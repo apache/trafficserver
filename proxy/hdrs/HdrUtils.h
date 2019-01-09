@@ -33,68 +33,98 @@
 
 #pragma once
 
+#include "tscpp/util/TextView.h"
 #include "tscore/ParseRules.h"
 #include "MIME.h"
 
-// csv = comma separated value
+/** Accessor class to iterate over values in a multi-valued field.
+ *
+ * This implements the logic for quoted strings as specified in the RFC.
+ */
 class HdrCsvIter
 {
+  using TextView = ts::TextView;
+
 public:
-  // MIME standard separator ',' is used as the default value
-  // Set-cookie/Cookie uses ';'
-  HdrCsvIter(const char s = ',')
-    : m_value_start(nullptr),
-      m_value_len(0),
-      m_bytes_consumed(0),
-      m_follow_dups(false),
-      m_csv_start(nullptr),
-      m_csv_len(0),
-      m_csv_end(nullptr),
-      m_csv_index(0),
-      m_cur_field(nullptr),
-      m_separator(s)
-  {
-  }
+  /** Construct the iterator in the initial state.
+   *
+   * @param s The separator character for sub-values.
+   */
+  HdrCsvIter(char s = ',') : m_separator(s) {}
+
+  /** Get the first sub-value.
+   *
+   * @param m The multi-valued field.
+   * @param follow_dups Continue on to duplicate fields flag.
+   * @return A view of the first sub-value in multi-valued data.
+   */
+  TextView get_first(const MIMEField *m, bool follow_dups = true);
   const char *get_first(const MIMEField *m, int *len, bool follow_dups = true);
+
+  /** Get the next sub-value.
+   *
+   * @return A view of the next subvalue, or an empty view if no more values.
+   *
+   * If @a follow_dups was set in the constructor, this will continue on to additional fields
+   * if those fields have the same name as the original field (e.g, are duplicates).
+   */
+  TextView get_next();
   const char *get_next(int *len);
+
+  /** Get the current sub-value.
+   *
+   * @return A view of the current subvalue, or an empty view if no more values.
+   *
+   * The state of the iterator is not modified.
+   */
+  TextView get_current();
   const char *get_current(int *len);
 
+  /** Get the @a nth sub-value in the field @a m.
+   *
+   * @param m Field.
+   * @param nth Index of the target sub-value.
+   * @param follow_dups Follow duplicate fields if necessary.
+   * @return The subvalue at index @a n, or an empty view if that does not exist.
+   */
+  TextView get_nth(MIMEField *m, int nth, bool follow_dups = true);
   const char *get_nth(MIMEField *m, int *len, int n, bool follow_dups = true);
+
   int count_values(MIMEField *field, bool follow_dups = true);
 
-  int get_index();
+  /** Get the first sub-value as an integer.
+   *
+   * @param m Field with the value.
+   * @param result [out] Set to the integer sub-value.
+   * @return @c true if there was an integer and @a result was set, @c false otherwise.
+   */
+  bool get_first_int(MIMEField *m, int &result);
 
-  int get_first_int(MIMEField *m, int *valid = nullptr);
-  int get_next_int(int *valid = nullptr);
+  /** Get the next subvalue as an integer.
+   *
+   * @param result [out] Set to the integer sub-value.
+   * @return @c true if there was an integer and @a result was set, @c false otherwise.
+   */
+  bool get_next_int(int &result);
 
 private:
   void find_csv();
 
-  const char *m_value_start;
-  int m_value_len;
-  int m_bytes_consumed;
-  bool m_follow_dups;
+  /// The current field value.
+  TextView m_value;
 
-  // m_csv_start - the start of the current comma separated value
-  //                 leading white space, and leading quotes have
-  //                 been skipped over
-  // m_csv_len - the length of the current comma separated value
-  //                 not including leading whitespace, trailing
-  //                 whitespace (unless quoted) or the terminating
-  //                 comma, or trailing quotes have been removed
-  // m_csv_end - the terminating comma of the csv unit.  Either
-  //                 the terminating comma or the final character
-  //                 if this is the last csv in the string
-  // m_cvs_index - the integer index of current csv starting
-  //                 at zero
-  const char *m_csv_start;
-  int m_csv_len;
-  const char *m_csv_end;
-  int m_csv_index;
-  const MIMEField *m_cur_field;
+  /// Whether duplicates are being followed.
+  bool m_follow_dups = false;
 
-  // for the Cookie/Set-cookie headers, the separator is ';'
-  const char m_separator;
+  /// The current sub-value.
+  TextView m_csv;
+
+  /// The field containing the current sub-value.
+  const MIMEField *m_cur_field = nullptr;
+
+  /// Separator for sub-values.
+  /// for the Cookie/Set-cookie headers, the separator is ';'
+  const char m_separator; // required constructor parameter, no initialization here.
 
   void field_init(const MIMEField *m);
 };
@@ -102,86 +132,83 @@ private:
 inline void
 HdrCsvIter::field_init(const MIMEField *m)
 {
-  m_cur_field   = m;
-  m_value_start = m->m_ptr_value;
-  m_value_len   = m->m_len_value;
-  m_csv_start   = m_value_start;
+  m_cur_field = m;
+  m_value.assign(m->m_ptr_value, m->m_len_value);
 }
 
 inline const char *
 HdrCsvIter::get_first(const MIMEField *m, int *len, bool follow_dups)
 {
+  auto tv = this->get_first(m, follow_dups);
+  *len    = static_cast<int>(tv.size());
+  return tv.data();
+}
+
+inline ts::TextView
+HdrCsvIter::get_first(const MIMEField *m, bool follow_dups)
+{
   field_init(m);
-
   m_follow_dups = follow_dups;
+  this->find_csv();
+  return m_csv;
+}
 
-  m_bytes_consumed = 0;
-  m_csv_index      = -1;
-
-  if (m_csv_start) {
-    find_csv();
-  } else {
-    m_csv_len = 0;
-  }
-
-  *len = m_csv_len;
-  return m_csv_start;
+inline ts::TextView
+HdrCsvIter::get_next()
+{
+  this->find_csv();
+  return m_csv;
 }
 
 inline const char *
 HdrCsvIter::get_next(int *len)
 {
-  if (m_csv_start) {
-    // Skip past the current csv
-    m_csv_start = m_csv_end + 1;
-    find_csv();
-  }
+  auto tv = this->get_next();
+  *len    = static_cast<int>(tv.size());
+  return tv.data();
+}
 
-  *len = m_csv_len;
-  return m_csv_start;
+inline ts::TextView
+HdrCsvIter::get_current()
+{
+  return m_csv;
 }
 
 inline const char *
 HdrCsvIter::get_current(int *len)
 {
-  *len = m_csv_len;
-  return m_csv_start;
+  *len = static_cast<int>(m_csv.size());
+  return m_csv.data();
 }
 
-inline int
-HdrCsvIter::get_first_int(MIMEField *m, int *valid)
+inline bool
+HdrCsvIter::get_first_int(MIMEField *m, int &result)
 {
-  int len;
-  const char *r = get_first(m, &len);
+  auto val = this->get_first(m);
 
-  if (r) {
-    if (valid) {
-      *valid = 1;
+  if (val) {
+    TextView parsed;
+    int n = ts::svtoi(val, &parsed);
+    if (parsed) {
+      result = n;
+      return true;
     }
-    return ink_atoi(r, len);
-  } else {
-    if (valid) {
-      *valid = 0;
-    }
-    return 0;
   }
+  return false;
 }
 
-inline int
-HdrCsvIter::get_next_int(int *valid)
+inline bool
+HdrCsvIter::get_next_int(int &result)
 {
-  int len;
-  const char *r = get_next(&len);
+  auto val = this->get_next();
 
-  if (r) {
-    if (valid) {
-      *valid = 1;
+  if (val) {
+    TextView parsed;
+    int n = ts::svtoi(val, &parsed);
+    if (parsed) {
+      result = n;
+      return true;
     }
-    return ink_atoi(r, len);
-  } else {
-    if (valid) {
-      *valid = 0;
-    }
-    return 0;
   }
+  return false;
 }
