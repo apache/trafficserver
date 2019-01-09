@@ -153,6 +153,11 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   vc->action_     = cont;
 
   SET_CONTINUATION_HANDLER(vc, &QUICNetVConnection::startEvent);
+  if (t->is_event_type(opt->etype)) {
+    vc->thread = t;
+  } else {
+    vc->thread = eventProcessor.assign_thread(opt->etype);
+  }
 
   vc->start();
 
@@ -167,12 +172,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
     }
   }
 
-  // Try to stay on the current thread if it is the right type
-  if (t->is_event_type(opt->etype)) {
-    t->schedule_imm(vc);
-  } else { // Otherwise, pass along to another thread of the right type
-    eventProcessor.schedule_imm(vc, opt->etype);
-  }
+  vc->thread->schedule_imm(vc);
 
   //  vc->connectUp(t, NO_FD);
 
