@@ -1239,8 +1239,19 @@ QUICPaddingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint16_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length,
                                                    const char *reason_phrase, QUICFrameId id, QUICFrameGenerator *owner)
   : QUICFrame(id, owner),
+    _type(0x1c),
     _error_code(error_code),
     _frame_type(frame_type),
+    _reason_phrase_length(reason_phrase_length),
+    _reason_phrase(reason_phrase)
+{
+}
+
+QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint16_t error_code, uint64_t reason_phrase_length,
+                                                   const char *reason_phrase, QUICFrameId id, QUICFrameGenerator *owner)
+  : QUICFrame(id, owner),
+    _type(0x1d),
+    _error_code(error_code),
     _reason_phrase_length(reason_phrase_length),
     _reason_phrase(reason_phrase)
 {
@@ -1270,6 +1281,7 @@ QUICConnectionCloseFrame::parse(const uint8_t *buf, size_t len)
 {
   ink_assert(len >= 1);
   this->_reset();
+  this->_type = buf[0];
   uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
 
   if (LEFT_SPACE(pos) < 2) {
@@ -1281,20 +1293,23 @@ QUICConnectionCloseFrame::parse(const uint8_t *buf, size_t len)
 
   size_t field_len = 0;
   uint64_t field   = 0;
-  if (!read_varint(pos, LEFT_SPACE(pos), field, field_len)) {
-    return;
-  }
 
-  this->_frame_type = static_cast<QUICFrameType>(field);
+  if (this->_type == 0x1c) {
+    if (!read_varint(pos, LEFT_SPACE(pos), field, field_len)) {
+      return;
+    }
 
-  /**
-     Frame Type Field Accessor
+    this->_frame_type = static_cast<QUICFrameType>(field);
 
-     PADDING frame in Frame Type field means frame type that triggered the error is unknown.
-     Return QUICFrameType::UNKNOWN when Frame Type field is PADDING (0x0).
-   */
-  if (this->_frame_type == QUICFrameType::PADDING) {
-    this->_frame_type = QUICFrameType::UNKNOWN;
+    /**
+       Frame Type Field Accessor
+
+       PADDING frame in Frame Type field means frame type that triggered the error is unknown.
+       Return QUICFrameType::UNKNOWN when Frame Type field is PADDING (0x0).
+     */
+    if (this->_frame_type == QUICFrameType::PADDING) {
+      this->_frame_type = QUICFrameType::UNKNOWN;
+    }
   }
 
   if (!read_varint(pos, LEFT_SPACE(pos), this->_reason_phrase_length, field_len)) {
@@ -1350,7 +1365,7 @@ QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 
   size_t n;
   uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::CONNECTION_CLOSE);
+  *p         = this->_type;
   ++p;
 
   // Error Code (16)
@@ -1382,9 +1397,14 @@ QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICConnectionCloseFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  int len =
-    snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=%s (0x%" PRIx16 ") frame=%s", this->size(),
+  int len;
+  if (this->_type == 0x1c) {
+    len = snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=%s (0x%" PRIx16 ") frame=%s", this->size(),
              QUICDebugNames::error_code(this->error_code()), this->error_code(), QUICDebugNames::frame_type(this->frame_type()));
+  } else {
+     // Application-specific error. It doesn't have a frame type and we don't know string representations of error codes.
+    len = snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=0x%" PRIx16 " ", this->size(), this->error_code());
+  }
 
   if (this->reason_phrase_length() != 0 && this->reason_phrase() != nullptr) {
     memcpy(msg + len, " reason=", 8);

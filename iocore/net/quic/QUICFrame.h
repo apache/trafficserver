@@ -356,7 +356,11 @@ class QUICConnectionCloseFrame : public QUICFrame
 public:
   QUICConnectionCloseFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
   QUICConnectionCloseFrame(const uint8_t *buf, size_t len);
+  // Constructor for transport error codes
   QUICConnectionCloseFrame(uint16_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length, const char *reason_phrase,
+                           QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
+  // Constructor for application protocol error codes
+  QUICConnectionCloseFrame(uint16_t error_code, uint64_t reason_phrase_length, const char *reason_phrase,
                            QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
@@ -373,6 +377,7 @@ public:
 private:
   virtual void _reset() override;
 
+  uint8_t _type                  = 0;
   uint16_t _error_code;
   QUICFrameType _frame_type      = QUICFrameType::UNKNOWN;
   uint64_t _reason_phrase_length = 0;
