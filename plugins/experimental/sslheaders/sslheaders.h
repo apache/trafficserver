@@ -19,7 +19,7 @@
 #include <ts/ts.h>
 #include <ts/remap.h>
 #include <cstring>
-#include <list>
+#include <vector>
 #include <string>
 
 extern "C" {
@@ -67,13 +67,15 @@ struct SslHdrExpansion {
   ExpansionScope scope;
   ExpansionField field;
 
-  // noncopyable
+  // noncopyable but moveable
   SslHdrExpansion(const SslHdrExpansion &) = delete;
   SslHdrExpansion &operator=(const SslHdrExpansion &) = delete;
+  SslHdrExpansion(SslHdrExpansion &&)                 = default;
+  SslHdrExpansion &operator=(SslHdrExpansion &&) = default;
 };
 
 struct SslHdrInstance {
-  typedef std::list<SslHdrExpansion *> expansion_list;
+  typedef std::vector<SslHdrExpansion> expansion_list;
 
   SslHdrInstance();
   ~SslHdrInstance();

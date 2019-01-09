@@ -206,8 +206,7 @@ ProxyClientSession::handle_api_return(int event)
     break;
   }
   default:
-    Error("received invalid session hook %s (%d)", HttpDebugNames::get_api_hook_name(hookid), hookid);
-    ink_release_assert(false);
+    Fatal("received invalid session hook %s (%d)", HttpDebugNames::get_api_hook_name(hookid), hookid);
     break;
   }
 }
