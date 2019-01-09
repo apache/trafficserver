@@ -580,7 +580,7 @@ QUICAckFrame::parse(const uint8_t *buf, size_t len)
   ink_assert(len >= 1);
   this->_reset();
   uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
-  bool has_ecn = (buf[0] == ACK_WITH_ECN);
+  bool has_ecn = (buf[0] == static_cast<uint8_t>(QUICFrameType::ACK_WITH_ECN));
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_largest_acknowledged, field_len)) {
