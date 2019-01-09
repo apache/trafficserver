@@ -8703,42 +8703,34 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
 void
 HttpTransact::delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_code)
 {
-  int w_code       = (int)warning_code;
+  int w_code       = static_cast<int>(warning_code);
   MIMEField *field = to_warn->field_find(MIME_FIELD_WARNING, MIME_LEN_WARNING);
-  ;
 
   // Loop over the values to see if we need to do anything
   if (field) {
     HdrCsvIter iter;
-
-    int valid;
     int val_code;
-
-    const char *value_str;
-    int value_len;
-
     MIMEField *new_field = nullptr;
-    val_code             = iter.get_first_int(field, &valid);
 
-    while (valid) {
+    bool valid_p = iter.get_first_int(field, val_code);
+
+    while (valid_p) {
       if (val_code == w_code) {
-        // Ok, found the value we're look to delete
-        //  Look over and create a new field
-        //  appending all elements that are not this
-        //  value
-        val_code = iter.get_first_int(field, &valid);
+        // Ok, found the value we're look to delete Look over and create a new field appending all
+        // elements that are not this value
+        valid_p = iter.get_first_int(field, val_code);
 
-        while (valid) {
+        while (valid_p) {
           if (val_code != warning_code) {
-            value_str = iter.get_current(&value_len);
+            auto value = iter.get_current();
             if (new_field) {
-              new_field->value_append(to_warn->m_heap, to_warn->m_mime, value_str, value_len, true);
+              new_field->value_append(to_warn->m_heap, to_warn->m_mime, value.data(), value.size(), true);
             } else {
               new_field = to_warn->field_create();
-              to_warn->field_value_set(new_field, value_str, value_len);
+              to_warn->field_value_set(new_field, value.data(), value.size());
             }
           }
-          val_code = iter.get_next_int(&valid);
+          valid_p = iter.get_next_int(val_code);
         }
 
         to_warn->field_delete(MIME_FIELD_WARNING, MIME_LEN_WARNING);
@@ -8749,8 +8741,7 @@ HttpTransact::delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_cod
 
         return;
       }
-
-      val_code = iter.get_next_int(&valid);
+      valid_p = iter.get_next_int(val_code);
     }
   }
 }
