@@ -565,8 +565,10 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
       size_t pn_len       = 4;
       QUICPacket::encode_packet_number(pn, this->_packet_number, pn_len);
 
-      if (pn > 0x3FFF) {
+      if (pn > 0x7FFFFF) {
         pn_len = 4;
+      } else if (pn > 0x7FFF) {
+        pn_len = 3;
       } else if (pn > 0x7F) {
         pn_len = 2;
       } else {
@@ -951,9 +953,11 @@ QUICPacket::calc_packet_number_len(QUICPacketNumber num, QUICPacketNumber base)
   uint64_t d  = (num - base) * 2;
   uint8_t len = 0;
 
-  if (d > 0x3FFF) {
+  if (d > 0xFFFFFF) {
     len = 4;
-  } else if (d > 0x7F) {
+  } else if (d > 0xFFFF) {
+    len = 3;
+  } else if (d > 0xFF) {
     len = 2;
   } else {
     len = 1;
@@ -970,19 +974,23 @@ QUICPacket::encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
   uint64_t mask = 0;
   switch (len) {
   case 1:
-    mask = 0x7F;
+    mask = 0xFF;
     break;
   case 2:
-    mask = 0x3FFF;
+    mask = 0xFFFF;
+    break;
+  case 3:
+    mask = 0xFFFFFF;
     break;
   case 4:
-    mask = 0x3FFFFFFF;
+    mask = 0xFFFFFFFF;
     break;
   default:
     ink_assert(!"len must be 1, 2, or 4");
     return false;
   }
   dst = src & mask;
+
   return true;
 }
 
@@ -994,16 +1002,16 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
   uint64_t maximum_diff = 0;
   switch (len) {
   case 1:
-    maximum_diff = 0x80;
+    maximum_diff = 0x100;
     break;
   case 2:
-    maximum_diff = 0x4000;
+    maximum_diff = 0x10000;
     break;
   case 3:
-    maximum_diff = 0x400000;
+    maximum_diff = 0x1000000;
     break;
   case 4:
-    maximum_diff = 0x40000000;
+    maximum_diff = 0x100000000;
     break;
   default:
     ink_assert(!"len must be 1, 2, 3 or 4");
