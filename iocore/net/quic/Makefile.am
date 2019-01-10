@@ -79,7 +79,8 @@ libquic_a_SOURCES = \
   QUICPacketRetransmitter.cc \
   QUICPathValidator.cc \
   QUICPinger.cc \
-  QUICFrameGenerator.cc
+  QUICFrameGenerator.cc \
+  QUICFrameRetransmitter.cc
 
 #
 # Check Programs
@@ -103,7 +104,8 @@ check_PROGRAMS = \
   test_QUICTransportParameters \
   test_QUICType \
   test_QUICTypeUtil \
-  test_QUICVersionNegotiator
+  test_QUICVersionNegotiator \
+  test_QUICFrameRetransmitter
 
 TESTS = $(check_PROGRAMS)
 
@@ -269,6 +271,13 @@ test_QUICVersionNegotiator_LDADD = $(test_LDADD)
 test_QUICVersionNegotiator_SOURCES = \
   $(test_main_SOURCES) \
   ./test/test_QUICVersionNegotiator.cc
+
+test_QUICFrameRetransmitter_CPPFLAGS = $(test_CPPFLAGS)
+test_QUICFrameRetransmitter_LDFLAGS = @AM_LDFLAGS@
+test_QUICFrameRetransmitter_LDADD = $(test_LDADD)
+test_QUICFrameRetransmitter_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_QUICFrameRetransmitter.cc
 
 #
 # clang-tidy

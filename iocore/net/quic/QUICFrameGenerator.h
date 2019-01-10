@@ -24,13 +24,7 @@
 #pragma once
 
 #include "QUICFrame.h"
-
-struct QUICFrameInformation {
-  QUICFrameType type;
-  QUICEncryptionLevel level;
-
-  uint8_t data[1024] = {};
-};
+#include "QUICFrameRetransmitter.h"
 
 class QUICFrameGenerator
 {
@@ -50,20 +44,20 @@ protected:
   }
 
   virtual void
-  _on_frame_acked(QUICFrameInformation &info)
+  _on_frame_acked(QUICFrameInformationUPtr &info)
   {
   }
 
   virtual void
-  _on_frame_lost(QUICFrameInformation &info)
+  _on_frame_lost(QUICFrameInformationUPtr &info)
   {
   }
 
   virtual std::vector<QUICEncryptionLevel> _encryption_level_filter();
   virtual bool _is_level_matched(QUICEncryptionLevel level);
-  void _records_frame(QUICFrameId id, QUICFrameInformation info);
+  void _records_frame(QUICFrameId id, QUICFrameInformationUPtr info);
 
 private:
   QUICFrameId _latest_frame_Id = 0;
-  std::map<QUICFrameId, QUICFrameInformation> _info;
+  std::map<QUICFrameId, QUICFrameInformationUPtr> _info;
 };

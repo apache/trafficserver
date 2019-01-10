@@ -111,11 +111,7 @@ public:
   uint8_t ack_delay_exponent() const;
 
 private:
-  struct AckFrameInfomation {
-    QUICPacketNumber largest_acknowledged = 0;
-  };
-
-  virtual void _on_frame_acked(QUICFrameInformation &info) override;
+  virtual void _on_frame_acked(QUICFrameInformationUPtr &info) override;
 
   /*
    * Returns QUICAckFrame only if ACK frame is able to be sent.

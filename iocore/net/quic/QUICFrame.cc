@@ -2887,8 +2887,9 @@ QUICStreamFrameUPtr
 QUICFrameFactory::create_stream_frame(Ptr<IOBufferBlock> &block, QUICStreamId stream_id, QUICOffset offset, bool last,
                                       bool has_offset_field, bool has_length_field, QUICFrameId id, QUICFrameGenerator *owner)
 {
-  QUICStreamFrame *frame = quicStreamFrameAllocator.alloc();
-  new (frame) QUICStreamFrame(block, stream_id, offset, last, has_offset_field, has_length_field, id, owner);
+  Ptr<IOBufferBlock> new_block = make_ptr<IOBufferBlock>(block->clone());
+  QUICStreamFrame *frame       = quicStreamFrameAllocator.alloc();
+  new (frame) QUICStreamFrame(new_block, stream_id, offset, last, has_offset_field, has_length_field, id, owner);
   return QUICStreamFrameUPtr(frame, &QUICFrameDeleter::delete_stream_frame);
 }
 

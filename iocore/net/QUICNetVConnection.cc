@@ -2218,7 +2218,7 @@ QUICNetVConnection::generate_frame(QUICEncryptionLevel level, uint64_t connectio
 }
 
 void
-QUICNetVConnection::_on_frame_lost(QUICFrameInformation &info)
+QUICNetVConnection::_on_frame_lost(QUICFrameInformationUPtr &info)
 {
   this->_is_resumption_token_sent = false;
 }
