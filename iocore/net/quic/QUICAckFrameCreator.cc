@@ -71,13 +71,13 @@ QUICAckFrameManager::generate_frame(QUICEncryptionLevel level, uint64_t connecti
   ack_frame         = ack_creator->generate_ack_frame(maximum_frame_size);
 
   if (ack_frame != nullptr) {
-    QUICFrameInformation info;
-    AckFrameInfomation *ack_info   = reinterpret_cast<AckFrameInfomation *>(info.data);
+    QUICFrameInformationUPtr info  = std::make_unique<QUICFrameInformation>();
+    AckFrameInfo *ack_info         = reinterpret_cast<AckFrameInfo *>(info->data);
     ack_info->largest_acknowledged = ack_frame->largest_acknowledged();
 
-    info.level = level;
-    info.type  = ack_frame->type();
-    this->_records_frame(ack_frame->id(), info);
+    info->level = level;
+    info->type  = ack_frame->type();
+    this->_records_frame(ack_frame->id(), std::move(info));
   }
 
   return ack_frame;
@@ -96,11 +96,11 @@ QUICAckFrameManager::will_generate_frame(QUICEncryptionLevel level)
 }
 
 void
-QUICAckFrameManager::_on_frame_acked(QUICFrameInformation &info)
+QUICAckFrameManager::_on_frame_acked(QUICFrameInformationUPtr &info)
 {
-  ink_assert(info.type == QUICFrameType::ACK);
-  AckFrameInfomation *ack_info = reinterpret_cast<AckFrameInfomation *>(info.data);
-  int index                    = QUICTypeUtil::pn_space_index(info.level);
+  ink_assert(info->type == QUICFrameType::ACK);
+  AckFrameInfo *ack_info = reinterpret_cast<AckFrameInfo *>(info->data);
+  int index              = QUICTypeUtil::pn_space_index(info->level);
   this->_ack_creator[index]->forget(ack_info->largest_acknowledged);
 }
 

@@ -432,7 +432,6 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   // MAX_STREAM_DATA
   frame = this->_local_flow_controller.generate_frame(level, UINT16_MAX, maximum_frame_size);
   if (frame) {
-    this->_records_max_stream_data_frame(*static_cast<QUICMaxStreamDataFrame *>(frame.get()));
     return frame;
   }
 
@@ -528,63 +527,52 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
 void
 QUICStream::_records_stream_frame(const QUICStreamFrame &frame, Ptr<IOBufferBlock> &block)
 {
-  QUICFrameInformation info;
-  info.type                   = frame.type();
-  StreamFrameInfo *frame_info = reinterpret_cast<StreamFrameInfo *>(info.data);
-  frame_info->offset          = frame.offset();
-  frame_info->has_fin         = frame.has_fin_flag();
-  frame_info->block           = block;
-  this->_records_frame(frame.id(), info);
+  QUICFrameInformationUPtr info = std::make_unique<QUICFrameInformation>();
+  info->type                    = frame.type();
+  StreamFrameInfo *frame_info   = reinterpret_cast<StreamFrameInfo *>(info->data);
+  frame_info->offset            = frame.offset();
+  frame_info->has_fin           = frame.has_fin_flag();
+  frame_info->block             = block;
+  this->_records_frame(frame.id(), std::move(info));
 }
 
 void
 QUICStream::_records_rst_stream_frame(const QUICRstStreamFrame &frame)
 {
-  QUICFrameInformation info;
-  info.type                      = frame.type();
-  RstStreamFrameInfo *frame_info = reinterpret_cast<RstStreamFrameInfo *>(info.data);
+  QUICFrameInformationUPtr info  = std::make_unique<QUICFrameInformation>();
+  info->type                     = frame.type();
+  RstStreamFrameInfo *frame_info = reinterpret_cast<RstStreamFrameInfo *>(info->data);
   frame_info->error_code         = frame.error_code();
   frame_info->final_offset       = frame.final_offset();
-  this->_records_frame(frame.id(), info);
+  this->_records_frame(frame.id(), std::move(info));
 }
 
 void
 QUICStream::_records_stop_sending_frame(const QUICStopSendingFrame &frame)
 {
-  QUICFrameInformation info;
-  info.type                        = frame.type();
-  StopSendingFrameInfo *frame_info = reinterpret_cast<StopSendingFrameInfo *>(info.data);
+  QUICFrameInformationUPtr info    = std::make_unique<QUICFrameInformation>();
+  info->type                       = frame.type();
+  StopSendingFrameInfo *frame_info = reinterpret_cast<StopSendingFrameInfo *>(info->data);
   frame_info->error_code           = frame.error_code();
-  this->_records_frame(frame.id(), info);
+  this->_records_frame(frame.id(), std::move(info));
 }
 
 void
-QUICStream::_records_max_stream_data_frame(const QUICMaxStreamDataFrame &frame)
-{
-  QUICFrameInformation info;
-  info.type                       = frame.type();
-  MaxStreamDataInfo *frame_info   = reinterpret_cast<MaxStreamDataInfo *>(info.data);
-  frame_info->maximum_stream_data = frame.maximum_stream_data();
-  this->_records_frame(frame.id(), info);
-}
-
-void
-QUICStream::_on_frame_acked(QUICFrameInformation &info)
+QUICStream::_on_frame_acked(QUICFrameInformationUPtr &info)
 {
   StreamFrameInfo *frame_info = nullptr;
-  switch (info.type) {
+  switch (info->type) {
   case QUICFrameType::RST_STREAM:
     this->_is_reset_complete = true;
     break;
   case QUICFrameType::STREAM:
-    frame_info        = reinterpret_cast<StreamFrameInfo *>(info.data);
+    frame_info        = reinterpret_cast<StreamFrameInfo *>(info->data);
     frame_info->block = nullptr;
     if (false) {
       this->_is_transfer_complete = true;
     }
     break;
   case QUICFrameType::STOP_SENDING:
-  case QUICFrameType::MAX_STREAM_DATA:
   default:
     break;
   }
@@ -593,10 +581,10 @@ QUICStream::_on_frame_acked(QUICFrameInformation &info)
 }
 
 void
-QUICStream::_on_frame_lost(QUICFrameInformation &info)
+QUICStream::_on_frame_lost(QUICFrameInformationUPtr &info)
 {
   StreamFrameInfo *frame_info = nullptr;
-  switch (info.type) {
+  switch (info->type) {
   case QUICFrameType::RST_STREAM:
     // [draft-16] 13.2.  Retransmission of Information
     // Cancellation of stream transmission, as carried in a RST_STREAM
@@ -607,13 +595,12 @@ QUICStream::_on_frame_lost(QUICFrameInformation &info)
     this->_is_reset_sent = false;
     break;
   case QUICFrameType::STREAM:
-    frame_info        = reinterpret_cast<StreamFrameInfo *>(info.data);
+    frame_info        = reinterpret_cast<StreamFrameInfo *>(info->data);
     frame_info->block = nullptr;
     break;
   case QUICFrameType::STOP_SENDING:
     this->_is_stop_sending_sent = false;
     break;
-  case QUICFrameType::MAX_STREAM_DATA:
   default:
     break;
   }
@@ -892,13 +879,13 @@ QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_
   block->_end = std::min(block->start() + frame_payload_size, block->_buf_end);
   ink_assert(static_cast<uint64_t>(block->read_avail()) == frame_payload_size);
 
-  QUICFrameInformation info;
-  info.type                                 = QUICFrameType::CRYPTO;
-  QUICFrameId frame_id                      = this->_issue_frame_id();
-  CryptoFrameInformation *crypto_frame_info = reinterpret_cast<CryptoFrameInformation *>(info.data);
-  crypto_frame_info->offset                 = this->_send_offset;
-  crypto_frame_info->block                  = block;
-  this->_records_frame(frame_id, info);
+  QUICFrameInformationUPtr info      = std::make_unique<QUICFrameInformation>();
+  info->type                         = QUICFrameType::CRYPTO;
+  QUICFrameId frame_id               = this->_issue_frame_id();
+  CryptoFrameInfo *crypto_frame_info = reinterpret_cast<CryptoFrameInfo *>(info->data);
+  crypto_frame_info->offset          = this->_send_offset;
+  crypto_frame_info->block           = block;
+  this->_records_frame(frame_id, std::move(info));
 
   frame = QUICFrameFactory::create_crypto_frame(block, this->_send_offset, frame_id, this);
   this->_send_offset += frame_payload_size;
@@ -908,17 +895,17 @@ QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_
 }
 
 void
-QUICCryptoStream::_on_frame_acked(QUICFrameInformation &info)
+QUICCryptoStream::_on_frame_acked(QUICFrameInformationUPtr &info)
 {
-  ink_assert(info.type == QUICFrameType::CRYPTO);
-  CryptoFrameInformation *crypto_frame_info = reinterpret_cast<CryptoFrameInformation *>(info.data);
-  crypto_frame_info->block                  = nullptr;
+  ink_assert(info->type == QUICFrameType::CRYPTO);
+  CryptoFrameInfo *crypto_frame_info = reinterpret_cast<CryptoFrameInfo *>(info->data);
+  crypto_frame_info->block           = nullptr;
 }
 
 void
-QUICCryptoStream::_on_frame_lost(QUICFrameInformation &info)
+QUICCryptoStream::_on_frame_lost(QUICFrameInformationUPtr &info)
 {
-  ink_assert(info.type == QUICFrameType::CRYPTO);
-  CryptoFrameInformation *crypto_frame_info = reinterpret_cast<CryptoFrameInformation *>(info.data);
-  crypto_frame_info->block                  = nullptr;
+  ink_assert(info->type == QUICFrameType::CRYPTO);
+  CryptoFrameInfo *crypto_frame_info = reinterpret_cast<CryptoFrameInfo *>(info->data);
+  crypto_frame_info->block           = nullptr;
 }

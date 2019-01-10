@@ -33,12 +33,13 @@
 #include "QUICIncomingFrameBuffer.h"
 #include "QUICFrameGenerator.h"
 #include "QUICConnection.h"
+#include "QUICFrameRetransmitter.h"
 
 /**
  * @brief QUIC Stream
  * TODO: This is similar to Http2Stream. Need to think some integration.
  */
-class QUICStream : public VConnection, public QUICFrameGenerator, public QUICTransferProgressProvider
+class QUICStream : public VConnection, public QUICFrameGenerator, public QUICTransferProgressProvider, public QUICFrameRetransmitter
 {
 public:
   QUICStream()
@@ -99,25 +100,6 @@ public:
   bool is_cancelled() const override;
 
 protected:
-  struct StreamFrameInfo {
-    QUICOffset offset;
-    bool has_fin;
-    Ptr<IOBufferBlock> block;
-  } stream_frame_info;
-
-  struct MaxStreamDataInfo {
-    uint64_t maximum_stream_data;
-  };
-
-  struct RstStreamFrameInfo {
-    QUICAppErrorCode error_code;
-    QUICOffset final_offset;
-  };
-
-  struct StopSendingFrameInfo {
-    QUICAppErrorCode error_code;
-  };
-
   virtual int64_t _process_read_vio();
   virtual int64_t _process_write_vio();
   void _signal_read_event();
@@ -126,7 +108,6 @@ protected:
   Event *_send_tracked_event(Event *, int, VIO *);
 
   void _write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin);
-  void _records_max_stream_data_frame(const QUICMaxStreamDataFrame &frame);
   void _records_rst_stream_frame(const QUICRstStreamFrame &frame);
   void _records_stream_frame(const QUICStreamFrame &frame, Ptr<IOBufferBlock> &block);
   void _records_stop_sending_frame(const QUICStopSendingFrame &frame);
@@ -164,8 +145,8 @@ protected:
   QUICBidirectionalStreamState _state;
 
   // QUICFrameGenerator
-  void _on_frame_acked(QUICFrameInformation &info) override;
-  void _on_frame_lost(QUICFrameInformation &info) override;
+  void _on_frame_acked(QUICFrameInformationUPtr &info) override;
+  void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 };
 
 /**
@@ -207,13 +188,8 @@ public:
   QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
 private:
-  struct CryptoFrameInformation {
-    QUICOffset offset;
-    Ptr<IOBufferBlock> block;
-  };
-
-  void _on_frame_acked(QUICFrameInformation &info) override;
-  void _on_frame_lost(QUICFrameInformation &info) override;
+  void _on_frame_acked(QUICFrameInformationUPtr &info) override;
+  void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 
   QUICStreamErrorUPtr _reset_reason = nullptr;
   QUICOffset _send_offset           = 0;

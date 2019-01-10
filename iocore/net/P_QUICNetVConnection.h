@@ -382,7 +382,7 @@ private:
   bool _has_ack_only_packet_out = false;
 
   // QUICFrameGenerator
-  void _on_frame_lost(QUICFrameInformation &info) override;
+  void _on_frame_lost(QUICFrameInformationUPtr &info) override;
   std::vector<QUICEncryptionLevel>
   _encryption_level_filter() override
   {
