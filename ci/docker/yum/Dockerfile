@@ -48,11 +48,12 @@ RUN yum -y update; \
     # Autoconf
     autoconf automake libtool \
     # Various other tools
-    git rpm-build distcc-server file; \
+    git rpm-build distcc-server file wget openssl hwloc; \
     # Devel packages that ATS needs
     yum -y install openssl-devel expat-devel pcre-devel libcap-devel hwloc-devel libunwind-devel \
     xz-devel libcurl-devel ncurses-devel jemalloc-devel GeoIP-devel kyotocabinet-devel luajit-devel \
-    brotli-devel ImageMagick-devel ImageMagick-c++-devel perl-ExtUtils-MakeMaker perl-Digest-SHA; \
+    brotli-devel ImageMagick-devel ImageMagick-c++-devel \
+    perl-ExtUtils-MakeMaker perl-Digest-SHA perl-URI; \
     # This is for autest stuff
     yum -y install python3 python3-virtualenv python-virtualenv httpd-tools procps-ng nmap-ncat; \
     # Optional: This is for the OpenSSH server, and Jenkins account + access (comment out if not needed)
