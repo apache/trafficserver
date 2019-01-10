@@ -1097,6 +1097,15 @@ mptcp
 
 .. ts:cv:: CONFIG proxy.config.http.default_buffer_water_mark INT 32768
 
+.. ts:cv:: CONFIG proxy.config.http.request_buffer_enabled INT 0
+   :overridable:
+
+   This is a configuration value that is overridable but not configurable. This is most likely an
+   implementation error.
+
+   This enables buffering the content for incoming ``POST`` requests. If enabled no outbound
+   connection is made until the entire ``POST`` request has been buffered.
+
 .. ts:cv:: CONFIG proxy.config.http.request_header_max_size INT 131072
 
    Controls the maximum size, in bytes, of an HTTP header in requests. Headers
@@ -3580,7 +3589,7 @@ Client-Related Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.client.sni_policy STRING NULL
    :overridable:
 
-   Indicate how the SNI value for the TLS connection to the origin is selected.  By default it is 
+   Indicate how the SNI value for the TLS connection to the origin is selected.  By default it is
    `host` which means the host header field value is used for the SNI.  If `remap` is specified, the
    remapped origin name is used for the SNI value.
 
