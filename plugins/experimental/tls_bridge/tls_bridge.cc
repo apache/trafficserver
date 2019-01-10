@@ -109,7 +109,9 @@ void
 BridgeConfig::load_pair(std::string_view rxp, std::string_view service, ts::file::path const &src, int ln)
 {
   Regex r;
-  if (r.compile(rxp.data(), Regex::ANCHORED)) {
+  // Unfortunately PCRE can only compile null terminated strings...
+  std::string pattern{rxp};
+  if (r.compile(pattern.c_str(), Regex::ANCHORED)) {
     _items.emplace_back(rxp, std::move(r), service);
   } else {
     char buff[std::numeric_limits<int>::digits10 + 2];
