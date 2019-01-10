@@ -173,10 +173,10 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT`                  :ts:cv:`proxy.config.net.sock_send_buffer_size_out`
 :c:macro:`TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB`                  :ts:cv:`proxy.config.http.parent_proxy.mark_down_hostdb`
 :c:macro:`TS_CONFIG_SRV_ENABLED`                                    :ts:cv:`proxy.config.srv_enabled`
-:c:macro:`TS_CONFIG_SSL_CERT_FILENAME`                              :ts:cv:`proxy.config.ssl.client.cert.filename`
+:c:macro:`TS_CONFIG_SSL_CLIENT_CERT_FILENAME`                       :ts:cv:`proxy.config.ssl.client.cert.filename`
 :c:macro:`TS_CONFIG_SSL_CERT_FILEPATH`                              :ts:cv:`proxy.config.ssl.client.cert.path`
 :c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER`                       :ts:cv:`proxy.config.ssl.client.verify.server`
-:c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES`            :ts:cv:`proxy.config.ssl.client.verify.server,properties`
+:c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES`            :ts:cv:`proxy.config.ssl.client.verify.server.properties`
 :c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY`                :ts:cv:`proxy.config.ssl.client.verify.server.policy`
 :c:macro:`TS_CONFIG_SSL_CLIENT_SNI_POLICY`                          :ts:cv:`proxy.config.ssl.client.sni_policy`
 :c:macro:`TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS`                    :ts:cv:`proxy.config.ssl.hsts_include_subdomains`
