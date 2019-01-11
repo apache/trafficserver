@@ -38,22 +38,22 @@ TEST_CASE("QUICFrameRetransmitter ignore frame which can not be retranmistted", 
   CHECK(retransmitter.create_retransmitted_frame(QUICEncryptionLevel::INITIAL, UINT16_MAX) == nullptr);
 }
 
-TEST_CASE("QUICFrameRetransmitter ignore frame which can not be split", "[quic]")
-{
-  QUICFrameRetransmitter retransmitter;
-  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
-  info->type                    = QUICFrameType::STOP_SENDING;
-  info->level                   = QUICEncryptionLevel::NONE;
-
-  retransmitter.save_frame_info(info);
-  CHECK(retransmitter.create_retransmitted_frame(QUICEncryptionLevel::INITIAL, 0) == nullptr);
-}
+// TEST_CASE("QUICFrameRetransmitter ignore frame which can not be split", "[quic]")
+// {
+//   QUICFrameRetransmitter retransmitter;
+//   QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
+//   info->type                    = QUICFrameType::STOP_SENDING;
+//   info->level                   = QUICEncryptionLevel::NONE;
+//
+//   retransmitter.save_frame_info(info);
+//   CHECK(retransmitter.create_retransmitted_frame(QUICEncryptionLevel::INITIAL, 0) == nullptr);
+// }
 
 TEST_CASE("QUICFrameRetransmitter ignore frame which has wrong level", "[quic]")
 {
   QUICFrameRetransmitter retransmitter;
   QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
-  info->type                    = QUICFrameType::STOP_SENDING;
+  info->type                    = QUICFrameType::STREAM;
   info->level                   = QUICEncryptionLevel::HANDSHAKE;
 
   retransmitter.save_frame_info(info);
@@ -64,14 +64,24 @@ TEST_CASE("QUICFrameRetransmitter successfully create retransmitted frame", "[qu
 {
   QUICFrameRetransmitter retransmitter;
   QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
-  info->type                    = QUICFrameType::STOP_SENDING;
+  info->type                    = QUICFrameType::STREAM;
   info->level                   = QUICEncryptionLevel::INITIAL;
+
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc();
+  memcpy(block->start(), data, sizeof(data));
+  block->fill(sizeof(data));
+
+  StreamFrameInfo *frame_info = reinterpret_cast<StreamFrameInfo *>(info->data);
+  frame_info->stream_id       = 0x12345;
+  frame_info->offset          = 0x67890;
+  frame_info->block           = block;
 
   retransmitter.save_frame_info(info);
 
   auto frame = retransmitter.create_retransmitted_frame(QUICEncryptionLevel::INITIAL, UINT16_MAX);
   CHECK(frame != nullptr);
-  CHECK(frame->type() == QUICFrameType::STOP_SENDING);
+  CHECK(frame->type() == QUICFrameType::STREAM);
 }
 
 TEST_CASE("QUICFrameRetransmitter successfully create stream frame", "[quic]")

@@ -41,9 +41,7 @@ struct QUICFrameInformationDeleter {
 
 using QUICFrameInformationUPtr = std::unique_ptr<QUICFrameInformation, QUICFrameInformationDeleter>;
 
-constexpr QUICFrameType RETRANSMITTED_FRAME_TYPE[] = {QUICFrameType::STREAM, QUICFrameType::STOP_SENDING,
-                                                      QUICFrameType::MAX_STREAM_DATA, QUICFrameType::RST_STREAM,
-                                                      QUICFrameType::MAX_DATA};
+constexpr QUICFrameType RETRANSMITTED_FRAME_TYPE[] = {QUICFrameType::STREAM};
 
 struct StreamFrameInfo {
   QUICStreamId stream_id;
@@ -52,38 +50,18 @@ struct StreamFrameInfo {
   Ptr<IOBufferBlock> block;
 };
 
-struct MaxStreamDataFrameInfo {
-  QUICStreamId stream_id;
-  uint64_t maximum_stream_data;
+struct CryptoFrameInfo {
+  QUICOffset offset;
+  Ptr<IOBufferBlock> block;
 };
 
 struct RstStreamFrameInfo {
-  QUICStreamId stream_id;
   QUICAppErrorCode error_code;
   QUICOffset final_offset;
 };
 
 struct StopSendingFrameInfo {
-  QUICStreamId stream_id;
   QUICAppErrorCode error_code;
-};
-
-struct MaxDataFrameInfo {
-  uint64_t maximum_data;
-};
-
-struct BlockedFrameInfo {
-  QUICOffset offset;
-};
-
-struct StreamBlockedFrameInfo {
-  QUICStreamId stream_id;
-  QUICOffset offset;
-};
-
-struct CryptoFrameInfo {
-  QUICOffset offset;
-  Ptr<IOBufferBlock> block;
 };
 
 struct AckFrameInfo {
@@ -100,17 +78,6 @@ public:
 private:
   QUICFrameUPtr _create_stream_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
                                      std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id, QUICFrameGenerator *owner);
-  QUICFrameUPtr _create_reset_stream_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
-                                           std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id,
-                                           QUICFrameGenerator *owner);
-  QUICFrameUPtr _create_max_stream_data_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
-                                              std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id,
-                                              QUICFrameGenerator *owner);
-  QUICFrameUPtr _create_stop_sending_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
-                                           std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id,
-                                           QUICFrameGenerator *owner);
-  QUICFrameUPtr _create_max_data_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
-                                       std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id, QUICFrameGenerator *owner);
 
   void _append_info_queue(std::deque<QUICFrameInformationUPtr> &tmp_queue);
 
