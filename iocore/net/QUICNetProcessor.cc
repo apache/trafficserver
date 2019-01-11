@@ -154,8 +154,6 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
 
   SET_CONTINUATION_HANDLER(vc, &QUICNetVConnection::startEvent);
 
-  vc->start();
-
   if (t->is_event_type(opt->etype)) {
     MUTEX_TRY_LOCK(lock, cont->mutex, t);
     if (lock.is_locked()) {
