@@ -232,7 +232,7 @@ QUICFrameUPtr
 QUICRemoteConnectionFlowController::_create_frame()
 {
   auto frame                    = QUICFrameFactory::create_blocked_frame(this->_offset, this->_issue_frame_id(), this);
-  QUICFrameInformationUPtr info = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   BlockedFrameInfo *frame_info  = reinterpret_cast<BlockedFrameInfo *>(info->data);
   info->type                    = frame->type();
   info->level                   = QUICEncryptionLevel::NONE;
@@ -245,7 +245,7 @@ QUICFrameUPtr
 QUICLocalConnectionFlowController::_create_frame()
 {
   auto frame                    = QUICFrameFactory::create_max_data_frame(this->_limit, this->_issue_frame_id(), this);
-  QUICFrameInformationUPtr info = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   MaxDataFrameInfo *frame_info  = reinterpret_cast<MaxDataFrameInfo *>(info->data);
   info->type                    = frame->type();
   info->level                   = QUICEncryptionLevel::NONE;
@@ -258,7 +258,7 @@ QUICFrameUPtr
 QUICRemoteStreamFlowController::_create_frame()
 {
   auto frame = QUICFrameFactory::create_stream_blocked_frame(this->_stream_id, this->_offset, this->_issue_frame_id(), this);
-  QUICFrameInformationUPtr info      = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info      = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   StreamBlockedFrameInfo *frame_info = reinterpret_cast<StreamBlockedFrameInfo *>(info->data);
   info->type                         = frame->type();
   info->level                        = QUICEncryptionLevel::NONE;
@@ -272,7 +272,7 @@ QUICFrameUPtr
 QUICLocalStreamFlowController::_create_frame()
 {
   auto frame = QUICFrameFactory::create_max_stream_data_frame(this->_stream_id, this->_limit, this->_issue_frame_id(), this);
-  QUICFrameInformationUPtr info      = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info      = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   MaxStreamDataFrameInfo *frame_info = reinterpret_cast<MaxStreamDataFrameInfo *>(info->data);
   info->type                         = frame->type();
   info->level                        = QUICEncryptionLevel::NONE;

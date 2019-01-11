@@ -71,7 +71,7 @@ QUICAckFrameManager::generate_frame(QUICEncryptionLevel level, uint64_t connecti
   ack_frame         = ack_creator->generate_ack_frame(maximum_frame_size);
 
   if (ack_frame != nullptr) {
-    QUICFrameInformationUPtr info  = std::make_unique<QUICFrameInformation>();
+    QUICFrameInformationUPtr info  = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
     AckFrameInfo *ack_info         = reinterpret_cast<AckFrameInfo *>(info->data);
     ack_info->largest_acknowledged = ack_frame->largest_acknowledged();
 

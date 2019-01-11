@@ -27,6 +27,8 @@
 #include "QUICFrameGenerator.h"
 #include "QUICDebugNames.h"
 
+ClassAllocator<QUICFrameInformation> quicFrameInformationAllocator("quicFrameInformationAllocator");
+
 QUICFrameUPtr
 QUICFrameRetransmitter::create_retransmitted_frame(QUICEncryptionLevel level, uint16_t maximum_frame_size, QUICFrameId id,
                                                    QUICFrameGenerator *owner)
