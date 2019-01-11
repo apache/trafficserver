@@ -32,10 +32,14 @@ struct QUICFrameInformation {
   QUICFrameType type;
   QUICEncryptionLevel level;
 
-  uint8_t data[1024] = {};
+  uint8_t data[128] = {};
 };
 
-typedef std::unique_ptr<QUICFrameInformation> QUICFrameInformationUPtr;
+struct QUICFrameInformationDeleter {
+  void operator()(QUICFrameInformation *p);
+};
+
+using QUICFrameInformationUPtr = std::unique_ptr<QUICFrameInformation, QUICFrameInformationDeleter>;
 
 constexpr QUICFrameType RETRANSMITTED_FRAME_TYPE[] = {QUICFrameType::STREAM, QUICFrameType::STOP_SENDING,
                                                       QUICFrameType::MAX_STREAM_DATA, QUICFrameType::RST_STREAM,
@@ -112,3 +116,11 @@ private:
 
   std::deque<QUICFrameInformationUPtr> _lost_frame_info_queue;
 };
+
+extern ClassAllocator<QUICFrameInformation> quicFrameInformationAllocator;
+
+inline void
+QUICFrameInformationDeleter::operator()(QUICFrameInformation *p)
+{
+  quicFrameInformationAllocator.free(p);
+}

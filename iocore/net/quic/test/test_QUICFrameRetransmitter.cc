@@ -30,7 +30,7 @@ constexpr static uint8_t data[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0
 TEST_CASE("QUICFrameRetransmitter ignore frame which can not be retranmistted", "[quic]")
 {
   QUICFrameRetransmitter retransmitter;
-  QUICFrameInformationUPtr info = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                    = QUICFrameType::PING;
   info->level                   = QUICEncryptionLevel::NONE;
 
@@ -41,7 +41,7 @@ TEST_CASE("QUICFrameRetransmitter ignore frame which can not be retranmistted", 
 TEST_CASE("QUICFrameRetransmitter ignore frame which can not be split", "[quic]")
 {
   QUICFrameRetransmitter retransmitter;
-  QUICFrameInformationUPtr info = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                    = QUICFrameType::STOP_SENDING;
   info->level                   = QUICEncryptionLevel::NONE;
 
@@ -52,7 +52,7 @@ TEST_CASE("QUICFrameRetransmitter ignore frame which can not be split", "[quic]"
 TEST_CASE("QUICFrameRetransmitter ignore frame which has wrong level", "[quic]")
 {
   QUICFrameRetransmitter retransmitter;
-  QUICFrameInformationUPtr info = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                    = QUICFrameType::STOP_SENDING;
   info->level                   = QUICEncryptionLevel::HANDSHAKE;
 
@@ -63,7 +63,7 @@ TEST_CASE("QUICFrameRetransmitter ignore frame which has wrong level", "[quic]")
 TEST_CASE("QUICFrameRetransmitter successfully create retransmitted frame", "[quic]")
 {
   QUICFrameRetransmitter retransmitter;
-  QUICFrameInformationUPtr info = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                    = QUICFrameType::STOP_SENDING;
   info->level                   = QUICEncryptionLevel::INITIAL;
 
@@ -77,7 +77,7 @@ TEST_CASE("QUICFrameRetransmitter successfully create retransmitted frame", "[qu
 TEST_CASE("QUICFrameRetransmitter successfully create stream frame", "[quic]")
 {
   QUICFrameRetransmitter retransmitter;
-  QUICFrameInformationUPtr info = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                    = QUICFrameType::STREAM;
   info->level                   = QUICEncryptionLevel::INITIAL;
 
@@ -111,7 +111,7 @@ TEST_CASE("QUICFrameRetransmitter successfully create stream frame", "[quic]")
 TEST_CASE("QUICFrameRetransmitter successfully split stream frame", "[quic]")
 {
   QUICFrameRetransmitter retransmitter;
-  QUICFrameInformationUPtr info = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                    = QUICFrameType::STREAM;
   info->level                   = QUICEncryptionLevel::INITIAL;
 

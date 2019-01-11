@@ -527,7 +527,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
 void
 QUICStream::_records_stream_frame(const QUICStreamFrame &frame, Ptr<IOBufferBlock> &block)
 {
-  QUICFrameInformationUPtr info = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                    = frame.type();
   StreamFrameInfo *frame_info   = reinterpret_cast<StreamFrameInfo *>(info->data);
   frame_info->offset            = frame.offset();
@@ -539,7 +539,7 @@ QUICStream::_records_stream_frame(const QUICStreamFrame &frame, Ptr<IOBufferBloc
 void
 QUICStream::_records_rst_stream_frame(const QUICRstStreamFrame &frame)
 {
-  QUICFrameInformationUPtr info  = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info  = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                     = frame.type();
   RstStreamFrameInfo *frame_info = reinterpret_cast<RstStreamFrameInfo *>(info->data);
   frame_info->error_code         = frame.error_code();
@@ -550,7 +550,7 @@ QUICStream::_records_rst_stream_frame(const QUICRstStreamFrame &frame)
 void
 QUICStream::_records_stop_sending_frame(const QUICStopSendingFrame &frame)
 {
-  QUICFrameInformationUPtr info    = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info    = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                       = frame.type();
   StopSendingFrameInfo *frame_info = reinterpret_cast<StopSendingFrameInfo *>(info->data);
   frame_info->error_code           = frame.error_code();
@@ -879,7 +879,7 @@ QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_
   block->_end = std::min(block->start() + frame_payload_size, block->_buf_end);
   ink_assert(static_cast<uint64_t>(block->read_avail()) == frame_payload_size);
 
-  QUICFrameInformationUPtr info      = std::make_unique<QUICFrameInformation>();
+  QUICFrameInformationUPtr info      = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                         = QUICFrameType::CRYPTO;
   QUICFrameId frame_id               = this->_issue_frame_id();
   CryptoFrameInfo *crypto_frame_info = reinterpret_cast<CryptoFrameInfo *>(info->data);
