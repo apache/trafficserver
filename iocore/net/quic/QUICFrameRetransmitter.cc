@@ -54,18 +54,6 @@ QUICFrameRetransmitter::create_retransmitted_frame(QUICEncryptionLevel level, ui
     case QUICFrameType::STREAM:
       frame = this->_create_stream_frame(info, maximum_frame_size, tmp_queue, id, owner);
       break;
-    case QUICFrameType::RST_STREAM:
-      frame = this->_create_reset_stream_frame(info, maximum_frame_size, tmp_queue, id, owner);
-      break;
-    case QUICFrameType::STOP_SENDING:
-      frame = this->_create_stop_sending_frame(info, maximum_frame_size, tmp_queue, id, owner);
-      break;
-    case QUICFrameType::MAX_STREAM_DATA:
-      frame = this->_create_max_stream_data_frame(info, maximum_frame_size, tmp_queue, id, owner);
-      break;
-    case QUICFrameType::MAX_DATA:
-      frame = this->_create_max_data_frame(info, maximum_frame_size, tmp_queue, id, owner);
-      break;
     default:
       ink_assert("unknown frame type");
       Error("unknown frame type: %s", QUICDebugNames::frame_type(info->type));
@@ -129,71 +117,6 @@ QUICFrameRetransmitter::_create_stream_frame(QUICFrameInformationUPtr &info, uin
   }
 
   stream_info->block = nullptr;
-  ink_assert(frame != nullptr);
-  return frame;
-}
-
-QUICFrameUPtr
-QUICFrameRetransmitter::_create_reset_stream_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
-                                                   std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id,
-                                                   QUICFrameGenerator *owner)
-{
-  RstStreamFrameInfo *rst_info = reinterpret_cast<RstStreamFrameInfo *>(info->data);
-  auto frame =
-    QUICFrameFactory::create_rst_stream_frame(rst_info->stream_id, rst_info->error_code, rst_info->final_offset, id, owner);
-  if (frame->size() > maximum_frame_size) {
-    tmp_queue.push_back(std::move(info));
-    return QUICFrameFactory::create_null_frame();
-  }
-
-  ink_assert(frame != nullptr);
-  return frame;
-}
-
-QUICFrameUPtr
-QUICFrameRetransmitter::_create_max_stream_data_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
-                                                      std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id,
-                                                      QUICFrameGenerator *owner)
-{
-  MaxStreamDataFrameInfo *frame_info = reinterpret_cast<MaxStreamDataFrameInfo *>(info->data);
-  auto frame = QUICFrameFactory::create_max_stream_data_frame(frame_info->stream_id, frame_info->maximum_stream_data, id, owner);
-  if (frame->size() > maximum_frame_size) {
-    tmp_queue.push_back(std::move(info));
-    return QUICFrameFactory::create_null_frame();
-  }
-
-  ink_assert(frame != nullptr);
-  return frame;
-}
-
-QUICFrameUPtr
-QUICFrameRetransmitter::_create_max_data_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
-                                               std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id,
-                                               QUICFrameGenerator *owner)
-{
-  MaxDataFrameInfo *frame_info = reinterpret_cast<MaxDataFrameInfo *>(info->data);
-  auto frame                   = QUICFrameFactory::create_max_data_frame(frame_info->maximum_data, id, owner);
-  if (frame->size() > maximum_frame_size) {
-    tmp_queue.push_back(std::move(info));
-    return QUICFrameFactory::create_null_frame();
-  }
-
-  ink_assert(frame != nullptr);
-  return frame;
-}
-
-QUICFrameUPtr
-QUICFrameRetransmitter::_create_stop_sending_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
-                                                   std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id,
-                                                   QUICFrameGenerator *owner)
-{
-  StopSendingFrameInfo *frame_info = reinterpret_cast<StopSendingFrameInfo *>(info->data);
-  auto frame = QUICFrameFactory::create_stop_sending_frame(frame_info->stream_id, frame_info->error_code, id, owner);
-  if (frame->size() > maximum_frame_size) {
-    tmp_queue.push_back(std::move(info));
-    return QUICFrameFactory::create_null_frame();
-  }
-
   ink_assert(frame != nullptr);
   return frame;
 }
