@@ -208,6 +208,8 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
     set_active_timeout(active_timeout_in);
   }
 
+  this->start();
+
   action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
   this->_schedule_packet_write_ready();
 
@@ -367,6 +369,8 @@ QUICNetVConnection::connectUp(EThread *t, int fd)
 
   // FIXME: complete do_io_xxxx instead
   this->read.enabled = 1;
+
+  this->start();
 
   // start QUIC handshake
   this->_schedule_packet_write_ready();
@@ -554,7 +558,7 @@ QUICNetVConnection::handle_frame(QUICEncryptionLevel level, const QUICFrame &fra
 }
 
 // XXX Setup QUICNetVConnection on regular EThread.
-// QUICNetVConnection::init() and QUICNetVConnection::start() might be called on ET_UDP EThread.
+// QUICNetVConnection::init() might be called on ET_UDP EThread.
 int
 QUICNetVConnection::state_pre_handshake(int event, Event *data)
 {
