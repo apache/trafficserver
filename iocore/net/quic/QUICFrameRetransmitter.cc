@@ -101,19 +101,27 @@ QUICFrameRetransmitter::_create_stream_frame(QUICFrameInformationUPtr &info, uin
   auto frame = QUICFrameFactory::create_stream_frame(stream_info->block, stream_info->stream_id, stream_info->offset,
                                                      stream_info->has_fin, true, true, id, owner);
   if (frame->size() > maximum_frame_size) {
-    auto new_frame = QUICFrameFactory::split_frame(frame.get(), maximum_frame_size);
-    if (new_frame == nullptr) {
-      // can not split stream frame. Because of too small maximum_frame_size.
+    QUICStreamFrame *stream_frame = static_cast<QUICStreamFrame *>(frame.get());
+    if (stream_frame->size() - stream_frame->data_length() > maximum_frame_size) {
+      // header length is larger than maximum_frame_size.
       tmp_queue.push_back(std::move(info));
       return QUICFrameFactory::create_null_frame();
-    } else {
-      QUICStreamFrame *stream_frame = static_cast<QUICStreamFrame *>(frame.get());
-      stream_info->block->consume(stream_frame->data_length());
-      stream_info->offset += stream_frame->data_length();
-      ink_assert(frame->size() <= maximum_frame_size);
-      tmp_queue.push_back(std::move(info));
-      return frame;
     }
+
+    IOBufferBlock *block = stream_frame->data();
+    size_t over_length   = stream_frame->size() - maximum_frame_size;
+    block->_end          = std::max(block->start(), block->_end - over_length);
+    if (block->read_avail() == 0) {
+      // no payload
+      tmp_queue.push_back(std::move(info));
+      return QUICFrameFactory::create_null_frame();
+    }
+
+    stream_info->block->consume(stream_frame->data_length());
+    stream_info->offset += stream_frame->data_length();
+    ink_assert(frame->size() <= maximum_frame_size);
+    tmp_queue.push_back(std::move(info));
+    return frame;
   }
 
   stream_info->block = nullptr;

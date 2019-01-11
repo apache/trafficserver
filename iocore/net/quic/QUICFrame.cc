@@ -338,7 +338,7 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len, size_t limit, bool include_len
   }
 
   // Stream Data (*)
-  memcpy(buf + *len, this->data(), this->data_length());
+  memcpy(buf + *len, this->data()->start(), this->data_length());
   *len += this->data_length();
 
   return *len;
@@ -366,10 +366,10 @@ QUICStreamFrame::data_length() const
   return this->_block->read_avail();
 }
 
-const uint8_t *
+IOBufferBlock *
 QUICStreamFrame::data() const
 {
-  return reinterpret_cast<const uint8_t *>(this->_block->start());
+  return this->_block.get();
 }
 
 /**
