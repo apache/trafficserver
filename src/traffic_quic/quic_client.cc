@@ -133,7 +133,7 @@ QUICClientApp::start(const char *path)
 
   if (error != nullptr) {
     Error("%s", error->msg);
-    ink_assert(!error->msg);
+    ink_abort("Could not create bidi stream : %s", error->msg);
   }
 
   // TODO: move to transaction
