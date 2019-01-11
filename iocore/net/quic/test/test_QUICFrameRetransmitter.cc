@@ -112,7 +112,7 @@ TEST_CASE("QUICFrameRetransmitter successfully create stream frame", "[quic]")
   CHECK(stream_frame->stream_id() == 0x12345);
   CHECK(stream_frame->offset() == 0x67890);
   CHECK(stream_frame->data_length() == sizeof(data));
-  CHECK(memcmp(stream_frame->data(), data, sizeof(data)) == 0);
+  CHECK(memcmp(stream_frame->data()->start(), data, sizeof(data)) == 0);
   frame = QUICFrameFactory::create_null_frame();
   // Becasue the info has been released, the refcount should be 1 (var block).
   CHECK(block->refcount() == 1);
@@ -147,7 +147,7 @@ TEST_CASE("QUICFrameRetransmitter successfully split stream frame", "[quic]")
   CHECK(stream_frame->size() <= 15);
 
   auto size = stream_frame->data_length();
-  CHECK(memcmp(stream_frame->data(), data, stream_frame->data_length()) == 0);
+  CHECK(memcmp(stream_frame->data()->start(), data, stream_frame->data_length()) == 0);
   // one for var block, one for the left data which saved in retransmitter
   CHECK(block->data->refcount() == 2);
   // one for var block, one for the left data which saved in retransmitter, one for var frame
@@ -164,7 +164,7 @@ TEST_CASE("QUICFrameRetransmitter successfully split stream frame", "[quic]")
   CHECK(stream_frame->stream_id() == 0x12345);
   CHECK(stream_frame->offset() == 0x67890 + size);
   CHECK(stream_frame->data_length() == sizeof(data) - size);
-  CHECK(memcmp(stream_frame->data(), data + size, stream_frame->data_length()) == 0);
+  CHECK(memcmp(stream_frame->data()->start(), data + size, stream_frame->data_length()) == 0);
   CHECK(block->refcount() == 1); // one for var block
 
   frame = QUICFrameFactory::create_null_frame();

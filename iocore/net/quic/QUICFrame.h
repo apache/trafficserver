@@ -103,7 +103,7 @@ public:
   size_t store(uint8_t *buf, size_t *len, size_t limit, bool include_length_field) const;
   QUICStreamId stream_id() const;
   QUICOffset offset() const;
-  const uint8_t *data() const;
+  IOBufferBlock *data() const;
   uint64_t data_length() const;
   bool has_offset_field() const;
   bool has_length_field() const;

@@ -83,7 +83,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
     CHECK(stream_frame->stream_id() == 0x01);
     CHECK(stream_frame->offset() == 0x00);
     CHECK(stream_frame->data_length() == 4);
-    CHECK(memcmp(stream_frame->data(), "\x01\x02\x03\x04", 4) == 0);
+    CHECK(memcmp(stream_frame->data()->start(), "\x01\x02\x03\x04", 4) == 0);
     CHECK(stream_frame->has_fin_flag() == false);
   }
 
@@ -102,7 +102,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
     CHECK(stream_frame->stream_id() == 0x01);
     CHECK(stream_frame->offset() == 0x00);
     CHECK(stream_frame->data_length() == 5);
-    CHECK(memcmp(stream_frame->data(), "\x01\x02\x03\x04\x05", 5) == 0);
+    CHECK(memcmp(stream_frame->data()->start(), "\x01\x02\x03\x04\x05", 5) == 0);
     CHECK(stream_frame->has_fin_flag() == false);
   }
 
@@ -123,7 +123,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
     CHECK(stream_frame->stream_id() == 0x01);
     CHECK(stream_frame->offset() == 0x02);
     CHECK(stream_frame->data_length() == 5);
-    CHECK(memcmp(stream_frame->data(), "\x01\x02\x03\x04\x05", 5) == 0);
+    CHECK(memcmp(stream_frame->data()->start(), "\x01\x02\x03\x04\x05", 5) == 0);
     CHECK(stream_frame->has_fin_flag() == false);
   }
 
@@ -144,7 +144,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
     CHECK(stream_frame->stream_id() == 0x01);
     CHECK(stream_frame->offset() == 0x02);
     CHECK(stream_frame->data_length() == 5);
-    CHECK(memcmp(stream_frame->data(), "\x01\x02\x03\x04\x05", 5) == 0);
+    CHECK(memcmp(stream_frame->data()->start(), "\x01\x02\x03\x04\x05", 5) == 0);
     CHECK(stream_frame->has_fin_flag() == true);
   }
 
@@ -397,11 +397,11 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame *stream_frame2 = dynamic_cast<QUICStreamFrame *>(stream_frame->split(16));
     CHECK(stream_frame->stream_id() == 0x01);
     CHECK(stream_frame->data_length() == 5);
-    CHECK(memcmp(stream_frame->data(), "\x01\x02\x03\x04\x05", stream_frame->data_length()) == 0);
+    CHECK(memcmp(stream_frame->data()->start(), "\x01\x02\x03\x04\x05", stream_frame->data_length()) == 0);
     CHECK(stream_frame->offset() == 0x100000000);
 
     CHECK(stream_frame2->data_length() == 5);
-    CHECK(memcmp(stream_frame2->data(), "\x11\x22\x33\x44\x55", stream_frame2->data_length()) == 0);
+    CHECK(memcmp(stream_frame2->data()->start(), "\x11\x22\x33\x44\x55", stream_frame2->data_length()) == 0);
     CHECK(stream_frame2->offset() == 0x100000000 + 5);
     CHECK(stream_frame2->stream_id() == 0x01);
 
