@@ -88,11 +88,12 @@ QUICNetVConnection::~QUICNetVConnection()
 }
 
 // XXX This might be called on ET_UDP thread
+// Initialize QUICNetVC for out going connection (NET_VCONNECTION_OUT)
 void
 QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
                          QUICPacketHandler *packet_handler)
 {
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
+  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::startEvent);
   this->_packet_transmitter_mutex    = new_ProxyMutex();
   this->_frame_transmitter_mutex     = new_ProxyMutex();
   this->_udp_con                     = udp_con;
@@ -112,6 +113,8 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
     QUICConDebug("dcid=%s scid=%s", dcid_hex_str, scid_hex_str);
   }
 }
+
+// Initialize QUICNetVC for in coming connection (NET_VCONNECTION_IN)
 void
 QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
                          UDPConnection *udp_con, QUICPacketHandler *packet_handler, QUICConnectionTable *ctable)

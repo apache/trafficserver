@@ -141,6 +141,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   // Setup QUICNetVConnection
   QUICConnectionId client_dst_cid;
   client_dst_cid.randomize();
+  // vc->init set handler of vc `QUICNetVConnection::startEvent`
   vc->init(client_dst_cid, client_dst_cid, con, packet_handler);
   packet_handler->init(vc);
 
@@ -151,8 +152,6 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   vc->submit_time = Thread::get_hrtime();
   vc->mutex       = cont->mutex;
   vc->action_     = cont;
-
-  SET_CONTINUATION_HANDLER(vc, &QUICNetVConnection::startEvent);
 
   if (t->is_event_type(opt->etype)) {
     MUTEX_TRY_LOCK(lock, cont->mutex, t);
@@ -171,8 +170,6 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   } else { // Otherwise, pass along to another thread of the right type
     eventProcessor.schedule_imm(vc, opt->etype);
   }
-
-  //  vc->connectUp(t, NO_FD);
 
   return ACTION_RESULT_DONE;
 }
