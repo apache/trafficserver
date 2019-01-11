@@ -86,9 +86,11 @@ CC_EXEC(test_tsutil src/tscpp/util/unit_tests)
 
 CPP_LIB(proxy proxy proxy)
 CPP_ADD_SOURCES(proxy proxy/http)
+CPP_ADD_SOURCES(proxy proxy/http/unit_tests)
 CPP_ADD_SOURCES(proxy proxy/http2)
 CPP_ADD_SOURCES(proxy proxy/http/remap)
 CPP_ADD_SOURCES(proxy proxy/hdrs)
+CPP_ADD_SOURCES(proxy proxy/hdrs/unit_tests)
 CPP_ADD_SOURCES(proxy proxy/logging)
 
 CPP_LIB(iocore iocore iocore)
