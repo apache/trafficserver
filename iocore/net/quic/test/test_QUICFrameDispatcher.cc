@@ -29,11 +29,12 @@
 
 TEST_CASE("QUICFrameHandler", "[quic]")
 {
-  uint8_t raw[]          = {0x01};
-  ats_unique_buf payload = ats_unique_malloc(1);
-  memcpy(payload.get(), raw, 1);
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc();
+  block->fill(1);
+  CHECK(block->read_avail() == 1);
 
-  QUICStreamFrame streamFrame(std::move(payload), 1, 0x03, 0);
+  QUICStreamFrame streamFrame(block, 0x03, 0);
 
   MockQUICConnection connection;
   MockQUICStreamManager streamManager;
