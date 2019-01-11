@@ -599,7 +599,7 @@ public:
   }
 
   const QUIC_EVP_CIPHER *
-  cipher_for_pne(QUICKeyPhase phase) const override
+  cipher_for_hp(QUICKeyPhase phase) const override
   {
     return nullptr;
   }

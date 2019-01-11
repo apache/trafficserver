@@ -150,7 +150,7 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
   CHECK(ret != 0);
   QUICFrameUPtr frame = fc.generate_frame(QUICEncryptionLevel::ONE_RTT, 0, 1024);
   CHECK(frame);
-  CHECK(frame->type() == QUICFrameType::BLOCKED);
+  CHECK(frame->type() == QUICFrameType::DATA_BLOCKED);
 
   // MAX_STREAM_DATA
   fc.forward_limit(2048);
@@ -182,7 +182,7 @@ TEST_CASE("QUICFlowController_Remote_Connection_ZERO_Credit", "[quic]")
   // if there're anything to send
   QUICFrameUPtr frame = fc.generate_frame(QUICEncryptionLevel::ONE_RTT, 0, 1024);
   CHECK(frame);
-  CHECK(frame->type() == QUICFrameType::BLOCKED);
+  CHECK(frame->type() == QUICFrameType::DATA_BLOCKED);
 
   // MAX_STREAM_DATA
   fc.forward_limit(2048);
@@ -353,7 +353,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     CHECK(static_cast<QUICBlockedFrame *>(frame.get())->offset() == 2048);
   }
 
-  SECTION("STREAM_BLOCKED frame")
+  SECTION("STREAM_DATA_BLOCKED frame")
   {
     int ret = 0;
     QUICRemoteStreamFlowController fc(1024, 0);

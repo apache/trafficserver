@@ -253,7 +253,7 @@ TEST_CASE("QUICStream", "[quic]")
     CHECK(stream->will_generate_frame(level) == true);
     frame = stream->generate_frame(level, 4096, 4096);
     CHECK(frame);
-    CHECK(frame->type() == QUICFrameType::STREAM_BLOCKED);
+    CHECK(frame->type() == QUICFrameType::STREAM_DATA_BLOCKED);
     CHECK(stream->will_generate_frame(level) == true);
 
     // Update window
@@ -280,7 +280,7 @@ TEST_CASE("QUICStream", "[quic]")
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level) == true);
     frame = stream->generate_frame(level, 4096, 4096);
-    CHECK(frame->type() == QUICFrameType::STREAM_BLOCKED);
+    CHECK(frame->type() == QUICFrameType::STREAM_DATA_BLOCKED);
 
     // Update window
     stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 6144));
@@ -338,7 +338,7 @@ TEST_CASE("QUICStream", "[quic]")
   }
   */
 
-  SECTION("Retransmit RST_STREAM frame")
+  SECTION("Retransmit RESET_STREAM frame")
   {
     MIOBuffer *write_buffer             = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
     IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
@@ -357,7 +357,7 @@ TEST_CASE("QUICStream", "[quic]")
     stream->reset(QUICStreamErrorUPtr(new QUICStreamError(stream.get(), QUIC_APP_ERROR_CODE_STOPPING)));
     frame = stream->generate_frame(level, 4096, 4096);
     REQUIRE(frame);
-    CHECK(frame->type() == QUICFrameType::RST_STREAM);
+    CHECK(frame->type() == QUICFrameType::RESET_STREAM);
     // Don't send it again untill it is considers as lost
     CHECK(stream->generate_frame(level, 4096, 4096) == nullptr);
     // Loss the frame
@@ -365,7 +365,7 @@ TEST_CASE("QUICStream", "[quic]")
     // After the loss the frame should be regenerated
     frame = stream->generate_frame(level, 4096, 4096);
     REQUIRE(frame);
-    CHECK(frame->type() == QUICFrameType::RST_STREAM);
+    CHECK(frame->type() == QUICFrameType::RESET_STREAM);
   }
 
   SECTION("Retransmit STOP_SENDING frame")

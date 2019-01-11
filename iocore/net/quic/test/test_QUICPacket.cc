@@ -50,7 +50,6 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     CHECK((header->source_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8)));
     CHECK(header->has_version() == true);
     CHECK(header->version() == 0x00000000);
-    CHECK(header->has_key_phase() == false);
   }
 
   SECTION("Long Header (load) INITIAL Packet")
@@ -79,7 +78,6 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     CHECK(header->packet_number() == 0x01234567);
     CHECK(header->has_version() == true);
     CHECK(header->version() == 0x11223344);
-    CHECK(header->has_key_phase() == false);
   }
 
   SECTION("Long Header (load) RETRY Packet")
@@ -115,7 +113,6 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     CHECK(memcmp(header->payload(), retry_token, 16) == 0);
     CHECK(header->has_version() == true);
     CHECK(header->version() == 0x11223344);
-    CHECK(header->has_key_phase() == false);
   }
 
   SECTION("Long Header (store) INITIAL Packet")
@@ -142,7 +139,6 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, 0x01234567, 0, 0x11223344, std::move(payload), 5);
 
     CHECK(header->size() == sizeof(expected) - 5);
-    CHECK(header->has_key_phase() == false);
     CHECK(header->packet_size() == sizeof(expected));
     CHECK(header->type() == QUICPacketType::INITIAL);
     CHECK(
@@ -183,7 +179,6 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
                               {reinterpret_cast<const uint8_t *>("\x08\x07\x06\x05\x04\x03\x02\x01"), 8}, std::move(payload), 16);
 
     CHECK(header->size() == sizeof(expected) - 16);
-    CHECK(header->has_key_phase() == false);
     CHECK(header->packet_size() == sizeof(expected));
     CHECK(header->type() == QUICPacketType::RETRY);
     CHECK(
@@ -228,7 +223,6 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
     QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, std::move(uinput), sizeof(input), 0);
     CHECK(header->size() == 23);
     CHECK(header->packet_size() == 25);
-    CHECK(header->has_key_phase() == true);
     CHECK(header->key_phase() == QUICKeyPhase::PHASE_0);
     CHECK(header->destination_cid() == dcid);
     CHECK(header->packet_number() == 0x01234567);
@@ -259,7 +253,6 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
 
     CHECK(header->size() == 23);
     CHECK(header->packet_size() == 0);
-    CHECK(header->has_key_phase() == true);
     CHECK(header->key_phase() == QUICKeyPhase::PHASE_0);
     CHECK(header->type() == QUICPacketType::PROTECTED);
     CHECK(header->destination_cid() == dcid);

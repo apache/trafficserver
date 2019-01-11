@@ -98,6 +98,7 @@ check_PROGRAMS = \
   test_QUICInvariants \
   test_QUICKeyGenerator \
   test_QUICPacket \
+  test_QUICPacketHeaderProtector \
   test_QUICPacketFactory \
   test_QUICStream \
   test_QUICStreamManager \
@@ -223,6 +224,13 @@ test_QUICPacketFactory_LDADD = $(test_LDADD)
 test_QUICPacketFactory_SOURCES = \
   $(test_main_SOURCES) \
   ./test/test_QUICPacketFactory.cc
+
+test_QUICPacketHeaderProtector_CPPFLAGS = $(test_CPPFLAGS)
+test_QUICPacketHeaderProtector_LDFLAGS = @AM_LDFLAGS@
+test_QUICPacketHeaderProtector_LDADD = $(test_LDADD)
+test_QUICPacketHeaderProtector_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_QUICPacketHeaderProtector.cc
 
 test_QUICStream_CPPFLAGS = $(test_CPPFLAGS)
 test_QUICStream_LDFLAGS = @AM_LDFLAGS@
