@@ -26,7 +26,8 @@
 #include "QUICApplication.h"
 #include "QUICTransportParameters.h"
 
-static constexpr char tag[] = "quic_stream_manager";
+static constexpr char tag[]                     = "quic_stream_manager";
+static constexpr QUICStreamId QUIC_STREAM_TYPES = 4;
 
 ClassAllocator<QUICStreamManager> quicStreamManagerAllocator("quicStreamManagerAllocator");
 ClassAllocator<QUICStream> quicStreamAllocator("quicStreamAllocator");
@@ -109,7 +110,7 @@ QUICStreamManager::create_uni_stream(QUICStreamId &new_stream_id)
   QUICConnectionErrorUPtr error = this->create_stream(this->_next_stream_id_uni);
   if (error == nullptr) {
     new_stream_id = this->_next_stream_id_uni;
-    this->_next_stream_id_uni += 2;
+    this->_next_stream_id_uni += QUIC_STREAM_TYPES;
   }
 
   return error;
@@ -121,7 +122,7 @@ QUICStreamManager::create_bidi_stream(QUICStreamId &new_stream_id)
   QUICConnectionErrorUPtr error = this->create_stream(this->_next_stream_id_bidi);
   if (error == nullptr) {
     new_stream_id = this->_next_stream_id_bidi;
-    this->_next_stream_id_bidi += 2;
+    this->_next_stream_id_bidi += QUIC_STREAM_TYPES;
   }
 
   return error;
