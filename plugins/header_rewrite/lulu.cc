@@ -71,6 +71,10 @@ getIP(sockaddr const *s_sockaddr)
 uint16_t
 getPort(sockaddr const *s_sockaddr)
 {
+  if (!s_sockaddr) {
+    return 0;
+  }
+
   switch (s_sockaddr->sa_family) {
   case AF_INET: {
     const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(s_sockaddr);
