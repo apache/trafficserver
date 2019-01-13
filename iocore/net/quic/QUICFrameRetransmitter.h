@@ -41,7 +41,7 @@ struct QUICFrameInformationDeleter {
 
 using QUICFrameInformationUPtr = std::unique_ptr<QUICFrameInformation, QUICFrameInformationDeleter>;
 
-constexpr QUICFrameType RETRANSMITTED_FRAME_TYPE[] = {QUICFrameType::STREAM};
+constexpr QUICFrameType RETRANSMITTED_FRAME_TYPE[] = {QUICFrameType::STREAM, QUICFrameType::CRYPTO};
 
 struct StreamFrameInfo {
   QUICStreamId stream_id;
@@ -73,10 +73,12 @@ class QUICFrameRetransmitter
 public:
   virtual QUICFrameUPtr create_retransmitted_frame(QUICEncryptionLevel level, uint16_t maximum_frame_size, QUICFrameId id = 0,
                                                    QUICFrameGenerator *owner = nullptr);
-  virtual void save_frame_info(QUICFrameInformationUPtr &info);
+  virtual void save_frame_info(QUICFrameInformationUPtr info);
 
 private:
   QUICFrameUPtr _create_stream_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
+                                     std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id, QUICFrameGenerator *owner);
+  QUICFrameUPtr _create_crypto_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
                                      std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id, QUICFrameGenerator *owner);
 
   void _append_info_queue(std::deque<QUICFrameInformationUPtr> &tmp_queue);

@@ -143,7 +143,7 @@ public:
 
   QUICOffset offset() const;
   uint64_t data_length() const;
-  const uint8_t *data() const;
+  IOBufferBlock *data() const;
 
   LINK(QUICCryptoFrame, link);
 
