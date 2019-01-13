@@ -400,6 +400,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     CHECK(memcmp(stream_frame->data()->start(), "\x01\x02\x03\x04\x05", stream_frame->data_length()) == 0);
     CHECK(stream_frame->offset() == 0x100000000);
 
+    frame1 = QUICFrameFactory::create_null_frame();
     CHECK(stream_frame2->data_length() == 5);
     CHECK(memcmp(stream_frame2->data()->start(), "\x11\x22\x33\x44\x55", stream_frame2->data_length()) == 0);
     CHECK(stream_frame2->offset() == 0x100000000 + 5);
@@ -426,7 +427,7 @@ TEST_CASE("CRYPTO Frame", "[quic]")
     std::shared_ptr<const QUICCryptoFrame> crypto_frame = std::dynamic_pointer_cast<const QUICCryptoFrame>(frame);
     CHECK(crypto_frame->offset() == 0x010000);
     CHECK(crypto_frame->data_length() == 5);
-    CHECK(memcmp(crypto_frame->data(), "\x01\x02\x03\x04\x05", 5) == 0);
+    CHECK(memcmp(crypto_frame->data()->start(), "\x01\x02\x03\x04\x05", 5) == 0);
   }
 
   SECTION("BAD Loading")

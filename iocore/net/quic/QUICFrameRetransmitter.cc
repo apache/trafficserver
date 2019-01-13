@@ -54,6 +54,9 @@ QUICFrameRetransmitter::create_retransmitted_frame(QUICEncryptionLevel level, ui
     case QUICFrameType::STREAM:
       frame = this->_create_stream_frame(info, maximum_frame_size, tmp_queue, id, owner);
       break;
+    case QUICFrameType::CRYPTO:
+      frame = this->_create_crypto_frame(info, maximum_frame_size, tmp_queue, id, owner);
+      break;
     default:
       ink_assert("unknown frame type");
       Error("unknown frame type: %s", QUICDebugNames::frame_type(info->type));
@@ -70,7 +73,7 @@ QUICFrameRetransmitter::create_retransmitted_frame(QUICEncryptionLevel level, ui
 }
 
 void
-QUICFrameRetransmitter::save_frame_info(QUICFrameInformationUPtr &info)
+QUICFrameRetransmitter::save_frame_info(QUICFrameInformationUPtr info)
 {
   for (auto type : RETRANSMITTED_FRAME_TYPE) {
     if (type == info->type) {
@@ -125,6 +128,43 @@ QUICFrameRetransmitter::_create_stream_frame(QUICFrameInformationUPtr &info, uin
   }
 
   stream_info->block = nullptr;
+  ink_assert(frame != nullptr);
+  return frame;
+}
+
+QUICFrameUPtr
+QUICFrameRetransmitter::_create_crypto_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
+                                             std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id,
+                                             QUICFrameGenerator *owner)
+{
+  CryptoFrameInfo *crypto_info = reinterpret_cast<CryptoFrameInfo *>(info->data);
+  // FIXME: has_offset and has_length should be configurable.
+  auto frame = QUICFrameFactory::create_crypto_frame(crypto_info->block, crypto_info->offset, id, owner);
+  if (frame->size() > maximum_frame_size) {
+    QUICCryptoFrame *crypto_frame = static_cast<QUICCryptoFrame *>(frame.get());
+    if (crypto_frame->size() - crypto_frame->data_length() > maximum_frame_size) {
+      // header length is larger than maximum_frame_size.
+      tmp_queue.push_back(std::move(info));
+      return QUICFrameFactory::create_null_frame();
+    }
+
+    IOBufferBlock *block = crypto_frame->data();
+    size_t over_length   = crypto_frame->size() - maximum_frame_size;
+    block->_end          = std::max(block->start(), block->_end - over_length);
+    if (block->read_avail() == 0) {
+      // no payload
+      tmp_queue.push_back(std::move(info));
+      return QUICFrameFactory::create_null_frame();
+    }
+
+    crypto_info->block->consume(crypto_frame->data_length());
+    crypto_info->offset += crypto_frame->data_length();
+    ink_assert(frame->size() <= maximum_frame_size);
+    tmp_queue.push_back(std::move(info));
+    return frame;
+  }
+
+  crypto_info->block = nullptr;
   ink_assert(frame != nullptr);
   return frame;
 }

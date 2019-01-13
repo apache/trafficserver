@@ -536,7 +536,7 @@ QUICCryptoFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   *len += n;
 
   // Crypto Data (*)
-  memcpy(buf + *len, this->data(), this->data_length());
+  memcpy(buf + *len, this->data()->start(), this->data_length());
   *len += this->data_length();
 
   return *len;
@@ -554,10 +554,10 @@ QUICCryptoFrame::data_length() const
   return this->_block->read_avail();
 }
 
-const uint8_t *
+IOBufferBlock *
 QUICCryptoFrame::data() const
 {
-  return reinterpret_cast<const uint8_t *>(this->_block->start());
+  return this->_block.get();
 }
 
 //
@@ -2896,8 +2896,9 @@ QUICFrameFactory::create_stream_frame(Ptr<IOBufferBlock> &block, QUICStreamId st
 QUICCryptoFrameUPtr
 QUICFrameFactory::create_crypto_frame(Ptr<IOBufferBlock> &block, QUICOffset offset, QUICFrameId id, QUICFrameGenerator *owner)
 {
-  QUICCryptoFrame *frame = quicCryptoFrameAllocator.alloc();
-  new (frame) QUICCryptoFrame(block, offset, id, owner);
+  Ptr<IOBufferBlock> new_block = make_ptr<IOBufferBlock>(block->clone());
+  QUICCryptoFrame *frame       = quicCryptoFrameAllocator.alloc();
+  new (frame) QUICCryptoFrame(new_block, offset, id, owner);
   return QUICCryptoFrameUPtr(frame, &QUICFrameDeleter::delete_crypto_frame);
 }
 
