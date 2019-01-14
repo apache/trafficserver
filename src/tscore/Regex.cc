@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include <array>
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_thread.h"
 #include "tscore/ink_memory.h"
@@ -101,25 +103,19 @@ Regex::get_capture_count()
 }
 
 bool
-Regex::exec(const char *str)
+Regex::exec(std::string_view const &str)
 {
-  return exec(str, strlen(str));
+  std::array<int, DEFAULT_GROUP_COUNT * 3> ovector;
+  return this->exec(str, ovector.data(), ovector.size());
 }
 
 bool
-Regex::exec(const char *str, int length)
-{
-  int ovector[DEFAULT_GROUP_COUNT];
-  return exec(str, length, ovector, countof(ovector));
-}
-
-bool
-Regex::exec(const char *str, int length, int *ovector, int ovecsize)
+Regex::exec(std::string_view const &str, int *ovector, int ovecsize)
 {
   int rv;
 
-  rv = pcre_exec(regex, regex_extra, str, length, 0, 0, ovector, ovecsize);
-  return rv > 0 ? true : false;
+  rv = pcre_exec(regex, regex_extra, str.data(), str.size(), 0, 0, ovector, ovecsize);
+  return rv > 0;
 }
 
 Regex::~Regex()
@@ -238,7 +234,7 @@ DFA::match(const char *str, int length) const
   dfa_pattern *p = _my_patterns;
 
   while (p) {
-    rc = p->_re->exec(str, length);
+    rc = p->_re->exec({str, size_t(length)});
     if (rc > 0) {
       return p->_idx;
     }
