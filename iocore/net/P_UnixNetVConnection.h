@@ -389,41 +389,6 @@ UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
 #endif
 }
 
-TS_INLINE int
-UnixNetVConnection::set_tcp_congestion_control(int side)
-{
-#ifdef TCP_CONGESTION
-  RecString congestion_control;
-  int ret;
-
-  if (side == CLIENT_SIDE) {
-    ret = REC_ReadConfigStringAlloc(congestion_control, "proxy.config.net.tcp_congestion_control_in");
-  } else {
-    ret = REC_ReadConfigStringAlloc(congestion_control, "proxy.config.net.tcp_congestion_control_out");
-  }
-
-  if (ret == REC_ERR_OKAY) {
-    int len = strlen(congestion_control);
-    if (len > 0) {
-      int rv = 0;
-      rv     = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<void *>(congestion_control), len);
-      if (rv < 0) {
-        Error("Unable to set TCP congestion control on socket %d to \"%.*s\", errno=%d (%s)", con.fd, len, congestion_control,
-              errno, strerror(errno));
-      } else {
-        Debug("socket", "Setting TCP congestion control on socket [%d] to \"%.*s\" -> %d", con.fd, len, congestion_control, rv);
-      }
-    }
-    ats_free(congestion_control);
-    return 0;
-  }
-  return -1;
-#else
-  Debug("socket", "Setting TCP congestion control is not supported on this platform.");
-  return -1;
-#endif
-}
-
 TS_INLINE UnixNetVConnection::~UnixNetVConnection() {}
 
 TS_INLINE SOCKET
