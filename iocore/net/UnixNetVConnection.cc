@@ -1524,3 +1524,33 @@ UnixNetVConnection::protocol_contains(std::string_view tag) const
   }
   return retval.data();
 }
+
+int
+UnixNetVConnection::set_tcp_congestion_control(int side)
+{
+#ifdef TCP_CONGESTION
+  std::string_view ccp;
+
+  if (side == CLIENT_SIDE) {
+    ccp = net_ccp_in;
+  } else {
+    ccp = net_ccp_out;
+  }
+
+  if (!ccp.empty()) {
+    int rv = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<const void *>(ccp.data()), ccp.length());
+
+    if (rv < 0) {
+      Error("Unable to set TCP congestion control on socket %d to \"%s\", errno=%d (%s)", con.fd, ccp.data(), errno,
+            strerror(errno));
+    } else {
+      Debug("socket", "Setting TCP congestion control on socket [%d] to \"%s\" -> %d", con.fd, ccp.data(), rv);
+    }
+    return 0;
+  }
+  return -1;
+#else
+  Debug("socket", "Setting TCP congestion control is not supported on this platform.");
+  return -1;
+#endif
+}

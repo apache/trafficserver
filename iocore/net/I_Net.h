@@ -61,6 +61,9 @@ extern int net_accept_period;
 extern int net_retry_delay;
 extern int net_throttle_delay;
 
+extern std::string_view net_ccp_in;
+extern std::string_view net_ccp_out;
+
 #define NET_EVENT_OPEN (NET_EVENT_EVENTS_START)
 #define NET_EVENT_OPEN_FAILED (NET_EVENT_EVENTS_START + 1)
 #define NET_EVENT_ACCEPT (NET_EVENT_EVENTS_START + 2)
