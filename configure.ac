@@ -1247,6 +1247,26 @@ AC_CHECK_FUNC([EVP_MD_CTX_free], [],
 
 LIBS="$saved_LIBS"
 
+# 
+# Check OpenSSL version for JA3 Fingerprint
+#
+AC_MSG_CHECKING([for JA3 compatible OpenSSL version])
+AC_EGREP_CPP(yes, [
+  #include <openssl/opensslv.h>
+  #if (OPENSSL_VERSION_NUMBER < 0x010100000L)
+  yes
+  #elif (OPENSSL_VERSION_NUMBER >= 0x010101000L)
+  yes
+  #endif
+  ], [
+    AC_MSG_RESULT(yes)
+    AS_IF([test "x${enable_experimental_plugins}" = "xyes"], [
+      enable_ja3_plugin=yes
+    ])
+  ], [AC_MSG_RESULT(no)])
+
+AM_CONDITIONAL([BUILD_JA3_PLUGIN], [test "x${enable_ja3_plugin}" = "xyes"])
+
 #
 # Check for zlib presence and usability
 TS_CHECK_ZLIB
