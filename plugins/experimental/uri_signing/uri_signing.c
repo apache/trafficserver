@@ -175,7 +175,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
   }
-  cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package);
+
+  char strip_uri[2000] = {0};
+  size_t strip_ct;
+  cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package, strip_uri, 2000, &strip_ct);
+
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
   }
@@ -222,7 +226,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
   }
-  struct jwt *jwt = validate_jws(jws, (struct config *)ih, url, url_ct);
+  struct jwt *jwt = validate_jws(jws, (struct config *)ih, strip_uri, strip_ct);
   cjose_jws_release(jws);
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
