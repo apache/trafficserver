@@ -74,7 +74,7 @@ private:
   QUICConnectionErrorUPtr _handle_frame(const QUICStopSendingFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICMaxStreamDataFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICStreamBlockedFrame &frame);
-  QUICConnectionErrorUPtr _handle_frame(const QUICMaxStreamIdFrame &frame);
+  QUICConnectionErrorUPtr _handle_frame(const QUICMaxStreamsFrame &frame);
   std::vector<QUICEncryptionLevel>
   _encryption_level_filter() override
   {
@@ -89,10 +89,10 @@ private:
   QUICApplicationMap *_app_map                              = nullptr;
   std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;
   std::shared_ptr<const QUICTransportParameters> _remote_tp = nullptr;
-  QUICStreamId _local_maximum_stream_id_bidi                = 0;
-  QUICStreamId _local_maximum_stream_id_uni                 = 0;
-  QUICStreamId _remote_maximum_stream_id_bidi               = 0;
-  QUICStreamId _remote_maximum_stream_id_uni                = 0;
+  QUICStreamId _local_max_streams_bidi                = 0;
+  QUICStreamId _local_max_streams_uni                 = 0;
+  QUICStreamId _remote_max_streams_bidi               = 0;
+  QUICStreamId _remote_max_streams_uni                = 0;
   QUICStreamId _next_stream_id_uni                          = 0;
   QUICStreamId _next_stream_id_bidi                         = 0;
   uint64_t _total_offset_sent                               = 0;

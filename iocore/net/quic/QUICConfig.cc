@@ -162,10 +162,10 @@ QUICConfigParams::initialize()
                                   "proxy.config.quic.initial_max_stream_data_bidi_remote_out");
   REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data_uni_in, "proxy.config.quic.initial_max_stream_data_uni_in");
   REC_EstablishStaticConfigInt32U(this->_initial_max_stream_data_uni_out, "proxy.config.quic.initial_max_stream_data_uni_out");
-  REC_EstablishStaticConfigInt32U(this->_initial_max_bidi_streams_in, "proxy.config.quic.initial_max_bidi_streams_in");
-  REC_EstablishStaticConfigInt32U(this->_initial_max_bidi_streams_out, "proxy.config.quic.initial_max_bidi_streams_out");
-  REC_EstablishStaticConfigInt32U(this->_initial_max_uni_streams_in, "proxy.config.quic.initial_max_uni_streams_in");
-  REC_EstablishStaticConfigInt32U(this->_initial_max_uni_streams_out, "proxy.config.quic.initial_max_uni_streams_out");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_streams_bidi_in, "proxy.config.quic.initial_max_streams_bidi_in");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_streams_bidi_out, "proxy.config.quic.initial_max_streams_bidi_out");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_streams_uni_in, "proxy.config.quic.initial_max_streams_uni_in");
+  REC_EstablishStaticConfigInt32U(this->_initial_max_streams_uni_out, "proxy.config.quic.initial_max_streams_uni_out");
   REC_EstablishStaticConfigInt32U(this->_ack_delay_exponent_in, "proxy.config.quic.ack_delay_exponent_in");
   REC_EstablishStaticConfigInt32U(this->_ack_delay_exponent_out, "proxy.config.quic.ack_delay_exponent_out");
   REC_EstablishStaticConfigInt32U(this->_max_ack_delay_in, "proxy.config.quic.max_ack_delay_in");
@@ -306,28 +306,28 @@ QUICConfigParams::initial_max_stream_data_uni_out() const
   return this->_initial_max_stream_data_uni_out;
 }
 
-uint16_t
-QUICConfigParams::initial_max_bidi_streams_in() const
+uint64_t
+QUICConfigParams::initial_max_streams_bidi_in() const
 {
-  return this->_initial_max_bidi_streams_in;
+  return this->_initial_max_streams_bidi_in;
 }
 
-uint16_t
-QUICConfigParams::initial_max_bidi_streams_out() const
+uint64_t
+QUICConfigParams::initial_max_streams_bidi_out() const
 {
-  return this->_initial_max_bidi_streams_out;
+  return this->_initial_max_streams_bidi_out;
 }
 
-uint16_t
-QUICConfigParams::initial_max_uni_streams_in() const
+uint64_t
+QUICConfigParams::initial_max_streams_uni_in() const
 {
-  return this->_initial_max_uni_streams_in;
+  return this->_initial_max_streams_uni_in;
 }
 
-uint16_t
-QUICConfigParams::initial_max_uni_streams_out() const
+uint64_t
+QUICConfigParams::initial_max_streams_uni_out() const
 {
-  return this->_initial_max_uni_streams_out;
+  return this->_initial_max_streams_uni_out;
 }
 
 uint8_t

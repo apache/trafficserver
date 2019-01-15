@@ -44,7 +44,7 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
     0x00, 0x00, 0x00, 0x00, // initial version
     0x00,                   // size of supported versions
     0x00, 0x06,             // size of parameters
-    0x00, 0x02,             // parameter id - initial_max_bidi_streams
+    0x00, 0x02,             // parameter id - initial_max_streams_bidi
     0x00, 0x02,             // length of value
     0x00, 0x10              // value
   };
@@ -54,7 +54,7 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   uint8_t remote_tp_buf[] = {
     0x00, 0x00, 0x00, 0x00, // initial version
     0x00, 0x06,             // size of parameters
-    0x00, 0x02,             // parameter id - initial_max_bidi_streams
+    0x00, 0x02,             // parameter id - initial_max_streams_bidi
     0x00, 0x02,             // length of value
     0x00, 0x10              // value
   };
@@ -141,7 +141,7 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
     0x00, 0x00, 0x00, 0x00, // initial version
     0x00,                   // size of supported versions
     0x00, 0x0e,             // size of parameters
-    0x00, 0x02,             // parameter id - initial_max_bidi_streams
+    0x00, 0x02,             // parameter id - initial_max_streams_bidi
     0x00, 0x02,             // length of value
     0x00, 0x10,             // value
     0x00, 0x00,             // parameter id - initial_max_stream_data_bidi_local
@@ -154,7 +154,7 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
   uint8_t remote_tp_buf[] = {
     0x00, 0x00, 0x00, 0x00, // initial version
     0x00, 0x0e,             // size of parameters
-    0x00, 0x02,             // parameter id - initial_max_bidi_streams
+    0x00, 0x02,             // parameter id - initial_max_streams_bidi
     0x00, 0x02,             // length of value
     0x00, 0x10,             // value
     0x00, 0x0a,             // parameter id - initial_max_stream_data_bidi_remote
@@ -198,7 +198,7 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
     0x00, 0x00, 0x00, 0x00, // initial version
     0x00,                   // size of supported versions
     0x00, 0x06,             // size of parameters
-    0x00, 0x02,             // parameter id - initial_max_bidi_streams
+    0x00, 0x02,             // parameter id - initial_max_streams_bidi
     0x00, 0x02,             // length of value
     0x00, 0x10              // value
   };
@@ -208,7 +208,7 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   uint8_t remote_tp_buf[] = {
     0x00, 0x00, 0x00, 0x00, // initial version
     0x00, 0x06,             // size of parameters
-    0x00, 0x02,             // parameter id - initial_max_bidi_streams
+    0x00, 0x02,             // parameter id - initial_max_streams_bidi
     0x00, 0x02,             // length of value
     0x00, 0x10              // value
   };

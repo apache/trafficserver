@@ -61,12 +61,12 @@ QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTran
   this->_remote_tp = remote_tp;
 
   if (this->_local_tp) {
-    this->_local_maximum_stream_id_bidi = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI);
-    this->_local_maximum_stream_id_uni  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI);
+    this->_local_max_streams_bidi = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI);
+    this->_local_max_streams_uni  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI);
   }
   if (this->_remote_tp) {
-    this->_remote_maximum_stream_id_bidi = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI);
-    this->_remote_maximum_stream_id_uni  = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI);
+    this->_remote_max_streams_bidi = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI);
+    this->_remote_max_streams_uni  = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI);
   }
 }
 
@@ -75,12 +75,12 @@ QUICStreamManager::set_max_stream_id(QUICStreamId id)
 {
   QUICStreamType type = QUICTypeUtil::detect_stream_type(id);
   if (type == QUICStreamType::SERVER_BIDI || type == QUICStreamType::CLIENT_BIDI) {
-    if (this->_local_maximum_stream_id_bidi <= id) {
-      this->_local_maximum_stream_id_bidi = id;
+    if (this->_local_max_streams_bidi <= id) {
+      this->_local_max_streams_bidi = id;
     }
   } else {
-    if (this->_local_maximum_stream_id_uni <= id) {
-      this->_local_maximum_stream_id_uni = id;
+    if (this->_local_max_streams_uni <= id) {
+      this->_local_max_streams_uni = id;
     }
   }
 }
@@ -158,7 +158,7 @@ QUICStreamManager::handle_frame(QUICEncryptionLevel level, const QUICFrame &fram
     error = this->_handle_frame(static_cast<const QUICRstStreamFrame &>(frame));
     break;
   case QUICFrameType::MAX_STREAMS:
-    error = this->_handle_frame(static_cast<const QUICMaxStreamIdFrame &>(frame));
+    error = this->_handle_frame(static_cast<const QUICMaxStreamsFrame &>(frame));
     break;
   default:
     Debug(tag, "Unexpected frame type: %02x", static_cast<unsigned int>(frame.type()));
@@ -231,13 +231,13 @@ QUICStreamManager::_handle_frame(const QUICStopSendingFrame &frame)
 }
 
 QUICConnectionErrorUPtr
-QUICStreamManager::_handle_frame(const QUICMaxStreamIdFrame &frame)
+QUICStreamManager::_handle_frame(const QUICMaxStreamsFrame &frame)
 {
-  QUICStreamType type = QUICTypeUtil::detect_stream_type(frame.maximum_stream_id());
+  QUICStreamType type = QUICTypeUtil::detect_stream_type(frame.maximum_streams());
   if (type == QUICStreamType::SERVER_BIDI || type == QUICStreamType::CLIENT_BIDI) {
-    this->_remote_maximum_stream_id_bidi = frame.maximum_stream_id();
+    this->_remote_max_streams_bidi = frame.maximum_streams();
   } else {
-    this->_remote_maximum_stream_id_uni = frame.maximum_stream_id();
+    this->_remote_max_streams_uni = frame.maximum_streams();
   }
   return nullptr;
 }
@@ -270,7 +270,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
     switch (QUICTypeUtil::detect_stream_type(stream_id)) {
     case QUICStreamType::CLIENT_BIDI:
-      if (this->_local_maximum_stream_id_bidi == 0 || stream_id > this->_local_maximum_stream_id_bidi) {
+      if (this->_local_max_streams_bidi == 0 || stream_id > this->_local_max_streams_bidi) {
         return nullptr;
       }
 
@@ -286,7 +286,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
       break;
     case QUICStreamType::CLIENT_UNI:
-      if (this->_local_maximum_stream_id_uni == 0 || stream_id > this->_local_maximum_stream_id_uni) {
+      if (this->_local_max_streams_uni == 0 || stream_id > this->_local_max_streams_uni) {
         return nullptr;
       }
 
@@ -295,7 +295,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
       break;
     case QUICStreamType::SERVER_BIDI:
-      if (this->_remote_maximum_stream_id_bidi == 0 || stream_id > this->_remote_maximum_stream_id_bidi) {
+      if (this->_remote_max_streams_bidi == 0 || stream_id > this->_remote_max_streams_bidi) {
         return nullptr;
       }
 
@@ -311,7 +311,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
       break;
     case QUICStreamType::SERVER_UNI:
-      if (this->_remote_maximum_stream_id_uni == 0 || stream_id > this->_remote_maximum_stream_id_uni) {
+      if (this->_remote_max_streams_uni == 0 || stream_id > this->_remote_max_streams_uni) {
         return nullptr;
       }
 

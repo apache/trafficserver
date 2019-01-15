@@ -1015,9 +1015,9 @@ TEST_CASE("Load MaxStreamId Frame", "[quic]")
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
     CHECK(frame1->type() == QUICFrameType::MAX_STREAMS);
     CHECK(frame1->size() == 5);
-    std::shared_ptr<const QUICMaxStreamIdFrame> max_stream_id_frame = std::dynamic_pointer_cast<const QUICMaxStreamIdFrame>(frame1);
-    CHECK(max_stream_id_frame != nullptr);
-    CHECK(max_stream_id_frame->maximum_stream_id() == 0x01020304);
+    std::shared_ptr<const QUICMaxStreamsFrame> max_streams_frame = std::dynamic_pointer_cast<const QUICMaxStreamsFrame>(frame1);
+    CHECK(max_streams_frame != nullptr);
+    CHECK(max_streams_frame->maximum_streams() == 0x01020304);
   }
   SECTION("bad load")
   {
@@ -1039,10 +1039,10 @@ TEST_CASE("Store MaxStreamId Frame", "[quic]")
     0x06,                   // Type
     0x81, 0x02, 0x03, 0x04, // Stream ID
   };
-  QUICMaxStreamIdFrame max_stream_id_frame(0x01020304, 0, nullptr);
-  CHECK(max_stream_id_frame.size() == 5);
+  QUICMaxStreamsFrame max_streams_frame(0x01020304, 0, nullptr);
+  CHECK(max_streams_frame.size() == 5);
 
-  max_stream_id_frame.store(buf, &len, 65535);
+  max_streams_frame.store(buf, &len, 65535);
   CHECK(len == 5);
   CHECK(memcmp(buf, expected, len) == 0);
 }
@@ -1517,16 +1517,16 @@ TEST_CASE("QUICFrameFactory Fast Create Frame", "[quic]")
   std::shared_ptr<const QUICFrame> frame1 = factory.fast_create(buf1, sizeof(buf1));
   CHECK(frame1 != nullptr);
 
-  std::shared_ptr<const QUICMaxStreamIdFrame> max_stream_id_frame1 = std::dynamic_pointer_cast<const QUICMaxStreamIdFrame>(frame1);
-  CHECK(max_stream_id_frame1 != nullptr);
-  CHECK(max_stream_id_frame1->maximum_stream_id() == 0x01020304);
+  std::shared_ptr<const QUICMaxStreamsFrame> max_streams_frame1 = std::dynamic_pointer_cast<const QUICMaxStreamsFrame>(frame1);
+  CHECK(max_streams_frame1 != nullptr);
+  CHECK(max_streams_frame1->maximum_streams() == 0x01020304);
 
   std::shared_ptr<const QUICFrame> frame2 = factory.fast_create(buf2, sizeof(buf2));
   CHECK(frame2 != nullptr);
 
-  std::shared_ptr<const QUICMaxStreamIdFrame> max_stream_id_frame2 = std::dynamic_pointer_cast<const QUICMaxStreamIdFrame>(frame2);
-  CHECK(max_stream_id_frame2 != nullptr);
-  CHECK(max_stream_id_frame2->maximum_stream_id() == 0x05060708);
+  std::shared_ptr<const QUICMaxStreamsFrame> max_streams_frame2 = std::dynamic_pointer_cast<const QUICMaxStreamsFrame>(frame2);
+  CHECK(max_streams_frame2 != nullptr);
+  CHECK(max_streams_frame2->maximum_streams() == 0x05060708);
 
   CHECK(frame1 == frame2);
 }

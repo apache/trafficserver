@@ -376,11 +376,11 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
   if (params->initial_max_data_in() != 0) {
     tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data_in());
   }
-  if (params->initial_max_bidi_streams_in() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI, params->initial_max_bidi_streams_in());
+  if (params->initial_max_streams_bidi_in() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI, params->initial_max_streams_bidi_in());
   }
-  if (params->initial_max_uni_streams_in() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI, params->initial_max_uni_streams_in());
+  if (params->initial_max_streams_uni_in() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI, params->initial_max_streams_uni_in());
   }
   if (params->initial_max_stream_data_bidi_local_in() != 0) {
     tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, params->initial_max_stream_data_bidi_local_in());
@@ -422,11 +422,11 @@ QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_versi
   if (params->initial_max_data_out() != 0) {
     tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data_out());
   }
-  if (params->initial_max_bidi_streams_out() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI, params->initial_max_bidi_streams_out());
+  if (params->initial_max_streams_bidi_out() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI, params->initial_max_streams_bidi_out());
   }
-  if (params->initial_max_uni_streams_out() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI, params->initial_max_uni_streams_out());
+  if (params->initial_max_streams_uni_out() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI, params->initial_max_streams_uni_out());
   }
   if (params->initial_max_stream_data_bidi_local_out() != 0) {
     tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, params->initial_max_stream_data_bidi_local_out());

@@ -38,7 +38,7 @@ ClassAllocator<QUICRstStreamFrame> quicRstStreamFrameAllocator("quicRstStreamFra
 ClassAllocator<QUICConnectionCloseFrame> quicConnectionCloseFrameAllocator("quicConnectionCloseFrameAllocator");
 ClassAllocator<QUICMaxDataFrame> quicMaxDataFrameAllocator("quicMaxDataFrameAllocator");
 ClassAllocator<QUICMaxStreamDataFrame> quicMaxStreamDataFrameAllocator("quicMaxStreamDataFrameAllocator");
-ClassAllocator<QUICMaxStreamIdFrame> quicMaxStreamIdFrameAllocator("quicMaxStreamDataIdAllocator");
+ClassAllocator<QUICMaxStreamsFrame> quicMaxStreamIdFrameAllocator("quicMaxStreamDataIdAllocator");
 ClassAllocator<QUICPingFrame> quicPingFrameAllocator("quicPingFrameAllocator");
 ClassAllocator<QUICBlockedFrame> quicBlockedFrameAllocator("quicBlockedFrameAllocator");
 ClassAllocator<QUICStreamBlockedFrame> quicStreamBlockedFrameAllocator("quicStreamBlockedFrameAllocator");
@@ -1646,16 +1646,16 @@ QUICMaxStreamDataFrame::maximum_stream_data() const
 //
 // MAX_STREAMS
 //
-QUICMaxStreamIdFrame::QUICMaxStreamIdFrame(QUICStreamId maximum_stream_id, QUICFrameId id, QUICFrameGenerator *owner)
+QUICMaxStreamsFrame::QUICMaxStreamsFrame(QUICStreamId maximum_streams, QUICFrameId id, QUICFrameGenerator *owner)
   : QUICFrame(id, owner)
 {
-  this->_maximum_stream_id = maximum_stream_id;
+  this->_maximum_streams = maximum_streams;
 }
 
 void
-QUICMaxStreamIdFrame::_reset()
+QUICMaxStreamsFrame::_reset()
 {
-  this->_maximum_stream_id = 0;
+  this->_maximum_streams = 0;
 
   this->_owner = nullptr;
   this->_id    = 0;
@@ -1663,20 +1663,20 @@ QUICMaxStreamIdFrame::_reset()
   this->_size  = 0;
 }
 
-QUICMaxStreamIdFrame::QUICMaxStreamIdFrame(const uint8_t *buf, size_t len)
+QUICMaxStreamsFrame::QUICMaxStreamsFrame(const uint8_t *buf, size_t len)
 {
   this->parse(buf, len);
 }
 
 void
-QUICMaxStreamIdFrame::parse(const uint8_t *buf, size_t len)
+QUICMaxStreamsFrame::parse(const uint8_t *buf, size_t len)
 {
   ink_assert(len >= 1);
   this->_reset();
   uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
 
   size_t field_len = 0;
-  if (!read_varint(pos, LEFT_SPACE(pos), this->_maximum_stream_id, field_len)) {
+  if (!read_varint(pos, LEFT_SPACE(pos), this->_maximum_streams, field_len)) {
     return;
   }
 
@@ -1685,29 +1685,29 @@ QUICMaxStreamIdFrame::parse(const uint8_t *buf, size_t len)
 }
 
 QUICFrameUPtr
-QUICMaxStreamIdFrame::clone() const
+QUICMaxStreamsFrame::clone() const
 {
-  return QUICFrameFactory::create_max_stream_id_frame(this->maximum_stream_id(), this->_id, this->_owner);
+  return QUICFrameFactory::create_max_streams_frame(this->maximum_streams(), this->_id, this->_owner);
 }
 
 QUICFrameType
-QUICMaxStreamIdFrame::type() const
+QUICMaxStreamsFrame::type() const
 {
   return QUICFrameType::MAX_STREAMS;
 }
 
 size_t
-QUICMaxStreamIdFrame::size() const
+QUICMaxStreamsFrame::size() const
 {
   if (this->_size) {
     return this->_size;
   }
 
-  return sizeof(QUICFrameType) + QUICVariableInt::size(this->_maximum_stream_id);
+  return sizeof(QUICFrameType) + QUICVariableInt::size(this->_maximum_streams);
 }
 
 size_t
-QUICMaxStreamIdFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+QUICMaxStreamsFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 {
   if (limit < this->size()) {
     return 0;
@@ -1717,17 +1717,17 @@ QUICMaxStreamIdFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   uint8_t *p = buf;
   *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAMS);
   ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_maximum_stream_id, p, &n);
+  QUICTypeUtil::write_QUICStreamId(this->_maximum_streams, p, &n);
   p += n;
 
   *len = p - buf;
   return *len;
 }
 
-QUICStreamId
-QUICMaxStreamIdFrame::maximum_stream_id() const
+uint64_t
+QUICMaxStreamsFrame::maximum_streams() const
 {
-  return this->_maximum_stream_id;
+  return this->_maximum_streams;
 }
 
 //
@@ -2691,8 +2691,8 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_max_stream_data_frame);
   case QUICFrameType::MAX_STREAMS:
     frame = quicMaxStreamIdFrameAllocator.alloc();
-    new (frame) QUICMaxStreamIdFrame(buf, len);
-    return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_max_stream_id_frame);
+    new (frame) QUICMaxStreamsFrame(buf, len);
+    return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_max_streams_frame);
   case QUICFrameType::PING:
     frame = quicPingFrameAllocator.alloc();
     new (frame) QUICPingFrame(buf, len);
@@ -2837,12 +2837,12 @@ QUICFrameFactory::create_max_stream_data_frame(QUICStreamId stream_id, uint64_t 
   return std::unique_ptr<QUICMaxStreamDataFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_max_stream_data_frame);
 }
 
-std::unique_ptr<QUICMaxStreamIdFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_max_stream_id_frame(QUICStreamId maximum_stream_id, QUICFrameId id, QUICFrameGenerator *owner)
+std::unique_ptr<QUICMaxStreamsFrame, QUICFrameDeleterFunc>
+QUICFrameFactory::create_max_streams_frame(QUICStreamId maximum_streams, QUICFrameId id, QUICFrameGenerator *owner)
 {
-  QUICMaxStreamIdFrame *frame = quicMaxStreamIdFrameAllocator.alloc();
-  new (frame) QUICMaxStreamIdFrame(maximum_stream_id, id, owner);
-  return std::unique_ptr<QUICMaxStreamIdFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_max_stream_id_frame);
+  QUICMaxStreamsFrame *frame = quicMaxStreamIdFrameAllocator.alloc();
+  new (frame) QUICMaxStreamsFrame(maximum_streams, id, owner);
+  return std::unique_ptr<QUICMaxStreamsFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_max_streams_frame);
 }
 
 std::unique_ptr<QUICPingFrame, QUICFrameDeleterFunc>

@@ -441,23 +441,23 @@ private:
 // MAX_STREAMS
 //
 
-class QUICMaxStreamIdFrame : public QUICFrame
+class QUICMaxStreamsFrame : public QUICFrame
 {
 public:
-  QUICMaxStreamIdFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICMaxStreamIdFrame(const uint8_t *buf, size_t len);
-  QUICMaxStreamIdFrame(QUICStreamId maximum_stream_id, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
+  QUICMaxStreamsFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
+  QUICMaxStreamsFrame(const uint8_t *buf, size_t len);
+  QUICMaxStreamsFrame(QUICStreamId maximum_streams, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
-  QUICStreamId maximum_stream_id() const;
+  uint64_t maximum_streams() const;
 
 private:
   virtual void _reset() override;
 
-  QUICStreamId _maximum_stream_id = 0;
+  uint64_t _maximum_streams = 0;
 };
 
 //
@@ -745,7 +745,7 @@ extern ClassAllocator<QUICRstStreamFrame> quicRstStreamFrameAllocator;
 extern ClassAllocator<QUICConnectionCloseFrame> quicConnectionCloseFrameAllocator;
 extern ClassAllocator<QUICMaxDataFrame> quicMaxDataFrameAllocator;
 extern ClassAllocator<QUICMaxStreamDataFrame> quicMaxStreamDataFrameAllocator;
-extern ClassAllocator<QUICMaxStreamIdFrame> quicMaxStreamIdFrameAllocator;
+extern ClassAllocator<QUICMaxStreamsFrame> quicMaxStreamIdFrameAllocator;
 extern ClassAllocator<QUICPingFrame> quicPingFrameAllocator;
 extern ClassAllocator<QUICBlockedFrame> quicBlockedFrameAllocator;
 extern ClassAllocator<QUICStreamBlockedFrame> quicStreamBlockedFrameAllocator;
@@ -825,10 +825,10 @@ public:
   }
 
   static void
-  delete_max_stream_id_frame(QUICFrame *frame)
+  delete_max_streams_frame(QUICFrame *frame)
   {
     frame->~QUICFrame();
-    quicMaxStreamIdFrameAllocator.free(static_cast<QUICMaxStreamIdFrame *>(frame));
+    quicMaxStreamIdFrameAllocator.free(static_cast<QUICMaxStreamsFrame *>(frame));
   }
 
   static void
@@ -987,8 +987,8 @@ public:
   /*
    * Creates a MAX_STREAMS frame.
    */
-  static std::unique_ptr<QUICMaxStreamIdFrame, QUICFrameDeleterFunc> create_max_stream_id_frame(
-    QUICStreamId maximum_stream_id, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
+  static std::unique_ptr<QUICMaxStreamsFrame, QUICFrameDeleterFunc> create_max_streams_frame(
+    QUICStreamId maximum_streams, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   /*
    * Creates a PING frame
