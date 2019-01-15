@@ -522,7 +522,7 @@ hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_strin
 {
   int wks_idx;
 
-  wks_idx = hdrtoken_strs_dfa->match(string, string_len);
+  wks_idx = hdrtoken_strs_dfa->match({string, size_t(string_len)});
 
   if (wks_idx < 0) {
     wks_idx = -1;

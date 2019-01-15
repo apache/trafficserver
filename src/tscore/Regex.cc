@@ -50,6 +50,12 @@ get_jit_stack(void *data ATS_UNUSED)
 }
 #endif
 
+Regex::Regex(Regex &&that) noexcept : regex(that.regex), regex_extra(that.regex_extra)
+{
+  that.regex       = nullptr;
+  that.regex_extra = nullptr;
+}
+
 bool
 Regex::compile(const char *pattern, const unsigned flags)
 {
@@ -114,7 +120,7 @@ Regex::exec(std::string_view const &str, int *ovector, int ovecsize)
 {
   int rv;
 
-  rv = pcre_exec(regex, regex_extra, str.data(), str.size(), 0, 0, ovector, ovecsize);
+  rv = pcre_exec(regex, regex_extra, str.data(), int(str.size()), 0, 0, ovector, ovecsize);
   return rv > 0;
 }
 
@@ -132,113 +138,63 @@ Regex::~Regex()
   }
 }
 
-DFA::~DFA()
-{
-  dfa_pattern *p = _my_patterns;
-  dfa_pattern *t;
+DFA::~DFA() {}
 
-  while (p) {
-    if (p->_re) {
-      delete p->_re;
-    }
-    if (p->_p) {
-      ats_free(p->_p);
-    }
-    t = p->_next;
-    ats_free(p);
-    p = t;
-  }
-}
-
-dfa_pattern *
-DFA::build(const char *pattern, unsigned flags)
+bool
+DFA::build(std::string_view const &pattern, unsigned flags)
 {
-  dfa_pattern *ret;
-  int rv;
+  Regex rxp;
+  std::string string{pattern};
 
   if (!(flags & RE_UNANCHORED)) {
     flags |= RE_ANCHORED;
   }
 
-  ret     = (dfa_pattern *)ats_malloc(sizeof(dfa_pattern));
-  ret->_p = nullptr;
-
-  ret->_re = new Regex();
-  rv       = ret->_re->compile(pattern, flags);
-  if (rv == -1) {
-    delete ret->_re;
-    ats_free(ret);
-    return nullptr;
+  if (!rxp.compile(string.c_str(), flags)) {
+    return false;
   }
-
-  ret->_idx  = 0;
-  ret->_p    = ats_strndup(pattern, strlen(pattern));
-  ret->_next = nullptr;
-  return ret;
+  _patterns.emplace_back(std::move(rxp), std::move(string));
+  return true;
 }
 
 int
-DFA::compile(const char *pattern, unsigned flags)
+DFA::compile(std::string_view const &pattern, unsigned flags)
 {
-  ink_assert(_my_patterns == nullptr);
-  _my_patterns = build(pattern, flags);
-  if (_my_patterns) {
-    return 0;
-  } else {
-    return -1;
+  ink_assert(_patterns.empty());
+  this->build(pattern, flags);
+  return _patterns.size();
+}
+
+int
+DFA::compile(std::string_view *patterns, int npatterns, unsigned flags)
+{
+  _patterns.reserve(npatterns); // try to pre-allocate.
+  for (int i = 0; i < npatterns; ++i) {
+    this->build(patterns[i], flags);
   }
+  return _patterns.size();
 }
 
 int
 DFA::compile(const char **patterns, int npatterns, unsigned flags)
 {
-  const char *pattern;
-  dfa_pattern *ret = nullptr;
-  dfa_pattern *end = nullptr;
-  int i;
-
-  for (i = 0; i < npatterns; i++) {
-    pattern = patterns[i];
-    ret     = build(pattern, flags);
-    if (!ret) {
-      continue;
-    }
-
-    if (!_my_patterns) {
-      _my_patterns        = ret;
-      _my_patterns->_next = nullptr;
-      _my_patterns->_idx  = i;
-    } else {
-      end = _my_patterns;
-      while (end->_next) {
-        end = end->_next;
-      }
-      end->_next = ret; // add to end
-      ret->_idx  = i;
-    }
+  _patterns.reserve(npatterns); // try to pre-allocate.
+  for (int i = 0; i < npatterns; ++i) {
+    this->build(patterns[i], flags);
   }
-
-  return 0;
+  return _patterns.size();
 }
 
 int
-DFA::match(const char *str) const
+DFA::match(std::string_view const &str) const
 {
-  return match(str, strlen(str));
-}
-
-int
-DFA::match(const char *str, int length) const
-{
-  int rc;
-  dfa_pattern *p = _my_patterns;
-
-  while (p) {
-    rc = p->_re->exec({str, size_t(length)});
-    if (rc > 0) {
-      return p->_idx;
+  // This is ugly, but the external interface needs to be @c const even though it's not really.
+  // This handles making the iterator non-const.
+  auto &pv{const_cast<decltype(_patterns) &>(_patterns)};
+  for (auto spot = pv.begin(), limit = pv.end(); spot != limit; ++spot) {
+    if (spot->_re.exec(str)) {
+      return spot - _patterns.begin();
     }
-    p = p->_next;
   }
 
   return -1;
