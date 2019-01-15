@@ -24,6 +24,9 @@
 #pragma once
 
 #include <string_view>
+#include <string>
+#include <vector>
+#include <memory>
 
 #include "tscore/ink_config.h"
 
@@ -49,7 +52,9 @@ public:
   /// Default number of capture groups.
   static constexpr size_t DEFAULT_GROUP_COUNT = 10;
 
-  Regex() = default;
+  Regex()              = default;
+  Regex(Regex const &) = delete; // No copying.
+  Regex(Regex &&that) noexcept;
   ~Regex();
 
   /** Compile the @a pattern into a regular expression.
@@ -60,7 +65,7 @@ public:
    *
    * @a flags should be the bitwise @c or of @c REFlags values.
    */
-  bool compile(const char *pattern, const unsigned flags = 0);
+  bool compile(const char *pattern, unsigned flags = 0);
 
   /** Execute the regular expression.
    *
@@ -93,27 +98,45 @@ private:
   pcre_extra *regex_extra = nullptr;
 };
 
-typedef struct __pat {
-  int _idx;
-  Regex *_re;
-  char *_p;
-  __pat *_next;
-} dfa_pattern;
-
+/** Deterministic Finite state Automata container.
+ *
+ * This contains a set of patterns (which may be of size 1) and matches if any of the patterns
+ * match.
+ */
 class DFA
 {
 public:
   DFA() = default;
   ~DFA();
 
-  int compile(const char *pattern, unsigned flags = 0);
+  /// @return The number of patterns successfully compiled.
+  int compile(std::string_view const &pattern, unsigned flags = 0);
+  /// @return The number of patterns successfully compiled.
+  int compile(std::string_view *patterns, int npatterns, unsigned flags = 0);
+  /// @return The number of patterns successfully compiled.
   int compile(const char **patterns, int npatterns, unsigned flags = 0);
 
-  int match(const char *str) const;
-  int match(const char *str, int length) const;
+  /** Match @a str against the internal patterns.
+   *
+   * @param str String to match.
+   * @return Index of the matched pattern, -1 if no match.
+   */
+  int match(std::string_view const &str) const;
 
 private:
-  dfa_pattern *build(const char *pattern, unsigned flags = 0);
+  struct Pattern {
+    Pattern(Regex &&rxp, std::string &&s) : _re(std::move(rxp)), _p(std::move(s)) {}
+    Regex _re;      ///< The compile pattern.
+    std::string _p; ///< The original pattern.
+  };
 
-  dfa_pattern *_my_patterns = nullptr;
+  /** Compile @a pattern and add it to the pattern set.
+   *
+   * @param pattern Regular expression to compile.
+   * @param flags Regular expression compilation flags.
+   * @return @c true if @a pattern was successfully compiled, @c false if not.
+   */
+  bool build(std::string_view const &pattern, unsigned flags = 0);
+
+  std::vector<Pattern> _patterns;
 };

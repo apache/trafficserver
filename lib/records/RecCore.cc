@@ -497,7 +497,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
   int num_records;
   DFA regex;
 
-  if (regex.compile(match, RE_CASE_INSENSITIVE | RE_UNANCHORED) != 0) {
+  if (!regex.compile(match, RE_CASE_INSENSITIVE | RE_UNANCHORED)) {
     return REC_ERR_FAIL;
   }
 

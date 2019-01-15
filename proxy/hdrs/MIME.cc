@@ -3282,6 +3282,7 @@ int
 mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
 {
   unsigned int three_char_wday, three_char_mon;
+  std::string_view view{buf, size_t(length)};
 
   ink_assert(length >= 29);
   ink_assert(!is_ws(buf[0]));
@@ -3312,7 +3313,7 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
     }
   }
   if (tp->tm_wday < 0) {
-    tp->tm_wday = day_names_dfa->match(buf, length);
+    tp->tm_wday = day_names_dfa->match(view);
     if (tp->tm_wday < 0) {
       return 0;
     }
@@ -3365,7 +3366,7 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
     }
   }
   if (tp->tm_mon < 0) {
-    tp->tm_mon = month_names_dfa->match(buf, length);
+    tp->tm_mon = month_names_dfa->match(view);
     if (tp->tm_mon < 0) {
       return 0;
     }
@@ -3510,7 +3511,7 @@ mime_parse_day(const char *&buf, const char *end, int *day)
     e += 1;
   }
 
-  *day = day_names_dfa->match(buf, e - buf);
+  *day = day_names_dfa->match({buf, size_t(e - buf)});
   if (*day < 0) {
     return 0;
   } else {
@@ -3533,7 +3534,7 @@ mime_parse_month(const char *&buf, const char *end, int *month)
     e += 1;
   }
 
-  *month = month_names_dfa->match(buf, e - buf);
+  *month = month_names_dfa->match({buf, size_t(e - buf)});
   if (*month < 0) {
     return 0;
   } else {
