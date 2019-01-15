@@ -42,7 +42,8 @@ public:
 
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
-  void set_max_stream_id(QUICStreamId id);
+  void set_max_streams_bidi(uint64_t max_streams);
+  void set_max_streams_uni(uint64_t max_streams);
   uint64_t total_reordered_bytes() const;
   uint64_t total_offset_received() const;
   uint64_t total_offset_sent() const;

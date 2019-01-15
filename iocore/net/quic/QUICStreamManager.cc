@@ -71,17 +71,18 @@ QUICStreamManager::init_flow_control_params(const std::shared_ptr<const QUICTran
 }
 
 void
-QUICStreamManager::set_max_stream_id(QUICStreamId id)
+QUICStreamManager::set_max_streams_bidi(uint64_t max_streams)
 {
-  QUICStreamType type = QUICTypeUtil::detect_stream_type(id);
-  if (type == QUICStreamType::SERVER_BIDI || type == QUICStreamType::CLIENT_BIDI) {
-    if (this->_local_max_streams_bidi <= id) {
-      this->_local_max_streams_bidi = id;
-    }
-  } else {
-    if (this->_local_max_streams_uni <= id) {
-      this->_local_max_streams_uni = id;
-    }
+  if (this->_local_max_streams_bidi <= max_streams) {
+    this->_local_max_streams_bidi = max_streams;
+  }
+}
+
+void
+QUICStreamManager::set_max_streams_uni(uint64_t max_streams)
+{
+  if (this->_local_max_streams_uni <= max_streams) {
+    this->_local_max_streams_uni = max_streams;
   }
 }
 

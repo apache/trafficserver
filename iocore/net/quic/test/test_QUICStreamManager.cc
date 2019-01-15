@@ -94,7 +94,7 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   CHECK(sm.stream_count() == 5);
 
   // Set local maximum stream id
-  sm.set_max_stream_id(0x14);
+  sm.set_max_streams_bidi(100);
   std::shared_ptr<QUICFrame> stream_blocked_frame_x = QUICFrameFactory::create_stream_blocked_frame(0x18, 0);
   sm.handle_frame(level, *stream_blocked_frame_x);
   CHECK(sm.stream_count() == 5);
