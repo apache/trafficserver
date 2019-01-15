@@ -54,12 +54,12 @@ struct SSLAddressLookupKey {
     // different matches if there is a certificate on the port.
 
     ts::FixedBufferWriter w{key, sizeof(key)};
-    w.print("{}", ts::bwf::Hex_Dump(ip)); // dump raw bytes in hex, don't format as IP address.
+    w.print("{}", ts::bwf::Hex_Dump(ip)); // dump as raw hex bytes, don't format as IP address.
     if (in_port_t port = ip.host_order_port(); port) {
-      sep = unsigned(w.size());
+      sep = static_cast<unsigned char>(w.size());
       w.print(".{:x}", port);
     }
-    w.print("\0");
+    w.write('\0'); // force C-string termination.
   }
 
   const char *
