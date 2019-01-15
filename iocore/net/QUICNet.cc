@@ -67,7 +67,8 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
   uint8_t *buf           = (uint8_t *)p->getIOBlockChain()->buf();
 
-  QUICPacketType ptype = static_cast<QUICPacketType>(buf[0] & 0x7f);
+  QUICPacketType ptype;
+  QUICPacketLongHeader::type(ptype, buf, 1);
   if (ptype == QUICPacketType::INITIAL && !vc->read.triggered) {
     SCOPED_MUTEX_LOCK(lock, vc->mutex, this_ethread());
     vc->read.triggered = 1;
