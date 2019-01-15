@@ -58,19 +58,22 @@ normalize_uri_helper(const char *uri, const char *expected_normal)
   size_t uri_ct = strlen(uri);
   int buff_size = uri_ct + 2;
   int err;
-  char uri_normal[buff_size];
+  char *uri_normal = (char *)malloc(buff_size);
   memset(uri_normal, 0, buff_size);
 
   err = normalize_uri(uri, uri_ct, uri_normal, buff_size);
 
   if (err) {
+    free(uri_normal);
     return false;
   }
 
   if (expected_normal && strcmp(expected_normal, uri_normal) == 0) {
+    free(uri_normal);
     return true;
   }
 
+  free(uri_normal);
   return false;
 }
 
@@ -101,8 +104,10 @@ jws_parsing_helper(const char *uri, const char *paramName, const char *expected_
   bool resp;
   size_t uri_ct   = strlen(uri);
   size_t strip_ct = 0;
-  char uri_strip[uri_ct + 1];
-  memset(uri_strip, 0, sizeof uri_strip);
+
+  char *uri_strip = (char *)malloc(uri_ct + 1);
+  memset(uri_strip, 0, uri_ct + 1);
+
   cjose_jws_t *jws = get_jws_from_uri(uri, uri_ct, paramName, uri_strip, uri_ct, &strip_ct);
   if (jws) {
     resp = true;
@@ -114,6 +119,7 @@ jws_parsing_helper(const char *uri, const char *paramName, const char *expected_
     resp = false;
   }
   cjose_jws_release(jws);
+  free(uri_strip);
   return resp;
 }
 
