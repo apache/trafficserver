@@ -172,7 +172,8 @@ int dcil) const
   } else {
     *sample_offset = 1 + dcil + 4;
   }
-  return sample_offset + 16 < protected_packet + protected_packet_len;
+
+  return *sample_offset + 16 < protected_packet_len;
 }
 
 bool
