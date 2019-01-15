@@ -90,10 +90,10 @@ private:
   QUICApplicationMap *_app_map                              = nullptr;
   std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;
   std::shared_ptr<const QUICTransportParameters> _remote_tp = nullptr;
-  QUICStreamId _local_max_streams_bidi                = 0;
-  QUICStreamId _local_max_streams_uni                 = 0;
-  QUICStreamId _remote_max_streams_bidi               = 0;
-  QUICStreamId _remote_max_streams_uni                = 0;
+  QUICStreamId _local_max_streams_bidi                      = 0;
+  QUICStreamId _local_max_streams_uni                       = 0;
+  QUICStreamId _remote_max_streams_bidi                     = 0;
+  QUICStreamId _remote_max_streams_uni                      = 0;
   QUICStreamId _next_stream_id_uni                          = 0;
   QUICStreamId _next_stream_id_bidi                         = 0;
   uint64_t _total_offset_sent                               = 0;

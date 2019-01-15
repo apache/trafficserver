@@ -360,8 +360,8 @@ public:
   QUICConnectionCloseFrame(uint16_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length, const char *reason_phrase,
                            QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   // Constructor for application protocol error codes
-  QUICConnectionCloseFrame(uint16_t error_code, uint64_t reason_phrase_length, const char *reason_phrase,
-                           QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
+  QUICConnectionCloseFrame(uint16_t error_code, uint64_t reason_phrase_length, const char *reason_phrase, QUICFrameId id = 0,
+                           QUICFrameGenerator *owner = nullptr);
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -377,7 +377,7 @@ public:
 private:
   virtual void _reset() override;
 
-  uint8_t _type                  = 0;
+  uint8_t _type = 0;
   uint16_t _error_code;
   QUICFrameType _frame_type      = QUICFrameType::UNKNOWN;
   uint64_t _reason_phrase_length = 0;
@@ -987,8 +987,9 @@ public:
   /*
    * Creates a MAX_STREAMS frame.
    */
-  static std::unique_ptr<QUICMaxStreamsFrame, QUICFrameDeleterFunc> create_max_streams_frame(
-    QUICStreamId maximum_streams, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
+  static std::unique_ptr<QUICMaxStreamsFrame, QUICFrameDeleterFunc> create_max_streams_frame(QUICStreamId maximum_streams,
+                                                                                             QUICFrameId id            = 0,
+                                                                                             QUICFrameGenerator *owner = nullptr);
 
   /*
    * Creates a PING frame

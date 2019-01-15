@@ -35,8 +35,8 @@
 static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 static constexpr char tag[]                            = "quic_handshake";
 
-static constexpr uint32_t TP_ERROR_LENGTH         = 0x010000;
-static constexpr uint32_t TP_ERROR_VALUE          = 0x020000;
+static constexpr uint32_t TP_ERROR_LENGTH = 0x010000;
+static constexpr uint32_t TP_ERROR_VALUE  = 0x020000;
 // static constexpr uint32_t TP_ERROR_MUST_EXIST     = 0x030000;
 static constexpr uint32_t TP_ERROR_MUST_NOT_EXIST = 0x040000;
 

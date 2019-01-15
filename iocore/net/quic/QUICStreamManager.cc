@@ -48,7 +48,7 @@ std::vector<QUICFrameType>
 QUICStreamManager::interests()
 {
   return {
-    QUICFrameType::STREAM,          QUICFrameType::RESET_STREAM,    QUICFrameType::STOP_SENDING,
+    QUICFrameType::STREAM,          QUICFrameType::RESET_STREAM, QUICFrameType::STOP_SENDING,
     QUICFrameType::MAX_STREAM_DATA, QUICFrameType::MAX_STREAMS,
   };
 }

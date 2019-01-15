@@ -47,7 +47,7 @@ QUICPacketHeaderProtector::protect(uint8_t *unprotected_packet, size_t unprotect
   } else {
     // This is a kind of hack. For short header we need to use the same key for header protection regardless of the key phase.
     phase = QUICKeyPhase::PHASE_0;
-    type = QUICPacketType::PROTECTED;
+    type  = QUICPacketType::PROTECTED;
   }
 
   Debug("v_quic_pne", "Protecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
@@ -104,7 +104,7 @@ QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected
   } else {
     // This is a kind of hack. For short header we need to use the same key for header protection regardless of the key phase.
     phase = QUICKeyPhase::PHASE_0;
-    type = QUICPacketType::PROTECTED;
+    type  = QUICPacketType::PROTECTED;
   }
 
   Debug("v_quic_pne", "Unprotecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
@@ -149,7 +149,7 @@ QUICPacketHeaderProtector::set_hs_protocol(const QUICHandshakeProtocol *hs_proto
 
 bool
 QUICPacketHeaderProtector::_calc_sample_offset(uint8_t *sample_offset, const uint8_t *protected_packet, size_t protected_packet_len,
-int dcil) const
+                                               int dcil) const
 {
   if (QUICInvariants::is_long_header(protected_packet)) {
     uint8_t dcil;

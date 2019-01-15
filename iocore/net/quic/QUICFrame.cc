@@ -106,11 +106,14 @@ QUICFrame::type(const uint8_t *buf)
     return QUICFrameType::ACK;
   } else if (static_cast<uint8_t>(QUICFrameType::STREAM) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::MAX_DATA)) {
     return QUICFrameType::STREAM;
-  } else if (static_cast<uint8_t>(QUICFrameType::MAX_STREAMS) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::DATA_BLOCKED)) {
+  } else if (static_cast<uint8_t>(QUICFrameType::MAX_STREAMS) <= buf[0] &&
+             buf[0] < static_cast<uint8_t>(QUICFrameType::DATA_BLOCKED)) {
     return QUICFrameType::MAX_STREAMS;
-  } else if (static_cast<uint8_t>(QUICFrameType::STREAMS_BLOCKED) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID)) {
+  } else if (static_cast<uint8_t>(QUICFrameType::STREAMS_BLOCKED) <= buf[0] &&
+             buf[0] < static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID)) {
     return QUICFrameType::STREAMS_BLOCKED;
-  } else if (static_cast<uint8_t>(QUICFrameType::CONNECTION_CLOSE) <= buf[0] && buf[0] < static_cast<uint8_t>(QUICFrameType::UNKNOWN)) {
+  } else if (static_cast<uint8_t>(QUICFrameType::CONNECTION_CLOSE) <= buf[0] &&
+             buf[0] < static_cast<uint8_t>(QUICFrameType::UNKNOWN)) {
     return QUICFrameType::CONNECTION_CLOSE;
   } else {
     return static_cast<QUICFrameType>(buf[0]);
@@ -1247,8 +1250,8 @@ QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint16_t error_code, QUICFram
 {
 }
 
-QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint16_t error_code, uint64_t reason_phrase_length,
-                                                   const char *reason_phrase, QUICFrameId id, QUICFrameGenerator *owner)
+QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint16_t error_code, uint64_t reason_phrase_length, const char *reason_phrase,
+                                                   QUICFrameId id, QUICFrameGenerator *owner)
   : QUICFrame(id, owner),
     _type(0x1d),
     _error_code(error_code),
@@ -1281,7 +1284,7 @@ QUICConnectionCloseFrame::parse(const uint8_t *buf, size_t len)
 {
   ink_assert(len >= 1);
   this->_reset();
-  this->_type = buf[0];
+  this->_type  = buf[0];
   uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
 
   if (LEFT_SPACE(pos) < 2) {
@@ -1399,10 +1402,11 @@ QUICConnectionCloseFrame::debug_msg(char *msg, size_t msg_len) const
 {
   int len;
   if (this->_type == 0x1c) {
-    len = snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=%s (0x%" PRIx16 ") frame=%s", this->size(),
-             QUICDebugNames::error_code(this->error_code()), this->error_code(), QUICDebugNames::frame_type(this->frame_type()));
+    len =
+      snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=%s (0x%" PRIx16 ") frame=%s", this->size(),
+               QUICDebugNames::error_code(this->error_code()), this->error_code(), QUICDebugNames::frame_type(this->frame_type()));
   } else {
-     // Application-specific error. It doesn't have a frame type and we don't know string representations of error codes.
+    // Application-specific error. It doesn't have a frame type and we don't know string representations of error codes.
     len = snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=0x%" PRIx16 " ", this->size(), this->error_code());
   }
 
