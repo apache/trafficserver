@@ -95,6 +95,7 @@ iocore/net/quic/test_QUICAltConnectionManager
 iocore/net/quic/test_QUICFlowController
 iocore/net/quic/test_QUICFrame
 iocore/net/quic/test_QUICFrameDispatcher
+iocore/net/quic/test_QUICFrameRetransmitter
 iocore/net/quic/test_QUICHandshake
 iocore/net/quic/test_QUICHandshakeProtocol
 iocore/net/quic/test_QUICIncomingFrameBuffer
