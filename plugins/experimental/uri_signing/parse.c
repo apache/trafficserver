@@ -25,7 +25,6 @@
 #include <cjose/cjose.h>
 #include <jansson.h>
 #include <string.h>
-#include <ts/ts.h>
 #include <inttypes.h>
 
 cjose_jws_t *

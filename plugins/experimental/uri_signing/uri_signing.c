@@ -22,10 +22,10 @@
 #include "jwt.h"
 #include "timing.h"
 
-#include <ts/ts.h>
 #include <ts/remap.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
 
@@ -157,6 +157,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   int cpi                 = 0;
   int url_ct              = 0;
   const char *url         = NULL;
+  char *strip_uri         = NULL;
+  TSRemapStatus status    = TSREMAP_NO_REMAP;
 
   const char *package = "URISigningPackage";
 
@@ -176,9 +178,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     checkpoints[cpi++] = mark_timer(&t);
   }
 
-  char strip_uri[2000] = {0};
+  int strip_size = url_ct + 1;
+  strip_uri      = (char *)TSmalloc(strip_size);
+  memset(strip_uri, 0, strip_size);
+
   size_t strip_ct;
-  cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package, strip_uri, 2000, &strip_ct);
+  cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package, strip_uri, strip_size, &strip_ct);
 
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
@@ -186,6 +191,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   int checked_cookies = 0;
   if (!jws) {
   check_cookies:
+    /* There is no valid token in the url */
+    strncpy(strip_uri, url, url_ct);
+    strip_ct = url_ct;
     ++checked_cookies;
 
     TSMLoc field;
@@ -218,6 +226,55 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       checkpoints[cpi++] = mark_timer(&t);
     }
     jws = get_jws_from_cookie(&client_cookie, &client_cookie_sz_ct, package);
+  } else {
+    /* There has been a JWS found in the url */
+    /* Strip the token from the URL for upstream if configured to do so */
+    if (config_strip_token((struct config *)ih)) {
+      if ((int)strip_ct != url_ct) {
+        int map_url_ct      = 0;
+        char *map_url       = NULL;
+        char *map_strip_uri = NULL;
+        map_url             = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &map_url_ct);
+
+        PluginDebug("Stripping Token from requestUrl: %s", map_url);
+
+        int map_strip_size = map_url_ct + 1;
+        map_strip_uri      = (char *)TSmalloc(map_strip_size);
+        memset(map_strip_uri, 0, map_strip_size);
+        size_t map_strip_ct = 0;
+
+        cjose_jws_t *map_jws = get_jws_from_uri(map_url, map_url_ct, package, map_strip_uri, map_strip_size, &map_strip_ct);
+        cjose_jws_release(map_jws);
+
+        char *strip_uri_start = &map_strip_uri[0];
+        char *strip_uri_end   = &map_strip_uri[map_strip_ct];
+        PluginDebug("Stripping token from upstream url to: %s", strip_uri_start);
+
+        TSParseResult parse_rc = TSUrlParse(rri->requestBufp, rri->requestUrl, (const char **)&strip_uri_start, strip_uri_end);
+        if (map_url != NULL) {
+          TSfree(map_url);
+        }
+        if (map_strip_uri != NULL) {
+          TSfree(map_strip_uri);
+        }
+
+        if (parse_rc != TS_PARSE_DONE) {
+          PluginDebug("Error in TSUrlParse");
+          goto fail;
+        }
+        status = TSREMAP_DID_REMAP;
+      }
+    }
+  }
+  /* Check auth_dir and pass through if configured */
+  if (uri_matches_auth_directive((struct config *)ih, url, url_ct)) {
+    if (url != NULL) {
+      TSfree((void *)url);
+    }
+    if (strip_uri != NULL) {
+      TSfree(strip_uri);
+    }
+    return TSREMAP_NO_REMAP;
   }
   if (!jws) {
     goto fail;
@@ -226,8 +283,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
   }
+
   struct jwt *jwt = validate_jws(jws, (struct config *)ih, strip_uri, strip_ct);
   cjose_jws_release(jws);
+
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
   }
@@ -238,6 +297,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       goto check_more_cookies;
     }
   }
+
+  /* There has been a validated JWT found in either the cookie or url */
 
   struct signer *signer = config_signer((struct config *)ih);
   char *cookie          = renew(jwt, signer->issuer, signer->jwk, signer->alg, package);
@@ -260,22 +321,22 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     last_mark = checkpoints[i];
   }
   PluginDebug("Spent %" PRId64 " ns uri_signing verification of %.*s.", mark_timer(&t), url_ct, url);
-  TSfree((void *)url);
-  return TSREMAP_NO_REMAP;
-fail:
-  if (uri_matches_auth_directive((struct config *)ih, url, url_ct)) {
-    if (url != NULL) {
-      TSfree((void *)url);
-    }
-    return TSREMAP_NO_REMAP;
-  }
 
+  TSfree((void *)url);
+  if (strip_uri != NULL) {
+    TSfree(strip_uri);
+  }
+  return status;
+fail:
   PluginDebug("Invalid JWT for %.*s", url_ct, url);
   TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_FORBIDDEN);
   PluginDebug("Spent %" PRId64 " ns uri_signing verification of %.*s.", mark_timer(&t), url_ct, url);
 
   if (url != NULL) {
     TSfree((void *)url);
+  }
+  if (strip_uri != NULL) {
+    TSfree(strip_uri);
   }
 
   return TSREMAP_DID_REMAP;
