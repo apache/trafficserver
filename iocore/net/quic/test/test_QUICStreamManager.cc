@@ -64,10 +64,13 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   sm.init_flow_control_params(local_tp, remote_tp);
 
   // STREAM frames create new streams
-  std::shared_ptr<QUICFrame> stream_frame_0 =
-    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("abc"), 3, 0, 0);
-  std::shared_ptr<QUICFrame> stream_frame_4 =
-    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("abc"), 3, 4, 0);
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc();
+  block->fill(4);
+  CHECK(block->read_avail() == 4);
+
+  std::shared_ptr<QUICFrame> stream_frame_0 = QUICFrameFactory::create_stream_frame(block, 0, 0);
+  std::shared_ptr<QUICFrame> stream_frame_4 = QUICFrameFactory::create_stream_frame(block, 4, 0);
   CHECK(sm.stream_count() == 0);
   sm.handle_frame(level, *stream_frame_0);
   CHECK(sm.stream_count() == 1);
@@ -114,8 +117,12 @@ TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
   sm.init_flow_control_params(local_tp, remote_tp);
 
   // STREAM frames create new streams
-  std::shared_ptr<QUICFrame> stream_frame_0 =
-    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("abc"), 3, 0, 7);
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc();
+  block->fill(4);
+  CHECK(block->read_avail() == 4);
+
+  std::shared_ptr<QUICFrame> stream_frame_0 = QUICFrameFactory::create_stream_frame(block, 0, 7);
 
   sm.handle_frame(level, *stream_frame_0);
   CHECK("succeed");
@@ -158,7 +165,6 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
     std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf));
 
   sm.init_flow_control_params(local_tp, remote_tp);
-  uint8_t data[1024] = {0};
 
   // Create a stream with STREAM_BLOCKED (== noop)
   std::shared_ptr<QUICFrame> stream_blocked_frame_0 = QUICFrameFactory::create_stream_blocked_frame(0, 0);
@@ -169,7 +175,12 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
   CHECK(sm.total_offset_received() == 0);
 
   // total_offset should be a integer in unit of 1024 octets
-  std::shared_ptr<QUICFrame> stream_frame_1 = QUICFrameFactory::create_stream_frame(data, 1024, 8, 0);
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc();
+  block->fill(1024);
+  CHECK(block->read_avail() == 1024);
+
+  std::shared_ptr<QUICFrame> stream_frame_1 = QUICFrameFactory::create_stream_frame(block, 8, 0);
   sm.handle_frame(level, *stream_frame_1);
   CHECK(sm.total_offset_received() == 1024);
 }
@@ -205,28 +216,35 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
     std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf));
 
   sm.init_flow_control_params(local_tp, remote_tp);
-  uint8_t data[1024] = {0};
 
   // Create a stream with STREAM_BLOCKED (== noop)
-  std::shared_ptr<QUICFrame> stream_frame_0_r =
-    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("abc"), 3, 0, 0);
-  std::shared_ptr<QUICFrame> stream_frame_4_r =
-    QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("abc"), 3, 4, 0);
+  Ptr<IOBufferBlock> block_3 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block_3->alloc();
+  block_3->fill(3);
+  CHECK(block_3->read_avail() == 3);
+
+  std::shared_ptr<QUICFrame> stream_frame_0_r = QUICFrameFactory::create_stream_frame(block_3, 0, 0);
+  std::shared_ptr<QUICFrame> stream_frame_4_r = QUICFrameFactory::create_stream_frame(block_3, 4, 0);
   sm.handle_frame(level, *stream_frame_0_r);
   sm.handle_frame(level, *stream_frame_4_r);
   CHECK(sm.stream_count() == 2);
   CHECK(sm.total_offset_sent() == 0);
 
+  Ptr<IOBufferBlock> block_1024 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block_1024->alloc();
+  block_1024->fill(1024);
+  CHECK(block_1024->read_avail() == 1024);
+
   // total_offset should be a integer in unit of octets
-  QUICFrameUPtr stream_frame_0 = QUICFrameFactory::create_stream_frame(data, 1024, 0, 0);
-  mock_app.send(data, 1024, 0);
+  QUICFrameUPtr stream_frame_0 = QUICFrameFactory::create_stream_frame(block_1024, 0, 0);
+  mock_app.send(reinterpret_cast<uint8_t *>(block_1024->buf()), 1024, 0);
   sm.add_total_offset_sent(1024);
   sleep(2);
   CHECK(sm.total_offset_sent() == 1024);
 
   // total_offset should be a integer in unit of octets
-  QUICFrameUPtr stream_frame_4 = QUICFrameFactory::create_stream_frame(data, 1024, 4, 0);
-  mock_app.send(data, 1024, 4);
+  QUICFrameUPtr stream_frame_4 = QUICFrameFactory::create_stream_frame(block_1024, 4, 0);
+  mock_app.send(reinterpret_cast<uint8_t *>(block_1024->buf()), 1024, 4);
   sm.add_total_offset_sent(1024);
   sleep(2);
   CHECK(sm.total_offset_sent() == 2048);

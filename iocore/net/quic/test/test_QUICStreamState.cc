@@ -32,8 +32,13 @@
 // Unidirectional (sending)
 TEST_CASE("QUICSendStreamState", "[quic]")
 {
-  auto stream_frame          = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("foo"), 4, 1, 0);
-  auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("bar"), 4, 1, 0, true);
+  Ptr<IOBufferBlock> block_4 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block_4->alloc();
+  block_4->fill(4);
+  CHECK(block_4->read_avail() == 4);
+
+  auto stream_frame          = QUICFrameFactory::create_stream_frame(block_4, 1, 0);
+  auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(block_4, 1, 0, true);
   auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, static_cast<QUICAppErrorCode>(0x01), 0);
   auto stream_blocked_frame  = QUICFrameFactory::create_stream_blocked_frame(0, 0);
   MockQUICTransferProgressProvider pp;
@@ -172,9 +177,14 @@ TEST_CASE("QUICSendStreamState", "[quic]")
 // Unidirectional (receiving)
 TEST_CASE("QUICReceiveStreamState", "[quic]")
 {
-  auto stream_frame          = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("foo"), 4, 1, 0);
-  auto stream_frame_delayed  = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("bar"), 4, 1, 1);
-  auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(reinterpret_cast<const uint8_t *>("baz"), 4, 1, 2, true);
+  Ptr<IOBufferBlock> block_4 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block_4->alloc();
+  block_4->fill(4);
+  CHECK(block_4->read_avail() == 4);
+
+  auto stream_frame          = QUICFrameFactory::create_stream_frame(block_4, 1, 0);
+  auto stream_frame_delayed  = QUICFrameFactory::create_stream_frame(block_4, 1, 1);
+  auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(block_4, 1, 2, true);
   auto rst_stream_frame      = QUICFrameFactory::create_rst_stream_frame(0, static_cast<QUICAppErrorCode>(0x01), 0);
   auto stream_blocked_frame  = QUICFrameFactory::create_stream_blocked_frame(0, 0);
 
