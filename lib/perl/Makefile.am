@@ -32,7 +32,7 @@ Makefile-pl: Makefile.PL $(top_builddir)/config.status
 	$(PERL) Makefile.PL INSTALLDIRS=$(INSTALLDIRS) INSTALL_BASE=$(prefix) PREFIX=
 
 clean-local:
-	-rm Makefile-pl
+	-rm -f Makefile-pl
 
 distclean-local:
 	-rm -rf Makefile-pl MYMETA.* blip
