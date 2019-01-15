@@ -28,6 +28,7 @@ extern "C" {
 #include <cjose/cjose.h>
 #include "../jwt.h"
 #include "../normalize.h"
+#include "../parse.h"
 }
 
 bool
@@ -92,6 +93,28 @@ remove_dot_helper(const char *path, const char *expected_path)
   }
 }
 
+bool
+jws_parsing_helper(const char *uri, const char *paramName, const char *expected_strip)
+{
+  bool resp;
+  size_t uri_ct   = strlen(uri);
+  size_t strip_ct = 0;
+  char uri_strip[uri_ct + 1];
+  memset(uri_strip, 0, sizeof uri_strip);
+  cjose_jws_t *jws = get_jws_from_uri(uri, uri_ct, paramName, uri_strip, uri_ct, &strip_ct);
+  if (jws) {
+    resp = true;
+    if (strcmp(uri_strip, expected_strip) != 0) {
+      cjose_jws_release(jws);
+      resp = false;
+    }
+  } else {
+    resp = false;
+  }
+  cjose_jws_release(jws);
+  return resp;
+}
+
 TEST_CASE("1", "[JWSParsingTest]")
 {
   INFO("TEST 1, Test JWT Parsing From Token Strings");
@@ -134,6 +157,157 @@ TEST_CASE("1", "[JWSParsingTest]")
                                 "Manager\",\"cdniuc\":\"uri-regex:http://foobar.local/testDir/*\"}"));
   }
   fprintf(stderr, "\n");
+}
+
+TEST_CASE("2", "[JWSFromURLTest]")
+{
+  INFO("TEST 2, Test JWT Parsing and Stripping From URLs");
+
+  SECTION("Token at end of URI")
+  {
+    REQUIRE(jws_parsing_helper(
+      "www.foo.com/hellothere/"
+      "URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+      "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+      "URISigningPackage", "www.foo.com/hellothere"));
+  }
+
+  SECTION("No Token in URL")
+  {
+    REQUIRE(!jws_parsing_helper(
+      "www.foo.com/hellothere/"
+      "URISigningPackag=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+      "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+      "URISigningPackage", NULL));
+  }
+
+  SECTION("Token in middle of the URL")
+  {
+    REQUIRE(jws_parsing_helper("www.foo.com/hellothere/"
+                               "URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                               "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+                               "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c/Something/Else",
+                               "URISigningPackage", "www.foo.com/hellothere/Something/Else"));
+  }
+
+  SECTION("Token at the start of the URL")
+  {
+    REQUIRE(jws_parsing_helper(":URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                               "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+                               "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c/www.foo.com/hellothere/Something/Else",
+                               "URISigningPackage", "/www.foo.com/hellothere/Something/Else"));
+  }
+
+  SECTION("Pass empty path parameter at end")
+  {
+    REQUIRE(!jws_parsing_helper("www.foobar.com/hellothere/URISigningPackage=", "URISigningPackage", NULL));
+  }
+
+  SECTION("Pass empty path parameter in the middle of URL")
+  {
+    REQUIRE(!jws_parsing_helper("www.foobar.com/hellothere/URISigningPackage=/Something/Else", "URISigningPackage", NULL));
+  }
+
+  SECTION("Partial package name in previous path parameter")
+  {
+    REQUIRE(jws_parsing_helper("www.foobar.com/URISig/"
+                               "URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                               "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+                               "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c/Something/Else",
+                               "URISigningPackage", "www.foobar.com/URISig/Something/Else"));
+  }
+
+  SECTION("Package comes directly after two reserved characters")
+  {
+    REQUIRE(jws_parsing_helper("www.foobar.com/"
+                               ":URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                               "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+                               "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c/Something/Else",
+                               "URISigningPackage", "www.foobar.com//Something/Else"));
+  }
+
+  SECTION("Package comes directly after string of reserved characters")
+  {
+    REQUIRE(jws_parsing_helper("www.foobar.com/?!/"
+                               ":URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                               "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+                               "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c/Something/Else",
+                               "URISigningPackage", "www.foobar.com/?!//Something/Else"));
+  }
+
+  SECTION("Invalid token passed before a valid token")
+  {
+    REQUIRE(!jws_parsing_helper("www.foobar.com/URISigningPackage=/"
+                                "URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                                "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+                                "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c/Something/Else",
+                                "URISigningPackage", NULL));
+  }
+
+  SECTION("Empty string as URL") { REQUIRE(!jws_parsing_helper("", "URISigningPackage", NULL)); }
+
+  SECTION("Empty package name to parser")
+  {
+    REQUIRE(!jws_parsing_helper(
+      "www.foobar.com/"
+      "URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+      "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+      "", NULL));
+  }
+
+  SECTION("Custom package name with a reserved character - at the end of the URI")
+  {
+    REQUIRE(jws_parsing_helper(
+      "www.foobar.com/CustomPackage/"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+      "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+      "CustomPackage/", "www.foobar.com"));
+  }
+
+  SECTION("Custom package name with a reserved character - in the middle of the URI")
+  {
+    REQUIRE(jws_parsing_helper(
+      "www.foobar.com/CustomPackage/"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+      "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c/Something/Else",
+      "CustomPackage/", "www.foobar.com/Something/Else"));
+  }
+
+  SECTION("URI signing package passed as the only a query parameter")
+  {
+    REQUIRE(jws_parsing_helper(
+      "www.foobar.com/Something/"
+      "Here?URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+      "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+      "URISigningPackage", "www.foobar.com/Something/Here"));
+  }
+
+  SECTION("URI signing package passed as first of many query parameters")
+  {
+    REQUIRE(jws_parsing_helper("www.foobar.com/Something/"
+                               "Here?URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                               "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+                               "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c&query3=foobar&query1=foo&query2=bar",
+                               "URISigningPackage", "www.foobar.com/Something/Here?query3=foobar&query1=foo&query2=bar"));
+  }
+
+  SECTION("URI signing package passed as one of many query parameters - passed in middle")
+  {
+    REQUIRE(jws_parsing_helper("www.foobar.com/Something/"
+                               "Here?query1=foo&query2=bar&URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                               "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+                               "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c&query3=foobar",
+                               "URISigningPackage", "www.foobar.com/Something/Here?query1=foo&query2=bar&query3=foobar"));
+  }
+
+  SECTION("URI signing package passed as last of many query parameters")
+  {
+    REQUIRE(jws_parsing_helper("www.foobar.com/Something/"
+                               "Here?query1=foo&query2=bar&URISigningPackage=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                               "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+                               "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                               "URISigningPackage", "www.foobar.com/Something/Here?query1=foo&query2=bar"));
+  }
 }
 
 TEST_CASE("3", "[RemoveDotSegmentsTest]")
