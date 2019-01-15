@@ -184,7 +184,8 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
     }
   }
 
-  thread = t;
+  // this->thread is already assigned by QUICPacketHandlerIn::_recv_packet
+  ink_assert(this->thread == this_ethread());
 
   // Send this NetVC to NetHandler and start to polling read & write event.
   if (h->startIO(this) < 0) {
@@ -567,9 +568,8 @@ QUICNetVConnection::state_pre_handshake(int event, Event *data)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
-  if (!this->thread) {
-    this->thread = this_ethread();
-  }
+  // this->thread should be assigned on any direction
+  ink_assert(this->thread == this_ethread());
 
   if (!this->nh) {
     this->nh = get_NetHandler(this_ethread());

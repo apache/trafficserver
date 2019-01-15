@@ -321,6 +321,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
+    vc->thread      = eth;
     vc->mutex       = new_ProxyMutex();
     vc->action_     = *this->action_;
     vc->set_is_transparent(this->opt.f_inbound_transparent);
@@ -338,6 +339,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   // Push the packet into QUICPollCont
   get_QUICPollCont(eth)->inQueue.push(qe);
   get_NetHandler(eth)->signalActivity();
+
   return;
 }
 
