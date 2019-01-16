@@ -388,8 +388,8 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
   if (params->initial_max_stream_data_bidi_remote_in() != 0) {
     tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, params->initial_max_stream_data_bidi_remote_in());
   }
-  if (params->initial_max_stream_data_uni_out() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, params->initial_max_stream_data_uni_out());
+  if (params->initial_max_stream_data_uni_in() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, params->initial_max_stream_data_uni_in());
   }
   if (pref_addr != nullptr) {
     uint8_t pref_addr_buf[QUICPreferredAddress::MAX_LEN];
