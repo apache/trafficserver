@@ -177,6 +177,7 @@ void SSLNetVCDetach(SSL *ssl);
 SSLNetVConnection *SSLNetVCAccess(const SSL *ssl);
 
 void setClientCertLevel(SSL *ssl, uint8_t certLevel);
+void setTLSValidProtocols(SSL *ssl, unsigned long proto_mask, unsigned long max_mask);
 
 namespace ssl
 {
