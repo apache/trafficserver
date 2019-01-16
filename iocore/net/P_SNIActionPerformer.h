@@ -92,6 +92,32 @@ public:
   }
 };
 
+class TLSValidProtocols : public ActionItem
+{
+  bool unset;
+  unsigned long protocol_mask;
+
+public:
+#ifdef SSL_OP_NO_TLSv1_3
+  static const unsigned long max_mask = SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3;
+#else
+  static const unsigned long max_mask = SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2;
+#endif
+  TLSValidProtocols() : unset(true), protocol_mask(max_mask) {}
+  TLSValidProtocols(unsigned long protocols) : unset(false), protocol_mask(protocols) {}
+  int
+  SNIAction(Continuation *cont) override
+  {
+    if (!unset) {
+      auto ssl_vc = dynamic_cast<SSLNetVConnection *>(cont);
+      Debug("ssl_sni", "TLSValidProtocol param 0%x", static_cast<unsigned int>(this->protocol_mask));
+      ssl_vc->protocol_mask_set = true;
+      ssl_vc->protocol_mask     = protocol_mask;
+    }
+    return SSL_TLSEXT_ERR_OK;
+  }
+};
+
 class SNI_IpAllow : public ActionItem
 {
   IpMap ip_map;
