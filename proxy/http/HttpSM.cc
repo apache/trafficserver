@@ -49,6 +49,7 @@
 #include <openssl/ssl.h>
 #include <algorithm>
 #include <atomic>
+#include <logging/Log.h>
 
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX 6  // 8K
@@ -5217,9 +5218,12 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
   if (info->app.http_data.last_failure == 0) {
     char *url_str = t_state.hdr_info.client_request.url_string_get(&t_state.arena, nullptr);
     Log::error("%s", lbw()
-                       .print("CONNECT: could not connect to {} for '{}' (setting last failure time) connect_result={}\0",
-                              t_state.current.server->dst_addr, url_str ? url_str : "<none>",
-                              ts::bwf::Errno(t_state.current.server->connect_result))
+                       .clip(1)
+                       .print("CONNECT Error: {} connecting to {} for '{}' (setting last failure time)",
+                              ts::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr,
+                              ts::bwf::FirstOf(url_str, "<none>"))
+                       .extend(1)
+                       .write('\0')
                        .data());
 
     if (url_str) {
