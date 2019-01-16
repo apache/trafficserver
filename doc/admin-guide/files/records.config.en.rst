@@ -1759,7 +1759,7 @@ Proxy User Variables
    ``10.0.2.123``          A single IP Address.
    ``10.0.3.1-10.0.3.254`` A range of IP address.
    ``10.0.4.0/24``         A range of IP address specified by CIDR notation.
-   ======================= ============================================================
+   ======================= ===========================================================
 
    .. important::
 
@@ -1768,7 +1768,7 @@ Proxy User Variables
        information.
        See :ts:cv:`proxy.config.http.server_ports` for information on how to enable Proxy Protocol on a port.
 
-   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header.
+   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header`.
 
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae INT 1
    :reloadable:
@@ -3507,9 +3507,9 @@ Client-Related Configuration
 :code:`DISABLED`
    Server Certificate will not be verified
 :code:`PERMISSIVE`
-   Certificate will be verified and the connection will not be established if verification fails.
-:code:`ENFORCED`
    The provided certificate will be verified and the connection will be established irrespective of the verification result. If verification fails the name of the server will be logged.
+:code:`ENFORCED`
+   Certificate will be verified and the connection will not be established if verification fails.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.properties STRING ALL
    :reloadable:
