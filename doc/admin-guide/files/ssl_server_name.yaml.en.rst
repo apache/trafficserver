@@ -70,6 +70,15 @@ disable_h2              :code:`true` or :code:`false`.
                         for proxy ports on which HTTP/2 is not enabled.
 
 tunnel_route            Destination as an FQDN and port, separated by a colon ``:``.
+
+valid_tls_versions_in     This specifies the list of TLS protocols that will be offered to user agents during
+                          the TLS negotiaton.  This replaces the global settings in :ts:cv:`proxy.config.ssl.TSLv1`,
+                          :ts:cv:`proxy.config.ssl.TLSv1_1`, :ts:cv:`proxy.config.ssl.TLSv1_2`,
+                          and :ts:cv:`proxy.config.ssl.TLSv1_3`. The potential values are TLSv1, TLSv1_1, TLSv1_2, and
+                          TLSv1_3.  You must list all protocols that |TS| should offer to the client when using
+                          this key.  This key is only valid for openssl 1.1.0 and later. Older versions of openssl do not
+                          provide a hook early enough to update the SSL object.  It is a syntax error for |TS| built
+                          against earlier versions.
 ======================= ==============================================================================
 
 Client verification, via ``verify_client``, correponds to setting

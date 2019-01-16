@@ -77,6 +77,9 @@ SNIConfigParams::loadSNIConfig()
     } else {
       sni_action_map.put(ats_strdup(servername), aiVec);
     }
+    if (!item.protocol_unset) {
+      aiVec->push_back(new TLSValidProtocols(item.protocol_mask));
+    }
 
     if (item.tunnel_destination.length()) {
       TunnelMap.emplace(item.fqdn.data(), item.tunnel_destination);

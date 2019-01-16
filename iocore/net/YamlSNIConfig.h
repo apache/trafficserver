@@ -26,13 +26,14 @@
 
 #include "tsconfig/Errata.h"
 
-constexpr char TS_fqdn[]                 = "fqdn";
-constexpr char TS_disable_H2[]           = "disable_h2";
-constexpr char TS_verify_client[]        = "verify_client";
-constexpr char TS_tunnel_route[]         = "tunnel_route";
-constexpr char TS_verify_origin_server[] = "verify_origin_server";
-constexpr char TS_client_cert[]          = "client_cert";
-constexpr char TS_ip_allow[]             = "ip_allow";
+constexpr char TS_fqdn[]                  = "fqdn";
+constexpr char TS_disable_H2[]            = "disable_h2";
+constexpr char TS_verify_client[]         = "verify_client";
+constexpr char TS_tunnel_route[]          = "tunnel_route";
+constexpr char TS_verify_origin_server[]  = "verify_origin_server";
+constexpr char TS_client_cert[]           = "client_cert";
+constexpr char TS_ip_allow[]              = "ip_allow";
+constexpr char TS_valid_tls_versions_in[] = "valid_tls_versions_in";
 
 const int start = 0;
 struct YamlSNIConfig {
@@ -45,6 +46,7 @@ struct YamlSNIConfig {
 
   };
   enum class Level { NONE = 0, MODERATE, STRICT };
+  enum class TLSProtocol : uint8_t { TLSv1 = 0, TLSv1_1, TLSv1_2, TLSv1_3, TLS_MAX = TLSv1_3 };
 
   YamlSNIConfig() {}
 
@@ -56,6 +58,10 @@ struct YamlSNIConfig {
     uint8_t verify_origin_server = 0;
     std::string client_cert;
     std::string ip_allow;
+    bool protocol_unset = true;
+    unsigned long protocol_mask;
+
+    void EnableProtocol(YamlSNIConfig::TLSProtocol proto);
   };
 
   ts::Errata loader(const char *cfgFilename);
