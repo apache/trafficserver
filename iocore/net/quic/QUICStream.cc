@@ -88,6 +88,12 @@ QUICStream::connection_info() const
   return this->_connection_info;
 }
 
+bool
+QUICStream::is_bidirectional() const
+{
+  return this->_id < 0x02;
+}
+
 QUICOffset
 QUICStream::final_offset() const
 {

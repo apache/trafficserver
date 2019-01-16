@@ -59,6 +59,12 @@ QUICStreamIO::stream_id() const
   return this->_stream->id();
 }
 
+bool
+QUICStreamIO::is_bidirectional() const
+{
+  return this->_stream->is_bidirectional();
+}
+
 int64_t
 QUICStreamIO::read(uint8_t *buf, int64_t len)
 {

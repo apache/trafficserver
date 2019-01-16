@@ -41,6 +41,7 @@ public:
   virtual ~QUICStreamIO();
 
   uint32_t stream_id() const;
+  bool is_bidirectional() const;
 
   int64_t read(uint8_t *buf, int64_t len);
   int64_t peek(uint8_t *buf, int64_t len);

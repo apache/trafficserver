@@ -69,6 +69,10 @@ QUICSimpleApp::main_event_handler(int event, Event *data)
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
+    if (!stream_io->is_bidirectional()) {
+      // FIXME Ignore unidirectional streams for now
+      break;
+    }
     if (stream_io->peek(&dummy, 1)) {
       if (txn == nullptr) {
         txn = new Http3ClientTransaction(this->_client_session, stream_io);

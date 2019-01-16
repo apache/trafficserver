@@ -59,6 +59,7 @@ public:
 
   QUICStreamId id() const;
   const QUICConnectionInfoProvider *connection_info() const;
+  bool is_bidirectional() const;
   QUICOffset final_offset() const;
 
   // Implement VConnection Interface.
