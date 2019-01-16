@@ -1538,7 +1538,7 @@ UnixNetVConnection::set_tcp_congestion_control(int side)
   }
 
   if (!ccp.empty()) {
-    int rv = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<const void *>(ccp.data()), ccp.length());
+    int rv = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<const void *>(ccp.data()), ccp.size());
 
     if (rv < 0) {
       Error("Unable to set TCP congestion control on socket %d to \"%s\", errno=%d (%s)", con.fd, ccp.data(), errno,
