@@ -64,11 +64,11 @@ configure_net()
 
   REC_ReadConfigStringAlloc(ccp, "proxy.config.net.tcp_congestion_control_in");
   if (ccp && *ccp != '\0') {
-    net_ccp_in = {ccp};
+    net_ccp_in = ccp;
   }
   REC_ReadConfigStringAlloc(ccp, "proxy.config.net.tcp_congestion_control_out");
   if (ccp && *ccp != '\0') {
-    net_ccp_out = {ccp};
+    net_ccp_out = ccp;
   }
 }
 
