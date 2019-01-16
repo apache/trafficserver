@@ -41,7 +41,7 @@
 #include "HttpProxyServerMain.h"
 #if TS_USE_QUIC == 1
 #include "P_QUICNextProtocolAccept.h"
-#include "hq/HQSessionAccept.h"
+#include "http3/Http3SessionAccept.h"
 #endif
 
 #include <vector>
@@ -260,7 +260,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
 
     // HTTP/QUIC
     if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC)) {
-      quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, new HQSessionAccept(accept_opt));
+      quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, new Http3SessionAccept(accept_opt));
     }
 
     quic->proxyPort  = &port;

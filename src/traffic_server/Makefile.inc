@@ -27,7 +27,7 @@ traffic_server_traffic_server_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/http2 \
-	-I$(abs_top_srcdir)/proxy/hq \
+	-I$(abs_top_srcdir)/proxy/http3 \
 	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/proxy/http/remap \
 	-I$(abs_top_srcdir)/proxy/hdrs \
@@ -98,6 +98,6 @@ endif
 
 if ENABLE_QUIC
 traffic_server_traffic_server_LDADD += \
-  $(top_builddir)/proxy/hq/libhq.a \
+  $(top_builddir)/proxy/http3/libhttp3.a \
   $(top_builddir)/iocore/net/quic/libquic.a
 endif

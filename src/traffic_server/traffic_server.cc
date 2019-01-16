@@ -98,7 +98,7 @@ extern "C" int plock(int);
 #include "P_SSLSNI.h"
 
 #if TS_USE_QUIC == 1
-#include "HQ.h"
+#include "Http3.h"
 #endif
 
 #include "tscore/ink_cap.h"
@@ -1892,7 +1892,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     Http2::init();
 #if TS_USE_QUIC == 1
     // Initialize HTTP/QUIC
-    HQ::init();
+    Http3::init();
 #endif
 
     if (!HttpProxyPort::loadValue(http_accept_port_descriptor)) {

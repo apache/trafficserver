@@ -582,7 +582,7 @@ public:
   void
   negotiated_application_name(const uint8_t **name, unsigned int *len) const override
   {
-    *name = reinterpret_cast<const uint8_t *>("hq");
+    *name = reinterpret_cast<const uint8_t *>("h3");
     *len  = 2;
   }
 
