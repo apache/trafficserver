@@ -4096,10 +4096,14 @@ HttpSM::do_hostdb_lookup()
 
     // If there is not a current server, we must be looking up the origin
     //  server at the beginning of the transaction
-    int server_port = t_state.current.server ?
-                        t_state.current.server->dst_addr.host_order_port() :
-                        t_state.server_info.dst_addr.isValid() ? t_state.server_info.dst_addr.host_order_port() :
-                                                                 t_state.hdr_info.client_request.port_get();
+    int server_port = 0;
+    if (t_state.current.server && t_state.current.server->dst_addr.isValid()) {
+      server_port = t_state.current.server->dst_addr.host_order_port();
+    } else if (t_state.server_info.dst_addr.isValid()) {
+      server_port = t_state.server_info.dst_addr.host_order_port();
+    } else {
+      server_port = t_state.hdr_info.client_request.port_get();
+    }
 
     if (t_state.api_txn_dns_timeout_value != -1) {
       SMDebug("http_timeout", "beginning DNS lookup. allowing %d mseconds for DNS lookup", t_state.api_txn_dns_timeout_value);
