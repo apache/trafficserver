@@ -72,6 +72,7 @@
 #define TS_USE_TLS_ALPN @use_tls_alpn@
 #define TS_USE_TLS_ASYNC @use_tls_async@
 #define TS_USE_CERT_CB @use_cert_cb@
+#define TS_USE_HELLO_CB @use_hello_cb@
 #define TS_USE_SET_RBIO @use_set_rbio@
 #define TS_USE_GET_DH_2048_256 @use_dh_get_2048_256@
 #define TS_USE_TLS_ECKEY @use_tls_eckey@

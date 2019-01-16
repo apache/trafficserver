@@ -71,6 +71,9 @@ SNIConfigParams::loadSNIConfig()
     if (item.verify_client_level != 255) {
       ai->actions.push_back(std::make_unique<VerifyClient>(item.verify_client_level));
     }
+    if (!item.protocol_unset) {
+      ai->actions.push_back(std::make_unique<TLSValidProtocols>(item.protocol_mask));
+    }
     if (item.tunnel_destination.length() > 0) {
       ai->actions.push_back(std::make_unique<TunnelDestination>(item.tunnel_destination, item.tunnel_decrypt));
     }

@@ -38,6 +38,7 @@ TSDECL(verify_origin_server);
 TSDECL(client_cert);
 TSDECL(client_key);
 TSDECL(ip_allow);
+TSDECL(valid_tls_versions_in);
 #undef TSDECL
 
 const int start = 0;
@@ -54,6 +55,7 @@ struct YamlSNIConfig {
   enum class Level { NONE = 0, MODERATE, STRICT };
   enum class Policy : uint8_t { DISABLED = 0, PERMISSIVE, ENFORCED, UNSET };
   enum class Property : uint8_t { NONE = 0, SIGNATURE_MASK = 0x1, NAME_MASK = 0x2, ALL_MASK = 0x3, UNSET };
+  enum class TLSProtocol : uint8_t { TLSv1 = 0, TLSv1_1, TLSv1_2, TLSv1_3, TLS_MAX = TLSv1_3 };
 
   YamlSNIConfig() {}
 
@@ -68,6 +70,10 @@ struct YamlSNIConfig {
     std::string client_cert;
     std::string client_key;
     std::string ip_allow;
+    bool protocol_unset = true;
+    unsigned long protocol_mask;
+
+    void EnableProtocol(YamlSNIConfig::TLSProtocol proto);
   };
 
   ts::Errata loader(const char *cfgFilename);

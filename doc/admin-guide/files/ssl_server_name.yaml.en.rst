@@ -71,8 +71,17 @@ verify_client             One of the values :code:`NONE`, :code:`MODERATE`, or :
                           fail the TLS handshake if new certificate is presented.  If ``STRICT`` is specified
                           the client must resent a certificate during the TLS handshake.
 
-
                           By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
+
+valid_tls_versions_in     This specifies the list of TLS protocols that will be offered to user agents during 
+                          the TLS negotiaton.  This replaces the global settings in :ts:cv:`proxy.config.ssl.TSLv1`, 
+                          :ts:cv:`proxy.config.ssl.TLSv1_1`, :ts:cv:`proxy.config.ssl.TLSv1_2`,
+                          and :ts:cv:`proxy.config.ssl.TLSv1_3`. The potential values are TLSv1, TLSv1_1, TLSv1_2, and 
+                          TLSv1_3.  You must list all protocols that |TS| should offer to the client when using 
+                          this key.  This key is only valid for openssl 1.1.0 and later. Older versions of openssl do not
+                          provide a hook early enough to update the SSL object.  It is a syntax error for |TS| built 
+                          against earlier versions.   
+
 
 client_cert               The file containing the client certificate to use for the outbound connection.
 
