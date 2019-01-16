@@ -533,6 +533,13 @@ LogObject::va_log(LogAccess *lad, const char *fmt, va_list ap)
 int
 LogObject::log(LogAccess *lad, const char *text_entry)
 {
+  // Clang doesn't like initializing a view with nullptr, have to check.
+  return this->log(lad, std::string_view{text_entry ? text_entry : ""});
+}
+
+int
+LogObject::log(LogAccess *lad, std::string_view text_entry)
+{
   LogBuffer *buffer;
   size_t offset       = 0; // prevent warning
   size_t bytes_needed = 0, bytes_used = 0;
@@ -546,7 +553,7 @@ LogObject::log(LogAccess *lad, const char *text_entry)
   }
   // this verification must be done here in order to avoid 'dead' LogBuffers
   // with none zero 'in usage' counters (see _checkout_write for more details)
-  if (!lad && !text_entry) {
+  if (!lad && text_entry.empty()) {
     Note("Call to LogAccess without LAD or text entry; skipping");
     return Log::FAIL;
   }
@@ -596,8 +603,8 @@ LogObject::log(LogAccess *lad, const char *text_entry)
     bytes_needed = m_format->field_count() * INK_MIN_ALIGN;
   } else if (lad) {
     bytes_needed = m_format->m_field_list.marshal_len(lad);
-  } else if (text_entry) {
-    bytes_needed = LogAccess::strlen(text_entry);
+  } else if (!text_entry.empty()) {
+    bytes_needed = INK_ALIGN_DEFAULT(text_entry.size() + 1); // must include null terminator.
   }
 
   if (bytes_needed == 0) {
@@ -630,8 +637,10 @@ LogObject::log(LogAccess *lad, const char *text_entry)
   } else if (lad) {
     bytes_used = m_format->m_field_list.marshal(lad, &(*buffer)[offset]);
     ink_assert(bytes_needed >= bytes_used);
-  } else if (text_entry) {
-    ink_strlcpy(&(*buffer)[offset], text_entry, bytes_needed);
+  } else if (!text_entry.empty()) {
+    char *dst = &(*buffer)[offset];
+    memcpy(dst, text_entry.data(), text_entry.size());
+    memset(dst + text_entry.size(), 0, bytes_needed - text_entry.size());
   }
 
   buffer->checkin_write(offset);
