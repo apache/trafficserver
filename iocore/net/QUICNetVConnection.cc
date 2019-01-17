@@ -796,6 +796,8 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
       ld->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
     }
 
+    // FIXME I'm not sure whether we can block here, but it's needed to not crash.
+    SCOPED_MUTEX_LOCK(lock, this->nh->mutex, this_ethread());
     if (this->nh) {
       this->nh->free_netvc(this);
     } else {
