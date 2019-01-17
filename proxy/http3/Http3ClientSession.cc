@@ -111,7 +111,6 @@ Http3ClientSession::get_protocol_string() const
 void
 Http3ClientSession::release(ProxyClientTransaction *trans)
 {
-  ink_assert(false);
   return;
 }
 
