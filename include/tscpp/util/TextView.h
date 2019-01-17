@@ -535,13 +535,18 @@ intmax_t svtoi(TextView src, TextView *parsed = nullptr, int base = 0);
  * @param src The source text. Updated during parsing.
  * @return The converted numeric value.
  *
- * This is a specialized function useful only where conversion performance is critical. It is used
- * inside @c svtoi for the common cases of 8, 10, and 16, therefore normally this isn't much more
- * performant in those cases than just @c svtoi. Because of this only positive values are parsed.
- * If determining the radix from the text or signed value parsing is needed, used @c svtoi.
+ * This is a specialized function useful only where conversion performance is critical, or for some
+ * other reason the numeric text has already been parsed out. The performance gains comes from
+ * templating the divisor which enables the compiler to optimize the multiplication (e.g., for
+ * powers of 2 shifts is used). It is used inside @c svtoi and @c svtou for the common cases of 8,
+ * 10, and 16, therefore normally this isn't much more performant than @c svtoi. Because of this
+ * only positive values are parsed. If determining the radix from the text or signed value parsing
+ * is needed, used @c svtoi.
  *
- * @a src is updated in place to indicate what characters were parsed. Parsing stops on the first
- * invalid digit, so any leading non-digit characters (e.g. whitespace) must already be removed.
+ * @a src is updated in place by removing parsed characters. Parsing stops on the first invalid
+ * digit, so any leading non-digit characters (e.g. whitespace) must already be removed. Overflow
+ * is detected and the first digit that would overflow is not parsed, and the maximum value is
+ * returned.
  */
 template <uintmax_t N>
 uintmax_t
@@ -551,8 +556,11 @@ svto_radix(ts::TextView &src)
   uintmax_t zret{0};
   uintmax_t v;
   while (src.size() && (0 <= (v = ts::svtoi_convert[static_cast<unsigned char>(*src)])) && v < N) {
-    zret *= N;
-    zret += v;
+    auto n = zret * N + v;
+    if (n < zret) { // overflow / wrap
+      return std::numeric_limits<uintmax_t>::max();
+    }
+    zret = n;
     ++src;
   }
   return zret;

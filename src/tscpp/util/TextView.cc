@@ -131,7 +131,12 @@ ts::svtoi(TextView src, TextView *out, int base)
       break;
     default:
       while (src.size() && (0 <= (v = svtoi_convert[static_cast<unsigned char>(*src)])) && v < base) {
-        zret = zret * base + v;
+        auto n = zret * base + v;
+        if (n < zret) {
+          zret = std::numeric_limits<uintmax_t>::max();
+          break; // overflow, stop parsing.
+        }
+        zret = n;
         ++src;
       }
       break;
