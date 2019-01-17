@@ -608,7 +608,11 @@ QUICNetVConnection::state_handshake(int event, Event *data)
       if (result == QUICPacketCreationResult::NOT_READY) {
         error = nullptr;
       } else if (result == QUICPacketCreationResult::FAILED) {
-        error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::INTERNAL_ERROR);
+        // Don't make this error, and discard the packet.
+        // Because:
+        // - Attacker can terminate connections
+        // - It could be just an errora on lower layer
+        error = nullptr;
       } else if (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::UNSUPPORTED) {
         error = this->_state_handshake_process_packet(std::move(packet));
       }
@@ -1098,7 +1102,11 @@ QUICNetVConnection::_state_connection_established_receive_packet()
   do {
     QUICPacketUPtr p = this->_dequeue_recv_packet(result);
     if (result == QUICPacketCreationResult::FAILED) {
-      return QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::INTERNAL_ERROR));
+      // Don't make this error, and discard the packet.
+      // Because:
+      // - Attacker can terminate connections
+      // - It could be just an errora on lower layer
+      continue;
     } else if (result == QUICPacketCreationResult::NO_PACKET) {
       return error;
     } else if (result == QUICPacketCreationResult::NOT_READY) {
