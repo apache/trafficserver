@@ -341,7 +341,6 @@ HttpSM::init()
   t_state.force_dns = (ip_rule_in_CacheControlTable() || t_state.parent_params->parent_table->ipMatch ||
                        !(t_state.txn_conf->doc_in_cache_skip_dns) || !(t_state.txn_conf->cache_http));
 
-  http_parser.m_allow_non_http = t_state.http_config_param->parser_allow_non_http;
   http_parser_init(&http_parser);
 
   SET_HANDLER(&HttpSM::main_handler);

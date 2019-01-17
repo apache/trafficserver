@@ -834,15 +834,6 @@ http_hdr_reason_lookup(unsigned status)
   return nullptr;
 }
 
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-void
-_http_parser_init(HTTPParser *parser)
-{
-  parser->m_parsing_http = true;
-}
-
 //////////////////////////////////////////////////////
 // init     first time structure setup              //
 // clear    resets an already-initialized structure //
@@ -851,14 +842,14 @@ _http_parser_init(HTTPParser *parser)
 void
 http_parser_init(HTTPParser *parser)
 {
-  _http_parser_init(parser);
+  parser->m_parsing_http = true;
   mime_parser_init(&parser->m_mime_parser);
 }
 
 void
 http_parser_clear(HTTPParser *parser)
 {
-  _http_parser_init(parser);
+  parser->m_parsing_http = true;
   mime_parser_clear(&parser->m_mime_parser);
 }
 
@@ -1384,11 +1375,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
   eoh:
     *start = old_start;
-    if (parser->m_allow_non_http) {
-      return PARSE_RESULT_DONE;
-    } else {
-      return PARSE_RESULT_ERROR;
-    }
+    return PARSE_RESULT_ERROR; // This used to return PARSE_RESULT_DONE by default before
 
   done:
     if (!version_start || !version_end) {

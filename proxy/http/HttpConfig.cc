@@ -1152,7 +1152,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.send_100_continue_response, "proxy.config.http.send_100_continue_response");
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
-  HttpEstablishStaticConfigByte(c.parser_allow_non_http, "proxy.config.http.parse.allow_non_http");
 
   HttpEstablishStaticConfigByte(c.keepalive_internal_vc, "proxy.config.http.keepalive_internal_vc");
 
@@ -1439,7 +1438,6 @@ HttpConfig::reconfigure()
 
   params->send_100_continue_response = INT_TO_BOOL(m_master.send_100_continue_response);
   params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
-  params->parser_allow_non_http      = INT_TO_BOOL(m_master.parser_allow_non_http);
   params->keepalive_internal_vc      = INT_TO_BOOL(m_master.keepalive_internal_vc);
 
   params->oride.cache_open_write_fail_action = m_master.oride.cache_open_write_fail_action;
