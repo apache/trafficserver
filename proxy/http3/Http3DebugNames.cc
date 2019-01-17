@@ -21,12 +21,32 @@
  *  limitations under the License.
  */
 
-#pragma once
-
+#include "Http3DebugNames.h"
 #include "Http3Types.h"
 
-class Http3DebugNames
+const char *
+Http3DebugNames::frame_type(Http3FrameType type)
 {
-public:
-  static const char *frame_type(Http3FrameType type);
-};
+  switch (type) {
+  case Http3FrameType::DATA:
+    return "DATA";
+  case Http3FrameType::HEADERS:
+    return "HEADERS";
+  case Http3FrameType::PRIORITY:
+    return "PRIORITY";
+  case Http3FrameType::CANCEL_PUSH:
+    return "CANCEL_PUSH";
+  case Http3FrameType::SETTINGS:
+    return "SETTINGS";
+  case Http3FrameType::PUSH_PROMISE:
+    return "PUSH_PROMISE";
+  case Http3FrameType::GOAWAY:
+    return "GOAWAY";
+  case Http3FrameType::DUPLICATE_PUSH_ID:
+    return "DUPLICATE_PUSH_ID";
+  case Http3FrameType::UNKNOWN:
+  default:
+    return "UNKNOWN";
+  }
+}
+

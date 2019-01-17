@@ -38,6 +38,7 @@ libhttp3_a_SOURCES = \
   Http3SessionAccept.cc \
   Http3ClientSession.cc \
   Http3ClientTransaction.cc \
+  Http3DebugNames.cc \
   Http3Frame.cc \
   Http3FrameCollector.cc \
   Http3FrameDispatcher.cc \

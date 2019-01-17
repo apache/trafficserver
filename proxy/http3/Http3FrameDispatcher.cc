@@ -79,6 +79,7 @@ Http3FrameDispatcher::on_read_ready(QUICStreamIO &stream_io, uint64_t &nread)
 
     // Dispatch
     Http3FrameType type                       = frame->type();
+    Debug("http3", "[RX] | %s", Http3DebugNames::frame_type(type));
     std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
     for (auto h : handlers) {
       error = h->handle_frame(frame);
