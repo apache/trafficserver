@@ -281,7 +281,6 @@ Http3FrameFactory::fast_create(const uint8_t *buf, size_t len)
   } else {
     frame->reset(buf, len);
   }
-  fprintf(stderr, "%p\n", frame.get());
 
   return frame;
 }
