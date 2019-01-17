@@ -69,6 +69,9 @@ struct ProxyError {
   uint32_t code       = 0;
 };
 
+// A little ugly, but this global is tracked by traffic_server.
+extern bool ts_is_draining;
+
 class ProxyClientSession : public VConnection
 {
 public:
@@ -152,11 +155,7 @@ public:
   bool
   is_draining() const
   {
-    RecInt draining;
-    if (RecGetRecordInt("proxy.node.config.draining", &draining) != REC_ERR_OKAY) {
-      return false;
-    }
-    return draining != 0;
+    return ts_is_draining;
   }
 
   // Initiate an API hook invocation.
