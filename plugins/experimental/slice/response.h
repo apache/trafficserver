@@ -1,9 +1,4 @@
 /** @file
-
-  Contination.cc
-
-  @section license License
-
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -21,22 +16,13 @@
   limitations under the License.
  */
 
-#include "I_EventSystem.h"
-#include "I_Continuation.h"
+#pragma once
 
-int
-Continuation::dispatchEvent(int event, void *data)
-{
-  if (mutex) {
-    EThread *t = this_ethread();
-    MUTEX_TRY_LOCK(lock, this->mutex, t);
-    if (!lock.is_locked()) {
-      t->schedule_imm(this, event, data);
-      return 0;
-    } else {
-      return (this->*handler)(event, data);
-    }
-  } else {
-    return (this->*handler)(event, data);
-  }
-}
+#include "HttpHeader.h"
+#include <string>
+
+std::string const &string502();
+
+std::string const &bodyString416();
+
+void form416HeaderAndBody(HttpHeader &header, int64_t const contentlen, std::string const &bodystr);

@@ -69,6 +69,7 @@ function checkBuild() {
 REF_6_2=$(getRef "6.2.x")
 REF_7_1=$(getRef "7.1.x")
 REF_8_0=$(getRef "8.0.x")
+REF_8_1=$(getRef "8.1.x")
 REF_master=$(getRef "master")
 
 # Do the updates
@@ -79,4 +80,5 @@ ${GIT} update-server-info
 checkBuild "$REF_6_2" "6.2.x"
 checkBuild "$REF_7_1" "7.1.x"
 checkBuild "$REF_8_0" "8.0.x"
+checkBuild "$REF_8_1" "8.1.x"
 checkBuild "$REF_master" "master"

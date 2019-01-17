@@ -121,7 +121,8 @@ namespace bwf
       }
     }
   };
-} // namespace bwf
+
+}; // namespace bwf
 
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e);
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Date const &date);

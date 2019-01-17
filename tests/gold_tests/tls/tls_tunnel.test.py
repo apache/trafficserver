@@ -27,15 +27,16 @@ Test.SkipUnless(
 )
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=False)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True)
-server_bar = Test.MakeOriginServer("server_bar", ssl=False)
+server_bar = Test.MakeOriginServer("server_bar", ssl=True)
 
-request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""} 
 request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-server_foo.addResponse("sessionlog.json", request_foo_header, response_header)
-server_bar.addResponse("sessionlog.json", request_bar_header, response_header)
+response_foo_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "foo ok"}
+response_bar_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "bar ok"}
+server_foo.addResponse("sessionlog.json", request_foo_header, response_foo_header)
+server_bar.addResponse("sessionlog.json", request_bar_header, response_bar_header)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/signed-foo.pem")
@@ -73,17 +74,23 @@ ts.Disk.records_config.update({
 })
 
 # foo.com should not terminate.  Just tunnel to server_foo
-# bar.com should terminate.  Forward its tcp stream to server_bar
+# bar.com should terminate.  
+# empty SNI should tunnel to server_bar
 ts.Disk.ssl_server_name_yaml.AddLines([
   '- fqdn: foo.com',
-  "  tunnel_route: localhost:{0}".format(server_foo.Variables.Port) ])
+  "  tunnel_route: localhost:{0}".format(server_foo.Variables.Port),
+  "- fqdn: bob.*.com",
+  "  tunnel_route: localhost:{0}".format(server_foo.Variables.Port),
+  "- fqdn: ''", # No SNI sent
+  "  tunnel_route: localhost:{0}".format(server_bar.Variables.Port)
+])
 
-tr = Test.AddTestRun("Tunnel-test")
-tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
-tr.ReturnCode = 0
+tr = Test.AddTestRun("foo.com Tunnel-test")
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(server_bar)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.TimeOut = 5
 tr.TimeOut = 5
@@ -91,5 +98,95 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connec
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from foo")
 
+tr = Test.AddTestRun("bob.bar.com Tunnel-test")
+tr.Processes.Default.Command = "curl -v --resolve 'bob.bar.com:{0}:127.0.0.1' -k  https://bob.bar.com:{0}".format(ts.Variables.ssl_port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = ts
+tr.Processes.Default.TimeOut = 5
+tr.TimeOut = 5
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from foo")
+
+tr = Test.AddTestRun("bar.com no Tunnel-test")
+tr.Processes.Default.Command = "curl -v --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = ts
+tr.Processes.Default.TimeOut = 5
+tr.TimeOut = 5
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")
+
+tr = Test.AddTestRun("no SNI Tunnel-test")
+tr.Processes.Default.Command = "curl -v -k  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = ts
+tr.Processes.Default.TimeOut = 5
+tr.TimeOut = 5
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
+
+# Update ssl_server_name file and reload
+tr = Test.AddTestRun("Update config files")
+# Update the SNI config
+snipath = ts.Disk.ssl_server_name_yaml.AbsPath
+recordspath = ts.Disk.records_config.AbsPath
+tr.Disk.File(snipath, id = "ssl_server_name_yaml", typename="ats:config"),
+tr.Disk.ssl_server_name_yaml.AddLines([
+  '- fqdn: bar.com',
+  "  tunnel_route: localhost:{0}".format(server_bar.Variables.Port),
+])
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server_foo
+tr.StillRunningAfter = server_bar
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Command = 'echo Updated configs'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.TimeOut = 5
+tr.TimeOut = 5
+
+trreload = Test.AddTestRun("Reload config")
+trreload.StillRunningAfter = ts
+trreload.StillRunningAfter = server_foo
+trreload.StillRunningAfter = server_bar
+trreload.Processes.Default.Command = 'traffic_ctl config reload'
+# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
+trreload.Processes.Default.Env = ts.Env
+trreload.Processes.Default.ReturnCode = 0
+trreload.Processes.Default.TimeOut = 5
+trreload.TimeOut = 5
+
+# Should termimate on traffic_server (not tunnel)
+tr = Test.AddTestRun("foo.com no Tunnel-test")
+tr.StillRunningAfter = ts
+# Wait for the reload to complete
+tr.DelayStart = 5
+tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.TimeOut = 5
+tr.TimeOut = 5
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+
+# Should tunnel to server_bar
+tr = Test.AddTestRun("bar.com  Tunnel-test")
+tr.Processes.Default.Command = "curl -v --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = ts
+tr.Processes.Default.TimeOut = 5
+tr.TimeOut = 5
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Terminate on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
 

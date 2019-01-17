@@ -252,24 +252,6 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
       NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
 
-      if (vc->origin_trace) {
-        char origin_trace_ip[INET6_ADDRSTRLEN];
-
-        ats_ip_ntop(vc->origin_trace_addr, origin_trace_ip, sizeof(origin_trace_ip));
-
-        if (r > 0) {
-          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d\tbytes=%d\n%.*s", origin_trace_ip,
-                  vc->origin_trace_port, (int)r, (int)r, (char *)tiovec[0].iov_base);
-
-        } else if (r == 0) {
-          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d closed connection",
-                  origin_trace_ip, vc->origin_trace_port);
-        } else {
-          TraceIn((vc->origin_trace), vc->get_remote_addr(), vc->get_remote_port(), "CLIENT %s:%d error=%s", origin_trace_ip,
-                  vc->origin_trace_port, strerror(errno));
-        }
-      }
-
       total_read += rattempted;
     } while (rattempted && r == rattempted && total_read < toread);
 
@@ -895,10 +877,7 @@ UnixNetVConnection::UnixNetVConnection()
     submit_time(0),
     oob_ptr(nullptr),
     from_accept_thread(false),
-    accept_object(nullptr),
-    origin_trace(false),
-    origin_trace_addr(nullptr),
-    origin_trace_port(0)
+    accept_object(nullptr)
 {
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::startEvent);
 }
@@ -995,22 +974,6 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
 
     } else {
       r = socketManager.writev(con.fd, &tiovec[0], niov);
-    }
-
-    if (origin_trace) {
-      char origin_trace_ip[INET6_ADDRSTRLEN];
-      ats_ip_ntop(origin_trace_addr, origin_trace_ip, sizeof(origin_trace_ip));
-
-      if (r > 0) {
-        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d\tbytes=%d\n%.*s", origin_trace_ip,
-                 origin_trace_port, (int)r, (int)r, (char *)tiovec[0].iov_base);
-
-      } else if (r == 0) {
-        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d\tbytes=0", origin_trace_ip, origin_trace_port);
-      } else {
-        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d error=%s", origin_trace_ip, origin_trace_port,
-                 strerror(errno));
-      }
     }
 
     if (r > 0) {
@@ -1123,8 +1086,15 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   if (active_timeout_in) {
     UnixNetVConnection::set_active_timeout(active_timeout_in);
   }
-
-  action_.continuation->dispatchEvent(NET_EVENT_ACCEPT, this);
+  if (action_.continuation->mutex != nullptr) {
+    MUTEX_TRY_LOCK(lock3, action_.continuation->mutex, t);
+    if (!lock3.is_locked()) {
+      ink_release_assert(0);
+    }
+    action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
+  } else {
+    action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
+  }
   return EVENT_DONE;
 }
 
@@ -1480,25 +1450,48 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
 void
 UnixNetVConnection::add_to_keep_alive_queue()
 {
-  nh->add_to_keep_alive_queue(this);
+  MUTEX_TRY_LOCK(lock, nh->mutex, this_ethread());
+  if (lock.is_locked()) {
+    nh->add_to_keep_alive_queue(this);
+  } else {
+    ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on keep_alive_queue.");
+  }
 }
 
 void
 UnixNetVConnection::remove_from_keep_alive_queue()
 {
-  nh->remove_from_keep_alive_queue(this);
+  MUTEX_TRY_LOCK(lock, nh->mutex, this_ethread());
+  if (lock.is_locked()) {
+    nh->remove_from_keep_alive_queue(this);
+  } else {
+    ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on keep_alive_queue.");
+  }
 }
 
 bool
 UnixNetVConnection::add_to_active_queue()
 {
-  return nh->add_to_active_queue(this);
+  bool result = false;
+
+  MUTEX_TRY_LOCK(lock, nh->mutex, this_ethread());
+  if (lock.is_locked()) {
+    result = nh->add_to_active_queue(this);
+  } else {
+    ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on active_queue.");
+  }
+  return result;
 }
 
 void
 UnixNetVConnection::remove_from_active_queue()
 {
-  nh->remove_from_active_queue(this);
+  MUTEX_TRY_LOCK(lock, nh->mutex, this_ethread());
+  if (lock.is_locked()) {
+    nh->remove_from_active_queue(this);
+  } else {
+    ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on active_queue.");
+  }
 }
 
 int
@@ -1529,4 +1522,34 @@ UnixNetVConnection::protocol_contains(std::string_view tag) const
     }
   }
   return retval.data();
+}
+
+int
+UnixNetVConnection::set_tcp_congestion_control(int side)
+{
+#ifdef TCP_CONGESTION
+  std::string_view ccp;
+
+  if (side == CLIENT_SIDE) {
+    ccp = net_ccp_in;
+  } else {
+    ccp = net_ccp_out;
+  }
+
+  if (!ccp.empty()) {
+    int rv = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<const void *>(ccp.data()), ccp.size());
+
+    if (rv < 0) {
+      Error("Unable to set TCP congestion control on socket %d to \"%s\", errno=%d (%s)", con.fd, ccp.data(), errno,
+            strerror(errno));
+    } else {
+      Debug("socket", "Setting TCP congestion control on socket [%d] to \"%s\" -> %d", con.fd, ccp.data(), rv);
+    }
+    return 0;
+  }
+  return -1;
+#else
+  Debug("socket", "Setting TCP congestion control is not supported on this platform.");
+  return -1;
+#endif
 }

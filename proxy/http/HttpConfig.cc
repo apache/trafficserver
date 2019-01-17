@@ -961,6 +961,7 @@ load_negative_caching_var(RecRecord const *r, void *cookie)
 void
 HttpConfig::startup()
 {
+  extern void SSLConfigInit(IpMap * map);
   http_rsb = RecAllocateRawStatBlock((int)http_stat_count);
   register_stat_callbacks();
 
@@ -978,6 +979,8 @@ HttpConfig::startup()
 
   RecHttpLoadIp("proxy.local.incoming_ip_to_bind", c.inbound_ip4, c.inbound_ip6);
   RecHttpLoadIp("proxy.local.outgoing_ip_to_bind", c.outbound_ip4, c.outbound_ip6);
+  RecHttpLoadIpMap("proxy.config.http.proxy_protocol_whitelist", c.config_proxy_protocol_ipmap);
+  SSLConfigInit(&c.config_proxy_protocol_ipmap);
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
   HttpEstablishStaticConfigLongLong(c.max_websocket_connections, "proxy.config.http.websocket.max_number_of_connections");
@@ -1221,7 +1224,11 @@ HttpConfig::startup()
 
   OutboundConnTrack::config_init(&c.outbound_conntrack, &c.oride.outbound_conntrack);
 
-  http_config_cont->dispatchEvent(EVENT_NONE, nullptr);
+  MUTEX_TRY_LOCK(lock, http_config_cont->mutex, this_ethread());
+  if (!lock.is_locked()) {
+    ink_release_assert(0);
+  }
+  http_config_cont->handleEvent(EVENT_NONE, nullptr);
 
   return;
 }

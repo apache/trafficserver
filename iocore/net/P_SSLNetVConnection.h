@@ -178,12 +178,6 @@ public:
     return transparentPassThrough;
   }
 
-  bool
-  GetSNIMapping()
-  {
-    return SNIMapping;
-  }
-
   void
   setTransparentPassThrough(bool val)
   {
@@ -292,19 +286,6 @@ public:
     }
     return retval;
   }
-  bool
-  getSSLTrace() const
-  {
-    return sslTrace || super::origin_trace;
-  }
-
-  void
-  setSSLTrace(bool state)
-  {
-    sslTrace = state;
-  }
-
-  bool computeSSLTrace();
 
   const char *
   getSSLProtocol(void) const
@@ -316,6 +297,49 @@ public:
   getSSLCipherSuite(void) const
   {
     return ssl ? SSL_get_cipher_name(ssl) : nullptr;
+  }
+
+  bool
+  has_tunnel_destination() const
+  {
+    return tunnel_host != nullptr;
+  }
+
+  const char *
+  get_tunnel_host() const
+  {
+    return tunnel_host;
+  }
+
+  ushort
+  get_tunnel_port() const
+  {
+    return tunnel_port;
+  }
+
+  /* Returns true if this vc was configured for forward_route
+   */
+  bool
+  decrypt_tunnel()
+  {
+    return has_tunnel_destination() && tunnel_decrypt;
+  }
+
+  void
+  set_tunnel_destination(const std::string_view &destination, bool decrypt)
+  {
+    auto pos = destination.find(":");
+    if (nullptr != tunnel_host) {
+      ats_free(tunnel_host);
+    }
+    if (pos != std::string::npos) {
+      tunnel_port = std::stoi(destination.substr(pos + 1).data());
+      tunnel_host = ats_strndup(destination.substr(0, pos).data(), pos);
+    } else {
+      tunnel_port = 0;
+      tunnel_host = ats_strndup(destination.data(), destination.length());
+    }
+    tunnel_decrypt = decrypt;
   }
 
   int populate_protocol(std::string_view *results, int n) const override;
@@ -333,7 +357,11 @@ public:
   ink_hrtime sslHandshakeEndTime   = 0;
   ink_hrtime sslLastWriteTime      = 0;
   int64_t sslTotalBytesSent        = 0;
-  char *serverName                 = nullptr;
+  // The serverName is either a pointer to the name fetched from the
+  // SSL object or the empty string.  Therefore, we do not allocate
+  // extra memory for this value.  If plugins in the future can set the
+  // serverName value, this strategy will have to change.
+  const char *serverName = nullptr;
 
   /// Set by asynchronous hooks to request a specific operation.
   SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
@@ -378,8 +406,10 @@ private:
   Continuation *npnEndpoint        = nullptr;
   SessionAccept *sessionAcceptPtr  = nullptr;
   bool sslTrace                    = false;
-  bool SNIMapping                  = false;
   int64_t redoWriteSize            = 0;
+  char *tunnel_host                = nullptr;
+  in_port_t tunnel_port            = 0;
+  bool tunnel_decrypt              = false;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

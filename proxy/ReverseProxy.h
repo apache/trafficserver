@@ -56,5 +56,6 @@ bool response_url_remap(HTTPHdr *response_header, UrlRewrite *table);
 
 // Reload Functions
 bool reloadUrlRewrite();
+bool urlRewriteVerify();
 
 int url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie);

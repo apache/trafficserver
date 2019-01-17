@@ -416,7 +416,7 @@ CtrlEngine::config_diff()
         std::cout << rec_labelof(desc->rec_class) << ' ' << desc->rec_name << ' ' << rec_typeof(desc->rec_type) << ' '
                   << current.c_str() << " # default: " << deflt.c_str() << std::endl;
       } else {
-        std::cout << desc->rec_name << "has changed" << std::endl;
+        std::cout << desc->rec_name << " has changed" << std::endl;
         std::cout << "\tCurrent Value: " << current.c_str() << std::endl;
         std::cout << "\tDefault Value: " << deflt.c_str() << std::endl;
       }

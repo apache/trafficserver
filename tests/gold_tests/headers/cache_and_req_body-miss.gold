@@ -1,11 +1,13 @@
 HTTP/1.1 200 OK
-Cache-Control: max-age=300
+Last-Modified: ``
+Cache-Control: max-age=1
 Content-Length: 3
 Date: ``
-Age: ``
+Age: 0
 Connection: keep-alive
 Via: ``
 Server: ``
+X-Cache-Key: http://127.0.0.1``
 X-Cache: miss
 
 xxx

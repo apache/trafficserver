@@ -318,11 +318,9 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
     return &plugins->action;
   } else {
     RemapPlugins plugins(s, request_url, request_header, hh_info);
-    int ret = 0;
 
-    do {
-      ret = plugins.run_single_remap();
-    } while (ret == 0);
+    while (!plugins.run_single_remap())
+      ; // EMPTY
 
     return ACTION_RESULT_DONE;
   }

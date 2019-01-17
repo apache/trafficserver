@@ -109,7 +109,7 @@ Regex::exec(const char *str)
 bool
 Regex::exec(const char *str, int length)
 {
-  int ovector[30];
+  int ovector[DEFAULT_GROUP_COUNT];
   return exec(str, length, ovector, countof(ovector));
 }
 

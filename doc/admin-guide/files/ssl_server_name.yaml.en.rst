@@ -66,20 +66,25 @@ verify_origin_server      Deprecated.  Use verify_server_policy and verify_serve
                           By default this is :ts:cv:`proxy.config.ssl.client.verify.server`.
 
 verify_client             One of the values :code:`NONE`, :code:`MODERATE`, or :code:`STRICT`.
+                          If ``NONE`` is specified, |TS| requests no certificate.  If ``MODERATE`` is specified
+                          |TS| will verify a certificate that is presented by the client, but it will not
+                          fail the TLS handshake if new certificate is presented.  If ``STRICT`` is specified
+                          the client must resent a certificate during the TLS handshake.
+
 
                           By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
 
 client_cert               The file containing the client certificate to use for the outbound connection.
 
-                          If this is relative it is relative to the path in
-                          :ts:cv:`proxy.config.ssl.server.cert.path`. If not set
+                          If this is relative, it is relative to the path in
+                          :ts:cv:`proxy.config.ssl.client.cert.path`. If not set
                           :ts:cv:`proxy.config.ssl.client.cert.filename` is used.
 
 client_key                The file containing the client private key that corresponds to the certificate
                           for the outbound connection.
 
-                          If this is relative it is relative to the path in
-                          :ts:cv:`proxy.config.ssl.server.private_key.path`. If not set,
+                          If this is relative, it is relative to the path in
+                          :ts:cv:`proxy.config.ssl.client.private_key.path`. If not set,
                           |TS| tries to use a private key in client_cert.  Otherwise, 
                           :ts:cv:`proxy.config.ssl.client.private_key.filename` is used.
 
@@ -91,6 +96,16 @@ disable_h2                :code:`true` or :code:`false`.
                           for proxy ports on which HTTP/2 is not enabled.
 
 tunnel_route              Destination as an FQDN and port, separated by a colon ``:``.
+
+
+                          This will forward all traffic to the specified destination without first terminating 
+                          the incoming TLS connection.
+
+forward_route             Destination as an FQDN and port, separated by a colon ``:``.
+
+                          This is similar to tunnel_route, but it terminates the TLS connection and forwards the
+                          decrypted traffic. |TS| will not interpret the decrypted data, so the contents do not 
+                          need to be HTTP.
 ========================= ==============================================================================
 
 Client verification, via ``verify_client``, correponds to setting

@@ -49,6 +49,7 @@
 #include <openssl/ssl.h>
 #include <algorithm>
 #include <atomic>
+#include <logging/Log.h>
 
 #define DEFAULT_RESPONSE_BUFFER_SIZE_INDEX 6 // 8K
 #define DEFAULT_REQUEST_BUFFER_SIZE_INDEX 6  // 8K
@@ -70,7 +71,6 @@
 #define USE_NEW_EMPTY_MIOBUFFER
 
 extern int cache_config_read_while_writer;
-extern TunnelHashMap TunnelMap; // stores the name of the servers to tunnel to
 
 // We have a debugging list that can use to find stuck
 //  state machines
@@ -518,7 +518,7 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
   http_parser_init(&http_parser);
 
   // Prepare raw reader which will live until we are sure this is HTTP indeed
-  if (is_transparent_passthrough_allowed()) {
+  if (is_transparent_passthrough_allowed() || (ssl_vc && ssl_vc->decrypt_tunnel())) {
     ua_raw_buffer_reader = buffer_reader->clone();
   }
 
@@ -556,7 +556,7 @@ HttpSM::setup_client_read_request_header()
   ua_entry->read_vio = ua_txn->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
   // The header may already be in the buffer if this
   //  a request from a keep-alive connection
-  dispatchEvent(VC_EVENT_READ_READY, ua_entry->read_vio);
+  handleEvent(VC_EVENT_READ_READY, ua_entry->read_vio);
 }
 
 void
@@ -565,7 +565,7 @@ HttpSM::setup_blind_tunnel_port()
   NetVConnection *netvc     = ua_txn->get_netvc();
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
   int host_len;
-  if (ssl_vc && ssl_vc->GetSNIMapping()) {
+  if (ssl_vc) {
     if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
       // the URL object has not been created in the start of the transaction. Hence, we need to create the URL here
       URL u;
@@ -575,10 +575,11 @@ HttpSM::setup_blind_tunnel_port()
       t_state.hdr_info.client_request.url_create(&u);
       u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
       t_state.hdr_info.client_request.url_set(&u);
-      if (auto it = TunnelMap.find(ssl_vc->serverName); it != TunnelMap.end()) {
-        t_state.hdr_info.client_request.url_get()->host_set(it->second.hostname.c_str(), it->second.hostname.size());
-        if (it->second.port > 0) {
-          t_state.hdr_info.client_request.url_get()->port_set(it->second.port);
+      if (ssl_vc->has_tunnel_destination()) {
+        const char *tunnel_host = ssl_vc->get_tunnel_host();
+        t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
+        if (ssl_vc->get_tunnel_port() > 0) {
+          t_state.hdr_info.client_request.url_get()->port_set(ssl_vc->get_tunnel_port());
         } else {
           t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
         }
@@ -664,7 +665,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   // We need to handle EOS as well as READ_READY because the client
   // may have sent all of the data already followed by a fIN and that
   // should be OK.
-  if (is_transparent_passthrough_allowed() && ua_raw_buffer_reader != nullptr) {
+  if (ua_raw_buffer_reader != nullptr) {
     bool do_blind_tunnel = false;
     // If we had a parse error and we're done reading data
     // blind tunnel
@@ -686,7 +687,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       // Turn off read eventing until we get the
       // blind tunnel infrastructure set up
       if (netvc) {
-        netvc->do_io_read(this, 0, nullptr);
+        netvc->do_io_read(nullptr, 0, nullptr);
       }
 
       /* establish blind tunnel */
@@ -888,7 +889,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
                 "[%" PRId64 "] [watch_for_client_abort] "
                 "forwarding event %s to tunnel",
                 sm_id, HttpDebugNames::get_event_name(event));
-        tunnel.dispatchEvent(event, c->write_vio);
+        tunnel.handleEvent(event, c->write_vio);
         return 0;
       } else {
         tunnel.kill_tunnel();
@@ -1384,18 +1385,18 @@ plugins required to work with sni_routing.
       NetVConnection *netvc     = ua_txn->get_netvc();
       SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
 
-      if (ssl_vc && ssl_vc->GetSNIMapping()) {
-        if (auto it = TunnelMap.find(ssl_vc->serverName); it != TunnelMap.end()) {
-          t_state.hdr_info.client_request.url_get()->host_set(it->second.hostname.c_str(), it->second.hostname.size());
-          if (it->second.port > 0) {
-            t_state.hdr_info.client_request.url_get()->port_set(it->second.port);
-          } else {
-            t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
-          }
+      if (ssl_vc && ssl_vc->has_tunnel_destination()) {
+        const char *tunnel_host = ssl_vc->get_tunnel_host();
+        t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
+        ushort tunnel_port = ssl_vc->get_tunnel_port();
+        if (tunnel_port > 0) {
+          t_state.hdr_info.client_request.url_get()->port_set(tunnel_port);
         } else {
-          t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->serverName, strlen(ssl_vc->serverName));
           t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
         }
+      } else if (ssl_vc) {
+        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->serverName, strlen(ssl_vc->serverName));
+        t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
       }
     }
   // FALLTHROUGH
@@ -1578,14 +1579,17 @@ void
 HttpSM::handle_api_return()
 {
   switch (t_state.api_next_action) {
-  case HttpTransact::SM_ACTION_API_SM_START:
-    if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+  case HttpTransact::SM_ACTION_API_SM_START: {
+    NetVConnection *netvc     = ua_txn->get_netvc();
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+    bool forward_dest         = ssl_vc != nullptr && ssl_vc->decrypt_tunnel();
+    if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || forward_dest) {
       setup_blind_tunnel_port();
     } else {
       setup_client_read_request_header();
     }
     return;
-
+  }
   case HttpTransact::SM_ACTION_API_CACHE_LOOKUP_COMPLETE:
   case HttpTransact::SM_ACTION_API_READ_CACHE_HDR:
     if (t_state.api_cleanup_cache_read && t_state.api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_PREPARE) {
@@ -1629,7 +1633,7 @@ HttpSM::handle_api_return()
     state_remove_from_list(EVENT_NONE, nullptr);
     return;
   default:
-    ink_release_assert("! Not reached");
+    ink_release_assert(!"Not reached");
     break;
   }
 
@@ -2560,7 +2564,7 @@ HttpSM::state_cache_open_read(int event, void *data)
     break;
 
   default:
-    ink_release_assert("!Unknown event");
+    ink_release_assert(!"Unknown event");
     break;
   }
 
@@ -3238,8 +3242,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     c->write_success          = true;
     t_state.client_info.abort = HttpTransact::DIDNOT_ABORT;
     if (t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
-      if (ua_txn->allow_half_open() &&
-          (t_state.www_auth_content != HttpTransact::CACHE_AUTH_SERVE || ua_txn->get_server_session())) {
+      if (t_state.www_auth_content != HttpTransact::CACHE_AUTH_SERVE || ua_txn->get_server_session()) {
         // successful keep-alive
         close_connection = false;
       }
@@ -3300,8 +3303,8 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
         is_eligible_post_request &= !vc->get_is_internal_request();
       }
     }
-    if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && ua_txn->allow_half_open() &&
-        c->producer->vc_type != HT_STATIC && event == VC_EVENT_WRITE_COMPLETE) {
+    if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && c->producer->vc_type != HT_STATIC &&
+        event == VC_EVENT_WRITE_COMPLETE) {
       ua_txn->set_half_close_flag(true);
     }
 
@@ -3977,7 +3980,7 @@ HttpSM::state_remap_request(int event, void * /* data ATS_UNUSED */)
   }
 
   default:
-    ink_assert("Unexpected event inside state_remap_request");
+    ink_assert(!"Unexpected event inside state_remap_request");
     break;
   }
 
@@ -4012,7 +4015,7 @@ HttpSM::do_remap_request(bool run_inline)
   if (!ret) {
     SMDebug("url_rewrite", "Could not find a valid remapping entry for this request [%" PRId64 "]", sm_id);
     if (!run_inline) {
-      dispatchEvent(EVENT_REMAP_COMPLETE, nullptr);
+      handleEvent(EVENT_REMAP_COMPLETE, nullptr);
     }
     return;
   }
@@ -4094,10 +4097,14 @@ HttpSM::do_hostdb_lookup()
 
     // If there is not a current server, we must be looking up the origin
     //  server at the beginning of the transaction
-    int server_port = t_state.current.server ?
-                        t_state.current.server->dst_addr.host_order_port() :
-                        t_state.server_info.dst_addr.isValid() ? t_state.server_info.dst_addr.host_order_port() :
-                                                                 t_state.hdr_info.client_request.port_get();
+    int server_port = 0;
+    if (t_state.current.server && t_state.current.server->dst_addr.isValid()) {
+      server_port = t_state.current.server->dst_addr.host_order_port();
+    } else if (t_state.server_info.dst_addr.isValid()) {
+      server_port = t_state.server_info.dst_addr.host_order_port();
+    } else {
+      server_port = t_state.hdr_info.client_request.port_get();
+    }
 
     if (t_state.api_txn_dns_timeout_value != -1) {
       SMDebug("http_timeout", "beginning DNS lookup. allowing %d mseconds for DNS lookup", t_state.api_txn_dns_timeout_value);
@@ -4285,7 +4292,15 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       start = -1;
     } else {
       for (start = 0; s < e && *s >= '0' && *s <= '9'; ++s) {
-        start = start * 10 + (*s - '0');
+        // check the int64 overflow in case of high gcc with O3 option
+        // thinking the start is always positive
+        int64_t new_start = start * 10 + (*s - '0');
+
+        if (new_start < start) { // Overflow
+          t_state.range_setup = HttpTransact::RANGE_NONE;
+          goto Lfaild;
+        }
+        start = new_start;
       }
       // skip last white spaces
       for (; s < e && ParseRules::is_ws(*s); ++s) {
@@ -4317,7 +4332,15 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       end = content_length - 1;
     } else {
       for (end = 0; s < e && *s >= '0' && *s <= '9'; ++s) {
-        end = end * 10 + (*s - '0');
+        // check the int64 overflow in case of high gcc with O3 option
+        // thinking the start is always positive
+        int64_t new_end = end * 10 + (*s - '0');
+
+        if (new_end < end) { // Overflow
+          t_state.range_setup = HttpTransact::RANGE_NONE;
+          goto Lfaild;
+        }
+        end = new_end;
       }
       // skip last white spaces
       for (; s < e && ParseRules::is_ws(*s); ++s) {
@@ -4668,6 +4691,46 @@ HttpSM::send_origin_throttled_response()
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
 
+static void
+set_tls_options(NetVCOptions &opt, OverridableHttpConfigParams *txn_conf)
+{
+  char *verify_server = nullptr;
+  if (txn_conf->ssl_client_verify_server_policy == nullptr) {
+    opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
+  } else {
+    verify_server = txn_conf->ssl_client_verify_server_policy;
+    if (strcmp(verify_server, "DISABLED") == 0) {
+      opt.verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
+    } else if (strcmp(verify_server, "PERMISSIVE") == 0) {
+      opt.verifyServerPolicy = YamlSNIConfig::Policy::PERMISSIVE;
+    } else if (strcmp(verify_server, "ENFORCED") == 0) {
+      opt.verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
+    } else {
+      Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
+              verify_server);
+      opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
+    }
+  }
+  if (txn_conf->ssl_client_verify_server_properties == nullptr) {
+    opt.verifyServerProperties = YamlSNIConfig::Property::UNSET;
+  } else {
+    verify_server = txn_conf->ssl_client_verify_server_properties;
+    if (strcmp(verify_server, "SIGNATURE") == 0) {
+      opt.verifyServerProperties = YamlSNIConfig::Property::SIGNATURE_MASK;
+    } else if (strcmp(verify_server, "NAME") == 0) {
+      opt.verifyServerProperties = YamlSNIConfig::Property::NAME_MASK;
+    } else if (strcmp(verify_server, "ALL") == 0) {
+      opt.verifyServerProperties = YamlSNIConfig::Property::ALL_MASK;
+    } else if (strcmp(verify_server, "NONE") == 0) {
+      opt.verifyServerProperties = YamlSNIConfig::Property::NONE;
+    } else {
+      Warning("%s is invalid for proxy.config.ssl.client.verify.server.properties.  Should be one of SIGNATURE, NAME, or ALL",
+              verify_server);
+      opt.verifyServerProperties = YamlSNIConfig::Property::NONE;
+    }
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////
 //
 //  HttpSM::do_http_server_open()
@@ -4956,6 +5019,8 @@ HttpSM::do_http_server_open(bool raw)
                      t_state.txn_conf->sock_option_flag_out, t_state.txn_conf->sock_packet_mark_out,
                      t_state.txn_conf->sock_packet_tos_out);
 
+  set_tls_options(opt, t_state.txn_conf);
+
   opt.ip_family = ip_family;
 
   if (ua_txn) {
@@ -5000,14 +5065,22 @@ HttpSM::do_http_server_open(bool raw)
   if (scheme_to_use == URL_WKSIDX_HTTPS || HttpTransactHeaders::is_method_idempotent(t_state.method)) {
     opt.f_tcp_fastopen = (t_state.txn_conf->sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN);
   }
+  opt.ssl_client_cert_name        = t_state.txn_conf->ssl_client_cert_filename;
+  opt.ssl_client_private_key_name = t_state.txn_conf->ssl_client_private_key_filename;
+  opt.ssl_client_ca_cert_name     = t_state.txn_conf->ssl_client_ca_cert_filename;
 
   if (scheme_to_use == URL_WKSIDX_HTTPS) {
     SMDebug("http", "calling sslNetProcessor.connect_re");
 
-    int len          = 0;
-    const char *host = t_state.hdr_info.server_request.host_get(&len);
-    if (host && len > 0) {
-      opt.set_sni_servername(host, len);
+    int len = 0;
+    if (t_state.txn_conf->ssl_client_sni_policy != nullptr && !strcmp(t_state.txn_conf->ssl_client_sni_policy, "remap")) {
+      len = strlen(t_state.server_info.name);
+      opt.set_sni_servername(t_state.server_info.name, len);
+    } else { // Do the default of host header for SNI
+      const char *host = t_state.hdr_info.server_request.host_get(&len);
+      if (host && len > 0) {
+        opt.set_sni_servername(host, len);
+      }
     }
     if (t_state.server_info.name) {
       opt.set_ssl_servername(t_state.server_info.name);
@@ -5145,9 +5218,12 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
   if (info->app.http_data.last_failure == 0) {
     char *url_str = t_state.hdr_info.client_request.url_string_get(&t_state.arena, nullptr);
     Log::error("%s", lbw()
-                       .print("CONNECT: could not connect to {} for '{}' (setting last failure time) connect_result={}\0",
-                              t_state.current.server->dst_addr, url_str ? url_str : "<none>",
-                              ts::bwf::Errno(t_state.current.server->connect_result))
+                       .clip(1)
+                       .print("CONNECT Error: {} connecting to {} for '{}' (setting last failure time)",
+                              ts::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr,
+                              ts::bwf::FirstOf(url_str, "<none>"))
+                       .extend(1)
+                       .write('\0')
                        .data());
 
     if (url_str) {
@@ -5422,13 +5498,13 @@ HttpSM::handle_server_setup_error(int event, void *data)
 
         ua_producer->alive         = false;
         ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
-        tunnel.dispatchEvent(VC_EVENT_ERROR, c->write_vio);
+        tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
         return;
       }
     } else {
       // c could be null here as well
       if (c != nullptr) {
-        tunnel.dispatchEvent(event, c->write_vio);
+        tunnel.handleEvent(event, c->write_vio);
         return;
       }
     }
@@ -5860,30 +5936,9 @@ HttpSM::attach_server_session(HttpServerSession *s)
   // Get server and client connections
   UnixNetVConnection *server_vc = dynamic_cast<UnixNetVConnection *>(server_session->get_netvc());
   UnixNetVConnection *client_vc = (UnixNetVConnection *)(ua_txn->get_netvc());
-  SSLNetVConnection *ssl_vc     = dynamic_cast<SSLNetVConnection *>(client_vc);
 
   // Verifying that the user agent and server sessions/transactions are operating on the same thread.
   ink_release_assert(!server_vc || !client_vc || server_vc->thread == client_vc->thread);
-  bool associated_connection = false;
-  if (server_vc) { // if server_vc isn't a PluginVC
-    if (ssl_vc) {  // if incoming connection is SSL
-      bool client_trace = ssl_vc->getSSLTrace();
-      if (client_trace) {
-        // get remote address and port to mark corresponding traces
-        const sockaddr *remote_addr = ssl_vc->get_remote_addr();
-        uint16_t remote_port        = ssl_vc->get_remote_port();
-        server_vc->setOriginTrace(true);
-        server_vc->setOriginTraceAddr(remote_addr);
-        server_vc->setOriginTracePort(remote_port);
-        associated_connection = true;
-      }
-    }
-  }
-  if (!associated_connection && server_vc) {
-    server_vc->setOriginTrace(false);
-    server_vc->setOriginTraceAddr(nullptr);
-    server_vc->setOriginTracePort(0);
-  }
 
   // set flag for server session is SSL
   SSLNetVConnection *server_ssl_vc = dynamic_cast<SSLNetVConnection *>(server_vc);
@@ -7577,7 +7632,7 @@ HttpSM::set_next_state()
   }
 
   default: {
-    ink_release_assert("!Unknown next action");
+    ink_release_assert(!"Unknown next action");
   }
   }
 }

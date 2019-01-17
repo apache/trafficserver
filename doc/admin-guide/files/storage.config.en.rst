@@ -92,7 +92,7 @@ which will effectively clear most of the cache. This can be problem when drives 
 reboot causes the path names to change.
 
 The :arg:`id` option can be used to create a fixed string that an administrator can use to keep the
-assignment table consistent by maintaing the mapping from physical device to base string even in the presence of hardware changes and failures.
+assignment table consistent by maintaining the mapping from physical device to base string even in the presence of hardware changes and failures.
 
 Examples
 ========

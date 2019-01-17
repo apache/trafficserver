@@ -41,7 +41,7 @@ class UnixNetVConnection;
 class NetHandler;
 struct PollDescriptor;
 
-TS_INLINE void
+inline void
 NetVCOptions::reset()
 {
   ip_proto  = USE_TCP;
@@ -66,12 +66,14 @@ NetVCOptions::reset()
 
   etype = ET_NET;
 
-  sni_servername    = nullptr;
-  ssl_servername    = nullptr;
-  clientCertificate = nullptr;
+  sni_servername              = nullptr;
+  ssl_servername              = nullptr;
+  ssl_client_cert_name        = nullptr;
+  ssl_client_private_key_name = nullptr;
+  ssl_client_ca_cert_name     = nullptr;
 }
 
-TS_INLINE void
+inline void
 NetVCOptions::set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long _opt_flags, unsigned long _packet_mark,
                              unsigned long _packet_tos)
 {
@@ -291,6 +293,7 @@ public:
 
   virtual void set_local_addr() override;
   virtual void set_remote_addr() override;
+  void set_remote_addr(const sockaddr *) override;
   int set_tcp_init_cwnd(int init_cwnd) override;
   int set_tcp_congestion_control(int side) override;
   void apply_options() override;
@@ -320,14 +323,21 @@ extern ClassAllocator<UnixNetVConnection> netVCAllocator;
 
 typedef int (UnixNetVConnection::*NetVConnHandler)(int, void *);
 
-TS_INLINE void
+inline void
 UnixNetVConnection::set_remote_addr()
 {
   ats_ip_copy(&remote_addr, &con.addr);
   this->control_flags.set_flag(ContFlags::DEBUG_OVERRIDE, diags->test_override_ip(remote_addr));
 }
 
-TS_INLINE void
+inline void
+UnixNetVConnection::set_remote_addr(const sockaddr *new_sa)
+{
+  ats_ip_copy(&remote_addr, new_sa);
+  this->control_flags.set_flag(ContFlags::DEBUG_OVERRIDE, diags->test_override_ip(remote_addr));
+}
+
+inline void
 UnixNetVConnection::set_local_addr()
 {
   int local_sa_size = sizeof(local_addr);
@@ -337,19 +347,19 @@ UnixNetVConnection::set_local_addr()
   ATS_UNUSED_RETURN(safe_getsockname(con.fd, &local_addr.sa, &local_sa_size));
 }
 
-TS_INLINE ink_hrtime
+inline ink_hrtime
 UnixNetVConnection::get_active_timeout()
 {
   return active_timeout_in;
 }
 
-TS_INLINE ink_hrtime
+inline ink_hrtime
 UnixNetVConnection::get_inactivity_timeout()
 {
   return inactivity_timeout_in;
 }
 
-TS_INLINE void
+inline void
 UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
 {
   Debug("socket", "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
@@ -357,7 +367,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
   next_activity_timeout_at = Thread::get_hrtime() + timeout_in;
 }
 
-TS_INLINE void
+inline void
 UnixNetVConnection::cancel_inactivity_timeout()
 {
   Debug("socket", "Cancel inactive timeout for NetVC=%p", this);
@@ -365,7 +375,7 @@ UnixNetVConnection::cancel_inactivity_timeout()
   set_inactivity_timeout(0);
 }
 
-TS_INLINE void
+inline void
 UnixNetVConnection::cancel_active_timeout()
 {
   Debug("socket", "Cancel active timeout for NetVC=%p", this);
@@ -373,7 +383,7 @@ UnixNetVConnection::cancel_active_timeout()
   next_activity_timeout_at = 0;
 }
 
-TS_INLINE int
+inline int
 UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
 {
 #ifdef TCP_INIT_CWND
@@ -388,56 +398,21 @@ UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
 #endif
 }
 
-TS_INLINE int
-UnixNetVConnection::set_tcp_congestion_control(int side)
-{
-#ifdef TCP_CONGESTION
-  RecString congestion_control;
-  int ret;
+inline UnixNetVConnection::~UnixNetVConnection() {}
 
-  if (side == CLIENT_SIDE) {
-    ret = REC_ReadConfigStringAlloc(congestion_control, "proxy.config.net.tcp_congestion_control_in");
-  } else {
-    ret = REC_ReadConfigStringAlloc(congestion_control, "proxy.config.net.tcp_congestion_control_out");
-  }
-
-  if (ret == REC_ERR_OKAY) {
-    int len = strlen(congestion_control);
-    if (len > 0) {
-      int rv = 0;
-      rv     = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<void *>(congestion_control), len);
-      if (rv < 0) {
-        Error("Unable to set TCP congestion control on socket %d to \"%.*s\", errno=%d (%s)", con.fd, len, congestion_control,
-              errno, strerror(errno));
-      } else {
-        Debug("socket", "Setting TCP congestion control on socket [%d] to \"%.*s\" -> %d", con.fd, len, congestion_control, rv);
-      }
-    }
-    ats_free(congestion_control);
-    return 0;
-  }
-  return -1;
-#else
-  Debug("socket", "Setting TCP congestion control is not supported on this platform.");
-  return -1;
-#endif
-}
-
-TS_INLINE UnixNetVConnection::~UnixNetVConnection() {}
-
-TS_INLINE SOCKET
+inline SOCKET
 UnixNetVConnection::get_socket()
 {
   return con.fd;
 }
 
-TS_INLINE void
+inline void
 UnixNetVConnection::set_action(Continuation *c)
 {
   action_ = c;
 }
 
-TS_INLINE const Action *
+inline const Action *
 UnixNetVConnection::get_action() const
 {
   return &action_;

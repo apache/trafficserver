@@ -114,10 +114,14 @@ ProtectedQueue::dequeue_external()
 void
 ProtectedQueue::wait(ink_hrtime timeout)
 {
-  ink_mutex_acquire(&lock);
+  /* If there are no external events available, will do a cond_timedwait.
+   *
+   *   - The `EThread::lock` will be released,
+   *   - And then the Event Thread goes to sleep and waits for the wakeup signal of `EThread::might_have_data`,
+   *   - The `EThread::lock` will be locked again when the Event Thread wakes up.
+   */
   if (INK_ATOMICLIST_EMPTY(al)) {
     timespec ts = ink_hrtime_to_timespec(timeout);
     ink_cond_timedwait(&might_have_data, &lock, &ts);
   }
-  ink_mutex_release(&lock);
 }

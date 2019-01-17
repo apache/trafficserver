@@ -694,7 +694,7 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
     // NEC thinks it is 5 RFC seems to indicate 1.
     switch (p[1]) {
     case 0:
-      Debug("Socks", "Username/Passwd succeded");
+      Debug("Socks", "Username/Passwd succeeded");
       *h_ptr = nullptr;
       break;
 

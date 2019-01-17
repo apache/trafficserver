@@ -492,6 +492,9 @@ struct OverridableHttpConfigParams {
       request_buffer_enabled(0),
       allow_half_open(1),
       ssl_client_verify_server(0),
+      ssl_client_verify_server_policy(nullptr),
+      ssl_client_verify_server_properties(nullptr),
+      ssl_client_sni_policy(nullptr),
       redirect_use_orig_cache_key(0),
       number_of_redirections(0),
       proxy_response_hsts_max_age(-1),
@@ -549,8 +552,9 @@ struct OverridableHttpConfigParams {
       global_user_agent_header_size(0),
       cache_heuristic_lm_factor(0.10),
       background_fill_threshold(0.5),
-      client_cert_filename(nullptr),
-      client_cert_filepath(nullptr),
+      ssl_client_cert_filename(nullptr),
+      ssl_client_private_key_filename(nullptr),
+      ssl_client_ca_cert_filename(nullptr),
       cache_vary_default_text(nullptr),
       cache_vary_default_images(nullptr),
       cache_vary_default_other(nullptr)
@@ -677,6 +681,9 @@ struct OverridableHttpConfigParams {
   // server verification mode//
   /////////////////////////////
   MgmtByte ssl_client_verify_server;
+  char *ssl_client_verify_server_policy;
+  char *ssl_client_verify_server_properties;
+  char *ssl_client_sni_policy;
 
   //////////////////
   // Redirection  //
@@ -792,8 +799,9 @@ struct OverridableHttpConfigParams {
   MgmtFloat background_fill_threshold;
 
   // Various strings, good place for them here ...
-  char *client_cert_filename;
-  char *client_cert_filepath;
+  char *ssl_client_cert_filename;
+  char *ssl_client_private_key_filename;
+  char *ssl_client_ca_cert_filename;
 
   char *cache_vary_default_text;
   char *cache_vary_default_images;
@@ -828,6 +836,8 @@ public:
 public:
   IpAddr inbound_ip4, inbound_ip6;
   IpAddr outbound_ip4, outbound_ip6;
+  IpAddr proxy_protocol_ip4, proxy_protocol_ip6;
+  IpMap config_proxy_protocol_ipmap;
 
   MgmtInt server_max_connections            = 0;
   MgmtInt origin_min_keep_alive_connections = 0; // TODO: This one really ought to be overridable, but difficult right now.
@@ -962,8 +972,9 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.body_factory_template_base);
   ats_free(oride.proxy_response_server_string);
   ats_free(oride.global_user_agent_header);
-  ats_free(oride.client_cert_filename);
-  ats_free(oride.client_cert_filepath);
+  ats_free(oride.ssl_client_cert_filename);
+  ats_free(oride.ssl_client_private_key_filename);
+  ats_free(oride.ssl_client_ca_cert_filename);
   ats_free(oride.cache_vary_default_text);
   ats_free(oride.cache_vary_default_images);
   ats_free(oride.cache_vary_default_other);

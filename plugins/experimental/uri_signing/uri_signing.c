@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include "uri_signing.h"
+#include "common.h"
 #include "config.h"
 #include "parse.h"
 #include "jwt.h"
@@ -46,7 +46,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  TSDebug(PLUGIN_NAME, "plugin is succesfully initialized");
+  TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
   return TS_SUCCESS;
 }
 
@@ -175,7 +175,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
   }
-  cjose_jws_t *jws = get_jws_from_query(url, url_ct, package);
+  cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package);
   if (cpi < max_cpi) {
     checkpoints[cpi++] = mark_timer(&t);
   }

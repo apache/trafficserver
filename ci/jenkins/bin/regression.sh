@@ -19,6 +19,7 @@
 cd "${WORKSPACE}/${BUILD_NUMBER}/build"
 [ -d BUILDS ] && cd BUILDS
 
-${ATS_MAKE} check VERBOSE=Y V=1 && ${ATS_MAKE} install
+${ATS_MAKE} check VERBOSE=Y V=1 || exit 1
 
+${ATS_MAKE} install || exit
 "${WORKSPACE}/${BUILD_NUMBER}/install/bin/traffic_server" -k -K -R 1

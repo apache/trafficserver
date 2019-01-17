@@ -324,7 +324,7 @@ typedef enum {
       accept connections. This is *not* guaranteed to be called
       before the first connection is accepted.
 
-      Event: TS_EVENT_LIFECYCLE_PORTS_READY_HOOK
+      Event: TS_EVENT_LIFECYCLE_PORTS_READY
 
     TS_LIFECYCLE_CACHE_READY_HOOK
 
@@ -333,12 +333,6 @@ typedef enum {
       hook is called.
 
       Event: TS_EVENT_LIFECYCLE_CACHE_READY
-
-    TS_LIFECYCLE_MSG_HOOK
-
-      Called in response to an external agent. The data is a pointer to  an instance of TSPluginMsg.
-
-      Event: TS_EVENT_LIFECYCLE_MSG
 
     TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK
 
@@ -354,6 +348,24 @@ typedef enum {
 
       Event: TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED
 
+    TS_LIFECYCLE_MSG_HOOK
+
+      Called in response to an external agent. The data is a pointer to  an instance of TSPluginMsg.
+
+      Event: TS_EVENT_LIFECYCLE_MSG
+
+    TS_LIFECYCLE_TASK_THREADS_READY_HOOK
+
+      called once, after the task threads have been started.
+
+      Event: TS_EVENT_LIFECYCLE_TASK_THREADS_READY
+
+    TS_LIFECYCLE_SHUTDOWN_HOOK
+
+      called once, after receiving a shutdown signal, such as SIGTERM.
+
+      Event: TS_EVENT_LIFECYCLE_SHUTDOWN
+
     Ordering guarantees:
 
     - TS_LIFECYCLE_PORTS_INITIALIZED_HOOK before TS_LIFECYCLE_PORTS_READY_HOOK.
@@ -368,6 +380,8 @@ typedef enum {
   TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK,
   TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK,
   TS_LIFECYCLE_MSG_HOOK,
+  TS_LIFECYCLE_TASK_THREADS_READY_HOOK,
+  TS_LIFECYCLE_SHUTDOWN_HOOK,
   TS_LIFECYCLE_LAST_HOOK
 } TSLifecycleHookID;
 
@@ -384,6 +398,7 @@ typedef enum {
   TS_EVENT_TIMEOUT                              = 2,
   TS_EVENT_ERROR                                = 3,
   TS_EVENT_CONTINUE                             = 4,
+
   TS_EVENT_VCONN_READ_READY                     = 100,
   TS_EVENT_VCONN_WRITE_READY                    = 101,
   TS_EVENT_VCONN_READ_COMPLETE                  = 102,
@@ -391,10 +406,17 @@ typedef enum {
   TS_EVENT_VCONN_EOS                            = 104,
   TS_EVENT_VCONN_INACTIVITY_TIMEOUT             = 105,
   TS_EVENT_VCONN_ACTIVE_TIMEOUT                 = 106,
+  TS_EVENT_VCONN_START                          = 107,
+  TS_EVENT_VCONN_CLOSE                          = 108,
+  TS_EVENT_VCONN_OUTBOUND_START                 = 109,
+  TS_EVENT_VCONN_OUTBOUND_CLOSE                 = 110,
+  TS_EVENT_VCONN_PRE_ACCEPT                     = TS_EVENT_VCONN_START, // Deprecated but still compatible
+
   TS_EVENT_NET_CONNECT                          = 200,
   TS_EVENT_NET_CONNECT_FAILED                   = 201,
   TS_EVENT_NET_ACCEPT                           = 202,
   TS_EVENT_NET_ACCEPT_FAILED                    = 204,
+
   TS_EVENT_INTERNAL_206                         = 206,
   TS_EVENT_INTERNAL_207                         = 207,
   TS_EVENT_INTERNAL_208                         = 208,
@@ -402,7 +424,9 @@ typedef enum {
   TS_EVENT_INTERNAL_210                         = 210,
   TS_EVENT_INTERNAL_211                         = 211,
   TS_EVENT_INTERNAL_212                         = 212,
+
   TS_EVENT_HOST_LOOKUP                          = 500,
+
   TS_EVENT_CACHE_OPEN_READ                      = 1102,
   TS_EVENT_CACHE_OPEN_READ_FAILED               = 1103,
   TS_EVENT_CACHE_OPEN_WRITE                     = 1108,
@@ -425,11 +449,15 @@ typedef enum {
   TS_EVENT_CACHE_LOOKUP_COMPLETE                = 1133,
   TS_EVENT_CACHE_READ_READY                     = 1134,
   TS_EVENT_CACHE_READ_COMPLETE                  = 1135,
+
   TS_EVENT_INTERNAL_1200                        = 1200,
+
   TS_EVENT_SSL_SESSION_GET                      = 2000,
   TS_EVENT_SSL_SESSION_NEW                      = 2001,
   TS_EVENT_SSL_SESSION_REMOVE                   = 2002,
+
   TS_EVENT_AIO_DONE                             = 3900,
+
   TS_EVENT_HTTP_CONTINUE                        = 60000,
   TS_EVENT_HTTP_ERROR                           = 60001,
   TS_EVENT_HTTP_READ_REQUEST_HDR                = 60002,
@@ -448,17 +476,17 @@ typedef enum {
   TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE           = 60015,
   TS_EVENT_HTTP_PRE_REMAP                       = 60016,
   TS_EVENT_HTTP_POST_REMAP                      = 60017,
-  TS_EVENT_LIFECYCLE_PORTS_INITIALIZED          = 60018,
-  TS_EVENT_LIFECYCLE_PORTS_READY                = 60019,
-  TS_EVENT_LIFECYCLE_CACHE_READY                = 60020,
-  TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED = 60021,
-  TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED = 60022,
-  TS_EVENT_VCONN_START                          = 60023,
-  TS_EVENT_VCONN_PRE_ACCEPT                     = TS_EVENT_VCONN_START, // Deprecated but still compatible
-  TS_EVENT_VCONN_CLOSE                          = 60026,
-  TS_EVENT_LIFECYCLE_MSG                        = 60024,
-  TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE         = 60025,
-  TS_EVENT_MGMT_UPDATE                          = 60100,
+  TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE         = 60018,
+
+  TS_EVENT_LIFECYCLE_PORTS_INITIALIZED          = 60100,
+  TS_EVENT_LIFECYCLE_PORTS_READY                = 60101,
+  TS_EVENT_LIFECYCLE_CACHE_READY                = 60102,
+  TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED = 60103,
+  TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED = 60104,
+  TS_EVENT_LIFECYCLE_MSG                        = 60105,
+  TS_EVENT_LIFECYCLE_TASK_THREADS_READY         = 60106,
+  TS_EVENT_LIFECYCLE_SHUTDOWN                   = 60107,
+
   TS_EVENT_INTERNAL_60200                       = 60200,
   TS_EVENT_INTERNAL_60201                       = 60201,
   TS_EVENT_INTERNAL_60202                       = 60202,
@@ -466,8 +494,8 @@ typedef enum {
   TS_EVENT_SSL_SERVERNAME                       = 60204,
   TS_EVENT_SSL_VERIFY_SERVER                    = 60205,
   TS_EVENT_SSL_VERIFY_CLIENT                    = 60206,
-  TS_EVENT_VCONN_OUTBOUND_START                 = 60207,
-  TS_EVENT_VCONN_OUTBOUND_CLOSE                 = 60208
+
+  TS_EVENT_MGMT_UPDATE                          = 60300
 } TSEvent;
 #define TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP TS_EVENT_HTTP_PRE_REMAP /* backwards compat */
 
@@ -761,6 +789,7 @@ typedef enum {
   TS_CONFIG_SRV_ENABLED,
   TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD,
   TS_CONFIG_SSL_CERT_FILENAME,
+  TS_CONFIG_SSL_CLIENT_CERT_FILENAME = TS_CONFIG_SSL_CERT_FILENAME,
   TS_CONFIG_SSL_CERT_FILEPATH,
   TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB,
   TS_CONFIG_HTTP_CACHE_ENABLE_DEFAULT_VARY_HEADER,
@@ -782,6 +811,12 @@ typedef enum {
   TS_CONFIG_HTTP_ALLOW_HALF_OPEN,
   TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX,
   TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH,
+  TS_CONFIG_SSL_CLIENT_VERIFY_SERVER,
+  TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY,
+  TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES,
+  TS_CONFIG_SSL_CLIENT_SNI_POLICY,
+  TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME,
+  TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME,
   TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 

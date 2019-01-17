@@ -43,6 +43,10 @@ public:
 
   virtual ~Value();
 
+  // noncopyable
+  Value(const Value &) = delete;
+  void operator=(const Value &) = delete;
+
   void set_value(const std::string &val);
 
   void
@@ -87,16 +91,7 @@ public:
     return _value.empty();
   }
 
-  bool
-  need_expansion() const
-  {
-    return _need_expander;
-  }
-
 private:
-  DISALLOW_COPY_AND_ASSIGN(Value);
-
-  bool _need_expander = false;
   int _int_value      = 0;
   double _float_value = 0.0;
   std::string _value;

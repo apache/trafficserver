@@ -341,7 +341,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
       if (tmp - current > (MAXDNAME - 1)) {
         return "DNS server name (ip) is too long";
       } else if (tmp - current == 0) {
-        return "server string is emtpy";
+        return "server string is empty";
       }
       *tmp = 0;
     }

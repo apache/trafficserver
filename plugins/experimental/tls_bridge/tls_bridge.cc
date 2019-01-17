@@ -1,19 +1,16 @@
 /*
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
+  Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.
+  See the NOTICE file distributed with this work for additional information regarding copyright
+  ownership.  The ASF licenses this file to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance with the License.  You may obtain a
+  copy of the License at
 
   http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+  Unless required by applicable law or agreed to in writing, software distributed under the License
+  is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+  or implied. See the License for the specific language governing permissions and limitations under
+  the License.
 */
 
 #include "ts/ts.h"
@@ -21,17 +18,25 @@
 #include <vector>
 #include <cinttypes>
 #include "tscpp/util/TextView.h"
+#include "tscore/ts_file.h"
 #include "regex.h"
 
-#define PLUGIN_NAME "TLS Bridge"
-#define PLUGIN_TAG "tls_bridge"
-
 using ts::TextView;
+
+namespace
+{
+constexpr char const PLUGIN_NAME[] = "TLS Bridge";
+constexpr char const PLUGIN_TAG[]  = "tls_bridge";
 
 // Base format string for making the internal CONNECT.
 char const CONNECT_FORMAT[] = "CONNECT https:%.*s HTTP/1.1\r\n\r\n";
 
+// TextView of the 'CONNECT' method string.
 const TextView METHOD_CONNECT{TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT};
+constexpr TextView CONFIG_FILE_ARG{"--file"};
+const std::string TS_CONFIG_DIR{TSConfigDirGet()};
+
+}; // namespace
 
 /* ------------------------------------------------------------------------------------ */
 // Utility functions
@@ -64,11 +69,13 @@ class BridgeConfig
     using self_type = BridgeConfig;
 
     /// Construct an item.
-    Item(const char *pattern, Regex &&r, const char *dest) : _pattern(pattern), _r(std::move(r)), _dest(dest) {}
+    /// @internal Pass in the compiled regex because no instance of this is created if
+    /// the regex doesn't compile successfully.
+    Item(std::string_view pattern, Regex &&r, std::string_view service) : _pattern(pattern), _r(std::move(r)), _service(service) {}
 
     std::string _pattern; ///< Original configuration regular expression.
     Regex _r;             ///< Compiled regex.
-    std::string _dest;    ///< Destination if matched.
+    std::string _service; ///< Destination service if matched.
   };
 
 public:
@@ -83,6 +90,14 @@ public:
 private:
   /// Configuration item storage.
   std::vector<Item> _items;
+
+  /** Load a configuration item pair.
+   *
+   * @param rxp The regular expression to match.
+   * @param service The destination service.
+   * @param ln Line number, or 0 if from plugin.config.
+   */
+  void load_pair(std::string_view rxp, std::string_view service, ts::file::path const &src, int ln = 0);
 };
 
 inline int
@@ -92,17 +107,76 @@ BridgeConfig::count() const
 }
 
 void
+BridgeConfig::load_pair(std::string_view rxp, std::string_view service, ts::file::path const &src, int ln)
+{
+  Regex r;
+  // Unfortunately PCRE can only compile null terminated strings...
+  std::string pattern{rxp};
+  if (r.compile(pattern.c_str(), Regex::ANCHORED)) {
+    _items.emplace_back(rxp, std::move(r), service);
+  } else {
+    char buff[std::numeric_limits<int>::digits10 + 2] = "";
+    if (ln) {
+      snprintf(buff, sizeof(buff), " on line %d", ln);
+    }
+    TSError("[%s] Failed to compile regular expression '%.*s' in %s%s", PLUGIN_NAME, int(rxp.size()), rxp.data(), src.c_str(),
+            buff);
+  }
+}
+
+void
 BridgeConfig::load_config(int argc, const char *argv[])
 {
+  static const ts::file::path plugin_config_fp{"plugin.config"};
+
   for (int i = 0; i < argc; i += 2) {
-    Regex r;
-    if (i + 1 >= argc) {
-      TSError("%s: Destination regular expression without peer", PLUGIN_TAG);
-    } else {
-      if (r.compile(argv[i]), Regex::ANCHORED) {
-        _items.emplace_back(argv[i], std::move(r), argv[i + 1]);
+    if (argv[i] == CONFIG_FILE_ARG) {
+      if (i + 1 >= argc) {
+        TSError("[%s] Invalid '%.*s' argument - no file name found.", PLUGIN_NAME, int(CONFIG_FILE_ARG.size()),
+                CONFIG_FILE_ARG.data());
       } else {
-        TSError("%s: Failed to compile regular expression '%s'", PLUGIN_TAG, argv[i]);
+        ts::file::path fp(argv[i + 1]);
+        std::error_code ec;
+        if (!fp.is_absolute()) {
+          fp = ts::file::path{TS_CONFIG_DIR} / fp; // slap the config dir on it to make it absolute.
+        }
+        // bulk load the file.
+        std::string content{ts::file::load(fp, ec)};
+        if (ec) {
+          TSError("[%s] Invalid '%.*s' argument - unable to read file '%s' : %s.", PLUGIN_NAME, int(CONFIG_FILE_ARG.size()),
+                  CONFIG_FILE_ARG.data(), fp.c_str(), ec.message().c_str());
+
+        } else {
+          // walk the lines.
+          int line_no = 0;
+          TextView src{content};
+          while (!src.empty()) {
+            TextView line{src.take_prefix_at('\n').trim_if(&isspace)};
+            ++line_no;
+            if (line.empty() || '#' == *line)
+              continue; // empty or comment, ignore.
+
+            // Pick apart the line into the regular expression and destination service.
+            TextView service{line};
+            TextView rxp{service.take_prefix_if(&isspace)};
+            service.ltrim_if(&isspace); // dump extra separating space.
+            // Only need to check service, as if the line isn't empty rxp will also be non-empty.
+            if (service.empty()) {
+              TSError("[%s] Invalid line %d in '%s' - no destination service found.", PLUGIN_NAME, line_no, fp.c_str());
+            } else {
+              this->load_pair(rxp, service, fp, line_no);
+            }
+          }
+        }
+      }
+    } else if (argv[i][0] == '-') {
+      TSError("[%s] Unrecognized option '%s'", PLUGIN_NAME, argv[i]);
+      i -= 1; // Don't skip next arg.
+    } else {
+      if (i + 1 >= argc) {
+        TSError("[%s] Regular expression '%s' without destination service", PLUGIN_NAME, argv[i]);
+      } else {
+        this->load_pair(argv[i], argv[i + 1], plugin_config_fp);
       }
     }
   }
@@ -113,7 +187,7 @@ BridgeConfig::match(TextView name)
 {
   for (auto &item : _items) {
     if (item._r.exec(name)) {
-      return {item._dest};
+      return {item._service};
     }
   }
   return {};
@@ -186,8 +260,6 @@ struct Bridge {
   TSHttpStatus _out_response_code = TS_HTTP_STATUS_NONE;
   /// Response reason, if not TS_HTTP_STATUS_OK
   std::string _out_response_reason;
-  /// Is the response to the user agent suspended?
-  bool _ua_response_suspended = false;
 
   /// Bridge requires a continuation for scheduling and the transaction.
   Bridge(TSCont cont, TSHttpTxn txn, TextView peer);
@@ -229,9 +301,9 @@ void
 Bridge::net_accept(TSVConn vc)
 {
   char buff[1024];
-  int64_t n = snprintf(buff, sizeof(buff), CONNECT_FORMAT, static_cast<int>(_peer.size()), _peer.data());
+  int64_t n = snprintf(buff, sizeof(buff), CONNECT_FORMAT, int(_peer.size()), _peer.data());
 
-  TSDebug(PLUGIN_TAG, "Received UA VConn");
+  TSDebug(PLUGIN_TAG, "Received UA VConn, connecting to peer %.*s", int(_peer.size()), _peer.data());
   // UA side intercepted.
   _ua.init(vc);
   _ua.do_read(_self_cont, INT64_MAX);
@@ -315,12 +387,6 @@ Bridge::check_outbound_OK()
         }
         // 519 is POOMA, useful for debugging, but may want to change this later.
         _out_response_code = c ? c : static_cast<TSHttpStatus>(519);
-        if (_ua_response_suspended) {
-          this->update_ua_response();
-          TSHttpTxnReenable(_ua_txn, TS_EVENT_HTTP_CONTINUE);
-          _ua_response_suspended = false;
-          TSDebug(PLUGIN_TAG, "TXN resumed");
-        }
         _out.consume(block.data() - raw.data());
         zret = true;
         TSDebug(PLUGIN_TAG, "Outbound status %d", c);
@@ -415,24 +481,19 @@ Bridge::eos(TSVIO vio)
   }
   _out.do_close();
   _ua.do_close();
-  _out_resp_state = EOS;
-  if (_ua_response_suspended) {
-    TSHttpTxnReenable(_ua_txn, TS_EVENT_HTTP_CONTINUE);
+  if (_out_resp_state != ERROR) {
+    _out_resp_state = EOS;
   }
 }
 
 void
 Bridge::send_response_cb()
 {
-  // If the upstream response hasn't been parsed yet, make the UA response wait for that.
-  // Set a flag so the upstream response parser knows to update response and reenable.
-  if (_out_resp_state < OK) {
-    _ua_response_suspended = true;
-    TSDebug(PLUGIN_TAG, "TXN suspended");
-  } else { // Already have all the data needed to do the update, so do it and move on.
-    this->update_ua_response();
-    TSHttpTxnReenable(_ua_txn, TS_EVENT_HTTP_CONTINUE);
-  }
+  // This happens either after the upstream connection and the writing the response there,
+  // or because the upstream connection was blocked. In either case the upstream work is
+  // done and the original transaction can proceed.
+  this->update_ua_response();
+  TSHttpTxnReenable(_ua_txn, TS_EVENT_HTTP_CONTINUE);
 }
 
 void
@@ -441,12 +502,10 @@ Bridge::update_ua_response()
   TSMBuffer mbuf;
   TSMLoc hdr_loc;
   if (TS_SUCCESS == TSHttpTxnClientRespGet(_ua_txn, &mbuf, &hdr_loc)) {
-    // A 200 for @a out_response_code only means there wasn't an internal failure on the upstream
-    // CONNECT. Network and other failures get reported in this response. This response code will
-    // be more accurate, so use it unless it's 200, in which case use the stored response code if
-    // that's not 200.
-    TSHttpStatus status = TSHttpHdrStatusGet(mbuf, hdr_loc);
-    if (TS_HTTP_STATUS_OK == status && TS_HTTP_STATUS_OK != _out_response_code) {
+    // If there is a non-200 upstream code then that's the most accurate because it was from
+    // an actual upstream connection. Otherwise, let the original connection response code
+    // ride.
+    if (_out_response_code != TS_HTTP_STATUS_OK && _out_response_code != TS_HTTP_STATUS_NONE) {
       TSHttpHdrStatusSet(mbuf, hdr_loc, _out_response_code);
       if (!_out_response_reason.empty()) {
         TSHttpHdrReasonSet(mbuf, hdr_loc, _out_response_reason.data(), _out_response_reason.size());
@@ -626,12 +685,12 @@ TSPluginInit(int argc, char const *argv[])
   TSPluginRegistrationInfo info{PLUGIN_NAME, "Oath:", "solidwallofcode@oath.com"};
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError(PLUGIN_NAME ": plugin registration failed.");
+    TSError("[%s] plugin registration failed.", PLUGIN_NAME);
   }
 
   Config.load_config(argc - 1, argv + 1);
   if (Config.count() <= 0) {
-    TSError("%s: No destinations defined, plugin disabled", PLUGIN_TAG);
+    TSError("[%s] No destinations defined, plugin disabled", PLUGIN_NAME);
   }
 
   TSCont contp = TSContCreate(CB_Read_Request_Hdr, TSMutexCreate());

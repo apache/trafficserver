@@ -28,15 +28,18 @@ struct jwt {
   double nbf;
   double iat;
   const char *jti;
-  const char *cdnicrit;
   int cdniv;
+  const char *cdnicrit;
+  const char *cdniip;
+  const char *cdniuc;
   int cdniets;
   int cdnistt;
+  int cdnistd;
 };
 struct jwt *parse_jwt(json_t *raw);
 void jwt_delete(struct jwt *jwt);
 bool jwt_validate(struct jwt *jwt);
-bool jwt_check_uri(const char *sub, const char *uri);
+bool jwt_check_uri(const char *cdniuc, const char *uri);
 
 struct _cjose_jwk_int;
 char *renew(struct jwt *jwt, const char *iss, struct _cjose_jwk_int *jwk, const char *alg, const char *package);

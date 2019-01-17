@@ -32,7 +32,7 @@ Description
 ===========
 
 Schedules :arg:`contp` to run :arg:`delay` milliseconds in the future. This is approximate. The delay
-will be at least :arg:`delay` but possibly more. Resultions finer than roughly 5 milliseconds will
+will be at least :arg:`delay` but possibly more. Resolutions finer than roughly 5 milliseconds will
 not be effective. :arg:`contp` is required to have a mutex, which is provided to
 :func:`TSContCreate`.
 

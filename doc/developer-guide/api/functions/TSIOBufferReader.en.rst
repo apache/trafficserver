@@ -59,7 +59,7 @@ has two very important consequences --
 *  Conversely keeping a reader around unused will pin the buffer data in memory. This can be useful or harmful.
 
 A buffer has a fixed amount of possible readers (currently 5) which is determined at compile
-time. Reader allocation is fast and cheap until this maxium is reached at which point it fails.
+time. Reader allocation is fast and cheap until this maximum is reached at which point it fails.
 
 :func:`TSIOBufferReaderAlloc` allocates a reader for the IO buffer :arg:`bufp`. This should only be
       called on a newly allocated buffer. If not the location of the reader in the buffer will be

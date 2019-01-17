@@ -35,6 +35,10 @@ class Parser
 public:
   explicit Parser(const std::string &line);
 
+  // noncopyable
+  Parser(const Parser &) = delete;
+  void operator=(const Parser &) = delete;
+
   bool
   empty() const
   {
@@ -76,7 +80,6 @@ public:
 
 private:
   void preprocess(std::vector<std::string> tokens);
-  DISALLOW_COPY_AND_ASSIGN(Parser);
 
   bool _cond;
   bool _empty;
@@ -94,10 +97,11 @@ class SimpleTokenizer
 public:
   explicit SimpleTokenizer(const std::string &line);
 
-  const std::vector<std::string> &get_tokens() const;
+  // noncopyable
+  SimpleTokenizer(const SimpleTokenizer &) = delete;
+  void operator=(const SimpleTokenizer &) = delete;
 
-private:
-  DISALLOW_COPY_AND_ASSIGN(SimpleTokenizer);
+  const std::vector<std::string> &get_tokens() const;
 
 protected:
   std::vector<std::string> _tokens;

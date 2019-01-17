@@ -36,11 +36,11 @@ Description
 ===========
 
 :func:`TSSslContextFindByName` searches for a SSL server context
-created from :file:`ssl_multicert.config`, matching against the
+created from :file:`ssl_multicert.config`, matchingg against the
 server :arg:`name`.
 
 :func:`TSSslContextFindByAddr` searches for a SSL server context
-created from :file:`ssl_multicert.config` matchin against the server
+created from :file:`ssl_multicert.config` matching against the server
 :arg:`address`.
 
 

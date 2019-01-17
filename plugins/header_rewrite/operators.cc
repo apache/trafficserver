@@ -25,7 +25,6 @@
 #include "ts/ts.h"
 
 #include "operators.h"
-#include "expander.h"
 #include "ts/apidefs.h"
 
 // OperatorConfig
@@ -355,11 +354,6 @@ OperatorSetRedirect::exec(const Resources &res) const
 
     _location.append_value(value, res);
 
-    if (_location.need_expansion()) {
-      VariableExpander ve(value);
-      value = ve.expand(res);
-    }
-
     bool remap = false;
     if (nullptr != res._rri) {
       remap = true;
@@ -543,12 +537,6 @@ OperatorAddHeader::exec(const Resources &res) const
 
   _value.append_value(value, res);
 
-  if (_value.need_expansion()) {
-    VariableExpander ve(value);
-
-    value = ve.expand(res);
-  }
-
   // Never set an empty header (I don't think that ever makes sense?)
   if (value.empty()) {
     TSDebug(PLUGIN_NAME, "Would set header %s to an empty value, skipping", _header.c_str());
@@ -584,12 +572,6 @@ OperatorSetHeader::exec(const Resources &res) const
   std::string value;
 
   _value.append_value(value, res);
-
-  if (_value.need_expansion()) {
-    VariableExpander ve(value);
-
-    value = ve.expand(res);
-  }
 
   // Never set an empty header (I don't think that ever makes sense?)
   if (value.empty()) {
@@ -718,12 +700,6 @@ OperatorAddCookie::exec(const Resources &res) const
 
   _value.append_value(value, res);
 
-  if (_value.need_expansion()) {
-    VariableExpander ve(value);
-
-    value = ve.expand(res);
-  }
-
   if (res.bufp && res.hdr_loc) {
     TSDebug(PLUGIN_NAME, "OperatorAddCookie::exec() invoked on cookie %s", _cookie.c_str());
     TSMLoc field_loc;
@@ -768,12 +744,6 @@ OperatorSetCookie::exec(const Resources &res) const
   std::string value;
 
   _value.append_value(value, res);
-
-  if (_value.need_expansion()) {
-    VariableExpander ve(value);
-
-    value = ve.expand(res);
-  }
 
   if (res.bufp && res.hdr_loc) {
     TSDebug(PLUGIN_NAME, "OperatorSetCookie::exec() invoked on cookie %s", _cookie.c_str());

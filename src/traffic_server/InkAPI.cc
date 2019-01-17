@@ -1295,7 +1295,16 @@ APIHook::invoke(int event, void *edata)
       ink_assert(!"not reached");
     }
   }
-  return m_cont->dispatchEvent(event, edata);
+  if (m_cont->mutex != nullptr) {
+    MUTEX_TRY_LOCK(lock, m_cont->mutex, this_ethread());
+    if (!lock.is_locked()) {
+      // If we cannot get the lock, the caller needs to restructure to handle rescheduling
+      ink_release_assert(0);
+    }
+    return m_cont->handleEvent(event, edata);
+  } else {
+    return m_cont->handleEvent(event, edata);
+  }
 }
 
 APIHook *
@@ -4510,7 +4519,16 @@ int
 TSContCall(TSCont contp, TSEvent event, void *edata)
 {
   Continuation *c = (Continuation *)contp;
-  return c->dispatchEvent((int)event, edata);
+  if (c->mutex != nullptr) {
+    MUTEX_TRY_LOCK(lock, c->mutex, this_ethread());
+    if (!lock.is_locked()) {
+      // If we cannot get the lock, the caller needs to restructure to handle rescheduling
+      ink_release_assert(0);
+    }
+    return c->handleEvent((int)event, edata);
+  } else {
+    return c->handleEvent((int)event, edata);
+  }
 }
 
 TSMutex
@@ -5100,57 +5118,6 @@ TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
   } else {
     l_url->copy(&u);
   }
-
-  return TS_SUCCESS;
-}
-
-/*
- * TSHttpTxnRedirectRequest is very odd.  It is only in experimental.h.
- * It is not used in any checked in code.  We should probably remove this.
- * SKH 1/15/2015
- */
-TSReturnCode
-TSHttpTxnRedirectRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc url_loc)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_url_handle(url_loc) == TS_SUCCESS);
-
-  URL u, *o_url, *r_url, *client_url;
-  HttpSM *sm             = (HttpSM *)txnp;
-  HttpTransact::State *s = &(sm->t_state);
-
-  u.m_heap     = ((HdrHeapSDKHandle *)bufp)->m_heap;
-  u.m_url_impl = (URLImpl *)url_loc;
-  if (!u.valid()) {
-    return TS_ERROR;
-  }
-
-  client_url = s->hdr_info.client_request.url_get();
-  if (!(client_url->valid())) {
-    return TS_ERROR;
-  }
-
-  s->redirect_info.redirect_in_process = true;
-  o_url                                = &(s->redirect_info.original_url);
-  if (!o_url->valid()) {
-    o_url->create(nullptr);
-    o_url->copy(client_url);
-  }
-  client_url->copy(&u);
-
-  r_url = &(s->redirect_info.redirect_url);
-  if (!r_url->valid()) {
-    r_url->create(nullptr);
-  }
-  r_url->copy(&u);
-
-  s->hdr_info.server_request.destroy();
-
-  s->request_sent_time           = 0;
-  s->response_received_time      = 0;
-  s->cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
-  s->next_action                 = HttpTransact::SM_ACTION_REDIRECT_READ;
 
   return TS_SUCCESS;
 }
@@ -8180,11 +8147,17 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD:
     ret = _memberp_to_generic(&overridableHttpConfig->forward_connect_method, conv);
     break;
-  case TS_CONFIG_SSL_CERT_FILENAME:
-    ret = _memberp_to_generic(&overridableHttpConfig->client_cert_filename, conv);
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER:
+    ret = _memberp_to_generic(&overridableHttpConfig->ssl_client_verify_server, conv);
     break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES:
+  case TS_CONFIG_SSL_CLIENT_SNI_POLICY:
+  case TS_CONFIG_SSL_CLIENT_CERT_FILENAME:
   case TS_CONFIG_SSL_CERT_FILEPATH:
-    ret = _memberp_to_generic(&overridableHttpConfig->client_cert_filepath, conv);
+  case TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME:
+  case TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME:
+    // String, must be handled elsewhere
     break;
   case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
     ret = _memberp_to_generic(&overridableHttpConfig->parent_failures_update_hostdb, conv);
@@ -8369,16 +8342,6 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       s->t_state.txn_conf->body_factory_template_base_len = 0;
     }
     break;
-  case TS_CONFIG_SSL_CERT_FILENAME:
-    if (value && length > 0) {
-      s->t_state.txn_conf->client_cert_filename = const_cast<char *>(value);
-    }
-    break;
-  case TS_CONFIG_SSL_CERT_FILEPATH:
-    if (value && length > 0) {
-      s->t_state.txn_conf->client_cert_filepath = const_cast<char *>(value);
-    }
-    break;
   case TS_CONFIG_HTTP_INSERT_FORWARDED:
     if (value && length > 0) {
       ts::LocalBufferWriter<1024> error;
@@ -8389,6 +8352,39 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
         Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
       }
     }
+    break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
+    if (value && length > 0) {
+      s->t_state.txn_conf->ssl_client_verify_server_policy = const_cast<char *>(value);
+    }
+    break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES:
+    if (value && length > 0) {
+      s->t_state.txn_conf->ssl_client_verify_server_properties = const_cast<char *>(value);
+    }
+    break;
+  case TS_CONFIG_SSL_CLIENT_SNI_POLICY:
+    if (value && length > 0) {
+      s->t_state.txn_conf->ssl_client_sni_policy = const_cast<char *>(value);
+    }
+    break;
+  case TS_CONFIG_SSL_CLIENT_CERT_FILENAME:
+    if (value && length > 0) {
+      s->t_state.txn_conf->ssl_client_cert_filename = const_cast<char *>(value);
+    }
+    break;
+  case TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME:
+    if (value && length > 0) {
+      s->t_state.txn_conf->ssl_client_private_key_filename = const_cast<char *>(value);
+    }
+    break;
+  case TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME:
+    if (value && length > 0) {
+      s->t_state.txn_conf->ssl_client_ca_cert_filename = const_cast<char *>(value);
+    }
+    break;
+  case TS_CONFIG_SSL_CERT_FILEPATH:
+    /* noop */
     break;
   default: {
     MgmtConverter const *conv;
@@ -8464,7 +8460,6 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
    {"proxy.config.http.slow.log.threshold", {TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.cache.max_stale_age", {TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.default_buffer_size", {TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.ssl.client.cert.filename", {TS_CONFIG_SSL_CERT_FILENAME, TS_RECORDDATATYPE_STRING}},
    {"proxy.config.http.response_server_str", {TS_CONFIG_HTTP_RESPONSE_SERVER_STR, TS_RECORDDATATYPE_STRING}},
    {"proxy.config.http.keep_alive_post_out", {TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT, TS_RECORDDATATYPE_INT}},
    {"proxy.config.net.sock_option_flag_out", {TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT, TS_RECORDDATATYPE_INT}},
@@ -8576,7 +8571,15 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
    {"proxy.config.http.connect_attempts_max_retries_dead_server",
     {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.parent_proxy.per_parent_connect_attempts",
-    {TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS, TS_RECORDDATATYPE_INT}}});
+    {TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS, TS_RECORDDATATYPE_INT}},
+   {"proxy.config.ssl.client.verify.server", {TS_CONFIG_SSL_CLIENT_VERIFY_SERVER, TS_RECORDDATATYPE_INT}},
+   {"proxy.config.ssl.client.verify.server.policy", {TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY, TS_RECORDDATATYPE_STRING}},
+   {"proxy.config.ssl.client.verify.server.properties", {TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES, TS_RECORDDATATYPE_STRING}},
+   {"proxy.config.ssl.client.sni_policy", {TS_CONFIG_SSL_CLIENT_SNI_POLICY, TS_RECORDDATATYPE_STRING}},
+   {"proxy.config.ssl.client.cert.filename", {TS_CONFIG_SSL_CLIENT_CERT_FILENAME, TS_RECORDDATATYPE_STRING}},
+   {"proxy.config.ssl.client.cert.path", {TS_CONFIG_SSL_CERT_FILEPATH, TS_RECORDDATATYPE_STRING}},
+   {"proxy.config.ssl.client.private_key.filename", {TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME, TS_RECORDDATATYPE_STRING}},
+   {"proxy.config.ssl.client.CA.cert.filename", {TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME, TS_RECORDDATATYPE_STRING}}});
 
 TSReturnCode
 TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)

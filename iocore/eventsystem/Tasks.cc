@@ -27,11 +27,18 @@
 EventType ET_TASK = ET_CALL;
 TasksProcessor tasksProcessor;
 
+EventType
+TasksProcessor::register_event_type()
+{
+  ET_TASK = eventProcessor.register_event_type("ET_TASK");
+  return ET_TASK;
+}
+
 // Note that if the number of task_threads is 0, all continuations scheduled for
 // ET_TASK ends up running on ET_CALL (which is the net-threads).
 int
 TasksProcessor::start(int task_threads, size_t stacksize)
 {
-  ET_TASK = eventProcessor.spawn_event_threads("ET_TASK", std::max(1, task_threads), stacksize);
+  eventProcessor.spawn_event_threads(ET_TASK, std::max(1, task_threads), stacksize);
   return 0;
 }

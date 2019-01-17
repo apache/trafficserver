@@ -36,6 +36,7 @@
 #include <openssl/rand.h>
 #include "P_SSLCertLookup.h"
 #include "YamlSNIConfig.h"
+#include <tscore/IpMap.h>
 
 struct SSLCertLookup;
 struct ssl_ticket_key_block;
@@ -80,7 +81,9 @@ struct SSLConfigParams : public ConfigInfo {
   int ssl_session_cache_auto_clear;
 
   char *clientCertPath;
+  char *clientCertPathOnly;
   char *clientKeyPath;
+  char *clientKeyPathOnly;
   char *clientCACertFilename;
   char *clientCACertPath;
   YamlSNIConfig::Policy verifyServerPolicy;
@@ -106,14 +109,8 @@ struct SSLConfigParams : public ConfigInfo {
   static size_t session_cache_number_buckets;
   static size_t session_cache_max_bucket_size;
   static bool session_cache_skip_on_lock_contention;
-  static bool sni_map_enable;
 
-  // TS-3435 Wiretracing for SSL Connections
-  static int ssl_wire_trace_enabled;
-  static char *ssl_wire_trace_addr;
-  static IpAddr *ssl_wire_trace_ip;
-  static int ssl_wire_trace_percentage;
-  static char *ssl_wire_trace_server_name;
+  static IpMap *proxy_protocol_ipmap;
 
   static init_ssl_ctx_func init_ssl_ctx_cb;
   static load_ssl_file_func load_ssl_file_cb;
@@ -123,15 +120,20 @@ struct SSLConfigParams : public ConfigInfo {
 
   SSL_CTX *client_ctx;
 
+  // Making this mutable since this is a updatable
+  // cache on an otherwise immutable config object
+  // The ctx_map owns the client SSL_CTX objects and is responseible for cleaning them up
   mutable std::unordered_map<std::string, SSL_CTX *> ctx_map;
   mutable ink_mutex ctxMapLock;
 
   SSL_CTX *getClientSSL_CTX(void) const;
-  SSL_CTX *getNewCTX(const char *client_cert, const char *key_file) const;
+  SSL_CTX *getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file, const char *ca_bundle_path) const;
+  void cleanupCTXTable();
 
   void initialize();
   void cleanup();
   void reset();
+  void SSLConfigInit(IpMap *global);
 };
 
 /////////////////////////////////////////////////////////////

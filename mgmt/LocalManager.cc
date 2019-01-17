@@ -1057,6 +1057,10 @@ LocalManager::bindProxyPort(HttpProxyPort &port)
     mgmt_fatal(0, "[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
   }
 
+  if (port.m_proxy_protocol) {
+    Debug("lm", "[bindProxyPort] Proxy Protocol enabled");
+  }
+
   if (port.m_inbound_transparent_p) {
 #if TS_USE_TPROXY
     Debug("http_tproxy", "Listen port %d inbound transparency enabled.", port.m_port);

@@ -4225,7 +4225,7 @@ REGRESSION_TEST(SDK_API_TSHttpHdr)(RegressionTest *test, int /* atype ATS_UNUSED
         SDK_RPRINT(test, "TSHttpHdrUrlSet&Get", "TestCase1", TC_FAIL, "TSHttpHdrUrlSet returns TS_ERROR");
       } else {
         if (TSHttpHdrUrlGet(bufp1, hdr_loc1, &url_loc_Get) != TS_SUCCESS) {
-          SDK_RPRINT(test, "TSHttpHdrUrlSet&Get", "TestCase1", TC_FAIL, "TSHttpHdrUrlGet retuns TS_ERROR");
+          SDK_RPRINT(test, "TSHttpHdrUrlSet&Get", "TestCase1", TC_FAIL, "TSHttpHdrUrlGet returns TS_ERROR");
         } else {
           if (url_loc == url_loc_Get) {
             SDK_RPRINT(test, "TSHttpHdrUrlSet&Get", "TestCase1", TC_PASS, "ok");
@@ -6682,7 +6682,7 @@ typedef enum {
   ORIG_TS_EVENT_HTTP_SSN_CLOSE             = 60014,
   ORIG_TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE = 60015,
 
-  ORIG_TS_EVENT_MGMT_UPDATE = 60100
+  ORIG_TS_EVENT_MGMT_UPDATE = 60300
 } ORIG_TSEvent;
 
 typedef enum {
@@ -8689,7 +8689,13 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.request_buffer_enabled",
    "proxy.config.http.allow_half_open",
    OutboundConnTrack::CONFIG_VAR_MAX,
-   OutboundConnTrack::CONFIG_VAR_MATCH}};
+   OutboundConnTrack::CONFIG_VAR_MATCH,
+   "proxy.config.ssl.client.verify.server",
+   "proxy.config.ssl.client.verify.server.policy",
+   "proxy.config.ssl.client.verify.server.properties",
+   "proxy.config.ssl.client.sni_policy",
+   "proxy.config.ssl.client.private_key.filename",
+   "proxy.config.ssl.client.CA.cert.filename"}};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
@@ -8978,7 +8984,7 @@ REGRESSION_TEST(SDK_API_DEBUG_NAME_LOOKUPS)(RegressionTest *test, int /* atype A
   bool success            = true;
   const char state_name[] = "INACTIVE_TIMEOUT";
   const char hook_name[]  = "TS_HTTP_READ_RESPONSE_HDR_HOOK";
-  const char event_name[] = "VC_EVENT_IMMEDIATE";
+  const char event_name[] = "TS_EVENT_IMMEDIATE";
   const char *str;
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -9002,9 +9008,9 @@ REGRESSION_TEST(SDK_API_DEBUG_NAME_LOOKUPS)(RegressionTest *test, int /* atype A
   }
 
   str = TSHttpEventNameLookup(TS_EVENT_IMMEDIATE);
-  if ((strlen(str) != strlen(event_name) || strcmp(str, event_name))) {
-    SDK_RPRINT(test, "TSHttpEventNameLookup", "TestCase1", TC_FAIL, "Failed on %d, expected %s, got %s", TS_EVENT_IMMEDIATE,
-               hook_name, str);
+  if (strstr(str, event_name) == nullptr) {
+    SDK_RPRINT(test, "TSHttpEventNameLookup", "TestCase1", TC_FAIL, "Failed on %d, expected %s to be within %s", TS_EVENT_IMMEDIATE,
+               event_name, str);
     success = false;
   } else {
     SDK_RPRINT(test, "TSHttpEventNameLookup", "TestCase1", TC_PASS, "ok");

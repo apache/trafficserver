@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 struct _cjose_jws_int;
-struct _cjose_jws_int *get_jws_from_query(const char *uri, size_t uri_ct, const char *paramName);
+struct _cjose_jws_int *get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName);
 struct _cjose_jws_int *get_jws_from_cookie(const char **cookie, size_t *cookie_ct, const char *paramName);
 
 struct config;

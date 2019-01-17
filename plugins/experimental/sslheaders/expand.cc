@@ -113,7 +113,7 @@ static const std::array<x509_expansion, SSL_HEADERS_FIELD_MAX> expansions = {{
   x509_expand_serial,      // SSL_HEADERS_FIELD_SERIAL
   x509_expand_signature,   // SSL_HEADERS_FIELD_SIGNATURE
   x509_expand_notbefore,   // SSL_HEADERS_FIELD_NOTBEFORE
-  x509_expand_notafter,    // SSL_HEADERS_FIELD_NOTBEFORE
+  x509_expand_notafter,    // SSL_HEADERS_FIELD_NOTAFTER
 }};
 
 bool

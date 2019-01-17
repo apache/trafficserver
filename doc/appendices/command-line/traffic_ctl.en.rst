@@ -255,7 +255,7 @@ traffic_ctl host
 .. program:: traffic_ctl host
 .. option:: status HOSTNAME [HOSTNAME ...]
 
-    Get the current status of the hosts used in parent.config as a next hop in a multi-tiered cache heirarchy.  The value 0 or 1 is returned indicating that the host is marked as down '0' or marked as up '1'.  If a host is marked as down, it will not be used as the next hop parent, another host marked as up will be chosen.
+    Get the current status of the hosts used in parent.config as a next hop in a multi-tiered cache hierarchy.  The value 0 or 1 is returned indicating that the host is marked as down '0' or marked as up '1'.  If a host is marked as down, it will not be used as the next hop parent, another host marked as up will be chosen.
 
 .. program:: traffic_ctl host
 .. option:: down --time seconds --reason 'manual|active|local' HOSTNAME [HOSTNAME ...]

@@ -599,7 +599,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.client.private_key.filename
  proxy.config.ssl.client.private_key.path
  proxy.config.ssl.client.verify.server
- proxy.config.ssl.enabled
  proxy.config.ssl.server.cert_chain.filename
  proxy.config.ssl.server.cert.path
  proxy.config.ssl.server.cipher_suite

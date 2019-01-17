@@ -57,6 +57,22 @@ Enumeration Members
 
 .. c:macro:: TS_EVENT_VCONN_ACTIVE_TIMEOUT
 
+.. c:macro:: TS_EVENT_VCONN_START
+
+   An inbound connection has started.
+
+.. c:macro:: TS_EVENT_VCONN_CLOSE
+
+   An inbound connection has closed.
+
+.. c:macro:: TS_EVENT_OUTBOUND_START
+
+   An outbound connection has started.
+
+.. c:macro:: TS_EVENT_OUTBOUND_CLOSE
+
+   An outbound connection has closed.
+
 .. c:macro:: TS_EVENT_NET_CONNECT
 
 .. c:macro:: TS_EVENT_NET_CONNECT_FAILED
@@ -167,27 +183,55 @@ Enumeration Members
 
 .. c:macro:: TS_EVENT_LIFECYCLE_PORTS_INITIALIZED
 
+   The internal data structures for the proxy ports have been initialized.
+
 .. c:macro:: TS_EVENT_LIFECYCLE_PORTS_READY
+
+   The proxy ports are now open for inbound connections.
 
 .. c:macro:: TS_EVENT_LIFECYCLE_CACHE_READY
 
-.. c:macro:: TS_EVENT_LIFECYCLE_MSG
+   The cache is ready.
 
 .. c:macro:: TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED
 
 .. c:macro:: TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED
 
-.. c:macro:: TS_EVENT_VCONN_START
+.. c:macro:: TS_EVENT_LIFECYCLE_MSG
 
-.. c:macro:: TS_EVENT_VCONN_CLOSE
+   A message from an external source has arrived.
 
-.. c:macro:: TS_EVENT_MGMT_UPDATE
+.. c:macro:: TS_EVENT_LIFECYCLE_TASK_THREADS_READY
+
+   The ``ET_TASK`` threads are running.
+
+.. c:macro:: TS_EVENT_LIFECYCLE_SHUTDOWN
+
+   The |TS| process has is shutting down.
 
 .. c:macro:: TS_EVENT_INTERNAL_60200
 
 .. c:macro:: TS_EVENT_INTERNAL_60201
 
 .. c:macro:: TS_EVENT_INTERNAL_60202
+
+.. c:macro:: TS_EVENT_SSL_CERT
+
+   Preparing to present a server certificate to an inbound TLS connection.
+
+.. c:macro:: TS_EVENT_SSL_SERVERNAME
+
+   The SNI name for an Inbound TLS connection has become available.
+
+.. c:macro:: TS_EVENT_SSL_VERIFY_SERVER
+
+   Outbound TLS connection certificate verification (verifying the server certificate).
+
+.. c:macro:: TS_EVENT_SSL_VERIFY_CLIENT
+
+   Inbound TLS connection certificate verification (verifying the client certificate).
+
+.. c:macro:: TS_EVENT_MGMT_UPDATE
 
 Description
 ===========
@@ -213,4 +257,3 @@ These are the event types used to drive continuations in the event system.
 .. cpp:var:: EventType EVENT_IMMEDIATE
 
    See :c:macro:`EVENT_IMMEDIATE`.
-

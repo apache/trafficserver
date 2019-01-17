@@ -400,7 +400,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   // get volume lock
   if (writer_lock_retry > SCAN_WRITER_LOCK_MAX_RETRY) {
     int r = _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_BLOCKED, nullptr);
-    Debug("cache_scan", "still havent got the writer lock, asking user..");
+    Debug("cache_scan", "still haven't got the writer lock, asking user..");
     switch (r) {
     case CACHE_SCAN_RESULT_RETRY:
       writer_lock_retry = 0;

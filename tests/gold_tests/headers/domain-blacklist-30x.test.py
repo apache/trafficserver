@@ -52,7 +52,7 @@ regex_map http://{4}/ http://{4}/ @plugin=header_rewrite.so @pparam=header_rewri
 
 for x in (0, 301, 302, 307, 308):
     ts.Disk.MakeConfigFile("header_rewrite_rules_{0}.conf".format(x)).AddLine("""\
-set-redirect {0} "%<cque>"
+set-redirect {0} "%{{CLIENT-URL}}"
 """.format(x))
 
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))

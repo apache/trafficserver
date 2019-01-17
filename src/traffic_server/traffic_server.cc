@@ -125,6 +125,7 @@ static void *mgmt_lifecycle_msg_callback(void *x, char *data, int len);
 static void init_ssl_ctx_callback(void *ctx, bool server);
 static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
 static void load_remap_file_callback(const char *remap_file);
+static void task_threads_started_callback();
 
 // We need these two to be accessible somewhere else now
 int num_of_net_threads = ink_number_of_processors();
@@ -222,6 +223,12 @@ struct AutoStopCont : public Continuation {
   int
   mainEvent(int /* event */, Event * /* e */)
   {
+    APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
+    while (hook) {
+      hook->invoke(TS_EVENT_LIFECYCLE_SHUTDOWN, nullptr);
+      hook = hook->next();
+    }
+
     pmgmt->stop();
     shutdown_event_system = true;
     delete this;
@@ -852,7 +859,7 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
     Layout::get()->update_sysconfdir(conf_dir);
   }
 
-  if (!reloadUrlRewrite()) {
+  if (!urlRewriteVerify()) {
     exitStatus |= (1 << 0);
     fprintf(stderr, "ERROR: Failed to load remap.config, exitStatus %d\n\n", exitStatus);
   } else {
@@ -1972,6 +1979,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     RecConfigWarnIfUnregistered();
 
     // "Task" processor, possibly with its own set of task threads
+    tasksProcessor.register_event_type();
+    eventProcessor.thread_group[ET_TASK]._afterStartCallback = task_threads_started_callback;
     tasksProcessor.start(num_task_threads, stacksize);
 
     if (netProcessor.socks_conf_stuff->accept_enabled) {
@@ -2114,4 +2123,14 @@ static void
 load_remap_file_callback(const char *remap_file)
 {
   pmgmt->signalConfigFileChild("remap.config", remap_file, CONFIG_FLAG_UNVERSIONED);
+}
+
+static void
+task_threads_started_callback()
+{
+  APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_TASK_THREADS_READY_HOOK);
+  while (hook) {
+    hook->invoke(TS_EVENT_LIFECYCLE_TASK_THREADS_READY, nullptr);
+    hook = hook->next();
+  }
 }

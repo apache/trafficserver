@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#include "uri_signing.h"
+#include "common.h"
 #include "jwt.h"
 #include "match.h"
 #include "ts/ts.h"
@@ -61,9 +61,12 @@ parse_jwt(json_t *raw)
   jwt->iat        = parse_number(json_object_get(raw, "iat"));
   jwt->jti        = json_string_value(json_object_get(raw, "jti"));
   jwt->cdniv      = parse_integer_default(json_object_get(raw, "cdniv"), 1);
+  jwt->cdnicrit   = json_string_value(json_object_get(raw, "cdnicrit"));
+  jwt->cdniip     = json_string_value(json_object_get(raw, "cdniip"));
+  jwt->cdniuc     = json_string_value(json_object_get(raw, "cdniuc"));
   jwt->cdniets    = json_integer_value(json_object_get(raw, "cdniets"));
   jwt->cdnistt    = json_integer_value(json_object_get(raw, "cdnistt"));
-  jwt->cdnicrit   = json_string_value(json_object_get(raw, "cdnicrit"));
+  jwt->cdnistd    = parse_integer_default(json_object_get(raw, "cdnistd"), 0);
   return jwt;
 }
 
@@ -112,13 +115,8 @@ jwt_validate(struct jwt *jwt)
     return false;
   }
 
-  if (!jwt->sub) { /* Mandatory claim. Will be validated after key verification. */
-    PluginDebug("Initial JWT Failure: missing sub");
-    return false;
-  }
-
   if (!unsupported_string_claim(jwt->aud)) {
-    PluginDebug("Initial JWT Failure: missing sub");
+    PluginDebug("Initial JWT Failure: aud unsupported");
     return false;
   }
 
@@ -129,6 +127,11 @@ jwt_validate(struct jwt *jwt)
 
   if (!unsupported_date_claim(jwt->nbf)) {
     PluginDebug("Initial JWT Failure: nbf unsupported");
+    return false;
+  }
+
+  if (!unsupported_string_claim(jwt->cdniip)) {
+    PluginDebug("Initial JWT Failure: cdniip unsupported");
     return false;
   }
 
@@ -147,21 +150,26 @@ jwt_validate(struct jwt *jwt)
     return false;
   }
 
+  if (jwt->cdnistd != 0) {
+    PluginDebug("Initial JWT Failure: unsupported value for cdnistd: %d", jwt->cdnistd);
+    return false;
+  }
+
   return true;
 }
 
 bool
-jwt_check_uri(const char *sub, const char *uri)
+jwt_check_uri(const char *cdniuc, const char *uri)
 {
   static const char CONT_URI_STR[]         = "uri";
   static const char CONT_URI_PATTERN_STR[] = "uri-pattern";
   static const char CONT_URI_REGEX_STR[]   = "uri-regex";
 
-  if (!sub || !*sub || !uri) {
+  if (!cdniuc || !*cdniuc || !uri) {
     return false;
   }
 
-  const char *kind = sub, *container = sub;
+  const char *kind = cdniuc, *container = cdniuc;
   while (*container && *container != ':') {
     ++container;
   }

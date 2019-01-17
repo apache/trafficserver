@@ -202,7 +202,7 @@ evaluate(const String &v)
   } else {
     stmt.assign(v);
   }
-  PrefetchDebug("statement: '%s', formating length: %zu", stmt.c_str(), len);
+  PrefetchDebug("statement: '%s', formatting length: %zu", stmt.c_str(), len);
 
   int result = 0;
   pos        = stmt.find_first_of("+-");

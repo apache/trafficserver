@@ -674,6 +674,7 @@ void
 NetHandler::add_to_keep_alive_queue(UnixNetVConnection *vc)
 {
   Debug("net_queue", "NetVC: %p", vc);
+  ink_assert(mutex->thread_holding == this_ethread());
 
   if (keep_alive_queue.in(vc)) {
     // already in the keep-alive queue, move the head
@@ -693,6 +694,8 @@ void
 NetHandler::remove_from_keep_alive_queue(UnixNetVConnection *vc)
 {
   Debug("net_queue", "NetVC: %p", vc);
+  ink_assert(mutex->thread_holding == this_ethread());
+
   if (keep_alive_queue.in(vc)) {
     keep_alive_queue.remove(vc);
     --keep_alive_queue_size;
@@ -705,6 +708,7 @@ NetHandler::add_to_active_queue(UnixNetVConnection *vc)
   Debug("net_queue", "NetVC: %p", vc);
   Debug("net_queue", "max_connections_per_thread_in: %d active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, active_queue_size, keep_alive_queue_size);
+  ink_assert(mutex->thread_holding == this_ethread());
 
   // if active queue is over size then close inactive connections
   if (manage_active_queue() == false) {
@@ -729,6 +733,8 @@ void
 NetHandler::remove_from_active_queue(UnixNetVConnection *vc)
 {
   Debug("net_queue", "NetVC: %p", vc);
+  ink_assert(mutex->thread_holding == this_ethread());
+
   if (active_queue.in(vc)) {
     active_queue.remove(vc);
     --active_queue_size;

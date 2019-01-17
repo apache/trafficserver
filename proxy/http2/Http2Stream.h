@@ -59,7 +59,6 @@ public:
     response_header.create(HTTP_TYPE_RESPONSE);
   }
 
-  ~Http2Stream() { this->destroy(); }
   int main_event_handler(int event, void *edata);
 
   void destroy() override;

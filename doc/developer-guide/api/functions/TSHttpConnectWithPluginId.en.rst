@@ -79,7 +79,7 @@ virtual connection.
 
 The combination of :arg:`tag` and :arg:`id` is intended to enable correlation
 in log post processing. The :arg:`tag` identifies the connection as related
-to the plugin and the :arg:`id` can be used in conjuction with plugin
+to the plugin and the :arg:`id` can be used in conjunction with plugin
 generated logs to correlate the log records.
 
 Notes

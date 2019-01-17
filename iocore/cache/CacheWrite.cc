@@ -90,7 +90,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           return openWriteCloseDir(EVENT_IMMEDIATE, nullptr);
         }
       }
-      if (update_key == od->single_doc_key && (total_len || !vec)) {
+      if (update_key == od->single_doc_key && (total_len || f.allow_empty_doc || !vec)) {
         od->move_resident_alt = false;
       }
     }
@@ -1113,11 +1113,11 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
   }
   if (is_debug_tag_set("cache_update")) {
     if (f.update && closed > 0) {
-      if (!total_len && alternate_index != CACHE_ALT_REMOVED) {
+      if (!total_len && !f.allow_empty_doc && alternate_index != CACHE_ALT_REMOVED) {
         Debug("cache_update", "header only %d (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
               update_key.b[1]);
 
-      } else if (total_len && alternate_index != CACHE_ALT_REMOVED) {
+      } else if ((total_len || f.allow_empty_doc) && alternate_index != CACHE_ALT_REMOVED) {
         Debug("cache_update", "header body, %d, (%" PRIu64 ", %" PRIu64 "), (%" PRIu64 ", %" PRIu64 ")",
               DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0], update_key.b[1], earliest_key.b[0], earliest_key.b[1]);
       } else if (!total_len && alternate_index == CACHE_ALT_REMOVED) {

@@ -42,8 +42,8 @@
 #define SP_REGNUM 15 /* Contains address of top of stack USP */
 #define PC_REGNUM 12 /* Contains program counter EIP */
 #define FP_REGNUM 5  /* Virtual frame pointer EBP */
-#define NO_OF_ARGS                                             \
-  10 /* The argument depth upto which we would be looking into \
+#define NO_OF_ARGS                                              \
+  10 /* The argument depth up to which we would be looking into \
         the stack */
 
 // contains local and in registers, frame pointer, and stack base
@@ -61,8 +61,8 @@ struct core_stack_state {
 #include <string.h>
 #include <assert.h>
 
-#define NO_OF_ARGS                                             \
-  10 /* The argument depth upto which we would be looking into \
+#define NO_OF_ARGS                                              \
+  10 /* The argument depth up to which we would be looking into \
         the stack */
 
 // contains local and in registers, frame pointer, and stack base

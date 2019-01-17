@@ -138,7 +138,7 @@ is successful.
 
 	.. macro:: TS_MILESTONE_LAST_ENTRY
 
-		A psuedo index which is set to be one more than the last valid index. This is useful for looping over the data.
+		A pseudo index which is set to be one more than the last valid index. This is useful for looping over the data.
 
 
 *  The server connect times predate the transmission of the :literal:`SYN`

@@ -263,7 +263,7 @@ public:
   self_type prefix(size_t n) const;
   /// Convenience overload to avoid ambiguity for literal numbers.
   self_type prefix(int n) const;
-  /** Get the prefix delimited by the first occurence of the character @a c.
+  /** Get the prefix delimited by the first occurrence of the character @a c.
 
       If @a c is not found the entire view is returned.
       The delimiter character is not included in the returned view.
@@ -271,7 +271,7 @@ public:
       @return A view of the prefix.
   */
   self_type prefix(char c) const;
-  /** Get the prefix delimited by the first occurence of a character in @a delimiters.
+  /** Get the prefix delimited by the first occurrence of a character in @a delimiters.
 
       If no such character is found the entire view is returned.
       The delimiter character is not included in the returned view.

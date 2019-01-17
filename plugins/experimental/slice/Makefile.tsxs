@@ -1,0 +1,64 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+all: slice
+
+slice_la_SOURCES = \
+	Config.cc \
+	ContentRange.cc \
+	Data.cc \
+	HttpHeader.cc \
+	Range.cc \
+	client.cc \
+	intercept.cc \
+	response.cc \
+	server.cc \
+	slice.cc \
+	transfer.cc \
+
+slice_la_HEADERS = \
+	Config.h \
+	ContentRange.h \
+	Data.h \
+	HttpHeader.h \
+	Range.h \
+	Stage.h \
+	client.h \
+	intercept.h \
+	response.h \
+	server.h \
+	slice.h \
+	transfer.h \
+
+slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
+	tsxs -v -o slice.so $(slice_la_SOURCES)
+
+install: slice $(slice_la_SOURCES) $(slice_la_HEADERS)
+	tsxs -v -o slice.so -i
+
+CXX = c++ -std=c++11
+#CXXFLAGS = -pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -O3 -fno-strict-aliasing -Wno-invalid-offsetof  -mcx16
+CXXFLAGS = -pipe -Wall -Wno-deprecated-declarations -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -O3 -fno-strict-aliasing -Wno-invalid-offsetof  -mcx16
+TSINCLUDE = $(shell tsxs -q INCLUDEDIR)
+#PREFIX = $(shell tsxs -q PREFIX)
+#LIBS = -L$(PREFIX)/lib -latscppapi
+#LIBS = $(PREFIX)/lib/libtsutil.la
+
+slice_test: slice_test.cc ContentRange.cc Range.cc
+	$(CXX) -o $@ $^ $(CXXFLAGS) -I$(TSINCLUDE) -DUNITTEST
+
+clean: 
+	rm -fv *.lo *.so

@@ -704,12 +704,26 @@ BufferWriter::printv(BWFormat const &fmt, std::tuple<Args...> const &args)
   return *this;
 }
 
+// Must be first so that other inline formatters can use it.
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, std::string_view sv);
+
 // Pointers that are not specialized.
 inline BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, const void *ptr)
 {
   BWFSpec ptr_spec{spec};
   ptr_spec._radix_lead_p = true;
+
+  if (ptr == nullptr) {
+    if (spec._type == 's' || spec._type == 'S') {
+      ptr_spec._type = BWFSpec::DEFAULT_TYPE;
+      ptr_spec._ext  = ""_sv; // clear any extension.
+      return bwformat(w, spec, spec._type == 's' ? "null"_sv : "NULL"_sv);
+    } else if (spec._type == BWFSpec::DEFAULT_TYPE) {
+      return w; // print nothing if there is no format character override.
+    }
+  }
+
   if (ptr_spec._type == BWFSpec::DEFAULT_TYPE || ptr_spec._type == 'p') {
     ptr_spec._type = 'x'; // if default or 'p;, switch to lower hex.
   } else if (ptr_spec._type == 'P') {
@@ -723,7 +737,12 @@ BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan const &span
 
 // -- Common formatters --
 
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, std::string_view sv);
+// Capture this explicitly so it doesn't go to any other pointer type.
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, std::nullptr_t)
+{
+  return bwformat(w, spec, static_cast<void *>(nullptr));
+}
 
 template <size_t N>
 BufferWriter &
@@ -735,10 +754,12 @@ bwformat(BufferWriter &w, BWFSpec const &spec, const char (&a)[N])
 inline BufferWriter &
 bwformat(BufferWriter &w, BWFSpec const &spec, const char *v)
 {
-  if (spec._type == 'x' || spec._type == 'X') {
+  if (spec._type == 'x' || spec._type == 'X' || spec._type == 'p') {
     bwformat(w, spec, static_cast<const void *>(v));
-  } else {
+  } else if (v != nullptr) {
     bwformat(w, spec, std::string_view(v));
+  } else {
+    bwformat(w, spec, nullptr);
   }
   return w;
 }
@@ -884,6 +905,51 @@ FixedBufferWriter::printv(BWFormat const &fmt, std::tuple<Args...> const &args) 
 {
   return static_cast<self_type &>(this->super_type::printv(fmt, args));
 }
+
+// Basic format wrappers - these are here because they're used internally.
+namespace bwf
+{
+  namespace detail
+  {
+    /** Write out raw memory in hexadecimal wrapper.
+     *
+     * This wrapper indicates the contained view should be dumped as raw memory in hexadecimal format.
+     * This is intended primarily for internal use by other formatting logic.
+     *
+     * @see Hex_Dump
+     */
+    struct MemDump {
+      std::string_view _view;
+
+      /** Dump @a n bytes starting at @a mem as hex.
+       *
+       * @param mem First byte of memory to dump.
+       * @param n Number of bytes.
+       */
+      MemDump(void const *mem, size_t n) : _view(static_cast<char const *>(mem), n) {}
+    };
+  } // namespace detail
+
+  /** Treat @a t as raw memory and dump the memory as hexadecimal.
+   *
+   * @tparam T Type of argument.
+   * @param t Object to dump.
+   * @return @a A wrapper to do a hex dump.
+   *
+   * This is the standard way to do a hexadecimal memory dump of an object.
+   *
+   * @internal This function exists so that other types can overload it for special processing,
+   * which would not be possible with just @c HexDump.
+   */
+  template <typename T>
+  detail::MemDump
+  Hex_Dump(T const &t)
+  {
+    return {&t, sizeof(T)};
+  }
+} // namespace bwf
+
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::detail::MemDump const &hex);
 
 } // end namespace ts
 

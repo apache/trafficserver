@@ -951,7 +951,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
       // Nothing to do
       break;
     default:
-      fprintf(stderr, "WARNING: Unmarshal failed due to unknow obj type %d after %d bytes", (int)obj->m_type,
+      fprintf(stderr, "WARNING: Unmarshal failed due to unknown obj type %d after %d bytes", (int)obj->m_type,
               (int)(obj_data - (char *)this));
       dump_heap(unmarshal_size);
       return -1;

@@ -45,7 +45,7 @@ transaction, or for specific transactions only.
 HTTP :term:`transaction` hooks are set on a global basis using the function
 :func:`TSHttpHookAdd`. This means that the continuation specified
 as the parameter to :func:`TSHttpHookAdd` is called for every
-transaction. :func:`TSHttpHookAdd` is typically called from
+transaction. :func:`TSHttpHookAdd` must only be called from
 :func:`TSPluginInit` or :func:`TSRemapInit`.
 
 :func:`TSHttpSsnHookAdd` adds :arg:`contp` to
@@ -113,6 +113,11 @@ transaction hooks::
             TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
             TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
             return 0;
+        case TS_EVENT_HTTP_READ_REQUEST_HDR:
+            txnp = (TSHttpTxn) edata;
+            // ...
+            TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+            return 0;
         default:
              break;
         }
@@ -127,6 +132,9 @@ transaction hooks::
         contp = TSContCreate(handler, NULL);
         TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
     }
+
+For more example code using hooks, see the test_hooks plugin in tests/tools/plugins (used by the test_hooks.test.py
+Gold test).
 
 See Also
 ========

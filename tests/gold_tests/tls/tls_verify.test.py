@@ -86,18 +86,14 @@ ts.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1
 })
 
-ts.Disk.ssl_server_name_yaml.AddLine(
-  '- fqdn: bar.com')
-ts.Disk.ssl_server_name_yaml.AddLine(
-  '  verify_server_policy: ENFORCED')
-ts.Disk.ssl_server_name_yaml.AddLine(
-  '  verify_server_properties: ALL')
-ts.Disk.ssl_server_name_yaml.AddLine(
-  '- fqdn: bad_bar.com')
-ts.Disk.ssl_server_name_yaml.AddLine(
-  '  verify_server_policy: ENFORCED')
-ts.Disk.ssl_server_name_yaml.AddLine(
-  '  verify_server_properties: ALL')
+ts.Disk.ssl_server_name_yaml.AddLines([
+  '- fqdn: bar.com',
+  '  verify_server_policy: ENFORCED',
+  '  verify_server_properties: ALL',
+  '- fqdn: bad_bar.com',
+  '  verify_server_policy: ENFORCED',
+  '  verify_server_properties: ALL'
+])
 
 tr = Test.AddTestRun("Permissive-Test")
 tr.Setup.Copy("ssl/signed-foo.key")

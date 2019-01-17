@@ -18,6 +18,7 @@ Makefile.in
 
 .project
 .cproject
+.idea
 
 .diags.log.meta
 
@@ -129,6 +130,7 @@ proxy/logging/test_LogUtils
 
 plugins/header_rewrite/header_rewrite_test
 plugins/experimental/esi/*_test
+plugins/experimental/slice/test_*
 plugins/experimental/sslheaders/test_sslheaders
 plugins/s3_auth/test_s3auth
 
@@ -138,6 +140,8 @@ plugins/esi/parser_test
 plugins/esi/processor_test
 plugins/esi/utils_test
 plugins/esi/vars_test
+
+plugins/experimental/uri_signing/test_uri_signing
 
 mgmt/api/traffic_api_cli_remote
 mgmt/tools/traffic_mcast_snoop

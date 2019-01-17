@@ -409,7 +409,7 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
 
     switch (result_code) {
     case LogBuffer::LB_OK:
-      // checkout succeded
+      // checkout succeeded
       retry = false;
       break;
 
@@ -1338,7 +1338,7 @@ LogObjectManager::log(LogAccess *lad)
   } else if (likely(ret & Log::SKIP)) {
     RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_event_log_access_skip_stat, 1);
   } else {
-    ink_release_assert("Unexpected result");
+    ink_release_assert(!"Unexpected result");
   }
 
   return ret;

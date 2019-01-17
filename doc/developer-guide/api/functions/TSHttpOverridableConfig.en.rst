@@ -43,7 +43,7 @@ Description
 
 Some of the values that are set in :file:`records.config` can be changed for a
 specific transaction. It is important to note that these functions change the
-configuration values stored for the transation, which is not quite the same as
+configuration values stored for the transaction, which is not quite the same as
 changing the actual operating values of the transaction. The critical effect is
 the value must be changed before it is used by the transaction - after that,
 changes will not have any effect.
@@ -152,7 +152,7 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED`         :ts:cv:`proxy.config.http.post.check.content_length.enabled`
 :c:macro:`TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT`             :ts:cv:`proxy.config.http.post_connect_attempts_timeout`
 :c:macro:`TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY`               :ts:cv:`proxy.config.http.redirect_use_orig_cache_key`
-TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED                               proxy.config.http.request_buffer_enabled
+:c:macro:`TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED`                    :ts:cv:`proxy.config.http.request_buffer_enabled`
 :c:macro:`TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE`                   :ts:cv:`proxy.config.http.request_header_max_size`
 :c:macro:`TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE`                  :ts:cv:`proxy.config.http.response_header_max_size`
 :c:macro:`TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED`                   :ts:cv:`proxy.config.http.response_server_enabled`
@@ -173,14 +173,22 @@ TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED                               proxy.config
 :c:macro:`TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT`                  :ts:cv:`proxy.config.net.sock_send_buffer_size_out`
 :c:macro:`TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB`                  :ts:cv:`proxy.config.http.parent_proxy.mark_down_hostdb`
 :c:macro:`TS_CONFIG_SRV_ENABLED`                                    :ts:cv:`proxy.config.srv_enabled`
-:c:macro:`TS_CONFIG_SSL_CERT_FILENAME`                              :ts:cv:`proxy.config.ssl.client.cert.filename`
+:c:macro:`TS_CONFIG_SSL_CLIENT_CERT_FILENAME`                       :ts:cv:`proxy.config.ssl.client.cert.filename`
 :c:macro:`TS_CONFIG_SSL_CERT_FILEPATH`                              :ts:cv:`proxy.config.ssl.client.cert.path`
-TS_CONFIG_SSL_CLIENT_VERIFY_SERVER                                  :ts:cv:`proxy.config.ssl.client.verify.server`
+:c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER`                       :ts:cv:`proxy.config.ssl.client.verify.server`
+:c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES`            :ts:cv:`proxy.config.ssl.client.verify.server.properties`
+:c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY`                :ts:cv:`proxy.config.ssl.client.verify.server.policy`
+:c:macro:`TS_CONFIG_SSL_CLIENT_SNI_POLICY`                          :ts:cv:`proxy.config.ssl.client.sni_policy`
 :c:macro:`TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS`                    :ts:cv:`proxy.config.ssl.hsts_include_subdomains`
 :c:macro:`TS_CONFIG_SSL_HSTS_MAX_AGE`                               :ts:cv:`proxy.config.ssl.hsts_max_age`
 :c:macro:`TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR`                    :ts:cv:`proxy.config.url_remap.pristine_host_hdr`
 :c:macro:`TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT`                       :ts:cv:`proxy.config.websocket.active_timeout`
 :c:macro:`TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT`                  :ts:cv:`proxy.config.websocket.no_activity_timeout`
+:c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY`                :ts:cv:`proxy.config.ssl.client.verify.server.policy`
+:c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES`            :ts:cv:`proxy.config.ssl.client.verify.server.properties`
+:c:macro:`TS_CONFIG_SSL_CLIENT_CERT_FILENAME`                       :ts:cv:`proxy.config.ssl.client.cert.filename`
+:c:macro:`TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME`                :ts:cv:`proxy.config.ssl.client.private_key.filename`
+:c:macro:`TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME`                    :ts:cv:`proxy.config.ssl.client.CA.cert.filename`
 ==================================================================  ====================================================================
 
 Examples

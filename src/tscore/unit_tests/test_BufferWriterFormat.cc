@@ -25,6 +25,7 @@
 #include "../../../tests/include/catch.hpp"
 #include <chrono>
 #include <iostream>
+#include <netinet/in.h>
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
 #include "tscpp/util/MemSpan.h"
@@ -306,6 +307,14 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
     ts::bwprint(out, fmt, std::string_view(), "Leif", "confused");
     REQUIRE(out == "Did you know? Leif is confused");
   }
+
+  char const *null_string{nullptr};
+  ts::bwprint(s, "Null {0:x}.{0}", null_string);
+  REQUIRE(s == "Null 0x0.");
+  ts::bwprint(s, "Null {0:X}.{0}", nullptr);
+  REQUIRE(s == "Null 0X0.");
+  ts::bwprint(s, "Null {0:p}.{0:P}.{0:s}.{0:S}", null_string);
+  REQUIRE(s == "Null 0x0.0X0.null.NULL");
 }
 
 TEST_CASE("BWFormat integral", "[bwprint][bwformat]")
@@ -566,6 +575,25 @@ TEST_CASE("bwstring std formats", "[libts][bwprint]")
   REQUIRE(w.view() == "name = Evil Dave");
   w.reset().print("name = {}", ts::bwf::FirstOf(empty, empty, s3, empty, s2, s1));
   REQUIRE(w.view() == "name = Leif");
+
+  unsigned v = ntohl(0xdeadbeef);
+  w.reset().print("{}", ts::bwf::Hex_Dump(v));
+  REQUIRE(w.view() == "deadbeef");
+  w.reset().print("{:x}", ts::bwf::Hex_Dump(v));
+  REQUIRE(w.view() == "deadbeef");
+  w.reset().print("{:X}", ts::bwf::Hex_Dump(v));
+  REQUIRE(w.view() == "DEADBEEF");
+  w.reset().print("{:#X}", ts::bwf::Hex_Dump(v));
+  REQUIRE(w.view() == "0XDEADBEEF");
+  w.reset().print("{} bytes {} digits {}", sizeof(double), std::numeric_limits<double>::digits10, ts::bwf::Hex_Dump(2.718281828));
+  REQUIRE(w.view() == "8 bytes 15 digits 9b91048b0abf0540");
+
+  INK_MD5 md5;
+  w.reset().print("{}", ts::bwf::Hex_Dump(md5));
+  REQUIRE(w.view() == "00000000000000000000000000000000");
+  CryptoContext().hash_immediate(md5, s2.data(), s2.size());
+  w.reset().print("{}", ts::bwf::Hex_Dump(md5));
+  REQUIRE(w.view() == "f240ccd7a95c7ec66d6c111e2925b23e");
 }
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code

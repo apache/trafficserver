@@ -610,6 +610,7 @@ HTTP Engine
    ip-out      Value           Local outbound IP address.
    ip-resolve  Value           IP address resolution style.
    proto       Value           List of supported session protocols.
+   pp                          Enable Proxy Protocol.
    ssl                         SSL terminated.
    tr-full                     Fully transparent (inbound and outbound)
    tr-in                       Inbound transparent.
@@ -645,6 +646,12 @@ proto
    separated by semi-colons. For TLS proxy ports the default value is
    all available protocols. For non-TLS proxy ports the default is HTTP
    only.
+
+pp
+   Enables Proxy Protocol on the port.  If Proxy Protocol is enabled on the
+   port, all incoming requests must be prefaced with the PROXY header.  See
+   :ref:`Proxy Protocol <proxy-protocol>` for more details on how to configure
+   this option properly.
 
 tr-full
    Fully transparent. This is a convenience option and is identical to specifying both ``tr-in`` and ``tr-out``.
@@ -803,7 +810,7 @@ mptcp
    ===== ======================================================================
    Value Description
    ===== ======================================================================
-   ``0`` |TS| will buffer the request until the post body has been recieved and
+   ``0`` |TS| will buffer the request until the post body has been received and
          then send the request to the origin server.
    ``1`` Immediately return a ``100 Continue`` from |TS| without waiting for
          the post body.
@@ -1089,6 +1096,15 @@ mptcp
    request bodies which lack a ``Content-length`` header.
 
 .. ts:cv:: CONFIG proxy.config.http.default_buffer_water_mark INT 32768
+
+.. ts:cv:: CONFIG proxy.config.http.request_buffer_enabled INT 0
+   :overridable:
+
+   This is a configuration value that is overridable but not configurable. This is most likely an
+   implementation error.
+
+   This enables buffering the content for incoming ``POST`` requests. If enabled no outbound
+   connection is made until the entire ``POST`` request has been buffered.
 
 .. ts:cv:: CONFIG proxy.config.http.request_header_max_size INT 131072
 
@@ -1418,7 +1434,7 @@ Origin Server Connect Attempts
 
    This value is used in determining when and if to prune active origin
    sessions. Without this value set, connections to origins can consume all the
-   way up to ts:cv:`proxy.config.net.connections_throttle` connections, which
+   way up to :ts:cv:`proxy.config.net.connections_throttle` connections, which
    in turn can starve incoming requests from available connections.
 
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.max INT 0
@@ -1724,11 +1740,35 @@ Proxy User Variables
    connection=full     Full user agent connection :ref:`protocol tags <protocol_tags>`
    ==================  ===============================================================
 
-   Each paramater in the list must be separated by ``|`` or ``:``.  For example, ``for|by=uuid|proto`` is
+   Each parameter in the list must be separated by ``|`` or ``:``.  For example, ``for|by=uuid|proto`` is
    a valid value for this variable.  Note that the ``connection`` parameter is a non-standard extension to
    RFC 7239.  Also note that, while |TS| allows multiple ``by`` parameters for the same proxy, this
    is prohibited by RFC 7239. Currently, for the ``host`` parameter to provide the original host from the
    incoming client request, `proxy.config.url_remap.pristine_host_hdr`_ must be enabled.
+
+.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_whitelist STRING ```<ip list>```
+
+   This defines a whitelist of server IPs that are trusted to provide
+   connections with Proxy Protocol information.  This is a comma delimited list
+   of IP addresses.  Addressed may be listed individually, in a range separated
+   by a dash or by using CIDR notation.
+
+   ======================= ===========================================================
+   Example  Effect
+   ======================= ===========================================================
+   ``10.0.2.123``          A single IP Address.
+   ``10.0.3.1-10.0.3.254`` A range of IP address.
+   ``10.0.4.0/24``         A range of IP address specified by CIDR notation.
+   ======================= ============================================================
+
+   .. important::
+
+       If Proxy Protocol is enabled on the port, but this directive is not
+       defined any server may initiate a connection with Proxy Protocol
+       information.
+       See :ts:cv:`proxy.config.http.server_ports` for information on how to enable Proxy Protocol on a port.
+
+   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header.
 
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae INT 1
    :reloadable:
@@ -2478,7 +2518,7 @@ DNS
 
 .. ts:cv:: CONFIG proxy.config.dns.resolv_conf STRING /etc/resolv.conf
 
-   Allows to specify which ``resolv.conf`` file to use for finding resolvers. While the format of this file must be the same as the
+   Allows one to specify which ``resolv.conf`` file to use for finding resolvers. While the format of this file must be the same as the
    standard ``resolv.conf`` file, this option allows an administrator to manage the set of resolvers in an external configuration file,
    without affecting how the rest of the operating system uses DNS.
 
@@ -2496,7 +2536,7 @@ DNS
    :reloadable:
    :overridable:
 
-   Indicates whether to use SRV records for orgin server lookup.
+   Indicates whether to use SRV records for origin server lookup.
 
 .. ts:cv:: CONFIG proxy.config.dns.dedicated_thread INT 0
 
@@ -2631,7 +2671,7 @@ HostDB
    Set the file path for an external host file.
 
    If this is set (non-empty) then the file is presumed to be a hosts file in
-   the standard `host file format <http://tools.ietf.org/html/rfc1123#page-13>`_.
+   the standard .
    It is read and the entries there added to the HostDB. The file is
    periodically checked for a more recent modification date in which case it is
    reloaded. The interval is set with :ts:cv:`proxy.config.hostdb.host_file.interval`.
@@ -2729,7 +2769,7 @@ HostDB
    Set the frequency (in seconds) to sync hostdb to disk.
 
    Note: hostdb is syncd to disk on a per-partition basis (of which there are 64).
-   This means that the minumum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
+   This means that the minimum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
 
 Logging Configuration
 =====================
@@ -3050,7 +3090,7 @@ Diagnostic Logging Configuration
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.tags STRING http|dns
 
-   Each |TS| `diag` and `debug` level message is annotated with a subsytem tag.  This configuration
+   Each |TS| `diag` and `debug` level message is annotated with a subsystem tag.  This configuration
    contains an anchored regular expression that filters the messages based on the tag. The
    expressions are prefix matched which creates an implicit ``.*`` at the end. Therefore the default
    value ``http|dns`` will match tags such as ``http``, ``http_hdrs``, ``dns``, and ``dns_recv``.
@@ -3058,7 +3098,7 @@ Diagnostic Logging Configuration
    Some commonly used debug tags are:
 
    ============  =====================================================
-   Tag           Subsytem usage
+   Tag           Subsystem usage
    ============  =====================================================
    dns           DNS query resolution
    http_hdrs     Logs the headers for HTTP requests and responses
@@ -3221,7 +3261,7 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.client.groups_list STRING <See notes under proxy.config.ssl.server.groups_list.>
 
    Configures the list of supported groups provided by OpenSSL which
-   |TS| will use for the "key_share" and "supported groups" extention
+   |TS| will use for the "key_share" and "supported groups" extension
    of TLSv1.3 connections. The value is a colon separated list of
    group NIDs or names, for example "P-521:P-384:P-256". For
    instructions, see "Groups" section of `TLS1.3 - OpenSSLWiki <https://wiki.openssl.org/index.php/TLS1.3#Groups>`_.
@@ -3364,7 +3404,7 @@ SSL Termination
    ``0`` Disables the session cache entirely.
    ``1`` Enables the session cache using OpenSSL's implementation.
    ``2`` Default. Enables the session cache using |TS|'s implementation. This
-         implentation should perform much better than the OpenSSL
+         implementation should perform much better than the OpenSSL
          implementation.
    ===== ======================================================================
 
@@ -3450,35 +3490,19 @@ SSL Termination
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
-.. ts:cv:: CONFIG proxy.config.ssl.wire_trace_enabled INT 0
-
-   When enabled this turns on wire tracing of SSL connections that meet
-   the conditions specified by wire_trace_percentage, wire_trace_addr
-   and wire_trace_server_name.
-
-.. ts:cv:: CONFIG proxy.config.ssl.wire_trace_percentage INT 0
-
-   This specifies the percentage of traffic meeting the other wire_trace
-   conditions to be traced.
-
-.. ts:cv:: CONFIG proxy.config.ssl.wire_trace_addr STRING NULL
-
-   This specifies the client IP for which wire_traces should be printed.
-
-.. ts:cv:: CONFIG proxy.config.ssl.wire_trace_server_name STRING NULL
-
-   This specifies the server name for which wire_traces should be printed.
-
 Client-Related Configuration
 ----------------------------
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING DISABLED
    :reloadable:
+   :overridable:
 
    Configures |TS| to verify the origin server certificate
    with the Certificate Authority (CA). This configuration takes a value of :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`
 
-   You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
+   You can override this global setting on a per domain basis in the ssl_server_name.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
+
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in ssl_server_name.yaml.
 
 :code:`DISABLED`
    Server Certificate will not be verified
@@ -3489,10 +3513,13 @@ Client-Related Configuration
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.properties STRING ALL
    :reloadable:
+   :overridable:
 
    Configures |TS| for what the default verify callback should check during origin server verification.
 
    You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_server_properties attribute<override-verify-server-properties>`.
+
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in ssl_server_name.yaml.
 
 :code:`NONE`
    Check nothing in the standard callback.  Rely entirely on plugins to check the certificate.
@@ -3521,6 +3548,7 @@ Client-Related Configuration
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.filename STRING NULL
    :reloadable:
+   :overridable:
 
    The filename of SSL client certificate installed on |TS|.
 
@@ -3532,6 +3560,7 @@ Client-Related Configuration
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.private_key.filename STRING NULL
    :reloadable:
+   :overridable:
 
    The filename of the |TS| private key. Change this variable
    only if the private key is not located in the |TS| SSL
@@ -3545,14 +3574,24 @@ Client-Related Configuration
    file.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
+   :reloadable:
+   :overridable:
 
    The filename of the certificate authority against which the origin
    server will be verified.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.CA.cert.path STRING NULL
+   :reloadable:
 
    Specifies the location of the certificate authority file against
    which the origin server will be verified.
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.sni_policy STRING NULL
+   :overridable:
+
+   Indicate how the SNI value for the TLS connection to the origin is selected.  By default it is
+   `host` which means the host header field value is used for the SNI.  If `remap` is specified, the
+   remapped origin name is used for the SNI value.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.SSLv3 INT 0
 

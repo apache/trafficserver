@@ -25,6 +25,8 @@
 #include "I_Machine.h"
 #include "ProtocolProbeSessionAccept.h"
 #include "http2/HTTP2.h"
+#include "ProxyProtocol.h"
+#include "I_NetVConnection.h"
 
 static bool
 proto_is_http2(IOBufferReader *reader)
@@ -89,6 +91,44 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       // Not enough data read. Well, that sucks.
       goto done;
     }
+
+    // if proxy_protocol is enabled via port descriptor AND the src IP is in
+    // the trusted whitelist for proxy protocol, then check to see if it is
+    // present
+
+    IpMap *pp_ipmap;
+    pp_ipmap = probeParent->proxy_protocol_ipmap;
+
+    if (netvc->get_is_proxy_protocol()) {
+      Debug("proxyprotocol", "ioCompletionEvent: proxy protocol is enabled on this port");
+      if (pp_ipmap->count() > 0) {
+        Debug("proxyprotocol", "ioCompletionEvent: proxy protocol has a configured whitelist of trusted IPs - checking");
+        void *payload = nullptr;
+        if (!pp_ipmap->contains(netvc->get_remote_addr(), &payload)) {
+          Debug("proxyprotocol",
+                "ioCompletionEvent: proxy protocol src IP is NOT in the configured whitelist of trusted IPs - closing connection");
+          goto done;
+        } else {
+          char new_host[INET6_ADDRSTRLEN];
+          Debug("proxyprotocol", "ioCompletionEvent: Source IP [%s] is trusted in the whitelist for proxy protocol",
+                ats_ip_ntop(netvc->get_remote_addr(), new_host, sizeof(new_host)));
+        }
+      } else {
+        Debug("proxyprotocol",
+              "ioCompletionEvent: proxy protocol DOES NOT have a configured whitelist of trusted IPs but proxy protocol is "
+              "ernabled on this port - processing all connections");
+      }
+
+      if (http_has_proxy_v1(reader, netvc)) {
+        Debug("proxyprotocol", "ioCompletionEvent: http has proxy_v1 header");
+        netvc->set_remote_addr(netvc->get_proxy_protocol_src_addr());
+      } else {
+        Debug("proxyprotocol",
+              "ioCompletionEvent: proxy protocol was enabled, but required header was not present in the transaction - "
+              "closing connection");
+        goto done;
+      }
+    } // end of Proxy Protocol processing
 
     if (proto_is_http2(reader)) {
       key = PROTO_HTTP2;

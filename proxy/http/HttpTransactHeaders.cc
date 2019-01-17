@@ -1155,25 +1155,19 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
 
     if (n_proto > 0) {
       auto Conn = [&](HttpForwarded::Option opt, HttpTransactHeaders::ProtocolStackDetail detail) -> void {
-        if (optSet[opt]) {
-          int revert = hdr.size();
+        if (optSet[opt] && hdr.remaining() > 0) {
+          ts::FixedBufferWriter lw{hdr.auxBuffer(), hdr.remaining()};
 
           if (hdr.size()) {
-            hdr << ';';
+            lw << ';';
           }
 
-          hdr << "connection=";
+          lw << "connection=";
 
           int numChars =
-            HttpTransactHeaders::write_hdr_protocol_stack(hdr.auxBuffer(), hdr.remaining(), detail, protoBuf.data(), n_proto, '-');
-          if (numChars > 0) {
-            hdr.fill(size_t(numChars));
-          }
-
-          if ((numChars <= 0) or (hdr.size() >= hdr.capacity())) {
-            // Remove parameter with potentially incomplete value.
-            //
-            hdr.reduce(revert);
+            HttpTransactHeaders::write_hdr_protocol_stack(lw.auxBuffer(), lw.remaining(), detail, protoBuf.data(), n_proto, '-');
+          if (numChars > 0 && !lw.fill(size_t(numChars)).error()) {
+            hdr.fill(lw.size());
           }
         }
       };
