@@ -904,7 +904,6 @@ public:
 
   MgmtByte send_100_continue_response = 0;
   MgmtByte disallow_post_100_continue = 0;
-  MgmtByte parser_allow_non_http      = 1;
   MgmtByte keepalive_internal_vc      = 0;
 
   MgmtByte server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
