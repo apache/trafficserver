@@ -81,11 +81,12 @@ ts.Disk.remap_config.AddLine(
 # Test 0 - Fill a 3 byte object with Last-Modified time into cache.
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
+tr.Processes.Default.StartBefore(ts, ready=1)
 tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: Fill" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-miss.gold"
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
 
 # Test 1 - Once it goes stale, fetch it again. We expect Origin to get IMS request, and serve a 304. We expect ATS to refresh the object, and give a 200 to user
 tr = Test.AddTestRun()
@@ -94,6 +95,7 @@ tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: IMS" -H
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale.gold"
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
 
 # Test 2 - Once it goes stale, fetch it via a range request. We expect Origin to get IMS request, and serve a 304. We expect ATS to refresh the object, and give a 206 to user
 tr = Test.AddTestRun()
@@ -102,12 +104,14 @@ tr.Processes.Default.Command = 'curl --range 0-1 -s -D - -v --ipv4 --http1.1 -H"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale-206.gold"
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
 
 # Test 3 - Fill a new object with an Etag. Not checking the output here.
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: EtagFill" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/etag'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
 
 # Test 4 - Once the etag object goes stale, fetch it again. We expect Origin to get INM request, and serve a 304. We expect ATS to refresh the object, and give a 200 to user
 tr = Test.AddTestRun()
@@ -116,6 +120,7 @@ tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: INM" -H
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale-INM.gold"
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
 
 # Test 5 - Once the etag object goes stale, fetch it via a range request. We expect Origin to get INM request, and serve a 304. We expect ATS to refresh the object, and give a 206 to user
 tr = Test.AddTestRun()
@@ -124,6 +129,7 @@ tr.Processes.Default.Command = 'curl --range 0-1 -s -D - -v --ipv4 --http1.1 -H"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit-stale-206-etag.gold"
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
 
 # Test 6 - The origin changes the initial LMT object to 0 byte. We expect ATS to fetch and serve the new 0 byte object.
 tr = Test.AddTestRun()
@@ -132,6 +138,7 @@ tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: noBody"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_nobody-hit-stale.gold"
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
 
 # Test 7 - Fetch the new 0 byte object again when fresh in cache to ensure its still a 0 byte object.
 tr = Test.AddTestRun()
@@ -140,6 +147,7 @@ tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: noBody"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_nobody-hit-stale.gold"
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
 
 # Test 8 - The origin changes the etag object to 0 byte 404. We expect ATS to fetch and serve the 404 0 byte object.
 tr = Test.AddTestRun()
@@ -148,6 +156,7 @@ tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: EtagErr
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_error_nobody.gold"
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
 
 # Test 9 - Fetch the 0 byte etag object again when fresh in cache to ensure its still a 0 byte object
 tr = Test.AddTestRun()
@@ -156,3 +165,4 @@ tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: EtagErr
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_error_nobody.gold"
 tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
