@@ -472,12 +472,14 @@ Bridge::flow_to_outbound()
 void
 Bridge::eos(TSVIO vio)
 {
-  if (vio == _out._write._vio || vio == _out._read._vio) {
+  if (nullptr == vio) {
+    // Generic close for some non-EOS reason.
+  } else if (vio == _out._write._vio || vio == _out._read._vio) {
     TSDebug(PLUGIN_TAG, "EOS upstream");
   } else if (vio == _ua._write._vio || vio == _ua._read._vio) {
     TSDebug(PLUGIN_TAG, "EOS user agent");
   } else {
-    TSDebug(PLUGIN_TAG, "EOS from unknown VIO");
+    TSDebug(PLUGIN_TAG, "EOS from unknown VIO [%p]", vio);
   }
   _out.do_close();
   _ua.do_close();
@@ -602,7 +604,8 @@ int
 CB_Exec(TSCont contp, TSEvent ev_idx, void *data)
 {
   auto ctx = static_cast<Bridge *>(TSContDataGet(contp));
-
+  // No point in checking @a ctx for @c nullptr because if it's not there, neither is the
+  // continuation so things would already be over the cliff.
   switch (ev_idx) {
   case TS_EVENT_NET_ACCEPT:
     ctx->net_accept(static_cast<TSVConn>(data));
@@ -626,7 +629,10 @@ CB_Exec(TSCont contp, TSEvent ev_idx, void *data)
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
     TSDebug(PLUGIN_TAG, "TXN_CLOSE: cleanup");
+    ctx->eos(nullptr); // no specific VIO, close up everything.
     delete ctx;
+    TSContDataSet(contp, nullptr); // Not sure if necessary, it's cheap, let's be safe.
+    TSContDestroy(contp);
     break;
   default:
     TSDebug(PLUGIN_TAG, "Event %d", ev_idx);
