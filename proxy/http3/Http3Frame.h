@@ -110,6 +110,47 @@ private:
   size_t _header_block_len          = 0;
 };
 
+//
+// SETTINGS Frame
+//
+
+enum class Http3SettingsId : uint16_t {
+  MAX_HEADER_LIST_SIZE = 0x06,
+  NUM_PLACEHOLDERS     = 0x08,
+  UNKNOWN              = 0x0a0a,
+};
+
+class Http3SettingsFrame : public Http3Frame
+{
+public:
+  Http3SettingsFrame() : Http3Frame(Http3FrameType::SETTINGS) {}
+  Http3SettingsFrame(const uint8_t *buf, size_t len);
+
+  static constexpr size_t MAX_PAYLOAD_SIZE = 60;
+  static constexpr std::array<Http3SettingsId, 2> VALID_SETTINGS_IDS{Http3SettingsId::MAX_HEADER_LIST_SIZE,
+                                                                     Http3SettingsId::NUM_PLACEHOLDERS};
+
+  void store(uint8_t *buf, size_t *len) const override;
+  void reset(const uint8_t *buf, size_t len) override;
+
+  bool is_valid() const;
+
+  bool contains(Http3SettingsId id) const;
+  uint64_t get(Http3SettingsId id) const;
+  void set(Http3SettingsId id, uint64_t value);
+
+private:
+  std::map<Http3SettingsId, uint64_t> _settings;
+  // TODO: make connection error with HTTP_MALFORMED_FRAME
+  bool _valid = false;
+};
+
+using Http3FrameDeleterFunc  = void (*)(Http3Frame *p);
+using Http3FrameUPtr         = std::unique_ptr<Http3Frame, Http3FrameDeleterFunc>;
+using Http3DataFrameUPtr     = std::unique_ptr<Http3DataFrame, Http3FrameDeleterFunc>;
+using Http3HeadersFrameUPtr  = std::unique_ptr<Http3HeadersFrame, Http3FrameDeleterFunc>;
+using Http3SettingsFrameUPtr = std::unique_ptr<Http3SettingsFrame, Http3FrameDeleterFunc>;
+
 using Http3FrameDeleterFunc = void (*)(Http3Frame *p);
 using Http3FrameUPtr        = std::unique_ptr<Http3Frame, Http3FrameDeleterFunc>;
 using Http3DataFrameUPtr    = std::unique_ptr<Http3DataFrame, Http3FrameDeleterFunc>;
@@ -118,6 +159,7 @@ using Http3HeadersFrameUPtr = std::unique_ptr<Http3HeadersFrame, Http3FrameDelet
 extern ClassAllocator<Http3Frame> http3FrameAllocator;
 extern ClassAllocator<Http3DataFrame> http3DataFrameAllocator;
 extern ClassAllocator<Http3HeadersFrame> http3HeadersFrameAllocator;
+extern ClassAllocator<Http3SettingsFrame> http3SettingsFrameAllocator;
 
 class Http3FrameDeleter
 {
@@ -147,6 +189,13 @@ public:
   {
     frame->~Http3Frame();
     http3HeadersFrameAllocator.free(static_cast<Http3HeadersFrame *>(frame));
+  }
+
+  static void
+  delete_settings_frame(Http3Frame *frame)
+  {
+    frame->~Http3Frame();
+    http3SettingsFrameAllocator.free(static_cast<Http3SettingsFrame *>(frame));
   }
 };
 

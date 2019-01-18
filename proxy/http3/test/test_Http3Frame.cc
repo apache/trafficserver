@@ -96,6 +96,60 @@ TEST_CASE("Store DATA Frame", "[http3]")
   }
 }
 
+TEST_CASE("Load SETTINGS Frame", "[http3]")
+{
+  SECTION("Normal")
+  {
+    uint8_t buf[] = {
+      0x0a,       // Length
+      0x04,       // Type
+      0x00, 0x06, // Identifier
+      0x44, 0x00, // Value
+      0x00, 0x08, // Identifier
+      0x0f,       // Value
+      0xba, 0xba, // Identifier
+      0x00,       // Value
+    };
+
+    std::shared_ptr<const Http3Frame> frame = Http3FrameFactory::create(buf, sizeof(buf));
+    CHECK(frame->type() == Http3FrameType::SETTINGS);
+    CHECK(frame->length() == sizeof(buf) - 2);
+
+    std::shared_ptr<const Http3SettingsFrame> settings_frame = std::dynamic_pointer_cast<const Http3SettingsFrame>(frame);
+    CHECK(settings_frame);
+    CHECK(settings_frame->is_valid());
+    CHECK(settings_frame->get(Http3SettingsId::MAX_HEADER_LIST_SIZE) == 0x0400);
+    CHECK(settings_frame->get(Http3SettingsId::NUM_PLACEHOLDERS) == 0x0f);
+  }
+}
+
+TEST_CASE("Store SETTINGS Frame", "[http3]")
+{
+  SECTION("Normal")
+  {
+    uint8_t expected[] = {
+      0x0a,       // Length
+      0x04,       // Type
+      0x00, 0x06, // Identifier
+      0x44, 0x00, // Value
+      0x00, 0x08, // Identifier
+      0x0f,       // Value
+      0x0a, 0x0a, // Identifier
+      0x00,       // Value
+    };
+
+    Http3SettingsFrame settings_frame;
+    settings_frame.set(Http3SettingsId::MAX_HEADER_LIST_SIZE, 0x0400);
+    settings_frame.set(Http3SettingsId::NUM_PLACEHOLDERS, 0x0f);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    settings_frame.store(buf, &len);
+    CHECK(len == sizeof(expected));
+    CHECK(memcmp(buf, expected, len) == 0);
+  }
+}
+
 TEST_CASE("Http3FrameFactory Create Unknown Frame", "[http3]")
 {
   uint8_t buf1[] = {

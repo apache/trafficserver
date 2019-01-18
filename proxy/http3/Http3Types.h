@@ -27,6 +27,11 @@
 
 #include <memory>
 
+enum class Http3StreamType : uint8_t {
+  CONTROL = 0x43,
+  PUSH    = 0x50,
+};
+
 // Update Http3Frame::type(const uint8_t *) too when you modify this list
 enum class Http3FrameType : uint8_t {
   DATA              = 0x00,

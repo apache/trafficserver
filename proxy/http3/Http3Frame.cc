@@ -28,6 +28,7 @@
 ClassAllocator<Http3Frame> http3FrameAllocator("http3FrameAllocator");
 ClassAllocator<Http3DataFrame> http3DataFrameAllocator("http3DataFrameAllocator");
 ClassAllocator<Http3HeadersFrame> http3HeadersFrameAllocator("http3HeadersFrameAllocator");
+ClassAllocator<Http3SettingsFrame> http3SettingsFrameAllocator("http3SettingsFrameAllocator");
 
 //
 // Static functions
@@ -211,6 +212,116 @@ Http3HeadersFrame::header_block_length() const
 }
 
 //
+// SETTINGS Frame
+//
+
+Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len) : Http3Frame(buf, buf_len)
+{
+  size_t len = this->_payload_offset;
+
+  while (len < buf_len) {
+    uint16_t id = QUICIntUtil::read_nbytes_as_uint(buf + len, 2);
+    len += 2;
+
+    size_t value_len = QUICVariableInt::size(buf + len);
+    uint64_t value   = QUICIntUtil::read_QUICVariableInt(buf + len);
+    len += value_len;
+
+    // Ignore any SETTINGS identifier it does not understand.
+    bool ignore = true;
+    for (const auto &known_id : Http3SettingsFrame::VALID_SETTINGS_IDS) {
+      if (id == static_cast<uint16_t>(known_id)) {
+        ignore = false;
+        break;
+      }
+    }
+
+    if (ignore) {
+      continue;
+    }
+
+    this->_settings.insert(std::make_pair(static_cast<Http3SettingsId>(id), value));
+  }
+
+  if (len == buf_len) {
+    this->_valid = true;
+  }
+}
+
+void
+Http3SettingsFrame::store(uint8_t *buf, size_t *len) const
+{
+  uint8_t payload[Http3SettingsFrame::MAX_PAYLOAD_SIZE] = {0};
+  uint8_t *p                                            = payload;
+  size_t l                                              = 0;
+
+  for (auto &it : this->_settings) {
+    QUICIntUtil::write_uint_as_nbytes(static_cast<uint16_t>(it.first), sizeof(uint16_t), p, &l);
+    p += l;
+    QUICIntUtil::write_QUICVariableInt(it.second, p, &l);
+    p += l;
+  }
+
+  // Exercise the requirement that unknown identifiers be ignored. - 4.2.5.1.
+  QUICIntUtil::write_uint_as_nbytes(static_cast<uint16_t>(Http3SettingsId::UNKNOWN), sizeof(uint16_t), p, &l);
+  p += l;
+  QUICIntUtil::write_QUICVariableInt(0, p, &l);
+  p += l;
+
+  size_t written     = 0;
+  size_t payload_len = p - payload;
+
+  // Length
+  QUICVariableInt::encode(buf, UINT64_MAX, written, payload_len);
+
+  // Type
+  buf[written++] = static_cast<uint8_t>(this->_type);
+
+  // Payload
+  memcpy(buf + written, payload, payload_len);
+  written += payload_len;
+
+  *len = written;
+}
+
+void
+Http3SettingsFrame::reset(const uint8_t *buf, size_t len)
+{
+  this->~Http3SettingsFrame();
+  new (this) Http3SettingsFrame(buf, len);
+}
+
+bool
+Http3SettingsFrame::is_valid() const
+{
+  return this->_valid;
+}
+
+bool
+Http3SettingsFrame::contains(Http3SettingsId id) const
+{
+  auto p = this->_settings.find(id);
+  return (p != this->_settings.end());
+}
+
+uint64_t
+Http3SettingsFrame::get(Http3SettingsId id) const
+{
+  auto p = this->_settings.find(id);
+  if (p != this->_settings.end()) {
+    return p->second;
+  }
+
+  return 0;
+}
+
+void
+Http3SettingsFrame::set(Http3SettingsId id, uint64_t value)
+{
+  this->_settings[id] = value;
+}
+
+//
 // Http3FrameFactory
 //
 Http3FrameUPtr
@@ -234,6 +345,10 @@ Http3FrameFactory::create(const uint8_t *buf, size_t len)
     frame = http3DataFrameAllocator.alloc();
     new (frame) Http3DataFrame(buf, len);
     return Http3FrameUPtr(frame, &Http3FrameDeleter::delete_data_frame);
+  case Http3FrameType::SETTINGS:
+    frame = http3SettingsFrameAllocator.alloc();
+    new (frame) Http3SettingsFrame(buf, len);
+    return Http3FrameUPtr(frame, &Http3FrameDeleter::delete_settings_frame);
   default:
     // Unknown frame
     Debug("http3_frame_factory", "Unknown frame type %hhx", static_cast<uint8_t>(type));
