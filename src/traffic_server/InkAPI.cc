@@ -6006,6 +6006,13 @@ TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status)
   sm->t_state.http_return_code = static_cast<HTTPStatus>(status);
 }
 
+void
+TSHttpTxnSetHttpRetStatus(TSHttpTxn txnp, TSHttpStatus status)
+{
+  TSHttpTxnStatusSet(txnp, status);
+}
+
+
 TSHttpStatus
 TSHttpTxnStatusGet(TSHttpTxn txnp)
 {
