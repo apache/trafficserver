@@ -24,6 +24,12 @@
 
 #include "P_SSLConfig.h"
 
+void
+SSLConfigInit(IpMap *)
+{
+  return;
+}
+
 bool
 SSLParseCertificateConfiguration(const SSLConfigParams *, SSL_CTX *)
 {
