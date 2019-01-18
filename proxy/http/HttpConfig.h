@@ -981,6 +981,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(connect_ports_string);
   ats_free(reverse_proxy_no_host_redirect);
   ats_free(redirect_actions_string);
+  ats_free(oride.ssl_client_sni_policy);
 
   delete connect_ports;
   delete redirect_actions_map;
