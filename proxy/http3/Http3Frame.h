@@ -40,7 +40,6 @@ public:
   uint64_t total_length() const;
   uint64_t length() const;
   Http3FrameType type() const;
-  uint8_t flags() const;
   virtual void store(uint8_t *buf, size_t *len) const;
   virtual void reset(const uint8_t *buf, size_t len);
   static int length(const uint8_t *buf, size_t buf_len, uint64_t &length);
@@ -48,8 +47,7 @@ public:
 
 protected:
   uint64_t _length       = 0;
-  Http3FrameType _type      = Http3FrameType::UNKNOWN;
-  uint8_t _flags         = 0;
+  Http3FrameType _type   = Http3FrameType::UNKNOWN;
   size_t _payload_offset = 0;
 };
 

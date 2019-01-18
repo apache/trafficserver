@@ -68,11 +68,8 @@ Http3Frame::Http3Frame(const uint8_t *buf, size_t buf_len)
   // Type
   this->_type = Http3FrameType(buf[length_field_length]);
 
-  // Flags
-  this->_flags = buf[length_field_length + 1];
-
   // Payload offset
-  this->_payload_offset = length_field_length + 2;
+  this->_payload_offset = length_field_length + 1;
 }
 
 Http3Frame::Http3Frame(Http3FrameType type) : _type(type) {}
@@ -93,12 +90,6 @@ Http3FrameType
 Http3Frame::type() const
 {
   return this->_type;
-}
-
-uint8_t
-Http3Frame::flags() const
-{
-  return this->_flags;
 }
 
 void
@@ -149,7 +140,6 @@ Http3DataFrame::store(uint8_t *buf, size_t *len) const
   size_t written = 0;
   QUICVariableInt::encode(buf, UINT64_MAX, written, this->_length);
   buf[written++] = static_cast<uint8_t>(this->_type);
-  buf[written++] = this->_flags;
   memcpy(buf + written, this->_payload, this->_payload_len);
   written += this->_payload_len;
   *len = written;
@@ -196,7 +186,6 @@ Http3HeadersFrame::store(uint8_t *buf, size_t *len) const
   size_t written = 0;
   QUICVariableInt::encode(buf, UINT64_MAX, written, this->_length);
   buf[written++] = static_cast<uint8_t>(this->_type);
-  buf[written++] = this->_flags;
   memcpy(buf + written, this->_header_block, this->_header_block_len);
   written += this->_header_block_len;
   *len = written;

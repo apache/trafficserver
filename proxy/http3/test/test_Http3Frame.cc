@@ -41,12 +41,12 @@ TEST_CASE("Load DATA Frame", "[http3]")
     uint8_t buf1[] = {
       0x04,                   // Length
       0x00,                   // Type
-      0x00,                   // Flags
       0x11, 0x22, 0x33, 0x44, // Payload
     };
     std::shared_ptr<const Http3Frame> frame1 = Http3FrameFactory::create(buf1, sizeof(buf1));
     CHECK(frame1->type() == Http3FrameType::DATA);
     CHECK(frame1->length() == 4);
+
     std::shared_ptr<const Http3DataFrame> data_frame = std::dynamic_pointer_cast<const Http3DataFrame>(frame1);
     CHECK(data_frame);
     CHECK(data_frame->payload_length() == 4);
@@ -58,12 +58,12 @@ TEST_CASE("Load DATA Frame", "[http3]")
     uint8_t buf1[] = {
       0x04,                   // Length
       0x00,                   // Type
-      0xff,                   // Flags
       0x11, 0x22, 0x33, 0x44, // Payload
     };
     std::shared_ptr<const Http3Frame> frame1 = Http3FrameFactory::create(buf1, sizeof(buf1));
     CHECK(frame1->type() == Http3FrameType::DATA);
     CHECK(frame1->length() == 4);
+
     std::shared_ptr<const Http3DataFrame> data_frame = std::dynamic_pointer_cast<const Http3DataFrame>(frame1);
     CHECK(data_frame);
     CHECK(data_frame->payload_length() == 4);
@@ -80,7 +80,6 @@ TEST_CASE("Store DATA Frame", "[http3]")
     uint8_t expected1[] = {
       0x04,                   // Length
       0x00,                   // Type
-      0x00,                   // Flags
       0x11, 0x22, 0x33, 0x44, // Payload
     };
 
@@ -92,7 +91,7 @@ TEST_CASE("Store DATA Frame", "[http3]")
     CHECK(data_frame.length() == 4);
 
     data_frame.store(buf, &len);
-    CHECK(len == 7);
+    CHECK(len == 6);
     CHECK(memcmp(buf, expected1, len) == 0);
   }
 }
@@ -102,7 +101,6 @@ TEST_CASE("Http3FrameFactory Create Unknown Frame", "[http3]")
   uint8_t buf1[] = {
     0x00, // Length
     0xff, // Type
-    0x00, // Flags
   };
   std::shared_ptr<const Http3Frame> frame1 = Http3FrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1);
@@ -117,13 +115,11 @@ TEST_CASE("Http3FrameFactory Fast Create Frame", "[http3]")
   uint8_t buf1[] = {
     0x04,                   // Length
     0x00,                   // Type
-    0x00,                   // Flags
     0x11, 0x22, 0x33, 0x44, // Payload
   };
   uint8_t buf2[] = {
     0x04,                   // Length
     0x00,                   // Type
-    0x00,                   // Flags
     0xaa, 0xbb, 0xcc, 0xdd, // Payload
   };
   std::shared_ptr<const Http3Frame> frame1 = factory.fast_create(buf1, sizeof(buf1));
@@ -131,14 +127,14 @@ TEST_CASE("Http3FrameFactory Fast Create Frame", "[http3]")
 
   std::shared_ptr<const Http3DataFrame> data_frame1 = std::dynamic_pointer_cast<const Http3DataFrame>(frame1);
   CHECK(data_frame1 != nullptr);
-  CHECK(memcmp(data_frame1->payload(), buf1 + 3, 4) == 0);
+  CHECK(memcmp(data_frame1->payload(), buf1 + 2, 4) == 0);
 
   std::shared_ptr<const Http3Frame> frame2 = factory.fast_create(buf2, sizeof(buf2));
   CHECK(frame2 != nullptr);
 
   std::shared_ptr<const Http3DataFrame> data_frame2 = std::dynamic_pointer_cast<const Http3DataFrame>(frame2);
   CHECK(data_frame2 != nullptr);
-  CHECK(memcmp(data_frame2->payload(), buf2 + 3, 4) == 0);
+  CHECK(memcmp(data_frame2->payload(), buf2 + 2, 4) == 0);
 
   CHECK(frame1 == frame2);
 }
