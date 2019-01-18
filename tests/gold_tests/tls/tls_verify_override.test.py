@@ -56,6 +56,8 @@ ts.addSSLfile("ssl/signer.key")
 
 ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
+    'map http://foo.com/basictobar https://bar.com:{0}'.format(server_bar.Variables.Port))
+ts.Disk.remap_config.AddLine(
     'map http://foo.com/basic https://foo.com:{0}'.format(server_foo.Variables.Port))
 ts.Disk.remap_config.AddLine(
     'map http://foo.com/override https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(server_foo.Variables.Port))
@@ -68,7 +70,7 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.remap_config.AddLine(
     'map http://bar.com/overrideenforced https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(server_foo.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map /basic https://127.0.0.1:{0}'.format(server.Variables.Port))
+    'map /basic https://random.com:{0}'.format(server.Variables.Port))
 ts.Disk.remap_config.AddLine(
     'map /overrideenforce https://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(server.Variables.Port))
 ts.Disk.remap_config.AddLine(
@@ -103,11 +105,13 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
     'proxy.config.url_remap.pristine_host_hdr': 1,
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-    'proxy.config.dns.resolv_conf': 'NULL'
+    'proxy.config.dns.resolv_conf': 'NULL',
+    'proxy.config.ssl.client.sni_policy': 'remap'
 })
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
+dns.addRecords(records={"random.com.": ["127.0.0.1"]})
 
 # Should succeed without message
 tr = Test.AddTestRun("default-permissive-success")
@@ -148,6 +152,15 @@ tr2.StillRunningAfter = ts
 # Should succeed, but will be message in log about signature 
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.TimeOut = 5
+
+tr3 = Test.AddTestRun("default-foo-to-bar")
+tr3.Processes.Default.Command = "curl -k -v -H \"host: foo.com\"  http://127.0.0.1:{0}/basictobar".format(ts.Variables.port)
+tr3.ReturnCode = 0
+tr3.StillRunningAfter = server
+tr3.StillRunningAfter = ts
+# Should succeed.  No error messages
+tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr3.Processes.Default.TimeOut = 5
 
 tr3 = Test.AddTestRun("override-foo")
 tr3.Processes.Default.Command = "curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/override".format(ts.Variables.port)
@@ -220,16 +233,17 @@ tr.StillRunningAfter = ts
 tr.Processes.Default.TimeOut = 5
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could not connect", "Curl attempt should succeed")
 
-
 # Over riding the built in ERROR check since we expect some cases to fail
 
 # checks on random.com should fail with message only
-ts.Disk.diags_log.Content = Testers.ContainsExpression("WARNING: Core server certificate verification failed for \(random.com\). Action=Continue Error=self signed certificate server=127.0.0.1\(127.0.0.1\) depth=0", "Warning for self signed certificate")
+ts.Disk.diags_log.Content = Testers.ContainsExpression("WARNING: Core server certificate verification failed for \(random.com\). Action=Continue Error=self signed certificate server=random.com\(127.0.0.1\) depth=0", "Warning for self signed certificate")
 # permissive failure for bar.com
 ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(bar.com\) not in certificate. Action=Continue server=bar.com\(127.0.0.1\)", "Warning on missing name for bar.com")
 # name check failure for random.com
-ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(random.com\) not in certificate. Action=Continue server=127.0.0.1\(127.0.0.1\)", "Warning on missing name for randome.com")
+ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(random.com\) not in certificate. Action=Continue server=random.com\(127.0.0.1\)", "Warning on missing name for randome.com")
 # name check failure for bar.com
 ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=bar.com\(127.0.0.1\)", "Failure on missing name for bar.com")
+# See if the explicitly set default sni_policy of remap works.  
+ts.Disk.diags_log.Content += Testers.ExcludesExpression("WARNING: SNI \(foo.com\) not in certificate. Action=Continue", "Warning on missing name for foo.com")
 
 
