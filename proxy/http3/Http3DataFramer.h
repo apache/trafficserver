@@ -40,5 +40,5 @@ public:
 
 private:
   Http3ClientTransaction *_transaction = nullptr;
-  VIO *_source_vio                  = nullptr;
+  VIO *_source_vio                     = nullptr;
 };

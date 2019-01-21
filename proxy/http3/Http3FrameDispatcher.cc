@@ -43,7 +43,7 @@ Http3FrameDispatcher::on_read_ready(QUICStreamIO &stream_io, uint64_t &nread)
 {
   std::shared_ptr<const Http3Frame> frame(nullptr);
   Http3ErrorUPtr error = Http3ErrorUPtr(new Http3NoError());
-  nread             = 0;
+  nread                = 0;
 
   while (true) {
     if (this->_reading_state == READING_LENGTH_LEN) {
@@ -78,7 +78,7 @@ Http3FrameDispatcher::on_read_ready(QUICStreamIO &stream_io, uint64_t &nread)
     nread += 1 + this->_reading_frame_payload_len; // Type field length (1) + Payload length
 
     // Dispatch
-    Http3FrameType type                       = frame->type();
+    Http3FrameType type = frame->type();
     Debug("http3", "[RX] | %s", Http3DebugNames::frame_type(type));
     std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
     for (auto h : handlers) {

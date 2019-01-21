@@ -25,7 +25,9 @@
 #include "Http3DataFramer.h"
 #include "Http3ClientTransaction.h"
 
-Http3DataFramer::Http3DataFramer(Http3ClientTransaction *transaction, VIO *source) : _transaction(transaction), _source_vio(source) {}
+Http3DataFramer::Http3DataFramer(Http3ClientTransaction *transaction, VIO *source) : _transaction(transaction), _source_vio(source)
+{
+}
 
 Http3FrameUPtr
 Http3DataFramer::generate_frame(uint16_t max_size)
@@ -34,7 +36,7 @@ Http3DataFramer::generate_frame(uint16_t max_size)
     return Http3FrameFactory::create_null_frame();
   }
 
-  Http3FrameUPtr frame      = Http3FrameFactory::create_null_frame();
+  Http3FrameUPtr frame   = Http3FrameFactory::create_null_frame();
   IOBufferReader *reader = this->_source_vio->get_reader();
   size_t len             = std::min(reader->read_avail(), static_cast<int64_t>(max_size));
   if (len) {

@@ -49,4 +49,3 @@ Http3DebugNames::frame_type(Http3FrameType type)
     return "UNKNOWN";
   }
 }
-

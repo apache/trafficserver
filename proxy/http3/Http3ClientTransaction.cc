@@ -32,13 +32,13 @@
 #include "Http3DataFramer.h"
 #include "HttpSM.h"
 
-#define Http3TransDebug(fmt, ...)                                                                                           \
-  Debug("http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                           \
+#define Http3TransDebug(fmt, ...)                                                                                        \
+  Debug("http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                        \
         static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->parent->get_netvc()))->cids().data(), \
         this->get_transaction_id(), ##__VA_ARGS__)
 
-#define Http3TransVDebug(fmt, ...)                                                                                          \
-  Debug("v_http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                         \
+#define Http3TransVDebug(fmt, ...)                                                                                       \
+  Debug("v_http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                      \
         static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->parent->get_netvc()))->cids().data(), \
         this->get_transaction_id(), ##__VA_ARGS__)
 
@@ -52,7 +52,8 @@
 //   Debug("v_http3_trans", "len=%" PRId64 "\n%s\n", read_len, msg);
 // }
 
-Http3ClientTransaction::Http3ClientTransaction(Http3ClientSession *session, QUICStreamIO *stream_io) : super(), _stream_io(stream_io)
+Http3ClientTransaction::Http3ClientTransaction(Http3ClientSession *session, QUICStreamIO *stream_io)
+  : super(), _stream_io(stream_io)
 {
   this->mutex   = new_ProxyMutex();
   this->_thread = this_ethread();

@@ -34,7 +34,7 @@ Http3FrameCollector::on_write_ready(QUICStreamIO *stream_io, size_t &nwritten)
     if (g->is_done()) {
       continue;
     }
-    size_t len        = 0;
+    size_t len           = 0;
     Http3FrameUPtr frame = g->generate_frame(sizeof(tmp) - nwritten);
     if (frame) {
       frame->store(tmp + nwritten, &len);

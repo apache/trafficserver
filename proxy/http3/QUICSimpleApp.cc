@@ -62,7 +62,7 @@ QUICSimpleApp::main_event_handler(int event, Event *data)
     return -1;
   }
 
-  QUICStreamId stream_id   = stream_io->stream_id();
+  QUICStreamId stream_id      = stream_io->stream_id();
   Http3ClientTransaction *txn = this->_client_session->get_transaction(stream_id);
 
   uint8_t dummy;

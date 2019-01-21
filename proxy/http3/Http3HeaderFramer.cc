@@ -27,7 +27,8 @@
 #include "HTTP.h"
 #include "I_VIO.h"
 
-Http3HeaderFramer::Http3HeaderFramer(Http3ClientTransaction *transaction, VIO *source) : _transaction(transaction), _source_vio(source)
+Http3HeaderFramer::Http3HeaderFramer(Http3ClientTransaction *transaction, VIO *source)
+  : _transaction(transaction), _source_vio(source)
 {
   http_parser_init(&this->_http_parser);
 }
@@ -46,7 +47,7 @@ Http3HeaderFramer::generate_frame(uint16_t max_size)
     // Create frames on demand base on max_size since we don't know how much we can write now
     const uint8_t *start = this->_header_block + this->_header_block_wrote;
     size_t len           = std::min(this->_header_block_len - this->_header_block_wrote, static_cast<size_t>(max_size));
-    Http3FrameUPtr frame    = Http3FrameFactory::create_headers_frame(start, len);
+    Http3FrameUPtr frame = Http3FrameFactory::create_headers_frame(start, len);
     this->_header_block_wrote += len;
     if (this->_header_block_len == this->_header_block_wrote) {
       this->_sent_all_data = true;

@@ -41,7 +41,7 @@ public:
 
 private:
   Http3ClientTransaction *_transaction = nullptr;
-  VIO *_source_vio                  = nullptr;
+  VIO *_source_vio                     = nullptr;
   HTTPParser _http_parser;
   HTTPHdr _header;
   uint8_t *_header_block     = nullptr;
