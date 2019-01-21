@@ -1073,7 +1073,7 @@ QUICNetVConnection::_state_connection_established_process_protected_packet(QUICP
   // on the old path until they initiate migration.
   // if (packet.destination_cid() == this->_quic_connection_id && has_non_probing_frame) {
   if (this->_alt_con_manager != nullptr) {
-    if(packet->destination_cid() != this->_quic_connection_id || !ats_ip_addr_port_eq(packet->from(), this->remote_addr)) {
+    if (packet->destination_cid() != this->_quic_connection_id || !ats_ip_addr_port_eq(packet->from(), this->remote_addr)) {
       if (!has_non_probing_frame) {
         QUICConDebug("FIXME: Connection migration has been initiated without non-probing frames");
       }
@@ -2100,13 +2100,13 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
   }
 
   if (this->connection_id() == dcid) {
-      // On client side (NET_VCONNECTION_OUT), nothing to do any more
-      if (this->netvc_context == NET_VCONNECTION_IN) {
-        Connection con;
-        con.setRemote(&(p.from().sa));
-        this->con.move(con);
-        this->_validate_new_path();
-      }
+    // On client side (NET_VCONNECTION_OUT), nothing to do any more
+    if (this->netvc_context == NET_VCONNECTION_IN) {
+      Connection con;
+      con.setRemote(&(p.from().sa));
+      this->con.move(con);
+      this->_validate_new_path();
+    }
   } else {
     if (this->_alt_con_manager->migrate_to(dcid, this->_reset_token)) {
       // DCID of received packet is local cid

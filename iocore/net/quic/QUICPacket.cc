@@ -175,9 +175,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf
 
   if (this->type() != QUICPacketType::VERSION_NEGOTIATION) {
     if (this->type() == QUICPacketType::RETRY) {
-      uint8_t odcil = 0;
-      this->_odcil(odcil, raw_buf + offset, len - offset);
-      ++offset;
+      uint8_t odcil        = (raw_buf[0] & 0x0f) + 3;
       this->_original_dcid = {raw_buf + offset, odcil};
       offset += odcil;
     } else {
@@ -540,16 +538,13 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
 
   if (this->_type != QUICPacketType::VERSION_NEGOTIATION) {
     if (this->_type == QUICPacketType::RETRY) {
-      std::random_device rnd;
-
-      buf[*len] += rnd() & 0xF0;
-      buf[*len] = this->_original_dcid == QUICConnectionId::ZERO() ? 0 : (this->_original_dcid.length() - 3);
-      *len += 1;
-
+      // Original Destination Connection ID
       if (this->_original_dcid != QUICConnectionId::ZERO()) {
         QUICTypeUtil::write_QUICConnectionId(this->_original_dcid, buf + *len, &n);
         *len += n;
       }
+      // ODCIL
+      buf[0] |= this->_original_dcid.length() - 3;
     } else {
       if (this->_type == QUICPacketType::INITIAL) {
         // Token Length Field
@@ -575,8 +570,10 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
         pn_len = 1;
       }
 
-      // PN Len field
-      QUICTypeUtil::write_QUICPacketNumberLen(pn_len, buf);
+      if (this->_type != QUICPacketType::RETRY) {
+        // PN Len field
+        QUICTypeUtil::write_QUICPacketNumberLen(pn_len, buf);
+      }
 
       // Length Field
       QUICIntUtil::write_QUICVariableInt(pn_len + this->_payload_length + aead_tag_len, buf + *len, &n);
@@ -589,23 +586,6 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
 
     // Payload will be stored
   }
-}
-
-bool
-QUICPacketLongHeader::_odcil(uint8_t &odcil, const uint8_t *buf, size_t buf_len)
-{
-  if (buf_len <= 0) {
-    return false;
-  }
-
-  // the least significant 4 bits are odcil and the most significant 4 bits are random
-  odcil = buf[0];
-
-  if (odcil != 0) {
-    odcil += 3;
-  }
-
-  return true;
 }
 
 //

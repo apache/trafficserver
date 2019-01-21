@@ -244,8 +244,6 @@ public:
   static bool packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len);
 
 private:
-  bool _odcil(uint8_t &odcil, const uint8_t *buf, size_t buf_len);
-
   QUICPacketNumber _packet_number;
   QUICConnectionId _destination_cid = QUICConnectionId::ZERO();
   QUICConnectionId _source_cid      = QUICConnectionId::ZERO();
