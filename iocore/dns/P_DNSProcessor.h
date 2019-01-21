@@ -159,8 +159,9 @@ struct DNSEntry : public Continuation {
 
   int mainEvent(int event, Event *e);
   int delayEvent(int event, Event *e);
+  int postAllEvent(int event, Event *e);
   int post(DNSHandler *h, HostEnt *ent);
-  int postEvent(int event, Event *e);
+  int postOneEvent(int event, Event *e);
   void init(const char *x, int len, int qtype_arg, Continuation *acont, DNSProcessor::Options const &opt);
 
   DNSEntry()
