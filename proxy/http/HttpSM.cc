@@ -3268,7 +3268,7 @@ HttpSM::tunnel_handler_ua_push(int event, HttpTunnelProducer *p)
   case VC_EVENT_EOS:
     // Transfer terminated.  Bail on the cache write.
     set_ua_abort(HttpTransact::ABORTED, event);
-    p->vc->do_io_close(EHTTP_ERROR);
+    p->do_io_close(EHTTP_ERROR);
     p->read_vio = nullptr;
     tunnel.chain_abort_all(p);
     break;
@@ -3305,7 +3305,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
     if (t_state.cache_info.object_read->object_size_get() != INT64_MAX || event == VC_EVENT_ERROR) {
       // Abnormal termination
       t_state.squid_codes.log_code = SQUID_LOG_TCP_SWAPFAIL;
-      p->vc->do_io_close(EHTTP_ERROR);
+      p->do_io_close(EHTTP_ERROR);
       p->read_vio = nullptr;
       tunnel.chain_abort_all(p);
       HTTP_INCREMENT_DYN_STAT(http_cache_read_errors);
@@ -3321,7 +3321,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
   case HTTP_TUNNEL_EVENT_CONSUMER_DETACH:
     p->read_success = true;
-    p->vc->do_io_close();
+    p->do_io_close();;
     p->read_vio = nullptr;
     break;
   default:
@@ -3524,7 +3524,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     if (c->producer->vc_type == HT_TRANSFORM) {
       if (c->producer->handler_state == HTTP_SM_TRANSFORM_OPEN) {
         ink_assert(c->producer->vc == post_transform_info.vc);
-        c->producer->vc->do_io_close();
+        c->producer->do_io_close();
         c->producer->alive                = false;
         c->producer->self_consumer->alive = false;
       }
@@ -3590,7 +3590,7 @@ HttpSM::tunnel_handler_ssl_producer(int event, HttpTunnelProducer *p)
     // The write side of this connection is still alive
     //  so half-close the read
     if (p->self_consumer->alive) {
-      p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+	  p->do_io_shutdown(IO_SHUTDOWN_READ);
       tunnel.local_finish_all(p);
       break;
     }
@@ -3611,7 +3611,7 @@ HttpSM::tunnel_handler_ssl_producer(int event, HttpTunnelProducer *p)
     if (p->self_consumer->producer->alive) {
       p->self_consumer->producer->alive = false;
       if (p->self_consumer->producer->self_consumer->alive) {
-        p->self_consumer->producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+        p->self_consumer->producer->do_io_shutdown(IO_SHUTDOWN_READ);
       } else {
         tunnel.close_vc(p->self_consumer->producer);
       }
@@ -3658,7 +3658,7 @@ HttpSM::tunnel_handler_ssl_consumer(int event, HttpTunnelConsumer *c)
     if (c->producer->alive) {
       c->producer->alive = false;
       if (c->producer->self_consumer->alive) {
-        c->producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+        c->producer->do_io_shutdown(IO_SHUTDOWN_READ);
       } else {
         tunnel.close_vc(c->producer);
       }
@@ -5654,7 +5654,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
   // now that we have the tunnel operational.
   // HttpTunnel could broken due to bad chunked data and close all vc by chain_abort_all().
   if (p->handler_state != HTTP_SM_POST_UA_FAIL && ua_txn->get_half_close_flag()) {
-    p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+	p->do_io_shutdown(IO_SHUTDOWN_READ);
   }
 }
 
@@ -6678,7 +6678,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
   // If we're half closed, we got a FIN from the client. Forward it on to the origin server
   // now that we have the tunnel operational.
   if (ua_txn && ua_txn->get_half_close_flag()) {
-    p_ua->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+    p_ua->do_io_shutdown(IO_SHUTDOWN_READ);
   }
 }
 
@@ -6755,7 +6755,9 @@ HttpSM::kill_this()
       pending_action->cancel();
       pending_action = nullptr;
     } else if (pending_action) {
-      ink_assert(pending_action == nullptr);
+    //  ink_assert(pending_action == nullptr);
+      pending_action->cancel();
+      pending_action = nullptr;
     }
 
     cache_sm.end_both();

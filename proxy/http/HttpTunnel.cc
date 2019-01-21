@@ -483,6 +483,23 @@ HttpTunnelProducer::set_throttle_src(HttpTunnelProducer *srcp)
     }
   }
 }
+void 
+HttpTunnelProducer::do_io_close(int lerrno)
+{
+	if(vc){
+	  vc->do_io_close(lerrno);
+	  vc = nullptr;
+	}
+}
+
+void HttpTunnelProducer::do_io_shutdown(ShutdownHowTo_t howto)
+{
+  if(vc){
+    vc->do_io_shutdown(howto);
+  }
+}
+
+
 
 HttpTunnelConsumer::HttpTunnelConsumer()
   : link(),
@@ -592,7 +609,7 @@ HttpTunnel::deallocate_buffers()
   ink_release_assert(active == false);
   for (auto &producer : producers) {
     if (producer.read_buffer != nullptr) {
-      ink_assert(producer.vc != nullptr);
+      //ink_assert(producer.vc != nullptr);
       free_MIOBuffer(producer.read_buffer);
       producer.read_buffer  = nullptr;
       producer.buffer_start = nullptr;
@@ -600,14 +617,14 @@ HttpTunnel::deallocate_buffers()
     }
 
     if (producer.chunked_handler.dechunked_buffer != nullptr) {
-      ink_assert(producer.vc != nullptr);
+     // ink_assert(producer.vc != nullptr);
       free_MIOBuffer(producer.chunked_handler.dechunked_buffer);
       producer.chunked_handler.dechunked_buffer = nullptr;
       num++;
     }
 
     if (producer.chunked_handler.chunked_buffer != nullptr) {
-      ink_assert(producer.vc != nullptr);
+    //  ink_assert(producer.vc != nullptr);
       free_MIOBuffer(producer.chunked_handler.chunked_buffer);
       producer.chunked_handler.chunked_buffer = nullptr;
       num++;
@@ -1465,7 +1482,7 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer *p)
       p->self_consumer->alive = false;
     }
     p->read_vio = nullptr;
-    p->vc->do_io_close(EHTTP_ERROR);
+    p->do_io_close(EHTTP_ERROR);
     update_stats_after_abort(p->vc_type);
   }
 }
@@ -1578,7 +1595,7 @@ HttpTunnel::close_vc(HttpTunnelProducer *p)
     }
   }
 
-  p->vc->do_io_close();
+  p->do_io_close();
 }
 
 // void HttpTunnel::close_vc(HttpTunnelConsumer* c)

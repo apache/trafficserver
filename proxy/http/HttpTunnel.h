@@ -178,6 +178,7 @@ struct HttpTunnelConsumer {
       @return @c true if data exits the ATS process at this consumer.
   */
   bool is_sink() const;
+  void do_io_close();
 };
 
 struct HttpTunnelProducer {
@@ -243,6 +244,8 @@ struct HttpTunnelProducer {
   */
   void set_throttle_src(HttpTunnelProducer *srcp ///< Source producer of flow.
   );
+	void do_io_close(int lerrno = -1);
+  void do_io_shutdown(ShutdownHowTo_t howto);
 };
 
 class HttpTunnel : public Continuation
@@ -536,6 +539,16 @@ HttpTunnelConsumer::is_sink() const
 {
   return HT_HTTP_CLIENT == vc_type || HT_CACHE_WRITE == vc_type;
 }
+
+inline void HttpTunnelConsumer::do_io_close()
+{
+  if(vc){
+    vc->do_io_close();
+    vc = nullptr;
+  }
+}
+
+
 
 inline bool
 HttpTunnelProducer::is_source() const
