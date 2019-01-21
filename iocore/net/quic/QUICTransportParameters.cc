@@ -288,9 +288,10 @@ QUICTransportParameters::_print() const
     if (p.second->len() == 0) {
       Debug(tag, "%s: (no value)", QUICDebugNames::transport_parameter_id(p.first));
     } else if (p.second->len() <= 8) {
-      Debug(tag, "%s: 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first),
-            QUICIntUtil::read_nbytes_as_uint(p.second->data(), p.second->len()),
-            QUICIntUtil::read_nbytes_as_uint(p.second->data(), p.second->len()));
+      uint64_t int_value;
+      size_t int_value_len;
+      QUICVariableInt::decode(int_value, int_value_len, p.second->data(), p.second->len());
+      Debug(tag, "%s: 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first), int_value, int_value);
     } else if (p.second->len() <= 24) {
       char hex_str[65];
       to_hex_str(hex_str, sizeof(hex_str), p.second->data(), p.second->len());
