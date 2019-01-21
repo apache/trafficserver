@@ -782,7 +782,11 @@ RangeTransform::handle_event(int event, void *edata)
 
   if (m_closed) {
     if (m_deletable) {
-      Debug("http_trans", "RangeTransform destroy: %p ndone=%" PRId64, this, m_output_vio ? m_output_vio->ndone : 0);
+      if (m_output_vc != nullptr) {
+        Debug("http_trans", "RangeTransform destroy: %p ndone=%" PRId64, this, m_output_vio ? m_output_vio->ndone : 0);
+      } else {
+        Debug("http_trans", "RangeTransform destroy");
+      }
       delete this;
     }
   } else {
