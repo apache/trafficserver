@@ -178,7 +178,7 @@ QUICPacketHeaderProtector::_calc_sample_offset(uint8_t *sample_offset, const uin
     *sample_offset = 1 + dcil + 4;
   }
 
-  return *sample_offset + 16 < protected_packet_len;
+  return *sample_offset + 16 <= protected_packet_len;
 }
 
 bool
