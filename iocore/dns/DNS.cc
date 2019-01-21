@@ -1307,7 +1307,16 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry, bool tcp_retry)
       DNS_SUM_DYN_STAT(dns_success_time_stat, Thread::get_hrtime() - e->submit_time);
     }
   }
+
+  // Remove head node from DNSHandler::entries queue
   h->entries.remove(e);
+  // Release Query ID from DNSHandler
+  for (int i : e->id) {
+    if (i < 0) {
+      break;
+    }
+    h->release_query_id(i);
+  }
 
   if (is_debug_tag_set("dns")) {
     if (is_addr_query(e->qtype)) {
@@ -1334,52 +1343,50 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry, bool tcp_retry)
     DNS_INCREMENT_DYN_STAT(dns_lookup_fail_stat);
   }
 
-  DNSEntry *dup = nullptr;
-  while ((dup = e->dups.dequeue())) {
-    if (dup->post(h, ent)) {
-      e->dups.enqueue(dup);
-      goto Lretry;
-    }
-  }
-
-  if (e->timeout) {
-    e->timeout->cancel(e);
-    e->timeout = nullptr;
-  }
-  e->result_ent = ent;
-
-  if (h->mutex->thread_holding == e->submit_thread) {
-    MUTEX_TRY_LOCK(lock, e->action.mutex, h->mutex->thread_holding);
-    if (!lock.is_locked()) {
-      Debug("dns", "failed lock for result %s", e->qname);
-      goto Lretry;
-    }
-    for (int i : e->id) {
-      if (i < 0) {
-        break;
-      }
-      h->release_query_id(i);
-    }
-    e->postEvent(0, nullptr);
-  } else {
-    for (int i : e->id) {
-      if (i < 0) {
-        break;
-      }
-      h->release_query_id(i);
-    }
-    e->mutex = e->action.mutex;
-    SET_CONTINUATION_HANDLER(e, &DNSEntry::postEvent);
-    e->submit_thread->schedule_imm_signal(e);
-  }
-  return;
-Lretry:
+  // Save HostEnt to the head node
   e->result_ent = ent;
   e->retries    = 0;
-  if (e->timeout) {
-    e->timeout->cancel();
+  SET_CONTINUATION_HANDLER(e, &DNSEntry::postAllEvent);
+  e->handleEvent(EVENT_NONE, nullptr);
+}
+
+int
+DNSEntry::postAllEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+{
+  /* Traverse the DNSEntry queue and callback
+   *
+   * The first DNSEntry object is head node,
+   *   - Pushed into DNSHandler::entries queue,
+   *   - Initial a DNS request and send to named server,
+   *   - Maintained a dups queue which holds the DNSEntry object for the same DNS request,
+   *   - All the DNSEntry in the queue share the same HostEnt result
+   *
+   * The head node callback the HostEnt result to the Continuation of all nodes one by one,
+   *   - If one of the callback fails, put the node back to the dups queue and try again later by reschedule the head node,
+   *   - Always call back the head node until the dups queue is empty.
+   */
+  DNSEntry *dup = nullptr;
+  while ((dup = dups.dequeue())) {
+    if (dup->post(dnsH, result_ent.get())) {
+      // If one of the callback fails, put the node back to the dups queue
+      dups.enqueue(dup);
+      // Try again by reschedule the head node
+      if (timeout) {
+        timeout->cancel();
+      }
+      timeout = dnsH->mutex->thread_holding->schedule_in(this, MUTEX_RETRY_DELAY);
+      return EVENT_DONE;
+    }
   }
-  e->timeout = h->mutex->thread_holding->schedule_in(e, MUTEX_RETRY_DELAY);
+
+  // Process the head node at last
+  if (post(dnsH, result_ent.get())) {
+    // If the callback fails, switch the handler to DNSEntry::postOneEvent and reschedule it.
+    mutex = action.mutex;
+    SET_HANDLER(&DNSEntry::postOneEvent);
+    submit_thread->schedule_imm(this);
+  }
+  return EVENT_DONE;
 }
 
 int
@@ -1396,17 +1403,17 @@ DNSEntry::post(DNSHandler *h, HostEnt *ent)
       Debug("dns", "failed lock for result %s", qname);
       return 1;
     }
-    postEvent(0, nullptr);
+    postOneEvent(0, nullptr);
   } else {
     mutex = action.mutex;
-    SET_HANDLER(&DNSEntry::postEvent);
+    SET_HANDLER(&DNSEntry::postOneEvent);
     submit_thread->schedule_imm_signal(this);
   }
   return 0;
 }
 
 int
-DNSEntry::postEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+DNSEntry::postOneEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   if (!action.cancelled) {
     Debug("dns", "called back continuation for %s", qname);
