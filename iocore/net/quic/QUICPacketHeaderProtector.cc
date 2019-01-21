@@ -87,11 +87,16 @@ QUICPacketHeaderProtector::protect(uint8_t *unprotected_packet, size_t unprotect
 bool
 QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected_packet_len) const
 {
-  // Do nothing if the packet is VN
+  // Do nothing if the packet is VN or RETRY
   if (QUICInvariants::is_long_header(protected_packet)) {
     QUICVersion version;
     QUICPacketLongHeader::version(version, protected_packet, protected_packet_len);
     if (version == 0x0) {
+      return true;
+    }
+    QUICPacketType type;
+    QUICPacketLongHeader::type(type, protected_packet, protected_packet_len);
+    if (type == QUICPacketType::RETRY) {
       return true;
     }
   }
