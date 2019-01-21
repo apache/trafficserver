@@ -206,10 +206,10 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   }
 
   for (auto &&filter : filters) {
-    const char *filter_name = filter.as<std::string>().c_str();
-    LogFilter *f            = cfg->filter_list.find_by_name(filter_name);
+    std::string filter_name = filter.as<std::string>().c_str();
+    LogFilter *f            = cfg->filter_list.find_by_name(filter_name.c_str());
     if (!f) {
-      Warning("Filter %s is not a known filter; cannot add to this LogObject", filter_name);
+      Warning("Filter %s is not a known filter; cannot add to this LogObject", filter_name.c_str());
     } else {
       logObject->add_filter(f);
     }
