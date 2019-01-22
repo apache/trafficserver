@@ -84,32 +84,30 @@ tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=bar.com", "Cert should contain bar.com")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=foo.com", "Cert should not contain foo.com")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(" HTTP/2 404", "Should make an exchange")
-tr.TimeOut = 5
 
 # Should receive a foo.com cert
 tr2 = Test.AddTestRun("foo.com cert")
 tr2.Processes.Default.Command = "curl -v --cacert signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
-tr2.Processes.Default.TimeOut = 5
+tr2.Processes.Default.TimeOut = 10
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=foo.com", "Cert should contain foo.com")
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=bar.com", "Cert should not contain bar.com")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(" HTTP/2 404", "Should make an exchange")
-tr2.TimeOut = 5
 
 # Should receive random.server.com
 tr2 = Test.AddTestRun("random.server.com cert")
 tr2.Processes.Default.Command = "curl -v -k --resolve 'random.server.com:{0}:127.0.0.1' https://random.server.com:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
-tr2.Processes.Default.TimeOut = 5
+tr2.Processes.Default.TimeOut = 10
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=random.server.com", "Cert should contain random.server.com")
@@ -123,7 +121,7 @@ tr2 = Test.AddTestRun("Bad SNI")
 tr2.Processes.Default.Command = "curl -v -k --cacert signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
-tr2.Processes.Default.TimeOut = 5
+tr2.Processes.Default.TimeOut = 10
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=foo.com", "Cert should contain foo.com")

@@ -116,25 +116,23 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr.TimeOut = 5
 
 tr2 = Test.AddTestRun("override-disabled")
 tr2.Processes.Default.Command = "curl -k -H \"host: random.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
-tr2.Processes.Default.TimeOut = 5
+tr2.Processes.Default.TimeOut = 10
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr2.TimeOut = 5
 
 tr3 = Test.AddTestRun("override-permissive")
 tr3.Processes.Default.Command = "curl -k -H \"host: bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
-tr3.Processes.Default.TimeOut = 5
+tr3.Processes.Default.TimeOut = 10
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr4 = Test.AddTestRun("override-permissive-bad-name")
@@ -142,7 +140,7 @@ tr4.Processes.Default.Command = "curl -k -H \"host: bad_bar.com\"  https://127.0
 tr4.ReturnCode = 0
 tr4.StillRunningAfter = server
 tr4.StillRunningAfter = ts
-tr4.Processes.Default.TimeOut = 5
+tr4.Processes.Default.TimeOut = 10
 tr4.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr5 = Test.AddTestRun("default-enforce-bad-sig")
@@ -151,7 +149,7 @@ tr5.ReturnCode = 0
 tr5.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
 tr5.StillRunningAfter = server
 tr5.StillRunningAfter = ts
-tr5.Processes.Default.TimeOut = 5
+tr5.Processes.Default.TimeOut = 10
 
 tr6 = Test.AddTestRun("default-enforce-fail")
 tr6.Processes.Default.Command = "curl -k -H \"host: bad_foo.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
@@ -159,7 +157,7 @@ tr6.ReturnCode = 0
 tr6.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
 tr6.StillRunningAfter = server
 tr6.StillRunningAfter = ts
-tr6.Processes.Default.TimeOut = 5
+tr6.Processes.Default.TimeOut = 10
 
 
 # No name checking for the sig-only permissive override for bad_bar

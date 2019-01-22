@@ -110,28 +110,25 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr.TimeOut = 5
 
 tr = Test.AddTestRun("my.foo.com Permissive-Test log failure")
 tr.Processes.Default.Command = "curl -v -k --resolve 'my.foo.com:{0}:127.0.0.1' https://my.foo.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr.TimeOut = 5
 
 
 tr2 = Test.AddTestRun("bob.bar.com Override-enforcing-Test")
 tr2.Processes.Default.Command = "curl -v -k --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
-tr2.Processes.Default.TimeOut = 5
+tr2.Processes.Default.TimeOut = 10
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr2.TimeOut = 5
 
 tr3 = Test.AddTestRun("bob.foo.com override-enforcing-name-test")
 tr3.Processes.Default.Command = "curl -v -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}/".format(ts.Variables.ssl_port)
@@ -139,8 +136,7 @@ tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Con
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
-tr3.Processes.Default.TimeOut = 5
-tr3.TimeOut = 5
+tr3.Processes.Default.TimeOut = 10
 
 tr3 = Test.AddTestRun("random.bar.com override-no-test")
 tr3.Processes.Default.Command = "curl -v -k --resolve 'random.bar.com:{0}:127.0.0.1' https://random.bar.com:{0}".format(ts.Variables.ssl_port)
@@ -148,8 +144,7 @@ tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Con
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
-tr3.Processes.Default.TimeOut = 5
-tr3.TimeOut = 5
+tr3.Processes.Default.TimeOut = 10
 
 
 # Over riding the built in ERROR check since we expect tr3 to fail
