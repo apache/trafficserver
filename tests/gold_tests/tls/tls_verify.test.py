@@ -109,18 +109,16 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr.TimeOut = 5
 
 tr2 = Test.AddTestRun("Override-enforcing-Test")
 tr2.Processes.Default.Command = "curl -v -k -H \"host: bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
-tr2.Processes.Default.TimeOut = 5
 tr2.StillRunningAfter = ts
+tr2.Processes.Default.TimeOut = 10
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr2.TimeOut = 5
 
 tr3 = Test.AddTestRun("Override-enforcing-Test-fail-name-check")
 tr3.Processes.Default.Command = "curl -v -k -H \"host: bad_bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
@@ -128,7 +126,7 @@ tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Con
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
-tr3.Processes.Default.TimeOut = 5
+tr3.Processes.Default.TimeOut = 10
 
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ExcludesExpression("verification failed", "Make sure the signatures didn't fail")

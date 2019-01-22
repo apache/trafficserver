@@ -100,30 +100,27 @@ tr.Processes.Default.StartBefore(server2)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
 tr.StillRunningAfter = server1
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.TimeOut = 10
 # Should succed.  No message
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr.TimeOut = 5
 
 tr2 = Test.AddTestRun("Use incorrect ca  bundle for server 1")
 tr2.Processes.Default.Command = "curl -k -H \"host: bar.com\"  http://127.0.0.1:{0}/badcase1".format(ts.Variables.port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server1
-tr2.Processes.Default.TimeOut = 5
+tr2.Processes.Default.TimeOut = 10
 tr2.StillRunningAfter = ts
 # Should succeed, but will be message in log about name mismatch
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr2.TimeOut = 5
 
 tr2 = Test.AddTestRun("Use currect ca bundle for server 2")
 tr2.Processes.Default.Command = "curl -k -H \"host: random.com\"  http://127.0.0.1:{0}/case2".format(ts.Variables.port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server2
-tr2.Processes.Default.TimeOut = 5
+tr2.Processes.Default.TimeOut = 10
 tr2.StillRunningAfter = ts
 # Should succeed, but will be message in log about signature 
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr2.TimeOut = 5
 
 tr3 = Test.AddTestRun("User incorrect ca bundle for server 2")
 tr3.Processes.Default.Command = "curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/badcase2".format(ts.Variables.port)
@@ -132,6 +129,6 @@ tr3.StillRunningAfter = server2
 tr3.StillRunningAfter = ts
 # Should succeed.  No error messages
 tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr3.Processes.Default.TimeOut = 5
+tr3.Processes.Default.TimeOut = 10
 
 

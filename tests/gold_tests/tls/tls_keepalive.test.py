@@ -102,5 +102,4 @@ tr.Processes.Default.ReturnCode = 0
 
 ts.Disk.squid_log.Content = "gold/accesslog.gold"
 
-tr.Processes.Default.TimeOut = 5
-tr.TimeOut = 5
+tr.Processes.Default.TimeOut = 10

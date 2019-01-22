@@ -107,9 +107,8 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = server2
 tr.Processes.Default.Command = "curl -H host:example.com  http://127.0.0.1:{0}/case1".format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.TimeOut = 5
+tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-tr.TimeOut = 5
 
 #Should fail
 trfail = Test.AddTestRun("Connect with first client cert to second server")
@@ -118,9 +117,8 @@ trfail.StillRunningAfter = server
 trfail.StillRunningAfter = server2
 trfail.Processes.Default.Command = 'curl -H host:example.com  http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
 trfail.Processes.Default.ReturnCode = 0
-trfail.Processes.Default.TimeOut = 5
+trfail.Processes.Default.TimeOut = 10
 trfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-trfail.TimeOut = 5
 
 # Should succeed
 trbar = Test.AddTestRun("Connect with signed2 bar to second server")
@@ -129,9 +127,8 @@ trbar.StillRunningAfter = server
 trbar.StillRunningAfter = server2
 trbar.Processes.Default.Command = "curl -H host:bar.com  http://127.0.0.1:{0}/case2".format(ts.Variables.port)
 trbar.Processes.Default.ReturnCode = 0
-trbar.Processes.Default.TimeOut = 5
+trbar.Processes.Default.TimeOut = 10
 trbar.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-trbar.TimeOut = 5
 
 #Should fail
 trbarfail = Test.AddTestRun("Connect with signed2 bar cert to first server")
@@ -140,9 +137,8 @@ trbarfail.StillRunningAfter = server
 trbarfail.StillRunningAfter = server2
 trbarfail.Processes.Default.Command = 'curl -H host:bar.com  http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
 trbarfail.Processes.Default.ReturnCode = 0
-trbarfail.Processes.Default.TimeOut = 5
+trbarfail.Processes.Default.TimeOut = 10
 trbarfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-trbarfail.TimeOut = 5
 
 tr2 = Test.AddTestRun("Update config files")
 # Update the SNI config
@@ -178,8 +174,7 @@ tr2.Processes.Default.Command = 'echo Updated configs'
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
-tr2.Processes.Default.TimeOut = 5
-tr2.TimeOut = 5
+tr2.Processes.Default.TimeOut = 10
 
 tr2reload = Test.AddTestRun("Reload config")
 tr2reload.StillRunningAfter = ts
@@ -189,8 +184,7 @@ tr2reload.Processes.Default.Command = 'traffic_ctl config reload'
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 tr2reload.Processes.Default.Env = ts.Env
 tr2reload.Processes.Default.ReturnCode = 0
-tr2reload.Processes.Default.TimeOut = 5
-tr2reload.TimeOut = 5
+tr2reload.Processes.Default.TimeOut = 10
 
 
 #Should succeed
@@ -202,9 +196,8 @@ tr3bar.StillRunningAfter = server
 tr3bar.StillRunningAfter = server2
 tr3bar.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
 tr3bar.Processes.Default.ReturnCode = 0
-tr3bar.Processes.Default.TimeOut = 5
+tr3bar.Processes.Default.TimeOut = 10
 tr3bar.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-tr3bar.TimeOut = 5
 
 #Should fail
 tr3barfail = Test.AddTestRun("Make request with other bar cert to second server")
@@ -213,9 +206,8 @@ tr3barfail.StillRunningAfter = server
 tr3barfail.StillRunningAfter = server2
 tr3barfail.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
 tr3barfail.Processes.Default.ReturnCode = 0
-tr3barfail.Processes.Default.TimeOut = 5
+tr3barfail.Processes.Default.TimeOut = 10
 tr3barfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-tr3barfail.TimeOut = 5
 
 #Should succeed
 tr3 = Test.AddTestRun("Make request with other cert to second server")
@@ -225,9 +217,8 @@ tr3.StillRunningAfter = server
 tr3.StillRunningAfter = server2
 tr3.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
 tr3.Processes.Default.ReturnCode = 0
-tr3.Processes.Default.TimeOut = 5
+tr3.Processes.Default.TimeOut = 10
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-tr3.TimeOut = 5
 
 #Should fail
 tr3fail = Test.AddTestRun("Make request with other cert to first server")
@@ -236,9 +227,8 @@ tr3fail.StillRunningAfter = server
 tr3fail.StillRunningAfter = server2
 tr3fail.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
 tr3fail.Processes.Default.ReturnCode = 0
-tr3fail.Processes.Default.TimeOut = 5
+tr3fail.Processes.Default.TimeOut = 10
 tr3fail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-tr3fail.TimeOut = 5
 
 
 # Test the case of updating certificate contents without changing file name.
@@ -254,7 +244,7 @@ trupdate.Processes.Default.Command = 'traffic_ctl config set proxy.config.ssl.cl
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 trupdate.Processes.Default.Env = ts.Env
 trupdate.Processes.Default.ReturnCode = 0
-trupdate.Processes.Default.TimeOut = 5
+trupdate.Processes.Default.TimeOut = 10
 
 trreload = Test.AddTestRun("Reload config after renaming certs")
 trreload.StillRunningAfter = ts
@@ -263,7 +253,7 @@ trreload.StillRunningAfter = server2
 trreload.Processes.Default.Command = 'traffic_ctl config reload'
 trreload.Processes.Default.Env = ts.Env
 trreload.Processes.Default.ReturnCode = 0
-trreload.Processes.Default.TimeOut = 5
+trreload.Processes.Default.TimeOut = 10
 
 #Should succeed
 tr4bar = Test.AddTestRun("Make request with renamed bar cert to second server")
@@ -274,9 +264,8 @@ tr4bar.StillRunningAfter = server
 tr4bar.StillRunningAfter = server2
 tr4bar.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
 tr4bar.Processes.Default.ReturnCode = 0
-tr4bar.Processes.Default.TimeOut = 5
+tr4bar.Processes.Default.TimeOut = 10
 tr4bar.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-tr4bar.TimeOut = 5
 
 #Should fail
 tr4barfail = Test.AddTestRun("Make request with renamed bar cert to first server")
@@ -285,7 +274,7 @@ tr4barfail.StillRunningAfter = server
 tr4barfail.StillRunningAfter = server2
 tr4barfail.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
 tr4barfail.Processes.Default.ReturnCode = 0
-tr4barfail.Processes.Default.TimeOut = 5
+tr4barfail.Processes.Default.TimeOut = 10
 tr4barfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
 #Should succeed
@@ -295,9 +284,8 @@ tr4.StillRunningAfter = server
 tr4.StillRunningAfter = server2
 tr4.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
 tr4.Processes.Default.ReturnCode = 0
-tr4.Processes.Default.TimeOut = 5
+tr4.Processes.Default.TimeOut = 10
 tr4.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-tr4.TimeOut = 5
 
 #Should fail
 tr4fail = Test.AddTestRun("Make request with renamed foo cert to second server")
@@ -306,7 +294,6 @@ tr4fail.StillRunningAfter = server
 tr4fail.StillRunningAfter = server2
 tr4fail.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
 tr4fail.Processes.Default.ReturnCode = 0
-tr4fail.Processes.Default.TimeOut = 5
+tr4fail.Processes.Default.TimeOut = 10
 tr4fail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-tr4fail.TimeOut = 5
 

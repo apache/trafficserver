@@ -86,5 +86,4 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.stdout = "gold/ssl-post.gold"
 tr.StillRunningAfter = server
-tr.Processes.Default.TimeOut = 5
-tr.TimeOut = 5
+tr.Processes.Default.TimeOut = 10

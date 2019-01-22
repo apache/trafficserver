@@ -89,8 +89,7 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 path1 = tr.Processes.Default.Streams.stdout.AbsPath
 tr.StillRunningAfter = server
-tr.Processes.Default.TimeOut = 5
-tr.TimeOut = 5
+tr.Processes.Default.TimeOut = 10
 
 # Pull out session created in tr to test for session id in tr2
 def checkSession(ev) :
@@ -124,5 +123,5 @@ tr2.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 
 tr2.Processes.Default.StartBefore(Test.Processes.ts2, ready=When.PortOpen(ts2.Variables.ssl_port))
 tr2.ReturnCode = 0
 path2 = tr2.Processes.Default.Streams.stdout.AbsPath
-tr2.Processes.Default.TimeOut = 5
+tr2.Processes.Default.TimeOut = 10
 tr2.Processes.Default.Streams.All.Content = Testers.Lambda(checkSession)
