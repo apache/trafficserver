@@ -664,7 +664,7 @@ unmarshalMimeHdr(char **buf, char *dest, int destLength)
 {
   ink_assert(*buf != nullptr);
 
-  const char *data{*buf};
+  const char *data = *buf;
 
   ink_assert(data != nullptr);
 
