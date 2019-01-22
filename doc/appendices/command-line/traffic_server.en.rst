@@ -52,8 +52,7 @@ environments or where the working set is highly variable.
 .. option:: -F, --disable_pfreelist
 
 Disable free list in ProxyAllocator which were left out by the -f
-option. Please note that this option is a temporary, testing
-option, and will be removed in the future.
+option. This option includes the functionality of :option:`-f`.
 
 .. option:: -R LEVEL, --regression LEVEL
 
