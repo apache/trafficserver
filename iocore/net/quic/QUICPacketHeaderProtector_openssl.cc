@@ -26,15 +26,22 @@
 bool
 QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *aead) const
 {
-  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+  static constexpr unsigned char FIVE_ZEROS[] = {0x00, 0x00, 0x00, 0x00, 0x00};
+  EVP_CIPHER_CTX *ctx                         = EVP_CIPHER_CTX_new();
 
   if (!ctx || !EVP_EncryptInit_ex(ctx, aead, nullptr, key, sample)) {
     return false;
   }
 
   int len = 0;
-  if (!EVP_EncryptUpdate(ctx, mask, &len, sample, 16)) {
-    return false;
+  if (aead == EVP_chacha20()) {
+    if (!EVP_EncryptUpdate(ctx, mask, &len, FIVE_ZEROS, sizeof(FIVE_ZEROS))) {
+      return false;
+    }
+  } else {
+    if (!EVP_EncryptUpdate(ctx, mask, &len, sample, 16)) {
+      return false;
+    }
   }
   if (!EVP_EncryptFinal_ex(ctx, mask + len, &len)) {
     return false;
