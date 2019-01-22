@@ -28,8 +28,24 @@
 #include <memory>
 
 enum class Http3StreamType : uint8_t {
-  CONTROL = 0x43,
-  PUSH    = 0x50,
+  CONTROL       = 0x43, ///< HTTP/3
+  QPACK_ENCODER = 0x48, ///< QPACK
+  PUSH          = 0x50, ///< HTTP/3
+  QPACK_DECODER = 0x68, ///< QPACK
+  RESERVED      = 0x1F,
+  UNKOWN        = 0xFF,
+};
+
+enum class Http3SettingsId : uint16_t {
+  HEADER_TABLE_SIZE     = 0x01, ///< QPACK Settings
+  RESERVED_1            = 0x02, ///< HTTP/3 Settings
+  RESERVED_2            = 0x03, ///< HTTP/3 Settings
+  RESERVED_3            = 0x04, ///< HTTP/3 Settings
+  RESERVED_4            = 0x05, ///< HTTP/3 Settings
+  MAX_HEADER_LIST_SIZE  = 0x06, ///< HTTP/3 Settings
+  QPACK_BLOCKED_STREAMS = 0x07, ///< QPACK Settings
+  NUM_PLACEHOLDERS      = 0x08, ///< HTTP/3 Settings
+  UNKNOWN               = 0x0A0A,
 };
 
 // Update Http3Frame::type(const uint8_t *) too when you modify this list

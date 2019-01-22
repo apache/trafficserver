@@ -114,12 +114,6 @@ private:
 // SETTINGS Frame
 //
 
-enum class Http3SettingsId : uint16_t {
-  MAX_HEADER_LIST_SIZE = 0x06,
-  NUM_PLACEHOLDERS     = 0x08,
-  UNKNOWN              = 0x0a0a,
-};
-
 class Http3SettingsFrame : public Http3Frame
 {
 public:
@@ -127,8 +121,12 @@ public:
   Http3SettingsFrame(const uint8_t *buf, size_t len);
 
   static constexpr size_t MAX_PAYLOAD_SIZE = 60;
-  static constexpr std::array<Http3SettingsId, 2> VALID_SETTINGS_IDS{Http3SettingsId::MAX_HEADER_LIST_SIZE,
-                                                                     Http3SettingsId::NUM_PLACEHOLDERS};
+  static constexpr std::array<Http3SettingsId, 4> VALID_SETTINGS_IDS{
+    Http3SettingsId::HEADER_TABLE_SIZE,
+    Http3SettingsId::MAX_HEADER_LIST_SIZE,
+    Http3SettingsId::QPACK_BLOCKED_STREAMS,
+    Http3SettingsId::NUM_PLACEHOLDERS,
+  };
 
   void store(uint8_t *buf, size_t *len) const override;
   void reset(const uint8_t *buf, size_t len) override;
