@@ -7695,7 +7695,7 @@ HttpSM::do_redirect()
         HTTP_INCREMENT_DYN_STAT(http_total_x_redirect_stat);
       } else {
         // get the location header and setup the redirect
-        int redir_len;
+        int redir_len   = 0;
         char *redir_url = (char *)t_state.hdr_info.client_response.value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redir_len);
         redirect_request(redir_url, redir_len);
       }
