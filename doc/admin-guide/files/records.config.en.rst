@@ -2281,55 +2281,6 @@ Heuristic Expiration
    aging factor is applied, the final maximum age calculated will never be
    higher than the value in this variable.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.time INT 0
-   :deprecated:
-   :reloadable:
-   :overridable:
-
-   How often |TS| checks for an early refresh, during the period before the
-   document stale time. The interval specified must be in seconds.
-
-.. note::
-
-   Previous versions of Apache |TS| defaulted this to 240s. This
-   feature is deprecated as of ATS v6.2.0.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.0
-   :deprecated:
-   :reloadable:
-   :overridable:
-
-   The probability that a refresh is made on a document during the fuzz time
-   specified in :ts:cv:`proxy.config.http.cache.fuzz.time`.
-
-.. note::
-
-   Previous versions of Apache |TS| defaulted this to 0.005 (0.5%).
-   This feature is deprecated as of ATS v6.2.0
-
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.min_time INT 0
-   :deprecated:
-   :reloadable:
-   :overridable:
-
-   Handles requests with a TTL less than :ts:cv:`proxy.config.http.cache.fuzz.time`.
-   It allows for different times to evaluate the probability of revalidation
-   for small TTLs and big TTLs. Objects with small TTLs will start "rolling the
-   revalidation dice" near the ``fuzz.min_time``, while objects with large TTLs
-   would start at ``fuzz.time``. A logarithmic-like function between determines
-   the revalidation evaluation start time (which will be between
-   ``fuzz.min_time`` and ``fuzz.time``). As the object gets closer to expiring,
-   the window start becomes more likely. By default this setting is not enabled,
-   but should be enabled any time you have objects with small TTLs.
-
-.. note::
-
-    These fuzzing options are marked as deprecated as of v6.2.0, and will be
-    removed for v7.0.0. Instead, we recommend looking at the new
-    :ts:cv:`proxy.config.http.cache.open_write_fail_action` configuration and
-    the features around thundering heard avoidance (see
-    :ref:`http-proxy-caching` for details).
-
 Dynamic Content & Content Negotiation
 =====================================
 
@@ -2602,7 +2553,7 @@ HostDB
    For values above ``200000``, you must increase :ts:cv:`proxy.config.hostdb.max_size`
    by at least 44 bytes per entry.
 
-.. ts:cv:: proxy.config.hostdb.round_robin_max_count INT 16
+.. ts:cv:: CONFIG proxy.config.hostdb.round_robin_max_count INT 16
 
    The maximum count of DNS answers per round robin hostdb record. The default variable is 16.
 
