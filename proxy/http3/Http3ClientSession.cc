@@ -105,7 +105,7 @@ Http3ClientSession::get_transact_count() const
 const char *
 Http3ClientSession::get_protocol_string() const
 {
-  return "h3-17";
+  return "hq-17";
 }
 
 void
