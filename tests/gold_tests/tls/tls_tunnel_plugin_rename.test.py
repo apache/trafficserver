@@ -66,7 +66,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     # enable ssl port
     'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
-    'proxy.config.http.connect_ports': '{0} {1} {2}'.format(ts.Variables.ssl_port,server_bar.Variables.Port,server_random.Variables.Port),
+    'proxy.config.http.connect_ports': '{0} {1} {2}'.format(ts.Variables.ssl_port,server_bar.Variables.SSL_Port,server_random.Variables.SSL_Port),
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
@@ -79,9 +79,9 @@ ts.Disk.records_config.update({
 # newname should tunnel to server_bar
 ts.Disk.ssl_server_name_yaml.AddLines([
   "- fqdn: newname",
-  "  tunnel_route: localhost:{0}".format(server_bar.Variables.Port),
+  "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port),
   "- fqdn: ''",  #default case
-  "  tunnel_route: localhost:{0}".format(server_random.Variables.Port),
+  "  tunnel_route: localhost:{0}".format(server_random.Variables.SSL_Port),
   ])
 
 # Plugin should add "newname" to the empty sni and go to _bar instead of random.com

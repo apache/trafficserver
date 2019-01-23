@@ -57,13 +57,13 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 ts.Disk.remap_config.AddLine(
-    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.Port,ts.Variables.ssl_port)
+    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
 )
 ts.Disk.remap_config.AddLine(
-    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.Port,ts.Variables.ssl_port)
+    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
 )
 ts.Disk.remap_config.AddLine(
-    'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.Port,ts.Variables.ssl_port)
+    'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
 )
 
 ts.Disk.ssl_server_name_yaml.AddLine(

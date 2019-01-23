@@ -64,7 +64,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     # enable ssl port
     'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
-    'proxy.config.http.connect_ports': '{0} {1} {2}'.format(ts.Variables.ssl_port,server_foo.Variables.Port,server_bar.Variables.Port),
+    'proxy.config.http.connect_ports': '{0} {1} {2}'.format(ts.Variables.ssl_port,server_foo.Variables.SSL_Port,server_bar.Variables.SSL_Port),
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
@@ -77,11 +77,11 @@ ts.Disk.records_config.update({
 # empty SNI should tunnel to server_bar
 ts.Disk.ssl_server_name_yaml.AddLines([
   '- fqdn: foo.com',
-  "  tunnel_route: localhost:{0}".format(server_foo.Variables.Port),
+  "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
   "- fqdn: bob.*.com",
-  "  tunnel_route: localhost:{0}".format(server_foo.Variables.Port),
+  "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
   "- fqdn: ''", # No SNI sent
-  "  tunnel_route: localhost:{0}".format(server_bar.Variables.Port)
+  "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port)
 ])
 
 tr = Test.AddTestRun("foo.com Tunnel-test")
@@ -135,7 +135,7 @@ recordspath = ts.Disk.records_config.AbsPath
 tr.Disk.File(snipath, id = "ssl_server_name_yaml", typename="ats:config"),
 tr.Disk.ssl_server_name_yaml.AddLines([
   '- fqdn: bar.com',
-  "  tunnel_route: localhost:{0}".format(server_bar.Variables.Port),
+  "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port),
 ])
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server_foo

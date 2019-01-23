@@ -31,6 +31,7 @@ pip_packages = [
     "requests",
     "dnslib",
     "httpbin",
+    "traffic-replay" # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
 ]
 
 
