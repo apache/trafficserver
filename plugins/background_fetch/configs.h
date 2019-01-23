@@ -26,6 +26,7 @@
 
 #include <cstdlib>
 #include <atomic>
+#include <string>
 
 #include "rules.h"
 
@@ -48,6 +49,8 @@ public:
     }
   }
 
+  bool parseOptions(int argc, const char *argv[]);
+
   BgFetchRule *
   getRules() const
   {
@@ -60,12 +63,26 @@ public:
     return _cont;
   }
 
+  const std::string &
+  logFile() const
+  {
+    return _log_file;
+  }
+
+  bool
+  allow304() const
+  {
+    return _allow_304;
+  }
+
   // This parses and populates the BgFetchRule linked list (_rules).
   bool readConfig(const char *file_name);
 
   bool bgFetchAllowed(TSHttpTxn txnp) const;
 
 private:
-  TSCont _cont;
-  BgFetchRule *_rules{nullptr};
+  TSCont _cont        = nullptr;
+  BgFetchRule *_rules = nullptr;
+  bool _allow_304     = false;
+  std::string _log_file;
 };
