@@ -41,16 +41,16 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modi
 server.addResponse("sessionlog.json", request_header, response_header)
 # IMS revalidation request
 request_IMS_header = {"headers": "GET / HTTP/1.1\r\nUID: IMS\r\nIf-Modified-Since: Tue, 08 May 2018 15:49:41 GMT\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_IMS_header = {"headers": "HTTP/1.1 304 Not Modified\r\nConnection: close\r\nCache-Control: max-age=1\r\n\r\n", "timestamp": "1469733493.993"}
+response_IMS_header = {"headers": "HTTP/1.1 304 Not Modified\r\nConnection: close\r\nCache-Control: max-age=1\r\n\r\n", "timestamp": "1469733493.993", "body": None}
 server.addResponse("sessionlog.json", request_IMS_header, response_IMS_header)
 
 # EtagFill
-request_etagfill_header = {"headers": "GET /etag HTTP/1.1\r\nHost: www.example.com\r\nUID: EtagFill\r\n\r\n", "timestamp": "1469733493.993"}
+request_etagfill_header = {"headers": "GET /etag HTTP/1.1\r\nHost: www.example.com\r\nUID: EtagFill\r\n\r\n", "timestamp": "1469733493.993", "body": None}
 response_etagfill_header = {"headers": "HTTP/1.1 200 OK\r\nETag: myetag\r\nConnection: close\r\nCache-Control: max-age=1\r\n\r\n", "timestamp": "1469733493.993", "body": "xxx"}
 server.addResponse("sessionlog.json", request_etagfill_header, response_etagfill_header)
 # INM revalidation
-request_INM_header = {"headers": "GET /etag HTTP/1.1\r\nUID: INM\r\nIf-None-Match: myetag\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993"}
-response_INM_header = {"headers": "HTTP/1.1 304 Not Modified\r\nConnection: close\r\nETag: myetag\r\nCache-Control: max-age=1\r\n\r\n", "timestamp": "1469733493.993"}
+request_INM_header = {"headers": "GET /etag HTTP/1.1\r\nUID: INM\r\nIf-None-Match: myetag\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": None}
+response_INM_header = {"headers": "HTTP/1.1 304 Not Modified\r\nConnection: close\r\nETag: myetag\r\nCache-Control: max-age=1\r\n\r\n", "timestamp": "1469733493.993", "body": None}
 server.addResponse("sessionlog.json", request_INM_header, response_INM_header)
 
 # object changed to 0 byte
@@ -59,7 +59,7 @@ response_noBody_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCo
 server.addResponse("sessionlog.json", request_noBody_header, response_noBody_header)
 
 # etag object now is a 404. Yeah, 404s don't usually have Cache-Control, but, ATS's default is to cache 404s for a while.
-request_etagfill_header = {"headers": "GET /etag HTTP/1.1\r\nHost: www.example.com\r\nUID: EtagError\r\n\r\n", "timestamp": "1469733493.993"}
+request_etagfill_header = {"headers": "GET /etag HTTP/1.1\r\nHost: www.example.com\r\nUID: EtagError\r\n\r\n", "timestamp": "1469733493.993", "body": None}
 response_etagfill_header = {"headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\nCache-Control: max-age=3\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_etagfill_header, response_etagfill_header)
 
