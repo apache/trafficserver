@@ -75,7 +75,7 @@ public:
     pause();
 
     TS_DEBUG(TAG, "Resuming in 2ms...");
-    resumeCont().schedule(2, TS_THREAD_POOL_NET);
+    resumeCont().schedule(2);
   }
 
   void
