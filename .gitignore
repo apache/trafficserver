@@ -87,6 +87,7 @@ src/tscore/test_geometry
 src/tscore/test_Regex
 src/tscore/test_X509HostnameValidator
 src/tscore/test_tscore
+src/tscpp/api/test_tscppapi
 src/tscpp/util/test_tscpputil
 lib/records/test_librecords
 lib/perl/lib/Apache/TS.pm

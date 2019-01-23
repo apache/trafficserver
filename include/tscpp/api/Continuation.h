@@ -30,13 +30,11 @@ namespace atscppapi
 class Continuation
 {
 public:
-  using Mutex = TSMutex;
-
   using Action = TSAction;
 
   // Create continuation, mutexp may be nullptr.
   //
-  explicit Continuation(Mutex mutexp) : _cont(TSContCreate(_generalEventFunc, mutexp))
+  explicit Continuation(TSMutex mutexp) : _cont(TSContCreate(_generalEventFunc, mutexp))
   {
     TSContDataSet(_cont, static_cast<void *>(this));
   }
@@ -45,16 +43,83 @@ public:
   //
   Continuation() {}
 
+  class Mutex
+  {
+  public:
+    Mutex() : _mutexp(nullptr) {}
+
+    // Call this from TSRemapInit() or TSPluginInit() function.
+    //
+    void
+    init()
+    {
+      if (!_mutexp) {
+        _mutexp = TSMutexCreate();
+      }
+    }
+
+    TSMutex
+    asTSMutex() const
+    {
+      return _mutexp;
+    }
+
+    // No copying.
+    //
+    Mutex(const Mutex &) = delete;
+    Mutex &operator=(const Mutex &) = delete;
+
+    // Moving allowed.
+    //
+    Mutex(Mutex &&that)
+    {
+      _mutexp      = that._mutexp;
+      that._mutexp = nullptr;
+    }
+    Mutex &
+    operator=(Mutex &&that)
+    {
+      if (&that != this) {
+        if (_mutexp) {
+          // For now, this cannot be called, due to Issue #4854
+          // TSMutexDestroy(_mutexp);
+        }
+        _mutexp      = that._mutexp;
+        that._mutexp = nullptr;
+      }
+      return *this;
+    }
+
+    ~Mutex()
+    {
+      if (_mutexp) {
+        // For now, this cannot be called, due to Issue #4854
+        // TSMutexDestroy(_mutexp);
+      }
+    }
+
+  private:
+    TSMutex _mutexp;
+  };
+
+  explicit Continuation(const Mutex &mutex) : Continuation(mutex.asTSMutex()) {}
+
   TSCont
   asTSCont() const
   {
     return _cont;
   }
 
+  bool
+  isNull() const
+  {
+    return _cont == nullptr;
+  }
+
   // Get mutex (for "non-empty" continuation).
   //
-  Mutex
-  mutex()
+  TSMutex
+  getTSMutex()
   {
     return _cont ? TSContMutexGet(_cont) : nullptr;
   }
@@ -76,10 +141,12 @@ public:
   }
 
   // No copying.
+  //
   Continuation(const Continuation &) = delete;
   Continuation &operator=(const Continuation &) = delete;
 
   // Moving allowed.
+  //
   Continuation(Continuation &&that)
   {
     _cont      = that._cont;
@@ -108,20 +175,20 @@ public:
     return TSContCall(_cont, event, edata);
   }
 
-  // Timeout of zero means no timeout.
+  // Delay of zero means no delay (schedule immediate).
   //
   Action
-  schedule(TSHRTime timeout = 0, TSThreadPool tp = TS_THREAD_POOL_NET)
+  schedule(TSHRTime delay = 0)
   {
-    return TSContScheduleOnPool(_cont, timeout, tp);
+    return TSContSchedule(_cont, delay);
   }
 
-  // Timeout of zero means no timeout.
+  // Delay of zero means no delay.
   //
   Action
-  httpSchedule(TSHttpTxn httpTransactionp, TSHRTime timeout = 0)
+  httpSchedule(TSHttpTxn httpTransactionp, TSHRTime delay = 0)
   {
-    return TSHttpSchedule(_cont, httpTransactionp, timeout);
+    return TSHttpSchedule(_cont, httpTransactionp, delay);
   }
 
   Action
@@ -140,6 +207,107 @@ protected:
   static int _generalEventFunc(TSCont cont, TSEvent event, void *edata);
 
   TSCont _cont = nullptr;
+};
+
+// Continue by calling a member function of a given instance of a class.
+//
+// One use-case is a function that would "naturally" be written like:
+//
+// void func()
+// {
+//   // Before critical section
+//
+//   // Lock mutex
+//
+//   // Critical section
+//
+//   // Release mutex
+//
+//   // After critical section
+// }
+//
+// But in traffic server this is generally not acceptable.  Waiting to lock a mutex in an event thread also
+// blocks the handling of all the events queued on that thread.  The function can be changed into a functor:
+//
+// class Func
+// {
+// public:
+//   void operator()()
+//   {
+//     // Before critical section
+//
+//     ContinueInMemberFunc<Func, &Func::critical>::once(this, mutex)->schedule();
+//   }
+//
+// private:
+//   void critical(TSEvent, void *)
+//   {
+//     // Critical section
+//
+//     ContinueInMemberFunc<Func, &Func::after>once(this, nullptr)->schedule();
+//   }
+//
+//   void after(TSEvent, void *)
+//   {
+//      // After critical section
+//
+//      // Typically such an object would clean itself up.
+//      delete this;
+//   }
+//
+//   // Local variables of the original function would become member variables of the class as needed.
+// };
+//
+template <class C, int (C::*MemberFunc)(TSEvent, void *edata)> class ContinueInMemberFunc final : public Continuation
+{
+public:
+  ContinueInMemberFunc(C &inst, TSMutex mutexp) : Continuation(mutexp), _inst(inst){};
+
+  ContinueInMemberFunc(C &inst, const Mutex &mutex) : ContinueInMemberFunc(inst, mutex.asTSMutex()){};
+
+  // Returns an instance of the Continuation class that is dynamically allocated and will delete itself after being
+  // triggered.
+  //
+  static Continuation *
+  once(C &inst, TSMutex mutexp)
+  {
+    return new Once(inst, mutexp);
+  }
+
+  // Returns an instance of the Continuation class that is dynamically allocated and will delete itself after being
+  // triggered.
+  //
+  static Continuation *
+  once(C &inst, const Mutex &mutex)
+  {
+    return new Once(inst, mutex.asTSMutex());
+  }
+
+private:
+  int
+  _run(TSEvent event, void *edata) final
+  {
+    return (_inst.*MemberFunc)(event, edata);
+  }
+
+  C &_inst;
+
+  class Once final : public Continuation
+  {
+  public:
+    Once(C &inst, TSMutex mutexp) : Continuation(mutexp), _inst(inst){};
+
+  private:
+    int
+    _run(TSEvent event, void *edata) final
+    {
+      int result = (_inst.*MemberFunc)(event, edata);
+      delete this;
+      return result;
+    }
+
+    C &_inst;
+  };
 };
 
 } // end namespace atscppapi

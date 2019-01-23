@@ -43,7 +43,7 @@ namespace detail
   public:
     ResumeAfterPauseCont() : Continuation() {}
 
-    ResumeAfterPauseCont(Continuation::Mutex m) : Continuation(m) {}
+    ResumeAfterPauseCont(TSMutex m) : Continuation(m) {}
 
   protected:
     int _run(TSEvent event, void *edata) override;

@@ -51,3 +51,17 @@ libtscppapi_la_SOURCES = \
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
+
+check_PROGRAMS = test_tscppapi
+
+TESTS = $(check_PROGRAMS)
+
+test_tscppapi_CPPFLAGS = $(AM_CPPFLAGS)\
+	-I$(abs_top_srcdir)/tests/include -Wall -Wextra -Werror $(AM_CXXFLAGS)
+
+# test_tscppapi_LDADD =
+
+test_tscppapi_SOURCES = \
+	Continuation.cc \
+	unit_tests/unit_test_main.cc \
+	unit_tests/test_Continuation.cc

@@ -83,7 +83,7 @@ checkPassed(TSEvent event, void *edata)
 class TestCont : public atscppapi::Continuation
 {
 public:
-  TestCont(Mutex m) : atscppapi::Continuation(m) {}
+  explicit TestCont(const Mutex &m) : atscppapi::Continuation(m) {}
 
   TestCont() = default;
 
@@ -101,51 +101,53 @@ private:
 void
 f()
 {
-  TestCont::Mutex m(TSMutexCreate());
+  TestCont::Mutex m;
+
+  m.init();
 
   TestCont c(m);
 
   ALWAYS_ASSERT(!!c)
   ALWAYS_ASSERT(c.asTSCont() != nullptr)
-  ALWAYS_ASSERT(c.mutex() == m)
+  ALWAYS_ASSERT(c.getTSMutex() == m.asTSMutex())
 
   TestCont c2(std::move(c));
 
   ALWAYS_ASSERT(!!c2)
   ALWAYS_ASSERT(c2.asTSCont() != nullptr)
-  ALWAYS_ASSERT(c2.mutex() == m)
+  ALWAYS_ASSERT(c2.getTSMutex() == m.asTSMutex())
 
   ALWAYS_ASSERT(!c)
   ALWAYS_ASSERT(c.asTSCont() == nullptr)
-  ALWAYS_ASSERT(c.mutex() == nullptr)
+  ALWAYS_ASSERT(c.getTSMutex() == nullptr)
 
   TestCont c3;
 
   ALWAYS_ASSERT(!c3)
   ALWAYS_ASSERT(c3.asTSCont() == nullptr)
-  ALWAYS_ASSERT(c3.mutex() == nullptr)
+  ALWAYS_ASSERT(c3.getTSMutex() == nullptr)
 
   c3 = std::move(c2);
 
   ALWAYS_ASSERT(!!c3)
   ALWAYS_ASSERT(c3.asTSCont() != nullptr)
-  ALWAYS_ASSERT(c3.mutex() == m)
+  ALWAYS_ASSERT(c3.getTSMutex() == m.asTSMutex())
 
   ALWAYS_ASSERT(!c2)
   ALWAYS_ASSERT(c2.asTSCont() == nullptr)
-  ALWAYS_ASSERT(c2.mutex() == nullptr)
+  ALWAYS_ASSERT(c2.getTSMutex() == nullptr)
 
   c3.destroy();
 
   ALWAYS_ASSERT(!c3)
   ALWAYS_ASSERT(c3.asTSCont() == nullptr)
-  ALWAYS_ASSERT(c3.mutex() == nullptr)
+  ALWAYS_ASSERT(c3.getTSMutex() == nullptr)
 
   c = TestCont(m);
 
   ALWAYS_ASSERT(!!c)
   ALWAYS_ASSERT(c.asTSCont() != nullptr)
-  ALWAYS_ASSERT(c.mutex() == m)
+  ALWAYS_ASSERT(c.getTSMutex() == m.asTSMutex())
 
   ALWAYS_ASSERT(c.call(TS_EVENT_INTERNAL_206) == 666)
   ALWAYS_ASSERT(checkPassed(TS_EVENT_INTERNAL_206, nullptr))
@@ -159,6 +161,61 @@ f()
 TEST(f)
 
 } // end namespace ContinuationTest
+
+// Test for ContinueInMemberFunc class template.
+//
+namespace ContinueInMemberFuncTest
+{
+struct {
+  TSEvent event;
+  void *edata;
+} passedToEventFunc;
+
+bool
+checkPassed(TSEvent event, void *edata)
+{
+  return (passedToEventFunc.event == event) and (passedToEventFunc.edata == edata);
+}
+
+class X
+{
+private:
+  int
+  foo(TSEvent event, void *edata)
+  {
+    passedToEventFunc.event = event;
+    passedToEventFunc.edata = edata;
+
+    return 666;
+  }
+
+public:
+  using CallFoo = atscppapi::ContinueInMemberFunc<X, &X::foo>;
+};
+
+void
+f()
+{
+  atscppapi::Continuation::Mutex m;
+
+  m.init();
+
+  X x;
+
+  X::CallFoo cf(x, m);
+
+  ALWAYS_ASSERT(cf.call(TS_EVENT_INTERNAL_206) == 666)
+  ALWAYS_ASSERT(checkPassed(TS_EVENT_INTERNAL_206, nullptr))
+
+  int dummy;
+
+  ALWAYS_ASSERT(X::CallFoo::once(x, m)->call(TS_EVENT_INTERNAL_207, &dummy) == 666)
+  ALWAYS_ASSERT(checkPassed(TS_EVENT_INTERNAL_207, &dummy))
+}
+
+TEST(f)
+
+} // end namespace ContinueInMemberFuncTest
 
 // Run all the tests.
 //
