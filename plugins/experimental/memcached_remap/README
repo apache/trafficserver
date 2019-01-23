@@ -1,7 +1,7 @@
 Apache Traffic Server Memcached-based remap plugin
 ==============================================
 
-This is a plugin which is based on the mysql_remap code (http://svn.apache.org/repos/asf/trafficserver/plugins/mysql_remap/)
+This is a plugin which is based on the mysql_remap code (https://github.com/apache/trafficserver/tree/master/plugins/experimental/mysql_remap)
 that allows us to do dynamic reverse proxy (dynamic remap) based on the
 information present in the memcached database.
 
@@ -23,27 +23,13 @@ server too (please change things accordingly, if any)
 
 sudo yum install memcached python-memcached
 
-NOTE 14-OCT-2015:
+2. Compile and Install the memcached_remap plugin
+
   To build this with the ATS configure script when
   --enable-experimental-plugins is used, you must
   have libmemcached version 1.0 or greater installed.
 
-2. Compile and Install the memcached_remap plugin
-
-[user@ memcached_remap]$ gmake
-/usr/local/bin/tsxs -o memcached_remap.so memcached_remap.cc
-  compiling memcached_remap.cc -> memcached_remap.lo
-  linking -> memcached_remap.so
-
-[user@ memcached_remap]$ sudo gmake install
-/usr/local/bin/tsxs -o memcached_remap.so memcached_remap.cc
-  compiling memcached_remap.cc -> memcached_remap.lo
-  linking -> memcached_remap.so
-/usr/local/bin/tsxs -i -o memcached_remap.so
-  installing memcached_remap.so ->
-/usr/local/libexec/trafficserver/memcached_remap.so
-
-3. Start the Traffic Server in Plugin Mode (to debug any issues)
+3. Start Traffic Server with logging (to debug any issues)
 
 /usr/local/bin/traffic_server -T "memcached_remap"
 
