@@ -2715,9 +2715,10 @@ HostDB
 
    The filename to persist hostdb to on disk.
 
-.. ts:cv:: CONFIG proxy.config.cache.hostdb.sync_frequency INT 120
+.. ts:cv:: CONFIG proxy.config.cache.hostdb.sync_frequency INT 0
 
-   Set the frequency (in seconds) to sync hostdb to disk.
+   Set the frequency (in seconds) to sync hostdb to disk. If set to zero (default as of v9.0.0), we won't
+   sync to disk ever.
 
    Note: hostdb is syncd to disk on a per-partition basis (of which there are 64).
    This means that the minimum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
