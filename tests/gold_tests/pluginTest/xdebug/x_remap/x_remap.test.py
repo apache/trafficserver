@@ -18,6 +18,10 @@ Test.Summary = '''
 Test xdebug plugin X-Remap and fwd headers
 '''
 
+Test.SkipUnless(
+    Condition.PluginExists('xdebug.so')
+)
+
 server = Test.MakeOriginServer("server", options={'--load': (Test.TestDirectory + '/x_remap-observer.py')})
 
 request_header = {

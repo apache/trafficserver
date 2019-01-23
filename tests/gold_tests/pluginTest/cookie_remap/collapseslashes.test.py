@@ -22,7 +22,8 @@ Test.Summary = '''
 '''
 # need Curl
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
+    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
+    Condition.PluginExists('cookie_remap.so')
 )
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: plugin collapses consecutive slashes"
