@@ -35,6 +35,7 @@
 #include "P_SSLConfig.h"
 #include "tscore/ink_memory.h"
 #include "tscpp/util/TextView.h"
+#include "tscore/I_Layout.h"
 #include <sstream>
 #include <pcre.h>
 
@@ -82,11 +83,11 @@ SNIConfigParams::loadSNIConfig()
 
     // set the next hop properties
     SSLConfig::scoped_config params;
-    auto clientCTX       = params->getClientSSL_CTX();
-    const char *certFile = item.client_cert.data();
-    const char *keyFile  = item.client_key.data();
-    if (certFile && certFile[0] != '\0') {
-      clientCTX = params->getCTX(certFile, keyFile, params->clientCACertFilename, params->clientCACertPath);
+    auto clientCTX = params->getClientSSL_CTX();
+    if (!item.client_cert.empty() && !item.client_key.empty()) {
+      std::string certFilePath = Layout::get()->relative_to(params->clientCertPathOnly, item.client_cert.data());
+      std::string keyFilePath  = Layout::get()->relative_to(params->clientKeyPathOnly, item.client_key.data());
+      clientCTX = params->getCTX(certFilePath.c_str(), keyFilePath.c_str(), params->clientCACertFilename, params->clientCACertPath);
     }
 
     auto nps = next_hop_list.emplace(next_hop_list.end());
