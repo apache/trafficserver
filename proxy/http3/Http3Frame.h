@@ -218,7 +218,7 @@ public:
    * This works almost the same as create() but it reuses created objects for performance.
    * If you create a frame object which has the same frame type that you created before, the object will be reset by new data.
    */
-  std::shared_ptr<const Http3Frame> fast_create(QUICStreamIO &stream_io, size_t len);
+  std::shared_ptr<const Http3Frame> fast_create(QUICStreamIO &stream_io, size_t frame_len);
   std::shared_ptr<const Http3Frame> fast_create(const uint8_t *buf, size_t len);
 
   /*

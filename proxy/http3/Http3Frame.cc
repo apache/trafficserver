@@ -372,7 +372,7 @@ Http3FrameFactory::fast_create(const uint8_t *buf, size_t len)
     } else {
       this->_unknown_frame->reset(buf, len);
     }
-    return _unknown_frame;
+    return this->_unknown_frame;
   }
 
   std::shared_ptr<Http3Frame> frame = this->_reusable_frames[static_cast<uint8_t>(type)];
@@ -390,18 +390,18 @@ Http3FrameFactory::fast_create(const uint8_t *buf, size_t len)
 }
 
 std::shared_ptr<const Http3Frame>
-Http3FrameFactory::fast_create(QUICStreamIO &stream_io, size_t len)
+Http3FrameFactory::fast_create(QUICStreamIO &stream_io, size_t frame_len)
 {
   uint8_t buf[65536];
 
   // FIXME DATA frames can be giga bytes
-  ink_assert(sizeof(buf) > len);
+  ink_assert(sizeof(buf) > frame_len);
 
-  if (stream_io.peek(buf, sizeof(buf) < len)) {
+  if (stream_io.peek(buf, frame_len) < static_cast<int64_t>(frame_len)) {
     // Return if whole frame data is not available
     return nullptr;
   }
-  return this->fast_create(buf, len);
+  return this->fast_create(buf, frame_len);
 }
 
 Http3HeadersFrameUPtr

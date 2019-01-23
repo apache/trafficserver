@@ -59,10 +59,9 @@ Http3FrameDispatcher::on_read_ready(QUICStreamIO &stream_io, uint64_t &nread)
     if (this->_reading_state == READING_PAYLOAD_LEN) {
       // Read a payload length
       uint8_t length_buf[8];
-      if (stream_io.read(length_buf, this->_reading_frame_length_len) != this->_reading_frame_length_len) {
+      if (stream_io.peek(length_buf, this->_reading_frame_length_len) != this->_reading_frame_length_len) {
         break;
       }
-      nread += this->_reading_frame_length_len;
       size_t dummy;
       if (QUICVariableInt::decode(this->_reading_frame_payload_len, dummy, length_buf, sizeof(length_buf)) < 0) {
         error = Http3ErrorUPtr(new Http3StreamError());
@@ -71,11 +70,16 @@ Http3FrameDispatcher::on_read_ready(QUICStreamIO &stream_io, uint64_t &nread)
     }
 
     // Create a frame
-    frame = this->_frame_factory.fast_create(stream_io, this->_reading_frame_payload_len);
+    // Length field length + Type field length (1) + Payload length
+    size_t frame_len = this->_reading_frame_length_len + 1 + this->_reading_frame_payload_len;
+    frame            = this->_frame_factory.fast_create(stream_io, frame_len);
     if (frame == nullptr) {
       break;
     }
-    nread += 1 + this->_reading_frame_payload_len; // Type field length (1) + Payload length
+
+    // Consume buffer if frame is created
+    nread += frame_len;
+    stream_io.consume(nread);
 
     // Dispatch
     Http3FrameType type = frame->type();
