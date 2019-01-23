@@ -25,11 +25,12 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdarg>
-#include <getopt.h>
 
 #include <string>
 #include <unordered_map>
 #include <cinttypes>
+#include <string_view>
+#include <array>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
@@ -38,12 +39,22 @@
 #include "configs.h"
 
 // Global config, if we don't have a remap specific config.
-static BgFetchConfig *gConfig;
+static BgFetchConfig *gConfig = nullptr;
+
+// This is the list of all headers that must be removed when we make the actual background
+// fetch request.
+static const std::array<const std::string_view, 6> FILTER_HEADERS{
+  {{TS_MIME_FIELD_RANGE, static_cast<size_t>(TS_MIME_LEN_RANGE)},
+   {TS_MIME_FIELD_IF_MATCH, static_cast<size_t>(TS_MIME_LEN_IF_MATCH)},
+   {TS_MIME_FIELD_IF_MODIFIED_SINCE, static_cast<size_t>(TS_MIME_LEN_IF_MODIFIED_SINCE)},
+   {TS_MIME_FIELD_IF_NONE_MATCH, static_cast<size_t>(TS_MIME_LEN_IF_NONE_MATCH)},
+   {TS_MIME_FIELD_IF_RANGE, static_cast<size_t>(TS_MIME_LEN_IF_RANGE)},
+   {TS_MIME_FIELD_IF_UNMODIFIED_SINCE, static_cast<size_t>(TS_MIME_LEN_IF_UNMODIFIED_SINCE)}}};
 
 ///////////////////////////////////////////////////////////////////////////
-// Hold the global ackground fetch state. This is currently shared across all
+// Hold the global background fetch state. This is currently shared across all
 // configurations, as a singleton. ToDo: Would it ever make sense to do this
-// per remap rule? Probably not.
+// per remap rule? Maybe for per-remap logging ??
 typedef std::unordered_map<std::string, bool> OutstandingRequests;
 
 class BgFetchState
@@ -61,11 +72,16 @@ public:
   }
 
   ~BgFetchState() { TSMutexDestroy(_lock); }
+
   void
-  createLog(const char *log_name)
+  createLog(const std::string &log_name)
   {
-    TSDebug(PLUGIN_NAME, "Creating log name %s", log_name);
-    TSAssert(TS_SUCCESS == TSTextLogObjectCreate(log_name, TS_LOG_MODE_ADD_TIMESTAMP, &_log));
+    if (!_log) {
+      TSDebug(PLUGIN_NAME, "Creating log name %s", log_name.c_str());
+      TSAssert(TS_SUCCESS == TSTextLogObjectCreate(log_name.c_str(), TS_LOG_MODE_ADD_TIMESTAMP, &_log));
+    } else {
+      TSError("[%s] A log file was already create, ignoring creation of %s", PLUGIN_NAME, log_name.c_str());
+    }
   }
 
   TSTextLogObject
@@ -261,10 +277,13 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
               TSDebug(PLUGIN_NAME, "Set header Host: %.*s", len, hostp);
             }
 
-            // Next, remove any Range: headers from our request.
-            if (remove_header(mbuf, hdr_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE) > 0) {
-              TSDebug(PLUGIN_NAME, "Removed the Range: header from request");
+            // Next, remove the Range headers and IMS (conditional) headers from the request
+            for (auto const &header : FILTER_HEADERS) {
+              if (remove_header(mbuf, hdr_loc, header.data(), header.size()) > 0) {
+                TSDebug(PLUGIN_NAME, "Removed the %s header from request", header.data());
+              }
             }
+
             // Everything went as planned, so we can return true
             ret = true;
           }
@@ -507,9 +526,10 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
           // ToDo: Check the MIME type first, to see if it's a type we care about.
           // ToDo: Such MIME types should probably be per remap rule.
 
-          // Only deal with 206 responses from Origin
-          TSDebug(PLUGIN_NAME, "Testing: response is 206?");
-          if (TS_HTTP_STATUS_PARTIAL_CONTENT == TSHttpHdrStatusGet(response, resp_hdr)) {
+          // Only deal with 206 and possibly 304 responses from Origin
+          TSHttpStatus status = TSHttpHdrStatusGet(response, resp_hdr);
+          TSDebug(PLUGIN_NAME, "Testing: response status code: %d?", status);
+          if (TS_HTTP_STATUS_PARTIAL_CONTENT == status || (config->allow304() && TS_HTTP_STATUS_NOT_MODIFIED == status)) {
             // Everything looks good so far, add a TXN hook for SEND_RESPONSE_HDR
             TSCont contp = TSContCreate(cont_check_cacheable, nullptr);
 
@@ -538,9 +558,6 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
-  static const struct option longopt[] = {{const_cast<char *>("log"), required_argument, nullptr, 'l'},
-                                          {const_cast<char *>("config"), required_argument, nullptr, 'c'},
-                                          {nullptr, no_argument, nullptr, '\0'}};
 
   info.plugin_name   = (char *)PLUGIN_NAME;
   info.vendor_name   = (char *)"Apache Software Foundation";
@@ -554,26 +571,18 @@ TSPluginInit(int argc, const char *argv[])
 
   gConfig = new BgFetchConfig(cont);
 
-  while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "lc", longopt, nullptr);
-
-    switch (opt) {
-    case 'l':
-      BgFetchState::getInstance().createLog(optarg);
-      break;
-    case 'c':
-      TSDebug(PLUGIN_NAME, "config file '%s'", optarg);
-      gConfig->readConfig(optarg);
-      break;
+  if (gConfig->parseOptions(argc, argv)) {
+    // Create the global log file. Note that calling this multiple times currently has no
+    // effect, only one log file is ever created. The BgFetchState is a singleton.
+    if (!gConfig->logFile().empty()) {
+      BgFetchState::getInstance().createLog(gConfig->logFile());
     }
-
-    if (opt == -1) {
-      break;
-    }
+    TSDebug(PLUGIN_NAME, "Initialized");
+    TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
+  } else {
+    // ToDo: Hmmm, no way to fail a global plugin here?
+    TSDebug(PLUGIN_NAME, "Failed to initialize as global plugin");
   }
-
-  TSDebug(PLUGIN_NAME, "Initialized");
-  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -608,16 +617,40 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
 {
   TSCont cont           = TSContCreate(cont_handle_response, nullptr);
   BgFetchConfig *config = new BgFetchConfig(cont);
+  bool success          = true;
 
-  // Parse the optional rules, wihch becomes a linked list of BgFetchRule's.
-  if (argc > 2) {
-    TSDebug(PLUGIN_NAME, "config file %s", argv[2]);
-    config->readConfig(argv[2]);
+  // The first two arguments are the "from" and "to" URL string. We need to
+  // skip them, but we also require that there be an option to masquerade as
+  // argv[0], so we increment the argument indexes by 1 rather than by 2.
+  argc--;
+  argv++;
+
+  // This is for backwards compatibility, ugly! ToDo: Remove for ATS v9.0.0 IMO.
+  if (argc > 1 && *argv[1] != '-') {
+    TSDebug(PLUGIN_NAME, "config file %s", argv[1]);
+    if (!config->readConfig(argv[1])) {
+      success = false;
+    }
+  } else {
+    if (config->parseOptions(argc, const_cast<const char **>(argv))) {
+      // Create the global log file. Remember, the BgFetchState is a singleton.
+      if (config->logFile().size()) {
+        BgFetchState::getInstance().createLog(config->logFile());
+      }
+    } else {
+      success = false;
+    }
   }
 
-  *ih = (void *)config;
+  if (success) {
+    *ih = config;
 
-  return TS_SUCCESS;
+    return TS_SUCCESS;
+  }
+
+  // Something went wrong with the configuration setup.
+  delete config;
+  return TS_ERROR;
 }
 
 void
@@ -625,6 +658,7 @@ TSRemapDeleteInstance(void *ih)
 {
   BgFetchConfig *config = static_cast<BgFetchConfig *>(ih);
 
+  TSContDestroy(config->getCont());
   delete config;
 }
 
@@ -644,11 +678,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &req_hdrs)) {
     TSMLoc field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
 
+    if (!field_loc) { // Less common case, but also allow If-Range header to triger, but only if Range not present
+      field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_IF_RANGE, TS_MIME_LEN_IF_RANGE);
+    }
+
     if (field_loc) {
       BgFetchConfig *config = static_cast<BgFetchConfig *>(ih);
 
       TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, config->getCont());
-      TSDebug(PLUGIN_NAME, "background fetch TSRemapDoRemap");
+      TSDebug(PLUGIN_NAME, "TSRemapDoRemap() added hook, request was Range / If-Range");
       TSHandleMLocRelease(bufp, req_hdrs, field_loc);
     }
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, req_hdrs);
