@@ -32,8 +32,9 @@ AM_CPPFLAGS += \
 	-I$(abs_srcdir)/hdrs \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	$(TS_INCLUDES)
-
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
+ 
 noinst_HEADERS = \
 	Show.h
 
@@ -75,7 +76,6 @@ libproxy_a_SOURCES += \
 	RegressionSM.h \
 	RegressionSM.cc
 endif
-
 
 # These are currently built separate, as part of building the lib/ tree, using
 # the normal LuaJIT build system. We are using the .o's directly, instead of the

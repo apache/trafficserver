@@ -37,7 +37,9 @@
 #include "tscore/ConsistentHash.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ink_apidefs.h"
+#include "tscore/ts_file.h"
 #include "HostStatus.h"
+#include "yaml-cpp/yaml.h"
 
 #include <algorithm>
 #include <vector>

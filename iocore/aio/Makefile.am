@@ -20,7 +20,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
 
 TESTS = test_AIO.sample
 

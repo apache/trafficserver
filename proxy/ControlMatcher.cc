@@ -671,7 +671,8 @@ IpMatcher<Data, MatchResult>::Print()
 }
 
 template <class Data, class MatchResult>
-ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const char *name, const matcher_tags *tags, int flags_in)
+ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const char *name, const matcher_tags *tags,
+                                                  const char *_yaml_namespace, int flags_in)
 {
   flags = flags_in;
   ink_assert(flags & (ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE));
@@ -687,6 +688,12 @@ ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const ch
 
     ink_release_assert(config_path);
     ink_strlcpy(config_file_path, config_path, sizeof(config_file_path));
+  }
+
+  if (file_var && ts::TextView{RecConfigReadConfigPath(file_var)}.take_suffix_at('.') == "yaml") {
+    config_is_yaml = true;
+    yaml_namespace = _yaml_namespace;
+    ink_release_assert(yaml_namespace);
   }
 
   reMatch   = nullptr;
@@ -783,6 +790,7 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
   int second_pass    = 0;
   int numEntries     = 0;
   bool alarmAlready  = false;
+  const char *errptr = nullptr;
 
   // type counts
   int hostDomain = 0;
@@ -791,71 +799,130 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
   int ip         = 0;
   int hostregex  = 0;
 
-  if (bufTok.Initialize(file_buf, SHARE_TOKS | ALLOW_EMPTY_TOKS) == 0) {
-    // We have an empty file
-    return 0;
-  }
-  // First get the number of entries
-  tmp = bufTok.iterFirst(&i_state);
-  while (tmp != nullptr) {
-    line_num++;
-
-    // skip all blank spaces at beginning of line
-    while (*tmp && isspace(*tmp)) {
-      tmp++;
+  if (!config_is_yaml) { // parse old line format.
+    if (bufTok.Initialize(file_buf, SHARE_TOKS | ALLOW_EMPTY_TOKS) == 0) {
+      // We have an empty file
+      return 0;
     }
+    // build a linked list of the entries
+    tmp = bufTok.iterFirst(&i_state);
+    while (tmp != nullptr) {
+      line_num++;
 
-    if (*tmp != '#' && *tmp != '\0') {
-      const char *errptr;
+      // skip all blank spaces at beginning of line
+      while (*tmp && isspace(*tmp)) {
+        tmp++;
+      }
 
-      current = (matcher_line *)ats_malloc(sizeof(matcher_line));
-      errptr  = parseConfigLine((char *)tmp, current, config_tags);
+      if (*tmp != '#' && *tmp != '\0') {
+        current = static_cast<matcher_line *>(ats_malloc(sizeof(matcher_line)));
+        errptr  = parseConfigLine((char *)tmp, current, config_tags);
 
-      if (errptr != nullptr) {
-        if (config_tags != &socks_server_tags) {
-          Result error =
-            Result::failure("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errptr);
-          SignalError(error.message(), alarmAlready);
-        }
-        ats_free(current);
-      } else {
-        // Line parsed ok.  Figure out what the destination
-        //  type is and link it into our list
-        numEntries++;
-        current->line_num = line_num;
-
-        switch (current->type) {
-        case MATCH_HOST:
-        case MATCH_DOMAIN:
-          hostDomain++;
-          break;
-        case MATCH_IP:
-          ip++;
-          break;
-        case MATCH_REGEX:
-          regex++;
-          break;
-        case MATCH_URL:
-          url++;
-          break;
-        case MATCH_HOST_REGEX:
-          hostregex++;
-          break;
-        case MATCH_NONE:
-        default:
-          ink_assert(0);
-        }
-
-        if (first == nullptr) {
-          ink_assert(last == nullptr);
-          first = last = current;
+        if (errptr != nullptr) {
+          if (config_tags != &socks_server_tags) {
+            Result error =
+              Result::failure("%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errptr);
+            SignalError(error.message(), alarmAlready);
+          }
+          ats_free(current);
         } else {
-          last->next = current;
-          last       = current;
+          // Line parsed ok.  Figure out what the destination
+          //  type is and link it into our list
+          numEntries++;
+          current->line_num = line_num;
+
+          if (first == nullptr) {
+            ink_assert(last == nullptr);
+            first = last = current;
+          } else {
+            last->next = current;
+            last       = current;
+          }
         }
       }
+      tmp = bufTok.iterNext(&i_state);
     }
-    tmp = bufTok.iterNext(&i_state);
+  } else { // parse a yaml document and build the linked list of entries..
+    /*
+     * The ControlMatcher has parsed text lines where each line has one 'matcher_tag' with configuration
+     * parameters specific to the 'Data' type.
+     *
+     * This Yaml Parser therefore assumes that the corresponding Yaml document is a sequence of objects
+     * where each object is a map containing one 'matcher_tag' and it's string value along with the
+     * 'Data' type specific config parameters.  Here we only count the number of entries and the 'matcher_tags'.
+     * The 'Data' type YamlParser will know how to parse out it's config parameters from each object in the
+     * sequence when it is called.
+     *
+     */
+    try {
+      config = YAML::Load(file_buf);
+      if (!config.IsMap()) {
+        Warning("Error parsing the yaml document from the config file %s: expected a top level map document.", config_file_path);
+        return 1;
+      }
+      root = config[yaml_namespace];
+      if (!root.IsSequence()) {
+        Warning("Error parsing the yaml document from the config file %s: expected a sequence document.", config_file_path);
+        return 1;
+      }
+
+      for (uint i = 0; i < root.size(); i++) {
+        current = static_cast<matcher_line *>(ats_malloc(sizeof(matcher_line)));
+        memset(current, 0, sizeof(matcher_line));
+        YAML::Node node   = root[i];
+        current->line_num = i; // overloaded to the yaml node position within the list
+        errptr            = parseYamlDoc(node, current, config_tags);
+        if (errptr != nullptr) {
+          if (config_tags != &socks_server_tags) {
+            Result error = Result::failure("%s discarding %s entry %d : %s", matcher_name, config_file_path, i, errptr);
+            SignalError(error.message(), alarmAlready);
+          }
+          ats_free(current);
+        } else {
+          // node parsed ok.  Figure out what the destination
+          // type is and link it into our list
+          numEntries++;
+
+          if (first == nullptr) {
+            ink_assert(last == nullptr);
+            first = last = current;
+          } else {
+            last->next = current;
+            last       = current;
+          }
+        }
+      }
+    } catch (YAML::ParserException &e) {
+      Warning("Error parsing the yaml config file %s: %s", config_file_path, e.what());
+      return 1;
+    }
+  }
+
+  // count the entry types
+  current = first;
+  while (current != nullptr) {
+    switch (current->type) {
+    case MATCH_HOST:
+    case MATCH_DOMAIN:
+      hostDomain++;
+      break;
+    case MATCH_IP:
+      ip++;
+      break;
+    case MATCH_REGEX:
+      regex++;
+      break;
+    case MATCH_URL:
+      url++;
+      break;
+    case MATCH_HOST_REGEX:
+      hostregex++;
+      break;
+    case MATCH_NONE:
+    default:
+      ink_assert(0);
+    }
+    current = current->next;
   }
 
   // Make we have something to do before going on
@@ -892,6 +959,12 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
   current = first;
   while (current != nullptr) {
     Result error = Result::ok();
+    if (config_is_yaml) {
+      YAML::Node node = root[current->line_num];
+      current->node   = &node;
+    } else {
+      current->node = nullptr;
+    }
 
     second_pass++;
     if ((flags & ALLOW_HOST_TABLE) && current->type == MATCH_DOMAIN) {
@@ -946,7 +1019,9 @@ ControlMatcher<Data, MatchResult>::BuildTable()
   }
 
   ret = BuildTableFromString(file_buf);
+
   ats_free(file_buf);
+
   return ret;
 }
 

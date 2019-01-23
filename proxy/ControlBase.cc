@@ -785,8 +785,7 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
   // Variables for error processing
   const char *errBuf = nullptr;
   mod_errors err     = ME_UNKNOWN;
-
-  int n_elts = line_info->num_el; // Element count for line.
+  int n_elts         = line_info->num_el; // Element count for line.
 
   // No elements -> no modifiers.
   if (0 >= n_elts) {
@@ -796,58 +795,122 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
   _mods.clear();
   _mods.reserve(n_elts);
 
-  // As elements are consumed, the labels are nulled out and the element
-  // count decremented. So we have to scan the entire array to be sure of
-  // finding all the elements. We'll track the element count so we can
-  // escape if we've found all of the elements.
-  for (int i = 0; n_elts && ME_UNKNOWN == err && i < MATCHER_MAX_TOKENS; ++i) {
-    Modifier *mod = nullptr;
+  if (!line_info->node) { // not yaml
+    // As elements are consumed, the labels are nulled out and the element
+    // count decremented. So we have to scan the entire array to be sure of
+    // finding all the elements. We'll track the element count so we can
+    // escape if we've found all of the elements.
+    for (int i = 0; n_elts && ME_UNKNOWN == err && i < MATCHER_MAX_TOKENS; ++i) {
+      Modifier *mod = nullptr;
 
-    char *label = line_info->line[0][i];
-    char *value = line_info->line[1][i];
+      char *label = line_info->line[0][i];
+      char *value = line_info->line[1][i];
 
-    if (!label) {
-      continue; // Already use.
+      if (!label) {
+        continue; // Already use.
+      }
+      if (!value) {
+        err = ME_PARSE_FAILED;
+        break;
+      }
+
+      if (strcasecmp(label, "port") == 0) {
+        mod = PortMod::make(value, &errBuf);
+      } else if (strcasecmp(label, "iport") == 0) {
+        mod = IPortMod::make(value, &errBuf);
+      } else if (strcasecmp(label, "scheme") == 0) {
+        mod = SchemeMod::make(value, &errBuf);
+      } else if (strcasecmp(label, "method") == 0) {
+        mod = MethodMod::make(value, &errBuf);
+      } else if (strcasecmp(label, "prefix") == 0) {
+        mod = PrefixMod::make(value, &errBuf);
+      } else if (strcasecmp(label, "suffix") == 0) {
+        mod = SuffixMod::make(value, &errBuf);
+      } else if (strcasecmp(label, "src_ip") == 0) {
+        mod = SrcIPMod::make(value, &errBuf);
+      } else if (strcasecmp(label, "time") == 0) {
+        mod = TimeMod::make(value, &errBuf);
+      } else if (strcasecmp(label, "tag") == 0) {
+        mod = TagMod::make(value, &errBuf);
+      } else if (strcasecmp(label, "internal") == 0) {
+        mod = InternalMod::make(value, &errBuf);
+      } else {
+        err = ME_BAD_MOD;
+      }
+
+      if (errBuf) {
+        err = ME_CALLEE_GENERATED; // Mod make failed.
+      }
+
+      // If nothing went wrong, add the mod and bump the element count.
+      if (ME_UNKNOWN == err) {
+        _mods.push_back(mod);
+        --n_elts;
+      } else {
+        delete mod; // we still need to clean up because we didn't transfer ownership.
+      }
     }
-    if (!value) {
-      err = ME_PARSE_FAILED;
-      break;
-    }
+  } else { // parsing a yaml config
+    static constexpr unsigned N_LABEL        = 10;
+    std::array<const char *, N_LABEL> labels = {"port",   "iport",  "scheme", "method", "prefix",
+                                                "suffix", "src_ip", "time",   "tag",    "internal"};
+    ink_assert(line_info->node != nullptr);
 
-    if (strcasecmp(label, "port") == 0) {
-      mod = PortMod::make(value, &errBuf);
-    } else if (strcasecmp(label, "iport") == 0) {
-      mod = IPortMod::make(value, &errBuf);
-    } else if (strcasecmp(label, "scheme") == 0) {
-      mod = SchemeMod::make(value, &errBuf);
-    } else if (strcasecmp(label, "method") == 0) {
-      mod = MethodMod::make(value, &errBuf);
-    } else if (strcasecmp(label, "prefix") == 0) {
-      mod = PrefixMod::make(value, &errBuf);
-    } else if (strcasecmp(label, "suffix") == 0) {
-      mod = SuffixMod::make(value, &errBuf);
-    } else if (strcasecmp(label, "src_ip") == 0) {
-      mod = SrcIPMod::make(value, &errBuf);
-    } else if (strcasecmp(label, "time") == 0) {
-      mod = TimeMod::make(value, &errBuf);
-    } else if (strcasecmp(label, "tag") == 0) {
-      mod = TagMod::make(value, &errBuf);
-    } else if (strcasecmp(label, "internal") == 0) {
-      mod = InternalMod::make(value, &errBuf);
-    } else {
-      err = ME_BAD_MOD;
-    }
+    // const YAML::Node root = *(line_info->node);
+    YAML::Node node = *(line_info->node);
 
-    if (errBuf) {
-      err = ME_CALLEE_GENERATED; // Mod make failed.
-    }
+    for (uint i = 0; i < 10; i++) {
+      Modifier *mod = nullptr;
+      const char *l = labels[i];
+      if (node[l]) {
+        std::string value = node[l].as<std::string>();
+        char *v           = ats_strdup(value.c_str());
+        switch (i) {
+        case 0: // port
+          mod = PortMod::make(v, &errBuf);
+          break;
+        case 1: // iport
+          mod = IPortMod::make(v, &errBuf);
+          break;
+        case 2: // scheme
+          mod = SchemeMod::make(v, &errBuf);
+          break;
+        case 3: // method
+          mod = MethodMod::make(v, &errBuf);
+          break;
+        case 4: // prefix
+          mod = PrefixMod::make(v, &errBuf);
+          break;
+        case 5: // suffix
+          mod = SuffixMod::make(v, &errBuf);
+          break;
+        case 6: // src_ip
+          mod = SrcIPMod::make(v, &errBuf);
+          break;
+        case 7: // time
+          mod = TimeMod::make(v, &errBuf);
+          break;
+        case 8: // tag
+          mod = TagMod::make(v, &errBuf);
+          break;
+        case 9: // internal
+          mod = InternalMod::make(v, &errBuf);
+          break;
+        default:
+          err = ME_BAD_MOD;
+        }
 
-    // If nothing went wrong, add the mod and bump the element count.
-    if (ME_UNKNOWN == err) {
-      _mods.push_back(mod);
-      --n_elts;
-    } else {
-      delete mod; // we still need to clean up because we didn't transfer ownership.
+        ats_free(v);
+        v = nullptr;
+
+        // If nothing went wrong, add the mod and bump the element count.
+        if (ME_UNKNOWN == err) {
+          _mods.push_back(mod);
+          --n_elts;
+        } else {
+          delete mod; // we still need to clean up because we didn't transfer ownership.
+        }
+      }
     }
   }
 

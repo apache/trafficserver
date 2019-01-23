@@ -32,6 +32,7 @@ dist_sysconf_DATA =	\
 	ip_allow.config.default \
 	logging.yaml.default \
 	parent.config.default \
+	parent.yaml.default \
 	plugin.config.default \
 	remap.config.default \
 	socks.config.default \

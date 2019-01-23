@@ -21,23 +21,33 @@
 parent.config
 =============
 
-.. configfile:: parent.config
+.. configfile:: parent.config, parent.yaml
 
-The :file:`parent.config` file identifies the parent proxies used in an
+The :file:`parent.config` or optionally `parent.yaml` file identifies the parent proxies used in an
 cache hierarchy. Use this file to perform the following configuration:
 
 -  Set up parent cache hierarchies, with multiple parents and parent
    failover
 -  Configure selected URL requests to bypass parent proxies
 
-Traffic Server uses the :file:`parent.config` file only when the parent
+Traffic Server uses the :file:`parent.config` or `parent.yaml` file only when the parent
 caching option is enabled (refer to :ref:`configuring-traffic-server-to-use-a-parent-cache`).
 
-After you modify the :file:`parent.config` file, run the :option:`traffic_ctl config reload`
+After you modify the :file:`parent.config` or `parent.yaml` file, run the :option:`traffic_ctl config reload`
 command to apply your changes.
 
 Format
 ======
+
+Optionally the parent configuration may be expressed using a yaml configuration file. 
+To use `parent.yaml`, set the following in `records.config`::
+
+  CONFIG proxy.config.http.parent_proxy.file STRING parent.yaml
+
+When Yaml is used, each line as described here become yaml object which
+is part of a sequence.  For a YAML example configuration file see::
+
+  configs/parent.yaml.default 
 
 Each line in the :file:`parent.config` file must contain a parent caching
 rule. Traffic Server recognizes three space-delimited tags: ::

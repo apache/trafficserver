@@ -618,3 +618,73 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
 
   return nullptr;
 }
+
+// char* parseYamlDoc(YAML::Node node, matcher_line* p_line, const matcher_tags* tags)
+//
+//   Parse out a yaml node object suitable for passing to
+//    a ControlMatcher object
+//
+//   If successful, nullptr is returned.  If unsuccessful,
+//     a static error string is returned
+//
+const char *
+parseYamlDoc(const YAML::Node node, matcher_line *p, const matcher_tags *tags)
+{
+  const char *label;
+  std::string_view val;
+  matcher_type type = MATCH_NONE;
+
+  uint dest = 0;
+  if (node[tags->match_ip]) {
+    type  = MATCH_IP;
+    label = tags->match_ip;
+    val   = node[tags->match_ip].Scalar();
+    dest++;
+  } else if (node[tags->match_host]) {
+    type  = MATCH_HOST;
+    label = tags->match_host;
+    val   = node[tags->match_host].Scalar();
+    dest++;
+  } else if (node[tags->match_domain]) {
+    type  = MATCH_DOMAIN;
+    label = tags->match_domain;
+    val   = node[tags->match_domain].Scalar();
+    dest++;
+  } else if (node[tags->match_regex]) {
+    type  = MATCH_REGEX;
+    label = tags->match_regex;
+    val   = node[tags->match_regex].Scalar();
+    dest++;
+  } else if (node[tags->match_url]) {
+    type  = MATCH_URL;
+    label = tags->match_url;
+    val   = node[tags->match_url].Scalar();
+    dest++;
+  } else if (node[tags->match_host_regex]) {
+    type  = MATCH_HOST_REGEX;
+    label = tags->match_host_regex;
+    val   = node[tags->match_host_regex].Scalar();
+    dest++;
+  }
+
+  if (type == MATCH_NONE) {
+    if (tags->dest_error_msg == false) {
+      return "No Source specifier";
+    } else {
+      return "No destination specifier";
+    }
+  } else if (dest != 1) {
+    if (tags->dest_error_msg == false) {
+      return "Multiple Sources Specified";
+    } else {
+      return "Multiple Destinations Specified";
+    }
+  }
+  p->type       = type;
+  p->dest_entry = 0;
+  p->num_el     = 0;
+  p->line[0][0] = const_cast<char *>(label);
+  p->line[1][0] = const_cast<char *>(val.data());
+  p->next       = nullptr;
+  return nullptr;
+}

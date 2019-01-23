@@ -92,6 +92,8 @@
 
 #include "tscore/ink_apidefs.h"
 #include "tscore/ink_defs.h"
+#include "tscore/ts_file.h"
+#include "tscpp/util/TextView.h"
 #include "HTTP.h"
 #include "tscore/Regex.h"
 #include "URL.h"
@@ -301,7 +303,7 @@ template <class Data, class MatchResult> class ControlMatcher
 public:
   // Parameter name must not be deallocated before this
   //  object is
-  ControlMatcher(const char *file_var, const char *name, const matcher_tags *tags,
+  ControlMatcher(const char *file_var, const char *name, const matcher_tags *tags, const char *_yaml_namespace = nullptr,
                  int flags_in = (ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE));
   ~ControlMatcher();
   int BuildTable();
@@ -357,4 +359,8 @@ public:
   int flags                = 0;
   int m_numEntries         = 0;
   const char *matcher_name = "unknown"; // Used for Debug/Warning/Error messages
+  bool config_is_yaml      = false;     // config file is in yaml format.
+  YAML::Node config;
+  YAML::Node root;
+  const char *yaml_namespace = nullptr; // config file top level yaml namespace.
 };

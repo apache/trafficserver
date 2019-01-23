@@ -29,7 +29,8 @@ traffic_logstats_traffic_logstats_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) \
+  @YAMLCPP_INCLUDES@
 
 traffic_logstats_traffic_logstats_LDFLAGS = \
 	$(AM_LDFLAGS) \

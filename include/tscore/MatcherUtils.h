@@ -34,6 +34,7 @@
 #include "tscore/ParseRules.h"
 #include "tscore/Result.h"
 #include "tscore/ink_inet.h"
+#include "yaml-cpp/yaml.h"
 
 // Look in MatcherUtils.cc for comments on function usage
 char *readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr);
@@ -86,6 +87,7 @@ struct matcher_line {
   int num_el;                        // Number of elements
   char *line[2][MATCHER_MAX_TOKENS]; // label, value pairs
   int line_num;                      // config file line number
+  const YAML::Node *node;            // the yaml node if we're parsing yaml
   matcher_line *next;                // use for linked list
 };
 
@@ -113,6 +115,7 @@ extern const matcher_tags ip_allow_dest_tags;
 extern const matcher_tags socks_server_tags;
 
 const char *parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags);
+const char *parseYamlDoc(const YAML::Node node, matcher_line *p_line, const matcher_tags *tags);
 
 // inline void LowerCaseStr(char* str)
 //

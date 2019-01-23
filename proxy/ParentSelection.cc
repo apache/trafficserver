@@ -30,6 +30,7 @@
 #include "HTTP.h"
 #include "HttpTransact.h"
 #include "I_Machine.h"
+#include "yaml-cpp/yaml.h"
 
 #define MAX_SIMPLE_RETRIES 5
 #define MAX_UNAVAILABLE_SERVER_RETRIES 5
@@ -38,6 +39,7 @@ typedef ControlMatcher<ParentRecord, ParentResult> P_table;
 
 // Global Vars for Parent Selection
 static const char modulePrefix[]                             = "[ParentSelection]";
+static const char yaml_namespace[]                           = "parents";
 static ConfigUpdateHandler<ParentConfig> *parentConfigUpdate = nullptr;
 static int self_detect                                       = 2;
 
@@ -269,7 +271,7 @@ ParentConfig::reconfigure()
   ParentConfigParams *params = nullptr;
 
   // Allocate parent table
-  P_table *pTable = new P_table(file_var, modulePrefix, &http_dest_tags);
+  P_table *pTable = new P_table(file_var, modulePrefix, &http_dest_tags, yaml_namespace);
 
   params = new ParentConfigParams(pTable);
   ink_assert(params != nullptr);
@@ -606,141 +608,269 @@ ParentRecord::Init(matcher_line *line_info)
   char buf[128];
   RecInt rec_self_detect = 2;
 
-  this->line_num = line_info->line_num;
-  this->scheme   = nullptr;
-
   if (RecGetRecordInt("proxy.config.http.parent_proxy.self_detect", &rec_self_detect) == REC_ERR_OKAY) {
     self_detect = static_cast<int>(rec_self_detect);
   }
 
-  for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
-    used  = false;
-    label = line_info->line[0][i];
-    val   = line_info->line[1][i];
+  if (!line_info->node) { // not yaml, parse text line .
 
-    if (label == nullptr) {
-      continue;
+    this->line_num = line_info->line_num;
+    this->scheme   = nullptr;
+
+    for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
+      used  = false;
+      label = line_info->line[0][i];
+      val   = line_info->line[1][i];
+
+      if (label == nullptr) {
+        continue;
+      }
+
+      if (strcasecmp(label, "round_robin") == 0) {
+        if (strcasecmp(val, "true") == 0) {
+          round_robin = P_HASH_ROUND_ROBIN;
+        } else if (strcasecmp(val, "strict") == 0) {
+          round_robin = P_STRICT_ROUND_ROBIN;
+        } else if (strcasecmp(val, "false") == 0) {
+          round_robin = P_NO_ROUND_ROBIN;
+        } else if (strcasecmp(val, "consistent_hash") == 0) {
+          round_robin = P_CONSISTENT_HASH;
+        } else if (strcasecmp(val, "latched") == 0) {
+          round_robin = P_LATCHED_ROUND_ROBIN;
+        } else {
+          round_robin = P_NO_ROUND_ROBIN;
+          errPtr      = "invalid argument to round_robin directive";
+        }
+        used = true;
+      } else if (strcasecmp(label, "parent") == 0 || strcasecmp(label, "primary_parent") == 0) {
+        PreProcessParents(val, line_num, parent_buf, sizeof(parent_buf) - 1);
+        errPtr = ProcessParents(parent_buf, true);
+        used   = true;
+      } else if (strcasecmp(label, "secondary_parent") == 0) {
+        PreProcessParents(val, line_num, parent_buf, sizeof(parent_buf) - 1);
+        errPtr = ProcessParents(parent_buf, false);
+        used   = true;
+      } else if (strcasecmp(label, "go_direct") == 0) {
+        if (strcasecmp(val, "false") == 0) {
+          go_direct = false;
+        } else if (strcasecmp(val, "true") != 0) {
+          errPtr = "invalid argument to go_direct directive";
+        } else {
+          go_direct = true;
+        }
+        used = true;
+      } else if (strcasecmp(label, "qstring") == 0) {
+        // qstring=ignore | consider
+        if (strcasecmp(val, "ignore") == 0) {
+          this->ignore_query = true;
+        } else {
+          this->ignore_query = false;
+        }
+        used = true;
+      } else if (strcasecmp(label, "parent_is_proxy") == 0) {
+        if (strcasecmp(val, "false") == 0) {
+          parent_is_proxy = false;
+        } else if (strcasecmp(val, "true") != 0) {
+          errPtr = "invalid argument to parent_is_proxy directive";
+        } else {
+          parent_is_proxy = true;
+        }
+        used = true;
+      } else if (strcasecmp(label, "parent_retry") == 0) {
+        if (strcasecmp(val, "simple_retry") == 0) {
+          parent_retry = PARENT_RETRY_SIMPLE;
+        } else if (strcasecmp(val, "unavailable_server_retry") == 0) {
+          parent_retry = PARENT_RETRY_UNAVAILABLE_SERVER;
+        } else if (strcasecmp(val, "both") == 0) {
+          parent_retry = PARENT_RETRY_BOTH;
+        } else {
+          errPtr = "invalid argument to parent_retry directive.";
+        }
+        used = true;
+      } else if (strcasecmp(label, "unavailable_server_retry_responses") == 0 && unavailable_server_retry_responses == nullptr) {
+        unavailable_server_retry_responses = new UnavailableServerResponseCodes(val);
+        used                               = true;
+      } else if (strcasecmp(label, "max_simple_retries") == 0) {
+        int v = atoi(val);
+        if (v >= 1 && v < MAX_SIMPLE_RETRIES) {
+          max_simple_retries = v;
+          used               = true;
+        } else {
+          snprintf(buf, sizeof(buf), "invalid argument to max_simple_retries.  Argument must be between 1 and %d.",
+                   MAX_SIMPLE_RETRIES);
+          errPtr = buf;
+        }
+      } else if (strcasecmp(label, "max_unavailable_server_retries") == 0) {
+        int v = atoi(val);
+        if (v >= 1 && v < MAX_UNAVAILABLE_SERVER_RETRIES) {
+          max_unavailable_server_retries = v;
+          used                           = true;
+        } else {
+          snprintf(buf, sizeof(buf), "invalid argument to max_unavailable_server_retries.  Argument must be between 1 and %d.",
+                   MAX_UNAVAILABLE_SERVER_RETRIES);
+          errPtr = buf;
+        }
+      } else if (strcasecmp(label, "secondary_mode") == 0) {
+        int v          = atoi(val);
+        secondary_mode = v;
+        used           = true;
+      } else if (strcasecmp(label, "ignore_self_detect") == 0) {
+        if (strcasecmp(val, "true") == 0) {
+          ignore_self_detect = true;
+        } else {
+          ignore_self_detect = false;
+        }
+        used = true;
+      }
+      // Report errors generated by ProcessParents();
+      if (errPtr != nullptr) {
+        return Result::failure("%s %s at line %d", modulePrefix, errPtr, line_num);
+      }
+
+      if (used == true) {
+        // Consume the label/value pair we used
+        line_info->line[0][i] = nullptr;
+        line_info->num_el--;
+      }
     }
 
-    if (strcasecmp(label, "round_robin") == 0) {
-      if (strcasecmp(val, "true") == 0) {
-        round_robin = P_HASH_ROUND_ROBIN;
-      } else if (strcasecmp(val, "strict") == 0) {
-        round_robin = P_STRICT_ROUND_ROBIN;
-      } else if (strcasecmp(val, "false") == 0) {
-        round_robin = P_NO_ROUND_ROBIN;
-      } else if (strcasecmp(val, "consistent_hash") == 0) {
-        round_robin = P_CONSISTENT_HASH;
-      } else if (strcasecmp(val, "latched") == 0) {
-        round_robin = P_LATCHED_ROUND_ROBIN;
-      } else {
-        round_robin = P_NO_ROUND_ROBIN;
-        errPtr      = "invalid argument to round_robin directive";
-      }
-      used = true;
-    } else if (strcasecmp(label, "parent") == 0 || strcasecmp(label, "primary_parent") == 0) {
-      PreProcessParents(val, line_num, parent_buf, sizeof(parent_buf) - 1);
-      errPtr = ProcessParents(parent_buf, true);
-      used   = true;
-    } else if (strcasecmp(label, "secondary_parent") == 0) {
-      PreProcessParents(val, line_num, parent_buf, sizeof(parent_buf) - 1);
-      errPtr = ProcessParents(parent_buf, false);
-      used   = true;
-    } else if (strcasecmp(label, "go_direct") == 0) {
-      if (strcasecmp(val, "false") == 0) {
-        go_direct = false;
-      } else if (strcasecmp(val, "true") != 0) {
-        errPtr = "invalid argument to go_direct directive";
-      } else {
-        go_direct = true;
-      }
-      used = true;
-    } else if (strcasecmp(label, "qstring") == 0) {
-      // qstring=ignore | consider
-      if (strcasecmp(val, "ignore") == 0) {
-        this->ignore_query = true;
-      } else {
-        this->ignore_query = false;
-      }
-      used = true;
-    } else if (strcasecmp(label, "parent_is_proxy") == 0) {
-      if (strcasecmp(val, "false") == 0) {
-        parent_is_proxy = false;
-      } else if (strcasecmp(val, "true") != 0) {
-        errPtr = "invalid argument to parent_is_proxy directive";
-      } else {
-        parent_is_proxy = true;
-      }
-      used = true;
-    } else if (strcasecmp(label, "parent_retry") == 0) {
-      if (strcasecmp(val, "simple_retry") == 0) {
-        parent_retry = PARENT_RETRY_SIMPLE;
-      } else if (strcasecmp(val, "unavailable_server_retry") == 0) {
-        parent_retry = PARENT_RETRY_UNAVAILABLE_SERVER;
-      } else if (strcasecmp(val, "both") == 0) {
-        parent_retry = PARENT_RETRY_BOTH;
-      } else {
-        errPtr = "invalid argument to parent_retry directive.";
-      }
-      used = true;
-    } else if (strcasecmp(label, "unavailable_server_retry_responses") == 0 && unavailable_server_retry_responses == nullptr) {
-      unavailable_server_retry_responses = new UnavailableServerResponseCodes(val);
-      used                               = true;
-    } else if (strcasecmp(label, "max_simple_retries") == 0) {
-      int v = atoi(val);
-      if (v >= 1 && v < MAX_SIMPLE_RETRIES) {
-        max_simple_retries = v;
-        used               = true;
-      } else {
-        snprintf(buf, sizeof(buf), "invalid argument to max_simple_retries.  Argument must be between 1 and %d.",
-                 MAX_SIMPLE_RETRIES);
-        errPtr = buf;
-      }
-    } else if (strcasecmp(label, "max_unavailable_server_retries") == 0) {
-      int v = atoi(val);
-      if (v >= 1 && v < MAX_UNAVAILABLE_SERVER_RETRIES) {
-        max_unavailable_server_retries = v;
-        used                           = true;
-      } else {
-        snprintf(buf, sizeof(buf), "invalid argument to max_unavailable_server_retries.  Argument must be between 1 and %d.",
-                 MAX_UNAVAILABLE_SERVER_RETRIES);
-        errPtr = buf;
-      }
-    } else if (strcasecmp(label, "secondary_mode") == 0) {
-      int v          = atoi(val);
-      secondary_mode = v;
-      used           = true;
-    } else if (strcasecmp(label, "ignore_self_detect") == 0) {
-      if (strcasecmp(val, "true") == 0) {
-        ignore_self_detect = true;
-      } else {
-        ignore_self_detect = false;
-      }
-      used = true;
-    }
-    // Report errors generated by ProcessParents();
-    if (errPtr != nullptr) {
-      return Result::failure("%s %s at line %d", modulePrefix, errPtr, line_num);
+    // delete unavailable_server_retry_responses if unavailable_server_retry is not enabled.
+    if (unavailable_server_retry_responses != nullptr && !(parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+      Warning("%s ignoring unavailable_server_retry_responses directive on line %d, as unavailable_server_retry is not enabled.",
+              modulePrefix, line_num);
+      delete unavailable_server_retry_responses;
+      unavailable_server_retry_responses = nullptr;
+    } else if (unavailable_server_retry_responses == nullptr && (parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+      // initialize UnavailableServerResponseCodes to the default value if unavailable_server_retry is enabled.
+      Warning("%s initializing UnavailableServerResponseCodes on line %d to 503 default.", modulePrefix, line_num);
+      unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
     }
 
-    if (used == true) {
-      // Consume the label/value pair we used
-      line_info->line[0][i] = nullptr;
-      line_info->num_el--;
-    }
-  }
+    // end of text line parsing
 
-  // delete unavailable_server_retry_responses if unavailable_server_retry is not enabled.
-  if (unavailable_server_retry_responses != nullptr && !(parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
-    Warning("%s ignoring unavailable_server_retry_responses directive on line %d, as unavailable_server_retry is not enabled.",
-            modulePrefix, line_num);
-    delete unavailable_server_retry_responses;
-    unavailable_server_retry_responses = nullptr;
-  } else if (unavailable_server_retry_responses == nullptr && (parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
-    // initialize UnavailableServerResponseCodes to the default value if unavailable_server_retry is enabled.
-    Warning("%s initializing UnavailableServerResponseCodes on line %d to 503 default.", modulePrefix, line_num);
-    unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
-  }
+  } else { // parse a yaml config.
+    ink_assert(line_info->node != nullptr);
+    // const YAML::Node root = *(line_info->node);
+    YAML::Node node = *(line_info->node);
+
+    try {
+      if (node["round_robin"]) {
+        if (node["round_robin"].Scalar().compare("true") == 0) {
+          round_robin = P_HASH_ROUND_ROBIN;
+        } else if (node["round_robin"].Scalar().compare("strict") == 0) {
+          round_robin = P_STRICT_ROUND_ROBIN;
+        } else if (node["round_robin"].Scalar().compare("false") == 0) {
+          round_robin = P_NO_ROUND_ROBIN;
+        } else if (node["round_robin"].Scalar().compare("consistent_hash") == 0) {
+          round_robin = P_CONSISTENT_HASH;
+        } else if (node["round_robin"].Scalar().compare("latched") == 0) {
+          round_robin = P_LATCHED_ROUND_ROBIN;
+        } else {
+          errPtr = "invalid argument to round_robin directive";
+          return Result::failure("%s %s on entry %d", modulePrefix, errPtr, line_info->line_num);
+        }
+      }
+
+      if (node["parent"] || node["primary_parent"]) {
+        const char *parent = node["parent"].Scalar().c_str();
+        PreProcessParents(parent, line_info->line_num, parent_buf, sizeof(parent_buf) - 1);
+        errPtr = ProcessParents(parent_buf, true);
+        if (errPtr != nullptr) {
+          return Result::failure("%s %s on entry %d", modulePrefix, errPtr, line_info->line_num);
+        }
+      }
+
+      if (node["secondary_parent"]) {
+        const char *secondary_parent = node["secondary_parent"].Scalar().c_str();
+        PreProcessParents(secondary_parent, line_info->line_num, parent_buf, sizeof(parent_buf) - 1);
+        errPtr = ProcessParents(parent_buf, false);
+        if (errPtr != nullptr) {
+          return Result::failure("%s %s on entry %d", modulePrefix, errPtr, line_info->line_num);
+        }
+      }
+
+      if (node["secondary_mode"]) {
+        uint sm = node["secondary_mode"].as<int>();
+        if (sm >= 1 && sm < 4) {
+          secondary_mode = sm;
+        } else {
+          snprintf(buf, sizeof(buf), "entry %d, invalid argument to secondary_mode.  Argument must be between 1, 2 or 3.",
+                   line_num);
+          Warning("%s %s: using default value %d", modulePrefix, buf, secondary_mode);
+        }
+      }
+
+      if (node["go_direct"]) {
+        go_direct = node["go_direct"].as<bool>();
+      }
+
+      if (node["qstring"]) {
+        if (node["qstring"].Scalar().compare("consider") == 0) {
+          ignore_query = false;
+        } else if (node["qstring"].Scalar().compare("ignore") == 0) {
+          ignore_query = true;
+        } else {
+          errPtr = "invalid argument to qstring directive";
+          return Result::failure("%s %s on entry %d", modulePrefix, errPtr, line_info->line_num);
+        }
+      }
+
+      if (node["parent_is_proxy"]) {
+        parent_is_proxy = node["parent_is_proxy"].as<bool>();
+      }
+
+      if (node["ignore_self_detect"]) {
+        ignore_self_detect = node["ignore_self_detect"].as<bool>();
+      }
+
+      if (node["parent_retry"]) {
+        if (node["parent_retry"].Scalar().compare("simple_retry") == 0) {
+          parent_retry = PARENT_RETRY_SIMPLE;
+        } else if (node["parent_retry"].Scalar().compare("unavailable_server_retry") == 0) {
+          parent_retry = PARENT_RETRY_UNAVAILABLE_SERVER;
+        } else if (node["parent_retry"].Scalar().compare("both") == 0) {
+          parent_retry = PARENT_RETRY_BOTH;
+        } else {
+          errPtr = "invalid argument to simple_retry directive.";
+          return Result::failure("%s %s on entry %d", modulePrefix, errPtr, line_info->line_num);
+        }
+      }
+      if (parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER) {
+        if (node["unavailable_server_retry_responses"]) {
+          const char *usr                    = node["unavailable_server_retry_responses"].Scalar().c_str();
+          unavailable_server_retry_responses = new UnavailableServerResponseCodes(const_cast<char *>(usr));
+        } else {
+          unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
+          Warning("%s initializing UnavailableServerResponseCodes on entry %d to 503 default.", modulePrefix, line_num);
+        }
+        if (node["max_unavailable_server_retries"]) {
+          uint mus = node["max_unavailable_server_retries"].as<int>();
+          if (mus > 0 && mus < MAX_UNAVAILABLE_SERVER_RETRIES) {
+            max_unavailable_server_retries = mus;
+          } else {
+            snprintf(buf, sizeof(buf),
+                     "entry %d, invalid argument to max_unavailable_server_retries.  Argument must be between 1 and %d.", line_num,
+                     MAX_UNAVAILABLE_SERVER_RETRIES);
+            Warning("%s %s: using default value %d", modulePrefix, buf, max_unavailable_server_retries);
+          }
+        }
+      }
+      if (parent_retry & PARENT_RETRY_SIMPLE) {
+        if (node["max_simple_retries"]) {
+          uint msr = node["max_simple_retries"].as<int>();
+          if (msr > 0 && msr < MAX_SIMPLE_RETRIES) {
+            max_simple_retries = msr;
+          } else {
+            snprintf(buf, sizeof(buf), "entry %d, invalid argument to max_simple_retries.  Argument must be between 1 and %d.",
+                     line_num, MAX_SIMPLE_RETRIES);
+            Warning("%s %s: using default value %d", modulePrefix, buf, max_simple_retries);
+          }
+        }
+      }
+    } catch (std::exception &ex) {
+      return Result::failure("%s parent config yaml parse error at line %d: %s", modulePrefix, line_num, ex.what());
+    }
+  } // end of yaml parse.
 
   if (this->parents == nullptr && go_direct == false) {
     return Result::failure("%s No parent specified in parent.config at line %d", modulePrefix, line_num);
@@ -1008,13 +1138,34 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
 #define REBUILD                                                                                                            \
   do {                                                                                                                     \
+    static char debug[] = {"parent_select|host_statuses"};                                                                 \
     delete params;                                                                                                         \
-    ParentTable = new P_table("", "ParentSelection Unit Test Table", &http_dest_tags,                                      \
+    ParentTable = new P_table("", "ParentSelection Unit Test Table", &http_dest_tags, nullptr,                             \
                               ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); \
     ParentTable->BuildTableFromString(tbl);                                                                                \
     RecSetRecordInt("proxy.config.http.parent_proxy.fail_threshold", fail_threshold, REC_SOURCE_DEFAULT);                  \
     RecSetRecordInt("proxy.config.http.parent_proxy.retry_time", retry_time, REC_SOURCE_DEFAULT);                          \
+    RecSetRecordInt("proxy.config.diags.debug.enabled", 1, REC_SOURCE_DEFAULT);                                            \
+    RecSetRecordString("proxy.config.diags.debug.tags", debug, REC_SOURCE_DEFAULT, true);                                  \
     params = new ParentConfigParams(ParentTable);                                                                          \
+  } while (0)
+
+// set's the filename with a recognized yaml suffix for testing a yaml config.
+#define REBUILD_YAML                                                                                                    \
+  do {                                                                                                                  \
+    static char debug[] = {"parent_select|host_statuses"};                                                              \
+    delete params;                                                                                                      \
+    const RecString fn = ats_strdup("parent.yaml");                                                                     \
+    RecSetRecordString("proxy.config.http.parent_proxy.file", fn, REC_SOURCE_DEFAULT, false, false);                    \
+    ParentTable =                                                                                                       \
+      new P_table("proxy.config.http.parent_proxy.file", "ParentSelection Unit Test Table", &http_dest_tags, "parents", \
+                  ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE);          \
+    ParentTable->BuildTableFromString(tbl);                                                                             \
+    RecSetRecordInt("proxy.config.http.parent_proxy.fail_threshold", fail_threshold, REC_SOURCE_DEFAULT);               \
+    RecSetRecordInt("proxy.config.http.parent_proxy.retry_time", retry_time, REC_SOURCE_DEFAULT);                       \
+    RecSetRecordInt("proxy.config.diags.debug.enabled", 1, REC_SOURCE_DEFAULT);                                         \
+    RecSetRecordString("proxy.config.diags.debug.tags", debug, REC_SOURCE_DEFAULT, true);                               \
+    params = new ParentConfigParams(ParentTable);                                                                       \
   } while (0)
 
 #define REINIT                             \
@@ -1780,6 +1931,35 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.stooges.net");
   FP;
   RE(verify(result, PARENT_SPECIFIED, "carol", 80), 211);
+
+  // Test 212 - parse and test a yaml config
+  _st.setHostStatus("curly", HOST_STATUS_UP, 0, Reason::MANUAL);
+  tbl[0] = '\0';
+  ST(212);
+  T("parents:\n"
+    "  - { dest_domain: \"stooges.net\", parent: \"curly:80|1.0;joe:8080|1.0;larry:80|1.0\", "
+    "round_robin: \"true\", go_direct: true, qstring: \"consider\" }\n"
+    "  - { dest_domain: \"bad.net\", parent: \"foo:80|1.0;baz:8080|1.0;bar:80|1.0\", "
+    "round_robin: \"true\", go_direct: true, qstring: \"consider\" }");
+  REBUILD_YAML;
+  REINIT;
+  br(request, "i.am.stooges.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "curly", 80), 212);
+
+  // Test 213
+  tbl[0] = '\0';
+  ST(213);
+  T("parents:\n"
+    "  - { dest_domain: \"stooges.net\", parent: \"curly:80|1.0;joe:8080|1.0;larry:80|1.0\", "
+    "round_robin: \"true\", go_direct: true, qstring: \"consider\" }\n"
+    "  - { dest_domain: \"bad.net\", parent: \"foo:80|1.0;baz:8080|1.0;bar:80|1.0\", "
+    "round_robin: \"true\", go_direct: true, qstring: \"consider\" }");
+  REBUILD_YAML;
+  REINIT;
+  br(request, "i.am.bad.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "foo", 80), 213);
 
   delete request;
   delete result;

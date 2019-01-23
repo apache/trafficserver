@@ -1,0 +1,174 @@
+{
+  "title": "Traffic Server parents configuration",
+  "description": "parent configuration file structure. Licensed under Apache V2 https://www.apache.org/licenses/LICENSE-2.0",
+  "type": "object",
+  "properties": {
+    "parents": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "properties": {
+          "dest_domain": {
+            "description": "A requested domain name, and its subdomains.",
+            "type": "string"
+          },
+          "dest_host": {
+            "description": "A requested hostname.",
+            "type": "string"
+          },
+          "dest_ip": {
+            "description": "A requested IP address or range of IP addresses separated by a dash (-)..",
+            "type": "string"
+          },
+          "url_regex": {
+            "description": "A regular expression (regex) to be found in a URL.",
+            "type": "string"
+          },
+          "internal": {
+            "description": "A boolean value, true or false, specifying if the rule should match (or not match) a transaction originating from an internal API.",
+            "enum": [
+              true,
+              false
+            ]
+          },
+          "go_direct": {
+            "description": "send the request directly to the origin bypassing the parent list.",
+            "enum": [
+              true,
+              false
+            ]
+          },
+          "max_simple_retries": {
+            "description": "The maximum number of retries for a simple retry.",
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "max_unavailable_server_retries": {
+            "description": "The maximum number of retries for an unavailable server retry.",
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "method": {
+            "description": "A request URL method",
+            "type": "string",
+            "enum": [
+              "get",
+              "post",
+              "put",
+              "trace"
+            ]
+          },
+          "parent_retry": {
+            "description": "Use one or both of 'simple_retry', or 'unavailable_server_retry'",
+            "type": "string",
+            "enum": [
+              "simple_retry",
+              "unavailable_server_retry",
+              "both"
+            ]
+          },
+          "parent_is_proxy": {
+            "description": "The parents listed in parent and secondary_parent are caching proxies, set to false if they are origins",
+            "enum": [
+              true,
+              false
+            ]
+          },
+          "port": {
+            "description": "A requested URL port.",
+            "type": "number"
+          },
+          "prefix": {
+            "description": "A prefix in the path part of a URL.",
+            "type": "string"
+          },
+          "qstring": {
+            "description": "use or ignore the query string when looking up a parent with consistent_hash",
+            "type": "string",
+            "enum": [
+              "consider",
+              "ignore"
+            ]
+          },
+          "round_robin": {
+            "description": "select to use one of the parent strategy algorithms, default is 'false'",
+            "enum": [
+              "true",
+              "false",
+              "strict",
+              "consistent_hash",
+              "latched"
+            ]
+          },
+          "scheme": {
+            "description": "A request URL method.",
+            "type": "string",
+            "enum": [
+              "http",
+              "https"
+            ]
+          },
+          "secondary_mode": {
+            "description": "The secondary parent list mode (see parent.config doc), defaults to 1.",
+            "type": "number",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "src_ip": {
+            "description": "A client IP address.",
+            "type": "string"
+          },
+          "suffix": {
+            "description": "A file suffix in the URL.",
+            "type": "string"
+          },
+          "time": {
+            "description": "A time range, such as 08:00-14:00, during which the parent cache is used to serve requests.",
+            "type": "string"
+          },
+          "parent": {
+            "description": "list of primary parents",
+            "type": "string"
+          },
+          "secondary_parent": {
+            "description": "list of secondary parents",
+            "type": "string"
+          },
+          "unavailable_server_retry_responses": {
+            "description": "When using unavailable_server retry, use this to specify a csv separated list of 5xx resposne codes, default is '503'",
+            "type": "string"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "dest_domain"
+            ]
+          },
+          {
+            "required": [
+              "dest_host"
+            ]
+          },
+          {
+            "required": [
+              "dest_ip"
+            ]
+          },
+          {
+            "required": [
+              "url_regex"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "parents"
+  ]
+}

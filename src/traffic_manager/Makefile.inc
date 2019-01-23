@@ -28,7 +28,8 @@ traffic_manager_traffic_manager_CPPFLAGS = \
 	-I$(abs_top_srcdir)/mgmt/api \
 	-I$(abs_top_srcdir)/mgmt/api/include \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) \
+  @YAMLCPP_INCLUDES@
 
 traffic_manager_traffic_manager_LDFLAGS = \
 	$(AM_LDFLAGS) \

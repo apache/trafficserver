@@ -25,7 +25,8 @@ traffic_crashlog_traffic_crashlog_CPPFLAGS = \
     -I$(abs_top_srcdir)/mgmt \
     -I$(abs_top_srcdir)/mgmt/utils \
     -I$(abs_top_srcdir)/mgmt/api/include \
-    $(TS_INCLUDES)
+    $(TS_INCLUDES) \
+    @YAMLCPP_INCLUDES@
 
 traffic_crashlog_traffic_crashlog_LDFLAGS = \
     $(AM_LDFLAGS) \
