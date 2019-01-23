@@ -2007,7 +2007,6 @@ QUICNewConnectionIdFrame::_reset()
 {
   this->_sequence      = 0;
   this->_connection_id = QUICConnectionId::ZERO();
-  memset(&this->_stateless_reset_token, 0, sizeof(QUICStatelessResetToken));
 
   this->_owner = nullptr;
   this->_id    = 0;
