@@ -23,6 +23,8 @@
 
 #include "Http3FrameCollector.h"
 
+#include "Http3DebugNames.h"
+
 Http3ErrorUPtr
 Http3FrameCollector::on_write_ready(QUICStreamIO *stream_io, size_t &nwritten)
 {
@@ -39,7 +41,10 @@ Http3FrameCollector::on_write_ready(QUICStreamIO *stream_io, size_t &nwritten)
     if (frame) {
       frame->store(tmp + nwritten, &len);
       nwritten += len;
+
+      Debug("http3", "[TX] [%d] | %s", stream_io->stream_id(), Http3DebugNames::frame_type(frame->type()));
     }
+
     all_done &= g->is_done();
   }
 

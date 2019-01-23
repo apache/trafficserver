@@ -38,6 +38,8 @@ struct QUICClientConfig {
   char path[1018]       = "/";
   char debug_tags[1024] = "quic|vv_quic_crypto";
   int close             = false;
+  int http0_9           = true;
+  int http3             = false;
 };
 
 class QUICClient : public Continuation
@@ -63,6 +65,9 @@ public:
   int main_event_handler(int event, Event *data);
 
 private:
+  void _start_http_09_session(const char *path);
+  void _start_http_3_session(const char *path);
+
   const QUICClientConfig *_config = nullptr;
   const char *_filename           = nullptr;
 };

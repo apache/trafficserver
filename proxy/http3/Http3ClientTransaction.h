@@ -74,6 +74,9 @@ private:
   int64_t _process_read_vio();
   int64_t _process_write_vio();
 
+  ParseResult _convert_header_from_3_to_1_1(HTTPHdr *hdr);
+  int _on_qpack_decode_complete();
+
   EThread *_thread           = nullptr;
   Event *_cross_thread_event = nullptr;
 
@@ -84,6 +87,8 @@ private:
   VIO _write_vio;
   Event *_read_event  = nullptr;
   Event *_write_event = nullptr;
+
+  HTTPHdr _request_header;
 
   // These are for Http3
   Http3FrameDispatcher _frame_dispatcher;

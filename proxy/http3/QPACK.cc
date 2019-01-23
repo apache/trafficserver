@@ -175,7 +175,7 @@ QPACK::event_handler(int event, Event *data)
 }
 
 int
-QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block)
+QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, uint64_t &header_block_len)
 {
   if (!header_block) {
     return -1;
@@ -209,7 +209,10 @@ QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block)
   this->_encode_prefix(largest_reference, base_index, header_data_prefix);
 
   header_block->append_block(header_data_prefix);
+  header_block_len += header_data_prefix->size();
+
   header_block->append_block(compressed_headers);
+  header_block_len += compressed_headers->size();
 
   return 0;
 }
@@ -224,7 +227,7 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
 
   if (this->_invalid) {
     thread->schedule_imm(cont, QPACK_EVENT_DECODE_FAILED, nullptr);
-    return 0;
+    return -1;
   }
 
   uint64_t tmp = 0;
@@ -248,6 +251,20 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
   this->_decode(thread, cont, stream_id, header_block, header_block_len, hdr);
 
   return 0;
+}
+
+void
+QPACK::set_encoder_stream(QUICStreamIO *stream_io)
+{
+  this->_encoder_stream_id = stream_io->stream_id();
+  this->set_stream(stream_io);
+}
+
+void
+QPACK::set_decoder_stream(QUICStreamIO *stream_io)
+{
+  this->_decoder_stream_id = stream_io->stream_id();
+  this->set_stream(stream_io);
 }
 
 int
@@ -1202,6 +1219,11 @@ QPACK::DynamicTable::lookup(const char *name, int name_len, const char *value, i
   const char *tmp_name                      = nullptr;
   const char *tmp_value                     = nullptr;
 
+  // DynamicTable is empty
+  if (this->_entries_inserted == 0) {
+    return {candidate_index, match_type};
+  }
+
   // TODO Use a tree for better perfomance
   for (; i <= end; i = (i + 1) % this->_max_entries) {
     if (name_len != 0 && this->_entries[i].name_len == name_len) {
@@ -1220,6 +1242,7 @@ QPACK::DynamicTable::lookup(const char *name, int name_len, const char *value, i
       }
     }
   }
+
   return {candidate_index, match_type};
 }
 
@@ -1242,6 +1265,10 @@ QPACK::DynamicTable::insert_entry(bool is_static, uint16_t index, const char *va
 const QPACK::LookupResult
 QPACK::DynamicTable::insert_entry(const char *name, uint16_t name_len, const char *value, uint16_t value_len)
 {
+  if (this->_max_entries == 0) {
+    return {UINT16_C(0), QPACK::LookupResult::MatchType::NONE};
+  }
+
   // Check if we can make enough space to insert a new entry
   uint16_t required_len = name_len + value_len;
   uint16_t available    = this->_available;

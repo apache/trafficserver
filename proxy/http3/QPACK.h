@@ -37,13 +37,14 @@ enum {
 };
 
 // FIXME This setting should be passed by HTTP/3
-constexpr int SETTINGS_HEADER_TABLE_SIZE     = 4096;
-constexpr int SETTINGS_QPACK_BLOCKED_STREAMS = 100;
+constexpr int SETTINGS_HEADER_TABLE_SIZE     = 0;
+constexpr int SETTINGS_QPACK_BLOCKED_STREAMS = 0;
 
 class QPACK : public QUICApplication
 {
 public:
-  QPACK(QUICConnection *qc, uint16_t max_table_size, uint16_t max_blocking_streams);
+  QPACK(QUICConnection *qc, uint16_t max_table_size = SETTINGS_HEADER_TABLE_SIZE,
+        uint16_t max_blocking_streams = SETTINGS_QPACK_BLOCKED_STREAMS);
   virtual ~QPACK();
 
   int event_handler(int event, Event *data);
@@ -52,7 +53,7 @@ public:
    * header_block must have enough size to store all headers in header_set.
    * The maximum size can be estimated with QPACK::estimate_header_block_size().
    */
-  int encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block);
+  int encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, uint64_t &header_block_len);
 
   /*
    * This will emit either of two events below:
@@ -63,6 +64,9 @@ public:
              EThread *thread = this_ethread());
 
   int cancel(uint64_t stream_id);
+
+  void set_encoder_stream(QUICStreamIO *stream_io);
+  void set_decoder_stream(QUICStreamIO *stream_io);
 
   static size_t estimate_header_block_size(const HTTPHdr &header_set);
 

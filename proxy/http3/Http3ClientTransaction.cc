@@ -31,6 +31,7 @@
 #include "Http3HeaderFramer.h"
 #include "Http3DataFramer.h"
 #include "HttpSM.h"
+#include "HTTP2.h"
 
 #define Http3TransDebug(fmt, ...)                                                                                        \
   Debug("http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                        \
@@ -62,22 +63,27 @@ Http3ClientTransaction::Http3ClientTransaction(Http3ClientSession *session, QUIC
   this->sm_reader = this->_read_vio_buf.alloc_reader();
   static_cast<Http3ClientSession *>(this->parent)->add_transaction(this);
 
-  this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio);
+  this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_io->stream_id());
   this->_data_framer   = new Http3DataFramer(this, &this->_write_vio);
   this->_frame_collector.add_generator(this->_header_framer);
   this->_frame_collector.add_generator(this->_data_framer);
   // this->_frame_collector.add_generator(this->_push_controller);
 
-  this->_header_handler = new Http3HeaderVIOAdaptor(&this->_read_vio);
+  this->_header_handler = new Http3HeaderVIOAdaptor(&this->_request_header, session->remote_qpack(), this, stream_io->stream_id());
   this->_data_handler   = new Http3StreamDataVIOAdaptor(&this->_read_vio);
+
   this->_frame_dispatcher.add_handler(this->_header_handler);
   this->_frame_dispatcher.add_handler(this->_data_handler);
+
+  this->_request_header.create(HTTP_TYPE_REQUEST);
 
   SET_HANDLER(&Http3ClientTransaction::state_stream_open);
 }
 
 Http3ClientTransaction::~Http3ClientTransaction()
 {
+  this->_request_header.destroy();
+
   delete this->_header_framer;
   delete this->_data_framer;
   delete this->_header_handler;
@@ -169,6 +175,18 @@ Http3ClientTransaction::state_stream_open(int event, void *edata)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT: {
     ink_assert(false);
+    break;
+  }
+  case QPACK_EVENT_DECODE_COMPLETE: {
+    int res = this->_on_qpack_decode_complete();
+    if (res) {
+      // If READ_READY event is scheduled, should it be canceled?
+      this->_signal_read_event();
+    }
+    break;
+  }
+  case QPACK_EVENT_DECODE_FAILED: {
+    // FIXME: handle error
     break;
   }
   default:
@@ -533,6 +551,67 @@ Http3ClientTransaction::_process_write_vio()
     this->_frame_collector.on_write_ready(this->_stream_io, nwritten);
     return nwritten;
   }
+}
+
+ParseResult
+Http3ClientTransaction::_convert_header_from_3_to_1_1(HTTPHdr *hdr)
+{
+  // TODO: do HTTP/3 specific convert, if there
+
+  // Dirty hack to bypass checks
+  char name_a[]              = ":authority";
+  char value_a[]             = "localhost";
+  MIMEField *authority_field = this->_request_header.field_create(name_a, sizeof(name_a) - 1);
+  authority_field->value_set(this->_request_header.m_heap, this->_request_header.m_mime, value_a, sizeof(value_a) - 1);
+  this->_request_header.field_attach(authority_field);
+
+  char name_s[]           = ":scheme";
+  char value_s[]          = "https";
+  MIMEField *scheme_field = this->_request_header.field_create(name_s, sizeof(name_s) - 1);
+  scheme_field->value_set(this->_request_header.m_heap, this->_request_header.m_mime, value_s, sizeof(value_s) - 1);
+  this->_request_header.field_attach(scheme_field);
+
+  return http2_convert_header_from_2_to_1_1(hdr);
+}
+
+int
+Http3ClientTransaction::_on_qpack_decode_complete()
+{
+  ParseResult res = this->_convert_header_from_3_to_1_1(&this->_request_header);
+  if (res == PARSE_RESULT_ERROR) {
+    return -1;
+  }
+
+  SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
+  MIOBuffer *writer = this->_read_vio.get_writer();
+
+  // TODO: Http2Stream::send_request has same logic. It originally comes from HttpSM::write_header_into_buffer.
+  // a). Make HttpSM::write_header_into_buffer static
+  //   or
+  // b). Add interface to HTTPHdr to dump data
+  //   or
+  // c). Add interface to HttpSM to handle HTTPHdr directly
+  int bufindex;
+  int dumpoffset = 0;
+  int done, tmp;
+  IOBufferBlock *block;
+  do {
+    bufindex = 0;
+    tmp      = dumpoffset;
+    block    = writer->get_current_block();
+    if (!block) {
+      writer->add_block();
+      block = writer->get_current_block();
+    }
+    done = this->_request_header.print(block->start(), block->write_avail(), &bufindex, &tmp);
+    dumpoffset += bufindex;
+    writer->fill(bufindex);
+    if (!done) {
+      writer->add_block();
+    }
+  } while (!done);
+
+  return 1;
 }
 
 void

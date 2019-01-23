@@ -84,6 +84,7 @@ public:
   virtual ~QUICApplication();
 
   void set_stream(QUICStream *stream, QUICStreamIO *stream_io = nullptr);
+  void set_stream(QUICStreamIO *stream_io);
   bool is_stream_set(QUICStream *stream);
   void reenable(QUICStream *stream);
   void unset_stream(QUICStream *stream);

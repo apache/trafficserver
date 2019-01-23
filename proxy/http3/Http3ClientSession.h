@@ -25,6 +25,7 @@
 
 #include "ProxyClientSession.h"
 #include "Http3ClientTransaction.h"
+#include "QPACK.h"
 
 class Http3ClientSession : public ProxyClientSession
 {
@@ -57,7 +58,12 @@ public:
   void add_transaction(Http3ClientTransaction *);
   Http3ClientTransaction *get_transaction(QUICStreamId);
 
+  QPACK *local_qpack();
+  QPACK *remote_qpack();
+
 private:
   NetVConnection *_client_vc = nullptr;
+  QPACK *_remote_qpack       = nullptr; // QPACK for decoding
+  QPACK *_local_qpack        = nullptr; // QPACK for encoding
   Queue<Http3ClientTransaction> _transaction_list;
 };

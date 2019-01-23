@@ -23,9 +23,12 @@
 
 #pragma once
 
+#include "hdrs/HTTP.h"
+
+#include "QPACK.h"
+
 #include "Http3FrameGenerator.h"
 #include "Http3Frame.h"
-#include "hdrs/HTTP.h"
 
 class Http3ClientTransaction;
 class VIO;
@@ -33,7 +36,7 @@ class VIO;
 class Http3HeaderFramer : public Http3FrameGenerator
 {
 public:
-  Http3HeaderFramer(Http3ClientTransaction *transaction, VIO *source);
+  Http3HeaderFramer(Http3ClientTransaction *transaction, VIO *source, QPACK *qpack, uint64_t stream_id);
 
   // Http3FrameGenerator
   Http3FrameUPtr generate_frame(uint16_t max_size) override;
@@ -42,13 +45,16 @@ public:
 private:
   Http3ClientTransaction *_transaction = nullptr;
   VIO *_source_vio                     = nullptr;
+  QPACK *_qpack                        = nullptr;
+  MIOBuffer *_header_block             = nullptr;
+  IOBufferReader *_header_block_reader = nullptr;
+  uint64_t _header_block_len           = 0;
+  uint64_t _header_block_wrote         = 0;
+  uint64_t _stream_id                  = 0;
+  bool _sent_all_data                  = false;
   HTTPParser _http_parser;
   HTTPHdr _header;
-  uint8_t *_header_block     = nullptr;
-  size_t _header_block_len   = 0;
-  size_t _header_block_wrote = 0;
-  bool _sent_all_data        = false;
 
+  void _convert_header_from_1_1_to_3(HTTPHdr *h3_hdrs, HTTPHdr *h1_hdrs);
   void _generate_header_block();
-  void _compress_header();
 };

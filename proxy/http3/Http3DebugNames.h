@@ -29,6 +29,7 @@ class Http3DebugNames
 {
 public:
   static const char *frame_type(Http3FrameType type);
+  static const char *stream_type(Http3StreamType type);
   static const char *stream_type(uint8_t type);
   static const char *settings_id(uint16_t id);
   static const char *error_code(uint16_t code);

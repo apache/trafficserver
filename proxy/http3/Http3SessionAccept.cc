@@ -26,7 +26,9 @@
 #include "P_Net.h"
 #include "I_Machine.h"
 #include "IPAllow.h"
+
 #include "QUICSimpleApp.h"
+#include "Http3App.h"
 
 Http3SessionAccept::Http3SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(nullptr), options(_o)
 {
@@ -56,7 +58,11 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
           ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
-  new QUICSimpleApp(static_cast<QUICNetVConnection *>(netvc), std::move(session_acl));
+  // TODO: switch by ALPN
+  // new QUICSimpleApp(static_cast<QUICNetVConnection *>(netvc), std::move(session_acl));
+  // who will destruct this app?
+  Http3App *app = new Http3App(static_cast<QUICNetVConnection *>(netvc), std::move(session_acl));
+  app->start();
 
   return true;
 }

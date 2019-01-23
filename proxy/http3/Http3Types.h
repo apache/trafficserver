@@ -29,9 +29,9 @@
 
 enum class Http3StreamType : uint8_t {
   CONTROL       = 0x43, ///< HTTP/3
-  QPACK_ENCODER = 0x48, ///< QPACK
+  QPACK_ENCODER = 0x48, ///< QPACK : encoder -> decoder
   PUSH          = 0x50, ///< HTTP/3
-  QPACK_DECODER = 0x68, ///< QPACK
+  QPACK_DECODER = 0x68, ///< QPACK : decoder -> encoder
   RESERVED      = 0x1F,
   UNKOWN        = 0xFF,
 };
@@ -131,7 +131,11 @@ public:
   Http3ConnectionError(const Http3ErrorCode error_code, const char *error_msg = nullptr) : Http3Error(error_code, error_msg){};
 };
 
-class Http3Stream;
+class Http3Stream
+{
+public:
+  static Http3StreamType type(const uint8_t *buf);
+};
 
 class Http3StreamError : public Http3Error
 {

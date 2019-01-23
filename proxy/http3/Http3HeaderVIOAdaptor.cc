@@ -22,9 +22,14 @@
  */
 
 #include "Http3HeaderVIOAdaptor.h"
-#include "I_VIO.h"
 
-Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(VIO *sink) : _sink_vio(sink) {}
+#include "I_VIO.h"
+#include "HTTP.h"
+
+Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(HTTPHdr *hdr, QPACK *qpack, Continuation *cont, uint64_t stream_id)
+  : _request_header(hdr), _qpack(qpack), _cont(cont), _stream_id(stream_id)
+{
+}
 
 std::vector<Http3FrameType>
 Http3HeaderVIOAdaptor::interests()
@@ -38,11 +43,18 @@ Http3HeaderVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame)
   ink_assert(frame->type() == Http3FrameType::HEADERS);
   const Http3HeadersFrame *hframe = dynamic_cast<const Http3HeadersFrame *>(frame.get());
 
-  SCOPED_MUTEX_LOCK(lock, this->_sink_vio->mutex, this_ethread());
+  int res = this->_qpack->decode(this->_stream_id, hframe->header_block(), hframe->header_block_length(), *this->_request_header,
+                                 this->_cont);
 
-  MIOBuffer *writer = this->_sink_vio->get_writer();
-  // TODO Uncompress header block
-  writer->write(hframe->header_block(), hframe->header_block_length());
+  if (res == 0) {
+    // When decoding is not blocked, continuation should be called directly?
+  } else if (res == 1) {
+    // Decoding is blocked. Callback will be fired.
+  } else if (res < 0) {
+    // error
+  } else {
+    // should not be here
+  }
 
   return Http3ErrorUPtr(new Http3NoError());
 }

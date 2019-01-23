@@ -58,6 +58,9 @@ main(int argc, const char **argv)
     {"path", 'P', "Path", "S1017", config.path, nullptr, nullptr},
     {"debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", config.debug_tags, nullptr, nullptr},
     {"close", 'c', "Enable connection close excercise", "F", &config.close, nullptr, nullptr},
+    {"http0_9", '-', "Enable HTTP/0.9", "T", &config.http0_9, nullptr, nullptr},
+    {"http3", '-', "Enable HTTP/3", "F", &config.http3, nullptr, nullptr},
+
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION(),
     RUNROOT_ARGUMENT_DESCRIPTION(),
@@ -65,6 +68,10 @@ main(int argc, const char **argv)
 
   // Process command line arguments and dump into variables
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+
+  if (config.http3) {
+    config.http0_9 = false;
+  }
 
   init_diags(config.debug_tags, nullptr);
   RecProcessInit(RECM_STAND_ALONE);

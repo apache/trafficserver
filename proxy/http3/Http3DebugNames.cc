@@ -51,6 +51,12 @@ Http3DebugNames::frame_type(Http3FrameType type)
 }
 
 const char *
+Http3DebugNames::stream_type(Http3StreamType type)
+{
+  return Http3DebugNames::stream_type(static_cast<uint8_t>(type));
+}
+
+const char *
 Http3DebugNames::stream_type(uint8_t type)
 {
   switch (type) {

@@ -202,6 +202,13 @@ QUICApplication::set_stream(QUICStream *stream, QUICStreamIO *stream_io)
   this->_stream_map.insert(std::make_pair(stream->id(), stream_io));
 }
 
+// @brief Bind stream and application
+void
+QUICApplication::set_stream(QUICStreamIO *stream_io)
+{
+  this->_stream_map.insert(std::make_pair(stream_io->stream_id(), stream_io));
+}
+
 bool
 QUICApplication::is_stream_set(QUICStream *stream)
 {

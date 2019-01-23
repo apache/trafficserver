@@ -128,8 +128,53 @@ QUICClientApp::start(const char *path)
     std::ofstream f_stream(this->_filename, std::ios::binary | std::ios::trunc);
   }
 
+  if (this->_config->http3) {
+    this->_start_http_3_session(path);
+  } else {
+    this->_start_http_09_session(path);
+  }
+}
+
+void
+QUICClientApp::_start_http_09_session(const char *path)
+{
   QUICStreamId stream_id;
   QUICConnectionErrorUPtr error = this->_qc->stream_manager()->create_bidi_stream(stream_id);
+
+  if (error != nullptr) {
+    Error("%s", error->msg);
+    ink_abort("Could not create bidi stream : %s", error->msg);
+  }
+
+  // TODO: move to transaction
+  char request[1024] = {0};
+  int request_len    = snprintf(request, sizeof(request), "GET %s\r\n", path);
+
+  QUICClientAppDebug("\n%s", request);
+
+  QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
+
+  stream_io->write(reinterpret_cast<uint8_t *>(request), request_len);
+  stream_io->write_done();
+  stream_io->write_reenable();
+}
+
+void
+QUICClientApp::_start_http_3_session(const char *path)
+{
+  QUICConnectionErrorUPtr error;
+
+  QUICStreamId settings_stream_id;
+  error = this->_qc->stream_manager()->create_uni_stream(settings_stream_id);
+
+  if (error != nullptr) {
+    Error("%s", error->msg);
+    ink_abort("Could not create uni stream : %s", error->msg);
+  }
+  // TODO: send settings frame
+
+  QUICStreamId stream_id;
+  error = this->_qc->stream_manager()->create_bidi_stream(stream_id);
 
   if (error != nullptr) {
     Error("%s", error->msg);

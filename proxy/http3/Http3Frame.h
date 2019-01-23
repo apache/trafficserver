@@ -225,6 +225,7 @@ public:
    * Creates a HEADERS frame.
    */
   static Http3HeadersFrameUPtr create_headers_frame(const uint8_t *header_block, size_t header_block_len);
+  static Http3HeadersFrameUPtr create_headers_frame(IOBufferReader *header_block_reader, size_t header_block_len);
 
   /*
    * Creates a DATA frame.

@@ -23,7 +23,11 @@
 
 #include "Http3ClientSession.h"
 
-Http3ClientSession::Http3ClientSession(NetVConnection *vc) : _client_vc(vc) {}
+Http3ClientSession::Http3ClientSession(NetVConnection *vc) : _client_vc(vc)
+{
+  this->_local_qpack  = new QPACK(static_cast<QUICNetVConnection *>(vc));
+  this->_remote_qpack = new QPACK(static_cast<QUICNetVConnection *>(vc));
+}
 
 Http3ClientSession::~Http3ClientSession()
 {
@@ -31,6 +35,8 @@ Http3ClientSession::~Http3ClientSession()
   for (Http3ClientTransaction *t = this->_transaction_list.head; t; t = static_cast<Http3ClientTransaction *>(t->link.next)) {
     delete t;
   }
+  delete this->_local_qpack;
+  delete this->_remote_qpack;
 }
 
 VIO *
@@ -105,7 +111,7 @@ Http3ClientSession::get_transact_count() const
 const char *
 Http3ClientSession::get_protocol_string() const
 {
-  return "hq-17";
+  return IP_PROTO_TAG_HTTP_QUIC.data();
 }
 
 void
@@ -156,4 +162,16 @@ Http3ClientSession::get_transaction(QUICStreamId id)
     }
   }
   return nullptr;
+}
+
+QPACK *
+Http3ClientSession::local_qpack()
+{
+  return this->_local_qpack;
+}
+
+QPACK *
+Http3ClientSession::remote_qpack()
+{
+  return this->_remote_qpack;
 }

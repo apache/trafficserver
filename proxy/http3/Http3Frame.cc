@@ -415,6 +415,21 @@ Http3FrameFactory::create_headers_frame(const uint8_t *header_block, size_t head
   return Http3HeadersFrameUPtr(frame, &Http3FrameDeleter::delete_headers_frame);
 }
 
+Http3HeadersFrameUPtr
+Http3FrameFactory::create_headers_frame(IOBufferReader *header_block_reader, size_t header_block_len)
+{
+  ats_unique_buf buf = ats_unique_malloc(header_block_len);
+
+  int64_t nread;
+  while ((nread = header_block_reader->read(buf.get(), header_block_len)) > 0) {
+    ;
+  }
+
+  Http3HeadersFrame *frame = http3HeadersFrameAllocator.alloc();
+  new (frame) Http3HeadersFrame(std::move(buf), header_block_len);
+  return Http3HeadersFrameUPtr(frame, &Http3FrameDeleter::delete_headers_frame);
+}
+
 Http3DataFrameUPtr
 Http3FrameFactory::create_data_frame(const uint8_t *payload, size_t payload_len)
 {

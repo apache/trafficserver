@@ -21,14 +21,21 @@
  *  limitations under the License.
  */
 
-#pragma once
+#include "Http3Types.h"
 
-#include "Http3Frame.h"
-
-class Http3FrameGenerator
+Http3StreamType
+Http3Stream::type(const uint8_t *buf)
 {
-public:
-  virtual ~Http3FrameGenerator(){};
-  virtual Http3FrameUPtr generate_frame(uint16_t max_size) = 0;
-  virtual bool is_done() const                             = 0;
-};
+  switch (*buf) {
+  case static_cast<uint8_t>(Http3StreamType::CONTROL):
+    return Http3StreamType::CONTROL;
+  case static_cast<uint8_t>(Http3StreamType::PUSH):
+    return Http3StreamType::PUSH;
+  case static_cast<uint8_t>(Http3StreamType::QPACK_ENCODER):
+    return Http3StreamType::QPACK_ENCODER;
+  case static_cast<uint8_t>(Http3StreamType::QPACK_DECODER):
+    return Http3StreamType::QPACK_DECODER;
+  default:
+    return Http3StreamType::UNKOWN;
+  }
+}

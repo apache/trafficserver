@@ -26,6 +26,7 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/mgmt/utils \
   -I$(abs_top_srcdir)/proxy \
   -I$(abs_top_srcdir)/proxy/http \
+  -I$(abs_top_srcdir)/proxy/http2 \
   -I$(abs_top_srcdir)/proxy/hdrs \
   -I$(abs_top_srcdir)/proxy/shared \
   -I$(abs_top_srcdir)/proxy/http/remap \
@@ -35,6 +36,8 @@ noinst_LIBRARIES = libhttp3.a
 
 libhttp3_a_SOURCES = \
   Http3.cc \
+  Http3App.cc \
+  Http3Types.cc \
   Http3SessionAccept.cc \
   Http3ClientSession.cc \
   Http3ClientTransaction.cc \

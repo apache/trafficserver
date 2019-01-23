@@ -23,19 +23,22 @@
 
 #pragma once
 
+#include "QPACK.h"
+
 #include "Http3FrameHandler.h"
 
-class VIO;
-
+// TODO: rename, this is not VIOAdoptor anymore
 class Http3HeaderVIOAdaptor : public Http3FrameHandler
 {
 public:
-  Http3HeaderVIOAdaptor(VIO *sink);
-
+  Http3HeaderVIOAdaptor(HTTPHdr *hdr, QPACK *qpack, Continuation *cont, uint64_t stream_id);
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
   Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame) override;
 
 private:
-  VIO *_sink_vio = nullptr;
+  HTTPHdr *_request_header = nullptr;
+  QPACK *_qpack            = nullptr;
+  Continuation *_cont      = nullptr;
+  uint64_t _stream_id      = 0;
 };
