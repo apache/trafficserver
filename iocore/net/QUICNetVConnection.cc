@@ -2175,6 +2175,10 @@ QUICNetVConnection::_handle_path_validation_timeout(Event *data)
   if (this->_path_validator->is_validated()) {
     QUICConDebug("Path validated");
     this->_alt_con_manager->drop_cid(this->_peer_old_quic_connection_id);
+    // FIXME This is a kind of workaround for connection migration.
+    // This PING make peer to send an ACK frame so that ATS can detect packet loss.
+    // It would be better if QUICLossDetector could detect the loss in another way.
+    this->ping();
   } else {
     QUICConDebug("Path validation failed");
     this->_switch_to_close_state();
