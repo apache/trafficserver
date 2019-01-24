@@ -52,8 +52,6 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|ssl',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     # enable ssl port
@@ -63,6 +61,7 @@ ts.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1,
     'proxy.config.ssl.TLSv1': 0,
     'proxy.config.ssl.TLSv1_1': 0,
+    'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.ssl.TLSv1_2': 1
 })
 
@@ -81,7 +80,6 @@ tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Varia
 tr.Processes.Default.Command = "curl -v --tls-max 1.2 --tlsv1.2 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 35 
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ssl_choose_client_version:unsupported protocol", "Should not allow TLSv1_2")
 
 # Target foo.com for TLSv1.  Should succeed
@@ -89,14 +87,12 @@ tr = Test.AddTestRun("foo.com TLSv1")
 tr.Processes.Default.Command = "curl -v --tls-max 1.0 --tlsv1 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 10
 
 # Target bar.com for TLSv1.  Should fail
 tr = Test.AddTestRun("bar.com TLSv1")
 tr.Processes.Default.Command = "curl -v --tls-max 1.0 --tlsv1 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 35 
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("alert protocol version", "Should not allow TLSv1_0")
 
 # Target bar.com for TLSv1_2.  Should succeed
@@ -104,5 +100,4 @@ tr = Test.AddTestRun("bar.com TLSv1_2")
 tr.Processes.Default.Command = "curl -v --tls-max 1.2 --tlsv1.2 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 10
 

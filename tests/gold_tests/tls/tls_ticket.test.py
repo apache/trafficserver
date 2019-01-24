@@ -66,6 +66,7 @@ ts.Disk.records_config.update({
     'proxy.config.http.server_ports': '{0}:proto=http2;http:ssl'.format(ts.Variables.ssl_port),
     'proxy.config.ssl.client.verify.server':  0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
+    'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.ssl.server.session_ticket.enable': '1',
     'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket'
 })
@@ -76,6 +77,7 @@ ts2.Disk.records_config.update({
     'proxy.config.ssl.client.verify.server':  0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.server.session_ticket.enable': '1',
+    'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket'
 })
 
@@ -89,7 +91,6 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 path1 = tr.Processes.Default.Streams.stdout.AbsPath
 tr.StillRunningAfter = server
-tr.Processes.Default.TimeOut = 10
 
 # Pull out session created in tr to test for session id in tr2
 def checkSession(ev) :
@@ -123,5 +124,4 @@ tr2.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 
 tr2.Processes.Default.StartBefore(Test.Processes.ts2, ready=When.PortOpen(ts2.Variables.ssl_port))
 tr2.ReturnCode = 0
 path2 = tr2.Processes.Default.Streams.stdout.AbsPath
-tr2.Processes.Default.TimeOut = 10
 tr2.Processes.Default.Streams.All.Content = Testers.Lambda(checkSession)
