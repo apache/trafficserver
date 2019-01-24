@@ -1476,6 +1476,13 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
         memset(buf.get() + len, 0, min_size - len);
         len += min_size - len;
       }
+    } else {
+      // Pad with PADDING frames to make sure payload length satisfy the minimum length for sampling for header protection
+      if (3 > len) {
+        // FIXME QUICNetVConnection should not know the actual type value of PADDING frame
+        memset(buf.get() + len, 0, 3 - len);
+        len += 3 - len;
+      }
     }
 
     // Packet is retransmittable if it's not ack only packet
