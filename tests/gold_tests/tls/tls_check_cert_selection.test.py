@@ -59,14 +59,13 @@ ts.Disk.ssl_multicert_config.AddLines([
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|ssl|dns|hostdb',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.url_remap.pristine_host_hdr': 1,
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+    'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.dns.resolv_conf': 'NULL'
 })
 
@@ -84,7 +83,6 @@ tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=bar.com", "Cert should contain bar.com")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=foo.com", "Cert should not contain foo.com")
@@ -95,7 +93,6 @@ tr2 = Test.AddTestRun("foo.com cert")
 tr2.Processes.Default.Command = "curl -v --cacert signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
-tr2.Processes.Default.TimeOut = 10
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=foo.com", "Cert should contain foo.com")
@@ -107,7 +104,6 @@ tr2 = Test.AddTestRun("random.server.com cert")
 tr2.Processes.Default.Command = "curl -v -k --resolve 'random.server.com:{0}:127.0.0.1' https://random.server.com:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
-tr2.Processes.Default.TimeOut = 10
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=random.server.com", "Cert should contain random.server.com")
@@ -121,7 +117,6 @@ tr2 = Test.AddTestRun("Bad SNI")
 tr2.Processes.Default.Command = "curl -v -k --cacert signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
-tr2.Processes.Default.TimeOut = 10
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=foo.com", "Cert should contain foo.com")

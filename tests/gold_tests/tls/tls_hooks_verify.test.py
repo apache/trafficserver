@@ -38,6 +38,7 @@ ts.addSSLfile("ssl/server.key")
 
 ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
+    # Test looks for debug output from the plugin
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'ssl_verify_test',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -47,6 +48,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
     'proxy.config.ssl.client.verify.server.properties': 'NONE',
+    'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.url_remap.pristine_host_hdr': 1
 })
 

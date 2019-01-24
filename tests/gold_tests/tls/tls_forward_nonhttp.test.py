@@ -45,14 +45,13 @@ ts.Disk.ssl_multicert_config.AddLine(
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|ssl',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     # enable ssl port
     'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.http.connect_ports': '{0} 4444'.format(ts.Variables.ssl_port),
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
+    'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.url_remap.pristine_host_hdr': 1
 })
 
@@ -69,7 +68,6 @@ tr.Processes.Default.Command = "sh test-nc-s_client.sh 4444 4443"
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 10
 testout_path = os.path.join(Test.RunDirectory, "test.out")
 tr.Disk.File(testout_path, id = "testout")
 tr.Processes.Default.Streams.All += Testers.IncludesExpression("This is a reply", "s_client should get response")

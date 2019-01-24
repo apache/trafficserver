@@ -71,8 +71,6 @@ ts.Disk.ssl_multicert_config.AddLine(
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|ssl',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     # enable ssl port
@@ -83,6 +81,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.client.verify.server.properties': 'SIGNATURE',
     'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
+    'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.url_remap.pristine_host_hdr': 1
 })
 
@@ -109,7 +108,6 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr2 = Test.AddTestRun("Override-enforcing-Test")
@@ -117,7 +115,6 @@ tr2.Processes.Default.Command = "curl -v -k -H \"host: bar.com\"  https://127.0.
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
-tr2.Processes.Default.TimeOut = 10
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr3 = Test.AddTestRun("Override-enforcing-Test-fail-name-check")
@@ -126,7 +123,6 @@ tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Con
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
-tr3.Processes.Default.TimeOut = 10
 
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ExcludesExpression("verification failed", "Make sure the signatures didn't fail")
