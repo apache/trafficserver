@@ -96,7 +96,6 @@ install-examples: examples
 
 $(abs_top_srcdir)/.git/hooks/pre-commit: $(abs_top_srcdir)/tools/git/pre-commit
 	@if [ -d $(abs_top_srcdir)/.git/hooks ]; then \
-		echo; echo "\tNote: Installing ATS .git/hooks/pre-commit"; echo; \
 		cp $(abs_top_srcdir)/tools/git/pre-commit $(abs_top_srcdir)/.git/hooks/pre-commit; \
 	fi
 
