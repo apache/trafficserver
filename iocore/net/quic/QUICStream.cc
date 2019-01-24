@@ -91,7 +91,7 @@ QUICStream::connection_info() const
 bool
 QUICStream::is_bidirectional() const
 {
-  return this->_id < 0x02;
+  return (this->_id & 0x03) < 0x02;
 }
 
 QUICOffset
