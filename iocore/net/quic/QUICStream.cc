@@ -417,14 +417,14 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   QUICFrameUPtr frame = this->create_retransmitted_frame(level, maximum_frame_size, this->_issue_frame_id(), this);
   if (frame != nullptr) {
     ink_assert(frame->type() == QUICFrameType::STREAM);
-    this->_records_stream_frame(*static_cast<QUICStreamFrame *>(frame.get()));
+    this->_records_stream_frame(level, *static_cast<QUICStreamFrame *>(frame.get()));
     return frame;
   }
 
   // RESET_STREAM
   if (this->_reset_reason && !this->_is_reset_sent) {
     frame = QUICFrameFactory::create_rst_stream_frame(*this->_reset_reason, this->_issue_frame_id(), this);
-    this->_records_rst_stream_frame(*static_cast<QUICRstStreamFrame *>(frame.get()));
+    this->_records_rst_stream_frame(level, *static_cast<QUICRstStreamFrame *>(frame.get()));
     this->_state.update_with_sending_frame(*frame);
     this->_is_reset_sent = true;
     return frame;
@@ -434,7 +434,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
   if (this->_stop_sending_reason && !this->_is_stop_sending_sent) {
     frame =
       QUICFrameFactory::create_stop_sending_frame(this->id(), this->_stop_sending_reason->code, this->_issue_frame_id(), this);
-    this->_records_stop_sending_frame(*static_cast<QUICStopSendingFrame *>(frame.get()));
+    this->_records_stop_sending_frame(level, *static_cast<QUICStopSendingFrame *>(frame.get()));
     this->_state.update_with_sending_frame(*frame);
     this->_is_stop_sending_sent = true;
     return frame;
@@ -527,7 +527,7 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     this->_send_offset += len;
     this->_write_vio.ndone += len;
   }
-  this->_records_stream_frame(*static_cast<QUICStreamFrame *>(frame.get()));
+  this->_records_stream_frame(level, *static_cast<QUICStreamFrame *>(frame.get()));
 
   this->_signal_write_event();
   this->_state.update_with_sending_frame(*frame);
@@ -536,10 +536,11 @@ QUICStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
 }
 
 void
-QUICStream::_records_stream_frame(const QUICStreamFrame &frame)
+QUICStream::_records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame)
 {
   QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                    = frame.type();
+  info->level                   = level;
   StreamFrameInfo *frame_info   = reinterpret_cast<StreamFrameInfo *>(info->data);
   frame_info->offset            = frame.offset();
   frame_info->has_fin           = frame.has_fin_flag();
@@ -548,10 +549,11 @@ QUICStream::_records_stream_frame(const QUICStreamFrame &frame)
 }
 
 void
-QUICStream::_records_rst_stream_frame(const QUICRstStreamFrame &frame)
+QUICStream::_records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame)
 {
   QUICFrameInformationUPtr info  = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                     = frame.type();
+  info->level                    = level;
   RstStreamFrameInfo *frame_info = reinterpret_cast<RstStreamFrameInfo *>(info->data);
   frame_info->error_code         = frame.error_code();
   frame_info->final_offset       = frame.final_offset();
@@ -559,10 +561,11 @@ QUICStream::_records_rst_stream_frame(const QUICRstStreamFrame &frame)
 }
 
 void
-QUICStream::_records_stop_sending_frame(const QUICStopSendingFrame &frame)
+QUICStream::_records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame)
 {
   QUICFrameInformationUPtr info    = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                       = frame.type();
+  info->level                      = level;
   StopSendingFrameInfo *frame_info = reinterpret_cast<StopSendingFrameInfo *>(info->data);
   frame_info->error_code           = frame.error_code();
   this->_records_frame(frame.id(), std::move(info));
@@ -873,7 +876,7 @@ QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_
   QUICFrameUPtr frame = this->create_retransmitted_frame(level, maximum_frame_size, this->_issue_frame_id(), this);
   if (frame != nullptr) {
     ink_assert(frame->type() == QUICFrameType::CRYPTO);
-    this->_records_crypto_frame(*static_cast<QUICCryptoFrame *>(frame.get()));
+    this->_records_crypto_frame(level, *static_cast<QUICCryptoFrame *>(frame.get()));
     return frame;
   }
 
@@ -896,7 +899,7 @@ QUICCryptoStream::generate_frame(QUICEncryptionLevel level, uint64_t connection_
   frame = QUICFrameFactory::create_crypto_frame(block, this->_send_offset, this->_issue_frame_id(), this);
   this->_send_offset += frame_payload_size;
   this->_write_buffer_reader->consume(frame_payload_size);
-  this->_records_crypto_frame(*static_cast<QUICCryptoFrame *>(frame.get()));
+  this->_records_crypto_frame(level, *static_cast<QUICCryptoFrame *>(frame.get()));
 
   return frame;
 }
@@ -917,10 +920,11 @@ QUICCryptoStream::_on_frame_lost(QUICFrameInformationUPtr &info)
 }
 
 void
-QUICCryptoStream::_records_crypto_frame(const QUICCryptoFrame &frame)
+QUICCryptoStream::_records_crypto_frame(QUICEncryptionLevel level, const QUICCryptoFrame &frame)
 {
   QUICFrameInformationUPtr info      = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                         = QUICFrameType::CRYPTO;
+  info->level                        = level;
   CryptoFrameInfo *crypto_frame_info = reinterpret_cast<CryptoFrameInfo *>(info->data);
   crypto_frame_info->offset          = frame.offset();
   crypto_frame_info->block           = frame.data();

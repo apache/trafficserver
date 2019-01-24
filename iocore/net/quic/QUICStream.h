@@ -109,9 +109,9 @@ protected:
   Event *_send_tracked_event(Event *, int, VIO *);
 
   void _write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin);
-  void _records_rst_stream_frame(const QUICRstStreamFrame &frame);
-  void _records_stream_frame(const QUICStreamFrame &frame);
-  void _records_stop_sending_frame(const QUICStopSendingFrame &frame);
+  void _records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame);
+  void _records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame);
+  void _records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame);
 
   QUICStreamErrorUPtr _reset_reason        = nullptr;
   bool _is_reset_sent                      = false;
@@ -192,7 +192,7 @@ private:
   void _on_frame_acked(QUICFrameInformationUPtr &info) override;
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 
-  void _records_crypto_frame(const QUICCryptoFrame &frame);
+  void _records_crypto_frame(QUICEncryptionLevel level, const QUICCryptoFrame &frame);
 
   QUICStreamErrorUPtr _reset_reason = nullptr;
   QUICOffset _send_offset           = 0;
