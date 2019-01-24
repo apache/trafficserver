@@ -5928,13 +5928,14 @@ TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
   // If this function is being executed on a thread created by the API
   // which is DEDICATED, the continuation needs to be called back on a
   // REGULAR thread.
-  if (eth == nullptr || eth->tt != REGULAR) {
+  if (eth == nullptr || eth->tt != REGULAR || !eth->is_event_type(ET_NET)) {
     eventProcessor.schedule_imm(new TSHttpSMCallback(sm, event), ET_NET);
   } else {
     MUTEX_TRY_LOCK(trylock, sm->mutex, eth);
     if (!trylock.is_locked()) {
       eventProcessor.schedule_imm(new TSHttpSMCallback(sm, event), ET_NET);
     } else {
+      ink_assert(eth->is_event_type(ET_NET));
       sm->state_api_callback((int)event, nullptr);
     }
   }
