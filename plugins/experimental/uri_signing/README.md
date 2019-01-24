@@ -2,7 +2,7 @@ URI Signing Plugin
 ==================
 
 This remap plugin implements the draft URI Signing protocol documented here:
-https://tools.ietf.org/html/draft-ietf-cdni-uri-signing-12 .
+https://tools.ietf.org/html/draft-ietf-cdni-uri-signing-16 .
 
 It takes a single argument: the name of a config file that contains key information.
 
@@ -16,6 +16,8 @@ this plugin gets the URI.
 
 Config
 ------
+
+### Keys
 
 The config file should be a JSON object that maps issuer names to JWK-sets.
 Exactly one of these JWK-sets must have an additional member indicating the
@@ -75,6 +77,26 @@ It's worth noting that multiple issuers can provide `auth_directives`.
 Each issuer will be processed in order and any issuer can provide access to
 a path.
 
+### Token Stripping
+
+When The boolean strip_token parameter is set to true, the plugin removes the 
+token from both the url that is sent upstream to the origin and the url that 
+is used as the cache key. It can be set like this:
+
+    {
+      "Kabletown URI Authority": {
+        "renewal_kid": "Second Key",
+        "strip_token" : true,
+        "auth_directives": [
+          ⋮
+        ]
+        "keys": [
+          ⋮
+        ]
+    }
+
+The strip_token parameter defaults to false and should be set by only one issuer.
+
 Usage
 -----
 
@@ -94,12 +116,14 @@ Path parameters will not be searched for JWTs.
 The following claims are understood:
 
   - `iss`: Must be present. The issuer is used to locate the key for verification.
-  - `sub`: Validated last, after key verification. **Only `uri-regex` is supported!**
+  - `sub`: May be present, but is not validated.
   - `exp`: Expired tokens are not valid.
   - `iat`: May be present, but is not validated.
   - `cdniv`: Must be missing or 1.
-  - `cdnistt`: If present, must be 1.
+  - `cdniuc`: Validated last, after key verificationD. **Only `regex` is supported!**
   - `cdniets`: If cdnistt is 1, this must be present and non-zero.
+  - `cdnistt`: If present, must be 1.
+  - `cdnistd`: If present, must be 0.
 
 ### Unsupported Claims
 
@@ -108,8 +132,10 @@ These claims are not supported. If they are present, the token will not validate
   - `aud`
   - `nbf`
   - `jti`
+  - `cdnicrit`
+  - `cdniip`
 
-In addition, the `sub` containers of `uri`, `uri-pattern`, and `uri-hash` are
+In addition, the `cdniuc` container of `hash` is 
 **not supported**.
 
 ### Token Renewal
