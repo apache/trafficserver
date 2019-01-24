@@ -2105,6 +2105,7 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
       Connection con;
       con.setRemote(&(p.from().sa));
       this->con.move(con);
+      this->set_remote_addr();
       this->_validate_new_path();
     }
   } else {
@@ -2117,6 +2118,7 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
         Connection con;
         con.setRemote(&(p.from().sa));
         this->con.move(con);
+        this->set_remote_addr();
 
         this->_update_peer_cid(this->_alt_con_manager->migrate_to_alt_cid());
         this->_validate_new_path();
