@@ -41,7 +41,7 @@ public:
 
 private:
   // Initial, 0/1-RTT, and Handshake
-  bool _need_to_fire[3] = {false};
+  bool _need_to_fire[4] = {false};
 
   // QUICFrameGenerator
   std::vector<QUICEncryptionLevel>
