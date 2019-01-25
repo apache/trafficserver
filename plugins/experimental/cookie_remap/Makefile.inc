@@ -27,13 +27,4 @@ experimental_cookie_remap_cookie_remap_la_LDFLAGS = \
 
 AM_CPPFLAGS += @YAMLCPP_INCLUDES@
 
-check_PROGRAMS +=  \
-	cookie_remap/test_cookiejar
-
-cookie_remap_test_cookiejar_CPPFLAGS = $(AM_CPPFLAGS) -Iexperimental/cookie_remap -I$(abs_top_srcdir)/tests/include
-cookie_remap_test_cookiejar_SOURCES = \
-    experimental/cookie_remap/unit_tests/cookiejar/unit_test.cc \
-    experimental/cookie_remap/strip.c \
-    experimental/cookie_remap/cookiejar.cc
-
 # vim: ft=make ts=8 sw=8 et:
