@@ -32,12 +32,20 @@ ts = Test.MakeATSProcess("ts")
 
 server = Test.MakeOriginServer("server", ip='127.0.0.10')
 
-request_header = {"headers": "GET /cookiematches HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-# expected response from the origin server
+request_header = {"headers": "GET /photos/search?query=magic HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
-# add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
+
+request_header_2 = {"headers": "GET /photos/search?query=/theunmatchedpath HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header_2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+
+server.addResponse("sessionfile.log", request_header_2, response_header_2)
+
+request_header_3 = {"headers": "GET /photos/search/magic/foobar HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header_3 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+
+server.addResponse("sessionfile.log", request_header_3, response_header_3)
 
 # Setup the remap configuration
 config_path = os.path.join(Test.TestDirectory, "configs/substituteconfig.txt")

@@ -35,6 +35,31 @@ ts = Test.MakeATSProcess("ts")
 # That's why I am not adding any canned request/response
 server = Test.MakeOriginServer("server", ip='127.0.0.10')
 
+request_header = {"headers": "GET /eighth/magic;matrix=1/eighth HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+
+server.addResponse("sessionfile.log", request_header, response_header)
+
+request_header_2 = {"headers": "GET /eighth/magic;matrix=1/eighth?hello=10 HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header_2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+
+server.addResponse("sessionfile.log", request_header_2, response_header_2)
+
+request_header_3 = {"headers": "GET /tenth/magic/tenth;matrix=2 HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header_3 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+
+server.addResponse("sessionfile.log", request_header_3, response_header_3)
+
+request_header_4 = {"headers": "GET /tenth/magic/tenth;matrix=2?query=10 HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header_4 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+
+server.addResponse("sessionfile.log", request_header_4, response_header_4)
+
+request_header_5 = {"headers": "GET /eleventh/magic;matrix=4/eleventh;matrix=2?query=true HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header_5 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+
+server.addResponse("sessionfile.log", request_header_5, response_header_5)
+
 # Setup the remap configuration
 config_path = os.path.join(Test.TestDirectory, "configs/matrixconfig.txt")
 with open(config_path, 'r') as config_file:
