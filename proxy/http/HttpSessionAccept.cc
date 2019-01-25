@@ -33,16 +33,10 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   IpAllow::ACL acl;
   ip_port_text_buffer ipb;
 
-  // The backdoor port is now only bound to "localhost", so no
-  // reason to check for if it's incoming from "localhost" or not.
-  if (backdoor) {
-    acl = IpAllow::makeAllowAllACL();
-  } else {
-    acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
-    if (!acl.isValid()) { // if there's no ACL, it's a hard deny.
-      Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
-      return false;
-    }
+  acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
+  if (!acl.isValid()) { // if there's no ACL, it's a hard deny.
+    Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
+    return false;
   }
 
   // Set the transport type if not already set
@@ -66,7 +60,7 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   new_session->host_res_style            = ats_host_res_from(client_ip->sa_family, host_res_preference);
   new_session->acl                       = std::move(acl);
 
-  new_session->new_connection(netvc, iobuf, reader, backdoor);
+  new_session->new_connection(netvc, iobuf, reader);
 
   return true;
 }

@@ -145,7 +145,7 @@ Http1ClientSession::free()
 }
 
 void
-Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
+Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
   ink_assert(new_vc != nullptr);
   ink_assert(client_vc == nullptr);
@@ -158,9 +158,6 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
   ink_assert(lock.is_locked());
-
-  // Disable hooks for backdoor connections.
-  this->hooks_on = !backdoor;
 
   // Unique client session identifier.
   con_id = ProxyClientSession::next_connection_id();
