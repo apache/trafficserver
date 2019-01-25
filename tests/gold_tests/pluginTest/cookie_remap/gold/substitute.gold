@@ -1,9 +1,7 @@
 ``
-Request=GET /photos/search?query=magic HTTP/1.1 lookup_key={PATH}
+Serving GET /photos/search?query=magic... Finished
 ``
+Serving GET /photos/search?query=/theunmatchedpath... Finished
 ``
-Request=GET /photos/search?query=/theunmatchedpath HTTP/1.1 lookup_key={PATH}
-``
-``
-equest=GET /photos/search/magic/foobar HTTP/1.1 lookup_key={PATH}
+Serving GET /photos/search/magic/foobar... Finished
 ``
