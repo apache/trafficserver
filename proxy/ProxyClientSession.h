@@ -81,7 +81,7 @@ public:
   virtual void free();
   virtual void start() = 0;
 
-  virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) = 0;
+  virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) = 0;
 
   virtual NetVConnection *get_netvc() const = 0;
 

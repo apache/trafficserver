@@ -369,22 +369,6 @@ start_HttpProxyServer()
 }
 
 void
-start_HttpProxyServerBackDoor(int port, int accept_threads)
-{
-  NetProcessor::AcceptOptions opt;
-  HttpSessionAccept::Options ha_opt;
-
-  opt.local_port     = port;
-  opt.accept_threads = accept_threads;
-  opt.localhost_only = true;
-  ha_opt.backdoor    = true;
-  opt.backdoor       = true;
-
-  // The backdoor only binds the loopback interface
-  netProcessor.main_accept(new HttpSessionAccept(ha_opt), NO_FD, opt);
-}
-
-void
 stop_HttpProxyServer()
 {
   sslNetProcessor.stop_accept();

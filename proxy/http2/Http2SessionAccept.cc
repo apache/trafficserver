@@ -59,7 +59,7 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
   new_session->outbound_ip4       = options.outbound_ip4;
   new_session->outbound_ip6       = options.outbound_ip6;
   new_session->outbound_port      = options.outbound_port;
-  new_session->new_connection(netvc, iobuf, reader, false /* backdoor */);
+  new_session->new_connection(netvc, iobuf, reader);
 
   return true;
 }

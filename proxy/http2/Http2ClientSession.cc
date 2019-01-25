@@ -151,14 +151,11 @@ Http2ClientSession::start()
 }
 
 void
-Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
+Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
   ink_assert(new_vc->mutex->thread_holding == this_ethread());
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, new_vc->mutex->thread_holding);
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, new_vc->mutex->thread_holding);
-
-  // HTTP/2 for the backdoor connections? Let's not deal woth that yet.
-  ink_release_assert(backdoor == false);
 
   // Unique client session identifier.
   this->con_id    = ProxyClientSession::next_connection_id();
