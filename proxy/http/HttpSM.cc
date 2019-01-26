@@ -503,7 +503,6 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
   ats_ip_copy(&t_state.client_info.dst_addr, netvc->get_local_addr());
   t_state.client_info.dst_addr.port() = netvc->get_local_port();
   t_state.client_info.is_transparent  = netvc->get_is_transparent();
-  t_state.backdoor_request            = !client_vc->hooks_enabled();
   t_state.client_info.port_attribute  = static_cast<HttpProxyPort::TransportType>(netvc->attributes);
 
   // Record api hook set state
@@ -5106,11 +5105,6 @@ HttpSM::do_http_server_open(bool raw)
 void
 HttpSM::do_api_callout_internal()
 {
-  if (t_state.backdoor_request) {
-    handle_api_return();
-    return;
-  }
-
   switch (t_state.api_next_action) {
   case HttpTransact::SM_ACTION_API_SM_START:
     cur_hook_id = TS_HTTP_TXN_START_HOOK;
