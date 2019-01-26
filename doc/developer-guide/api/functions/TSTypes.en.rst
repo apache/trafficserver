@@ -150,6 +150,20 @@ more widely. Those are described on this page.
 
 .. type:: TSThread
 
+      This represents an internal |TS| thread, created by the |TS| core. It is an opaque type which
+      can be used only to check for equality / inequality, and passed to API functions. An instance
+      that refers to the current thread can be obtained with :func:`TSThreadSelf`.
+
+.. type:: TSEventThread
+
+      This type represents an :term:`event thread`. It is an opaque which is used to specify a
+      particular event processing thread in |TS|. If plugin code is executing in an event thread
+      (which will be true if called from a hook or a scheduled event) then the current event thread
+      can be obtained via :func:`TSEventThreadSelf`.
+
+      A :code:`TSEventThread` is also a :type:`TSThread` and can be passed as an argument to any
+      parameter of type :type:`TSThread`.
+
 .. type:: TSThreadFunc
 
 .. type:: TSUuidVersion

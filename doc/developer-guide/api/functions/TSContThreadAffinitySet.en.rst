@@ -19,7 +19,7 @@
 .. default-domain:: c
 
 TSContThreadAffinitySet
-**************
+***********************
 
 Synopsis
 ========

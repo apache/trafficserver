@@ -48,12 +48,10 @@ doxygen: Doxyfile
 PAPER         = letter
 BUILDDIR      = docbuild
 
-# Internal variables.
 # [amc] LaTex apparently doesn't work as of Sphinx 1.6.1
 # see https://media.readthedocs.org/pdf/sphinx/1.6.3/sphinx.pdf
 # section 24.3.2 around page 247, third item for 'NotImplementedError', so this is kind of useless.
-PAPEROPT_a4     = -t latex_a4
-PAPEROPT_letter = -t latex_letter
+
 ALLSPHINXOPTS   = $(SPHINXOPTS)
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(SPHINXOPTS)
