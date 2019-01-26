@@ -1303,6 +1303,7 @@ struct HTTPCacheAlt {
   HTTPCacheAlt();
   void copy(HTTPCacheAlt *to_copy);
   void copy_frag_offsets_from(HTTPCacheAlt *src);
+  void copy_frag_offsets_from_and_free(HTTPCacheAlt *src);
   void destroy();
 
   uint32_t m_magic;
@@ -1383,6 +1384,7 @@ public:
     m_alt = info->m_alt;
   }
   void copy_frag_offsets_from(HTTPInfo *src);
+  void copy_frag_offsets_from_and_free(HTTPInfo *src);
   HTTPInfo &operator=(const HTTPInfo &m);
 
   inkcoreapi int marshal_length();

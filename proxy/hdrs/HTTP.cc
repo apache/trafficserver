@@ -1948,6 +1948,31 @@ HTTPCacheAlt::copy_frag_offsets_from(HTTPCacheAlt *src)
   }
 }
 
+void
+HTTPCacheAlt::copy_frag_offsets_from_and_free(HTTPCacheAlt *src)
+{
+  m_frag_offset_count = src->m_frag_offset_count;
+  if (m_frag_offset_count > 0) {
+    if (m_frag_offset_count > N_INTEGRAL_FRAG_OFFSETS) {
+      /* Mixed feelings about this - technically we don't need it to be a
+         power of two when copied because currently that means it is frozen.
+         But that could change later and it would be a nasty bug to find.
+         So we'll do it for now. The relative overhead is tiny.
+      */
+      int bcount = HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS * 2;
+      while (bcount < m_frag_offset_count) {
+        bcount *= 2;
+      }
+      m_frag_offsets = static_cast<FragOffset *>(ats_malloc(sizeof(FragOffset) * bcount));
+    } else {
+      m_frag_offsets = m_integral_frag_offsets;
+    }
+    memcpy(m_frag_offsets, src->m_frag_offsets, sizeof(FragOffset) * m_frag_offset_count);
+    if (src->m_frag_offsets != src->m_integral_frag_offsets)
+      ats_free(src->m_frag_offsets);
+  }
+}
+
 const int HTTP_ALT_MARSHAL_SIZE = ROUND(sizeof(HTTPCacheAlt), HDR_PTR_SIZE);
 
 void
@@ -1965,6 +1990,14 @@ HTTPInfo::copy(HTTPInfo *hi)
 
   create();
   m_alt->copy(hi->m_alt);
+}
+
+void
+HTTPInfo::copy_frag_offsets_from_and_free(HTTPInfo *src)
+{
+  if (m_alt && src->m_alt) {
+    m_alt->copy_frag_offsets_from_and_free(src->m_alt);
+  }
 }
 
 void

@@ -106,7 +106,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
          data should remain valid.
       */
       if (alternate_index >= 0) {
-        alternate.copy_frag_offsets_from(write_vector->get(alternate_index));
+        alternate.copy_frag_offsets_from_and_free(write_vector->get(alternate_index));
       }
       alternate_index = write_vector->insert(&alternate, alternate_index);
     }
