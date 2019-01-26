@@ -714,7 +714,6 @@ public:
     bool cdn_remap_complete                           = false;
     bool first_dns_lookup                             = true;
 
-    bool backdoor_request = false; // internal
     HttpRequestData request_data;
     ParentConfigParams *parent_params = nullptr;
     ParentResult parent_result;

@@ -135,12 +135,6 @@ public:
   }
 
   bool
-  hooks_enabled() const
-  {
-    return this->hooks_on;
-  }
-
-  bool
   has_hooks() const
   {
     return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
@@ -311,7 +305,6 @@ protected:
 
   // Session specific debug flag.
   bool debug_on   = false;
-  bool hooks_on   = true;
   bool in_destroy = false;
 
   int64_t con_id        = 0;
