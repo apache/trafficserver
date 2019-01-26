@@ -35,6 +35,13 @@ Glossary
       invoked to continue the suspended processing. This can be considered
       similar to co-routines.
 
+   event loop
+      Code that executes callbacks in continuations from a queue of events.
+
+   event thread
+      A thread created by |TS| that has an :term:`event loop`. Event loops drive activity in |TS|
+      and are responsible for all network I/O handling, hook processing, and scheduled events.
+
    session
       A single connection from a client to Traffic Server, covering all
       requests and responses on that connection. A session starts when the
