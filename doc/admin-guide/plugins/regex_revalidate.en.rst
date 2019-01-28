@@ -29,24 +29,23 @@ be forced.
 Purpose
 =======
 
-This plugin's intended use is the selective forcing of revalidations on cache
-objects which are not yet marked as stale in |TS| but which may have been
-updated at the origin - without needing to alter cache control headers,
-pre-emptively purge the object from the cache manually, or adjust the global
-cache revalidation settings (such as fuzz times) used by other plugins.
+This plugin's intended use is the selective forcing of revalidations
+on cache objects which are not yet marked as stale in |TS| but which
+may have been updated at the origin - without needing to alter cache
+control headers, pre-emptively purge the object from the cache manually,
+or adjust the global cache revalidation settings (such as fuzz times)
+used by other plugins.
 
-Forced cache revalidations may be as specifically or loosely targeted as a
-regular expression against your origin URLs permits. Thus, individual cache
-objects may have rules created for them, or entire path prefixes, or even any
-cache objects with a particular file extension.
+Forced cache revalidations may be as specifically or loosely targeted as
+a regular expression against your origin URLs permits. Thus, individual
+cache objects may have rules created for them, or entire path prefixes,
+or even any cache objects with a particular file extension.
 
 Installation
 ============
 
-To make this plugin available, you must enable experimental plugins when
+The ``regex_revalidate.so`` plugin is built and installed by default when
 building |TS|::
-
-    ./configure --enable-experimental-plugins
 
 Configuration
 =============
@@ -58,15 +57,17 @@ two required arguments: the path to a rules file, and the path to a log file::
 
 The rule configuration file format is described below in `Revalidation Rules`_.
 
-By default The plugin regularly (every 60 seconds) checks its rules configuration
-file for changes and it will also check for changes when ``traffic_ctl config reload``
-is run. If the file has been modified since its last scan, the contents
-are read and the in-memory rules list is updated. Thus, new rules may be added and
-existing ones modified without requiring a service restart.
+By default The plugin regularly (every 60 seconds) checks its rules
+configuration file for changes and it will also check for changes when
+``traffic_ctl config reload`` is run. If the file has been modified
+since its last scan, the contents are read and the in-memory rules list
+is updated then scanned to remove expired entries. Thus, new rules may
+be added and existing ones modified without requiring a service restart.
 
-The configuration parameter `--disable-timed-updates` or `-d` may be used to configure
-the plugin to disable timed config file change checks.  With timed checks disabled,
-config file changes are checked are only when ``traffic_ctl config reload`` is run.::
+The configuration parameter `--disable-timed-updates` or `-d` may be
+used to configure the plugin to disable timed config file change checks.
+With timed checks disabled, config file changes are checked are only when
+``traffic_ctl config reload`` is run.::
 
     regex_revalidate.so -d -c <path to rules> -l <path to log>
 
@@ -92,10 +93,10 @@ client-side URL), including protocol scheme and origin server domain.
 Rule Expiration
 ---------------
 
-Every rule must have an expiration associated with it. The rule expiration is
-expressed as an integer of seconds since epoch (equivalent to the return value
-of :manpage:`time(2)`), after which the forced revalidation will no longer
-occur.
+Every rule must have an expiration associated with it. The rule expiration
+is expressed as an integer of seconds since epoch (equivalent to the
+return value of :manpage:`time(2)`), after which the forced revalidation
+will no longer occur.
 
 Caveats
 =======
@@ -103,28 +104,29 @@ Caveats
 Matches Only Post-Remapping
 ---------------------------
 
-The regular expressions in revalidation rules see only the final, remapped URL
-in a transaction. As such, they cannot be used to distinguish between two
-client-facing URLs which are mapped to the same origin object. This is due to
-the fact that the plugin uses :c:data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK`.
+The regular expressions in revalidation plugin rules see only the
+final, remapped URL in a transaction. As such, they cannot be used
+to distinguish between two client-facing URLs which are mapped to
+the same origin object. This is due to the fact that the plugin uses
+:c:data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK`.
 
 Removing Rules
 --------------
 
-While new rules are added dynamically (the configuration file is checked every
-60 seconds for changes), rule lines removed from the configuration file do not
-currently lead to that rule being removed from the running plugin. In these
-cases, if the rule must be taken out of service, a service restart may be
-necessary.
+While new rules are added dynamically (the configuration file is checked
+every 60 seconds for changes when '-d' is not specified), rule lines
+removed from the configuration file do not currently lead to that rule
+being removed from the running plugin. In these cases if the rule must
+be taken out of service either changing the expiration date to a time
+earlier than now or an ATS service restart may be necessary.
 
 Examples
 ========
 
 The following rule would cause the cache object whose origin server is
-``origin.tld`` and whose path is ``/images/foo.jpg`` to be revalidated by force
-in |TS| until 6:47:27 AM on Saturday, November 14th, 2015 (UTC)::
+``origin.tld`` and whose path is ``/images/foo.jpg`` to be revalidated
+by force in |TS| until 6:47:27 AM on Saturday, November 14th, 2015 (UTC)::
 
     http://origin\.tld/images/foo\.jpg 1447483647
 
 Note the escaping of the ``.`` metacharacter in the rule's regular expression.
-

@@ -28,9 +28,7 @@ Test a basic regex_revalidate
 #  ensure item is staled only once.
 # Add a new rule, config reload:
 #  ensure item isn't restaled again, but rule still in effect.
-#
-# If the rule disappears from regex_revalidate.conf its still loaded!!
-# A rule's expiry can't be changed after the fact!
+# Modify existing rule to expire early, ensure rule doesn't apply.
 
 Test.SkipUnless(
     Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
@@ -63,12 +61,12 @@ response_header_0 = {"headers":
     "Cache-Control: max-age=300\r\n" +
     "\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx",
+    "body": "/",
 }
 
-# cache item path1
+# cache item alwaysfresh
 request_header_1 = {"headers":
-    "GET /path1 HTTP/1.1\r\n" +
+    "GET /alwaysfresh HTTP/1.1\r\n" +
     "Host: www.example.com\r\n" +
     "\r\n",
     "timestamp": "1469733493.993",
@@ -77,16 +75,15 @@ request_header_1 = {"headers":
 response_header_1 = {"headers":
     "HTTP/1.1 200 OK\r\n" +
     "Connection: close\r\n" +
-    'Etag: "path1"\r\n' +
-    "Cache-Control: max-age=600,public\r\n" +
+    "Cache-Control: max-age=900,public\r\n" +
     "\r\n",
     "timestamp": "1469733493.993",
-    "body": "abc"
+    "body": "alwaysfresh"
 }
 
-# cache item path1a
+# cache item path1
 request_header_2 = {"headers":
-    "GET /path1a HTTP/1.1\r\n" +
+    "GET /path1 HTTP/1.1\r\n" +
     "Host: www.example.com\r\n" +
     "\r\n",
     "timestamp": "1469733493.993",
@@ -95,16 +92,15 @@ request_header_2 = {"headers":
 response_header_2 = {"headers":
     "HTTP/1.1 200 OK\r\n" +
     "Connection: close\r\n" +
-    'Etag: "path1a"\r\n' +
     "Cache-Control: max-age=600,public\r\n" +
     "\r\n",
     "timestamp": "1469733493.993",
-    "body": "cde"
+    "body": "path1"
 }
 
-# cache item path2a
+# cache item path1a
 request_header_3 = {"headers":
-    "GET /path2a HTTP/1.1\r\n" +
+    "GET /path1a HTTP/1.1\r\n" +
     "Host: www.example.com\r\n" +
     "\r\n",
     "timestamp": "1469733493.993",
@@ -113,17 +109,34 @@ request_header_3 = {"headers":
 response_header_3 = {"headers":
     "HTTP/1.1 200 OK\r\n" +
     "Connection: close\r\n" +
-    'Etag: "path2a"\r\n' +
+    "Cache-Control: max-age=600,public\r\n" +
+    "\r\n",
+    "timestamp": "1469733493.993",
+    "body": "path1a"
+}
+
+# cache item path2a
+request_header_4 = {"headers":
+    "GET /path2a HTTP/1.1\r\n" +
+    "Host: www.example.com\r\n" +
+    "\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+response_header_4 = {"headers":
+    "HTTP/1.1 200 OK\r\n" +
+    "Connection: close\r\n" +
     "Cache-Control: max-age=900,public\r\n" +
     "\r\n",
     "timestamp": "1469733493.993",
-    "body": "efg"
+    "body": "path2a"
 }
 
 server.addResponse("sessionlog.json", request_header_0, response_header_0)
 server.addResponse("sessionlog.json", request_header_1, response_header_1)
 server.addResponse("sessionlog.json", request_header_2, response_header_2)
 server.addResponse("sessionlog.json", request_header_3, response_header_3)
+server.addResponse("sessionlog.json", request_header_4, response_header_4)
 
 # Configure ATS server
 ts.Disk.plugin_config.AddLine('xdebug.so')
@@ -150,44 +163,36 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'regex_revalidate',
 #    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.http.cache.http': 1,
-    'proxy.config.http.wait_for_cache': 1,
+    'proxy.config.http.cache.http': 1, 'proxy.config.http.wait_for_cache': 1,
     'proxy.config.http.insert_age_in_response': 0,
     'proxy.config.http.response_via_str': 3,
     'proxy.config.http.server_ports': '{}'.format(ts.Variables.port),
 })
 
-# 0 Test - Load cache (miss) (path1)
-tr = Test.AddTestRun("Cache miss path1")
-tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/regex_reval-miss.gold"
-tr.StillRunningAfter = ts
+cache_paths = [ "alwaysfresh", "path1", "path1a", "path2a" ]
+firsttime = True
 
-# 1 Test - Load cache (miss) for later test (path1a)
-tr = Test.AddTestRun("Cache miss path1a")
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path1a'.format(ts.Variables.port)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/regex_reval-miss.gold"
-tr.StillRunningAfter = ts
+# Load up multiple cache entries
+for path in cache_paths:
+    tr = Test.AddTestRun("Cache load " + path)
+    if firsttime:
+        tr.Processes.Default.StartBefore(server)
+        tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
+        tr.DelayStart = 5
+        firsttime = False
+    tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/{}'.format(ts.Variables.port, path)
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Streams.stdout = "gold/regex_reval-miss.gold"
+    tr.StillRunningAfter = ts
 
-# 2 Test - Load cache (miss) for later test (path2a)
-tr = Test.AddTestRun("Cache miss path2a")
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path2a'.format(ts.Variables.port)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/regex_reval-miss.gold"
-tr.StillRunningAfter = ts
-
-# 3 Test - Cache hit path1
-tr = Test.AddTestRun("Cache hit fresh path1")
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
+# 4 Test - Cache hit (alwaysfresh)
+tr = Test.AddTestRun("Cache hit fresh alwaysfresh")
+tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/alwaysfresh'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_reval-hit.gold"
 tr.StillRunningAfter = ts
 
-# 4 Stage - Reload new regex_revalidate
+# 5 Stage - Reload new regex_revalidate
 tr = Test.AddTestRun("Reload config add path1")
 tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
     path1_rule
@@ -201,22 +206,29 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
 tr.TimeOut = 5
 
-# 5 Test - Revalidate path1
+# 6 Test - Cache hit (alwdaysfresh)
+tr = Test.AddTestRun("Cache hit fresh alwaysfresh")
+tr.DelayStart = 10
+tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/alwaysfresh'.format(ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/regex_reval-hit.gold"
+tr.StillRunningAfter = ts
+
+# 7 Test - Revalidate path1
 tr = Test.AddTestRun("Revalidate stale path1")
-tr.DelayStart = 5
 tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_reval-stale.gold"
 tr.StillRunningAfter = ts
 
-# 6 Test - Cache hit (path1)
+# 8 Test - Cache hit (path1)
 tr = Test.AddTestRun("Cache hit fresh path1")
 tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_reval-hit.gold"
 tr.StillRunningAfter = ts
 
-# 7 Stage - Reload new regex_revalidate
+# 9 Stage - Reload new regex_revalidate
 tr = Test.AddTestRun("Reload config add path2")
 tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
     path1_rule,
@@ -231,25 +243,29 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
 tr.TimeOut = 5
 
-# 8 Test - Cache hit (path1)
+# 10 Test - Cache hit (alwdaysfresh)
+tr = Test.AddTestRun("Cache hit fresh alwaysfresh")
+tr.DelayStart = 10
+tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/alwaysfresh'.format(ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/regex_reval-hit.gold"
+tr.StillRunningAfter = ts
+
+# 11 Test - Cache hit (path1)
 tr = Test.AddTestRun("Cache hit fresh path1")
-tr.DelayStart = 5
 tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_reval-hit.gold"
 tr.StillRunningAfter = ts
 
-# 9 Test - Cache stale (check rule is still loaded) (path1a)
+# 12 Test - Cache stale (check rule is still loaded) (path1a)
 tr = Test.AddTestRun("Revalidate stale path1a")
 tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path1a'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_reval-stale.gold"
 tr.StillRunningAfter = ts
 
-# The C version of regex_revalidate doesn't allow an existing rule to
-# be changed by a reload.
-
-# 10 Stage - regex_revalidate rewrite rule early expire
+# 13 Stage - regex_revalidate rewrite rule early expire
 tr = Test.AddTestRun("Reload config change path2")
 tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
     path1_rule,
@@ -264,10 +280,17 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
 tr.TimeOut = 5
 
-# 11 Test - Cache hit (path2a)
+# 14 Test - Cache hit (alwdaysfresh)
+tr = Test.AddTestRun("Cache hit fresh alwaysfresh")
+tr.DelayStart = 10
+tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/alwaysfresh'.format(ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/regex_reval-hit.gold"
+tr.StillRunningAfter = ts
+
+# 15 Test - Cache hit (path2a)
 tr = Test.AddTestRun("Cache hit stale path2a")
-tr.DelayStart = 5
 tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path2a'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/regex_reval-stale.gold"
+tr.Processes.Default.Streams.stdout = "gold/regex_reval-hit.gold"
 tr.StillRunningAfter = ts

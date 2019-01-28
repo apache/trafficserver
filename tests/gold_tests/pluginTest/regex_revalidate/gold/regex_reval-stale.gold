@@ -1,7 +1,6 @@
 HTTP/1.1 200 OK
-Etag: ``
 Cache-Control: max-age=``,public
-Content-Length: 3
+Content-Length: ``
 Date: ``
 Connection: ``
 Server: ``
