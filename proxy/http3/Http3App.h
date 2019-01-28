@@ -58,6 +58,7 @@ private:
   void _handle_bidi_stream_on_read_ready(int event, QUICStreamIO *stream_io);
   void _handle_uni_stream_on_write_ready(int event, QUICStreamIO *stream_io);
   void _handle_bidi_stream_on_write_ready(int event, QUICStreamIO *stream_io);
+  void _set_qpack_stream(Http3StreamType type, QUICStreamIO *stream_io);
 
   Http3ClientSession *_client_session   = nullptr;
   Http3FrameHandler *_settings_handler  = nullptr;

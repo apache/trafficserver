@@ -61,17 +61,16 @@ void
 Http3App::start()
 {
   QUICStreamId stream_id;
-  QUICConnectionErrorUPtr error = this->create_uni_stream(stream_id, Http3StreamType::CONTROL);
-  if (error != nullptr) {
-    ink_abort("Could not creat CONTROL stream");
-  }
 
+  this->create_uni_stream(stream_id, Http3StreamType::CONTROL);
   this->_local_control_stream = this->_find_stream_io(stream_id);
-  this->_local_uni_stream_map.insert(std::make_pair(stream_id, Http3StreamType::CONTROL));
-
-  // Should do this->handleEvent(VC_EVENT_WRITE_READY, vio); ???
-
   this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_local_control_stream);
+
+  this->create_uni_stream(stream_id, Http3StreamType::QPACK_ENCODER);
+  this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_find_stream_io(stream_id));
+
+  this->create_uni_stream(stream_id, Http3StreamType::QPACK_DECODER);
+  this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_find_stream_io(stream_id));
 }
 
 int
@@ -124,8 +123,15 @@ Http3App::create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type)
 
   if (error == nullptr) {
     QUICStreamIO *stream_io = this->_find_stream_io(new_stream_id);
-    uint8_t buf[]           = {static_cast<uint8_t>(type)};
+
+    uint8_t buf[] = {static_cast<uint8_t>(type)};
     stream_io->write(buf, sizeof(uint8_t));
+
+    this->_local_uni_stream_map.insert(std::make_pair(new_stream_id, type));
+
+    Debug("http3", "[%llu] %s stream is created", new_stream_id, Http3DebugNames::stream_type(type));
+  } else {
+    ink_abort("Could not creat %s stream", Http3DebugNames::stream_type(type));
   }
 
   return error;
@@ -164,22 +170,9 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, QUICStreamIO *stream
     // TODO: when PUSH comes from client, send stream error with HTTP_WRONG_STREAM_DIRECTION
     break;
   }
-  case Http3StreamType::QPACK_ENCODER: {
-    // Change app to QPACK from Http3
-    if (this->_qc->direction() == NET_VCONNECTION_IN) {
-      this->_client_session->remote_qpack()->set_encoder_stream(stream_io);
-    } else {
-      this->_client_session->local_qpack()->set_encoder_stream(stream_io);
-    }
-    break;
-  }
+  case Http3StreamType::QPACK_ENCODER:
   case Http3StreamType::QPACK_DECODER: {
-    if (this->_qc->direction() == NET_VCONNECTION_IN) {
-      this->_client_session->local_qpack()->set_decoder_stream(stream_io);
-    } else {
-      this->_client_session->remote_qpack()->set_decoder_stream(stream_io);
-    }
-    break;
+    this->_set_qpack_stream(type, stream_io);
   }
   case Http3StreamType::UNKOWN:
   default:
@@ -223,10 +216,35 @@ Http3App::_handle_uni_stream_on_write_ready(int /* event */, QUICStreamIO *strea
     this->_control_stream_collector.on_write_ready(stream_io, nwritten);
     break;
   }
+  case Http3StreamType::QPACK_ENCODER:
+  case Http3StreamType::QPACK_DECODER: {
+    this->_set_qpack_stream(it->second, stream_io);
+  }
   case Http3StreamType::UNKOWN:
   case Http3StreamType::PUSH:
   default:
     break;
+  }
+}
+
+void
+Http3App::_set_qpack_stream(Http3StreamType type, QUICStreamIO *stream_io)
+{
+  // Change app to QPACK from Http3
+  if (type == Http3StreamType::QPACK_ENCODER) {
+    if (this->_qc->direction() == NET_VCONNECTION_IN) {
+      this->_client_session->remote_qpack()->set_encoder_stream(stream_io);
+    } else {
+      this->_client_session->local_qpack()->set_encoder_stream(stream_io);
+    }
+  } else if (type == Http3StreamType::QPACK_DECODER) {
+    if (this->_qc->direction() == NET_VCONNECTION_IN) {
+      this->_client_session->local_qpack()->set_decoder_stream(stream_io);
+    } else {
+      this->_client_session->remote_qpack()->set_decoder_stream(stream_io);
+    }
+  } else {
+    ink_abort("unkown stream type");
   }
 }
 
