@@ -1702,6 +1702,7 @@ class UrlPrintHack
         ink_assert(nullptr == ui->m_ptr_port); // shouldn't be set if not in URL.
         ui->m_ptr_port    = m_port_buff;
         ui->m_len_port    = snprintf(m_port_buff, sizeof(m_port_buff), "%d", hdr->m_port);
+        ui->m_port        = hdr->m_port;
         m_port_modified_p = true;
       } else {
         m_port_modified_p = false;
@@ -1725,6 +1726,7 @@ class UrlPrintHack
       if (m_port_modified_p) {
         ui->m_len_port = 0;
         ui->m_ptr_port = nullptr;
+        ui->m_port     = 0;
       }
       if (m_host_modified_p) {
         ui->m_len_host = 0;
