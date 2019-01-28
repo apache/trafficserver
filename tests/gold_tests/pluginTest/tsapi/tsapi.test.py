@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Test TS API Hooks.
+Test TS API.
 '''
 
 Test.SkipUnless(
@@ -24,14 +24,14 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 
-# test_hooks.so will output test logging to this file.
+# test_tsapi.so will output test logging to this file.
 Test.Env["OUTPUT_FILE"] = Test.RunDirectory + "/log.txt"
 
 server = Test.MakeOriginServer("server")
 
 request_header = {
-    "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": "" }
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "" }
+    "headers": "GET / HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": "" }
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "112233" }
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts = Test.MakeATSProcess("ts", select_ports=False)
@@ -50,41 +50,44 @@ ts.Disk.records_config.update({
         'ipv4:{0} ipv4:{1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port)),
     'proxy.config.url_remap.remap_required': 0,
     'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|test_hooks',
+    'proxy.config.diags.debug.tags': 'http|test_tsapi',
 })
 
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 
-Test.PreparePlugin(Test.Variables.AtsTestToolsDir + '/plugins/test_hooks.cc', ts)
+ts.Disk.remap_config.AddLine(
+    "map http://myhost.test:{0}  http://127.0.0.1:{0}".format(server.Variables.Port)
+)
+ts.Disk.remap_config.AddLine(
+    "map https://myhost.test:{0}  http://127.0.0.1:{0}".format(server.Variables.Port)
+)
 
-ts.Disk.remap_config.AddLine(
-    "map http://one http://127.0.0.1:{0}".format(server.Variables.Port)
-)
-ts.Disk.remap_config.AddLine(
-    "map https://one http://127.0.0.1:{0}".format(server.Variables.Port)
-)
+Test.PreparePlugin(Test.Variables.AtsTestToolsDir + '/plugins/test_tsapi.cc', ts)
 
 tr = Test.AddTestRun()
 # Probe server port to check if ready.
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-# Probe TS cleartext port to check if ready (probing TLS port causes spurious VCONN hook triggers).
+# Probe TS cleartext port to check if ready.
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
 #
 tr.Processes.Default.Command = (
-    'curl --verbose --ipv4 --header "Host: one" http://localhost:{0}/argh'.format(ts.Variables.port)
+    'curl --verbose --ipv4 --header "Host: myhost.test:{0}" http://localhost:{1}/'.format(server.Variables.Port, ts.Variables.port)
 )
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    'curl --verbose --ipv4 --http2 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port)
+    'curl --verbose --ipv4 --http2 --insecure --header ' +
+    '"Host: myhost.test:{0}" https://localhost:{1}/'.format(server.Variables.Port, ts.Variables.ssl_port)
 )
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = "echo check log"
+# Change server port number (which can vary) to a fixed string for compare to gold file.
+tr.Processes.Default.Command = "sed 's/:{0}/:SERVER_PORT/' < {1}/log.txt > {1}/log2.txt".format(
+    server.Variables.Port, Test.RunDirectory)
 tr.Processes.Default.ReturnCode = 0
-f = tr.Disk.File("log.txt")
+f = tr.Disk.File("log2.txt")
 f.Content = "log.gold"
