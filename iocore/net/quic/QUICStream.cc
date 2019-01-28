@@ -542,6 +542,7 @@ QUICStream::_records_stream_frame(QUICEncryptionLevel level, const QUICStreamFra
   info->type                    = frame.type();
   info->level                   = level;
   StreamFrameInfo *frame_info   = reinterpret_cast<StreamFrameInfo *>(info->data);
+  frame_info->stream_id         = frame.stream_id();
   frame_info->offset            = frame.offset();
   frame_info->has_fin           = frame.has_fin_flag();
   frame_info->block             = frame.data();
