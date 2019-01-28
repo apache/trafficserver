@@ -1991,7 +1991,6 @@ HTTPInfo::marshal_length()
   }
 
   if (m_alt->m_frag_offset_count > HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS) {
-    len -= sizeof(m_alt->m_integral_frag_offsets);
     len += sizeof(FragOffset) * m_alt->m_frag_offset_count;
   }
 
@@ -2006,23 +2005,11 @@ HTTPInfo::marshal(char *buf, int len)
   HTTPCacheAlt *marshal_alt = (HTTPCacheAlt *)buf;
   // non-zero only if the offsets are external. Otherwise they get
   // marshalled along with the alt struct.
-  int frag_len = (0 == m_alt->m_frag_offset_count || m_alt->m_frag_offsets == m_alt->m_integral_frag_offsets) ?
-                   0 :
-                   sizeof(HTTPCacheAlt::FragOffset) * m_alt->m_frag_offset_count;
-
   ink_assert(m_alt->m_magic == CACHE_ALT_MAGIC_ALIVE);
 
   // Make sure the buffer is aligned
   //    ink_assert(((intptr_t)buf) & 0x3 == 0);
 
-  // If we have external fragment offsets, copy the initial ones
-  // into the integral data.
-  if (frag_len) {
-    memcpy(m_alt->m_integral_frag_offsets, m_alt->m_frag_offsets, sizeof(m_alt->m_integral_frag_offsets));
-    frag_len -= sizeof(m_alt->m_integral_frag_offsets);
-    // frag_len should never be non-zero at this point, as the offsets
-    // should be external only if too big for the internal table.
-  }
   // Memcpy the whole object so that we can use it
   //   live later.  This involves copying a few
   //   extra bytes now but will save copying any
@@ -2035,13 +2022,14 @@ HTTPInfo::marshal(char *buf, int len)
   buf += HTTP_ALT_MARSHAL_SIZE;
   used += HTTP_ALT_MARSHAL_SIZE;
 
-  if (frag_len > 0) {
+  if (m_alt->m_frag_offset_count > HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS) {
     marshal_alt->m_frag_offsets = static_cast<FragOffset *>(reinterpret_cast<void *>(used));
-    memcpy(buf, m_alt->m_frag_offsets + HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS, frag_len);
-    buf += frag_len;
-    used += frag_len;
+    memcpy(buf, m_alt->m_frag_offsets, m_alt->m_frag_offset_count * sizeof(FragOffset));
+    buf += m_alt->m_frag_offset_count * sizeof(FragOffset);
+    used += m_alt->m_frag_offset_count * sizeof(FragOffset);
   } else {
-    marshal_alt->m_frag_offsets = nullptr;
+    // the data stored in intergral buffer
+    m_alt->m_frag_offsets = nullptr;
   }
 
   // The m_{request,response}_hdr->m_heap pointers are converted
@@ -2098,23 +2086,9 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
   len -= HTTP_ALT_MARSHAL_SIZE;
 
   if (alt->m_frag_offset_count > HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS) {
-    // stuff that didn't fit in the integral slots.
-    int extra       = sizeof(FragOffset) * alt->m_frag_offset_count - sizeof(alt->m_integral_frag_offsets);
-    char *extra_src = buf + reinterpret_cast<intptr_t>(alt->m_frag_offsets);
-    // Actual buffer size, which must be a power of two.
-    // Well, technically not, because we never modify an unmarshalled fragment
-    // offset table, but it would be a nasty bug should that be done in the
-    // future.
-    int bcount = HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS * 2;
-
-    while (bcount < alt->m_frag_offset_count) {
-      bcount *= 2;
-    }
-    alt->m_frag_offsets =
-      static_cast<FragOffset *>(ats_malloc(bcount * sizeof(FragOffset))); // WRONG - must round up to next power of 2.
-    memcpy(alt->m_frag_offsets, alt->m_integral_frag_offsets, sizeof(alt->m_integral_frag_offsets));
-    memcpy(alt->m_frag_offsets + HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS, extra_src, extra);
-    len -= extra;
+    alt->m_frag_offsets = reinterpret_cast<FragOffset *>(buf + reinterpret_cast<intptr_t>(alt->m_frag_offsets));
+    len -= sizeof(FragOffset) * alt->m_frag_offset_count;
+    ink_assert(len >= 0);
   } else if (alt->m_frag_offset_count > 0) {
     alt->m_frag_offsets = alt->m_integral_frag_offsets;
   } else {
