@@ -553,25 +553,35 @@ Http3ClientTransaction::_process_write_vio()
   }
 }
 
+// Constant strings for pseudo headers
+const char *HTTP3_VALUE_SCHEME    = ":scheme";
+const char *HTTP3_VALUE_AUTHORITY = ":authority";
+
+const unsigned HTTP3_LEN_SCHEME    = countof(":scheme") - 1;
+const unsigned HTTP3_LEN_AUTHORITY = countof(":authority") - 1;
+
 ParseResult
-Http3ClientTransaction::_convert_header_from_3_to_1_1(HTTPHdr *hdr)
+Http3ClientTransaction::_convert_header_from_3_to_1_1(HTTPHdr *hdrs)
 {
   // TODO: do HTTP/3 specific convert, if there
 
   // Dirty hack to bypass checks
-  char name_a[]              = ":authority";
-  char value_a[]             = "localhost";
-  MIMEField *authority_field = this->_request_header.field_create(name_a, sizeof(name_a) - 1);
-  authority_field->value_set(this->_request_header.m_heap, this->_request_header.m_mime, value_a, sizeof(value_a) - 1);
-  this->_request_header.field_attach(authority_field);
+  MIMEField *field;
+  if ((field = hdrs->field_find(HTTP3_VALUE_SCHEME, HTTP3_LEN_SCHEME)) == nullptr) {
+    char value_s[]          = "https";
+    MIMEField *scheme_field = hdrs->field_create(HTTP3_VALUE_SCHEME, HTTP3_LEN_SCHEME);
+    scheme_field->value_set(hdrs->m_heap, hdrs->m_mime, value_s, sizeof(value_s) - 1);
+    hdrs->field_attach(scheme_field);
+  }
 
-  char name_s[]           = ":scheme";
-  char value_s[]          = "https";
-  MIMEField *scheme_field = this->_request_header.field_create(name_s, sizeof(name_s) - 1);
-  scheme_field->value_set(this->_request_header.m_heap, this->_request_header.m_mime, value_s, sizeof(value_s) - 1);
-  this->_request_header.field_attach(scheme_field);
+  if ((field = hdrs->field_find(HTTP3_VALUE_AUTHORITY, HTTP3_LEN_AUTHORITY)) == nullptr) {
+    char value_a[]             = "localhost";
+    MIMEField *authority_field = hdrs->field_create(HTTP3_VALUE_AUTHORITY, HTTP3_LEN_AUTHORITY);
+    authority_field->value_set(hdrs->m_heap, hdrs->m_mime, value_a, sizeof(value_a) - 1);
+    hdrs->field_attach(authority_field);
+  }
 
-  return http2_convert_header_from_2_to_1_1(hdr);
+  return http2_convert_header_from_2_to_1_1(hdrs);
 }
 
 int
