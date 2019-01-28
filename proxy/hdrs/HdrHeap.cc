@@ -1170,11 +1170,6 @@ HdrStrHeap::expand(char *ptr, int old_size, int new_size)
   }
 }
 
-struct StrTest {
-  char *ptr;
-  int len;
-};
-
 #if TS_HAS_TESTS
 #include "tscore/TestBox.h"
 REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
