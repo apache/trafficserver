@@ -104,6 +104,15 @@ QUICAckFrameManager::_on_frame_acked(QUICFrameInformationUPtr &info)
   this->_ack_creator[index]->forget(ack_info->largest_acknowledged);
 }
 
+void
+QUICAckFrameManager::_on_frame_lost(QUICFrameInformationUPtr &info)
+{
+  ink_assert(info->type == QUICFrameType::ACK);
+  int index = QUICTypeUtil::pn_space_index(info->level);
+  // when ack frame lost. Force to refresh the frame.
+  this->_ack_creator[index]->refresh_frame(true);
+}
+
 QUICFrameId
 QUICAckFrameManager::issue_frame_id()
 {
@@ -131,8 +140,13 @@ QUICAckFrameManager::timer_fired()
 // QUICAckFrameManager::QUICAckFrameCreator
 //
 void
-QUICAckFrameManager::QUICAckFrameCreator::refresh_frame()
+QUICAckFrameManager::QUICAckFrameCreator::refresh_frame(bool force)
 {
+  if (force && !this->_packet_numbers.empty()) {
+    this->_available   = true;
+    this->_should_send = true;
+  }
+
   if (this->_available) {
     // make sure we have the new ack_frame to override the old one.
     this->_ack_frame = this->create_ack_frame();

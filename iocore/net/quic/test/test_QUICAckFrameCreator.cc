@@ -286,3 +286,52 @@ TEST_CASE("QUICAckFrameManager_QUICAckFrameCreator", "[quic]")
   CHECK(packet_numbers.largest_ack_number() == 0);
   CHECK(packet_numbers.largest_ack_received_time() == 0);
 }
+
+TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
+{
+  QUICAckFrameManager ack_manager;
+  QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
+
+  // Initial state
+  std::shared_ptr<QUICFrame> ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  CHECK(frame == nullptr);
+
+  ack_manager.update(level, 2, 1, false);
+  ack_manager.update(level, 5, 1, false);
+  ack_manager.update(level, 6, 1, false);
+  ack_manager.update(level, 8, 1, false);
+  ack_manager.update(level, 9, 1, false);
+
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  CHECK(frame != nullptr);
+  CHECK(frame->ack_block_count() == 2);
+  CHECK(frame->largest_acknowledged() == 9);
+  CHECK(frame->ack_block_section()->first_ack_block() == 1);
+  CHECK(frame->ack_block_section()->begin()->gap() == 0);
+
+  ack_manager.on_frame_lost(frame->id());
+  CHECK(ack_manager.will_generate_frame(level) == true);
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  CHECK(frame != nullptr);
+  CHECK(frame->ack_block_count() == 2);
+  CHECK(frame->largest_acknowledged() == 9);
+  CHECK(frame->ack_block_section()->first_ack_block() == 1);
+  CHECK(frame->ack_block_section()->begin()->gap() == 0);
+
+  CHECK(ack_manager.will_generate_frame(level) == false);
+  ack_manager.on_frame_lost(frame->id());
+  CHECK(ack_manager.will_generate_frame(level) == true);
+  ack_manager.update(level, 7, 1, false);
+  ack_manager.update(level, 4, 1, false);
+
+  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  CHECK(frame != nullptr);
+  CHECK(frame->ack_block_count() == 1);
+  CHECK(frame->largest_acknowledged() == 9);
+  CHECK(frame->ack_block_section()->first_ack_block() == 5);
+  CHECK(frame->ack_block_section()->begin()->gap() == 0);
+}
