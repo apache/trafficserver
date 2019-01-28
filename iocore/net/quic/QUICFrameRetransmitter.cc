@@ -99,27 +99,35 @@ QUICFrameRetransmitter::_create_stream_frame(QUICFrameInformationUPtr &info, uin
                                              std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id,
                                              QUICFrameGenerator *owner)
 {
+  QUICFrameUPtr frame          = QUICFrameFactory::create_null_frame();
   StreamFrameInfo *stream_info = reinterpret_cast<StreamFrameInfo *>(info->data);
-  // FIXME: has_offset and has_length should be configurable.
-  auto frame = QUICFrameFactory::create_stream_frame(stream_info->block, stream_info->stream_id, stream_info->offset,
-                                                     stream_info->has_fin, true, true, id, owner);
-  if (frame->size() > maximum_frame_size) {
-    QUICStreamFrame *stream_frame = static_cast<QUICStreamFrame *>(frame.get());
-    if (stream_frame->size() - stream_frame->data_length() > maximum_frame_size) {
-      // header length is larger than maximum_frame_size.
-      tmp_queue.push_back(std::move(info));
-      return QUICFrameFactory::create_null_frame();
-    }
 
-    IOBufferBlock *block = stream_frame->data();
-    size_t over_length   = stream_frame->size() - maximum_frame_size;
-    block->_end          = std::max(block->start(), block->_end - over_length);
+  static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
+  if (maximum_frame_size <= MAX_STREAM_FRAME_OVERHEAD) {
+    tmp_queue.push_back(std::move(info));
+    return frame;
+  }
+
+  // FIXME MAX_STREAM_FRAME_OVERHEAD is here and there
+  // These size calculation should not exist multiple places
+  uint64_t maximmum_data_size = maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD;
+  if (maximmum_data_size > static_cast<uint64_t>(stream_info->block->size())) {
+    frame = QUICFrameFactory::create_stream_frame(stream_info->block, stream_info->stream_id, stream_info->offset,
+                                                  stream_info->has_fin, true, true, id, owner);
+    ink_assert(frame->size() <= maximum_frame_size);
+    stream_info->block = nullptr;
+  } else {
+    frame = QUICFrameFactory::create_stream_frame(stream_info->block, stream_info->stream_id, stream_info->offset, false, true,
+                                                  true, id, owner);
+    QUICStreamFrame *stream_frame = static_cast<QUICStreamFrame *>(frame.get());
+    IOBufferBlock *block          = stream_frame->data();
+    size_t over_length            = stream_frame->size() - maximum_frame_size;
+    block->_end                   = std::max(block->start(), block->_end - over_length);
     if (block->read_avail() == 0) {
       // no payload
       tmp_queue.push_back(std::move(info));
       return QUICFrameFactory::create_null_frame();
     }
-
     stream_info->block->consume(stream_frame->data_length());
     stream_info->offset += stream_frame->data_length();
     ink_assert(frame->size() <= maximum_frame_size);
@@ -127,7 +135,6 @@ QUICFrameRetransmitter::_create_stream_frame(QUICFrameInformationUPtr &info, uin
     return frame;
   }
 
-  stream_info->block = nullptr;
   ink_assert(frame != nullptr);
   return frame;
 }
