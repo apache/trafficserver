@@ -158,11 +158,12 @@ public:
 };
 
 struct StrHeapDesc {
-  StrHeapDesc();
+  StrHeapDesc() = default;
+
   Ptr<RefCountObj> m_ref_count_ptr;
-  char *m_heap_start;
-  int32_t m_heap_len;
-  bool m_locked;
+  char *m_heap_start = nullptr;
+  int32_t m_heap_len = 0;
+  bool m_locked      = false;
 
   bool
   contains(const char *str) const
