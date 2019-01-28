@@ -25,7 +25,8 @@
 
 #include "QUICFrameRetransmitter.h"
 
-constexpr static uint8_t data[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10};
+constexpr static uint8_t data[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x01, 0x02, 0x03, 0x04, 0x05,
+                                   0x06, 0x07, 0x08, 0x09, 0x10, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10};
 
 TEST_CASE("QUICFrameRetransmitter ignore frame which can not be retranmistted", "[quic]")
 {
@@ -138,13 +139,13 @@ TEST_CASE("QUICFrameRetransmitter successfully split stream frame", "[quic]")
 
   retransmitter.save_frame_info(std::move(info));
 
-  auto frame = retransmitter.create_retransmitted_frame(QUICEncryptionLevel::INITIAL, 15);
+  auto frame = retransmitter.create_retransmitted_frame(QUICEncryptionLevel::INITIAL, 25);
   CHECK(frame != nullptr);
   CHECK(frame->type() == QUICFrameType::STREAM);
   auto stream_frame = static_cast<QUICStreamFrame *>(frame.get());
   CHECK(stream_frame->stream_id() == 0x12345);
   CHECK(stream_frame->offset() == 0x67890);
-  CHECK(stream_frame->size() <= 15);
+  CHECK(stream_frame->size() <= 25);
 
   auto size = stream_frame->data_length();
   CHECK(memcmp(stream_frame->data()->start(), data, stream_frame->data_length()) == 0);
@@ -191,12 +192,12 @@ TEST_CASE("QUICFrameRetransmitter successfully split crypto frame", "[quic]")
 
   retransmitter.save_frame_info(std::move(info));
 
-  auto frame = retransmitter.create_retransmitted_frame(QUICEncryptionLevel::INITIAL, 15);
+  auto frame = retransmitter.create_retransmitted_frame(QUICEncryptionLevel::INITIAL, 25);
   CHECK(frame != nullptr);
   CHECK(frame->type() == QUICFrameType::CRYPTO);
   auto crypto_frame = static_cast<QUICCryptoFrame *>(frame.get());
   CHECK(crypto_frame->offset() == 0x67890);
-  CHECK(crypto_frame->size() <= 15);
+  CHECK(crypto_frame->size() <= 25);
 
   auto size = crypto_frame->data_length();
   CHECK(memcmp(crypto_frame->data()->start(), data, crypto_frame->data_length()) == 0);
@@ -217,6 +218,63 @@ TEST_CASE("QUICFrameRetransmitter successfully split crypto frame", "[quic]")
   CHECK(crypto_frame->data_length() == sizeof(data) - size);
   CHECK(memcmp(crypto_frame->data()->start(), data + size, crypto_frame->data_length()) == 0);
   CHECK(block->refcount() == 1); // one for var block
+
+  frame = QUICFrameFactory::create_null_frame();
+  CHECK(block->refcount() == 1);
+  CHECK(block->data->refcount() == 1);
+}
+
+TEST_CASE("QUICFrameRetransmitter successfully split stream frame with fin flag", "[quic]")
+{
+  QUICFrameRetransmitter retransmitter;
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
+  info->type                    = QUICFrameType::STREAM;
+  info->level                   = QUICEncryptionLevel::INITIAL;
+
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc();
+  memcpy(block->start(), data, sizeof(data));
+  block->fill(sizeof(data));
+
+  StreamFrameInfo *frame_info = reinterpret_cast<StreamFrameInfo *>(info->data);
+  frame_info->stream_id       = 0x12345;
+  frame_info->offset          = 0x67890;
+  frame_info->block           = block;
+  frame_info->has_fin         = true;
+  CHECK(block->refcount() == 2);
+
+  retransmitter.save_frame_info(std::move(info));
+
+  auto frame = retransmitter.create_retransmitted_frame(QUICEncryptionLevel::INITIAL, 25);
+  CHECK(frame != nullptr);
+  CHECK(frame->type() == QUICFrameType::STREAM);
+  auto stream_frame = static_cast<QUICStreamFrame *>(frame.get());
+  CHECK(stream_frame->stream_id() == 0x12345);
+  CHECK(stream_frame->offset() == 0x67890);
+  CHECK(stream_frame->size() <= 25);
+  CHECK(stream_frame->has_fin_flag() == false);
+
+  auto size = stream_frame->data_length();
+  CHECK(memcmp(stream_frame->data()->start(), data, stream_frame->data_length()) == 0);
+  // one for var block, one for the left data which saved in retransmitter
+  CHECK(block->data->refcount() == 2);
+  // one for var block, one for the left data which saved in retransmitter, one for var frame
+  CHECK(block->refcount() == 2);
+  frame = QUICFrameFactory::create_null_frame();
+  // one for var block, one for var info
+  CHECK(block->refcount() == 2);
+  CHECK(block->data->refcount() == 1);
+
+  frame = retransmitter.create_retransmitted_frame(QUICEncryptionLevel::INITIAL, UINT16_MAX);
+  CHECK(frame != nullptr);
+  CHECK(frame->type() == QUICFrameType::STREAM);
+  stream_frame = static_cast<QUICStreamFrame *>(frame.get());
+  CHECK(stream_frame->stream_id() == 0x12345);
+  CHECK(stream_frame->offset() == 0x67890 + size);
+  CHECK(stream_frame->data_length() == sizeof(data) - size);
+  CHECK(memcmp(stream_frame->data()->start(), data + size, stream_frame->data_length()) == 0);
+  CHECK(block->refcount() == 1); // one for var block
+  CHECK(stream_frame->has_fin_flag() == true);
 
   frame = QUICFrameFactory::create_null_frame();
   CHECK(block->refcount() == 1);
