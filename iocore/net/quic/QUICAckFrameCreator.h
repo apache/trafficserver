@@ -57,7 +57,7 @@ public:
     std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> generate_ack_frame(uint16_t maximum_frame_size);
 
     // timer event handler, refresh _ack_frame;
-    void refresh_frame();
+    void refresh_frame(bool force = false);
 
     QUICPacketNumber largest_ack_number();
     ink_hrtime largest_ack_received_time();
@@ -112,6 +112,7 @@ public:
 
 private:
   virtual void _on_frame_acked(QUICFrameInformationUPtr &info) override;
+  virtual void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 
   /*
    * Returns QUICAckFrame only if ACK frame is able to be sent.
