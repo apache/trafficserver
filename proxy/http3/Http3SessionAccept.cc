@@ -50,19 +50,29 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
 
   netvc->attributes = this->options.transport_type;
 
+  QUICNetVConnection *qvc = static_cast<QUICNetVConnection *>(netvc);
+
   if (is_debug_tag_set("http3")) {
     ip_port_text_buffer ipb;
 
-    Debug("http3", "[%s] accepted connection from %s transport type = %d",
-          static_cast<QUICConnection *>(static_cast<QUICNetVConnection *>(netvc))->cids().data(),
+    Debug("http3", "[%s] accepted connection from %s transport type = %d", qvc->cids().data(),
           ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
-  // TODO: switch by ALPN
-  // new QUICSimpleApp(static_cast<QUICNetVConnection *>(netvc), std::move(session_acl));
-  // who will destruct this app?
-  Http3App *app = new Http3App(static_cast<QUICNetVConnection *>(netvc), std::move(session_acl));
-  app->start();
+  std::string_view alpn = qvc->negotiated_application_name();
+
+  if (alpn.empty() || IP_PROTO_TAG_HTTP_QUIC.compare(alpn) == 0) {
+    Debug("http3", "[%s] start HTTP/0.9 app (ALPN=%s)", qvc->cids().data(), alpn.data());
+
+    new QUICSimpleApp(qvc, std::move(session_acl));
+  } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0) {
+    Debug("http3", "[%s] start HTTP/3 app (ALPN=%s)", qvc->cids().data(), alpn.data());
+
+    Http3App *app = new Http3App(qvc, std::move(session_acl));
+    app->start();
+  } else {
+    ink_abort("Negotiated App Name is unknown");
+  }
 
   return true;
 }
