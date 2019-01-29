@@ -1567,6 +1567,9 @@ HostDBContinuation::iterateEvent(int event, Event *e)
       }
     }
     current_iterate_pos++;
+  }
+
+  if (current_iterate_pos < hostDB.refcountcache->partition_count()) {
     // And reschedule ourselves to pickup the next bucket after HOST_DB_RETRY_PERIOD.
     Debug("hostdb", "iterateEvent event=%d eventp=%p: completed current iteration %ld of %ld", event, e, current_iterate_pos,
           hostDB.refcountcache->partition_count());
