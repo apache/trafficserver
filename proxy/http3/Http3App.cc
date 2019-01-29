@@ -309,6 +309,7 @@ Http3SettingsFramer::generate_frame(uint16_t max_size)
   Http3SettingsFrame *frame = http3SettingsFrameAllocator.alloc();
   new (frame) Http3SettingsFrame();
   frame->set(Http3SettingsId::HEADER_TABLE_SIZE, 0x0);
+  frame->set(Http3SettingsId::NUM_PLACEHOLDERS, 100);
 
   return Http3SettingsFrameUPtr(frame, &Http3FrameDeleter::delete_settings_frame);
 }
