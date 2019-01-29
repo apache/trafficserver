@@ -42,6 +42,9 @@ Glossary
       A thread created by |TS| that has an :term:`event loop`. Event loops drive activity in |TS|
       and are responsible for all network I/O handling, hook processing, and scheduled events.
 
+   header heap
+      A heap to manage transaction local memory for HTTP headers.
+
    session
       A single connection from a client to Traffic Server, covering all
       requests and responses on that connection. A session starts when the
@@ -165,3 +168,10 @@ Glossary
       A plugin which operates only on transactions matching specific remap
       rules as defined in :file:`remap.config`. Contrast with
       :term:`global plugin`.
+
+   variable sized class
+      A class where the instances vary in size. This is done by allocating a block of memory at least
+      as large as the class and then constructing a class instance at the start of the block. The
+      class must be provided the size of this extended memory during construction and is presumed
+      to use it as part of the instance. This generally requires calling a helper function to
+      create the instance and extra care when de-allocating.
