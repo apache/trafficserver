@@ -258,7 +258,12 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   } else if (port.isQUIC()) {
     QUICNextProtocolAccept *quic = new QUICNextProtocolAccept();
 
-    // HTTP/QUIC
+    // HTTP/3
+    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_3)) {
+      quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_3, new Http3SessionAccept(accept_opt));
+    }
+
+    // HTTP/0.9 over QUIC (for interop only, will be removed)
     if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC)) {
       quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, new Http3SessionAccept(accept_opt));
     }
