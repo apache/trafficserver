@@ -895,6 +895,17 @@ QUICNetVConnection::largest_acked_packet_number(QUICEncryptionLevel level) const
   return this->_loss_detector[index]->largest_acked_packet_number();
 }
 
+std::string_view
+QUICNetVConnection::negotiated_application_name() const
+{
+  const uint8_t *name;
+  unsigned int name_len = 0;
+
+  this->_hs_protocol->negotiated_application_name(&name, &name_len);
+
+  return std::string_view(reinterpret_cast<const char *>(name), name_len);
+}
+
 QUICConnectionErrorUPtr
 QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
 {

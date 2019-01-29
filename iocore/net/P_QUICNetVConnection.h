@@ -210,6 +210,7 @@ public:
   NetVConnectionContext_t direction() const override;
   SSLNextProtocolSet *next_protocol_set() const override;
   QUICPacketNumber largest_acked_packet_number(QUICEncryptionLevel level) const override;
+  std::string_view negotiated_application_name() const override;
   bool is_closed() const override;
 
   // QUICConnection (QUICPacketTransmitter)
