@@ -735,6 +735,7 @@ ts_session_protocol_well_known_name_indices_init()
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_1_0);
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_1_1);
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_2_0);
+  TSProtoTags.insert(TS_PROTO_TAG_HTTP_3);
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_QUIC);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_3);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_2);
