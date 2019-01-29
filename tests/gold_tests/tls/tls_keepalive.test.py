@@ -24,6 +24,11 @@ Test.Summary = '''
 Verify that the client-side keep alive is honored for TLS and different versions of HTTP
 '''
 
+Test.SkipUnless(
+    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
+    Condition.HasCurlFeature('http2')
+)
+
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server")
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
