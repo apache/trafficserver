@@ -83,7 +83,6 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl --tls-max 1.2 -k --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case1".format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 35
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("alert", "TLS handshake should fail")
 
 tr = Test.AddTestRun("Connect to foo.com with bad cert")
 tr.Setup.Copy("ssl/server.pem")
@@ -93,7 +92,6 @@ tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert server.pem --key server.key --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case1".format(ts.Variables.ssl_port)
 # Should fail with badly signed certs
 tr.Processes.Default.ReturnCode = 35
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("alert unknown ca", "TLS handshake should fail")
 
 tr = Test.AddTestRun("Connect to foo.com with cert")
 tr.Setup.Copy("ssl/signed-foo.pem")
@@ -159,7 +157,6 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl --tls-max 1.2 -k --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/case1".format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 35
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("alert handshake failure", "TLS handshake should fail")
 
 tr = Test.AddTestRun("Connect to bar.com with cert")
 tr.Setup.Copy("ssl/signed-bar.pem")
@@ -177,6 +174,5 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert server.pem --key server.key --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/case1".format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 35
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("alert unknown ca", "TLS handshake should fail")
 
 
