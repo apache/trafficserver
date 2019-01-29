@@ -61,16 +61,23 @@ void
 Http3App::start()
 {
   QUICStreamId stream_id;
+  QUICConnectionErrorUPtr error;
 
-  this->create_uni_stream(stream_id, Http3StreamType::CONTROL);
-  this->_local_control_stream = this->_find_stream_io(stream_id);
-  this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_local_control_stream);
+  error = this->create_uni_stream(stream_id, Http3StreamType::CONTROL);
+  if (error == nullptr) {
+    this->_local_control_stream = this->_find_stream_io(stream_id);
+    this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_local_control_stream);
+  }
 
-  this->create_uni_stream(stream_id, Http3StreamType::QPACK_ENCODER);
-  this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_find_stream_io(stream_id));
+  error = this->create_uni_stream(stream_id, Http3StreamType::QPACK_ENCODER);
+  if (error == nullptr) {
+    this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_find_stream_io(stream_id));
+  }
 
-  this->create_uni_stream(stream_id, Http3StreamType::QPACK_DECODER);
-  this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_find_stream_io(stream_id));
+  error = this->create_uni_stream(stream_id, Http3StreamType::QPACK_DECODER);
+  if (error == nullptr) {
+    this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_find_stream_io(stream_id));
+  }
 }
 
 int
@@ -131,7 +138,7 @@ Http3App::create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type)
 
     Debug("http3", "[%llu] %s stream is created", new_stream_id, Http3DebugNames::stream_type(type));
   } else {
-    ink_abort("Could not creat %s stream", Http3DebugNames::stream_type(type));
+    Debug("http3", "Could not creat %s stream", Http3DebugNames::stream_type(type));
   }
 
   return error;
