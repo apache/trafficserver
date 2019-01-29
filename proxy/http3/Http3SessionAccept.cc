@@ -62,11 +62,15 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
   std::string_view alpn = qvc->negotiated_application_name();
 
   if (alpn.empty() || IP_PROTO_TAG_HTTP_QUIC.compare(alpn) == 0) {
-    Debug("http3", "[%s] start HTTP/0.9 app (ALPN=%s)", qvc->cids().data(), alpn.data());
+    if (alpn.empty()) {
+      Debug("http3", "[%s] start HTTP/0.9 app (ALPN=null)", qvc->cids().data());
+    } else {
+      Debug("http3", "[%s] start HTTP/0.9 app (ALPN=%s)", qvc->cids().data(), IP_PROTO_TAG_HTTP_QUIC.data());
+    }
 
     new QUICSimpleApp(qvc, std::move(session_acl));
   } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0) {
-    Debug("http3", "[%s] start HTTP/3 app (ALPN=%s)", qvc->cids().data(), alpn.data());
+    Debug("http3", "[%s] start HTTP/3 app (ALPN=%s)", qvc->cids().data(), IP_PROTO_TAG_HTTP_3.data());
 
     Http3App *app = new Http3App(qvc, std::move(session_acl));
     app->start();
