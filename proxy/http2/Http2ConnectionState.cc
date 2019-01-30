@@ -237,7 +237,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   // keep track of how many bytes we get in the frame
   stream->request_header_length += payload_length;
-  if (stream->request_header_length > Http2::max_request_header_size) {
+  if (stream->request_header_length > Http2::max_header_list_size) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                       "recv headers payload for headers greater than header length");
   }
@@ -800,7 +800,7 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   // keep track of how many bytes we get in the frame
   stream->request_header_length += payload_length;
-  if (stream->request_header_length > Http2::max_request_header_size) {
+  if (stream->request_header_length > Http2::max_header_list_size) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                       "continuation payload for headers exceeded");
   }
