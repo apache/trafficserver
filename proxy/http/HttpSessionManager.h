@@ -33,10 +33,10 @@
 #pragma once
 
 #include "P_EventSystem.h"
-#include "HttpServerSession.h"
+#include "Http1ServerSession.h"
 #include "tscore/IntrusiveHashMap.h"
 
-class ProxyClientTransaction;
+class ProxyTransaction;
 class HttpSM;
 
 void initialize_thread_for_http_sessions(EThread *thread, int thread_index);
@@ -67,13 +67,13 @@ public:
   static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
 
 protected:
-  using IPTable   = IntrusiveHashMap<HttpServerSession::IPLinkage>;
-  using FQDNTable = IntrusiveHashMap<HttpServerSession::FQDNLinkage>;
+  using IPTable   = IntrusiveHashMap<Http1ServerSession::IPLinkage>;
+  using FQDNTable = IntrusiveHashMap<Http1ServerSession::FQDNLinkage>;
 
 public:
   /** Check if a session matches address and host name.
    */
-  static bool match(HttpServerSession *ss, sockaddr const *addr, CryptoHash const &host_hash,
+  static bool match(Http1ServerSession *ss, sockaddr const *addr, CryptoHash const &host_hash,
                     TSServerSessionSharingMatchType match_style);
 
   /** Get a session from the pool.
@@ -84,10 +84,10 @@ public:
       @return A pointer to the session or @c NULL if not matching session was found.
   */
   HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &host_hash, TSServerSessionSharingMatchType match_style,
-                             HttpSM *sm, HttpServerSession *&server_session);
+                             HttpSM *sm, Http1ServerSession *&server_session);
   /** Release a session to to pool.
    */
-  void releaseSession(HttpServerSession *ss);
+  void releaseSession(Http1ServerSession *ss);
 
   /// Close all sessions and then clear the table.
   void purge();
@@ -103,9 +103,8 @@ class HttpSessionManager
 public:
   HttpSessionManager() : m_g_pool(nullptr) {}
   ~HttpSessionManager() {}
-  HSMresult_t acquire_session(Continuation *cont, sockaddr const *addr, const char *hostname, ProxyClientTransaction *ua_txn,
-                              HttpSM *sm);
-  HSMresult_t release_session(HttpServerSession *to_release);
+  HSMresult_t acquire_session(Continuation *cont, sockaddr const *addr, const char *hostname, ProxyTransaction *ua_txn, HttpSM *sm);
+  HSMresult_t release_session(Http1ServerSession *to_release);
   void purge_keepalives();
   void init();
   int main_handler(int event, void *data);

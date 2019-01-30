@@ -31,8 +31,8 @@
  ****************************************************************************/
 
 #include "HttpSessionManager.h"
-#include "../ProxyClientSession.h"
-#include "HttpServerSession.h"
+#include "../ProxySession.h"
+#include "Http1ServerSession.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
 
@@ -57,13 +57,13 @@ ServerSessionPool::purge()
 {
   // @c do_io_close can free the instance which clears the intrusive links and breaks the iterator.
   // Therefore @c do_io_close is called on a post-incremented iterator.
-  m_ip_pool.apply([](HttpServerSession *ssn) -> void { ssn->do_io_close(); });
+  m_ip_pool.apply([](Http1ServerSession *ssn) -> void { ssn->do_io_close(); });
   m_ip_pool.clear();
   m_fqdn_pool.clear();
 }
 
 bool
-ServerSessionPool::match(HttpServerSession *ss, sockaddr const *addr, CryptoHash const &hostname_hash,
+ServerSessionPool::match(Http1ServerSession *ss, sockaddr const *addr, CryptoHash const &hostname_hash,
                          TSServerSessionSharingMatchType match_style)
 {
   return TS_SERVER_SESSION_SHARING_MATCH_NONE !=
@@ -93,7 +93,7 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
 
 HSMresult_t
 ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostname_hash,
-                                  TSServerSessionSharingMatchType match_style, HttpSM *sm, HttpServerSession *&to_return)
+                                  TSServerSessionSharingMatchType match_style, HttpSM *sm, Http1ServerSession *&to_return)
 {
   HSMresult_t zret = HSM_NOT_FOUND;
   to_return        = nullptr;
@@ -144,7 +144,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
 }
 
 void
-ServerSessionPool::releaseSession(HttpServerSession *ss)
+ServerSessionPool::releaseSession(Http1ServerSession *ss)
 {
   ss->state = HSS_KA_SHARED;
   // Now we need to issue a read on the connection to detect
@@ -176,7 +176,7 @@ int
 ServerSessionPool::eventHandler(int event, void *data)
 {
   NetVConnection *net_vc = nullptr;
-  HttpServerSession *s   = nullptr;
+  Http1ServerSession *s  = nullptr;
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -275,9 +275,9 @@ HttpSessionManager::purge_keepalives()
 
 HSMresult_t
 HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockaddr const *ip, const char *hostname,
-                                    ProxyClientTransaction *ua_txn, HttpSM *sm)
+                                    ProxyTransaction *ua_txn, HttpSM *sm)
 {
-  HttpServerSession *to_return = nullptr;
+  Http1ServerSession *to_return = nullptr;
   TSServerSessionSharingMatchType match_style =
     static_cast<TSServerSessionSharingMatchType>(sm->t_state.txn_conf->server_session_sharing_match);
   CryptoHash hostname_hash;
@@ -370,7 +370,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
 }
 
 HSMresult_t
-HttpSessionManager::release_session(HttpServerSession *to_release)
+HttpSessionManager::release_session(Http1ServerSession *to_release)
 {
   EThread *ethread = this_ethread();
   ServerSessionPool *pool =
