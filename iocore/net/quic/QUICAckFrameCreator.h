@@ -50,14 +50,13 @@ public:
     void sort();
     void forget(QUICPacketNumber largest_acknowledged);
     bool available() const;
-    bool is_ack_frame_ready() const;
-    std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> create_ack_frame();
+    bool is_ack_frame_ready();
 
     // Checks maximum_frame_size and return _ack_frame
     std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> generate_ack_frame(uint16_t maximum_frame_size);
 
     // timer event handler, refresh _ack_frame;
-    void refresh_frame(bool force = false);
+    void refresh_frame();
 
     QUICPacketNumber largest_ack_number();
     ink_hrtime largest_ack_received_time();
@@ -67,16 +66,16 @@ public:
     std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _create_ack_frame();
 
     std::list<RecvdPacket> _packet_numbers;
-    bool _available                         = false;
-    bool _should_send                       = false;
+    bool _available                         = false; // packet_number has data to sent
+    bool _should_send                       = false; // ack frame should be sent immediately
+    bool _has_new_data                      = false; // new data after last sent
     size_t _size_unsend                     = 0;
     QUICPacketNumber _largest_ack_number    = 0;
     QUICPacketNumber _expect_next           = 0;
     ink_hrtime _largest_ack_received_time   = 0;
     ink_hrtime _latest_packet_received_time = 0;
 
-    std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _ack_frame = QUICFrameFactory::create_null_ack_frame();
-    QUICAckFrameManager *_ack_manager                              = nullptr;
+    QUICAckFrameManager *_ack_manager = nullptr;
 
     QUICEncryptionLevel _level = QUICEncryptionLevel::NONE;
   };
@@ -106,7 +105,6 @@ public:
    */
   QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
-  int timer_fired();
   QUICFrameId issue_frame_id();
   uint8_t ack_delay_exponent() const;
 
