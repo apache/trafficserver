@@ -627,7 +627,15 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     break;
   }
   case QUIC_EVENT_ACK_PERIODIC: {
-    if (!this->_refresh_ack_frame_manager()) {
+    bool need_schedule = false;
+    for (auto level : QUIC_ENCRYPTION_LEVELS) {
+      if (this->_ack_frame_manager.will_generate_frame(level)) {
+        need_schedule = true;
+        break;
+      }
+    }
+
+    if (!need_schedule) {
       break;
     }
 
@@ -677,7 +685,15 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     break;
   }
   case QUIC_EVENT_ACK_PERIODIC: {
-    if (!this->_refresh_ack_frame_manager()) {
+    bool need_schedule = false;
+    for (auto level : QUIC_ENCRYPTION_LEVELS) {
+      if (this->_ack_frame_manager.will_generate_frame(level)) {
+        need_schedule = true;
+        break;
+      }
+    }
+
+    if (!need_schedule) {
       break;
     }
 
@@ -2183,19 +2199,6 @@ QUICNetVConnection::_handle_path_validation_timeout(Event *data)
     QUICConDebug("Path validation failed");
     this->_switch_to_close_state();
   }
-}
-
-bool
-QUICNetVConnection::_refresh_ack_frame_manager()
-{
-  this->_ack_frame_manager.timer_fired();
-  for (auto level : QUIC_PN_SPACES) {
-    if (this->_ack_frame_manager.will_generate_frame(level)) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 // QUICFrameGenerator

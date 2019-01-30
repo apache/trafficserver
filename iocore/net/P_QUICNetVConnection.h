@@ -304,7 +304,6 @@ private:
 
   void _unschedule_ack_manager_periodic();
   Event *_ack_manager_periodic = nullptr;
-  bool _refresh_ack_frame_manager();
 
   uint64_t _maximum_stream_frame_data_size();
   void _store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrameUPtr &frame,
