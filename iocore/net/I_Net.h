@@ -43,6 +43,7 @@
 #include "ts/I_Version.h"
 #include "I_EventSystem.h"
 #include <netinet/in.h>
+#include "ts/string_view.h"
 
 #ifndef UIO_MAXIOV
 #define NET_MAX_IOV 16 // UIO_MAXIOV shall be at least 16 1003.1g (5.4.1.1)
@@ -63,6 +64,9 @@ extern int net_event_period;
 extern int net_accept_period;
 extern int net_retry_delay;
 extern int net_throttle_delay;
+
+extern ts::string_view net_ccp_in;
+extern ts::string_view net_ccp_out;
 
 #define NET_EVENT_OPEN (NET_EVENT_EVENTS_START)
 #define NET_EVENT_OPEN_FAILED (NET_EVENT_EVENTS_START + 1)
