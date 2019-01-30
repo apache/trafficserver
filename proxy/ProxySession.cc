@@ -1,6 +1,6 @@
 /** @file
 
-  ProxyClientSession - Base class for protocol client sessions.
+  ProxySession - Base class for protocol client & server sessions.
 
   @section license License
 
@@ -23,17 +23,17 @@
 
 #include "HttpConfig.h"
 #include "HttpDebugNames.h"
-#include "ProxyClientSession.h"
+#include "ProxySession.h"
 
 static int64_t next_cs_id = 0;
 
-ProxyClientSession::ProxyClientSession() : VConnection(nullptr)
+ProxySession::ProxySession() : VConnection(nullptr)
 {
   ink_zero(this->user_args);
 }
 
 void
-ProxyClientSession::set_session_active()
+ProxySession::set_session_active()
 {
   if (!m_active) {
     m_active = true;
@@ -42,7 +42,7 @@ ProxyClientSession::set_session_active()
 }
 
 void
-ProxyClientSession::clear_session_active()
+ProxySession::clear_session_active()
 {
   if (m_active) {
     m_active = false;
@@ -51,7 +51,7 @@ ProxyClientSession::clear_session_active()
 }
 
 int64_t
-ProxyClientSession::next_connection_id()
+ProxySession::next_connection_id()
 {
   return ink_atomic_increment(&next_cs_id, 1);
 }
@@ -84,7 +84,7 @@ is_valid_hook(TSHttpHookID hookid)
 }
 
 void
-ProxyClientSession::free()
+ProxySession::free()
 {
   if (schedule_event) {
     schedule_event->cancel();
@@ -96,7 +96,7 @@ ProxyClientSession::free()
 }
 
 int
-ProxyClientSession::state_api_callout(int event, void *data)
+ProxySession::state_api_callout(int event, void *data)
 {
   Event *e = static_cast<Event *>(data);
   if (e == schedule_event) {
@@ -127,7 +127,7 @@ ProxyClientSession::state_api_callout(int event, void *data)
           plugin_mutex = hook->m_cont->mutex;
           plugin_lock  = MUTEX_TAKE_TRY_LOCK(hook->m_cont->mutex, mutex->thread_holding);
           if (!plugin_lock) {
-            SET_HANDLER(&ProxyClientSession::state_api_callout);
+            SET_HANDLER(&ProxySession::state_api_callout);
             if (!schedule_event) { // Don't bother to schedule is there is already one out.
               schedule_event = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
             }
@@ -162,7 +162,7 @@ ProxyClientSession::state_api_callout(int event, void *data)
 }
 
 void
-ProxyClientSession::do_api_callout(TSHttpHookID id)
+ProxySession::do_api_callout(TSHttpHookID id)
 {
   ink_assert(id == TS_HTTP_SSN_START_HOOK || id == TS_HTTP_SSN_CLOSE_HOOK);
 
@@ -171,7 +171,7 @@ ProxyClientSession::do_api_callout(TSHttpHookID id)
   this->api_current = nullptr;
 
   if (this->has_hooks()) {
-    SET_HANDLER(&ProxyClientSession::state_api_callout);
+    SET_HANDLER(&ProxySession::state_api_callout);
     this->state_api_callout(EVENT_NONE, nullptr);
   } else {
     this->handle_api_return(TS_EVENT_HTTP_CONTINUE);
@@ -179,11 +179,11 @@ ProxyClientSession::do_api_callout(TSHttpHookID id)
 }
 
 void
-ProxyClientSession::handle_api_return(int event)
+ProxySession::handle_api_return(int event)
 {
   TSHttpHookID hookid = this->api_hookid;
 
-  SET_HANDLER(&ProxyClientSession::state_api_callout);
+  SET_HANDLER(&ProxySession::state_api_callout);
 
   this->api_hookid  = TS_HTTP_LAST_HOOK;
   this->api_scope   = API_HOOK_SCOPE_NONE;

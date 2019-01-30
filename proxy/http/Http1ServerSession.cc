@@ -23,7 +23,7 @@
 
 /****************************************************************************
 
-   HttpServerSession.cc
+   Http1ServerSession.cc
 
    Description:
 
@@ -32,15 +32,15 @@
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
 #include "tscore/Allocator.h"
-#include "HttpServerSession.h"
+#include "Http1ServerSession.h"
 #include "HttpSessionManager.h"
 #include "HttpSM.h"
 
 static int64_t next_ss_id = (int64_t)0;
-ClassAllocator<HttpServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
+ClassAllocator<Http1ServerSession> http1ServerSessionAllocator("http1ServerSessionAllocator");
 
 void
-HttpServerSession::destroy()
+Http1ServerSession::destroy()
 {
   ink_release_assert(server_vc == nullptr);
   ink_assert(read_buffer);
@@ -53,14 +53,14 @@ HttpServerSession::destroy()
 
   mutex.clear();
   if (TS_SERVER_SESSION_SHARING_POOL_THREAD == sharing_pool) {
-    THREAD_FREE(this, httpServerSessionAllocator, this_thread());
+    THREAD_FREE(this, http1ServerSessionAllocator, this_thread());
   } else {
-    httpServerSessionAllocator.free(this);
+    http1ServerSessionAllocator.free(this);
   }
 }
 
 void
-HttpServerSession::new_connection(NetVConnection *new_vc)
+Http1ServerSession::new_connection(NetVConnection *new_vc)
 {
   ink_assert(new_vc != nullptr);
   server_vc = new_vc;
@@ -87,7 +87,7 @@ HttpServerSession::new_connection(NetVConnection *new_vc)
 }
 
 void
-HttpServerSession::enable_outbound_connection_tracking(OutboundConnTrack::Group *group)
+Http1ServerSession::enable_outbound_connection_tracking(OutboundConnTrack::Group *group)
 {
   ink_assert(nullptr == conn_track_group);
   conn_track_group = group;
@@ -99,25 +99,25 @@ HttpServerSession::enable_outbound_connection_tracking(OutboundConnTrack::Group 
 }
 
 VIO *
-HttpServerSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+Http1ServerSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   return server_vc ? server_vc->do_io_read(c, nbytes, buf) : nullptr;
 }
 
 VIO *
-HttpServerSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+Http1ServerSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
   return server_vc ? server_vc->do_io_write(c, nbytes, buf, owner) : nullptr;
 }
 
 void
-HttpServerSession::do_io_shutdown(ShutdownHowTo_t howto)
+Http1ServerSession::do_io_shutdown(ShutdownHowTo_t howto)
 {
   server_vc->do_io_shutdown(howto);
 }
 
 void
-HttpServerSession::do_io_close(int alerrno)
+Http1ServerSession::do_io_close(int alerrno)
 {
   ts::LocalBufferWriter<256> w;
   bool debug_p = is_debug_tag_set("http_ss");
@@ -162,17 +162,17 @@ HttpServerSession::do_io_close(int alerrno)
 }
 
 void
-HttpServerSession::reenable(VIO *vio)
+Http1ServerSession::reenable(VIO *vio)
 {
   server_vc->reenable(vio);
 }
 
-// void HttpServerSession::release()
+// void Http1ServerSession::release()
 //
 //   Releases the session for K-A reuse
 //
 void
-HttpServerSession::release()
+Http1ServerSession::release()
 {
   Debug("http_ss", "Releasing session, private_session=%d, sharing_match=%d", private_session, sharing_match);
   // Set our state to KA for stat issues

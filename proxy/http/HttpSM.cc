@@ -22,12 +22,12 @@
 
  */
 
-#include "../ProxyClientTransaction.h"
+#include "../ProxyTransaction.h"
 #include "HttpSM.h"
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
 #include "ProxyConfig.h"
-#include "HttpServerSession.h"
+#include "Http1ServerSession.h"
 #include "HttpDebugNames.h"
 #include "HttpSessionManager.h"
 #include "P_Cache.h"
@@ -443,7 +443,7 @@ HttpSM::start_sub_sm()
 }
 
 void
-HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader *buffer_reader)
+HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffer_reader)
 {
   milestones[TS_MILESTONE_UA_BEGIN] = Thread::get_hrtime();
   ink_assert(client_vc != nullptr);
@@ -639,7 +639,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
   // Reset the inactivity timeout if this is the first
   //   time we've been called.  The timeout had been set to
-  //   the accept timeout by the ProxyClientTransaction
+  //   the accept timeout by the ProxyTransaction
   //
   if ((ua_buffer_reader->read_avail() > 0) && (client_request_hdr_bytes == 0)) {
     milestones[TS_MILESTONE_UA_FIRST_READ] = Thread::get_hrtime();
@@ -1734,14 +1734,14 @@ HttpSM::state_http_server_open(int event, void *data)
     pending_action = nullptr;
   }
   milestones[TS_MILESTONE_SERVER_CONNECT_END] = Thread::get_hrtime();
-  HttpServerSession *session;
+  Http1ServerSession *session;
   NetVConnection *netvc = nullptr;
 
   switch (event) {
   case NET_EVENT_OPEN: {
     session = (TS_SERVER_SESSION_SHARING_POOL_THREAD == t_state.http_config_param->server_session_sharing_pool) ?
-                THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
-                httpServerSessionAllocator.alloc();
+                THREAD_ALLOC_INIT(http1ServerSessionAllocator, mutex->thread_holding) :
+                http1ServerSessionAllocator.alloc();
     session->sharing_pool  = static_cast<TSServerSessionSharingPoolType>(t_state.http_config_param->server_session_sharing_pool);
     session->sharing_match = static_cast<TSServerSessionSharingMatchType>(t_state.txn_conf->server_session_sharing_match);
 
@@ -4901,7 +4901,7 @@ HttpSM::do_http_server_open(bool raw)
   // session when we already have an attached server session.
   else if ((TS_SERVER_SESSION_SHARING_MATCH_NONE == t_state.txn_conf->server_session_sharing_match || is_private()) &&
            (ua_txn != nullptr)) {
-    HttpServerSession *existing_ss = ua_txn->get_server_session();
+    Http1ServerSession *existing_ss = ua_txn->get_server_session();
 
     if (existing_ss) {
       // [amc] Not sure if this is the best option, but we don't get here unless session sharing is disabled
@@ -4928,7 +4928,7 @@ HttpSM::do_http_server_open(bool raw)
   // to get a new one.
   // ua_txn is null when t_state.req_flavor == REQ_FLAVOR_SCHEDULED_UPDATE
   else if (ua_txn != nullptr) {
-    HttpServerSession *existing_ss = ua_txn->get_server_session();
+    Http1ServerSession *existing_ss = ua_txn->get_server_session();
     if (existing_ss) {
       existing_ss->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->keep_alive_no_activity_timeout_out));
       existing_ss->release();
@@ -5898,7 +5898,7 @@ HttpSM::write_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
 }
 
 void
-HttpSM::attach_server_session(HttpServerSession *s)
+HttpSM::attach_server_session(Http1ServerSession *s)
 {
   hsm_release_assert(server_session == nullptr);
   hsm_release_assert(server_entry == nullptr);
@@ -7973,7 +7973,7 @@ HttpSM::is_private()
   if (server_session) {
     res = server_session->private_session;
   } else if (ua_txn) {
-    HttpServerSession *ss = ua_txn->get_server_session();
+    Http1ServerSession *ss = ua_txn->get_server_session();
     if (ss) {
       res = ss->private_session;
     } else if (will_be_private_ss) {

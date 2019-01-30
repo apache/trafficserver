@@ -1,6 +1,6 @@
 /** @file
 
-  ProxyClientSession - Base class for protocol client sessions.
+  ProxySession - Base class for protocol client & server sessions.
 
   @section license License
 
@@ -28,7 +28,7 @@
 #include <string_view>
 #include "P_Net.h"
 #include "InkAPIInternal.h"
-#include "http/HttpServerSession.h"
+#include "http/Http1ServerSession.h"
 #include "IPAllow.h"
 
 // Emit a debug message conditional on whether this particular client session
@@ -36,7 +36,7 @@
 // member function.
 #define SsnDebug(ssn, tag, ...) SpecificDebug((ssn)->debug(), tag, __VA_ARGS__)
 
-class ProxyClientTransaction;
+class ProxyTransaction;
 
 enum class ProxyErrorClass {
   NONE,
@@ -72,10 +72,11 @@ struct ProxyError {
 // A little ugly, but this global is tracked by traffic_server.
 extern bool ts_is_draining;
 
-class ProxyClientSession : public VConnection
+/// Abstract class for HttpSM to interface with any session
+class ProxySession : public VConnection
 {
 public:
-  ProxyClientSession();
+  ProxySession();
 
   virtual void destroy() = 0;
   virtual void free();
@@ -181,7 +182,7 @@ public:
   }
 
   // Indicate we are done with a transaction.
-  virtual void release(ProxyClientTransaction *trans) = 0;
+  virtual void release(ProxyTransaction *trans) = 0;
 
   virtual in_port_t
   get_outbound_port() const
@@ -208,11 +209,11 @@ public:
   }
 
   virtual void
-  attach_server_session(HttpServerSession *ssession, bool transaction_done = true)
+  attach_server_session(Http1ServerSession *ssession, bool transaction_done = true)
   {
   }
 
-  virtual HttpServerSession *
+  virtual Http1ServerSession *
   get_server_session() const
   {
     return nullptr;
@@ -296,8 +297,8 @@ public:
   ink_hrtime ssn_last_txn_time = 0;
 
   // noncopyable
-  ProxyClientSession(ProxyClientSession &) = delete;
-  ProxyClientSession &operator=(const ProxyClientSession &) = delete;
+  ProxySession(ProxySession &) = delete;
+  ProxySession &operator=(const ProxySession &) = delete;
 
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so

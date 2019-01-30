@@ -932,7 +932,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       // the amount to read since we know it.  We will forward the FIN
       // to the server on VC_EVENT_WRITE_COMPLETE.
       if (p->vc_type == HT_HTTP_CLIENT) {
-        ProxyClientTransaction *ua_vc = static_cast<ProxyClientTransaction *>(p->vc);
+        ProxyTransaction *ua_vc = static_cast<ProxyTransaction *>(p->vc);
         if (ua_vc->get_half_close_flag()) {
           c_write          = c->buffer_reader->read_avail();
           p->alive         = false;

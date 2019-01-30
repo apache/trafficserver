@@ -67,15 +67,15 @@
 
     @a ID The numeric type that is the hash value for an instance of @a Key.
 
-    Example for @c HttpServerSession keyed by the origin server IP address.
+    Example for @c Http1ServerSession keyed by the origin server IP address.
 
     @code
     struct Descriptor {
-      static sockaddr const* key_of(HttpServerSession const* value) { return &value->ip.sa }
+      static sockaddr const* key_of(Http1ServerSession const* value) { return &value->ip.sa }
       static bool equal(sockaddr const* lhs, sockaddr const* rhs) { return ats_ip_eq(lhs, rhs); }
       static uint32_t hash_of(sockaddr const* key) { return ats_ip_hash(key); }
-      static HttpServerSession *& next_ptr(HttpServerSession * ssn) { return ssn->_next; }
-      static HttpServerSession *& prev_ptr(HttpServerSession * ssn) { return ssn->_prev; }
+      static Http1ServerSession *& next_ptr(Http1ServerSession * ssn) { return ssn->_next; }
+      static Http1ServerSession *& prev_ptr(Http1ServerSession * ssn) { return ssn->_prev; }
     };
     using Table = IntrusiveHashMap<Descriptor>;
     @endcode

@@ -46,8 +46,8 @@ libhttp_a_SOURCES = \
 	HttpCacheSM.h \
 	Http1ClientSession.cc \
 	Http1ClientSession.h \
-	Http1ClientTransaction.cc \
-	Http1ClientTransaction.h \
+	Http1Transaction.cc \
+	Http1Transaction.h \
 	HttpConfig.cc \
 	HttpConfig.h \
 	HttpConnectionCount.cc \
@@ -60,8 +60,8 @@ libhttp_a_SOURCES = \
 	HttpProxyServerMain.h \
 	HttpSM.cc \
 	HttpSM.h \
-	HttpServerSession.cc \
-	HttpServerSession.h \
+	Http1ServerSession.cc \
+	Http1ServerSession.h \
 	HttpSessionManager.cc \
 	HttpSessionManager.h \
 	HttpTransact.cc \
