@@ -614,7 +614,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   const char *value;
   int len;
   bool is_trailing_header = trailing_header;
-  int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_request_header_size, maximum_table_size);
+  int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_header_list_size, maximum_table_size);
 
   if (result < 0) {
     if (result == HPACK_ERROR_COMPRESSION_ERROR) {
@@ -726,7 +726,6 @@ uint32_t Http2::initial_window_size        = 1048576;
 uint32_t Http2::max_frame_size             = 16384;
 uint32_t Http2::header_table_size          = 4096;
 uint32_t Http2::max_header_list_size       = 4294967295;
-uint32_t Http2::max_request_header_size    = 131072;
 uint32_t Http2::accept_no_activity_timeout = 120;
 uint32_t Http2::no_activity_timeout_in     = 120;
 uint32_t Http2::active_timeout_in          = 0;
@@ -744,7 +743,6 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(max_frame_size, "proxy.config.http2.max_frame_size");
   REC_EstablishStaticConfigInt32U(header_table_size, "proxy.config.http2.header_table_size");
   REC_EstablishStaticConfigInt32U(max_header_list_size, "proxy.config.http2.max_header_list_size");
-  REC_EstablishStaticConfigInt32U(max_request_header_size, "proxy.config.http.request_header_max_size");
   REC_EstablishStaticConfigInt32U(accept_no_activity_timeout, "proxy.config.http2.accept_no_activity_timeout");
   REC_EstablishStaticConfigInt32U(no_activity_timeout_in, "proxy.config.http2.no_activity_timeout_in");
   REC_EstablishStaticConfigInt32U(active_timeout_in, "proxy.config.http2.active_timeout_in");
