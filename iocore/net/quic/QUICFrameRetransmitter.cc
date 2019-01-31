@@ -110,8 +110,8 @@ QUICFrameRetransmitter::_create_stream_frame(QUICFrameInformationUPtr &info, uin
 
   // FIXME MAX_STREAM_FRAME_OVERHEAD is here and there
   // These size calculation should not exist multiple places
-  uint64_t maximmum_data_size = maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD;
-  if (maximmum_data_size > static_cast<uint64_t>(stream_info->block->size())) {
+  uint64_t maximum_data_size = maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD;
+  if (maximum_data_size >= static_cast<uint64_t>(stream_info->block->size())) {
     frame = QUICFrameFactory::create_stream_frame(stream_info->block, stream_info->stream_id, stream_info->offset,
                                                   stream_info->has_fin, true, true, id, owner);
     ink_assert(frame->size() <= maximum_frame_size);
@@ -121,7 +121,7 @@ QUICFrameRetransmitter::_create_stream_frame(QUICFrameInformationUPtr &info, uin
                                                   true, id, owner);
     QUICStreamFrame *stream_frame = static_cast<QUICStreamFrame *>(frame.get());
     IOBufferBlock *block          = stream_frame->data();
-    size_t over_length            = stream_frame->size() - maximum_frame_size;
+    size_t over_length            = stream_frame->data_length() - maximum_data_size;
     block->_end                   = std::max(block->start(), block->_end - over_length);
     if (block->read_avail() == 0) {
       // no payload
