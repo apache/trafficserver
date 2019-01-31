@@ -1368,7 +1368,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.quic.initial_max_data_out", RECD_INT, "65536", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.quic.initial_max_stream_data_bidi_local_in", RECD_INT, "4096", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.quic.initial_max_stream_data_bidi_local_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.initial_max_stream_data_bidi_local_out", RECD_INT, "4096", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
