@@ -33,13 +33,9 @@ OutboundConnTrack::Imp OutboundConnTrack::_imp;
 
 OutboundConnTrack::GlobalConfig *OutboundConnTrack::_global_config{nullptr};
 
-const MgmtConverter OutboundConnTrack::MAX_CONV{
+const MgmtConverter OutboundConnTrack::MAX_CONV(
   [](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<decltype(TxnConfig::max) *>(data)); },
-  [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::max) *>(data) = static_cast<decltype(TxnConfig::max)>(i); },
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr};
+  [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::max) *>(data) = static_cast<decltype(TxnConfig::max)>(i); });
 
 // Do integer and string conversions.
 const MgmtConverter OutboundConnTrack::MATCH_CONV{
