@@ -280,7 +280,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   // Server Stateless Retry
   QUICConfig::scoped_config params;
   QUICConnectionId cid_in_retry_token;
-  if (!vc && params->stateless_retry()) {
+  if (!vc && params->stateless_retry() && QUICInvariants::is_long_header(buf)) {
     int ret = this->_stateless_retry(buf, buf_len, udp_packet->getConnection(), udp_packet->from, dcid, scid, &cid_in_retry_token);
     if (ret < 0) {
       udp_packet->free();
