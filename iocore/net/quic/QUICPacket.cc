@@ -949,8 +949,6 @@ QUICPacket::calc_packet_number_len(QUICPacketNumber num, QUICPacketNumber base)
 bool
 QUICPacket::encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len)
 {
-  ink_assert(len == 1 || len == 2 || len == 4);
-
   uint64_t mask = 0;
   switch (len) {
   case 1:
