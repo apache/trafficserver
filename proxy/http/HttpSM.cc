@@ -1761,7 +1761,7 @@ HttpSM::state_http_server_open(int event, void *data)
       handle_http_server_open();
     }
     return 0;
-
+  case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     // Update the time out to the regular connection timeout.
