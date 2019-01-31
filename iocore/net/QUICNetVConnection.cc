@@ -1707,8 +1707,8 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     if (packet->type() == QUICPacketType::VERSION_NEGOTIATION) {
       QUICConDebug("[RX] %s packet size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
     } else {
-      QUICConDebug("[RX] %s packet #%" PRIu64 " size=%u", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
-                   packet->size());
+      QUICConDebug("[RX] %s packet #%" PRIu64 " size=%u header_len=%u payload_len=%u", QUICDebugNames::packet_type(packet->type()),
+                   packet->packet_number(), packet->size(), packet->header_size(), packet->payload_length());
     }
     break;
   default:
