@@ -122,4 +122,4 @@ file(GLOB plugin_files
         )
 add_library(plugins SHARED ${plugin_files})
 
-add_custom_target(clang-format WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY} COMMAND make clang-format)
+add_custom_target(clang-format WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY} COMMAND make -j clang-format)

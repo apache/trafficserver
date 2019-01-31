@@ -322,3 +322,29 @@ required for generic access:
 #. Update the Lua plugin enumeration ``TSLuaOverridableConfigKey`` in |ts_lua_http_config.c|_.
 
 #. Update the documentation of :ref:`ts-overridable-config` in |TSHttpOverridableConfig.en.rst|_.
+
+API conversions
+---------------
+
+A relatively new feature for overridable variables is the ability to keep them in more natural data
+types and convert as needed to the API types. This in turns enables defining the configuration
+locally in a module and then "exporting" it to the API interface. Modules then do not have to
+include headers for all types in all overridable configurations.
+
+The conversion is done through an instance of :code:`MgmtConverter`. This has 6 points to
+conversions, a load and store function for each of the types :code:`MgmtInt`, :code:`MgmtFloat`, and
+:code:`MgmtInt`. The :code:`MgmtByte` type is handled by the :code:`MgmtInt` conversions. In general
+each overridable variable will specify two of these, a load and store for a specific type, although
+it is possible to provide other pairs, e.g. if a value is an enumeration can should be settable
+as a string as well as an integer.
+
+The module is responsible for creating an instance of :code:`MgmtConverter` with the appropriate
+load / store function pairs set. The declaration must be visible in the :ts:git:`proxy/InkAPI.cc`
+file. The function :code:`_conf_to_memberp` sets up the conversion. For the value of the enumeration
+:c:type:`TSOverridableConfigKey` that specifies the overridable variable, code is added to specify
+the member and the conversion. There are default converters for the API types and if the overridable
+is one of those, it is only necessary to call :code:`_memberp_to_generic` passing in a pointer to
+the variable. For a variable with conversion, :arg:`ret` should be set to point to the variable and
+:arg:`conv` set to point to the converter for that variable. If multiple variables are of the same
+type they can use the same converter because a pointer to the specific member is passed to the
+converter.

@@ -7971,32 +7971,14 @@ template <typename T>
 inline void *
 _memberp_to_generic(T *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter IntConverter{
-    [](void *data) -> MgmtInt { return *static_cast<MgmtInt *>(data); },
-    [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; },
-    nullptr,
-    nullptr, // float
-    nullptr,
-    nullptr // string
-  };
+  static const MgmtConverter IntConverter([](void *data) -> MgmtInt { return *static_cast<MgmtInt *>(data); },
+                                          [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; });
 
-  static const MgmtConverter ByteConverter{
-    [](void *data) -> MgmtInt { return *static_cast<MgmtByte *>(data); },
-    [](void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; },
-    nullptr,
-    nullptr, // float
-    nullptr,
-    nullptr // string
-  };
+  static const MgmtConverter ByteConverter{[](void *data) -> MgmtInt { return *static_cast<MgmtByte *>(data); },
+                                           [](void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; }};
 
-  static const MgmtConverter FloatConverter{
-    nullptr, // int
-    nullptr,
-    [](void *data) -> MgmtFloat { return *static_cast<MgmtFloat *>(data); },
-    [](void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; },
-    nullptr,
-    nullptr // string
-  };
+  static const MgmtConverter FloatConverter{[](void *data) -> MgmtFloat { return *static_cast<MgmtFloat *>(data); },
+                                            [](void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; }};
 
   // For now, strings are special.
 
@@ -8398,11 +8380,11 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 
   void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
 
-  if (!dest || !conv->set_int) {
+  if (!dest || !conv->store_int) {
     return TS_ERROR;
   }
 
-  conv->set_int(dest, value);
+  conv->store_int(dest, value);
 
   return TS_SUCCESS;
 }
@@ -8417,11 +8399,11 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
   MgmtConverter const *conv;
   void *src = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
 
-  if (!src || !conv->get_int) {
+  if (!src || !conv->load_int) {
     return TS_ERROR;
   }
 
-  *value = conv->get_int(src);
+  *value = conv->load_int(src);
 
   return TS_SUCCESS;
 }
@@ -8438,11 +8420,11 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 
   void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
 
-  if (!dest || !conv->set_float) {
+  if (!dest || !conv->store_float) {
     return TS_ERROR;
   }
 
-  conv->set_float(dest, value);
+  conv->store_float(dest, value);
 
   return TS_SUCCESS;
 }
@@ -8456,10 +8438,10 @@ TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
   MgmtConverter const *conv;
   void *src = _conf_to_memberp(conf, reinterpret_cast<HttpSM *>(txnp)->t_state.txn_conf, conv);
 
-  if (!src || !conv->get_float) {
+  if (!src || !conv->load_float) {
     return TS_ERROR;
   }
-  *value = conv->get_float(src);
+  *value = conv->load_float(src);
 
   return TS_SUCCESS;
 }
@@ -8552,8 +8534,8 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   default: {
     MgmtConverter const *conv;
     void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
-    if (dest != nullptr && conv != nullptr && conv->set_string) {
-      conv->set_string(dest, std::string_view(value, length));
+    if (dest != nullptr && conv != nullptr && conv->store_string) {
+      conv->store_string(dest, std::string_view(value, length));
     } else {
       return TS_ERROR;
     }
@@ -8589,8 +8571,8 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   default: {
     MgmtConverter const *conv;
     void *src = _conf_to_memberp(conf, sm->t_state.txn_conf, conv);
-    if (src != nullptr && conv != nullptr && conv->get_string) {
-      auto sv = conv->get_string(src);
+    if (src != nullptr && conv != nullptr && conv->load_string) {
+      auto sv = conv->load_string(src);
       *value  = sv.data();
       *length = sv.size();
     } else {
