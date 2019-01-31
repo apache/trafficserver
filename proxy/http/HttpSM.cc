@@ -7703,7 +7703,7 @@ HttpSM::do_redirect()
 }
 
 void
-HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
+HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_len)
 {
   SMDebug("http_redirect", "[HttpSM::redirect_request]");
   // get a reference to the client request header and client url and check to see if the url is valid
@@ -7754,22 +7754,22 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   // reset the path from previous redirects (if any)
   t_state.redirect_info.redirect_url.path_set(nullptr, 0);
 
-  // redirectUrl.user_set(redirect_url, redirect_len);
-  redirectUrl.parse(redirect_url, redirect_len);
+  redirectUrl.parse(arg_redirect_url, arg_redirect_len);
   {
     int _scheme_len = -1;
     int _host_len   = -1;
-    if (redirectUrl.scheme_get(&_scheme_len) == nullptr && redirectUrl.host_get(&_host_len) != nullptr && redirect_url[0] != '/') {
+    if (redirectUrl.scheme_get(&_scheme_len) == nullptr && redirectUrl.host_get(&_host_len) != nullptr &&
+        arg_redirect_url[0] != '/') {
       // RFC7230 § 5.5
       // The redirect URL lacked a scheme and so it is a relative URL.
       // The redirect URL did not begin with a slash, so we parsed some or all
       // of the the relative URI path as the host.
       // Prepend a slash and parse again.
-      char redirect_url_leading_slash[redirect_len + 1];
+      char redirect_url_leading_slash[arg_redirect_len + 1];
       redirect_url_leading_slash[0] = '/';
-      memcpy(redirect_url_leading_slash + 1, redirect_url, redirect_len + 1);
+      memcpy(redirect_url_leading_slash + 1, arg_redirect_url, arg_redirect_len + 1);
       url_nuke_proxy_stuff(redirectUrl.m_url_impl);
-      redirectUrl.parse(redirect_url_leading_slash, redirect_len + 1);
+      redirectUrl.parse(redirect_url_leading_slash, arg_redirect_len + 1);
     }
   }
 

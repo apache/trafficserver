@@ -7556,7 +7556,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
       URL *r_url = &s->redirect_info.redirect_url;
 
       ink_assert(r_url->valid());
-      base_request->url_get()->copy(r_url);
+      base_request->url_set(r_url);
     } else {
       // this is for multiple cache lookup
       URL *o_url = &s->cache_info.original_url;
