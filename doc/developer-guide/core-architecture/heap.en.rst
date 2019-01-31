@@ -121,6 +121,15 @@ Classes
 
       :arg:`type` must be one of the values specified in :class:`HdrHeapObjImpl`.
 
+   .. function:: int marshal_length
+
+      Compute and return the size of the buffer needed to serialize :arg:`this`.
+
+   .. function:: int marshal(char * buffer, int length)
+
+      Serialize :arg:`this` to :arg:`buffer` of size :arg:`length`. It is required that
+      :arg:`length` be at least the value returned by :func:`HdrHeap::marshal_length`.
+
 .. function:: HdrHeap * new_HdrHeap(int n)
 
    Create and return a new instance of :class:`HdrHeap`. If :arg:`n` is less than ``HDR_HEAP_DEFAULT_SIZE``
@@ -147,8 +156,6 @@ collection operation on the writeable string heap in the header heap by calling
 :func:`HdrHeap::coalesce_str_heaps`. This is done when
 
 *  The amount of dead space in the writable string heap exceeds ``MAX_LOST_STR_SPACE``.
-
-*  The header heap is preparing to be serialized.
 
 *  An external string heap is being added and all current read only string heap slots are used.
 
@@ -188,6 +195,58 @@ try.
 Once space is found for the object, the base members of :class:`HdrHeapObjImpl` are initialized with
 the objec type and size, with the :arg:`m_obj_flags` set to 0.
 
+Serialization
+-------------
+
+Because heaps store the HTTP request / response data, a header heap needs to be serialized to be put
+in to the cache. For performance reasons, it is desirable to be able to unserialize the serialized
+data in place, rather than copying it again. That is, the data is read from disk into a block of
+memory and then that memory is converted to a live data structure. In this case the memory used by
+the heap is owned by some other object and the header heap must not do any clean up. This is
+signaled by the `m_writeable` flag. In an unserialized header heap this is set to ``false`` and such
+a header heap is not allowed to allocate any additional objects or strings - it is immutable.
+
+The primary mechanism to do this is to use swizzling on the pointers in the structure. During
+serialization pointers are converted to offsets and during unserialization these offsets are
+converted back to pointers. To make this simpler, unserialized header heaps are marked read only so
+that updating does not have to be supported. Additionally, :class:`HdrHeap` is a POD and therefore
+has no virtual function table pointer to be stored or restored [#]_.
+
+To serialize, first :func:`HdrHeap::marshal_length` is called to get a buffer size. The
+serialization buffer is created with sufficient space for the header heap and that space is passed
+to :func:`HdrHeap::marshal` to perform the actual serialization. The object heaps are serialized
+followed by the string heaps. No coalescence is done, on the presumption that because the amount
+of dead space is limited by coalescence (as needed) on every string creation.
+
+When serializing strings, each object is responsible for swizzling its own pointers. Because the
+object heaps have already been serialized and all of the header heap object types are also PODs,
+these serialized objects can have the pointer swizzling method, :code:`marshal`, called directly
+on them. This method is provided with a set of "translations" which indicate the base offset for
+each range of object and string heap memory. The object marshalling can then compute the correct
+offset to store for each live string pointer.
+
+Inheriting Strings
+------------------
+
+The string heaps are designed to be reference counted so that they can be shared as read only
+objects between heaps. This enables copying heap objects between heaps less expensive as the
+strings pointers in them can be preserved in the new heap by sharing the string heaps in which
+those strings reside.
+
+This can still be a bit complex as it is possible that the combined number of string heaps is more
+than the limit. In this case, the target header heap does string coalescence so that it is reduced to
+having a single writeable string heap with enough free space to hold all of the strings in the
+source header heap. As a result, it is required that all heap objects already be present in the
+target header heap before the strings are inherited. This means that the string coalescence will
+properly copy the strings of and update the strings pointers in the copied heap objects.
+
 .. rubric:: Footnotes.
 
-.. [#] Not that I can see any good reason for that, if virtual methods instead of :code:`switch` statements were used.
+.. [#]
+
+   Not that I can see any good reason for that, if virtual methods instead of :code:`switch`
+   statements were used.
+
+.. [#]
+
+   Which makes the initialization logic to "fixup" the virtual function pointer rather silly.
