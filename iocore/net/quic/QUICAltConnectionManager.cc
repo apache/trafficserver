@@ -283,6 +283,7 @@ QUICAltConnectionManager::generate_frame(QUICEncryptionLevel level, uint64_t con
           this->_alt_quic_connection_ids_local[i].advertised = true;
         }
 
+        this->_records_new_connection_id_frame(level, *static_cast<QUICNewConnectionIdFrame *>(frame.get()));
         return frame;
       }
     }
@@ -292,10 +293,60 @@ QUICAltConnectionManager::generate_frame(QUICEncryptionLevel level, uint64_t con
   if (!this->_retired_seq_nums.empty()) {
     if (auto s = this->_retired_seq_nums.front()) {
       frame = QUICFrameFactory::create_retire_connection_id_frame(s);
+      this->_records_retire_connection_id_frame(level, *static_cast<QUICRetireConnectionIdFrame *>(frame.get()));
       this->_retired_seq_nums.pop();
       return frame;
     }
   }
 
   return frame;
+}
+
+void
+QUICAltConnectionManager::_records_new_connection_id_frame(QUICEncryptionLevel level, const QUICNewConnectionIdFrame &frame)
+{
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
+  info->type                    = frame.type();
+  info->level                   = level;
+
+  AltConnectionInfo *frame_info = reinterpret_cast<AltConnectionInfo *>(info->data);
+  frame_info->seq_num           = frame.sequence();
+  frame_info->token             = frame.stateless_reset_token();
+  frame_info->id                = frame.connection_id();
+  this->_records_frame(frame.id(), std::move(info));
+}
+
+void
+QUICAltConnectionManager::_records_retire_connection_id_frame(QUICEncryptionLevel level, const QUICRetireConnectionIdFrame &frame)
+{
+  QUICFrameInformationUPtr info            = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
+  info->type                               = frame.type();
+  info->level                              = level;
+  *reinterpret_cast<int64_t *>(info->data) = frame.seq_num();
+  this->_records_frame(frame.id(), std::move(info));
+}
+
+void
+QUICAltConnectionManager::_on_frame_lost(QUICFrameInformationUPtr &info)
+{
+  switch (info->type) {
+  case QUICFrameType::NEW_CONNECTION_ID: {
+    AltConnectionInfo *frame_info = reinterpret_cast<AltConnectionInfo *>(info->data);
+    for (int i = 0; i < this->_nids; ++i) {
+      if (this->_alt_quic_connection_ids_local[i].seq_num == frame_info->seq_num) {
+        ink_assert(this->_alt_quic_connection_ids_local[i].advertised);
+        this->_alt_quic_connection_ids_local[i].advertised = false;
+        this->_need_advertise                              = true;
+        return;
+      }
+    }
+    break;
+  }
+  case QUICFrameType::RETIRE_CONNECTION_ID: {
+    this->_retired_seq_nums.push(*reinterpret_cast<int64_t *>(info->data));
+    break;
+  }
+  default:
+    ink_assert(0);
+  }
 }
