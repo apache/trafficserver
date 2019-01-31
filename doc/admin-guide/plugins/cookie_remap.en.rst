@@ -19,11 +19,8 @@
 
 .. _admin-plugins-cookie_remap:
 
-============================================================
 Cookie Based Routing Inside TrafficServer Using cookie_remap
-============================================================
-
-----
+************************************************************
 
 
 * `Cookie Based Routing Inside TrafficServer Using cookie_remap <#cookie-based-routing-inside-trafficserver-using-cookie_remap>`_

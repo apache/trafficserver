@@ -54,16 +54,16 @@ ts.addSSLfile("ssl/signer2.key")
 
 ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
-    'map /case1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server1.Variables.Port, ts.Variables.SSLDir, "signer.pem")
+    'map /case1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server1.Variables.SSL_Port, ts.Variables.SSLDir, "signer.pem")
 )
 ts.Disk.remap_config.AddLine(
-    'map /badcase1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server1.Variables.Port, ts.Variables.SSLDir, "signer2.pem")
+    'map /badcase1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server1.Variables.SSL_Port, ts.Variables.SSLDir, "signer2.pem")
 )
 ts.Disk.remap_config.AddLine(
-    'map /case2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server2.Variables.Port, ts.Variables.SSLDir, "signer2.pem")
+    'map /case2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server2.Variables.SSL_Port, ts.Variables.SSLDir, "signer2.pem")
 )
 ts.Disk.remap_config.AddLine(
-    'map /badcase2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server2.Variables.Port, ts.Variables.SSLDir, "signer.pem")
+    'map /badcase2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server2.Variables.SSL_Port, ts.Variables.SSLDir, "signer.pem")
 )
 
 ts.Disk.ssl_multicert_config.AddLine(

@@ -23,6 +23,7 @@ experimental_uri_signing_uri_signing_la_SOURCES = \
   experimental/uri_signing/jwt.c                  \
   experimental/uri_signing/match.c                \
   experimental/uri_signing/parse.c                \
+  experimental/uri_signing/normalize.c            \
   experimental/uri_signing/timing.c
 
 experimental_uri_signing_uri_signing_la_LIBADD = @LIBJANSSON@ @LIBCJOSE@ @LIBPCRE@ -lm -lcrypto
@@ -39,4 +40,5 @@ experimental_uri_signing_test_uri_signing_SOURCES = \
     experimental/uri_signing/cookie.c \
     experimental/uri_signing/config.c \
     experimental/uri_signing/timing.c \
+    experimental/uri_signing/normalize.c \
     experimental/uri_signing/match.c

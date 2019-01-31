@@ -34,7 +34,7 @@ ts = Test.MakeATSProcess("ts")
 # second server is run during second test
 server = Test.MakeOriginServer("server", ip='127.0.0.10')
 
-request_header = {"headers": "GET /regexmatches HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET /regexmatches?cookies=oreos-chipsahoy-icecream HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 

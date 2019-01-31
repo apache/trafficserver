@@ -135,7 +135,6 @@ clang-format-iocore:
 
 clang-format-lib:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/include
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/cppapi
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/records
 
 clang-format-mgmt:

@@ -50,9 +50,9 @@ ts.addSSLfile("ssl/signer.key")
 
 ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
-    'map https://bar.com:{0}/ https://foo.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.Port))
+    'map https://bar.com:{0}/ https://foo.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map https://foo.com:{0}/ https://bar.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.Port))
+    'map https://foo.com:{0}/ https://bar.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port))
 
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'

@@ -98,11 +98,6 @@ public:
   {
     return parent ? parent->debug() : false;
   }
-  bool
-  hooks_enabled() const
-  {
-    return parent ? parent->hooks_enabled() : false;
-  }
 
   APIHook *
   ssn_hook_get(TSHttpHookID id) const

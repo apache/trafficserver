@@ -1,3 +1,3 @@
 ``
-Request=GET /i/like/cheetos?.done=http://finance.yahoo.com HTTP/1.1 lookup_key={PATH}
+Serving GET /i/like/cheetos?.done=http://finance.yahoo.com... Finished
 ``

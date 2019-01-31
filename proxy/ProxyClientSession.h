@@ -81,7 +81,7 @@ public:
   virtual void free();
   virtual void start() = 0;
 
-  virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) = 0;
+  virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) = 0;
 
   virtual NetVConnection *get_netvc() const = 0;
 
@@ -132,12 +132,6 @@ public:
   debug() const
   {
     return this->debug_on;
-  }
-
-  bool
-  hooks_enabled() const
-  {
-    return this->hooks_on;
   }
 
   bool
@@ -311,7 +305,6 @@ protected:
 
   // Session specific debug flag.
   bool debug_on   = false;
-  bool hooks_on   = true;
   bool in_destroy = false;
 
   int64_t con_id        = 0;

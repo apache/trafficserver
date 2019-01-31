@@ -53,7 +53,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 ts.Disk.remap_config.AddLine(
-    'map https://example.com:4443 https://127.0.0.1:{0}'.format(server.Variables.Port)
+    'map https://example.com:4443 https://127.0.0.1:{0}'.format(server.Variables.SSL_Port)
 )
 
 Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'ssl_hook_test.cc'), ts, '-out_start=1 -out_close=2')
