@@ -358,8 +358,9 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // vc is an SSLNetVConnection.
   if (!vc->getSSLHandShakeComplete()) {
     if (vc->trackFirstHandshake()) {
-      // Send the write ready on up to the state machine
-      write_signal_and_update(VC_EVENT_WRITE_READY, vc);
+      // Eat the first write-ready.  Until the TLS handshake is complete,
+      // we should still be under the connect timeout and shouldn't bother
+      // the state machine until the TLS handshake is complete
       vc->write.triggered = 0;
       nh->write_ready_list.remove(vc);
     }
