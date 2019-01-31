@@ -56,6 +56,8 @@ QUICPacketRetransmitter::retransmit_packet(const QUICPacket &packet)
     case QUICFrameType::CONNECTION_CLOSE:
     case QUICFrameType::STREAM:
     case QUICFrameType::CRYPTO:
+    case QUICFrameType::NEW_CONNECTION_ID:
+    case QUICFrameType::RETIRE_CONNECTION_ID:
       break;
     default:
       frame     = QUICFrameFactory::create_retransmission_frame(frame->clone(), packet);

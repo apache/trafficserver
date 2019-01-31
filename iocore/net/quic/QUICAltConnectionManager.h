@@ -86,9 +86,7 @@ public:
   QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
 
 private:
-  class AltConnectionInfo
-  {
-  public:
+  struct AltConnectionInfo {
     uint64_t seq_num;
     QUICConnectionId id;
     QUICStatelessResetToken token;
@@ -112,6 +110,11 @@ private:
   AltConnectionInfo _generate_next_alt_con_info();
   void _init_alt_connection_ids(const IpEndpoint *preferred_endpoint = nullptr);
   bool _update_alt_connection_id(uint64_t chosen_seq_num);
+
+  void _records_new_connection_id_frame(QUICEncryptionLevel level, const QUICNewConnectionIdFrame &frame);
+  void _records_retire_connection_id_frame(QUICEncryptionLevel, const QUICRetireConnectionIdFrame &frame);
+
+  void _on_frame_lost(QUICFrameInformationUPtr &info);
 
   QUICConnectionErrorUPtr _register_remote_connection_id(const QUICNewConnectionIdFrame &frame);
   QUICConnectionErrorUPtr _retire_remote_connection_id(const QUICRetireConnectionIdFrame &frame);
