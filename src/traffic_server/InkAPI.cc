@@ -95,10 +95,6 @@ extern AppVersionInfo appVersionInfo;
 static int api_rsb_index;
 static RecRawStatBlock *api_rsb;
 
-static std::type_info const &TYPE_INFO_MGMT_INT   = typeid(MgmtInt);
-static std::type_info const &TYPE_INFO_MGMT_BYTE  = typeid(MgmtByte);
-static std::type_info const &TYPE_INFO_MGMT_FLOAT = typeid(MgmtFloat);
-
 /** Reservation for a user arg.
  */
 struct UserArg {
@@ -7944,32 +7940,63 @@ TSSkipRemappingSet(TSHttpTxn txnp, int flag)
  * to this API handling, with the rest of the code base using the natural types.
  */
 
+/// Unhandled API conversions.
+/// Because the code around the specially handled types still uses this in the default case,
+/// it must compile for those cases. To indicate unhandled, return @c nullptr for @a conv.
+/// @internal This should be a temporary state, eventually the other cases should be handled
+/// via specializations here.
+/// @internal C++ note - THIS MUST BE FIRST IN THE DECLARATIONS or it might be falsely used.
 template <typename T>
 inline void *
 _memberp_to_generic(T *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter IntConverter([](void *data) -> MgmtInt { return *static_cast<MgmtInt *>(data); },
-                                          [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; });
+  conv = nullptr;
+  return ptr;
+}
 
-  static const MgmtConverter ByteConverter{[](void *data) -> MgmtInt { return *static_cast<MgmtByte *>(data); },
-                                           [](void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; }};
+/// API conversion for @c MgmtInt, identify conversion as integer.
+inline void *
+_memberp_to_generic(MgmtInt *ptr, MgmtConverter const *&conv)
+{
+  static const MgmtConverter converter([](void *data) -> MgmtInt { return *static_cast<MgmtInt *>(data); },
+                                       [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; });
 
-  static const MgmtConverter FloatConverter{[](void *data) -> MgmtFloat { return *static_cast<MgmtFloat *>(data); },
-                                            [](void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; }};
+  conv = &converter;
+  return ptr;
+}
 
-  // For now, strings are special.
+/// API conversion for @c MgmtByte, handles integer / byte size differences.
+inline void *
+_memberp_to_generic(MgmtByte *ptr, MgmtConverter const *&conv)
+{
+  static const MgmtConverter converter{[](void *data) -> MgmtInt { return *static_cast<MgmtByte *>(data); },
+                                       [](void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; }};
 
-  auto type = &typeid(T);
-  if (*type == TYPE_INFO_MGMT_INT) {
-    conv = &IntConverter;
-  } else if (*type == TYPE_INFO_MGMT_BYTE) {
-    conv = &ByteConverter;
-  } else if (*type == TYPE_INFO_MGMT_FLOAT) {
-    conv = &FloatConverter;
-  } else {
-    conv = nullptr;
-  }
+  conv = &converter;
+  return ptr;
+}
 
+/// API conversion for @c MgmtFloat, identity conversion as float.
+inline void *
+_memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv)
+{
+  static const MgmtConverter converter{[](void *data) -> MgmtFloat { return *static_cast<MgmtFloat *>(data); },
+                                       [](void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; }};
+
+  conv = &converter;
+  return ptr;
+}
+
+/// API conversion for arbitrary enum.
+/// Handle casting to and from the enum type @a E.
+template <typename E>
+inline auto
+_memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std::enable_if<std::is_enum<E>::value, void *>::type
+{
+  static const MgmtConverter converter{[](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<E *>(data)); },
+                                       [](void *data, MgmtInt i) -> void { *static_cast<E *>(data) = static_cast<E>(i); }};
+
+  conv = &converter;
   return ptr;
 }
 
