@@ -110,7 +110,7 @@ QUICAckFrameManager::_on_frame_lost(QUICFrameInformationUPtr &info)
   ink_assert(info->type == QUICFrameType::ACK);
   int index = QUICTypeUtil::pn_space_index(info->level);
   // when ack frame lost. Force to refresh the frame.
-  this->_ack_creator[index]->refresh_frame();
+  this->_ack_creator[index]->refresh_state();
 }
 
 QUICFrameId
@@ -125,14 +125,20 @@ QUICAckFrameManager::ack_delay_exponent() const
   return this->_ack_delay_exponent;
 }
 
+void
+QUICAckFrameManager::set_max_ack_delay(uint16_t delay)
+{
+  for (auto level : QUIC_PN_SPACES) {
+    this->_ack_creator[static_cast<int>(level)]->set_max_ack_delay(delay);
+  }
+}
+
 //
 // QUICAckFrameManager::QUICAckFrameCreator
 //
 void
-QUICAckFrameManager::QUICAckFrameCreator::refresh_frame()
+QUICAckFrameManager::QUICAckFrameCreator::refresh_state()
 {
-  QUICConfig::scoped_config params;
-
   if (this->_packet_numbers.empty() || !this->_available) {
     return;
   }
@@ -163,8 +169,6 @@ QUICAckFrameManager::QUICAckFrameCreator::forget(QUICPacketNumber largest_acknow
 void
 QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_number, size_t size, bool ack_only)
 {
-  QUICConfig::scoped_config params;
-
   if (packet_number == 0 || packet_number > this->_largest_ack_number) {
     this->_largest_ack_received_time = Thread::get_hrtime();
     this->_largest_ack_number        = packet_number;
@@ -345,15 +349,19 @@ QUICAckFrameManager::QUICAckFrameCreator::available() const
 bool
 QUICAckFrameManager::QUICAckFrameCreator::is_ack_frame_ready()
 {
-  QUICConfig::scoped_config params;
-
   if (this->_available && this->_has_new_data && !this->_packet_numbers.empty() &&
-      this->_latest_packet_received_time + params->max_ack_delay_in() <= Thread::get_hrtime()) {
+      this->_latest_packet_received_time + this->_max_ack_delay * HRTIME_MSECOND <= Thread::get_hrtime()) {
     // when we has new data and the data is available to send (not ack only). and we delay for too much time. Send it out
     this->_should_send = true;
   }
 
   return this->_should_send && this->_available && !this->_packet_numbers.empty();
+}
+
+void
+QUICAckFrameManager::QUICAckFrameCreator::set_max_ack_delay(uint16_t delay)
+{
+  this->_max_ack_delay = delay;
 }
 
 QUICAckFrameManager::QUICAckFrameCreator::QUICAckFrameCreator(QUICEncryptionLevel level, QUICAckFrameManager *ack_manager)

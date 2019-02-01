@@ -51,12 +51,13 @@ public:
     void forget(QUICPacketNumber largest_acknowledged);
     bool available() const;
     bool is_ack_frame_ready();
+    void set_max_ack_delay(uint16_t delay);
 
     // Checks maximum_frame_size and return _ack_frame
     std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> generate_ack_frame(uint16_t maximum_frame_size);
 
-    // timer event handler, refresh _ack_frame;
-    void refresh_frame();
+    // refresh state when frame lost
+    void refresh_state();
 
     QUICPacketNumber largest_ack_number();
     ink_hrtime largest_ack_received_time();
@@ -70,6 +71,7 @@ public:
     bool _should_send                       = false; // ack frame should be sent immediately
     bool _has_new_data                      = false; // new data after last sent
     size_t _size_unsend                     = 0;
+    uint16_t _max_ack_delay                 = 25;
     QUICPacketNumber _largest_ack_number    = 0;
     QUICPacketNumber _expect_next           = 0;
     ink_hrtime _largest_ack_received_time   = 0;
@@ -86,6 +88,7 @@ public:
   ~QUICAckFrameManager();
 
   void set_ack_delay_exponent(uint8_t ack_delay_exponent);
+  void set_max_ack_delay(uint16_t delay);
   void set_force_to_send(bool on = true);
   bool force_to_send() const;
 
