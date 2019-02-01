@@ -41,7 +41,7 @@ ClassAllocator<QUICMaxStreamDataFrame> quicMaxStreamDataFrameAllocator("quicMaxS
 ClassAllocator<QUICMaxStreamsFrame> quicMaxStreamIdFrameAllocator("quicMaxStreamDataIdAllocator");
 ClassAllocator<QUICPingFrame> quicPingFrameAllocator("quicPingFrameAllocator");
 ClassAllocator<QUICBlockedFrame> quicBlockedFrameAllocator("quicBlockedFrameAllocator");
-ClassAllocator<QUICStreamBlockedFrame> quicStreamBlockedFrameAllocator("quicStreamBlockedFrameAllocator");
+ClassAllocator<QUICStreamDataBlockedFrame> quicStreamBlockedFrameAllocator("quicStreamBlockedFrameAllocator");
 ClassAllocator<QUICStreamIdBlockedFrame> quicStreamIdBlockedFrameAllocator("quicStreamIdBlockedFrameAllocator");
 ClassAllocator<QUICNewConnectionIdFrame> quicNewConnectionIdFrameAllocator("quicNewConnectionIdFrameAllocator");
 ClassAllocator<QUICStopSendingFrame> quicStopSendingFrameAllocator("quicStopSendingFrameAllocator");
@@ -1826,13 +1826,13 @@ QUICBlockedFrame::offset() const
 //
 // STREAM_DATA_BLOCKED frame
 //
-QUICStreamBlockedFrame::QUICStreamBlockedFrame(const uint8_t *buf, size_t len)
+QUICStreamDataBlockedFrame::QUICStreamDataBlockedFrame(const uint8_t *buf, size_t len)
 {
   this->parse(buf, len);
 }
 
 void
-QUICStreamBlockedFrame::_reset()
+QUICStreamDataBlockedFrame::_reset()
 {
   this->_stream_id = 0;
   this->_offset    = 0;
@@ -1844,7 +1844,7 @@ QUICStreamBlockedFrame::_reset()
 }
 
 void
-QUICStreamBlockedFrame::parse(const uint8_t *buf, size_t len)
+QUICStreamDataBlockedFrame::parse(const uint8_t *buf, size_t len)
 {
   ink_assert(len >= 1);
   this->_reset();
@@ -1864,25 +1864,25 @@ QUICStreamBlockedFrame::parse(const uint8_t *buf, size_t len)
 }
 
 int
-QUICStreamBlockedFrame::debug_msg(char *msg, size_t msg_len) const
+QUICStreamDataBlockedFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| STREAM_BLOCKED size=%zu  offset=%" PRIu64, this->size(), this->offset());
+  return snprintf(msg, msg_len, "| STREAM_DATA_BLOCKED size=%zu  offset=%" PRIu64, this->size(), this->offset());
 }
 
 QUICFrameUPtr
-QUICStreamBlockedFrame::clone() const
+QUICStreamDataBlockedFrame::clone() const
 {
   return QUICFrameFactory::create_stream_blocked_frame(this->stream_id(), this->offset(), this->_id, this->_owner);
 }
 
 QUICFrameType
-QUICStreamBlockedFrame::type() const
+QUICStreamDataBlockedFrame::type() const
 {
   return QUICFrameType::STREAM_DATA_BLOCKED;
 }
 
 size_t
-QUICStreamBlockedFrame::size() const
+QUICStreamDataBlockedFrame::size() const
 {
   if (this->_size) {
     return this->_size;
@@ -1892,7 +1892,7 @@ QUICStreamBlockedFrame::size() const
 }
 
 size_t
-QUICStreamBlockedFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+QUICStreamDataBlockedFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 {
   if (limit < this->size()) {
     return 0;
@@ -1913,13 +1913,13 @@ QUICStreamBlockedFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 }
 
 QUICStreamId
-QUICStreamBlockedFrame::stream_id() const
+QUICStreamDataBlockedFrame::stream_id() const
 {
   return this->_stream_id;
 }
 
 QUICOffset
-QUICStreamBlockedFrame::offset() const
+QUICStreamDataBlockedFrame::offset() const
 {
   return this->_offset;
 }
@@ -2718,7 +2718,7 @@ QUICFrameFactory::create(const uint8_t *buf, size_t len)
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_blocked_frame);
   case QUICFrameType::STREAM_DATA_BLOCKED:
     frame = quicStreamBlockedFrameAllocator.alloc();
-    new (frame) QUICStreamBlockedFrame(buf, len);
+    new (frame) QUICStreamDataBlockedFrame(buf, len);
     return QUICFrameUPtr(frame, &QUICFrameDeleter::delete_stream_blocked_frame);
   case QUICFrameType::STREAMS_BLOCKED:
     frame = quicStreamIdBlockedFrameAllocator.alloc();
@@ -2898,12 +2898,12 @@ QUICFrameFactory::create_blocked_frame(QUICOffset offset, QUICFrameId id, QUICFr
   return std::unique_ptr<QUICBlockedFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_blocked_frame);
 }
 
-std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc>
+std::unique_ptr<QUICStreamDataBlockedFrame, QUICFrameDeleterFunc>
 QUICFrameFactory::create_stream_blocked_frame(QUICStreamId stream_id, QUICOffset offset, QUICFrameId id, QUICFrameGenerator *owner)
 {
-  QUICStreamBlockedFrame *frame = quicStreamBlockedFrameAllocator.alloc();
-  new (frame) QUICStreamBlockedFrame(stream_id, offset, id, owner);
-  return std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_stream_blocked_frame);
+  QUICStreamDataBlockedFrame *frame = quicStreamBlockedFrameAllocator.alloc();
+  new (frame) QUICStreamDataBlockedFrame(stream_id, offset, id, owner);
+  return std::unique_ptr<QUICStreamDataBlockedFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_stream_blocked_frame);
 }
 
 std::unique_ptr<QUICStreamIdBlockedFrame, QUICFrameDeleterFunc>

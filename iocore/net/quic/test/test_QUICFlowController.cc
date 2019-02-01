@@ -366,7 +366,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     CHECK(ret == 0);
     frame = fc.generate_frame(level, 1024, 1024);
     REQUIRE(frame);
-    CHECK(static_cast<QUICStreamBlockedFrame *>(frame.get())->offset() == 1024);
+    CHECK(static_cast<QUICStreamDataBlockedFrame *>(frame.get())->offset() == 1024);
     QUICFrameId id = frame->id();
 
     // Don't retransmit unless the frame is lost
@@ -377,7 +377,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     fc.on_frame_lost(id);
     frame = fc.generate_frame(level, 1024, 1024);
     REQUIRE(frame);
-    CHECK(static_cast<QUICStreamBlockedFrame *>(frame.get())->offset() == 1024);
+    CHECK(static_cast<QUICStreamDataBlockedFrame *>(frame.get())->offset() == 1024);
 
     // Don't send if it was not blocked
     fc.on_frame_lost(frame->id());
@@ -390,7 +390,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     ret   = fc.update(2048);
     frame = fc.generate_frame(level, 1024, 1024);
     REQUIRE(frame);
-    CHECK(static_cast<QUICStreamBlockedFrame *>(frame.get())->offset() == 2048);
+    CHECK(static_cast<QUICStreamDataBlockedFrame *>(frame.get())->offset() == 2048);
   }
 
   SECTION("MAX_DATA frame")

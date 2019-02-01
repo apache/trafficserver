@@ -380,7 +380,7 @@ QUICStream::recv(const QUICMaxStreamDataFrame &frame)
 }
 
 QUICConnectionErrorUPtr
-QUICStream::recv(const QUICStreamBlockedFrame &frame)
+QUICStream::recv(const QUICStreamDataBlockedFrame &frame)
 {
   // STREAM_DATA_BLOCKED frames are for debugging. Nothing to do here.
   return nullptr;

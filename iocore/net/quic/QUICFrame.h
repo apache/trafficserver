@@ -490,12 +490,12 @@ private:
 // STREAM_DATA_BLOCKED
 //
 
-class QUICStreamBlockedFrame : public QUICFrame
+class QUICStreamDataBlockedFrame : public QUICFrame
 {
 public:
-  QUICStreamBlockedFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICStreamBlockedFrame(const uint8_t *buf, size_t len);
-  QUICStreamBlockedFrame(QUICStreamId s, QUICOffset o, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
+  QUICStreamDataBlockedFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
+  QUICStreamDataBlockedFrame(const uint8_t *buf, size_t len);
+  QUICStreamDataBlockedFrame(QUICStreamId s, QUICOffset o, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
     : QUICFrame(id, owner), _stream_id(s), _offset(o){};
 
   QUICFrameUPtr clone() const override;
@@ -750,7 +750,7 @@ extern ClassAllocator<QUICMaxStreamDataFrame> quicMaxStreamDataFrameAllocator;
 extern ClassAllocator<QUICMaxStreamsFrame> quicMaxStreamIdFrameAllocator;
 extern ClassAllocator<QUICPingFrame> quicPingFrameAllocator;
 extern ClassAllocator<QUICBlockedFrame> quicBlockedFrameAllocator;
-extern ClassAllocator<QUICStreamBlockedFrame> quicStreamBlockedFrameAllocator;
+extern ClassAllocator<QUICStreamDataBlockedFrame> quicStreamBlockedFrameAllocator;
 extern ClassAllocator<QUICStreamIdBlockedFrame> quicStreamIdBlockedFrameAllocator;
 extern ClassAllocator<QUICNewConnectionIdFrame> quicNewConnectionIdFrameAllocator;
 extern ClassAllocator<QUICStopSendingFrame> quicStopSendingFrameAllocator;
@@ -851,7 +851,7 @@ public:
   delete_stream_blocked_frame(QUICFrame *frame)
   {
     frame->~QUICFrame();
-    quicStreamBlockedFrameAllocator.free(static_cast<QUICStreamBlockedFrame *>(frame));
+    quicStreamBlockedFrameAllocator.free(static_cast<QUICStreamDataBlockedFrame *>(frame));
   }
 
   static void
@@ -1020,7 +1020,7 @@ public:
   /*
    * Creates a STREAM_DATA_BLOCKED frame.
    */
-  static std::unique_ptr<QUICStreamBlockedFrame, QUICFrameDeleterFunc> create_stream_blocked_frame(
+  static std::unique_ptr<QUICStreamDataBlockedFrame, QUICFrameDeleterFunc> create_stream_blocked_frame(
     QUICStreamId stream_id, QUICOffset offset, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   /*

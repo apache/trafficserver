@@ -74,7 +74,7 @@ private:
   QUICConnectionErrorUPtr _handle_frame(const QUICRstStreamFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICStopSendingFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICMaxStreamDataFrame &frame);
-  QUICConnectionErrorUPtr _handle_frame(const QUICStreamBlockedFrame &frame);
+  QUICConnectionErrorUPtr _handle_frame(const QUICStreamDataBlockedFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICMaxStreamsFrame &frame);
   std::vector<QUICEncryptionLevel>
   _encryption_level_filter() override

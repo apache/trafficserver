@@ -77,7 +77,7 @@ public:
 
   QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame);
   QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame);
-  QUICConnectionErrorUPtr recv(const QUICStreamBlockedFrame &frame);
+  QUICConnectionErrorUPtr recv(const QUICStreamDataBlockedFrame &frame);
   QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame);
   QUICConnectionErrorUPtr recv(const QUICRstStreamFrame &frame);
 

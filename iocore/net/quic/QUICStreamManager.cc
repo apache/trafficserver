@@ -147,7 +147,7 @@ QUICStreamManager::handle_frame(QUICEncryptionLevel level, const QUICFrame &fram
     break;
   case QUICFrameType::STREAM_DATA_BLOCKED:
     // STREAM_DATA_BLOCKED frame is for debugging. Just propagate to streams
-    error = this->_handle_frame(static_cast<const QUICStreamBlockedFrame &>(frame));
+    error = this->_handle_frame(static_cast<const QUICStreamDataBlockedFrame &>(frame));
     break;
   case QUICFrameType::STREAM:
     error = this->_handle_frame(static_cast<const QUICStreamFrame &>(frame));
@@ -182,7 +182,7 @@ QUICStreamManager::_handle_frame(const QUICMaxStreamDataFrame &frame)
 }
 
 QUICConnectionErrorUPtr
-QUICStreamManager::_handle_frame(const QUICStreamBlockedFrame &frame)
+QUICStreamManager::_handle_frame(const QUICStreamDataBlockedFrame &frame)
 {
   QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
   if (stream) {
