@@ -164,13 +164,13 @@ ProcessManager::processManagerThread(void *arg)
 
     if (pmgmt->require_lm) {
       ret = pmgmt->pollLMConnection();
-      if (ret < 0 && pmgmt->running) {
+      if (ret < 0 && pmgmt->running && !shutdown_event_system) {
         Alert("exiting with read error from process manager: %s", strerror(-ret));
       }
     }
 
     ret = pmgmt->processSignalQueue();
-    if (ret < 0 && pmgmt->running) {
+    if (ret < 0 && pmgmt->running && !shutdown_event_system) {
       Alert("exiting with write error from process manager: %s", strerror(-ret));
     }
   }
