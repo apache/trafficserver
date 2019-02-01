@@ -89,13 +89,13 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   CHECK(sm.stream_count() == 4);
 
   // STREAM_DATA_BLOCKED frames create new streams
-  std::shared_ptr<QUICFrame> stream_blocked_frame = QUICFrameFactory::create_stream_blocked_frame(0x10, 0);
+  std::shared_ptr<QUICFrame> stream_blocked_frame = QUICFrameFactory::create_stream_data_blocked_frame(0x10, 0);
   sm.handle_frame(level, *stream_blocked_frame);
   CHECK(sm.stream_count() == 5);
 
   // Set local maximum stream id
   sm.set_max_streams_bidi(100);
-  std::shared_ptr<QUICFrame> stream_blocked_frame_x = QUICFrameFactory::create_stream_blocked_frame(0x18, 0);
+  std::shared_ptr<QUICFrame> stream_blocked_frame_x = QUICFrameFactory::create_stream_data_blocked_frame(0x18, 0);
   sm.handle_frame(level, *stream_blocked_frame_x);
   CHECK(sm.stream_count() == 5);
 }
@@ -167,8 +167,8 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
   sm.init_flow_control_params(local_tp, remote_tp);
 
   // Create a stream with STREAM_DATA_BLOCKED (== noop)
-  std::shared_ptr<QUICFrame> stream_blocked_frame_0 = QUICFrameFactory::create_stream_blocked_frame(0, 0);
-  std::shared_ptr<QUICFrame> stream_blocked_frame_1 = QUICFrameFactory::create_stream_blocked_frame(4, 0);
+  std::shared_ptr<QUICFrame> stream_blocked_frame_0 = QUICFrameFactory::create_stream_data_blocked_frame(0, 0);
+  std::shared_ptr<QUICFrame> stream_blocked_frame_1 = QUICFrameFactory::create_stream_data_blocked_frame(4, 0);
   sm.handle_frame(level, *stream_blocked_frame_0);
   sm.handle_frame(level, *stream_blocked_frame_1);
   CHECK(sm.stream_count() == 2);

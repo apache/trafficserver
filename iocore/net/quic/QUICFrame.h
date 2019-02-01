@@ -1021,7 +1021,7 @@ public:
   /*
    * Creates a STREAM_DATA_BLOCKED frame.
    */
-  static std::unique_ptr<QUICStreamDataBlockedFrame, QUICFrameDeleterFunc> create_stream_blocked_frame(
+  static std::unique_ptr<QUICStreamDataBlockedFrame, QUICFrameDeleterFunc> create_stream_data_blocked_frame(
     QUICStreamId stream_id, QUICOffset offset, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
   /*

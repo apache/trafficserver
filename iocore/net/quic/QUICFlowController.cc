@@ -241,7 +241,7 @@ QUICLocalConnectionFlowController::_create_frame()
 QUICFrameUPtr
 QUICRemoteStreamFlowController::_create_frame()
 {
-  auto frame = QUICFrameFactory::create_stream_blocked_frame(this->_stream_id, this->_offset, this->_issue_frame_id(), this);
+  auto frame = QUICFrameFactory::create_stream_data_blocked_frame(this->_stream_id, this->_offset, this->_issue_frame_id(), this);
   QUICFrameInformationUPtr info                 = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                                    = frame->type();
   info->level                                   = QUICEncryptionLevel::NONE;
