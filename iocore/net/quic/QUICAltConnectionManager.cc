@@ -283,7 +283,7 @@ QUICAltConnectionManager::generate_frame(QUICEncryptionLevel level, uint64_t con
           this->_alt_quic_connection_ids_local[i].advertised = true;
         }
 
-        this->_records_new_connection_id_frame(level, *static_cast<QUICNewConnectionIdFrame *>(frame.get()));
+        this->_records_new_connection_id_frame(level, static_cast<const QUICNewConnectionIdFrame &>(*frame));
         return frame;
       }
     }
@@ -293,7 +293,7 @@ QUICAltConnectionManager::generate_frame(QUICEncryptionLevel level, uint64_t con
   if (!this->_retired_seq_nums.empty()) {
     if (auto s = this->_retired_seq_nums.front()) {
       frame = QUICFrameFactory::create_retire_connection_id_frame(s);
-      this->_records_retire_connection_id_frame(level, *static_cast<QUICRetireConnectionIdFrame *>(frame.get()));
+      this->_records_retire_connection_id_frame(level, static_cast<const QUICRetireConnectionIdFrame &>(*frame));
       this->_retired_seq_nums.pop();
       return frame;
     }
