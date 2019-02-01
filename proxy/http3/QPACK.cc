@@ -898,7 +898,7 @@ QPACK::_decode(EThread *ethread, Continuation *cont, uint64_t stream_id, const u
 bool
 QPACK::_add_to_blocked_list(DecodeRequest *decode_request)
 {
-  if (this->_blocked_list.count() >= SETTINGS_QPACK_BLOCKED_STREAMS) {
+  if (this->_blocked_list.count() >= this->_max_blocking_streams) {
     return false;
   }
 

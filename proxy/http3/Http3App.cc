@@ -136,7 +136,7 @@ Http3App::create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type)
 
     this->_local_uni_stream_map.insert(std::make_pair(new_stream_id, type));
 
-    Debug("http3", "[%llu] %s stream is created", new_stream_id, Http3DebugNames::stream_type(type));
+    Debug("http3", "[%" PRIu64 "] %s stream is created", new_stream_id, Http3DebugNames::stream_type(type));
   } else {
     Debug("http3", "Could not creat %s stream", Http3DebugNames::stream_type(type));
   }
