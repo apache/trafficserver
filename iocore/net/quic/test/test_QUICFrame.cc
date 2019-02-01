@@ -1058,7 +1058,8 @@ TEST_CASE("Load Blocked Frame", "[quic]")
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
     CHECK(frame1->type() == QUICFrameType::DATA_BLOCKED);
     CHECK(frame1->size() == 2);
-    std::shared_ptr<const QUICBlockedFrame> blocked_stream_frame = std::dynamic_pointer_cast<const QUICBlockedFrame>(frame1);
+    std::shared_ptr<const QUICDataBlockedFrame> blocked_stream_frame =
+      std::dynamic_pointer_cast<const QUICDataBlockedFrame>(frame1);
     CHECK(blocked_stream_frame != nullptr);
     CHECK(blocked_stream_frame->offset() == 0x07);
   }
@@ -1083,7 +1084,7 @@ TEST_CASE("Store Blocked Frame", "[quic]")
     0x08, // Type
     0x07, // Offset
   };
-  QUICBlockedFrame blocked_stream_frame(0x07, 0, nullptr);
+  QUICDataBlockedFrame blocked_stream_frame(0x07, 0, nullptr);
   CHECK(blocked_stream_frame.size() == 2);
 
   blocked_stream_frame.store(buf, &len, 65535);
