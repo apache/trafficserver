@@ -97,7 +97,7 @@ msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, 
     const uint8_t *tmp = reinterpret_cast<const uint8_t *>(buf);
     int msg_type       = tmp[0];
 
-    Debug(tag, "%s (%d), %s (%d)", content_type_str(content_type), content_type, hs_type_str(msg_type), msg_type);
+    Debug(tag, "%s (%d), %s (%d) len=%zu", content_type_str(content_type), content_type, hs_type_str(msg_type), msg_type, len);
     return;
   }
 
