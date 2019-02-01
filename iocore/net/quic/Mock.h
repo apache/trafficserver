@@ -281,6 +281,12 @@ public:
   {
   }
 
+  std::string_view
+  negotiated_application_name() const override
+  {
+    return "h3-17";
+  }
+
   int _transmit_count   = 0;
   int _retransmit_count = 0;
   Ptr<ProxyMutex> _mutex;
@@ -371,6 +377,12 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
   is_closed() const override
   {
     return false;
+  }
+
+  std::string_view
+  negotiated_application_name() const override
+  {
+    return "h3-17";
   }
 };
 
