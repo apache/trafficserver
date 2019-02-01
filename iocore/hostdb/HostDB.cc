@@ -678,14 +678,7 @@ Lretry:
   c->init(hash, opt);
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::probeEvent);
 
-  // Since ProxyMutexPtr has a cast operator, gcc-3.x get upset
-  // about ambiguity when doing this comparison, so by reversing
-  // the operands, I force it to pick the cast operation /leif.
-  if (thread->mutex == cont->mutex) {
-    thread->schedule_in(c, MUTEX_RETRY_DELAY);
-  } else {
-    dnsProcessor.thread->schedule_imm(c);
-  }
+  thread->schedule_in(c, MUTEX_RETRY_DELAY);
 
   return &c->action;
 }
@@ -796,11 +789,7 @@ HostDBProcessor::getSRVbyname_imm(Continuation *cont, process_srv_info_pfn proce
   c->init(hash, copt);
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::probeEvent);
 
-  if (thread->mutex == cont->mutex) {
-    thread->schedule_in(c, MUTEX_RETRY_DELAY);
-  } else {
-    dnsProcessor.thread->schedule_imm(c);
-  }
+  thread->schedule_in(c, MUTEX_RETRY_DELAY);
 
   return &c->action;
 }
@@ -902,11 +891,7 @@ HostDBProcessor::iterate(Continuation *cont)
   c->current_iterate_pos = 0;
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::iterateEvent);
 
-  if (thread->mutex == cont->mutex) {
-    thread->schedule_in(c, HOST_DB_RETRY_PERIOD);
-  } else {
-    dnsProcessor.thread->schedule_imm(c);
-  }
+  thread->schedule_in(c, HOST_DB_RETRY_PERIOD);
 
   return &c->action;
 }
