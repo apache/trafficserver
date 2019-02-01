@@ -182,7 +182,7 @@ send_pull_message(RecMessageT msg_type)
 RecErrT
 recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
 {
-  RecRecord *r;
+  RecRecordSerialized *r;
   RecMessageItr itr;
 
   switch (msg_type) {
@@ -359,8 +359,8 @@ RecRegisterConfigCounter(RecT rec_type, const char *name, RecCounter data_defaul
 // RecSetRecordXXX
 //-------------------------------------------------------------------------
 RecErrT
-RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, RecSourceT source, bool lock,
-             bool inc_version)
+RecSetRecord(RecT rec_type, std::string_view name, RecDataT data_type, RecData *data, RecRawStat *data_raw, RecSourceT source,
+             bool lock, bool inc_version)
 {
   RecErrT err = REC_ERR_OKAY;
   RecRecord *r1;
@@ -406,8 +406,6 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
       }
       rec_mutex_release(&(r1->lock));
     } else {
-      // We don't need to ats_strdup() here as we will make copies of any
-      // strings when we marshal them into our RecMessage buffer.
       RecRecord r2;
 
       RecRecordInit(&r2);
@@ -445,7 +443,7 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
     } else {
       err = send_set_message(r1);
     }
-    g_records_ht.emplace(name, r1);
+    g_records_ht.emplace(r1->name, r1);
   }
 
 Ldone:
@@ -457,7 +455,7 @@ Ldone:
 }
 
 RecErrT
-RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock, bool inc_version)
+RecSetRecordConvert(std::string_view const &name, const RecString rec_string, RecSourceT source, bool lock, bool inc_version)
 {
   RecData data;
   data.rec_string = rec_string;
@@ -523,7 +521,7 @@ CheckSnapFileVersion(const char *path)
 RecErrT
 RecReadStatsFile()
 {
-  RecRecord *r;
+  RecRecordSerialized *r;
   RecMessage *m;
   RecMessageItr itr;
   RecPersistT persist_type = RECP_NULL;
@@ -537,21 +535,21 @@ RecReadStatsFile()
   if ((m = RecMessageReadFromDisk(snap_fpath)) != nullptr) {
     if (RecMessageUnmarshalFirst(m, &itr, &r) != REC_ERR_FAIL) {
       do {
-        if ((r->name == nullptr) || (!strlen(r->name))) {
+        if (r->name.empty()) {
           continue;
         }
 
         // If we don't have a persistence type for this record, it means that it is not a stat, or it is
         // not registered yet. Either way, it's ok to just set the persisted value and keep going.
         if (RecGetRecordPersistenceType(r->name, &persist_type, false /* lock */) != REC_ERR_OKAY) {
-          RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
+          RecDebug(DL_Debug, "restoring value for persisted stat '%.*s'", static_cast<int>(r->name.size()), r->name.data());
           RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SOURCE_EXPLICIT, false);
           continue;
         }
 
         if (!REC_TYPE_IS_STAT(r->rec_type)) {
           // This should not happen, but be defensive against records changing their type ..
-          RecLog(DL_Warning, "skipping restore of non-stat record '%s'", r->name);
+          RecLog(DL_Warning, "skipping restore of non-stat record '%.*s'", static_cast<int>(r->name.size()), r->name.data());
           continue;
         }
 
@@ -559,11 +557,12 @@ RecReadStatsFile()
         // already registered with an updated persistence type, then we don't want to set it. We should
         // keep the registered value.
         if (persist_type == RECP_NON_PERSISTENT) {
-          RecDebug(DL_Debug, "preserving current value of formerly persistent stat '%s'", r->name);
+          RecDebug(DL_Debug, "preserving current value of formerly persistent stat '%.*s'", static_cast<int>(r->name.size()),
+                   r->name.data());
           continue;
         }
 
-        RecDebug(DL_Debug, "restoring value for persisted stat '%s'", r->name);
+        RecDebug(DL_Debug, "restoring value for persisted stat '%.*s'", static_cast<int>(r->name.size()), r->name.data());
         RecSetRecord(r->rec_type, r->name, r->data_type, &(r->data), &(r->stat_meta.data_raw), REC_SOURCE_EXPLICIT, false);
       } while (RecMessageUnmarshalNext(m, &itr, &r) != REC_ERR_FAIL);
     }
@@ -683,10 +682,10 @@ RecSyncConfigToTB(TextBuffer *tb, bool *inc_version)
       rec_mutex_acquire(&(r->lock));
       if (REC_TYPE_IS_CONFIG(r->rec_type)) {
         if (r->sync_required & REC_DISK_SYNC_REQUIRED) {
-          if (g_rec_config_contents_ht.find(r->name) == g_rec_config_contents_ht.end()) {
+          if (g_rec_config_contents_ht.find(r->name_store) == g_rec_config_contents_ht.end()) {
             cfe             = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
             cfe->entry_type = RECE_RECORD;
-            cfe->entry      = ats_strdup(r->name);
+            cfe->entry      = ats_strdup(r->name.data());
             enqueue(g_rec_config_contents_llq, (void *)cfe);
             g_rec_config_contents_ht.emplace(r->name);
           }
@@ -820,7 +819,7 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
       if ((r->config_meta.update_required & update_required_type) && (r->config_meta.update_cb_list)) {
         RecConfigUpdateCbList *cur_callback = nullptr;
         for (cur_callback = r->config_meta.update_cb_list; cur_callback; cur_callback = cur_callback->next) {
-          (*(cur_callback->update_cb))(r->name, r->data_type, r->data, cur_callback->update_cookie);
+          (*(cur_callback->update_cb))(r->name.data(), r->data_type, r->data, cur_callback->update_cookie);
         }
         r->config_meta.update_required = r->config_meta.update_required & ~update_required_type;
       }
@@ -861,7 +860,7 @@ reset_stat_record(RecRecord *rec)
 // RecResetStatRecord
 //------------------------------------------------------------------------
 RecErrT
-RecResetStatRecord(const char *name)
+RecResetStatRecord(std::string_view name)
 {
   RecErrT err = REC_ERR_FAIL;
 

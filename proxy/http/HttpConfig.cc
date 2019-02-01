@@ -950,7 +950,7 @@ void
 load_negative_caching_var(RecRecord const *r, void *cookie)
 {
   HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
-  set_negative_caching_list(r->name, r->data_type, r->data, c, false);
+  set_negative_caching_list(r->name.data(), r->data_type, r->data, c, false);
 }
 
 ////////////////////////////////////////////////////////////////

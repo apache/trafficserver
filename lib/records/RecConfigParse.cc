@@ -38,7 +38,7 @@
 
 const char *g_rec_config_fpath = nullptr;
 LLQ *g_rec_config_contents_llq = nullptr;
-std::unordered_set<std::string> g_rec_config_contents_ht;
+std::unordered_set<std::string_view> g_rec_config_contents_ht;
 ink_mutex g_rec_config_lock;
 
 //-------------------------------------------------------------------------

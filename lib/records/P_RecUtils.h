@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <string_view>
+
 #include "tscore/Diags.h"
 #include "tscore/ink_atomic.h"
 
@@ -41,7 +43,7 @@
 //-------------------------------------------------------------------------
 void RecRecordInit(RecRecord *r);
 void RecRecordFree(RecRecord *r);
-RecRecord *RecAlloc(RecT rec_type, const char *name, RecDataT data_type);
+RecRecord *RecAlloc(RecT rec_type, std::string_view name, RecDataT data_type);
 
 //-------------------------------------------------------------------------
 // RecData Utils

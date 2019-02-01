@@ -1,3 +1,4 @@
+
 /** @file
 
   A brief file description
@@ -292,7 +293,7 @@ send_record_get_response(int fd, const RecRecord *rec)
   if (rec) {
     type   = rec->data_type;
     rclass = rec->rec_type;
-    name   = const_cast<MgmtMarshallString>(rec->name);
+    name   = const_cast<MgmtMarshallString>(rec->name.data());
   } else {
     type   = RECD_NULL;
     rclass = RECT_NULL;
@@ -302,17 +303,17 @@ send_record_get_response(int fd, const RecRecord *rec)
   switch (type) {
   case RECD_INT:
     type      = TS_REC_INT;
-    value.ptr = (void *)&rec->data.rec_int;
+    value.ptr = const_cast<void *>(static_cast<void const *>(&rec->data.rec_int));
     value.len = sizeof(RecInt);
     break;
   case RECD_COUNTER:
     type      = TS_REC_COUNTER;
-    value.ptr = (void *)&rec->data.rec_counter;
+    value.ptr = const_cast<void *>(static_cast<void const *>(&rec->data.rec_counter));
     value.len = sizeof(RecCounter);
     break;
   case RECD_FLOAT:
     type      = TS_REC_FLOAT;
-    value.ptr = (void *)&rec->data.rec_float;
+    value.ptr = const_cast<void *>(static_cast<void const *>(&rec->data.rec_float));
     value.len = sizeof(RecFloat);
     break;
   case RECD_STRING:
@@ -893,7 +894,7 @@ send_record_describe(const RecRecord *rec, void *edata)
       return;
     }
 
-    rec_name       = const_cast<char *>(rec->name);
+    rec_name       = const_cast<char *>(rec->name.data());
     rec_type       = rec->data_type;
     rec_class      = rec->rec_type;
     rec_version    = rec->version;

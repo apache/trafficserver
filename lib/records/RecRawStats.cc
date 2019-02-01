@@ -582,7 +582,7 @@ RecExecRawStatSyncCbs()
           raw_stat_clear(r->stat_meta.sync_rsb, r->stat_meta.sync_id);
           r->stat_meta.sync_rsb->global[r->stat_meta.sync_id]->version = r->version;
         } else {
-          (*(r->stat_meta.sync_cb))(r->name, r->data_type, &(r->data), r->stat_meta.sync_rsb, r->stat_meta.sync_id);
+          (*(r->stat_meta.sync_cb))(r->name.data(), r->data_type, &(r->data), r->stat_meta.sync_rsb, r->stat_meta.sync_id);
         }
         r->sync_required = REC_SYNC_REQUIRED;
       }

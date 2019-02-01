@@ -142,7 +142,7 @@ void
 Load_Config_Var(RecRecord const *r, void *)
 {
   for (auto cb = r->config_meta.update_cb_list; nullptr != cb; cb = cb->next) {
-    cb->update_cb(r->name, r->data_type, r->data, cb->update_cookie);
+    cb->update_cb(r->name.data(), r->data_type, r->data, cb->update_cookie);
   }
 }
 

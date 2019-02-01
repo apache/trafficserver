@@ -187,16 +187,11 @@ static void
 handle_record_read(const RecRecord *rec, void *edata)
 {
   HostStatus &hs = HostStatus::instance();
-  std::string hostname;
 
   if (rec) {
-    Debug("host_statuses", "name: %s", rec->name);
+    Debug("host_statuses", "name: %.*s", static_cast<int>(rec->name.size()), rec->name.data());
+    std::string hostname(ts::TextView{rec->name}.remove_prefix(stat_prefix.length()));
 
-    // parse the hostname from the stat name
-    char *s = const_cast<char *>(rec->name);
-    // 1st move the pointer past the stat prefix.
-    s += stat_prefix.length();
-    hostname = s;
     hs.createHostStat(hostname.c_str(), rec->data.rec_string);
     HostStatRec h(rec->data.rec_string);
     hs.loadRecord(hostname, h);

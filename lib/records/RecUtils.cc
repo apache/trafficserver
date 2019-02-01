@@ -33,7 +33,7 @@
 void
 RecRecordInit(RecRecord *r)
 {
-  ink_zero(*r);
+  //  ink_zero(*r);
   rec_mutex_init(&(r->lock), nullptr);
 }
 
@@ -47,7 +47,7 @@ RecRecordFree(RecRecord *r)
 // RecAlloc
 //-------------------------------------------------------------------------
 RecRecord *
-RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
+RecAlloc(RecT rec_type, std::string_view name, RecDataT data_type)
 {
   if (g_num_records >= REC_MAX_RECORDS) {
     Warning("too many stats/configs, please increase REC_MAX_RECORDS or rebuild with --with_max_api_stats=<n>");
@@ -58,10 +58,11 @@ RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
   RecRecord *r = &(g_records[i]);
 
   RecRecordInit(r);
-  r->rec_type  = rec_type;
-  r->name      = ats_strdup(name);
-  r->order     = i;
-  r->data_type = data_type;
+  r->rec_type   = rec_type;
+  r->name_store = name;
+  r->name       = r->name_store;
+  r->order      = i;
+  r->data_type  = data_type;
 
   return r;
 }

@@ -140,8 +140,14 @@ RecErrT RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock *rsb, int
 // already been taken out for the callback.
 
 // RecSetRecordConvert -> WebMgmtUtils.cc::varSetFromStr()
-RecErrT RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock = true,
+RecErrT RecSetRecordConvert(std::string_view const &name, const RecString rec_string, RecSourceT source, bool lock = true,
                             bool inc_version = true);
+inline RecErrT
+RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock = true, bool inc_version = true)
+{
+  return RecSetRecordConvert(std::string_view{name ? name : ""}, rec_string, source, lock, inc_version);
+}
+
 RecErrT RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock = true, bool inc_version = true);
 RecErrT RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock = true, bool inc_version = true);
 RecErrT RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock = true,
@@ -168,7 +174,12 @@ RecErrT RecLookupMatchingRecords(unsigned rec_type, const char *match, RecLookup
 
 RecErrT RecGetRecordType(const char *name, RecT *rec_type, bool lock = true);
 RecErrT RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock = true);
-RecErrT RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lock = true);
+RecErrT RecGetRecordPersistenceType(std::string_view name, RecPersistT *persist_type, bool lock = true);
+inline RecErrT
+RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lock = true)
+{
+  return RecGetRecordPersistenceType(std::string_view{name ? name : ""}, persist_type, lock);
+}
 RecErrT RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock = true);
 RecErrT RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock = true);
 RecErrT RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock = true);
@@ -296,7 +307,12 @@ RecString REC_readString(const char *name, bool *found, bool lock = true);
 //------------------------------------------------------------------------
 // Clear Statistics
 //------------------------------------------------------------------------
-RecErrT RecResetStatRecord(const char *name);
+RecErrT RecResetStatRecord(std::string_view name);
+inline RecErrT
+RecResetStatRecord(const char *name)
+{
+  return RecResetStatRecord(std::string_view{name ? name : ""});
+}
 RecErrT RecResetStatRecord(RecT type = RECT_NULL, bool all = false);
 
 //------------------------------------------------------------------------

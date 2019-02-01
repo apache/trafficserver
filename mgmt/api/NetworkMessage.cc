@@ -284,7 +284,7 @@ send_mgmt_response(int fd, OpType optype, ...)
 
   ink_assert(msglen >= 0);
 
-  reply.ptr = (char *)ats_malloc(msglen);
+  reply.ptr = static_cast<char *>(ats_malloc(msglen));
   reply.len = msglen;
 
   // Marshall the message itself.

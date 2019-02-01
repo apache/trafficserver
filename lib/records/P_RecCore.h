@@ -34,10 +34,11 @@
 
 #include <unordered_set>
 #include <unordered_map>
+#include <array>
 
 // records, record hash-table, and hash-table rwlock
-extern RecRecord *g_records;
-extern std::unordered_map<std::string, RecRecord *> g_records_ht;
+extern std::array<RecRecord, REC_MAX_RECORDS> g_records;
+extern std::unordered_map<std::string_view, RecRecord *> g_records_ht;
 extern ink_rwlock g_records_rwlock;
 extern int g_num_records;
 extern RecModeT g_mode_type;
@@ -45,7 +46,8 @@ extern RecModeT g_mode_type;
 // records.config items
 extern const char *g_rec_config_fpath;
 extern LLQ *g_rec_config_contents_llq;
-extern std::unordered_set<std::string> g_rec_config_contents_ht;
+// This contains names that are records and so depends on the storage there for key storage.
+extern std::unordered_set<std::string_view> g_rec_config_contents_ht;
 extern ink_mutex g_rec_config_lock;
 
 //-------------------------------------------------------------------------
@@ -58,19 +60,40 @@ int RecCoreInit(RecModeT mode_type, Diags *diags);
 // Registration/Insertion
 //-------------------------------------------------------------------------
 
-RecRecord *RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type);
+RecRecord *RecRegisterStat(RecT rec_type, std::string_view name, RecDataT data_type, RecData data_default,
+                           RecPersistT persist_type);
+inline RecRecord *
+RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type)
+{
+  return RecRegisterStat(rec_type, std::string_view{name ? name : ""}, data_type, data_default, persist_type);
+}
 
-RecRecord *RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecUpdateT update_type,
+RecRecord *RecRegisterConfig(RecT rec_type, std::string_view name, RecDataT data_type, RecData data_default, RecUpdateT update_type,
                              RecCheckT check_type, const char *check_regex, RecSourceT source, RecAccessT access_type = RECA_NULL);
 
-RecRecord *RecForceInsert(RecRecord *record);
+inline RecRecord *
+RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecUpdateT update_type,
+                  RecCheckT check_type, const char *check_regex, RecSourceT source, RecAccessT access_type = RECA_NULL)
+{
+  return RecRegisterConfig(rec_type, std::string_view{name ? name : ""}, data_type, data_default, update_type, check_type,
+                           check_regex, source, access_type);
+}
+
+/** Add @a record to the global table.
+ *
+ * @param record Record data to insert.
+ * @return The record in the global table.
+ *
+ * This adds or overrides as needed to insert @a record.
+ */
+RecRecord *RecForceInsert(RecRecordSerialized *record);
 
 //-------------------------------------------------------------------------
 // Setting/Getting
 //-------------------------------------------------------------------------
 
-RecErrT RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *raw_stat, RecSourceT source,
-                     bool lock = true, bool inc_version = true);
+RecErrT RecSetRecord(RecT rec_type, std::string_view name, RecDataT data_type, RecData *data, RecRawStat *raw_stat,
+                     RecSourceT source, bool lock = true, bool inc_version = true);
 
 RecErrT RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool lock = true);
 

@@ -40,8 +40,8 @@ RecMessage *RecMessageAlloc(RecMessageT msg_type, int initial_size = 256);
 int RecMessageFree(RecMessage *msg);
 
 RecMessage *RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record);
-int RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record);
-int RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record);
+int RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecordSerialized **record);
+int RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecordSerialized **record);
 
 int RecMessageSend(RecMessage *msg);
 int RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie);

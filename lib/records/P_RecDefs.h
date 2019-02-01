@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "I_RecDefs.h"
 
 #define REC_CONFIG_FILE "records.config"
@@ -99,22 +101,38 @@ struct RecConfigMeta {
   RecSourceT source; ///< Source of the configuration value.
 };
 
-struct RecRecord {
-  RecT rec_type;
-  const char *name;
-  RecDataT data_type;
-  RecData data;
-  RecData data_default;
-  RecMutex lock;
-  unsigned char sync_required;
-  uint32_t version;
-  bool registered;
+/** librecords record (serialized form).
+ * This is presumed to be aliased over a serialized buffer and the string storage embedded in that
+ * buffer.
+ *
+ */
+struct RecRecordSerialized {
+  RecT rec_type{RECT_NULL};       ///< Type of record.
+  std::string_view name;          ///< Record name.
+  RecDataT data_type{RECD_NULL};  ///< Type of data in the record.
+  RecData data{0};                ///< Actual data.
+  RecData data_default{0};        ///< Default value for data.
+  RecMutex lock;                  ///< Lock for this record.
+  unsigned char sync_required{0}; ///< Flag for requiring ICP sync.
+  uint32_t version{0};            ///< Data version.
+  bool registered{false};         ///< Flag for being registered in the global table.
   union {
     RecStatMeta stat_meta;
     RecConfigMeta config_meta;
   };
-  int order;
-  int rsb_id;
+  int order{0};
+  int rsb_id{0}; ///< Offset in raw stat block for stat records.
+};
+
+/** librecords record (global table form)
+ *
+ * Adds in class storage for the name string so it can be safely used after deserialization.
+ *
+ * @note This ends up aliasing the name, but I decided that was better than either duplicating the
+ * class defines, or have a more complicated inheritance structure.
+ */
+struct RecRecord : public RecRecordSerialized {
+  std::string name_store; ///< Storage for @a name.
 };
 
 //-------------------------------------------------------------------------

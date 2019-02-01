@@ -73,20 +73,18 @@ RecMessage *
 RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
 {
   int msg_ele_size;
-  int rec_name_len         = -1;
   int rec_data_str_len     = -1;
   int rec_data_def_str_len = -1;
   int rec_cfg_chk_len      = -1;
   RecMessageEleHdr *ele_hdr;
-  RecRecord *r;
+  RecRecordSerialized *r;
+  char *r_raw; // @a r as a char pointer.
   char *p;
 
   // find out how much space we need
-  msg_ele_size = sizeof(RecMessageEleHdr) + sizeof(RecRecord);
-  if (record->name) {
-    rec_name_len = strlen(record->name) + 1;
-    msg_ele_size += rec_name_len;
-  }
+  msg_ele_size = sizeof(RecMessageEleHdr) + sizeof(RecRecordSerialized);
+  // always write something, even if it's just a terminal null.
+  msg_ele_size += record->name.size() + 1;
   if (record->data_type == RECD_STRING) {
     if (record->data.rec_string) {
       rec_data_str_len = strlen(record->data.rec_string) + 1;
@@ -124,15 +122,15 @@ RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
   ele_hdr->magic  = REC_MESSAGE_ELE_MAGIC;
   ele_hdr->o_next = msg->o_write;
   p               = (char *)ele_hdr + sizeof(RecMessageEleHdr);
-  memcpy(p, record, sizeof(RecRecord));
-  r = (RecRecord *)p;
-  p += sizeof(RecRecord);
-  if (rec_name_len != -1) {
-    ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_name_len);
-    memcpy(p, record->name, rec_name_len);
-    r->name = (char *)((uintptr_t)p - (uintptr_t)r);
-    p += rec_name_len;
-  }
+  memcpy(p, record, sizeof(RecRecordSerialized));
+  r_raw = p;
+  r     = reinterpret_cast<RecRecordSerialized *>(r_raw);
+  p += sizeof(RecRecordSerialized);
+  ink_assert((msg->o_end - (reinterpret_cast<uintptr_t>(p) - reinterpret_cast<uintptr_t>(msg)) >=
+              reinterpret_cast<uintptr_t>(record->name.size() + 1)));
+  memcpy(p, record->name.data(), record->name.size() + 1);
+  r->name = std::string_view{reinterpret_cast<char *>(p - r_raw), record->name.size()};
+  p += record->name.size() + 1;
   if (rec_data_str_len != -1) {
     ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_data_str_len);
     memcpy(p, record->data.rec_string, rec_data_str_len);
@@ -161,7 +159,7 @@ RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
 //-------------------------------------------------------------------------
 
 int
-RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
+RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecordSerialized **record)
 {
   itr->ele_hdr = (RecMessageEleHdr *)((char *)msg + msg->o_start);
   itr->next    = 1;
@@ -174,22 +172,23 @@ RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record
 //-------------------------------------------------------------------------
 
 int
-RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
+RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecordSerialized **record)
 {
   RecMessageEleHdr *eh;
-  RecRecord *r;
+  RecRecordSerialized *r;
+  auto msg_raw = reinterpret_cast<char *>(msg);
 
   if (itr == nullptr) {
     if (msg->entries == 0) {
       return REC_ERR_FAIL;
     } else {
-      eh = (RecMessageEleHdr *)((char *)msg + msg->o_start);
+      eh = reinterpret_cast<RecMessageEleHdr *>(msg_raw + msg->o_start);
     }
   } else {
     if (itr->next >= msg->entries) {
       return REC_ERR_FAIL;
     }
-    itr->ele_hdr = (RecMessageEleHdr *)((char *)(msg) + itr->ele_hdr->o_next);
+    itr->ele_hdr = reinterpret_cast<RecMessageEleHdr *>(msg_raw + itr->ele_hdr->o_next);
     itr->next += 1;
     eh = itr->ele_hdr;
   }
@@ -202,21 +201,21 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
     return REC_ERR_FAIL;
   }
 
-  r = (RecRecord *)((char *)eh + sizeof(RecMessageEleHdr));
+  r          = reinterpret_cast<RecRecordSerialized *>(eh + 1);
+  auto raw_r = reinterpret_cast<char *>(r);
 
-  if (r->name) {
-    r->name = (char *)r + (intptr_t)(r->name);
-  }
+  r->name = std::string_view{raw_r + reinterpret_cast<ptrdiff_t>(r->name.data()), r->name.size()};
+
   if (r->data_type == RECD_STRING) {
     if (r->data.rec_string) {
-      r->data.rec_string = (char *)r + (intptr_t)(r->data.rec_string);
+      r->data.rec_string = raw_r + reinterpret_cast<intptr_t>(r->data.rec_string);
     }
     if (r->data_default.rec_string) {
-      r->data_default.rec_string = (char *)r + (intptr_t)(r->data_default.rec_string);
+      r->data_default.rec_string = raw_r + reinterpret_cast<intptr_t>(r->data_default.rec_string);
     }
   }
   if (REC_TYPE_IS_CONFIG(r->rec_type) && (r->config_meta.check_expr)) {
-    r->config_meta.check_expr = (char *)r + (intptr_t)(r->config_meta.check_expr);
+    r->config_meta.check_expr = raw_r + reinterpret_cast<intptr_t>(r->config_meta.check_expr);
   }
 
   *record = r;

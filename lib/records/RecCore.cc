@@ -32,8 +32,14 @@
 
 static bool g_initialized = false;
 
-RecRecord *g_records = nullptr;
-std::unordered_map<std::string, RecRecord *> g_records_ht;
+std::array<RecRecord, REC_MAX_RECORDS> g_records;
+
+/** Global mapping of record names to values.
+ * @internal When placing items in this table, the key @b must be the name in the record.
+ * This is because the key is stored as a @c string_view and the pointer in that view must
+ * point to memory that has a life time at least that of the item.
+ */
+std::unordered_map<std::string_view, RecRecord *> g_records_ht;
 ink_rwlock g_records_rwlock;
 int g_num_records = 0;
 
@@ -41,7 +47,7 @@ int g_num_records = 0;
 // register_record
 //-------------------------------------------------------------------------
 static RecRecord *
-register_record(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type,
+register_record(RecT rec_type, std::string_view name, RecDataT data_type, RecData data_default, RecPersistT persist_type,
                 bool *updated_p = nullptr)
 {
   RecRecord *r = nullptr;
@@ -86,7 +92,9 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
     // Set the r->data to its default value as this is a new record
     RecDataSet(r->data_type, &(r->data), &(data_default));
     RecDataSet(r->data_type, &(r->data_default), &(data_default));
-    g_records_ht.emplace(name, r);
+    // Must use name in @a r so that the view points in to the record, not
+    // the memory in the argument @a name.
+    g_records_ht.emplace(r->name, r);
 
     if (REC_TYPE_IS_STAT(r->rec_type)) {
       r->stat_meta.persist_type = persist_type;
@@ -195,9 +203,6 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   RecConfigFileInit();
 
   g_num_records = 0;
-
-  // initialize record array for our internal stats (this can be reallocated later)
-  g_records = (RecRecord *)ats_malloc(REC_MAX_RECORDS * sizeof(RecRecord));
 
   // initialize record rwlock
   ink_rwlock_init(&g_records_rwlock);
@@ -509,7 +514,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
       continue;
     }
 
-    if (regex.match(r->name) < 0) {
+    if (regex.match(r->name.data()) < 0) {
       continue;
     }
 
@@ -576,7 +581,7 @@ RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock)
 }
 
 RecErrT
-RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lock)
+RecGetRecordPersistenceType(std::string_view name, RecPersistT *persist_type, bool lock)
 {
   RecErrT err = REC_ERR_FAIL;
 
@@ -853,7 +858,7 @@ RecGetRecordSource(const char *name, RecSourceT *source, bool lock)
 // RecRegisterStat
 //-------------------------------------------------------------------------
 RecRecord *
-RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecPersistT persist_type)
+RecRegisterStat(RecT rec_type, std::string_view name, RecDataT data_type, RecData data_default, RecPersistT persist_type)
 {
   RecRecord *r = nullptr;
 
@@ -865,7 +870,8 @@ RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData dat
     // new default value.
     if ((r->stat_meta.persist_type == RECP_NULL || r->stat_meta.persist_type == RECP_PERSISTENT) &&
         persist_type == RECP_NON_PERSISTENT) {
-      RecDebug(DL_Debug, "resetting default value for formerly persisted stat '%s'", r->name);
+      RecDebug(DL_Debug, "resetting default value for formerly persisted stat '%.*s'", static_cast<int>(r->name.size()),
+               r->name.data());
       RecDataSet(r->data_type, &(r->data), &(data_default));
     }
 
@@ -883,7 +889,7 @@ RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 // RecRegisterConfig
 //-------------------------------------------------------------------------
 RecRecord *
-RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData data_default, RecUpdateT update_type,
+RecRegisterConfig(RecT rec_type, std::string_view name, RecDataT data_type, RecData data_default, RecUpdateT update_type,
                   RecCheckT check_type, const char *check_expr, RecSourceT source, RecAccessT access_type)
 {
   RecRecord *r;
@@ -949,7 +955,7 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 // RecForceInsert
 //-------------------------------------------------------------------------
 RecRecord *
-RecForceInsert(RecRecord *record)
+RecForceInsert(RecRecordSerialized *record)
 {
   RecRecord *r = nullptr;
   bool r_is_a_new_record;
@@ -962,6 +968,9 @@ RecForceInsert(RecRecord *record)
     rec_mutex_acquire(&(r->lock));
     r->rec_type  = record->rec_type;
     r->data_type = record->data_type;
+    // This copies the name into long lasting storage in the new record.
+    r->name_store = record->name;
+    r->name       = r->name_store;
   } else {
     r_is_a_new_record = true;
     if ((r = RecAlloc(record->rec_type, record->name, record->data_type)) == nullptr) {
@@ -1037,7 +1046,7 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
     RecRecord *r = &(g_records[i]);
     if ((rec_type == RECT_NULL) || (rec_type & r->rec_type)) {
       rec_mutex_acquire(&(r->lock));
-      callback(r->rec_type, edata, r->registered, r->name, r->data_type, &r->data);
+      callback(r->rec_type, edata, r->registered, r->name.data(), r->data_type, &r->data);
       rec_mutex_release(&(r->lock));
     }
   }
