@@ -1354,7 +1354,6 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   const ssize_t window_size         = std::min(this->client_rwnd, stream->client_rwnd);
   const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
   const size_t write_available_size = std::min(buf_len, static_cast<size_t>(window_size));
-  size_t read_available_size        = 0;
   payload_length                    = 0;
 
   uint8_t flags = 0x00;
@@ -1363,23 +1362,21 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
 
-  if (current_reader) {
-    read_available_size = static_cast<size_t>(current_reader->read_avail());
-  } else {
+  if (!current_reader) {
     Http2StreamDebug(this->ua_session, stream->get_id(), "couldn't get data reader");
     return Http2SendDataFrameResult::ERROR;
   }
 
   // Select appropriate payload length
-  if (read_available_size > 0) {
+  if (current_reader->is_read_avail_more_than(0)) {
     // We only need to check for window size when there is a payload
     if (window_size <= 0) {
       Http2StreamDebug(this->ua_session, stream->get_id(), "No window");
       return Http2SendDataFrameResult::NO_WINDOW;
     }
     // Copy into the payload buffer. Seems like we should be able to skip this copy step
-    payload_length = std::min(read_available_size, write_available_size);
-    current_reader->memcpy(payload_buffer, static_cast<int64_t>(payload_length));
+    payload_length = write_available_size;
+    payload_length = current_reader->read(payload_buffer, static_cast<int64_t>(write_available_size));
   } else {
     payload_length = 0;
   }
@@ -1392,7 +1389,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
-  if (stream->is_body_done() && read_available_size <= write_available_size) {
+  if (stream->is_body_done() && !current_reader->is_read_avail_more_than(0)) {
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
   }
 
@@ -1410,7 +1407,6 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   data.finalize(payload_length);
 
   stream->update_sent_count(payload_length);
-  current_reader->consume(payload_length);
 
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
