@@ -179,7 +179,8 @@ public:
 
 protected:
   QUICPacketHeader(){};
-  static constexpr size_t MAX_PACKET_HEADER_LEN = 128;
+  // Token field in Initial packet could be very long.
+  static constexpr size_t MAX_PACKET_HEADER_LEN = 256;
 
   const IpEndpoint _from = {};
 
