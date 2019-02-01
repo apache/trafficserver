@@ -243,6 +243,7 @@ QUICNetVConnection::startEvent(int event, Event *e)
 void
 QUICNetVConnection::start()
 {
+  ink_release_assert(this->thread != nullptr);
   QUICConfig::scoped_config params;
 
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
@@ -252,12 +253,16 @@ QUICNetVConnection::start()
     this->_reset_token       = QUICStatelessResetToken(this->_quic_connection_id, params->instance_id());
     this->_hs_protocol       = this->_setup_handshake_protocol(params->server_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol, this->_reset_token, params->stateless_retry());
+    this->_ack_frame_manager.set_max_ack_delay(params->max_ack_delay_in());
+    this->_ack_manager_periodic = this->thread->schedule_every(this, params->max_ack_delay_in(), QUIC_EVENT_ACK_PERIODIC);
   } else {
     this->_ack_frame_manager.set_ack_delay_exponent(params->ack_delay_exponent_out());
     this->_hs_protocol       = this->_setup_handshake_protocol(params->client_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol);
     this->_handshake_handler->start(&this->_packet_factory, params->vn_exercise_enabled());
     this->_handshake_handler->do_handshake();
+    this->_ack_frame_manager.set_max_ack_delay(params->max_ack_delay_out());
+    this->_ack_manager_periodic = this->thread->schedule_every(this, params->max_ack_delay_out(), QUIC_EVENT_ACK_PERIODIC);
   }
 
   this->_application_map = new QUICApplicationMap();
@@ -283,9 +288,6 @@ QUICNetVConnection::start()
   this->_frame_dispatcher->add_handler(this->_stream_manager);
   this->_frame_dispatcher->add_handler(this->_path_validator);
   this->_frame_dispatcher->add_handler(this->_handshake_handler);
-
-  ink_release_assert(this->thread != nullptr);
-  this->_ack_manager_periodic = this->thread->schedule_every(this, params->max_ack_delay_in(), QUIC_EVENT_ACK_PERIODIC);
 }
 
 void
