@@ -225,8 +225,15 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   format_writer.print("[{timestamp}] ");
   auto timestamp_offset = format_writer.size();
 
+  format_writer.print("{thread-name}");
+  format_writer.print(" {}: ", level_name(diags_level));
+
   if (location(loc, show_location, diags_level)) {
-    format_writer.print("<{:50,50}> ", *loc);
+    format_writer.print("<{}> ", *loc);
+  }
+
+  if (debug_tag) {
+    format_writer.print("({}) ", debug_tag);
   }
 
   format_writer.print("{}", format_string);
