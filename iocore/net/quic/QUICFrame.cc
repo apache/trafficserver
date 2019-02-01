@@ -1769,6 +1769,12 @@ QUICBlockedFrame::parse(const uint8_t *buf, size_t len)
   this->_size  = FRAME_SIZE(pos);
 }
 
+int
+QUICBlockedFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  return snprintf(msg, msg_len, "| BLOCKED size=%zu offset=%" PRIu64, this->size(), this->offset());
+}
+
 QUICFrameUPtr
 QUICBlockedFrame::clone() const
 {
@@ -1855,6 +1861,12 @@ QUICStreamBlockedFrame::parse(const uint8_t *buf, size_t len)
 
   this->_valid = true;
   this->_size  = FRAME_SIZE(pos);
+}
+
+int
+QUICStreamBlockedFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  return snprintf(msg, msg_len, "| STREAM_BLOCKED size=%zu  offset=%" PRIu64, this->size(), this->offset());
 }
 
 QUICFrameUPtr
