@@ -59,6 +59,7 @@
 #include "quic/QUICPathValidator.h"
 #include "quic/QUICApplicationMap.h"
 #include "quic/QUICPacketReceiveQueue.h"
+#include "quic/QUICAddrVerifyState.h"
 
 // These are included here because older OpenQUIC libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -363,7 +364,6 @@ private:
   void _update_peer_cid(const QUICConnectionId &new_cid);
   void _update_local_cid(const QUICConnectionId &new_cid);
   void _rerandomize_original_cid();
-  bool _is_src_addr_verified();
 
   QUICHandshakeProtocol *_setup_handshake_protocol(SSL_CTX *ctx);
 
@@ -379,8 +379,9 @@ private:
   uint64_t _stream_frames_sent     = 0;
 
   // TODO: Source addresses verification through an address validation token
-  bool _src_addr_verified       = false;
   bool _has_ack_only_packet_out = false;
+
+  QUICAddrVerifyState _verfied_state;
 
   // QUICFrameGenerator
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
