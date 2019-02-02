@@ -69,8 +69,6 @@ static constexpr ink_hrtime WRITE_READY_INTERVAL      = HRTIME_MSECONDS(2);
 static constexpr uint32_t PACKET_PER_EVENT            = 256;
 static constexpr uint32_t MAX_CONSECUTIVE_STREAMS     = 8; //< Interrupt sending STREAM frames to send ACK frame
 
-static constexpr uint32_t MAX_PACKETS_WITHOUT_SRC_ADDR_VARIDATION = 3;
-
 static constexpr uint32_t STATE_CLOSING_MAX_SEND_PKT_NUM  = 8; // Max number of sending packets which contain a closing frame.
 static constexpr uint32_t STATE_CLOSING_MAX_RECV_PKT_WIND = 1 << STATE_CLOSING_MAX_SEND_PKT_NUM;
 
@@ -1052,8 +1050,8 @@ QUICNetVConnection::_state_handshake_process_handshake_packet(QUICPacketUPtr pac
 {
   // Source address is verified by receiving any message from the client encrypted using the
   // Handshake keys.
-  if (this->netvc_context == NET_VCONNECTION_IN && !this->_src_addr_verified) {
-    this->_src_addr_verified = true;
+  if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
+    this->_verfied_state.set_addr_verifed();
   }
   return this->_recv_and_ack(*packet);
 }
@@ -1226,19 +1224,23 @@ QUICNetVConnection::_state_common_send_packet()
         continue;
       }
 
-      if (this->netvc_context == NET_VCONNECTION_IN && !this->_is_src_addr_verified() &&
-          this->_handshake_packets_sent >= MAX_PACKETS_WITHOUT_SRC_ADDR_VARIDATION) {
-        error = 1;
-        break;
+      uint32_t max_packet_size = udp_payload_len - written;
+      if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
+        uint32_t windows = this->_verfied_state.windows();
+        QUICConDebug("send to unverified window: %u", windows);
+        max_packet_size = std::min(max_packet_size, windows);
       }
 
-      uint32_t max_packet_size = udp_payload_len - written;
-      QUICPacketUPtr packet    = this->_packetize_frames(level, max_packet_size);
+      QUICPacketUPtr packet = this->_packetize_frames(level, max_packet_size);
 
       if (packet) {
         if (this->netvc_context == NET_VCONNECTION_IN &&
             (packet->type() == QUICPacketType::INITIAL || packet->type() == QUICPacketType::HANDSHAKE)) {
           ++this->_handshake_packets_sent;
+        }
+
+        if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
+          this->_verfied_state.consume(packet->size());
         }
 
         // TODO: do not write two QUIC Short Header Packets
@@ -1688,6 +1690,9 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
     }
 
     this->_last_received_packet_type = packet->type();
+    if (!this->_verfied_state.is_verified()) {
+      this->_verfied_state.fill(packet->size());
+    }
   }
 
   // Debug prints
@@ -2081,12 +2086,6 @@ QUICNetVConnection::_rerandomize_original_cid()
 
     QUICConDebug("original cid: %s -> %s", old_cid_str, new_cid_str);
   }
-}
-
-bool
-QUICNetVConnection::_is_src_addr_verified()
-{
-  return this->_src_addr_verified;
 }
 
 QUICHandshakeProtocol *
