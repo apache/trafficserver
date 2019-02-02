@@ -2249,7 +2249,7 @@ HttpSM::state_hostdb_lookup(int event, void *data)
     opt.host_res_style = ua_txn->get_host_res_style();
 
     Action *dns_lookup_action_handle =
-      hostDBProcessor.getbyname_imm(this, (process_hostdb_info_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
+      hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
     if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
       pending_action = dns_lookup_action_handle;
@@ -4047,7 +4047,7 @@ HttpSM::do_hostdb_lookup()
       opt.timeout = t_state.api_txn_dns_timeout_value;
     }
     Action *srv_lookup_action_handle =
-      hostDBProcessor.getSRVbyname_imm(this, (process_srv_info_pfn)&HttpSM::process_srv_info, d, 0, opt);
+      hostDBProcessor.getSRVbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_srv_info, d, 0, opt);
 
     if (srv_lookup_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
@@ -4064,7 +4064,7 @@ HttpSM::do_hostdb_lookup()
       opt.host_res_style = ua_txn->get_host_res_style();
 
       Action *dns_lookup_action_handle =
-        hostDBProcessor.getbyname_imm(this, (process_hostdb_info_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
+        hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
       if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
         ink_assert(!pending_action);
         pending_action = dns_lookup_action_handle;
@@ -4098,7 +4098,7 @@ HttpSM::do_hostdb_lookup()
     opt.timeout        = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
     opt.host_res_style = ua_txn->get_host_res_style();
 
-    Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this, (process_hostdb_info_pfn)&HttpSM::process_hostdb_info,
+    Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info,
                                                                      t_state.dns_info.lookup_name, 0, opt);
 
     if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
