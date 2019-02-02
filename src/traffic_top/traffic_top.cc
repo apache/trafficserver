@@ -57,6 +57,7 @@
 #include "tscore/ink_args.h"
 #include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
+#include "tscore/runroot.h"
 
 using namespace std;
 
@@ -407,6 +408,7 @@ main(int argc, const char **argv)
 
   process_args(&version, argument_descriptions, countof(argument_descriptions), argv, USAGE);
 
+  runroot_handler(argv);
   Layout::create();
   RecProcessInit(RECM_STAND_ALONE, nullptr /* diags */);
   LibRecordsConfigInit();
