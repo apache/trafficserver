@@ -634,19 +634,18 @@ HostDBProcessor::getby(Continuation *cont, const char *hostname, int len, sockad
   // Attempt to find the result in-line, for level 1 hits
   //
   if (!aforce_dns) {
-    bool loop;
-    do {
+    MUTEX_TRY_LOCK(lock, cont->mutex, thread);
+    bool loop = lock.is_locked();
+    while (loop) {
       loop = false; // Only loop on explicit set for retry.
       // find the partition lock
       //
-      // TODO: Could we reuse the "mutex" above safely? I think so but not sure.
-      Ptr<ProxyMutex> bmutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-      MUTEX_TRY_LOCK(lock, bmutex, thread);
-      MUTEX_TRY_LOCK(lock2, cont->mutex, thread);
+      Ptr<ProxyMutex> bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+      MUTEX_TRY_LOCK(lock2, bucket_mutex, thread);
 
-      if (lock.is_locked() && lock2.is_locked()) {
+      if (lock2.is_locked()) {
         // If we can get the lock and a level 1 probe succeeds, return
-        Ptr<HostDBInfo> r = probe(bmutex, hash, aforce_dns);
+        Ptr<HostDBInfo> r = probe(bucket_mutex, hash, aforce_dns);
         if (r) {
           if (r->is_failed() && hostname) {
             loop = check_for_retry(hash.db_mark, host_res_style);
@@ -662,7 +661,7 @@ HostDBProcessor::getby(Continuation *cont, const char *hostname, int len, sockad
           hash.refresh(); // only on reloop, because we've changed the family.
         }
       }
-    } while (loop);
+    }
   }
   Debug("hostdb", "delaying force %d answer for %s", aforce_dns,
         hostname ? hostname : ats_is_ip(ip) ? ats_ip_ntop(ip, ipb, sizeof ipb) : "<null>");
