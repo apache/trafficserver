@@ -37,7 +37,7 @@ QUICSimpleApp::QUICSimpleApp(QUICNetVConnection *client_vc, IpAllow::ACL session
 {
   this->_client_session      = new Http3ClientSession(client_vc);
   this->_client_session->acl = std::move(session_acl);
-  this->_client_session->new_connection(client_vc, nullptr, nullptr, false);
+  this->_client_session->new_connection(client_vc, nullptr, nullptr);
 
   this->_qc->stream_manager()->set_default_application(this);
 

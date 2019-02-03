@@ -45,7 +45,7 @@ public:
   // Implement ProxyClienSession interface
   void start() override;
   void destroy() override;
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) override;
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
   NetVConnection *get_netvc() const override;
   int get_transact_count() const override;
   const char *get_protocol_string() const override;
