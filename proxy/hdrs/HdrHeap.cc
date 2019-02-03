@@ -1170,13 +1170,6 @@ HdrStrHeap::expand(char *ptr, int old_size, int new_size)
   }
 }
 
-StrHeapDesc::StrHeapDesc()
-{
-  m_heap_start = nullptr;
-  m_heap_len   = 0;
-  m_locked     = false;
-}
-
 struct StrTest {
   char *ptr;
   int len;

@@ -500,7 +500,7 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata)
 
         if (cdata.grq->delay > 0) {
           VDEBUG("delaying response by %ums", cdata.grq->delay);
-          TSContSchedule(contp, cdata.grq->delay, TS_THREAD_POOL_NET);
+          TSContScheduleOnPool(contp, cdata.grq->delay, TS_THREAD_POOL_NET);
           return TS_EVENT_NONE;
         }
 

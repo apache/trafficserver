@@ -341,7 +341,6 @@ HttpSM::init()
   t_state.force_dns = (ip_rule_in_CacheControlTable() || t_state.parent_params->parent_table->ipMatch ||
                        !(t_state.txn_conf->doc_in_cache_skip_dns) || !(t_state.txn_conf->cache_http));
 
-  http_parser.m_allow_non_http = t_state.http_config_param->parser_allow_non_http;
   http_parser_init(&http_parser);
 
   SET_HANDLER(&HttpSM::main_handler);
@@ -504,7 +503,6 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
   ats_ip_copy(&t_state.client_info.dst_addr, netvc->get_local_addr());
   t_state.client_info.dst_addr.port() = netvc->get_local_port();
   t_state.client_info.is_transparent  = netvc->get_is_transparent();
-  t_state.backdoor_request            = !client_vc->hooks_enabled();
   t_state.client_info.port_attribute  = static_cast<HttpProxyPort::TransportType>(netvc->attributes);
 
   // Record api hook set state
@@ -5107,11 +5105,6 @@ HttpSM::do_http_server_open(bool raw)
 void
 HttpSM::do_api_callout_internal()
 {
-  if (t_state.backdoor_request) {
-    handle_api_return();
-    return;
-  }
-
   switch (t_state.api_next_action) {
   case HttpTransact::SM_ACTION_API_SM_START:
     cur_hook_id = TS_HTTP_TXN_START_HOOK;
@@ -7696,7 +7689,7 @@ HttpSM::do_redirect()
         HTTP_INCREMENT_DYN_STAT(http_total_x_redirect_stat);
       } else {
         // get the location header and setup the redirect
-        int redir_len;
+        int redir_len   = 0;
         char *redir_url = (char *)t_state.hdr_info.client_response.value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redir_len);
         redirect_request(redir_url, redir_len);
       }

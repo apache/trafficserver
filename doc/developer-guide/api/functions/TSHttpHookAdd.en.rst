@@ -77,9 +77,11 @@ function will be TS_EVENT_HTTP_READ_REQUEST_HDR.
 When a continuation is triggered by a hook, the actual type of the event data
 (the void pointer passed as the third parameter to the continuation function) is
 determined by which hook it is.  For example, for the hook ID TS_HTTP_TXN_CLOSE_HOOK,
-the event data is of type TSHttpTxn.  This is the case regardless of whether the
+the event data is of type :type:`TSHttpTxn`.  This is the case regardless of whether the
 continuation was added to the hook using :func:`TSHttpTxnHookAdd`, :func:`TSHttpSsnHookAdd`
-or :func:`TSHttpHookAdd`.
+or :func:`TSHttpHookAdd`.  If the event data is of type :type:`TSHttpTxn`, :type:`TSHttpSsn` or
+:type:`TSVConn`, the continuation function can assume the mutex of the indicated
+event data object is locked.  (But the continuation function must not unlock it.)
 
 Return Values
 =============

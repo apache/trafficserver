@@ -50,9 +50,9 @@ ts.addSSLfile("ssl/signer.key")
 
 ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
-    'map https://bar.com:{0}/ https://foo.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.Port))
+    'map https://bar.com:{0}/ https://foo.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map https://foo.com:{0}/ https://bar.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.Port))
+    'map https://foo.com:{0}/ https://bar.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port))
 
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
@@ -61,8 +61,6 @@ ts.Disk.ssl_multicert_config.AddLine(
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|ssl|dns|hostdb',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     # enable ssl port
@@ -75,6 +73,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
     'proxy.config.url_remap.pristine_host_hdr': 0,
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+    'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.dns.resolv_conf': 'NULL'
 })
 
@@ -95,19 +94,15 @@ tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.TimeOut = 5
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr.TimeOut = 5
 
 # foo.com in.  bar.com out.  Should not verify
 tr2 = Test.AddTestRun("Enforced-bad-test")
 tr2.Processes.Default.Command = "curl -v -k --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
-tr2.Processes.Default.TimeOut = 5
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should not have succeeded")
-tr2.TimeOut = 5
 
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ExcludesExpression("verification failed", "Make sure the signatures didn't fail")

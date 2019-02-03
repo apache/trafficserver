@@ -22,9 +22,55 @@
     limitations under the License.
 */
 
-#include "configs.h"
+#include <getopt.h>
 #include <cstdio>
 #include <memory.h>
+
+#include "configs.h"
+
+// Parse the command line options. This got a little wonky, since we decided to have different
+// syntax for remap vs global plugin initialization, and the global BG fetch state :-/. Clean up
+// later...
+bool
+BgFetchConfig::parseOptions(int argc, const char *argv[])
+{
+  static const struct option longopt[] = {{const_cast<char *>("log"), required_argument, nullptr, 'l'},
+                                          {const_cast<char *>("config"), required_argument, nullptr, 'c'},
+                                          {const_cast<char *>("allow-304"), no_argument, nullptr, 'a'},
+                                          {nullptr, no_argument, nullptr, '\0'}};
+
+  while (true) {
+    int opt = getopt_long(argc, (char *const *)argv, "lc", longopt, nullptr);
+
+    if (opt == -1) {
+      break;
+    }
+
+    switch (opt) {
+    case 'l':
+      TSDebug(PLUGIN_NAME, "option: log file specified: %s", optarg);
+      _log_file = optarg;
+      break;
+    case 'c':
+      TSDebug(PLUGIN_NAME, "option: config file '%s'", optarg);
+      if (!readConfig(optarg)) {
+        // Error messages are written in the parser
+        return false;
+      }
+      break;
+    case 'a':
+      TSDebug(PLUGIN_NAME, "option: --allow-304 set");
+      _allow_304 = true;
+      break;
+    default:
+      TSError("[%s] invalid plugin option: %c", PLUGIN_NAME, opt);
+      return false;
+      break;
+    }
+  }
+
+  return true;
+}
 
 // Read a config file, populare the linked list (chain the BgFetchRule's)
 bool
@@ -45,11 +91,12 @@ BgFetchConfig::readConfig(const char *config_file)
   } else {
     snprintf(file_path, sizeof(file_path), "%s/%s", TSConfigDirGet(), config_file);
   }
-  TSDebug(PLUGIN_NAME, "Chosen config file is at: %s", file_path);
+  TSDebug(PLUGIN_NAME, "chosen config file is at: %s", file_path);
 
   file = TSfopen(file_path, "r");
   if (nullptr == file) {
     TSError("[%s] invalid config file:  %s", PLUGIN_NAME, file_path);
+    TSDebug(PLUGIN_NAME, "invalid config file: %s", file_path);
     return false;
   }
 

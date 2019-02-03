@@ -6622,7 +6622,13 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
     TxnDebug("http_trans", "[handle_content_length_header] RESPONSE cont len in hdr is %" PRId64, header->get_content_length());
   } else {
     // No content length header.
-    if (s->source == SOURCE_CACHE) {
+    // If the source is cache or server returned 304 response,
+    // we can try to get the content length based on object size.
+    // Also, we should check the scenario of server sending't  a unexpected 304 response for a non conditional request( no cached
+    // object )
+    if (s->source == SOURCE_CACHE ||
+        (s->source == SOURCE_HTTP_ORIGIN_SERVER && s->hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED &&
+         s->cache_info.object_read != nullptr)) {
       // If there is no content-length header, we can
       //   insert one since the cache knows definitely
       //   how long the object is unless we're in a
@@ -6637,18 +6643,14 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
       } else if (s->range_setup == RANGE_NOT_TRANSFORM_REQUESTED) {
         // if we are doing a single Range: request, calculate the new
         // C-L: header
+        // either the object is in cache or origin returned a 304 Not Modified response. We can still turn this into a proper Range
+        // response from the cached object.
         change_response_header_because_of_range_request(s, header);
         s->hdr_info.trust_response_cl = true;
       } else {
         header->set_content_length(cl);
         s->hdr_info.trust_response_cl = true;
       }
-    } else if (s->source == SOURCE_HTTP_ORIGIN_SERVER && s->hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED &&
-               s->range_setup == RANGE_NOT_TRANSFORM_REQUESTED) {
-      // In this case, we had a cached object, possibly chunked encoded (so we don't have a CL: header), but the origin did a
-      // 304 Not Modified response. We can still turn this into a proper Range response from the cached object.
-      change_response_header_because_of_range_request(s, header);
-      s->hdr_info.trust_response_cl = true;
     } else {
       // Check to see if there is no content length
       //  header because the response precludes a
@@ -7979,9 +7981,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   int64_t len;
   char *new_msg;
 
-  new_msg = body_factory->fabricate_with_old_api(error_body_type, s, 8192, &len, body_language, sizeof(body_language), body_type,
-                                                 sizeof(body_type), s->internal_msg_buffer_size,
-                                                 s->internal_msg_buffer_size ? s->internal_msg_buffer : nullptr);
+  new_msg = body_factory->fabricate_with_old_api(
+    error_body_type, s, s->http_config_param->body_factory_response_max_size, &len, body_language, sizeof(body_language), body_type,
+    sizeof(body_type), s->internal_msg_buffer_size, s->internal_msg_buffer_size ? s->internal_msg_buffer : nullptr);
 
   // After the body factory is called, a new "body" is allocated, and we must replace it. It is
   // unfortunate that there's no way to avoid this fabrication even when there is no substitutions...

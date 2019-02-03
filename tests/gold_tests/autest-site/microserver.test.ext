@@ -16,13 +16,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from autest.api import AddWhenFunction
-from ports import get_port
 import json
 import socket
 import ssl
 import time
 import sys
+
+from autest.api import AddWhenFunction
+from ports import get_port
+
+import trlib.ipconstants as IPConstants
+from trlib import Transaction, Request, Response, Session
+
+DEFAULT_LOOKUP_KEY = '{PATH}'
 
 
 def addMethod(self, testName, request_header, functionName):
@@ -52,51 +58,15 @@ def getHeaderFieldVal(request_header, field):
     return val
 
 # addResponse adds customized response with respect to request_header. request_header and response_header are both dictionaries
-
-
 def addResponse(self, filename, request_header, response_header):
-    requestline = request_header["headers"].split("\r\n")[0]
-    host_ = ""
-    path_ = ""
-    if requestline:
-        url_part = requestline.split(" ")
-        if len(url_part) > 1:
-            if url_part[1].startswith("http"):
-                path_ = url_part[1].split("/", 2)[2]
-                host_, path_ = path_.split("/", 1)
-            else:
-                path_ = url_part[1].split("/", 1)[1]
+    client_request = Request.fromRequestLine(request_header["headers"], request_header["body"], None if "options" not in request_header else request_header["options"])
+    server_response = Response.fromRequestLine(response_header["headers"], response_header["body"], None if "options" not in response_header else response_header["options"])
 
-    kpath = ""
+    # timestamp field is left None because that needs to be revised for better implementation
+    txn = Transaction(client_request, None, server_response, None, None, None)
 
-    argsList = []
-    keyslist = self.Variables.lookup_key.split("}")
-    for keystr in keyslist:
-        if keystr == '{PATH':
-            kpath = kpath + path_
-            continue
-        if keystr == '{HOST':
-            kpath = kpath + host_
-            continue
-        if keystr == '':  # empty
-            continue
-        stringk = keystr.replace("{%", "")
-        argsList.append(stringk)
-    KeyList = []
-    for argsL in argsList:
-        field_val = getHeaderFieldVal(request_header, argsL)
-        if field_val != None:
-            KeyList.append(field_val)
-    rl = "".join(KeyList) + kpath
-    txn = dict()
-    txn["timestamp"] = ""
-    txn["uuid"] = rl
-    txn["request"] = request_header
-    txn["response"] = response_header
     absFilepath = os.path.join(self.Variables.DataDir, filename)
     addTransactionToSession(txn, absFilepath)
-    # absFilepath=os.path.abspath(filename)
-    # self.Setup.CopyAs(absFilepath,self.Variables.DataDir)
     return
 
 # adds transaction in json format to the specified file
@@ -110,17 +80,24 @@ def addTransactionToSession(txn, JFile):
         jf = open(JFile, 'r')
         jsondata = json.load(jf)
 
+    # hard coding only 1 session per file
+    # since for the purpose of testing, we don't need multiple sessions in a file
     if jsondata == None:
-        jsondata = dict()
-        jsondata["version"] = '0.2'
-        jsondata["timestamp"] = "1234567890.098"
-        jsondata["encoding"] = "url_encoded"
-        jsondata["txns"] = list()
-        jsondata["txns"].append(txn)
+        jsondata = {}
+        jsondata["sessions"] = []
+
+        jsondata["sessions"].append(Session(JFile.split("/")[-1], None, None, [txn]).toJSON())
+        jsondata["meta"] = {}
+        jsondata["meta"]["version"] = "1.0"
     else:
-        jsondata["txns"].append(txn)
+        # hardcoding 0 because for testing we only have 1 session
+        jsondata["sessions"][0]["transactions"].append(txn.toJSON())
+
     with open(JFile, 'w+') as jf:
         jf.write(json.dumps(jsondata))
+
+def addSessionFromFiles(self, session_dir):
+    self.Setup.Copy(session_dir, self.Variables.DataDir)
 
 
 # make headers with the key and values provided
@@ -132,73 +109,83 @@ def makeHeader(self, requestString, **kwargs):
     return headerStr
 
 
-def uServerUpAndRunning(host, port, isSsl, isIPv6, clientcert='', clientkey=''):
+def uServerUpAndRunning(serverHost, port, isSsl, isIPv6, request, clientcert='', clientkey=''):
     if isIPv6:
         plain_sock = socket.socket(socket.AF_INET6)
     else:
         plain_sock = socket.socket(socket.AF_INET)
 
-    if isSsl: 
-      if clientcert != '' or clientkey != '':
-        sock = ssl.wrap_socket(plain_sock, keyfile=clientkey, certfile=clientcert)
-      else:
-        sock = ssl.wrap_socket(plain_sock)
+    if isSsl:
+        if clientcert != '' or clientkey != '':
+            sock = ssl.wrap_socket(plain_sock, keyfile=clientkey, certfile=clientcert)
+        else:
+            sock = ssl.wrap_socket(plain_sock)
     else:
-      sock = plain_sock
+        sock = plain_sock
 
     try:
-        sock.connect((host, port))
+        sock.connect((serverHost, port))
     except ConnectionRefusedError:
         return False
 
-    sock.sendall("GET /ruok HTTP/1.1\r\nHost: {}\r\n\r\n".format(host).encode())
-    decoded_output=''
+    sock.sendall(request.encode())
+    decoded_output = ''
     while True:
+        host.WriteDebug("??")
         output = sock.recv(4096)  # suggested bufsize from docs.python.org
+        host.WriteDebug("!!")
         if len(output) <= 0:
             break
         else:
-            decoded_output+=output.decode()
+            decoded_output += output.decode()
     sock.close()
     sock = None
 
-    expected_response="HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 4\r\n\r\nimok"
+    expected_response = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 4\r\n\r\nimok"
     if decoded_output == expected_response:
         return True
-    raise RuntimeError('\n'.join([
-            'Got invalid response from microserver:',
-            '----',
-            decoded_output,
-            '----']))
+
+    host.WriteError('\n'.join([
+        'Got invalid response from microserver:',
+        '----',
+        decoded_output,
+        '----']))
+
+
 AddWhenFunction(uServerUpAndRunning)
 
 
-def MakeOriginServer(obj, name, port=False, ip='INADDR_LOOPBACK', delay=False, ssl=False, lookup_key='{PATH}', mode='test', options={}, clientcert='', clientkey=''):
-    # to get the IP keywords in tools/lib
-    sys.path.append(obj.Variables.AtsTestToolsDir)
-    import lib.IPConstants as IPConstants
-
-    server_path = os.path.join(obj.Variables.AtsTestToolsDir, 'microServer/uWServer.py')
+def MakeOriginServer(obj, name, port=None, s_port=None, ip='INADDR_LOOPBACK', delay=None, ssl=False, lookup_key=DEFAULT_LOOKUP_KEY, clientcert='', clientkey='', both=False, options={}):
     data_dir = os.path.join(obj.RunDirectory, name)
-    # create Process
     p = obj.Processes.Process(name)
-
-    if (port == False):
-        port = get_port(p, "Port")
 
     ipaddr = IPConstants.getIP(ip)
 
-    if (delay == False):
-        delay = 0
+    command = "microserver --data-dir {0} --ip_address {1} --lookupkey '{2}'".format(data_dir, ipaddr, lookup_key)
 
-    command = "python3 {0} --data-dir {1} --port {2} --ip_address {3} --delay {4} -m test --lookupkey '{5}' -m {6}".format(
-        server_path, data_dir, port, ipaddr, delay, lookup_key, mode)
+    if delay:
+        command += " --delay {0}".format(delay)
 
-    if ssl:
-        command += " --ssl True"
+    if both or ssl:
+        if not s_port:
+            s_port = get_port(p, "SSL_Port")
+
+        command += " --both" if both else " --ssl"
+        key = clientkey if clientkey else os.path.join(obj.Variables["AtsTestToolsDir"], "microserver", "ssl", "server.pem")
+        cert = clientcert if clientcert else os.path.join(obj.Variables["AtsTestToolsDir"], "microserver", "ssl", "server.crt")
+        command += " --key {0}".format(key)
+        command += " --cert {0}".format(cert)
+        command += " --s_port {0}".format(s_port)
+
+    # this might break if user specifies both both and ssl 
+    if not ssl: # in both or HTTP only mode
+        if not port:
+            port = get_port(p, "Port")
+
+        command += " --port {0}".format(port)
 
     for flag, value in options.items():
-        command += " {} {}".format(flag, value)
+        command += " {} {}".format(flag, value if value else '')
 
     p.Command = command
     p.Setup.MakeDir(data_dir)
@@ -206,20 +193,33 @@ def MakeOriginServer(obj, name, port=False, ip='INADDR_LOOPBACK', delay=False, s
     p.Variables.lookup_key = lookup_key
     AddMethodToInstance(p, addResponse)
     AddMethodToInstance(p, addTransactionToSession)
+    AddMethodToInstance(p, addSessionFromFiles)
 
-    # Set up health check.
-    addResponse(p, "healthcheck.json", {
-        "headers": "GET /ruok HTTP/1.1\r\nHost: {}\r\n\r\n".format(ipaddr),
+    custom_lookup_header = ''
+    keys = lookup_key.split("}")
+
+    for key in keys:
+        if key not in ['{PATH', '{URL', '{HOST', '{%Host']:
+            k = key.replace("{%", "")
+
+            if len(k) > 0:
+                custom_lookup_header += '{0}: healthcheck\r\n'.format(k)
+
+    healthcheck_request = {
+        "headers": "GET /ruok HTTP/1.1\r\nHost: {0}\r\n{1}\r\n".format(ipaddr, custom_lookup_header),
         "timestamp": "1469733493.993",
         "body": ""
-    }, {
+    }
+
+    # Set up health check.
+    addResponse(p, "healthcheck.json", healthcheck_request, {
         "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
         "timestamp": "1469733493.993",
         "body": "imok",
-        "options": "skipHooks"
+        "options": {"skipHooks": None}
     })
 
-    p.Ready = When.uServerUpAndRunning(ipaddr, port, ssl, IPConstants.isIPv6(ip), clientcert=clientcert, clientkey=clientkey)
+    p.Ready = When.uServerUpAndRunning(ipaddr, s_port if ssl else port, ssl, IPConstants.isIPv6(ip), healthcheck_request["headers"], clientcert=clientcert, clientkey=clientkey)
     p.ReturnCode = Any(None, 0)
 
     return p

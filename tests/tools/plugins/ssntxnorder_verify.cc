@@ -249,7 +249,7 @@ handle_order(TSCont contp, TSEvent event, void *edata)
     if (!strcmp(ctl_tag, msgp->tag) && strncmp(ctl_dump, reinterpret_cast<const char *>(msgp->data), strlen(ctl_dump)) == 0) {
       dump_tables();
     } else {
-      TSContSchedule(contp, 0, TS_THREAD_POOL_NET);
+      TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
     }
 
     break;

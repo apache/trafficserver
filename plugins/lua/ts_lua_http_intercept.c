@@ -406,7 +406,7 @@ ts_lua_flush_wakeup(ts_lua_http_intercept_ctx *ictx)
   ci = &ictx->cinfo;
 
   contp  = TSContCreate(ts_lua_flush_wakeup_handler, ci->mutex);
-  action = TSContSchedule(contp, 0, TS_THREAD_POOL_DEFAULT);
+  action = TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
 
   ai = ts_lua_async_create_item(contp, ts_lua_flush_cleanup, (void *)action, ci);
   TSContDataSet(contp, ai);

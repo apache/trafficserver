@@ -208,6 +208,7 @@ EThread::execute_regular()
   static EventMetrics METRIC_INIT;
 
   // give priority to immediate events
+  has_event_loop = true;
   for (;;) {
     if (unlikely(shutdown_event_system == true)) {
       return;

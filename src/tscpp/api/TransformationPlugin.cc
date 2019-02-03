@@ -34,28 +34,27 @@
 #define INT64_MAX (9223372036854775807LL)
 #endif
 
-using namespace atscppapi;
-using atscppapi::TransformationPlugin;
-
-namespace
+namespace atscppapi
 {
-class ResumeAfterPauseCont : public Continuation
+namespace detail
 {
-public:
-  ResumeAfterPauseCont() : Continuation() {}
+  class ResumeAfterPauseCont : public Continuation
+  {
+  public:
+    ResumeAfterPauseCont() : Continuation() {}
 
-  ResumeAfterPauseCont(Continuation::Mutex m) : Continuation(m) {}
+    ResumeAfterPauseCont(Continuation::Mutex m) : Continuation(m) {}
 
-protected:
-  int _run(TSEvent event, void *edata) override;
-};
+  protected:
+    int _run(TSEvent event, void *edata) override;
+  };
 
-} // end anonymous namespace
+} // end namespace detail
 
 /**
  * @private
  */
-struct atscppapi::TransformationPluginState : noncopyable, public ResumeAfterPauseCont {
+struct TransformationPluginState : noncopyable, public detail::ResumeAfterPauseCont {
   TSVConn vconn_;
   Transaction &transaction_;
   TransformationPlugin &transformation_plugin_;
@@ -107,8 +106,14 @@ struct atscppapi::TransformationPluginState : noncopyable, public ResumeAfterPau
   }
 };
 
+} // end namespace atscppapi
+
+using namespace atscppapi;
+
 namespace
 {
+using ResumeAfterPauseCont = atscppapi::detail::ResumeAfterPauseCont;
+
 void
 cleanupTransformation(TSCont contp)
 {

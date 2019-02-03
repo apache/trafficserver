@@ -144,6 +144,47 @@ AC_DEFUN([TS_CHECK_CRYPTO_CERT_CB], [
   AC_SUBST(use_cert_cb)
 ])
 
+AC_DEFUN([TS_CHECK_CRYPTO_HELLO_CB], [
+  _hello_saved_LIBS=$LIBS
+  enable_hello_cb=yes
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_HEADERS(openssl/ssl.h openssl/ts.h)
+  AC_CHECK_HEADERS(openssl/tls1.h, [], [],
+[ #if HAVE_OPENSSL_SSL_H
+#include <openssl/ssl.h>
+#include <openssl/tls1.h>
+#endif ])
+
+  AC_MSG_CHECKING([for SSL_CTX_set_client_hello_cb])
+  AC_LINK_IFELSE(
+  [
+    AC_LANG_PROGRAM([[
+#if HAVE_OPENSSL_SSL_H
+#include <openssl/ssl.h>
+#endif
+#if HAVE_OPENSSL_TLS1_H
+#include <openssl/tls1.h>
+#endif
+      ]],
+      [[SSL_CTX_set_client_hello_cb(NULL, NULL, NULL);]])
+  ],
+  [
+    AC_MSG_RESULT([yes])
+  ],
+  [
+    AC_MSG_RESULT([no])
+    enable_hello_cb=no
+  ])
+
+  LIBS=$_hello_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable TLS client hello callback support)
+  AC_MSG_RESULT([$enable_hello_cb])
+  TS_ARG_ENABLE_VAR([use], [hello-cb])
+  AC_SUBST(use_hello_cb)
+])
+
 AC_DEFUN([TS_CHECK_CRYPTO_SET_RBIO], [
   _rbio_saved_LIBS=$LIBS
   enable_set_rbio=yes

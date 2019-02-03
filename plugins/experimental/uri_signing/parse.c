@@ -29,10 +29,11 @@
 #include <inttypes.h>
 
 cjose_jws_t *
-get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName)
+get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName, char *strip_uri, size_t buff_ct, size_t *strip_ct)
 {
   /* Reserved characters as defined by the URI Generic Syntax RFC: https://tools.ietf.org/html/rfc3986#section-2.2 */
-  const char *reserved_string = ":/?#[]@!$&\'()*+,;=";
+  static const char *reserved_string  = ":/?#[]@!$&\'()*+,;=";
+  static const char *sub_delim_string = "!$&\'()*+,;=";
 
   /* If param name ends in reserved character this will be treated as the termination symbol when parsing for package. Default is
    * '='. */
@@ -94,6 +95,29 @@ get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName)
         PluginDebug("Unable to read JWS: %.*s, %s", (int)(key_end - key), key, err.message ? err.message : "");
       } else {
         PluginDebug("Parsed JWS: %.*s (%16p)", (int)(key_end - key), key, jws);
+
+        /* Strip token */
+        /* Check that passed buffer is large enough */
+        *strip_ct = ((key - uri) + (end - value_end));
+        if (buff_ct <= *strip_ct) {
+          PluginDebug("Strip URI buffer is not large enough");
+          return NULL;
+        }
+
+        if (value_end != end && strchr(sub_delim_string, *value_end)) {
+          /*Strip from first char of package name to sub-delimeter that terminates the signed JWT */
+          memcpy(strip_uri, uri, (key - uri));
+          memcpy(strip_uri + (key - uri), value_end + 1, (end - value_end + 1));
+        } else {
+          /*Strip from reserved char to the last char of the JWT */
+          memcpy(strip_uri, uri, (key - uri - 1));
+          memcpy(strip_uri + (key - uri - 1), value_end, (end - value_end));
+        }
+
+        if (strip_uri[*strip_ct - 1] != '\0') {
+          strip_uri[*strip_ct - 1] = '\0';
+        }
+        PluginDebug("Stripped URI: %s", strip_uri);
       }
       return jws;
     }

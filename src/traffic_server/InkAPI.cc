@@ -2684,7 +2684,7 @@ TSMimeFieldValueGet(TSMBuffer /* bufp ATS_UNUSED */, TSMLoc field_obj, int idx, 
   if (idx >= 0) {
     return mime_field_value_get_comma_val(handle->field_ptr, value_len_ptr, idx);
   } else {
-    return mime_field_value_get(handle->field_ptr, value_len_ptr);
+    return handle->field_ptr->value_get(value_len_ptr);
   }
 }
 
@@ -3135,8 +3135,8 @@ TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int *length)
   sdk_assert(sdk_sanity_check_field_handle(field, hdr) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)length) == TS_SUCCESS);
 
-  MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *)field;
-  return mime_field_name_get(handle->field_ptr, length);
+  MIMEFieldSDKHandle *handle = reinterpret_cast<MIMEFieldSDKHandle *>(field);
+  return handle->field_ptr->name_get(length);
 }
 
 TSReturnCode
@@ -4399,24 +4399,57 @@ TSContDataGet(TSCont contp)
 }
 
 TSAction
-TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
+TSContSchedule(TSCont contp, TSHRTime timeout)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
-  INKContInternal *i = (INKContInternal *)contp;
-  TSAction action;
+  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
 
-  if (ink_atomic_increment((int *)&i->m_event_count, 1) < 0) {
+  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
     ink_assert(!"not reached");
+  }
+
+  EThread *eth = i->getThreadAffinity();
+  if (eth == nullptr) {
+    eth = this_event_thread();
+    i->setThreadAffinity(eth);
+  }
+
+  TSAction action;
+  if (timeout == 0) {
+    action = reinterpret_cast<TSAction>(eth->schedule_imm(i));
+  } else {
+    action = reinterpret_cast<TSAction>(eth->schedule_in(i, HRTIME_MSECONDS(timeout)));
+  }
+
+  /* This is a hack. Should be handled in ink_types */
+  action = (TSAction)((uintptr_t)action | 0x1);
+  return action;
+}
+
+TSAction
+TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
+
+  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
+
+  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
+    ink_assert(!"not reached");
+  }
+
+  if (i->getThreadAffinity() == nullptr) {
+    i->setThreadAffinity(this_event_thread());
   }
 
   EventType etype;
 
   switch (tp) {
   case TS_THREAD_POOL_NET:
-  case TS_THREAD_POOL_DEFAULT:
     etype = ET_NET;
     break;
   case TS_THREAD_POOL_TASK:
@@ -4439,36 +4472,97 @@ TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
     break;
   }
 
+  TSAction action;
   if (timeout == 0) {
     action = reinterpret_cast<TSAction>(eventProcessor.schedule_imm(i, etype));
   } else {
     action = reinterpret_cast<TSAction>(eventProcessor.schedule_in(i, HRTIME_MSECONDS(timeout), etype));
   }
 
-  /* This is a hack. SHould be handled in ink_types */
+  /* This is a hack. Should be handled in ink_types */
   action = (TSAction)((uintptr_t)action | 0x1);
   return action;
 }
 
 TSAction
-TSContScheduleEvery(TSCont contp, ink_hrtime every, TSThreadPool tp)
+TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread)
+{
+  ink_release_assert(ethread != nullptr);
+
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
+
+  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
+
+  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
+    ink_assert(!"not reached");
+  }
+
+  EThread *eth = reinterpret_cast<EThread *>(ethread);
+  if (i->getThreadAffinity() == nullptr) {
+    i->setThreadAffinity(eth);
+  }
+
+  TSAction action;
+  if (timeout == 0) {
+    action = reinterpret_cast<TSAction>(eth->schedule_imm(i));
+  } else {
+    action = reinterpret_cast<TSAction>(eth->schedule_in(i, HRTIME_MSECONDS(timeout)));
+  }
+
+  /* This is a hack. Should be handled in ink_types */
+  action = (TSAction)((uintptr_t)action | 0x1);
+  return action;
+}
+
+TSAction
+TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
-  INKContInternal *i = (INKContInternal *)contp;
-  TSAction action;
+  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
 
-  if (ink_atomic_increment((int *)&i->m_event_count, 1) < 0) {
+  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
     ink_assert(!"not reached");
+  }
+
+  EThread *eth = i->getThreadAffinity();
+  if (eth == nullptr) {
+    eth = this_event_thread();
+    i->setThreadAffinity(eth);
+  }
+
+  TSAction action = reinterpret_cast<TSAction>(eth->schedule_every(i, HRTIME_MSECONDS(every)));
+
+  /* This is a hack. Should be handled in ink_types */
+  action = (TSAction)((uintptr_t)action | 0x1);
+  return action;
+}
+
+TSAction
+TSContScheduleEveryOnPool(TSCont contp, TSHRTime every, TSThreadPool tp)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
+
+  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
+
+  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
+    ink_assert(!"not reached");
+  }
+
+  if (i->getThreadAffinity() == nullptr) {
+    i->setThreadAffinity(this_event_thread());
   }
 
   EventType etype;
 
   switch (tp) {
   case TS_THREAD_POOL_NET:
-  case TS_THREAD_POOL_DEFAULT:
     etype = ET_NET;
     break;
   case TS_THREAD_POOL_TASK:
@@ -4479,15 +4573,84 @@ TSContScheduleEvery(TSCont contp, ink_hrtime every, TSThreadPool tp)
     break;
   }
 
-  action = reinterpret_cast<TSAction>(eventProcessor.schedule_every(i, HRTIME_MSECONDS(every), etype));
+  TSAction action = reinterpret_cast<TSAction>(eventProcessor.schedule_every(i, HRTIME_MSECONDS(every), etype));
 
-  /* This is a hack. SHould be handled in ink_types */
+  /* This is a hack. Should be handled in ink_types */
   action = (TSAction)((uintptr_t)action | 0x1);
   return action;
 }
 
 TSAction
-TSHttpSchedule(TSCont contp, TSHttpTxn txnp, ink_hrtime timeout)
+TSContScheduleEveryOnThread(TSCont contp, TSHRTime every /* millisecs */, TSEventThread ethread)
+{
+  ink_release_assert(ethread != nullptr);
+
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
+
+  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
+
+  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
+    ink_assert(!"not reached");
+  }
+
+  EThread *eth = reinterpret_cast<EThread *>(ethread);
+  if (i->getThreadAffinity() == nullptr) {
+    i->setThreadAffinity(eth);
+  }
+
+  TSAction action = reinterpret_cast<TSAction>(eth->schedule_every(i, HRTIME_MSECONDS(every)));
+
+  /* This is a hack. Should be handled in ink_types */
+  action = (TSAction)((uintptr_t)action | 0x1);
+  return action;
+}
+
+TSReturnCode
+TSContThreadAffinitySet(TSCont contp, TSEventThread ethread)
+{
+  ink_release_assert(ethread != nullptr);
+
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
+
+  INKContInternal *i       = reinterpret_cast<INKContInternal *>(contp);
+  EThread *thread_affinity = reinterpret_cast<EThread *>(ethread);
+
+  if (i->setThreadAffinity(thread_affinity)) {
+    return TS_SUCCESS;
+  }
+  return TS_ERROR;
+}
+
+TSEventThread
+TSContThreadAffinityGet(TSCont contp)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
+
+  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
+
+  return reinterpret_cast<TSEventThread>(i->getThreadAffinity());
+}
+
+void
+TSContThreadAffinityClear(TSCont contp)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
+
+  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
+
+  i->clearThreadAffinity();
+}
+
+TSAction
+TSHttpSchedule(TSCont contp, TSHttpTxn txnp, TSHRTime timeout)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -6412,7 +6575,7 @@ TSActionCancel(TSAction actionp)
   Action *a;
   INKContInternal *i;
 
-  /* This is a hack. SHould be handled in ink_types */
+  /* This is a hack. Should be handled in ink_types */
   if ((uintptr_t)actionp & 0x1) {
     a = (Action *)((uintptr_t)actionp - 1);
     i = (INKContInternal *)a->continuation;
@@ -7808,32 +7971,14 @@ template <typename T>
 inline void *
 _memberp_to_generic(T *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter IntConverter{
-    [](void *data) -> MgmtInt { return *static_cast<MgmtInt *>(data); },
-    [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; },
-    nullptr,
-    nullptr, // float
-    nullptr,
-    nullptr // string
-  };
+  static const MgmtConverter IntConverter([](void *data) -> MgmtInt { return *static_cast<MgmtInt *>(data); },
+                                          [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; });
 
-  static const MgmtConverter ByteConverter{
-    [](void *data) -> MgmtInt { return *static_cast<MgmtByte *>(data); },
-    [](void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; },
-    nullptr,
-    nullptr, // float
-    nullptr,
-    nullptr // string
-  };
+  static const MgmtConverter ByteConverter{[](void *data) -> MgmtInt { return *static_cast<MgmtByte *>(data); },
+                                           [](void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; }};
 
-  static const MgmtConverter FloatConverter{
-    nullptr, // int
-    nullptr,
-    [](void *data) -> MgmtFloat { return *static_cast<MgmtFloat *>(data); },
-    [](void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; },
-    nullptr,
-    nullptr // string
-  };
+  static const MgmtConverter FloatConverter{[](void *data) -> MgmtFloat { return *static_cast<MgmtFloat *>(data); },
+                                            [](void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; }};
 
   // For now, strings are special.
 
@@ -8235,11 +8380,11 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 
   void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
 
-  if (!dest || !conv->set_int) {
+  if (!dest || !conv->store_int) {
     return TS_ERROR;
   }
 
-  conv->set_int(dest, value);
+  conv->store_int(dest, value);
 
   return TS_SUCCESS;
 }
@@ -8254,11 +8399,11 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
   MgmtConverter const *conv;
   void *src = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
 
-  if (!src || !conv->get_int) {
+  if (!src || !conv->load_int) {
     return TS_ERROR;
   }
 
-  *value = conv->get_int(src);
+  *value = conv->load_int(src);
 
   return TS_SUCCESS;
 }
@@ -8275,11 +8420,11 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 
   void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
 
-  if (!dest || !conv->set_float) {
+  if (!dest || !conv->store_float) {
     return TS_ERROR;
   }
 
-  conv->set_float(dest, value);
+  conv->store_float(dest, value);
 
   return TS_SUCCESS;
 }
@@ -8293,10 +8438,10 @@ TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
   MgmtConverter const *conv;
   void *src = _conf_to_memberp(conf, reinterpret_cast<HttpSM *>(txnp)->t_state.txn_conf, conv);
 
-  if (!src || !conv->get_float) {
+  if (!src || !conv->load_float) {
     return TS_ERROR;
   }
-  *value = conv->get_float(src);
+  *value = conv->load_float(src);
 
   return TS_SUCCESS;
 }
@@ -8389,8 +8534,8 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   default: {
     MgmtConverter const *conv;
     void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
-    if (dest != nullptr && conv != nullptr && conv->set_string) {
-      conv->set_string(dest, std::string_view(value, length));
+    if (dest != nullptr && conv != nullptr && conv->store_string) {
+      conv->store_string(dest, std::string_view(value, length));
     } else {
       return TS_ERROR;
     }
@@ -8426,8 +8571,8 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   default: {
     MgmtConverter const *conv;
     void *src = _conf_to_memberp(conf, sm->t_state.txn_conf, conv);
-    if (src != nullptr && conv != nullptr && conv->get_string) {
-      auto sv = conv->get_string(src);
+    if (src != nullptr && conv != nullptr && conv->load_string) {
+      auto sv = conv->load_string(src);
       *value  = sv.data();
       *length = sv.size();
     } else {

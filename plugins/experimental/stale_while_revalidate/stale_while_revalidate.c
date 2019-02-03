@@ -597,7 +597,7 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
 
           fetch_cont = TSContCreate(fetch_resource, TSMutexCreate());
           TSContDataSet(fetch_cont, (void *)state);
-          TSContSchedule(fetch_cont, 0, TS_THREAD_POOL_NET);
+          TSContScheduleOnPool(fetch_cont, 0, TS_THREAD_POOL_NET);
           TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
         } else if ((state->txn_start - chi->date) < (chi->max_age + chi->stale_on_error)) {
           TSDebug(PLUGIN_NAME, "Looks like we can return fresh data on 500 error");
@@ -609,7 +609,7 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
           state->main_cont = cont; // we need this for the warning header callback. not sure i like it, but it works.
           fetch_cont       = TSContCreate(fetch_resource, TSMutexCreate());
           TSContDataSet(fetch_cont, (void *)state);
-          TSContSchedule(fetch_cont, 0, TS_THREAD_POOL_NET);
+          TSContScheduleOnPool(fetch_cont, 0, TS_THREAD_POOL_NET);
         } else {
           TSDebug(PLUGIN_NAME, "No love? now: %d date: %d max-age: %d swr: %d soe: %d", (int)state->txn_start, (int)chi->date,
                   (int)chi->max_age, (int)chi->stale_while_revalidate, (int)chi->stale_on_error);

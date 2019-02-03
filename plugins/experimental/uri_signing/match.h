@@ -17,5 +17,5 @@
  */
 
 #include <stdbool.h>
-bool match_glob(const char *needle, const char *haystack);
+bool match_hash(const char *needle, const char *haystack);
 bool match_regex(const char *pattern, const char *uri);

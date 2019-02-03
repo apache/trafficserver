@@ -322,8 +322,7 @@ struct HTTPValTE {
 };
 
 struct HTTPParser {
-  bool m_parsing_http   = false;
-  bool m_allow_non_http = false;
+  bool m_parsing_http = false;
   MIMEParser m_mime_parser;
 };
 

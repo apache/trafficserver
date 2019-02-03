@@ -359,32 +359,35 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
 //-------------------------------------------------------------------------
 // RecGetRecordXXX
 //-------------------------------------------------------------------------
-int
+RecErrT
 RecGetRecordInt(const char *name, RecInt *rec_int, bool lock)
 {
-  int err;
+  RecErrT err;
   RecData data;
+
   if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
     *rec_int = data.rec_int;
   }
   return err;
 }
 
-int
+RecErrT
 RecGetRecordFloat(const char *name, RecFloat *rec_float, bool lock)
 {
-  int err;
+  RecErrT err;
   RecData data;
+
   if ((err = RecGetRecord_Xmalloc(name, RECD_FLOAT, &data, lock)) == REC_ERR_OKAY) {
     *rec_float = data.rec_float;
   }
   return err;
 }
 
-int
+RecErrT
 RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
 {
-  int err = REC_ERR_OKAY;
+  RecErrT err = REC_ERR_OKAY;
+
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
   }
@@ -411,44 +414,48 @@ RecGetRecordString(const char *name, char *buf, int buf_len, bool lock)
   return err;
 }
 
-int
+RecErrT
 RecGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock)
 {
-  int err;
+  RecErrT err;
   RecData data;
+
   if ((err = RecGetRecord_Xmalloc(name, RECD_STRING, &data, lock)) == REC_ERR_OKAY) {
     *rec_string = data.rec_string;
   }
   return err;
 }
 
-int
+RecErrT
 RecGetRecordCounter(const char *name, RecCounter *rec_counter, bool lock)
 {
-  int err;
+  RecErrT err;
   RecData data;
+
   if ((err = RecGetRecord_Xmalloc(name, RECD_COUNTER, &data, lock)) == REC_ERR_OKAY) {
     *rec_counter = data.rec_counter;
   }
   return err;
 }
 
-int
+RecErrT
 RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock)
 {
-  int err;
+  RecErrT err;
   RecData data;
+
   if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
     *rec_byte = data.rec_int;
   }
   return err;
 }
 
-int
+RecErrT
 RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
 {
-  int err;
+  RecErrT err;
   RecData data;
+
   if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
     *rec_bool = 0 != data.rec_int;
   }
@@ -459,10 +466,10 @@ RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
 // RecGetRec Attributes
 //-------------------------------------------------------------------------
 
-int
+RecErrT
 RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), void *data, bool lock)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -484,7 +491,7 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
   return err;
 }
 
-int
+RecErrT
 RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(const RecRecord *, void *), void *data, bool lock)
 {
   int num_records;
@@ -514,10 +521,10 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
   return REC_ERR_OKAY;
 }
 
-int
+RecErrT
 RecGetRecordType(const char *name, RecT *rec_type, bool lock)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -539,10 +546,10 @@ RecGetRecordType(const char *name, RecT *rec_type, bool lock)
   return err;
 }
 
-int
+RecErrT
 RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -568,10 +575,10 @@ RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock)
   return err;
 }
 
-int
+RecErrT
 RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lock)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -597,10 +604,10 @@ RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lo
   return err;
 }
 
-int
+RecErrT
 RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -629,10 +636,10 @@ RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
   return err;
 }
 
-int
+RecErrT
 RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -658,10 +665,10 @@ RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock)
   return err;
 }
 
-int
+RecErrT
 RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -687,10 +694,10 @@ RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock)
   return err;
 }
 
-int
+RecErrT
 RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -716,10 +723,10 @@ RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock)
   return err;
 }
 
-int
+RecErrT
 RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
 {
-  int err;
+  RecErrT err;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -767,10 +774,10 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
   return err;
 }
 
-int
+RecErrT
 RecGetRecordAccessType(const char *name, RecAccessT *access, bool lock)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -792,10 +799,10 @@ RecGetRecordAccessType(const char *name, RecAccessT *access, bool lock)
   return err;
 }
 
-int
+RecErrT
 RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -817,10 +824,10 @@ RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
   return err;
 }
 
-int
+RecErrT
 RecGetRecordSource(const char *name, RecSourceT *source, bool lock)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   if (lock) {
     ink_rwlock_rdlock(&g_records_rwlock);
@@ -1086,8 +1093,8 @@ REC_readInteger(const char *name, bool *found, bool lock)
 {
   ink_assert(name);
   RecInt _tmp = 0;
-  bool _found;
-  _found = (RecGetRecordInt(name, &_tmp, lock) == REC_ERR_OKAY);
+  bool _found = (RecGetRecordInt(name, &_tmp, lock) == REC_ERR_OKAY);
+
   if (found) {
     *found = _found;
   }
@@ -1099,8 +1106,8 @@ REC_readFloat(char *name, bool *found, bool lock)
 {
   ink_assert(name);
   RecFloat _tmp = 0.0;
-  bool _found;
-  _found = (RecGetRecordFloat(name, &_tmp, lock) == REC_ERR_OKAY);
+  bool _found   = (RecGetRecordFloat(name, &_tmp, lock) == REC_ERR_OKAY);
+
   if (found) {
     *found = _found;
   }
@@ -1112,8 +1119,8 @@ REC_readCounter(char *name, bool *found, bool lock)
 {
   ink_assert(name);
   RecCounter _tmp = 0;
-  bool _found;
-  _found = (RecGetRecordCounter(name, &_tmp, lock) == REC_ERR_OKAY);
+  bool _found     = (RecGetRecordCounter(name, &_tmp, lock) == REC_ERR_OKAY);
+
   if (found) {
     *found = _found;
   }
@@ -1125,8 +1132,8 @@ REC_readString(const char *name, bool *found, bool lock)
 {
   ink_assert(name);
   RecString _tmp = nullptr;
-  bool _found;
-  _found = (RecGetRecordString_Xmalloc(name, &_tmp, lock) == REC_ERR_OKAY);
+  bool _found    = (RecGetRecordString_Xmalloc(name, &_tmp, lock) == REC_ERR_OKAY);
+
   if (found) {
     *found = _found;
   }

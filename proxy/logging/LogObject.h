@@ -119,6 +119,17 @@ public:
   }
 
   int log(LogAccess *lad, const char *text_entry = nullptr);
+
+  /** Log the @a text_entry.
+   *
+   * @param lad Log accessor.
+   * @param text_entry Literal text to log.
+   * @return Result - value from Log::ReturnCodeFlags.
+   *
+   * @see Log::ReturnCodeFlags.
+   */
+  int log(LogAccess *lad, std::string_view text_entry);
+
   int va_log(LogAccess *lad, const char *fmt, va_list ap);
 
   unsigned roll_files(long time_now = 0);

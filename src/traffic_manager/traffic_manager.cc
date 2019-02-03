@@ -548,7 +548,7 @@ main(int argc, const char **argv)
 
   init_dirs(); // setup critical directories, needs LibRecords
 
-  if (RecGetRecordString("proxy.config.admin.user_id", userToRunAs, sizeof(userToRunAs)) != TS_ERR_OKAY ||
+  if (RecGetRecordString("proxy.config.admin.user_id", userToRunAs, sizeof(userToRunAs)) != REC_ERR_OKAY ||
       strlen(userToRunAs) == 0) {
     mgmt_fatal(0, "proxy.config.admin.user_id is not set\n");
   }

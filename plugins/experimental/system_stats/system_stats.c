@@ -224,7 +224,7 @@ systemStatsContCB(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
   stat_creation_mutex = TSContMutexGet(cont);
   getStats(stat_creation_mutex);
 
-  TSContSchedule(cont, SYSTEM_STATS_TIMEOUT, TS_THREAD_POOL_TASK);
+  TSContScheduleOnPool(cont, SYSTEM_STATS_TIMEOUT, TS_THREAD_POOL_TASK);
   TSDebug(DEBUG_TAG, "finished %s", __FUNCTION__);
 
   return 0;
@@ -253,7 +253,7 @@ TSPluginInit(int argc, const char *argv[])
   // We want our first hit immediate to populate the stats,
   // Subsequent schedules done within the function will be for
   // 5 seconds.
-  TSContSchedule(stats_cont, 0, TS_THREAD_POOL_TASK);
+  TSContScheduleOnPool(stats_cont, 0, TS_THREAD_POOL_TASK);
 
   TSDebug(DEBUG_TAG, "Init complete");
 }

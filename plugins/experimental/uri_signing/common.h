@@ -28,6 +28,7 @@ void PrintToStdErr(const char *fmt, ...);
 
 #else
 
+#include "ts/ts.h"
 #define PluginDebug(...) TSDebug("uri_signing", PLUGIN_NAME " " __VA_ARGS__)
 #define PluginError(...) PluginDebug(__VA_ARGS__), TSError(PLUGIN_NAME " " __VA_ARGS__)
 

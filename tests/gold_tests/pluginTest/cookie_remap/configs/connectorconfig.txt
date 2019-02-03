@@ -1,0 +1,16 @@
+# This is a test configuration
+
+# First 2 ops do a comparison against the cookie and the 3rd
+# one does against the url
+op:
+  cookie: fpbeta
+  operation: string
+  match: abcd
+  connector: and
+  cookie: icecream
+  operation: exists
+  connector: and
+  operation: regex
+  regex: magic
+  sendto: http://127.0.0.10:$PORT/cookiematches
+  else: http://127.0.0.11:$ALTPORT/cookiedoesntmatch

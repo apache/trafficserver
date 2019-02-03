@@ -141,6 +141,8 @@ struct MIMEField {
       return true; // by default, assume supports commas
   }
 
+  /// @return The name of @a this field.
+  std::string_view name_get() const;
   const char *name_get(int *length) const;
 
   /** Find the index of the value in the multi-value field.
@@ -157,7 +159,10 @@ struct MIMEField {
   */
   int value_get_index(const char *value, int length) const;
 
+  /// @return The value of @a this field.
+  std::string_view value_get() const;
   const char *value_get(int *length) const;
+
   int32_t value_get_int() const;
   uint32_t value_get_uint() const;
   int64_t value_get_int64() const;
@@ -655,11 +660,9 @@ inkcoreapi MIMEField *mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl 
 
 void mime_field_destroy(MIMEHdrImpl *mh, MIMEField *field);
 
-const char *mime_field_name_get(const MIMEField *field, int *length);
 void mime_field_name_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, const char *name,
                          int length, bool must_copy_string);
 
-inkcoreapi const char *mime_field_value_get(const MIMEField *field, int *length);
 int32_t mime_field_value_get_int(const MIMEField *field);
 uint32_t mime_field_value_get_uint(const MIMEField *field);
 int64_t mime_field_value_get_int64(const MIMEField *field);
@@ -744,7 +747,9 @@ int mime_parse_integer(const char *&buf, const char *end, int *integer);
 inline const char *
 MIMEField::name_get(int *length) const
 {
-  return (mime_field_name_get(this, length));
+  auto name{this->name_get()};
+  *length = int(name.size());
+  return name.data();
 }
 
 /*-------------------------------------------------------------------------
@@ -788,7 +793,9 @@ MIMEField::name_is_valid() const
 inline const char *
 MIMEField::value_get(int *length) const
 {
-  return (mime_field_value_get(this, length));
+  auto value{this->value_get()};
+  *length = int(value.size());
+  return value.data();
 }
 
 inline int32_t
@@ -1253,20 +1260,17 @@ MIMEHdr::value_get_index(const char *name, int name_length, const char *value, i
 inline const char *
 MIMEHdr::value_get(const char *name, int name_length, int *value_length_return) const
 {
-  //    ink_assert(valid());
-  const MIMEField *field = field_find(name, name_length);
-
-  if (field)
-    return (mime_field_value_get(field, value_length_return));
-  else
-    return (nullptr);
+  if (const MIMEField *field = field_find(name, name_length); field) {
+    return field->value_get(value_length_return);
+  }
+  return nullptr;
 }
 
 inline std::string_view
 MIMEHdr::value_get(std::string_view const &name) const
 {
   if (MIMEField const *field = field_find(name.data(), name.size()); field) {
-    return {field->m_ptr_value, field->m_len_value};
+    return field->value_get();
   }
   return {};
 }

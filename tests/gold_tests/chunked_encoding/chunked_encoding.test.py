@@ -83,7 +83,7 @@ ts.Disk.remap_config.AddLine(
     'map http://www.yetanotherexample.com http://127.0.0.1:{0}'.format(server3.Variables.Port)
 )
 ts.Disk.remap_config.AddLine(
-    'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.Port, ts.Variables.ssl_port)
+    'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port)
 )
 
 

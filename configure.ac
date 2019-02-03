@@ -1195,6 +1195,9 @@ TS_CHECK_CRYPTO_EC_KEYS
 # Check for the presense of the certificate callback in the ssl library
 TS_CHECK_CRYPTO_CERT_CB
 
+# Check for the client hello callback
+TS_CHECK_CRYPTO_HELLO_CB
+
 #
 # Check for SSL_set0_rbio call
 TS_CHECK_CRYPTO_SET_RBIO

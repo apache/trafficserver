@@ -37,7 +37,7 @@ plugin allows the following:
    devices and within cache groups.
 
 Configuration
-============
+=============
 
 This plugin is intended for use as a remap plugin and is
 configured in :file:`remap.config`.

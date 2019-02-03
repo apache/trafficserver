@@ -164,7 +164,7 @@ public:
   void start() override;
   void destroy() override;
   void free() override;
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) override;
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
 
   bool
   ready_to_free() const

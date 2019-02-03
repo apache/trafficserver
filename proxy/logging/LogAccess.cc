@@ -360,6 +360,15 @@ LogAccess::marshal_str(char *dest, const char *source, int padded_len)
 }
 
 /*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_client_req_all_header_fields(char *buf)
+{
+  return LogUtils::marshalMimeHdr(m_client_request, buf);
+}
+
+/*-------------------------------------------------------------------------
   LogAccess::marshal_mem
 
   This is a version of marshal_str that works with unterminated strings.
@@ -477,6 +486,18 @@ LogAccess::unmarshal_int(char **buf)
 }
 
 /*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_proxy_resp_all_header_fields(char *buf)
+{
+  return LogUtils::marshalMimeHdr(m_proxy_response, buf);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------------
   unmarshal_itoa
 
   This routine provides a fast conversion from a binary int to a string.
@@ -587,6 +608,18 @@ LogAccess::unmarshal_int_to_str_hex(char **buf, char *dest, int len)
 }
 
 /*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_proxy_req_all_header_fields(char *buf)
+{
+  return LogUtils::marshalMimeHdr(m_proxy_request, buf);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------------
   LogAccess::unmarshal_str
 
   Retrieve the string from the location pointed at by the buffer and
@@ -673,6 +706,18 @@ LogAccess::unmarshal_int_to_time_str(char **buf, char *dest, int len)
   return strlen;
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_server_resp_all_header_fields(char *buf)
+{
+  return LogUtils::marshalMimeHdr(m_server_response, buf);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
 int
 LogAccess::unmarshal_int_to_netscape_str(char **buf, char *dest, int len)
 {
@@ -702,6 +747,13 @@ LogAccess::unmarshal_http_method (char **buf, char *dest, int len)
     return unmarshal_str (buf, dest, len);
 }
 */
+
+int
+LogAccess::marshal_cache_resp_all_header_fields(char *buf)
+{
+  return LogUtils::marshalMimeHdr(m_cache_response, buf);
+}
+
 /*-------------------------------------------------------------------------
   LogAccess::unmarshal_http_version
 

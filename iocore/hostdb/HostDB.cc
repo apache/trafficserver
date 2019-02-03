@@ -59,7 +59,7 @@ static ink_time_t hostdb_hostfile_update_timestamp = 0;
 static char hostdb_filename[PATH_NAME_MAX]         = DEFAULT_HOST_DB_FILENAME;
 int hostdb_max_count                               = DEFAULT_HOST_DB_SIZE;
 char hostdb_hostfile_path[PATH_NAME_MAX]           = "";
-int hostdb_sync_frequency                          = 120;
+int hostdb_sync_frequency                          = 0;
 int hostdb_disable_reverse_lookup                  = 0;
 
 ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
@@ -1567,6 +1567,9 @@ HostDBContinuation::iterateEvent(int event, Event *e)
       }
     }
     current_iterate_pos++;
+  }
+
+  if (current_iterate_pos < hostDB.refcountcache->partition_count()) {
     // And reschedule ourselves to pickup the next bucket after HOST_DB_RETRY_PERIOD.
     Debug("hostdb", "iterateEvent event=%d eventp=%p: completed current iteration %ld of %ld", event, e, current_iterate_pos,
           hostDB.refcountcache->partition_count());

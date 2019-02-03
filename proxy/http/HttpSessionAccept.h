@@ -81,10 +81,6 @@ public:
   bool f_transparent_passthrough;
   /// Set transparent passthrough.
   self &setTransparentPassthrough(bool);
-  /// Accepting backdoor connections.
-  bool backdoor;
-  /// Set backdoor accept.
-  self &setBackdoor(bool);
   /// Host address resolution preference order.
   HostResPreferenceOrder host_res_preference;
   /// Set the host query preference.
@@ -96,7 +92,7 @@ public:
 };
 
 inline HttpSessionAcceptOptions::HttpSessionAcceptOptions()
-  : transport_type(0), outbound_port(0), f_outbound_transparent(false), f_transparent_passthrough(false), backdoor(false)
+  : transport_type(0), outbound_port(0), f_outbound_transparent(false), f_transparent_passthrough(false)
 {
   memcpy(host_res_preference, host_res_default_preference_order, sizeof(host_res_preference));
 }
@@ -146,13 +142,6 @@ inline HttpSessionAcceptOptions &
 HttpSessionAcceptOptions::setTransparentPassthrough(bool flag)
 {
   f_transparent_passthrough = flag;
-  return *this;
-}
-
-inline HttpSessionAcceptOptions &
-HttpSessionAcceptOptions::setBackdoor(bool flag)
-{
-  backdoor = flag;
   return *this;
 }
 

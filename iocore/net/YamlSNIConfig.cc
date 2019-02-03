@@ -26,10 +26,12 @@
 #include <string_view>
 
 #include <yaml-cpp/yaml.h>
+#include <openssl/ssl.h>
 
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
 #include "tsconfig/Errata.h"
+#include "P_SNIActionPerformer.h"
 
 ts::Errata
 YamlSNIConfig::loader(const char *cfgFilename)
@@ -55,9 +57,37 @@ YamlSNIConfig::loader(const char *cfgFilename)
   return ts::Errata();
 }
 
-TsEnumDescriptor LEVEL_DESCRIPTOR      = {{{"NONE", 0}, {"MODERATE", 1}, {"STRICT", 2}}};
-TsEnumDescriptor POLICY_DESCRIPTOR     = {{{"DISABLED", 0}, {"PERMISSIVE", 1}, {"ENFORCED", 2}}};
-TsEnumDescriptor PROPERTIES_DESCRIPTOR = {{{"NONE", 0}, {"SIGNATURE", 0x1}, {"NAME", 0x2}, {"ALL", 0x3}}};
+void
+YamlSNIConfig::Item::EnableProtocol(YamlSNIConfig::TLSProtocol proto)
+{
+  if (proto <= YamlSNIConfig::TLSProtocol::TLS_MAX) {
+    if (protocol_unset) {
+      protocol_mask  = TLSValidProtocols::max_mask;
+      protocol_unset = false;
+    }
+    switch (proto) {
+    case YamlSNIConfig::TLSProtocol::TLSv1:
+      protocol_mask &= ~SSL_OP_NO_TLSv1;
+      break;
+    case YamlSNIConfig::TLSProtocol::TLSv1_1:
+      protocol_mask &= ~SSL_OP_NO_TLSv1_1;
+      break;
+    case YamlSNIConfig::TLSProtocol::TLSv1_2:
+      protocol_mask &= ~SSL_OP_NO_TLSv1_2;
+      break;
+    case YamlSNIConfig::TLSProtocol::TLSv1_3:
+#ifdef SSL_OP_NO_TLSv1_3
+      protocol_mask &= ~SSL_OP_NO_TLSv1_3;
+#endif
+      break;
+    }
+  }
+}
+
+TsEnumDescriptor LEVEL_DESCRIPTOR         = {{{"NONE", 0}, {"MODERATE", 1}, {"STRICT", 2}}};
+TsEnumDescriptor POLICY_DESCRIPTOR        = {{{"DISABLED", 0}, {"PERMISSIVE", 1}, {"ENFORCED", 2}}};
+TsEnumDescriptor PROPERTIES_DESCRIPTOR    = {{{"NONE", 0}, {"SIGNATURE", 0x1}, {"NAME", 0x2}, {"ALL", 0x3}}};
+TsEnumDescriptor TLS_PROTOCOLS_DESCRIPTOR = {{{"TLSv1", 0}, {"TLSv1_1", 1}, {"TLSv1_2", 2}, {"TLSv1_3", 3}}};
 
 std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_disable_h2,
@@ -69,7 +99,12 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_verify_server_properties,
                                                TS_client_cert,
                                                TS_client_key,
-                                               TS_ip_allow};
+                                               TS_ip_allow
+#if TS_USE_HELLO_CB
+                                               ,
+                                               TS_valid_tls_versions_in
+#endif
+};
 
 namespace YAML
 {
@@ -157,6 +192,13 @@ template <> struct convert<YamlSNIConfig::Item> {
 
     if (node[TS_ip_allow]) {
       item.ip_allow = node[TS_ip_allow].as<std::string>();
+    }
+    if (node[TS_valid_tls_versions_in]) {
+      for (unsigned int i = 0; i < node[TS_valid_tls_versions_in].size(); i++) {
+        auto value   = node[TS_valid_tls_versions_in][i].as<std::string>();
+        int protocol = TLS_PROTOCOLS_DESCRIPTOR.get(value);
+        item.EnableProtocol(static_cast<YamlSNIConfig::TLSProtocol>(protocol));
+      }
     }
     return true;
   }

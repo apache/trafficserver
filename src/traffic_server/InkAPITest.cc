@@ -1882,7 +1882,7 @@ cache_handler(TSCont contp, TSEvent event, void *data)
 
       // now waiting for 100ms to make sure the key is
       // written in directory remove the content
-      TSContSchedule(contp, 100, TS_THREAD_POOL_DEFAULT);
+      TSContScheduleOnPool(contp, 100, TS_THREAD_POOL_NET);
     }
 
     return 1;
@@ -2463,7 +2463,7 @@ REGRESSION_TEST(SDK_API_TSActionCancel)(RegressionTest *test, int /* atype ATS_U
 
   TSMutex cont_mutex = TSMutexCreate();
   TSCont contp       = TSContCreate(action_cancel_handler, cont_mutex);
-  TSAction actionp   = TSContSchedule(contp, 10000, TS_THREAD_POOL_DEFAULT);
+  TSAction actionp   = TSContScheduleOnPool(contp, 10000, TS_THREAD_POOL_NET);
 
   TSMutexLock(cont_mutex);
   if (TSActionDone(actionp)) {
@@ -2475,7 +2475,7 @@ REGRESSION_TEST(SDK_API_TSActionCancel)(RegressionTest *test, int /* atype ATS_U
   }
   TSMutexUnlock(cont_mutex);
 
-  TSContSchedule(contp, 0, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
 }
 
 //////////////////////////////////////////////
@@ -2594,7 +2594,7 @@ REGRESSION_TEST(SDK_API_TSContDataGet)(RegressionTest *test, int /* atype ATS_UN
 
   TSContDataSet(contp, (void *)my_data);
 
-  TSContSchedule(contp, 0, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
 }
 
 //////////////////////////////////////////////
@@ -2633,7 +2633,7 @@ REGRESSION_TEST(SDK_API_TSContMutexGet)(RegressionTest *test, int /* atype ATS_U
 //////////////////////////////////////////////
 //       SDK_API_TSCont
 //
-// Unit Test for API: TSContSchedule
+// Unit Test for API: TSContScheduleOnPool
 //////////////////////////////////////////////
 
 // this is needed for asynchronous APIs
@@ -2649,15 +2649,15 @@ cont_schedule_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */
 {
   if (event == TS_EVENT_IMMEDIATE) {
     // Test Case 1
-    SDK_RPRINT(SDK_ContSchedule_test, "TSContSchedule", "TestCase1", TC_PASS, "ok");
+    SDK_RPRINT(SDK_ContSchedule_test, "TSContScheduleOnPool", "TestCase1", TC_PASS, "ok");
     tc1_count++;
   } else if (event == TS_EVENT_TIMEOUT) {
     // Test Case 2
-    SDK_RPRINT(SDK_ContSchedule_test, "TSContSchedule", "TestCase2", TC_PASS, "ok");
+    SDK_RPRINT(SDK_ContSchedule_test, "TSContScheduleOnPool", "TestCase2", TC_PASS, "ok");
     tc2_count++;
   } else {
     // If we receive a bad event, it's a failure
-    SDK_RPRINT(SDK_ContSchedule_test, "TSContSchedule", "TestCase1|2", TC_FAIL, "received unexpected event number %d", event);
+    SDK_RPRINT(SDK_ContSchedule_test, "TSContScheduleOnPool", "TestCase1|2", TC_FAIL, "received unexpected event number %d", event);
     *SDK_ContSchedule_pstatus = REGRESSION_TEST_FAILED;
     return 0;
   }
@@ -3035,10 +3035,10 @@ REGRESSION_TEST(SDK_API_TSContSchedule)(RegressionTest *test, int /* atype ATS_U
   TSCont contp2 = TSContCreate(cont_schedule_handler, TSMutexCreate());
 
   // Test Case 1: schedule immediate
-  TSContSchedule(contp, 0, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
 
   // Test Case 2: schedule in 10ms
-  TSContSchedule(contp2, 10, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(contp2, 10, TS_THREAD_POOL_NET);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3507,7 +3507,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
   case TS_EVENT_TIMEOUT:
     /* Browser still waiting the response ? */
     if (test->browser->status == REQUEST_INPROGRESS) {
-      TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+      TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
     }
     /* Browser got the response. test is over. clean up */
     else {
@@ -3600,7 +3600,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpHookAdd)(RegressionTest *test, int /* atyp
 
   /* Wait until transaction is done */
   if (socktest->browser->status == REQUEST_INPROGRESS) {
-    TSContSchedule(cont, 25, TS_THREAD_POOL_DEFAULT);
+    TSContScheduleOnPool(cont, 25, TS_THREAD_POOL_NET);
   }
 
   return;
@@ -6443,7 +6443,7 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
   data->log              = log;
   TSContDataSet(log_test_cont, data);
 
-  TSContSchedule(log_test_cont, 6000, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(log_test_cont, 6000, TS_THREAD_POOL_NET);
   return;
 }
 
@@ -7000,7 +7000,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_TIMEOUT:
     /* Browser still waiting the response ? */
     if (data->browser->status == REQUEST_INPROGRESS) {
-      TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+      TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
     }
     /* Browser got the response. test is over. clean up */
     else {
@@ -7085,7 +7085,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpSsn)(RegressionTest *test, int /* atype AT
 
   /* Wait until transaction is done */
   if (socktest->browser->status == REQUEST_INPROGRESS) {
-    TSContSchedule(cont, 25, TS_THREAD_POOL_DEFAULT);
+    TSContScheduleOnPool(cont, 25, TS_THREAD_POOL_NET);
   }
 
   return;
@@ -7244,13 +7244,13 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
       if (ptest->configured) {
         // If we are still in progress, reschedule.
         rprintf(ptest->regtest, "waiting for response\n");
-        TSContSchedule(contp, 100, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 100, TS_THREAD_POOL_NET);
         break;
       }
 
       if (!ptest->parent_routing_enabled()) {
         rprintf(ptest->regtest, "waiting for configuration\n");
-        TSContSchedule(contp, 100, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 100, TS_THREAD_POOL_NET);
         break;
       }
 
@@ -7330,7 +7330,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet_Fail)(RegressionTest *test,
   ptest->os = synserver_create(SYNSERVER_LISTEN_PORT, TSContCreate(synserver_vc_refuse, TSMutexCreate()));
   synserver_start(ptest->os);
 
-  TSContSchedule(cont, 25, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(cont, 25, TS_THREAD_POOL_NET);
 }
 
 EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet_Success)(RegressionTest *test, int level, int *pstatus)
@@ -7362,7 +7362,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet_Success)(RegressionTest *te
   ptest->os = synserver_create(SYNSERVER_LISTEN_PORT, TSContCreate(synserver_vc_accept, TSMutexCreate()));
   synserver_start(ptest->os);
 
-  TSContSchedule(cont, 25, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(cont, 25, TS_THREAD_POOL_NET);
 }
 
 /////////////////////////////////////////////////////
@@ -7485,12 +7485,12 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
     /* Browser still waiting the response ? */
     if (data->first_time == true) {
       if (data->browser1->status == REQUEST_INPROGRESS) {
-        TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
         return 0;
       }
     } else {
       if (data->browser2->status == REQUEST_INPROGRESS) {
-        TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
         return 0;
       }
     }
@@ -7508,7 +7508,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
         /* Send another similar client request */
         synclient_txn_send_request(data->browser2, data->request);
         ink_assert(REQUEST_INPROGRESS == data->browser2->status);
-        TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
         return 0;
       }
 
@@ -7577,7 +7577,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnCache)(RegressionTest *test, int /* aty
   synclient_txn_send_request(socktest->browser1, socktest->request);
 
   /* Wait until transaction is done */
-  TSContSchedule(cont, 25, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(cont, 25, TS_THREAD_POOL_NET);
 
   return;
 }
@@ -7951,37 +7951,37 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
     switch (data->req_no) {
     case 1:
       if (data->browser1->status == REQUEST_INPROGRESS) {
-        TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
         return 0;
       }
       data->req_no++;
       Debug(UTDBG_TAG "_transform", "Running Browser 2");
       synclient_txn_send_request(data->browser2, data->request2);
-      TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+      TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
       return 0;
     case 2:
       if (data->browser2->status == REQUEST_INPROGRESS) {
-        TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
         return 0;
       }
       data->req_no++;
       Debug(UTDBG_TAG "_transform", "Running Browser 3");
       synclient_txn_send_request(data->browser3, data->request1);
-      TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+      TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
       return 0;
     case 3:
       if (data->browser3->status == REQUEST_INPROGRESS) {
-        TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
         return 0;
       }
       data->req_no++;
       Debug(UTDBG_TAG "_transform", "Running Browser 4");
       synclient_txn_send_request(data->browser4, data->request2);
-      TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+      TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
       return 0;
     case 4:
       if (data->browser4->status == REQUEST_INPROGRESS) {
-        TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
         return 0;
       }
       synserver_delete(data->os);
@@ -8120,7 +8120,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnTransform)(RegressionTest *test, int /*
   // synclient_txn_send_request(socktest->browser2, socktest->request2);
 
   /* Wait until transaction is done */
-  TSContSchedule(cont, 25, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(cont, 25, TS_THREAD_POOL_NET);
 
   return;
 }
@@ -8232,12 +8232,12 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
     /* Browser still waiting the response ? */
     if (data->first_time == true) {
       if ((data->browser1->status == REQUEST_INPROGRESS) || (data->browser2->status == REQUEST_INPROGRESS)) {
-        TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
         return 0;
       }
     } else {
       if (data->browser3->status == REQUEST_INPROGRESS) {
-        TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
         return 0;
       }
     }
@@ -8257,7 +8257,7 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
 
         /* Register to HTTP hooks that are called in case of alternate selection */
         TSHttpHookAdd(TS_HTTP_SELECT_ALT_HOOK, contp);
-        TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+        TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
         return 0;
       }
 
@@ -8336,7 +8336,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo)(RegressionTest *test, int /* atyp
   synclient_txn_send_request(socktest->browser2, socktest->request2);
 
   /* Wait until transaction is done */
-  TSContSchedule(cont, 25, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(cont, 25, TS_THREAD_POOL_NET);
 
   return;
 }
@@ -8425,7 +8425,7 @@ cont_test_handler(TSCont contp, TSEvent event, void *edata)
     /* Browser still waiting the response ? */
     if (data->browser->status == REQUEST_INPROGRESS) {
       TSDebug(UTDBG_TAG, "Browser still waiting response...");
-      TSContSchedule(contp, 25, TS_THREAD_POOL_DEFAULT);
+      TSContScheduleOnPool(contp, 25, TS_THREAD_POOL_NET);
     }
     /* Browser got the response */
     else {
@@ -8517,7 +8517,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept)(RegressionTest *test, 
   synclient_txn_send_request_to_vc(data->browser, data->request, data->vc);
 
   /* Wait until transaction is done */
-  TSContSchedule(cont_test, 25, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(cont_test, 25, TS_THREAD_POOL_NET);
 
   return;
 }
@@ -8556,7 +8556,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *
   synclient_txn_send_request_to_vc(data->browser, data->request, data->vc);
 
   /* Wait until transaction is done */
-  TSContSchedule(cont_test, 25, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(cont_test, 25, TS_THREAD_POOL_NET);
 
   return;
 }

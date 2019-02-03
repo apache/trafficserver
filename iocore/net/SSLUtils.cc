@@ -418,6 +418,57 @@ PerformAction(Continuation *cont, const char *servername)
   return SSL_TLSEXT_ERR_OK;
 }
 
+#if TS_USE_HELLO_CB
+// Pausable callback
+static int
+ssl_client_hello_callback(SSL *s, int *al, void *arg)
+{
+  const char *servername = nullptr;
+  const unsigned char *p;
+  size_t remaining, len;
+  if (SSL_client_hello_get0_ext(s, TLSEXT_TYPE_server_name, &p, &remaining) || remaining <= 2) {
+    // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
+    /* Extract the length of the supplied list of names. */
+    len = *(p++) << 8;
+    len += *(p++);
+    if (len + 2 == remaining) {
+      remaining = len;
+      /*
+       * The list in practice only has a single element, so we only consider
+       * the first one.
+       */
+      if (remaining != 0 && *p++ == TLSEXT_NAMETYPE_host_name) {
+        remaining--;
+        /* Now we can finally pull out the byte array with the actual hostname. */
+        if (remaining > 2) {
+          len = *(p++) << 8;
+          len += *(p++);
+          if (len + 2 <= remaining) {
+            remaining  = len;
+            servername = reinterpret_cast<const char *>(p);
+          }
+        }
+      }
+    }
+  }
+
+  SSLNetVConnection *netvc = SSLNetVCAccess(s);
+
+  netvc->serverName = servername ? servername : "";
+  int ret           = PerformAction(netvc, netvc->serverName);
+  if (ret != SSL_TLSEXT_ERR_OK) {
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
+  if (netvc->has_tunnel_destination() && !netvc->decrypt_tunnel()) {
+    netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
+  }
+  if (netvc->protocol_mask_set) {
+    setTLSValidProtocols(s, netvc->protocol_mask, TLSValidProtocols::max_mask);
+  }
+  return 1;
+}
+#endif
+
 // Use the certificate callback for openssl 1.0.2 and greater
 // otherwise use the SNI callback
 #if TS_USE_CERT_CB
@@ -471,6 +522,8 @@ ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   if (nullptr == netvc->serverName) {
     netvc->serverName = "";
   }
+
+  // Rerun the actions in case a plugin changed the server name
   int ret = PerformAction(netvc, netvc->serverName);
   if (ret != SSL_TLSEXT_ERR_OK) {
     return SSL_TLSEXT_ERR_ALERT_FATAL;
@@ -478,7 +531,6 @@ ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   if (netvc->has_tunnel_destination() && !netvc->decrypt_tunnel()) {
     netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
   }
-
   return SSL_TLSEXT_ERR_OK;
 }
 
@@ -1592,6 +1644,16 @@ ssl_set_handshake_callbacks(SSL_CTX *ctx)
 #else
   SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_and_cert_callback);
 #endif
+#if TS_USE_HELLO_CB
+  SSL_CTX_set_client_hello_cb(ctx, ssl_client_hello_callback, nullptr);
+#endif
+}
+
+void
+setTLSValidProtocols(SSL *ssl, unsigned long proto_mask, unsigned long max_mask)
+{
+  SSL_set_options(ssl, proto_mask);
+  SSL_clear_options(ssl, max_mask & ~proto_mask);
 }
 
 void

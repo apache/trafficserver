@@ -511,7 +511,7 @@ psi_include(TSCont contp, void *edata ATS_UNUSED)
      TS_HTTP_READ_REQUEST_HDR, TS_HTTP_OS_DNS and so on...) we could
      use TSHttpTxnReenable to wake up the transaction instead of sending an event. */
 
-  TSContSchedule(contp, 0, TS_THREAD_POOL_DEFAULT);
+  TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
   data->psi_success = 0;
   data->state       = STATE_READ_DATA;
   TSMutexUnlock(TSContMutexGet(contp));
@@ -749,7 +749,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
     d->contp = contp;
     d->event = event;
     TSContDataSet(c, d);
-    TSContSchedule(c, 10, TS_THREAD_POOL_DEFAULT);
+    TSContScheduleOnPool(c, 10, TS_THREAD_POOL_NET);
     return 1;
   }
 
@@ -765,7 +765,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
        the continuation right away as the thread will call us back
        on this continuation. */
     if (state == STATE_READ_PSI) {
-      TSContSchedule(contp, 10, TS_THREAD_POOL_DEFAULT);
+      TSContScheduleOnPool(contp, 10, TS_THREAD_POOL_NET);
     } else {
       TSMutexUnlock(TSContMutexGet(contp));
       cont_data_destroy(TSContDataGet(contp));

@@ -26,6 +26,7 @@
 #include <ts/ts.h>
 #include <openssl/ssl.h>
 #include <hiredis/hiredis.h>
+#include <string.h>
 #include "common.h"
 
 #include "subscriber.h"

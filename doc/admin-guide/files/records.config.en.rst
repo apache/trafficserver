@@ -1759,7 +1759,7 @@ Proxy User Variables
    ``10.0.2.123``          A single IP Address.
    ``10.0.3.1-10.0.3.254`` A range of IP address.
    ``10.0.4.0/24``         A range of IP address specified by CIDR notation.
-   ======================= ============================================================
+   ======================= ===========================================================
 
    .. important::
 
@@ -1768,7 +1768,7 @@ Proxy User Variables
        information.
        See :ts:cv:`proxy.config.http.server_ports` for information on how to enable Proxy Protocol on a port.
 
-   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header.
+   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header`.
 
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae INT 1
    :reloadable:
@@ -2281,55 +2281,6 @@ Heuristic Expiration
    aging factor is applied, the final maximum age calculated will never be
    higher than the value in this variable.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.time INT 0
-   :deprecated:
-   :reloadable:
-   :overridable:
-
-   How often |TS| checks for an early refresh, during the period before the
-   document stale time. The interval specified must be in seconds.
-
-.. note::
-
-   Previous versions of Apache |TS| defaulted this to 240s. This
-   feature is deprecated as of ATS v6.2.0.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.0
-   :deprecated:
-   :reloadable:
-   :overridable:
-
-   The probability that a refresh is made on a document during the fuzz time
-   specified in :ts:cv:`proxy.config.http.cache.fuzz.time`.
-
-.. note::
-
-   Previous versions of Apache |TS| defaulted this to 0.005 (0.5%).
-   This feature is deprecated as of ATS v6.2.0
-
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.min_time INT 0
-   :deprecated:
-   :reloadable:
-   :overridable:
-
-   Handles requests with a TTL less than :ts:cv:`proxy.config.http.cache.fuzz.time`.
-   It allows for different times to evaluate the probability of revalidation
-   for small TTLs and big TTLs. Objects with small TTLs will start "rolling the
-   revalidation dice" near the ``fuzz.min_time``, while objects with large TTLs
-   would start at ``fuzz.time``. A logarithmic-like function between determines
-   the revalidation evaluation start time (which will be between
-   ``fuzz.min_time`` and ``fuzz.time``). As the object gets closer to expiring,
-   the window start becomes more likely. By default this setting is not enabled,
-   but should be enabled any time you have objects with small TTLs.
-
-.. note::
-
-    These fuzzing options are marked as deprecated as of v6.2.0, and will be
-    removed for v7.0.0. Instead, we recommend looking at the new
-    :ts:cv:`proxy.config.http.cache.open_write_fail_action` configuration and
-    the features around thundering heard avoidance (see
-    :ref:`http-proxy-caching` for details).
-
 Dynamic Content & Content Negotiation
 =====================================
 
@@ -2602,7 +2553,7 @@ HostDB
    For values above ``200000``, you must increase :ts:cv:`proxy.config.hostdb.max_size`
    by at least 44 bytes per entry.
 
-.. ts:cv:: proxy.config.hostdb.round_robin_max_count INT 16
+.. ts:cv:: CONFIG proxy.config.hostdb.round_robin_max_count INT 16
 
    The maximum count of DNS answers per round robin hostdb record. The default variable is 16.
 
@@ -2764,9 +2715,10 @@ HostDB
 
    The filename to persist hostdb to on disk.
 
-.. ts:cv:: CONFIG proxy.config.cache.hostdb.sync_frequency INT 120
+.. ts:cv:: CONFIG proxy.config.cache.hostdb.sync_frequency INT 0
 
-   Set the frequency (in seconds) to sync hostdb to disk.
+   Set the frequency (in seconds) to sync hostdb to disk. If set to zero (default as of v9.0.0), we won't
+   sync to disk ever.
 
    Note: hostdb is syncd to disk on a per-partition basis (of which there are 64).
    This means that the minimum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
@@ -3507,9 +3459,9 @@ Client-Related Configuration
 :code:`DISABLED`
    Server Certificate will not be verified
 :code:`PERMISSIVE`
-   Certificate will be verified and the connection will not be established if verification fails.
-:code:`ENFORCED`
    The provided certificate will be verified and the connection will be established irrespective of the verification result. If verification fails the name of the server will be logged.
+:code:`ENFORCED`
+   Certificate will be verified and the connection will not be established if verification fails.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.properties STRING ALL
    :reloadable:

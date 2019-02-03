@@ -23,7 +23,7 @@
 #include <string.h>
 
 bool
-match_glob(const char *needle, const char *haystack)
+match_hash(const char *needle, const char *haystack)
 {
   return false;
 }
