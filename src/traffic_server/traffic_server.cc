@@ -224,6 +224,7 @@ struct AutoStopCont : public Continuation {
   {
     APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
     while (hook) {
+      SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
       hook->invoke(TS_EVENT_LIFECYCLE_SHUTDOWN, nullptr);
       hook = hook->next();
     }
