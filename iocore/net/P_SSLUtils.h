@@ -85,6 +85,7 @@ enum SSL_Stats {
   /* error stats */
   ssl_error_want_write,
   ssl_error_want_read,
+  ssl_error_want_client_hello_cb,
   ssl_error_want_x509_lookup,
   ssl_error_syscall,
   ssl_error_read_eos,

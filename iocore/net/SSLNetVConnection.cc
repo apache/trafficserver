@@ -265,6 +265,13 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
       Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read)");
       break;
+#ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
+    case SSL_ERROR_WANT_CLIENT_HELLO_CB:
+      event = SSL_READ_WOULD_BLOCK;
+      SSL_INCREMENT_DYN_STAT(ssl_error_want_client_hello_cb);
+      Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read/client hello cb)");
+      break;
+#endif
     case SSL_ERROR_WANT_X509_LOOKUP:
       event = SSL_READ_WOULD_BLOCK;
       SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
@@ -806,6 +813,9 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_READ");
       break;
     case SSL_ERROR_WANT_WRITE:
+#ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
+    case SSL_ERROR_WANT_CLIENT_HELLO_CB:
+#endif
     case SSL_ERROR_WANT_X509_LOOKUP: {
       if (SSL_ERROR_WANT_WRITE == err) {
         SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
@@ -813,7 +823,11 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       } else if (SSL_ERROR_WANT_X509_LOOKUP == err) {
         SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
       }
-
+#ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
+      else if (SSL_ERROR_WANT_CLIENT_HELLO_CB == err) {
+        SSL_INCREMENT_DYN_STAT(ssl_error_want_client_hello_cb);
+      }
+#endif
       needs |= EVENTIO_WRITE;
       num_really_written = -EAGAIN;
       Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_WRITE");
@@ -1098,7 +1112,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 {
   // Continue on if we are in the invoked state.  The hook has not yet reenabled
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_CERT_INVOKE || sslHandshakeHookState == HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE ||
-      sslHandshakeHookState == HANDSHAKE_HOOKS_PRE_INVOKE) {
+      sslHandshakeHookState == HANDSHAKE_HOOKS_PRE_INVOKE || sslHandshakeHookState == HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE) {
     return SSL_WAIT_FOR_HOOK;
   }
 
@@ -1110,9 +1124,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     } else {
       curHook = curHook->next();
     }
-    // If no more hooks, move onto SNI
+    // If no more hooks, move onto CLIENT HELLO
+
     if (nullptr == curHook) {
-      sslHandshakeHookState = HANDSHAKE_HOOKS_SNI;
+      sslHandshakeHookState = HANDSHAKE_HOOKS_CLIENT_HELLO;
     } else {
       sslHandshakeHookState = HANDSHAKE_HOOKS_PRE_INVOKE;
       ContWrapper::wrap(nh->mutex.get(), curHook->m_cont, TS_EVENT_VCONN_START, this);
@@ -1294,7 +1309,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
   case SSL_ERROR_WANT_READ:
     return SSL_HANDSHAKE_WANT_READ;
-
+#ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
+  case SSL_ERROR_WANT_CLIENT_HELLO_CB:
+    return EVENT_CONT;
+#endif
 // This value is only defined in openssl has been patched to
 // enable the sni callback to break out of the SSL_accept processing
 #ifdef SSL_ERROR_WANT_SNI_RESOLVE
@@ -1405,7 +1423,12 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
     Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_READ");
     return SSL_HANDSHAKE_WANT_READ;
-
+#ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
+  case SSL_ERROR_WANT_CLIENT_HELLO_CB:
+    SSL_INCREMENT_DYN_STAT(ssl_error_want_client_hello_cb);
+    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_CLIENT_HELLO_CB");
+    break;
+#endif
   case SSL_ERROR_WANT_X509_LOOKUP:
     SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
     Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_X509_LOOKUP");
@@ -1516,6 +1539,9 @@ SSLNetVConnection::reenable(NetHandler *nh, int event)
   case HANDSHAKE_HOOKS_OUTBOUND_PRE_INVOKE:
     sslHandshakeHookState = HANDSHAKE_HOOKS_OUTBOUND_PRE;
     break;
+  case HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE:
+    sslHandshakeHookState = HANDSHAKE_HOOKS_CLIENT_HELLO;
+    break;
   case HANDSHAKE_HOOKS_CERT_INVOKE:
     sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
     break;
@@ -1541,7 +1567,10 @@ SSLNetVConnection::reenable(NetHandler *nh, int event)
   }
   if (curHook != nullptr) {
     // Invoke the hook and return, wait for next reenable
-    if (sslHandshakeHookState == HANDSHAKE_HOOKS_CLIENT_CERT) {
+    if (sslHandshakeHookState == HANDSHAKE_HOOKS_CLIENT_HELLO) {
+      sslHandshakeHookState = HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE;
+      curHook->invoke(TS_EVENT_SSL_CLIENT_HELLO, this);
+    } else if (sslHandshakeHookState == HANDSHAKE_HOOKS_CLIENT_CERT) {
       sslHandshakeHookState = HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE;
       curHook->invoke(TS_EVENT_SSL_VERIFY_CLIENT, this);
     } else if (sslHandshakeHookState == HANDSHAKE_HOOKS_CERT) {
@@ -1573,6 +1602,10 @@ SSLNetVConnection::reenable(NetHandler *nh, int event)
     switch (this->sslHandshakeHookState) {
     case HANDSHAKE_HOOKS_PRE:
     case HANDSHAKE_HOOKS_PRE_INVOKE:
+      sslHandshakeHookState = HANDSHAKE_HOOKS_CLIENT_HELLO;
+      break;
+    case HANDSHAKE_HOOKS_CLIENT_HELLO:
+    case HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE:
       sslHandshakeHookState = HANDSHAKE_HOOKS_SNI;
       break;
     case HANDSHAKE_HOOKS_SNI:
@@ -1620,20 +1653,33 @@ bool
 SSLNetVConnection::callHooks(TSEvent eventId)
 {
   // Only dealing with the SNI/CERT hook so far.
-  ink_assert(eventId == TS_EVENT_SSL_CERT || eventId == TS_EVENT_SSL_SERVERNAME || eventId == TS_EVENT_SSL_VERIFY_SERVER ||
-             eventId == TS_EVENT_SSL_VERIFY_CLIENT || eventId == TS_EVENT_VCONN_CLOSE || eventId == TS_EVENT_VCONN_OUTBOUND_CLOSE);
+  ink_assert(eventId == TS_EVENT_SSL_CLIENT_HELLO || eventId == TS_EVENT_SSL_CERT || eventId == TS_EVENT_SSL_SERVERNAME ||
+             eventId == TS_EVENT_SSL_VERIFY_SERVER || eventId == TS_EVENT_SSL_VERIFY_CLIENT || eventId == TS_EVENT_VCONN_CLOSE ||
+             eventId == TS_EVENT_VCONN_OUTBOUND_CLOSE);
   Debug("ssl", "callHooks sslHandshakeHookState=%d eventID=%d", this->sslHandshakeHookState, eventId);
 
   // Move state if it is appropriate
   switch (this->sslHandshakeHookState) {
   case HANDSHAKE_HOOKS_PRE:
   case HANDSHAKE_HOOKS_OUTBOUND_PRE:
-    if (eventId == TS_EVENT_SSL_SERVERNAME) {
+    if (eventId == TS_EVENT_SSL_CLIENT_HELLO) {
+      this->sslHandshakeHookState = HANDSHAKE_HOOKS_CLIENT_HELLO;
+    } else if (eventId == TS_EVENT_SSL_SERVERNAME) {
       this->sslHandshakeHookState = HANDSHAKE_HOOKS_SNI;
     } else if (eventId == TS_EVENT_SSL_VERIFY_SERVER) {
       this->sslHandshakeHookState = HANDSHAKE_HOOKS_VERIFY_SERVER;
     } else if (eventId == TS_EVENT_SSL_CERT) {
       this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
+    }
+    break;
+  case HANDSHAKE_HOOKS_CLIENT_HELLO:
+    if (eventId == TS_EVENT_SSL_SERVERNAME) {
+      this->sslHandshakeHookState = HANDSHAKE_HOOKS_SNI;
+    } else if (eventId == TS_EVENT_SSL_CERT) {
+      this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
+    } else if (eventId == TS_EVENT_VCONN_CLOSE) {
+      // Jump to the end
+      this->sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
     }
     break;
   case HANDSHAKE_HOOKS_SNI:
@@ -1650,6 +1696,19 @@ SSLNetVConnection::callHooks(TSEvent eventId)
 
   // Look for hooks associated with the event
   switch (this->sslHandshakeHookState) {
+  case HANDSHAKE_HOOKS_CLIENT_HELLO:
+  case HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE:
+    if (!curHook) {
+      curHook = ssl_hooks->get(TS_SSL_CLIENT_HELLO_INTERNAL_HOOK);
+    } else {
+      curHook = curHook->next();
+    }
+    if (curHook == nullptr) {
+      this->sslHandshakeHookState = HANDSHAKE_HOOKS_SNI;
+    } else {
+      this->sslHandshakeHookState = HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE;
+    }
+    break;
   case HANDSHAKE_HOOKS_VERIFY_SERVER:
     // The server verify event addresses ATS to origin handshake
     // All the other events are for client to ATS
@@ -1731,7 +1790,8 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   if (curHook != nullptr) {
     curHook->invoke(eventId, this);
     reenabled =
-      (this->sslHandshakeHookState != HANDSHAKE_HOOKS_CERT_INVOKE && this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE_INVOKE);
+      (this->sslHandshakeHookState != HANDSHAKE_HOOKS_CERT_INVOKE && this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE_INVOKE &&
+       this->sslHandshakeHookState != HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE);
     Debug("ssl", "Called hook on state=%d reenabled=%d", sslHandshakeHookState, reenabled);
   }
 
