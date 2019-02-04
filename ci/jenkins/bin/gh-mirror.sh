@@ -54,14 +54,14 @@ function checkBuild() {
 	echo -n "$diff" | ${GREP} -F -e doc/ >/dev/null
 	if [ 0 == $? ]; then
 		echo "Triggerd Docs build for ${branch}"
-		${CURL} -o /dev/null -s ${BASE_URL}/view/${branch}/job/docs-${branch}/${token}
+		${CURL} -o /dev/null -s ${BASE_URL}/job/docs-${branch}/${token}
 	fi
 
 	# Check if commits have non doc/ changes
 	echo -n "$diff" | ${GREP} -F -v -e doc/ >/dev/null
 	if [ 0 == $? ]; then
 		echo "Triggered main build for ${branch}"
-		${CURL} -o /dev/null -s ${BASE_URL}/view/${branch}/job/start-${branch}/${token}
+		${CURL} -o /dev/null -s ${BASE_URL}/job/start-${branch}/${token}
 	fi
 }
 
