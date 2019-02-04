@@ -201,7 +201,7 @@ ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int a
 
     if (conf->content) {
       if (luaL_loadstring(L, conf->content)) {
-        snprintf(errbuf, errbuf_size, "[%s] luaL_loadstring %s failed: %s", __FUNCTION__, conf->script, lua_tostring(L, -1));
+        snprintf(errbuf, errbuf_size, "[%s] luaL_loadstring failed: %s", __FUNCTION__, lua_tostring(L, -1));
         lua_pop(L, 1);
         TSMutexUnlock(arr[i].mutexp);
         return -1;
