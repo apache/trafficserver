@@ -121,7 +121,7 @@ Classes
 
       :arg:`type` must be one of the values specified in :class:`HdrHeapObjImpl`.
 
-   .. function:: int marshal_length
+   .. function:: int marshal_length()
 
       Compute and return the size of the buffer needed to serialize :arg:`this`.
 
