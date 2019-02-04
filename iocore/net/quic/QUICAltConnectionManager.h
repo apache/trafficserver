@@ -114,7 +114,7 @@ private:
   void _records_new_connection_id_frame(QUICEncryptionLevel level, const QUICNewConnectionIdFrame &frame);
   void _records_retire_connection_id_frame(QUICEncryptionLevel, const QUICRetireConnectionIdFrame &frame);
 
-  void _on_frame_lost(QUICFrameInformationUPtr &info);
+  void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 
   QUICConnectionErrorUPtr _register_remote_connection_id(const QUICNewConnectionIdFrame &frame);
   QUICConnectionErrorUPtr _retire_remote_connection_id(const QUICRetireConnectionIdFrame &frame);
