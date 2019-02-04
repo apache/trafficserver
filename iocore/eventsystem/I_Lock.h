@@ -242,7 +242,7 @@ Mutex_trylock(
 #ifdef DEBUG
   const SourceLocation &location, const char *ahandler,
 #endif
-  ProxyMutex *m, EThread *t)
+  Ptr<ProxyMutex> &m, EThread *t)
 {
   ink_assert(t != nullptr);
   ink_assert(t == (EThread *)this_thread());
@@ -281,90 +281,12 @@ Mutex_trylock(
   return true;
 }
 
-inline bool
-Mutex_trylock(
-#ifdef DEBUG
-  const SourceLocation &location, const char *ahandler,
-#endif
-  Ptr<ProxyMutex> &m, EThread *t)
-{
-  return Mutex_trylock(
-#ifdef DEBUG
-    location, ahandler,
-#endif
-    m.get(), t);
-}
-
-inline bool
-Mutex_trylock_spin(
-#ifdef DEBUG
-  const SourceLocation &location, const char *ahandler,
-#endif
-  ProxyMutex *m, EThread *t, int spincnt = 1)
-{
-  ink_assert(t != nullptr);
-  if (m->thread_holding != t) {
-    int locked;
-    do {
-      if ((locked = ink_mutex_try_acquire(&m->the_mutex))) {
-        break;
-      }
-    } while (--spincnt);
-    if (!locked) {
-#ifdef DEBUG
-      lock_waiting(m->srcloc, m->handler);
-#ifdef LOCK_CONTENTION_PROFILING
-      m->unsuccessful_nonblocking_acquires++;
-      m->nonblocking_acquires++;
-      m->total_acquires++;
-      m->print_lock_stats(0);
-#endif // LOCK_CONTENTION_PROFILING
-#endif // DEBUG
-      return false;
-    }
-    m->thread_holding = t;
-    ink_assert(m->thread_holding);
-#ifdef DEBUG
-    m->srcloc    = location;
-    m->handler   = ahandler;
-    m->hold_time = Thread::get_hrtime();
-#ifdef MAX_LOCK_TAKEN
-    m->taken++;
-#endif // MAX_LOCK_TAKEN
-#endif // DEBUG
-  }
-#ifdef DEBUG
-#ifdef LOCK_CONTENTION_PROFILING
-  m->successful_nonblocking_acquires++;
-  m->nonblocking_acquires++;
-  m->total_acquires++;
-  m->print_lock_stats(0);
-#endif // LOCK_CONTENTION_PROFILING
-#endif // DEBUG
-  m->nthread_holding++;
-  return true;
-}
-
-inline bool
-Mutex_trylock_spin(
-#ifdef DEBUG
-  const SourceLocation &location, const char *ahandler,
-#endif
-  Ptr<ProxyMutex> &m, EThread *t, int spincnt = 1)
-{
-  return Mutex_trylock_spin(
-#ifdef DEBUG
-    location, ahandler,
-#endif
-    m.get(), t, spincnt);
-}
-
 inline int
 Mutex_lock(
 #ifdef DEBUG
   const SourceLocation &location, const char *ahandler,
 #endif
-  ProxyMutex *m, EThread *t)
+  Ptr<ProxyMutex> &m, EThread *t)
 {
   ink_assert(t != nullptr);
   if (m->thread_holding != t) {
@@ -391,22 +313,8 @@ Mutex_lock(
   return true;
 }
 
-inline int
-Mutex_lock(
-#ifdef DEBUG
-  const SourceLocation &location, const char *ahandler,
-#endif
-  Ptr<ProxyMutex> &m, EThread *t)
-{
-  return Mutex_lock(
-#ifdef DEBUG
-    location, ahandler,
-#endif
-    m.get(), t);
-}
-
 inline void
-Mutex_unlock(ProxyMutex *m, EThread *t)
+Mutex_unlock(Ptr<ProxyMutex> &m, EThread *t)
 {
   if (m->nthread_holding) {
     ink_assert(t == m->thread_holding);
@@ -429,12 +337,6 @@ Mutex_unlock(ProxyMutex *m, EThread *t)
   }
 }
 
-inline void
-Mutex_unlock(Ptr<ProxyMutex> &m, EThread *t)
-{
-  Mutex_unlock(m.get(), t);
-}
-
 /** Scoped lock class for ProxyMutex
  */
 class MutexLock
@@ -448,20 +350,6 @@ public:
 #ifdef DEBUG
     const SourceLocation &location, const char *ahandler,
 #endif // DEBUG
-    ProxyMutex *am, EThread *t)
-    : m(am), locked_p(true)
-  {
-    Mutex_lock(
-#ifdef DEBUG
-      location, ahandler,
-#endif // DEBUG
-      m.get(), t);
-  }
-
-  MutexLock(
-#ifdef DEBUG
-    const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
     Ptr<ProxyMutex> &am, EThread *t)
     : m(am), locked_p(true)
   {
@@ -469,7 +357,7 @@ public:
 #ifdef DEBUG
       location, ahandler,
 #endif // DEBUG
-      m.get(), t);
+      m, t);
   }
 
   void
@@ -497,62 +385,24 @@ public:
 #ifdef DEBUG
     const SourceLocation &location, const char *ahandler,
 #endif // DEBUG
-    ProxyMutex *am, EThread *t)
-    : m(am)
-  {
-    lock_acquired = Mutex_trylock(
-#ifdef DEBUG
-      location, ahandler,
-#endif // DEBUG
-      m.get(), t);
-  }
-
-  MutexTryLock(
-#ifdef DEBUG
-    const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
     Ptr<ProxyMutex> &am, EThread *t)
     : m(am)
   {
-    lock_acquired = Mutex_trylock(
+    if (am) {
+      lock_acquired = Mutex_trylock(
 #ifdef DEBUG
-      location, ahandler,
+        location, ahandler,
 #endif // DEBUG
-      m.get(), t);
-  }
-
-  MutexTryLock(
-#ifdef DEBUG
-    const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
-    ProxyMutex *am, EThread *t, int sp)
-    : m(am)
-  {
-    lock_acquired = Mutex_trylock_spin(
-#ifdef DEBUG
-      location, ahandler,
-#endif // DEBUG
-      m.get(), t, sp);
-  }
-
-  MutexTryLock(
-#ifdef DEBUG
-    const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
-    Ptr<ProxyMutex> &am, EThread *t, int sp)
-    : m(am)
-  {
-    lock_acquired = Mutex_trylock_spin(
-#ifdef DEBUG
-      location, ahandler,
-#endif // DEBUG
-      m.get(), t, sp);
+        m, t);
+    } else {
+      lock_acquired = true;
+    }
   }
 
   ~MutexTryLock()
   {
-    if (lock_acquired) {
-      Mutex_unlock(m.get(), m->thread_holding);
+    if (lock_acquired && m.get()) {
+      Mutex_unlock(m, m->thread_holding);
     }
   }
 
@@ -561,16 +411,17 @@ public:
   void
   acquire(EThread *t)
   {
-    MUTEX_TAKE_LOCK(m.get(), t);
     lock_acquired = true;
+    if (m.get()) {
+      MUTEX_TAKE_LOCK(m, t);
+    }
   }
 
   void
   release()
   {
-    ink_assert(lock_acquired); // generate a warning because it shouldn't be done.
-    if (lock_acquired) {
-      Mutex_unlock(m.get(), m->thread_holding);
+    if (lock_acquired && m.get()) {
+      Mutex_unlock(m, m->thread_holding);
     }
     lock_acquired = false;
   }

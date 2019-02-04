@@ -47,6 +47,6 @@
 
 static constexpr ts::ModuleVersion HOSTDB_MODULE_INTERNAL_VERSION{HOSTDB_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE};
 
-Ptr<HostDBInfo> probe(ProxyMutex *mutex, CryptoHash const &hash, bool ignore_timeout);
+Ptr<HostDBInfo> probe(Ptr<ProxyMutex> mutex, CryptoHash const &hash, bool ignore_timeout);
 
 void make_crypto_hash(CryptoHash &hash, const char *hostname, int len, int port, const char *pDNSServers, HostDBMark mark);

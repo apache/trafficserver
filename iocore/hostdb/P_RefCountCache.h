@@ -408,7 +408,7 @@ public:
 
   // Some methods to get some internal state
   int partition_for_key(uint64_t key);
-  ProxyMutex *lock_for_key(uint64_t key);
+  Ptr<ProxyMutex> lock_for_key(uint64_t key);
   size_t partition_count() const;
   RefCountCachePartition<C> &get_partition(int pnum);
   size_t count() const;
@@ -510,10 +510,10 @@ RefCountCache<C>::get_header()
 }
 
 template <class C>
-ProxyMutex *
+Ptr<ProxyMutex>
 RefCountCache<C>::lock_for_key(uint64_t key)
 {
-  return this->partitions[this->partition_for_key(key)]->lock.get();
+  return this->partitions[this->partition_for_key(key)]->lock;
 }
 
 template <class C>
