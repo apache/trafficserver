@@ -180,7 +180,6 @@ globalContFunc(TSCont, TSEvent event, void *eventData)
 
     TSVConnReenable(vConn);
   } break;
-
   case TS_EVENT_SSL_CERT:
   case TS_EVENT_SSL_SERVERNAME: {
     auto vConn = static_cast<TSVConn>(eventData);
@@ -327,7 +326,6 @@ TSPluginInit(int argc, const char *argv[])
   TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, gCont);
   TSHttpHookAdd(TS_SSL_CERT_HOOK, gCont);
   TSHttpHookAdd(TS_SSL_SERVERNAME_HOOK, gCont);
-
   // NOTE: as of January 2019 these two hooks are only triggered for TLS connections.  It seems that, at trafficserver
   // startup, spurious data on the TLS TCP port may cause trafficserver to attempt (and fail) to create a TLS
   // connection.  If this happens, it will result in TS_VCONN_START_HOOK being triggered, and then TS_VCONN_CLOSE_HOOK

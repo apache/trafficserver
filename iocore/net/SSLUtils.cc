@@ -423,7 +423,8 @@ PerformAction(Continuation *cont, const char *servername)
 static int
 ssl_client_hello_callback(SSL *s, int *al, void *arg)
 {
-  const char *servername = nullptr;
+  SSLNetVConnection *netvc = SSLNetVCAccess(s);
+  const char *servername   = nullptr;
   const unsigned char *p;
   size_t remaining, len;
   // Parse the servrer name if the get extension call succeeds and there are more than 2 bytes to parse
@@ -452,9 +453,6 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
       }
     }
   }
-
-  SSLNetVConnection *netvc = SSLNetVCAccess(s);
-
   netvc->serverName = servername ? servername : "";
   int ret           = PerformAction(netvc, netvc->serverName);
   if (ret != SSL_TLSEXT_ERR_OK) {
@@ -465,6 +463,12 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
   }
   if (netvc->protocol_mask_set) {
     setTLSValidProtocols(s, netvc->protocol_mask, TLSValidProtocols::max_mask);
+  }
+
+  bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
+
+  if (!reenabled) {
+    return SSL_CLIENT_HELLO_RETRY;
   }
   return SSL_CLIENT_HELLO_SUCCESS;
 }

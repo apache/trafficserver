@@ -1,4 +1,4 @@
-`` DIAG: (ssl_hook_test) Setup callbacks pa=2 sni=0 cert=0 cert_imm=0 pa_delay=0
+`` DIAG: (ssl_hook_test) Setup callbacks pa=2 client_hello=0 client_hello_imm=0 sni=0 cert=0 cert_imm=0 pa_delay=0
 `` DIAG: (ssl_hook_test) Pre accept callback 0 `` - event is good
 `` DIAG: (ssl_hook_test) Pre accept callback 1 `` - event is good
 ``

@@ -1,2 +1,2 @@
-`` DIAG: (ssl_hook_test) Setup callbacks pa=0 sni=0 cert=0 cert_imm=1 pa_delay=0
+`` DIAG: (ssl_hook_test) Setup callbacks pa=0 client_hello=0 client_hello_imm=0 sni=0 cert=0 cert_imm=1 pa_delay=0
 `` DIAG: (ssl_hook_test) Cert callback 0 ssl_vc=``
