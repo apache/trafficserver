@@ -33,36 +33,43 @@ extern const ink_freelist_ops *freelist_class_ops;
 TEST_CASE("QUICFrame Type", "[quic]")
 {
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x00")) == QUICFrameType::PADDING);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x01")) == QUICFrameType::RESET_STREAM);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x02")) == QUICFrameType::CONNECTION_CLOSE);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x04")) == QUICFrameType::MAX_DATA);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x05")) == QUICFrameType::MAX_STREAM_DATA);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x06")) == QUICFrameType::MAX_STREAMS);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x07")) == QUICFrameType::PING);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x08")) == QUICFrameType::DATA_BLOCKED);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x09")) == QUICFrameType::STREAM_DATA_BLOCKED);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0a")) == QUICFrameType::STREAMS_BLOCKED);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0b")) == QUICFrameType::NEW_CONNECTION_ID);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0c")) == QUICFrameType::STOP_SENDING);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0d")) == QUICFrameType::RETIRE_CONNECTION_ID);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0e")) == QUICFrameType::PATH_CHALLENGE);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0f")) == QUICFrameType::PATH_RESPONSE);
-
-  // Range of STREAM
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x10")) == QUICFrameType::STREAM);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x17")) == QUICFrameType::STREAM);
-
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x18")) == QUICFrameType::CRYPTO);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x19")) == QUICFrameType::NEW_TOKEN);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x18")) == QUICFrameType::CRYPTO);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x19")) == QUICFrameType::NEW_TOKEN);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x01")) == QUICFrameType::PING);
 
   // Range of ACK
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1a")) == QUICFrameType::ACK);
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1b")) == QUICFrameType::ACK);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x02")) == QUICFrameType::ACK);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x03")) == QUICFrameType::ACK);
+
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x04")) == QUICFrameType::RESET_STREAM);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x05")) == QUICFrameType::STOP_SENDING);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x06")) == QUICFrameType::CRYPTO);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x07")) == QUICFrameType::NEW_TOKEN);
+
+  // Range of STREAM
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x08")) == QUICFrameType::STREAM);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x0f")) == QUICFrameType::STREAM);
+
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x10")) == QUICFrameType::MAX_DATA);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x11")) == QUICFrameType::MAX_STREAM_DATA);
+
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x12")) == QUICFrameType::MAX_STREAMS);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x13")) == QUICFrameType::MAX_STREAMS);
+
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x14")) == QUICFrameType::DATA_BLOCKED);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x15")) == QUICFrameType::STREAM_DATA_BLOCKED);
+
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x16")) == QUICFrameType::STREAMS_BLOCKED);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x17")) == QUICFrameType::STREAMS_BLOCKED);
+
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x18")) == QUICFrameType::NEW_CONNECTION_ID);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x19")) == QUICFrameType::RETIRE_CONNECTION_ID);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1a")) == QUICFrameType::PATH_CHALLENGE);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1b")) == QUICFrameType::PATH_RESPONSE);
+
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1c")) == QUICFrameType::CONNECTION_CLOSE);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1d")) == QUICFrameType::CONNECTION_CLOSE);
 
   // Undefined ragne
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x21")) == QUICFrameType::UNKNOWN);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1e")) == QUICFrameType::UNKNOWN);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xff")) == QUICFrameType::UNKNOWN);
 }
 
@@ -71,7 +78,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
   SECTION("OLF=000")
   {
     uint8_t buf1[] = {
-      0x10,                   // 0b00010OLF (OLF=000)
+      0x08,                   // 0b00001OLF (OLF=000)
       0x01,                   // Stream ID
       0x01, 0x02, 0x03, 0x04, // Stream Data
     };
@@ -89,7 +96,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
   SECTION("OLF=010")
   {
     uint8_t buf1[] = {
-      0x12,                         // 0b00010OLF (OLF=010)
+      0x0a,                         // 0b00001OLF (OLF=010)
       0x01,                         // Stream ID
       0x05,                         // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
@@ -108,7 +115,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
   SECTION("OLF=110")
   {
     uint8_t buf1[] = {
-      0x16,                         // 0b00010OLF (OLF=110)
+      0x0e,                         // 0b00001OLF (OLF=110)
       0x01,                         // Stream ID
       0x02,                         // Data Length
       0x05,                         // Data Length
@@ -129,7 +136,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
   SECTION("OLF=111")
   {
     uint8_t buf1[] = {
-      0x17,                         // 0b00010OLF (OLF=110)
+      0x0f,                         // 0b00001OLF (OLF=111)
       0x01,                         // Stream ID
       0x02,                         // Data Length
       0x05,                         // Data Length
@@ -150,7 +157,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
   SECTION("BAD DATA")
   {
     uint8_t buf1[] = {
-      0x17,                   // 0b00010OLF (OLF=110)
+      0x0e,                   // 0b00001OLF (OLF=110)
       0x01,                   // Stream ID
       0x02,                   // Data Length
       0x05,                   // Data Length
@@ -164,7 +171,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
   SECTION("BAD DATA")
   {
     uint8_t buf1[] = {
-      0x17, // 0b00010OLF (OLF=110)
+      0x0e, // 0b00001OLF (OLF=110)
       0x01, // Stream ID
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
@@ -180,7 +187,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     uint8_t buf[32] = {0};
     size_t len;
     uint8_t expected1[] = {
-      0x12,                         // 0b00010OLF (OLF=010)
+      0x0a,                         // 0b00001OLF (OLF=010)
       0x01,                         // Stream ID
       0x05,                         // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
@@ -205,7 +212,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     uint8_t buf[32] = {0};
     size_t len;
     uint8_t expected2[] = {
-      0x16,                         // 0b00010OLF (OLF=110)
+      0x0e,                         // 0b00001OLF (OLF=110)
       0x01,                         // Stream ID
       0x01,                         // Offset
       0x05,                         // Data Length
@@ -230,7 +237,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     uint8_t buf[32] = {0};
     size_t len;
     uint8_t expected3[] = {
-      0x16,                         // 0b00010OLF (OLF=110)
+      0x0e,                         // 0b00001OLF (OLF=110)
       0x01,                         // Stream ID
       0x80, 0x01, 0x00, 0x00,       // Offset
       0x05,                         // Data Length
@@ -255,7 +262,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     uint8_t buf[32] = {0};
     size_t len;
     uint8_t expected4[] = {
-      0x16,                                           // 0b00010OLF (OLF=110)
+      0x0e,                                           // 0b00001OLF (OLF=110)
       0x01,                                           // Stream ID
       0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
       0x05,                                           // Data Length
@@ -280,7 +287,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     uint8_t buf[32] = {0};
     size_t len;
     uint8_t expected5[] = {
-      0x16,                                           // 0b00010OLF (OLF=110)
+      0x0e,                                           // 0b00001OLF (OLF=110)
       0x41, 0x00,                                     // Stream ID
       0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
       0x05,                                           // Data Length
@@ -305,7 +312,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     uint8_t buf[32] = {0};
     size_t len;
     uint8_t expected6[] = {
-      0x16,                                           // 0b00010OLF (OLF=110)
+      0x0e,                                           // 0b00001OLF (OLF=110)
       0x80, 0x01, 0x00, 0x00,                         // Stream ID
       0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
       0x05,                                           // Data Length
@@ -330,7 +337,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     uint8_t buf[32] = {0};
     size_t len;
     uint8_t expected7[] = {
-      0x16,                                           // 0b00010OLF (OLF=110)
+      0x0e,                                           // 0b00001OLF (OLF=110)
       0x81, 0x00, 0x00, 0x00,                         // Stream ID
       0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
       0x05,                                           // Data Length
@@ -355,7 +362,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     uint8_t buf[32] = {0};
     size_t len;
     uint8_t expected[] = {
-      0x17,                                           // 0b00010OLF (OLF=111)
+      0x0f,                                           // 0b00001OLF (OLF=111)
       0x81, 0x00, 0x00, 0x00,                         // Stream ID
       0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
       0x05,                                           // Data Length
@@ -378,7 +385,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
   SECTION("split stream frame")
   {
     uint8_t buf1[] = {
-      0x16,                                           // 0b00010OLF (OLF=110)
+      0x0e,                                           // 0b00001OLF (OLF=110)
       0x01,                                           // Stream ID
       0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
       0x0a,                                           // Data Length
@@ -414,7 +421,7 @@ TEST_CASE("CRYPTO Frame", "[quic]")
   SECTION("Loading")
   {
     uint8_t buf[] = {
-      0x18,                         // Type
+      0x06,                         // Type
       0x80, 0x01, 0x00, 0x00,       // Offset
       0x05,                         // Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Crypto Data
@@ -432,7 +439,7 @@ TEST_CASE("CRYPTO Frame", "[quic]")
   SECTION("BAD Loading")
   {
     uint8_t buf[] = {
-      0x18,                   // Type
+      0x06,                   // Type
       0x80, 0x01, 0x00, 0x00, // Offset
     };
     std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
@@ -445,7 +452,7 @@ TEST_CASE("CRYPTO Frame", "[quic]")
     uint8_t buf[32] = {0};
     size_t len;
     uint8_t expected[] = {
-      0x18,                         // Typr
+      0x06,                         // Typr
       0x80, 0x01, 0x00, 0x00,       // Offset
       0x05,                         // Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Crypto Data
@@ -470,7 +477,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf1[] = {
-      0x1a,       // Type
+      0x02,       // Type
       0x12,       // Largest Acknowledged
       0x74, 0x56, // Ack Delay
       0x00,       // Ack Block Count
@@ -489,7 +496,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf1[] = {
-      0x1a,                   // Type
+      0x02,                   // Type
       0x80, 0x00, 0x00, 0x01, // Largest Acknowledged
       0x41, 0x71,             // Ack Delay
       0x00,                   // Ack Block Count
@@ -513,7 +520,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("2 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf1[] = {
-      0x1a,                                           // Type
+      0x02,                                           // Type
       0x12,                                           // Largest Acknowledged
       0x74, 0x56,                                     // Ack Delay
       0x02,                                           // Ack Block Count
@@ -551,7 +558,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("load bad frame")
   {
     uint8_t buf1[] = {
-      0x1a, // Type
+      0x02, // Type
       0x12, // Largest Acknowledged
     };
 
@@ -563,7 +570,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("load bad block")
   {
     uint8_t buf1[] = {
-      0x1a,                   // Type
+      0x02,                   // Type
       0x12,                   // Largest Acknowledged
       0x74, 0x56,             // Ack Delay
       0x02,                   // Ack Block Count
@@ -581,7 +588,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length with ECN section")
   {
     uint8_t buf1[] = {
-      0x1b,       // Type
+      0x03,       // Type
       0x12,       // Largest Acknowledged
       0x74, 0x56, // Ack Delay
       0x00,       // Ack Block Count
@@ -608,7 +615,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length with ECN section")
   {
     uint8_t buf1[] = {
-      0x1b,       // Type
+      0x03,       // Type
       0x12,       // Largest Acknowledged
       0x74, 0x56, // Ack Delay
       0x00,       // Ack Block Count
@@ -631,7 +638,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
     size_t len;
 
     uint8_t expected[] = {
-      0x1a,       // Type
+      0x02,       // Type
       0x12,       // Largest Acknowledged
       0x74, 0x56, // Ack Delay
       0x00,       // Ack Block Count
@@ -652,7 +659,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
     size_t len;
 
     uint8_t expected[] = {
-      0x1a,                                           // Type
+      0x02,                                           // Type
       0x12,                                           // Largest Acknowledged
       0x74, 0x56,                                     // Ack Delay
       0x02,                                           // Ack Block Count
@@ -679,7 +686,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
     size_t len;
 
     uint8_t expected[] = {
-      0x1a,                                           // Type
+      0x02,                                           // Type
       0x12,                                           // Largest Acknowledged
       0x74, 0x56,                                     // Ack Delay
       0x02,                                           // Ack Block Count
@@ -706,7 +713,7 @@ TEST_CASE("Load RESET_STREAM Frame", "[quic]")
   SECTION("Load")
   {
     uint8_t buf1[] = {
-      0x01,                                          // Type
+      0x04,                                          // Type
       0x92, 0x34, 0x56, 0x78,                        // Stream ID
       0x00, 0x01,                                    // Error Code
       0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
@@ -724,7 +731,7 @@ TEST_CASE("Load RESET_STREAM Frame", "[quic]")
   SECTION("BAD Load")
   {
     uint8_t buf1[] = {
-      0x01,                   // Type
+      0x04,                   // Type
       0x92, 0x34, 0x56, 0x78, // Stream ID
       0x00, 0x01,             // Error Code
     };
@@ -740,7 +747,7 @@ TEST_CASE("Store RESET_STREAM Frame", "[quic]")
   size_t len;
 
   uint8_t expected[] = {
-    0x01,                                          // Type
+    0x04,                                          // Type
     0x92, 0x34, 0x56, 0x78,                        // Stream ID
     0x00, 0x01,                                    // Error Code
     0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
@@ -756,7 +763,7 @@ TEST_CASE("Store RESET_STREAM Frame", "[quic]")
 TEST_CASE("Load Ping Frame", "[quic]")
 {
   uint8_t buf[] = {
-    0x07, // Type
+    0x01, // Type
   };
   std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
   CHECK(frame->type() == QUICFrameType::PING);
@@ -772,7 +779,7 @@ TEST_CASE("Store Ping Frame", "[quic]")
   size_t len;
 
   uint8_t expected[] = {
-    0x07, // Type
+    0x01, // Type
   };
 
   QUICPingFrame frame;
@@ -817,7 +824,7 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
   SECTION("loading w/ reason phrase")
   {
     uint8_t buf[] = {
-      0x02,                        // Type
+      0x1c,                        // Type
       0x00, 0x0A,                  // Error Code
       0x00,                        // Frame Type
       0x05,                        // Reason Phrase Length
@@ -840,7 +847,7 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
   SECTION("Bad loading")
   {
     uint8_t buf[] = {
-      0x02,       // Type
+      0x1c,       // Type
       0x00, 0x0A, // Error Code
       0x00,       // Frame Type
       0x05,       // Reason Phrase Length
@@ -854,9 +861,9 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
   SECTION("loading w/o reason phrase")
   {
     uint8_t buf[] = {
-      0x02,       // Type
+      0x1c,       // Type
       0x00, 0x0A, // Error Code
-      0x01,       // Frame Type
+      0x04,       // Frame Type
       0x00,       // Reason Phrase Length
     };
     std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
@@ -877,9 +884,9 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
     size_t len;
 
     uint8_t expected[] = {
-      0x02,                        // Type
+      0x1c,                        // Type
       0x00, 0x0A,                  // Error Code
-      0x10,                        // Frame Type
+      0x08,                        // Frame Type
       0x05,                        // Reason Phrase Length
       0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
     };
@@ -898,7 +905,7 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
     size_t len;
 
     uint8_t expected[] = {
-      0x02,       // Type
+      0x1c,       // Type
       0x00, 0x0A, // Error Code
       0x00,       // Frame Type
       0x00,       // Reason Phrase Length
@@ -916,7 +923,7 @@ TEST_CASE("Load MaxData Frame", "[quic]")
   SECTION("Load")
   {
     uint8_t buf1[] = {
-      0x04,                                          // Type
+      0x10,                                          // Type
       0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
@@ -930,7 +937,7 @@ TEST_CASE("Load MaxData Frame", "[quic]")
   SECTION("Bad Load")
   {
     uint8_t buf1[] = {
-      0x04, // Type
+      0x10, // Type
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
     CHECK(frame1->type() == QUICFrameType::MAX_DATA);
@@ -944,7 +951,7 @@ TEST_CASE("Store MaxData Frame", "[quic]")
   size_t len;
 
   uint8_t expected[] = {
-    0x04,                                          // Type
+    0x10,                                          // Type
     0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
   };
   QUICMaxDataFrame max_data_frame(0x1122334455667788, 0, nullptr);
@@ -960,7 +967,7 @@ TEST_CASE("Load MaxStreamData Frame", "[quic]")
   SECTION("Load")
   {
     uint8_t buf1[] = {
-      0x05,                                          // Type
+      0x11,                                          // Type
       0x81, 0x02, 0x03, 0x04,                        // Stream ID
       0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Stream Data
     };
@@ -977,7 +984,7 @@ TEST_CASE("Load MaxStreamData Frame", "[quic]")
   SECTION("Load")
   {
     uint8_t buf1[] = {
-      0x05,                   // Type
+      0x11,                   // Type
       0x81, 0x02, 0x03, 0x04, // Stream ID
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
@@ -992,7 +999,7 @@ TEST_CASE("Store MaxStreamData Frame", "[quic]")
   size_t len;
 
   uint8_t expected[] = {
-    0x05,                                          // Type
+    0x11,                                          // Type
     0x81, 0x02, 0x03, 0x04,                        // Stream ID
     0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Stream Data
   };
@@ -1004,12 +1011,12 @@ TEST_CASE("Store MaxStreamData Frame", "[quic]")
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
-TEST_CASE("Load MaxStreamId Frame", "[quic]")
+TEST_CASE("Load MaxStreams Frame", "[quic]")
 {
   SECTION("load")
   {
     uint8_t buf1[] = {
-      0x06,                   // Type
+      0x12,                   // Type
       0x81, 0x02, 0x03, 0x04, // Stream ID
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
@@ -1022,7 +1029,7 @@ TEST_CASE("Load MaxStreamId Frame", "[quic]")
   SECTION("bad load")
   {
     uint8_t buf1[] = {
-      0x06, // Type
+      0x12, // Type
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
     CHECK(frame1->type() == QUICFrameType::MAX_STREAMS);
@@ -1030,13 +1037,13 @@ TEST_CASE("Load MaxStreamId Frame", "[quic]")
   }
 }
 
-TEST_CASE("Store MaxStreamId Frame", "[quic]")
+TEST_CASE("Store MaxStreams Frame", "[quic]")
 {
   uint8_t buf[65535];
   size_t len;
 
   uint8_t expected[] = {
-    0x06,                   // Type
+    0x12,                   // Type
     0x81, 0x02, 0x03, 0x04, // Stream ID
   };
   QUICMaxStreamsFrame max_streams_frame(0x01020304, 0, nullptr);
@@ -1047,12 +1054,12 @@ TEST_CASE("Store MaxStreamId Frame", "[quic]")
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
-TEST_CASE("Load Blocked Frame", "[quic]")
+TEST_CASE("Load DataBlocked Frame", "[quic]")
 {
   SECTION("load")
   {
     uint8_t buf1[] = {
-      0x08, // Type
+      0x14, // Type
       0x07, // Offset
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
@@ -1067,7 +1074,7 @@ TEST_CASE("Load Blocked Frame", "[quic]")
   SECTION("bad load")
   {
     uint8_t buf1[] = {
-      0x08, // Type
+      0x14, // Type
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
     CHECK(frame1->type() == QUICFrameType::DATA_BLOCKED);
@@ -1075,13 +1082,13 @@ TEST_CASE("Load Blocked Frame", "[quic]")
   }
 }
 
-TEST_CASE("Store Blocked Frame", "[quic]")
+TEST_CASE("Store DataBlocked Frame", "[quic]")
 {
   uint8_t buf[65535];
   size_t len;
 
   uint8_t expected[] = {
-    0x08, // Type
+    0x14, // Type
     0x07, // Offset
   };
   QUICDataBlockedFrame blocked_stream_frame(0x07, 0, nullptr);
@@ -1097,7 +1104,7 @@ TEST_CASE("Load StreamDataBlocked Frame", "[quic]")
   SECTION("Load")
   {
     uint8_t buf1[] = {
-      0x09,                   // Type
+      0x15,                   // Type
       0x81, 0x02, 0x03, 0x04, // Stream ID
       0x07,                   // Offset
     };
@@ -1114,7 +1121,7 @@ TEST_CASE("Load StreamDataBlocked Frame", "[quic]")
   SECTION("Load")
   {
     uint8_t buf1[] = {
-      0x09,                   // Type
+      0x15,                   // Type
       0x81, 0x02, 0x03, 0x04, // Stream ID
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
@@ -1129,7 +1136,7 @@ TEST_CASE("Store StreamDataBlocked Frame", "[quic]")
   size_t len;
 
   uint8_t expected[] = {
-    0x09,                   // Type
+    0x15,                   // Type
     0x81, 0x02, 0x03, 0x04, // Stream ID
     0x07,                   // Offset
   };
@@ -1141,12 +1148,12 @@ TEST_CASE("Store StreamDataBlocked Frame", "[quic]")
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
-TEST_CASE("Load StreamIdBlocked Frame", "[quic]")
+TEST_CASE("Load StreamsBlocked Frame", "[quic]")
 {
   SECTION("Load")
   {
     uint8_t buf1[] = {
-      0x0a,       // Type
+      0x16,       // Type
       0x41, 0x02, // Stream ID
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
@@ -1161,7 +1168,7 @@ TEST_CASE("Load StreamIdBlocked Frame", "[quic]")
   SECTION("Load")
   {
     uint8_t buf1[] = {
-      0x0a, // Type
+      0x16, // Type
     };
     std::shared_ptr<const QUICFrame> frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
     CHECK(frame1->type() == QUICFrameType::STREAMS_BLOCKED);
@@ -1169,13 +1176,13 @@ TEST_CASE("Load StreamIdBlocked Frame", "[quic]")
   }
 }
 
-TEST_CASE("Store StreamIdBlocked Frame", "[quic]")
+TEST_CASE("Store StreamsBlocked Frame", "[quic]")
 {
   uint8_t buf[65535];
   size_t len;
 
   uint8_t expected[] = {
-    0x0a,       // Type
+    0x16,       // Type
     0x41, 0x02, // Stream ID
   };
   QUICStreamIdBlockedFrame stream_id_blocked_frame(0x0102, 0, nullptr);
@@ -1191,9 +1198,9 @@ TEST_CASE("Load NewConnectionId Frame", "[quic]")
   SECTION("load")
   {
     uint8_t buf1[] = {
-      0x0b,                                           // Type
-      0x08,                                           // Length
+      0x18,                                           // Type
       0x41, 0x02,                                     // Sequence
+      0x08,                                           // Length
       0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
       0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
@@ -1213,9 +1220,9 @@ TEST_CASE("Load NewConnectionId Frame", "[quic]")
   SECTION("Bad Load")
   {
     uint8_t buf1[] = {
-      0x0b,                                           // Type
-      0x08,                                           // Length
+      0x18,                                           // Type
       0x41, 0x02,                                     // Sequence
+      0x08,                                           // Length
       0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
     };
@@ -1231,9 +1238,9 @@ TEST_CASE("Store NewConnectionId Frame", "[quic]")
   size_t len;
 
   uint8_t expected[] = {
-    0x0b,                                           // Type
-    0x08,                                           // Length
+    0x18,                                           // Type
     0x41, 0x02,                                     // Sequence
+    0x08,                                           // Length
     0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Stateless Reset Token
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -1252,7 +1259,7 @@ TEST_CASE("Load STOP_SENDING Frame", "[quic]")
   SECTION("LOAD")
   {
     uint8_t buf[] = {
-      0x0c,                   // Type
+      0x05,                   // Type
       0x92, 0x34, 0x56, 0x78, // Stream ID
       0x00, 0x01,             // Error Code
     };
@@ -1269,7 +1276,7 @@ TEST_CASE("Load STOP_SENDING Frame", "[quic]")
   SECTION("Bad LOAD")
   {
     uint8_t buf[] = {
-      0x0c,                   // Type
+      0x05,                   // Type
       0x92, 0x34, 0x56, 0x78, // Stream ID
     };
     std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
@@ -1284,7 +1291,7 @@ TEST_CASE("Store STOP_SENDING Frame", "[quic]")
   size_t len;
 
   uint8_t expected[] = {
-    0x0c,                   // Type
+    0x05,                   // Type
     0x92, 0x34, 0x56, 0x78, // Stream ID
     0x00, 0x01,             // Error Code
   };
@@ -1301,7 +1308,7 @@ TEST_CASE("Load PATH_CHALLENGE Frame", "[quic]")
   SECTION("Load")
   {
     uint8_t buf[] = {
-      0x0e,                                           // Type
+      0x1a,                                           // Type
       0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
     };
     std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
@@ -1317,7 +1324,7 @@ TEST_CASE("Load PATH_CHALLENGE Frame", "[quic]")
   SECTION("Load")
   {
     uint8_t buf[] = {
-      0x0e,                                     // Type
+      0x1a,                                     // Type
       0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xef, // Data
     };
     std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
@@ -1332,7 +1339,7 @@ TEST_CASE("Store PATH_CHALLENGE Frame", "[quic]")
   size_t len;
 
   uint8_t expected[] = {
-    0x0e,                                           // Type
+    0x1a,                                           // Type
     0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
   };
 
@@ -1354,7 +1361,7 @@ TEST_CASE("Load PATH_RESPONSE Frame", "[quic]")
   SECTION("Load")
   {
     uint8_t buf[] = {
-      0x0f,                                           // Type
+      0x1b,                                           // Type
       0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
     };
     std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
@@ -1370,7 +1377,7 @@ TEST_CASE("Load PATH_RESPONSE Frame", "[quic]")
   SECTION("Load")
   {
     uint8_t buf[] = {
-      0x0f,                                     // Type
+      0x1b,                                     // Type
       0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
     };
     std::shared_ptr<const QUICFrame> frame = QUICFrameFactory::create(buf, sizeof(buf));
@@ -1385,7 +1392,7 @@ TEST_CASE("Store PATH_RESPONSE Frame", "[quic]")
   size_t len;
 
   uint8_t expected[] = {
-    0x0f,                                           // Type
+    0x1b,                                           // Type
     0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
   };
 
@@ -1405,7 +1412,7 @@ TEST_CASE("Store PATH_RESPONSE Frame", "[quic]")
 TEST_CASE("NEW_TOKEN Frame", "[quic]")
 {
   uint8_t raw_new_token_frame[] = {
-    0x19,                                           // Type
+    0x07,                                           // Type
     0x08,                                           // Token Length (i)
     0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, // Token (*)
   };
@@ -1453,7 +1460,7 @@ TEST_CASE("NEW_TOKEN Frame", "[quic]")
 TEST_CASE("RETIRE_CONNECTION_ID Frame", "[quic]")
 {
   uint8_t raw_retire_connection_id_frame[] = {
-    0x0d, // Type
+    0x19, // Type
     0x08, // Sequence Number (i)
   };
   size_t raw_retire_connection_id_frame_len = sizeof(raw_retire_connection_id_frame);
@@ -1508,11 +1515,11 @@ TEST_CASE("QUICFrameFactory Fast Create Frame", "[quic]")
   QUICFrameFactory factory;
 
   uint8_t buf1[] = {
-    0x06,                   // Type
+    0x12,                   // Type
     0x81, 0x02, 0x03, 0x04, // Stream Data
   };
   uint8_t buf2[] = {
-    0x06,                   // Type
+    0x12,                   // Type
     0x85, 0x06, 0x07, 0x08, // Stream Data
   };
   std::shared_ptr<const QUICFrame> frame1 = factory.fast_create(buf1, sizeof(buf1));
@@ -1572,362 +1579,4 @@ TEST_CASE("QUICFrameFactory Create RESET_STREAM with a QUICStreamError", "[quic]
   CHECK(rst_stream_frame1->error_code() == 0x01);
   CHECK(rst_stream_frame1->stream_id() == 0x1234);
   CHECK(rst_stream_frame1->final_offset() == 0);
-}
-
-// Test for retransmittable frames
-TEST_CASE("Retransmit", "[quic][frame][retransmit]")
-{
-  QUICPacketFactory factory;
-  MockQUICHandshakeProtocol hs_protocol;
-  factory.set_hs_protocol(&hs_protocol);
-  std::vector<QUICFrameInfo> frames;
-  QUICPacketUPtr packet = factory.create_protected_packet({reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4}, 0, {nullptr},
-                                                          0, true, false, frames);
-  SECTION("STREAM frame split")
-  {
-    size_t len;
-    uint8_t buf1[] = {
-      0x16,                                           // 0b00010OLF (OLF=110)
-      0x01,                                           // Stream ID
-      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
-      0x0a,                                           // Data Length
-      0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
-      0x11, 0x22, 0x33, 0x44, 0x55,
-    };
-
-    uint8_t expected[]{
-      0x16,                                           // 0b00010OLF (OLF=110)
-      0x01,                                           // Stream ID
-      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x05, // Offset
-      0x05,                                           // Data Length
-      0x11, 0x22, 0x33, 0x44, 0x55,                   // Stream Data
-    };
-
-    uint8_t expected2[]{
-      0x16,                                           // 0b00010OLF (OLF=110)
-      0x01,                                           // Stream ID
-      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
-      0x05,                                           // Data Length
-      0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
-    };
-
-    uint8_t buffer[128];
-
-    QUICFrameUPtr frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-    auto frame           = QUICFrameFactory::create_retransmission_frame(std::move(frame1), *packet);
-    auto frame2          = frame->split(16);
-
-    CHECK(frame2->type() == QUICFrameType::STREAM);
-    CHECK(frame2->store(buffer, &len, 128));
-    CHECK(memcmp(buffer, expected, sizeof(expected)) == 0);
-    CHECK(frame->store(buffer, &len, 128));
-    CHECK(memcmp(buffer, expected2, sizeof(expected2)) == 0);
-
-    QUICFrameDeleter::delete_stream_frame(frame2);
-  }
-
-  SECTION("STREAM frame")
-  {
-    uint8_t frame_buf[] = {
-      0x12,                         // Type, 0b00010OLF (OLF=010)
-      0x01,                         // Stream ID
-      0x05,                         // Data Length
-      0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 8);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("CRYPTO frame")
-  {
-    uint8_t frame_buf[] = {
-      0x18,                         // Type
-      0x01,                         // Offset
-      0x05,                         // Length
-      0x01, 0x02, 0x03, 0x04, 0x05, // Crypto Data
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 8);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("RESET_STREAM frame")
-  {
-    uint8_t frame_buf[] = {
-      0x01,                                          // Type
-      0x92, 0x34, 0x56, 0x78,                        // Stream ID
-      0x00, 0x01,                                    // Error Code
-      0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 15);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("CONNECTION_CLOSE frame")
-  {
-    uint8_t frame_buf[] = {
-      0x02,                        // Type
-      0x00, 0x0A,                  // Error Code
-      0x00,                        // Frame Type
-      0x05,                        // Reason Phrase Length
-      0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == sizeof(frame_buf));
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("APPLICATION_CLOSE frame")
-  {
-    uint8_t frame_buf[] = {
-      0x03,                        // Type
-      0x00, 0x01,                  // Error Code
-      0x05,                        // Reason Phrase Length
-      0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 9);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("MAX_DATA frame")
-  {
-    uint8_t frame_buf[] = {
-      0x04,                                          // Type
-      0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 9);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("MAX_STREAM_DATA frame")
-  {
-    uint8_t frame_buf[] = {
-      0x05,                                          // Type
-      0x81, 0x02, 0x03, 0x04,                        // Stream ID
-      0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Stream Data
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 13);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("MAX_STREAMS frame")
-  {
-    uint8_t frame_buf[] = {
-      0x06,                   // Type
-      0x81, 0x02, 0x03, 0x04, // Stream ID
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 5);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("PING frame")
-  {
-    uint8_t frame_buf[] = {
-      0x07, // Type
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 1);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("BLOCKED frame")
-  {
-    uint8_t frame_buf[] = {
-      0x08, // Type
-      0x07, // Offset
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 2);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("STREAM_DATA_BLOCKED frame")
-  {
-    uint8_t frame_buf[] = {
-      0x09,                   // Type
-      0x81, 0x02, 0x03, 0x04, // Stream ID
-      0x07,                   // Offset
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 6);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("STREAMS_BLOCKED frame")
-  {
-    uint8_t frame_buf[] = {
-      0x0a,       // Type
-      0x41, 0x02, // Stream ID
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 3);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("NEW_CONNECTION_ID frame")
-  {
-    uint8_t frame_buf[] = {
-      0x0b,                                           // Type
-      0x08,                                           // Length
-      0x41, 0x02,                                     // Sequence
-      0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
-      0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
-      0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 28);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("STOP_SENDING frame")
-  {
-    uint8_t frame_buf[] = {
-      0x0c,                   // Type
-      0x92, 0x34, 0x56, 0x78, // Stream ID
-      0x00, 0x01,             // Error Code
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 7);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("PATH_CHALLENGE frame")
-  {
-    uint8_t frame_buf[] = {
-      0x0e,                                           // Type
-      0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 9);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
-
-  SECTION("PATH_RESPONSE frame")
-  {
-    uint8_t frame_buf[] = {
-      0x0f,                                           // Type
-      0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
-    };
-
-    QUICFrameUPtr frame = QUICFrameFactory::create(frame_buf, sizeof(frame_buf));
-    frame               = QUICFrameFactory::create_retransmission_frame(std::move(frame), *packet);
-
-    uint8_t buf[32] = {0};
-    size_t len;
-    frame->store(buf, &len, 32);
-
-    CHECK(len == 9);
-    CHECK(memcmp(buf, frame_buf, len) == 0);
-  }
 }
