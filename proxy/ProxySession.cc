@@ -119,29 +119,20 @@ ProxySession::state_api_callout(int event, void *data)
       }
 
       if (this->api_current) {
-        bool plugin_lock = false;
-        APIHook *hook    = this->api_current;
-        Ptr<ProxyMutex> plugin_mutex;
+        APIHook *hook = this->api_current;
 
-        if (hook->m_cont->mutex) {
-          plugin_mutex = hook->m_cont->mutex;
-          plugin_lock  = MUTEX_TAKE_TRY_LOCK(hook->m_cont->mutex, mutex->thread_holding);
-          if (!plugin_lock) {
-            SET_HANDLER(&ProxySession::state_api_callout);
-            if (!schedule_event) { // Don't bother to schedule is there is already one out.
-              schedule_event = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
-            }
-            return 0;
+        MUTEX_TRY_LOCK(lock, hook->m_cont->mutex, mutex->thread_holding);
+        // Have a mutex but did't get the lock, reschedule
+        if (!lock.is_locked()) {
+          SET_HANDLER(&ProxySession::state_api_callout);
+          if (!schedule_event) { // Don't bother to schedule is there is already one out.
+            schedule_event = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
           }
+          return 0;
         }
 
         this->api_current = this->api_current->next();
         hook->invoke(eventmap[this->api_hookid], this);
-
-        if (plugin_lock) {
-          Mutex_unlock(plugin_mutex, this_ethread());
-        }
-
         return 0;
       }
     }

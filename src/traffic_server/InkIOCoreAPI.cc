@@ -54,7 +54,7 @@ sdk_sanity_check_mutex(TSMutex mutex)
     return TS_ERROR;
   }
 
-  ProxyMutex *mutexp = (ProxyMutex *)mutex;
+  ProxyMutex *mutexp = reinterpret_cast<ProxyMutex *>(mutex);
 
   if (mutexp->refcount() < 0) {
     return TS_ERROR;
@@ -242,6 +242,7 @@ TSMutex
 TSMutexCreate()
 {
   ProxyMutex *mutexp = new_ProxyMutex();
+  mutexp->refcount_inc();
 
   // TODO: Remove this when allocations can never fail.
   sdk_assert(sdk_sanity_check_mutex((TSMutex)mutexp) == TS_SUCCESS);
@@ -253,9 +254,12 @@ void
 TSMutexDestroy(TSMutex m)
 {
   sdk_assert(sdk_sanity_check_mutex(m) == TS_SUCCESS);
-  ink_release_assert(((ProxyMutex *)m)->refcount() == 0);
-
-  ((ProxyMutex *)m)->free();
+  ProxyMutex *mutexp = reinterpret_cast<ProxyMutex *>(m);
+  // Decrement the refcount added in TSMutexCreate.  Delete if this
+  // was the last ref count
+  if (mutexp && mutexp->refcount_dec() == 0) {
+    mutexp->free();
+  }
 }
 
 /* The following two APIs are for Into work, actually, APIs of Mutex
@@ -292,21 +296,24 @@ void
 TSMutexLock(TSMutex mutexp)
 {
   sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
-  MUTEX_TAKE_LOCK((ProxyMutex *)mutexp, this_ethread());
+  Ptr<ProxyMutex> proxy_mutex(reinterpret_cast<ProxyMutex *>(mutexp));
+  MUTEX_TAKE_LOCK(proxy_mutex, this_ethread());
 }
 
 TSReturnCode
 TSMutexLockTry(TSMutex mutexp)
 {
   sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
-  return (MUTEX_TAKE_TRY_LOCK((ProxyMutex *)mutexp, this_ethread()) ? TS_SUCCESS : TS_ERROR);
+  Ptr<ProxyMutex> proxy_mutex(reinterpret_cast<ProxyMutex *>(mutexp));
+  return (MUTEX_TAKE_TRY_LOCK(proxy_mutex, this_ethread()) ? TS_SUCCESS : TS_ERROR);
 }
 
 void
 TSMutexUnlock(TSMutex mutexp)
 {
   sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
-  MUTEX_UNTAKE_LOCK((ProxyMutex *)mutexp, this_ethread());
+  Ptr<ProxyMutex> proxy_mutex(reinterpret_cast<ProxyMutex *>(mutexp));
+  MUTEX_UNTAKE_LOCK(proxy_mutex, this_ethread());
 }
 
 /* VIOs */
@@ -409,7 +416,7 @@ TSVIOMutexGet(TSVIO viop)
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
   VIO *vio = (VIO *)viop;
-  return (TSMutex)(vio->mutex.get());
+  return reinterpret_cast<TSMutex>(vio->mutex.get());
 }
 
 /* High Resolution Time */

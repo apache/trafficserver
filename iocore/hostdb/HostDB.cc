@@ -449,13 +449,13 @@ HostDBContinuation::init(HostDBHash const &the_hash, Options const &opt)
 void
 HostDBContinuation::refresh_hash()
 {
-  ProxyMutex *old_bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  Ptr<ProxyMutex> old_bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
   // We're not pending DNS anymore.
   remove_trigger_pending_dns();
   hash.refresh();
   // Update the mutex if it's from the bucket.
   // Some call sites modify this after calling @c init so need to check.
-  if (mutex.get() == old_bucket_mutex) {
+  if (mutex == old_bucket_mutex) {
     mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
   }
 }
@@ -533,7 +533,7 @@ db_mark_for(IpAddr const &ip)
 }
 
 Ptr<HostDBInfo>
-probe(ProxyMutex *mutex, HostDBHash const &hash, bool ignore_timeout)
+probe(Ptr<ProxyMutex> mutex, HostDBHash const &hash, bool ignore_timeout)
 {
   // If hostdb is disabled, don't return anything
   if (!hostdb_enable) {
@@ -609,8 +609,8 @@ HostDBProcessor::getby(Continuation *cont, const char *hostname, int len, sockad
                        HostResStyle host_res_style, int dns_lookup_timeout)
 {
   HostDBHash hash;
-  EThread *thread   = this_ethread();
-  ProxyMutex *mutex = thread->mutex.get();
+  EThread *thread       = this_ethread();
+  Ptr<ProxyMutex> mutex = thread->mutex;
   ip_text_buffer ipb;
 
   HOSTDB_INCREMENT_DYN_STAT(hostdb_total_lookups_stat);
@@ -640,7 +640,7 @@ HostDBProcessor::getby(Continuation *cont, const char *hostname, int len, sockad
       // find the partition lock
       //
       // TODO: Could we reuse the "mutex" above safely? I think so but not sure.
-      ProxyMutex *bmutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+      Ptr<ProxyMutex> bmutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
       MUTEX_TRY_LOCK(lock, bmutex, thread);
       MUTEX_TRY_LOCK(lock2, cont->mutex, thread);
 
@@ -763,7 +763,7 @@ HostDBProcessor::getSRVbyname_imm(Continuation *cont, process_srv_info_pfn proce
   // Attempt to find the result in-line, for level 1 hits
   if (!force_dns) {
     // find the partition lock
-    ProxyMutex *bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+    Ptr<ProxyMutex> bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
     MUTEX_TRY_LOCK(lock, bucket_mutex, thread);
 
     // If we can get the lock and a level 1 probe succeeds, return
@@ -836,7 +836,7 @@ HostDBProcessor::getbyname_imm(Continuation *cont, process_hostdb_info_pfn proce
     do {
       loop = false; // loop only on explicit set for retry
       // find the partition lock
-      ProxyMutex *bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+      Ptr<ProxyMutex> bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
       SCOPED_MUTEX_LOCK(lock, bucket_mutex, thread);
       // do a level 1 probe for immediate result.
       Ptr<HostDBInfo> r = probe(bucket_mutex, hash, false);
@@ -952,8 +952,8 @@ HostDBProcessor::setby(const char *hostname, int len, sockaddr const *ip, HostDB
 
   // Attempt to find the result in-line, for level 1 hits
 
-  ProxyMutex *mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-  EThread *thread   = this_ethread();
+  Ptr<ProxyMutex> mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  EThread *thread       = this_ethread();
   MUTEX_TRY_LOCK(lock, mutex, thread);
 
   if (lock.is_locked()) {
@@ -999,7 +999,7 @@ HostDBProcessor::setby_srv(const char *hostname, int len, const char *target, Ho
 int
 HostDBContinuation::setbyEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  Ptr<HostDBInfo> r = probe(mutex.get(), hash, false);
+  Ptr<HostDBInfo> r = probe(mutex, hash, false);
 
   if (r) {
     do_setby(r.get(), &app, hash.host_name, hash.ip, is_srv());
@@ -1056,8 +1056,11 @@ int
 HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event *e)
 {
   Continuation *cont = action.continuation;
-
-  MUTEX_TRY_LOCK(lock, cont ? cont->mutex.get() : (ProxyMutex *)nullptr, e->ethread);
+  Ptr<ProxyMutex> proxy_mutex;
+  if (cont) {
+    proxy_mutex = cont->mutex;
+  }
+  MUTEX_TRY_LOCK(lock, proxy_mutex, e->ethread);
   if (!lock.is_locked()) {
     e->schedule_in(HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;
@@ -1068,7 +1071,7 @@ HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event *e)
         cont->handleEvent(EVENT_HOST_DB_IP_REMOVED, (void *)nullptr);
       }
     } else {
-      Ptr<HostDBInfo> r = probe(mutex.get(), hash, false);
+      Ptr<HostDBInfo> r = probe(mutex, hash, false);
       bool res          = remove_round_robin(r.get(), hash.host_name, hash.ip);
       if (cont) {
         cont->handleEvent(EVENT_HOST_DB_IP_REMOVED, res ? static_cast<void *>(&hash.ip) : static_cast<void *>(nullptr));
@@ -1277,7 +1280,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     ttl             = failed ? 0 : e->ttl / 60;
     int ttl_seconds = failed ? 0 : e->ttl; // ebalsa: moving to second accuracy
 
-    Ptr<HostDBInfo> old_r = probe(mutex.get(), hash, false);
+    Ptr<HostDBInfo> old_r = probe(mutex, hash, false);
     // If the DNS lookup failed with NXDOMAIN, remove the old record
     if (e && e->isNameError() && old_r) {
       hostDB.refcountcache->erase(old_r->key);
@@ -1535,7 +1538,7 @@ HostDBContinuation::iterateEvent(int event, Event *e)
   // let's iterate through another record and then reschedule ourself.
   if (current_iterate_pos < hostDB.refcountcache->partition_count()) {
     // TODO: configurable number at a time?
-    ProxyMutex *bucket_mutex = hostDB.refcountcache->get_partition(current_iterate_pos).lock.get();
+    Ptr<ProxyMutex> bucket_mutex = hostDB.refcountcache->get_partition(current_iterate_pos).lock;
     MUTEX_TRY_LOCK(lock_bucket, bucket_mutex, t);
     if (!lock_bucket.is_locked()) {
       // we couldn't get the bucket lock, let's just reschedule and try later.
@@ -1612,7 +1615,7 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   if (!force_dns) {
     // Do the probe
     //
-    Ptr<HostDBInfo> r = probe(mutex.get(), hash, false);
+    Ptr<HostDBInfo> r = probe(mutex, hash, false);
 
     if (r) {
       HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
