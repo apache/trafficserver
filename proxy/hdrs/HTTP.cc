@@ -592,21 +592,21 @@ http_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
   -------------------------------------------------------------------------*/
 
 int
-http_hdr_length_get(HTTPHdrImpl *hdr)
+HTTPHdr::length_get() const
 {
   int length = 0;
 
-  if (hdr->m_polarity == HTTP_TYPE_REQUEST) {
-    if (hdr->u.req.m_ptr_method) {
-      length = hdr->u.req.m_len_method;
+  if (m_http->m_polarity == HTTP_TYPE_REQUEST) {
+    if (m_http->u.req.m_ptr_method) {
+      length = m_http->u.req.m_len_method;
     } else {
       length = 0;
     }
 
     length += 1; // " "
 
-    if (hdr->u.req.m_url_impl) {
-      length += url_length_get(hdr->u.req.m_url_impl);
+    if (m_http->u.req.m_url_impl) {
+      length += url_length_get(m_http->u.req.m_url_impl);
     }
 
     length += 1; // " "
@@ -614,9 +614,9 @@ http_hdr_length_get(HTTPHdrImpl *hdr)
     length += 8; // HTTP/%d.%d
 
     length += 2; // "\r\n"
-  } else if (hdr->m_polarity == HTTP_TYPE_RESPONSE) {
-    if (hdr->u.resp.m_ptr_reason) {
-      length = hdr->u.resp.m_len_reason;
+  } else if (m_http->m_polarity == HTTP_TYPE_RESPONSE) {
+    if (m_http->u.resp.m_ptr_reason) {
+      length = m_http->u.resp.m_len_reason;
     } else {
       length = 0;
     }
@@ -632,7 +632,7 @@ http_hdr_length_get(HTTPHdrImpl *hdr)
     length += 2; // "\r\n"
   }
 
-  length += mime_hdr_length_get(hdr->m_fields_impl);
+  length += mime_hdr_length_get(m_http->m_fields_impl);
 
   return length;
 }

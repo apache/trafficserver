@@ -423,9 +423,6 @@ inkcoreapi int http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hh, char *buf, int buf
 
 void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 
-int http_hdr_length_get(HTTPHdrImpl *hh);
-// HTTPType               http_hdr_type_get (HTTPHdrImpl *hh);
-
 // int32_t                  http_hdr_version_get (HTTPHdrImpl *hh);
 inkcoreapi void http_hdr_version_set(HTTPHdrImpl *hh, int32_t ver);
 
@@ -520,7 +517,7 @@ public:
 
   int print(char *buf, int bufsize, int *bufindex, int *dumpoffset);
 
-  int length_get();
+  int length_get() const;
 
   HTTPType type_get() const;
 
@@ -841,16 +838,6 @@ HTTPHdr::print(char *buf, int bufsize, int *bufindex, int *dumpoffset)
 {
   ink_assert(valid());
   return http_hdr_print(m_heap, m_http, buf, bufsize, bufindex, dumpoffset);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline int
-HTTPHdr::length_get()
-{
-  ink_assert(valid());
-  return http_hdr_length_get(m_http);
 }
 
 /*-------------------------------------------------------------------------
