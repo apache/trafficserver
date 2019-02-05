@@ -288,7 +288,7 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
   int n_requests                  = load_qif_file(qif_file, requests);
 
   QUICApplicationDriver driver;
-  QPACK *qpack                   = new QPACK(driver.get_connection(), dts, mbs);
+  QPACK *qpack                   = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
   TestQUICStream *encoder_stream = new TestQUICStream(0);
   TestQUICStream *decoder_stream = new TestQUICStream(9999);
   qpack->set_stream(encoder_stream);
@@ -296,10 +296,11 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
 
   uint64_t stream_id                  = 1;
   MIOBuffer *header_block             = new_MIOBuffer();
+  uint64_t header_block_len           = 0;
   IOBufferReader *header_block_reader = header_block->alloc_reader();
   for (int i = 0; i < n_requests; ++i) {
     HTTPHdr *hdr = requests[i];
-    ret          = qpack->encode(stream_id, *hdr, header_block);
+    ret          = qpack->encode(stream_id, *hdr, header_block, header_block_len);
     if (ret < 0) {
       break;
     }
@@ -334,7 +335,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
   TestQPACKEventHandler *event_handler = new TestQPACKEventHandler();
 
   QUICApplicationDriver driver;
-  QPACK *qpack                   = new QPACK(driver.get_connection(), dts, mbs);
+  QPACK *qpack                   = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
   TestQUICStream *encoder_stream = new TestQUICStream(0);
   qpack->set_stream(encoder_stream);
 
