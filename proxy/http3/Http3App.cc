@@ -26,12 +26,19 @@
 #include "P_Net.h"
 #include "P_VConnection.h"
 
+#include "Http3Config.h"
 #include "Http3DebugNames.h"
 #include "Http3ClientSession.h"
 #include "Http3ClientTransaction.h"
 
 static constexpr char tag[]   = "http3";
 static constexpr char tag_v[] = "v_http3";
+
+// Default values of settings defined by specs.
+static constexpr uint32_t HTTP3_DEFAULT_HEADER_TABLE_SIZE     = 0;
+static constexpr uint32_t HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE  = UINT32_MAX;
+static constexpr uint32_t HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS = 0;
+static constexpr uint32_t HTTP3_DEFAULT_NUM_PLACEHOLDERS      = 0;
 
 Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QUICApplication(client_vc)
 {
@@ -303,7 +310,6 @@ Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame)
 //
 // SETTINGS frame framer
 //
-// TODO: load values from config
 Http3FrameUPtr
 Http3SettingsFramer::generate_frame(uint16_t max_size)
 {
@@ -313,10 +319,26 @@ Http3SettingsFramer::generate_frame(uint16_t max_size)
 
   this->_is_sent = true;
 
+  Http3Config::scoped_config params;
+
   Http3SettingsFrame *frame = http3SettingsFrameAllocator.alloc();
   new (frame) Http3SettingsFrame();
-  frame->set(Http3SettingsId::HEADER_TABLE_SIZE, 0x0);
-  frame->set(Http3SettingsId::NUM_PLACEHOLDERS, 100);
+
+  if (params->header_table_size() != HTTP3_DEFAULT_HEADER_TABLE_SIZE) {
+    frame->set(Http3SettingsId::HEADER_TABLE_SIZE, params->header_table_size());
+  }
+
+  if (params->max_header_list_size() != HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE) {
+    frame->set(Http3SettingsId::NUM_PLACEHOLDERS, params->max_header_list_size());
+  }
+
+  if (params->qpack_blocked_streams() != HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS) {
+    frame->set(Http3SettingsId::QPACK_BLOCKED_STREAMS, params->qpack_blocked_streams());
+  }
+
+  if (params->num_placeholders() != HTTP3_DEFAULT_NUM_PLACEHOLDERS) {
+    frame->set(Http3SettingsId::NUM_PLACEHOLDERS, params->num_placeholders());
+  }
 
   return Http3SettingsFrameUPtr(frame, &Http3FrameDeleter::delete_settings_frame);
 }

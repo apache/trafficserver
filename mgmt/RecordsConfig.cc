@@ -1334,6 +1334,21 @@ static const RecordElement RecordsConfig[] =
 
   //############
   //#
+  //# HTTP/3 global configuration.
+  //#
+  //############
+  {RECT_CONFIG, "proxy.config.http3.header_table_size", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http3.max_header_list_size", RECD_INT, "4096", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http3.qpack_blocked_streams", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http3.num_placeholders", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  ,
+
+
+  //############
+  //#
   //# QUIC global configuration.
   //#
   //############

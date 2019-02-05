@@ -1,5 +1,5 @@
 #
-#  Makefile.am for HTTP over QUIC
+#  Makefile.am for HTTP/3
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -36,6 +36,7 @@ noinst_LIBRARIES = libhttp3.a
 
 libhttp3_a_SOURCES = \
   Http3.cc \
+  Http3Config.cc \
   Http3App.cc \
   Http3Types.cc \
   Http3SessionAccept.cc \

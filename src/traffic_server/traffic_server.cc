@@ -99,6 +99,7 @@ extern "C" int plock(int);
 
 #if TS_USE_QUIC == 1
 #include "Http3.h"
+#include "Http3Config.h"
 #endif
 
 #include "tscore/ink_cap.h"
@@ -1741,6 +1742,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // We want to initialize Machine as early as possible because it
   // has other dependencies. Hopefully not in prep_HttpProxyServer().
   HttpConfig::startup();
+#if TS_USE_QUIC == 1
+  Http3Config::startup();
+#endif
 
   /* Set up the machine with the outbound address if that's set,
      or the inbound address if set, otherwise let it default.
