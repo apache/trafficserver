@@ -30,7 +30,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
   SECTION("Long Header (load) Version Negotiation Packet")
   {
     const uint8_t input[] = {
-      0x80,                                           // Long header, Type: NONE
+      0xc0,                                           // Long header, Type: NONE
       0x00, 0x00, 0x00, 0x00,                         // Version
       0x55,                                           // DCIL/SCIL
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
@@ -55,14 +55,14 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
   SECTION("Long Header (load) INITIAL Packet")
   {
     const uint8_t input[] = {
-      0xFF,                                           // Long header, Type: INITIAL
+      0xc3,                                           // Long header, Type: INITIAL
       0x11, 0x22, 0x33, 0x44,                         // Version
       0x55,                                           // DCIL/SCIL
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x00,                                           // Token Length (i), Token (*)
       0x02,                                           // Payload length
-      0xC1, 0x23, 0x45, 0x67,                         // Packet number
+      0x01, 0x23, 0x45, 0x67,                         // Packet number
       0xff, 0xff,                                     // Payload (dummy)
     };
     ats_unique_buf uinput = ats_unique_malloc(sizeof(input));
@@ -83,12 +83,11 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
   SECTION("Long Header (load) RETRY Packet")
   {
     const uint8_t input[] = {
-      0xFE,                                           // Long header, Type: RETRY
+      0xf5,                                           // Long header, Type: RETRY
       0x11, 0x22, 0x33, 0x44,                         // Version
       0x55,                                           // DCIL/SCIL
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
-      0x05,                                           // ODCIL
       0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, // Original Destination Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Retry Token
       0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
@@ -121,14 +120,14 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     size_t len      = 0;
 
     const uint8_t expected[] = {
-      0xFF,                                           // Long header, Type: INITIAL
+      0xc3,                                           // Long header, Type: INITIAL
       0x11, 0x22, 0x33, 0x44,                         // Version
       0x55,                                           // DCIL/SCIL
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x00,                                           // Token Length (i), Token (*)
       0x19,                                           // Length (Not 0x09 because it will have 16 bytes of AEAD tag)
-      0xC1, 0x23, 0x45, 0x67,                         // Packet number
+      0x01, 0x23, 0x45, 0x67,                         // Packet number
       0x11, 0x22, 0x33, 0x44, 0x55,                   // Payload (dummy)
     };
     ats_unique_buf payload = ats_unique_malloc(5);
@@ -159,18 +158,17 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     size_t len      = 0;
 
     const uint8_t expected[] = {
-      0xFE,                                           // Long header, Type: RETRY
+      0xf5,                                           // Long header, Type: RETRY
       0x11, 0x22, 0x33, 0x44,                         // Version
       0x55,                                           // DCIL/SCIL
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
-      0x05,                                           // ODCIL
       0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, // Original Destination Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Retry Token
       0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
     };
     ats_unique_buf payload = ats_unique_malloc(16);
-    memcpy(payload.get(), expected + 31, 16);
+    memcpy(payload.get(), expected + 30, 16);
 
     QUICPacketHeaderUPtr header =
       QUICPacketHeader::build(QUICPacketType::RETRY, QUICKeyPhase::INITIAL, 0x11223344,
@@ -210,11 +208,11 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
   SECTION("Short Header (load)")
   {
     const uint8_t input[] = {
-      0x30,                                           // Short header with (K=0)
+      0x43,                                           // Short header with (K=0)
       0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Destination Connection ID (144)
       0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, //
       0x10, 0x11,                                     //
-      0xC1, 0x23, 0x45, 0x67,                         // Packet number
+      0x01, 0x23, 0x45, 0x67,                         // Packet number
       0xff, 0xff,                                     // Payload (dummy)
     };
     ats_unique_buf uinput = ats_unique_malloc(sizeof(input));
@@ -235,11 +233,11 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
     size_t len      = 0;
 
     const uint8_t expected[] = {
-      0x30,                                           // Short header with (K=0)
+      0x43,                                           // Short header with (K=0)
       0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Destination Connection ID (144)
       0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, //
       0x10, 0x11,                                     //
-      0xC1, 0x23, 0x45, 0x67,                         // Packet number
+      0x01, 0x23, 0x45, 0x67,                         // Packet number
       0x11, 0x22, 0x33, 0x44, 0x55,                   // Protected Payload
     };
     size_t payload_len = 5;
@@ -267,12 +265,9 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
 
 TEST_CASE("Encoded Packet Number Length", "[quic]")
 {
-  QUICPacketNumber base = 0x6afa2f;
+  QUICPacketNumber base = 0xabe8bc;
 
-  // To be clarify: Is "As a result..." sentence missing "twice" ?
-  //
-  // CHECK(QUICPacket::calc_packet_number_len(0x6b2d79, base) == 2);
-  CHECK(QUICPacket::calc_packet_number_len(0x6bc107, base) == 4);
+  CHECK(QUICPacket::calc_packet_number_len(0xace8fe, base) == 3);
 }
 
 TEST_CASE("Encoding Packet Number", "[quic]")
@@ -293,26 +288,4 @@ TEST_CASE("Decoding Packet Number 1", "[quic]")
 
   QUICPacket::decode_packet_number(dst, src, len, base);
   CHECK(dst == 0xaa8309b3);
-}
-
-TEST_CASE("Decoding Packet Number 2", "[quic]")
-{
-  QUICPacketNumber dst  = 0;
-  QUICPacketNumber src  = 0xf1;
-  size_t len            = 1;
-  QUICPacketNumber base = 0x18bf54f0;
-
-  QUICPacket::decode_packet_number(dst, src, len, base);
-  CHECK(dst == 0x18bf5571);
-}
-
-TEST_CASE("Decoding Packet Number 3", "[quic]")
-{
-  QUICPacketNumber dst  = 0;
-  QUICPacketNumber src  = 0x5694;
-  size_t len            = 2;
-  QUICPacketNumber base = 0x44D35695;
-
-  QUICPacket::decode_packet_number(dst, src, len, base);
-  CHECK(dst == 0x44d39694);
 }
