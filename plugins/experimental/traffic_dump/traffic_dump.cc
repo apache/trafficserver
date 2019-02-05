@@ -26,7 +26,6 @@
 #include <getopt.h>
 #include <unistd.h>
 
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -38,31 +37,37 @@
 #include <chrono>
 #include <atomic>
 #include <string>
+#include <string_view>
 
+#include "tscore/ts_file.h"
 #include "ts/ts.h"
 
-const char *PLUGIN_NAME          = "traffic_dump";
-static const std::string closing = "]}]}";
+namespace
+{
+const char *PLUGIN_NAME   = "traffic_dump";
+const std::string closing = "]}]}";
 
-static std::string LOG_DIR = "dump";                // default log directory
-static int s_arg_idx       = 0;                     // Session Arg Index to pass on session data
-static std::atomic<int64_t> sample_pool_size(1000); // Sampling ratio
-
+ts::file::path log_path{"dump"};               // default log directory
+int s_arg_idx = 0;                             // Session Arg Index to pass on session data
+std::atomic<int64_t> sample_pool_size(1000);   // Sampling ratio
+std::atomic<int64_t> max_disk_usage(10000000); //< Max disk space for logs (approximate)
+std::atomic<int64_t> disk_usage(0);            //< Actual disk usage
 // handler declaration
-static int session_aio_handler(TSCont contp, TSEvent event, void *edata);
-static int session_txn_handler(TSCont contp, TSEvent event, void *edata);
+int session_aio_handler(TSCont contp, TSEvent event, void *edata);
+int session_txn_handler(TSCont contp, TSEvent event, void *edata);
 
-// Custom structure for per session data
+/// Custom structure for per session data
 struct SsnData {
-  int log_fd           = -1;    // Log file descriptor
-  int aio_count        = 0;     // Active AIO counts
-  int64_t write_offset = 0;     // AIO write offset
-  bool first           = true;  // First Transaction
-  bool ssn_closed      = false; // Session closed flag
+  int log_fd           = -1;    //< Log file descriptor
+  int aio_count        = 0;     //< Active AIO counts
+  int64_t write_offset = 0;     //< AIO write offset
+  bool first           = true;  //< First Transaction
+  bool ssn_closed      = false; //< Session closed flag
+  ts::file::path log_name;      //< Log file path
 
-  TSCont aio_cont       = nullptr; // AIO callback
-  TSCont txn_cont       = nullptr; // Transaction callback
-  TSMutex disk_io_mutex = nullptr; // AIO mutex
+  TSCont aio_cont       = nullptr; //< AIO callback
+  TSCont txn_cont       = nullptr; //< Transaction callback
+  TSMutex disk_io_mutex = nullptr; //< AIO mutex
 
   SsnData()
   {
@@ -110,7 +115,7 @@ struct SsnData {
 
 /// Local helper functions about json formatting
 /// min_write(): Inline function for repeating code
-static inline void
+inline void
 min_write(const char *buf, int64_t &prevIdx, int64_t &idx, std::ostream &jsonfile)
 {
   if (prevIdx < idx) {
@@ -121,7 +126,7 @@ min_write(const char *buf, int64_t &prevIdx, int64_t &idx, std::ostream &jsonfil
 
 /// esc_json_out(): Escape characters in a buffer and output to ofstream object
 ///                 in a way to minimize ofstream operations
-static int
+int
 esc_json_out(const char *buf, int64_t len, std::ostream &jsonfile)
 {
   if (buf == nullptr)
@@ -176,14 +181,14 @@ esc_json_out(const char *buf, int64_t len, std::ostream &jsonfile)
 }
 
 /// escape_json(): escape chars in a string and returns json string
-static std::string
+std::string
 escape_json(std::string const &s)
 {
   std::ostringstream o;
   esc_json_out(s.c_str(), s.length(), o);
   return o.str();
 }
-static std::string
+std::string
 escape_json(const char *buf, int64_t size)
 {
   std::ostringstream o;
@@ -191,34 +196,21 @@ escape_json(const char *buf, int64_t size)
   return o.str();
 }
 
-/// json_entry(): Formats to map-style entry i.e. "field": "value"
-// static inline std::string
-// json_entry(std::string const &name, std::string const &value)
-// {
-//   return "\"" + escape_json(name) + "\": \"" + escape_json(value) + "\"";
-// }
-
-static inline std::string
+inline std::string
 json_entry(std::string const &name, const char *buf, int64_t size)
 {
   return "\"" + escape_json(name) + "\":\"" + escape_json(buf, size) + "\"";
 }
 
 /// json_entry_array(): Formats to array-style entry i.e. ["field","value"]
-// static inline std::string
-// json_entry_array(std::string const &name, std::string const &value)
-// {
-//   return "[\"" + escape_json(name) + "\", \"" + escape_json(value) + "\"]";
-// }
-
-static inline std::string
+inline std::string
 json_entry_array(const char *name, int name_len, const char *value, int value_len)
 {
   return "[\"" + escape_json(name, name_len) + "\", \"" + escape_json(value, value_len) + "\"]";
 }
 
 /// Helper functions to collect txn information from TSMBuffer
-static std::string
+std::string
 collect_headers(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t body_bytes)
 {
   std::string result = "{";
@@ -308,6 +300,12 @@ session_aio_handler(TSCont contp, TSEvent event, void *edata)
         TSContDataSet(contp, nullptr);
         close(ssnData->log_fd);
         TSMutexUnlock(ssnData->disk_io_mutex);
+        std::error_code ec;
+        ts::file::file_status st = ts::file::status(ssnData->log_name, ec);
+        if (!ec) {
+          disk_usage += ts::file::file_size(st);
+          TSDebug(PLUGIN_NAME, "Finish a session with log file of %" PRId64 "bytes", ts::file::file_size(st));
+        }
         delete ssnData;
         return TS_SUCCESS;
       }
@@ -412,9 +410,25 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
   // Also handles LIFECYCLE_MSG from traffic_ctl
   case TS_EVENT_LIFECYCLE_MSG: {
     TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
-    if (strlen(msg->tag) == 19 && strncmp(msg->tag, "traffic_dump.sample", 19) == 0) {
-      sample_pool_size = static_cast<int64_t>(strtol(static_cast<const char *>(msg->data), nullptr, 0));
-      TSDebug(PLUGIN_NAME, "global_ssn_handler(): Received Msg to change sample size to %" PRId64 "", sample_pool_size.load());
+    // String view of plugin message prefix
+    static constexpr std::string_view PLUGIN_PREFIX("traffic_dump."_sv);
+
+    std::string_view tag(msg->tag, strlen(msg->tag));
+
+    if (tag.substr(0, PLUGIN_PREFIX.size()) == PLUGIN_PREFIX) {
+      tag.remove_prefix(PLUGIN_PREFIX.size());
+      if (tag == "sample") {
+        sample_pool_size = static_cast<int64_t>(strtol(static_cast<const char *>(msg->data), nullptr, 0));
+        TSDebug(PLUGIN_NAME, "TS_EVENT_LIFECYCLE_MSG: Received Msg to change sample size to %" PRId64 "bytes",
+                sample_pool_size.load());
+      } else if (tag == "reset") {
+        disk_usage = 0;
+        TSDebug(PLUGIN_NAME, "TS_EVENT_LIFECYCLE_MSG: Received Msg to reset disk usage counter");
+      } else if (tag == "limit") {
+        max_disk_usage = static_cast<int64_t>(strtol(static_cast<const char *>(msg->data), nullptr, 0));
+        TSDebug(PLUGIN_NAME, "TS_EVENT_LIFECYCLE_MSG: Received Msg to change max disk usage to %" PRId64 "bytes",
+                max_disk_usage.load());
+      }
     }
     return TS_SUCCESS;
   }
@@ -423,6 +437,10 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     int64_t id = TSHttpSsnIdGet(ssnp);
     if (id % sample_pool_size != 0) {
       TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore session %" PRId64 "...", id);
+      break;
+    } else if (disk_usage >= max_disk_usage) {
+      TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore session %" PRId64 "due to disk usage %" PRId64 "bytes", id,
+              disk_usage.load());
       break;
     }
     // Beginning of a new session
@@ -470,28 +488,26 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     // Initialize AIO file
     TSMutexLock(ssnData->disk_io_mutex);
     if (ssnData->log_fd < 0) {
-      std::string path  = LOG_DIR + "/" + std::string(client_str, 3);
-      std::string fname = path + "/" + session_id;
+      ts::file::path log_p = log_path / ts::file::path(std::string(client_str, 3));
+      ts::file::path log_f = log_p / ts::file::path(session_id);
 
       // Create subdir if not existing
-      struct stat st;
-      if (stat(path.c_str(), &st) == -1) {
-        if (mkdir(path.c_str(), 0755) == -1) {
-          TSDebug(PLUGIN_NAME, "global_ssn_handler(): failed to create dir (%d)%s", errno, strerror(errno));
-
-          TSError("[%s] Failed to create dir. %s", PLUGIN_NAME, strerror(errno));
-        }
+      std::error_code ec;
+      ts::file::status(log_p, ec);
+      if (ec && mkdir(log_p.c_str(), 0755) == -1) {
+        TSDebug(PLUGIN_NAME, "global_ssn_handler(): Failed to create dir %s", log_p.c_str());
+        TSError("[%s] Failed to create dir %s", PLUGIN_NAME, log_p.c_str());
       }
 
       // Try to open log files for AIO
-      ssnData->log_fd = open(fname.c_str(), O_RDWR | O_CREAT, S_IRWXU);
+      ssnData->log_fd = open(log_f.c_str(), O_RDWR | O_CREAT, S_IRWXU);
       if (ssnData->log_fd < 0) {
         TSMutexUnlock(ssnData->disk_io_mutex);
-        TSDebug(PLUGIN_NAME, "global_ssn_handler(): Failed to open log files. Abort.");
+        TSDebug(PLUGIN_NAME, "global_ssn_handler(): Failed to open log files %s. Abort.", log_f.c_str());
         TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
         return TS_EVENT_HTTP_CONTINUE;
       }
-
+      ssnData->log_name = log_f;
       // Write log file beginning to disk
       ssnData->write_to_disk(beginning);
     }
@@ -526,6 +542,8 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
   return TS_SUCCESS;
 }
 
+} // End of anonymous namespace
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
@@ -533,36 +551,28 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = "traffic_dump";
-  info.vendor_name   = "Oath";
-  info.support_email = "edge@oath.com";
-
-  std::string installDir = TSInstallDirGet();
-  LOG_DIR                = installDir + "/" + LOG_DIR + "/";
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   /// Commandline options
-  static const struct option longopts[] = {
-    {"logdir", required_argument, nullptr, 'l'}, {"sample", required_argument, nullptr, 's'}, {nullptr, no_argument, nullptr, 0}};
-  int opt = 0;
+  static const struct option longopts[] = {{"logdir", required_argument, nullptr, 'l'},
+                                           {"sample", required_argument, nullptr, 's'},
+                                           {"limit", required_argument, nullptr, 'm'},
+                                           {nullptr, no_argument, nullptr, 0}};
+  int opt                               = 0;
   while (opt >= 0) {
     opt = getopt_long(argc, (char *const *)argv, "l:", longopts, nullptr);
     switch (opt) {
     case 'l': {
-      LOG_DIR = std::string(optarg);
-      if (LOG_DIR[0] != '/') {
-        LOG_DIR = installDir + "/" + std::string(optarg) + "/";
-      }
-      TSDebug(PLUGIN_NAME, "Initialized with log dir: %s", LOG_DIR.c_str());
-      struct stat st;
-      if (stat(LOG_DIR.c_str(), &st) == -1) {
-        TSDebug(PLUGIN_NAME, "Log dir error: (%d) %s", errno, strerror(errno));
-      } else {
-        TSDebug(PLUGIN_NAME, "Log dir opened successfully");
-      }
+      log_path = ts::file::path{optarg};
       break;
     }
     case 's': {
       sample_pool_size = static_cast<int64_t>(std::strtol(optarg, nullptr, 0));
       break;
+    }
+    case 'm': {
+      max_disk_usage = static_cast<int64_t>(std::strtol(optarg, nullptr, 0));
     }
     case -1:
     case '?':
@@ -575,6 +585,12 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
+  // Make absolute path if not
+  if (!log_path.is_absolute()) {
+    log_path = ts::file::path(TSInstallDirGet()) / log_path;
+  }
+  TSDebug(PLUGIN_NAME, "Initialized with log directory: %s", log_path.c_str());
+
   if (TS_SUCCESS != TSPluginRegister(&info)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to register plugin.", PLUGIN_NAME);
   } else if (TS_SUCCESS != TSHttpSsnArgIndexReserve(PLUGIN_NAME, "Track log related data", &s_arg_idx)) {
@@ -585,7 +601,8 @@ TSPluginInit(int argc, const char *argv[])
     TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, ssncont);
     TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, ssncont);
     TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, ssncont);
-    TSDebug(PLUGIN_NAME, "Initialized with sample pool size %" PRId64 "", sample_pool_size.load());
+    TSDebug(PLUGIN_NAME, "Initialized with sample pool size %" PRId64 " bytes and disk limit %" PRId64 "bytes",
+            sample_pool_size.load(), max_disk_usage.load());
   }
 
   return;
