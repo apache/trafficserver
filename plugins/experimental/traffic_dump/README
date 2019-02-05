@@ -11,6 +11,13 @@ Traffic Dump is a global plugin and is configured by arguments in plugin.config.
 --sample <N>
   The sampling ratio. By setting this number to N, Traffic Dump will capture every one out of N sessions. This ratio can also be changed via traffic_ctl without restarting ATS.
 
+--limit <N>
+  The max disk usage (approximate). By setting this number to N, Traffic Dump will stop capturing new sessions once the disk usage exceeds N bytes.
+
 Traffic_Ctl Command:
 traffic_ctl plugin msg traffic_dump.sample N
   Same as setting --sample=N in plugin.config.
+traffic_ctl plugin msg traffic_dump.reset
+  Reset disk usage.
+traffic_ctl plugin msg traffic_dump.limit N
+  Set max disk usage.
