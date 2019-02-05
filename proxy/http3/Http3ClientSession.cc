@@ -23,10 +23,14 @@
 
 #include "Http3ClientSession.h"
 
+#include "Http3.h"
+
 Http3ClientSession::Http3ClientSession(NetVConnection *vc) : _client_vc(vc)
 {
-  this->_local_qpack  = new QPACK(static_cast<QUICNetVConnection *>(vc));
-  this->_remote_qpack = new QPACK(static_cast<QUICNetVConnection *>(vc));
+  this->_local_qpack  = new QPACK(static_cast<QUICNetVConnection *>(vc), HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE,
+                                 HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
+  this->_remote_qpack = new QPACK(static_cast<QUICNetVConnection *>(vc), HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE,
+                                  HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
 }
 
 Http3ClientSession::~Http3ClientSession()

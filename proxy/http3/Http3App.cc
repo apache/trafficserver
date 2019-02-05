@@ -26,6 +26,7 @@
 #include "P_Net.h"
 #include "P_VConnection.h"
 
+#include "Http3.h"
 #include "Http3Config.h"
 #include "Http3DebugNames.h"
 #include "Http3ClientSession.h"

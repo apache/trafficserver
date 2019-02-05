@@ -29,8 +29,6 @@
 #include "MIME.h"
 #include "QUICApplication.h"
 
-#include "Http3.h"
-
 class HTTPHdr;
 
 enum {
@@ -41,9 +39,7 @@ enum {
 class QPACK : public QUICApplication
 {
 public:
-  QPACK(QUICConnection *qc, uint32_t max_header_list_size = HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE,
-        uint16_t max_table_size       = HTTP3_DEFAULT_HEADER_TABLE_SIZE,
-        uint16_t max_blocking_streams = HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
+  QPACK(QUICConnection *qc, uint32_t max_header_list_size, uint16_t max_table_size, uint16_t max_blocking_streams);
   virtual ~QPACK();
 
   int event_handler(int event, Event *data);
