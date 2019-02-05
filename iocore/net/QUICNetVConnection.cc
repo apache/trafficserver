@@ -472,9 +472,7 @@ QUICNetVConnection::stream_manager()
 void
 QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
 {
-  QUICConDebug("Retransmit %s packet #%" PRIu64, QUICDebugNames::packet_type(packet.type()), packet.packet_number());
-
-  this->_packet_retransmitter.retransmit_packet(packet);
+  QUICConDebug("[NOP] Retransmit %s packet #%" PRIu64, QUICDebugNames::packet_type(packet.type()), packet.packet_number());
 }
 
 Ptr<ProxyMutex>
@@ -955,7 +953,6 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPack
     }
     this->_congestion_controller->reset();
     SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
-    this->_packet_retransmitter.reset();
 
     // start handshake over
     this->_handshake_handler->reset();
@@ -1031,7 +1028,6 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
   }
   this->_congestion_controller->reset();
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
-  this->_packet_retransmitter.reset();
   this->_packet_recv_queue.reset();
 
   // Initialize Key Materials with peer CID. Because peer CID is DCID of (second) INITIAL packet from client which reply to RETRY
@@ -1379,16 +1375,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
       frame = this->_alt_con_manager->generate_frame(level, UINT16_MAX, max_frame_size);
     }
-  }
-
-  // Lost frames
-  frame = this->_packet_retransmitter.generate_frame(level, UINT16_MAX, max_frame_size);
-  while (frame) {
-    ++frame_count;
-    probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, frame, frames);
-
-    frame = this->_packet_retransmitter.generate_frame(level, UINT16_MAX, max_frame_size);
   }
 
   // MAX_DATA

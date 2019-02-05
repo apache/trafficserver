@@ -52,7 +52,6 @@
 #include "quic/QUICHandshakeProtocol.h"
 #include "quic/QUICAckFrameCreator.h"
 #include "quic/QUICPinger.h"
-#include "quic/QUICPacketRetransmitter.h"
 #include "quic/QUICLossDetector.h"
 #include "quic/QUICStreamManager.h"
 #include "quic/QUICAltConnectionManager.h"
@@ -254,7 +253,6 @@ private:
   QUICFrameFactory _frame_factory;
   QUICAckFrameManager _ack_frame_manager;
   QUICPinger _pinger;
-  QUICPacketRetransmitter _packet_retransmitter;
   QUICPacketHeaderProtector _ph_protector;
   QUICRTTMeasure _rtt_measure;
   QUICApplicationMap *_application_map = nullptr;
