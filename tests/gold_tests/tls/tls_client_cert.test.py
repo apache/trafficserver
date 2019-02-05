@@ -18,6 +18,7 @@ Test offering client cert to origin
 #  limitations under the License.
 
 import os
+import subprocess
 import re
 
 Test.Summary = '''
@@ -32,6 +33,7 @@ cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 # --clientverify: "" empty string because microserver does store_true for argparse, but options is a dictionary
 server = Test.MakeOriginServer("server", ssl=True, options = { "--clientCA": cafile, "--clientverify": ""}, clientcert="{0}/signed-foo.pem".format(Test.RunDirectory), clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
 server2 = Test.MakeOriginServer("server2", ssl=True, options = { "--clientCA": cafile2, "--clientverify": ""}, clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory), clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+server3 = Test.MakeOriginServer("server3")
 server.Setup.Copy("ssl/signer.pem")
 server.Setup.Copy("ssl/signer2.pem")
 server.Setup.Copy("ssl/signed-foo.pem")
@@ -171,6 +173,20 @@ tr2.Processes.Default.Command = 'echo Updated configs'
 tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
 
+# Parking this as a ready tester on a meaningless process
+# Stall the test runs until the ssl_server_name reload has completed
+# At that point the new ssl_server_name settings are ready to go
+def ssl_server_name_reload_done(tsenv):
+  def done_reload(process, hasRunFor, **kw):
+    cmd = "grep 'ssl_server_name.yaml done reloading!' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
+    retval = subprocess.run(cmd, shell=True, env=tsenv)
+    if retval.returncode == 0:
+      cmd ="if [ -f {0}/test.out -a \"`cat {0}/test.out`\" = \"2\" ] ; then true; else false; fi".format(Test.RunDirectory)
+      retval = subprocess.run(cmd, shell = True, env=tsenv)
+    return retval.returncode == 0
+
+  return done_reload
+
 tr2reload = Test.AddTestRun("Reload config")
 tr2reload.StillRunningAfter = ts
 tr2reload.StillRunningAfter = server
@@ -184,7 +200,7 @@ tr2reload.Processes.Default.ReturnCode = 0
 #Should succeed
 tr3bar = Test.AddTestRun("Make request with other bar cert to first server")
 # Wait for the reload to complete
-tr3bar.DelayStart = 10
+tr3bar.Processes.Default.StartBefore(server3, ready=ssl_server_name_reload_done(ts.Env))
 tr3bar.StillRunningAfter = ts
 tr3bar.StillRunningAfter = server
 tr3bar.StillRunningAfter = server2
