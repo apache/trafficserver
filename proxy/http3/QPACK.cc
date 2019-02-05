@@ -132,9 +132,10 @@ const QPACK::Header QPACK::StaticTable::STATIC_HEADER_FIELDS[] = {
   {"x-frame-options", "deny"},
   {"x-frame-options", "sameorigin"}};
 
-QPACK::QPACK(QUICConnection *qc, uint16_t max_table_size, uint16_t max_blocking_streams)
+QPACK::QPACK(QUICConnection *qc, uint32_t max_header_list_size, uint16_t max_table_size, uint16_t max_blocking_streams)
   : QUICApplication(qc),
     _dynamic_table(max_table_size),
+    _max_header_list_size(max_header_list_size),
     _max_table_size(max_table_size),
     _max_blocking_streams(max_blocking_streams)
 {
@@ -265,6 +266,24 @@ QPACK::set_decoder_stream(QUICStreamIO *stream_io)
 {
   this->_decoder_stream_id = stream_io->stream_id();
   this->set_stream(stream_io);
+}
+
+void
+QPACK::update_max_header_list_size(uint32_t max_header_list_size)
+{
+  this->_max_header_list_size = max_header_list_size;
+}
+
+void
+QPACK::update_max_table_size(uint16_t max_table_size)
+{
+  this->_max_table_size = max_table_size;
+}
+
+void
+QPACK::update_max_blocking_streams(uint16_t max_blocking_streams)
+{
+  this->_max_blocking_streams = max_blocking_streams;
 }
 
 int
@@ -615,7 +634,7 @@ QPACK::_encode_literal_header_field_with_postbase_name_ref(uint16_t index, uint1
 }
 
 int
-QPACK::_decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr)
+QPACK::_decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr, uint32_t &header_len)
 {
   // Read index field
   int len = 0;
@@ -644,9 +663,8 @@ QPACK::_decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size
   }
 
   // Create and attach a header
-  MIMEField *new_field = hdr.field_create(name, name_len);
-  new_field->value_set(hdr.m_heap, hdr.m_mime, value, value_len);
-  hdr.field_attach(new_field);
+  this->_attach_header(hdr, name, name_len, value, value_len, false);
+  header_len = name_len + value_len;
 
   QPACKDebug("Decoded Indexed Header Field: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index, result.index, name_len,
              name, value_len, value);
@@ -655,7 +673,8 @@ QPACK::_decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size
 }
 
 int
-QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr)
+QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
+                                                  uint32_t &header_len)
 {
   int read_len = 0;
 
@@ -701,6 +720,7 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
 
   // Create and attach a header
   this->_attach_header(hdr, name, name_len, value, value_len, never_index);
+  header_len = name_len + value_len;
 
   QPACKDebug("Decoded Literal Header Field With Name Ref: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
              result.index, name_len, name, static_cast<int>(value_len), value);
@@ -709,7 +729,7 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
 }
 
 int
-QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t buf_len, HTTPHdr &hdr)
+QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t buf_len, HTTPHdr &hdr, uint32_t &header_len)
 {
   int read_len = 0;
 
@@ -738,6 +758,7 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
 
   // Create and attach a header
   this->_attach_header(hdr, name, name_len, value, value_len, never_index);
+  header_len = name_len + value_len;
 
   QPACKDebug("Decoded Literal Header Field Without Name Ref: name=%.*s, value=%.*s", static_cast<uint16_t>(name_len), name,
              static_cast<uint16_t>(value_len), value);
@@ -746,7 +767,8 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
 }
 
 int
-QPACK::_decode_indexed_header_field_with_postbase_index(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr)
+QPACK::_decode_indexed_header_field_with_postbase_index(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
+                                                        uint32_t &header_len)
 {
   // Read index field
   int len = 0;
@@ -772,6 +794,7 @@ QPACK::_decode_indexed_header_field_with_postbase_index(int16_t base_index, cons
 
   // Create and attach a header
   this->_attach_header(hdr, name, name_len, value, value_len, false);
+  header_len = name_len + value_len;
 
   QPACKDebug("Decoded Indexed Header Field With Postbase Index: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
              result.index, name_len, name, value_len, value);
@@ -780,7 +803,8 @@ QPACK::_decode_indexed_header_field_with_postbase_index(int16_t base_index, cons
 }
 
 int
-QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr)
+QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
+                                                           uint32_t &header_len)
 {
   int read_len = 0;
 
@@ -822,6 +846,7 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
 
   // Create and attach a header
   this->_attach_header(hdr, name, name_len, value, value_len, never_index);
+  header_len = name_len + value_len;
 
   QPACKDebug("Decoded Literal Header Field With Postbase Name Ref: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
              static_cast<uint16_t>(index), name_len, name, static_cast<int>(value_len), value);
@@ -859,22 +884,34 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
   }
   pos += ret;
 
+  uint32_t decoded_header_list_size = 0;
+
   // Decode Instructions
   while (pos < header_block + header_block_len) {
+    uint32_t header_len = 0;
+
     if (pos[0] & 0x80) { // Index Header Field
-      ret = this->_decode_indexed_header_field(base_index, pos, remain_len, hdr);
+      ret = this->_decode_indexed_header_field(base_index, pos, remain_len, hdr, header_len);
     } else if (pos[0] & 0x40) { // Literal Header Field With Name Reference
-      ret = this->_decode_literal_header_field_with_name_ref(base_index, pos, remain_len, hdr);
+      ret = this->_decode_literal_header_field_with_name_ref(base_index, pos, remain_len, hdr, header_len);
     } else if (pos[0] & 0x20) { // Literal Header Field Without Name Reference
-      ret = this->_decode_literal_header_field_without_name_ref(pos, remain_len, hdr);
+      ret = this->_decode_literal_header_field_without_name_ref(pos, remain_len, hdr, header_len);
     } else if (pos[0] & 0x10) { // Indexed Header Field With Post-Base Index
-      ret = this->_decode_indexed_header_field_with_postbase_index(base_index, pos, remain_len, hdr);
+      ret = this->_decode_indexed_header_field_with_postbase_index(base_index, pos, remain_len, hdr, header_len);
     } else { // Literal Header Field With Post-Base Name Reference
-      ret = this->_decode_literal_header_field_with_postbase_name_ref(base_index, pos, remain_len, hdr);
+      ret = this->_decode_literal_header_field_with_postbase_name_ref(base_index, pos, remain_len, hdr, header_len);
     }
+
     if (ret < 0) {
       break;
     }
+
+    decoded_header_list_size += header_len;
+    if (decoded_header_list_size > this->_max_header_list_size) {
+      ret = -2;
+      break;
+    }
+
     pos += ret;
   }
 

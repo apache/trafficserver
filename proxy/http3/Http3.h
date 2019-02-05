@@ -27,6 +27,11 @@
 #include "records/I_RecDefs.h"
 #include "records/I_RecProcess.h"
 
+extern const uint32_t HTTP3_DEFAULT_HEADER_TABLE_SIZE;
+extern const uint32_t HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE;
+extern const uint32_t HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS;
+extern const uint32_t HTTP3_DEFAULT_NUM_PLACEHOLDERS;
+
 extern RecRawStatBlock *http3_rsb; // Container for statistics.
 
 class Http3

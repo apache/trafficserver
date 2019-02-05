@@ -34,12 +34,6 @@
 static constexpr char tag[]   = "http3";
 static constexpr char tag_v[] = "v_http3";
 
-// Default values of settings defined by specs.
-static constexpr uint32_t HTTP3_DEFAULT_HEADER_TABLE_SIZE     = 0;
-static constexpr uint32_t HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE  = UINT32_MAX;
-static constexpr uint32_t HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS = 0;
-static constexpr uint32_t HTTP3_DEFAULT_NUM_PLACEHOLDERS      = 0;
-
 Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QUICApplication(client_vc)
 {
   this->_client_session      = new Http3ClientSession(client_vc);
@@ -48,7 +42,7 @@ Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QU
 
   this->_qc->stream_manager()->set_default_application(this);
 
-  this->_settings_handler = new Http3SettingsHandler();
+  this->_settings_handler = new Http3SettingsHandler(this->_client_session);
   this->_control_stream_dispatcher.add_handler(this->_settings_handler);
 
   this->_settings_framer = new Http3SettingsFramer();
@@ -294,13 +288,32 @@ Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame)
     return Http3ErrorUPtr(new Http3NoError());
   }
 
+  // TODO: Add length check: the maximum number of values are 2^62 - 1, but some fields have shorter maximum than it.
+  if (settings_frame->contains(Http3SettingsId::HEADER_TABLE_SIZE)) {
+    uint64_t header_table_size = settings_frame->get(Http3SettingsId::HEADER_TABLE_SIZE);
+    this->_session->remote_qpack()->update_max_table_size(header_table_size);
+
+    Debug("http3", "SETTINGS_HEADER_TABLE_SIZE: %" PRId64, header_table_size);
+  }
+
   if (settings_frame->contains(Http3SettingsId::MAX_HEADER_LIST_SIZE)) {
-    uint64_t header_list_size = settings_frame->get(Http3SettingsId::MAX_HEADER_LIST_SIZE);
-    Debug("http3", "SETTINGS_MAX_HEADER_LIST_SIZE: %" PRId64, header_list_size);
+    uint64_t max_header_list_size = settings_frame->get(Http3SettingsId::MAX_HEADER_LIST_SIZE);
+    this->_session->remote_qpack()->update_max_header_list_size(max_header_list_size);
+
+    Debug("http3", "SETTINGS_MAX_HEADER_LIST_SIZE: %" PRId64, max_header_list_size);
+  }
+
+  if (settings_frame->contains(Http3SettingsId::QPACK_BLOCKED_STREAMS)) {
+    uint64_t qpack_blocked_streams = settings_frame->get(Http3SettingsId::QPACK_BLOCKED_STREAMS);
+    this->_session->remote_qpack()->update_max_blocking_streams(qpack_blocked_streams);
+
+    Debug("http3", "SETTINGS_QPACK_BLOCKED_STREAMS: %" PRId64, qpack_blocked_streams);
   }
 
   if (settings_frame->contains(Http3SettingsId::NUM_PLACEHOLDERS)) {
     uint64_t num_placeholders = settings_frame->get(Http3SettingsId::NUM_PLACEHOLDERS);
+    // TODO: update settings for priority tree
+
     Debug("http3", "SETTINGS_NUM_PLACEHOLDERS: %" PRId64, num_placeholders);
   }
 

@@ -77,11 +77,15 @@ private:
 class Http3SettingsHandler : public Http3FrameHandler
 {
 public:
-  Http3SettingsHandler(){};
+  Http3SettingsHandler(Http3ClientSession *session) : _session(session){};
 
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
   Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame) override;
+
+private:
+  // TODO: clarify Http3ClientSession I/F for Http3SettingsHandler and Http3App
+  Http3ClientSession *_session = nullptr;
 };
 
 class Http3SettingsFramer : public Http3FrameGenerator

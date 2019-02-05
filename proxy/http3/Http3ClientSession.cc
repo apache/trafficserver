@@ -25,8 +25,8 @@
 
 Http3ClientSession::Http3ClientSession(NetVConnection *vc) : _client_vc(vc)
 {
-  this->_local_qpack  = new QPACK(static_cast<QUICNetVConnection *>(vc), 0, 0);
-  this->_remote_qpack = new QPACK(static_cast<QUICNetVConnection *>(vc), 0, 0);
+  this->_local_qpack  = new QPACK(static_cast<QUICNetVConnection *>(vc));
+  this->_remote_qpack = new QPACK(static_cast<QUICNetVConnection *>(vc));
 }
 
 Http3ClientSession::~Http3ClientSession()

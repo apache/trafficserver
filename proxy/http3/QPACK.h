@@ -29,6 +29,8 @@
 #include "MIME.h"
 #include "QUICApplication.h"
 
+#include "Http3.h"
+
 class HTTPHdr;
 
 enum {
@@ -36,15 +38,12 @@ enum {
   QPACK_EVENT_DECODE_FAILED,
 };
 
-// FIXME This setting should be passed by HTTP/3
-constexpr int SETTINGS_HEADER_TABLE_SIZE     = 0;
-constexpr int SETTINGS_QPACK_BLOCKED_STREAMS = 0;
-
 class QPACK : public QUICApplication
 {
 public:
-  QPACK(QUICConnection *qc, uint16_t max_table_size = SETTINGS_HEADER_TABLE_SIZE,
-        uint16_t max_blocking_streams = SETTINGS_QPACK_BLOCKED_STREAMS);
+  QPACK(QUICConnection *qc, uint32_t max_header_list_size = HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE,
+        uint16_t max_table_size       = HTTP3_DEFAULT_HEADER_TABLE_SIZE,
+        uint16_t max_blocking_streams = HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
   virtual ~QPACK();
 
   int event_handler(int event, Event *data);
@@ -67,6 +66,10 @@ public:
 
   void set_encoder_stream(QUICStreamIO *stream_io);
   void set_decoder_stream(QUICStreamIO *stream_io);
+
+  void update_max_header_list_size(uint32_t max_header_list_size);
+  void update_max_table_size(uint16_t max_table_size);
+  void update_max_blocking_streams(uint16_t max_blocking_streams);
 
   static size_t estimate_header_block_size(const HTTPHdr &header_set);
 
@@ -241,6 +244,7 @@ private:
 
   DynamicTable _dynamic_table;
   std::map<uint64_t, struct EntryReference> _references;
+  uint32_t _max_header_list_size = 0;
   uint16_t _max_table_size       = 0;
   uint16_t _max_blocking_streams = 0;
 
@@ -295,11 +299,14 @@ private:
   void _decode(EThread *ethread, Continuation *cont, uint64_t stream_id, const uint8_t *header_block, size_t header_block_len,
                HTTPHdr &hdr);
   int _decode_header(const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr);
-  int _decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr);
-  int _decode_indexed_header_field_with_postbase_index(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr);
-  int _decode_literal_header_field_with_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr);
-  int _decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t buf_len, HTTPHdr &hdr);
-  int _decode_literal_header_field_with_postbase_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr);
+  int _decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr, uint32_t &header_len);
+  int _decode_indexed_header_field_with_postbase_index(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
+                                                       uint32_t &header_len);
+  int _decode_literal_header_field_with_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
+                                                 uint32_t &header_len);
+  int _decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t buf_len, HTTPHdr &hdr, uint32_t &header_len);
+  int _decode_literal_header_field_with_postbase_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
+                                                          uint32_t &header_len);
 
   // Utilities
   uint16_t _calc_absolute_index_from_relative_index(uint16_t base_index, uint16_t relative_index);
