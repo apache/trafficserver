@@ -63,7 +63,6 @@ public:
   virtual size_t size() const = 0;
   virtual bool is_probing_frame() const;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const = 0;
-  virtual QUICFrame *split(size_t size);
   virtual int debug_msg(char *msg, size_t msg_len) const;
   virtual void parse(const uint8_t *buf, size_t len){};
   virtual QUICFrameGenerator *generated_by();
@@ -92,7 +91,6 @@ public:
                   bool has_offset_field = true, bool has_length_field = true, QUICFrameId id = 0,
                   QUICFrameGenerator *owner = nullptr);
 
-  QUICFrame *split(size_t size) override;
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -133,7 +131,6 @@ public:
   QUICCryptoFrame(const uint8_t *buf, size_t len);
   QUICCryptoFrame(Ptr<IOBufferBlock> &block, QUICOffset offset, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
-  QUICFrame *split(size_t size) override;
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -886,12 +883,6 @@ public:
 class QUICFrameFactory
 {
 public:
-  /*
-   * Split Stream frame into two frame
-   * Return the new frame
-   */
-  static QUICFrameUPtr split_frame(QUICFrame *frame, size_t size);
-
   /*
    * This is for an empty QUICFrameUptr.
    * Empty frames are used for variable initialization and return value of frame creation failure

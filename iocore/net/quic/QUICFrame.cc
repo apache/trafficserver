@@ -125,12 +125,6 @@ QUICFrame::debug_msg(char *msg, size_t msg_len) const
   return snprintf(msg, msg_len, "| %s size=%zu", QUICDebugNames::frame_type(this->type()), this->size());
 }
 
-QUICFrame *
-QUICFrame::split(size_t size)
-{
-  return nullptr;
-}
-
 bool
 QUICFrame::valid() const
 {
@@ -214,45 +208,6 @@ QUICStreamFrame::_reset()
   this->_id               = 0;
   this->_valid            = false;
   this->_size             = 0;
-}
-
-QUICFrame *
-QUICStreamFrame::split(size_t size)
-{
-  size_t header_len = 1 + QUICVariableInt::size(this->_stream_id);
-  if (this->_has_offset_field) {
-    header_len += QUICVariableInt::size(this->_offset);
-  }
-  if (this->_has_length_field) {
-    header_len += QUICVariableInt::size(this->_block->read_avail());
-  }
-
-  if (size <= header_len) {
-    return nullptr;
-  }
-  bool fin = this->has_fin_flag();
-
-  ink_assert(size < this->size());
-  ink_assert(this->_block.get() != nullptr);
-
-  size_t data_len = size - header_len;
-
-  Ptr<IOBufferBlock> new_block = make_ptr<IOBufferBlock>(this->_block->clone());
-  new_block->consume(data_len);
-  this->_block->_end = std::min(this->_block->_start + data_len, this->_block->_buf_end);
-
-  if (this->has_offset_field()) {
-    this->_offset = this->offset();
-  }
-
-  this->_fin       = false;
-  this->_stream_id = this->stream_id();
-
-  QUICStreamFrame *frame = quicStreamFrameAllocator.alloc();
-  new (frame) QUICStreamFrame(new_block, this->stream_id(), this->offset() + this->data_length(), fin, this->_has_offset_field,
-                              this->_has_length_field, this->_id, this->_owner);
-
-  return frame;
 }
 
 QUICFrameUPtr
@@ -462,33 +417,6 @@ QUICCryptoFrame::_reset()
   this->_id     = 0;
   this->_valid  = false;
   this->_size   = 0;
-}
-
-QUICFrame *
-QUICCryptoFrame::split(size_t size)
-{
-  size_t header_len = 1 + QUICVariableInt::size(this->_offset) + QUICVariableInt::size(this->_block->read_avail());
-  if (size <= header_len) {
-    return nullptr;
-  }
-
-  ink_assert(size < this->size());
-
-  size_t data_len = size - header_len;
-
-  ink_assert(size < this->size());
-  ink_assert(this->_block.get() != nullptr);
-
-  Ptr<IOBufferBlock> new_block = make_ptr<IOBufferBlock>(this->_block->clone());
-  new_block->consume(data_len);
-  this->_block->_end = std::min(this->_block->_start + data_len, this->_block->_buf_end);
-
-  this->_offset = this->offset();
-
-  QUICCryptoFrame *frame = quicCryptoFrameAllocator.alloc();
-  new (frame) QUICCryptoFrame(this->_block, this->offset() + data_len, this->_id, this->_owner);
-
-  return frame;
 }
 
 QUICFrameUPtr
@@ -2736,17 +2664,6 @@ QUICFrameFactory::create_crypto_frame(Ptr<IOBufferBlock> &block, QUICOffset offs
   QUICCryptoFrame *frame       = quicCryptoFrameAllocator.alloc();
   new (frame) QUICCryptoFrame(new_block, offset, id, owner);
   return QUICCryptoFrameUPtr(frame, &QUICFrameDeleter::delete_crypto_frame);
-}
-
-QUICFrameUPtr
-QUICFrameFactory::split_frame(QUICFrame *frame, size_t size)
-{
-  auto new_frame = frame->split(size);
-  if (!new_frame) {
-    return QUICFrameFactory::create_null_frame();
-  }
-
-  return QUICFrameUPtr(new_frame, &QUICFrameDeleter::delete_stream_frame);
 }
 
 std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc>
