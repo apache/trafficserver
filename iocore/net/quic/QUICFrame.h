@@ -716,29 +716,6 @@ private:
   uint64_t _seq_num = 0;
 };
 
-//
-// Retransmission Frame - Not on the spec
-//
-
-class QUICRetransmissionFrame : public QUICFrame
-{
-public:
-  QUICRetransmissionFrame() {}
-  QUICRetransmissionFrame(QUICFrameUPtr original_frame, const QUICPacket &original_packet);
-  QUICFrameUPtr clone() const override;
-  QUICFrameType type() const override;
-  virtual size_t size() const override;
-  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
-  virtual int debug_msg(char *msg, size_t msg_len) const override;
-  QUICPacketType packet_type() const;
-  QUICFrame *split(size_t size) override;
-
-private:
-  QUICFrameUPtr _frame = QUICFrameUPtr(nullptr, nullptr);
-  ats_unique_buf _data = ats_unique_buf(nullptr);
-  QUICPacketType _packet_type;
-};
-
 extern ClassAllocator<QUICStreamFrame> quicStreamFrameAllocator;
 extern ClassAllocator<QUICCryptoFrame> quicCryptoFrameAllocator;
 extern ClassAllocator<QUICAckFrame> quicAckFrameAllocator;
@@ -758,7 +735,6 @@ extern ClassAllocator<QUICPathChallengeFrame> quicPathChallengeFrameAllocator;
 extern ClassAllocator<QUICPathResponseFrame> quicPathResponseFrameAllocator;
 extern ClassAllocator<QUICNewTokenFrame> quicNewTokenFrameAllocator;
 extern ClassAllocator<QUICRetireConnectionIdFrame> quicRetireConnectionIdFrameAllocator;
-extern ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator;
 
 class QUICFrameDeleter
 {
@@ -901,13 +877,6 @@ public:
   {
     frame->~QUICFrame();
     quicRetireConnectionIdFrameAllocator.free(static_cast<QUICRetireConnectionIdFrame *>(frame));
-  }
-
-  static void
-  delete_retransmission_frame(QUICFrame *frame)
-  {
-    frame->~QUICFrame();
-    quicRetransmissionFrameAllocator.free(static_cast<QUICRetransmissionFrame *>(frame));
   }
 };
 
@@ -1069,13 +1038,6 @@ public:
    */
   static std::unique_ptr<QUICRetireConnectionIdFrame, QUICFrameDeleterFunc> create_retire_connection_id_frame(
     uint64_t seq_num, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
-
-  /*
-   * Creates a retransmission frame, which is very special.
-   * This retransmission frame will be used only for retransmission and it's not a standard frame type.
-   */
-  static std::unique_ptr<QUICRetransmissionFrame, QUICFrameDeleterFunc> create_retransmission_frame(
-    QUICFrameUPtr original_frame, const QUICPacket &original_packet);
 
 private:
   // FIXME Actual number of frame types is several but some of the values are not sequential.

@@ -49,7 +49,6 @@ ClassAllocator<QUICPathChallengeFrame> quicPathChallengeFrameAllocator("quicPath
 ClassAllocator<QUICPathResponseFrame> quicPathResponseFrameAllocator("quicPathResponseFrameAllocator");
 ClassAllocator<QUICNewTokenFrame> quicNewTokenFrameAllocator("quicNewTokenFrameAllocator");
 ClassAllocator<QUICRetireConnectionIdFrame> quicRetireConnectionIdFrameAllocator("quicRetireConnectionIdFrameAllocator");
-ClassAllocator<QUICRetransmissionFrame> quicRetransmissionFrameAllocator("quicRetransmissionFrameAllocator");
 
 #define LEFT_SPACE(pos) ((size_t)(buf + len - pos))
 #define FRAME_SIZE(pos) (pos - buf)
@@ -2595,62 +2594,6 @@ QUICRetireConnectionIdFrame::seq_num() const
 }
 
 //
-// QUICRetransmissionFrame
-//
-QUICRetransmissionFrame::QUICRetransmissionFrame(QUICFrameUPtr original_frame, const QUICPacket &original_packet)
-  : QUICFrame(original_frame->id(), original_frame->generated_by()), _packet_type(original_packet.type())
-{
-  this->_frame = std::move(original_frame);
-}
-
-QUICFrameUPtr
-QUICRetransmissionFrame::clone() const
-{
-  ink_assert(!"Retransmission frames shouldn't be cloned");
-  return QUICFrameFactory::create_null_frame();
-}
-
-QUICFrameType
-QUICRetransmissionFrame::type() const
-{
-  return this->_frame->type();
-}
-
-size_t
-QUICRetransmissionFrame::size() const
-{
-  return this->_frame->size();
-}
-
-size_t
-QUICRetransmissionFrame::store(uint8_t *buf, size_t *len, size_t limit) const
-{
-  return this->_frame->store(buf, len, limit);
-}
-
-int
-QUICRetransmissionFrame::debug_msg(char *msg, size_t msg_len) const
-{
-  return snprintf(msg, msg_len, "| %s size=%zu (retransmission)", QUICDebugNames::frame_type(this->type()), this->size());
-}
-
-QUICPacketType
-QUICRetransmissionFrame::packet_type() const
-{
-  return this->_packet_type;
-}
-
-QUICFrame *
-QUICRetransmissionFrame::split(size_t size)
-{
-  if (this->_frame->type() != QUICFrameType::STREAM) {
-    return nullptr;
-  }
-
-  return this->_frame->split(size);
-}
-
-//
 // QUICFrameFactory
 //
 
@@ -2968,14 +2911,6 @@ QUICFrameFactory::create_retire_connection_id_frame(uint64_t seq_num, QUICFrameI
   new (frame) QUICRetireConnectionIdFrame(seq_num, id, owner);
   return std::unique_ptr<QUICRetireConnectionIdFrame, QUICFrameDeleterFunc>(frame,
                                                                             &QUICFrameDeleter::delete_retire_connection_id_frame);
-}
-
-std::unique_ptr<QUICRetransmissionFrame, QUICFrameDeleterFunc>
-QUICFrameFactory::create_retransmission_frame(QUICFrameUPtr original_frame, const QUICPacket &original_packet)
-{
-  QUICRetransmissionFrame *frame = quicRetransmissionFrameAllocator.alloc();
-  new (frame) QUICRetransmissionFrame(std::move(original_frame), original_packet);
-  return std::unique_ptr<QUICRetransmissionFrame, QUICFrameDeleterFunc>(frame, &QUICFrameDeleter::delete_retransmission_frame);
 }
 
 QUICFrameId
