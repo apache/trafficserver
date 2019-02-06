@@ -425,7 +425,7 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
 {
   const char *servername = nullptr;
   const unsigned char *p;
-  size_t remaining, len;
+  size_t remaining = INT64_MAX, len;
   if (SSL_client_hello_get0_ext(s, TLSEXT_TYPE_server_name, &p, &remaining) || remaining <= 2) {
     // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
     /* Extract the length of the supplied list of names. */
