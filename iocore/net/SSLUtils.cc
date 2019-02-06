@@ -426,7 +426,8 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
   const char *servername = nullptr;
   const unsigned char *p;
   size_t remaining, len;
-  if (SSL_client_hello_get0_ext(s, TLSEXT_TYPE_server_name, &p, &remaining) || remaining <= 2) {
+  // Parse the servrer name if the get extension call succeeds and there are more than 2 bytes to parse
+  if (SSL_client_hello_get0_ext(s, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2) {
     // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
     /* Extract the length of the supplied list of names. */
     len = *(p++) << 8;
@@ -457,7 +458,7 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
   netvc->serverName = servername ? servername : "";
   int ret           = PerformAction(netvc, netvc->serverName);
   if (ret != SSL_TLSEXT_ERR_OK) {
-    return SSL_TLSEXT_ERR_ALERT_FATAL;
+    return SSL_CLIENT_HELLO_ERROR;
   }
   if (netvc->has_tunnel_destination() && !netvc->decrypt_tunnel()) {
     netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
@@ -465,7 +466,7 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
   if (netvc->protocol_mask_set) {
     setTLSValidProtocols(s, netvc->protocol_mask, TLSValidProtocols::max_mask);
   }
-  return 1;
+  return SSL_CLIENT_HELLO_SUCCESS;
 }
 #endif
 
