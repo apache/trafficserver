@@ -304,7 +304,7 @@ session_aio_handler(TSCont contp, TSEvent event, void *edata)
         ts::file::file_status st = ts::file::status(ssnData->log_name, ec);
         if (!ec) {
           disk_usage += ts::file::file_size(st);
-          TSDebug(PLUGIN_NAME, "Finish a session with log file of %" PRId64 "bytes", ts::file::file_size(st));
+          TSDebug(PLUGIN_NAME, "Finish a session with log file of %" PRIuMAX "bytes", ts::file::file_size(st));
         }
         delete ssnData;
         return TS_SUCCESS;
