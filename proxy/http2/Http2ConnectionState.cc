@@ -1184,25 +1184,27 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
       return;
     }
 
-    // If the number of clients is 0 and ua_session is active, then mark the connection as inactive
-    if (total_client_streams_count == 0 && ua_session->is_active()) {
-      ua_session->clear_session_active();
-      UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
-      if (vc) {
-        vc->cancel_active_timeout();
-        vc->add_to_keep_alive_queue();
+    if (total_client_streams_count == 0) {
+      if (fini_received) {
+        // We were shutting down, go ahead and terminate the session
+        // this is a member of Http2ConnectionState and will be freed
+        // when ua_session is destroyed
+        ua_session->destroy();
+
+        // Can't do this because we just destroyed right here ^,
+        // or we can use a local variable to do it.
+        // ua_session = nullptr;
+      } else if (ua_session->is_active()) {
+        // If the number of clients is 0, HTTP2_SESSION_EVENT_FINI is not received or sent, and ua_session is active,
+        // then mark the connection as inactive
+        ua_session->clear_session_active();
+        UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
+        if (vc) {
+          vc->cancel_active_timeout();
+          // With heavy traffic, ua_session could be destroyed. Do not touch ua_session after this.
+          vc->add_to_keep_alive_queue();
+        }
       }
-    }
-
-    if (fini_received && total_client_streams_count == 0) {
-      // We were shutting down, go ahead and terminate the session
-      // this is a member of Http2ConnectionState and will be freed
-      // when ua_session is destroyed
-      ua_session->destroy();
-
-      // Can't do this because we just destroyed right here ^,
-      // or we can use a local variable to do it.
-      // ua_session = nullptr;
     }
   }
 }
