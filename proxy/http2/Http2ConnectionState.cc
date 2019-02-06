@@ -1245,14 +1245,7 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   if (this->ua_session) {
     ink_assert(this->mutex == ua_session->mutex);
-    // If the number of clients is 0 and ua_session is active, then mark the connection as inactive
-    if (total_client_streams_count == 0 && ua_session->is_active()) {
-      ua_session->clear_session_active();
-      UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
-      if (vc && vc->active_timeout_in == 0) {
-        vc->add_to_keep_alive_queue();
-      }
-    }
+
     if (total_client_streams_count == 0) {
       if (fini_received) {
         // We were shutting down, go ahead and terminate the session
@@ -1265,6 +1258,15 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
         // ua_session = nullptr;
       } else if (shutdown_state == HTTP2_SHUTDOWN_IN_PROGRESS && fini_event == nullptr) {
         fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+      } else if (ua_session->is_active()) {
+        // If the number of clients is 0, HTTP2_SESSION_EVENT_FINI is not received or sent, and ua_session is active,
+        // then mark the connection as inactive
+        ua_session->clear_session_active();
+        UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
+        if (vc && vc->active_timeout_in == 0) {
+          // With heavy traffic, ua_session could be destroyed. Do not touch ua_session after this.
+          vc->add_to_keep_alive_queue();
+        }
       } else {
         schedule_zombie_event();
       }
