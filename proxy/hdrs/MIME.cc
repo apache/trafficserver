@@ -34,6 +34,8 @@
 #include "HdrUtils.h"
 #include "HttpCompat.h"
 
+using ts::TextView;
+
 /***********************************************************************
  *                                                                     *
  *                    C O M P I L E    O P T I O N S                   *
@@ -2302,215 +2304,161 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
  *                          P A R S E R                                *
  *                                                                     *
  ***********************************************************************/
+
 void
-_mime_scanner_init(MIMEScanner *scanner)
+MIMEScanner::init()
 {
-  scanner->m_line        = nullptr;
-  scanner->m_line_size   = 0;
-  scanner->m_line_length = 0;
-  scanner->m_state       = MIME_PARSE_BEFORE;
+  m_state = INITIAL_PARSE_STATE;
+  // Ugly, but required because of how proxy allocation works - that leaves the instance in a
+  // random state, so even assigning to it can crash. Because this method substitutes for a real
+  // constructor in the proxy allocation system, call the CTOR here. Any memory that gets allocated
+  // is supposed to be cleaned up by calling @c clear on this object.
+  new (&m_line) std::string;
 }
 
-//////////////////////////////////////////////////////
-// init     first time structure setup              //
-// clear    resets an already-initialized structure //
-//////////////////////////////////////////////////////
-void
-mime_scanner_init(MIMEScanner *scanner)
+MIMEScanner &
+MIMEScanner::append(TextView text)
 {
-  _mime_scanner_init(scanner);
-}
-
-// clear is to reset an already initialized structure
-void
-mime_scanner_clear(MIMEScanner *scanner)
-{
-  ats_free(scanner->m_line);
-  _mime_scanner_init(scanner);
-}
-
-void
-mime_scanner_append(MIMEScanner *scanner, const char *data, int data_size)
-{
-  int free_size = scanner->m_line_size - scanner->m_line_length;
-
-  //////////////////////////////////////////////////////
-  // if not enough space, allocate or grow the buffer //
-  //////////////////////////////////////////////////////
-  if (data_size > free_size) {       // need to allocate/grow the buffer
-    if (scanner->m_line_size == 0) { // buffer should be at least 128 bytes
-      scanner->m_line_size = 128;
-    }
-
-    while (free_size < data_size) { // grow buffer by powers of 2
-      scanner->m_line_size *= 2;
-      free_size = scanner->m_line_size - scanner->m_line_length;
-    }
-
-    if (scanner->m_line == nullptr) { // if no buffer yet, allocate one
-      scanner->m_line = (char *)ats_malloc(scanner->m_line_size);
-    } else {
-      scanner->m_line = (char *)ats_realloc(scanner->m_line, scanner->m_line_size);
-    }
-  }
-  ////////////////////////////////////////////////
-  // append new data onto the end of the buffer //
-  ////////////////////////////////////////////////
-
-  memcpy(&(scanner->m_line[scanner->m_line_length]), data, data_size);
-  scanner->m_line_length += data_size;
+  m_line += text;
+  return *this;
 }
 
 ParseResult
-mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input_e, const char **output_s, const char **output_e,
-                 bool *output_shares_raw_input,
-                 bool raw_input_eof, ///< All data has been received for this header.
-                 int raw_input_scan_type)
+MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, bool eof_p, ScanType scan_type)
 {
-  const char *raw_input_c, *lf_ptr;
   ParseResult zret = PARSE_RESULT_CONT;
   // Need this for handling dangling CR.
-  static const char RAW_CR = ParseRules::CHAR_CR;
+  static const char RAW_CR{ParseRules::CHAR_CR};
 
-  ink_assert((raw_input_s != nullptr) && (*raw_input_s != nullptr));
-  ink_assert(raw_input_e != nullptr);
-
-  raw_input_c = *raw_input_s;
-
-  while (PARSE_RESULT_CONT == zret && raw_input_c < raw_input_e) {
-    ptrdiff_t runway = raw_input_e - raw_input_c; // remaining input.
-    switch (S->m_state) {
+  auto text = input;
+  while (PARSE_RESULT_CONT == zret && !text.empty()) {
+    switch (m_state) {
     case MIME_PARSE_BEFORE: // waiting to find a field.
-      if (ParseRules::is_cr(*raw_input_c)) {
-        ++raw_input_c;
-        if (runway >= 2 && ParseRules::is_lf(*raw_input_c)) {
+      if (ParseRules::is_cr(*text)) {
+        ++text;
+        if (!text.empty() && ParseRules::is_lf(*text)) {
           // optimize a bit - this happens >99% of the time after a CR.
-          ++raw_input_c;
+          ++text;
           zret = PARSE_RESULT_DONE;
         } else {
-          S->m_state = MIME_PARSE_FOUND_CR;
+          m_state = MIME_PARSE_FOUND_CR;
         }
-      } else if (ParseRules::is_lf(*raw_input_c)) {
-        ++raw_input_c;
+      } else if (ParseRules::is_lf(*text)) {
+        ++text;
         zret = PARSE_RESULT_DONE; // Required by regression test.
       } else {
         // consume this character in the next state.
-        S->m_state = MIME_PARSE_INSIDE;
+        m_state = MIME_PARSE_INSIDE;
       }
       break;
     case MIME_PARSE_FOUND_CR:
-      // Looking for a field and found a CR, which should mean terminating
-      // the header. Note that we've left the CR in the input so we have
-      // to skip over it.
-      if (ParseRules::is_lf(*raw_input_c)) {
-        // Header terminated.
-        ++raw_input_c;
+      // Looking for a field and found a CR, which should mean terminating the header.
+      if (ParseRules::is_lf(*text)) {
+        ++text;
         zret = PARSE_RESULT_DONE;
       } else {
-        // This really should be an error (spec doesn't permit lone CR)
-        // but the regression tests require it.
-        mime_scanner_append(S, &RAW_CR, 1);
-        S->m_state = MIME_PARSE_INSIDE;
+        // This really should be an error (spec doesn't permit lone CR) but the regression tests
+        // require it.
+        this->append({&RAW_CR, 1});
+        m_state = MIME_PARSE_INSIDE;
       }
       break;
-    case MIME_PARSE_INSIDE:
-      lf_ptr = static_cast<const char *>(memchr(raw_input_c, ParseRules::CHAR_LF, runway));
-      if (lf_ptr) {
-        raw_input_c = lf_ptr + 1;
-        if (MIME_SCANNER_TYPE_LINE == raw_input_scan_type) {
-          zret       = PARSE_RESULT_OK;
-          S->m_state = MIME_PARSE_BEFORE;
+    case MIME_PARSE_INSIDE: {
+      auto lf_off = text.find(ParseRules::CHAR_LF);
+      if (lf_off != TextView::npos) {
+        text.remove_prefix(lf_off + 1); // drop up to and including LF
+        if (LINE == scan_type) {
+          zret    = PARSE_RESULT_OK;
+          m_state = MIME_PARSE_BEFORE;
         } else {
-          S->m_state = MIME_PARSE_AFTER;
+          m_state = MIME_PARSE_AFTER; // looking for line folding.
         }
-      } else {
-        raw_input_c = raw_input_e; // grab all that's available.
+      } else { // no EOL, consume all text without changing state.
+        text.remove_prefix(text.size());
       }
-      break;
+    } break;
     case MIME_PARSE_AFTER:
-      // After a LF. Might be the end or a continuation.
-      if (ParseRules::is_ws(*raw_input_c)) {
-        char *unfold = const_cast<char *>(raw_input_c - 1);
-
-        *unfold-- = ' ';
+      // After a LF, the next line might be a continuation / folded line. That's indicated by a
+      // starting whitespace. If that's the case, back up over the preceding CR/LF with space and
+      // pretend it's the same line.
+      if (ParseRules::is_ws(*text)) { // folded line.
+        char *unfold = const_cast<char *>(text.data() - 1);
+        *unfold--    = ' ';
         if (ParseRules::is_cr(*unfold)) {
           *unfold = ' ';
         }
-        S->m_state = MIME_PARSE_INSIDE; // back inside the field.
+        m_state = MIME_PARSE_INSIDE; // back inside the field.
       } else {
-        S->m_state = MIME_PARSE_BEFORE; // field terminated.
-        zret       = PARSE_RESULT_OK;
+        m_state = MIME_PARSE_BEFORE; // field terminated.
+        zret    = PARSE_RESULT_OK;
       }
       break;
     }
   }
 
-  ptrdiff_t data_size = raw_input_c - *raw_input_s;
+  TextView parsed_text{input.data(), text.data()};
+  bool save_parsed_text_p = !parsed_text.empty();
 
   if (PARSE_RESULT_CONT == zret) {
-    // data ran out before we got a clear final result.
-    // There a number of things we need to check and possibly adjust
-    // that result. It's less complex to do this cleanup than handle
-    // in the parser state machine.
-    if (raw_input_eof) {
+    // data ran out before we got a clear final result. There a number of things we need to check
+    // and possibly adjust that result. It's less complex to do this cleanup than handle all of
+    // these checks in the parser state machine.
+    if (eof_p) {
       // Should never return PARSE_CONT if we've hit EOF.
-      if (0 == data_size) {
+      if (parsed_text.empty()) {
         // all input previously consumed. If we're between fields, that's cool.
-        if (MIME_PARSE_INSIDE != S->m_state) {
-          S->m_state = MIME_PARSE_BEFORE; // probably not needed...
-          zret       = PARSE_RESULT_DONE;
+        if (MIME_PARSE_INSIDE != m_state) {
+          m_state = MIME_PARSE_BEFORE; // probably not needed...
+          zret    = PARSE_RESULT_DONE;
         } else {
           zret = PARSE_RESULT_ERROR; // unterminated field.
         }
-      } else if (MIME_PARSE_AFTER == S->m_state) {
-        // Special case it seems - need to accept the final field
-        // even if there's no header terminating CR LF. We check for
-        // absolute end of input because otherwise this might be
-        // a multiline field where we haven't seen the next leading space.
-        S->m_state = MIME_PARSE_BEFORE;
-        zret       = PARSE_RESULT_OK;
+      } else if (MIME_PARSE_AFTER == m_state) {
+        // Special case it seems - need to accept the final field even if there's no header
+        // terminating CR LF. This is only reasonable after absolute end of input (EOF) because
+        // otherwise this might be a multiline field where we haven't seen the next leading space.
+        m_state = MIME_PARSE_BEFORE;
+        zret    = PARSE_RESULT_OK;
       } else {
         // Partial input, no field / line CR LF
         zret = PARSE_RESULT_ERROR; // Unterminated field.
       }
-    } else if (data_size) {
-      if (MIME_PARSE_INSIDE == S->m_state) {
+    } else if (!parsed_text.empty()) {
+      if (MIME_PARSE_INSIDE == m_state) {
         // Inside a field but more data is expected. Save what we've got.
-        mime_scanner_append(S, *raw_input_s, data_size);
-        data_size = 0; // Don't append again.
-      } else if (MIME_PARSE_AFTER == S->m_state) {
+        this->append(parsed_text);  // Do this here to force appending.
+        save_parsed_text_p = false; // don't double append.
+      } else if (MIME_PARSE_AFTER == m_state) {
         // After a field but we still have data. Need to parse it too.
-        S->m_state = MIME_PARSE_BEFORE;
-        zret       = PARSE_RESULT_OK;
+        m_state = MIME_PARSE_BEFORE;
+        zret    = PARSE_RESULT_OK;
       }
     }
   }
 
-  if (data_size && S->m_line_length) {
+  if (save_parsed_text_p && !m_line.empty()) {
     // If we're already accumulating, continue to do so if we have data.
-    mime_scanner_append(S, *raw_input_s, data_size);
+    this->append(parsed_text);
   }
-  // No sharing if we've accumulated data (really, force this to make compiler shut up).
-  *output_shares_raw_input = 0 == S->m_line_length;
 
   // adjust out arguments.
   if (PARSE_RESULT_CONT != zret) {
-    if (0 != S->m_line_length) {
-      *output_s        = S->m_line;
-      *output_e        = *output_s + S->m_line_length;
-      S->m_line_length = 0;
+    if (!m_line.empty()) {
+      output = m_line;
+      m_line.resize(0); // depending resize(0) not deallocating internal string memory.
+      output_shares_input = false;
     } else {
-      *output_s = *raw_input_s;
-      *output_e = raw_input_c;
+      output              = parsed_text;
+      output_shares_input = true;
     }
   }
 
-  // Make sure there are no '\0' in the input scanned so far
-  if (zret != PARSE_RESULT_ERROR && memchr(*raw_input_s, '\0', raw_input_c - *raw_input_s) != nullptr) {
+  // Make sure there are no null characters in the input scanned so far
+  if (zret != PARSE_RESULT_ERROR && TextView::npos != parsed_text.find('\0')) {
     zret = PARSE_RESULT_ERROR;
   }
 
-  *raw_input_s = raw_input_c; // mark input consumed.
+  input.remove_prefix(parsed_text.size());
   return zret;
 }
 
@@ -2528,14 +2476,14 @@ _mime_parser_init(MIMEParser *parser)
 void
 mime_parser_init(MIMEParser *parser)
 {
-  mime_scanner_init(&parser->m_scanner);
+  parser->m_scanner.init();
   _mime_parser_init(parser);
 }
 
 void
 mime_parser_clear(MIMEParser *parser)
 {
-  mime_scanner_clear(&parser->m_scanner);
+  parser->m_scanner.clear();
   _mime_parser_init(parser);
 }
 
@@ -2545,17 +2493,6 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 {
   ParseResult err;
   bool line_is_real;
-  const char *colon;
-  const char *line_c;
-  const char *line_s = nullptr;
-  const char *line_e = nullptr;
-  const char *field_name_first;
-  const char *field_name_last;
-  const char *field_value_first;
-  const char *field_value_last;
-  const char *field_line_first;
-  const char *field_line_last;
-  int field_name_length, field_value_length;
 
   MIMEScanner *scanner = &parser->m_scanner;
 
@@ -2564,22 +2501,23 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // get a name:value line, with all continuation lines glued into one line //
     ////////////////////////////////////////////////////////////////////////////
 
-    err = mime_scanner_get(scanner, real_s, real_e, &line_s, &line_e, &line_is_real, eof, MIME_SCANNER_TYPE_FIELD);
+    TextView text{*real_s, real_e};
+    TextView parsed;
+    err     = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::FIELD);
+    *real_s = text.data();
     if (err != PARSE_RESULT_OK) {
       return err;
     }
-
-    line_c = line_s;
 
     //////////////////////////////////////////////////
     // if got a LF or CR on its own, end the header //
     //////////////////////////////////////////////////
 
-    if ((line_e - line_c >= 2) && (line_c[0] == ParseRules::CHAR_CR) && (line_c[1] == ParseRules::CHAR_LF)) {
+    if ((parsed.size() >= 2) && (parsed[0] == ParseRules::CHAR_CR) && (parsed[1] == ParseRules::CHAR_LF)) {
       return PARSE_RESULT_DONE;
     }
 
-    if ((line_e - line_c >= 1) && (line_c[0] == ParseRules::CHAR_LF)) {
+    if ((parsed.size() >= 1) && (parsed[0] == ParseRules::CHAR_LF)) {
       return PARSE_RESULT_DONE;
     }
 
@@ -2587,27 +2525,23 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // find pointers into the name:value field //
     /////////////////////////////////////////////
 
-    field_line_first = line_c;
-    field_line_last  = line_e - 1;
-
-    // find name first
-    field_name_first = line_c;
     /**
      * Fix for INKqa09141. The is_token function fails for '@' character.
      * Header names starting with '@' signs are valid headers. Hence we
      * have to add one more check to see if the first parameter is '@'
      * character then, the header name is valid.
      **/
-    if ((!ParseRules::is_token(*field_name_first)) && (*field_name_first != '@')) {
+    if ((!ParseRules::is_token(*parsed)) && (*parsed != '@')) {
       continue; // toss away garbage line
     }
 
     // find name last
-    colon = (char *)memchr(line_c, ':', (line_e - line_c));
-    if (!colon) {
+    auto field_value = parsed; // need parsed as is later on.
+    auto field_name  = field_value.split_prefix_at(':');
+    if (field_name.empty()) {
       continue; // toss away garbage line
     }
-    field_name_last = colon - 1;
+
     // RFC7230 section 3.2.4:
     // No whitespace is allowed between the header field-name and colon.  In
     // the past, differences in the handling of such whitespace have led to
@@ -2615,57 +2549,44 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // server MUST reject any received request message that contains
     // whitespace between a header field-name and colon with a response code
     // of 400 (Bad Request).
-    if ((field_name_last >= field_name_first) && is_ws(*field_name_last)) {
+    if (is_ws(field_name.back())) {
       return PARSE_RESULT_ERROR;
     }
 
     // find value first
-    field_value_first = colon + 1;
-    while ((field_value_first < line_e) && is_ws(*field_value_first)) {
-      ++field_value_first;
-    }
-
-    // find_value_last
-    field_value_last = line_e - 1;
-    while ((field_value_last >= field_value_first) && ParseRules::is_wslfcr(*field_value_last)) {
-      --field_value_last;
-    }
-
-    field_name_length  = (int)(field_name_last - field_name_first + 1);
-    field_value_length = (int)(field_value_last - field_value_first + 1);
+    field_value.ltrim_if(&ParseRules::is_ws);
+    field_value.rtrim_if(&ParseRules::is_wslfcr);
 
     // Make sure the name or value is not longer than 64K
-    if (field_name_length >= UINT16_MAX || field_value_length >= UINT16_MAX) {
+    if (field_name.size() >= UINT16_MAX || field_value.size() >= UINT16_MAX) {
       return PARSE_RESULT_ERROR;
     }
 
-    int total_line_length = (int)(field_line_last - field_line_first + 1);
+    //    int total_line_length = (int)(field_line_last - field_line_first + 1);
 
     //////////////////////////////////////////////////////////////////////
     // if we can't leave the name & value in the real buffer, copy them //
     //////////////////////////////////////////////////////////////////////
 
     if (must_copy_strings || (!line_is_real)) {
-      int length     = total_line_length;
-      char *dup      = heap->duplicate_str(field_name_first, length);
-      intptr_t delta = dup - field_name_first;
-
-      field_name_first += delta;
-      field_value_first += delta;
+      char *dup      = heap->duplicate_str(parsed.data(), parsed.size());
+      intptr_t delta = dup - parsed.data();
+      field_name.assign(field_name.data() + delta, field_name.size());
+      field_value.assign(field_value.data() + delta, field_value.size());
     }
     ///////////////////////
     // tokenize the name //
     ///////////////////////
 
-    int field_name_wks_idx = hdrtoken_tokenize(field_name_first, field_name_length);
+    int field_name_wks_idx = hdrtoken_tokenize(field_name.data(), field_name.size());
 
     ///////////////////////////////////////////
     // build and insert the new field object //
     ///////////////////////////////////////////
 
     MIMEField *field = mime_field_create(heap, mh);
-    mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name_first, field_name_length, field_value_first,
-                              field_value_length, true, total_line_length, false);
+    mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name.data(), field_name.size(), field_value.data(),
+                              field_value.size(), true, parsed.size(), false);
     mime_hdr_field_attach(mh, field, 1, nullptr);
   }
 }
