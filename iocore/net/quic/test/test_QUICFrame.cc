@@ -381,39 +381,6 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     CHECK(len == 19);
     CHECK(memcmp(buf, expected, len) == 0);
   }
-
-  SECTION("split stream frame")
-  {
-    uint8_t buf1[] = {
-      0x0e,                                           // 0b00001OLF (OLF=110)
-      0x01,                                           // Stream ID
-      0xc0, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, // Offset
-      0x0a,                                           // Data Length
-      0x01, 0x02, 0x03, 0x04, 0x05,                   // Stream Data
-      0x11, 0x22, 0x33, 0x44, 0x55,
-    };
-
-    QUICFrameUPtr frame1 = QUICFrameFactory::create(buf1, sizeof(buf1));
-    CHECK(frame1->type() == QUICFrameType::STREAM);
-    CHECK(frame1->size() == 21);
-    QUICStreamFrame *stream_frame = dynamic_cast<QUICStreamFrame *>(frame1.get());
-    CHECK(stream_frame->offset() == 0x100000000);
-    CHECK(stream_frame->stream_id() == 0x01);
-    CHECK(stream_frame->data_length() == 10);
-    QUICStreamFrame *stream_frame2 = dynamic_cast<QUICStreamFrame *>(stream_frame->split(16));
-    CHECK(stream_frame->stream_id() == 0x01);
-    CHECK(stream_frame->data_length() == 5);
-    CHECK(memcmp(stream_frame->data()->start(), "\x01\x02\x03\x04\x05", stream_frame->data_length()) == 0);
-    CHECK(stream_frame->offset() == 0x100000000);
-
-    frame1 = QUICFrameFactory::create_null_frame();
-    CHECK(stream_frame2->data_length() == 5);
-    CHECK(memcmp(stream_frame2->data()->start(), "\x11\x22\x33\x44\x55", stream_frame2->data_length()) == 0);
-    CHECK(stream_frame2->offset() == 0x100000000 + 5);
-    CHECK(stream_frame2->stream_id() == 0x01);
-
-    QUICFrameDeleter::delete_stream_frame(stream_frame2);
-  }
 }
 
 TEST_CASE("CRYPTO Frame", "[quic]")
