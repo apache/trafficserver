@@ -894,17 +894,21 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     const char *version_start;
     const char *version_end;
 
+    ts::TextView text, parsed;
+
     real_end = end;
 
   start:
     hh->m_polarity = HTTP_TYPE_REQUEST;
 
     // Make sure the line is not longer than 64K
-    if (scanner->m_line_length >= UINT16_MAX) {
+    if (scanner->get_buffered_line_size() >= UINT16_MAX) {
       return PARSE_RESULT_ERROR;
     }
 
-    err = mime_scanner_get(scanner, start, real_end, &line_start, &end, &line_is_real, eof, MIME_SCANNER_TYPE_LINE);
+    text.assign(*start, real_end);
+    err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::LINE);
+    *start = text.data();
     if (err < 0) {
       return err;
     }
@@ -917,9 +921,9 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       return err;
     }
 
-    cur = line_start;
-    ink_assert((end - cur) >= 0);
-    ink_assert((end - cur) < UINT16_MAX);
+    ink_assert(parsed.size() < UINT16_MAX);
+    line_start = cur = parsed.data();
+    end              = parsed.data_end();
 
     must_copy_strings = (must_copy_strings || (!line_is_real));
 
@@ -1244,11 +1248,14 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     hh->m_polarity = HTTP_TYPE_RESPONSE;
 
     // Make sure the line is not longer than 64K
-    if (scanner->m_line_length >= UINT16_MAX) {
+    if (scanner->get_buffered_line_size() >= UINT16_MAX) {
       return PARSE_RESULT_ERROR;
     }
 
-    err = mime_scanner_get(scanner, start, real_end, &line_start, &end, &line_is_real, eof, MIME_SCANNER_TYPE_LINE);
+    ts::TextView text{*start, real_end};
+    ts::TextView parsed;
+    err    = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::LINE);
+    *start = text.data();
     if (err < 0) {
       return err;
     }
@@ -1256,9 +1263,9 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
       return err;
     }
 
-    cur = line_start;
-    ink_assert((end - cur) >= 0);
-    ink_assert((end - cur) < UINT16_MAX);
+    ink_assert(parsed.size() < UINT16_MAX);
+    line_start = cur = parsed.data();
+    end              = parsed.data_end();
 
     must_copy_strings = (must_copy_strings || (!line_is_real));
 

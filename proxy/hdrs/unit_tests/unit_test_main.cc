@@ -21,5 +21,24 @@
   limitations under the License.
  */
 
-#define CATCH_CONFIG_MAIN
+#include "HTTP.h"
+
+#define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
+
+extern int cmd_disable_pfreelist;
+
+int
+main(int argc, char *argv[])
+{
+  // No thread setup, forbid use of thread local allocators.
+  cmd_disable_pfreelist = true;
+  // Get all of the HTTP WKS items populated.
+  http_init();
+
+  int result = Catch::Session().run(argc, argv);
+
+  // global clean-up...
+
+  return result;
+}

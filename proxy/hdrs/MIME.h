@@ -25,6 +25,7 @@
 
 #include <sys/time.h>
 #include <string_view>
+#include <string>
 
 #include "tscore/ink_assert.h"
 #include "tscore/ink_apidefs.h"
@@ -32,6 +33,8 @@
 #include "tscore/ParseRules.h"
 #include "HdrHeap.h"
 #include "HdrToken.h"
+
+#include "tscpp/util/TextView.h"
 
 /***********************************************************************
  *                                                                     *
@@ -57,9 +60,6 @@ enum MimeParseState {
   MIME_PARSE_INSIDE,   ///< Inside a field.
   MIME_PARSE_AFTER,    ///< After a field.
 };
-
-#define MIME_SCANNER_TYPE_LINE 0
-#define MIME_SCANNER_TYPE_FIELD 1
 
 /***********************************************************************
  *                                                                     *
@@ -283,12 +283,74 @@ struct MIMEHdrImpl : public HdrHeapObjImpl {
  *                                                                     *
  ***********************************************************************/
 
+/** A pre-parser used to extract MIME "lines" from raw input for further parsing.
+ *
+ * This maintains an internal line buffer which is used to keeping content between calls
+ * when the parse has not yet completed.
+ *
+ */
 struct MIMEScanner {
-  char *m_line;           // buffered line being built up
-  int m_line_length;      // size of real live data in buffer
-  int m_line_size;        // total allocated size of buffer
-  MimeParseState m_state; ///< Parsing machine state.
+  using self_type = MIMEScanner; ///< Self reference type.
+public:
+  /// Type of input scanning.
+  enum ScanType {
+    LINE  = 0, ///< Scan a single line.
+    FIELD = 1, ///< Scan with line folding enabled.
+  };
+
+  void init();  ///< Pseudo-constructor required by proxy allocation.
+  void clear(); ///< Pseudo-destructor required by proxy allocation.
+
+  /// @return The size of the internal line buffer.
+  size_t get_buffered_line_size() const;
+
+  /** Scan @a input for MIME data delimited by CR/LF end of line markers.
+   *
+   * @param input [in,out] Text to scan.
+   * @param output [out] Parsed text from @a input, if any.
+   * @param output_shares_input [out] Whether @a output is in @a input.
+   * @param eof_p [in] The source for @a input is done, no more data will ever be available.
+   * @param scan_type [in] Whether to check for line folding.
+   * @return The result of scanning.
+   *
+   * @a input is updated to remove text that was scanned. @a output is updated to be a view of the
+   * scanned @a input. This is separate because @a output may be a view of @a input or a view of the
+   * internal line buffer. Which of these cases obtains is returned in @a output_shares_input. This
+   * is @c true if @a output is a view of @a input, and @c false if @a output is a view of the
+   * internal buffer, but is only set if the result is not @c PARSE_RESULT_CONT (that is, it is not
+   * set until scanning has completed). If @a scan_type is @c FIELD then folded lines are
+   * accumulated in to a single line stored in the internal buffer. Otherwise the scanning
+   * terminates at the first CR/LF.
+   */
+  ParseResult get(ts::TextView &input, ts::TextView &output, bool &output_shares_input, bool eof_p, ScanType scan_type);
+
+protected:
+  /** Append @a text to the internal buffer.
+   *
+   * @param text Text to append.
+   * @return @a this
+   *
+   * A copy of @a text is appended to the internal line buffer.
+   */
+  self_type &append(ts::TextView text);
+
+  static constexpr MimeParseState INITIAL_PARSE_STATE = MIME_PARSE_BEFORE;
+  std::string m_line;                          ///< Internally buffered line data for field coalescence.
+  MimeParseState m_state{INITIAL_PARSE_STATE}; ///< Parsing machine state.
 };
+
+inline size_t
+MIMEScanner::get_buffered_line_size() const
+{
+  return m_line.size();
+}
+
+inline void
+MIMEScanner::clear()
+{
+  m_line.clear();
+  m_state = INITIAL_PARSE_STATE;
+}
 
 struct MIMEParser {
   MIMEScanner m_scanner;
@@ -691,12 +753,6 @@ void mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field,
 
 void mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const char *value, int length, bool prepend_comma,
                              const char separator);
-
-void mime_scanner_init(MIMEScanner *scanner);
-void mime_scanner_clear(MIMEScanner *scanner);
-void mime_scanner_append(MIMEScanner *scanner, const char *data, int data_size);
-ParseResult mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input_e, const char **output_s,
-                             const char **output_e, bool *output_shares_raw_input, bool raw_input_eof, int raw_input_scan_type);
 
 void mime_parser_init(MIMEParser *parser);
 void mime_parser_clear(MIMEParser *parser);

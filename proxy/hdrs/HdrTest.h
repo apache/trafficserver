@@ -51,7 +51,6 @@ private:
   int test_parse_date();
   int test_format_date();
   int test_url();
-  int test_http_parser_eos_boundary_cases();
   int test_arena();
   int test_regex();
   int test_accept_language_match();
