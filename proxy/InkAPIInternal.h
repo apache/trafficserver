@@ -167,9 +167,9 @@ public:
   /// Remove all hooks.
   void clear();
   /// Add the hook @a cont to the front of the hooks for @a id.
-  void prepend(ID id, INKContInternal *cont);
+  virtual void prepend(ID id, INKContInternal *cont);
   /// Add the hook @a cont to the end of the hooks for @a id.
-  void append(ID id, INKContInternal *cont);
+  virtual void append(ID id, INKContInternal *cont);
   /// Get the list of hooks for @a id.
   APIHook *get(ID id) const;
   /// @return @c true if @a id is a valid id, @c false otherwise.
@@ -281,6 +281,25 @@ typedef enum {
 
 class SslAPIHooks : public FeatureAPIHooks<TSSslHookInternalID, TS_SSL_INTERNAL_LAST_HOOK>
 {
+public:
+  void
+  append(TSSslHookInternalID id, INKContInternal *cont) override
+  {
+    if (cont->mutex == nullptr) {
+      FeatureAPIHooks<TSSslHookInternalID, TS_SSL_INTERNAL_LAST_HOOK>::append(id, cont);
+    } else {
+      ink_release_assert(!"Cannot have continuation with mutex on SSL hook");
+    }
+  }
+  void
+  prepend(TSSslHookInternalID id, INKContInternal *cont) override
+  {
+    if (cont->mutex == nullptr) {
+      FeatureAPIHooks<TSSslHookInternalID, TS_SSL_INTERNAL_LAST_HOOK>::prepend(id, cont);
+    } else {
+      ink_release_assert(!"Cannot have continuation with mutex on SSL hook");
+    }
+  }
 };
 
 class LifecycleAPIHooks : public FeatureAPIHooks<TSLifecycleHookID, TS_LIFECYCLE_LAST_HOOK>

@@ -66,7 +66,7 @@ TSPluginInit(int argc, const char *argv[])
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[%s] Plugin registration failed", PN);
   }
-  TSCont cb = TSContCreate(&CB_server_rename, TSMutexCreate());
+  TSCont cb = TSContCreate(&CB_server_rename, nullptr);
   TSHttpHookAdd(TS_SSL_SERVERNAME_HOOK, cb);
 
   return;

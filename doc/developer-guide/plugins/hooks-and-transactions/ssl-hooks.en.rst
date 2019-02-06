@@ -19,13 +19,19 @@
 
 .. _developer-plugins-ssl-hooks:
 
-TLS User Agent Hooks
+TLS Hooks
 ********************
 
 In addition to the HTTP oriented hooks, a plugin can add hooks (by calling :c:func:`TSHttpHookAdd`)
-to trigger code during the TLS handshake with the user agent.  This TLS handshake occurs well
+to trigger code during the TLS handshake with the user agent.  This TLS handshake from the user agent occurs well
 before the HTTP transaction is available, so a separate state machine is required to track the
 TLS hooks.
+
+Since some of the TLS hook points cannot be interrupted and resumed later, |TS| cannot automatically lock the
+mutexes of the continuations called from the hooks, as a failure to get the lock requires blocking (which is not 
+acceptable), making a lock failure unrecoverable. For simplicity and consistency, it is better to forbid mutexes on
+all continuations attached to a TLS hook. Therefore, when adding a continuation to a TLS hook, if the continuation
+has a mutex an assertion will occur.
 
 TLS Hooks
 ---------

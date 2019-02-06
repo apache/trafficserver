@@ -258,7 +258,7 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_coun
   TSDebug(PN, "Setup callbacks pa=%d sni=%d cert=%d cert_imm=%d pa_delay=%d", preaccept_count, sni_count, cert_count,
           cert_count_immediate, preaccept_count_delay);
   for (i = 0; i < preaccept_count; i++) {
-    cb = TSContCreate(&CB_Pre_Accept, TSMutexCreate());
+    cb = TSContCreate(&CB_Pre_Accept, nullptr);
     TSContDataSet(cb, (void *)(intptr_t)i);
     if (txn) {
       TSHttpTxnHookAdd(txn, TS_VCONN_START_HOOK, cb);
@@ -267,7 +267,7 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_coun
     }
   }
   for (i = 0; i < preaccept_count_delay; i++) {
-    cb = TSContCreate(&CB_Pre_Accept_Delay, TSMutexCreate());
+    cb = TSContCreate(&CB_Pre_Accept_Delay, nullptr);
     TSContDataSet(cb, (void *)(intptr_t)i);
     if (txn) {
       TSHttpTxnHookAdd(txn, TS_VCONN_START_HOOK, cb);
@@ -276,7 +276,7 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_coun
     }
   }
   for (i = 0; i < sni_count; i++) {
-    cb = TSContCreate(&CB_SNI, TSMutexCreate());
+    cb = TSContCreate(&CB_SNI, nullptr);
     TSContDataSet(cb, (void *)(intptr_t)i);
     if (txn) {
       TSHttpTxnHookAdd(txn, TS_SSL_SERVERNAME_HOOK, cb);
@@ -285,7 +285,7 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_coun
     }
   }
   for (i = 0; i < cert_count; i++) {
-    cb = TSContCreate(&CB_Cert, TSMutexCreate());
+    cb = TSContCreate(&CB_Cert, nullptr);
     TSContDataSet(cb, (void *)(intptr_t)i);
     if (txn) {
       TSHttpTxnHookAdd(txn, TS_SSL_CERT_HOOK, cb);
@@ -294,7 +294,7 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_coun
     }
   }
   for (i = 0; i < cert_count_immediate; i++) {
-    cb = TSContCreate(&CB_Cert_Immediate, TSMutexCreate());
+    cb = TSContCreate(&CB_Cert_Immediate, nullptr);
     TSContDataSet(cb, (void *)(intptr_t)i);
     if (txn) {
       TSHttpTxnHookAdd(txn, TS_SSL_CERT_HOOK, cb);
@@ -304,7 +304,7 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_coun
   }
 
   for (i = 0; i < close_count; i++) {
-    cb = TSContCreate(&CB_close, TSMutexCreate());
+    cb = TSContCreate(&CB_close, nullptr);
     TSContDataSet(cb, (void *)(intptr_t)i);
     if (txn) {
       TSHttpTxnHookAdd(txn, TS_VCONN_CLOSE_HOOK, cb);
@@ -313,7 +313,7 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_coun
     }
   }
   for (i = 0; i < out_start_count; i++) {
-    cb = TSContCreate(&CB_out_start, TSMutexCreate());
+    cb = TSContCreate(&CB_out_start, nullptr);
     TSContDataSet(cb, (void *)(intptr_t)i);
     if (txn) {
       TSHttpTxnHookAdd(txn, TS_VCONN_OUTBOUND_START_HOOK, cb);
@@ -322,7 +322,7 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_coun
     }
   }
   for (i = 0; i < out_start_delay_count; i++) {
-    cb = TSContCreate(&CB_out_start_delay, TSMutexCreate());
+    cb = TSContCreate(&CB_out_start_delay, nullptr);
     TSContDataSet(cb, (void *)(intptr_t)i);
     if (txn) {
       TSHttpTxnHookAdd(txn, TS_VCONN_OUTBOUND_START_HOOK, cb);
@@ -331,7 +331,7 @@ setup_callbacks(TSHttpTxn txn, int preaccept_count, int sni_count, int cert_coun
     }
   }
   for (i = 0; i < out_close_count; i++) {
-    cb = TSContCreate(&CB_out_close, TSMutexCreate());
+    cb = TSContCreate(&CB_out_close, nullptr);
     TSContDataSet(cb, (void *)(intptr_t)i);
     if (txn) {
       TSHttpTxnHookAdd(txn, TS_VCONN_OUTBOUND_CLOSE_HOOK, cb);

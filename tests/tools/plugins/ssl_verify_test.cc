@@ -99,7 +99,7 @@ setup_callbacks(int count)
 
   TSDebug(PN, "Setup callbacks count=%d", count);
   for (i = 0; i < count; i++) {
-    cb = TSContCreate(&CB_server_verify, TSMutexCreate());
+    cb = TSContCreate(&CB_server_verify, nullptr);
     TSContDataSet(cb, (void *)(intptr_t)i);
     TSHttpHookAdd(TS_SSL_VERIFY_SERVER_HOOK, cb);
   }

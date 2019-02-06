@@ -23,6 +23,7 @@ verifies the event data parameter to the continuations triggered by the hooks is
 
 #include <fstream>
 #include <cstdlib>
+#include <mutex>
 
 #include <ts/ts.h>
 
@@ -43,6 +44,7 @@ char PIName[] = PINAME;
 // terminates.
 //
 std::fstream logFile;
+std::mutex logLock;
 
 TSVConn activeVConn;
 
@@ -53,7 +55,10 @@ TSHttpTxn activeTxn;
 int
 transactionContFunc(TSCont, TSEvent event, void *eventData)
 {
-  logFile << "Transaction: event=" << TSHttpEventNameLookup(event) << std::endl;
+  {
+    std::lock_guard<std::mutex> lock(logLock);
+    logFile << "Transaction: event=" << TSHttpEventNameLookup(event) << std::endl;
+  }
 
   TSDebug(PIName, "Transaction: event=%s(%d) eventData=%p", TSHttpEventNameLookup(event), event, eventData);
 
@@ -313,11 +318,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  // Mutex to protext the logFile object.
-  //
-  TSMutex mtx = TSMutexCreate();
-
-  gCont = TSContCreate(globalContFunc, mtx);
+  gCont = TSContCreate(globalContFunc, nullptr);
 
   // Setup the global hook
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, gCont);
@@ -342,7 +343,8 @@ TSPluginInit(int argc, const char *argv[])
   // TSHttpHookAdd(TS_VCONN_OUTBOUND_START_HOOK, gCont);
   // TSHttpHookAdd(TS_VCONN_OUTBOUND_CLOSE_HOOK, gCont);
 
-  sCont = TSContCreate(sessionContFunc, mtx);
+  TSMutex mtx = TSMutexCreate();
+  sCont       = TSContCreate(sessionContFunc, mtx);
 
   tCont = TSContCreate(transactionContFunc, mtx);
 }
