@@ -521,10 +521,6 @@ QUICNetVConnection::handle_frame(QUICEncryptionLevel level, const QUICFrame &fra
     QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
                 this->_remote_flow_controller->current_limit());
     this->_schedule_packet_write_ready();
-
-    break;
-  case QUICFrameType::PING:
-    // Nothing to do
     break;
   case QUICFrameType::DATA_BLOCKED:
     // DATA_BLOCKED frame is for debugging. Nothing to do here.
