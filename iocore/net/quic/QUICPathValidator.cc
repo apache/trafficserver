@@ -131,6 +131,9 @@ QUICPathValidator::generate_frame(QUICEncryptionLevel level, uint64_t connection
 {
   QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
 
+  // PATH_CHALLENGE and PATH_RESPONSE are not flow-controlled
+  connection_credit = UINT64_MAX;
+
   if (!this->_is_level_matched(level)) {
     return frame;
   }

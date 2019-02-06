@@ -62,6 +62,7 @@ public:
   virtual QUICFrameType type() const;
   virtual size_t size() const = 0;
   virtual bool is_probing_frame() const;
+  virtual bool is_flow_controlled() const;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const = 0;
   virtual int debug_msg(char *msg, size_t msg_len) const;
   virtual void parse(const uint8_t *buf, size_t len){};
@@ -94,6 +95,7 @@ public:
   QUICFrameUPtr clone() const override;
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
+  virtual bool is_flow_controlled() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;

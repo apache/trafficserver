@@ -33,7 +33,8 @@ class QUICPinger : public QUICFrameGenerator
 public:
   QUICPinger() {}
 
-  void trigger(QUICEncryptionLevel level);
+  void request(QUICEncryptionLevel level);
+  void cancel(QUICEncryptionLevel level);
 
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level) override;
@@ -41,7 +42,7 @@ public:
 
 private:
   // Initial, 0/1-RTT, and Handshake
-  bool _need_to_fire[4] = {false};
+  uint64_t _need_to_fire[4] = {0};
 
   // QUICFrameGenerator
   std::vector<QUICEncryptionLevel>
