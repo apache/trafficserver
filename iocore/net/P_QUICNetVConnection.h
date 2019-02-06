@@ -44,6 +44,7 @@
 #include "quic/QUICConnectionTable.h"
 #include "quic/QUICVersionNegotiator.h"
 #include "quic/QUICPacket.h"
+#include "quic/QUICPacketFactory.h"
 #include "quic/QUICFrame.h"
 #include "quic/QUICFrameDispatcher.h"
 #include "quic/QUICHandshake.h"

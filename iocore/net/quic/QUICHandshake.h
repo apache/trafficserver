@@ -34,6 +34,7 @@
  * @brief Send/Receive CRYPTO frame and do Cryptographic Handshake
  */
 class QUICVersionNegotiator;
+class QUICPacketFactory;
 class SSLNextProtocolSet;
 
 class QUICHandshake : public QUICFrameHandler, public QUICFrameGenerator

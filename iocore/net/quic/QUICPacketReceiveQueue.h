@@ -28,6 +28,8 @@
 
 #include "QUICPacket.h"
 
+class QUICPacketFactory;
+
 class QUICPacketReceiveQueue
 {
 public:

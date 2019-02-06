@@ -48,6 +48,7 @@ libquic_a_SOURCES = \
   QUICTypes.cc \
   QUICIntUtil.cc \
   QUICPacket.cc \
+  QUICPacketFactory.cc \
   QUICFrame.cc \
   QUICFrameDispatcher.cc \
   QUICVersionNegotiator.cc \
