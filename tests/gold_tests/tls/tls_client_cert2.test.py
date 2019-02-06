@@ -55,6 +55,7 @@ server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
+ts.addSSLfile("ssl/combo-signed-foo.pem")
 ts.addSSLfile("ssl/signed-foo.pem")
 ts.addSSLfile("ssl/signed-foo.key")
 ts.addSSLfile("ssl/signed2-foo.pem")
@@ -91,8 +92,7 @@ ts.Disk.ssl_server_name_yaml.AddLines([
     '  client_cert: signed-bar.pem',
     '  client_key: signed-bar.key',
     '- fqdn: bob.*.com',
-    '  client_cert: {0}/signed-foo.pem'.format(ts.Variables.SSLDir),
-    '  client_key: {0}/signed-foo.key'.format(ts.Variables.SSLDir),
+    '  client_cert: {0}/combo-signed-foo.pem'.format(ts.Variables.SSLDir),
     '- fqdn: "*bar.com"',
     '  client_cert: {0}/signed2-bar.pem'.format(ts.Variables.SSLDir),
     '  client_key: {0}/signed-bar.key'.format(ts.Variables.SSLDir),
