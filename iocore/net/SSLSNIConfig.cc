@@ -84,9 +84,13 @@ SNIConfigParams::loadSNIConfig()
     // set the next hop properties
     SSLConfig::scoped_config params;
     auto clientCTX = params->getClientSSL_CTX();
-    if (!item.client_cert.empty() && !item.client_key.empty()) {
+    // Load if we have at least specified the client certificate
+    if (!item.client_cert.empty()) {
       std::string certFilePath = Layout::get()->relative_to(params->clientCertPathOnly, item.client_cert.data());
-      std::string keyFilePath  = Layout::get()->relative_to(params->clientKeyPathOnly, item.client_key.data());
+      std::string keyFilePath;
+      if (!item.client_key.empty()) {
+        keyFilePath = Layout::get()->relative_to(params->clientKeyPathOnly, item.client_key.data());
+      }
       clientCTX = params->getCTX(certFilePath.c_str(), keyFilePath.c_str(), params->clientCACertFilename, params->clientCACertPath);
     }
 
