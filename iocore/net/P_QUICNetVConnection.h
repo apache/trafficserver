@@ -276,6 +276,8 @@ private:
   QUICAltConnectionManager *_alt_con_manager        = nullptr;
   QUICPathValidator *_path_validator                = nullptr;
 
+  std::vector<QUICFrameGenerator *> _frame_generators;
+
   QUICPacketReceiveQueue _packet_recv_queue = {this->_packet_factory, this->_ph_protector};
 
   QUICConnectionErrorUPtr _connection_error  = nullptr;

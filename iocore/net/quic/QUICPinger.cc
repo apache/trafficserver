@@ -24,15 +24,21 @@
 #include "QUICPinger.h"
 
 void
-QUICPinger::trigger(QUICEncryptionLevel level)
+QUICPinger::request(QUICEncryptionLevel level)
 {
-  this->_need_to_fire[static_cast<int>(level)] = true;
+  ++this->_need_to_fire[static_cast<int>(level)];
+}
+
+void
+QUICPinger::cancel(QUICEncryptionLevel level)
+{
+  --this->_need_to_fire[static_cast<int>(level)];
 }
 
 bool
 QUICPinger::will_generate_frame(QUICEncryptionLevel level)
 {
-  return this->_need_to_fire[QUICTypeUtil::pn_space_index(level)];
+  return this->_need_to_fire[QUICTypeUtil::pn_space_index(level)] > 0;
 }
 
 QUICFrameUPtr
@@ -44,10 +50,10 @@ QUICPinger::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit
     return frame;
   }
 
-  if (this->_need_to_fire[static_cast<int>(level)] && maximum_frame_size > 0) {
+  if (this->_need_to_fire[static_cast<int>(level)] > 0 && maximum_frame_size > 0) {
     // don't care ping frame lost or acked
     frame                                        = QUICFrameFactory::create_ping_frame(0, nullptr);
-    this->_need_to_fire[static_cast<int>(level)] = false;
+    this->_need_to_fire[static_cast<int>(level)] = 0;
   }
 
   return frame;

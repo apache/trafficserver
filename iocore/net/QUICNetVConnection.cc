@@ -282,6 +282,17 @@ QUICNetVConnection::start()
   this->_path_validator         = new QUICPathValidator();
   this->_stream_manager         = new QUICStreamManager(this, &this->_rtt_measure, this->_application_map);
 
+  // Register frame generators
+  this->_frame_generators.push_back(this->_handshake_handler);      // CRYPTO
+  this->_frame_generators.push_back(this->_path_validator);         // PATH_CHALLENGE, PATH_RESPOSNE
+  this->_frame_generators.push_back(this->_local_flow_controller);  // MAX_DATA
+  this->_frame_generators.push_back(this->_remote_flow_controller); // DATA_BLOCKED
+  this->_frame_generators.push_back(this);                          // NEW_TOKEN
+  this->_frame_generators.push_back(this->_stream_manager);         // STREAM, MAX_STREAM_DATA, STREAM_DATA_BLOCKED
+  this->_frame_generators.push_back(&this->_ack_frame_manager);     // ACK
+  this->_frame_generators.push_back(&this->_pinger);                // PING
+
+  // Register frame handlers
   this->_frame_dispatcher->add_handler(this);
   this->_frame_dispatcher->add_handler(this->_stream_manager);
   this->_frame_dispatcher->add_handler(this->_path_validator);
@@ -492,7 +503,7 @@ QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 void
 QUICNetVConnection::ping()
 {
-  this->_pinger.trigger(QUICEncryptionLevel::ONE_RTT);
+  this->_pinger.request(QUICEncryptionLevel::ONE_RTT);
 }
 
 void
@@ -996,6 +1007,7 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
       this->_alt_con_manager =
         new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, params->instance_id(),
                                      params->num_alt_connection_ids(), params->preferred_address());
+      this->_frame_generators.push_back(this->_alt_con_manager);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
     error = this->_handshake_handler->start(packet.get(), &this->_packet_factory, this->_alt_con_manager->preferred_address());
@@ -1354,125 +1366,56 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
   std::vector<QUICFrameInfo> frames;
 
-  // CRYPTO
-  frame = this->_handshake_handler->generate_frame(level, UINT16_MAX, max_frame_size);
-  while (frame) {
-    ++frame_count;
-    probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, frame, frames);
-    frame = this->_handshake_handler->generate_frame(level, UINT16_MAX, max_frame_size);
+  if (this->_has_ack_only_packet_out) {
+    // Sent too much ack_only packet. At this moment we need to packetize a ping frame
+    // to force peer send ack frame.
+    this->_pinger.request(level);
   }
 
-  // NEW_TOKEN
-  frame = this->generate_frame(level, UINT16_MAX, max_frame_size);
-  if (frame) {
-    ++frame_count;
-    probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, frame, frames);
-  }
-
-  // PATH_CHALLENGE, PATH_RESPOSNE
-  frame = this->_path_validator->generate_frame(level, UINT16_MAX, max_frame_size);
-  if (frame) {
-    ++frame_count;
-    probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, frame, frames);
-  }
-
-  // NEW_CONNECTION_ID
-  if (this->_alt_con_manager) {
-    frame = this->_alt_con_manager->generate_frame(level, UINT16_MAX, max_frame_size);
-    while (frame) {
-      ++frame_count;
-      probing |= frame->is_probing_frame();
-      this->_store_frame(buf, len, max_frame_size, frame, frames);
-
-      frame = this->_alt_con_manager->generate_frame(level, UINT16_MAX, max_frame_size);
-    }
-  }
-
-  // MAX_DATA
-  frame = this->_local_flow_controller->generate_frame(level, UINT16_MAX, max_frame_size);
-  if (frame) {
-    ++frame_count;
-    probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, frame, frames);
-  }
-
-  // DATA_BLOCKED
-  if (this->_remote_flow_controller->credit() == 0 && this->_stream_manager->will_generate_frame(level)) {
-    frame = this->_remote_flow_controller->generate_frame(level, UINT16_MAX, max_frame_size);
-    if (frame) {
-      ++frame_count;
-      probing |= frame->is_probing_frame();
-      this->_store_frame(buf, len, max_frame_size, frame, frames);
-    }
-  }
-
-  // STREAM, MAX_STREAM_DATA, STREAM_DATA_BLOCKED
-  if (!this->_path_validator->is_validating()) {
-    frame = this->_stream_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
-    while (frame) {
-      ++frame_count;
-      probing |= frame->is_probing_frame();
-      if (frame->type() == QUICFrameType::STREAM) {
-        int ret = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
-        QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
-                    this->_remote_flow_controller->current_limit());
-        ink_assert(ret == 0);
+  bool ack_only = true;
+  for (auto g : this->_frame_generators) {
+    while (g->will_generate_frame(level)) {
+      // FIXME will_generate_frame should receive more parameters so we don't need extra checks
+      if (g == this->_remote_flow_controller && !this->_stream_manager->will_generate_frame(level)) {
+        break;
       }
-      this->_store_frame(buf, len, max_frame_size, frame, frames);
-
-      if (++this->_stream_frames_sent % MAX_CONSECUTIVE_STREAMS == 0) {
+      if (g == this->_stream_manager && this->_path_validator->is_validating()) {
         break;
       }
 
-      frame = this->_stream_manager->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
+      // Common block
+      frame = g->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
+      if (frame) {
+        ++frame_count;
+        probing |= frame->is_probing_frame();
+        if (frame->is_flow_controlled()) {
+          int ret = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
+          QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
+                      this->_remote_flow_controller->current_limit());
+          ink_assert(ret == 0);
+        }
+        this->_store_frame(buf, len, max_frame_size, frame, frames);
+
+        // FIXME ACK frame should have priority
+        if (frame->type() == QUICFrameType::STREAM) {
+          if (++this->_stream_frames_sent % MAX_CONSECUTIVE_STREAMS == 0) {
+            break;
+          }
+        }
+
+        if (ack_only && frame->type() != QUICFrameType::ACK) {
+          ack_only = false;
+          this->_pinger.cancel(level);
+        }
+
+      } else {
+        // Move to next generator
+        break;
+      }
     }
   }
 
-  // ACK
-  if (frame_count == 0) {
-    if (this->_ack_frame_manager.will_generate_frame(level)) {
-      frame = this->_ack_frame_manager.generate_frame(level, UINT16_MAX, max_frame_size);
-    }
-  } else {
-    frame = this->_ack_frame_manager.generate_frame(level, UINT16_MAX, max_frame_size);
-  }
-
-  bool ack_only = false;
-  if (frame != nullptr) {
-    if (frame_count == 0) {
-      ack_only = true;
-    }
-    ++frame_count;
-    probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, frame, frames);
-  }
-
-  QUICConfig::scoped_config params;
-  if (ack_only) {
-    if (this->_has_ack_only_packet_out) {
-      // Sent too much ack_only packet. At this moment we need to packetize a ping frame
-      // to force peer send ack frame.
-      // Just call trigger to not send multiple PING frames, because application could request sending PING.
-      this->_pinger.trigger(level);
-    } else {
-      this->_has_ack_only_packet_out = true;
-    }
-  } else if (!ack_only) {
-    this->_has_ack_only_packet_out = false;
-  }
-
-  // PING
-  frame = this->_pinger.generate_frame(level, UINT16_MAX, max_frame_size);
-  if (frame) {
-    ++frame_count;
-    ack_only                       = false;
-    this->_has_ack_only_packet_out = false;
-    probing |= frame->is_probing_frame();
-    this->_store_frame(buf, len, max_frame_size, frame, frames);
-  }
+  this->_has_ack_only_packet_out = ack_only;
 
   // Schedule a packet
   if (len != 0) {
@@ -1926,6 +1869,7 @@ QUICNetVConnection::_switch_to_established_state()
       pref_addr_buf          = remote_tp->getAsBytes(QUICTransportParameterId::PREFERRED_ADDRESS, len);
       this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id,
                                                             params->instance_id(), 1, {pref_addr_buf, len});
+      this->_frame_generators.push_back(this->_alt_con_manager);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
   } else {

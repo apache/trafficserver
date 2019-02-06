@@ -84,6 +84,12 @@ QUICFrame::is_probing_frame() const
   return false;
 }
 
+bool
+QUICFrame::is_flow_controlled() const
+{
+  return false;
+}
+
 QUICFrameId
 QUICFrame::id() const
 {
@@ -248,6 +254,12 @@ QUICStreamFrame::size() const
   }
 
   return size;
+}
+
+bool
+QUICStreamFrame::is_flow_controlled() const
+{
+  return true;
 }
 
 size_t
