@@ -1360,7 +1360,7 @@ Origin Server Connect Attempts
    :reloadable:
    :overridable:
 
-   Limits the number of socket connections per origin server to the value specified. To enable, set to one (``1``).
+   Limits the number of socket connections per origin server to the value specified. To disable, set to zero (``0``).
 
 .. ts:cv:: CONFIG proxy.config.http.origin_max_connections_queue INT -1
    :reloadable:
