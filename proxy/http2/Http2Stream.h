@@ -28,6 +28,7 @@
 #include "Http2DebugNames.h"
 #include "../http/HttpTunnel.h" // To get ChunkedHandler
 #include "Http2DependencyTree.h"
+#include "tscore/History.h"
 
 class Http2Stream;
 class Http2ConnectionState;
@@ -244,6 +245,8 @@ private:
   HTTPHdr _req_header;
   VIO read_vio;
   VIO write_vio;
+
+  History<HISTORY_DEFAULT_SIZE> _history;
 
   bool trailing_header = false;
   bool body_done       = false;

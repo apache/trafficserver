@@ -29,6 +29,7 @@
 #include "Http2ConnectionState.h"
 #include <string_view>
 #include "tscore/ink_inet.h"
+#include "tscore/History.h"
 
 // Name                       Edata                 Description
 // HTTP2_SESSION_EVENT_INIT   Http2ClientSession *  HTTP/2 session is born
@@ -304,6 +305,9 @@ public:
     return write_buffer->max_read_avail();
   }
 
+  // Record history from Http2ConnectionState
+  void remember(const SourceLocation &location, int event, int reentrant = NO_REENTRANT);
+
   // noncopyable
   Http2ClientSession(Http2ClientSession &) = delete;
   Http2ClientSession &operator=(const Http2ClientSession &) = delete;
@@ -332,6 +336,8 @@ private:
 
   IpEndpoint cached_client_addr;
   IpEndpoint cached_local_addr;
+
+  History<HISTORY_DEFAULT_SIZE> _history;
 
   // For Upgrade: h2c
   Http2UpgradeContext upgrade_context;
