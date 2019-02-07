@@ -93,7 +93,6 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::startEvent);
   this->_packet_transmitter_mutex    = new_ProxyMutex();
-  this->_frame_transmitter_mutex     = new_ProxyMutex();
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
   this->_peer_quic_connection_id     = peer_cid;
@@ -119,7 +118,6 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
   this->_packet_transmitter_mutex    = new_ProxyMutex();
-  this->_frame_transmitter_mutex     = new_ProxyMutex();
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
   this->_peer_quic_connection_id     = peer_cid;
@@ -1363,7 +1361,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   QUICFrameUPtr frame(nullptr, nullptr);
 
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
-  SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
   std::vector<QUICFrameInfo> frames;
 
   if (this->_has_ack_only_packet_out) {
@@ -1452,7 +1449,6 @@ void
 QUICNetVConnection::_packetize_closing_frame()
 {
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
-  SCOPED_MUTEX_LOCK(frame_transmitter_lock, this->_frame_transmitter_mutex, this_ethread());
 
   if (this->_connection_error == nullptr || this->_the_final_packet) {
     return;

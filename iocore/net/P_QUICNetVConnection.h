@@ -337,7 +337,6 @@ private:
   QUICConnectionErrorUPtr _state_closing_send_packet();
 
   Ptr<ProxyMutex> _packet_transmitter_mutex;
-  Ptr<ProxyMutex> _frame_transmitter_mutex;
 
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
