@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "tscore/runroot.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
@@ -1131,7 +1132,7 @@ RecConfigReadConfigDir()
 
   if (const char *env = getenv("PROXY_CONFIG_CONFIG_DIR")) {
     ink_strlcpy(buf, env, sizeof(buf));
-  } else {
+  } else if (get_runroot().empty()) {
     RecGetRecordString("proxy.config.config_dir", buf, sizeof(buf));
   }
 
