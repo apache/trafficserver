@@ -26,7 +26,15 @@
 #include "Http2ClientSession.h"
 #include "Http2Stream.h"
 #include "Http2DebugNames.h"
+#include "HttpDebugNames.h"
 #include <sstream>
+
+#define REMEMBER(e, r)                                        \
+  {                                                           \
+    if (this->ua_session) {                                   \
+      this->ua_session->remember(MakeSourceLocation(), e, r); \
+    }                                                         \
+  }
 
 #define Http2ConDebug(ua_session, fmt, ...) \
   SsnDebug(ua_session, "http2_con", "[%" PRId64 "] " fmt, ua_session->connection_id(), ##__VA_ARGS__);
@@ -877,6 +885,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   case HTTP2_SESSION_EVENT_INIT: {
     ink_assert(this->ua_session == nullptr);
     this->ua_session = (Http2ClientSession *)edata;
+    REMEMBER(event, this->recursion);
 
     // [RFC 7540] 3.5. HTTP/2 Connection Preface. Upon establishment of a TCP connection and
     // determination that HTTP/2 will be used by both peers, each endpoint MUST
@@ -902,6 +911,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   // Finalize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_FINI: {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    REMEMBER(event, this->recursion);
 
     ink_assert(this->fini_received == false);
     this->fini_received = true;
@@ -911,6 +921,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   } break;
 
   case HTTP2_SESSION_EVENT_XMIT: {
+    REMEMBER(event, this->recursion);
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     send_data_frames_depends_on_priority();
     _scheduled = false;
@@ -918,6 +929,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   // Parse received HTTP/2 frames
   case HTTP2_SESSION_EVENT_RECV: {
+    REMEMBER(event, this->recursion);
     const Http2Frame *frame       = (Http2Frame *)edata;
     const Http2StreamId stream_id = frame->header().streamid;
     Http2Error error;
@@ -964,6 +976,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   // Initiate a gracefull shutdown
   case HTTP2_SESSION_EVENT_SHUTDOWN_INIT: {
+    REMEMBER(event, this->recursion);
     ink_assert(shutdown_state == HTTP2_SHUTDOWN_NOT_INITIATED);
     shutdown_state = HTTP2_SHUTDOWN_INITIATED;
     // [RFC 7540] 6.8.  GOAWAY
@@ -977,6 +990,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   // Continue a gracefull shutdown
   case HTTP2_SESSION_EVENT_SHUTDOWN_CONT: {
+    REMEMBER(event, this->recursion);
     ink_assert(shutdown_state == HTTP2_SHUTDOWN_INITIATED);
     shutdown_cont_event = nullptr;
     shutdown_state      = HTTP2_SHUTDOWN_IN_PROGRESS;
@@ -1010,8 +1024,10 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 }
 
 int
-Http2ConnectionState::state_closed(int /* event */, void *edata)
+Http2ConnectionState::state_closed(int event, void *edata)
 {
+  REMEMBER(event, this->recursion);
+
   if (edata == zombie_event) {
     // Zombie session is still around.  Assert!
     ink_release_assert(zombie_event == nullptr);
@@ -1195,6 +1211,7 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
   }
 
   Http2StreamDebug(ua_session, stream->get_id(), "Delete stream");
+  REMEMBER(NO_EVENT, this->recursion);
 
   if (Http2::stream_priority_enabled) {
     Http2DependencyTree::Node *node = stream->priority_node;
@@ -1236,6 +1253,8 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 void
 Http2ConnectionState::release_stream(Http2Stream *stream)
 {
+  REMEMBER(NO_EVENT, this->recursion)
+
   if (stream) {
     // Decrement total_client_streams_count here, because it's a counter include streams in the process of shutting down.
     // Other counters (client_streams_in_count/client_streams_out_count) are already decremented in delete_stream().
@@ -1770,6 +1789,8 @@ Http2ConnectionState::send_ping_frame(Http2StreamId id, uint8_t flag, const uint
 void
 Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 {
+  ink_assert(this->ua_session != nullptr);
+
   Http2ConDebug(ua_session, "Send GOAWAY frame, last_stream_id: %d", id);
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
@@ -1778,8 +1799,6 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 
   Http2Frame frame(HTTP2_FRAME_TYPE_GOAWAY, 0, 0);
   Http2Goaway goaway;
-
-  ink_assert(this->ua_session != nullptr);
 
   goaway.last_streamid = id;
   goaway.error_code    = ec;

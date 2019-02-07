@@ -25,8 +25,14 @@
 #include "HttpDebugNames.h"
 #include "tscore/ink_base64.h"
 
+#define REMEMBER(e, r)                          \
+  {                                             \
+    this->remember(MakeSourceLocation(), e, r); \
+  }
+
 #define STATE_ENTER(state_name, event)                                                       \
   do {                                                                                       \
+    REMEMBER(event, this->recursion)                                                         \
     SsnDebug(this, "http2_cs", "[%" PRId64 "] [%s, %s]", this->connection_id(), #state_name, \
              HttpDebugNames::get_event_name(event));                                         \
   } while (0)
@@ -35,6 +41,7 @@
 
 #define HTTP2_SET_SESSION_HANDLER(handler) \
   do {                                     \
+    REMEMBER(NO_EVENT, this->recursion);   \
     this->session_handler = (handler);     \
   } while (0)
 
@@ -65,6 +72,7 @@ Http2ClientSession::destroy()
 {
   if (!in_destroy) {
     in_destroy = true;
+    REMEMBER(NO_EVENT, this->recursion)
     Http2SsnDebug("session destroy");
     // Let everyone know we are going down
     do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
@@ -87,6 +95,7 @@ Http2ClientSession::free()
     return;
   }
 
+  REMEMBER(NO_EVENT, this->recursion)
   Http2SsnDebug("session free");
 
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
@@ -253,6 +262,7 @@ Http2ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
 void
 Http2ClientSession::do_io_close(int alerrno)
 {
+  REMEMBER(NO_EVENT, this->recursion)
   Http2SsnDebug("session closed");
 
   ink_assert(this->mutex->thread_holding == this_ethread());
@@ -549,4 +559,10 @@ void
 Http2ClientSession::decrement_current_active_client_connections_stat()
 {
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT, this_ethread());
+}
+
+void
+Http2ClientSession::remember(const SourceLocation &location, int event, int reentrant)
+{
+  this->_history.push_back(location, event, reentrant);
 }
