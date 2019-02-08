@@ -53,6 +53,8 @@ using QUICFrameId = uint64_t;
 class QUICFrame
 {
 public:
+  constexpr static int MAX_INSTANCE_SIZE = 256;
+
   virtual ~QUICFrame() {}
   static QUICFrameType type(const uint8_t *buf);
 
@@ -849,6 +851,7 @@ public:
 private:
   // FIXME Actual number of frame types is several but some of the values are not sequential.
   QUICFrame *_reusable_frames[256] = {nullptr};
+  uint8_t _buf_for_fast_create[256 * QUICFrame::MAX_INSTANCE_SIZE];
   QUICUnknownFrame _unknown_frame;
 };
 

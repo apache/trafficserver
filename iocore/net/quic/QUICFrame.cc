@@ -2516,10 +2516,11 @@ QUICFrameFactory::fast_create(const uint8_t *buf, size_t len)
     return this->_unknown_frame;
   }
 
-  QUICFrame *frame = this->_reusable_frames[static_cast<ptrdiff_t>(QUICFrame::type(buf))];
+  ptrdiff_t type_index = static_cast<ptrdiff_t>(QUICFrame::type(buf));
+  QUICFrame *frame     = this->_reusable_frames[type_index];
 
   if (frame == nullptr) {
-    frame = QUICFrameFactory::create(static_cast<uint8_t *>(malloc(1024)), buf, len);
+    frame = QUICFrameFactory::create(this->_buf_for_fast_create + (type_index * QUICFrame::MAX_INSTANCE_SIZE), buf, len);
     if (frame != nullptr) {
       this->_reusable_frames[static_cast<ptrdiff_t>(QUICFrame::type(buf))] = frame;
     }
