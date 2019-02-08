@@ -3289,18 +3289,18 @@ CacheProcessor::find_by_path(const char *path, int len)
 
 namespace cache_bc
 {
-static size_t const HTTP_ALT_MARSHAL_SIZE = ROUND(sizeof(HTTPCacheAlt), HDR_PTR_SIZE); // current size.
+static size_t const HTTP_ALT_MARSHAL_SIZE = HdrHeapMarshalBlocks{ts::round_up(sizeof(HTTPCacheAlt))}; // current size.
 size_t
 HTTPInfo_v21::marshalled_length(void *data)
 {
-  size_t zret           = ROUND(sizeof(HTTPCacheAlt_v21), HDR_PTR_SIZE);
+  size_t zret           = HdrHeapMarshalBlocks{ts::round_up(sizeof(HTTPCacheAlt_v21))};
   HTTPCacheAlt_v21 *alt = static_cast<HTTPCacheAlt_v21 *>(data);
   HdrHeap *hdr;
 
   hdr = reinterpret_cast<HdrHeap *>(reinterpret_cast<char *>(alt) + reinterpret_cast<uintptr_t>(alt->m_request_hdr.m_heap));
-  zret += ROUND(hdr->unmarshal_size(), HDR_PTR_SIZE);
+  zret += HdrHeapMarshalBlocks{ts::round_up(hdr->unmarshal_size())};
   hdr = reinterpret_cast<HdrHeap *>(reinterpret_cast<char *>(alt) + reinterpret_cast<uintptr_t>(alt->m_response_hdr.m_heap));
-  zret += ROUND(hdr->unmarshal_size(), HDR_PTR_SIZE);
+  zret += HdrHeapMarshalBlocks{ts::round_up(hdr->unmarshal_size())};
   return zret;
 }
 
@@ -3363,7 +3363,7 @@ HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(char *&dst, char *&src, size_
   s_hdr =
     reinterpret_cast<HdrHeap_v23 *>(reinterpret_cast<char *>(s_alt) + reinterpret_cast<uintptr_t>(s_alt->m_request_hdr.m_heap));
   d_hdr    = reinterpret_cast<HdrHeap_v23 *>(dst);
-  hdr_size = ROUND(s_hdr->unmarshal_size(), HDR_PTR_SIZE);
+  hdr_size = HdrHeapMarshalBlocks{ts::round_up(s_hdr->unmarshal_size())};
   if (hdr_size > length) {
     return false;
   }
@@ -3375,7 +3375,7 @@ HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(char *&dst, char *&src, size_
   s_hdr =
     reinterpret_cast<HdrHeap_v23 *>(reinterpret_cast<char *>(s_alt) + reinterpret_cast<uintptr_t>(s_alt->m_response_hdr.m_heap));
   d_hdr    = reinterpret_cast<HdrHeap_v23 *>(dst);
-  hdr_size = ROUND(s_hdr->unmarshal_size(), HDR_PTR_SIZE);
+  hdr_size = HdrHeapMarshalBlocks{ts::round_up(s_hdr->unmarshal_size())};
   if (hdr_size > length) {
     return false;
   }

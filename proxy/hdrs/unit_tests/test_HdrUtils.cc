@@ -47,7 +47,7 @@ TEST_CASE("HdrUtils", "[proxy][hdrutils]")
   static constexpr std::string_view FOUR_TAG{"Four"};
   static constexpr std::string_view FIVE_TAG{"Five"};
 
-  HdrHeap *heap = new_HdrHeap(HDR_HEAP_DEFAULT_SIZE + 64);
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
   MIMEParser parser;
   char const *real_s = text.data();
   char const *real_e = text.data_end();

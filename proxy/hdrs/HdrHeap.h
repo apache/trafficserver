@@ -36,28 +36,21 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_assert.h"
 #include "tscore/Arena.h"
+#include "tscore/Scalar.h"
 #include "HdrToken.h"
 
 // Objects in the heap must currently be aligned to 8 byte boundaries,
 // so their (address & HDR_PTR_ALIGNMENT_MASK) == 0
 
-#define HDR_PTR_SIZE (sizeof(uint64_t))
-#define HDR_PTR_ALIGNMENT_MASK ((HDR_PTR_SIZE)-1L)
-
-#define ROUND(x, l) (((x) + ((l)-1L)) & ~((l)-1L))
+static constexpr size_t HDR_PTR_SIZE           = sizeof(uint64_t);
+static constexpr size_t HDR_PTR_ALIGNMENT_MASK = HDR_PTR_SIZE - 1L;
+using HdrHeapMarshalBlocks                     = ts::Scalar<HDR_PTR_SIZE>;
 
 // A many of the operations regarding read-only str
 //  heaps are hand unrolled in the code.  Chaning
 //  this value requires a full pass through HdrBuf.cc
 //  to fix the unrolled operations
-#define HDR_BUF_RONLY_HEAPS 3
-
-#define HDR_HEAP_DEFAULT_SIZE 2048
-#define HDR_STR_HEAP_DEFAULT_SIZE 2048
-
-#define HDR_MAX_ALLOC_SIZE (HDR_HEAP_DEFAULT_SIZE - sizeof(HdrHeap))
-#define HDR_HEAP_HDR_SIZE ROUND(sizeof(HdrHeap), HDR_PTR_SIZE)
-#define STR_HEAP_HDR_SIZE sizeof(HdrStrHeap)
+static constexpr unsigned HDR_BUF_RONLY_HEAPS = 3;
 
 class CoreUtils;
 class IOBufferBlock;
@@ -140,6 +133,8 @@ enum {
 class HdrStrHeap : public RefCountObj
 {
 public:
+  static constexpr int DEFAULT_SIZE = 2048;
+
   void free() override;
 
   char *allocate(int nbytes);
@@ -150,20 +145,22 @@ public:
   char *m_free_start;
   uint32_t m_free_size;
 
-  bool
-  contains(const char *str) const
-  {
-    return (str >= ((const char *)this + STR_HEAP_HDR_SIZE) && str < ((const char *)this + m_heap_size));
-  }
+  bool contains(const char *str) const;
 };
+
+inline bool
+HdrStrHeap::contains(const char *str) const
+{
+  return reinterpret_cast<char const *>(this + 1) <= str && str < reinterpret_cast<char const *>(this) + m_heap_size;
+}
 
 struct StrHeapDesc {
   StrHeapDesc() = default;
 
   Ptr<RefCountObj> m_ref_count_ptr;
-  char *m_heap_start = nullptr;
-  int32_t m_heap_len = 0;
-  bool m_locked      = false;
+  char const *m_heap_start = nullptr;
+  int32_t m_heap_len       = 0;
+  bool m_locked            = false;
 
   bool
   contains(const char *str) const
@@ -177,6 +174,8 @@ class HdrHeap
   friend class CoreUtils;
 
 public:
+  static constexpr int DEFAULT_SIZE = 2048;
+
   void init();
   inkcoreapi void destroy();
 
@@ -265,7 +264,7 @@ public:
   void coalesce_str_heaps(int incoming_size = 0);
   void evacuate_from_str_heaps(HdrStrHeap *new_heap);
   size_t required_space_for_evacuation();
-  bool attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *index);
+  bool attach_str_heap(char const *h_start, int h_len, RefCountObj *h_ref_obj, int *index);
 
   /** Struct to prevent garbage collection on heaps.
       This bumps the reference count to the heap containing the pointer
@@ -302,6 +301,9 @@ public:
   int m_lost_string_space;
 };
 
+static constexpr HdrHeapMarshalBlocks HDR_HEAP_HDR_SIZE{ts::round_up(sizeof(HdrHeap))};
+static constexpr size_t HDR_MAX_ALLOC_SIZE = HdrHeap::DEFAULT_SIZE - HDR_HEAP_HDR_SIZE;
+
 inline void
 HdrHeap::free_string(const char *s, int len)
 {
@@ -318,15 +320,15 @@ HdrHeap::unmarshal_size() const
 
 //
 struct MarshalXlate {
-  char *start;
-  char *end;
-  char *offset;
+  char const *start;
+  char const *end;
+  char const *offset;
   MarshalXlate() : start(nullptr), end(nullptr), offset(nullptr) {}
 };
 
 struct HeapCheck {
-  char *start;
-  char *end;
+  char const *start;
+  char const *end;
 };
 
 // Nasty macro to do string marshalling
@@ -479,6 +481,6 @@ HdrHeapSDKHandle::set(const HdrHeapSDKHandle *from)
 }
 
 HdrStrHeap *new_HdrStrHeap(int requested_size);
-inkcoreapi HdrHeap *new_HdrHeap(int size = HDR_HEAP_DEFAULT_SIZE);
+inkcoreapi HdrHeap *new_HdrHeap(int size = HdrHeap::DEFAULT_SIZE);
 
 void hdr_heap_test();
