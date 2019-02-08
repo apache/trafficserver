@@ -60,8 +60,8 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
   }
 
   auto formats = config["formats"];
-  for (auto it = formats.begin(); it != formats.end(); ++it) {
-    auto fmt = it->as<std::unique_ptr<LogFormat>>().release();
+  for (auto const &node : formats) {
+    auto fmt = node.as<std::unique_ptr<LogFormat>>().release();
     if (fmt->valid()) {
       cfg->format_list.add(fmt, false);
 
@@ -76,8 +76,8 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
   }
 
   auto filters = config["filters"];
-  for (auto it = filters.begin(); it != filters.end(); ++it) {
-    auto filter = it->as<std::unique_ptr<LogFilter>>().release();
+  for (auto const &node : filters) {
+    auto filter = node.as<std::unique_ptr<LogFilter>>().release();
 
     if (filter) {
       cfg->filter_list.add(filter, false);
@@ -90,8 +90,8 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
   }
 
   auto logs = config["logs"];
-  for (auto it = logs.begin(); it != logs.end(); ++it) {
-    auto obj = decodeLogObject(*it);
+  for (auto const &node : logs) {
+    auto obj = decodeLogObject(node);
     if (obj) {
       cfg->log_object_manager.manage_object(obj);
     }
@@ -108,7 +108,7 @@ std::set<std::string> valid_log_object_keys = {
 LogObject *
 YamlLogConfig::decodeLogObject(const YAML::Node &node)
 {
-  for (auto &&item : node) {
+  for (auto const &item : node) {
     if (std::none_of(valid_log_object_keys.begin(), valid_log_object_keys.end(),
                      [&item](std::string s) { return s == item.first.as<std::string>(); })) {
       throw YAML::ParserException(item.Mark(), "log: unsupported key '" + item.first.as<std::string>() + "'");
@@ -205,7 +205,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
     throw YAML::ParserException(filters.Mark(), "'filters' should be a list");
   }
 
-  for (auto &&filter : filters) {
+  for (auto const &filter : filters) {
     std::string filter_name = filter.as<std::string>().c_str();
     LogFilter *f            = cfg->filter_list.find_by_name(filter_name.c_str());
     if (!f) {
@@ -224,7 +224,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
     throw YAML::ParserException(collation_host_list.Mark(), "'collation_hosts' should be a list of collation_host objects");
   }
 
-  for (auto &&collation_host : collation_host_list) {
+  for (auto const &collation_host : collation_host_list) {
     if (!collation_host["host"]) {
       Warning("no collation 'host' name; cannot add this Collation host");
       continue;
@@ -250,7 +250,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
     }
 
     LogHost *prev = lh;
-    for (auto &&failover_host : collation_host["failover"]) {
+    for (auto const &failover_host : collation_host["failover"]) {
       auto failover_host_name = failover_host.as<std::string>();
       LogHost *flh            = new LogHost(logObject->get_full_filename(), logObject->get_signature());
       if (!flh->set_name_or_ipstr(failover_host_name.c_str())) {
