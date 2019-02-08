@@ -33,7 +33,7 @@
 class QUICIncomingFrameBuffer
 {
 public:
-  virtual QUICFrameSPtr pop() = 0;
+  virtual const QUICFrame *pop() = 0;
   /*
    * Becasue frames passed by FrameDispatcher is temporal, this clones a passed frame to ensure that we can use it later.
    */
@@ -44,8 +44,8 @@ public:
 protected:
   QUICOffset _recv_offset = 0;
 
-  std::queue<QUICFrameSPtr> _recv_buffer;
-  std::map<QUICOffset, QUICFrameSPtr> _out_of_order_queue;
+  std::queue<const QUICFrame *> _recv_buffer;
+  std::map<QUICOffset, const QUICFrame *> _out_of_order_queue;
 };
 
 class QUICIncomingStreamFrameBuffer : public QUICIncomingFrameBuffer, public QUICTransferProgressProvider
@@ -56,7 +56,7 @@ public:
   QUICIncomingStreamFrameBuffer() {}
   ~QUICIncomingStreamFrameBuffer();
 
-  QUICFrameSPtr pop() override;
+  const QUICFrame *pop() override;
   QUICConnectionErrorUPtr insert(const QUICFrame &frame) override;
   void clear() override;
 
@@ -81,7 +81,7 @@ public:
   QUICIncomingCryptoFrameBuffer() {}
   ~QUICIncomingCryptoFrameBuffer();
 
-  QUICFrameSPtr pop() override;
+  const QUICFrame *pop() override;
   QUICConnectionErrorUPtr insert(const QUICFrame &frame) override;
 
 private:

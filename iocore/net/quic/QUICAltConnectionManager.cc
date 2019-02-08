@@ -260,10 +260,11 @@ QUICAltConnectionManager::will_generate_frame(QUICEncryptionLevel level)
   return this->_need_advertise || !this->_retired_seq_nums.empty();
 }
 
-QUICFrameUPtr
-QUICAltConnectionManager::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICFrame *
+QUICAltConnectionManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
+                                         uint16_t maximum_frame_size)
 {
-  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+  QUICFrame *frame = nullptr;
   if (!this->_is_level_matched(level)) {
     return frame;
   }
@@ -272,13 +273,13 @@ QUICAltConnectionManager::generate_frame(QUICEncryptionLevel level, uint64_t con
     int count = this->_nids;
     for (int i = 0; i < count; ++i) {
       if (!this->_alt_quic_connection_ids_local[i].advertised) {
-        frame = QUICFrameFactory::create_new_connection_id_frame(this->_alt_quic_connection_ids_local[i].seq_num,
+        frame = QUICFrameFactory::create_new_connection_id_frame(buf, this->_alt_quic_connection_ids_local[i].seq_num,
                                                                  this->_alt_quic_connection_ids_local[i].id,
                                                                  this->_alt_quic_connection_ids_local[i].token);
 
         if (frame && frame->size() > maximum_frame_size) {
           // Cancel generating frame
-          frame = QUICFrameFactory::create_null_frame();
+          frame = nullptr;
         } else {
           this->_alt_quic_connection_ids_local[i].advertised = true;
         }
@@ -292,7 +293,7 @@ QUICAltConnectionManager::generate_frame(QUICEncryptionLevel level, uint64_t con
 
   if (!this->_retired_seq_nums.empty()) {
     if (auto s = this->_retired_seq_nums.front()) {
-      frame = QUICFrameFactory::create_retire_connection_id_frame(s);
+      frame = QUICFrameFactory::create_retire_connection_id_frame(buf, s);
       this->_records_retire_connection_id_frame(level, static_cast<const QUICRetireConnectionIdFrame &>(*frame));
       this->_retired_seq_nums.pop();
       return frame;

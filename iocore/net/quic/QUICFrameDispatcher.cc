@@ -45,24 +45,23 @@ QUICConnectionErrorUPtr
 QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &ack_only,
                                     bool &is_flow_controlled, bool *has_non_probing_frame)
 {
-  std::shared_ptr<const QUICFrame> frame(nullptr);
   uint16_t cursor               = 0;
   ack_only                      = true;
   is_flow_controlled            = false;
   QUICConnectionErrorUPtr error = nullptr;
 
   while (cursor < size) {
-    frame = this->_frame_factory.fast_create(payload + cursor, size - cursor);
-    if (frame == nullptr) {
+    const QUICFrame &frame = this->_frame_factory.fast_create(payload + cursor, size - cursor);
+    if (frame.type() == QUICFrameType::UNKNOWN) {
       QUICDebug("Failed to create a frame (%u bytes skipped)", size - cursor);
       break;
     }
     if (has_non_probing_frame) {
-      *has_non_probing_frame |= !frame->is_probing_frame();
+      *has_non_probing_frame |= !frame.is_probing_frame();
     }
-    cursor += frame->size();
+    cursor += frame.size();
 
-    QUICFrameType type = frame->type();
+    QUICFrameType type = frame.type();
 
     if (type == QUICFrameType::STREAM) {
       is_flow_controlled = true;
@@ -70,7 +69,7 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
 
     if (is_debug_tag_set(tag) && type != QUICFrameType::PADDING) {
       char msg[1024];
-      frame->debug_msg(msg, sizeof(msg));
+      frame.debug_msg(msg, sizeof(msg));
       QUICDebug("[RX] %s", msg);
     }
 
@@ -80,7 +79,7 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
 
     std::vector<QUICFrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
     for (auto h : handlers) {
-      error = h->handle_frame(level, *frame.get());
+      error = h->handle_frame(level, frame);
       // TODO: is there any case to continue this loop even if error?
       if (error != nullptr) {
         return error;

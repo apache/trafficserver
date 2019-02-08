@@ -126,10 +126,11 @@ QUICPathValidator::will_generate_frame(QUICEncryptionLevel level)
   return (this->_has_outgoing_challenge || this->_has_outgoing_response);
 }
 
-QUICFrameUPtr
-QUICPathValidator::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_quic_packet_size)
+QUICFrame *
+QUICPathValidator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
+                                  uint16_t maximum_quic_packet_size)
 {
-  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+  QUICFrame *frame = nullptr;
 
   // PATH_CHALLENGE and PATH_RESPONSE are not flow-controlled
   connection_credit = UINT64_MAX;
@@ -139,19 +140,19 @@ QUICPathValidator::generate_frame(QUICEncryptionLevel level, uint64_t connection
   }
 
   if (this->_has_outgoing_response) {
-    frame = QUICFrameFactory::create_path_response_frame(this->_incoming_challenge);
+    frame = QUICFrameFactory::create_path_response_frame(buf, this->_incoming_challenge);
     if (frame && frame->size() > maximum_quic_packet_size) {
       // Cancel generating frame
-      frame = QUICFrameFactory::create_null_frame();
+      frame = nullptr;
     } else {
       this->_has_outgoing_response = false;
     }
   } else if (this->_has_outgoing_challenge) {
-    frame = QUICFrameFactory::create_path_challenge_frame(this->_outgoing_challenge +
-                                                          (QUICPathChallengeFrame::DATA_LEN * (this->_has_outgoing_challenge - 1)));
+    frame = QUICFrameFactory::create_path_challenge_frame(
+      buf, this->_outgoing_challenge + (QUICPathChallengeFrame::DATA_LEN * (this->_has_outgoing_challenge - 1)));
     if (frame && frame->size() > maximum_quic_packet_size) {
       // Cancel generating frame
-      frame = QUICFrameFactory::create_null_frame();
+      frame = nullptr;
     } else {
       --this->_has_outgoing_challenge;
       ink_assert(this->_has_outgoing_challenge >= 0);
