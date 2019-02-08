@@ -1462,7 +1462,7 @@ QUICNetVConnection::_packetize_closing_frame()
   QUICFrame *frame = nullptr;
 
   // CONNECTION_CLOSE
-  uint8_t frame_buf[1024];
+  uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   frame = QUICFrameFactory::create_connection_close_frame(frame_buf, *this->_connection_error);
 
   uint32_t max_size  = this->maximum_quic_packet_size();
