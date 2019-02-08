@@ -44,19 +44,19 @@ template <intmax_t N, typename C, typename T> class Scalar;
 
 namespace detail
 {
-  // @internal - althought these conversion methods look bulky, in practice they compile down to
-  // very small amounts of code due to dead code elimination and that all of the conditions are
-  // compile time constants.
+  // @internal - although these conversion methods look bulky, in practice they compile down to
+  // very small amounts of code due to the conditions being compile time constant - the non-taken
+  // clauses are dead code and eliminated by the compiler.
 
   // The general case where neither N nor S are a multiple of the other seems a bit long but this
   // minimizes the risk of integer overflow.  I need to validate that under -O2 the compiler will
   // only do 1 division to get both the quotient and remainder for (n/N) and (n%N). In cases where
   // N,S are powers of 2 I have verified recent GNU compilers will optimize to bit operations.
 
-  /// Convert a count @a c that is scale @s S to scale @c N
-  template <intmax_t N, intmax_t S>
-  intmax_t
-  scale_conversion_round_up(intmax_t c)
+  /// Convert a count @a c that is scale @s S to the corresponding count for scale @c N
+  template <intmax_t N, intmax_t S, typename C>
+  C
+  scale_conversion_round_up(C c)
   {
     typedef std::ratio<N, S> R;
     if (N == S) {
@@ -71,9 +71,9 @@ namespace detail
   }
 
   /// Convert a count @a c that is scale @s S to scale @c N
-  template <intmax_t N, intmax_t S>
-  intmax_t
-  scale_conversion_round_down(intmax_t c)
+  template <intmax_t N, intmax_t S, typename C>
+  C
+  scale_conversion_round_down(C c)
   {
     typedef std::ratio<N, S> R;
     if (N == S) {
@@ -108,6 +108,10 @@ namespace detail
 
      Much of this is driven by the fact that the assignment operator, in some cases, can not be
      templated and therefore to have a nice interface for assignment this split is needed.
+
+     Note - the key point is the actual conversion is not done when the wrapper instance is created
+     but when the wrapper instance is assigned. That is what enables the conversion to be done in
+     the context of the destination, which is not otherwise possible.
    */
 
   // Unit value, to be rounded up.
@@ -891,6 +895,20 @@ auto
 Scalar<N, C, T>::minus(Counter n) const -> self
 {
   return {_n - n};
+}
+
+template <intmax_t N, typename C>
+C
+round_up(C value)
+{
+  return N * detail::scale_conversion_round_up<N, 1>(value);
+}
+
+template <intmax_t N, typename C>
+C
+round_down(C value)
+{
+  return N * detail::scale_conversion_round_down<N, 1>(value);
 }
 
 namespace detail

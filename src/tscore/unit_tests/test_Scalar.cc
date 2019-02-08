@@ -76,6 +76,24 @@ TEST_CASE("Scalar", "[libts][Scalar]")
   sz_b = sz; // Should be OK because SCALE_1 is an integer multiple of SCALE_2
   //  sz = sz_b; // Should not compile.
   REQUIRE(sz_b.count() == 119 * (SCALE_1 / SCALE_2));
+
+  // Test generic rounding.
+  REQUIRE(120 == ts::round_up<10>(118));
+  REQUIRE(120 == ts::round_up<10>(120));
+  REQUIRE(130 == ts::round_up<10>(121));
+
+  REQUIRE(110 == ts::round_down<10>(118));
+  REQUIRE(120 == ts::round_down<10>(120));
+  REQUIRE(120 == ts::round_down<10>(121));
+
+  REQUIRE(1200 == ts::round_up<100>(1108));
+  REQUIRE(1200 == ts::round_up<100>(1200));
+  REQUIRE(1300 == ts::round_up<100>(1201));
+
+  REQUIRE(100 == ts::round_down<100>(118));
+  REQUIRE(1100 == ts::round_down<100>(1108));
+  REQUIRE(1200 == ts::round_down<100>(1200));
+  REQUIRE(1200 == ts::round_down<100>(1208));
 }
 
 TEST_CASE("Scalar Factors", "[libts][Scalar][factors]")
