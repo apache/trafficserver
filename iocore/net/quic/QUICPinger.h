@@ -49,9 +49,6 @@ private:
   _encryption_level_filter() override
   {
     return {
-      QUICEncryptionLevel::INITIAL,
-      QUICEncryptionLevel::ZERO_RTT,
-      QUICEncryptionLevel::HANDSHAKE,
       QUICEncryptionLevel::ONE_RTT,
     };
   }

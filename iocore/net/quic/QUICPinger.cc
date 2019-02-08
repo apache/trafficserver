@@ -32,7 +32,9 @@ QUICPinger::request(QUICEncryptionLevel level)
 void
 QUICPinger::cancel(QUICEncryptionLevel level)
 {
-  --this->_need_to_fire[static_cast<int>(level)];
+  if (this->_need_to_fire[static_cast<int>(level)] > 0) {
+    --this->_need_to_fire[static_cast<int>(level)];
+  }
 }
 
 bool

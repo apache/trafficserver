@@ -1411,6 +1411,9 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       }
     }
   }
+  if (frame_count == 0) {
+    ack_only = false;
+  }
 
   this->_has_ack_only_packet_out = ack_only;
 
