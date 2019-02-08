@@ -1369,7 +1369,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   }
 
   bool ack_only = true;
-  uint8_t frame_instance_buffer[1024]; // This is for a frame instance but not serialized frame data
+  uint8_t frame_instance_buffer[QUICFrame::MAX_INSTANCE_SIZE]; // This is for a frame instance but not serialized frame data
   QUICFrame *frame = nullptr;
   for (auto g : this->_frame_generators) {
     while (g->will_generate_frame(level)) {
