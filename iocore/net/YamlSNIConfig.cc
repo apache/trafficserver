@@ -115,7 +115,7 @@ template <> struct convert<YamlSNIConfig::Item> {
     for (auto &&item : node) {
       if (std::none_of(valid_sni_config_keys.begin(), valid_sni_config_keys.end(),
                        [&item](std::string s) { return s == item.first.as<std::string>(); })) {
-        throw std::runtime_error("unsupported key " + item.first.as<std::string>());
+        throw YAML::ParserException(item.Mark(), "unsupported key " + item.first.as<std::string>());
       }
     }
 
@@ -133,7 +133,7 @@ template <> struct convert<YamlSNIConfig::Item> {
       auto value = node[TS_verify_client].as<std::string>();
       int level  = LEVEL_DESCRIPTOR.get(value);
       if (level < 0) {
-        throw std::runtime_error("unknown value \"" + value + "\"");
+        throw YAML::ParserException(node[TS_verify_client].Mark(), "unknown value \"" + value + "\"");
       }
       item.verify_client_level = static_cast<uint8_t>(level);
     }
@@ -169,7 +169,7 @@ template <> struct convert<YamlSNIConfig::Item> {
       auto value = node[TS_verify_server_policy].as<std::string>();
       int policy = POLICY_DESCRIPTOR.get(value);
       if (policy < 0) {
-        throw std::runtime_error("unknown value \"" + value + "\"");
+        throw YAML::ParserException(node[TS_verify_server_policy].Mark(), "unknown value \"" + value + "\"");
       }
       item.verify_server_policy = static_cast<YamlSNIConfig::Policy>(policy);
     }
@@ -178,7 +178,7 @@ template <> struct convert<YamlSNIConfig::Item> {
       auto value     = node[TS_verify_server_properties].as<std::string>();
       int properties = PROPERTIES_DESCRIPTOR.get(value);
       if (properties < 0) {
-        throw std::runtime_error("unknown value \"" + value + "\"");
+        throw YAML::ParserException(node[TS_verify_server_properties].Mark(), "unknown value \"" + value + "\"");
       }
       item.verify_server_properties = static_cast<YamlSNIConfig::Property>(properties);
     }
