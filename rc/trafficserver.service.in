@@ -21,6 +21,9 @@ After=syslog.target network.target
 
 [Service]
 Type=simple
+ExecStartPre=-/usr/bin/mkdir -p /@exp_runtimedir@
+ExecStartPre=/usr/bin/chown @pkgsysuser@:@pkgsysgroup@ /@exp_runtimedir@
+SuccessExitStatus=15
 EnvironmentFile=-/etc/sysconfig/trafficserver
 ExecStart=@exp_bindir@/traffic_manager $TM_DAEMON_ARGS
 Restart=on-failure
