@@ -54,7 +54,7 @@ public:
     void set_max_ack_delay(uint16_t delay);
 
     // Checks maximum_frame_size and return _ack_frame
-    std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> generate_ack_frame(uint16_t maximum_frame_size);
+    QUICAckFrame *generate_ack_frame(uint8_t *buf, uint16_t maximum_frame_size);
 
     // refresh state when frame lost
     void refresh_state();
@@ -64,7 +64,7 @@ public:
 
   private:
     uint64_t _calculate_delay();
-    std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _create_ack_frame();
+    QUICAckFrame *_create_ack_frame(uint8_t *buf);
 
     std::list<RecvdPacket> _packet_numbers;
     bool _available                         = false; // packet_number has data to sent
@@ -106,7 +106,8 @@ public:
   /*
    * Calls create directly.
    */
-  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
+  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
+                            uint16_t maximum_frame_size) override;
 
   QUICFrameId issue_frame_id();
   uint8_t ack_delay_exponent() const;
@@ -119,7 +120,7 @@ private:
    * Returns QUICAckFrame only if ACK frame is able to be sent.
    * Caller must send the ACK frame to the peer if it was returned.
    */
-  std::unique_ptr<QUICAckFrame, QUICFrameDeleterFunc> _create_ack_frame(QUICEncryptionLevel level);
+  QUICAckFrame *_create_ack_frame(uint8_t *buf, QUICEncryptionLevel level);
   uint64_t _calculate_delay(QUICEncryptionLevel level);
   std::vector<QUICEncryptionLevel>
   _encryption_level_filter() override

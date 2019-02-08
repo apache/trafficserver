@@ -29,11 +29,11 @@
 
 ClassAllocator<QUICFrameInformation> quicFrameInformationAllocator("quicFrameInformationAllocator");
 
-QUICFrameUPtr
-QUICFrameRetransmitter::create_retransmitted_frame(QUICEncryptionLevel level, uint16_t maximum_frame_size, QUICFrameId id,
-                                                   QUICFrameGenerator *owner)
+QUICFrame *
+QUICFrameRetransmitter::create_retransmitted_frame(uint8_t *buf, QUICEncryptionLevel level, uint16_t maximum_frame_size,
+                                                   QUICFrameId id, QUICFrameGenerator *owner)
 {
-  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+  QUICFrame *frame = nullptr;
   if (this->_lost_frame_info_queue.empty()) {
     return frame;
   }
@@ -52,10 +52,10 @@ QUICFrameRetransmitter::create_retransmitted_frame(QUICEncryptionLevel level, ui
 
     switch (info->type) {
     case QUICFrameType::STREAM:
-      frame = this->_create_stream_frame(info, maximum_frame_size, tmp_queue, id, owner);
+      frame = this->_create_stream_frame(buf, info, maximum_frame_size, tmp_queue, id, owner);
       break;
     case QUICFrameType::CRYPTO:
-      frame = this->_create_crypto_frame(info, maximum_frame_size, tmp_queue, id, owner);
+      frame = this->_create_crypto_frame(buf, info, maximum_frame_size, tmp_queue, id, owner);
       break;
     default:
       ink_assert("unknown frame type");
@@ -94,12 +94,12 @@ QUICFrameRetransmitter::_append_info_queue(std::deque<QUICFrameInformationUPtr> 
   }
 }
 
-QUICFrameUPtr
-QUICFrameRetransmitter::_create_stream_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
+QUICFrame *
+QUICFrameRetransmitter::_create_stream_frame(uint8_t *buf, QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
                                              std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id,
                                              QUICFrameGenerator *owner)
 {
-  QUICFrameUPtr frame          = QUICFrameFactory::create_null_frame();
+  QUICFrame *frame             = nullptr;
   StreamFrameInfo *stream_info = reinterpret_cast<StreamFrameInfo *>(info->data);
 
   static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
@@ -112,21 +112,21 @@ QUICFrameRetransmitter::_create_stream_frame(QUICFrameInformationUPtr &info, uin
   // These size calculation should not exist multiple places
   uint64_t maximum_data_size = maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD;
   if (maximum_data_size >= static_cast<uint64_t>(stream_info->block->size())) {
-    frame = QUICFrameFactory::create_stream_frame(stream_info->block, stream_info->stream_id, stream_info->offset,
+    frame = QUICFrameFactory::create_stream_frame(buf, stream_info->block, stream_info->stream_id, stream_info->offset,
                                                   stream_info->has_fin, true, true, id, owner);
     ink_assert(frame->size() <= maximum_frame_size);
     stream_info->block = nullptr;
   } else {
-    frame = QUICFrameFactory::create_stream_frame(stream_info->block, stream_info->stream_id, stream_info->offset, false, true,
+    frame = QUICFrameFactory::create_stream_frame(buf, stream_info->block, stream_info->stream_id, stream_info->offset, false, true,
                                                   true, id, owner);
-    QUICStreamFrame *stream_frame = static_cast<QUICStreamFrame *>(frame.get());
+    QUICStreamFrame *stream_frame = static_cast<QUICStreamFrame *>(frame);
     IOBufferBlock *block          = stream_frame->data();
     size_t over_length            = stream_frame->data_length() - maximum_data_size;
     block->_end                   = std::max(block->start(), block->_end - over_length);
     if (block->read_avail() == 0) {
       // no payload
       tmp_queue.push_back(std::move(info));
-      return QUICFrameFactory::create_null_frame();
+      return nullptr;
     }
     stream_info->block->consume(stream_frame->data_length());
     stream_info->offset += stream_frame->data_length();
@@ -139,20 +139,20 @@ QUICFrameRetransmitter::_create_stream_frame(QUICFrameInformationUPtr &info, uin
   return frame;
 }
 
-QUICFrameUPtr
-QUICFrameRetransmitter::_create_crypto_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
+QUICFrame *
+QUICFrameRetransmitter::_create_crypto_frame(uint8_t *buf, QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
                                              std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id,
                                              QUICFrameGenerator *owner)
 {
   CryptoFrameInfo *crypto_info = reinterpret_cast<CryptoFrameInfo *>(info->data);
   // FIXME: has_offset and has_length should be configurable.
-  auto frame = QUICFrameFactory::create_crypto_frame(crypto_info->block, crypto_info->offset, id, owner);
+  auto frame = QUICFrameFactory::create_crypto_frame(buf, crypto_info->block, crypto_info->offset, id, owner);
   if (frame->size() > maximum_frame_size) {
-    QUICCryptoFrame *crypto_frame = static_cast<QUICCryptoFrame *>(frame.get());
+    QUICCryptoFrame *crypto_frame = static_cast<QUICCryptoFrame *>(frame);
     if (crypto_frame->size() - crypto_frame->data_length() > maximum_frame_size) {
       // header length is larger than maximum_frame_size.
       tmp_queue.push_back(std::move(info));
-      return QUICFrameFactory::create_null_frame();
+      return nullptr;
     }
 
     IOBufferBlock *block = crypto_frame->data();
@@ -161,7 +161,7 @@ QUICFrameRetransmitter::_create_crypto_frame(QUICFrameInformationUPtr &info, uin
     if (block->read_avail() == 0) {
       // no payload
       tmp_queue.push_back(std::move(info));
-      return QUICFrameFactory::create_null_frame();
+      return nullptr;
     }
 
     crypto_info->block->consume(crypto_frame->data_length());

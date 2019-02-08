@@ -71,15 +71,15 @@ struct AckFrameInfo {
 class QUICFrameRetransmitter
 {
 public:
-  virtual QUICFrameUPtr create_retransmitted_frame(QUICEncryptionLevel level, uint16_t maximum_frame_size, QUICFrameId id = 0,
-                                                   QUICFrameGenerator *owner = nullptr);
+  virtual QUICFrame *create_retransmitted_frame(uint8_t *buf, QUICEncryptionLevel level, uint16_t maximum_frame_size,
+                                                QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   virtual void save_frame_info(QUICFrameInformationUPtr info);
 
 private:
-  QUICFrameUPtr _create_stream_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
-                                     std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id, QUICFrameGenerator *owner);
-  QUICFrameUPtr _create_crypto_frame(QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
-                                     std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id, QUICFrameGenerator *owner);
+  QUICFrame *_create_stream_frame(uint8_t *buf, QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
+                                  std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id, QUICFrameGenerator *owner);
+  QUICFrame *_create_crypto_frame(uint8_t *buf, QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
+                                  std::deque<QUICFrameInformationUPtr> &tmp_queue, QUICFrameId id, QUICFrameGenerator *owner);
 
   void _append_info_queue(std::deque<QUICFrameInformationUPtr> &tmp_queue);
 

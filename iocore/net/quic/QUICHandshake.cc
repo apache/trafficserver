@@ -346,19 +346,17 @@ QUICHandshake::will_generate_frame(QUICEncryptionLevel level)
   return this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level);
 }
 
-QUICFrameUPtr
-QUICHandshake::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICFrame *
+QUICHandshake::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
-  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
-
   // CRYPTO frame is not flow-controlled
-  connection_credit = UINT64_MAX;
+  // connection_credit = UINT64_MAX;
 
-  if (!this->_is_level_matched(level)) {
-    return frame;
+  QUICFrame *frame = nullptr;
+
+  if (this->_is_level_matched(level)) {
+    frame = this->_crypto_streams[static_cast<int>(level)].generate_frame(buf, level, connection_credit, maximum_frame_size);
   }
-
-  frame = this->_crypto_streams[static_cast<int>(level)].generate_frame(level, connection_credit, maximum_frame_size);
 
   return frame;
 }

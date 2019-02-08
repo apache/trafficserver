@@ -406,11 +406,10 @@ QUICStreamManager::will_generate_frame(QUICEncryptionLevel level)
   return false;
 }
 
-QUICFrameUPtr
-QUICStreamManager::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICFrame *
+QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
-  // FIXME We should pick a stream based on priority
-  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+  QUICFrame *frame = nullptr;
 
   if (!this->_is_level_matched(level)) {
     return frame;
@@ -421,15 +420,16 @@ QUICStreamManager::generate_frame(QUICEncryptionLevel level, uint64_t connection
     return frame;
   }
 
+  // FIXME We should pick a stream based on priority
   for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
-    frame = s->generate_frame(level, connection_credit, maximum_frame_size);
+    frame = s->generate_frame(buf, level, connection_credit, maximum_frame_size);
     if (frame) {
       break;
     }
   }
 
   if (frame != nullptr && frame->type() == QUICFrameType::STREAM) {
-    this->add_total_offset_sent(static_cast<QUICStreamFrame *>(frame.get())->data_length());
+    this->add_total_offset_sent(static_cast<QUICStreamFrame *>(frame)->data_length());
   }
 
   return frame;

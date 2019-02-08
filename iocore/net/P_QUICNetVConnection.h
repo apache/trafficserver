@@ -224,7 +224,8 @@ public:
 
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level) override;
-  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
+  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
+                            uint16_t maximum_frame_size) override;
 
   int in_closed_queue = 0;
 
@@ -309,7 +310,7 @@ private:
   Event *_ack_manager_periodic = nullptr;
 
   uint64_t _maximum_stream_frame_data_size();
-  void _store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrameUPtr &frame,
+  void _store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrame &frame,
                     std::vector<QUICFrameInfo> &frames);
   QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size);
   void _packetize_closing_frame();

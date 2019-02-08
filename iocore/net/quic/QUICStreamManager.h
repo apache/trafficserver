@@ -65,7 +65,8 @@ public:
 
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level) override;
-  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
+  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
+                            uint16_t maximum_frame_size) override;
 
 private:
   QUICStream *_find_stream(QUICStreamId id);

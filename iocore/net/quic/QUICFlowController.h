@@ -61,15 +61,16 @@ public:
 
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level) override;
-  QUICFrameUPtr generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override;
+  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
+                            uint16_t maximum_frame_size) override;
 
 protected:
   QUICFlowController(uint64_t initial_limit) : _limit(initial_limit) {}
-  virtual QUICFrameUPtr _create_frame() = 0;
+  virtual QUICFrame *_create_frame(uint8_t *buf) = 0;
 
-  QUICOffset _offset   = 0; //< Largest sent/received offset
-  QUICOffset _limit    = 0; //< Maximum amount of data to send/receive
-  QUICFrameUPtr _frame = QUICFrameFactory::create_null_frame();
+  QUICOffset _offset        = 0; //< Largest sent/received offset
+  QUICOffset _limit         = 0; //< Maximum amount of data to send/receive
+  bool _should_create_frame = false;
 };
 
 class QUICRemoteFlowController : public QUICFlowController
@@ -112,7 +113,7 @@ class QUICRemoteConnectionFlowController : public QUICRemoteFlowController
 {
 public:
   QUICRemoteConnectionFlowController(uint64_t initial_limit) : QUICRemoteFlowController(initial_limit) {}
-  QUICFrameUPtr _create_frame() override;
+  QUICFrame *_create_frame(uint8_t *buf) override;
 };
 
 class QUICLocalConnectionFlowController : public QUICLocalFlowController
@@ -122,7 +123,7 @@ public:
     : QUICLocalFlowController(rtt_provider, initial_limit)
   {
   }
-  QUICFrameUPtr _create_frame() override;
+  QUICFrame *_create_frame(uint8_t *buf) override;
 };
 
 class QUICRemoteStreamFlowController : public QUICRemoteFlowController
@@ -132,7 +133,7 @@ public:
     : QUICRemoteFlowController(initial_limit), _stream_id(stream_id)
   {
   }
-  QUICFrameUPtr _create_frame() override;
+  QUICFrame *_create_frame(uint8_t *buf) override;
 
 private:
   QUICStreamId _stream_id = 0;
@@ -145,7 +146,7 @@ public:
     : QUICLocalFlowController(rtt_provider, initial_limit), _stream_id(stream_id)
   {
   }
-  QUICFrameUPtr _create_frame() override;
+  QUICFrame *_create_frame(uint8_t *buf) override;
 
 private:
   QUICStreamId _stream_id = 0;

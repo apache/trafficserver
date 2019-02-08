@@ -1318,11 +1318,11 @@ QUICNetVConnection::_state_closing_send_packet()
 }
 
 void
-QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrameUPtr &frame,
+QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrame &frame,
                                  std::vector<QUICFrameInfo> &frames)
 {
   size_t l = 0;
-  frame->store(buf.get() + offset, &l, max_frame_size);
+  frame.store(buf.get() + offset, &l, max_frame_size);
 
   // frame should be stored because it's created with max_frame_size
   ink_assert(l != 0);
@@ -1332,11 +1332,11 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &
 
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
     char msg[1024];
-    frame->debug_msg(msg, sizeof(msg));
+    frame.debug_msg(msg, sizeof(msg));
     QUICConDebug("[TX] %s", msg);
   }
 
-  frames.emplace_back(frame->id(), frame->generated_by());
+  frames.emplace_back(frame.id(), frame.generated_by());
 }
 
 QUICPacketUPtr
@@ -1358,7 +1358,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   int frame_count    = 0;
   size_t len         = 0;
   ats_unique_buf buf = ats_unique_malloc(max_packet_size);
-  QUICFrameUPtr frame(nullptr, nullptr);
 
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   std::vector<QUICFrameInfo> frames;
@@ -1370,6 +1369,8 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   }
 
   bool ack_only = true;
+  uint8_t frame_instance_buffer[1024]; // This is for a frame instance but not serialized frame data
+  QUICFrame *frame = nullptr;
   for (auto g : this->_frame_generators) {
     while (g->will_generate_frame(level)) {
       // FIXME will_generate_frame should receive more parameters so we don't need extra checks
@@ -1381,7 +1382,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       }
 
       // Common block
-      frame = g->generate_frame(level, this->_remote_flow_controller->credit(), max_frame_size);
+      frame = g->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size);
       if (frame) {
         ++frame_count;
         probing |= frame->is_probing_frame();
@@ -1391,7 +1392,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
                       this->_remote_flow_controller->current_limit());
           ink_assert(ret == 0);
         }
-        this->_store_frame(buf, len, max_frame_size, frame, frames);
+        this->_store_frame(buf, len, max_frame_size, *frame, frames);
 
         // FIXME ACK frame should have priority
         if (frame->type() == QUICFrameType::STREAM) {
@@ -1405,6 +1406,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
           this->_pinger.cancel(level);
         }
 
+        frame->~QUICFrame();
       } else {
         // Move to next generator
         break;
@@ -1457,10 +1459,11 @@ QUICNetVConnection::_packetize_closing_frame()
     return;
   }
 
-  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+  QUICFrame *frame = nullptr;
 
   // CONNECTION_CLOSE
-  frame = QUICFrameFactory::create_connection_close_frame(*this->_connection_error);
+  uint8_t frame_buf[1024];
+  frame = QUICFrameFactory::create_connection_close_frame(frame_buf, *this->_connection_error);
 
   uint32_t max_size  = this->maximum_quic_packet_size();
   ats_unique_buf buf = ats_unique_malloc(max_size);
@@ -1468,7 +1471,7 @@ QUICNetVConnection::_packetize_closing_frame()
   size_t len              = 0;
   uint64_t max_frame_size = static_cast<uint64_t>(max_size);
   std::vector<QUICFrameInfo> frames;
-  this->_store_frame(buf, len, max_frame_size, frame, frames);
+  this->_store_frame(buf, len, max_frame_size, *frame, frames);
 
   QUICEncryptionLevel level = this->_hs_protocol->current_encryption_level();
   ink_assert(level != QUICEncryptionLevel::ZERO_RTT);
@@ -2149,10 +2152,10 @@ QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level)
   return !this->_is_resumption_token_sent;
 }
 
-QUICFrameUPtr
-QUICNetVConnection::generate_frame(QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICFrame *
+QUICNetVConnection::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
-  QUICFrameUPtr frame = QUICFrameFactory::create_null_frame();
+  QUICFrame *frame = nullptr;
 
   if (!this->_is_level_matched(level)) {
     return frame;
@@ -2164,13 +2167,13 @@ QUICNetVConnection::generate_frame(QUICEncryptionLevel level, uint64_t connectio
 
   // TODO Make expiration period configurable
   QUICResumptionToken token(this->get_remote_endpoint(), this->connection_id(), Thread::get_hrtime() + HRTIME_HOURS(24));
-  frame = QUICFrameFactory::create_new_token_frame(token, this->_issue_frame_id(), this);
+  frame = QUICFrameFactory::create_new_token_frame(buf, token, this->_issue_frame_id(), this);
   if (frame) {
     if (frame->size() < maximum_frame_size) {
       this->_is_resumption_token_sent = true;
     } else {
       // Cancel generating frame
-      frame = QUICFrameFactory::create_null_frame();
+      frame = nullptr;
     }
   }
 
