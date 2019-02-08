@@ -173,6 +173,9 @@ static int delay_listen_for_cache_p;
 // Keeps track if the server is in draining state, follows the proxy.node.config.draining metric
 bool ts_is_draining = false;
 
+// Flag to stop ssl handshakes during shutdown.
+extern bool stop_ssl_handshake;
+
 AppVersionInfo appVersionInfo; // Build info for this application
 
 static ArgumentDescription argument_descriptions[] = {
@@ -222,6 +225,8 @@ struct AutoStopCont : public Continuation {
   int
   mainEvent(int /* event */, Event * /* e */)
   {
+    stop_ssl_handshake = true;
+
     APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
     while (hook) {
       SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
