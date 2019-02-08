@@ -111,17 +111,17 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   for (auto &&item : node) {
     if (std::none_of(valid_log_object_keys.begin(), valid_log_object_keys.end(),
                      [&item](std::string s) { return s == item.first.as<std::string>(); })) {
-      throw std::runtime_error("log: unsupported key '" + item.first.as<std::string>() + "'");
+      throw YAML::ParserException(item.Mark(), "log: unsupported key '" + item.first.as<std::string>() + "'");
     }
   }
 
   if (!node["format"]) {
-    throw std::runtime_error("missing 'format' argument");
+    throw YAML::ParserException(node.Mark(), "missing 'format' argument");
   }
   std::string format = node["format"].as<std::string>();
 
   if (!node["filename"]) {
-    throw std::runtime_error("missing 'filename' argument");
+    throw YAML::ParserException(node.Mark(), "missing 'filename' argument");
   }
 
   std::string header;
@@ -155,7 +155,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
     auto value          = node["rolling_enabled"].as<std::string>();
     obj_rolling_enabled = ROLLING_MODE.get(value);
     if (obj_rolling_enabled < 0) {
-      throw std::runtime_error("unknown value " + value);
+      throw YAML::ParserException(node["rolling_enabled"].Mark(), "unknown value " + value);
     }
   }
   if (node["rolling_interval_sec"]) {
@@ -202,7 +202,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   }
 
   if (!filters.IsSequence()) {
-    throw std::runtime_error("'filters' should be a list");
+    throw YAML::ParserException(filters.Mark(), "'filters' should be a list");
   }
 
   for (auto &&filter : filters) {
@@ -221,7 +221,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   }
 
   if (!collation_host_list.IsSequence()) {
-    throw std::runtime_error("'collation_hosts' should be a list of collation_host objects");
+    throw YAML::ParserException(collation_host_list.Mark(), "'collation_hosts' should be a list of collation_host objects");
   }
 
   for (auto &&collation_host : collation_host_list) {
@@ -246,7 +246,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
 
     if (!collation_host["failover"].IsSequence()) {
       delete lh;
-      throw std::runtime_error("'failover' should be a list of host names");
+      throw YAML::ParserException(collation_host["failover"].Mark(), "'failover' should be a list of host names");
     }
 
     LogHost *prev = lh;
