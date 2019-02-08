@@ -156,7 +156,7 @@ APIHooks::is_empty() const
     maximum hook ID so the valid ids are 0..(N-1) in the standard C array style.
  */
 template <typename ID, ///< Type of hook ID
-          ID N         ///< Number of hooks
+          int N        ///< Number of hooks
           >
 class FeatureAPIHooks
 {
@@ -194,14 +194,14 @@ private:
   APIHooks m_hooks[N];
 };
 
-template <typename ID, ID N> FeatureAPIHooks<ID, N>::FeatureAPIHooks() : hooks_p(false) {}
+template <typename ID, int N> FeatureAPIHooks<ID, N>::FeatureAPIHooks() : hooks_p(false) {}
 
-template <typename ID, ID N> FeatureAPIHooks<ID, N>::~FeatureAPIHooks()
+template <typename ID, int N> FeatureAPIHooks<ID, N>::~FeatureAPIHooks()
 {
   this->clear();
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
 void
 FeatureAPIHooks<ID, N>::clear()
 {
@@ -211,7 +211,7 @@ FeatureAPIHooks<ID, N>::clear()
   hooks_p = false;
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
 void
 FeatureAPIHooks<ID, N>::prepend(ID id, INKContInternal *cont)
 {
@@ -221,7 +221,7 @@ FeatureAPIHooks<ID, N>::prepend(ID id, INKContInternal *cont)
   }
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
 void
 FeatureAPIHooks<ID, N>::append(ID id, INKContInternal *cont)
 {
@@ -231,14 +231,14 @@ FeatureAPIHooks<ID, N>::append(ID id, INKContInternal *cont)
   }
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
 APIHook *
 FeatureAPIHooks<ID, N>::get(ID id) const
 {
   return likely(is_valid(id)) ? m_hooks[id].get() : nullptr;
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
 void
 FeatureAPIHooks<ID, N>::invoke(ID id, int event, void *data)
 {
@@ -247,14 +247,14 @@ FeatureAPIHooks<ID, N>::invoke(ID id, int event, void *data)
   }
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
 bool
 FeatureAPIHooks<ID, N>::has_hooks() const
 {
   return hooks_p;
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
 bool
 FeatureAPIHooks<ID, N>::is_valid(ID id)
 {
@@ -265,22 +265,26 @@ class HttpAPIHooks : public FeatureAPIHooks<TSHttpHookID, TS_HTTP_LAST_HOOK>
 {
 };
 
-typedef enum {
-  TS_SSL_INTERNAL_FIRST_HOOK,
-  TS_VCONN_START_INTERNAL_HOOK = TS_SSL_INTERNAL_FIRST_HOOK,
-  TS_VCONN_CLOSE_INTERNAL_HOOK,
-  TS_SSL_CLIENT_HELLO_INTERNAL_HOOK,
-  TS_SSL_CERT_INTERNAL_HOOK,
-  TS_SSL_SERVERNAME_INTERNAL_HOOK,
-  TS_SSL_VERIFY_SERVER_INTERNAL_HOOK,
-  TS_SSL_VERIFY_CLIENT_INTERNAL_HOOK,
-  TS_SSL_SESSION_INTERNAL_HOOK,
-  TS_VCONN_OUTBOUND_START_INTERNAL_HOOK,
-  TS_VCONN_OUTBOUND_CLOSE_INTERNAL_HOOK,
-  TS_SSL_INTERNAL_LAST_HOOK
-} TSSslHookInternalID;
+class TSSslHookInternalID
+{
+public:
+  constexpr TSSslHookInternalID(TSHttpHookID id) : _id(id - TS_SSL_FIRST_HOOK) {}
 
-class SslAPIHooks : public FeatureAPIHooks<TSSslHookInternalID, TS_SSL_INTERNAL_LAST_HOOK>
+  constexpr operator int() const { return _id; }
+
+  static const int NUM = TS_SSL_LAST_HOOK - TS_SSL_FIRST_HOOK + 1;
+
+  constexpr bool
+  is_in_bounds() const
+  {
+    return (_id >= 0) && (_id < NUM);
+  }
+
+private:
+  const int _id;
+};
+
+class SslAPIHooks : public FeatureAPIHooks<TSSslHookInternalID, TSSslHookInternalID::NUM>
 {
 };
 
