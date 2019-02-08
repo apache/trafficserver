@@ -159,10 +159,17 @@ collection operation on the writeable string heap in the header heap by calling
 
 *  An external string heap is being added and all current read only string heap slots are used.
 
+The mechanism is simple in design - the size of the live string data in the current string heaps is
+calculated and a new heap is allocated sufficient to contain all existing strings, with additional
+space for new string data. Each heap object is required to provide a :code:`strings_length` method
+which returns the size of the live string data for that object (recursively as needed). The strings
+are copied to the new string heap, all of the previous string heaps are discarded, and the new heap
+becomes the writable string heap for the header heap.
+
 Each heap object is responsible for providing a :code:`move_strings` method which copies its strings
-to a new string heap. This is a source of pointer invalidation for other parts of the core and the
-plugin API. For the latter, insulating from such string movement is the point of the
-:c:type:`TSMLoc` type.
+to a new string heap, passed as an argument. This is a source of pointer invalidation for other
+parts of the core and the plugin API. For the latter, insulating from such string movement is the
+point of the :c:type:`TSMLoc` type.
 
 String Allocation
 -----------------

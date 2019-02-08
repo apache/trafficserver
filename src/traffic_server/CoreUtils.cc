@@ -469,10 +469,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   intptr_t ptr_heap_size = 0;
   intptr_t str_size      = 0;
   intptr_t str_heaps     = 0;
-  std::vector<struct MarshalXlate> ptr_xlation(2);
-  // MarshalXlate static_table[2];
-  // MarshalXlate* ptr_xlation = static_table;
-  intptr_t used;
+  std::vector<MarshalXlate> ptr_xlation(2);
   intptr_t i;
   intptr_t copy_size;
 
@@ -544,7 +541,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   swizzle_heap->m_ronly_heap[0].m_heap_start          = (char *)(intptr_t)swizzle_heap->m_size; // offset
   swizzle_heap->m_ronly_heap[0].m_ref_count_ptr.m_ptr = nullptr;
 
-  for (int i = 1; i < HDR_BUF_RONLY_HEAPS; i++) {
+  for (unsigned i = 1; i < HDR_BUF_RONLY_HEAPS; ++i) {
     swizzle_heap->m_ronly_heap[i].m_heap_start = nullptr;
   }
 
@@ -650,10 +647,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   }
 
   // Add up the total bytes used
-  used = ptr_heap_size + str_size + HDR_HEAP_HDR_SIZE;
-  used = ROUND(used, HDR_PTR_SIZE);
-
-  return used;
+  return HdrHeapMarshalBlocks{ts::round_up(ptr_heap_size + str_size + HDR_HEAP_HDR_SIZE)};
 
 Failed:
   swizzle_heap->m_magic = HDR_BUF_MAGIC_CORRUPT;
