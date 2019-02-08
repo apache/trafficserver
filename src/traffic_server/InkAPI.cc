@@ -4696,8 +4696,8 @@ TSHttpHookAdd(TSHttpHookID id, TSCont contp)
 
   icontp = reinterpret_cast<INKContInternal *>(contp);
 
-  if (id >= TS_SSL_FIRST_HOOK && id <= TS_SSL_LAST_HOOK) {
-    TSSslHookInternalID internalId = static_cast<TSSslHookInternalID>(id - TS_SSL_FIRST_HOOK);
+  TSSslHookInternalID internalId{id};
+  if (internalId.is_in_bounds()) {
     ssl_hooks->append(internalId, icontp);
   } else { // Follow through the regular HTTP hook framework
     http_global_hooks->append(id, icontp);
