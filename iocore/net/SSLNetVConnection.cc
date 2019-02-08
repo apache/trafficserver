@@ -73,6 +73,8 @@ void SSL_set0_rbio(SSL *ssl, BIO *rbio);
 
 ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
 
+bool stop_ssl_handshake = false;
+
 namespace
 {
 /// Callback to get two locks.
@@ -937,9 +939,14 @@ SSLNetVConnection::free(EThread *t)
     THREAD_FREE(this, sslNetVCAllocator, t);
   }
 }
+
 int
 SSLNetVConnection::sslStartHandShake(int event, int &err)
 {
+  if (stop_ssl_handshake) {
+    Debug("ssl", "Stopping handshake due to server shutting down.");
+    return EVENT_ERROR;
+  }
   if (sslHandshakeBeginTime == 0) {
     sslHandshakeBeginTime = Thread::get_hrtime();
     // net_activity will not be triggered until after the handshake
