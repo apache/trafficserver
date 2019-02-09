@@ -88,6 +88,11 @@ RemapPlugins::run_single_remap()
   Debug("url_rewrite", "running single remap rule id %d for the %d%s time", map->map_id, _cur,
         _cur == 1 ? "st" : _cur == 2 ? "nd" : _cur == 3 ? "rd" : "th");
 
+  if (0 == _cur) {
+    Debug("url_rewrite", "setting the remapped url by copying from mapping rule");
+    url_rewrite_remap_request(_s->url_map, _request_url, _s->hdr_info.client_request.method_get_wksidx());
+  }
+
   // There might not be a plugin if we are a regular non-plugin map rule. In that case, we will fall through
   // and do the default mapping and then stop.
   if (plugin) {
@@ -109,12 +114,6 @@ RemapPlugins::run_single_remap()
     } else {
       Debug("url_rewrite", "completed single remap, attempting another via immediate callback");
       zret = false; // not done yet.
-    }
-
-    // If the chain is finished, and the URL hasn't been rewritten, do the rule remap.
-    if (zret && 0 == _rewritten) {
-      Debug("url_rewrite", "plugins did not change host, port or path, copying from mapping rule");
-      url_rewrite_remap_request(_s->url_map, _request_url, _s->hdr_info.client_request.method_get_wksidx());
     }
   }
   return zret;
