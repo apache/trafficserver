@@ -40,7 +40,6 @@
 #define MAX_LOST_STR_SPACE 1024
 
 Allocator hdrHeapAllocator("hdrHeap", HDR_HEAP_DEFAULT_SIZE);
-static HdrHeap proto_heap;
 
 Allocator strHeapAllocator("hdrStrHeap", HDR_STR_HEAP_DEFAULT_SIZE);
 
@@ -121,11 +120,6 @@ new_HdrHeap(int size)
   } else {
     h = (HdrHeap *)ats_malloc(size);
   }
-
-  //    Debug("hdrs", "Allocated header heap in size %d", size);
-
-  // Patch virtual function table ptr
-  *((void **)h) = *((void **)&proto_heap);
 
   h->m_size = size;
   h->init();
