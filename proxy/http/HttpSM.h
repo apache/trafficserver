@@ -479,7 +479,7 @@ protected:
   void do_api_callout_internal();
   void do_redirect();
   void redirect_request(const char *redirect_url, const int redirect_len);
-  void do_drain_request_body();
+  void do_drain_request_body(HTTPHdr &response);
 
   void wait_for_full_body();
 
