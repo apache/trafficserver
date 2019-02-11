@@ -530,7 +530,6 @@ public:
   typedef struct _RedirectInfo {
     bool redirect_in_process = false;
     URL original_url;
-    URL redirect_url;
 
     _RedirectInfo() {}
   } RedirectInfo;
@@ -882,7 +881,6 @@ public:
       cache_info.object_store.destroy();
       cache_info.transform_store.destroy();
       redirect_info.original_url.destroy();
-      redirect_info.redirect_url.destroy();
 
       url_map.clear();
       arena.reset();

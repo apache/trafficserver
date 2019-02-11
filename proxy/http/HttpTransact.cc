@@ -7551,13 +7551,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   //
   // notice that currently, based_request IS client_request
   if (base_request == &s->hdr_info.client_request) {
-    if (s->redirect_info.redirect_in_process) {
-      // this is for auto redirect
-      URL *r_url = &s->redirect_info.redirect_url;
-
-      ink_assert(r_url->valid());
-      base_request->url_set(r_url);
-    } else {
+    if (!s->redirect_info.redirect_in_process) {
       // this is for multiple cache lookup
       URL *o_url = &s->cache_info.original_url;
 
