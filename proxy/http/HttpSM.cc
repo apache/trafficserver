@@ -5592,7 +5592,7 @@ HttpSM::setup_transform_to_server_transfer()
 }
 
 void
-HttpSM::do_drain_request_body()
+HttpSM::do_drain_request_body(HTTPHdr &response)
 {
   int64_t content_length = t_state.hdr_info.client_request.get_content_length();
   int64_t avail          = ua_buffer_reader->read_avail();
@@ -5617,7 +5617,7 @@ HttpSM::do_drain_request_body()
 
 close_connection:
   t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
-  t_state.hdr_info.client_response.value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
+  response.value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
 }
 
 void
@@ -7417,11 +7417,10 @@ HttpSM::set_next_state()
     release_server_session(true);
     t_state.source = HttpTransact::SOURCE_CACHE;
 
-    do_drain_request_body();
-
     if (transform_info.vc) {
       ink_assert(t_state.hdr_info.client_response.valid() == 0);
       ink_assert((t_state.hdr_info.transform_response.valid() ? true : false) == true);
+      do_drain_request_body(t_state.hdr_info.transform_response);
       t_state.hdr_info.cache_response.create(HTTP_TYPE_RESPONSE);
       t_state.hdr_info.cache_response.copy(&t_state.hdr_info.transform_response);
 
@@ -7430,6 +7429,7 @@ HttpSM::set_next_state()
       tunnel.tunnel_run(p);
     } else {
       ink_assert((t_state.hdr_info.client_response.valid() ? true : false) == true);
+      do_drain_request_body(t_state.hdr_info.client_response);
       t_state.hdr_info.cache_response.create(HTTP_TYPE_RESPONSE);
       t_state.hdr_info.cache_response.copy(&t_state.hdr_info.client_response);
 
