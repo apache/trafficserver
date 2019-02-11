@@ -3,9 +3,11 @@ Changes with Apache Traffic Server 8.0.3
   #4279 - Ensure NOFILES ulimit is set high
   #4297 - Don't update records.config when other configs are reloaded
   #4311 - Fix typo of the nofiles ulimit to a sane number
+  #4420 - Removes this unused old/duplicated define
   #4528 - Removes ref-counting from background_fetch
   #4550 - Doc: Describe parent weight and format
   #4552 - Print error message for unimplemented commands
+  #4560 - Add the TLSv1_3 setting to disable TLSv1_3
   #4577 - Doc: change code snippet highlighting scheme
   #4581 - Doc: Add missing overrides and sort
   #4587 - Remove unused code
@@ -25,12 +27,18 @@ Changes with Apache Traffic Server 8.0.3
   #4732 - Make H2 stream counters atomic
   #4759 - Fixes Clang-Analyzer issue of H2 Dependence Tree
   #4773 - Calls SSL child config callback after cert is loaded for both key parts
+  #4774 - Fixed clang 5.0.0 issue with brace initialization
   #4780 - Don't allow the old body to be used when refreshing
   #4792 - Validates return values from TSHttpTxnClientAddrGet()
   #4807 - Allows to run make clean multiple times
+  #4810 - Fixes unmatched port when looking up HostDB
+  #4811 - Changes the string_view::length to ::size
+  #4820 - Eliminates expensive librecords and malloc on drain
   #4842 - Doc: minor records.config cleaning
   #4845 - Initialize redir_len, compiler warnings
   #4853 - Various fixes and improvements to background_fetch
   #4885 - Content Length can be trusted when the origin server returns a 304
   #4892 - Use one setting for H2 consistently for header size limit on H2 connections
+  #4918 - Runroot: make traffic_top use runroot
+  #4936 - Mark H2 connection inactive only if it is NOT shutting down
   #4943 - Fix to allow runroot to override the configuration directory
