@@ -7727,13 +7727,8 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   t_state.redirect_info.redirect_in_process = true;
 
   // set the passed in location url and parse it
-  URL &redirectUrl = t_state.redirect_info.redirect_url;
-  if (!redirectUrl.valid()) {
-    redirectUrl.create(nullptr);
-  }
-
-  // reset the path from previous redirects (if any)
-  t_state.redirect_info.redirect_url.path_set(nullptr, 0);
+  URL redirectUrl;
+  redirectUrl.create(nullptr);
 
   redirectUrl.parse(arg_redirect_url, arg_redirect_len);
   {
@@ -7762,6 +7757,8 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   }
   // copy the redirect url to the client url
   clientUrl.copy(&redirectUrl);
+
+  redirectUrl.destroy();
 
   //(bug 2540703) Clear the previous response if we will attempt the redirect
   if (t_state.hdr_info.client_response.valid()) {
