@@ -80,7 +80,8 @@ Configuration
 =============
 
 This module acts as remap plugin of Traffic Server, so we should realize 'do_remap' or 'do_os_response' function in each
-lua script. We can write this in remap.config:
+lua script. The path referencing a file with the lua script can be relative to the configuration directory or an absolute
+path. We can write this in remap.config:
 
 ::
 
