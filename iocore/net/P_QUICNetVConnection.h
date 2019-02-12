@@ -315,10 +315,10 @@ private:
                     std::vector<QUICFrameInfo> &frames);
   QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size);
   void _packetize_closing_frame();
-  QUICPacketUPtr _build_packet(ats_unique_buf buf, size_t len, bool retransmittable, bool probing,
+  QUICPacketUPtr _build_packet(ats_unique_buf buf, size_t len, bool retransmittable, bool probing, bool crypto,
                                std::vector<QUICFrameInfo> &frames, QUICPacketType type = QUICPacketType::UNINITIALIZED);
   QUICPacketUPtr _build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool retransmittable, bool probing,
-                               std::vector<QUICFrameInfo> &frames);
+                               bool crypto, std::vector<QUICFrameInfo> &frames);
 
   QUICConnectionErrorUPtr _recv_and_ack(QUICPacket &packet, bool *has_non_probing_frame = nullptr);
 
