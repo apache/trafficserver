@@ -996,7 +996,10 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     shutdown_state      = HTTP2_SHUTDOWN_IN_PROGRESS;
     // [RFC 7540] 6.8.  GOAWAY
     // ..., the server can send another GOAWAY frame with an updated last stream identifier
-    send_goaway_frame(latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+    if (shutdown_reason == Http2ErrorCode::HTTP2_ERROR_MAX) {
+      shutdown_reason = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+    }
+    send_goaway_frame(latest_streamid_in, shutdown_reason);
     // Stop creating new streams
     SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
     this->ua_session->set_half_close_local_flag(true);
@@ -1693,6 +1696,7 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_STREAM_ERRORS_COUNT, this_ethread());
+    ++stream_error_count;
   }
 
   Http2Frame rst_stream(HTTP2_FRAME_TYPE_RST_STREAM, id, 0);

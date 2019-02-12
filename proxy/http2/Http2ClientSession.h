@@ -44,6 +44,11 @@
 #define HTTP2_SESSION_EVENT_SHUTDOWN_INIT (HTTP2_SESSION_EVENTS_START + 5)
 #define HTTP2_SESSION_EVENT_SHUTDOWN_CONT (HTTP2_SESSION_EVENTS_START + 6)
 
+enum class Http2SessionCod : int {
+  NOT_PROVIDED,
+  HIGH_ERROR_RATE,
+};
+
 size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
 
 // To support Upgrade: h2c
@@ -342,11 +347,12 @@ private:
   // For Upgrade: h2c
   Http2UpgradeContext upgrade_context;
 
-  VIO *write_vio        = nullptr;
-  int dying_event       = 0;
-  bool kill_me          = false;
-  bool half_close_local = false;
-  int recursion         = 0;
+  VIO *write_vio                 = nullptr;
+  int dying_event                = 0;
+  bool kill_me                   = false;
+  Http2SessionCod cause_of_death = Http2SessionCod::NOT_PROVIDED;
+  bool half_close_local          = false;
+  int recursion                  = 0;
 
   std::unordered_set<std::string> h2_pushed_urls;
 };

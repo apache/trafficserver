@@ -62,6 +62,7 @@ static const char *const HTTP2_STAT_SESSION_DIE_ACTIVE_NAME               = "pro
 static const char *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME             = "proxy.process.http2.session_die_inactive";
 static const char *const HTTP2_STAT_SESSION_DIE_EOS_NAME                  = "proxy.process.http2.session_die_eos";
 static const char *const HTTP2_STAT_SESSION_DIE_ERROR_NAME                = "proxy.process.http2.session_die_error";
+static const char *const HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE_NAME      = "proxy.process.http2.session_die_high_error_rate";
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -731,6 +732,7 @@ uint32_t Http2::no_activity_timeout_in     = 120;
 uint32_t Http2::active_timeout_in          = 0;
 uint32_t Http2::push_diary_size            = 256;
 uint32_t Http2::zombie_timeout_in          = 0;
+float Http2::stream_error_rate_threshold   = 0.1;
 
 void
 Http2::init()
@@ -748,6 +750,7 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(active_timeout_in, "proxy.config.http2.active_timeout_in");
   REC_EstablishStaticConfigInt32U(push_diary_size, "proxy.config.http2.push_diary_size");
   REC_EstablishStaticConfigInt32U(zombie_timeout_in, "proxy.config.http2.zombie_debug_timeout_in");
+  REC_EstablishStaticConfigFloat(stream_error_rate_threshold, "proxy.config.http2.stream_error_rate_threshold");
 
   // If any settings is broken, ATS should not start
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams_in}));
@@ -796,6 +799,8 @@ Http2::init()
                      static_cast<int>(HTTP2_STAT_SESSION_DIE_INACTIVE), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_ERROR_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_SESSION_DIE_ERROR), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE), RecRawStatSyncSum);
 }
 
 #if TS_HAS_TESTS

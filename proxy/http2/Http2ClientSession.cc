@@ -103,25 +103,37 @@ Http2ClientSession::free()
   // Update stats on how we died.  May want to eliminate this.  Was useful for
   // tracking down which cases we were having problems cleaning up.  But for general
   // use probably not worth the effort
-  switch (dying_event) {
-  case VC_EVENT_NONE:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_DEFAULT, this_ethread());
-    break;
-  case VC_EVENT_ACTIVE_TIMEOUT:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ACTIVE, this_ethread());
-    break;
-  case VC_EVENT_INACTIVITY_TIMEOUT:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_INACTIVE, this_ethread());
-    break;
-  case VC_EVENT_ERROR:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ERROR, this_ethread());
-    break;
-  case VC_EVENT_EOS:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_EOS, this_ethread());
-    break;
-  default:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_OTHER, this_ethread());
-    break;
+  if (cause_of_death != Http2SessionCod::NOT_PROVIDED) {
+    switch (cause_of_death) {
+    case Http2SessionCod::HIGH_ERROR_RATE:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE, this_ethread());
+      break;
+    case Http2SessionCod::NOT_PROVIDED:
+      // Can't happen but this case is here to not have default case.
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_OTHER, this_ethread());
+      break;
+    }
+  } else {
+    switch (dying_event) {
+    case VC_EVENT_NONE:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_DEFAULT, this_ethread());
+      break;
+    case VC_EVENT_ACTIVE_TIMEOUT:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ACTIVE, this_ethread());
+      break;
+    case VC_EVENT_INACTIVITY_TIMEOUT:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_INACTIVE, this_ethread());
+      break;
+    case VC_EVENT_ERROR:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ERROR, this_ethread());
+      break;
+    case VC_EVENT_EOS:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_EOS, this_ethread());
+      break;
+    default:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_OTHER, this_ethread());
+      break;
+    }
   }
 
   ink_release_assert(this->client_vc == nullptr);
@@ -360,13 +372,25 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     break;
   }
 
-  if (!this->is_draining()) {
+  if (!this->is_draining() && this->connection_state.get_shutdown_reason() == Http2ErrorCode::HTTP2_ERROR_MAX) {
     this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NONE);
   }
 
-  // For a case we already checked Connection header and it didn't exist
-  if (this->is_draining() && this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
-    this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
+  if (this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
+    if (this->is_draining()) { // For a case we already checked Connection header and it didn't exist
+      Http2SsnDebug("Preparing for graceful shutdown because of draining state");
+      this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
+    } else if (this->connection_state.get_stream_error_rate() >
+               Http2::stream_error_rate_threshold) { // For a case many stream errors happened
+      ip_port_text_buffer ipb;
+      const char *client_ip = ats_ip_ntop(get_client_addr(), ipb, sizeof(ipb));
+      Error("HTTP/2 session error client_ip=%s session_id=%" PRId64
+            " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
+            client_ip, connection_id(), this->connection_state.get_stream_error_rate(), Http2::stream_error_rate_threshold);
+      Http2SsnDebug("Preparing for graceful shutdown because of a high stream error rate");
+      cause_of_death = Http2SessionCod::HIGH_ERROR_RATE;
+      this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM);
+    }
   }
 
   if (this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NOT_INITIATED) {
