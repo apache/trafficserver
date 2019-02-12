@@ -76,7 +76,7 @@ dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
 tr = Test.AddTestRun("bar.com cert")
 tr.Setup.Copy("ssl/signer.pem")
 tr.Setup.Copy("ssl/signer2.pem")
-tr.Processes.Default.Command = "curl -v --cacert signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl -v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
@@ -84,20 +84,20 @@ tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Varia
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=bar.com", "Cert should contain bar.com")
-tr.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=foo.com", "Cert should not contain foo.com")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression(" HTTP/2 404", "Should make an exchange")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN=bar.com", "Cert should contain bar.com")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Cert should not contain foo.com")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
 
 # Should receive a foo.com cert
 tr2 = Test.AddTestRun("foo.com cert")
-tr2.Processes.Default.Command = "curl -v --cacert signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr2.Processes.Default.Command = "curl -v --cacert ./signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=foo.com", "Cert should contain foo.com")
-tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=bar.com", "Cert should not contain bar.com")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression(" HTTP/2 404", "Should make an exchange")
+tr2.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "Cert should contain foo.com")
+tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=bar.com", "Cert should not contain bar.com")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
 
 # Should receive random.server.com
 tr2 = Test.AddTestRun("random.server.com cert")
@@ -106,20 +106,20 @@ tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=random.server.com", "Cert should contain random.server.com")
-tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=foo.com", "Cert should not contain foo.com")
-tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=bar.com", "Cert should not contain bar.com")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression(" HTTP/2 404", "Should make an exchange")
+tr2.Processes.Default.Streams.All += Testers.ContainsExpression("CN=random.server.com", "Cert should contain random.server.com")
+tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Cert should not contain foo.com")
+tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=bar.com", "Cert should not contain bar.com")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
 
 # No SNI match should match specific IP address, foo.com
 # SNI name and returned cert name will not match, so must use -k to avoid cert verification
 tr2 = Test.AddTestRun("Bad SNI")
-tr2.Processes.Default.Command = "curl -v -k --cacert signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(ts.Variables.ssl_port)
+tr2.Processes.Default.Command = "curl -v -k --cacert ./signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr2.Processes.Default.Streams.All += Testers.ContainsExpression(" CN=foo.com", "Cert should contain foo.com")
-tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(" CN=bar.com", "Cert should not contain bar.com")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression(" HTTP/2 404", "Should make an exchange")
+tr2.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "Cert should contain foo.com")
+tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=bar.com", "Cert should not contain bar.com")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
 
