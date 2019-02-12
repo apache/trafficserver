@@ -21,15 +21,16 @@
 
 #include <ts/ts.h>
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
-#include <stdbool.h>
 #include <getopt.h>
 #include <limits.h>
-#include <sys/types.h>
+#include <stdatomic.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 #ifdef HAVE_PCRE_PCRE_H
@@ -67,7 +68,7 @@ typedef struct invalidate_t {
 } invalidate_t;
 
 typedef struct {
-  invalidate_t *invalidate_list;
+  _Atomic(invalidate_t *) invalidate_list;
   char *config_file;
   time_t last_load;
   TSTextLogObject log;
@@ -343,39 +344,36 @@ free_handler(TSCont cont, TSEvent event, void *edata)
 static int
 config_handler(TSCont cont, TSEvent event, void *edata)
 {
-  plugin_state_t *pstate;
-  invalidate_t *i, *iptr;
-  TSCont free_cont;
-  bool updated;
-  TSMutex mutex;
-
-  mutex = TSContMutexGet(cont);
-  TSMutexLock(mutex);
+  // config_handler's mutex is already locked for this function.
 
   TSDebug(LOG_PREFIX, "In config Handler");
-  pstate = (plugin_state_t *)TSContDataGet(cont);
-  i      = copy_config(pstate->invalidate_list);
+  plugin_state_t *const pstate = (plugin_state_t *)TSContDataGet(cont);
 
-  updated = prune_config(&i);
-  updated = load_config(pstate, &i) || updated;
+  // not necessary to atomically load listold
+  invalidate_t *listold = pstate->invalidate_list;
+  invalidate_t *listnew = copy_config(listold);
+
+  bool const pruned = prune_config(&listnew);
+  bool const loaded = load_config(pstate, &listnew);
+
+  bool const updated = pruned || loaded;
 
   if (updated) {
-    list_config(pstate, i);
-    iptr = __sync_val_compare_and_swap(&(pstate->invalidate_list), pstate->invalidate_list, i);
+    atomic_store(&(pstate->invalidate_list), listnew);
+    list_config(pstate, listnew);
 
-    if (iptr) {
-      free_cont = TSContCreate(free_handler, TSMutexCreate());
-      TSContDataSet(free_cont, (void *)iptr);
+    // delay deletion of the now defunct list
+    if (listold) {
+      TSCont const free_cont = TSContCreate(free_handler, TSMutexCreate());
+      TSContDataSet(free_cont, (void *)listold);
       TSContScheduleOnPool(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
     }
   } else {
     TSDebug(LOG_PREFIX, "No Changes");
-    if (i) {
-      free_invalidate_t_list(i);
+    if (listnew) { // listnew was never active in this case
+      free_invalidate_t_list(listnew);
     }
   }
-
-  TSMutexUnlock(mutex);
 
   // Don't reschedule for TS_EVENT_MGMT_UPDATE
   if (event == TS_EVENT_TIMEOUT) {
@@ -408,7 +406,6 @@ main_handler(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txn = (TSHttpTxn)edata;
   int status;
-  invalidate_t *iptr;
   plugin_state_t *pstate;
 
   time_t date = 0, now = 0;
@@ -419,8 +416,8 @@ main_handler(TSCont cont, TSEvent event, void *edata)
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     if (TSHttpTxnCacheLookupStatusGet(txn, &status) == TS_SUCCESS) {
       if (status == TS_CACHE_LOOKUP_HIT_FRESH) {
-        pstate = (plugin_state_t *)TSContDataGet(cont);
-        iptr   = pstate->invalidate_list;
+        pstate             = (plugin_state_t *)TSContDataGet(cont);
+        invalidate_t *iptr = atomic_load(&(pstate->invalidate_list));
         while (iptr) {
           if (!date) {
             date = get_date_from_cached_hdr(txn);

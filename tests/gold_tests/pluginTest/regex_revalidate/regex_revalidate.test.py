@@ -77,7 +77,6 @@ request_header_1 = {"headers":
 response_header_1 = {"headers":
     "HTTP/1.1 200 OK\r\n" +
     "Connection: close\r\n" +
-    'Etag: "path1"\r\n' +
     "Cache-Control: max-age=600,public\r\n" +
     "\r\n",
     "timestamp": "1469733493.993",
@@ -95,7 +94,6 @@ request_header_2 = {"headers":
 response_header_2 = {"headers":
     "HTTP/1.1 200 OK\r\n" +
     "Connection: close\r\n" +
-    'Etag: "path1a"\r\n' +
     "Cache-Control: max-age=600,public\r\n" +
     "\r\n",
     "timestamp": "1469733493.993",
@@ -113,7 +111,6 @@ request_header_3 = {"headers":
 response_header_3 = {"headers":
     "HTTP/1.1 200 OK\r\n" +
     "Connection: close\r\n" +
-    'Etag: "path2a"\r\n' +
     "Cache-Control: max-age=900,public\r\n" +
     "\r\n",
     "timestamp": "1469733493.993",
