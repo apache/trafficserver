@@ -1,10 +1,12 @@
 Changes with Apache Traffic Server 8.0.3
+  #3008 - Fix an failed assertion in HttpSM::parse_range_and_compare
   #4189 - Plugins: Cleanup up dependencies on core headers - background_fetch
   #4279 - Ensure NOFILES ulimit is set high
   #4297 - Don't update records.config when other configs are reloaded
   #4311 - Fix typo of the nofiles ulimit to a sane number
   #4354 - Fix logging log file roll issue (#2544).
   #4420 - Removes this unused old/duplicated define
+  #4488 - preventing crashing when calling TSSslContextFindByName with a nullptr or a 0 length string
   #4528 - Removes ref-counting from background_fetch
   #4550 - Doc: Describe parent weight and format
   #4552 - Print error message for unimplemented commands
@@ -21,7 +23,6 @@ Changes with Apache Traffic Server 8.0.3
   #4595 - Doc: getting started case shouldn't used regex_remap
   #4599 - Doc: Remove pipeline references
   #4601 - Update logging.yaml documentation
-  #4602 - New ScheduleOn APIs
   #4610 - Doc: parent config has more features than balancer plugin
   #4619 - Doc: cache.config isn't a substitute for Cache-Control
   #4620 - Doc: removing stale while revalidate plugin doc (marked deprecated in 7)
@@ -30,6 +31,7 @@ Changes with Apache Traffic Server 8.0.3
   #4678 - Prevent linking everything against brotli
   #4682 - Finish the config removal started in #4653
   #4685 - Cleans up some plugin READMEs
+  #4689 - Deals better with Cc: max-age=0
   #4693 - Remove ignoring unused variable warning from webp plugin
   #4731 - Acquire a lock before checking H2ConnectionState::ua_session
   #4732 - Make H2 stream counters atomic
@@ -37,6 +39,7 @@ Changes with Apache Traffic Server 8.0.3
   #4759 - Fixes Clang-Analyzer issue of H2 Dependence Tree
   #4773 - Calls SSL child config callback after cert is loaded for both key parts
   #4774 - Fixed clang 5.0.0 issue with brace initialization
+  #4778 - This improves on #3008, making the code clearer
   #4780 - Don't allow the old body to be used when refreshing
   #4792 - Validates return values from TSHttpTxnClientAddrGet()
   #4797 - Eliminates frequent librecords lookup
@@ -45,11 +48,16 @@ Changes with Apache Traffic Server 8.0.3
   #4811 - Changes the string_view::length to ::size
   #4812 - Add ifdef so tls test client will compile on non-openssl-1.1.x
   #4820 - Eliminates expensive librecords and malloc on drain
+  #4824 - Fix ATS does not honor proxy.config.body_factory.response_max_size
+  #4839 - Fixes heap-use-after-free in RangeTransform
   #4842 - Doc: minor records.config cleaning
   #4845 - Initialize redir_len, compiler warnings
   #4853 - Various fixes and improvements to background_fetch
+  #4881 - Fix TSHttpTxnEffectiveUrlStringGet to correctly set the port when non-standard
   #4885 - Content Length can be trusted when the origin server returns a 304
   #4892 - Use one setting for H2 consistently for header size limit on H2 connections
   #4918 - Runroot: make traffic_top use runroot
   #4936 - Mark H2 connection inactive only if it is NOT shutting down
   #4943 - Fix to allow runroot to override the configuration directory
+  #4946 - Corrects description for proxy.config.http.origin_max_connections
+  #4949 - Split current active client connections stats into HTTP/1.1 and HTTP/2
