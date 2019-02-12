@@ -151,9 +151,6 @@ extern int URL_LEN_MMS;
 extern int URL_LEN_MMSU;
 extern int URL_LEN_MMST;
 
-/* Private */
-void url_adjust(MarshalXlate *str_xlate, int num_xlate);
-
 /* Public */
 bool validate_host_name(std::string_view addr);
 void url_init();
