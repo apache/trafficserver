@@ -111,12 +111,33 @@ public:
     lookup_table.insert(make_pair("dns_entry", LookupItem("DNS Entry", "proxy.process.hostdb.cache.current_items", 1)));
     lookup_table.insert(make_pair("dns_hits", LookupItem("DNS Hits", "proxy.process.hostdb.total_hits", 2)));
     lookup_table.insert(make_pair("dns_lookups", LookupItem("DNS Lookups", "proxy.process.hostdb.total_lookups", 2)));
+
+    // Incoming HTTP/1.1 and HTTP/2 connections - some metrics are HTTP version specific
     lookup_table.insert(make_pair("client_req", LookupItem("Requests", "proxy.process.http.incoming_requests", 2)));
-    lookup_table.insert(make_pair("client_conn", LookupItem("New Conn", "proxy.process.http.total_client_connections", 2)));
-    lookup_table.insert(make_pair("client_req_conn", LookupItem("Req/Conn", "client_req", "client_conn", 3)));
-    lookup_table.insert(make_pair("client_curr_conn", LookupItem("Curr Conn", "proxy.process.http.current_client_connections", 1)));
+
+    // total_client_connections
     lookup_table.insert(
-      make_pair("client_actv_conn", LookupItem("Active Con", "proxy.process.http.current_active_client_connections", 1)));
+      make_pair("client_conn_h1", LookupItem("New Conn HTTP/1.x", "proxy.process.http.total_client_connections", 2)));
+    lookup_table.insert(
+      make_pair("client_conn_h2", LookupItem("New Conn HTTP/2", "proxy.process.http2.total_client_connections", 2)));
+    lookup_table.insert(make_pair("client_conn", LookupItem("New Conn", "client_conn_h1", "client_conn_h2", 6)));
+
+    // requests / connections
+    lookup_table.insert(make_pair("client_req_conn", LookupItem("Req/Conn", "client_req", "client_conn", 3)));
+
+    // current_client_connections
+    lookup_table.insert(
+      make_pair("client_curr_conn_h1", LookupItem("Curr Conn HTTP/1.x", "proxy.process.http.current_client_connections", 1)));
+    lookup_table.insert(
+      make_pair("client_curr_conn_h2", LookupItem("Curr Conn HTTP/2", "proxy.process.http2.current_client_connections", 1)));
+    lookup_table.insert(make_pair("client_curr_conn", LookupItem("Curr Conn", "client_curr_conn_h1", "client_curr_conn_h2", 6)));
+
+    // current_active_client_connections
+    lookup_table.insert(make_pair("client_actv_conn_h1",
+                                  LookupItem("Active Con HTTP/1.x", "proxy.process.http.current_active_client_connections", 1)));
+    lookup_table.insert(make_pair("client_actv_conn_h2",
+                                  LookupItem("Active Con HTTP/2", "proxy.process.http2.current_active_client_connections", 1)));
+    lookup_table.insert(make_pair("client_actv_conn", LookupItem("Active Con", "client_actv_conn_h1", "client_actv_conn_h2", 6)));
 
     lookup_table.insert(make_pair("server_req", LookupItem("Requests", "proxy.process.http.outgoing_requests", 2)));
     lookup_table.insert(make_pair("server_conn", LookupItem("New Conn", "proxy.process.http.total_server_connections", 2)));
