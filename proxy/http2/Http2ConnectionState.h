@@ -221,6 +221,23 @@ public:
     return client_streams_in_count;
   }
 
+  double
+  get_stream_error_rate() const
+  {
+    int total = get_stream_requests();
+    if (total > 0) {
+      return (double)stream_error_count / (double)total;
+    } else {
+      return 0;
+    }
+  }
+
+  Http2ErrorCode
+  get_shutdown_reason() const
+  {
+    return shutdown_reason;
+  }
+
   // Connection level window size
   ssize_t client_rwnd = HTTP2_INITIAL_WINDOW_SIZE;
   ssize_t server_rwnd = Http2::initial_window_size;
@@ -267,9 +284,10 @@ public:
   }
 
   void
-  set_shutdown_state(Http2ShutdownState state)
+  set_shutdown_state(Http2ShutdownState state, Http2ErrorCode reason = Http2ErrorCode::HTTP2_ERROR_NO_ERROR)
   {
-    shutdown_state = state;
+    shutdown_state  = state;
+    shutdown_reason = reason;
   }
 
   // noncopyable
@@ -316,6 +334,9 @@ private:
   // Counter for current active streams and streams in the process of shutting down
   std::atomic<uint32_t> total_client_streams_count = 0;
 
+  // Counter for stream errors ATS sent
+  uint32_t stream_error_count = 0;
+
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS
   //     "A HEADERS frame without the END_HEADERS flag set MUST be followed by a
@@ -328,6 +349,7 @@ private:
   bool fini_received                = false;
   int recursion                     = 0;
   Http2ShutdownState shutdown_state = HTTP2_SHUTDOWN_NONE;
+  Http2ErrorCode shutdown_reason    = Http2ErrorCode::HTTP2_ERROR_MAX;
   Event *shutdown_cont_event        = nullptr;
   Event *fini_event                 = nullptr;
   Event *zombie_event               = nullptr;
