@@ -23,6 +23,7 @@
 
 #include "I_EventSystem.h"
 #include "tscore/I_Layout.h"
+#include "tscore/TSSystemState.h"
 
 #include "diags.i"
 
@@ -75,7 +76,7 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   process_killer *killer = new process_killer(new_ProxyMutex());
   eventProcessor.schedule_in(killer, HRTIME_SECONDS(10));
   eventProcessor.schedule_every(alrm, HRTIME_SECONDS(1));
-  while (!shutdown_event_system) {
+  while (!TSSystemState::is_event_system_shut_down()) {
     sleep(1);
   }
   return 0;

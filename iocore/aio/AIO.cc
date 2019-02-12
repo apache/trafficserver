@@ -25,6 +25,8 @@
  * Async Disk IO operations.
  */
 
+#include <tscore/TSSystemState.h>
+
 #include "P_AIO.h"
 
 #if AIO_MODE == AIO_MODE_NATIVE
@@ -457,7 +459,7 @@ aio_thread_main(void *arg)
   ink_mutex_acquire(&my_aio_req->aio_mutex);
   for (;;) {
     do {
-      if (unlikely(shutdown_event_system == true)) {
+      if (TSSystemState::is_event_system_shut_down()) {
         ink_mutex_release(&my_aio_req->aio_mutex);
         return nullptr;
       }
