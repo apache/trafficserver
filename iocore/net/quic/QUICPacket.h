@@ -333,14 +333,14 @@ public:
 
   /*
    * Creates a QUICPacket with a QUICPacketHeader, a buffer that contains payload and a flag that indicates whether the packet is
-   * retransmittable
+   * ack_eliciting
    *
    * This will be used for sending packets. Therefore, it is expected that payload is already encrypted.
    * However, QUICPacket class itself doesn't care about whether the payload is protected (encrypted) or not.
    */
-  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool retransmittable, bool probing);
+  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool ack_eliciting, bool probing);
 
-  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool retransmittable, bool probing,
+  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool ack_eliciting, bool probing,
              std::vector<QUICFrameInfo> &frames);
 
   ~QUICPacket();
@@ -353,7 +353,7 @@ public:
   QUICVersion version() const;
   const QUICPacketHeader &header() const;
   const uint8_t *payload() const;
-  bool is_retransmittable() const;
+  bool is_ack_eliciting() const;
   bool is_probing_packet() const;
 
   /*
@@ -386,7 +386,7 @@ private:
   QUICPacketHeaderUPtr _header = QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
   ats_unique_buf _payload      = ats_unique_buf(nullptr);
   size_t _payload_size         = 0;
-  bool _is_retransmittable     = false;
+  bool _is_ack_eliciting       = false;
   bool _is_probing_packet      = false;
 };
 
