@@ -73,6 +73,8 @@ public:
   ~QUICPacketHeader() {}
   const uint8_t *buf();
 
+  virtual bool is_crypto_packet() const;
+
   const IpEndpoint &from() const;
 
   virtual QUICPacketType type() const = 0;
@@ -139,7 +141,8 @@ public:
    */
   static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid,
                                     QUICConnectionId source_cid, QUICPacketNumber packet_number,
-                                    QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len);
+                                    QUICPacketNumber base_packet_number, QUICVersion version, bool crypto, ats_unique_buf payload,
+                                    size_t len);
 
   /*
    * Build a QUICPacketHeader
@@ -148,8 +151,8 @@ public:
    */
   static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid,
                                     QUICConnectionId source_cid, QUICPacketNumber packet_number,
-                                    QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf payload, size_t len,
-                                    ats_unique_buf token, size_t token_len);
+                                    QUICPacketNumber base_packet_number, QUICVersion version, bool crypto, ats_unique_buf payload,
+                                    size_t len, ats_unique_buf token, size_t token_len);
 
   /*
    * Build a QUICPacketHeader
@@ -208,8 +211,8 @@ public:
   virtual ~QUICPacketLongHeader(){};
   QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
   QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                       QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf,
-                       size_t len, ats_unique_buf token = ats_unique_buf(nullptr), size_t token_len = 0);
+                       QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version, bool crypto,
+                       ats_unique_buf buf, size_t len, ats_unique_buf token = ats_unique_buf(nullptr), size_t token_len = 0);
   QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICVersion version, QUICConnectionId destination_cid,
                        QUICConnectionId source_cid, QUICConnectionId original_dcid, ats_unique_buf retry_token,
                        size_t retry_token_len);
@@ -221,6 +224,7 @@ public:
   QUICPacketNumber packet_number() const;
   bool has_version() const;
   bool is_valid() const;
+  bool is_crypto_packet() const override;
   QUICVersion version() const;
   const uint8_t *payload() const;
   const uint8_t *token() const;
@@ -253,6 +257,7 @@ private:
   size_t _token_offset              = 0;                        //< INITIAL packet only
   ats_unique_buf _token             = ats_unique_buf(nullptr);  //< INITIAL packet only
   size_t _payload_offset            = 0;
+  bool _is_crypto_packet            = false;
 };
 
 class QUICPacketShortHeader : public QUICPacketHeader

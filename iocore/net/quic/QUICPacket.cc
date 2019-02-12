@@ -69,6 +69,12 @@ QUICPacketHeader::from() const
   return this->_from;
 }
 
+bool
+QUICPacketHeader::is_crypto_packet() const
+{
+  return false;
+}
+
 uint16_t
 QUICPacketHeader::packet_size() const
 {
@@ -93,23 +99,23 @@ QUICPacketHeader::load(const IpEndpoint from, ats_unique_buf buf, size_t len, QU
 
 QUICPacketHeaderUPtr
 QUICPacketHeader::build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                        QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version,
+                        QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version, bool crypto,
                         ats_unique_buf payload, size_t len)
 {
   QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
   new (long_header) QUICPacketLongHeader(type, key_phase, destination_cid, source_cid, packet_number, base_packet_number, version,
-                                         std::move(payload), len);
+                                         crypto, std::move(payload), len);
   return QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
 }
 
 QUICPacketHeaderUPtr
 QUICPacketHeader::build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                        QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version,
+                        QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version, bool crypto,
                         ats_unique_buf payload, size_t len, ats_unique_buf token, size_t token_len)
 {
   QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
   new (long_header) QUICPacketLongHeader(type, key_phase, destination_cid, source_cid, packet_number, base_packet_number, version,
-                                         std::move(payload), len, std::move(token), token_len);
+                                         crypto, std::move(payload), len, std::move(token), token_len);
   return QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
 }
 
@@ -202,8 +208,8 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf
 
 QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid,
                                            QUICConnectionId source_cid, QUICPacketNumber packet_number,
-                                           QUICPacketNumber base_packet_number, QUICVersion version, ats_unique_buf buf, size_t len,
-                                           ats_unique_buf token, size_t token_len)
+                                           QUICPacketNumber base_packet_number, QUICVersion version, bool crypto,
+                                           ats_unique_buf buf, size_t len, ats_unique_buf token, size_t token_len)
 {
   this->_type               = type;
   this->_destination_cid    = destination_cid;
@@ -217,6 +223,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key
   this->_payload            = std::move(buf);
   this->_payload_length     = len;
   this->_key_phase          = key_phase;
+  this->_is_crypto_packet   = crypto;
 
   if (this->_type == QUICPacketType::VERSION_NEGOTIATION) {
     this->_buf_len =
@@ -254,6 +261,12 @@ QUICPacketLongHeader::type() const
   } else {
     return this->_type;
   }
+}
+
+bool
+QUICPacketLongHeader::is_crypto_packet() const
+{
+  return this->_is_crypto_packet;
 }
 
 bool

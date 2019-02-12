@@ -182,7 +182,7 @@ QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUIC
 
   // VN packet dosen't have packet number field and version field is always 0x00000000
   QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, QUICKeyPhase::INITIAL, dcid, scid,
-                                                        0x00, 0x00, 0x00, std::move(versions), len);
+                                                        0x00, 0x00, 0x00, false, std::move(versions), len);
 
   return QUICPacketFactory::_create_unprotected_packet(std::move(header));
 }
@@ -190,14 +190,14 @@ QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUIC
 QUICPacketUPtr
 QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                         bool retransmittable, bool probing, std::vector<QUICFrameInfo> &frames,
+                                         bool retransmittable, bool probing, bool crypto, std::vector<QUICFrameInfo> &frames,
                                          ats_unique_buf token, size_t token_len)
 {
   int index           = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::INITIAL);
   QUICPacketNumber pn = this->_packet_number_generator[index].next();
   QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::INITIAL, QUICKeyPhase::INITIAL, destination_cid, source_cid, pn, base_packet_number,
-                            this->_version, std::move(payload), len, std::move(token), token_len);
+                            this->_version, crypto, std::move(payload), len, std::move(token), token_len);
   return this->_create_encrypted_packet(std::move(header), retransmittable, probing, frames);
 }
 
@@ -217,13 +217,13 @@ QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICCon
 QUICPacketUPtr
 QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                            QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                           bool retransmittable, bool probing, std::vector<QUICFrameInfo> &frames)
+                                           bool retransmittable, bool probing, bool crypto, std::vector<QUICFrameInfo> &frames)
 {
   int index           = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::HANDSHAKE);
   QUICPacketNumber pn = this->_packet_number_generator[index].next();
   QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::HANDSHAKE, QUICKeyPhase::HANDSHAKE, destination_cid, source_cid, pn, base_packet_number,
-                            this->_version, std::move(payload), len);
+                            this->_version, crypto, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), retransmittable, probing, frames);
 }
 
@@ -236,7 +236,7 @@ QUICPacketFactory::create_zero_rtt_packet(QUICConnectionId destination_cid, QUIC
   QUICPacketNumber pn = this->_packet_number_generator[index].next();
   QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::ZERO_RTT_PROTECTED, QUICKeyPhase::ZERO_RTT, destination_cid, source_cid, pn,
-                            base_packet_number, this->_version, std::move(payload), len);
+                            base_packet_number, this->_version, false, std::move(payload), len);
   return this->_create_encrypted_packet(std::move(header), retransmittable, probing, frames);
 }
 
