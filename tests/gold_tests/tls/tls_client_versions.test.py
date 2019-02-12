@@ -34,7 +34,7 @@ Test.SkipUnless(
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server", ssl=True)
 
-request_foo_header = {"headers": "GET / HTTP/1.1\r\n\r\n", "timestamp": "1469733493.993", "body": ""} 
+request_foo_header = {"headers": "GET / HTTP/1.1\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_foo_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "foo ok"}
 server.addResponse("sessionlog.json", request_foo_header, response_foo_header)
 
@@ -66,7 +66,7 @@ ts.Disk.records_config.update({
 })
 
 # foo.com should only offer the older TLS protocols
-# bar.com should terminate.  
+# bar.com should terminate.
 # empty SNI should tunnel to server_bar
 ts.Disk.ssl_server_name_yaml.AddLines([
   '- fqdn: foo.com',
@@ -78,9 +78,8 @@ tr = Test.AddTestRun("foo.com TLSv1_2")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Command = "curl -v --tls-max 1.2 --tlsv1.2 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
-tr.ReturnCode = 35 
+tr.ReturnCode = 35
 tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("ssl_choose_client_version:unsupported protocol", "Should not allow TLSv1_2")
 
 # Target foo.com for TLSv1.  Should succeed
 tr = Test.AddTestRun("foo.com TLSv1")
@@ -91,9 +90,8 @@ tr.StillRunningAfter = ts
 # Target bar.com for TLSv1.  Should fail
 tr = Test.AddTestRun("bar.com TLSv1")
 tr.Processes.Default.Command = "curl -v --tls-max 1.0 --tlsv1 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
-tr.ReturnCode = 35 
+tr.ReturnCode = 35
 tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("alert protocol version", "Should not allow TLSv1_0")
 
 # Target bar.com for TLSv1_2.  Should succeed
 tr = Test.AddTestRun("bar.com TLSv1_2")
