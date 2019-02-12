@@ -24,6 +24,7 @@
 #include "P_Net.h"
 #include "tscore/InkErrno.h"
 #include "tscore/ink_sock.h"
+#include "tscore/TSSystemState.h"
 #include "P_SSLNextProtocolAccept.h"
 
 // For Stat Pages
@@ -205,7 +206,7 @@ NetProcessor::stop_accept()
 Action *
 UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *opt)
 {
-  if (unlikely(shutdown_event_system == true)) {
+  if (TSSystemState::is_event_system_shut_down()) {
     return ACTION_RESULT_NONE;
   }
   EThread *t             = cont->mutex->thread_holding;

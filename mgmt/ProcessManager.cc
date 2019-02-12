@@ -25,6 +25,7 @@
 #include "ProcessManager.h"
 
 #include "tscore/ink_apidefs.h"
+#include "tscore/TSSystemState.h"
 #include "MgmtSocket.h"
 #include "tscore/I_Layout.h"
 
@@ -166,13 +167,13 @@ ProcessManager::processManagerThread(void *arg)
 
     if (pmgmt->require_lm) {
       ret = pmgmt->pollLMConnection();
-      if (ret < 0 && pmgmt->running && !shutdown_event_system) {
+      if (ret < 0 && pmgmt->running && !TSSystemState::is_event_system_shut_down()) {
         Alert("exiting with read error from process manager: %s", strerror(-ret));
       }
     }
 
     ret = pmgmt->processSignalQueue();
-    if (ret < 0 && pmgmt->running && !shutdown_event_system) {
+    if (ret < 0 && pmgmt->running && !TSSystemState::is_event_system_shut_down()) {
       Alert("exiting with write error from process manager: %s", strerror(-ret));
     }
   }

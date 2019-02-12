@@ -51,8 +51,6 @@ enum ThreadType {
   DEDICATED,
 };
 
-extern bool shutdown_event_system;
-
 /**
   Event System specific type of thread.
 

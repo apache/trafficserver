@@ -33,6 +33,7 @@
 
  ***************************************************************************/
 #include "tscore/ink_platform.h"
+#include "tscore/TSSystemState.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
 #include "I_Machine.h"
@@ -1248,7 +1249,7 @@ Log::preproc_thread_main(void *args)
   Log::preproc_notify[idx].lock();
 
   while (true) {
-    if (unlikely(shutdown_event_system == true)) {
+    if (TSSystemState::is_event_system_shut_down()) {
       return nullptr;
     }
     size_t buffers_preproced = 0;
@@ -1291,7 +1292,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
   Log::flush_notify->lock();
 
   while (true) {
-    if (unlikely(shutdown_event_system == true)) {
+    if (TSSystemState::is_event_system_shut_down()) {
       return nullptr;
     }
     fdata = (LogFlushData *)ink_atomiclist_popall(flush_data_list);

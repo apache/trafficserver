@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include <tscore/TSSystemState.h>
+
 #include "P_Net.h"
 
 #ifdef ROUNDUP
@@ -333,7 +335,7 @@ NetAccept::do_blocking_accept(EThread *t)
       return -1;
     }
 
-    if (unlikely(shutdown_event_system == true)) {
+    if (TSSystemState::is_event_system_shut_down()) {
       return -1;
     }
 

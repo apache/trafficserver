@@ -24,6 +24,7 @@
 #include "tscore/ink_config.h"
 #include "tscore/EventNotify.h"
 #include "tscore/I_Layout.h"
+#include "tscore/TSSystemState.h"
 #include "records/I_RecHttp.h"
 
 #include "InkAPIInternal.h" // Added to include the ssl_hook definitions
@@ -76,8 +77,6 @@ void SSL_set0_rbio(SSL *ssl, BIO *rbio);
 #define SSL_WAIT_FOR_ASYNC 12
 
 ClassAllocator<SSLNetVConnection> sslNetVCAllocator("sslNetVCAllocator");
-
-bool stop_ssl_handshake = false;
 
 namespace
 {
@@ -961,7 +960,7 @@ SSLNetVConnection::free(EThread *t)
 int
 SSLNetVConnection::sslStartHandShake(int event, int &err)
 {
-  if (stop_ssl_handshake) {
+  if (TSSystemState::is_ssl_handshaking_stopped()) {
     Debug("ssl", "Stopping handshake due to server shutting down.");
     return EVENT_ERROR;
   }

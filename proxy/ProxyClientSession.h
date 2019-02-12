@@ -25,6 +25,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_resolver.h"
+#include "tscore/TSSystemState.h"
 #include <string_view>
 #include "P_Net.h"
 #include "InkAPIInternal.h"
@@ -69,9 +70,7 @@ struct ProxyError {
   uint32_t code       = 0;
 };
 
-// A little ugly, but this global is tracked by traffic_server.
-extern bool ts_is_draining;
-
+/// Abstract class for HttpSM to interface with any session
 class ProxyClientSession : public VConnection
 {
 public:
@@ -149,7 +148,7 @@ public:
   bool
   is_draining() const
   {
-    return ts_is_draining;
+    return TSSystemState::is_draining();
   }
 
   // Initiate an API hook invocation.

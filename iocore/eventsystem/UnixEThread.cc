@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include <tscore/TSSystemState.h>
+
 //////////////////////////////////////////////////////////////////////
 //
 // The EThread Class
@@ -44,8 +46,6 @@ char const *const EThread::STAT_NAME[] = {"proxy.process.eventloop.count",      
                                           "proxy.process.eventloop.time.max"};
 
 int const EThread::SAMPLE_COUNT[N_EVENT_TIMESCALES] = {10, 100, 1000};
-
-bool shutdown_event_system = false;
 
 int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
 
@@ -209,7 +209,7 @@ EThread::execute_regular()
 
   // give priority to immediate events
   for (;;) {
-    if (unlikely(shutdown_event_system == true)) {
+    if (TSSystemState::is_event_system_shut_down()) {
       return;
     }
 

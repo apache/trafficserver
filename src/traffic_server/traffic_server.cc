@@ -171,12 +171,6 @@ static bool signal_received[NSIG];
 // -1: cache is already initialized, don't delay.
 static int delay_listen_for_cache_p;
 
-// Keeps track if the server is in draining state, follows the proxy.node.config.draining metric
-bool ts_is_draining = false;
-
-// Flag to stop ssl handshakes during shutdown.
-extern bool stop_ssl_handshake;
-
 AppVersionInfo appVersionInfo; // Build info for this application
 
 static ArgumentDescription argument_descriptions[] = {
@@ -226,7 +220,7 @@ struct AutoStopCont : public Continuation {
   int
   mainEvent(int /* event */, Event * /* e */)
   {
-    stop_ssl_handshake = true;
+    TSSystemState::stop_ssl_handshaking();
 
     APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
     while (hook) {
@@ -236,7 +230,7 @@ struct AutoStopCont : public Continuation {
     }
 
     pmgmt->stop();
-    shutdown_event_system = true;
+    TSSystemState::shut_down_event_system();
     delete this;
     return EVENT_CONT;
   }
@@ -294,7 +288,7 @@ public:
       RecInt timeout = 0;
       if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) == REC_ERR_OKAY && timeout) {
         RecSetRecordInt("proxy.node.config.draining", 1, REC_SOURCE_DEFAULT);
-        ts_is_draining = true;
+        TSSystemState::drain(true);
         if (!remote_management_flag) {
           // Close listening sockets here only if TS is running standalone
           RecInt close_sockets = 0;
@@ -1365,7 +1359,7 @@ struct RegressionCont : public Continuation {
       return EVENT_CONT;
     }
 
-    shutdown_event_system = true;
+    TSSystemState::shut_down_event_system();
     fprintf(stderr, "REGRESSION_TEST DONE: %s\n", regression_status_string(res));
     ::exit(res == REGRESSION_TEST_PASSED ? 0 : 1);
     return EVENT_CONT;
@@ -2002,7 +1996,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 #endif
 
-  while (!shutdown_event_system) {
+  while (!TSSystemState::is_event_system_shut_down()) {
     sleep(1);
   }
 
@@ -2032,9 +2026,9 @@ static void mgmt_restart_shutdown_callback(ts::MemSpan)
 static void
 mgmt_drain_callback(ts::MemSpan span)
 {
-  char *arg      = static_cast<char *>(span.data());
-  ts_is_draining = (span.size() == 2 && arg[0] == '1');
-  RecSetRecordInt("proxy.node.config.draining", ts_is_draining ? 1 : 0, REC_SOURCE_DEFAULT);
+  char *arg = static_cast<char *>(span.data());
+  TSSystemState::drain(span.size() == 2 && arg[0] == '1');
+  RecSetRecordInt("proxy.node.config.draining", TSSystemState::is_draining() ? 1 : 0, REC_SOURCE_DEFAULT);
 }
 
 static void
