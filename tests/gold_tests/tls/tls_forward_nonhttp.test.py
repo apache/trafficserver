@@ -21,9 +21,9 @@ Test.Summary = '''
 Forwarding a non-HTTP protocol out of TLS
 '''
 
-# need Curl
+# need nc
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
+    Condition.HasProgram("nc", "nc need to be installed on system for this test to work")
 )
 
 # Define default ATS
