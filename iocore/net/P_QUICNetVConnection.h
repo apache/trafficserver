@@ -380,7 +380,7 @@ private:
   uint64_t _stream_frames_sent     = 0;
 
   // TODO: Source addresses verification through an address validation token
-  bool _has_ack_only_packet_out = false;
+  bool _has_ack_eliciting_packet_out = true;
 
   QUICAddrVerifyState _verfied_state;
 

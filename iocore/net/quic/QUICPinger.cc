@@ -26,12 +26,19 @@
 void
 QUICPinger::request(QUICEncryptionLevel level)
 {
+  if (!this->_is_level_matched(level)) {
+    return;
+  }
   ++this->_need_to_fire[static_cast<int>(level)];
 }
 
 void
 QUICPinger::cancel(QUICEncryptionLevel level)
 {
+  if (!this->_is_level_matched(level)) {
+    return;
+  }
+
   if (this->_need_to_fire[static_cast<int>(level)] > 0) {
     --this->_need_to_fire[static_cast<int>(level)];
   }
@@ -40,6 +47,10 @@ QUICPinger::cancel(QUICEncryptionLevel level)
 bool
 QUICPinger::will_generate_frame(QUICEncryptionLevel level)
 {
+  if (!this->_is_level_matched(level)) {
+    return false;
+  }
+
   return this->_need_to_fire[QUICTypeUtil::pn_space_index(level)] > 0;
 }
 
