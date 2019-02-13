@@ -1246,9 +1246,7 @@ QUICNetVConnection::_state_common_send_packet()
 
       uint32_t max_packet_size = udp_payload_len - written;
       if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
-        uint32_t windows = this->_verfied_state.windows();
-        QUICConDebug("send to unverified window: %u", windows);
-        max_packet_size = std::min(max_packet_size, windows);
+        max_packet_size = std::min(max_packet_size, this->_verfied_state.windows());
       }
 
       QUICPacketUPtr packet = this->_packetize_frames(level, max_packet_size);
@@ -1260,6 +1258,7 @@ QUICNetVConnection::_state_common_send_packet()
         }
 
         if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
+          QUICConDebug("send to unverified window: %u", this->_verfied_state.windows());
           this->_verfied_state.consume(packet->size());
         }
 
