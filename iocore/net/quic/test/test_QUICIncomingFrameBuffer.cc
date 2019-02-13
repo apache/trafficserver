@@ -29,6 +29,7 @@
 
 TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
 {
+  uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   QUICStream *stream = new QUICStream();
   QUICIncomingStreamFrameBuffer buffer;
   QUICErrorUPtr err = nullptr;
@@ -44,7 +45,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
 
   SECTION("single frame")
   {
-    std::shared_ptr<QUICStreamFrame> stream1_frame_0_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 0, true);
+    QUICStreamFrame *stream1_frame_0_r = QUICFrameFactory::create_stream_frame(frame_buf, block_1024, 1, 0, true);
 
     err = buffer.insert(*stream1_frame_0_r);
     CHECK(err == nullptr);
@@ -52,11 +53,16 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
 
   SECTION("multiple frames")
   {
-    std::shared_ptr<QUICStreamFrame> stream1_frame_0_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 0);
-    std::shared_ptr<QUICStreamFrame> stream1_frame_1_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 1024);
-    std::shared_ptr<QUICStreamFrame> stream1_frame_2_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 2048, true);
-    std::shared_ptr<QUICStreamFrame> stream1_frame_3_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 3072, true);
-    std::shared_ptr<QUICStreamFrame> stream1_frame_4_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 4096);
+    uint8_t frame_buf0[QUICFrame::MAX_INSTANCE_SIZE];
+    uint8_t frame_buf1[QUICFrame::MAX_INSTANCE_SIZE];
+    uint8_t frame_buf2[QUICFrame::MAX_INSTANCE_SIZE];
+    uint8_t frame_buf3[QUICFrame::MAX_INSTANCE_SIZE];
+    uint8_t frame_buf4[QUICFrame::MAX_INSTANCE_SIZE];
+    QUICStreamFrame *stream1_frame_0_r = QUICFrameFactory::create_stream_frame(frame_buf0, block_1024, 1, 0);
+    QUICStreamFrame *stream1_frame_1_r = QUICFrameFactory::create_stream_frame(frame_buf1, block_1024, 1, 1024);
+    QUICStreamFrame *stream1_frame_2_r = QUICFrameFactory::create_stream_frame(frame_buf2, block_1024, 1, 2048, true);
+    QUICStreamFrame *stream1_frame_3_r = QUICFrameFactory::create_stream_frame(frame_buf3, block_1024, 1, 3072, true);
+    QUICStreamFrame *stream1_frame_4_r = QUICFrameFactory::create_stream_frame(frame_buf4, block_1024, 1, 4096);
 
     buffer.insert(*stream1_frame_0_r);
     buffer.insert(*stream1_frame_1_r);
@@ -84,9 +90,12 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
 
   SECTION("Pure FIN")
   {
-    std::shared_ptr<QUICStreamFrame> stream1_frame_0_r      = QUICFrameFactory::create_stream_frame(block_1024, 1, 0);
-    std::shared_ptr<QUICStreamFrame> stream1_frame_empty    = QUICFrameFactory::create_stream_frame(block_0, 1, 1024);
-    std::shared_ptr<QUICStreamFrame> stream1_frame_pure_fin = QUICFrameFactory::create_stream_frame(block_0, 1, 1024, true);
+    uint8_t frame_buf0[QUICFrame::MAX_INSTANCE_SIZE];
+    uint8_t frame_buf1[QUICFrame::MAX_INSTANCE_SIZE];
+    uint8_t frame_buf2[QUICFrame::MAX_INSTANCE_SIZE];
+    QUICStreamFrame *stream1_frame_0_r      = QUICFrameFactory::create_stream_frame(frame_buf0, block_1024, 1, 0);
+    QUICStreamFrame *stream1_frame_empty    = QUICFrameFactory::create_stream_frame(frame_buf1, block_0, 1, 1024);
+    QUICStreamFrame *stream1_frame_pure_fin = QUICFrameFactory::create_stream_frame(frame_buf2, block_0, 1, 1024, true);
 
     err = buffer.insert(*stream1_frame_0_r);
     CHECK(err == nullptr);
@@ -116,12 +125,19 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
   block_0->alloc();
   CHECK(block_0->read_avail() == 0);
 
-  std::shared_ptr<QUICStreamFrame> stream1_frame_0_r   = QUICFrameFactory::create_stream_frame(block_1024, 1, 0);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_1_r   = QUICFrameFactory::create_stream_frame(block_1024, 1, 1024);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_empty = QUICFrameFactory::create_stream_frame(block_0, 1, 2048);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_2_r   = QUICFrameFactory::create_stream_frame(block_1024, 1, 2048);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_3_r   = QUICFrameFactory::create_stream_frame(block_1024, 1, 3072);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_4_r   = QUICFrameFactory::create_stream_frame(block_1024, 1, 4096, true);
+  uint8_t frame_buf0[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf1[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf2[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf3[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf4[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf5[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf6[QUICFrame::MAX_INSTANCE_SIZE];
+  QUICStreamFrame *stream1_frame_0_r   = QUICFrameFactory::create_stream_frame(frame_buf0, block_1024, 1, 0);
+  QUICStreamFrame *stream1_frame_1_r   = QUICFrameFactory::create_stream_frame(frame_buf1, block_1024, 1, 1024);
+  QUICStreamFrame *stream1_frame_empty = QUICFrameFactory::create_stream_frame(frame_buf2, block_0, 1, 2048);
+  QUICStreamFrame *stream1_frame_2_r   = QUICFrameFactory::create_stream_frame(frame_buf3, block_1024, 1, 2048);
+  QUICStreamFrame *stream1_frame_3_r   = QUICFrameFactory::create_stream_frame(frame_buf4, block_1024, 1, 3072);
+  QUICStreamFrame *stream1_frame_4_r   = QUICFrameFactory::create_stream_frame(frame_buf5, block_1024, 1, 4096, true);
 
   buffer.insert(*stream1_frame_0_r);
   buffer.insert(*stream1_frame_1_r);
@@ -131,15 +147,15 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
   buffer.insert(*stream1_frame_4_r);
   CHECK(!buffer.empty());
 
-  auto frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  auto frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 0);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 1024);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 2048);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 3072);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 4096);
   CHECK(buffer.empty());
 
@@ -152,15 +168,15 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
   buffer.insert(*stream1_frame_0_r);
   CHECK(!buffer.empty());
 
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 0);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 1024);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 2048);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 3072);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 4096);
   CHECK(buffer.empty());
 
@@ -182,10 +198,18 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
   block_0->alloc();
   CHECK(block_0->read_avail() == 0);
 
-  std::shared_ptr<QUICStreamFrame> stream1_frame_0_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 0);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_1_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 1024);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_2_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 2048, true);
-  std::shared_ptr<QUICStreamFrame> stream1_frame_3_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 2048, true);
+  uint8_t frame_buf0[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf1[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf2[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf3[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf4[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf5[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf6[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t frame_buf7[QUICFrame::MAX_INSTANCE_SIZE];
+  QUICStreamFrame *stream1_frame_0_r = QUICFrameFactory::create_stream_frame(frame_buf0, block_1024, 1, 0);
+  QUICStreamFrame *stream1_frame_1_r = QUICFrameFactory::create_stream_frame(frame_buf1, block_1024, 1, 1024);
+  QUICStreamFrame *stream1_frame_2_r = QUICFrameFactory::create_stream_frame(frame_buf2, block_1024, 1, 2048, true);
+  QUICStreamFrame *stream1_frame_3_r = QUICFrameFactory::create_stream_frame(frame_buf3, block_1024, 1, 2048, true);
 
   buffer.insert(*stream1_frame_0_r);
   buffer.insert(*stream1_frame_1_r);
@@ -193,22 +217,22 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
   err = buffer.insert(*stream1_frame_3_r);
   CHECK(err == nullptr);
 
-  auto frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  auto frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 0);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 1024);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 2048);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame == nullptr);
   CHECK(buffer.empty());
 
   buffer.clear();
 
-  std::shared_ptr<QUICStreamFrame> stream2_frame_0_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 0);
-  std::shared_ptr<QUICStreamFrame> stream2_frame_1_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 1024);
-  std::shared_ptr<QUICStreamFrame> stream2_frame_2_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 1024);
-  std::shared_ptr<QUICStreamFrame> stream2_frame_3_r = QUICFrameFactory::create_stream_frame(block_1024, 1, 2048, true);
+  QUICStreamFrame *stream2_frame_0_r = QUICFrameFactory::create_stream_frame(frame_buf4, block_1024, 1, 0);
+  QUICStreamFrame *stream2_frame_1_r = QUICFrameFactory::create_stream_frame(frame_buf5, block_1024, 1, 1024);
+  QUICStreamFrame *stream2_frame_2_r = QUICFrameFactory::create_stream_frame(frame_buf6, block_1024, 1, 1024);
+  QUICStreamFrame *stream2_frame_3_r = QUICFrameFactory::create_stream_frame(frame_buf7, block_1024, 1, 2048, true);
 
   buffer.insert(*stream2_frame_0_r);
   buffer.insert(*stream2_frame_1_r);
@@ -216,13 +240,13 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
   err = buffer.insert(*stream2_frame_3_r);
   CHECK(err == nullptr);
 
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 0);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 1024);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 2048);
-  frame = std::static_pointer_cast<const QUICStreamFrame>(buffer.pop());
+  frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame == nullptr);
   CHECK(buffer.empty());
 

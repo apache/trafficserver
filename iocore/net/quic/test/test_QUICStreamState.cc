@@ -37,10 +37,16 @@ TEST_CASE("QUICSendStreamState", "[quic]")
   block_4->fill(4);
   CHECK(block_4->read_avail() == 4);
 
-  auto stream_frame              = QUICFrameFactory::create_stream_frame(block_4, 1, 0);
-  auto stream_frame_with_fin     = QUICFrameFactory::create_stream_frame(block_4, 1, 0, true);
-  auto rst_stream_frame          = QUICFrameFactory::create_rst_stream_frame(0, static_cast<QUICAppErrorCode>(0x01), 0);
-  auto stream_data_blocked_frame = QUICFrameFactory::create_stream_data_blocked_frame(0, 0);
+  uint8_t stream_frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t stream_frame_with_fin_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t rst_stream_frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t stream_data_blocked_frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+
+  auto stream_frame          = QUICFrameFactory::create_stream_frame(stream_frame_buf, block_4, 1, 0);
+  auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(stream_frame_with_fin_buf, block_4, 1, 0, true);
+  auto rst_stream_frame =
+    QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 0, static_cast<QUICAppErrorCode>(0x01), 0);
+  auto stream_data_blocked_frame = QUICFrameFactory::create_stream_data_blocked_frame(stream_data_blocked_frame_buf, 0, 0);
   MockQUICTransferProgressProvider pp;
 
   SECTION("Ready -> Send -> Data Sent -> Data Recvd")
@@ -182,11 +188,18 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
   block_4->fill(4);
   CHECK(block_4->read_avail() == 4);
 
-  auto stream_frame              = QUICFrameFactory::create_stream_frame(block_4, 1, 0);
-  auto stream_frame_delayed      = QUICFrameFactory::create_stream_frame(block_4, 1, 1);
-  auto stream_frame_with_fin     = QUICFrameFactory::create_stream_frame(block_4, 1, 2, true);
-  auto rst_stream_frame          = QUICFrameFactory::create_rst_stream_frame(0, static_cast<QUICAppErrorCode>(0x01), 0);
-  auto stream_data_blocked_frame = QUICFrameFactory::create_stream_data_blocked_frame(0, 0);
+  uint8_t stream_frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t stream_frame_delayed_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t stream_frame_with_fin_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t rst_stream_frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t stream_data_blocked_frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+
+  auto stream_frame          = QUICFrameFactory::create_stream_frame(stream_frame_buf, block_4, 1, 0);
+  auto stream_frame_delayed  = QUICFrameFactory::create_stream_frame(stream_frame_delayed_buf, block_4, 1, 1);
+  auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(stream_frame_with_fin_buf, block_4, 1, 2, true);
+  auto rst_stream_frame =
+    QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 0, static_cast<QUICAppErrorCode>(0x01), 0);
+  auto stream_data_blocked_frame = QUICFrameFactory::create_stream_data_blocked_frame(stream_data_blocked_frame_buf, 0, 0);
 
   SECTION("Recv -> Size Known -> Data Recvd -> Data Read")
   {
