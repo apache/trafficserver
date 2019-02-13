@@ -172,23 +172,15 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_max_ack_delay_out, "proxy.config.quic.max_ack_delay_out");
 
   // Loss Detection
-  REC_EstablishStaticConfigInt32U(this->_ld_max_tlps, "proxy.config.quic.loss_detection.max_tlps");
-  REC_EstablishStaticConfigInt32U(this->_ld_reordering_threshold, "proxy.config.quic.loss_detection.reordering_threshold");
-  REC_EstablishStaticConfigFloat(this->_ld_time_reordering_fraction, "proxy.config.quic.loss_detection.time_reordering_fraction");
-  REC_EstablishStaticConfigInt32U(this->_ld_time_loss_detection, "proxy.config.quic.loss_detection.using_time_loss_detection");
+  REC_EstablishStaticConfigInt32U(this->_ld_packet_threshold, "proxy.config.quic.loss_detection.packet_threshold");
+  REC_EstablishStaticConfigFloat(this->_ld_time_threshold, "proxy.config.quic.loss_detection.time_threshold");
 
   uint32_t timeout = 0;
-  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.min_tlp_timeout");
-  this->_ld_min_tlp_timeout = HRTIME_MSECONDS(timeout);
+  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.granularity");
+  this->_ld_granularity = HRTIME_MSECONDS(timeout);
 
-  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.min_rto_timeout");
-  this->_ld_min_rto_timeout = HRTIME_MSECONDS(timeout);
-
-  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.delayed_ack_timeout");
-  this->_ld_delayed_ack_timeout = HRTIME_MSECONDS(timeout);
-
-  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.default_initial_rtt");
-  this->_ld_default_initial_rtt = HRTIME_MSECONDS(timeout);
+  REC_EstablishStaticConfigInt32U(timeout, "proxy.config.quic.loss_detection.initial_rtt");
+  this->_ld_initial_rtt = HRTIME_MSECONDS(timeout);
 
   // Congestion Control
   REC_EstablishStaticConfigInt32U(this->_cc_default_mss, "proxy.config.quic.congestion_control.default_mss");
@@ -379,51 +371,27 @@ QUICConfigParams::client_ssl_ctx() const
 }
 
 uint32_t
-QUICConfigParams::ld_max_tlps() const
+QUICConfigParams::ld_packet_threshold() const
 {
-  return _ld_max_tlps;
-}
-
-uint32_t
-QUICConfigParams::ld_reordering_threshold() const
-{
-  return _ld_reordering_threshold;
+  return _ld_packet_threshold;
 }
 
 float
-QUICConfigParams::ld_time_reordering_fraction() const
+QUICConfigParams::ld_time_threshold() const
 {
-  return _ld_time_reordering_fraction;
-}
-
-uint32_t
-QUICConfigParams::ld_time_loss_detection() const
-{
-  return _ld_time_loss_detection;
+  return _ld_time_threshold;
 }
 
 ink_hrtime
-QUICConfigParams::ld_min_tlp_timeout() const
+QUICConfigParams::ld_granularity() const
 {
-  return _ld_min_tlp_timeout;
+  return _ld_granularity;
 }
 
 ink_hrtime
-QUICConfigParams::ld_min_rto_timeout() const
+QUICConfigParams::ld_initial_rtt() const
 {
-  return _ld_min_rto_timeout;
-}
-
-ink_hrtime
-QUICConfigParams::ld_delayed_ack_timeout() const
-{
-  return _ld_delayed_ack_timeout;
-}
-
-ink_hrtime
-QUICConfigParams::ld_default_initial_rtt() const
-{
-  return _ld_default_initial_rtt;
+  return _ld_initial_rtt;
 }
 
 uint32_t

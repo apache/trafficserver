@@ -870,6 +870,12 @@ QUICPacket::packet_number() const
   return this->_header->packet_number();
 }
 
+bool
+QUICPacket::is_crypto_packet() const
+{
+  return this->_header->is_crypto_packet();
+}
+
 const QUICPacketHeader &
 QUICPacket::header() const
 {

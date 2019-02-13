@@ -359,6 +359,7 @@ public:
   const QUICPacketHeader &header() const;
   const uint8_t *payload() const;
   bool is_ack_eliciting() const;
+  bool is_crypto_packet() const;
   bool is_probing_packet() const;
 
   /*

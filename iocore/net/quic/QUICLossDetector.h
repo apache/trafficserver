@@ -41,12 +41,17 @@
 class QUICLossDetector;
 
 struct PacketInfo {
+  // 6.3.1.  Sent Packet Fields
   QUICPacketNumber packet_number;
-  ink_hrtime time;
-  bool ack_only;
-  bool handshake;
-  size_t bytes;
+  ink_hrtime time_sent;
+  bool ack_eliciting;
+  bool is_crypto_packet;
+  bool in_flight;
+  size_t sent_bytes;
+
+  // addition
   QUICPacketUPtr packet;
+  // end
 };
 
 using PacketInfoUPtr = std::unique_ptr<PacketInfo>;
@@ -117,7 +122,7 @@ public:
 
   std::vector<QUICFrameType> interests() override;
   virtual QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
-  void on_packet_sent(QUICPacketUPtr packet);
+  void on_packet_sent(QUICPacketUPtr packet, bool in_flight = true);
   QUICPacketNumber largest_acked_packet_number();
   void update_ack_delay_exponent(uint8_t ack_delay_exponent);
   void reset();
@@ -128,42 +133,34 @@ private:
 
   uint8_t _ack_delay_exponent = 3;
 
-  // [draft-11 recovery] 3.5.1.  Constants of interest
+  // [draft-17 recovery] 6.4.1.  Constants of interest
   // Values will be loaded from records.config via QUICConfig at constructor
-  uint32_t _k_max_tlps              = 0;
-  uint32_t _k_reordering_threshold  = 0;
-  float _k_time_reordering_fraction = 0.0;
-  bool _k_using_time_loss_detection = false;
-  ink_hrtime _k_min_tlp_timeout     = 0;
-  ink_hrtime _k_min_rto_timeout     = 0;
-  ink_hrtime _k_delayed_ack_timeout = 0;
-  ink_hrtime _k_default_initial_rtt = 0;
+  uint32_t _k_packet_threshold = 0;
+  float _k_time_threshold      = 0.0;
+  ink_hrtime _k_granularity    = 0;
+  ink_hrtime _k_initial_rtt    = 0;
 
   // [draft-11 recovery] 3.5.2.  Variables of interest
   // Keep the order as the same as the spec so that we can see the difference easily.
-  Action *_loss_detection_alarm                        = nullptr;
-  uint32_t _handshake_count                            = 0;
-  uint32_t _tlp_count                                  = 0;
-  uint32_t _rto_count                                  = 0;
-  uint32_t _largest_sent_before_rto                    = 0;
-  ink_hrtime _time_of_last_sent_retransmittable_packet = 0;
-  ink_hrtime _time_of_last_sent_handshake_packet       = 0;
-  uint32_t _largest_sent_packet                        = 0;
-  uint32_t _largest_acked_packet                       = 0;
-  ink_hrtime _latest_rtt                               = 0;
-  ink_hrtime _smoothed_rtt                             = 0;
-  ink_hrtime _rttvar                                   = 0;
-  ink_hrtime _min_rtt                                  = INT64_MAX;
-  ink_hrtime _max_ack_delay                            = 0;
-  uint32_t _reordering_threshold                       = 0;
-  double _time_reordering_fraction                     = 0.0;
-  ink_hrtime _loss_time                                = 0;
+  Action *_loss_detection_timer                      = nullptr;
+  uint32_t _crypto_count                             = 0;
+  uint32_t _pto_count                                = 0;
+  ink_hrtime _time_of_last_sent_ack_eliciting_packet = 0;
+  ink_hrtime _time_of_last_sent_crypto_packet        = 0;
+  QUICPacketNumber _largest_sent_packet              = 0;
+  QUICPacketNumber _largest_acked_packet             = 0;
+  ink_hrtime _latest_rtt                             = 0;
+  ink_hrtime _smoothed_rtt                           = 0;
+  ink_hrtime _rttvar                                 = 0;
+  ink_hrtime _min_rtt                                = INT64_MAX;
+  ink_hrtime _max_ack_delay                          = 0;
+  ink_hrtime _loss_time                              = 0;
   std::map<QUICPacketNumber, PacketInfoUPtr> _sent_packets;
 
   // These are not defined on the spec but expected to be count
   // These counter have to be updated when inserting / erasing packets from _sent_packets with following functions.
-  std::atomic<uint32_t> _handshake_outstanding;
-  std::atomic<uint32_t> _retransmittable_outstanding;
+  std::atomic<uint32_t> _crypto_outstanding;
+  std::atomic<uint32_t> _ack_eliciting_outstanding;
   void _add_to_sent_packet_list(QUICPacketNumber packet_number, std::unique_ptr<PacketInfo> packet_info);
   void _remove_from_sent_packet_list(QUICPacketNumber packet_number);
   std::map<QUICPacketNumber, PacketInfoUPtr>::iterator _remove_from_sent_packet_list(
@@ -176,19 +173,19 @@ private:
    */
   ink_hrtime _loss_detection_alarm_at = 0;
 
-  void _on_packet_sent(QUICPacketNumber packet_number, bool is_ack_only, bool is_handshake, size_t sent_bytes,
+  void _on_packet_sent(QUICPacketNumber packet_number, bool ack_eliciting, bool in_flight, bool is_crypto_packet, size_t sent_bytes,
                        QUICPacketUPtr packet);
   void _on_ack_received(const QUICAckFrame &ack_frame);
   void _on_packet_acked(const PacketInfo &acked_packet);
-  void _update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay, QUICPacketNumber largest_acked);
-  void _detect_lost_packets(QUICPacketNumber largest_acked);
-  void _set_loss_detection_alarm();
-  void _on_loss_detection_alarm();
+  void _update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay);
+  void _detect_lost_packets();
+  void _set_loss_detection_timer();
+  void _on_loss_detection_timeout();
   void _retransmit_lost_packet(QUICPacketUPtr &packet);
 
   std::set<QUICAckFrame::PacketNumberRange> _determine_newly_acked_packets(const QUICAckFrame &ack_frame);
 
-  void _retransmit_all_unacked_handshake_data();
+  void _retransmit_all_unacked_crypto_data();
   void _send_one_packet();
   void _send_two_packets();
 

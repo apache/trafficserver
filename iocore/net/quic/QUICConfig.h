@@ -70,14 +70,10 @@ public:
   uint8_t max_ack_delay_out() const;
 
   // Loss Detection
-  uint32_t ld_max_tlps() const;
-  uint32_t ld_reordering_threshold() const;
-  float ld_time_reordering_fraction() const;
-  uint32_t ld_time_loss_detection() const;
-  ink_hrtime ld_min_tlp_timeout() const;
-  ink_hrtime ld_min_rto_timeout() const;
-  ink_hrtime ld_delayed_ack_timeout() const;
-  ink_hrtime ld_default_initial_rtt() const;
+  uint32_t ld_packet_threshold() const;
+  float ld_time_threshold() const;
+  ink_hrtime ld_granularity() const;
+  ink_hrtime ld_initial_rtt() const;
 
   // Congestion Control
   uint32_t cc_default_mss() const;
@@ -129,15 +125,11 @@ private:
   uint32_t _max_ack_delay_in                        = 0;
   uint32_t _max_ack_delay_out                       = 0;
 
-  // [draft-11 recovery] 3.5.1.  Constants of interest
-  uint32_t _ld_max_tlps              = 2;
-  uint32_t _ld_reordering_threshold  = 3;
-  float _ld_time_reordering_fraction = 0.125;
-  uint32_t _ld_time_loss_detection   = 0;
-  ink_hrtime _ld_min_tlp_timeout     = HRTIME_MSECONDS(10);
-  ink_hrtime _ld_min_rto_timeout     = HRTIME_MSECONDS(200);
-  ink_hrtime _ld_delayed_ack_timeout = HRTIME_MSECONDS(25);
-  ink_hrtime _ld_default_initial_rtt = HRTIME_MSECONDS(100);
+  // [draft-17 recovery] 6.4.1.  Constants of interest
+  uint32_t _ld_packet_threshold = 3;
+  float _ld_time_threshold      = 1.25;
+  ink_hrtime _ld_granularity    = HRTIME_MSECONDS(1);
+  ink_hrtime _ld_initial_rtt    = HRTIME_MSECONDS(100);
 
   // [draft-11 recovery] 4.7.1.  Constants of interest
   uint32_t _cc_default_mss          = 1460;
