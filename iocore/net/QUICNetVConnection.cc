@@ -1362,7 +1362,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   std::vector<QUICFrameInfo> frames;
 
-  if (this->_has_ack_only_packet_out) {
+  if (!this->_has_ack_eliciting_packet_out) {
     // Sent too much ack_only packet. At this moment we need to packetize a ping frame
     // to force peer send ack frame.
     this->_pinger.request(level);
@@ -1419,11 +1419,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       }
     }
   }
-  if (frame_count == 0) {
-    ack_eliciting = false;
-  }
-
-  this->_has_ack_only_packet_out = !ack_eliciting;
 
   // Schedule a packet
   if (len != 0) {
@@ -1450,7 +1445,8 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     }
 
     // Packet is retransmittable if it's not ack only packet
-    packet = this->_build_packet(level, std::move(buf), len, ack_eliciting, probing, crypto, frames);
+    packet                              = this->_build_packet(level, std::move(buf), len, ack_eliciting, probing, crypto, frames);
+    this->_has_ack_eliciting_packet_out = ack_eliciting;
   }
 
   return packet;
