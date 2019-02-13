@@ -38,6 +38,7 @@ build/lt~obsolete.m4
 
 Makefile
 Makefile-pl
+config.cache
 config.status
 config.nice
 config.h
