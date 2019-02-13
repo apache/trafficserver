@@ -98,12 +98,6 @@ unsupported_string_claim(const char *str)
 }
 
 bool
-unsupported_date_claim(double t)
-{
-  return isnan(t);
-}
-
-bool
 jwt_validate(struct jwt *jwt)
 {
   if (!jwt) {
@@ -126,8 +120,8 @@ jwt_validate(struct jwt *jwt)
     return false;
   }
 
-  if (!unsupported_date_claim(jwt->nbf)) {
-    PluginDebug("Initial JWT Failure: nbf unsupported");
+  if (now() < jwt->nbf) {
+    PluginDebug("Initial JWT Failure: nbf claim violated");
     return false;
   }
 
