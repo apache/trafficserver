@@ -257,6 +257,9 @@ public:
   QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block, QUICFrameId id = 0,
                QUICFrameGenerator *owner = nullptr);
 
+  // There's no reasont restrict copy, but we need to write the copy constructor. Otherwise it will crash on destruct.
+  QUICAckFrame(const QUICAckFrame &) = delete;
+
   virtual ~QUICAckFrame();
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;

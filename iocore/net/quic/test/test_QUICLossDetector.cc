@@ -41,10 +41,10 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   MockQUICConnectionInfoProvider info;
   MockQUICCongestionController cc(&info);
   QUICLossDetector detector(&tx, &info, &cc, &rtt_measure, 0);
-  ats_unique_buf payload              = ats_unique_malloc(512);
-  size_t payload_len                  = 512;
-  QUICPacketUPtr packet               = QUICPacketFactory::create_null_packet();
-  std::shared_ptr<QUICAckFrame> frame = QUICFrameFactory::create_null_ack_frame();
+  ats_unique_buf payload = ats_unique_malloc(512);
+  size_t payload_len     = 512;
+  QUICPacketUPtr packet  = QUICPacketFactory::create_null_packet();
+  QUICAckFrame *frame    = nullptr;
   std::vector<QUICFrameInfo> dummy_frames;
 
   SECTION("Handshake")
@@ -142,9 +142,10 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     afm.update(QUICEncryptionLevel::INITIAL, pn8, payload_len, false);
     afm.update(QUICEncryptionLevel::INITIAL, pn9, payload_len, false);
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
-    std::shared_ptr<QUICFrame> x = afm.generate_frame(QUICEncryptionLevel::INITIAL, 2048, 2048);
-    frame                        = std::dynamic_pointer_cast<QUICAckFrame>(x);
-    detector.handle_frame(QUICEncryptionLevel::INITIAL, *frame.get());
+    uint8_t buf[QUICFrame::MAX_INSTANCE_SIZE];
+    QUICFrame *x = afm.generate_frame(buf, QUICEncryptionLevel::INITIAL, 2048, 2048);
+    frame        = static_cast<QUICAckFrame *>(x);
+    detector.handle_frame(QUICEncryptionLevel::INITIAL, *frame);
     ink_hrtime_sleep(HRTIME_MSECONDS(5000));
 
     CHECK(cc.lost_packets.size() == 3);
@@ -163,6 +164,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
 
 TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
 {
+  uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   MockQUICPacketTransmitter tx;
   MockQUICConnectionInfoProvider info;
   MockQUICCongestionController cc(&info);
@@ -172,10 +174,10 @@ TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
   // Check initial state
   CHECK(tx.retransmitted.size() == 0);
 
-  auto t1                           = Thread::get_hrtime();
-  std::shared_ptr<QUICAckFrame> ack = QUICFrameFactory::create_ack_frame(100000000, 100, 10000000);
+  auto t1           = Thread::get_hrtime();
+  QUICAckFrame *ack = QUICFrameFactory::create_ack_frame(frame_buf, 100000000, 100, 10000000);
   ack->ack_block_section()->add_ack_block({20000000, 30000000});
-  detector.handle_frame(QUICEncryptionLevel::INITIAL, *ack.get());
+  detector.handle_frame(QUICEncryptionLevel::INITIAL, *ack);
   auto t2 = Thread::get_hrtime();
   CHECK(t2 - t1 < HRTIME_MSECONDS(100));
 }

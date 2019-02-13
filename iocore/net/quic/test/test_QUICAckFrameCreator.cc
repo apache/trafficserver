@@ -31,16 +31,17 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
 {
   QUICAckFrameManager ack_manager;
   QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
+  uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
 
   // Initial state
-  std::shared_ptr<QUICFrame> ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame == nullptr);
 
   // One packet
   ack_manager.update(level, 1, 1, false);
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 1);
@@ -54,8 +55,8 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   ack_manager.update(level, 5, 1, false);
   ack_manager.update(level, 3, 1, false);
   ack_manager.update(level, 4, 1, false);
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 5);
@@ -65,8 +66,8 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   ack_manager.update(level, 6, 1, false);
   ack_manager.update(level, 7, 1, false);
   ack_manager.update(level, 10, 1, false);
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
   CHECK(frame->largest_acknowledged() == 10);
@@ -77,14 +78,14 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   ack_manager.on_frame_acked(frame->id());
 
   CHECK(ack_manager.will_generate_frame(level) == false);
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
   CHECK(ack_frame == nullptr);
 
   ack_manager.update(level, 11, 1, false);
   ack_manager.update(level, 12, 1, false);
   ack_manager.update(level, 13, 1, false);
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 13);
@@ -98,11 +99,11 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   ack_manager.update(level, 15, 1, true);
   ack_manager.update(level, 16, 1, true);
   CHECK(ack_manager.will_generate_frame(level) == false);
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
 
   ack_manager.update(level, 17, 1, false);
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 17);
@@ -187,8 +188,9 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     QUICAckFrameManager ack_manager;
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 
-    std::shared_ptr<QUICFrame> ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-    std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+    uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+    QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+    QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
     CHECK(frame == nullptr);
 
     // unorder frame should sent immediately
@@ -201,8 +203,8 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     sleep(1);
     Thread::get_hrtime_updated();
     CHECK(ack_manager.will_generate_frame(level) == true);
-    ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-    frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+    ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+    frame     = static_cast<QUICAckFrame *>(ack_frame);
 
     CHECK(frame->ack_block_count() == 0);
     CHECK(frame->largest_acknowledged() == 2);
@@ -217,8 +219,9 @@ TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
   QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
 
   // Initial state
-  std::shared_ptr<QUICFrame> ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame == nullptr);
 
   ack_manager.update(level, 2, 1, false);
@@ -227,8 +230,8 @@ TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
   ack_manager.update(level, 8, 1, false);
   ack_manager.update(level, 9, 1, false);
 
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 2);
   CHECK(frame->largest_acknowledged() == 9);
@@ -239,8 +242,8 @@ TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
 
   ack_manager.update(level, 7, 1, false);
   ack_manager.update(level, 4, 1, false);
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
   CHECK(frame->largest_acknowledged() == 9);
@@ -293,10 +296,11 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
 {
   QUICAckFrameManager ack_manager;
   QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
+  uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
 
   // Initial state
-  std::shared_ptr<QUICFrame> ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  std::shared_ptr<QUICAckFrame> frame  = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame == nullptr);
 
   ack_manager.update(level, 2, 1, false);
@@ -305,8 +309,8 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
   ack_manager.update(level, 8, 1, false);
   ack_manager.update(level, 9, 1, false);
 
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 2);
   CHECK(frame->largest_acknowledged() == 9);
@@ -315,8 +319,8 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
 
   ack_manager.on_frame_lost(frame->id());
   CHECK(ack_manager.will_generate_frame(level) == true);
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 2);
   CHECK(frame->largest_acknowledged() == 9);
@@ -329,8 +333,8 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
   ack_manager.update(level, 7, 1, false);
   ack_manager.update(level, 4, 1, false);
 
-  ack_frame = ack_manager.generate_frame(level, UINT16_MAX, UINT16_MAX);
-  frame     = std::static_pointer_cast<QUICAckFrame>(ack_frame);
+  ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+  frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
   CHECK(frame->ack_block_count() == 1);
   CHECK(frame->largest_acknowledged() == 9);
