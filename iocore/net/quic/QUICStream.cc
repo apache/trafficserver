@@ -332,7 +332,9 @@ QUICStream::recv(const QUICStreamFrame &frame)
     return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FLOW_CONTROL_ERROR);
   }
 
-  QUICConnectionErrorUPtr error = this->_received_stream_frame_buffer.insert(frame);
+  // Make a copy and insert it into the receive buffer because the frame passed is temporal
+  QUICFrame *cloned             = new QUICStreamFrame(frame);
+  QUICConnectionErrorUPtr error = this->_received_stream_frame_buffer.insert(cloned);
   if (error != nullptr) {
     this->_received_stream_frame_buffer.clear();
     return error;
@@ -340,20 +342,25 @@ QUICStream::recv(const QUICStreamFrame &frame)
 
   auto new_frame                      = this->_received_stream_frame_buffer.pop();
   const QUICStreamFrame *stream_frame = nullptr;
+  uint64_t last_offset                = 0;
+  uint64_t last_length                = 0;
 
   while (new_frame != nullptr) {
     stream_frame = static_cast<const QUICStreamFrame *>(new_frame);
+    last_offset  = stream_frame->offset();
+    last_length  = stream_frame->data_length();
 
     this->_write_to_read_vio(stream_frame->offset(), reinterpret_cast<uint8_t *>(stream_frame->data()->start()),
                              stream_frame->data_length(), stream_frame->has_fin_flag());
     this->_state.update_with_receiving_frame(*new_frame);
 
+    delete new_frame;
     new_frame = this->_received_stream_frame_buffer.pop();
   }
 
   // Forward limit of local flow controller with the largest reordered stream frame
   if (stream_frame) {
-    this->_reordered_bytes = stream_frame->offset() + stream_frame->data_length();
+    this->_reordered_bytes = last_offset + last_length;
     this->_local_flow_controller.forward_limit(this->_reordered_bytes + this->_flow_control_buffer_size);
     QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
                       this->_local_flow_controller.current_limit());
@@ -824,7 +831,9 @@ QUICCryptoStream::reset_recv_offset()
 QUICConnectionErrorUPtr
 QUICCryptoStream::recv(const QUICCryptoFrame &frame)
 {
-  QUICConnectionErrorUPtr error = this->_received_stream_frame_buffer.insert(frame);
+  // Make a copy and insert it into the receive buffer because the frame passed is temporal
+  QUICFrame *cloned             = new QUICCryptoFrame(frame);
+  QUICConnectionErrorUPtr error = this->_received_stream_frame_buffer.insert(cloned);
   if (error != nullptr) {
     this->_received_stream_frame_buffer.clear();
     return error;
@@ -835,6 +844,8 @@ QUICCryptoStream::recv(const QUICCryptoFrame &frame)
     const QUICCryptoFrame *crypto_frame = static_cast<const QUICCryptoFrame *>(new_frame);
 
     this->_read_buffer->write(reinterpret_cast<uint8_t *>(crypto_frame->data()->start()), crypto_frame->data_length());
+
+    delete new_frame;
     new_frame = this->_received_stream_frame_buffer.pop();
   }
 

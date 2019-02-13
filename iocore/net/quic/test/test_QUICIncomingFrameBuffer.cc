@@ -47,8 +47,10 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
   {
     QUICStreamFrame *stream1_frame_0_r = QUICFrameFactory::create_stream_frame(frame_buf, block_1024, 1, 0, true);
 
-    err = buffer.insert(*stream1_frame_0_r);
+    err = buffer.insert(new QUICStreamFrame(*stream1_frame_0_r));
     CHECK(err == nullptr);
+
+    buffer.clear();
   }
 
   SECTION("multiple frames")
@@ -64,28 +66,34 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     QUICStreamFrame *stream1_frame_3_r = QUICFrameFactory::create_stream_frame(frame_buf3, block_1024, 1, 3072, true);
     QUICStreamFrame *stream1_frame_4_r = QUICFrameFactory::create_stream_frame(frame_buf4, block_1024, 1, 4096);
 
-    buffer.insert(*stream1_frame_0_r);
-    buffer.insert(*stream1_frame_1_r);
-    buffer.insert(*stream1_frame_2_r);
-    err = buffer.insert(*stream1_frame_3_r);
+    buffer.insert(new QUICStreamFrame(*stream1_frame_0_r));
+    buffer.insert(new QUICStreamFrame(*stream1_frame_1_r));
+    buffer.insert(new QUICStreamFrame(*stream1_frame_2_r));
+    err = buffer.insert(new QUICStreamFrame(*stream1_frame_3_r));
     CHECK(err->cls == QUICErrorClass::TRANSPORT);
     CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
+
+    buffer.clear();
 
     QUICIncomingStreamFrameBuffer buffer2;
 
-    buffer2.insert(*stream1_frame_3_r);
-    buffer2.insert(*stream1_frame_0_r);
-    buffer2.insert(*stream1_frame_1_r);
-    err = buffer2.insert(*stream1_frame_2_r);
+    buffer2.insert(new QUICStreamFrame(*stream1_frame_3_r));
+    buffer2.insert(new QUICStreamFrame(*stream1_frame_0_r));
+    buffer2.insert(new QUICStreamFrame(*stream1_frame_1_r));
+    err = buffer2.insert(new QUICStreamFrame(*stream1_frame_2_r));
     CHECK(err->cls == QUICErrorClass::TRANSPORT);
     CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
+
+    buffer2.clear();
 
     QUICIncomingStreamFrameBuffer buffer3;
 
-    buffer3.insert(*stream1_frame_4_r);
-    err = buffer3.insert(*stream1_frame_3_r);
+    buffer3.insert(new QUICStreamFrame(*stream1_frame_4_r));
+    err = buffer3.insert(new QUICStreamFrame(*stream1_frame_3_r));
     CHECK(err->cls == QUICErrorClass::TRANSPORT);
     CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
+
+    buffer3.clear();
   }
 
   SECTION("Pure FIN")
@@ -97,14 +105,16 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     QUICStreamFrame *stream1_frame_empty    = QUICFrameFactory::create_stream_frame(frame_buf1, block_0, 1, 1024);
     QUICStreamFrame *stream1_frame_pure_fin = QUICFrameFactory::create_stream_frame(frame_buf2, block_0, 1, 1024, true);
 
-    err = buffer.insert(*stream1_frame_0_r);
+    err = buffer.insert(new QUICStreamFrame(*stream1_frame_0_r));
     CHECK(err == nullptr);
 
-    err = buffer.insert(*stream1_frame_empty);
+    err = buffer.insert(new QUICStreamFrame(*stream1_frame_empty));
     CHECK(err == nullptr);
 
-    err = buffer.insert(*stream1_frame_pure_fin);
+    err = buffer.insert(new QUICStreamFrame(*stream1_frame_pure_fin));
     CHECK(err == nullptr);
+
+    buffer.clear();
   }
 
   delete stream;
@@ -139,12 +149,12 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
   QUICStreamFrame *stream1_frame_3_r   = QUICFrameFactory::create_stream_frame(frame_buf4, block_1024, 1, 3072);
   QUICStreamFrame *stream1_frame_4_r   = QUICFrameFactory::create_stream_frame(frame_buf5, block_1024, 1, 4096, true);
 
-  buffer.insert(*stream1_frame_0_r);
-  buffer.insert(*stream1_frame_1_r);
-  buffer.insert(*stream1_frame_empty);
-  buffer.insert(*stream1_frame_2_r);
-  buffer.insert(*stream1_frame_3_r);
-  buffer.insert(*stream1_frame_4_r);
+  buffer.insert(new QUICStreamFrame(*stream1_frame_0_r));
+  buffer.insert(new QUICStreamFrame(*stream1_frame_1_r));
+  buffer.insert(new QUICStreamFrame(*stream1_frame_empty));
+  buffer.insert(new QUICStreamFrame(*stream1_frame_2_r));
+  buffer.insert(new QUICStreamFrame(*stream1_frame_3_r));
+  buffer.insert(new QUICStreamFrame(*stream1_frame_4_r));
   CHECK(!buffer.empty());
 
   auto frame = static_cast<const QUICStreamFrame *>(buffer.pop());
@@ -161,11 +171,11 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
 
   buffer.clear();
 
-  buffer.insert(*stream1_frame_4_r);
-  buffer.insert(*stream1_frame_3_r);
-  buffer.insert(*stream1_frame_2_r);
-  buffer.insert(*stream1_frame_1_r);
-  buffer.insert(*stream1_frame_0_r);
+  buffer.insert(new QUICStreamFrame(*stream1_frame_4_r));
+  buffer.insert(new QUICStreamFrame(*stream1_frame_3_r));
+  buffer.insert(new QUICStreamFrame(*stream1_frame_2_r));
+  buffer.insert(new QUICStreamFrame(*stream1_frame_1_r));
+  buffer.insert(new QUICStreamFrame(*stream1_frame_0_r));
   CHECK(!buffer.empty());
 
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
@@ -211,10 +221,10 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
   QUICStreamFrame *stream1_frame_2_r = QUICFrameFactory::create_stream_frame(frame_buf2, block_1024, 1, 2048, true);
   QUICStreamFrame *stream1_frame_3_r = QUICFrameFactory::create_stream_frame(frame_buf3, block_1024, 1, 2048, true);
 
-  buffer.insert(*stream1_frame_0_r);
-  buffer.insert(*stream1_frame_1_r);
-  buffer.insert(*stream1_frame_2_r);
-  err = buffer.insert(*stream1_frame_3_r);
+  buffer.insert(new QUICStreamFrame(*stream1_frame_0_r));
+  buffer.insert(new QUICStreamFrame(*stream1_frame_1_r));
+  buffer.insert(new QUICStreamFrame(*stream1_frame_2_r));
+  err = buffer.insert(new QUICStreamFrame(*stream1_frame_3_r));
   CHECK(err == nullptr);
 
   auto frame = static_cast<const QUICStreamFrame *>(buffer.pop());
@@ -234,10 +244,10 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
   QUICStreamFrame *stream2_frame_2_r = QUICFrameFactory::create_stream_frame(frame_buf6, block_1024, 1, 1024);
   QUICStreamFrame *stream2_frame_3_r = QUICFrameFactory::create_stream_frame(frame_buf7, block_1024, 1, 2048, true);
 
-  buffer.insert(*stream2_frame_0_r);
-  buffer.insert(*stream2_frame_1_r);
-  buffer.insert(*stream2_frame_2_r);
-  err = buffer.insert(*stream2_frame_3_r);
+  buffer.insert(new QUICStreamFrame(*stream2_frame_0_r));
+  buffer.insert(new QUICStreamFrame(*stream2_frame_1_r));
+  buffer.insert(new QUICStreamFrame(*stream2_frame_2_r));
+  err = buffer.insert(new QUICStreamFrame(*stream2_frame_3_r));
   CHECK(err == nullptr);
 
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());

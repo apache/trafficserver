@@ -38,44 +38,44 @@ TEST_CASE("QUICStream", "[quic]")
 
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
 
-  Ptr<IOBufferBlock> new_block             = make_ptr<IOBufferBlock>(block->clone());
-  new_block->_end                          = new_block->_start + 2;
-  std::shared_ptr<QUICStreamFrame> frame_1 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 0);
+  Ptr<IOBufferBlock> new_block = make_ptr<IOBufferBlock>(block->clone());
+  new_block->_end              = new_block->_start + 2;
+  QUICStreamFrame frame_1(new_block, stream_id, 0);
   block->consume(2);
 
-  new_block                                = block->clone();
-  new_block->_end                          = new_block->_start + 2;
-  std::shared_ptr<QUICStreamFrame> frame_2 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 2);
+  new_block       = block->clone();
+  new_block->_end = new_block->_start + 2;
+  QUICStreamFrame frame_2(new_block, stream_id, 2);
   block->consume(2);
 
-  new_block                                = block->clone();
-  new_block->_end                          = new_block->_start + 2;
-  std::shared_ptr<QUICStreamFrame> frame_3 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 4);
+  new_block       = block->clone();
+  new_block->_end = new_block->_start + 2;
+  QUICStreamFrame frame_3(new_block, stream_id, 4);
   block->consume(2);
 
-  new_block                                = block->clone();
-  new_block->_end                          = new_block->_start + 2;
-  std::shared_ptr<QUICStreamFrame> frame_4 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 6);
+  new_block       = block->clone();
+  new_block->_end = new_block->_start + 2;
+  QUICStreamFrame frame_4(new_block, stream_id, 6);
   block->consume(2);
 
-  new_block                                = block->clone();
-  new_block->_end                          = new_block->_start + 2;
-  std::shared_ptr<QUICStreamFrame> frame_5 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 8);
+  new_block       = block->clone();
+  new_block->_end = new_block->_start + 2;
+  QUICStreamFrame frame_5(new_block, stream_id, 8);
   block->consume(2);
 
-  new_block                                = block->clone();
-  new_block->_end                          = new_block->_start + 2;
-  std::shared_ptr<QUICStreamFrame> frame_6 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 10);
+  new_block       = block->clone();
+  new_block->_end = new_block->_start + 2;
+  QUICStreamFrame frame_6(new_block, stream_id, 10);
   block->consume(2);
 
-  new_block                                = block->clone();
-  new_block->_end                          = new_block->_start + 2;
-  std::shared_ptr<QUICStreamFrame> frame_7 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 12);
+  new_block       = block->clone();
+  new_block->_end = new_block->_start + 2;
+  QUICStreamFrame frame_7(new_block, stream_id, 12);
   block->consume(2);
 
-  new_block                                = block->clone();
-  new_block->_end                          = new_block->_start + 2;
-  std::shared_ptr<QUICStreamFrame> frame_8 = std::make_shared<QUICStreamFrame>(new_block, stream_id, 14);
+  new_block       = block->clone();
+  new_block->_end = new_block->_start + 2;
+  QUICStreamFrame frame_8(new_block, stream_id, 14);
   block->consume(2);
 
   SECTION("QUICStream_assembling_byte_stream_1")
@@ -88,14 +88,14 @@ TEST_CASE("QUICStream", "[quic]")
     std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, 1024, 1024));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
-    stream->recv(*frame_1);
-    stream->recv(*frame_2);
-    stream->recv(*frame_3);
-    stream->recv(*frame_4);
-    stream->recv(*frame_5);
-    stream->recv(*frame_6);
-    stream->recv(*frame_7);
-    stream->recv(*frame_8);
+    stream->recv(frame_1);
+    stream->recv(frame_2);
+    stream->recv(frame_3);
+    stream->recv(frame_4);
+    stream->recv(frame_5);
+    stream->recv(frame_6);
+    stream->recv(frame_7);
+    stream->recv(frame_8);
 
     uint8_t buf[32];
     int64_t len = reader->read_avail();
@@ -115,14 +115,14 @@ TEST_CASE("QUICStream", "[quic]")
     std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
-    stream->recv(*frame_8);
-    stream->recv(*frame_7);
-    stream->recv(*frame_6);
-    stream->recv(*frame_5);
-    stream->recv(*frame_4);
-    stream->recv(*frame_3);
-    stream->recv(*frame_2);
-    stream->recv(*frame_1);
+    stream->recv(frame_8);
+    stream->recv(frame_7);
+    stream->recv(frame_6);
+    stream->recv(frame_5);
+    stream->recv(frame_4);
+    stream->recv(frame_3);
+    stream->recv(frame_2);
+    stream->recv(frame_1);
 
     uint8_t buf[32];
     int64_t len = reader->read_avail();
@@ -142,16 +142,16 @@ TEST_CASE("QUICStream", "[quic]")
     std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
-    stream->recv(*frame_8);
-    stream->recv(*frame_7);
-    stream->recv(*frame_6);
-    stream->recv(*frame_7); // duplicated frame
-    stream->recv(*frame_5);
-    stream->recv(*frame_3);
-    stream->recv(*frame_1);
-    stream->recv(*frame_2);
-    stream->recv(*frame_4);
-    stream->recv(*frame_5); // duplicated frame
+    stream->recv(frame_8);
+    stream->recv(frame_7);
+    stream->recv(frame_6);
+    stream->recv(frame_7); // duplicated frame
+    stream->recv(frame_5);
+    stream->recv(frame_3);
+    stream->recv(frame_1);
+    stream->recv(frame_2);
+    stream->recv(frame_4);
+    stream->recv(frame_5); // duplicated frame
 
     uint8_t buf[32];
     int64_t len = reader->read_avail();
