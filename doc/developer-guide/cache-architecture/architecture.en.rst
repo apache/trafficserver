@@ -64,7 +64,6 @@ line in the file defines a :term:`cache span` which is treated as a uniform
 persistent store.
 
 .. figure:: images/cache-spans.png
-   :align: center
 
    Two cache spans
 
@@ -81,12 +80,10 @@ stripe is in a single cache span and part of a single cache volume.
 If the cache volumes for the example cache spans were defined as:
 
 .. image:: images/ats-cache-volume-definition.png
-   :align: center
 
 Then the actual layout would look like:
 
 .. image:: images/cache-span-layout.png
-   :align: center
 
 Cache stripes are the fundamental unit of cache for the implementation. A
 cached object is stored entirely in a single stripe, and therefore in a single
@@ -116,7 +113,6 @@ file system. A cache stripe is structured data contained in a span block and alw
 entire span block.
 
 .. image:: images/span-header.svg
-   :align: center
 
 Stripe Structure
 ----------------
@@ -175,7 +171,6 @@ memory as more content is stored in the cache. If there is enough memory to run
 |TS| with an empty cache there is enough to run it with a full cache.
 
 .. figure:: images/cache-directory-structure.png
-   :align: center
 
 Each entry stores an offset in the stripe and a size. The size stored in the
 directory entry is an :ref:`approximate size <dir-size>` which is at least as
@@ -215,7 +210,6 @@ a stripe is chosen so that each segment has as many buckets as possible without
 exceeding 65,535 (2\ :sup:`16`\ -1) entries in a segment.
 
 .. figure:: images/dir-segment-bucket.png
-   :align: center
 
 Each directory entry has a previous and next index value which is used to link
 entries in the same segment. Because no segment has more than 65,535 entries,
@@ -237,7 +231,6 @@ bucket locality (that is, :term:`cache IDs <cache ID>` that map to the same
 hash bucket will also tend to use the same directory bucket).
 
 .. figure:: images/dir-bucket-assign.png
-   :align: center
 
 Entries are removed from the free list when used and returned when no longer in
 use. When a :term:`fragment <cache fragment>` needs to be put in to the
@@ -263,7 +256,6 @@ without the segment free lists. This makes the size of the header dependent on
 the directory but not that of the footer.
 
 .. figure:: images/cache-stripe-layout.png
-   :align: center
 
 Each stripe has several values that describe its basic layout:
 
@@ -326,7 +318,6 @@ Instead it will be noted if the object is accessed in the future and the disk
 read of the fragment fails.
 
 .. figure:: images/ats-cache-write-cursor.png
-   :align: center
 
    The write cursor and documents in the cache.
 
@@ -381,7 +372,6 @@ area of the on disk image, followed by information about additional fragments
 if needed to store the object.
 
 .. figure:: images/cache-doc-layout-3-2-0.png
-   :align: center
 
    ``Doc`` layout 3.2.0
 
@@ -392,7 +382,6 @@ metadata to being directly incorporated in to the :cpp:class:`CacheHTTPInfoVecto
 yielding a layout of the following form.
 
 .. figure:: images/cache-doc-layout-4-0-1.png
-   :align: center
 
    ``Doc`` layout 4.0.1
 
@@ -444,7 +433,6 @@ of a single object are ordered they are not necessarily contiguous, as data from
 different objects are interleaved as the data arrives in |TS|.
 
 .. figure:: images/cache-multi-fragment.png
-   :align: center
 
    Multi-alternate and multi-fragment object storage
 

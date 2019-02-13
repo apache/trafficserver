@@ -37,7 +37,6 @@ ProxySession
 ------------------
 
 .. figure:: /static/images/sessions/session_hierarchy.png
-   :align: center
    :alt: ProxySession hierarchy
 
 The ProxySession class abstracts the key features of a client session.  It contains zero or more ProxyTransaction objects.  It also has a reference to the associated NetVC (either UnixNetVConnection or SSLNetVConnection).  The session class is responsible for interfacing with the user agent protocol.
@@ -50,7 +49,6 @@ ProxyTransaction
 ----------------------
 
 .. figure:: /static/images/sessions/transaction_hierarchy.png
-   :align: center
    :alt: ProxyTransaction hierarchy
 
 The ProxyTransaction class abstracts the key features of a client transaction.  It has a reference to its
@@ -65,7 +63,6 @@ HTTP/1.x Objects
 ----------------
 
 .. figure:: /static/images/sessions/http1_session_objects.png
-   :align: center
    :alt: HTTP1 session objects
 
 This diagram shows the relationships between objects created as part of a HTTP/1.x session.  A NetVC
@@ -88,7 +85,6 @@ HTTP/2 Objects
 --------------
 
 .. figure:: /static/images/sessions/http2_session_objects.png
-   :align: center
    :alt: HTTP/2 session objects
 
 This diagram shows the relationships between objects created as part of a HTTP/2 session.  It is very similar

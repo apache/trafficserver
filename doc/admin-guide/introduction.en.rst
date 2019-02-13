@@ -190,7 +190,6 @@ requests and manage, control, and monitor the health of the system.
 The figure below illustrates the |TS| processes.
 
 .. figure:: ../static/images/admin/process.jpg
-   :align: center
    :alt: Illustration of the |TS| Processes
 
    Illustration of the |TS| Processes

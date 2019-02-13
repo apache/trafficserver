@@ -83,7 +83,6 @@ call-back functions you've registered for that event type.
 .. _PluginProcess:
 
 .. figure:: /static/images/sdk/plugin_process.jpg
-   :align: center
    :alt: Plugin Process
 
    Plugin Process
@@ -130,7 +129,6 @@ The figure below, :ref:`possibleTSplugins`, illustrates several types of plugins
 .. _possibleTSplugins:
 
 .. figure:: /static/images/sdk/Uses.jpg
-   :align: center
    :alt: Possible Traffic Server Plugins
 
    Possible Traffic Server Plugins

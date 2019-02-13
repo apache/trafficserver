@@ -69,7 +69,6 @@ full restart of Traffic Server.
 The following is a sample portion of :file:`records.config`:
 
 .. figure:: ../static/images/admin/records.jpg
-   :align: center
    :alt: Sample records.config file
 
    Sample records.config file

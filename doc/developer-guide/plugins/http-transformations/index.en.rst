@@ -88,7 +88,6 @@ relationship between the transformation ``VConnection`` and its
 
 .. figure:: /static/images/sdk/vconnection.jpg
    :alt: A Transformation and its VIOs
-   :align: center
 
    **A Transformation and its VIOs**
 

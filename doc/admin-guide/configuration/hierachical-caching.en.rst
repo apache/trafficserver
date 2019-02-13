@@ -66,7 +66,6 @@ can now be served directly from the Traffic Server cache (until the data
 is stale or expired).
 
 .. figure:: /static/images/admin/cachehrc.jpg
-   :align: center
    :alt: Parent caching
 
    Parent caching

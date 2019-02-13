@@ -273,7 +273,6 @@ The overall exchange looks like the following:
 A detailed view of the plugin operation.
 
 .. image:: ../../../uml/images/TLS-Bridge-Plugin.svg
-   :align: center
 
 A sequence diagram focusing on the request / response data flow. There is a :code:`NetVConn` for the
 connection to the Peer |TS| which is omitted for clarity.
@@ -288,7 +287,6 @@ means there was an error and the tunnel is shut down. To deal with the Client re
 response code is stored and used later during cleanup.
 
 .. image:: ../../../uml/images/TLS-Bridge-Messages.svg
-   :align: center
 
 A restartable state machine is used to recognize the end of the Peer |TS| response. The initial part
 of the response is easy because all that is needed is to wait until there is sufficient data for a

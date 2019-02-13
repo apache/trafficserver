@@ -47,7 +47,6 @@ Netscape Common
 The following figure shows a sample log entry in a Netscape Common log file.
 
 .. figure:: /static/images/admin/netscape_common_format.jpg
-   :align: center
    :alt: Sample Netscape Common log entry
 
 The numbered sections correspond to the following log fields in |TS|:
@@ -82,7 +81,6 @@ Netscape Extended
 The following figure shows a sample log entry in a Netscape Extended log file.
 
 .. figure:: /static/images/admin/netscape_extended_format.jpg
-   :align: center
    :alt: Sample Netscape Extended log entry
 
 In addition to fields 1-7 from the Netscape Common log format, the Extended
@@ -129,7 +127,6 @@ Netscape Extended-2
 The following figure shows a sample log entry in a Netscape Extended2 log file.
 
 .. figure:: /static/images/admin/netscape_extended2_format.jpg
-   :align: center
    :alt: Sample Netscape Extended-2 log entry
 
 In addition to fields 1-16 from the Netscape Common and Netscape Extended log
@@ -168,7 +165,6 @@ Squid
 The following figure shows a sample log entry in a Squid log file.
 
 .. figure:: /static/images/admin/squid_format.jpg
-   :align: center
    :alt: Sample Squid log entry
 
 The numbered sections correspond to the following log fields in |TS|:
