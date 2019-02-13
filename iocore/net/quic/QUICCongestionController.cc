@@ -69,18 +69,18 @@ QUICCongestionController::on_packet_acked(const PacketInfo &acked_packet)
 {
   // Remove from bytes_in_flight.
   SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
-  this->_bytes_in_flight -= acked_packet.bytes;
+  this->_bytes_in_flight -= acked_packet.sent_bytes;
   if (this->_in_recovery(acked_packet.packet_number)) {
     // Do not increase congestion window in recovery period.
     return;
   }
   if (this->_congestion_window < this->_ssthresh) {
     // Slow start.
-    this->_congestion_window += acked_packet.bytes;
+    this->_congestion_window += acked_packet.sent_bytes;
     QUICCCDebug("slow start window chaged");
   } else {
     // Congestion avoidance.
-    this->_congestion_window += this->_k_default_mss * acked_packet.bytes / this->_congestion_window;
+    this->_congestion_window += this->_k_default_mss * acked_packet.sent_bytes / this->_congestion_window;
     QUICCCDebug("Congestion avoidance window changed");
   }
 }
@@ -95,7 +95,7 @@ QUICCongestionController::on_packets_lost(const std::map<QUICPacketNumber, Packe
   SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
   // Remove lost packets from bytes_in_flight.
   for (auto &lost_packet : lost_packets) {
-    this->_bytes_in_flight -= lost_packet.second->bytes;
+    this->_bytes_in_flight -= lost_packet.second->sent_bytes;
   }
   QUICPacketNumber largest_lost_packet = lost_packets.rbegin()->first;
   // Start a new recovery epoch if the lost packet is larger

@@ -45,14 +45,10 @@ QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConne
   this->_loss_detection_mutex = new_ProxyMutex();
 
   QUICConfig::scoped_config params;
-  this->_k_max_tlps                  = params->ld_max_tlps();
-  this->_k_reordering_threshold      = params->ld_reordering_threshold();
-  this->_k_time_reordering_fraction  = params->ld_time_reordering_fraction();
-  this->_k_using_time_loss_detection = params->ld_time_loss_detection();
-  this->_k_min_tlp_timeout           = params->ld_min_tlp_timeout();
-  this->_k_min_rto_timeout           = params->ld_min_rto_timeout();
-  this->_k_delayed_ack_timeout       = params->ld_delayed_ack_timeout();
-  this->_k_default_initial_rtt       = params->ld_default_initial_rtt();
+  this->_k_packet_threshold = params->ld_packet_threshold();
+  this->_k_time_threshold   = params->ld_time_threshold();
+  this->_k_granularity      = params->ld_granularity();
+  this->_k_initial_rtt      = params->ld_initial_rtt();
 
   this->reset();
 
@@ -61,9 +57,9 @@ QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConne
 
 QUICLossDetector::~QUICLossDetector()
 {
-  if (this->_loss_detection_alarm) {
-    this->_loss_detection_alarm->cancel();
-    this->_loss_detection_alarm = nullptr;
+  if (this->_loss_detection_timer) {
+    this->_loss_detection_timer->cancel();
+    this->_loss_detection_timer = nullptr;
   }
 
   this->_sent_packets.clear();
@@ -80,7 +76,7 @@ QUICLossDetector::event_handler(int event, Event *edata)
     if (this->_loss_detection_alarm_at <= Thread::get_hrtime()) {
       this->_loss_detection_alarm_at = 0;
       this->_smoothed_rtt            = this->_rtt_measure->smoothed_rtt();
-      this->_on_loss_detection_alarm();
+      this->_on_loss_detection_timeout();
     }
     break;
   }
@@ -88,9 +84,9 @@ QUICLossDetector::event_handler(int event, Event *edata)
     SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
     QUICLDDebug("Shutdown");
 
-    if (this->_loss_detection_alarm) {
-      this->_loss_detection_alarm->cancel();
-      this->_loss_detection_alarm = nullptr;
+    if (this->_loss_detection_timer) {
+      this->_loss_detection_timer->cancel();
+      this->_loss_detection_timer = nullptr;
     }
     break;
   }
@@ -136,49 +132,42 @@ QUICLossDetector::largest_acked_packet_number()
 }
 
 void
-QUICLossDetector::on_packet_sent(QUICPacketUPtr packet)
+QUICLossDetector::on_packet_sent(QUICPacketUPtr packet, bool in_flight)
 {
-  bool is_handshake   = false;
-  QUICPacketType type = packet->type();
-
-  if (type == QUICPacketType::VERSION_NEGOTIATION) {
+  if (packet->type() == QUICPacketType::VERSION_NEGOTIATION) {
     return;
   }
 
-  // Is CRYPTO[EOED] on 0-RTT handshake?
-  if (type == QUICPacketType::INITIAL || type == QUICPacketType::HANDSHAKE) {
-    is_handshake = true;
-  }
-
-  QUICPacketNumber packet_number = packet->packet_number();
-  bool is_ack_only               = !packet->is_ack_eliciting();
-  size_t sent_bytes              = is_ack_only ? 0 : packet->size();
-  this->_smoothed_rtt            = this->_rtt_measure->smoothed_rtt();
-  this->_on_packet_sent(packet_number, is_ack_only, is_handshake, sent_bytes, std::move(packet));
+  this->_smoothed_rtt = this->_rtt_measure->smoothed_rtt();
+  auto packet_number  = packet->packet_number();
+  auto ack_eliciting  = packet->is_ack_eliciting();
+  auto crypto         = packet->is_crypto_packet();
+  auto sent_bytes     = packet->size();
+  this->_on_packet_sent(packet_number, ack_eliciting, in_flight, crypto, sent_bytes, std::move(packet));
 }
 
 void
 QUICLossDetector::reset()
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-  if (this->_loss_detection_alarm) {
-    this->_loss_detection_alarm->cancel();
-    this->_loss_detection_alarm = nullptr;
+  if (this->_loss_detection_timer) {
+    this->_loss_detection_timer->cancel();
+    this->_loss_detection_timer = nullptr;
   }
 
   this->_sent_packets.clear();
 
-  // [draft-11 recovery] 3.5.3.  Initialization
-  this->_handshake_outstanding       = 0;
-  this->_retransmittable_outstanding = 0;
-
-  if (this->_k_using_time_loss_detection) {
-    this->_reordering_threshold     = UINT32_MAX;
-    this->_time_reordering_fraction = this->_k_time_reordering_fraction;
-  } else {
-    this->_reordering_threshold     = this->_k_reordering_threshold;
-    this->_time_reordering_fraction = INFINITY;
-  }
+  // [draft-17 recovery] 6.4.3.  Initialization
+  this->_crypto_count                           = 0;
+  this->_pto_count                              = 0;
+  this->_loss_time                              = 0;
+  this->_smoothed_rtt                           = 0;
+  this->_rttvar                                 = 0;
+  this->_min_rtt                                = INT64_MAX;
+  this->_time_of_last_sent_ack_eliciting_packet = 0;
+  this->_time_of_last_sent_crypto_packet        = 0;
+  this->_largest_sent_packet                    = 0;
+  this->_largest_acked_packet                   = 0;
 }
 
 void
@@ -188,30 +177,25 @@ QUICLossDetector::update_ack_delay_exponent(uint8_t ack_delay_exponent)
 }
 
 void
-QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool is_ack_only, bool is_handshake, size_t sent_bytes,
-                                  QUICPacketUPtr packet)
+QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool ack_eliciting, bool in_flight, bool is_crypto_packet,
+                                  size_t sent_bytes, QUICPacketUPtr packet)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   ink_hrtime now             = Thread::get_hrtime();
   this->_largest_sent_packet = packet_number;
   // FIXME Should we really keep actual packet object?
 
-  if (!is_ack_only) {
-    PacketInfoUPtr packet_info(new PacketInfo({packet_number, now, is_ack_only, is_handshake, sent_bytes, std::move(packet)}));
-    this->_add_to_sent_packet_list(packet_number, std::move(packet_info));
-
-    if (is_handshake) {
-      this->_time_of_last_sent_handshake_packet = now;
+  PacketInfoUPtr packet_info = PacketInfoUPtr(new PacketInfo(
+    {packet_number, now, ack_eliciting, is_crypto_packet, in_flight, ack_eliciting ? sent_bytes : 0, std::move(packet)}));
+  this->_add_to_sent_packet_list(packet_number, std::move(packet_info));
+  if (ack_eliciting) {
+    if (is_crypto_packet) {
+      this->_time_of_last_sent_crypto_packet = now;
     }
-    this->_time_of_last_sent_retransmittable_packet = now;
+
+    this->_time_of_last_sent_ack_eliciting_packet = now;
     this->_cc->on_packet_sent(sent_bytes);
-    this->_set_loss_detection_alarm();
-  } else {
-    // -- ADDITIONAL CODE --
-    // To simplify code - setting sent_bytes only if the packet is not ack_only.
-    PacketInfoUPtr packet_info(new PacketInfo({packet_number, now, is_ack_only, is_handshake, 0, std::move(packet)}));
-    this->_add_to_sent_packet_list(packet_number, std::move(packet_info));
-    // -- END OF ADDITIONAL CODE --
+    this->_set_loss_detection_timer();
   }
 }
 
@@ -221,55 +205,66 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame)
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
-  this->_largest_acked_packet = ack_frame.largest_acknowledged();
-  // If the largest acked is newly acked, update the RTT.
+  this->_largest_acked_packet = std::max(this->_largest_acked_packet, ack_frame.largest_acknowledged());
+  // If the largest acknowledged is newly acked and
+  //  ack-eliciting, update the RTT.
   auto pi = this->_sent_packets.find(ack_frame.largest_acknowledged());
   if (pi != this->_sent_packets.end()) {
-    this->_latest_rtt = Thread::get_hrtime() - pi->second->time;
+    this->_latest_rtt = Thread::get_hrtime() - pi->second->time_sent;
     // _latest_rtt is nanosecond but ack_frame.ack_delay is microsecond and scaled
     ink_hrtime delay = HRTIME_USECONDS(ack_frame.ack_delay() << this->_ack_delay_exponent);
-    this->_update_rtt(this->_latest_rtt, delay, ack_frame.largest_acknowledged());
+    this->_update_rtt(this->_latest_rtt, delay);
   }
 
   QUICLDVDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
-               this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
+               this->_ack_eliciting_outstanding.load(), this->_crypto_outstanding.load());
+
+  // TODO ECN
+  // if (ACK frame contains ECN information):
+  //   ProcessECN(ack)
 
   // Find all newly acked packets.
+  bool newly_acked_packets = false;
   for (auto &&range : this->_determine_newly_acked_packets(ack_frame)) {
     for (auto ite = this->_sent_packets.begin(); ite != this->_sent_packets.end(); /* no increment here*/) {
       auto tmp_ite = ite;
       tmp_ite++;
       if (range.contains(ite->first)) {
+        newly_acked_packets = true;
         this->_on_packet_acked(*(ite->second));
       }
       ite = tmp_ite;
     }
   }
 
-  QUICLDVDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
-               this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
+  if (!newly_acked_packets) {
+    return;
+  }
 
-  this->_detect_lost_packets(ack_frame.largest_acknowledged());
+  this->_crypto_count = 0;
+  this->_pto_count    = 0;
+
+  QUICLDVDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
+               this->_ack_eliciting_outstanding.load(), this->_crypto_outstanding.load());
+
+  this->_detect_lost_packets();
 
   QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
-              this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
+              this->_ack_eliciting_outstanding.load(), this->_crypto_outstanding.load());
 
-  this->_set_loss_detection_alarm();
+  this->_set_loss_detection_timer();
 }
 
 void
-QUICLossDetector::_update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay, QUICPacketNumber largest_acked)
+QUICLossDetector::_update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay)
 {
   // min_rtt ignores ack delay.
   this->_min_rtt = std::min(this->_min_rtt, latest_rtt);
+  // Limit ack_delay by max_ack_delay
+  ack_delay = std::min(ack_delay, this->_max_ack_delay);
   // Adjust for ack delay if it's plausible.
   if (latest_rtt - this->_min_rtt > ack_delay) {
     latest_rtt -= ack_delay;
-    // Only save into max ack delay if it's used for rtt calculation and is not ack only.
-    auto pi = this->_sent_packets.find(largest_acked);
-    if (pi != this->_sent_packets.end() && !pi->second->ack_only) {
-      this->_max_ack_delay = std::max(this->_max_ack_delay, ack_delay);
-    }
   }
   // Based on {{RFC6298}}.
   if (this->_smoothed_rtt == 0) {
@@ -291,18 +286,9 @@ QUICLossDetector::_on_packet_acked(const PacketInfo &acked_packet)
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   // QUICLDDebug("Packet number %" PRIu64 " has been acked", acked_packet_number);
 
-  if (!acked_packet.ack_only) {
+  if (acked_packet.ack_eliciting) {
     this->_cc->on_packet_acked(acked_packet);
   }
-
-  // If a packet sent prior to RTO was acked, then the RTO
-  // was spurious.  Otherwise, inform congestion control.
-  if (this->_rto_count > 0 && acked_packet.packet_number > this->_largest_sent_before_rto) {
-    this->_cc->on_retransmission_timeout_verified();
-  }
-  this->_handshake_count = 0;
-  this->_tlp_count       = 0;
-  this->_rto_count       = 0;
 
   for (QUICFrameInfo &frame_info : acked_packet.packet->frames()) {
     auto reactor = frame_info.generated_by();
@@ -317,18 +303,18 @@ QUICLossDetector::_on_packet_acked(const PacketInfo &acked_packet)
 }
 
 void
-QUICLossDetector::_set_loss_detection_alarm()
+QUICLossDetector::_set_loss_detection_timer()
 {
-  ink_hrtime alarm_duration;
+  ink_hrtime timeout;
 
   // Don't arm the alarm if there are no packets with retransmittable data in flight.
   // -- MODIFIED CODE --
-  // In psuedocode, `bytes_in_flight` is used, but we're tracking "retransmittable data in flight" by `_retransmittable_outstanding`
-  if (this->_retransmittable_outstanding == 0) {
-    if (this->_loss_detection_alarm) {
+  // In psuedocode, `bytes_in_flight` is used, but we're tracking "retransmittable data in flight" by `_ack_eliciting_outstanding`
+  if (this->_ack_eliciting_outstanding == 0) {
+    if (this->_loss_detection_timer) {
       this->_loss_detection_alarm_at = 0;
-      this->_loss_detection_alarm->cancel();
-      this->_loss_detection_alarm = nullptr;
+      this->_loss_detection_timer->cancel();
+      this->_loss_detection_timer = nullptr;
       QUICLDDebug("Loss detection alarm has been unset");
     }
 
@@ -336,147 +322,114 @@ QUICLossDetector::_set_loss_detection_alarm()
   }
   // -- END OF MODIFIED CODE --
 
-  if (this->_handshake_outstanding) {
+  if (this->_crypto_outstanding) {
     // Handshake retransmission alarm.
     if (this->_smoothed_rtt == 0) {
-      alarm_duration = 2 * this->_k_default_initial_rtt;
+      timeout = 2 * this->_k_initial_rtt;
     } else {
-      alarm_duration = 2 * this->_smoothed_rtt;
+      timeout = 2 * this->_smoothed_rtt;
     }
-    alarm_duration = std::max(alarm_duration + this->_max_ack_delay, this->_k_min_tlp_timeout);
-    alarm_duration = alarm_duration * (1 << this->_handshake_count);
+    timeout = std::max(timeout, this->_k_granularity);
+    timeout = timeout * (1 << this->_crypto_count);
 
-    this->_loss_detection_alarm_at = this->_time_of_last_sent_handshake_packet + alarm_duration;
-    QUICLDDebug("Handshake retransmission alarm will be set");
+    this->_loss_detection_alarm_at = this->_time_of_last_sent_crypto_packet + timeout;
+    QUICLDDebug("crypto packet alarm will be set: %ld", this->_loss_detection_alarm_at);
     // -- ADDITIONAL CODE --
     // In psudocode returning here, but we don't do for scheduling _loss_detection_alarm event.
     // -- END OF ADDITIONAL CODE --
   } else {
     if (this->_loss_time != 0) {
-      // Early retransmit timer or time loss detection.
-      alarm_duration = this->_loss_time - this->_time_of_last_sent_retransmittable_packet;
-      QUICLDDebug("Early retransmit timer or time loss detection will be set");
+      // Time threshold loss detection.
+      this->_loss_detection_alarm_at = this->_loss_time;
+      QUICLDDebug("time threshold loss detection timer: %ld", this->_loss_detection_alarm_at);
 
     } else {
-      // RTO or TLP alarm
-      alarm_duration = this->_smoothed_rtt + 4 * this->_rttvar + this->_max_ack_delay;
-      alarm_duration = std::max(alarm_duration, this->_k_min_rto_timeout);
-      alarm_duration = alarm_duration * (1 << this->_rto_count);
-
-      if (this->_tlp_count < this->_k_max_tlps) {
-        // Tail Loss Probe
-        ink_hrtime tlp_alarm_duration =
-          std::max(static_cast<ink_hrtime>(1.5 * this->_smoothed_rtt + this->_max_ack_delay), this->_k_min_tlp_timeout);
-        alarm_duration = std::min(tlp_alarm_duration, alarm_duration);
-      }
-      QUICLDDebug("RTO or TLP alarm will be set");
+      // PTO Duration
+      timeout                        = this->_smoothed_rtt + 4 * this->_rttvar + this->_max_ack_delay;
+      timeout                        = std::max(timeout, this->_k_granularity);
+      timeout                        = timeout * (1 << this->_pto_count);
+      this->_loss_detection_alarm_at = this->_time_of_last_sent_ack_eliciting_packet + timeout;
+      QUICLDDebug("PTO timeout will be set: %ld", this->_loss_detection_alarm_at);
     }
 
-    // -- ADDITIONAL CODE --
-    // alarm_curation can be negative value because _loss_time is updated in _detect_lost_packets()
-    // In that case, perhaps we should trigger the alarm immediately.
-    if (alarm_duration < 0) {
-      alarm_duration = 1;
+    QUICLDDebug("Loss detection alarm has been set to %" PRId64 "ms", timeout / HRTIME_MSECOND);
+
+    if (!this->_loss_detection_timer) {
+      this->_loss_detection_timer = eventProcessor.schedule_every(this, HRTIME_MSECONDS(25));
     }
-    // -- END OF ADDITONAL CODE --
-
-    this->_loss_detection_alarm_at = this->_time_of_last_sent_retransmittable_packet + alarm_duration;
-  }
-
-  QUICLDDebug("Loss detection alarm has been set to %" PRId64 "ms", alarm_duration / HRTIME_MSECOND);
-
-  if (!this->_loss_detection_alarm) {
-    this->_loss_detection_alarm = eventProcessor.schedule_every(this, HRTIME_MSECONDS(25));
   }
 }
 
 void
-QUICLossDetector::_on_loss_detection_alarm()
+QUICLossDetector::_on_loss_detection_timeout()
 {
-  if (this->_handshake_outstanding) {
+  if (this->_crypto_outstanding) {
     // Handshake retransmission alarm.
-    this->_retransmit_all_unacked_handshake_data();
-    this->_handshake_count++;
+    this->_retransmit_all_unacked_crypto_data();
+    this->_crypto_count++;
   } else if (this->_loss_time != 0) {
     // Early retransmit or Time Loss Detection
-    this->_detect_lost_packets(this->_largest_acked_packet);
-  } else if (this->_tlp_count < this->_k_max_tlps) {
-    // Tail Loss Probe.
-    QUICLDVDebug("TLP");
-    // FIXME TLP causes inifinite loop somehow
-    // this->_send_one_packet();
-    this->_tlp_count++;
+    this->_detect_lost_packets();
   } else {
-    // RTO.
-    if (this->_rto_count == 0) {
-      this->_largest_sent_before_rto = this->_largest_sent_packet;
-    }
-    QUICLDVDebug("RTO");
+    QUICLDVDebug("PTO");
     this->_send_two_packets();
-    this->_rto_count++;
+    this->_pto_count++;
   }
 
   QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
-              this->_retransmittable_outstanding.load(), this->_handshake_outstanding.load());
+              this->_ack_eliciting_outstanding.load(), this->_crypto_outstanding.load());
 
   if (is_debug_tag_set("v_quic_loss_detector")) {
     for (auto &unacked : this->_sent_packets) {
-      QUICLDVDebug("#%" PRIu64 " is_handshake=%i is_ack_only=%i size=%zu", unacked.first, unacked.second->handshake,
-                   unacked.second->ack_only, unacked.second->bytes);
+      QUICLDVDebug("#%" PRIu64 " is_crypto=%i ack_eliciting=%i size=%zu", unacked.first, unacked.second->is_crypto_packet,
+                   unacked.second->ack_eliciting, unacked.second->sent_bytes);
     }
   }
 
-  this->_set_loss_detection_alarm();
+  this->_set_loss_detection_timer();
 }
 
 void
-QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_number)
+QUICLossDetector::_detect_lost_packets()
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-  this->_loss_time = 0;
+  this->_loss_time      = 0;
+  ink_hrtime loss_delay = this->_k_time_threshold * std::max(this->_latest_rtt, this->_smoothed_rtt);
   std::map<QUICPacketNumber, PacketInfo *> lost_packets;
-  double delay_until_lost = INFINITY;
 
-  if (this->_k_using_time_loss_detection) {
-    delay_until_lost = (1 + this->_time_reordering_fraction) * std::max(this->_latest_rtt, this->_smoothed_rtt);
-  } else if (largest_acked_packet_number == this->_largest_sent_packet) {
-    // Early retransmit alarm.
-    delay_until_lost = 5.0 / 4.0 * std::max(this->_latest_rtt, this->_smoothed_rtt);
-  }
+  // Packets sent before this time are deemed lost.
+  ink_hrtime lost_send_time = Thread::get_hrtime() - loss_delay;
 
-  for (auto it = this->_sent_packets.begin(); it != this->_sent_packets.end();) {
-    if (it->first >= largest_acked_packet_number) {
+  // Packets with packet numbers before this are deemed lost.
+  QUICPacketNumber lost_pn = this->_largest_acked_packet - this->_k_packet_threshold;
+
+  for (auto it = this->_sent_packets.begin(); it != this->_sent_packets.end(); ++it) {
+    if (it->first >= this->_largest_acked_packet) {
       break;
     }
-    ink_hrtime time_since_sent = Thread::get_hrtime() - it->second->time;
-    uint64_t delta             = largest_acked_packet_number - it->second->packet_number;
-    if (time_since_sent > delay_until_lost || delta > this->_reordering_threshold) {
-      if (time_since_sent > delay_until_lost) {
-        QUICLDDebug("Lost: time since sent is too long (#%" PRId64 " sent=%" PRId64 ", delay=%lf, fraction=%lf, lrtt=%" PRId64
-                    ", srtt=%" PRId64 ")",
-                    it->first, time_since_sent, delay_until_lost, this->_time_reordering_fraction, this->_latest_rtt,
-                    this->_smoothed_rtt);
+
+    auto &unacked = it->second;
+
+    // Mark packet as lost, or set time when it should be marked.
+    if (unacked->time_sent < lost_send_time || unacked->packet_number < lost_pn) {
+      if (unacked->time_sent < lost_send_time) {
+        QUICLDDebug("Lost: time since sent is too long (#%" PRId64 " sent=%" PRId64 ", delay=%" PRId64
+                    ", fraction=%lf, lrtt=%" PRId64 ", srtt=%" PRId64 ")",
+                    it->first, unacked->time_sent, lost_send_time, this->_k_time_threshold, this->_latest_rtt, this->_smoothed_rtt);
       } else {
         QUICLDDebug("Lost: packet delta is too large (#%" PRId64 " largest=%" PRId64 " threshold=%" PRId32 ")", it->first,
-                    largest_acked_packet_number, this->_reordering_threshold);
+                    this->_largest_acked_packet, this->_k_packet_threshold);
       }
 
-      if (!it->second->ack_only) {
+      if (unacked->in_flight) {
         lost_packets.insert({it->first, it->second.get()});
+      } else if (this->_loss_time == 0) {
+        this->_loss_time = unacked->time_sent + loss_delay;
       } else {
-        // -- ADDITIONAL CODE --
-        // We remove only "ack-only" packets for life time management of packets.
-        // Packets in lost_packets will be removed from sent_packet later.
-        it = this->_remove_from_sent_packet_list(it);
-        continue;
-        // -- END OF ADDITIONAL CODE --
+        this->_loss_time = std::min(this->_loss_time, unacked->time_sent + loss_delay);
       }
-    } else if (this->_loss_time == 0 && delay_until_lost != INFINITY) {
-      this->_loss_time = Thread::get_hrtime() + delay_until_lost - time_since_sent;
     }
-
-    ++it;
   }
 
   // Inform the congestion controller of lost packets and
@@ -500,34 +453,24 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumber largest_acked_packet_num
 // ===== Functions below are used on the spec but there're no pseudo code  =====
 
 void
-QUICLossDetector::_retransmit_all_unacked_handshake_data()
+QUICLossDetector::_retransmit_all_unacked_crypto_data()
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-  std::set<QUICPacketNumber> retransmitted_handshake_packets;
+  std::set<QUICPacketNumber> retransmitted_crypto_packets;
   std::map<QUICPacketNumber, PacketInfo *> lost_packets;
 
   for (auto &info : this->_sent_packets) {
-    retransmitted_handshake_packets.insert(info.first);
-    lost_packets.insert({info.first, info.second.get()});
-    this->_transmitter->retransmit_packet(*info.second->packet);
+    if (info.second->is_crypto_packet) {
+      retransmitted_crypto_packets.insert(info.first);
+      this->_retransmit_lost_packet(info.second->packet);
+      lost_packets.insert({info.first, info.second.get()});
+    }
   }
 
   this->_cc->on_packets_lost(lost_packets);
-  for (auto packet_number : retransmitted_handshake_packets) {
+  for (auto packet_number : retransmitted_crypto_packets) {
     this->_remove_from_sent_packet_list(packet_number);
-  }
-}
-
-void
-QUICLossDetector::_send_one_packet()
-{
-  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
-  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-
-  auto ite = this->_sent_packets.rbegin();
-  if (ite != this->_sent_packets.rend()) {
-    this->_transmitter->retransmit_packet(*ite->second->packet);
   }
 }
 
@@ -536,14 +479,7 @@ QUICLossDetector::_send_two_packets()
 {
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-  auto ite = this->_sent_packets.rbegin();
-  if (ite != this->_sent_packets.rend()) {
-    this->_transmitter->retransmit_packet(*ite->second->packet);
-    ite++;
-    if (ite != this->_sent_packets.rend()) {
-      this->_transmitter->retransmit_packet(*ite->second->packet);
-    }
-  }
+  // TODO sent ping
 }
 
 // ===== Functions below are helper functions =====
@@ -562,7 +498,6 @@ QUICLossDetector::_retransmit_lost_packet(QUICPacketUPtr &packet)
 
     reactor->on_frame_lost(frame_info.id());
   }
-  this->_transmitter->retransmit_packet(*packet);
 }
 
 std::set<QUICAckFrame::PacketNumberRange>
@@ -592,13 +527,13 @@ QUICLossDetector::_add_to_sent_packet_list(QUICPacketNumber packet_number, Packe
   // Increment counters
   auto ite = this->_sent_packets.find(packet_number);
   if (ite != this->_sent_packets.end()) {
-    if (ite->second->handshake) {
-      ++this->_handshake_outstanding;
-      ink_assert(this->_handshake_outstanding.load() > 0);
+    if (ite->second->is_crypto_packet) {
+      ++this->_crypto_outstanding;
+      ink_assert(this->_crypto_outstanding.load() > 0);
     }
-    if (!ite->second->ack_only) {
-      ++this->_retransmittable_outstanding;
-      ink_assert(this->_retransmittable_outstanding.load() > 0);
+    if (!ite->second->ack_eliciting) {
+      ++this->_ack_eliciting_outstanding;
+      ink_assert(this->_ack_eliciting_outstanding.load() > 0);
     }
   }
 }
@@ -627,13 +562,13 @@ QUICLossDetector::_decrement_outstanding_counters(std::map<QUICPacketNumber, Pac
 {
   if (it != this->_sent_packets.end()) {
     // Decrement counters
-    if (it->second->handshake) {
-      ink_assert(this->_handshake_outstanding.load() > 0);
-      --this->_handshake_outstanding;
+    if (it->second->is_crypto_packet) {
+      ink_assert(this->_crypto_outstanding.load() > 0);
+      --this->_crypto_outstanding;
     }
-    if (!it->second->ack_only) {
-      ink_assert(this->_retransmittable_outstanding.load() > 0);
-      --this->_retransmittable_outstanding;
+    if (!it->second->ack_eliciting) {
+      ink_assert(this->_ack_eliciting_outstanding.load() > 0);
+      --this->_ack_eliciting_outstanding;
     }
   }
 }
@@ -643,8 +578,8 @@ QUICLossDetector::current_rto_period()
 {
   ink_hrtime alarm_duration;
   alarm_duration = this->_smoothed_rtt + 4 * this->_rttvar + this->_max_ack_delay;
-  alarm_duration = std::max(alarm_duration, this->_k_min_rto_timeout);
-  alarm_duration = alarm_duration * (1 << this->_rto_count);
+  alarm_duration = std::max(alarm_duration, this->_k_granularity);
+  alarm_duration = alarm_duration * (1 << this->_pto_count);
   return alarm_duration;
 }
 
