@@ -1,5 +1,7 @@
 Changes with Apache Traffic Server 8.0.3
   #3008 - Fix an failed assertion in HttpSM::parse_range_and_compare
+  #4147 - Fix crash in Http2ClientSession::release_netvc
+  #4178 - Fix another ProxySession and NetVC shutdown race crash
   #4189 - Plugins: Cleanup up dependencies on core headers - background_fetch
   #4279 - Ensure NOFILES ulimit is set high
   #4297 - Don't update records.config when other configs are reloaded
