@@ -1,6 +1,6 @@
 /** @file
  *
- *  QUIC Handshake Protocol (TLS to Secure QUIC)
+ *  QUIC Packet Protection Key Info
  *
  *  @section license License
  *
@@ -20,26 +20,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#include "QUICHandshakeProtocol.h"
+
+#pragma once
+
 #include "QUICTypes.h"
-#include "QUICPacketProtectionKeyInfo.h"
 
-QUICPacketProtection::~QUICPacketProtection() {}
-
-void
-QUICPacketProtection::set_key(std::unique_ptr<KeyMaterial> km, QUICKeyPhase phase)
+class QUICPacketProtectionKeyInfo
 {
-  this->_key_chain[static_cast<int>(phase)] = std::move(km);
-}
+public:
+  void add_key(QUICEncryptionLevel level, int key, QUICKeyPhase phase);
+  void update_key(QUICEncryptionLevel level, int key);
+  void remove_key(QUICEncryptionLevel level);
+  void remove_key(QUICEncryptionLevel level, QUICKeyPhase phase);
 
-const KeyMaterial *
-QUICPacketProtection::get_key(QUICKeyPhase phase) const
-{
-  return this->_key_chain[static_cast<int>(phase)].get();
-}
-
-QUICKeyPhase
-QUICPacketProtection::key_phase() const
-{
-  return this->_key_phase;
-}
+  void has_key_for(QUICKeyPhase phase);
+  void get_key(QUICEncryptionLevel level) const;
+};

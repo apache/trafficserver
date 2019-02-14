@@ -26,6 +26,8 @@
 #include "QUICTypes.h"
 #include "QUICPacket.h"
 
+class QUICPacketProtectionKeyInfo;
+
 class QUICPacketNumberGenerator
 {
 public:
@@ -46,6 +48,8 @@ public:
                                                       QUICStatelessResetToken stateless_reset_token);
   static QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                             QUICConnectionId original_dcid, QUICRetryToken &token);
+
+  QUICPacketFactory(QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info) {}
 
   QUICPacketUPtr create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number,
                         QUICPacketCreationResult &result);
@@ -74,6 +78,8 @@ public:
 private:
   QUICVersion _version                      = QUIC_SUPPORTED_VERSIONS[0];
   const QUICHandshakeProtocol *_hs_protocol = nullptr;
+  QUICPacketProtectionKeyInfo &_pp_key_info;
+
   // Initial, 0/1-RTT, and Handshake
   QUICPacketNumberGenerator _packet_number_generator[3];
 

@@ -60,6 +60,7 @@
 #include "quic/QUICApplicationMap.h"
 #include "quic/QUICPacketReceiveQueue.h"
 #include "quic/QUICAddrVerifyState.h"
+#include "quic/QUICPacketProtectionKeyInfo.h"
 
 // These are included here because older OpenQUIC libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -246,7 +247,8 @@ private:
   char _cids_data[MAX_CIDS_SIZE] = {0};
   std::string_view _cids;
 
-  UDPConnection *_udp_con            = nullptr;
+  UDPConnection *_udp_con = nullptr;
+  QUICPacketProtectionKeyInfo _pp_key_info;
   QUICPacketHandler *_packet_handler = nullptr;
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;

@@ -27,9 +27,13 @@
 #include "QUICKeyGenerator.h"
 #include "QUICHandshakeProtocol.h"
 
+class QUICPacketProtectionKeyInfo;
+
 class QUICPacketHeaderProtector
 {
 public:
+  QUICPacketHeaderProtector(QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info) {}
+
   bool unprotect(uint8_t *protected_packet, size_t protected_packet_len) const;
   bool protect(uint8_t *unprotected_packet, size_t unprotected_packet_len, int dcil) const;
 
@@ -38,6 +42,7 @@ public:
   void set_hs_protocol(const QUICHandshakeProtocol *hs_protocol);
 
 private:
+  QUICPacketProtectionKeyInfo &_pp_key_info;
   const QUICHandshakeProtocol *_hs_protocol = nullptr;
 
   bool _calc_sample_offset(uint8_t *sample_offset, const uint8_t *protected_packet, size_t protected_packet_len, int dcil) const;

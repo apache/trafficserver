@@ -28,6 +28,7 @@
 #include "QUICTransportParameters.h"
 
 class QUICHandshakeProtocol;
+class QUICPacketProtectionKeyInfo;
 
 class QUICPacketProtection
 {
@@ -54,7 +55,7 @@ struct QUICHandshakeMsgs {
 class QUICHandshakeProtocol
 {
 public:
-  QUICHandshakeProtocol(){};
+  QUICHandshakeProtocol(QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info) {}
   virtual ~QUICHandshakeProtocol(){};
 
   virtual int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)              = 0;
@@ -80,4 +81,7 @@ public:
                        uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const = 0;
   virtual QUICEncryptionLevel current_encryption_level() const                                       = 0;
   virtual void abort_handshake()                                                                     = 0;
+
+protected:
+  QUICPacketProtectionKeyInfo &_pp_key_info;
 };
