@@ -28,7 +28,7 @@ accomplished by examining the initial data from the inbound connection to decide
 destination. The initial data is then sent to the destination and subsequently |TS| forwards all
 data read on one connection to the other and vice versa.
 
-.. image:: ../uml/images/l4-basic-sequence.svg
+.. figure:: ../uml/images/l4-basic-sequence.svg
    :align: center
 
 In this way it acts similary to `nc <https://linux.die.net/man/1/nc>`__.
@@ -116,7 +116,7 @@ In addition to this, in the :file:`records.config` file, edit the following vari
 
 The sequence of network activity for a Client connecting to ``service-2`` is
 
-.. image:: ../uml/images/l4-sni-routing-seq.svg
+.. figure:: ../uml/images/l4-sni-routing-seq.svg
    :align: center
 
 Note the destination for the outbound TCP connection and the HTTP ``CONNECT`` is the same. If this
