@@ -86,6 +86,9 @@ QUICCongestionController::on_packet_acked(const PacketInfo &acked_packet)
   }
 }
 
+// addtional code
+// the original one is:
+//   CongestionEvent(sent_time):
 void
 QUICCongestionController::_congestion_event(ink_hrtime sent_time, uint32_t pto_count)
 {
@@ -102,6 +105,9 @@ QUICCongestionController::_congestion_event(ink_hrtime sent_time, uint32_t pto_c
   }
 }
 
+// additional code
+// the original one is:
+//   ProcessECN(ack):
 void
 QUICCongestionController::process_ecn(const PacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section,
                                       uint32_t pto_count)
@@ -117,6 +123,9 @@ QUICCongestionController::process_ecn(const PacketInfo &acked_largest_packet, co
   }
 }
 
+// additional code
+// the original one is:
+//   OnPacketsLost(lost_packets):
 void
 QUICCongestionController::on_packets_lost(const std::map<QUICPacketNumber, PacketInfo *> &lost_packets, uint32_t pto_count)
 {

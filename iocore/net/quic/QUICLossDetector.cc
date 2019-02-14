@@ -493,6 +493,7 @@ QUICLossDetector::_retransmit_lost_packet(QUICPacketUPtr &packet)
   SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
+  QUICLDDebug("[NOP] Retransmit %s packet #%" PRIu64, QUICDebugNames::packet_type(packet->type()), packet->packet_number());
   for (QUICFrameInfo &frame_info : packet->frames()) {
     auto reactor = frame_info.generated_by();
     if (reactor == nullptr) {
