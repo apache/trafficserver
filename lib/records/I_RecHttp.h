@@ -29,8 +29,9 @@
 #include "ts/apidefs.h"
 #include "tscore/ink_assert.h"
 #include "tscore/IpMap.h"
+#include "tscore/MemArena.h"
 #include <algorithm>
-#include <vector>
+#include <array>
 
 /// Load default inbound IP addresses from the configuration file.
 void RecHttpLoadIp(const char *name, ///< Name of value in configuration file.
@@ -48,18 +49,17 @@ void RecHttpLoadIpMap(const char *name, ///< Name of value in configuration file
 */
 class SessionProtocolSet
 {
-  typedef SessionProtocolSet self; ///< Self reference type.
+  using self_type = SessionProtocolSet; ///< Self reference type.
   /// Storage for the set - a bit vector.
-  uint32_t m_bits;
+  uint32_t m_bits = 0;
 
 public:
-  // The right way.
-  //  static int const MAX = sizeof(m_bits) * CHAR_BIT;
-  // The RHEL5/gcc 4.1.2 way
-  static int const MAX = sizeof(uint32_t) * 8;
+  static constexpr int MAX = sizeof(m_bits) * CHAR_BIT;
+
   /// Default constructor.
   /// Constructs and empty set.
-  SessionProtocolSet() : m_bits(0) {}
+  SessionProtocolSet() = default;
+
   uint32_t
   indexToMask(int idx) const
   {
@@ -72,9 +72,10 @@ public:
   {
     m_bits |= this->indexToMask(idx);
   }
+
   /// Mark all the protocols in @a that as present in @a this.
   void
-  markIn(self const &that)
+  markIn(self_type const &that)
   {
     m_bits |= that.m_bits;
   }
@@ -86,7 +87,7 @@ public:
   }
   /// Mark the protocols in @a that as not in @a this.
   void
-  markOut(self const &that)
+  markOut(self_type const &that)
   {
     m_bits &= ~(that.m_bits);
   }
@@ -98,7 +99,7 @@ public:
   }
   /// Test if all the protocols in @a that are in @a this protocol set.
   bool
-  contains(self const &that) const
+  contains(self_type const &that) const
   {
     return that.m_bits == (that.m_bits & m_bits);
   }
@@ -117,7 +118,7 @@ public:
 
   /// Check for intersection.
   bool
-  intersects(self const &that)
+  intersects(self_type const &that)
   {
     return 0 != (m_bits & that.m_bits);
   }
@@ -131,7 +132,7 @@ public:
 
   /// Equality (identical sets).
   bool
-  operator==(self const &that) const
+  operator==(self_type const &that) const
   {
     return m_bits == that.m_bits;
   }
@@ -147,52 +148,51 @@ const char *RecNormalizeProtoTag(const char *tag);
 
 /** Registered session protocol names.
 
-    We do this to avoid lots of string compares. By normalizing the
-    string names we can just compare their indices in this table.
+    We do this to avoid lots of string compares. By normalizing the string names we can just compare
+    their indices in this table.
 
-    @internal To simplify the implementation we limit the maximum
-    number of strings to 32. That will be sufficient for the forseeable
-    future. We can come back to this if it ever becomes a problem.
+    @internal To simplify the implementation we limit the maximum number of strings to 32. That will
+    be sufficient for the forseeable future. We can come back to this if it ever becomes a problem.
 
-    @internal Because we have so few strings we just use a linear search.
-    If the size gets much larger we should consider doing something more
-    clever.
+    @internal Because we have so few strings we just use a linear search. If the size gets much
+    larger we should consider doing something more clever.
+
+    @internal This supports providing constant strings because those strings are exported to the
+    C API and this logic @b must return exactly those pointers.
 */
 class SessionProtocolNameRegistry
 {
 public:
-  static int const MAX     = SessionProtocolSet::MAX; ///< Maximum # of registered names.
-  static int const INVALID = -1;                      ///< Normalized invalid index value.
+  static int constexpr MAX     = SessionProtocolSet::MAX; ///< Maximum # of registered names.
+  static int constexpr INVALID = -1;                      ///< Normalized invalid index value.
+
+  using TextView = ts::TextView;
 
   /// Default constructor.
   /// Creates empty registry with no names.
-  SessionProtocolNameRegistry();
-
-  /// Destructor.
-  /// Cleans up strings.
-  ~SessionProtocolNameRegistry();
+  SessionProtocolNameRegistry() = default;
 
   /** Get the index for @a name, registering it if needed.
       The name is copied internally.
       @return The index for the registered @a name.
   */
-  int toIndex(const char *name);
+  int toIndex(TextView name);
 
   /** Get the index for @a name, registering it if needed.
       The caller @b guarantees @a name is persistent and immutable.
       @return The index for the registered @a name.
   */
-  int toIndexConst(const char *name);
+  int toIndexConst(TextView name);
 
   /** Convert a @a name to an index.
       @return The index for @a name or @c INVALID if it is not registered.
   */
-  int indexFor(const char *name) const;
+  int indexFor(TextView name) const;
 
   /** Convert an @a index to the corresponding name.
       @return A pointer to the name or @c nullptr if the index isn't registered.
   */
-  const char *nameFor(int index) const;
+  TextView nameFor(int index) const;
 
   /// Mark protocols as present in @a sp_set based on the names in @a value.
   /// The names can be separated by ;/|,: and space.
@@ -201,11 +201,9 @@ public:
   void markIn(const char *value, SessionProtocolSet &sp_set);
 
 protected:
-  unsigned int m_n;         ///< Index of first unused slot.
-  const char *m_names[MAX]; ///< Pointers to registered names.
-  uint8_t m_flags[MAX];     ///< Flags for each name.
-
-  static uint8_t const F_ALLOCATED = 0x1; ///< Flag for allocated by this instance.
+  int m_n = 0; ///< Index of first unused slot.
+  std::array<TextView, MAX> m_names;
+  ts::MemArena m_arena; ///< Storage for non-constant strings.
 };
 
 extern SessionProtocolNameRegistry globalSessionProtocolNameRegistry;

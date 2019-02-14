@@ -500,7 +500,7 @@ SessionProtocolNameRegistry::markIn(const char *value, SessionProtocolSet &sp_se
     } else if (0 == strcasecmp(elt, TS_ALPN_PROTOCOL_GROUP_HTTP2)) {
       sp_set.markIn(HTTP2_PROTOCOL_SET);
     } else { // user defined - register and mark.
-      int idx = globalSessionProtocolNameRegistry.toIndex(elt);
+      int idx = globalSessionProtocolNameRegistry.toIndex(TextView{elt, strlen(elt)});
       sp_set.markIn(idx);
     }
   }
@@ -651,7 +651,8 @@ HttpProxyPort::print(char *out, size_t n)
     bool sep_p = !need_colon_p;
     for (int k = 0; k < SessionProtocolSet::MAX; ++k) {
       if (sp_set.contains(k)) {
-        zret += snprintf(out + zret, n - zret, "%s%s", sep_p ? ";" : "", globalSessionProtocolNameRegistry.nameFor(k));
+        auto name{globalSessionProtocolNameRegistry.nameFor(k)};
+        zret += snprintf(out + zret, n - zret, "%s%.*s", sep_p ? ";" : "", static_cast<int>(name.size()), name.data());
         sep_p = true;
       }
     }
@@ -678,10 +679,10 @@ void
 ts_session_protocol_well_known_name_indices_init()
 {
   // register all the well known protocols and get the indices set.
-  TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_0_9);
-  TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_1_0);
-  TS_ALPN_PROTOCOL_INDEX_HTTP_1_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_1_1);
-  TS_ALPN_PROTOCOL_INDEX_HTTP_2_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_2_0);
+  TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_0_9});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_1_0});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_1_1 = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_1_1});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_2_0 = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_2_0});
 
   // Now do the predefined protocol sets.
   HTTP_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_0_9);
@@ -713,30 +714,18 @@ RecNormalizeProtoTag(const char *tag)
   return findResult == TSProtoTags.end() ? nullptr : findResult->data();
 }
 
-SessionProtocolNameRegistry::SessionProtocolNameRegistry() : m_n(0)
-{
-  memset(m_names, 0, sizeof(m_names));
-  memset(&m_flags, 0, sizeof(m_flags));
-}
-
-SessionProtocolNameRegistry::~SessionProtocolNameRegistry()
-{
-  for (size_t i = 0; i < m_n; ++i) {
-    if (m_flags[i] & F_ALLOCATED) {
-      ats_free(const_cast<char *>(m_names[i])); // blech - ats_free won't take a const char*
-    }
-  }
-}
-
 int
-SessionProtocolNameRegistry::toIndex(const char *name)
+SessionProtocolNameRegistry::toIndex(ts::TextView name)
 {
   int zret = this->indexFor(name);
   if (INVALID == zret) {
-    if (m_n < static_cast<size_t>(MAX)) {
-      m_names[m_n] = ats_strdup(name);
-      m_flags[m_n] = F_ALLOCATED;
-      zret         = m_n++;
+    if (m_n < MAX) {
+      // Localize the name by copying it in to the arena.
+      auto text = m_arena.alloc(name.size() + 1);
+      memcpy(text.data(), name.data(), name.size());
+      text.end()[-1] = '\0';
+      m_names[m_n]   = text.view();
+      zret           = m_n++;
     } else {
       ink_release_assert(!"Session protocol name registry overflow");
     }
@@ -745,11 +734,11 @@ SessionProtocolNameRegistry::toIndex(const char *name)
 }
 
 int
-SessionProtocolNameRegistry::toIndexConst(const char *name)
+SessionProtocolNameRegistry::toIndexConst(TextView name)
 {
   int zret = this->indexFor(name);
   if (INVALID == zret) {
-    if (m_n < static_cast<size_t>(MAX)) {
+    if (m_n < MAX) {
       m_names[m_n] = name;
       zret         = m_n++;
     } else {
@@ -760,18 +749,17 @@ SessionProtocolNameRegistry::toIndexConst(const char *name)
 }
 
 int
-SessionProtocolNameRegistry::indexFor(const char *name) const
+SessionProtocolNameRegistry::indexFor(TextView name) const
 {
-  for (size_t i = 0; i < m_n; ++i) {
-    if (0 == strcasecmp(name, m_names[i])) {
-      return i;
-    }
+  auto spot = std::find(m_names.begin(), m_names.begin() + m_n, name);
+  if (spot != m_names.end()) {
+    return static_cast<int>(spot - m_names.begin());
   }
   return INVALID;
 }
 
-const char *
+ts::TextView
 SessionProtocolNameRegistry::nameFor(int idx) const
 {
-  return 0 <= idx && idx < static_cast<int>(m_n) ? m_names[idx] : nullptr;
+  return 0 <= idx && idx < m_n ? m_names[idx] : TextView{};
 }
