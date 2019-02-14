@@ -222,6 +222,9 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame)
   // TODO ECN
   // if (ACK frame contains ECN information):
   //   ProcessECN(ack)
+  if (ack_frame.ecn_section() != nullptr && pi != this->_sent_packets.end()) {
+    this->_cc->process_ecn(*pi->second, ack_frame.ecn_section(), this->_pto_count);
+  }
 
   // Find all newly acked packets.
   bool newly_acked_packets = false;

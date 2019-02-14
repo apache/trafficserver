@@ -81,7 +81,7 @@ public:
   void on_packet_acked(const PacketInfo &acked_packet);
   virtual void on_packets_lost(const std::map<QUICPacketNumber, PacketInfo *> &packets, uint32_t pto_count);
   void on_retransmission_timeout_verified();
-  void process_ecn(const PacketInfo &acked_largest_packet, QUICAckFrame::EcnSection *ecn_section, uint32_t pto_count);
+  void process_ecn(const PacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section, uint32_t pto_count);
   bool check_credit() const;
   uint32_t open_window() const;
   void reset();
