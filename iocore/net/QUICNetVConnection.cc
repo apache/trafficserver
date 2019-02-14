@@ -74,7 +74,7 @@ static constexpr uint32_t STATE_CLOSING_MAX_RECV_PKT_WIND = 1 << STATE_CLOSING_M
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
-QUICNetVConnection::QUICNetVConnection() {}
+QUICNetVConnection::QUICNetVConnection() : _packet_factory(this->_pp_key_info), _ph_protector(this->_pp_key_info) {}
 
 QUICNetVConnection::~QUICNetVConnection()
 {
@@ -2039,7 +2039,7 @@ QUICNetVConnection::_setup_handshake_protocol(SSL_CTX *ctx)
 {
   // Initialize handshake protocol specific stuff
   // For QUICv1 TLS is the only option
-  QUICTLS *tls = new QUICTLS(ctx, this->direction());
+  QUICTLS *tls = new QUICTLS(this->_pp_key_info, ctx, this->direction());
   SSL_set_ex_data(tls->ssl_handle(), QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
   return tls;
 }

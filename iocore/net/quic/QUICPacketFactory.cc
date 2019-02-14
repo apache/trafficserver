@@ -22,6 +22,7 @@
  */
 
 #include "QUICPacketFactory.h"
+#include "QUICPacketProtectionKeyInfo.h"
 #include "QUICDebugNames.h"
 
 using namespace std::literals;
@@ -97,6 +98,7 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       result        = QUICPacketCreationResult::SUCCESS;
       break;
     case QUICPacketType::PROTECTED:
+      this->_pp_key_info.has_key_for(header->key_phase());
       if (this->_hs_protocol->is_key_derived(header->key_phase(), false)) {
         if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
                                         header->payload_size(), header->packet_number(), header->buf(), header->size(),
