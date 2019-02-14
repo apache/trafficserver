@@ -127,8 +127,7 @@ QUICPathValidator::will_generate_frame(QUICEncryptionLevel level)
 }
 
 QUICFrame *
-QUICPathValidator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
-                                  uint16_t maximum_quic_packet_size)
+QUICPathValidator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
   QUICFrame *frame = nullptr;
 
@@ -141,7 +140,7 @@ QUICPathValidator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
 
   if (this->_has_outgoing_response) {
     frame = QUICFrameFactory::create_path_response_frame(buf, this->_incoming_challenge);
-    if (frame && frame->size() > maximum_quic_packet_size) {
+    if (frame && frame->size() > maximum_frame_size) {
       // Cancel generating frame
       frame = nullptr;
     } else {
@@ -150,7 +149,7 @@ QUICPathValidator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
   } else if (this->_has_outgoing_challenge) {
     frame = QUICFrameFactory::create_path_challenge_frame(
       buf, this->_outgoing_challenge + (QUICPathChallengeFrame::DATA_LEN * (this->_has_outgoing_challenge - 1)));
-    if (frame && frame->size() > maximum_quic_packet_size) {
+    if (frame && frame->size() > maximum_frame_size) {
       // Cancel generating frame
       frame = nullptr;
     } else {
