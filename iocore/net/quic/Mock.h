@@ -379,7 +379,7 @@ public:
   MockQUICCongestionController(QUICConnectionInfoProvider *info) : QUICCongestionController(info) {}
   // Override
   virtual void
-  on_packets_lost(const std::map<QUICPacketNumber, PacketInfo *> &packets) override
+  on_packets_lost(const std::map<QUICPacketNumber, PacketInfo *> &packets, uint32_t pto_count) override
   {
     for (auto &p : packets) {
       lost_packets.insert(p.first);
@@ -713,4 +713,32 @@ private:
   bool _is_reset_complete     = false;
   uint64_t _transfer_progress = 0;
   uint64_t _transfer_goal     = UINT64_MAX;
+};
+
+class MockQUICFrameGenerator : public QUICFrameGenerator
+{
+public:
+  bool
+  will_generate_frame(QUICEncryptionLevel level) override
+  {
+    return true;
+  }
+
+  QUICFrame *
+  generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+  {
+    QUICFrame *frame              = QUICFrameFactory::create_ping_frame(buf, 0, this);
+    QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
+    this->_records_frame(0, std::move(info));
+    return frame;
+  }
+
+  int lost_frame_count = 0;
+
+private:
+  void
+  _on_frame_lost(QUICFrameInformationUPtr &info)
+  {
+    lost_frame_count++;
+  }
 };
