@@ -76,10 +76,11 @@ public:
   ink_hrtime ld_initial_rtt() const;
 
   // Congestion Control
-  uint32_t cc_default_mss() const;
+  uint32_t cc_max_datagram_size() const;
   uint32_t cc_initial_window() const;
   uint32_t cc_minimum_window() const;
   float cc_loss_reduction_factor() const;
+  uint32_t cc_persistent_congestion_threshold() const;
 
   static int connection_table_size();
   static uint8_t scid_len();
@@ -132,10 +133,11 @@ private:
   ink_hrtime _ld_initial_rtt    = HRTIME_MSECONDS(100);
 
   // [draft-11 recovery] 4.7.1.  Constants of interest
-  uint32_t _cc_default_mss          = 1460;
-  uint32_t _cc_initial_window_scale = 10; // Actual initial window size is this value multiplied by the _cc_default_mss
-  uint32_t _cc_minimum_window_scale = 2;  // Actual minimum window size is this value multiplied by the _cc_default_mss
-  float _cc_loss_reduction_factor   = 0.5;
+  uint32_t _cc_max_datagram_size               = 1200;
+  uint32_t _cc_initial_window_scale            = 10; // Actual initial window size is this value multiplied by the _cc_default_mss
+  uint32_t _cc_minimum_window_scale            = 2;  // Actual minimum window size is this value multiplied by the _cc_default_mss
+  float _cc_loss_reduction_factor              = 0.5;
+  uint32_t _cc_persistent_congestion_threshold = 2;
 };
 
 class QUICConfig

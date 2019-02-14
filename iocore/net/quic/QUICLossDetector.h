@@ -79,8 +79,9 @@ public:
   virtual ~QUICCongestionController() {}
   void on_packet_sent(size_t bytes_sent);
   void on_packet_acked(const PacketInfo &acked_packet);
-  virtual void on_packets_lost(const std::map<QUICPacketNumber, PacketInfo *> &packets);
+  virtual void on_packets_lost(const std::map<QUICPacketNumber, PacketInfo *> &packets, uint32_t pto_count);
   void on_retransmission_timeout_verified();
+  void process_ecn(const PacketInfo &acked_largest_packet, QUICAckFrame::EcnSection *ecn_section, uint32_t pto_count);
   bool check_credit() const;
   uint32_t open_window() const;
   void reset();
@@ -93,22 +94,26 @@ public:
 private:
   Ptr<ProxyMutex> _cc_mutex;
 
-  // [draft-11 recovery] 4.7.1. Constants of interest
-  // Values will be loaded from records.config via QUICConfig at constructor
-  uint32_t _k_default_mss        = 0;
-  uint32_t _k_initial_window     = 0;
-  uint32_t _k_minimum_window     = 0;
-  float _k_loss_reduction_factor = 0.0;
+  void _congestion_event(ink_hrtime sent_time, uint32_t pto_count);
 
-  // [draft-11 recovery] 4.7.2. Variables of interest
-  uint32_t _bytes_in_flight         = 0;
-  uint32_t _congestion_window       = 0;
-  QUICPacketNumber _end_of_recovery = 0;
-  uint32_t _ssthresh                = UINT32_MAX;
+  // [draft-17 recovery] 7.9.1. Constants of interest
+  // Values will be loaded from records.config via QUICConfig at constructor
+  uint32_t _k_max_datagram_size               = 0;
+  uint32_t _k_initial_window                  = 0;
+  uint32_t _k_minimum_window                  = 0;
+  float _k_loss_reduction_factor              = 0.0;
+  uint32_t _k_persistent_congestion_threshold = 0;
+
+  // [draft-17 recovery] 7.9.2. Variables of interest
+  uint32_t _ecn_ce_counter        = 0;
+  uint32_t _bytes_in_flight       = 0;
+  uint32_t _congestion_window     = 0;
+  ink_hrtime _recovery_start_time = 0;
+  uint32_t _ssthresh              = UINT32_MAX;
 
   QUICConnectionInfoProvider *_info = nullptr;
 
-  bool _in_recovery(QUICPacketNumber packet_number);
+  bool _in_recovery(ink_hrtime sent_time);
 };
 
 class QUICLossDetector : public Continuation, public QUICFrameHandler
