@@ -254,3 +254,6 @@ tr.Processes.Default.Command = (
     "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S=acae22b0e1ba6ea6fbb5d26018dbf152558e98cb'" +
     LogTee + " ; grep -F -e '< HTTP' -e Authorization {0}/url_sig_long.log > {0}/url_sig_short.log ".format(ts.RunDirectory)
 )
+
+# Overriding the built in ERROR check since we expect some ERROR messages
+ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Some tests are failure tests")
