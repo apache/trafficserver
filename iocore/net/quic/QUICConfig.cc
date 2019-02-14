@@ -183,13 +183,12 @@ QUICConfigParams::initialize()
   this->_ld_initial_rtt = HRTIME_MSECONDS(timeout);
 
   // Congestion Control
-  //   REC_EstablishStaticConfigInt32U(this->_cc_max_datagram_size, "proxy.config.quic.congestion_control.max_datagram_size");
-  //   REC_EstablishStaticConfigInt32U(this->_cc_initial_window_scale, "proxy.config.quic.congestion_control.initial_window_scale");
-  //   REC_EstablishStaticConfigInt32U(this->_cc_minimum_window_scale, "proxy.config.quic.congestion_control.minimum_window_scale");
-  //   REC_EstablishStaticConfigFloat(this->_cc_loss_reduction_factor,
-  //   "proxy.config.quic.congestion_control.loss_reduction_factor");
-  //   REC_EstablishStaticConfigInt32U(this->_cc_persistent_congestion_threshold,
-  //                                   "proxy.config.quic.congestion_control.persistent_congestion_threshold");
+  REC_EstablishStaticConfigInt32U(this->_cc_max_datagram_size, "proxy.config.quic.congestion_control.max_datagram_size");
+  REC_EstablishStaticConfigInt32U(this->_cc_initial_window_scale, "proxy.config.quic.congestion_control.initial_window_scale");
+  REC_EstablishStaticConfigInt32U(this->_cc_minimum_window_scale, "proxy.config.quic.congestion_control.minimum_window_scale");
+  REC_EstablishStaticConfigFloat(this->_cc_loss_reduction_factor, "proxy.config.quic.congestion_control.loss_reduction_factor");
+  REC_EstablishStaticConfigInt32U(this->_cc_persistent_congestion_threshold,
+                                  "proxy.config.quic.congestion_control.persistent_congestion_threshold");
 
   this->_server_ssl_ctx = quic_init_server_ssl_ctx(this);
   this->_client_ssl_ctx = quic_init_client_ssl_ctx(this);
