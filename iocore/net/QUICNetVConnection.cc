@@ -446,7 +446,7 @@ QUICNetVConnection::direction() const
 }
 
 uint32_t
-QUICNetVConnection::minimum_quic_packet_size()
+QUICNetVConnection::_minimum_quic_packet_size()
 {
   if (netvc_context == NET_VCONNECTION_OUT) {
     // FIXME Only the first packet need to be 1200 bytes at least
@@ -459,7 +459,7 @@ QUICNetVConnection::minimum_quic_packet_size()
 }
 
 uint32_t
-QUICNetVConnection::maximum_quic_packet_size() const
+QUICNetVConnection::_maximum_quic_packet_size() const
 {
   if (this->options.ip_family == PF_INET6) {
     return this->_pmtu - UDP_HEADER_SIZE - IPV6_HEADER_SIZE;
@@ -471,7 +471,7 @@ QUICNetVConnection::maximum_quic_packet_size() const
 uint64_t
 QUICNetVConnection::_maximum_stream_frame_data_size()
 {
-  return this->maximum_quic_packet_size() - MAX_STREAM_FRAME_OVERHEAD - MAX_PACKET_OVERHEAD;
+  return this->_maximum_quic_packet_size() - MAX_STREAM_FRAME_OVERHEAD - MAX_PACKET_OVERHEAD;
 }
 
 QUICStreamManager *
@@ -1423,7 +1423,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   if (len != 0) {
     if (level == QUICEncryptionLevel::INITIAL && this->netvc_context == NET_VCONNECTION_OUT) {
       // Pad with PADDING frames
-      uint64_t min_size = this->minimum_quic_packet_size();
+      uint64_t min_size = this->_minimum_quic_packet_size();
       if (this->_av_token) {
         min_size = min_size - this->_av_token_len;
       }
@@ -1465,7 +1465,7 @@ QUICNetVConnection::_packetize_closing_frame()
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   frame = QUICFrameFactory::create_connection_close_frame(frame_buf, *this->_connection_error);
 
-  uint32_t max_size  = this->maximum_quic_packet_size();
+  uint32_t max_size  = this->_maximum_quic_packet_size();
   ats_unique_buf buf = ats_unique_malloc(max_size);
 
   size_t len              = 0;

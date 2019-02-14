@@ -213,18 +213,6 @@ public:
   }
 
   uint32_t
-  minimum_quic_packet_size() override
-  {
-    return 1200;
-  }
-
-  uint32_t
-  maximum_quic_packet_size() const override
-  {
-    return 1200;
-  }
-
-  uint32_t
   pmtu() const override
   {
     return 1280;

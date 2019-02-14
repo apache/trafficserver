@@ -43,21 +43,6 @@ public:
   virtual std::string_view cids() const                   = 0;
   virtual const QUICFiveTuple five_tuple() const          = 0;
 
-  /*
-   * Retruns the maximum packet size at the time called
-   *
-   * The size depends on PMTU.
-   */
-  virtual uint32_t maximum_quic_packet_size() const = 0;
-
-  /*
-   * Returns the mimimum packet size at the time called
-   *
-   * If the connection is an outgoing connection and you have not sent Client Initial packet,
-   * this return the minimum size for it, which is 1200.
-   */
-  virtual uint32_t minimum_quic_packet_size() = 0;
-
   virtual uint32_t pmtu() const                                                         = 0;
   virtual NetVConnectionContext_t direction() const                                     = 0;
   virtual SSLNextProtocolSet *next_protocol_set() const                                 = 0;

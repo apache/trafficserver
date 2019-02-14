@@ -205,8 +205,6 @@ public:
   QUICConnectionId connection_id() const override;
   std::string_view cids() const override;
   const QUICFiveTuple five_tuple() const override;
-  uint32_t maximum_quic_packet_size() const override;
-  uint32_t minimum_quic_packet_size() override;
   uint32_t pmtu() const override;
   NetVConnectionContext_t direction() const override;
   SSLNextProtocolSet *next_protocol_set() const override;
@@ -309,6 +307,8 @@ private:
   void _unschedule_ack_manager_periodic();
   Event *_ack_manager_periodic = nullptr;
 
+  uint32_t _maximum_quic_packet_size() const;
+  uint32_t _minimum_quic_packet_size();
   uint64_t _maximum_stream_frame_data_size();
   void _store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrame &frame,
                     std::vector<QUICFrameInfo> &frames);
