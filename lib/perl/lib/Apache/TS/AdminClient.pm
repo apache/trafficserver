@@ -30,68 +30,63 @@ use Apache::TS;
 
 # Mgmt API command constants, should track ts/mgmtapi.h
 use constant {
-    TS_RECORD_SET                 => 0,
-    TS_RECORD_GET                 => 1,
-    TS_PROXY_STATE_GET            => 2,
-    TS_PROXY_STATE_SET            => 3,
-    TS_RECONFIGURE                => 4,
-    TS_RESTART                    => 5,
-    TS_BOUNCE                     => 6,
-    TS_EVENT_RESOLVE              => 7,
-    TS_EVENT_GET_MLT              => 8,
-    TS_EVENT_ACTIVE               => 9,
-    TS_EVENT_REG_CALLBACK         => 10,
-    TS_EVENT_UNREG_CALLBACK       => 11,
-    TS_EVENT_NOTIFY               => 12,
-    TS_STATS_RESET_NODE           => 13,
-    TS_STORAGE_DEVICE_CMD_OFFLINE => 14,
-    TS_RECORD_MATCH_GET           => 15,
-    TS_API_PING                   => 16,
-    TS_SERVER_BACKTRACE           => 17,
-    TS_RECORD_DESCRIBE_CONFIG     => 18,
-    TS_LIFECYCLE_MESSAGE          => 19,
-    TS_UNDEFINED_OP               => 20
-};
+              TS_RECORD_SET                 => 0,
+              TS_RECORD_GET                 => 1,
+              TS_PROXY_STATE_GET            => 2,
+              TS_PROXY_STATE_SET            => 3,
+              TS_RECONFIGURE                => 4,
+              TS_RESTART                    => 5,
+              TS_BOUNCE                     => 6,
+              TS_EVENT_RESOLVE              => 7,
+              TS_EVENT_GET_MLT              => 8,
+              TS_EVENT_ACTIVE               => 9,
+              TS_EVENT_REG_CALLBACK         => 10,
+              TS_EVENT_UNREG_CALLBACK       => 11,
+              TS_EVENT_NOTIFY               => 12,
+              TS_STATS_RESET_NODE           => 13,
+              TS_STORAGE_DEVICE_CMD_OFFLINE => 14,
+              TS_RECORD_MATCH_GET           => 15,
+              TS_API_PING                   => 16,
+              TS_SERVER_BACKTRACE           => 17,
+              TS_RECORD_DESCRIBE_CONFIG     => 18,
+              TS_LIFECYCLE_MESSAGE          => 19,
+              TS_UNDEFINED_OP               => 20
+              };
 
 use constant {
-    TS_REC_INT     => 0,
-    TS_REC_COUNTER => 1,
-    TS_REC_FLOAT   => 2,
-    TS_REC_STRING  => 3
-};
+              TS_REC_INT     => 0,
+              TS_REC_COUNTER => 1,
+              TS_REC_FLOAT   => 2,
+              TS_REC_STRING  => 3
+              };
 
 use constant {
-    TS_ERR_OKAY                => 0,
-    TS_ERR_READ_FILE           => 1,
-    TS_ERR_WRITE_FILE          => 2,
-    TS_ERR_PARSE_CONFIG_RULE   => 3,
-    TS_ERR_INVALID_CONFIG_RULE => 4,
-    TS_ERR_NET_ESTABLISH       => 5,
-    TS_ERR_NET_READ            => 6,
-    TS_ERR_NET_WRITE           => 7,
-    TS_ERR_NET_EOF             => 8,
-    TS_ERR_NET_TIMEOUT         => 9,
-    TS_ERR_SYS_CALL            => 10,
-    TS_ERR_PARAMS              => 11,
-    TS_ERR_FAIL                => 12
-};
-
+              TS_ERR_OKAY                => 0,
+              TS_ERR_READ_FILE           => 1,
+              TS_ERR_WRITE_FILE          => 2,
+              TS_ERR_PARSE_CONFIG_RULE   => 3,
+              TS_ERR_INVALID_CONFIG_RULE => 4,
+              TS_ERR_NET_ESTABLISH       => 5,
+              TS_ERR_NET_READ            => 6,
+              TS_ERR_NET_WRITE           => 7,
+              TS_ERR_NET_EOF             => 8,
+              TS_ERR_NET_TIMEOUT         => 9,
+              TS_ERR_SYS_CALL            => 10,
+              TS_ERR_PARAMS              => 11,
+              TS_ERR_FAIL                => 12
+              };
 
 # Semi-intelligent way of finding the mgmtapi socket.
 sub _find_socket {
     my $path = shift || "";
     my $name = shift || "mgmtapi.sock";
     my @sockets_def = (
-        $path,
-        Apache::TS::PREFIX . '/' . Apache::TS::REL_RUNTIMEDIR . '/' . 'mgmtapi.sock',
-        '/usr/local/var/trafficserver',
-        '/usr/local/var/run/trafficserver',
-        '/usr/local/var/run',
-        '/var/trafficserver',
-        '/var/run/trafficserver',
-        '/var/run',
-        '/opt/ats/var/trafficserver',
-    );
+                       $path,                          Apache::TS::PREFIX . '/' . Apache::TS::REL_RUNTIMEDIR . '/' . 'mgmtapi.sock',
+                       '/usr/local/var/trafficserver', '/usr/local/var/run/trafficserver',
+                       '/usr/local/var/run',           '/var/trafficserver',
+                       '/var/run/trafficserver',       '/var/run',
+                       '/opt/ats/var/trafficserver',
+                       );
 
     foreach my $socket (@sockets_def) {
         return $socket if (-S $socket);
@@ -109,9 +104,8 @@ sub new {
     my $self = {};
 
     $self->{_socket_path} = _find_socket($args{socket_path});
-    $self->{_socket} = undef;
-    croak
-"Unable to locate socket, please pass socket_path with the management api socket location to Apache::TS::AdminClient"
+    $self->{_socket}      = undef;
+    croak "Unable to locate socket, please pass socket_path with the management api socket location to Apache::TS::AdminClient"
       if (!$self->{_socket_path});
     if ((!-r $self->{_socket_path}) or (!-w $self->{_socket_path}) or (!-S $self->{_socket_path})) {
         croak "Unable to open $self->{_socket_path} for reads or writes";
@@ -143,16 +137,14 @@ sub open_socket {
     if (defined($self->{_socket})) {
         if ($args{force} || $args{reopen}) {
             $self->close_socket();
-        }
-        else {
+        } else {
             return undef;
         }
     }
 
-    $self->{_socket} = IO::Socket::UNIX->new(
-        Type => SOCK_STREAM,
-        Peer => $self->{_socket_path}
-   ) or croak("Error opening socket - $@");
+    $self->{_socket} = IO::Socket::UNIX->new(Type => SOCK_STREAM,
+                                             Peer => $self->{_socket_path})
+      or croak("Error opening socket - $@");
 
     return undef unless defined($self->{_socket});
     $self->{_select}->add($self->{_socket});
@@ -178,9 +170,9 @@ sub close_socket {
 # Do reads()'s on our Unix domain socket, takes an optional timeout, in ms's.
 #
 sub _do_read {
-    my $self = shift;
-    my $timeout = shift || 1/1000.0; # 1ms by default
-    my $res = "";
+    my $self    = shift;
+    my $timeout = shift || 1 / 1000.0;    # 1ms by default
+    my $res     = "";
 
     while ($self->{_select}->can_read($timeout)) {
         my $rc = $self->{_socket}->sysread($res, 1024, length($res));
@@ -199,14 +191,13 @@ sub _do_read {
     return $res || undef;
 }
 
-
 #
 # Get (read) a stat out of the local manager. Note that the assumption is
 # that you are calling this with an existing stats "name".
 #
 sub get_stat {
     my ($self, $stat) = @_;
-    my $res               = "";
+    my $res = "";
 
     return undef unless defined($self->{_socket});
     return undef unless $self->{_select}->can_write(10);
@@ -219,7 +210,7 @@ sub get_stat {
     my $msg = pack("ll/Z", TS_RECORD_GET, $stat);
     $self->{_socket}->print(pack("l/a", $msg));
     $res = $self->_do_read();
-    return undef unless defined($res); # Don't proceed on read failure.
+    return undef unless defined($res);    # Don't proceed on read failure.
 
     # The response format is:
     #   MGMT_MARSHALL_INT: message length
@@ -235,12 +226,10 @@ sub get_stat {
         if ($type == TS_REC_INT || $type == TS_REC_COUNTER) {
             my ($ival) = unpack("q", $value);
             return $ival;
-        }
-        elsif ($type == TS_REC_FLOAT) {
+        } elsif ($type == TS_REC_FLOAT) {
             my ($fval) = unpack("f", $value);
             return $fval;
-        }
-        elsif ($type == TS_REC_STRING) {
+        } elsif ($type == TS_REC_STRING) {
             my ($sval) = unpack("Z*", $value);
             return $sval;
         }
@@ -523,12 +512,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.local_state_dir
  proxy.config.log.ascii_buffer_size
  proxy.config.log.auto_delete_rolled_files
- proxy.config.log.collation_host
- proxy.config.log.collation_host_tagged
- proxy.config.log.collation_max_send_buffers
- proxy.config.log.collation_port
- proxy.config.log.collation_retry_sec
- proxy.config.log.collation_secret
  proxy.config.log.file_stat_frequency
  proxy.config.log.hostname
  proxy.config.log.log_buffer_size
