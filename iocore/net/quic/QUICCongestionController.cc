@@ -103,7 +103,7 @@ QUICCongestionController::_congestion_event(ink_hrtime sent_time, uint32_t pto_c
 }
 
 void
-QUICCongestionController::process_ecn(const PacketInfo &acked_largest_packet, QUICAckFrame::EcnSection *ecn_section,
+QUICCongestionController::process_ecn(const PacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section,
                                       uint32_t pto_count)
 {
   // If the ECN-CE counter reported by the peer has increased,
