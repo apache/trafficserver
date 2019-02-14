@@ -82,10 +82,16 @@ quic_init_client_ssl_ctx(const QUICConfigParams *params)
     }
   }
 
-  if (params->session_file() != nullptr) {
+  if (params->client_session_file() != nullptr) {
     SSL_CTX_set_session_cache_mode(ssl_ctx, SSL_SESS_CACHE_CLIENT | SSL_SESS_CACHE_NO_INTERNAL_STORE);
     SSL_CTX_sess_set_new_cb(ssl_ctx, QUIC::ssl_client_new_session);
   }
+
+#ifdef SSL_MODE_QUIC_HACK
+  if (params->client_keylog_file() != nullptr) {
+    SSL_CTX_set_keylog_callback(ssl_ctx, QUIC::ssl_client_keylog_cb);
+  }
+#endif
 
   return ssl_ctx;
 }
@@ -113,7 +119,8 @@ QUICConfigParams::initialize()
 
   REC_ReadConfigStringAlloc(this->_server_supported_groups, "proxy.config.quic.server.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_supported_groups, "proxy.config.quic.client.supported_groups");
-  REC_ReadConfigStringAlloc(this->_session_file, "proxy.config.quic.client.session_file");
+  REC_ReadConfigStringAlloc(this->_client_session_file, "proxy.config.quic.client.session_file");
+  REC_ReadConfigStringAlloc(this->_client_keylog_file, "proxy.config.quic.client.keylog_file");
 
   // Transport Parameters
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
@@ -417,9 +424,15 @@ QUICConfigParams::scid_len()
 }
 
 const char *
-QUICConfigParams::session_file() const
+QUICConfigParams::client_session_file() const
 {
-  return _session_file;
+  return this->_client_session_file;
+}
+
+const char *
+QUICConfigParams::client_keylog_file() const
+{
+  return this->_client_keylog_file;
 }
 
 //
