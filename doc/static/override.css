@@ -19,6 +19,11 @@ dd {
     overflow: visible;
 }
 
+div.figure.align-center{
+    margin: initial;
+    max-width: 800px;
+}
+
 /* pre inside paragraphs gets weird spacing  */
 span.pre {
     line-height: initial;

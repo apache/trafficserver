@@ -80,12 +80,12 @@ stripe is in a single cache span and part of a single cache volume.
 
 If the cache volumes for the example cache spans were defined as:
 
-.. image:: images/ats-cache-volume-definition.png
+.. figure:: images/ats-cache-volume-definition.png
    :align: center
 
 Then the actual layout would look like:
 
-.. image:: images/cache-span-layout.png
+.. figure:: images/cache-span-layout.png
    :align: center
 
 Cache stripes are the fundamental unit of cache for the implementation. A
@@ -115,7 +115,7 @@ relationship between a span block and a cache stripe is the same as between a di
 file system. A cache stripe is structured data contained in a span block and always occupies the
 entire span block.
 
-.. image:: images/span-header.svg
+.. figure:: images/span-header.svg
    :align: center
 
 Stripe Structure
@@ -292,7 +292,8 @@ The header for a stripe is a variably sized instance of :class:`VolHeaderFooter`
 The variable trailing section contains the head indices of the directory entry
 free lists for the segments.
 
-.. image:: images/stripe-header.svg
+.. figure:: images/stripe-header.svg
+   :align: center
 
 The trailing :member:`VolHeaderFooter::freelist` array overlays the disk storage with
 an entry for every segment, even though the array is declared to have length `1`.
