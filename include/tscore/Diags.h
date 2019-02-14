@@ -113,7 +113,7 @@ class Diags
 public:
   Diags(const char *prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log,
         int diags_log_perm = -1, int output_log_perm = -1);
-  ~Diags();
+  virtual ~Diags();
 
   BaseLogFile *diags_log;
   BaseLogFile *stdout_log;
@@ -208,7 +208,7 @@ public:
     va_end(ap);
   }
 
-  void error_va(DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
+  virtual void error_va(DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
 
   void dump(FILE *fp = stdout) const;
 
