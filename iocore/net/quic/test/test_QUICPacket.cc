@@ -135,7 +135,8 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
 
     QUICPacketHeaderUPtr header = QUICPacketHeader::build(
       QUICPacketType::INITIAL, QUICKeyPhase::INITIAL, {reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8},
-      {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, 0x01234567, 0, 0x11223344, std::move(payload), 5);
+      {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, 0x01234567, 0, 0x11223344, true,
+      std::move(payload), 5);
 
     CHECK(header->size() == sizeof(expected) - 5);
     CHECK(header->packet_size() == sizeof(expected));
@@ -146,6 +147,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     CHECK(header->packet_number() == 0x01234567);
     CHECK(header->has_version() == true);
     CHECK(header->version() == 0x11223344);
+    CHECK(header->is_crypto_packet());
 
     header->store(buf, &len);
     CHECK(len == header->size());

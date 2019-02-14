@@ -98,7 +98,7 @@ TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
   QUICPacketUPtr packet =
     factory.create_handshake_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
                                     QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4), 0,
-                                    std::move(payload), sizeof(raw), true, false, dummy_frames);
+                                    std::move(payload), sizeof(raw), true, false, true, dummy_frames);
   CHECK(packet->type() == QUICPacketType::HANDSHAKE);
   CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4)));
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);
