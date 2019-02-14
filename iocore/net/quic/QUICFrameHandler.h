@@ -24,7 +24,7 @@
 #pragma once
 
 #include <vector>
-#include <QUICFrame.h>
+class QUICFrame;
 
 class QUICFrameHandler
 {
