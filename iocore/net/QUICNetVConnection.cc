@@ -907,7 +907,7 @@ QUICNetVConnection::next_protocol_set() const
 }
 
 QUICPacketNumber
-QUICNetVConnection::largest_acked_packet_number(QUICEncryptionLevel level) const
+QUICNetVConnection::_largest_acked_packet_number(QUICEncryptionLevel level) const
 {
   int index = QUICTypeUtil::pn_space_index(level);
 
@@ -1551,25 +1551,25 @@ QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool retransmi
     }
 
     packet = this->_packet_factory.create_initial_packet(
-      dcid, this->_quic_connection_id, this->largest_acked_packet_number(QUICEncryptionLevel::INITIAL), std::move(buf), len,
+      dcid, this->_quic_connection_id, this->_largest_acked_packet_number(QUICEncryptionLevel::INITIAL), std::move(buf), len,
       retransmittable, probing, frames, std::move(token), token_len);
     break;
   }
   case QUICPacketType::HANDSHAKE: {
     packet = this->_packet_factory.create_handshake_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
-                                                           this->largest_acked_packet_number(QUICEncryptionLevel::HANDSHAKE),
+                                                           this->_largest_acked_packet_number(QUICEncryptionLevel::HANDSHAKE),
                                                            std::move(buf), len, retransmittable, probing, frames);
     break;
   }
   case QUICPacketType::ZERO_RTT_PROTECTED: {
     packet = this->_packet_factory.create_zero_rtt_packet(this->_original_quic_connection_id, this->_quic_connection_id,
-                                                          this->largest_acked_packet_number(QUICEncryptionLevel::ZERO_RTT),
+                                                          this->_largest_acked_packet_number(QUICEncryptionLevel::ZERO_RTT),
                                                           std::move(buf), len, retransmittable, probing, frames);
     break;
   }
   case QUICPacketType::PROTECTED: {
     packet = this->_packet_factory.create_protected_packet(this->_peer_quic_connection_id,
-                                                           this->largest_acked_packet_number(QUICEncryptionLevel::ONE_RTT),
+                                                           this->_largest_acked_packet_number(QUICEncryptionLevel::ONE_RTT),
                                                            std::move(buf), len, retransmittable, probing, frames);
     break;
   }

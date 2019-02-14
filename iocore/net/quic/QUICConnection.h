@@ -43,12 +43,11 @@ public:
   virtual std::string_view cids() const                   = 0;
   virtual const QUICFiveTuple five_tuple() const          = 0;
 
-  virtual uint32_t pmtu() const                                                         = 0;
-  virtual NetVConnectionContext_t direction() const                                     = 0;
-  virtual SSLNextProtocolSet *next_protocol_set() const                                 = 0;
-  virtual bool is_closed() const                                                        = 0;
-  virtual QUICPacketNumber largest_acked_packet_number(QUICEncryptionLevel level) const = 0;
-  virtual std::string_view negotiated_application_name() const                          = 0;
+  virtual uint32_t pmtu() const                                = 0;
+  virtual NetVConnectionContext_t direction() const            = 0;
+  virtual SSLNextProtocolSet *next_protocol_set() const        = 0;
+  virtual bool is_closed() const                               = 0;
+  virtual std::string_view negotiated_application_name() const = 0;
 };
 
 class QUICConnection : public QUICPacketTransmitter, public QUICFrameHandler, public QUICConnectionInfoProvider

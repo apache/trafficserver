@@ -208,7 +208,6 @@ public:
   uint32_t pmtu() const override;
   NetVConnectionContext_t direction() const override;
   SSLNextProtocolSet *next_protocol_set() const override;
-  QUICPacketNumber largest_acked_packet_number(QUICEncryptionLevel level) const override;
   std::string_view negotiated_application_name() const override;
   bool is_closed() const override;
 
@@ -307,9 +306,11 @@ private:
   void _unschedule_ack_manager_periodic();
   Event *_ack_manager_periodic = nullptr;
 
+  QUICPacketNumber _largest_acked_packet_number(QUICEncryptionLevel level) const;
   uint32_t _maximum_quic_packet_size() const;
   uint32_t _minimum_quic_packet_size();
   uint64_t _maximum_stream_frame_data_size();
+
   void _store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrame &frame,
                     std::vector<QUICFrameInfo> &frames);
   QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size);

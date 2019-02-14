@@ -218,12 +218,6 @@ public:
     return 1280;
   }
 
-  QUICPacketNumber
-  largest_acked_packet_number(QUICEncryptionLevel level) const override
-  {
-    return 0;
-  }
-
   NetVConnectionContext_t
   direction() const override
   {
@@ -326,27 +320,9 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
   }
 
   uint32_t
-  minimum_quic_packet_size() override
-  {
-    return 1200;
-  }
-
-  uint32_t
-  maximum_quic_packet_size() const override
-  {
-    return 1200;
-  }
-
-  uint32_t
   pmtu() const override
   {
     return 1280;
-  }
-
-  QUICPacketNumber
-  largest_acked_packet_number(QUICEncryptionLevel level) const override
-  {
-    return 0;
   }
 
   NetVConnectionContext_t
