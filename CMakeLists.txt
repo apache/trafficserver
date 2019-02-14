@@ -83,6 +83,7 @@ CPP_LIB(tscppapi src/tscpp/api include/tscpp/api)
 
 CC_EXEC(test_tscore src/tscore/unit_tests)
 CC_EXEC(test_tsutil src/tscpp/util/unit_tests)
+CC_EXEC(test_librecords lib/records/unit_tests)
 
 CPP_LIB(proxy proxy proxy)
 CPP_ADD_SOURCES(proxy proxy/http)
