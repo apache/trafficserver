@@ -183,10 +183,12 @@ QUICConfigParams::initialize()
   this->_ld_initial_rtt = HRTIME_MSECONDS(timeout);
 
   // Congestion Control
-  REC_EstablishStaticConfigInt32U(this->_cc_default_mss, "proxy.config.quic.congestion_control.default_mss");
+  REC_EstablishStaticConfigInt32U(this->_cc_max_datagram_size, "proxy.config.quic.congestion_control.max_datagram_size");
   REC_EstablishStaticConfigInt32U(this->_cc_initial_window_scale, "proxy.config.quic.congestion_control.initial_window_scale");
   REC_EstablishStaticConfigInt32U(this->_cc_minimum_window_scale, "proxy.config.quic.congestion_control.minimum_window_scale");
   REC_EstablishStaticConfigFloat(this->_cc_loss_reduction_factor, "proxy.config.quic.congestion_control.loss_reduction_factor");
+  REC_EstablishStaticConfigInt32U(this->_cc_persistent_congestion_threshold,
+                                  "proxy.config.quic.congestion_control.persistent_congestion_threshold");
 
   this->_server_ssl_ctx = quic_init_server_ssl_ctx(this);
   this->_client_ssl_ctx = quic_init_client_ssl_ctx(this);
@@ -395,27 +397,33 @@ QUICConfigParams::ld_initial_rtt() const
 }
 
 uint32_t
-QUICConfigParams::cc_default_mss() const
+QUICConfigParams::cc_max_datagram_size() const
 {
-  return _cc_default_mss;
+  return _cc_max_datagram_size;
 }
 
 uint32_t
 QUICConfigParams::cc_initial_window() const
 {
-  return _cc_initial_window_scale * _cc_default_mss;
+  return _cc_initial_window_scale * _cc_max_datagram_size;
 }
 
 uint32_t
 QUICConfigParams::cc_minimum_window() const
 {
-  return _cc_minimum_window_scale * _cc_default_mss;
+  return _cc_minimum_window_scale * _cc_max_datagram_size;
 }
 
 float
 QUICConfigParams::cc_loss_reduction_factor() const
 {
   return _cc_loss_reduction_factor;
+}
+
+uint32_t
+QUICConfigParams::cc_persistent_congestion_threshold() const
+{
+  return _cc_persistent_congestion_threshold;
 }
 
 uint8_t

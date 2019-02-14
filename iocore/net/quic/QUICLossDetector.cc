@@ -435,7 +435,7 @@ QUICLossDetector::_detect_lost_packets()
   // Inform the congestion controller of lost packets and
   // lets it decide whether to retransmit immediately.
   if (!lost_packets.empty()) {
-    this->_cc->on_packets_lost(lost_packets);
+    this->_cc->on_packets_lost(lost_packets, this->_pto_count);
     for (auto lost_packet : lost_packets) {
       // -- ADDITIONAL CODE --
       // Not sure how we can get feedback from congestion control and when we should retransmit the lost packets but we need to send
@@ -468,7 +468,7 @@ QUICLossDetector::_retransmit_all_unacked_crypto_data()
     }
   }
 
-  this->_cc->on_packets_lost(lost_packets);
+  this->_cc->on_packets_lost(lost_packets, this->_pto_count);
   for (auto packet_number : retransmitted_crypto_packets) {
     this->_remove_from_sent_packet_list(packet_number);
   }
