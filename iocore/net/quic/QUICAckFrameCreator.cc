@@ -198,13 +198,13 @@ QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_numb
   }
 
   if (!ack_only) {
-    this->_available = true;
+    this->_available    = true;
+    this->_has_new_data = true;
   } else {
     this->_should_send = this->_available ? this->_should_send : false;
   }
 
-  this->_has_new_data = true;
-  this->_expect_next  = packet_number + 1;
+  this->_expect_next = packet_number + 1;
   this->_packet_numbers.push_back({ack_only, packet_number});
 }
 
