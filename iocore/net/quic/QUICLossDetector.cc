@@ -336,7 +336,7 @@ QUICLossDetector::_set_loss_detection_timer()
     timeout = timeout * (1 << this->_crypto_count);
 
     this->_loss_detection_alarm_at = this->_time_of_last_sent_crypto_packet + timeout;
-    QUICLDDebug("crypto packet alarm will be set: %ld", this->_loss_detection_alarm_at);
+    QUICLDDebug("crypto packet alarm will be set: %" PRId64, this->_loss_detection_alarm_at);
     // -- ADDITIONAL CODE --
     // In psudocode returning here, but we don't do for scheduling _loss_detection_alarm event.
     // -- END OF ADDITIONAL CODE --
@@ -344,7 +344,7 @@ QUICLossDetector::_set_loss_detection_timer()
     if (this->_loss_time != 0) {
       // Time threshold loss detection.
       this->_loss_detection_alarm_at = this->_loss_time;
-      QUICLDDebug("time threshold loss detection timer: %ld", this->_loss_detection_alarm_at);
+      QUICLDDebug("time threshold loss detection timer: %" PRId64, this->_loss_detection_alarm_at);
 
     } else {
       // PTO Duration
@@ -352,7 +352,7 @@ QUICLossDetector::_set_loss_detection_timer()
       timeout                        = std::max(timeout, this->_k_granularity);
       timeout                        = timeout * (1 << this->_pto_count);
       this->_loss_detection_alarm_at = this->_time_of_last_sent_ack_eliciting_packet + timeout;
-      QUICLDDebug("PTO timeout will be set: %ld", this->_loss_detection_alarm_at);
+      QUICLDDebug("PTO timeout will be set: %" PRId64, this->_loss_detection_alarm_at);
     }
 
     QUICLDDebug("Loss detection alarm has been set to %" PRId64 "ms", timeout / HRTIME_MSECOND);
