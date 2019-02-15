@@ -283,11 +283,11 @@ QUICAltConnectionManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level
         if (frame && frame->size() > maximum_frame_size) {
           // Cancel generating frame
           frame = nullptr;
-        } else {
+        } else if (frame != nullptr) {
+          this->_records_new_connection_id_frame(level, static_cast<const QUICNewConnectionIdFrame &>(*frame));
           this->_alt_quic_connection_ids_local[i].advertised = true;
         }
 
-        this->_records_new_connection_id_frame(level, static_cast<const QUICNewConnectionIdFrame &>(*frame));
         return frame;
       }
     }
