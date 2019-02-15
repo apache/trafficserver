@@ -206,20 +206,20 @@ public:
   //  by a heap consolidation.  Does NOT lock for Multi-Threaed
   //  access!
   void
-  lock_ronly_str_heap(int i)
+  lock_ronly_str_heap(unsigned i)
   {
     m_ronly_heap[i].m_locked = true;
   }
 
   void
-  unlock_ronly_str_heap(int i)
+  unlock_ronly_str_heap(unsigned i)
   {
     m_ronly_heap[i].m_locked = false;
     // INKqa11238
     // Move slot i to the first available slot in m_ronly_heap[].
     // The move is necessary because the rest of the code assumes
     // heaps are always allocated in order.
-    for (int j = 0; j < i; j++) {
+    for (unsigned j = 0; j < i; j++) {
       if (m_ronly_heap[j].m_heap_start == nullptr) {
         // move slot i to slot j
         m_ronly_heap[j].m_ref_count_ptr = m_ronly_heap[i].m_ref_count_ptr;
@@ -230,6 +230,7 @@ public:
         m_ronly_heap[i].m_heap_start    = nullptr;
         m_ronly_heap[i].m_heap_len      = 0;
         m_ronly_heap[i].m_locked        = false;
+        break; // Did the move, time to go.
       }
     }
   }
