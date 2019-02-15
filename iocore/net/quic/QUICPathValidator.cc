@@ -126,13 +126,14 @@ QUICPathValidator::will_generate_frame(QUICEncryptionLevel level)
   return (this->_has_outgoing_challenge || this->_has_outgoing_response);
 }
 
+/**
+ * @param connection_credit This is not used. Because PATH_CHALLENGE and PATH_RESPONSE frame are not flow-controlled
+ */
 QUICFrame *
-QUICPathValidator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICPathValidator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
+                                  uint16_t maximum_frame_size)
 {
   QUICFrame *frame = nullptr;
-
-  // PATH_CHALLENGE and PATH_RESPONSE are not flow-controlled
-  connection_credit = UINT64_MAX;
 
   if (!this->_is_level_matched(level)) {
     return frame;

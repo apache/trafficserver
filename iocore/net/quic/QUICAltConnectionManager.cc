@@ -260,8 +260,11 @@ QUICAltConnectionManager::will_generate_frame(QUICEncryptionLevel level)
   return this->_need_advertise || !this->_retired_seq_nums.empty();
 }
 
+/**
+ * @param connection_credit This is not used. Because NEW_CONNECTION_ID frame is not flow-controlled
+ */
 QUICFrame *
-QUICAltConnectionManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
+QUICAltConnectionManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
                                          uint16_t maximum_frame_size)
 {
   QUICFrame *frame = nullptr;

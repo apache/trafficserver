@@ -349,9 +349,6 @@ QUICHandshake::will_generate_frame(QUICEncryptionLevel level)
 QUICFrame *
 QUICHandshake::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
 {
-  // CRYPTO frame is not flow-controlled
-  // connection_credit = UINT64_MAX;
-
   QUICFrame *frame = nullptr;
 
   if (this->_is_level_matched(level)) {

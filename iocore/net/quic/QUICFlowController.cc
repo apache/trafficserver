@@ -105,8 +105,12 @@ QUICFlowController::will_generate_frame(QUICEncryptionLevel level)
   return this->_should_create_frame;
 }
 
+/**
+ * @param connection_credit This is not used. Because MAX_(STREAM_)DATA frame are not flow-controlled
+ */
 QUICFrame *
-QUICFlowController::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICFlowController::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
+                                   uint16_t maximum_frame_size)
 {
   QUICFrame *frame = nullptr;
 

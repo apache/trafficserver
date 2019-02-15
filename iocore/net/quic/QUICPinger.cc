@@ -54,8 +54,11 @@ QUICPinger::will_generate_frame(QUICEncryptionLevel level)
   return this->_need_to_fire[QUICTypeUtil::pn_space_index(level)] > 0;
 }
 
+/**
+ * @param connection_credit This is not used. Because PING frame is not flow-controlled
+ */
 QUICFrame *
-QUICPinger::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICPinger::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */, uint16_t maximum_frame_size)
 {
   QUICFrame *frame = nullptr;
 

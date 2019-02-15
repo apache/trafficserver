@@ -876,8 +876,12 @@ QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level)
   return this->_write_buffer_reader->is_read_avail_more_than(0);
 }
 
+/**
+ * @param connection_credit This is not used. Because CRYPTO frame is not flow-controlled
+ */
 QUICFrame *
-QUICCryptoStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICCryptoStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
+                                 uint16_t maximum_frame_size)
 {
   QUICConnectionErrorUPtr error = nullptr;
 

@@ -57,8 +57,11 @@ QUICAckFrameManager::update(QUICEncryptionLevel level, QUICPacketNumber packet_n
   return 0;
 }
 
+/**
+ * @param connection_credit This is not used. Because ACK frame is not flow-controlled
+ */
 QUICFrame *
-QUICAckFrameManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
+QUICAckFrameManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
                                     uint16_t maximum_frame_size)
 {
   QUICAckFrame *ack_frame = nullptr;
