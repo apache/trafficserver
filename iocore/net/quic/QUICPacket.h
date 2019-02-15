@@ -217,21 +217,21 @@ public:
                        QUICConnectionId source_cid, QUICConnectionId original_dcid, ats_unique_buf retry_token,
                        size_t retry_token_len);
 
-  QUICPacketType type() const;
-  QUICConnectionId destination_cid() const;
-  QUICConnectionId source_cid() const;
+  QUICPacketType type() const override;
+  QUICConnectionId destination_cid() const override;
+  QUICConnectionId source_cid() const override;
   QUICConnectionId original_dcid() const;
-  QUICPacketNumber packet_number() const;
-  bool has_version() const;
-  bool is_valid() const;
+  QUICPacketNumber packet_number() const override;
+  bool has_version() const override;
+  bool is_valid() const override;
   bool is_crypto_packet() const override;
-  QUICVersion version() const;
-  const uint8_t *payload() const;
+  QUICVersion version() const override;
+  const uint8_t *payload() const override;
   const uint8_t *token() const;
   size_t token_len() const;
-  QUICKeyPhase key_phase() const;
-  uint16_t size() const;
-  void store(uint8_t *buf, size_t *len) const;
+  QUICKeyPhase key_phase() const override;
+  uint16_t size() const override;
+  void store(uint8_t *buf, size_t *len) const override;
 
   static bool type(QUICPacketType &type, const uint8_t *packet, size_t packet_len);
   static bool version(QUICVersion &version, const uint8_t *packet, size_t packet_len);
@@ -270,21 +270,21 @@ public:
                         QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
   QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
-  QUICPacketType type() const;
-  QUICConnectionId destination_cid() const;
+  QUICPacketType type() const override;
+  QUICConnectionId destination_cid() const override;
   QUICConnectionId
-  source_cid() const
+  source_cid() const override
   {
     return QUICConnectionId::ZERO();
   }
-  QUICPacketNumber packet_number() const;
-  bool has_version() const;
-  bool is_valid() const;
-  QUICVersion version() const;
-  const uint8_t *payload() const;
-  QUICKeyPhase key_phase() const;
-  uint16_t size() const;
-  void store(uint8_t *buf, size_t *len) const;
+  QUICPacketNumber packet_number() const override;
+  bool has_version() const override;
+  bool is_valid() const override;
+  QUICVersion version() const override;
+  const uint8_t *payload() const override;
+  QUICKeyPhase key_phase() const override;
+  uint16_t size() const override;
+  void store(uint8_t *buf, size_t *len) const override;
 
   static bool key_phase(QUICKeyPhase &key_phase, const uint8_t *packet, size_t packet_len);
   static bool packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil);
