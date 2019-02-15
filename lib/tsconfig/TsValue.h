@@ -217,7 +217,7 @@ namespace detail {
     ValueType getType() const;
   protected:
     ValueType _type;      ///< Type of value.
-    ValueIndex _parent;   ///< Table index of parent value.
+    ValueIndex _parent = 0;   ///< Table index of parent value.
     ConstBuffer _text;    ///< Text of value (if scalar).
     ConstBuffer _name;    ///< Local name of value, if available.
     size_t _local_index;  ///< Index among siblings.
