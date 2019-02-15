@@ -1252,11 +1252,6 @@ QUICNetVConnection::_state_common_send_packet()
       QUICPacketUPtr packet = this->_packetize_frames(level, max_packet_size);
 
       if (packet) {
-        if (this->netvc_context == NET_VCONNECTION_IN &&
-            (packet->type() == QUICPacketType::INITIAL || packet->type() == QUICPacketType::HANDSHAKE)) {
-          ++this->_handshake_packets_sent;
-        }
-
         if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
           QUICConDebug("send to unverified window: %u", this->_verfied_state.windows());
           this->_verfied_state.consume(packet->size());

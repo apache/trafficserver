@@ -375,9 +375,7 @@ private:
   size_t _av_token_len           = 0;
   bool _is_resumption_token_sent = false;
 
-  // This is for limiting number of packets that a server can send without path validation
-  uint32_t _handshake_packets_sent = 0;
-  uint64_t _stream_frames_sent     = 0;
+  uint64_t _stream_frames_sent = 0;
 
   // TODO: Source addresses verification through an address validation token
   bool _has_ack_eliciting_packet_out = true;
