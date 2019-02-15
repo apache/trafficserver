@@ -56,7 +56,7 @@ parse_jwt(json_t *raw)
   jwt->raw        = raw;
   jwt->iss        = json_string_value(json_object_get(raw, "iss"));
   jwt->sub        = json_string_value(json_object_get(raw, "sub"));
-  jwt->aud        = json_string_value(json_object_get(raw, "aud"));
+  jwt->aud        = json_object_get(raw, "aud");
   jwt->exp        = parse_number(json_object_get(raw, "exp"));
   jwt->nbf        = parse_number(json_object_get(raw, "nbf"));
   jwt->iat        = parse_number(json_object_get(raw, "iat"));
@@ -77,6 +77,8 @@ jwt_delete(struct jwt *jwt)
   if (!jwt) {
     return;
   }
+
+  json_decref(jwt->aud);
   json_decref(jwt->raw);
   free(jwt);
 }
@@ -116,11 +118,6 @@ jwt_validate(struct jwt *jwt)
     return false;
   }
 
-  if (!unsupported_string_claim(jwt->aud)) {
-    PluginDebug("Initial JWT Failure: aud unsupported");
-    return false;
-  }
-
   if (now() > jwt->exp) {
     PluginDebug("Initial JWT Failure: expired token");
     return false;
@@ -157,6 +154,43 @@ jwt_validate(struct jwt *jwt)
   }
 
   return true;
+}
+
+bool
+jwt_check_aud(json_t *aud, const char *id)
+{
+  if (!aud) {
+    return true;
+  }
+  if (!id) {
+    return false;
+  }
+  /* If aud is a string, do a simple string comparison */
+  const char *aud_str = json_string_value(aud);
+  if (aud_str) {
+    PluginDebug("Checking aud %s agaisnt token aud string \"%s\"", id, aud_str);
+    /* Both strings will be null terminated per jansson docs */
+    if (strcmp(aud_str, id) == 0) {
+      return true;
+    }
+    return false;
+  }
+  PluginDebug("Checking aud %s agaisnt token aud array", id);
+  /* If aud is an array, check all items */
+  if (json_is_array(aud)) {
+    size_t index;
+    json_t *aud_item;
+    json_array_foreach(aud, index, aud_item)
+    {
+      aud_str = json_string_value(aud_item);
+      if (aud_str) {
+        if (strcmp(aud_str, id) == 0) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 bool
@@ -220,6 +254,14 @@ renew_copy_string(json_t *new_json, const char *name, const char *old)
 }
 
 void
+renew_copy_raw(json_t *new_json, const char *name, json_t *old_json)
+{
+  if (old_json) {
+    json_object_set_new(new_json, name, old_json);
+  }
+}
+
+void
 renew_copy_real(json_t *new_json, const char *name, double old)
 {
   if (!isnan(old)) {
@@ -251,7 +293,7 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
   json_t *new_json = json_object();
   renew_copy_string(new_json, "iss", iss); /* use issuer of new signing key */
   renew_copy_string(new_json, "sub", jwt->sub);
-  renew_copy_string(new_json, "aud", jwt->aud);
+  renew_copy_raw(new_json, "aud", jwt->aud);
   renew_copy_real(new_json, "exp", now() + jwt->cdniets); /* expire ets seconds hence */
   renew_copy_real(new_json, "nbf", jwt->nbf);
   renew_copy_real(new_json, "iat", now()); /* issued now */
@@ -261,6 +303,7 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
   renew_copy_integer(new_json, "cdnistt", jwt->cdnistt);
 
   char *pt = json_dumps(new_json, JSON_COMPACT);
+  json_decref(new_json);
 
   cjose_header_t *hdr = cjose_header_new(NULL);
   if (!hdr) {
