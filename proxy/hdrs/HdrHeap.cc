@@ -962,7 +962,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
 inline bool
 HdrHeap::attach_str_heap(char const *h_start, int h_len, RefCountObj *h_ref_obj, int *index)
 {
-  if (static_cast<unsigned>(*index) >= HDR_BUF_RONLY_HEAPS) {
+  if (*index >= static_cast<int>(HDR_BUF_RONLY_HEAPS)) {
     return false;
   }
 
