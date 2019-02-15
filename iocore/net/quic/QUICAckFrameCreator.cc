@@ -193,7 +193,7 @@ QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_numb
   }
 
   // can not delay handshake packet
-  if (this->_level == QUICEncryptionLevel::INITIAL || this->_level == QUICEncryptionLevel::HANDSHAKE) {
+  if ((this->_level == QUICEncryptionLevel::INITIAL || this->_level == QUICEncryptionLevel::HANDSHAKE) && !ack_only) {
     this->_should_send = true;
   }
 

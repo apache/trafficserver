@@ -343,3 +343,70 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
 
   CHECK(ack_manager.will_generate_frame(level) == false);
 }
+
+TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
+{
+  SECTION("INITIAL")
+  {
+    QUICAckFrameManager ack_manager;
+    QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
+    uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+
+    // Initial state
+    QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+    QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
+    CHECK(frame == nullptr);
+
+    ack_manager.update(level, 1, 1, false);
+    ack_manager.update(level, 2, 1, false);
+    ack_manager.update(level, 3, 1, false);
+    ack_manager.update(level, 4, 1, false);
+    ack_manager.update(level, 5, 1, false);
+
+    CHECK(ack_manager.will_generate_frame(level) == true);
+
+    ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+    frame     = static_cast<QUICAckFrame *>(ack_frame);
+    CHECK(frame != nullptr);
+    CHECK(frame->ack_block_count() == 0);
+    CHECK(frame->largest_acknowledged() == 5);
+    CHECK(frame->ack_block_section()->first_ack_block() == 4);
+    CHECK(frame->ack_block_section()->begin()->gap() == 0);
+
+    ack_manager.update(level, 6, 1, true);
+    ack_manager.update(level, 7, 1, true);
+    CHECK(ack_manager.will_generate_frame(level) == false);
+  }
+
+  SECTION("ONE_RTT")
+  {
+    QUICAckFrameManager ack_manager;
+    QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
+    uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+
+    // Initial state
+    QUICFrame *ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+    QUICAckFrame *frame  = static_cast<QUICAckFrame *>(ack_frame);
+    CHECK(frame == nullptr);
+
+    ack_manager.update(level, 1, 1, false);
+    ack_manager.update(level, 2, 1, false);
+    ack_manager.update(level, 3, 1, false);
+    ack_manager.update(level, 4, 1, false);
+    ack_manager.update(level, 5, 1, false);
+
+    CHECK(ack_manager.will_generate_frame(level) == true);
+
+    ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX);
+    frame     = static_cast<QUICAckFrame *>(ack_frame);
+    CHECK(frame != nullptr);
+    CHECK(frame->ack_block_count() == 0);
+    CHECK(frame->largest_acknowledged() == 5);
+    CHECK(frame->ack_block_section()->first_ack_block() == 4);
+    CHECK(frame->ack_block_section()->begin()->gap() == 0);
+
+    ack_manager.update(level, 6, 1, true);
+    ack_manager.update(level, 7, 1, true);
+    CHECK(ack_manager.will_generate_frame(level) == false);
+  }
+}
