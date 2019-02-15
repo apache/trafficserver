@@ -1282,6 +1282,9 @@ struct IpAddr {
   /// Test for loopback
   bool isLoopback() const;
 
+  /// Test for any addr
+  bool isAnyAddr() const;
+
   uint16_t _family; ///< Protocol family.
   /// Address data.
   union {
@@ -1339,6 +1342,12 @@ inline bool
 IpAddr::isLoopback() const
 {
   return (AF_INET == _family && 0x7F == _addr._byte[0]) || (AF_INET6 == _family && IN6_IS_ADDR_LOOPBACK(&_addr._ip6));
+}
+
+inline bool
+IpAddr::isAnyAddr() const
+{
+  return (AF_INET == _family && INADDR_ANY == _addr._ip4) || (AF_INET6 == _family && IN6_IS_ADDR_UNSPECIFIED(&_addr._ip6));
 }
 
 /// Assign sockaddr storage.

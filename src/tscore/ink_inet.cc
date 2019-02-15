@@ -841,7 +841,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, IpAddr const &addr)
     if (spec.has_numeric_type()) {
       bwformat(w, local_spec, static_cast<uintmax_t>(addr.family()));
     } else {
-      bwformat(w, local_spec, addr.family());
+      bwformat(w, local_spec, ats_ip_family_name(addr.family()));
     }
   }
   return w;
