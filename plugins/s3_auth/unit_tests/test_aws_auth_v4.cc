@@ -69,37 +69,78 @@ TEST_CASE("uriEncode(): encode reserved chars in an object name", "[AWS][auth][u
   CHECK_FALSE(encoded.compare("%20/%21%22%23%24%25%26%27%28%29%2A%2B%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D"));
 }
 
-TEST_CASE("uriDecode(): decode empty input", "[AWS][auth][utility]")
+TEST_CASE("isUriEncoded(): check an empty input", "[AWS][auth][utility]")
 {
-  String encoded("");
-  String decoded = uriDecode(encoded);
-  CHECK(0 == decoded.length()); /* 0 encoded because of the invalid input */
+  CHECK(false == isUriEncoded(""));
 }
 
-TEST_CASE("uriDecode(): decode unreserved chars", "[AWS][auth][utility]")
+TEST_CASE("isUriEncoded(): '%' and nothing else", "[AWS][auth][utility]")
+{
+  CHECK(false == isUriEncoded("%"));
+}
+
+TEST_CASE("isUriEncoded(): '%' but no hex digits", "[AWS][auth][utility]")
+{
+  CHECK(false == isUriEncoded("XXX%XXX"));
+}
+
+TEST_CASE("isUriEncoded(): '%' but only one hex digit", "[AWS][auth][utility]")
+{
+  CHECK(false == isUriEncoded("XXXXX%1XXXXXX"));
+  CHECK(false == isUriEncoded("XXX%1")); // test end of string case
+}
+
+TEST_CASE("isUriEncoded(): '%' and 2 hex digit", "[AWS][auth][utility]")
+{
+  CHECK(true == isUriEncoded("XXX%12XXX"));
+  CHECK(true == isUriEncoded("XXX%12")); // test end of string case
+}
+
+TEST_CASE("isUriEncoded(): space not encoded", "[AWS][auth][utility]")
+{
+  // Having a space always means it was not encoded.
+  CHECK(false == isUriEncoded("XXXXX XXXXXX"));
+}
+
+TEST_CASE("isUriEncoded(): '/' in strings which are not object names", "[AWS][auth][utility]")
+{
+  // This is not an object name so if we have '/' => the string was not encoded.
+  CHECK(false == isUriEncoded("XXXXX/XXXXXX", /* isObjectName */ false));
+
+  // There is no '/' and '%2F' shows that it was encoded.
+  CHECK(true == isUriEncoded("XXXXX%2FXXXXXX", /* isObjectName */ false));
+
+  // This is not an object name so if we have '/' => the string was not encoded despite '%20' in it.
+  CHECK(false == isUriEncoded("XXXXX/%20XXXXX", /* isObjectName */ false));
+}
+
+TEST_CASE("isUriEncoded(): '/' in strings that are object names", "[AWS][auth][utility]")
+{
+  // This is an object name so having '/' is normal but not enough to conclude if it is encoded or not.
+  CHECK(false == isUriEncoded("XXXXX/XXXXXX", /* isObjectName */ true));
+
+  // There is no '/' and '%2F' shows it is encoded.
+  CHECK(true == isUriEncoded("XXXXX%2FXXXXXX", /* isObjectName */ true));
+
+  // This is an object name so having '/' is normal and because of '%20' we can conclude it was encoded.
+  CHECK(true == isUriEncoded("XXXXX/%20XXXXX", /* isObjectName */ true));
+}
+
+TEST_CASE("isUriEncoded(): no reserved chars in the input", "[AWS][auth][utility]")
 {
   const String encoded = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                          "abcdefghijklmnopqrstuvwxyz"
                          "0123456789"
                          "-._~";
-  String decoded = uriDecode(encoded);
-
-  CHECK(encoded.length() == encoded.length());
-  CHECK_FALSE(decoded.compare("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                              "abcdefghijklmnopqrstuvwxyz"
-                              "0123456789"
-                              "-._~"));
+  CHECK(false == isUriEncoded(encoded));
 }
 
-TEST_CASE("uriDecode(): decode reserved chars", "[AWS][auth][utility]")
+TEST_CASE("isUriEncoded(): reserved chars in the input", "[AWS][auth][utility]")
 {
-  const String encoded =
-    "%20%2F%21%22%23%24%25%26%27%28%29%2A%2B%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D"; /* some printable but
-                                                                                                  reserved chars */
-  String decoded = uriDecode(encoded);
+  // some printable but reserved chars " /!\"#$%&'()*+,:;<=>?@[\\]^`{|}"
+  const String encoded = "%20%2F%21%22%23%24%25%26%27%28%29%2A%2B%2C%3A%3B%3C%3D%3E%3F%40%5B%5C%5D%5E%60%7B%7C%7D";
 
-  CHECK(3 * decoded.length() == encoded.length()); /* size of "%NN" = 3 */
-  CHECK_FALSE(decoded.compare(" /!\"#$%&'()*+,:;<=>?@[\\]^`{|}"));
+  CHECK(true == isUriEncoded(encoded));
 }
 
 /* base16Encode() ************************************************************************************************************** */
