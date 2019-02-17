@@ -64,42 +64,9 @@ QUICReceiveStreamStateMachine::is_allowed_to_receive(const QUICFrame &frame) con
 bool
 QUICReceiveStreamStateMachine::is_allowed_to_receive(QUICFrameType type) const
 {
-  if (type != QUICFrameType::STREAM && type != QUICFrameType::STREAM_DATA_BLOCKED && type != QUICFrameType::RESET_STREAM) {
-    return false;
-  }
-
-  // Return true or break out the switch to return false
-  if (this->get() == QUICReceiveStreamState::Init &&
-      (type == QUICFrameType::STREAM || type == QUICFrameType::STREAM_DATA_BLOCKED || type == QUICFrameType::RESET_STREAM)) {
+  // always allow receive these frames.
+  if (type == QUICFrameType::STREAM || type == QUICFrameType::STREAM_DATA_BLOCKED || type == QUICFrameType::RESET_STREAM) {
     return true;
-  }
-
-  switch (this->get()) {
-  case QUICReceiveStreamState::Recv:
-    if (type == QUICFrameType::STREAM || type == QUICFrameType::RESET_STREAM || type == QUICFrameType::STREAM_DATA_BLOCKED) {
-      return true;
-    }
-    break;
-  case QUICReceiveStreamState::SizeKnown:
-    // STREAM_DATA_BLOCKED must be older frame because we have already received fin .
-    if (type == QUICFrameType::STREAM || type == QUICFrameType::RESET_STREAM) {
-      return true;
-    }
-    break;
-  case QUICReceiveStreamState::DataRecvd:
-    // once we are in DataRecvd, discard all stale STREAM frame and peer's RESET_STREAM frame to try our best to collect data.
-    break;
-  // FIXME: once receiving RESET_STREAM frame. We don't transit this state to DataRecvd.
-  case QUICReceiveStreamState::ResetRecvd:
-    return false;
-  case QUICReceiveStreamState::Init:
-  // Discard every thing when we are in terminal state.
-  case QUICReceiveStreamState::DataRead:
-  case QUICReceiveStreamState::ResetRead:
-    return false;
-  default:
-    ink_assert(!"Unknown state");
-    break;
   }
 
   return false;
@@ -280,6 +247,9 @@ QUICSendStreamStateMachine::is_allowed_to_receive(QUICFrameType type) const
   case QUICSendStreamState::ResetSent:
   case QUICSendStreamState::DataRecvd:
   case QUICSendStreamState::ResetRecvd:
+    if (type == QUICFrameType::MAX_STREAM_DATA) {
+      return true;
+    }
     break;
   default:
     break;
