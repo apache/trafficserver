@@ -26,37 +26,34 @@
 #include "QUICFrame.h"
 #include "QUICTransferProgressProvider.h"
 
-class QUICStreamState
+enum class QUICSendStreamState {
+  Init       = 0,
+  Ready      = 1,
+  Send       = 2,
+  DataSent   = 3,
+  DataRecvd  = 4,
+  ResetSent  = 5,
+  ResetRecvd = 6,
+};
+
+enum class QUICReceiveStreamState {
+  Init       = 7,
+  Recv       = 8,
+  SizeKnown  = 9,
+  DataRecvd  = 10,
+  ResetRecvd = 11,
+  DataRead   = 12,
+  ResetRead  = 13,
+};
+
+enum class QUICBidirectionalStreamState { Init = 14, Idle = 15, Open = 16, HC_R = 17, HC_L = 18, Closed = 19, Invalid = 20 };
+
+template <class T> class QUICStreamStateMachine
 {
 public:
-  enum class State {
-    // Common
-    _Init,
-    _Invalid,
-    // SendStreamState
-    Ready,
-    Send,
-    DataSent,
-    DataRecvd,
-    ResetSent,
-    ResetRecvd,
-    // ReceiveStreamState
-    Recv,
-    SizeKnown,
-    /* DataRecvd, (dup)*/
-    DataRead,
-    /* ResetRecvd, (dup)*/
-    ResetRead,
-    // Bidirectional
-    Open,
-    HC_R,
-    HC_L,
-    Closed
-  };
+  virtual ~QUICStreamStateMachine() {}
 
-  virtual ~QUICStreamState() {}
-
-  virtual State
+  virtual T
   get() const
   {
     return this->_state;
@@ -65,87 +62,86 @@ public:
   virtual void update_with_sending_frame(const QUICFrame &frame)   = 0;
   virtual void update_with_receiving_frame(const QUICFrame &frame) = 0;
 
+  virtual void
+  update_on_transport_send_event()
+  {
+  }
+  virtual void
+  update_on_transport_recv_event()
+  {
+  }
+  virtual void
+  update_on_user_read_event()
+  {
+  }
+
   virtual bool is_allowed_to_send(QUICFrameType type) const        = 0;
   virtual bool is_allowed_to_send(const QUICFrame &frame) const    = 0;
   virtual bool is_allowed_to_receive(QUICFrameType type) const     = 0;
   virtual bool is_allowed_to_receive(const QUICFrame &frame) const = 0;
 
 protected:
-  void _set_state(State s);
+  void
+  _set_state(T s)
+  {
+    ink_assert(s != T::Init);
+    this->_state = s;
+  }
 
 private:
-  State _state = State::_Init;
+  T _state = T::Init;
 };
 
-class QUICUnidirectionalStreamState : public QUICStreamState
+class QUICSendStreamStateMachine : public QUICStreamStateMachine<QUICSendStreamState>
 {
 public:
-  QUICUnidirectionalStreamState(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out)
-    : _in_progress(in), _out_progress(out)
-  {
-  }
-  virtual void update(const QUICStreamState &opposite_side) = 0;
-
-protected:
-  QUICTransferProgressProvider *_in_progress  = nullptr;
-  QUICTransferProgressProvider *_out_progress = nullptr;
-};
-
-class QUICSendStreamState : public QUICUnidirectionalStreamState
-{
-public:
-  QUICSendStreamState(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out) : QUICUnidirectionalStreamState(in, out)
-  {
-    this->_set_state(State::Ready);
-  }
+  QUICSendStreamStateMachine() { this->_set_state(QUICSendStreamState::Ready); };
 
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
-  void update(const QUICStreamState &opposite_side) override;
-  void update_on_ack();
+
+  void update_on_transport_send_event() override;
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
   bool is_allowed_to_receive(QUICFrameType type) const override;
   bool is_allowed_to_receive(const QUICFrame &frame) const override;
+
+  void update(const QUICReceiveStreamState opposite_side);
 };
 
-class QUICReceiveStreamState : public QUICUnidirectionalStreamState
+class QUICReceiveStreamStateMachine : public QUICStreamStateMachine<QUICReceiveStreamState>
 {
 public:
-  QUICReceiveStreamState(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out)
-    : QUICUnidirectionalStreamState(in, out)
-  {
-  }
+  QUICReceiveStreamStateMachine() = default;
 
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
-  void update(const QUICStreamState &opposite_side) override;
-  void update_on_read();
-  void update_on_eos();
+
+  void update_on_transport_recv_event() override;
+  void update_on_user_read_event() override;
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
   bool is_allowed_to_receive(QUICFrameType type) const override;
   bool is_allowed_to_receive(const QUICFrame &frame) const override;
+
+  void update(const QUICSendStreamState opposite_side);
 };
 
-class QUICBidirectionalStreamState : public QUICStreamState
+class QUICBidirectionalStreamStateMachine : public QUICStreamStateMachine<QUICBidirectionalStreamState>
 {
 public:
-  QUICBidirectionalStreamState(QUICTransferProgressProvider *send_in, QUICTransferProgressProvider *send_out,
-                               QUICTransferProgressProvider *recv_in, QUICTransferProgressProvider *recv_out)
-    : _send_stream_state(send_in, send_out), _recv_stream_state(recv_in, recv_out)
-  {
-    this->_recv_stream_state.update(this->_send_stream_state);
-  }
-  State get() const override;
+  QUICBidirectionalStreamStateMachine() { this->_recv_stream_state.update(this->_send_stream_state.get()); };
+
+  QUICBidirectionalStreamState get() const override;
 
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
-  void update_on_ack();
-  void update_on_read();
-  void update_on_eos();
+
+  void update_on_transport_send_event() override;
+  void update_on_transport_recv_event() override;
+  void update_on_user_read_event() override;
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
@@ -153,6 +149,6 @@ public:
   bool is_allowed_to_receive(const QUICFrame &frame) const override;
 
 private:
-  QUICSendStreamState _send_stream_state;
-  QUICReceiveStreamState _recv_stream_state;
+  QUICSendStreamStateMachine _send_stream_state;
+  QUICReceiveStreamStateMachine _recv_stream_state;
 };
