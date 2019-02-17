@@ -281,7 +281,7 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
     CHECK(ss.get() == QUICReceiveStreamState::DataRecvd);
 
     // Case4. Recv RESET_STREAM
-    CHECK(ss.is_allowed_to_receive(QUICFrameType::RESET_STREAM) == false);
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::RESET_STREAM));
     ss.update_with_receiving_frame(*rst_stream_frame);
     CHECK(ss.get() == QUICReceiveStreamState::DataRecvd);
   }
@@ -307,7 +307,7 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
     CHECK(ss.is_allowed_to_send(QUICFrameType::STOP_SENDING) == false);
 
     // Case4. Recv ALL data
-    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM) == false);
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     ss.update_with_receiving_frame(*stream_frame_delayed);
     ss.update_on_transport_recv_event();
     CHECK(ss.get() == QUICReceiveStreamState::ResetRecvd);
@@ -316,7 +316,7 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
     CHECK(ss.is_allowed_to_send(QUICFrameType::STOP_SENDING) == false);
   }
 
-  SECTION("Discard STREAM and RESET_STREAM in DataRecvd")
+  SECTION("Do not discard STREAM and RESET_STREAM in DataRecvd")
   {
     // Case1. Recv STREAM
     QUICReceiveStreamStateMachine ss;
@@ -335,8 +335,8 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
     ss.update_on_transport_recv_event();
     CHECK(ss.get() == QUICReceiveStreamState::DataRecvd);
 
-    CHECK(ss.is_allowed_to_receive(QUICFrameType::RESET_STREAM) == false);
-    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM) == false);
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::RESET_STREAM));
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     CHECK(ss.is_allowed_to_send(QUICFrameType::STOP_SENDING));
   }
 }
