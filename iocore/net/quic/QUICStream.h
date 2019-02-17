@@ -43,11 +43,7 @@ class QUICStream : public VConnection, public QUICFrameGenerator, public QUICTra
 {
 public:
   QUICStream()
-    : VConnection(nullptr),
-      _remote_flow_controller(0, 0),
-      _local_flow_controller(nullptr, 0, 0),
-      _received_stream_frame_buffer(),
-      _state(nullptr, nullptr, nullptr, nullptr)
+    : VConnection(nullptr), _remote_flow_controller(0, 0), _local_flow_controller(nullptr, 0, 0), _received_stream_frame_buffer()
   {
   }
   QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid, uint64_t recv_max_stream_data,
@@ -73,7 +69,7 @@ public:
    * QUICApplication need to call one of these functions when it process VC_EVENT_*
    */
   void on_read();
-  void on_eos();
+  // void on_eos();
 
   QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame);
   QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame);
@@ -144,7 +140,7 @@ protected:
   QUICIncomingStreamFrameBuffer _received_stream_frame_buffer;
 
   // FIXME Unidirectional streams should use either ReceiveStreamState or SendStreamState
-  QUICBidirectionalStreamState _state;
+  QUICBidirectionalStreamStateMachine _state;
 
   // QUICFrameGenerator
   void _on_frame_acked(QUICFrameInformationUPtr &info) override;

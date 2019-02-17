@@ -168,6 +168,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 4096);
   CHECK(buffer.empty());
+  CHECK(buffer.has_all_data());
 
   buffer.clear();
 
@@ -189,6 +190,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 4096);
   CHECK(buffer.empty());
+  CHECK(buffer.has_all_data());
 
   delete stream;
 }
@@ -236,6 +238,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame == nullptr);
   CHECK(buffer.empty());
+  CHECK(buffer.has_all_data());
 
   buffer.clear();
 
@@ -259,6 +262,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame == nullptr);
   CHECK(buffer.empty());
+  CHECK(buffer.has_all_data());
 
   delete stream;
 }
