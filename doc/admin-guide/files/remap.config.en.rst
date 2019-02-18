@@ -107,6 +107,8 @@ Traffic Server recognizes three space-delimited fields: ``type``,
 
     where ``scheme`` is ``http``, ``https``, ``ws`` or ``wss``.
 
+   .. note:: A remap rule for requests that upgrade from HTTP to WebSocket still require a remap rule with the ``ws`` or ``wss`` scheme.
+
 
 .. _remap-config-precedence:
 
