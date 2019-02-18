@@ -159,6 +159,12 @@ SSLInitClientContext(const SSLConfigParams *params)
   }
 
   if (params->clientCertPath != nullptr && params->clientCertPath[0] != '\0') {
+    // Optionally elevate/allow file access to read root-only
+    // certificates. The destructor will drop privilege for us.
+    uint32_t elevate_setting = 0;
+    REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+    ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
+
     if (!SSL_CTX_use_certificate_chain_file(client_ctx, params->clientCertPath)) {
       SSLError("failed to load client certificate from %s", params->clientCertPath);
       goto fail;
