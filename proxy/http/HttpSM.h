@@ -45,19 +45,6 @@
 #include "tscore/History.h"
 //#include "AuthHttpAdapter.h"
 
-/* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
- * are actually required.
- * Enabling LAZY_BUF_ALLOC, stop Http code from allocation space
- * for header buffer and tunnel buffer. The allocation is done by
- * the net code in read_from_net when data is actually written into
- * the buffer. By allocating memory only when it is required we can
- * reduce the memory consumed by TS process.
- *
- * IMPORTANT NOTE: enable/disable LAZY_BUF_ALLOC in Http1ServerSession.h
- * as well.
- */
-#define LAZY_BUF_ALLOC
-
 #define HTTP_API_CONTINUE (INK_API_EVENT_EVENTS_START + 0)
 #define HTTP_API_ERROR (INK_API_EVENT_EVENTS_START + 1)
 

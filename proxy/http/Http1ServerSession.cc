@@ -74,11 +74,9 @@ Http1ServerSession::new_connection(NetVConnection *new_vc)
   magic = HTTP_SS_MAGIC_ALIVE;
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, 1); // Update the true global stat
   HTTP_INCREMENT_DYN_STAT(http_total_server_connections_stat);
-#ifdef LAZY_BUF_ALLOC
-  read_buffer = new_empty_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
-#else
+
   read_buffer = new_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
-#endif
+
   buf_reader = read_buffer->alloc_reader();
   Debug("http_ss", "[%" PRId64 "] session born, netvc %p", con_id, new_vc);
   state = HSS_INIT;
