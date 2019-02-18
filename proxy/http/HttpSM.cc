@@ -6403,10 +6403,7 @@ HttpSM::server_transfer_init(MIOBuffer *buf, int hdr_size)
   if (server_response_pre_read_bytes == to_copy && server_buffer_reader->read_avail() > 0) {
     t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
   }
-#ifdef LAZY_BUF_ALLOC
-  // reset the server session buffer
-  server_session->reset_read_buffer();
-#endif
+
   return nbytes;
 }
 
