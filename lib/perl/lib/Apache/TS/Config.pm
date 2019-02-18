@@ -31,7 +31,7 @@ our $VERSION = "1.0";
 
 # Constants
 use constant {
-    TS_CONF_UNMODIFIED     => 0,
-    TS_CONF_MODIFIED       => 1,
-    TS_CONF_REMOVED        => 2
+    TS_CONF_UNMODIFIED => 0,
+    TS_CONF_MODIFIED   => 1,
+    TS_CONF_REMOVED    => 2
 };

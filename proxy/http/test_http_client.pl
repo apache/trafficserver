@@ -28,7 +28,6 @@ sub make_proxy_request($$$$$);
 sub make_doc_filename($);
 sub make_doc_http_filename($);
 
-
 ###########################################################
 #
 # global configuration parameters
@@ -44,54 +43,39 @@ my ($save_http_doc)   = 0;
 ###########################################################
 sub process_input_http_requests_file($$$)
 {
-	my ($filename, $proxy_name, $proxy_port) = @_;
-	my ($input, $host_name, $host_port, $request, $line);
+    my ($filename, $proxy_name, $proxy_port) = @_;
+    my ($input, $host_name, $host_port, $request, $line);
 
-	#open input file for read
-	unless (open input, "<$filename")
-	{
-		print "cannot open $filename: $!\n";
-		return;
-	}
+    #open input file for read
+    unless (open input, "<$filename") {
+        print "cannot open $filename: $!\n";
+        return;
+    }
 
-	while ($line = <input>)
-	{
-		$request .= $line;
-		#replace \n with \r\n
-		if (not $line =~ m/\r/)
-		{
-			$line =~ s/\n/\r\n/;
-		}
-		if ($line =~ m/host/i)
-		{
-			($_, $host_name, $host_port) = split( /:/, $line, 3);
-			if (not $host_port)
-			{
-				$host_port = 80;
-			}
-		}
-		elsif (length($line) <= 2 && $line == "\n")
-		{
-			$request .= $line;
-			if ($proxy_name and $proxy_port)
-			{
-				$request = make_proxy_request(
-					$request,
-					$host_name,
-					$host_port,
-					$proxy_name,
-				    $proxy_port);
-				spawn_http_request($proxy_name, $proxy_port, $request);
-			}
-			else
-			{
-				print $request;
-				spawn_http_request($host_name, $host_port, $request);
-			}
-			$request = "";
-		}
-	}
-	return;
+    while ($line = <input>) {
+        $request .= $line;
+        #replace \n with \r\n
+        if (not $line =~ m/\r/) {
+            $line =~ s/\n/\r\n/;
+        }
+        if ($line =~ m/host/i) {
+            ($_, $host_name, $host_port) = split(/:/, $line, 3);
+            if (not $host_port) {
+                $host_port = 80;
+            }
+        } elsif (length($line) <= 2 && $line == "\n") {
+            $request .= $line;
+            if ($proxy_name and $proxy_port) {
+                $request = make_proxy_request($request, $host_name, $host_port, $proxy_name, $proxy_port);
+                spawn_http_request($proxy_name, $proxy_port, $request);
+            } else {
+                print $request;
+                spawn_http_request($host_name, $host_port, $request);
+            }
+            $request = "";
+        }
+    }
+    return;
 }
 ###########################################################
 #
@@ -100,21 +84,18 @@ sub process_input_http_requests_file($$$)
 ###########################################################
 sub spawn_http_request($$$)
 {
-	my($hostname, $hostport, $request) = @_;
+    my ($hostname, $hostport, $request) = @_;
 
-	my ($pid);
-	if (!defined ($pid = fork))
-	{
-		print "fork failed", "\n";
-		exit;
-	}
-	elsif ($pid)
-	{   # parent
-		return;
-	}
-	# else, I am the child
-	do_http_request ($hostname, $hostport, $request);
-	exit;
+    my ($pid);
+    if (!defined($pid = fork)) {
+        print "fork failed", "\n";
+        exit;
+    } elsif ($pid) {    # parent
+        return;
+    }
+    # else, I am the child
+    do_http_request($hostname, $hostport, $request);
+    exit;
 }
 ###########################################################
 #
@@ -123,33 +104,31 @@ sub spawn_http_request($$$)
 ###########################################################
 sub spawn_http_request($$$)
 {
-	my ($hostname, $hostport, $request) = @_;
-	my ($line);
-	my ($iaddr, $paddr, $proto);
+    my ($hostname, $hostport, $request) = @_;
+    my ($line);
+    my ($iaddr, $paddr, $proto);
 
-	$hostname =~ s/\s//g;
+    $hostname =~ s/\s//g;
 
-	$iaddr     = inet_aton($hostname)   or die "no host: $hostname", "\n";
-	$paddr     = sockaddr_in($hostport, $iaddr);
-	$proto     = getprotobyname('tcp');
+    $iaddr = inet_aton($hostname) or die "no host: $hostname", "\n";
+    $paddr = sockaddr_in($hostport, $iaddr);
+    $proto = getprotobyname('tcp');
 
-	unless (socket(Host, PF_INET, SOCK_STREAM, $proto))
-	{
-		print "socket: $!", "\n";
-		exit;
-	}
-	unless (connect(Host, $paddr))
-	{
-		print "connect: $!", "\n";
-		exit;
-	}
-	syswrite Host, $request, length($request);
-	#process response
-	process_http_response($request, $Host, 1, 1);
-	print "request is done\n";
-	close (Host);
+    unless (socket(Host, PF_INET, SOCK_STREAM, $proto)) {
+        print "socket: $!", "\n";
+        exit;
+    }
+    unless (connect(Host, $paddr)) {
+        print "connect: $!", "\n";
+        exit;
+    }
+    syswrite Host, $request, length($request);
+    #process response
+    process_http_response($request, $Host, 1, 1);
+    print "request is done\n";
+    close(Host);
 
-	return;
+    return;
 }
 ###########################################################
 #
@@ -165,62 +144,52 @@ sub spawn_http_request($$$)
 ###########################################################
 sub process_http_response($$$$)
 {
-	my ($request, $Host, $save_doc_flag, $save_http_flag) = @_;
-	my ($doc_filename, $http_filename);
+    my ($request, $Host, $save_doc_flag, $save_http_flag) = @_;
+    my ($doc_filename, $http_filename);
 
-	my ($doc_filename)      = make_doc_filename($request);
-	my ($doc_http_filename) = make_doc_http_filename($request);
+    my ($doc_filename)      = make_doc_filename($request);
+    my ($doc_http_filename) = make_doc_http_filename($request);
 
-	print $doc_filename, ' ', $doc_http_filename, "\n";
+    print $doc_filename, ' ', $doc_http_filename, "\n";
 
-	my ($doc_file, $doc_http_file);
-	########################
-	# open files for write #
-	########################
-	if ($save_doc_flag)
-	{
-		unless (open doc_file, ">$doc_filename")
-		{
-			print "cannot open $doc_filename for write", "\n";
-			return;
-		}
-	}
-	if ($save_http_flag)
-	{
-		unless (open doc_http_file, ">$doc_http_filename")
-		{
-			print "cannot open $doc_http_filename for write", "\n";
-			return;
-		}
-	}
-	##############################
-	# write http header and body #
-	##############################
-	my ($http_header) = 1;
-	my ($doc_body)    = 0;
-	my ($line);
+    my ($doc_file, $doc_http_file);
+    ########################
+    # open files for write #
+    ########################
+    if ($save_doc_flag) {
+        unless (open doc_file, ">$doc_filename") {
+            print "cannot open $doc_filename for write", "\n";
+            return;
+        }
+    }
+    if ($save_http_flag) {
+        unless (open doc_http_file, ">$doc_http_filename") {
+            print "cannot open $doc_http_filename for write", "\n";
+            return;
+        }
+    }
+    ##############################
+    # write http header and body #
+    ##############################
+    my ($http_header) = 1;
+    my ($doc_body)    = 0;
+    my ($line);
 
-	while ($line = <Host>)
-	{
-		if ($http_header)
-		{
-			if ($save_http_flag)
-			{
-				print doc_http_file $line;
-			}
-			if (length($line) <= 2 && $line == "\n")
-			{
-				close doc_http_file;
-				$http_header = 0;
-				$doc_body    = 1;
-			}
-		}
-		elsif ($save_doc_flag)
-		{
-			print doc_file $line;
-		}
-	}
-	return;
+    while ($line = <Host>) {
+        if ($http_header) {
+            if ($save_http_flag) {
+                print doc_http_file $line;
+            }
+            if (length($line) <= 2 && $line == "\n") {
+                close doc_http_file;
+                $http_header = 0;
+                $doc_body    = 1;
+            }
+        } elsif ($save_doc_flag) {
+            print doc_file $line;
+        }
+    }
+    return;
 }
 ###########################################################
 #
@@ -234,21 +203,20 @@ sub process_http_response($$$$)
 ###########################################################
 sub make_proxy_request($$$$$)
 {
-	my ($request, $host_name, $host_port, $proxy_name, $proxy_port) = @_;
-	my ($proxy_request) = $request;
+    my ($request, $host_name, $host_port, $proxy_name, $proxy_port) = @_;
+    my ($proxy_request) = $request;
 
-	my ($url_prefix) = "http:\/\/$host_name\/";
-	$url_prefix =~ s/\s//g;
+    my ($url_prefix) = "http:\/\/$host_name\/";
+    $url_prefix =~ s/\s//g;
 
-	if ($host_port != 80)
-	{
-		$url_prefix .= ":$host_port\/";
-	}
-	$url_prefix =~ s/\s//g;
+    if ($host_port != 80) {
+        $url_prefix .= ":$host_port\/";
+    }
+    $url_prefix =~ s/\s//g;
 
-	$proxy_request =~ s/\//$url_prefix/;
+    $proxy_request =~ s/\//$url_prefix/;
 
-	return ($proxy_request);
+    return ($proxy_request);
 }
 ###########################################################
 #
@@ -258,45 +226,44 @@ sub make_proxy_request($$$$$)
 ###########################################################
 sub make_doc_filename($)
 {
-	my ($request) = @_;
-	my ($doc_filename);
-	my ($host_name);
+    my ($request) = @_;
+    my ($doc_filename);
+    my ($host_name);
 
-	($_, $host_name) = split (/host:/i, $request, 2);
-	($host_name, $_) = split (/ /, $host_name);
-	#replace every . with _
-	$host_name =~ s/\./_/g;
+    ($_, $host_name) = split(/host:/i, $request, 2);
+    ($host_name, $_) = split(/ /, $host_name);
+    #replace every . with _
+    $host_name =~ s/\./_/g;
 
-	print $request, "\n";
-	print $host_name, "\n";
+    print $request,   "\n";
+    print $host_name, "\n";
 
-	($_, $doc_filename) = split (/ /, $request, 2);
-	#remove scheme://host_name if this is a proxy request
-#	if ($doc_filename =~ m/:\/\//)
-#	{
-#
-#	}
-#
-#	@@@@@@@@
+    ($_, $doc_filename) = split(/ /, $request, 2);
+    #remove scheme://host_name if this is a proxy request
+    #	if ($doc_filename =~ m/:\/\//)
+    #	{
+    #
+    #	}
+    #
+    #	@@@@@@@@
 
-	($_, $doc_filename) = split (/\//, $doc_filename, 2);
-	$doc_filename =~ s/\//_/g;
-	#remove any white spaces
-	$doc_filename =~ s/\s//g;
+    ($_, $doc_filename) = split(/\//, $doc_filename, 2);
+    $doc_filename =~ s/\//_/g;
+    #remove any white spaces
+    $doc_filename =~ s/\s//g;
 
-	print "doc name is: ", $doc_filename, "\n";
+    print "doc name is: ", $doc_filename, "\n";
 
-	if (length($doc_filename) <= 1)
-	{
-		$doc_filename = 'default.html';
-	}
+    if (length($doc_filename) <= 1) {
+        $doc_filename = 'default.html';
+    }
 
-	$doc_filename = $host_name . '_' . $doc_filename;
+    $doc_filename = $host_name . '_' . $doc_filename;
 
-	#remove any white spaces
-	$doc_filename =~ s/\s//g;
+    #remove any white spaces
+    $doc_filename =~ s/\s//g;
 
-	return ($doc_filename);
+    return ($doc_filename);
 }
 ###########################################################
 #
@@ -305,43 +272,34 @@ sub make_doc_filename($)
 ###########################################################
 sub make_doc_http_filename($)
 {
-	my ($request) = @_;
-	my ($doc_http_filename);
+    my ($request) = @_;
+    my ($doc_http_filename);
 
-	$doc_http_filename = make_doc_filename($request);
-	$doc_http_filename .= '.http';
+    $doc_http_filename = make_doc_filename($request);
+    $doc_http_filename .= '.http';
 
-	return ($doc_http_filename);
+    return ($doc_http_filename);
 }
 ###########################################################
 #
 # main entry point
 #
 ###########################################################
-if ($#ARGV != 1 and $#ARGV != 3)
-{
-	print 'no proxy : test_http_client <input file> <number of users>', "\n";
-	print 'use proxy: test_http_client <input file> <number of users> ';
-	print '<proxy host> <proxy port>', "\n";
-	exit;
+if ($#ARGV != 1 and $#ARGV != 3) {
+    print 'no proxy : test_http_client <input file> <number of users>', "\n";
+    print 'use proxy: test_http_client <input file> <number of users> ';
+    print '<proxy host> <proxy port>', "\n";
+    exit;
 }
 
-if ($#ARGV == 1)
-{
-	my ($infile, $nusers) = @ARGV;
-	process_input_http_requests_file($infile, "", "");
-}
-elsif ($#ARGV == 3)
-{
-	my ($infile, $nusers, $proxy_name, $proxy_port) = @ARGV;
-	process_input_http_requests_file($infile, $proxy_name, $proxy_port);
+if ($#ARGV == 1) {
+    my ($infile, $nusers) = @ARGV;
+    process_input_http_requests_file($infile, "", "");
+} elsif ($#ARGV == 3) {
+    my ($infile, $nusers, $proxy_name, $proxy_port) = @ARGV;
+    process_input_http_requests_file($infile, $proxy_name, $proxy_port);
 }
 
 print "\n";
 exit;
-
-
-
-
-
 
