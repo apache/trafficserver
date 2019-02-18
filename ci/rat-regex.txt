@@ -25,6 +25,7 @@
 .*\.gold$
 ^\.gitignore$
 ^\.gitmodules$
+^\.perltidyrc$
 ^\.indent.pro$
 ^\.vimrc$
 ^\.clang-.*$

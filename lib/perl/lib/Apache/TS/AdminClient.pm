@@ -76,20 +76,16 @@ use constant {
     TS_ERR_FAIL                => 12
 };
 
-
 # Semi-intelligent way of finding the mgmtapi socket.
-sub _find_socket {
+sub _find_socket
+{
     my $path = shift || "";
     my $name = shift || "mgmtapi.sock";
     my @sockets_def = (
-        $path,
-        Apache::TS::PREFIX . '/' . Apache::TS::REL_RUNTIMEDIR . '/' . 'mgmtapi.sock',
-        '/usr/local/var/trafficserver',
-        '/usr/local/var/run/trafficserver',
-        '/usr/local/var/run',
-        '/var/trafficserver',
-        '/var/run/trafficserver',
-        '/var/run',
+        $path,                          Apache::TS::PREFIX . '/' . Apache::TS::REL_RUNTIMEDIR . '/' . 'mgmtapi.sock',
+        '/usr/local/var/trafficserver', '/usr/local/var/run/trafficserver',
+        '/usr/local/var/run',           '/var/trafficserver',
+        '/var/run/trafficserver',       '/var/run',
         '/opt/ats/var/trafficserver',
     );
 
@@ -104,14 +100,14 @@ sub _find_socket {
 #
 # Constructor
 #
-sub new {
+sub new
+{
     my ($class, %args) = @_;
     my $self = {};
 
     $self->{_socket_path} = _find_socket($args{socket_path});
-    $self->{_socket} = undef;
-    croak
-"Unable to locate socket, please pass socket_path with the management api socket location to Apache::TS::AdminClient"
+    $self->{_socket}      = undef;
+    croak "Unable to locate socket, please pass socket_path with the management api socket location to Apache::TS::AdminClient"
       if (!$self->{_socket_path});
     if ((!-r $self->{_socket_path}) or (!-w $self->{_socket_path}) or (!-S $self->{_socket_path})) {
         croak "Unable to open $self->{_socket_path} for reads or writes";
@@ -128,7 +124,8 @@ sub new {
 #
 # Destructor
 #
-sub DESTROY {
+sub DESTROY
+{
     my $self = shift;
     return $self->close_socket();
 }
@@ -136,15 +133,15 @@ sub DESTROY {
 #
 # Open the socket (Unix domain)
 #
-sub open_socket {
+sub open_socket
+{
     my $self = shift;
     my %args = @_;
 
     if (defined($self->{_socket})) {
         if ($args{force} || $args{reopen}) {
             $self->close_socket();
-        }
-        else {
+        } else {
             return undef;
         }
     }
@@ -152,7 +149,7 @@ sub open_socket {
     $self->{_socket} = IO::Socket::UNIX->new(
         Type => SOCK_STREAM,
         Peer => $self->{_socket_path}
-   ) or croak("Error opening socket - $@");
+    ) or croak("Error opening socket - $@");
 
     return undef unless defined($self->{_socket});
     $self->{_select}->add($self->{_socket});
@@ -160,7 +157,8 @@ sub open_socket {
     return $self;
 }
 
-sub close_socket {
+sub close_socket
+{
     my $self = shift;
 
     # if socket doesn't exist, return as there's nothing to do.
@@ -177,10 +175,11 @@ sub close_socket {
 #
 # Do reads()'s on our Unix domain socket, takes an optional timeout, in ms's.
 #
-sub _do_read {
-    my $self = shift;
-    my $timeout = shift || 1/1000.0; # 1ms by default
-    my $res = "";
+sub _do_read
+{
+    my $self    = shift;
+    my $timeout = shift || 1 / 1000.0;    # 1ms by default
+    my $res     = "";
 
     while ($self->{_select}->can_read($timeout)) {
         my $rc = $self->{_socket}->sysread($res, 1024, length($res));
@@ -199,14 +198,14 @@ sub _do_read {
     return $res || undef;
 }
 
-
 #
 # Get (read) a stat out of the local manager. Note that the assumption is
 # that you are calling this with an existing stats "name".
 #
-sub get_stat {
+sub get_stat
+{
     my ($self, $stat) = @_;
-    my $res               = "";
+    my $res = "";
 
     return undef unless defined($self->{_socket});
     return undef unless $self->{_select}->can_write(10);
@@ -219,7 +218,7 @@ sub get_stat {
     my $msg = pack("ll/Z", TS_RECORD_GET, $stat);
     $self->{_socket}->print(pack("l/a", $msg));
     $res = $self->_do_read();
-    return undef unless defined($res); # Don't proceed on read failure.
+    return undef unless defined($res);    # Don't proceed on read failure.
 
     # The response format is:
     #   MGMT_MARSHALL_INT: message length
@@ -235,12 +234,10 @@ sub get_stat {
         if ($type == TS_REC_INT || $type == TS_REC_COUNTER) {
             my ($ival) = unpack("q", $value);
             return $ival;
-        }
-        elsif ($type == TS_REC_FLOAT) {
+        } elsif ($type == TS_REC_FLOAT) {
             my ($fval) = unpack("f", $value);
             return $fval;
-        }
-        elsif ($type == TS_REC_STRING) {
+        } elsif ($type == TS_REC_STRING) {
             my ($sval) = unpack("Z*", $value);
             return $sval;
         }
