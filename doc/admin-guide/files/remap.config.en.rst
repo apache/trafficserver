@@ -87,7 +87,7 @@ Traffic Server recognizes three space-delimited fields: ``type``,
        notify the browser of the URL change for the current request only
        (by returning an HTTP status code 307).
 
-       .. note: use the ``regex_`` prefix to indicate that the line has a regular expression (regex).
+       .. note:: use the ``regex_`` prefix to indicate that the line has a regular expression (regex).
 
 .. _remap-config-format-target:
 
@@ -119,7 +119,7 @@ Remap rules are not processed top-down, but based on an internal
 priority. Once these rules are executed we pick the first match
 based on configuration file parse order.
 
-1. ``map_with_recv_port`` and ```regex_map_with_recv_port```
+1. ``map_with_recv_port`` and ``regex_map_with_recv_port``
 #. ``map`` and ``regex_map`` and ``reverse_map``
 #. ``redirect`` and ``redirect_temporary``
 #. ``regex_redirect`` and ``regex_redirect_temporary``
