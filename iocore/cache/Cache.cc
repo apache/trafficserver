@@ -2865,6 +2865,8 @@ cplist_reconfigure()
         new_cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
         memset(new_cp->disk_vols, 0, gndisks * sizeof(DiskVol *));
         if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp)) {
+          ats_free(new_cp->disk_vols);
+          new_cp->disk_vols = nullptr;
           delete new_cp;
           return -1;
         }
