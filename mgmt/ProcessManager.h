@@ -25,12 +25,14 @@
 
 #pragma once
 
+#include <functional>
+#include <string_view>
+
 #include "MgmtUtils.h"
 #include "BaseManager.h"
 #include "tscore/ink_sock.h"
 
 #include "tscore/ink_apidefs.h"
-#include <functional>
 
 #if HAVE_EVENTFD
 #include <sys/eventfd.h>
@@ -55,6 +57,17 @@ public:
   inkcoreapi void signalConfigFileChild(const char *parent, const char *child, unsigned int options);
   inkcoreapi void signalManager(int msg_id, const char *data_str);
   inkcoreapi void signalManager(int msg_id, const char *data_raw, int data_len);
+
+  /** Send a management message of type @a msg_id with @a text.
+   *
+   * @param msg_id ID for the message.
+   * @param text Content for the message.
+   *
+   * A terminating null character is added automatically.
+   */
+  inkcoreapi void signalManager(int msg_id, std::string_view text);
+
+  inkcoreapi void signalManager(MgmtMessageHdr *mh);
 
   void reconfigure();
   void initLMConnection();
