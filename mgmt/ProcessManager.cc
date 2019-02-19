@@ -243,7 +243,28 @@ ProcessManager::signalManager(int msg_id, const char *data_raw, int data_len)
   mh->msg_id   = msg_id;
   mh->data_len = data_len;
   memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
+  this->signalManager(mh);
+}
 
+void
+ProcessManager::signalManager(int msg_id, std::string_view text)
+{
+  MgmtMessageHdr *mh;
+
+  // Make space for the extra null terminator.
+  mh           = static_cast<MgmtMessageHdr *>(ats_malloc(sizeof(MgmtMessageHdr) + text.size() + 1));
+  auto body    = reinterpret_cast<char *>(mh + 1); // start of the message body.
+  mh->msg_id   = msg_id;
+  mh->data_len = text.size() + 1;
+  memcpy(body, text.data(), text.size());
+  body[text.size()] = '\0';
+
+  this->signalManager(mh);
+}
+
+void
+ProcessManager::signalManager(MgmtMessageHdr *mh)
+{
   ink_release_assert(::enqueue(mgmt_signal_queue, mh));
 
 #if HAVE_EVENTFD
