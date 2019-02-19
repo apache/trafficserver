@@ -30,15 +30,15 @@
 
 #define QUICStreamDebug(fmt, ...)                                                                        \
   Debug("quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
-        QUICDebugNames::stream_state(static_cast<int>(this->_state.get())), ##__VA_ARGS__)
+        QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
 
 #define QUICVStreamDebug(fmt, ...)                                                                         \
   Debug("v_quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
-        QUICDebugNames::stream_state(static_cast<int>(this->_state.get())), ##__VA_ARGS__)
+        QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
 
 #define QUICStreamFCDebug(fmt, ...)                                                                         \
   Debug("quic_flow_ctrl", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
-        QUICDebugNames::stream_state(static_cast<int>(this->_state.get())), ##__VA_ARGS__)
+        QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
 
 static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
 static constexpr uint32_t MAX_CRYPTO_FRAME_OVERHEAD = 16;
@@ -296,7 +296,9 @@ QUICStream::_write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t 
 void
 QUICStream::on_read()
 {
-  this->_state.update_on_user_read_event();
+  if (this->_received_stream_frame_buffer.empty() && this->_received_stream_frame_buffer.has_all_data()) {
+    this->_state.update_on_user_read_event();
+  }
 }
 
 /**

@@ -27,26 +27,34 @@
 #include "QUICTransferProgressProvider.h"
 
 enum class QUICSendStreamState {
-  Init       = 0,
-  Ready      = 1,
-  Send       = 2,
-  DataSent   = 3,
-  DataRecvd  = 4,
-  ResetSent  = 5,
-  ResetRecvd = 6,
+  Init,
+  Ready,
+  Send,
+  DataSent,
+  DataRecvd,
+  ResetSent,
+  ResetRecvd,
 };
 
 enum class QUICReceiveStreamState {
-  Init       = 7,
-  Recv       = 8,
-  SizeKnown  = 9,
-  DataRecvd  = 10,
-  ResetRecvd = 11,
-  DataRead   = 12,
-  ResetRead  = 13,
+  Init,
+  Recv,
+  SizeKnown,
+  DataRecvd,
+  ResetRecvd,
+  DataRead,
+  ResetRead,
 };
 
-enum class QUICBidirectionalStreamState { Init = 14, Idle = 15, Open = 16, HC_R = 17, HC_L = 18, Closed = 19, Invalid = 20 };
+enum class QUICBidirectionalStreamState {
+  Init,
+  Idle,
+  Open,
+  HC_R,
+  HC_L,
+  Closed,
+  Invalid,
+};
 
 template <class T> class QUICStreamStateMachine
 {
