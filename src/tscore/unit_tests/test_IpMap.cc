@@ -540,11 +540,11 @@ TEST_CASE("IpMap CloseIntersection", "[libts][ipmap]")
   void *const markB = reinterpret_cast<void *>(2);
   void *const markC = reinterpret_cast<void *>(3);
   void *const markD = reinterpret_cast<void *>(4);
-  // void *mark; // for retrieval
 
   IpEndpoint a_1_l, a_1_u, a_2_l, a_2_u, a_3_l, a_3_u, a_4_l, a_4_u, a_5_l, a_5_u, a_6_l, a_6_u, a_7_l, a_7_u;
   IpEndpoint b_1_l, b_1_u;
   IpEndpoint c_1_l, c_1_u, c_2_l, c_2_u, c_3_l, c_3_u;
+  IpEndpoint c_3_m;
   IpEndpoint d_1_l, d_1_u, d_2_l, d_2_u;
 
   IpEndpoint a_1_m;
@@ -573,6 +573,7 @@ TEST_CASE("IpMap CloseIntersection", "[libts][ipmap]")
   ats_ip_pton("123.90.112.0", &c_2_l);
   ats_ip_pton("123.90.119.255", &c_2_u);
   ats_ip_pton("123.90.132.0", &c_3_l);
+  ats_ip_pton("123.90.134.157", &c_3_m);
   ats_ip_pton("123.90.135.255", &c_3_u);
 
   ats_ip_pton("123.82.196.0", &d_1_l);
@@ -590,16 +591,33 @@ TEST_CASE("IpMap CloseIntersection", "[libts][ipmap]")
   CHECK_THAT(map, IsMarkedAt(a_1_m));
 
   map.mark(b_1_l, b_1_u, markB);
-  CHECK_THAT(map, IsMarkedAt(a_1_m));
+  CHECK_THAT(map, IsMarkedWith(a_1_m, markA));
 
   map.mark(c_1_l, c_1_u, markC);
   map.mark(c_2_l, c_2_u, markC);
   map.mark(c_3_l, c_3_u, markC);
-  CHECK_THAT(map, IsMarkedAt(a_1_m));
+  CHECK_THAT(map, IsMarkedWith(a_1_m, markA));
 
   map.mark(d_1_l, d_1_u, markD);
   map.mark(d_2_l, d_2_u, markD);
   CHECK_THAT(map, IsMarkedAt(a_1_m));
+  CHECK_THAT(map, IsMarkedWith(b_1_u, markB));
+  CHECK_THAT(map, IsMarkedWith(c_3_m, markC));
+  CHECK_THAT(map, IsMarkedWith(d_2_l, markD));
 
   CHECK(map.count() == 13);
-}
+
+  // Check move constructor.
+  IpMap m2{std::move(map)};
+  // Original map should be empty.
+  REQUIRE(map.count() == 0);
+  // Do all these again on the destination map.
+  CHECK_THAT(m2, IsMarkedWith(a_1_m, markA));
+  CHECK_THAT(m2, IsMarkedWith(a_1_m, markA));
+  CHECK_THAT(m2, IsMarkedWith(a_1_m, markA));
+  CHECK_THAT(m2, IsMarkedWith(a_1_m, markA));
+  CHECK_THAT(m2, IsMarkedWith(b_1_u, markB));
+  CHECK_THAT(m2, IsMarkedWith(c_3_m, markC));
+  CHECK_THAT(m2, IsMarkedWith(d_2_l, markD));
+  CHECK(m2.count() == 13);
+};
