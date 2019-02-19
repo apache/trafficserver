@@ -77,16 +77,6 @@ public:
    */
   void enable_outbound_connection_tracking(OutboundConnTrack::Group *group);
 
-  void
-  reset_read_buffer(void)
-  {
-    ink_assert(read_buffer->_writer);
-    ink_assert(buf_reader != nullptr);
-    read_buffer->dealloc_all_readers();
-    read_buffer->_writer = nullptr;
-    buf_reader           = read_buffer->alloc_reader();
-  }
-
   IOBufferReader *
   get_reader()
   {
