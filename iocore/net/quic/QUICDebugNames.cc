@@ -209,50 +209,68 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
 }
 
 const char *
-QUICDebugNames::stream_state(const int state)
+QUICDebugNames::stream_state(const QUICSendStreamState state)
 {
   switch (state) {
-  case 0:
+  case QUICSendStreamState::Init:
     return "QUICSendStreamState::Init";
-  case 1:
+  case QUICSendStreamState::Ready:
     return "QUICSendStreamState::Ready";
-  case 2:
+  case QUICSendStreamState::Send:
     return "QUICSendStreamState::Send";
-  case 3:
+  case QUICSendStreamState::DataSent:
     return "QUICSendStreamState::DataSent";
-  case 4:
+  case QUICSendStreamState::DataRecvd:
     return "QUICSendStreamState::DataRecvd";
-  case 5:
+  case QUICSendStreamState::ResetSent:
     return "QUICSendStreamState::ResetSent";
-  case 6:
+  case QUICSendStreamState::ResetRecvd:
     return "QUICSendStreamState::ResetRecvd";
-  case 7:
+  default:
+    return "UNKNOWN";
+  }
+}
+
+const char *
+QUICDebugNames::stream_state(const QUICReceiveStreamState state)
+{
+  switch (state) {
+  case QUICReceiveStreamState::Init:
     return "QUICReceiveStreamState::Init";
-  case 8:
+  case QUICReceiveStreamState::Recv:
     return "QUICReceiveStreamState::Recv";
-  case 9:
+  case QUICReceiveStreamState::SizeKnown:
     return "QUICReceiveStreamState::SizeKnown";
-  case 10:
+  case QUICReceiveStreamState::DataRecvd:
     return "QUICReceiveStreamState::DataRecvd";
-  case 11:
+  case QUICReceiveStreamState::ResetRecvd:
     return "QUICReceiveStreamState::ResetRecvd";
-  case 12:
+  case QUICReceiveStreamState::DataRead:
     return "QUICReceiveStreamState::DataRead";
-  case 13:
+  case QUICReceiveStreamState::ResetRead:
     return "QUICReceiveStreamState::ResetRead";
-  case 14:
+  default:
+    return "UNKNOWN";
+  }
+}
+
+const char *
+QUICDebugNames::stream_state(const QUICBidirectionalStreamState state)
+{
+  switch (state) {
+  case QUICBidirectionalStreamState::Init:
     return "QUICBidirectionalStreamState::Init";
-  case 15:
+  case QUICBidirectionalStreamState::Idle:
     return "QUICBidirectionalStreamState::Idle";
-  case 16:
+  case QUICBidirectionalStreamState::Open:
     return "QUICBidirectionalStreamState::Open";
-  case 17:
+  case QUICBidirectionalStreamState::HC_R:
     return "QUICBidirectionalStreamState::HC_R";
-  case 18:
+  case QUICBidirectionalStreamState::HC_L:
     return "QUICBidirectionalStreamState::HC_L";
-  case 19:
+  case QUICBidirectionalStreamState::Closed:
     return "QUICBidirectionalStreamState::Closed";
-  case 20:
+  case QUICBidirectionalStreamState::Invalid:
     return "QUICBidirectionalStreamState::Invalid";
   default:
     return "UNKNOWN";
