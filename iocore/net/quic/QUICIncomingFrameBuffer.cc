@@ -32,12 +32,6 @@ QUICIncomingFrameBuffer::~QUICIncomingFrameBuffer()
   this->clear();
 }
 
-bool
-QUICIncomingStreamFrameBuffer::has_all_data() const
-{
-  return this->_recv_offset == this->_fin_offset;
-}
-
 void
 QUICIncomingFrameBuffer::clear()
 {

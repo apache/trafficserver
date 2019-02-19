@@ -57,7 +57,6 @@ public:
   const QUICFrame *pop() override;
   QUICConnectionErrorUPtr insert(const QUICFrame *frame) override;
   void clear() override;
-  bool has_all_data() const;
 
   // QUICTransferProgressProvider
   bool is_transfer_goal_set() const override;
