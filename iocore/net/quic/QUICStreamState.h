@@ -106,7 +106,6 @@ public:
   QUICSendStreamStateMachine(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out)
     : QUICUnidirectionalStreamStateMachine(in, out)
   {
-    ink_assert(out != nullptr);
     this->_set_state(QUICSendStreamState::Ready);
   }
 
@@ -129,7 +128,6 @@ public:
   QUICReceiveStreamStateMachine(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out)
     : QUICUnidirectionalStreamStateMachine(in, out)
   {
-    ink_assert(in != nullptr);
   }
 
   void update_with_sending_frame(const QUICFrame &frame) override;
