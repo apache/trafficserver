@@ -21,6 +21,7 @@
 
 #include "P_SSLUtils.h"
 
+#include "tscpp/util/TextView.h"
 #include "tscore/ink_platform.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/I_Layout.h"
@@ -70,17 +71,19 @@
 #include <openssl/ec.h>
 #endif
 
+using namespace std::literals;
+
 // ssl_multicert.config field names:
-#define SSL_IP_TAG "dest_ip"
-#define SSL_CERT_TAG "ssl_cert_name"
-#define SSL_PRIVATE_KEY_TAG "ssl_key_name"
-#define SSL_CA_TAG "ssl_ca_name"
-#define SSL_ACTION_TAG "action"
-#define SSL_ACTION_TUNNEL_TAG "tunnel"
-#define SSL_SESSION_TICKET_ENABLED "ssl_ticket_enabled"
-#define SSL_KEY_DIALOG "ssl_key_dialog"
-#define SSL_SERVERNAME "dest_fqdn"
-#define SSL_CERT_SEPARATE_DELIM ','
+static constexpr std::string_view SSL_IP_TAG("dest_ip"sv);
+static constexpr std::string_view SSL_CERT_TAG("ssl_cert_name"sv);
+static constexpr std::string_view SSL_PRIVATE_KEY_TAG("ssl_key_name"sv);
+static constexpr std::string_view SSL_CA_TAG("ssl_ca_name"sv);
+static constexpr std::string_view SSL_ACTION_TAG("action"sv);
+static constexpr std::string_view SSL_ACTION_TUNNEL_TAG("tunnel"sv);
+static constexpr std::string_view SSL_SESSION_TICKET_ENABLED("ssl_ticket_enabled"sv);
+static constexpr std::string_view SSL_KEY_DIALOG("ssl_key_dialog"sv);
+static constexpr std::string_view SSL_SERVERNAME("dest_fqdn"sv);
+static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
 
 // openssl version must be 0.9.4 or greater
 #if (OPENSSL_VERSION_NUMBER < 0x00090400L)
@@ -1364,7 +1367,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
       } else if (strcmp(sslMultCertSettings->dialog, "builtin") == 0) {
         passwd_cb = ssl_private_key_passphrase_callback_builtin;
       } else { // unknown config
-        SSLError("unknown " SSL_KEY_DIALOG " configuration value '%s'", (const char *)sslMultCertSettings->dialog);
+        SSLError("unknown %s configuration value '%s'", SSL_KEY_DIALOG.data(), (const char *)sslMultCertSettings->dialog);
         memset(static_cast<void *>(&ud), 0, sizeof(ud));
         goto fail;
       }
@@ -1783,7 +1786,7 @@ ssl_extract_certificate(const matcher_line *line_info, ssl_user_config &sslMultC
       if (strcasecmp(SSL_ACTION_TUNNEL_TAG, value) == 0) {
         sslMultCertSettings.opt = SSLCertContext::OPT_TUNNEL;
       } else {
-        Error("Unrecognized action for " SSL_ACTION_TAG);
+        Error("Unrecognized action for %s", SSL_ACTION_TAG.data());
         return false;
       }
     }
