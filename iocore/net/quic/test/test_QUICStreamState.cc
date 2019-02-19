@@ -363,7 +363,7 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
   }
 }
 
-TEST_CASE("QUICBidState", "[quic]")
+TEST_CASE("QUICBidiState", "[quic]")
 {
   Ptr<IOBufferBlock> block_4 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
   block_4->alloc();
@@ -381,7 +381,7 @@ TEST_CASE("QUICBidState", "[quic]")
   auto rst_stream_frame =
     QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 0, static_cast<QUICAppErrorCode>(0x01), 0);
 
-  SECTION("QUICBidState idle -> open -> HC_R 1")
+  SECTION("QUICBidiState idle -> open -> HC_R 1")
   {
     MockQUICTransferProgressProvider in_progress;
     MockQUICTransferProgressProvider out_progress;
@@ -398,7 +398,7 @@ TEST_CASE("QUICBidState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_R);
   }
 
-  SECTION("QUICBidState idle -> open -> HC_R 2")
+  SECTION("QUICBidiState idle -> open -> HC_R 2")
   {
     MockQUICTransferProgressProvider in_progress;
     MockQUICTransferProgressProvider out_progress;
@@ -414,7 +414,7 @@ TEST_CASE("QUICBidState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_R);
   }
 
-  SECTION("QUICBidState idle -> open -> HC_L 1")
+  SECTION("QUICBidiState idle -> open -> HC_L 1")
   {
     MockQUICTransferProgressProvider in_progress;
     MockQUICTransferProgressProvider out_progress;
@@ -437,7 +437,7 @@ TEST_CASE("QUICBidState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
   }
 
-  SECTION("QUICBidState idle -> open -> HC_L 2")
+  SECTION("QUICBidiState idle -> open -> HC_L 2")
   {
     MockQUICTransferProgressProvider in_progress;
     MockQUICTransferProgressProvider out_progress;
@@ -453,7 +453,7 @@ TEST_CASE("QUICBidState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
   }
 
-  SECTION("QUICBidState idle -> open -> closed 1")
+  SECTION("QUICBidiState idle -> open -> closed 1")
   {
     MockQUICTransferProgressProvider in_progress;
     MockQUICTransferProgressProvider out_progress;
@@ -478,7 +478,7 @@ TEST_CASE("QUICBidState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
   }
 
-  SECTION("QUICBidState idle -> open -> closed 2")
+  SECTION("QUICBidiState idle -> open -> closed 2")
   {
     MockQUICTransferProgressProvider in_progress;
     MockQUICTransferProgressProvider out_progress;
@@ -504,7 +504,7 @@ TEST_CASE("QUICBidState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
   }
 
-  SECTION("QUICBidState idle -> open -> closed 3")
+  SECTION("QUICBidiState idle -> open -> closed 3")
   {
     MockQUICTransferProgressProvider in_progress;
     MockQUICTransferProgressProvider out_progress;
