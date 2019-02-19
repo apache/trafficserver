@@ -95,18 +95,27 @@ QUICReceiveStreamStateMachine::update_with_receiving_frame(const QUICFrame &fram
     if (type == QUICFrameType::STREAM) {
       if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
         this->_set_state(QUICReceiveStreamState::SizeKnown);
+        if (this->_in_progress->is_transfer_complete()) {
+          this->_set_state(QUICReceiveStreamState::DataRecvd);
+        }
       }
     } else if (type == QUICFrameType::RESET_STREAM) {
       this->_set_state(QUICReceiveStreamState::ResetRecvd);
     }
     break;
   case QUICReceiveStreamState::SizeKnown:
-    if (type == QUICFrameType::RESET_STREAM) {
+    if (type == QUICFrameType::STREAM && this->_in_progress->is_transfer_complete()) {
+      this->_set_state(QUICReceiveStreamState::DataRecvd);
+    } else if (type == QUICFrameType::RESET_STREAM) {
+      this->_set_state(QUICReceiveStreamState::ResetRecvd);
+    }
+    break;
+  case QUICReceiveStreamState::DataRecvd:
+    if (type == QUICFrameType::STREAM && this->_in_progress->is_transfer_complete()) {
       this->_set_state(QUICReceiveStreamState::ResetRecvd);
     }
     break;
   case QUICReceiveStreamState::Init:
-  case QUICReceiveStreamState::DataRecvd:
   case QUICReceiveStreamState::ResetRecvd:
   case QUICReceiveStreamState::DataRead:
   case QUICReceiveStreamState::ResetRead:
@@ -118,33 +127,17 @@ QUICReceiveStreamStateMachine::update_with_receiving_frame(const QUICFrame &fram
 }
 
 void
-QUICReceiveStreamStateMachine::update_on_user_read_event()
+QUICReceiveStreamStateMachine::update_on_read()
 {
-  switch (this->get()) {
-  case QUICReceiveStreamState::DataRecvd:
+  if (this->_in_progress->is_transfer_complete()) {
     this->_set_state(QUICReceiveStreamState::DataRead);
-    break;
-  case QUICReceiveStreamState::ResetRecvd:
-    this->_set_state(QUICReceiveStreamState::ResetRead);
-    break;
-  case QUICReceiveStreamState::Recv:
-  case QUICReceiveStreamState::SizeKnown:
-  case QUICReceiveStreamState::DataRead:
-  case QUICReceiveStreamState::ResetRead:
-    break;
-  case QUICReceiveStreamState::Init:
-  default:
-    ink_assert(!"Unknown state");
-    break;
   }
 }
 
 void
-QUICReceiveStreamStateMachine::update_on_transport_recv_event()
+QUICReceiveStreamStateMachine::update_on_eos()
 {
-  if (this->get() == QUICReceiveStreamState::SizeKnown) {
-    this->_set_state(QUICReceiveStreamState::DataRecvd);
-  }
+  this->_set_state(QUICReceiveStreamState::ResetRead);
 }
 
 void
@@ -301,17 +294,12 @@ QUICSendStreamStateMachine::update_with_receiving_frame(const QUICFrame &frame)
 }
 
 void
-QUICSendStreamStateMachine::update_on_transport_send_event()
+QUICSendStreamStateMachine::update_on_ack()
 {
-  switch (this->get()) {
-  case QUICSendStreamState::DataSent:
+  if (this->_out_progress->is_transfer_complete()) {
     this->_set_state(QUICSendStreamState::DataRecvd);
-    break;
-  case QUICSendStreamState::ResetSent:
+  } else if (this->_out_progress->is_cancelled()) {
     this->_set_state(QUICSendStreamState::ResetRecvd);
-    break;
-  default:
-    break;
   }
 }
 
@@ -408,21 +396,21 @@ QUICBidirectionalStreamStateMachine::update_with_receiving_frame(const QUICFrame
 }
 
 void
-QUICBidirectionalStreamStateMachine::update_on_transport_recv_event()
+QUICBidirectionalStreamStateMachine::update_on_ack()
 {
-  this->_recv_stream_state.update_on_transport_recv_event();
+  this->_send_stream_state.update_on_ack();
 }
 
 void
-QUICBidirectionalStreamStateMachine::update_on_transport_send_event()
+QUICBidirectionalStreamStateMachine::update_on_read()
 {
-  this->_send_stream_state.update_on_transport_send_event();
+  this->_recv_stream_state.update_on_read();
 }
 
 void
-QUICBidirectionalStreamStateMachine::update_on_user_read_event()
+QUICBidirectionalStreamStateMachine::update_on_eos()
 {
-  this->_recv_stream_state.update_on_user_read_event();
+  this->_recv_stream_state.update_on_eos();
 }
 
 bool
