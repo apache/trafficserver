@@ -300,6 +300,12 @@ QUICStream::on_read()
   this->_state.update_on_read();
 }
 
+void
+QUICStream::on_eos()
+{
+  this->_state.update_on_eos();
+}
+
 /**
  * @brief Receive STREAM frame
  * @detail When receive STREAM frame, reorder frames and write to buffer of read_vio.

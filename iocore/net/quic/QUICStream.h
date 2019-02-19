@@ -73,7 +73,7 @@ public:
    * QUICApplication need to call one of these functions when it process VC_EVENT_*
    */
   void on_read();
-  // void on_eos();
+  void on_eos();
 
   QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame);
   QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame);

@@ -49,7 +49,7 @@ TEST_CASE("QUICSendStreamState", "[quic]")
   auto stream_data_blocked_frame = QUICFrameFactory::create_stream_data_blocked_frame(stream_data_blocked_frame_buf, 0, 0);
   MockQUICTransferProgressProvider pp;
 
-  SECTION("SendStreamState: Ready -> Send -> Data Sent -> Data Recvd")
+  SECTION("Ready -> Send -> Data Sent -> Data Recvd")
   {
     // Case1. Create Stream (Sending)
     QUICSendStreamStateMachine ss(nullptr, &pp);
@@ -79,7 +79,7 @@ TEST_CASE("QUICSendStreamState", "[quic]")
     CHECK(ss.get() == QUICSendStreamState::DataRecvd);
   }
 
-  SECTION("QUICSendStreamState: Ready -> Send")
+  SECTION("Ready -> Send")
   {
     // Case1. Create Stream (Sending)
     QUICSendStreamStateMachine ss(nullptr, &pp);
@@ -113,7 +113,7 @@ TEST_CASE("QUICSendStreamState", "[quic]")
     CHECK(ss.get() == QUICSendStreamState::ResetRecvd);
   }
 
-  SECTION("QUICSendStreamState: Ready -> Send -> Reset Sent -> Reset Recvd")
+  SECTION("Ready -> Send -> Reset Sent -> Reset Recvd")
   {
     // Case1. Create Stream (Sending)
     QUICSendStreamStateMachine ss(nullptr, &pp);
@@ -139,7 +139,7 @@ TEST_CASE("QUICSendStreamState", "[quic]")
     CHECK(ss.get() == QUICSendStreamState::ResetRecvd);
   }
 
-  SECTION("QUICSendStreamState: Ready -> Send -> Data Sent -> Reset Sent -> Reset Recvd")
+  SECTION("Ready -> Send -> Data Sent -> Reset Sent -> Reset Recvd")
   {
     // Case1. Create Stream (Sending)
     QUICSendStreamStateMachine ss(nullptr, &pp);
@@ -346,162 +346,187 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
     CHECK(ss.get() == QUICReceiveStreamState::Recv);
 
     // Case2. Recv FIN in a STREAM
-    // CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    // ss.update_with_receiving_frame(*stream_frame_with_fin);
-    // CHECK(ss.get() == QUICReceiveStreamState::SizeKnown);
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
+    ss.update_with_receiving_frame(*stream_frame_with_fin);
+    CHECK(ss.get() == QUICReceiveStreamState::SizeKnown);
 
     // // Case3. Recv ALL data
-    // CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    // ss.update_with_receiving_frame(*stream_frame_delayed);
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
+    in_progress.set_transfer_complete(true);
+    ss.update_with_receiving_frame(*stream_frame_delayed);
     // ss.update_on_transport_recv_event();
-    // CHECK(ss.get() == QUICReceiveStreamState::DataRecvd);
+    CHECK(ss.get() == QUICReceiveStreamState::DataRecvd);
 
-    // CHECK(ss.is_allowed_to_receive(QUICFrameType::RESET_STREAM));
-    // CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    // CHECK(ss.is_allowed_to_send(QUICFrameType::STOP_SENDING));
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::RESET_STREAM));
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
+    CHECK(ss.is_allowed_to_send(QUICFrameType::STOP_SENDING));
   }
 }
 
-// TEST_CASE("QUICBidState", "[quic]")
-// {
-//   Ptr<IOBufferBlock> block_4 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-//   block_4->alloc();
-//   block_4->fill(4);
-//   CHECK(block_4->read_avail() == 4);
-//
-//   uint8_t stream_frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-//   uint8_t stream_frame_delayed_buf[QUICFrame::MAX_INSTANCE_SIZE];
-//   uint8_t stream_frame_with_fin_buf[QUICFrame::MAX_INSTANCE_SIZE];
-//   uint8_t rst_stream_frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-//
-//   auto stream_frame          = QUICFrameFactory::create_stream_frame(stream_frame_buf, block_4, 1, 0);
-//   auto stream_frame_delayed  = QUICFrameFactory::create_stream_frame(stream_frame_delayed_buf, block_4, 1, 1);
-//   auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(stream_frame_with_fin_buf, block_4, 1, 2, true);
-//   auto rst_stream_frame =
-//     QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 0, static_cast<QUICAppErrorCode>(0x01), 0);
-//
-//   SECTION("QUICBidState idle -> open -> HC_R 1")
-//   {
-//     QUICBidirectionalStreamStateMachine ss;
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
-//
-//     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-//     ss.update_with_receiving_frame(*stream_frame);
-//
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-//     ss.update_with_receiving_frame(*stream_frame_with_fin);
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-//
-//     ss.update_on_transport_recv_event();
-//     CHECK(ss.get() == QUICBidirectionalStreamState::HC_R);
-//   }
-//
-//   SECTION("QUICBidState idle -> open -> HC_R 2")
-//   {
-//     QUICBidirectionalStreamStateMachine ss;
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
-//
-//     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-//     ss.update_with_receiving_frame(*stream_frame);
-//
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-//     ss.update_with_receiving_frame(*rst_stream_frame);
-//     CHECK(ss.get() == QUICBidirectionalStreamState::HC_R);
-//   }
-//
-//   SECTION("QUICBidState idle -> open -> HC_L 1")
-//   {
-//     QUICBidirectionalStreamStateMachine ss;
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
-//
-//     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-//     ss.update_with_sending_frame(*stream_frame);
-//
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-//     ss.update_with_sending_frame(*stream_frame_with_fin);
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-//
-//     ss.update_on_transport_send_event();
-//     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
-//
-//     ss.update_with_sending_frame(*stream_frame_delayed);
-//     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
-//   }
-//
-//   SECTION("QUICBidState idle -> open -> HC_L 2")
-//   {
-//     QUICBidirectionalStreamStateMachine ss;
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
-//
-//     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-//     ss.update_with_sending_frame(*stream_frame);
-//
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-//     ss.update_with_sending_frame(*rst_stream_frame);
-//     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
-//   }
-//
-//   SECTION("QUICBidState idle -> open -> closed 1")
-//   {
-//     QUICBidirectionalStreamStateMachine ss;
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
-//
-//     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-//     ss.update_with_sending_frame(*stream_frame);
-//
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-//     ss.update_with_sending_frame(*rst_stream_frame);
-//     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
-//
-//     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-//     ss.update_with_receiving_frame(*stream_frame);
-//
-//     ss.update_with_receiving_frame(*rst_stream_frame);
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
-//
-//     ss.update_on_user_read_event();
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
-//   }
-//
-//   SECTION("QUICBidState idle -> open -> closed 2")
-//   {
-//     QUICBidirectionalStreamStateMachine ss;
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
-//
-//     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-//     ss.update_with_sending_frame(*stream_frame_with_fin);
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-//     ss.update_on_transport_send_event();
-//     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
-//
-//     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-//     ss.update_with_receiving_frame(*stream_frame);
-//
-//     ss.update_with_receiving_frame(*rst_stream_frame);
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
-//
-//     ss.update_on_user_read_event();
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
-//   }
-//
-//   SECTION("QUICBidState idle -> open -> closed 3")
-//   {
-//     QUICBidirectionalStreamStateMachine ss;
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
-//
-//     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-//     ss.update_with_sending_frame(*stream_frame_with_fin);
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-//     ss.update_on_transport_send_event();
-//     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
-//
-//     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-//     ss.update_with_receiving_frame(*stream_frame);
-//
-//     ss.update_with_receiving_frame(*stream_frame_with_fin);
-//     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
-//
-//     ss.update_on_transport_recv_event();
-//     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
-//   }
-// }
+TEST_CASE("QUICBidState", "[quic]")
+{
+  Ptr<IOBufferBlock> block_4 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block_4->alloc();
+  block_4->fill(4);
+  CHECK(block_4->read_avail() == 4);
+
+  uint8_t stream_frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t stream_frame_delayed_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t stream_frame_with_fin_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t rst_stream_frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+
+  auto stream_frame          = QUICFrameFactory::create_stream_frame(stream_frame_buf, block_4, 1, 0);
+  auto stream_frame_delayed  = QUICFrameFactory::create_stream_frame(stream_frame_delayed_buf, block_4, 1, 1);
+  auto stream_frame_with_fin = QUICFrameFactory::create_stream_frame(stream_frame_with_fin_buf, block_4, 1, 2, true);
+  auto rst_stream_frame =
+    QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 0, static_cast<QUICAppErrorCode>(0x01), 0);
+
+  SECTION("QUICBidState idle -> open -> HC_R 1")
+  {
+    MockQUICTransferProgressProvider in_progress;
+    MockQUICTransferProgressProvider out_progress;
+
+    QUICBidirectionalStreamStateMachine ss(nullptr, &out_progress, &in_progress, nullptr);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
+
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
+    ss.update_with_receiving_frame(*stream_frame);
+
+    CHECK(ss.get() == QUICBidirectionalStreamState::Open);
+    in_progress.set_transfer_complete(true);
+    ss.update_with_receiving_frame(*stream_frame_with_fin);
+    CHECK(ss.get() == QUICBidirectionalStreamState::HC_R);
+  }
+
+  SECTION("QUICBidState idle -> open -> HC_R 2")
+  {
+    MockQUICTransferProgressProvider in_progress;
+    MockQUICTransferProgressProvider out_progress;
+
+    QUICBidirectionalStreamStateMachine ss(nullptr, &out_progress, &in_progress, nullptr);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
+
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
+    ss.update_with_receiving_frame(*stream_frame);
+
+    CHECK(ss.get() == QUICBidirectionalStreamState::Open);
+    ss.update_with_receiving_frame(*rst_stream_frame);
+    CHECK(ss.get() == QUICBidirectionalStreamState::HC_R);
+  }
+
+  SECTION("QUICBidState idle -> open -> HC_L 1")
+  {
+    MockQUICTransferProgressProvider in_progress;
+    MockQUICTransferProgressProvider out_progress;
+
+    QUICBidirectionalStreamStateMachine ss(nullptr, &out_progress, &in_progress, nullptr);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
+
+    CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
+    ss.update_with_sending_frame(*stream_frame);
+
+    CHECK(ss.get() == QUICBidirectionalStreamState::Open);
+    ss.update_with_sending_frame(*stream_frame_with_fin);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Open);
+
+    out_progress.set_transfer_complete(true);
+    ss.update_on_ack();
+    CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
+
+    ss.update_with_sending_frame(*stream_frame_delayed);
+    CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
+  }
+
+  SECTION("QUICBidState idle -> open -> HC_L 2")
+  {
+    MockQUICTransferProgressProvider in_progress;
+    MockQUICTransferProgressProvider out_progress;
+
+    QUICBidirectionalStreamStateMachine ss(nullptr, &out_progress, &in_progress, nullptr);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
+
+    CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
+    ss.update_with_sending_frame(*stream_frame);
+
+    CHECK(ss.get() == QUICBidirectionalStreamState::Open);
+    ss.update_with_sending_frame(*rst_stream_frame);
+    CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
+  }
+
+  SECTION("QUICBidState idle -> open -> closed 1")
+  {
+    MockQUICTransferProgressProvider in_progress;
+    MockQUICTransferProgressProvider out_progress;
+
+    QUICBidirectionalStreamStateMachine ss(nullptr, &out_progress, &in_progress, nullptr);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
+
+    CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
+    ss.update_with_sending_frame(*stream_frame);
+
+    CHECK(ss.get() == QUICBidirectionalStreamState::Open);
+    ss.update_with_sending_frame(*rst_stream_frame);
+    CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
+
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
+    ss.update_with_receiving_frame(*stream_frame);
+
+    ss.update_with_receiving_frame(*rst_stream_frame);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
+
+    ss.update_on_eos();
+    CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
+  }
+
+  SECTION("QUICBidState idle -> open -> closed 2")
+  {
+    MockQUICTransferProgressProvider in_progress;
+    MockQUICTransferProgressProvider out_progress;
+
+    QUICBidirectionalStreamStateMachine ss(nullptr, &out_progress, &in_progress, nullptr);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
+
+    CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
+    ss.update_with_sending_frame(*stream_frame_with_fin);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Open);
+    out_progress.set_transfer_complete(true);
+    ss.update_on_ack();
+    CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
+
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
+    ss.update_with_receiving_frame(*stream_frame);
+
+    ss.update_with_receiving_frame(*rst_stream_frame);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
+
+    in_progress.set_transfer_complete(true);
+    ss.update_on_eos();
+    CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
+  }
+
+  SECTION("QUICBidState idle -> open -> closed 3")
+  {
+    MockQUICTransferProgressProvider in_progress;
+    MockQUICTransferProgressProvider out_progress;
+
+    QUICBidirectionalStreamStateMachine ss(nullptr, &out_progress, &in_progress, nullptr);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
+
+    CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
+    ss.update_with_sending_frame(*stream_frame_with_fin);
+    CHECK(ss.get() == QUICBidirectionalStreamState::Open);
+    out_progress.set_transfer_complete(true);
+    ss.update_on_ack();
+    CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
+
+    CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
+    ss.update_with_receiving_frame(*stream_frame_delayed);
+
+    ss.update_with_receiving_frame(*stream_frame_with_fin);
+    CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
+
+    in_progress.set_transfer_complete(true);
+    ss.update_on_read();
+    CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
+  }
+}
