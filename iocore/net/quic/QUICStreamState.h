@@ -70,19 +70,6 @@ public:
   virtual void update_with_sending_frame(const QUICFrame &frame)   = 0;
   virtual void update_with_receiving_frame(const QUICFrame &frame) = 0;
 
-  virtual void
-  update_on_transport_send_event()
-  {
-  }
-  virtual void
-  update_on_transport_recv_event()
-  {
-  }
-  virtual void
-  update_on_user_read_event()
-  {
-  }
-
   virtual bool is_allowed_to_send(QUICFrameType type) const        = 0;
   virtual bool is_allowed_to_send(const QUICFrame &frame) const    = 0;
   virtual bool is_allowed_to_receive(QUICFrameType type) const     = 0;
@@ -100,15 +87,32 @@ private:
   T _state = T::Init;
 };
 
-class QUICSendStreamStateMachine : public QUICStreamStateMachine<QUICSendStreamState>
+class QUICUnidirectionalStreamStateMachine
 {
 public:
-  QUICSendStreamStateMachine() { this->_set_state(QUICSendStreamState::Ready); };
+  QUICUnidirectionalStreamStateMachine(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out)
+    : _in_progress(in), _out_progress(out)
+  {
+  }
+
+protected:
+  QUICTransferProgressProvider *_in_progress  = nullptr;
+  QUICTransferProgressProvider *_out_progress = nullptr;
+};
+
+class QUICSendStreamStateMachine : public QUICUnidirectionalStreamStateMachine, public QUICStreamStateMachine<QUICSendStreamState>
+{
+public:
+  QUICSendStreamStateMachine(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out)
+    : QUICUnidirectionalStreamStateMachine(in, out)
+  {
+    ink_assert(out != nullptr);
+    this->_set_state(QUICSendStreamState::Ready);
+  }
 
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
-
-  void update_on_transport_send_event() override;
+  void update_on_ack();
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
@@ -118,16 +122,20 @@ public:
   void update(const QUICReceiveStreamState opposite_side);
 };
 
-class QUICReceiveStreamStateMachine : public QUICStreamStateMachine<QUICReceiveStreamState>
+class QUICReceiveStreamStateMachine : public QUICUnidirectionalStreamStateMachine,
+                                      public QUICStreamStateMachine<QUICReceiveStreamState>
 {
 public:
-  QUICReceiveStreamStateMachine() = default;
+  QUICReceiveStreamStateMachine(QUICTransferProgressProvider *in, QUICTransferProgressProvider *out)
+    : QUICUnidirectionalStreamStateMachine(in, out)
+  {
+    ink_assert(in != nullptr);
+  }
 
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
-
-  void update_on_transport_recv_event() override;
-  void update_on_user_read_event() override;
+  void update_on_read();
+  void update_on_eos();
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
@@ -140,16 +148,20 @@ public:
 class QUICBidirectionalStreamStateMachine : public QUICStreamStateMachine<QUICBidirectionalStreamState>
 {
 public:
-  QUICBidirectionalStreamStateMachine() { this->_recv_stream_state.update(this->_send_stream_state.get()); };
+  QUICBidirectionalStreamStateMachine(QUICTransferProgressProvider *send_in, QUICTransferProgressProvider *send_out,
+                                      QUICTransferProgressProvider *recv_in, QUICTransferProgressProvider *recv_out)
+    : _send_stream_state(send_in, send_out), _recv_stream_state(recv_in, recv_out)
+  {
+    this->_recv_stream_state.update(this->_send_stream_state.get());
+  };
 
   QUICBidirectionalStreamState get() const override;
 
   void update_with_sending_frame(const QUICFrame &frame) override;
   void update_with_receiving_frame(const QUICFrame &frame) override;
-
-  void update_on_transport_send_event() override;
-  void update_on_transport_recv_event() override;
-  void update_on_user_read_event() override;
+  void update_on_ack();
+  void update_on_read();
+  void update_on_eos();
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;

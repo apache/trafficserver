@@ -176,7 +176,7 @@ QUICIncomingStreamFrameBuffer::is_transfer_goal_set() const
 uint64_t
 QUICIncomingStreamFrameBuffer::transfer_progress() const
 {
-  return this->_max_offset;
+  return this->_recv_offset;
 }
 
 uint64_t

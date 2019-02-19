@@ -663,7 +663,7 @@ public:
   bool
   is_transfer_complete() const override
   {
-    return this->_is_transfer_complete;
+    return this->_is_transfer_complete || this->_transfer_progress >= this->_transfer_goal;
   }
 
   bool

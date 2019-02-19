@@ -43,7 +43,11 @@ class QUICStream : public VConnection, public QUICFrameGenerator, public QUICTra
 {
 public:
   QUICStream()
-    : VConnection(nullptr), _remote_flow_controller(0, 0), _local_flow_controller(nullptr, 0, 0), _received_stream_frame_buffer()
+    : VConnection(nullptr),
+      _remote_flow_controller(0, 0),
+      _local_flow_controller(nullptr, 0, 0),
+      _received_stream_frame_buffer(),
+      _state(nullptr, nullptr, nullptr, nullptr)
   {
   }
   QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid, uint64_t recv_max_stream_data,

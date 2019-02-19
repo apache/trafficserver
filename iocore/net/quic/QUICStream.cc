@@ -51,7 +51,8 @@ QUICStream::QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider
     _remote_flow_controller(send_max_stream_data, _id),
     _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
     _flow_control_buffer_size(recv_max_stream_data),
-    _received_stream_frame_buffer()
+    _received_stream_frame_buffer(),
+    _state(nullptr, &this->_progress_vio, this, nullptr)
 {
   SET_HANDLER(&QUICStream::state_stream_open);
   mutex = new_ProxyMutex();
@@ -296,9 +297,7 @@ QUICStream::_write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t 
 void
 QUICStream::on_read()
 {
-  if (this->_received_stream_frame_buffer.empty() && this->_received_stream_frame_buffer.has_all_data()) {
-    this->_state.update_on_user_read_event();
-  }
+  this->_state.update_on_read();
 }
 
 /**
@@ -333,10 +332,6 @@ QUICStream::recv(const QUICStreamFrame &frame)
   if (error != nullptr) {
     this->_received_stream_frame_buffer.clear();
     return error;
-  }
-
-  if (this->_received_stream_frame_buffer.has_all_data()) {
-    this->_state.update_on_transport_recv_event();
   }
 
   auto new_frame                      = this->_received_stream_frame_buffer.pop();
@@ -598,9 +593,7 @@ QUICStream::_on_frame_acked(QUICFrameInformationUPtr &info)
     break;
   }
 
-  if (this->_is_reset_complete || this->_is_transfer_complete) {
-    this->_state.update_on_transport_send_event();
-  }
+  this->_state.update_on_ack();
 }
 
 void
