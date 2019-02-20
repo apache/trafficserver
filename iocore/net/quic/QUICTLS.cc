@@ -27,6 +27,7 @@
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
 
+#include "QUICPacketProtectionKeyInfo.h"
 #include "QUICDebugNames.h"
 
 constexpr static char tag[] = "quic_tls";
@@ -104,17 +105,26 @@ QUICTLS::is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const
 int
 QUICTLS::initialize_key_materials(QUICConnectionId cid)
 {
+  this->_pp_key_info.set_cipher_for_hp_initial(EVP_aes_128_ecb());
+
   // Generate keys
   Debug(tag, "Generating %s keys", QUICDebugNames::key_phase(QUICKeyPhase::INITIAL));
-  std::unique_ptr<KeyMaterial> km;
+  std::unique_ptr<KeyMaterial> km_client;
+  std::unique_ptr<KeyMaterial> km_server;
 
-  km = this->_keygen_for_client.generate(cid);
-  this->_print_km("initial - client", *km);
-  this->_client_pp->set_key(std::move(km), QUICKeyPhase::INITIAL);
+  if (this->_netvc_context == NET_VCONNECTION_IN) {
+    km_client = this->_keygen_for_client.generate(this->_pp_key_info.decryption_key_for_hp(QUICEncryptionLevel::INITIAL), cid);
+    km_server = this->_keygen_for_server.generate(this->_pp_key_info.encryption_key_for_hp(QUICEncryptionLevel::INITIAL), cid);
+  } else {
+    km_client = this->_keygen_for_client.generate(this->_pp_key_info.encryption_key_for_hp(QUICEncryptionLevel::INITIAL), cid);
+    km_server = this->_keygen_for_server.generate(this->_pp_key_info.decryption_key_for_hp(QUICEncryptionLevel::INITIAL), cid);
+  }
 
-  km = this->_keygen_for_server.generate(cid);
-  this->_print_km("initial - server", *km);
-  this->_server_pp->set_key(std::move(km), QUICKeyPhase::INITIAL);
+  this->_print_km("initial - client", *km_client);
+  this->_print_km("initial - server", *km_server);
+
+  this->_client_pp->set_key(std::move(km_client), QUICKeyPhase::INITIAL);
+  this->_server_pp->set_key(std::move(km_server), QUICKeyPhase::INITIAL);
 
   return 1;
 }

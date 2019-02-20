@@ -61,6 +61,7 @@ libquic_a_SOURCES = \
   QUICHandshake.cc \
   QUICHandshakeProtocol.cc \
   QUICPacketHeaderProtector.cc \
+  QUICPacketProtectionKeyInfo.cc \
   $(QUICPHProtector_impl) \
   QUICTLS.cc \
   $(QUICTLS_impl) \

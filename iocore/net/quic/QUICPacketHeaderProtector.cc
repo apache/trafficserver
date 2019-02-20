@@ -21,6 +21,7 @@
  *  limitations under the License.
  */
 
+#include "QUICPacketProtectionKeyInfo.h"
 #include "QUICPacketHeaderProtector.h"
 #include "QUICDebugNames.h"
 #include "QUICPacket.h"
@@ -41,6 +42,7 @@ QUICPacketHeaderProtector::protect(uint8_t *unprotected_packet, size_t unprotect
 
   QUICKeyPhase phase;
   QUICPacketType type;
+  QUICEncryptionLevel level;
   if (QUICInvariants::is_long_header(unprotected_packet)) {
     QUICPacketLongHeader::key_phase(phase, unprotected_packet, unprotected_packet_len);
     QUICPacketLongHeader::type(type, unprotected_packet, unprotected_packet_len);
@@ -49,18 +51,33 @@ QUICPacketHeaderProtector::protect(uint8_t *unprotected_packet, size_t unprotect
     phase = QUICKeyPhase::PHASE_0;
     type  = QUICPacketType::PROTECTED;
   }
+  switch (phase) {
+  case QUICKeyPhase::PHASE_0:
+  case QUICKeyPhase::PHASE_1:
+    level = QUICEncryptionLevel::ONE_RTT;
+    break;
+  case QUICKeyPhase::HANDSHAKE:
+    level = QUICEncryptionLevel::HANDSHAKE;
+    break;
+  case QUICKeyPhase::INITIAL:
+    level = QUICEncryptionLevel::INITIAL;
+    break;
+  case QUICKeyPhase::ZERO_RTT:
+    level = QUICEncryptionLevel::ZERO_RTT;
+    break;
+  }
 
   Debug("v_quic_pne", "Protecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
         QUICDebugNames::key_phase(phase));
 
-  const QUIC_EVP_CIPHER *aead = this->_hs_protocol->cipher_for_hp(phase);
+  const QUIC_EVP_CIPHER *aead = this->_pp_key_info.get_cipher_for_hp(level);
   if (!aead) {
     Debug("quic_pne", "Failed to encrypt a packet number: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
 
-  const KeyMaterial *km = this->_hs_protocol->key_material_for_encryption(phase);
-  if (!km) {
+  const uint8_t *key = this->_pp_key_info.encryption_key_for_hp(level);
+  if (!key) {
     Debug("quic_pne", "Failed to encrypt a packet number: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
@@ -72,7 +89,7 @@ QUICPacketHeaderProtector::protect(uint8_t *unprotected_packet, size_t unprotect
   }
 
   uint8_t mask[EVP_MAX_BLOCK_LENGTH];
-  if (!this->_generate_mask(mask, unprotected_packet + sample_offset, km->hp, aead)) {
+  if (!this->_generate_mask(mask, unprotected_packet + sample_offset, key, aead)) {
     Debug("v_quic_pne", "Failed to generate a mask");
     return false;
   }
@@ -103,6 +120,7 @@ QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected
 
   QUICKeyPhase phase;
   QUICPacketType type;
+  QUICEncryptionLevel level;
   if (QUICInvariants::is_long_header(protected_packet)) {
     QUICPacketLongHeader::key_phase(phase, protected_packet, protected_packet_len);
     QUICPacketLongHeader::type(type, protected_packet, protected_packet_len);
@@ -111,18 +129,33 @@ QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected
     phase = QUICKeyPhase::PHASE_0;
     type  = QUICPacketType::PROTECTED;
   }
+  switch (phase) {
+  case QUICKeyPhase::PHASE_0:
+  case QUICKeyPhase::PHASE_1:
+    level = QUICEncryptionLevel::ONE_RTT;
+    break;
+  case QUICKeyPhase::HANDSHAKE:
+    level = QUICEncryptionLevel::HANDSHAKE;
+    break;
+  case QUICKeyPhase::INITIAL:
+    level = QUICEncryptionLevel::INITIAL;
+    break;
+  case QUICKeyPhase::ZERO_RTT:
+    level = QUICEncryptionLevel::ZERO_RTT;
+    break;
+  }
 
   Debug("v_quic_pne", "Unprotecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
         QUICDebugNames::key_phase(phase));
 
-  const QUIC_EVP_CIPHER *aead = this->_hs_protocol->cipher_for_hp(phase);
+  const QUIC_EVP_CIPHER *aead = this->_pp_key_info.get_cipher_for_hp(level);
   if (!aead) {
     Debug("quic_pne", "Failed to decrypt a packet number: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
 
-  const KeyMaterial *km = this->_hs_protocol->key_material_for_decryption(phase);
-  if (!km) {
+  const uint8_t *key = this->_pp_key_info.decryption_key_for_hp(level);
+  if (!key) {
     Debug("quic_pne", "Failed to decrypt a packet number: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
   }
@@ -134,7 +167,7 @@ QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected
   }
 
   uint8_t mask[EVP_MAX_BLOCK_LENGTH];
-  if (!this->_generate_mask(mask, protected_packet + sample_offset, km->hp, aead)) {
+  if (!this->_generate_mask(mask, protected_packet + sample_offset, key, aead)) {
     Debug("v_quic_pne", "Failed to generate a mask");
     return false;
   }
@@ -144,12 +177,6 @@ QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected
   }
 
   return true;
-}
-
-void
-QUICPacketHeaderProtector::set_hs_protocol(const QUICHandshakeProtocol *hs_protocol)
-{
-  this->_hs_protocol = hs_protocol;
 }
 
 bool
