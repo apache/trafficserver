@@ -21,10 +21,6 @@
 
 #pragma once
 
-#include "tscore/ink_config.h"
-#include "tscore/Diags.h"
-#include "P_SSLClientUtils.h"
-
 #define OPENSSL_THREAD_DEFINES
 
 // BoringSSL does not have this include file
@@ -33,17 +29,75 @@
 #endif
 #include <openssl/ssl.h>
 
+#include "tscore/ink_config.h"
+#include "tscore/Diags.h"
+
+#include "P_SSLClientUtils.h"
+#include "P_SSLCertLookup.h"
+
 struct SSLConfigParams;
-struct SSLCertLookup;
 class SSLNetVConnection;
 
 typedef int ssl_error_t;
 
-// Create a default SSL server context.
-SSL_CTX *SSLDefaultServerContext();
+/**
+   @brief Gather user provided settings from ssl_multicert.config in to this single struct
+ */
+struct SSLMultiCertConfigParams {
+  SSLMultiCertConfigParams() : opt(SSLCertContext::OPT_NONE)
+  {
+    REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable");
+  }
+
+  int session_ticket_enabled; ///< session ticket enabled
+  ats_scoped_str addr;        ///< IPv[64] address to match
+  ats_scoped_str cert;        ///< certificate
+  ats_scoped_str first_cert;  ///< the first certificate name when multiple cert files are in 'ssl_cert_name'
+  ats_scoped_str ca;          ///< CA public certificate
+  ats_scoped_str key;         ///< Private key
+  ats_scoped_str dialog;      ///< Private key dialog
+  ats_scoped_str servername;  ///< Destination server
+  SSLCertContext::Option opt; ///< SSLCertContext special handling option
+};
+
+/**
+    @brief Load SSL certificates from ssl_multicert.config and setup SSLCertLookup for SSLCertificateConfig
+ */
+class SSLMultiCertConfigLoader
+{
+public:
+  SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
+
+  bool load(SSLCertLookup *lookup);
+
+  virtual SSL_CTX *default_server_ssl_ctx();
+  virtual SSL_CTX *init_server_ssl_ctx(std::vector<X509 *> &certList, const SSLMultiCertConfigParams *sslMultCertSettings);
+
+  static bool load_certs(SSL_CTX *ctx, std::vector<X509 *> &certList, const SSLConfigParams *params,
+                         const SSLMultiCertConfigParams *ssl_multi_cert_params);
+  static bool set_session_id_context(SSL_CTX *ctx, const SSLConfigParams *params,
+                                     const SSLMultiCertConfigParams *sslMultCertSettings);
+
+  static bool index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, const char *certname);
+  static int check_server_cert_now(X509 *cert, const char *certname);
+  static void clear_pw_references(SSL_CTX *ssl_ctx);
+
+protected:
+  const SSLConfigParams *_params;
+
+private:
+  virtual SSL_CTX *_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiCertConfigParams *ssl_multi_cert_params);
+  virtual void _set_handshake_callbacks(SSL_CTX *ctx);
+};
 
 // Create a new SSL server context fully configured.
+// Used by TS API (TSSslServerContextCreate)
 SSL_CTX *SSLCreateServerContext(const SSLConfigParams *params);
+
+// Release SSL_CTX and the associated data. This works for both
+// client and server contexts and gracefully accepts nullptr.
+// Used by TS API (TSSslContextDestroy)
+void SSLReleaseContext(SSL_CTX *ctx);
 
 // Initialize the SSL library.
 void SSLInitializeLibrary();
@@ -51,18 +105,11 @@ void SSLInitializeLibrary();
 // Initialize SSL library based on configuration settings
 void SSLPostConfigInitialize();
 
-// Release SSL_CTX and the associated data. This works for both
-// client and server contexts and gracefully accepts nullptr.
-void SSLReleaseContext(SSL_CTX *ctx);
-
 // Wrapper functions to SSL I/O routines
 ssl_error_t SSLWriteBuffer(SSL *ssl, const void *buf, int64_t nbytes, int64_t &nwritten);
 ssl_error_t SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread);
 ssl_error_t SSLAccept(SSL *ssl);
 ssl_error_t SSLConnect(SSL *ssl);
-
-// Load the SSL certificate configuration.
-bool SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup);
 
 // Attach a SSL NetVC back pointer to a SSL session.
 void SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc);

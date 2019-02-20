@@ -23,8 +23,9 @@
 
 #pragma once
 
+#include <openssl/ssl.h>
+
 #include "ProxyConfig.h"
-#include "P_SSLUtils.h"
 
 struct SSLConfigParams;
 struct SSLContextStorage;

@@ -30,13 +30,15 @@
  ****************************************************************************/
 #pragma once
 
-#include "ProxyConfig.h"
-#include "SSLSessionCache.h"
-#include "tscore/ink_inet.h"
 #include <openssl/rand.h>
-#include "P_SSLCertLookup.h"
+
+#include "tscore/ink_inet.h"
+#include "tscore/IpMap.h"
+
+#include "ProxyConfig.h"
+
+#include "SSLSessionCache.h"
 #include "YamlSNIConfig.h"
-#include <tscore/IpMap.h>
 
 struct SSLCertLookup;
 struct ssl_ticket_key_block;
