@@ -245,6 +245,7 @@ QUICNetVConnection::start()
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   if (this->direction() == NET_VCONNECTION_IN) {
+    this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::SERVER);
     this->_ack_frame_manager.set_ack_delay_exponent(params->ack_delay_exponent_in());
     this->_reset_token       = QUICStatelessResetToken(this->_quic_connection_id, params->instance_id());
     this->_hs_protocol       = this->_setup_handshake_protocol(params->server_ssl_ctx());
@@ -252,6 +253,7 @@ QUICNetVConnection::start()
     this->_ack_frame_manager.set_max_ack_delay(params->max_ack_delay_in());
     this->_ack_manager_periodic = this->thread->schedule_every(this, params->max_ack_delay_in(), QUIC_EVENT_ACK_PERIODIC);
   } else {
+    this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::CLIENT);
     this->_ack_frame_manager.set_ack_delay_exponent(params->ack_delay_exponent_out());
     this->_hs_protocol       = this->_setup_handshake_protocol(params->client_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol);
@@ -265,7 +267,6 @@ QUICNetVConnection::start()
 
   this->_frame_dispatcher = new QUICFrameDispatcher(this);
   this->_packet_factory.set_hs_protocol(this->_hs_protocol);
-  this->_ph_protector.set_hs_protocol(this->_hs_protocol);
 
   // Create frame handlers
   this->_congestion_controller = new QUICCongestionController(this);

@@ -72,7 +72,6 @@ public:
   void negotiated_application_name(const uint8_t **name, unsigned int *len) const override;
   const KeyMaterial *key_material_for_encryption(QUICKeyPhase phase) const override;
   const KeyMaterial *key_material_for_decryption(QUICKeyPhase phase) const override;
-  const QUIC_EVP_CIPHER *cipher_for_hp(QUICKeyPhase phase) const override;
 
   bool encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len, uint64_t pkt_num,
                const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override;
@@ -101,6 +100,7 @@ private:
   int _process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in);
   void _generate_0rtt_key();
   void _update_encryption_level(QUICEncryptionLevel level);
+  void _store_negotiated_cipher_for_hp();
   void _print_km(const char *header, KeyMaterial &km, const uint8_t *secret = nullptr, size_t secret_len = 0);
 
   SSL *_ssl                              = nullptr;

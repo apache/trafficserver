@@ -25,29 +25,23 @@
 
 #include "QUICTypes.h"
 #include "QUICKeyGenerator.h"
-#include "QUICHandshakeProtocol.h"
 
 class QUICPacketProtectionKeyInfo;
 
 class QUICPacketHeaderProtector
 {
 public:
-  QUICPacketHeaderProtector(QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info) {}
+  QUICPacketHeaderProtector(const QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info) {}
 
   bool unprotect(uint8_t *protected_packet, size_t protected_packet_len) const;
   bool protect(uint8_t *unprotected_packet, size_t unprotected_packet_len, int dcil) const;
 
-  // FIXME We don't need QUICHandshakeProtocol here, and should pass QUICCryptoInfoProvider or somethign instead.
-  // For now it receives a CONST pointer so PacketNubmerProtector cannot bother handshake.
-  void set_hs_protocol(const QUICHandshakeProtocol *hs_protocol);
-
 private:
-  QUICPacketProtectionKeyInfo &_pp_key_info;
-  const QUICHandshakeProtocol *_hs_protocol = nullptr;
+  const QUICPacketProtectionKeyInfo &_pp_key_info;
 
   bool _calc_sample_offset(uint8_t *sample_offset, const uint8_t *protected_packet, size_t protected_packet_len, int dcil) const;
 
-  bool _generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *aead) const;
+  bool _generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const QUIC_EVP_CIPHER *aead) const;
 
   bool _unprotect(uint8_t *packet, size_t packet_len, const uint8_t *mask) const;
   bool _protect(uint8_t *packet, size_t packet_len, const uint8_t *mask, int dcil) const;

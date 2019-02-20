@@ -43,7 +43,7 @@ constexpr static std::string_view LABEL_FOR_IV("quic iv"sv);
 constexpr static std::string_view LABEL_FOR_HP("quic hp"sv);
 
 std::unique_ptr<KeyMaterial>
-QUICKeyGenerator::generate(QUICConnectionId cid)
+QUICKeyGenerator::generate(uint8_t *hp_key, QUICConnectionId cid)
 {
   std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
 
@@ -78,15 +78,20 @@ QUICKeyGenerator::generate(QUICConnectionId cid)
 
   this->_generate(*km, hkdf, secret, secret_len, cipher);
 
+  memcpy(hp_key, km->hp, 512);
+
   return km;
 }
 
 std::unique_ptr<KeyMaterial>
-QUICKeyGenerator::regenerate(const uint8_t *secret, size_t secret_len, const QUIC_EVP_CIPHER *cipher, QUICHKDF &hkdf)
+QUICKeyGenerator::regenerate(uint8_t *hp_key, const uint8_t *secret, size_t secret_len, const QUIC_EVP_CIPHER *cipher,
+                             QUICHKDF &hkdf)
 {
   std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
 
   this->_generate(*km, hkdf, secret, secret_len, cipher);
+
+  memcpy(hp_key, km->hp, 512);
 
   return km;
 }

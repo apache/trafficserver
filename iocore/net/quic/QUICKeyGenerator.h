@@ -55,9 +55,10 @@ public:
    * Generate keys for Initial encryption level
    * The keys for the remaining encryption level are derived by TLS stack with "quic " prefix
    */
-  std::unique_ptr<KeyMaterial> generate(QUICConnectionId cid);
+  std::unique_ptr<KeyMaterial> generate(uint8_t *hp_key, QUICConnectionId cid);
 
-  std::unique_ptr<KeyMaterial> regenerate(const uint8_t *secret, size_t secret_len, const QUIC_EVP_CIPHER *cipher, QUICHKDF &hkdf);
+  std::unique_ptr<KeyMaterial> regenerate(uint8_t *hp_key, const uint8_t *secret, size_t secret_len, const QUIC_EVP_CIPHER *cipher,
+                                          QUICHKDF &hkdf);
 
 private:
   Context _ctx = Context::SERVER;

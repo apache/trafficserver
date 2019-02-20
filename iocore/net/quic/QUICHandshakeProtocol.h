@@ -68,7 +68,6 @@ public:
   virtual void negotiated_application_name(const uint8_t **name, unsigned int *len) const = 0;
   virtual const KeyMaterial *key_material_for_encryption(QUICKeyPhase phase) const        = 0;
   virtual const KeyMaterial *key_material_for_decryption(QUICKeyPhase phase) const        = 0;
-  virtual const QUIC_EVP_CIPHER *cipher_for_hp(QUICKeyPhase phase) const                  = 0;
 
   virtual std::shared_ptr<const QUICTransportParameters> local_transport_parameters()             = 0;
   virtual std::shared_ptr<const QUICTransportParameters> remote_transport_parameters()            = 0;
