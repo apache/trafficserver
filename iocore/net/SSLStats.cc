@@ -26,6 +26,7 @@
 #include <openssl/err.h>
 
 #include "P_SSLConfig.h"
+#include "P_SSLUtils.h"
 
 RecRawStatBlock *ssl_rsb = nullptr;
 std::unordered_map<std::string, intptr_t> cipher_map;
@@ -206,7 +207,8 @@ SSLInitializeStatistics()
   // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across
   // configuration reloads and works for the case where we honor the client cipher preference.
 
-  ctx     = SSLDefaultServerContext();
+  SSLMultiCertConfigLoader loader(nullptr);
+  ctx     = loader.default_server_ssl_ctx();
   ssl     = SSL_new(ctx);
   ciphers = SSL_get_ciphers(ssl);
 

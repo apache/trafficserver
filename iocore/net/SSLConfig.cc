@@ -524,7 +524,8 @@ SSLCertificateConfig::reconfigure()
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
-  SSLParseCertificateConfiguration(params, lookup);
+  SSLMultiCertConfigLoader loader(params);
+  loader.load(lookup);
 
   if (!lookup->is_valid) {
     retStatus = false;
