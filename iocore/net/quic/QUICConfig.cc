@@ -28,9 +28,12 @@
 #include <records/I_RecHttp.h>
 
 #include "P_SSLConfig.h"
+#include "P_OCSPStapling.h"
 
 #include "QUICGlobals.h"
 #include "QUICTransportParameters.h"
+
+#define QUICConfDebug(fmt, ...) Debug("quic_conf", fmt, ##__VA_ARGS__)
 
 // OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
 // https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
@@ -40,6 +43,7 @@ static constexpr std::string_view QUIC_ALPN_PROTO_LIST("\5hq-18"sv);
 
 int QUICConfig::_config_id                   = 0;
 int QUICConfigParams::_connection_table_size = 65521;
+int QUICCertConfig::_config_id               = 0;
 
 static SSL_CTX *
 quic_new_ssl_ctx()
@@ -66,29 +70,6 @@ quic_new_ssl_ctx()
   // https://github.com/tatsuhiro-t/openssl/tree/quic-draft-13
   SSL_CTX_set_mode(ssl_ctx, SSL_MODE_QUIC_HACK);
 #endif
-
-  return ssl_ctx;
-}
-
-static SSL_CTX *
-quic_init_server_ssl_ctx(const QUICConfigParams *params)
-{
-  SSL_CTX *ssl_ctx = quic_new_ssl_ctx();
-
-  SSLConfig::scoped_config ssl_params;
-  SSLParseCertificateConfiguration(ssl_params, ssl_ctx);
-
-  if (SSL_CTX_check_private_key(ssl_ctx) != 1) {
-    Error("check private key failed");
-  }
-
-  SSL_CTX_set_alpn_select_cb(ssl_ctx, QUIC::ssl_select_next_protocol, nullptr);
-
-  if (params->server_supported_groups() != nullptr) {
-    if (SSL_CTX_set1_groups_list(ssl_ctx, params->server_supported_groups()) != 1) {
-      Error("SSL_CTX_set1_groups_list failed");
-    }
-  }
 
   return ssl_ctx;
 }
@@ -125,7 +106,6 @@ QUICConfigParams::~QUICConfigParams()
   this->_server_supported_groups = (char *)ats_free_null(this->_server_supported_groups);
   this->_client_supported_groups = (char *)ats_free_null(this->_client_supported_groups);
 
-  SSL_CTX_free(this->_server_ssl_ctx);
   SSL_CTX_free(this->_client_ssl_ctx);
 };
 
@@ -194,7 +174,6 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_cc_persistent_congestion_threshold,
                                   "proxy.config.quic.congestion_control.persistent_congestion_threshold");
 
-  this->_server_ssl_ctx = quic_init_server_ssl_ctx(this);
   this->_client_ssl_ctx = quic_init_client_ssl_ctx(this);
 }
 
@@ -375,12 +354,6 @@ QUICConfigParams::client_supported_groups() const
 }
 
 SSL_CTX *
-QUICConfigParams::server_ssl_ctx() const
-{
-  return this->_server_ssl_ctx;
-}
-
-SSL_CTX *
 QUICConfigParams::client_ssl_ctx() const
 {
   return this->_client_ssl_ctx;
@@ -488,4 +461,224 @@ void
 QUICConfig::release(QUICConfigParams *params)
 {
   configProcessor.release(_config_id, params);
+}
+
+//
+// QUICCertConfig
+//
+void
+QUICCertConfig::startup()
+{
+  reconfigure();
+}
+
+void
+QUICCertConfig::reconfigure()
+{
+  SSLConfig::scoped_config params;
+  SSLCertLookup *lookup = new SSLCertLookup();
+
+  QUICMultiCertConfigLoader loader(params);
+  loader.load(lookup);
+
+  _config_id = configProcessor.set(_config_id, lookup);
+}
+
+SSLCertLookup *
+QUICCertConfig::acquire()
+{
+  return static_cast<SSLCertLookup *>(configProcessor.get(_config_id));
+}
+
+void
+QUICCertConfig::release(SSLCertLookup *lookup)
+{
+  configProcessor.release(_config_id, lookup);
+}
+
+//
+// QUICMultiCertConfigLoader
+//
+SSL_CTX *
+QUICMultiCertConfigLoader::default_server_ssl_ctx()
+{
+  return quic_new_ssl_ctx();
+}
+
+SSL_CTX *
+QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, const SSLMultiCertConfigParams *multi_cert_params)
+{
+  const SSLConfigParams *params = this->_params;
+
+  SSL_CTX *ctx = this->default_server_ssl_ctx();
+
+  if (multi_cert_params) {
+    if (multi_cert_params->dialog) {
+      // TODO: dialog support
+    }
+
+    if (multi_cert_params->cert) {
+      if (!SSLMultiCertConfigLoader::load_certs(ctx, cert_list, params, multi_cert_params)) {
+        goto fail;
+      }
+    }
+
+    // SSL_CTX_load_verify_locations() builds the cert chain from the
+    // serverCACertFilename if that is not nullptr.  Otherwise, it uses the hashed
+    // symlinks in serverCACertPath.
+    //
+    // if ssl_ca_name is NOT configured for this cert in ssl_multicert.config
+    //     AND
+    // if proxy.config.ssl.CA.cert.filename and proxy.config.ssl.CA.cert.path
+    //     are configured
+    //   pass that file as the chain (include all certs in that file)
+    // else if proxy.config.ssl.CA.cert.path is configured (and
+    //       proxy.config.ssl.CA.cert.filename is nullptr)
+    //   use the hashed symlinks in that directory to build the chain
+    if (!multi_cert_params->ca && params->serverCACertPath != nullptr) {
+      if ((!SSL_CTX_load_verify_locations(ctx, params->serverCACertFilename, params->serverCACertPath)) ||
+          (!SSL_CTX_set_default_verify_paths(ctx))) {
+        Error("invalid CA Certificate file or CA Certificate path");
+        goto fail;
+      }
+    }
+  }
+
+  if (params->clientCertLevel != 0) {
+    // TODO: client cert support
+  }
+
+  if (!SSLMultiCertConfigLoader::set_session_id_context(ctx, params, multi_cert_params)) {
+    goto fail;
+  }
+
+  if (params->server_tls13_cipher_suites != nullptr) {
+    if (!SSL_CTX_set_ciphersuites(ctx, params->server_tls13_cipher_suites)) {
+      Error("invalid tls server cipher suites in records.config");
+      goto fail;
+    }
+  }
+
+  if (params->server_groups_list != nullptr) {
+    if (!SSL_CTX_set1_groups_list(ctx, params->server_groups_list)) {
+      Error("invalid groups list for server in records.config");
+      goto fail;
+    }
+  }
+
+  // SSL_CTX_set_info_callback(ctx, ssl_callback_info);
+
+  SSL_CTX_set_alpn_select_cb(ctx, QUIC::ssl_select_next_protocol, nullptr);
+
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    QUICConfDebug("SSL OCSP Stapling is enabled");
+    SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
+    const char *cert_name = multi_cert_params ? multi_cert_params->cert.get() : nullptr;
+
+    for (auto cert : cert_list) {
+      if (!ssl_stapling_init_cert(ctx, cert, cert_name)) {
+        Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", cert_name);
+      }
+    }
+  } else {
+    QUICConfDebug("SSL OCSP Stapling is disabled");
+  }
+
+  if (SSLConfigParams::init_ssl_ctx_cb) {
+    SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+  }
+
+  return ctx;
+
+fail:
+  SSLReleaseContext(ctx);
+  for (auto cert : cert_list) {
+    X509_free(cert);
+  }
+
+  return nullptr;
+}
+
+SSL_CTX *
+QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiCertConfigParams *multi_cert_params)
+{
+  std::vector<X509 *> cert_list;
+  SSL_CTX *ctx                   = this->init_server_ssl_ctx(cert_list, multi_cert_params);
+  ssl_ticket_key_block *keyblock = nullptr;
+  bool inserted                  = false;
+
+  if (!ctx || !multi_cert_params) {
+    lookup->is_valid = false;
+    return nullptr;
+  }
+
+  const char *certname = multi_cert_params->cert.get();
+  for (auto cert : cert_list) {
+    if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert, certname)) {
+      /* At this point, we know cert is bad, and we've already printed a
+         descriptive reason as to why cert is bad to the log file */
+      QUICConfDebug("Marking certificate as NOT VALID: %s", certname);
+      lookup->is_valid = false;
+    }
+  }
+
+  // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
+  if (multi_cert_params->addr) {
+    if (strcmp(multi_cert_params->addr, "*") == 0) {
+      if (lookup->insert(multi_cert_params->addr, SSLCertContext(ctx, multi_cert_params->opt, keyblock)) >= 0) {
+        inserted            = true;
+        lookup->ssl_default = ctx;
+        this->_set_handshake_callbacks(ctx);
+      }
+    } else {
+      IpEndpoint ep;
+
+      if (ats_ip_pton(multi_cert_params->addr, &ep) == 0) {
+        QUICConfDebug("mapping '%s' to certificate %s", (const char *)multi_cert_params->addr, (const char *)certname);
+        if (lookup->insert(ep, SSLCertContext(ctx, multi_cert_params->opt, keyblock)) >= 0) {
+          inserted = true;
+        }
+      } else {
+        Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)multi_cert_params->addr);
+        lookup->is_valid = false;
+      }
+    }
+  }
+
+  // Insert additional mappings. Note that this maps multiple keys to the same value, so when
+  // this code is updated to reconfigure the SSL certificates, it will need some sort of
+  // refcounting or alternate way of avoiding double frees.
+  QUICConfDebug("importing SNI names from %s", (const char *)certname);
+  for (auto cert : cert_list) {
+    if (SSLMultiCertConfigLoader::index_certificate(lookup, SSLCertContext(ctx, multi_cert_params->opt), cert, certname)) {
+      inserted = true;
+    }
+  }
+
+  if (inserted) {
+    if (SSLConfigParams::init_ssl_ctx_cb) {
+      SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+    }
+  }
+
+  if (!inserted) {
+    SSLReleaseContext(ctx);
+    ctx = nullptr;
+  }
+
+  for (auto &i : cert_list) {
+    X509_free(i);
+  }
+
+  return ctx;
+}
+
+void
+QUICMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ssl_ctx)
+{
+  SSL_CTX_set_cert_cb(ssl_ctx, QUIC::ssl_cert_cb, nullptr);
+  SSL_CTX_set_tlsext_servername_callback(ssl_ctx, QUIC::ssl_sni_cb);
+
+  // Set client hello callback if needed
+  // SSL_CTX_set_client_hello_cb(ctx, QUIC::ssl_client_hello_cb, nullptr);
 }

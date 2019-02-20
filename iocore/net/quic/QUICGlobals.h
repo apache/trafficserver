@@ -34,6 +34,8 @@ public:
   static int ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
                                       unsigned inlen, void *);
   static int ssl_client_new_session(SSL *ssl, SSL_SESSION *session);
+  static int ssl_cert_cb(SSL *ssl, void *arg);
+  static int ssl_sni_cb(SSL *ssl, int *ad, void *arg);
 
   static int ssl_quic_qc_index;
   static int ssl_quic_tls_index;

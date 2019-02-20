@@ -63,6 +63,7 @@ QUICNetProcessor::start(int, size_t stacksize)
   // This initialization order matters ...
   // QUICInitializeLibrary();
   QUICConfig::startup();
+  QUICCertConfig::startup();
 
 #ifdef TLS1_3_VERSION_DRAFT_TXT
   // FIXME: remove this when TLS1_3_VERSION_DRAFT_TXT is removed
