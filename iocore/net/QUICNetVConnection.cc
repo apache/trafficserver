@@ -245,9 +245,11 @@ QUICNetVConnection::start()
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   if (this->direction() == NET_VCONNECTION_IN) {
+    QUICCertConfig::scoped_config server_cert;
+
     this->_ack_frame_manager.set_ack_delay_exponent(params->ack_delay_exponent_in());
     this->_reset_token       = QUICStatelessResetToken(this->_quic_connection_id, params->instance_id());
-    this->_hs_protocol       = this->_setup_handshake_protocol(params->server_ssl_ctx());
+    this->_hs_protocol       = this->_setup_handshake_protocol(server_cert->ssl_default);
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol, this->_reset_token, params->stateless_retry());
     this->_ack_frame_manager.set_max_ack_delay(params->max_ack_delay_in());
     this->_ack_manager_periodic = this->thread->schedule_every(this, params->max_ack_delay_in(), QUIC_EVENT_ACK_PERIODIC);

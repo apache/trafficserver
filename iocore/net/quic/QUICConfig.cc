@@ -40,6 +40,7 @@ static constexpr std::string_view QUIC_ALPN_PROTO_LIST("\5hq-17"sv);
 
 int QUICConfig::_config_id                   = 0;
 int QUICConfigParams::_connection_table_size = 65521;
+int QUICCertConfig::_config_id               = 0;
 
 static SSL_CTX *
 quic_new_ssl_ctx()
@@ -66,29 +67,6 @@ quic_new_ssl_ctx()
   // https://github.com/tatsuhiro-t/openssl/tree/quic-draft-13
   SSL_CTX_set_mode(ssl_ctx, SSL_MODE_QUIC_HACK);
 #endif
-
-  return ssl_ctx;
-}
-
-static SSL_CTX *
-quic_init_server_ssl_ctx(const QUICConfigParams *params)
-{
-  SSL_CTX *ssl_ctx = quic_new_ssl_ctx();
-
-  SSLConfig::scoped_config ssl_params;
-  SSLParseCertificateConfiguration(ssl_params, ssl_ctx);
-
-  if (SSL_CTX_check_private_key(ssl_ctx) != 1) {
-    Error("check private key failed");
-  }
-
-  SSL_CTX_set_alpn_select_cb(ssl_ctx, QUIC::ssl_select_next_protocol, nullptr);
-
-  if (params->server_supported_groups() != nullptr) {
-    if (SSL_CTX_set1_groups_list(ssl_ctx, params->server_supported_groups()) != 1) {
-      Error("SSL_CTX_set1_groups_list failed");
-    }
-  }
 
   return ssl_ctx;
 }
@@ -125,7 +103,6 @@ QUICConfigParams::~QUICConfigParams()
   this->_server_supported_groups = (char *)ats_free_null(this->_server_supported_groups);
   this->_client_supported_groups = (char *)ats_free_null(this->_client_supported_groups);
 
-  SSL_CTX_free(this->_server_ssl_ctx);
   SSL_CTX_free(this->_client_ssl_ctx);
 };
 
@@ -190,7 +167,6 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_cc_persistent_congestion_threshold,
                                   "proxy.config.quic.congestion_control.persistent_congestion_threshold");
 
-  this->_server_ssl_ctx = quic_init_server_ssl_ctx(this);
   this->_client_ssl_ctx = quic_init_client_ssl_ctx(this);
 }
 
@@ -361,12 +337,6 @@ QUICConfigParams::client_supported_groups() const
 }
 
 SSL_CTX *
-QUICConfigParams::server_ssl_ctx() const
-{
-  return this->_server_ssl_ctx;
-}
-
-SSL_CTX *
 QUICConfigParams::client_ssl_ctx() const
 {
   return this->_client_ssl_ctx;
@@ -474,4 +444,437 @@ void
 QUICConfig::release(QUICConfigParams *params)
 {
   configProcessor.release(_config_id, params);
+}
+
+//
+// QUICCertConfig
+//
+void
+QUICCertConfig::startup()
+{
+  reconfigure();
+}
+
+void
+QUICCertConfig::reconfigure()
+{
+  SSLConfig::scoped_config params;
+  SSLCertLookup *lookup = new SSLCertLookup();
+
+  QUICMultiCertConfigLoader loader(params);
+  loader.load(lookup);
+
+  _config_id = configProcessor.set(_config_id, lookup);
+}
+
+SSLCertLookup *
+QUICCertConfig::acquire()
+{
+  return static_cast<SSLCertLookup *>(configProcessor.get(_config_id));
+}
+
+void
+QUICCertConfig::release(SSLCertLookup *lookup)
+{
+  configProcessor.release(_config_id, lookup);
+}
+
+//
+// QUICMultiCertConfigLoader
+//
+SSL_CTX *
+QUICMultiCertConfigLoader::default_server_ssl_ctx()
+{
+  return quic_new_ssl_ctx();
+}
+
+#ifndef evp_md_func
+#ifdef OPENSSL_NO_SHA256
+#define evp_md_func EVP_sha1()
+#else
+#define evp_md_func EVP_sha256()
+#endif
+#endif
+
+SSL_CTX *
+QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &certList, const SSLMultiCertConfigParams *sslMultCertSettings)
+{
+  const SSLConfigParams *params = this->_params;
+
+  SSL_CTX *ctx                 = this->default_server_ssl_ctx();
+  EVP_MD_CTX *digest           = EVP_MD_CTX_new();
+  STACK_OF(X509_NAME) *ca_list = nullptr;
+  unsigned char hash_buf[EVP_MAX_MD_SIZE];
+  unsigned int hash_len    = 0;
+  const char *setting_cert = sslMultCertSettings ? sslMultCertSettings->cert.get() : nullptr;
+
+  //   // disable selected protocols
+  //   SSL_CTX_set_options(ctx, params->ssl_ctx_options);
+
+  //   Debug("ssl.session_cache",
+  //         "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, "
+  //         "skip_on_contention=%d, timeout=%d, auto_clear=%d",
+  //         ctx, params->ssl_session_cache, params->ssl_session_cache_size, params->ssl_session_cache_num_buckets,
+  //         params->ssl_session_cache_skip_on_contention, params->ssl_session_cache_timeout, params->ssl_session_cache_auto_clear);
+
+  //   if (params->ssl_session_cache_timeout) {
+  //     SSL_CTX_set_timeout(ctx, params->ssl_session_cache_timeout);
+  //   }
+
+  //   int additional_cache_flags = 0;
+  //   additional_cache_flags |= (params->ssl_session_cache_auto_clear == 0) ? SSL_SESS_CACHE_NO_AUTO_CLEAR : 0;
+
+  //   switch (params->ssl_session_cache) {
+  //   case SSLConfigParams::SSL_SESSION_CACHE_MODE_OFF:
+  //     Debug("ssl.session_cache", "disabling SSL session cache");
+
+  //     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF | SSL_SESS_CACHE_NO_INTERNAL);
+  //     break;
+  //   case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_OPENSSL_IMPL:
+  //     Debug("ssl.session_cache", "enabling SSL session cache with OpenSSL implementation");
+
+  //     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | additional_cache_flags);
+  //     SSL_CTX_sess_set_cache_size(ctx, params->ssl_session_cache_size);
+  //     break;
+  //   case SSLConfigParams::SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL: {
+  //     Debug("ssl.session_cache", "enabling SSL session cache with ATS implementation");
+  //     /* Add all the OpenSSL callbacks */
+  //     SSL_CTX_sess_set_new_cb(ctx, ssl_new_cached_session);
+  //     SSL_CTX_sess_set_remove_cb(ctx, ssl_rm_cached_session);
+  //     SSL_CTX_sess_set_get_cb(ctx, ssl_get_cached_session);
+
+  //     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | SSL_SESS_CACHE_NO_INTERNAL | additional_cache_flags);
+
+  //     break;
+  //   }
+  //   }
+
+  // #ifdef SSL_MODE_RELEASE_BUFFERS
+  //   if (OPENSSL_VERSION_NUMBER > 0x1000107fL) {
+  //     Debug("ssl", "enabling SSL_MODE_RELEASE_BUFFERS");
+  //     SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
+  //   }
+  // #endif
+
+  // #ifdef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
+  //   SSL_CTX_set_options(ctx, SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
+  // #endif
+
+  if (sslMultCertSettings) {
+    if (sslMultCertSettings->dialog) {
+      // passphrase_cb_userdata ud(params, sslMultCertSettings->dialog, sslMultCertSettings->first_cert, sslMultCertSettings->key);
+      // // pass phrase dialog configuration
+      // pem_password_cb *passwd_cb = nullptr;
+      // if (strncmp(sslMultCertSettings->dialog, "exec:", 5) == 0) {
+      //   ud._serverDialog = &sslMultCertSettings->dialog[5];
+      //   // validate the exec program
+      //   if (!ssl_private_key_validate_exec(ud._serverDialog)) {
+      //     SSLError("failed to access '%s' pass phrase program: %s", (const char *)ud._serverDialog, strerror(errno));
+      //     memset(static_cast<void *>(&ud), 0, sizeof(ud));
+      //     goto fail;
+      //   }
+      //   passwd_cb = ssl_private_key_passphrase_callback_exec;
+      // } else if (strcmp(sslMultCertSettings->dialog, "builtin") == 0) {
+      //   passwd_cb = ssl_private_key_passphrase_callback_builtin;
+      // } else { // unknown config
+      //   SSLError("unknown " SSL_KEY_DIALOG " configuration value '%s'", (const char *)sslMultCertSettings->dialog);
+      //   memset(static_cast<void *>(&ud), 0, sizeof(ud));
+      //   goto fail;
+      // }
+      // SSL_CTX_set_default_passwd_cb(ctx, passwd_cb);
+      // SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
+      // // Clear any password info lingering in the UD data structure
+      // memset(static_cast<void *>(&ud), 0, sizeof(ud));
+    }
+
+    if (sslMultCertSettings->cert) {
+      if (!SSLMultiCertConfigLoader::load_certs(ctx, certList, params, sslMultCertSettings)) {
+        goto fail;
+      }
+    }
+
+    // SSL_CTX_load_verify_locations() builds the cert chain from the
+    // serverCACertFilename if that is not nullptr.  Otherwise, it uses the hashed
+    // symlinks in serverCACertPath.
+    //
+    // if ssl_ca_name is NOT configured for this cert in ssl_multicert.config
+    //     AND
+    // if proxy.config.ssl.CA.cert.filename and proxy.config.ssl.CA.cert.path
+    //     are configured
+    //   pass that file as the chain (include all certs in that file)
+    // else if proxy.config.ssl.CA.cert.path is configured (and
+    //       proxy.config.ssl.CA.cert.filename is nullptr)
+    //   use the hashed symlinks in that directory to build the chain
+    if (!sslMultCertSettings->ca && params->serverCACertPath != nullptr) {
+      if ((!SSL_CTX_load_verify_locations(ctx, params->serverCACertFilename, params->serverCACertPath)) ||
+          (!SSL_CTX_set_default_verify_paths(ctx))) {
+        SSLError("invalid CA Certificate file or CA Certificate path");
+        goto fail;
+      }
+    }
+  }
+
+  if (params->clientCertLevel != 0) {
+    // if (params->serverCACertFilename != nullptr && params->serverCACertPath != nullptr) {
+    //   if ((!SSL_CTX_load_verify_locations(ctx, params->serverCACertFilename, params->serverCACertPath)) ||
+    //       (!SSL_CTX_set_default_verify_paths(ctx))) {
+    //     SSLError("CA Certificate file or CA Certificate path invalid");
+    //     goto fail;
+    //   }
+    // }
+
+    // if (params->clientCertLevel == 2) {
+    //   server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE;
+    // } else if (params->clientCertLevel == 1) {
+    //   server_verify_client = SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE;
+    // } else {
+    //   // disable client cert support
+    //   server_verify_client = SSL_VERIFY_NONE;
+    //   Error("illegal client certification level %d in records.config", server_verify_client);
+    // }
+    // SSL_CTX_set_verify(ctx, server_verify_client, ssl_verify_client_callback);
+    // SSL_CTX_set_verify_depth(ctx, params->verify_depth); // might want to make configurable at some point.
+  }
+
+  // Set the list of CA's to send to client if we ask for a client
+  // certificate
+  if (params->serverCACertFilename) {
+    ca_list = SSL_load_client_CA_file(params->serverCACertFilename);
+    if (ca_list) {
+      SSL_CTX_set_client_CA_list(ctx, ca_list);
+    }
+  }
+
+  if (EVP_DigestInit_ex(digest, evp_md_func, nullptr) == 0) {
+    SSLError("EVP_DigestInit_ex failed");
+    goto fail;
+  }
+
+  if (nullptr != setting_cert) {
+    Debug("ssl", "Using '%s' in hash for session id context", sslMultCertSettings->cert.get());
+    if (EVP_DigestUpdate(digest, sslMultCertSettings->cert, strlen(setting_cert)) == 0) {
+      SSLError("EVP_DigestUpdate failed");
+      goto fail;
+    }
+  }
+
+  if (ca_list != nullptr) {
+    size_t num_certs = sk_X509_NAME_num(ca_list);
+
+    for (size_t i = 0; i < num_certs; i++) {
+      X509_NAME *name = sk_X509_NAME_value(ca_list, i);
+      if (X509_NAME_digest(name, evp_md_func, hash_buf /* borrow our final hash buffer. */, &hash_len) == 0 ||
+          EVP_DigestUpdate(digest, hash_buf, hash_len) == 0) {
+        SSLError("Adding X509 name to digest failed");
+        goto fail;
+      }
+    }
+  }
+
+  if (EVP_DigestFinal_ex(digest, hash_buf, &hash_len) == 0) {
+    SSLError("EVP_DigestFinal_ex failed");
+    goto fail;
+  }
+  EVP_MD_CTX_free(digest);
+  digest = nullptr;
+
+  if (SSL_CTX_set_session_id_context(ctx, hash_buf, hash_len) == 0) {
+    SSLError("SSL_CTX_set_session_id_context failed");
+    goto fail;
+  }
+
+  if (params->cipherSuite != nullptr) {
+    if (!SSL_CTX_set_cipher_list(ctx, params->cipherSuite)) {
+      SSLError("invalid cipher suite in records.config");
+      goto fail;
+    }
+  }
+
+#if TS_USE_TLS_SET_CIPHERSUITES
+  if (params->server_tls13_cipher_suites != nullptr) {
+    if (!SSL_CTX_set_ciphersuites(ctx, params->server_tls13_cipher_suites)) {
+      SSLError("invalid tls server cipher suites in records.config");
+      goto fail;
+    }
+  }
+#endif
+
+#ifdef SSL_CTX_set1_groups_list
+  if (params->server_groups_list != nullptr) {
+    if (!SSL_CTX_set1_groups_list(ctx, params->server_groups_list)) {
+      SSLError("invalid groups list for server in records.config");
+      goto fail;
+    }
+  }
+#endif
+
+  // if (!ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
+  //   goto fail;
+  // }
+
+  // ssl_context_enable_ecdh(ctx);
+
+  // if (sslMultCertSettings && sslMultCertSettings->dialog) {
+  //   SSL_CLEAR_PW_REFERENCES(ctx);
+  // }
+
+  // #if TS_USE_TLS_NPN
+  //   SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, nullptr);
+  // #endif /* TS_USE_TLS_NPN */
+
+  // #if TS_USE_TLS_ALPN
+  SSL_CTX_set_alpn_select_cb(ctx, QUIC::ssl_select_next_protocol, nullptr);
+  // #endif /* TS_USE_TLS_ALPN */
+
+  // #ifdef TS_USE_TLS_OCSP
+  //   if (SSLConfigParams::ssl_ocsp_enabled) {
+  //     Debug("ssl", "SSL OCSP Stapling is enabled");
+  //     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
+  //   } else {
+  //     Debug("ssl", "SSL OCSP Stapling is disabled");
+  //   }
+  // #else
+  //   if (SSLConfigParams::ssl_ocsp_enabled) {
+  //     Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
+  //   }
+  // #endif /* TS_USE_TLS_OCSP */
+
+  if (SSLConfigParams::init_ssl_ctx_cb) {
+    SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+  }
+  return ctx;
+
+fail:
+  if (digest) {
+    EVP_MD_CTX_free(digest);
+  }
+  SSL_CTX_set_default_passwd_cb(ctx, nullptr);
+  SSL_CTX_set_default_passwd_cb_userdata(ctx, nullptr);
+  SSLReleaseContext(ctx);
+  for (auto cert : certList) {
+    X509_free(cert);
+  }
+
+  return nullptr;
+}
+
+SSL_CTX *
+QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiCertConfigParams *sslMultiCertSettings)
+{
+  std::vector<X509 *> cert_list;
+  SSL_CTX *ctx                   = this->init_server_ssl_ctx(cert_list, sslMultiCertSettings);
+  ssl_ticket_key_block *keyblock = nullptr;
+  bool inserted                  = false;
+
+  if (!ctx || !sslMultiCertSettings) {
+    lookup->is_valid = false;
+    return nullptr;
+  }
+
+  const char *certname = sslMultiCertSettings->cert.get();
+  for (auto cert : cert_list) {
+    if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert, certname)) {
+      /* At this point, we know cert is bad, and we've already printed a
+         descriptive reason as to why cert is bad to the log file */
+      Debug("ssl", "Marking certificate as NOT VALID: %s", certname);
+      lookup->is_valid = false;
+    }
+  }
+
+  // // Load the session ticket key if session tickets are not disabled
+  // if (sslMultCertSettings->session_ticket_enabled != 0) {
+  //   keyblock = ssl_context_enable_tickets(ctx, nullptr);
+  // }
+
+  // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
+  if (sslMultiCertSettings->addr) {
+    if (strcmp(sslMultiCertSettings->addr, "*") == 0) {
+      if (lookup->insert(sslMultiCertSettings->addr, SSLCertContext(ctx, sslMultiCertSettings->opt, keyblock)) >= 0) {
+        inserted            = true;
+        lookup->ssl_default = ctx;
+        this->_set_handshake_callbacks(ctx);
+      }
+    } else {
+      IpEndpoint ep;
+
+      if (ats_ip_pton(sslMultiCertSettings->addr, &ep) == 0) {
+        Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultiCertSettings->addr, (const char *)certname);
+        if (lookup->insert(ep, SSLCertContext(ctx, sslMultiCertSettings->opt, keyblock)) >= 0) {
+          inserted = true;
+        }
+      } else {
+        Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)sslMultiCertSettings->addr);
+        lookup->is_valid = false;
+      }
+    }
+  }
+  //   if (!inserted) {
+  // #if HAVE_OPENSSL_SESSION_TICKETS
+  //     if (keyblock != nullptr) {
+  //       ticket_block_free(keyblock);
+  //     }
+  // #endif
+  //   }
+
+  // #if defined(SSL_OP_NO_TICKET)
+  //   // Session tickets are enabled by default. Disable if explicitly requested.
+  //   if (sslMultCertSettings->session_ticket_enabled == 0) {
+  //     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
+  //     Debug("ssl", "ssl session ticket is disabled");
+  //   }
+  // #endif
+
+  // #ifdef TS_USE_TLS_OCSP
+  //   if (SSLConfigParams::ssl_ocsp_enabled) {
+  //     Debug("ssl", "SSL OCSP Stapling is enabled");
+  //     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
+  //     for (auto cert : cert_list) {
+  //       if (!ssl_stapling_init_cert(ctx, cert, certname)) {
+  //         Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
+  //       }
+  //     }
+  //   } else {
+  //     Debug("ssl", "SSL OCSP Stapling is disabled");
+  //   }
+  // #else
+  //   if (SSLConfigParams::ssl_ocsp_enabled) {
+  //     Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
+  //   }
+  // #endif /* TS_USE_TLS_OCSP */
+
+  // Insert additional mappings. Note that this maps multiple keys to the same value, so when
+  // this code is updated to reconfigure the SSL certificates, it will need some sort of
+  // refcounting or alternate way of avoiding double frees.
+  Debug("ssl", "importing SNI names from %s", (const char *)certname);
+  for (auto cert : cert_list) {
+    if (SSLMultiCertConfigLoader::index_certificate(lookup, SSLCertContext(ctx, sslMultiCertSettings->opt), cert, certname)) {
+      inserted = true;
+    }
+  }
+
+  if (inserted) {
+    if (SSLConfigParams::init_ssl_ctx_cb) {
+      SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+    }
+  }
+
+  if (!inserted) {
+    SSLReleaseContext(ctx);
+    ctx = nullptr;
+  }
+
+  for (auto &i : cert_list) {
+    X509_free(i);
+  }
+
+  return ctx;
+}
+
+void
+QUICMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ssl_ctx)
+{
+  SSL_CTX_set_cert_cb(ssl_ctx, QUIC::ssl_cert_cb, nullptr);
+  SSL_CTX_set_tlsext_servername_callback(ssl_ctx, QUIC::ssl_sni_cb);
+
+  // SSL_CTX_set_client_hello_cb(ctx, ssl_client_hello_callback, nullptr); ?
 }
