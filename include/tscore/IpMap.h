@@ -32,6 +32,7 @@
 #include "tscore/ink_inet.h"
 #include "tscpp/util/IntrusiveDList.h"
 #include "tscore/ink_assert.h"
+#include "tscore/BufferWriterForward.h"
 
 namespace ts
 {
@@ -194,7 +195,7 @@ public:
     Node *_node        = nullptr; //!< Current node.
   };
 
-  IpMap(); ///< Default constructor.
+  IpMap()                      = default; ///< Default constructor.
   IpMap(self_type const &that) = delete;
   IpMap(self_type &&that) noexcept;
   ~IpMap(); ///< Destructor.
@@ -362,9 +363,13 @@ public:
   */
   void validate();
 
-  /// Print all spans.
-  /// @return This map.
-  //  self& print();
+  /** Generate formatted output.
+   *
+   * @param w Destination of formatted output.
+   * @param spec Formatting specification.
+   * @return @a w
+   */
+  ts::BufferWriter &describe(ts::BufferWriter &w, ts::BWFSpec const &spec) const;
 
 protected:
   /// Force the IPv4 map to exist.
@@ -487,4 +492,11 @@ inline IpMap::iterator::pointer IpMap::iterator::operator->() const
   return _node;
 }
 
-inline IpMap::IpMap() : _m4(nullptr), _m6(nullptr) {}
+namespace ts
+{
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, IpMap const &map)
+{
+  return map.describe(w, spec);
+}
+} // namespace ts

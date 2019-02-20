@@ -45,6 +45,7 @@
 
 #include "tscore/IpMap.h"
 #include "tscore/ink_inet.h"
+#include "tscore/BufferWriter.h"
 
 namespace ts
 {
@@ -226,9 +227,13 @@ namespace detail
     /// @return The number of distinct ranges.
     size_t count() const;
 
-    /// Print all spans.
-    /// @return This map.
-    self_type &print();
+    /** Generate formatted output.
+     *
+     * @param w Destination of the output.
+     * @param spec Format specification.
+     * @return @a w.
+     */
+    ts::BufferWriter &describe(ts::BufferWriter &w, ts::BWFSpec const &spec) const;
 
     // Helper methods.
     N *
@@ -731,18 +736,21 @@ namespace detail
   }
 
   template <typename N>
-  IpMapBase<N> &
-  IpMapBase<N>::print()
+  ts::BufferWriter &
+  IpMapBase<N>::describe(ts::BufferWriter &w, ts::BWFSpec const &spec) const
   {
-#if 0
-  for ( Node* n = _list.head() ; n ; n = n->_next ) {
-    std::cout
-      << n << ": " << n->_min << '-' << n->_max << " [" << n->_data << "] "
-      << (n->_color == Node::BLACK ? "Black " : "Red   ") << "P=" << n->_parent << " L=" << n->_left << " R=" << n->_right
-      << std::endl;
-  }
-#endif
-    return *this;
+    auto pos = w.extent();
+    for (auto const &rb_node : _list) {
+      N const &n{static_cast<N const &>(rb_node)};
+      if (w.extent() > pos) {
+        w.write(',');
+      }
+      w.print("{::a}-{::a}={}", n.min(), n.max(), n._data);
+      if (std::string_view::npos != spec._ext.find('x')) {
+        w.print("[{};^{};<{};>{}]", n._color == N::BLACK ? "Black" : "Red", n._parent, n._left, n._right);
+      }
+    }
+    return w;
   }
 
   template <typename N> IpMapBase<N>::~IpMapBase() { this->clear(); }
@@ -1090,6 +1098,14 @@ namespace detail
     friend class ::IpMap;
   };
 } // namespace detail
+
+template <typename N>
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, detail::IpMapBase<N> const &map)
+{
+  return map.describe(w, spec);
+}
+
 } // namespace ts
 //----------------------------------------------------------------------------
 IpMap::IpMap(IpMap::self_type &&that) noexcept : _m4(that._m4), _m6(that._m6)
@@ -1288,6 +1304,28 @@ IpMap::iterator::operator--()
     }
   }
   return *this;
+}
+
+ts::BufferWriter &
+IpMap::describe(ts::BufferWriter &w, ts::BWFSpec const &spec) const
+{
+  w.write("IPv4 ");
+  if (_m4) {
+    bwformat(w, spec, *_m4);
+  } else {
+    w.write("N/A");
+  }
+  w.write("\n");
+
+  w.write("IPv6 ");
+  if (_m6) {
+    bwformat(w, spec, *_m6);
+  } else {
+    w.write("N/A");
+  }
+  w.write("\n");
+
+  return w;
 }
 
 //----------------------------------------------------------------------------
