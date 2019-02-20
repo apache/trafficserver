@@ -1285,7 +1285,7 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
 }
 
 SSL_CTX *
-SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMultCertSettings, std::vector<X509 *> &certList)
+SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMultCertSettings, std::vector<X509 *> &cert_list)
 {
   int server_verify_client;
   SSL_CTX *ctx                 = SSLDefaultServerContext();
@@ -1416,7 +1416,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
           goto fail;
         }
 
-        certList.push_back(cert);
+        cert_list.push_back(cert);
         if (SSLConfigParams::load_ssl_file_cb) {
           SSLConfigParams::load_ssl_file_cb(completeServerCertPath.c_str(), CONFIG_FLAG_UNVERSIONED);
         }
@@ -1605,6 +1605,12 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   if (SSLConfigParams::ssl_ocsp_enabled) {
     Debug("ssl", "SSL OCSP Stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
+
+    for (auto cert : cert_list) {
+      if (!ssl_stapling_init_cert(ctx, cert, setting_cert)) {
+        Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", setting_cert);
+      }
+    }
   } else {
     Debug("ssl", "SSL OCSP Stapling is disabled");
   }
@@ -1625,7 +1631,7 @@ fail:
   }
   SSL_CLEAR_PW_REFERENCES(ctx)
   SSLReleaseContext(ctx);
-  for (auto cert : certList) {
+  for (auto cert : cert_list) {
     X509_free(cert);
   }
 
@@ -1702,24 +1708,6 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     }
 #endif
   }
-
-#ifdef TS_USE_TLS_OCSP
-  if (SSLConfigParams::ssl_ocsp_enabled) {
-    Debug("ssl", "SSL OCSP Stapling is enabled");
-    SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
-    for (auto cert : cert_list) {
-      if (!ssl_stapling_init_cert(ctx, cert, certname)) {
-        Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
-      }
-    }
-  } else {
-    Debug("ssl", "SSL OCSP Stapling is disabled");
-  }
-#else
-  if (SSLConfigParams::ssl_ocsp_enabled) {
-    Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
-  }
-#endif /* TS_USE_TLS_OCSP */
 
   // Insert additional mappings. Note that this maps multiple keys to the same value, so when
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
