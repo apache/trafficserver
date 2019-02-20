@@ -448,7 +448,7 @@ SSLConfigParams::initialize()
   }
 }
 
-SSL_CTX *
+shared_SSL_CTX
 SSLConfigParams::getClientSSL_CTX() const
 {
   return client_ctx;
@@ -673,95 +673,70 @@ SSLTicketParams::cleanup()
   ticket_key_filename = (char *)ats_free_null(ticket_key_filename);
 }
 
-SSL_CTX *
+shared_SSL_CTX
 SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file, const char *ca_bundle_path) const
 {
-  SSL_CTX *client_ctx = nullptr;
-  CTX_MAP *ctx_map    = nullptr;
+  shared_SSL_CTX client_ctx = nullptr;
   std::string top_level_key, ctx_key;
   ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
   ts::bwprint(ctx_key, "{}:{}", client_cert, key_file);
 
-  ink_mutex_acquire(&ctxMapLock);
-  // Do first level searching and create new CTX_MAP as second level if not exists.
-  auto top_iter = top_level_ctx_map.find(top_level_key);
-  if (top_iter != top_level_ctx_map.end()) {
-    if (top_iter->second == nullptr) {
-      top_iter->second = new CTX_MAP;
+  auto ctx_map_iter = top_level_ctx_map.find(top_level_key);
+  if (ctx_map_iter != top_level_ctx_map.end()) {
+    auto ctx_iter = ctx_map_iter->second.find(ctx_key);
+    if (ctx_iter != ctx_map_iter->second.end()) {
+      client_ctx = ctx_iter->second;
     }
-    ctx_map = top_iter->second;
-  } else {
-    ctx_map = new CTX_MAP;
-    top_level_ctx_map.insert(std::make_pair(top_level_key, ctx_map));
   }
-  // Do second level searching and return client ctx if found
-  auto iter = ctx_map->find(ctx_key);
-  if (iter != ctx_map->end()) {
-    client_ctx = iter->second;
+
+  // Create context if doesn't exists
+  if (!client_ctx) {
+    client_ctx = shared_SSL_CTX(SSLInitClientContext(this), SSLReleaseContext);
+
+    if (client_cert) {
+      // Set public and private keys
+      if (!SSL_CTX_use_certificate_chain_file(client_ctx.get(), client_cert)) {
+        SSLError("failed to load client certificate from %s", client_cert);
+        goto fail;
+      }
+      if (!key_file || key_file[0] == '\0') {
+        key_file = client_cert;
+      }
+      if (!SSL_CTX_use_PrivateKey_file(client_ctx.get(), key_file, SSL_FILETYPE_PEM)) {
+        SSLError("failed to load client private key file from %s", key_file);
+        goto fail;
+      }
+
+      if (!SSL_CTX_check_private_key(client_ctx.get())) {
+        SSLError("client private key (%s) does not match the certificate public key (%s)", key_file, client_cert);
+        goto fail;
+      }
+    }
+
+    // Set CA information for verifying peer cert
+    if (ca_bundle_file != nullptr || ca_bundle_path != nullptr) {
+      if (!SSL_CTX_load_verify_locations(client_ctx.get(), ca_bundle_file, ca_bundle_path)) {
+        SSLError("invalid client CA Certificate file (%s) or CA Certificate path (%s)", ca_bundle_file, ca_bundle_path);
+        goto fail;
+      }
+    } else if (!SSL_CTX_set_default_verify_paths(client_ctx.get())) {
+      SSLError("failed to set the default verify paths");
+      goto fail;
+    }
+
+    // Try to update the context in mapping with lock acquired. If a valid context exists, return it without changing the structure.
+    ink_mutex_acquire(&ctxMapLock);
+    auto ctx_iter = top_level_ctx_map[top_level_key].find(ctx_key);
+    if (ctx_iter == top_level_ctx_map[top_level_key].end() || ctx_iter->second == nullptr) {
+      top_level_ctx_map[top_level_key][ctx_key] = client_ctx;
+    } else {
+      client_ctx = ctx_iter->second;
+    }
     ink_mutex_release(&ctxMapLock);
-    return client_ctx;
   }
-  ink_mutex_release(&ctxMapLock);
-
-  // Not yet in the table.  Make the cert and add it to the table
-  client_ctx = SSLInitClientContext(this);
-
-  if (client_cert) {
-    // Set public and private keys
-    if (!SSL_CTX_use_certificate_chain_file(client_ctx, client_cert)) {
-      SSLError("failed to load client certificate from %s", client_cert);
-      goto fail;
-    }
-    if (!key_file || key_file[0] == '\0') {
-      key_file = client_cert;
-    }
-    if (!SSL_CTX_use_PrivateKey_file(client_ctx, key_file, SSL_FILETYPE_PEM)) {
-      SSLError("failed to load client private key file from %s", key_file);
-      goto fail;
-    }
-
-    if (!SSL_CTX_check_private_key(client_ctx)) {
-      SSLError("client private key (%s) does not match the certificate public key (%s)", key_file, client_cert);
-      goto fail;
-    }
-  }
-
-  // Set CA information for verifying peer cert
-  if (ca_bundle_file != nullptr || ca_bundle_path != nullptr) {
-    if (!SSL_CTX_load_verify_locations(client_ctx, ca_bundle_file, ca_bundle_path)) {
-      SSLError("invalid client CA Certificate file (%s) or CA Certificate path (%s)", ca_bundle_file, ca_bundle_path);
-      goto fail;
-    }
-  } else if (!SSL_CTX_set_default_verify_paths(client_ctx)) {
-    SSLError("failed to set the default verify paths");
-    goto fail;
-  }
-
-  ink_mutex_acquire(&ctxMapLock);
-  top_iter = top_level_ctx_map.find(top_level_key);
-  if (top_iter != top_level_ctx_map.end()) {
-    if (top_iter->second == nullptr) {
-      top_iter->second = new CTX_MAP;
-    }
-    ctx_map = top_iter->second;
-  } else {
-    ctx_map = new CTX_MAP;
-    top_level_ctx_map.insert(std::make_pair(top_level_key, ctx_map));
-  }
-  iter = ctx_map->find(ctx_key);
-  if (iter != ctx_map->end()) {
-    SSL_CTX_free(client_ctx);
-    client_ctx = iter->second;
-  } else {
-    ctx_map->insert(std::make_pair(ctx_key, client_ctx));
-  }
-  ink_mutex_release(&ctxMapLock);
   return client_ctx;
 
 fail:
-  if (client_ctx) {
-    SSL_CTX_free(client_ctx);
-  }
   return nullptr;
 }
 
@@ -769,17 +744,6 @@ void
 SSLConfigParams::cleanupCTXTable()
 {
   ink_mutex_acquire(&ctxMapLock);
-  CTX_MAP *ctx_map = nullptr;
-  for (auto &top_pair : top_level_ctx_map) {
-    ctx_map = top_pair.second;
-    if (ctx_map) {
-      for (auto &pair : (*ctx_map)) {
-        SSL_CTX_free(pair.second);
-      }
-      ctx_map->clear();
-      delete ctx_map;
-    }
-  }
   top_level_ctx_map.clear();
   ink_mutex_release(&ctxMapLock);
 }

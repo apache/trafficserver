@@ -1,7 +1,6 @@
 /** @file
 
-  Functions that break the no internal pact with openssl.  We
-  explicitly undefine OPENSSL_NO_SSL_INTERN in this file.
+  Function prototypes that break the no internal pact with openssl.
 
   @section license License
 
@@ -21,44 +20,17 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+
+#pragma once
 #include "tscore/ink_config.h"
 #include <openssl/opensslv.h>
 
-#if TS_USE_SET_RBIO && OPENSSL_VERSION_NUMBER >= 0x10100000L
-// No need to do anything, this version of openssl provides the SSL_set0_rbio and SSL_CTX_up_ref.
-#else
-
-#ifdef OPENSSL_NO_SSL_INTERN
-#undef OPENSSL_NO_SSL_INTERN
+#if !TS_USE_SET_RBIO
+// Defined in SSLInternal.c, should probably make a separate include
+// file for this at some point
+void SSL_set0_rbio(SSL *ssl, BIO *rbio);
 #endif
-
-#include <openssl/ssl.h>
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-#include <atomic>
-
-static_assert(sizeof(std::atomic_int) == sizeof(int));
-static_assert(alignof(std::atomic_int) == alignof(int));
-
-int
-SSL_CTX_up_ref(SSL_CTX *ctx)
-{
-  int i;
-  i = atomic_fetch_add_explicit(reinterpret_cast<std::atomic_int *>(&ctx->references), 1, std::memory_order::memory_order_relaxed) +
-      1;
-  return ((i > 1) ? 1 : 0);
-}
-#endif
-
-#if !TS_USE_SET_RBIO
-void
-SSL_set0_rbio(SSL *ssl, BIO *rbio)
-{
-  if (ssl->rbio != nullptr) {
-    BIO_free(ssl->rbio);
-  }
-  ssl->rbio = rbio;
-}
-#endif
-
+int SSL_CTX_up_ref(SSL_CTX *ctx);
 #endif

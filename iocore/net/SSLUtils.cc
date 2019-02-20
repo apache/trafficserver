@@ -277,8 +277,9 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 static int
 set_context_cert(SSL *ssl)
 {
-  SSL_CTX *ctx       = nullptr;
-  SSLCertContext *cc = nullptr;
+  shared_SSL_CTX ctx  = nullptr;
+  SSL_CTX *verify_ctx = nullptr;
+  SSLCertContext *cc  = nullptr;
   SSLCertificateConfig::scoped_config lookup;
   const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
@@ -298,11 +299,11 @@ set_context_cert(SSL *ssl)
   // don't find a name-based match at this point, we *do not* want to mess with the context because we've
   // already made a best effort to find the best match.
   if (likely(servername)) {
-    cc = lookup->find((char *)servername);
-    if (cc && cc->ctx) {
-      ctx = cc->ctx;
+    cc = lookup->find(const_cast<char *>(servername));
+    if (cc) {
+      ctx = cc->getCtx();
     }
-    if (cc && SSLCertContext::OPT_TUNNEL == cc->opt && netvc->get_is_transparent()) {
+    if (cc && ctx && SSLCertContextOption::OPT_TUNNEL == cc->opt && netvc->get_is_transparent()) {
       netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       netvc->setSSLHandShakeComplete(SSL_HANDSHAKE_DONE);
       retval = -1;
@@ -318,25 +319,25 @@ set_context_cert(SSL *ssl)
     if (0 == safe_getsockname(netvc->get_socket(), &ip.sa, &namelen)) {
       cc = lookup->find(ip);
     }
-    if (cc && cc->ctx) {
-      ctx = cc->ctx;
+    if (cc) {
+      ctx = cc->getCtx();
     }
   }
 
   if (ctx != nullptr) {
-    SSL_set_SSL_CTX(ssl, ctx);
+    SSL_set_SSL_CTX(ssl, ctx.get());
 #if TS_HAVE_OPENSSL_SESSION_TICKETS
     // Reset the ticket callback if needed
-    SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket);
+    SSL_CTX_set_tlsext_ticket_key_cb(ctx.get(), ssl_callback_session_ticket);
 #endif
   } else {
     found = false;
   }
 
-  ctx = SSL_get_SSL_CTX(ssl);
-  Debug("ssl", "ssl_cert_callback %s SSL context %p for requested name '%s'", found ? "found" : "using", ctx, servername);
+  verify_ctx = SSL_get_SSL_CTX(ssl);
+  Debug("ssl", "ssl_cert_callback %s SSL context %p for requested name '%s'", found ? "found" : "using", verify_ctx, servername);
 
-  if (ctx == nullptr) {
+  if (verify_ctx == nullptr) {
     retval = 0;
     goto done;
   }
@@ -1391,15 +1392,34 @@ fail:
 }
 
 SSL_CTX *
-SSLCreateServerContext(const SSLConfigParams *params)
+SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigParams *sslMultiCertSettings, const char *cert_path,
+                       const char *key_path)
 {
   SSLMultiCertConfigLoader loader(params);
   std::vector<X509 *> cert_list;
-
-  SSL_CTX *ctx = loader.init_server_ssl_ctx(cert_list, nullptr);
+  std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ctx(nullptr, &SSL_CTX_free);
+  ctx.reset(loader.init_server_ssl_ctx(cert_list, sslMultiCertSettings));
   ink_assert(cert_list.empty());
 
-  return ctx;
+  if (cert_path) {
+    if (!SSL_CTX_use_certificate_file(ctx.get(), cert_path, SSL_FILETYPE_PEM)) {
+      SSLError("SSLCreateServerContext(): failed to load server certificate.");
+      return nullptr;
+    }
+    if (!key_path || key_path[0] == '\0') {
+      key_path = cert_path;
+    }
+    if (!SSL_CTX_use_PrivateKey_file(ctx.get(), key_path, SSL_FILETYPE_PEM)) {
+      SSLError("SSLCreateServerContext(): failed to load server private key.");
+      return nullptr;
+    }
+    if (!SSL_CTX_check_private_key(ctx.get())) {
+      SSLError("SSLCreateServerContext(): server private key does not match server certificate.");
+      return nullptr;
+    }
+  }
+
+  return ctx.release();
 }
 
 /**
@@ -1407,12 +1427,12 @@ SSLCreateServerContext(const SSLConfigParams *params)
    Do NOT call SSL_CTX_set_* functions from here. SSL_CTX should be set up by SSLMultiCertConfigLoader::init_server_ssl_ctx().
  */
 SSL_CTX *
-SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiCertConfigParams *sslMultCertSettings)
+SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams sslMultCertSettings)
 {
   std::vector<X509 *> cert_list;
-  SSL_CTX *ctx                   = this->init_server_ssl_ctx(cert_list, sslMultCertSettings);
-  ssl_ticket_key_block *keyblock = nullptr;
-  bool inserted                  = false;
+  shared_ssl_ticket_key_block keyblock = nullptr;
+  bool inserted                        = false;
+  shared_SSL_CTX ctx(this->init_server_ssl_ctx(cert_list, sslMultCertSettings.get()), SSL_CTX_free);
 
   if (!ctx || !sslMultCertSettings) {
     lookup->is_valid = false;
@@ -1431,23 +1451,23 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiCe
 
   // Load the session ticket key if session tickets are not disabled
   if (sslMultCertSettings->session_ticket_enabled != 0) {
-    keyblock = ssl_context_enable_tickets(ctx, nullptr);
+    keyblock = shared_ssl_ticket_key_block(ssl_context_enable_tickets(ctx.get(), nullptr), ticket_block_free);
   }
 
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
   if (sslMultCertSettings->addr) {
     if (strcmp(sslMultCertSettings->addr, "*") == 0) {
-      if (lookup->insert(sslMultCertSettings->addr, SSLCertContext(ctx, sslMultCertSettings->opt, keyblock)) >= 0) {
+      if (lookup->insert(sslMultCertSettings->addr, SSLCertContext(ctx, sslMultCertSettings, keyblock)) >= 0) {
         inserted            = true;
         lookup->ssl_default = ctx;
-        this->_set_handshake_callbacks(ctx);
+        this->_set_handshake_callbacks(ctx.get());
       }
     } else {
       IpEndpoint ep;
 
       if (ats_ip_pton(sslMultCertSettings->addr, &ep) == 0) {
         Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings->addr, (const char *)certname);
-        if (lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings->opt, keyblock)) >= 0) {
+        if (lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings, keyblock)) >= 0) {
           inserted = true;
         }
       } else {
@@ -1456,32 +1476,24 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiCe
       }
     }
   }
-  if (!inserted) {
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
-    if (keyblock != nullptr) {
-      ticket_block_free(keyblock);
-    }
-#endif
-  }
 
   // Insert additional mappings. Note that this maps multiple keys to the same value, so when
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
   Debug("ssl", "importing SNI names from %s", (const char *)certname);
   for (auto cert : cert_list) {
-    if (SSLMultiCertConfigLoader::index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings->opt), cert, certname)) {
+    if (SSLMultiCertConfigLoader::index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings), cert, certname)) {
       inserted = true;
     }
   }
 
   if (inserted) {
     if (SSLConfigParams::init_ssl_ctx_cb) {
-      SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+      SSLConfigParams::init_ssl_ctx_cb(ctx.get(), true);
     }
   }
 
   if (!inserted) {
-    SSLReleaseContext(ctx);
     ctx = nullptr;
   }
 
@@ -1489,11 +1501,11 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiCe
     X509_free(i);
   }
 
-  return ctx;
+  return ctx.get();
 }
 
 static bool
-ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams &sslMultCertSettings)
+ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams *sslMultCertSettings)
 {
   for (int i = 0; i < MATCHER_MAX_TOKENS; ++i) {
     const char *label;
@@ -1507,40 +1519,40 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
     }
 
     if (strcasecmp(label, SSL_IP_TAG) == 0) {
-      sslMultCertSettings.addr = ats_strdup(value);
+      sslMultCertSettings->addr = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_CERT_TAG) == 0) {
-      sslMultCertSettings.cert = ats_strdup(value);
+      sslMultCertSettings->cert = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_CA_TAG) == 0) {
-      sslMultCertSettings.ca = ats_strdup(value);
+      sslMultCertSettings->ca = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_PRIVATE_KEY_TAG) == 0) {
-      sslMultCertSettings.key = ats_strdup(value);
+      sslMultCertSettings->key = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_OCSP_RESPONSE_TAG) == 0) {
-      sslMultCertSettings.ocsp_response = ats_strdup(value);
+      sslMultCertSettings->ocsp_response = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_SESSION_TICKET_ENABLED) == 0) {
-      sslMultCertSettings.session_ticket_enabled = atoi(value);
+      sslMultCertSettings->session_ticket_enabled = atoi(value);
     }
 
     if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
-      sslMultCertSettings.dialog = ats_strdup(value);
+      sslMultCertSettings->dialog = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_SERVERNAME) == 0) {
-      sslMultCertSettings.servername = ats_strdup(value);
+      sslMultCertSettings->servername = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_ACTION_TAG) == 0) {
       if (strcasecmp(SSL_ACTION_TUNNEL_TAG, value) == 0) {
-        sslMultCertSettings.opt = SSLCertContext::OPT_TUNNEL;
+        sslMultCertSettings->opt = SSLCertContextOption::OPT_TUNNEL;
       } else {
         Error("Unrecognized action for %s", SSL_ACTION_TAG.data());
         return false;
@@ -1548,11 +1560,11 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
     }
   }
   // TS-4679:  It is ok to be missing the cert.  At least if the action is set to tunnel
-  if (sslMultCertSettings.cert) {
-    SimpleTokenizer cert_tok(sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
+  if (sslMultCertSettings->cert) {
+    SimpleTokenizer cert_tok(sslMultCertSettings->cert, SSL_CERT_SEPARATE_DELIM);
     const char *first_cert = cert_tok.getNext();
     if (first_cert) {
-      sslMultCertSettings.first_cert = ats_strdup(first_cert);
+      sslMultCertSettings->first_cert = ats_strdup(first_cert);
     }
   }
 
@@ -1599,7 +1611,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
     }
 
     if (*line != '\0' && *line != '#') {
-      SSLMultiCertConfigParams sslMultiCertSettings;
+      shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
       const char *errPtr;
 
       errPtr = parseConfigLine(line, &line_info, &sslCertTags);
@@ -1608,10 +1620,10 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
         RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s entry at line %d: %s", __func__, params->configFilePath,
                          line_num, errPtr);
       } else {
-        if (ssl_extract_certificate(&line_info, sslMultiCertSettings)) {
+        if (ssl_extract_certificate(&line_info, sslMultiCertSettings.get())) {
           // There must be a certificate specified unless the tunnel action is set
-          if (sslMultiCertSettings.cert || sslMultiCertSettings.opt != SSLCertContext::OPT_TUNNEL) {
-            this->_store_ssl_ctx(lookup, &sslMultiCertSettings);
+          if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
+            this->_store_ssl_ctx(lookup, sslMultiCertSettings);
           } else {
             Warning("No ssl_cert_name specified and no tunnel action set");
           }
@@ -1626,9 +1638,9 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   // bootstrap the SSL handshake so that we can subsequently do the SNI lookup to switch to the real
   // context.
   if (lookup->ssl_default == nullptr) {
-    SSLMultiCertConfigParams sslMultiCertSettings;
-    sslMultiCertSettings.addr = ats_strdup("*");
-    if (this->_store_ssl_ctx(lookup, &sslMultiCertSettings) == nullptr) {
+    shared_SSLMultiCertConfigParams sslMultiCertSettings(new SSLMultiCertConfigParams);
+    sslMultiCertSettings->addr = ats_strdup("*");
+    if (this->_store_ssl_ctx(lookup, sslMultiCertSettings) == nullptr) {
       Error("failed set default context");
       return false;
     }
