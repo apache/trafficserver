@@ -32,6 +32,7 @@ example_Plugins = \
 	blacklist_0.la \
 	blacklist_1.la \
 	bnull_transform.la \
+	cert_update.la \
 	request_buffer.la \
 	cache_scan.la \
 	client_context_dump.la \
@@ -102,6 +103,7 @@ basic_auth_la_SOURCES = basic_auth/basic_auth.c
 blacklist_0_la_SOURCES = blacklist_0/blacklist_0.c
 blacklist_1_la_SOURCES = blacklist_1/blacklist_1.c
 bnull_transform_la_SOURCES = bnull_transform/bnull_transform.c
+cert_update_la_SOURCES = cert_update/cert_update.cc
 request_buffer_la_SOURCES = request_buffer/request_buffer.c
 cache_scan_la_SOURCES = cache_scan/cache_scan.cc
 client_context_dump_la_SOURCES = client_context_dump/client_context_dump.cc

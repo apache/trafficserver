@@ -71,7 +71,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
     // Try the default
     keyblock = params->default_global_keyblock;
   } else {
-    keyblock = cc->keyblock;
+    keyblock = cc->keyblock.get();
   }
   ink_release_assert(keyblock != nullptr && keyblock->num_keys > 0);
 

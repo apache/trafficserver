@@ -47,11 +47,14 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
     const unsigned ctxCount = certLookup->count();
     for (size_t i = 0; i < ctxCount; i++) {
       SSLCertContext *cc = certLookup->get(i);
-      if (cc && cc->ctx) {
-        sessions += SSL_CTX_sess_accept_good(cc->ctx);
-        hits += SSL_CTX_sess_hits(cc->ctx);
-        misses += SSL_CTX_sess_misses(cc->ctx);
-        timeouts += SSL_CTX_sess_timeouts(cc->ctx);
+      if (cc) {
+        shared_SSL_CTX ctx = cc->getCtx();
+        if (ctx) {
+          sessions += SSL_CTX_sess_accept_good(ctx.get());
+          hits += SSL_CTX_sess_hits(ctx.get());
+          misses += SSL_CTX_sess_misses(ctx.get());
+          timeouts += SSL_CTX_sess_timeouts(ctx.get());
+        }
       }
     }
   }

@@ -479,7 +479,7 @@ done:
 void
 ocsp_update()
 {
-  SSL_CTX *ctx;
+  shared_SSL_CTX ctx;
   OCSP_RESPONSE *resp = nullptr;
   time_t current_time;
 
@@ -488,27 +488,29 @@ ocsp_update()
 
   for (unsigned i = 0; i < ctxCount; i++) {
     SSLCertContext *cc = certLookup->get(i);
-    if (cc && cc->ctx) {
-      ctx               = cc->ctx;
-      certinfo *cinf    = nullptr;
-      certinfo_map *map = stapling_get_cert_info(ctx);
-      if (map) {
-        // Walk over all certs associated with this CTX
-        for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
-          cinf = iter->second;
-          ink_mutex_acquire(&cinf->stapling_mutex);
-          current_time = time(nullptr);
-          if ((cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) && !cinf->is_prefetched) {
-            ink_mutex_release(&cinf->stapling_mutex);
-            if (stapling_refresh_response(cinf, &resp)) {
-              Debug("Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-              SSL_INCREMENT_DYN_STAT(ssl_ocsp_refreshed_cert_stat);
+    if (cc) {
+      ctx = cc->getCtx();
+      if (ctx) {
+        certinfo *cinf    = nullptr;
+        certinfo_map *map = stapling_get_cert_info(ctx.get());
+        if (map) {
+          // Walk over all certs associated with this CTX
+          for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
+            cinf = iter->second;
+            ink_mutex_acquire(&cinf->stapling_mutex);
+            current_time = time(nullptr);
+            if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
+              ink_mutex_release(&cinf->stapling_mutex);
+              if (stapling_refresh_response(cinf, &resp)) {
+                Debug("Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
+                SSL_INCREMENT_DYN_STAT(ssl_ocsp_refreshed_cert_stat);
+              } else {
+                Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
+                SSL_INCREMENT_DYN_STAT(ssl_ocsp_refresh_cert_failure_stat);
+              }
             } else {
-              Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-              SSL_INCREMENT_DYN_STAT(ssl_ocsp_refresh_cert_failure_stat);
+              ink_mutex_release(&cinf->stapling_mutex);
             }
-          } else {
-            ink_mutex_release(&cinf->stapling_mutex);
           }
         }
       }

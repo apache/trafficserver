@@ -49,6 +49,9 @@
 #include "P_Cache.h"
 #include "records/I_RecCore.h"
 #include "P_SSLConfig.h"
+#include "P_SSLClientUtils.h"
+#include "SSLDiags.h"
+#include "SSLInternal.h"
 #include "ProxyConfig.h"
 #include "Plugin.h"
 #include "LogObject.h"
@@ -8980,8 +8983,11 @@ TSSslContextFindByName(const char *name)
   SSLCertLookup *lookup = SSLCertificateConfig::acquire();
   if (lookup != nullptr) {
     SSLCertContext *cc = lookup->find(name);
-    if (cc && cc->ctx) {
-      ret = reinterpret_cast<TSSslContext>(cc->ctx);
+    if (cc) {
+      shared_SSL_CTX ctx = cc->getCtx();
+      if (ctx) {
+        ret = reinterpret_cast<TSSslContext>(ctx.get());
+      }
     }
     SSLCertificateConfig::release(lookup);
   }
@@ -8996,8 +9002,11 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
     IpEndpoint ip;
     ip.assign(addr);
     SSLCertContext *cc = lookup->find(ip);
-    if (cc && cc->ctx) {
-      ret = reinterpret_cast<TSSslContext>(cc->ctx);
+    if (cc) {
+      shared_SSL_CTX ctx = cc->getCtx();
+      if (ctx) {
+        ret = reinterpret_cast<TSSslContext>(ctx.get());
+      }
     }
     SSLCertificateConfig::release(lookup);
   }
@@ -9026,7 +9035,7 @@ TSSslClientContextsNamesGet(int n, const char **result, int *actual)
     ink_mutex_acquire(&ctx_map_lock);
     for (auto &ca_pair : ca_map) {
       // Populate mem array with 2 strings each time
-      for (auto &ctx_pair : *ca_pair.second) {
+      for (auto &ctx_pair : ca_pair.second) {
         if (idx + 1 < n) {
           mem[idx++] = ca_pair.first;
           mem[idx++] = ctx_pair.first;
@@ -9049,7 +9058,8 @@ TSSslClientContextsNamesGet(int n, const char **result, int *actual)
 /**
  * This function returns the client context corresponding to the lookup keys provided.
  * User should call TSSslClientContextsGet() first to determine which lookup keys are
- * present before querying for them.
+ * present before querying for them. User will need to release the context returned
+ * from this function.
  * Returns valid TSSslContext on success and nullptr on failure.
  * @param first_key Key string for the top level.
  * @param second_key Key string for the second level.
@@ -9066,9 +9076,10 @@ TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths)
     ink_mutex_acquire(&params->ctxMapLock);
     auto ca_iter = params->top_level_ctx_map.find(ca_paths);
     if (ca_iter != params->top_level_ctx_map.end()) {
-      auto ctx_iter = ca_iter->second->find(ck_paths);
-      if (ctx_iter != ca_iter->second->end()) {
-        retval = reinterpret_cast<TSSslContext>(ctx_iter->second);
+      auto ctx_iter = ca_iter->second.find(ck_paths);
+      if (ctx_iter != ca_iter->second.end()) {
+        SSL_CTX_up_ref(ctx_iter->second.get());
+        retval = reinterpret_cast<TSSslContext>(ctx_iter->second.get());
       }
     }
     ink_mutex_release(&params->ctxMapLock);
@@ -9083,7 +9094,7 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_f
   TSSslContext ret        = nullptr;
   SSLConfigParams *config = SSLConfig::acquire();
   if (config != nullptr) {
-    ret = reinterpret_cast<TSSslContext>(SSLCreateServerContext(config));
+    ret = reinterpret_cast<TSSslContext>(SSLCreateServerContext(config, nullptr));
 #if TS_USE_TLS_OCSP
     if (ret && SSLConfigParams::ssl_ocsp_enabled && cert && certname) {
       if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ret), ssl_callback_ocsp_stapling)) {
@@ -9102,6 +9113,124 @@ tsapi void
 TSSslContextDestroy(TSSslContext ctx)
 {
   SSLReleaseContext(reinterpret_cast<SSL_CTX *>(ctx));
+}
+
+TSReturnCode
+TSSslClientCertUpdate(const char *cert_path, const char *key_path)
+{
+  if (nullptr == cert_path) {
+    return TS_ERROR;
+  }
+
+  std::string key;
+  shared_SSL_CTX client_ctx = nullptr;
+  SSLConfigParams *params   = SSLConfig::acquire();
+
+  // Generate second level key for client context lookup
+  ts::bwprint(key, "{}:{}", cert_path, key_path);
+  Debug("ssl.cert_update", "TSSslClientCertUpdate(): Use %.*s as key for lookup", static_cast<int>(key.size()), key.data());
+
+  if (nullptr != params) {
+    // Try to update client contexts maps
+    auto &ca_paths_map = params->top_level_ctx_map;
+    auto &map_lock     = params->ctxMapLock;
+    std::string ca_paths_key;
+    // First try to locate the client context and its CA path (by top level)
+    ink_mutex_acquire(&map_lock);
+    for (auto &ca_paths_pair : ca_paths_map) {
+      auto &ctx_map = ca_paths_pair.second;
+      auto iter     = ctx_map.find(key);
+      if (iter != ctx_map.end() && iter->second != nullptr) {
+        ca_paths_key = ca_paths_pair.first;
+        break;
+      }
+    }
+    ink_mutex_release(&map_lock);
+
+    // Only update on existing
+    if (ca_paths_key.empty()) {
+      return TS_ERROR;
+    }
+
+    // Extract CA related paths
+    size_t sep                 = ca_paths_key.find(':');
+    std::string ca_bundle_file = ca_paths_key.substr(0, sep);
+    std::string ca_bundle_path = ca_paths_key.substr(sep + 1);
+
+    // Build new client context
+    client_ctx =
+      shared_SSL_CTX(SSLCreateClientContext(params, ca_bundle_path.empty() ? nullptr : ca_bundle_path.c_str(),
+                                            ca_bundle_file.empty() ? nullptr : ca_bundle_file.c_str(), cert_path, key_path),
+                     SSL_CTX_free);
+
+    // Successfully generates a client context, update in the map
+    ink_mutex_acquire(&map_lock);
+    auto iter = ca_paths_map.find(ca_paths_key);
+    if (iter != ca_paths_map.end() && iter->second.count(key)) {
+      iter->second[key] = client_ctx;
+    } else {
+      client_ctx = nullptr;
+    }
+    ink_mutex_release(&map_lock);
+  }
+
+  return client_ctx ? TS_SUCCESS : TS_ERROR;
+}
+
+TSReturnCode
+TSSslServerCertUpdate(const char *cert_path, const char *key_path)
+{
+  if (nullptr == cert_path) {
+    return TS_ERROR;
+  }
+
+  if (!key_path || key_path[0] == '\0') {
+    key_path = cert_path;
+  }
+
+  SSLCertContext *cc         = nullptr;
+  shared_SSL_CTX test_ctx    = nullptr;
+  std::shared_ptr<X509> cert = nullptr;
+
+  SSLConfig::scoped_config config;
+  SSLCertificateConfig::scoped_config lookup;
+
+  if (lookup && config) {
+    // Read cert from path to extract lookup key (common name)
+    scoped_BIO bio(BIO_new_file(cert_path, "r"));
+    if (bio) {
+      cert = std::shared_ptr<X509>(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr), X509_free);
+    }
+    if (!bio || !cert) {
+      SSLError("Failed to load certificate/key from %s", cert_path);
+      return TS_ERROR;
+    }
+
+    // Extract common name
+    int pos                       = X509_NAME_get_index_by_NID(X509_get_subject_name(cert.get()), NID_commonName, -1);
+    X509_NAME_ENTRY *common_name  = X509_NAME_get_entry(X509_get_subject_name(cert.get()), pos);
+    ASN1_STRING *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
+    char *common_name_str         = reinterpret_cast<char *>(const_cast<unsigned char *>(ASN1_STRING_get0_data(common_name_asn1)));
+    if (ASN1_STRING_length(common_name_asn1) != static_cast<int>(strlen(common_name_str))) {
+      // Embedded NULL char
+      return TS_ERROR;
+    }
+    Debug("ssl.cert_update", "Updating from %s with common name %s", cert_path, common_name_str);
+
+    // Update context to use cert
+    cc = lookup->find(common_name_str);
+    if (cc && cc->getCtx()) {
+      test_ctx = shared_SSL_CTX(SSLCreateServerContext(config, cc->userconfig.get(), cert_path, key_path), SSLReleaseContext);
+      if (!test_ctx) {
+        return TS_ERROR;
+      }
+      // Atomic Swap
+      cc->setCtx(test_ctx);
+      return TS_SUCCESS;
+    }
+  }
+
+  return TS_ERROR;
 }
 
 tsapi void

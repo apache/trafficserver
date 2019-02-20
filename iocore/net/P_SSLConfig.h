@@ -42,6 +42,7 @@
 
 struct SSLCertLookup;
 struct ssl_ticket_key_block;
+
 /////////////////////////////////////////////////////////////
 //
 // struct SSLConfigParams
@@ -121,18 +122,20 @@ struct SSLConfigParams : public ConfigInfo {
   static int async_handshake_enabled;
   static char *engine_conf_file;
 
-  SSL_CTX *client_ctx;
+  shared_SSL_CTX client_ctx;
 
   // Client contexts are held by 2-level map:
   // The first level maps from CA bundle file&path to next level map;
   // The second level maps from cert&key to actual SSL_CTX;
   // The second level map owns the client SSL_CTX objects and is responsible for cleaning them up
-  using CTX_MAP = std::unordered_map<std::string, SSL_CTX *>;
-  mutable std::unordered_map<std::string, CTX_MAP *> top_level_ctx_map;
+  using CTX_MAP = std::unordered_map<std::string, shared_SSL_CTX>;
+  mutable std::unordered_map<std::string, CTX_MAP> top_level_ctx_map;
   mutable ink_mutex ctxMapLock;
 
-  SSL_CTX *getClientSSL_CTX() const;
-  SSL_CTX *getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file, const char *ca_bundle_path) const;
+  shared_SSL_CTX getClientSSL_CTX() const;
+  shared_SSL_CTX getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file,
+                        const char *ca_bundle_path) const;
+
   void cleanupCTXTable();
 
   void initialize();
