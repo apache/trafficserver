@@ -24,6 +24,7 @@
 #include "tscore/IpMap.h"
 #include <sstream>
 #include <catch.hpp>
+#include <tscore/BufferWriter.h>
 
 std::ostream &
 operator<<(std::ostream &s, IpEndpoint const &addr)
@@ -620,4 +621,13 @@ TEST_CASE("IpMap CloseIntersection", "[libts][ipmap]")
   CHECK_THAT(m2, IsMarkedWith(c_3_m, markC));
   CHECK_THAT(m2, IsMarkedWith(d_2_l, markD));
   CHECK(m2.count() == 13);
+
+#if 0
+  ts::LocalBufferWriter<1024> w;
+  std::cout << "Basic map dump" << std::endl;
+  std::cout << w.print("{}", m2).view() << std::endl;
+  w.reset();
+  std::cout << "With tree detail" << std::endl;
+  std::cout << w.print("{::x}", m2).view() << std::endl;
+#endif
 };
