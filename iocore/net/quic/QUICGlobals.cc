@@ -26,9 +26,13 @@
 #include <cstring>
 
 #include "P_SSLNextProtocolSet.h"
+
 #include "QUICStats.h"
 #include "QUICConfig.h"
 #include "QUICConnection.h"
+
+#define QUICGlobalDebug(fmt, ...) Debug("quic_global", fmt, ##__VA_ARGS__)
+#define QUICGlobalQCDebug(qc, fmt, ...) Debug("quic_global", "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
 
 RecRawStatBlock *quic_rsb;
 
@@ -67,13 +71,70 @@ QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
   QUICConfig::scoped_config params;
   auto file = BIO_new_file(params->session_file(), "w");
   if (file == nullptr) {
-    Debug("quic_global", "Could not write TLS session in %s", params->session_file());
+    QUICGlobalDebug("Could not write TLS session in %s", params->session_file());
     return 0;
   }
 
   PEM_write_bio_SSL_SESSION(file, session);
   BIO_free(file);
   return 0;
+}
+
+int
+QUIC::ssl_cert_cb(SSL *ssl, void * /*arg*/)
+{
+  SSL_CTX *ctx       = nullptr;
+  SSLCertContext *cc = nullptr;
+  QUICCertConfig::scoped_config lookup;
+  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  QUICConnection *qc     = static_cast<QUICConnection *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_qc_index));
+
+  if (servername == nullptr) {
+    servername = "";
+  }
+  QUICGlobalQCDebug(qc, "SNI=%s", servername);
+
+  // The incoming SSL_CTX is either the one mapped from the inbound IP address or the default one. If we
+  // don't find a name-based match at this point, we *do not* want to mess with the context because we've
+  // already made a best effort to find the best match.
+  if (likely(servername)) {
+    cc = lookup->find((char *)servername);
+    if (cc && cc->ctx) {
+      ctx = cc->ctx;
+    }
+  }
+
+  // If there's no match on the server name, try to match on the peer address.
+  if (ctx == nullptr) {
+    QUICFiveTuple five_tuple = qc->five_tuple();
+    IpEndpoint ip            = five_tuple.destination();
+    cc                       = lookup->find(ip);
+
+    if (cc && cc->ctx) {
+      ctx = cc->ctx;
+    }
+  }
+
+  bool found = true;
+  if (ctx != nullptr) {
+    SSL_set_SSL_CTX(ssl, ctx);
+  } else {
+    found = false;
+  }
+
+  ctx = SSL_get_SSL_CTX(ssl);
+
+  QUICGlobalQCDebug(qc, "%s SSL_CTX %p for requested name '%s'", found ? "found" : "using", ctx, servername);
+
+  return 1;
+}
+
+int
+QUIC::ssl_sni_cb(SSL *ssl, int * /*ad*/, void * /*arg*/)
+{
+  // XXX: add SNIConfig support ?
+  // XXX: add TRANSPORT_BLIND_TUNNEL support ?
+  return 1;
 }
 
 void
