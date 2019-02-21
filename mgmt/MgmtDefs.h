@@ -31,6 +31,7 @@
 
 #include "tscore/ink_defs.h"
 #include "tscpp/util/MemSpan.h"
+#include "tscpp/util/TextView.h"
 
 typedef int64_t MgmtIntCounter;
 typedef int64_t MgmtInt;
@@ -142,4 +143,4 @@ inline MgmtConverter::MgmtConverter(MgmtInt (*_load_int)(void *), void (*_store_
 {
 }
 
-constexpr std::string_view LM_CONNECTION_SERVER{"processerver.sock"};
+constexpr ts::TextView LM_CONNECTION_SERVER{"processerver.sock"};
