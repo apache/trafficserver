@@ -1002,9 +1002,9 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
   if (this->netvc_context == NET_VCONNECTION_IN) {
     if (!this->_alt_con_manager) {
       QUICConfig::scoped_config params;
-      this->_alt_con_manager =
-        new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, params->instance_id(),
-                                     params->num_alt_connection_ids(), params->preferred_address());
+      this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id,
+                                                            params->instance_id(), params->num_alt_connection_ids(),
+                                                            params->preferred_address_ipv4(), params->preferred_address_ipv6());
       this->_frame_generators.push_back(this->_alt_con_manager);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }

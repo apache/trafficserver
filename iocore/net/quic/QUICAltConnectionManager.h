@@ -44,7 +44,8 @@ public:
    * Constructor for servers
    */
   QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, QUICConnectionId peer_initial_cid, uint32_t instance_id,
-                           uint8_t num_alt_con, const IpEndpoint *preferred_endpoint = nullptr);
+                           uint8_t num_alt_con, const IpEndpoint *preferred_endpoint_ipv4 = nullptr,
+                           const IpEndpoint *preferred_endpoint_ipv6 = nullptr);
   ~QUICAltConnectionManager();
 
   /**
@@ -109,7 +110,8 @@ private:
   QUICPreferredAddress *_preferred_address = nullptr;
 
   AltConnectionInfo _generate_next_alt_con_info();
-  void _init_alt_connection_ids(const IpEndpoint *preferred_endpoint = nullptr);
+  void _init_alt_connection_ids(const IpEndpoint *preferred_endpoint_ipv4 = nullptr,
+                                const IpEndpoint *preferred_endpoint_ipv6 = nullptr);
   bool _update_alt_connection_id(uint64_t chosen_seq_num);
 
   void _records_new_connection_id_frame(QUICEncryptionLevel level, const QUICNewConnectionIdFrame &frame);

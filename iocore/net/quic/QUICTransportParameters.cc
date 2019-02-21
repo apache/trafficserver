@@ -300,12 +300,14 @@ QUICTransportParameters::_print() const
       QUICPreferredAddress pref_addr(p.second->data(), p.second->len());
       char cid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
       char token_hex_str[QUICStatelessResetToken::LEN * 2 + 1];
-      char ep_hex_str[512];
+      char ep_ipv4_hex_str[512];
+      char ep_ipv6_hex_str[512];
       pref_addr.cid().hex(cid_hex_str, sizeof(cid_hex_str));
       to_hex_str(token_hex_str, sizeof(token_hex_str), pref_addr.token().buf(), QUICStatelessResetToken::LEN);
-      ats_ip_nptop(pref_addr.endpoint(), ep_hex_str, sizeof(ep_hex_str));
-      Debug(tag, "%s: Endpoint=%s, CID=%s, Token=%s", QUICDebugNames::transport_parameter_id(p.first), ep_hex_str, cid_hex_str,
-            token_hex_str);
+      ats_ip_nptop(pref_addr.endpoint_ipv4(), ep_ipv4_hex_str, sizeof(ep_ipv4_hex_str));
+      ats_ip_nptop(pref_addr.endpoint_ipv6(), ep_ipv6_hex_str, sizeof(ep_ipv6_hex_str));
+      Debug(tag, "%s: Endpoint(IPv4)=%s, Endpoint(IPv6)=%s, CID=%s, Token=%s", QUICDebugNames::transport_parameter_id(p.first),
+            ep_ipv4_hex_str, ep_ipv6_hex_str, cid_hex_str, token_hex_str);
     } else {
       Debug(tag, "%s: (long data)", QUICDebugNames::transport_parameter_id(p.first));
     }

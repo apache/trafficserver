@@ -36,7 +36,7 @@
 // https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
 // Should be integrate with IP_PROTO_TAG_HTTP_QUIC in ts/ink_inet.h ?
 using namespace std::literals;
-static constexpr std::string_view QUIC_ALPN_PROTO_LIST("\5hq-17"sv);
+static constexpr std::string_view QUIC_ALPN_PROTO_LIST("\5hq-18"sv);
 
 int QUICConfig::_config_id                   = 0;
 int QUICConfigParams::_connection_table_size = 65521;
@@ -146,9 +146,13 @@ QUICConfigParams::initialize()
   // Transport Parameters
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_out, "proxy.config.quic.no_activity_timeout_out");
-  REC_ReadConfigStringAlloc(this->_preferred_address, "proxy.config.quic.preferred_address");
-  if (this->_preferred_address) {
-    ats_ip_pton(this->_preferred_address, &this->_preferred_endpoint);
+  REC_ReadConfigStringAlloc(this->_preferred_address_ipv4, "proxy.config.quic.preferred_address_ipv4");
+  if (this->_preferred_address_ipv4) {
+    ats_ip_pton(this->_preferred_address_ipv4, &this->_preferred_endpoint_ipv4);
+  }
+  REC_ReadConfigStringAlloc(this->_preferred_address_ipv6, "proxy.config.quic.preferred_address_ipv6");
+  if (this->_preferred_address_ipv6) {
+    ats_ip_pton(this->_preferred_address_ipv6, &this->_preferred_endpoint_ipv6);
   }
   REC_EstablishStaticConfigInt32U(this->_initial_max_data_in, "proxy.config.quic.initial_max_data_in");
   REC_EstablishStaticConfigInt32U(this->_initial_max_data_out, "proxy.config.quic.initial_max_data_out");
@@ -207,13 +211,23 @@ QUICConfigParams::no_activity_timeout_out() const
 }
 
 const IpEndpoint *
-QUICConfigParams::preferred_address() const
+QUICConfigParams::preferred_address_ipv4() const
 {
-  if (!this->_preferred_address) {
+  if (!this->_preferred_address_ipv4) {
     return nullptr;
   }
 
-  return &this->_preferred_endpoint;
+  return &this->_preferred_endpoint_ipv4;
+}
+
+const IpEndpoint *
+QUICConfigParams::preferred_address_ipv6() const
+{
+  if (!this->_preferred_address_ipv6) {
+    return nullptr;
+  }
+
+  return &this->_preferred_endpoint_ipv6;
 }
 
 uint32_t

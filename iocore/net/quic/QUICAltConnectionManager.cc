@@ -46,14 +46,15 @@ QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConne
 
 QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
                                                    QUICConnectionId peer_initial_cid, uint32_t instance_id, uint8_t num_alt_con,
-                                                   const IpEndpoint *preferred_endpoint)
+                                                   const IpEndpoint *preferred_endpoint_ipv4,
+                                                   const IpEndpoint *preferred_endpoint_ipv6)
   : _qc(qc), _ctable(ctable), _instance_id(instance_id), _nids(num_alt_con)
 {
   // Sequence number of the initial CID is 0
   this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});
 
   this->_alt_quic_connection_ids_local = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
-  this->_init_alt_connection_ids(preferred_endpoint);
+  this->_init_alt_connection_ids(preferred_endpoint_ipv4, preferred_endpoint_ipv6);
 }
 
 QUICAltConnectionManager::~QUICAltConnectionManager()
@@ -117,18 +118,32 @@ QUICAltConnectionManager::_generate_next_alt_con_info()
 }
 
 void
-QUICAltConnectionManager::_init_alt_connection_ids(const IpEndpoint *preferred_endpoint)
+QUICAltConnectionManager::_init_alt_connection_ids(const IpEndpoint *preferred_endpoint_ipv4,
+                                                   const IpEndpoint *preferred_endpoint_ipv6)
 {
-  if (preferred_endpoint) {
+  if (preferred_endpoint_ipv4 || preferred_endpoint_ipv6) {
     this->_alt_quic_connection_ids_local[0] = this->_generate_next_alt_con_info();
     // This alt cid will be advertised via Transport Parameter
     this->_alt_quic_connection_ids_local[0].advertised = true;
 
-    this->_preferred_address = new QUICPreferredAddress(*preferred_endpoint, this->_alt_quic_connection_ids_local[0].id,
-                                                        this->_alt_quic_connection_ids_local[0].token);
+    IpEndpoint empty_endpoint_ipv4;
+    IpEndpoint empty_endpoint_ipv6;
+    empty_endpoint_ipv4.sa.sa_family = AF_UNSPEC;
+    empty_endpoint_ipv6.sa.sa_family = AF_UNSPEC;
+    if (preferred_endpoint_ipv4 == nullptr) {
+      preferred_endpoint_ipv4 = &empty_endpoint_ipv4;
+    }
+    if (preferred_endpoint_ipv6 == nullptr) {
+      preferred_endpoint_ipv6 = &empty_endpoint_ipv6;
+    }
+
+    // FIXME Check nullptr dereference
+    this->_preferred_address =
+      new QUICPreferredAddress(*preferred_endpoint_ipv4, *preferred_endpoint_ipv6, this->_alt_quic_connection_ids_local[0].id,
+                               this->_alt_quic_connection_ids_local[0].token);
   }
 
-  for (int i = (preferred_endpoint ? 1 : 0); i < this->_nids; ++i) {
+  for (int i = (preferred_endpoint_ipv4 || preferred_endpoint_ipv6 ? 1 : 0); i < this->_nids; ++i) {
     this->_alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
   }
   this->_need_advertise = true;

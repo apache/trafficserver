@@ -50,7 +50,7 @@ using QUICOffset       = uint64_t;
 // Note: Fix QUIC_ALPN_PROTO_LIST in QUICConfig.cc
 // Note: Change ExtensionType (QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID) if it's changed
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
-  0xff000011,
+  0xff000012,
 };
 constexpr QUICVersion QUIC_EXERCISE_VERSIONS = 0x1a2a3a4a;
 
@@ -399,21 +399,25 @@ public:
   constexpr static int16_t MIN_LEN = 26;
   constexpr static int16_t MAX_LEN = 295;
 
-  QUICPreferredAddress(IpEndpoint endpoint, QUICConnectionId cid, QUICStatelessResetToken token)
-    : _endpoint(endpoint), _cid(cid), _token(token), _valid(true)
+  QUICPreferredAddress(IpEndpoint endpoint_ipv4, IpEndpoint endpoint_ipv6, QUICConnectionId cid, QUICStatelessResetToken token)
+    : _endpoint_ipv4(endpoint_ipv4), _endpoint_ipv6(endpoint_ipv6), _cid(cid), _token(token), _valid(true)
   {
   }
   QUICPreferredAddress(const uint8_t *buf, uint16_t len);
 
   bool is_available() const;
-  const IpEndpoint endpoint() const;
+  bool has_ipv4() const;
+  bool has_ipv6() const;
+  const IpEndpoint endpoint_ipv4() const;
+  const IpEndpoint endpoint_ipv6() const;
   const QUICConnectionId cid() const;
   const QUICStatelessResetToken token() const;
 
   void store(uint8_t *buf, uint16_t &len) const;
 
 private:
-  IpEndpoint _endpoint;
+  IpEndpoint _endpoint_ipv4;
+  IpEndpoint _endpoint_ipv6;
   QUICConnectionId _cid;
   QUICStatelessResetToken _token;
   bool _valid = false;

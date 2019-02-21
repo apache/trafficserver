@@ -366,40 +366,29 @@ QUICPreferredAddress::QUICPreferredAddress(const uint8_t *buf, uint16_t len)
 
   const uint8_t *p = buf;
 
-  // ipVersion
-  uint64_t type = p[0];
-  p += 1;
+  // ipv4Address
+  in_addr_t addr_ipv4;
+  memcpy(&addr_ipv4, p, 4);
+  p += 4;
 
-  // ipAddress
-  uint16_t addr_len = p[0];
-  p += 1;
-  if (type == 4) {
-    if (addr_len == 4) {
-      in_addr_t addr;
-      memcpy(&addr, p, addr_len);
-      p += 4;
-      in_port_t port;
-      memcpy(&port, p, 2);
-      p += 2;
-      ats_ip4_set(&this->_endpoint, addr, port);
-    } else {
-      return;
-    }
-  } else if (type == 6) {
-    if (addr_len == TS_IP6_SIZE) {
-      in6_addr addr;
-      memcpy(&addr, p, addr_len);
-      p += TS_IP6_SIZE;
-      in_port_t port;
-      memcpy(&port, p, 2);
-      p += 2;
-      ats_ip6_set(&this->_endpoint, addr, port);
-    } else {
-      return;
-    }
-  } else {
-    return;
-  }
+  // ipv4Port
+  in_port_t port_ipv4;
+  memcpy(&port_ipv4, p, 2);
+  p += 2;
+
+  ats_ip4_set(&this->_endpoint_ipv4, addr_ipv4, port_ipv4);
+
+  // ipv6Address
+  in6_addr addr_ipv6;
+  memcpy(&addr_ipv6, p, 16);
+  p += TS_IP6_SIZE;
+
+  // ipv6Port
+  in_port_t port_ipv6;
+  memcpy(&port_ipv6, p, 2);
+  p += 2;
+
+  ats_ip6_set(&this->_endpoint_ipv6, addr_ipv6, port_ipv6);
 
   // CID
   uint16_t cid_len = QUICIntUtil::read_nbytes_as_uint(p, 1);
@@ -419,10 +408,28 @@ QUICPreferredAddress::is_available() const
   return this->_valid;
 }
 
-const IpEndpoint
-QUICPreferredAddress::endpoint() const
+bool
+QUICPreferredAddress::has_ipv4() const
 {
-  return this->_endpoint;
+  return this->_endpoint_ipv4.isValid();
+}
+
+bool
+QUICPreferredAddress::has_ipv6() const
+{
+  return this->_endpoint_ipv6.isValid();
+}
+
+const IpEndpoint
+QUICPreferredAddress::endpoint_ipv4() const
+{
+  return this->_endpoint_ipv4;
+}
+
+const IpEndpoint
+QUICPreferredAddress::endpoint_ipv6() const
+{
+  return this->_endpoint_ipv6;
 }
 
 const QUICConnectionId
@@ -443,30 +450,31 @@ QUICPreferredAddress::store(uint8_t *buf, uint16_t &len) const
   size_t dummy;
   uint8_t *p = buf;
 
-  // ipVersion
-  if (this->_endpoint.isIp4()) {
-    p[0] = 4;
-  } else if (this->_endpoint.isIp6()) {
-    p[0] = 6;
-  } else {
-    return;
-  }
-  p += 1;
+  if (this->_endpoint_ipv4.isValid()) {
+    // ipv4Address
+    memcpy(p, &ats_ip4_addr_cast(this->_endpoint_ipv4), 4);
+    p += 4;
 
-  // ipAddress
-  size_t addr_len = ats_ip_addr_size(this->_endpoint);
-  p[0]            = addr_len;
-  p += 1;
-  if (this->_endpoint.isIp4()) {
-    memcpy(p, &ats_ip4_addr_cast(this->_endpoint), addr_len);
+    // ipv4Port
+    memcpy(p, &ats_ip_port_cast(this->_endpoint_ipv4), 2);
+    p += 2;
   } else {
-    memcpy(p, &ats_ip6_addr_cast(this->_endpoint), addr_len);
+    memset(p, 0, 6);
+    p += 6;
   }
-  p += addr_len;
 
-  // port
-  memcpy(p, &ats_ip_port_cast(this->_endpoint), 2);
-  p += 2;
+  if (this->_endpoint_ipv6.isValid()) {
+    // ipv6Address
+    memcpy(p, &ats_ip6_addr_cast(this->_endpoint_ipv6), 16);
+    p += 16;
+
+    // ipv6Port
+    memcpy(p, &ats_ip_port_cast(this->_endpoint_ipv6), 2);
+    p += 2;
+  } else {
+    memset(p, 0, 18);
+    p += 18;
+  }
 
   // CID
   uint8_t cid_len = this->_cid.length();
