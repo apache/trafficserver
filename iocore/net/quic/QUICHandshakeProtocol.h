@@ -30,21 +30,6 @@
 class QUICHandshakeProtocol;
 class QUICPacketProtectionKeyInfo;
 
-class QUICPacketProtection
-{
-public:
-  QUICPacketProtection(){};
-  ~QUICPacketProtection();
-  void set_key(std::unique_ptr<KeyMaterial> km, QUICKeyPhase phase);
-  const KeyMaterial *get_key(QUICKeyPhase phase) const;
-  QUICKeyPhase key_phase() const;
-
-private:
-  // TODO: discard keys
-  std::unique_ptr<KeyMaterial> _key_chain[5] = {nullptr};
-  QUICKeyPhase _key_phase                    = QUICKeyPhase::INITIAL;
-};
-
 struct QUICHandshakeMsgs {
   uint8_t *buf        = nullptr; //< pointer to the buffer
   size_t max_buf_len  = 0;       //< size of buffer

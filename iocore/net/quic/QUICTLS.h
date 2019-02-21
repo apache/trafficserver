@@ -90,8 +90,6 @@ private:
   void _print_km(const char *header, KeyMaterial &km, const uint8_t *secret = nullptr, size_t secret_len = 0);
 
   SSL *_ssl                              = nullptr;
-  QUICPacketProtection *_client_pp       = nullptr;
-  QUICPacketProtection *_server_pp       = nullptr;
   NetVConnectionContext_t _netvc_context = NET_VCONNECTION_UNSET;
   bool _early_data_processed             = false;
   bool _is_session_reused                = false;
