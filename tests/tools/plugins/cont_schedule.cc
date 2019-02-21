@@ -175,22 +175,22 @@ TSContThreadAffinity_handler(TSCont contp, TSEvent event, void *edata)
 
   test_thread = TSEventThreadSelf();
 
-  if (TSContThreadAffinityGet(contp) == nullptr) {
-    TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is null]");
-    TSContThreadAffinitySet(contp, TSEventThreadSelf());
-    if (TSContThreadAffinityGet(contp) == test_thread) {
-      TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is set]");
-      TSContThreadAffinityClear(contp);
-      if (TSContThreadAffinityGet(contp) == nullptr) {
-        TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is cleared]");
+  if (TSContThreadAffinityGet(contp) != nullptr) {
+    TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is not null]");
+    TSContThreadAffinityClear(contp);
+    if (TSContThreadAffinityGet(contp) == nullptr) {
+      TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is cleared]");
+      TSContThreadAffinitySet(contp, TSEventThreadSelf());
+      if (TSContThreadAffinityGet(contp) == test_thread) {
+        TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is set]");
       } else {
-        TSDebug(DEBUG_TAG_CHK, "fail [affinity thread is not cleared]");
+        TSDebug(DEBUG_TAG_CHK, "fail [affinity thread is not set]");
       }
     } else {
-      TSDebug(DEBUG_TAG_CHK, "fail [affinity thread is not set]");
+      TSDebug(DEBUG_TAG_CHK, "fail [affinity thread is not cleared]");
     }
   } else {
-    TSDebug(DEBUG_TAG_CHK, "fail [affinity thread is not null]");
+    TSDebug(DEBUG_TAG_CHK, "fail [affinity thread is null]");
   }
 
   return 0;
@@ -207,6 +207,7 @@ TSContSchedule_test()
   } else {
     TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
     TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
+    TSContThreadAffinityClear(contp);
     TSContScheduleOnPool(contp, 200, TS_THREAD_POOL_NET);
   }
 }
@@ -223,8 +224,10 @@ TSContScheduleOnPool_test()
   } else {
     TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
     TSContScheduleOnPool(contp_1, 0, TS_THREAD_POOL_NET);
+    TSContThreadAffinityClear(contp_1);
     TSContScheduleOnPool(contp_1, 100, TS_THREAD_POOL_NET);
     TSContScheduleOnPool(contp_2, 200, TS_THREAD_POOL_TASK);
+    TSContThreadAffinityClear(contp_2);
     TSContScheduleOnPool(contp_2, 300, TS_THREAD_POOL_TASK);
   }
 }
@@ -240,6 +243,7 @@ TSContScheduleOnThread_test()
   } else {
     TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
     TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
+    TSContThreadAffinityClear(contp);
     TSContScheduleOnPool(contp, 200, TS_THREAD_POOL_NET);
   }
 }
