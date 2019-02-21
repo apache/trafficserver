@@ -173,7 +173,6 @@ char *url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length);
 void url_called_set(URLImpl *url);
 char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length);
 
-const char *url_scheme_get(URLImpl *url, int *length);
 void url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, cache_generation_t generation = -1);
 void url_host_CryptoHash_get(URLImpl *url, CryptoHash *hash);
 const char *url_scheme_set(HdrHeap *heap, URLImpl *url, const char *value, int value_wks_idx, int length, bool copy_string);
@@ -249,6 +248,7 @@ public:
   void host_hash_get(CryptoHash *hash);
 
   const char *scheme_get(int *length);
+  const std::string_view scheme_get();
   int scheme_get_wksidx();
   void scheme_set(const char *value, int length);
 
@@ -444,11 +444,25 @@ URL::host_hash_get(CryptoHash *hash)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+inline const std::string_view
+URL::scheme_get()
+{
+  ink_assert(valid());
+
+  if (m_url_impl->m_scheme_wks_idx >= 0) {
+    return std::string_view{hdrtoken_index_to_wks(m_url_impl->m_scheme_wks_idx),
+                            static_cast<size_t>(hdrtoken_index_to_length(m_url_impl->m_scheme_wks_idx))};
+  } else {
+    return std::string_view{m_url_impl->m_ptr_scheme, m_url_impl->m_len_scheme};
+  }
+}
+
 inline const char *
 URL::scheme_get(int *length)
 {
-  ink_assert(valid());
-  return (url_scheme_get(m_url_impl, length));
+  std::string_view ret = this->scheme_get();
+  *length              = ret.size();
+  return ret.data();
 }
 
 inline int

@@ -688,24 +688,6 @@ url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length)
   -------------------------------------------------------------------------*/
 
 const char *
-url_scheme_get(URLImpl *url, int *length)
-{
-  const char *str;
-
-  if (url->m_scheme_wks_idx >= 0) {
-    str     = hdrtoken_index_to_wks(url->m_scheme_wks_idx);
-    *length = hdrtoken_index_to_length(url->m_scheme_wks_idx);
-  } else {
-    str     = url->m_ptr_scheme;
-    *length = url->m_len_scheme;
-  }
-  return str;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-const char *
 url_user_get(URLImpl *url, int *length)
 {
   *length = url->m_len_user;
