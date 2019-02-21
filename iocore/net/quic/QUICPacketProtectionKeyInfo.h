@@ -34,34 +34,82 @@ public:
   // FIXME This should be passed to the constructor but NetVC cannot pass it because it has set_context too.
   void set_context(Context ctx);
 
-  void add_key(QUICEncryptionLevel level, int key, QUICKeyPhase phase);
-  void update_key(QUICEncryptionLevel level, int key);
-  void remove_key(QUICEncryptionLevel level);
-  void remove_key(QUICEncryptionLevel level, QUICKeyPhase phase);
+  void add_key(QUICKeyPhase phase, int key);
+  void update_key(QUICKeyPhase phase, int key);
+  void remove_key(QUICKeyPhase phase);
 
-  void encryption_key_for_pp(QUICEncryptionLevel level) const;
-  void decryption_key_for_pp(QUICEncryptionLevel level) const;
+  // Payload Protection (common)
+  const QUIC_EVP_CIPHER *get_cipher(QUICKeyPhase phase) const;
+  size_t get_tag_len(QUICKeyPhase phase) const;
+  void set_cipher_initial(const QUIC_EVP_CIPHER *cipher);
+  void set_cipher(const QUIC_EVP_CIPHER *cipher, size_t tag_len);
+
+  // Payload Protection (encryption)
+
+  bool is_encryption_key_available(QUICKeyPhase phase) const;
+  void set_encryption_key_available(QUICKeyPhase phase);
+
+  const uint8_t *encryption_key(QUICKeyPhase phase) const;
+  uint8_t *encryption_key(QUICKeyPhase phase);
+
+  const uint8_t *encryption_iv(QUICKeyPhase phase) const;
+  uint8_t *encryption_iv(QUICKeyPhase phase);
+
+  const size_t *encryption_iv_len(QUICKeyPhase phase) const;
+  size_t *encryption_iv_len(QUICKeyPhase phase);
+
+  // Payload Protection (decryption)
+
+  bool is_decryption_key_available(QUICKeyPhase phase) const;
+  void set_decryption_key_available(QUICKeyPhase phase);
+
+  const uint8_t *decryption_key(QUICKeyPhase phase) const;
+  uint8_t *decryption_key(QUICKeyPhase phase);
+
+  const uint8_t *decryption_iv(QUICKeyPhase phase) const;
+  uint8_t *decryption_iv(QUICKeyPhase phase);
+
+  const size_t *decryption_iv_len(QUICKeyPhase phase) const;
+  size_t *decryption_iv_len(QUICKeyPhase phase);
 
   // Header Protection
 
-  const QUIC_EVP_CIPHER *get_cipher_for_hp_initial() const;
+  const QUIC_EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const;
   void set_cipher_for_hp_initial(const QUIC_EVP_CIPHER *cipher);
-
-  const QUIC_EVP_CIPHER *get_cipher_for_hp(QUICEncryptionLevel level) const;
   void set_cipher_for_hp(const QUIC_EVP_CIPHER *cipher);
 
-  const uint8_t *encryption_key_for_hp(QUICEncryptionLevel level) const;
-  uint8_t *encryption_key_for_hp(QUICEncryptionLevel level);
+  const uint8_t *encryption_key_for_hp(QUICKeyPhase phase) const;
+  uint8_t *encryption_key_for_hp(QUICKeyPhase phase);
 
-  const uint8_t *decryption_key_for_hp(QUICEncryptionLevel level) const;
-  uint8_t *decryption_key_for_hp(QUICEncryptionLevel level);
+  const uint8_t *decryption_key_for_hp(QUICKeyPhase phase) const;
+  uint8_t *decryption_key_for_hp(QUICKeyPhase phase);
 
 private:
   Context _ctx = Context::SERVER;
 
+  // Payload Protection
+
+  const QUIC_EVP_CIPHER *_cipher_initial = nullptr;
+  const QUIC_EVP_CIPHER *_cipher         = nullptr;
+  size_t _tag_len                        = 0;
+
+  bool _is_client_key_available[5] = {false};
+  bool _is_server_key_available[5] = {false};
+
+  uint8_t _client_key[5][512];
+  uint8_t _server_key[5][512];
+
+  uint8_t _client_iv[5][512];
+  uint8_t _server_iv[5][512];
+
+  size_t _client_iv_len[5];
+  size_t _server_iv_len[5];
+
+  // Header Protection
+
   const QUIC_EVP_CIPHER *_cipher_for_hp_initial = nullptr;
   const QUIC_EVP_CIPHER *_cipher_for_hp         = nullptr;
 
-  uint8_t _client_key_for_hp[4][512];
-  uint8_t _server_key_for_hp[4][512];
+  uint8_t _client_key_for_hp[5][512];
+  uint8_t _server_key_for_hp[5][512];
 };

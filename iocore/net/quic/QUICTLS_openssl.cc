@@ -186,17 +186,24 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
   QUICHKDF hkdf(this->_get_handshake_digest());
   std::unique_ptr<KeyMaterial> km = nullptr;
 
+  this->_store_negotiated_cipher();
+  this->_store_negotiated_cipher_for_hp();
+
   switch (name) {
   case SSL_KEY_CLIENT_EARLY_TRAFFIC:
     // this->_update_encryption_level(QUICEncryptionLevel::ZERO_RTT);
     phase  = QUICKeyPhase::ZERO_RTT;
-    cipher = this->_get_evp_aead(phase);
+    cipher = this->_pp_key_info.get_cipher(phase);
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.decryption_key_for_hp(QUICEncryptionLevel::ZERO_RTT), secret,
-                                               secret_len, cipher, hkdf);
+      km = this->_keygen_for_client.regenerate(this->_pp_key_info.decryption_key_for_hp(phase),
+                                               this->_pp_key_info.decryption_key(phase), this->_pp_key_info.decryption_iv(phase),
+                                               this->_pp_key_info.decryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      this->_pp_key_info.set_decryption_key_available(phase);
     } else {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.encryption_key_for_hp(QUICEncryptionLevel::ZERO_RTT), secret,
-                                               secret_len, cipher, hkdf);
+      km = this->_keygen_for_client.regenerate(this->_pp_key_info.encryption_key_for_hp(phase),
+                                               this->_pp_key_info.encryption_key(phase), this->_pp_key_info.encryption_iv(phase),
+                                               this->_pp_key_info.encryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      this->_pp_key_info.set_encryption_key_available(phase);
     }
     this->_print_km("update - client - 0rtt", *km, secret, secret_len);
     this->_client_pp->set_key(std::move(km), phase);
@@ -204,13 +211,17 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
   case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
     phase  = QUICKeyPhase::HANDSHAKE;
-    cipher = this->_get_evp_aead(phase);
+    cipher = this->_pp_key_info.get_cipher(phase);
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.decryption_key_for_hp(QUICEncryptionLevel::HANDSHAKE), secret,
-                                               secret_len, cipher, hkdf);
+      km = this->_keygen_for_client.regenerate(this->_pp_key_info.decryption_key_for_hp(phase),
+                                               this->_pp_key_info.decryption_key(phase), this->_pp_key_info.decryption_iv(phase),
+                                               this->_pp_key_info.decryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      this->_pp_key_info.set_decryption_key_available(phase);
     } else {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.encryption_key_for_hp(QUICEncryptionLevel::HANDSHAKE), secret,
-                                               secret_len, cipher, hkdf);
+      km = this->_keygen_for_client.regenerate(this->_pp_key_info.encryption_key_for_hp(phase),
+                                               this->_pp_key_info.encryption_key(phase), this->_pp_key_info.encryption_iv(phase),
+                                               this->_pp_key_info.encryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      this->_pp_key_info.set_encryption_key_available(phase);
     }
     this->_print_km("update - client - handshake", *km, secret, secret_len);
     this->_client_pp->set_key(std::move(km), phase);
@@ -218,13 +229,17 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
   case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
     phase  = QUICKeyPhase::PHASE_0;
-    cipher = this->_get_evp_aead(phase);
+    cipher = this->_pp_key_info.get_cipher(phase);
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.decryption_key_for_hp(QUICEncryptionLevel::ONE_RTT), secret,
-                                               secret_len, cipher, hkdf);
+      km = this->_keygen_for_client.regenerate(this->_pp_key_info.decryption_key_for_hp(phase),
+                                               this->_pp_key_info.decryption_key(phase), this->_pp_key_info.decryption_iv(phase),
+                                               this->_pp_key_info.decryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      this->_pp_key_info.set_decryption_key_available(phase);
     } else {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.encryption_key_for_hp(QUICEncryptionLevel::ONE_RTT), secret,
-                                               secret_len, cipher, hkdf);
+      km = this->_keygen_for_client.regenerate(this->_pp_key_info.encryption_key_for_hp(phase),
+                                               this->_pp_key_info.encryption_key(phase), this->_pp_key_info.encryption_iv(phase),
+                                               this->_pp_key_info.encryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      this->_pp_key_info.set_encryption_key_available(phase);
     }
     this->_print_km("update - client - 1rtt", *km, secret, secret_len);
     this->_client_pp->set_key(std::move(km), phase);
@@ -232,13 +247,17 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
   case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
     phase  = QUICKeyPhase::HANDSHAKE;
-    cipher = this->_get_evp_aead(phase);
+    cipher = this->_pp_key_info.get_cipher(phase);
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      km = this->_keygen_for_server.regenerate(this->_pp_key_info.encryption_key_for_hp(QUICEncryptionLevel::HANDSHAKE), secret,
-                                               secret_len, cipher, hkdf);
+      km = this->_keygen_for_server.regenerate(this->_pp_key_info.encryption_key_for_hp(phase),
+                                               this->_pp_key_info.encryption_key(phase), this->_pp_key_info.encryption_iv(phase),
+                                               this->_pp_key_info.encryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      this->_pp_key_info.set_encryption_key_available(phase);
     } else {
-      km = this->_keygen_for_server.regenerate(this->_pp_key_info.decryption_key_for_hp(QUICEncryptionLevel::HANDSHAKE), secret,
-                                               secret_len, cipher, hkdf);
+      km = this->_keygen_for_server.regenerate(this->_pp_key_info.decryption_key_for_hp(phase),
+                                               this->_pp_key_info.decryption_key(phase), this->_pp_key_info.decryption_iv(phase),
+                                               this->_pp_key_info.decryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      this->_pp_key_info.set_decryption_key_available(phase);
     }
     this->_print_km("update - server - handshake", *km, secret, secret_len);
     this->_server_pp->set_key(std::move(km), phase);
@@ -246,13 +265,17 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
   case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
     phase  = QUICKeyPhase::PHASE_0;
-    cipher = this->_get_evp_aead(phase);
+    cipher = this->_pp_key_info.get_cipher(phase);
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      km = this->_keygen_for_server.regenerate(this->_pp_key_info.encryption_key_for_hp(QUICEncryptionLevel::ONE_RTT), secret,
-                                               secret_len, cipher, hkdf);
+      km = this->_keygen_for_server.regenerate(this->_pp_key_info.encryption_key_for_hp(phase),
+                                               this->_pp_key_info.encryption_key(phase), this->_pp_key_info.encryption_iv(phase),
+                                               this->_pp_key_info.encryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      this->_pp_key_info.set_encryption_key_available(phase);
     } else {
-      km = this->_keygen_for_server.regenerate(this->_pp_key_info.decryption_key_for_hp(QUICEncryptionLevel::ONE_RTT), secret,
-                                               secret_len, cipher, hkdf);
+      km = this->_keygen_for_server.regenerate(this->_pp_key_info.decryption_key_for_hp(phase),
+                                               this->_pp_key_info.decryption_key(phase), this->_pp_key_info.decryption_iv(phase),
+                                               this->_pp_key_info.decryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      this->_pp_key_info.set_decryption_key_available(phase);
     }
     this->_print_km("update - server - 1rtt", *km, secret, secret_len);
     this->_server_pp->set_key(std::move(km), phase);
@@ -260,8 +283,6 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
   default:
     break;
   }
-
-  this->_store_negotiated_cipher_for_hp();
 
   return;
 }
@@ -458,15 +479,56 @@ QUICTLS::reset()
 }
 
 void
+QUICTLS::_store_negotiated_cipher()
+{
+  ink_assert(this->_ssl);
+
+  const QUIC_EVP_CIPHER *cipher = nullptr;
+  size_t tag_len                = 0;
+  const SSL_CIPHER *ssl_cipher  = SSL_get_current_cipher(this->_ssl);
+
+  if (ssl_cipher) {
+    switch (SSL_CIPHER_get_id(ssl_cipher)) {
+    case TLS1_3_CK_AES_128_GCM_SHA256:
+      cipher  = EVP_aes_128_gcm();
+      tag_len = EVP_GCM_TLS_TAG_LEN;
+      break;
+    case TLS1_3_CK_AES_256_GCM_SHA384:
+      cipher  = EVP_aes_256_gcm();
+      tag_len = EVP_GCM_TLS_TAG_LEN;
+      break;
+    case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
+      cipher  = EVP_chacha20_poly1305();
+      tag_len = EVP_CHACHAPOLY_TLS_TAG_LEN;
+      break;
+    case TLS1_3_CK_AES_128_CCM_SHA256:
+      cipher  = EVP_aes_128_ccm();
+      tag_len = EVP_GCM_TLS_TAG_LEN;
+      break;
+    case TLS1_3_CK_AES_128_CCM_8_SHA256:
+      cipher  = EVP_aes_128_ccm();
+      tag_len = EVP_CCM8_TLS_TAG_LEN;
+      break;
+    default:
+      ink_assert(false);
+    }
+  } else {
+    ink_assert(false);
+  }
+
+  this->_pp_key_info.set_cipher(cipher, tag_len);
+}
+
+void
 QUICTLS::_store_negotiated_cipher_for_hp()
 {
   ink_assert(this->_ssl);
 
   const QUIC_EVP_CIPHER *cipher_for_hp = nullptr;
-  const SSL_CIPHER *cipher             = SSL_get_current_cipher(this->_ssl);
+  const SSL_CIPHER *ssl_cipher         = SSL_get_current_cipher(this->_ssl);
 
-  if (cipher) {
-    switch (SSL_CIPHER_get_id(cipher)) {
+  if (ssl_cipher) {
+    switch (SSL_CIPHER_get_id(ssl_cipher)) {
     case TLS1_3_CK_AES_128_GCM_SHA256:
       cipher_for_hp = EVP_aes_128_ecb();
       break;
@@ -516,64 +578,6 @@ QUICTLS::_write_early_data()
   return 1;
 }
 
-const EVP_CIPHER *
-QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
-{
-  if (phase == QUICKeyPhase::INITIAL) {
-    return EVP_aes_128_gcm();
-  } else {
-    const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
-    if (cipher) {
-      switch (SSL_CIPHER_get_id(cipher)) {
-      case TLS1_3_CK_AES_128_GCM_SHA256:
-        return EVP_aes_128_gcm();
-      case TLS1_3_CK_AES_256_GCM_SHA384:
-        return EVP_aes_256_gcm();
-      case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
-        return EVP_chacha20_poly1305();
-      case TLS1_3_CK_AES_128_CCM_SHA256:
-      case TLS1_3_CK_AES_128_CCM_8_SHA256:
-        return EVP_aes_128_ccm();
-      default:
-        ink_assert(false);
-        return nullptr;
-      }
-    } else {
-      ink_assert(false);
-      return nullptr;
-    }
-  }
-}
-
-size_t
-QUICTLS::_get_aead_tag_len(QUICKeyPhase phase) const
-{
-  if (phase == QUICKeyPhase::INITIAL) {
-    return EVP_GCM_TLS_TAG_LEN;
-  } else {
-    const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
-    if (cipher) {
-      switch (SSL_CIPHER_get_id(cipher)) {
-      case TLS1_3_CK_AES_128_GCM_SHA256:
-      case TLS1_3_CK_AES_256_GCM_SHA384:
-        return EVP_GCM_TLS_TAG_LEN;
-      case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
-        return EVP_CHACHAPOLY_TLS_TAG_LEN;
-      case TLS1_3_CK_AES_128_CCM_SHA256:
-        return EVP_CCM_TLS_TAG_LEN;
-      case TLS1_3_CK_AES_128_CCM_8_SHA256:
-        return EVP_CCM8_TLS_TAG_LEN;
-      default:
-        ink_assert(false);
-        return -1;
-      }
-    } else {
-      ink_assert(false);
-      return -1;
-    }
-  }
-}
-
 const EVP_MD *
 QUICTLS::_get_handshake_digest() const
 {
@@ -588,109 +592,5 @@ QUICTLS::_get_handshake_digest() const
   default:
     ink_assert(false);
     return nullptr;
-  }
-}
-
-bool
-QUICTLS::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_CIPHER *aead,
-                  size_t tag_len) const
-{
-  uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
-  size_t nonce_len                 = 0;
-  _gen_nonce(nonce, nonce_len, pkt_num, km.iv, km.iv_len);
-
-  EVP_CIPHER_CTX *aead_ctx;
-  int len;
-
-  if (!(aead_ctx = EVP_CIPHER_CTX_new())) {
-    return false;
-  }
-  if (!EVP_EncryptInit_ex(aead_ctx, aead, nullptr, nullptr, nullptr)) {
-    return false;
-  }
-  if (!EVP_CIPHER_CTX_ctrl(aead_ctx, EVP_CTRL_AEAD_SET_IVLEN, nonce_len, nullptr)) {
-    return false;
-  }
-  if (!EVP_EncryptInit_ex(aead_ctx, nullptr, nullptr, km.key, nonce)) {
-    return false;
-  }
-  if (!EVP_EncryptUpdate(aead_ctx, nullptr, &len, ad, ad_len)) {
-    return false;
-  }
-  if (!EVP_EncryptUpdate(aead_ctx, cipher, &len, plain, plain_len)) {
-    return false;
-  }
-  cipher_len = len;
-
-  if (!EVP_EncryptFinal_ex(aead_ctx, cipher + len, &len)) {
-    return false;
-  }
-  cipher_len += len;
-
-  if (max_cipher_len < cipher_len + tag_len) {
-    return false;
-  }
-  if (!EVP_CIPHER_CTX_ctrl(aead_ctx, EVP_CTRL_AEAD_GET_TAG, tag_len, cipher + cipher_len)) {
-    return false;
-  }
-  cipher_len += tag_len;
-
-  EVP_CIPHER_CTX_free(aead_ctx);
-
-  return true;
-}
-
-bool
-QUICTLS::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
-                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_CIPHER *aead,
-                  size_t tag_len) const
-{
-  uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
-  size_t nonce_len                 = 0;
-  _gen_nonce(nonce, nonce_len, pkt_num, km.iv, km.iv_len);
-
-  EVP_CIPHER_CTX *aead_ctx;
-  int len;
-
-  if (!(aead_ctx = EVP_CIPHER_CTX_new())) {
-    return false;
-  }
-  if (!EVP_DecryptInit_ex(aead_ctx, aead, nullptr, nullptr, nullptr)) {
-    return false;
-  }
-  if (!EVP_CIPHER_CTX_ctrl(aead_ctx, EVP_CTRL_AEAD_SET_IVLEN, nonce_len, nullptr)) {
-    return false;
-  }
-  if (!EVP_DecryptInit_ex(aead_ctx, nullptr, nullptr, km.key, nonce)) {
-    return false;
-  }
-  if (!EVP_DecryptUpdate(aead_ctx, nullptr, &len, ad, ad_len)) {
-    return false;
-  }
-
-  if (cipher_len < tag_len) {
-    return false;
-  }
-  cipher_len -= tag_len;
-  if (!EVP_DecryptUpdate(aead_ctx, plain, &len, cipher, cipher_len)) {
-    return false;
-  }
-  plain_len = len;
-
-  if (!EVP_CIPHER_CTX_ctrl(aead_ctx, EVP_CTRL_AEAD_SET_TAG, tag_len, const_cast<uint8_t *>(cipher + cipher_len))) {
-    return false;
-  }
-
-  int ret = EVP_DecryptFinal_ex(aead_ctx, plain + len, &len);
-
-  EVP_CIPHER_CTX_free(aead_ctx);
-
-  if (ret > 0) {
-    plain_len += len;
-    return true;
-  } else {
-    Debug(tag, "Failed to decrypt -- the first 4 bytes decrypted are %0x %0x %0x %0x", plain[0], plain[1], plain[2], plain[3]);
-    return false;
   }
 }
