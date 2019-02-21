@@ -670,12 +670,26 @@ SSL_CTX *
 SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file, const char *ca_bundle_path) const
 {
   SSL_CTX *client_ctx = nullptr;
-  std::string key;
-  ts::bwprint(key, "{}:{}:{}:{}", client_cert, key_file, ca_bundle_file, ca_bundle_path);
+  CTX_MAP *ctx_map    = nullptr;
+  std::string top_level_key, ctx_key;
+  ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
+  ts::bwprint(ctx_key, "{}:{}", client_cert, key_file, ca_bundle_file, ca_bundle_path);
 
   ink_mutex_acquire(&ctxMapLock);
-  auto iter = ctx_map.find(key);
-  if (iter != ctx_map.end()) {
+  // Do first level searching and create new CTX_MAP as second level if not exists.
+  auto top_iter = top_level_ctx_map.find(top_level_key);
+  if (top_iter != top_level_ctx_map.end()) {
+    if (top_iter->second == nullptr) {
+      top_iter->second = new CTX_MAP;
+    }
+    ctx_map = top_iter->second;
+  } else {
+    ctx_map = new CTX_MAP;
+    top_level_ctx_map.insert(std::make_pair(top_level_key, ctx_map));
+  }
+  // Do second level searching and return client ctx if found
+  auto iter = ctx_map->find(ctx_key);
+  if (iter != ctx_map->end()) {
     client_ctx = iter->second;
     ink_mutex_release(&ctxMapLock);
     return client_ctx;
@@ -717,12 +731,22 @@ SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const cha
   }
 
   ink_mutex_acquire(&ctxMapLock);
-  iter = ctx_map.find(key);
-  if (iter != ctx_map.end()) {
+  top_iter = top_level_ctx_map.find(top_level_key);
+  if (top_iter != top_level_ctx_map.end()) {
+    if (top_iter->second == nullptr) {
+      top_iter->second = new CTX_MAP;
+    }
+    ctx_map = top_iter->second;
+  } else {
+    ctx_map = new CTX_MAP;
+    top_level_ctx_map.insert(std::make_pair(top_level_key, ctx_map));
+  }
+  iter = ctx_map->find(ctx_key);
+  if (iter != ctx_map->end()) {
     SSL_CTX_free(client_ctx);
     client_ctx = iter->second;
   } else {
-    ctx_map.insert(std::make_pair(key, client_ctx));
+    ctx_map->insert(std::make_pair(ctx_key, client_ctx));
   }
   ink_mutex_release(&ctxMapLock);
   return client_ctx;
@@ -738,11 +762,17 @@ void
 SSLConfigParams::cleanupCTXTable()
 {
   ink_mutex_acquire(&ctxMapLock);
-  auto iter = ctx_map.begin();
-  while (iter != ctx_map.end()) {
-    SSL_CTX_free(iter->second);
-    ++iter;
+  CTX_MAP *ctx_map = nullptr;
+  for (auto &top_pair : top_level_ctx_map) {
+    ctx_map = top_pair.second;
+    if (ctx_map) {
+      for (auto &pair : (*ctx_map)) {
+        SSL_CTX_free(pair.second);
+      }
+      ctx_map->clear();
+      delete ctx_map;
+    }
   }
-  ctx_map.clear();
+  top_level_ctx_map.clear();
   ink_mutex_release(&ctxMapLock);
 }
