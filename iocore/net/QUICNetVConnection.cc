@@ -266,7 +266,6 @@ QUICNetVConnection::start()
   this->_application_map = new QUICApplicationMap();
 
   this->_frame_dispatcher = new QUICFrameDispatcher(this);
-  this->_packet_factory.set_hs_protocol(this->_hs_protocol);
 
   // Create frame handlers
   this->_congestion_controller = new QUICCongestionController(this);

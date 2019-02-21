@@ -35,10 +35,12 @@ noinst_LIBRARIES = libquic.a
 
 if OPENSSL_IS_BORINGSSL
 QUICPHProtector_impl = QUICPacketHeaderProtector_boringssl.cc
+QUICPPProtector_impl = QUICPacketPayloadProtector_boringssl.cc
 QUICTLS_impl = QUICTLS_boringssl.cc
 QUICKeyGenerator_impl = QUICKeyGenerator_boringssl.cc
 else
 QUICPHProtector_impl = QUICPacketHeaderProtector_openssl.cc
+QUICPPProtector_impl = QUICPacketPayloadProtector_openssl.cc
 QUICTLS_impl = QUICTLS_openssl.cc
 QUICKeyGenerator_impl = QUICKeyGenerator_openssl.cc
 endif
@@ -61,8 +63,10 @@ libquic_a_SOURCES = \
   QUICHandshake.cc \
   QUICHandshakeProtocol.cc \
   QUICPacketHeaderProtector.cc \
-  QUICPacketProtectionKeyInfo.cc \
   $(QUICPHProtector_impl) \
+  QUICPacketPayloadProtector.cc \
+  $(QUICPPProtector_impl) \
+  QUICPacketProtectionKeyInfo.cc \
   QUICTLS.cc \
   $(QUICTLS_impl) \
   QUICKeyGenerator.cc \

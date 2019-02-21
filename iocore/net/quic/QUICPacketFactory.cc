@@ -98,10 +98,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       result        = QUICPacketCreationResult::SUCCESS;
       break;
     case QUICPacketType::PROTECTED:
-      if (this->_hs_protocol->is_key_derived(header->key_phase(), false)) {
-        if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
-                                        header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                        header->key_phase())) {
+      if (this->_pp_key_info.is_decryption_key_available(header->key_phase())) {
+        if (this->_pp_protector.unprotect(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
+                                          header->payload_size(), header->packet_number(), header->buf(), header->size(),
+                                          header->key_phase())) {
           result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::FAILED;
@@ -111,12 +111,11 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       }
       break;
     case QUICPacketType::INITIAL:
-      this->_pp_key_info.decryption_key_for_pp(QUICEncryptionLevel::INITIAL);
-      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::INITIAL, false)) {
+      if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL)) {
         if (QUICTypeUtil::is_supported_version(header->version())) {
-          if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
-                                          header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                          QUICKeyPhase::INITIAL)) {
+          if (this->_pp_protector.unprotect(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
+                                            header->payload_size(), header->packet_number(), header->buf(), header->size(),
+                                            QUICKeyPhase::INITIAL)) {
             result = QUICPacketCreationResult::SUCCESS;
           } else {
             result = QUICPacketCreationResult::FAILED;
@@ -129,10 +128,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       }
       break;
     case QUICPacketType::HANDSHAKE:
-      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::HANDSHAKE, false)) {
-        if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
-                                        header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                        QUICKeyPhase::HANDSHAKE)) {
+      if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::HANDSHAKE)) {
+        if (this->_pp_protector.unprotect(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
+                                          header->payload_size(), header->packet_number(), header->buf(), header->size(),
+                                          QUICKeyPhase::HANDSHAKE)) {
           result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::FAILED;
@@ -142,10 +141,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       }
       break;
     case QUICPacketType::ZERO_RTT_PROTECTED:
-      if (this->_hs_protocol->is_key_derived(QUICKeyPhase::ZERO_RTT, false)) {
-        if (this->_hs_protocol->decrypt(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
-                                        header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                        QUICKeyPhase::ZERO_RTT)) {
+      if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::ZERO_RTT)) {
+        if (this->_pp_protector.unprotect(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
+                                          header->payload_size(), header->packet_number(), header->buf(), header->size(),
+                                          QUICKeyPhase::ZERO_RTT)) {
           result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::IGNORED;
@@ -306,7 +305,7 @@ QUICPacketFactory::_create_encrypted_packet(QUICPacketHeaderUPtr header, bool re
              header->packet_number(), QUICDebugNames::key_phase(header->key_phase()));
 
   QUICPacket *packet = nullptr;
-  if (this->_hs_protocol->encrypt(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
+  if (this->_pp_protector.protect(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
                                   header->packet_number(), header->buf(), header->size(), header->key_phase())) {
     packet = quicPacketAllocator.alloc();
     new (packet) QUICPacket(std::move(header), std::move(cipher_txt), cipher_txt_len, retransmittable, probing, frames);
@@ -323,16 +322,11 @@ QUICPacketFactory::set_version(QUICVersion negotiated_version)
   this->_version = negotiated_version;
 }
 
-void
-QUICPacketFactory::set_hs_protocol(const QUICHandshakeProtocol *hs_protocol)
-{
-  this->_hs_protocol = hs_protocol;
-}
-
 bool
 QUICPacketFactory::is_ready_to_create_protected_packet()
 {
-  return this->_hs_protocol->is_handshake_finished();
+  return this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::PHASE_0) ||
+         this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::PHASE_1);
 }
 
 void

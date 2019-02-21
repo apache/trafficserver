@@ -30,10 +30,193 @@ QUICPacketProtectionKeyInfo::set_context(Context ctx)
 }
 
 const QUIC_EVP_CIPHER *
-QUICPacketProtectionKeyInfo::get_cipher_for_hp(QUICEncryptionLevel level) const
+QUICPacketProtectionKeyInfo::get_cipher(QUICKeyPhase phase) const
 {
-  switch (level) {
-  case QUICEncryptionLevel::INITIAL:
+  switch (phase) {
+  case QUICKeyPhase::INITIAL:
+    return this->_cipher_initial;
+  default:
+    return this->_cipher;
+  }
+}
+
+size_t
+QUICPacketProtectionKeyInfo::get_tag_len(QUICKeyPhase phase) const
+{
+  switch (phase) {
+  case QUICKeyPhase::INITIAL:
+    return EVP_GCM_TLS_TAG_LEN;
+  default:
+    return this->_tag_len;
+  }
+}
+
+bool
+QUICPacketProtectionKeyInfo::is_encryption_key_available(QUICKeyPhase phase) const
+{
+  int index = static_cast<int>(phase);
+  if (this->_ctx == Context::SERVER) {
+    return this->_is_server_key_available[index];
+  } else {
+    return this->_is_client_key_available[index];
+  }
+}
+
+void
+QUICPacketProtectionKeyInfo::set_encryption_key_available(QUICKeyPhase phase)
+{
+  int index = static_cast<int>(phase);
+  if (this->_ctx == Context::SERVER) {
+    this->_is_server_key_available[index] = true;
+  } else {
+    this->_is_client_key_available[index] = true;
+    ;
+  }
+}
+
+const uint8_t *
+QUICPacketProtectionKeyInfo::encryption_key(QUICKeyPhase phase) const
+{
+  int index = static_cast<int>(phase);
+  if (this->_ctx == Context::SERVER) {
+    return this->_server_key[index];
+  } else {
+    return this->_client_key[index];
+  }
+}
+
+uint8_t *
+QUICPacketProtectionKeyInfo::encryption_key(QUICKeyPhase phase)
+{
+  return const_cast<uint8_t *>(const_cast<const QUICPacketProtectionKeyInfo *>(this)->encryption_key(phase));
+}
+
+const uint8_t *
+QUICPacketProtectionKeyInfo::encryption_iv(QUICKeyPhase phase) const
+{
+  int index = static_cast<int>(phase);
+  if (this->_ctx == Context::SERVER) {
+    return this->_server_iv[index];
+  } else {
+    return this->_client_iv[index];
+  }
+}
+
+uint8_t *
+QUICPacketProtectionKeyInfo::encryption_iv(QUICKeyPhase phase)
+{
+  return const_cast<uint8_t *>(const_cast<const QUICPacketProtectionKeyInfo *>(this)->encryption_iv(phase));
+}
+
+const size_t *
+QUICPacketProtectionKeyInfo::encryption_iv_len(QUICKeyPhase phase) const
+{
+  int index = static_cast<int>(phase);
+  if (this->_ctx == Context::SERVER) {
+    return &this->_server_iv_len[index];
+  } else {
+    return &this->_client_iv_len[index];
+  }
+}
+
+size_t *
+QUICPacketProtectionKeyInfo::encryption_iv_len(QUICKeyPhase phase)
+{
+  return const_cast<size_t *>(const_cast<const QUICPacketProtectionKeyInfo *>(this)->encryption_iv_len(phase));
+}
+
+bool
+QUICPacketProtectionKeyInfo::is_decryption_key_available(QUICKeyPhase phase) const
+{
+  int index = static_cast<int>(phase);
+  if (this->_ctx == Context::SERVER) {
+    return this->_is_client_key_available[index];
+  } else {
+    return this->_is_server_key_available[index];
+  }
+}
+
+void
+QUICPacketProtectionKeyInfo::set_decryption_key_available(QUICKeyPhase phase)
+{
+  int index = static_cast<int>(phase);
+  if (this->_ctx == Context::SERVER) {
+    this->_is_client_key_available[index] = true;
+  } else {
+    this->_is_server_key_available[index] = true;
+    ;
+  }
+}
+
+const uint8_t *
+QUICPacketProtectionKeyInfo::decryption_key(QUICKeyPhase phase) const
+{
+  int index = static_cast<int>(phase);
+  if (this->_ctx == Context::SERVER) {
+    return this->_client_key[index];
+  } else {
+    return this->_server_key[index];
+  }
+}
+
+uint8_t *
+QUICPacketProtectionKeyInfo::decryption_key(QUICKeyPhase phase)
+{
+  return const_cast<uint8_t *>(const_cast<const QUICPacketProtectionKeyInfo *>(this)->decryption_key(phase));
+}
+
+const uint8_t *
+QUICPacketProtectionKeyInfo::decryption_iv(QUICKeyPhase phase) const
+{
+  int index = static_cast<int>(phase);
+  if (this->_ctx == Context::SERVER) {
+    return this->_client_iv[index];
+  } else {
+    return this->_server_iv[index];
+  }
+}
+
+uint8_t *
+QUICPacketProtectionKeyInfo::decryption_iv(QUICKeyPhase phase)
+{
+  return const_cast<uint8_t *>(const_cast<const QUICPacketProtectionKeyInfo *>(this)->decryption_iv(phase));
+}
+
+const size_t *
+QUICPacketProtectionKeyInfo::decryption_iv_len(QUICKeyPhase phase) const
+{
+  int index = static_cast<int>(phase);
+  if (this->_ctx == Context::SERVER) {
+    return &this->_client_iv_len[index];
+  } else {
+    return &this->_server_iv_len[index];
+  }
+}
+
+size_t *
+QUICPacketProtectionKeyInfo::decryption_iv_len(QUICKeyPhase phase)
+{
+  return const_cast<size_t *>(const_cast<const QUICPacketProtectionKeyInfo *>(this)->decryption_iv_len(phase));
+}
+
+void
+QUICPacketProtectionKeyInfo::set_cipher_initial(const QUIC_EVP_CIPHER *cipher)
+{
+  this->_cipher_initial = cipher;
+}
+
+void
+QUICPacketProtectionKeyInfo::set_cipher(const QUIC_EVP_CIPHER *cipher, size_t tag_len)
+{
+  this->_cipher  = cipher;
+  this->_tag_len = tag_len;
+}
+
+const QUIC_EVP_CIPHER *
+QUICPacketProtectionKeyInfo::get_cipher_for_hp(QUICKeyPhase phase) const
+{
+  switch (phase) {
+  case QUICKeyPhase::INITIAL:
     return this->_cipher_for_hp_initial;
   default:
     return this->_cipher_for_hp;
@@ -53,9 +236,9 @@ QUICPacketProtectionKeyInfo::set_cipher_for_hp(const QUIC_EVP_CIPHER *cipher)
 }
 
 const uint8_t *
-QUICPacketProtectionKeyInfo::encryption_key_for_hp(QUICEncryptionLevel level) const
+QUICPacketProtectionKeyInfo::encryption_key_for_hp(QUICKeyPhase phase) const
 {
-  int index = static_cast<int>(level);
+  int index = static_cast<int>(phase);
   if (this->_ctx == Context::SERVER) {
     return this->_server_key_for_hp[index];
   } else {
@@ -64,9 +247,9 @@ QUICPacketProtectionKeyInfo::encryption_key_for_hp(QUICEncryptionLevel level) co
 }
 
 uint8_t *
-QUICPacketProtectionKeyInfo::encryption_key_for_hp(QUICEncryptionLevel level)
+QUICPacketProtectionKeyInfo::encryption_key_for_hp(QUICKeyPhase phase)
 {
-  int index = static_cast<int>(level);
+  int index = static_cast<int>(phase);
   if (this->_ctx == Context::SERVER) {
     return this->_server_key_for_hp[index];
   } else {
@@ -75,9 +258,9 @@ QUICPacketProtectionKeyInfo::encryption_key_for_hp(QUICEncryptionLevel level)
 }
 
 const uint8_t *
-QUICPacketProtectionKeyInfo::decryption_key_for_hp(QUICEncryptionLevel level) const
+QUICPacketProtectionKeyInfo::decryption_key_for_hp(QUICKeyPhase phase) const
 {
-  int index = static_cast<int>(level);
+  int index = static_cast<int>(phase);
   if (this->_ctx == Context::SERVER) {
     return this->_client_key_for_hp[index];
   } else {
@@ -86,17 +269,12 @@ QUICPacketProtectionKeyInfo::decryption_key_for_hp(QUICEncryptionLevel level) co
 }
 
 uint8_t *
-QUICPacketProtectionKeyInfo::decryption_key_for_hp(QUICEncryptionLevel level)
+QUICPacketProtectionKeyInfo::decryption_key_for_hp(QUICKeyPhase phase)
 {
-  int index = static_cast<int>(level);
+  int index = static_cast<int>(phase);
   if (this->_ctx == Context::SERVER) {
     return this->_client_key_for_hp[index];
   } else {
     return this->_server_key_for_hp[index];
   }
-}
-
-void
-QUICPacketProtectionKeyInfo::decryption_key_for_pp(QUICEncryptionLevel level) const
-{
 }

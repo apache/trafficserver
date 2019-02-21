@@ -92,19 +92,10 @@ QUICTLS::is_ready_to_derive() const
   }
 }
 
-bool
-QUICTLS::is_key_derived(QUICKeyPhase key_phase, bool for_encryption) const
-{
-  if (key_phase == QUICKeyPhase::ZERO_RTT) {
-    return this->_client_pp->get_key(QUICKeyPhase::ZERO_RTT);
-  } else {
-    return this->_get_km(key_phase, for_encryption);
-  }
-}
-
 int
 QUICTLS::initialize_key_materials(QUICConnectionId cid)
 {
+  this->_pp_key_info.set_cipher_initial(EVP_aes_128_gcm());
   this->_pp_key_info.set_cipher_for_hp_initial(EVP_aes_128_ecb());
 
   // Generate keys
@@ -113,11 +104,23 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
   std::unique_ptr<KeyMaterial> km_server;
 
   if (this->_netvc_context == NET_VCONNECTION_IN) {
-    km_client = this->_keygen_for_client.generate(this->_pp_key_info.decryption_key_for_hp(QUICEncryptionLevel::INITIAL), cid);
-    km_server = this->_keygen_for_server.generate(this->_pp_key_info.encryption_key_for_hp(QUICEncryptionLevel::INITIAL), cid);
+    km_client = this->_keygen_for_client.generate(
+      this->_pp_key_info.decryption_key_for_hp(QUICKeyPhase::INITIAL), this->_pp_key_info.decryption_key(QUICKeyPhase::INITIAL),
+      this->_pp_key_info.decryption_iv(QUICKeyPhase::INITIAL), this->_pp_key_info.decryption_iv_len(QUICKeyPhase::INITIAL), cid);
+    this->_pp_key_info.set_decryption_key_available(QUICKeyPhase::INITIAL);
+    km_server = this->_keygen_for_server.generate(
+      this->_pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), this->_pp_key_info.encryption_key(QUICKeyPhase::INITIAL),
+      this->_pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), this->_pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
+    this->_pp_key_info.set_encryption_key_available(QUICKeyPhase::INITIAL);
   } else {
-    km_client = this->_keygen_for_client.generate(this->_pp_key_info.encryption_key_for_hp(QUICEncryptionLevel::INITIAL), cid);
-    km_server = this->_keygen_for_server.generate(this->_pp_key_info.decryption_key_for_hp(QUICEncryptionLevel::INITIAL), cid);
+    km_client = this->_keygen_for_client.generate(
+      this->_pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), this->_pp_key_info.encryption_key(QUICKeyPhase::INITIAL),
+      this->_pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), this->_pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
+    this->_pp_key_info.set_encryption_key_available(QUICKeyPhase::INITIAL);
+    km_server = this->_keygen_for_server.generate(
+      this->_pp_key_info.decryption_key_for_hp(QUICKeyPhase::INITIAL), this->_pp_key_info.decryption_key(QUICKeyPhase::INITIAL),
+      this->_pp_key_info.decryption_iv(QUICKeyPhase::INITIAL), this->_pp_key_info.decryption_iv_len(QUICKeyPhase::INITIAL), cid);
+    this->_pp_key_info.set_decryption_key_available(QUICKeyPhase::INITIAL);
   }
 
   this->_print_km("initial - client", *km_client);
@@ -127,18 +130,6 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
   this->_server_pp->set_key(std::move(km_server), QUICKeyPhase::INITIAL);
 
   return 1;
-}
-
-const KeyMaterial *
-QUICTLS::key_material_for_encryption(QUICKeyPhase phase) const
-{
-  return this->_get_km(phase, true);
-}
-
-const KeyMaterial *
-QUICTLS::key_material_for_decryption(QUICKeyPhase phase) const
-{
-  return this->_get_km(phase, false);
 }
 
 const char *
@@ -175,99 +166,6 @@ QUICTLS::_update_encryption_level(QUICEncryptionLevel level)
   }
 
   return;
-}
-
-bool
-QUICTLS::encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                 uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
-{
-  size_t tag_len        = this->_get_aead_tag_len(phase);
-  const KeyMaterial *km = this->key_material_for_encryption(phase);
-  if (!km) {
-    Debug(tag, "Failed to encrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
-    return false;
-  }
-  const QUIC_EVP_CIPHER *aead = this->_get_evp_aead(phase);
-
-  bool ret = _encrypt(cipher, cipher_len, max_cipher_len, plain, plain_len, pkt_num, ad, ad_len, *km, aead, tag_len);
-  if (!ret) {
-    Debug(tag, "Failed to encrypt a packet #%" PRIu64, pkt_num);
-  }
-  return ret;
-}
-
-bool
-QUICTLS::decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
-                 uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
-{
-  size_t tag_len        = this->_get_aead_tag_len(phase);
-  const KeyMaterial *km = this->key_material_for_decryption(phase);
-  if (!km) {
-    Debug(tag, "Failed to decrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
-    return false;
-  }
-  const QUIC_EVP_CIPHER *aead = this->_get_evp_aead(phase);
-  bool ret = _decrypt(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, *km, aead, tag_len);
-  if (!ret) {
-    Debug(tag, "Failed to decrypt a packet #%" PRIu64, pkt_num);
-  }
-  return ret;
-}
-
-/**
- * Example iv_len = 12
- *
- *   0                   1
- *   0 1 2 3 4 5 6 7 8 9 0 1 2  (byte)
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |           iv            |    // IV
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |0|0|0|0|    pkt num      |    // network byte order & left-padded with zeros
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |          nonce          |    // nonce = iv xor pkt_num
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+
- *
- */
-void
-QUICTLS::_gen_nonce(uint8_t *nonce, size_t &nonce_len, uint64_t pkt_num, const uint8_t *iv, size_t iv_len) const
-{
-  nonce_len = iv_len;
-  memcpy(nonce, iv, iv_len);
-
-  pkt_num    = htobe64(pkt_num);
-  uint8_t *p = reinterpret_cast<uint8_t *>(&pkt_num);
-
-  for (size_t i = 0; i < 8; ++i) {
-    nonce[iv_len - 8 + i] ^= p[i];
-  }
-}
-
-const KeyMaterial *
-QUICTLS::_get_km(QUICKeyPhase phase, bool for_encryption) const
-{
-  QUICPacketProtection *pp = nullptr;
-
-  switch (this->_netvc_context) {
-  case NET_VCONNECTION_IN:
-    if (for_encryption) {
-      pp = this->_server_pp;
-    } else {
-      pp = this->_client_pp;
-    }
-    break;
-  case NET_VCONNECTION_OUT:
-    if (for_encryption) {
-      pp = this->_client_pp;
-    } else {
-      pp = this->_server_pp;
-    }
-    break;
-  default:
-    ink_assert(!"It should not happen");
-    return nullptr;
-  }
-
-  return pp->get_key(phase);
 }
 
 void

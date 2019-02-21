@@ -25,6 +25,7 @@
 
 #include "QUICTypes.h"
 #include "QUICPacket.h"
+#include "QUICPacketPayloadProtector.h"
 
 class QUICPacketProtectionKeyInfo;
 
@@ -49,7 +50,7 @@ public:
   static QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                             QUICConnectionId original_dcid, QUICRetryToken &token);
 
-  QUICPacketFactory(const QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info) {}
+  QUICPacketFactory(const QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info), _pp_protector(pp_key_info) {}
 
   QUICPacketUPtr create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number,
                         QUICPacketCreationResult &result);
@@ -68,17 +69,14 @@ public:
                                          std::vector<QUICFrameInfo> &frames);
   void set_version(QUICVersion negotiated_version);
 
-  // FIXME We don't need QUICHandshakeProtocol here, and should pass QUICCryptoInfoProvider or somethign instead.
-  // For now it receives a CONST pointer so PacketFactory cannot bother handshake.
-  void set_hs_protocol(const QUICHandshakeProtocol *hs_protocol);
-
   bool is_ready_to_create_protected_packet();
   void reset();
 
 private:
-  QUICVersion _version                      = QUIC_SUPPORTED_VERSIONS[0];
-  const QUICHandshakeProtocol *_hs_protocol = nullptr;
+  QUICVersion _version = QUIC_SUPPORTED_VERSIONS[0];
+
   const QUICPacketProtectionKeyInfo &_pp_key_info;
+  QUICPacketPayloadProtector _pp_protector;
 
   // Initial, 0/1-RTT, and Handshake
   QUICPacketNumberGenerator _packet_number_generator[3];
