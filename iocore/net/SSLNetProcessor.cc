@@ -27,6 +27,7 @@
 #include "P_SSLUtils.h"
 #include "P_OCSPStapling.h"
 #include "P_SSLSNI.h"
+#include "SSLStats.h"
 
 //
 // Global Data
