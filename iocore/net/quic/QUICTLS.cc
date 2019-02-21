@@ -65,9 +65,6 @@ QUICTLS::set_remote_transport_parameters(std::shared_ptr<const QUICTransportPara
 QUICTLS::~QUICTLS()
 {
   SSL_free(this->_ssl);
-
-  delete this->_client_pp;
-  delete this->_server_pp;
 }
 
 uint16_t
@@ -125,9 +122,6 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
 
   this->_print_km("initial - client", *km_client);
   this->_print_km("initial - server", *km_server);
-
-  this->_client_pp->set_key(std::move(km_client), QUICKeyPhase::INITIAL);
-  this->_server_pp->set_key(std::move(km_server), QUICKeyPhase::INITIAL);
 
   return 1;
 }

@@ -206,7 +206,6 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
       this->_pp_key_info.set_encryption_key_available(phase);
     }
     this->_print_km("update - client - 0rtt", *km, secret, secret_len);
-    this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
@@ -224,7 +223,6 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
       this->_pp_key_info.set_encryption_key_available(phase);
     }
     this->_print_km("update - client - handshake", *km, secret, secret_len);
-    this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
@@ -242,7 +240,6 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
       this->_pp_key_info.set_encryption_key_available(phase);
     }
     this->_print_km("update - client - 1rtt", *km, secret, secret_len);
-    this->_client_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
@@ -260,7 +257,6 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
       this->_pp_key_info.set_decryption_key_available(phase);
     }
     this->_print_km("update - server - handshake", *km, secret, secret_len);
-    this->_server_pp->set_key(std::move(km), phase);
     break;
   case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
@@ -278,7 +274,6 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
       this->_pp_key_info.set_decryption_key_available(phase);
     }
     this->_print_km("update - server - 1rtt", *km, secret, secret_len);
-    this->_server_pp->set_key(std::move(km), phase);
     break;
   default:
     break;
@@ -297,9 +292,6 @@ QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, Net
   } else {
     SSL_set_accept_state(this->_ssl);
   }
-
-  this->_client_pp = new QUICPacketProtection();
-  this->_server_pp = new QUICPacketProtection();
 
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_tls_index, this);
   SSL_set_key_callback(this->_ssl, key_cb, this);

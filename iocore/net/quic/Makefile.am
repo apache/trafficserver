@@ -61,7 +61,6 @@ libquic_a_SOURCES = \
   QUICStreamState.cc \
   QUICStream.cc \
   QUICHandshake.cc \
-  QUICHandshakeProtocol.cc \
   QUICPacketHeaderProtector.cc \
   $(QUICPHProtector_impl) \
   QUICPacketPayloadProtector.cc \
