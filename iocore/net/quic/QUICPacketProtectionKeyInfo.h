@@ -34,9 +34,7 @@ public:
   // FIXME This should be passed to the constructor but NetVC cannot pass it because it has set_context too.
   void set_context(Context ctx);
 
-  void add_key(QUICKeyPhase phase, int key);
-  void update_key(QUICKeyPhase phase, int key);
-  void remove_key(QUICKeyPhase phase);
+  void drop_keys(QUICKeyPhase phase);
 
   // Payload Protection (common)
 

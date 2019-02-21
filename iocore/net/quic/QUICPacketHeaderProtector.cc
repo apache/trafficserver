@@ -120,7 +120,6 @@ QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected
 
   QUICKeyPhase phase;
   QUICPacketType type;
-  QUICEncryptionLevel level;
   if (QUICInvariants::is_long_header(protected_packet)) {
     QUICPacketLongHeader::key_phase(phase, protected_packet, protected_packet_len);
     QUICPacketLongHeader::type(type, protected_packet, protected_packet_len);
@@ -128,21 +127,6 @@ QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected
     // This is a kind of hack. For short header we need to use the same key for header protection regardless of the key phase.
     phase = QUICKeyPhase::PHASE_0;
     type  = QUICPacketType::PROTECTED;
-  }
-  switch (phase) {
-  case QUICKeyPhase::PHASE_0:
-  case QUICKeyPhase::PHASE_1:
-    level = QUICEncryptionLevel::ONE_RTT;
-    break;
-  case QUICKeyPhase::HANDSHAKE:
-    level = QUICEncryptionLevel::HANDSHAKE;
-    break;
-  case QUICKeyPhase::INITIAL:
-    level = QUICEncryptionLevel::INITIAL;
-    break;
-  case QUICKeyPhase::ZERO_RTT:
-    level = QUICEncryptionLevel::ZERO_RTT;
-    break;
   }
 
   Debug("v_quic_pne", "Unprotecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
