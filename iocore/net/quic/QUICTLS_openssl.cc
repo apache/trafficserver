@@ -184,10 +184,16 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
   QUICKeyPhase phase;
   const QUIC_EVP_CIPHER *cipher;
   QUICHKDF hkdf(this->_get_handshake_digest());
-  std::unique_ptr<KeyMaterial> km = nullptr;
 
   this->_store_negotiated_cipher();
   this->_store_negotiated_cipher_for_hp();
+
+  uint8_t *key_for_hp;
+  uint8_t *key;
+  uint8_t *iv;
+  size_t key_for_hp_len;
+  size_t key_len;
+  size_t *iv_len;
 
   switch (name) {
   case SSL_KEY_CLIENT_EARLY_TRAFFIC:
@@ -195,85 +201,125 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
     phase  = QUICKeyPhase::ZERO_RTT;
     cipher = this->_pp_key_info.get_cipher(phase);
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.decryption_key_for_hp(phase),
-                                               this->_pp_key_info.decryption_key(phase), this->_pp_key_info.decryption_iv(phase),
-                                               this->_pp_key_info.decryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      key_for_hp     = this->_pp_key_info.decryption_key_for_hp(phase);
+      key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(phase);
+      key            = this->_pp_key_info.decryption_key(phase);
+      key_len        = this->_pp_key_info.decryption_key_len(phase);
+      iv             = this->_pp_key_info.decryption_iv(phase);
+      iv_len         = this->_pp_key_info.decryption_iv_len(phase);
+      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
       this->_pp_key_info.set_decryption_key_available(phase);
     } else {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.encryption_key_for_hp(phase),
-                                               this->_pp_key_info.encryption_key(phase), this->_pp_key_info.encryption_iv(phase),
-                                               this->_pp_key_info.encryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      key_for_hp     = this->_pp_key_info.encryption_key_for_hp(phase);
+      key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(phase);
+      key            = this->_pp_key_info.encryption_key(phase);
+      key_len        = this->_pp_key_info.encryption_key_len(phase);
+      iv             = this->_pp_key_info.encryption_iv(phase);
+      iv_len         = this->_pp_key_info.encryption_iv_len(phase);
+      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
       this->_pp_key_info.set_encryption_key_available(phase);
     }
-    this->_print_km("update - client - 0rtt", *km, secret, secret_len);
+    this->_print_km("update - client - 0rtt", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len);
     break;
   case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
     phase  = QUICKeyPhase::HANDSHAKE;
     cipher = this->_pp_key_info.get_cipher(phase);
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.decryption_key_for_hp(phase),
-                                               this->_pp_key_info.decryption_key(phase), this->_pp_key_info.decryption_iv(phase),
-                                               this->_pp_key_info.decryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      key_for_hp     = this->_pp_key_info.decryption_key_for_hp(phase);
+      key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(phase);
+      key            = this->_pp_key_info.decryption_key(phase);
+      key_len        = this->_pp_key_info.decryption_key_len(phase);
+      iv             = this->_pp_key_info.decryption_iv(phase);
+      iv_len         = this->_pp_key_info.decryption_iv_len(phase);
+      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
       this->_pp_key_info.set_decryption_key_available(phase);
     } else {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.encryption_key_for_hp(phase),
-                                               this->_pp_key_info.encryption_key(phase), this->_pp_key_info.encryption_iv(phase),
-                                               this->_pp_key_info.encryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      key_for_hp     = this->_pp_key_info.encryption_key_for_hp(phase);
+      key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(phase);
+      key            = this->_pp_key_info.encryption_key(phase);
+      key_len        = this->_pp_key_info.encryption_key_len(phase);
+      iv             = this->_pp_key_info.encryption_iv(phase);
+      iv_len         = this->_pp_key_info.encryption_iv_len(phase);
+      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
       this->_pp_key_info.set_encryption_key_available(phase);
     }
-    this->_print_km("update - client - handshake", *km, secret, secret_len);
+    this->_print_km("update - client - handshake", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len);
     break;
   case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
     phase  = QUICKeyPhase::PHASE_0;
     cipher = this->_pp_key_info.get_cipher(phase);
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.decryption_key_for_hp(phase),
-                                               this->_pp_key_info.decryption_key(phase), this->_pp_key_info.decryption_iv(phase),
-                                               this->_pp_key_info.decryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      key_for_hp     = this->_pp_key_info.decryption_key_for_hp(phase);
+      key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(phase);
+      key            = this->_pp_key_info.decryption_key(phase);
+      key_len        = this->_pp_key_info.decryption_key_len(phase);
+      iv             = this->_pp_key_info.decryption_iv(phase);
+      iv_len         = this->_pp_key_info.decryption_iv_len(phase);
+      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
       this->_pp_key_info.set_decryption_key_available(phase);
     } else {
-      km = this->_keygen_for_client.regenerate(this->_pp_key_info.encryption_key_for_hp(phase),
-                                               this->_pp_key_info.encryption_key(phase), this->_pp_key_info.encryption_iv(phase),
-                                               this->_pp_key_info.encryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      key_for_hp     = this->_pp_key_info.encryption_key_for_hp(phase);
+      key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(phase);
+      key            = this->_pp_key_info.encryption_key(phase);
+      key_len        = this->_pp_key_info.encryption_key_len(phase);
+      iv             = this->_pp_key_info.encryption_iv(phase);
+      iv_len         = this->_pp_key_info.encryption_iv_len(phase);
+      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
       this->_pp_key_info.set_encryption_key_available(phase);
     }
-    this->_print_km("update - client - 1rtt", *km, secret, secret_len);
+    this->_print_km("update - client - 1rtt", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len);
     break;
   case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
     phase  = QUICKeyPhase::HANDSHAKE;
     cipher = this->_pp_key_info.get_cipher(phase);
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      km = this->_keygen_for_server.regenerate(this->_pp_key_info.encryption_key_for_hp(phase),
-                                               this->_pp_key_info.encryption_key(phase), this->_pp_key_info.encryption_iv(phase),
-                                               this->_pp_key_info.encryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      key_for_hp     = this->_pp_key_info.encryption_key_for_hp(phase);
+      key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(phase);
+      key            = this->_pp_key_info.encryption_key(phase);
+      key_len        = this->_pp_key_info.encryption_key_len(phase);
+      iv             = this->_pp_key_info.encryption_iv(phase);
+      iv_len         = this->_pp_key_info.encryption_iv_len(phase);
+      this->_keygen_for_server.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
       this->_pp_key_info.set_encryption_key_available(phase);
     } else {
-      km = this->_keygen_for_server.regenerate(this->_pp_key_info.decryption_key_for_hp(phase),
-                                               this->_pp_key_info.decryption_key(phase), this->_pp_key_info.decryption_iv(phase),
-                                               this->_pp_key_info.decryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      key_for_hp     = this->_pp_key_info.decryption_key_for_hp(phase);
+      key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(phase);
+      key            = this->_pp_key_info.decryption_key(phase);
+      key_len        = this->_pp_key_info.decryption_key_len(phase);
+      iv             = this->_pp_key_info.decryption_iv(phase);
+      iv_len         = this->_pp_key_info.decryption_iv_len(phase);
+      this->_keygen_for_server.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
       this->_pp_key_info.set_decryption_key_available(phase);
     }
-    this->_print_km("update - server - handshake", *km, secret, secret_len);
+    this->_print_km("update - server - handshake", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len);
     break;
   case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
     this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
     phase  = QUICKeyPhase::PHASE_0;
     cipher = this->_pp_key_info.get_cipher(phase);
     if (this->_netvc_context == NET_VCONNECTION_IN) {
-      km = this->_keygen_for_server.regenerate(this->_pp_key_info.encryption_key_for_hp(phase),
-                                               this->_pp_key_info.encryption_key(phase), this->_pp_key_info.encryption_iv(phase),
-                                               this->_pp_key_info.encryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      key_for_hp     = this->_pp_key_info.encryption_key_for_hp(phase);
+      key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(phase);
+      key            = this->_pp_key_info.encryption_key(phase);
+      key_len        = this->_pp_key_info.encryption_key_len(phase);
+      iv             = this->_pp_key_info.encryption_iv(phase);
+      iv_len         = this->_pp_key_info.encryption_iv_len(phase);
+      this->_keygen_for_server.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
       this->_pp_key_info.set_encryption_key_available(phase);
     } else {
-      km = this->_keygen_for_server.regenerate(this->_pp_key_info.decryption_key_for_hp(phase),
-                                               this->_pp_key_info.decryption_key(phase), this->_pp_key_info.decryption_iv(phase),
-                                               this->_pp_key_info.decryption_iv_len(phase), secret, secret_len, cipher, hkdf);
+      key_for_hp     = this->_pp_key_info.decryption_key_for_hp(phase);
+      key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(phase);
+      key            = this->_pp_key_info.decryption_key(phase);
+      key_len        = this->_pp_key_info.decryption_key_len(phase);
+      iv             = this->_pp_key_info.decryption_iv(phase);
+      iv_len         = this->_pp_key_info.decryption_iv_len(phase);
+      this->_keygen_for_server.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
       this->_pp_key_info.set_decryption_key_available(phase);
     }
-    this->_print_km("update - server - 1rtt", *km, secret, secret_len);
+    this->_print_km("update - server - 1rtt", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len);
     break;
   default:
     break;

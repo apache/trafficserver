@@ -39,6 +39,7 @@ public:
   void remove_key(QUICKeyPhase phase);
 
   // Payload Protection (common)
+
   const QUIC_EVP_CIPHER *get_cipher(QUICKeyPhase phase) const;
   size_t get_tag_len(QUICKeyPhase phase) const;
   void set_cipher_initial(const QUIC_EVP_CIPHER *cipher);
@@ -51,6 +52,8 @@ public:
 
   const uint8_t *encryption_key(QUICKeyPhase phase) const;
   uint8_t *encryption_key(QUICKeyPhase phase);
+
+  size_t encryption_key_len(QUICKeyPhase phase) const;
 
   const uint8_t *encryption_iv(QUICKeyPhase phase) const;
   uint8_t *encryption_iv(QUICKeyPhase phase);
@@ -65,6 +68,8 @@ public:
 
   const uint8_t *decryption_key(QUICKeyPhase phase) const;
   uint8_t *decryption_key(QUICKeyPhase phase);
+
+  size_t decryption_key_len(QUICKeyPhase phase) const;
 
   const uint8_t *decryption_iv(QUICKeyPhase phase) const;
   uint8_t *decryption_iv(QUICKeyPhase phase);
@@ -81,8 +86,12 @@ public:
   const uint8_t *encryption_key_for_hp(QUICKeyPhase phase) const;
   uint8_t *encryption_key_for_hp(QUICKeyPhase phase);
 
+  size_t encryption_key_for_hp_len(QUICKeyPhase phase) const;
+
   const uint8_t *decryption_key_for_hp(QUICKeyPhase phase) const;
   uint8_t *decryption_key_for_hp(QUICKeyPhase phase);
+
+  size_t decryption_key_for_hp_len(QUICKeyPhase phase) const;
 
 private:
   Context _ctx = Context::SERVER;
@@ -96,6 +105,7 @@ private:
   bool _is_client_key_available[5] = {false};
   bool _is_server_key_available[5] = {false};
 
+  // FIXME EVP_MAX_KEY_LENGTH and EVP_MAX_IV_LENGTH are not enough somehow
   uint8_t _client_key[5][512];
   uint8_t _server_key[5][512];
 

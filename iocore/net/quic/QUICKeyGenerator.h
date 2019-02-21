@@ -32,18 +32,6 @@ typedef EVP_AEAD QUIC_EVP_CIPHER;
 typedef EVP_CIPHER QUIC_EVP_CIPHER;
 #endif // OPENSSL_IS_BORINGSSL
 
-struct KeyMaterial {
-  // These constant sizes are not enough somehow
-  // uint8_t key[EVP_MAX_KEY_LENGTH] = {0};
-  // uint8_t iv[EVP_MAX_IV_LENGTH]   = {0};
-  uint8_t key[512] = {0};
-  uint8_t iv[512]  = {0};
-  uint8_t hp[512]  = {0};
-  size_t key_len   = 512;
-  size_t iv_len    = 512;
-  size_t hp_len    = 512;
-};
-
 class QUICKeyGenerator
 {
 public:
@@ -55,10 +43,10 @@ public:
    * Generate keys for Initial encryption level
    * The keys for the remaining encryption level are derived by TLS stack with "quic " prefix
    */
-  std::unique_ptr<KeyMaterial> generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, QUICConnectionId cid);
+  void generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, QUICConnectionId cid);
 
-  std::unique_ptr<KeyMaterial> regenerate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, const uint8_t *secret,
-                                          size_t secret_len, const QUIC_EVP_CIPHER *cipher, QUICHKDF &hkdf);
+  void regenerate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, const uint8_t *secret, size_t secret_len,
+                  const QUIC_EVP_CIPHER *cipher, QUICHKDF &hkdf);
 
 private:
   Context _ctx = Context::SERVER;
@@ -66,7 +54,8 @@ private:
   uint8_t _last_secret[256];
   size_t _last_secret_len = 0;
 
-  int _generate(KeyMaterial &km, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, const QUIC_EVP_CIPHER *cipher);
+  int _generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, QUICHKDF &hkdf, const uint8_t *secret,
+                size_t secret_len, const QUIC_EVP_CIPHER *cipher);
   int _generate_initial_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, QUICConnectionId cid, const char *label,
                                size_t label_len, size_t length);
   int _generate_key(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,

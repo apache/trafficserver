@@ -42,11 +42,9 @@ constexpr static std::string_view LABEL_FOR_KEY("quic key"sv);
 constexpr static std::string_view LABEL_FOR_IV("quic iv"sv);
 constexpr static std::string_view LABEL_FOR_HP("quic hp"sv);
 
-std::unique_ptr<KeyMaterial>
+void
 QUICKeyGenerator::generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, QUICConnectionId cid)
 {
-  std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
-
   const QUIC_EVP_CIPHER *cipher = this->_get_cipher_for_initial();
   const EVP_MD *md              = EVP_sha256();
   uint8_t secret[512];
@@ -76,43 +74,28 @@ QUICKeyGenerator::generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t
     break;
   }
 
-  this->_generate(*km, hkdf, secret, secret_len, cipher);
-
-  memcpy(hp_key, km->hp, 512);
-  memcpy(pp_key, km->key, 512);
-  memcpy(iv, km->iv, 512);
-  *iv_len = km->iv_len;
-
-  return km;
+  this->_generate(hp_key, pp_key, iv, iv_len, hkdf, secret, secret_len, cipher);
 }
 
-std::unique_ptr<KeyMaterial>
+void
 QUICKeyGenerator::regenerate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, const uint8_t *secret,
                              size_t secret_len, const QUIC_EVP_CIPHER *cipher, QUICHKDF &hkdf)
 {
-  std::unique_ptr<KeyMaterial> km = std::make_unique<KeyMaterial>();
-
-  this->_generate(*km, hkdf, secret, secret_len, cipher);
-
-  memcpy(hp_key, km->hp, 512);
-  memcpy(pp_key, km->key, 512);
-  memcpy(iv, km->iv, 512);
-  *iv_len = km->iv_len;
-
-  return km;
+  this->_generate(hp_key, pp_key, iv, iv_len, hkdf, secret, secret_len, cipher);
 }
 
 int
-QUICKeyGenerator::_generate(KeyMaterial &km, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
-                            const QUIC_EVP_CIPHER *cipher)
+QUICKeyGenerator::_generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, QUICHKDF &hkdf, const uint8_t *secret,
+                            size_t secret_len, const QUIC_EVP_CIPHER *cipher)
 {
   // Generate key, iv, and hp_key
   //   key    = HKDF-Expand-Label(S, "quic key", "", key_length)
   //   iv     = HKDF-Expand-Label(S, "quic iv", "", iv_length)
   //   hp_key = HKDF-Expand-Label(S, "quic hp", "", hp_key_length)
-  this->_generate_key(km.key, &km.key_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
-  this->_generate_iv(km.iv, &km.iv_len, hkdf, secret, secret_len, this->_get_iv_len(cipher));
-  this->_generate_hp(km.hp, &km.hp_len, hkdf, secret, secret_len, this->_get_key_len(cipher));
+  size_t dummy;
+  this->_generate_key(pp_key, &dummy, hkdf, secret, secret_len, this->_get_key_len(cipher));
+  this->_generate_iv(iv, iv_len, hkdf, secret, secret_len, this->_get_iv_len(cipher));
+  this->_generate_hp(hp_key, &dummy, hkdf, secret, secret_len, this->_get_key_len(cipher));
 
   return 0;
 }

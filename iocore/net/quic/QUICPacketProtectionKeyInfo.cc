@@ -91,6 +91,23 @@ QUICPacketProtectionKeyInfo::encryption_key(QUICKeyPhase phase)
   return const_cast<uint8_t *>(const_cast<const QUICPacketProtectionKeyInfo *>(this)->encryption_key(phase));
 }
 
+size_t
+QUICPacketProtectionKeyInfo::encryption_key_len(QUICKeyPhase phase) const
+{
+  const QUIC_EVP_CIPHER *cipher;
+
+  switch (phase) {
+  case QUICKeyPhase::INITIAL:
+    cipher = this->_cipher_initial;
+    break;
+  default:
+    cipher = this->_cipher;
+    break;
+  }
+
+  return EVP_CIPHER_key_length(cipher);
+}
+
 const uint8_t *
 QUICPacketProtectionKeyInfo::encryption_iv(QUICKeyPhase phase) const
 {
@@ -163,6 +180,23 @@ uint8_t *
 QUICPacketProtectionKeyInfo::decryption_key(QUICKeyPhase phase)
 {
   return const_cast<uint8_t *>(const_cast<const QUICPacketProtectionKeyInfo *>(this)->decryption_key(phase));
+}
+
+size_t
+QUICPacketProtectionKeyInfo::decryption_key_len(QUICKeyPhase phase) const
+{
+  const QUIC_EVP_CIPHER *cipher;
+
+  switch (phase) {
+  case QUICKeyPhase::INITIAL:
+    cipher = this->_cipher_initial;
+    break;
+  default:
+    cipher = this->_cipher;
+    break;
+  }
+
+  return EVP_CIPHER_key_length(cipher);
 }
 
 const uint8_t *
@@ -257,6 +291,23 @@ QUICPacketProtectionKeyInfo::encryption_key_for_hp(QUICKeyPhase phase)
   }
 }
 
+size_t
+QUICPacketProtectionKeyInfo::encryption_key_for_hp_len(QUICKeyPhase phase) const
+{
+  const QUIC_EVP_CIPHER *cipher;
+
+  switch (phase) {
+  case QUICKeyPhase::INITIAL:
+    cipher = this->_cipher_for_hp_initial;
+    break;
+  default:
+    cipher = this->_cipher_for_hp;
+    break;
+  }
+
+  return EVP_CIPHER_key_length(cipher);
+}
+
 const uint8_t *
 QUICPacketProtectionKeyInfo::decryption_key_for_hp(QUICKeyPhase phase) const
 {
@@ -277,4 +328,21 @@ QUICPacketProtectionKeyInfo::decryption_key_for_hp(QUICKeyPhase phase)
   } else {
     return this->_server_key_for_hp[index];
   }
+}
+
+size_t
+QUICPacketProtectionKeyInfo::decryption_key_for_hp_len(QUICKeyPhase phase) const
+{
+  const QUIC_EVP_CIPHER *cipher;
+
+  switch (phase) {
+  case QUICKeyPhase::INITIAL:
+    cipher = this->_cipher_for_hp_initial;
+    break;
+  default:
+    cipher = this->_cipher_for_hp;
+    break;
+  }
+
+  return EVP_CIPHER_key_length(cipher);
 }
