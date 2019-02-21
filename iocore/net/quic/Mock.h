@@ -562,18 +562,6 @@ public:
     *len  = 2;
   }
 
-  const KeyMaterial *
-  key_material_for_encryption(QUICKeyPhase phase) const override
-  {
-    return nullptr;
-  }
-
-  const KeyMaterial *
-  key_material_for_decryption(QUICKeyPhase phase) const override
-  {
-    return nullptr;
-  }
-
   const QUIC_EVP_CIPHER *
   cipher_for_hp(QUICKeyPhase phase) const override
   {

@@ -87,7 +87,8 @@ private:
   void _store_negotiated_cipher();
   void _store_negotiated_cipher_for_hp();
 
-  void _print_km(const char *header, KeyMaterial &km, const uint8_t *secret = nullptr, size_t secret_len = 0);
+  void _print_km(const char *header, const uint8_t *key_for_hp, size_t key_for_hp_len, const uint8_t *key, size_t key_len,
+                 const uint8_t *iv, size_t iv_len, const uint8_t *secret = nullptr, size_t secret_len = 0);
 
   SSL *_ssl                              = nullptr;
   NetVConnectionContext_t _netvc_context = NET_VCONNECTION_UNSET;

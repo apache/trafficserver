@@ -97,31 +97,59 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
 
   // Generate keys
   Debug(tag, "Generating %s keys", QUICDebugNames::key_phase(QUICKeyPhase::INITIAL));
-  std::unique_ptr<KeyMaterial> km_client;
-  std::unique_ptr<KeyMaterial> km_server;
+
+  uint8_t *client_key_for_hp;
+  uint8_t *client_key;
+  uint8_t *client_iv;
+  size_t client_key_for_hp_len;
+  size_t client_key_len;
+  size_t *client_iv_len;
+
+  uint8_t *server_key_for_hp;
+  uint8_t *server_key;
+  uint8_t *server_iv;
+  size_t server_key_for_hp_len;
+  size_t server_key_len;
+  size_t *server_iv_len;
 
   if (this->_netvc_context == NET_VCONNECTION_IN) {
-    km_client = this->_keygen_for_client.generate(
-      this->_pp_key_info.decryption_key_for_hp(QUICKeyPhase::INITIAL), this->_pp_key_info.decryption_key(QUICKeyPhase::INITIAL),
-      this->_pp_key_info.decryption_iv(QUICKeyPhase::INITIAL), this->_pp_key_info.decryption_iv_len(QUICKeyPhase::INITIAL), cid);
-    this->_pp_key_info.set_decryption_key_available(QUICKeyPhase::INITIAL);
-    km_server = this->_keygen_for_server.generate(
-      this->_pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), this->_pp_key_info.encryption_key(QUICKeyPhase::INITIAL),
-      this->_pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), this->_pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
-    this->_pp_key_info.set_encryption_key_available(QUICKeyPhase::INITIAL);
+    client_key_for_hp     = this->_pp_key_info.decryption_key_for_hp(QUICKeyPhase::INITIAL);
+    client_key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(QUICKeyPhase::INITIAL);
+    client_key            = this->_pp_key_info.decryption_key(QUICKeyPhase::INITIAL);
+    client_key_len        = this->_pp_key_info.decryption_key_len(QUICKeyPhase::INITIAL);
+    client_iv             = this->_pp_key_info.decryption_iv(QUICKeyPhase::INITIAL);
+    client_iv_len         = this->_pp_key_info.decryption_iv_len(QUICKeyPhase::INITIAL);
+    server_key_for_hp     = this->_pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL);
+    server_key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(QUICKeyPhase::INITIAL);
+    server_key            = this->_pp_key_info.encryption_key(QUICKeyPhase::INITIAL);
+    server_key_len        = this->_pp_key_info.encryption_key_len(QUICKeyPhase::INITIAL);
+    server_iv             = this->_pp_key_info.encryption_iv(QUICKeyPhase::INITIAL);
+    server_iv_len         = this->_pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL);
   } else {
-    km_client = this->_keygen_for_client.generate(
-      this->_pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), this->_pp_key_info.encryption_key(QUICKeyPhase::INITIAL),
-      this->_pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), this->_pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
-    this->_pp_key_info.set_encryption_key_available(QUICKeyPhase::INITIAL);
-    km_server = this->_keygen_for_server.generate(
-      this->_pp_key_info.decryption_key_for_hp(QUICKeyPhase::INITIAL), this->_pp_key_info.decryption_key(QUICKeyPhase::INITIAL),
-      this->_pp_key_info.decryption_iv(QUICKeyPhase::INITIAL), this->_pp_key_info.decryption_iv_len(QUICKeyPhase::INITIAL), cid);
-    this->_pp_key_info.set_decryption_key_available(QUICKeyPhase::INITIAL);
+    client_key_for_hp     = this->_pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL);
+    client_key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(QUICKeyPhase::INITIAL);
+    client_key            = this->_pp_key_info.encryption_key(QUICKeyPhase::INITIAL);
+    client_key_len        = this->_pp_key_info.encryption_key_len(QUICKeyPhase::INITIAL);
+    client_iv             = this->_pp_key_info.encryption_iv(QUICKeyPhase::INITIAL);
+    client_iv_len         = this->_pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL);
+    server_key_for_hp     = this->_pp_key_info.decryption_key_for_hp(QUICKeyPhase::INITIAL);
+    server_key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(QUICKeyPhase::INITIAL);
+    server_key            = this->_pp_key_info.decryption_key(QUICKeyPhase::INITIAL);
+    server_key_len        = this->_pp_key_info.decryption_key_len(QUICKeyPhase::INITIAL);
+    server_iv             = this->_pp_key_info.decryption_iv(QUICKeyPhase::INITIAL);
+    server_iv_len         = this->_pp_key_info.decryption_iv_len(QUICKeyPhase::INITIAL);
   }
 
-  this->_print_km("initial - client", *km_client);
-  this->_print_km("initial - server", *km_server);
+  this->_keygen_for_client.generate(client_key_for_hp, client_key, client_iv, client_iv_len, cid);
+  this->_keygen_for_server.generate(server_key_for_hp, server_key, server_iv, server_iv_len, cid);
+
+  this->_pp_key_info.set_decryption_key_available(QUICKeyPhase::INITIAL);
+  this->_pp_key_info.set_encryption_key_available(QUICKeyPhase::INITIAL);
+
+  this->_print_km("initial - server", server_key_for_hp, server_key_for_hp_len, server_key, server_key_len, server_iv,
+                  *server_iv_len);
+  this->_print_km("initial - client", client_key_for_hp, client_key_for_hp_len, client_key, server_key_len, client_iv,
+                  *client_iv_len);
 
   return 1;
 }
@@ -163,7 +191,8 @@ QUICTLS::_update_encryption_level(QUICEncryptionLevel level)
 }
 
 void
-QUICTLS::_print_km(const char *header, KeyMaterial &km, const uint8_t *secret, size_t secret_len)
+QUICTLS::_print_km(const char *header, const uint8_t *key_for_hp, size_t key_for_hp_len, const uint8_t *key, size_t key_len,
+                   const uint8_t *iv, size_t iv_len, const uint8_t *secret, size_t secret_len)
 {
   if (is_debug_tag_set("vv_quic_crypto")) {
     Debug("vv_quic_crypto", "%s", header);
@@ -172,11 +201,11 @@ QUICTLS::_print_km(const char *header, KeyMaterial &km, const uint8_t *secret, s
       QUICDebug::to_hex(print_buf, static_cast<const uint8_t *>(secret), secret_len);
       Debug("vv_quic_crypto", "secret=%s", print_buf);
     }
-    QUICDebug::to_hex(print_buf, km.key, km.key_len);
+    QUICDebug::to_hex(print_buf, key, key_len);
     Debug("vv_quic_crypto", "key=%s", print_buf);
-    QUICDebug::to_hex(print_buf, km.iv, km.iv_len);
+    QUICDebug::to_hex(print_buf, iv, iv_len);
     Debug("vv_quic_crypto", "iv=%s", print_buf);
-    QUICDebug::to_hex(print_buf, km.hp, km.hp_len);
+    QUICDebug::to_hex(print_buf, key_for_hp, key_for_hp_len);
     Debug("vv_quic_crypto", "hp=%s", print_buf);
   }
 }
