@@ -27,6 +27,7 @@
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
+#include "SSLStats.h"
 
 // Maxiumum OCSP stapling response size.
 // This should be the response for a single certificate and will typically include the responder certificate chain,

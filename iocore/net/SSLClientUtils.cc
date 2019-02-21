@@ -23,9 +23,11 @@
 #include "records/I_RecHttp.h"
 #include "tscore/ink_platform.h"
 #include "tscore/X509HostnameValidator.h"
+
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
 #include "YamlSNIConfig.h"
+#include "SSLDiags.h"
 
 #include <openssl/err.h>
 #include <openssl/pem.h>

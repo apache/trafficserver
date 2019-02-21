@@ -136,6 +136,7 @@ libinknet_a_SOURCES = \
 	SSLCertLookup.cc \
 	SSLSessionCache.cc \
 	SSLConfig.cc \
+	SSLDiags.cc \
 	SSLInternal.cc \
 	SSLNetAccept.cc \
 	SSLNetProcessor.cc \
@@ -143,6 +144,7 @@ libinknet_a_SOURCES = \
 	SSLNextProtocolAccept.cc \
 	SSLNextProtocolSet.cc \
 	SSLSNIConfig.cc \
+	SSLStats.cc \
 	SSLUtils.cc \
 	SSLClientUtils.cc \
 	OCSPStapling.cc \

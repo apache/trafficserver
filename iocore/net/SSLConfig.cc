@@ -29,19 +29,23 @@
    SSL Configurations
  ****************************************************************************/
 
-#include "tscore/ink_platform.h"
-#include "tscore/I_Layout.h"
+#include "P_SSLConfig.h"
 
 #include <cstring>
 #include <cmath>
+
+#include "tscore/ink_platform.h"
+#include "tscore/I_Layout.h"
+#include "records/I_RecHttp.h"
+
+#include "HttpConfig.h"
+
 #include "P_Net.h"
-#include "P_SSLConfig.h"
-#include "YamlSNIConfig.h"
 #include "P_SSLUtils.h"
 #include "P_SSLCertLookup.h"
 #include "SSLSessionCache.h"
-#include <records/I_RecHttp.h>
-#include <HttpConfig.h>
+#include "SSLDiags.h"
+#include "YamlSNIConfig.h"
 
 int SSLConfig::configid                                     = 0;
 int SSLCertificateConfig::configid                          = 0;
