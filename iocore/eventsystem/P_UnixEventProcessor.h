@@ -71,6 +71,9 @@ EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
     e->ethread = ethread;
   } else {
     e->ethread = assign_thread(etype);
+    if (ethread == nullptr) {
+      e->continuation->setThreadAffinity(e->ethread);
+    }
   }
 
   if (e->continuation->mutex) {

@@ -4409,8 +4409,7 @@ TSContSchedule(TSCont contp, TSHRTime timeout)
 
   EThread *eth = i->getThreadAffinity();
   if (eth == nullptr) {
-    eth = this_event_thread();
-    i->setThreadAffinity(eth);
+    return nullptr;
   }
 
   TSAction action;
@@ -4436,10 +4435,6 @@ TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
 
   if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
     ink_assert(!"not reached");
-  }
-
-  if (i->getThreadAffinity() == nullptr) {
-    i->setThreadAffinity(this_event_thread());
   }
 
   EventType etype;
@@ -4527,8 +4522,7 @@ TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */)
 
   EThread *eth = i->getThreadAffinity();
   if (eth == nullptr) {
-    eth = this_event_thread();
-    i->setThreadAffinity(eth);
+    return nullptr;
   }
 
   TSAction action = reinterpret_cast<TSAction>(eth->schedule_every(i, HRTIME_MSECONDS(every)));
@@ -4549,10 +4543,6 @@ TSContScheduleEveryOnPool(TSCont contp, TSHRTime every, TSThreadPool tp)
 
   if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
     ink_assert(!"not reached");
-  }
-
-  if (i->getThreadAffinity() == nullptr) {
-    i->setThreadAffinity(this_event_thread());
   }
 
   EventType etype;
