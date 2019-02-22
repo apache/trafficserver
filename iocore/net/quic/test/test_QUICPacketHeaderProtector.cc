@@ -23,6 +23,7 @@
 
 #include "catch.hpp"
 
+#include "QUICPacketProtectionKeyInfo.h"
 #include "QUICPacketHeaderProtector.h"
 #include "QUICTLS.h"
 
@@ -68,17 +69,16 @@ TEST_CASE("QUICPacketHeaderProtector")
     uint8_t tmp[64];
     memcpy(tmp, original, sizeof(tmp));
 
-    QUICHandshakeProtocol *client = new QUICTLS(client_ssl_ctx, NET_VCONNECTION_OUT);
-    QUICHandshakeProtocol *server = new QUICTLS(server_ssl_ctx, NET_VCONNECTION_IN);
+    QUICPacketProtectionKeyInfo pp_key_info_client;
+    QUICPacketProtectionKeyInfo pp_key_info_server;
+    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT);
+    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN);
 
     CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
-    QUICPacketHeaderProtector client_ph_protector;
-    QUICPacketHeaderProtector server_ph_protector;
-
-    client_ph_protector.set_hs_protocol(client);
-    server_ph_protector.set_hs_protocol(server);
+    QUICPacketHeaderProtector client_ph_protector(pp_key_info_client);
+    QUICPacketHeaderProtector server_ph_protector(pp_key_info_server);
 
     // ## Client -> Server
     client_ph_protector.protect(tmp, sizeof(tmp), 18);
@@ -102,17 +102,16 @@ TEST_CASE("QUICPacketHeaderProtector")
     uint8_t tmp[48];
     memcpy(tmp, original, sizeof(tmp));
 
-    QUICHandshakeProtocol *client = new QUICTLS(client_ssl_ctx, NET_VCONNECTION_OUT);
-    QUICHandshakeProtocol *server = new QUICTLS(server_ssl_ctx, NET_VCONNECTION_IN);
+    QUICPacketProtectionKeyInfo pp_key_info_client;
+    QUICPacketProtectionKeyInfo pp_key_info_server;
+    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT);
+    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN);
 
     CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
-    QUICPacketHeaderProtector client_ph_protector;
-    QUICPacketHeaderProtector server_ph_protector;
-
-    client_ph_protector.set_hs_protocol(client);
-    server_ph_protector.set_hs_protocol(server);
+    QUICPacketHeaderProtector client_ph_protector(pp_key_info_client);
+    QUICPacketHeaderProtector server_ph_protector(pp_key_info_server);
 
     // Handshake
     // CH

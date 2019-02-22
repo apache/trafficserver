@@ -24,13 +24,13 @@
 #include "catch.hpp"
 
 #include "quic/QUICVersionNegotiator.h"
+#include "quic/QUICPacketProtectionKeyInfo.h"
 #include "quic/Mock.h"
 
 TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
 {
-  QUICPacketFactory packet_factory;
-  MockQUICHandshakeProtocol hs_protocol;
-  packet_factory.set_hs_protocol(&hs_protocol);
+  QUICPacketProtectionKeyInfo pp_key_info;
+  QUICPacketFactory packet_factory(pp_key_info);
   QUICVersionNegotiator vn;
   std::vector<QUICFrameInfo> dummy_frames;
 
@@ -94,9 +94,8 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
 
 TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
 {
-  QUICPacketFactory packet_factory;
-  MockQUICHandshakeProtocol hs_protocol;
-  packet_factory.set_hs_protocol(&hs_protocol);
+  QUICPacketProtectionKeyInfo pp_key_info;
+  QUICPacketFactory packet_factory(pp_key_info);
   QUICVersionNegotiator vn;
   std::vector<QUICFrameInfo> dummy_frames;
 

@@ -35,6 +35,8 @@
 
 // #include "Mock.h"
 #include "QUICPacketHeaderProtector.h"
+#include "QUICPacketPayloadProtector.h"
+#include "QUICPacketProtectionKeyInfo.h"
 #include "QUICTLS.h"
 
 // depends on size of cert
@@ -95,8 +97,12 @@ TEST_CASE("QUICHandshakeProtocol")
 
   SECTION("Full Handshake", "[quic]")
   {
-    QUICHandshakeProtocol *client = new QUICTLS(client_ssl_ctx, NET_VCONNECTION_OUT);
-    QUICHandshakeProtocol *server = new QUICTLS(server_ssl_ctx, NET_VCONNECTION_IN);
+    QUICPacketProtectionKeyInfo pp_key_info_client;
+    QUICPacketProtectionKeyInfo pp_key_info_server;
+    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT);
+    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN);
+    QUICPacketPayloadProtector ppp_client(pp_key_info_client);
+    QUICPacketPayloadProtector ppp_server(pp_key_info_server);
 
     CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
@@ -189,15 +195,16 @@ TEST_CASE("QUICHandshakeProtocol")
 
     uint8_t cipher[128] = {0}; // >= original len + EVP_AEAD_max_overhead
     size_t cipher_len   = 0;
-    CHECK(client->encrypt(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
-                          QUICKeyPhase::PHASE_0));
+    CHECK(ppp_client.protect(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
+                             QUICKeyPhase::PHASE_0));
 
     std::cout << "### Encrypted Text" << std::endl;
     print_hex(cipher, cipher_len);
 
     uint8_t plain[128] = {0};
     size_t plain_len   = 0;
-    CHECK(server->decrypt(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::PHASE_0));
+    CHECK(
+      ppp_server.unprotect(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::PHASE_0));
 
     std::cout << "### Decrypted Text" << std::endl;
     print_hex(plain, plain_len);
@@ -217,8 +224,12 @@ TEST_CASE("QUICHandshakeProtocol")
       REQUIRE(false);
     }
 
-    QUICHandshakeProtocol *client = new QUICTLS(client_ssl_ctx, NET_VCONNECTION_OUT);
-    QUICHandshakeProtocol *server = new QUICTLS(server_ssl_ctx, NET_VCONNECTION_IN);
+    QUICPacketProtectionKeyInfo pp_key_info_client;
+    QUICPacketProtectionKeyInfo pp_key_info_server;
+    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT);
+    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN);
+    QUICPacketPayloadProtector ppp_client(pp_key_info_client);
+    QUICPacketPayloadProtector ppp_server(pp_key_info_server);
 
     CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
@@ -323,15 +334,16 @@ TEST_CASE("QUICHandshakeProtocol")
 
     uint8_t cipher[128] = {0}; // >= original len + EVP_AEAD_max_overhead
     size_t cipher_len   = 0;
-    CHECK(client->encrypt(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
-                          QUICKeyPhase::PHASE_0));
+    CHECK(ppp_client.protect(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
+                             QUICKeyPhase::PHASE_0));
 
     std::cout << "### Encrypted Text" << std::endl;
     print_hex(cipher, cipher_len);
 
     uint8_t plain[128] = {0};
     size_t plain_len   = 0;
-    CHECK(server->decrypt(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::PHASE_0));
+    CHECK(
+      ppp_server.unprotect(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::PHASE_0));
 
     std::cout << "### Decrypted Text" << std::endl;
     print_hex(plain, plain_len);
@@ -351,7 +363,8 @@ TEST_CASE("QUICHandshakeProtocol")
 
   SECTION("Alert", "[quic]")
   {
-    QUICHandshakeProtocol *server = new QUICTLS(server_ssl_ctx, NET_VCONNECTION_IN);
+    QUICPacketProtectionKeyInfo pp_key_info_server;
+    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN);
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
     // Malformed CH (finished)
@@ -384,8 +397,10 @@ TEST_CASE("QUICHandshakeProtocol")
 
   SECTION("Full Handshake + Packet Number Protection", "[quic]")
   {
-    QUICHandshakeProtocol *client = new QUICTLS(client_ssl_ctx, NET_VCONNECTION_OUT);
-    QUICHandshakeProtocol *server = new QUICTLS(server_ssl_ctx, NET_VCONNECTION_IN);
+    QUICPacketProtectionKeyInfo pp_key_info_client;
+    QUICPacketProtectionKeyInfo pp_key_info_server;
+    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT);
+    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN);
 
     CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));

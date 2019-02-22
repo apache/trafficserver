@@ -28,9 +28,9 @@
 
 TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 {
-  QUICPacketFactory factory;
-  MockQUICHandshakeProtocol hs_protocol;
-  factory.set_hs_protocol(&hs_protocol);
+  QUICPacketProtectionKeyInfo pp_key_info;
+  QUICPacketFactory factory(pp_key_info);
+  ;
 
   const uint8_t raw_dcid[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
   const uint8_t raw_scid[] = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18};
@@ -64,9 +64,8 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 
 TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
 {
-  QUICPacketFactory factory;
-  MockQUICHandshakeProtocol hs_protocol;
-  factory.set_hs_protocol(&hs_protocol);
+  QUICPacketProtectionKeyInfo pp_key_info;
+  QUICPacketFactory factory(pp_key_info);
   factory.set_version(0x11223344);
 
   uint8_t raw[] = {0xaa, 0xbb, 0xcc, 0xdd};
@@ -85,9 +84,8 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
 
 TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
 {
-  QUICPacketFactory factory;
-  MockQUICHandshakeProtocol hs_protocol;
-  factory.set_hs_protocol(&hs_protocol);
+  QUICPacketProtectionKeyInfo pp_key_info;
+  QUICPacketFactory factory(pp_key_info);
   factory.set_version(0x11223344);
   std::vector<QUICFrameInfo> dummy_frames;
 
@@ -108,9 +106,8 @@ TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
 
 TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
 {
-  QUICPacketFactory factory;
-  MockQUICHandshakeProtocol hs_protocol;
-  factory.set_hs_protocol(&hs_protocol);
+  QUICPacketProtectionKeyInfo pp_key_info;
+  QUICPacketFactory factory(pp_key_info);
   QUICStatelessResetToken token({reinterpret_cast<const uint8_t *>("\x30\x39"), 2}, 67890);
 
   QUICPacketUPtr packet =

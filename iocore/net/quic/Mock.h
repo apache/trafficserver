@@ -513,7 +513,8 @@ private:
 class MockQUICHandshakeProtocol : public QUICHandshakeProtocol
 {
 public:
-  MockQUICHandshakeProtocol() : QUICHandshakeProtocol() {}
+  MockQUICHandshakeProtocol(QUICPacketProtectionKeyInfo &pp_key_info) : QUICHandshakeProtocol(pp_key_info) {}
+
   int
   handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in) override
   {
@@ -537,12 +538,6 @@ public:
     return true;
   }
 
-  bool
-  is_key_derived(QUICKeyPhase /* key_phase */, bool /* for_encryption */) const override
-  {
-    return true;
-  }
-
   int
   initialize_key_materials(QUICConnectionId cid) override
   {
@@ -560,28 +555,6 @@ public:
   {
     *name = reinterpret_cast<const uint8_t *>("h3");
     *len  = 2;
-  }
-
-  const QUIC_EVP_CIPHER *
-  cipher_for_hp(QUICKeyPhase phase) const override
-  {
-    return nullptr;
-  }
-
-  bool
-  encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len, uint64_t pkt_num,
-          const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override
-  {
-    memcpy(cipher, plain, plain_len);
-    return true;
-  }
-
-  bool
-  decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len, uint64_t pkt_num,
-          const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const override
-  {
-    memcpy(plain, cipher, cipher_len);
-    return true;
   }
 
   QUICEncryptionLevel
@@ -713,7 +686,7 @@ public:
   }
 
   QUICFrame *
-  generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+  generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override
   {
     QUICFrame *frame              = QUICFrameFactory::create_ping_frame(buf, 0, this);
     QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
@@ -725,7 +698,7 @@ public:
 
 private:
   void
-  _on_frame_lost(QUICFrameInformationUPtr &info)
+  _on_frame_lost(QUICFrameInformationUPtr &info) override
   {
     lost_frame_count++;
   }
