@@ -1365,6 +1365,7 @@ struct RegressionCont : public Continuation {
       return EVENT_CONT;
     }
 
+    shutdown_event_system = true;
     fprintf(stderr, "REGRESSION_TEST DONE: %s\n", regression_status_string(res));
     ::exit(res == REGRESSION_TEST_PASSED ? 0 : 1);
     return EVENT_CONT;
