@@ -33,6 +33,7 @@
 #include <openssl/ssl.h>
 
 #include "QUICKeyGenerator.h"
+#include "QUICPacketProtectionKeyInfo.h"
 
 // https://github.com/quicwg/base-drafts/wiki/Test-Vector-for-the-Clear-Text-AEAD-key-derivation
 TEST_CASE("draft-17 Test Vectors", "[quic]")
@@ -54,14 +55,16 @@ TEST_CASE("draft-17 Test Vectors", "[quic]")
       0xcd, 0x25, 0x3a, 0x36, 0xff, 0x93, 0x93, 0x7c, 0x46, 0x93, 0x84, 0xa8, 0x23, 0xaf, 0x6c, 0x56,
     };
 
-    std::unique_ptr<KeyMaterial> actual_km = keygen.generate(cid);
+    QUICPacketProtectionKeyInfo pp_key_info;
+    keygen.generate(pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), pp_key_info.encryption_key(QUICKeyPhase::INITIAL),
+                    pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
 
-    CHECK(actual_km->key_len == sizeof(expected_client_key));
-    CHECK(memcmp(actual_km->key, expected_client_key, sizeof(expected_client_key)) == 0);
-    CHECK(actual_km->iv_len == sizeof(expected_client_iv));
-    CHECK(memcmp(actual_km->iv, expected_client_iv, sizeof(expected_client_iv)) == 0);
-    CHECK(actual_km->hp_len == sizeof(expected_client_hp));
-    CHECK(memcmp(actual_km->hp, expected_client_hp, sizeof(expected_client_hp)) == 0);
+    CHECK(pp_key_info.encryption_key_len(QUICKeyPhase::INITIAL) == sizeof(expected_client_key));
+    CHECK(memcmp(pp_key_info.encryption_key(QUICKeyPhase::INITIAL), expected_client_key, sizeof(expected_client_key)) == 0);
+    CHECK(*pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL) == sizeof(expected_client_iv));
+    CHECK(memcmp(pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), expected_client_iv, sizeof(expected_client_iv)) == 0);
+    CHECK(pp_key_info.encryption_key_for_hp_len(QUICKeyPhase::INITIAL) == sizeof(expected_client_hp));
+    CHECK(memcmp(pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), expected_client_hp, sizeof(expected_client_hp)) == 0);
   }
 
   SECTION("SERVER Initial")
@@ -80,13 +83,15 @@ TEST_CASE("draft-17 Test Vectors", "[quic]")
       0x25, 0x79, 0xd8, 0x69, 0x6f, 0x85, 0xed, 0xa6, 0x8d, 0x35, 0x02, 0xb6, 0x55, 0x96, 0x58, 0x6b,
     };
 
-    std::unique_ptr<KeyMaterial> actual_km = keygen.generate(cid);
+    QUICPacketProtectionKeyInfo pp_key_info;
+    keygen.generate(pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), pp_key_info.encryption_key(QUICKeyPhase::INITIAL),
+                    pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
 
-    CHECK(actual_km->key_len == sizeof(expected_server_key));
-    CHECK(memcmp(actual_km->key, expected_server_key, sizeof(expected_server_key)) == 0);
-    CHECK(actual_km->iv_len == sizeof(expected_server_iv));
-    CHECK(memcmp(actual_km->iv, expected_server_iv, sizeof(expected_server_iv)) == 0);
-    CHECK(actual_km->hp_len == sizeof(expected_server_hp));
-    CHECK(memcmp(actual_km->hp, expected_server_hp, sizeof(expected_server_hp)) == 0);
+    CHECK(pp_key_info.encryption_key_len(QUICKeyPhase::INITIAL) == sizeof(expected_server_key));
+    CHECK(memcmp(pp_key_info.encryption_key(QUICKeyPhase::INITIAL), expected_server_key, sizeof(expected_server_key)) == 0);
+    CHECK(*pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL) == sizeof(expected_server_iv));
+    CHECK(memcmp(pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), expected_server_iv, sizeof(expected_server_iv)) == 0);
+    CHECK(pp_key_info.encryption_key_for_hp_len(QUICKeyPhase::INITIAL) == sizeof(expected_server_hp));
+    CHECK(memcmp(pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), expected_server_hp, sizeof(expected_server_hp)) == 0);
   }
 }

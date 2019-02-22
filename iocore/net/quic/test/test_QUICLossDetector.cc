@@ -30,9 +30,8 @@
 
 TEST_CASE("QUICLossDetector_Loss", "[quic]")
 {
-  MockQUICHandshakeProtocol hs_protocol;
-  QUICPacketFactory pf;
-  pf.set_hs_protocol(&hs_protocol);
+  QUICPacketProtectionKeyInfo pp_key_info;
+  QUICPacketFactory pf(pp_key_info);
   QUICRTTMeasure rtt_measure;
 
   QUICAckFrameManager afm;
