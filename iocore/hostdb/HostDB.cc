@@ -1607,7 +1607,8 @@ HostDBContinuation::remove_trigger_pending_dns()
     c = n;
   }
   while ((c = qq.dequeue())) {
-    c->handleEvent(EVENT_IMMEDIATE, nullptr);
+    // resume all queued HostDBCont in their native threads to avoid locking issues.
+    eventProcessor.schedule_imm(c);
   }
 }
 
