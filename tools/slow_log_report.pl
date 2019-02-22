@@ -37,7 +37,7 @@ sub displayStat($) {
   my($stats) = @_;
 
   printf("%25s %10s %10s %10s %10s %10s %10s %10s %10s\n", 'key', 'total', 'count', 'mean', 'median', '95th', '99th', 'min', 'max');
-  foreach my $key ('ua_begin', 'ua_first_read', 'ua_read_header_done', 'cache_open_read_begin', 'cache_open_read_end', 'dns_lookup_begin', 'dns_lookup_end', 'server_connect', 'server_first_read', 'server_read_header_done', 'server_close', 'ua_close', 'sm_finish') {
+  foreach my $key ('ua_begin', 'ua_first_read', 'ua_read_header_done', 'cache_open_read_begin', 'cache_open_read_end', 'dns_lookup_begin', 'dns_lookup_end', 'server_connect', 'server_connect_end', 'server_first_read', 'server_read_header_done', 'server_close', 'ua_close', 'sm_finish') {
 
     my $count = $stats->{$key}->{count};
     my $total = $stats->{$key}->{total};
