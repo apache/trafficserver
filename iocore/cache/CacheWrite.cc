@@ -1369,7 +1369,9 @@ CacheVC::openWriteWriteDone(int event, Event *e)
 static inline int
 target_fragment_size()
 {
-  return cache_config_target_fragment_size - sizeof(Doc);
+  uint64_t value = cache_config_target_fragment_size - sizeof(Doc);
+  ink_release_assert(value <= MAX_FRAG_SIZE);
+  return value;
 }
 
 int
