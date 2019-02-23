@@ -102,6 +102,16 @@ public:
 
   class iterator; // forward declare.
 
+  static constexpr in_addr_t RAW_IP4_MIN_ADDR = 0;
+  static constexpr IpAddr IP4_MIN_ADDR{RAW_IP4_MIN_ADDR};
+  static constexpr in_addr_t RAW_IP4_MAX_ADDR = ~0;
+  static constexpr IpAddr IP4_MAX_ADDR{RAW_IP4_MAX_ADDR};
+
+  static constexpr in6_addr RAW_IP6_MIN_ADDR = {{{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}}};
+  static constexpr IpAddr IP6_MIN_ADDR{RAW_IP6_MIN_ADDR};
+  static constexpr in6_addr RAW_IP6_MAX_ADDR = {{{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}}};
+  static constexpr IpAddr IP6_MAX_ADDR{RAW_IP6_MAX_ADDR};
+
   /** Public API for intervals in the map.
    */
   class Node : protected ts::detail::RBNode
@@ -260,6 +270,8 @@ public:
                     sockaddr const *max  ///< Maximum value.
   );
   /// Unmark addresses (overload).
+  self_type &unmark(IpAddr const &min, IpAddr const &max);
+  /// Unmark addresses (overload).
   self_type &unmark(IpEndpoint const *min, IpEndpoint const *max);
   /// Unmark overload.
   self_type &unmark(in_addr_t min, ///< Minimum of range to unmark.
@@ -397,6 +409,15 @@ inline IpMap &
 IpMap::unmark(IpEndpoint const *min, IpEndpoint const *max)
 {
   return this->unmark(&min->sa, &max->sa);
+}
+
+inline IpMap &
+IpMap::unmark(IpAddr const &min, IpAddr const &max)
+{
+  IpEndpoint x, y;
+  x.assign(min);
+  y.assign(max);
+  return this->unmark(&x.sa, &y.sa);
 }
 
 inline IpMap &
