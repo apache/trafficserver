@@ -3154,6 +3154,18 @@ register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
   REG_INT("span.online", cache_span_online_stat);
 }
 
+int
+FragmentSizeUpdateCb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
+{
+  if (sizeof(Doc) >= static_cast<size_t>(data.rec_int) || static_cast<size_t>(data.rec_int) - sizeof(Doc) > MAX_FRAG_SIZE) {
+    Warning("The fragments size exceed the limitation, ignore: %" PRId64 ", %d", data.rec_int, cache_config_target_fragment_size);
+    return 0;
+  }
+
+  cache_config_target_fragment_size = data.rec_int;
+  return 0;
+}
+
 void
 ink_cache_init(ts::ModuleVersion v)
 {
@@ -3206,9 +3218,12 @@ ink_cache_init(ts::ModuleVersion v)
   Debug("cache_init", "proxy.config.cache.hit_evacuate_size_limit = %d", cache_config_hit_evacuate_size_limit);
 
   REC_EstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
-  REC_EstablishStaticConfigInt32(cache_config_target_fragment_size, "proxy.config.cache.target_fragment_size");
 
-  if (cache_config_target_fragment_size == 0) {
+  ink_assert(REC_RegisterConfigUpdateFunc("proxy.config.cache.target_fragment_size", FragmentSizeUpdateCb, nullptr) !=
+             REC_ERR_FAIL);
+  REC_ReadConfigInt32(cache_config_target_fragment_size, "proxy.config.cache.target_fragment_size");
+
+  if (cache_config_target_fragment_size == 0 || cache_config_target_fragment_size - sizeof(Doc) > MAX_FRAG_SIZE) {
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
   }
 
