@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import hashlib
+import hmac
 import os
 import subprocess
 Test.Summary = '''
@@ -194,16 +196,6 @@ tr.Processes.Default.Command = (
 
 # Success tests.
 
-# No client / SHA1 / P=1 / URL not pristine / URL not altered.
-#
-tr = Test.AddTestRun()
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Command = (
-    "curl --verbose --proxy http://127.0.0.1:{} 'http://one.two.three/".format(ts.Variables.port) +
-    "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S=acae22b0e1ba6ea6fbb5d26018dbf152558e98cb'" +
-    LogTee
-)
-
 # With client / SHA1 / P=1 / URL pristine / URL not altered.
 #
 tr = Test.AddTestRun()
@@ -244,13 +236,34 @@ tr.Processes.Default.Command = (
     LogTee
 )
 
-# No client / SHA1 / P=1 / URL not pristine / URL not altered -- HTTPS.
+def sign(payload, key):
+  secret=bytes(key,'utf-8')
+  data=bytes(payload, 'utf-8')
+  md=bytes(hmac.new(secret, data, digestmod=hashlib.sha1).digest().hex(), 'utf-8')
+  return md.decode("utf-8")
+
+# No client / SHA1 / P=1 / URL not pristine / URL not altered.
 #
+path="foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S="
+to_sign="127.0.0.1:{}/".format(server.Variables.Port) + path
+url="http://one.two.three/" + path + sign(to_sign, "dqsgopTSM_doT6iAysasQVUKaPykyb6e")
+
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (
-    "curl --verbose --http1.1 --insecure --header 'Host: one.two.three' 'https://127.0.0.1:{}/".format(ts.Variables.ssl_port) +
-    "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S=acae22b0e1ba6ea6fbb5d26018dbf152558e98cb'" +
+    "curl --verbose --proxy http://127.0.0.1:{} '{}'".format(ts.Variables.port, url) + LogTee
+)
+
+# No client / SHA1 / P=1 / URL not pristine / URL not altered -- HTTPS.
+#
+path="foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S="
+to_sign="127.0.0.1:{}/".format(server.Variables.Port) + path
+url="https://127.0.0.1:{}/".format(ts.Variables.ssl_port) + path + sign(to_sign, "dqsgopTSM_doT6iAysasQVUKaPykyb6e")
+
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = (
+    "curl --verbose --http1.1 --insecure --header 'Host: one.two.three' '{}'".format(url) +
     LogTee + " ; grep -F -e '< HTTP' -e Authorization {0}/url_sig_long.log > {0}/url_sig_short.log ".format(ts.RunDirectory)
 )
 
