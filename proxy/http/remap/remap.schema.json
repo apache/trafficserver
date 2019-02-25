@@ -1,0 +1,227 @@
+{
+  "$schema": "https://github.com/apache/trafficserver/tree/master/proxy/http/remap/remap.schema.json",
+  "title": "Traffic Server Remap Config",
+  "description": "Remap (URL rewriting) configuration. Licensed under Apache V2 https://www.apache.org/licenses/LICENSE-2.0",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Configuration format version."
+    },
+    "url_rewrite": {
+      "description": "Root tag for URL rewrite configuration",
+      "type": "object",
+      "properties": {
+        "rules": {
+          "$ref": "#/definitions/url_rewrite/rule_list"
+        },
+        "filters": {
+          "$ref": "#/definitions/url_rewrite/filter_define_list"
+        }
+      }
+    }
+  },
+  "required": [
+    "url_rewrite"
+  ],
+  "definitions": {
+    "url_rewrite": {
+      "ip_range": {
+        "description": "A range of IP addresses in a single family.",
+        "anyOf": [
+          {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "string",
+              "description": "IP address."
+            }
+          },
+          {
+            "type": "string",
+            "description": "A single IP address, a dash separated pair of IP addresses, or a CIDR notation network."
+          }
+        ]
+      },
+      "action": {
+        "description": "Enforcement action.",
+        "type": "string",
+        "enum": [
+          "allow",
+          "deny"
+        ]
+      },
+      "method-set": {
+        "description": "Methods to check.",
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "Method name"
+          },
+          {
+            "type": "array",
+            "description": "List of method names.",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "description": "Method name"
+            }
+          }
+        ]
+      },
+      "filter_define": {
+        "description": "Required transaction properties to match for a rule to be valid.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Name of the filter.",
+            "type": "string"
+          },
+          "action": {
+            "$ref": "#/definitions/url_rewrite/action"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "filter_define_list": {
+        "description": "List of filter definitions.",
+        "oneOf": [
+          {
+            "$ref": "#/definitions/url_rewrite/filter_define"
+          },
+          {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/definitions/url_rewrite/filter_define"
+            }
+          }
+        ]
+      },
+      "filter_ref": {
+        "oneOf": [
+          {
+            "description": "Name of a filter",
+            "type": "string"
+          },
+          {
+            "$ref": "#/definitions/url_rewrite/filter"
+          }
+        ]
+      },
+      "filter_list": {
+        "description": "List of filters.",
+        "oneOf": [
+          {
+            "$ref": "#/definitions/url_rewrite/filter_ref"
+          },
+          {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/definitions/url_rewrite/filter_ref"
+            }
+          }
+        ]
+      },
+      "plugin": {
+        "description": "A plugin to run for a rule.",
+        "type": "object",
+        "properties": {
+          "path": {
+            "description": "Path to the plugin binary.",
+            "type": "string"
+          },
+          "params": {
+            "description": "Parameters to pass to plugin during rule initialization",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "plugin_list": {
+        "description": "Set of plugins to run for this rule.",
+        "oneOf": [
+          {
+            "$ref": "#/definitions/url_rewrite/plugin"
+          },
+          {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/definitions/url_rewrite/plugin"
+            }
+          }
+        ]
+      },
+      "referer_data": {
+        "description": "Refererer mapping data.",
+        "type": "object",
+        "properties": {
+          "redirect": {
+            "description": "Redirect URL",
+            "type": "string"
+          },
+          "match": {
+            "description": "Regular expressions (PCRE compliant) to match the Referer field value.",
+            "type": "array",
+            "items": "string",
+            "minItems": 1
+          }
+        },
+        "required": [
+          "redirect",
+          "match"
+        ]
+      },
+      "rule": {
+        "description": "URL Rewrite rule.",
+        "type": "object",
+        "properties": {
+          "from": {
+            "description": "The original URL in the client request.",
+            "type": "string"
+          },
+          "to": {
+            "description": "The new URL to which the proxy request should be rewritten.",
+            "type": "string"
+          },
+          "proxy_port": {
+            "description": "Specify a local port for a rule.",
+            "type": "number"
+          },
+          "plugin": {
+            "$ref": "#/definitions/url_rewrite/plugin_list"
+          }
+        },
+        "required": [
+          "outbound",
+          "action"
+        ]
+      },
+      "rule_list": {
+        "description": "List of url rewrite rules.",
+        "oneOf": [
+          {
+            "$ref": "#/definitions/url_rewrite/rule"
+          },
+          {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/definitions/url_rewrite/rule"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

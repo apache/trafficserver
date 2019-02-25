@@ -115,8 +115,7 @@ public:
     // we store the host-string-to-substitute here; if a match is found,
     // the substitutions are made and the resulting url is stored
     // directly in toURL's host field
-    char *to_url_host_template;
-    int to_url_host_template_len;
+    ts::TextView to_url_host_template;
 
     // stores the number of substitutions
     int n_substitutions;
@@ -198,6 +197,16 @@ public:
                           mapping_container);
   }
 
+  /** Copy the content of @a view into storage attached to this instance.
+   *
+   * @param view Source view.
+   * @return Equivalent view referencing attached memory.
+   *
+   * This is useful for storing strings from the configuration. The view is null terminated, although
+   * the null character is not included in the returned view size.
+   */
+  ts::TextView localize(ts::TextView view);
+
   int nohost_rules  = 0;
   int reverse_proxy = 0;
 
@@ -209,6 +218,9 @@ public:
   int num_rules_redirect_permanent     = 0;
   int num_rules_redirect_temporary     = 0;
   int num_rules_forward_with_recv_port = 0;
+
+  /// Storage for filters associated with this remapping.
+  RemapFilter::List filters;
 
 protected:
   ts::MemArena arena;
@@ -228,6 +240,17 @@ private:
   void _destroyList(RegexMappingList &regexes);
   inline bool _addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMapping *reg_map, const char *src_host,
                           bool is_cur_mapping_regex, int &count);
+
+  friend class RemapBuilder;
 };
 
 void url_rewrite_remap_request(const UrlMappingContainer &mapping_container, URL *request_url, int scheme = -1);
+
+inline ts::TextView
+UrlRewrite::localize(ts::TextView view)
+{
+  auto span = arena.alloc(view.size() + 1);
+  memcpy(span.data(), view.data(), view.size());
+  span.end()[-1] = '\0';
+  return {span.begin(), view.size()};
+}

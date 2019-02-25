@@ -543,34 +543,35 @@ hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_strin
   -------------------------------------------------------------------------*/
 
 int
-hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out)
+hdrtoken_tokenize(std::string_view string, std::string_view *wks_string_out)
 {
   int wks_idx;
   HdrTokenHashBucket *bucket;
 
-  ink_assert(string != nullptr);
+  ink_assert(!string.empty());
 
-  if (hdrtoken_is_wks(string)) {
-    wks_idx = hdrtoken_wks_to_index(string);
+  if (hdrtoken_is_wks(string.data())) {
+    wks_idx = hdrtoken_wks_to_index(string.data());
     if (wks_string_out) {
       *wks_string_out = string;
     }
     return wks_idx;
   }
 
-  uint32_t hash = hdrtoken_hash((const unsigned char *)string, (unsigned int)string_len);
+  uint32_t hash = hdrtoken_hash(reinterpret_cast<unsigned char const *>(string.data()), string.size());
   uint32_t slot = hash_to_slot(hash);
 
   bucket = &(hdrtoken_hash_table[slot]);
-  if ((bucket->wks != nullptr) && (bucket->hash == hash) && (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
+  size_t wks_len;
+  if ((bucket->wks != nullptr) && (bucket->hash == hash) && ((wks_len = hdrtoken_wks_to_length(bucket->wks)) == string.size())) {
     wks_idx = hdrtoken_wks_to_index(bucket->wks);
     if (wks_string_out) {
-      *wks_string_out = bucket->wks;
+      *wks_string_out = {bucket->wks, wks_len};
     }
     return wks_idx;
   }
 
-  Debug("hdr_token", "Did not find a WKS for '%.*s'", string_len, string);
+  Debug("hdr_token", "Did not find a WKS for '%.*s'", static_cast<int>(string.size()), string.data());
   return -1;
 }
 

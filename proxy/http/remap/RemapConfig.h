@@ -25,8 +25,8 @@
 
 #include <list>
 #include "AclFiltering.h"
-#include "tscore/MemArena.h"
 #include "tscore/ts_file.h"
+#include "UrlRewrite.h"
 
 class UrlRewrite;
 class url_mapping;
@@ -45,6 +45,8 @@ static constexpr ts::TextView REMAP_FILTER_IP_ALLOW_TAG{"ip_allow"};
 /** Configuration load time information for building the remap table.
 
     This is not a persistent structure, it is used only while the configuration is being loaded.
+    Data that needs to persist longer is transfered to the @c URLRewrite instance. In particular
+    this means any strings from the configuration that can be used later.
 */
 struct RemapBuilder {
   using self_type = RemapBuilder; ///< Self reference type.
@@ -61,7 +63,7 @@ struct RemapBuilder {
    *
    * @param url_rewriter The persistent store of remap information.
    */
-  RemapBuilder(UrlRewrite *url_rewriter) : rewrite(url_rewriter) {}
+  explicit RemapBuilder(UrlRewrite *url_rewriter) : rewriter(url_rewriter) {}
 
   RemapBuilder(const RemapBuilder &) = delete;
   RemapBuilder &operator=(const RemapBuilder &) = delete;
@@ -72,10 +74,8 @@ struct RemapBuilder {
    * @param rewriter The persistent store of remap information.
    * @return @c true if the file was parsed successfully, @c false if not.
    *
-   * This is a static function, it creates a temporary instance of this class to do the parsing
-   * and puts the persistent data in @a rewriter.
    */
-  static bool parse_config(ts::file::path const &path, UrlRewrite * rewriter);
+  static bool parse_config(ts::file::path const &path, UrlRewrite *rewriter);
 
   /** Parse and load a remap configuration file.
    *
@@ -86,8 +86,6 @@ struct RemapBuilder {
    * This is used to handle included configuration files.
    */
   TextView parse_remap_fragment(ts::file::path const &path, RemapBuilder::ErrBuff &errw);
-
-  TextView process_filter_opt(url_mapping &mapping, ErrBuff &errw);
 
   /** Handle a directive.
    *
@@ -142,12 +140,15 @@ struct RemapBuilder {
 
   /** Load the plugins for the current arguments.
    *
+   * @param mp URL mapping instance for the plugins.
    * @param errw Error reporting buffer.
    * @return An error string, or an empty view on success.
    *
    * This walks the argument list, finding plugin arguments and loading the specified plugin.
    */
-  TextView load_plugins(ErrBuff & errw);
+  TextView load_plugins(url_mapping *mp, ErrBuff &errw);
+
+  TextView parse_regex_mapping(TextView fromHost, url_mapping *mapping, UrlRewrite::RegexMapping *rxp_map, ErrBuff &errw);
 
   /** Find a filter by name.
    *
@@ -156,6 +157,18 @@ struct RemapBuilder {
    */
   RemapFilter *find_filter(TextView name);
 
+  /** Localize a URL and, if needed, normalize it as it is  copied.
+   *
+   * @param url URL to normalize.
+   * @return A view of the normalized URL.
+   *
+   * Required properties:
+   * - If the URL is a full URL, the host @b must be followed by a separator ('/').
+   */
+  TextView normalize_url(TextView url);
+
+  /// Reset state for a new rule.
+  /// Filters are not cleared.
   void clear();
 
   // These are views in to the configuration file. Copies are made when storing them in the
@@ -164,24 +177,16 @@ struct RemapBuilder {
   ParamList paramv; ///< Parameter list.
   ArgList argv;     ///< Argument list.
 
+  /// Flags for the argument types, indicating if at least one is present in the args.
+  std::bitset<RemapArg::N_TYPES> arg_types                     = 0;
+  static constexpr std::bitset<RemapArg::N_TYPES> FILTER_TYPES = 0xb111111000;
+
   bool ip_allow_check_enabled_p = true;
   bool accept_check_p           = true;
-  UrlRewrite *rewrite           = nullptr; // Pointer to the UrlRewrite object we are parsing for.
+  UrlRewrite *rewriter          = nullptr; // Pointer to the UrlRewrite object we are parsing for.
   RemapFilterList filters;
   std::list<RemapFilter *> active_filters;
-  ts::MemArena arena{512};
-
-  /** Copy the @a token to the local memory arena and return the localized data.
-   *
-   * @param token String to localize.
-   * @return A new view of the localized string.
-   *
-   * This adds a null terminator so the view can be used as a C string.
-   */
-  TextView localize(TextView token);
 };
-
-const char *remap_validate_filter_args(RemapFilter **rule_pp, const char **argv, int argc, char *errStrBuf, size_t errStrBufSize);
 
 bool remap_parse_config(const char *path, UrlRewrite *rewrite);
 

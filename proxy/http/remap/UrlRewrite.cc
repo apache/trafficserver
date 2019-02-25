@@ -313,7 +313,7 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
   bool remap_found = false;
   const char *host;
   int host_len;
-  char *new_loc_hdr;
+  char const *new_loc_hdr;
   int new_loc_length;
   int i;
   const struct {
@@ -367,90 +367,52 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
 
   s->acl_filtering_performed = true; // small protection against reverse mapping
 
-  if (map->filter) {
-    int method               = s->hdr_info.client_request.method_get_wksidx();
-    int method_wksidx        = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
-    bool client_enabled_flag = true;
+  // Default is to allow, therefore do nothing if no filters.
+  if (!map->filters.empty()) {
+    int method        = s->hdr_info.client_request.method_get_wksidx();
+    int method_wksidx = (method != -1) ? (method - HTTP_WKSIDX_CONNECT) : -1;
 
     ink_release_assert(ats_is_ip(&s->client_info.src_addr));
 
-    for (RemapFilter *rp = map->filter; rp && client_enabled_flag; rp = rp->next) {
-      bool match = true;
-
-      if (rp->method_restriction_enabled) {
+    for (auto *rp : map->filters) {
+      if (rp->method_active_p) {
+        bool match_p = false;
         if (method_wksidx >= 0 && method_wksidx < HTTP_WKSIDX_METHODS_CNT) {
-          match = rp->wk_method[method_wksidx];
-        } else if (!rp->methods.empty()) {
-          match = false;
+          match_p = rp->wk_method[method_wksidx];
+        } else if (rp->methods.empty()) {
+          match_p = false;
         } else {
-          int method_str_len;
-          const char *method_str = s->hdr_info.client_request.method_get(&method_str_len);
-          match                  = rp->methods.count(std::string(method_str, method_str_len));
+          match_p = rp->methods.find(s->hdr_info.client_request.method_get()) != rp->methods.end();
+        }
+        if (rp->method_invert_p) {
+          match_p = !match_p;
+        }
+        if (!match_p) {
+          continue;
         }
       }
 
-      if (match && rp->src_ip_valid) {
-        match = false;
-        for (int j = 0; j < rp->src_ip_cnt && !match; j++) {
-          bool in_range = rp->src_ip_array[j].contains(s->client_info.src_addr);
-          if (rp->src_ip_array[j].invert) {
-            if (!in_range) {
-              match = true;
-            }
-          } else {
-            if (in_range) {
-              match = true;
-            }
-          }
-        }
+      if (rp->src_ip.count() && !rp->src_ip.contains(s->client_info.src_addr)) {
+        continue;
       }
 
-      if (match && rp->in_ip_valid) {
-        Debug("url_rewrite", "match was true and we have specified a in_ip field");
-        match = false;
-        for (int j = 0; j < rp->in_ip_cnt && !match; j++) {
-          IpEndpoint incoming_addr;
-          incoming_addr.assign(s->state_machine->ua_txn->get_netvc()->get_local_addr());
-          if (is_debug_tag_set("url_rewrite")) {
-            char buf1[128], buf2[128], buf3[128];
-            ats_ip_ntop(incoming_addr, buf1, sizeof(buf1));
-            rp->in_ip_array[j].start.toString(buf2, sizeof(buf2));
-            rp->in_ip_array[j].end.toString(buf3, sizeof(buf3));
-            Debug("url_rewrite", "Trying to match incoming address %s in range %s - %s.", buf1, buf2, buf3);
-          }
-          bool in_range = rp->in_ip_array[j].contains(incoming_addr);
-          if (rp->in_ip_array[j].invert) {
-            if (!in_range) {
-              match = true;
-            }
-          } else {
-            if (in_range) {
-              match = true;
-            }
-          }
-        }
+      if (rp->proxy_ip.count() && !rp->proxy_ip.contains(s->state_machine->ua_txn->get_netvc()->get_local_addr())) {
+        continue;
       }
 
-      if (rp->internal) {
-        match = s->state_machine->ua_txn->get_netvc()->get_is_internal_request();
-        Debug("url_rewrite", "%s an internal request", match ? "matched" : "didn't match");
+      if (rp->internal_p && !s->state_machine->ua_txn->get_netvc()->get_is_internal_request()) {
+        continue;
       }
 
-      if (match && client_enabled_flag) { // make sure that a previous filter did not DENY
-        Debug("url_rewrite", "matched ACL filter rule, %s request", rp->allow_flag ? "allowing" : "denying");
-        client_enabled_flag = rp->allow_flag ? true : false;
-      } else {
-        if (!client_enabled_flag) {
-          Debug("url_rewrite", "Previous ACL filter rule denied request, continuing to deny it");
-        } else {
-          Debug("url_rewrite", "did NOT match ACL filter rule, %s request", rp->allow_flag ? "denying" : "allowing");
-          client_enabled_flag = rp->allow_flag ? false : true;
-        }
+      // Matched all criteria ==> apply action.
+      if (is_debug_tag_set("url_rewrite")) {
+        ts::LocalBufferWriter<256> w;
+        w.print("Matched filter rule - '{}'", rp->action).write('\0');
+        Debug("url_rewrite", "%s", w.view().data());
       }
-
-    } /* end of for(rp = map->filter;rp;rp = rp->next) */
-
-    s->client_connection_enabled = client_enabled_flag;
+      s->client_connection_enabled = (rp->action == RemapFilter::ALLOW);
+      break;
+    }
   }
 }
 
@@ -784,47 +746,37 @@ int
 UrlRewrite::_expandSubstitutions(int *matches_info, const RegexMapping *reg_map, const char *matched_string, char *dest_buf,
                                  int dest_buf_size)
 {
-  int cur_buf_size = 0;
-  int token_start  = 0;
-  int n_bytes_needed;
+  unsigned token_start = 0;
+  unsigned n_bytes_needed;
   int match_index;
-  for (int i = 0; i < reg_map->n_substitutions; ++i) {
+  ts::FixedBufferWriter w{dest_buf, static_cast<size_t>(dest_buf_size)};
+  for (int i = 0; !w.error() && i < reg_map->n_substitutions; ++i) {
     // first copy preceding bytes
     n_bytes_needed = reg_map->substitution_markers[i] - token_start;
-    if ((cur_buf_size + n_bytes_needed) > dest_buf_size) {
-      goto lOverFlow;
-    }
-    memcpy(dest_buf + cur_buf_size, reg_map->to_url_host_template + token_start, n_bytes_needed);
-    cur_buf_size += n_bytes_needed;
+    w.write(reg_map->to_url_host_template.substr(token_start, n_bytes_needed));
 
     // then copy the sub pattern match
     match_index    = reg_map->substitution_ids[i] * 2;
     n_bytes_needed = matches_info[match_index + 1] - matches_info[match_index];
-    if ((cur_buf_size + n_bytes_needed) > dest_buf_size) {
-      goto lOverFlow;
-    }
-    memcpy(dest_buf + cur_buf_size, matched_string + matches_info[match_index], n_bytes_needed);
-    cur_buf_size += n_bytes_needed;
+    w.write(matched_string + matches_info[match_index], n_bytes_needed);
 
     token_start = reg_map->substitution_markers[i] + 2; // skip the place holder
   }
 
   // copy last few bytes (if any)
-  if (token_start < reg_map->to_url_host_template_len) {
-    n_bytes_needed = reg_map->to_url_host_template_len - token_start;
-    if ((cur_buf_size + n_bytes_needed) > dest_buf_size) {
-      goto lOverFlow;
-    }
-    memcpy(dest_buf + cur_buf_size, reg_map->to_url_host_template + token_start, n_bytes_needed);
-    cur_buf_size += n_bytes_needed;
+  if (token_start < reg_map->to_url_host_template.size()) {
+    n_bytes_needed = reg_map->to_url_host_template.size() - token_start;
+    w.write(reg_map->to_url_host_template.substr(token_start, n_bytes_needed));
   }
-  Debug("url_rewrite_regex", "Expanded substitutions and returning string [%.*s] with length %d", cur_buf_size, dest_buf,
-        cur_buf_size);
-  return cur_buf_size;
 
-lOverFlow:
-  Warning("Overflow while expanding substitutions");
-  return 0;
+  if (w.error()) {
+    Warning("Overflow while expanding substitutions");
+    return 0;
+  }
+
+  Debug("url_rewrite_regex", "Expanded substitutions and returning string [%.*s] with length %" PRIu64, static_cast<int>(w.size()),
+        w.data(), w.size());
+  return static_cast<int>(w.size());
 }
 
 bool
@@ -922,9 +874,6 @@ UrlRewrite::_destroyList(RegexMappingList &mappings)
   RegexMapping *list_iter;
   while ((list_iter = mappings.pop()) != nullptr) {
     delete list_iter->url_map;
-    if (list_iter->to_url_host_template) {
-      ats_free(list_iter->to_url_host_template);
-    }
     delete list_iter;
   }
   mappings.clear();

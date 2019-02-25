@@ -427,6 +427,7 @@ void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 inkcoreapi void http_hdr_version_set(HTTPHdrImpl *hh, int32_t ver);
 
 const char *http_hdr_method_get(HTTPHdrImpl *hh, int *length);
+std::string_view http_hdr_method_get(HTTPHdrImpl *hh);
 inkcoreapi void http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
                                     bool must_copy);
 
@@ -525,6 +526,7 @@ public:
   void version_set(HTTPVersion version);
 
   const char *method_get(int *length);
+  std::string_view method_get();
   int method_get_wksidx();
   void method_set(const char *value, int length);
 
@@ -548,7 +550,7 @@ public:
 
       @see url_string_get
    */
-  char *url_string_get_ref(int *length = nullptr ///< Store string length here.
+  char const *url_string_get_ref(int *length = nullptr ///< Store string length here.
   );
 
   /** Print the URL.
@@ -1027,6 +1029,15 @@ HTTPHdr::method_get(int *length)
   return http_hdr_method_get(m_http, length);
 }
 
+inline std::string_view
+HTTPHdr::method_get()
+{
+  ink_assert(valid());
+  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
+
+  return http_hdr_method_get(m_http);
+}
+
 inline int
 HTTPHdr::method_get_wksidx()
 {
@@ -1256,7 +1267,7 @@ HTTPHdr::is_pragma_no_cache_set()
   return (get_cooked_pragma_no_cache());
 }
 
-inline char *
+inline char const *
 HTTPHdr::url_string_get_ref(int *length)
 {
   return this->url_string_get(USE_HDR_HEAP_MAGIC, length);

@@ -1030,4 +1030,23 @@ operator<<(ostream &s, ts::FixedBufferWriter &w)
 {
   return s << w.view();
 }
+
+ts::BufferWriter &
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, error_code const &ec)
+{
+  // This provides convenient safe access to the errno short name array.
+  static const ts::BWFormat number_fmt{"[{}]"sv}; // numeric value format.
+  if (spec.has_numeric_type()) {                  // if numeric type, print just the numeric
+    // part.
+    w.print(number_fmt, ec.value());
+  } else {
+    w.write(ec.message());
+    if (spec._type != 's' && spec._type != 'S') {
+      w.write(' ');
+      w.print(number_fmt, ec.value());
+    }
+  }
+  return w;
+}
+
 } // namespace std

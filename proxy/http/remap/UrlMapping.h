@@ -31,44 +31,84 @@
 #include "RemapPluginInfo.h"
 #include "tscore/Regex.h"
 #include "tscore/List.h"
+#include "tscpp/util/TextView.h"
+#include "tscpp/util/IntrusiveDList.h"
 
-/**
- * Used to store http referer strings (and/or regexp)
+/** Used to store http referer strings (and/or regexp)
  **/
-class referer_info
+class RefererInfo
 {
+  using self_type = RefererInfo; ///< Self reference type.
 public:
-  referer_info(char *_ref, bool *error_flag = nullptr, char *errmsgbuf = nullptr, int errmsgbuf_size = 0);
-  ~referer_info();
-  referer_info *next;
-  char *referer;
-  int referer_size;
-  bool any;      /* any flag '*' */
-  bool negative; /* negative referer '~' */
-  bool regx_valid;
-  pcre *regx;
+  RefererInfo() = default;
+  RefererInfo(self_type &&that) : referer(that.referer), any(that.any), negative(that.negative), regx(that.regx)
+  {
+    that.regx = nullptr;
+    that.referer.clear();
+  }
+  RefererInfo(self_type const &that) = delete;
+  ~RefererInfo();
+  self_type *_next = nullptr; ///< Intrusive forward link.
+  self_type *_prev = nullptr; ///< Intrusive backward link.
+  /// Intrusive link descriptor.
+  using Linkage = ts::IntrusiveLinkage<self_type>;
+  /// List of instances of this type.
+  using List = ts::IntrusiveDList<Linkage>;
+
+  static constexpr ts::TextView ANY_TAG{"*"};
+
+  /** Parse @a text into a referer and flags.
+   *
+   * @param text Referer text to parse.
+   * @param errw Error reporting buffer.
+   * @return An empty view on success, an error string on failure.
+   *
+   * @note @a text must be null terminated (a C-string) with the null immediately following the view.
+   * This is required by PCRE.
+   */
+  ts::TextView parse(ts::TextView text, ts::FixedBufferWriter &errw);
+
+  ts::TextView referer;
+  bool any      = false; /* any flag '*' */
+  bool negative = false; /* negative referer '~' */
+  pcre *regx    = nullptr;
 };
 
-/**
+/** Tokenized referer format string.
  *
- **/
-class redirect_tag_str
+ */
+class RedirectChunk
 {
-public:
-  redirect_tag_str() : next(nullptr), chunk_str(nullptr), type(0) {}
-  ~redirect_tag_str()
-  {
-    type = 0;
-    if (chunk_str) {
-      ats_free(chunk_str);
-      chunk_str = nullptr;
-    }
-  }
+  using self_type = RedirectChunk;
 
-  redirect_tag_str *next;
-  char *chunk_str;
-  char type; /* s - string, r - referer, t - url_to, f - url_from, o - origin url */
-  static redirect_tag_str *parse_format_redirect_url(char *url);
+public:
+  RedirectChunk() = default;
+  /** Construct an initialized chunkd of type @a c and @a text.
+   *
+   * @param text Text for the chunk.
+   * @param c Type of the chunk.
+   */
+  RedirectChunk(ts::TextView text, char c) noexcept : chunk(text), type(c) {}
+
+  /// Text, if any, for this chunk.
+  ts::TextView chunk;
+
+  /** Type of chunk.
+   * - 's' : string (literal)
+   * - 'r' : referer
+   * - 'f' : from URL
+   * - 't' : to URL
+   * - 'o' : origin URL
+   */
+  char type = 's'; /* s - string, r - referer, t - url_to, f - url_from, o - origin url */
+
+  /** Parse the @a url into a vector of chunks in @a result.
+   *
+   * @param url [in] The URL (text string) to parse.
+   * @param result [out] Parsed chunks are placed here.
+   * @return @c true on success, @c false on error.
+   */
+  static bool parse(ts::TextView url, std::vector<self_type> &result);
 };
 
 /**
@@ -95,20 +135,21 @@ public:
   int from_path_len = 0;
   URL fromURL;
   URL toURL; // Default TO-URL (from remap.config)
-  bool homePageRedirect              = false;
-  bool unique                        = false; // INKqa11970 - unique mapping
-  bool default_redirect_url          = false;
-  bool optional_referer              = false;
-  bool negative_referer              = false;
-  bool wildcard_from_scheme          = false;   // from url is '/foo', only http or https for now
-  char *tag                          = nullptr; // tag
-  char *filter_redirect_url          = nullptr; // redirect url when referer filtering enabled
-  unsigned int map_id                = 0;
-  referer_info *referer_list         = nullptr;
-  redirect_tag_str *redir_chunk_list = nullptr;
-  bool ip_allow_check_enabled_p      = false;
-  RemapFilter *filter                = nullptr; // acl filtering (list of rules)
-  LINK(url_mapping, link);                      // For use with the main Queue linked list holding all the mapping
+  bool homePageRedirect     = false;
+  bool unique               = false; // INKqa11970 - unique mapping
+  bool default_redirect_url = false;
+  bool optional_referer     = false;
+  bool negative_referer     = false;
+  bool wildcard_from_scheme = false;   // from url is '/foo', only http or https for now
+  ts::TextView tag          = nullptr; // tag
+  ts::TextView filter_redirect_url;    // redirect url when referer filtering enabled
+  unsigned int map_id = 0;
+  RefererInfo::List referer_list;
+  std::vector<RedirectChunk> redirect_chunks;
+  bool ip_allow_check_enabled_p = false;
+  /// List of filters that applyt to this remapping, in precedence order.
+  std::vector<RemapFilter *> filters;
+  LINK(url_mapping, link); // For use with the main Queue linked list holding all the mapping
 
   int
   getRank() const

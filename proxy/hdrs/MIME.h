@@ -815,7 +815,7 @@ inline void
 MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length)
 {
   int16_t name_wks_idx;
-  const char *name_wks;
+  const char *name_wks = nullptr;
 
   if (hdrtoken_is_wks(name)) {
     name_wks_idx = hdrtoken_wks_to_index(name);

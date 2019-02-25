@@ -44,15 +44,18 @@ struct RemapArg {
   /// Type of argument (feature based).
   enum Type : int8_t {
     INVALID,      ///< Invalid / uninitialized.
-    INTERNAL,     ///< Filter for internal requests.
     PLUGIN,       ///< Specify a plugin.
     PLUGIN_PARAM, ///< Specific a plugin parameter.
+    INTERNAL,     ///< Filter for internal requests.
     METHOD,       ///< Filter by method.
     MAP_ID,       ///< Assign a rule ID.
     ACTION,       ///< ACL action.
     SRC_IP,       ///< Check user agent IP address.
     PROXY_IP,     ///< Check local inbound IP address (proxy address).
   };
+
+  /// Number of values in @c Type
+  static constexpr unsigned N_TYPES = 9;
 
   /** A description of an argument.
    * This enables mapping from string names to argument types.
@@ -62,16 +65,22 @@ struct RemapArg {
     Type type;             ///< Type of argument of this @a name.
     bool value_required_p; ///< Argument must have a value.
   };
+
   /// List of supported arguments.
-  static constexpr std::array<Descriptor, 9> Args = {{{"internal", INTERNAL, false},
-                                                      {"plugin", PLUGIN, true},
-                                                      {"pparam", PLUGIN_PARAM, true},
-                                                      {"method", METHOD, true},
-                                                      {"src-ip", SRC_IP, true},
-                                                      {"proxy-ip", PROXY_IP, true},
-                                                      {"in-ip", PROXY_IP, true},
-                                                      {"action", ACTION, true},
-                                                      {"mapid", MAP_ID, true}}};
+  /// @internal Note the value '9' here is not the same as @c N_TYPES because @c INVALID isn't
+  /// listed here, and some are duplicates - it happens to work out to the same but it's not
+  /// required.
+  static constexpr std::array<Descriptor, 9> ArgTags = {{{"internal", INTERNAL, false},
+                                                         {"plugin", PLUGIN, true},
+                                                         {"pparam", PLUGIN_PARAM, true},
+                                                         {"method", METHOD, true},
+                                                         {"src-ip", SRC_IP, true},
+                                                         {"proxy-ip", PROXY_IP, true},
+                                                         {"in-ip", PROXY_IP, true},
+                                                         {"action", ACTION, true},
+                                                         {"mapid", MAP_ID, true}}};
+
+  RemapArg() = default;
 
   /** Construct from argument @a key and @a value.
    *
@@ -129,16 +138,29 @@ public:
    * longer than that of this instance. This is the responsibility of the caller (presumably the
    * instance owner).
    */
-  ts::textView add_arg(RemapArg const &arg, ts::FixedBufferWriter &errw);
+  ts::TextView add_arg(RemapArg const &arg, ts::FixedBufferWriter &errw);
 
-  ts::BufferWriter &inscribe(ts::BufferWriter &w, ts::BWFSpec const &spec) const;
+  /** Generate formatted output describing this instance.
+   *
+   * @param w Output buffer.
+   * @param spec Format specification.
+   * @return @a w
+   *
+   * This is intended to be used for BW formatting.
+   */
+  ts::BufferWriter &describe(ts::BufferWriter &w, ts::BWFSpec const &spec) const;
 
   self_type *_next = nullptr; ///< Forward intrusive link.
   self_type *_prev = nullptr; ///< Backward instrusive link.
   using Linkage    = ts::IntrusiveLinkage<self_type, &self_type::_next, &self_type::_prev>;
+  using List       = ts::IntrusiveDList<Linkage>;
 
+  /// Filter action.
   enum Action : uint8_t { ALLOW, DENY } action = ALLOW;
-  bool internal_p                              = false;
+  /// Check if the transaction is internal.
+  bool internal_p      = false;
+  bool method_active_p = false; ///< Methods should be checked for matching.
+  bool method_invert_p = false; ///< Match on not a listed method.
 
   std::string name; // optional filter name
 
@@ -150,9 +172,11 @@ public:
 
   // methods
   /// Flag vector for well known methods.
+  /// @internal This must be a vector because the number of well known methods is computed at run time.
   std::vector<bool> wk_method;
-  /// Set of method names.
-  using MethodSet = std::set<std::string>;
+  /// General method set.
+  /// This contains methods that are not well known, i.e. are not built in to HTTP processing.
+  using MethodSet = std::set<std::string_view>;
   /// Set for methods that are not well known (built in to TS).
   MethodSet methods;
 
@@ -160,16 +184,21 @@ public:
   IpMap src_ip;
   /// Map of local inbound addresses of interest.
   IpMap proxy_ip;
+
+protected:
+  /** Fill a @a map with the addresses not in [ @a min, @a max ].
+   *
+   * @param map Map to fill.
+   * @param min Min address of excluded range.
+   * @param max Max address of exclude range.
+   * @param mark Value to use in the fill.
+   */
+  void fill_inverted(IpMap &map, IpAddr const &min, IpAddr const &max, void *mark);
+
+  ts::TextView add_ip_addr_arg(IpMap &map, ts::TextView range, ts::TextView const &tag, ts::FixedBufferWriter &errw);
 };
 
-using RemapFilterList = ts::IntrusiveDList<RemapFilter::Linkage>;
-
-inline size_t
-RemapFilter::add_arg(RemapArg const &arg)
-{
-  argv.emplace_back(arg);
-  return argv.size();
-}
+using RemapFilterList = RemapFilter::List;
 
 inline RemapFilter &
 RemapFilter::set_name(ts::TextView const &text)
@@ -180,10 +209,14 @@ RemapFilter::set_name(ts::TextView const &text)
 
 namespace ts
 {
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, RemapArg::Type type);
+
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, RemapFilter::Action action);
+
 inline BufferWriter &
 bwformat(ts::BufferWriter &w, BWFSpec const &spec, RemapFilter const &rule)
 {
-  return rule.inscribe(w, spec);
+  return rule.describe(w, spec);
 }
 
 } // namespace ts

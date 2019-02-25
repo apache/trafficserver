@@ -285,8 +285,8 @@ LogUtils::strip_trailing_newline(char *buf)
 namespace
 {
 char *
-escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map,
-                    bool pure_escape)
+escapify_url_common(Arena *arena, char const *url, size_t len_in, int *len_out, char *dst, size_t dst_size,
+                    const unsigned char *map, bool pure_escape)
 {
   // codes_to_escape is a bitmap encoding the codes that should be escaped.
   // These are all the codes defined in section 2.4.3 of RFC 2396
@@ -328,9 +328,9 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
 
   // Count specials in the url, assuming that there won't be any.
   //
-  int count        = 0;
-  char *p          = url;
-  char *in_url_end = url + len_in;
+  int count              = 0;
+  char const *p          = url;
+  char const *in_url_end = url + len_in;
 
   while (p < in_url_end) {
     unsigned char c = *p;
@@ -347,7 +347,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
     if (dst) {
       ink_strlcpy(dst, url, dst_size);
     }
-    return url;
+    return const_cast<char *>(url);
   }
 
   // For each special char found, we'll need an escape string, which is
@@ -376,8 +376,8 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
     new_url = (char *)arena->str_alloc(out_len + 1);
   }
 
-  char *from = url;
-  char *to   = new_url;
+  char const *from = url;
+  char *to         = new_url;
 
   while (from < in_url_end) {
     unsigned char c = *from;
@@ -414,13 +414,14 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
 } // namespace
 
 char *
-LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map)
+LogUtils::escapify_url(Arena *arena, char const *url, size_t len_in, int *len_out, char *dst, size_t dst_size,
+                       const unsigned char *map)
 {
   return escapify_url_common(arena, url, len_in, len_out, dst, dst_size, map, false);
 }
 
 char *
-LogUtils::pure_escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size,
+LogUtils::pure_escapify_url(Arena *arena, char const *url, size_t len_in, int *len_out, char *dst, size_t dst_size,
                             const unsigned char *map)
 {
   return escapify_url_common(arena, url, len_in, len_out, dst, dst_size, map, true);

@@ -171,7 +171,8 @@ void url_describe(HdrHeapObjImpl *raw, bool recurse);
 int url_length_get(URLImpl *url);
 char *url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap);
 void url_clear_string_ref(URLImpl *url);
-char *url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length);
+char const *url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length);
+std::string_view url_string_get_view(HdrHeap *heap, URLImpl *url);
 void url_called_set(URLImpl *url);
 char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length);
 
@@ -244,7 +245,8 @@ public:
   int length_get();
   void clear_string_ref();
   char *string_get(Arena *arena, int *length = nullptr);
-  char *string_get_ref(int *length = nullptr);
+  char const *string_get_ref(int *length = nullptr);
+  std::string_view string_get_view();
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = nullptr);
   void hash_get(CryptoHash *hash, cache_generation_t generation = -1) const;
   void host_hash_get(CryptoHash *hash);
@@ -258,6 +260,7 @@ public:
   void user_set(const char *value, int length);
   const char *password_get(int *length);
   void password_set(const char *value, int length);
+  std::string_view host_get();
   const char *host_get(int *length);
   void host_set(const char *value, int length);
   int port_get();
@@ -399,11 +402,18 @@ URL::string_get(Arena *arena_or_null_for_malloc, int *length)
   return url_string_get(m_url_impl, arena_or_null_for_malloc, length, m_heap);
 }
 
-inline char *
+inline char const *
 URL::string_get_ref(int *length)
 {
   ink_assert(valid());
   return url_string_get_ref(m_heap, m_url_impl, length);
+}
+
+inline std::string_view
+URL::string_get_view()
+{
+  ink_assert(valid());
+  return url_string_get_view(m_heap, m_url_impl);
 }
 
 inline void
@@ -533,9 +543,16 @@ URL::password_set(const char *value, int length)
 inline const char *
 URL::host_get(int *length)
 {
+  auto host{this->host_get()};
+  *length = host.size();
+  return host.data();
+}
+
+inline std::string_view
+URL::host_get()
+{
   ink_assert(valid());
-  *length = m_url_impl->m_len_host;
-  return m_url_impl->m_ptr_host;
+  return {m_url_impl->m_ptr_host, m_url_impl->m_len_host};
 }
 
 /*-------------------------------------------------------------------------
@@ -734,5 +751,5 @@ URL::unescapify(Arena *arena, const char *str, int length)
 
 namespace ts
 {
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, URL *url);
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, URL const &url);
 }

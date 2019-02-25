@@ -79,34 +79,11 @@ url_mapping::delete_instance(unsigned int index)
  **/
 url_mapping::~url_mapping()
 {
-  referer_info *r;
-  redirect_tag_str *rc;
-  RemapFilter *afr;
-
-  tag                 = (char *)ats_free_null(tag);
-  filter_redirect_url = (char *)ats_free_null(filter_redirect_url);
-
-  while ((r = referer_list) != nullptr) {
-    referer_list = r->next;
-    delete r;
-  }
-
-  while ((rc = redir_chunk_list) != nullptr) {
-    redir_chunk_list = rc->next;
-    delete rc;
-  }
-
   // Delete all instance data, this gets ugly because to delete the instance data, we also
   // must know which plugin this is associated with. Hence, looping with index instead of a
   // normal iterator. ToDo: Maybe we can combine them into another container.
   for (std::size_t i = 0; i < plugin_count(); ++i) {
     delete_instance(i);
-  }
-
-  // Delete filters
-  while ((afr = filter) != nullptr) {
-    filter = afr->next;
-    delete afr;
   }
 
   // Destroy the URLs
@@ -121,108 +98,63 @@ url_mapping::Print()
 
   fromURL.string_get_buf(from_url_buf, (int)sizeof(from_url_buf));
   toURL.string_get_buf(to_url_buf, (int)sizeof(to_url_buf));
-  printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %zu plugins]\n", from_url_buf, unique ? "(unique)" : "",
-         to_url_buf, homePageRedirect ? "(R)" : "", tag ? tag : "", plugin_count() > 0 ? "are" : "not", plugin_count());
+  printf("\t %s %s=> %s %s <%.*s> [plugins %s enabled; running with %zu plugins]\n", from_url_buf, unique ? "(unique)" : "",
+         to_url_buf, homePageRedirect ? "(R)" : "", static_cast<int>(tag.size()), tag.data(), plugin_count() > 0 ? "are" : "not",
+         plugin_count());
 }
 
-/**
- *
- **/
-redirect_tag_str *
-redirect_tag_str::parse_format_redirect_url(char *url)
+bool
+RedirectChunk::parse(ts::TextView url, std::vector<self_type> &result)
 {
-  char *c;
-  redirect_tag_str *r, **rr;
-  redirect_tag_str *list = nullptr;
-  char type              = 0;
-
-  if (url && *url) {
-    for (rr = &list; *(c = url) != 0;) {
-      for (type = 's'; *c; c++) {
-        if (c[0] == '%') {
-          char tmp_type = (char)tolower((int)c[1]);
-          if (tmp_type == 'r' || tmp_type == 'f' || tmp_type == 't' || tmp_type == 'o') {
-            if (url == c) {
-              type = tmp_type;
-            }
-            break;
-          }
-        }
+  while (!url.empty()) {
+    ts::TextView::size_type idx = 0;
+    if (url.npos == idx || idx == url.size() - 1) { // all remaining text is a literal.
+      result.emplace_back(url, 's');
+      return true;
+    }
+    char c = url[idx + 1];
+    if ('r' == c || 'f' == c || 't' == c || 'o' == c) {
+      if (idx > 1) {
+        result.emplace_back(url.substr(idx), 's');
       }
-      r = new redirect_tag_str();
-      if (likely(r)) {
-        if ((r->type = type) == 's') {
-          char svd     = *c;
-          *c           = 0;
-          r->chunk_str = ats_strdup(url);
-          *c           = svd;
-          url          = c;
-        } else {
-          url += 2;
-        }
-        (*rr = r)->next = nullptr;
-        rr              = &(r->next);
-        // printf("\t***********'%c' - '%s'*******\n",r->type,r->chunk_str ? r->chunk_str : "<NULL>");
-      } else {
-        break; /* memory allocation error */
-      }
+      result.emplace_back(ts::TextView{}, c);
+      url.remove_prefix(idx + 2);
+      idx = 0;
     }
   }
-  return list;
+  return true;
 }
 
-/**
- *
- **/
-referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size)
-  : next(nullptr), referer(nullptr), referer_size(0), any(false), negative(false), regx_valid(false)
+ts::TextView
+RefererInfo::parse(ts::TextView text, ts::FixedBufferWriter &errw)
 {
-  const char *error;
-  int erroffset;
-
-  if (error_flag) {
-    *error_flag = false;
-  }
-  regx = nullptr;
-
-  if (_ref) {
-    if (*_ref == '~') {
+  if (!text.empty()) {
+    if (*text == '~') {
       negative = true;
-      _ref++;
+      ++text;
     }
-    if ((referer = ats_strdup(_ref)) != nullptr) {
-      referer_size = strlen(referer);
-      if (!strcmp(referer, "*")) {
+    referer = text;
+    if (!text.empty()) {
+      if (text == ANY_TAG) {
         any = true;
       } else {
-        regx = pcre_compile(referer, PCRE_CASELESS, &error, &erroffset, nullptr);
+        char const *err_msg = nullptr;
+        int err_pos         = 0;
+        regx                = pcre_compile(text.data(), PCRE_CASELESS, &err_msg, &err_pos, nullptr);
         if (!regx) {
-          if (errmsgbuf && (errmsgbuf_size - 1) > 0) {
-            ink_strlcpy(errmsgbuf, error, errmsgbuf_size);
-          }
-          if (error_flag) {
-            *error_flag = true;
-          }
-        } else {
-          regx_valid = true;
+          errw.write(err_msg);
+          return errw.view();
         }
       }
     }
   }
+  return {};
 }
 
-/**
- *
- **/
-referer_info::~referer_info()
+RefererInfo::~RefererInfo()
 {
-  ats_free(referer);
-  referer      = nullptr;
-  referer_size = 0;
-
-  if (regx_valid) {
+  if (regx) {
     pcre_free(regx);
-    regx       = nullptr;
-    regx_valid = false;
   }
+  regx = nullptr;
 }

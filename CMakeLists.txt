@@ -48,7 +48,9 @@ include_directories(
         mgmt/api
         mgmt/utils
         mgmt/api/include
-        proxy/api)
+        proxy/api
+        lib/yamlcpp/include
+)
 
 macro(CC_EXEC exec path)
     file(GLOB cc_exec_files ${path}/*.cc ${path}/*.h)

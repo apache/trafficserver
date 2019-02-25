@@ -109,7 +109,7 @@ extern uint32_t hdrtoken_str_flags[];
 
 extern void hdrtoken_init();
 extern int hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = nullptr);
-inkcoreapi extern int hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr);
+inkcoreapi extern int hdrtoken_tokenize(std::string_view, std::string_view *wks_string_out = nullptr);
 extern const char *hdrtoken_string_to_wks(const char *string);
 extern const char *hdrtoken_string_to_wks(const char *string, int length);
 
@@ -196,6 +196,16 @@ hdrtoken_index_to_prefix(int wks_idx)
   return hdrtoken_wks_to_prefix(hdrtoken_index_to_wks(wks_idx));
 }
 
+inline int
+hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr)
+{
+  std::string_view wks;
+  auto r = hdrtoken_tokenize({string, static_cast<size_t>(string_len)}, &wks);
+  if (r > -1 && wks_string_out) {
+    *wks_string_out = wks.data();
+  }
+  return r;
+}
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 

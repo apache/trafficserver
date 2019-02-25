@@ -661,19 +661,21 @@ http_hdr_version_set(HTTPHdrImpl *hh, int32_t ver)
 const char *
 http_hdr_method_get(HTTPHdrImpl *hh, int *length)
 {
-  const char *str;
+  auto method{http_hdr_method_get(hh)};
+  *length = method.size();
+  return method.data();
+}
 
+std::string_view
+http_hdr_method_get(HTTPHdrImpl *hh)
+{
   ink_assert(hh->m_polarity == HTTP_TYPE_REQUEST);
 
   if (hh->u.req.m_method_wks_idx >= 0) {
-    str     = hdrtoken_index_to_wks(hh->u.req.m_method_wks_idx);
-    *length = hdrtoken_index_to_length(hh->u.req.m_method_wks_idx);
-  } else {
-    str     = hh->u.req.m_ptr_method;
-    *length = hh->u.req.m_len_method;
+    return {hdrtoken_index_to_wks(hh->u.req.m_method_wks_idx),
+            static_cast<size_t>(hdrtoken_index_to_length(hh->u.req.m_method_wks_idx))};
   }
-
-  return (str);
+  return {hh->u.req.m_ptr_method, hh->u.req.m_len_method};
 }
 
 /*-------------------------------------------------------------------------
@@ -1757,7 +1759,8 @@ HTTPHdr::url_string_get(Arena *arena, int *length)
     // even uglier but it's less so than duplicating this entire method to
     // change that one thing.
 
-    zret = (arena == USE_HDR_HEAP_MAGIC) ? m_url_cached.string_get_ref(length) : m_url_cached.string_get(arena, length);
+    zret = (arena == USE_HDR_HEAP_MAGIC) ? const_cast<char *>(m_url_cached.string_get_ref(length)) :
+                                           m_url_cached.string_get(arena, length);
   }
   return zret;
 }

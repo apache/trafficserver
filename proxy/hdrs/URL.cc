@@ -610,20 +610,28 @@ url_clear_string_ref(URLImpl *url)
   return;
 }
 
-char *
+char const *
 url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
 {
+  auto view{url_string_get_view(heap, url)};
+  if (length) {
+    *length = view.size();
+  }
+  return view.data();
+}
+
+std::string_view
+url_string_get_view(HdrHeap *heap, URLImpl *url)
+{
   if (!url) {
-    return nullptr;
+    return {};
   }
 
   if (url->m_ptr_printed_string && url->m_clean) {
-    if (length) {
-      *length = url->m_len_printed_string;
-    }
-    return (char *)url->m_ptr_printed_string;
+    size_t len = url->m_len_printed_string;
+    return {url->m_ptr_printed_string, len};
   } else { // either not clean or never printed
-    int len = url_length_get(url);
+    size_t len = url_length_get(url);
     char *buf;
     int index  = 0;
     int offset = 0;
@@ -633,13 +641,10 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
     url_print(url, buf, len, &index, &offset);
     buf[len] = '\0';
 
-    if (length) {
-      *length = len;
-    }
     url->m_clean              = true; // reset since we have url_print()'ed again
     url->m_len_printed_string = len;
     url->m_ptr_printed_string = buf;
-    return buf;
+    return {buf, len};
   }
 }
 
@@ -709,6 +714,18 @@ url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length)
     }
   }
   return buf;
+}
+
+ts::BufferWriter &
+ts::bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, URL const &url)
+{
+  if (url.m_url_impl) {
+    int len = url_length_get(url.m_url_impl);
+    int idx = 0, offset = 0;
+    url_print(url.m_url_impl, w.auxBuffer(), w.remaining(), &idx, &offset);
+    w.fill(len);
+  }
+  return w;
 }
 
 /*-------------------------------------------------------------------------

@@ -144,12 +144,10 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
   HTTPHdr *request_header = &s->hdr_info.client_request;
   URL *request_url        = request_header->url_get();
   char **redirect_url     = &s->remap_redirect;
-  char host_hdr_buf[TS_MAX_HOST_NAME_LEN], tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048], *c;
-  const char *remapped_host;
-  int remapped_host_len, remapped_port, tmp;
-  int from_len;
+  char host_hdr_buf[TS_MAX_HOST_NAME_LEN], tmp_referer_buf[4096];
+  int remapped_port, tmp;
   bool remap_found = false;
-  referer_info *ri;
+  ts::LocalBufferWriter<4096> tmp_redirect_w;
 
   map = s->url_map.getMapping();
   if (!map) {
@@ -159,7 +157,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
   table->PerformACLFiltering(s, map);
 
   // Check referer filtering rules
-  if ((s->filter_mask & URL_REMAP_FILTER_REFERER) != 0 && (ri = map->referer_list) != nullptr) {
+  if ((s->filter_mask & URL_REMAP_FILTER_REFERER) != 0 && !map->referer_list.empty()) {
     const char *referer_hdr = nullptr;
     int referer_len         = 0;
     bool enabled_flag       = map->optional_referer ? true : false;
@@ -171,14 +169,15 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
       }
       memcpy(tmp_referer_buf, referer_hdr, referer_len);
       tmp_referer_buf[referer_len] = 0;
-      for (enabled_flag = false; ri; ri = ri->next) {
-        if (ri->any) {
+      enabled_flag                 = false;
+      for (auto const &ri : map->referer_list) {
+        if (ri.any) {
           enabled_flag = true;
           if (!map->negative_referer) {
             break;
           }
-        } else if (ri->regx_valid && (pcre_exec(ri->regx, nullptr, tmp_referer_buf, referer_len, 0, 0, nullptr, 0) != -1)) {
-          enabled_flag = ri->negative ? false : true;
+        } else if (ri.regx != nullptr && (pcre_exec(ri.regx, nullptr, tmp_referer_buf, referer_len, 0, 0, nullptr, 0) != -1)) {
+          enabled_flag = ri.negative ? false : true;
           break;
         }
       }
@@ -186,45 +185,43 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 
     if (!enabled_flag) {
       if (!map->default_redirect_url) {
-        if ((s->filter_mask & URL_REMAP_FILTER_REDIRECT_FMT) != 0 && map->redir_chunk_list) {
-          redirect_tag_str *rc;
-          tmp_redirect_buf[(tmp = 0)] = 0;
-          for (rc = map->redir_chunk_list; rc; rc = rc->next) {
-            c = nullptr;
-            switch (rc->type) {
+        if ((s->filter_mask & URL_REMAP_FILTER_REDIRECT_FMT) != 0 && !map->redirect_chunks.empty()) {
+          for (auto const &rc : map->redirect_chunks) {
+            switch (rc.type) {
             case 's':
-              c = rc->chunk_str;
+              tmp_redirect_w.write(rc.chunk);
               break;
             case 'r':
-              c = (referer_len && referer_hdr) ? &tmp_referer_buf[0] : nullptr;
-              break;
-            case 'f':
-            case 't':
-              remapped_host = (rc->type == 'f') ?
-                                map->fromURL.string_get_buf(tmp_buf, (int)sizeof(tmp_buf), &from_len) :
-                                ((s->url_map).getToURL())->string_get_buf(tmp_buf, (int)sizeof(tmp_buf), &from_len);
-              if (remapped_host && from_len > 0) {
-                c = &tmp_buf[0];
+              if (referer_len && referer_hdr) {
+                tmp_redirect_w.write(tmp_referer_buf);
               }
               break;
+            case 'f': {
+              ts::TextView remapped_host{map->fromURL.string_get_view()};
+              if (remapped_host) {
+                tmp_redirect_w.write(remapped_host);
+              }
+            } break;
+            case 't': {
+              ts::TextView remapped_host{((s->url_map).getToURL())->string_get_view()};
+              if (remapped_host) {
+                tmp_redirect_w.write(remapped_host);
+              }
+            } break;
             case 'o':
-              c = s->unmapped_url.string_get_ref(nullptr);
+              tmp_redirect_w.write(s->unmapped_url.string_get_view());
               break;
             };
-
-            if (c && tmp < (int)(sizeof(tmp_redirect_buf) - 1)) {
-              tmp += snprintf(&tmp_redirect_buf[tmp], sizeof(tmp_redirect_buf) - tmp, "%s", c);
-            }
           }
-          tmp_redirect_buf[sizeof(tmp_redirect_buf) - 1] = 0;
-          *redirect_url                                  = ats_strdup(tmp_redirect_buf);
+          tmp_redirect_w.write('\0');
+          *redirect_url = ats_strdup(tmp_redirect_w.data());
         }
       } else {
         *redirect_url = ats_strdup(table->http_default_redirect_url);
       }
 
       if (*redirect_url == nullptr) {
-        *redirect_url = ats_strdup(map->filter_redirect_url ? map->filter_redirect_url : table->http_default_redirect_url);
+        *redirect_url = ats_strdup(map->filter_redirect_url ? map->filter_redirect_url.data() : table->http_default_redirect_url);
       }
       if (HTTP_STATUS_NONE == s->http_return_code) {
         s->http_return_code = HTTP_STATUS_MOVED_TEMPORARILY;
@@ -252,14 +249,14 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
     // Create the new host header field being careful that our
     //   temporary buffer has adequate length
     //
-    remapped_host = request_url->host_get(&remapped_host_len);
-    remapped_port = request_url->port_get_raw();
+    ts::TextView remapped_host = request_url->host_get();
+    remapped_port              = request_url->port_get_raw();
 
-    if (TS_MAX_HOST_NAME_LEN > remapped_host_len) {
-      tmp = remapped_host_len;
-      memcpy(host_hdr_buf, remapped_host, remapped_host_len);
+    if (TS_MAX_HOST_NAME_LEN > remapped_host.size()) {
+      tmp = remapped_host.size();
+      memcpy(host_hdr_buf, remapped_host.data(), remapped_host.size());
       if (remapped_port) {
-        tmp += snprintf(host_hdr_buf + remapped_host_len, TS_MAX_HOST_NAME_LEN - remapped_host_len - 1, ":%d", remapped_port);
+        tmp += snprintf(host_hdr_buf + remapped_host.size(), TS_MAX_HOST_NAME_LEN - remapped_host.size() - 1, ":%d", remapped_port);
       }
     } else {
       tmp = TS_MAX_HOST_NAME_LEN;

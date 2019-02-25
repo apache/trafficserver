@@ -37,6 +37,9 @@ bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, atomic<T> const &v)
 {
   return ts::bwformat(w, spec, v.load());
 }
+
+ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, error_code const &ec);
+
 } // end namespace std
 
 namespace ts

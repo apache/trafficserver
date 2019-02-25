@@ -1310,7 +1310,7 @@ LogAccess::validate_unmapped_url()
 
     if (m_http_sm->t_state.unmapped_url.valid()) {
       int unmapped_url_len;
-      char *unmapped_url = m_http_sm->t_state.unmapped_url.string_get_ref(&unmapped_url_len);
+      char const *unmapped_url = m_http_sm->t_state.unmapped_url.string_get_ref(&unmapped_url_len);
 
       if (unmapped_url && unmapped_url[0] != 0) {
         m_client_req_unmapped_url_canon_str =
@@ -1371,7 +1371,7 @@ LogAccess::validate_lookup_url()
 
     if (m_http_sm->t_state.cache_info.lookup_url_storage.valid()) {
       int lookup_url_len;
-      char *lookup_url = m_http_sm->t_state.cache_info.lookup_url_storage.string_get_ref(&lookup_url_len);
+      char const *lookup_url = m_http_sm->t_state.cache_info.lookup_url_storage.string_get_ref(&lookup_url_len);
 
       if (lookup_url && lookup_url[0] != 0) {
         m_cache_lookup_url_canon_str = LogUtils::escapify_url(&m_arena, lookup_url, lookup_url_len, &m_cache_lookup_url_canon_len);
