@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Information about remap plugin libraries.
 
   @section license License
 
@@ -25,102 +25,56 @@
 #include "tscore/ink_string.h"
 #include "tscore/ink_memory.h"
 
-remap_plugin_info::remap_plugin_info(char *_path)
-  : next(nullptr),
-    path(nullptr),
-    path_size(0),
-    dlh(nullptr),
-    fp_tsremap_init(nullptr),
-    fp_tsremap_config_reload(nullptr),
-    fp_tsremap_done(nullptr),
-    fp_tsremap_new_instance(nullptr),
-    fp_tsremap_delete_instance(nullptr),
-    fp_tsremap_do_remap(nullptr),
-    fp_tsremap_os_response(nullptr)
-{
-  // coverity did not see ats_free
-  // coverity[ctor_dtor_leak]
-  if (_path && likely((path = ats_strdup(_path)) != nullptr)) {
-    path_size = strlen(path);
-  }
-}
+RemapPluginInfo::List RemapPluginInfo::g_list;
 
-remap_plugin_info::~remap_plugin_info()
+RemapPluginInfo::RemapPluginInfo(ts::file::path &&library_path) : path(std::move(library_path)) {}
+
+RemapPluginInfo::~RemapPluginInfo()
 {
-  ats_free(path);
-  if (dlh) {
-    dlclose(dlh);
+  if (dl_handle) {
+    dlclose(dl_handle);
   }
 }
 
 //
 // Find a plugin by path from our linked list
 //
-remap_plugin_info *
-remap_plugin_info::find_by_path(char *_path)
+RemapPluginInfo *
+RemapPluginInfo::find_by_path(std::string_view library_path)
 {
-  int _path_size        = 0;
-  remap_plugin_info *pi = nullptr;
-
-  if (likely(_path && (_path_size = strlen(_path)) > 0)) {
-    for (pi = this; pi; pi = pi->next) {
-      if (pi->path && pi->path_size == _path_size && !strcmp(pi->path, _path)) {
-        break;
-      }
-    }
-  }
-
-  return pi;
+  auto spot = std::find_if(g_list.begin(), g_list.end(),
+                           [&](self_type const &info) -> bool { return 0 == library_path.compare(info.path.view()); });
+  return spot == g_list.end() ? nullptr : static_cast<self_type *>(spot);
 }
 
 //
 // Add a plugin to the linked list
 //
 void
-remap_plugin_info::add_to_list(remap_plugin_info *pi)
+RemapPluginInfo::add_to_list(RemapPluginInfo *pi)
 {
-  remap_plugin_info *p = this;
-
-  if (likely(pi)) {
-    while (p->next) {
-      p = p->next;
-    }
-
-    p->next  = pi;
-    pi->next = nullptr;
-  }
+  g_list.append(pi);
 }
 
 //
-// Remove and delete all plugins from a list, including ourselves.
+// Remove and delete all plugins from a list.
 //
 void
-remap_plugin_info::delete_my_list()
+RemapPluginInfo::delete_list()
 {
-  remap_plugin_info *p = this->next;
-
-  while (p) {
-    remap_plugin_info *tmp = p;
-
-    p = p->next;
-    delete tmp;
-  }
-
-  delete this;
+  g_list.apply([](self_type *info) -> void { delete info; });
+  g_list.clear();
 }
 
 //
 // Tell all plugins (that so wish) that remap.config is being reloaded
 //
 void
-remap_plugin_info::indicate_reload()
+RemapPluginInfo::indicate_reload()
 {
-  remap_plugin_info *p = this;
-
-  while (p) {
-    if (p->fp_tsremap_config_reload) {
-      p->fp_tsremap_config_reload();
+  g_list.apply([](self_type *info) -> void {
+    if (info->config_reload_cb) {
+      info->config_reload_cb();
     }
-    p = p->next;
-  }
+  });
 }

@@ -768,8 +768,8 @@ public:
     // INK API/Remap API plugin interface
     void *remap_plugin_instance = nullptr;
     void *user_args[TS_HTTP_MAX_USER_ARG];
-    remap_plugin_info::_tsremap_os_response *fp_tsremap_os_response = nullptr;
-    HTTPStatus http_return_code                                     = HTTP_STATUS_NONE;
+    RemapPluginInfo::OS_Response_F *fp_tsremap_os_response = nullptr;
+    HTTPStatus http_return_code                            = HTTP_STATUS_NONE;
 
     int api_txn_active_timeout_value      = -1;
     int api_txn_connect_timeout_value     = -1;

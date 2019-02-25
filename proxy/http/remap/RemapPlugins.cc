@@ -26,7 +26,7 @@
 ClassAllocator<RemapPlugins> pluginAllocator("RemapPluginsAlloc");
 
 TSRemapStatus
-RemapPlugins::run_plugin(remap_plugin_info *plugin)
+RemapPlugins::run_plugin(RemapPluginInfo *plugin)
 {
   ink_assert(_s);
 
@@ -51,11 +51,11 @@ RemapPlugins::run_plugin(remap_plugin_info *plugin)
 
   // Prepare State for the future
   if (_cur == 0) {
-    _s->fp_tsremap_os_response = plugin->fp_tsremap_os_response;
+    _s->fp_tsremap_os_response = plugin->os_response_cb;
     _s->remap_plugin_instance  = ih;
   }
 
-  plugin_retcode = plugin->fp_tsremap_do_remap(ih, reinterpret_cast<TSHttpTxn>(_s->state_machine), &rri);
+  plugin_retcode = plugin->do_remap_cb(ih, reinterpret_cast<TSHttpTxn>(_s->state_machine), &rri);
   // TODO: Deal with negative return codes here
   if (plugin_retcode < 0) {
     plugin_retcode = TSREMAP_NO_REMAP;
@@ -82,7 +82,7 @@ bool
 RemapPlugins::run_single_remap()
 {
   url_mapping *map             = _s->url_map.getMapping();
-  remap_plugin_info *plugin    = map->get_plugin(_cur); // get the nth plugin in our list of plugins
+  RemapPluginInfo *plugin      = map->get_plugin(_cur); // get the nth plugin in our list of plugins
   TSRemapStatus plugin_retcode = TSREMAP_NO_REMAP;
   bool zret                    = true; // default - last iteration.
   Debug("url_rewrite", "running single remap rule id %d for the %d%s time", map->map_id, _cur,
