@@ -36,6 +36,7 @@
 #include "P_SSLSNI.h"
 #include "P_SSLConfig.h"
 #include "SSLSessionCache.h"
+#include "SSLSessionTicket.h"
 #include "SSLDynlock.h"
 #include "SSLDiags.h"
 #include "SSLStats.h"
@@ -57,10 +58,6 @@
 
 #if HAVE_OPENSSL_EVP_H
 #include <openssl/evp.h>
-#endif
-
-#if HAVE_OPENSSL_HMAC_H
-#include <openssl/hmac.h>
 #endif
 
 #if HAVE_OPENSSL_TS_H
@@ -130,16 +127,7 @@ struct ssl_user_config {
 
 SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
 
-// Check if the ticket_key callback #define is available, and if so, enable session tickets.
-#ifdef SSL_CTX_set_tlsext_ticket_key_cb
-
-#define HAVE_OPENSSL_SESSION_TICKETS 1
-
-static void session_ticket_free(void *, void *, CRYPTO_EX_DATA *, int, long, void *);
-static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
-#endif /* SSL_CTX_set_tlsext_ticket_key_cb */
-
-#if HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAVE_OPENSSL_SESSION_TICKETS
 static int ssl_session_ticket_index = -1;
 #endif
 
@@ -376,7 +364,7 @@ set_context_cert(SSL *ssl)
 
   if (ctx != nullptr) {
     SSL_set_SSL_CTX(ssl, ctx);
-#if HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAVE_OPENSSL_SESSION_TICKETS
     // Reset the ticket callback if needed
     SSL_CTX_set_tlsext_ticket_key_cb(ctx, ssl_callback_session_ticket);
 #endif
@@ -714,7 +702,7 @@ ssl_context_enable_ecdh(SSL_CTX *ctx)
 static ssl_ticket_key_block *
 ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
 {
-#if HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAVE_OPENSSL_SESSION_TICKETS
   ssl_ticket_key_block *keyblock = nullptr;
 
   keyblock = ssl_create_ticket_keyblock(ticket_key_path);
@@ -736,10 +724,10 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
   SSL_CTX_clear_options(ctx, SSL_OP_NO_TICKET);
   return keyblock;
 
-#else  /* !HAVE_OPENSSL_SESSION_TICKETS */
+#else  /* !TS_HAVE_OPENSSL_SESSION_TICKETS */
   (void)ticket_key_path;
   return nullptr;
-#endif /* HAVE_OPENSSL_SESSION_TICKETS */
+#endif /* TS_HAVE_OPENSSL_SESSION_TICKETS */
 }
 
 struct passphrase_cb_userdata {
@@ -1015,8 +1003,8 @@ SSLInitializeLibrary()
     CRYPTO_set_dynlock_destroy_callback(ssl_dyn_destroy_callback);
   }
 
-#ifdef SSL_CTX_set_tlsext_ticket_key_cb
-  ssl_session_ticket_index = SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, session_ticket_free);
+#ifdef TS_HAVE_OPENSSL_SESSION_TICKETS
+  ssl_session_ticket_index = SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, ssl_session_ticket_free);
   if (ssl_session_ticket_index == -1) {
     SSLError("failed to create session ticket index");
   }
@@ -1705,7 +1693,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     }
   }
   if (!inserted) {
-#if HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAVE_OPENSSL_SESSION_TICKETS
     if (keyblock != nullptr) {
       ticket_block_free(keyblock);
     }
@@ -1878,83 +1866,6 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
 
   return true;
 }
-
-#if HAVE_OPENSSL_SESSION_TICKETS
-
-static void
-session_ticket_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
-{
-  ticket_block_free((struct ssl_ticket_key_block *)ptr);
-}
-
-/*
- * RFC 5077. Create session ticket to resume SSL session without requiring session-specific state at the TLS server.
- * Specifically, it distributes the encrypted session-state information to the client in the form of a ticket and
- * a mechanism to present the ticket back to the server.
- * */
-static int
-ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx,
-                            int enc)
-{
-  SSLCertificateConfig::scoped_config lookup;
-  SSLTicketKeyConfig::scoped_config params;
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-
-  // Get the IP address to look up the keyblock
-  IpEndpoint ip;
-  int namelen        = sizeof(ip);
-  SSLCertContext *cc = nullptr;
-  if (0 == safe_getsockname(netvc->get_socket(), &ip.sa, &namelen)) {
-    cc = lookup->find(ip);
-  }
-  ssl_ticket_key_block *keyblock = nullptr;
-  if (cc == nullptr || cc->keyblock == nullptr) {
-    // Try the default
-    keyblock = params->default_global_keyblock;
-  } else {
-    keyblock = cc->keyblock;
-  }
-  ink_release_assert(keyblock != nullptr && keyblock->num_keys > 0);
-
-  if (enc == 1) {
-    const ssl_ticket_key_t &most_recent_key = keyblock->keys[0];
-    memcpy(keyname, most_recent_key.key_name, sizeof(most_recent_key.key_name));
-    RAND_bytes(iv, EVP_MAX_IV_LENGTH);
-    EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), nullptr, most_recent_key.aes_key, iv);
-    HMAC_Init_ex(hctx, most_recent_key.hmac_secret, sizeof(most_recent_key.hmac_secret), evp_md_func, nullptr);
-
-    Debug("ssl", "create ticket for a new session.");
-    SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
-    return 1;
-  } else if (enc == 0) {
-    for (unsigned i = 0; i < keyblock->num_keys; ++i) {
-      if (memcmp(keyname, keyblock->keys[i].key_name, sizeof(keyblock->keys[i].key_name)) == 0) {
-        EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), nullptr, keyblock->keys[i].aes_key, iv);
-        HMAC_Init_ex(hctx, keyblock->keys[i].hmac_secret, sizeof(keyblock->keys[i].hmac_secret), evp_md_func, nullptr);
-
-        Debug("ssl", "verify the ticket for an existing session.");
-        // Increase the total number of decrypted tickets.
-        SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_stat);
-
-        if (i != 0) { // The number of tickets decrypted with "older" keys.
-          SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_old_key_stat);
-        }
-
-        SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-        netvc->setSSLSessionCacheHit(true);
-        // When we decrypt with an "older" key, encrypt the ticket again with the most recent key.
-        return (i == 0) ? 1 : 2;
-      }
-    }
-
-    Debug("ssl", "keyname is not consistent.");
-    SSL_INCREMENT_DYN_STAT(ssl_total_tickets_not_found_stat);
-    return 0;
-  }
-
-  return -1;
-}
-#endif /* HAVE_OPENSSL_SESSION_TICKETS */
 
 // Release SSL_CTX and the associated data. This works for both
 // client and server contexts and gracefully accepts nullptr.

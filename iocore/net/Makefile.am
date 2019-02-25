@@ -134,7 +134,7 @@ libinknet_a_SOURCES = \
 	ProxyProtocol.cc \
 	Socks.cc \
 	SSLCertLookup.cc \
-	SSLSessionCache.cc \
+	SSLClientUtils.cc \
 	SSLConfig.cc \
 	SSLDiags.cc \
 	SSLInternal.cc \
@@ -145,8 +145,9 @@ libinknet_a_SOURCES = \
 	SSLNextProtocolSet.cc \
 	SSLSNIConfig.cc \
 	SSLStats.cc \
+	SSLSessionCache.cc \
+	SSLSessionTicket.cc \
 	SSLUtils.cc \
-	SSLClientUtils.cc \
 	OCSPStapling.cc \
 	Socks.cc \
 	UDPIOEvent.cc \

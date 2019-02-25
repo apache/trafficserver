@@ -21,12 +21,9 @@
   limitations under the License.
  */
 
-#include "tscore/ink_config.h"
-
 #include "P_SSLCertLookup.h"
-#include "P_SSLUtils.h"
-#include "P_SSLConfig.h"
-#include "I_EventSystem.h"
+
+#include "tscore/ink_config.h"
 #include "tscore/I_Layout.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Regex.h"
@@ -35,16 +32,15 @@
 #include "tscore/bwf_std_format.h"
 #include "tscore/TestBox.h"
 
+#include "I_EventSystem.h"
+
+#include "P_SSLUtils.h"
+#include "P_SSLConfig.h"
+#include "SSLSessionTicket.h"
+
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
-
-// Check if the ticket_key callback #define is available, and if so, enable session tickets.
-#ifdef SSL_CTX_set_tlsext_ticket_key_cb
-
-#define HAVE_OPENSSL_SESSION_TICKETS 1
-
-#endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 struct SSLAddressLookupKey {
   explicit SSLAddressLookupKey(const IpEndpoint &ip)
@@ -201,7 +197,7 @@ fail:
 ssl_ticket_key_block *
 ssl_create_ticket_keyblock(const char *ticket_key_path)
 {
-#if HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAVE_OPENSSL_SESSION_TICKETS
   ats_scoped_str ticket_key_data;
   int ticket_key_len;
   ssl_ticket_key_block *keyblock = nullptr;
@@ -226,10 +222,10 @@ fail:
   ticket_block_free(keyblock);
   return nullptr;
 
-#else  /* !HAVE_OPENSSL_SESSION_TICKETS */
+#else  /* !TS_HAVE_OPENSSL_SESSION_TICKETS */
   (void)ticket_key_path;
   return nullptr;
-#endif /* HAVE_OPENSSL_SESSION_TICKETS */
+#endif /* TS_HAVE_OPENSSL_SESSION_TICKETS */
 }
 void
 SSLCertContext::release()
