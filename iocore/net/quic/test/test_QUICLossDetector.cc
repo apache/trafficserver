@@ -30,7 +30,7 @@
 
 TEST_CASE("QUICLossDetector_Loss", "[quic]")
 {
-  QUICPacketProtectionKeyInfo pp_key_info;
+  MockQUICPacketProtectionKeyInfo pp_key_info;
   QUICPacketFactory pf(pp_key_info);
   QUICRTTMeasure rtt_measure;
 
