@@ -43,8 +43,9 @@
 #include "P_Net.h"
 #include "P_SSLUtils.h"
 #include "P_SSLCertLookup.h"
-#include "SSLSessionCache.h"
 #include "SSLDiags.h"
+#include "SSLSessionCache.h"
+#include "SSLSessionTicket.h"
 #include "YamlSNIConfig.h"
 
 int SSLConfig::configid                                     = 0;
@@ -70,13 +71,6 @@ char *SSLConfigParams::engine_conf_file      = nullptr;
 static std::unique_ptr<ConfigUpdateHandler<SSLCertificateConfig>> sslCertUpdate;
 static std::unique_ptr<ConfigUpdateHandler<SSLConfig>> sslConfigUpdate;
 static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
-
-// Check if the ticket_key callback #define is available, and if so, enable session tickets.
-#ifdef SSL_CTX_set_tlsext_ticket_key_cb
-
-#define HAVE_OPENSSL_SESSION_TICKETS 1
-
-#endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 SSLConfigParams::SSLConfigParams()
 {
@@ -563,7 +557,7 @@ SSLTicketParams::LoadTicket()
 {
   cleanup();
 
-#if HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAVE_OPENSSL_SESSION_TICKETS
   ssl_ticket_key_block *keyblock = nullptr;
 
   SSLConfig::scoped_config params;
@@ -611,7 +605,7 @@ void
 SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
 {
   cleanup();
-#if HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAVE_OPENSSL_SESSION_TICKETS
   if (ticket_data != nullptr && ticket_data_len > 0) {
     default_global_keyblock = ticket_block_create(ticket_data, ticket_data_len);
   } else {
