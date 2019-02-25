@@ -830,6 +830,7 @@ agg_copy(char *p, CacheVC *vc)
         }
         ink_assert(!(((uintptr_t)&doc->hdr()[0]) & HDR_PTR_ALIGNMENT_MASK));
         ink_assert(vc->header_len == vc->write_vector->marshal(doc->hdr(), vc->header_len));
+        doc->has_vector = true;
       } else {
         memcpy(doc->hdr(), vc->header_to_write, vc->header_len);
       }

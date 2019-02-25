@@ -248,3 +248,19 @@ CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj *block
 
   return ((caddr_t)buf - (caddr_t)start);
 }
+
+void
+cleanup_vector_frag_table(char *buf)
+{
+  Doc *doc = reinterpret_cast<Doc *>(buf);
+  if (!doc->has_vector) {
+    return;
+  }
+
+  CacheHTTPInfoVector info = {};
+  info.get_handles(doc->hdr(), doc->hlen, nullptr);
+  for (int i = info.xcount - 1; i >= 0; --i) {
+    info.data(i).alternate.m_alt->m_response_hdr.m_mime->recompute_accelerators_and_presence_bits();
+    info.data(i).alternate.m_alt->m_request_hdr.m_mime->recompute_accelerators_and_presence_bits();
+  }
+}

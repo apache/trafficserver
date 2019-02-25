@@ -318,6 +318,7 @@ struct Doc {
 #if TS_ENABLE_FIPS == 1
   CryptoHash key; ///< Key for this doc.
 #endif
+  bool has_vector = false;
 
   uint32_t data_len();
   uint32_t prefix_len();

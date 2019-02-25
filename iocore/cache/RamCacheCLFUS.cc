@@ -308,7 +308,8 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey
             e->size = e->compressed_len;
             check_accounting(this);
             e->flag_bits.compressed = 0;
-            e->data                 = data;
+            // FIXME: it might cause leaking because of m_frag_offsets
+            e->data = data;
           }
           (*ret_data) = data;
         } else {
@@ -377,6 +378,9 @@ RamCacheCLFUS::victimize(RamCacheCLFUSEntry *e)
 {
   objects--;
   DDebug("ram_cache", "put %X %d %d size %d VICTIMIZED", e->key.slice32(3), e->auxkey1, e->auxkey2, e->size);
+  if (e->data->refcount() == 1) {
+    cleanup_vector_frag_table(e->data->data());
+  }
   e->data          = nullptr;
   e->flag_bits.lru = 1;
   lru[1].enqueue(e);
@@ -406,6 +410,9 @@ RamCacheCLFUS::destroy(RamCacheCLFUSEntry *e)
     objects--;
     bytes -= e->size + ENTRY_OVERHEAD;
     CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -(int64_t)e->size);
+    if (e->data->refcount() == 1) {
+      cleanup_vector_frag_table(e->data->data());
+    }
     e->data = nullptr;
   } else {
     history--;
@@ -549,6 +556,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         e->size = e->len;
         l       = e->len;
       }
+      // FIXME: it might cause leaking because of m_frag_offsets
       e->data            = new_xmalloc_IOBufferData(bb, l);
       e->data->_mem_type = DEFAULT_ALLOC;
       check_accounting(this);
@@ -613,10 +621,12 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
       if (!copy) {
         e->size = size;
+        // FIXME: it might cause leaking because of m_frag_offsets
         e->data = data;
       } else {
         char *b = (char *)ats_malloc(len);
         memcpy(b, data->data(), len);
+        // FIXME: it might cause leaking because of m_frag_offsets
         e->data            = new_xmalloc_IOBufferData(b, len);
         e->data->_mem_type = DEFAULT_ALLOC;
         e->size            = size;
@@ -723,10 +733,12 @@ Linsert:
   check_accounting(this);
   e->flags = 0;
   if (!copy) {
+    // FIXME: it might cause leaking because of m_frag_offsets
     e->data = data;
   } else {
     char *b = (char *)ats_malloc(len);
     memcpy(b, data->data(), len);
+    // FIXME: it might cause leaking because of m_frag_offsets
     e->data            = new_xmalloc_IOBufferData(b, len);
     e->data->_mem_type = DEFAULT_ALLOC;
   }

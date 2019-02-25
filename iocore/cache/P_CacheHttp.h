@@ -83,3 +83,5 @@ CacheHTTPInfoVector::get(int idx)
   ink_assert(idx < xcount);
   return &data[idx].alternate;
 }
+
+void cleanup_vector_frag_table(char *doc);

@@ -152,6 +152,10 @@ RamCacheLRU::remove(RamCacheLRUEntry *e)
   bytes -= ENTRY_OVERHEAD + e->data->block_size();
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -(ENTRY_OVERHEAD + e->data->block_size()));
   DDebug("ram_cache", "put %X %d %d FREED", e->key.slice32(3), e->auxkey1, e->auxkey2);
+  if (e->data->refcount() == 1) {
+    // final chance to free frag table
+    cleanup_vector_frag_table(e->data->data());
+  }
   e->data = nullptr;
   THREAD_FREE(e, ramCacheLRUEntryAllocator, this_thread());
   objects--;
