@@ -1105,7 +1105,7 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
   if (VALID_SCHEMA.empty()) {
     VALID_SCHEMA.push_back(URL_SCHEME_HTTP);
     VALID_SCHEMA.push_back(URL_SCHEME_HTTPS);
-    VALID_SCHEMA.push_back(URL_SCHEM_FILE);
+    VALID_SCHEMA.push_back(URL_SCHEME_FILE);
     VALID_SCHEMA.push_back(URL_SCHEME_TUNNEL);
   }
   // If this happens to be a config reload, the list of loaded remap plugins is non-empty, and we
