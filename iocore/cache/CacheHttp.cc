@@ -260,7 +260,8 @@ cleanup_vector_frag_table(char *buf)
   CacheHTTPInfoVector info = {};
   info.get_handles(doc->hdr(), doc->hlen, nullptr);
   for (int i = info.xcount - 1; i >= 0; --i) {
-    info.data(i).alternate.m_alt->m_response_hdr.m_mime->recompute_accelerators_and_presence_bits();
-    info.data(i).alternate.m_alt->m_request_hdr.m_mime->recompute_accelerators_and_presence_bits();
+    if (info.data(i).alternate.valid() && info.data(i).alternate.m_alt->m_frag_offsets != info.data(i).alternate.m_alt->m_integral_frag_offsets) {
+      ats_free(info.data(i).alternate.m_alt->m_frag_offsets);
+    }
   }
 }
