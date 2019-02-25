@@ -132,10 +132,10 @@ Classes
 
 .. function:: HdrHeap * new_HdrHeap(int n)
 
-   Create and return a new instance of :class:`HdrHeap`. If :arg:`n` is less than ``HDR_HEAP_DEFAULT_SIZE``
+   Create and return a new instance of :class:`HdrHeap`. If :arg:`n` is less than ``HdrHeap::DEFAULT_SIZE``
    it is increased to that value.
 
-   If the allocated size is ``HDR_HEAP_DEFAULT_SIZE`` (or smaller and upsized to that value) then
+   If the allocated size is ``HdrHeap::DEFAULT_SIZE`` (or smaller and upsized to that value) then
    the instance is allocated from a thread local pool via :code:`hdrHeapAllocator`. If larger it
    is allocated from global memory via :code:`ats_malloc`.
 
