@@ -68,7 +68,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
 
   for (auto const &test : tests) {
     HTTPHdr req_hdr;
-    HdrHeap *heap = new_HdrHeap(HDR_HEAP_DEFAULT_SIZE + 64); // extra to prevent proxy allocation.
+    HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64); // extra to prevent proxy allocation.
 
     req_hdr.create(HTTP_TYPE_REQUEST, heap);
 
