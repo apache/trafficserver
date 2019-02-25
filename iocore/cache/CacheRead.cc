@@ -545,6 +545,21 @@ CacheVC::openReadClose(int event, Event * /* e ATS_UNUSED */)
       vol->force_evacuate_head(&earliest_dir, dir_pinned(&earliest_dir));
     }
   }
+
+  if (this->first_buf != nullptr && this->first_buf->refcount() == 1) {
+    // need to free this buffer since we don't put it to ram cache
+    CacheHTTPInfoVector vector;
+    Doc *doc = (Doc *)this->first_buf->data();
+    this->load_http_info(&vector, doc);
+    for (auto i = 0; i < vector.xcount; i++) {
+      if (vector.data[i].alternate.valid() &&
+          vector.data[i].alternate.m_alt->m_frag_offsets != vector.data[i].alternate.m_alt->m_integral_frag_offsets) {
+        ink_assert(!vector.data[i].alternate.m_alt->m_writeable);
+        ats_free(vector.data[i].alternate.m_alt->m_frag_offsets);
+      }
+    }
+  }
+
   vol->close_read(this);
   return free_CacheVC(this);
 }
