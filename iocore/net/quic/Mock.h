@@ -510,6 +510,28 @@ private:
   }
 };
 
+class MockQUICPacketProtectionKeyInfo : public QUICPacketProtectionKeyInfo
+{
+public:
+  const QUIC_EVP_CIPHER *
+  get_cipher(QUICKeyPhase phase) const override
+  {
+    return EVP_aes_128_gcm();
+  }
+
+  size_t
+  get_tag_len(QUICKeyPhase phase) const override
+  {
+    return EVP_GCM_TLS_TAG_LEN;
+  }
+
+  size_t *encryption_iv_len(QUICKeyPhase) const override
+  {
+    static size_t dummy = 12;
+    return &dummy;
+  }
+};
+
 class MockQUICHandshakeProtocol : public QUICHandshakeProtocol
 {
 public:

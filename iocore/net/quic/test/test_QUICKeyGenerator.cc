@@ -56,6 +56,8 @@ TEST_CASE("draft-17 Test Vectors", "[quic]")
     };
 
     QUICPacketProtectionKeyInfo pp_key_info;
+    pp_key_info.set_cipher_initial(EVP_aes_128_gcm());
+    pp_key_info.set_cipher_for_hp_initial(EVP_aes_128_ecb());
     keygen.generate(pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), pp_key_info.encryption_key(QUICKeyPhase::INITIAL),
                     pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
 
@@ -84,6 +86,8 @@ TEST_CASE("draft-17 Test Vectors", "[quic]")
     };
 
     QUICPacketProtectionKeyInfo pp_key_info;
+    pp_key_info.set_cipher_initial(EVP_aes_128_gcm());
+    pp_key_info.set_cipher_for_hp_initial(EVP_aes_128_ecb());
     keygen.generate(pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), pp_key_info.encryption_key(QUICKeyPhase::INITIAL),
                     pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
 

@@ -28,7 +28,7 @@
 
 TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 {
-  QUICPacketProtectionKeyInfo pp_key_info;
+  MockQUICPacketProtectionKeyInfo pp_key_info;
   QUICPacketFactory factory(pp_key_info);
   ;
 
@@ -64,7 +64,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
 
 TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
 {
-  QUICPacketProtectionKeyInfo pp_key_info;
+  MockQUICPacketProtectionKeyInfo pp_key_info;
   QUICPacketFactory factory(pp_key_info);
   factory.set_version(0x11223344);
 
@@ -84,7 +84,7 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
 
 TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
 {
-  QUICPacketProtectionKeyInfo pp_key_info;
+  MockQUICPacketProtectionKeyInfo pp_key_info;
   QUICPacketFactory factory(pp_key_info);
   factory.set_version(0x11223344);
   std::vector<QUICFrameInfo> dummy_frames;
@@ -99,14 +99,14 @@ TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
                                     std::move(payload), sizeof(raw), true, false, true, dummy_frames);
   CHECK(packet->type() == QUICPacketType::HANDSHAKE);
   CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4)));
-  CHECK(memcmp(packet->payload(), raw, sizeof(raw)) == 0);
+  CHECK(memcmp(packet->payload(), raw, sizeof(raw)) != 0);
   CHECK(packet->packet_number() <= 0xFFFFFBFF);
   CHECK(packet->version() == 0x11223344);
 }
 
 TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
 {
-  QUICPacketProtectionKeyInfo pp_key_info;
+  MockQUICPacketProtectionKeyInfo pp_key_info;
   QUICPacketFactory factory(pp_key_info);
   QUICStatelessResetToken token({reinterpret_cast<const uint8_t *>("\x30\x39"), 2}, 67890);
 

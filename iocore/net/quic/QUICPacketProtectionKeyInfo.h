@@ -38,26 +38,26 @@ public:
 
   // Payload Protection (common)
 
-  const QUIC_EVP_CIPHER *get_cipher(QUICKeyPhase phase) const;
-  size_t get_tag_len(QUICKeyPhase phase) const;
-  void set_cipher_initial(const QUIC_EVP_CIPHER *cipher);
-  void set_cipher(const QUIC_EVP_CIPHER *cipher, size_t tag_len);
+  virtual const QUIC_EVP_CIPHER *get_cipher(QUICKeyPhase phase) const;
+  virtual size_t get_tag_len(QUICKeyPhase phase) const;
+  virtual void set_cipher_initial(const QUIC_EVP_CIPHER *cipher);
+  virtual void set_cipher(const QUIC_EVP_CIPHER *cipher, size_t tag_len);
 
   // Payload Protection (encryption)
 
-  bool is_encryption_key_available(QUICKeyPhase phase) const;
-  void set_encryption_key_available(QUICKeyPhase phase);
+  virtual bool is_encryption_key_available(QUICKeyPhase phase) const;
+  virtual void set_encryption_key_available(QUICKeyPhase phase);
 
-  const uint8_t *encryption_key(QUICKeyPhase phase) const;
-  uint8_t *encryption_key(QUICKeyPhase phase);
+  virtual const uint8_t *encryption_key(QUICKeyPhase phase) const;
+  virtual uint8_t *encryption_key(QUICKeyPhase phase);
 
-  size_t encryption_key_len(QUICKeyPhase phase) const;
+  virtual size_t encryption_key_len(QUICKeyPhase phase) const;
 
-  const uint8_t *encryption_iv(QUICKeyPhase phase) const;
-  uint8_t *encryption_iv(QUICKeyPhase phase);
+  virtual const uint8_t *encryption_iv(QUICKeyPhase phase) const;
+  virtual uint8_t *encryption_iv(QUICKeyPhase phase);
 
-  const size_t *encryption_iv_len(QUICKeyPhase phase) const;
-  size_t *encryption_iv_len(QUICKeyPhase phase);
+  virtual const size_t *encryption_iv_len(QUICKeyPhase phase) const;
+  virtual size_t *encryption_iv_len(QUICKeyPhase phase);
 
   // Payload Protection (decryption)
 
