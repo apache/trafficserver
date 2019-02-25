@@ -30,7 +30,7 @@
  *
  **/
 bool
-url_mapping::add_plugin(remap_plugin_info *i, void *ih)
+url_mapping::add_plugin(RemapPluginInfo *i, void *ih)
 {
   _plugin_list.push_back(i);
   _instance_data.push_back(ih);
@@ -41,7 +41,7 @@ url_mapping::add_plugin(remap_plugin_info *i, void *ih)
 /**
  *
  **/
-remap_plugin_info *
+RemapPluginInfo *
 url_mapping::get_plugin(std::size_t index) const
 {
   Debug("url_rewrite", "get_plugin says we have %zu plugins and asking for plugin %zu", plugin_count(), index);
@@ -66,11 +66,11 @@ url_mapping::get_instance(std::size_t index) const
 void
 url_mapping::delete_instance(unsigned int index)
 {
-  void *ih             = get_instance(index);
-  remap_plugin_info *p = get_plugin(index);
+  void *ih           = get_instance(index);
+  RemapPluginInfo *p = get_plugin(index);
 
-  if (ih && p && p->fp_tsremap_delete_instance) {
-    p->fp_tsremap_delete_instance(ih);
+  if (ih && p && p->delete_instance_cb) {
+    p->delete_instance_cb(ih);
   }
 }
 
