@@ -101,13 +101,30 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       write_vector->remove(0, true);
     }
     if (vec) {
+      CacheHTTPInfo *alternate_tmp = nullptr;
       /* preserve fragment offset data from old info. This method is
          called iff the update is a header only update so the fragment
          data should remain valid.
       */
       if (alternate_index >= 0) {
-        alternate.copy_frag_offsets_from(write_vector->get(alternate_index));
+        alternate_tmp = write_vector->get(alternate_index);
+        alternate.copy_frag_offsets_from(alternate_tmp);
       }
+
+      if (alternate_tmp && alternate_tmp->valid() && !f.put_to_ram && !f.doc_from_ram_cache) {
+        // Do not destroy it, because CacheHTTPInfo is allocated from Doc's buffer.
+        // And this mem will be freed along with IOBufferData free.
+        // But alternate_tmp.m_alt->frag_offsets doesn't . It should be free immedately.
+        // Don't free the fragment if the Doc has put to ram. Because the reader might already use this
+        // fragment.
+        // FIXME: this is a really bad hack.
+        ink_assert(!alternate_tmp->m_alt->m_writeable);
+        // the m_writeable is false becasue this is allocated from Doc's buffer
+        if (alternate_tmp->m_alt->m_frag_offsets != alternate_tmp->m_alt->m_integral_frag_offsets) {
+          ats_free(alternate_tmp->m_alt->m_frag_offsets);
+        }
+      }
+
       alternate_index = write_vector->insert(&alternate, alternate_index);
     }
 

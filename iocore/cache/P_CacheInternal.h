@@ -501,6 +501,7 @@ struct CacheVC : public CacheVConnection {
       unsigned int hit_evacuate : 1;
       unsigned int compressed_in_ram : 1; // compressed state in ram cache
       unsigned int allow_empty_doc : 1;   // used for cache empty http document
+      unsigned int put_to_ram : 1;
     } f;
   };
   // BTF optimization used to skip reading stuff in cache partition that doesn't contain any

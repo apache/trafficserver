@@ -2366,6 +2366,7 @@ CacheVC::handleReadDone(int event, Event *e)
         if (cutoff_check && !f.doc_from_ram_cache) {
           uint64_t o = dir_offset(&dir);
           vol->ram_cache->put(read_key, buf.get(), doc->len, http_copy_hdr, (uint32_t)(o >> 32), (uint32_t)o);
+          f.put_to_ram = 1;
         }
         if (!doc_len) {
           // keep a pointer to it. In case the state machine decides to
