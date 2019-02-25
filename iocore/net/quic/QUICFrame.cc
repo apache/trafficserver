@@ -139,7 +139,8 @@ QUICStreamFrame::QUICStreamFrame(const uint8_t *buf, size_t len)
 }
 
 QUICStreamFrame::QUICStreamFrame(const QUICStreamFrame &o)
-  : _block(make_ptr<IOBufferBlock>(o._block->clone())),
+  : QUICFrame(o),
+    _block(make_ptr<IOBufferBlock>(o._block->clone())),
     _stream_id(o._stream_id),
     _offset(o._offset),
     _fin(o._fin),
@@ -371,7 +372,8 @@ QUICCryptoFrame::QUICCryptoFrame(const uint8_t *buf, size_t len)
   this->parse(buf, len);
 }
 
-QUICCryptoFrame::QUICCryptoFrame(const QUICCryptoFrame &o) : _offset(o._offset), _block(make_ptr<IOBufferBlock>(o._block->clone()))
+QUICCryptoFrame::QUICCryptoFrame(const QUICCryptoFrame &o)
+  : QUICFrame(o), _offset(o._offset), _block(make_ptr<IOBufferBlock>(o._block->clone()))
 {
 }
 
