@@ -95,16 +95,19 @@ QUICIncomingStreamFrameBuffer::insert(const QUICFrame *frame)
 
   QUICConnectionErrorUPtr err = this->_check_and_set_fin_flag(offset, len, stream_frame->has_fin_flag());
   if (err != nullptr) {
+    delete frame;
     return err;
   }
 
   // Ignore empty stream frame except pure fin stream frame
   if (len == 0 && !stream_frame->has_fin_flag()) {
+    delete frame;
     return nullptr;
   }
 
   if (this->_recv_offset > offset) {
     // dup frame;
+    delete frame;
     return nullptr;
   } else if (this->_recv_offset == offset) {
     this->_recv_offset = offset + len;
@@ -227,11 +230,13 @@ QUICIncomingCryptoFrameBuffer::insert(const QUICFrame *frame)
 
   // Ignore empty stream frame
   if (len == 0) {
+    delete frame;
     return nullptr;
   }
 
   if (this->_recv_offset > offset) {
     // dup frame;
+    delete frame;
     return nullptr;
   } else if (this->_recv_offset == offset) {
     this->_recv_offset = offset + len;
