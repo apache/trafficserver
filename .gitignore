@@ -87,6 +87,7 @@ src/tscore/test_Regex
 src/tscore/test_X509HostnameValidator
 src/tscore/test_tscore
 src/tscpp/util/test_tscpputil
+lib/records/test_librecords
 lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
