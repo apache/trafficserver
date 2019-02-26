@@ -673,6 +673,18 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
   return buf;
 }
 
+ts::BufferWriter &
+ts::bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, URL *url)
+{
+  if (url->m_url_impl) {
+    int len = url_length_get(url->m_url_impl);
+    int idx = 0, offset = 0;
+    url_print(url->m_url_impl, w.auxBuffer(), w.remaining(), &idx, &offset);
+    w.fill(len);
+  }
+  return w;
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 

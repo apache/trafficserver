@@ -24,6 +24,7 @@
 #pragma once
 
 #include "tscore/Arena.h"
+#include "tscore/BufferWriterForward.h"
 #include "HdrToken.h"
 #include "HdrHeap.h"
 #include "tscore/CryptoHash.h"
@@ -729,4 +730,9 @@ inline char *
 URL::unescapify(Arena *arena, const char *str, int length)
 {
   return url_unescapify(arena, str, length);
+}
+
+namespace ts
+{
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, URL *url);
 }
