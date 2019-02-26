@@ -2139,10 +2139,20 @@ CacheVC::is_pread_capable()
 static void
 unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
 {
+  using UnmarshalFunc           = int(char *buf, int len, RefCountObj *block_ref);
+  UnmarshalFunc *unmarshal_func = &HTTPInfo::unmarshal;
+  ts::VersionNumber version(doc->v_major, doc->v_minor);
+
+  // introduced by https://github.com/apache/trafficserver/pull/4874, this is used to distinguish the doc version
+  // before and after #4847
+  if (version < CACHE_DB_VERSION) {
+    unmarshal_func = &HTTPInfo::unmarshal_v24_1;
+  }
+
   char *tmp = doc->hdr();
   int len   = doc->hlen;
   while (len > 0) {
-    int r = HTTPInfo::unmarshal(tmp, len, buf.get());
+    int r = unmarshal_func(tmp, len, buf.get());
     if (r < 0) {
       ink_assert(!"CacheVC::handleReadDone unmarshal failed");
       okay = 0;
