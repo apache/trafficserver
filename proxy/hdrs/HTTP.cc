@@ -2136,6 +2136,87 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
   return alt->m_unmarshal_len;
 }
 
+int
+HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
+{
+  HTTPCacheAlt *alt = (HTTPCacheAlt *)buf;
+  int orig_len      = len;
+
+  if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
+    // Already unmarshaled, must be a ram cache
+    //  it
+    ink_assert(alt->m_unmarshal_len > 0);
+    ink_assert(alt->m_unmarshal_len <= len);
+    return alt->m_unmarshal_len;
+  } else if (alt->m_magic != CACHE_ALT_MAGIC_MARSHALED) {
+    ink_assert(!"HTTPInfo::unmarshal bad magic");
+    return -1;
+  }
+
+  ink_assert(alt->m_unmarshal_len < 0);
+  alt->m_magic = CACHE_ALT_MAGIC_ALIVE;
+  ink_assert(alt->m_writeable == 0);
+  len -= HTTP_ALT_MARSHAL_SIZE;
+
+  if (alt->m_frag_offset_count > HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS) {
+    // stuff that didn't fit in the integral slots.
+    int extra       = sizeof(FragOffset) * alt->m_frag_offset_count - sizeof(alt->m_integral_frag_offsets);
+    char *extra_src = buf + reinterpret_cast<intptr_t>(alt->m_frag_offsets);
+    // Actual buffer size, which must be a power of two.
+    // Well, technically not, because we never modify an unmarshalled fragment
+    // offset table, but it would be a nasty bug should that be done in the
+    // future.
+    int bcount = HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS * 2;
+
+    while (bcount < alt->m_frag_offset_count) {
+      bcount *= 2;
+    }
+    alt->m_frag_offsets =
+      static_cast<FragOffset *>(ats_malloc(bcount * sizeof(FragOffset))); // WRONG - must round up to next power of 2.
+    memcpy(alt->m_frag_offsets, alt->m_integral_frag_offsets, sizeof(alt->m_integral_frag_offsets));
+    memcpy(alt->m_frag_offsets + HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS, extra_src, extra);
+    len -= extra;
+  } else if (alt->m_frag_offset_count > 0) {
+    alt->m_frag_offsets = alt->m_integral_frag_offsets;
+  } else {
+    alt->m_frag_offsets = nullptr; // should really already be zero.
+  }
+
+  HdrHeap *heap   = (HdrHeap *)(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
+  HTTPHdrImpl *hh = nullptr;
+  int tmp;
+  if (heap != nullptr) {
+    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
+    if (hh == nullptr || tmp < 0) {
+      ink_assert(!"HTTPInfo::request unmarshal failed");
+      return -1;
+    }
+    len -= tmp;
+    alt->m_request_hdr.m_heap              = heap;
+    alt->m_request_hdr.m_http              = hh;
+    alt->m_request_hdr.m_mime              = hh->m_fields_impl;
+    alt->m_request_hdr.m_url_cached.m_heap = heap;
+  }
+
+  heap = (HdrHeap *)(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
+  if (heap != nullptr) {
+    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
+    if (hh == nullptr || tmp < 0) {
+      ink_assert(!"HTTPInfo::response unmarshal failed");
+      return -1;
+    }
+    len -= tmp;
+
+    alt->m_response_hdr.m_heap = heap;
+    alt->m_response_hdr.m_http = hh;
+    alt->m_response_hdr.m_mime = hh->m_fields_impl;
+  }
+
+  alt->m_unmarshal_len = orig_len - len;
+
+  return alt->m_unmarshal_len;
+}
+
 // bool HTTPInfo::check_marshalled(char* buf, int len)
 //  Checks a marhshalled HTTPInfo buffer to make
 //    sure it's sane.  Returns true if sane, false otherwise
