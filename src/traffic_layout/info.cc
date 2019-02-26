@@ -89,11 +89,7 @@ produce_features(bool json)
   print_feature("TS_HAS_SO_MARK", TS_HAS_SO_MARK, json);
   print_feature("TS_HAS_IP_TOS", TS_HAS_IP_TOS, json);
   print_feature("TS_USE_HWLOC", TS_USE_HWLOC, json);
-  print_feature("TS_USE_TLS_NPN", TS_USE_TLS_NPN, json);
-  print_feature("TS_USE_TLS_ALPN", TS_USE_TLS_ALPN, json);
-  print_feature("TS_USE_CERT_CB", TS_USE_CERT_CB, json);
   print_feature("TS_USE_SET_RBIO", TS_USE_SET_RBIO, json);
-  print_feature("TS_USE_TLS_ECKEY", TS_USE_TLS_ECKEY, json);
   print_feature("TS_USE_LINUX_NATIVE_AIO", TS_USE_LINUX_NATIVE_AIO, json);
   print_feature("TS_HAS_SO_PEERCRED", TS_HAS_SO_PEERCRED, json);
   print_feature("TS_USE_REMOTE_UNWINDING", TS_USE_REMOTE_UNWINDING, json);

@@ -68,14 +68,10 @@
 #define TS_HAS_SO_MARK @has_so_mark@
 #define TS_HAS_IP_TOS @has_ip_tos@
 #define TS_USE_HWLOC @use_hwloc@
-#define TS_USE_TLS_NPN @use_tls_npn@
-#define TS_USE_TLS_ALPN @use_tls_alpn@
 #define TS_USE_TLS_ASYNC @use_tls_async@
-#define TS_USE_CERT_CB @use_cert_cb@
 #define TS_USE_HELLO_CB @use_hello_cb@
 #define TS_USE_SET_RBIO @use_set_rbio@
 #define TS_USE_GET_DH_2048_256 @use_dh_get_2048_256@
-#define TS_USE_TLS_ECKEY @use_tls_eckey@
 #define TS_USE_TLS_SET_CIPHERSUITES @use_tls_set_ciphersuites@
 #define TS_USE_LINUX_NATIVE_AIO @use_linux_native_aio@
 #define TS_USE_REMOTE_UNWINDING @use_remote_unwinding@

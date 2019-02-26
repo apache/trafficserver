@@ -6971,7 +6971,6 @@ extern bool ssl_register_protocol(const char *, Continuation *);
 extern bool ssl_unregister_protocol(const char *, Continuation *);
 
 TSReturnCode
-#if TS_USE_TLS_NPN
 TSNetAcceptNamedProtocol(TSCont contp, const char *protocol)
 {
   sdk_assert(protocol != nullptr);
@@ -6985,12 +6984,6 @@ TSNetAcceptNamedProtocol(TSCont contp, const char *protocol)
 
   return TS_SUCCESS;
 }
-#else  /* TS_USE_TLS_NPN */
-TSNetAcceptNamedProtocol(TSCont, const char *)
-{
-  return TS_ERROR;
-}
-#endif /* TS_USE_TLS_NPN */
 
 /* DNS Lookups */
 TSAction
