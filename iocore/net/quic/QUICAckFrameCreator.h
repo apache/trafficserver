@@ -101,13 +101,13 @@ public:
   /*
    * Returns true only if should send ack.
    */
-  bool will_generate_frame(QUICEncryptionLevel level) override;
+  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
 
   /*
    * Calls create directly.
    */
-  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
-                            uint16_t maximum_frame_size) override;
+  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
+                            ink_hrtime timestamp) override;
 
   QUICFrameId issue_frame_id();
   uint8_t ack_delay_exponent() const;

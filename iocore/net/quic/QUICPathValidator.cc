@@ -117,9 +117,13 @@ QUICPathValidator::handle_frame(QUICEncryptionLevel level, const QUICFrame &fram
 // QUICFrameGenerator
 //
 bool
-QUICPathValidator::will_generate_frame(QUICEncryptionLevel level)
+QUICPathValidator::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
   if (!this->_is_level_matched(level)) {
+    return false;
+  }
+
+  if (this->_last_sent_at == timestamp) {
     return false;
   }
 
@@ -131,7 +135,7 @@ QUICPathValidator::will_generate_frame(QUICEncryptionLevel level)
  */
 QUICFrame *
 QUICPathValidator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
-                                  uint16_t maximum_frame_size)
+                                  uint16_t maximum_frame_size, ink_hrtime timestamp)
 {
   QUICFrame *frame = nullptr;
 
@@ -158,6 +162,8 @@ QUICPathValidator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
       ink_assert(this->_has_outgoing_challenge >= 0);
     }
   }
+
+  this->_last_sent_at = timestamp;
 
   return frame;
 }

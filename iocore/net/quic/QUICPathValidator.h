@@ -41,9 +41,9 @@ public:
   QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICFrameGeneratro
-  bool will_generate_frame(QUICEncryptionLevel level) override;
-  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
-                            uint16_t maximum_frame_size) override;
+  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
+  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
+                            ink_hrtime timestamp) override;
 
 private:
   enum class ValidationState : int {
@@ -54,6 +54,7 @@ private:
   ValidationState _state      = ValidationState::NOT_VALIDATED;
   int _has_outgoing_challenge = 0;
   bool _has_outgoing_response = false;
+  ink_hrtime _last_sent_at    = 0;
   uint8_t _incoming_challenge[QUICPathChallengeFrame::DATA_LEN];
   uint8_t _outgoing_challenge[QUICPathChallengeFrame::DATA_LEN * 3];
 

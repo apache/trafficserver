@@ -337,22 +337,24 @@ QUICHandshake::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
 }
 
 bool
-QUICHandshake::will_generate_frame(QUICEncryptionLevel level)
+QUICHandshake::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
   if (!this->_is_level_matched(level)) {
     return false;
   }
 
-  return this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level);
+  return this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level, timestamp);
 }
 
 QUICFrame *
-QUICHandshake::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICHandshake::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
+                              ink_hrtime timestamp)
 {
   QUICFrame *frame = nullptr;
 
   if (this->_is_level_matched(level)) {
-    frame = this->_crypto_streams[static_cast<int>(level)].generate_frame(buf, level, connection_credit, maximum_frame_size);
+    frame =
+      this->_crypto_streams[static_cast<int>(level)].generate_frame(buf, level, connection_credit, maximum_frame_size, timestamp);
   }
 
   return frame;

@@ -411,13 +411,14 @@ QUICStream::recv(const QUICRstStreamFrame &frame)
 }
 
 bool
-QUICStream::will_generate_frame(QUICEncryptionLevel level)
+QUICStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
   return this->_write_vio.get_reader()->read_avail() > 0;
 }
 
 QUICFrame *
-QUICStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
+                           ink_hrtime timestamp)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
@@ -448,7 +449,7 @@ QUICStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t con
   }
 
   // MAX_STREAM_DATA
-  frame = this->_local_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size);
+  frame = this->_local_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, timestamp);
   if (frame) {
     return frame;
   }
@@ -484,7 +485,7 @@ QUICStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t con
     uint64_t stream_credit = this->_remote_flow_controller.credit();
     if (stream_credit == 0) {
       // STREAM_DATA_BLOCKED
-      frame = this->_remote_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size);
+      frame = this->_remote_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, timestamp);
       return frame;
     }
 
@@ -871,7 +872,7 @@ QUICCryptoStream::write(const uint8_t *buf, int64_t len)
 }
 
 bool
-QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level)
+QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
   return this->_write_buffer_reader->is_read_avail_more_than(0);
 }
@@ -881,7 +882,7 @@ QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level)
  */
 QUICFrame *
 QUICCryptoStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
-                                 uint16_t maximum_frame_size)
+                                 uint16_t maximum_frame_size, ink_hrtime timestamp)
 {
   QUICConnectionErrorUPtr error = nullptr;
 

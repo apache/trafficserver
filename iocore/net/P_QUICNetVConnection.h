@@ -220,9 +220,9 @@ public:
   QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level) override;
-  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
-                            uint16_t maximum_frame_size) override;
+  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
+  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
+                            ink_hrtime timestamp) override;
 
   int in_closed_queue = 0;
 

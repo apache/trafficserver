@@ -630,9 +630,10 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     break;
   }
   case QUIC_EVENT_ACK_PERIODIC: {
-    bool need_schedule = false;
+    ink_hrtime timestamp = Thread::get_hrtime();
+    bool need_schedule   = false;
     for (auto level : QUIC_ENCRYPTION_LEVELS) {
-      if (this->_ack_frame_manager.will_generate_frame(level)) {
+      if (this->_ack_frame_manager.will_generate_frame(level, timestamp)) {
         need_schedule = true;
         break;
       }
@@ -688,9 +689,10 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     break;
   }
   case QUIC_EVENT_ACK_PERIODIC: {
-    bool need_schedule = false;
+    ink_hrtime timestamp = Thread::get_hrtime();
+    bool need_schedule   = false;
     for (auto level : QUIC_ENCRYPTION_LEVELS) {
-      if (this->_ack_frame_manager.will_generate_frame(level)) {
+      if (this->_ack_frame_manager.will_generate_frame(level, timestamp)) {
         need_schedule = true;
         break;
       }
@@ -1336,6 +1338,8 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &
 QUICPacketUPtr
 QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size)
 {
+  ink_hrtime timestamp = Thread::get_hrtime();
+
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
   if (max_packet_size <= MAX_PACKET_OVERHEAD) {
     return packet;
@@ -1367,9 +1371,9 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   uint8_t frame_instance_buffer[QUICFrame::MAX_INSTANCE_SIZE]; // This is for a frame instance but not serialized frame data
   QUICFrame *frame = nullptr;
   for (auto g : this->_frame_generators) {
-    while (g->will_generate_frame(level)) {
+    while (g->will_generate_frame(level, timestamp)) {
       // FIXME will_generate_frame should receive more parameters so we don't need extra checks
-      if (g == this->_remote_flow_controller && !this->_stream_manager->will_generate_frame(level)) {
+      if (g == this->_remote_flow_controller && !this->_stream_manager->will_generate_frame(level, timestamp)) {
         break;
       }
       if (g == this->_stream_manager && this->_path_validator->is_validating()) {
@@ -1377,7 +1381,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       }
 
       // Common block
-      frame = g->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size);
+      frame = g->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size, timestamp);
       if (frame) {
         ++frame_count;
         probing |= frame->is_probing_frame();
@@ -2102,11 +2106,13 @@ QUICNetVConnection::_state_connection_established_initiate_connection_migration(
   ink_assert(this->netvc_context == NET_VCONNECTION_OUT);
 
   QUICConnectionErrorUPtr error = nullptr;
+  ink_hrtime timestamp          = Thread::get_hrtime();
 
   std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
 
   if (this->_connection_migration_initiated || remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION) ||
-      !this->_alt_con_manager->is_ready_to_migrate() || this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT)) {
+      !this->_alt_con_manager->is_ready_to_migrate() ||
+      this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT, timestamp)) {
     return error;
   }
 
@@ -2139,7 +2145,7 @@ QUICNetVConnection::_handle_path_validation_timeout(Event *data)
 
 // QUICFrameGenerator
 bool
-QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level)
+QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
   if (!this->_is_level_matched(level)) {
     return false;
@@ -2149,7 +2155,8 @@ QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level)
 }
 
 QUICFrame *
-QUICNetVConnection::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size)
+QUICNetVConnection::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
+                                   ink_hrtime timestamp)
 {
   QUICFrame *frame = nullptr;
 

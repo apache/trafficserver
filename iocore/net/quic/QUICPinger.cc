@@ -45,7 +45,7 @@ QUICPinger::cancel(QUICEncryptionLevel level)
 }
 
 bool
-QUICPinger::will_generate_frame(QUICEncryptionLevel level)
+QUICPinger::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
   if (!this->_is_level_matched(level)) {
     return false;
@@ -58,7 +58,8 @@ QUICPinger::will_generate_frame(QUICEncryptionLevel level)
  * @param connection_credit This is not used. Because PING frame is not flow-controlled
  */
 QUICFrame *
-QUICPinger::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */, uint16_t maximum_frame_size)
+QUICPinger::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */, uint16_t maximum_frame_size,
+                           ink_hrtime timestamp)
 {
   QUICFrame *frame = nullptr;
 
