@@ -1375,6 +1375,7 @@ public:
   inkcoreapi int marshal_length();
   inkcoreapi int marshal(char *buf, int len);
   static int unmarshal(char *buf, int len, RefCountObj *block_ref);
+  static int unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref);
   void set_buffer_reference(RefCountObj *block_ref);
   int get_handle(char *buf, int len);
 

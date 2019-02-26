@@ -33,7 +33,7 @@
 #define CACHE_ALT_REMOVED -2
 
 static const uint8_t CACHE_DB_MAJOR_VERSION = 24;
-static const uint8_t CACHE_DB_MINOR_VERSION = 1;
+static const uint8_t CACHE_DB_MINOR_VERSION = 2;
 // This is used in various comparisons because otherwise if the minor version is 0,
 // the compile fails because the condition is always true or false. Running it through
 // VersionNumber prevents that.
