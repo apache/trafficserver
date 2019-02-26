@@ -1173,32 +1173,18 @@ TS_ADDTO([LDFLAGS], [$ATOMIC_LIBS])
 
 #
 # Check for SSL presence and usability
+#
 TS_CHECK_CRYPTO
 
-#
-# Check for NextProtocolNegotiation TLS extension support.
-TS_CHECK_CRYPTO_NEXTPROTONEG
+# Check for OpenSSL Version
+TS_CHECK_CRYPTO_VERSION
 
-#
-# Check for ALPN TLS extension support.
-TS_CHECK_CRYPTO_ALPN
-
-#
 # Check for openssl ASYNC jobs
 TS_CHECK_CRYPTO_ASYNC
-
-#
-# Check for EC key support.
-TS_CHECK_CRYPTO_EC_KEYS
-
-#
-# Check for the presense of the certificate callback in the ssl library
-TS_CHECK_CRYPTO_CERT_CB
 
 # Check for the client hello callback
 TS_CHECK_CRYPTO_HELLO_CB
 
-#
 # Check for SSL_set0_rbio call
 TS_CHECK_CRYPTO_SET_RBIO
 

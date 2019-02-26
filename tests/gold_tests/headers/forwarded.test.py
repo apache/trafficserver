@@ -25,7 +25,6 @@ Test FORWARDED header.
 '''
 
 Test.SkipUnless(
-    Condition.HasATSFeature('TS_USE_TLS_ALPN'),
     Condition.HasCurlFeature('http2'),
     Condition.HasCurlFeature('IPv6'),
 )

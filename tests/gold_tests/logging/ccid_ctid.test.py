@@ -27,7 +27,6 @@ Test.SkipUnless(
     Condition.HasProgram(
         "curl", "Curl need to be installed on system for this test to work"),
     # Condition.IsPlatform("linux"), Don't see the need for this.
-    Condition.HasATSFeature('TS_USE_TLS_ALPN'),
     Condition.HasCurlFeature('http2')
 )
 

@@ -19,7 +19,6 @@ Test TS API Hooks.
 '''
 
 Test.SkipUnless(
-    Condition.HasATSFeature('TS_USE_TLS_ALPN'),
     Condition.HasCurlFeature('http2'),
 )
 Test.ContinueOnFail = True

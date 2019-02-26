@@ -42,30 +42,25 @@
 #include "SSLStats.h"
 
 #include <string>
-#include <openssl/err.h>
-#include <openssl/bio.h>
-#include <openssl/pem.h>
-#include <openssl/x509.h>
-#include <openssl/asn1.h>
-#include <openssl/rand.h>
-#include <openssl/dh.h>
-#include <openssl/bn.h>
-#include <openssl/engine.h>
-#include <openssl/conf.h>
 #include <unistd.h>
 #include <termios.h>
 #include <vector>
 
-#if HAVE_OPENSSL_EVP_H
+#include <openssl/asn1.h>
+#include <openssl/bio.h>
+#include <openssl/bn.h>
+#include <openssl/conf.h>
+#include <openssl/dh.h>
+#include <openssl/ec.h>
+#include <openssl/engine.h>
+#include <openssl/err.h>
 #include <openssl/evp.h>
-#endif
+#include <openssl/pem.h>
+#include <openssl/rand.h>
+#include <openssl/x509.h>
 
 #if HAVE_OPENSSL_TS_H
 #include <openssl/ts.h>
-#endif
-
-#if HAVE_OPENSSL_EC_H
-#include <openssl/ec.h>
 #endif
 
 using namespace std::literals;
@@ -81,11 +76,6 @@ static constexpr std::string_view SSL_SESSION_TICKET_ENABLED("ssl_ticket_enabled
 static constexpr std::string_view SSL_KEY_DIALOG("ssl_key_dialog"sv);
 static constexpr std::string_view SSL_SERVERNAME("dest_fqdn"sv);
 static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
-
-// openssl version must be 0.9.4 or greater
-#if (OPENSSL_VERSION_NUMBER < 0x00090400L)
-#error Traffic Server requires an OpenSSL library version 0.9.4 or greater
-#endif
 
 #ifndef evp_md_func
 #ifdef OPENSSL_NO_SHA256
@@ -439,9 +429,6 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
 }
 #endif
 
-// Use the certificate callback for openssl 1.0.2 and greater
-// otherwise use the SNI callback
-#if TS_USE_CERT_CB
 /**
  * Called before either the server or the client certificate is used
  * Return 1 on success, 0 on error, or -1 to pause
@@ -483,7 +470,7 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
  * Cannot stop this callback. Always reeneabled
  */
 static int
-ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
+ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
@@ -503,71 +490,6 @@ ssl_servername_only_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   }
   return SSL_TLSEXT_ERR_OK;
 }
-
-#else
-static int
-ssl_servername_and_cert_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
-{
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-  bool reenabled;
-  int retval = 1;
-
-  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  if (servername == nullptr) {
-    servername = "";
-  }
-  Debug("ssl", "Requested servername is %s", servername);
-  int ret = PerformAction(netvc, servername);
-  if (ret != SSL_TLSEXT_ERR_OK) {
-    return SSL_TLSEXT_ERR_ALERT_FATAL;
-  }
-
-  // If we are in tunnel mode, don't select a cert.  Pause!
-  if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == netvc->attributes) {
-    return -1; // Pause
-  }
-
-  // Do the common certificate lookup only once.  If we pause
-  // and restart processing, do not execute the common logic again
-  if (!netvc->calledHooks(TS_EVENT_SSL_CERT)) {
-    retval = set_context_cert(ssl);
-    if (retval != 1) {
-      goto done;
-    }
-  }
-
-  // Call the plugin SNI code
-  reenabled = netvc->callHooks(TS_EVENT_SSL_CERT);
-  // If it did not re-enable, return the code to
-  // stop the accept processing
-  if (!reenabled) {
-    retval = -1;
-  }
-
-done:
-  // Map 1 to SSL_TLSEXT_ERR_OK
-  // Map 0 to SSL_TLSEXT_ERR_ALERT_FATAL
-  // Map -1 to SSL_TLSEXT_ERR_READ_AGAIN, if present
-  switch (retval) {
-  case 1:
-    retval = SSL_TLSEXT_ERR_OK;
-    break;
-  case -1:
-#ifdef SSL_TLSEXT_ERR_READ_AGAIN
-    retval = SSL_TLSEXT_ERR_READ_AGAIN;
-#else
-    Error("Cannot pause SNI processsing with this version of openssl");
-    retval = SSL_TLSEXT_ERR_ALERT_FATAL;
-#endif
-    break;
-  case 0:
-  default:
-    retval = SSL_TLSEXT_ERR_ALERT_FATAL;
-    break;
-  }
-  return retval;
-}
-#endif
 
 #if TS_USE_GET_DH_2048_256 == 0
 /* Build 2048-bit MODP Group with 256-bit Prime Order Subgroup from RFC 5114 */
@@ -651,20 +573,17 @@ ssl_context_enable_ecdh(SSL_CTX *ctx)
 {
 #if OPENSSL_VERSION_NUMBER < 0x10100000
 
-#if TS_USE_TLS_ECKEY
-
-#if defined(SSL_CTRL_SET_ECDH_AUTO)
+#if defined(SSL_CTX_set_ecdh_auto)
   SSL_CTX_set_ecdh_auto(ctx, 1);
-#elif defined(HAVE_EC_KEY_NEW_BY_CURVE_NAME) && defined(NID_X9_62_prime256v1)
+#elif defined(NID_X9_62_prime256v1)
   EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 
   if (ecdh) {
     SSL_CTX_set_tmp_ecdh(ctx, ecdh);
     EC_KEY_free(ecdh);
   }
-#endif
-#endif
-#endif
+#endif /* SSL_CTRL_SET_ECDH_AUTO */
+#endif /* OPENSSL_VERSION_NUMBER */
 
   return ctx;
 }
@@ -1211,13 +1130,10 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 void
 SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
 {
-// Make sure the callbacks are set
-#if TS_USE_CERT_CB
+  // Make sure the callbacks are set
   SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, nullptr);
-  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_only_callback);
-#else
-  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_and_cert_callback);
-#endif
+  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
+
 #if TS_USE_HELLO_CB
   SSL_CTX_set_client_hello_cb(ctx, ssl_client_hello_callback, nullptr);
 #endif
@@ -1305,10 +1221,8 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, co
   }
 
 #ifdef SSL_MODE_RELEASE_BUFFERS
-  if (OPENSSL_VERSION_NUMBER > 0x1000107fL) {
-    Debug("ssl", "enabling SSL_MODE_RELEASE_BUFFERS");
-    SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
-  }
+  Debug("ssl", "enabling SSL_MODE_RELEASE_BUFFERS");
+  SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
 #endif
 
 #ifdef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
@@ -1439,13 +1353,8 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, co
   }
   SSL_CTX_set_info_callback(ctx, ssl_callback_info);
 
-#if TS_USE_TLS_NPN
   SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, nullptr);
-#endif /* TS_USE_TLS_NPN */
-
-#if TS_USE_TLS_ALPN
   SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, nullptr);
-#endif /* TS_USE_TLS_ALPN */
 
 #if TS_USE_TLS_OCSP
   if (SSLConfigParams::ssl_ocsp_enabled) {
