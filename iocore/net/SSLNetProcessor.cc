@@ -37,7 +37,7 @@ SSLNetProcessor ssl_NetProcessor;
 NetProcessor &sslNetProcessor = ssl_NetProcessor;
 SNIActionPerformer sni_action_performer;
 
-#ifdef TS_USE_TLS_OCSP
+#if TS_USE_TLS_OCSP
 struct OCSPContinuation : public Continuation {
   int
   mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
@@ -76,7 +76,7 @@ SSLNetProcessor::start(int, size_t stacksize)
   // Initialize SSL statistics. This depends on an initial set of certificates being loaded above.
   SSLInitializeStatistics();
 
-#ifdef TS_USE_TLS_OCSP
+#if TS_USE_TLS_OCSP
   if (SSLConfigParams::ssl_ocsp_enabled) {
     // Call the update initially to get things populated
     ocsp_update();
