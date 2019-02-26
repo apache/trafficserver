@@ -3321,7 +3321,8 @@ SSL Termination
    The filename of the default and global ticket key for SSL sessions. The location is relative to the
    :ts:cv:`proxy.config.ssl.server.cert.path` directory. One way to generate this would be to run
    ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file.ticket``. Also
-   note that OpenSSL session tickets are sensitive to the version of the ca-certificates.
+   note that OpenSSL session tickets are sensitive to the version of the ca-certificates. Once the
+   file is changed with new tickets, use :option:`traffic_ctl config reload` to begin using them.
 
 .. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.yaml
 
