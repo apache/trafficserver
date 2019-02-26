@@ -20,7 +20,7 @@
  */
 
 #include "P_OCSPStapling.h"
-#ifdef TS_USE_TLS_OCSP
+#if TS_USE_TLS_OCSP
 
 #include <openssl/ssl.h>
 #include <openssl/ocsp.h>
