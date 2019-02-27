@@ -2286,7 +2286,7 @@ ParseHostFile(const char *path, unsigned int hostdb_hostfile_check_interval)
 // Regression tests
 //
 // Take a started hostDB and fill it up and make sure it doesn't explode
-#ifdef TS_HAS_TESTS
+#if TS_HAS_TESTS
 struct HostDBRegressionContinuation;
 
 struct HostDBRegressionContinuation : public Continuation {

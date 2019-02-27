@@ -48,7 +48,7 @@ public:
                                     int content_type_len, int64_t content_length);
 };
 
-#ifdef TS_HAS_TESTS
+#if TS_HAS_TESTS
 class TransformTest
 {
 public:
