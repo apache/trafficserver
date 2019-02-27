@@ -62,31 +62,8 @@
 #include "quic/QUICAddrVerifyState.h"
 #include "quic/QUICPacketProtectionKeyInfo.h"
 
-// These are included here because older OpenQUIC libraries don't have them.
-// Don't copy these defines, or use their values directly, they are merely
-// here to avoid compiler errors.
-#ifndef QUIC_TLSEXT_ERR_OK
-#define QUIC_TLSEXT_ERR_OK 0
-#endif
-
-#ifndef QUIC_TLSEXT_ERR_NOACK
-#define QUIC_TLSEXT_ERR_NOACK 3
-#endif
-
-#define QUIC_OP_HANDSHAKE 0x16
-
 // Size of connection ids for debug log : e.g. aaaaaaaa-bbbbbbbb\0
 static constexpr size_t MAX_CIDS_SIZE = 8 + 1 + 8 + 1;
-
-// class QUICNextProtocolSet;
-// struct QUICCertLookup;
-
-typedef enum {
-  QUIC_HOOK_OP_DEFAULT,                      ///< Null / initialization value. Do normal processing.
-  QUIC_HOOK_OP_TUNNEL,                       ///< Switch to blind tunnel
-  QUIC_HOOK_OP_TERMINATE,                    ///< Termination connection / transaction.
-  QUIC_HOOK_OP_LAST = QUIC_HOOK_OP_TERMINATE ///< End marker value.
-} QuicVConnOp;
 
 //////////////////////////////////////////////////////////////////
 //

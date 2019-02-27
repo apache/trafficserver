@@ -41,9 +41,6 @@
 #include "QUICConfig.h"
 #include "QUICIntUtil.h"
 
-#define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
-#define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
-
 using namespace std::literals;
 static constexpr std::string_view QUIC_DEBUG_TAG = "quic_net"sv;
 
