@@ -943,6 +943,9 @@ QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
     break;
   case QUICPacketType::HANDSHAKE:
     error = this->_state_handshake_process_handshake_packet(std::move(packet));
+    if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL) && this->netvc_context == NET_VCONNECTION_IN) {
+      this->_pp_key_info.drop_keys(QUICKeyPhase::INITIAL);
+    }
     break;
   case QUICPacketType::ZERO_RTT_PROTECTED:
     error = this->_state_handshake_process_zero_rtt_protected_packet(std::move(packet));

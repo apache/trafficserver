@@ -29,6 +29,27 @@ QUICPacketProtectionKeyInfo::set_context(Context ctx)
   this->_ctx = ctx;
 }
 
+void
+QUICPacketProtectionKeyInfo::drop_keys(QUICKeyPhase phase)
+{
+  int index = static_cast<int>(phase);
+
+  this->_is_client_key_available[index] = false;
+  this->_is_server_key_available[index] = false;
+
+  memset(this->_client_key[index], 0x00, sizeof(this->_client_key[index]));
+  memset(this->_server_key[index], 0x00, sizeof(this->_server_key[index]));
+
+  memset(this->_client_iv[index], 0x00, sizeof(this->_client_iv[index]));
+  memset(this->_server_iv[index], 0x00, sizeof(this->_server_iv[index]));
+
+  this->_client_iv_len[index] = 0;
+  this->_server_iv_len[index] = 0;
+
+  memset(this->_client_key_for_hp[index], 0x00, sizeof(this->_client_key_for_hp[index]));
+  memset(this->_server_key_for_hp[index], 0x00, sizeof(this->_server_key_for_hp[index]));
+}
+
 const QUIC_EVP_CIPHER *
 QUICPacketProtectionKeyInfo::get_cipher(QUICKeyPhase phase) const
 {
