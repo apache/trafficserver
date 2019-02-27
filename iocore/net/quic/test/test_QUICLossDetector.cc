@@ -36,10 +36,9 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
 
   QUICAckFrameManager afm;
   QUICConnectionId connection_id = {reinterpret_cast<const uint8_t *>("\x01"), 1};
-  MockQUICPacketTransmitter tx;
   MockQUICConnectionInfoProvider info;
   MockQUICCongestionController cc(&info);
-  QUICLossDetector detector(&tx, &info, &cc, &rtt_measure, 0);
+  QUICLossDetector detector(&info, &cc, &rtt_measure, 0);
   ats_unique_buf payload = ats_unique_malloc(512);
   size_t payload_len     = 512;
   QUICPacketUPtr packet  = QUICPacketFactory::create_null_packet();
@@ -52,7 +51,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     // Check initial state
     uint8_t frame_buffer[1024] = {0};
     CHECK(g.lost_frame_count == 0);
-    QUICFrame *ping_frame = g.generate_frame(frame_buffer, QUICEncryptionLevel::HANDSHAKE, 4, UINT16_MAX);
+    QUICFrame *ping_frame = g.generate_frame(frame_buffer, QUICEncryptionLevel::HANDSHAKE, 4, UINT16_MAX, 0);
 
     uint8_t raw[4];
     size_t len;
@@ -85,9 +84,6 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
 
   SECTION("1-RTT")
   {
-    // Check initial state
-    CHECK(tx.retransmitted.size() == 0);
-
     // Send packet (1) to (7)
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet1  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
@@ -152,7 +148,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     afm.update(QUICEncryptionLevel::INITIAL, pn9, payload_len, false);
     afm.update(QUICEncryptionLevel::INITIAL, pn10, payload_len, false);
     uint8_t buf[QUICFrame::MAX_INSTANCE_SIZE];
-    QUICFrame *x = afm.generate_frame(buf, QUICEncryptionLevel::INITIAL, 2048, 2048);
+    QUICFrame *x = afm.generate_frame(buf, QUICEncryptionLevel::INITIAL, 2048, 2048, 0);
     frame        = static_cast<QUICAckFrame *>(x);
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
     detector.handle_frame(QUICEncryptionLevel::INITIAL, *frame);
@@ -176,14 +172,10 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
 TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
 {
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  MockQUICPacketTransmitter tx;
   MockQUICConnectionInfoProvider info;
   MockQUICCongestionController cc(&info);
   QUICRTTMeasure rtt_measure;
-  QUICLossDetector detector(&tx, &info, &cc, &rtt_measure, 0);
-
-  // Check initial state
-  CHECK(tx.retransmitted.size() == 0);
+  QUICLossDetector detector(&info, &cc, &rtt_measure, 0);
 
   auto t1           = Thread::get_hrtime();
   QUICAckFrame *ack = QUICFrameFactory::create_ack_frame(frame_buf, 100000000, 100, 10000000);

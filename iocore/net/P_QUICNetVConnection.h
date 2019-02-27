@@ -212,10 +212,6 @@ public:
   std::string_view negotiated_application_name() const override;
   bool is_closed() const override;
 
-  // QUICConnection (QUICPacketTransmitter)
-  virtual void retransmit_packet(const QUICPacket &packet) override;
-  virtual Ptr<ProxyMutex> get_packet_transmitter_mutex() override;
-
   // QUICConnection (QUICFrameHandler)
   std::vector<QUICFrameType> interests() override;
   QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;

@@ -37,9 +37,9 @@
   Debug("v_quic_loss_detector", "[%s] [%s] " fmt, this->_info->cids().data(), QUICDebugNames::pn_space(this->_pn_space_index), \
         ##__VA_ARGS__)
 
-QUICLossDetector::QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info,
-                                   QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, int index)
-  : _transmitter(transmitter), _info(info), _cc(cc), _rtt_measure(rtt_measure), _pn_space_index(index)
+QUICLossDetector::QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
+                                   int index)
+  : _info(info), _cc(cc), _rtt_measure(rtt_measure), _pn_space_index(index)
 {
   this->mutex                 = new_ProxyMutex();
   this->_loss_detection_mutex = new_ProxyMutex();
@@ -64,8 +64,7 @@ QUICLossDetector::~QUICLossDetector()
 
   this->_sent_packets.clear();
 
-  this->_transmitter = nullptr;
-  this->_cc          = nullptr;
+  this->_cc = nullptr;
 }
 
 int
@@ -202,7 +201,6 @@ QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool ack_elici
 void
 QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame)
 {
-  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
   this->_largest_acked_packet = std::max(this->_largest_acked_packet, ack_frame.largest_acknowledged());
@@ -285,7 +283,6 @@ QUICLossDetector::_update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay)
 void
 QUICLossDetector::_on_packet_acked(const PacketInfo &acked_packet)
 {
-  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   // QUICLDDebug("Packet number %" PRIu64 " has been acked", acked_packet_number);
 
@@ -395,7 +392,6 @@ QUICLossDetector::_on_loss_detection_timeout()
 void
 QUICLossDetector::_detect_lost_packets()
 {
-  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   this->_loss_time      = 0;
   ink_hrtime loss_delay = this->_k_time_threshold * std::max(this->_latest_rtt, this->_smoothed_rtt);
@@ -458,7 +454,6 @@ QUICLossDetector::_detect_lost_packets()
 void
 QUICLossDetector::_retransmit_all_unacked_crypto_data()
 {
-  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   std::set<QUICPacketNumber> retransmitted_crypto_packets;
   std::map<QUICPacketNumber, PacketInfo *> lost_packets;
@@ -480,7 +475,6 @@ QUICLossDetector::_retransmit_all_unacked_crypto_data()
 void
 QUICLossDetector::_send_two_packets()
 {
-  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   // TODO sent ping
 }
@@ -490,7 +484,6 @@ QUICLossDetector::_send_two_packets()
 void
 QUICLossDetector::_retransmit_lost_packet(QUICPacketUPtr &packet)
 {
-  SCOPED_MUTEX_LOCK(transmitter_lock, this->_transmitter->get_packet_transmitter_mutex().get(), this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
   QUICLDDebug("[NOP] Retransmit %s packet #%" PRIu64, QUICDebugNames::packet_type(packet->type()), packet->packet_number());

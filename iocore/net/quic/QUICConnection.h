@@ -25,7 +25,6 @@
 
 #include "I_EventSystem.h"
 #include "I_NetVConnection.h"
-#include "QUICPacketTransmitter.h"
 #include "QUICFrameHandler.h"
 
 class QUICApplication;
@@ -50,7 +49,7 @@ public:
   virtual std::string_view negotiated_application_name() const = 0;
 };
 
-class QUICConnection : public QUICPacketTransmitter, public QUICFrameHandler, public QUICConnectionInfoProvider
+class QUICConnection : public QUICFrameHandler, public QUICConnectionInfoProvider
 {
 public:
   virtual QUICStreamManager *stream_manager()             = 0;

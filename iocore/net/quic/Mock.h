@@ -29,7 +29,6 @@
 #include "QUICStreamManager.h"
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
-#include "QUICPacketTransmitter.h"
 
 class MockQUICStreamManager : public QUICStreamManager
 {
@@ -185,18 +184,6 @@ public:
     return std::string_view("00000000-00000000"sv);
   }
 
-  void
-  retransmit_packet(const QUICPacket &packet) override
-  {
-    ++_retransmit_count;
-  }
-
-  Ptr<ProxyMutex>
-  get_packet_transmitter_mutex() override
-  {
-    return this->_mutex;
-  }
-
   std::vector<QUICFrameType>
   interests() override
   {
@@ -350,29 +337,6 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
   }
 };
 
-class MockQUICPacketTransmitter : public QUICPacketTransmitter
-{
-public:
-  MockQUICPacketTransmitter() : QUICPacketTransmitter() { this->_mutex = new_ProxyMutex(); };
-
-  void
-  retransmit_packet(const QUICPacket &packet) override
-  {
-    this->retransmitted.insert(packet.packet_number());
-  }
-
-  Ptr<ProxyMutex>
-  get_packet_transmitter_mutex() override
-  {
-    return this->_mutex;
-  }
-
-  Ptr<ProxyMutex> _mutex;
-
-  std::set<QUICPacketNumber> transmitted;
-  std::set<QUICPacketNumber> retransmitted;
-};
-
 class MockQUICCongestionController : public QUICCongestionController
 {
 public:
@@ -421,9 +385,8 @@ private:
 class MockQUICLossDetector : public QUICLossDetector
 {
 public:
-  MockQUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info, QUICCongestionController *cc,
-                       QUICRTTMeasure *rtt_measure, int index)
-    : QUICLossDetector(transmitter, info, cc, rtt_measure, index)
+  MockQUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, int index)
+    : QUICLossDetector(info, cc, rtt_measure, index)
   {
   }
   void
@@ -702,13 +665,14 @@ class MockQUICFrameGenerator : public QUICFrameGenerator
 {
 public:
   bool
-  will_generate_frame(QUICEncryptionLevel level) override
+  will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override
   {
     return true;
   }
 
   QUICFrame *
-  generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override
+  generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
+                 ink_hrtime timestamp) override
   {
     QUICFrame *frame              = QUICFrameFactory::create_ping_frame(buf, 0, this);
     QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());

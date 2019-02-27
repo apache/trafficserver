@@ -24,6 +24,8 @@
 #pragma once
 
 #include <vector>
+#include "QUICTypes.h"
+
 class QUICFrame;
 
 class QUICFrameHandler

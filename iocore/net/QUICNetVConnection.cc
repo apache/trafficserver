@@ -92,7 +92,6 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
                          QUICPacketHandler *packet_handler)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::startEvent);
-  this->_packet_transmitter_mutex    = new_ProxyMutex();
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
   this->_peer_quic_connection_id     = peer_cid;
@@ -117,7 +116,6 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
                          UDPConnection *udp_con, QUICPacketHandler *packet_handler, QUICConnectionTable *ctable)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
-  this->_packet_transmitter_mutex    = new_ProxyMutex();
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
   this->_peer_quic_connection_id     = peer_cid;
@@ -271,7 +269,7 @@ QUICNetVConnection::start()
   this->_congestion_controller = new QUICCongestionController(this);
   for (auto s : QUIC_PN_SPACES) {
     int index            = static_cast<int>(s);
-    QUICLossDetector *ld = new QUICLossDetector(this, this, this->_congestion_controller, &this->_rtt_measure, index);
+    QUICLossDetector *ld = new QUICLossDetector(this, this->_congestion_controller, &this->_rtt_measure, index);
     this->_frame_dispatcher->add_handler(ld);
     this->_loss_detector[index] = ld;
   }
@@ -478,18 +476,6 @@ QUICStreamManager *
 QUICNetVConnection::stream_manager()
 {
   return this->_stream_manager;
-}
-
-void
-QUICNetVConnection::retransmit_packet(const QUICPacket &packet)
-{
-  QUICConDebug("[NOP] Retransmit %s packet #%" PRIu64, QUICDebugNames::packet_type(packet.type()), packet.packet_number());
-}
-
-Ptr<ProxyMutex>
-QUICNetVConnection::get_packet_transmitter_mutex()
-{
-  return this->_packet_transmitter_mutex;
 }
 
 void
@@ -939,7 +925,6 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPack
       this->_loss_detector[static_cast<int>(s)]->reset();
     }
     this->_congestion_controller->reset();
-    SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
 
     // start handshake over
     this->_handshake_handler->reset();
@@ -1015,7 +1000,6 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
     this->_loss_detector[static_cast<int>(s)]->reset();
   }
   this->_congestion_controller->reset();
-  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   this->_packet_recv_queue.reset();
 
   // Initialize Key Materials with peer CID. Because peer CID is DCID of (second) INITIAL packet from client which reply to RETRY
@@ -1324,7 +1308,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   size_t len         = 0;
   ats_unique_buf buf = ats_unique_malloc(max_packet_size);
 
-  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   std::vector<QUICFrameInfo> frames;
 
   if (!this->_has_ack_eliciting_packet_out) {
@@ -1420,8 +1403,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 void
 QUICNetVConnection::_packetize_closing_frame()
 {
-  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
-
   if (this->_connection_error == nullptr || this->_the_final_packet) {
     return;
   }
@@ -1638,7 +1619,6 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
 void
 QUICNetVConnection::_schedule_packet_write_ready(bool delay)
 {
-  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   if (!this->_packet_write_ready) {
     QUICConVVVDebug("Schedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PACKET_WRITE_READY));
     if (delay) {
@@ -1652,7 +1632,6 @@ QUICNetVConnection::_schedule_packet_write_ready(bool delay)
 void
 QUICNetVConnection::_unschedule_packet_write_ready()
 {
-  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   if (this->_packet_write_ready) {
     this->_packet_write_ready->cancel();
     this->_packet_write_ready = nullptr;
@@ -1662,7 +1641,6 @@ QUICNetVConnection::_unschedule_packet_write_ready()
 void
 QUICNetVConnection::_close_packet_write_ready(Event *data)
 {
-  SCOPED_MUTEX_LOCK(packet_transmitter_lock, this->_packet_transmitter_mutex, this_ethread());
   ink_assert(this->_packet_write_ready == data);
   this->_packet_write_ready = nullptr;
 }

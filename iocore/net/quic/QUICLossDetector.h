@@ -35,7 +35,6 @@
 #include "QUICPacket.h"
 #include "QUICFrame.h"
 #include "QUICFrameHandler.h"
-#include "QUICPacketTransmitter.h"
 #include "QUICConnection.h"
 
 class QUICLossDetector;
@@ -119,8 +118,7 @@ private:
 class QUICLossDetector : public Continuation, public QUICFrameHandler
 {
 public:
-  QUICLossDetector(QUICPacketTransmitter *transmitter, QUICConnectionInfoProvider *info, QUICCongestionController *cc,
-                   QUICRTTMeasure *rtt_measure, int index);
+  QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, int index);
   ~QUICLossDetector();
 
   int event_handler(int event, Event *edata);
@@ -194,9 +192,8 @@ private:
   void _send_one_packet();
   void _send_two_packets();
 
-  QUICPacketTransmitter *_transmitter = nullptr;
-  QUICConnectionInfoProvider *_info   = nullptr;
-  QUICCongestionController *_cc       = nullptr;
-  QUICRTTMeasure *_rtt_measure        = nullptr;
-  int _pn_space_index                 = -1;
+  QUICConnectionInfoProvider *_info = nullptr;
+  QUICCongestionController *_cc     = nullptr;
+  QUICRTTMeasure *_rtt_measure      = nullptr;
+  int _pn_space_index               = -1;
 };
