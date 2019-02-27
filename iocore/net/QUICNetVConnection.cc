@@ -251,7 +251,7 @@ QUICNetVConnection::start()
     this->_hs_protocol       = this->_setup_handshake_protocol(params->server_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol, this->_reset_token, params->stateless_retry());
     this->_ack_frame_manager.set_max_ack_delay(params->max_ack_delay_in());
-    this->_ack_manager_periodic = this->thread->schedule_every(this, params->max_ack_delay_in(), QUIC_EVENT_ACK_PERIODIC);
+    this->_schedule_ack_manager_periodic(params->max_ack_delay_in());
   } else {
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::CLIENT);
     this->_ack_frame_manager.set_ack_delay_exponent(params->ack_delay_exponent_out());
@@ -260,7 +260,7 @@ QUICNetVConnection::start()
     this->_handshake_handler->start(&this->_packet_factory, params->vn_exercise_enabled());
     this->_handshake_handler->do_handshake();
     this->_ack_frame_manager.set_max_ack_delay(params->max_ack_delay_out());
-    this->_ack_manager_periodic = this->thread->schedule_every(this, params->max_ack_delay_out(), QUIC_EVENT_ACK_PERIODIC);
+    this->_schedule_ack_manager_periodic(params->max_ack_delay_out());
   }
 
   this->_application_map = new QUICApplicationMap();
@@ -629,37 +629,16 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     } while (error == nullptr && (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::IGNORED));
     break;
   }
-  case QUIC_EVENT_ACK_PERIODIC: {
-    ink_hrtime timestamp = Thread::get_hrtime();
-    bool need_schedule   = false;
-    for (auto level : QUIC_ENCRYPTION_LEVELS) {
-      if (this->_ack_frame_manager.will_generate_frame(level, timestamp)) {
-        need_schedule = true;
-        break;
-      }
-    }
-
-    if (!need_schedule) {
-      break;
-    }
-
-    // we have ack to send
-    // FIXME: should sent depend on socket event.
-    this->_schedule_packet_write_ready();
+  case QUIC_EVENT_ACK_PERIODIC:
+    this->_handle_periodic_ack_event();
     break;
-  }
-
-  case QUIC_EVENT_PACKET_WRITE_READY: {
+  case QUIC_EVENT_PACKET_WRITE_READY:
     this->_close_packet_write_ready(data);
-
     // TODO: support RETRY packet
     error = this->_state_common_send_packet();
-
     // Reschedule WRITE_READY
     this->_schedule_packet_write_ready(true);
-
     break;
-  }
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
     this->_handle_path_validation_timeout(data);
     break;
@@ -684,45 +663,25 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   QUICConnectionErrorUPtr error = nullptr;
   switch (event) {
-  case QUIC_EVENT_PACKET_READ_READY: {
+  case QUIC_EVENT_PACKET_READ_READY:
     error = this->_state_connection_established_receive_packet();
     break;
-  }
-  case QUIC_EVENT_ACK_PERIODIC: {
-    ink_hrtime timestamp = Thread::get_hrtime();
-    bool need_schedule   = false;
-    for (auto level : QUIC_ENCRYPTION_LEVELS) {
-      if (this->_ack_frame_manager.will_generate_frame(level, timestamp)) {
-        need_schedule = true;
-        break;
-      }
-    }
-
-    if (!need_schedule) {
-      break;
-    }
-
-    // we have ack to send
-    // FIXME: should sent depend on socket event.
-    this->_schedule_packet_write_ready();
+  case QUIC_EVENT_ACK_PERIODIC:
+    this->_handle_periodic_ack_event();
     break;
-  }
-
-  case QUIC_EVENT_PACKET_WRITE_READY: {
+  case QUIC_EVENT_PACKET_WRITE_READY:
     this->_close_packet_write_ready(data);
     error = this->_state_common_send_packet();
     // Reschedule WRITE_READY
     this->_schedule_packet_write_ready(true);
     break;
-  }
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
     this->_handle_path_validation_timeout(data);
     break;
-  case EVENT_IMMEDIATE: {
+  case EVENT_IMMEDIATE:
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
     break;
-  }
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
   }
@@ -1729,6 +1688,12 @@ QUICNetVConnection::_unschedule_closing_timeout()
 }
 
 void
+QUICNetVConnection::_schedule_ack_manager_periodic(ink_hrtime interval)
+{
+  this->_ack_manager_periodic = this->thread->schedule_every(this, interval, QUIC_EVENT_ACK_PERIODIC);
+}
+
+void
 QUICNetVConnection::_unschedule_ack_manager_periodic()
 {
   if (this->_ack_manager_periodic) {
@@ -2131,6 +2096,25 @@ QUICNetVConnection::_state_connection_established_initiate_connection_migration(
   this->_validate_new_path();
 
   return error;
+}
+
+void
+QUICNetVConnection::_handle_periodic_ack_event()
+{
+  ink_hrtime timestamp = Thread::get_hrtime();
+  bool need_schedule   = false;
+  for (auto level : QUIC_ENCRYPTION_LEVELS) {
+    if (this->_ack_frame_manager.will_generate_frame(level, timestamp)) {
+      need_schedule = true;
+      break;
+    }
+  }
+
+  if (need_schedule) {
+    // we have ack to send
+    // FIXME: should sent depend on socket event.
+    this->_schedule_packet_write_ready();
+  }
 }
 
 void

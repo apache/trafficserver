@@ -304,6 +304,7 @@ private:
   void _close_path_validation_timeout(Event *data);
   Event *_path_validation_timeout = nullptr;
 
+  void _schedule_ack_manager_periodic(ink_hrtime interval);
   void _unschedule_ack_manager_periodic();
   Event *_ack_manager_periodic = nullptr;
 
@@ -357,6 +358,7 @@ private:
   bool _application_started = false;
   void _start_application();
 
+  void _handle_periodic_ack_event();
   void _handle_path_validation_timeout(Event *data);
   void _handle_idle_timeout();
 
