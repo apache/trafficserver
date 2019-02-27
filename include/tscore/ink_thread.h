@@ -163,16 +163,28 @@ ink_thread_create(ink_thread *tid, void *(*f)(void *), void *a, int detached, si
   pthread_attr_destroy(&attr);
 }
 
+static inline int
+ink_thread_setcancelstate(ink_thread who, int state)
+{
+  int r;
+  ink_assert(!pthread_setcancelstate(state, &r));
+  return r;
+}
+
+static inline int
+ink_thread_setcanceltype(ink_thread who, int type)
+{
+  int r;
+  ink_assert(!pthread_setcanceltype(type, &r));
+  return r;
+}
+
 static inline void
 ink_thread_cancel(ink_thread who)
 {
-#if defined(freebsd)
-  (void)who;
-  ink_assert(!"not supported");
-#else
-  int ret = pthread_cancel(who);
-  ink_assert(ret == 0);
-#endif
+  // Removing the check for FreeBSD according to this
+  // https://www.freebsd.org/cgi/man.cgi?query=pthread_cancel
+  ink_assert(!pthread_cancel(who));
 }
 
 static inline void *

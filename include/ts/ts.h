@@ -1105,6 +1105,10 @@ tsapi const char *TSHttpHdrReasonLookup(TSHttpStatus status);
    Threads */
 tsapi TSThread TSThreadCreate(TSThreadFunc func, void *data);
 tsapi TSThread TSThreadInit(void);
+tsapi void TSThreadSetCancelState(TSThread thread, int state);
+tsapi void TSThreadSetCancelType(TSThread thread, int type);
+tsapi void TSThreadCancel(TSThread thread);
+tsapi void *TSThreadJoin(TSThread thread);
 tsapi void TSThreadDestroy(TSThread thread);
 tsapi void TSThreadWait(TSThread thread);
 tsapi TSThread TSThreadSelf(void);

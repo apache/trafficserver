@@ -157,6 +157,7 @@ TSThreadCreate(TSThreadFunc func, void *data)
   if (!tid) {
     return (TSThread) nullptr;
   }
+  thread->tid = tid;
 
   return (TSThread)thread;
 }
@@ -198,6 +199,51 @@ TSThreadInit()
   thread->set_specific();
 
   return reinterpret_cast<TSThread>(thread);
+}
+
+void
+TSThreadSetCancelState(TSThread thread, int state)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
+  INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
+
+  if (ithread->tid != 0) {
+    ink_thread_setcancelstate(ithread->tid, state);
+  }
+}
+
+void
+TSThreadSetCancelType(TSThread thread, int type)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
+  INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
+
+  if (ithread->tid != 0) {
+    ink_thread_setcanceltype(ithread->tid, type);
+  }
+}
+
+void
+TSThreadCancel(TSThread thread)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
+  INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
+
+  if (ithread->tid != 0) {
+    ink_thread_cancel(ithread->tid);
+  }
+}
+
+void *
+TSThreadJoin(TSThread thread)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
+  INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
+
+  if (ithread->tid != 0) {
+    return ink_thread_join(ithread->tid);
+  }
+  return nullptr;
 }
 
 void
