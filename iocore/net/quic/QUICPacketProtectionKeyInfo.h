@@ -61,35 +61,35 @@ public:
 
   // Payload Protection (decryption)
 
-  bool is_decryption_key_available(QUICKeyPhase phase) const;
-  void set_decryption_key_available(QUICKeyPhase phase);
+  virtual bool is_decryption_key_available(QUICKeyPhase phase) const;
+  virtual void set_decryption_key_available(QUICKeyPhase phase);
 
-  const uint8_t *decryption_key(QUICKeyPhase phase) const;
-  uint8_t *decryption_key(QUICKeyPhase phase);
+  virtual const uint8_t *decryption_key(QUICKeyPhase phase) const;
+  virtual uint8_t *decryption_key(QUICKeyPhase phase);
 
-  size_t decryption_key_len(QUICKeyPhase phase) const;
+  virtual size_t decryption_key_len(QUICKeyPhase phase) const;
 
-  const uint8_t *decryption_iv(QUICKeyPhase phase) const;
-  uint8_t *decryption_iv(QUICKeyPhase phase);
+  virtual const uint8_t *decryption_iv(QUICKeyPhase phase) const;
+  virtual uint8_t *decryption_iv(QUICKeyPhase phase);
 
-  const size_t *decryption_iv_len(QUICKeyPhase phase) const;
-  size_t *decryption_iv_len(QUICKeyPhase phase);
+  virtual const size_t *decryption_iv_len(QUICKeyPhase phase) const;
+  virtual size_t *decryption_iv_len(QUICKeyPhase phase);
 
   // Header Protection
 
-  const QUIC_EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const;
-  void set_cipher_for_hp_initial(const QUIC_EVP_CIPHER *cipher);
-  void set_cipher_for_hp(const QUIC_EVP_CIPHER *cipher);
+  virtual const QUIC_EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const;
+  virtual void set_cipher_for_hp_initial(const QUIC_EVP_CIPHER *cipher);
+  virtual void set_cipher_for_hp(const QUIC_EVP_CIPHER *cipher);
 
-  const uint8_t *encryption_key_for_hp(QUICKeyPhase phase) const;
-  uint8_t *encryption_key_for_hp(QUICKeyPhase phase);
+  virtual const uint8_t *encryption_key_for_hp(QUICKeyPhase phase) const;
+  virtual uint8_t *encryption_key_for_hp(QUICKeyPhase phase);
 
-  size_t encryption_key_for_hp_len(QUICKeyPhase phase) const;
+  virtual size_t encryption_key_for_hp_len(QUICKeyPhase phase) const;
 
-  const uint8_t *decryption_key_for_hp(QUICKeyPhase phase) const;
-  uint8_t *decryption_key_for_hp(QUICKeyPhase phase);
+  virtual const uint8_t *decryption_key_for_hp(QUICKeyPhase phase) const;
+  virtual uint8_t *decryption_key_for_hp(QUICKeyPhase phase);
 
-  size_t decryption_key_for_hp_len(QUICKeyPhase phase) const;
+  virtual size_t decryption_key_for_hp_len(QUICKeyPhase phase) const;
 
 private:
   Context _ctx = Context::SERVER;

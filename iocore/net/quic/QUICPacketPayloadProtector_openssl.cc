@@ -32,12 +32,12 @@ QUICPacketPayloadProtector::_protect(uint8_t *cipher, size_t &cipher_len, size_t
                                      size_t plain_len, uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key,
                                      const uint8_t *iv, size_t iv_len, const EVP_CIPHER *aead, size_t tag_len) const
 {
-  uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
-  size_t nonce_len                 = 0;
-  this->_gen_nonce(nonce, nonce_len, pkt_num, iv, iv_len);
-
   EVP_CIPHER_CTX *aead_ctx;
   int len;
+  uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
+  size_t nonce_len                 = 0;
+
+  this->_gen_nonce(nonce, nonce_len, pkt_num, iv, iv_len);
 
   if (!(aead_ctx = EVP_CIPHER_CTX_new())) {
     return false;
@@ -82,12 +82,12 @@ QUICPacketPayloadProtector::_unprotect(uint8_t *plain, size_t &plain_len, size_t
                                        size_t cipher_len, uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key,
                                        const uint8_t *iv, size_t iv_len, const EVP_CIPHER *aead, size_t tag_len) const
 {
-  uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
-  size_t nonce_len                 = 0;
-  _gen_nonce(nonce, nonce_len, pkt_num, iv, iv_len);
-
   EVP_CIPHER_CTX *aead_ctx;
   int len;
+  uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
+  size_t nonce_len                 = 0;
+
+  this->_gen_nonce(nonce, nonce_len, pkt_num, iv, iv_len);
 
   if (!(aead_ctx = EVP_CIPHER_CTX_new())) {
     return false;
