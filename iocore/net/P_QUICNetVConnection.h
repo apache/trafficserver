@@ -233,7 +233,6 @@ public:
   SLINK(QUICNetVConnection, closed_alink);
 
 private:
-  QUICPacketType _last_received_packet_type = QUICPacketType::UNINITIALIZED;
   std::random_device _rnd;
 
   QUICConnectionId _peer_quic_connection_id;     // dst cid in local

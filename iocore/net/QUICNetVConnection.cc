@@ -1634,7 +1634,6 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
       }
     }
 
-    this->_last_received_packet_type = packet->type();
     if (!this->_verfied_state.is_verified()) {
       this->_verfied_state.fill(packet->size());
     }
