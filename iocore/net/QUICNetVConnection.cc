@@ -1275,6 +1275,11 @@ QUICNetVConnection::_state_common_send_packet()
         QUICConDebug("[TX] %s packet #%" PRIu64 " size=%zu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
                      len);
 
+        if (this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::INITIAL) && packet->type() == QUICPacketType::HANDSHAKE &&
+            this->netvc_context == NET_VCONNECTION_OUT) {
+          this->_pp_key_info.drop_keys(QUICKeyPhase::INITIAL);
+        }
+
         int index = QUICTypeUtil::pn_space_index(level);
         this->_loss_detector[index]->on_packet_sent(std::move(packet));
         packet_count++;
