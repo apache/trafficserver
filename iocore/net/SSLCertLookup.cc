@@ -311,38 +311,6 @@ make_to_lower_case(const char *name, char *lower_case_name, int buf_len)
   lower_case_name[i] = '\0';
 }
 
-static char *
-reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1])
-{
-  char *ptr        = reversed + sizeof(reversed);
-  const char *part = hostname;
-
-  *(--ptr) = '\0'; // NUL-terminate
-
-  while (*part) {
-    ssize_t len    = strcspn(part, ".");
-    ssize_t remain = ptr - reversed;
-
-    if (remain < (len + 1)) {
-      return nullptr;
-    }
-
-    ptr -= len;
-    memcpy(ptr, part, len);
-
-    // Skip to the next domain component. This will take us to either a '.' or a NUL.
-    // If it's a '.' we need to skip over it.
-    part += len;
-    if (*part == '.') {
-      ++part;
-      *(--ptr) = '.';
-    }
-  }
-  make_to_lower_case(ptr, ptr, strlen(ptr) + 1);
-
-  return ptr;
-}
-
 SSLContextStorage::SSLContextStorage() {}
 
 bool
@@ -456,6 +424,38 @@ SSLContextStorage::lookup(const char *name)
 }
 
 #if TS_HAS_TESTS
+
+static char *
+reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1])
+{
+  char *ptr        = reversed + sizeof(reversed);
+  const char *part = hostname;
+
+  *(--ptr) = '\0'; // NUL-terminate
+
+  while (*part) {
+    ssize_t len    = strcspn(part, ".");
+    ssize_t remain = ptr - reversed;
+
+    if (remain < (len + 1)) {
+      return nullptr;
+    }
+
+    ptr -= len;
+    memcpy(ptr, part, len);
+
+    // Skip to the next domain component. This will take us to either a '.' or a NUL.
+    // If it's a '.' we need to skip over it.
+    part += len;
+    if (*part == '.') {
+      ++part;
+      *(--ptr) = '.';
+    }
+  }
+  make_to_lower_case(ptr, ptr, strlen(ptr) + 1);
+
+  return ptr;
+}
 
 REGRESSION_TEST(SSLWildcardMatch)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {

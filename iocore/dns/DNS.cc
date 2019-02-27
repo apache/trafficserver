@@ -1825,7 +1825,7 @@ ink_dns_init(ts::ModuleVersion v)
                      RecRawStatSyncSum);
 }
 
-#ifdef TS_HAS_TESTS
+#if TS_HAS_TESTS
 struct DNSRegressionContinuation;
 using DNSRegContHandler = int (DNSRegressionContinuation::*)(int, void *);
 

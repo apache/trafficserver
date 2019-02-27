@@ -727,7 +727,7 @@ NullTransform::handle_event(int event, void *edata)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-#ifdef TS_HAS_TESTS
+#if TS_HAS_TESTS
 void
 TransformTest::run()
 {
