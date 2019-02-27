@@ -148,7 +148,7 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
 
   this->_print_km("initial - server", server_key_for_hp, server_key_for_hp_len, server_key, server_key_len, server_iv,
                   *server_iv_len);
-  this->_print_km("initial - client", client_key_for_hp, client_key_for_hp_len, client_key, server_key_len, client_iv,
+  this->_print_km("initial - client", client_key_for_hp, client_key_for_hp_len, client_key, client_key_len, client_iv,
                   *client_iv_len);
 
   return 1;
