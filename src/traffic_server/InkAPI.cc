@@ -37,9 +37,9 @@
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
-#include "ProxySession.h"
+#include "ProxyClientSession.h"
 #include "Http2ClientSession.h"
-#include "Http1ServerSession.h"
+#include "HttpServerSession.h"
 #include "HttpSM.h"
 #include "HttpConfig.h"
 #include "P_Net.h"
@@ -4721,7 +4721,7 @@ TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_hook_id(id) == TS_SUCCESS);
 
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
   cs->ssn_hook_append(id, (INKContInternal *)contp);
 }
 
@@ -4730,28 +4730,28 @@ TSHttpSsnTransactionCount(TSHttpSsn ssnp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
 
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
   return cs->get_transact_count();
 }
 
 TSVConn
 TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
 {
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
   return reinterpret_cast<TSVConn>(cs->get_netvc());
 }
 
 TSVConn
 TSHttpSsnServerVConnGet(TSHttpSsn ssnp)
 {
-  Http1ServerSession *ss = reinterpret_cast<Http1ServerSession *>(ssnp);
+  HttpServerSession *ss = reinterpret_cast<HttpServerSession *>(ssnp);
   return reinterpret_cast<TSVConn>(ss->get_netvc());
 }
 
 class TSHttpSsnCallback : public Continuation
 {
 public:
-  TSHttpSsnCallback(ProxySession *cs, TSEvent event) : Continuation(cs->mutex), m_cs(cs), m_event(event)
+  TSHttpSsnCallback(ProxyClientSession *cs, TSEvent event) : Continuation(cs->mutex), m_cs(cs), m_event(event)
   {
     SET_HANDLER(&TSHttpSsnCallback::event_handler);
   }
@@ -4765,7 +4765,7 @@ public:
   }
 
 private:
-  ProxySession *m_cs;
+  ProxyClientSession *m_cs;
   TSEvent m_event;
 };
 
@@ -4774,8 +4774,8 @@ TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
 
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
-  EThread *eth     = this_ethread();
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  EThread *eth           = this_ethread();
 
   // If this function is being executed on a thread created by the API
   // which is DEDICATED, the continuation needs to be called back on a
@@ -5475,7 +5475,7 @@ TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 sockaddr const *
 TSHttpSsnClientAddrGet(TSHttpSsn ssnp)
 {
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
 
   if (cs == nullptr) {
     return nullptr;
@@ -5494,7 +5494,7 @@ TSHttpTxnClientAddrGet(TSHttpTxn txnp)
 sockaddr const *
 TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp)
 {
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
 
   if (cs == nullptr) {
     return nullptr;
@@ -5517,7 +5517,7 @@ TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp)
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
 
-  Http1ServerSession *ssn = sm->get_server_session();
+  HttpServerSession *ssn = sm->get_server_session();
   if (ssn == nullptr) {
     return nullptr;
   }
@@ -5635,7 +5635,7 @@ TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
 
   // change the mark on an active server session
   if (nullptr != sm->ua_txn) {
-    Http1ServerSession *ssn = sm->ua_txn->get_server_session();
+    HttpServerSession *ssn = sm->ua_txn->get_server_session();
     if (nullptr != ssn) {
       NetVConnection *vc = ssn->get_netvc();
       if (vc != nullptr) {
@@ -5677,7 +5677,7 @@ TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
 
   // change the tos on an active server session
   if (nullptr != sm->ua_txn) {
-    Http1ServerSession *ssn = sm->ua_txn->get_server_session();
+    HttpServerSession *ssn = sm->ua_txn->get_server_session();
     if (nullptr != ssn) {
       NetVConnection *vc = ssn->get_netvc();
       if (vc != nullptr) {
@@ -5719,7 +5719,7 @@ TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp)
 
   // change the tos on an active server session
   if (nullptr != sm->ua_txn) {
-    Http1ServerSession *ssn = sm->ua_txn->get_server_session();
+    HttpServerSession *ssn = sm->ua_txn->get_server_session();
     if (nullptr != ssn) {
       NetVConnection *vc = ssn->get_netvc();
       if (vc != nullptr) {
@@ -6073,7 +6073,7 @@ TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg)
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
 
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
 
   cs->set_user_arg(arg_idx, arg);
 }
@@ -6084,7 +6084,7 @@ TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx)
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
 
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
   return cs->get_user_arg(arg_idx);
 }
 
@@ -6219,14 +6219,14 @@ void
 TSHttpSsnDebugSet(TSHttpSsn ssnp, int on)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  (reinterpret_cast<ProxySession *>(ssnp))->set_debug(0 != on);
+  (reinterpret_cast<ProxyClientSession *>(ssnp))->set_debug(0 != on);
 }
 
 int
 TSHttpSsnDebugGet(TSHttpSsn ssnp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  return (reinterpret_cast<ProxySession *>(ssnp))->debug();
+  return (reinterpret_cast<ProxyClientSession *>(ssnp))->debug();
 }
 
 int
@@ -7387,8 +7387,8 @@ TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)fdp) == TS_SUCCESS);
 
-  VConnection *basecs = reinterpret_cast<VConnection *>(ssnp);
-  ProxySession *cs    = dynamic_cast<ProxySession *>(basecs);
+  VConnection *basecs    = reinterpret_cast<VConnection *>(ssnp);
+  ProxyClientSession *cs = dynamic_cast<ProxyClientSession *>(basecs);
 
   if (cs == nullptr) {
     return TS_ERROR;
@@ -7421,7 +7421,7 @@ TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   *fdp       = -1;
 
-  Http1ServerSession *ss = sm->get_server_session();
+  HttpServerSession *ss = sm->get_server_session();
   if (ss == nullptr) {
     return TS_ERROR;
   }
@@ -7789,7 +7789,7 @@ TSFetchRespHdrMLocGet(TSFetchSM fetch_sm)
 int
 TSHttpSsnIsInternal(TSHttpSsn ssnp)
 {
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
 
   if (!cs) {
     return 0;
@@ -9277,7 +9277,7 @@ int64_t
 TSHttpSsnIdGet(TSHttpSsn ssnp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
   return cs->connection_id();
 }
 
@@ -9307,8 +9307,8 @@ TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int 
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   sdk_assert(n == 0 || result != nullptr);
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
-  int count        = 0;
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  int count              = 0;
   if (cs && n > 0) {
     auto mem = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
     count    = cs->populate_protocol(mem, n);
@@ -9340,7 +9340,7 @@ const char *
 TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
   return cs->protocol_contains(std::string_view{tag});
 }
 

@@ -27,34 +27,34 @@ The User Agent interacts with ATS by creating a session with the ATS server and
 submitting sequences of requests over the session. ATS supports several session protocols including
 HTTP/1.x and HTTP/2. A HTTP State Machine is created for each request to process the request.
 
-ATS uses the generic classes ProxySession and ProxyTransaction to hide the details of
+ATS uses the generic classes ProxyClientSession and ProxyClientTransaction to hide the details of
 the underlaying protocols from the HTTP State Machine.
 
 Classes
 =======
 
-ProxySession
+ProxyClientSession
 ------------------
 
 .. figure:: /static/images/sessions/session_hierarchy.png
    :align: center
-   :alt: ProxySession hierarchy
+   :alt: ProxyClientSession hierarchy
 
-The ProxySession class abstracts the key features of a client session.  It contains zero or more ProxyTransaction objects.  It also has a reference to the associated NetVC (either UnixNetVConnection or SSLNetVConnection).  The session class is responsible for interfacing with the user agent protocol.
+The ProxyClientSession class abstracts the key features of a client session.  It contains zero or more ProxyClientTransaction objects.  It also has a reference to the associated NetVC (either UnixNetVConnection or SSLNetVConnection).  The session class is responsible for interfacing with the user agent protocol.
 
 At this point there are two concrete subclasses: Http1ClientSession and Http2ClientSession.  The Http1ClientSession
 only has at most one transaction active at a time.  The HTTP/2 protocol allows for multiple simultaneous active
 transactions
 
-ProxyTransaction
+ProxyClientTransaction
 ----------------------
 
 .. figure:: /static/images/sessions/transaction_hierarchy.png
    :align: center
-   :alt: ProxyTransaction hierarchy
+   :alt: ProxyClientTransaction hierarchy
 
-The ProxyTransaction class abstracts the key features of a client transaction.  It has a reference to its
-paraent ProxySession.  One HttpSM is created for each ProxyTransaction.
+The ProxyClientTransaction class abstracts the key features of a client transaction.  It has a reference to its
+paraent ProxyClientSession.  One HttpSM is created for each ProxyClientTransaction.
 
 There are two concrete subclasses: Http1ClientTransaction and Http2Stream.
 
@@ -70,18 +70,18 @@ HTTP/1.x Objects
 
 This diagram shows the relationships between objects created as part of a HTTP/1.x session.  A NetVC
 object performs the basic network level protocols.  The Http1ClientSession object has a reference to the
-associated NetVC object.  The NetVC object is available via the :code:`ProxySession::get_netvc()` method.
+associated NetVC object.  The NetVC object is available via the :code:`ProxyClientSession::get_netvc()` method.
 
 The Http1ClientSession object contains a Http1ClientTransaction objet.  For each HTTP request, it calls
-the :code:`ProxySession::new_transaction()` method to instantiate the Http1ClientTransaction object.  With the HTTP/1.x
+the :code:`ProxyClientSession::new_transaction()` method to instantiate the Http1ClientTransaction object.  With the HTTP/1.x
 protocol at most one transaction can be active at a time.
 
-When the Http1ClientTransaction object is instantiated via :code:`ProxyTransaction::new_transaction()` it allocates a
+When the Http1ClientTransaction object is instantiated via :code:`ProxyClientTransaction::new_transaction()` it allocates a
 new HttpSM object, initializes it, and calls :code:`HttpSM::attach_client_session()` to associate the
 Http1ClientTransaction object with the new HttpSM.
 
-The ProxyTransaction object refers to the HttpSM via the current_reader member variable.  The HttpSM object
-refers to ProxyTransaction via the ua_session member variable (session in the member name is
+The ProxyClientTransaction object refers to the HttpSM via the current_reader member variable.  The HttpSM object
+refers to ProxyClientTransaction via the ua_session member variable (session in the member name is
 historical because the HttpSM used to refer directly to the ClientSession object).
 
 HTTP/2 Objects
@@ -93,11 +93,11 @@ HTTP/2 Objects
 
 This diagram shows the relationships between objects created as part of a HTTP/2 session.  It is very similar
 to the HTTP/1.x case.  The Http2ClientSession object interacts with the NetVC.  The Http2Stream object creates
-a HttpSM object object when :code:`ProxySession::new_transaction()` is called.
+a HttpSM object object when :code:`ProxyClient::new_transaction()` is called.
 
 One difference is that the Http/2 protocol allows for multiple simultaneous transactions, so the Http2ClientSession
 object must be able to manage multiple streams. From the HttpSM perspective it is interacting with a
-ProxyTransaction object, and there is no difference between working with a Http2Stream and a Http1ClientTransaction.
+ProxyClientTransaction object, and there is no difference between working with a Http2Stream and a Http1ClientTransaction.
 
 Transaction and Session Shutdown
 ================================
@@ -114,5 +114,5 @@ cause use-after-free and other related memory corruption errors.
 To ensure that sessions and transactions are correctly shutdown the following assertions are maintained.
 
 * The Session object will not call :code:`::destroy()` on itself until all child transaction objects are fully shutdown (i.e. TXN_CLOSE hooks are called and the transaction objects have been freed).
-* The Transaction object will not call :code:`::destroy()` on itself until the associated HttpSM has been shutdown.  In :code:`HttpSM::kill_this()`, the HttpSM will call :code:`ProxyTransaction::transaction_done()` on the ua_session object.  If the user agent initiates the termination, the ProxyTransaction object will send a WRITE_COMPLETE, EOS, or ERROR event on the open VIO object.  This should signal to the HttpSM object to shut itself down.
+* The Transaction object will not call :code:`::destroy()` on itself until the associated HttpSM has been shutdown.  In :code:`HttpSM::kill_this()`, the HttpSM will call :code:`ProxyClientTransaction::transaction_done()` on the ua_session object.  If the user agent initiates the termination, the ProxyClientTransaction object will send a WRITE_COMPLETE, EOS, or ERROR event on the open VIO object.  This should signal to the HttpSM object to shut itself down.
 

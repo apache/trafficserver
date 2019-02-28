@@ -24,7 +24,7 @@
 #pragma once
 
 #include "HTTP2.h"
-#include "../ProxyTransaction.h"
+#include "../ProxyClientTransaction.h"
 #include "Http2DebugNames.h"
 #include "../http/HttpTunnel.h" // To get ChunkedHandler
 #include "Http2DependencyTree.h"
@@ -35,10 +35,10 @@ class Http2ConnectionState;
 
 typedef Http2DependencyTree::Tree<Http2Stream *> DependencyTree;
 
-class Http2Stream : public ProxyTransaction
+class Http2Stream : public ProxyClientTransaction
 {
 public:
-  typedef ProxyTransaction super; ///< Parent type.
+  typedef ProxyClientTransaction super; ///< Parent type.
   Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size) : client_rwnd(initial_rwnd), _id(sid)
   {
     SET_HANDLER(&Http2Stream::main_event_handler);

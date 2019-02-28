@@ -37,24 +37,23 @@
 #include "HTTP.h"
 #include "HttpConfig.h"
 #include "IPAllow.h"
-#include "ProxySession.h"
-#include "Http1Transaction.h"
+#include "ProxyClientSession.h"
+#include "Http1ClientTransaction.h"
 
 #ifdef USE_HTTP_DEBUG_LISTS
 extern ink_mutex debug_cs_list_mutex;
 #endif
 
 class HttpSM;
-class Http1ServerSession;
+class HttpServerSession;
 
-/// Class to manage a Http v1 session to a client
-class Http1ClientSession : public ProxySession
+class Http1ClientSession : public ProxyClientSession
 {
 public:
-  typedef ProxySession super; ///< Parent type.
+  typedef ProxyClientSession super; ///< Parent type.
   Http1ClientSession();
 
-  // Implement ProxySession interface.
+  // Implement ProxyClientSession interface.
   void destroy() override;
   void free() override;
   void release_transaction();
@@ -121,11 +120,11 @@ public:
   }
 
   // Indicate we are done with a transaction
-  void release(ProxyTransaction *trans) override;
+  void release(ProxyClientTransaction *trans) override;
 
-  void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true) override;
+  void attach_server_session(HttpServerSession *ssession, bool transaction_done = true) override;
 
-  Http1ServerSession *
+  HttpServerSession *
   get_server_session() const override
   {
     return bound_ss;
@@ -200,7 +199,7 @@ private:
   VIO *ka_vio;
   VIO *slave_ka_vio;
 
-  Http1ServerSession *bound_ss;
+  HttpServerSession *bound_ss;
 
   int released_transactions;
 
@@ -213,7 +212,7 @@ public:
   /// Transparently pass-through non-HTTP traffic.
   bool f_transparent_passthrough;
 
-  Http1Transaction trans;
+  Http1ClientTransaction trans;
 };
 
 extern ClassAllocator<Http1ClientSession> http1ClientSessionAllocator;

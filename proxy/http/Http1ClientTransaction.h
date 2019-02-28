@@ -1,6 +1,6 @@
 /** @file
 
-  Http1Transaction.h - The Transaction class for Http1*
+  Http1ClientTransaction.h - The Transaction class for Http1*
 
   @section license License
 
@@ -23,16 +23,16 @@
 
 #pragma once
 
-#include "../ProxyTransaction.h"
+#include "../ProxyClientTransaction.h"
 
 class Continuation;
-/// Concrete class for any Http1 Transaction
-class Http1Transaction : public ProxyTransaction
+
+class Http1ClientTransaction : public ProxyClientTransaction
 {
 public:
-  using super_type = ProxyTransaction;
+  using super_type = ProxyClientTransaction;
 
-  Http1Transaction() {}
+  Http1ClientTransaction() {}
   // Implement VConnection interface.
   VIO *
   do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override
@@ -53,7 +53,7 @@ public:
   }
 
   // Don't destroy your elements.  Rely on the Http1ClientSession to clean up the
-  // Http1Transaction class as necessary.  The super::destroy() clears the
+  // Http1ClientTransaction class as necessary.  The super::destroy() clears the
   // mutex, which Http1ClientSession owns.
   void
   destroy() override
@@ -83,7 +83,7 @@ public:
 
   bool allow_half_open() const override;
 
-  void set_parent(ProxySession *new_parent) override;
+  void set_parent(ProxyClientSession *new_parent) override;
 
   bool
   is_outbound_transparent() const override
