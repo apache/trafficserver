@@ -26,7 +26,15 @@
 #include "Http2ClientSession.h"
 #include "Http2Stream.h"
 #include "Http2DebugNames.h"
+#include "HttpDebugNames.h"
 #include <sstream>
+
+#define REMEMBER(e, r)                                        \
+  {                                                           \
+    if (this->ua_session) {                                   \
+      this->ua_session->remember(MakeSourceLocation(), e, r); \
+    }                                                         \
+  }
 
 #define Http2ConDebug(ua_session, fmt, ...) \
   SsnDebug(ua_session, "http2_con", "[%" PRId64 "] " fmt, ua_session->connection_id(), ##__VA_ARGS__);
@@ -877,6 +885,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   case HTTP2_SESSION_EVENT_INIT: {
     ink_assert(this->ua_session == nullptr);
     this->ua_session = (Http2ClientSession *)edata;
+    REMEMBER(event, this->recursion);
 
     // [RFC 7540] 3.5. HTTP/2 Connection Preface. Upon establishment of a TCP connection and
     // determination that HTTP/2 will be used by both peers, each endpoint MUST
@@ -902,6 +911,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   // Finalize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_FINI: {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    REMEMBER(event, this->recursion);
 
     ink_assert(this->fini_received == false);
     this->fini_received = true;
@@ -911,6 +921,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   } break;
 
   case HTTP2_SESSION_EVENT_XMIT: {
+    REMEMBER(event, this->recursion);
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     send_data_frames_depends_on_priority();
     _scheduled = false;
@@ -918,6 +929,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   // Parse received HTTP/2 frames
   case HTTP2_SESSION_EVENT_RECV: {
+    REMEMBER(event, this->recursion);
     const Http2Frame *frame       = (Http2Frame *)edata;
     const Http2StreamId stream_id = frame->header().streamid;
     Http2Error error;
@@ -964,6 +976,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   // Initiate a gracefull shutdown
   case HTTP2_SESSION_EVENT_SHUTDOWN_INIT: {
+    REMEMBER(event, this->recursion);
     ink_assert(shutdown_state == HTTP2_SHUTDOWN_NOT_INITIATED);
     shutdown_state = HTTP2_SHUTDOWN_INITIATED;
     // [RFC 7540] 6.8.  GOAWAY
@@ -977,12 +990,16 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   // Continue a gracefull shutdown
   case HTTP2_SESSION_EVENT_SHUTDOWN_CONT: {
+    REMEMBER(event, this->recursion);
     ink_assert(shutdown_state == HTTP2_SHUTDOWN_INITIATED);
     shutdown_cont_event = nullptr;
     shutdown_state      = HTTP2_SHUTDOWN_IN_PROGRESS;
     // [RFC 7540] 6.8.  GOAWAY
     // ..., the server can send another GOAWAY frame with an updated last stream identifier
-    send_goaway_frame(latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+    if (shutdown_reason == Http2ErrorCode::HTTP2_ERROR_MAX) {
+      shutdown_reason = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+    }
+    send_goaway_frame(latest_streamid_in, shutdown_reason);
     // Stop creating new streams
     SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
     this->ua_session->set_half_close_local_flag(true);
@@ -1010,8 +1027,10 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 }
 
 int
-Http2ConnectionState::state_closed(int /* event */, void *edata)
+Http2ConnectionState::state_closed(int event, void *edata)
 {
+  REMEMBER(event, this->recursion);
+
   if (edata == zombie_event) {
     // Zombie session is still around.  Assert!
     ink_release_assert(zombie_event == nullptr);
@@ -1195,6 +1214,7 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
   }
 
   Http2StreamDebug(ua_session, stream->get_id(), "Delete stream");
+  REMEMBER(NO_EVENT, this->recursion);
 
   if (Http2::stream_priority_enabled) {
     Http2DependencyTree::Node *node = stream->priority_node;
@@ -1236,6 +1256,8 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 void
 Http2ConnectionState::release_stream(Http2Stream *stream)
 {
+  REMEMBER(NO_EVENT, this->recursion)
+
   if (stream) {
     // Decrement total_client_streams_count here, because it's a counter include streams in the process of shutting down.
     // Other counters (client_streams_in_count/client_streams_out_count) are already decremented in delete_stream().
@@ -1245,14 +1267,7 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   if (this->ua_session) {
     ink_assert(this->mutex == ua_session->mutex);
-    // If the number of clients is 0 and ua_session is active, then mark the connection as inactive
-    if (total_client_streams_count == 0 && ua_session->is_active()) {
-      ua_session->clear_session_active();
-      UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
-      if (vc && vc->active_timeout_in == 0) {
-        vc->add_to_keep_alive_queue();
-      }
-    }
+
     if (total_client_streams_count == 0) {
       if (fini_received) {
         // We were shutting down, go ahead and terminate the session
@@ -1265,6 +1280,15 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
         // ua_session = nullptr;
       } else if (shutdown_state == HTTP2_SHUTDOWN_IN_PROGRESS && fini_event == nullptr) {
         fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+      } else if (ua_session->is_active()) {
+        // If the number of clients is 0, HTTP2_SESSION_EVENT_FINI is not received or sent, and ua_session is active,
+        // then mark the connection as inactive
+        ua_session->clear_session_active();
+        UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
+        if (vc && vc->active_timeout_in == 0) {
+          // With heavy traffic, ua_session could be destroyed. Do not touch ua_session after this.
+          vc->add_to_keep_alive_queue();
+        }
       } else {
         schedule_zombie_event();
       }
@@ -1354,7 +1378,6 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   const ssize_t window_size         = std::min(this->client_rwnd, stream->client_rwnd);
   const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
   const size_t write_available_size = std::min(buf_len, static_cast<size_t>(window_size));
-  size_t read_available_size        = 0;
   payload_length                    = 0;
 
   uint8_t flags = 0x00;
@@ -1363,23 +1386,21 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
 
-  if (current_reader) {
-    read_available_size = static_cast<size_t>(current_reader->read_avail());
-  } else {
+  if (!current_reader) {
     Http2StreamDebug(this->ua_session, stream->get_id(), "couldn't get data reader");
     return Http2SendDataFrameResult::ERROR;
   }
 
   // Select appropriate payload length
-  if (read_available_size > 0) {
+  if (current_reader->is_read_avail_more_than(0)) {
     // We only need to check for window size when there is a payload
     if (window_size <= 0) {
       Http2StreamDebug(this->ua_session, stream->get_id(), "No window");
       return Http2SendDataFrameResult::NO_WINDOW;
     }
     // Copy into the payload buffer. Seems like we should be able to skip this copy step
-    payload_length = std::min(read_available_size, write_available_size);
-    current_reader->memcpy(payload_buffer, static_cast<int64_t>(payload_length));
+    payload_length = write_available_size;
+    payload_length = current_reader->read(payload_buffer, static_cast<int64_t>(write_available_size));
   } else {
     payload_length = 0;
   }
@@ -1392,7 +1413,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
-  if (stream->is_body_done() && read_available_size <= write_available_size) {
+  if (stream->is_body_done() && !current_reader->is_read_avail_more_than(0)) {
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
   }
 
@@ -1410,7 +1431,6 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   data.finalize(payload_length);
 
   stream->update_sent_count(payload_length);
-  current_reader->consume(payload_length);
 
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
@@ -1676,6 +1696,7 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_STREAM_ERRORS_COUNT, this_ethread());
+    ++stream_error_count;
   }
 
   Http2Frame rst_stream(HTTP2_FRAME_TYPE_RST_STREAM, id, 0);
@@ -1772,6 +1793,8 @@ Http2ConnectionState::send_ping_frame(Http2StreamId id, uint8_t flag, const uint
 void
 Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 {
+  ink_assert(this->ua_session != nullptr);
+
   Http2ConDebug(ua_session, "Send GOAWAY frame, last_stream_id: %d", id);
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
@@ -1780,8 +1803,6 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 
   Http2Frame frame(HTTP2_FRAME_TYPE_GOAWAY, 0, 0);
   Http2Goaway goaway;
-
-  ink_assert(this->ua_session != nullptr);
 
   goaway.last_streamid = id;
   goaway.error_code    = ec;

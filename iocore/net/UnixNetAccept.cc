@@ -78,7 +78,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   Connection con;
 
   if (!blockable) {
-    if (!MUTEX_TAKE_TRY_LOCK(na->action_->mutex.get(), e->ethread)) {
+    if (!MUTEX_TAKE_TRY_LOCK(na->action_->mutex, e->ethread)) {
       return 0;
     }
   }
@@ -149,7 +149,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
 
 Ldone:
   if (!blockable) {
-    MUTEX_UNTAKE_LOCK(na->action_->mutex.get(), e->ethread);
+    MUTEX_UNTAKE_LOCK(na->action_->mutex, e->ethread);
   }
   return count;
 }
@@ -379,12 +379,12 @@ NetAccept::acceptEvent(int event, void *ep)
   (void)event;
   Event *e = (Event *)ep;
   // PollDescriptor *pd = get_PollDescriptor(e->ethread);
-  ProxyMutex *m = nullptr;
+  Ptr<ProxyMutex> m;
 
   if (action_->mutex) {
-    m = action_->mutex.get();
+    m = action_->mutex;
   } else {
-    m = mutex.get();
+    m = mutex;
   }
 
   MUTEX_TRY_LOCK(lock, m, e->ethread);

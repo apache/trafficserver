@@ -3321,7 +3321,8 @@ SSL Termination
    The filename of the default and global ticket key for SSL sessions. The location is relative to the
    :ts:cv:`proxy.config.ssl.server.cert.path` directory. One way to generate this would be to run
    ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file.ticket``. Also
-   note that OpenSSL session tickets are sensitive to the version of the ca-certificates.
+   note that OpenSSL session tickets are sensitive to the version of the ca-certificates. Once the
+   file is changed with new tickets, use :option:`traffic_ctl config reload` to begin using them.
 
 .. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.yaml
 
@@ -3711,6 +3712,13 @@ HTTP/2 Configuration
    Indicates the maximum number of HTTP/2 server pushes that are remembered per
    HTTP/2 connection to avoid duplicate pushes on the same connection. If the
    maximum number is reached, new entries are not remembered.
+
+.. ts:cv:: CONFIG proxy.config.http2.stream_error_rate_threshold FLOAT 0.1
+   :reloadable:
+
+   This is the maximum stream error rate |TS| allows on an HTTP/2 connection.
+   |TS| gracefully closes connections that have stream error rates above this
+   setting by sending GOAWAY frames.
 
 Plug-in Configuration
 =====================

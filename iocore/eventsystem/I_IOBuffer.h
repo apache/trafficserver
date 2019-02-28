@@ -714,6 +714,12 @@ public:
   */
   int64_t block_read_avail();
 
+  /** Get a view of the data available to read.
+   *
+   * @return A view encompassing currently available readable data.
+   */
+  std::string_view block_read_view();
+
   void skip_empty_blocks();
 
   /**

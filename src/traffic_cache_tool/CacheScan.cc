@@ -29,7 +29,7 @@
 
 // using namespace ct;
 
-const int HTTP_ALT_MARSHAL_SIZE = ROUND(sizeof(HTTPCacheAlt), HDR_PTR_SIZE);
+constexpr HdrHeapMarshalBlocks HTTP_ALT_MARSHAL_SIZE = ts::round_up(sizeof(HTTPCacheAlt));
 
 namespace ct
 {
@@ -248,8 +248,7 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
 
   hh->m_magic = HDR_BUF_MAGIC_ALIVE;
 
-  int unmarshal_length = ROUND(hh->unmarshal_size(), HDR_PTR_SIZE);
-  return unmarshal_length;
+  return HdrHeapMarshalBlocks(ts::round_up(hh->unmarshal_size()));
 }
 
 Errata

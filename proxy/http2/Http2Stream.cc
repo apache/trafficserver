@@ -26,6 +26,11 @@
 #include "Http2ClientSession.h"
 #include "../http/HttpSM.h"
 
+#define REMEMBER(e, r)                                    \
+  {                                                       \
+    this->_history.push_back(MakeSourceLocation(), e, r); \
+  }
+
 #define Http2StreamDebug(fmt, ...) \
   SsnDebug(parent, "http2_stream", "[%" PRId64 "] [%u] " fmt, parent->connection_id(), this->get_id(), ##__VA_ARGS__);
 
@@ -35,6 +40,7 @@ int
 Http2Stream::main_event_handler(int event, void *edata)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  REMEMBER(event, this->reentrancy_count);
 
   if (!this->_switch_thread_if_not_on_right_thread(event, edata)) {
     // Not on the right thread
@@ -320,6 +326,7 @@ Http2Stream::do_io_close(int /* flags */)
   super::release(nullptr);
 
   if (!closed) {
+    REMEMBER(NO_EVENT, this->reentrancy_count);
     Http2StreamDebug("do_io_close");
 
     // When we get here, the SM has initiated the shutdown.  Either it received a WRITE_COMPLETE, or it is shutting down.  Any
@@ -371,6 +378,8 @@ void
 Http2Stream::terminate_if_possible()
 {
   if (terminate_stream && reentrancy_count == 0) {
+    REMEMBER(NO_EVENT, this->reentrancy_count);
+
     Http2ClientSession *h2_parent = static_cast<Http2ClientSession *>(parent);
     SCOPED_MUTEX_LOCK(lock, h2_parent->connection_state.mutex, this_ethread());
     h2_parent->connection_state.delete_stream(this);
@@ -384,6 +393,7 @@ Http2Stream::initiating_close()
 {
   if (!closed) {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    REMEMBER(NO_EVENT, this->reentrancy_count);
     Http2StreamDebug("initiating_close");
 
     // Set the state of the connection to closed
@@ -452,6 +462,7 @@ Http2Stream::send_tracked_event(Event *event, int send_event, VIO *vio)
   }
 
   if (event == nullptr) {
+    REMEMBER(send_event, this->reentrancy_count);
     event = this_ethread()->schedule_imm(this, send_event, vio);
   }
 
@@ -592,7 +603,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
         if (memcmp(HTTP_VALUE_CLOSE, value, HTTP_LEN_CLOSE) == 0) {
           SCOPED_MUTEX_LOCK(lock, parent->connection_state.mutex, this_ethread());
           if (parent->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
-            parent->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
+            parent->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
           }
         }
       }
@@ -705,6 +716,7 @@ Http2Stream::reenable(VIO *vio)
 void
 Http2Stream::destroy()
 {
+  REMEMBER(NO_EVENT, this->reentrancy_count);
   Http2StreamDebug("Destroy stream, sent %" PRIu64 " bytes", this->bytes_sent);
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   // Clean up after yourself if this was an EOS
@@ -726,7 +738,6 @@ Http2Stream::destroy()
   // Clean up the write VIO in case of inactivity timeout
   this->do_io_write(nullptr, 0, nullptr);
 
-  HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
   ink_hrtime end_time = Thread::get_hrtime();
   HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, _thread, end_time - _start_time);
   _req_header.destroy();
@@ -879,6 +890,19 @@ Http2Stream::release(IOBufferReader *r)
   super::release(r);
   current_reader = nullptr; // State machine is on its own way down.
   this->do_io_close();
+}
+
+void
+Http2Stream::increment_client_transactions_stat()
+{
+  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
+  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT, _thread);
+}
+
+void
+Http2Stream::decrement_client_transactions_stat()
+{
+  HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
 }
 
 bool

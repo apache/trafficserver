@@ -39,12 +39,12 @@ convert<std::unique_ptr<LogFormat>>::decode(const Node &node, std::unique_ptr<Lo
   for (auto &&item : node) {
     if (std::none_of(valid_log_format_keys.begin(), valid_log_format_keys.end(),
                      [&item](std::string s) { return s == item.first.as<std::string>(); })) {
-      throw std::runtime_error("format: unsupported key '" + item.first.as<std::string>() + "'");
+      throw YAML::ParserException(node.Mark(), "format: unsupported key '" + item.first.as<std::string>() + "'");
     }
   }
 
   if (!node["format"]) {
-    throw std::runtime_error("missing 'format' argument");
+    throw YAML::ParserException(node.Mark(), "missing 'format' argument");
   }
   std::string format = node["format"].as<std::string>();
 
@@ -80,14 +80,14 @@ convert<std::unique_ptr<LogFilter>>::decode(const Node &node, std::unique_ptr<Lo
   for (auto &&item : node) {
     if (std::none_of(valid_log_filter_keys.begin(), valid_log_filter_keys.end(),
                      [&item](std::string s) { return s == item.first.as<std::string>(); })) {
-      throw std::runtime_error("filter: unsupported key '" + item.first.as<std::string>() + "'");
+      throw YAML::ParserException(node.Mark(), "filter: unsupported key '" + item.first.as<std::string>() + "'");
     }
   }
 
   // we require all keys for LogFilter
   for (auto &&item : valid_log_filter_keys) {
     if (!node[item]) {
-      throw std::runtime_error("missing '" + item + "' argument");
+      throw YAML::ParserException(node.Mark(), "missing '" + item + "' argument");
     }
   }
 

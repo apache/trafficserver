@@ -67,9 +67,9 @@ ts.Disk.remap_config.AddLine(
 )
 
 tr = Test.AddTestRun()
-# Wait for the micro server
+# Probe server port to check if ready.
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-# Delay on readiness of our ssl ports
+# Probe TS cleartext port to check if ready (probing TLS port causes spurious VCONN hook triggers).
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
 #
 tr.Processes.Default.Command = (
@@ -78,7 +78,6 @@ tr.Processes.Default.Command = (
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-# A small delay so the test_hooks test plugin can assume there is only one HTTP transaction in progress at a time.
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http2 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port)
 )

@@ -79,8 +79,8 @@ class url_mapping
 public:
   ~url_mapping();
 
-  bool add_plugin(remap_plugin_info *i, void *ih);
-  remap_plugin_info *get_plugin(std::size_t) const;
+  bool add_plugin(RemapPluginInfo *i, void *ih);
+  RemapPluginInfo *get_plugin(std::size_t) const;
   void *get_instance(std::size_t) const;
 
   std::size_t
@@ -122,7 +122,7 @@ public:
   };
 
 private:
-  std::vector<remap_plugin_info *> _plugin_list;
+  std::vector<RemapPluginInfo *> _plugin_list;
   std::vector<void *> _instance_data;
   int _rank = 0;
 };

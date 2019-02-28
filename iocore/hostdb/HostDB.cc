@@ -449,13 +449,13 @@ HostDBContinuation::init(HostDBHash const &the_hash, Options const &opt)
 void
 HostDBContinuation::refresh_hash()
 {
-  ProxyMutex *old_bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  Ptr<ProxyMutex> old_bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
   // We're not pending DNS anymore.
   remove_trigger_pending_dns();
   hash.refresh();
   // Update the mutex if it's from the bucket.
   // Some call sites modify this after calling @c init so need to check.
-  if (mutex.get() == old_bucket_mutex) {
+  if (mutex == old_bucket_mutex) {
     mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
   }
 }
@@ -533,7 +533,7 @@ db_mark_for(IpAddr const &ip)
 }
 
 Ptr<HostDBInfo>
-probe(ProxyMutex *mutex, HostDBHash const &hash, bool ignore_timeout)
+probe(Ptr<ProxyMutex> mutex, HostDBHash const &hash, bool ignore_timeout)
 {
   // If hostdb is disabled, don't return anything
   if (!hostdb_enable) {
@@ -605,88 +605,109 @@ HostDBContinuation::insert(unsigned int attl)
 // Get an entry by either name or IP
 //
 Action *
-HostDBProcessor::getby(Continuation *cont, const char *hostname, int len, sockaddr const *ip, bool aforce_dns,
-                       HostResStyle host_res_style, int dns_lookup_timeout)
+HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_result, HostDBHash &hash, Options const &opt)
 {
-  HostDBHash hash;
-  EThread *thread   = this_ethread();
-  ProxyMutex *mutex = thread->mutex.get();
+  bool trylock          = (cb_process_result == nullptr);
+  bool force_dns        = false;
+  EThread *thread       = this_ethread();
+  Ptr<ProxyMutex> mutex = thread->mutex;
   ip_text_buffer ipb;
+
+  if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS) {
+    force_dns = true;
+  } else if (opt.flags & HOSTDB_FORCE_DNS_RELOAD) {
+    force_dns = hostdb_re_dns_on_reload;
+    if (force_dns) {
+      HOSTDB_INCREMENT_DYN_STAT(hostdb_re_dns_on_reload_stat);
+    }
+  }
 
   HOSTDB_INCREMENT_DYN_STAT(hostdb_total_lookups_stat);
 
-  if ((!hostdb_enable || (hostname && !*hostname)) || (hostdb_disable_reverse_lookup && ip)) {
-    MUTEX_TRY_LOCK(lock, cont->mutex, thread);
-    if (!lock.is_locked()) {
-      goto Lretry;
+  if (!hostdb_enable ||                                       // if the HostDB is disabled,
+      (hash.host_name && !*hash.host_name) ||                 // or host_name is empty string
+      (hostdb_disable_reverse_lookup && hash.ip.isValid())) { // or try to lookup by ip address when the reverse lookup disabled
+    if (cb_process_result) {
+      (cont->*cb_process_result)(nullptr);
+    } else {
+      MUTEX_TRY_LOCK(lock, cont->mutex, thread);
+      if (!lock.is_locked()) {
+        goto Lretry;
+      }
+      cont->handleEvent(EVENT_HOST_DB_LOOKUP, nullptr);
     }
-    cont->handleEvent(EVENT_HOST_DB_LOOKUP, nullptr);
     return ACTION_RESULT_DONE;
   }
 
-  // Load the hash data.
-  hash.set_host(hostname, hostname ? (len ? len : strlen(hostname)) : 0);
-  hash.ip.assign(ip);
-  hash.port    = ip ? ats_ip_port_host_order(ip) : 0;
-  hash.db_mark = db_mark_for(host_res_style);
-  hash.refresh();
-
   // Attempt to find the result in-line, for level 1 hits
-  //
-  if (!aforce_dns) {
-    bool loop;
-    do {
+  if (!force_dns) {
+    MUTEX_TRY_LOCK(lock, cont->mutex, thread);
+    bool loop = lock.is_locked();
+    while (loop) {
       loop = false; // Only loop on explicit set for retry.
       // find the partition lock
-      //
-      // TODO: Could we reuse the "mutex" above safely? I think so but not sure.
-      ProxyMutex *bmutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-      MUTEX_TRY_LOCK(lock, bmutex, thread);
-      MUTEX_TRY_LOCK(lock2, cont->mutex, thread);
-
-      if (lock.is_locked() && lock2.is_locked()) {
+      Ptr<ProxyMutex> bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+      MUTEX_TRY_LOCK(lock2, bucket_mutex, thread);
+      if (!lock2.is_locked() && !trylock) {
+        // Refer to: [TS-374](http://issues.apache.org/jira/browse/TS-374)
+        lock2.acquire(thread);
+      }
+      if (lock2.is_locked()) {
         // If we can get the lock and a level 1 probe succeeds, return
-        Ptr<HostDBInfo> r = probe(bmutex, hash, aforce_dns);
+        Ptr<HostDBInfo> r = probe(bucket_mutex, hash, false);
         if (r) {
-          if (r->is_failed() && hostname) {
-            loop = check_for_retry(hash.db_mark, host_res_style);
+          // fail, see if we should retry with alternate
+          if (hash.db_mark != HOSTDB_MARK_SRV && r->is_failed() && hash.host_name) {
+            loop = check_for_retry(hash.db_mark, opt.host_res_style);
           }
           if (!loop) {
             // No retry -> final result. Return it.
-            Debug("hostdb", "immediate answer for %s",
-                  hostname ? hostname : ats_is_ip(ip) ? ats_ip_ntop(ip, ipb, sizeof ipb) : "<null>");
+            if (hash.db_mark == HOSTDB_MARK_SRV) {
+              Debug("hostdb", "immediate SRV answer for %.*s from hostdb", hash.host_len, hash.host_name);
+              Debug("dns_srv", "immediate SRV answer for %.*s from hostdb", hash.host_len, hash.host_name);
+            } else if (hash.host_name) {
+              Debug("hostdb", "immediate answer for %.*s", hash.host_len, hash.host_name);
+            } else {
+              Debug("hostdb", "immediate answer for %s", hash.ip.isValid() ? hash.ip.toString(ipb, sizeof ipb) : "<null>");
+            }
             HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
-            reply_to_cont(cont, r.get());
+            if (cb_process_result) {
+              (cont->*cb_process_result)(r.get());
+            } else {
+              reply_to_cont(cont, r.get());
+            }
             return ACTION_RESULT_DONE;
           }
           hash.refresh(); // only on reloop, because we've changed the family.
         }
       }
-    } while (loop);
+    }
   }
-  Debug("hostdb", "delaying force %d answer for %s", aforce_dns,
-        hostname ? hostname : ats_is_ip(ip) ? ats_ip_ntop(ip, ipb, sizeof ipb) : "<null>");
+  if (hash.db_mark == HOSTDB_MARK_SRV) {
+    Debug("hostdb", "delaying (force=%d) SRV answer for %.*s [timeout = %d]", force_dns, hash.host_len, hash.host_name,
+          opt.timeout);
+    Debug("dns_srv", "delaying (force=%d) SRV answer for %.*s [timeout = %d]", force_dns, hash.host_len, hash.host_name,
+          opt.timeout);
+  } else if (hash.host_name) {
+    Debug("hostdb", "delaying (force=%d) answer for %.*s [timeout %d]", force_dns, hash.host_len, hash.host_name, opt.timeout);
+  } else {
+    Debug("hostdb", "delaying (force=%d) answer for %s [timeout %d]", force_dns,
+          hash.ip.isValid() ? hash.ip.toString(ipb, sizeof ipb) : "<null>", opt.timeout);
+  }
 
 Lretry:
   // Otherwise, create a continuation to do a deeper probe in the background
   //
   HostDBContinuation *c = hostDBContAllocator.alloc();
-  HostDBContinuation::Options opt;
-  opt.timeout        = dns_lookup_timeout;
-  opt.force_dns      = aforce_dns;
-  opt.cont           = cont;
-  opt.host_res_style = host_res_style;
-  c->init(hash, opt);
+  HostDBContinuation::Options copt;
+  copt.timeout        = opt.timeout;
+  copt.force_dns      = force_dns;
+  copt.cont           = cont;
+  copt.host_res_style = (hash.db_mark == HOSTDB_MARK_SRV) ? HOST_RES_NONE : opt.host_res_style;
+  c->init(hash, copt);
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::probeEvent);
 
-  // Since ProxyMutexPtr has a cast operator, gcc-3.x get upset
-  // about ambiguity when doing this comparison, so by reversing
-  // the operands, I force it to pick the cast operation /leif.
-  if (thread->mutex == cont->mutex) {
-    thread->schedule_in(c, MUTEX_RETRY_DELAY);
-  } else {
-    dnsProcessor.thread->schedule_imm(c);
-  }
+  thread->schedule_in(c, MUTEX_RETRY_DELAY);
 
   return &c->action;
 }
@@ -696,192 +717,96 @@ Lretry:
 Action *
 HostDBProcessor::getbyname_re(Continuation *cont, const char *ahostname, int len, Options const &opt)
 {
-  bool force_dns    = false;
-  EThread *thread   = this_ethread();
-  ProxyMutex *mutex = thread->mutex.get();
+  HostDBHash hash;
 
-  if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS) {
-    force_dns = true;
-  } else if (opt.flags & HOSTDB_FORCE_DNS_RELOAD) {
-    force_dns = (hostdb_re_dns_on_reload ? true : false);
-    if (force_dns) {
-      HOSTDB_INCREMENT_DYN_STAT(hostdb_re_dns_on_reload_stat);
-    }
-  }
-  return getby(cont, ahostname, len, nullptr, force_dns, opt.host_res_style, opt.timeout);
+  ink_assert(nullptr != ahostname);
+
+  // Load the hash data.
+  hash.set_host(ahostname, ahostname ? (len ? len : strlen(ahostname)) : 0);
+  // Leave hash.ip invalid
+  hash.port    = 0;
+  hash.db_mark = db_mark_for(opt.host_res_style);
+  hash.refresh();
+
+  return getby(cont, nullptr, hash, opt);
 }
 
 Action *
 HostDBProcessor::getbynameport_re(Continuation *cont, const char *ahostname, int len, Options const &opt)
 {
-  bool force_dns    = false;
-  EThread *thread   = this_ethread();
-  ProxyMutex *mutex = thread->mutex.get();
+  HostDBHash hash;
 
-  if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS) {
-    force_dns = true;
-  } else if (opt.flags & HOSTDB_FORCE_DNS_RELOAD) {
-    force_dns = (hostdb_re_dns_on_reload ? true : false);
-    if (force_dns) {
-      HOSTDB_INCREMENT_DYN_STAT(hostdb_re_dns_on_reload_stat);
-    }
-  }
-  sockaddr sa;
-  ats_ip4_set(&sa, INADDR_ANY, htons(opt.port));
-  return getby(cont, ahostname, len, &sa, force_dns, opt.host_res_style, opt.timeout);
+  ink_assert(nullptr != ahostname);
+
+  // Load the hash data.
+  hash.set_host(ahostname, ahostname ? (len ? len : strlen(ahostname)) : 0);
+  // Leave hash.ip invalid
+  hash.port    = opt.port;
+  hash.db_mark = db_mark_for(opt.host_res_style);
+  hash.refresh();
+
+  return getby(cont, nullptr, hash, opt);
+}
+
+// Lookup Hostinfo by addr
+Action *
+HostDBProcessor::getbyaddr_re(Continuation *cont, sockaddr const *aip)
+{
+  HostDBHash hash;
+
+  ink_assert(nullptr != aip);
+
+  HostDBProcessor::Options opt;
+  opt.host_res_style = HOST_RES_NONE;
+
+  // Leave hash.host_name as nullptr
+  hash.ip.assign(aip);
+  hash.port    = ats_ip_port_host_order(aip);
+  hash.db_mark = db_mark_for(opt.host_res_style);
+  hash.refresh();
+
+  return getby(cont, nullptr, hash, opt);
 }
 
 /* Support SRV records */
 Action *
-HostDBProcessor::getSRVbyname_imm(Continuation *cont, process_srv_info_pfn process_srv_info, const char *hostname, int len,
+HostDBProcessor::getSRVbyname_imm(Continuation *cont, cb_process_result_pfn process_srv_info, const char *hostname, int len,
                                   Options const &opt)
 {
   ink_assert(cont->mutex->thread_holding == this_ethread());
-  bool force_dns    = false;
-  EThread *thread   = cont->mutex->thread_holding;
-  ProxyMutex *mutex = thread->mutex.get();
+  HostDBHash hash;
 
   ink_assert(nullptr != hostname);
 
-  if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS) {
-    force_dns = true;
-  } else if (opt.flags & HOSTDB_FORCE_DNS_RELOAD) {
-    force_dns = (hostdb_re_dns_on_reload ? true : false);
-    if (force_dns) {
-      HOSTDB_INCREMENT_DYN_STAT(hostdb_re_dns_on_reload_stat);
-    }
-  }
-
-  HostDBHash hash;
-
-  HOSTDB_INCREMENT_DYN_STAT(hostdb_total_lookups_stat);
-
-  if (!hostdb_enable || !*hostname) {
-    (cont->*process_srv_info)(nullptr);
-    return ACTION_RESULT_DONE;
-  }
-
-  hash.host_name = hostname;
-  hash.host_len  = len ? len : strlen(hostname);
-  hash.port      = 0;
-  hash.db_mark   = HOSTDB_MARK_SRV;
+  hash.set_host(hostname, len ? len : strlen(hostname));
+  // Leave hash.ip invalid
+  hash.port    = 0;
+  hash.db_mark = HOSTDB_MARK_SRV;
   hash.refresh();
 
-  // Attempt to find the result in-line, for level 1 hits
-  if (!force_dns) {
-    // find the partition lock
-    ProxyMutex *bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-    MUTEX_TRY_LOCK(lock, bucket_mutex, thread);
-
-    // If we can get the lock and a level 1 probe succeeds, return
-    if (lock.is_locked()) {
-      Ptr<HostDBInfo> r = probe(bucket_mutex, hash, false);
-      if (r) {
-        Debug("hostdb", "immediate SRV answer for %s from hostdb", hostname);
-        Debug("dns_srv", "immediate SRV answer for %s from hostdb", hostname);
-        HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
-        (cont->*process_srv_info)(r.get());
-        return ACTION_RESULT_DONE;
-      }
-    }
-  }
-
-  Debug("dns_srv", "delaying (force=%d) SRV answer for %.*s [timeout = %d]", force_dns, hash.host_len, hash.host_name, opt.timeout);
-
-  // Otherwise, create a continuation to do a deeper probe in the background
-  HostDBContinuation *c = hostDBContAllocator.alloc();
-  HostDBContinuation::Options copt;
-  copt.timeout   = opt.timeout;
-  copt.cont      = cont;
-  copt.force_dns = force_dns;
-  c->init(hash, copt);
-  SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::probeEvent);
-
-  if (thread->mutex == cont->mutex) {
-    thread->schedule_in(c, MUTEX_RETRY_DELAY);
-  } else {
-    dnsProcessor.thread->schedule_imm(c);
-  }
-
-  return &c->action;
+  return getby(cont, process_srv_info, hash, opt);
 }
 
 // Wrapper from getbyname to getby
 //
 Action *
-HostDBProcessor::getbyname_imm(Continuation *cont, process_hostdb_info_pfn process_hostdb_info, const char *hostname, int len,
+HostDBProcessor::getbyname_imm(Continuation *cont, cb_process_result_pfn process_hostdb_info, const char *hostname, int len,
                                Options const &opt)
 {
   ink_assert(cont->mutex->thread_holding == this_ethread());
-  bool force_dns    = false;
-  EThread *thread   = cont->mutex->thread_holding;
-  ProxyMutex *mutex = thread->mutex.get();
   HostDBHash hash;
 
   ink_assert(nullptr != hostname);
 
-  if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS) {
-    force_dns = true;
-  } else if (opt.flags & HOSTDB_FORCE_DNS_RELOAD) {
-    force_dns = (hostdb_re_dns_on_reload ? true : false);
-    if (force_dns) {
-      HOSTDB_INCREMENT_DYN_STAT(hostdb_re_dns_on_reload_stat);
-    }
-  }
-
-  HOSTDB_INCREMENT_DYN_STAT(hostdb_total_lookups_stat);
-
-  if (!hostdb_enable || !*hostname) {
-    (cont->*process_hostdb_info)(nullptr);
-    return ACTION_RESULT_DONE;
-  }
-
   hash.set_host(hostname, len ? len : strlen(hostname));
+  // Leave hash.ip invalid
+  // TODO: May I rename the wrapper name to getbynameport_imm ? - oknet
+  //   By comparing getbyname_re and getbynameport_re, the hash.port should be 0 if only get hostinfo by name.
   hash.port    = opt.port;
   hash.db_mark = db_mark_for(opt.host_res_style);
   hash.refresh();
 
-  // Attempt to find the result in-line, for level 1 hits
-  if (!force_dns) {
-    bool loop;
-    do {
-      loop = false; // loop only on explicit set for retry
-      // find the partition lock
-      ProxyMutex *bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-      SCOPED_MUTEX_LOCK(lock, bucket_mutex, thread);
-      // do a level 1 probe for immediate result.
-      Ptr<HostDBInfo> r = probe(bucket_mutex, hash, false);
-      if (r) {
-        if (r->is_failed()) { // fail, see if we should retry with alternate
-          loop = check_for_retry(hash.db_mark, opt.host_res_style);
-        }
-        if (!loop) {
-          // No retry -> final result. Return it.
-          Debug("hostdb", "immediate answer for %.*s", hash.host_len, hash.host_name);
-          HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
-          (cont->*process_hostdb_info)(r.get());
-          return ACTION_RESULT_DONE;
-        }
-        hash.refresh(); // Update for retry.
-      }
-    } while (loop);
-  }
-
-  Debug("hostdb", "delaying force %d answer for %.*s [timeout %d]", force_dns, hash.host_len, hash.host_name, opt.timeout);
-
-  // Otherwise, create a continuation to do a deeper probe in the background
-  HostDBContinuation *c = hostDBContAllocator.alloc();
-  HostDBContinuation::Options copt;
-  copt.cont           = cont;
-  copt.force_dns      = force_dns;
-  copt.timeout        = opt.timeout;
-  copt.host_res_style = opt.host_res_style;
-  c->init(hash, copt);
-  SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::probeEvent);
-
-  thread->schedule_in(c, HOST_DB_RETRY_PERIOD);
-
-  return &c->action;
+  return getby(cont, process_hostdb_info, hash, opt);
 }
 
 Action *
@@ -903,11 +828,7 @@ HostDBProcessor::iterate(Continuation *cont)
   c->current_iterate_pos = 0;
   SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::iterateEvent);
 
-  if (thread->mutex == cont->mutex) {
-    thread->schedule_in(c, HOST_DB_RETRY_PERIOD);
-  } else {
-    dnsProcessor.thread->schedule_imm(c);
-  }
+  thread->schedule_in(c, HOST_DB_RETRY_PERIOD);
 
   return &c->action;
 }
@@ -967,8 +888,8 @@ HostDBProcessor::setby(const char *hostname, int len, sockaddr const *ip, HostDB
 
   // Attempt to find the result in-line, for level 1 hits
 
-  ProxyMutex *mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-  EThread *thread   = this_ethread();
+  Ptr<ProxyMutex> mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  EThread *thread       = this_ethread();
   MUTEX_TRY_LOCK(lock, mutex, thread);
 
   if (lock.is_locked()) {
@@ -1014,7 +935,7 @@ HostDBProcessor::setby_srv(const char *hostname, int len, const char *target, Ho
 int
 HostDBContinuation::setbyEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  Ptr<HostDBInfo> r = probe(mutex.get(), hash, false);
+  Ptr<HostDBInfo> r = probe(mutex, hash, false);
 
   if (r) {
     do_setby(r.get(), &app, hash.host_name, hash.ip, is_srv());
@@ -1071,8 +992,11 @@ int
 HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event *e)
 {
   Continuation *cont = action.continuation;
-
-  MUTEX_TRY_LOCK(lock, cont ? cont->mutex.get() : (ProxyMutex *)nullptr, e->ethread);
+  Ptr<ProxyMutex> proxy_mutex;
+  if (cont) {
+    proxy_mutex = cont->mutex;
+  }
+  MUTEX_TRY_LOCK(lock, proxy_mutex, e->ethread);
   if (!lock.is_locked()) {
     e->schedule_in(HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;
@@ -1083,7 +1007,7 @@ HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event *e)
         cont->handleEvent(EVENT_HOST_DB_IP_REMOVED, (void *)nullptr);
       }
     } else {
-      Ptr<HostDBInfo> r = probe(mutex.get(), hash, false);
+      Ptr<HostDBInfo> r = probe(mutex, hash, false);
       bool res          = remove_round_robin(r.get(), hash.host_name, hash.ip);
       if (cont) {
         cont->handleEvent(EVENT_HOST_DB_IP_REMOVED, res ? static_cast<void *>(&hash.ip) : static_cast<void *>(nullptr));
@@ -1292,7 +1216,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     ttl             = failed ? 0 : e->ttl / 60;
     int ttl_seconds = failed ? 0 : e->ttl; // ebalsa: moving to second accuracy
 
-    Ptr<HostDBInfo> old_r = probe(mutex.get(), hash, false);
+    Ptr<HostDBInfo> old_r = probe(mutex, hash, false);
     // If the DNS lookup failed with NXDOMAIN, remove the old record
     if (e && e->isNameError() && old_r) {
       hostDB.refcountcache->erase(old_r->key);
@@ -1550,7 +1474,7 @@ HostDBContinuation::iterateEvent(int event, Event *e)
   // let's iterate through another record and then reschedule ourself.
   if (current_iterate_pos < hostDB.refcountcache->partition_count()) {
     // TODO: configurable number at a time?
-    ProxyMutex *bucket_mutex = hostDB.refcountcache->get_partition(current_iterate_pos).lock.get();
+    Ptr<ProxyMutex> bucket_mutex = hostDB.refcountcache->get_partition(current_iterate_pos).lock;
     MUTEX_TRY_LOCK(lock_bucket, bucket_mutex, t);
     if (!lock_bucket.is_locked()) {
       // we couldn't get the bucket lock, let's just reschedule and try later.
@@ -1627,7 +1551,7 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   if (!force_dns) {
     // Do the probe
     //
-    Ptr<HostDBInfo> r = probe(mutex.get(), hash, false);
+    Ptr<HostDBInfo> r = probe(mutex, hash, false);
 
     if (r) {
       HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
@@ -2362,7 +2286,7 @@ ParseHostFile(const char *path, unsigned int hostdb_hostfile_check_interval)
 // Regression tests
 //
 // Take a started hostDB and fill it up and make sure it doesn't explode
-#ifdef TS_HAS_TESTS
+#if TS_HAS_TESTS
 struct HostDBRegressionContinuation;
 
 struct HostDBRegressionContinuation : public Continuation {

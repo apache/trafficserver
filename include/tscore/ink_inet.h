@@ -1153,20 +1153,19 @@ struct IpAddr {
 
   /// Default construct (invalid address).
   IpAddr() : _family(AF_UNSPEC) {}
-  /// Construct as IPv4 @a addr.
-  explicit IpAddr(in_addr_t addr ///< Address to assign.
-                  )
-    : _family(AF_INET)
-  {
-    _addr._ip4 = addr;
-  }
-  /// Construct as IPv6 @a addr.
-  explicit IpAddr(in6_addr const &addr ///< Address to assign.
-                  )
-    : _family(AF_INET6)
-  {
-    _addr._ip6 = addr;
-  }
+
+  /** Construct from IPv4 address.
+   *
+   * @param addr Source address.
+   */
+  explicit constexpr IpAddr(in_addr_t addr) : _family(AF_INET), _addr(addr) {}
+
+  /** Construct from IPv6 address.
+   *
+   * @param addr Source address.
+   */
+  explicit constexpr IpAddr(in6_addr const &addr) : _family(AF_INET6), _addr(addr) {}
+
   /// Construct from @c sockaddr.
   explicit IpAddr(sockaddr const *addr) { this->assign(addr); }
   /// Construct from @c sockaddr_in6.
@@ -1285,14 +1284,22 @@ struct IpAddr {
   /// Test for loopback
   bool isLoopback() const;
 
+  /// Test for any addr
+  bool isAnyAddr() const;
+
   uint16_t _family; ///< Protocol family.
   /// Address data.
-  union {
+  union Addr {
     in_addr_t _ip4;                                                    ///< IPv4 address storage.
     in6_addr _ip6;                                                     ///< IPv6 address storage.
     uint8_t _byte[TS_IP6_SIZE];                                        ///< As raw bytes.
     uint32_t _u32[TS_IP6_SIZE / (sizeof(uint32_t) / sizeof(uint8_t))]; ///< As 32 bit chunks.
     uint64_t _u64[TS_IP6_SIZE / (sizeof(uint64_t) / sizeof(uint8_t))]; ///< As 64 bit chunks.
+
+    // This is required by the @c constexpr constructor.
+    constexpr Addr() : _ip4(0) {}
+    constexpr Addr(in_addr_t addr) : _ip4(addr) {}
+    constexpr Addr(in6_addr const &addr) : _ip6(addr) {}
   } _addr;
 
   ///< Pre-constructed invalid instance.
@@ -1342,6 +1349,12 @@ inline bool
 IpAddr::isLoopback() const
 {
   return (AF_INET == _family && 0x7F == _addr._byte[0]) || (AF_INET6 == _family && IN6_IS_ADDR_LOOPBACK(&_addr._ip6));
+}
+
+inline bool
+IpAddr::isAnyAddr() const
+{
+  return (AF_INET == _family && INADDR_ANY == _addr._ip4) || (AF_INET6 == _family && IN6_IS_ADDR_UNSPECIFIED(&_addr._ip6));
 }
 
 /// Assign sockaddr storage.

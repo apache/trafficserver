@@ -31,17 +31,6 @@
  ****************************************************************************/
 
 #pragma once
-/* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
- * are actually required.
- * Enabling LAZY_BUF_ALLOC, stop Http code from allocation space
- * for header buffer and tunnel buffer. The allocation is done by
- * the net code in read_from_net when data is actually written into
- * the buffer. By allocating memory only when it is required we can
- * reduce the memory consumed by TS process.
- *
- * IMPORTANT NOTE: enable/disable LAZY_BUF_ALLOC in HttpSM.h as well.
- */
-#define LAZY_BUF_ALLOC
 
 #include "P_Net.h"
 
@@ -85,16 +74,6 @@ public:
    * session terminates.
    */
   void enable_outbound_connection_tracking(OutboundConnTrack::Group *group);
-
-  void
-  reset_read_buffer(void)
-  {
-    ink_assert(read_buffer->_writer);
-    ink_assert(buf_reader != nullptr);
-    read_buffer->dealloc_all_readers();
-    read_buffer->_writer = nullptr;
-    buf_reader           = read_buffer->alloc_reader();
-  }
 
   IOBufferReader *
   get_reader()

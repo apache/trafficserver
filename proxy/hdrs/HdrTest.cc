@@ -74,7 +74,6 @@ HdrTest::go(RegressionTest *t, int /* atype ATS_UNUSED */)
   status = status & test_url();
   status = status & test_arena();
   status = status & test_regex();
-  status = status & test_http_parser_eos_boundary_cases();
   status = status & test_http_mutation();
   status = status & test_mime();
   status = status & test_http();
@@ -515,84 +514,6 @@ HdrTest::test_mime()
   hdr.destroy();
 
   return (failures_to_status("test_mime", 0));
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-HdrTest::test_http_parser_eos_boundary_cases()
-{
-  struct {
-    const char *msg;
-    int expected_result;
-    int expected_bytes_consumed;
-  } tests[] = {
-    {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
-    {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_RESULT_DONE, 28},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_RESULT_DONE, 48},
-    {"GET", PARSE_RESULT_ERROR, 3},
-    {"GET /index.html", PARSE_RESULT_ERROR, 15},
-    {"GET /index.html\r\n", PARSE_RESULT_ERROR, 17},
-    {"GET /index.html HTTP/1.0", PARSE_RESULT_ERROR, 24},
-    {"GET /index.html HTTP/1.0\r", PARSE_RESULT_ERROR, 25},
-    {"GET /index.html HTTP/1.0\n", PARSE_RESULT_DONE, 25},
-    {"GET /index.html HTTP/1.0\n\n", PARSE_RESULT_DONE, 26},
-    {"GET /index.html HTTP/1.0\r\n\r\n", PARSE_RESULT_DONE, 28},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_RESULT_ERROR, 44},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 45},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_RESULT_DONE, 48},
-    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 44},
-    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_RESULT_DONE, 53},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
-    {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
-    {"", PARSE_RESULT_ERROR, 0},
-    {nullptr, 0, 0},
-  };
-
-  int i, ret, bytes_consumed;
-  const char *orig_start;
-  const char *start;
-  const char *end;
-  HTTPParser parser;
-
-  int failures = 0;
-
-  bri_box("test_http_parser_eos_boundary_cases");
-
-  http_parser_init(&parser);
-
-  for (i = 0; tests[i].msg != nullptr; i++) {
-    HTTPHdr req_hdr;
-
-    start = tests[i].msg;
-    end   = start + strlen(start); // 1 character past end of string
-
-    req_hdr.create(HTTP_TYPE_REQUEST);
-
-    http_parser_clear(&parser);
-
-    orig_start     = start;
-    ret            = req_hdr.parse_req(&parser, &start, end, true);
-    bytes_consumed = (int)(start - orig_start);
-
-    printf("======== test %d (length=%d, consumed=%d)\n", i, (int)strlen(tests[i].msg), bytes_consumed);
-    printf("[%s]\n", tests[i].msg);
-    printf("\n[");
-    req_hdr.print(nullptr, 0, nullptr, nullptr);
-    printf("]\n\n");
-
-    if ((ret != tests[i].expected_result) || (bytes_consumed != tests[i].expected_bytes_consumed)) {
-      ++failures;
-      printf("FAILED: test %d: retval <expected %d, got %d>, eaten <expected %d, got %d>\n\n", i, tests[i].expected_result, ret,
-             tests[i].expected_bytes_consumed, bytes_consumed);
-    }
-
-    req_hdr.destroy();
-  }
-
-  return (failures_to_status("test_http_parser_eos_boundary_cases", failures));
 }
 
 /*-------------------------------------------------------------------------

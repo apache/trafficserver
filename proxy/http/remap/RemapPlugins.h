@@ -68,7 +68,7 @@ struct RemapPlugins : public Continuation {
 
   int run_remap(int event, Event *e);
   bool run_single_remap();
-  TSRemapStatus run_plugin(remap_plugin_info *plugin);
+  TSRemapStatus run_plugin(RemapPluginInfo *plugin);
 
   Action action;
 

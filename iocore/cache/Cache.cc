@@ -2865,6 +2865,8 @@ cplist_reconfigure()
         new_cp->disk_vols = (DiskVol **)ats_malloc(gndisks * sizeof(DiskVol *));
         memset(new_cp->disk_vols, 0, gndisks * sizeof(DiskVol *));
         if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp)) {
+          ats_free(new_cp->disk_vols);
+          new_cp->disk_vols = nullptr;
           delete new_cp;
           return -1;
         }
@@ -3152,6 +3154,18 @@ register_cache_stats(RecRawStatBlock *rsb, const char *prefix)
   REG_INT("span.online", cache_span_online_stat);
 }
 
+int
+FragmentSizeUpdateCb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
+{
+  if (sizeof(Doc) >= static_cast<size_t>(data.rec_int) || static_cast<size_t>(data.rec_int) - sizeof(Doc) > MAX_FRAG_SIZE) {
+    Warning("The fragments size exceed the limitation, ignore: %" PRId64 ", %d", data.rec_int, cache_config_target_fragment_size);
+    return 0;
+  }
+
+  cache_config_target_fragment_size = data.rec_int;
+  return 0;
+}
+
 void
 ink_cache_init(ts::ModuleVersion v)
 {
@@ -3204,9 +3218,12 @@ ink_cache_init(ts::ModuleVersion v)
   Debug("cache_init", "proxy.config.cache.hit_evacuate_size_limit = %d", cache_config_hit_evacuate_size_limit);
 
   REC_EstablishStaticConfigInt32(cache_config_force_sector_size, "proxy.config.cache.force_sector_size");
-  REC_EstablishStaticConfigInt32(cache_config_target_fragment_size, "proxy.config.cache.target_fragment_size");
 
-  if (cache_config_target_fragment_size == 0) {
+  ink_assert(REC_RegisterConfigUpdateFunc("proxy.config.cache.target_fragment_size", FragmentSizeUpdateCb, nullptr) !=
+             REC_ERR_FAIL);
+  REC_ReadConfigInt32(cache_config_target_fragment_size, "proxy.config.cache.target_fragment_size");
+
+  if (cache_config_target_fragment_size == 0 || cache_config_target_fragment_size - sizeof(Doc) > MAX_FRAG_SIZE) {
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
   }
 
@@ -3289,18 +3306,18 @@ CacheProcessor::find_by_path(const char *path, int len)
 
 namespace cache_bc
 {
-static size_t const HTTP_ALT_MARSHAL_SIZE = ROUND(sizeof(HTTPCacheAlt), HDR_PTR_SIZE); // current size.
+static size_t const HTTP_ALT_MARSHAL_SIZE = HdrHeapMarshalBlocks{ts::round_up(sizeof(HTTPCacheAlt))}; // current size.
 size_t
 HTTPInfo_v21::marshalled_length(void *data)
 {
-  size_t zret           = ROUND(sizeof(HTTPCacheAlt_v21), HDR_PTR_SIZE);
+  size_t zret           = HdrHeapMarshalBlocks{ts::round_up(sizeof(HTTPCacheAlt_v21))};
   HTTPCacheAlt_v21 *alt = static_cast<HTTPCacheAlt_v21 *>(data);
   HdrHeap *hdr;
 
   hdr = reinterpret_cast<HdrHeap *>(reinterpret_cast<char *>(alt) + reinterpret_cast<uintptr_t>(alt->m_request_hdr.m_heap));
-  zret += ROUND(hdr->unmarshal_size(), HDR_PTR_SIZE);
+  zret += HdrHeapMarshalBlocks{ts::round_up(hdr->unmarshal_size())};
   hdr = reinterpret_cast<HdrHeap *>(reinterpret_cast<char *>(alt) + reinterpret_cast<uintptr_t>(alt->m_response_hdr.m_heap));
-  zret += ROUND(hdr->unmarshal_size(), HDR_PTR_SIZE);
+  zret += HdrHeapMarshalBlocks{ts::round_up(hdr->unmarshal_size())};
   return zret;
 }
 
@@ -3363,7 +3380,7 @@ HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(char *&dst, char *&src, size_
   s_hdr =
     reinterpret_cast<HdrHeap_v23 *>(reinterpret_cast<char *>(s_alt) + reinterpret_cast<uintptr_t>(s_alt->m_request_hdr.m_heap));
   d_hdr    = reinterpret_cast<HdrHeap_v23 *>(dst);
-  hdr_size = ROUND(s_hdr->unmarshal_size(), HDR_PTR_SIZE);
+  hdr_size = HdrHeapMarshalBlocks{ts::round_up(s_hdr->unmarshal_size())};
   if (hdr_size > length) {
     return false;
   }
@@ -3375,7 +3392,7 @@ HTTPInfo_v21::copy_and_upgrade_unmarshalled_to_v23(char *&dst, char *&src, size_
   s_hdr =
     reinterpret_cast<HdrHeap_v23 *>(reinterpret_cast<char *>(s_alt) + reinterpret_cast<uintptr_t>(s_alt->m_response_hdr.m_heap));
   d_hdr    = reinterpret_cast<HdrHeap_v23 *>(dst);
-  hdr_size = ROUND(s_hdr->unmarshal_size(), HDR_PTR_SIZE);
+  hdr_size = HdrHeapMarshalBlocks{ts::round_up(s_hdr->unmarshal_size())};
   if (hdr_size > length) {
     return false;
   }

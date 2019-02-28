@@ -145,7 +145,7 @@ void
 RecMessageInit()
 {
   ink_assert(g_mode_type != RECM_NULL);
-  lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, RecMessageRecvThis, nullptr);
+  lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, &RecMessageRecvThis);
   message_initialized_p = true;
 }
 
@@ -207,9 +207,9 @@ RecLocalStart(FileManager *configFiles)
 }
 
 int
-RecRegisterManagerCb(int id, RecManagerCb _fn, void *_data)
+RecRegisterManagerCb(int id, RecManagerCb const &_fn)
 {
-  return lmgmt->registerMgmtCallback(id, _fn, _data);
+  return lmgmt->registerMgmtCallback(id, _fn);
 }
 
 void

@@ -29,19 +29,24 @@
    SSL Configurations
  ****************************************************************************/
 
-#include "tscore/ink_platform.h"
-#include "tscore/I_Layout.h"
+#include "P_SSLConfig.h"
 
 #include <cstring>
 #include <cmath>
+
+#include "tscore/ink_platform.h"
+#include "tscore/I_Layout.h"
+#include "records/I_RecHttp.h"
+
+#include "HttpConfig.h"
+
 #include "P_Net.h"
-#include "P_SSLConfig.h"
-#include "YamlSNIConfig.h"
 #include "P_SSLUtils.h"
 #include "P_SSLCertLookup.h"
+#include "SSLDiags.h"
 #include "SSLSessionCache.h"
-#include <records/I_RecHttp.h>
-#include <HttpConfig.h>
+#include "SSLSessionTicket.h"
+#include "YamlSNIConfig.h"
 
 int SSLConfig::configid                                     = 0;
 int SSLCertificateConfig::configid                          = 0;
@@ -66,13 +71,6 @@ char *SSLConfigParams::engine_conf_file      = nullptr;
 static std::unique_ptr<ConfigUpdateHandler<SSLCertificateConfig>> sslCertUpdate;
 static std::unique_ptr<ConfigUpdateHandler<SSLConfig>> sslConfigUpdate;
 static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
-
-// Check if the ticket_key callback #define is available, and if so, enable session tickets.
-#ifdef SSL_CTX_set_tlsext_ticket_key_cb
-
-#define HAVE_OPENSSL_SESSION_TICKETS 1
-
-#endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 SSLConfigParams::SSLConfigParams()
 {
@@ -520,7 +518,8 @@ SSLCertificateConfig::reconfigure()
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
-  SSLParseCertificateConfiguration(params, lookup);
+  SSLMultiCertConfigLoader loader(params);
+  loader.load(lookup);
 
   if (!lookup->is_valid) {
     retStatus = false;
@@ -534,9 +533,9 @@ SSLCertificateConfig::reconfigure()
   }
 
   if (retStatus) {
-    Note("ssl_multicert.config done reloading!");
+    Note("ssl_multicert.config finished loading");
   } else {
-    Note("failed to reload ssl_multicert.config");
+    Error("ssl_multicert.config failed to load");
   }
 
   return retStatus;
@@ -559,7 +558,7 @@ SSLTicketParams::LoadTicket()
 {
   cleanup();
 
-#if HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAVE_OPENSSL_SESSION_TICKETS
   ssl_ticket_key_block *keyblock = nullptr;
 
   SSLConfig::scoped_config params;
@@ -607,7 +606,7 @@ void
 SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
 {
   cleanup();
-#if HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAVE_OPENSSL_SESSION_TICKETS
   if (ticket_data != nullptr && ticket_data_len > 0) {
     default_global_keyblock = ticket_block_create(ticket_data, ticket_data_len);
   } else {
@@ -666,12 +665,26 @@ SSL_CTX *
 SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file, const char *ca_bundle_path) const
 {
   SSL_CTX *client_ctx = nullptr;
-  std::string key;
-  ts::bwprint(key, "{}:{}:{}:{}", client_cert, key_file, ca_bundle_file, ca_bundle_path);
+  CTX_MAP *ctx_map    = nullptr;
+  std::string top_level_key, ctx_key;
+  ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
+  ts::bwprint(ctx_key, "{}:{}", client_cert, key_file, ca_bundle_file, ca_bundle_path);
 
   ink_mutex_acquire(&ctxMapLock);
-  auto iter = ctx_map.find(key);
-  if (iter != ctx_map.end()) {
+  // Do first level searching and create new CTX_MAP as second level if not exists.
+  auto top_iter = top_level_ctx_map.find(top_level_key);
+  if (top_iter != top_level_ctx_map.end()) {
+    if (top_iter->second == nullptr) {
+      top_iter->second = new CTX_MAP;
+    }
+    ctx_map = top_iter->second;
+  } else {
+    ctx_map = new CTX_MAP;
+    top_level_ctx_map.insert(std::make_pair(top_level_key, ctx_map));
+  }
+  // Do second level searching and return client ctx if found
+  auto iter = ctx_map->find(ctx_key);
+  if (iter != ctx_map->end()) {
     client_ctx = iter->second;
     ink_mutex_release(&ctxMapLock);
     return client_ctx;
@@ -713,12 +726,22 @@ SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const cha
   }
 
   ink_mutex_acquire(&ctxMapLock);
-  iter = ctx_map.find(key);
-  if (iter != ctx_map.end()) {
+  top_iter = top_level_ctx_map.find(top_level_key);
+  if (top_iter != top_level_ctx_map.end()) {
+    if (top_iter->second == nullptr) {
+      top_iter->second = new CTX_MAP;
+    }
+    ctx_map = top_iter->second;
+  } else {
+    ctx_map = new CTX_MAP;
+    top_level_ctx_map.insert(std::make_pair(top_level_key, ctx_map));
+  }
+  iter = ctx_map->find(ctx_key);
+  if (iter != ctx_map->end()) {
     SSL_CTX_free(client_ctx);
     client_ctx = iter->second;
   } else {
-    ctx_map.insert(std::make_pair(key, client_ctx));
+    ctx_map->insert(std::make_pair(ctx_key, client_ctx));
   }
   ink_mutex_release(&ctxMapLock);
   return client_ctx;
@@ -734,11 +757,17 @@ void
 SSLConfigParams::cleanupCTXTable()
 {
   ink_mutex_acquire(&ctxMapLock);
-  auto iter = ctx_map.begin();
-  while (iter != ctx_map.end()) {
-    SSL_CTX_free(iter->second);
-    ++iter;
+  CTX_MAP *ctx_map = nullptr;
+  for (auto &top_pair : top_level_ctx_map) {
+    ctx_map = top_pair.second;
+    if (ctx_map) {
+      for (auto &pair : (*ctx_map)) {
+        SSL_CTX_free(pair.second);
+      }
+      ctx_map->clear();
+      delete ctx_map;
+    }
   }
-  ctx_map.clear();
+  top_level_ctx_map.clear();
   ink_mutex_release(&ctxMapLock);
 }

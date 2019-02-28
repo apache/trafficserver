@@ -102,6 +102,11 @@ more widely. Those are described on this page.
 
 .. type:: TSMBuffer
 
+   Internally, data for a transaction is stored in one more more :term:`header heap`\s. These are
+   storage local to the transaction, and generally each HTTP header is stored in a separate one.
+   This type is a handle to a header heap, and is provided or required by functions that locate HTTP
+   header related data.
+
 .. type:: TSMgmtCounter
 
 .. type:: TSMgmtFloat
@@ -119,6 +124,12 @@ more widely. Those are described on this page.
 .. type:: TSMimeParser
 
 .. type:: TSMLoc
+
+   This is a memory location relative to a :term:`header heap` represented by a :c:type:`TSMBuffer` and
+   must always be used in conjuction with that :c:type:`TSMBuffer` instance. It identifies a specific
+   object in the :c:type:`TSMBuffer`. This indirection is needed so that the :c:type:`TSMBuffer`
+   can reallocate space as needed. Therefore a raw address obtained from a :c:type:`TSMLoc` should
+   be considered volatile that may become invalid across any API call.
 
 .. var:: TSMLoc TS_NULL_MLOC
 

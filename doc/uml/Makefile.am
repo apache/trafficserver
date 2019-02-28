@@ -18,6 +18,7 @@
 
 if BUILD_DOCS
 images := $(patsubst %.uml,images/%.svg,$(wildcard *.uml))
+images += $(patsubst %.plantuml,images/%.svg,$(wildcard *.plantuml))
 PLANTUML_JAR := $(shell ../ext/plantuml_fetch.sh | tail -1)
 
 all-am: jar-check $(images)
@@ -39,6 +40,9 @@ latex: all-am
 man: all-am
 
 images/%.svg : %.uml
+	$(JAVA) -jar $(PLANTUML_JAR) -o images -tsvg $<
+
+images/%.svg : %.plantuml
 	$(JAVA) -jar $(PLANTUML_JAR) -o images -tsvg $<
 
 clean-local:

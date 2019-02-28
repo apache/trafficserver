@@ -23,6 +23,11 @@
 
 #pragma once
 
+#include <string_view>
+#include <string>
+#include <vector>
+#include <memory>
+
 #include "tscore/ink_config.h"
 
 #ifdef HAVE_PCRE_PCRE_H
@@ -45,43 +50,93 @@ class Regex
 {
 public:
   /// Default number of capture groups.
-  static constexpr size_t DEFAULT_GROUP_COUNT = 30;
+  static constexpr size_t DEFAULT_GROUP_COUNT = 10;
 
-  Regex() = default;
-  bool compile(const char *pattern, const unsigned flags = 0);
-  // It is safe to call exec() concurrently on the same object instance
-  bool exec(const char *str);
-  bool exec(const char *str, int length);
-  bool exec(const char *str, int length, int *ovector, int ovecsize);
-  int get_capture_count();
+  Regex()              = default;
+  Regex(Regex const &) = delete; // No copying.
+  Regex(Regex &&that) noexcept;
   ~Regex();
+
+  /** Compile the @a pattern into a regular expression.
+   *
+   * @param pattern Source pattern for regular expression (null terminated).
+   * @param flags Compilation flags.
+   * @return @a true if compiled successfully, @a false otherwise.
+   *
+   * @a flags should be the bitwise @c or of @c REFlags values.
+   */
+  bool compile(const char *pattern, unsigned flags = 0);
+
+  /** Execute the regular expression.
+   *
+   * @param str String to match against.
+   * @return @c true if the patter matched, @a false if not.
+   *
+   * It is safe to call this method concurrently on the same instance of @a this.
+   */
+  bool exec(std::string_view const &str);
+
+  /** Execute the regular expression.
+   *
+   * @param str String to match against.
+   * @param ovector Capture results.
+   * @param ovecsize Number of elements in @a ovector.
+   * @return @c true if the patter matched, @a false if not.
+   *
+   * It is safe to call this method concurrently on the same instance of @a this.
+   *
+   * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
+   * be a multiple of 3 and at least three times the number of desired capture groups.
+   */
+  bool exec(std::string_view const &str, int *ovector, int ovecsize);
+
+  /// @return The number of groups captured in the last call to @c exec.
+  int get_capture_count();
 
 private:
   pcre *regex             = nullptr;
   pcre_extra *regex_extra = nullptr;
 };
 
-typedef struct __pat {
-  int _idx;
-  Regex *_re;
-  char *_p;
-  __pat *_next;
-} dfa_pattern;
-
+/** Deterministic Finite state Automata container.
+ *
+ * This contains a set of patterns (which may be of size 1) and matches if any of the patterns
+ * match.
+ */
 class DFA
 {
 public:
   DFA() = default;
   ~DFA();
 
-  int compile(const char *pattern, unsigned flags = 0);
+  /// @return The number of patterns successfully compiled.
+  int compile(std::string_view const &pattern, unsigned flags = 0);
+  /// @return The number of patterns successfully compiled.
+  int compile(std::string_view *patterns, int npatterns, unsigned flags = 0);
+  /// @return The number of patterns successfully compiled.
   int compile(const char **patterns, int npatterns, unsigned flags = 0);
 
-  int match(const char *str) const;
-  int match(const char *str, int length) const;
+  /** Match @a str against the internal patterns.
+   *
+   * @param str String to match.
+   * @return Index of the matched pattern, -1 if no match.
+   */
+  int match(std::string_view const &str) const;
 
 private:
-  dfa_pattern *build(const char *pattern, unsigned flags = 0);
+  struct Pattern {
+    Pattern(Regex &&rxp, std::string &&s) : _re(std::move(rxp)), _p(std::move(s)) {}
+    Regex _re;      ///< The compile pattern.
+    std::string _p; ///< The original pattern.
+  };
 
-  dfa_pattern *_my_patterns = nullptr;
+  /** Compile @a pattern and add it to the pattern set.
+   *
+   * @param pattern Regular expression to compile.
+   * @param flags Regular expression compilation flags.
+   * @return @c true if @a pattern was successfully compiled, @c false if not.
+   */
+  bool build(std::string_view const &pattern, unsigned flags = 0);
+
+  std::vector<Pattern> _patterns;
 };

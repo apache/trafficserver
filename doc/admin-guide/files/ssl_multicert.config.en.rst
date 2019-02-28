@@ -73,7 +73,7 @@ ssl_cert_name=FILENAME[,FILENAME ...]
 dest_ip=ADDRESS (optional)
   The IP (v4 or v6) address that the certificate should be presented
   on. This is now only used as a fallback in the case that the TLS
-  SubjectNameIndication extension is not supported. If *ADDRESS* is
+  ServerNameIndication extension is not supported. If *ADDRESS* is
   `*`, the corresponding certificate will be used as the global
   default fallback if no other match can be made. The address may
   contain a port specifier, in which case the corresponding certificate

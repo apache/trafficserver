@@ -1295,16 +1295,12 @@ APIHook::invoke(int event, void *edata)
       ink_assert(!"not reached");
     }
   }
-  if (m_cont->mutex != nullptr) {
-    MUTEX_TRY_LOCK(lock, m_cont->mutex, this_ethread());
-    if (!lock.is_locked()) {
-      // If we cannot get the lock, the caller needs to restructure to handle rescheduling
-      ink_release_assert(0);
-    }
-    return m_cont->handleEvent(event, edata);
-  } else {
-    return m_cont->handleEvent(event, edata);
+  MUTEX_TRY_LOCK(lock, m_cont->mutex, this_ethread());
+  if (!lock.is_locked()) {
+    // If we cannot get the lock, the caller needs to restructure to handle rescheduling
+    ink_release_assert(0);
   }
+  return m_cont->handleEvent(event, edata);
 }
 
 APIHook *
@@ -4413,8 +4409,7 @@ TSContSchedule(TSCont contp, TSHRTime timeout)
 
   EThread *eth = i->getThreadAffinity();
   if (eth == nullptr) {
-    eth = this_event_thread();
-    i->setThreadAffinity(eth);
+    return nullptr;
   }
 
   TSAction action;
@@ -4440,10 +4435,6 @@ TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
 
   if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
     ink_assert(!"not reached");
-  }
-
-  if (i->getThreadAffinity() == nullptr) {
-    i->setThreadAffinity(this_event_thread());
   }
 
   EventType etype;
@@ -4531,8 +4522,7 @@ TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */)
 
   EThread *eth = i->getThreadAffinity();
   if (eth == nullptr) {
-    eth = this_event_thread();
-    i->setThreadAffinity(eth);
+    return nullptr;
   }
 
   TSAction action = reinterpret_cast<TSAction>(eth->schedule_every(i, HRTIME_MSECONDS(every)));
@@ -4553,10 +4543,6 @@ TSContScheduleEveryOnPool(TSCont contp, TSHRTime every, TSThreadPool tp)
 
   if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
     ink_assert(!"not reached");
-  }
-
-  if (i->getThreadAffinity() == nullptr) {
-    i->setThreadAffinity(this_event_thread());
   }
 
   EventType etype;
@@ -4682,16 +4668,12 @@ int
 TSContCall(TSCont contp, TSEvent event, void *edata)
 {
   Continuation *c = (Continuation *)contp;
-  if (c->mutex != nullptr) {
-    MUTEX_TRY_LOCK(lock, c->mutex, this_ethread());
-    if (!lock.is_locked()) {
-      // If we cannot get the lock, the caller needs to restructure to handle rescheduling
-      ink_release_assert(0);
-    }
-    return c->handleEvent((int)event, edata);
-  } else {
-    return c->handleEvent((int)event, edata);
+  MUTEX_TRY_LOCK(lock, c->mutex, this_ethread());
+  if (!lock.is_locked()) {
+    // If we cannot get the lock, the caller needs to restructure to handle rescheduling
+    ink_release_assert(0);
   }
+  return c->handleEvent((int)event, edata);
 }
 
 TSMutex
@@ -5936,13 +5918,14 @@ TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
   // If this function is being executed on a thread created by the API
   // which is DEDICATED, the continuation needs to be called back on a
   // REGULAR thread.
-  if (eth == nullptr || eth->tt != REGULAR) {
+  if (eth == nullptr || eth->tt != REGULAR || !eth->is_event_type(ET_NET)) {
     eventProcessor.schedule_imm(new TSHttpSMCallback(sm, event), ET_NET);
   } else {
     MUTEX_TRY_LOCK(trylock, sm->mutex, eth);
     if (!trylock.is_locked()) {
       eventProcessor.schedule_imm(new TSHttpSMCallback(sm, event), ET_NET);
     } else {
+      ink_assert(eth->is_event_type(ET_NET));
       sm->state_api_callback((int)event, nullptr);
     }
   }
@@ -9001,7 +8984,7 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname)
   SSLConfigParams *config = SSLConfig::acquire();
   if (config != nullptr) {
     ret = reinterpret_cast<TSSslContext>(SSLCreateServerContext(config));
-#ifdef TS_USE_TLS_OCSP
+#if TS_USE_TLS_OCSP
     if (ret && SSLConfigParams::ssl_ocsp_enabled && cert && certname) {
       if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ret), ssl_callback_ocsp_stapling)) {
         if (!ssl_stapling_init_cert(reinterpret_cast<SSL_CTX *>(ret), reinterpret_cast<X509 *>(cert), certname)) {

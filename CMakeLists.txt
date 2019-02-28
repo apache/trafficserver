@@ -83,12 +83,15 @@ CPP_LIB(tscppapi src/tscpp/api include/tscpp/api)
 
 CC_EXEC(test_tscore src/tscore/unit_tests)
 CC_EXEC(test_tsutil src/tscpp/util/unit_tests)
+CC_EXEC(test_librecords lib/records/unit_tests)
 
 CPP_LIB(proxy proxy proxy)
 CPP_ADD_SOURCES(proxy proxy/http)
+CPP_ADD_SOURCES(proxy proxy/http/unit_tests)
 CPP_ADD_SOURCES(proxy proxy/http2)
 CPP_ADD_SOURCES(proxy proxy/http/remap)
 CPP_ADD_SOURCES(proxy proxy/hdrs)
+CPP_ADD_SOURCES(proxy proxy/hdrs/unit_tests)
 CPP_ADD_SOURCES(proxy proxy/logging)
 
 CPP_LIB(iocore iocore iocore)
@@ -105,6 +108,7 @@ CPP_ADD_SOURCES(mgmt mgmt/api)
 CPP_ADD_SOURCES(mgmt mgmt/utils)
 
 CPP_LIB(records lib/records lib/records)
+CPP_LIB(logging proxy/logging proxy/logging)
 
 CPP_LIB(tsconfig lib/tsconfig lib/tsconfig)
 CPP_LIB(wccp src/wccp include/wccp)

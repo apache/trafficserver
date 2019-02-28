@@ -80,7 +80,8 @@ Configuration
 =============
 
 This module acts as remap plugin of Traffic Server, so we should realize 'do_remap' or 'do_os_response' function in each
-lua script. We can write this in remap.config:
+lua script. The path referencing a file with the lua script can be relative to the configuration directory or an absolute
+path. We can write this in remap.config:
 
 ::
 
@@ -140,7 +141,7 @@ is always available within lua script. This package can be introduced into Lua l
     ts.say('Hello World')
     ts.sleep(10)
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.process.uuid
 ---------------
@@ -156,7 +157,7 @@ Here is an example:
 
     local pid = ts.process.uuid()  -- a436bae6-082c-4805-86af-78a5916c4a91
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.now
 ------
@@ -173,7 +174,7 @@ Here is an example:
 
     local nt = ts.now()  -- 1395221053.123
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.debug
 --------
@@ -194,7 +195,7 @@ We should write this TAG in records.config(If TAG is missing, default TAG will b
 
 ``CONFIG proxy.config.diags.debug.tags STRING TAG``
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.error
 --------
@@ -210,7 +211,7 @@ Here is an example:
 
        ts.error('This is an error message')
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 TS Basic Internal Information
 -----------------------------
@@ -231,7 +232,7 @@ Here is an example:
 
        local config_dir = ts.get_config_dir()
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Remap status constants
 ----------------------
@@ -247,7 +248,7 @@ Remap status constants
 
 These constants are usually used as return value of do_remap function.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.remap.get_to_url_host
 ------------------------
@@ -267,7 +268,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.remap.get_to_url_port
 ------------------------
@@ -277,7 +278,7 @@ ts.remap.get_to_url_port
 
 **description**: retrieve the "to" port of the remap rule
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.remap.get_to_url_scheme
 --------------------------
@@ -287,7 +288,7 @@ ts.remap.get_to_url_scheme
 
 **description**: retrieve the "to" scheme of the remap rule
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.remap.get_to_uri
 -------------------
@@ -297,7 +298,7 @@ ts.remap.get_to_uri
 
 **description**: retrieve the "to" path of the remap rule
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.remap.get_to_url
 -------------------
@@ -307,7 +308,7 @@ ts.remap.get_to_url
 
 **description**: retrieve the "to" url of the remap rule
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.remap.get_from_url_host
 --------------------------
@@ -317,7 +318,7 @@ ts.remap.get_from_url_host
 
 **description**: retrieve the "from" host of the remap rule
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.remap.get_from_url_port
 --------------------------
@@ -327,7 +328,7 @@ ts.remap.get_from_url_port
 
 **description**: retrieve the "from" port of the remap rule
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.remap.get_from_url_scheme
 ----------------------------
@@ -337,7 +338,7 @@ ts.remap.get_from_url_scheme
 
 **description**: retrieve the "from" scheme of the remap rule
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.remap.get_from_uri
 ---------------------
@@ -347,7 +348,7 @@ ts.remap.get_from_uri
 
 **description**: retrieve the "from" path of the remap rule
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.remap.get_from_url
 ---------------------
@@ -357,7 +358,7 @@ ts.remap.get_from_url
 
 **description**: retrieve the "from" url of the remap rule
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.hook
 -------
@@ -402,7 +403,7 @@ You can create global hook as well
 
     ts.hook(TS_LUA_HOOK_READ_REQUEST_HDR, do_some_work)
 
-    Or you can do it this way
+Or you can do it this way
 
 ::
 
@@ -417,7 +418,7 @@ Also the return value of the function will control how the transaction will be r
 the transaction to be re-enabled normally (TS_EVENT_HTTP_CONTINUE). Return value of 1 will be using TS_EVENT_HTTP_ERROR
 instead.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Hook point constants
 --------------------
@@ -488,7 +489,7 @@ Additional Information:
 +-----------------------+---------------------------+----------------------+--------------------+----------------------+
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.ctx
 ------
@@ -527,7 +528,7 @@ Then the client will get the response like this:
     Connection: Keep-Alive
     ...
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.get_method
 ----------------------------
@@ -538,7 +539,7 @@ ts.client_request.get_method
 **description:** This function can be used to retrieve the current client request's method name. String like "GET" or
 "POST" is returned.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.set_method
 ----------------------------
@@ -558,7 +559,7 @@ ts.client_request.get_version
 
 Current possible values are 1.0, 1.1, and 0.9.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.set_version
 -----------------------------
@@ -572,7 +573,7 @@ ts.client_request.set_version
 
     ts.client_request.set_version('1.0')
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.get_uri
 -------------------------
@@ -596,7 +597,7 @@ Then ``GET /st?a=1`` will yield the output:
 ``/st``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.set_uri
 -------------------------
@@ -609,7 +610,7 @@ ts.client_request.set_uri
 The PATH argument must be a Lua string and starts with ``/``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.get_uri_args
 ------------------------------
@@ -633,7 +634,7 @@ Then ``GET /st?a=1&b=2`` will yield the output:
 ``a=1&b=2``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.set_uri_args
 ------------------------------
@@ -648,7 +649,7 @@ ts.client_request.set_uri_args
     ts.client_request.set_uri_args('n=6&p=7')
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.get_uri_params
 --------------------------------
@@ -672,7 +673,7 @@ Then ``GET /st;a=1`` will yield the output:
 ``a=1``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.set_uri_params
 --------------------------------
@@ -687,7 +688,7 @@ ts.client_request.set_uri_params
     ts.client_request.set_uri_params('n=6')
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.get_url
 -------------------------
@@ -710,7 +711,7 @@ Then ``GET /st?a=1&b=2 HTTP/1.1\r\nHost: a.tbcdn.cn\r\n...`` will yield the outp
 
 ``http://a.tbcdn.cn/st?a=1&b=2``
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.header.HEADER
 -------------------------------
@@ -739,7 +740,7 @@ Then ``GET /st HTTP/1.1\r\nHost: b.tb.cn\r\nUser-Agent: Mozilla/5.0\r\n...`` wil
 ``Mozilla/5.0``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.get_headers
 -----------------------------
@@ -767,7 +768,7 @@ Then ``GET /st HTTP/1.1\r\nHost: b.tb.cn\r\nUser-Aget: Mozilla/5.0\r\nAccept: */
     Accept: */*
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.client_addr.get_addr
 --------------------------------------
@@ -791,7 +792,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.client_addr.get_incoming_port
 -----------------------------------------------
@@ -812,7 +813,7 @@ Here is an example:
         ts.debug(port)             -- 80
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.get_url_host
 ------------------------------
@@ -835,7 +836,7 @@ Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yi
 
 ``192.168.231.129``
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.set_url_host
 ------------------------------
@@ -865,7 +866,7 @@ remap.config like this:
 
 Then server request will connect to ``192.168.231.130:80``
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.get_url_port
 ------------------------------
@@ -889,7 +890,7 @@ Then Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` wi
 ``8080``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.set_url_port
 ------------------------------
@@ -901,7 +902,7 @@ ts.client_request.set_url_port
 the origin server, and we should return TS_LUA_REMAP_DID_REMAP(_STOP) in do_remap.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.get_url_scheme
 --------------------------------
@@ -925,7 +926,7 @@ Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yi
 ``http``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_request.set_url_scheme
 --------------------------------
@@ -937,7 +938,7 @@ ts.client_request.set_url_scheme
 server request, and we should return TS_LUA_REMAP_DID_REMAP(_STOP) in do_remap.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.set_cache_url
 ---------------------
@@ -956,7 +957,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.get_cache_lookup_url
 ----------------------------
@@ -981,7 +982,7 @@ Here is an example
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.set_cache_lookup_url
 ----------------------------
@@ -991,7 +992,7 @@ ts.http.set_cache_lookup_url
 
 **description:** This function can be used to set the cache lookup url for the client request.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.get_parent_proxy
 ------------------------
@@ -1017,7 +1018,7 @@ Here is an example
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.set_parent_proxy
 ------------------------
@@ -1027,7 +1028,7 @@ ts.http.set_parent_proxy
 
 **description:** This function can be used to set the parent proxy host and name.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.get_parent_selection_url
 --------------------------------
@@ -1052,7 +1053,7 @@ Here is an example
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.set_parent_selection_url
 --------------------------------
@@ -1062,7 +1063,7 @@ ts.http.set_parent_selection_url
 
 **description:** This function can be used to set the parent selection url for the client request.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.set_server_resp_no_store
 --------------------------------
@@ -1081,7 +1082,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.set_resp
 ----------------
@@ -1116,7 +1117,7 @@ We will get the response like this:
     Document access failed :)
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.get_cache_lookup_status
 -------------------------------
@@ -1145,7 +1146,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.set_cache_lookup_status
 -------------------------------
@@ -1175,7 +1176,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Http cache lookup status constants
 ----------------------------------
@@ -1189,7 +1190,7 @@ Http cache lookup status constants
     TS_LUA_CACHE_LOOKUP_SKIPPED (3)
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.cached_response.get_status
 -----------------------------
@@ -1217,7 +1218,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.cached_response.get_version
 ------------------------------
@@ -1230,7 +1231,7 @@ ts.cached_response.get_version
 Current possible values are 1.0, 1.1, and 0.9.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.cached_response.header.HEADER
 --------------------------------
@@ -1260,7 +1261,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.cached_response.get_headers
 ------------------------------
@@ -1303,7 +1304,7 @@ We will get the output:
     Server: ATS/5.0.0
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 
 ts.server_request.get_uri
@@ -1333,7 +1334,7 @@ Then ``GET /am.txt?a=1`` will yield the output:
 ``/am.txt``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.set_uri
 -------------------------
@@ -1346,7 +1347,7 @@ ts.server_request.set_uri
 The PATH argument must be a Lua string and starts with ``/``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.get_uri_args
 ------------------------------
@@ -1375,7 +1376,7 @@ Then ``GET /st?a=1&b=2`` will yield the output:
 ``a=1&b=2``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.set_uri_args
 ------------------------------
@@ -1390,7 +1391,7 @@ ts.server_request.set_uri_args
     ts.server_request.set_uri_args('n=6&p=7')
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.get_uri_params
 --------------------------------
@@ -1419,7 +1420,7 @@ Then ``GET /st;a=1`` will yield the output:
 ``a=1``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.set_uri_params
 --------------------------------
@@ -1434,7 +1435,7 @@ ts.server_request.set_uri_params
     ts.server_request.set_uri_params('n=6')
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.header.HEADER
 -------------------------------
@@ -1468,7 +1469,7 @@ Then ``GET /st HTTP/1.1\r\nHost: b.tb.cn\r\nUser-Agent: Mozilla/5.0\r\n...`` wil
 ``Mozilla/5.0``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.get_headers
 -----------------------------
@@ -1503,7 +1504,7 @@ We will get the output:
     Accept: */*
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.server_addr.set_addr
 --------------------------------------
@@ -1523,7 +1524,7 @@ Here is an example:
         ts.server_request.server_addr.set_addr("192.168.231.17", 80, TS_LUA_AF_INET)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Socket address family
 ---------------------
@@ -1535,7 +1536,7 @@ Socket address family
     TS_LUA_AF_INET6 (10)
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.server_addr.get_addr
 --------------------------------------
@@ -1558,7 +1559,7 @@ Here is an example:
         ts.debug(family)           -- 2(AF_INET)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.server_addr.get_nexthop_addr
 ----------------------------------------------
@@ -1581,7 +1582,7 @@ Here is an example:
         ts.debug(family)           -- 2(AF_INET)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.server_addr.get_ip
 ------------------------------------
@@ -1602,7 +1603,7 @@ Here is an example:
         ts.debug(ip)               -- 192.168.231.17
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.server_addr.get_port
 --------------------------------------
@@ -1623,7 +1624,7 @@ Here is an example:
         ts.debug(port)             -- 80
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.server_addr.get_outgoing_port
 -----------------------------------------------
@@ -1644,7 +1645,7 @@ Here is an example:
         ts.debug(port)             -- 50880
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.server_addr.set_outgoing_addr
 -----------------------------------------------
@@ -1664,7 +1665,7 @@ Here is an example:
         ts.server_request.server_addr.set_outgoing_addr("192.168.231.17", 80, TS_LUA_AF_INET)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.get_url_host
 ------------------------------
@@ -1692,7 +1693,7 @@ Then ``GET http://abc.com/p2/a.txt HTTP/1.1`` will yield the output:
 
 ``abc.com``
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.set_url_host
 ------------------------------
@@ -1742,7 +1743,7 @@ Will be changed to:
     Client-ip: 135.xx.xx.xx
     X-Forwarded-For: 135.xx.xx.xx
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.get_url_scheme
 --------------------------------
@@ -1770,7 +1771,7 @@ Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yi
 
 ``http``
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_request.set_url_scheme
 --------------------------------
@@ -1780,7 +1781,7 @@ ts.server_request.set_url_scheme
 
 **description:** Set ``scheme`` field of the request url with ``str``. This function is used to change the scheme of the server request.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_response.get_status
 -----------------------------
@@ -1806,7 +1807,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_'
+`TOP <#lua-plugin>`_'
 
 ts.server_response.set_status
 -----------------------------
@@ -1830,7 +1831,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_'
+`TOP <#lua-plugin>`_'
 
 ts.server_response.get_version
 ------------------------------
@@ -1842,7 +1843,7 @@ ts.server_response.get_version
 
 Current possible values are 1.0, 1.1, and 0.9.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_response.set_version
 ------------------------------
@@ -1856,7 +1857,7 @@ ts.server_response.set_version
 
     ts.server_response.set_version('1.0')
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.server_response.header.HEADER
 --------------------------------
@@ -1890,7 +1891,7 @@ We will get the output:
 ``text/html``
 
 
-`TOP <#ts-lua-plugin>`_'
+`TOP <#lua-plugin>`_'
 
 ts.server_response.get_headers
 ------------------------------
@@ -1931,7 +1932,7 @@ We will get the output:
     Accept-Ranges: bytes
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_response.get_status
 -----------------------------
@@ -1957,7 +1958,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_response.set_status
 -----------------------------
@@ -1981,7 +1982,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_response.get_version
 ------------------------------
@@ -1993,7 +1994,7 @@ ts.client_response.get_version
 
 Current possible values are 1.0, 1.1, and 0.9.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_response.set_version
 ------------------------------
@@ -2007,7 +2008,7 @@ ts.client_response.set_version
 
     ts.client_response.set_version('1.0')
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_response.header.HEADER
 --------------------------------
@@ -2041,7 +2042,7 @@ We will get the output:
 ``text/html``
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_response.get_headers
 ------------------------------
@@ -2082,7 +2083,7 @@ We will get the output:
     Accept-Ranges: bytes
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.client_response.set_error_resp
 ---------------------------------
@@ -2126,7 +2127,7 @@ We will get the response like this:
     bad luck :(
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Number constants
 ----------------------
@@ -2139,7 +2140,7 @@ Number constants
 
 These constants are usually used in transform handler.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.resp_cache_transformed
 ------------------------------
@@ -2166,7 +2167,7 @@ Here is an example:
 This function is usually called after we hook TS_LUA_RESPONSE_TRANSFORM.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.resp_cache_untransformed
 --------------------------------
@@ -2193,7 +2194,7 @@ Here is an example:
 This function is usually called after we hook TS_LUA_RESPONSE_TRANSFORM.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.resp_transform.get_upstream_bytes
 -----------------------------------------
@@ -2234,7 +2235,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.resp_transform.get_upstream_watermark_bytes
 ---------------------------------------------------
@@ -2245,7 +2246,7 @@ ts.http.resp_transform.get_upstream_watermark_bytes
 **description**: This function can be used to retrive the current watermark bytes for the upstream transform buffer.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.resp_transform.set_upstream_watermark_bytes
 ---------------------------------------------------
@@ -2258,7 +2259,7 @@ ts.http.resp_transform.set_upstream_watermark_bytes
 Setting the watermark bytes above 32kb may improve the performance of the transform handler.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.resp_transform.set_downstream_bytes
 -------------------------------------------
@@ -2272,7 +2273,7 @@ Sometimes we want to set Content-Length header in client_response, and this func
 data is returned from the transform handler.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.skip_remapping_set
 --------------------------
@@ -2294,7 +2295,7 @@ Here is an example:
 
 This function is usually called in do_global_read_request function
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.get_client_protocol_stack
 ---------------------------------
@@ -2316,7 +2317,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.server_push
 -------------------
@@ -2335,7 +2336,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.is_websocket
 --------------------
@@ -2355,7 +2356,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.get_plugin_tag
 ----------------------
@@ -2375,7 +2376,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.id
 ----------
@@ -2395,7 +2396,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.ssn_id
 --------------
@@ -2415,7 +2416,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.is_internal_request
 ---------------------------
@@ -2435,7 +2436,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.is_aborted
 ------------------
@@ -2455,7 +2456,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.transaction_count
 -------------------------
@@ -2475,7 +2476,7 @@ Here is an example
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.redirect_url_set
 ------------------------
@@ -2494,7 +2495,7 @@ Here is an example
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.get_server_state
 ------------------------
@@ -2515,7 +2516,7 @@ Here is an example
         end
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Server state constants
 ----------------------
@@ -2533,10 +2534,9 @@ Server state constants
     TS_LUA_SRVSTATE_OPEN_RAW_ERROR (7)
     TS_LUA_SRVSTATE_PARSE_ERROR (8)
     TS_LUA_SRVSTATE_TRANSACTION_COMPLETE (9)
-    TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_F (10)
-    TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_M (11)
+    TS_LUA_SRVSTATE_PARENT_RETRY (10)
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.get_remap_from_url
 --------------------------
@@ -2555,7 +2555,7 @@ Here is an example
         ts.debug(from_url)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.get_remap_to_url
 ------------------------
@@ -2574,7 +2574,7 @@ Here is an example
         ts.debug(to_url)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.get_client_fd
 ---------------------
@@ -2593,7 +2593,7 @@ Here is an example
         ts.debug(fd)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.get_server_fd
 ---------------------
@@ -2612,7 +2612,7 @@ Here is an example
         ts.debug(fd)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.add_package_path
 -------------------
@@ -2635,7 +2635,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.add_package_cpath
 --------------------
@@ -2659,7 +2659,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 
 ts.md5
@@ -2681,7 +2681,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.md5_bin
 ----------
@@ -2701,7 +2701,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.sha1
 -------
@@ -2722,7 +2722,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.sha1_bin
 -----------
@@ -2742,7 +2742,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.base64_encode
 ----------------
@@ -2762,7 +2762,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.base64_decode
 ----------------
@@ -2783,7 +2783,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.escape_uri
 -------------
@@ -2802,7 +2802,7 @@ Here is an example:
         value = ts.escape_uri(test)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.unescape_uri
 ---------------
@@ -2823,7 +2823,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.fetch
 -----------
@@ -2878,7 +2878,7 @@ Issuing a post request:
 
     res = ts.fetch('http://xx.com/foo', {method = 'POST', body = 'hello world'})
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.fetch_multi
 --------------
@@ -2906,7 +2906,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 
 ts.http.intercept
@@ -2967,7 +2967,7 @@ Then we will get the response like this:
     1395145392 Zheng.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.server_intercept
 ------------------------
@@ -3033,7 +3033,7 @@ Here is an example:
         ts.http.server_intercept(process_combo, h)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.say
 ------
@@ -3044,7 +3044,7 @@ ts.say
 **description:** Write response to ATS within intercept or server_intercept.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.flush
 --------
@@ -3107,7 +3107,7 @@ We will get the response like this:
     wo ai yu ye hua
     wo ai yu ye hua
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.sleep
 --------
@@ -3136,7 +3136,7 @@ Here is an example:
         ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.host_lookup
 --------------
@@ -3160,7 +3160,7 @@ Here is an example:
         ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.schedule
 -----------
@@ -3190,7 +3190,7 @@ Here is an example:
         ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.config_int_get
 ----------------------
@@ -3205,7 +3205,7 @@ ts.http.config_int_get
     val = ts.http.config_int_get(TS_LUA_CONFIG_HTTP_CACHE_HTTP)
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.config_int_set
 ----------------------
@@ -3225,7 +3225,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.config_float_get
 ------------------------
@@ -3236,7 +3236,7 @@ ts.http.config_float_get
 **description:** Configuration option which has a float value can be retrieved with this function.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.config_float_set
 ------------------------
@@ -3247,7 +3247,7 @@ ts.http.config_float_set
 **description:** This function can be used to overwrite the configuration options.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.config_string_get
 -------------------------
@@ -3258,7 +3258,7 @@ ts.http.config_string_get
 **description:** Configuration option which has a string value can be retrieved with this function.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.config_string_set
 -------------------------
@@ -3269,7 +3269,7 @@ ts.http.config_string_set
 **description:** This function can be used to overwrite the configuration options.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Http config constants
 ---------------------
@@ -3322,7 +3322,8 @@ Http config constants
     TS_LUA_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN
     TS_LUA_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT
     TS_LUA_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT
-    TS_LUA_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS
+    TS_LUA_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX
+    TS_LUA_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH
     TS_LUA_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES
     TS_LUA_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER
     TS_LUA_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES
@@ -3330,13 +3331,10 @@ Http config constants
     TS_LUA_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT
     TS_LUA_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME
     TS_LUA_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD
-    TS_LUA_CONFIG_HTTP_CACHE_FUZZ_TIME
-    TS_LUA_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME
     TS_LUA_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS
     TS_LUA_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT
     TS_LUA_CONFIG_HTTP_RESPONSE_SERVER_STR
     TS_LUA_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR
-    TS_LUA_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY
     TS_LUA_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD
     TS_LUA_CONFIG_NET_SOCK_PACKET_MARK_OUT
     TS_LUA_CONFIG_NET_SOCK_PACKET_TOS_OUT
@@ -3346,6 +3344,7 @@ Http config constants
     TS_LUA_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK
     TS_LUA_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK
     TS_LUA_CONFIG_HTTP_CACHE_RANGE_LOOKUP
+    TS_LUA_CONFIG_HTTP_NORMALIZE_AE
     TS_LUA_CONFIG_HTTP_DEFAULT_BUFFER_SIZE
     TS_LUA_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK
     TS_LUA_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE
@@ -3366,10 +3365,42 @@ Http config constants
     TS_LUA_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION
     TS_LUA_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS
     TS_LUA_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES
-    TS_LUA_CONFIG_HTTP_NORMALIZE_AE
+    TS_LUA_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY
+    TS_LUA_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT
+    TS_LUA_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT
+    TS_LUA_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT
+    TS_LUA_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT
+    TS_LUA_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS
+    TS_LUA_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN
+    TS_LUA_CONFIG_SRV_ENABLED
+    TS_LUA_CONFIG_HTTP_FORWARD_CONNECT_METHOD
+    TS_LUA_CONFIG_SSL_CERT_FILENAME
+    TS_LUA_CONFIG_SSL_CERT_FILEPATH
+    TS_LUA_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB
+    TS_LUA_CONFIG_HTTP_CACHE_ENABLE_DEFAULT_VARY_HEADER
+    TS_LUA_CONFIG_HTTP_CACHE_VARY_DEFAULT_TEXT
+    TS_LUA_CONFIG_HTTP_CACHE_VARY_DEFAULT_IMAGES
+    TS_LUA_CONFIG_HTTP_CACHE_VARY_DEFAULT_OTHER
+    TS_LUA_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH
+    TS_LUA_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH
+    TS_LUA_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH
+    TS_LUA_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_CHARSET_MISMATCH
+    TS_LUA_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD
+    TS_LUA_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME
+    TS_LUA_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS
+    TS_LUA_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT
+    TS_LUA_CONFIG_HTTP_ALLOW_MULTI_RANGE
+    TS_LUA_CONFIG_HTTP_REQUEST_BUFFER_ENABLED
+    TS_LUA_CONFIG_HTTP_ALLOW_HALF_OPEN
+    TS_LUA_CONFIG_SSL_CLIENT_VERIFY_SERVER
+    TS_LUA_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY
+    TS_LUA_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES
+    TS_LUA_CONFIG_SSL_CLIENT_SNI_POLICY
+    TS_LUA_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME
+    TS_LUA_CONFIG_SSL_CLIENT_CA_CERT_FILENAME
     TS_LUA_CONFIG_LAST_ENTRY
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.timeout_set
 -------------------
@@ -3389,7 +3420,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Timeout constants
 -----------------
@@ -3403,7 +3434,7 @@ Timeout constants
     TS_LUA_TIMEOUT_NO_ACTIVITY
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.client_packet_mark_set
 ------------------------------
@@ -3422,7 +3453,7 @@ Here is an example:
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.server_packet_mark_set
 ------------------------------
@@ -3433,7 +3464,7 @@ ts.http.server_packet_mark_set
 **description:** This function can be used to set packet mark for server connection.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.client_packet_tos_set
 -----------------------------
@@ -3444,7 +3475,7 @@ ts.http.client_packet_tos_set
 **description:** This function can be used to set packet tos for client connection.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.server_packet_tos_set
 -----------------------------
@@ -3455,7 +3486,7 @@ ts.http.server_packet_tos_set
 **description:** This function can be used to set packet tos for server connection.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.client_packet_dscp_set
 ------------------------------
@@ -3466,7 +3497,7 @@ ts.http.client_packet_dscp_set
 **description:** This function can be used to set packet dscp for client connection.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.server_packet_dscp_set
 ------------------------------
@@ -3477,7 +3508,7 @@ ts.http.server_packet_dscp_set
 **description:** This function can be used to set packet dscp for server connection.
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.enable_redirect
 -----------------------
@@ -3497,7 +3528,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.set_debug
 -----------------
@@ -3517,7 +3548,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.cntl_get
 ----------------
@@ -3532,7 +3563,7 @@ ts.http.cntl_get
     val = ts.http.cntl_get(TS_LUA_HTTP_CNTL_GET_LOGGING_MODE)
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.cntl_set
 ----------------
@@ -3552,7 +3583,7 @@ Here is an example:
     end
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Http control channel constants
 ------------------------------
@@ -3566,7 +3597,7 @@ Http control channel constants
     TS_LUA_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.http.milestone_get
 ---------------------
@@ -3582,7 +3613,7 @@ of seconds since the beginning of the transaction.
 
     val = ts.http.milestone_get(TS_LUA_MILESTONE_SM_START)
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Milestone constants
 ------------------------------
@@ -3616,7 +3647,7 @@ Milestone constants
     TS_LUA_MILESTONE_TLS_HANDSHAKE_END
 
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.mgmt.get_counter
 -------------------
@@ -3630,7 +3661,7 @@ ts.mgmt.get_counter
 
     n = ts.mgmt.get_counter('proxy.process.http.incoming_requests')
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.mgmt.get_int
 ---------------
@@ -3640,7 +3671,7 @@ ts.mgmt.get_int
 
 **description:** This function can be used to retrieve the record value which has a int type.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.mgmt.get_float
 -----------------
@@ -3650,7 +3681,7 @@ ts.mgmt.get_float
 
 **description:** This function can be used to retrieve the record value which has a float type.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.mgmt.get_string
 ------------------
@@ -3664,7 +3695,7 @@ ts.mgmt.get_string
 
     name = ts.mgmt.get_string('proxy.config.product_name')
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.stat_create
 --------------
@@ -3703,7 +3734,7 @@ Here is an example.
         return 0
     end
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 ts.stat_find
 ------------
@@ -3714,7 +3745,7 @@ ts.stat_find
 **description:** This function can be used to find a statistics record given the name. A statistics record table will
 be returned with 4 functions to increment, decrement, get and set the value. That is similar to ts.stat_create()
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Todo
 ====
@@ -3728,7 +3759,7 @@ as transaction hook instead. But this will have problem down the road when we ne
 together in some proper orderings. In the future, we should consider different approach, such as creating and
 maintaining the lua state in the ATS core.
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 Notes on Unit Testing Lua scripts for ATS Lua Plugin
 ====================================================
@@ -3758,11 +3789,11 @@ Reference for further information
 
 * luacov - https://luarocks.org/modules/hisham/luacov
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_
 
 More docs
 =========
 
 * https://github.com/portl4t/ts-lua
 
-`TOP <#ts-lua-plugin>`_
+`TOP <#lua-plugin>`_

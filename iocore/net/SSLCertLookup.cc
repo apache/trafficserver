@@ -21,12 +21,9 @@
   limitations under the License.
  */
 
-#include "tscore/ink_config.h"
-
 #include "P_SSLCertLookup.h"
-#include "P_SSLUtils.h"
-#include "P_SSLConfig.h"
-#include "I_EventSystem.h"
+
+#include "tscore/ink_config.h"
 #include "tscore/I_Layout.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Regex.h"
@@ -35,16 +32,15 @@
 #include "tscore/bwf_std_format.h"
 #include "tscore/TestBox.h"
 
+#include "I_EventSystem.h"
+
+#include "P_SSLUtils.h"
+#include "P_SSLConfig.h"
+#include "SSLSessionTicket.h"
+
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
-
-// Check if the ticket_key callback #define is available, and if so, enable session tickets.
-#ifdef SSL_CTX_set_tlsext_ticket_key_cb
-
-#define HAVE_OPENSSL_SESSION_TICKETS 1
-
-#endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 struct SSLAddressLookupKey {
   explicit SSLAddressLookupKey(const IpEndpoint &ip)
@@ -201,7 +197,7 @@ fail:
 ssl_ticket_key_block *
 ssl_create_ticket_keyblock(const char *ticket_key_path)
 {
-#if HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAVE_OPENSSL_SESSION_TICKETS
   ats_scoped_str ticket_key_data;
   int ticket_key_len;
   ssl_ticket_key_block *keyblock = nullptr;
@@ -226,10 +222,10 @@ fail:
   ticket_block_free(keyblock);
   return nullptr;
 
-#else  /* !HAVE_OPENSSL_SESSION_TICKETS */
+#else  /* !TS_HAVE_OPENSSL_SESSION_TICKETS */
   (void)ticket_key_path;
   return nullptr;
-#endif /* HAVE_OPENSSL_SESSION_TICKETS */
+#endif /* TS_HAVE_OPENSSL_SESSION_TICKETS */
 }
 void
 SSLCertContext::release()
@@ -313,38 +309,6 @@ make_to_lower_case(const char *name, char *lower_case_name, int buf_len)
     lower_case_name[i] = ParseRules::ink_tolower(name[i]);
   }
   lower_case_name[i] = '\0';
-}
-
-static char *
-reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1])
-{
-  char *ptr        = reversed + sizeof(reversed);
-  const char *part = hostname;
-
-  *(--ptr) = '\0'; // NUL-terminate
-
-  while (*part) {
-    ssize_t len    = strcspn(part, ".");
-    ssize_t remain = ptr - reversed;
-
-    if (remain < (len + 1)) {
-      return nullptr;
-    }
-
-    ptr -= len;
-    memcpy(ptr, part, len);
-
-    // Skip to the next domain component. This will take us to either a '.' or a NUL.
-    // If it's a '.' we need to skip over it.
-    part += len;
-    if (*part == '.') {
-      ++part;
-      *(--ptr) = '.';
-    }
-  }
-  make_to_lower_case(ptr, ptr, strlen(ptr) + 1);
-
-  return ptr;
 }
 
 SSLContextStorage::SSLContextStorage() {}
@@ -460,6 +424,38 @@ SSLContextStorage::lookup(const char *name)
 }
 
 #if TS_HAS_TESTS
+
+static char *
+reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1])
+{
+  char *ptr        = reversed + sizeof(reversed);
+  const char *part = hostname;
+
+  *(--ptr) = '\0'; // NUL-terminate
+
+  while (*part) {
+    ssize_t len    = strcspn(part, ".");
+    ssize_t remain = ptr - reversed;
+
+    if (remain < (len + 1)) {
+      return nullptr;
+    }
+
+    ptr -= len;
+    memcpy(ptr, part, len);
+
+    // Skip to the next domain component. This will take us to either a '.' or a NUL.
+    // If it's a '.' we need to skip over it.
+    part += len;
+    if (*part == '.') {
+      ++part;
+      *(--ptr) = '.';
+    }
+  }
+  make_to_lower_case(ptr, ptr, strlen(ptr) + 1);
+
+  return ptr;
+}
 
 REGRESSION_TEST(SSLWildcardMatch)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {

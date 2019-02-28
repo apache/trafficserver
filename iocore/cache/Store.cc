@@ -327,9 +327,11 @@ Store::read_config()
   ats_scoped_fd fd;
   ats_scoped_str storage_path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
 
+  Note("storage.config loading ...");
   Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
   fd = ::open(storage_path, O_RDONLY);
   if (fd < 0) {
+    Error("storage.config failed to load");
     return Result::failure("open %s: %s", (const char *)storage_path, strerror(errno));
   }
 
@@ -369,6 +371,7 @@ Store::read_config()
       if (ParseRules::is_digit(*e)) {
         if ((size = ink_atoi64(e)) <= 0) {
           delete sd;
+          Error("storage.config failed to load");
           return Result::failure("failed to parse size '%s'", e);
         }
       } else if (0 == strncasecmp(HASH_BASE_STRING_KEY, e, sizeof(HASH_BASE_STRING_KEY) - 1)) {
@@ -386,6 +389,7 @@ Store::read_config()
         }
         if (!*e || !ParseRules::is_digit(*e) || 0 >= (volume_num = ink_atoi(e))) {
           delete sd;
+          Error("storage.config failed to load");
           return Result::failure("failed to parse volume number '%s'", e);
         }
       }
@@ -436,6 +440,8 @@ Store::read_config()
   }
   sd = nullptr; // these are all used.
   sort();
+
+  Note("storage.config finished loading");
 
   return Result::ok();
 }

@@ -31,13 +31,14 @@
 #include "QUICEvents.h"
 
 static constexpr int LONG_HDR_OFFSET_CONNECTION_ID = 6;
-static constexpr char tag[]                        = "quic_sec";
+static constexpr char debug_tag[]                  = "quic_sec";
 
-#define QUICDebug(fmt, ...) Debug(tag, fmt, ##__VA_ARGS__)
-#define QUICDebugQC(qc, fmt, ...) Debug(tag, "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
+#define QUICDebug(fmt, ...) Debug(debug_tag, fmt, ##__VA_ARGS__)
+#define QUICDebugQC(qc, fmt, ...) Debug(debug_tag, "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
 
 // ["local dcid" - "local scid"]
-#define QUICDebugDS(dcid, scid, fmt, ...) Debug(tag, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
+#define QUICDebugDS(dcid, scid, fmt, ...) \
+  Debug(debug_tag, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
 
 //
 // QUICPacketHandler
@@ -86,7 +87,7 @@ QUICPacketHandler::_send_packet(Continuation *c, const QUICPacket &packet, UDPCo
 
   UDPPacket *udp_packet = new_UDPPacket(addr, 0, udp_payload);
 
-  if (is_debug_tag_set(tag)) {
+  if (is_debug_tag_set(debug_tag)) {
     ip_port_text_buffer ipb;
     QUICConnectionId dcid = packet.destination_cid();
     QUICConnectionId scid = QUICConnectionId::ZERO();
@@ -109,7 +110,7 @@ QUICPacketHandler::_send_packet(Continuation *c, QUICNetVConnection *vc, Ptr<IOB
   IpEndpoint addr        = vc->con.addr;
   UDPPacket *udp_packet  = new_UDPPacket(addr, 0, udp_payload);
 
-  if (is_debug_tag_set(tag)) {
+  if (is_debug_tag_set(debug_tag)) {
     ip_port_text_buffer ipb;
     QUICConnectionId dcid = QUICConnectionId::ZERO();
     QUICConnectionId scid = QUICConnectionId::ZERO();
@@ -239,7 +240,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       return;
     }
 
-    if (is_debug_tag_set(tag)) {
+    if (is_debug_tag_set(debug_tag)) {
       ip_port_text_buffer ipb;
       QUICDebugDS(scid, dcid, "recv LH packet from %s size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
                   udp_packet->getPktLength());
@@ -267,7 +268,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
   } else {
     // TODO: lookup DCID by 5-tuple when ATS omits SCID
-    if (is_debug_tag_set(tag)) {
+    if (is_debug_tag_set(debug_tag)) {
       ip_port_text_buffer ipb;
       QUICDebugDS(scid, dcid, "recv SH packet from %s size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
                   udp_packet->getPktLength());
@@ -460,7 +461,7 @@ QUICPacketHandlerOut::send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp
 void
 QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
 {
-  if (is_debug_tag_set(tag)) {
+  if (is_debug_tag_set(debug_tag)) {
     IOBufferBlock *block = udp_packet->getIOBlockChain();
     const uint8_t *buf   = reinterpret_cast<uint8_t *>(block->buf());
 

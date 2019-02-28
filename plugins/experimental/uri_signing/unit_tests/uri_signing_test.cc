@@ -29,6 +29,7 @@ extern "C" {
 #include "../jwt.h"
 #include "../normalize.h"
 #include "../parse.h"
+#include "../match.h"
 }
 
 bool
@@ -445,4 +446,33 @@ TEST_CASE("4", "[NormalizeTest]")
 
   SECTION("Testing empty uri after http://?/") { REQUIRE(!normalize_uri_helper("http://?/", NULL)); }
   fprintf(stderr, "\n");
+}
+
+TEST_CASE("5", "[RegexTests]")
+{
+  INFO("TEST 5, Test Regex Matching");
+
+  SECTION("Standard regex")
+  {
+    REQUIRE(match_regex("http://kelloggsTester.souza.local/KellogsDir/*",
+                        "http://kelloggsTester.souza.local/KellogsDir/some_manifest.m3u8"));
+  }
+
+  SECTION("Back references are not supported") { REQUIRE(!match_regex("(b*a)\\1$", "bbbbba")); }
+
+  SECTION("Escape a special character") { REQUIRE(match_regex("money\\$", "money$bags")); }
+
+  SECTION("Dollar sign")
+  {
+    REQUIRE(!match_regex(".+foobar$", "foobarfoofoo"));
+    REQUIRE(match_regex(".+foobar$", "foofoofoobar"));
+  }
+
+  SECTION("Number Quantifier with Groups")
+  {
+    REQUIRE(match_regex("(abab){2}", "abababab"));
+    REQUIRE(!match_regex("(abab){2}", "abab"));
+  }
+
+  SECTION("Alternation") { REQUIRE(match_regex("cat|dog", "dog")); }
 }

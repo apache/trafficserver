@@ -32,8 +32,8 @@
 #include "Http3ClientSession.h"
 #include "Http3ClientTransaction.h"
 
-static constexpr char tag[]   = "http3";
-static constexpr char tag_v[] = "v_http3";
+static constexpr char debug_tag[]   = "http3";
+static constexpr char debug_tag_v[] = "v_http3";
 
 Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QUICApplication(client_vc)
 {
@@ -85,13 +85,13 @@ Http3App::start()
 int
 Http3App::main_event_handler(int event, Event *data)
 {
-  Debug(tag_v, "[%s] %s (%d)", this->_qc->cids().data(), get_vc_event_name(event), event);
+  Debug(debug_tag_v, "[%s] %s (%d)", this->_qc->cids().data(), get_vc_event_name(event), event);
 
   VIO *vio                = reinterpret_cast<VIO *>(data);
   QUICStreamIO *stream_io = this->_find_stream_io(vio);
 
   if (stream_io == nullptr) {
-    Debug(tag, "[%s] Unknown Stream", this->_qc->cids().data());
+    Debug(debug_tag, "[%s] Unknown Stream", this->_qc->cids().data());
     return -1;
   }
 

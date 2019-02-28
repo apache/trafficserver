@@ -170,30 +170,29 @@ HdrHeap::attach_block(IOBufferBlock *b, const char *use_start)
 
 RETRY:
 
-  // It's my contention that since heaps are add to the
-  //   first available slot, one you find an empty slot
-  //   it's not possible that a heap ptr for this block
-  //   exists in a later slot
-  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    if (m_ronly_heap[i].m_heap_start == nullptr) {
+  // It's my contention that since heaps are add to the first available slot, one you find an empty
+  // slot it's not possible that a heap ptr for this block exists in a later slot
+
+  for (auto &heap : m_ronly_heap) {
+    if (heap.m_heap_start == nullptr) {
       // Add block to heap in this slot
-      m_ronly_heap[i].m_heap_start    = (char *)use_start;
-      m_ronly_heap[i].m_heap_len      = (int)(b->end() - b->start());
-      m_ronly_heap[i].m_ref_count_ptr = b->data.object();
+      heap.m_heap_start    = static_cast<char const *>(use_start);
+      heap.m_heap_len      = static_cast<int>(b->end() - b->start());
+      heap.m_ref_count_ptr = b->data.object();
       //          printf("Attaching block at %X for %d in slot %d\n",
       //                 m_ronly_heap[i].m_heap_start,
       //                 m_ronly_heap[i].m_heap_len,
       //                 i);
-      return i;
-    } else if (m_ronly_heap[i].m_heap_start == b->buf()) {
+      return &heap - m_ronly_heap;
+    } else if (heap.m_heap_start == b->buf()) {
       // This block is already on the heap so just extend
       //   it's range
-      m_ronly_heap[i].m_heap_len = (int)(b->end() - b->buf());
+      heap.m_heap_len = static_cast<int>(b->end() - b->buf());
       //          printf("Extending block at %X to %d in slot %d\n",
       //                 m_ronly_heap[i].m_heap_start,
       //                 m_ronly_heap[i].m_heap_len,
       //                 i);
-      return i;
+      return &heap - m_ronly_heap;
     }
   }
 

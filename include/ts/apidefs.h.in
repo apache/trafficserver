@@ -286,6 +286,7 @@ typedef enum {
   TS_VCONN_START_HOOK = TS_SSL_FIRST_HOOK,
   TS_VCONN_PRE_ACCEPT_HOOK = TS_VCONN_START_HOOK, // Deprecated but compatible for now.
   TS_VCONN_CLOSE_HOOK,
+  TS_SSL_CLIENT_HELLO_HOOK,
   TS_SSL_SNI_HOOK,
   TS_SSL_CERT_HOOK = TS_SSL_SNI_HOOK,
   TS_SSL_SERVERNAME_HOOK,
@@ -494,6 +495,7 @@ typedef enum {
   TS_EVENT_SSL_SERVERNAME                       = 60204,
   TS_EVENT_SSL_VERIFY_SERVER                    = 60205,
   TS_EVENT_SSL_VERIFY_CLIENT                    = 60206,
+  TS_EVENT_SSL_CLIENT_HELLO                     = 60207,
 
   TS_EVENT_MGMT_UPDATE                          = 60300
 } TSEvent;

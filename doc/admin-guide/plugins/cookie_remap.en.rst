@@ -43,7 +43,7 @@ Cookie Based Routing Inside TrafficServer Using cookie_remap
 
   * `Reserved path expressions <#reserved-path-expressions>`_
 
-    * `$cr_request_url <#cr_request_url-v-15>`_
+    * `$cr_req_url <#cr_req_url-v-15>`_
     * `$cr_urlencode() <#cr_urlencode-v-15>`_
     * `$path <#path>`_
     * `$unmatched_path <#unmatched_path>`_
@@ -219,7 +219,7 @@ Reserved path expressions
 
 The following expressions can be used in either the sendto **or** ``else`` URLs, and will be expanded.
 
-$cr_request_url
+$cr_req_url
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ----
@@ -235,7 +235,7 @@ Therefore, a rule like:
    op:
      cookie: K
      operation: exists
-     sendto: http://foo.com/?.done=$cr_request_url
+     sendto: http://foo.com/?.done=$cr_req_url
    </pre>
 
 
@@ -275,7 +275,7 @@ Therefore, a rule like:
    op:
      cookie: B
      operation: exists
-     sendto: http://foo.com/?.done=$cr_urlencode($cr_request_url)
+     sendto: http://foo.com/?.done=$cr_urlencode($cr_req_url)
    </pre>
 
 

@@ -144,17 +144,21 @@ initCacheControl()
 //
 //  Called when the cache.conf file changes.  Since it called
 //   infrequently, we do the load of new file as blocking I/O and
-//   lock aquire is also blocking
+//   lock acquire is also blocking
 //
 void
 reloadCacheControl()
 {
+  Note("cache.config loading ...");
+
   CC_table *newTable;
 
   Debug("cache_control", "cache.config updated, reloading");
   eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CACHE);
   newTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
   ink_atomic_swap(&CacheControlTable, newTable);
+
+  Note("cache.config finished loading");
 }
 
 void

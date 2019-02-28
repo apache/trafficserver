@@ -714,7 +714,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
 {
   TSRemapInterface ri;
   struct stat stat_buf;
-  remap_plugin_info *pi;
+  RemapPluginInfo *pi;
   char *c, *err, tmpbuf[2048], default_path[PATH_NAME_MAX];
   const char *new_argv[1024];
   char *parv[1024];
@@ -775,13 +775,9 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
 
   Debug("remap_plugin", "using path %s for plugin", c);
 
-  if (!remap_pi_list || (pi = remap_pi_list->find_by_path(c)) == nullptr) {
-    pi = new remap_plugin_info(c);
-    if (!remap_pi_list) {
-      remap_pi_list = pi;
-    } else {
-      remap_pi_list->add_to_list(pi);
-    }
+  if ((pi = RemapPluginInfo::find_by_path(c)) == nullptr) {
+    pi = new RemapPluginInfo(ts::file::path(c));
+    RemapPluginInfo::add_to_list(pi);
     Debug("remap_plugin", "New remap plugin info created for \"%s\"", c);
 
     {
@@ -789,7 +785,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
       REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
       ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-      if ((pi->dlh = dlopen(c, RTLD_NOW)) == nullptr) {
+      if ((pi->dl_handle = dlopen(c, RTLD_NOW)) == nullptr) {
 #if defined(freebsd) || defined(openbsd)
         err = (char *)dlerror();
 #else
@@ -798,30 +794,28 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
         snprintf(errbuf, errbufsize, "Can't load plugin \"%s\" - %s", c, err ? err : "Unknown dlopen() error");
         return -4;
       }
-      pi->fp_tsremap_init = reinterpret_cast<remap_plugin_info::_tsremap_init *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT));
-      pi->fp_tsremap_config_reload =
-        reinterpret_cast<remap_plugin_info::_tsremap_config_reload *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_CONFIG_RELOAD));
-      pi->fp_tsremap_done = reinterpret_cast<remap_plugin_info::_tsremap_done *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DONE));
-      pi->fp_tsremap_new_instance =
-        reinterpret_cast<remap_plugin_info::_tsremap_new_instance *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_NEW_INSTANCE));
-      pi->fp_tsremap_delete_instance =
-        reinterpret_cast<remap_plugin_info::_tsremap_delete_instance *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DELETE_INSTANCE));
-      pi->fp_tsremap_do_remap = reinterpret_cast<remap_plugin_info::_tsremap_do_remap *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DO_REMAP));
-      pi->fp_tsremap_os_response =
-        reinterpret_cast<remap_plugin_info::_tsremap_os_response *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE));
+      pi->init_cb          = reinterpret_cast<RemapPluginInfo::Init_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_INIT));
+      pi->config_reload_cb = reinterpret_cast<RemapPluginInfo::Reload_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_CONFIG_RELOAD));
+      pi->done_cb          = reinterpret_cast<RemapPluginInfo::Done_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_DONE));
+      pi->new_instance_cb =
+        reinterpret_cast<RemapPluginInfo::New_Instance_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_NEW_INSTANCE));
+      pi->delete_instance_cb =
+        reinterpret_cast<RemapPluginInfo::Delete_Instance_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_DELETE_INSTANCE));
+      pi->do_remap_cb    = reinterpret_cast<RemapPluginInfo::Do_Remap_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_DO_REMAP));
+      pi->os_response_cb = reinterpret_cast<RemapPluginInfo::OS_Response_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_OS_RESPONSE));
 
-      if (!pi->fp_tsremap_init) {
+      if (!pi->init_cb) {
         snprintf(errbuf, errbufsize, R"(Can't find "%s" function in remap plugin "%s")", TSREMAP_FUNCNAME_INIT, c);
         retcode = -10;
-      } else if (!pi->fp_tsremap_new_instance && pi->fp_tsremap_delete_instance) {
+      } else if (!pi->new_instance_cb && pi->delete_instance_cb) {
         snprintf(errbuf, errbufsize,
                  R"(Can't find "%s" function in remap plugin "%s" which is required if "%s" function exists)",
                  TSREMAP_FUNCNAME_NEW_INSTANCE, c, TSREMAP_FUNCNAME_DELETE_INSTANCE);
         retcode = -11;
-      } else if (!pi->fp_tsremap_do_remap) {
+      } else if (!pi->do_remap_cb) {
         snprintf(errbuf, errbufsize, R"(Can't find "%s" function in remap plugin "%s")", TSREMAP_FUNCNAME_DO_REMAP, c);
         retcode = -12;
-      } else if (pi->fp_tsremap_new_instance && !pi->fp_tsremap_delete_instance) {
+      } else if (pi->new_instance_cb && !pi->delete_instance_cb) {
         snprintf(errbuf, errbufsize,
                  R"(Can't find "%s" function in remap plugin "%s" which is required if "%s" function exists)",
                  TSREMAP_FUNCNAME_DELETE_INSTANCE, c, TSREMAP_FUNCNAME_NEW_INSTANCE);
@@ -831,16 +825,16 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
         if (errbuf && errbufsize > 0) {
           Debug("remap_plugin", "%s", errbuf);
         }
-        dlclose(pi->dlh);
-        pi->dlh = nullptr;
+        dlclose(pi->dl_handle);
+        pi->dl_handle = nullptr;
         return retcode;
       }
       memset(&ri, 0, sizeof(ri));
       ri.size            = sizeof(ri);
       ri.tsremap_version = TSREMAP_VERSION;
 
-      if (pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
-        snprintf(errbuf, errbufsize, "Failed to initialize plugin \"%s\": %s", pi->path,
+      if (pi->init_cb(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
+        snprintf(errbuf, errbufsize, "Failed to initialize plugin \"%s\": %s", pi->path.c_str(),
                  tmpbuf[0] ? tmpbuf : "Unknown plugin error");
         return -5;
       }
@@ -848,7 +842,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     Debug("remap_plugin", "Remap plugin \"%s\" - initialization completed", c);
   }
 
-  if (!pi->dlh) {
+  if (!pi->dl_handle) {
     snprintf(errbuf, errbufsize, "Can't load plugin \"%s\"", c);
     return -6;
   }
@@ -889,7 +883,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     Debug("url_rewrite", "Argument %d: %s", k, argv[k]);
   }
 
-  Debug("url_rewrite", "Viewing parsed plugin parameters for %s: [%d]", pi->path, *plugin_found_at);
+  Debug("url_rewrite", "Viewing parsed plugin parameters for %s: [%d]", pi->path.c_str(), *plugin_found_at);
   for (int k = 0; k < parc; k++) {
     Debug("url_rewrite", "Argument %d: %s", k, parv[k]);
   }
@@ -898,7 +892,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
 
   void *ih         = nullptr;
   TSReturnCode res = TS_SUCCESS;
-  if (pi->fp_tsremap_new_instance) {
+  if (pi->new_instance_cb) {
 #if (!defined(kfreebsd) && defined(freebsd)) || defined(darwin)
     optreset = 1;
 #endif
@@ -910,7 +904,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     opterr = 0;
     optarg = nullptr;
 
-    res = pi->fp_tsremap_new_instance(parc, parv, &ih, tmpbuf, sizeof(tmpbuf) - 1);
+    res = pi->new_instance_cb(parc, parv, &ih, tmpbuf, sizeof(tmpbuf) - 1);
   }
 
   Debug("remap_plugin", "done creating new plugin instance");
@@ -1426,9 +1420,7 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
 
   // If this happens to be a config reload, the list of loaded remap plugins is non-empty, and we
   // can signal all these plugins that a reload has begun.
-  if (remap_pi_list) {
-    remap_pi_list->indicate_reload();
-  }
+  RemapPluginInfo::indicate_reload();
   bti.rewrite = rewrite;
   return remap_parse_config_bti(path, &bti);
 }

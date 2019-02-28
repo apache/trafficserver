@@ -25,4 +25,5 @@ Core Architecture
 .. toctree::
    :maxdepth: 1
 
+   heap.en
    rpc.en

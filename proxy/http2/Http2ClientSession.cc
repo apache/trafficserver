@@ -25,8 +25,14 @@
 #include "HttpDebugNames.h"
 #include "tscore/ink_base64.h"
 
+#define REMEMBER(e, r)                          \
+  {                                             \
+    this->remember(MakeSourceLocation(), e, r); \
+  }
+
 #define STATE_ENTER(state_name, event)                                                       \
   do {                                                                                       \
+    REMEMBER(event, this->recursion)                                                         \
     SsnDebug(this, "http2_cs", "[%" PRId64 "] [%s, %s]", this->connection_id(), #state_name, \
              HttpDebugNames::get_event_name(event));                                         \
   } while (0)
@@ -35,6 +41,7 @@
 
 #define HTTP2_SET_SESSION_HANDLER(handler) \
   do {                                     \
+    REMEMBER(NO_EVENT, this->recursion);   \
     this->session_handler = (handler);     \
   } while (0)
 
@@ -65,6 +72,7 @@ Http2ClientSession::destroy()
 {
   if (!in_destroy) {
     in_destroy = true;
+    REMEMBER(NO_EVENT, this->recursion)
     Http2SsnDebug("session destroy");
     // Let everyone know we are going down
     do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
@@ -87,6 +95,7 @@ Http2ClientSession::free()
     return;
   }
 
+  REMEMBER(NO_EVENT, this->recursion)
   Http2SsnDebug("session free");
 
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
@@ -94,25 +103,37 @@ Http2ClientSession::free()
   // Update stats on how we died.  May want to eliminate this.  Was useful for
   // tracking down which cases we were having problems cleaning up.  But for general
   // use probably not worth the effort
-  switch (dying_event) {
-  case VC_EVENT_NONE:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_DEFAULT, this_ethread());
-    break;
-  case VC_EVENT_ACTIVE_TIMEOUT:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ACTIVE, this_ethread());
-    break;
-  case VC_EVENT_INACTIVITY_TIMEOUT:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_INACTIVE, this_ethread());
-    break;
-  case VC_EVENT_ERROR:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ERROR, this_ethread());
-    break;
-  case VC_EVENT_EOS:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_EOS, this_ethread());
-    break;
-  default:
-    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_OTHER, this_ethread());
-    break;
+  if (cause_of_death != Http2SessionCod::NOT_PROVIDED) {
+    switch (cause_of_death) {
+    case Http2SessionCod::HIGH_ERROR_RATE:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE, this_ethread());
+      break;
+    case Http2SessionCod::NOT_PROVIDED:
+      // Can't happen but this case is here to not have default case.
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_OTHER, this_ethread());
+      break;
+    }
+  } else {
+    switch (dying_event) {
+    case VC_EVENT_NONE:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_DEFAULT, this_ethread());
+      break;
+    case VC_EVENT_ACTIVE_TIMEOUT:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ACTIVE, this_ethread());
+      break;
+    case VC_EVENT_INACTIVITY_TIMEOUT:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_INACTIVE, this_ethread());
+      break;
+    case VC_EVENT_ERROR:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ERROR, this_ethread());
+      break;
+    case VC_EVENT_EOS:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_EOS, this_ethread());
+      break;
+    default:
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_OTHER, this_ethread());
+      break;
+    }
   }
 
   ink_release_assert(this->client_vc == nullptr);
@@ -253,6 +274,7 @@ Http2ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
 void
 Http2ClientSession::do_io_close(int alerrno)
 {
+  REMEMBER(NO_EVENT, this->recursion)
   Http2SsnDebug("session closed");
 
   ink_assert(this->mutex->thread_holding == this_ethread());
@@ -272,6 +294,8 @@ Http2ClientSession::do_io_close(int alerrno)
     SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
     this->connection_state.release_stream(nullptr);
   }
+
+  this->clear_session_active();
 }
 
 void
@@ -348,13 +372,25 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     break;
   }
 
-  if (!this->is_draining()) {
+  if (!this->is_draining() && this->connection_state.get_shutdown_reason() == Http2ErrorCode::HTTP2_ERROR_MAX) {
     this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NONE);
   }
 
-  // For a case we already checked Connection header and it didn't exist
-  if (this->is_draining() && this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
-    this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
+  if (this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
+    if (this->is_draining()) { // For a case we already checked Connection header and it didn't exist
+      Http2SsnDebug("Preparing for graceful shutdown because of draining state");
+      this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
+    } else if (this->connection_state.get_stream_error_rate() >
+               Http2::stream_error_rate_threshold) { // For a case many stream errors happened
+      ip_port_text_buffer ipb;
+      const char *client_ip = ats_ip_ntop(get_client_addr(), ipb, sizeof(ipb));
+      Error("HTTP/2 session error client_ip=%s session_id=%" PRId64
+            " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
+            client_ip, connection_id(), this->connection_state.get_stream_error_rate(), Http2::stream_error_rate_threshold);
+      Http2SsnDebug("Preparing for graceful shutdown because of a high stream error rate");
+      cause_of_death = Http2SessionCod::HIGH_ERROR_RATE;
+      this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM);
+    }
   }
 
   if (this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NOT_INITIATED) {
@@ -547,4 +583,10 @@ void
 Http2ClientSession::decrement_current_active_client_connections_stat()
 {
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT, this_ethread());
+}
+
+void
+Http2ClientSession::remember(const SourceLocation &location, int event, int reentrant)
+{
+  this->_history.push_back(location, event, reentrant);
 }

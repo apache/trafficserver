@@ -621,6 +621,13 @@ IOBufferReader::block_read_avail()
   return (int64_t)(block->end() - (block->start() + start_offset));
 }
 
+inline std::string_view
+IOBufferReader::block_read_view()
+{
+  const char *start = this->start(); // empty blocks are skipped in here.
+  return start ? std::string_view{start, static_cast<size_t>(block->end() - start)} : std::string_view{};
+}
+
 TS_INLINE int
 IOBufferReader::block_count()
 {

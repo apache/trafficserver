@@ -320,10 +320,11 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
   // client session
   {
     // Now check to see if we have a connection in our shared connection pool
-    EThread *ethread       = this_ethread();
-    ProxyMutex *pool_mutex = (TS_SERVER_SESSION_SHARING_POOL_THREAD == sm->t_state.http_config_param->server_session_sharing_pool) ?
-                               ethread->server_session_pool->mutex.get() :
-                               m_g_pool->mutex.get();
+    EThread *ethread = this_ethread();
+    Ptr<ProxyMutex> pool_mutex =
+      (TS_SERVER_SESSION_SHARING_POOL_THREAD == sm->t_state.http_config_param->server_session_sharing_pool) ?
+        ethread->server_session_pool->mutex :
+        m_g_pool->mutex;
     MUTEX_TRY_LOCK(lock, pool_mutex, ethread);
     if (lock.is_locked()) {
       if (TS_SERVER_SESSION_SHARING_POOL_THREAD == sm->t_state.http_config_param->server_session_sharing_pool) {

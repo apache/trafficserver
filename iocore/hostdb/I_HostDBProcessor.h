@@ -393,11 +393,11 @@ struct HostDBRoundRobin {
 };
 
 struct HostDBCache;
+struct HostDBHash;
 
 // Prototype for inline completion functionf or
 //  getbyname_imm()
-typedef void (Continuation::*process_hostdb_info_pfn)(HostDBInfo *r);
-typedef void (Continuation::*process_srv_info_pfn)(HostDBInfo *r);
+typedef void (Continuation::*cb_process_result_pfn)(HostDBInfo *r);
 
 Action *iterate(Continuation *cont);
 
@@ -448,20 +448,16 @@ struct HostDBProcessor : public Processor {
 
   Action *getbynameport_re(Continuation *cont, const char *hostname, int len, Options const &opt = DEFAULT_OPTIONS);
 
-  Action *getSRVbyname_imm(Continuation *cont, process_srv_info_pfn process_srv_info, const char *hostname, int len,
+  Action *getSRVbyname_imm(Continuation *cont, cb_process_result_pfn process_srv_info, const char *hostname, int len,
                            Options const &opt = DEFAULT_OPTIONS);
 
-  Action *getbyname_imm(Continuation *cont, process_hostdb_info_pfn process_hostdb_info, const char *hostname, int len,
+  Action *getbyname_imm(Continuation *cont, cb_process_result_pfn process_hostdb_info, const char *hostname, int len,
                         Options const &opt = DEFAULT_OPTIONS);
 
   Action *iterate(Continuation *cont);
 
   /** Lookup Hostinfo by addr */
-  Action *
-  getbyaddr_re(Continuation *cont, sockaddr const *aip)
-  {
-    return getby(cont, nullptr, 0, aip, false, HOST_RES_NONE, 0);
-  }
+  Action *getbyaddr_re(Continuation *cont, sockaddr const *aip);
 
   /** Set the application information (fire-and-forget). */
   void
@@ -500,8 +496,7 @@ struct HostDBProcessor : public Processor {
   HostDBCache *cache();
 
 private:
-  Action *getby(Continuation *cont, const char *hostname, int len, sockaddr const *ip, bool aforce_dns, HostResStyle host_res_style,
-                int timeout);
+  Action *getby(Continuation *cont, cb_process_result_pfn cb_process_result, HostDBHash &hash, Options const &opt);
 
 public:
   /** Set something.

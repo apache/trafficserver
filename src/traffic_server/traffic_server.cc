@@ -119,10 +119,10 @@ extern "C" int plock(int);
 
 static const long MAX_LOGIN = ink_login_name_max();
 
-static void *mgmt_restart_shutdown_callback(void *, char *, int data_len);
-static void *mgmt_drain_callback(void *, char *, int data_len);
-static void *mgmt_storage_device_cmd_callback(void *x, char *data, int len);
-static void *mgmt_lifecycle_msg_callback(void *x, char *data, int len);
+static void mgmt_restart_shutdown_callback(ts::MemSpan);
+static void mgmt_drain_callback(ts::MemSpan);
+static void mgmt_storage_device_cmd_callback(int cmd, std::string_view const &arg);
+static void mgmt_lifecycle_msg_callback(ts::MemSpan);
 static void init_ssl_ctx_callback(void *ctx, bool server);
 static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
 static void load_remap_file_callback(const char *remap_file);
@@ -178,6 +178,9 @@ static int delay_listen_for_cache_p;
 // Keeps track if the server is in draining state, follows the proxy.node.config.draining metric
 bool ts_is_draining = false;
 
+// Flag to stop ssl handshakes during shutdown.
+extern bool stop_ssl_handshake;
+
 AppVersionInfo appVersionInfo; // Build info for this application
 
 static ArgumentDescription argument_descriptions[] = {
@@ -227,8 +230,11 @@ struct AutoStopCont : public Continuation {
   int
   mainEvent(int /* event */, Event * /* e */)
   {
+    stop_ssl_handshake = true;
+
     APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
     while (hook) {
+      SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
       hook->invoke(TS_EVENT_LIFECYCLE_SHUTDOWN, nullptr);
       hook = hook->next();
     }
@@ -1375,6 +1381,7 @@ struct RegressionCont : public Continuation {
       return EVENT_CONT;
     }
 
+    shutdown_event_system = true;
     fprintf(stderr, "REGRESSION_TEST DONE: %s\n", regression_status_string(res));
     ::exit(res == REGRESSION_TEST_PASSED ? 0 : 1);
     return EVENT_CONT;
@@ -1995,16 +2002,17 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       start_SocksProxy(netProcessor.socks_conf_stuff->accept_port);
     }
 
-    pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, mgmt_restart_shutdown_callback, nullptr);
-    pmgmt->registerMgmtCallback(MGMT_EVENT_RESTART, mgmt_restart_shutdown_callback, nullptr);
-    pmgmt->registerMgmtCallback(MGMT_EVENT_DRAIN, mgmt_drain_callback, nullptr);
+    pmgmt->registerMgmtCallback(MGMT_EVENT_SHUTDOWN, &mgmt_restart_shutdown_callback);
+    pmgmt->registerMgmtCallback(MGMT_EVENT_RESTART, &mgmt_restart_shutdown_callback);
+    pmgmt->registerMgmtCallback(MGMT_EVENT_DRAIN, &mgmt_drain_callback);
 
     // Callback for various storage commands. These all go to the same function so we
     // pass the event code along so it can do the right thing. We cast that to <int> first
     // just to be safe because the value is a #define, not a typed value.
-    pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, mgmt_storage_device_cmd_callback,
-                                reinterpret_cast<void *>(static_cast<int>(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE)));
-    pmgmt->registerMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, mgmt_lifecycle_msg_callback, nullptr);
+    pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, [](ts::MemSpan span) -> void {
+      mgmt_storage_device_cmd_callback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, std::string_view{span});
+    });
+    pmgmt->registerMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, &mgmt_lifecycle_msg_callback);
 
     ink_set_thread_name("[TS_MAIN]");
 
@@ -2049,42 +2057,37 @@ REGRESSION_TEST(Hdrs)(RegressionTest *t, int atype, int *pstatus)
 }
 #endif
 
-static void *
-mgmt_restart_shutdown_callback(void *, char *, int /* data_len ATS_UNUSED */)
+static void mgmt_restart_shutdown_callback(ts::MemSpan)
 {
   sync_cache_dir_on_shutdown();
-  return nullptr;
 }
 
-static void *
-mgmt_drain_callback(void *, char *arg, int len)
+static void
+mgmt_drain_callback(ts::MemSpan span)
 {
-  ts_is_draining = (len == 2 && arg[0] == '1');
+  char *arg      = static_cast<char *>(span.data());
+  ts_is_draining = (span.size() == 2 && arg[0] == '1');
   RecSetRecordInt("proxy.node.config.draining", ts_is_draining ? 1 : 0, REC_SOURCE_DEFAULT);
-  return nullptr;
 }
 
-static void *
-mgmt_storage_device_cmd_callback(void *data, char *arg, int len)
+static void
+mgmt_storage_device_cmd_callback(int cmd, std::string_view const &arg)
 {
   // data is the device name to control
-  CacheDisk *d = cacheProcessor.find_by_path(arg, len);
-  // Actual command is in @a data.
-  intptr_t cmd = reinterpret_cast<intptr_t>(data);
+  CacheDisk *d = cacheProcessor.find_by_path(arg.data(), int(arg.size()));
 
   if (d) {
     switch (cmd) {
     case MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE:
-      Debug("server", "Marking %.*s offline", len, arg);
+      Debug("server", "Marking %.*s offline", int(arg.size()), arg.data());
       cacheProcessor.mark_storage_offline(d, /* admin */ true);
       break;
     }
   }
-  return nullptr;
 }
 
-static void *
-mgmt_lifecycle_msg_callback(void *, char *data, int len)
+static void
+mgmt_lifecycle_msg_callback(ts::MemSpan span)
 {
   APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_MSG_HOOK);
   TSPluginMsg msg;
@@ -2093,7 +2096,7 @@ mgmt_lifecycle_msg_callback(void *, char *data, int len)
   MgmtMarshallData payload;
   static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA};
 
-  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &tag, &payload) == -1) {
+  if (mgmt_message_parse(span.data(), span.size(), fields, countof(fields), &op, &tag, &payload) == -1) {
     Error("Plugin message - RPC parsing error - message discarded.");
   } else {
     msg.tag       = tag;
@@ -2105,7 +2108,6 @@ mgmt_lifecycle_msg_callback(void *, char *data, int len)
       hook = hook->next();
     }
   }
-  return nullptr;
 }
 
 static void

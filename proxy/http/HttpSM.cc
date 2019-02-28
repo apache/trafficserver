@@ -486,7 +486,6 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
 
   ink_release_assert(ua_txn->get_half_close_flag() == false);
   mutex = client_vc->mutex;
-  HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
   if (ua_txn->debug()) {
     debug_on = true;
   }
@@ -1428,34 +1427,19 @@ plugins required to work with sni_routing.
           callout_state = HTTP_API_IN_CALLOUT;
         }
 
-        /* The MUTEX_TRY_LOCK macro was changed so
-           that it can't handle NULL mutex'es.  The plugins
-           can use null mutexes so we have to do this manually.
-           We need to take a smart pointer to the mutex since
-           the plugin could release it's mutex while we're on
-           the callout
-         */
-        bool plugin_lock;
-        Ptr<ProxyMutex> plugin_mutex;
-        if (cur_hook->m_cont->mutex) {
-          plugin_mutex = cur_hook->m_cont->mutex;
-          plugin_lock  = MUTEX_TAKE_TRY_LOCK(cur_hook->m_cont->mutex, mutex->thread_holding);
-
-          if (!plugin_lock) {
-            api_timer = -Thread::get_hrtime_updated();
-            HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
-            ink_assert(pending_action == nullptr);
-            pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
-            // Should @a callout_state be reset back to HTTP_API_NO_CALLOUT here? Because the default
-            // handler has been changed the value isn't important to the rest of the state machine
-            // but not resetting means there is no way to reliably detect re-entrance to this state with an
-            // outstanding callout.
-            return 0;
-          }
-        } else {
-          plugin_lock = false;
+        MUTEX_TRY_LOCK(lock, cur_hook->m_cont->mutex, mutex->thread_holding);
+        // Have a mutex but didn't get the lock, reschedule
+        if (!lock.is_locked()) {
+          api_timer = -Thread::get_hrtime_updated();
+          HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
+          ink_assert(pending_action == nullptr);
+          pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
+          // Should @a callout_state be reset back to HTTP_API_NO_CALLOUT here? Because the default
+          // handler has been changed the value isn't important to the rest of the state machine
+          // but not resetting means there is no way to reliably detect re-entrance to this state with an
+          // outstanding callout.
+          return 0;
         }
-
         SMDebug("http", "[%" PRId64 "] calling plugin on hook %s at hook %p", sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id),
                 cur_hook);
 
@@ -1473,11 +1457,6 @@ plugins required to work with sni_routing.
           // tracking a non-complete callout from a chain so just let it ride. It will get cleaned
           // up in state_api_callback when the plugin re-enables this transaction.
         }
-
-        if (plugin_lock) {
-          Mutex_unlock(plugin_mutex, mutex->thread_holding);
-        }
-
         return 0;
       }
     }
@@ -1784,6 +1763,7 @@ HttpSM::state_http_server_open(int event, void *data)
     }
     return 0;
   }
+  case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     // Update the time out to the regular connection timeout.
@@ -2268,7 +2248,7 @@ HttpSM::state_hostdb_lookup(int event, void *data)
     opt.host_res_style = ua_txn->get_host_res_style();
 
     Action *dns_lookup_action_handle =
-      hostDBProcessor.getbyname_imm(this, (process_hostdb_info_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
+      hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
     if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
       pending_action = dns_lookup_action_handle;
@@ -3306,6 +3286,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
       ua_txn->set_half_close_flag(true);
     }
 
+    vc_table.remove_entry(this->ua_entry);
     ua_txn->do_io_close();
   } else {
     ink_assert(ua_buffer_reader != nullptr);
@@ -4064,7 +4045,7 @@ HttpSM::do_hostdb_lookup()
       opt.timeout = t_state.api_txn_dns_timeout_value;
     }
     Action *srv_lookup_action_handle =
-      hostDBProcessor.getSRVbyname_imm(this, (process_srv_info_pfn)&HttpSM::process_srv_info, d, 0, opt);
+      hostDBProcessor.getSRVbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_srv_info, d, 0, opt);
 
     if (srv_lookup_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
@@ -4081,7 +4062,7 @@ HttpSM::do_hostdb_lookup()
       opt.host_res_style = ua_txn->get_host_res_style();
 
       Action *dns_lookup_action_handle =
-        hostDBProcessor.getbyname_imm(this, (process_hostdb_info_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
+        hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
       if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
         ink_assert(!pending_action);
         pending_action = dns_lookup_action_handle;
@@ -4115,7 +4096,7 @@ HttpSM::do_hostdb_lookup()
     opt.timeout        = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
     opt.host_res_style = ua_txn->get_host_res_style();
 
-    Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this, (process_hostdb_info_pfn)&HttpSM::process_hostdb_info,
+    Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info,
                                                                      t_state.dns_info.lookup_name, 0, opt);
 
     if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
@@ -5611,7 +5592,7 @@ HttpSM::setup_transform_to_server_transfer()
 }
 
 void
-HttpSM::do_drain_request_body()
+HttpSM::do_drain_request_body(HTTPHdr &response)
 {
   int64_t content_length = t_state.hdr_info.client_request.get_content_length();
   int64_t avail          = ua_buffer_reader->read_avail();
@@ -5636,7 +5617,7 @@ HttpSM::do_drain_request_body()
 
 close_connection:
   t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
-  t_state.hdr_info.client_response.value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
+  response.value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
 }
 
 void
@@ -6420,10 +6401,7 @@ HttpSM::server_transfer_init(MIOBuffer *buf, int hdr_size)
   if (server_response_pre_read_bytes == to_copy && server_buffer_reader->read_avail() > 0) {
     t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
   }
-#ifdef LAZY_BUF_ALLOC
-  // reset the server session buffer
-  server_session->reset_read_buffer();
-#endif
+
   return nbytes;
 }
 
@@ -6938,7 +6916,6 @@ HttpSM::kill_this()
 
     SMDebug("http", "[%" PRId64 "] deallocating sm", sm_id);
     //    authAdapter.destroyState();
-    HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
     destroy();
   }
 }
@@ -7436,11 +7413,10 @@ HttpSM::set_next_state()
     release_server_session(true);
     t_state.source = HttpTransact::SOURCE_CACHE;
 
-    do_drain_request_body();
-
     if (transform_info.vc) {
       ink_assert(t_state.hdr_info.client_response.valid() == 0);
       ink_assert((t_state.hdr_info.transform_response.valid() ? true : false) == true);
+      do_drain_request_body(t_state.hdr_info.transform_response);
       t_state.hdr_info.cache_response.create(HTTP_TYPE_RESPONSE);
       t_state.hdr_info.cache_response.copy(&t_state.hdr_info.transform_response);
 
@@ -7449,6 +7425,7 @@ HttpSM::set_next_state()
       tunnel.tunnel_run(p);
     } else {
       ink_assert((t_state.hdr_info.client_response.valid() ? true : false) == true);
+      do_drain_request_body(t_state.hdr_info.client_response);
       t_state.hdr_info.cache_response.create(HTTP_TYPE_RESPONSE);
       t_state.hdr_info.cache_response.copy(&t_state.hdr_info.client_response);
 
@@ -7703,7 +7680,7 @@ HttpSM::do_redirect()
 }
 
 void
-HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
+HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_len)
 {
   SMDebug("http_redirect", "[HttpSM::redirect_request]");
   // get a reference to the client request header and client url and check to see if the url is valid
@@ -7746,30 +7723,25 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   t_state.redirect_info.redirect_in_process = true;
 
   // set the passed in location url and parse it
-  URL &redirectUrl = t_state.redirect_info.redirect_url;
-  if (!redirectUrl.valid()) {
-    redirectUrl.create(nullptr);
-  }
+  URL redirectUrl;
+  redirectUrl.create(nullptr);
 
-  // reset the path from previous redirects (if any)
-  t_state.redirect_info.redirect_url.path_set(nullptr, 0);
-
-  // redirectUrl.user_set(redirect_url, redirect_len);
-  redirectUrl.parse(redirect_url, redirect_len);
+  redirectUrl.parse(arg_redirect_url, arg_redirect_len);
   {
     int _scheme_len = -1;
     int _host_len   = -1;
-    if (redirectUrl.scheme_get(&_scheme_len) == nullptr && redirectUrl.host_get(&_host_len) != nullptr && redirect_url[0] != '/') {
+    if (redirectUrl.scheme_get(&_scheme_len) == nullptr && redirectUrl.host_get(&_host_len) != nullptr &&
+        arg_redirect_url[0] != '/') {
       // RFC7230 § 5.5
       // The redirect URL lacked a scheme and so it is a relative URL.
       // The redirect URL did not begin with a slash, so we parsed some or all
       // of the the relative URI path as the host.
       // Prepend a slash and parse again.
-      char redirect_url_leading_slash[redirect_len + 1];
+      char redirect_url_leading_slash[arg_redirect_len + 1];
       redirect_url_leading_slash[0] = '/';
-      memcpy(redirect_url_leading_slash + 1, redirect_url, redirect_len + 1);
+      memcpy(redirect_url_leading_slash + 1, arg_redirect_url, arg_redirect_len + 1);
       url_nuke_proxy_stuff(redirectUrl.m_url_impl);
-      redirectUrl.parse(redirect_url_leading_slash, redirect_len + 1);
+      redirectUrl.parse(redirect_url_leading_slash, arg_redirect_len + 1);
     }
   }
 
@@ -7781,6 +7753,8 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   }
   // copy the redirect url to the client url
   clientUrl.copy(&redirectUrl);
+
+  redirectUrl.destroy();
 
   //(bug 2540703) Clear the previous response if we will attempt the redirect
   if (t_state.hdr_info.client_response.valid()) {

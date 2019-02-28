@@ -637,6 +637,18 @@ Http3ClientTransaction::get_transaction_id() const
   return this->_stream_io->stream_id();
 }
 
+void
+Http3ClientTransaction::increment_client_transactions_stat()
+{
+  // TODO
+}
+
+void
+Http3ClientTransaction::decrement_client_transactions_stat()
+{
+  // TODO
+}
+
 bool
 Http3ClientTransaction::is_response_header_sent() const
 {

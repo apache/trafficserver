@@ -530,7 +530,6 @@ public:
   typedef struct _RedirectInfo {
     bool redirect_in_process = false;
     URL original_url;
-    URL redirect_url;
 
     _RedirectInfo() {}
   } RedirectInfo;
@@ -769,8 +768,8 @@ public:
     // INK API/Remap API plugin interface
     void *remap_plugin_instance = nullptr;
     void *user_args[TS_HTTP_MAX_USER_ARG];
-    remap_plugin_info::_tsremap_os_response *fp_tsremap_os_response = nullptr;
-    HTTPStatus http_return_code                                     = HTTP_STATUS_NONE;
+    RemapPluginInfo::OS_Response_F *fp_tsremap_os_response = nullptr;
+    HTTPStatus http_return_code                            = HTTP_STATUS_NONE;
 
     int api_txn_active_timeout_value      = -1;
     int api_txn_connect_timeout_value     = -1;
@@ -882,7 +881,6 @@ public:
       cache_info.object_store.destroy();
       cache_info.transform_store.destroy();
       redirect_info.original_url.destroy();
-      redirect_info.redirect_url.destroy();
 
       url_map.clear();
       arena.reset();

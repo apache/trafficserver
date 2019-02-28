@@ -365,6 +365,8 @@ HttpDebugNames::get_event_name(int event)
     return "TS_EVENT_INTERNAL_60201";
   case TS_EVENT_INTERNAL_60202:
     return "TS_EVENT_INTERNAL_60202";
+  case TS_EVENT_SSL_CLIENT_HELLO:
+    return "TS_EVENT_SSL_CLIENT_HELLO";
   case TS_EVENT_SSL_CERT:
     return "TS_EVENT_SSL_CERT";
   case TS_EVENT_SSL_SERVERNAME:
@@ -607,6 +609,8 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
     return "TS_VCONN_START_HOOK";
   case TS_VCONN_CLOSE_HOOK:
     return "TS_VCONN_CLOSE_HOOK";
+  case TS_SSL_CLIENT_HELLO_HOOK:
+    return "TS_SSL_CLIENT_HELLO_HOOK";
   case TS_SSL_CERT_HOOK:
     return "TS_SSL_CERT_HOOK";
   case TS_SSL_SERVERNAME_HOOK:

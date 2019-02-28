@@ -21,6 +21,8 @@
 
 #include "P_SSLConfig.h"
 #include "SSLSessionCache.h"
+#include "SSLStats.h"
+
 #include <cstring>
 
 #define SSLSESSIONCACHE_STRINGIFY0(x) #x
