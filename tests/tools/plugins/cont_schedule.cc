@@ -103,7 +103,7 @@ TSContScheduleOnPool_handler_1(TSCont contp, TSEvent event, void *edata)
     } else {
       TSDebug(DEBUG_TAG_CHK, "fail [on the same thread]");
     }
-    check_thread = TSThreadSelf();
+    check_thread = nullptr;
   }
   return 0;
 }
@@ -115,10 +115,10 @@ TSContScheduleOnPool_handler_2(TSCont contp, TSEvent event, void *edata)
   if (check_thread == nullptr) {
     check_thread = TSThreadSelf();
   } else {
-    if (check_thread != TSThreadSelf()) {
-      TSDebug(DEBUG_TAG_CHK, "pass [should not be the same thread]");
+    if (check_thread == TSThreadSelf()) {
+      TSDebug(DEBUG_TAG_CHK, "pass [should be the same thread]");
     } else {
-      TSDebug(DEBUG_TAG_CHK, "fail [on the same thread]");
+      TSDebug(DEBUG_TAG_CHK, "fail [not the same thread]");
     }
     check_thread = TSThreadSelf();
   }
