@@ -39,7 +39,7 @@
 #include "RemapPluginInfo.h"
 #include "UrlMapping.h"
 #include "records/I_RecHttp.h"
-#include "ProxySession.h"
+#include "ProxyClientSession.h"
 
 #define HTTP_RELEASE_ASSERT(X) ink_release_assert(X)
 

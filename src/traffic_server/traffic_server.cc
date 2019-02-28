@@ -76,7 +76,7 @@ extern "C" int plock(int);
 #include "ProxyConfig.h"
 #include "HttpProxyServerMain.h"
 #include "HttpBodyFactory.h"
-#include "ProxySession.h"
+#include "ProxyClientSession.h"
 #include "logging/Log.h"
 #include "CacheControl.h"
 #include "IPAllow.h"

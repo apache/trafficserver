@@ -23,7 +23,7 @@
 
 /****************************************************************************
 
-   Http1ServerSession.h
+   HttpServerSession.h
 
    Description:
 
@@ -53,16 +53,14 @@ enum {
   HTTP_SS_MAGIC_DEAD  = 0xDEADFEED,
 };
 
-/// Class to manage a Http v1 session to a server
-// TODO: inherit from ProxySession
-class Http1ServerSession : public VConnection
+class HttpServerSession : public VConnection
 {
-  using self_type  = Http1ServerSession;
+  using self_type  = HttpServerSession;
   using super_type = VConnection;
 
 public:
-  Http1ServerSession() : super_type(nullptr) {}
-  Http1ServerSession(self_type const &) = delete;
+  HttpServerSession() : super_type(nullptr) {}
+  HttpServerSession(self_type const &) = delete;
   self_type &operator=(self_type const &) = delete;
 
   void destroy();
@@ -151,8 +149,8 @@ public:
     static sockaddr const *key_of(self_type const *ssn);
     static bool equal(sockaddr const *lhs, sockaddr const *rhs);
     // Add a couple overloads for internal convenience.
-    static bool equal(sockaddr const *lhs, Http1ServerSession const *rhs);
-    static bool equal(Http1ServerSession const *lhs, sockaddr const *rhs);
+    static bool equal(sockaddr const *lhs, HttpServerSession const *rhs);
+    static bool equal(HttpServerSession const *lhs, sockaddr const *rhs);
   } _ip_link;
 
   /// Hash map descriptor class for FQDN map.
@@ -201,86 +199,86 @@ private:
   IOBufferReader *buf_reader = nullptr;
 };
 
-extern ClassAllocator<Http1ServerSession> http1ServerSessionAllocator;
+extern ClassAllocator<HttpServerSession> httpServerSessionAllocator;
 
 // --- Implementation ---
 
 inline void
-Http1ServerSession::attach_hostname(const char *hostname)
+HttpServerSession::attach_hostname(const char *hostname)
 {
   if (CRYPTO_HASH_ZERO == hostname_hash) {
     CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
   }
 }
 
-inline Http1ServerSession *&
-Http1ServerSession::IPLinkage::next_ptr(self_type *ssn)
+inline HttpServerSession *&
+HttpServerSession::IPLinkage::next_ptr(self_type *ssn)
 {
   return ssn->_ip_link._next;
 }
 
-inline Http1ServerSession *&
-Http1ServerSession::IPLinkage::prev_ptr(self_type *ssn)
+inline HttpServerSession *&
+HttpServerSession::IPLinkage::prev_ptr(self_type *ssn)
 {
   return ssn->_ip_link._prev;
 }
 
 inline uint32_t
-Http1ServerSession::IPLinkage::hash_of(sockaddr const *key)
+HttpServerSession::IPLinkage::hash_of(sockaddr const *key)
 {
   return ats_ip_hash(key);
 }
 
 inline sockaddr const *
-Http1ServerSession::IPLinkage::key_of(self_type const *ssn)
+HttpServerSession::IPLinkage::key_of(self_type const *ssn)
 {
   return &ssn->get_server_ip().sa;
 }
 
 inline bool
-Http1ServerSession::IPLinkage::equal(sockaddr const *lhs, sockaddr const *rhs)
+HttpServerSession::IPLinkage::equal(sockaddr const *lhs, sockaddr const *rhs)
 {
   return ats_ip_addr_port_eq(lhs, rhs);
 }
 
 inline bool
-Http1ServerSession::IPLinkage::equal(sockaddr const *lhs, Http1ServerSession const *rhs)
+HttpServerSession::IPLinkage::equal(sockaddr const *lhs, HttpServerSession const *rhs)
 {
   return ats_ip_addr_port_eq(lhs, key_of(rhs));
 }
 
 inline bool
-Http1ServerSession::IPLinkage::equal(Http1ServerSession const *lhs, sockaddr const *rhs)
+HttpServerSession::IPLinkage::equal(HttpServerSession const *lhs, sockaddr const *rhs)
 {
   return ats_ip_addr_port_eq(key_of(lhs), rhs);
 }
 
-inline Http1ServerSession *&
-Http1ServerSession::FQDNLinkage::next_ptr(self_type *ssn)
+inline HttpServerSession *&
+HttpServerSession::FQDNLinkage::next_ptr(self_type *ssn)
 {
   return ssn->_fqdn_link._next;
 }
 
-inline Http1ServerSession *&
-Http1ServerSession::FQDNLinkage::prev_ptr(self_type *ssn)
+inline HttpServerSession *&
+HttpServerSession::FQDNLinkage::prev_ptr(self_type *ssn)
 {
   return ssn->_fqdn_link._prev;
 }
 
 inline uint64_t
-Http1ServerSession::FQDNLinkage::hash_of(CryptoHash const &key)
+HttpServerSession::FQDNLinkage::hash_of(CryptoHash const &key)
 {
   return key.fold();
 }
 
 inline CryptoHash const &
-Http1ServerSession::FQDNLinkage::key_of(self_type *ssn)
+HttpServerSession::FQDNLinkage::key_of(self_type *ssn)
 {
   return ssn->hostname_hash;
 }
 
 inline bool
-Http1ServerSession::FQDNLinkage::equal(CryptoHash const &lhs, CryptoHash const &rhs)
+HttpServerSession::FQDNLinkage::equal(CryptoHash const &lhs, CryptoHash const &rhs)
 {
   return lhs == rhs;
 }

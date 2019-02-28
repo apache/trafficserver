@@ -120,7 +120,7 @@ public:
   ProxyAllocator http1ClientSessionAllocator;
   ProxyAllocator http2ClientSessionAllocator;
   ProxyAllocator http2StreamAllocator;
-  ProxyAllocator http1ServerSessionAllocator;
+  ProxyAllocator httpServerSessionAllocator;
   ProxyAllocator hdrHeapAllocator;
   ProxyAllocator strHeapAllocator;
   ProxyAllocator cacheVConnectionAllocator;

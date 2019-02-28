@@ -25,7 +25,7 @@
 
 #include "HTTP2.h"
 #include "Plugin.h"
-#include "ProxySession.h"
+#include "ProxyClientSession.h"
 #include "Http2ConnectionState.h"
 #include <string_view>
 #include "tscore/ink_inet.h"
@@ -158,15 +158,15 @@ private:
   IOBufferReader *ioreader;
 };
 
-class Http2ClientSession : public ProxySession
+class Http2ClientSession : public ProxyClientSession
 {
 public:
-  typedef ProxySession super; ///< Parent type.
+  typedef ProxyClientSession super; ///< Parent type.
   typedef int (Http2ClientSession::*SessionHandler)(int, void *);
 
   Http2ClientSession();
 
-  // Implement ProxySession interface.
+  // Implement ProxyClientSession interface.
   void start() override;
   void destroy() override;
   void free() override;
@@ -225,7 +225,7 @@ public:
   }
 
   void
-  release(ProxyTransaction *trans) override
+  release(ProxyClientTransaction *trans) override
   {
   }
 

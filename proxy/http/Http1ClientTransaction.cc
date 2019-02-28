@@ -1,6 +1,6 @@
 /** @file
 
-  Http1Transaction.cc - The Transaction class for Http1*
+  Http1ClientTransaction.cc - The Transaction class for Http1*
 
   @section license License
 
@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-#include "Http1Transaction.h"
+#include "Http1ClientTransaction.h"
 #include "Http1ClientSession.h"
 #include "HttpSM.h"
 
 void
-Http1Transaction::release(IOBufferReader *r)
+Http1ClientTransaction::release(IOBufferReader *r)
 {
   // Must set this inactivity count here rather than in the session because the state machine
   // is not availble then
@@ -47,7 +47,7 @@ Http1Transaction::release(IOBufferReader *r)
 }
 
 void
-Http1Transaction::set_parent(ProxySession *new_parent)
+Http1ClientTransaction::set_parent(ProxyClientSession *new_parent)
 {
   parent                           = new_parent;
   Http1ClientSession *http1_parent = dynamic_cast<Http1ClientSession *>(new_parent);
@@ -61,7 +61,7 @@ Http1Transaction::set_parent(ProxySession *new_parent)
 }
 
 void
-Http1Transaction::transaction_done()
+Http1ClientTransaction::transaction_done()
 {
   if (parent) {
     static_cast<Http1ClientSession *>(parent)->release_transaction();
@@ -69,7 +69,7 @@ Http1Transaction::transaction_done()
 }
 
 bool
-Http1Transaction::allow_half_open() const
+Http1ClientTransaction::allow_half_open() const
 {
   bool config_allows_it = (current_reader) ? current_reader->t_state.txn_conf->allow_half_open > 0 : true;
   if (config_allows_it) {
@@ -80,13 +80,13 @@ Http1Transaction::allow_half_open() const
 }
 
 void
-Http1Transaction::increment_client_transactions_stat()
+Http1ClientTransaction::increment_client_transactions_stat()
 {
   HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
 }
 
 void
-Http1Transaction::decrement_client_transactions_stat()
+Http1ClientTransaction::decrement_client_transactions_stat()
 {
   HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
 }

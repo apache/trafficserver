@@ -1,6 +1,6 @@
 /** @file
 
-  ProxyTransaction - Base class for protocol client/server transactions.
+  ProxyClientTransaction - Base class for protocol client transactions.
 
   @section license License
 
@@ -23,17 +23,15 @@
 
 #pragma once
 
-#include "ProxySession.h"
+#include "ProxyClientSession.h"
 #include <string_view>
 
 class HttpSM;
-class Http1ServerSession;
-
-// Abstract Class for any transaction with-in the HttpSM
-class ProxyTransaction : public VConnection
+class HttpServerSession;
+class ProxyClientTransaction : public VConnection
 {
 public:
-  ProxyTransaction();
+  ProxyClientTransaction();
 
   // do_io methods implemented by subclasses
 
@@ -49,7 +47,7 @@ public:
   virtual void set_inactivity_timeout(ink_hrtime timeout_in) = 0;
   virtual void cancel_inactivity_timeout()                   = 0;
 
-  virtual void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true);
+  virtual void attach_server_session(HttpServerSession *ssession, bool transaction_done = true);
 
   // See if we need to schedule on the primary thread for the transaction or change the thread that is associated with the VC.
   // If we reschedule, the scheduled action is returned.  Otherwise, NULL is returned
@@ -197,14 +195,14 @@ public:
 
   virtual void transaction_done() = 0;
 
-  ProxySession *
+  ProxyClientSession *
   get_parent()
   {
     return parent;
   }
 
   virtual void
-  set_parent(ProxySession *new_parent)
+  set_parent(ProxyClientSession *new_parent)
   {
     parent         = new_parent;
     host_res_style = parent->host_res_style;
@@ -214,7 +212,7 @@ public:
   {
   }
 
-  Http1ServerSession *
+  HttpServerSession *
   get_server_session() const
   {
     return parent ? parent->get_server_session() : nullptr;
@@ -268,7 +266,7 @@ public:
   virtual void decrement_client_transactions_stat() = 0;
 
 protected:
-  ProxySession *parent;
+  ProxyClientSession *parent;
   HttpSM *current_reader;
   IOBufferReader *sm_reader;
 
