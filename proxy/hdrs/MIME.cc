@@ -2442,14 +2442,14 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
   }
 
   // adjust out arguments.
+  output_shares_input = true;
   if (PARSE_RESULT_CONT != zret) {
     if (!m_line.empty()) {
       output = m_line;
       m_line.resize(0); // depending resize(0) not deallocating internal string memory.
       output_shares_input = false;
     } else {
-      output              = parsed_text;
-      output_shares_input = true;
+      output = parsed_text;
     }
   }
 
@@ -2569,8 +2569,8 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     //////////////////////////////////////////////////////////////////////
 
     if (must_copy_strings || (!line_is_real)) {
-      char *dup      = heap->duplicate_str(parsed.data(), parsed.size());
-      intptr_t delta = dup - parsed.data();
+      char *dup       = heap->duplicate_str(parsed.data(), parsed.size());
+      ptrdiff_t delta = dup - parsed.data();
       field_name.assign(field_name.data() + delta, field_name.size());
       field_value.assign(field_value.data() + delta, field_value.size());
     }
