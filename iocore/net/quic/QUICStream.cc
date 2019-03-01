@@ -43,24 +43,10 @@
 static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
 static constexpr uint32_t MAX_CRYPTO_FRAME_OVERHEAD = 16;
 
-QUICStream::QUICStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
-                       uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
-  : VConnection(nullptr),
-    _connection_info(cinfo),
-    _id(sid),
-    _remote_flow_controller(send_max_stream_data, _id),
-    _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
-    _flow_control_buffer_size(recv_max_stream_data),
-    _received_stream_frame_buffer(),
-    _state(nullptr, &this->_progress_vio, this, nullptr)
+QUICStream::QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid)
+  : VConnection(nullptr), _connection_info(cinfo), _id(sid), _received_stream_frame_buffer()
 {
-  SET_HANDLER(&QUICStream::state_stream_open);
   mutex = new_ProxyMutex();
-
-  QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
-                    this->_local_flow_controller.current_limit());
-  QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
-                    this->_remote_flow_controller.current_limit());
 }
 
 QUICStream::~QUICStream()
@@ -101,8 +87,154 @@ QUICStream::final_offset() const
   return 0;
 }
 
+void
+QUICStream::_write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin)
+{
+  SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
+
+  uint64_t bytes_added = this->_read_vio.buffer.writer()->write(data, data_length);
+
+  // Until receive FIN flag, keep nbytes INT64_MAX
+  if (fin && bytes_added == data_length) {
+    this->_read_vio.nbytes = offset + data_length;
+  }
+}
+
+/**
+ * Replace existing event only if the new event is different than the inprogress event
+ */
+Event *
+QUICStream::_send_tracked_event(Event *event, int send_event, VIO *vio)
+{
+  if (event != nullptr) {
+    if (event->callback_event != send_event) {
+      event->cancel();
+      event = nullptr;
+    }
+  }
+
+  if (event == nullptr) {
+    event = this_ethread()->schedule_imm(this, send_event, vio);
+  }
+
+  return event;
+}
+
+/**
+ * @brief Signal event to this->_read_vio.cont
+ */
+void
+QUICStream::_signal_read_event()
+{
+  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
+    return;
+  }
+  MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
+
+  int event = this->_read_vio.ntodo() ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
+
+  if (lock.is_locked()) {
+    this->_read_vio.cont->handleEvent(event, &this->_read_vio);
+  } else {
+    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
+  }
+}
+
+/**
+ * @brief Signal event to this->_write_vio.cont
+ */
+void
+QUICStream::_signal_write_event()
+{
+  if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
+    return;
+  }
+  MUTEX_TRY_LOCK(lock, this->_write_vio.mutex, this_ethread());
+
+  int event = this->_write_vio.ntodo() ? VC_EVENT_WRITE_READY : VC_EVENT_WRITE_COMPLETE;
+
+  if (lock.is_locked()) {
+    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
+  } else {
+    this_ethread()->schedule_imm(this->_write_vio.cont, event, &this->_write_vio);
+  }
+}
+
+/**
+ * @brief Signal event to this->_write_vio.cont
+ */
+void
+QUICStream::_signal_read_eos_event()
+{
+  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
+    return;
+  }
+  MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
+
+  int event = VC_EVENT_EOS;
+
+  if (lock.is_locked()) {
+    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
+  } else {
+    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
+  }
+}
+
+int64_t
+QUICStream::_process_read_vio()
+{
+  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
+    return 0;
+  }
+
+  // Pass through. Read operation is done by QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
+  // TODO: 1. pop frame from _received_stream_frame_buffer
+  //       2. write data to _read_vio
+
+  return 0;
+}
+
+/**
+ * @brief Send STREAM DATA from _response_buffer
+ * @detail Call _signal_write_event() to indicate event upper layer
+ */
+int64_t
+QUICStream::_process_write_vio()
+{
+  if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
+    return 0;
+  }
+
+  return 0;
+}
+
+QUICOffset
+QUICStream::reordered_bytes() const
+{
+  return this->_reordered_bytes;
+}
+
+//
+// QUICBidirectionalStream
+//
+QUICBidirectionalStream::QUICBidirectionalStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
+                                                 uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
+  : QUICStream(cinfo, sid),
+    _remote_flow_controller(send_max_stream_data, _id),
+    _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
+    _flow_control_buffer_size(recv_max_stream_data),
+    _state(nullptr, &this->_progress_vio, this, nullptr)
+{
+  SET_HANDLER(&QUICBidirectionalStream::state_stream_open);
+
+  QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
+                    this->_local_flow_controller.current_limit());
+  QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
+                    this->_remote_flow_controller.current_limit());
+}
+
 int
-QUICStream::state_stream_open(int event, void *data)
+QUICBidirectionalStream::state_stream_open(int event, void *data)
 {
   QUICVStreamDebug("%s (%d)", get_vc_event_name(event), event);
   QUICErrorUPtr error = nullptr;
@@ -163,7 +295,7 @@ QUICStream::state_stream_open(int event, void *data)
 }
 
 int
-QUICStream::state_stream_closed(int event, void *data)
+QUICBidirectionalStream::state_stream_closed(int event, void *data)
 {
   QUICVStreamDebug("%s (%d)", get_vc_event_name(event), event);
 
@@ -193,117 +325,28 @@ QUICStream::state_stream_closed(int event, void *data)
   return EVENT_DONE;
 }
 
-// this->_read_vio.nbytes should be INT64_MAX until receive FIN flag
-VIO *
-QUICStream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+bool
+QUICBidirectionalStream::is_transfer_goal_set() const
 {
-  if (buf) {
-    this->_read_vio.buffer.writer_for(buf);
-  } else {
-    this->_read_vio.buffer.clear();
-  }
-
-  this->_read_vio.mutex     = c ? c->mutex : this->mutex;
-  this->_read_vio.cont      = c;
-  this->_read_vio.nbytes    = nbytes;
-  this->_read_vio.ndone     = 0;
-  this->_read_vio.vc_server = this;
-  this->_read_vio.op        = VIO::READ;
-
-  this->_process_read_vio();
-  this->_send_tracked_event(this->_read_event, VC_EVENT_READ_READY, &this->_read_vio);
-
-  return &this->_read_vio;
+  return this->_received_stream_frame_buffer.is_transfer_goal_set();
 }
 
-VIO *
-QUICStream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+uint64_t
+QUICBidirectionalStream::transfer_progress() const
 {
-  if (buf) {
-    this->_write_vio.buffer.reader_for(buf);
-  } else {
-    this->_write_vio.buffer.clear();
-  }
-
-  this->_write_vio.mutex     = c ? c->mutex : this->mutex;
-  this->_write_vio.cont      = c;
-  this->_write_vio.nbytes    = nbytes;
-  this->_write_vio.ndone     = 0;
-  this->_write_vio.vc_server = this;
-  this->_write_vio.op        = VIO::WRITE;
-
-  this->_process_write_vio();
-  this->_send_tracked_event(this->_write_event, VC_EVENT_WRITE_READY, &this->_write_vio);
-
-  return &this->_write_vio;
+  return this->_received_stream_frame_buffer.transfer_progress();
 }
 
-void
-QUICStream::do_io_close(int lerrno)
+uint64_t
+QUICBidirectionalStream::transfer_goal() const
 {
-  SET_HANDLER(&QUICStream::state_stream_closed);
-
-  this->_read_vio.buffer.clear();
-  this->_read_vio.nbytes = 0;
-  this->_read_vio.op     = VIO::NONE;
-  this->_read_vio.cont   = nullptr;
-
-  this->_write_vio.buffer.clear();
-  this->_write_vio.nbytes = 0;
-  this->_write_vio.op     = VIO::NONE;
-  this->_write_vio.cont   = nullptr;
+  return this->_received_stream_frame_buffer.transfer_goal();
 }
 
-void
-QUICStream::do_io_shutdown(ShutdownHowTo_t howto)
+bool
+QUICBidirectionalStream::is_cancelled() const
 {
-  ink_assert(false); // unimplemented yet
-  return;
-}
-
-void
-QUICStream::reenable(VIO *vio)
-{
-  if (vio->op == VIO::READ) {
-    QUICVStreamDebug("read_vio reenabled");
-
-    int64_t len = this->_process_read_vio();
-    if (len > 0) {
-      this->_signal_read_event();
-    }
-  } else if (vio->op == VIO::WRITE) {
-    QUICVStreamDebug("write_vio reenabled");
-
-    int64_t len = this->_process_write_vio();
-    if (len > 0) {
-      this->_signal_write_event();
-    }
-  }
-}
-
-void
-QUICStream::_write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin)
-{
-  SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
-
-  uint64_t bytes_added = this->_read_vio.buffer.writer()->write(data, data_length);
-
-  // Until receive FIN flag, keep nbytes INT64_MAX
-  if (fin && bytes_added == data_length) {
-    this->_read_vio.nbytes = offset + data_length;
-  }
-}
-
-void
-QUICStream::on_read()
-{
-  this->_state.update_on_read();
-}
-
-void
-QUICStream::on_eos()
-{
-  this->_state.update_on_eos();
+  return this->_is_reset_complete;
 }
 
 /**
@@ -313,7 +356,7 @@ QUICStream::on_eos()
  * which is called by application via do_io_read() or reenable().
  */
 QUICConnectionErrorUPtr
-QUICStream::recv(const QUICStreamFrame &frame)
+QUICBidirectionalStream::recv(const QUICStreamFrame &frame)
 {
   ink_assert(_id == frame.stream_id());
   ink_assert(this->_read_vio.op == VIO::READ);
@@ -372,7 +415,7 @@ QUICStream::recv(const QUICStreamFrame &frame)
 }
 
 QUICConnectionErrorUPtr
-QUICStream::recv(const QUICMaxStreamDataFrame &frame)
+QUICBidirectionalStream::recv(const QUICMaxStreamDataFrame &frame)
 {
   this->_remote_flow_controller.forward_limit(frame.maximum_stream_data());
   QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
@@ -387,14 +430,21 @@ QUICStream::recv(const QUICMaxStreamDataFrame &frame)
 }
 
 QUICConnectionErrorUPtr
-QUICStream::recv(const QUICStreamDataBlockedFrame &frame)
+QUICBidirectionalStream::recv(const QUICCryptoFrame &frame)
+{
+  ink_assert(!"should not happen");
+  return nullptr;
+}
+
+QUICConnectionErrorUPtr
+QUICBidirectionalStream::recv(const QUICStreamDataBlockedFrame &frame)
 {
   // STREAM_DATA_BLOCKED frames are for debugging. Nothing to do here.
   return nullptr;
 }
 
 QUICConnectionErrorUPtr
-QUICStream::recv(const QUICStopSendingFrame &frame)
+QUICBidirectionalStream::recv(const QUICStopSendingFrame &frame)
 {
   this->_state.update_with_receiving_frame(frame);
   this->_reset_reason = QUICStreamErrorUPtr(new QUICStreamError(this, QUIC_APP_ERROR_CODE_STOPPING));
@@ -403,22 +453,110 @@ QUICStream::recv(const QUICStopSendingFrame &frame)
 }
 
 QUICConnectionErrorUPtr
-QUICStream::recv(const QUICRstStreamFrame &frame)
+QUICBidirectionalStream::recv(const QUICRstStreamFrame &frame)
 {
   this->_state.update_with_receiving_frame(frame);
   this->_signal_read_eos_event();
   return nullptr;
 }
 
+// this->_read_vio.nbytes should be INT64_MAX until receive FIN flag
+VIO *
+QUICBidirectionalStream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+{
+  if (buf) {
+    this->_read_vio.buffer.writer_for(buf);
+  } else {
+    this->_read_vio.buffer.clear();
+  }
+
+  this->_read_vio.mutex     = c ? c->mutex : this->mutex;
+  this->_read_vio.cont      = c;
+  this->_read_vio.nbytes    = nbytes;
+  this->_read_vio.ndone     = 0;
+  this->_read_vio.vc_server = this;
+  this->_read_vio.op        = VIO::READ;
+
+  this->_process_read_vio();
+  this->_send_tracked_event(this->_read_event, VC_EVENT_READ_READY, &this->_read_vio);
+
+  return &this->_read_vio;
+}
+
+VIO *
+QUICBidirectionalStream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+{
+  if (buf) {
+    this->_write_vio.buffer.reader_for(buf);
+  } else {
+    this->_write_vio.buffer.clear();
+  }
+
+  this->_write_vio.mutex     = c ? c->mutex : this->mutex;
+  this->_write_vio.cont      = c;
+  this->_write_vio.nbytes    = nbytes;
+  this->_write_vio.ndone     = 0;
+  this->_write_vio.vc_server = this;
+  this->_write_vio.op        = VIO::WRITE;
+
+  this->_process_write_vio();
+  this->_send_tracked_event(this->_write_event, VC_EVENT_WRITE_READY, &this->_write_vio);
+
+  return &this->_write_vio;
+}
+
+void
+QUICBidirectionalStream::do_io_close(int lerrno)
+{
+  SET_HANDLER(&QUICBidirectionalStream::state_stream_closed);
+
+  this->_read_vio.buffer.clear();
+  this->_read_vio.nbytes = 0;
+  this->_read_vio.op     = VIO::NONE;
+  this->_read_vio.cont   = nullptr;
+
+  this->_write_vio.buffer.clear();
+  this->_write_vio.nbytes = 0;
+  this->_write_vio.op     = VIO::NONE;
+  this->_write_vio.cont   = nullptr;
+}
+
+void
+QUICBidirectionalStream::do_io_shutdown(ShutdownHowTo_t howto)
+{
+  ink_assert(false); // unimplemented yet
+  return;
+}
+
+void
+QUICBidirectionalStream::reenable(VIO *vio)
+{
+  if (vio->op == VIO::READ) {
+    QUICVStreamDebug("read_vio reenabled");
+
+    int64_t len = this->_process_read_vio();
+    if (len > 0) {
+      this->_signal_read_event();
+    }
+  } else if (vio->op == VIO::WRITE) {
+    QUICVStreamDebug("write_vio reenabled");
+
+    int64_t len = this->_process_write_vio();
+    if (len > 0) {
+      this->_signal_write_event();
+    }
+  }
+}
+
 bool
-QUICStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICBidirectionalStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
   return this->_local_flow_controller.will_generate_frame(level, timestamp) || (this->_write_vio.get_reader()->read_avail() > 0);
 }
 
 QUICFrame *
-QUICStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                           ink_hrtime timestamp)
+QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
+                                        uint16_t maximum_frame_size, ink_hrtime timestamp)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
@@ -544,7 +682,7 @@ QUICStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t con
 }
 
 void
-QUICStream::_records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame)
+QUICBidirectionalStream::_records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame)
 {
   QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                    = frame.type();
@@ -558,7 +696,7 @@ QUICStream::_records_stream_frame(QUICEncryptionLevel level, const QUICStreamFra
 }
 
 void
-QUICStream::_records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame)
+QUICBidirectionalStream::_records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame)
 {
   QUICFrameInformationUPtr info  = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                     = frame.type();
@@ -570,7 +708,7 @@ QUICStream::_records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstSt
 }
 
 void
-QUICStream::_records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame)
+QUICBidirectionalStream::_records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame)
 {
   QUICFrameInformationUPtr info    = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
   info->type                       = frame.type();
@@ -581,7 +719,7 @@ QUICStream::_records_stop_sending_frame(QUICEncryptionLevel level, const QUICSto
 }
 
 void
-QUICStream::_on_frame_acked(QUICFrameInformationUPtr &info)
+QUICBidirectionalStream::_on_frame_acked(QUICFrameInformationUPtr &info)
 {
   StreamFrameInfo *frame_info = nullptr;
   switch (info->type) {
@@ -604,7 +742,7 @@ QUICStream::_on_frame_acked(QUICFrameInformationUPtr &info)
 }
 
 void
-QUICStream::_on_frame_lost(QUICFrameInformationUPtr &info)
+QUICBidirectionalStream::_on_frame_lost(QUICFrameInformationUPtr &info)
 {
   switch (info->type) {
   case QUICFrameType::RESET_STREAM:
@@ -627,172 +765,40 @@ QUICStream::_on_frame_lost(QUICFrameInformationUPtr &info)
   }
 }
 
-/**
- * Replace existing event only if the new event is different than the inprogress event
- */
-Event *
-QUICStream::_send_tracked_event(Event *event, int send_event, VIO *vio)
-{
-  if (event != nullptr) {
-    if (event->callback_event != send_event) {
-      event->cancel();
-      event = nullptr;
-    }
-  }
-
-  if (event == nullptr) {
-    event = this_ethread()->schedule_imm(this, send_event, vio);
-  }
-
-  return event;
-}
-
-/**
- * @brief Signal event to this->_read_vio.cont
- */
 void
-QUICStream::_signal_read_event()
-{
-  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
-    return;
-  }
-  MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
-
-  int event = this->_read_vio.ntodo() ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
-
-  if (lock.is_locked()) {
-    this->_read_vio.cont->handleEvent(event, &this->_read_vio);
-  } else {
-    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
-  }
-
-  QUICVStreamDebug("%s (%d)", get_vc_event_name(event), event);
-}
-
-/**
- * @brief Signal event to this->_write_vio.cont
- */
-void
-QUICStream::_signal_write_event()
-{
-  if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
-    return;
-  }
-  MUTEX_TRY_LOCK(lock, this->_write_vio.mutex, this_ethread());
-
-  int event = this->_write_vio.ntodo() ? VC_EVENT_WRITE_READY : VC_EVENT_WRITE_COMPLETE;
-
-  if (lock.is_locked()) {
-    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
-  } else {
-    this_ethread()->schedule_imm(this->_write_vio.cont, event, &this->_write_vio);
-  }
-
-  QUICVStreamDebug("%s (%d)", get_vc_event_name(event), event);
-}
-
-/**
- * @brief Signal event to this->_write_vio.cont
- */
-void
-QUICStream::_signal_read_eos_event()
-{
-  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
-    return;
-  }
-  MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
-
-  int event = VC_EVENT_EOS;
-
-  if (lock.is_locked()) {
-    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
-  } else {
-    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
-  }
-
-  QUICVStreamDebug("%s (%d)", get_vc_event_name(event), event);
-}
-
-int64_t
-QUICStream::_process_read_vio()
-{
-  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
-    return 0;
-  }
-
-  // Pass through. Read operation is done by QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
-  // TODO: 1. pop frame from _received_stream_frame_buffer
-  //       2. write data to _read_vio
-
-  return 0;
-}
-
-/**
- * @brief Send STREAM DATA from _response_buffer
- * @detail Call _signal_write_event() to indicate event upper layer
- */
-int64_t
-QUICStream::_process_write_vio()
-{
-  if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
-    return 0;
-  }
-
-  return 0;
-}
-
-void
-QUICStream::stop_sending(QUICStreamErrorUPtr error)
+QUICBidirectionalStream::stop_sending(QUICStreamErrorUPtr error)
 {
   this->_stop_sending_reason = std::move(error);
 }
 
 void
-QUICStream::reset(QUICStreamErrorUPtr error)
+QUICBidirectionalStream::reset(QUICStreamErrorUPtr error)
 {
   this->_reset_reason = std::move(error);
 }
 
-QUICOffset
-QUICStream::reordered_bytes() const
+void
+QUICBidirectionalStream::on_read()
 {
-  return this->_reordered_bytes;
+  this->_state.update_on_read();
+}
+
+void
+QUICBidirectionalStream::on_eos()
+{
+  this->_state.update_on_eos();
 }
 
 QUICOffset
-QUICStream::largest_offset_received() const
+QUICBidirectionalStream::largest_offset_received() const
 {
   return this->_local_flow_controller.current_offset();
 }
 
 QUICOffset
-QUICStream::largest_offset_sent() const
+QUICBidirectionalStream::largest_offset_sent() const
 {
   return this->_remote_flow_controller.current_offset();
-}
-
-bool
-QUICStream::is_transfer_goal_set() const
-{
-  return this->_received_stream_frame_buffer.is_transfer_goal_set();
-}
-
-uint64_t
-QUICStream::transfer_progress() const
-{
-  return this->_received_stream_frame_buffer.transfer_progress();
-}
-
-uint64_t
-QUICStream::transfer_goal() const
-{
-  return this->_received_stream_frame_buffer.transfer_goal();
-}
-
-bool
-QUICStream::is_cancelled() const
-{
-  return this->_is_reset_complete;
 }
 
 //
