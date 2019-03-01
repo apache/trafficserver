@@ -33,6 +33,7 @@
 #include "tscore/ink_config.h"
 #include "tscore/ink_assert.h"
 #include <ctime>
+#include <cstdint>
 #include <sys/time.h>
 #include <cstdlib>
 typedef int64_t ink_hrtime;
