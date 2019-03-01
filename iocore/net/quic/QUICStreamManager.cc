@@ -30,7 +30,7 @@ static constexpr char tag[]                     = "quic_stream_manager";
 static constexpr QUICStreamId QUIC_STREAM_TYPES = 4;
 
 ClassAllocator<QUICStreamManager> quicStreamManagerAllocator("quicStreamManagerAllocator");
-ClassAllocator<QUICStream> quicStreamAllocator("quicStreamAllocator");
+ClassAllocator<QUICBidirectionalStream> quicStreamAllocator("quicStreamAllocator");
 
 QUICStreamManager::QUICStreamManager(QUICConnectionInfoProvider *info, QUICRTTProvider *rtt_provider, QUICApplicationMap *app_map)
   : _info(info), _rtt_provider(rtt_provider), _app_map(app_map)
@@ -324,7 +324,8 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
     // TODO Free the stream somewhere
     stream = THREAD_ALLOC(quicStreamAllocator, this_ethread());
-    new (stream) QUICStream(this->_rtt_provider, this->_info, stream_id, local_max_stream_data, remote_max_stream_data);
+    new (stream)
+      QUICBidirectionalStream(this->_rtt_provider, this->_info, stream_id, local_max_stream_data, remote_max_stream_data);
 
     this->stream_list.push(stream);
   }

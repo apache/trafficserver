@@ -30,7 +30,7 @@
 #include "QUICFrame.h"
 #include "QUICLossDetector.h"
 
-extern ClassAllocator<QUICStream> quicStreamAllocator;
+extern ClassAllocator<QUICBidirectionalStream> quicStreamAllocator;
 
 class QUICTransportParameters;
 

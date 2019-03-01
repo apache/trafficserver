@@ -85,7 +85,8 @@ TEST_CASE("QUICStream", "[quic]")
 
     MockQUICRTTProvider rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
-    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, 1024, 1024));
+    std::unique_ptr<QUICBidirectionalStream> stream(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, 1024, 1024));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(frame_1);
@@ -112,7 +113,8 @@ TEST_CASE("QUICStream", "[quic]")
 
     MockQUICRTTProvider rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
-    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
+    std::unique_ptr<QUICBidirectionalStream> stream(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(frame_8);
@@ -139,7 +141,8 @@ TEST_CASE("QUICStream", "[quic]")
 
     MockQUICRTTProvider rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
-    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
+    std::unique_ptr<QUICBidirectionalStream> stream(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(frame_8);
@@ -169,7 +172,8 @@ TEST_CASE("QUICStream", "[quic]")
 
     MockQUICRTTProvider rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
-    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, 4096, 4096));
+    std::unique_ptr<QUICBidirectionalStream> stream(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, 4096, 4096));
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
@@ -209,7 +213,8 @@ TEST_CASE("QUICStream", "[quic]")
 
     MockQUICRTTProvider rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
-    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, 4096, 4096));
+    std::unique_ptr<QUICBidirectionalStream> stream(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, 4096, 4096));
     SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
 
     MockContinuation mock_cont(stream->mutex);
@@ -304,8 +309,8 @@ TEST_CASE("QUICStream", "[quic]")
 
     MockQUICRTTProvider rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
-    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
-    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+    std::unique_ptr<QUICBidirectionalStream> stream(new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id,
+  UINT64_MAX, UINT64_MAX)); SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
 
     MockContinuation mock_cont(stream->mutex);
     stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
@@ -347,7 +352,8 @@ TEST_CASE("QUICStream", "[quic]")
 
     MockQUICRTTProvider rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
-    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
+    std::unique_ptr<QUICBidirectionalStream> stream(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
     SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
 
     MockContinuation mock_cont(stream->mutex);
@@ -377,7 +383,8 @@ TEST_CASE("QUICStream", "[quic]")
 
     MockQUICRTTProvider rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
-    std::unique_ptr<QUICStream> stream(new QUICStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
+    std::unique_ptr<QUICBidirectionalStream> stream(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
     SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
 
     MockContinuation mock_cont(stream->mutex);
