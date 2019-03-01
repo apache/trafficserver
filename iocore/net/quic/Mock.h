@@ -488,7 +488,7 @@ public:
     return EVP_GCM_TLS_TAG_LEN;
   }
 
-  size_t *encryption_iv_len(QUICKeyPhase) const override
+  const size_t *encryption_iv_len(QUICKeyPhase) const override
   {
     static size_t dummy = 12;
     return &dummy;
