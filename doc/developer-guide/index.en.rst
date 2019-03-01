@@ -55,4 +55,5 @@ duplicate bugs is encouraged, but not required.
    host-resolution-proposal.en
    client-session-architecture.en
    core-architecture/index.en
+   design-documents/index.en
    layout/index.en
