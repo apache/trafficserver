@@ -33,7 +33,7 @@
 
 #ifdef HAVE_EVENTFD
 #include <sys/eventfd.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <sys/epoll.h>
 #endif
 
