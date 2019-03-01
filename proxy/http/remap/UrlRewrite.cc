@@ -19,6 +19,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 
 #include "UrlRewrite.h"
@@ -78,6 +79,9 @@ UrlRewrite::load()
   }
 
   REC_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
+
+  /* Initialize the plugin factory */
+  pluginFactory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
 
   if (0 == this->BuildTable(config_file_path)) {
     _valid = true;

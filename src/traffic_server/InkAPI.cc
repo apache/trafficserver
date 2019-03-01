@@ -1000,6 +1000,7 @@ INKContInternal::INKContInternal()
     m_closed(1),
     m_deletable(0),
     m_deleted(0),
+    m_context(0),
     m_free_magic(INKCONT_INTERN_MAGIC_ALIVE)
 {
 }
@@ -1012,18 +1013,20 @@ INKContInternal::INKContInternal(TSEventFunc funcp, TSMutex mutexp)
     m_closed(1),
     m_deletable(0),
     m_deleted(0),
+    m_context(0),
     m_free_magic(INKCONT_INTERN_MAGIC_ALIVE)
 {
   SET_HANDLER(&INKContInternal::handle_event);
 }
 
 void
-INKContInternal::init(TSEventFunc funcp, TSMutex mutexp)
+INKContInternal::init(TSEventFunc funcp, TSMutex mutexp, void *context)
 {
   SET_HANDLER(&INKContInternal::handle_event);
 
   mutex        = (ProxyMutex *)mutexp;
   m_event_func = funcp;
+  m_context    = context;
 }
 
 void
@@ -1094,7 +1097,11 @@ INKContInternal::handle_event(int event, void *edata)
       Debug("plugin", "INKCont Deletable but not deleted %d", m_event_count);
     }
   } else {
-    int retval = m_event_func((TSCont)this, (TSEvent)event, edata);
+    /* set the plugin context */
+    auto *previousContext = pluginThreadContext;
+    pluginThreadContext   = reinterpret_cast<PluginThreadContext *>(m_context);
+    int retval            = m_event_func((TSCont)this, (TSEvent)event, edata);
+    pluginThreadContext   = previousContext;
     if (edata && event == EVENT_INTERVAL) {
       Event *e = reinterpret_cast<Event *>(edata);
       if (e->period != 0) {
@@ -4369,6 +4376,8 @@ TSMgmtSourceGet(const char *var_name, TSMgmtSource *source)
 //
 ////////////////////////////////////////////////////////////////////
 
+extern thread_local PluginThreadContext *pluginThreadContext;
+
 TSCont
 TSContCreate(TSEventFunc funcp, TSMutex mutexp)
 {
@@ -4377,9 +4386,13 @@ TSContCreate(TSEventFunc funcp, TSMutex mutexp)
     sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
   }
 
+  if (pluginThreadContext) {
+    pluginThreadContext->acquire();
+  }
+
   INKContInternal *i = INKContAllocator.alloc();
 
-  i->init(funcp, mutexp);
+  i->init(funcp, mutexp, pluginThreadContext);
   return (TSCont)i;
 }
 
@@ -4389,6 +4402,10 @@ TSContDestroy(TSCont contp)
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
   INKContInternal *i = (INKContInternal *)contp;
+
+  if (i->m_context) {
+    reinterpret_cast<PluginThreadContext *>(i->m_context)->release();
+  }
 
   i->destroy();
 }
@@ -5951,6 +5968,8 @@ TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
   }
 }
 
+TSReturnCode TSHttpArgIndexNameLookup(UserArg::Type type, const char *name, int *arg_idx, const char **description);
+
 TSReturnCode
 TSHttpArgIndexReserve(UserArg::Type type, const char *name, const char *description, int *ptr_idx)
 {
@@ -5958,7 +5977,19 @@ TSHttpArgIndexReserve(UserArg::Type type, const char *name, const char *descript
   sdk_assert(sdk_sanity_check_null_ptr(name) == TS_SUCCESS);
   sdk_assert(0 <= type && type < UserArg::Type::COUNT);
 
-  int idx   = UserArgIdx[type]++;
+  int idx;
+
+  /* Since this function is meant to be called during plugin initialization we could end up "leaking" indices during plugins reload.
+   * Make sure we allocate 1 index per name, also current TSHttpArgIndexNameLookup() implementation assumes 1-1 relationship as
+   * well. */
+  const char *desc;
+  if (TS_SUCCESS == TSHttpArgIndexNameLookup(type, name, &idx, &desc)) {
+    // Found existing index.
+    *ptr_idx = idx;
+    return TS_SUCCESS;
+  }
+
+  idx       = UserArgIdx[type]++;
   int limit = (type == UserArg::Type::VCONN) ? TS_VCONN_MAX_USER_ARG : TS_HTTP_MAX_USER_ARG;
 
   if (idx < limit) {
@@ -6609,11 +6640,15 @@ TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp)
   // TODO: probably don't need this if memory allocations fails properly
   sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
 
+  if (pluginThreadContext) {
+    pluginThreadContext->acquire();
+  }
+
   INKVConnInternal *i = INKVConnAllocator.alloc();
 
   sdk_assert(sdk_sanity_check_null_ptr((void *)i) == TS_SUCCESS);
 
-  i->init(event_funcp, mutexp);
+  i->init(event_funcp, mutexp, pluginThreadContext);
   return reinterpret_cast<TSVConn>(i);
 }
 
