@@ -702,13 +702,14 @@ class MockQUICFrameGenerator : public QUICFrameGenerator
 {
 public:
   bool
-  will_generate_frame(QUICEncryptionLevel level) override
+  will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override
   {
     return true;
   }
 
   QUICFrame *
-  generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size) override
+  generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
+                 ink_hrtime timestamp) override
   {
     QUICFrame *frame              = QUICFrameFactory::create_ping_frame(buf, 0, this);
     QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
