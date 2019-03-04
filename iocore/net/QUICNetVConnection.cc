@@ -316,7 +316,7 @@ QUICNetVConnection::free(EThread *t)
 
     super::clear();
   */
-  this->_packet_handler->close_conenction(this);
+  this->_packet_handler->close_connection(this);
 }
 
 void

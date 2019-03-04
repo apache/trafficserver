@@ -40,15 +40,19 @@ public:
   QUICPacketHandler();
   ~QUICPacketHandler();
 
-  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketHeaderProtector &pn_protector) = 0;
-  virtual void send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload)                                          = 0;
+  void send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketHeaderProtector &pn_protector);
+  void send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload);
 
-  virtual void close_conenction(QUICNetVConnection *conn);
+  void close_connection(QUICNetVConnection *conn);
 
 protected:
-  static void _send_packet(Continuation *c, const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu,
-                           const QUICPacketHeaderProtector *ph_protector, int dcil);
-  static void _send_packet(Continuation *c, QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload);
+  void _send_packet(const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu,
+                    const QUICPacketHeaderProtector *ph_protector, int dcil);
+  void _send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IOBufferBlock> udp_payload);
+
+  // FIXME Remove this
+  // QUICPacketHandler could be a continuation, but NetAccept is a contination too.
+  virtual Continuation *_get_continuation() = 0;
 
   Event *_collector_event                       = nullptr;
   QUICClosedConCollector *_closed_con_collector = nullptr;
@@ -72,10 +76,9 @@ public:
   virtual int acceptEvent(int event, void *e) override;
   void init_accept(EThread *t) override;
 
+protected:
   // QUICPacketHandler
-  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc,
-                           const QUICPacketHeaderProtector &ph_protector) override;
-  virtual void send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload) override;
+  Continuation *_get_continuation() override;
 
 private:
   void _recv_packet(int event, UDPPacket *udp_packet) override;
@@ -98,10 +101,9 @@ public:
   void init(QUICNetVConnection *vc);
   int event_handler(int event, Event *data);
 
+protected:
   // QUICPacketHandler
-  virtual void send_packet(const QUICPacket &packet, QUICNetVConnection *vc,
-                           const QUICPacketHeaderProtector &pn_protector) override;
-  virtual void send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload) override;
+  Continuation *_get_continuation() override;
 
 private:
   void _recv_packet(int event, UDPPacket *udp_packet) override;
