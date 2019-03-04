@@ -23,7 +23,7 @@
 
 Summary:	Apache Traffic Server, a reverse, forward and transparent HTTP proxy cache
 Name:		trafficserver
-Version:	7.1.5
+Version:	7.1.6
 Release:	1%{?dist}
 License:	Apache Software License 2.0 (AL2)
 Group:		System Environment/Daemons
