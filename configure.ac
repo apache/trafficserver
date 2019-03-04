@@ -1304,26 +1304,14 @@ TS_CHECK_LUAJIT
 # Enable experimental/uri_singing plugin
 # This is here, instead of above, because it needs to know if PCRE is available.
 #
-AC_CHECK_HEADERS([jansson.h], [
-  AC_MSG_CHECKING([whether jansson is dynamic])
-  TS_LINK_WITH_FLAGS_IFELSE([-fPIC -ljansson],[AC_LANG_PROGRAM(
-                            [#include <jansson.h>],
-                            [(void) json_object();])],
-                            [AC_MSG_RESULT([yes]); LIBJANSSON=-ljansson],
-                            [AC_MSG_RESULT([no]);  LIBJANSSON=-l:libjansson.a])
-  ],
-  [LIBJANSSON=])
 
-AC_CHECK_HEADERS([cjose/cjose.h], [
-  AC_MSG_CHECKING([whether cjose is dynamic])
-  TS_LINK_WITH_FLAGS_IFELSE([-fPIC -lcjose],[AC_LANG_PROGRAM(
-                            [#include <cjose/cjose.h>],
-                            [(void) cjose_jws_import("", 0, NULL);])],
-                            [AC_MSG_RESULT([yes]); LIBCJOSE=-lcjose],
-                            [AC_MSG_RESULT([no]);  LIBCJOSE=-l:libcjose.a])
-  ],
-  [LIBCJOSE=])
+#### Check for optional jansson library (uri_signing)
+TS_CHECK_JANSSON
+
 AC_CHECK_LIB([crypto],[HMAC],[has_libcrypto=1],[has_libcrypto=0])
+
+#### Check for optional cjose library (uri_signing)
+TS_CHECK_CJOSE
 
 AM_CONDITIONAL([BUILD_URI_SIGNING_PLUGIN], [test ! -z "${LIBCJOSE}" -a ! -z "${LIBJANSSON}" -a "x${enable_pcre}" = "xyes" -a "x${has_libcrypto}" = "x1"])
 AC_SUBST([LIBCJOSE])
