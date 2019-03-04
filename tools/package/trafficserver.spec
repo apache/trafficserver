@@ -23,7 +23,7 @@
 
 Summary:	Apache Traffic Server, a reverse, forward and transparent HTTP proxy cache
 Name:		trafficserver
-Version:	7.1.6
+Version:	7.1.7
 Release:	1%{?dist}
 License:	Apache Software License 2.0 (AL2)
 Group:		System Environment/Daemons
@@ -179,10 +179,13 @@ getent passwd ats >/dev/null || useradd -r -u 176 -g ats -d / -s /sbin/nologin -
 %{_datadir}/pkgconfig/trafficserver.pc
 
 %changelog
+* Sun Mar 3 2019 Leif Hedstrom <zwoop@apache.org> - 7.1.7-1
+- Fixed various build issues / inconsitencies, version bump.
+
+* Fri Oct 19 2018 Leif Hedstrom <zwoop@apache.org> - 7.1.5-1
+- More cleanup, fixes from Bryan Call for permissions
+
 * Tue Dec 19 2017 Leif Hedstrom <zwoop@apache.org> - 7.1.2-1
 - Cleanup for 7.1.x, and various other changes. This needs more work
   upstream though, since I'm finding issues.
 - Losely based on ideas from the Fedora .spec
-
-* Fri Oct 19 2018 Leif Hedstrom <zwoop@apache.org> - 7.1.5-1
-- More cleanup, fixes from Bryan Call for permissions
