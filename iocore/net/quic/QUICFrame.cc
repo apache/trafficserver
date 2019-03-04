@@ -1507,7 +1507,8 @@ QUICMaxStreamDataFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICMaxStreamDataFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| MAX_STREAM_DATA size=%zu maximum=%" PRIu64, this->size(), this->maximum_stream_data());
+  return snprintf(msg, msg_len, "| MAX_STREAM_DATA size=%zu id=%" PRIu64 " maximum=%" PRIu64, this->size(), this->stream_id(),
+                  this->maximum_stream_data());
 }
 
 QUICStreamId
@@ -1729,7 +1730,8 @@ QUICStreamDataBlockedFrame::parse(const uint8_t *buf, size_t len)
 int
 QUICStreamDataBlockedFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| STREAM_DATA_BLOCKED size=%zu  offset=%" PRIu64, this->size(), this->offset());
+  return snprintf(msg, msg_len, "| STREAM_DATA_BLOCKED size=%zu id=%" PRIu64 " offset=%" PRIu64, this->size(), this->stream_id(),
+                  this->offset());
 }
 
 QUICFrameType
