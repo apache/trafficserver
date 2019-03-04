@@ -214,6 +214,42 @@ QUICStream::reordered_bytes() const
   return this->_reordered_bytes;
 }
 
+QUICConnectionErrorUPtr
+QUICStream::recv(const QUICStreamFrame &frame)
+{
+  return nullptr;
+}
+
+QUICConnectionErrorUPtr
+QUICStream::recv(const QUICMaxStreamDataFrame &frame)
+{
+  return nullptr;
+}
+
+QUICConnectionErrorUPtr
+QUICStream::recv(const QUICStreamDataBlockedFrame &frame)
+{
+  return nullptr;
+}
+
+QUICConnectionErrorUPtr
+QUICStream::recv(const QUICStopSendingFrame &frame)
+{
+  return nullptr;
+}
+
+QUICConnectionErrorUPtr
+QUICStream::recv(const QUICRstStreamFrame &frame)
+{
+  return nullptr;
+}
+
+QUICConnectionErrorUPtr
+QUICStream::recv(const QUICCryptoFrame &frame)
+{
+  return nullptr;
+}
+
 //
 // QUICBidirectionalStream
 //
@@ -430,16 +466,10 @@ QUICBidirectionalStream::recv(const QUICMaxStreamDataFrame &frame)
 }
 
 QUICConnectionErrorUPtr
-QUICBidirectionalStream::recv(const QUICCryptoFrame &frame)
-{
-  ink_assert(!"should not happen");
-  return nullptr;
-}
-
-QUICConnectionErrorUPtr
 QUICBidirectionalStream::recv(const QUICStreamDataBlockedFrame &frame)
 {
   // STREAM_DATA_BLOCKED frames are for debugging. Nothing to do here.
+  QUICStreamFCDebug("[REMOTE] blocked %" PRIu64, frame.offset());
   return nullptr;
 }
 
@@ -952,4 +982,84 @@ QUICCryptoStream::_records_crypto_frame(QUICEncryptionLevel level, const QUICCry
   crypto_frame_info->offset          = frame.offset();
   crypto_frame_info->block           = frame.data();
   this->_records_frame(frame.id(), std::move(info));
+}
+
+QUICOffset
+QUICCryptoStream::largest_offset_received() const
+{
+  // TODO:
+  ink_assert(!"unsupported");
+  return 0;
+}
+
+QUICOffset
+QUICCryptoStream::largest_offset_sent() const
+{
+  // TODO
+  ink_assert(!"unsupported");
+  return 0;
+}
+
+void
+QUICCryptoStream::stop_sending(QUICStreamErrorUPtr error)
+{
+  // TODO
+  ink_assert(!"unsupported");
+  return;
+}
+
+void
+QUICCryptoStream::reset(QUICStreamErrorUPtr error)
+{
+  // TODO
+  ink_assert(!"unsupported");
+  return;
+}
+
+void
+QUICCryptoStream::on_eos()
+{
+  return;
+}
+
+void
+QUICCryptoStream::on_read()
+{
+  return;
+}
+
+// Implement VConnection Interface.
+VIO *
+QUICCryptoStream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+{
+  ink_assert(!"unsupported");
+  return nullptr;
+}
+
+VIO *
+QUICCryptoStream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+{
+  ink_assert(!"unsupported");
+  return nullptr;
+}
+
+void
+QUICCryptoStream::do_io_close(int lerrno)
+{
+  ink_assert(!"unsupported");
+  return;
+}
+
+void
+QUICCryptoStream::do_io_shutdown(ShutdownHowTo_t howto)
+{
+  ink_assert(!"unsupported");
+  return;
+}
+
+void
+QUICCryptoStream::reenable(VIO *vio)
+{
+  ink_assert(!"unsupported");
+  return;
 }
