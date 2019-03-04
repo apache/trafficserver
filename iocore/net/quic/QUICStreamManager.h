@@ -57,7 +57,7 @@ public:
 
   void set_default_application(QUICApplication *app);
 
-  DLL<QUICStream> stream_list;
+  DLL<QUICStreamVConnection> stream_list;
 
   // QUICFrameHandler
   virtual std::vector<QUICFrameType> interests() override;
@@ -69,8 +69,8 @@ public:
                             ink_hrtime timestamp) override;
 
 private:
-  QUICStream *_find_stream(QUICStreamId id);
-  QUICStream *_find_or_create_stream(QUICStreamId stream_id);
+  QUICStreamVConnection *_find_stream_vc(QUICStreamId id);
+  QUICStreamVConnection *_find_or_create_stream_vc(QUICStreamId stream_id);
   QUICConnectionErrorUPtr _handle_frame(const QUICStreamFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICRstStreamFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICStopSendingFrame &frame);

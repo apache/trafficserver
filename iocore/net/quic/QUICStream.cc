@@ -44,23 +44,11 @@ static constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
 static constexpr uint32_t MAX_CRYPTO_FRAME_OVERHEAD = 16;
 
 QUICStream::QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid)
-  : VConnection(nullptr), _connection_info(cinfo), _id(sid), _received_stream_frame_buffer()
+  : _connection_info(cinfo), _id(sid), _received_stream_frame_buffer()
 {
-  mutex = new_ProxyMutex();
 }
 
-QUICStream::~QUICStream()
-{
-  if (this->_read_event) {
-    this->_read_event->cancel();
-    this->_read_event = nullptr;
-  }
-
-  if (this->_write_event) {
-    this->_write_event->cancel();
-    this->_write_event = nullptr;
-  }
-}
+QUICStream::~QUICStream() {}
 
 QUICStreamId
 QUICStream::id() const
@@ -84,127 +72,6 @@ QUICOffset
 QUICStream::final_offset() const
 {
   // TODO Return final offset
-  return 0;
-}
-
-void
-QUICStream::_write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin)
-{
-  SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
-
-  uint64_t bytes_added = this->_read_vio.buffer.writer()->write(data, data_length);
-
-  // Until receive FIN flag, keep nbytes INT64_MAX
-  if (fin && bytes_added == data_length) {
-    this->_read_vio.nbytes = offset + data_length;
-  }
-}
-
-/**
- * Replace existing event only if the new event is different than the inprogress event
- */
-Event *
-QUICStream::_send_tracked_event(Event *event, int send_event, VIO *vio)
-{
-  if (event != nullptr) {
-    if (event->callback_event != send_event) {
-      event->cancel();
-      event = nullptr;
-    }
-  }
-
-  if (event == nullptr) {
-    event = this_ethread()->schedule_imm(this, send_event, vio);
-  }
-
-  return event;
-}
-
-/**
- * @brief Signal event to this->_read_vio.cont
- */
-void
-QUICStream::_signal_read_event()
-{
-  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
-    return;
-  }
-  MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
-
-  int event = this->_read_vio.ntodo() ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
-
-  if (lock.is_locked()) {
-    this->_read_vio.cont->handleEvent(event, &this->_read_vio);
-  } else {
-    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
-  }
-}
-
-/**
- * @brief Signal event to this->_write_vio.cont
- */
-void
-QUICStream::_signal_write_event()
-{
-  if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
-    return;
-  }
-  MUTEX_TRY_LOCK(lock, this->_write_vio.mutex, this_ethread());
-
-  int event = this->_write_vio.ntodo() ? VC_EVENT_WRITE_READY : VC_EVENT_WRITE_COMPLETE;
-
-  if (lock.is_locked()) {
-    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
-  } else {
-    this_ethread()->schedule_imm(this->_write_vio.cont, event, &this->_write_vio);
-  }
-}
-
-/**
- * @brief Signal event to this->_write_vio.cont
- */
-void
-QUICStream::_signal_read_eos_event()
-{
-  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
-    return;
-  }
-  MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
-
-  int event = VC_EVENT_EOS;
-
-  if (lock.is_locked()) {
-    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
-  } else {
-    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
-  }
-}
-
-int64_t
-QUICStream::_process_read_vio()
-{
-  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
-    return 0;
-  }
-
-  // Pass through. Read operation is done by QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
-  // TODO: 1. pop frame from _received_stream_frame_buffer
-  //       2. write data to _read_vio
-
-  return 0;
-}
-
-/**
- * @brief Send STREAM DATA from _response_buffer
- * @detail Call _signal_write_event() to indicate event upper layer
- */
-int64_t
-QUICStream::_process_write_vio()
-{
-  if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
-    return 0;
-  }
-
   return 0;
 }
 
@@ -251,11 +118,148 @@ QUICStream::recv(const QUICCryptoFrame &frame)
 }
 
 //
+// QUICStreamVConnection
+//
+QUICStreamVConnection::~QUICStreamVConnection()
+{
+  if (this->_read_event) {
+    this->_read_event->cancel();
+    this->_read_event = nullptr;
+  }
+
+  if (this->_write_event) {
+    this->_write_event->cancel();
+    this->_write_event = nullptr;
+  }
+}
+
+void
+QUICStreamVConnection::_write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin)
+{
+  SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
+
+  uint64_t bytes_added = this->_read_vio.buffer.writer()->write(data, data_length);
+
+  // Until receive FIN flag, keep nbytes INT64_MAX
+  if (fin && bytes_added == data_length) {
+    this->_read_vio.nbytes = offset + data_length;
+  }
+}
+
+/**
+ * Replace existing event only if the new event is different than the inprogress event
+ */
+Event *
+QUICStreamVConnection::_send_tracked_event(Event *event, int send_event, VIO *vio)
+{
+  if (event != nullptr) {
+    if (event->callback_event != send_event) {
+      event->cancel();
+      event = nullptr;
+    }
+  }
+
+  if (event == nullptr) {
+    event = this_ethread()->schedule_imm(this, send_event, vio);
+  }
+
+  return event;
+}
+
+/**
+ * @brief Signal event to this->_read_vio.cont
+ */
+void
+QUICStreamVConnection::_signal_read_event()
+{
+  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
+    return;
+  }
+  MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
+
+  int event = this->_read_vio.ntodo() ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
+
+  if (lock.is_locked()) {
+    this->_read_vio.cont->handleEvent(event, &this->_read_vio);
+  } else {
+    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
+  }
+}
+
+/**
+ * @brief Signal event to this->_write_vio.cont
+ */
+void
+QUICStreamVConnection::_signal_write_event()
+{
+  if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
+    return;
+  }
+  MUTEX_TRY_LOCK(lock, this->_write_vio.mutex, this_ethread());
+
+  int event = this->_write_vio.ntodo() ? VC_EVENT_WRITE_READY : VC_EVENT_WRITE_COMPLETE;
+
+  if (lock.is_locked()) {
+    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
+  } else {
+    this_ethread()->schedule_imm(this->_write_vio.cont, event, &this->_write_vio);
+  }
+}
+
+/**
+ * @brief Signal event to this->_write_vio.cont
+ */
+void
+QUICStreamVConnection::_signal_read_eos_event()
+{
+  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
+    return;
+  }
+  MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
+
+  int event = VC_EVENT_EOS;
+
+  if (lock.is_locked()) {
+    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
+  } else {
+    this_ethread()->schedule_imm(this->_read_vio.cont, event, &this->_read_vio);
+  }
+}
+
+int64_t
+QUICStreamVConnection::_process_read_vio()
+{
+  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
+    return 0;
+  }
+
+  // Pass through. Read operation is done by QUICStream::recv(const std::shared_ptr<const QUICStreamFrame> frame)
+  // TODO: 1. pop frame from _received_stream_frame_buffer
+  //       2. write data to _read_vio
+
+  return 0;
+}
+
+/**
+ * @brief Send STREAM DATA from _response_buffer
+ * @detail Call _signal_write_event() to indicate event upper layer
+ */
+int64_t
+QUICStreamVConnection::_process_write_vio()
+{
+  if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
+    return 0;
+  }
+
+  return 0;
+}
+
+//
 // QUICBidirectionalStream
 //
 QUICBidirectionalStream::QUICBidirectionalStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
                                                  uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
-  : QUICStream(cinfo, sid),
+  : QUICStreamVConnection(cinfo, sid),
     _remote_flow_controller(send_max_stream_data, _id),
     _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
     _flow_control_buffer_size(recv_max_stream_data),
@@ -1025,41 +1029,5 @@ QUICCryptoStream::on_eos()
 void
 QUICCryptoStream::on_read()
 {
-  return;
-}
-
-// Implement VConnection Interface.
-VIO *
-QUICCryptoStream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
-{
-  ink_assert(!"unsupported");
-  return nullptr;
-}
-
-VIO *
-QUICCryptoStream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
-{
-  ink_assert(!"unsupported");
-  return nullptr;
-}
-
-void
-QUICCryptoStream::do_io_close(int lerrno)
-{
-  ink_assert(!"unsupported");
-  return;
-}
-
-void
-QUICCryptoStream::do_io_shutdown(ShutdownHowTo_t howto)
-{
-  ink_assert(!"unsupported");
-  return;
-}
-
-void
-QUICCryptoStream::reenable(VIO *vio)
-{
-  ink_assert(!"unsupported");
   return;
 }
