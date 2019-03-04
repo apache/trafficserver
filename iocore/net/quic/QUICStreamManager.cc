@@ -90,16 +90,16 @@ QUICConnectionErrorUPtr
 QUICStreamManager::create_stream(QUICStreamId stream_id)
 {
   // TODO: check stream_id
-  QUICConnectionErrorUPtr error = nullptr;
-  QUICStream *stream            = this->_find_or_create_stream(stream_id);
-  if (!stream) {
+  QUICConnectionErrorUPtr error    = nullptr;
+  QUICStreamVConnection *stream_vc = this->_find_or_create_stream_vc(stream_id);
+  if (!stream_vc) {
     return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
   }
 
   QUICApplication *application = this->_app_map->get(stream_id);
 
-  if (!application->is_stream_set(stream)) {
-    application->set_stream(stream);
+  if (!application->is_stream_set(stream_vc)) {
+    application->set_stream(stream_vc);
   }
 
   return error;
@@ -132,7 +132,7 @@ QUICStreamManager::create_bidi_stream(QUICStreamId &new_stream_id)
 void
 QUICStreamManager::reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error)
 {
-  auto stream = this->_find_stream(stream_id);
+  auto stream = this->_find_stream_vc(stream_id);
   stream->reset(std::move(error));
 }
 
@@ -173,7 +173,7 @@ QUICStreamManager::handle_frame(QUICEncryptionLevel level, const QUICFrame &fram
 QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICMaxStreamDataFrame &frame)
 {
-  QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
+  QUICStreamVConnection *stream = this->_find_or_create_stream_vc(frame.stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
@@ -184,7 +184,7 @@ QUICStreamManager::_handle_frame(const QUICMaxStreamDataFrame &frame)
 QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICStreamDataBlockedFrame &frame)
 {
-  QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
+  QUICStreamVConnection *stream = this->_find_or_create_stream_vc(frame.stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
@@ -195,7 +195,7 @@ QUICStreamManager::_handle_frame(const QUICStreamDataBlockedFrame &frame)
 QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICStreamFrame &frame)
 {
-  QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
+  QUICStreamVConnection *stream = this->_find_or_create_stream_vc(frame.stream_id());
   if (!stream) {
     return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
   }
@@ -212,7 +212,7 @@ QUICStreamManager::_handle_frame(const QUICStreamFrame &frame)
 QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICRstStreamFrame &frame)
 {
-  QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
+  QUICStream *stream = this->_find_or_create_stream_vc(frame.stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
@@ -223,7 +223,7 @@ QUICStreamManager::_handle_frame(const QUICRstStreamFrame &frame)
 QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICStopSendingFrame &frame)
 {
-  QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
+  QUICStream *stream = this->_find_or_create_stream_vc(frame.stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
@@ -243,10 +243,10 @@ QUICStreamManager::_handle_frame(const QUICMaxStreamsFrame &frame)
   return nullptr;
 }
 
-QUICStream *
-QUICStreamManager::_find_stream(QUICStreamId id)
+QUICStreamVConnection *
+QUICStreamManager::_find_stream_vc(QUICStreamId id)
 {
-  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
     if (s->id() == id) {
       return s;
     }
@@ -254,10 +254,10 @@ QUICStreamManager::_find_stream(QUICStreamId id)
   return nullptr;
 }
 
-QUICStream *
-QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
+QUICStreamVConnection *
+QUICStreamManager::_find_or_create_stream_vc(QUICStreamId stream_id)
 {
-  QUICStream *stream = this->_find_stream(stream_id);
+  QUICStreamVConnection *stream = this->_find_stream_vc(stream_id);
   if (!stream) {
     if (!this->_local_tp) {
       return nullptr;

@@ -37,7 +37,7 @@ class QUICApplication;
 class QUICStreamIO
 {
 public:
-  QUICStreamIO(QUICApplication *app, QUICStream *stream);
+  QUICStreamIO(QUICApplication *app, QUICStreamVConnection *stream);
   virtual ~QUICStreamIO();
 
   uint32_t stream_id() const;
@@ -63,7 +63,7 @@ protected:
   IOBufferReader *_write_buffer_reader = nullptr;
 
 private:
-  QUICStream *_stream = nullptr;
+  QUICStreamVConnection *_stream_vc = nullptr;
 
   VIO *_read_vio  = nullptr;
   VIO *_write_vio = nullptr;
@@ -83,11 +83,11 @@ public:
   QUICApplication(QUICConnection *qc);
   virtual ~QUICApplication();
 
-  void set_stream(QUICStream *stream, QUICStreamIO *stream_io = nullptr);
+  void set_stream(QUICStreamVConnection *stream_vc, QUICStreamIO *stream_io = nullptr);
   void set_stream(QUICStreamIO *stream_io);
-  bool is_stream_set(QUICStream *stream);
-  void reenable(QUICStream *stream);
-  void unset_stream(QUICStream *stream);
+  bool is_stream_set(QUICStreamVConnection *stream_vc);
+  void reenable(QUICStreamVConnection *stream_vc);
+  void unset_stream(QUICStreamVConnection *stream_vc);
 
 protected:
   QUICStreamIO *_find_stream_io(QUICStreamId id);

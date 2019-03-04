@@ -27,14 +27,14 @@
 static constexpr char tag_stream_io[] = "quic_stream_io";
 static constexpr char tag_app[]       = "quic_app";
 
-#define QUICStreamIODebug(fmt, ...)                                                                                     \
-  Debug(tag_stream_io, "[%s] [%" PRIu64 "] " fmt, this->_stream->connection_info()->cids().data(), this->_stream->id(), \
+#define QUICStreamIODebug(fmt, ...)                                                                                           \
+  Debug(tag_stream_io, "[%s] [%" PRIu64 "] " fmt, this->_stream_vc->connection_info()->cids().data(), this->_stream_vc->id(), \
         ##__VA_ARGS__)
 
 //
 // QUICStreamIO
 //
-QUICStreamIO::QUICStreamIO(QUICApplication *app, QUICStream *stream) : _stream(stream)
+QUICStreamIO::QUICStreamIO(QUICApplication *app, QUICStreamVConnection *stream_vc) : _stream_vc(stream_vc)
 {
   this->_read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
   this->_write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
@@ -42,8 +42,8 @@ QUICStreamIO::QUICStreamIO(QUICApplication *app, QUICStream *stream) : _stream(s
   this->_read_buffer_reader  = this->_read_buffer->alloc_reader();
   this->_write_buffer_reader = this->_write_buffer->alloc_reader();
 
-  this->_read_vio  = stream->do_io_read(app, INT64_MAX, this->_read_buffer);
-  this->_write_vio = stream->do_io_write(app, INT64_MAX, this->_write_buffer_reader);
+  this->_read_vio  = stream_vc->do_io_read(app, INT64_MAX, this->_read_buffer);
+  this->_write_vio = stream_vc->do_io_write(app, INT64_MAX, this->_write_buffer_reader);
 }
 
 QUICStreamIO::~QUICStreamIO()
@@ -56,13 +56,13 @@ QUICStreamIO::~QUICStreamIO()
 uint32_t
 QUICStreamIO::stream_id() const
 {
-  return this->_stream->id();
+  return this->_stream_vc->id();
 }
 
 bool
 QUICStreamIO::is_bidirectional() const
 {
-  return this->_stream->is_bidirectional();
+  return this->_stream_vc->is_bidirectional();
 }
 
 int64_t
@@ -83,7 +83,7 @@ QUICStreamIO::read(uint8_t *buf, int64_t len)
     this->_read_vio->ndone += nread;
   }
 
-  this->_stream->on_read();
+  this->_stream_vc->on_read();
 
   return nread;
 }
@@ -98,7 +98,7 @@ void
 QUICStreamIO::consume(int64_t len)
 {
   this->_read_buffer_reader->consume(len);
-  this->_stream->on_read();
+  this->_stream_vc->on_read();
 }
 
 bool
@@ -194,12 +194,12 @@ QUICApplication::~QUICApplication()
 
 // @brief Bind stream and application
 void
-QUICApplication::set_stream(QUICStream *stream, QUICStreamIO *stream_io)
+QUICApplication::set_stream(QUICStreamVConnection *stream_vc, QUICStreamIO *stream_io)
 {
   if (stream_io == nullptr) {
-    stream_io = new QUICStreamIO(this, stream);
+    stream_io = new QUICStreamIO(this, stream_vc);
   }
-  this->_stream_map.insert(std::make_pair(stream->id(), stream_io));
+  this->_stream_map.insert(std::make_pair(stream_vc->id(), stream_io));
 }
 
 // @brief Bind stream and application
@@ -210,7 +210,7 @@ QUICApplication::set_stream(QUICStreamIO *stream_io)
 }
 
 bool
-QUICApplication::is_stream_set(QUICStream *stream)
+QUICApplication::is_stream_set(QUICStreamVConnection *stream)
 {
   auto result = this->_stream_map.find(stream->id());
 
@@ -218,7 +218,7 @@ QUICApplication::is_stream_set(QUICStream *stream)
 }
 
 void
-QUICApplication::reenable(QUICStream *stream)
+QUICApplication::reenable(QUICStreamVConnection *stream)
 {
   QUICStreamIO *stream_io = this->_find_stream_io(stream->id());
   if (stream_io) {
@@ -232,7 +232,7 @@ QUICApplication::reenable(QUICStream *stream)
 }
 
 void
-QUICApplication::unset_stream(QUICStream *stream)
+QUICApplication::unset_stream(QUICStreamVConnection *stream)
 {
   QUICStreamIO *stream_io = this->_find_stream_io(stream->id());
   if (stream_io) {

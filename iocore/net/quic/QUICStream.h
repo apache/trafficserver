@@ -39,10 +39,10 @@
  * @brief QUIC Stream
  * TODO: This is similar to Http2Stream. Need to think some integration.
  */
-class QUICStream : public VConnection, public QUICFrameGenerator, public QUICFrameRetransmitter
+class QUICStream : public QUICFrameGenerator, public QUICFrameRetransmitter
 {
 public:
-  QUICStream() : VConnection(nullptr) {}
+  QUICStream() {}
   QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid);
   virtual ~QUICStream();
 
@@ -74,6 +74,31 @@ public:
   LINK(QUICStream, link);
 
 protected:
+  QUICConnectionInfoProvider *_connection_info = nullptr;
+  QUICStreamId _id                             = 0;
+  QUICOffset _send_offset                      = 0;
+  QUICOffset _reordered_bytes                  = 0;
+
+  // Fragments of received STREAM frame (offset is unmatched)
+  // TODO: Consider to replace with ts/RbTree.h or other data structure
+  QUICIncomingStreamFrameBuffer _received_stream_frame_buffer;
+};
+
+// This is VConnection class for VIO operation.
+class QUICStreamVConnection : public VConnection, public QUICStream
+{
+public:
+  QUICStreamVConnection(QUICConnectionInfoProvider *cinfo, QUICStreamId sid) : VConnection(nullptr), QUICStream(cinfo, sid)
+  {
+    mutex = new_ProxyMutex();
+  }
+
+  QUICStreamVConnection() : VConnection(nullptr) {}
+  virtual ~QUICStreamVConnection();
+
+  LINK(QUICStreamVConnection, link);
+
+protected:
   virtual int64_t _process_read_vio();
   virtual int64_t _process_write_vio();
   void _signal_read_event();
@@ -82,29 +107,24 @@ protected:
   Event *_send_tracked_event(Event *, int, VIO *);
 
   void _write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin);
-  QUICConnectionInfoProvider *_connection_info = nullptr;
-  QUICStreamId _id                             = 0;
-  QUICOffset _send_offset                      = 0;
-  QUICOffset _reordered_bytes                  = 0;
 
   VIO _read_vio;
   VIO _write_vio;
 
   Event *_read_event  = nullptr;
   Event *_write_event = nullptr;
-
-  // Fragments of received STREAM frame (offset is unmatched)
-  // TODO: Consider to replace with ts/RbTree.h or other data structure
-  QUICIncomingStreamFrameBuffer _received_stream_frame_buffer;
 };
 
-class QUICBidirectionalStream : public QUICStream, public QUICTransferProgressProvider
+class QUICBidirectionalStream : public QUICStreamVConnection, public QUICTransferProgressProvider
 {
 public:
   QUICBidirectionalStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
                           uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
   QUICBidirectionalStream()
-    : _remote_flow_controller(0, 0), _local_flow_controller(nullptr, 0, 0), _state(nullptr, nullptr, nullptr, nullptr)
+    : QUICStreamVConnection(),
+      _remote_flow_controller(0, 0),
+      _local_flow_controller(nullptr, 0, 0),
+      _state(nullptr, nullptr, nullptr, nullptr)
   {
   }
 
@@ -201,13 +221,6 @@ public:
   int64_t read(uint8_t *buf, int64_t len);
   int64_t write(const uint8_t *buf, int64_t len);
 
-  // Implement VConnection Interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
-  void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
-
   void stop_sending(QUICStreamErrorUPtr error) override;
   void reset(QUICStreamErrorUPtr error) override;
 
@@ -216,8 +229,6 @@ public:
 
   void on_eos() override;
   void on_read() override;
-
-  LINK(QUICStream, link);
 
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
