@@ -42,7 +42,7 @@
 class QUICStream : public VConnection, public QUICFrameGenerator, public QUICFrameRetransmitter
 {
 public:
-  QUICStream() : VConnection(nullptr), _received_stream_frame_buffer() {}
+  QUICStream() : VConnection(nullptr) {}
   QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid);
   virtual ~QUICStream();
 
@@ -57,12 +57,12 @@ public:
   virtual void on_read() = 0;
   virtual void on_eos()  = 0;
 
-  virtual QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame)            = 0;
-  virtual QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame)     = 0;
-  virtual QUICConnectionErrorUPtr recv(const QUICStreamDataBlockedFrame &frame) = 0;
-  virtual QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame)       = 0;
-  virtual QUICConnectionErrorUPtr recv(const QUICRstStreamFrame &frame)         = 0;
-  virtual QUICConnectionErrorUPtr recv(const QUICCryptoFrame &frame)            = 0;
+  virtual QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame);
+  virtual QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame);
+  virtual QUICConnectionErrorUPtr recv(const QUICStreamDataBlockedFrame &frame);
+  virtual QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame);
+  virtual QUICConnectionErrorUPtr recv(const QUICRstStreamFrame &frame);
+  virtual QUICConnectionErrorUPtr recv(const QUICCryptoFrame &frame);
 
   QUICOffset reordered_bytes() const;
   virtual QUICOffset largest_offset_received() const = 0;
@@ -93,15 +93,9 @@ protected:
   Event *_read_event  = nullptr;
   Event *_write_event = nullptr;
 
-  bool _is_transfer_complete = false;
-  bool _is_reset_complete    = false;
-
   // Fragments of received STREAM frame (offset is unmatched)
   // TODO: Consider to replace with ts/RbTree.h or other data structure
   QUICIncomingStreamFrameBuffer _received_stream_frame_buffer;
-
-  // FIXME: should be removed
-  virtual void update() = 0;
 };
 
 class QUICBidirectionalStream : public QUICStream, public QUICTransferProgressProvider
@@ -127,7 +121,6 @@ public:
   virtual QUICConnectionErrorUPtr recv(const QUICStreamDataBlockedFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICRstStreamFrame &frame) override;
-  virtual QUICConnectionErrorUPtr recv(const QUICCryptoFrame &frame) override;
 
   // Implement VConnection Interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
@@ -160,6 +153,9 @@ private:
   QUICStreamErrorUPtr _stop_sending_reason = nullptr;
   bool _is_stop_sending_sent               = false;
 
+  bool _is_transfer_complete = false;
+  bool _is_reset_complete    = false;
+
   QUICTransferProgressProviderVIO _progress_vio = {this->_read_vio};
 
   QUICRemoteStreamFlowController _remote_flow_controller;
@@ -176,8 +172,6 @@ private:
   // QUICFrameGenerator
   void _on_frame_acked(QUICFrameInformationUPtr &info) override;
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
-
-  virtual void update(){};
 };
 
 /**
@@ -188,7 +182,7 @@ private:
  * - no flow control
  * - no state (never closed)
  */
-class QUICCryptoStream : public QUICFrameGenerator, public QUICFrameRetransmitter
+class QUICCryptoStream : public QUICStream
 {
 public:
   QUICCryptoStream();
@@ -201,16 +195,27 @@ public:
   void reset_send_offset();
   void reset_recv_offset();
 
-  QUICConnectionErrorUPtr recv(const QUICCryptoFrame &frame);
+  QUICConnectionErrorUPtr recv(const QUICCryptoFrame &frame) override;
+
   int64_t read_avail();
   int64_t read(uint8_t *buf, int64_t len);
   int64_t write(const uint8_t *buf, int64_t len);
 
-  void stop_sending(QUICStreamErrorUPtr error);
-  void reset(QUICStreamErrorUPtr error);
+  // Implement VConnection Interface.
+  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
+  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
+  void do_io_close(int lerrno = -1) override;
+  void do_io_shutdown(ShutdownHowTo_t howto) override;
+  void reenable(VIO *vio) override;
 
-  QUICOffset largest_offset_received();
-  QUICOffset largest_offset_sent();
+  void stop_sending(QUICStreamErrorUPtr error) override;
+  void reset(QUICStreamErrorUPtr error) override;
+
+  QUICOffset largest_offset_received() const override;
+  QUICOffset largest_offset_sent() const override;
+
+  void on_eos() override;
+  void on_read() override;
 
   LINK(QUICStream, link);
 
