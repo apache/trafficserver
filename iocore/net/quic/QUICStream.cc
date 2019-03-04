@@ -413,7 +413,7 @@ QUICStream::recv(const QUICRstStreamFrame &frame)
 bool
 QUICStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
-  return this->_write_vio.get_reader()->read_avail() > 0;
+  return this->_local_flow_controller.will_generate_frame(level, timestamp) || (this->_write_vio.get_reader()->read_avail() > 0);
 }
 
 QUICFrame *
