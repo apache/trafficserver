@@ -185,3 +185,42 @@ plugin.
 If you would like to statically link them, you will need to ensure that they are
 compiled with the `-fPIC` flag in their CFLAGs. If the archives have PIC, the
 build scripts will automatically statically link them.
+
+Here are some sample commands for building jansson, cjose and trafficserver
+locally using static linking.  This assumes all source is under ${HOME}/git.
+
+### Sample
+
+If using local jansson:
+
+    cd ${HOME}/git
+    git clone https://github.com/akheron/jansson.git
+    cd jansson
+    autoreconf -i
+    ./configure --disable-shared CC="gcc -fpic"
+    make -j`nproc`
+
+    # Needed for ATS configure
+    ln -s src/.libs lib
+    ln -s src include
+
+If using local cjose:
+
+    cd ${HOME}/git
+    git clone https://github.com/cisco/cjose.git
+    cd cjose
+    autoreconf -i
+    ./configure --with-jansson=${HOME}/git/jansson --disable-shared CC="gcc -fpic"
+    make -j`nproc`
+
+    # Needed for ATS configure
+    ln -s src/.libs lib
+
+ATS:
+
+    cd ${HOME}/git/
+    git clone https://github.com/apache/trafficserver.git
+    cd trafficserver
+		autoreconf -i
+    ./configure --enable-experimental-plugins --with-jansson=${HOME}/git/jansson --with-cjose=${HOME}/git/cjose
+    make -j`nproc`
