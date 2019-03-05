@@ -255,6 +255,19 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       // TODO: lookup DCID by 5-tuple when ATS omits SCID
       return;
     }
+
+    QUICPacketType type = QUICPacketType::UNINITIALIZED;
+    QUICPacketLongHeader::type(type, buf, buf_len);
+    if (type == QUICPacketType::INITIAL) {
+      // [draft-18] 7.2.
+      // When an Initial packet is sent by a client which has not previously received a Retry packet from the server, it populates
+      // the Destination Connection ID field with an unpredictable value. This MUST be at least 8 bytes in length.
+      if (dcid != QUICConnectionId::ZERO() && dcid.length() < QUICConnectionId::MIN_LENGTH_FOR_INITIAL) {
+        QUICDebug("Ignore packet - DCIL is too small for Initial packet");
+        udp_packet->free();
+        return;
+      }
+    }
   } else {
     // TODO: lookup DCID by 5-tuple when ATS omits SCID
     if (is_debug_tag_set(debug_tag)) {

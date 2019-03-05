@@ -223,8 +223,9 @@ class QUICConnectionId
 public:
   static uint8_t SCID_LEN;
 
-  static const int MAX_LENGTH            = 18;
-  static const size_t MAX_HEX_STR_LENGTH = MAX_LENGTH * 2 + 1;
+  static const int MIN_LENGTH_FOR_INITIAL = 8;
+  static const int MAX_LENGTH             = 18;
+  static const size_t MAX_HEX_STR_LENGTH  = MAX_LENGTH * 2 + 1;
   static QUICConnectionId ZERO();
   QUICConnectionId();
   QUICConnectionId(const uint8_t *buf, uint8_t len);
