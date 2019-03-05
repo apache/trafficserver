@@ -483,7 +483,6 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
               }
             }
           }
-          TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
           return TS_EVENT_NONE;
         };
         TSHttpTxnHookAdd(txn, TS_HTTP_SEND_REQUEST_HDR_HOOK, TSContCreate(send_req_dump, nullptr));
@@ -496,7 +495,6 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
           if (TSHttpTxnServerRespGet(txn, &buffer, &hdr) == TS_SUCCESS) {
             log_headers(txn, buffer, hdr, "ServerResponse");
           }
-          TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
           return TS_EVENT_NONE;
         };
         TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(read_resp_dump, nullptr));
