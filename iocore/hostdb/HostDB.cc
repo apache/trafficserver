@@ -1728,7 +1728,8 @@ int
 HostDBContinuation::set_check_pending_dns()
 {
   Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(md5.hash);
-  HostDBContinuation *c        = q.head;
+  this->setThreadAffinity(this_ethread());
+  HostDBContinuation *c = q.head;
   for (; c; c = (HostDBContinuation *)c->link.next) {
     if (md5.hash == c->md5.hash) {
       Debug("hostdb", "enqueuing additional request");
@@ -1756,8 +1757,16 @@ HostDBContinuation::remove_trigger_pending_dns()
     }
     c = n;
   }
-  while ((c = qq.dequeue()))
-    c->handleEvent(EVENT_IMMEDIATE, nullptr);
+  EThread *thread = this_ethread();
+  while ((c = qq.dequeue())) {
+    // resume all queued HostDBCont in the thread associated with the netvc to avoid nethandler locking issues.
+    EThread *affinity_thread = c->getThreadAffinity();
+    if (!affinity_thread || affinity_thread == thread) {
+      c->handleEvent(EVENT_IMMEDIATE, nullptr);
+    } else {
+      eventProcessor.schedule_imm(c);
+    }
+  }
 }
 
 //

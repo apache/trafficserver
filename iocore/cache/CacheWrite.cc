@@ -345,9 +345,9 @@ Vol::aggWriteDone(int event, Event *e)
   // callback ready sync CacheVCs
   CacheVC *c = nullptr;
   while ((c = sync.dequeue())) {
-    if (UINT_WRAP_LTE(c->write_serial + 2, header->write_serial))
-      c->initial_thread->schedule_imm_signal(c, AIO_EVENT_DONE);
-    else {
+    if (UINT_WRAP_LTE(c->write_serial + 2, header->write_serial)) {
+      eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);
+    } else {
       sync.push(c); // put it back on the front
       break;
     }
@@ -987,10 +987,7 @@ Lagain:
       ink_assert(false);
       while ((c = agg.dequeue())) {
         agg_todo_size -= c->agg_len;
-        if (c->initial_thread != nullptr)
-          c->initial_thread->schedule_imm_signal(c, AIO_EVENT_DONE);
-        else
-          eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);
+        eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);
       }
       return EVENT_CONT;
     }
@@ -1049,10 +1046,9 @@ Lwait:
   while ((c = tocall.dequeue())) {
     if (event == EVENT_CALL && c->mutex->thread_holding == mutex->thread_holding)
       ret = EVENT_RETURN;
-    else if (c->initial_thread != nullptr)
-      c->initial_thread->schedule_imm_signal(c, AIO_EVENT_DONE);
-    else
+    } else {
       eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);
+    }
   }
   return ret;
 }
