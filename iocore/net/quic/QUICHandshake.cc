@@ -110,7 +110,7 @@ QUICHandshake::start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled
 {
   QUICVersion initital_version = QUIC_SUPPORTED_VERSIONS[0];
   if (vn_exercise_enabled) {
-    initital_version = QUIC_EXERCISE_VERSIONS;
+    initital_version = QUIC_EXERCISE_VERSION;
   }
 
   this->_load_local_client_transport_parameters(initital_version);

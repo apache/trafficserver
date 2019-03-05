@@ -171,7 +171,7 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
 QUICPacketUPtr
 QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid)
 {
-  size_t len = sizeof(QUICVersion) * countof(QUIC_SUPPORTED_VERSIONS);
+  size_t len = sizeof(QUICVersion) * (countof(QUIC_SUPPORTED_VERSIONS) + 1);
   ats_unique_buf versions(reinterpret_cast<uint8_t *>(ats_malloc(len)));
   uint8_t *p = versions.get();
 
@@ -181,6 +181,13 @@ QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUIC
     p += n;
   }
 
+  // [draft-18] 6.3. Using Reserved Versions
+  // To help ensure this, a server SHOULD include a reserved version (see Section 15) while generating a
+  // Version Negotiation packet.
+  QUICTypeUtil::write_QUICVersion(QUIC_EXERCISE_VERSION, p, &n);
+  p += n;
+
+  ink_assert(len == static_cast<size_t>(p - versions.get()));
   // VN packet dosen't have packet number field and version field is always 0x00000000
   QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, QUICKeyPhase::INITIAL, dcid, scid,
                                                         0x00, 0x00, 0x00, false, std::move(versions), len);

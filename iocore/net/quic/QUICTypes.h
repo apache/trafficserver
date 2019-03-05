@@ -52,7 +52,7 @@ using QUICOffset       = uint64_t;
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
   0xff000012,
 };
-constexpr QUICVersion QUIC_EXERCISE_VERSIONS = 0x1a2a3a4a;
+constexpr QUICVersion QUIC_EXERCISE_VERSION = 0x1a2a3a4a;
 
 enum class QUICEncryptionLevel {
   NONE      = -1,
