@@ -708,7 +708,7 @@ http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
         int url_string_length   = url->strings_length();
         heap->m_read_write_heap = new_HdrStrHeap(url_string_length);
       }
-      hh->u.req.m_url_impl->move_strings(heap->m_read_write_heap.get());
+      hh->u.req.m_url_impl->rehome_strings(heap);
     } else {
       hh->u.req.m_url_impl = url;
     }
