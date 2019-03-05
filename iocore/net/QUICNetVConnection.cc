@@ -1918,8 +1918,15 @@ QUICNetVConnection::_validate_new_path()
   this->_path_validator->validate();
   // Not sure how long we should wait. The spec says just "enough time".
   // Use the same time amount as the closing timeout.
-  int index      = QUICTypeUtil::pn_space_index(this->_hs_protocol->current_encryption_level());
-  ink_hrtime rto = this->_loss_detector[index]->current_rto_period();
+  ink_hrtime rto          = 0;
+  int current_level_index = QUICTypeUtil::pn_space_index(this->_hs_protocol->current_encryption_level());
+
+  // Workaround fix for #5111 - walk through PN Spaces to get correct RTO
+  // This could be removed when _loss_detectors are combined.
+  for (int i = 0; i <= current_level_index; ++i) {
+    rto = std::max(rto, this->_loss_detector[i]->current_rto_period());
+  }
+
   this->_schedule_path_validation_timeout(3 * rto);
 }
 
