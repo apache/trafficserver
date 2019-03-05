@@ -19,6 +19,11 @@ class UrlRewrite  {
 
 UrlRewrite --|> RefCountObj
 UrlRewrite --* MappingStore
+UrlRewrite --* RemapFilter::List
+note top: Owning storage for filters
+class RemapFilter::List << IntrusiveDList >> {
+}
+RemapFilter::List --* "*" RemapFilter
 
 class MappingStore {
   Rule collection
@@ -47,10 +52,45 @@ RemapFilter --* "*" RemapArg
 RemapFilter --* "2" IpMap
 
 class url_mapping {
-  URL rewrite rule
+  rewrite rule
+  ================
+  URL from
+  URL to
+}
+note right: Mapping type is determined by\nwhich MappingStore owns\nthis mapping.
+
+url_mapping --* "1" FilterVector
+note top: Pointers to elements in\nUrlRewrite::FilterList
+
+class FilterVector << std::vector >> {
 }
 
-url_mapping --o "*" RemapFilter
+url_mapping --* "1" RemapPluginInfoList
+url_mapping --* "1" RefererInfo::List
+url_mapping --* "1" RedirectChunkList
+url_mapping --* "2" URL
+
+class RemapPluginInfoList << std::vector >> {
+  Pointers to global
+  remap plugin data.
+}
+RemapPluginInfoList --o "*" RemapPluginInfo
+
+class RedirectChunkList << std::vector >> {
+}
+RedirectChunkList --* "*" RedirectChunk
+
+RefererInfo::List --* "*" RefererInfo
+
+class RefererInfo::List << IntrusiveDList >> {
+}
+
+class RefererInfo {
+  Host rewrite from Referer
+}
+
+class RedirectChunk {
+}
 
 class UrlMappingPathIndex {
 }

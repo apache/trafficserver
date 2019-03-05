@@ -47,6 +47,10 @@ Implementation
    criteria and an action, which is either ``ALLOW`` or ``DENY``. If the filter matches the request
    the action is used, otherwise the next filter is checked.
 
+   .. type:: List
+
+      An :class:`IntrusiveDList` of instances.
+
 .. class:: RemapBuilder
 
    This contains logic to parse the remap configuration file. This is used temporarily while building
@@ -57,9 +61,20 @@ Implementation
 
    The top level remapping structure. This is created from a configuration file and then used at run
    time to perform remapping. Data that is shared or needs to persist as long as the configuration
-   is stored in this class. In particular the string views stored in the ancillary data structures
-   depend on the string being resident in this object. Such strings are "localized" in to a
-   :class:`MemArena` and views are created to reference those localized copies.
+   is stored in this class. These are
+
+   Localized Strings
+      The string views stored in the ancillary data structures
+      depend on the string being resident in this object. Such strings are "localized" in to a
+      :class:`MemArena` and views are created to reference those localized copies.
+
+   Remap Filters
+      All instances of :class:`RemapFilter` for the configuation are stored here (including direct
+      filters), other ancillary classes keep pointers to elements in this list.
+
+   The rules are stored here in one of several containers. The rule type is implicit in which
+   container contains the rule. It is assumed that all rules in a container have the data needed
+   for the rule type of that container.
 
    .. class:: RegexMapping
 
@@ -68,11 +83,15 @@ Implementation
       regular expression match group subsitutions so that if the regular expression matches, the
       results can be efficiently assembled in to the output host name.
 
-   .. method:: ts::TextView localize(ts::TextView view)
+   .. function:: TextView localize(TextView view)
 
       Make a local copy of :arg:`view` and return a view of that copy. The local copy is part of the
       :class:`UrlRewrite` instance and has the same lifetime. The copy is a C-string, i.e. null
       terminated although the null character is not in the returned view.
+
+   .. member:: RemapFilter::List filters
+
+      Configuration level storage for filters.
 
 .. figure:: /uml/images/url-rewrite.svg
    :align: center

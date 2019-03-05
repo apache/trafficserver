@@ -240,20 +240,30 @@ public:
 
   /** Test status.
 
-      Equivalent to @c success but more convenient for use in
+      Equivalent to @c is_ok but more convenient for use in
       control statements.
 
-      @return @c true if no messages or last message has a zero
-      message ID, @c false otherwise.
+   *  @return @c false at least one message has a severity of @c FAILURE_SEVERITY or greater, @c
+   *  true if not.
    */
+
   explicit operator bool() const;
+
+  /** Test status.
+   *
+   * Equivalent to <tt>!is_ok()</tt> but potentially more convenient.
+   *
+   *  @return @c true at least one message has a severity of @c FAILURE_SEVERITY or greater, @c
+   *  false if not.
+   */
+  bool operator!() const;
 
   /** Test errata for no failure condition.
 
       Equivalent to @c operator @c bool but easier to invoke.
 
-      @return @c true if no messages or last message has a zero
-      message ID, @c false otherwise.
+      @return @c true if no message has a severity of @c FAILURE_SEVERITY
+      or greater, @c false if at least one such message is in the stack.
    */
   bool is_ok() const;
 
@@ -671,6 +681,11 @@ Errata::operator=(self_type &&that) -> self_type &
 inline Errata::operator bool() const
 {
   return this->is_ok();
+}
+
+inline bool Errata::operator!() const
+{
+  return !this->is_ok();
 }
 
 inline bool

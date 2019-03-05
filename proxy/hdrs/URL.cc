@@ -485,6 +485,16 @@ url_host_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool co
   mime_str_u16_set(heap, value, length, &(url->m_ptr_host), &(url->m_len_host), copy_string);
 }
 
+void
+URL::host_set_lower(std::string_view host)
+{
+  this->pre_update();
+  char *raw = m_heap->allocate_str(host.size());
+  std::transform(host.begin(), host.end(), raw, &tolower);
+  m_url_impl->m_ptr_host = raw;
+  m_url_impl->m_len_host = host.size();
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 

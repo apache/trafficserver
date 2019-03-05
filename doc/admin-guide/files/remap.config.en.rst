@@ -444,8 +444,8 @@ important it should be repeated.
 
 For an ``allow`` filter to be useful, it must be followed by a ``deny`` filter. In the most common
 use case, where the goal is to specify which for which requests the rule is valid, the ``allow``
-should be followd by an plain ``deny``, which denies everything __except requests that matched the
-allow filter__.
+should be followd by an plain ``deny``, which denies everything *except requests that matched the
+allow filter*.
 
 The constraints available for a filter are
 
@@ -620,3 +620,55 @@ The top level key is ``url_rewrite``. Under this key are two elements, a ``rules
 
 ``rules``
    The URL rewriting rules. This is optional, but if not present no URL rewriting will be done.
+
+Rule
+----
+
+A rule has a number of fields.
+
+``target``
+   The target URL. This is the URL against which the URL in the client request is matched. This has
+   support for :ref:`limited regular expressions <remap-config-regex>`. This is indicated by marking
+   the URL as type "rx" using `YAML explicit typing with application specific local tags
+   <https://yaml.org/spec/1.2/spec.html#id2761292>`__. That is, a literal match would look like
+
+      target: "http://apache.org"
+
+   while a regular expression match would look like ::
+
+      target: !rx "http://.*[.]apache[.]org"
+
+``replacement``
+   The replacement URL.
+
+``options``
+   A list of keyword options for the rule.
+
+   ``proxy_port``
+      Use the local (proxy) port of the inbound connection for checking the rewrite rules.
+
+      .. rubric:: Compatibility
+
+         Setting this option is equivalent to using ``map_with_recv_port``.
+
+   ``reverse``
+      Enable reverse mapping. This causes a ``Location`` field in the upstream response to be
+      rewritten from the :arg:`replacement` URL to the :arg:`target` URL.
+
+      .. rubric:: Compatibility
+
+         Setting this option is equivalent to adding a ``reverse_map`` rule that has the target
+         and replacement URLs exchanged. E.g. ::
+
+            target: "http://example.com"
+            replacement: "http://apache.org"
+            options: [ "reverse" ]
+
+         is equivalent to ::
+
+            map http://example.com http://apache.org
+            reverse_map http://apache.org http://example.com
+
+``id``
+   Set the rule ID. This must be a positive integer.
+

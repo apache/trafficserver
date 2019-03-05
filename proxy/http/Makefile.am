@@ -93,10 +93,12 @@ test_proxy_http_SOURCES = \
 	unit_tests/test_ForwardedConfig.cc \
 	ForwardedConfig.cc \
 	unit_tests/test_error_page_selection.cc \
+	unit_tests/test_url_rewrite.cc \
 	HttpBodyFactory.cc \
 	HttpBodyFactory.h
 
 test_proxy_http_LDADD = \
+	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
@@ -107,7 +109,8 @@ test_proxy_http_LDADD = \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/utils/libinkutils.a \
 	@HWLOC_LIBS@ \
-	@LIBCAP@
+	@LIBCAP@ \
+	@LIBSWOC_LIBS@
 
 clang-tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)
 	$(CXX_Clang_Tidy)

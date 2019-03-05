@@ -38,7 +38,7 @@ traffic_server_traffic_server_CPPFLAGS = \
 
 traffic_server_traffic_server_LDFLAGS = \
 	$(AM_LDFLAGS) \
-	@YAMLCPP_LDFLAGS@
+	@YAMLCPP_LDFLAGS@ @LIBSWOC_LDFLAGS@
 
 traffic_server_traffic_server_SOURCES = \
 	traffic_server/CoreUtils.cc \
@@ -89,6 +89,7 @@ traffic_server_traffic_server_LDADD = \
 	@LIBPROFILER@ \
 	@OPENSSL_LIBS@ \
 	@YAMLCPP_LIBS@ \
+	@LIBSWOC_LIBS@ \
 	-lm
 
 if IS_DARWIN

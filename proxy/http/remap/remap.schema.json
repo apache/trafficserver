@@ -182,6 +182,13 @@
           "match"
         ]
       },
+      "rule_option": {
+        "description": "Optional feature for a rule.",
+        "type": "string",
+        "enum": [
+          "regex"
+        ]
+      },
       "rule": {
         "description": "URL Rewrite rule.",
         "type": "object",
@@ -193,6 +200,25 @@
           "to": {
             "description": "The new URL to which the proxy request should be rewritten.",
             "type": "string"
+          },
+          "options": {
+            "description": "Rule options to enable for this rule.",
+            "oneOf": [
+              {
+                "$ref": "#/definitions/url_rewrite/option"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/url_rewrite/option"
+                },
+                "minItems": 1
+              }
+            ]
+          },
+          "map_id": {
+            "description": "Rule identifier (positive integer)",
+            "type": "number"
           },
           "proxy_port": {
             "description": "Specify a local port for a rule.",

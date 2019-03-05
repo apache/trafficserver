@@ -263,6 +263,13 @@ public:
   std::string_view host_get();
   const char *host_get(int *length);
   void host_set(const char *value, int length);
+
+  /** Set the host name to @a host converted to lower case.
+   *
+   * @param host Original host name.
+   */
+  void host_set_lower(std::string_view host);
+
   int port_get();
   int port_get_raw();
   void port_set(int port);
@@ -289,6 +296,9 @@ public:
   // No gratuitous copies!
   URL(const URL &u) = delete;
   URL &operator=(const URL &u) = delete;
+
+  /// Method to call before doing an update to this object.
+  void pre_update();
 };
 
 /*-------------------------------------------------------------------------
@@ -308,6 +318,15 @@ inline int
 URL::valid() const
 {
   return (m_heap && m_url_impl);
+}
+
+inline void
+URL::pre_update()
+{
+  // equivalent to url_call_set().
+  if (m_url_impl) {
+    m_url_impl->m_clean = !m_url_impl->m_ptr_printed_string;
+  }
 }
 
 /*-------------------------------------------------------------------------

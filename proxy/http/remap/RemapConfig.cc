@@ -36,6 +36,7 @@
 #include "tscore/bwf_std_format.h"
 #include "IPAllow.h"
 #include "tscpp/util/PostScript.h"
+#include "RemapYAMLBuilder.h"
 
 #define modulePrefix "[ReverseProxy]"
 
@@ -654,6 +655,7 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
   url_mapping *new_mapping = nullptr;
   mapping_type maptype;
   UrlRewrite::RegexMapping *rxp_map = nullptr;
+  TextView tag; // Rule tag, if any.
 
   bool is_cur_mapping_regex_p;
   TextView type_id_str;
@@ -664,6 +666,11 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
   if (ec) {
     log_warning(errw.print(R"(Error: '{}' while loading '{}')", ec, path));
     return false;
+  }
+
+  if (ts::TextView{path.view()}.take_suffix_at('.') == "yaml" || ts::TextView::npos != content.find(RemapYAMLBuilder::ROOT_TAG)) {
+    auto result = RemapYAMLBuilder::parse(rewriter, content);
+    return result.is_ok();
   }
 
   Debug("url_rewrite", "[BuildTable] UrlRewrite::BuildTable()");
@@ -816,7 +823,6 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
   // update sticky flag
   builder.accept_check_p = builder.accept_check_p && builder.ip_allow_check_enabled_p;
 
-  new_mapping->map_id = 0;
   if (builder.arg_types[RemapArg::MAP_ID]) {
     auto spot =
       std::find_if(builder.argv.begin(), builder.argv.end(), [](auto const &arg) -> bool { return RemapArg::MAP_ID == arg.type; });
@@ -868,9 +874,8 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
   }
 
   // Check if a tag is specified.
-  auto tag = builder.paramv[3];
-  if (!tag.empty()) {
-    tag = builder.rewriter->localize(tag);
+  if (builder.paramv.size() >= 4) {
+    tag = builder.rewriter->localize(builder.paramv[3]);
     if (maptype == FORWARD_MAP_REFERER) {
       new_mapping->filter_redirect_url = tag;
       if (0 == strcasecmp(tag, "<default>") || 0 == strcasecmp(tag, "default") || 0 == strcasecmp(tag, "<default_redirect_url>") ||
@@ -932,31 +937,20 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
   // might get two slashes occasionally instead of one because
   // the rest of the system assumes that trailing slashes have
   // been removed.
-  std::string fromHost_str;
-  char fromHost_static[1024];
-  char *fromHost_buff = fromHost_static;
-  if (fromHost.size() + 1 > sizeof(fromHost_static)) {
-    fromHost_str.resize(fromHost.size() + 1);
-    fromHost_buff = fromHost_str.data();
-  }
-  // Canonicalize the hostname by making it lower case
-  for (size_t idx = 0; idx < fromHost.size(); ++idx) {
-    fromHost_buff[idx] = static_cast<char>(tolower(fromHost[idx]));
-  }
-  fromHost_buff[fromHost.size()] = 0;
 
   // set the normalized string so nobody else has to normalize this
-  new_mapping->fromURL.host_set(fromHost_buff, fromHost.size());
+  new_mapping->fromURL.host_set_lower(fromHost);
+  fromHost = new_mapping->fromURL.host_get();
 
   if (is_cur_mapping_regex_p) {
     ts::LocalBufferWriter<1024> lbw;
     rxp_map      = new UrlRewrite::RegexMapping();
-    auto err_msg = builder.parse_regex_mapping({fromHost_buff, fromHost.size()}, new_mapping, rxp_map, lbw);
+    auto err_msg = builder.parse_regex_mapping({fromHost.data(), fromHost.size()}, new_mapping, rxp_map, lbw);
     if (!err_msg.empty()) {
       errw.print("could not process regex mapping config line - {}", err_msg);
       return false;
     }
-    Debug("url_rewrite_regex", "Configured regex rule for host [%s]", fromHost_buff);
+    Debug("url_rewrite_regex", "Configured regex rule for host [%.*s]", static_cast<int>(fromHost.size()), fromHost.data());
   }
 
   // If a TS receives a request on a port which is set to tunnel mode (ie, blind forwarding) and a
@@ -966,10 +960,13 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
   // convert hostname to its IPv4 addr and gives a new remap rule with the IPv4 addr.
 
   if ((maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) &&
-      fromScheme == URL_SCHEME_TUNNEL && (fromHost_buff[0] < '0' || fromHost_buff[0] > '9')) {
+      fromScheme == URL_SCHEME_TUNNEL && (fromHost[0] < '0' || fromHost[0] > '9')) {
     addrinfo *ai_records; // returned records.
     ip_text_buffer ipb;   // buffer for address string conversion.
-    if (0 == getaddrinfo(fromHost_buff, nullptr, nullptr, &ai_records)) {
+    char *tmp = static_cast<char *>(alloca(fromHost.size() + 1));
+    memcpy(tmp, fromHost.data(), fromHost.size());
+    tmp[fromHost.size()] = '\0';
+    if (0 == getaddrinfo(tmp, nullptr, nullptr, &ai_records)) {
       ts::PostScript ai_cleanup{[=]() -> void { freeaddrinfo(ai_records); }};
       for (addrinfo *ai_spot = ai_records; ai_spot; ai_spot = ai_spot->ai_next) {
         if (ats_is_ip(ai_spot->ai_addr) && !ats_is_ip_any(ai_spot->ai_addr) && ai_spot->ai_protocol == IPPROTO_TCP) {
@@ -995,7 +992,8 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
   }
 
   // Now add the mapping to appropriate container
-  if (!builder.rewriter->InsertMapping(maptype, new_mapping, rxp_map, fromHost_buff, is_cur_mapping_regex_p)) {
+  // WRONG - fromHost.data() is not null terminated. Need to fix InsertMapping.
+  if (!builder.rewriter->InsertMapping(maptype, new_mapping, rxp_map, fromHost.data(), is_cur_mapping_regex_p)) {
     errw.write("unable to add mapping rule to lookup table");
     return false;
   }
@@ -1008,7 +1006,7 @@ bool
 remap_parse_config(const char *path, UrlRewrite *rewrite)
 {
   // Convenient place to check for valid schema init - doesn't happen often, and don't need it before
-  // this.
+  // this. This can't be done at start up because it depends on other initialization logic.
   if (VALID_SCHEMA.empty()) {
     VALID_SCHEMA.push_back(URL_SCHEME_HTTP);
     VALID_SCHEMA.push_back(URL_SCHEME_HTTPS);
