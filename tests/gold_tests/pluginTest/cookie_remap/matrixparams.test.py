@@ -27,7 +27,6 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: Tests when matrix parameters are present"
-Test.SkipIf(Condition.true("Test is temporarily turned off, to be fixed according to an incompatible plugin API change (PR #4964)"))
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
