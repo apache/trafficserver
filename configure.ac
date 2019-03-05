@@ -1329,6 +1329,14 @@ AM_CONDITIONAL([BUILD_URI_SIGNING_PLUGIN], [test ! -z "${LIBCJOSE}" -a ! -z "${L
 AC_SUBST([LIBCJOSE])
 AC_SUBST([LIBJANSSON])
 
+LIBSWOC_INCLUDES=-I\${abs_top_srcdir}/lib/swoc++/include
+LIBSWOC_LIBS=\${abs_top_builddir}/lib/swoc++/libswoc++.a
+LIBSWOC_LDFLAGS=
+
+AC_SUBST([LIBSWOC_INCLUDES])
+AC_SUBST([LIBSWOC_LIBS])
+AC_SUBST([LIBSWOC_LDFLAGS])
+
 # Check for yaml-cpp library
 #
 TS_CHECK_YAML_CPP
@@ -2073,6 +2081,7 @@ AC_CONFIG_FILES([
   lib/tsconfig/Makefile
   src/wccp/Makefile
   lib/yamlcpp/Makefile
+  lib/swoc++/Makefile
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile

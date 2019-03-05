@@ -50,6 +50,7 @@ include_directories(
         mgmt/api/include
         proxy/api
         lib/yamlcpp/include
+        lib/swoc++/include
 )
 
 macro(CC_EXEC exec path)
@@ -114,6 +115,7 @@ CPP_LIB(logging proxy/logging proxy/logging)
 
 CPP_LIB(tsconfig lib/tsconfig lib/tsconfig)
 CPP_LIB(wccp src/wccp include/wccp)
+CPP_LIB(swoc++ lib/swoc++/src lib/swoc++/include/swoc)
 
 file(GLOB plugin_files
         plugins/*/*.h

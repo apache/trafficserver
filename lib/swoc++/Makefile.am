@@ -1,4 +1,5 @@
-# lib Makefile.am
+#
+# Makefile.am for libswoc++ library
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -16,24 +17,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = . records tsconfig swoc++
+include $(top_srcdir)/build/tidy.mk
 
-if BUILD_PERL_LIB
-SUBDIRS += perl
-endif
+AM_CPPFLAGS += \
+	-I$(abs_top_srcdir)/lib/swoc++/include
 
-# to prevent Clang Analyzer warning
-LOCAL =
+noinst_LIBRARIES = libswoc++.a
 
-if BUILD_YAML_CPP
-LOCAL += yamlcpp
-endif
+libswoc___a_SOURCES = \
+	src/bw_format.cc \
+	src/Errata.cc \
+	src/MemArena.cc \
+	src/swoc_file.cc \
+	src/TextView.cc 
 
-
-all-local:	$(LOCAL)
-	$(MAKE) -C yamlcpp
-	$(MAKE) -C swoc++
-
-clean-local:
-	$(MAKE) -C yamlcpp clean
-	$(MAKE) -C swoc++ clean
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)
