@@ -68,7 +68,7 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
 
     // Validate version
-    QUICTransportParametersInClientHello tp(QUIC_EXERCISE_VERSIONS);
+    QUICTransportParametersInClientHello tp(QUIC_EXERCISE_VERSION);
     vn.validate(&tp);
     CHECK(vn.status() == QUICVersionNegotiationStatus::VALIDATED);
     CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);
@@ -80,7 +80,7 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
     // Negotiate version
-    packet_factory.set_version(QUIC_EXERCISE_VERSIONS);
+    packet_factory.set_version(QUIC_EXERCISE_VERSION);
     QUICPacketUPtr initial_packet =
       packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true, dummy_frames);
     vn.negotiate(initial_packet.get());
@@ -125,7 +125,7 @@ TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
     // Negotiate version
-    packet_factory.set_version(QUIC_EXERCISE_VERSIONS);
+    packet_factory.set_version(QUIC_EXERCISE_VERSION);
     QUICPacketUPtr initial_packet =
       packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true, dummy_frames);
 
