@@ -44,11 +44,11 @@ class QUICPacketFactory
 {
 public:
   static QUICPacketUPtr create_null_packet();
-  static QUICPacketUPtr create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid);
-  static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id,
-                                                      QUICStatelessResetToken stateless_reset_token);
-  static QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                            QUICConnectionId original_dcid, QUICRetryToken &token);
+  static QUICVersionNegotiationPacket *create_version_negotiation_packet(uint8_t *buf, QUICConnectionId dcid,
+                                                                         QUICConnectionId scid);
+  static QUICStatelessResetPacket *create_stateless_reset_packet(uint8_t *buf, QUICStatelessResetToken stateless_reset_token);
+  static QUICRetryPacket *create_retry_packet(uint8_t *buf, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                              QUICConnectionId original_dcid, QUICRetryToken &token);
 
   QUICPacketFactory(const QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info), _pp_protector(pp_key_info) {}
 
@@ -81,7 +81,6 @@ private:
   // Initial, 0/1-RTT, and Handshake
   QUICPacketNumberGenerator _packet_number_generator[3];
 
-  static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeaderUPtr header);
   QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool ack_eliciting, bool probing,
                                           std::vector<QUICFrameInfo> &frames);
 };

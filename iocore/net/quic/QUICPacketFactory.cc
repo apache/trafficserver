@@ -168,31 +168,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
 }
 
-QUICPacketUPtr
-QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid)
+QUICVersionNegotiationPacket *
+QUICPacketFactory::create_version_negotiation_packet(uint8_t *buf, QUICConnectionId dcid, QUICConnectionId scid)
 {
-  size_t len = sizeof(QUICVersion) * (countof(QUIC_SUPPORTED_VERSIONS) + 1);
-  ats_unique_buf versions(reinterpret_cast<uint8_t *>(ats_malloc(len)));
-  uint8_t *p = versions.get();
-
-  size_t n;
-  for (auto v : QUIC_SUPPORTED_VERSIONS) {
-    QUICTypeUtil::write_QUICVersion(v, p, &n);
-    p += n;
-  }
-
-  // [draft-18] 6.3. Using Reserved Versions
-  // To help ensure this, a server SHOULD include a reserved version (see Section 15) while generating a
-  // Version Negotiation packet.
-  QUICTypeUtil::write_QUICVersion(QUIC_EXERCISE_VERSION, p, &n);
-  p += n;
-
-  ink_assert(len == static_cast<size_t>(p - versions.get()));
-  // VN packet dosen't have packet number field and version field is always 0x00000000
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, QUICKeyPhase::INITIAL, dcid, scid,
-                                                        0x00, 0x00, 0x00, false, std::move(versions), len);
-
-  return QUICPacketFactory::_create_unprotected_packet(std::move(header));
+  return new (buf) QUICVersionNegotiationPacket(dcid, scid, QUIC_SUPPORTED_VERSIONS, countof(QUIC_SUPPORTED_VERSIONS));
 }
 
 QUICPacketUPtr
@@ -209,17 +188,11 @@ QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICC
   return this->_create_encrypted_packet(std::move(header), retransmittable, probing, frames);
 }
 
-QUICPacketUPtr
-QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+QUICRetryPacket *
+QUICPacketFactory::create_retry_packet(uint8_t *buf, QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICConnectionId original_dcid, QUICRetryToken &token)
 {
-  ats_unique_buf payload = ats_unique_malloc(token.length());
-  memcpy(payload.get(), token.buf(), token.length());
-
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::RETRY, QUICKeyPhase::INITIAL, QUIC_SUPPORTED_VERSIONS[0], destination_cid, source_cid,
-                            original_dcid, std::move(payload), token.length());
-  return QUICPacketFactory::_create_unprotected_packet(std::move(header));
+  return new (buf) QUICRetryPacket(QUIC_SUPPORTED_VERSIONS[0], destination_cid, source_cid, original_dcid, token);
 }
 
 QUICPacketUPtr
@@ -261,40 +234,10 @@ QUICPacketFactory::create_protected_packet(QUICConnectionId connection_id, QUICP
   return this->_create_encrypted_packet(std::move(header), retransmittable, probing, frames);
 }
 
-QUICPacketUPtr
-QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessResetToken stateless_reset_token)
+QUICStatelessResetPacket *
+QUICPacketFactory::create_stateless_reset_packet(uint8_t *buf, QUICStatelessResetToken stateless_reset_token)
 {
-  std::random_device rnd;
-
-  uint8_t random_packet_number = static_cast<uint8_t>(rnd() & 0xFF);
-  size_t payload_len           = static_cast<uint8_t>((rnd() & 0xFF) | 16); // Mimimum length has to be 16
-  ats_unique_buf payload       = ats_unique_malloc(payload_len + 16);
-  uint8_t *naked_payload       = payload.get();
-
-  // Generate random octets
-  for (int i = payload_len - 1; i >= 0; --i) {
-    naked_payload[i] = static_cast<uint8_t>(rnd() & 0xFF);
-  }
-  // Copy stateless reset token into payload
-  memcpy(naked_payload + payload_len - 16, stateless_reset_token.buf(), 16);
-
-  // KeyPhase won't be used
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::STATELESS_RESET, QUICKeyPhase::INITIAL, connection_id,
-                                                        random_packet_number, 0, std::move(payload), payload_len);
-  return QUICPacketFactory::_create_unprotected_packet(std::move(header));
-}
-
-QUICPacketUPtr
-QUICPacketFactory::_create_unprotected_packet(QUICPacketHeaderUPtr header)
-{
-  ats_unique_buf cleartext = ats_unique_malloc(2048);
-  size_t cleartext_len     = header->payload_size();
-
-  memcpy(cleartext.get(), header->payload(), cleartext_len);
-  QUICPacket *packet = quicPacketAllocator.alloc();
-  new (packet) QUICPacket(std::move(header), std::move(cleartext), cleartext_len, false, false);
-
-  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
+  return new (buf) QUICStatelessResetPacket(stateless_reset_token);
 }
 
 QUICPacketUPtr

@@ -75,14 +75,10 @@ void
 QUICPacketHandler::_send_packet(const QUICPacket &packet, UDPConnection *udp_con, IpEndpoint &addr, uint32_t pmtu,
                                 const QUICPacketHeaderProtector *ph_protector, int dcil)
 {
-  size_t udp_len;
-  Ptr<IOBufferBlock> udp_payload(new_IOBufferBlock());
-  udp_payload->alloc(iobuffer_size_to_index(pmtu));
-  packet.store(reinterpret_cast<uint8_t *>(udp_payload->end()), &udp_len);
-  udp_payload->fill(udp_len);
+  Ptr<IOBufferBlock> udp_payload = packet.to_io_buffer_block();
 
   if (ph_protector) {
-    ph_protector->protect(reinterpret_cast<uint8_t *>(udp_payload->start()), udp_len, dcil);
+    ph_protector->protect(reinterpret_cast<uint8_t *>(udp_payload->start()), udp_payload->size(), dcil);
   }
 
   this->_send_packet(udp_con, addr, udp_payload);
@@ -245,7 +241,8 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     if (!QUICInvariants::is_version_negotiation(v) && !QUICTypeUtil::is_supported_version(v)) {
       QUICDebugDS(scid, dcid, "Unsupported version: 0x%x", v);
 
-      QUICPacketUPtr vn = QUICPacketFactory::create_version_negotiation_packet(scid, dcid);
+      uint8_t buf[sizeof(QUICVersionNegotiationPacket)];
+      QUICVersionNegotiationPacket *vn = QUICPacketFactory::create_version_negotiation_packet(buf, scid, dcid);
       this->_send_packet(*vn, udp_packet->getConnection(), udp_packet->from, 1200, nullptr, 0);
       udp_packet->free();
       return;
@@ -297,7 +294,8 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   if ((!vc && !QUICInvariants::is_long_header(buf)) || (vc && vc->in_closed_queue)) {
     QUICConfig::scoped_config params;
     QUICStatelessResetToken token(dcid, params->instance_id());
-    auto packet = QUICPacketFactory::create_stateless_reset_packet(dcid, token);
+    uint8_t buf[sizeof(QUICStatelessResetPacket)];
+    auto packet = QUICPacketFactory::create_stateless_reset_packet(buf, token);
     this->_send_packet(*packet, udp_packet->getConnection(), udp_packet->from, 1200, nullptr, 0);
     udp_packet->free();
     return;
@@ -381,7 +379,8 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
     QUICRetryToken token(from, dcid);
     QUICConnectionId local_cid;
     local_cid.randomize();
-    QUICPacketUPtr retry_packet = QUICPacketFactory::create_retry_packet(scid, local_cid, dcid, token);
+    uint8_t buf[sizeof(QUICRetryPacket)];
+    auto retry_packet = QUICPacketFactory::create_retry_packet(buf, scid, local_cid, dcid, token);
 
     this->_send_packet(*retry_packet, connection, from, 1200, nullptr, 0);
 

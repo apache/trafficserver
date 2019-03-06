@@ -580,10 +580,8 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
         pn_len = 1;
       }
 
-      if (this->_type != QUICPacketType::RETRY) {
-        // PN Len field
-        QUICTypeUtil::write_QUICPacketNumberLen(pn_len, buf);
-      }
+      // PN Len field
+      QUICTypeUtil::write_QUICPacketNumberLen(pn_len, buf);
 
       // Length Field
       QUICIntUtil::write_QUICVariableInt(pn_len + this->_payload_length + aead_tag_len, buf + *len, &n);
@@ -1023,4 +1021,138 @@ QUICPacket::decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, si
   }
 
   return true;
+}
+
+Ptr<IOBufferBlock>
+QUICVersionNegotiationPacket::to_io_buffer_block() const
+{
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(BUFFER_SIZE_INDEX_2K);
+  uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
+  size_t len   = 0;
+  size_t n;
+
+  // Type
+  buf[0] = 0xC0;
+  buf[0] |= rand();
+  len += 1;
+
+  // Version (always 0)
+  QUICTypeUtil::write_QUICVersion(0, buf + len, &n);
+  len += n;
+
+  // DCIL and SCIL
+  buf[len] = this->_dcid == QUICConnectionId::ZERO() ? 0 : (this->_dcid.length() - 3) << 4;
+  buf[len] += this->_scid == QUICConnectionId::ZERO() ? 0 : this->_scid.length() - 3;
+  len += 1;
+
+  // DCID
+  if (this->_dcid != QUICConnectionId::ZERO()) {
+    QUICTypeUtil::write_QUICConnectionId(this->_dcid, buf + len, &n);
+    len += n;
+  }
+
+  // SCID
+  if (this->_scid != QUICConnectionId::ZERO()) {
+    QUICTypeUtil::write_QUICConnectionId(this->_scid, buf + len, &n);
+    len += n;
+  }
+
+  // Supported Versions
+  for (int i = 0; i < this->_nversions; ++i) {
+    QUICTypeUtil::write_QUICVersion(this->_versions[i], buf + len, &n);
+    len += n;
+  }
+
+  // [draft-18] 6.3. Using Reserved Versions
+  // To help ensure this, a server SHOULD include a reserved version (see Section 15) while generating a
+  // Version Negotiation packet.
+  QUICTypeUtil::write_QUICVersion(QUIC_EXERCISE_VERSION, buf + len, &n);
+  len += n;
+
+  block->fill(len);
+
+  return block;
+}
+
+Ptr<IOBufferBlock>
+QUICStatelessResetPacket::to_io_buffer_block() const
+{
+  std::random_device rnd;
+
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(BUFFER_SIZE_INDEX_2K);
+  uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
+  size_t len   = 0;
+
+  // Type
+  buf[0] = 0x40;
+  len += 1;
+
+  // Unpredictable bits
+  size_t unpredictable_len = static_cast<uint8_t>((rnd() & 0xFF) | 23); // Mimimum length has to be 23
+  for (int i = unpredictable_len - 1; i >= 0; --i) {
+    buf[i] = static_cast<uint8_t>(rnd() & 0xFF);
+  }
+  len += unpredictable_len;
+
+  // Stateless Reset Token
+  memcpy(buf + len, this->_stateless_reset_token.buf(), 16);
+
+  block->fill(len);
+
+  return block;
+}
+
+Ptr<IOBufferBlock>
+QUICRetryPacket::to_io_buffer_block() const
+{
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(BUFFER_SIZE_INDEX_2K);
+  uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
+  size_t len   = 0;
+  size_t n;
+
+  // Type
+  buf[0] = 0xC0;
+  buf[0] += static_cast<uint8_t>(QUICPacketType::RETRY) << 4;
+  len += 1;
+
+  // Version
+  QUICTypeUtil::write_QUICVersion(this->_version, buf + len, &n);
+  len += n;
+
+  // DCIL and SCIL
+  buf[len] = this->_dcid == QUICConnectionId::ZERO() ? 0 : (this->_dcid.length() - 3) << 4;
+  buf[len] += this->_scid == QUICConnectionId::ZERO() ? 0 : this->_scid.length() - 3;
+  len += 1;
+
+  // DCID
+  if (this->_dcid != QUICConnectionId::ZERO()) {
+    QUICTypeUtil::write_QUICConnectionId(this->_dcid, buf + len, &n);
+    len += n;
+  }
+
+  // SCID
+  if (this->_scid != QUICConnectionId::ZERO()) {
+    QUICTypeUtil::write_QUICConnectionId(this->_scid, buf + len, &n);
+    len += n;
+  }
+
+  // Original Destination Connection ID
+  if (this->_original_dcid != QUICConnectionId::ZERO()) {
+    QUICTypeUtil::write_QUICConnectionId(this->_original_dcid, buf + len, &n);
+    len += n;
+  }
+
+  // ODCIL
+  buf[0] |= this->_original_dcid.length() - 3;
+
+  // Retry Token
+  memcpy(buf + len, this->_token.buf(), this->_token.length());
+  len += this->_token.length();
+
+  block->fill(len);
+
+  return block;
 }

@@ -380,6 +380,14 @@ public:
   void store(uint8_t *buf, size_t *len) const;
   QUICKeyPhase key_phase() const;
 
+  virtual Ptr<IOBufferBlock>
+  to_io_buffer_block() const
+  {
+    // FIXME Make this pure virtual
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    return block;
+  }
+
   /***** STATIC MEMBERS *****/
 
   static uint8_t calc_packet_number_len(QUICPacketNumber num, QUICPacketNumber base);
@@ -394,6 +402,53 @@ private:
   size_t _payload_size         = 0;
   bool _is_ack_eliciting       = false;
   bool _is_probing_packet      = false;
+};
+
+class QUICVersionNegotiationPacket : public QUICPacket
+{
+public:
+  QUICVersionNegotiationPacket(QUICConnectionId dcid, QUICConnectionId scid, const QUICVersion *versions, int nversions)
+    : _dcid(dcid), _scid(scid), _versions(versions), _nversions(nversions)
+  {
+  }
+
+  Ptr<IOBufferBlock> to_io_buffer_block() const override;
+
+private:
+  QUICConnectionId _dcid;
+  QUICConnectionId _scid;
+  const QUICVersion *_versions;
+  int _nversions;
+};
+
+class QUICStatelessResetPacket : public QUICPacket
+{
+public:
+  QUICStatelessResetPacket(QUICStatelessResetToken stateless_reset_token) : _stateless_reset_token(stateless_reset_token) {}
+
+  Ptr<IOBufferBlock> to_io_buffer_block() const override;
+
+private:
+  QUICStatelessResetToken _stateless_reset_token;
+};
+
+class QUICRetryPacket : public QUICPacket
+{
+public:
+  QUICRetryPacket(QUICVersion version, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                  QUICConnectionId original_dcid, QUICRetryToken &token)
+    : _version(version), _dcid(destination_cid), _scid(source_cid), _original_dcid(original_dcid), _token(token)
+  {
+  }
+
+  Ptr<IOBufferBlock> to_io_buffer_block() const override;
+
+private:
+  QUICVersion _version;
+  QUICConnectionId _dcid;
+  QUICConnectionId _scid;
+  QUICConnectionId _original_dcid;
+  QUICRetryToken &_token;
 };
 
 using QUICPacketDeleterFunc = void (*)(QUICPacket *p);
