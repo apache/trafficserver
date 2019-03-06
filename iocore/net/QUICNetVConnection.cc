@@ -1469,13 +1469,7 @@ QUICPacketUPtr
 QUICNetVConnection::_build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool ack_eliciting, bool probing,
                                   bool crypto, std::vector<QUICFrameInfo> &frames)
 {
-  return this->_build_packet(std::move(buf), len, ack_eliciting, probing, crypto, frames, QUICTypeUtil::packet_type(level));
-}
-
-QUICPacketUPtr
-QUICNetVConnection::_build_packet(ats_unique_buf buf, size_t len, bool ack_eliciting, bool probing, bool crypto,
-                                  std::vector<QUICFrameInfo> &frames, QUICPacketType type)
-{
+  QUICPacketType type   = QUICTypeUtil::packet_type(level);
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
 
   switch (type) {
