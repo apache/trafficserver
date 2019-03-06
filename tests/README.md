@@ -6,8 +6,8 @@ This directory contains different tests for Apache Trafficserver. It is recommen
 ## Layout
 The current layout is:
 
-**gold_tests/** - contains all the TSQA v4 based tests that run on the Reusable Gold Testing System (AuTest)  
-**tools/** - contains programs used to help with testing.  
+**gold_tests/** - contains all the TSQA v4 based tests that run on the Reusable Gold Testing System (AuTest)
+**tools/** - contains programs used to help with testing.
 **include/** - contains headers used for unit testing.
 
 ## Scripts
@@ -290,11 +290,7 @@ ts.Disk.remap_config.AddLine(
  * TS_HAS_SO_MARK
  * TS_HAS_IP_TOS
  * TS_USE_HWLOC
- * TS_USE_TLS_NPN
- * TS_USE_TLS_ALPN
- * TS_USE_CERT_CB
  * TS_USE_SET_RBIO
- * TS_USE_TLS_ECKEY
  * TS_USE_LINUX_NATIVE_AIO
  * TS_HAS_SO_PEERCRED
  * TS_USE_REMOTE_UNWINDING
@@ -307,7 +303,7 @@ ts.Disk.remap_config.AddLine(
 ```python
 #create the origin server process
 Test.SkipUnless(
-    Condition.HasATSFeature('TS_USE_TLS_ALPN'),
+    Condition.HasATSFeature('TS_USE_LINUX_NATIVE_AIO'),
 )
 ```
 

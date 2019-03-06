@@ -99,7 +99,9 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
   return true;
 }
 
-TsEnumDescriptor ROLLING_MODE = {{{"none", 0}, {"time", 1}, {"size", 2}, {"both", 3}, {"any", 4}}};
+TsEnumDescriptor ROLLING_MODE_TEXT = {{{"none", 0}, {"time", 1}, {"size", 2}, {"both", 3}, {"any", 4}}};
+TsEnumDescriptor ROLLING_MODE_LUA  = {
+  {{"log.roll.none", 0}, {"log.roll.time", 1}, {"log.roll.size", 2}, {"log.roll.both", 3}, {"log.roll.any", 4}}};
 
 std::set<std::string> valid_log_object_keys = {
   "filename",          "format",          "mode",    "header",          "rolling_enabled", "rolling_interval_sec",
@@ -153,9 +155,15 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
 
   if (node["rolling_enabled"]) {
     auto value          = node["rolling_enabled"].as<std::string>();
-    obj_rolling_enabled = ROLLING_MODE.get(value);
+    obj_rolling_enabled = ROLLING_MODE_TEXT.get(value);
     if (obj_rolling_enabled < 0) {
-      throw YAML::ParserException(node["rolling_enabled"].Mark(), "unknown value " + value);
+      obj_rolling_enabled = ROLLING_MODE_LUA.get(value);
+      if (obj_rolling_enabled < 0) {
+        obj_rolling_enabled = node["rolling_enabled"].as<int>();
+        if (obj_rolling_enabled < Log::NO_ROLLING || obj_rolling_enabled > Log::ROLL_ON_TIME_AND_SIZE) {
+          throw YAML::ParserException(node["rolling_enabled"].Mark(), "unknown value " + value);
+        }
+      }
     }
   }
   if (node["rolling_interval_sec"]) {

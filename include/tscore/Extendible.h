@@ -105,6 +105,8 @@ template <typename Derived_t> struct Extendible {
   Extendible(Extendible &) = delete;
   /** allocate a new object with additional field data */
   void *operator new(size_t size);
+  /** free the object */
+  void operator delete(void *ptr);
   /** construct all fields */
   Extendible() { schema.call_construct(this_as_char_ptr()); }
   /** destruct all fields */
@@ -548,6 +550,15 @@ Extendible<Derived_t>::operator new(size_t size)
   void *ptr = ats_memalign(schema.alloc_align, schema.alloc_size);
   ink_release_assert(ptr != nullptr);
   return ptr;
+}
+
+/// free the object
+template <class Derived_t>
+void
+Extendible<Derived_t>::operator delete(void *ptr)
+{
+  ats_free(ptr);
+  ink_release_assert(ptr != nullptr);
 }
 
 // private

@@ -349,6 +349,21 @@ URLImpl::unmarshal(intptr_t offset)
 }
 
 void
+URLImpl::rehome_strings(HdrHeap *new_heap)
+{
+  m_ptr_scheme         = new_heap->localize({m_ptr_scheme, m_len_scheme}).data();
+  m_ptr_user           = new_heap->localize({m_ptr_user, m_len_user}).data();
+  m_ptr_password       = new_heap->localize({m_ptr_password, m_len_password}).data();
+  m_ptr_host           = new_heap->localize({m_ptr_host, m_len_host}).data();
+  m_ptr_port           = new_heap->localize({m_ptr_port, m_len_port}).data();
+  m_ptr_path           = new_heap->localize({m_ptr_path, m_len_path}).data();
+  m_ptr_params         = new_heap->localize({m_ptr_params, m_len_params}).data();
+  m_ptr_query          = new_heap->localize({m_ptr_query, m_len_query}).data();
+  m_ptr_fragment       = new_heap->localize({m_ptr_fragment, m_len_fragment}).data();
+  m_ptr_printed_string = new_heap->localize({m_ptr_printed_string, m_len_printed_string}).data();
+}
+
+void
 URLImpl::move_strings(HdrStrHeap *new_heap)
 {
   HDR_MOVE_STR(m_ptr_scheme, m_len_scheme);
@@ -682,24 +697,6 @@ url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length)
     }
   }
   return buf;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-const char *
-url_scheme_get(URLImpl *url, int *length)
-{
-  const char *str;
-
-  if (url->m_scheme_wks_idx >= 0) {
-    str     = hdrtoken_index_to_wks(url->m_scheme_wks_idx);
-    *length = hdrtoken_index_to_length(url->m_scheme_wks_idx);
-  } else {
-    str     = url->m_ptr_scheme;
-    *length = url->m_len_scheme;
-  }
-  return str;
 }
 
 /*-------------------------------------------------------------------------

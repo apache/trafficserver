@@ -90,9 +90,10 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
   map.insert(new Thing("dave"));
   map.insert(new Thing("persia"));
   REQUIRE(map.count() == 3);
-  for (auto &thing : map) {
-    delete &thing;
-  }
+  // Need to be bit careful cleaning up, since the link pointers are in the objects and deleting
+  // the object makes it unsafe to use an iterator referencing that object. For a full cleanup,
+  // the best option is to first delete everything, then clean up the map.
+  map.apply([](Thing *thing) { delete thing; });
   map.clear();
   REQUIRE(map.count() == 0);
 

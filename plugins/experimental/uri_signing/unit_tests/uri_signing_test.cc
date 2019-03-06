@@ -30,6 +30,7 @@ extern "C" {
 #include "../normalize.h"
 #include "../parse.h"
 #include "../match.h"
+#include "../config.h"
 }
 
 bool
@@ -475,4 +476,182 @@ TEST_CASE("5", "[RegexTests]")
   }
 
   SECTION("Alternation") { REQUIRE(match_regex("cat|dog", "dog")); }
+  fprintf(stderr, "\n");
+}
+
+TEST_CASE("6", "[AudTests]")
+{
+  INFO("TEST 6, Test Aud Matching");
+
+  json_error_t *err = NULL;
+  SECTION("Standard aud string match")
+  {
+    json_t *raw = json_loads("{\"aud\": \"tester\"}", 0, err);
+    json_t *aud = json_object_get(raw, "aud");
+    REQUIRE(jwt_check_aud(aud, "tester"));
+    json_decref(aud);
+    json_decref(raw);
+  }
+
+  SECTION("Standard aud array match")
+  {
+    json_t *raw = json_loads("{\"aud\": [ \"foo\", \"bar\",  \"tester\"]}", 0, err);
+    json_t *aud = json_object_get(raw, "aud");
+    REQUIRE(jwt_check_aud(aud, "tester"));
+    json_decref(aud);
+    json_decref(raw);
+  }
+
+  SECTION("Standard aud string mismatch")
+  {
+    json_t *raw = json_loads("{\"aud\": \"foo\"}", 0, err);
+    json_t *aud = json_object_get(raw, "aud");
+    REQUIRE(!jwt_check_aud(aud, "tester"));
+    json_decref(aud);
+    json_decref(raw);
+  }
+
+  SECTION("Standard aud array mismatch")
+  {
+    json_t *raw = json_loads("{\"aud\": [\"foo\", \"bar\", \"foobar\"]}", 0, err);
+    json_t *aud = json_object_get(raw, "aud");
+    REQUIRE(!jwt_check_aud(aud, "tester"));
+    json_decref(aud);
+    json_decref(raw);
+  }
+
+  SECTION("Integer trying to pass as an aud")
+  {
+    json_t *raw = json_loads("{\"aud\": 1}", 0, err);
+    json_t *aud = json_object_get(raw, "aud");
+    REQUIRE(!jwt_check_aud(aud, "tester"));
+    json_decref(aud);
+    json_decref(raw);
+  }
+
+  SECTION("Integer mixed into a passing aud array")
+  {
+    json_t *raw = json_loads("{\"aud\": [1, \"foo\", \"bar\", \"tester\"]}", 0, err);
+    json_t *aud = json_object_get(raw, "aud");
+    REQUIRE(jwt_check_aud(aud, "tester"));
+    json_decref(aud);
+    json_decref(raw);
+  }
+
+  SECTION("Case sensitive test for single string")
+  {
+    json_t *raw = json_loads("{\"aud\": \"TESTer\"}", 0, err);
+    json_t *aud = json_object_get(raw, "aud");
+    REQUIRE(!jwt_check_aud(aud, "tester"));
+    json_decref(aud);
+    json_decref(raw);
+  }
+
+  SECTION("Case sensitive test for array")
+  {
+    json_t *raw = json_loads("{\"aud\": [1, \"foo\", \"bar\", \"Tester\"]}", 0, err);
+    json_t *aud = json_object_get(raw, "aud");
+    REQUIRE(!jwt_check_aud(aud, "tester"));
+    json_decref(aud);
+    json_decref(raw);
+  }
+
+  fprintf(stderr, "\n");
+}
+
+TEST_CASE("7", "[TestsConfig]")
+{
+  INFO("TEST 7, Config Loading and Config Functions");
+
+  SECTION("Config Loading ID Field")
+  {
+    struct config *cfg = read_config("experimental/uri_signing/unit_tests/testConfig.config");
+    REQUIRE(cfg != NULL);
+    REQUIRE(strcmp(config_get_id(cfg), "tester") == 0);
+    config_delete(cfg);
+  }
+  fprintf(stderr, "\n");
+}
+
+bool
+jws_validation_helper(const char *url, const char *package, struct config *cfg)
+{
+  size_t url_ct   = strlen(url);
+  size_t strip_ct = 0;
+  char uri_strip[url_ct + 1];
+  memset(uri_strip, 0, sizeof uri_strip);
+  cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package, uri_strip, url_ct, &strip_ct);
+  if (!jws) {
+    return false;
+  }
+  struct jwt *jwt = validate_jws(jws, cfg, uri_strip, strip_ct);
+  if (jwt) {
+    jwt_delete(jwt);
+    cjose_jws_release(jws);
+    return true;
+  }
+  cjose_jws_release(jws);
+  return false;
+}
+
+TEST_CASE("8", "[TestsWithConfig]")
+{
+  INFO("TEST 8, Tests Involving Validation with Config");
+  struct config *cfg = read_config("experimental/uri_signing/unit_tests/testConfig.config");
+
+  SECTION("Validation of Valid Aud String in JWS")
+  {
+    REQUIRE(jws_validation_helper("http://www.foobar.com/"
+                                  "URISigningPackage=eyJLZXlJREtleSI6IjUiLCJhbGciOiJIUzI1NiJ9."
+                                  "eyJjZG5pZXRzIjozMCwiY2RuaXN0dCI6MSwiaXNzIjoiTWFzdGVyIElzc3VlciIsImF1ZCI6InRlc3RlciIsImNkbml1YyI6"
+                                  "InJlZ2V4Omh0dHA6Ly93d3cuZm9vYmFyLmNvbS8qIn0.InBxVm6OOAglNqc-U5wAZaRQVebJ9PK7Y9i7VFHWYHU",
+                                  "URISigningPackage", cfg));
+    fprintf(stderr, "\n");
+  }
+
+  SECTION("Validation of Invalid Aud String in JWS")
+  {
+    REQUIRE(!jws_validation_helper("http://www.foobar.com/"
+                                   "URISigningPackage=eyJLZXlJREtleSI6IjUiLCJhbGciOiJIUzI1NiJ9."
+                                   "eyJjZG5pZXRzIjozMCwiY2RuaXN0dCI6MSwiaXNzIjoiTWFzdGVyIElzc3VlciIsImF1ZCI6ImJhZCIsImNkbml1YyI6InJ"
+                                   "lZ2V4Omh0dHA6Ly93d3cuZm9vYmFyLmNvbS8qIn0.aCOo8gOBa5G1RKkkzgWYwc79dPRw_fQUC0k1sWcjkyM",
+                                   "URISigningPackage", cfg));
+    fprintf(stderr, "\n");
+  }
+
+  SECTION("Validation of Valid Aud Array in JWS")
+  {
+    REQUIRE(jws_validation_helper(
+      "http://www.foobar.com/"
+      "URISigningPackage=eyJLZXlJREtleSI6IjUiLCJhbGciOiJIUzI1NiJ9."
+      "eyJjZG5pZXRzIjozMCwiY2RuaXN0dCI6MSwiaXNzIjoiTWFzdGVyIElzc3VlciIsImF1ZCI6WyJiYWQiLCJpbnZhbGlkIiwidGVzdGVyIl0sImNkbml1YyI6InJl"
+      "Z2V4Omh0dHA6Ly93d3cuZm9vYmFyLmNvbS8qIn0.7lyepZMzc_odieKvOTN2U-k1gLwRKS8KJIvDFQXDqGs",
+      "URISigningPackage", cfg));
+    fprintf(stderr, "\n");
+  }
+
+  SECTION("Validation of Invalid Aud Array in JWS")
+  {
+    REQUIRE(!jws_validation_helper(
+      "http://www.foobar.com/"
+      "URISigningPackage=eyJLZXlJREtleSI6IjUiLCJhbGciOiJIUzI1NiJ9."
+      "eyJjZG5pZXRzIjozMCwiY2RuaXN0dCI6MSwiaXNzIjoiTWFzdGVyIElzc3VlciIsImF1ZCI6WyJiYWQiLCJpbnZhbGlkIiwiZm9vYmFyIl0sImNkbml1YyI6InJl"
+      "Z2V4Omh0dHA6Ly93d3cuZm9vYmFyLmNvbS8qIn0.CU3WMJAPs0uRC7NKXvatVG9uU9SANdZzqO0GdQUatxk",
+      "URISigningPackage", cfg));
+    fprintf(stderr, "\n");
+  }
+
+  SECTION("Validation of Valid Aud Array Mixed types in JWS")
+  {
+    REQUIRE(jws_validation_helper(
+      "http://www.foobar.com/"
+      "URISigningPackage=eyJLZXlJREtleSI6IjUiLCJhbGciOiJIUzI1NiJ9."
+      "eyJjZG5pZXRzIjozMCwiY2RuaXN0dCI6MSwiaXNzIjoiTWFzdGVyIElzc3VlciIsImF1ZCI6WyJiYWQiLDEsImZvb2JhciIsInRlc3RlciJdLCJjZG5pdWMiOiJy"
+      "ZWdleDpodHRwOi8vd3d3LmZvb2Jhci5jb20vKiJ9._vlXsA3r7RPje2ZdMnpaGTwIsdNMjuQWPEHRkGKTVL8",
+      "URISigningPackage", cfg));
+    fprintf(stderr, "\n");
+  }
+
+  config_delete(cfg);
+  fprintf(stderr, "\n");
 }

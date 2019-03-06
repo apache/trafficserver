@@ -235,6 +235,26 @@ public:
     }
   }
 
+  // Working function to copy strings into a new heap
+  // Unlike the HDR_MOVE_STR macro, this function will call
+  // allocate_str which will update the new_heap to create more space
+  // if there is not originally sufficient space
+  inline std::string_view
+  localize(const std::string_view &string)
+  {
+    auto length = string.length();
+    if (length > 0) {
+      char *new_str = this->allocate_str(length);
+      if (new_str) {
+        memcpy(new_str, string.data(), length);
+      } else {
+        length = 0;
+      }
+      return {new_str, length};
+    }
+    return {nullptr, 0};
+  }
+
   // Sanity Check Functions
   void sanity_check_strs();
   bool check_marshalled(uint32_t buf_length);

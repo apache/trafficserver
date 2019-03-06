@@ -256,10 +256,9 @@ SSLConfigParams::initialize()
 #endif
 
 #ifdef SSL_OP_NO_COMPRESSION
-  /* OpenSSL >= 1.0 only */
   ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
   ssl_client_ctx_options |= SSL_OP_NO_COMPRESSION;
-#elif OPENSSL_VERSION_NUMBER >= 0x00908000L
+#else
   sk_SSL_COMP_zero(SSL_COMP_get_compression_methods());
 #endif
 
@@ -668,7 +667,7 @@ SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const cha
   CTX_MAP *ctx_map    = nullptr;
   std::string top_level_key, ctx_key;
   ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
-  ts::bwprint(ctx_key, "{}:{}", client_cert, key_file, ca_bundle_file, ca_bundle_path);
+  ts::bwprint(ctx_key, "{}:{}", client_cert, key_file);
 
   ink_mutex_acquire(&ctxMapLock);
   // Do first level searching and create new CTX_MAP as second level if not exists.

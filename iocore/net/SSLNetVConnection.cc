@@ -1274,16 +1274,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       // is preferred since it is the server's preference.  The server
       // preference would not be meaningful if we let the client
       // preference have priority.
-
-#if TS_USE_TLS_ALPN
       SSL_get0_alpn_selected(ssl, &proto, &len);
-#endif /* TS_USE_TLS_ALPN */
-
-#if TS_USE_TLS_NPN
       if (len == 0) {
         SSL_get0_next_proto_negotiated(ssl, &proto, &len);
       }
-#endif /* TS_USE_TLS_NPN */
 
       if (len) {
         // If there's no NPN set, we should not have done this negotiation.
@@ -1517,13 +1511,10 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
   if (netvc->npnSet && netvc->npnSet->advertiseProtocols(&npn, &npnsz)) {
     // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
     // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
-
-#if HAVE_SSL_SELECT_NEXT_PROTO
     if (SSL_select_next_proto((unsigned char **)out, outlen, npn, npnsz, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
       Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
       return SSL_TLSEXT_ERR_OK;
     }
-#endif /* HAVE_SSL_SELECT_NEXT_PROTO */
   }
 
   *out    = nullptr;
