@@ -854,7 +854,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   parv[parc++] = ats_strdup(err);
   ats_free(err);
 
-  if ((err = mp->toUrl.string_get(nullptr)) == nullptr) {
+  if ((err = mp->toURL.string_get(nullptr)) == nullptr) {
     snprintf(errbuf, errbufsize, "Can't load toURL from URL class");
     return -7;
   }
@@ -960,7 +960,7 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
     goto lFail;
   }
 
-  to_host = new_mapping->toUrl.host_get(&to_host_len);
+  to_host = new_mapping->toURL.host_get(&to_host_len);
   for (int i = 0; i < (to_host_len - 1); ++i) {
     if (to_host[i] == '$') {
       if (substitution_count > UrlRewrite::MAX_REGEX_SUBS) {
@@ -981,7 +981,7 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   // so the regex itself is stored in fromURL.host; string to match
   // will be in the request; string to use for substitutions will be
   // in this buffer
-  str                               = new_mapping->toUrl.host_get(&str_index); // reusing str and str_index
+  str                               = new_mapping->toURL.host_get(&str_index); // reusing str and str_index
   reg_map->to_url_host_template_len = str_index;
   reg_map->to_url_host_template     = static_cast<char *>(ats_malloc(str_index));
   memcpy(reg_map->to_url_host_template, str, str_index);
@@ -1185,8 +1185,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     map_to_start = map_to;
     tmp          = map_to;
 
-    new_mapping->toUrl.create(nullptr);
-    rparse                   = new_mapping->toUrl.parse_no_path_component_breakdown(tmp, length);
+    new_mapping->toURL.create(nullptr);
+    rparse                   = new_mapping->toURL.parse_no_path_component_breakdown(tmp, length);
     map_to_start[origLength] = '\0'; // Unwhack
 
     if (rparse != PARSE_RESULT_DONE) {
@@ -1202,7 +1202,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       fromScheme                        = new_mapping->fromURL.scheme_get(&fromSchemeLen);
       new_mapping->wildcard_from_scheme = true;
     }
-    toScheme = new_mapping->toUrl.scheme_get(&toSchemeLen);
+    toScheme = new_mapping->toURL.scheme_get(&toSchemeLen);
 
     // Include support for HTTPS scheme
     // includes support for FILE scheme
@@ -1281,7 +1281,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       }
     }
 
-    toHost = new_mapping->toUrl.host_get(&toHostLen);
+    toHost = new_mapping->toURL.host_get(&toHostLen);
     if (toHost == nullptr || toHostLen <= 0) {
       errStr = "The remap destinations require a hostname";
       goto MAP_ERROR;
@@ -1340,8 +1340,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
             u_mapping->fromURL.create(nullptr);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
             u_mapping->fromURL.host_set(ipb, strlen(ipb));
-            u_mapping->toUrl.create(nullptr);
-            u_mapping->toUrl.copy(&new_mapping->toUrl);
+            u_mapping->toURL.create(nullptr);
+            u_mapping->toURL.copy(&new_mapping->toURL);
 
             if (bti->paramv[3] != nullptr) {
               u_mapping->tag = ats_strdup(&(bti->paramv[3][0]));
