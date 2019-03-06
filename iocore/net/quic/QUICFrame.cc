@@ -2702,13 +2702,13 @@ QUICFrameFactory::create_retire_connection_id_frame(uint8_t *buf, uint64_t seq_n
 }
 
 QUICFrameId
-QUICFrameInfo::id()
+QUICFrameInfo::id() const
 {
   return this->_id;
 }
 
 QUICFrameGenerator *
-QUICFrameInfo::generated_by()
+QUICFrameInfo::generated_by() const
 {
   return this->_generator;
 }

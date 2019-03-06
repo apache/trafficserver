@@ -49,7 +49,8 @@ struct PacketInfo {
   size_t sent_bytes;
 
   // addition
-  QUICPacketUPtr packet;
+  QUICPacketType type;
+  std::vector<QUICFrameInfo> frames;
   // end
 };
 
@@ -125,7 +126,7 @@ public:
 
   std::vector<QUICFrameType> interests() override;
   virtual QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
-  void on_packet_sent(QUICPacketUPtr packet, bool in_flight = true);
+  void on_packet_sent(QUICPacket &packet, bool in_flight = true);
   QUICPacketNumber largest_acked_packet_number();
   void update_ack_delay_exponent(uint8_t ack_delay_exponent);
   void reset();
@@ -177,14 +178,14 @@ private:
   ink_hrtime _loss_detection_alarm_at = 0;
 
   void _on_packet_sent(QUICPacketNumber packet_number, bool ack_eliciting, bool in_flight, bool is_crypto_packet, size_t sent_bytes,
-                       QUICPacketUPtr packet);
+                       QUICPacketType type, std::vector<QUICFrameInfo> &frames);
   void _on_ack_received(const QUICAckFrame &ack_frame);
   void _on_packet_acked(const PacketInfo &acked_packet);
   void _update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay);
   void _detect_lost_packets();
   void _set_loss_detection_timer();
   void _on_loss_detection_timeout();
-  void _retransmit_lost_packet(QUICPacketUPtr &packet);
+  void _retransmit_lost_packet(PacketInfo &packet_info);
 
   std::set<QUICAckFrame::PacketNumberRange> _determine_newly_acked_packets(const QUICAckFrame &ack_frame);
 

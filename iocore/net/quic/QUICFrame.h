@@ -853,8 +853,8 @@ class QUICFrameInfo
 {
 public:
   QUICFrameInfo(QUICFrameId id, QUICFrameGenerator *generator) : _id(id), _generator(generator) {}
-  QUICFrameId id();
-  QUICFrameGenerator *generated_by();
+  QUICFrameId id() const;
+  QUICFrameGenerator *generated_by() const;
 
 private:
   QUICFrameId _id = 0;
