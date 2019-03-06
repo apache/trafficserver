@@ -128,9 +128,11 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
   Map::iterator idx;
 
   // Erase all the non-"dup" and see if the range is still correct.
-  map.apply([&map](Thing &thing) {
-    if (thing._payload != "dup"sv)
-      map.erase(map.iterator_for(&thing));
+  map.apply([&map](Thing *thing) {
+    if (thing->_payload != "dup"sv) {
+      map.erase(map.iterator_for(thing));
+      delete thing;
+    }
   });
   r = map.equal_range("dup"sv);
   REQUIRE(r.first != r.second);
@@ -155,7 +157,7 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
 // Some more involved tests.
 TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]")
 {
-  std::vector<std::string_view> strings;
+  std::vector<std::string> strings;
 
   std::uniform_int_distribution<short> char_gen{'a', 'z'};
   std::uniform_int_distribution<short> length_gen{20, 40};
@@ -167,12 +169,12 @@ TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]")
   strings.reserve(N);
   for (int i = 0; i < N; ++i) {
     auto len = length_gen(randu);
-    char *s  = static_cast<char *>(malloc(len + 1));
+    std::string s;
+    s.reserve(len);
     for (decltype(len) j = 0; j < len; ++j) {
-      s[j] = char_gen(randu);
+      s += char_gen(randu);
     }
-    s[len] = 0;
-    strings.push_back({s, size_t(len)});
+    strings.push_back(s);
   }
 
   // Fill the IntrusiveHashMap
@@ -233,4 +235,6 @@ TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]")
     }
   }
   REQUIRE(miss_p == false);
+
+  ihm.apply([](Thing *thing) { delete thing; });
 };
