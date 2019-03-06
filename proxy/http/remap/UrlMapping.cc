@@ -111,7 +111,7 @@ url_mapping::~url_mapping()
 
   // Destroy the URLs
   fromURL.destroy();
-  toUrl.destroy();
+  toURL.destroy();
 }
 
 void
@@ -120,7 +120,7 @@ url_mapping::Print()
   char from_url_buf[131072], to_url_buf[131072];
 
   fromURL.string_get_buf(from_url_buf, (int)sizeof(from_url_buf));
-  toUrl.string_get_buf(to_url_buf, (int)sizeof(to_url_buf));
+  toURL.string_get_buf(to_url_buf, (int)sizeof(to_url_buf));
   printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %zu plugins]\n", from_url_buf, unique ? "(unique)" : "",
          to_url_buf, homePageRedirect ? "(R)" : "", tag ? tag : "", plugin_count() > 0 ? "are" : "not", plugin_count());
 }

@@ -144,8 +144,8 @@ UrlRewrite::SetupBackdoorMapping()
   mapping->fromURL.parse(from_url, sizeof(from_url) - 1);
   mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
 
-  mapping->toUrl.create(nullptr);
-  mapping->toUrl.parse(to_url, sizeof(to_url) - 1);
+  mapping->toURL.create(nullptr);
+  mapping->toURL.parse(to_url, sizeof(to_url) - 1);
 
   return mapping;
 }
@@ -599,7 +599,7 @@ UrlRewrite::InsertMapping(mapping_type maptype, url_mapping *new_mapping, RegexM
     success = _addToStore(forward_mappings, new_mapping, reg_map, src_host, is_cur_mapping_regex, num_rules_forward);
     if (success) {
       // @todo: is this applicable to regex mapping too?
-      SetHomePageRedirectFlag(new_mapping, new_mapping->toUrl);
+      SetHomePageRedirectFlag(new_mapping, new_mapping->toURL);
     }
     break;
   case REVERSE_MAP:
@@ -641,7 +641,7 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping *mapping, con
     case FORWARD_MAP:
     case FORWARD_MAP_REFERER:
     case FORWARD_MAP_WITH_RECV_PORT:
-      SetHomePageRedirectFlag(mapping, mapping->toUrl);
+      SetHomePageRedirectFlag(mapping, mapping->toURL);
       break;
     default:
       break;
@@ -914,7 +914,7 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       // Expand substitutions in the host field from the stored template
       buf_len           = _expandSubstitutions(matches_info, list_iter, request_host, buf, sizeof(buf));
       URL *expanded_url = mapping_container.createNewToURL();
-      expanded_url->copy(&((list_iter->url_map)->toUrl));
+      expanded_url->copy(&((list_iter->url_map)->toURL));
       expanded_url->host_set(buf, buf_len);
 
       Debug("url_rewrite_regex", "Expanded toURL to [%.*s]", expanded_url->length_get(), expanded_url->string_get_ref());
