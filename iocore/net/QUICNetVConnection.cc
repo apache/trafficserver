@@ -1223,7 +1223,7 @@ QUICNetVConnection::_state_common_send_packet()
         }
 
         int index = QUICTypeUtil::pn_space_index(level);
-        this->_loss_detector[index]->on_packet_sent(std::move(packet));
+        this->_loss_detector[index]->on_packet_sent(*packet);
         packet_count++;
       }
     }

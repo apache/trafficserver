@@ -68,7 +68,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                               false, std::move(payload), sizeof(raw));
     QUICPacketUPtr packet = QUICPacketUPtr(new QUICPacket(std::move(header), std::move(payload), sizeof(raw), true, false),
                                            [](QUICPacket *p) { delete p; });
-    detector.on_packet_sent(std::move(packet));
+    detector.on_packet_sent(*packet);
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
     CHECK(g.lost_frame_count >= 0);
 
@@ -127,16 +127,16 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     QUICPacketNumber pn9  = packet9->packet_number();
     QUICPacketNumber pn10 = packet10->packet_number();
 
-    detector.on_packet_sent(std::move(packet1));
-    detector.on_packet_sent(std::move(packet2));
-    detector.on_packet_sent(std::move(packet3));
-    detector.on_packet_sent(std::move(packet4));
-    detector.on_packet_sent(std::move(packet5));
-    detector.on_packet_sent(std::move(packet6));
-    detector.on_packet_sent(std::move(packet7));
-    detector.on_packet_sent(std::move(packet8));
-    detector.on_packet_sent(std::move(packet9));
-    detector.on_packet_sent(std::move(packet10));
+    detector.on_packet_sent(*packet1);
+    detector.on_packet_sent(*packet2);
+    detector.on_packet_sent(*packet3);
+    detector.on_packet_sent(*packet4);
+    detector.on_packet_sent(*packet5);
+    detector.on_packet_sent(*packet6);
+    detector.on_packet_sent(*packet7);
+    detector.on_packet_sent(*packet8);
+    detector.on_packet_sent(*packet9);
+    detector.on_packet_sent(*packet10);
 
     ink_hrtime_sleep(HRTIME_MSECONDS(2000));
     // Receive an ACK for (1) (4) (5) (7) (8) (9)

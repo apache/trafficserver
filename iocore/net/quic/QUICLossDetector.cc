@@ -131,18 +131,20 @@ QUICLossDetector::largest_acked_packet_number()
 }
 
 void
-QUICLossDetector::on_packet_sent(QUICPacketUPtr packet, bool in_flight)
+QUICLossDetector::on_packet_sent(QUICPacket &packet, bool in_flight)
 {
-  if (packet->type() == QUICPacketType::VERSION_NEGOTIATION) {
+  if (packet.type() == QUICPacketType::VERSION_NEGOTIATION) {
     return;
   }
 
   this->_smoothed_rtt = this->_rtt_measure->smoothed_rtt();
-  auto packet_number  = packet->packet_number();
-  auto ack_eliciting  = packet->is_ack_eliciting();
-  auto crypto         = packet->is_crypto_packet();
-  auto sent_bytes     = packet->size();
-  this->_on_packet_sent(packet_number, ack_eliciting, in_flight, crypto, sent_bytes, std::move(packet));
+  auto packet_number  = packet.packet_number();
+  auto ack_eliciting  = packet.is_ack_eliciting();
+  auto crypto         = packet.is_crypto_packet();
+  auto sent_bytes     = packet.size();
+  auto type           = packet.type();
+  auto frames         = std::move(packet.frames());
+  this->_on_packet_sent(packet_number, ack_eliciting, in_flight, crypto, sent_bytes, type, frames);
 }
 
 void
@@ -177,15 +179,14 @@ QUICLossDetector::update_ack_delay_exponent(uint8_t ack_delay_exponent)
 
 void
 QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool ack_eliciting, bool in_flight, bool is_crypto_packet,
-                                  size_t sent_bytes, QUICPacketUPtr packet)
+                                  size_t sent_bytes, QUICPacketType type, std::vector<QUICFrameInfo> &frames)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   ink_hrtime now             = Thread::get_hrtime();
   this->_largest_sent_packet = packet_number;
-  // FIXME Should we really keep actual packet object?
-
   PacketInfoUPtr packet_info = PacketInfoUPtr(new PacketInfo(
-    {packet_number, now, ack_eliciting, is_crypto_packet, in_flight, ack_eliciting ? sent_bytes : 0, std::move(packet)}));
+    {packet_number, now, ack_eliciting, is_crypto_packet, in_flight, ack_eliciting ? sent_bytes : 0, type, std::move(frames)}));
+
   this->_add_to_sent_packet_list(packet_number, std::move(packet_info));
   if (in_flight) {
     if (is_crypto_packet) {
@@ -291,7 +292,7 @@ QUICLossDetector::_on_packet_acked(const PacketInfo &acked_packet)
     this->_cc->on_packet_acked(acked_packet);
   }
 
-  for (QUICFrameInfo &frame_info : acked_packet.packet->frames()) {
+  for (const QUICFrameInfo &frame_info : acked_packet.frames) {
     auto reactor = frame_info.generated_by();
     if (reactor == nullptr) {
       continue;
@@ -441,7 +442,7 @@ QUICLossDetector::_detect_lost_packets()
       // Not sure how we can get feedback from congestion control and when we should retransmit the lost packets but we need to send
       // them somewhere.
       // I couldn't find the place so just send them here for now.
-      this->_retransmit_lost_packet(lost_packet.second->packet);
+      this->_retransmit_lost_packet(*lost_packet.second);
       // -- END OF ADDITIONAL CODE --
       // -- ADDITIONAL CODE --
       this->_remove_from_sent_packet_list(lost_packet.first);
@@ -462,7 +463,7 @@ QUICLossDetector::_retransmit_all_unacked_crypto_data()
   for (auto &info : this->_sent_packets) {
     if (info.second->is_crypto_packet) {
       retransmitted_crypto_packets.insert(info.first);
-      this->_retransmit_lost_packet(info.second->packet);
+      this->_retransmit_lost_packet(*info.second);
       lost_packets.insert({info.first, info.second.get()});
     }
   }
@@ -483,12 +484,12 @@ QUICLossDetector::_send_two_packets()
 // ===== Functions below are helper functions =====
 
 void
-QUICLossDetector::_retransmit_lost_packet(QUICPacketUPtr &packet)
+QUICLossDetector::_retransmit_lost_packet(PacketInfo &packet_info)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
-  QUICLDDebug("[NOP] Retransmit %s packet #%" PRIu64, QUICDebugNames::packet_type(packet->type()), packet->packet_number());
-  for (QUICFrameInfo &frame_info : packet->frames()) {
+  QUICLDDebug("Retransmit %s packet #%" PRIu64, QUICDebugNames::packet_type(packet_info.type), packet_info.packet_number);
+  for (QUICFrameInfo &frame_info : packet_info.frames) {
     auto reactor = frame_info.generated_by();
     if (reactor == nullptr) {
       continue;
