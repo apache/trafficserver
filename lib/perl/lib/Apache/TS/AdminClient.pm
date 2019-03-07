@@ -482,7 +482,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.no_origin_server_dns
  proxy.config.http.normalize_ae_gzip
  proxy.config.http.number_of_redirections
- proxy.config.http.origin_max_connections
+ proxy.config.http.per_server.connection.max
  proxy.config.http.origin_min_keep_alive_connections
  proxy.config.http.parent_proxies
  proxy.config.http.parent_proxy.connect_attempts_timeout
