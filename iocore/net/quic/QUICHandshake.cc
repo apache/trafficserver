@@ -106,21 +106,22 @@ QUICHandshake::~QUICHandshake()
 }
 
 QUICConnectionErrorUPtr
-QUICHandshake::start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled)
+QUICHandshake::start(const QUICTPConfig &tp_config, QUICPacketFactory *packet_factory, bool vn_exercise_enabled)
 {
   QUICVersion initital_version = QUIC_SUPPORTED_VERSIONS[0];
   if (vn_exercise_enabled) {
     initital_version = QUIC_EXERCISE_VERSION;
   }
 
-  this->_load_local_client_transport_parameters(initital_version);
+  this->_load_local_client_transport_parameters(tp_config, initital_version);
   packet_factory->set_version(initital_version);
 
   return nullptr;
 }
 
 QUICConnectionErrorUPtr
-QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory, const QUICPreferredAddress *pref_addr)
+QUICHandshake::start(const QUICTPConfig &tp_config, const QUICPacket *initial_packet, QUICPacketFactory *packet_factory,
+                     const QUICPreferredAddress *pref_addr)
 {
   // Negotiate version
   if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
@@ -130,7 +131,7 @@ QUICHandshake::start(const QUICPacket *initial_packet, QUICPacketFactory *packet
     if (initial_packet->version()) {
       if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
         QUICHSDebug("Version negotiation succeeded: %x", initial_packet->version());
-        this->_load_local_server_transport_parameters(initial_packet->version(), pref_addr);
+        this->_load_local_server_transport_parameters(tp_config, initial_packet->version(), pref_addr);
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
       } else {
         ink_assert(!"Unsupported version initial packet should be droped QUICPakcetHandler");
@@ -361,36 +362,36 @@ QUICHandshake::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t 
 }
 
 void
-QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_version, const QUICPreferredAddress *pref_addr)
+QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_config, QUICVersion negotiated_version,
+                                                       const QUICPreferredAddress *pref_addr)
 {
-  QUICConfig::scoped_config params;
   QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions(negotiated_version);
 
   // MUSTs
-  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_in()));
+  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
   if (this->_stateless_retry) {
     tp->set(QUICTransportParameterId::ORIGINAL_CONNECTION_ID, this->_qc->first_connection_id(),
             this->_qc->first_connection_id().length());
   }
 
   // MAYs
-  if (params->initial_max_data_in() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data_in());
+  if (tp_config.initial_max_data() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, tp_config.initial_max_data());
   }
-  if (params->initial_max_streams_bidi_in() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI, params->initial_max_streams_bidi_in());
+  if (tp_config.initial_max_streams_bidi() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI, tp_config.initial_max_streams_bidi());
   }
-  if (params->initial_max_streams_uni_in() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI, params->initial_max_streams_uni_in());
+  if (tp_config.initial_max_streams_uni() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI, tp_config.initial_max_streams_uni());
   }
-  if (params->initial_max_stream_data_bidi_local_in() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, params->initial_max_stream_data_bidi_local_in());
+  if (tp_config.initial_max_stream_data_bidi_local() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, tp_config.initial_max_stream_data_bidi_local());
   }
-  if (params->initial_max_stream_data_bidi_remote_in() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, params->initial_max_stream_data_bidi_remote_in());
+  if (tp_config.initial_max_stream_data_bidi_remote() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, tp_config.initial_max_stream_data_bidi_remote());
   }
-  if (params->initial_max_stream_data_uni_in() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, params->initial_max_stream_data_uni_in());
+  if (tp_config.initial_max_stream_data_uni() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, tp_config.initial_max_stream_data_uni());
   }
   if (pref_addr != nullptr) {
     uint8_t pref_addr_buf[QUICPreferredAddress::MAX_LEN];
@@ -401,7 +402,7 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
 
   // MAYs (server)
   tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
-  tp->set(QUICTransportParameterId::ACK_DELAY_EXPONENT, params->ack_delay_exponent_in());
+  tp->set(QUICTransportParameterId::ACK_DELAY_EXPONENT, tp_config.ack_delay_exponent());
 
   tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
 
@@ -410,35 +411,33 @@ QUICHandshake::_load_local_server_transport_parameters(QUICVersion negotiated_ve
 }
 
 void
-QUICHandshake::_load_local_client_transport_parameters(QUICVersion initial_version)
+QUICHandshake::_load_local_client_transport_parameters(const QUICTPConfig &tp_config, QUICVersion initial_version)
 {
-  QUICConfig::scoped_config params;
-
   QUICTransportParametersInClientHello *tp = new QUICTransportParametersInClientHello(initial_version);
 
   // MUSTs
-  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(params->no_activity_timeout_out()));
+  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
 
   // MAYs
-  if (params->initial_max_data_out() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, params->initial_max_data_out());
+  if (tp_config.initial_max_data() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_DATA, tp_config.initial_max_data());
   }
-  if (params->initial_max_streams_bidi_out() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI, params->initial_max_streams_bidi_out());
+  if (tp_config.initial_max_streams_bidi() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI, tp_config.initial_max_streams_bidi());
   }
-  if (params->initial_max_streams_uni_out() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI, params->initial_max_streams_uni_out());
+  if (tp_config.initial_max_streams_uni() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI, tp_config.initial_max_streams_uni());
   }
-  if (params->initial_max_stream_data_bidi_local_out() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, params->initial_max_stream_data_bidi_local_out());
+  if (tp_config.initial_max_stream_data_bidi_local() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, tp_config.initial_max_stream_data_bidi_local());
   }
-  if (params->initial_max_stream_data_bidi_remote_out() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, params->initial_max_stream_data_bidi_remote_out());
+  if (tp_config.initial_max_stream_data_bidi_remote() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, tp_config.initial_max_stream_data_bidi_remote());
   }
-  if (params->initial_max_stream_data_uni_out() != 0) {
-    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, params->initial_max_stream_data_uni_out());
+  if (tp_config.initial_max_stream_data_uni() != 0) {
+    tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, tp_config.initial_max_stream_data_uni());
   }
-  tp->set(QUICTransportParameterId::ACK_DELAY_EXPONENT, params->ack_delay_exponent_out());
+  tp->set(QUICTransportParameterId::ACK_DELAY_EXPONENT, tp_config.ack_delay_exponent());
 
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(std::unique_ptr<QUICTransportParameters>(tp));

@@ -38,17 +38,16 @@
         ##__VA_ARGS__)
 
 QUICLossDetector::QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
-                                   int index)
+                                   int index, const QUICLDConfig &ld_config)
   : _info(info), _cc(cc), _rtt_measure(rtt_measure), _pn_space_index(index)
 {
   this->mutex                 = new_ProxyMutex();
   this->_loss_detection_mutex = new_ProxyMutex();
 
-  QUICConfig::scoped_config params;
-  this->_k_packet_threshold = params->ld_packet_threshold();
-  this->_k_time_threshold   = params->ld_time_threshold();
-  this->_k_granularity      = params->ld_granularity();
-  this->_k_initial_rtt      = params->ld_initial_rtt();
+  this->_k_packet_threshold = ld_config.packet_threshold();
+  this->_k_time_threshold   = ld_config.time_threshold();
+  this->_k_granularity      = ld_config.granularity();
+  this->_k_initial_rtt      = ld_config.initial_rtt();
 
   this->reset();
 

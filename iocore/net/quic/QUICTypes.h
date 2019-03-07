@@ -448,6 +448,41 @@ private:
   uint64_t _hash_code = 0;
 };
 
+class QUICTPConfig
+{
+public:
+  virtual uint32_t no_activity_timeout() const                 = 0;
+  virtual const IpEndpoint *preferred_address_ipv4() const     = 0;
+  virtual const IpEndpoint *preferred_address_ipv6() const     = 0;
+  virtual uint32_t initial_max_data() const                    = 0;
+  virtual uint32_t initial_max_stream_data_bidi_local() const  = 0;
+  virtual uint32_t initial_max_stream_data_bidi_remote() const = 0;
+  virtual uint32_t initial_max_stream_data_uni() const         = 0;
+  virtual uint64_t initial_max_streams_bidi() const            = 0;
+  virtual uint64_t initial_max_streams_uni() const             = 0;
+  virtual uint8_t ack_delay_exponent() const                   = 0;
+  virtual uint8_t max_ack_delay() const                        = 0;
+};
+
+class QUICLDConfig
+{
+public:
+  virtual uint32_t packet_threshold() const = 0;
+  virtual float time_threshold() const      = 0;
+  virtual ink_hrtime granularity() const    = 0;
+  virtual ink_hrtime initial_rtt() const    = 0;
+};
+
+class QUICCCConfig
+{
+public:
+  virtual uint32_t max_datagram_size() const               = 0;
+  virtual uint32_t initial_window() const                  = 0;
+  virtual uint32_t minimum_window() const                  = 0;
+  virtual float loss_reduction_factor() const              = 0;
+  virtual uint32_t persistent_congestion_threshold() const = 0;
+};
+
 // TODO: move version independent functions to QUICInvariants
 class QUICTypeUtil
 {

@@ -69,9 +69,11 @@ int
 QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
 {
   QUICConfig::scoped_config params;
-  auto file = BIO_new_file(params->session_file(), "w");
+  const char *session_file = params->session_file();
+  auto file                = BIO_new_file(session_file, "w");
+
   if (file == nullptr) {
-    QUICGlobalDebug("Could not write TLS session in %s", params->session_file());
+    QUICGlobalDebug("Could not write TLS session in %s", session_file);
     return 0;
   }
 
