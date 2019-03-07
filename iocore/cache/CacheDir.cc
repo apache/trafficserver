@@ -1267,10 +1267,6 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
             ++frag_demographics[dir_size(e)][dir_big(e)];
           }
         }
-        e = next_dir(e, seg);
-        if (!e) {
-          break;
-        }
       }
 
       // Check for duplicates (identical tags in the same bucket).
