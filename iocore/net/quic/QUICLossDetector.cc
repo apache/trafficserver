@@ -187,12 +187,14 @@ QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool ack_elici
   PacketInfoUPtr packet_info = PacketInfoUPtr(new PacketInfo(
     {packet_number, now, ack_eliciting, is_crypto_packet, in_flight, ack_eliciting ? sent_bytes : 0, std::move(packet)}));
   this->_add_to_sent_packet_list(packet_number, std::move(packet_info));
-  if (ack_eliciting) {
+  if (in_flight) {
     if (is_crypto_packet) {
       this->_time_of_last_sent_crypto_packet = now;
     }
 
-    this->_time_of_last_sent_ack_eliciting_packet = now;
+    if (ack_eliciting) {
+      this->_time_of_last_sent_ack_eliciting_packet = now;
+    }
     this->_cc->on_packet_sent(sent_bytes);
     this->_set_loss_detection_timer();
   }
@@ -217,7 +219,6 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame)
   QUICLDVDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
                this->_ack_eliciting_outstanding.load(), this->_crypto_outstanding.load());
 
-  // TODO ECN
   // if (ACK frame contains ECN information):
   //   ProcessECN(ack)
   if (ack_frame.ecn_section() != nullptr && pi != this->_sent_packets.end()) {
@@ -242,13 +243,13 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame)
     return;
   }
 
+  this->_detect_lost_packets();
+
   this->_crypto_count = 0;
   this->_pto_count    = 0;
 
   QUICLDVDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
                this->_ack_eliciting_outstanding.load(), this->_crypto_outstanding.load());
-
-  this->_detect_lost_packets();
 
   QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
               this->_ack_eliciting_outstanding.load(), this->_crypto_outstanding.load());
