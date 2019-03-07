@@ -36,9 +36,11 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
 
   QUICAckFrameManager afm;
   QUICConnectionId connection_id = {reinterpret_cast<const uint8_t *>("\x01"), 1};
+  MockQUICCCConfig cc_config;
+  MockQUICLDConfig ld_config;
   MockQUICConnectionInfoProvider info;
-  MockQUICCongestionController cc(&info);
-  QUICLossDetector detector(&info, &cc, &rtt_measure, 0);
+  MockQUICCongestionController cc(&info, cc_config);
+  QUICLossDetector detector(&info, &cc, &rtt_measure, 0, ld_config);
   ats_unique_buf payload = ats_unique_malloc(512);
   size_t payload_len     = 512;
   QUICPacketUPtr packet  = QUICPacketFactory::create_null_packet();
@@ -173,9 +175,11 @@ TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
 {
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   MockQUICConnectionInfoProvider info;
-  MockQUICCongestionController cc(&info);
+  MockQUICCCConfig cc_config;
+  MockQUICLDConfig ld_config;
+  MockQUICCongestionController cc(&info, cc_config);
   QUICRTTMeasure rtt_measure;
-  QUICLossDetector detector(&info, &cc, &rtt_measure, 0);
+  QUICLossDetector detector(&info, &cc, &rtt_measure, 0, ld_config);
 
   auto t1           = Thread::get_hrtime();
   QUICAckFrame *ack = QUICFrameFactory::create_ack_frame(frame_buf, 100000000, 100, 10000000);

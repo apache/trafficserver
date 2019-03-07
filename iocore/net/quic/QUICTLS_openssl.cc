@@ -328,7 +328,8 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
   return;
 }
 
-QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx)
+QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx,
+                 const char *session_file)
   : QUICHandshakeProtocol(pp_key_info), _ssl(SSL_new(ssl_ctx)), _netvc_context(nvc_ctx)
 {
   ink_assert(this->_netvc_context != NET_VCONNECTION_UNSET);
@@ -342,22 +343,21 @@ QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, Net
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_tls_index, this);
   SSL_set_key_callback(this->_ssl, key_cb, this);
 
-  QUICConfig::scoped_config params;
-  if (params->session_file() && this->_netvc_context == NET_VCONNECTION_OUT) {
-    auto file = BIO_new_file(params->session_file(), "r");
+  if (session_file && this->_netvc_context == NET_VCONNECTION_OUT) {
+    auto file = BIO_new_file(session_file, "r");
     if (file == nullptr) {
-      Debug(tag, "Could not read tls session file %s", params->session_file());
+      Debug(tag, "Could not read tls session file %s", session_file);
       return;
     }
 
     auto session = PEM_read_bio_SSL_SESSION(file, nullptr, 0, nullptr);
     if (session == nullptr) {
-      Debug(tag, "Could not read tls session file %s", params->session_file());
+      Debug(tag, "Could not read tls session file %s", session_file);
     } else {
       if (!SSL_set_session(this->_ssl, session)) {
-        Debug(tag, "Session resumption failed : %s", params->session_file());
+        Debug(tag, "Session resumption failed : %s", session_file);
       } else {
-        Debug(tag, "Session resumption success : %s", params->session_file());
+        Debug(tag, "Session resumption success : %s", session_file);
         this->_is_session_reused = true;
       }
       SSL_SESSION_free(session);

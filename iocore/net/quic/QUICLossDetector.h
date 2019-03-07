@@ -74,7 +74,7 @@ private:
 class QUICCongestionController
 {
 public:
-  QUICCongestionController(QUICConnectionInfoProvider *info);
+  QUICCongestionController(QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config);
   virtual ~QUICCongestionController() {}
   void on_packet_sent(size_t bytes_sent);
   void on_packet_acked(const PacketInfo &acked_packet);
@@ -118,7 +118,8 @@ private:
 class QUICLossDetector : public Continuation, public QUICFrameHandler
 {
 public:
-  QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, int index);
+  QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, int index,
+                   const QUICLDConfig &ld_config);
   ~QUICLossDetector();
 
   int event_handler(int event, Event *edata);

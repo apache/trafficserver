@@ -24,8 +24,6 @@
 #include <tscore/Diags.h>
 #include <QUICLossDetector.h>
 
-#include "QUICConfig.h"
-
 #define QUICCCDebug(fmt, ...)                                                \
   Debug("quic_cc",                                                           \
         "[%s] "                                                              \
@@ -38,16 +36,15 @@
         "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt, \
         this->_info->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, ##__VA_ARGS__)
 
-QUICCongestionController::QUICCongestionController(QUICConnectionInfoProvider *info) : _info(info)
+QUICCongestionController::QUICCongestionController(QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config) : _info(info)
 {
   this->_cc_mutex = new_ProxyMutex();
 
-  QUICConfig::scoped_config params;
-  this->_k_max_datagram_size               = params->cc_max_datagram_size();
-  this->_k_initial_window                  = params->cc_initial_window();
-  this->_k_minimum_window                  = params->cc_minimum_window();
-  this->_k_loss_reduction_factor           = params->cc_loss_reduction_factor();
-  this->_k_persistent_congestion_threshold = params->cc_persistent_congestion_threshold();
+  this->_k_max_datagram_size               = cc_config.max_datagram_size();
+  this->_k_initial_window                  = cc_config.initial_window();
+  this->_k_minimum_window                  = cc_config.minimum_window();
+  this->_k_loss_reduction_factor           = cc_config.loss_reduction_factor();
+  this->_k_persistent_congestion_threshold = cc_config.persistent_congestion_threshold();
 
   this->reset();
 }

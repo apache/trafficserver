@@ -56,12 +56,12 @@ public:
                             ink_hrtime timestamp) override;
 
   // for client side
-  QUICConnectionErrorUPtr start(QUICPacketFactory *packet_factory, bool vn_exercise_enabled);
+  QUICConnectionErrorUPtr start(const QUICTPConfig &tp_config, QUICPacketFactory *packet_factory, bool vn_exercise_enabled);
   QUICConnectionErrorUPtr negotiate_version(const QUICPacket *packet, QUICPacketFactory *packet_factory);
   void reset();
 
   // for server side
-  QUICConnectionErrorUPtr start(const QUICPacket *initial_packet, QUICPacketFactory *packet_factory,
+  QUICConnectionErrorUPtr start(const QUICTPConfig &tp_config, const QUICPacket *initial_packet, QUICPacketFactory *packet_factory,
                                 const QUICPreferredAddress *pref_addr);
 
   QUICConnectionErrorUPtr do_handshake();
@@ -101,8 +101,9 @@ private:
       QUICEncryptionLevel::ONE_RTT,
     };
   }
-  void _load_local_server_transport_parameters(QUICVersion negotiated_version, const QUICPreferredAddress *pref_addr);
-  void _load_local_client_transport_parameters(QUICVersion initial_version);
+  void _load_local_server_transport_parameters(const QUICTPConfig &tp_config, QUICVersion negotiated_version,
+                                               const QUICPreferredAddress *pref_addr);
+  void _load_local_client_transport_parameters(const QUICTPConfig &tp_config, QUICVersion initial_version);
   bool _check_remote_transport_parameters(std::shared_ptr<const QUICTransportParametersInClientHello> tp);
   bool _check_remote_transport_parameters(std::shared_ptr<const QUICTransportParametersInEncryptedExtensions> tp);
   std::shared_ptr<const QUICTransportParameters> _local_transport_parameters  = nullptr;

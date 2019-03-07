@@ -36,12 +36,14 @@ TEST_CASE("QUICFrameHandler", "[quic]")
 
   QUICStreamFrame streamFrame(block, 0x03, 0);
 
+  MockQUICLDConfig ld_config;
+  MockQUICCCConfig cc_config;
   MockQUICConnection connection;
   MockQUICStreamManager streamManager;
   MockQUICConnectionInfoProvider info;
-  MockQUICCongestionController cc(&info);
+  MockQUICCongestionController cc(&info, cc_config);
   QUICRTTMeasure rtt_measure;
-  MockQUICLossDetector lossDetector(&info, &cc, &rtt_measure, 0);
+  MockQUICLossDetector lossDetector(&info, &cc, &rtt_measure, 0, ld_config);
 
   QUICFrameDispatcher quicFrameDispatcher(&info);
   quicFrameDispatcher.add_handler(&connection);

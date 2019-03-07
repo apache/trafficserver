@@ -71,6 +71,190 @@ static constexpr uint32_t STATE_CLOSING_MAX_RECV_PKT_WIND = 1 << STATE_CLOSING_M
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
 
+class QUICTPConfigQCP : public QUICTPConfig
+{
+public:
+  QUICTPConfigQCP(const QUICConfigParams *params, NetVConnectionContext_t ctx) : _params(params), _ctx(ctx) {}
+
+  uint32_t
+  no_activity_timeout() const override
+  {
+    if (this->_ctx == NET_VCONNECTION_IN) {
+      return this->_params->no_activity_timeout_in();
+    } else {
+      return this->_params->no_activity_timeout_out();
+    }
+  }
+
+  const IpEndpoint *
+  preferred_address_ipv4() const override
+  {
+    return this->_params->preferred_address_ipv4();
+  }
+
+  const IpEndpoint *
+  preferred_address_ipv6() const override
+  {
+    return this->_params->preferred_address_ipv6();
+  }
+
+  uint32_t
+  initial_max_data() const override
+  {
+    if (this->_ctx == NET_VCONNECTION_IN) {
+      return this->_params->initial_max_data_in();
+    } else {
+      return this->_params->initial_max_data_out();
+    }
+  }
+
+  uint32_t
+  initial_max_stream_data_bidi_local() const override
+  {
+    if (this->_ctx == NET_VCONNECTION_IN) {
+      return this->_params->initial_max_stream_data_bidi_local_in();
+    } else {
+      return this->_params->initial_max_stream_data_bidi_local_out();
+    }
+  }
+
+  uint32_t
+  initial_max_stream_data_bidi_remote() const override
+  {
+    if (this->_ctx == NET_VCONNECTION_IN) {
+      return this->_params->initial_max_stream_data_bidi_remote_in();
+    } else {
+      return this->_params->initial_max_stream_data_bidi_remote_out();
+    }
+  }
+
+  uint32_t
+  initial_max_stream_data_uni() const override
+  {
+    if (this->_ctx == NET_VCONNECTION_IN) {
+      return this->_params->initial_max_stream_data_uni_in();
+    } else {
+      return this->_params->initial_max_stream_data_uni_out();
+    }
+  }
+
+  uint64_t
+  initial_max_streams_bidi() const override
+  {
+    if (this->_ctx == NET_VCONNECTION_IN) {
+      return this->_params->initial_max_streams_bidi_in();
+    } else {
+      return this->_params->initial_max_streams_bidi_out();
+    }
+  }
+
+  uint64_t
+  initial_max_streams_uni() const override
+  {
+    if (this->_ctx == NET_VCONNECTION_IN) {
+      return this->_params->initial_max_streams_uni_in();
+    } else {
+      return this->_params->initial_max_streams_uni_out();
+    }
+  }
+
+  uint8_t
+  ack_delay_exponent() const override
+  {
+    if (this->_ctx == NET_VCONNECTION_IN) {
+      return this->_params->ack_delay_exponent_in();
+    } else {
+      return this->_params->ack_delay_exponent_out();
+    }
+  }
+
+  uint8_t
+  max_ack_delay() const override
+  {
+    if (this->_ctx == NET_VCONNECTION_IN) {
+      return this->_params->max_ack_delay_in();
+    } else {
+      return this->_params->max_ack_delay_out();
+    }
+  }
+
+private:
+  const QUICConfigParams *_params;
+  NetVConnectionContext_t _ctx;
+};
+
+class QUICCCConfigQCP : public QUICCCConfig
+{
+public:
+  QUICCCConfigQCP(const QUICConfigParams *params) : _params(params) {}
+
+  uint32_t
+  max_datagram_size() const override
+  {
+    return this->_params->cc_max_datagram_size();
+  }
+
+  uint32_t
+  initial_window() const override
+  {
+    return this->_params->cc_initial_window();
+  }
+
+  uint32_t
+  minimum_window() const override
+  {
+    return this->_params->cc_minimum_window();
+  }
+
+  float
+  loss_reduction_factor() const override
+  {
+    return this->_params->cc_loss_reduction_factor();
+  }
+
+  uint32_t
+  persistent_congestion_threshold() const override
+  {
+    return this->_params->cc_persistent_congestion_threshold();
+  }
+
+private:
+  const QUICConfigParams *_params;
+};
+
+class QUICLDConfigQCP : public QUICLDConfig
+{
+public:
+  QUICLDConfigQCP(const QUICConfigParams *params) : _params(params) {}
+
+  uint32_t
+  packet_threshold() const override
+  {
+    return this->_params->ld_packet_threshold();
+  }
+
+  float
+  time_threshold() const override
+  {
+    return this->_params->ld_time_threshold();
+  }
+
+  ink_hrtime
+  granularity() const override
+  {
+    return this->_params->ld_granularity();
+  }
+
+  ink_hrtime
+  initial_rtt() const override
+  {
+    return this->_params->ld_initial_rtt();
+  }
+
+private:
+  const QUICConfigParams *_params;
+};
+
 QUICNetVConnection::QUICNetVConnection() : _packet_factory(this->_pp_key_info), _ph_protector(this->_pp_key_info) {}
 
 QUICNetVConnection::~QUICNetVConnection()
@@ -250,11 +434,12 @@ QUICNetVConnection::start()
     this->_ack_frame_manager.set_max_ack_delay(params->max_ack_delay_in());
     this->_schedule_ack_manager_periodic(params->max_ack_delay_in());
   } else {
+    QUICTPConfigQCP tp_config(params, NET_VCONNECTION_OUT);
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::CLIENT);
     this->_ack_frame_manager.set_ack_delay_exponent(params->ack_delay_exponent_out());
     this->_hs_protocol       = this->_setup_handshake_protocol(params->client_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol);
-    this->_handshake_handler->start(&this->_packet_factory, params->vn_exercise_enabled());
+    this->_handshake_handler->start(tp_config, &this->_packet_factory, params->vn_exercise_enabled());
     this->_handshake_handler->do_handshake();
     this->_ack_frame_manager.set_max_ack_delay(params->max_ack_delay_out());
     this->_schedule_ack_manager_periodic(params->max_ack_delay_out());
@@ -265,10 +450,12 @@ QUICNetVConnection::start()
   this->_frame_dispatcher = new QUICFrameDispatcher(this);
 
   // Create frame handlers
-  this->_congestion_controller = new QUICCongestionController(this);
+  QUICCCConfigQCP cc_config(params);
+  QUICLDConfigQCP ld_config(params);
+  this->_congestion_controller = new QUICCongestionController(this, cc_config);
   for (auto s : QUIC_PN_SPACES) {
     int index            = static_cast<int>(s);
-    QUICLossDetector *ld = new QUICLossDetector(this, this->_congestion_controller, &this->_rtt_measure, index);
+    QUICLossDetector *ld = new QUICLossDetector(this, this->_congestion_controller, &this->_rtt_measure, index, ld_config);
     this->_frame_dispatcher->add_handler(ld);
     this->_loss_detector[index] = ld;
   }
@@ -948,15 +1135,17 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
 
   // Start handshake
   if (this->netvc_context == NET_VCONNECTION_IN) {
+    QUICConfig::scoped_config params;
     if (!this->_alt_con_manager) {
-      QUICConfig::scoped_config params;
       this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id,
                                                             params->instance_id(), params->num_alt_connection_ids(),
                                                             params->preferred_address_ipv4(), params->preferred_address_ipv6());
       this->_frame_generators.push_back(this->_alt_con_manager);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
-    error = this->_handshake_handler->start(packet.get(), &this->_packet_factory, this->_alt_con_manager->preferred_address());
+    QUICTPConfigQCP tp_config(params, NET_VCONNECTION_IN);
+    error =
+      this->_handshake_handler->start(tp_config, packet.get(), &this->_packet_factory, this->_alt_con_manager->preferred_address());
 
     // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.
     if (this->_handshake_handler->is_version_negotiated()) {
@@ -1989,7 +2178,8 @@ QUICNetVConnection::_setup_handshake_protocol(SSL_CTX *ctx)
 {
   // Initialize handshake protocol specific stuff
   // For QUICv1 TLS is the only option
-  QUICTLS *tls = new QUICTLS(this->_pp_key_info, ctx, this->direction());
+  QUICConfig::scoped_config params;
+  QUICTLS *tls = new QUICTLS(this->_pp_key_info, ctx, this->direction(), params->session_file());
   SSL_set_ex_data(tls->ssl_handle(), QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
   return tls;
 }

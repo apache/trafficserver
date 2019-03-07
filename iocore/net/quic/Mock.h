@@ -340,7 +340,10 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
 class MockQUICCongestionController : public QUICCongestionController
 {
 public:
-  MockQUICCongestionController(QUICConnectionInfoProvider *info) : QUICCongestionController(info) {}
+  MockQUICCongestionController(QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config)
+    : QUICCongestionController(info, cc_config)
+  {
+  }
   // Override
   virtual void
   on_packets_lost(const std::map<QUICPacketNumber, PacketInfo *> &packets, uint32_t pto_count) override
@@ -385,8 +388,9 @@ private:
 class MockQUICLossDetector : public QUICLossDetector
 {
 public:
-  MockQUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, int index)
-    : QUICLossDetector(info, cc, rtt_measure, index)
+  MockQUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, int index,
+                       const QUICLDConfig &ld_config)
+    : QUICLossDetector(info, cc, rtt_measure, index, ld_config)
   {
   }
   void
@@ -639,5 +643,65 @@ private:
   _on_frame_lost(QUICFrameInformationUPtr &info) override
   {
     lost_frame_count++;
+  }
+};
+
+class MockQUICLDConfig : public QUICLDConfig
+{
+  uint32_t
+  packet_threshold() const
+  {
+    return 3;
+  }
+
+  float
+  time_threshold() const
+  {
+    return 1.25;
+  }
+
+  ink_hrtime
+  granularity() const
+  {
+    return HRTIME_MSECONDS(1);
+  }
+
+  ink_hrtime
+  initial_rtt() const
+  {
+    return HRTIME_MSECONDS(100);
+  }
+};
+
+class MockQUICCCConfig : public QUICCCConfig
+{
+  uint32_t
+  max_datagram_size() const
+  {
+    return 1200;
+  }
+
+  uint32_t
+  initial_window() const
+  {
+    return 10;
+  }
+
+  uint32_t
+  minimum_window() const
+  {
+    return 2;
+  }
+
+  float
+  loss_reduction_factor() const
+  {
+    return 0.5;
+  }
+
+  uint32_t
+  persistent_congestion_threshold() const
+  {
+    return 2;
   }
 };
