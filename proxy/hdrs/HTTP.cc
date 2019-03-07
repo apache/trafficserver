@@ -2035,8 +2035,7 @@ HTTPInfo::marshal(char *buf, int len)
     buf += m_alt->m_frag_offset_count * sizeof(FragOffset);
     used += m_alt->m_frag_offset_count * sizeof(FragOffset);
   } else {
-    // the data stored in intergral buffer
-    m_alt->m_frag_offsets = nullptr;
+    marshal_alt->m_frag_offsets = nullptr;
   }
 
   // The m_{request,response}_hdr->m_heap pointers are converted
