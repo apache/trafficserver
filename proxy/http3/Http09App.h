@@ -33,13 +33,14 @@ class Http3ClientSession;
 /**
  * @brief A simple multi-streamed application.
  * @detail Response to simple HTTP/0.9 GETs
+ * This will be removed when HTTP/0.9 over QUIC support is dropped
  *
  */
-class QUICSimpleApp : public QUICApplication
+class Http09App : public QUICApplication
 {
 public:
-  QUICSimpleApp(QUICNetVConnection *client_vc, IpAllow::ACL session_acl);
-  ~QUICSimpleApp();
+  Http09App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl);
+  ~Http09App();
 
   int main_event_handler(int event, Event *data);
 

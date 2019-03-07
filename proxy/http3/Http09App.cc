@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICSimpleApp.h"
+#include "Http09App.h"
 
 #include "P_Net.h"
 #include "P_VConnection.h"
@@ -33,7 +33,7 @@
 static constexpr char debug_tag[]   = "quic_simple_app";
 static constexpr char debug_tag_v[] = "v_quic_simple_app";
 
-QUICSimpleApp::QUICSimpleApp(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QUICApplication(client_vc)
+Http09App::Http09App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QUICApplication(client_vc)
 {
   this->_client_session      = new Http3ClientSession(client_vc);
   this->_client_session->acl = std::move(session_acl);
@@ -41,16 +41,16 @@ QUICSimpleApp::QUICSimpleApp(QUICNetVConnection *client_vc, IpAllow::ACL session
 
   this->_qc->stream_manager()->set_default_application(this);
 
-  SET_HANDLER(&QUICSimpleApp::main_event_handler);
+  SET_HANDLER(&Http09App::main_event_handler);
 }
 
-QUICSimpleApp::~QUICSimpleApp()
+Http09App::~Http09App()
 {
   delete this->_client_session;
 }
 
 int
-QUICSimpleApp::main_event_handler(int event, Event *data)
+Http09App::main_event_handler(int event, Event *data)
 {
   Debug(debug_tag_v, "[%s] %s (%d)", this->_qc->cids().data(), get_vc_event_name(event), event);
 

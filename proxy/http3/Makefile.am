@@ -35,6 +35,7 @@ AM_CPPFLAGS += \
 noinst_LIBRARIES = libhttp3.a
 
 libhttp3_a_SOURCES = \
+  Http09App.cc \
   Http3.cc \
   Http3Config.cc \
   Http3App.cc \
@@ -50,8 +51,7 @@ libhttp3_a_SOURCES = \
   Http3DataFramer.cc \
   Http3HeaderVIOAdaptor.cc \
   Http3StreamDataVIOAdaptor.cc \
-  QPACK.cc \
-  QUICSimpleApp.cc
+  QPACK.cc
 
 #
 # Check Programs

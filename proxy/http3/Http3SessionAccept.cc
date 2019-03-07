@@ -27,7 +27,7 @@
 #include "I_Machine.h"
 #include "IPAllow.h"
 
-#include "QUICSimpleApp.h"
+#include "Http09App.h"
 #include "Http3App.h"
 
 Http3SessionAccept::Http3SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(nullptr), options(_o)
@@ -68,7 +68,7 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
       Debug("http3", "[%s] start HTTP/0.9 app (ALPN=%s)", qvc->cids().data(), IP_PROTO_TAG_HTTP_QUIC.data());
     }
 
-    new QUICSimpleApp(qvc, std::move(session_acl));
+    new Http09App(qvc, std::move(session_acl));
   } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0) {
     Debug("http3", "[%s] start HTTP/3 app (ALPN=%s)", qvc->cids().data(), IP_PROTO_TAG_HTTP_3.data());
 
