@@ -429,7 +429,8 @@ freelist_clean(int s, Vol *vol)
     return;
   }
   Warning("cache directory overflow on '%s' segment %d, purging...", vol->path, s);
-  int n    = 0;
+  // randomized the purging operation by hrtime()
+  int n    = (int)Thread::get_hrtime() % 10;
   Dir *seg = vol->dir_segment(s);
   for (int bi = 0; bi < vol->buckets; bi++) {
     Dir *b = dir_bucket(bi, seg);
