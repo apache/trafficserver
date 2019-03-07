@@ -121,6 +121,6 @@
 #define TS_BUILD_CANONICAL_HOST "@host@"
 
 #define TS_BUILD_DEFAULT_LOOPBACK_IFACE "@default_loopback_iface@"
-/* clang-format on */
 
 static const int DEFAULT_STACKSIZE = @default_stack_size@;
+/* clang-format on */
