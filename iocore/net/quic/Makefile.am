@@ -181,14 +181,6 @@ test_QUICLossDetector_SOURCES = \
   $(test_event_main_SOURCES) \
   ./test/test_QUICLossDetector.cc
 
-# TODO: fix unit test using QUICCryptoStream
-# test_QUICHandshake_CPPFLAGS = $(test_CPPFLAGS)
-# test_QUICHandshake_LDFLAGS = @AM_LDFLAGS@
-# test_QUICHandshake_LDADD = $(test_LDADD)
-# test_QUICHandshake_SOURCES = \
-#   $(test_event_main_SOURCES) \
-#   ./test/test_QUICHandshake.cc
-
 test_QUICHandshakeProtocol_CPPFLAGS = $(test_CPPFLAGS)
 test_QUICHandshakeProtocol_LDFLAGS = @AM_LDFLAGS@
 test_QUICHandshakeProtocol_LDADD = $(test_LDADD)
