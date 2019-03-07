@@ -339,7 +339,7 @@ QUICStreamManager::total_reordered_bytes() const
   uint64_t total_bytes = 0;
 
   // FIXME Iterating all (open + closed) streams is expensive
-  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
     total_bytes += s->reordered_bytes();
   }
   return total_bytes;
@@ -351,7 +351,7 @@ QUICStreamManager::total_offset_received() const
   uint64_t total_offset_received = 0;
 
   // FIXME Iterating all (open + closed) streams is expensive
-  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
     total_offset_received += s->largest_offset_received();
   }
   return total_offset_received;
@@ -374,7 +374,7 @@ uint32_t
 QUICStreamManager::stream_count() const
 {
   uint32_t count = 0;
-  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
     ++count;
   }
   return count;
@@ -398,7 +398,7 @@ QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, ink_hrtime tim
     return false;
   }
 
-  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
     if (s->will_generate_frame(level, timestamp)) {
       return true;
     }
@@ -423,7 +423,7 @@ QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
   }
 
   // FIXME We should pick a stream based on priority
-  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
     frame = s->generate_frame(buf, level, connection_credit, maximum_frame_size, timestamp);
     if (frame) {
       break;
