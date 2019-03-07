@@ -30,7 +30,7 @@
 TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
 {
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  QUICStream *stream = new QUICStream();
+  QUICBidirectionalStream *stream = new QUICBidirectionalStream();
   QUICIncomingStreamFrameBuffer buffer;
   QUICErrorUPtr err = nullptr;
 
@@ -122,7 +122,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
 
 TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
 {
-  QUICStream *stream = new QUICStream();
+  QUICBidirectionalStream *stream = new QUICBidirectionalStream();
   QUICIncomingStreamFrameBuffer buffer;
   QUICErrorUPtr err = nullptr;
 
@@ -195,7 +195,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
 
 TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
 {
-  QUICStream *stream = new QUICStream();
+  QUICBidirectionalStream *stream = new QUICBidirectionalStream();
   QUICIncomingStreamFrameBuffer buffer;
   QUICErrorUPtr err = nullptr;
 
