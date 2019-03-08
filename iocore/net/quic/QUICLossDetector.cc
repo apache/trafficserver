@@ -131,20 +131,35 @@ QUICLossDetector::largest_acked_packet_number()
 }
 
 void
-QUICLossDetector::on_packet_sent(QUICPacket &packet, bool in_flight)
+QUICLossDetector::on_packet_sent(QUICPacketInfoUPtr packet_info, bool in_flight)
 {
-  if (packet.type() == QUICPacketType::VERSION_NEGOTIATION) {
+  if (packet_info->type == QUICPacketType::VERSION_NEGOTIATION) {
     return;
   }
 
   this->_smoothed_rtt = this->_rtt_measure->smoothed_rtt();
-  auto packet_number  = packet.packet_number();
-  auto ack_eliciting  = packet.is_ack_eliciting();
-  auto crypto         = packet.is_crypto_packet();
-  auto sent_bytes     = packet.size();
-  auto type           = packet.type();
-  auto frames         = std::move(packet.frames());
-  this->_on_packet_sent(packet_number, ack_eliciting, in_flight, crypto, sent_bytes, type, frames);
+
+  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
+
+  bool ack_eliciting         = packet_info->ack_eliciting;
+  bool is_crypto_packet      = packet_info->is_crypto_packet;
+  ink_hrtime now             = packet_info->time_sent;
+  size_t sent_bytes          = packet_info->sent_bytes;
+  this->_largest_sent_packet = packet_info->packet_number;
+
+  this->_add_to_sent_packet_list(packet_info->packet_number, std::move(packet_info));
+
+  if (in_flight) {
+    if (is_crypto_packet) {
+      this->_time_of_last_sent_crypto_packet = now;
+    }
+
+    if (ack_eliciting) {
+      this->_time_of_last_sent_ack_eliciting_packet = now;
+    }
+    this->_cc->on_packet_sent(sent_bytes);
+    this->_set_loss_detection_timer();
+  }
 }
 
 void
@@ -175,30 +190,6 @@ void
 QUICLossDetector::update_ack_delay_exponent(uint8_t ack_delay_exponent)
 {
   this->_ack_delay_exponent = ack_delay_exponent;
-}
-
-void
-QUICLossDetector::_on_packet_sent(QUICPacketNumber packet_number, bool ack_eliciting, bool in_flight, bool is_crypto_packet,
-                                  size_t sent_bytes, QUICPacketType type, std::vector<QUICFrameInfo> &frames)
-{
-  SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-  ink_hrtime now             = Thread::get_hrtime();
-  this->_largest_sent_packet = packet_number;
-  PacketInfoUPtr packet_info = PacketInfoUPtr(new PacketInfo(
-    {packet_number, now, ack_eliciting, is_crypto_packet, in_flight, ack_eliciting ? sent_bytes : 0, type, std::move(frames)}));
-
-  this->_add_to_sent_packet_list(packet_number, std::move(packet_info));
-  if (in_flight) {
-    if (is_crypto_packet) {
-      this->_time_of_last_sent_crypto_packet = now;
-    }
-
-    if (ack_eliciting) {
-      this->_time_of_last_sent_ack_eliciting_packet = now;
-    }
-    this->_cc->on_packet_sent(sent_bytes);
-    this->_set_loss_detection_timer();
-  }
 }
 
 void
@@ -283,7 +274,7 @@ QUICLossDetector::_update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay)
 }
 
 void
-QUICLossDetector::_on_packet_acked(const PacketInfo &acked_packet)
+QUICLossDetector::_on_packet_acked(const QUICPacketInfo &acked_packet)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   // QUICLDDebug("Packet number %" PRIu64 " has been acked", acked_packet_number);
@@ -397,7 +388,7 @@ QUICLossDetector::_detect_lost_packets()
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   this->_loss_time      = 0;
   ink_hrtime loss_delay = this->_k_time_threshold * std::max(this->_latest_rtt, this->_smoothed_rtt);
-  std::map<QUICPacketNumber, PacketInfo *> lost_packets;
+  std::map<QUICPacketNumber, QUICPacketInfo *> lost_packets;
 
   // Packets sent before this time are deemed lost.
   ink_hrtime lost_send_time = Thread::get_hrtime() - loss_delay;
@@ -458,7 +449,7 @@ QUICLossDetector::_retransmit_all_unacked_crypto_data()
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   std::set<QUICPacketNumber> retransmitted_crypto_packets;
-  std::map<QUICPacketNumber, PacketInfo *> lost_packets;
+  std::map<QUICPacketNumber, QUICPacketInfo *> lost_packets;
 
   for (auto &info : this->_sent_packets) {
     if (info.second->is_crypto_packet) {
@@ -484,7 +475,7 @@ QUICLossDetector::_send_two_packets()
 // ===== Functions below are helper functions =====
 
 void
-QUICLossDetector::_retransmit_lost_packet(PacketInfo &packet_info)
+QUICLossDetector::_retransmit_lost_packet(QUICPacketInfo &packet_info)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
@@ -516,12 +507,12 @@ QUICLossDetector::_determine_newly_acked_packets(const QUICAckFrame &ack_frame)
 }
 
 void
-QUICLossDetector::_add_to_sent_packet_list(QUICPacketNumber packet_number, PacketInfoUPtr packet_info)
+QUICLossDetector::_add_to_sent_packet_list(QUICPacketNumber packet_number, QUICPacketInfoUPtr packet_info)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
   // Add to the list
-  this->_sent_packets.insert(std::pair<QUICPacketNumber, PacketInfoUPtr>(packet_number, std::move(packet_info)));
+  this->_sent_packets.insert(std::pair<QUICPacketNumber, QUICPacketInfoUPtr>(packet_number, std::move(packet_info)));
 
   // Increment counters
   auto ite = this->_sent_packets.find(packet_number);
@@ -547,8 +538,8 @@ QUICLossDetector::_remove_from_sent_packet_list(QUICPacketNumber packet_number)
   this->_sent_packets.erase(packet_number);
 }
 
-std::map<QUICPacketNumber, PacketInfoUPtr>::iterator
-QUICLossDetector::_remove_from_sent_packet_list(std::map<QUICPacketNumber, PacketInfoUPtr>::iterator it)
+std::map<QUICPacketNumber, QUICPacketInfoUPtr>::iterator
+QUICLossDetector::_remove_from_sent_packet_list(std::map<QUICPacketNumber, QUICPacketInfoUPtr>::iterator it)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
@@ -557,7 +548,7 @@ QUICLossDetector::_remove_from_sent_packet_list(std::map<QUICPacketNumber, Packe
 }
 
 void
-QUICLossDetector::_decrement_outstanding_counters(std::map<QUICPacketNumber, PacketInfoUPtr>::iterator it)
+QUICLossDetector::_decrement_outstanding_counters(std::map<QUICPacketNumber, QUICPacketInfoUPtr>::iterator it)
 {
   if (it != this->_sent_packets.end()) {
     // Decrement counters

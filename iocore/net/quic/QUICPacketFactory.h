@@ -56,17 +56,16 @@ public:
                         QUICPacketCreationResult &result);
   QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len, bool ack_eliciting,
-                                       bool probing, bool crypto, std::vector<QUICFrameInfo> &frame,
-                                       ats_unique_buf token = ats_unique_buf(nullptr), size_t token_len = 0);
+                                       bool probing, bool crypto, ats_unique_buf token = ats_unique_buf(nullptr),
+                                       size_t token_len = 0);
   QUICPacketUPtr create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                         bool ack_eliciting, bool probing, bool crypto, std::vector<QUICFrameInfo> &frames);
+                                         bool ack_eliciting, bool probing, bool crypto);
   QUICPacketUPtr create_zero_rtt_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                         QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len, bool ack_eliciting,
-                                        bool probing, std::vector<QUICFrameInfo> &frames);
+                                        bool probing);
   QUICPacketUPtr create_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
-                                         ats_unique_buf payload, size_t len, bool ack_eliciting, bool probing,
-                                         std::vector<QUICFrameInfo> &frames);
+                                         ats_unique_buf payload, size_t len, bool ack_eliciting, bool probing);
   void set_version(QUICVersion negotiated_version);
 
   bool is_ready_to_create_protected_packet();
@@ -82,6 +81,5 @@ private:
   QUICPacketNumberGenerator _packet_number_generator[3];
 
   static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeaderUPtr header);
-  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool ack_eliciting, bool probing,
-                                          std::vector<QUICFrameInfo> &frames);
+  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool ack_eliciting, bool probing);
 };

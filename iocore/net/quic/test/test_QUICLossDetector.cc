@@ -43,7 +43,6 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   size_t payload_len     = 512;
   QUICPacketUPtr packet  = QUICPacketFactory::create_null_packet();
   QUICAckFrame *frame    = nullptr;
-  std::vector<QUICFrameInfo> dummy_frames;
 
   SECTION("Handshake")
   {
@@ -68,7 +67,14 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                               false, std::move(payload), sizeof(raw));
     QUICPacketUPtr packet = QUICPacketUPtr(new QUICPacket(std::move(header), std::move(payload), sizeof(raw), true, false),
                                            [](QUICPacket *p) { delete p; });
-    detector.on_packet_sent(*packet);
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet->packet_number(),
+                                                                  Thread::get_hrtime(),
+                                                                  packet->is_ack_eliciting(),
+                                                                  packet->is_crypto_packet(),
+                                                                  true,
+                                                                  packet->size(),
+                                                                  packet->type(),
+                                                                  {}}));
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
     CHECK(g.lost_frame_count >= 0);
 
@@ -87,34 +93,34 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     // Send packet (1) to (7)
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet1  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false, dummy_frames);
+                                                        payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet2  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false, dummy_frames);
+                                                        payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet3  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false, dummy_frames);
+                                                        payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet4  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false, dummy_frames);
+                                                        payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet5  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false, dummy_frames);
+                                                        payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet6  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false, dummy_frames);
+                                                        payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet7  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false, dummy_frames);
+                                                        payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet8  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false, dummy_frames);
+                                                        payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet9  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false, dummy_frames);
+                                                        payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet10 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                         payload_len, true, false, dummy_frames);
+                                                         payload_len, true, false);
 
     QUICPacketNumber pn1  = packet1->packet_number();
     QUICPacketNumber pn2  = packet2->packet_number();
@@ -127,16 +133,87 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     QUICPacketNumber pn9  = packet9->packet_number();
     QUICPacketNumber pn10 = packet10->packet_number();
 
-    detector.on_packet_sent(*packet1);
-    detector.on_packet_sent(*packet2);
-    detector.on_packet_sent(*packet3);
-    detector.on_packet_sent(*packet4);
-    detector.on_packet_sent(*packet5);
-    detector.on_packet_sent(*packet6);
-    detector.on_packet_sent(*packet7);
-    detector.on_packet_sent(*packet8);
-    detector.on_packet_sent(*packet9);
-    detector.on_packet_sent(*packet10);
+    QUICPacketInfoUPtr packet_info = nullptr;
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet1->packet_number(),
+                                                                  Thread::get_hrtime(),
+                                                                  packet1->is_ack_eliciting(),
+                                                                  packet1->is_crypto_packet(),
+                                                                  true,
+                                                                  packet1->size(),
+                                                                  packet1->type(),
+                                                                  {}}));
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet2->packet_number(),
+                                                                  Thread::get_hrtime(),
+                                                                  packet2->is_ack_eliciting(),
+                                                                  packet2->is_crypto_packet(),
+                                                                  true,
+                                                                  packet2->size(),
+                                                                  packet2->type(),
+                                                                  {}}));
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet3->packet_number(),
+                                                                  Thread::get_hrtime(),
+                                                                  packet3->is_ack_eliciting(),
+                                                                  packet3->is_crypto_packet(),
+                                                                  true,
+                                                                  packet3->size(),
+                                                                  packet3->type(),
+                                                                  {}}));
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet4->packet_number(),
+                                                                  Thread::get_hrtime(),
+                                                                  packet4->is_ack_eliciting(),
+                                                                  packet4->is_crypto_packet(),
+                                                                  true,
+                                                                  packet4->size(),
+                                                                  packet4->type(),
+                                                                  {}}));
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet5->packet_number(),
+                                                                  Thread::get_hrtime(),
+                                                                  packet5->is_ack_eliciting(),
+                                                                  packet5->is_crypto_packet(),
+                                                                  true,
+                                                                  packet5->size(),
+                                                                  packet5->type(),
+                                                                  {}}));
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet6->packet_number(),
+                                                                  Thread::get_hrtime(),
+                                                                  packet6->is_ack_eliciting(),
+                                                                  packet6->is_crypto_packet(),
+                                                                  true,
+                                                                  packet6->size(),
+                                                                  packet6->type(),
+                                                                  {}}));
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet7->packet_number(),
+                                                                  Thread::get_hrtime(),
+                                                                  packet6->is_ack_eliciting(),
+                                                                  packet7->is_crypto_packet(),
+                                                                  true,
+                                                                  packet7->size(),
+                                                                  packet7->type(),
+                                                                  {}}));
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet8->packet_number(),
+                                                                  Thread::get_hrtime(),
+                                                                  packet6->is_ack_eliciting(),
+                                                                  packet8->is_crypto_packet(),
+                                                                  true,
+                                                                  packet8->size(),
+                                                                  packet8->type(),
+                                                                  {}}));
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet9->packet_number(),
+                                                                  Thread::get_hrtime(),
+                                                                  packet6->is_ack_eliciting(),
+                                                                  packet9->is_crypto_packet(),
+                                                                  true,
+                                                                  packet9->size(),
+                                                                  packet9->type(),
+                                                                  {}}));
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet10->packet_number(),
+                                                                  Thread::get_hrtime(),
+                                                                  packet10->is_ack_eliciting(),
+                                                                  packet10->is_crypto_packet(),
+                                                                  true,
+                                                                  packet10->size(),
+                                                                  packet10->type(),
+                                                                  {}}));
 
     ink_hrtime_sleep(HRTIME_MSECONDS(2000));
     // Receive an ACK for (1) (4) (5) (7) (8) (9)

@@ -1196,7 +1196,20 @@ QUICNetVConnection::_state_common_send_packet()
         max_packet_size = std::min(max_packet_size, this->_verfied_state.windows());
       }
 
-      QUICPacketUPtr packet = this->_packetize_frames(level, max_packet_size);
+      QUICPacketInfoUPtr packet_info = std::make_unique<QUICPacketInfo>();
+      QUICPacketUPtr packet          = this->_packetize_frames(level, max_packet_size, packet_info->frames);
+
+      packet_info->packet_number    = packet->packet_number();
+      packet_info->time_sent        = Thread::get_hrtime();
+      packet_info->ack_eliciting    = packet->is_ack_eliciting();
+      packet_info->is_crypto_packet = packet->is_crypto_packet();
+      packet_info->in_flight        = true;
+      if (packet_info->ack_eliciting) {
+        packet_info->sent_bytes = packet->size();
+      } else {
+        packet_info->sent_bytes = 0;
+      }
+      packet_info->type = packet->type();
 
       if (packet) {
         if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
@@ -1223,7 +1236,7 @@ QUICNetVConnection::_state_common_send_packet()
         }
 
         int index = QUICTypeUtil::pn_space_index(level);
-        this->_loss_detector[index]->on_packet_sent(*packet);
+        this->_loss_detector[index]->on_packet_sent(std::move(packet_info));
         packet_count++;
       }
     }
@@ -1286,7 +1299,7 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &
 }
 
 QUICPacketUPtr
-QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size)
+QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size, std::vector<QUICFrameInfo> &frames)
 {
   ink_hrtime timestamp = Thread::get_hrtime();
 
@@ -1306,8 +1319,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   int frame_count    = 0;
   size_t len         = 0;
   ats_unique_buf buf = ats_unique_malloc(max_packet_size);
-
-  std::vector<QUICFrameInfo> frames;
 
   if (!this->_has_ack_eliciting_packet_out) {
     // Sent too much ack_only packet. At this moment we need to packetize a ping frame
@@ -1392,7 +1403,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     }
 
     // Packet is retransmittable if it's not ack only packet
-    packet                              = this->_build_packet(level, std::move(buf), len, ack_eliciting, probing, crypto, frames);
+    packet                              = this->_build_packet(level, std::move(buf), len, ack_eliciting, probing, crypto);
     this->_has_ack_eliciting_packet_out = ack_eliciting;
   }
 
@@ -1422,7 +1433,7 @@ QUICNetVConnection::_packetize_closing_frame()
 
   QUICEncryptionLevel level = this->_hs_protocol->current_encryption_level();
   ink_assert(level != QUICEncryptionLevel::ZERO_RTT);
-  this->_the_final_packet = this->_build_packet(level, std::move(buf), len, true, false, false, frames);
+  this->_the_final_packet = this->_build_packet(level, std::move(buf), len, true, false, false);
 }
 
 QUICConnectionErrorUPtr
@@ -1469,7 +1480,7 @@ QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_fram
 
 QUICPacketUPtr
 QUICNetVConnection::_build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool ack_eliciting, bool probing,
-                                  bool crypto, std::vector<QUICFrameInfo> &frames)
+                                  bool crypto)
 {
   QUICPacketType type   = QUICTypeUtil::packet_type(level);
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
@@ -1493,25 +1504,25 @@ QUICNetVConnection::_build_packet(QUICEncryptionLevel level, ats_unique_buf buf,
 
     packet = this->_packet_factory.create_initial_packet(
       dcid, this->_quic_connection_id, this->_largest_acked_packet_number(QUICEncryptionLevel::INITIAL), std::move(buf), len,
-      ack_eliciting, probing, crypto, frames, std::move(token), token_len);
+      ack_eliciting, probing, crypto, std::move(token), token_len);
     break;
   }
   case QUICPacketType::HANDSHAKE: {
     packet = this->_packet_factory.create_handshake_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
                                                            this->_largest_acked_packet_number(QUICEncryptionLevel::HANDSHAKE),
-                                                           std::move(buf), len, ack_eliciting, probing, crypto, frames);
+                                                           std::move(buf), len, ack_eliciting, probing, crypto);
     break;
   }
   case QUICPacketType::ZERO_RTT_PROTECTED: {
     packet = this->_packet_factory.create_zero_rtt_packet(this->_original_quic_connection_id, this->_quic_connection_id,
                                                           this->_largest_acked_packet_number(QUICEncryptionLevel::ZERO_RTT),
-                                                          std::move(buf), len, ack_eliciting, probing, frames);
+                                                          std::move(buf), len, ack_eliciting, probing);
     break;
   }
   case QUICPacketType::PROTECTED: {
     packet = this->_packet_factory.create_protected_packet(this->_peer_quic_connection_id,
                                                            this->_largest_acked_packet_number(QUICEncryptionLevel::ONE_RTT),
-                                                           std::move(buf), len, ack_eliciting, probing, frames);
+                                                           std::move(buf), len, ack_eliciting, probing);
     break;
   }
   default:

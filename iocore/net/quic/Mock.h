@@ -343,7 +343,7 @@ public:
   MockQUICCongestionController(QUICConnectionInfoProvider *info) : QUICCongestionController(info) {}
   // Override
   virtual void
-  on_packets_lost(const std::map<QUICPacketNumber, PacketInfo *> &packets, uint32_t pto_count) override
+  on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets, uint32_t pto_count) override
   {
     for (auto &p : packets) {
       lost_packets.insert(p.first);

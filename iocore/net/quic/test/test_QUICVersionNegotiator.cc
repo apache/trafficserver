@@ -34,7 +34,6 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
   QUICVersionNegotiator vn;
   ats_unique_buf dummy_payload = ats_unique_malloc(128);
   size_t dummy_payload_len     = 128;
-  std::vector<QUICFrameInfo> dummy_frames;
 
   SECTION("Normal case")
   {
@@ -44,7 +43,7 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     // Negotiate version
     packet_factory.set_version(QUIC_SUPPORTED_VERSIONS[0]);
     QUICPacketUPtr initial_packet =
-      packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true, dummy_frames);
+      packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true);
     vn.negotiate(initial_packet.get());
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
 
@@ -63,7 +62,7 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     // Negotiate version
     packet_factory.set_version(QUIC_SUPPORTED_VERSIONS[0]);
     QUICPacketUPtr initial_packet =
-      packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true, dummy_frames);
+      packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true);
     vn.negotiate(initial_packet.get());
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
 
@@ -82,7 +81,7 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     // Negotiate version
     packet_factory.set_version(QUIC_EXERCISE_VERSION);
     QUICPacketUPtr initial_packet =
-      packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true, dummy_frames);
+      packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true);
     vn.negotiate(initial_packet.get());
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
@@ -101,7 +100,6 @@ TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
   QUICVersionNegotiator vn;
   ats_unique_buf dummy_payload = ats_unique_malloc(128);
   size_t dummy_payload_len     = 128;
-  std::vector<QUICFrameInfo> dummy_frames;
 
   SECTION("Normal case")
   {
@@ -127,7 +125,7 @@ TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
     // Negotiate version
     packet_factory.set_version(QUIC_EXERCISE_VERSION);
     QUICPacketUPtr initial_packet =
-      packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true, dummy_frames);
+      packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true);
 
     // Server send VN packet based on Initial packet
     QUICPacketUPtr vn_packet =

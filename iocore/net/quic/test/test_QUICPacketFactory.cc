@@ -87,7 +87,6 @@ TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
   MockQUICPacketProtectionKeyInfo pp_key_info;
   QUICPacketFactory factory(pp_key_info);
   factory.set_version(0x11223344);
-  std::vector<QUICFrameInfo> dummy_frames;
 
   uint8_t raw[]          = {0xaa, 0xbb, 0xcc, 0xdd};
   ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
@@ -96,7 +95,7 @@ TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
   QUICPacketUPtr packet =
     factory.create_handshake_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
                                     QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4), 0,
-                                    std::move(payload), sizeof(raw), true, false, true, dummy_frames);
+                                    std::move(payload), sizeof(raw), true, false, true);
   CHECK(packet->type() == QUICPacketType::HANDSHAKE);
   CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4)));
   CHECK(memcmp(packet->payload(), raw, sizeof(raw)) != 0);

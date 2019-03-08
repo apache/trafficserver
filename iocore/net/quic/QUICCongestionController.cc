@@ -66,7 +66,7 @@ QUICCongestionController::_in_recovery(ink_hrtime sent_time)
 }
 
 void
-QUICCongestionController::on_packet_acked(const PacketInfo &acked_packet)
+QUICCongestionController::on_packet_acked(const QUICPacketInfo &acked_packet)
 {
   // Remove from bytes_in_flight.
   SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
@@ -109,7 +109,7 @@ QUICCongestionController::_congestion_event(ink_hrtime sent_time, uint32_t pto_c
 // the original one is:
 //   ProcessECN(ack):
 void
-QUICCongestionController::process_ecn(const PacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section,
+QUICCongestionController::process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section,
                                       uint32_t pto_count)
 {
   // If the ECN-CE counter reported by the peer has increased,
@@ -127,7 +127,7 @@ QUICCongestionController::process_ecn(const PacketInfo &acked_largest_packet, co
 // the original one is:
 //   OnPacketsLost(lost_packets):
 void
-QUICCongestionController::on_packets_lost(const std::map<QUICPacketNumber, PacketInfo *> &lost_packets, uint32_t pto_count)
+QUICCongestionController::on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets, uint32_t pto_count)
 {
   if (lost_packets.empty()) {
     return;
