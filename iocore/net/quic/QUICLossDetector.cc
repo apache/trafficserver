@@ -243,13 +243,13 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame)
     return;
   }
 
+  QUICLDVDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
+               this->_ack_eliciting_outstanding.load(), this->_crypto_outstanding.load());
+
   this->_detect_lost_packets();
 
   this->_crypto_count = 0;
   this->_pto_count    = 0;
-
-  QUICLDVDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
-               this->_ack_eliciting_outstanding.load(), this->_crypto_outstanding.load());
 
   QUICLDDebug("Unacked packets %lu (retransmittable %u, includes %u handshake packets)", this->_sent_packets.size(),
               this->_ack_eliciting_outstanding.load(), this->_crypto_outstanding.load());
