@@ -1199,19 +1199,19 @@ QUICNetVConnection::_state_common_send_packet()
       QUICPacketInfoUPtr packet_info = std::make_unique<QUICPacketInfo>();
       QUICPacketUPtr packet          = this->_packetize_frames(level, max_packet_size, packet_info->frames);
 
-      packet_info->packet_number    = packet->packet_number();
-      packet_info->time_sent        = Thread::get_hrtime();
-      packet_info->ack_eliciting    = packet->is_ack_eliciting();
-      packet_info->is_crypto_packet = packet->is_crypto_packet();
-      packet_info->in_flight        = true;
-      if (packet_info->ack_eliciting) {
-        packet_info->sent_bytes = packet->size();
-      } else {
-        packet_info->sent_bytes = 0;
-      }
-      packet_info->type = packet->type();
-
       if (packet) {
+        packet_info->packet_number    = packet->packet_number();
+        packet_info->time_sent        = Thread::get_hrtime();
+        packet_info->ack_eliciting    = packet->is_ack_eliciting();
+        packet_info->is_crypto_packet = packet->is_crypto_packet();
+        packet_info->in_flight        = true;
+        if (packet_info->ack_eliciting) {
+          packet_info->sent_bytes = packet->size();
+        } else {
+          packet_info->sent_bytes = 0;
+        }
+        packet_info->type = packet->type();
+
         if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
           QUICConDebug("send to unverified window: %u", this->_verfied_state.windows());
           this->_verfied_state.consume(packet->size());
