@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  URL rewriting.
 
   @section license License
 
@@ -49,20 +49,8 @@ SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
   new_mapping->homePageRedirect = (from_path && !to_path) ? true : false;
 }
 
-//
-// CTOR / DTOR for the UrlRewrite class.
-//
-UrlRewrite::UrlRewrite()
-  : nohost_rules(0),
-    reverse_proxy(0),
-    ts_name(nullptr),
-    http_default_redirect_url(nullptr),
-    num_rules_forward(0),
-    num_rules_reverse(0),
-    num_rules_redirect_permanent(0),
-    num_rules_redirect_temporary(0),
-    num_rules_forward_with_recv_port(0),
-    _valid(false)
+bool
+UrlRewrite::load()
 {
   ats_scoped_str config_file_path;
 
@@ -70,7 +58,7 @@ UrlRewrite::UrlRewrite()
   if (!config_file_path) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to find proxy.config.url_remap.filename");
     Warning("%s Unable to locate remap.config. No remappings in effect", modulePrefix);
-    return;
+    return false;
   }
 
   this->ts_name = nullptr;
@@ -99,6 +87,7 @@ UrlRewrite::UrlRewrite()
   } else {
     Warning("something failed during BuildTable() -- check your remap plugins!");
   }
+  return _valid;
 }
 
 UrlRewrite::~UrlRewrite()
@@ -662,8 +651,6 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping *mapping, con
 int
 UrlRewrite::BuildTable(const char *path)
 {
-  BUILD_TABLE_INFO bti;
-
   ink_assert(forward_mappings.empty());
   ink_assert(reverse_mappings.empty());
   ink_assert(permanent_redirects.empty());
