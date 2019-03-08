@@ -77,7 +77,7 @@ EOF
       echo "or alternatively, undefine the FORMAT environment variable"
       exit 1
   else
-      for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc); do
+      for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in); do
     echo $file
     ${FORMAT} -i $file
       done

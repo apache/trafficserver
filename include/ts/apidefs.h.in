@@ -283,7 +283,7 @@ typedef enum {
   // Putting the SSL hooks in the same enum space
   // So both sets of hooks can be set by the same Hook function
   TS_SSL_FIRST_HOOK,
-  TS_VCONN_START_HOOK = TS_SSL_FIRST_HOOK,
+  TS_VCONN_START_HOOK      = TS_SSL_FIRST_HOOK,
   TS_VCONN_PRE_ACCEPT_HOOK = TS_VCONN_START_HOOK, // Deprecated but compatible for now.
   TS_VCONN_CLOSE_HOOK,
   TS_SSL_SNI_HOOK,
@@ -292,7 +292,7 @@ typedef enum {
   TS_SSL_SERVER_VERIFY_HOOK,
   TS_SSL_VERIFY_CLIENT_HOOK,
   TS_SSL_SESSION_HOOK,
-  TS_SSL_LAST_HOOK = TS_SSL_SESSION_HOOK,
+  TS_SSL_LAST_HOOK                          = TS_SSL_SESSION_HOOK,
   TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK = 24,
   TS_HTTP_LAST_HOOK
 } TSHttpHookID;
