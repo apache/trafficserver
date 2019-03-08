@@ -94,3 +94,20 @@ TEST_CASE("AcidPtr Isolation")
   }
   CHECK(*p.getPtr() == 42);
 }
+
+TEST_CASE("AcidPtr Abort")
+{
+  AcidPtr<int> p;
+  {
+    AcidCommitPtr<int> w(p);
+    *w = 40;
+  }
+  CHECK(*p.getPtr() == 40);
+  {
+    AcidCommitPtr<int> w = p;
+    *w += 1;
+    w.abort();
+    CHECK(w == nullptr);
+  }
+  CHECK(*p.getPtr() == 40);
+}

@@ -209,13 +209,28 @@ TEST_CASE("Extendible", "")
     CHECK(testField::alive == 0);
   }
 
+  INFO("AcidPtr AcidCommitPtr malloc ptr int");
+  {
+    void *mem            = malloc(sizeof(AcidPtr<int>));
+    AcidPtr<int> &reader = *(new (mem) AcidPtr<int>);
+    {
+      auto writer = reader.startCommit();
+      CHECK(*writer == 0);
+      *writer = 1;
+      CHECK(*writer == 1);
+      CHECK(*reader.getPtr().get() == 0);
+      // end of scope writer, commit to reader
+    }
+    CHECK(*reader.getPtr().get() == 1);
+    reader.~AcidPtr<int>();
+    free(mem);
+  }
   INFO("AcidPtr AcidCommitPtr casting");
   {
-    void *mem = malloc(sizeof(AcidPtr<testField>));
-    new (mem) AcidPtr<testField>();
-    AcidPtr<testField> &reader = *static_cast<AcidPtr<testField> *>(mem);
+    void *mem                  = malloc(sizeof(AcidPtr<testField>));
+    AcidPtr<testField> &reader = *(new (mem) AcidPtr<testField>);
     {
-      AcidCommitPtr<testField> writer = AcidCommitPtr<testField>(reader);
+      auto writer = reader.startCommit();
       CHECK(writer->arr[0] == 1);
       CHECK(reader.getPtr()->arr[0] == 1);
       writer->arr[0] = 99;
@@ -223,6 +238,7 @@ TEST_CASE("Extendible", "")
       CHECK(reader.getPtr()->arr[0] == 1);
     }
     CHECK(reader.getPtr()->arr[0] == 99);
+    reader.~AcidPtr<testField>();
     free(mem);
   }
   INFO("ACIDPTR block-free reader")
