@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  URL rewriting.
 
   @section license License
 
@@ -57,10 +57,24 @@ class UrlRewrite : public RefCountObj
 {
 public:
   using URLTable = std::unordered_map<std::string, UrlMappingPathIndex *>;
-  UrlRewrite();
+  UrlRewrite()   = default;
   ~UrlRewrite() override;
 
+  /** Load the configuration.
+   *
+   * This access data in librecords to obtain the information needed for loading the configuration.
+   *
+   * @return @c true if the instance state is valid, @c false if not.
+   */
+  bool load();
+
+  /** Build the internal url write tables.
+   *
+   * @param path Path to configuration file.
+   * @return 0 on success, non-zero error code on failure.
+   */
   int BuildTable(const char *path);
+
   mapping_type Remap_redirect(HTTPHdr *request_header, URL *redirect_url);
   bool ReverseMap(HTTPHdr *response_header);
   void SetReverseFlag(int flag);
@@ -182,20 +196,20 @@ public:
                           mapping_container);
   }
 
-  int nohost_rules;
-  int reverse_proxy;
+  int nohost_rules  = 0;
+  int reverse_proxy = 0;
 
-  char *ts_name; // Used to send redirects when no host info
+  char *ts_name = nullptr; // Used to send redirects when no host info
 
-  char *http_default_redirect_url; // Used if redirect in "referer" filtering was not defined properly
-  int num_rules_forward;
-  int num_rules_reverse;
-  int num_rules_redirect_permanent;
-  int num_rules_redirect_temporary;
-  int num_rules_forward_with_recv_port;
+  char *http_default_redirect_url      = nullptr; // Used if redirect in "referer" filtering was not defined properly
+  int num_rules_forward                = 0;
+  int num_rules_reverse                = 0;
+  int num_rules_redirect_permanent     = 0;
+  int num_rules_redirect_temporary     = 0;
+  int num_rules_forward_with_recv_port = 0;
 
 private:
-  bool _valid;
+  bool _valid = false;
 
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host, int request_host_len,
                       UrlMappingContainer &mapping_container);
