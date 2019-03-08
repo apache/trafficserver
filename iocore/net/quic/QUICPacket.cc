@@ -777,20 +777,6 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
 }
 
 //
-// QUICTrackablePacket
-//
-QUICTrackablePacket::QUICTrackablePacket(std::vector<QUICFrameInfo> &frames)
-{
-  this->_frames = std::move(frames);
-}
-
-std::vector<QUICFrameInfo> &
-QUICTrackablePacket::frames()
-{
-  return this->_frames;
-}
-
-//
 // QUICPacket
 //
 
@@ -803,26 +789,7 @@ QUICPacket::QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size
   this->_payload_size = payload_len;
 }
 
-QUICPacket::QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, std::vector<QUICFrameInfo> &frames)
-  : QUICTrackablePacket(frames)
-{
-  this->_header       = std::move(header);
-  this->_payload      = std::move(payload);
-  this->_payload_size = payload_len;
-}
-
 QUICPacket::QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool ack_eliciting, bool probing)
-{
-  this->_header            = std::move(header);
-  this->_payload           = std::move(payload);
-  this->_payload_size      = payload_len;
-  this->_is_ack_eliciting  = ack_eliciting;
-  this->_is_probing_packet = probing;
-}
-
-QUICPacket::QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool ack_eliciting, bool probing,
-                       std::vector<QUICFrameInfo> &frames)
-  : QUICTrackablePacket(frames)
 {
   this->_header            = std::move(header);
   this->_payload           = std::move(payload);

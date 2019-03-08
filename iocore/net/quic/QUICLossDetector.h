@@ -39,7 +39,7 @@
 
 class QUICLossDetector;
 
-struct PacketInfo {
+struct QUICPacketInfo {
   // 6.3.1.  Sent Packet Fields
   QUICPacketNumber packet_number;
   ink_hrtime time_sent;
@@ -54,7 +54,7 @@ struct PacketInfo {
   // end
 };
 
-using PacketInfoUPtr = std::unique_ptr<PacketInfo>;
+using QUICPacketInfoUPtr = std::unique_ptr<QUICPacketInfo>;
 
 class QUICRTTProvider
 {
@@ -78,10 +78,10 @@ public:
   QUICCongestionController(QUICConnectionInfoProvider *info);
   virtual ~QUICCongestionController() {}
   void on_packet_sent(size_t bytes_sent);
-  void on_packet_acked(const PacketInfo &acked_packet);
-  virtual void on_packets_lost(const std::map<QUICPacketNumber, PacketInfo *> &packets, uint32_t pto_count);
+  void on_packet_acked(const QUICPacketInfo &acked_packet);
+  virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets, uint32_t pto_count);
   void on_retransmission_timeout_verified();
-  void process_ecn(const PacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section, uint32_t pto_count);
+  void process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section, uint32_t pto_count);
   bool check_credit() const;
   uint32_t open_window() const;
   void reset();
@@ -126,7 +126,7 @@ public:
 
   std::vector<QUICFrameType> interests() override;
   virtual QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
-  void on_packet_sent(QUICPacket &packet, bool in_flight = true);
+  void on_packet_sent(QUICPacketInfoUPtr packet_info, bool in_flight = true);
   QUICPacketNumber largest_acked_packet_number();
   void update_ack_delay_exponent(uint8_t ack_delay_exponent);
   void reset();
@@ -159,17 +159,17 @@ private:
   ink_hrtime _min_rtt                                = INT64_MAX;
   ink_hrtime _max_ack_delay                          = 0;
   ink_hrtime _loss_time                              = 0;
-  std::map<QUICPacketNumber, PacketInfoUPtr> _sent_packets;
+  std::map<QUICPacketNumber, QUICPacketInfoUPtr> _sent_packets;
 
   // These are not defined on the spec but expected to be count
   // These counter have to be updated when inserting / erasing packets from _sent_packets with following functions.
   std::atomic<uint32_t> _crypto_outstanding;
   std::atomic<uint32_t> _ack_eliciting_outstanding;
-  void _add_to_sent_packet_list(QUICPacketNumber packet_number, std::unique_ptr<PacketInfo> packet_info);
+  void _add_to_sent_packet_list(QUICPacketNumber packet_number, std::unique_ptr<QUICPacketInfo> packet_info);
   void _remove_from_sent_packet_list(QUICPacketNumber packet_number);
-  std::map<QUICPacketNumber, PacketInfoUPtr>::iterator _remove_from_sent_packet_list(
-    std::map<QUICPacketNumber, PacketInfoUPtr>::iterator it);
-  void _decrement_outstanding_counters(std::map<QUICPacketNumber, PacketInfoUPtr>::iterator it);
+  std::map<QUICPacketNumber, QUICPacketInfoUPtr>::iterator _remove_from_sent_packet_list(
+    std::map<QUICPacketNumber, QUICPacketInfoUPtr>::iterator it);
+  void _decrement_outstanding_counters(std::map<QUICPacketNumber, QUICPacketInfoUPtr>::iterator it);
 
   /*
    * Because this alarm will be reset on every packet transmission, to reduce number of events,
@@ -177,15 +177,13 @@ private:
    */
   ink_hrtime _loss_detection_alarm_at = 0;
 
-  void _on_packet_sent(QUICPacketNumber packet_number, bool ack_eliciting, bool in_flight, bool is_crypto_packet, size_t sent_bytes,
-                       QUICPacketType type, std::vector<QUICFrameInfo> &frames);
   void _on_ack_received(const QUICAckFrame &ack_frame);
-  void _on_packet_acked(const PacketInfo &acked_packet);
+  void _on_packet_acked(const QUICPacketInfo &acked_packet);
   void _update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay);
   void _detect_lost_packets();
   void _set_loss_detection_timer();
   void _on_loss_detection_timeout();
-  void _retransmit_lost_packet(PacketInfo &packet_info);
+  void _retransmit_lost_packet(QUICPacketInfo &packet_info);
 
   std::set<QUICAckFrame::PacketNumberRange> _determine_newly_acked_packets(const QUICAckFrame &ack_frame);
 

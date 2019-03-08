@@ -51,18 +51,6 @@ extern ClassAllocator<QUICPacketShortHeader> quicPacketShortHeaderAllocator;
 using QUICPacketHeaderDeleterFunc = void (*)(QUICPacketHeader *p);
 using QUICPacketHeaderUPtr        = std::unique_ptr<QUICPacketHeader, QUICPacketHeaderDeleterFunc>;
 
-class QUICTrackablePacket
-{
-public:
-  virtual ~QUICTrackablePacket() {}
-  std::vector<QUICFrameInfo> &frames();
-
-protected:
-  QUICTrackablePacket() {}
-  QUICTrackablePacket(std::vector<QUICFrameInfo> &frames);
-  std::vector<QUICFrameInfo> _frames;
-};
-
 class QUICPacketHeader
 {
 public:
@@ -321,7 +309,7 @@ public:
   }
 };
 
-class QUICPacket : public QUICTrackablePacket
+class QUICPacket
 {
 public:
   QUICPacket();
