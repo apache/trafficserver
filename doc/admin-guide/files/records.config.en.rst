@@ -2307,6 +2307,7 @@ all the different user-agent versions of documents it encounters.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.open_read_retry_time INT 10
    :reloadable:
+   :overridable:
 
     The number of milliseconds a cacheable request will wait before requesting the object from cache if an equivalent request is in flight.
 
