@@ -13,7 +13,7 @@
       "type": "object",
       "properties": {
         "rules": {
-          "$ref": "#/definitions/url_rewrite/rule_list"
+          "$ref": "#/definitions/url_rewrite/directive"
         },
         "filters": {
           "$ref": "#/definitions/url_rewrite/filter_define_list"
@@ -45,14 +45,14 @@
         ]
       },
       "action": {
-        "description": "Enforcement action.",
+        "description": "Filtering result.",
         "type": "string",
         "enum": [
-          "allow",
-          "deny"
+          "disable",
+          "enable"
         ]
       },
-      "method-set": {
+      "method_set": {
         "description": "Methods to check.",
         "oneOf": [
           {
@@ -87,7 +87,7 @@
         ]
       },
       "filter_define_list": {
-        "description": "List of filter definitions.",
+        "description": "List of (named) filter definitions.",
         "oneOf": [
           {
             "$ref": "#/definitions/url_rewrite/filter_define"
@@ -101,19 +101,22 @@
           }
         ]
       },
+      "filter_name": {
+        "description": "Name of a filter",
+        "type": "string"
+      },
       "filter_ref": {
         "oneOf": [
           {
-            "description": "Name of a filter",
-            "type": "string"
+            "$ref": "#/definitions/url_rewrite/filter_name"
           },
           {
-            "$ref": "#/definitions/url_rewrite/filter"
+            "$ref": "#/definitions/url_rewrite/filter_define"
           }
         ]
       },
       "filter_list": {
-        "description": "List of filters.",
+        "description": "List of filters. These can be filter names or in place definitions.",
         "oneOf": [
           {
             "$ref": "#/definitions/url_rewrite/filter_ref"
@@ -135,8 +138,8 @@
             "description": "Path to the plugin binary.",
             "type": "string"
           },
-          "params": {
-            "description": "Parameters to pass to plugin during rule initialization",
+          "args": {
+            "description": "Arguments to pass to plugin during rule initialization",
             "type": "array",
             "items": {
               "type": "string"
@@ -163,17 +166,20 @@
         ]
       },
       "referer_data": {
-        "description": "Refererer mapping data.",
+        "description": "Refererer matching data.",
         "type": "object",
         "properties": {
           "redirect": {
-            "description": "Redirect URL",
+            "description": "Default redirection URL",
             "type": "string"
           },
           "match": {
             "description": "Regular expressions (PCRE compliant) to match the Referer field value.",
             "type": "array",
-            "items": "string",
+            "items": {
+              "description": "A regular expression",
+              "type": "string"
+            },
             "minItems": 1
           }
         },
@@ -186,18 +192,18 @@
         "description": "Optional feature for a rule.",
         "type": "string",
         "enum": [
-          "regex"
+          "reverse"
         ]
       },
       "rule": {
         "description": "URL Rewrite rule.",
         "type": "object",
         "properties": {
-          "from": {
+          "target": {
             "description": "The original URL in the client request.",
             "type": "string"
           },
-          "to": {
+          "replacement": {
             "description": "The new URL to which the proxy request should be rewritten.",
             "type": "string"
           },
@@ -205,18 +211,18 @@
             "description": "Rule options to enable for this rule.",
             "oneOf": [
               {
-                "$ref": "#/definitions/url_rewrite/option"
+                "$ref": "#/definitions/url_rewrite/rule_option"
               },
               {
                 "type": "array",
                 "items": {
-                  "$ref": "#/definitions/url_rewrite/option"
+                  "$ref": "#/definitions/url_rewrite/rule_option"
                 },
                 "minItems": 1
               }
             ]
           },
-          "map_id": {
+          "rule_id": {
             "description": "Rule identifier (positive integer)",
             "type": "number"
           },
@@ -224,26 +230,67 @@
             "description": "Specify a local port for a rule.",
             "type": "number"
           },
-          "plugin": {
+          "plugins": {
             "$ref": "#/definitions/url_rewrite/plugin_list"
+          },
+          "referer": {
+            "$ref": "#/definitions/url_rewrite/referer_data"
+          },
+          "filters": {
+            "$ref": "#/definitions/url_rewrite/filter_list"
           }
         },
         "required": [
-          "outbound",
-          "action"
+          "target",
+          "replacement"
         ]
       },
-      "rule_list": {
-        "description": "List of url rewrite rules.",
+      "filter_directive_list": {
+        "description": "List of filter names.",
         "oneOf": [
           {
-            "$ref": "#/definitions/url_rewrite/rule"
+            "$ref": "#/definitions/url_rewrite/filter_name"
           },
           {
             "type": "array",
             "minItems": 1,
             "items": {
-              "$ref": "#/definitions/url_rewrite/rule"
+              "$ref": "#/definitions/url_rewrite/filter_name"
+            }
+          }
+        ]
+      },
+      "directive": {
+        "oneOf": [
+          {
+            "description": "Filter enable",
+            "type": "object",
+            "properties": {
+              "enable": {
+                "$ref": "#/definitions/url_rewrite/filter_directive_list"
+              }
+            },
+            "required": [ "enable" ]
+          },
+          {
+            "description": "Filter disable",
+            "type": "object",
+            "properties": {
+              "enable": {
+                "$ref": "#/definitions/url_rewrite/filter_directive_list"
+              }
+            },
+            "required": [ "disable" ]
+          },
+          {
+            "$ref": "#/definitions/url_rewrite/rule"
+          },
+          {
+            "description": "List of directives.",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/definitions/url_rewrite/directive"
             }
           }
         ]

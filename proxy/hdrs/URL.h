@@ -263,6 +263,7 @@ public:
   std::string_view host_get();
   const char *host_get(int *length);
   void host_set(const char *value, int length);
+  void host_set(std::string_view name);
 
   /** Set the host name to @a host converted to lower case.
    *

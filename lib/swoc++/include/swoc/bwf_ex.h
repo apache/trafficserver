@@ -33,7 +33,7 @@ namespace swoc
 {
 namespace bwf
 {
-  using namespace std::literals; // enable ""sv
+  using namespace swoc::literals; // enable ""sv
 
   /** Output @a text @a n times.
    *

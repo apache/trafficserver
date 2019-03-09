@@ -107,14 +107,14 @@ public:
    * @param value Value to look up.
    * @return The name for @a value.
    */
-  std::string_view operator[](E value);
+  std::string_view operator[](E value) const;
 
   /** Get the value for a @a name.
    *
    * @param name Name to look up.
    * @return The value for the @a name.
    */
-  E operator[](std::string_view const &name);
+  E operator[](std::string_view const &name) const;
 
   /// Define the @a names for a @a value.
   /// The first name is the primary name. All @a names must be convertible to @c std::string_view.
@@ -253,7 +253,7 @@ protected:
      * @param value Value without a name.
      * @return A name for that value.
      */
-    std::string_view operator()(E value);
+    std::string_view operator()(E value) const;
 
     /// Internal clean up, needed for assignment and destructor.
     self_type &destroy();
@@ -275,7 +275,7 @@ protected:
     self_type &operator=(E value);
     self_type &operator=(const UnknownNameHandler &handler);
 
-    E operator()(std::string_view name);
+    E operator()(std::string_view name) const;
 
     self_type &destroy();
 
@@ -457,7 +457,7 @@ Lexicon<E>::NameDefault::operator=(const UnknownValueHandler &handler) -> self_t
 
 template <typename E>
 std::string_view
-Lexicon<E>::NameDefault::operator()(E value)
+Lexicon<E>::NameDefault::operator()(E value) const
 {
   switch (_content) {
   case Content::SCALAR:
@@ -512,14 +512,14 @@ Lexicon<E>::ValueDefault::operator=(const UnknownNameHandler &handler) -> self_t
 
 template <typename E>
 E
-Lexicon<E>::ValueDefault::operator()(std::string_view name)
+Lexicon<E>::ValueDefault::operator()(std::string_view name) const
 {
   switch (_content) {
   case Content::SCALAR:
-    return *(reinterpret_cast<E *>(_store));
+    return *(reinterpret_cast<E const*>(_store));
     break;
   case Content::HANDLER:
-    return (*(reinterpret_cast<UnknownNameHandler *>(_store)))(name);
+    return (*(reinterpret_cast<UnknownNameHandler const *>(_store)))(name);
     break;
   default:
     throw std::domain_error(swoc::LocalBufferWriter<128>().print("Lexicon: unknown name '{}'\0", name).data());
@@ -572,7 +572,7 @@ Lexicon<E>::localize(std::string_view const &name)
   return span.view();
 }
 
-template <typename E> std::string_view Lexicon<E>::operator[](E value)
+template <typename E> std::string_view Lexicon<E>::operator[](E value) const
 {
   auto spot = _by_value.find(value);
   if (spot != _by_value.end()) {
@@ -581,7 +581,7 @@ template <typename E> std::string_view Lexicon<E>::operator[](E value)
   return _name_default(value);
 }
 
-template <typename E> E Lexicon<E>::operator[](std::string_view const &name)
+template <typename E> E Lexicon<E>::operator[](std::string_view const &name) const
 {
   auto spot = _by_name.find(name);
   if (spot != _by_name.end()) {

@@ -80,54 +80,88 @@ RemapArg::RemapArg(ts::TextView key, ts::TextView data)
 {
   auto spot = std::find_if(ArgTags.begin(), ArgTags.end(), [=](auto const &d) -> bool { return key == d.name; });
   if (spot != ArgTags.end()) {
-    tag   = key;
+    key   = key;
     value = data;
     type  = spot->type;
   }
 }
 
 void
-RemapBuilder::clear()
+RemapTextBuilder::clear()
 {
   paramv.resize(0);
   argv.resize(0);
   arg_types.reset();
 }
 
-RemapFilter *
-RemapBuilder::find_filter(TextView name)
-{
-  auto spot = std::find_if(filters.begin(), filters.end(), [=](auto const &filter) { return filter.name == name; });
-  return spot != filters.end() ? &(*spot) : nullptr;
-}
-
 TextView
-RemapBuilder::normalize_url(RemapBuilder::TextView url)
+RemapTextBuilder::add_filter_arg(RemapArg const &arg, RemapFilter *filter, RemapTextBuilder::ErrBuff &errw)
 {
-  bool add_separator_p = false;
-  // If it's a proxy URL and there's no separator after the host, add one.
-  if (auto pos = url.find("://"_sv); pos != url.npos) {
-    if (auto post_host_pos = url.substr(pos + 3).find('/'); post_host_pos == url.npos) {
-      add_separator_p = true;
+  switch (arg.type) {
+  case RemapArg::METHOD: {
+    auto text{arg.value};
+    if ('~' == *text) {
+      ++text;
+      filter->set_method_match_inverted(true);
     }
-  }
-  auto url_size = url.size();
-  if (add_separator_p) {
-    ++url_size;
+    while (text) {
+      auto method = text.take_prefix_at(";,"_sv);
+      if (method.empty()) {
+        continue;
+      }
+      filter->add_method(method);
+    }
+  } break;
+  case RemapArg::PROXY_ADDR: {
+    auto range{arg.value};
+    bool invert_p = false;
+    IpAddr min, max;
+    if (*range == '~') {
+      invert_p = true;
+      ++range;
+    }
+    if (0 == ats_ip_range_parse(range, min, max)) {
+      if (invert_p) {
+        filter->mark_proxy_addr_inverted(min, max);
+      } else {
+        filter->mark_proxy_addr(min, max);
+      }
+    } else {
+      errw.print("malformed IP address '{}' in argument '{}'", range, arg.key);
+      return errw.view();
+    }
+  } break;
+  case RemapArg::SRC_ADDR: {
+    auto range{arg.value};
+    bool invert_p = false;
+    IpAddr min, max;
+    if (*range == '~') {
+      invert_p = true;
+      ++range;
+    }
+    if (0 == ats_ip_range_parse(range, min, max)) {
+      if (invert_p) {
+        filter->mark_src_addr_inverted(min, max);
+      } else {
+        filter->mark_src_addr(min, max);
+      }
+    } else {
+      errw.print("malformed IP address '{}' in argument '{}'", range, arg.key);
+      return errw.view();
+    }
+  } break;
+  case RemapArg::INTERNAL:
+    filter->set_internal_check(RemapFilter::REQUIRE_TRUE);
+    break;
+  default:
+    break;
   }
 
-  // Now localize it, with the trailing slash if needed.
-  auto span = rewriter->arena.alloc(url_size + 1);
-  memcpy(span.data(), url.data(), url.size());
-  span.end()[-1] = '\0';
-  if (add_separator_p) {
-    span.end()[-2] = '/';
-  }
-  return {span.begin(), url_size};
+  return {};
 }
 
 TextView
-RemapBuilder::parse_define_directive(TextView directive, RemapBuilder::ErrBuff &errw)
+RemapTextBuilder::parse_define_directive(TextView directive, RemapTextBuilder::ErrBuff &errw)
 {
   if (paramv.size() < 2 || paramv[1].empty()) {
     errw.print("Directive \"{}\" must have name parameter", directive);
@@ -141,30 +175,28 @@ RemapBuilder::parse_define_directive(TextView directive, RemapBuilder::ErrBuff &
     return errw.view();
   }
 
-  auto filter = this->find_filter(paramv[1]);
-  if (filter) {
+  if (this->find_filter(paramv[1])) {
     errw.print("Redefinition of filter '{}'", paramv[1]);
     return errw.view();
   }
-  filter = new RemapFilter;
-  ts::PostScript cleanup([=]() -> void { delete filter; });
+
+  std::unique_ptr<RemapFilter> filter{new RemapFilter};
   filter->set_name(paramv[1]);
   // Add the arguments for the filter.
   for (auto const &arg : argv) {
-    auto err_msg = filter->add_arg({arg.type, this->rewriter->localize(arg.tag), this->rewriter->localize(arg.value)}, errw);
-    if (!err_msg.empty()) {
-      return err_msg;
+    auto result = this->add_filter_arg(arg, filter.get(), errw);
+    if (!result.empty()) {
+      return result;
     }
   }
 
-  cleanup.release();
-  filters.append(filter);
+  _filters.append(filter.release());
 
   return {};
 }
 
 TextView
-RemapBuilder::parse_delete_directive(TextView directive, ErrBuff &errw)
+RemapTextBuilder::parse_delete_directive(TextView directive, ErrBuff &errw)
 {
   if (paramv.size() < 2) {
     errw.print("Directive '{}' must have name argument", directive);
@@ -173,13 +205,13 @@ RemapBuilder::parse_delete_directive(TextView directive, ErrBuff &errw)
   }
 
   if (auto spot = this->find_filter(paramv[1]); spot) {
-    this->filters.erase(spot);
+    this->_filters.erase(spot);
   }
   return {};
 }
 
 TextView
-RemapBuilder::parse_activate_directive(TextView directive, ErrBuff &errw)
+RemapTextBuilder::parse_activate_directive(TextView directive, ErrBuff &errw)
 {
   if (paramv.size() < 2) {
     errw.print("Directive '{}' must have name argument", directive);
@@ -201,12 +233,12 @@ RemapBuilder::parse_activate_directive(TextView directive, ErrBuff &errw)
   }
 
   // Reverse precedence! This is the first match, at the end.
-  active_filters.push_back(filter);
+  _active_filters.push_back(filter);
   return nullptr;
 }
 
 TextView
-RemapBuilder::parse_deactivate_directive(TextView directive, ErrBuff &errw)
+RemapTextBuilder::parse_deactivate_directive(TextView directive, ErrBuff &errw)
 {
   if (paramv.size() < 2) {
     errw.print("Directive '{}' must have name argument", directive);
@@ -227,29 +259,29 @@ RemapBuilder::parse_deactivate_directive(TextView directive, ErrBuff &errw)
     return errw.view();
   }
 
-  auto spot = std::find_if(active_filters.rbegin(), active_filters.rend(), [=](auto f) -> bool { return f == filter; });
-  if (spot != active_filters.rend()) {
-    active_filters.erase(spot.base());
+  auto spot = std::find_if(_active_filters.rbegin(), _active_filters.rend(), [=](auto f) -> bool { return f == filter; });
+  if (spot != _active_filters.rend()) {
+    _active_filters.erase(spot.base());
   }
   return {};
 }
 
 TextView
-RemapBuilder::parse_remap_fragment(ts::file::path const &path, RemapBuilder::ErrBuff &errw)
+RemapTextBuilder::parse_remap_fragment(ts::file::path const &path, RemapTextBuilder::ErrBuff &errw)
 {
   // Need a child builder to avoid clobbering state in @a this builder. The filters need to be
   // loaned to the child so that global filters can be used and new filters are available later.
-  RemapBuilder builder{rewriter};
+  RemapTextBuilder builder{_rewriter};
   bool success;
 
   // Move it over for now.
-  builder.filters = std::move(this->filters);
+  builder._filters = std::move(this->_filters);
 
   Debug("url_rewrite", "[%s] including remap configuration from %s", __func__, path.c_str());
-  success = builder.parse_config(path, rewriter);
+  success = builder.parse_config(path, _rewriter);
 
   // Child is done, bring back the filters.
-  this->filters = std::move(builder.filters);
+  this->_filters = std::move(builder._filters);
 
   if (success) {
     // register the included file with the management subsystem so that we can correctly
@@ -264,7 +296,7 @@ RemapBuilder::parse_remap_fragment(ts::file::path const &path, RemapBuilder::Err
 }
 
 TextView
-RemapBuilder::parse_include_directive(TextView directive, ErrBuff &errw)
+RemapTextBuilder::parse_include_directive(TextView directive, ErrBuff &errw)
 {
   TextView err_msg;
 
@@ -336,35 +368,35 @@ RemapBuilder::parse_include_directive(TextView directive, ErrBuff &errw)
 
 struct remap_directive {
   TextView name;
-  TextView (RemapBuilder::*parser)(TextView, RemapBuilder::ErrBuff &);
+  TextView (RemapTextBuilder::*parser)(TextView, RemapTextBuilder::ErrBuff &);
 };
 
 static const std::array<remap_directive, 16> directives = {{
 
-  {".definefilter", &RemapBuilder::parse_define_directive},
-  {".deffilter", &RemapBuilder::parse_define_directive},
-  {".defflt", &RemapBuilder::parse_define_directive},
+  {".definefilter", &RemapTextBuilder::parse_define_directive},
+  {".deffilter", &RemapTextBuilder::parse_define_directive},
+  {".defflt", &RemapTextBuilder::parse_define_directive},
 
-  {".deletefilter", &RemapBuilder::parse_delete_directive},
-  {".delfilter", &RemapBuilder::parse_delete_directive},
-  {".delflt", &RemapBuilder::parse_delete_directive},
+  {".deletefilter", &RemapTextBuilder::parse_delete_directive},
+  {".delfilter", &RemapTextBuilder::parse_delete_directive},
+  {".delflt", &RemapTextBuilder::parse_delete_directive},
 
-  {".usefilter", &RemapBuilder::parse_activate_directive},
-  {".activefilter", &RemapBuilder::parse_activate_directive},
-  {".activatefilter", &RemapBuilder::parse_activate_directive},
-  {".useflt", &RemapBuilder::parse_activate_directive},
+  {".usefilter", &RemapTextBuilder::parse_activate_directive},
+  {".activefilter", &RemapTextBuilder::parse_activate_directive},
+  {".activatefilter", &RemapTextBuilder::parse_activate_directive},
+  {".useflt", &RemapTextBuilder::parse_activate_directive},
 
-  {".unusefilter", &RemapBuilder::parse_deactivate_directive},
-  {".deactivatefilter", &RemapBuilder::parse_deactivate_directive},
-  {".unactivefilter", &RemapBuilder::parse_deactivate_directive},
-  {".deuseflt", &RemapBuilder::parse_deactivate_directive},
-  {".unuseflt", &RemapBuilder::parse_deactivate_directive},
+  {".unusefilter", &RemapTextBuilder::parse_deactivate_directive},
+  {".deactivatefilter", &RemapTextBuilder::parse_deactivate_directive},
+  {".unactivefilter", &RemapTextBuilder::parse_deactivate_directive},
+  {".deuseflt", &RemapTextBuilder::parse_deactivate_directive},
+  {".unuseflt", &RemapTextBuilder::parse_deactivate_directive},
 
-  {".include", &RemapBuilder::parse_include_directive},
+  {".include", &RemapTextBuilder::parse_include_directive},
 }};
 
 TextView
-RemapBuilder::parse_directive(ErrBuff &errw)
+RemapTextBuilder::parse_directive(ErrBuff &errw)
 {
   auto token{paramv[0]};
 
@@ -387,13 +419,10 @@ RemapBuilder::parse_directive(ErrBuff &errw)
 }
 
 TextView
-RemapBuilder::load_plugins(url_mapping *mp, ErrBuff &errw)
+RemapTextBuilder::load_plugins(url_mapping *mp, ErrBuff &errw)
 {
-  TSRemapInterface ri;
-  RemapPluginInfo *pi;
   std::vector<char const *> plugin_argv;
   unsigned idx = 0;
-  char plugin_err_buff[2048];
 
   while (idx < argv.size()) {
     RemapArg const &arg{argv[idx++]};
@@ -403,7 +432,7 @@ RemapBuilder::load_plugins(url_mapping *mp, ErrBuff &errw)
     }
 
     if (arg.value.empty()) {
-      errw.print("Plugin file name not found for argument '{}'", arg.tag);
+      errw.print("Plugin file name not found for argument '{}'", arg.key);
       return errw.view();
     }
 
@@ -436,7 +465,7 @@ RemapBuilder::load_plugins(url_mapping *mp, ErrBuff &errw)
     // Next is to URL.
     plugin_argv.push_back(arg_text.data());
     pos = arg_text.extent();
-    arg_text.print("{}", mp->toUrl);
+    arg_text.print("{}", mp->toURL);
     if (pos == arg_text.extent()) {
       errw.write("Can't load toURL from URL class");
       return errw.view();
@@ -455,192 +484,17 @@ RemapBuilder::load_plugins(url_mapping *mp, ErrBuff &errw)
     }
 
     Debug("remap_plugin", "Loading plugin from %s", path.c_str());
-
-    if ((pi = RemapPluginInfo::find_by_path(path.view())) == nullptr) {
-      pi = new RemapPluginInfo(std::move(path));
-      RemapPluginInfo::add_to_list(pi);
-      Debug("remap_plugin", "New remap plugin info created for \"%s\"", pi->path.c_str());
-
-      // Load the plugin library and find the entry points.
-      {
-        auto err_pos            = errw.extent();
-        uint32_t elevate_access = 0;
-        REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
-        ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
-
-        if ((pi->dl_handle = dlopen(pi->path.c_str(), RTLD_NOW)) == nullptr) {
-          auto dl_err_text = dlerror();
-          errw.print(R"(Failed to load plugin "{}" - {})", pi->path, ts::bwf::FirstOf(dl_err_text, "*Unknown dlopen() error"));
-          return errw.view();
-        }
-        pi->init_cb          = reinterpret_cast<RemapPluginInfo::Init_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_INIT));
-        pi->config_reload_cb = reinterpret_cast<RemapPluginInfo::Reload_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_CONFIG_RELOAD));
-        pi->done_cb          = reinterpret_cast<RemapPluginInfo::Done_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_DONE));
-        pi->new_instance_cb =
-          reinterpret_cast<RemapPluginInfo::New_Instance_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_NEW_INSTANCE));
-        pi->delete_instance_cb =
-          reinterpret_cast<RemapPluginInfo::Delete_Instance_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_DELETE_INSTANCE));
-        pi->do_remap_cb    = reinterpret_cast<RemapPluginInfo::Do_Remap_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_DO_REMAP));
-        pi->os_response_cb = reinterpret_cast<RemapPluginInfo::OS_Response_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_OS_RESPONSE));
-
-        if (!pi->init_cb) {
-          errw.print(R"(Can't find "{}" function in remap plugin "{}")", TSREMAP_FUNCNAME_INIT, pi->path);
-        } else if (!pi->new_instance_cb && pi->delete_instance_cb) {
-          errw.print(R"(Can't find "{}" function in remap plugin "{}" which is required if "{}" function exists)",
-                     TSREMAP_FUNCNAME_NEW_INSTANCE, pi->path, TSREMAP_FUNCNAME_DELETE_INSTANCE);
-        } else if (!pi->do_remap_cb) {
-          errw.print(R"(Can't find "{}" function in remap plugin "{}")", TSREMAP_FUNCNAME_DO_REMAP, pi->path);
-        } else if (pi->new_instance_cb && !pi->delete_instance_cb) {
-          errw.print(R"(Can't find "{}" function in remap plugin "{}" which is required if "{}" function exists)",
-                     TSREMAP_FUNCNAME_DELETE_INSTANCE, pi->path, TSREMAP_FUNCNAME_NEW_INSTANCE);
-        }
-        if (errw.extent() != err_pos) {
-          Debug("remap_plugin", "%.*s", static_cast<int>(errw.size()), errw.data());
-          dlclose(pi->dl_handle);
-          pi->dl_handle = nullptr;
-          return errw.view();
-        }
-        ink_zero(ri);
-        ri.size            = sizeof(ri);
-        ri.tsremap_version = TSREMAP_VERSION;
-
-        plugin_err_buff[0] = '\0';
-        if (pi->init_cb(&ri, plugin_err_buff, sizeof plugin_err_buff) != TS_SUCCESS) {
-          errw.print(R"("Failed to initialize plugin "{}": {})", pi->path,
-                     ts::bwf::FirstOf(plugin_err_buff, "Unknown plugin error"));
-          return errw.view();
-        }
-      } // done elevating access
-      Debug("remap_plugin", R"(Remap plugin "%s" - initialization completed)", pi->path.c_str());
-    }
-
-    if (!pi->dl_handle) {
-      errw.print(R"(Failed to load plugin "{}")", pi->path);
+    auto result = this->load_plugin(mp, std::move(path), plugin_argv.size(), plugin_argv.data());
+    if (!result.is_ok()) {
+      errw.print("{}", result);
       return errw.view();
     }
-
-    if (is_debug_tag_set("url_rewrite")) {
-      Debug("url_rewrite", "Viewing all parameters for config line");
-      ts::LocalBufferWriter<2048> lw;
-      int i = 0;
-      lw.write("Rule args: ");
-      pos = lw.extent();
-      for (auto const &arg : argv) {
-        if (pos != lw.extent()) {
-          lw.write(", ");
-        }
-        lw.print("{}: {}={}", ++i, arg.tag, arg.value);
-      }
-      Debug("url_rewrite", "%.*s", static_cast<int>(lw.size()), lw.data());
-
-      lw.reset();
-      i = 0;
-      lw.print("Plugin '{}' args:", path);
-      pos = lw.extent();
-      for (auto arg : plugin_argv) {
-        if (pos != lw.extent()) {
-          lw.write(", ");
-        }
-        lw.print("{}: {}", ++i, arg);
-      }
-      Debug("url_rewrite", "%.*s", static_cast<int>(lw.size()), lw.data());
-    }
-
-    Debug("remap_plugin", "creating new plugin instance");
-
-    void *ih         = nullptr;
-    TSReturnCode res = TS_SUCCESS;
-    if (pi->new_instance_cb) {
-#if (!defined(kfreebsd) && defined(freebsd)) || defined(darwin)
-      optreset = 1;
-#endif
-#if defined(__GLIBC__)
-      optind = 0;
-#else
-      optind = 1;
-#endif
-      opterr = 0;
-      optarg = nullptr;
-
-      plugin_err_buff[0] = '\0';
-      res                = pi->new_instance_cb(plugin_argv.size(), const_cast<char **>(plugin_argv.data()), &ih, plugin_err_buff,
-                                sizeof(plugin_err_buff));
-    }
-
-    Debug("remap_plugin", "done creating new plugin instance");
-
-    if (res != TS_SUCCESS) {
-      errw.print(R"(Failed to create instance for plugin "{}": {})", pi->path,
-                 ts::bwf::FirstOf(plugin_err_buff, "Unknown plugin error"));
-      return errw.view();
-    }
-
-    mp->add_plugin(pi, ih);
   }
-
   return 0;
-}
-/** will process the regex mapping configuration and create objects in
-    output argument reg_map. It assumes existing data in reg_map is
-    inconsequential and will be perfunctorily null-ed;
-*/
-TextView
-RemapBuilder::parse_regex_mapping(RemapBuilder::TextView fromHost, url_mapping *mapping, UrlRewrite::RegexMapping *rxp_map,
-                                  ErrBuff &errw)
-{
-  int substitution_id;
-  int substitution_count = 0;
-  int captures;
-
-  rxp_map->to_url_host_template.clear();
-  rxp_map->n_substitutions = 0;
-  rxp_map->url_map         = mapping;
-
-  ts::PostScript cleanup([&]() -> void { rxp_map->to_url_host_template.clear(); });
-
-  if (rxp_map->regular_expression.compile(fromHost.data()) == false) {
-    errw.print("pcre_compile failed! Regex has error starting at '{}'", fromHost);
-    return errw.view();
-  }
-
-  captures = rxp_map->regular_expression.get_capture_count();
-  if (captures == -1) {
-    errw.write("pcre_fullinfo failed!");
-    return errw.view();
-  }
-  if (captures >= UrlRewrite::MAX_REGEX_SUBS) { // off by one for $0 (implicit capture)
-    errw.print("regex has %{} capturing subpatterns (including entire regex); Max allowed: {}", captures + 1,
-               UrlRewrite::MAX_REGEX_SUBS);
-    return errw.view();
-  }
-
-  auto to_host = mapping->toURL.host_get();
-  for (unsigned i = 0; i < to_host.size() - 1; ++i) {
-    if (to_host[i] == '$') {
-      if (substitution_count > UrlRewrite::MAX_REGEX_SUBS) {
-        errw.print("Cannot have more than %d substitutions in mapping with host [{}]", UrlRewrite::MAX_REGEX_SUBS, fromHost);
-        return errw.view();
-      }
-      substitution_id = to_host[i + 1] - '0';
-      if ((substitution_id < 0) || (substitution_id > captures)) {
-        errw.print("Substitution id [{}] has no corresponding capture pattern in regex [{}]", to_host[i + 1], fromHost);
-        return errw.view();
-      }
-      rxp_map->substitution_markers[rxp_map->n_substitutions] = i;
-      rxp_map->substitution_ids[rxp_map->n_substitutions]     = substitution_id;
-      ++rxp_map->n_substitutions;
-    }
-  }
-
-  // so the regex itself is stored in fromURL.host; string to match will be in the request; string
-  // to use for substitutions will be in this buffer. Does this need to be localized, or is @c toUrl
-  // sufficiently stable?
-  rxp_map->to_url_host_template = mapping->toURL.host_get();
-  return {};
 }
 
 bool
-RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
+RemapTextBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
 {
   ts::LocalBufferWriter<1024> errw; // Used as the error buffer later.
   TextView errMsg;                  // error message returned from other parsing logic.
@@ -668,7 +522,7 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
     return false;
   }
 
-  if (ts::TextView{path.view()}.take_suffix_at('.') == "yaml" || ts::TextView::npos != content.find(RemapYAMLBuilder::ROOT_TAG)) {
+  if (ts::TextView{path.view()}.take_suffix_at('.') == "yaml" || ts::TextView::npos != content.find(RemapYAMLBuilder::ROOT_KEY)) {
     auto result = RemapYAMLBuilder::parse(rewriter, content);
     return result.is_ok();
   }
@@ -794,20 +648,20 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
     for (auto const &arg : builder.argv) {
       if (arg.type == RemapArg::ACTION) {
         f            = new RemapFilter;
-        auto err_msg = f->add_arg(arg, errw);
+        auto err_msg = builder.add_filter_arg(arg, f, errw);
         if (!err_msg.empty()) {
           return false;
         }
-        builder.rewriter->filters.append(f);
+        builder._rewriter->filters.append(f);
         new_mapping->filters.push_back(f);
       } else if (builder.FILTER_TYPES[arg.type]) {
         if (nullptr == f) {
-          errw.print("remap filter option '@{}={}' without a preceeding '@{}' on line {}- ignored", arg.tag, arg.value,
+          errw.print("remap filter option '@{}={}' without a preceeding '@{}' on line {}- ignored", arg.key, arg.value,
                      RemapArg::ACTION, line_no);
           log_warning(errw);
           errw.reset();
         }
-        auto err_msg = f->add_arg(arg, errw);
+        auto err_msg = builder.add_filter_arg(arg, f, errw);
         if (!err_msg.empty()) {
           return false;
         }
@@ -815,10 +669,10 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
     }
   }
   // Add active filters - note these go in reverse order, to keep the predence ordering correct.
-  // The mapping needs them in precedence order, while @c active_filters is a stack and therefore
+  // The mapping needs them in precedence order, while @c _active_filters is a stack and therefore
   // in reverse precdence order.
-  new_mapping->filters.reserve(new_mapping->filters.size() + builder.active_filters.size());
-  new_mapping->filters.insert(new_mapping->filters.end(), builder.active_filters.rbegin(), builder.active_filters.rend());
+  new_mapping->filters.reserve(new_mapping->filters.size() + builder._active_filters.size());
+  new_mapping->filters.insert(new_mapping->filters.end(), builder._active_filters.rbegin(), builder._active_filters.rend());
 
   // update sticky flag
   builder.accept_check_p = builder.accept_check_p && builder.ip_allow_check_enabled_p;
@@ -875,7 +729,7 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
 
   // Check if a tag is specified.
   if (builder.paramv.size() >= 4) {
-    tag = builder.rewriter->localize(builder.paramv[3]);
+    tag = builder._rewriter->localize(builder.paramv[3]);
     if (maptype == FORWARD_MAP_REFERER) {
       new_mapping->filter_redirect_url = tag;
       if (0 == strcasecmp(tag, "<default>") || 0 == strcasecmp(tag, "default") || 0 == strcasecmp(tag, "<default_redirect_url>") ||
@@ -944,12 +798,12 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
 
   if (is_cur_mapping_regex_p) {
     ts::LocalBufferWriter<1024> lbw;
-    rxp_map      = new UrlRewrite::RegexMapping();
-    auto err_msg = builder.parse_regex_mapping({fromHost.data(), fromHost.size()}, new_mapping, rxp_map, lbw);
-    if (!err_msg.empty()) {
-      errw.print("could not process regex mapping config line - {}", err_msg);
+    auto result = builder.parse_regex_rewrite(new_mapping, fromHost);
+    if (!result.is_ok()) {
+      errw.print("could not process regex mapping config line - {}", result.errata());
       return false;
     }
+    rxp_map = result;
     Debug("url_rewrite_regex", "Configured regex rule for host [%.*s]", static_cast<int>(fromHost.size()), fromHost.data());
   }
 
@@ -961,39 +815,16 @@ RemapBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
 
   if ((maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) &&
       fromScheme == URL_SCHEME_TUNNEL && (fromHost[0] < '0' || fromHost[0] > '9')) {
-    addrinfo *ai_records; // returned records.
-    ip_text_buffer ipb;   // buffer for address string conversion.
-    char *tmp = static_cast<char *>(alloca(fromHost.size() + 1));
-    memcpy(tmp, fromHost.data(), fromHost.size());
-    tmp[fromHost.size()] = '\0';
-    if (0 == getaddrinfo(tmp, nullptr, nullptr, &ai_records)) {
-      ts::PostScript ai_cleanup{[=]() -> void { freeaddrinfo(ai_records); }};
-      for (addrinfo *ai_spot = ai_records; ai_spot; ai_spot = ai_spot->ai_next) {
-        if (ats_is_ip(ai_spot->ai_addr) && !ats_is_ip_any(ai_spot->ai_addr) && ai_spot->ai_protocol == IPPROTO_TCP) {
-          url_mapping *u_mapping = new url_mapping;
-
-          ats_ip_ntop(ai_spot->ai_addr, ipb, sizeof ipb);
-          u_mapping->fromURL.create(nullptr);
-          u_mapping->fromURL.copy(&new_mapping->fromURL);
-          u_mapping->fromURL.host_set(ipb, strlen(ipb));
-          u_mapping->toURL.create(nullptr);
-          u_mapping->toURL.copy(&new_mapping->toURL);
-
-          u_mapping->tag = tag;
-
-          if (!builder.rewriter->InsertForwardMapping(maptype, u_mapping, ipb)) {
-            errw.write("unable to add mapping rule to lookup table");
-            delete u_mapping;
-            return false;
-          }
-        }
-      }
+    auto result = builder.insert_ancillary_tunnel_rules(new_mapping->fromURL, new_mapping->toURL, maptype, tag);
+    if (!result.is_ok()) {
+      errw.print("{}", result);
+      return false;
     }
   }
 
   // Now add the mapping to appropriate container
   // WRONG - fromHost.data() is not null terminated. Need to fix InsertMapping.
-  if (!builder.rewriter->InsertMapping(maptype, new_mapping, rxp_map, fromHost.data(), is_cur_mapping_regex_p)) {
+  if (!builder._rewriter->InsertMapping(maptype, new_mapping, rxp_map, fromHost.data(), is_cur_mapping_regex_p)) {
     errw.write("unable to add mapping rule to lookup table");
     return false;
   }
@@ -1016,5 +847,5 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
   // If this happens to be a config reload, the list of loaded remap plugins is non-empty, and we
   // can signal all these plugins that a reload has begun.
   RemapPluginInfo::indicate_reload();
-  return RemapBuilder::parse_config(ts::file::path{path}, rewrite);
+  return RemapTextBuilder::parse_config(ts::file::path{path}, rewrite);
 }

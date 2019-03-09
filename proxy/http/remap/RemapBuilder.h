@@ -18,6 +18,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <string_view>
 #include <bitset>
 
@@ -33,6 +35,12 @@ class RemapBuilder
   using TextView  = swoc::TextView;
 
 public:
+  /** Constructor.
+   *
+   * @param url_rewriter The persistent store of remap information.
+   */
+  explicit RemapBuilder(UrlRewrite *url_rewriter);
+
   /** Create a regex rewrite object.
    *
    * @param mapping Base mapping container.
@@ -40,4 +48,51 @@ public:
    * @return A new regex mapping, or errors.
    */
   swoc::Rv<UrlRewrite::RegexMapping *> parse_regex_rewrite(url_mapping *mapping, TextView target_host);
+
+  /** Localize a URL and, if needed, normalize it as it is  copied.
+   *
+   * @param url URL to normalize.
+   * @return A view of the normalized URL.
+   *
+   * Required properties:
+   * - If the URL is a full URL, the host @b must be followed by a separator ('/').
+   */
+  TextView normalize_url(TextView url);
+
+  /** Find a filter by name.
+   *
+   * @param name Name of filter.
+   * @return A pointer to the filter, or @c nullptr if not found.
+   */
+  RemapFilter *find_filter(TextView name);
+
+  swoc::Errata insert_ancillary_tunnel_rules(URL &target_url, URL &replacement_url, mapping_type rule_type, TextView tag);
+
+protected:
+  swoc::Errata load_plugin(url_mapping *mp, ts::file::path &&path, int argc, char const **argv);
+
+  UrlRewrite *_rewriter = nullptr; // Pointer to the UrlRewrite object we are parsing for.
+  RemapFilterList _filters;
+  std::list<RemapFilter *> _active_filters;
+  bool _load_plugins_elevated_p = false;
 };
+
+namespace ts
+{
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, swoc::Errata const &erratum)
+{
+  swoc::FixedBufferWriter fw{w.auxBuffer(), w.remaining()};
+  swoc::bwformat(fw, swoc::bwf::Spec::DEFAULT, erratum);
+  return w.fill(fw.size());
+};
+} // namespace ts
+
+namespace swoc
+{
+inline BufferWriter &
+bwformat(BufferWriter &w, bwf::Spec const &spec, ts::file::path const &path)
+{
+  return bwformat(w, spec, path.view());
+}
+} // namespace swoc

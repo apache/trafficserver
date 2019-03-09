@@ -32,7 +32,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/http/remap \
 	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/proxy/http2 \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) @LIBSWOC_INCLUDES@
 
 noinst_HEADERS = HttpProxyServerMain.h
 noinst_LIBRARIES = libhttp.a
@@ -86,7 +86,8 @@ check_PROGRAMS = test_proxy_http
 TESTS = $(check_PROGRAMS)
 
 test_proxy_http_CPPFLAGS = $(AM_CPPFLAGS)\
-	-I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/tests/include \
+	@LIBSWOC_INCLUDES@
 
 test_proxy_http_SOURCES = \
 	unit_tests/unit_test_main.cc \

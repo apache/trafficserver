@@ -815,6 +815,7 @@ BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, std::string_view 
 inline BufferWriter &
 bwformat(BufferWriter &w, bwf::Spec const &spec, const void *ptr)
 {
+  using namespace swoc::literals;
   bwf::Spec ptr_spec{spec};
   ptr_spec._radix_lead_p = true;
 

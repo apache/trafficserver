@@ -89,7 +89,7 @@ extern "C" int plock(int);
 #include "Plugin.h"
 #include "DiagsConfig.h"
 #include "CoreUtils.h"
-#include "RemapConfig.h"
+//#include "RemapConfig.h"
 #include "RemapProcessor.h"
 #include "I_Tasks.h"
 #include "InkAPIInternal.h"
@@ -104,6 +104,8 @@ extern "C" int plock(int);
 #include <gperftools/profiler.h>
 #include <gperftools/heap-profiler.h>
 #endif
+
+extern std::function<void(char const *)> load_remap_file_cb;
 
 //
 // Global Data

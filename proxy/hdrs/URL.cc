@@ -495,6 +495,13 @@ URL::host_set_lower(std::string_view host)
   m_url_impl->m_len_host = host.size();
 }
 
+void
+URL::host_set(std::string_view host)
+{
+  this->pre_update();
+  mime_str_u16_set(m_heap, host.data(), host.size(), &(m_url_impl->m_ptr_host), &(m_url_impl->m_len_host), true);
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -686,18 +693,6 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
     *length = len;
   }
   return buf;
-}
-
-ts::BufferWriter &
-ts::bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, URL *url)
-{
-  if (url->m_url_impl) {
-    int len = url_length_get(url->m_url_impl);
-    int idx = 0, offset = 0;
-    url_print(url->m_url_impl, w.auxBuffer(), w.remaining(), &idx, &offset);
-    w.fill(len);
-  }
-  return w;
 }
 
 /*-------------------------------------------------------------------------

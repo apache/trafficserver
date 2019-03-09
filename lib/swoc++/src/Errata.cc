@@ -25,6 +25,8 @@
 
 using swoc::MemArena;
 using std::string_view;
+using namespace std::literals;
+using namespace swoc::literals;
 
 namespace swoc
 {

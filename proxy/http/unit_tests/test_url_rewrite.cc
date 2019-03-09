@@ -1,6 +1,6 @@
 /** @file
 
-  This file used for catch based tests. It is the main() stub.
+  Catch-based tests for URL rewriting.
 
   @section license License
 
@@ -21,26 +21,14 @@
   limitations under the License.
  */
 
-#define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
 
-#include "test_Diags.h"
-#include "HTTP.h"
+#include "remap/UrlRewrite.h"
+#include "remap/RemapConfig.h"
 
-Diags *diags = new CatchDiags;
-extern int cmd_disable_pfreelist;
-
-int
-main(int argc, char *argv[])
+TEST_CASE("URL Rewrite", "[url-rewrite]")
 {
-  // No thread setup, forbid use of thread local allocators.
-  cmd_disable_pfreelist = true;
-  // Get all of the HTTP WKS items populated.
-  http_init();
-
-  int result = Catch::Session().run(argc, argv);
-
-  // global clean-up...
-
-  return result;
+  auto rewriter = new UrlRewrite;
+  remap_parse_config("unit_tests/remap_examples/remap_001.config", rewriter);
+  delete rewriter;
 }

@@ -392,25 +392,25 @@ UrlRewrite::PerformACLFiltering(HttpTransact::State *s, url_mapping *map)
         }
       }
 
-      if (rp->src_ip.count() && !rp->src_ip.contains(s->client_info.src_addr)) {
+      if (rp->src_addr.count() && !rp->src_addr.contains(s->client_info.src_addr)) {
         continue;
       }
 
-      if (rp->proxy_ip.count() && !rp->proxy_ip.contains(s->state_machine->ua_txn->get_netvc()->get_local_addr())) {
+      if (rp->proxy_addr.count() && !rp->proxy_addr.contains(s->state_machine->ua_txn->get_netvc()->get_local_addr())) {
         continue;
       }
 
-      if (rp->internal_p && !s->state_machine->ua_txn->get_netvc()->get_is_internal_request()) {
+      if (rp->check_for_internal(s->state_machine->ua_txn->get_netvc()->get_is_internal_request())) {
         continue;
       }
 
       // Matched all criteria ==> apply action.
       if (is_debug_tag_set("url_rewrite")) {
         ts::LocalBufferWriter<256> w;
-        w.print("Matched filter rule - '{}'", rp->action).write('\0');
+        w.print("Matched filter rule - enabled:{:s}", rp->is_enabled()).write('\0');
         Debug("url_rewrite", "%s", w.view().data());
       }
-      s->client_connection_enabled = (rp->action == RemapFilter::ALLOW);
+      s->client_connection_enabled = rp->is_enabled();
       break;
     }
   }

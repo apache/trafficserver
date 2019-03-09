@@ -27,6 +27,8 @@
 #include "hdrs/HTTP.h"
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
+#include "swoc/Lexicon.h"
+#include "ts_swoc_bwf_aux.h"
 
 using ts::BufferWriter;
 
@@ -39,96 +41,54 @@ RemapFilter::reset()
 {
   argv.clear();
 
-  action     = ALLOW;
-  internal_p = false;
+  _action         = ENABLE;
+  _internal_check = DO_NOT_CHECK;
 
   name.clear();
   // This should force all elements to @c false.
   wk_method.assign(HTTP_WKSIDX_METHODS_CNT, false);
   methods.clear();
-  src_ip.clear();
-  proxy_ip.clear();
+  src_addr.clear();
+  proxy_addr.clear();
 }
 
 RemapFilter::RemapFilter() : wk_method(HTTP_WKSIDX_METHODS_CNT, false) {}
 
-ts::TextView
-RemapFilter::add_arg(RemapArg const &arg, ts::FixedBufferWriter &errw)
+RemapFilter &
+RemapFilter::add_method(ts::TextView const &method)
 {
-  switch (arg.type) {
-  case RemapArg::METHOD: {
-    auto text{arg.value};
-    if ('~' == *text) {
-      ++text;
-      method_invert_p = true;
-    }
-    while (text) {
-      auto method = text.take_prefix_at(";,"_sv);
-      if (method.empty()) {
-        continue;
-      }
-      // Please remember that the order of hash idx creation is very important and it is defined
-      // in HTTP.cc file. 0 in our array is the first method, CONNECT
-      int m = hdrtoken_tokenize(method) - HTTP_WKSIDX_CONNECT;
+  // Please remember that the order of hash idx creation is very important and it is defined
+  // in HTTP.cc file. 0 in our array is the first method, CONNECT
+  int m = hdrtoken_tokenize(method) - HTTP_WKSIDX_CONNECT;
 
-      if (0 <= m && m < HTTP_WKSIDX_METHODS_CNT) {
-        wk_method[m] = true;
-      } else {
-        Debug("url_rewrite", "[validate_filter_args] Using nonstandard method [%.*s]", static_cast<int>(arg.value.size()),
-              arg.value.data());
-        methods.emplace(arg.value);
-      }
-      method_active_p = true;
-    }
-  } break;
-  case RemapArg::SRC_IP: {
-    auto err_msg = this->add_ip_addr_arg(src_ip, arg.value, arg.tag, errw);
-    if (!err_msg.empty()) {
-      return err_msg;
-    }
-  } break;
-  case RemapArg::PROXY_IP: {
-    auto err_msg = this->add_ip_addr_arg(proxy_ip, arg.value, arg.tag, errw);
-    if (!err_msg.empty()) {
-      return err_msg;
-    }
-  } break;
-  case RemapArg::ACTION: {
-    static constexpr std::array<std::string_view, 4> DENY_TAG  = {{"0", "off", "deny", "disable"}};
-    static constexpr std::array<std::string_view, 4> ALLOW_TAG = {{"1", "on", "allow", "enable"}};
-    if (DENY_TAG.end() != std::find_if(DENY_TAG.begin(), DENY_TAG.end(),
-                                       [&](std::string_view tag) -> bool { return 0 == strcasecmp(tag, arg.value); })) {
-      action = DENY;
-    } else if (ALLOW_TAG.end() != std::find_if(DENY_TAG.begin(), DENY_TAG.end(),
-                                               [&](std::string_view tag) -> bool { return 0 == strcasecmp(tag, arg.value); })) {
-      action = ALLOW;
-    } else {
-      errw.print("Unrecognized value '{}' for filter option '{}'", arg.value, arg.tag);
-      Debug("url_rewrite", "[validate_filter_args] %.*s", static_cast<int>(errw.size()), errw.data());
-      return errw.view();
-    }
-  } break;
-  case RemapArg::INTERNAL: {
-    internal_p = true;
-  } break;
-  default:
-    ink_assert(false);
-    break;
+  if (0 <= m && m < HTTP_WKSIDX_METHODS_CNT) {
+    wk_method[m] = true;
+  } else {
+    Debug("url_rewrite", "[validate_filter_args] Using nonstandard method [%.*s]", static_cast<int>(method.size()), method.data());
+    methods.emplace(method);
   }
-  return {};
+  method_active_p = true;
+  return *this;
+}
+
+RemapFilter &
+RemapFilter::set_method_match_inverted(bool flag)
+{
+  method_invert_p = flag;
+  return *this;
 }
 
 BufferWriter &
 RemapFilter::describe(BufferWriter &w, ts::BWFSpec const &spec) const
 {
-  w.print("Filter {}: flags - action={} internal={:s}", ts::bwf::FirstOf(name, "N/A"), action, internal_p);
+  w.print("Filter {}: flags - action={} internal={:s}", ts::bwf::FirstOf(name, "N/A"), _action, _internal_check);
   w.print("\nArgs: ");
   auto pos = w.extent();
   for (auto const &arg : argv) {
     if (w.extent() > pos) {
       w.write(", ");
     }
-    w.print("{}{}", arg.tag, ts::bwf::OptionalAffix(arg.value, "", "="));
+    w.print("{}{}", arg.key, ts::bwf::OptionalAffix(arg.value, "", "="));
   }
   if (w.extent() == pos) {
     w.write("N/A");
@@ -156,18 +116,18 @@ RemapFilter::describe(BufferWriter &w, ts::BWFSpec const &spec) const
   }
   w.write('\n');
 
-  if (src_ip.count() > 0) {
-    w.print("Source IP map: {}", src_ip);
+  if (src_addr.count() > 0) {
+    w.print("Source IP map: {}", src_addr);
   }
-  if (proxy_ip.count() > 0) {
-    w.print("Proxy IP map: {}", proxy_ip);
+  if (proxy_addr.count() > 0) {
+    w.print("Proxy IP map: {}", proxy_addr);
   }
 
   return w;
 }
 
 void
-RemapFilter::fill_inverted(IpMap &map, IpAddr const &min, IpAddr const &max, void *mark)
+RemapFilter::mark_inverted(IpMap &map, IpAddr const &min, IpAddr const &max)
 {
   // This is a bit ugly, but these values are actually hard to compute in a general and safe
   // manner, particularly the increment and decrement. Instead this marks everything, then
@@ -180,30 +140,57 @@ RemapFilter::fill_inverted(IpMap &map, IpAddr const &min, IpAddr const &max, voi
   }
   tmp.unmark(min, max);
   for (auto const &r : tmp) {
-    map.fill(r.min(), r.max());
+    map.mark(r.min(), r.max(), this);
   }
 }
 
-ts::TextView
-RemapFilter::add_ip_addr_arg(IpMap &map, ts::TextView range, ts::TextView const &tag, ts::FixedBufferWriter &errw)
+void
+RemapFilter::mark(IpMap &map, IpAddr const &min, IpAddr const &max)
 {
-  bool invert_p = false;
-  IpAddr min, max;
-  if (*range == '~') {
-    invert_p = true;
-    ++range;
+  map.mark(min, max, this);
+}
+
+RemapFilter &
+RemapFilter::set_action(Action action)
+{
+  _action = action;
+  return *this;
+}
+
+swoc::Errata
+RemapFilter::set_action(ts::TextView value)
+{
+  static const swoc::Lexicon<Action> LEXICON{{ENABLE, {"enable", "true", "yes", "1"}}, {DISABLE, {"disable", "false", "no", "0"}}};
+  static const std::string LEXICON_NAMES{swoc::bwstring("{}", swoc::bwf::LexiconPrimaryNames(LEXICON))};
+
+  swoc::Errata erratum;
+
+  try {
+    _action = LEXICON[value];
+  } catch (std::domain_error &ex) {
+    erratum.error(R"(Invalid action "{}" - must be one of {})", value, LEXICON_NAMES);
   }
-  if (0 == ats_ip_range_parse(range, min, max)) {
-    if (invert_p) {
-      this->fill_inverted(map, min, max, this);
-    } else {
-      map.fill(min, max, this);
-    }
-  } else {
-    errw.print("malformed IP address '{}' in argument '{}'", range, tag);
-    return errw.view();
+
+  return erratum;
+}
+
+swoc::Errata
+RemapFilter::set_internal_check(ts::TextView value)
+{
+  static const swoc::Lexicon<TriState> LEXICON{{DO_NOT_CHECK, {"ignore", "whatever", "default"}},
+                                               {REQUIRE_TRUE, {"yes", "enable", "true", "1"}},
+                                               {REQUIRE_FALSE, {"no", "disable", "false", "0"}}};
+  static const std::string LEXICON_NAMES{swoc::bwstring("{}", swoc::bwf::LexiconPrimaryNames(LEXICON))};
+
+  swoc::Errata erratum;
+
+  try {
+    _internal_check = LEXICON[value];
+  } catch (std::domain_error &ex) {
+    erratum.error(R"(Invalid internal check value "{}" - must be one of {})", value, LEXICON_NAMES);
   }
-  return {};
+
+  return erratum;
 }
 
 ts::BufferWriter &
@@ -220,12 +207,33 @@ ts::bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, RemapArg::Type t)
 }
 
 ts::BufferWriter &
+ts::bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, RemapFilter::TriState state)
+{
+  if (spec.has_numeric_type()) {
+    bwformat(w, spec, static_cast<std::underlying_type<RemapFilter::TriState>::type>(state));
+  } else {
+    switch (state) {
+    case RemapFilter::DO_NOT_CHECK:
+      bwformat(w, spec, "DO_NOT_CHECK");
+      break;
+    case RemapFilter::REQUIRE_FALSE:
+      bwformat(w, spec, "FALSE");
+      break;
+    case RemapFilter::REQUIRE_TRUE:
+      bwformat(w, spec, "TRUE");
+      break;
+    }
+  }
+  return w;
+}
+
+ts::BufferWriter &
 ts::bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, RemapFilter::Action action)
 {
   if (spec.has_numeric_type()) {
     bwformat(w, spec, static_cast<std::underlying_type<RemapFilter::Action>::type>(action));
   } else {
-    bwformat(w, spec, action == RemapFilter::ALLOW ? "Allow"_sv : "Deny"_sv);
+    bwformat(w, spec, action == RemapFilter::ENABLE ? "enabled"_sv : "disabled"_sv);
   }
   return w;
 }

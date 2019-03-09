@@ -33,6 +33,7 @@
 #include "swoc/swoc_meta.h"
 
 using namespace std::literals;
+using namespace swoc::literals;
 
 swoc::bwf::ExternalNames swoc::bwf::Global_Names;
 using swoc::svto_radix;
@@ -1222,4 +1223,23 @@ operator<<(ostream &s, swoc::FixedBufferWriter &w)
 {
   return s << w.view();
 }
+
+swoc::BufferWriter &
+bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, error_code const &ec)
+{
+  // This provides convenient safe access to the errno short name array.
+  static const swoc::bwf::Format number_fmt{"[{}]"_sv}; // numeric value format.
+  if (spec.has_numeric_type()) {                  // if numeric type, print just the numeric
+    // part.
+    w.print(number_fmt, ec.value());
+  } else {
+    w.write(ec.message());
+    if (spec._type != 's' && spec._type != 'S') {
+      w.write(' ');
+      w.print(number_fmt, ec.value());
+    }
+  }
+  return w;
+}
+
 } // namespace std

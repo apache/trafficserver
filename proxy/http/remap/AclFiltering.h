@@ -35,6 +35,8 @@
 #include "tscore/IpMap.h"
 #include "tscore/BufferWriter.h"
 
+#include "swoc/Errata.h"
+
 extern int HTTP_WKSIDX_METHODS_CNT;
 
 /** An argument to a remap rule.
@@ -50,8 +52,8 @@ struct RemapArg {
     METHOD,       ///< Filter by method.
     MAP_ID,       ///< Assign a rule ID.
     ACTION,       ///< ACL action.
-    SRC_IP,       ///< Check user agent IP address.
-    PROXY_IP,     ///< Check local inbound IP address (proxy address).
+    SRC_ADDR,     ///< Check user agent IP address.
+    PROXY_ADDR,   ///< Check local inbound IP address (proxy address).
   };
 
   /// Number of values in @c Type
@@ -74,9 +76,9 @@ struct RemapArg {
                                                          {"plugin", PLUGIN, true},
                                                          {"pparam", PLUGIN_PARAM, true},
                                                          {"method", METHOD, true},
-                                                         {"src-ip", SRC_IP, true},
-                                                         {"proxy-ip", PROXY_IP, true},
-                                                         {"in-ip", PROXY_IP, true},
+                                                         {"src-ip", SRC_ADDR, true},
+                                                         {"proxy-ip", PROXY_ADDR, true},
+                                                         {"in-ip", PROXY_ADDR, true},
                                                          {"action", ACTION, true},
                                                          {"mapid", MAP_ID, true}}};
 
@@ -95,13 +97,13 @@ struct RemapArg {
   /** Explicit construct with all values.
    *
    * @param t Type.
-   * @param k Tag.
+   * @param k Key.
    * @param v Value.
    */
-  RemapArg(Type t, ts::TextView k, ts::TextView v) : type(t), tag(k), value(v) {}
+  RemapArg(Type t, ts::TextView k, ts::TextView v) : type(t), key(k), value(v) {}
 
   Type type = INVALID; ///< Type of argument.
-  ts::TextView tag;    ///< Name of the argument.
+  ts::TextView key;    ///< Name of the argument.
   ts::TextView value;  ///< Value. [depends on @a type]
 };
 
@@ -116,6 +118,19 @@ private:
 public:
   using self_type = RemapFilter; ///< Self reference type.
 
+  /// Filter action.
+  enum Action : uint8_t {
+    ENABLE, ///< The rule is enabled.
+    DISABLE ///< The rule is disabled.
+  };
+
+  /// Boolean checking - don't care, false, true values.
+  enum TriState {
+    DO_NOT_CHECK,  ///< Do not check.
+    REQUIRE_FALSE, ///< Required to be @c false.
+    REQUIRE_TRUE   ///< Required to be @c true.
+  };
+
   /// Default constructor.
   RemapFilter();
 
@@ -128,17 +143,41 @@ public:
    */
   self_type &set_name(ts::TextView const &text);
 
-  /** Add an argument to the filter.
+  /** Add @a method to the set of matched methods.
    *
-   * @param arg The argument instance.
-   * @param errw Error buffer for reporting.
-   * @return An error string on failure, an empty view on success.
-   *
-   * The @c RemapArg instances have views, not strings, and so must point to strings with a lifetime
-   * longer than that of this instance. This is the responsibility of the caller (presumably the
-   * instance owner).
+   * @param method Name of method.
+   * @return @a this
    */
-  ts::TextView add_arg(RemapArg const &arg, ts::FixedBufferWriter &errw);
+  self_type &add_method(ts::TextView const &method);
+
+  /** Set whether to invert the method matching.
+   *
+   * @param flag New value for inverting.
+   * @return @a this
+   *
+   * If the method match is inverted, then this filters matches any method @b not in the match set.
+   */
+  self_type &set_method_match_inverted(bool flag);
+
+  self_type &mark_src_addr(IpAddr &min, IpAddr &max);
+  self_type &mark_src_addr_inverted(IpAddr &min, IpAddr &max);
+  self_type &mark_proxy_addr(IpAddr &min, IpAddr &max);
+  self_type &mark_proxy_addr_inverted(IpAddr &min, IpAddr &max);
+
+  self_type &set_action(Action action);
+
+  swoc::Errata set_action(ts::TextView value);
+
+  bool
+  is_enabled() const
+  {
+    return _action == ENABLE;
+  }
+
+  self_type &set_internal_check(TriState state);
+  swoc::Errata set_internal_check(ts::TextView value);
+
+  bool check_for_internal(bool internal_p);
 
   /** Generate formatted output describing this instance.
    *
@@ -155,10 +194,7 @@ public:
   using Linkage    = ts::IntrusiveLinkage<self_type, &self_type::_next, &self_type::_prev>;
   using List       = ts::IntrusiveDList<Linkage>;
 
-  /// Filter action.
-  enum Action : uint8_t { ALLOW, DENY } action = ALLOW;
   /// Check if the transaction is internal.
-  bool internal_p      = false;
   bool method_active_p = false; ///< Methods should be checked for matching.
   bool method_invert_p = false; ///< Match on not a listed method.
 
@@ -181,21 +217,26 @@ public:
   MethodSet methods;
 
   /// Map of remote inbound addresses of interest.
-  IpMap src_ip;
+  IpMap src_addr;
   /// Map of local inbound addresses of interest.
-  IpMap proxy_ip;
+  IpMap proxy_addr;
 
 protected:
-  /** Fill a @a map with the addresses not in [ @a min, @a max ].
+  void mark(IpMap &map, IpAddr const &min, IpAddr const &max);
+
+  /** Mark a @a map with the addresses not in [ @a min, @a max ].
    *
    * @param map Map to fill.
    * @param min Min address of excluded range.
    * @param max Max address of exclude range.
    * @param mark Value to use in the fill.
    */
-  void fill_inverted(IpMap &map, IpAddr const &min, IpAddr const &max, void *mark);
+  void mark_inverted(IpMap &map, IpAddr const &min, IpAddr const &max);
 
-  ts::TextView add_ip_addr_arg(IpMap &map, ts::TextView range, ts::TextView const &tag, ts::FixedBufferWriter &errw);
+  /// Action if this filter is matched.
+  Action _action = ENABLE;
+  /// Check if internal request.
+  TriState _internal_check = DO_NOT_CHECK;
 };
 
 using RemapFilterList = RemapFilter::List;
@@ -207,10 +248,49 @@ RemapFilter::set_name(ts::TextView const &text)
   return *this;
 }
 
+inline RemapFilter &
+RemapFilter::mark_src_addr(IpAddr &min, IpAddr &max)
+{
+  this->mark(src_addr, min, max);
+  return *this;
+}
+inline RemapFilter &
+RemapFilter::mark_src_addr_inverted(IpAddr &min, IpAddr &max)
+{
+  this->mark_inverted(src_addr, min, max);
+  return *this;
+}
+inline RemapFilter &
+RemapFilter::mark_proxy_addr(IpAddr &min, IpAddr &max)
+{
+  this->mark(proxy_addr, min, max);
+  return *this;
+}
+inline RemapFilter &
+RemapFilter::mark_proxy_addr_inverted(IpAddr &min, IpAddr &max)
+{
+  this->mark_inverted(proxy_addr, min, max);
+  return *this;
+}
+
+inline RemapFilter::self_type &
+RemapFilter::set_internal_check(RemapFilter::TriState state)
+{
+  _internal_check = state;
+  return *this;
+}
+
+inline bool
+RemapFilter::check_for_internal(bool internal_p)
+{
+  return !((_internal_check == REQUIRE_TRUE && !internal_p) || (_internal_check == REQUIRE_FALSE && internal_p));
+}
+
 namespace ts
 {
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, RemapArg::Type type);
 
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, RemapFilter::TriState state);
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, RemapFilter::Action action);
 
 inline BufferWriter &

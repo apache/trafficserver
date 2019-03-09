@@ -24,11 +24,11 @@
 #pragma once
 
 #include <list>
-#include "AclFiltering.h"
 #include "tscore/ts_file.h"
+#include "RemapBuilder.h"
+#include "AclFiltering.h"
 #include "UrlRewrite.h"
 
-class UrlRewrite;
 class url_mapping;
 
 // remap rule types
@@ -48,9 +48,11 @@ static constexpr ts::TextView REMAP_FILTER_IP_ALLOW_TAG{"ip_allow"};
     Data that needs to persist longer is transfered to the @c URLRewrite instance. In particular
     this means any strings from the configuration that can be used later.
 */
-struct RemapBuilder {
-  using self_type = RemapBuilder; ///< Self reference type.
-  using TextView  = ts::TextView;
+struct RemapTextBuilder : public RemapBuilder {
+  using self_type  = RemapTextBuilder; ///< Self reference type.
+  using super_type = RemapBuilder;     ///< Parent type.
+
+  using TextView = ts::TextView;
   /// List of parameter, the direct remap values in a configuration rule.
   using ParamList = std::vector<std::string_view>;
   /// List of arguments, which are modifiers for the configuration rule. Almost all require a
@@ -63,10 +65,10 @@ struct RemapBuilder {
    *
    * @param url_rewriter The persistent store of remap information.
    */
-  explicit RemapBuilder(UrlRewrite *url_rewriter) : rewriter(url_rewriter) {}
+  explicit RemapTextBuilder(UrlRewrite *url_rewriter) : super_type{url_rewriter} {}
 
-  RemapBuilder(const RemapBuilder &) = delete;
-  RemapBuilder &operator=(const RemapBuilder &) = delete;
+  RemapTextBuilder(const RemapTextBuilder &) = delete;
+  RemapTextBuilder &operator=(const RemapTextBuilder &) = delete;
 
   /** Parse the configuration file.
    *
@@ -85,7 +87,7 @@ struct RemapBuilder {
    *
    * This is used to handle included configuration files.
    */
-  TextView parse_remap_fragment(ts::file::path const &path, RemapBuilder::ErrBuff &errw);
+  TextView parse_remap_fragment(ts::file::path const &path, RemapTextBuilder::ErrBuff &errw);
 
   /** Handle a directive.
    *
@@ -138,6 +140,8 @@ struct RemapBuilder {
    */
   TextView parse_include_directive(TextView directive, ErrBuff &errw);
 
+  TextView add_filter_arg(RemapArg const &arg, RemapFilter *filter, RemapTextBuilder::ErrBuff &errw);
+
   /** Load the plugins for the current arguments.
    *
    * @param mp URL mapping instance for the plugins.
@@ -147,25 +151,6 @@ struct RemapBuilder {
    * This walks the argument list, finding plugin arguments and loading the specified plugin.
    */
   TextView load_plugins(url_mapping *mp, ErrBuff &errw);
-
-  TextView parse_regex_mapping(TextView fromHost, url_mapping *mapping, UrlRewrite::RegexMapping *rxp_map, ErrBuff &errw);
-
-  /** Find a filter by name.
-   *
-   * @param name Name of filter.
-   * @return A pointer to the filter, or @c nullptr if not found.
-   */
-  RemapFilter *find_filter(TextView name);
-
-  /** Localize a URL and, if needed, normalize it as it is  copied.
-   *
-   * @param url URL to normalize.
-   * @return A view of the normalized URL.
-   *
-   * Required properties:
-   * - If the URL is a full URL, the host @b must be followed by a separator ('/').
-   */
-  TextView normalize_url(TextView url);
 
   /// Reset state for a new rule.
   /// Filters are not cleared.
@@ -183,9 +168,6 @@ struct RemapBuilder {
 
   bool ip_allow_check_enabled_p = true;
   bool accept_check_p           = true;
-  UrlRewrite *rewriter          = nullptr; // Pointer to the UrlRewrite object we are parsing for.
-  RemapFilterList filters;
-  std::list<RemapFilter *> active_filters;
 };
 
 bool remap_parse_config(const char *path, UrlRewrite *rewrite);

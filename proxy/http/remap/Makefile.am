@@ -52,7 +52,8 @@ libhttp_remap_a_SOURCES = \
 	UrlMappingPathIndex.cc \
 	UrlMappingPathIndex.h \
 	UrlRewrite.cc \
-	UrlRewrite.h
+	UrlRewrite.h \
+	ts_swoc_bwf_aux.h
 
 clang-tidy-local: $(libhttp_remap_a_SOURCES)
 	$(CXX_Clang_Tidy)
