@@ -64,10 +64,12 @@ private:
   TestQUICConnection _connection;
 };
 
-class TestQUICStream : public QUICStream
+// TODO: QUICUnidirectionalStream should be used if there
+class TestQUICStream : public QUICBidirectionalStream
 {
 public:
-  TestQUICStream(QUICStreamId sid) : QUICStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), sid, 65536, 65536)
+  TestQUICStream(QUICStreamId sid)
+    : QUICBidirectionalStream(new MockQUICRTTProvider(), new MockQUICConnectionInfoProvider(), sid, 65536, 65536)
   {
   }
 

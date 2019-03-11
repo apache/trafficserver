@@ -62,57 +62,47 @@ check_PROGRAMS = \
 
 TESTS = $(check_PROGRAMS)
 
-test_libhttp3_CPPFLAGS = \
+test_CPPFLAGS = \
   $(AM_CPPFLAGS) \
+  -I$(abs_top_srcdir)/proxy/logging \
   -I$(abs_top_srcdir)/tests/include
 
-test_libhttp3_LDFLAGS = \
-  @AM_LDFLAGS@
+test_LDADD = \
+  libhttp3.a \
+  $(top_builddir)/iocore/net/libinknet.a \
+  $(top_builddir)/iocore/net/quic/libquic.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/src/tscore/libtscore.la \
+  $(top_builddir)/src/tscpp/util/libtscpputil.la \
+  $(top_builddir)/lib/tsconfig/libtsconfig.la \
+  $(top_builddir)/proxy/ParentSelectionStrategy.o \
+  $(top_builddir)/proxy/libproxy.a \
+  $(top_builddir)/proxy/hdrs/libhdrs.a
 
+test_libhttp3_CPPFLAGS = $(test_CPPFLAGS)
+test_libhttp3_LDFLAGS = @AM_LDFLAGS@
+test_libhttp3_LDADD = $(test_LDADD)
 test_libhttp3_SOURCES = \
   ./test/main.cc \
   ./test/test_Http3Frame.cc \
   ../http/HttpConfig.cc \
   ../http/HttpConnectionCount.cc \
   ../http/ForwardedConfig.cc \
-  ./test/stub.cc
+  ../../iocore/net/libinknet_stub.cc
 
-test_libhttp3_LDADD = \
-  libhttp3.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/src/tscore/libtscore.la \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/proxy/libproxy.a \
-  $(top_builddir)/proxy/hdrs/libhdrs.a \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a
-
-test_qpack_CPPFLAGS = \
-  $(AM_CPPFLAGS) \
-  -I$(abs_top_srcdir)/tests/include
-
-test_qpack_LDFLAGS = \
-  @AM_LDFLAGS@
-
+test_qpack_CPPFLAGS = $(test_CPPFLAGS)
+test_qpack_LDFLAGS = @AM_LDFLAGS@
+test_qpack_LDADD = $(test_LDADD)
 test_qpack_SOURCES = \
   ./test/main_qpack.cc \
   ./test/test_QPACK.cc \
   ../http/HttpConfig.cc \
   ../http/HttpConnectionCount.cc \
   ../http/ForwardedConfig.cc \
-  ./test/stub.cc
+  ../../iocore/net/libinknet_stub.cc
 
-test_qpack_LDADD = \
-  libhttp3.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/src/tscore/libtscore.la \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/proxy/libproxy.a \
-  $(top_builddir)/proxy/hdrs/libhdrs.a \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a
 
 #
 # clang-tidy
