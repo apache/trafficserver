@@ -522,7 +522,7 @@ TEST_CASE("bwstring std formats", "[libts][bwprint]")
   w.print("{}", ts::bwf::Errno(13));
   REQUIRE(w.view() == "EACCES: Permission denied [13]"sv);
   w.reset().print("{}", ts::bwf::Errno(134));
-  REQUIRE(w.view().substr(0, 22) == "Unknown: Unknown error"sv);
+  REQUIRE(w.view().substr(0, 9) == "Unknown: "sv);
 
   time_t t = 1528484137;
   // default is GMT

@@ -120,6 +120,10 @@ HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned 
 
   getStatName(reason_stat, name, reason);
 
+  if (getHostStatId(reason_stat.c_str()) == -1) {
+    createHostStat(name);
+  }
+
   int stat_id = getHostStatId(reason_stat.c_str());
 
   // update the stats
@@ -212,7 +216,6 @@ HostStatus::createHostStat(const char *name)
     }
   }
   ink_rwlock_unlock(&host_statids_rwlock);
-  setHostStatus(name, HostStatus_t::HOST_STATUS_UP, 0, nullptr);
 }
 
 int

@@ -193,7 +193,12 @@ jwt_check_uri(const char *cdniuc, const char *uri)
   static const char CONT_URI_HASH_STR[]  = "hash";
   static const char CONT_URI_REGEX_STR[] = "regex";
 
-  if (!cdniuc || !*cdniuc || !uri) {
+  /* If cdniuc is not provided, skip uri check */
+  if (!cdniuc || !*cdniuc) {
+    return true;
+  }
+
+  if (!uri) {
     return false;
   }
 
@@ -292,9 +297,11 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
   renew_copy_real(new_json, "nbf", jwt->nbf);
   renew_copy_real(new_json, "iat", now()); /* issued now */
   renew_copy_string(new_json, "jti", jwt->jti);
+  renew_copy_string(new_json, "cdniuc", jwt->cdniuc);
   renew_copy_integer(new_json, "cdniv", jwt->cdniv);
   renew_copy_integer(new_json, "cdniets", jwt->cdniets);
   renew_copy_integer(new_json, "cdnistt", jwt->cdnistt);
+  renew_copy_integer(new_json, "cdnistd", jwt->cdnistd);
 
   char *pt = json_dumps(new_json, JSON_COMPACT);
   json_decref(new_json);

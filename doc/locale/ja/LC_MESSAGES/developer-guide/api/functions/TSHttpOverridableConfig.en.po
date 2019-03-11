@@ -270,10 +270,6 @@ msgstr ":ts:cv:`proxy.config.http.cache.heuristic_min_lifetime`"
 msgid ":ts:cv:`proxy.config.websocket.active_timeout`"
 msgstr ":ts:cv:`proxy.config.http.cache.heuristic_min_lifetime`"
 
-#: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:112
-msgid ":ts:cv:`proxy.config.http.origin_max_connections`"
-msgstr ""
-
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:113
 msgid ":ts:cv:`proxy.config.http.connect_attempts_max_retries`"
 msgstr ""

@@ -94,7 +94,7 @@ public:
 
   int from_path_len = 0;
   URL fromURL;
-  URL toUrl; // Default TO-URL (from remap.config)
+  URL toURL; // Default TO-URL (from remap.config)
   bool homePageRedirect              = false;
   bool unique                        = false; // INKqa11970 - unique mapping
   bool default_redirect_url          = false;
@@ -159,7 +159,7 @@ public:
   {
     deleteToURL();
     _mapping  = m;
-    _toURLPtr = m ? &(m->toUrl) : nullptr;
+    _toURLPtr = m ? &(m->toURL) : nullptr;
   }
 
   void

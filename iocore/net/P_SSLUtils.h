@@ -67,6 +67,7 @@ class SSLMultiCertConfigLoader
 {
 public:
   SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
+  virtual ~SSLMultiCertConfigLoader(){};
 
   bool load(SSLCertLookup *lookup);
 

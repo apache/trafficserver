@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  URL rewriting.
 
   @section license License
 
@@ -49,20 +49,8 @@ SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
   new_mapping->homePageRedirect = (from_path && !to_path) ? true : false;
 }
 
-//
-// CTOR / DTOR for the UrlRewrite class.
-//
-UrlRewrite::UrlRewrite()
-  : nohost_rules(0),
-    reverse_proxy(0),
-    ts_name(nullptr),
-    http_default_redirect_url(nullptr),
-    num_rules_forward(0),
-    num_rules_reverse(0),
-    num_rules_redirect_permanent(0),
-    num_rules_redirect_temporary(0),
-    num_rules_forward_with_recv_port(0),
-    _valid(false)
+bool
+UrlRewrite::load()
 {
   ats_scoped_str config_file_path;
 
@@ -70,7 +58,7 @@ UrlRewrite::UrlRewrite()
   if (!config_file_path) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to find proxy.config.url_remap.filename");
     Warning("%s Unable to locate remap.config. No remappings in effect", modulePrefix);
-    return;
+    return false;
   }
 
   this->ts_name = nullptr;
@@ -99,6 +87,7 @@ UrlRewrite::UrlRewrite()
   } else {
     Warning("something failed during BuildTable() -- check your remap plugins!");
   }
+  return _valid;
 }
 
 UrlRewrite::~UrlRewrite()
@@ -144,8 +133,8 @@ UrlRewrite::SetupBackdoorMapping()
   mapping->fromURL.parse(from_url, sizeof(from_url) - 1);
   mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
 
-  mapping->toUrl.create(nullptr);
-  mapping->toUrl.parse(to_url, sizeof(to_url) - 1);
+  mapping->toURL.create(nullptr);
+  mapping->toURL.parse(to_url, sizeof(to_url) - 1);
 
   return mapping;
 }
@@ -599,7 +588,7 @@ UrlRewrite::InsertMapping(mapping_type maptype, url_mapping *new_mapping, RegexM
     success = _addToStore(forward_mappings, new_mapping, reg_map, src_host, is_cur_mapping_regex, num_rules_forward);
     if (success) {
       // @todo: is this applicable to regex mapping too?
-      SetHomePageRedirectFlag(new_mapping, new_mapping->toUrl);
+      SetHomePageRedirectFlag(new_mapping, new_mapping->toURL);
     }
     break;
   case REVERSE_MAP:
@@ -641,7 +630,7 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping *mapping, con
     case FORWARD_MAP:
     case FORWARD_MAP_REFERER:
     case FORWARD_MAP_WITH_RECV_PORT:
-      SetHomePageRedirectFlag(mapping, mapping->toUrl);
+      SetHomePageRedirectFlag(mapping, mapping->toURL);
       break;
     default:
       break;
@@ -662,8 +651,6 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping *mapping, con
 int
 UrlRewrite::BuildTable(const char *path)
 {
-  BUILD_TABLE_INFO bti;
-
   ink_assert(forward_mappings.empty());
   ink_assert(reverse_mappings.empty());
   ink_assert(permanent_redirects.empty());
@@ -914,7 +901,7 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
       // Expand substitutions in the host field from the stored template
       buf_len           = _expandSubstitutions(matches_info, list_iter, request_host, buf, sizeof(buf));
       URL *expanded_url = mapping_container.createNewToURL();
-      expanded_url->copy(&((list_iter->url_map)->toUrl));
+      expanded_url->copy(&((list_iter->url_map)->toURL));
       expanded_url->host_set(buf, buf_len);
 
       Debug("url_rewrite_regex", "Expanded toURL to [%.*s]", expanded_url->length_get(), expanded_url->string_get_ref());
