@@ -141,13 +141,14 @@ QUICLossDetector::on_packet_sent(QUICPacketInfoUPtr packet_info, bool in_flight)
 
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
-  bool ack_eliciting         = packet_info->ack_eliciting;
-  bool is_crypto_packet      = packet_info->is_crypto_packet;
-  ink_hrtime now             = packet_info->time_sent;
-  size_t sent_bytes          = packet_info->sent_bytes;
-  this->_largest_sent_packet = packet_info->packet_number;
+  QUICPacketNumber packet_number = packet_info->packet_number;
+  bool ack_eliciting             = packet_info->ack_eliciting;
+  bool is_crypto_packet          = packet_info->is_crypto_packet;
+  ink_hrtime now                 = packet_info->time_sent;
+  size_t sent_bytes              = packet_info->sent_bytes;
+  this->_largest_sent_packet     = packet_info->packet_number;
 
-  this->_add_to_sent_packet_list(packet_info->packet_number, std::move(packet_info));
+  this->_add_to_sent_packet_list(packet_number, std::move(packet_info));
 
   if (in_flight) {
     if (is_crypto_packet) {
