@@ -41,7 +41,7 @@ public:
   using super = ProxyClientTransaction;
 
   HQClientTransaction(HQClientSession *session, QUICStreamIO *stream_io);
-  ~HQClientTransaction();
+  virtual ~HQClientTransaction();
 
   // Implement ProxyClienTransaction interface
   void set_active_timeout(ink_hrtime timeout_in) override;

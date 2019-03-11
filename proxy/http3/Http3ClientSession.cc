@@ -146,7 +146,6 @@ Http3ClientSession::~Http3ClientSession()
   this->_client_vc = nullptr;
   delete this->_local_qpack;
   delete this->_remote_qpack;
-  super::~HQClientSession();
 }
 
 const char *
@@ -198,7 +197,6 @@ Http3ClientSession::remote_qpack()
 Http09ClientSession::~Http09ClientSession()
 {
   this->_client_vc = nullptr;
-  super::~HQClientSession();
 }
 
 const char *

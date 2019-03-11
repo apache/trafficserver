@@ -33,7 +33,7 @@ public:
   using super = ProxyClientSession; ///< Parent type
 
   HQClientSession(NetVConnection *vc) : _client_vc(vc){};
-  ~HQClientSession();
+  virtual ~HQClientSession();
 
   // Implement VConnection interface
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
