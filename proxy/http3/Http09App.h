@@ -28,7 +28,7 @@
 #include "QUICApplication.h"
 
 class QUICNetVConnection;
-class Http3ClientSession;
+class Http09ClientSession;
 
 /**
  * @brief A simple multi-streamed application.
@@ -45,5 +45,5 @@ public:
   int main_event_handler(int event, Event *data);
 
 private:
-  Http3ClientSession *_client_session = nullptr;
+  Http09ClientSession *_client_session = nullptr;
 };

@@ -29,17 +29,19 @@
 #include "Http3FrameCollector.h"
 
 class QUICStreamIO;
+class HQClientSession;
+class Http09ClientSession;
 class Http3ClientSession;
 class Http3HeaderFramer;
 class Http3DataFramer;
 
-class Http3ClientTransaction : public ProxyClientTransaction
+class HQClientTransaction : public ProxyClientTransaction
 {
 public:
   using super = ProxyClientTransaction;
 
-  Http3ClientTransaction(Http3ClientSession *session, QUICStreamIO *stream_io);
-  ~Http3ClientTransaction();
+  HQClientTransaction(HQClientSession *session, QUICStreamIO *stream_io);
+  ~HQClientTransaction();
 
   // Implement ProxyClienTransaction interface
   void set_active_timeout(ink_hrtime timeout_in) override;
@@ -54,30 +56,23 @@ public:
   void decrement_client_transactions_stat() override;
 
   // VConnection interface
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
-  void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t) override;
-  void reenable(VIO *) override;
+  virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
+  virtual VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0,
+                           bool owner = false) override;
+  virtual void do_io_close(int lerrno = -1) override;
+  virtual void do_io_shutdown(ShutdownHowTo_t) override;
+  virtual void reenable(VIO *) override;
 
-  void set_read_vio_nbytes(int64_t nbytes);
-  void set_write_vio_nbytes(int64_t nbytes);
+  // HQClientTransaction
+  virtual int state_stream_open(int, void *)             = 0;
+  virtual int state_stream_closed(int event, void *data) = 0;
 
-  // Http3ClientTransaction specific methods
-  int state_stream_open(int, void *);
-  int state_stream_closed(int event, void *data);
-  bool is_response_header_sent() const;
-  bool is_response_body_sent() const;
-
-private:
+protected:
+  virtual int64_t _process_read_vio()  = 0;
+  virtual int64_t _process_write_vio() = 0;
   Event *_send_tracked_event(Event *, int, VIO *);
   void _signal_read_event();
   void _signal_write_event();
-  int64_t _process_read_vio();
-  int64_t _process_write_vio();
-
-  ParseResult _convert_header_from_3_to_1_1(HTTPHdr *hdr);
-  int _on_qpack_decode_complete();
 
   EThread *_thread           = nullptr;
   Event *_cross_thread_event = nullptr;
@@ -91,16 +86,61 @@ private:
   Event *_write_event = nullptr;
 
   HTTPHdr _request_header;
+};
 
-  // These are for Http3
+class Http3ClientTransaction : public HQClientTransaction
+{
+public:
+  using super = HQClientTransaction;
+
+  Http3ClientTransaction(Http3ClientSession *session, QUICStreamIO *stream_io);
+  ~Http3ClientTransaction();
+
+  int state_stream_open(int event, void *data) override;
+  int state_stream_closed(int event, void *data) override;
+
+  void do_io_close(int lerrno = -1) override;
+
+  bool is_response_header_sent() const;
+  bool is_response_body_sent() const;
+
+private:
+  int64_t _process_read_vio() override;
+  int64_t _process_write_vio() override;
+
+  ParseResult _convert_header_from_3_to_1_1(HTTPHdr *hdr);
+  int _on_qpack_decode_complete();
+
+  // These are for HTTP/3
   Http3FrameDispatcher _frame_dispatcher;
   Http3FrameCollector _frame_collector;
   Http3FrameGenerator *_header_framer = nullptr;
   Http3FrameGenerator *_data_framer   = nullptr;
   Http3FrameHandler *_header_handler  = nullptr;
   Http3FrameHandler *_data_handler    = nullptr;
+};
 
-  // These are for 0.9 support
+/**
+   Only for interop. Will be removed.
+ */
+class Http09ClientTransaction : public HQClientTransaction
+{
+public:
+  using super = HQClientTransaction;
+
+  Http09ClientTransaction(Http09ClientSession *session, QUICStreamIO *stream_io);
+  ~Http09ClientTransaction();
+
+  int state_stream_open(int event, void *data) override;
+  int state_stream_closed(int event, void *data) override;
+
+  void do_io_close(int lerrno = -1) override;
+
+private:
+  int64_t _process_read_vio() override;
+  int64_t _process_write_vio() override;
+
+  // These are for HTTP/0.9
   bool _protocol_detected          = false;
   bool _legacy_request             = false;
   bool _client_req_header_complete = false;

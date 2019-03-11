@@ -196,7 +196,7 @@ Http3App::_handle_bidi_stream_on_read_ready(int event, QUICStreamIO *stream_io)
   uint8_t dummy;
   if (stream_io->peek(&dummy, 1)) {
     QUICStreamId stream_id      = stream_io->stream_id();
-    Http3ClientTransaction *txn = this->_client_session->get_transaction(stream_id);
+    Http3ClientTransaction *txn = static_cast<Http3ClientTransaction *>(this->_client_session->get_transaction(stream_id));
 
     if (txn == nullptr) {
       txn = new Http3ClientTransaction(this->_client_session, stream_io);
@@ -261,7 +261,7 @@ void
 Http3App::_handle_bidi_stream_on_write_ready(int event, QUICStreamIO *stream_io)
 {
   QUICStreamId stream_id      = stream_io->stream_id();
-  Http3ClientTransaction *txn = this->_client_session->get_transaction(stream_id);
+  Http3ClientTransaction *txn = static_cast<Http3ClientTransaction *>(this->_client_session->get_transaction(stream_id));
   if (txn != nullptr) {
     SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
     txn->handleEvent(event);

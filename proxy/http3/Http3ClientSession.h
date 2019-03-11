@@ -27,13 +27,13 @@
 #include "Http3ClientTransaction.h"
 #include "QPACK.h"
 
-class Http3ClientSession : public ProxyClientSession
+class HQClientSession : public ProxyClientSession
 {
 public:
-  typedef ProxyClientSession super; ///< Parent type.
+  using super = ProxyClientSession; ///< Parent type
 
-  Http3ClientSession(NetVConnection *vc);
-  ~Http3ClientSession();
+  HQClientSession(NetVConnection *vc) : _client_vc(vc){};
+  ~HQClientSession();
 
   // Implement VConnection interface
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
@@ -43,27 +43,63 @@ public:
   void reenable(VIO *vio) override;
 
   // Implement ProxyClienSession interface
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
   void start() override;
   void destroy() override;
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
+  void release(ProxyClientTransaction *trans) override;
   NetVConnection *get_netvc() const override;
   int get_transact_count() const override;
+
+  // HQClientSession
+  void add_transaction(HQClientTransaction *);
+  HQClientTransaction *get_transaction(QUICStreamId);
+
+protected:
+  NetVConnection *_client_vc = nullptr;
+
+private:
+  // this should be unordered map?
+  Queue<HQClientTransaction> _transaction_list;
+};
+
+class Http3ClientSession : public HQClientSession
+{
+public:
+  using super = HQClientSession; ///< Parent type
+
+  Http3ClientSession(NetVConnection *vc);
+  ~Http3ClientSession();
+
+  // ProxyClienSession interface
   const char *get_protocol_string() const override;
-  void release(ProxyClientTransaction *trans) override;
   int populate_protocol(std::string_view *result, int size) const override;
   void increment_current_active_client_connections_stat() override;
   void decrement_current_active_client_connections_stat() override;
-
-  // Http3ClientSession specific methods
-  void add_transaction(Http3ClientTransaction *);
-  Http3ClientTransaction *get_transaction(QUICStreamId);
 
   QPACK *local_qpack();
   QPACK *remote_qpack();
 
 private:
-  NetVConnection *_client_vc = nullptr;
-  QPACK *_remote_qpack       = nullptr; // QPACK for decoding
-  QPACK *_local_qpack        = nullptr; // QPACK for encoding
-  Queue<Http3ClientTransaction> _transaction_list;
+  QPACK *_remote_qpack = nullptr; // QPACK for decoding
+  QPACK *_local_qpack  = nullptr; // QPACK for encoding
+};
+
+/**
+   Only for interop. Will be removed.
+ */
+class Http09ClientSession : public HQClientSession
+{
+public:
+  using super = HQClientSession; ///< Parent type
+
+  Http09ClientSession(NetVConnection *vc) : HQClientSession(vc) {}
+  ~Http09ClientSession();
+
+  // ProxyClienSession interface
+  const char *get_protocol_string() const override;
+  int populate_protocol(std::string_view *result, int size) const override;
+  void increment_current_active_client_connections_stat() override;
+  void decrement_current_active_client_connections_stat() override;
+
+private:
 };

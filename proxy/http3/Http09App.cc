@@ -35,7 +35,7 @@ static constexpr char debug_tag_v[] = "v_quic_simple_app";
 
 Http09App::Http09App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QUICApplication(client_vc)
 {
-  this->_client_session      = new Http3ClientSession(client_vc);
+  this->_client_session      = new Http09ClientSession(client_vc);
   this->_client_session->acl = std::move(session_acl);
   this->_client_session->new_connection(client_vc, nullptr, nullptr);
 
@@ -62,8 +62,8 @@ Http09App::main_event_handler(int event, Event *data)
     return -1;
   }
 
-  QUICStreamId stream_id      = stream_io->stream_id();
-  Http3ClientTransaction *txn = this->_client_session->get_transaction(stream_id);
+  QUICStreamId stream_id       = stream_io->stream_id();
+  Http09ClientTransaction *txn = static_cast<Http09ClientTransaction *>(this->_client_session->get_transaction(stream_id));
 
   uint8_t dummy;
   switch (event) {
@@ -75,7 +75,7 @@ Http09App::main_event_handler(int event, Event *data)
     }
     if (stream_io->peek(&dummy, 1)) {
       if (txn == nullptr) {
-        txn = new Http3ClientTransaction(this->_client_session, stream_io);
+        txn = new Http09ClientTransaction(this->_client_session, stream_io);
         SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
 
         txn->new_transaction();
