@@ -31,8 +31,7 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/Diags.h"
-
-#include "P_SSLClientUtils.h"
+#include "records/I_RecCore.h"
 #include "P_SSLCertLookup.h"
 
 struct SSLConfigParams;
