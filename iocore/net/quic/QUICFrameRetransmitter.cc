@@ -175,3 +175,9 @@ QUICFrameRetransmitter::_create_crypto_frame(uint8_t *buf, QUICFrameInformationU
   ink_assert(frame != nullptr);
   return frame;
 }
+
+bool
+QUICFrameRetransmitter::is_retransmited_frame_queue_empty() const
+{
+  return this->_lost_frame_info_queue.empty();
+}

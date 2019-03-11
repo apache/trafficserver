@@ -74,6 +74,7 @@ public:
   virtual QUICFrame *create_retransmitted_frame(uint8_t *buf, QUICEncryptionLevel level, uint16_t maximum_frame_size,
                                                 QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   virtual void save_frame_info(QUICFrameInformationUPtr info);
+  bool is_retransmited_frame_queue_empty() const;
 
 private:
   QUICFrame *_create_stream_frame(uint8_t *buf, QUICFrameInformationUPtr &info, uint16_t maximum_frame_size,
