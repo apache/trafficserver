@@ -95,6 +95,28 @@ TEST_CASE("AcidPtr Isolation")
   CHECK(*p.getPtr() == 42);
 }
 
+TEST_CASE("AcidPtr persistence")
+{
+  AcidPtr<int> p(new int(40));
+  std::shared_ptr<const int> r1, r2, r3, r4;
+  REQUIRE(p.getPtr() != nullptr);
+  r1 = p.getPtr();
+  {
+    AcidCommitPtr<int> w = p;
+    r2                   = p.getPtr();
+    *w += 1; // update p at end of scope
+  }
+  r3 = p.getPtr();
+  {
+    *AcidCommitPtr<int>(p) += 1; // leaves scope immediately if not named.
+    r4 = p.getPtr();
+  }
+  CHECK(*r1 == 40); // references to data are still valid, but inconsistent. (todo: rename AcidPtr to AiPtr?)
+  CHECK(*r2 == 40);
+  CHECK(*r3 == 41);
+  CHECK(*r4 == 42);
+}
+
 TEST_CASE("AcidPtr Abort")
 {
   AcidPtr<int> p;
