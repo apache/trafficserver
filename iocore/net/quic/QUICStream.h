@@ -25,7 +25,8 @@
 
 #include "tscore/List.h"
 
-#include "I_VConnection.h"
+#include "P_VConnection.h"
+#include "I_Event.h"
 
 #include "QUICFrame.h"
 #include "QUICStreamState.h"
@@ -34,6 +35,7 @@
 #include "QUICFrameGenerator.h"
 #include "QUICConnection.h"
 #include "QUICFrameRetransmitter.h"
+#include "QUICDebugNames.h"
 
 /**
  * @brief QUIC Stream
@@ -115,85 +117,6 @@ protected:
   Event *_write_event = nullptr;
 };
 
-class QUICBidirectionalStream : public QUICStreamVConnection, public QUICTransferProgressProvider
-{
-public:
-  QUICBidirectionalStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
-                          uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
-  QUICBidirectionalStream()
-    : QUICStreamVConnection(),
-      _remote_flow_controller(0, 0),
-      _local_flow_controller(nullptr, 0, 0),
-      _state(nullptr, nullptr, nullptr, nullptr)
-  {
-  }
-
-  int state_stream_open(int event, void *data);
-  int state_stream_closed(int event, void *data);
-
-  // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
-  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            ink_hrtime timestamp) override;
-
-  virtual QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame) override;
-  virtual QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame) override;
-  virtual QUICConnectionErrorUPtr recv(const QUICStreamDataBlockedFrame &frame) override;
-  virtual QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame) override;
-  virtual QUICConnectionErrorUPtr recv(const QUICRstStreamFrame &frame) override;
-
-  // Implement VConnection Interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
-  void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
-
-  void stop_sending(QUICStreamErrorUPtr error) override;
-  void reset(QUICStreamErrorUPtr error) override;
-
-  // QUICTransferProgressProvider
-  bool is_transfer_goal_set() const override;
-  uint64_t transfer_progress() const override;
-  uint64_t transfer_goal() const override;
-  bool is_cancelled() const override;
-
-  /*
-   * QUICApplication need to call one of these functions when it process VC_EVENT_*
-   */
-  virtual void on_read() override;
-  virtual void on_eos() override;
-
-  QUICOffset largest_offset_received() const override;
-  QUICOffset largest_offset_sent() const override;
-
-private:
-  QUICStreamErrorUPtr _reset_reason        = nullptr;
-  bool _is_reset_sent                      = false;
-  QUICStreamErrorUPtr _stop_sending_reason = nullptr;
-  bool _is_stop_sending_sent               = false;
-
-  bool _is_transfer_complete = false;
-  bool _is_reset_complete    = false;
-
-  QUICTransferProgressProviderVIO _progress_vio = {this->_read_vio};
-
-  QUICRemoteStreamFlowController _remote_flow_controller;
-  QUICLocalStreamFlowController _local_flow_controller;
-  uint64_t _flow_control_buffer_size = 1024;
-
-  // FIXME Unidirectional streams should use either ReceiveStreamState or SendStreamState
-  QUICBidirectionalStreamStateMachine _state;
-
-  void _records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame);
-  void _records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame);
-  void _records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame);
-
-  // QUICFrameGenerator
-  void _on_frame_acked(QUICFrameInformationUPtr &info) override;
-  void _on_frame_lost(QUICFrameInformationUPtr &info) override;
-};
-
 /**
  * @brief QUIC Crypto stream
  * Differences from QUICStream are below
@@ -254,3 +177,18 @@ private:
   IOBufferReader *_read_buffer_reader  = nullptr;
   IOBufferReader *_write_buffer_reader = nullptr;
 };
+
+#define QUICStreamDebug(fmt, ...)                                                                        \
+  Debug("quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+        QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
+
+#define QUICVStreamDebug(fmt, ...)                                                                         \
+  Debug("v_quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+        QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
+
+#define QUICStreamFCDebug(fmt, ...)                                                                         \
+  Debug("quic_flow_ctrl", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+        QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
+
+extern const uint32_t MAX_STREAM_FRAME_OVERHEAD;
+extern const uint32_t MAX_CRYPTO_FRAME_OVERHEAD;

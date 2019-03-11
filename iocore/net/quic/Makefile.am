@@ -86,7 +86,8 @@ libquic_a_SOURCES = \
   QUICPinger.cc \
   QUICFrameGenerator.cc \
   QUICFrameRetransmitter.cc \
-  QUICAddrVerifyState.cc
+  QUICAddrVerifyState.cc \
+  QUICBidirectionalStream.cc
 
 #
 # Check Programs

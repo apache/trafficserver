@@ -24,7 +24,7 @@
 #pragma once
 
 #include "QUICTypes.h"
-#include "QUICStream.h"
+#include "QUICBidirectionalStream.h"
 #include "QUICApplicationMap.h"
 #include "QUICFrameHandler.h"
 #include "QUICFrame.h"
