@@ -117,67 +117,6 @@ protected:
   Event *_write_event = nullptr;
 };
 
-/**
- * @brief QUIC Crypto stream
- * Differences from QUICStream are below
- * - this doesn't have VConnection interface
- * - no stream id
- * - no flow control
- * - no state (never closed)
- */
-class QUICCryptoStream : public QUICStream
-{
-public:
-  QUICCryptoStream();
-  ~QUICCryptoStream();
-
-  int state_stream_open(int event, void *data);
-
-  const QUICConnectionInfoProvider *info() const;
-  QUICOffset final_offset() const;
-  void reset_send_offset();
-  void reset_recv_offset();
-
-  QUICConnectionErrorUPtr recv(const QUICCryptoFrame &frame) override;
-
-  int64_t read_avail();
-  int64_t read(uint8_t *buf, int64_t len);
-  int64_t write(const uint8_t *buf, int64_t len);
-
-  void stop_sending(QUICStreamErrorUPtr error) override;
-  void reset(QUICStreamErrorUPtr error) override;
-
-  QUICOffset largest_offset_received() const override;
-  QUICOffset largest_offset_sent() const override;
-
-  void on_eos() override;
-  void on_read() override;
-
-  // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
-  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            ink_hrtime timestamp) override;
-
-private:
-  void _on_frame_acked(QUICFrameInformationUPtr &info) override;
-  void _on_frame_lost(QUICFrameInformationUPtr &info) override;
-
-  void _records_crypto_frame(QUICEncryptionLevel level, const QUICCryptoFrame &frame);
-
-  QUICStreamErrorUPtr _reset_reason = nullptr;
-  QUICOffset _send_offset           = 0;
-
-  // Fragments of received STREAM frame (offset is unmatched)
-  // TODO: Consider to replace with ts/RbTree.h or other data structure
-  QUICIncomingCryptoFrameBuffer _received_stream_frame_buffer;
-
-  MIOBuffer *_read_buffer  = nullptr;
-  MIOBuffer *_write_buffer = nullptr;
-
-  IOBufferReader *_read_buffer_reader  = nullptr;
-  IOBufferReader *_write_buffer_reader = nullptr;
-};
-
 #define QUICStreamDebug(fmt, ...)                                                                        \
   Debug("quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
