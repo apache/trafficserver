@@ -96,6 +96,7 @@ extern "C" int plock(int);
 #include "HTTP2.h"
 #include "tscore/ink_config.h"
 #include "P_SSLSNI.h"
+#include "P_SSLClientUtils.h"
 
 #include "tscore/ink_cap.h"
 
