@@ -33,6 +33,9 @@ man_pages = [
     ('appendices/command-line/traffic_top.en', 'traffic_top', u'Display Traffic Server statistics', None, '1'),
     ('appendices/command-line/tsxs.en', 'tsxs', u'Traffic Server plugin tool', None, '1'),
     ('appendices/command-line/traffic_via.en', 'traffic_via', u'Traffic Server Via header decoder', None, '1'),
+    ('appendices/command-line/traffic_layout.en', 'traffic_layout', u'Traffic Server sandbox management tool', None, '1'),
+    ('appendices/command-line/traffic_cache_tool.en', 'traffic_cache_tool', u'Traffic Server cache management tool', None, '1'),
+    ('appendices/command-line/traffic_wccp.en', 'traffic_wccp', u'Traffic Server WCCP client', None, '1'),
 
     ('admin-guide/files/cache.config.en', 'cache.config', u'Traffic Server cache configuration file', None, '5'),
     ('admin-guide/files/hosting.config.en', 'hosting.config', u'Traffic Server domain hosting configuration file', None, '5'),

@@ -24,6 +24,7 @@
 
 #include <cstdlib>
 #include <string_view>
+#include <string.h>
 
 #include "configs.h"
 #include "rules.h"

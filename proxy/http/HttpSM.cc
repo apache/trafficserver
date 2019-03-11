@@ -4031,10 +4031,14 @@ HttpSM::do_hostdb_lookup()
 
     // If there is not a current server, we must be looking up the origin
     //  server at the beginning of the transaction
-    int server_port = t_state.current.server ?
-                        t_state.current.server->dst_addr.host_order_port() :
-                        t_state.server_info.dst_addr.isValid() ? t_state.server_info.dst_addr.host_order_port() :
-                                                                 t_state.hdr_info.client_request.port_get();
+    int server_port = 0;
+    if (t_state.current.server && t_state.current.server->dst_addr.isValid()) {
+      server_port = t_state.current.server->dst_addr.host_order_port();
+    } else if (t_state.server_info.dst_addr.isValid()) {
+      server_port = t_state.server_info.dst_addr.host_order_port();
+    } else {
+      server_port = t_state.hdr_info.client_request.port_get();
+    }
 
     if (t_state.api_txn_dns_timeout_value != -1) {
       SMDebug("http_timeout", "beginning DNS lookup. allowing %d mseconds for DNS lookup", t_state.api_txn_dns_timeout_value);
@@ -4222,7 +4226,15 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       start = -1;
     } else {
       for (start = 0; s < e && *s >= '0' && *s <= '9'; ++s) {
-        start = start * 10 + (*s - '0');
+        // check the int64 overflow in case of high gcc with O3 option
+        // thinking the start is always positive
+        int64_t new_start = start * 10 + (*s - '0');
+
+        if (new_start < start) { // Overflow
+          t_state.range_setup = HttpTransact::RANGE_NONE;
+          goto Lfaild;
+        }
+        start = new_start;
       }
       // skip last white spaces
       for (; s < e && ParseRules::is_ws(*s); ++s) {
@@ -4254,7 +4266,15 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       end = content_length - 1;
     } else {
       for (end = 0; s < e && *s >= '0' && *s <= '9'; ++s) {
-        end = end * 10 + (*s - '0');
+        // check the int64 overflow in case of high gcc with O3 option
+        // thinking the start is always positive
+        int64_t new_end = end * 10 + (*s - '0');
+
+        if (new_end < end) { // Overflow
+          t_state.range_setup = HttpTransact::RANGE_NONE;
+          goto Lfaild;
+        }
+        end = new_end;
       }
       // skip last white spaces
       for (; s < e && ParseRules::is_ws(*s); ++s) {
@@ -7613,7 +7633,7 @@ HttpSM::do_redirect()
         HTTP_INCREMENT_DYN_STAT(http_total_x_redirect_stat);
       } else {
         // get the location header and setup the redirect
-        int redir_len;
+        int redir_len   = 0;
         char *redir_url = (char *)t_state.hdr_info.client_response.value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redir_len);
         redirect_request(redir_url, redir_len);
       }

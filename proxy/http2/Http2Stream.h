@@ -109,12 +109,6 @@ public:
   bool change_state(uint8_t type, uint8_t flags);
 
   void
-  set_id(Http2StreamId sid)
-  {
-    _id = sid;
-  }
-
-  void
   update_initial_rwnd(Http2WindowSize new_size)
   {
     client_rwnd = new_size;
@@ -193,12 +187,6 @@ public:
   MIOBuffer request_buffer                 = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
   Http2DependencyTree::Node *priority_node = nullptr;
 
-  EThread *
-  get_thread()
-  {
-    return _thread;
-  }
-
   IOBufferReader *response_get_data_reader() const;
   bool
   response_is_chunked() const
@@ -247,6 +235,13 @@ private:
   bool response_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
   void send_response_body(bool call_update);
+
+  /**
+   * Check if this thread is the right thread to process events for this
+   * continuation.
+   * Return true if the caller can continue event processing.
+   */
+  bool _switch_thread_if_not_on_right_thread(int event, void *edata);
 
   HTTPParser http_parser;
   ink_hrtime _start_time = 0;
@@ -305,6 +300,3 @@ private:
 };
 
 extern ClassAllocator<Http2Stream> http2StreamAllocator;
-
-extern bool check_continuation(Continuation *cont);
-extern bool check_stream_thread(Continuation *cont);

@@ -22,8 +22,8 @@
 cache.config
 ************
 
-The :file:`cache.config` file  defines how |TS| caches web objects. You can add
-caching rules to specify the following:
+The :file:`cache.config` file allows you to overrule the origin's cache
+policies. You can add caching rules to specify the following:
 
 - Not to cache objects from specific IP addresses.
 - How long to pin particular objects in the cache.
@@ -31,6 +31,15 @@ caching rules to specify the following:
 - Whether to ignore no-cache directives from the server.
 
 .. important::
+
+   Generally, using this file to define cache policies is an antipattern.
+   It's usually better to have the origin specify the cache policy via the
+   `Cache-Control: <https://tools.ietf.org/html/rfc7234#section-5.2>`_ header.
+   That way, all the business logic stays with the content generation. The
+   origin is in a much better position to know which content can be safely
+   cached, and for how long. It can make fine grained decisions, changing
+   Cache-Control: header value per object. This file allows for some overrides
+   but, is relatively crude compared to what the origin can provide.
 
    After modifying :file:`cache.config`, run :option:`traffic_ctl config reload`
    to apply changes.

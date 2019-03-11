@@ -54,7 +54,7 @@ of the original (Client) request under these conditions:
 - The response is a ``206`` response
 - The original client request, and the Origin server response, is clearly
   indicating that the response is cacheable. This uses the new API
-  c:func:`TSHttpTxnIsCacheable()`, which also implies honoring current
+  :c:func:`TSHttpTxnIsCacheable()`, which also implies honoring current
   Traffic Server configurations.
 
 

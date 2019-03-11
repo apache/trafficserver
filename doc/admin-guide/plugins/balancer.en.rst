@@ -20,6 +20,10 @@ Balancer Plugin
   specific language governing permissions and limitations
   under the License.
 
+.. note::
+
+  All of the the features in this plugin (and more) are found in
+  :file:`parent.config`. As a result, this plugin is likely to be deprecated.
 
 The ``balancer`` balances requests across multiple origin servers.
 To use this plugin, configure it in a :file:`remap.config` rule, specifying

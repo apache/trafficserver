@@ -25,9 +25,10 @@
 #pragma once
 
 #include <cstdlib>
+#include <atomic>
+#include <string>
 
 #include "rules.h"
-#include "tscore/ink_atomic.h"
 
 // Constants
 const char PLUGIN_NAME[] = "background_fetch";
@@ -38,22 +39,17 @@ const char PLUGIN_NAME[] = "background_fetch";
 class BgFetchConfig
 {
 public:
-  BgFetchConfig(TSCont cont) : _cont(cont), _rules(nullptr), _ref_count(0) { TSContDataSet(cont, static_cast<void *>(this)); }
-  void
-  acquire()
-  {
-    ink_atomic_increment(&_ref_count, 1);
-  }
+  explicit BgFetchConfig(TSCont cont) : _cont(cont) { TSContDataSet(cont, static_cast<void *>(this)); }
 
-  void
-  release()
+  ~BgFetchConfig()
   {
-    TSDebug(PLUGIN_NAME, "ref_count is %d", _ref_count);
-    if (1 >= ink_atomic_decrement(&_ref_count, 1)) {
-      TSDebug(PLUGIN_NAME, "configuration deleted, due to ref-counting");
-      delete this;
+    delete _rules;
+    if (_cont) {
+      TSContDestroy(_cont);
     }
   }
+
+  bool parseOptions(int argc, const char *argv[]);
 
   BgFetchRule *
   getRules() const
@@ -67,21 +63,26 @@ public:
     return _cont;
   }
 
+  const std::string &
+  logFile() const
+  {
+    return _log_file;
+  }
+
+  bool
+  allow304() const
+  {
+    return _allow_304;
+  }
+
   // This parses and populates the BgFetchRule linked list (_rules).
   bool readConfig(const char *file_name);
 
   bool bgFetchAllowed(TSHttpTxn txnp) const;
 
 private:
-  ~BgFetchConfig()
-  {
-    delete _rules;
-    if (_cont) {
-      TSContDestroy(_cont);
-    }
-  }
-
-  TSCont _cont;
-  BgFetchRule *_rules;
-  int _ref_count;
+  TSCont _cont        = nullptr;
+  BgFetchRule *_rules = nullptr;
+  bool _allow_304     = false;
+  std::string _log_file;
 };

@@ -1,0 +1,73 @@
+Changes with Apache Traffic Server 8.0.3
+  #3008 - Fix an failed assertion in HttpSM::parse_range_and_compare
+  #4087 - Doc: Add documentation for experimental plugin "multiplexer"
+  #4147 - Fix crash in Http2ClientSession::release_netvc
+  #4178 - Fix another ProxySession and NetVC shutdown race crash
+  #4189 - Plugins: Cleanup up dependencies on core headers - background_fetch
+  #4279 - Ensure NOFILES ulimit is set high
+  #4297 - Don't update records.config when other configs are reloaded
+  #4311 - Fix typo of the nofiles ulimit to a sane number
+  #4354 - Fix logging log file roll issue (#2544)
+  #4420 - Removes this unused old/duplicated define
+  #4488 - preventing crashing when calling TSSslContextFindByName with a nullptr or a 0 length string
+  #4528 - Removes ref-counting from background_fetch
+  #4550 - Doc: Describe parent weight and format
+  #4552 - Print error message for unimplemented commands
+  #4554 - Make autests friendlier with openssl 1.1.1
+  #4558 - Ignore the entire doc/_build directory that is generated
+  #4560 - Add the TLSv1_3 setting to disable TLSv1_3
+  #4572 - Fixes another memory leak related to OCSP
+  #4574 - Allows the use of certs with no commonName, but with subjectAltNames
+  #4577 - Doc: change code snippet highlighting scheme
+  #4581 - Doc: Add missing overrides and sort
+  #4587 - Remove unused code
+  #4589 - Refactor H2 cross thread event handling
+  #4592 - Doc: sort overrides in table; remove missing references
+  #4595 - Doc: getting started case shouldn't used regex_remap
+  #4599 - Doc: Remove pipeline references
+  #4601 - Update logging.yaml documentation
+  #4610 - Doc: parent config has more features than balancer plugin
+  #4619 - Doc: cache.config isn't a substitute for Cache-Control
+  #4620 - Doc: removing stale while revalidate plugin doc (marked deprecated in 7)
+  #4653 - Remove ssl.enable flag
+  #4654 - Changes external links to internal
+  #4678 - Prevent linking everything against brotli
+  #4682 - Finish the config removal started in #4653
+  #4685 - Cleans up some plugin READMEs
+  #4689 - Deals better with Cc: max-age=0
+  #4693 - Remove ignoring unused variable warning from webp plugin
+  #4713 - regex_revalidate: don't start a new self scheduling config handler on every config reload
+  #4731 - Acquire a lock before checking H2ConnectionState::ua_session
+  #4732 - Make H2 stream counters atomic
+  #4757 - Add missing manpages to build list
+  #4759 - Fixes Clang-Analyzer issue of H2 Dependence Tree
+  #4773 - Calls SSL child config callback after cert is loaded for both key parts
+  #4774 - Fixed clang 5.0.0 issue with brace initialization
+  #4778 - This improves on #3008, making the code clearer
+  #4780 - Don't allow the old body to be used when refreshing
+  #4792 - Validates return values from TSHttpTxnClientAddrGet()
+  #4797 - Eliminates frequent librecords lookup
+  #4807 - Allows to run make clean multiple times
+  #4810 - Fixes unmatched port when looking up HostDB
+  #4811 - Changes the string_view::length to ::size
+  #4812 - Add ifdef so tls test client will compile on non-openssl-1.1.x
+  #4820 - Eliminates expensive librecords and malloc on drain
+  #4824 - Fix ATS does not honor proxy.config.body_factory.response_max_size
+  #4839 - Fixes heap-use-after-free in RangeTransform
+  #4842 - Doc: minor records.config cleaning
+  #4845 - Initialize redir_len, compiler warnings
+  #4853 - Various fixes and improvements to background_fetch
+  #4881 - Fix TSHttpTxnEffectiveUrlStringGet to correctly set the port when non-standard
+  #4885 - Content Length can be trusted when the origin server returns a 304
+  #4892 - Use one setting for H2 consistently for header size limit on H2 connections
+  #4918 - Runroot: make traffic_top use runroot
+  #4936 - Mark H2 connection inactive only if it is NOT shutting down
+  #4943 - Fix to allow runroot to override the configuration directory
+  #4946 - Corrects description for proxy.config.http.origin_max_connections
+  #4949 - Split current active client connections stats into HTTP/1.1 and HTTP/2
+  #4968 - Fix client connections of traffic_top
+  #4971 - Fixed a typo in the background_fetch plugin section
+  #4989 - Doc: money trace plugin link incorrect
+  #4992 - Doc: centering images is not in view
+  #4995 - Doc: minor records.config cleaning
+  #5019 - s3_auth:fixed uncaught exception on invalid input

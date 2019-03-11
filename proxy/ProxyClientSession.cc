@@ -37,7 +37,7 @@ ProxyClientSession::set_session_active()
 {
   if (!m_active) {
     m_active = true;
-    HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
+    this->increment_current_active_client_connections_stat();
   }
 }
 
@@ -46,7 +46,7 @@ ProxyClientSession::clear_session_active()
 {
   if (m_active) {
     m_active = false;
-    HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
+    this->decrement_current_active_client_connections_stat();
   }
 }
 
@@ -197,11 +197,6 @@ ProxyClientSession::handle_api_return(int event)
     }
     break;
   case TS_HTTP_SSN_CLOSE_HOOK: {
-    NetVConnection *vc = this->get_netvc();
-    if (vc) {
-      vc->do_io_close();
-      this->release_netvc();
-    }
     free(); // You can now clean things up
     break;
   }

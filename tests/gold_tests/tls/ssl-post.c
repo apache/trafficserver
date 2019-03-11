@@ -89,6 +89,10 @@ spawn_same_session_send(void *arg)
 
   SSL_CTX *client_ctx = SSL_CTX_new(SSLv23_client_method());
   SSL *ssl            = SSL_new(client_ctx);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  SSL_set_max_proto_version(ssl, TLS1_2_VERSION);
+#endif
+
   SSL_set_session(ssl, tinfo->session);
 
   SSL_set_fd(ssl, sfd);
@@ -282,6 +286,9 @@ main(int argc, char *argv[])
 
   SSL_CTX *client_ctx = SSL_CTX_new(SSLv23_client_method());
   SSL *ssl            = SSL_new(client_ctx);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  SSL_set_max_proto_version(ssl, TLS1_2_VERSION);
+#endif
 
   SSL_set_fd(ssl, sfd);
   int ret         = SSL_connect(ssl);

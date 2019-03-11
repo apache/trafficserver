@@ -79,7 +79,6 @@ Http2ClientSession::free()
   }
 
   if (client_vc) {
-    release_netvc();
     client_vc->do_io_close();
     client_vc = nullptr;
   }
@@ -266,7 +265,6 @@ Http2ClientSession::do_io_close(int alerrno)
     // Copy aside the client address before releasing the vc
     cached_client_addr.assign(client_vc->get_remote_addr());
     cached_local_addr.assign(client_vc->get_local_addr());
-    this->release_netvc();
     client_vc->do_io_close();
     client_vc = nullptr;
   }
@@ -275,6 +273,8 @@ Http2ClientSession::do_io_close(int alerrno)
     SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
     this->connection_state.release_stream(nullptr);
   }
+
+  this->clear_session_active();
 }
 
 void
@@ -538,4 +538,16 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
     vio->reenable();
   }
   return 0;
+}
+
+void
+Http2ClientSession::increment_current_active_client_connections_stat()
+{
+  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT, this_ethread());
+}
+
+void
+Http2ClientSession::decrement_current_active_client_connections_stat()
+{
+  HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT, this_ethread());
 }

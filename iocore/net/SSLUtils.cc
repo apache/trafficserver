@@ -1486,7 +1486,7 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cer
       if (name->type == GEN_DNS) {
         ats_scoped_str dns(asn1_strdup(name->d.dNSName));
         // only try to insert if the alternate name is not the main name
-        if (strcmp(dns, subj_name) != 0) {
+        if (subj_name == nullptr || strcmp(dns, subj_name) != 0) {
           Debug("ssl", "mapping '%s' to certificates %s", (const char *)dns, certname);
           if (lookup->insert(dns, cc) >= 0) {
             inserted = true;
@@ -1700,16 +1700,18 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
           X509_free(cert);
           goto fail;
         }
-        certList.push_back(cert);
-        if (SSLConfigParams::load_ssl_file_cb) {
-          SSLConfigParams::load_ssl_file_cb(completeServerCertPath.c_str(), CONFIG_FLAG_UNVERSIONED);
-        }
+
         // Load up any additional chain certificates
         SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
 
         const char *keyPath = key_tok.getNext();
         if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, keyPath)) {
           goto fail;
+        }
+
+        certList.push_back(cert);
+        if (SSLConfigParams::load_ssl_file_cb) {
+          SSLConfigParams::load_ssl_file_cb(completeServerCertPath.c_str(), CONFIG_FLAG_UNVERSIONED);
         }
 
         // Must load all the intermediate certificates before starting the next chain

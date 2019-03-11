@@ -160,7 +160,7 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 {
   if (final_path) {
     if (path && path[0] != '/') {
-      *final_path = ats_stringdup(RecConfigReadPrefixPath(nullptr, path));
+      *final_path = ats_stringdup(Layout::get()->relative_to(Layout::get()->prefix, path));
     } else if (!path || path[0] == '\0') {
       *final_path = ats_stringdup(RecConfigReadConfigDir());
     } else {
@@ -238,6 +238,17 @@ SSLConfigParams::initialize()
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1_2");
   if (!client_ssl_options) {
     ssl_client_ctx_options |= SSL_OP_NO_TLSv1_2;
+  }
+#endif
+#ifdef SSL_OP_NO_TLSv1_3
+  REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1_3");
+  if (!options) {
+    ssl_ctx_options |= SSL_OP_NO_TLSv1_3;
+  }
+
+  REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1_3");
+  if (!client_ssl_options) {
+    ssl_client_ctx_options |= SSL_OP_NO_TLSv1_3;
   }
 #endif
 

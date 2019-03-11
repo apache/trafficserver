@@ -895,7 +895,7 @@ RecSetSyncRequired(char *name, bool lock)
   if (ink_hash_table_lookup(g_records_ht, name, (void **)&r1)) {
     if (i_am_the_record_owner(r1->rec_type)) {
       rec_mutex_acquire(&(r1->lock));
-      r1->sync_required = REC_SYNC_REQUIRED;
+      r1->sync_required = REC_PEER_SYNC_REQUIRED;
       if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
         r1->config_meta.update_required = REC_UPDATE_REQUIRED;
       }

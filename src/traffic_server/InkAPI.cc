@@ -9163,6 +9163,10 @@ TSVConnSSLConnectionGet(TSVConn sslp)
 tsapi TSSslContext
 TSSslContextFindByName(const char *name)
 {
+  if (nullptr == name || 0 == strlen(name)) {
+    // an empty name is an invalid input
+    return nullptr;
+  }
   TSSslContext ret      = nullptr;
   SSLCertLookup *lookup = SSLCertificateConfig::acquire();
   if (lookup != nullptr) {

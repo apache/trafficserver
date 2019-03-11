@@ -40,10 +40,11 @@ reHost = "www.example.com"
 testName = ""
 
 header_count = 378
+#header_count = 78
 
 header_string = "POST /post HTTP/1.1\r\nHost: www.example.com\r\nContent-Length:1000\r\n"
 
-for i in range(0, 378):
+for i in range(0, header_count):
     header_string = "{1}header{0}:{0}\r\n".format(i, header_string)
 header_string = "{0}\r\n".format(header_string)
 
@@ -78,7 +79,7 @@ ts.Disk.records_config.update({
 })
 
 tr = Test.AddTestRun("Run-Test")
-tr.Command = './ssl-post 127.0.0.1 40 378 4443'
+tr.Command = './ssl-post 127.0.0.1 40 {0} 4443'.format(header_count)
 tr.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)

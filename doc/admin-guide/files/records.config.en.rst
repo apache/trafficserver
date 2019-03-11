@@ -869,14 +869,9 @@ ip-resolve
 
 .. note::
 
-   If HTTP/1.1 is used, then |TS| can use keep-alive connections with
-   pipelining to origin servers.
+   If HTTP/1.1 is used, then |TS| can use keep-alive connections to origin servers.
 
-   If HTTP/1.0 is used, then |TS| can use keep-alive connections without
-   pipelining to origin servers.
-
-   If HTTP/0.9 is used, then |TS| does not use keep-alive connections to
-   origin servers.
+   If HTTP/1.0 is used, then |TS| can use keep-alive connections to origin servers.
 
 .. ts:cv:: CONFIG proxy.config.http.chunking.size INT 4096
    :overridable:
@@ -1365,7 +1360,7 @@ Origin Server Connect Attempts
    :reloadable:
    :overridable:
 
-   Limits the number of socket connections per origin server to the value specified. To enable, set to one (``1``).
+   Limits the number of socket connections per origin server to the value specified. To disable, set to zero (``0``).
 
 .. ts:cv:: CONFIG proxy.config.http.origin_max_connections_queue INT -1
    :reloadable:
@@ -2149,55 +2144,6 @@ Heuristic Expiration
    aging factor is applied, the final maximum age calculated will never be
    higher than the value in this variable.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.time INT 0
-   :deprecated:
-   :reloadable:
-   :overridable:
-
-   How often |TS| checks for an early refresh, during the period before the
-   document stale time. The interval specified must be in seconds.
-
-.. note::
-
-   Previous versions of Apache Traffic Server defaulted this to 240s. This
-   feature is deprecated as of ATS v6.2.0.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.0
-   :deprecated:
-   :reloadable:
-   :overridable:
-
-   The probability that a refresh is made on a document during the fuzz time
-   specified in :ts:cv:`proxy.config.http.cache.fuzz.time`.
-
-.. note::
-
-   Previous versions of Apache Traffic Server defaulted this to 0.005 (0.5%).
-   This feature is deprecated as of ATS v6.2.0
-
-.. ts:cv:: CONFIG proxy.config.http.cache.fuzz.min_time INT 0
-   :deprecated:
-   :reloadable:
-   :overridable:
-
-   Handles requests with a TTL less than :ts:cv:`proxy.config.http.cache.fuzz.time`.
-   It allows for different times to evaluate the probability of revalidation
-   for small TTLs and big TTLs. Objects with small TTLs will start "rolling the
-   revalidation dice" near the ``fuzz.min_time``, while objects with large TTLs
-   would start at ``fuzz.time``. A logarithmic-like function between determines
-   the revalidation evaluation start time (which will be between
-   ``fuzz.min_time`` and ``fuzz.time``). As the object gets closer to expiring,
-   the window start becomes more likely. By default this setting is not enabled,
-   but should be enabled any time you have objects with small TTLs.
-
-.. note::
-
-    These fuzzing options are marked as deprecated as of v6.2.0, and will be
-    removed for v7.0.0. Instead, we recommend looking at the new
-    :ts:cv:`proxy.config.http.cache.open_write_fail_action` configuration and
-    the features around thundering heard avoidance (see
-    :ref:`http-proxy-caching` for details).
-
 Dynamic Content & Content Negotiation
 =====================================
 
@@ -2470,7 +2416,7 @@ HostDB
    For values above ``200000``, you must increase :ts:cv:`proxy.config.hostdb.max_size`
    by at least 44 bytes per entry.
 
-.. ts:cv:: proxy.config.hostdb.round_robin_max_count INT 16
+.. ts:cv:: CONFIG proxy.config.hostdb.round_robin_max_count INT 16
 
    The maximum count of DNS answers per round robin hostdb record. The default variable is 16.
 
@@ -3134,6 +3080,10 @@ SSL Termination
 
    Enables (``1``) or disables (``0``) TLS v1.2.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
 
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_3 INT 1
+
+   Enables (``1``) or disables (``0``) TLS v1.3.  If not specified, enabled by default.  [Requires OpenSSL v1.1.1 and higher]
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.certification_level INT 0
 
    Sets the client certification level:
@@ -3416,6 +3366,10 @@ Client-Related Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_2 INT 1
 
    Enables (``1``) or disables (``0``) TLSv1_2 in the ATS client context. If not specified, enabled by default
+
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3 INT 1
+
+   Enables (``1``) or disables (``0``) TLSv1_3 in the ATS client context. If not specified, enabled by default
 
 .. ts:cv:: CONFIG proxy.config.ssl.async.handshake.enabled INT 0
 

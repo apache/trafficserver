@@ -65,7 +65,7 @@ Message Passing
 
 Sequence diagram for a command sent from |TCtl| to when it is recieved by a plugin.
 
-.. image:: ../../uml/images/RPC-sequence-diagram.svg
+.. figure:: ../../uml/images/RPC-sequence-diagram.svg
 
 .. note::
 
@@ -231,7 +231,7 @@ Now, using this macro, messages can easily be sent. For example:
 RPC API for |TServer| and |TManager|
 ====================================
 
-.. image:: ../../uml/images/RPC-states.svg
+.. figure:: ../../uml/images/RPC-states.svg
    :align: center
 
 |LM| and |PM| follow similar workflows. A manager will poll the socket for any messages. If it is able to read a message, it will handle it based on the :arg:`msg_id` from the :class:`MgmtMessageHdr` and select a callback to run asynchoronously. The async callback will add a response, if any, to an outgoing event queue within the class. A manager will continue to poll and read on the socket as long as there are messages avaliable. Two things can stop a manager from polling.

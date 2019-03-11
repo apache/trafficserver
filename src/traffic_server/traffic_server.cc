@@ -170,6 +170,9 @@ static bool signal_received[NSIG];
 // -1: cache is already initialized, don't delay.
 static int delay_listen_for_cache_p;
 
+// Keeps track if the server is in draining state, follows the proxy.node.config.draining metric
+bool ts_is_draining = false;
+
 AppVersionInfo appVersionInfo; // Build info for this application
 
 static ArgumentDescription argument_descriptions[] = {
@@ -279,6 +282,7 @@ public:
       RecInt timeout = 0;
       if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) == REC_ERR_OKAY && timeout) {
         RecSetRecordInt("proxy.node.config.draining", 1, REC_SOURCE_DEFAULT);
+        ts_is_draining = true;
         if (!remote_management_flag) {
           // Close listening sockets here only if TS is running standalone
           RecInt close_sockets = 0;
@@ -2036,8 +2040,8 @@ mgmt_restart_shutdown_callback(void *, char *, int /* data_len ATS_UNUSED */)
 static void *
 mgmt_drain_callback(void *, char *arg, int len)
 {
-  ink_assert(len > 1 && (arg[0] == '0' || arg[0] == '1'));
-  RecSetRecordInt("proxy.node.config.draining", arg[0] == '1', REC_SOURCE_DEFAULT);
+  ts_is_draining = (len == 2 && arg[0] == '1');
+  RecSetRecordInt("proxy.node.config.draining", ts_is_draining ? 1 : 0, REC_SOURCE_DEFAULT);
   return nullptr;
 }
 

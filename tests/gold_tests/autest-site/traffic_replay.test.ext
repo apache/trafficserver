@@ -1,0 +1,91 @@
+'''
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# default 'mixed' for connection type since it doesn't hurt 
+def Replay(obj, name, replay_dir, key=None, cert=None, conn_type='mixed', options={}):
+    # ATS setup - one line because we leave records and remap config to user
+    ts = obj.MakeATSProcess("ts", select_ports=False) # select ports can be disabled once we add ssl port selection in extension
+
+    # TEMP
+    ts.Variables.ssl_port = 4443
+
+    ts.addSSLfile(os.path.join(obj.Variables["AtsTestToolsDir"], "microserver", "ssl", "server.pem"))
+    ts.addSSLfile(os.path.join(obj.Variables["AtsTestToolsDir"], "microserver", "ssl", "server.crt"))
+
+    ts.Disk.ssl_multicert_config.AddLine(
+        'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.pem'
+    )
+
+    # MicroServer setup - NOTE: expand to multiple microserver in future?
+    server = obj.MakeOriginServer("server", both=True, lookup_key='{%uuid}')
+    server.addSessionFromFiles(replay_dir)
+
+    # MicroDNS setup
+    dns = obj.MakeDNServer("dns", default=['127.0.0.1'])
+
+    # Traffic Replay setup
+    data_dir = os.path.join(obj.RunDirectory, name)
+
+    # NOTE: we are forcing mixed connection types for now for the sake of simplicity
+
+    # if conn_type != 'nossl':
+    #     if not key:
+    #         host.WriteError("Must provide SSL key to traffic-replay.")
+
+    #     if not cert:
+    #         host.WriteError("Must provide SSL key to traffic-replay.")
+
+    #     if not ts.Variables.ssl_port:
+    #         host.WriteError("Must set traffic server with an ssl port")
+
+    # NOTE: does this need change?
+    hostIP = '127.0.0.1'
+
+    if not key:
+        key = os.path.join(obj.Variables["AtsTestToolsDir"], "microserver", "ssl", "server.pem")
+
+    if not cert:
+        cert = os.path.join(obj.Variables["AtsTestToolsDir"], "microserver", "ssl", "server.crt")
+    
+    command = 'traffic-replay --log_dir {0} --type {1} --verify --host {2} --port {3} --s_port {4} '.format(data_dir, conn_type, hostIP, ts.Variables.port, ts.Variables.ssl_port)
+
+    if key:
+        command += "-k {0} ".format(key)
+
+    if cert:
+        command += "--ca_cert {0} ".format(cert)
+
+    if options:
+        for flag, value in options.items():
+            command += "{} {} ".format(flag, value if value else '')
+
+    tr = obj.AddTestRun(name)
+    tr.Command = command
+    # tr.Command = "echo Hi"
+    tr.Setup.MakeDir(data_dir)
+    tr.Setup.Copy(replay_dir, data_dir)
+    tr.Processes.Default.StartBefore(server)
+    tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.ssl_port))
+    tr.Processes.Default.StartBefore(dns)
+    tr.ReturnCode = Any(None, 0)
+    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("FAIL", "No fails allowed.")
+
+    # return all the stuff in case user wants to do extra optimization
+    return (ts, server, dns, tr)
+
+AddTestRunSet(Replay)

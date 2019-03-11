@@ -103,32 +103,52 @@ uriEncode(const String &in, bool isObjectName)
 }
 
 /**
- * @brief URI-decode a character string (AWS specific version, see spec)
+ * @brief checks if the string is URI-encoded (AWS specific encoding version, see spec)
  *
  * @see AWS spec: http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
  *
- * @todo Consider reusing / converting to TSStringPercentDecode()
- *       Currently we don't build a library/archive so we could link with the unit-test binary. Also using
- *       different sets of encode/decode functions during runtime and unit-testing did not seem as a good idea.
- * @param in string to be URI decoded
- * @return encoded string.
+ * @note According to the following RFC if the string is encoded and contains '%' it should
+ *       be followed by 2 hexadecimal symbols otherwise '%' should be encoded with %25:
+ *          https://tools.ietf.org/html/rfc3986#section-2.1
+ *
+ * @param in string to be URI checked
+ * @param isObjectName if true encoding didn't encode '/', kept it as it is.
+ * @return true if encoded, false not encoded.
  */
-String
-uriDecode(const String &in)
+bool
+isUriEncoded(const String &in, bool isObjectName)
 {
-  std::string result;
-  result.reserve(in.length());
-  size_t i = 0;
-  while (i < in.length()) {
-    if (in[i] == '%') {
-      result += static_cast<char>(std::stoi(in.substr(i + 1, 2), nullptr, 16));
-      i += 3;
-    } else {
-      result += in[i];
-      i++;
+  for (size_t pos = 0; pos < in.length(); pos++) {
+    char c = in[pos];
+
+    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+      /* found a unreserved character which should not have been be encoded regardless
+       * 'A'-'Z', 'a'-'z', '0'-'9', '-', '.', '_', and '~'.  */
+      continue;
+    }
+
+    if (' ' == c) {
+      /* space should have been encoded with %20 if the string was encoded */
+      return false;
+    }
+
+    if ('/' == c && !isObjectName) {
+      /* if this is not an object name '/' should have been encoded */
+      return false;
+    }
+
+    if ('%' == c) {
+      if (pos + 2 < in.length() && std::isxdigit(in[pos + 1]) && std::isxdigit(in[pos + 2])) {
+        /* if string was encoded we should have exactly 2 hexadecimal chars following it */
+        return true;
+      } else {
+        /* lonely '%' should have been encoded with %25 according to the RFC so likely not encoded */
+        return false;
+      }
     }
   }
-  return result;
+
+  return false;
 }
 
 /**
@@ -290,10 +310,7 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
 
     paramNames.insert(encodedParam);
 
-    /* Look for '%' first trying to avoid as many uri-decode calls as possible.
-     * it is hard to estimate which is more likely use-case - (1) URIs with uri-encoded query parameter
-     * values or (2) with unencoded which defines the success of this optimization */
-    if (nullptr == memchr(value.c_str(), '%', value.length()) || 0 == uriDecode(value).compare(value)) {
+    if (!isUriEncoded(value, /* isObjectName */ false)) {
       /* Not URI-encoded */
       paramsMap[encodedParam] = uriEncode(value, /* isObjectName */ false);
     } else {

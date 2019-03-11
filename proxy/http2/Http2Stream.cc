@@ -34,19 +34,16 @@ ClassAllocator<Http2Stream> http2StreamAllocator("http2StreamAllocator");
 int
 Http2Stream::main_event_handler(int event, void *edata)
 {
-  Event *e = static_cast<Event *>(edata);
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
-  Thread *this_thread = this_ethread();
-  if (this->get_thread() != this_thread) {
-    // Send on to the owning thread
-    if (cross_thread_event == nullptr) {
-      cross_thread_event = this->get_thread()->schedule_imm(this, event, edata);
-    }
+  if (!this->_switch_thread_if_not_on_right_thread(event, edata)) {
+    // Not on the right thread
     return 0;
   }
+  ink_release_assert(this->_thread == this_ethread());
+
+  Event *e = static_cast<Event *>(edata);
   reentrancy_count++;
-  ink_release_assert(this->get_thread() == this_ethread());
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   if (e == cross_thread_event) {
     cross_thread_event = nullptr;
   } else if (e == active_event) {
@@ -467,15 +464,13 @@ Http2Stream::update_read_request(int64_t read_len, bool call_update, bool check_
   if (closed || parent == nullptr || current_reader == nullptr || read_vio.mutex == nullptr) {
     return;
   }
-  if (this->get_thread() != this_ethread()) {
-    SCOPED_MUTEX_LOCK(stream_lock, this->mutex, this_ethread());
-    if (cross_thread_event == nullptr) {
-      // Send to the right thread
-      cross_thread_event = this->get_thread()->schedule_imm(this, VC_EVENT_READ_READY, nullptr);
-    }
+
+  if (!this->_switch_thread_if_not_on_right_thread(VC_EVENT_READ_READY, nullptr)) {
+    // Not on the right thread
     return;
   }
-  ink_release_assert(this->get_thread() == this_ethread());
+  ink_release_assert(this->_thread == this_ethread());
+
   SCOPED_MUTEX_LOCK(lock, read_vio.mutex, this_ethread());
   if (read_vio.nbytes > 0 && read_vio.ndone <= read_vio.nbytes) {
     // If this vio has a different buffer, we must copy
@@ -532,15 +527,13 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
       (buf_reader == nullptr && write_len == 0)) {
     return;
   }
-  if (this->get_thread() != this_ethread()) {
-    SCOPED_MUTEX_LOCK(stream_lock, this->mutex, this_ethread());
-    if (cross_thread_event == nullptr) {
-      // Send to the right thread
-      cross_thread_event = this->get_thread()->schedule_imm(this, VC_EVENT_WRITE_READY, nullptr);
-    }
+
+  if (!this->_switch_thread_if_not_on_right_thread(VC_EVENT_WRITE_READY, nullptr)) {
+    // Not on the right thread
     return;
   }
-  ink_release_assert(this->get_thread() == this_ethread());
+  ink_release_assert(this->_thread == this_ethread());
+
   Http2ClientSession *parent = static_cast<Http2ClientSession *>(this->get_parent());
 
   SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
@@ -550,7 +543,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
   if (this->chunked) {
     if (chunked_handler.dechunked_buffer && chunked_handler.dechunked_buffer->max_read_avail() > HTTP2_MAX_BUFFER_USAGE) {
       if (buffer_full_write_event == nullptr) {
-        buffer_full_write_event = get_thread()->schedule_imm(this, VC_EVENT_WRITE_READY);
+        buffer_full_write_event = _thread->schedule_imm(this, VC_EVENT_WRITE_READY);
       }
     } else {
       this->response_process_data(is_done);
@@ -757,24 +750,6 @@ Http2Stream::destroy()
   THREAD_FREE(this, http2StreamAllocator, this_ethread());
 }
 
-bool
-check_stream_thread(Continuation *cont)
-{
-  Http2Stream *stream = dynamic_cast<Http2Stream *>(cont);
-  if (stream) {
-    return stream->get_thread() == this_ethread();
-  } else {
-    return true;
-  }
-}
-
-bool
-check_continuation(Continuation *cont)
-{
-  Http2Stream *stream = dynamic_cast<Http2Stream *>(cont);
-  return stream == nullptr;
-}
-
 void
 Http2Stream::response_initialize_data_handling(bool &is_done)
 {
@@ -904,4 +879,18 @@ Http2Stream::release(IOBufferReader *r)
   super::release(r);
   current_reader = nullptr; // State machine is on its own way down.
   this->do_io_close();
+}
+
+bool
+Http2Stream::_switch_thread_if_not_on_right_thread(int event, void *edata)
+{
+  if (this->_thread != this_ethread()) {
+    SCOPED_MUTEX_LOCK(stream_lock, this->mutex, this_ethread());
+    if (cross_thread_event == nullptr) {
+      // Send to the right thread
+      cross_thread_event = this->_thread->schedule_imm(this, event, edata);
+    }
+    return false;
+  }
+  return true;
 }

@@ -107,19 +107,6 @@ public:
     return client_vc;
   }
 
-  void
-  release_netvc() override
-  {
-    // Make sure the vio's are also released to avoid
-    // later surprises in inactivity timeout
-    if (client_vc) {
-      client_vc->do_io_read(nullptr, 0, nullptr);
-      client_vc->do_io_write(nullptr, 0, nullptr);
-      client_vc->set_action(nullptr);
-      client_vc = nullptr;
-    }
-  }
-
   int
   get_transact_count() const override
   {
@@ -175,6 +162,9 @@ public:
   {
     return f_transparent_passthrough;
   }
+
+  void increment_current_active_client_connections_stat() override;
+  void decrement_current_active_client_connections_stat() override;
 
 private:
   Http1ClientSession(Http1ClientSession &);
