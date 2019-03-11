@@ -196,7 +196,7 @@ ConfigProcessor::release(unsigned int id, ConfigInfo *info)
 
   idx = id - 1;
 
-  if (info->refcount_dec() == 0) {
+  if (info && info->refcount_dec() == 0) {
     // When we release, we should already have replaced this object in the index.
     Debug("config", "Release config %d 0x%" PRId64, id, (int64_t)info);
     ink_release_assert(info != this->infos[idx]);
