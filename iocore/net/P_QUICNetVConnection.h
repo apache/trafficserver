@@ -40,6 +40,7 @@
 #include "tscore/ink_apidefs.h"
 #include "tscore/List.h"
 
+#include "quic/QUICConfig.h"
 #include "quic/QUICConnection.h"
 #include "quic/QUICConnectionTable.h"
 #include "quic/QUICVersionNegotiator.h"
@@ -207,6 +208,8 @@ public:
 
 private:
   std::random_device _rnd;
+
+  QUICConfig::scoped_config _quic_config;
 
   QUICConnectionId _peer_quic_connection_id;     // dst cid in local
   QUICConnectionId _peer_old_quic_connection_id; // dst previous cid in local

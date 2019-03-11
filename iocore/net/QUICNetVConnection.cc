@@ -419,7 +419,6 @@ void
 QUICNetVConnection::start()
 {
   ink_release_assert(this->thread != nullptr);
-  QUICConfig::scoped_config params;
 
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
@@ -427,22 +426,23 @@ QUICNetVConnection::start()
     QUICCertConfig::scoped_config server_cert;
 
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::SERVER);
-    this->_ack_frame_manager.set_ack_delay_exponent(params->ack_delay_exponent_in());
-    this->_reset_token       = QUICStatelessResetToken(this->_quic_connection_id, params->instance_id());
-    this->_hs_protocol       = this->_setup_handshake_protocol(server_cert->ssl_default);
-    this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol, this->_reset_token, params->stateless_retry());
-    this->_ack_frame_manager.set_max_ack_delay(params->max_ack_delay_in());
-    this->_schedule_ack_manager_periodic(params->max_ack_delay_in());
+    this->_ack_frame_manager.set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_in());
+    this->_reset_token = QUICStatelessResetToken(this->_quic_connection_id, this->_quic_config->instance_id());
+    this->_hs_protocol = this->_setup_handshake_protocol(server_cert->ssl_default);
+    this->_handshake_handler =
+      new QUICHandshake(this, this->_hs_protocol, this->_reset_token, this->_quic_config->stateless_retry());
+    this->_ack_frame_manager.set_max_ack_delay(this->_quic_config->max_ack_delay_in());
+    this->_schedule_ack_manager_periodic(this->_quic_config->max_ack_delay_in());
   } else {
-    QUICTPConfigQCP tp_config(params, NET_VCONNECTION_OUT);
+    QUICTPConfigQCP tp_config(this->_quic_config, NET_VCONNECTION_OUT);
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::CLIENT);
-    this->_ack_frame_manager.set_ack_delay_exponent(params->ack_delay_exponent_out());
-    this->_hs_protocol       = this->_setup_handshake_protocol(params->client_ssl_ctx());
+    this->_ack_frame_manager.set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_out());
+    this->_hs_protocol       = this->_setup_handshake_protocol(this->_quic_config->client_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol);
-    this->_handshake_handler->start(tp_config, &this->_packet_factory, params->vn_exercise_enabled());
+    this->_handshake_handler->start(tp_config, &this->_packet_factory, this->_quic_config->vn_exercise_enabled());
     this->_handshake_handler->do_handshake();
-    this->_ack_frame_manager.set_max_ack_delay(params->max_ack_delay_out());
-    this->_schedule_ack_manager_periodic(params->max_ack_delay_out());
+    this->_ack_frame_manager.set_max_ack_delay(this->_quic_config->max_ack_delay_out());
+    this->_schedule_ack_manager_periodic(this->_quic_config->max_ack_delay_out());
   }
 
   this->_application_map = new QUICApplicationMap();
@@ -450,8 +450,8 @@ QUICNetVConnection::start()
   this->_frame_dispatcher = new QUICFrameDispatcher(this);
 
   // Create frame handlers
-  QUICCCConfigQCP cc_config(params);
-  QUICLDConfigQCP ld_config(params);
+  QUICCCConfigQCP cc_config(this->_quic_config);
+  QUICLDConfigQCP ld_config(this->_quic_config);
   this->_congestion_controller = new QUICCongestionController(this, cc_config);
   for (auto s : QUIC_PN_SPACES) {
     int index            = static_cast<int>(s);
@@ -747,12 +747,10 @@ QUICNetVConnection::state_pre_handshake(int event, Event *data)
   }
 
   // FIXME: Should be accept_no_activity_timeout?
-  QUICConfig::scoped_config params;
-
   if (this->get_context() == NET_VCONNECTION_IN) {
-    this->set_inactivity_timeout(HRTIME_SECONDS(params->no_activity_timeout_in()));
+    this->set_inactivity_timeout(HRTIME_SECONDS(this->_quic_config->no_activity_timeout_in()));
   } else {
-    this->set_inactivity_timeout(HRTIME_SECONDS(params->no_activity_timeout_out()));
+    this->set_inactivity_timeout(HRTIME_SECONDS(this->_quic_config->no_activity_timeout_out()));
   }
 
   this->add_to_active_queue();
@@ -1135,15 +1133,15 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
 
   // Start handshake
   if (this->netvc_context == NET_VCONNECTION_IN) {
-    QUICConfig::scoped_config params;
     if (!this->_alt_con_manager) {
-      this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id,
-                                                            params->instance_id(), params->num_alt_connection_ids(),
-                                                            params->preferred_address_ipv4(), params->preferred_address_ipv6());
+      this->_alt_con_manager =
+        new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, this->_quic_config->instance_id(),
+                                     this->_quic_config->num_alt_connection_ids(), this->_quic_config->preferred_address_ipv4(),
+                                     this->_quic_config->preferred_address_ipv6());
       this->_frame_generators.push_back(this->_alt_con_manager);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
-    QUICTPConfigQCP tp_config(params, NET_VCONNECTION_IN);
+    QUICTPConfigQCP tp_config(this->_quic_config, NET_VCONNECTION_IN);
     error =
       this->_handshake_handler->start(tp_config, packet.get(), &this->_packet_factory, this->_alt_con_manager->preferred_address());
 
@@ -1250,8 +1248,7 @@ QUICNetVConnection::_state_connection_established_process_protected_packet(QUICP
   }
 
   // For Connection Migration excercise
-  QUICConfig::scoped_config params;
-  if (this->netvc_context == NET_VCONNECTION_OUT && params->cm_exercise_enabled()) {
+  if (this->netvc_context == NET_VCONNECTION_OUT && this->_quic_config->cm_exercise_enabled()) {
     this->_state_connection_established_initiate_connection_migration();
   }
 
@@ -2010,10 +2007,9 @@ QUICNetVConnection::_switch_to_established_state()
       std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
       const uint8_t *pref_addr_buf;
       uint16_t len;
-      QUICConfig::scoped_config params;
       pref_addr_buf          = remote_tp->getAsBytes(QUICTransportParameterId::PREFERRED_ADDRESS, len);
       this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id,
-                                                            params->instance_id(), 1, {pref_addr_buf, len});
+                                                            this->_quic_config->instance_id(), 1, {pref_addr_buf, len});
       this->_frame_generators.push_back(this->_alt_con_manager);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
@@ -2189,8 +2185,7 @@ QUICNetVConnection::_setup_handshake_protocol(SSL_CTX *ctx)
 {
   // Initialize handshake protocol specific stuff
   // For QUICv1 TLS is the only option
-  QUICConfig::scoped_config params;
-  QUICTLS *tls = new QUICTLS(this->_pp_key_info, ctx, this->direction(), params->session_file());
+  QUICTLS *tls = new QUICTLS(this->_pp_key_info, ctx, this->direction(), this->_quic_config->session_file());
   SSL_set_ex_data(tls->ssl_handle(), QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
   return tls;
 }
