@@ -27,7 +27,7 @@
 #include "QUICTransportParameters.h"
 #include "QUICFrameHandler.h"
 #include "QUICFrameGenerator.h"
-#include "QUICStream.h"
+#include "QUICCryptoStream.h"
 
 /**
  * @class QUICHandshake

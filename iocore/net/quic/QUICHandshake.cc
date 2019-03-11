@@ -30,7 +30,6 @@
 #include "QUICPacketFactory.h"
 #include "QUICVersionNegotiator.h"
 #include "QUICConfig.h"
-#include "QUICStream.h"
 
 #define QUICHSDebug(fmt, ...) Debug("quic_handshake", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
