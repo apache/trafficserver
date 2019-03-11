@@ -62,6 +62,12 @@ QUICTLS::set_remote_transport_parameters(std::shared_ptr<const QUICTransportPara
   this->_remote_transport_parameters = tp;
 }
 
+const char *
+QUICTLS::session_file() const
+{
+  return this->_session_file;
+}
+
 QUICTLS::~QUICTLS()
 {
   SSL_free(this->_ssl);

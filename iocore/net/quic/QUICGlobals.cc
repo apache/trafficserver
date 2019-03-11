@@ -31,6 +31,9 @@
 #include "QUICConfig.h"
 #include "QUICConnection.h"
 
+#include "QUICTLS.h"
+#include <openssl/ssl.h>
+
 #define QUICGlobalDebug(fmt, ...) Debug("quic_global", fmt, ##__VA_ARGS__)
 #define QUICGlobalQCDebug(qc, fmt, ...) Debug("quic_global", "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
 
@@ -68,8 +71,8 @@ QUIC::ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned cha
 int
 QUIC::ssl_client_new_session(SSL *ssl, SSL_SESSION *session)
 {
-  QUICConfig::scoped_config params;
-  const char *session_file = params->session_file();
+  QUICTLS *qtls            = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
+  const char *session_file = qtls->session_file();
   auto file                = BIO_new_file(session_file, "w");
 
   if (file == nullptr) {
