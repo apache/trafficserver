@@ -1,12 +1,13 @@
 Changes with Apache Traffic Server 8.0.3
   #3008 - Fix an failed assertion in HttpSM::parse_range_and_compare
+  #4087 - Doc: Add documentation for experimental plugin "multiplexer"
   #4147 - Fix crash in Http2ClientSession::release_netvc
   #4178 - Fix another ProxySession and NetVC shutdown race crash
   #4189 - Plugins: Cleanup up dependencies on core headers - background_fetch
   #4279 - Ensure NOFILES ulimit is set high
   #4297 - Don't update records.config when other configs are reloaded
   #4311 - Fix typo of the nofiles ulimit to a sane number
-  #4354 - Fix logging log file roll issue (#2544).
+  #4354 - Fix logging log file roll issue (#2544)
   #4420 - Removes this unused old/duplicated define
   #4488 - preventing crashing when calling TSSslContextFindByName with a nullptr or a 0 length string
   #4528 - Removes ref-counting from background_fetch
@@ -35,6 +36,7 @@ Changes with Apache Traffic Server 8.0.3
   #4685 - Cleans up some plugin READMEs
   #4689 - Deals better with Cc: max-age=0
   #4693 - Remove ignoring unused variable warning from webp plugin
+  #4713 - regex_revalidate: don't start a new self scheduling config handler on every config reload
   #4731 - Acquire a lock before checking H2ConnectionState::ua_session
   #4732 - Make H2 stream counters atomic
   #4757 - Add missing manpages to build list
