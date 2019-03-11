@@ -301,49 +301,55 @@ TEST_CASE("QUICStream", "[quic]")
 
   /*
    * This test does not pass now
-   *
+   */
   SECTION("Retransmit STREAM frame")
   {
-    MIOBuffer *write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+    MIOBuffer *write_buffer             = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
     IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
 
     MockQUICRTTProvider rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
-    std::unique_ptr<QUICBidirectionalStream> stream(new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id,
-  UINT64_MAX, UINT64_MAX)); SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+    std::unique_ptr<QUICBidirectionalStream> stream(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
+    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
 
     MockContinuation mock_cont(stream->mutex);
     stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
-    const char data1[] = "this is a test data";
-    const char data2[] = "THIS IS ANOTHER TEST DATA";
-    QUICFrameUPtr frame   = QUICFrameFactory::create_null_frame();
-
-    QUICFrameUPtr frame1 = QUICFrameFactory::create_null_frame();
-    QUICFrameUPtr frame2 = QUICFrameFactory::create_null_frame();
+    const char data1[]        = "this is a test data";
+    const char data2[]        = "THIS IS ANOTHER TEST DATA";
+    QUICFrame *frame          = nullptr;
+    QUICStreamFrame *frame1   = nullptr;
+    QUICStreamFrame *frame2   = nullptr;
+    uint8_t frame_buf2[QUICFrame::MAX_INSTANCE_SIZE];
 
     // Write data1
-    write_buffer->write(data1, 1024);
+    write_buffer->write(data1, sizeof(data1));
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     // Generate STREAM frame
-    frame1 = stream->generate_frame(level, 4096, 4096);
+    frame  = stream->generate_frame(frame_buf, level, 4096, 4096, 0);
+    frame1 = static_cast<QUICStreamFrame *>(frame);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->generate_frame(level, 4096, 4096) == nullptr);
+    CHECK(stream->generate_frame(frame_buf, level, 4096, 4096, 0) == nullptr);
+    CHECK(stream->will_generate_frame(level, 0) == false);
+    stream->on_frame_lost(frame->id());
+    CHECK(stream->will_generate_frame(level, 0) == true);
+
     // Write data2
-    write_buffer->write(data1, 1024);
+    write_buffer->write(data2, sizeof(data2));
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
     // Lost the frame
     stream->on_frame_lost(frame->id());
     // Regenerate a frame
-    frame2 = stream->generate_frame(level, 4096, 4096);
+    frame = stream->generate_frame(frame_buf2, level, 4096, 4096, 0);
     // Lost data should be resent first
+    frame2 = static_cast<QUICStreamFrame *>(frame);
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(frame1->offset() == frame2->offset());
     CHECK(frame1->data_length() == frame2->data_length());
-    CHECK(memcmp(frame1->data(), frame2->data(), frame1->data_length());
+    CHECK(memcmp(frame1->data(), frame2->data(), frame1->data_length()));
   }
-  */
 
   SECTION("Retransmit RESET_STREAM frame")
   {

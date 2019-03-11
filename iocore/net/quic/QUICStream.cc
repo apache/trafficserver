@@ -585,7 +585,8 @@ QUICBidirectionalStream::reenable(VIO *vio)
 bool
 QUICBidirectionalStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
-  return this->_local_flow_controller.will_generate_frame(level, timestamp) || (this->_write_vio.get_reader()->read_avail() > 0);
+  return this->_local_flow_controller.will_generate_frame(level, timestamp) || !this->is_retransmited_frame_queue_empty() ||
+         (this->_write_vio.get_reader()->read_avail() > 0);
 }
 
 QUICFrame *
@@ -914,7 +915,7 @@ QUICCryptoStream::write(const uint8_t *buf, int64_t len)
 bool
 QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
-  return this->_write_buffer_reader->is_read_avail_more_than(0);
+  return this->_write_buffer_reader->is_read_avail_more_than(0) || !this->is_retransmited_frame_queue_empty();
 }
 
 /**
