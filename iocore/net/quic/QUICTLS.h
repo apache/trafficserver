@@ -57,11 +57,12 @@ public:
   void set_local_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp) override;
   void set_remote_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp) override;
 
+  const char *session_file() const;
+
   // FIXME Should not exist
   SSL *ssl_handle();
 
   // QUICHandshakeProtocol
-
   int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in) override;
   void reset() override;
   bool is_handshake_finished() const override;
@@ -77,6 +78,8 @@ private:
   QUICKeyGenerator _keygen_for_client = QUICKeyGenerator(QUICKeyGenerator::Context::CLIENT);
   QUICKeyGenerator _keygen_for_server = QUICKeyGenerator(QUICKeyGenerator::Context::SERVER);
   const EVP_MD *_get_handshake_digest() const;
+
+  const char *_session_file;
 
   int _read_early_data();
   int _write_early_data();

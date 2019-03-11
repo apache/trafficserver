@@ -330,7 +330,7 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
 
 QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx,
                  const char *session_file)
-  : QUICHandshakeProtocol(pp_key_info), _ssl(SSL_new(ssl_ctx)), _netvc_context(nvc_ctx)
+  : QUICHandshakeProtocol(pp_key_info), _session_file(session_file), _ssl(SSL_new(ssl_ctx)), _netvc_context(nvc_ctx)
 {
   ink_assert(this->_netvc_context != NET_VCONNECTION_UNSET);
 
