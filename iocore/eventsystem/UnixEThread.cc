@@ -199,6 +199,7 @@ EThread::execute_regular()
   ink_hrtime next_time = 0;
 
   // give priority to immediate events
+  has_event_loop = true;
   for (;;) {
     if (unlikely(shutdown_event_system == true)) {
       return;

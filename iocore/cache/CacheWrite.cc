@@ -1044,7 +1044,7 @@ Lagain:
 Lwait:
   int ret = EVENT_CONT;
   while ((c = tocall.dequeue())) {
-    if (event == EVENT_CALL && c->mutex->thread_holding == mutex->thread_holding)
+    if (event == EVENT_CALL && c->mutex->thread_holding == mutex->thread_holding) {
       ret = EVENT_RETURN;
     } else {
       eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);

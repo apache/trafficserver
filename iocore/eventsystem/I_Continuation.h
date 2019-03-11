@@ -46,6 +46,9 @@ class Processor;
 class ProxyMutex;
 class EThread;
 
+extern EThread *this_ethread();
+extern EThread *this_event_thread();
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //  Constants and Type Definitions
@@ -132,6 +135,30 @@ public:
     needs to be thread local while this continuation is running
   */
   ContFlags control_flags;
+
+  EThread *thread_affinity = this_event_thread();
+
+  bool
+  setThreadAffinity(EThread *ethread)
+  {
+    if (ethread != nullptr) {
+      thread_affinity = ethread;
+      return true;
+    }
+    return false;
+  }
+
+  EThread *
+  getThreadAffinity()
+  {
+    return thread_affinity;
+  }
+
+  void
+  clearThreadAffinity()
+  {
+    thread_affinity = nullptr;
+  }
 
   /**
     Receives the event code and data for an Event.
