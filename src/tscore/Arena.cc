@@ -133,11 +133,11 @@ Arena::free(void *mem, size_t size)
 
     b = m_blocks;
     while (b->next) {
+      if (b->m_water_level == ((char *)mem + size)) {
+        b->m_water_level = (char *)mem;
+        return;
+      }
       b = b->next;
-    }
-
-    if (b->m_water_level == ((char *)mem + size)) {
-      b->m_water_level = (char *)mem;
     }
   }
 }
