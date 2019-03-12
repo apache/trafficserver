@@ -81,10 +81,6 @@ protected:
   QUICOffset _send_offset                      = 0;
   QUICOffset _reordered_bytes                  = 0;
 
-  // Fragments of received STREAM frame (offset is unmatched)
-  // TODO: Consider to replace with ts/RbTree.h or other data structure
-  QUICIncomingStreamFrameBuffer _received_stream_frame_buffer;
-
   void _records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame);
   void _records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame);
   void _records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame);

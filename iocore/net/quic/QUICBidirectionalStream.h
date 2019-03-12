@@ -92,6 +92,10 @@ private:
   QUICLocalStreamFlowController _local_flow_controller;
   uint64_t _flow_control_buffer_size = 1024;
 
+  // Fragments of received STREAM frame (offset is unmatched)
+  // TODO: Consider to replace with ts/RbTree.h or other data structure
+  QUICIncomingStreamFrameBuffer _received_stream_frame_buffer;
+
   // FIXME Unidirectional streams should use either ReceiveStreamState or SendStreamState
   QUICBidirectionalStreamStateMachine _state;
 
