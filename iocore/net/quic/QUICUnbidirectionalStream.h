@@ -96,8 +96,6 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
-  void stop_sending(QUICStreamErrorUPtr error) override;
-
   // QUICTransferProgressProvider
   bool is_transfer_goal_set() const override;
   uint64_t transfer_progress() const override;
@@ -111,6 +109,8 @@ public:
   virtual void on_eos() override;
 
   QUICOffset largest_offset_received() const override;
+
+  void stop_sending(QUICStreamErrorUPtr error) override;
 
 private:
   QUICStreamErrorUPtr _stop_sending_reason = nullptr;
