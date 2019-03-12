@@ -56,8 +56,8 @@ public:
   /*
    * QUICApplication need to call one of these functions when it process VC_EVENT_*
    */
-  virtual void on_read() = 0;
-  virtual void on_eos()  = 0;
+  virtual void on_read();
+  virtual void on_eos();
 
   virtual QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame);
   virtual QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame);
@@ -67,11 +67,11 @@ public:
   virtual QUICConnectionErrorUPtr recv(const QUICCryptoFrame &frame);
 
   QUICOffset reordered_bytes() const;
-  virtual QUICOffset largest_offset_received() const = 0;
-  virtual QUICOffset largest_offset_sent() const     = 0;
+  virtual QUICOffset largest_offset_received() const;
+  virtual QUICOffset largest_offset_sent() const;
 
-  virtual void stop_sending(QUICStreamErrorUPtr error) = 0;
-  virtual void reset(QUICStreamErrorUPtr error)        = 0;
+  virtual void stop_sending(QUICStreamErrorUPtr error);
+  virtual void reset(QUICStreamErrorUPtr error);
 
   LINK(QUICStream, link);
 

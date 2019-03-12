@@ -151,6 +151,38 @@ QUICStream::_records_crypto_frame(QUICEncryptionLevel level, const QUICCryptoFra
   this->_records_frame(frame.id(), std::move(info));
 }
 
+void
+QUICStream::reset(QUICStreamErrorUPtr error)
+{
+}
+
+void
+QUICStream::stop_sending(QUICStreamErrorUPtr error)
+{
+}
+
+QUICOffset
+QUICStream::largest_offset_received() const
+{
+  return 0;
+}
+
+QUICOffset
+QUICStream::largest_offset_sent() const
+{
+  return 0;
+}
+
+void
+QUICStream::on_eos()
+{
+}
+
+void
+QUICStream::on_read()
+{
+}
+
 //
 // QUICStreamVConnection
 //

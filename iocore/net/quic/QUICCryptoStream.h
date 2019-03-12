@@ -52,15 +52,6 @@ public:
   int64_t read(uint8_t *buf, int64_t len);
   int64_t write(const uint8_t *buf, int64_t len);
 
-  void stop_sending(QUICStreamErrorUPtr error) override;
-  void reset(QUICStreamErrorUPtr error) override;
-
-  QUICOffset largest_offset_received() const override;
-  QUICOffset largest_offset_sent() const override;
-
-  void on_eos() override;
-  void on_read() override;
-
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
