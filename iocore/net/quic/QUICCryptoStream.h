@@ -70,8 +70,6 @@ private:
   void _on_frame_acked(QUICFrameInformationUPtr &info) override;
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 
-  void _records_crypto_frame(QUICEncryptionLevel level, const QUICCryptoFrame &frame);
-
   QUICStreamErrorUPtr _reset_reason = nullptr;
   QUICOffset _send_offset           = 0;
 

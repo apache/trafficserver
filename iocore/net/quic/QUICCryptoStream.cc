@@ -164,18 +164,6 @@ QUICCryptoStream::_on_frame_lost(QUICFrameInformationUPtr &info)
   this->save_frame_info(std::move(info));
 }
 
-void
-QUICCryptoStream::_records_crypto_frame(QUICEncryptionLevel level, const QUICCryptoFrame &frame)
-{
-  QUICFrameInformationUPtr info      = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
-  info->type                         = QUICFrameType::CRYPTO;
-  info->level                        = level;
-  CryptoFrameInfo *crypto_frame_info = reinterpret_cast<CryptoFrameInfo *>(info->data);
-  crypto_frame_info->offset          = frame.offset();
-  crypto_frame_info->block           = frame.data();
-  this->_records_frame(frame.id(), std::move(info));
-}
-
 QUICOffset
 QUICCryptoStream::largest_offset_received() const
 {

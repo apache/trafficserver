@@ -95,10 +95,6 @@ private:
   // FIXME Unidirectional streams should use either ReceiveStreamState or SendStreamState
   QUICBidirectionalStreamStateMachine _state;
 
-  void _records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame);
-  void _records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame);
-  void _records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame);
-
   // QUICFrameGenerator
   void _on_frame_acked(QUICFrameInformationUPtr &info) override;
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
