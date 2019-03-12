@@ -102,6 +102,55 @@ QUICStream::recv(const QUICCryptoFrame &frame)
   return nullptr;
 }
 
+void
+QUICStream::_records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame)
+{
+  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
+  info->type                    = frame.type();
+  info->level                   = level;
+  StreamFrameInfo *frame_info   = reinterpret_cast<StreamFrameInfo *>(info->data);
+  frame_info->stream_id         = frame.stream_id();
+  frame_info->offset            = frame.offset();
+  frame_info->has_fin           = frame.has_fin_flag();
+  frame_info->block             = frame.data();
+  this->_records_frame(frame.id(), std::move(info));
+}
+
+void
+QUICStream::_records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame)
+{
+  QUICFrameInformationUPtr info  = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
+  info->type                     = frame.type();
+  info->level                    = level;
+  RstStreamFrameInfo *frame_info = reinterpret_cast<RstStreamFrameInfo *>(info->data);
+  frame_info->error_code         = frame.error_code();
+  frame_info->final_offset       = frame.final_offset();
+  this->_records_frame(frame.id(), std::move(info));
+}
+
+void
+QUICStream::_records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame)
+{
+  QUICFrameInformationUPtr info    = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
+  info->type                       = frame.type();
+  info->level                      = level;
+  StopSendingFrameInfo *frame_info = reinterpret_cast<StopSendingFrameInfo *>(info->data);
+  frame_info->error_code           = frame.error_code();
+  this->_records_frame(frame.id(), std::move(info));
+}
+
+void
+QUICStream::_records_crypto_frame(QUICEncryptionLevel level, const QUICCryptoFrame &frame)
+{
+  QUICFrameInformationUPtr info      = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
+  info->type                         = QUICFrameType::CRYPTO;
+  info->level                        = level;
+  CryptoFrameInfo *crypto_frame_info = reinterpret_cast<CryptoFrameInfo *>(info->data);
+  crypto_frame_info->offset          = frame.offset();
+  crypto_frame_info->block           = frame.data();
+  this->_records_frame(frame.id(), std::move(info));
+}
+
 //
 // QUICStreamVConnection
 //

@@ -486,43 +486,6 @@ QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level,
 }
 
 void
-QUICBidirectionalStream::_records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame)
-{
-  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
-  info->type                    = frame.type();
-  info->level                   = level;
-  StreamFrameInfo *frame_info   = reinterpret_cast<StreamFrameInfo *>(info->data);
-  frame_info->stream_id         = frame.stream_id();
-  frame_info->offset            = frame.offset();
-  frame_info->has_fin           = frame.has_fin_flag();
-  frame_info->block             = frame.data();
-  this->_records_frame(frame.id(), std::move(info));
-}
-
-void
-QUICBidirectionalStream::_records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame)
-{
-  QUICFrameInformationUPtr info  = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
-  info->type                     = frame.type();
-  info->level                    = level;
-  RstStreamFrameInfo *frame_info = reinterpret_cast<RstStreamFrameInfo *>(info->data);
-  frame_info->error_code         = frame.error_code();
-  frame_info->final_offset       = frame.final_offset();
-  this->_records_frame(frame.id(), std::move(info));
-}
-
-void
-QUICBidirectionalStream::_records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame)
-{
-  QUICFrameInformationUPtr info    = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
-  info->type                       = frame.type();
-  info->level                      = level;
-  StopSendingFrameInfo *frame_info = reinterpret_cast<StopSendingFrameInfo *>(info->data);
-  frame_info->error_code           = frame.error_code();
-  this->_records_frame(frame.id(), std::move(info));
-}
-
-void
 QUICBidirectionalStream::_on_frame_acked(QUICFrameInformationUPtr &info)
 {
   StreamFrameInfo *frame_info = nullptr;
