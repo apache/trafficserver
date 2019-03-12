@@ -127,8 +127,7 @@ QUICSendStream::state_stream_closed(int event, void *data)
 bool
 QUICSendStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
-  return this->_remote_flow_controller.will_generate_frame(level, timestamp) || !this->is_retransmited_frame_queue_empty() ||
-         (this->_write_vio.get_reader()->read_avail() > 0);
+  return !this->is_retransmited_frame_queue_empty() || (this->_write_vio.get_reader()->read_avail() > 0);
 }
 
 QUICFrame *
@@ -752,4 +751,10 @@ QUICReceiveStream::_on_frame_acked(QUICFrameInformationUPtr &info)
     ink_assert(!"unknown frame type");
     break;
   }
+}
+
+void
+QUICReceiveStream::stop_sending(QUICStreamErrorUPtr error)
+{
+  this->_stop_sending_reason = std::move(error);
 }
