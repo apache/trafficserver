@@ -131,4 +131,3 @@ protected:
         QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
 
 extern const uint32_t MAX_STREAM_FRAME_OVERHEAD;
-extern const uint32_t MAX_CRYPTO_FRAME_OVERHEAD;

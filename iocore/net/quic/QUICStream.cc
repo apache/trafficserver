@@ -26,7 +26,6 @@
 #include "QUICStreamManager.h"
 
 constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
-constexpr uint32_t MAX_CRYPTO_FRAME_OVERHEAD = 16;
 
 QUICStream::QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid) : _connection_info(cinfo), _id(sid) {}
 
