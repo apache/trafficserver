@@ -24,7 +24,7 @@
 #include "catch.hpp"
 
 #include "quic/QUICBidirectionalStream.h"
-#include "quic/QUICUnbidirectionalStream.h"
+#include "quic/QUICUnidirectionalStream.h"
 #include "quic/Mock.h"
 
 TEST_CASE("QUICBidiStream", "[quic]")

@@ -21,7 +21,7 @@
  *  limitations under the License.
  */
 
-#include "QUICUnbidirectionalStream.h"
+#include "QUICUnidirectionalStream.h"
 
 //
 // QUICSendStream
