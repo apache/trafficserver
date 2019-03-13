@@ -89,7 +89,7 @@ libquic_a_SOURCES = \
   QUICAddrVerifyState.cc \
   QUICBidirectionalStream.cc \
   QUICCryptoStream.cc \
-  QUICUnbidirectionalStream.cc
+  QUICUnidirectionalStream.cc
 
 #
 # Check Programs
