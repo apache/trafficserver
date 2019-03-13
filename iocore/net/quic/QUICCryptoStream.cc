@@ -23,6 +23,8 @@
 
 #include "QUICCryptoStream.h"
 
+constexpr uint32_t MAX_CRYPTO_FRAME_OVERHEAD = 16;
+
 //
 // QUICCryptoStream
 //
