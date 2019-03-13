@@ -126,7 +126,9 @@ ProcessManager::stop()
     ats_free(sig);
   }
 
-  ats_free(mgmt_signal_queue);
+  LLQ *tmp_queue    = mgmt_signal_queue;
+  mgmt_signal_queue = nullptr;
+  delete_queue(tmp_queue);
 }
 
 /*
