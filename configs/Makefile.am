@@ -29,7 +29,7 @@ nodist_sysconf_DATA = \
 dist_sysconf_DATA =	\
 	cache.config.default \
 	hosting.config.default \
-	ip_allow.config.default \
+	ip_allow.yaml.default \
 	logging.yaml.default \
 	parent.config.default \
 	plugin.config.default \
