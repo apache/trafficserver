@@ -24,7 +24,7 @@
 #include "catch.hpp"
 
 #include "quic/QUICIncomingFrameBuffer.h"
-#include "quic/QUICStream.h"
+#include "quic/QUICBidirectionalStream.h"
 #include <memory>
 
 TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
