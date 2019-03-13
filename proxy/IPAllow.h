@@ -32,17 +32,20 @@
 
 #include <string>
 #include <string_view>
-#include <set>
 #include <vector>
-#include <atomic>
 
 #include "hdrs/HTTP.h"
 #include "ProxyConfig.h"
 #include "tscore/IpMap.h"
 #include "tscpp/util/TextView.h"
+#include "tscore/ts_file.h"
 
 // forward declare in name only so it can be a friend.
 struct IpAllowUpdate;
+namespace YAML
+{
+class Node;
+}
 
 /** Singleton class for access controls.
  */
@@ -50,10 +53,7 @@ class IpAllow : public ConfigInfo
 {
   friend struct IpAllowUpdate;
 
-  // These point in to the bulk loaded configuration file, which therefore needs to be kept around
-  // until the configuration is destructed. The number is expected to be small enough a vector is the
-  // best container.
-  using MethodNames = std::vector<std::string_view>;
+  using MethodNames = std::vector<std::string>;
 
   static constexpr uint32_t ALL_METHOD_MASK = ~0; // Mask for all methods.
 
@@ -63,7 +63,8 @@ class IpAllow : public ConfigInfo
   struct Record {
     /// Default constructor.
     /// Present only to make Vec<> happy, do not use.
-    Record() = default;
+    Record()              = default;
+    Record(Record &&that) = default;
     explicit Record(uint32_t method_mask);
     Record(uint32_t method_mask, int line, MethodNames &&nonstandard_methods, bool deny_nonstandard_methods);
 
@@ -87,6 +88,19 @@ public:
   static constexpr ts::TextView OPT_ACTION_DENY{"ip_deny"};
   static constexpr ts::TextView OPT_METHOD{"method"};
   static constexpr ts::TextView OPT_METHOD_ALL{"all"};
+
+  static constexpr ts::TextView YAML_TAG_ROOT{"ip_addr_acl"};
+  static constexpr ts::TextView YAML_TAG_IP_ADDRS{"ip_addrs"};
+  static constexpr ts::TextView YAML_TAG_APPLY{"apply"};
+  static constexpr ts::TextView YAML_VALUE_APPLY_IN{"in"};
+  static constexpr ts::TextView YAML_VALUE_APPLY_OUT{"out"};
+  static constexpr ts::TextView YAML_TAG_ACTION{"action"};
+  static constexpr ts::TextView YAML_VALUE_ACTION_ALLOW{"allow"};
+  static constexpr ts::TextView YAML_VALUE_ACTION_DENY{"deny"};
+  static constexpr ts::TextView YAML_TAG_METHODS{"methods"};
+  static constexpr ts::TextView YAML_VALUE_METHODS_ALL{"all"};
+
+  static constexpr const char *MODULE_NAME = "IPAllow";
 
   /** An access control record and support data.
    * The primary point of this is to hold the backing configuration in memory while the ACL
@@ -166,21 +180,22 @@ public:
    */
   static bool isAcceptCheckEnabled();
 
+  const ts::file::path &get_config_file() const;
+
 private:
   static size_t configid;               ///< Configuration ID for update management.
   static const Record ALLOW_ALL_RECORD; ///< Static record that allows all access.
   static bool accept_check_p;           ///< @c true if deny all can be enforced during accept.
 
-  static constexpr const char *MODULE_NAME = "IPAllow";
-
   void PrintMap(IpMap *map);
   int BuildTable();
+  int ATSBuildTable(const std::string &);
+  int YAMLBuildTable(const std::string &);
+  bool YAMLLoadEntry(const YAML::Node &);
+  bool YAMLLoadIPAddrRange(const YAML::Node &, IpMap *map, void *mark);
+  bool YAMLLoadMethod(const YAML::Node &node, Record &rec);
 
-  ats_scoped_str config_file_path; ///< Path to configuration file.
-  /// The file contents so records can point in to this instead of separately allocating.
-  ats_scoped_str file_buff;
-  //  const char *module_name{nullptr};
-  //  const char *action{nullptr};
+  ts::file::path config_file; ///< Path to configuration file.
   IpMap _src_map;
   IpMap _dst_map;
   std::vector<Record> _src_acls;
@@ -314,4 +329,10 @@ inline auto
 IpAllow::makeAllowAllACL() -> ACL
 {
   return {&ALLOW_ALL_RECORD, nullptr};
+}
+
+inline const ts::file::path &
+IpAllow::get_config_file() const
+{
+  return config_file;
 }

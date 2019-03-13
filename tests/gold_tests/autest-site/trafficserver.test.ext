@@ -214,7 +214,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
-    fname = "ip_allow.config"
+    fname = "ip_allow.yaml"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 

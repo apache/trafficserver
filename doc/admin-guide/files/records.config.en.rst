@@ -1801,7 +1801,7 @@ Security
    .. important::
 
        If you enable this option, then you must also specify
-       a filtering rule in the ip_allow.config file to allow only certain
+       a filtering rule in the ip_allow.yaml file to allow only certain
        machines to push content into the cache.
 
 .. ts:cv:: CONFIG proxy.config.http.max_post_size INT 0

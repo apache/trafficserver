@@ -76,7 +76,7 @@ initializeRegistry()
   registerFile("proxy.config.socks.socks_config_file", "socks.config");
   registerFile("records.config", "records.config");
   registerFile("proxy.config.cache.control.filename", "cache.config");
-  registerFile("proxy.config.cache.ip_allow.filename", "ip_allow.config");
+  registerFile("proxy.config.cache.ip_allow.filename", "ip_allow.yaml");
   registerFile("proxy.config.http.parent_proxy.file", "parent.config");
   registerFile("proxy.config.url_remap.filename", "remap.config");
   registerFile("", "volume.config");
