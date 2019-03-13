@@ -28,9 +28,9 @@
 static constexpr char tag[] = "quic_ppp";
 
 bool
-QUICPacketPayloadProtector::_protect(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain,
-                                     size_t plain_len, uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key,
-                                     const uint8_t *iv, size_t iv_len, const EVP_CIPHER *aead, size_t tag_len) const
+QUICPacketPayloadProtector::_protect(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, Ptr<IOBufferBlock> plain,
+                                     uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key, const uint8_t *iv,
+                                     size_t iv_len, const EVP_CIPHER *aead, size_t tag_len) const
 {
   EVP_CIPHER_CTX *aead_ctx;
   int len;
@@ -54,12 +54,17 @@ QUICPacketPayloadProtector::_protect(uint8_t *cipher, size_t &cipher_len, size_t
   if (!EVP_EncryptUpdate(aead_ctx, nullptr, &len, ad, ad_len)) {
     return false;
   }
-  if (!EVP_EncryptUpdate(aead_ctx, cipher, &len, plain, plain_len)) {
-    return false;
-  }
-  cipher_len = len;
 
-  if (!EVP_EncryptFinal_ex(aead_ctx, cipher + len, &len)) {
+  cipher_len = 0;
+  while (plain) {
+    if (!EVP_EncryptUpdate(aead_ctx, cipher + cipher_len, &len, reinterpret_cast<unsigned char *>(plain->buf()), plain->size())) {
+      return false;
+    }
+    cipher_len += len;
+    plain = plain->next;
+  }
+
+  if (!EVP_EncryptFinal_ex(aead_ctx, cipher + cipher_len, &len)) {
     return false;
   }
   cipher_len += len;

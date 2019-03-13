@@ -89,6 +89,14 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       result = QUICPacketCreationResult::UNSUPPORTED;
     }
   } else {
+    Ptr<IOBufferBlock> plain         = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    Ptr<IOBufferBlock> protected_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    protected_ibb->set_internal(reinterpret_cast<void *>(const_cast<uint8_t *>(header->payload())), header->payload_size(),
+                                BUFFER_SIZE_NOT_ALLOCATED);
+    Ptr<IOBufferBlock> header_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    header_ibb->set_internal(reinterpret_cast<void *>(const_cast<uint8_t *>(header->buf())), header->size(),
+                             BUFFER_SIZE_NOT_ALLOCATED);
+
     switch (header->type()) {
     case QUICPacketType::STATELESS_RESET:
     case QUICPacketType::RETRY:
@@ -99,9 +107,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       break;
     case QUICPacketType::PROTECTED:
       if (this->_pp_key_info.is_decryption_key_available(header->key_phase())) {
-        if (this->_pp_protector.unprotect(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
-                                          header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                          header->key_phase())) {
+        plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
+        memcpy(plain_txt.get(), plain->buf(), plain->size());
+        plain_txt_len = plain->size();
+        if (plain != nullptr) {
           result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::FAILED;
@@ -113,9 +122,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
     case QUICPacketType::INITIAL:
       if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL)) {
         if (QUICTypeUtil::is_supported_version(header->version())) {
-          if (this->_pp_protector.unprotect(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
-                                            header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                            QUICKeyPhase::INITIAL)) {
+          plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
+          memcpy(plain_txt.get(), plain->buf(), plain->size());
+          plain_txt_len = plain->size();
+          if (plain != nullptr) {
             result = QUICPacketCreationResult::SUCCESS;
           } else {
             result = QUICPacketCreationResult::FAILED;
@@ -129,9 +139,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       break;
     case QUICPacketType::HANDSHAKE:
       if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::HANDSHAKE)) {
-        if (this->_pp_protector.unprotect(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
-                                          header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                          QUICKeyPhase::HANDSHAKE)) {
+        plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
+        memcpy(plain_txt.get(), plain->buf(), plain->size());
+        plain_txt_len = plain->size();
+        if (plain != nullptr) {
           result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::FAILED;
@@ -142,9 +153,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       break;
     case QUICPacketType::ZERO_RTT_PROTECTED:
       if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::ZERO_RTT)) {
-        if (this->_pp_protector.unprotect(plain_txt.get(), plain_txt_len, max_plain_txt_len, header->payload(),
-                                          header->payload_size(), header->packet_number(), header->buf(), header->size(),
-                                          QUICKeyPhase::ZERO_RTT)) {
+        plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
+        memcpy(plain_txt.get(), plain->buf(), plain->size());
+        plain_txt_len = plain->size();
+        if (plain != nullptr) {
           result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::IGNORED;
@@ -298,21 +310,28 @@ QUICPacketFactory::_create_unprotected_packet(QUICPacketHeaderUPtr header)
 QUICPacketUPtr
 QUICPacketFactory::_create_encrypted_packet(QUICPacketHeaderUPtr header, bool retransmittable, bool probing)
 {
-  // TODO: use pmtu of UnixNetVConnection
-  size_t max_cipher_txt_len = 2048;
-  ats_unique_buf cipher_txt = ats_unique_malloc(max_cipher_txt_len);
-  size_t cipher_txt_len     = 0;
-
   QUICConnectionId dcid = header->destination_cid();
   QUICConnectionId scid = header->source_cid();
   QUICVDebug(dcid, scid, "Encrypting %s packet #%" PRIu64 " using %s", QUICDebugNames::packet_type(header->type()),
              header->packet_number(), QUICDebugNames::key_phase(header->key_phase()));
 
   QUICPacket *packet = nullptr;
-  if (this->_pp_protector.protect(cipher_txt.get(), cipher_txt_len, max_cipher_txt_len, header->payload(), header->payload_size(),
-                                  header->packet_number(), header->buf(), header->size(), header->key_phase())) {
+
+  Ptr<IOBufferBlock> payload_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  payload_ibb->set_internal(reinterpret_cast<void *>(const_cast<uint8_t *>(header->payload())), header->payload_size(),
+                            BUFFER_SIZE_NOT_ALLOCATED);
+
+  Ptr<IOBufferBlock> header_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  header_ibb->set_internal(reinterpret_cast<void *>(const_cast<uint8_t *>(header->buf())), header->size(),
+                           BUFFER_SIZE_NOT_ALLOCATED);
+
+  Ptr<IOBufferBlock> protected_payload =
+    this->_pp_protector.protect(header_ibb, payload_ibb, header->packet_number(), header->key_phase());
+  if (protected_payload != nullptr) {
+    ats_unique_buf cipher_txt = ats_unique_malloc(protected_payload->size());
+    memcpy(cipher_txt.get(), protected_payload->buf(), protected_payload->size());
     packet = quicPacketAllocator.alloc();
-    new (packet) QUICPacket(std::move(header), std::move(cipher_txt), cipher_txt_len, retransmittable, probing);
+    new (packet) QUICPacket(std::move(header), std::move(cipher_txt), protected_payload->size(), retransmittable, probing);
   } else {
     QUICDebug(dcid, scid, "Failed to encrypt a packet");
   }

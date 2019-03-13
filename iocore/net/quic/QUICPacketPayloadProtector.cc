@@ -27,48 +27,71 @@
 
 static constexpr char tag[] = "quic_ppp";
 
-bool
-QUICPacketPayloadProtector::protect(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain,
-                                    size_t plain_len, uint64_t pkt_num, const uint8_t *ad, size_t ad_len, QUICKeyPhase phase) const
+Ptr<IOBufferBlock>
+QUICPacketPayloadProtector::protect(Ptr<IOBufferBlock> unprotected_header, Ptr<IOBufferBlock> unprotected_payload, uint64_t pkt_num,
+                                    QUICKeyPhase phase) const
 {
+  Ptr<IOBufferBlock> protected_payload;
+  protected_payload = nullptr;
+
   size_t tag_len     = this->_pp_key_info.get_tag_len(phase);
   const uint8_t *key = this->_pp_key_info.encryption_key(phase);
   const uint8_t *iv  = this->_pp_key_info.encryption_iv(phase);
   size_t iv_len      = *this->_pp_key_info.encryption_iv_len(phase);
   if (!key) {
     Debug(tag, "Failed to encrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
-    return false;
+    return protected_payload;
   }
+
   const QUIC_EVP_CIPHER *aead = this->_pp_key_info.get_cipher(phase);
 
-  bool ret =
-    this->_protect(cipher, cipher_len, max_cipher_len, plain, plain_len, pkt_num, ad, ad_len, key, iv, iv_len, aead, tag_len);
-  if (!ret) {
+  protected_payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  protected_payload->alloc(iobuffer_size_to_index(unprotected_payload->size() + tag_len));
+
+  size_t written_len = 0;
+  if (!this->_protect(reinterpret_cast<uint8_t *>(protected_payload->start()), written_len, protected_payload->write_avail(),
+                      unprotected_payload, pkt_num, reinterpret_cast<uint8_t *>(unprotected_header->buf()),
+                      unprotected_header->size(), key, iv, iv_len, aead, tag_len)) {
     Debug(tag, "Failed to encrypt a packet #%" PRIu64, pkt_num);
+    protected_payload = nullptr;
+  } else {
+    protected_payload->fill(written_len);
   }
-  return ret;
+
+  return protected_payload;
 }
 
-bool
-QUICPacketPayloadProtector::unprotect(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher,
-                                      size_t cipher_len, uint64_t pkt_num, const uint8_t *ad, size_t ad_len,
+Ptr<IOBufferBlock>
+QUICPacketPayloadProtector::unprotect(Ptr<IOBufferBlock> unprotected_header, Ptr<IOBufferBlock> protected_payload, uint64_t pkt_num,
                                       QUICKeyPhase phase) const
 {
+  Ptr<IOBufferBlock> unprotected_payload;
+  unprotected_payload = nullptr;
+
   size_t tag_len     = this->_pp_key_info.get_tag_len(phase);
   const uint8_t *key = this->_pp_key_info.decryption_key(phase);
   const uint8_t *iv  = this->_pp_key_info.decryption_iv(phase);
   size_t iv_len      = *this->_pp_key_info.decryption_iv_len(phase);
   if (!key) {
     Debug(tag, "Failed to decrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
-    return false;
+    return unprotected_payload;
   }
   const QUIC_EVP_CIPHER *aead = this->_pp_key_info.get_cipher(phase);
-  bool ret =
-    this->_unprotect(plain, plain_len, max_plain_len, cipher, cipher_len, pkt_num, ad, ad_len, key, iv, iv_len, aead, tag_len);
-  if (!ret) {
+
+  unprotected_payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  unprotected_payload->alloc(iobuffer_size_to_index(protected_payload->size()));
+
+  size_t written_len = 0;
+  if (!this->_unprotect(reinterpret_cast<uint8_t *>(unprotected_payload->start()), written_len, unprotected_payload->write_avail(),
+                        reinterpret_cast<uint8_t *>(protected_payload->buf()), protected_payload->size(), pkt_num,
+                        reinterpret_cast<uint8_t *>(unprotected_header->buf()), unprotected_header->size(), key, iv, iv_len, aead,
+                        tag_len)) {
     Debug(tag, "Failed to decrypt a packet #%" PRIu64, pkt_num);
+    unprotected_header = nullptr;
+  } else {
+    unprotected_payload->fill(written_len);
   }
-  return ret;
+  return unprotected_payload;
 }
 
 /**
