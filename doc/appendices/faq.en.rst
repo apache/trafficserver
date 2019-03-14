@@ -225,6 +225,7 @@ Value             Meaning
 A     authorization failure
 C     connection to server failed
 D     dns failure
+L     loop detected
 F     request forbidden
 H     header syntax unacceptable
 N     no error

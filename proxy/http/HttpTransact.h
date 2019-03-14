@@ -149,6 +149,7 @@ enum ViaString_t {
   VIA_ERROR_TIMEOUT           = 'T',
   VIA_ERROR_CACHE_READ        = 'R',
   VIA_ERROR_MOVED_TEMPORARILY = 'M',
+  VIA_ERROR_LOOP_DETECTED     = 'L',
   //
   // Now the detailed stuff
   //
@@ -164,7 +165,6 @@ enum ViaString_t {
   // cache type
   VIA_DETAIL_CACHE_DESCRIPTOR_STRING = 'c',
   VIA_DETAIL_CACHE                   = 'C',
-  VIA_DETAIL_CLUSTER                 = 'L',
   VIA_DETAIL_PARENT                  = 'P',
   VIA_DETAIL_SERVER                  = 'S',
   // result of cache lookup
