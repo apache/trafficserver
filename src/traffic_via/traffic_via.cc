@@ -170,6 +170,7 @@ standardViaLookup(char flag)
     viaTable->viaData[(unsigned char)'F'] = "request forbidden";
     viaTable->viaData[(unsigned char)'R'] = "cache read error";
     viaTable->viaData[(unsigned char)'M'] = "moved temporarily";
+    viaTable->viaData[(unsigned char)'L'] = "looped detected";
     viaTable->viaData[(unsigned char)' '] = "unknown";
     break;
   default:

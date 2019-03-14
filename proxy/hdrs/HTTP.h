@@ -142,7 +142,6 @@ enum SquidLogCode {
   SQUID_LOG_ERR_NO_CLIENTS_BIG_OBJ    = 'r',
   SQUID_LOG_ERR_READ_ERROR            = 's',
   SQUID_LOG_ERR_CLIENT_ABORT          = 't', // Client side abort logging
-  SQUID_LOG_ERR_CLIENT_READ_ERROR     = 'J', // Client side abort logging
   SQUID_LOG_ERR_CONNECT_FAIL          = 'u',
   SQUID_LOG_ERR_INVALID_REQ           = 'v',
   SQUID_LOG_ERR_UNSUP_REQ             = 'w',
@@ -157,6 +156,8 @@ enum SquidLogCode {
   SQUID_LOG_ERR_PROXY_DENIED          = 'G',
   SQUID_LOG_ERR_WEBFETCH_DETECTED     = 'H',
   SQUID_LOG_ERR_FUTURE_1              = 'I',
+  SQUID_LOG_ERR_CLIENT_READ_ERROR     = 'J', // Client side abort logging
+  SQUID_LOG_ERR_LOOP_DETECTED         = 'K', // Loop or cycle detected, request came back to this server
   SQUID_LOG_ERR_UNKNOWN               = 'Z'
 };
 
