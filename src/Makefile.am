@@ -43,4 +43,3 @@ include traffic_logcat/Makefile.inc
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
-	$(CC_Clang_Tidy)

@@ -41,3 +41,5 @@ libwccp_a_SOURCES = \
 	WccpStatic.cc \
 	WccpUtil.h
 
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)
