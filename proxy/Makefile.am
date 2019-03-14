@@ -62,7 +62,7 @@ libproxy_a_SOURCES = \
 	ProxyClientSession.cc \
 	ProxyClientSession.h \
 	ProxyClientTransaction.cc \
-	ProxyClientTransaction \
+	ProxyClientTransaction.h \
 	ReverseProxy.cc \
 	ReverseProxy.h \
 	StatPages.cc \
@@ -164,3 +164,6 @@ install-data-hook:
 		chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgdatadir);\
 	fi
 	-echo "<TS_VERSION> $(PACKAGE_VERSION)" > $(DESTDIR)$(pkgsysconfdir)/trafficserver-release
+
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)
