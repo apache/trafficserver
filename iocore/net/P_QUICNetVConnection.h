@@ -289,11 +289,11 @@ private:
   uint32_t _minimum_quic_packet_size();
   uint64_t _maximum_stream_frame_data_size();
 
-  void _store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrame &frame,
-                    std::vector<QUICFrameInfo> &frames);
+  Ptr<IOBufferBlock> _store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_added, uint64_t &max_frame_size, QUICFrame &frame,
+                                  std::vector<QUICFrameInfo> &frames);
   QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size, std::vector<QUICFrameInfo> &frames);
   void _packetize_closing_frame();
-  QUICPacketUPtr _build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool retransmittable, bool probing,
+  QUICPacketUPtr _build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block, bool retransmittable, bool probing,
                                bool crypto);
 
   QUICConnectionErrorUPtr _recv_and_ack(QUICPacket &packet, bool *has_non_probing_frame = nullptr);

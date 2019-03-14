@@ -1460,18 +1460,29 @@ QUICNetVConnection::_state_closing_send_packet()
   return nullptr;
 }
 
-void
-QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &max_frame_size, QUICFrame &frame,
+Ptr<IOBufferBlock>
+QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_added, uint64_t &max_frame_size, QUICFrame &frame,
                                  std::vector<QUICFrameInfo> &frames)
 {
-  size_t l = 0;
-  frame.store(buf.get() + offset, &l, max_frame_size);
+  Ptr<IOBufferBlock> new_block = frame.to_io_buffer_block(max_frame_size);
+
+  size_added             = 0;
+  Ptr<IOBufferBlock> tmp = new_block;
+  while (tmp) {
+    size_added += new_block->size();
+    tmp = new_block->next;
+  }
+
+  if (parent_block == nullptr) {
+    parent_block = new_block;
+  } else {
+    parent_block->next = new_block;
+  }
 
   // frame should be stored because it's created with max_frame_size
-  ink_assert(l != 0);
+  ink_assert(size_added != 0);
 
-  offset += l;
-  max_frame_size -= l;
+  max_frame_size -= size_added;
 
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
     char msg[1024];
@@ -1480,6 +1491,11 @@ QUICNetVConnection::_store_frame(ats_unique_buf &buf, size_t &offset, uint64_t &
   }
 
   frames.emplace_back(frame.id(), frame.generated_by());
+
+  while (parent_block->next) {
+    parent_block = parent_block->next;
+  }
+  return parent_block;
 }
 
 QUICPacketUPtr
@@ -1499,10 +1515,11 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   }
   max_frame_size = std::min(max_frame_size, this->_maximum_stream_frame_data_size());
 
-  bool probing       = false;
-  int frame_count    = 0;
-  size_t len         = 0;
-  ats_unique_buf buf = ats_unique_malloc(max_packet_size);
+  bool probing    = false;
+  int frame_count = 0;
+  size_t len      = 0;
+  Ptr<IOBufferBlock> first_block;
+  Ptr<IOBufferBlock> last_block;
 
   if (!this->_has_ack_eliciting_packet_out) {
     // Sent too much ack_only packet. At this moment we need to packetize a ping frame
@@ -1510,6 +1527,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     this->_pinger.request(level);
   }
 
+  size_t size_added  = 0;
   bool ack_eliciting = false;
   bool crypto        = false;
   uint8_t frame_instance_buffer[QUICFrame::MAX_INSTANCE_SIZE]; // This is for a frame instance but not serialized frame data
@@ -1535,7 +1553,12 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
                       this->_remote_flow_controller->current_limit());
           ink_assert(ret == 0);
         }
-        this->_store_frame(buf, len, max_frame_size, *frame, frames);
+        last_block = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
+        len += size_added;
+
+        if (first_block == nullptr) {
+          first_block = last_block;
+        }
 
         // FIXME ACK frame should have priority
         if (frame->type() == QUICFrameType::STREAM) {
@@ -1574,20 +1597,27 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
       if (min_size > len) {
         // FIXME QUICNetVConnection should not know the actual type value of PADDING frame
-        memset(buf.get() + len, 0, min_size - len);
-        len += min_size - len;
+        Ptr<IOBufferBlock> pad_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+        pad_block->alloc(iobuffer_size_to_index(min_size - len));
+        memset(pad_block->start(), 0, pad_block->size());
+        last_block->next = pad_block;
+        len += pad_block->size();
       }
     } else {
       // Pad with PADDING frames to make sure payload length satisfy the minimum length for sampling for header protection
       if (3 > len) {
         // FIXME QUICNetVConnection should not know the actual type value of PADDING frame
-        memset(buf.get() + len, 0, 3 - len);
-        len += 3 - len;
+        Ptr<IOBufferBlock> pad_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+        ;
+        pad_block->alloc(iobuffer_size_to_index(3 - len));
+        memset(pad_block->start(), 0, pad_block->size());
+        last_block->next = pad_block;
+        len += pad_block->size();
       }
     }
 
     // Packet is retransmittable if it's not ack only packet
-    packet                              = this->_build_packet(level, std::move(buf), len, ack_eliciting, probing, crypto);
+    packet                              = this->_build_packet(level, first_block, ack_eliciting, probing, crypto);
     this->_has_ack_eliciting_packet_out = ack_eliciting;
   }
 
@@ -1607,17 +1637,18 @@ QUICNetVConnection::_packetize_closing_frame()
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   frame = QUICFrameFactory::create_connection_close_frame(frame_buf, *this->_connection_error);
 
-  uint32_t max_size  = this->_maximum_quic_packet_size();
-  ats_unique_buf buf = ats_unique_malloc(max_size);
+  uint32_t max_size = this->_maximum_quic_packet_size();
 
-  size_t len              = 0;
+  size_t size_added       = 0;
   uint64_t max_frame_size = static_cast<uint64_t>(max_size);
   std::vector<QUICFrameInfo> frames;
-  this->_store_frame(buf, len, max_frame_size, *frame, frames);
+  Ptr<IOBufferBlock> parent_block;
+  parent_block = nullptr;
+  parent_block = this->_store_frame(parent_block, size_added, max_frame_size, *frame, frames);
 
   QUICEncryptionLevel level = this->_hs_protocol->current_encryption_level();
   ink_assert(level != QUICEncryptionLevel::ZERO_RTT);
-  this->_the_final_packet = this->_build_packet(level, std::move(buf), len, true, false, false);
+  this->_the_final_packet = this->_build_packet(level, parent_block, true, false, false);
 }
 
 QUICConnectionErrorUPtr
@@ -1663,11 +1694,22 @@ QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_fram
 }
 
 QUICPacketUPtr
-QUICNetVConnection::_build_packet(QUICEncryptionLevel level, ats_unique_buf buf, size_t len, bool ack_eliciting, bool probing,
+QUICNetVConnection::_build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block, bool ack_eliciting, bool probing,
                                   bool crypto)
 {
   QUICPacketType type   = QUICTypeUtil::packet_type(level);
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
+
+  // FIXME Pass parent_block to create_x_packet
+  // No need to make a unique buf here
+  ats_unique_buf buf = ats_unique_malloc(2048);
+  uint8_t *raw_buf   = buf.get();
+  size_t len         = 0;
+  while (parent_block) {
+    memcpy(raw_buf + len, parent_block->buf(), parent_block->size());
+    len += parent_block->size();
+    parent_block = parent_block->next;
+  }
 
   switch (type) {
   case QUICPacketType::INITIAL: {

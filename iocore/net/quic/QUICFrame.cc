@@ -105,6 +105,22 @@ QUICFrame::type(const uint8_t *buf)
   }
 }
 
+Ptr<IOBufferBlock>
+QUICFrame::to_io_buffer_block(size_t limit) const
+{
+  // FIXME Each classes should override this and drop store().
+  // This just wraps store() for now.
+
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(limit));
+
+  size_t written_len = 0;
+  this->store(reinterpret_cast<uint8_t *>(block->start()), &written_len, limit);
+  block->fill(written_len);
+
+  return block;
+}
+
 int
 QUICFrame::debug_msg(char *msg, size_t msg_len) const
 {
