@@ -224,7 +224,6 @@ decodeViaHeader(const char *str)
 
   memcpy(Via, str, viaHdrLength);
   Via[viaHdrLength] = '\0'; // null terminate
-  printf("Via header is %s, Length is %zu\n", Via, viaHdrLength);
 
   // Via header inside square brackets
   if (Via[0] == '[' && Via[viaHdrLength - 1] == ']') {
@@ -232,6 +231,8 @@ decodeViaHeader(const char *str)
     Via++;
     Via[viaHdrLength] = '\0'; // null terminate the string after trimming
   }
+
+  printf("Via header is [%s], Length is %zu\n", Via, viaHdrLength);
 
   if (viaHdrLength == 5) {
     Via = strcat(Via, " "); // Add one space character before decoding via header
