@@ -193,24 +193,24 @@ TEST_CASE("QUICHandshakeProtocol")
     std::cout << "### Original Text" << std::endl;
     print_hex(original, sizeof(original));
 
-    uint8_t cipher[128] = {0}; // >= original len + EVP_AEAD_max_overhead
-    size_t cipher_len   = 0;
-    CHECK(ppp_client.protect(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
-                             QUICKeyPhase::PHASE_0));
+    Ptr<IOBufferBlock> original_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    original_ibb->set_internal(const_cast<uint8_t *>(original), sizeof(original), BUFFER_SIZE_NOT_ALLOCATED);
+    Ptr<IOBufferBlock> header_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    header_ibb->set_internal(const_cast<uint8_t *>(ad), sizeof(ad), BUFFER_SIZE_NOT_ALLOCATED);
+    Ptr<IOBufferBlock> cipher = ppp_client.protect(header_ibb, original_ibb, pkt_num, QUICKeyPhase::PHASE_0);
+    CHECK(cipher);
 
     std::cout << "### Encrypted Text" << std::endl;
-    print_hex(cipher, cipher_len);
+    print_hex(reinterpret_cast<uint8_t *>(cipher->buf()), cipher->size());
 
-    uint8_t plain[128] = {0};
-    size_t plain_len   = 0;
-    CHECK(
-      ppp_server.unprotect(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::PHASE_0));
+    Ptr<IOBufferBlock> plain = ppp_server.unprotect(header_ibb, cipher, pkt_num, QUICKeyPhase::PHASE_0);
+    CHECK(plain);
 
     std::cout << "### Decrypted Text" << std::endl;
-    print_hex(plain, plain_len);
+    print_hex(reinterpret_cast<uint8_t *>(plain->buf()), plain->size());
 
-    CHECK(sizeof(original) == (plain_len));
-    CHECK(memcmp(original, plain, plain_len) == 0);
+    CHECK(sizeof(original) == (plain->size()));
+    CHECK(memcmp(original, plain->buf(), plain->size()) == 0);
 
     // Teardown
     delete client;
@@ -327,29 +327,30 @@ TEST_CASE("QUICHandshakeProtocol")
     std::cout << "### Messages from server" << std::endl;
     print_hex(msg6.buf, msg6.offsets[4]);
 
+    Ptr<IOBufferBlock> original_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    original_ibb->set_internal(const_cast<uint8_t *>(original), sizeof(original), BUFFER_SIZE_NOT_ALLOCATED);
+    Ptr<IOBufferBlock> header_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    header_ibb->set_internal(const_cast<uint8_t *>(ad), sizeof(ad), BUFFER_SIZE_NOT_ALLOCATED);
+
     // encrypt - decrypt
     // client (encrypt) - server (decrypt)
     std::cout << "### Original Text" << std::endl;
     print_hex(original, sizeof(original));
 
-    uint8_t cipher[128] = {0}; // >= original len + EVP_AEAD_max_overhead
-    size_t cipher_len   = 0;
-    CHECK(ppp_client.protect(cipher, cipher_len, sizeof(cipher), original, sizeof(original), pkt_num, ad, sizeof(ad),
-                             QUICKeyPhase::PHASE_0));
+    Ptr<IOBufferBlock> cipher = ppp_client.protect(header_ibb, original_ibb, pkt_num, QUICKeyPhase::PHASE_0);
+    CHECK(cipher);
 
     std::cout << "### Encrypted Text" << std::endl;
-    print_hex(cipher, cipher_len);
+    print_hex(reinterpret_cast<uint8_t *>(cipher->buf()), cipher->size());
 
-    uint8_t plain[128] = {0};
-    size_t plain_len   = 0;
-    CHECK(
-      ppp_server.unprotect(plain, plain_len, sizeof(plain), cipher, cipher_len, pkt_num, ad, sizeof(ad), QUICKeyPhase::PHASE_0));
+    Ptr<IOBufferBlock> plain = ppp_server.unprotect(header_ibb, cipher, pkt_num, QUICKeyPhase::PHASE_0);
+    CHECK(plain);
 
     std::cout << "### Decrypted Text" << std::endl;
-    print_hex(plain, plain_len);
+    print_hex(reinterpret_cast<uint8_t *>(plain->buf()), plain->size());
 
-    CHECK(sizeof(original) == (plain_len));
-    CHECK(memcmp(original, plain, plain_len) == 0);
+    CHECK(sizeof(original) == plain->size());
+    CHECK(memcmp(original, plain->buf(), plain->size()) == 0);
 
     // Teardown
     // Make it back to the default settings
