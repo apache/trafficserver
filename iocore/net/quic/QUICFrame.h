@@ -56,6 +56,7 @@ public:
   virtual bool is_probing_frame() const;
   virtual bool is_flow_controlled() const;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const = 0;
+  virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const;
   virtual int debug_msg(char *msg, size_t msg_len) const;
   virtual void parse(const uint8_t *buf, size_t len){};
   virtual QUICFrameGenerator *generated_by();
