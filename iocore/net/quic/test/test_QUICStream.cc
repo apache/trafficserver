@@ -349,7 +349,7 @@ TEST_CASE("QUICBidiStream", "[quic]")
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(frame1->offset() == frame2->offset());
     CHECK(frame1->data_length() == frame2->data_length());
-    CHECK(memcmp(frame1->data(), frame2->data(), frame1->data_length()));
+    CHECK(memcmp(frame1->data()->buf(), frame2->data()->buf(), frame1->data_length()) == 0);
   }
 
   SECTION("Retransmit RESET_STREAM frame")
@@ -814,7 +814,7 @@ TEST_CASE("QUIC send only stream", "[quic]")
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(frame1->offset() == frame2->offset());
     CHECK(frame1->data_length() == frame2->data_length());
-    CHECK(memcmp(frame1->data(), frame2->data(), frame1->data_length()));
+    CHECK(memcmp(frame1->data()->buf(), frame2->data()->buf(), frame1->data_length()) == 0);
   }
 
   SECTION("Retransmit RESET_STREAM frame")
