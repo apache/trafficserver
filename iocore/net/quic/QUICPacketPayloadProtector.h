@@ -34,10 +34,10 @@ class QUICPacketPayloadProtector
 public:
   QUICPacketPayloadProtector(const QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info) {}
 
-  Ptr<IOBufferBlock> protect(Ptr<IOBufferBlock> unprotected_header, Ptr<IOBufferBlock> unprotected_payload, uint64_t pkt_num,
-                             QUICKeyPhase phase) const;
-  Ptr<IOBufferBlock> unprotect(Ptr<IOBufferBlock> unprotected_header, Ptr<IOBufferBlock> protected_payload, uint64_t pkt_num,
-                               QUICKeyPhase phase) const;
+  Ptr<IOBufferBlock> protect(const Ptr<IOBufferBlock> unprotected_header, const Ptr<IOBufferBlock> unprotected_payload,
+                             uint64_t pkt_num, QUICKeyPhase phase) const;
+  Ptr<IOBufferBlock> unprotect(const Ptr<IOBufferBlock> unprotected_header, const Ptr<IOBufferBlock> protected_payload,
+                               uint64_t pkt_num, QUICKeyPhase phase) const;
 
 private:
   const QUICPacketProtectionKeyInfo &_pp_key_info;
@@ -45,7 +45,7 @@ private:
   bool _unprotect(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
                   uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key, const uint8_t *iv, size_t iv_len,
                   const QUIC_EVP_CIPHER *aead, size_t tag_len) const;
-  bool _protect(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, Ptr<IOBufferBlock> plain, uint64_t pkt_num,
+  bool _protect(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const Ptr<IOBufferBlock> plain, uint64_t pkt_num,
                 const uint8_t *ad, size_t ad_len, const uint8_t *key, const uint8_t *iv, size_t iv_len, const QUIC_EVP_CIPHER *aead,
                 size_t tag_len) const;
 

@@ -28,8 +28,8 @@
 static constexpr char tag[] = "quic_ppp";
 
 Ptr<IOBufferBlock>
-QUICPacketPayloadProtector::protect(Ptr<IOBufferBlock> unprotected_header, Ptr<IOBufferBlock> unprotected_payload, uint64_t pkt_num,
-                                    QUICKeyPhase phase) const
+QUICPacketPayloadProtector::protect(const Ptr<IOBufferBlock> unprotected_header, const Ptr<IOBufferBlock> unprotected_payload,
+                                    uint64_t pkt_num, QUICKeyPhase phase) const
 {
   Ptr<IOBufferBlock> protected_payload;
   protected_payload = nullptr;
@@ -62,8 +62,8 @@ QUICPacketPayloadProtector::protect(Ptr<IOBufferBlock> unprotected_header, Ptr<I
 }
 
 Ptr<IOBufferBlock>
-QUICPacketPayloadProtector::unprotect(Ptr<IOBufferBlock> unprotected_header, Ptr<IOBufferBlock> protected_payload, uint64_t pkt_num,
-                                      QUICKeyPhase phase) const
+QUICPacketPayloadProtector::unprotect(const Ptr<IOBufferBlock> unprotected_header, const Ptr<IOBufferBlock> protected_payload,
+                                      uint64_t pkt_num, QUICKeyPhase phase) const
 {
   Ptr<IOBufferBlock> unprotected_payload;
   unprotected_payload = nullptr;
@@ -87,7 +87,7 @@ QUICPacketPayloadProtector::unprotect(Ptr<IOBufferBlock> unprotected_header, Ptr
                         reinterpret_cast<uint8_t *>(unprotected_header->buf()), unprotected_header->size(), key, iv, iv_len, aead,
                         tag_len)) {
     Debug(tag, "Failed to decrypt a packet #%" PRIu64, pkt_num);
-    unprotected_header = nullptr;
+    unprotected_payload = nullptr;
   } else {
     unprotected_payload->fill(written_len);
   }
