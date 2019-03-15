@@ -45,7 +45,7 @@ The return value from the ``format`` function is the log format object which
 may then be supplied to the appropriate ``log.*`` functions that define your
 logging destinations.
 
-A very simple exampe, which contains only the timestamp of when the event began
+A very simple example, which contains only the timestamp of when the event began
 and the canonical URL of the request, would look like:
 
 .. code:: yaml
@@ -233,7 +233,7 @@ Error Code
 The log fields of error code which is triggered session close or
 transaction close. The first byte of this field indicates that the error
 code is session level (``S``) or transaction level (``T``).
-When no error code is received or transmitted, these fileds are ``-``.
+When no error code is received or transmitted, these fields are ``-``.
 For HTTP/2, error code are described in RFC 7540 section 7.
 
 ===== =============== =========================================================
@@ -660,6 +660,7 @@ TCP Details
 ~~~~~~~~~~~
 
 .. _cqtr:
+.. _cqmpt:
 
 The following logging fields reveal information about the TCP layer of client,
 proxy, and origin server connections.
@@ -670,6 +671,10 @@ Field Source         Description
 cqtr  Client Request TCP reused status of the connection between the client and
                      |TS| proxy, indicating whether the request was delivered
                      through an already established connection.
+cqmpt Client Request Indicates the MPTCP state of the connection. ``-1`` means
+                     MPTCP was not enabled on the listening port, whereas ``0``
+                     and ``1`` indicates whether MPTCP was successfully
+                     negotiated or not.
 ===== ============== ==========================================================
 
 .. _admin-logging-fields-time:
@@ -698,7 +703,7 @@ The logging fields expose a variety of timing related information about client,
 proxy, and origin transactions. Variants of some of the fields provide timing
 resolution of the same underlying detail in milliseconds and seconds (both
 fractional and rounded-down integers). These variants are particularly useful
-in accomodating the emulation of other HTTP proxy softwares' logging formats.
+in accommodating the emulation of other HTTP proxy softwares' logging formats.
 
 Other fields in this category provide variously formatted timestamps of
 particular events within the current transaction (e.g. the time at which a
@@ -731,7 +736,7 @@ ms    Proxy                   Timestamp in milliseconds of a specific milestone
                               which milestone to use.
 msdms Proxy                   Difference in milliseconds between the timestamps
                               of two milestones. See note below about
-                              specifying which miletones to use.
+                              specifying which milestones to use.
 stms  Proxy-Origin Connection Time (in milliseconds) spent accessing the origin
                               server. Measured from the time the connection
                               between proxy and origin is established to the

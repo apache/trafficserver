@@ -117,6 +117,9 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->set_is_transparent(na->opt.f_inbound_transparent);
     vc->set_is_proxy_protocol(na->opt.f_proxy_protocol);
     vc->set_context(NET_VCONNECTION_IN);
+    if (na->opt.f_mptcp) {
+      vc->set_mptcp_state(); // Try to get the MPTCP state, and update accordingly
+    }
 #ifdef USE_EDGE_TRIGGER
     // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
     if (na->server.http_accept_filter) {
@@ -354,6 +357,9 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->options.ip_family   = opt.ip_family;
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
+    if (opt.f_mptcp) {
+      vc->set_mptcp_state(); // Try to get the MPTCP state, and update accordingly
+    }
     vc->accept_object = this;
 #ifdef USE_EDGE_TRIGGER
     // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
@@ -503,6 +509,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->options.ip_family   = opt.ip_family;
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
+    if (opt.f_mptcp) {
+      vc->set_mptcp_state(); // Try to get the MPTCP state, and update accordingly
+    }
+
 #ifdef USE_EDGE_TRIGGER
     // Set the vc as triggered and place it in the read ready queue later in case there is already data on the socket.
     if (server.http_accept_filter) {

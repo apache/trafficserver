@@ -465,12 +465,15 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
       _client_connection_id = p->connection_id();
     }
   }
-  // We've already verified that the netvc is !nullptr above, and netvc == ua_txn->get_netvc()
-  is_internal = netvc->get_is_internal_request();
 
-  // Collect log & stats information
-  client_tcp_reused         = !(ua_txn->is_first_transaction());
+  // Collect log & stats information. We've already verified that the netvc is !nullptr above,
+  // and netvc == ua_txn->get_netvc().
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+
+  is_internal       = netvc->get_is_internal_request();
+  mptcp_state       = netvc->get_mptcp_state();
+  client_tcp_reused = !(ua_txn->is_first_transaction());
+
   if (ssl_vc != nullptr) {
     client_connection_is_ssl = true;
     client_ssl_reused        = ssl_vc->getSSLSessionCacheHit();

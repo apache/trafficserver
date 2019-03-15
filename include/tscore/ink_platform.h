@@ -190,3 +190,12 @@ typedef unsigned int in_addr_t;
        // on various OSs (linux-4096,osx/bsd-1024,
        //                 windows-260,etc)
 #endif
+
+// This is a little bit of a hack for now, until MPTCP has landed upstream in Linux land.
+#ifndef MPTCP_ENABLED
+#if defined(linux)
+#define MPTCP_ENABLED 42
+#else
+#define MPTCP_ENABLED 0
+#endif
+#endif

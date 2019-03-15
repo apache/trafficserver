@@ -1725,6 +1725,21 @@ LogAccess::marshal_client_req_is_internal(char *buf)
   return INK_MIN_ALIGN;
 }
 
+int
+LogAccess::marshal_client_req_mptcp_state(char *buf)
+{
+  if (buf) {
+    int val = -1;
+
+    if (m_http_sm->mptcp_state.has_value()) {
+      val = m_http_sm->mptcp_state.value() ? 1 : 0;
+    } else {
+    }
+    marshal_int(buf, val);
+  }
+  return INK_MIN_ALIGN;
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 

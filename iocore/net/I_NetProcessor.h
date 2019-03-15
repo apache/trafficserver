@@ -97,6 +97,12 @@ public:
     */
     bool f_inbound_transparent;
 
+    /** MPTCP enabled on listener.
+        @internal For logging and metrics purposes to know whether the
+        listener enabled MPTCP or not.
+    */
+    bool f_mptcp;
+
     /// Proxy Protocol enabled
     bool f_proxy_protocol;
 
