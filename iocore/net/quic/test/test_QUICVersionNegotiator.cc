@@ -44,7 +44,7 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     packet_factory.set_version(QUIC_SUPPORTED_VERSIONS[0]);
     QUICPacketUPtr initial_packet =
       packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true);
-    vn.negotiate(initial_packet.get());
+    vn.negotiate(*initial_packet);
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
 
     // Validate version
@@ -63,7 +63,7 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     packet_factory.set_version(QUIC_SUPPORTED_VERSIONS[0]);
     QUICPacketUPtr initial_packet =
       packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true);
-    vn.negotiate(initial_packet.get());
+    vn.negotiate(*initial_packet);
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
 
     // Validate version
@@ -82,7 +82,7 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     packet_factory.set_version(QUIC_EXERCISE_VERSION);
     QUICPacketUPtr initial_packet =
       packet_factory.create_initial_packet({}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true);
-    vn.negotiate(initial_packet.get());
+    vn.negotiate(*initial_packet);
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
     // Validate version
@@ -132,7 +132,7 @@ TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
       packet_factory.create_version_negotiation_packet(initial_packet->source_cid(), initial_packet->destination_cid());
 
     // Negotiate version
-    vn.negotiate(vn_packet.get());
+    vn.negotiate(*vn_packet);
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
     CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);
 

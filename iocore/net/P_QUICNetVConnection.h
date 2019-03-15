@@ -296,17 +296,17 @@ private:
   QUICPacketUPtr _build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block, bool retransmittable, bool probing,
                                bool crypto);
 
-  QUICConnectionErrorUPtr _recv_and_ack(QUICPacket &packet, bool *has_non_probing_frame = nullptr);
+  QUICConnectionErrorUPtr _recv_and_ack(const QUICPacket &packet, bool *has_non_probing_frame = nullptr);
 
-  QUICConnectionErrorUPtr _state_handshake_process_packet(QUICPacketUPtr packet);
-  QUICConnectionErrorUPtr _state_handshake_process_version_negotiation_packet(QUICPacketUPtr packet);
-  QUICConnectionErrorUPtr _state_handshake_process_initial_packet(QUICPacketUPtr packet);
-  QUICConnectionErrorUPtr _state_handshake_process_retry_packet(QUICPacketUPtr packet);
-  QUICConnectionErrorUPtr _state_handshake_process_handshake_packet(QUICPacketUPtr packet);
-  QUICConnectionErrorUPtr _state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet);
+  QUICConnectionErrorUPtr _state_handshake_process_packet(const QUICPacket &packet);
+  QUICConnectionErrorUPtr _state_handshake_process_version_negotiation_packet(const QUICPacket &packet);
+  QUICConnectionErrorUPtr _state_handshake_process_initial_packet(const QUICPacket &packet);
+  QUICConnectionErrorUPtr _state_handshake_process_retry_packet(const QUICPacket &packet);
+  QUICConnectionErrorUPtr _state_handshake_process_handshake_packet(const QUICPacket &packet);
+  QUICConnectionErrorUPtr _state_handshake_process_zero_rtt_protected_packet(const QUICPacket &packet);
   QUICConnectionErrorUPtr _state_connection_established_receive_packet();
-  QUICConnectionErrorUPtr _state_connection_established_process_protected_packet(QUICPacketUPtr packet);
-  QUICConnectionErrorUPtr _state_connection_established_migrate_connection(const QUICPacket &p);
+  QUICConnectionErrorUPtr _state_connection_established_process_protected_packet(const QUICPacket &packet);
+  QUICConnectionErrorUPtr _state_connection_established_migrate_connection(const QUICPacket &packet);
   QUICConnectionErrorUPtr _state_connection_established_initiate_connection_migration();
   QUICConnectionErrorUPtr _state_closing_receive_packet();
   QUICConnectionErrorUPtr _state_draining_receive_packet();

@@ -785,7 +785,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
         // - It could be just an errora on lower layer
         error = nullptr;
       } else if (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::UNSUPPORTED) {
-        error = this->_state_handshake_process_packet(std::move(packet));
+        error = this->_state_handshake_process_packet(*packet);
       }
 
       // if we complete handshake, switch to establish state
@@ -1055,31 +1055,31 @@ QUICNetVConnection::negotiated_application_name() const
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
+QUICNetVConnection::_state_handshake_process_packet(const QUICPacket &packet)
 {
   QUICConnectionErrorUPtr error = nullptr;
-  switch (packet->type()) {
+  switch (packet.type()) {
   case QUICPacketType::VERSION_NEGOTIATION:
-    error = this->_state_handshake_process_version_negotiation_packet(std::move(packet));
+    error = this->_state_handshake_process_version_negotiation_packet(packet);
     break;
   case QUICPacketType::INITIAL:
-    error = this->_state_handshake_process_initial_packet(std::move(packet));
+    error = this->_state_handshake_process_initial_packet(packet);
     break;
   case QUICPacketType::RETRY:
-    error = this->_state_handshake_process_retry_packet(std::move(packet));
+    error = this->_state_handshake_process_retry_packet(packet);
     break;
   case QUICPacketType::HANDSHAKE:
-    error = this->_state_handshake_process_handshake_packet(std::move(packet));
+    error = this->_state_handshake_process_handshake_packet(packet);
     if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL) && this->netvc_context == NET_VCONNECTION_IN) {
       this->_pp_key_info.drop_keys(QUICKeyPhase::INITIAL);
     }
     break;
   case QUICPacketType::ZERO_RTT_PROTECTED:
-    error = this->_state_handshake_process_zero_rtt_protected_packet(std::move(packet));
+    error = this->_state_handshake_process_zero_rtt_protected_packet(packet);
     break;
   case QUICPacketType::PROTECTED:
   default:
-    QUICConDebug("Ignore %s(%" PRIu8 ") packet", QUICDebugNames::packet_type(packet->type()), static_cast<uint8_t>(packet->type()));
+    QUICConDebug("Ignore %s(%" PRIu8 ") packet", QUICDebugNames::packet_type(packet.type()), static_cast<uint8_t>(packet.type()));
 
     error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::INTERNAL_ERROR);
     break;
@@ -1088,11 +1088,11 @@ QUICNetVConnection::_state_handshake_process_packet(QUICPacketUPtr packet)
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPacketUPtr packet)
+QUICNetVConnection::_state_handshake_process_version_negotiation_packet(const QUICPacket &packet)
 {
   QUICConnectionErrorUPtr error = nullptr;
 
-  if (packet->destination_cid() != this->connection_id()) {
+  if (packet.destination_cid() != this->connection_id()) {
     QUICConDebug("Ignore Version Negotiation packet");
     return error;
   }
@@ -1100,7 +1100,7 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPack
   if (this->_handshake_handler->is_version_negotiated()) {
     QUICConDebug("ignore VN - already negotiated");
   } else {
-    error = this->_handshake_handler->negotiate_version(packet.get(), &this->_packet_factory);
+    error = this->_handshake_handler->negotiate_version(packet, &this->_packet_factory);
 
     // discard all transport state except packet number
     for (auto s : QUIC_PN_SPACES) {
@@ -1118,7 +1118,7 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(QUICPack
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packet)
+QUICNetVConnection::_state_handshake_process_initial_packet(const QUICPacket &packet)
 {
   // QUIC packet could be smaller than MINIMUM_INITIAL_PACKET_SIZE when coalescing packets
   // if (packet->size() < MINIMUM_INITIAL_PACKET_SIZE) {
@@ -1140,12 +1140,11 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
     QUICTPConfigQCP tp_config(this->_quic_config, NET_VCONNECTION_IN);
-    error =
-      this->_handshake_handler->start(tp_config, packet.get(), &this->_packet_factory, this->_alt_con_manager->preferred_address());
+    error = this->_handshake_handler->start(tp_config, packet, &this->_packet_factory, this->_alt_con_manager->preferred_address());
 
     // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.
     if (this->_handshake_handler->is_version_negotiated()) {
-      error = this->_recv_and_ack(*packet);
+      error = this->_recv_and_ack(packet);
 
       if (error == nullptr && !this->_handshake_handler->has_remote_tp()) {
         error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR);
@@ -1153,7 +1152,7 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
     }
   } else {
     // on client side, _handshake_handler is already started. Just process packet like _state_handshake_process_handshake_packet()
-    error = this->_recv_and_ack(*packet);
+    error = this->_recv_and_ack(packet);
   }
 
   return error;
@@ -1163,7 +1162,7 @@ QUICNetVConnection::_state_handshake_process_initial_packet(QUICPacketUPtr packe
    This doesn't call this->_recv_and_ack(), because RETRY packet doesn't have any frames.
  */
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
+QUICNetVConnection::_state_handshake_process_retry_packet(const QUICPacket &packet)
 {
   ink_assert(this->netvc_context == NET_VCONNECTION_OUT);
 
@@ -1173,9 +1172,9 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
   }
 
   // TODO: move packet->payload to _av_token
-  this->_av_token_len = packet->payload_length();
+  this->_av_token_len = packet.payload_length();
   this->_av_token     = ats_unique_malloc(this->_av_token_len);
-  memcpy(this->_av_token.get(), packet->payload(), this->_av_token_len);
+  memcpy(this->_av_token.get(), packet.payload(), this->_av_token_len);
 
   // discard all transport state
   this->_handshake_handler->reset();
@@ -1198,32 +1197,32 @@ QUICNetVConnection::_state_handshake_process_retry_packet(QUICPacketUPtr packet)
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_process_handshake_packet(QUICPacketUPtr packet)
+QUICNetVConnection::_state_handshake_process_handshake_packet(const QUICPacket &packet)
 {
   // Source address is verified by receiving any message from the client encrypted using the
   // Handshake keys.
   if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
     this->_verfied_state.set_addr_verifed();
   }
-  return this->_recv_and_ack(*packet);
+  return this->_recv_and_ack(packet);
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(QUICPacketUPtr packet)
+QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(const QUICPacket &packet)
 {
   this->_stream_manager->init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
                                                   this->_handshake_handler->remote_transport_parameters());
   this->_start_application();
-  return this->_recv_and_ack(*packet);
+  return this->_recv_and_ack(packet);
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_connection_established_process_protected_packet(QUICPacketUPtr packet)
+QUICNetVConnection::_state_connection_established_process_protected_packet(const QUICPacket &packet)
 {
   QUICConnectionErrorUPtr error = nullptr;
   bool has_non_probing_frame    = false;
 
-  error = this->_recv_and_ack(*packet, &has_non_probing_frame);
+  error = this->_recv_and_ack(packet, &has_non_probing_frame);
   if (error != nullptr) {
     return error;
   }
@@ -1234,11 +1233,11 @@ QUICNetVConnection::_state_connection_established_process_protected_packet(QUICP
   // on the old path until they initiate migration.
   // if (packet.destination_cid() == this->_quic_connection_id && has_non_probing_frame) {
   if (this->_alt_con_manager != nullptr) {
-    if (packet->destination_cid() != this->_quic_connection_id || !ats_ip_addr_port_eq(packet->from(), this->remote_addr)) {
+    if (packet.destination_cid() != this->_quic_connection_id || !ats_ip_addr_port_eq(packet.from(), this->remote_addr)) {
       if (!has_non_probing_frame) {
         QUICConDebug("FIXME: Connection migration has been initiated without non-probing frames");
       }
-      error = this->_state_connection_established_migrate_connection(*packet);
+      error = this->_state_connection_established_migrate_connection(packet);
       if (error != nullptr) {
         return error;
       }
@@ -1262,7 +1261,7 @@ QUICNetVConnection::_state_connection_established_receive_packet()
   // Receive a QUIC packet
   net_activity(this, this_ethread());
   do {
-    QUICPacketUPtr p = this->_dequeue_recv_packet(result);
+    QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
     if (result == QUICPacketCreationResult::FAILED) {
       // Don't make this error, and discard the packet.
       // Because:
@@ -1278,18 +1277,19 @@ QUICNetVConnection::_state_connection_established_receive_packet()
     }
 
     // Process the packet
-    switch (p->type()) {
+    switch (packet->type()) {
     case QUICPacketType::PROTECTED:
-      error = this->_state_connection_established_process_protected_packet(std::move(p));
+      error = this->_state_connection_established_process_protected_packet(*packet);
       break;
     case QUICPacketType::INITIAL:
     case QUICPacketType::HANDSHAKE:
     case QUICPacketType::ZERO_RTT_PROTECTED:
       // Pass packet to _recv_and_ack to send ack to the packet. Stream data will be discarded by offset mismatch.
-      error = this->_recv_and_ack(*p);
+      error = this->_recv_and_ack(*packet);
       break;
     default:
-      QUICConDebug("Unknown packet type: %s(%" PRIu8 ")", QUICDebugNames::packet_type(p->type()), static_cast<uint8_t>(p->type()));
+      QUICConDebug("Unknown packet type: %s(%" PRIu8 ")", QUICDebugNames::packet_type(packet->type()),
+                   static_cast<uint8_t>(packet->type()));
 
       error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::INTERNAL_ERROR);
       break;
@@ -1652,7 +1652,7 @@ QUICNetVConnection::_packetize_closing_frame()
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_recv_and_ack(QUICPacket &packet, bool *has_non_probing_frame)
+QUICNetVConnection::_recv_and_ack(const QUICPacket &packet, bool *has_non_probing_frame)
 {
   ink_assert(packet.type() != QUICPacketType::RETRY);
 

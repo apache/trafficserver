@@ -119,18 +119,18 @@ QUICHandshake::start(const QUICTPConfig &tp_config, QUICPacketFactory *packet_fa
 }
 
 QUICConnectionErrorUPtr
-QUICHandshake::start(const QUICTPConfig &tp_config, const QUICPacket *initial_packet, QUICPacketFactory *packet_factory,
+QUICHandshake::start(const QUICTPConfig &tp_config, const QUICPacket &initial_packet, QUICPacketFactory *packet_factory,
                      const QUICPreferredAddress *pref_addr)
 {
   // Negotiate version
   if (this->_version_negotiator->status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED) {
-    if (initial_packet->type() != QUICPacketType::INITIAL) {
+    if (initial_packet.type() != QUICPacketType::INITIAL) {
       return std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
     }
-    if (initial_packet->version()) {
+    if (initial_packet.version()) {
       if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
-        QUICHSDebug("Version negotiation succeeded: %x", initial_packet->version());
-        this->_load_local_server_transport_parameters(tp_config, initial_packet->version(), pref_addr);
+        QUICHSDebug("Version negotiation succeeded: %x", initial_packet.version());
+        this->_load_local_server_transport_parameters(tp_config, initial_packet.version(), pref_addr);
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
       } else {
         ink_assert(!"Unsupported version initial packet should be droped QUICPakcetHandler");
@@ -143,7 +143,7 @@ QUICHandshake::start(const QUICTPConfig &tp_config, const QUICPacket *initial_pa
 }
 
 QUICConnectionErrorUPtr
-QUICHandshake::negotiate_version(const QUICPacket *vn, QUICPacketFactory *packet_factory)
+QUICHandshake::negotiate_version(const QUICPacket &vn, QUICPacketFactory *packet_factory)
 {
   // Client side only
   ink_assert(this->_qc->direction() == NET_VCONNECTION_OUT);
@@ -155,7 +155,7 @@ QUICHandshake::negotiate_version(const QUICPacket *vn, QUICPacketFactory *packet
     return nullptr;
   }
 
-  if (vn->version() != 0x00) {
+  if (vn.version() != 0x00) {
     QUICHSDebug("Version field must be 0x00000000");
     return std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
   }
