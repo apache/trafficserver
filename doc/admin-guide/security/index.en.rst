@@ -109,8 +109,8 @@ Client/Traffic Server connections, you must do the following:
 #. Set the appropriate base path for your SSL certificates and private keys
    in :file:`records.config`. ::
 
-        CONFIG proxy.config.ssl.server.cert.path STRING "/opt/ts/etc/ssl/certs/"
-        CONFIG proxy.config.ssl.server.private_key.path STRING "/opt/ts/etc/ssl/keys/"
+        CONFIG proxy.config.ssl.server.cert.path STRING /opt/ts/etc/ssl/certs/
+        CONFIG proxy.config.ssl.server.private_key.path STRING /opt/ts/etc/ssl/keys/
 
 #. Add an entry to :file:`ssl_multicert.config` for each certificate and key
    which your Traffic Server system will be using to terminate SSL connections
