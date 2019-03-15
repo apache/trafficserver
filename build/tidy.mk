@@ -23,12 +23,12 @@ Clang_Tidy_Options = -fix -fix-errors -header-filter=.*
 Clang_Tidy_CC_Files = $(filter %.c, $(sort $(1)))
 Clang_Tidy_CXX_Files = $(filter %.cc, $(sort $(1)))
 
-#clang-tidy rules. We expect these to be actions with something like
-#$(DIST_SOURCES) as the dependencies.rules. Note that $DIST_SOURCES
-#is not an automake API, it is an implementation detail, but it ought
-#to be stable enough.
+# clang-tidy rules. We expect these to be actions with something like
+# $(DIST_SOURCES) as the dependencies.rules. Note that $DIST_SOURCES
+# is not an automake API, it is an implementation detail, but it ought
+# to be stable enough.
 #
-#All this clearly requires GNU make.
+# All this clearly requires GNU make.
 
-CXX_Clang_Tidy = $(CLANG_TIDY) $(Clang_Tidy_Options) $(call Clang_Tidy_CXX_Files,$^) -- $(CXXCOMPILE) -x c++
-CC_Clang_Tidy = $(CLANG_TIDY) $(Clang_Tidy_Options) $(call Clang_Tidy_CC_Files,$^) -- $(COMPILE) -x c
+CXX_Clang_Tidy = $(foreach tidy_target, $(call Clang_Tidy_CXX_Files,$^), $(CLANG_TIDY) $(Clang_Tidy_Options) $(tidy_target) -- $(CXXCOMPILE) -x c++;)
+CC_Clang_Tidy = $(foreach tidy_target, $(call Clang_Tidy_CC_Files,$^), $(CLANG_TIDY) $(Clang_Tidy_Options) $(tidy_target) -- $(COMPILE) -x c;)
