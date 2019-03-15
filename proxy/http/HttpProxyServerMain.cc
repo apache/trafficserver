@@ -159,6 +159,7 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
 
   if (port) {
     net.f_inbound_transparent = port->m_inbound_transparent_p;
+    net.f_mptcp               = port->m_mptcp;
     net.ip_family             = port->m_family;
     net.local_port            = port->m_port;
     net.f_proxy_protocol      = port->m_proxy_protocol;

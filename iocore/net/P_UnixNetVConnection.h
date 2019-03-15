@@ -283,6 +283,7 @@ public:
   ink_hrtime get_active_timeout() override;
 
   void set_local_addr() override;
+  void set_mptcp_state() override;
   void set_remote_addr() override;
   void set_remote_addr(const sockaddr *) override;
   int set_tcp_init_cwnd(int init_cwnd) override;
@@ -336,6 +337,21 @@ UnixNetVConnection::set_local_addr()
   // `local_addr` is checked within get_local_addr() and the `got_local_addr`
   // is set only with a valid `local_addr`.
   ATS_UNUSED_RETURN(safe_getsockname(con.fd, &local_addr.sa, &local_sa_size));
+}
+
+// Update the internal VC state variable for MPTCP
+TS_INLINE void
+UnixNetVConnection::set_mptcp_state()
+{
+  int mptcp_enabled      = -1;
+  int mptcp_enabled_size = sizeof(mptcp_enabled);
+
+  if (0 == safe_getsockopt(con.fd, IPPROTO_TCP, MPTCP_ENABLED, (char *)&mptcp_enabled, &mptcp_enabled_size)) {
+    Debug("socket_mptcp", "MPTCP socket state: %d", mptcp_enabled);
+    mptcp_state = mptcp_enabled > 0 ? true : false;
+  } else {
+    Debug("socket_mptcp", "MPTCP failed getsockopt(): %s", strerror(errno));
+  }
 }
 
 TS_INLINE ink_hrtime

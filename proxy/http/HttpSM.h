@@ -29,8 +29,10 @@
 
 
  ****************************************************************************/
-
 #pragma once
+
+#include <string_view>
+#include <optional>
 
 #include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
@@ -41,9 +43,7 @@
 #include "InkAPIInternal.h"
 #include "../ProxyClientTransaction.h"
 #include "HdrUtils.h"
-#include <string_view>
 #include "tscore/History.h"
-//#include "AuthHttpAdapter.h"
 
 /* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
  * are actually required.
@@ -314,12 +314,12 @@ public:
 
   // YTS Team, yamsat Plugin
   bool enable_redirection = false; // To check if redirection is enabled
+  bool post_failed        = false; // Added to identify post failure
+  bool debug_on           = false; // Transaction specific debug flag
   char *redirect_url    = nullptr; // url for force redirect (provide users a functionality to redirect to another url when needed)
   int redirect_url_len  = 0;
-  int redirection_tries = 0;        // To monitor number of redirections
-  int64_t transfered_bytes = 0;     // Added to calculate POST data
-  bool post_failed         = false; // Added to identify post failure
-  bool debug_on            = false; // Transaction specific debug flag
+  int redirection_tries = 0;    // To monitor number of redirections
+  int64_t transfered_bytes = 0; // Added to calculate POST data
 
   // Tunneling request to plugin
   HttpPluginTunnel_t plugin_tunnel_type = HTTP_NO_PLUGIN_TUNNEL;
@@ -339,9 +339,9 @@ public:
   void postbuf_copy_partial_data();
   void postbuf_init(IOBufferReader *ua_reader);
   void set_postbuf_done(bool done);
+  IOBufferReader *get_postbuf_clone_reader();
   bool get_postbuf_done();
   bool is_postbuf_valid();
-  IOBufferReader *get_postbuf_clone_reader();
 
 protected:
   int reentrancy_count = 0;
@@ -540,17 +540,17 @@ public:
   int pushed_response_hdr_bytes      = 0;
   int64_t pushed_response_body_bytes = 0;
   bool client_tcp_reused             = false;
-  // Info about client's SSL connection.
-  bool client_ssl_reused          = false;
-  bool client_connection_is_ssl   = false;
-  bool is_internal                = false;
+  bool client_ssl_reused             = false;
+  bool client_connection_is_ssl      = false;
+  bool is_internal                   = false;
+  bool server_connection_is_ssl      = false;
+  bool is_waiting_for_full_body      = false;
+  bool is_using_post_buffer          = false;
+  std::optional<bool> mptcp_state; // Don't initialize, that marks it as "not defined".
   const char *client_protocol     = "-";
   const char *client_sec_protocol = "-";
   const char *client_cipher_suite = "-";
   int server_transact_count       = 0;
-  bool server_connection_is_ssl   = false;
-  bool is_waiting_for_full_body   = false;
-  bool is_using_post_buffer       = false;
 
   TransactionMilestones milestones;
   ink_hrtime api_timer = 0;
