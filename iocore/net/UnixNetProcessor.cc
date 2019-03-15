@@ -51,6 +51,7 @@ NetProcessor::AcceptOptions::reset()
   packet_tos            = 0;
   tfo_queue_length      = 0;
   f_inbound_transparent = false;
+  f_mptcp               = false;
   f_proxy_protocol      = false;
   return *this;
 }
