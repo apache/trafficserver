@@ -66,6 +66,130 @@ libinkcache_a_SOURCES += \
 	P_CacheTest.h
 endif
 
+TESTS = $(check_PROGRAMS)
+
+test_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/http2 \
+	-I$(abs_top_srcdir)/proxy/http3 \
+	-I$(abs_top_srcdir)/proxy/logging \
+	-I$(abs_top_srcdir)/proxy/http/remap \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/shared \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/tests/include \
+	$(TS_INCLUDES) \
+	@OPENSSL_INCLUDES@
+
+test_LDADD = \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/iocore/cache/libinkcache.a \
+	$(top_builddir)/proxy/libproxy.a \
+	$(top_builddir)/proxy/http/libhttp.a \
+	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
+	$(top_builddir)/proxy/libproxy.a \
+	$(top_builddir)/iocore/net/libinknet.a \
+	$(top_builddir)/iocore/dns/libinkdns.a \
+	$(top_builddir)/iocore/hostdb/libinkhostdb.a \
+	$(top_builddir)/proxy/logging/liblogging.a \
+	$(top_builddir)/proxy/hdrs/libhdrs.a \
+	$(top_builddir)/proxy/logging/liblogcollation.a \
+	$(top_builddir)/proxy/shared/libdiagsconfig.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/iocore/utils/libinkutils.a \
+	$(top_builddir)/iocore/aio/libinkaio.a \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/lib/tsconfig/libtsconfig.la \
+	@HWLOC_LIBS@ \
+	@LIBPCRE@ \
+	@LIBRESOLV@ \
+	@LIBZ@ \
+	@LIBLZMA@ \
+	@LIBPROFILER@ \
+	@OPENSSL_LIBS@ \
+	@YAMLCPP_LIBS@ \
+	-lm
+
+
+check_PROGRAMS = \
+  test_Cache \
+  test_RWW \
+  test_Alternate_L_to_S \
+  test_Alternate_S_to_L \
+  test_Alternate_L_to_S_remove_L \
+  test_Alternate_L_to_S_remove_S \
+  test_Alternate_S_to_L_remove_S \
+  test_Alternate_S_to_L_remove_L
+
+test_main_SOURCES = \
+  ./test/main.cc \
+  ./test/stub.cc \
+  ./test/CacheTestHandler.cc
+
+test_Cache_CPPFLAGS = $(test_CPPFLAGS)
+test_Cache_LDFLAGS = @AM_LDFLAGS@
+test_Cache_LDADD = $(test_LDADD)
+test_Cache_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Cache.cc
+
+test_RWW_CPPFLAGS = $(test_CPPFLAGS)
+test_RWW_LDFLAGS = @AM_LDFLAGS@
+test_RWW_LDADD = $(test_LDADD)
+test_RWW_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_RWW.cc
+
+test_Alternate_L_to_S_CPPFLAGS = $(test_CPPFLAGS)
+test_Alternate_L_to_S_LDFLAGS = @AM_LDFLAGS@
+test_Alternate_L_to_S_LDADD = $(test_LDADD)
+test_Alternate_L_to_S_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Alternate_L_to_S.cc
+
+test_Alternate_S_to_L_CPPFLAGS = $(test_CPPFLAGS)
+test_Alternate_S_to_L_LDFLAGS = @AM_LDFLAGS@
+test_Alternate_S_to_L_LDADD = $(test_LDADD)
+test_Alternate_S_to_L_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Alternate_S_to_L.cc
+
+test_Alternate_L_to_S_remove_L_CPPFLAGS = $(test_CPPFLAGS)
+test_Alternate_L_to_S_remove_L_LDFLAGS = @AM_LDFLAGS@
+test_Alternate_L_to_S_remove_L_LDADD = $(test_LDADD)
+test_Alternate_L_to_S_remove_L_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Alternate_L_to_S_remove_L.cc
+
+test_Alternate_L_to_S_remove_S_CPPFLAGS = $(test_CPPFLAGS)
+test_Alternate_L_to_S_remove_S_LDFLAGS = @AM_LDFLAGS@
+test_Alternate_L_to_S_remove_S_LDADD = $(test_LDADD)
+test_Alternate_L_to_S_remove_S_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Alternate_L_to_S_remove_S.cc
+
+test_Alternate_S_to_L_remove_S_CPPFLAGS = $(test_CPPFLAGS)
+test_Alternate_S_to_L_remove_S_LDFLAGS = @AM_LDFLAGS@
+test_Alternate_S_to_L_remove_S_LDADD = $(test_LDADD)
+test_Alternate_S_to_L_remove_S_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Alternate_S_to_L_remove_S.cc
+
+test_Alternate_S_to_L_remove_L_CPPFLAGS = $(test_CPPFLAGS)
+test_Alternate_S_to_L_remove_L_LDFLAGS = @AM_LDFLAGS@
+test_Alternate_S_to_L_remove_L_LDADD = $(test_LDADD)
+test_Alternate_S_to_L_remove_L_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Alternate_S_to_L_remove_L.cc
+
 include $(top_srcdir)/build/tidy.mk
 
 clang-tidy-local: $(DIST_SOURCES)
