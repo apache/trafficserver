@@ -1072,6 +1072,7 @@ QUICNetVConnection::_state_handshake_process_packet(const QUICPacket &packet)
     error = this->_state_handshake_process_handshake_packet(packet);
     if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL) && this->netvc_context == NET_VCONNECTION_IN) {
       this->_pp_key_info.drop_keys(QUICKeyPhase::INITIAL);
+      this->_minimum_encryption_level = QUICEncryptionLevel::HANDSHAKE;
     }
     break;
   case QUICPacketType::ZERO_RTT_PROTECTED:
@@ -1370,7 +1371,8 @@ QUICNetVConnection::_state_common_send_packet()
     udp_payload->alloc(iobuffer_size_to_index(udp_payload_len));
 
     uint32_t written = 0;
-    for (auto level : QUIC_ENCRYPTION_LEVELS) {
+    for (int i = static_cast<int>(this->_minimum_encryption_level); i <= static_cast<int>(QUICEncryptionLevel::ONE_RTT); ++i) {
+      auto level = QUIC_ENCRYPTION_LEVELS[i];
       if (level == QUICEncryptionLevel::ONE_RTT && !this->_handshake_handler->is_completed()) {
         continue;
       }
@@ -1417,6 +1419,7 @@ QUICNetVConnection::_state_common_send_packet()
         if (this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::INITIAL) && packet->type() == QUICPacketType::HANDSHAKE &&
             this->netvc_context == NET_VCONNECTION_OUT) {
           this->_pp_key_info.drop_keys(QUICKeyPhase::INITIAL);
+          this->_minimum_encryption_level = QUICEncryptionLevel::HANDSHAKE;
         }
 
         int index = QUICTypeUtil::pn_space_index(level);
@@ -2317,8 +2320,8 @@ QUICNetVConnection::_handle_periodic_ack_event()
 {
   ink_hrtime timestamp = Thread::get_hrtime();
   bool need_schedule   = false;
-  for (auto level : QUIC_ENCRYPTION_LEVELS) {
-    if (this->_ack_frame_manager.will_generate_frame(level, timestamp)) {
+  for (int i = static_cast<int>(this->_minimum_encryption_level); i <= static_cast<int>(QUICEncryptionLevel::ONE_RTT); ++i) {
+    if (this->_ack_frame_manager.will_generate_frame(QUIC_ENCRYPTION_LEVELS[i], timestamp)) {
       need_schedule = true;
       break;
     }
