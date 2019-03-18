@@ -33,14 +33,14 @@
 #endif
 
 #include <fcntl.h>
-#include <limits.h>
-#include <assert.h>
-#include <time.h>
+#include <limits.h> // NOLINT(modernize-deprecated-headers)
+#include <assert.h> // NOLINT(modernize-deprecated-headers)
+#include <time.h>   // NOLINT(modernize-deprecated-headers)
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <sys/file.h>
 #include <sys/resource.h>
-#include <errno.h>
+#include <errno.h> // NOLINT(modernize-deprecated-headers)
 #include <syslog.h>
 #include <pwd.h>
 #include <poll.h>
@@ -61,11 +61,11 @@ struct ifafilt;
 #include <net/if.h>
 
 #ifdef HAVE_STDLIB_H
-#include <stdlib.h>
+#include <stdlib.h> // NOLINT(modernize-deprecated-headers)
 #endif
-#include <ctype.h>
+#include <ctype.h> // NOLINT(modernize-deprecated-headers)
 #ifdef HAVE_STRING_H
-#include <string.h>
+#include <string.h> // NOLINT(modernize-deprecated-headers)
 #endif
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
@@ -107,7 +107,7 @@ struct ifafilt;
 #include <arpa/nameser_compat.h>
 #endif
 
-#include <signal.h>
+#include <signal.h> // NOLINT(modernize-deprecated-headers)
 #ifdef HAVE_SIGINFO_H
 #include <siginfo.h>
 #endif
@@ -170,7 +170,7 @@ typedef unsigned int in_addr_t;
 #endif
 
 #ifdef HAVE_FLOAT_H
-#include <float.h>
+#include <float.h> // NOLINT(modernize-deprecated-headers)
 #endif
 
 #ifdef HAVE_SYS_SYSMACROS_H

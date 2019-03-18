@@ -19,9 +19,9 @@
 #ifndef _CKREMAP_HASH_H_
 #define _CKREMAP_HASH_H_
 
-#include <stddef.h>
+#include <stddef.h> // NOLINT(modernize-deprecated-headers)
 #include <sys/types.h>
-#include <inttypes.h>
+#include <inttypes.h> // NOLINT(modernize-deprecated-headers)
 
 #ifdef __cplusplus
 extern "C" {
