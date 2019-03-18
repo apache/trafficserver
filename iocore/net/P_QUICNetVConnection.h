@@ -284,6 +284,8 @@ private:
   void _unschedule_ack_manager_periodic();
   Event *_ack_manager_periodic = nullptr;
 
+  QUICEncryptionLevel _minimum_encryption_level = QUICEncryptionLevel::INITIAL;
+
   QUICPacketNumber _largest_acked_packet_number(QUICEncryptionLevel level) const;
   uint32_t _maximum_quic_packet_size() const;
   uint32_t _minimum_quic_packet_size();
