@@ -284,6 +284,10 @@ STEK_Send_To_Network(struct ssl_ticket_key_t *stekToSend)
 static void *
 STEK_Update_Setter_Thread(void *arg)
 {
+  plugin_threads.store(::pthread_self());
+  ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+  ::pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
+
   int sleepInterval;
   struct ssl_ticket_key_t newKey;
   int startProblem = 0; // counter for start up and retry issues.
@@ -368,6 +372,10 @@ STEK_update(const std::string &encrypted_stek)
 static void *
 STEK_Update_Checker_Thread(void *arg)
 {
+  plugin_threads.store(::pthread_self());
+  ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+  ::pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
+
   time_t currentTime;
   time_t lastWarningTime; // last time we put out a warning
 

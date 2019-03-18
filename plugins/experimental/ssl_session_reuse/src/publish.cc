@@ -33,10 +33,15 @@
 #include "publisher.h"
 #include "Config.h"
 #include "redis_auth.h"
+#include "ssl_utils.h"
 
 void *
 RedisPublisher::start_worker_thread(void *arg)
 {
+  plugin_threads.store(::pthread_self());
+  ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+  ::pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
+
   RedisPublisher *publisher = static_cast<RedisPublisher *>(arg);
   publisher->runWorker();
   return arg;
