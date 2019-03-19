@@ -240,7 +240,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   struct signer *signer = config_signer((struct config *)ih);
-  char *cookie          = renew(jwt, signer->issuer, signer->jwk, signer->alg, package);
+  char *cookie          = renew(jwt, config_get_id((struct config *)ih), signer->jwk, signer->alg, package);
   jwt_delete(jwt);
 
   if (cpi < max_cpi) {
