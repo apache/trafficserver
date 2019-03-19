@@ -112,9 +112,9 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
   REQUIRE(map.bucket_count() > nb);
   for (auto &thing : map) {
     REQUIRE(0 == marks[thing._n]);
-    marks[thing._n] = 1;
+    marks[thing._n] = true;
   }
-  marks[0] = 1;
+  marks[0] = true;
   REQUIRE(marks.all());
   map.insert(new Thing("dup"sv, 79));
   map.insert(new Thing("dup"sv, 80));

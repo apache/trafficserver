@@ -955,8 +955,8 @@ CacheRemoveCont::event_handler(int event, void *data)
   return EVENT_DONE;
 }
 
-int64_t cache_bytes_used(void);
-int64_t cache_bytes_total(void);
+int64_t cache_bytes_used();
+int64_t cache_bytes_total();
 
 #ifdef DEBUG
 #define CACHE_DEBUG_INCREMENT_DYN_STAT(_x) CACHE_INCREMENT_DYN_STAT(_x)

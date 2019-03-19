@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include <time.h>
+#include <ctime>
 #include <string>
 #include "tscore/ink_rwlock.h"
 #include "records/P_RecProcess.h"

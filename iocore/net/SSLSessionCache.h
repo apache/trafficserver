@@ -116,7 +116,7 @@ public:
   Ptr<IOBufferData> asn1_data; /* this is the ASN1 representation of the SSL_CTX */
   size_t len_asn1_data;
 
-  SSLSession(const SSLSessionID &id, Ptr<IOBufferData> ssl_asn1_data, size_t len_asn1)
+  SSLSession(const SSLSessionID &id, const Ptr<IOBufferData> &ssl_asn1_data, size_t len_asn1)
     : session_id(id), asn1_data(ssl_asn1_data), len_asn1_data(len_asn1)
   {
   }

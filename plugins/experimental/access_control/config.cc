@@ -169,23 +169,23 @@ load(T &container, const String &filename)
 bool
 AccessControlConfig::init(int argc, char *argv[])
 {
-  static const struct option longopt[] = {{const_cast<char *>("invalid-syntax-status-code"), optional_argument, 0, 'a'},
-                                          {const_cast<char *>("invalid-signature-status-code"), optional_argument, 0, 'b'},
-                                          {const_cast<char *>("invalid-timing-status-code"), optional_argument, 0, 'c'},
-                                          {const_cast<char *>("invalid-scope-status-code"), optional_argument, 0, 'd'},
-                                          {const_cast<char *>("invalid-origin-response"), optional_argument, 0, 'e'},
-                                          {const_cast<char *>("internal-error-status-code"), optional_argument, 0, 'f'},
-                                          {const_cast<char *>("check-cookie"), optional_argument, 0, 'g'},
-                                          {const_cast<char *>("symmetric-keys-map"), optional_argument, 0, 'h'},
-                                          {const_cast<char *>("reject-invalid-token-requests"), optional_argument, 0, 'i'},
-                                          {const_cast<char *>("extract-subject-to-header"), optional_argument, 0, 'j'},
-                                          {const_cast<char *>("extract-tokenid-to-header"), optional_argument, 0, 'k'},
-                                          {const_cast<char *>("extract-status-to-header"), optional_argument, 0, 'l'},
-                                          {const_cast<char *>("token-response-header"), optional_argument, 0, 'm'},
-                                          {const_cast<char *>("use-redirects"), optional_argument, 0, 'n'},
+  static const struct option longopt[] = {{const_cast<char *>("invalid-syntax-status-code"), optional_argument, nullptr, 'a'},
+                                          {const_cast<char *>("invalid-signature-status-code"), optional_argument, nullptr, 'b'},
+                                          {const_cast<char *>("invalid-timing-status-code"), optional_argument, nullptr, 'c'},
+                                          {const_cast<char *>("invalid-scope-status-code"), optional_argument, nullptr, 'd'},
+                                          {const_cast<char *>("invalid-origin-response"), optional_argument, nullptr, 'e'},
+                                          {const_cast<char *>("internal-error-status-code"), optional_argument, nullptr, 'f'},
+                                          {const_cast<char *>("check-cookie"), optional_argument, nullptr, 'g'},
+                                          {const_cast<char *>("symmetric-keys-map"), optional_argument, nullptr, 'h'},
+                                          {const_cast<char *>("reject-invalid-token-requests"), optional_argument, nullptr, 'i'},
+                                          {const_cast<char *>("extract-subject-to-header"), optional_argument, nullptr, 'j'},
+                                          {const_cast<char *>("extract-tokenid-to-header"), optional_argument, nullptr, 'k'},
+                                          {const_cast<char *>("extract-status-to-header"), optional_argument, nullptr, 'l'},
+                                          {const_cast<char *>("token-response-header"), optional_argument, nullptr, 'm'},
+                                          {const_cast<char *>("use-redirects"), optional_argument, nullptr, 'n'},
                                           {const_cast<char *>("include-uri-paths-file"), optional_argument, nullptr, 'o'},
                                           {const_cast<char *>("exclude-uri-paths-file"), optional_argument, nullptr, 'p'},
-                                          {0, 0, 0, 0}};
+                                          {nullptr, 0, nullptr, 0}};
 
   bool status = true;
   optind      = 0;

@@ -171,7 +171,7 @@ namespace detail
 struct ats_wildcard_matcher {
   ats_wildcard_matcher()
   {
-    if (!regex.compile("^\\*\\.[^\\*.]+")) {
+    if (!regex.compile(R"(^\*\.[^\*.]+)")) {
       Fatal("failed to compile TLS wildcard matching regex");
     }
   }

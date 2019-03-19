@@ -292,7 +292,7 @@ public:
   /// Default constructor.
   Cache();
   /// Destructor
-  ~Cache();
+  ~Cache() override;
 
   /// Define services from a configuration file.
   ts::Errata loadServicesFromFile(char const *path ///< Path to file.
@@ -308,7 +308,7 @@ public:
       - @c ServiceGroup::CONFLICT if the service doesn't match the existing service.
    */
   Service defineServiceGroup(ServiceGroup const &svc, ///< Service group description.
-                             ServiceGroup::Result *result = 0);
+                             ServiceGroup::Result *result = nullptr);
 
   /** Add a seed router to the service group.
 
@@ -335,7 +335,7 @@ protected:
   /// Get the current implementation instance cast to correct type.
   ImplType const *impl() const;
   /// Create a new implementation instance.
-  super::ImplType *make();
+  super::ImplType *make() override;
 };
 
 /** Hold a reference to a service group in this end point.
@@ -387,7 +387,7 @@ public:
   /// Default constructor
   Router();
   /// Destructor.
-  ~Router();
+  ~Router() override;
 
   /// Transmit pending messages.
   int sendPendingMessages();
@@ -398,7 +398,7 @@ protected:
   /// Get the current implementation instance cast to correct type.
   ImplType *impl();
   /// Create a new implementation instance.
-  super::ImplType *make();
+  super::ImplType *make() override;
 };
 
 // ------------------------------------------------------
@@ -499,7 +499,7 @@ ServiceGroup::clearPorts()
   return *this;
 }
 
-inline Cache::Service::Service() : m_group(0) {}
+inline Cache::Service::Service() : m_group(nullptr) {}
 
 inline Cache::Service::Service(Cache const &cache, detail::cache::GroupData &group) : m_cache(cache), m_group(&group) {}
 

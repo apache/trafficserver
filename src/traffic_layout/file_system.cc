@@ -73,15 +73,15 @@ create_directory(const std::string &dir)
 
   int ret = 0, pos = 0, pos1 = 0;
   if ((s[0] == '.') || (s[0] == '/')) {
-    pos1 = s.find("/") + 1;
+    pos1 = s.find('/') + 1;
   }
-  pos = s.find("/", pos1);
+  pos = s.find('/', pos1);
 
   ret  = mkdir(s.substr(0, pos).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
   pos1 = pos + 1;
   // create directory one layer by one layer
   while (true) {
-    pos = s.find("/", pos1);
+    pos = s.find('/', pos1);
     if ((size_t)pos == s.npos) {
       break;
     }
@@ -192,7 +192,7 @@ filter_ts_files(const std::string &dir, const std::string &dst_path)
   // ----- filter traffic server related files -----
   if (dir == LAYOUT_BINDIR || dir == LAYOUT_SBINDIR) {
     // check if executable is in the list of traffic server executables. If not, end the copying.
-    if (executables.find(dst_path.substr(dst_path.find_last_of("/") + 1)) == executables.end()) {
+    if (executables.find(dst_path.substr(dst_path.find_last_of('/') + 1)) == executables.end()) {
       return false;
     }
   }

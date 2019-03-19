@@ -529,11 +529,11 @@ HttpTunnel::reset()
 {
   ink_assert(active == false);
 #ifdef DEBUG
-  for (int i = 0; i < MAX_PRODUCERS; ++i) {
-    ink_assert(producers[i].alive == false);
+  for (auto &producer : producers) {
+    ink_assert(producer.alive == false);
   }
-  for (int j = 0; j < MAX_CONSUMERS; ++j) {
-    ink_assert(consumers[j].alive == false);
+  for (auto &consumer : consumers) {
+    ink_assert(consumer.alive == false);
   }
 #endif
 

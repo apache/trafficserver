@@ -84,7 +84,7 @@ Pattern::init(const String &config)
     size_t next    = 1;
     do {
       current = next + 1;
-      next    = config.find_first_of("/", current);
+      next    = config.find_first_of('/', current);
     } while (next != String::npos && '\\' == config[next - 1]);
 
     if (next != String::npos) {
@@ -98,7 +98,7 @@ Pattern::init(const String &config)
     start = next + 1;
     do {
       current = next + 1;
-      next    = config.find_first_of("/", current);
+      next    = config.find_first_of('/', current);
     } while (next != String::npos && '\\' == config[next - 1]);
 
     if (next != String::npos) {
@@ -393,8 +393,8 @@ Pattern::compile()
  */
 MultiPattern::~MultiPattern()
 {
-  for (std::vector<Pattern *>::iterator p = this->_list.begin(); p != this->_list.end(); ++p) {
-    delete (*p);
+  for (auto &p : this->_list) {
+    delete p;
   }
 }
 
@@ -428,8 +428,8 @@ MultiPattern::add(Pattern *pattern)
 bool
 MultiPattern::match(const String &subject) const
 {
-  for (std::vector<Pattern *>::const_iterator p = this->_list.begin(); p != this->_list.end(); ++p) {
-    if (nullptr != (*p) && (*p)->match(subject)) {
+  for (auto p : this->_list) {
+    if (nullptr != p && p->match(subject)) {
       return true;
     }
   }
@@ -445,8 +445,8 @@ MultiPattern::match(const String &subject) const
 bool
 MultiPattern::replace(const String &subject, String &result) const
 {
-  for (std::vector<Pattern *>::const_iterator p = this->_list.begin(); p != this->_list.end(); ++p) {
-    if (nullptr != (*p) && (*p)->replace(subject, result)) {
+  for (auto p : this->_list) {
+    if (nullptr != p && p->replace(subject, result)) {
       return true;
     }
   }

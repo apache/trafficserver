@@ -64,7 +64,7 @@ struct src_ip_info_t {
 class acl_filter_rule
 {
 private:
-  void reset(void);
+  void reset();
 
 public:
   acl_filter_rule *next;
@@ -98,7 +98,7 @@ public:
   ~acl_filter_rule();
   void name(const char *_name = nullptr);
   int add_argv(int _argc, char *_argv[]);
-  void print(void);
+  void print();
 
   static acl_filter_rule *find_byname(acl_filter_rule *list, const char *name);
   static void delete_byname(acl_filter_rule **list, const char *name);

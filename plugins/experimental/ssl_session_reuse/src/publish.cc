@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <exception>
-#include <string.h>
+#include <cstring>
 #include <memory>
 #include <ts/ts.h>
 #include "common.h"

@@ -87,15 +87,15 @@ class FetchPolicyLru : public FetchPolicy
 public:
   /* Default size values are also considered minimum. TODO: find out if this works OK. */
   FetchPolicyLru() : _maxSize(10), _size(0){};
-  virtual ~FetchPolicyLru(){};
+  ~FetchPolicyLru() override{};
 
   /* Fetch policy interface methods */
-  bool init(const char *parameters);
-  bool acquire(const std::string &url);
-  bool release(const std::string &url);
-  const char *name();
-  size_t getMaxSize();
-  size_t getSize();
+  bool init(const char *parameters) override;
+  bool acquire(const std::string &url) override;
+  bool release(const std::string &url) override;
+  const char *name() override;
+  size_t getMaxSize() override;
+  size_t getSize() override;
 
 protected:
   LruMap _map;

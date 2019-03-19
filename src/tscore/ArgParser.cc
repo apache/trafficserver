@@ -28,6 +28,7 @@
 #include <iostream>
 #include <set>
 #include <sstream>
+#include <utility>
 #include <sysexits.h>
 
 std::string global_usage;
@@ -199,7 +200,7 @@ ArgParser::require_commands()
 void
 ArgParser::set_error(std::string e)
 {
-  _error_msg = e;
+  _error_msg = std::move(e);
 }
 
 std::string

@@ -23,14 +23,14 @@
  */
 
 #include <unistd.h>
-#include <string.h>
+#include <cstring>
 #include <mutex>
 #include <sys/time.h>
 #include <ts/ts.h>
 #include <openssl/rand.h>
 
 #include "ssl_utils.h"
-#include "assert.h"
+#include <cassert>
 #include "redis_auth.h"
 #include "stek.h"
 #include "common.h"
@@ -303,7 +303,7 @@ STEK_Update_Setter_Thread(void *arg)
   stek_master_setter_running = 1;
   TSDebug(PLUGIN, "Will now act as the STEK rotator for pod");
 
-  while (1) {
+  while (true) {
     // Create new STEK, set it for me, and then send it to the POD.
     if ((!STEK_CreateNew(&newKey, 0, 1 /* entropy ensured */)) || (!STEK_Send_To_Network(&newKey))) {
       // Error occurred. We will retry after a short interval.
@@ -381,7 +381,7 @@ STEK_Update_Checker_Thread(void *arg)
 
   lastChangeTime = lastWarningTime = time(&currentTime); // init to current to supress a startup warning.
 
-  while (1) {
+  while (true) {
     if (!stek_initialized && ssl_param.pub) {
       // Launch a request for the master to resend you the ticket key
       std::string redis_channel = ssl_param.cluster_name + "." + STEK_ID_RESEND;

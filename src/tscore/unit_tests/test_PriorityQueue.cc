@@ -21,7 +21,7 @@
     limitations under the License.
 */
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "tscore/PriorityQueue.h"
 #include "catch.hpp"

@@ -438,7 +438,7 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
 }
 
 inline int
-LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
+LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFieldAliasMap> &map, const char *msg)
 {
   long int codeStrLen = 0;
 
@@ -951,7 +951,7 @@ LogAccess::unmarshal_ip_to_hex(char **buf, char *dest, int len)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -969,7 +969,7 @@ LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAlia
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -987,7 +987,7 @@ LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogField
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -1005,7 +1005,7 @@ LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAli
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -1015,7 +1015,7 @@ LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFiel
 }
 
 int
-LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);

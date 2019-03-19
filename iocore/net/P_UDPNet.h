@@ -76,7 +76,7 @@ public:
   int now_slot;
 
   void
-  init(void)
+  init()
   {
     now_slot       = 0;
     ink_hrtime now = ink_get_hrtime_internal();

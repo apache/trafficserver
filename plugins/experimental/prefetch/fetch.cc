@@ -25,9 +25,9 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
-#include <string.h>
+#include <cstring>
 #include <sys/socket.h>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "ts/ts.h" /* ATS API */
 #include "fetch.h"

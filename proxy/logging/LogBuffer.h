@@ -261,9 +261,9 @@ public:
   ~LogBufferList();
 
   void add(LogBuffer *lb);
-  LogBuffer *get(void);
+  LogBuffer *get();
   int
-  get_size(void)
+  get_size()
   {
     return m_size;
   }

@@ -31,7 +31,7 @@
 //-------------------------------------------------------------------------
 int RecProcessInit(RecModeT mode_type, Diags *diags = nullptr);
 int RecProcessInitMessage(RecModeT mode_type);
-int RecProcessStart(void);
+int RecProcessStart();
 
 //-------------------------------------------------------------------------
 // Setters for manipulating internal sleep intervals

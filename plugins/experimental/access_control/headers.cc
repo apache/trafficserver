@@ -21,8 +21,8 @@
  * @brief HTTP headers manipulation.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "headers.h"
 #include "common.h"

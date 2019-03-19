@@ -533,7 +533,7 @@ db_mark_for(IpAddr const &ip)
 }
 
 Ptr<HostDBInfo>
-probe(Ptr<ProxyMutex> mutex, HostDBHash const &hash, bool ignore_timeout)
+probe(const Ptr<ProxyMutex> &mutex, HostDBHash const &hash, bool ignore_timeout)
 {
   // If hostdb is disabled, don't return anything
   if (!hostdb_enable) {

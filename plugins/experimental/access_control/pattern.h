@@ -76,7 +76,7 @@ private:
 class MultiPattern
 {
 public:
-  MultiPattern(const String name = "") : _name(name) {}
+  MultiPattern(const String &name = "") : _name(name) {}
   virtual ~MultiPattern();
 
   bool empty() const;
@@ -106,14 +106,14 @@ public:
    * @param subject subject string
    * @return return false if any of the patterns matches, true otherwise.
    */
-  virtual bool
-  match(const String &subject) const
+  bool
+  match(const String &subject) const override
   {
     return !MultiPattern::match(subject);
   }
 
-  virtual bool
-  match(const String &subject, String &pattern) const
+  bool
+  match(const String &subject, String &pattern) const override
   {
     return !MultiPattern::match(subject, pattern);
   }

@@ -81,7 +81,7 @@ class TunnelDestination : public ActionItem
 {
 public:
   TunnelDestination(const std::string_view &dest, bool decrypt) : destination(dest), tunnel_decrypt(decrypt) {}
-  ~TunnelDestination() {}
+  ~TunnelDestination() override {}
 
   int
   SNIAction(Continuation *cont) const override

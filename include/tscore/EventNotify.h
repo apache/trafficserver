@@ -36,12 +36,12 @@ class EventNotify
 {
 public:
   EventNotify();
-  void signal(void);
-  int wait(void);
+  void signal();
+  int wait();
   int timedwait(int timeout); // milliseconds
-  void lock(void);
-  bool trylock(void);
-  void unlock(void);
+  void lock();
+  bool trylock();
+  void unlock();
   ~EventNotify();
 
 private:

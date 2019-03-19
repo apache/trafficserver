@@ -144,8 +144,8 @@ void
 UrlRewrite::_destroyTable(std::unique_ptr<URLTable> &h_table)
 {
   if (h_table) {
-    for (auto it = h_table->begin(); it != h_table->end(); ++it) {
-      delete it->second;
+    for (auto &it : *h_table) {
+      delete it.second;
     }
   }
 }
@@ -183,8 +183,8 @@ void
 UrlRewrite::PrintStore(MappingsStore &store)
 {
   if (store.hash_lookup) {
-    for (auto it = store.hash_lookup->begin(); it != store.hash_lookup->end(); ++it) {
-      it->second->Print();
+    for (auto &it : *store.hash_lookup) {
+      it.second->Print();
     }
   }
 

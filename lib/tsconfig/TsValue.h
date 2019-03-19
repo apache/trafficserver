@@ -29,6 +29,7 @@
 #include <tsconfig/NumericType.h>
 #include <tsconfig/IntrusivePtr.h>
 #include <tsconfig/Errata.h>
+#include <utility>
 #include <vector>
 
 namespace ts { namespace config {
@@ -651,7 +652,7 @@ namespace detail {
 
 inline Value::~Value() { }
 inline Value::Value() : _vidx(detail::NULL_VALUE_INDEX) {}
-inline Value::Value(Configuration cfg, detail::ValueIndex vidx) : _config(cfg), _vidx(vidx) { }
+inline Value::Value(Configuration cfg, detail::ValueIndex vidx) : _config(std::move(cfg)), _vidx(vidx) { }
 inline bool Value::hasValue() const { return _config && _vidx != detail::NULL_VALUE_INDEX; }
 inline Value::operator detail::PseudoBool::Type () const { return this->hasValue() ? detail::PseudoBool::TRUE : detail::PseudoBool::FALSE; }
 inline bool Value::operator ! () const { return ! this->hasValue(); }
