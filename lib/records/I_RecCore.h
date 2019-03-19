@@ -46,7 +46,7 @@ int RecSetDiags(Diags *diags);
 typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const char *name, const char *value, RecSourceT source,
                                        bool inc_version);
 
-void RecConfigFileInit(void);
+void RecConfigFileInit();
 int RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_version);
 
 // Return a copy of the system's configuration directory.

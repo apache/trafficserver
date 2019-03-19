@@ -359,7 +359,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
 
             AccessToken *token = config->_tokenFactory->getAccessToken();
             if (nullptr != token &&
-                VALID == (data->_originState = token->validate(StringView(tokenHdrValue, tokenHdrValueLen), time(0)))) {
+                VALID == (data->_originState = token->validate(StringView(tokenHdrValue, tokenHdrValueLen), time(nullptr)))) {
               /*
                * From RFC 6265 "HTTP State Management Mechanism":
                * To maximize compatibility with user agents, servers that wish to
@@ -520,7 +520,7 @@ enforceAccessControl(TSHttpTxn txnp, TSRemapRequestInfo *rri, AccessControlConfi
     if (0 < decryptedCookieSize) {
       AccessToken *token = config->_tokenFactory->getAccessToken();
       if (nullptr != token) {
-        data->_vaState = token->validate(StringView(decodedCookie, decryptedCookieSize), time(0));
+        data->_vaState = token->validate(StringView(decodedCookie, decryptedCookieSize), time(nullptr));
         if (VALID != data->_vaState) {
           remapStatus =
             handleInvalidToken(txnp, data, reject, accessTokenStateToHttpStatus(data->_vaState, config), data->_vaState);

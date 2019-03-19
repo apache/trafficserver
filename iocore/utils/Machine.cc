@@ -231,8 +231,8 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
 Machine::~Machine()
 {
   ats_free(hostname);
-  for (auto spot = machine_id_ipaddrs.begin(); spot != machine_id_ipaddrs.end(); spot++) {
-    delete spot->second;
+  for (auto &machine_id_ipaddr : machine_id_ipaddrs) {
+    delete machine_id_ipaddr.second;
   }
 }
 

@@ -59,12 +59,12 @@ public:
   setGlobName(std::string name)
   {
     std::string::size_type pos = 0;
-    while ((pos = name.find(".", pos)) != std::string::npos) {
+    while ((pos = name.find('.', pos)) != std::string::npos) {
       name.replace(pos, 1, "\\.");
       pos += 2;
     }
     pos = 0;
-    while ((pos = name.find("*", pos)) != std::string::npos) {
+    while ((pos = name.find('*', pos)) != std::string::npos) {
       name.replace(pos, 1, ".{0,}");
     }
     Debug("ssl_sni", "Regexed fqdn=%s", name.c_str());

@@ -22,9 +22,9 @@
 
  */
 
-#include <math.h>
-#include <string.h>
-#include <errno.h>
+#include <cmath>
+#include <cstring>
+#include <cerrno>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
@@ -191,7 +191,7 @@ Cleanup:
 }
 
 int
-decode_id(std::string encoded_id, char *decoded_data, int &decoded_data_len)
+decode_id(const std::string &encoded_id, char *decoded_data, int &decoded_data_len)
 {
   size_t decode_len = 0;
   memset(decoded_data, 0, decoded_data_len);

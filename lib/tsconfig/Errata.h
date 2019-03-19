@@ -827,7 +827,7 @@ inline size_t Errata::size() const {
 }
 
 inline bool Errata::isOK() const {
-  return 0 == m_data
+  return nullptr == m_data
     || 0 == m_data->size()
     || Message::Success_Test(this->top())
     ;

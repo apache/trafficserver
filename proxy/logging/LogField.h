@@ -79,7 +79,7 @@ public:
   typedef int (LogAccess::*MarshalFunc)(char *buf);
   typedef int (*UnmarshalFunc)(char **buf, char *dest, int len);
   typedef int (*UnmarshalFuncWithSlice)(char **buf, char *dest, int len, LogSlice *slice);
-  typedef int (*UnmarshalFuncWithMap)(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
+  typedef int (*UnmarshalFuncWithMap)(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
   typedef void (LogAccess::*SetFunc)(char *buf, int len);
 
   enum Type {
@@ -177,7 +177,7 @@ public:
   void set_aggregate_op(Aggregate agg_op);
   void update_aggregate(int64_t val);
 
-  static void init_milestone_container(void);
+  static void init_milestone_container();
   static Container valid_container_name(char *name);
   static Aggregate valid_aggregate_name(char *name);
   static bool fieldlist_contains_aggregates(const char *fieldlist);

@@ -33,8 +33,8 @@
 Value::~Value()
 {
   TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Value");
-  for (auto it = _cond_vals.begin(); it != _cond_vals.end(); it++) {
-    delete *it;
+  for (auto &_cond_val : _cond_vals) {
+    delete _cond_val;
   }
 }
 
@@ -47,8 +47,7 @@ Value::set_value(const std::string &val)
     SimpleTokenizer tokenizer(_value);
     auto tokens = tokenizer.get_tokens();
 
-    for (auto it = tokens.begin(); it != tokens.end(); it++) {
-      std::string token    = *it;
+    for (auto token : tokens) {
       Condition *tcond_val = nullptr;
 
       if (token.substr(0, 2) == "%{") {

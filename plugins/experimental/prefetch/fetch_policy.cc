@@ -23,7 +23,7 @@
 
 #include "fetch_policy.h"
 
-#include <string.h>
+#include <cstring>
 
 #include "common.h"
 #include "fetch_policy_lru.h"

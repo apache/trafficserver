@@ -40,7 +40,7 @@ namespace cache
       TSCacheKeyDestroy(key_);
     }
 
-    Key(void) : key_(TSCacheKeyCreate()) { assert(key_ != nullptr); }
+    Key() : key_(TSCacheKeyCreate()) { assert(key_ != nullptr); }
     Key(const Key &) = delete;
     Key &operator=(const Key &) = delete;
 
@@ -51,7 +51,7 @@ namespace cache
     }
 
     TSCacheKey
-    key(void) const
+    key() const
     {
       return key_;
     }

@@ -18,7 +18,7 @@
   limitations under the License.
  */
 
-#include <inttypes.h>
+#include <cinttypes>
 
 #include <cstdio>
 #include <cstdlib>
@@ -28,7 +28,7 @@
 
 #include <sys/types.h>
 #include <fcntl.h>
-#include <errno.h>
+#include <cerrno>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 

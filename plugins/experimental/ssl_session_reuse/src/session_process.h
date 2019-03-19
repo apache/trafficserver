@@ -24,7 +24,7 @@
 #pragma once
 
 #include <string>
-#include <math.h>
+#include <cmath>
 
 #define SSL_SESSION_MAX_DER 1024 * 10
 
@@ -42,6 +42,6 @@ int decrypt_session(const std::string &encrypted_data, const unsigned char *key,
                     int32_t &session_len);
 
 int encode_id(const char *id, int idlen, std::string &decoded_data);
-int decode_id(std::string encoded_id, char *decoded_data, int &decoded_data_len);
+int decode_id(const std::string &encoded_id, char *decoded_data, int &decoded_data_len);
 
 int add_session(char *session_id, int session_id_len, const std::string &encrypted_session);

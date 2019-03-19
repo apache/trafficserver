@@ -707,25 +707,25 @@ HdrHeap::marshal(char *buf, int len)
     str_heaps++;
   }
 
-  for (unsigned i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
-    if (m_ronly_heap[i].m_heap_start != nullptr) {
-      if (m_ronly_heap[i].m_heap_len > len) {
+  for (auto &i : m_ronly_heap) {
+    if (i.m_heap_start != nullptr) {
+      if (i.m_heap_len > len) {
         goto Failed;
       }
 
-      memcpy(b, m_ronly_heap[i].m_heap_start, m_ronly_heap[i].m_heap_len);
+      memcpy(b, i.m_heap_start, i.m_heap_len);
 
       // Add translation table entry for string heaps
       //   FIX ME - possible offset overflow issues?
-      str_xlation[str_heaps].start  = m_ronly_heap[i].m_heap_start;
-      str_xlation[str_heaps].end    = m_ronly_heap[i].m_heap_start + m_ronly_heap[i].m_heap_len;
+      str_xlation[str_heaps].start  = i.m_heap_start;
+      str_xlation[str_heaps].end    = i.m_heap_start + i.m_heap_len;
       str_xlation[str_heaps].offset = str_xlation[str_heaps].start - (b - buf);
       ink_assert(str_xlation[str_heaps].start <= str_xlation[str_heaps].end);
 
       str_heaps++;
-      b += m_ronly_heap[i].m_heap_len;
-      len -= m_ronly_heap[i].m_heap_len;
-      str_size += m_ronly_heap[i].m_heap_len;
+      b += i.m_heap_len;
+      len -= i.m_heap_len;
+      str_size += i.m_heap_len;
     }
   }
 
@@ -1024,10 +1024,10 @@ HdrHeap::inherit_string_heaps(const HdrHeap *inherit_from)
     free_slots--;
     inherit_str_size = inherit_from->m_read_write_heap->m_heap_size;
   }
-  for (unsigned index = 0; index < HDR_BUF_RONLY_HEAPS; ++index) {
-    if (inherit_from->m_ronly_heap[index].m_heap_start != nullptr) {
+  for (const auto &index : inherit_from->m_ronly_heap) {
+    if (index.m_heap_start != nullptr) {
       free_slots--;
-      inherit_str_size += inherit_from->m_ronly_heap[index].m_heap_len;
+      inherit_str_size += index.m_heap_len;
     } else {
       // Heaps are allocated from the front of the array, so if
       //  we hit a NULL, we know we can stop

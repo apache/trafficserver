@@ -187,7 +187,7 @@ TSPluginInit(int argc, const char *argv[])
   my_data *data = (my_data *)malloc(1 * sizeof(my_data));
 
   TSPluginRegistrationInfo info;
-  bool reconnect = 1;
+  bool reconnect = true;
 
   info.plugin_name   = const_cast<char *>(PLUGIN_NAME);
   info.vendor_name   = const_cast<char *>("Apache Software Foundation");

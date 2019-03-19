@@ -42,13 +42,13 @@ initGeoIP()
 {
   GeoIPDBTypes dbs[] = {GEOIP_COUNTRY_EDITION, GEOIP_COUNTRY_EDITION_V6, GEOIP_ASNUM_EDITION, GEOIP_ASNUM_EDITION_V6};
 
-  for (unsigned i = 0; i < sizeof(dbs) / sizeof(dbs[0]); ++i) {
-    if (!gGeoIP[dbs[i]] && GeoIP_db_avail(dbs[i])) {
+  for (auto &db : dbs) {
+    if (!gGeoIP[db] && GeoIP_db_avail(db)) {
       // GEOIP_STANDARD seems to break threaded apps...
-      gGeoIP[dbs[i]] = GeoIP_open_type(dbs[i], GEOIP_MMAP_CACHE);
+      gGeoIP[db] = GeoIP_open_type(db, GEOIP_MMAP_CACHE);
 
-      char *db_info = GeoIP_database_info(gGeoIP[dbs[i]]);
-      TSDebug(PLUGIN_NAME, "initialized GeoIP-DB[%d] %s", dbs[i], db_info);
+      char *db_info = GeoIP_database_info(gGeoIP[db]);
+      TSDebug(PLUGIN_NAME, "initialized GeoIP-DB[%d] %s", db, db_info);
       free(db_info);
     }
   }

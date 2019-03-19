@@ -30,7 +30,7 @@
  */
 
 #pragma once
-#include "stdint.h"
+#include <cstdint>
 #include <typeinfo>
 #include <typeindex>
 #include <cstddef>
@@ -60,7 +60,7 @@ enum AccessEnum { ATOMIC, BIT, STATIC, ACIDPTR, DIRECT, C_API, NUM_ACCESS_TYPES 
 inline bool &
 areStaticsFrozen()
 {
-  static bool frozen = 0;
+  static bool frozen = false;
   return frozen;
 }
 

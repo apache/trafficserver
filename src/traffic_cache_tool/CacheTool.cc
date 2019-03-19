@@ -1219,7 +1219,7 @@ dir_check()
 }
 
 void
-walk_bucket_chain(std::string devicePath)
+walk_bucket_chain(const std::string &devicePath)
 {
   Cache cache;
   if ((err = cache.loadSpan(SpanFile))) {
@@ -1237,7 +1237,7 @@ walk_bucket_chain(std::string devicePath)
 }
 
 void
-Clear_Span(std::string devicePath)
+Clear_Span(const std::string &devicePath)
 {
   Cache cache;
   if ((err = cache.loadSpan(SpanFile))) {
@@ -1253,7 +1253,7 @@ Clear_Span(std::string devicePath)
 }
 
 void
-Check_Freelist(std::string devicePath)
+Check_Freelist(const std::string &devicePath)
 {
   Cache cache;
   if ((err = cache.loadSpan(SpanFile))) {

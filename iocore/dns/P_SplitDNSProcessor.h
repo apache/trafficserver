@@ -130,12 +130,12 @@ class DNSRequestData : public RequestData
 public:
   DNSRequestData();
 
-  char *get_string();
+  char *get_string() override;
 
-  const char *get_host();
+  const char *get_host() override;
 
-  sockaddr const *get_ip();        // unused required virtual method.
-  sockaddr const *get_client_ip(); // unused required virtual method.
+  sockaddr const *get_ip() override;        // unused required virtual method.
+  sockaddr const *get_client_ip() override; // unused required virtual method.
 
   const char *m_pHost;
 };

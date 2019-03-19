@@ -77,7 +77,7 @@ private:
 class MultiPattern
 {
 public:
-  MultiPattern(const String name = "") : _name(name) {}
+  MultiPattern(const String &name = "") : _name(name) {}
   virtual ~MultiPattern();
 
   bool empty() const;

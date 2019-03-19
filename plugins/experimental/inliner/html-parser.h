@@ -35,7 +35,7 @@ namespace inliner
   typedef std::vector<Pair> AttributeVector;
 
   struct Attributes : AttributeVector {
-    operator std::string(void) const;
+    operator std::string() const;
   };
 
   struct Tag {
@@ -104,9 +104,9 @@ namespace inliner
     Attribute::ATTRIBUTES state_;
     Attributes attributes;
 
-    AttributeParser(void) : state_(Attribute::kPreName) {}
+    AttributeParser() : state_(Attribute::kPreName) {}
     void
-    reset(void)
+    reset()
     {
       state_ = Attribute::kPreName;
       attributes.clear();
@@ -133,7 +133,7 @@ namespace inliner
     Tag::TAGS tag_;
     AttributeParser attributeParser_;
 
-    HtmlParser(void) : state_(State::kUndefined), tag_(Tag::kUndefined) {}
+    HtmlParser() : state_(State::kUndefined), tag_(Tag::kUndefined) {}
     virtual ~HtmlParser() {}
     bool parseTag(const char);
     size_t parse(const char *, size_t, size_t o = 0);

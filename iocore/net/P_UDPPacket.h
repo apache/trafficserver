@@ -151,14 +151,14 @@ UDPPacket::setConnection(UDPConnection *c)
 }
 
 TS_INLINE IOBufferBlock *
-UDPPacket::getIOBlockChain(void)
+UDPPacket::getIOBlockChain()
 {
   ink_assert(dynamic_cast<UDPPacketInternal *>(this) != nullptr);
   return ((UDPPacketInternal *)this)->chain.get();
 }
 
 TS_INLINE UDPConnection *
-UDPPacket::getConnection(void)
+UDPPacket::getConnection()
 {
   return ((UDPPacketInternal *)this)->conn;
 }

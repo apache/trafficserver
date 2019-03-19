@@ -101,7 +101,7 @@ namespace inliner
     }
 
     void
-    done(void)
+    done()
     {
       if (GIF::verifySignature(content_)) {
         contentType_ = "image/gif";
@@ -165,13 +165,13 @@ namespace inliner
     }
 
     void
-    timeout(void) const
+    timeout() const
     {
       TSDebug(PLUGIN_TAG, "Fetch timeout");
     }
 
     void
-    error(void) const
+    error() const
     {
       TSDebug(PLUGIN_TAG, "Fetch error");
     }
@@ -225,7 +225,7 @@ namespace inliner
     }
 
     template <class T1, class T2>
-    CacheHandler(const std::string &s, const std::string &o, const std::string c, const std::string &i, T1 &&si, T2 &&si2)
+    CacheHandler(const std::string &s, const std::string &o, const std::string &c, const std::string &i, T1 &&si, T2 &&si2)
       : src_(s), original_(o), classes_(c), id_(i), sink_(std::forward<T1>(si)), sink2_(std::forward<T2>(si2)), reader_(nullptr)
     {
       assert(sink_ != nullptr);
@@ -248,7 +248,7 @@ namespace inliner
     CacheHandler &operator=(const CacheHandler &) = delete;
 
     void
-    done(void)
+    done()
     {
       assert(reader_ != nullptr);
       assert(sink2_ != nullptr);
@@ -291,7 +291,7 @@ namespace inliner
     }
 
     void
-    miss(void)
+    miss()
     {
       assert(sink_ != nullptr);
       *sink_ << original_;

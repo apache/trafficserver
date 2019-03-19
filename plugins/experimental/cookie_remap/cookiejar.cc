@@ -18,7 +18,7 @@
 
 #include "cookiejar.h"
 #include "strip.h"
-#include <string.h>
+#include <cstring>
 
 /* allowed cookie-name definition from RFC
  * cookie-name       = token

@@ -169,7 +169,7 @@ struct EVPContext {
     EVP_MD_CTX_destroy(context);
   }
 
-  EVPContext(void) : context(EVP_MD_CTX_create()) { assert(nullptr != context); }
+  EVPContext() : context(EVP_MD_CTX_create()) { assert(nullptr != context); }
 };
 
 struct EVPKey {
@@ -181,7 +181,7 @@ struct EVPKey {
     EVP_PKEY_free(key);
   }
 
-  EVPKey(void) : key(EVP_PKEY_new()) { assert(nullptr != key); }
+  EVPKey() : key(EVP_PKEY_new()) { assert(nullptr != key); }
 
   bool
   assign(const char *const k) const
@@ -250,7 +250,7 @@ struct Exception {
     info = DestroyExceptionInfo(info);
   }
 
-  Exception(void) : info(AcquireExceptionInfo()) { assert(nullptr != info); }
+  Exception() : info(AcquireExceptionInfo()) { assert(nullptr != info); }
 };
 
 struct Image {
@@ -262,7 +262,7 @@ struct Image {
     info = DestroyImageInfo(info);
   }
 
-  Image(void) : info(AcquireImageInfo()) { assert(nullptr != info); }
+  Image() : info(AcquireImageInfo()) { assert(nullptr != info); }
 };
 
 struct Wand {
@@ -278,17 +278,17 @@ struct Wand {
     }
   }
 
-  Wand(void) : wand(NewMagickWand()), blob(nullptr) { assert(nullptr != wand); }
+  Wand() : wand(NewMagickWand()), blob(nullptr) { assert(nullptr != wand); }
 
   void
-  clear(void) const
+  clear() const
   {
     assert(nullptr != wand);
     ClearMagickWand(wand);
   }
 
   std::string_view
-  get(void)
+  get()
   {
     assert(nullptr != wand);
     std::size_t length = 0;
@@ -336,7 +336,7 @@ struct Wand {
 struct Core {
   ~Core() { MagickCoreTerminus(); }
 
-  Core(void) { MagickCoreGenesis("/tmp", MagickFalse); }
+  Core() { MagickCoreGenesis("/tmp", MagickFalse); }
 };
 
 } // namespace magick
@@ -362,7 +362,7 @@ struct QueryMap {
   }
 
   void
-  parse(void)
+  parse()
   {
     std::string_view key;
     std::size_t i = 0, j = 0;
@@ -473,7 +473,7 @@ struct ImageTransform : TransformationPlugin {
   }
 
   void
-  handleInputComplete(void) override
+  handleInputComplete() override
   {
     TSDebug(PLUGIN_TAG, "handleInputComplete");
 
@@ -515,7 +515,7 @@ struct GlobalHookPlugin : GlobalPlugin {
   magick::EVPKey *key_;
   ThreadPool threadPool_;
 
-  ~GlobalHookPlugin()
+  ~GlobalHookPlugin() override
   {
     if (nullptr != key_) {
       delete key_;

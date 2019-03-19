@@ -229,8 +229,8 @@ RegressionSM::RegressionSM(const RegressionSM &ao) : Continuation(ao)
   parent   = &o;
   nwaiting = o.nwaiting;
 
-  for (unsigned i = 0; i < o.children.size(); i++) {
-    children.push_back(o.children[i]->clone());
+  for (auto &i : o.children) {
+    children.push_back(i->clone());
   }
 
   n              = o.n;

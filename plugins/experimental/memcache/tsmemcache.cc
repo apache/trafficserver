@@ -962,7 +962,7 @@ MC::ascii_incr_decr_event(int event, void *data)
     }
     header.cas = ink_atomic_increment(&next_cas, 1);
     {
-      char *data = 0;
+      char *data = nullptr;
       int len    = 0;
       // must be huge, why convert to a counter ??
       if (cwvc->get_single_data((void **)&data, &len) < 0) {

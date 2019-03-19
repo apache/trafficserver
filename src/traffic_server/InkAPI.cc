@@ -1777,28 +1777,28 @@ TShrtime()
 ////////////////////////////////////////////////////////////////////
 
 const char *
-TSInstallDirGet(void)
+TSInstallDirGet()
 {
   static std::string prefix = Layout::get()->prefix;
   return prefix.c_str();
 }
 
 const char *
-TSConfigDirGet(void)
+TSConfigDirGet()
 {
   static std::string sysconfdir = RecConfigReadConfigDir();
   return sysconfdir.c_str();
 }
 
 const char *
-TSRuntimeDirGet(void)
+TSRuntimeDirGet()
 {
   static std::string runtimedir = RecConfigReadRuntimeDir();
   return runtimedir.c_str();
 }
 
 const char *
-TSTrafficServerVersionGet(void)
+TSTrafficServerVersionGet()
 {
   return traffic_server_version;
 }
@@ -1820,7 +1820,7 @@ TSTrafficServerVersionGetPatch()
 }
 
 const char *
-TSPluginDirGet(void)
+TSPluginDirGet()
 {
   static std::string path = RecConfigReadPluginDir();
   return path.c_str();
@@ -1962,7 +1962,7 @@ TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
 // TSMBuffer: pointers to HdrHeapSDKHandle objects
 
 TSMBuffer
-TSMBufferCreate(void)
+TSMBufferCreate()
 {
   TSMBuffer bufp;
   HdrHeapSDKHandle *new_heap = new HdrHeapSDKHandle;
@@ -2456,7 +2456,7 @@ TSIpStringToAddr(const char *str, size_t str_len, sockaddr *addr)
 /**************/
 
 TSMimeParser
-TSMimeParserCreate(void)
+TSMimeParserCreate()
 {
   TSMimeParser parser = reinterpret_cast<TSMimeParser>(ats_malloc(sizeof(MIMEParser)));
 
@@ -3547,7 +3547,7 @@ TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 /* HttpParser */
 /**************/
 TSHttpParser
-TSHttpParserCreate(void)
+TSHttpParserCreate()
 {
   TSHttpParser parser = reinterpret_cast<TSHttpParser>(ats_malloc(sizeof(HTTPParser)));
   http_parser_init((HTTPParser *)parser);
@@ -4039,7 +4039,7 @@ sdk_sanity_check_cachekey(TSCacheKey key)
 }
 
 TSCacheKey
-TSCacheKeyCreate(void)
+TSCacheKeyCreate()
 {
   TSCacheKey key = (TSCacheKey) new CacheInfo();
 
@@ -4249,7 +4249,7 @@ TSCacheHttpInfoDestroy(TSCacheHttpInfo infop)
 }
 
 TSCacheHttpInfo
-TSCacheHttpInfoCreate(void)
+TSCacheHttpInfoCreate()
 {
   CacheHTTPInfo *info = new CacheHTTPInfo;
   info->create();
@@ -6367,7 +6367,7 @@ TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp)
 }
 
 int
-TSHttpCurrentClientConnectionsGet(void)
+TSHttpCurrentClientConnectionsGet()
 {
   int64_t S;
 
@@ -6376,7 +6376,7 @@ TSHttpCurrentClientConnectionsGet(void)
 }
 
 int
-TSHttpCurrentActiveClientConnectionsGet(void)
+TSHttpCurrentActiveClientConnectionsGet()
 {
   int64_t S;
 
@@ -6385,7 +6385,7 @@ TSHttpCurrentActiveClientConnectionsGet(void)
 }
 
 int
-TSHttpCurrentIdleClientConnectionsGet(void)
+TSHttpCurrentIdleClientConnectionsGet()
 {
   int64_t total  = 0;
   int64_t active = 0;
@@ -6401,7 +6401,7 @@ TSHttpCurrentIdleClientConnectionsGet(void)
 }
 
 int
-TSHttpCurrentCacheConnectionsGet(void)
+TSHttpCurrentCacheConnectionsGet()
 {
   int64_t S;
 
@@ -6410,7 +6410,7 @@ TSHttpCurrentCacheConnectionsGet(void)
 }
 
 int
-TSHttpCurrentServerConnectionsGet(void)
+TSHttpCurrentServerConnectionsGet()
 {
   int64_t S;
 
@@ -7458,7 +7458,7 @@ TSMatcherExtractIPRange(char *match_str, sockaddr *addr1, sockaddr *addr2)
 }
 
 TSMatcherLine
-TSMatcherLineCreate(void)
+TSMatcherLineCreate()
 {
   return reinterpret_cast<TSMatcherLine>(ats_malloc(sizeof(matcher_line)));
 }
@@ -9156,7 +9156,7 @@ TSSslSessionRemove(const TSSslSessionID *session_id)
 
 // APIs for managing and using UUIDs.
 TSUuid
-TSUuidCreate(void)
+TSUuidCreate()
 {
   ATSUuid *uuid = new ATSUuid();
   return (TSUuid)uuid;
@@ -9196,7 +9196,7 @@ TSUuidInitialize(TSUuid uuid, TSUuidVersion v)
 }
 
 TSUuid
-TSProcessUuidGet(void)
+TSProcessUuidGet()
 {
   Machine *machine = Machine::instance();
   return (TSUuid)(&machine->uuid);

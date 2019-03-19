@@ -235,7 +235,7 @@ class HeaderField
 {
 private:
   header_field_iterator iter_;
-  HeaderField(header_field_iterator iter) : iter_(iter) {}
+  HeaderField(const header_field_iterator &iter) : iter_(iter) {}
 
 public:
   typedef unsigned int size_type;

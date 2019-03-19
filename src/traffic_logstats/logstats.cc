@@ -753,7 +753,7 @@ struct ExitStatus {
   }
 
   void
-  append(const std::string s)
+  append(const std::string &s)
   {
     ink_strlcat(notice, s.c_str(), sizeof(notice));
   }

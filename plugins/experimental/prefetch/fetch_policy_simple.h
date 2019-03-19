@@ -33,13 +33,13 @@ class FetchPolicySimple : public FetchPolicy
 {
 public:
   FetchPolicySimple() {}
-  virtual ~FetchPolicySimple(){};
-  bool init(const char *parameters);
-  bool acquire(const std::string &url);
-  bool release(const std::string &url);
-  const char *name();
-  size_t getSize();
-  size_t getMaxSize();
+  ~FetchPolicySimple() override{};
+  bool init(const char *parameters) override;
+  bool acquire(const std::string &url) override;
+  bool release(const std::string &url) override;
+  const char *name() override;
+  size_t getSize() override;
+  size_t getMaxSize() override;
 
 private:
   std::unordered_map<std::string, bool> _urls;
