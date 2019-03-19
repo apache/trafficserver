@@ -1081,15 +1081,17 @@ public:
 
 typedef void (*TransactEntryFunc_t)(HttpTransact::State *s);
 
-////////////////////////////////////////////////////////
-// the spec says about message body the following:    //
-// All responses to the HEAD request method MUST NOT  //
-// include a message-body, even though the presence   //
-// of entity-header fields might lead one to believe  //
-// they do. All 1xx (informational), 204 (no content),//
-// and 304 (not modified) responses MUST NOT include  //
-// a message-body.                                    //
-////////////////////////////////////////////////////////
+/* The spec says about message body the following:
+ *
+ * All responses to the HEAD and CONNECT request method
+ * MUST NOT include a message-body, even though the presence
+ * of entity-header fields might lead one to believe they do.
+ *
+ * All 1xx (informational), 204 (no content), and 304 (not modified)
+ * responses MUST NOT include a message-body.
+ *
+ * Refer : [https://tools.ietf.org/html/rfc7231#section-4.3.6]
+ */
 inline bool
 is_response_body_precluded(HTTPStatus status_code)
 {
@@ -1105,7 +1107,7 @@ is_response_body_precluded(HTTPStatus status_code)
 inline bool
 is_response_body_precluded(HTTPStatus status_code, int method)
 {
-  if ((method == HTTP_WKSIDX_HEAD) || is_response_body_precluded(status_code)) {
+  if ((method == HTTP_WKSIDX_HEAD) || (method == HTTP_WKSIDX_CONNECT) || is_response_body_precluded(status_code)) {
     return true;
   } else {
     return false;
