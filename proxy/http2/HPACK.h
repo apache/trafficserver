@@ -55,10 +55,10 @@ enum class HpackMatch {
 
 // Result of looking for a header field in IndexingTable
 struct HpackLookupResult {
-  HpackLookupResult() : index(0), index_type(HpackIndex::NONE), match_type(HpackMatch::NONE) {}
-  int index;
-  HpackIndex index_type;
-  HpackMatch match_type;
+  HpackLookupResult() {}
+  int index             = 0;
+  HpackIndex index_type = HpackIndex::NONE;
+  HpackMatch match_type = HpackMatch::NONE;
 };
 
 class MIMEFieldWrapper

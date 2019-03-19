@@ -154,6 +154,6 @@ public:
   ~SSLSessionCache();
 
 private:
-  SSLSessionBucket *session_bucket;
+  SSLSessionBucket *session_bucket = nullptr;
   size_t nbuckets;
 };

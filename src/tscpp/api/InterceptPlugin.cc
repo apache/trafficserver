@@ -45,10 +45,10 @@ struct InterceptPlugin::State {
   TSVConn net_vc_ = nullptr;
 
   struct IoHandle {
-    TSVIO vio_;
-    TSIOBuffer buffer_;
-    TSIOBufferReader reader_;
-    IoHandle() : vio_(nullptr), buffer_(nullptr), reader_(nullptr){};
+    TSVIO vio_               = nullptr;
+    TSIOBuffer buffer_       = nullptr;
+    TSIOBufferReader reader_ = nullptr;
+    IoHandle(){};
     ~IoHandle()
     {
       if (reader_) {

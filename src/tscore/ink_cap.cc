@@ -486,8 +486,7 @@ ElevateAccess::releasePrivilege()
 #endif
 
 ElevateAccess::ElevateAccess(unsigned lvl)
-  : elevated(false),
-    saved_uid(geteuid()),
+  : saved_uid(geteuid()),
     level(lvl)
 #if TS_USE_POSIX_CAP
     ,

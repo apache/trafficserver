@@ -55,7 +55,7 @@ class RedisPublisher
 
   std::vector<RedisEndpoint> m_redisEndpoints;
   std::string m_redisEndpointsStr;
-  int m_endpointIndex;
+  int m_endpointIndex = 0;
   std::mutex m_endpointIndexMutex;
 
   std::vector<simple_pool *> pools;
@@ -68,7 +68,7 @@ class RedisPublisher
   unsigned int m_maxQueuedMessages;
   unsigned int m_poolRedisConnectTimeout; // milliseconds
 
-  bool err;
+  bool err = false;
 
   void runWorker();
 

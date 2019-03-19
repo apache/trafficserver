@@ -39,7 +39,7 @@ ink_mutex ResourceTracker::resourceLock = PTHREAD_MUTEX_INITIALIZER;
 class Resource
 {
 public:
-  Resource() : _incrementCount(0), _decrementCount(0), _value(0), _symbol(nullptr) { _name[0] = '\0'; }
+  Resource() { _name[0] = '\0'; }
   void increment(const int64_t size);
   int64_t
   getValue() const
@@ -86,10 +86,10 @@ public:
   }
 
 private:
-  int64_t _incrementCount;
-  int64_t _decrementCount;
-  int64_t _value;
-  const void *_symbol;
+  int64_t _incrementCount = 0;
+  int64_t _decrementCount = 0;
+  int64_t _value          = 0;
+  const void *_symbol     = nullptr;
   char _name[128];
 };
 

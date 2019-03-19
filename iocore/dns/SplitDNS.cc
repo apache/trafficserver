@@ -74,14 +74,12 @@ Ptr<ProxyMutex> SplitDNSConfig::dnsHandler_mutex;
 /* --------------------------------------------------------------
    SplitDNSResult::SplitDNSResult()
    -------------------------------------------------------------- */
-inline SplitDNSResult::SplitDNSResult() : r(DNS_SRVR_UNDEFINED), m_line_number(0), m_rec(nullptr), m_wrap_around(false) {}
+inline SplitDNSResult::SplitDNSResult() {}
 
 /* --------------------------------------------------------------
    SplitDNS::SplitDNS()
    -------------------------------------------------------------- */
-SplitDNS::SplitDNS() : m_DNSSrvrTable(nullptr), m_SplitDNSlEnable(0), m_bEnableFastPath(false), m_pxLeafArray(nullptr), m_numEle(0)
-{
-}
+SplitDNS::SplitDNS() {}
 
 SplitDNS::~SplitDNS()
 {

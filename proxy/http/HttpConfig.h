@@ -358,11 +358,11 @@ extern RecRawStatBlock *http_rsb;
 //   (corresponds to a "*" in the config file)
 /////////////////////////////////////////////////////////////
 struct HttpConfigPortRange {
-  int low;
-  int high;
-  HttpConfigPortRange *next;
+  int low                   = 0;
+  int high                  = 0;
+  HttpConfigPortRange *next = nullptr;
 
-  HttpConfigPortRange() : low(0), high(0), next(nullptr) {}
+  HttpConfigPortRange() {}
   ~HttpConfigPortRange()
   {
     if (next)
@@ -436,176 +436,53 @@ static std::map<std::string, Action> action_map = {
 // and State (txn) structure. It allows for certain configs
 // to be overridable per transaction more easily.
 struct OverridableHttpConfigParams {
-  OverridableHttpConfigParams()
-    : maintain_pristine_host_hdr(1),
-      chunking_enabled(1),
-      negative_caching_enabled(0),
-      negative_revalidating_enabled(0),
-      cache_when_to_revalidate(0),
-      keep_alive_enabled_in(1),
-      keep_alive_enabled_out(1),
-      keep_alive_post_out(1),
-      server_session_sharing_match(TS_SERVER_SESSION_SHARING_MATCH_BOTH),
-      auth_server_session_private(1),
-      fwd_proxy_auth_to_parent(0),
-      uncacheable_requests_bypass_parent(1),
-      attach_server_session_to_client(0),
-      forward_connect_method(0),
-      insert_age_in_response(1),
-      anonymize_remove_from(0),
-      anonymize_remove_referer(0),
-      anonymize_remove_user_agent(0),
-      anonymize_remove_cookie(0),
-      anonymize_remove_client_ip(0),
-      anonymize_insert_client_ip(1),
-      proxy_response_server_enabled(1),
-      proxy_response_hsts_include_subdomains(0),
-      insert_squid_x_forwarded_for(1),
-      insert_forwarded(HttpForwarded::OptionBitSet()),
-      send_http11_requests(1),
-      cache_http(1),
-      cache_ignore_client_no_cache(1),
-      cache_ignore_client_cc_max_age(0),
-      cache_ims_on_client_no_cache(1),
-      cache_ignore_server_no_cache(0),
-      cache_responses_to_cookies(1),
-      cache_ignore_auth(0),
-      cache_urls_that_look_dynamic(1),
-      cache_required_headers(2),
-      cache_range_lookup(1),
-      cache_range_write(0),
-      allow_multi_range(0),
-      cache_enable_default_vary_headers(0),
-      ignore_accept_mismatch(0),
-      ignore_accept_language_mismatch(0),
-      ignore_accept_encoding_mismatch(0),
-      ignore_accept_charset_mismatch(0),
-      insert_request_via_string(1),
-      insert_response_via_string(0),
-      doc_in_cache_skip_dns(1),
-      flow_control_enabled(0),
-      normalize_ae(0),
-      srv_enabled(0),
-      parent_failures_update_hostdb(0),
-      cache_open_write_fail_action(0),
-      post_check_content_length_enabled(1),
-      request_buffer_enabled(0),
-      allow_half_open(1),
-      ssl_client_verify_server(0),
-      ssl_client_verify_server_policy(nullptr),
-      ssl_client_verify_server_properties(nullptr),
-      ssl_client_sni_policy(nullptr),
-      redirect_use_orig_cache_key(0),
-      number_of_redirections(0),
-      proxy_response_hsts_max_age(-1),
-      negative_caching_lifetime(1800),
-      negative_revalidating_lifetime(1800),
-      sock_recv_buffer_size_out(0),
-      sock_send_buffer_size_out(0),
-      sock_option_flag_out(0),
-      sock_packet_mark_out(0),
-      sock_packet_tos_out(0),
-      server_tcp_init_cwnd(0),
-      request_hdr_max_size(131072),
-      response_hdr_max_size(131072),
-      cache_heuristic_min_lifetime(3600),
-      cache_heuristic_max_lifetime(86400),
-      cache_guaranteed_min_lifetime(0),
-      cache_guaranteed_max_lifetime(31536000),
-      cache_max_stale_age(604800),
-      keep_alive_no_activity_timeout_in(120),
-      keep_alive_no_activity_timeout_out(120),
-      transaction_no_activity_timeout_in(30),
-      transaction_no_activity_timeout_out(30),
-      transaction_active_timeout_out(0),
-      transaction_active_timeout_in(900),
-      websocket_active_timeout(3600),
-      websocket_inactive_timeout(600),
-      connect_attempts_max_retries(0),
-      connect_attempts_max_retries_dead_server(3),
-      connect_attempts_rr_retries(3),
-      connect_attempts_timeout(30),
-      post_connect_attempts_timeout(1800),
-      parent_connect_attempts(4),
-      parent_retry_time(300),
-      parent_fail_threshold(10),
-      per_parent_connect_attempts(2),
-      parent_connect_timeout(30),
-      down_server_timeout(300),
-      client_abort_threshold(10),
-      max_cache_open_read_retries(-1),
-      cache_open_read_retry_time(10),
-      cache_generation_number(-1),
-      max_cache_open_write_retries(1),
-      background_fill_active_timeout(60),
-      http_chunking_size(4096),
-      flow_high_water_mark(0),
-      flow_low_water_mark(0),
-      default_buffer_size_index(8),
-      default_buffer_water_mark(32768),
-      slow_log_threshold(0),
-      body_factory_template_base(nullptr),
-      body_factory_template_base_len(0),
-      proxy_response_server_string(nullptr),
-      proxy_response_server_string_len(0),
-      global_user_agent_header(nullptr),
-      global_user_agent_header_size(0),
-      cache_heuristic_lm_factor(0.10),
-      background_fill_threshold(0.5),
-      ssl_client_cert_filename(nullptr),
-      ssl_client_private_key_filename(nullptr),
-      ssl_client_ca_cert_filename(nullptr),
-      cache_vary_default_text(nullptr),
-      cache_vary_default_images(nullptr),
-      cache_vary_default_other(nullptr)
-  {
-  }
+  OverridableHttpConfigParams() : insert_forwarded(HttpForwarded::OptionBitSet()) {}
 
   // A simple rules here:
   //   * Place all MgmtByte configs before all other configs
-  MgmtByte maintain_pristine_host_hdr;
-  MgmtByte chunking_enabled;
+  MgmtByte maintain_pristine_host_hdr = 1;
+  MgmtByte chunking_enabled           = 1;
 
   ////////////////////////////////
   //  Negative Response Caching //
   ////////////////////////////////
-  MgmtByte negative_caching_enabled;
-  MgmtByte negative_revalidating_enabled;
+  MgmtByte negative_caching_enabled      = 0;
+  MgmtByte negative_revalidating_enabled = 0;
 
-  MgmtByte cache_when_to_revalidate;
+  MgmtByte cache_when_to_revalidate = 0;
 
-  MgmtByte keep_alive_enabled_in;
-  MgmtByte keep_alive_enabled_out;
-  MgmtByte keep_alive_post_out; // share server sessions for post
+  MgmtByte keep_alive_enabled_in  = 1;
+  MgmtByte keep_alive_enabled_out = 1;
+  MgmtByte keep_alive_post_out    = 1; // share server sessions for post
 
-  MgmtByte server_session_sharing_match;
+  MgmtByte server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
   //  MgmtByte share_server_sessions;
-  MgmtByte auth_server_session_private;
-  MgmtByte fwd_proxy_auth_to_parent;
-  MgmtByte uncacheable_requests_bypass_parent;
-  MgmtByte attach_server_session_to_client;
+  MgmtByte auth_server_session_private        = 1;
+  MgmtByte fwd_proxy_auth_to_parent           = 0;
+  MgmtByte uncacheable_requests_bypass_parent = 1;
+  MgmtByte attach_server_session_to_client    = 0;
 
-  MgmtByte forward_connect_method;
+  MgmtByte forward_connect_method = 0;
 
-  MgmtByte insert_age_in_response;
+  MgmtByte insert_age_in_response = 1;
 
   ///////////////////////////////////////////////////////////////////
   // Privacy: fields which are removed from the user agent request //
   ///////////////////////////////////////////////////////////////////
-  MgmtByte anonymize_remove_from;
-  MgmtByte anonymize_remove_referer;
-  MgmtByte anonymize_remove_user_agent;
-  MgmtByte anonymize_remove_cookie;
-  MgmtByte anonymize_remove_client_ip;
-  MgmtByte anonymize_insert_client_ip;
+  MgmtByte anonymize_remove_from       = 0;
+  MgmtByte anonymize_remove_referer    = 0;
+  MgmtByte anonymize_remove_user_agent = 0;
+  MgmtByte anonymize_remove_cookie     = 0;
+  MgmtByte anonymize_remove_client_ip  = 0;
+  MgmtByte anonymize_insert_client_ip  = 1;
 
-  MgmtByte proxy_response_server_enabled;
-  MgmtByte proxy_response_hsts_include_subdomains;
+  MgmtByte proxy_response_server_enabled          = 1;
+  MgmtByte proxy_response_hsts_include_subdomains = 0;
 
   /////////////////////
   // X-Forwarded-For //
   /////////////////////
-  MgmtByte insert_squid_x_forwarded_for;
+  MgmtByte insert_squid_x_forwarded_for = 1;
 
   ///////////////
   // Forwarded //
@@ -615,197 +492,197 @@ struct OverridableHttpConfigParams {
   //////////////////////
   //  Version Hell    //
   //////////////////////
-  MgmtByte send_http11_requests;
+  MgmtByte send_http11_requests = 1;
 
   ///////////////////
   // cache control //
   ///////////////////
-  MgmtByte cache_http;
-  MgmtByte cache_ignore_client_no_cache;
-  MgmtByte cache_ignore_client_cc_max_age;
-  MgmtByte cache_ims_on_client_no_cache;
-  MgmtByte cache_ignore_server_no_cache;
-  MgmtByte cache_responses_to_cookies;
-  MgmtByte cache_ignore_auth;
-  MgmtByte cache_urls_that_look_dynamic;
-  MgmtByte cache_required_headers;
-  MgmtByte cache_range_lookup;
-  MgmtByte cache_range_write;
-  MgmtByte allow_multi_range;
+  MgmtByte cache_http                     = 1;
+  MgmtByte cache_ignore_client_no_cache   = 1;
+  MgmtByte cache_ignore_client_cc_max_age = 0;
+  MgmtByte cache_ims_on_client_no_cache   = 1;
+  MgmtByte cache_ignore_server_no_cache   = 0;
+  MgmtByte cache_responses_to_cookies     = 1;
+  MgmtByte cache_ignore_auth              = 0;
+  MgmtByte cache_urls_that_look_dynamic   = 1;
+  MgmtByte cache_required_headers         = 2;
+  MgmtByte cache_range_lookup             = 1;
+  MgmtByte cache_range_write              = 0;
+  MgmtByte allow_multi_range              = 0;
 
-  MgmtByte cache_enable_default_vary_headers;
+  MgmtByte cache_enable_default_vary_headers = 0;
 
-  MgmtByte ignore_accept_mismatch;
-  MgmtByte ignore_accept_language_mismatch;
-  MgmtByte ignore_accept_encoding_mismatch;
-  MgmtByte ignore_accept_charset_mismatch;
+  MgmtByte ignore_accept_mismatch          = 0;
+  MgmtByte ignore_accept_language_mismatch = 0;
+  MgmtByte ignore_accept_encoding_mismatch = 0;
+  MgmtByte ignore_accept_charset_mismatch  = 0;
 
-  MgmtByte insert_request_via_string;
-  MgmtByte insert_response_via_string;
+  MgmtByte insert_request_via_string  = 1;
+  MgmtByte insert_response_via_string = 0;
 
   //////////////////////
   //  DOC IN CACHE NO DNS//
   //////////////////////
-  MgmtByte doc_in_cache_skip_dns;
-  MgmtByte flow_control_enabled;
+  MgmtByte doc_in_cache_skip_dns = 1;
+  MgmtByte flow_control_enabled  = 0;
 
   ////////////////////////////////
   // Optimize gzip alternates   //
   ////////////////////////////////
-  MgmtByte normalize_ae;
+  MgmtByte normalize_ae = 0;
 
   //////////////////////////
   // hostdb/dns variables //
   //////////////////////////
-  MgmtByte srv_enabled;
-  MgmtByte parent_failures_update_hostdb;
+  MgmtByte srv_enabled                   = 0;
+  MgmtByte parent_failures_update_hostdb = 0;
 
-  MgmtByte cache_open_write_fail_action;
+  MgmtByte cache_open_write_fail_action = 0;
 
   ////////////////////////
   // Check Post request //
   ////////////////////////
-  MgmtByte post_check_content_length_enabled;
+  MgmtByte post_check_content_length_enabled = 1;
 
   ////////////////////////////////////////////////
   // Buffer post body before connecting servers //
   ////////////////////////////////////////////////
-  MgmtByte request_buffer_enabled;
+  MgmtByte request_buffer_enabled = 0;
 
   /////////////////////////////////////////////////
   // Keep connection open after client sends FIN //
   /////////////////////////////////////////////////
-  MgmtByte allow_half_open;
+  MgmtByte allow_half_open = 1;
 
   /////////////////////////////
   // server verification mode//
   /////////////////////////////
-  MgmtByte ssl_client_verify_server;
-  char *ssl_client_verify_server_policy;
-  char *ssl_client_verify_server_properties;
-  char *ssl_client_sni_policy;
+  MgmtByte ssl_client_verify_server         = 0;
+  char *ssl_client_verify_server_policy     = nullptr;
+  char *ssl_client_verify_server_properties = nullptr;
+  char *ssl_client_sni_policy               = nullptr;
 
   //////////////////
   // Redirection  //
   //////////////////
-  MgmtByte redirect_use_orig_cache_key;
-  MgmtInt number_of_redirections;
+  MgmtByte redirect_use_orig_cache_key = 0;
+  MgmtInt number_of_redirections       = 0;
 
-  MgmtInt proxy_response_hsts_max_age;
+  MgmtInt proxy_response_hsts_max_age = -1;
 
   ////////////////////////////////
   //  Negative cache lifetimes  //
   ////////////////////////////////
-  MgmtInt negative_caching_lifetime;
-  MgmtInt negative_revalidating_lifetime;
+  MgmtInt negative_caching_lifetime      = 1800;
+  MgmtInt negative_revalidating_lifetime = 1800;
 
   ///////////////////////////////////////
   // origin server connection settings //
   ///////////////////////////////////////
-  MgmtInt sock_recv_buffer_size_out;
-  MgmtInt sock_send_buffer_size_out;
-  MgmtInt sock_option_flag_out;
-  MgmtInt sock_packet_mark_out;
-  MgmtInt sock_packet_tos_out;
+  MgmtInt sock_recv_buffer_size_out = 0;
+  MgmtInt sock_send_buffer_size_out = 0;
+  MgmtInt sock_option_flag_out      = 0;
+  MgmtInt sock_packet_mark_out      = 0;
+  MgmtInt sock_packet_tos_out       = 0;
 
   ///////////////////////////////
   // Initial congestion window //
   ///////////////////////////////
-  MgmtInt server_tcp_init_cwnd;
+  MgmtInt server_tcp_init_cwnd = 0;
 
   ///////////////
   // Hdr Limit //
   ///////////////
-  MgmtInt request_hdr_max_size;
-  MgmtInt response_hdr_max_size;
+  MgmtInt request_hdr_max_size  = 131072;
+  MgmtInt response_hdr_max_size = 131072;
 
   /////////////////////
   // cache variables //
   /////////////////////
-  MgmtInt cache_heuristic_min_lifetime;
-  MgmtInt cache_heuristic_max_lifetime;
-  MgmtInt cache_guaranteed_min_lifetime;
-  MgmtInt cache_guaranteed_max_lifetime;
-  MgmtInt cache_max_stale_age;
+  MgmtInt cache_heuristic_min_lifetime  = 3600;
+  MgmtInt cache_heuristic_max_lifetime  = 86400;
+  MgmtInt cache_guaranteed_min_lifetime = 0;
+  MgmtInt cache_guaranteed_max_lifetime = 31536000;
+  MgmtInt cache_max_stale_age           = 604800;
 
   ///////////////////////////////////////////////////
   // connection variables. timeouts are in seconds //
   ///////////////////////////////////////////////////
-  MgmtInt keep_alive_no_activity_timeout_in;
-  MgmtInt keep_alive_no_activity_timeout_out;
-  MgmtInt transaction_no_activity_timeout_in;
-  MgmtInt transaction_no_activity_timeout_out;
-  MgmtInt transaction_active_timeout_out;
-  MgmtInt transaction_active_timeout_in;
-  MgmtInt websocket_active_timeout;
-  MgmtInt websocket_inactive_timeout;
+  MgmtInt keep_alive_no_activity_timeout_in   = 120;
+  MgmtInt keep_alive_no_activity_timeout_out  = 120;
+  MgmtInt transaction_no_activity_timeout_in  = 30;
+  MgmtInt transaction_no_activity_timeout_out = 30;
+  MgmtInt transaction_active_timeout_out      = 0;
+  MgmtInt transaction_active_timeout_in       = 900;
+  MgmtInt websocket_active_timeout            = 3600;
+  MgmtInt websocket_inactive_timeout          = 600;
 
   ////////////////////////////////////
   // origin server connect attempts //
   ////////////////////////////////////
-  MgmtInt connect_attempts_max_retries;
-  MgmtInt connect_attempts_max_retries_dead_server;
-  MgmtInt connect_attempts_rr_retries;
-  MgmtInt connect_attempts_timeout;
-  MgmtInt post_connect_attempts_timeout;
+  MgmtInt connect_attempts_max_retries             = 0;
+  MgmtInt connect_attempts_max_retries_dead_server = 3;
+  MgmtInt connect_attempts_rr_retries              = 3;
+  MgmtInt connect_attempts_timeout                 = 30;
+  MgmtInt post_connect_attempts_timeout            = 1800;
 
   ////////////////////////////////////
   // parent proxy connect attempts //
   ///////////////////////////////////
-  MgmtInt parent_connect_attempts;
-  MgmtInt parent_retry_time;
-  MgmtInt parent_fail_threshold;
-  MgmtInt per_parent_connect_attempts;
-  MgmtInt parent_connect_timeout;
+  MgmtInt parent_connect_attempts     = 4;
+  MgmtInt parent_retry_time           = 300;
+  MgmtInt parent_fail_threshold       = 10;
+  MgmtInt per_parent_connect_attempts = 2;
+  MgmtInt parent_connect_timeout      = 30;
 
-  MgmtInt down_server_timeout;
-  MgmtInt client_abort_threshold;
+  MgmtInt down_server_timeout    = 300;
+  MgmtInt client_abort_threshold = 10;
 
   // open read failure retries.
-  MgmtInt max_cache_open_read_retries;
-  MgmtInt cache_open_read_retry_time; // time is in mseconds
-  MgmtInt cache_generation_number;
+  MgmtInt max_cache_open_read_retries = -1;
+  MgmtInt cache_open_read_retry_time  = 10; // time is in mseconds
+  MgmtInt cache_generation_number     = -1;
 
   // open write failure retries.
-  MgmtInt max_cache_open_write_retries;
+  MgmtInt max_cache_open_write_retries = 1;
 
-  MgmtInt background_fill_active_timeout;
+  MgmtInt background_fill_active_timeout = 60;
 
-  MgmtInt http_chunking_size;   // Maximum chunk size for chunked output.
-  MgmtInt flow_high_water_mark; ///< Flow control high water mark.
-  MgmtInt flow_low_water_mark;  ///< Flow control low water mark.
+  MgmtInt http_chunking_size   = 4096; // Maximum chunk size for chunked output.
+  MgmtInt flow_high_water_mark = 0;    ///< Flow control high water mark.
+  MgmtInt flow_low_water_mark  = 0;    ///< Flow control low water mark.
 
-  MgmtInt default_buffer_size_index;
-  MgmtInt default_buffer_water_mark;
-  MgmtInt slow_log_threshold;
+  MgmtInt default_buffer_size_index = 8;
+  MgmtInt default_buffer_water_mark = 32768;
+  MgmtInt slow_log_threshold        = 0;
 
   OutboundConnTrack::TxnConfig outbound_conntrack;
 
   ///////////////////////////////////////////////////////////////////
   // Server header                                                 //
   ///////////////////////////////////////////////////////////////////
-  char *body_factory_template_base;
-  size_t body_factory_template_base_len;
-  char *proxy_response_server_string;      // This does not get free'd by us!
-  size_t proxy_response_server_string_len; // Updated when server_string is set.
+  char *body_factory_template_base        = nullptr;
+  size_t body_factory_template_base_len   = 0;
+  char *proxy_response_server_string      = nullptr; // This does not get free'd by us!
+  size_t proxy_response_server_string_len = 0;       // Updated when server_string is set.
 
   ///////////////////////////////////////////////////////////////////
   // Global User Agent header                                                 //
   ///////////////////////////////////////////////////////////////////
-  char *global_user_agent_header;       // This does not get free'd by us!
-  size_t global_user_agent_header_size; // Updated when user_agent is set.
+  char *global_user_agent_header       = nullptr; // This does not get free'd by us!
+  size_t global_user_agent_header_size = 0;       // Updated when user_agent is set.
 
-  MgmtFloat cache_heuristic_lm_factor;
-  MgmtFloat background_fill_threshold;
+  MgmtFloat cache_heuristic_lm_factor = 0.10;
+  MgmtFloat background_fill_threshold = 0.5;
 
   // Various strings, good place for them here ...
-  char *ssl_client_cert_filename;
-  char *ssl_client_private_key_filename;
-  char *ssl_client_ca_cert_filename;
+  char *ssl_client_cert_filename        = nullptr;
+  char *ssl_client_private_key_filename = nullptr;
+  char *ssl_client_ca_cert_filename     = nullptr;
 
-  char *cache_vary_default_text;
-  char *cache_vary_default_images;
-  char *cache_vary_default_other;
+  char *cache_vary_default_text   = nullptr;
+  char *cache_vary_default_images = nullptr;
+  char *cache_vary_default_other  = nullptr;
 };
 
 /////////////////////////////////////////////////////////////

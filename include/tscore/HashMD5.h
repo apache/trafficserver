@@ -36,6 +36,6 @@ struct ATSHashMD5 : ATSHash {
 private:
   EVP_MD_CTX *ctx;
   unsigned char md_value[EVP_MAX_MD_SIZE];
-  unsigned int md_len;
-  bool finalized;
+  unsigned int md_len = 0;
+  bool finalized      = false;
 };

@@ -121,7 +121,7 @@ TSRemapInit(TSRemapInterface *apiInfo, char *errBuf, int erroBufSize)
  */
 
 struct PrefetchInstance {
-  PrefetchInstance() : _state(nullptr){};
+  PrefetchInstance(){};
 
 private:
   PrefetchInstance(PrefetchInstance const &);
@@ -129,7 +129,7 @@ private:
 
 public:
   PrefetchConfig _config;
-  BgFetchState *_state;
+  BgFetchState *_state = nullptr;
 };
 
 /**

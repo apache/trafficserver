@@ -49,7 +49,7 @@ struct HttpCacheAction : public Action {
   {
     sm = sm_arg;
   };
-  HttpCacheSM *sm;
+  HttpCacheSM *sm = nullptr;
 };
 
 class HttpCacheSM : public Continuation
@@ -70,16 +70,16 @@ public:
   Action *open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache, bool retry,
                      bool allow_multiple);
 
-  CacheVConnection *cache_read_vc;
-  CacheVConnection *cache_write_vc;
+  CacheVConnection *cache_read_vc  = nullptr;
+  CacheVConnection *cache_write_vc = nullptr;
 
-  bool read_locked;
-  bool write_locked;
+  bool read_locked  = false;
+  bool write_locked = false;
   // Flag to check whether read-while-write is in progress or not
-  bool readwhilewrite_inprogress;
+  bool readwhilewrite_inprogress = false;
 
-  HttpSM *master_sm;
-  Action *pending_action;
+  HttpSM *master_sm      = nullptr;
+  Action *pending_action = nullptr;
 
   // Function to set readwhilewrite_inprogress flag
   inline void
@@ -190,24 +190,24 @@ private:
   int state_cache_open_write(int event, void *data);
 
   HttpCacheAction captive_action;
-  bool open_read_cb;
-  bool open_write_cb;
+  bool open_read_cb  = false;
+  bool open_write_cb = false;
 
   // Open read parameters
-  int open_read_tries;
-  HTTPHdr *read_request_hdr;
-  OverridableHttpConfigParams *http_params;
-  time_t read_pin_in_cache;
+  int open_read_tries                      = 0;
+  HTTPHdr *read_request_hdr                = nullptr;
+  OverridableHttpConfigParams *http_params = nullptr;
+  time_t read_pin_in_cache                 = 0;
 
   // Open write parameters
-  bool retry_write;
-  int open_write_tries;
+  bool retry_write     = true;
+  int open_write_tries = 0;
 
   // Common parameters
-  URL *lookup_url;
+  URL *lookup_url = nullptr;
   HttpCacheKey cache_key;
 
   // to keep track of multiple cache lookups
-  int lookup_max_recursive;
-  int current_lookup_level;
+  int lookup_max_recursive = 0;
+  int current_lookup_level = 0;
 };

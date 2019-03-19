@@ -266,18 +266,18 @@ public:
   virtual void decrement_client_transactions_stat() = 0;
 
 protected:
-  ProxyClientSession *parent;
-  HttpSM *current_reader;
-  IOBufferReader *sm_reader;
+  ProxyClientSession *parent = nullptr;
+  HttpSM *current_reader     = nullptr;
+  IOBufferReader *sm_reader  = nullptr;
 
   /// DNS resolution preferences.
-  HostResStyle host_res_style;
+  HostResStyle host_res_style = HOST_RES_NONE;
   /// Local outbound address control.
   in_port_t outbound_port{0};
   IpAddr outbound_ip4;
   IpAddr outbound_ip6;
 
-  bool restart_immediate;
+  bool restart_immediate = false;
 
 private:
 };

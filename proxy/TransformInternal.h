@@ -87,9 +87,9 @@ public:
 
 public:
   APIHooks m_hooks;
-  VConnection *m_tvc;
-  IOBufferReader *m_read_buf;
-  MIOBuffer *m_write_buf;
+  VConnection *m_tvc         = nullptr;
+  IOBufferReader *m_read_buf = nullptr;
+  MIOBuffer *m_write_buf     = nullptr;
 };
 
 class NullTransform : public INKVConnInternal

@@ -62,24 +62,7 @@ ink_mutex debug_cs_list_mutex;
 
 ClassAllocator<Http1ClientSession> http1ClientSessionAllocator("http1ClientSessionAllocator");
 
-Http1ClientSession::Http1ClientSession()
-  : client_vc(nullptr),
-    magic(HTTP_CS_MAGIC_DEAD),
-    transact_count(0),
-    tcp_init_cwnd_set(false),
-    half_close(false),
-    conn_decrease(false),
-    read_buffer(nullptr),
-    sm_reader(nullptr),
-    read_state(HCS_INIT),
-    ka_vio(nullptr),
-    slave_ka_vio(nullptr),
-    bound_ss(nullptr),
-    released_transactions(0),
-    f_outbound_transparent(false),
-    f_transparent_passthrough(false)
-{
-}
+Http1ClientSession::Http1ClientSession() {}
 
 void
 Http1ClientSession::destroy()

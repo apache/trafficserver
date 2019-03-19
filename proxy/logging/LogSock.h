@@ -123,6 +123,6 @@ private:
 
   ConnectTable *ct; // list of all connections; index 0 is
   // the accept port.
-  bool m_accept_connections; // do we accept new connections?
-  int m_max_connections;     // max size of all tables
+  bool m_accept_connections = false; // do we accept new connections?
+  int m_max_connections;             // max size of all tables
 };

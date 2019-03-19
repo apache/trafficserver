@@ -239,20 +239,20 @@ public:
     TRANSPORT_PLUGIN        /// < Protocol plugin connection
   };
 
-  int m_fd;             ///< Pre-opened file descriptor if present.
-  TransportType m_type; ///< Type of connection.
-  in_port_t m_port;     ///< Port on which to listen.
-  uint8_t m_family;     ///< IP address family.
+  int m_fd;                                 ///< Pre-opened file descriptor if present.
+  TransportType m_type = TRANSPORT_DEFAULT; ///< Type of connection.
+  in_port_t m_port     = 0;                 ///< Port on which to listen.
+  uint8_t m_family     = AF_INET;           ///< IP address family.
   /// True if proxy protocol is required on incoming requests.
-  bool m_proxy_protocol;
+  bool m_proxy_protocol = false;
   /// True if inbound connects (from client) are transparent.
-  bool m_inbound_transparent_p;
+  bool m_inbound_transparent_p = false;
   /// True if outbound connections (to origin servers) are transparent.
-  bool m_outbound_transparent_p;
+  bool m_outbound_transparent_p = false;
   // True if transparent pass-through is enabled on this port.
-  bool m_transparent_passthrough;
+  bool m_transparent_passthrough = false;
   /// True if MPTCP is enabled on this port.
-  bool m_mptcp;
+  bool m_mptcp = false;
   /// Local address for inbound connections (listen address).
   IpAddr m_inbound_ip;
   /// Local address for outbound connections (to origin server).

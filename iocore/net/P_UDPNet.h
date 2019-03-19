@@ -61,19 +61,19 @@ extern UDPNetProcessorInternal udpNetInternal;
 class PacketQueue
 {
 public:
-  PacketQueue() : nPackets(0), now_slot(0)
+  PacketQueue()
   {
     lastPullLongTermQ = 0;
     init();
   }
 
   virtual ~PacketQueue() {}
-  int nPackets;
+  int nPackets = 0;
   ink_hrtime lastPullLongTermQ;
   Queue<UDPPacketInternal> longTermQ;
   Queue<UDPPacketInternal> bucket[N_SLOTS];
   ink_hrtime delivery_time[N_SLOTS];
-  int now_slot;
+  int now_slot = 0;
 
   void
   init()

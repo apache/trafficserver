@@ -329,8 +329,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
   return TSREMAP_NO_REMAP;
 }
 
-SslHdrInstance::SslHdrInstance()
-  : expansions(), attach(SSL_HEADERS_ATTACH_SERVER), cont(TSContCreate(SslHdrExpandRequestHook, nullptr))
+SslHdrInstance::SslHdrInstance() : expansions(), cont(TSContCreate(SslHdrExpandRequestHook, nullptr))
 {
   TSContDataSet(cont, this);
 }

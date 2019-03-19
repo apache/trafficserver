@@ -157,7 +157,7 @@ SSLNextProtocolSet::findEndpoint(const unsigned char *proto, unsigned len) const
   return nullptr;
 }
 
-SSLNextProtocolSet::SSLNextProtocolSet() : npn(nullptr), npnsz(0) {}
+SSLNextProtocolSet::SSLNextProtocolSet() {}
 
 SSLNextProtocolSet::~SSLNextProtocolSet()
 {

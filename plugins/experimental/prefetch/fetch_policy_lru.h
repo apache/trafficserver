@@ -86,7 +86,7 @@ class FetchPolicyLru : public FetchPolicy
 {
 public:
   /* Default size values are also considered minimum. TODO: find out if this works OK. */
-  FetchPolicyLru() : _maxSize(10), _size(0){};
+  FetchPolicyLru(){};
   ~FetchPolicyLru() override{};
 
   /* Fetch policy interface methods */
@@ -100,6 +100,6 @@ public:
 protected:
   LruMap _map;
   LruList _list;
-  LruList::size_type _maxSize;
-  LruList::size_type _size;
+  LruList::size_type _maxSize = 10;
+  LruList::size_type _size    = 0;
 };

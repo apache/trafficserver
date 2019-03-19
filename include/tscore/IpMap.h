@@ -123,7 +123,7 @@ public:
   public:
     using self_type = Node; ///< Self reference type.
     /// Default constructor.
-    Node() : _data(nullptr) {}
+    Node() {}
     /// Construct with @a data.
     Node(void *data) : _data(data) {}
     /// @return Client data for the node.
@@ -146,7 +146,7 @@ public:
     virtual sockaddr const *max() const = 0;
 
   protected:
-    void *_data; ///< Client data.
+    void *_data = nullptr; ///< Client data.
   };
 
   /** Iterator over nodes / intervals.

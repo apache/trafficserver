@@ -239,7 +239,7 @@ public:
     alloc or dealloc methods.
 
   */
-  AllocType _mem_type;
+  AllocType _mem_type = NO_ALLOC;
 
   /**
     Points to the allocated memory. This member stores the address of
@@ -247,10 +247,10 @@ public:
     instead use the alloc or dealloc methods.
 
   */
-  char *_data;
+  char *_data = nullptr;
 
 #ifdef TRACK_BUFFER_USER
-  const char *_location;
+  const char *_location = nullptr;
 #endif
 
   /**
@@ -258,16 +258,7 @@ public:
     this method. Use one of the functions with the 'new_' prefix instead.
 
   */
-  IOBufferData()
-    : _size_index(BUFFER_SIZE_NOT_ALLOCATED),
-      _mem_type(NO_ALLOC),
-      _data(nullptr)
-#ifdef TRACK_BUFFER_USER
-      ,
-      _location(nullptr)
-#endif
-  {
-  }
+  IOBufferData() : _size_index(BUFFER_SIZE_NOT_ALLOCATED) {}
 
   // noncopyable, declaration only
   IOBufferData(const IOBufferData &) = delete;
@@ -489,12 +480,12 @@ public:
   */
   void free() override;
 
-  char *_start;
-  char *_end;
-  char *_buf_end;
+  char *_start   = nullptr;
+  char *_end     = nullptr;
+  char *_buf_end = nullptr;
 
 #ifdef TRACK_BUFFER_USER
-  const char *_location;
+  const char *_location = nullptr;
 #endif
 
   /**
@@ -893,14 +884,14 @@ public:
     return mbuf;
   }
 
-  MIOBufferAccessor *accessor; // pointer back to the accessor
+  MIOBufferAccessor *accessor = nullptr; // pointer back to the accessor
 
   /**
     Back pointer to this object's MIOBuffer. A pointer back to the
     MIOBuffer this reader is allocated from.
 
   */
-  MIOBuffer *mbuf;
+  MIOBuffer *mbuf = nullptr;
   Ptr<IOBufferBlock> block;
 
   /**
@@ -909,10 +900,10 @@ public:
     of the available data.
 
   */
-  int64_t start_offset;
-  int64_t size_limit;
+  int64_t start_offset = 0;
+  int64_t size_limit   = INT64_MAX;
 
-  IOBufferReader() : accessor(nullptr), mbuf(nullptr), start_offset(0), size_limit(INT64_MAX) {}
+  IOBufferReader() {}
 };
 
 /**
@@ -1303,7 +1294,7 @@ public:
   IOBufferReader readers[MAX_MIOBUFFER_READERS];
 
 #ifdef TRACK_BUFFER_USER
-  const char *_location;
+  const char *_location = nullptr;
 #endif
 
   MIOBuffer(void *b, int64_t bufsize, int64_t aWater_mark);
@@ -1352,20 +1343,12 @@ struct MIOBufferAccessor {
     entry = nullptr;
   }
 
-  MIOBufferAccessor()
-    :
-#ifdef DEBUG
-      name(nullptr),
-#endif
-      mbuf(nullptr),
-      entry(nullptr)
-  {
-  }
+  MIOBufferAccessor() {}
 
   ~MIOBufferAccessor();
 
 #ifdef DEBUG
-  const char *name;
+  const char *name = nullptr;
 #endif
 
   // noncopyable
@@ -1373,8 +1356,8 @@ struct MIOBufferAccessor {
   MIOBufferAccessor &operator=(const MIOBufferAccessor &) = delete;
 
 private:
-  MIOBuffer *mbuf;
-  IOBufferReader *entry;
+  MIOBuffer *mbuf       = nullptr;
+  IOBufferReader *entry = nullptr;
 };
 
 extern MIOBuffer *new_MIOBuffer_internal(

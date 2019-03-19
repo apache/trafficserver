@@ -341,10 +341,10 @@ HdrHeap::unmarshal_size() const
 
 //
 struct MarshalXlate {
-  char const *start;
-  char const *end;
-  char const *offset;
-  MarshalXlate() : start(nullptr), end(nullptr), offset(nullptr) {}
+  char const *start  = nullptr;
+  char const *end    = nullptr;
+  char const *offset = nullptr;
+  MarshalXlate() {}
 };
 
 struct HeapCheck {
@@ -458,7 +458,7 @@ struct HeapCheck {
 //
 struct HdrHeapSDKHandle {
 public:
-  HdrHeapSDKHandle() : m_heap(nullptr) {}
+  HdrHeapSDKHandle() {}
   ~HdrHeapSDKHandle() { clear(); }
   // clear() only deallocates chained SDK return values
   //   The underlying MBuffer is left untouched
@@ -471,7 +471,7 @@ public:
   void set(const HdrHeapSDKHandle *from);
   const char *make_sdk_string(const char *raw_str, int raw_str_len);
 
-  HdrHeap *m_heap;
+  HdrHeap *m_heap = nullptr;
 
   // In order to prevent gratitous refcounting,
   //  automatic C++ copies are disabled!

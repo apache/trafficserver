@@ -60,8 +60,8 @@ public:
   SSLNextProtocolSet &operator=(const SSLNextProtocolSet &) = delete; // disabled
 
 private:
-  mutable unsigned char *npn;
-  mutable size_t npnsz;
+  mutable unsigned char *npn = nullptr;
+  mutable size_t npnsz       = 0;
 
   NextProtocolEndpoint::list_type endpoints;
 };

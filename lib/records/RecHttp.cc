@@ -197,16 +197,8 @@ HttpProxyPort::Group GLOBAL_DATA;
 } // namespace
 HttpProxyPort::Group &HttpProxyPort::m_global = GLOBAL_DATA;
 
-HttpProxyPort::HttpProxyPort()
-  : m_fd(ts::NO_FD),
-    m_type(TRANSPORT_DEFAULT),
-    m_port(0),
-    m_family(AF_INET),
-    m_proxy_protocol(false),
-    m_inbound_transparent_p(false),
-    m_outbound_transparent_p(false),
-    m_transparent_passthrough(false),
-    m_mptcp(false)
+HttpProxyPort::HttpProxyPort() : m_fd(ts::NO_FD)
+
 {
   memcpy(m_host_res_preference, host_res_default_preference_order, sizeof(m_host_res_preference));
 }

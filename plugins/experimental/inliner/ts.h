@@ -47,7 +47,7 @@ namespace io
   struct IO {
     TSIOBuffer buffer;
     TSIOBufferReader reader;
-    TSVIO vio;
+    TSVIO vio = nullptr;
 
     ~IO()
     {
@@ -58,8 +58,8 @@ namespace io
       TSIOBufferDestroy(buffer);
     }
 
-    IO() : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) {}
-    IO(const TSIOBuffer &b) : buffer(b), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) { assert(buffer != nullptr); }
+    IO() : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)) {}
+    IO(const TSIOBuffer &b) : buffer(b), reader(TSIOBufferReaderAlloc(buffer)) { assert(buffer != nullptr); }
     static IO *read(TSVConn, TSCont, const int64_t);
 
     static IO *
@@ -114,7 +114,7 @@ namespace io
   typedef std::weak_ptr<WriteOperation> WriteOperationWeakPointer;
 
   struct Lock {
-    const TSMutex mutex_;
+    const TSMutex mutex_ = nullptr;
 
     ~Lock()
     {
@@ -131,7 +131,7 @@ namespace io
     }
 
     // noncopyable
-    Lock() : mutex_(nullptr) {}
+    Lock() {}
     Lock(const Lock &) = delete;
 
     Lock(Lock &&l) : mutex_(l.mutex_) { const_cast<TSMutex &>(l.mutex_) = nullptr; }

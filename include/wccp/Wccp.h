@@ -372,8 +372,8 @@ public:
 
 private:
   Service(Cache const &cache, detail::cache::GroupData &group);
-  Cache m_cache;                     ///< Parent cache.
-  detail::cache::GroupData *m_group; ///< Service Group data.
+  Cache m_cache;                               ///< Parent cache.
+  detail::cache::GroupData *m_group = nullptr; ///< Service Group data.
   friend class Cache;
 };
 
@@ -499,7 +499,7 @@ ServiceGroup::clearPorts()
   return *this;
 }
 
-inline Cache::Service::Service() : m_group(nullptr) {}
+inline Cache::Service::Service() {}
 
 inline Cache::Service::Service(Cache const &cache, detail::cache::GroupData &group) : m_cache(cache), m_group(&group) {}
 

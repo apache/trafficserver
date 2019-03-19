@@ -75,21 +75,7 @@ enum ExtraSubstitutions {
 // length calculations (we need all of them).
 //
 struct UrlComponents {
-  UrlComponents()
-    : scheme(nullptr),
-      host(nullptr),
-      path(nullptr),
-      query(nullptr),
-      matrix(nullptr),
-      port(0),
-      scheme_len(0),
-      host_len(0),
-      path_len(0),
-      query_len(0),
-      matrix_len(0),
-      url_len(0)
-  {
-  }
+  UrlComponents() {}
 
   void
   populate(TSRemapRequestInfo *rri)
@@ -104,20 +90,20 @@ struct UrlComponents {
     url_len = scheme_len + host_len + path_len + query_len + matrix_len + 32;
   }
 
-  const char *scheme;
-  const char *host;
-  const char *path;
-  const char *query;
-  const char *matrix;
-  int port;
+  const char *scheme = nullptr;
+  const char *host   = nullptr;
+  const char *path   = nullptr;
+  const char *query  = nullptr;
+  const char *matrix = nullptr;
+  int port           = 0;
 
-  int scheme_len;
-  int host_len;
-  int path_len;
-  int query_len;
-  int matrix_len;
+  int scheme_len = 0;
+  int host_len   = 0;
+  int path_len   = 0;
+  int query_len  = 0;
+  int matrix_len = 0;
 
-  int url_len; // Full length, of all components
+  int url_len = 0; // Full length, of all components
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -643,29 +629,17 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
 
 // Hold one remap instance
 struct RemapInstance {
-  RemapInstance()
-    : first(nullptr),
-      last(nullptr),
-      profile(false),
-      method(false),
-      query_string(true),
-      matrix_params(false),
-      host(false),
-      hits(0),
-      misses(0),
-      filename("unknown")
-  {
-  }
+  RemapInstance() : filename("unknown") {}
 
-  RemapRegex *first;
-  RemapRegex *last;
-  bool profile;
-  bool method;
-  bool query_string;
-  bool matrix_params;
-  bool host;
-  int hits;
-  int misses;
+  RemapRegex *first  = nullptr;
+  RemapRegex *last   = nullptr;
+  bool profile       = false;
+  bool method        = false;
+  bool query_string  = true;
+  bool matrix_params = false;
+  bool host          = false;
+  int hits           = 0;
+  int misses         = 0;
   std::string filename;
 };
 

@@ -70,11 +70,11 @@ static int InterceptTxnHook(TSCont contp, TSEvent event, void *edata);
 // a write). We need two of these for each TSVConn; one to push
 // data into the TSVConn and one to pull data out.
 struct InterceptIOChannel {
-  TSVIO vio;
-  TSIOBuffer iobuf;
-  TSIOBufferReader reader;
+  TSVIO vio               = nullptr;
+  TSIOBuffer iobuf        = nullptr;
+  TSIOBufferReader reader = nullptr;
 
-  InterceptIOChannel() : vio(nullptr), iobuf(nullptr), reader(nullptr) {}
+  InterceptIOChannel() {}
   ~InterceptIOChannel()
   {
     if (this->reader) {
@@ -130,12 +130,12 @@ struct InterceptIO {
 // are intercepting is the server. Hence the "client" and
 // "server" nomenclature here.
 struct InterceptState {
-  TSHttpTxn txn; // The transaction on whose behalf we are intercepting.
+  TSHttpTxn txn = nullptr; // The transaction on whose behalf we are intercepting.
 
   InterceptIO client; // Server intercept VC state.
   InterceptIO server; // Intercept origin VC state.
 
-  InterceptState() : txn(nullptr) {}
+  InterceptState() {}
   ~InterceptState() {}
 };
 

@@ -44,26 +44,7 @@ static const char *const CHUNK_HEADER_FMT = "%" PRIx64 "\r\n";
 // a block in the input stream.
 static int const CHUNK_IOBUFFER_SIZE_INDEX = MIN_IOBUFFER_SIZE;
 
-ChunkedHandler::ChunkedHandler()
-  : action(ACTION_UNSET),
-    chunked_reader(nullptr),
-    dechunked_buffer(nullptr),
-    dechunked_size(0),
-    dechunked_reader(nullptr),
-    chunked_buffer(nullptr),
-    chunked_size(0),
-    truncation(false),
-    skip_bytes(0),
-    state(CHUNK_READ_CHUNK),
-    cur_chunk_size(0),
-    bytes_left(0),
-    last_server_event(VC_EVENT_NONE),
-    running_sum(0),
-    num_digits(0),
-    max_chunk_size(DEFAULT_MAX_CHUNK_SIZE),
-    max_chunk_header_len(0)
-{
-}
+ChunkedHandler::ChunkedHandler() : max_chunk_size(DEFAULT_MAX_CHUNK_SIZE) {}
 
 void
 ChunkedHandler::init(IOBufferReader *buffer_in, HttpTunnelProducer *p)
@@ -393,32 +374,7 @@ ChunkedHandler::generate_chunked_content()
   return false;
 }
 
-HttpTunnelProducer::HttpTunnelProducer()
-  : consumer_list(),
-    self_consumer(nullptr),
-    vc(nullptr),
-    vc_handler(nullptr),
-    read_vio(nullptr),
-    read_buffer(nullptr),
-    buffer_start(nullptr),
-    vc_type(HT_HTTP_SERVER),
-    chunking_action(TCA_PASSTHRU_DECHUNKED_CONTENT),
-    do_chunking(false),
-    do_dechunking(false),
-    do_chunked_passthru(false),
-    init_bytes_done(0),
-    nbytes(0),
-    ntodo(0),
-    bytes_read(0),
-    handler_state(0),
-    last_event(0),
-    num_consumers(0),
-    alive(false),
-    read_success(false),
-    flow_control_source(nullptr),
-    name(nullptr)
-{
-}
+HttpTunnelProducer::HttpTunnelProducer() : consumer_list() {}
 
 uint64_t
 HttpTunnelProducer::backlog(uint64_t limit)
@@ -484,23 +440,7 @@ HttpTunnelProducer::set_throttle_src(HttpTunnelProducer *srcp)
   }
 }
 
-HttpTunnelConsumer::HttpTunnelConsumer()
-  : link(),
-    producer(nullptr),
-    self_producer(nullptr),
-    vc_type(HT_HTTP_CLIENT),
-    vc(nullptr),
-    buffer_reader(nullptr),
-    vc_handler(nullptr),
-    write_vio(nullptr),
-    skip_bytes(0),
-    bytes_written(0),
-    handler_state(0),
-    alive(false),
-    write_success(false),
-    name(nullptr)
-{
-}
+HttpTunnelConsumer::HttpTunnelConsumer() : link() {}
 
 HttpTunnel::HttpTunnel() : Continuation(nullptr) {}
 

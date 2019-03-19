@@ -399,7 +399,7 @@ public:
 class MemoryLimit : public Continuation
 {
 public:
-  MemoryLimit() : Continuation(new_ProxyMutex()), _memory_limit(0)
+  MemoryLimit() : Continuation(new_ProxyMutex())
   {
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
@@ -449,7 +449,7 @@ public:
   }
 
 private:
-  int64_t _memory_limit;
+  int64_t _memory_limit = 0;
   struct rusage _usage;
 };
 
@@ -1173,18 +1173,18 @@ struct ShowStats : public Continuation {
 #ifdef ENABLE_TIME_TRACE
   FILE *fp;
 #endif
-  int cycle;
-  int64_t last_cc;
-  int64_t last_rb;
-  int64_t last_w;
-  int64_t last_r;
-  int64_t last_wb;
-  int64_t last_nrb;
-  int64_t last_nw;
-  int64_t last_nr;
-  int64_t last_nwb;
-  int64_t last_p;
-  int64_t last_o;
+  int cycle        = 0;
+  int64_t last_cc  = 0;
+  int64_t last_rb  = 0;
+  int64_t last_w   = 0;
+  int64_t last_r   = 0;
+  int64_t last_wb  = 0;
+  int64_t last_nrb = 0;
+  int64_t last_nw  = 0;
+  int64_t last_nr  = 0;
+  int64_t last_nwb = 0;
+  int64_t last_p   = 0;
+  int64_t last_o   = 0;
   int
   mainEvent(int event, Event *e)
   {
@@ -1284,20 +1284,8 @@ struct ShowStats : public Continuation {
 #endif
     return EVENT_CONT;
   }
-  ShowStats()
-    : Continuation(nullptr),
-      cycle(0),
-      last_cc(0),
-      last_rb(0),
-      last_w(0),
-      last_r(0),
-      last_wb(0),
-      last_nrb(0),
-      last_nw(0),
-      last_nr(0),
-      last_nwb(0),
-      last_p(0),
-      last_o(0)
+  ShowStats() : Continuation(nullptr)
+
   {
     SET_HANDLER(&ShowStats::mainEvent);
 #ifdef ENABLE_TIME_TRACE
@@ -1352,9 +1340,9 @@ init_http_header()
 
 #if TS_HAS_TESTS
 struct RegressionCont : public Continuation {
-  int initialized;
-  int waits;
-  int started;
+  int initialized = 0;
+  int waits       = 0;
+  int started     = 0;
 
   int
   mainEvent(int event, Event *e)
@@ -1383,10 +1371,7 @@ struct RegressionCont : public Continuation {
     return EVENT_CONT;
   }
 
-  RegressionCont() : Continuation(new_ProxyMutex()), initialized(0), waits(0), started(0)
-  {
-    SET_HANDLER(&RegressionCont::mainEvent);
-  }
+  RegressionCont() : Continuation(new_ProxyMutex()) { SET_HANDLER(&RegressionCont::mainEvent); }
 };
 
 static void

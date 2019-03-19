@@ -83,12 +83,12 @@ static string COMBO_HANDLER_PATH{DEFAULT_COMBO_HANDLER_PATH};
 using StringList = list<string>;
 
 struct ClientRequest {
-  TSHttpStatus status;
-  const sockaddr *client_addr;
+  TSHttpStatus status         = TS_HTTP_STATUS_OK;
+  const sockaddr *client_addr = nullptr;
   StringList file_urls;
-  bool gzip_accepted;
+  bool gzip_accepted = false;
   string defaultBucket; // default Bucket will be set to HOST header
-  ClientRequest() : status(TS_HTTP_STATUS_OK), client_addr(nullptr), gzip_accepted(false), defaultBucket("l"){};
+  ClientRequest() : defaultBucket("l"){};
 };
 
 struct InterceptData {
@@ -96,11 +96,11 @@ struct InterceptData {
   TSCont contp;
 
   struct IoHandle {
-    TSVIO vio;
-    TSIOBuffer buffer;
-    TSIOBufferReader reader;
+    TSVIO vio               = nullptr;
+    TSIOBuffer buffer       = nullptr;
+    TSIOBufferReader reader = nullptr;
 
-    IoHandle() : vio(nullptr), buffer(nullptr), reader(nullptr){};
+    IoHandle(){};
 
     ~IoHandle()
     {

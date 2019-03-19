@@ -386,7 +386,7 @@ ink_dn_expand(const u_char *msg, const u_char *eom, const u_char *comp_dn, u_cha
   return ::dn_expand((unsigned char *)msg, (unsigned char *)eom, (unsigned char *)comp_dn, (char *)exp_dn, length);
 }
 
-DNSProcessor::DNSProcessor() : thread(nullptr), handler(nullptr)
+DNSProcessor::DNSProcessor()
 {
   ink_zero(l_res);
   ink_zero(local_ipv6);

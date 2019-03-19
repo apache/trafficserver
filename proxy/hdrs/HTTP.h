@@ -1292,18 +1292,18 @@ struct HTTPCacheAlt {
   void copy_frag_offsets_from(HTTPCacheAlt *src);
   void destroy();
 
-  uint32_t m_magic;
+  uint32_t m_magic = CACHE_ALT_MAGIC_ALIVE;
 
   // Writeable is set to true is we reside
   //  in a buffer owned by this structure.
   // INVARIANT: if own the buffer this HttpCacheAlt
   //   we also own the buffers for the request &
   //   response headers
-  int32_t m_writeable;
-  int32_t m_unmarshal_len;
+  int32_t m_writeable     = 1;
+  int32_t m_unmarshal_len = -1;
 
-  int32_t m_id;
-  int32_t m_rid;
+  int32_t m_id  = -1;
+  int32_t m_rid = -1;
 
   int32_t m_object_key[sizeof(CryptoHash) / sizeof(int32_t)];
   int32_t m_object_size[2];
@@ -1311,12 +1311,12 @@ struct HTTPCacheAlt {
   HTTPHdr m_request_hdr;
   HTTPHdr m_response_hdr;
 
-  time_t m_request_sent_time;
-  time_t m_response_received_time;
+  time_t m_request_sent_time      = 0;
+  time_t m_response_received_time = 0;
 
   /// # of fragment offsets in this alternate.
   /// @note This is one less than the number of fragments.
-  int m_frag_offset_count;
+  int m_frag_offset_count = 0;
   /// Type of offset for a fragment.
   typedef uint64_t FragOffset;
   /// Table of fragment offsets.
@@ -1324,7 +1324,7 @@ struct HTTPCacheAlt {
   /// first byte past the end of fragment 0 which is also the first
   /// byte of fragment 1. For this reason there is no fragment offset
   /// for the last fragment.
-  FragOffset *m_frag_offsets;
+  FragOffset *m_frag_offsets = nullptr;
   /// # of fragment offsets built in to object.
   static int constexpr N_INTEGRAL_FRAG_OFFSETS = 4;
   /// Integral fragment offset table.
@@ -1337,7 +1337,7 @@ struct HTTPCacheAlt {
   // We don't want to use a ref count ptr (Ptr<>)
   //  since our ownership model requires explicit
   //  destroys and ref count pointers defeat this
-  RefCountObj *m_ext_buffer;
+  RefCountObj *m_ext_buffer = nullptr;
 };
 
 class HTTPInfo
@@ -1345,9 +1345,9 @@ class HTTPInfo
 public:
   typedef HTTPCacheAlt::FragOffset FragOffset; ///< Import type.
 
-  HTTPCacheAlt *m_alt;
+  HTTPCacheAlt *m_alt = nullptr;
 
-  HTTPInfo() : m_alt(nullptr) {}
+  HTTPInfo() {}
   ~HTTPInfo() { clear(); }
   void
   clear()

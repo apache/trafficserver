@@ -53,11 +53,11 @@ union EventArgument {
 };
 
 struct PassthruIO {
-  TSVIO vio;
-  TSIOBuffer iobuf;
-  TSIOBufferReader reader;
+  TSVIO vio               = nullptr;
+  TSIOBuffer iobuf        = nullptr;
+  TSIOBufferReader reader = nullptr;
 
-  PassthruIO() : vio(nullptr), iobuf(nullptr), reader(nullptr) {}
+  PassthruIO() {}
   ~PassthruIO() { clear(); }
   void
   clear()

@@ -42,7 +42,7 @@
 namespace ats
 {
 struct HttpParser {
-  bool parsed_;
+  bool parsed_ = false;
   TSHttpParser parser_;
   TSMBuffer buffer_;
   TSMLoc location_;
@@ -56,7 +56,7 @@ struct HttpParser {
     destroyParser();
   }
 
-  HttpParser() : parsed_(false), parser_(TSHttpParserCreate()), buffer_(TSMBufferCreate()), location_(TSHttpHdrCreate(buffer_))
+  HttpParser() : parser_(TSHttpParserCreate()), buffer_(TSMBufferCreate()), location_(TSHttpHdrCreate(buffer_))
   {
     TSHttpHdrTypeSet(buffer_, location_, TS_HTTP_TYPE_RESPONSE);
   }

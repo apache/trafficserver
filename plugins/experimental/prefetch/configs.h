@@ -39,11 +39,8 @@ public:
       _nextHeader("X-AppleCDN-Prefetch-Next"),
       _replaceHost(),
       _namespace("default"),
-      _metricsPrefix("prefetch.stats"),
-      _fetchCount(1),
-      _fetchMax(0),
-      _front(false),
-      _exactMatch(false)
+      _metricsPrefix("prefetch.stats")
+
   {
   }
 
@@ -194,9 +191,9 @@ private:
   std::string _namespace;
   std::string _metricsPrefix;
   std::string _logName;
-  unsigned _fetchCount;
-  unsigned _fetchMax;
-  bool _front;
-  bool _exactMatch;
+  unsigned _fetchCount = 1;
+  unsigned _fetchMax   = 0;
+  bool _front          = false;
+  bool _exactMatch     = false;
   MultiPattern _nextPaths;
 };

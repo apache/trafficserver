@@ -217,13 +217,13 @@ namespace detail {
     /// Get item type.
     ValueType getType() const;
   protected:
-    ValueType _type;      ///< Type of value.
+    ValueType _type = VoidValue;      ///< Type of value.
     ValueIndex _parent = 0;   ///< Table index of parent value.
     ConstBuffer _text;    ///< Text of value (if scalar).
     ConstBuffer _name;    ///< Local name of value, if available.
-    size_t _local_index;  ///< Index among siblings.
-    int _srcLine;         ///< Source line.
-    int _srcColumn;       ///< Source column.
+    size_t _local_index = 0;  ///< Index among siblings.
+    int _srcLine = 0;         ///< Source line.
+    int _srcColumn = 0;       ///< Source column.
 
     /// Container for children of this item.
     typedef std::vector<ValueIndex> ChildGroup;
@@ -645,8 +645,8 @@ namespace detail {
   inline ValueItem const& ValueTable::operator [] (ValueIndex idx) const { return const_cast<self*>(this)->operator [] (idx); }
   inline ValueTable& ValueTable::reset() { _ptr.reset(); return *this; }
 
-  inline ValueItem::ValueItem() : _type(VoidValue), _local_index(0), _srcLine(0), _srcColumn(0) {}
-  inline ValueItem::ValueItem(ValueType type) : _type(type), _local_index(0), _srcLine(0), _srcColumn(0) {}
+  inline ValueItem::ValueItem()  {}
+  inline ValueItem::ValueItem(ValueType type) : _type(type) {}
   inline ValueType ValueItem::getType() const { return _type; }
 }
 

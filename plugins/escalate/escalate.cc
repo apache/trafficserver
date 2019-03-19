@@ -51,7 +51,7 @@ struct EscalationState {
 
   typedef std::map<unsigned, RetryInfo> StatusMapType;
 
-  EscalationState() : use_pristine(false)
+  EscalationState()
   {
     cont = TSContCreate(EscalateResponse, nullptr);
     TSContDataSet(cont, this);
@@ -60,7 +60,7 @@ struct EscalationState {
   ~EscalationState() { TSContDestroy(cont); }
   TSCont cont;
   StatusMapType status_map;
-  bool use_pristine;
+  bool use_pristine = false;
 };
 
 // Little helper function, to update the Host portion of a URL, and stringify the result.

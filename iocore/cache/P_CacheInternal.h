@@ -425,7 +425,7 @@ struct CacheVC : public CacheVConnection {
 
   OpenDirEntry *od;
   AIOCallbackInternal io;
-  int alternate_index; // preferred position in vector
+  int alternate_index = CACHE_ALT_INDEX_DEFAULT; // preferred position in vector
   LINK(CacheVC, opendir_link);
 #ifdef CACHE_STAT_PAGES
   LINK(CacheVC, stat_link);
@@ -971,14 +971,14 @@ struct Vol;
 class CacheHostTable;
 
 struct Cache {
-  int cache_read_done;
-  int total_good_nvol;
-  int total_nvol;
-  int ready;
-  int64_t cache_size; // in store block size
-  CacheHostTable *hosttable;
-  int total_initialized_vol;
-  CacheType scheme;
+  int cache_read_done       = 0;
+  int total_good_nvol       = 0;
+  int total_nvol            = 0;
+  int ready                 = CACHE_INITIALIZING;
+  int64_t cache_size        = 0; // in store block size
+  CacheHostTable *hosttable = nullptr;
+  int total_initialized_vol = 0;
+  CacheType scheme          = CACHE_NONE_TYPE;
 
   int open(bool reconfigure, bool fix);
   int close();
@@ -1009,17 +1009,7 @@ struct Cache {
 
   Vol *key_to_vol(const CacheKey *key, const char *hostname, int host_len);
 
-  Cache()
-    : cache_read_done(0),
-      total_good_nvol(0),
-      total_nvol(0),
-      ready(CACHE_INITIALIZING),
-      cache_size(0), // in store block size
-      hosttable(nullptr),
-      total_initialized_vol(0),
-      scheme(CACHE_NONE_TYPE)
-  {
-  }
+  Cache() {}
 };
 
 extern Cache *theCache;

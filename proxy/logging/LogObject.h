@@ -66,10 +66,10 @@ class LogBufferManager
 {
 private:
   ASLL(LogBuffer, write_link) write_list;
-  int _num_flush_buffers;
+  int _num_flush_buffers = 0;
 
 public:
-  LogBufferManager() : _num_flush_buffers(0) {}
+  LogBufferManager() {}
   inline void
   add_to_flush_queue(LogBuffer *buffer)
   {

@@ -109,11 +109,11 @@ lengthof(const char (&)[N])
 // for each TSVConn; one to push data into the TSVConn and one to pull
 // data out.
 struct IOChannel {
-  TSVIO vio;
+  TSVIO vio = nullptr;
   TSIOBuffer iobuf;
   TSIOBufferReader reader;
 
-  IOChannel() : vio(nullptr), iobuf(TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_32K)), reader(TSIOBufferReaderAlloc(iobuf)) {}
+  IOChannel() : iobuf(TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_32K)), reader(TSIOBufferReaderAlloc(iobuf)) {}
   ~IOChannel()
   {
     if (this->reader) {
@@ -163,10 +163,10 @@ struct GeneratorHttpHeader {
 };
 
 struct GeneratorRequest {
-  off_t nbytes; // Number of bytes to generate.
-  unsigned flags;
-  unsigned delay;  // Milliseconds to delay before sending a response.
-  unsigned maxage; // Max age for cache responses.
+  off_t nbytes   = 0; // Number of bytes to generate.
+  unsigned flags = 0;
+  unsigned delay = 0; // Milliseconds to delay before sending a response.
+  unsigned maxage;    // Max age for cache responses.
   IOChannel readio;
   IOChannel writeio;
   GeneratorHttpHeader rqheader;
@@ -176,7 +176,7 @@ struct GeneratorRequest {
     ISHEAD    = 0x0002,
   };
 
-  GeneratorRequest() : nbytes(0), flags(0), delay(0), maxage(60 * 60 * 24) {}
+  GeneratorRequest() : maxage(60 * 60 * 24) {}
   ~GeneratorRequest() {}
 };
 

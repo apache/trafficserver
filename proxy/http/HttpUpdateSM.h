@@ -55,8 +55,8 @@ public:
   Action *start_scheduled_update(Continuation *cont, HTTPHdr *req);
 
   //  private:
-  bool cb_occured;
-  Continuation *cb_cont;
+  bool cb_occured       = false;
+  Continuation *cb_cont = nullptr;
   Action cb_action;
   int cb_event;
 

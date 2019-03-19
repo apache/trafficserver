@@ -524,8 +524,7 @@ TransformVConnection::backlog(uint64_t limit)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-TransformControl::TransformControl()
-  : Continuation(new_ProxyMutex()), m_hooks(), m_tvc(nullptr), m_read_buf(nullptr), m_write_buf(nullptr)
+TransformControl::TransformControl() : Continuation(new_ProxyMutex()), m_hooks()
 {
   SET_HANDLER(&TransformControl::handle_event);
 

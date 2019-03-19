@@ -189,12 +189,12 @@ public:
   bool has_hooks_for(ID id) const;
 
 private:
-  bool hooks_p; ///< Flag for (not) empty container.
+  bool hooks_p = false; ///< Flag for (not) empty container.
   /// The array of hooks lists.
   APIHooks m_hooks[N];
 };
 
-template <typename ID, int N> FeatureAPIHooks<ID, N>::FeatureAPIHooks() : hooks_p(false) {}
+template <typename ID, int N> FeatureAPIHooks<ID, N>::FeatureAPIHooks() {}
 
 template <typename ID, int N> FeatureAPIHooks<ID, N>::~FeatureAPIHooks()
 {

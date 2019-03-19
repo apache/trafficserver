@@ -194,15 +194,11 @@ public:
   subop()
     : cookie(""),
       operation(""),
-      op_type(UNKNOWN),
-      target(UNKNOWN_TARGET),
+
       str_match(""),
-      regex(nullptr),
-      regex_extra(nullptr),
-      regex_ccount(0),
-      bucket(""),
-      how_many(0),
-      out_of(0)
+
+      bucket("")
+
   {
     TSDebug(MY_NAME, "subop constructor called");
   }
@@ -392,19 +388,19 @@ public:
 private:
   std::string cookie;
   std::string operation;
-  enum operation_type op_type;
-  enum target_type target;
+  enum operation_type op_type = UNKNOWN;
+  enum target_type target     = UNKNOWN_TARGET;
 
   std::string str_match;
 
-  pcre *regex;
-  pcre_extra *regex_extra;
+  pcre *regex             = nullptr;
+  pcre_extra *regex_extra = nullptr;
   std::string regex_string;
-  int regex_ccount;
+  int regex_ccount = 0;
 
   std::string bucket;
-  unsigned int how_many;
-  unsigned int out_of;
+  unsigned int how_many = 0;
+  unsigned int out_of   = 0;
 };
 
 typedef std::vector<const subop *> SubOpQueue;
