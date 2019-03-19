@@ -38,6 +38,24 @@ RemapBuilder::find_filter(TextView name)
 }
 
 swoc::TextView
+RemapBuilder::stash(swoc::TextView view)
+{
+  auto span = (_stash.alloc(view.size() + 1)).rebind<char>();
+  memcpy(span.data(), view.data(), view.size());
+  span.end()[-1] = '\0';
+  return {span.begin(), view.size()};
+}
+
+swoc::TextView
+RemapBuilder::stash_lower(swoc::TextView view)
+{
+  auto span = (_stash.alloc(view.size() + 1)).rebind<char>();
+  std::transform(view.begin(), view.end(), span.begin(), &tolower);
+  span.end()[-1] = '\0';
+  return {span.begin(), view.size()};
+}
+
+swoc::TextView
 RemapBuilder::normalize_url(TextView url)
 {
   bool add_separator_p = false;
@@ -53,7 +71,7 @@ RemapBuilder::normalize_url(TextView url)
   }
 
   // Now localize it, with the trailing slash if needed.
-  auto span = _rewriter->arena.alloc(url_size + 1);
+  auto span = _stash.alloc(url_size + 1).rebind<char>();
   memcpy(span.data(), url.data(), url.size());
   span.end()[-1] = '\0';
   if (add_separator_p) {
@@ -74,8 +92,13 @@ RemapBuilder::parse_regex_rewrite(url_mapping *mapping, TextView target_host)
   int substitution_count = 0;
 
   regex_rewrite->url_map = mapping;
+  // Make sure the regex is a C string.
+  _stash.require(target_host.size() + 1);
+  auto span{_stash.remnant().rebind<char>()};
+  memcpy(span.data(), target_host.data(), target_host.size());
+  span[target_host.size()] = '\0';
 
-  if (regex_rewrite->regular_expression.compile(target_host.data()) == false) {
+  if (regex_rewrite->regular_expression.compile(span.data()) == false) {
     zret.errata().error("{} pcre_compile failed on '{}'", ERROR_PREFIX, target_host);
   } else {
     int captures = regex_rewrite->regular_expression.get_capture_count();

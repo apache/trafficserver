@@ -23,10 +23,10 @@
 #include <string_view>
 #include <bitset>
 
+#include "UrlRewrite.h"
+
 #include "swoc/TextView.h"
 #include "swoc/Errata.h"
-
-#include "UrlRewrite.h"
 
 /// Base class for remap config builders.
 class RemapBuilder
@@ -68,12 +68,33 @@ public:
 
   swoc::Errata insert_ancillary_tunnel_rules(URL &target_url, URL &replacement_url, mapping_type rule_type, TextView tag);
 
+  /** Make a copy of @a view in local string storage.
+   *
+   * @param view String to copy.
+   * @return A view of the copy.
+   *
+   * The copy is null terminated so the return value can be used as a C string.
+   */
+  swoc::TextView stash(swoc::TextView view);
+
+  /** Make a copy of @a view in local string storage.
+   *
+   * @param view String to copy.
+   * @return A view of the copy.
+   *
+   * The copy converted to lower case and null terminated so the return value can be used as a C
+   * string.
+   */
+  swoc::TextView stash_lower(swoc::TextView view);
+
 protected:
   swoc::Errata load_plugin(url_mapping *mp, ts::file::path &&path, int argc, char const **argv);
 
   UrlRewrite *_rewriter = nullptr; // Pointer to the UrlRewrite object we are parsing for.
   RemapFilterList _filters;
   std::list<RemapFilter *> _active_filters;
+  swoc::MemArena _stash; ///< Temporary storage for localizing strings.
+
   bool _load_plugins_elevated_p = false;
 };
 

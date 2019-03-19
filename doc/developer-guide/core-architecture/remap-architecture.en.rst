@@ -36,14 +36,14 @@ Implementation
 
 .. class:: RemapArg
 
-   An argument in a remap rule. The general form of an argument is "@tag=value".
-   Each argument has a :arg:`type` which is determined by the tag. The value is stored in this
-   structure, if one is present. Each type requires a value, or ignores it - there are no optional
-   values.
+   An argument in a remap rule, which has a :arg:`key` and :arg:`value`. Each argument has a
+   :arg:`type` which is determined by the :arg:`key`. The value is present or not, depending on the
+   :arg:`type`. Each type has either a required value, or no value. This is primarily an artifact
+   of the line based format, it's not useful for YAML configuration.
 
 .. class:: RemapFilter
 
-   An access check to determine if a rule is valid for a request. The filter has a set of matching
+   An access check to determine if a rule is enabled for a request. The filter has a set of matching
    criteria and an action, which is either ``ALLOW`` or ``DENY``. If the filter matches the request
    the action is used, otherwise the next filter is checked.
 
@@ -57,16 +57,35 @@ Implementation
    a new configuration. The persistent configuration data is stored in :class:`UrlRewrite` directly
    or indirectly.
 
+   .. function:: TextView stash(TextView str)
+
+      Copy the contents of :arg:`str` to the builder string stash then return a view of that copy.
+      The copy will always a C string but the terminating null will not be in the view.
+
+   .. function:: TextView stash_lower(TextView str)
+
+      Copy the contents of :arg:`str` to the builder string stash while converting to lower case,
+      then return a view of that copy. The copy will always a C string but the terminating null will
+      not be in the view.
+
+.. class:: RemapTextBuilder : public RemapBuilder
+
+   A subclass that supports the text (line) based configuration format.
+
+.. class: RemapYAMLBuilder : public RemapBuilder
+
+   A subclass that supports YAML based configuration format.
+
 .. class:: UrlRewrite
 
-   The top level remapping structure. This is created from a configuration file and then used at run
-   time to perform remapping. Data that is shared or needs to persist as long as the configuration
-   is stored in this class. These are
+   The top level remapping structure. This is created from a configuration file and then used during
+   a transaction to perform remapping. Data that is shared or needs to persist as long as the
+   configuration is stored in this class. These are
 
    Localized Strings
-      The string views stored in the ancillary data structures
-      depend on the string being resident in this object. Such strings are "localized" in to a
-      :class:`MemArena` and views are created to reference those localized copies.
+      The string views stored in the ancillary data structures depend on the string being resident
+      in this object. Such strings are "localized" in to a :class:`MemArena` and views are created
+      to reference those localized copies.
 
    Remap Filters
       All instances of :class:`RemapFilter` for the configuation are stored here (including direct
@@ -100,6 +119,26 @@ Memory Ownership
 ----------------
 
 To avoid excessive memory allocation, the data structures for a configuration use string views to
-track relevant information. These require underlying storage for the views which is embedded in the
-:class:`UrlRewrite` instance, because that serves as the root of a configuration instance and therefore
-controls the lifetime of the ancillary data structures containing the string views.
+track relevant information. These require underlying storage. This is managed by instances of :class:`MemArena`.
+There are two levels of this.
+
+There is a configuration level persistent string store in :class:`UrlRewrite`. This accessed via the
+:function:`UrlRewrite::localize` method. This takes a view and returns a view containing identical
+data but inside the arena. A null terminated is added because it's cheap and frequently needed for
+when these strings are passed to C style interfaces.
+
+There is also a string arena in :class:`RemapBuilder` which is used for holding strings that are
+only needed while parsing a specific rule. This storage is needed to support C strings and
+case transformations from the configuration data that are used in remap support methods (e.g.
+regular expression compilation). This storage is accessed via :function:`RemapBuilder::stash` which
+takes a view and returns a view that is a copy of the original. The arena is cleared after each
+rule is processed.
+
+URL Handling
+------------
+
+To be more consistent and faster with literal URL lookups, the target URL is normalized to be lower
+case. This includes target URLs that are regular expressions.
+
+For a regular expression rule, replacement URL can have substitutions in it. This is broken down into
+a vector of substitutions during configuration parsing.

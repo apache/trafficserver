@@ -162,42 +162,48 @@ void
 RemapYAMLBuilder::parse_replacement_url(swoc::Errata &erratum, YAML::Node const &parent, URL &url,
                                         RemapYAMLBuilder::URLOptions &opts)
 {
-  static constexpr swoc::TextView TO_URL_KEY{"replacement"};
-
-  if (parent[TO_URL_KEY]) {
-    auto node{parent[TO_URL_KEY]};
+  if (parent[REPLACEMENT_URL_KEY]) {
+    auto node{parent[REPLACEMENT_URL_KEY]};
     if (!node.IsScalar()) {
-      erratum.error("'{}' TO_URL_KEY is not a text value at {}", TO_URL_KEY, node.Mark());
+      erratum.error("'{}' TO_URL_KEY is not a text value at {}", REPLACEMENT_URL_KEY, node.Mark());
     } else {
       swoc::TextView text{this->normalize_url(node.Scalar())};
       url.create(nullptr);
       if (PARSE_RESULT_DONE != url.parse_no_path_component_breakdown(text.data(), text.size())) {
-        erratum.error("Malformed URL '{}' in '{}' TO_URL_KEY at {}", text, TO_URL_KEY, node.Mark());
+        erratum.error("Malformed URL '{}' in '{}' TO_URL_KEY at {}", text, REPLACEMENT_URL_KEY, node.Mark());
       }
     }
   }
 }
 
-void
-RemapYAMLBuilder::parse_target_url(swoc::Errata &erratum, YAML::Node const &parent, URL &url, URLOptions &opts)
+swoc::Errata
+RemapYAMLBuilder::parse_target_url(YAML::Node const &node, url_mapping *mp, std::unique_ptr<UrlRewrite::RegexMapping> &rx_mp,
+                                   URLOptions &opts)
 {
-  static constexpr swoc::TextView TARGET_URL_KEY{"target"};
+  swoc::Errata zret;
 
-  if (parent[TARGET_URL_KEY]) {
-    auto node{parent[TARGET_URL_KEY]};
-    if (!node.IsScalar()) {
-      erratum.error("'{}' FROM_URL_KEY is not a text value at {}", TARGET_URL_KEY, node.Mark());
+  if (!node.IsScalar()) {
+    zret.error(R"(URL at {} must be a string)", node.Mark());
+  } else {
+    swoc::TextView url_text{this->normalize_url(node.Scalar())};
+    mp->fromURL.create(nullptr);
+    if (PARSE_RESULT_DONE == mp->fromURL.parse_no_path_component_breakdown(url_text.data(), url_text.size())) {
+      if (node.Tag() == "!regex") {
+        auto result = this->parse_regex_rewrite(mp, mp->fromURL.host_get());
+        if (result.is_ok()) {
+          opts[static_cast<unsigned>(RemapYAMLBuilder::URLOpt::REGEX)] = true;
+          rx_mp.reset(result);
+        } else {
+          result.errata().error(R"(Failed to parse regular expression in target URL at {})", node.Mark());
+          zret.note(result);
+        }
+      }
     } else {
-      swoc::TextView text{this->normalize_url(node.Scalar())};
-      url.create(nullptr);
-      if (PARSE_RESULT_DONE != url.parse_no_path_component_breakdown(text.data(), text.size())) {
-        erratum.error("Malformed URL '{}' in '{}' FROM_URL_KEY at {}", text, TARGET_URL_KEY, node.Mark());
-      }
-      if (node.Tag() == "!regexx") {
-        opts[static_cast<unsigned>(RemapYAMLBuilder::URLOpt::REGEX)] = true;
-      }
+      zret.error(R"(Malformed URL "{}" at {})", node.Scalar().c_str(), node.Mark());
     }
   }
+
+  return zret;
 }
 
 swoc::Errata
@@ -364,53 +370,60 @@ RemapYAMLBuilder::parse_plugin_define(YAML::Node const &node, url_mapping *mp)
   static constexpr swoc::TextView ARGS_KEY{"args"};
 
   swoc::Errata zret;
-  ts::file::path path;
-  std::vector<const char *> plugin_argv;
+  if (node.IsMap()) {
+    ts::file::path path;
+    // This is passed directly to the C interface, so it must be a vector of @c char pointers,
+    // each a C style string.
+    std::vector<const char *> plugin_argv;
 
-  if (node[PATH_KEY]) {
-    auto path_node{node[PATH_KEY]};
-    if (path_node.IsScalar()) {
-      path = path_node.Scalar();
-      std::error_code ec;
-      if (path.is_relative()) {
-        path = ts::file::path(Layout::get()->sysconfdir) / path;
-      }
-      auto file_stat{ts::file::status(path, ec)};
-      if (ec) {
-        zret.error(R"(Plugin file "{}" access error {})", path, ec);
-      }
-    } else {
-      zret.error(R"(Value for "{}" must be a string)", PATH_KEY);
-    }
-  }
-
-  if (!zret.is_ok()) {
-    return zret;
-  }
-
-  if (node[ARGS_KEY]) {
-    auto args_node{node[ARGS_KEY]};
-    if (args_node.IsScalar()) {
-      plugin_argv.push_back(_rewriter->localize(args_node.Scalar()).data());
-    } else if (args_node.IsSequence()) {
-      for (auto const &n : args_node) {
-        if (n.IsScalar()) {
-          plugin_argv.push_back(_rewriter->localize(args_node.Scalar()).data());
-        } else {
-          zret.error(R"(Invalid plugin argument at {} - must be strings)", n.Mark());
-          break;
+    if (node[PATH_KEY]) {
+      auto path_node{node[PATH_KEY]};
+      if (path_node.IsScalar()) {
+        path = path_node.Scalar();
+        std::error_code ec;
+        if (path.is_relative()) {
+          path = ts::file::path(Layout::get()->sysconfdir) / path;
         }
+        auto file_stat{ts::file::status(path, ec)};
+        if (ec) {
+          zret.error(R"(Plugin file "{}" access error {}.)", path, ec);
+        }
+      } else {
+        zret.error(R"(Value for "{}" must be a string.)", PATH_KEY);
       }
-    } else {
-      zret.error(R"(Plugin key "{}" must have a value that is a string or array of strings)", ARGS_KEY);
     }
-  };
 
-  if (!zret.is_ok()) {
-    return zret;
+    if (!zret.is_ok()) {
+      return zret;
+    }
+
+    if (node[ARGS_KEY]) {
+      auto args_node{node[ARGS_KEY]};
+      if (args_node.IsScalar()) {
+        plugin_argv.push_back(args_node.Scalar().data());
+      } else if (args_node.IsSequence()) {
+        for (auto const &n : args_node) {
+          if (n.IsScalar()) {
+            plugin_argv.push_back(n.Scalar().data());
+          } else {
+            zret.error(R"(Invalid plugin argument at {} - must be a string.)", n.Mark());
+            break;
+          }
+        }
+      } else {
+        zret.error(R"(Plugin key "{}" must have a value that is a string or array of strings.)", ARGS_KEY);
+      }
+    };
+
+    if (!zret.is_ok()) {
+      return zret;
+    }
+
+    zret = this->load_plugin(mp, std::move(path), plugin_argv.size(), plugin_argv.data());
+  } else {
+    zret.error(R"(Plugin definition at {} must be an object.)", node.Mark());
   }
 
-  zret = this->load_plugin(mp, std::move(path), plugin_argv.size(), plugin_argv.data());
   return zret;
 }
 
@@ -459,11 +472,10 @@ RemapYAMLBuilder::parse_referer_match(YAML::Node const &value, url_mapping *mp)
 
   if (value.IsScalar()) {
     RefererInfo ri;
-    auto rx{_rewriter->localize(value.Scalar())};
     ts::LocalBufferWriter<1024> errw;
-    auto err_msg = ri.parse(rx, errw);
+    auto err_msg = ri.parse(value.Scalar(), errw);
     if (err_msg) {
-      zret.error(R"(Malformed value "{}" at {} - {}.)", rx, value.Mark(), err_msg);
+      zret.error(R"(Malformed value "{}" at {} - {}.)", value.Scalar().c_str(), value.Mark(), err_msg);
     } else {
       if (ri.negative && ri.any) {
         mp->optional_referer = true;
@@ -565,14 +577,28 @@ RemapYAMLBuilder::parse_rule_define(YAML::Node const &rule)
 
   RuleOptions rule_options;
   std::unique_ptr<url_mapping> mapping{new url_mapping};
+  std::unique_ptr<UrlRewrite::RegexMapping> regex_mapping;
 
   in_port_t proxy_port = 0; // proxy port, if non-zero
   URLOptions target_options;
   URLOptions replacement_options;
 
-  this->parse_target_url(zret, rule, mapping->fromURL, target_options);
   this->parse_replacement_url(zret, rule, mapping->toURL, replacement_options);
+  // parsing the target depends on the replacement if target is a regex - need to match up
+  // capture groups with replacement substitutions.
+  if (rule[TARGET_URL_KEY]) {
+    auto node{rule[TARGET_URL_KEY]};
+    auto result{this->parse_target_url(node, mapping.get(), regex_mapping, replacement_options)};
+    if (!result.is_ok()) {
+      result.error(R"(While parsing regular expression at {} in a rule at {}.)", node.Mark(), rule.Mark());
+      zret.note(result);
+    }
+  } else {
+    zret.error(R"(Required key "{}" not found in rule at {})", TARGET_URL_KEY, rule.Mark());
+  }
+
   yaml_parse_unsigned(zret, rule, RULE_ID_KEY, mapping->map_id);
+
   if (rule[PROXY_PORT_KEY]) {
     auto port_node{rule[PROXY_PORT_KEY]};
     auto result{yaml_parse_ip_port(port_node, proxy_port)};
@@ -591,11 +617,9 @@ RemapYAMLBuilder::parse_rule_define(YAML::Node const &rule)
         this->apply_rule_option(zret, n, rule_options);
       }
     } else {
-      zret.error(R"("The value for '{}" key at {} must be a string or an array of strings.)", OPTIONS_KEY, node.Mark());
+      zret.error(R"(The value for "{}" key at {} must be a string or an array of strings.)", OPTIONS_KEY, node.Mark());
     }
   }
-
-  auto target_host{mapping->fromURL.host_get()};
 
   if (rule[REDIRECT_KEY]) {
     auto redirect{rule[REDIRECT_KEY]};
@@ -650,9 +674,7 @@ RemapYAMLBuilder::parse_rule_define(YAML::Node const &rule)
 
   if (rule[PLUGINS_KEY]) {
     auto plugins_node{rule[PLUGINS_KEY]};
-    if (plugins_node.IsScalar()) {
-      zret = this->parse_plugin_define(plugins_node, mapping.get());
-    } else if (plugins_node.IsSequence()) {
+    if (plugins_node.IsSequence()) {
       for (auto const &n : plugins_node) {
         auto result = this->parse_plugin_define(n, mapping.get());
         if (!result.is_ok()) {
@@ -663,30 +685,33 @@ RemapYAMLBuilder::parse_rule_define(YAML::Node const &rule)
         }
       }
     } else {
-      zret.error("Plugins value must be an object or an array of objects");
+      zret = this->parse_plugin_define(plugins_node, mapping.get());
     }
   }
 
   if (zret.is_ok()) {
-    UrlRewrite::RegexMapping *regex_mapping = target_options[URLOpt::REGEX] ? new UrlRewrite::RegexMapping : nullptr;
     mapping_type rule_type{FORWARD_MAP};
 
     if (proxy_port) {
       rule_type = FORWARD_MAP_WITH_RECV_PORT;
     }
-    _rewriter->InsertMapping(rule_type, mapping.release(), regex_mapping, nullptr, target_options[URLOpt::REGEX]);
+
+    _rewriter->InsertMapping(rule_type, mapping.get(), regex_mapping.release(), nullptr, target_options[URLOpt::REGEX]);
 
     // If the reverse option is set, insert a reverse rule for this rule.
     if (rule_options[REVERSE_MAP]) {
       auto reverse_mapping = new url_mapping;
       reverse_mapping->fromURL.create(nullptr);
       reverse_mapping->fromURL.copy(&mapping->toURL);
+      reverse_mapping->toURL.create(nullptr);
       reverse_mapping->toURL.copy(&mapping->fromURL);
       _rewriter->InsertMapping(REVERSE_MAP, reverse_mapping, nullptr, nullptr, false);
     }
-  }
 
-  zret.error("Failed to parse rule definition at {}", rule.Mark());
+    mapping.release(); // Don't clean this up!
+  } else {
+    zret.error("Failed to parse rule definition at {}", rule.Mark());
+  }
   return zret;
 };
 
@@ -793,18 +818,18 @@ RemapYAMLBuilder::parse_directives(YAML::Node const &rules)
     auto rv{this->parse_directive(rules)};
     if (!rv.is_ok()) {
       zret.note(rv);
-      zret.error("Rules [{} {}] was malformed.", RULE_DEFINITIONS_KEY, rules.Mark());
+      zret.error(R"(Value for "{}" at {} was malformed.)", RULE_DEFINITIONS_KEY, rules.Mark());
     }
   } else if (rules.IsSequence()) {
     for (auto const &rule : rules) {
       auto rv{this->parse_directive(rule)};
       if (!rv.is_ok()) {
         zret.note(rv);
-        zret.error("Rules [{} {}] was malformed.", RULE_DEFINITIONS_KEY, rule.Mark());
+        zret.error(R"(Value for "{}" at {} was malformed.)", RULE_DEFINITIONS_KEY, rules.Mark());
       }
     }
   } else {
-    zret.error("Rules [{} {}] must be a rule definition or an array of rule definitions", RULE_DEFINITIONS_KEY, rules.Mark());
+    zret.error(R"(Value for "{}" at {} must be an object or an array of objects.)", RULE_DEFINITIONS_KEY, rules.Mark());
   }
   return zret;
 }
@@ -821,11 +846,11 @@ RemapYAMLBuilder::parse(UrlRewrite *rewriter, std::string const &content)
   }
 
   if (!top[ROOT_KEY]) {
-    return zret.warn("YAML parsing error: required root tag '{}' not found", ROOT_KEY);
+    return zret.warn("YAML parsing error: required root tag '{}' not found.", ROOT_KEY);
   }
   auto root = top[ROOT_KEY];
   if (!root.IsMap()) {
-    return zret.warn("YAML parsing error: required root tag '{}' was not an object", ROOT_KEY);
+    return zret.warn("YAML parsing error: required root tag '{}' was not an object.", ROOT_KEY);
   }
 
   RemapYAMLBuilder builder{rewriter};
@@ -833,14 +858,14 @@ RemapYAMLBuilder::parse(UrlRewrite *rewriter, std::string const &content)
   YAML::Node filters{root[FILTER_DEFINITIONS_KEY]};
   if (filters) {
     if (!(zret = builder.parse_filter_definitions(filters)).is_ok()) {
-      zret.error("YAML parsing error for '{}' tag", FILTER_DEFINITIONS_KEY);
+      zret.error("YAML parsing error for '{}' tag at {}.", FILTER_DEFINITIONS_KEY, root.Mark());
       return zret;
     }
   }
   YAML::Node rules{root[RULE_DEFINITIONS_KEY]};
   if (rules) {
     if (!(zret = builder.parse_directives(rules)).is_ok()) {
-      zret.error("YAML parsing error for '{}' tag", RULE_DEFINITIONS_KEY);
+      zret.error("YAML parsing error for '{}' tag at {}.", RULE_DEFINITIONS_KEY, root.Mark());
       return zret;
     }
   }

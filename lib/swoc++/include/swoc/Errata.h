@@ -393,8 +393,6 @@ template <typename R> struct Rv : public std::tuple<R, Errata> {
   static constexpr int RESULT = 0; ///< Tuple index for result.
   static constexpr int ERRATA = 1; ///< Tuple index for Errata.
 
-  result_type _result{}; ///< The actual result of the function.
-
   /** Default constructor.
       The default constructor for @a R is used.
       The status is initialized to SUCCESS.
@@ -462,20 +460,19 @@ template <typename R> struct Rv : public std::tuple<R, Errata> {
 
   /** User conversion to the result type.
 
-      This makes it easy to use the function normally or to pass the
-      result only to other functions without having to extract it by
-      hand.
+      This makes it easy to use the function normally or to pass the result only to other functions
+      without having to extract it by hand.
   */
   operator result_type const &() const;
 
   /** Assignment from result type.
 
-      This allows the result to be assigned to a pre-declared return
-      value structure.  The return value is a reference to the
-      internal result so that this operator can be chained in other
-      assignments to instances of result type. This is most commonly
-      used when the result is computed in to a local variable to be
-      both returned and stored in a member.
+      @param r Result.
+
+      This allows the result to be assigned to a pre-declared return value structure.  The return
+      value is a reference to the internal result so that this operator can be chained in other
+      assignments to instances of result type. This is most commonly used when the result is
+      computed in to a local variable to be both returned and stored in a member.
 
       @code
       Rv<int> zret;
@@ -488,13 +485,14 @@ template <typename R> struct Rv : public std::tuple<R, Errata> {
 
       @return A reference to the copy of @a r stored in this object.
   */
-  result_type &
-  operator=(result_type const &r ///< result_type to assign
-  )
-  {
-    _result = r;
-    return _result;
-  }
+  result_type &operator=(result_type const &r);
+
+  /** Move assign a result @r to @a this.
+   *
+   * @param r Result.
+   * @return @a r
+   */
+  result_type &operator=(result_type &&r);
 
   /** Set the result.
 
@@ -887,6 +885,22 @@ Rv<R>::note(Severity level, std::string_view fmt, Args &&... args)
 {
   std::get<ERRATA>(*this).note_v(level, fmt, std::forward_as_tuple(args...));
   return *this;
+}
+
+template <typename R>
+auto
+Rv<R>::operator=(result_type const &r) -> result_type &
+{
+  std::get<RESULT>(*this) = r;
+  return r;
+}
+
+template <typename R>
+auto
+Rv<R>::operator=(result_type &&r) -> result_type &
+{
+  std::get<RESULT>(*this) = std::move(r);
+  return r;
 }
 
 BufferWriter &bwformat(BufferWriter &w, bwf::Spec const &spec, Severity);

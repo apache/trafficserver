@@ -106,7 +106,7 @@ MemArena::alloc(size_t n)
   zret       = block->alloc(n);
   _active_allocated += n;
   // If this block is now full, move it to the back.
-  if (block->full() && block != _active.tail()) {
+  if (block->is_full() && block != _active.tail()) {
     _active.erase(block);
     _active.append(block);
   }
@@ -157,7 +157,7 @@ MemArena::require(size_t n)
   } else {
     // Search back through the list until a full block is hit, which is a miss.
     while (spot != _active.end() && n > spot->remaining()) {
-      if (spot->full())
+      if (spot->is_full())
         spot = _active.end();
       else
         ++spot;
@@ -188,14 +188,25 @@ MemArena::destroy_frozen()
 }
 
 MemArena &
-MemArena::clear(size_t n)
+MemArena::clear(size_t hint)
 {
-  _reserve_hint    = n ? n : _frozen_allocated + _active_allocated;
+  _reserve_hint    = hint ? hint : _frozen_allocated + _active_allocated;
   _frozen_reserved = _frozen_allocated = 0;
   _active_reserved = _active_allocated = 0;
   this->destroy_frozen();
   this->destroy_active();
 
+  return *this;
+}
+
+MemArena &
+MemArena::discard(size_t hint)
+{
+  _reserve_hint = hint ? hint : _frozen_allocated + _active_allocated;
+  for (auto &block : _active) {
+    block.discard();
+  }
+  _active_allocated = 0;
   return *this;
 }
 

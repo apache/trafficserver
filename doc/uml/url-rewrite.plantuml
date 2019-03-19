@@ -109,6 +109,6 @@ UrlMappingPathIndex --* "1" UrlMappingGroup
 UrlMappingGroup --* "*" UrlMappingTrie
 UrlMappingTrie --* "*" url_mapping
 
-RegexMapping --* "1" url_mapping
+RegexMapping --o "1" url_mapping
 
 @enduml

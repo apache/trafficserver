@@ -1,4 +1,0 @@
-url_rewrite:
-  rules:
-    - from: http://one.com
-      to: http://solidwallofcode.com

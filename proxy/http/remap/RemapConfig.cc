@@ -36,6 +36,7 @@
 #include "tscore/bwf_std_format.h"
 #include "IPAllow.h"
 #include "tscpp/util/PostScript.h"
+#include "RemapTextBuilder.h"
 #include "RemapYAMLBuilder.h"
 
 #define modulePrefix "[ReverseProxy]"
@@ -92,6 +93,7 @@ RemapTextBuilder::clear()
   paramv.resize(0);
   argv.resize(0);
   arg_types.reset();
+  _stash.discard();
 }
 
 TextView
@@ -524,6 +526,7 @@ RemapTextBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
 
   if (ts::TextView{path.view()}.take_suffix_at('.') == "yaml" || ts::TextView::npos != content.find(RemapYAMLBuilder::ROOT_KEY)) {
     auto result = RemapYAMLBuilder::parse(rewriter, content);
+    std::cout << result;
     return result.is_ok();
   }
 
@@ -729,7 +732,7 @@ RemapTextBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
 
   // Check if a tag is specified.
   if (builder.paramv.size() >= 4) {
-    tag = builder._rewriter->localize(builder.paramv[3]);
+    tag = builder.stash(builder.paramv[3]);
     if (maptype == FORWARD_MAP_REFERER) {
       new_mapping->filter_redirect_url = tag;
       if (0 == strcasecmp(tag, "<default>") || 0 == strcasecmp(tag, "default") || 0 == strcasecmp(tag, "<default_redirect_url>") ||
@@ -740,7 +743,7 @@ RemapTextBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
       for (auto spot = builder.paramv.rbegin(), limit = builder.paramv.rend() - 3; spot < limit; ++spot) {
         if (!spot->empty()) {
           RefererInfo ri;
-          TextView ref_text = rewriter->localize(*spot);
+          TextView ref_text = builder.stash(*spot);
           ts::LocalBufferWriter<1024> ref_errw;
 
           auto err_msg = ri.parse(ref_text, ref_errw);
@@ -831,7 +834,9 @@ RemapTextBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
 
   cleanup.release();
   return true;
-} /* end of while(cur_line != nullptr) */
+}
+
+/* end of while(cur_line != nullptr) */
 
 bool
 remap_parse_config(const char *path, UrlRewrite *rewrite)

@@ -25,9 +25,9 @@
 #include "swoc/Errata.h"
 #include "yaml-cpp/yaml.h"
 #include "RemapBuilder.h"
+#include "UrlRewrite.h"
 
 class url_mapping;
-class UrlRewrite;
 
 /** Parse YAML based url rewriting configuration.
  *
@@ -51,6 +51,9 @@ public:
   static constexpr swoc::TextView REDIRECT_VALUE_PERMANENT{"permanent"};
   static constexpr swoc::TextView REDIRECT_VALUE_TEMPORARY{"temporary"};
   /// @}
+
+  static constexpr swoc::TextView TARGET_URL_KEY{"target"};
+  static constexpr swoc::TextView REPLACEMENT_URL_KEY{"replacement"};
 
   /// Value type for negating.
   static constexpr swoc::TextView YAML_NOT_TYPE{"!not"};
@@ -170,12 +173,18 @@ public:
 
   /** Parse a node for an original URL to rewrite.
    *
-   * @param erratum [out] Error reporting.
-   * @param parent [in] Base node.
-   * @param url [out] A URL object to update from the text.
+   * @param node [in] Value node with the target URL.
+   * @param mp [out] The URL mapping object to update.
+   * @param rx_mp [out] The regular expression mapping, if any..
    * @param opts [out] Options set by the value.
+   *
+   * @return Any errors.
+   *
+   * If the URL is marked to be a regular expression, the @c REGEX option in @a opts is set and the
+   * regular expression mapping object is returned via the @a rx_map argument.
    */
-  void parse_target_url(swoc::Errata &erratum, YAML::Node const &parent, URL &url, URLOptions &opts);
+  swoc::Errata parse_target_url(YAML::Node const &node, url_mapping *mp, std::unique_ptr<UrlRewrite::RegexMapping> &rx_mp,
+                                URLOptions &opts);
 
   /** Parse a node for a URL as the new URL in a rewriting.
    *

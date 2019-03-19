@@ -28,7 +28,36 @@
 
 TEST_CASE("URL Rewrite", "[url-rewrite]")
 {
-  auto rewriter = new UrlRewrite;
-  remap_parse_config("unit_tests/remap_examples/remap_001.config", rewriter);
-  delete rewriter;
+  SECTION("001-text")
+  {
+    auto rewriter = new UrlRewrite;
+    std::cout << "001 Text" << std::endl;
+    remap_parse_config("unit_tests/remap_examples/remap_001.config", rewriter);
+    rewriter->Print();
+    delete rewriter;
+  }
+  SECTION("001-yaml")
+  {
+    auto rewriter = new UrlRewrite;
+    std::cout << "001 YAML" << std::endl;
+    remap_parse_config("unit_tests/remap_examples/remap_001.yaml", rewriter);
+    rewriter->Print();
+    delete rewriter;
+  }
+  SECTION("002-yaml")
+  {
+    auto rewriter = new UrlRewrite;
+    std::cout << "002 YAML" << std::endl;
+    remap_parse_config("unit_tests/remap_examples/remap_002.yaml", rewriter);
+    rewriter->Print();
+    delete rewriter;
+  }
+  SECTION("003-yaml")
+  {
+    auto rewriter = new UrlRewrite;
+    std::cout << "003 YAML" << std::endl;
+    remap_parse_config("unit_tests/remap_examples/remap_003.yaml", rewriter);
+    rewriter->Print();
+    delete rewriter;
+  }
 }

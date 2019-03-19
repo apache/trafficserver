@@ -33,6 +33,7 @@ Configuration Files
    plugin.config.en
    records.config.en
    remap.config.en
+   remap.yaml.en
    splitdns.config.en
    ssl_multicert.config.en
    ssl_server_name.yaml.en
@@ -66,6 +67,9 @@ Configuration Files
 
 :doc:`remap.config.en`
    Defines mapping rules used by |TS| to properly route all incoming requests.
+
+:doc:`remap.yaml.en`
+   Defines mapping rules used by |TS| to properly route all incoming requests in YAML format.
 
 :doc:`splitdns.config.en`
    Configures DNS servers to use under specific conditions.

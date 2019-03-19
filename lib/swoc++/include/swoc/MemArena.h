@@ -66,6 +66,14 @@ public:
      */
     MemSpan<void> alloc(size_t n);
 
+    /** Discard allocations.
+     *
+     * Reset the block state to empty.
+     *
+     * @return @a this.
+     */
+    Block &discard();
+
     /** Check if the byte at address @a ptr is in this block.
      *
      * @param ptr Address of byte to check.
@@ -74,7 +82,7 @@ public:
     bool contains(const void *ptr) const;
 
     /// @return @c true if the block has at least @c MIN_FREE_SPACE bytes free.
-    bool full() const;
+    bool is_full() const;
 
     /** Override standard delete.
      *
@@ -212,13 +220,29 @@ public:
 
   /** Release all memory.
 
-      Empties the entire arena and deallocates all underlying memory. The hint for the next reservered block size will
-      be @a n if @a n is not zero, otherwise it will be the sum of all allocations when this method was called.
+      Empties the entire arena and deallocates all underlying memory. The hint for the next reserved
+      block size will be @a n if @a n is not zero, otherwise it will be the sum of all allocations
+      when this method was called.
 
-      @return @c *this
+      @param hint Size hint for the next internal allocation.
+      @return @a this
+
+      @see discard
 
    */
-  MemArena &clear(size_t n = 0);
+  MemArena &clear(size_t hint = 0);
+
+  /** Discard all allocations.
+   *
+   * All active internal memory blocks are reset to be empty, discarding any allocations. These blocks
+   * will be re-used by subsequent allocations.
+   *
+   * @param hint Size hint for the next internal allocation.
+   * @return @a this.
+   *
+   * @see clear
+   */
+  MemArena &discard(size_t hint = 0);
 
   /// @return The amount of memory allocated.
   size_t size() const;
@@ -347,7 +371,7 @@ MemArena::Block::remaining() const
 }
 
 inline bool
-MemArena::Block::full() const
+MemArena::Block::is_full() const
 {
   return this->remaining() < MIN_FREE_SPACE;
 }
@@ -376,6 +400,13 @@ inline MemSpan<void>
 MemArena::Block::remnant()
 {
   return {this->data() + allocated, this->remaining()};
+}
+
+inline MemArena::Block &
+MemArena::Block::discard()
+{
+  allocated = 0;
+  return *this;
 }
 
 inline size_t

@@ -1,22 +1,23 @@
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-   distributed with this work for additional information
-   regarding copyright ownership.  The ASF licenses this file
-   to you under the Apache License, Version 2.0 (the
-   "License"); you may not use this file except in compliance
-   with the License.  You may obtain a copy of the License at
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
 
    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing,
-   software distributed under the License is distributed on an
-   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-   KIND, either express or implied.  See the License for the
-   specific language governing permissions and limitations
-   under the License.
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
 
+============
 remap.config
-************
+============
 
 .. configfile:: remap.config
 
@@ -25,18 +26,22 @@ remap.config
 .. toctree::
    :maxdepth: 2
 
-The :file:`remap.config` file (by default, located in ``/usr/local/etc/trafficserver/``) contains
-mapping rules that Traffic Server uses to perform the following actions:
 
-*  Map URL requests for a specific origin server to the appropriate location on Traffic Server when
-   Traffic Server acts as a reverse proxy for that particular origin server
+The :file:`remap.config` file (by default, located in
+``/usr/local/etc/trafficserver/``) contains mapping rules that Traffic Server
+uses to perform the following actions:
 
-*  Reverse-map server location headers so that when origin servers respond to a request with a
-   location header that redirects the client to another location, the clients do not bypass Traffic
-   Server
+-  Map URL requests for a specific origin server to the appropriate
+   location on Traffic Server when Traffic Server acts as a reverse
+   proxy for that particular origin server
+-  Reverse-map server location headers so that when origin servers
+   respond to a request with a location header that redirects the client
+   to another location, the clients do not bypass Traffic Server
+-  Redirect HTTP requests permanently or temporarily without Traffic
+   Server having to contact any origin servers
 
-*  Redirect HTTP requests permanently or temporarily without Traffic Server having to contact any
-   origin servers
+Refer to  :ref:`reverse-proxy-and-http-redirects`, for information about
+redirecting HTTP requests and using reverse proxy.
 
 After you modify the :file:`remap.config` run the
 :option:`traffic_ctl config reload` to apply the changes.
@@ -44,64 +49,63 @@ After you modify the :file:`remap.config` run the
 Format
 ======
 
-Empty lines and lines where the first non-whitespace character is '#' are ignored. Otherwise each
-line must be either a mapping rule or a directive. Lines can be broken up into multiple lines for
-better readability by using ``\`` as continuation marker as the last character in the line.
+Each line in the :file:`remap.config` file must contain a mapping rule. Empty lines,
+or lines starting with ``#`` are ignored. Each line can be broken up into multiple
+lines for better readability by using ``\`` as continuation marker.
 
-Traffic Server recognizes three space-delimited fields at the start of each rule line, in order:
-``type``, ``target``, and ``replacement``. The following list describes the format of each field.
+Traffic Server recognizes three space-delimited fields: ``type``,
+``target``, and ``replacement``. The following list describes the format of each field.
 
 .. _remap-config-format-type:
 
 ``type``
-   Enter one of the following:
+    Enter one of the following:
 
-   ``map``
-      translates an incoming request URL to the appropriate origin server URL.
+    -  ``map`` --translates an incoming request URL to the appropriate
+       origin server URL.
 
-   ``map_with_recv_port``
-      exactly like 'map' except that it uses the port at which the request was received to perform
-      the mapping instead of the port present in the request. The regex qualifier can also be used
-      for this type. When present, 'map_with_recv_port' mappings are checked first. If there is a
-      match, then it is chosen without evaluating the "regular" forward mapping rules.
+    -  ``map_with_recv_port`` --exactly like 'map' except that it uses the port at
+       which the request was received to perform the mapping instead of the port present
+       in the request. The regex qualifier can also be used for this type. When present,
+       'map_with_recv_port' mappings are checked first. If there is a match, then it is
+       chosen without evaluating the "regular" forward mapping rules.
 
-   ``map_with_referer``
-      extended version of 'map', which can be used to activate "deep linking protection", where
-      target URLs are only accessible when the Referer header is set to a URL that is allowed to
-      link to the target.
+    -  ``map_with_referer`` -- extended version of 'map', which can be used to activate
+       "deep linking protection", where target URLs are only accessible when the Referer
+       header is set to a URL that is allowed to link to the target.
 
-   ``reverse_map``
-      translates the URL in origin server redirect responses to point to the Traffic Server.
+    -  ``reverse_map`` --translates the URL in origin server redirect
+       responses to point to the Traffic Server.
 
-   ``redirect``
-      redirects HTTP requests permanently without having to contact the origin server. Permanent
-      redirects notify the browser of the URL change (by returning an HTTP status code 301) so
-      that the browser can update bookmarks.
+    -  ``redirect`` --redirects HTTP requests permanently without having
+       to contact the origin server. Permanent redirects notify the
+       browser of the URL change (by returning an HTTP status code 301)
+       so that the browser can update bookmarks.
 
-   ``redirect_temporary``
-      redirects HTTP requests temporarily without having to contact the origin server. Temporary
-      redirects notify the browser of the URL change for the current request only (by returning an
-      HTTP status code 307).
+    -  ``redirect_temporary`` --redirects HTTP requests temporarily
+       without having to contact the origin server. Temporary redirects
+       notify the browser of the URL change for the current request only
+       (by returning an HTTP status code 307).
 
-      .. note:: use the ``regex_`` prefix to indicate that the line has a regular expression (regex).
+       .. note:: use the ``regex_`` prefix to indicate that the line has a regular expression (regex).
 
 .. _remap-config-format-target:
 
 ``target``
-   Enter the origin ("from") URL. You can enter up to four components: ::
+    Enter the origin ("from") URL. You can enter up to four components: ::
 
-      scheme://host:port/path_prefix
+        scheme://host:port/path_prefix
 
-   where ``scheme`` is ``http``, ``https``, ``ws`` or ``wss``.
+    where ``scheme`` is ``http``, ``https``, ``ws`` or ``wss``.
 
 .. _remap-config-format-replacement:
 
 ``replacement``
-   Enter the origin ("from") URL. You can enter up to four components: ::
+    Enter the origin ("from") URL. You can enter up to four components: ::
 
-      scheme://host:port/path_prefix
+        scheme://host:port/path_prefix
 
-   where ``scheme`` is ``http``, ``https``, ``ws`` or ``wss``.
+    where ``scheme`` is ``http``, ``https``, ``ws`` or ``wss``.
 
    .. note:: A remap rule for requests that upgrade from HTTP to WebSocket still require a remap rule with the ``ws`` or ``wss`` scheme.
 
@@ -111,8 +115,9 @@ Traffic Server recognizes three space-delimited fields at the start of each rule
 Precedence
 ==========
 
-Remap rules are not processed top-down, but based on an internal priority. Once these rules are
-executed the first match based on configuration file parse order is chosen as the effective rule.
+Remap rules are not processed top-down, but based on an internal
+priority. Once these rules are executed we pick the first match
+based on configuration file parse order.
 
 1. ``map_with_recv_port`` and ``regex_map_with_recv_port``
 #. ``map`` and ``regex_map`` and ``reverse_map``
@@ -129,10 +134,13 @@ rules without.
 Match-All
 =========
 
-A map rule with a single ``/`` the target acts as a wildcard, it will match any request. This should
-be used with care, and certainly only once at the end of the remap.config file. E.g. ::
+A map rule with a single ``/`` acts as a wildcard, it will match any
+request. This should be use with care, and certainly only once at the
+end of the remap.config file. E.g.
 
-   map / http://example.com/path_not_found.html
+::
+
+    map / http://all.example.com
 
 Examples
 --------
@@ -146,8 +154,8 @@ Reverse Proxy Mapping Rules
 The following example shows a map rule that does not specify a path
 prefix in the target or replacement: ::
 
-   map http://www.x.com/ http://server.hoster.com/
-   reverse_map http://server.hoster.com/ http://www.x.com/
+    map http://www.x.com/ http://server.hoster.com/
+    reverse_map http://server.hoster.com/ http://www.x.com/
 
 This rule results in the following translations:
 
@@ -161,14 +169,14 @@ Client Request                                   Translated Request
 The following example shows a map rule with path prefixes specified in
 the target: ::
 
-   map http://www.y.com/marketing/ http://marketing.y.com/
-   reverse_map http://marketing.y.com/ http://www.y.com/marketing/
-   map http://www.y.com/sales/ http://sales.y.com/
-   reverse_map http://sales.y.com/ http://www.y.com/sales/
-   map http://www.y.com/engineering/ http://engineering.y.com/
-   reverse_map http://engineering.y.com/ http://www.y.com/engineering/
-   map http://www.y.com/stuff/ http://info.y.com/
-   reverse_map http://info.y.com/ http://www.y.com/stuff/
+    map http://www.y.com/marketing/ http://marketing.y.com/
+    reverse_map http://marketing.y.com/ http://www.y.com/marketing/
+    map http://www.y.com/sales/ http://sales.y.com/
+    reverse_map http://sales.y.com/ http://www.y.com/sales/
+    map http://www.y.com/engineering/ http://engineering.y.com/
+    reverse_map http://engineering.y.com/ http://www.y.com/engineering/
+    map http://www.y.com/stuff/ http://info.y.com/
+    reverse_map http://info.y.com/ http://www.y.com/stuff/
 
 These rules result in the following translations:
 
@@ -182,10 +190,10 @@ Client Request                                                  Translated Reque
 
 The following example shows that the order of the rules matters: ::
 
-   map http://www.g.com/ http://external.g.com/
-   reverse_map http://external.g.com/ http://www.g.com/
-   map http://www.g.com/stuff/ http://stuff.g.com/
-   reverse_map http://stuff.g.com/ http://www.g.com/stuff/
+    map http://www.g.com/ http://external.g.com/
+    reverse_map http://external.g.com/ http://www.g.com/
+    map http://www.g.com/stuff/ http://stuff.g.com/
+    reverse_map http://stuff.g.com/ http://www.g.com/stuff/
 
 These rules result in the following translation.
 
@@ -246,12 +254,10 @@ Client Request                        Translated Request
 
 The following example shows reverse-map rules::
 
-   map http://www.x.com/ http://server.hoster.com/x/
-   reverse_map http://server.hoster.com/x/ http://www.x.com/
+    map http://www.x.com/ http://server.hoster.com/x/
+    reverse_map http://server.hoster.com/x/ http://www.x.com/
 
 These rules result in the following translations.
-
-For the ``map`` rule --
 
 ================================ =====================================
 Client Request                   Translated Request
@@ -259,10 +265,10 @@ Client Request                   Translated Request
 ``http://www.x.com/Widgets``     ``http://server.hoster.com/x/Widgets``
 ================================ =====================================
 
-For the ``reverse_map`` rule --
+ 
 
 ================================ ======================================= =============================
-Client Request                   ``Location`` Header                     Translated Request
+Client Request                   Origin Server Header                    Translated Request
 ================================ ======================================= =============================
 ``http://www.x.com/Widgets``     ``http://server.hoster.com/x/Widgets/`` ``http://www.x.com/Widgets/``
 ================================ ======================================= =============================
@@ -279,12 +285,12 @@ Redirect Mapping Rules
 The following rule permanently redirects all HTTP requests for
 ``www.company.com`` to ``www.company2.com``: ::
 
-   redirect http://www.company.com/ http://www.company2.com/
+    redirect http://www.company.com/ http://www.company2.com/
 
 The following rule *temporarily* redirects all HTTP requests for
 ``www.company1.com`` to ``www.company2.com``: ::
 
-   redirect_temporary http://www.company1.com/ http://www.company2.com/
+    redirect_temporary http://www.company1.com/ http://www.company2.com/
 
 .. _remap-config-regex:
 
@@ -294,25 +300,24 @@ Regular Expression (regex) Remap Support
 Regular expressions can be specified in remapping rules, with the
 limitations below:
 
-*  Only the ``host`` field can contain a regex; the ``scheme``, ``port``, and other fields cannot.
-   For path manipulation via regexes, use the :ref:`admin-plugins-regex-remap`.
-
-*  The number of capturing subpatterns is limited to 9. This means that ``$0`` through ``$9`` can be
-   used as subtraction placeholders (``$0`` will be the entire input string).
-
-*  The number of substitutions in the expansion string is limited to 10.
-
-*  There is no ``regex_`` equivalent to ``reverse_remap``, so when using ``regex_map`` you should
-   make sure the reverse path is clear by setting
-   (:ts:cv:`proxy.config.url_remap.pristine_host_hdr`)
+-  Only the ``host`` field can contain a regex; the ``scheme``,
+   ``port``, and other fields cannot. For path manipulation via regexes,
+   use the :ref:`admin-plugins-regex-remap`.
+-  The number of capturing subpatterns is limited to 9. This means that
+   ``$0`` through ``$9`` can be used as subtraction placeholders (``$0``
+   will be the entire input string).
+-  The number of substitutions in the expansion string is limited to 10.
+-  There is no ``regex_`` equivalent to ``reverse_remap``, so when using
+   ``regex_map`` you should make sure the reverse path is clear by
+   setting (:ts:cv:`proxy.config.url_remap.pristine_host_hdr`)
 
 Examples
 --------
 
 ::
 
-   regex_map http://x([0-9]+).z.com/ http://real-x$1.z.com/
-   regex_redirect http://old.(.*).z.com http://new.$1.z.com
+    regex_map http://x([0-9]+).z.com/ http://real-x$1.z.com/
+    regex_redirect http://old.(.*).z.com http://new.$1.z.com
 
 .. _map_with_referer:
 
@@ -321,7 +326,7 @@ map_with_referer
 
 the format of is the following::
 
-   map_with_referer client-URL origin-server-URL redirect-URL regex1 [regex2 ...]
+    map_with_referer client-URL origin-server-URL redirect-URL regex1 [regex2 ...]
 
 'redirect-URL' is a redirection URL specified according to RFC 2616 and can
 contain special formatting instructions for run-time modifications of the
@@ -336,19 +341,19 @@ At least one regular expressions must be specified in order to activate
 regular expression strings - 2048.  In order to enable the 'deep linking
 protection' feature in Traffic Server, configure records.config with::
 
-   CONFIG proxy.config.http.referer_filter INT 1
+    CONFIG proxy.config.http.referer_filter INT 1
 
 In order to enable run-time formatting for redirect URL, configure::
 
-   CONFIG proxy.config.http.referer_format_redirect INT 1
+    CONFIG proxy.config.http.referer_format_redirect INT 1
 
 When run-time formatting for redirect-URL was enabled the following format
 symbols can be used::
 
-   %r - to substitute original "Referer" header string
-   %f - to substitute client-URL from 'map_with_referer' record
-   %t - to substitute origin-server-URL from 'map_with_referer' record
-   %o - to substitute request URL to origin server, which was created a
+    %r - to substitute original "Referer" header string
+    %f - to substitute client-URL from 'map_with_referer' record
+    %t - to substitute origin-server-URL from 'map_with_referer' record
+    %o - to substitute request URL to origin server, which was created a
          the result of a mapping operation
 
 Note: There is a special referer type "~*" that can be used in order to
@@ -378,7 +383,7 @@ Explanation: Referer header must be in the request but all referers are allowed 
 
 ::
 
-   map_with_referer http://y.foo.bar.com/x/yy/  http://foo.bar.com/x/yy/ http://games.bar.com/error ~* * ~.*\.evil\.com
+    map_with_referer http://y.foo.bar.com/x/yy/  http://foo.bar.com/x/yy/ http://games.bar.com/error ~* * ~.*\.evil\.com
 
 Explanation: Referer header is optional. However, if Referer header exists, only request from ".*\.evil\.com" will be redirected to redirect-URL.
 
@@ -397,9 +402,9 @@ Examples
 
 ::
 
-   map http://url/path http://url/path \
-      @plugin=/etc/traffic_server/config/plugins/plugin1.so @pparam=1 @pparam=2 \
-      @plugin=/etc/traffic_server/config/plugins/plugin2.so @pparam=3
+    map http://url/path http://url/path \
+        @plugin=/etc/traffic_server/config/plugins/plugin1.so @pparam=1 @pparam=2 \
+        @plugin=/etc/traffic_server/config/plugins/plugin2.so @pparam=3
 
 will pass "1" and "2" to plugin1.so and "3" to plugin2.so.
 
@@ -407,158 +412,73 @@ This will pass "1" and "2" to plugin1.so and "3" to plugin2.so
 
 .. _remap-config-named-filters:
 
-Filters
-=======
+Acl Filters
+===========
 
-Filters can be created to control access of specific remap lines. The markup is very similar to that
-of :file:`ip_allow.config`, with slight changes to accomodate remap markup. A filter can be created
-for a single remap rule (*direct filter*) or, as a *named filter* which can be used for multiple
-rules. Filter precedence is in line order for filters defined in the configuration line, and most
-recently activated for named filters. A simple mnemnonic to keep this straight is that filter
-precedence is inversely related to the distance of the filter from the remap rule in the
-configuration file. Any filter in the same line is closer than any named filter, and the first
-filter in a remap rule is closest to the rule and therefore of the highest precedence. The most
-recent activated filter is closest to the remap rule and therefore of higher precedence than any
-filter activated earlier.
-
-.. image:: ../../static/images/remap-rule-precedence.png
-   :align: center
-
-Direct filters must start with the keyword ``@action`` with a value of either ``allow`` or ``deny``,
-e.g. ``@action=allow``. Once a filter is started with this keyword additional constraints can be
-added. Each constraint is a ``@`` followed by the constraint keyword and its value.
-
-The filter is *applied* if its constraints match properties of the transaction. A filter with no
-constraints always matches. If multiple constraints of different types are specified, all must
-match. If multiple constraints of the same type are specified, the rules matches if any of
-constraints match. Filters are checked in precedence order and the first matching filter determines
-whether the transaction is allowed or denied. By default rules are allows, so that rules with no
-filters work as expected. This leads to a very important point:
-
-.. important:: An ``allow`` action by itself **has no effect**.
-
-By default a rule is allowed, if a filter is applied that also allows there is no change. This is so
-important it should be repeated.
-
-.. important:: An ``allow`` action by itself **has no effect**.
-
-For an ``allow`` filter to be useful, it must be followed by a ``deny`` filter. In the most common
-use case, where the goal is to specify which for which requests the rule is valid, the ``allow``
-should be followd by an plain ``deny``, which denies everything *except requests that matched the
-allow filter*.
-
-The constraints available for a filter are
-
-``src_ip``
-   The remote IP address of the inbound connection (the client IP address). This can be specified
-   as a range using ``-`` as a separator, or as CIDR style network, e.g. ``172.17.9.0/28``. A
-   single address is interpreted as a range of size 1 or (equivalently) a host address with a mask
-   of ``32`` for IPv4 and ``128`` for IPv6.
-
-``proxy_ip``
-   The local IP address of the inbound connection. This is the IP address to which the inbound
-   connection connected.
-
-``in_ip``
-   A deprecated synonymn for ``proxy_ip``.
-
-``method``
-   The HTTP method of the request. Multiple methods can be specified by either multiple instances
-   of this contraint or by separating methods with the ``|`` character. Note this can include
-   methods that are not defined by the W3 standard. Inverting the value will include all
-   syntatically valid methods for this reason.
-
-``internal``
-   This matches requests that are internal, that is generate by |TS| and not by an inbound
-   connection. This constraint does not have a value.
-
-The value of a constraint can be preceded by ``~`` to negate the match, that is to match a
-transaction value that is not the contraint value. For methods, this is the negation of all methods
-in the constraint. A useless but illustrative example which creates a constraint of all methods is ::
-
-   @method=~POST @method=POST
-
-More usefully, a constraint of all methods except ``GET``, ``HEAD``, and ``POST`` would be ::
-
-   @method=~GET|POST|HEAD
-
-As noted, this will match methods such as ``UPDATE``, ``TEAPOT``, and ``LEIF`` because those are
-syntatically valid methods and not one of ``GET``, ``POST``, and ``HEAD``.
-
-Examples
---------
-
-Some examples of remap rules with direct filters.
-
-Deny ``POST`` requests. ::
-
-   map http://foo.example.com/neverpost  http://foo.example.com/neverpost @action=deny @method=post
-
-Deny requests originating from IP address ``172.17.9.123`` ::
-
-   map http://foo.example.com/  http://foo.example.com/ @action=deny @src_ip=172.17.9.123
-
-Deny requests **not** originating from IP address ``172.17.9.123`` ::
-
-   map http://foo.example.com/  http://foo.example.com/ @action=deny @src_ip=~172.17.9.123
-
-Deny requests originating from IP address ``172.17.9.123`` only if the connection is to the proxy
-port listening on IP address ``10.97.185.17``. ::
-
-   map http://foo.example.com/  http://foo.example.com/ @action=deny @src_ip=172.17.9.123 @in_ip=10.97.185.17
-
-Allow only the methods ``POST``, ``GET``, and ``HEAD`` from the loopback address ``127.0.0.1`` ::
-
-   map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=127.0.0.1 @method=post @method=get @method=head @action=deny
-
-Note these filters will return a 403 response if the resource is restricted.
-
-Named Filters
-=============
-
-Named filters can be created and applied to blocks of mappings. A named filter is first created using
-``.definefilter``. This takes a filter name and a set of constraints, just as a direct filter does.
-For example, a named filter with the name ``disable_delete_purge`` that blocks ``DELETE`` and
-``PURGE`` would be defined as ::
-
-   .definefilter disable_delete_purge @action=deny @method=delete @method=purge
-
-A named filter becomes applicable when activated via ``.activatefilter``. This takes the name of the
-filter to activate. ::
-
-   .activatefilter disable_delete_purge
-
-A named filter is active until it is explicitly deactivated with ``.deactivatefilter``. This takes
-the name of the filter to deactivate. ::
-
-   .deactivatefilter disable_delete_purge
-
-As noted earlier, named filters are applied in order from the
-most recently activated to the least recently, that is in proximity order to the remap rule. As with
-direct filters the first filter that matches determines the result for the remap rule.
+Acl filters can be created to control access of specific remap lines. The markup
+is very similar to that of :file:`ip_allow.config`, with slight changes to
+accommodate remap markup
 
 Examples
 --------
 
 ::
 
-   .definefilter disable_delete_purge @action=deny @method=delete @method=purge
-   .definefilter local_only @action=allow @src_ip=192.168.0.1-192.168.0.254 @src_ip=10.0.0.1-10.0.0.254
+    map http://foo.example.com/neverpost  http://foo.example.com/neverpost @action=deny @method=post
+    map http://foo.example.com/onlypost  http://foo.example.com/onlypost @action=allow @method=post
 
-   .activatefilter disable_delete_purge
+    map http://foo.example.com/  http://foo.example.com/ @action=deny @src_ip=1.2.3.4
+    map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=127.0.0.1
 
-   map http://foo.example.com/ http://bar.example.com/
+    map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=10.5.2.1 @in_ip=72.209.23.4
 
-   .activatefilter local_only
-   map http://www.example.com/admin http://internal.example.com/admin
-   .deactivatefilter local_only
+    map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=127.0.0.1 @method=post @method=get @method=head
 
-   map http://www.example.com/ http://internal.example.com/
-   map http://auth.example.com/ http://auth.internal.example.com/ @action=allow @internal
+Note that these Acl filters will return a 403 response if the resource is restricted.
 
-The filter `disable_delete_purge` will be applied to all of the mapping rules. (It is activated
-before any mappings and is never deactivated.) The filter `local_only` will only be applied to the
-second mapping. The ``local_only`` filter will be checked first when it is active.
+The difference between ``@src_ip`` and ``@in_ip`` is that the ``@src_ip`` is the client
+ip and the ``in_ip`` is the ip address the client is connecting to (the incoming address).
+
+Named Filters
+=============
+
+Named filters can be created and applied to blocks of mappings using
+the ``.definefilter``, ``.activatefilter``, and ``.deactivatefilter``
+directives. Named filters must be defined using ``.definefilter`` before
+being used. Once defined, ``.activatefilter`` can used to activate a
+filter for all mappings that follow until deactivated with
+``.deactivatefilter``.
+
+The ``@internal`` operator can be used to filter on whether a request
+is generated by |TS| itself, usually by a plugin.  This operator
+is helpful for remapping internal requests without allowing access
+to external users. By default both internal and external requests
+are allowed.
+
+
+Examples
+--------
+
+::
+
+    .definefilter disable_delete_purge @action=deny @method=delete @method=purge
+    .definefilter local_only @action=allow @src_ip=192.168.0.1-192.168.0.254 @src_ip=10.0.0.1-10.0.0.254
+
+    .activatefilter disable_delete_purge
+
+    map http://foo.example.com/ http://bar.example.com/
+
+    .activatefilter local_only
+    map http://www.example.com/admin http://internal.example.com/admin
+    .deactivatefilter local_only
+
+    map http://www.example.com/ http://internal.example.com/
+    map http://auth.example.com/ http://auth.internal.example.com/ @action=allow @internal
+
+The filter `disable_delete_purge` will be applied to all of the
+mapping rules. (It is activated before any mappings and is never
+deactivated.) The filter `local_only` will only be applied to the
+second mapping.
 
 Including Additional Remap Files
 ================================
@@ -577,10 +497,10 @@ directives are allowed.
 
 .. note::
 
-   Included remap files are not currently tracked by the configuration
-   subsystem. Changes to included remap files will not be noticed
-   by online configuration changes applied by :option:`traffic_ctl config reload`
-   unless :file:`remap.config` has also changed.
+  Included remap files are not currently tracked by the configuration
+  subsystem. Changes to included remap files will not be noticed
+  by online configuration changes applied by :option:`traffic_ctl config reload`
+  unless :file:`remap.config` has also changed.
 
 Examples
 --------
@@ -588,87 +508,22 @@ Examples
 In this example, a top-level :file:`remap.config` file simply
 references additional mapping rules files ::
 
-   .include filters.config
-   .include one.example.com.config two.example.com.config
+  .include filters.config
+  .include one.example.com.config two.example.com.config
 
 The file `filters.config` contains ::
 
-   .definefilter deny_purge @action=deny @method=purge
-   .definefilter allow_purge @action=allow @method=purge
+  .definefilter deny_purge @action=deny @method=purge
+  .definefilter allow_purge @action=allow @method=purge
 
 The file `one.example.com.config` contains::
 
-   .activatefilter deny_purge
-   map http://one.example.com http://origin-one.example.com
-   .deactivatefilter deny_purge
+  .activatefilter deny_purge
+  map http://one.example.com http://origin-one.example.com
+  .deactivatefilter deny_purge
 
 The file `two.example.com.config` contains::
 
-   .activatefilter allow_purge
-   map http://two.example.com http://origin-two.example.com
-   .deactivatefilter dallowpurge
-
-YAML
-====
-
-URL rewriting configuration can also be expressed as a YAML formatted file.
-
-The top level key is ``url_rewrite``. Under this key are two elements, a ``rules`` key and a ``filters`` key.
-
-``filters``
-   A list of named filter definitions. This is optional.
-
-``rules``
-   The URL rewriting rules. This is optional, but if not present no URL rewriting will be done.
-
-Rule
-----
-
-A rule has a number of fields.
-
-``target``
-   The target URL. This is the URL against which the URL in the client request is matched. This has
-   support for :ref:`limited regular expressions <remap-config-regex>`. This is indicated by marking
-   the URL as type "rx" using `YAML explicit typing with application specific local tags
-   <https://yaml.org/spec/1.2/spec.html#id2761292>`__. That is, a literal match would look like
-
-      target: "http://apache.org"
-
-   while a regular expression match would look like ::
-
-      target: !rx "http://.*[.]apache[.]org"
-
-``replacement``
-   The replacement URL.
-
-``options``
-   A list of keyword options for the rule.
-
-   ``proxy_port``
-      Use the local (proxy) port of the inbound connection for checking the rewrite rules.
-
-      .. rubric:: Compatibility
-
-         Setting this option is equivalent to using ``map_with_recv_port``.
-
-   ``reverse``
-      Enable reverse mapping. This causes a ``Location`` field in the upstream response to be
-      rewritten from the :arg:`replacement` URL to the :arg:`target` URL.
-
-      .. rubric:: Compatibility
-
-         Setting this option is equivalent to adding a ``reverse_map`` rule that has the target
-         and replacement URLs exchanged. E.g. ::
-
-            target: "http://example.com"
-            replacement: "http://apache.org"
-            options: [ "reverse" ]
-
-         is equivalent to ::
-
-            map http://example.com http://apache.org
-            reverse_map http://apache.org http://example.com
-
-``id``
-   Set the rule ID. This must be a positive integer.
-
+  .activatefilter allow_purge
+  map http://two.example.com http://origin-two.example.com
+  .deactivatefilter dallowpurge
