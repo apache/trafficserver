@@ -69,8 +69,8 @@ struct MT_ListEntry{
 template <class key_t, class data_t> class HashTableIteratorState
 {
 public:
-  HashTableIteratorState() : cur_buck(-1), ppcur(NULL) {}
-  int cur_buck;
+  HashTableIteratorState() : ppcur(NULL) {}
+  int cur_buck = -1;
   HashTableEntry<key_t, data_t> **ppcur;
 };
 

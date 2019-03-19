@@ -36,7 +36,7 @@
 #endif
 
 /* Session Cache */
-SSLSessionCache::SSLSessionCache() : session_bucket(nullptr), nbuckets(SSLConfigParams::session_cache_number_buckets)
+SSLSessionCache::SSLSessionCache() : nbuckets(SSLConfigParams::session_cache_number_buckets)
 {
   Debug("ssl.session_cache", "Created new ssl session cache %p with %zu buckets each with size max size %zu", this, nbuckets,
         SSLConfigParams::session_cache_max_bucket_size);

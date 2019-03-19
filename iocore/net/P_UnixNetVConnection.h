@@ -232,7 +232,7 @@ public:
   UnixNetVConnection *migrateToCurrentThread(Continuation *c, EThread *t);
 
   Action action_;
-  int closed;
+  int closed = 0;
   NetState read;
   NetState write;
 
@@ -244,14 +244,14 @@ public:
   LINK(UnixNetVConnection, keep_alive_queue_link);
   LINK(UnixNetVConnection, active_queue_link);
 
-  ink_hrtime inactivity_timeout_in;
-  ink_hrtime active_timeout_in;
-  ink_hrtime next_inactivity_timeout_at;
-  ink_hrtime next_activity_timeout_at;
+  ink_hrtime inactivity_timeout_in      = 0;
+  ink_hrtime active_timeout_in          = 0;
+  ink_hrtime next_inactivity_timeout_at = 0;
+  ink_hrtime next_activity_timeout_at   = 0;
 
   EventIO ep;
-  NetHandler *nh;
-  unsigned int id;
+  NetHandler *nh  = nullptr;
+  unsigned int id = 0;
 
   union {
     unsigned int flags;
@@ -264,11 +264,11 @@ public:
   };
 
   Connection con;
-  int recursion;
-  ink_hrtime submit_time;
-  OOB_callback *oob_ptr;
-  bool from_accept_thread;
-  NetAccept *accept_object;
+  int recursion            = 0;
+  ink_hrtime submit_time   = 0;
+  OOB_callback *oob_ptr    = nullptr;
+  bool from_accept_thread  = false;
+  NetAccept *accept_object = nullptr;
 
   // es - origin_trace associated connections
   bool origin_trace;

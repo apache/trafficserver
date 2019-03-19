@@ -25,11 +25,11 @@
   Range is converted from closed range into a half open range for.
  */
 struct ContentRange {
-  int64_t m_beg;
-  int64_t m_end;    // half open
-  int64_t m_length; // full content length
+  int64_t m_beg    = -1;
+  int64_t m_end    = -1; // half open
+  int64_t m_length = -1; // full content length
 
-  ContentRange() : m_beg(-1), m_end(-1), m_length(-1) {}
+  ContentRange() {}
   explicit ContentRange(int64_t const begin, int64_t const end, int64_t const len) : m_beg(begin), m_end(end), m_length(len) {}
   bool
   isValid() const

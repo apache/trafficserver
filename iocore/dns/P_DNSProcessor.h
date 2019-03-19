@@ -187,25 +187,25 @@ struct DNSHandler : public Continuation {
   IpEndpoint local_ipv6; ///< Local V6 address if set.
   IpEndpoint local_ipv4; ///< Local V4 address if set.
   int ifd[MAX_NAMED];
-  int n_con;
+  int n_con = 0;
   DNSConnection tcpcon[MAX_NAMED];
   DNSConnection udpcon[MAX_NAMED];
   Queue<DNSEntry> entries;
   Queue<DNSConnection> triggered;
-  int in_flight;
-  int name_server;
-  int in_write_dns;
-  HostEnt *hostent_cache;
+  int in_flight          = 0;
+  int name_server        = 0;
+  int in_write_dns       = 0;
+  HostEnt *hostent_cache = nullptr;
 
   int ns_down[MAX_NAMED];
   int failover_number[MAX_NAMED];
   int failover_soon_number[MAX_NAMED];
   ink_hrtime crossed_failover_number[MAX_NAMED];
-  ink_hrtime last_primary_retry;
-  ink_hrtime last_primary_reopen;
+  ink_hrtime last_primary_retry  = 0;
+  ink_hrtime last_primary_reopen = 0;
 
-  ink_res_state m_res;
-  int txn_lookup_timeout;
+  ink_res_state m_res    = nullptr;
+  int txn_lookup_timeout = 0;
 
   InkRand generator;
   // bitmap of query ids in use
@@ -298,9 +298,9 @@ struct DNSServer {
   char x_def_domain[MAXDNAME];
   char x_domain_srch_list[MAXDNAME];
 
-  DNSHandler *x_dnsH;
+  DNSHandler *x_dnsH = nullptr;
 
-  DNSServer() : x_dnsH(nullptr)
+  DNSServer()
   {
     memset(x_server_ip, 0, sizeof(x_server_ip));
 
@@ -313,15 +313,7 @@ struct DNSServer {
 TS_INLINE
 DNSHandler::DNSHandler()
   : Continuation(nullptr),
-    n_con(0),
-    in_flight(0),
-    name_server(0),
-    in_write_dns(0),
-    hostent_cache(nullptr),
-    last_primary_retry(0),
-    last_primary_reopen(0),
-    m_res(nullptr),
-    txn_lookup_timeout(0),
+
     generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this))
 {
   ats_ip_invalidate(&ip);

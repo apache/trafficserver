@@ -317,7 +317,7 @@ inline MemSpan::MemSpan(void *start, void *end) : _data(start), _size(static_cas
 
 template <typename T, size_t N> MemSpan::MemSpan(T (&a)[N]) : _data(a), _size(N * sizeof(T)) {}
 
-inline constexpr MemSpan::MemSpan(std::nullptr_t) : _data(nullptr), _size(0) {}
+inline constexpr MemSpan::MemSpan(std::nullptr_t) {}
 
 inline ptrdiff_t
 MemSpan::distance(void const *lhs, void const *rhs)

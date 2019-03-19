@@ -184,33 +184,33 @@ private:
     HCS_CLOSED,
   };
 
-  NetVConnection *client_vc;
-  int magic;
-  int transact_count;
-  bool tcp_init_cwnd_set;
-  bool half_close;
-  bool conn_decrease;
+  NetVConnection *client_vc = nullptr;
+  int magic                 = HTTP_SS_MAGIC_DEAD;
+  int transact_count        = 0;
+  bool tcp_init_cwnd_set    = false;
+  bool half_close           = false;
+  bool conn_decrease        = false;
 
-  MIOBuffer *read_buffer;
-  IOBufferReader *sm_reader;
+  MIOBuffer *read_buffer    = nullptr;
+  IOBufferReader *sm_reader = nullptr;
 
-  C_Read_State read_state;
+  C_Read_State read_state = HCS_INIT;
 
-  VIO *ka_vio;
-  VIO *slave_ka_vio;
+  VIO *ka_vio       = nullptr;
+  VIO *slave_ka_vio = nullptr;
 
-  HttpServerSession *bound_ss;
+  HttpServerSession *bound_ss = nullptr;
 
-  int released_transactions;
+  int released_transactions = 0;
 
 public:
   // Link<Http1ClientSession> debug_link;
   LINK(Http1ClientSession, debug_link);
 
   /// Set outbound connection to transparent.
-  bool f_outbound_transparent;
+  bool f_outbound_transparent = false;
   /// Transparently pass-through non-HTTP traffic.
-  bool f_transparent_passthrough;
+  bool f_transparent_passthrough = false;
 
   Http1ClientTransaction trans;
 };

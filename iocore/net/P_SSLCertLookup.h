@@ -61,21 +61,21 @@ struct SSLCertContext {
     OPT_TUNNEL ///< Just tunnel, don't terminate.
   };
 
-  SSLCertContext() : ctx(nullptr), opt(OPT_NONE), keyblock(nullptr) {}
-  explicit SSLCertContext(SSL_CTX *c) : ctx(c), opt(OPT_NONE), keyblock(nullptr) {}
-  SSLCertContext(SSL_CTX *c, Option o) : ctx(c), opt(o), keyblock(nullptr) {}
+  SSLCertContext() {}
+  explicit SSLCertContext(SSL_CTX *c) : ctx(c) {}
+  SSLCertContext(SSL_CTX *c, Option o) : ctx(c), opt(o) {}
   SSLCertContext(SSL_CTX *c, Option o, ssl_ticket_key_block *kb) : ctx(c), opt(o), keyblock(kb) {}
   void release();
 
-  SSL_CTX *ctx;                   ///< openSSL context.
-  Option opt;                     ///< Special handling option.
-  ssl_ticket_key_block *keyblock; ///< session keys associated with this address
+  SSL_CTX *ctx                   = nullptr;  ///< openSSL context.
+  Option opt                     = OPT_NONE; ///< Special handling option.
+  ssl_ticket_key_block *keyblock = nullptr;  ///< session keys associated with this address
 };
 
 struct SSLCertLookup : public ConfigInfo {
   SSLContextStorage *ssl_storage;
-  SSL_CTX *ssl_default;
-  bool is_valid;
+  SSL_CTX *ssl_default = nullptr;
+  bool is_valid        = true;
 
   int insert(const char *name, SSLCertContext const &cc);
   int insert(const IpEndpoint &address, SSLCertContext const &cc);

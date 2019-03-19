@@ -38,14 +38,14 @@ public:
   UDPConnectionInternal();
   ~UDPConnectionInternal() override;
 
-  Continuation *continuation;
-  int recvActive; // interested in receiving
-  int refcount;   // public for assertion
+  Continuation *continuation = nullptr;
+  int recvActive             = 0; // interested in receiving
+  int refcount               = 0; // public for assertion
 
   SOCKET fd;
   IpEndpoint binding;
-  int binding_valid;
-  int tobedestroyed;
+  int binding_valid = 0;
+  int tobedestroyed = 0;
   int sendGenerationNum;
   int64_t lastSentPktTSSeqNum;
 
@@ -60,8 +60,7 @@ public:
 };
 
 TS_INLINE
-UDPConnectionInternal::UDPConnectionInternal()
-  : continuation(nullptr), recvActive(0), refcount(0), fd(-1), binding_valid(0), tobedestroyed(0)
+UDPConnectionInternal::UDPConnectionInternal() : fd(-1)
 {
   sendGenerationNum    = 0;
   lastSentPktTSSeqNum  = -1;

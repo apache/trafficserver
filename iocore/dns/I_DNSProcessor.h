@@ -68,13 +68,13 @@ struct DNSProcessor : public Processor {
 
     /// Query handler to use.
     /// Default: single threaded handler.
-    DNSHandler *handler;
+    DNSHandler *handler = nullptr;
     /// Query timeout value.
     /// Default: @c DEFAULT_DNS_TIMEOUT (or as set in records.config)
-    int timeout; ///< Timeout value for request.
+    int timeout = 0; ///< Timeout value for request.
     /// Host resolution style.
     /// Default: IPv4, IPv6 ( @c HOST_RES_IPV4 )
-    HostResStyle host_res_style;
+    HostResStyle host_res_style = HOST_RES_IPV4;
 
     /// Default constructor.
     Options();
@@ -121,8 +121,8 @@ struct DNSProcessor : public Processor {
 
   // private:
   //
-  EThread *thread;
-  DNSHandler *handler;
+  EThread *thread     = nullptr;
+  DNSHandler *handler = nullptr;
   ts_imp_res_state l_res;
   IpEndpoint local_ipv6;
   IpEndpoint local_ipv4;
@@ -172,7 +172,7 @@ DNSProcessor::gethostbyaddr(Continuation *cont, IpAddr const *addr, Options cons
   return getby(reinterpret_cast<const char *>(addr), 0, T_PTR, cont, opt);
 }
 
-inline DNSProcessor::Options::Options() : handler(nullptr), timeout(0), host_res_style(HOST_RES_IPV4) {}
+inline DNSProcessor::Options::Options() {}
 
 inline DNSProcessor::Options &
 DNSProcessor::Options::setHandler(DNSHandler *h)

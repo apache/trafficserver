@@ -64,13 +64,13 @@
 typedef Action *(*StatPagesFunc)(Continuation *cont, HTTPHdr *header);
 
 struct StatPageData {
-  char *data;
-  char *type;
-  int length;
+  char *data = nullptr;
+  char *type = nullptr;
+  int length = 0;
 
-  StatPageData() : data(nullptr), type(nullptr), length(0) {}
-  StatPageData(char *adata) : data(adata), type(nullptr) { length = strlen(adata); }
-  StatPageData(char *adata, int alength) : data(adata), type(nullptr), length(alength) {}
+  StatPageData() {}
+  StatPageData(char *adata) : data(adata) { length = strlen(adata); }
+  StatPageData(char *adata, int alength) : data(adata), length(alength) {}
 };
 
 struct StatPagesManager {

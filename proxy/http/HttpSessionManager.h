@@ -101,7 +101,7 @@ public:
 class HttpSessionManager
 {
 public:
-  HttpSessionManager() : m_g_pool(nullptr) {}
+  HttpSessionManager() {}
   ~HttpSessionManager() {}
   HSMresult_t acquire_session(Continuation *cont, sockaddr const *addr, const char *hostname, ProxyClientTransaction *ua_txn,
                               HttpSM *sm);
@@ -113,7 +113,7 @@ public:
 private:
   /// Global pool, used if not per thread pools.
   /// @internal We delay creating this because the session manager is created during global statics init.
-  ServerSessionPool *m_g_pool;
+  ServerSessionPool *m_g_pool = nullptr;
 };
 
 extern HttpSessionManager httpSessionManager;

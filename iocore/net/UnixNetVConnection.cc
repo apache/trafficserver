@@ -866,20 +866,8 @@ UnixNetVConnection::reenable_re(VIO *vio)
   }
 }
 
-UnixNetVConnection::UnixNetVConnection()
-  : closed(0),
-    inactivity_timeout_in(0),
-    active_timeout_in(0),
-    next_inactivity_timeout_at(0),
-    next_activity_timeout_at(0),
-    nh(nullptr),
-    id(0),
-    flags(0),
-    recursion(0),
-    submit_time(0),
-    oob_ptr(nullptr),
-    from_accept_thread(false),
-    accept_object(nullptr)
+UnixNetVConnection::UnixNetVConnection() : flags(0)
+
 {
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::startEvent);
 }

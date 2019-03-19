@@ -38,7 +38,7 @@ replaceString(String &str, const String &from, const String &to)
   }
 }
 
-Pattern::Pattern() : _re(nullptr), _extra(nullptr), _pattern(""), _replacement(""), _tokenCount(0) {}
+Pattern::Pattern() : _pattern(""), _replacement("") {}
 
 /**
  * @brief Initializes PCRE pattern by providing the subject and replacement strings.

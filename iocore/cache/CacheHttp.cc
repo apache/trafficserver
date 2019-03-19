@@ -32,7 +32,7 @@ static vec_info default_vec_info;
 
 static CacheHTTPInfo default_http_info;
 
-CacheHTTPInfoVector::CacheHTTPInfoVector() : magic(nullptr), data(&default_vec_info, 4), xcount(0) {}
+CacheHTTPInfoVector::CacheHTTPInfoVector() : data(&default_vec_info, 4) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

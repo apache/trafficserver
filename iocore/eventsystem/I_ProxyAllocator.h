@@ -39,10 +39,10 @@ extern int thread_freelist_low_watermark;
 extern int cmd_disable_pfreelist;
 
 struct ProxyAllocator {
-  int allocated;
-  void *freelist;
+  int allocated  = 0;
+  void *freelist = nullptr;
 
-  ProxyAllocator() : allocated(0), freelist(nullptr) {}
+  ProxyAllocator() {}
 };
 
 template <class C>

@@ -32,24 +32,16 @@ using std::string;
  * @private
  */
 struct atscppapi::RequestState : noncopyable {
-  TSMBuffer hdr_buf_;
-  TSMLoc hdr_loc_;
-  TSMLoc url_loc_;
+  TSMBuffer hdr_buf_ = nullptr;
+  TSMLoc hdr_loc_    = nullptr;
+  TSMLoc url_loc_    = nullptr;
   Url url_;
   Headers headers_;
   /* method and version are stored here for the case of an unbound request */
-  HttpMethod method_;
-  HttpVersion version_;
-  bool destroy_buf_;
-  RequestState()
-    : hdr_buf_(nullptr),
-      hdr_loc_(nullptr),
-      url_loc_(nullptr),
-      method_(HTTP_METHOD_UNKNOWN),
-      version_(HTTP_VERSION_UNKNOWN),
-      destroy_buf_(false)
-  {
-  }
+  HttpMethod method_   = HTTP_METHOD_UNKNOWN;
+  HttpVersion version_ = HTTP_VERSION_UNKNOWN;
+  bool destroy_buf_    = false;
+  RequestState() {}
 };
 
 Request::Request()

@@ -79,7 +79,7 @@ clear_xstr_array(char *v[], size_t vsize)
 }
 
 BUILD_TABLE_INFO::BUILD_TABLE_INFO()
-  : remap_optflg(0), paramc(0), argc(0), ip_allow_check_enabled_p(true), accept_check_p(true), rules_list(nullptr), rewrite(nullptr)
+
 {
   memset(this->paramv, 0, sizeof(this->paramv));
   memset(this->argv, 0, sizeof(this->argv));

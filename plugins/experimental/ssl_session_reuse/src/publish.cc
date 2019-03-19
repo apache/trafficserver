@@ -49,14 +49,14 @@ RedisPublisher::start_worker_thread(void *arg)
 
 RedisPublisher::RedisPublisher(const std::string &conf)
   : m_redisEndpointsStr(cDefaultRedisEndpoint),
-    m_endpointIndex(0),
+
     m_numWorkers(cPubNumWorkerThreads),
     m_redisConnectTimeout(cDefaultRedisConnectTimeout),
     m_redisConnectTries(cDefaultRedisConnectTries),
     m_redisPublishTries(cDefaultRedisPublishTries),
     m_redisRetryDelay(cDefaultRedisRetryDelay),
-    m_maxQueuedMessages(cDefaultMaxQueuedMessages),
-    err(false)
+    m_maxQueuedMessages(cDefaultMaxQueuedMessages)
+
 {
   if (Config::getSingleton().loadConfig(conf)) {
     Config::getSingleton().getValue("pubconfig", "PubNumWorkers", m_numWorkers);

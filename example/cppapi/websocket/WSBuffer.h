@@ -84,6 +84,6 @@ public:
 
 private:
   std::string ws_buf_;  // incoming data.
-  int frame_;           // frame type of current message
+  int frame_ = 0;       // frame type of current message
   std::string msg_buf_; // decoded message data
 };

@@ -279,17 +279,17 @@ struct AIO_Callback_handler : public Continuation {
 };
 
 struct CacheVol {
-  int vol_number;
-  int scheme;
-  off_t size;
-  int num_vols;
-  Vol **vols;
-  DiskVol **disk_vols;
+  int vol_number      = -1;
+  int scheme          = 0;
+  off_t size          = 0;
+  int num_vols        = 0;
+  Vol **vols          = nullptr;
+  DiskVol **disk_vols = nullptr;
   LINK(CacheVol, link);
   // per volume stats
-  RecRawStatBlock *vol_rsb;
+  RecRawStatBlock *vol_rsb = nullptr;
 
-  CacheVol() : vol_number(-1), scheme(0), size(0), num_vols(0), vols(nullptr), disk_vols(nullptr), vol_rsb(nullptr) {}
+  CacheVol() {}
 };
 
 // Note : hdr() needs to be 8 byte aligned.

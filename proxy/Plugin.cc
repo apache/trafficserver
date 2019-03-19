@@ -51,10 +51,7 @@ using init_func_t = void (*)(int, char **);
 DLL<PluginRegInfo> plugin_reg_list;
 PluginRegInfo *plugin_reg_current = nullptr;
 
-PluginRegInfo::PluginRegInfo()
-  : plugin_registered(false), plugin_path(nullptr), plugin_name(nullptr), vendor_name(nullptr), support_email(nullptr), dlh(nullptr)
-{
-}
+PluginRegInfo::PluginRegInfo() {}
 
 PluginRegInfo::~PluginRegInfo()
 {

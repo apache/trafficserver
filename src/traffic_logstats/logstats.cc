@@ -599,39 +599,25 @@ struct CommandLineArgs {
   char log_file[1024];
   char origin_file[1024];
   char origin_list[MAX_ORIG_STRING];
-  int max_origins;
+  int max_origins = 0;
   char state_tag[1024];
-  int64_t min_hits;
-  int max_age;
+  int64_t min_hits = 0;
+  int max_age      = 0;
   int line_len;
-  int incremental;     // Do an incremental run
-  int tail;            // Tail the log file
-  int summary;         // Summary only
-  int json;            // JSON output
-  int cgi;             // CGI output (typically with json)
-  int urls;            // Produce JSON output of URL stats, arg is LRU size
-  int show_urls;       // Max URLs to show
-  int as_object;       // Show the URL stats as a single JSON object (not array)
-  int concise;         // Eliminate metrics that can be inferred by other values
-  int report_per_user; // A flag to aggregate and report stats per user instead of per host if 'true' (default 'false')
-  int no_format_check; // A flag to skip the log format check if any of the fields is not a standard squid log format field.
+  int incremental     = 0; // Do an incremental run
+  int tail            = 0; // Tail the log file
+  int summary         = 0; // Summary only
+  int json            = 0; // JSON output
+  int cgi             = 0; // CGI output (typically with json)
+  int urls            = 0; // Produce JSON output of URL stats, arg is LRU size
+  int show_urls       = 0; // Max URLs to show
+  int as_object       = 0; // Show the URL stats as a single JSON object (not array)
+  int concise         = 0; // Eliminate metrics that can be inferred by other values
+  int report_per_user = 0; // A flag to aggregate and report stats per user instead of per host if 'true' (default 'false')
+  int no_format_check = 0; // A flag to skip the log format check if any of the fields is not a standard squid log format field.
 
-  CommandLineArgs()
-    : max_origins(0),
-      min_hits(0),
-      max_age(0),
-      line_len(DEFAULT_LINE_LEN),
-      incremental(0),
-      tail(0),
-      summary(0),
-      json(0),
-      cgi(0),
-      urls(0),
-      show_urls(0),
-      as_object(0),
-      concise(0),
-      report_per_user(0),
-      no_format_check(0)
+  CommandLineArgs() : line_len(DEFAULT_LINE_LEN)
+
   {
     log_file[0]    = '\0';
     origin_file[0] = '\0';
@@ -731,10 +717,10 @@ enum ExitLevel {
 };
 
 struct ExitStatus {
-  ExitLevel level;
+  ExitLevel level = EXIT_OK;
   char notice[1024];
 
-  ExitStatus() : level(EXIT_OK) { memset(notice, 0, sizeof(notice)); }
+  ExitStatus() { memset(notice, 0, sizeof(notice)); }
   void
   set(ExitLevel l, const char *n = nullptr)
   {

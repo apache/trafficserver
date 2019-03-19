@@ -217,9 +217,7 @@ HostDBHash::refresh()
   ctx.finalize(hash);
 }
 
-HostDBHash::HostDBHash() : host_name(nullptr), host_len(0), port(0), dns_server(nullptr), pSD(nullptr), db_mark(HOSTDB_MARK_GENERIC)
-{
-}
+HostDBHash::HostDBHash() {}
 
 HostDBHash::~HostDBHash()
 {
@@ -228,7 +226,7 @@ HostDBHash::~HostDBHash()
   }
 }
 
-HostDBCache::HostDBCache() : refcountcache(nullptr), pending_dns(nullptr), remoteHostDBQueue(nullptr)
+HostDBCache::HostDBCache()
 {
   hosts_file_ptr = new RefCountedHostsFileMap();
 }

@@ -89,14 +89,14 @@ private:
   void operator=(BgFetchState const &); /* never implement */
 
   /* Fetch policy related */
-  FetchPolicy *_policy; /* fetch policy */
-  TSMutex _policyLock;  /* protects the policy object only */
+  FetchPolicy *_policy = nullptr; /* fetch policy */
+  TSMutex _policyLock;            /* protects the policy object only */
 
   /* Mechanisms to avoid concurrent fetches and applying limits */
-  FetchPolicy *_unique; /* make sure we never download same object multiple times at the same time */
-  TSMutex _lock;        /* protects the deduplication object only */
-  size_t _concurrentFetches;
-  size_t _concurrentFetchesMax;
+  FetchPolicy *_unique = nullptr; /* make sure we never download same object multiple times at the same time */
+  TSMutex _lock;                  /* protects the deduplication object only */
+  size_t _concurrentFetches                        = 0;
+  size_t _concurrentFetchesMax                     = 0;
   PrefetchMetricInfo _metrics[FETCHES_MAX_METRICS] = {
     {FETCH_ACTIVE, TS_RECORDDATATYPE_INT, -1},        {FETCH_COMPLETED, TS_RECORDDATATYPE_COUNTER, -1},
     {FETCH_ERRORS, TS_RECORDDATATYPE_COUNTER, -1},    {FETCH_TIMEOOUTS, TS_RECORDDATATYPE_COUNTER, -1},
@@ -108,7 +108,7 @@ private:
     {FETCH_POLICY_MAXSIZE, TS_RECORDDATATYPE_INT, -1}};
 
   /* plugin specific fetch logging */
-  TSTextLogObject _log;
+  TSTextLogObject _log = nullptr;
 };
 
 /**

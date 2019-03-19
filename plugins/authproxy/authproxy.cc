@@ -55,11 +55,11 @@ static TSCont AuthOsDnsContinuation;
 
 struct AuthOptions {
   std::string hostname;
-  int hostport;
-  AuthRequestTransform transform;
-  bool force;
+  int hostport                   = -1;
+  AuthRequestTransform transform = nullptr;
+  bool force                     = false;
 
-  AuthOptions() : hostport(-1), transform(nullptr), force(false) {}
+  AuthOptions() {}
   ~AuthOptions() {}
 };
 
@@ -137,27 +137,19 @@ static const StateTransition StateTableInit[] = {{TS_EVENT_HTTP_POST_REMAP, Stat
                                                  {TS_EVENT_NONE, nullptr, nullptr}};
 
 struct AuthRequestContext {
-  TSHttpTxn txn;        // Original client transaction we are authorizing.
-  TSCont cont;          // Continuation for this state machine.
-  TSVConn vconn;        // Virtual connection to the auth proxy.
-  TSHttpParser hparser; // HTTP response header parser.
-  HttpHeader rheader;   // HTTP response header.
+  TSHttpTxn txn = nullptr; // Original client transaction we are authorizing.
+  TSCont cont   = nullptr; // Continuation for this state machine.
+  TSVConn vconn = nullptr; // Virtual connection to the auth proxy.
+  TSHttpParser hparser;    // HTTP response header parser.
+  HttpHeader rheader;      // HTTP response header.
   HttpIoBuffer iobuf;
-  const char *method; // Client request method (e.g. GET)
-  bool read_body;
+  const char *method = nullptr; // Client request method (e.g. GET)
+  bool read_body     = true;
 
-  const StateTransition *state;
+  const StateTransition *state = nullptr;
 
-  AuthRequestContext()
-    : txn(nullptr),
-      cont(nullptr),
-      vconn(nullptr),
-      hparser(TSHttpParserCreate()),
-      rheader(),
-      iobuf(TS_IOBUFFER_SIZE_INDEX_4K),
-      method(nullptr),
-      read_body(true),
-      state(nullptr)
+  AuthRequestContext() : hparser(TSHttpParserCreate()), rheader(), iobuf(TS_IOBUFFER_SIZE_INDEX_4K)
+
   {
     this->cont = TSContCreate(dispatch, TSMutexCreate());
     TSContDataSet(this->cont, this);

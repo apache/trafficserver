@@ -72,7 +72,7 @@ span_file_typename(mode_t st_mode)
 }
 
 Ptr<ProxyMutex> tmp_p;
-Store::Store() : n_disks_in_config(0), n_disks(0), disk(nullptr) {}
+Store::Store() {}
 
 void
 Store::add(Span *ds)

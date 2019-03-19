@@ -267,7 +267,7 @@ struct Image {
 
 struct Wand {
   MagickWand *wand;
-  void *blob;
+  void *blob = nullptr;
 
   ~Wand()
   {
@@ -278,7 +278,7 @@ struct Wand {
     }
   }
 
-  Wand() : wand(NewMagickWand()), blob(nullptr) { assert(nullptr != wand); }
+  Wand() : wand(NewMagickWand()) { assert(nullptr != wand); }
 
   void
   clear() const
@@ -512,7 +512,7 @@ struct ImageTransform : TransformationPlugin {
 
 struct GlobalHookPlugin : GlobalPlugin {
   magick::Core core_;
-  magick::EVPKey *key_;
+  magick::EVPKey *key_ = nullptr;
   ThreadPool threadPool_;
 
   ~GlobalHookPlugin() override
@@ -523,7 +523,7 @@ struct GlobalHookPlugin : GlobalPlugin {
     }
   }
 
-  GlobalHookPlugin(const char *const f = nullptr) : key_(nullptr), threadPool_(2)
+  GlobalHookPlugin(const char *const f = nullptr) : threadPool_(2)
   {
     if (nullptr != f) {
       assert(0 < strlen(f));

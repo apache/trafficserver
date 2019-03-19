@@ -114,7 +114,7 @@ createStat(const String &prefix, const String &space, const char *module, const 
   return true;
 }
 
-BgFetchState::BgFetchState() : _policy(nullptr), _unique(nullptr), _concurrentFetches(0), _concurrentFetchesMax(0), _log(nullptr)
+BgFetchState::BgFetchState()
 {
   _policyLock = TSMutexCreate();
   if (nullptr == _policyLock) {

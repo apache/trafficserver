@@ -113,14 +113,14 @@ private:
       linkage required by @c Trie.
   */
   struct ContextRef {
-    ContextRef() : idx(-1) {}
+    ContextRef() {}
     explicit ContextRef(int n) : idx(n) {}
     void
     Print() const
     {
       Debug("ssl", "Item=%p SSL_CTX=#%d", this, idx);
     }
-    int idx;                ///< Index in the context store.
+    int idx = -1;           ///< Index in the context store.
     LINK(ContextRef, link); ///< Require by @c Trie
   };
 
@@ -239,7 +239,7 @@ SSLCertContext::release()
   ctx = nullptr;
 }
 
-SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(nullptr), is_valid(true) {}
+SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()) {}
 
 SSLCertLookup::~SSLCertLookup()
 {

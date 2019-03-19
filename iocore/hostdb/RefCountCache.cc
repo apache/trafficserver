@@ -38,8 +38,7 @@ RefCountCacheHashEntry::dealloc(RefCountCacheHashEntry *e)
   return refCountCacheHashingValueAllocator.free(e);
 }
 
-RefCountCacheHeader::RefCountCacheHeader(ts::VersionNumber object_version)
-  : magic(REFCOUNTCACHE_MAGIC_NUMBER), object_version(object_version){};
+RefCountCacheHeader::RefCountCacheHeader(ts::VersionNumber object_version) : object_version(object_version){};
 
 bool
 RefCountCacheHeader::operator==(const RefCountCacheHeader other) const

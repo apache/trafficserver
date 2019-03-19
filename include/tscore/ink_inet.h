@@ -1149,7 +1149,7 @@ struct IpAddr {
   typedef IpAddr self; ///< Self reference type.
 
   /// Default construct (invalid address).
-  IpAddr() : _family(AF_UNSPEC) {}
+  IpAddr() {}
 
   /** Construct from IPv4 address.
    *
@@ -1284,7 +1284,7 @@ struct IpAddr {
   /// Test for any addr
   bool isAnyAddr() const;
 
-  uint16_t _family; ///< Protocol family.
+  uint16_t _family = AF_UNSPEC; ///< Protocol family.
   /// Address data.
   union Addr {
     in_addr_t _ip4;                                                    ///< IPv4 address storage.

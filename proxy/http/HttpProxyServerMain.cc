@@ -119,12 +119,12 @@ ssl_unregister_protocol(const char *protocol, Continuation *contp)
 */
 struct HttpProxyAcceptor {
   /// Accept continuation.
-  Continuation *_accept;
+  Continuation *_accept = nullptr;
   /// Options for @c NetProcessor.
   NetProcessor::AcceptOptions _net_opt;
 
   /// Default constructor.
-  HttpProxyAcceptor() : _accept(nullptr) {}
+  HttpProxyAcceptor() {}
 };
 
 /** Global acceptors.

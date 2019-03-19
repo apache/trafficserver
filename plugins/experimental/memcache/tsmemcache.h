@@ -83,15 +83,15 @@ struct MCAccept : public Continuation {
 #ifndef HAVE_TLS
   ProxyAllocator *theMCThreadAllocator;
 #endif
-  int accept_port;
+  int accept_port = 0;
   int main_event(int event, void *netvc);
 
   MCAccept()
     :
 #ifndef HAVE_TLS
-      theMCThreadAllocator(NULL),
+      theMCThreadAllocator(NULL)
 #endif
-      accept_port(0)
+
   {
     SET_HANDLER(&MCAccept::main_event);
   }

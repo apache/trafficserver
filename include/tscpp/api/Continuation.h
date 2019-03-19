@@ -43,7 +43,7 @@ public:
 
   // Create "empty" continuation, can only be populated by move assignement.
   //
-  Continuation() : _cont(nullptr) {}
+  Continuation() {}
 
   TSCont
   asTSCont() const
@@ -139,7 +139,7 @@ protected:
   //
   static int _generalEventFunc(TSCont cont, TSEvent event, void *edata);
 
-  TSCont _cont;
+  TSCont _cont = nullptr;
 };
 
 } // end namespace atscppapi

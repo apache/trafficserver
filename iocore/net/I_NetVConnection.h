@@ -612,8 +612,8 @@ public:
   // is enabled by SocksProxy
   SocksAddrType socks_addr;
 
-  unsigned int attributes;
-  EThread *thread;
+  unsigned int attributes = 0;
+  EThread *thread         = nullptr;
 
   /// PRIVATE: The public interface is VIO::reenable()
   void reenable(VIO *vio) override = 0;
@@ -815,31 +815,22 @@ protected:
   IpEndpoint local_addr;
   IpEndpoint remote_addr;
 
-  bool got_local_addr;
-  bool got_remote_addr;
+  bool got_local_addr  = false;
+  bool got_remote_addr = false;
 
-  bool is_internal_request;
+  bool is_internal_request = false;
   /// Set if this connection is transparent.
-  bool is_transparent;
+  bool is_transparent = false;
   /// Set if proxy protocol is enabled
-  bool is_proxy_protocol;
+  bool is_proxy_protocol = false;
   /// Set if the next write IO that empties the write buffer should generate an event.
-  int write_buffer_empty_event;
+  int write_buffer_empty_event = 0;
   /// NetVConnection Context.
-  NetVConnectionContext_t netvc_context;
+  NetVConnectionContext_t netvc_context = NET_VCONNECTION_UNSET;
 };
 
-inline NetVConnection::NetVConnection()
-  : AnnotatedVConnection(nullptr),
-    attributes(0),
-    thread(nullptr),
-    got_local_addr(false),
-    got_remote_addr(false),
-    is_internal_request(false),
-    is_transparent(false),
-    is_proxy_protocol(false),
-    write_buffer_empty_event(0),
-    netvc_context(NET_VCONNECTION_UNSET)
+inline NetVConnection::NetVConnection() : AnnotatedVConnection(nullptr)
+
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);

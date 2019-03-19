@@ -232,10 +232,10 @@ public:
   }
 
 public:
-  bool initialized;
-  bool reconfiguration_needed;
-  bool logging_space_exhausted;
-  int64_t m_space_used;
+  bool initialized             = false;
+  bool reconfiguration_needed  = false;
+  bool logging_space_exhausted = false;
+  int64_t m_space_used         = 0;
   int64_t m_partition_space_left;
   bool roll_log_files_now; // signal that files must be rolled
 
@@ -289,13 +289,13 @@ private:
   //
   bool use_orphan_log_space_value;
 
-  LogCollationAccept *m_log_collation_accept;
+  LogCollationAccept *m_log_collation_accept = nullptr;
 
-  bool m_disk_full;
-  bool m_disk_low;
-  bool m_partition_full;
-  bool m_partition_low;
-  bool m_log_directory_inaccessible;
+  bool m_disk_full                  = false;
+  bool m_disk_low                   = false;
+  bool m_partition_full             = false;
+  bool m_partition_low              = false;
+  bool m_log_directory_inaccessible = false;
 
   // noncopyable
   // -- member functions not allowed --

@@ -101,10 +101,10 @@ namespace inliner
   };
 
   struct AttributeParser {
-    Attribute::ATTRIBUTES state_;
+    Attribute::ATTRIBUTES state_ = Attribute::kPreName;
     Attributes attributes;
 
-    AttributeParser() : state_(Attribute::kPreName) {}
+    AttributeParser() {}
     void
     reset()
     {
@@ -129,11 +129,11 @@ namespace inliner
   };
 
   struct HtmlParser {
-    State::STATES state_;
-    Tag::TAGS tag_;
+    State::STATES state_ = State::kUndefined;
+    Tag::TAGS tag_       = Tag::kUndefined;
     AttributeParser attributeParser_;
 
-    HtmlParser() : state_(State::kUndefined), tag_(Tag::kUndefined) {}
+    HtmlParser() {}
     virtual ~HtmlParser() {}
     bool parseTag(const char);
     size_t parse(const char *, size_t, size_t o = 0);

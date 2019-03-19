@@ -56,7 +56,7 @@ static const struct option longopt[] = {
 class PromotionPolicy
 {
 public:
-  PromotionPolicy() : _sample(0.0)
+  PromotionPolicy()
   {
     // This doesn't have to be perfect, since this is just chance sampling.
     // coverity[dont_call]
@@ -106,7 +106,7 @@ public:
   virtual void usage() const             = 0;
 
 private:
-  float _sample;
+  float _sample = 0.0;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -195,7 +195,7 @@ static LRUEntry NULL_LRU_ENTRY; // Used to create an "empty" new LRUEntry
 class LRUPolicy : public PromotionPolicy
 {
 public:
-  LRUPolicy() : PromotionPolicy(), _buckets(1000), _hits(10), _lock(TSMutexCreate()), _list_size(0), _freelist_size(0) {}
+  LRUPolicy() : PromotionPolicy(), _lock(TSMutexCreate()) {}
   ~LRUPolicy() override
   {
     TSDebug(PLUGIN_NAME, "deleting LRUPolicy object");
@@ -333,14 +333,14 @@ public:
   }
 
 private:
-  unsigned _buckets;
-  unsigned _hits;
+  unsigned _buckets = 1000;
+  unsigned _hits    = 10;
   // For the LRU. Note that we keep track of the List sizes, because some versions fo STL have broken
   // implementations of size(), making them obsessively slow on calling ::size().
   TSMutex _lock;
   LRUMap _map;
   LRUList _list, _freelist;
-  size_t _list_size, _freelist_size;
+  size_t _list_size = 0, _freelist_size = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -349,7 +349,7 @@ private:
 class PromotionConfig
 {
 public:
-  PromotionConfig() : _policy(nullptr) {}
+  PromotionConfig() {}
   ~PromotionConfig() { delete _policy; }
   PromotionPolicy *
   getPolicy() const
@@ -402,7 +402,7 @@ public:
   }
 
 private:
-  PromotionPolicy *_policy;
+  PromotionPolicy *_policy = nullptr;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////

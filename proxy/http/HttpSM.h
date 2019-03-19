@@ -126,10 +126,10 @@ HttpVCTable::is_table_clear() const
 }
 
 struct HttpTransformInfo {
-  HttpVCTableEntry *entry;
-  VConnection *vc;
+  HttpVCTableEntry *entry = nullptr;
+  VConnection *vc         = nullptr;
 
-  HttpTransformInfo() : entry(nullptr), vc(nullptr) {}
+  HttpTransformInfo() {}
 };
 
 enum {

@@ -83,7 +83,7 @@ init_ssl_params(const std::string &conf)
   return 0;
 }
 
-ssl_session_param::ssl_session_param() : pub(nullptr) {}
+ssl_session_param::ssl_session_param() {}
 
 ssl_session_param::~ssl_session_param()
 {

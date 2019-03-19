@@ -285,7 +285,7 @@ update_cache_config(const char * /* name ATS_UNUSED */, RecDataT /* data_type AT
   return 0;
 }
 
-CacheVC::CacheVC() : alternate_index(CACHE_ALT_INDEX_DEFAULT)
+CacheVC::CacheVC()
 {
   size_to_init = sizeof(CacheVC) - (size_t) & ((CacheVC *)nullptr)->vio;
   memset((void *)&vio, 0, size_to_init);

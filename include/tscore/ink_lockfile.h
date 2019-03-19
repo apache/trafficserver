@@ -33,9 +33,9 @@
 class Lockfile
 {
 public:
-  Lockfile() : fd(0) { fname[0] = '\0'; }
+  Lockfile() { fname[0] = '\0'; }
   // coverity[uninit_member]
-  Lockfile(const char *filename) : fd(0) { ink_strlcpy(fname, filename, sizeof(fname)); }
+  Lockfile(const char *filename) { ink_strlcpy(fname, filename, sizeof(fname)); }
   ~Lockfile() {}
   void
   SetLockfileName(const char *filename)
@@ -86,5 +86,5 @@ public:
 
 private:
   char fname[PATH_NAME_MAX];
-  int fd;
+  int fd = 0;
 };

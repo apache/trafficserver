@@ -46,34 +46,24 @@ struct CacheHostRecord {
     ats_free(cp);
   }
 
-  CacheType type;
-  Vol **vols;
-  int good_num_vols;
-  int num_vols;
-  int num_initialized;
-  unsigned short *vol_hash_table;
-  CacheVol **cp;
-  int num_cachevols;
+  CacheType type                 = CACHE_NONE_TYPE;
+  Vol **vols                     = nullptr;
+  int good_num_vols              = 0;
+  int num_vols                   = 0;
+  int num_initialized            = 0;
+  unsigned short *vol_hash_table = nullptr;
+  CacheVol **cp                  = nullptr;
+  int num_cachevols              = 0;
 
-  CacheHostRecord()
-    : type(CACHE_NONE_TYPE),
-      vols(nullptr),
-      good_num_vols(0),
-      num_vols(0),
-      num_initialized(0),
-      vol_hash_table(nullptr),
-      cp(nullptr),
-      num_cachevols(0)
-  {
-  }
+  CacheHostRecord() {}
 };
 
 void build_vol_hash_table(CacheHostRecord *cp);
 
 struct CacheHostResult {
-  CacheHostRecord *record;
+  CacheHostRecord *record = nullptr;
 
-  CacheHostResult() : record(nullptr) {}
+  CacheHostResult() {}
 };
 
 class CacheHostMatcher

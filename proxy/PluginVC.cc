@@ -1281,11 +1281,11 @@ public:
   int main_handler(int event, void *data);
 
 private:
-  unsigned i;
-  unsigned completions_received;
+  unsigned i                    = 0;
+  unsigned completions_received = 0;
 };
 
-PVCTestDriver::PVCTestDriver() : NetTestDriver(), i(0), completions_received(0) {}
+PVCTestDriver::PVCTestDriver() : NetTestDriver() {}
 
 PVCTestDriver::~PVCTestDriver()
 {

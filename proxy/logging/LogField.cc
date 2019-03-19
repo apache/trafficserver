@@ -701,7 +701,7 @@ LogField::fieldlist_contains_aggregates(const char *fieldlist)
   heap with "new" and that each element is on at most ONE list.  To enforce
   this, items are copied by default, using the copy ctor.
   -------------------------------------------------------------------------*/
-LogFieldList::LogFieldList() : m_marshal_len(0) {}
+LogFieldList::LogFieldList() {}
 
 LogFieldList::~LogFieldList()
 {

@@ -44,10 +44,10 @@ class PluginVCCore;
 struct PluginVCState {
   PluginVCState();
   VIO vio;
-  bool shutdown;
+  bool shutdown = false;
 };
 
-inline PluginVCState::PluginVCState() : vio(), shutdown(false) {}
+inline PluginVCState::PluginVCState() : vio() {}
 
 enum PluginVC_t {
   PLUGIN_VC_UNKNOWN,
@@ -247,37 +247,27 @@ private:
   void init();
   void destroy();
 
-  Continuation *connect_to;
-  bool connected;
+  Continuation *connect_to = nullptr;
+  bool connected           = false;
 
-  MIOBuffer *p_to_a_buffer;
-  IOBufferReader *p_to_a_reader;
+  MIOBuffer *p_to_a_buffer      = nullptr;
+  IOBufferReader *p_to_a_reader = nullptr;
 
-  MIOBuffer *a_to_p_buffer;
-  IOBufferReader *a_to_p_reader;
+  MIOBuffer *a_to_p_buffer      = nullptr;
+  IOBufferReader *a_to_p_reader = nullptr;
 
   IpEndpoint passive_addr_struct;
   IpEndpoint active_addr_struct;
 
-  void *passive_data;
-  void *active_data;
+  void *passive_data = nullptr;
+  void *active_data  = nullptr;
 
   static int32_t nextid;
-  unsigned id;
+  unsigned id = 0;
 };
 
-inline PluginVCCore::PluginVCCore()
-  : active_vc(this),
-    passive_vc(this),
-    connect_to(nullptr),
-    connected(false),
-    p_to_a_buffer(nullptr),
-    p_to_a_reader(nullptr),
-    a_to_p_buffer(nullptr),
-    a_to_p_reader(nullptr),
-    passive_data(nullptr),
-    active_data(nullptr),
-    id(0)
+inline PluginVCCore::PluginVCCore() : active_vc(this), passive_vc(this)
+
 {
   memset(&active_addr_struct, 0, sizeof active_addr_struct);
   memset(&passive_addr_struct, 0, sizeof passive_addr_struct);

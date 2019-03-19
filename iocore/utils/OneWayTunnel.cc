@@ -64,22 +64,7 @@ transfer_data(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
   out_buf.writer()->fill(n);
 }
 
-OneWayTunnel::OneWayTunnel()
-  : Continuation(nullptr),
-    vioSource(nullptr),
-    vioTarget(nullptr),
-    cont(nullptr),
-    manipulate_fn(nullptr),
-    n_connections(0),
-    lerrno(0),
-    single_buffer(false),
-    close_source(false),
-    close_target(false),
-    tunnel_till_done(false),
-    tunnel_peer(nullptr),
-    free_vcs(true)
-{
-}
+OneWayTunnel::OneWayTunnel() : Continuation(nullptr) {}
 
 OneWayTunnel *
 OneWayTunnel::OneWayTunnel_alloc()

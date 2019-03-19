@@ -44,24 +44,24 @@ public:
 
   SLINK(UDPPacketInternal, alink); // atomic link
   // packet scheduling stuff: keep it a doubly linked list
-  uint64_t pktLength;
+  uint64_t pktLength = 0;
 
-  int reqGenerationNum;
-  ink_hrtime delivery_time; // when to deliver packet
+  int reqGenerationNum     = 0;
+  ink_hrtime delivery_time = 0; // when to deliver packet
 
   Ptr<IOBufferBlock> chain;
-  Continuation *cont;          // callback on error
-  UDPConnectionInternal *conn; // connection where packet should be sent to.
+  Continuation *cont          = nullptr; // callback on error
+  UDPConnectionInternal *conn = nullptr; // connection where packet should be sent to.
 
-  int in_the_priority_queue;
-  int in_heap;
+  int in_the_priority_queue = 0;
+  int in_heap               = 0;
 };
 
 inkcoreapi extern ClassAllocator<UDPPacketInternal> udpPacketAllocator;
 
 TS_INLINE
 UDPPacketInternal::UDPPacketInternal()
-  : pktLength(0), reqGenerationNum(0), delivery_time(0), cont(nullptr), conn(nullptr), in_the_priority_queue(0), in_heap(0)
+
 {
   memset(&from, '\0', sizeof(from));
   memset(&to, '\0', sizeof(to));

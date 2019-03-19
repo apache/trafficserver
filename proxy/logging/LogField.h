@@ -264,7 +264,7 @@ public:
   LogFieldList &operator=(const LogFieldList &rhs) = delete;
 
 private:
-  unsigned m_marshal_len;
+  unsigned m_marshal_len = 0;
   Queue<LogField> m_field_list;
   std::string _badSymbols;
 };
