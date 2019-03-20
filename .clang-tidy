@@ -1,1 +1,2 @@
 Checks: -*,modernize-loop-convert,modernize-use-bool-literals,modernize-deprecated-headers,performance-unnecessary-value-param,performance-faster-string-find,modernize-raw-string-literal,modernize-redundant-void-arg,modernize-use-nullptr,modernize-use-override
+HeaderFilterRegex: (?!(\/openssl\/|\/pcre\/|\/lib\/yaml\/)).*

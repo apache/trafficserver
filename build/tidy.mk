@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-Clang_Tidy_Options = -fix -fix-errors -header-filter=.*
+Clang_Tidy_Options = -fix -fix-errors
 
 # Sort the filenames to remove duplicates, then filter to retain
 # just the C and C++ sources so we don't pick up lex and yacc files
