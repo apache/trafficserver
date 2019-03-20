@@ -51,6 +51,7 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
   static __thread bool hash_init = false;
 
   if (unlikely(!hash_init)) {
+    // NOLINTNEXTLINE
     hcreate_r(TS_MAX_API_STATS << 1, &stat_cache);
     hash_init = true;
     TSDebug(DEBUG_TAG, "stat cache hash init");
@@ -58,6 +59,7 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
 
   search.key  = name;
   search.data = 0;
+  // NOLINTNEXTLINE
   hsearch_r(search, FIND, &result, &stat_cache);
 
   if (unlikely(result == NULL)) {
@@ -78,6 +80,7 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
     if (stat_id >= 0) {
       search.key  = TSstrdup(name);
       search.data = (void *)((intptr_t)stat_id);
+      // NOLINTNEXTLINE
       hsearch_r(search, ENTER, &result, &stat_cache);
       TSDebug(DEBUG_TAG, "Cached stat_name: %s stat_id: %d", name, stat_id);
     }

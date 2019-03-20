@@ -316,6 +316,7 @@ ts_lua_client_response_set_status(lua_State *L)
 
   TS_LUA_CHECK_CLIENT_RESPONSE_HDR(http_ctx);
 
+  // NOLINTNEXTLINE
   status = luaL_checkint(L, 1);
 
   reason     = TSHttpHdrReasonLookup(status);
