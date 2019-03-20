@@ -1456,7 +1456,7 @@ UnixNetVConnection::add_to_keep_alive_queue()
   if (lock.is_locked()) {
     nh->add_to_keep_alive_queue(this);
   } else {
-    ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on keep_alive_queue.");
+    Error("BUG: It must have acquired the NetHandler's lock before doing anything on keep_alive_queue.");
   }
 }
 
@@ -1467,7 +1467,7 @@ UnixNetVConnection::remove_from_keep_alive_queue()
   if (lock.is_locked()) {
     nh->remove_from_keep_alive_queue(this);
   } else {
-    ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on keep_alive_queue.");
+    Error("BUG: It must have acquired the NetHandler's lock before doing anything on keep_alive_queue.");
   }
 }
 
@@ -1480,7 +1480,7 @@ UnixNetVConnection::add_to_active_queue()
   if (lock.is_locked()) {
     result = nh->add_to_active_queue(this);
   } else {
-    ink_release_assert(!"BUG: It must have acquired the NetHandler's lock before doing anything on active_queue.");
+    Error("BUG: It must have acquired the NetHandler's lock before doing anything on active_queue.");
   }
   return result;
 }
