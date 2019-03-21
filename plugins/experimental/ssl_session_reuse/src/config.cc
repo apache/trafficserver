@@ -62,7 +62,10 @@ Config::loadConfig(const std::string &filename)
     size_t n = info.st_size;
     std::string config_data;
     config_data.resize(n);
-    read(fd, const_cast<char *>(config_data.data()), n);
+    if (read(fd, const_cast<char *>(config_data.data()), n) < 0) {
+      close(fd);
+      return success;
+    }
 
     ts::TextView content(config_data);
     while (content) {
@@ -77,10 +80,13 @@ Config::loadConfig(const std::string &filename)
         m_config[std::string(field.data(), field.size())] = std::string(line.data(), line.size());
       }
     }
+
+    close(fd);
+
+    m_noConfig      = false;
+    success         = true;
+    m_alreadyLoaded = true;
   }
-  m_noConfig      = false;
-  success         = true;
-  m_alreadyLoaded = true;
 
   return success;
 }
