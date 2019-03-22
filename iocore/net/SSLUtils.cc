@@ -1853,9 +1853,13 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   }
 #endif
 
-#ifdef SSL_CTX_set1_groups_list
+#if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
   if (params->server_groups_list != nullptr) {
+#ifdef SSL_CTX_set1_groups_list
     if (!SSL_CTX_set1_groups_list(ctx, params->server_groups_list)) {
+#else
+    if (!SSL_CTX_set1_curves_list(ctx, params->server_groups_list)) {
+#endif
       SSLError("invalid groups list for server in records.config");
       goto fail;
     }
