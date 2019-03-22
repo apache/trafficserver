@@ -3209,7 +3209,7 @@ SSL Termination
 
    X25519:P-256:X448:P-521:P-384
 
-   This configuration works with OpenSSL v1.1.1 and above.
+   This configuration works with OpenSSL v1.0.2 and above.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.groups_list STRING <See notes under proxy.config.ssl.server.groups_list.>
 
@@ -3219,7 +3219,7 @@ SSL Termination
    group NIDs or names, for example "P-521:P-384:P-256". For
    instructions, see "Groups" section of `TLS1.3 - OpenSSLWiki <https://wiki.openssl.org/index.php/TLS1.3#Groups>`_.
 
-   This configuration works with OpenSSL v1.1.1 and above.
+   This configuration works with OpenSSL v1.0.2 and above.
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 1
 
