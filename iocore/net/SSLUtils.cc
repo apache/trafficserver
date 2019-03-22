@@ -1333,9 +1333,13 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, co
   }
 #endif
 
-#ifdef SSL_CTX_set1_groups_list
+#if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
   if (params->server_groups_list != nullptr) {
+#ifdef SSL_CTX_set1_groups_list
     if (!SSL_CTX_set1_groups_list(ctx, params->server_groups_list)) {
+#else
+    if (!SSL_CTX_set1_curves_list(ctx, params->server_groups_list)) {
+#endif
       SSLError("invalid groups list for server in records.config");
       goto fail;
     }
