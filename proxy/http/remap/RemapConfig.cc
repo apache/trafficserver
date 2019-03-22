@@ -495,13 +495,10 @@ RemapTextBuilder::load_plugins(url_mapping *mp, ErrBuff &errw)
   return 0;
 }
 
-bool
-RemapTextBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
+TextView
+RemapTextBuilder::parse_rule(int line_no, ErrBuff &errw)
 {
-  ts::LocalBufferWriter<1024> errw; // Used as the error buffer later.
-  TextView errMsg;                  // error message returned from other parsing logic.
-  unsigned line_no = 0;             // current line #
-  self_type builder{rewriter};
+  TextView errMsg; // error message returned from other parsing logic.
 
   bool alarm_already = false;
 
@@ -513,8 +510,241 @@ RemapTextBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
   UrlRewrite::RegexMapping *rxp_map = nullptr;
   TextView tag; // Rule tag, if any.
 
-  bool is_cur_mapping_regex_p;
-  TextView type_id_str;
+  // If something goes wrong, log the error and clean up.
+  ts::PostScript cleanup([&]() -> void {
+    ts::LocalBufferWriter<1024> lw;
+    lw.print(R"("{}" failed to add remap rule at line {} : {})", modulePrefix, line_no, errw.view());
+    ConfigError(lw.view(), alarm_already);
+    delete new_mapping;
+    delete rxp_map;
+  });
+
+  bool is_cur_mapping_regex_p = REMAP_REGEX_PREFIX.isNoCasePrefixOf(paramv[0]);
+  TextView type_id_str        = paramv[0].substr(is_cur_mapping_regex_p ? REMAP_REGEX_PREFIX.size() : 0);
+
+  // Check to see whether is a reverse or forward mapping
+  if (0 == strcasecmp(REMAP_REVERSE_MAP_TAG, type_id_str)) {
+    Debug("url_rewrite", "[BuildTable] - REVERSE_MAP");
+    maptype = REVERSE_MAP;
+  } else if (0 == strcasecmp(REMAP_MAP_TAG, type_id_str)) {
+    Debug("url_rewrite", "[BuildTable] - FORWARD_MAP");
+    maptype = FORWARD_MAP;
+  } else if (0 == strcasecmp(REMAP_REDIRECT_TAG, type_id_str)) {
+    Debug("url_rewrite", "[BuildTable] - PERMANENT_REDIRECT");
+    maptype = PERMANENT_REDIRECT;
+  } else if (0 == strcasecmp(REMAP_TEMPORARY_REDIRECT_TAG, type_id_str)) {
+    Debug("url_rewrite", "[BuildTable] - TEMPORARY_REDIRECT");
+    maptype = TEMPORARY_REDIRECT;
+  } else if (0 == strcasecmp(REMAP_WITH_REFERER_TAG, type_id_str)) {
+    Debug("url_rewrite", "[BuildTable] - FORWARD_MAP_REFERER");
+    maptype = FORWARD_MAP_REFERER;
+  } else if (0 == strcasecmp(REMAP_WITH_RECV_PORT_TAG, type_id_str)) {
+    Debug("url_rewrite", "[BuildTable] - FORWARD_MAP_WITH_RECV_PORT");
+    maptype = FORWARD_MAP_WITH_RECV_PORT;
+  } else {
+    errw.print("unknown mapping type '{}' at line {}", type_id_str, line_no);
+    return errw.view();
+  }
+
+  new_mapping = new url_mapping;
+
+  // Set up direct filters.
+  if ((arg_types & FILTER_TYPES).any()) {
+    RemapFilter *f = nullptr;
+    for (auto const &arg : argv) {
+      if (arg.type == RemapArg::ACTION) {
+        f            = new RemapFilter;
+        auto err_msg = add_filter_arg(arg, f, errw);
+        if (!err_msg.empty()) {
+          return err_msg;
+        }
+        _rewriter->filters.append(f);
+        new_mapping->filters.push_back(f);
+      } else if (FILTER_TYPES[arg.type]) {
+        if (nullptr == f) {
+          errw.print("remap filter option '@{}={}' without a preceeding '@{}' on line {}- ignored", arg.key, arg.value,
+                     RemapArg::ACTION, line_no);
+          log_warning(errw);
+          errw.reset();
+        }
+        auto err_msg = add_filter_arg(arg, f, errw);
+        if (!err_msg.empty()) {
+          return err_msg;
+        }
+      }
+    }
+  }
+  // Add active filters - note these go in reverse order, to keep the predence ordering correct.
+  // The mapping needs them in precedence order, while @c _active_filters is a stack and therefore
+  // in reverse precdence order.
+  new_mapping->filters.reserve(new_mapping->filters.size() + _active_filters.size());
+  new_mapping->filters.insert(new_mapping->filters.end(), _active_filters.rbegin(), _active_filters.rend());
+
+  // update sticky flag
+  accept_check_p = accept_check_p && ip_allow_check_enabled_p;
+
+  if (arg_types[RemapArg::MAP_ID]) {
+    auto spot = std::find_if(argv.begin(), argv.end(), [](auto const &arg) -> bool { return RemapArg::MAP_ID == arg.type; });
+    new_mapping->map_id = ts::svtoi(spot->value);
+  }
+
+  auto map_from_url = normalize_url(paramv[1]);
+
+  new_mapping->fromURL.create(nullptr);
+  auto rparse = new_mapping->fromURL.parse_no_path_component_breakdown(map_from_url.data(), map_from_url.size());
+
+  if (rparse != PARSE_RESULT_DONE) {
+    errw.print(R"(Malformed url "{}" in from URL on line {})", map_from_url, line_no);
+    return errw.view();
+  }
+
+  auto map_to_url = normalize_url(paramv[2]);
+
+  new_mapping->toURL.create(nullptr);
+  rparse = new_mapping->toURL.parse_no_path_component_breakdown(map_to_url.data(), map_to_url.size());
+
+  if (rparse != PARSE_RESULT_DONE) {
+    errw.print(R"(Malformed url "{}" in from URL on line {})", map_to_url, line_no);
+    return errw.view();
+  }
+
+  fromScheme = new_mapping->fromURL.scheme_get(&fromSchemeLen);
+  // If the rule is "/" or just some other relative path
+  //   we need to default the scheme to http
+  if (fromScheme == nullptr || fromSchemeLen == 0) {
+    new_mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
+    fromScheme                        = new_mapping->fromURL.scheme_get(&fromSchemeLen);
+    new_mapping->wildcard_from_scheme = true;
+  }
+  toScheme = new_mapping->toURL.scheme_get(&toSchemeLen);
+
+  // Include support for HTTPS scheme
+  // includes support for FILE scheme
+  if (std::none_of(VALID_SCHEMA.begin(), VALID_SCHEMA.end(), [&](auto wks) -> bool { return wks == fromScheme; }) ||
+      std::none_of(VALID_SCHEMA.begin(), VALID_SCHEMA.end(), [&](auto wks) -> bool { return wks == toScheme; })) {
+    errw.print("only http, https, ws, wss, and tunnel remappings are supported");
+    return errw.view();
+  }
+
+  // If mapping from WS or WSS we must map out to WS or WSS
+  if ((fromScheme == URL_SCHEME_WSS || fromScheme == URL_SCHEME_WS) && (toScheme != URL_SCHEME_WSS && toScheme != URL_SCHEME_WS)) {
+    errw.print("WS or WSS can only be mapped out to WS or WSS.");
+    return errw.view();
+  }
+
+  // Check if a tag is specified.
+  if (paramv.size() >= 4) {
+    tag = stash(paramv[3]);
+    if (maptype == FORWARD_MAP_REFERER) {
+      new_mapping->filter_redirect_url = tag;
+      if (0 == strcasecmp(tag, "<default>") || 0 == strcasecmp(tag, "default") || 0 == strcasecmp(tag, "<default_redirect_url>") ||
+          0 == strcasecmp(tag, "default_redirect_url")) {
+        new_mapping->default_redirect_url = true;
+      }
+      RedirectChunk::parse(new_mapping->filter_redirect_url, new_mapping->redirect_chunks);
+      for (auto spot = paramv.rbegin(), limit = paramv.rend() - 3; spot < limit; ++spot) {
+        if (!spot->empty()) {
+          RefererInfo ri;
+          TextView ref_text = stash(*spot);
+          ts::LocalBufferWriter<1024> ref_errw;
+
+          auto err_msg = ri.parse(ref_text, ref_errw);
+          if (err_msg) {
+            errw.print("{} Incorrect Referer regular expression \"{}\" at line {} - {}", modulePrefix, ref_text, line_no,
+                       ref_errw.view());
+            ConfigError(errw.view(), alarm_already);
+          }
+
+          if (ri.negative && ri.any) {
+            new_mapping->optional_referer = true; /* referer header is optional */
+          } else {
+            if (ri.negative) {
+              new_mapping->negative_referer = true; /* we have negative referer in list */
+            }
+            new_mapping->referer_list.append(new RefererInfo(std::move(ri)));
+          }
+        }
+      }
+    } else { // not a FORWARD_MAP_REFERER
+      new_mapping->tag = tag;
+    }
+  }
+
+  // Check to see the fromHost remapping is a relative one
+  auto fromHost = new_mapping->fromURL.host_get();
+  if (fromHost.empty()) {
+    if (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) {
+      if (paramv[1][0] != '/') {
+        errw.write("relative remappings must begin with a /");
+        return errw.view();
+      }
+    } else {
+      errw.write("remap source in reverse mappings requires a hostname");
+      return errw.view();
+    }
+  }
+
+  if (new_mapping->toURL.host_get().empty()) {
+    errw.write("The remap destinations require a hostname");
+    return errw.view();
+  }
+
+  // Get rid of trailing slashes since they interfere
+  //  with our ability to send redirects
+  // You might be tempted to remove these lines but the new
+  // optimized header system will introduce problems.  You
+  // might get two slashes occasionally instead of one because
+  // the rest of the system assumes that trailing slashes have
+  // been removed.
+
+  // set the normalized string so nobody else has to normalize this
+  new_mapping->fromURL.host_set_lower(fromHost);
+  fromHost = new_mapping->fromURL.host_get();
+
+  if (is_cur_mapping_regex_p) {
+    ts::LocalBufferWriter<1024> lbw;
+    auto result = parse_regex_rewrite(new_mapping, fromHost);
+    if (!result.is_ok()) {
+      errw.print("could not process regex mapping config line - {}", result.errata());
+      return errw.view();
+    }
+    rxp_map = result;
+    Debug("url_rewrite_regex", "Configured regex rule for host [%.*s]", static_cast<int>(fromHost.size()), fromHost.data());
+  }
+
+  // If a TS receives a request on a port which is set to tunnel mode (ie, blind forwarding) and a
+  // client connects directly to the TS, then the TS will use its IPv4 address and remap rules given
+  // to send the request to its proper destination. See HttpTransact::HandleBlindTunnel().
+  // Therefore, for a remap rule like "map tunnel://hostname..." in remap.config, we also needs to
+  // convert hostname to its IPv4 addr and gives a new remap rule with the IPv4 addr.
+
+  if ((maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) &&
+      fromScheme == URL_SCHEME_TUNNEL && (fromHost[0] < '0' || fromHost[0] > '9')) {
+    auto result = insert_ancillary_tunnel_rules(new_mapping->fromURL, new_mapping->toURL, maptype, tag);
+    if (!result.is_ok()) {
+      errw.print("{}", result);
+      return errw.view();
+    }
+  }
+
+  // Now add the mapping to appropriate container
+  // WRONG - fromHost.data() is not null terminated. Need to fix InsertMapping.
+  if (!_rewriter->InsertMapping(maptype, new_mapping, rxp_map, fromHost.data(), is_cur_mapping_regex_p)) {
+    errw.write("unable to add mapping rule to lookup table");
+    return errw.view();
+  }
+
+  cleanup.release();
+  return {};
+}
+
+bool
+RemapTextBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
+{
+  ts::LocalBufferWriter<1024> errw; // Used as the error buffer later.
+  TextView errMsg;                  // error message returned from other parsing logic.
+  unsigned line_no = 0;             // current line #
+  self_type builder{rewriter};
 
   // Read the entire file.
   std::error_code ec;
@@ -531,15 +761,6 @@ RemapTextBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
   }
 
   Debug("url_rewrite", "[BuildTable] UrlRewrite::BuildTable()");
-
-  // If something goes wrong, log the error and clean up.
-  ts::PostScript cleanup([&]() -> void {
-    ts::LocalBufferWriter<1024> lw;
-    lw.print(R"("{}" failed to add remap rule from "{}" at line {} : {})", modulePrefix, path, line_no, errw.view());
-    ConfigError(lw.view(), alarm_already);
-    delete new_mapping;
-    delete rxp_map;
-  });
 
   // Parse the file contents.
   TextView text{content};
@@ -614,225 +835,13 @@ RemapTextBuilder::parse_config(ts::file::path const &path, UrlRewrite *rewriter)
       }
       continue;
     }
-  }
 
-  is_cur_mapping_regex_p = REMAP_REGEX_PREFIX.isNoCasePrefixOf(builder.paramv[0]);
-  type_id_str            = builder.paramv[0].substr(is_cur_mapping_regex_p ? REMAP_REGEX_PREFIX.size() : 0);
-
-  // Check to see whether is a reverse or forward mapping
-  if (0 == strcasecmp(REMAP_REVERSE_MAP_TAG, type_id_str)) {
-    Debug("url_rewrite", "[BuildTable] - REVERSE_MAP");
-    maptype = REVERSE_MAP;
-  } else if (0 == strcasecmp(REMAP_MAP_TAG, type_id_str)) {
-    Debug("url_rewrite", "[BuildTable] - FORWARD_MAP");
-    maptype = FORWARD_MAP;
-  } else if (0 == strcasecmp(REMAP_REDIRECT_TAG, type_id_str)) {
-    Debug("url_rewrite", "[BuildTable] - PERMANENT_REDIRECT");
-    maptype = PERMANENT_REDIRECT;
-  } else if (0 == strcasecmp(REMAP_TEMPORARY_REDIRECT_TAG, type_id_str)) {
-    Debug("url_rewrite", "[BuildTable] - TEMPORARY_REDIRECT");
-    maptype = TEMPORARY_REDIRECT;
-  } else if (0 == strcasecmp(REMAP_WITH_REFERER_TAG, type_id_str)) {
-    Debug("url_rewrite", "[BuildTable] - FORWARD_MAP_REFERER");
-    maptype = FORWARD_MAP_REFERER;
-  } else if (0 == strcasecmp(REMAP_WITH_RECV_PORT_TAG, type_id_str)) {
-    Debug("url_rewrite", "[BuildTable] - FORWARD_MAP_WITH_RECV_PORT");
-    maptype = FORWARD_MAP_WITH_RECV_PORT;
-  } else {
-    errw.print("unknown mapping type '{}' at line {}", type_id_str, line_no);
-    return false;
-  }
-
-  new_mapping = new url_mapping;
-
-  // Set up direct filters.
-  if ((builder.arg_types & builder.FILTER_TYPES).any()) {
-    RemapFilter *f = nullptr;
-    for (auto const &arg : builder.argv) {
-      if (arg.type == RemapArg::ACTION) {
-        f            = new RemapFilter;
-        auto err_msg = builder.add_filter_arg(arg, f, errw);
-        if (!err_msg.empty()) {
-          return false;
-        }
-        builder._rewriter->filters.append(f);
-        new_mapping->filters.push_back(f);
-      } else if (builder.FILTER_TYPES[arg.type]) {
-        if (nullptr == f) {
-          errw.print("remap filter option '@{}={}' without a preceeding '@{}' on line {}- ignored", arg.key, arg.value,
-                     RemapArg::ACTION, line_no);
-          log_warning(errw);
-          errw.reset();
-        }
-        auto err_msg = builder.add_filter_arg(arg, f, errw);
-        if (!err_msg.empty()) {
-          return false;
-        }
-      }
-    }
-  }
-  // Add active filters - note these go in reverse order, to keep the predence ordering correct.
-  // The mapping needs them in precedence order, while @c _active_filters is a stack and therefore
-  // in reverse precdence order.
-  new_mapping->filters.reserve(new_mapping->filters.size() + builder._active_filters.size());
-  new_mapping->filters.insert(new_mapping->filters.end(), builder._active_filters.rbegin(), builder._active_filters.rend());
-
-  // update sticky flag
-  builder.accept_check_p = builder.accept_check_p && builder.ip_allow_check_enabled_p;
-
-  if (builder.arg_types[RemapArg::MAP_ID]) {
-    auto spot =
-      std::find_if(builder.argv.begin(), builder.argv.end(), [](auto const &arg) -> bool { return RemapArg::MAP_ID == arg.type; });
-    new_mapping->map_id = ts::svtoi(spot->value);
-  }
-
-  auto map_from_url = builder.normalize_url(builder.paramv[1]);
-
-  new_mapping->fromURL.create(nullptr);
-  auto rparse = new_mapping->fromURL.parse_no_path_component_breakdown(map_from_url.data(), map_from_url.size());
-
-  if (rparse != PARSE_RESULT_DONE) {
-    errw.print(R"(Malformed url "{}" in from URL on line {})", map_from_url, line_no);
-    return false;
-  }
-
-  auto map_to_url = builder.normalize_url(builder.paramv[2]);
-
-  new_mapping->toURL.create(nullptr);
-  rparse = new_mapping->toURL.parse_no_path_component_breakdown(map_to_url.data(), map_to_url.size());
-
-  if (rparse != PARSE_RESULT_DONE) {
-    errw.print(R"(Malformed url "{}" in from URL on line {})", map_to_url, line_no);
-    return false;
-  }
-
-  fromScheme = new_mapping->fromURL.scheme_get(&fromSchemeLen);
-  // If the rule is "/" or just some other relative path
-  //   we need to default the scheme to http
-  if (fromScheme == nullptr || fromSchemeLen == 0) {
-    new_mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
-    fromScheme                        = new_mapping->fromURL.scheme_get(&fromSchemeLen);
-    new_mapping->wildcard_from_scheme = true;
-  }
-  toScheme = new_mapping->toURL.scheme_get(&toSchemeLen);
-
-  // Include support for HTTPS scheme
-  // includes support for FILE scheme
-  if (std::none_of(VALID_SCHEMA.begin(), VALID_SCHEMA.end(), [&](auto wks) -> bool { return wks == fromScheme; }) ||
-      std::none_of(VALID_SCHEMA.begin(), VALID_SCHEMA.end(), [&](auto wks) -> bool { return wks == toScheme; })) {
-    errw.print("only http, https, ws, wss, and tunnel remappings are supported");
-    return false;
-  }
-
-  // If mapping from WS or WSS we must map out to WS or WSS
-  if ((fromScheme == URL_SCHEME_WSS || fromScheme == URL_SCHEME_WS) && (toScheme != URL_SCHEME_WSS && toScheme != URL_SCHEME_WS)) {
-    errw.print("WS or WSS can only be mapped out to WS or WSS.");
-    return false;
-  }
-
-  // Check if a tag is specified.
-  if (builder.paramv.size() >= 4) {
-    tag = builder.stash(builder.paramv[3]);
-    if (maptype == FORWARD_MAP_REFERER) {
-      new_mapping->filter_redirect_url = tag;
-      if (0 == strcasecmp(tag, "<default>") || 0 == strcasecmp(tag, "default") || 0 == strcasecmp(tag, "<default_redirect_url>") ||
-          0 == strcasecmp(tag, "default_redirect_url")) {
-        new_mapping->default_redirect_url = true;
-      }
-      RedirectChunk::parse(new_mapping->filter_redirect_url, new_mapping->redirect_chunks);
-      for (auto spot = builder.paramv.rbegin(), limit = builder.paramv.rend() - 3; spot < limit; ++spot) {
-        if (!spot->empty()) {
-          RefererInfo ri;
-          TextView ref_text = builder.stash(*spot);
-          ts::LocalBufferWriter<1024> ref_errw;
-
-          auto err_msg = ri.parse(ref_text, ref_errw);
-          if (err_msg) {
-            errw.print("{} Incorrect Referer regular expression \"{}\" at line {} - {}", modulePrefix, ref_text, line_no,
-                       ref_errw.view());
-            ConfigError(errw.view(), alarm_already);
-          }
-
-          if (ri.negative && ri.any) {
-            new_mapping->optional_referer = true; /* referer header is optional */
-          } else {
-            if (ri.negative) {
-              new_mapping->negative_referer = true; /* we have negative referer in list */
-            }
-            new_mapping->referer_list.append(new RefererInfo(std::move(ri)));
-          }
-        }
-      }
-    } else { // not a FORWARD_MAP_REFERER
-      new_mapping->tag = tag;
-    }
-  }
-
-  // Check to see the fromHost remapping is a relative one
-  auto fromHost = new_mapping->fromURL.host_get();
-  if (fromHost.empty()) {
-    if (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) {
-      if (builder.paramv[1][0] != '/') {
-        errw.write("relative remappings must begin with a /");
-        return false;
-      }
-    } else {
-      errw.write("remap source in reverse mappings requires a hostname");
+    auto result = builder.parse_rule(line_no, errw);
+    if (!result.empty()) {
       return false;
     }
   }
 
-  if (new_mapping->toURL.host_get().empty()) {
-    errw.write("The remap destinations require a hostname");
-    return false;
-  }
-
-  // Get rid of trailing slashes since they interfere
-  //  with our ability to send redirects
-  // You might be tempted to remove these lines but the new
-  // optimized header system will introduce problems.  You
-  // might get two slashes occasionally instead of one because
-  // the rest of the system assumes that trailing slashes have
-  // been removed.
-
-  // set the normalized string so nobody else has to normalize this
-  new_mapping->fromURL.host_set_lower(fromHost);
-  fromHost = new_mapping->fromURL.host_get();
-
-  if (is_cur_mapping_regex_p) {
-    ts::LocalBufferWriter<1024> lbw;
-    auto result = builder.parse_regex_rewrite(new_mapping, fromHost);
-    if (!result.is_ok()) {
-      errw.print("could not process regex mapping config line - {}", result.errata());
-      return false;
-    }
-    rxp_map = result;
-    Debug("url_rewrite_regex", "Configured regex rule for host [%.*s]", static_cast<int>(fromHost.size()), fromHost.data());
-  }
-
-  // If a TS receives a request on a port which is set to tunnel mode (ie, blind forwarding) and a
-  // client connects directly to the TS, then the TS will use its IPv4 address and remap rules given
-  // to send the request to its proper destination. See HttpTransact::HandleBlindTunnel().
-  // Therefore, for a remap rule like "map tunnel://hostname..." in remap.config, we also needs to
-  // convert hostname to its IPv4 addr and gives a new remap rule with the IPv4 addr.
-
-  if ((maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) &&
-      fromScheme == URL_SCHEME_TUNNEL && (fromHost[0] < '0' || fromHost[0] > '9')) {
-    auto result = builder.insert_ancillary_tunnel_rules(new_mapping->fromURL, new_mapping->toURL, maptype, tag);
-    if (!result.is_ok()) {
-      errw.print("{}", result);
-      return false;
-    }
-  }
-
-  // Now add the mapping to appropriate container
-  // WRONG - fromHost.data() is not null terminated. Need to fix InsertMapping.
-  if (!builder._rewriter->InsertMapping(maptype, new_mapping, rxp_map, fromHost.data(), is_cur_mapping_regex_p)) {
-    errw.write("unable to add mapping rule to lookup table");
-    return false;
-  }
-
-  cleanup.release();
   return true;
 }
 

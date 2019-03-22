@@ -1,0 +1,5 @@
+url_rewrite:
+  rules:
+    - target: http://one.test
+      replacement: http://apache.org
+      options: [ reverse ]

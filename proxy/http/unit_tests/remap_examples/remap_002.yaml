@@ -1,0 +1,4 @@
+url_rewrite:
+  rules:
+    - target: !regex http://.*[.]one[.]test
+      replacement: http://apache.org

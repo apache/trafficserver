@@ -44,11 +44,29 @@ TEST_CASE("URL Rewrite", "[url-rewrite]")
     rewriter->Print();
     delete rewriter;
   }
+
+  SECTION("002-text")
+  {
+    auto rewriter = new UrlRewrite;
+    std::cout << "002 Text" << std::endl;
+    remap_parse_config("unit_tests/remap_examples/remap_002.config", rewriter);
+    rewriter->Print();
+    delete rewriter;
+  }
   SECTION("002-yaml")
   {
     auto rewriter = new UrlRewrite;
     std::cout << "002 YAML" << std::endl;
     remap_parse_config("unit_tests/remap_examples/remap_002.yaml", rewriter);
+    rewriter->Print();
+    delete rewriter;
+  }
+
+  SECTION("003-text")
+  {
+    auto rewriter = new UrlRewrite;
+    std::cout << "003 Text" << std::endl;
+    remap_parse_config("unit_tests/remap_examples/remap_003.config", rewriter);
     rewriter->Print();
     delete rewriter;
   }
