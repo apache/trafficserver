@@ -14,9 +14,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-all: slice
+TSXS?=tsxs
+PLUGIN=slice
 
-slice_la_SOURCES = \
+all: $(PLUGIN).so
+
+SOURCES = \
 	Config.cc \
 	ContentRange.cc \
 	Data.cc \
@@ -29,7 +32,7 @@ slice_la_SOURCES = \
 	slice.cc \
 	transfer.cc \
 
-slice_la_HEADERS = \
+HEADERS = \
 	Config.h \
 	ContentRange.h \
 	Data.h \
@@ -43,22 +46,21 @@ slice_la_HEADERS = \
 	slice.h \
 	transfer.h \
 
-slice: $(slice_la_SOURCES) $(slice_la_HEADERS)
-	tsxs -v -o slice.so $(slice_la_SOURCES)
+$(PLUGIN).so: $(SOURCES) $(HEADERS)
+	$(TSXS) -v -o $(PLUGIN).so $(SOURCES)
 
-install: slice $(slice_la_SOURCES) $(slice_la_HEADERS)
-	tsxs -v -o slice.so -i
+install: all
+	$(TSXS) -v -o $(PLUGIN).so -i
 
-CXX = c++ -std=c++11
-#CXXFLAGS = -pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -O3 -fno-strict-aliasing -Wno-invalid-offsetof  -mcx16
-CXXFLAGS = -pipe -Wall -Wno-deprecated-declarations -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -O3 -fno-strict-aliasing -Wno-invalid-offsetof  -mcx16
 TSINCLUDE = $(shell tsxs -q INCLUDEDIR)
+TSCXX = $(shell tsxs -q CXX)
+TSCXXFLAGS = $(shell tsxs -q CXXFLAGS)
 #PREFIX = $(shell tsxs -q PREFIX)
 #LIBS = -L$(PREFIX)/lib -latscppapi
 #LIBS = $(PREFIX)/lib/libtsutil.la
 
 slice_test: slice_test.cc ContentRange.cc Range.cc
-	$(CXX) -o $@ $^ $(CXXFLAGS) -I$(TSINCLUDE) -DUNITTEST
+	$(TSCXX) -o $@ $^ $(TSCXXFLAGS) -I$(TSINCLUDE) -DUNITTEST
 
 clean: 
 	rm -fv *.lo *.so
