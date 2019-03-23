@@ -183,7 +183,7 @@ TS_INLINE EThread *
 this_event_thread()
 {
   EThread *ethread = this_ethread();
-  if (ethread != nullptr && ethread->has_event_loop) {
+  if (ethread != nullptr && ethread->tt == REGULAR) {
     return ethread;
   } else {
     return nullptr;
