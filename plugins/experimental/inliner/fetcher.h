@@ -68,7 +68,7 @@ struct HttpParser {
   TSMBuffer buffer_;
   TSMLoc location_;
 
-  void destroyParser(void);
+  void destroyParser();
 
   ~HttpParser()
   {
@@ -77,7 +77,7 @@ struct HttpParser {
     destroyParser();
   }
 
-  HttpParser(void) : parsed_(false), parser_(TSHttpParserCreate()), buffer_(TSMBufferCreate()), location_(TSHttpHdrCreate(buffer_))
+  HttpParser() : parsed_(false), parser_(TSHttpParserCreate()), buffer_(TSMBufferCreate()), location_(TSHttpHdrCreate(buffer_))
   {
     TSHttpHdrTypeSet(buffer_, location_, TS_HTTP_TYPE_RESPONSE);
   }
@@ -85,7 +85,7 @@ struct HttpParser {
   bool parse(io::IO &);
 
   int
-  statusCode(void) const
+  statusCode() const
   {
     return static_cast<int>(TSHttpHdrStatusGet(buffer_, location_));
   }

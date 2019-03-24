@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include <time.h>
+#include <ctime>
 #include <string>
 #include "tscore/ink_rwlock.h"
 #include "records/P_RecProcess.h"
@@ -50,11 +50,12 @@ struct HostStatRec_t {
 };
 
 struct Reasons {
-  static constexpr const char *ACTIVE = "active";
-  static constexpr const char *LOCAL  = "local";
-  static constexpr const char *MANUAL = "manual";
+  static constexpr const char *ACTIVE      = "active";
+  static constexpr const char *LOCAL       = "local";
+  static constexpr const char *MANUAL      = "manual";
+  static constexpr const char *SELF_DETECT = "self_detect";
 
-  static constexpr const char *reasons[3] = {ACTIVE, LOCAL, MANUAL};
+  static constexpr const char *reasons[4] = {ACTIVE, LOCAL, MANUAL, SELF_DETECT};
 
   static bool
   validReason(const char *reason)

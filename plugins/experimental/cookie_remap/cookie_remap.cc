@@ -32,7 +32,7 @@
 #include <list>
 #include <map>
 #include <set>
-#include <string.h>
+#include <cstring>
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -314,7 +314,7 @@ public:
   void
   setBucket(const std::string &s)
   {
-    int start_pos = s.find("/");
+    int start_pos = s.find('/');
 
     op_type  = BUCKET;
     bucket   = s;
@@ -349,7 +349,7 @@ public:
       return false;
     }
     regex_extra = pcre_study(regex, 0, &error_study);
-    if ((regex_extra == nullptr) && (error_study != 0)) {
+    if ((regex_extra == nullptr) && (error_study != nullptr)) {
       return false;
     }
 
@@ -432,8 +432,8 @@ public:
   ~op()
   {
     TSDebug(MY_NAME, "op destructor called");
-    for (SubOpQueue::iterator it = subops.begin(); it != subops.end(); ++it) {
-      delete *it;
+    for (auto &subop : subops) {
+      delete subop;
     }
   }
 
@@ -483,8 +483,8 @@ public:
     TSDebug(MY_NAME, "sending to: %s", sendto.c_str());
     TSDebug(MY_NAME, "if these operations match: ");
 
-    for (SubOpQueue::const_iterator it = subops.begin(); it != subops.end(); ++it) {
-      (*it)->printSubOp();
+    for (auto subop : subops) {
+      subop->printSubOp();
     }
     if (else_sendto.size() > 0)
       TSDebug(MY_NAME, "else: %s", else_sendto.c_str());
@@ -508,16 +508,16 @@ public:
 
     TSDebug(MY_NAME, "starting to process a new operation");
 
-    for (SubOpQueue::const_iterator it = subops.begin(); it != subops.end(); ++it) {
+    for (auto subop : subops) {
       // subop* s = *it;
-      int subop_type     = (*it)->getOpType();
-      target_type target = (*it)->getTargetType();
+      int subop_type     = subop->getOpType();
+      target_type target = subop->getTargetType();
 
-      c = (*it)->getCookieName();
+      c = subop->getCookieName();
       if (c.length()) {
         TSDebug(MY_NAME, "processing cookie: %s", c.c_str());
 
-        size_t period_pos = c.find_first_of(".");
+        size_t period_pos = c.find_first_of('.');
 
         if (period_pos == std::string::npos) { // not a sublevel
                                                // cookie name
@@ -632,7 +632,7 @@ public:
 
       // OPERATION::string matching
       if (subop_type == STRING) {
-        if (string_to_match == (*it)->getStringMatch()) {
+        if (string_to_match == subop->getStringMatch()) {
           TSDebug(MY_NAME, "string match succeeded");
           continue;
         } else {
@@ -645,7 +645,7 @@ public:
       // OPERATION::regex matching
       if (subop_type == REGEXP) {
         int ovector[OVECCOUNT];
-        int ret = (*it)->regexMatch(string_to_match.c_str(), string_to_match.length(), ovector);
+        int ret = subop->regexMatch(string_to_match.c_str(), string_to_match.length(), ovector);
 
         if (ret >= 0) {
           std::string::size_type pos  = sendto.find('$');
@@ -665,7 +665,7 @@ public:
                   "successful regex "
                   "match of: %s with %s "
                   "rewriting string: %s",
-                  string_to_match.c_str(), (*it)->getRegexString().c_str(), sendto.c_str());
+                  string_to_match.c_str(), subop->getRegexString().c_str(), sendto.c_str());
 
           // replace the $(1-9) in the sendto url
           // as necessary
@@ -675,7 +675,7 @@ public:
             if (isdigit(sendto[pos + 1])) {
               int ix = sendto[pos + 1] - '0';
 
-              if (ix <= (*it)->getRegexCcount()) { // Just skip an illegal regex group
+              if (ix <= subop->getRegexCcount()) { // Just skip an illegal regex group
                 dest += sendto.substr(ppos, pos - ppos);
                 dest += string_to_match.substr(ovector[ix * 2], ovector[ix * 2 + 1] - ovector[ix * 2]);
                 ppos = pos + 2;
@@ -698,7 +698,7 @@ public:
                   "could not match "
                   "regular expression "
                   "%s to %s",
-                  (*it)->getRegexString().c_str(), string_to_match.c_str());
+                  subop->getRegexString().c_str(), string_to_match.c_str());
           retval &= 0;
           break;
         }
@@ -706,8 +706,8 @@ public:
 
       // OPERATION::bucket ranges
       if (subop_type == BUCKET) {
-        unsigned int taking = (*it)->bucketGetTaking();
-        unsigned int out_of = (*it)->bucketOutOf();
+        unsigned int taking = subop->bucketGetTaking();
+        unsigned int out_of = subop->bucketOutOf();
 
         uint32_t hash;
 
@@ -1068,7 +1068,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   CookieJar jar;
   jar.create(temp_cookie);
 
-  for (OpsQueue::iterator it = ops->begin(); it != ops->end(); ++it) {
+  for (auto &op : *ops) {
     TSDebug(MY_NAME, ">>> processing new operation");
     if ((*it)->process(jar, rewrite_to, status, rri, txnp)) {
       cr_substitutions(rewrite_to, rri, txnp);
@@ -1083,7 +1083,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       } while (pos <= rewrite_to.length() && pos < tmp_pos);
 
       // Add Query Parameters if not already present
-      if (!client_req_query_params.empty() && rewrite_to.find("?") == std::string::npos) {
+      if (!client_req_query_params.empty() && rewrite_to.find('?') == std::string::npos) {
         rewrite_to.append(client_req_query_params);
       }
 
@@ -1162,8 +1162,8 @@ TSRemapDeleteInstance(void *ih)
   OpsQueue *ops = (OpsQueue *)ih;
 
   TSDebug(MY_NAME, "deleting loaded operations");
-  for (OpsQueue::iterator it = ops->begin(); it != ops->end(); ++it) {
-    delete *it;
+  for (auto &op : *ops) {
+    delete op;
   }
 
   delete ops;

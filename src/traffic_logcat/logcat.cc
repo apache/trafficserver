@@ -198,7 +198,7 @@ process_file(int in_fd, int out_fd)
     // see if there is an alternate format request from the command
     // line
     //
-    const char *alt_format = NULL;
+    const char *alt_format = nullptr;
     // convert the buffer to ascii entries and place onto stdout
     //
     if (header->fmt_fieldlist()) {
@@ -218,7 +218,7 @@ open_output_file(char *output_file)
     if (access(output_file, F_OK)) {
       if (errno != ENOENT) {
         fprintf(stderr, "Error accessing output file %s: ", output_file);
-        perror(0);
+        perror(nullptr);
         file_desc = -1;
       }
     } else {
@@ -235,7 +235,7 @@ open_output_file(char *output_file)
 
     if (file_desc < 0) {
       fprintf(stderr, "Error while opening output file %s: ", output_file);
-      perror(0);
+      perror(nullptr);
     }
   }
 
@@ -303,7 +303,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
       int in_fd = open(file_arguments[i], O_RDONLY);
       if (in_fd < 0) {
         fprintf(stderr, "Error opening input file %s: ", file_arguments[i]);
-        perror(0);
+        perror(nullptr);
         error = DATA_PROCESSING_ERROR;
       } else {
 #if HAVE_POSIX_FADVISE

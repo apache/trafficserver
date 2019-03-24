@@ -140,13 +140,13 @@ UDPConnection::GetSendGenerationNumber()
 }
 
 TS_INLINE int
-UDPConnection::getPortNum(void)
+UDPConnection::getPortNum()
 {
   return ats_ip_port_host_order(&static_cast<UDPConnectionInternal *>(this)->binding);
 }
 
 TS_INLINE int64_t
-UDPConnection::cancel(void)
+UDPConnection::cancel()
 {
   UDPConnectionInternal *p = (UDPConnectionInternal *)this;
 

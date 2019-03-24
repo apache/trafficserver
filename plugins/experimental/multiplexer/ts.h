@@ -52,7 +52,7 @@ namespace io
       TSIOBufferDestroy(buffer);
     }
 
-    IO(void) : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) {}
+    IO() : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) {}
     IO(const TSIOBuffer &b) : buffer(b), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) { assert(buffer != nullptr); }
     static IO *read(TSVConn, TSCont, const int64_t);
 

@@ -195,7 +195,7 @@ evaluate(const String &v)
   /* Find out if width is specified (hence leading zeros are required if the width is bigger then the result width) */
   String stmt;
   size_t len = 0;
-  size_t pos = v.find_first_of(":");
+  size_t pos = v.find_first_of(':');
   if (String::npos != pos) {
     stmt.assign(v.substr(0, pos));
     len = getValue(v.substr(pos + 1));
@@ -237,8 +237,8 @@ expand(String &s)
 {
   size_t cur = 0;
   while (String::npos != cur) {
-    size_t start = s.find_first_of("{", cur);
-    size_t stop  = s.find_first_of("}", start);
+    size_t start = s.find_first_of('{', cur);
+    size_t stop  = s.find_first_of('}', start);
 
     if (String::npos != start && String::npos != stop) {
       s.replace(start, stop - start + 1, evaluate(s.substr(start + 1, stop - start - 1)));

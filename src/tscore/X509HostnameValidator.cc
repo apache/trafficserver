@@ -166,7 +166,7 @@ wildcard_match(const unsigned char *prefix, size_t prefix_len, const unsigned ch
    * permitted characters and only matches a single label
    */
   for (p = wildcard_start; p != wildcard_end; ++p) {
-    if (!(('0' <= *p && *p <= '9') || ('A' <= *p && *p <= 'Z') || ('a' <= *p && *p <= 'z') || *p == '-')) {
+    if (!(('a' <= *p && *p <= 'z') || ('A' <= *p && *p <= 'Z') || ('0' <= *p && *p <= '9') || *p == '-' || *p == '_')) {
       return false;
     }
   }

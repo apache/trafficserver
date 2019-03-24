@@ -31,8 +31,7 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/Diags.h"
-
-#include "P_SSLClientUtils.h"
+#include "records/I_RecCore.h"
 #include "P_SSLCertLookup.h"
 
 struct SSLConfigParams;
@@ -67,6 +66,7 @@ class SSLMultiCertConfigLoader
 {
 public:
   SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
+  virtual ~SSLMultiCertConfigLoader(){};
 
   bool load(SSLCertLookup *lookup);
 
@@ -171,7 +171,7 @@ namespace detail
 struct ats_wildcard_matcher {
   ats_wildcard_matcher()
   {
-    if (!regex.compile("^\\*\\.[^\\*.]+")) {
+    if (!regex.compile(R"(^\*\.[^\*.]+)")) {
       Fatal("failed to compile TLS wildcard matching regex");
     }
   }

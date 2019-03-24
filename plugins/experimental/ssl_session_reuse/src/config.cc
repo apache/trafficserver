@@ -23,7 +23,7 @@
  */
 
 #include <ts/ts.h>
-#include <string.h>
+#include <cstring>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -105,7 +105,7 @@ Config::setLastConfigChange()
 bool
 Config::configHasChanged()
 {
-  time_t checkTime = time(0) / cCheckDivisor;
+  time_t checkTime = time(nullptr) / cCheckDivisor;
 
   if (0 == m_lastmtime || m_lastCheck != checkTime) {
     m_lastCheck = checkTime;

@@ -177,7 +177,7 @@ template <typename T>
 void
 Tree<T>::_dump(Node *node, std::ostream &output) const
 {
-  output << "{ \"id\":\"" << node->id << "/" << node->weight << "/" << node->point << "/" << ((node->t != nullptr) ? "1" : "0")
+  output << R"({ "id":")" << node->id << "/" << node->weight << "/" << node->point << "/" << ((node->t != nullptr) ? "1" : "0")
          << "/" << ((node->active) ? "a" : "d") << "\",";
   // Dump the children
   output << " \"c\":[";

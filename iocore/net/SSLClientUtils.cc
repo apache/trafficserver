@@ -32,12 +32,6 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L) // openssl returns a const SSL_METHOD
-using ink_ssl_method_t = const SSL_METHOD *;
-#else
-typedef SSL_METHOD *ink_ssl_method_t;
-#endif
-
 int
 verify_callback(int signature_ok, X509_STORE_CTX *ctx)
 {
@@ -143,8 +137,8 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
 SSL_CTX *
 SSLInitClientContext(const SSLConfigParams *params)
 {
-  ink_ssl_method_t meth = nullptr;
-  SSL_CTX *client_ctx   = nullptr;
+  const SSL_METHOD *meth = nullptr;
+  SSL_CTX *client_ctx    = nullptr;
 
   // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
   // to do the seeding of the PRNG for us. This is the case for all platforms that

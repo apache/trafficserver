@@ -372,8 +372,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
           continue;
         } else {
           Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", fqdn, line_num);
-          hs.createHostStat(fqdn);
-          hs.setHostStatus(fqdn, HostStatus_t::HOST_STATUS_DOWN, 0, Reasons::MANUAL);
+          hs.setHostStatus(fqdn, HostStatus_t::HOST_STATUS_DOWN, 0, Reasons::SELF_DETECT);
         }
       }
     } else {
@@ -385,8 +384,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
         } else {
           Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", token,
                 line_num);
-          hs.createHostStat(token);
-          hs.setHostStatus(token, HostStatus_t::HOST_STATUS_DOWN, 0, Reasons::MANUAL);
+          hs.setHostStatus(token, HostStatus_t::HOST_STATUS_DOWN, 0, Reasons::SELF_DETECT);
         }
       }
     }
@@ -517,7 +515,9 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
         memcpy(this->parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->parents[i].name = this->parents[i].hash_string;
       }
-      hs.createHostStat(this->parents[i].hostname);
+      if (hs.getHostStatus(this->parents[i].hostname) == HostStatus_t::HOST_STATUS_INIT) {
+        hs.setHostStatus(this->parents[i].hostname, HOST_STATUS_UP, 0, Reasons::MANUAL);
+      }
     } else {
       memcpy(this->secondary_parents[i].hostname, current, tmp - current);
       this->secondary_parents[i].hostname[tmp - current] = '\0';
@@ -533,7 +533,9 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
         memcpy(this->secondary_parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->secondary_parents[i].name = this->secondary_parents[i].hash_string;
       }
-      hs.createHostStat(this->secondary_parents[i].hostname);
+      if (hs.getHostStatus(this->secondary_parents[i].hostname) == HostStatus_t::HOST_STATUS_INIT) {
+        hs.setHostStatus(this->secondary_parents[i].hostname, HOST_STATUS_UP, 0, Reasons::MANUAL);
+      }
     }
     tmp3 = nullptr;
   }

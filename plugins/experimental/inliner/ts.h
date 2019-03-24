@@ -58,7 +58,7 @@ namespace io
       TSIOBufferDestroy(buffer);
     }
 
-    IO(void) : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) {}
+    IO() : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) {}
     IO(const TSIOBuffer &b) : buffer(b), reader(TSIOBufferReaderAlloc(buffer)), vio(nullptr) { assert(buffer != nullptr); }
     static IO *read(TSVConn, TSCont, const int64_t);
 
@@ -78,9 +78,9 @@ namespace io
 
     uint64_t copy(const std::string &) const;
 
-    int64_t consume(void) const;
+    int64_t consume() const;
 
-    int64_t done(void) const;
+    int64_t done() const;
   };
 
   struct ReaderSize {
@@ -131,7 +131,7 @@ namespace io
     }
 
     // noncopyable
-    Lock(void) : mutex_(nullptr) {}
+    Lock() : mutex_(nullptr) {}
     Lock(const Lock &) = delete;
 
     Lock(Lock &&l) : mutex_(l.mutex_) { const_cast<TSMutex &>(l.mutex_) = nullptr; }
@@ -166,8 +166,8 @@ namespace io
     WriteOperation &operator<<(const std::string &);
 
     void process(const size_t b = 0);
-    void close(void);
-    void abort(void);
+    void close();
+    void abort();
 
   private:
     WriteOperation(const TSVConn, const TSMutex, const size_t);
@@ -215,10 +215,10 @@ namespace io
       return IOSinkPointer(new IOSink(WriteOperation::Create(std::forward<A>(a)...)));
     }
 
-    void process(void);
-    SinkPointer branch(void);
-    Lock lock(void);
-    void abort(void);
+    void process();
+    SinkPointer branch();
+    Lock lock();
+    void abort();
 
   private:
     IOSink(WriteOperationWeakPointer &&p) : operation_(std::move(p)) {}
@@ -249,7 +249,7 @@ namespace io
       TSIOBufferDestroy(buffer_);
     }
 
-    BufferNode(void) : buffer_(TSIOBufferCreate()), reader_(TSIOBufferReaderAlloc(buffer_))
+    BufferNode() : buffer_(TSIOBufferCreate()), reader_(TSIOBufferReaderAlloc(buffer_))
     {
       assert(buffer_ != nullptr);
       assert(reader_ != nullptr);
@@ -289,7 +289,7 @@ namespace io
     Sink(const Sink &) = delete;
     Sink &operator=(const Sink &) = delete;
 
-    SinkPointer branch(void);
+    SinkPointer branch();
 
     Sink &operator<<(std::string &&);
 

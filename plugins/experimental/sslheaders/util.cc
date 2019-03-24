@@ -78,9 +78,9 @@ SslHdrParseExpansion(const char *spec, SslHdrExpansion &exp)
 
   // Push sep to point to the field selector.
   selector = sep + 1;
-  for (unsigned i = 0; i < fields.size(); ++i) {
-    if (strcmp(selector, fields[i].name) == 0) {
-      exp.field = fields[i].field;
+  for (auto field : fields) {
+    if (strcmp(selector, field.name) == 0) {
+      exp.field = field.field;
       return true;
     }
   }

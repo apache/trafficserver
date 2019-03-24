@@ -33,10 +33,10 @@
 class Lockfile
 {
 public:
-  Lockfile(void) : fd(0) { fname[0] = '\0'; }
+  Lockfile() : fd(0) { fname[0] = '\0'; }
   // coverity[uninit_member]
   Lockfile(const char *filename) : fd(0) { ink_strlcpy(fname, filename, sizeof(fname)); }
-  ~Lockfile(void) {}
+  ~Lockfile() {}
   void
   SetLockfileName(const char *filename)
   {
@@ -44,7 +44,7 @@ public:
   }
 
   const char *
-  GetLockfileName(void)
+  GetLockfileName()
   {
     return fname;
   }
@@ -69,7 +69,7 @@ public:
   // Close()
   //
   // Closes the file handle on the opened Lockfile.
-  void Close(void);
+  void Close();
 
   // Kill()
   // KillGroup()

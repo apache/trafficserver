@@ -398,7 +398,7 @@ dir_from_offset(int64_t i, CacheDirEntry *seg)
 {
 #if DIR_DEPTH < 5
   if (!i)
-    return 0;
+    return nullptr;
   return dir_in_seg(seg, i);
 #else
   i = i + ((i - 1) / (DIR_DEPTH - 1));

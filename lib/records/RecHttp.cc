@@ -751,8 +751,9 @@ SessionProtocolNameRegistry::toIndexConst(TextView name)
 int
 SessionProtocolNameRegistry::indexFor(TextView name) const
 {
-  auto spot = std::find(m_names.begin(), m_names.begin() + m_n, name);
-  if (spot != m_names.end()) {
+  const ts::TextView *end = m_names.begin() + m_n;
+  auto spot               = std::find(m_names.begin(), end, name);
+  if (spot != end) {
     return static_cast<int>(spot - m_names.begin());
   }
   return INVALID;

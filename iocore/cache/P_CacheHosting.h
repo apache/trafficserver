@@ -194,7 +194,7 @@ struct ConfigVolumes {
   void BuildListFromString(char *config_file_path, char *file_buf);
 
   void
-  clear_all(void)
+  clear_all()
   {
     // remove all the volumes from the queue
     for (int i = 0; i < num_volumes; i++) {

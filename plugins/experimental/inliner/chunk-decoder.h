@@ -70,14 +70,14 @@ class ChunkDecoder
   int64_t size_;
 
 public:
-  ChunkDecoder(void) : state_(State::kSize), size_(0) {}
+  ChunkDecoder() : state_(State::kSize), size_(0) {}
   void parseSizeCharacter(const char);
   int parseSize(const char *, const int64_t);
   int decode(const TSIOBufferReader &);
-  bool isSizeState(void) const;
+  bool isSizeState() const;
 
   inline bool
-  isEnd(void) const
+  isEnd() const
   {
     return state_ == State::kEnd;
   }

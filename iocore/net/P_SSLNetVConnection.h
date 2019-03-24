@@ -298,13 +298,13 @@ public:
   }
 
   const char *
-  getSSLProtocol(void) const
+  getSSLProtocol() const
   {
     return ssl ? SSL_get_version(ssl) : nullptr;
   }
 
   const char *
-  getSSLCipherSuite(void) const
+  getSSLCipherSuite() const
   {
     return ssl ? SSL_get_cipher_name(ssl) : nullptr;
   }

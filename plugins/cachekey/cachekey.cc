@@ -23,6 +23,7 @@
 
 #include <cstring> /* strlen() */
 #include <sstream> /* istringstream */
+#include <utility>
 #include "cachekey.h"
 
 static void
@@ -195,7 +196,7 @@ getUri(TSMBuffer buf, TSMLoc url)
  * @param rri remap request info
  */
 CacheKey::CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType uriType, TSRemapRequestInfo *rri)
-  : _txn(txn), _separator(separator), _uriType(uriType)
+  : _txn(txn), _separator(std::move(separator)), _uriType(uriType)
 {
   _key.reserve(512);
 

@@ -440,7 +440,6 @@ struct CacheVC : public CacheVConnection {
   // NOTE: NOTE: NOTE: If vio is NOT the start, then CHANGE the
   // size_to_init initialization
   VIO vio;
-  EThread *initial_thread; // initial thread open_XX was called on
   CacheFragType frag_type;
   CacheHTTPInfo *info;
   CacheHTTPInfoVector *write_vector;
@@ -549,9 +548,9 @@ new_CacheVC(Continuation *cont)
   CacheVC *c          = THREAD_ALLOC(cacheVConnectionAllocator, t);
   c->vector.data.data = &c->vector.data.fast_data[0];
   c->_action          = cont;
-  c->initial_thread   = t->tt == DEDICATED ? nullptr : t;
   c->mutex            = cont->mutex;
   c->start_time       = Thread::get_hrtime();
+  c->setThreadAffinity(t);
   ink_assert(c->trigger == nullptr);
   Debug("cache_new", "new %p", c);
 #ifdef CACHE_STAT_PAGES
@@ -956,8 +955,8 @@ CacheRemoveCont::event_handler(int event, void *data)
   return EVENT_DONE;
 }
 
-int64_t cache_bytes_used(void);
-int64_t cache_bytes_total(void);
+int64_t cache_bytes_used();
+int64_t cache_bytes_total();
 
 #ifdef DEBUG
 #define CACHE_DEBUG_INCREMENT_DYN_STAT(_x) CACHE_INCREMENT_DYN_STAT(_x)

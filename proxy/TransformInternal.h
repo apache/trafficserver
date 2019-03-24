@@ -55,21 +55,21 @@ class TransformVConnection : public TransformVCChain
 {
 public:
   TransformVConnection(Continuation *cont, APIHook *hooks);
-  ~TransformVConnection();
+  ~TransformVConnection() override;
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
-  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
-  void do_io_close(int lerrno = -1);
-  void do_io_shutdown(ShutdownHowTo_t howto);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
+  void do_io_close(int lerrno = -1) override;
+  void do_io_shutdown(ShutdownHowTo_t howto) override;
 
-  void reenable(VIO *vio);
+  void reenable(VIO *vio) override;
 
   /** Compute the backlog.
       @return The actual backlog, or a value at least @a limit.
   */
-  virtual uint64_t backlog(uint64_t limit = UINT64_MAX);
+  uint64_t backlog(uint64_t limit = UINT64_MAX) override;
 
 public:
   VConnection *m_transform;
@@ -96,7 +96,7 @@ class NullTransform : public INKVConnInternal
 {
 public:
   NullTransform(ProxyMutex *mutex);
-  ~NullTransform();
+  ~NullTransform() override;
 
   int handle_event(int event, void *edata);
 
@@ -111,7 +111,7 @@ class RangeTransform : public INKVConnInternal
 public:
   RangeTransform(ProxyMutex *mutex, RangeRecord *ranges, int num_fields, HTTPHdr *transform_resp, const char *content_type,
                  int content_type_len, int64_t content_length);
-  ~RangeTransform();
+  ~RangeTransform() override;
 
   int handle_event(int event, void *edata);
 

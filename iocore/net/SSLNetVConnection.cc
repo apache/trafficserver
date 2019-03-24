@@ -1124,7 +1124,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_PRE) {
     if (!curHook) {
       Debug("ssl", "Initialize preaccept curHook from NULL");
-      curHook = ssl_hooks->get(TS_VCONN_START_INTERNAL_HOOK);
+      curHook = ssl_hooks->get(TSSslHookInternalID(TS_VCONN_START_HOOK));
     } else {
       curHook = curHook->next();
     }
@@ -1274,16 +1274,10 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       // is preferred since it is the server's preference.  The server
       // preference would not be meaningful if we let the client
       // preference have priority.
-
-#if TS_USE_TLS_ALPN
       SSL_get0_alpn_selected(ssl, &proto, &len);
-#endif /* TS_USE_TLS_ALPN */
-
-#if TS_USE_TLS_NPN
       if (len == 0) {
         SSL_get0_next_proto_negotiated(ssl, &proto, &len);
       }
-#endif /* TS_USE_TLS_NPN */
 
       if (len) {
         // If there's no NPN set, we should not have done this negotiation.
@@ -1381,7 +1375,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_OUTBOUND_PRE) {
     if (!curHook) {
       Debug("ssl", "Initialize outbound connect curHook from NULL");
-      curHook = ssl_hooks->get(TS_VCONN_OUTBOUND_START_INTERNAL_HOOK);
+      curHook = ssl_hooks->get(TSSslHookInternalID(TS_VCONN_OUTBOUND_START_HOOK));
     } else {
       curHook = curHook->next();
     }
@@ -1517,13 +1511,10 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
   if (netvc->npnSet && netvc->npnSet->advertiseProtocols(&npn, &npnsz)) {
     // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
     // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
-
-#if HAVE_SSL_SELECT_NEXT_PROTO
     if (SSL_select_next_proto((unsigned char **)out, outlen, npn, npnsz, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
       Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
       return SSL_TLSEXT_ERR_OK;
     }
-#endif /* HAVE_SSL_SELECT_NEXT_PROTO */
   }
 
   *out    = nullptr;
@@ -1703,7 +1694,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   case HANDSHAKE_HOOKS_CLIENT_HELLO:
   case HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE:
     if (!curHook) {
-      curHook = ssl_hooks->get(TS_SSL_CLIENT_HELLO_INTERNAL_HOOK);
+      curHook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_CLIENT_HELLO_HOOK));
     } else {
       curHook = curHook->next();
     }
@@ -1717,14 +1708,14 @@ SSLNetVConnection::callHooks(TSEvent eventId)
     // The server verify event addresses ATS to origin handshake
     // All the other events are for client to ATS
     if (!curHook) {
-      curHook = ssl_hooks->get(TS_SSL_VERIFY_SERVER_INTERNAL_HOOK);
+      curHook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_VERIFY_SERVER_HOOK));
     } else {
       curHook = curHook->next();
     }
     break;
   case HANDSHAKE_HOOKS_SNI:
     if (!curHook) {
-      curHook = ssl_hooks->get(TS_SSL_SERVERNAME_INTERNAL_HOOK);
+      curHook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_SERVERNAME_HOOK));
     } else {
       curHook = curHook->next();
     }
@@ -1735,7 +1726,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   case HANDSHAKE_HOOKS_CERT:
   case HANDSHAKE_HOOKS_CERT_INVOKE:
     if (!curHook) {
-      curHook = ssl_hooks->get(TS_SSL_CERT_INTERNAL_HOOK);
+      curHook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_CERT_HOOK));
     } else {
       curHook = curHook->next();
     }
@@ -1748,7 +1739,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   case HANDSHAKE_HOOKS_CLIENT_CERT:
   case HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE:
     if (!curHook) {
-      curHook = ssl_hooks->get(TS_SSL_VERIFY_CLIENT_INTERNAL_HOOK);
+      curHook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_VERIFY_CLIENT_HOOK));
     } else {
       curHook = curHook->next();
     }
@@ -1758,14 +1749,14 @@ SSLNetVConnection::callHooks(TSEvent eventId)
     if (eventId == TS_EVENT_VCONN_CLOSE) {
       sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
       if (curHook == nullptr) {
-        curHook = ssl_hooks->get(TS_VCONN_CLOSE_INTERNAL_HOOK);
+        curHook = ssl_hooks->get(TSSslHookInternalID(TS_VCONN_CLOSE_HOOK));
       } else {
         curHook = curHook->next();
       }
     } else if (eventId == TS_EVENT_VCONN_OUTBOUND_CLOSE) {
       sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
       if (curHook == nullptr) {
-        curHook = ssl_hooks->get(TS_VCONN_OUTBOUND_CLOSE_INTERNAL_HOOK);
+        curHook = ssl_hooks->get(TSSslHookInternalID(TS_VCONN_OUTBOUND_CLOSE_HOOK));
       } else {
         curHook = curHook->next();
       }

@@ -22,8 +22,8 @@
  * @see utils.h
  */
 
-#include <errno.h>          /* errno */
-#include <limits.h>         /* LONG_MIN, LONG_MAX */
+#include <cerrno>           /* errno */
+#include <climits>          /* LONG_MIN, LONG_MAX */
 #include <openssl/bio.h>    /* BIO I/O abstraction */
 #include <openssl/buffer.h> /* buf_mem_st */
 #include <openssl/err.h>    /* ERR_get_error() and ERR_error_string_n() */
@@ -279,7 +279,7 @@ cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen,
 
         /* success */
         result = len;
-      } while (0);
+      } while (false);
 
       EVP_PKEY_free(pkey);
       EVP_MD_CTX_destroy(ctx);

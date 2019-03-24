@@ -36,7 +36,7 @@ monitor()
 {
   std::lock_guard<std::mutex> guard(mutex);
   //	while (0 < inplay)
-  while (1) {
+  while (true) {
     mutex.unlock();
     std::this_thread::sleep_for(std::chrono::seconds(10));
     std::cerr << "Inplay: " << inplay << std::endl;

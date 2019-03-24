@@ -539,6 +539,7 @@ public:
   // Info about client's SSL connection.
   bool client_ssl_reused          = false;
   bool client_connection_is_ssl   = false;
+  bool is_internal                = false;
   const char *client_protocol     = "-";
   const char *client_sec_protocol = "-";
   const char *client_cipher_suite = "-";

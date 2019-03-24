@@ -83,7 +83,7 @@ public:
   void AddRef();
   int GetRefCount();
 
-  int getPortNum(void);
+  int getPortNum();
 
   int GetSendGenerationNumber(); // const
   void SetLastSentPktTSSeqNum(int64_t sentSeqNum);

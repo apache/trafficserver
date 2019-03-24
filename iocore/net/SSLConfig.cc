@@ -42,6 +42,7 @@
 
 #include "P_Net.h"
 #include "P_SSLUtils.h"
+#include "P_SSLClientUtils.h"
 #include "P_SSLCertLookup.h"
 #include "SSLDiags.h"
 #include "SSLSessionCache.h"
@@ -256,10 +257,9 @@ SSLConfigParams::initialize()
 #endif
 
 #ifdef SSL_OP_NO_COMPRESSION
-  /* OpenSSL >= 1.0 only */
   ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
   ssl_client_ctx_options |= SSL_OP_NO_COMPRESSION;
-#elif OPENSSL_VERSION_NUMBER >= 0x00908000L
+#else
   sk_SSL_COMP_zero(SSL_COMP_get_compression_methods());
 #endif
 

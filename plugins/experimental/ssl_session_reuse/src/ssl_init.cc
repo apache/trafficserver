@@ -23,7 +23,7 @@
  */
 
 #include <string>
-#include <string.h>
+#include <cstring>
 #include "ssl_utils.h"
 #include "Config.h"
 #include "common.h"

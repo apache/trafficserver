@@ -119,7 +119,7 @@ autopep8:
 # If you make changes to directory structures, you must update this as well.
 #
 .PHONY:	clang-format-src clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
-	clang-format-plugins clang-format-proxy clang-format-tools
+	clang-format-plugins clang-format-proxy clang-format-tools perltidy
 
 clang-format: 	clang-format-src clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
 		clang-format-plugins clang-format-proxy clang-format-tools clang-format-tests
@@ -151,6 +151,9 @@ clang-format-tools:
 
 clang-format-tests:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/tests
+
+perltidy:
+	perltidy -q -b -bext='/' `find . -name \*.pm -o -name \*.pl`
 
 help:
 	@echo 'all              default target for building the package'

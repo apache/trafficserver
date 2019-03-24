@@ -99,6 +99,7 @@ public:
     processors and you should not modify it directly.
 
   */
+  // NOLINTNEXTLINE(modernize-use-nullptr)
   ink_thread tid = 0;
 
   /**

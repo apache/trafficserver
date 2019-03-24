@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <sys/stat.h>
 #include "tscore/ArgParser.h"
 #include <unordered_map>
 

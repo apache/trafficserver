@@ -26,10 +26,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <string.h>
+#include <cstring>
 #include <pthread.h>
-#include <errno.h>
-#include <math.h>
+#include <cerrno>
+#include <cmath>
 #include <openssl/rand.h>
 #include <pthread.h>
 #include <netinet/in.h>

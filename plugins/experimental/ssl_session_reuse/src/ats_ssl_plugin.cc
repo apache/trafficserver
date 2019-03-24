@@ -22,7 +22,7 @@
 
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <ts/ts.h>
 #include <ts/apidefs.h>
 #include <openssl/ssl.h>

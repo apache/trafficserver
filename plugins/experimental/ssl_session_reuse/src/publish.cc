@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <exception>
-#include <string.h>
+#include <cstring>
 #include <memory>
 #include <ts/ts.h>
 #include "common.h"
@@ -239,6 +239,9 @@ RedisPublisher::runWorker()
     }
 
     Message &current_message(m_messageQueue.front());
+    if (!current_message.cleanup) {
+      m_messageQueue.pop_front();
+    }
 
     m_messageQueueMutex.unlock();
     ::sem_wait(&m_workerSem);
@@ -262,10 +265,6 @@ RedisPublisher::runWorker()
 
         m_messageQueueMutex.unlock();
       }
-    }
-
-    if (!current_message.cleanup) {
-      m_messageQueue.pop_front();
     }
 
     clear_reply(current_reply);

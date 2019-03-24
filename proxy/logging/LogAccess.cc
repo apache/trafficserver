@@ -438,7 +438,7 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
 }
 
 inline int
-LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
+LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFieldAliasMap> &map, const char *msg)
 {
   long int codeStrLen = 0;
 
@@ -951,7 +951,7 @@ LogAccess::unmarshal_ip_to_hex(char **buf, char *dest, int len)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -969,7 +969,7 @@ LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAlia
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -987,7 +987,7 @@ LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogField
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -1005,7 +1005,7 @@ LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAli
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -1015,7 +1015,7 @@ LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFiel
 }
 
 int
-LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -1689,37 +1689,34 @@ int
 LogAccess::marshal_client_req_tcp_reused(char *buf)
 {
   if (buf) {
-    int64_t tcp_reused;
-    tcp_reused = m_http_sm->client_tcp_reused;
-    marshal_int(buf, tcp_reused);
+    marshal_int(buf, m_http_sm->client_tcp_reused ? 1 : 0);
   }
   return INK_MIN_ALIGN;
 }
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 int
 LogAccess::marshal_client_req_is_ssl(char *buf)
 {
   if (buf) {
-    int64_t is_ssl;
-    is_ssl = m_http_sm->client_connection_is_ssl;
-    marshal_int(buf, is_ssl);
+    marshal_int(buf, m_http_sm->client_connection_is_ssl ? 1 : 0);
   }
   return INK_MIN_ALIGN;
 }
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 int
 LogAccess::marshal_client_req_ssl_reused(char *buf)
 {
   if (buf) {
-    int64_t ssl_session_reused;
-    ssl_session_reused = m_http_sm->client_ssl_reused;
-    marshal_int(buf, ssl_session_reused);
+    marshal_int(buf, m_http_sm->client_ssl_reused ? 1 : 0);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_client_req_is_internal(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, m_http_sm->is_internal ? 1 : 0);
   }
   return INK_MIN_ALIGN;
 }

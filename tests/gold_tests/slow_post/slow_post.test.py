@@ -53,9 +53,9 @@ class SlowPostAttack:
         self._ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'http',
-            'proxy.config.http.origin_max_connections': self._origin_max_connections,
+            'proxy.config.http.per_server.connection.max': self._origin_max_connections,
             # Disable queueing when connection reaches limit
-            'proxy.config.http.origin_max_connections_queue': 0,
+            'proxy.config.http.per_server.connection.queue_size': 0,
         })
 
     def run(self):

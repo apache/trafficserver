@@ -1,4 +1,4 @@
-Via header is [uScMsSf pSeN;t cCMp sS], Length is 24
+Via header is [uScMsSf pSeN;t cCMp sS], Length is 22
 Via Header Details:
 Request headers received from client                   :simple request (not conditional)
 Result of Traffic Server cache lookup for URL          :miss (a cache "MISS")

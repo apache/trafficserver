@@ -64,7 +64,7 @@ init_reverse_proxy()
   rewrite_table  = new UrlRewrite();
 
   Note("remap.config loading ...");
-  if (!rewrite_table->is_valid()) {
+  if (!rewrite_table->load()) {
     Fatal("remap.config failed to load");
   }
   Note("remap.config finished loading");
@@ -121,7 +121,7 @@ struct UR_UpdateContinuation : public Continuation {
 bool
 urlRewriteVerify()
 {
-  return UrlRewrite().is_valid();
+  return UrlRewrite().load();
 }
 
 /**
@@ -138,7 +138,7 @@ reloadUrlRewrite()
   Note("remap.config loading ...");
   Debug("url_rewrite", "remap.config updated, reloading...");
   newTable = new UrlRewrite();
-  if (newTable->is_valid()) {
+  if (newTable->load()) {
     static const char *msg = "remap.config finished loading";
 
     // Hold at least one lease, until we reload the configuration
