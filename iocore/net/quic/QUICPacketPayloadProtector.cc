@@ -38,7 +38,7 @@ QUICPacketPayloadProtector::protect(const Ptr<IOBufferBlock> unprotected_header,
   const uint8_t *key = this->_pp_key_info.encryption_key(phase);
   const uint8_t *iv  = this->_pp_key_info.encryption_iv(phase);
   size_t iv_len      = *this->_pp_key_info.encryption_iv_len(phase);
-  if (!key) {
+  if (!key || key[0] == 0x00) {
     Debug(tag, "Failed to encrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return protected_payload;
   }
@@ -52,7 +52,7 @@ QUICPacketPayloadProtector::protect(const Ptr<IOBufferBlock> unprotected_header,
   if (!this->_protect(reinterpret_cast<uint8_t *>(protected_payload->start()), written_len, protected_payload->write_avail(),
                       unprotected_payload, pkt_num, reinterpret_cast<uint8_t *>(unprotected_header->buf()),
                       unprotected_header->size(), key, iv, iv_len, aead, tag_len)) {
-    Debug(tag, "Failed to encrypt a packet #%" PRIu64, pkt_num);
+    Debug(tag, "Failed to encrypt a packet #%" PRIu64 " with keys for %s", pkt_num, QUICDebugNames::key_phase(phase));
     protected_payload = nullptr;
   } else {
     protected_payload->fill(written_len);
