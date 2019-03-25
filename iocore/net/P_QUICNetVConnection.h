@@ -295,6 +295,7 @@ private:
                                   std::vector<QUICFrameInfo> &frames);
   QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size, std::vector<QUICFrameInfo> &frames);
   void _packetize_closing_frame();
+  Ptr<IOBufferBlock> _generate_padding_frame(size_t frame_size);
   QUICPacketUPtr _build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block, bool retransmittable, bool probing,
                                bool crypto);
 

@@ -58,13 +58,14 @@ static constexpr std::string_view QUIC_DEBUG_TAG = "quic_net"sv;
 static constexpr uint32_t IPV4_HEADER_SIZE            = 20;
 static constexpr uint32_t IPV6_HEADER_SIZE            = 40;
 static constexpr uint32_t UDP_HEADER_SIZE             = 8;
-static constexpr uint32_t MAX_PACKET_OVERHEAD         = 62; // Max long header len without length of token field of Initial packet
+static constexpr uint32_t MAX_PACKET_OVERHEAD         = 62; ///< Max long header len without length of token field of Initial packet
 static constexpr uint32_t MINIMUM_INITIAL_PACKET_SIZE = 1200;
 static constexpr ink_hrtime WRITE_READY_INTERVAL      = HRTIME_MSECONDS(2);
 static constexpr uint32_t PACKET_PER_EVENT            = 256;
-static constexpr uint32_t MAX_CONSECUTIVE_STREAMS     = 8; //< Interrupt sending STREAM frames to send ACK frame
+static constexpr uint32_t MAX_CONSECUTIVE_STREAMS     = 8; ///< Interrupt sending STREAM frames to send ACK frame
+static constexpr uint32_t MIN_PKT_PAYLOAD_LEN         = 3; ///< Minimum payload length for sampling for header protection
 
-static constexpr uint32_t STATE_CLOSING_MAX_SEND_PKT_NUM  = 8; // Max number of sending packets which contain a closing frame.
+static constexpr uint32_t STATE_CLOSING_MAX_SEND_PKT_NUM  = 8; ///< Max number of sending packets which contain a closing frame.
 static constexpr uint32_t STATE_CLOSING_MAX_RECV_PKT_WIND = 1 << STATE_CLOSING_MAX_SEND_PKT_NUM;
 
 ClassAllocator<QUICNetVConnection> quicNetVCAllocator("quicNetVCAllocator");
@@ -1501,6 +1502,20 @@ QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_a
   return parent_block;
 }
 
+// FIXME QUICNetVConnection should not know the actual type value of PADDING frame
+Ptr<IOBufferBlock>
+QUICNetVConnection::_generate_padding_frame(size_t frame_size)
+{
+  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(frame_size));
+  memset(block->start(), 0, frame_size);
+  block->fill(frame_size);
+
+  ink_assert(frame_size == static_cast<size_t>(block->size()));
+
+  return block;
+}
+
 QUICPacketUPtr
 QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size, std::vector<QUICFrameInfo> &frames)
 {
@@ -1599,22 +1614,15 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       min_size = std::min(min_size, max_packet_size);
 
       if (min_size > len) {
-        // FIXME QUICNetVConnection should not know the actual type value of PADDING frame
-        Ptr<IOBufferBlock> pad_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-        pad_block->alloc(iobuffer_size_to_index(min_size - len));
-        memset(pad_block->start(), 0, pad_block->size());
-        last_block->next = pad_block;
+        Ptr<IOBufferBlock> pad_block = _generate_padding_frame(min_size - len);
+        last_block->next             = pad_block;
         len += pad_block->size();
       }
     } else {
       // Pad with PADDING frames to make sure payload length satisfy the minimum length for sampling for header protection
-      if (3 > len) {
-        // FIXME QUICNetVConnection should not know the actual type value of PADDING frame
-        Ptr<IOBufferBlock> pad_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-        ;
-        pad_block->alloc(iobuffer_size_to_index(3 - len));
-        memset(pad_block->start(), 0, pad_block->size());
-        last_block->next = pad_block;
+      if (MIN_PKT_PAYLOAD_LEN > len) {
+        Ptr<IOBufferBlock> pad_block = _generate_padding_frame(MIN_PKT_PAYLOAD_LEN - len);
+        last_block->next             = pad_block;
         len += pad_block->size();
       }
     }
