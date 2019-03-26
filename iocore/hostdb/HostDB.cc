@@ -124,6 +124,9 @@ hostdb_cont_free(HostDBContinuation *cont)
   if (cont->pending_action) {
     cont->pending_action->cancel();
   }
+  if (cont->timeout) {
+    cont->timeout->cancel();
+  }
   cont->mutex        = nullptr;
   cont->action.mutex = nullptr;
   hostDBContAllocator.free(cont);
