@@ -87,7 +87,7 @@ public:
   {
     switch (m_logfile->m_file_format) {
     case LOG_FILE_BINARY:
-      logbuffer = (LogBuffer *)m_data;
+      logbuffer = static_cast<LogBuffer *>(m_data);
       LogBuffer::destroy(logbuffer);
       break;
     case LOG_FILE_ASCII:

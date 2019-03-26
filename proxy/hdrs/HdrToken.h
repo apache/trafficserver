@@ -137,11 +137,12 @@ hdrtoken_is_valid_wks_idx(int wks_idx)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// ToDo: This, and dependencies / users should probalby be const HdrTokenHeapPrefix * IMO.
 inline HdrTokenHeapPrefix *
 hdrtoken_wks_to_prefix(const char *wks)
 {
   ink_assert(hdrtoken_is_wks(wks));
-  return ((HdrTokenHeapPrefix *)(wks - sizeof(HdrTokenHeapPrefix)));
+  return reinterpret_cast<HdrTokenHeapPrefix *>(const_cast<char *>(wks) - sizeof(HdrTokenHeapPrefix));
 }
 
 /*-------------------------------------------------------------------------

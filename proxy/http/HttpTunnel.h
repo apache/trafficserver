@@ -517,7 +517,7 @@ inline bool
 HttpTunnelConsumer::is_downstream_from(VConnection *vc)
 {
   HttpTunnelProducer *p = producer;
-  HttpTunnelConsumer *c;
+
   while (p) {
     if (p->vc == vc) {
       return true;
@@ -525,7 +525,8 @@ HttpTunnelConsumer::is_downstream_from(VConnection *vc)
     // The producer / consumer chain can contain a cycle in the case
     // of a blind tunnel so give up if we find ourself (the original
     // consumer).
-    c = p->self_consumer;
+    HttpTunnelConsumer *c = p->self_consumer;
+
     p = (c && c != this) ? c->producer : nullptr;
   }
   return false;

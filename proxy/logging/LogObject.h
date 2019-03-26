@@ -234,12 +234,12 @@ public:
   inline bool
   receives_remote_data() const
   {
-    return m_flags & REMOTE_DATA ? true : false;
+    return (m_flags & REMOTE_DATA) ? true : false;
   }
   inline bool
   writes_to_pipe() const
   {
-    return m_flags & WRITES_TO_PIPE ? true : false;
+    return (m_flags & WRITES_TO_PIPE) ? true : false;
   }
   inline bool
   writes_to_disk()

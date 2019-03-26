@@ -1332,9 +1332,6 @@ LogAccess::validate_unmapped_url()
 void
 LogAccess::validate_unmapped_url_path()
 {
-  int len;
-  char *c;
-
   if (m_client_req_unmapped_url_path_str == nullptr && m_client_req_unmapped_url_host_str == nullptr) {
     // Use unmapped canonical URL as default
     m_client_req_unmapped_url_path_str = m_client_req_unmapped_url_canon_str;
@@ -1343,7 +1340,9 @@ LogAccess::validate_unmapped_url_path()
     m_client_req_unmapped_url_host_str = INVALID_STR;
 
     if (m_client_req_unmapped_url_path_len >= 6) { // xxx:// - minimum schema size
-      c = (char *)memchr((void *)m_client_req_unmapped_url_path_str, ':', m_client_req_unmapped_url_path_len - 1);
+      int len;
+      char *c = (char *)memchr((void *)m_client_req_unmapped_url_path_str, ':', m_client_req_unmapped_url_path_len - 1);
+
       if (c && (len = (int)(c - m_client_req_unmapped_url_path_str)) <= 5) { // 5 - max schema size
         if (len + 2 <= m_client_req_unmapped_url_canon_len && c[1] == '/' && c[2] == '/') {
           len += 3; // Skip "://"
