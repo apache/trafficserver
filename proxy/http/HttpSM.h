@@ -99,7 +99,7 @@ struct HttpVCTableEntry {
 
 struct HttpVCTable {
   static const int vc_table_max_entries = 4;
-  HttpVCTable(HttpSM *);
+  explicit HttpVCTable(HttpSM *);
 
   HttpVCTableEntry *new_entry();
   HttpVCTableEntry *find_entry(VConnection *);

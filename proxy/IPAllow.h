@@ -98,8 +98,8 @@ public:
     using self_type = ACL; ///< Self reference type.
   public:
     ACL()                  = default;
-    ACL(const self_type &) = delete; // no copies.
-    ACL(self_type &&that) noexcept;  // move allowed.
+    ACL(const self_type &) = delete;         // no copies.
+    explicit ACL(self_type &&that) noexcept; // move allowed.
     ~ACL();
 
     self_type &operator=(const self_type &) = delete;
@@ -131,7 +131,7 @@ public:
     IpAllow *_config{nullptr}; ///< The backing configuration.
   };
 
-  IpAllow(const char *config_var);
+  explicit IpAllow(const char *config_var);
 
   void Print();
 

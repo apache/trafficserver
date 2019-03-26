@@ -61,7 +61,7 @@ public:
     LS_N_STATES,
   };
 
-  LogSock(int max_connects = 1);
+  explicit LogSock(int max_connects = 1);
   ~LogSock();
 
   bool pending_any(int *cid, int timeout_msec = 0);

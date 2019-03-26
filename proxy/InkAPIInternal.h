@@ -53,20 +53,13 @@ enum CacheInfoMagic {
 
 struct CacheInfo {
   CryptoHash cache_key;
-  CacheFragType frag_type;
-  char *hostname;
-  int len;
-  time_t pin_in_cache;
-  CacheInfoMagic magic;
+  CacheFragType frag_type = CACHE_FRAG_TYPE_NONE;
+  char *hostname          = nullptr;
+  int len                 = 0;
+  time_t pin_in_cache     = 0;
+  CacheInfoMagic magic    = CACHE_INFO_MAGIC_ALIVE;
 
-  CacheInfo()
-  {
-    frag_type    = CACHE_FRAG_TYPE_NONE;
-    hostname     = nullptr;
-    len          = 0;
-    pin_in_cache = 0;
-    magic        = CACHE_INFO_MAGIC_ALIVE;
-  }
+  CacheInfo() {}
 };
 
 class FileImpl
@@ -268,7 +261,7 @@ class HttpAPIHooks : public FeatureAPIHooks<TSHttpHookID, TS_HTTP_LAST_HOOK>
 class TSSslHookInternalID
 {
 public:
-  constexpr TSSslHookInternalID(TSHttpHookID id) : _id(id - TS_SSL_FIRST_HOOK) {}
+  explicit constexpr TSSslHookInternalID(TSHttpHookID id) : _id(id - TS_SSL_FIRST_HOOK) {}
 
   constexpr operator int() const { return _id; }
 
@@ -295,7 +288,7 @@ class LifecycleAPIHooks : public FeatureAPIHooks<TSLifecycleHookID, TS_LIFECYCLE
 class ConfigUpdateCallback : public Continuation
 {
 public:
-  ConfigUpdateCallback(INKContInternal *contp) : Continuation(contp->mutex.get()), m_cont(contp)
+  explicit ConfigUpdateCallback(INKContInternal *contp) : Continuation(contp->mutex.get()), m_cont(contp)
   {
     SET_HANDLER(&ConfigUpdateCallback::event_handler);
   }

@@ -50,7 +50,7 @@ struct LogSlice {
   // Initialize LogSlice by slice notation,
   // the str looks like: "xxx[0:30]".
   //
-  LogSlice(char *str);
+  explicit LogSlice(char *str);
 
   //
   // Convert slice notation to target string's offset,

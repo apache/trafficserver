@@ -992,9 +992,6 @@ HttpSM::state_read_push_response_header(int event, void *data)
   ink_assert(ua_entry->read_vio == (VIO *)data);
   ink_assert(t_state.current.server == nullptr);
 
-  int64_t data_size  = 0;
-  int64_t bytes_used = 0;
-
   switch (event) {
   case VC_EVENT_EOS:
     ua_entry->eos = true;
@@ -1018,17 +1015,16 @@ HttpSM::state_read_push_response_header(int event, void *data)
   while (ua_buffer_reader->read_avail() && state == PARSE_RESULT_CONT) {
     const char *start = ua_buffer_reader->start();
     const char *tmp   = start;
-    data_size         = ua_buffer_reader->block_read_avail();
+    int64_t data_size = ua_buffer_reader->block_read_avail();
     ink_assert(data_size >= 0);
 
     /////////////////////
     // tokenize header //
     /////////////////////
-    state =
-      t_state.hdr_info.server_response.parse_resp(&http_parser, &tmp, tmp + data_size, false // Only call w/ eof when data exhausted
-      );
+    state = t_state.hdr_info.server_response.parse_resp(&http_parser, &tmp, tmp + data_size,
+                                                        false); // Only call w/ eof when data exhausted
 
-    bytes_used = tmp - start;
+    int64_t bytes_used = tmp - start;
 
     ink_release_assert(bytes_used <= data_size);
     ua_buffer_reader->consume(bytes_used);
@@ -1719,14 +1715,13 @@ HttpSM::state_http_server_open(int event, void *data)
     pending_action = nullptr;
   }
   milestones[TS_MILESTONE_SERVER_CONNECT_END] = Thread::get_hrtime();
-  HttpServerSession *session;
-  NetVConnection *netvc = nullptr;
+  NetVConnection *netvc                       = nullptr;
 
   switch (event) {
   case NET_EVENT_OPEN: {
-    session = (TS_SERVER_SESSION_SHARING_POOL_THREAD == t_state.http_config_param->server_session_sharing_pool) ?
-                THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
-                httpServerSessionAllocator.alloc();
+    HttpServerSession *session = (TS_SERVER_SESSION_SHARING_POOL_THREAD == t_state.http_config_param->server_session_sharing_pool) ?
+                                   THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
+                                   httpServerSessionAllocator.alloc();
     session->sharing_pool  = static_cast<TSServerSessionSharingPoolType>(t_state.http_config_param->server_session_sharing_pool);
     session->sharing_match = static_cast<TSServerSessionSharingMatchType>(t_state.txn_conf->server_session_sharing_match);
 
@@ -4398,8 +4393,6 @@ Lfaild:
 void
 HttpSM::calculate_output_cl(int64_t num_chars_for_ct, int64_t num_chars_for_cl)
 {
-  int i;
-
   if (t_state.range_setup != HttpTransact::RANGE_REQUESTED && t_state.range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
     return;
   }
@@ -4409,7 +4402,7 @@ HttpSM::calculate_output_cl(int64_t num_chars_for_ct, int64_t num_chars_for_cl)
   if (t_state.num_range_fields == 1) {
     t_state.range_output_cl = t_state.ranges[0]._end - t_state.ranges[0]._start + 1;
   } else {
-    for (i = 0; i < t_state.num_range_fields; i++) {
+    for (int i = 0; i < t_state.num_range_fields; i++) {
       if (t_state.ranges[i]._start >= 0) {
         t_state.range_output_cl += boundary_size;
         t_state.range_output_cl += sub_header_size + num_chars_for_ct;
@@ -4446,9 +4439,6 @@ void
 HttpSM::do_range_setup_if_necessary()
 {
   MIMEField *field;
-  INKVConnInternal *range_trans;
-  int field_content_type_len = -1;
-  const char *content_type;
 
   ink_assert(t_state.cache_info.object_read != nullptr);
 
@@ -4492,11 +4482,14 @@ HttpSM::do_range_setup_if_necessary()
       // We have to do the transform on (allowed) multi-range request, *or* if the VC is not pread capable
       if (do_transform) {
         if (api_hooks.get(TS_HTTP_RESPONSE_TRANSFORM_HOOK) == nullptr) {
+          int field_content_type_len = -1;
+          const char *content_type   = t_state.cache_info.object_read->response_get()->value_get(
+            MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &field_content_type_len);
+
           Debug("http_trans", "Unable to accelerate range request, fallback to transform");
-          content_type = t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE,
-                                                                                   &field_content_type_len);
+
           // create a Range: transform processor for requests of type Range: bytes=1-2,4-5,10-100 (eg. multiple ranges)
-          range_trans = transformProcessor.range_transform(
+          INKVConnInternal *range_trans = transformProcessor.range_transform(
             mutex.get(), t_state.ranges, t_state.num_range_fields, &t_state.hdr_info.transform_response, content_type,
             field_content_type_len, t_state.cache_info.object_read->object_size_get());
           api_hooks.append(TS_HTTP_RESPONSE_TRANSFORM_HOOK, range_trans);
@@ -4621,7 +4614,7 @@ HttpSM::do_cache_prepare_update()
 void
 HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_info, bool retry, bool allow_multiple)
 {
-  URL *o_url, *c_url, *s_url;
+  URL *o_url, *s_url;
   bool restore_client_request = false;
 
   ink_assert(!pending_action);
@@ -4643,7 +4636,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   // modify client request to make it have the url we are going to
   // store into the cache
   if (restore_client_request) {
-    c_url = t_state.hdr_info.client_request.url_get();
+    URL *c_url = t_state.hdr_info.client_request.url_get();
     s_url->copy(c_url);
   }
 
@@ -5856,16 +5849,15 @@ HttpSM::issue_cache_update()
 int
 HttpSM::write_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
 {
-  int bufindex;
   int dumpoffset;
-  int done, tmp;
-  IOBufferBlock *block;
+  int done;
 
   dumpoffset = 0;
   do {
-    bufindex = 0;
-    tmp      = dumpoffset;
-    block    = b->get_current_block();
+    IOBufferBlock *block = b->get_current_block();
+    int bufindex         = 0;
+    int tmp              = dumpoffset;
+
     ink_assert(block->write_avail() > 0);
     done = h->print(block->start(), block->write_avail(), &bufindex, &tmp);
     dumpoffset += bufindex;
@@ -6330,7 +6322,6 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
 int
 HttpSM::find_http_resp_buffer_size(int64_t content_length)
 {
-  int64_t buf_size;
   int64_t alloc_index;
 
   if (content_length == HTTP_UNDEFINED_CL) {
@@ -6341,6 +6332,8 @@ HttpSM::find_http_resp_buffer_size(int64_t content_length)
       alloc_index = DEFAULT_RESPONSE_BUFFER_SIZE_INDEX;
     }
   } else {
+    int64_t buf_size;
+
 #ifdef WRITE_AND_TRANSFER
     buf_size = HTTP_HEADER_BUFFER_SIZE + content_length - index_to_buffer_size(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
 #else
@@ -7796,9 +7789,9 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
 
   bool noPortInHost = HttpConfig::m_master.redirection_host_no_port;
 
-  bool isRedirectUrlOriginForm = clientUrl.m_url_impl->m_len_scheme <= 0 && clientUrl.m_url_impl->m_len_user <= 0 &&
-                                 clientUrl.m_url_impl->m_len_password <= 0 && clientUrl.m_url_impl->m_len_host <= 0 &&
-                                 clientUrl.m_url_impl->m_len_port <= 0;
+  bool isRedirectUrlOriginForm = !clientUrl.m_url_impl->m_len_scheme && !clientUrl.m_url_impl->m_len_user &&
+                                 !clientUrl.m_url_impl->m_len_password && !clientUrl.m_url_impl->m_len_host &&
+                                 !clientUrl.m_url_impl->m_len_port;
 
   // check to see if the client request passed a host header, if so copy the host and port from the redirect url and
   // make a new host header

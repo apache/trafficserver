@@ -278,7 +278,10 @@ struct LoggingPreprocContinuation : public Continuation {
     return 0;
   }
 
-  LoggingPreprocContinuation(int idx) : Continuation(nullptr), m_idx(idx) { SET_HANDLER(&LoggingPreprocContinuation::mainEvent); }
+  explicit LoggingPreprocContinuation(int idx) : Continuation(nullptr), m_idx(idx)
+  {
+    SET_HANDLER(&LoggingPreprocContinuation::mainEvent);
+  }
 };
 
 struct LoggingFlushContinuation : public Continuation {
@@ -291,7 +294,10 @@ struct LoggingFlushContinuation : public Continuation {
     return 0;
   }
 
-  LoggingFlushContinuation(int idx) : Continuation(nullptr), m_idx(idx) { SET_HANDLER(&LoggingFlushContinuation::mainEvent); }
+  explicit LoggingFlushContinuation(int idx) : Continuation(nullptr), m_idx(idx)
+  {
+    SET_HANDLER(&LoggingFlushContinuation::mainEvent);
+  }
 };
 
 struct LoggingCollateContinuation : public Continuation {
@@ -1252,11 +1258,10 @@ Log::preproc_thread_main(void *args)
     if (TSSystemState::is_event_system_shut_down()) {
       return nullptr;
     }
-    size_t buffers_preproced = 0;
-    LogConfig *current       = (LogConfig *)configProcessor.get(log_configid);
+    LogConfig *current = static_cast<LogConfig *>(configProcessor.get(log_configid));
 
     if (likely(current)) {
-      buffers_preproced = current->log_object_manager.preproc_buffers(idx);
+      size_t buffers_preproced = current->log_object_manager.preproc_buffers(idx);
 
       // config->increment_space_used(bytes_to_disk);
       // TODO: the bytes_to_disk should be set to Log
@@ -1295,7 +1300,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
     if (TSSystemState::is_event_system_shut_down()) {
       return nullptr;
     }
-    fdata = (LogFlushData *)ink_atomiclist_popall(flush_data_list);
+    fdata = static_cast<LogFlushData *>(ink_atomiclist_popall(flush_data_list));
 
     // invert the list
     //
@@ -1312,7 +1317,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       LogFile *logfile  = fdata->m_logfile.get();
 
       if (logfile->m_file_format == LOG_FILE_BINARY) {
-        logbuffer                      = (LogBuffer *)fdata->m_data;
+        logbuffer                      = static_cast<LogBuffer *>(fdata->m_data);
         LogBufferHeader *buffer_header = logbuffer->header();
 
         buf         = (char *)buffer_header;
@@ -1475,7 +1480,7 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
       }
 
       Debug("log-sock", "pending message ...");
-      header = (LogBufferHeader *)sock->read_alloc(sock_id, &bytes_read);
+      header = static_cast<LogBufferHeader *>(sock->read_alloc(sock_id, &bytes_read));
       if (!header) {
         Debug("log-sock", "Error reading LogBuffer from collation client");
         continue;
@@ -1536,9 +1541,9 @@ Log::match_logobject(LogBufferHeader *header)
     LogFormat fmt("__collation_format__", header->fmt_fieldlist(), header->fmt_printf());
 
     if (fmt.valid()) {
-      LogFileFormat file_format = header->log_object_flags & LogObject::BINARY ?
+      LogFileFormat file_format = (header->log_object_flags & LogObject::BINARY) ?
                                     LOG_FILE_BINARY :
-                                    (header->log_object_flags & LogObject::WRITES_TO_PIPE ? LOG_FILE_PIPE : LOG_FILE_ASCII);
+                                    ((header->log_object_flags & LogObject::WRITES_TO_PIPE) ? LOG_FILE_PIPE : LOG_FILE_ASCII);
 
       obj = new LogObject(&fmt, Log::config->logfile_dir, header->log_filename(), file_format, nullptr,
                           (Log::RollingEnabledValues)Log::config->rolling_enabled, Log::config->collation_preproc_threads,
