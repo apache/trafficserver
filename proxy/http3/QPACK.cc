@@ -297,15 +297,17 @@ QPACK::_encode_prefix(uint16_t largest_reference, uint16_t base_index, IOBufferB
   prefix->fill(ret);
 
   uint16_t delta;
+  prefix->end()[0] = 0x0;
   if (base_index < largest_reference) {
     prefix->end()[0] |= 0x80;
     delta = largest_reference - base_index;
   } else {
     delta = base_index - largest_reference;
   }
+
   if ((ret = xpack_encode_integer(reinterpret_cast<uint8_t *>(prefix->end()),
                                   reinterpret_cast<uint8_t *>(prefix->end() + prefix->write_avail()), delta, 7)) < 0) {
-    return -1;
+    return -2;
   }
   prefix->fill(ret);
 
@@ -872,11 +874,12 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
   uint64_t delta_base_index;
   uint16_t base_index;
   if ((ret = xpack_decode_integer(delta_base_index, pos, pos + remain_len, 7)) < 0 && delta_base_index < 0xFFFF) {
-    return -1;
+    return -2;
   }
+
   if (pos[0] & 0x80) {
     if (delta_base_index == 0) {
-      return -1;
+      return -3;
     }
     base_index = largest_reference - delta_base_index;
   } else {
@@ -923,8 +926,10 @@ QPACK::_decode(EThread *ethread, Continuation *cont, uint64_t stream_id, const u
                HTTPHdr &hdr)
 {
   int event;
-  if (this->_decode_header(header_block, header_block_len, hdr) < 0) {
+  int res = this->_decode_header(header_block, header_block_len, hdr);
+  if (res < 0) {
     event = QPACK_EVENT_DECODE_FAILED;
+    QPACKDebug("decoding header failed (%d)", res);
   } else {
     event = QPACK_EVENT_DECODE_COMPLETE;
     this->_write_header_acknowledgement(stream_id);
