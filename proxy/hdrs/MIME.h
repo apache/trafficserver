@@ -784,12 +784,12 @@ uint32_t mime_parse_uint(const char *buf, const char *end = nullptr);
 int64_t mime_parse_int64(const char *buf, const char *end = nullptr);
 int mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp);
 time_t mime_parse_date(const char *buf, const char *end = nullptr);
-int mime_parse_day(const char *&buf, const char *end, int *day);
-int mime_parse_month(const char *&buf, const char *end, int *month);
-int mime_parse_mday(const char *&buf, const char *end, int *mday);
-int mime_parse_year(const char *&buf, const char *end, int *year);
-int mime_parse_time(const char *&buf, const char *end, int *hour, int *min, int *sec);
-int mime_parse_integer(const char *&buf, const char *end, int *integer);
+bool mime_parse_day(const char *&buf, const char *end, int *day);
+bool mime_parse_month(const char *&buf, const char *end, int *month);
+bool mime_parse_mday(const char *&buf, const char *end, int *mday);
+bool mime_parse_year(const char *&buf, const char *end, int *year);
+bool mime_parse_time(const char *&buf, const char *end, int *hour, int *min, int *sec);
+bool mime_parse_integer(const char *&buf, const char *end, int *integer);
 
 /***********************************************************************
  *                                                                     *

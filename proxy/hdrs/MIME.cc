@@ -3061,12 +3061,18 @@ mime_parse_int(const char *buf, const char *end)
     return 0;
   }
 
-  if (is_digit(*buf)) // fast case
-  {
+  if (is_digit(*buf)) { // fast case
     num = *buf++ - '0';
     while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) + (*buf++ - '0');
+      if (num != INT_MAX) {
+        int new_num = (num * 10) + (*buf++ - '0');
+
+        num = (new_num < num ? INT_MAX : new_num); // Check for overflow
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
     }
+
     return num;
   } else {
     num      = 0;
@@ -3083,7 +3089,13 @@ mime_parse_int(const char *buf, const char *end)
     // NOTE: we first compute the value as negative then correct the
     // sign back to positive. This enables us to correctly parse MININT.
     while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) - (*buf++ - '0');
+      if (num != INT_MIN) {
+        int new_num = (num * 10) - (*buf++ - '0');
+
+        num = (new_num > num ? INT_MIN : new_num); // Check for overflow, so to speak, see above re: negative
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
     }
 
     if (!negative) {
@@ -3418,7 +3430,7 @@ mime_parse_date(const char *buf, const char *end)
   return t;
 }
 
-int
+bool
 mime_parse_day(const char *&buf, const char *end, int *day)
 {
   const char *e;
@@ -3434,14 +3446,14 @@ mime_parse_day(const char *&buf, const char *end, int *day)
 
   *day = day_names_dfa->match({buf, size_t(e - buf)});
   if (*day < 0) {
-    return 0;
+    return false;
   } else {
     buf = e;
-    return 1;
+    return true;
   }
 }
 
-int
+bool
 mime_parse_month(const char *&buf, const char *end, int *month)
 {
   const char *e;
@@ -3457,20 +3469,20 @@ mime_parse_month(const char *&buf, const char *end, int *month)
 
   *month = month_names_dfa->match({buf, size_t(e - buf)});
   if (*month < 0) {
-    return 0;
+    return false;
   } else {
     buf = e;
-    return 1;
+    return true;
   }
 }
 
-int
+bool
 mime_parse_mday(const char *&buf, const char *end, int *mday)
 {
   return mime_parse_integer(buf, end, mday);
 }
 
-int
+bool
 mime_parse_year(const char *&buf, const char *end, int *year)
 {
   int val;
@@ -3480,7 +3492,7 @@ mime_parse_year(const char *&buf, const char *end, int *year)
   }
 
   if ((buf == end) || (*buf == '\0')) {
-    return 0;
+    return false;
   }
 
   val = 0;
@@ -3497,59 +3509,88 @@ mime_parse_year(const char *&buf, const char *end, int *year)
 
   *year = val;
 
-  return 1;
+  return true;
 }
 
-int
+bool
 mime_parse_time(const char *&buf, const char *end, int *hour, int *min, int *sec)
 {
   if (!mime_parse_integer(buf, end, hour)) {
-    return 0;
+    return false;
   }
   if (!mime_parse_integer(buf, end, min)) {
-    return 0;
+    return false;
   }
   if (!mime_parse_integer(buf, end, sec)) {
-    return 0;
+    return false;
   }
-  return 1;
+  return true;
 }
 
-// TODO: Do we really need mime_parse_int() and mime_parse_integer() ? I know
-// they have slightly different prototypes, but still...
-int
+// This behaves slightly different than mime_parse_int(), int that we actually
+// return a "bool" for success / failure on "reasonable" parsing. This kinda
+// dumb, because we have two interfaces, where one does not move along the
+// buf pointer, but this one does (and the ones using this function do).
+bool
 mime_parse_integer(const char *&buf, const char *end, int *integer)
 {
-  int val;
-  bool negative;
-
-  negative = false;
-
   while ((buf != end) && *buf && !is_digit(*buf) && (*buf != '-')) {
     buf += 1;
   }
 
   if ((buf == end) || (*buf == '\0')) {
-    return 0;
+    return false;
   }
 
-  if (*buf == '-') {
-    negative = true;
-    buf += 1;
-  }
+  int32_t num;
+  bool negative;
 
-  val = 0;
-  while ((buf != end) && is_digit(*buf)) {
-    val = (val * 10) + (*buf++ - '0');
-  }
+  // This code is copied verbatim from mime_parse_int ... Sigh. Maybe amc is right, and
+  // we really need to clean this up. But, as such, we should redo all these interfaces,
+  // and that's a big undertaking (and we'd want to move these strings all to string_view's).
+  if (is_digit(*buf)) { // fast case
+    num = *buf++ - '0';
+    while ((buf != end) && is_digit(*buf)) {
+      if (num != INT_MAX) {
+        int new_num = (num * 10) + (*buf++ - '0');
 
-  if (negative) {
-    *integer = -val;
+        num = (new_num < num ? INT_MAX : new_num); // Check for overflow
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
+    }
   } else {
-    *integer = val;
+    num      = 0;
+    negative = false;
+
+    while ((buf != end) && ParseRules::is_space(*buf)) {
+      buf += 1;
+    }
+
+    if ((buf != end) && (*buf == '-')) {
+      negative = true;
+      buf += 1;
+    }
+    // NOTE: we first compute the value as negative then correct the
+    // sign back to positive. This enables us to correctly parse MININT.
+    while ((buf != end) && is_digit(*buf)) {
+      if (num != INT_MIN) {
+        int new_num = (num * 10) - (*buf++ - '0');
+
+        num = (new_num > num ? INT_MIN : new_num); // Check for overflow, so to speak, see above re: negative
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
+    }
+
+    if (!negative) {
+      num = -num;
+    }
   }
 
-  return 1;
+  *integer = num;
+
+  return true;
 }
 
 /***********************************************************************
