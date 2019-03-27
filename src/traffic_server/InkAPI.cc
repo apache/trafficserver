@@ -5037,9 +5037,10 @@ TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   HdrHeapSDKHandle **handle = &(sm->t_state.cache_resp_hdr_heap_handle);
 
   if (*handle == nullptr) {
-    *handle           = (HdrHeapSDKHandle *)sm->t_state.arena.alloc(sizeof(HdrHeapSDKHandle));
-    (*handle)->m_heap = cached_hdr->m_heap;
+    *handle = (HdrHeapSDKHandle *)sm->t_state.arena.alloc(sizeof(HdrHeapSDKHandle));
   }
+  // Always reset the m_heap to make sure the heap is not stale
+  (*handle)->m_heap = cached_hdr->m_heap;
 
   *(reinterpret_cast<HdrHeapSDKHandle **>(bufp)) = *handle;
   *obj                                           = reinterpret_cast<TSMLoc>(cached_hdr->m_http);
