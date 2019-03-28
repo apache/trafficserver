@@ -372,9 +372,12 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
     break;
   case CC_NEVER_CACHE:
     if (this->CheckForMatch(h_rdata, result->never_line) == true) {
-      result->never_cache = true;
-      result->never_line  = this->line_num;
-      match               = true;
+      // ttl-in-cache overrides never-cache
+      if (result->ttl_line == -1) {
+        result->never_cache = true;
+        result->never_line  = this->line_num;
+        match               = true;
+      }
     }
     break;
   case CC_STANDARD_CACHE:
