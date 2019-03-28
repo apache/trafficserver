@@ -56,13 +56,13 @@ Config::loadConfig(const std::string &filename)
 
   m_filename = filename;
 
-  int fd = (this->m_filename.length() > 0 ? open(m_filename.c_str(), O_RDONLY) : 0);
+  int fd = (this->m_filename.length() > 0 ? open(m_filename.c_str(), O_RDONLY) : ts::NO_FD);
   struct stat info;
-  if (0 == fstat(fd, &info)) {
+  if (fd > 0 && 0 == fstat(fd, &info)) {
     size_t n = info.st_size;
     std::string config_data;
     config_data.resize(n);
-    if (read(fd, const_cast<char *>(config_data.data()), n) < 0) {
+    if (read(fd, const_cast<char *>(config_data.data()), n) != n) {
       close(fd);
       return success;
     }
