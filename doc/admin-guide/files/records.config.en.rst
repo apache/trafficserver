@@ -2712,7 +2712,7 @@ HostDB
 
     Set the interval (in seconds) in which to re-query DNS regardless of TTL status.
 
-.. ts:cv:: CONFIG proxy.config.hostdb.filename STRING "host.db"
+.. ts:cv:: CONFIG proxy.config.hostdb.filename STRING host.db
 
    The filename to persist hostdb to on disk.
 

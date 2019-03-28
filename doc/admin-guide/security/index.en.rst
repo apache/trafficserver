@@ -146,7 +146,7 @@ Client/Traffic Server connections, you must do the following:
    The list of acceptable CA signers is configured with
    :ts:cv:`proxy.config.ssl.CA.cert.path` in :file:`records.config`. ::
 
-        CONFIG proxy.config.ssl.CA.cert.path STRING "/opt/CA/certs/private-ca.pem"
+        CONFIG proxy.config.ssl.CA.cert.path STRING /opt/CA/certs/private-ca.pem
 
 #. Run the command :option:`traffic_ctl server restart` to restart Traffic Server.
 
@@ -208,16 +208,16 @@ and origin server connections, you must do the following:
    :file:`records.config` in the setting :ts:cv:`proxy.config.ssl.client.cert.path`
    and :ts:cv:`proxy.config.ssl.client.cert.filename`. ::
 
-        CONFIG proxy.config.ssl.client.cert.path STRING "/opt/ts/etc/ssl/certs/"
-        CONFIG proxy.config.ssl.client.cert.filename STRING "client.pem"
+        CONFIG proxy.config.ssl.client.cert.path STRING /opt/ts/etc/ssl/certs/
+        CONFIG proxy.config.ssl.client.cert.filename STRING client.pem
 
    You must also provide the paths to the private key for this certificate,
    unless the key is contained within the same file as the certificate, using
    :ts:cv:`proxy.config.ssl.client.private_key.path` and
    :ts:cv:`proxy.config.ssl.client.private_key.filename`. ::
 
-        CONFIG proxy.config.ssl.client.private_key.path STRING "/opt/ts/etc/ssl/keys/"
-        CONFIG proxy.config.ssl.client.private_key.filename STRING "client.pem"
+        CONFIG proxy.config.ssl.client.private_key.path STRING /opt/ts/etc/ssl/keys/
+        CONFIG proxy.config.ssl.client.private_key.filename STRING client.pem
 
 #. Enable or disable, per your security policy, server SSL certificate
    verification using :ts:cv:`proxy.config.ssl.client.verify.server.policy` in
@@ -230,8 +230,8 @@ and origin server connections, you must do the following:
    :ts:cv:`proxy.config.ssl.client.CA.cert.path` and
    :ts:cv:`proxy.config.ssl.client.CA.cert.filename`. ::
 
-        CONFIG proxy.config.ssl.client.CA.cert.path STRING "/opt/ts/etc/ssl/certs/"
-        CONFIG proxy.config.ssl.client.CA.cert.filename STRING "CAs.pem"
+        CONFIG proxy.config.ssl.client.CA.cert.path STRING /opt/ts/etc/ssl/certs/
+        CONFIG proxy.config.ssl.client.CA.cert.filename STRING CAs.pem
 
 #. Run the command :option:`traffic_ctl server restart` to restart Traffic Server.
 

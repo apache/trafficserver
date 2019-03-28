@@ -35,7 +35,7 @@ occurs, follow the steps below:
 #. Set :ts:cv:`proxy.config.alarm_email` in :file:`records.config` to the email
    address you want to receive alarm notifications. ::
 
-        CONFIG proxy.config.alarm_email STRING "alerts@example.com"
+        CONFIG proxy.config.alarm_email STRING alerts@example.com
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
