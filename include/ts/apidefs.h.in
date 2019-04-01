@@ -1287,5 +1287,12 @@ typedef enum {
 typedef struct tsapi_uuid *TSUuid;
 
 #ifdef __cplusplus
+namespace ts
+{
+  static const int NO_FD = -1; ///< No or invalid file descriptor.
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif /* __cplusplus */
