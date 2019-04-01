@@ -4934,6 +4934,43 @@ TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int *length)
 }
 
 TSReturnCode
+TSHttpHdrEffectiveUrlBufGet(TSMBuffer hdr_buf, TSMLoc hdr_loc, char *buf, int64_t size, int64_t *length)
+{
+  sdk_assert(sdk_sanity_check_mbuffer(hdr_buf) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_http_hdr_handle(hdr_loc) == TS_SUCCESS);
+  if (size) {
+    sdk_assert(sdk_sanity_check_null_ptr(buf) == TS_SUCCESS);
+  }
+  sdk_assert(sdk_sanity_check_null_ptr(length) == TS_SUCCESS);
+
+  auto buf_handle = reinterpret_cast<HTTPHdr *>(hdr_buf);
+  auto hdr_handle = reinterpret_cast<HTTPHdrImpl *>(hdr_loc);
+
+  if (hdr_handle->m_polarity != HTTP_TYPE_REQUEST) {
+    Debug("plugin", "Trying to get a URL from response header %p", hdr_loc);
+    return TS_ERROR;
+  }
+
+  int url_length = buf_handle->url_printed_length();
+
+  sdk_assert(url_length >= 0);
+
+  *length = url_length;
+
+  // If the user-provided buffer is too small to hold the URL string, do not put anything in it.  This is not considered
+  // an error case.
+  //
+  if (url_length <= size) {
+    int index  = 0;
+    int offset = 0;
+
+    buf_handle->url_print(buf, size, &index, &offset, true);
+  }
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);

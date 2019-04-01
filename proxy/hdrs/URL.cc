@@ -611,7 +611,7 @@ url_clear_string_ref(URLImpl *url)
 }
 
 char *
-url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
+url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length, bool normalized)
 {
   if (!url) {
     return nullptr;
@@ -630,7 +630,7 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
 
     /* stuff alloc'd here gets gc'd on HdrHeap::destroy() */
     buf = heap->allocate_str(len + 1);
-    url_print(url, buf, len, &index, &offset);
+    url_print(url, buf, len, &index, &offset, normalized);
     buf[len] = '\0';
 
     if (length) {
@@ -644,7 +644,7 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
 }
 
 char *
-url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
+url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap, bool normalized)
 {
   int len = url_length_get(url);
   char *buf;
@@ -654,7 +654,7 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
 
   buf = arena ? arena->str_alloc(len) : (char *)ats_malloc(len + 1);
 
-  url_print(url, buf, len, &index, &offset);
+  url_print(url, buf, len, &index, &offset, normalized);
   buf[len] = '\0';
 
   /* see string_get_ref() */
@@ -1516,14 +1516,15 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
  ***********************************************************************/
 
 int
-url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout, bool normalize)
 {
 #define TRY(x) \
   if (!x)      \
   return 0
 
   if (url->m_ptr_scheme) {
-    TRY(mime_mem_print(url->m_ptr_scheme, url->m_len_scheme, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY((normalize ? mime_mem_print_lc : mime_mem_print)(url->m_ptr_scheme, url->m_len_scheme, buf_start, buf_length,
+                                                         buf_index_inout, buf_chars_to_skip_inout));
     // [amc] Why is "file:" special cased to be wrong?
     //    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
     //      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
@@ -1550,7 +1551,8 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     if (bracket_p) {
       TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
-    TRY(mime_mem_print(url->m_ptr_host, url->m_len_host, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY((normalize ? mime_mem_print_lc : mime_mem_print)(url->m_ptr_host, url->m_len_host, buf_start, buf_length, buf_index_inout,
+                                                         buf_chars_to_skip_inout));
     if (bracket_p) {
       TRY(mime_mem_print("]", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
