@@ -23,8 +23,10 @@ Regression testing code for TS API.  Not comprehensive, hopefully will be built 
 #include <fstream>
 #include <cstdlib>
 #include <string_view>
+#include <string>
 
 #include <ts/ts.h>
+#include <tscpp/util/PostScript.h>
 
 // TSReleaseAssert() doesn't seem to produce any logging output for a debug build, so do both kinds of assert.
 //
@@ -62,6 +64,48 @@ testsForReadReqHdrHook(TSHttpTxn txn)
     logFile << std::string_view(urlStr, urlLength) << std::endl;
 
     TSfree(urlStr);
+  }
+
+  logFile << "TSHttpHdrEffectiveUrlBufGet():  ";
+  {
+    TSMBuffer hbuf;
+    TSMLoc hloc;
+
+    if (TSHttpTxnClientReqGet(txn, &hbuf, &hloc) != TS_SUCCESS) {
+      logFile << "failed to get client request" << std::endl;
+
+    } else {
+      ts::PostScript ps([=]() -> void { TSHandleMLocRelease(hbuf, TS_NULL_MLOC, hloc); });
+
+      int64_t url_length;
+
+      if (TSHttpHdrEffectiveUrlBufGet(hbuf, hloc, nullptr, 0, &url_length) != TS_SUCCESS) {
+        logFile << "sizing call failed " << std::endl;
+
+      } else if (0 == url_length) {
+        logFile << "zero URL length returned" << std::endl;
+
+      } else {
+        std::string s(url_length, '?');
+
+        s += "yada";
+
+        int64_t url_length2;
+
+        if (TSHttpHdrEffectiveUrlBufGet(hbuf, hloc, s.data(), url_length + 4, &url_length2) != TS_SUCCESS) {
+          logFile << "data-obtaining call failed" << std::endl;
+
+        } else if (url_length2 != url_length) {
+          logFile << "second size does not match first" << std::endl;
+
+        } else if (s.substr(url_length, 4) != "yada") {
+          logFile << "overwrite" << std::endl;
+
+        } else {
+          logFile << s.substr(0, url_length) << std::endl;
+        }
+      }
+    }
   }
 }
 

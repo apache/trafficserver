@@ -65,17 +65,17 @@ tr = Test.AddTestRun()
 # Probe server port to check if ready.
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 # Probe TS cleartext port to check if ready.
-tr.Processes.Default.StartBefore(Test.Processes.ts)
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
 #
 tr.Processes.Default.Command = (
-    'curl --verbose --ipv4 --header "Host: myhost.test:{0}" http://localhost:{1}/'.format(server.Variables.Port, ts.Variables.port)
+    'curl --verbose --ipv4 --header "Host: mYhOsT.teSt:{0}" hTtP://loCalhOst:{1}/'.format(server.Variables.Port, ts.Variables.port)
 )
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http2 --insecure --header ' +
-    '"Host: myhost.test:{0}" https://localhost:{1}/'.format(server.Variables.Port, ts.Variables.ssl_port)
+    '"Host: myhost.test:{0}" HttPs://LocalHost:{1}/'.format(server.Variables.Port, ts.Variables.ssl_port)
 )
 tr.Processes.Default.ReturnCode = 0
 

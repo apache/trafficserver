@@ -164,13 +164,13 @@ URLImpl *url_copy(URLImpl *s_url, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit
 void url_copy_onto(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
 void url_copy_onto_as_server_url(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
 
-int url_print(URLImpl *u, char *buf, int bufsize, int *bufindex, int *dumpoffset);
+int url_print(URLImpl *u, char *buf, int bufsize, int *bufindex, int *dumpoffset, bool normalized = false);
 void url_describe(HdrHeapObjImpl *raw, bool recurse);
 
 int url_length_get(URLImpl *url);
-char *url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap);
+char *url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap, bool normalized = false);
 void url_clear_string_ref(URLImpl *url);
-char *url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length);
+char *url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length, bool normalized = false);
 void url_called_set(URLImpl *url);
 char *url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length);
 
@@ -238,12 +238,12 @@ public:
   // Note that URL::destroy() is inherited from HdrHeapSDKHandle.
   void nuke_proxy_stuff();
 
-  int print(char *buf, int bufsize, int *bufindex, int *dumpoffset);
+  int print(char *buf, int bufsize, int *bufindex, int *dumpoffset, bool normalized = false);
 
   int length_get();
   void clear_string_ref();
-  char *string_get(Arena *arena, int *length = nullptr);
-  char *string_get_ref(int *length = nullptr);
+  char *string_get(Arena *arena, int *length = nullptr, bool normalized = false);
+  char *string_get_ref(int *length = nullptr, bool normalized = false);
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = nullptr);
   void hash_get(CryptoHash *hash, cache_generation_t generation = -1) const;
   void host_hash_get(CryptoHash *hash);
@@ -372,10 +372,10 @@ URL::nuke_proxy_stuff()
   -------------------------------------------------------------------------*/
 
 inline int
-URL::print(char *buf, int bufsize, int *bufindex, int *dumpoffset)
+URL::print(char *buf, int bufsize, int *bufindex, int *dumpoffset, bool normalized)
 {
   ink_assert(valid());
-  return url_print(m_url_impl, buf, bufsize, bufindex, dumpoffset);
+  return url_print(m_url_impl, buf, bufsize, bufindex, dumpoffset, normalized);
 }
 
 /*-------------------------------------------------------------------------
@@ -392,17 +392,17 @@ URL::length_get()
   -------------------------------------------------------------------------*/
 
 inline char *
-URL::string_get(Arena *arena_or_null_for_malloc, int *length)
+URL::string_get(Arena *arena_or_null_for_malloc, int *length, bool normalized)
 {
   ink_assert(valid());
-  return url_string_get(m_url_impl, arena_or_null_for_malloc, length, m_heap);
+  return url_string_get(m_url_impl, arena_or_null_for_malloc, length, m_heap, normalized);
 }
 
 inline char *
-URL::string_get_ref(int *length)
+URL::string_get_ref(int *length, bool normalized)
 {
   ink_assert(valid());
-  return url_string_get_ref(m_heap, m_url_impl, length);
+  return url_string_get_ref(m_heap, m_url_impl, length, normalized);
 }
 
 inline void
