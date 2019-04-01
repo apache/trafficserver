@@ -26,6 +26,7 @@
 #define _I_EventSystem_h
 
 #include "tscore/ink_platform.h"
+#include "ts/apidefs.h"
 
 #include "I_IOBuffer.h"
 #include "I_Action.h"
