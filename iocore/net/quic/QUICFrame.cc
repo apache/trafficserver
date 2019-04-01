@@ -1040,6 +1040,13 @@ QUICRstStreamFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   return *len;
 }
 
+int
+QUICRstStreamFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  return snprintf(msg, msg_len, "| RESET_STREAM size=%zu stream_id=%" PRIu64 " code=0x%" PRIx16, this->size(), this->stream_id(),
+                  this->error_code());
+}
+
 QUICStreamId
 QUICRstStreamFrame::stream_id() const
 {
