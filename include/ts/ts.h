@@ -384,7 +384,8 @@ tsapi int TSUrlLengthGet(TSMBuffer bufp, TSMLoc offset);
     The length parameter must present, providing storage for the URL
     string length value.
     Note: To get the effective URL from a request, use the alternative
-          TSHttpTxnEffectiveUrlStringGet API.
+          TSHttpTxnEffectiveUrlStringGet or
+          TSHttpTxnEffectiveNormalizedUrlStringGet APIs.
 
     @param bufp marshal buffer containing the URL you want to get.
     @param offset location of the URL within bufp.
@@ -1288,6 +1289,18 @@ tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSML
     after use with @c TSfree.
 */
 tsapi char *TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int *length /**< String length return, may be @c NULL. */
+);
+
+/** Get the effective URL for the transaction, with the scheme and host normalized to lower case letter.
+    The effective URL is the URL taking in to account both the explicit
+    URL in the request and the HOST field.
+
+    A possibly non-null terminated string is returned.
+
+    @note The returned string is allocated and must be freed by the caller
+    after use with @c TSfree.
+*/
+tsapi char *TSHttpTxnEffectiveNormalizedUrlStringGet(TSHttpTxn txnp, int *length /**< String length return, may be @c NULL. */
 );
 
 tsapi void TSHttpTxnRespCacheableSet(TSHttpTxn txnp, int flag);

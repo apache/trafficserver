@@ -542,8 +542,9 @@ public:
       and invoking @c URL::string_get if the host is in a header
       field and not explicitly in the URL.
    */
-  char *url_string_get(Arena *arena = nullptr, ///< Arena to use, or @c malloc if NULL.
-                       int *length  = nullptr  ///< Store string length here.
+  char *url_string_get(Arena *arena    = nullptr, ///< Arena to use, or @c malloc if NULL.
+                       int *length     = nullptr, ///< Store string length here.
+                       bool normalized = false    ///< Scheme and host normalized to lower case letters.
   );
   /** Get a string with the effective URL in it.
       This is automatically allocated if needed in the request heap.

@@ -766,6 +766,8 @@ int mime_hdr_print(HdrHeap *heap, MIMEHdrImpl *mh, char *buf_start, int buf_leng
                    int *buf_chars_to_skip_inout);
 int mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout,
                    int *buf_chars_to_skip_inout);
+int mime_mem_print_lc(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout,
+                      int *buf_chars_to_skip_inout);
 int mime_field_print(MIMEField *field, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout);
 
 const char *mime_str_u16_set(HdrHeap *heap, const char *s_str, int s_len, const char **d_str, uint16_t *d_len, bool must_copy);

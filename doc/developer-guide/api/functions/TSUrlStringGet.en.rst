@@ -31,6 +31,7 @@ Synopsis
 
 .. function:: char * TSUrlStringGet(TSMBuffer bufp, TSMLoc offset, int * length)
 .. function:: char * TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txn, int * length)
+.. function:: char * TSHttpTxnEffectiveNormalizedUrlStringGet(TSHttpTxn txn, int * length)
 .. function:: int TSUrlLengthGet(TSMBuffer bufp, TSMLoc offset)
 .. function:: void TSUrlPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp)
 
@@ -59,6 +60,9 @@ attempt is made to de-reference it.
 
 This function is useful to guarantee a URL that is as complete as possible given
 the specific request.
+
+:func:`TSHttpTxnEffectiveNormalizedUrlStringGet` is the same as :func:`TSHttpTxnEffectiveUrlStringGet`,
+except that the host and scheme in the URL will be normalized to all lowercase letters.
 
 :func:`TSUrlLengthGet` calculates the length of the URL located at
 :arg:`offset` within the marshal buffer bufp as if it were returned as a

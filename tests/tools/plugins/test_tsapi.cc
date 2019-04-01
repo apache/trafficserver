@@ -63,6 +63,20 @@ testsForReadReqHdrHook(TSHttpTxn txn)
 
     TSfree(urlStr);
   }
+
+  logFile << "TSHttpTxnEffectiveNormalizedUrlStringGet():  ";
+  urlStr = TSHttpTxnEffectiveNormalizedUrlStringGet(txn, &urlLength);
+  if (!urlStr) {
+    logFile << "URL null" << std::endl;
+  } else if (0 == urlLength) {
+    logFile << "URL length zero" << std::endl;
+  } else if (0 > urlLength) {
+    logFile << "URL length negative" << std::endl;
+  } else {
+    logFile << std::string_view(urlStr, urlLength) << std::endl;
+
+    TSfree(urlStr);
+  }
 }
 
 int
