@@ -133,7 +133,7 @@ Example
 
 	Add the remap rule like
 
-		map http://test-remap.domain.com http://google.com @plugin=url_sig.so @pparam=sign_test.config
+		map http://test-remap.domain.com http://google.com @plugin=url_sig.so @pparam=sign_test.config @pparam=pristineurl
 
 	Restart traffic server or traffic_ctl config reload  - verify there are no errors in diags.log
 
