@@ -25,6 +25,7 @@
 #include "wccp/Wccp.h"
 #include "WccpUtil.h"
 #include "tscore/TsBuffer.h"
+#include "ts/apidefs.h"
 // Needed for template use of byte ordering functions.
 #include <netinet/in.h>
 #include <memory.h>
