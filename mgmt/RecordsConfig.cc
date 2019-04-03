@@ -1186,7 +1186,9 @@ static const RecordElement RecordsConfig[] =
   //        # Update period for stapling caches. 60s (1 min) by default.
   {RECT_CONFIG, "proxy.config.ssl.ocsp.update_period", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
   ,
-
+  //        # Base path for OCSP prefetched responses
+  {RECT_CONFIG, "proxy.config.ssl.ocsp.response.path", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   //##############################################################################
   //#
   //# Configuration for TLSv1.3 and above

@@ -3516,6 +3516,14 @@ OCSP Stapling Configuration
 
    Update period (in seconds) for stapling caches.
 
+.. ts:cv:: CONFIG proxy.config.ssl.ocsp.response.path STRING NULL
+
+   The directory path of the prefetched OCSP stapling responses. Change this
+   variable only if you intend to use and administratively maintain
+   prefetched OCSP stapling responses. All stapling responses listed in
+   :file:`ssl_multicert.config` will be loaded relative to this
+   path.
+
 HTTP/2 Configuration
 ====================
 

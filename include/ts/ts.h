@@ -1234,7 +1234,7 @@ tsapi TSSslConnection TSVConnSSLConnectionGet(TSVConn sslp);
 tsapi TSSslContext TSSslContextFindByName(const char *name);
 tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const *);
 /*  Create a new SSL context based on the settings in records.config */
-tsapi TSSslContext TSSslServerContextCreate(TSSslX509 cert, const char *certname);
+tsapi TSSslContext TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file);
 tsapi void TSSslContextDestroy(TSSslContext ctx);
 tsapi void TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen);
 tsapi TSNextProtocolSet TSUnregisterProtocol(TSNextProtocolSet protoset, const char *protocol);

@@ -8998,7 +8998,7 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
 }
 
 tsapi TSSslContext
-TSSslServerContextCreate(TSSslX509 cert, const char *certname)
+TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file)
 {
   TSSslContext ret        = nullptr;
   SSLConfigParams *config = SSLConfig::acquire();
@@ -9007,7 +9007,7 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname)
 #if TS_USE_TLS_OCSP
     if (ret && SSLConfigParams::ssl_ocsp_enabled && cert && certname) {
       if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ret), ssl_callback_ocsp_stapling)) {
-        if (!ssl_stapling_init_cert(reinterpret_cast<SSL_CTX *>(ret), reinterpret_cast<X509 *>(cert), certname)) {
+        if (!ssl_stapling_init_cert(reinterpret_cast<SSL_CTX *>(ret), reinterpret_cast<X509 *>(cert), certname, rsp_file)) {
           Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
         }
       }
