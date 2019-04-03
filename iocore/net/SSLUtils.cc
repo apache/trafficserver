@@ -69,6 +69,7 @@ using namespace std::literals;
 static constexpr std::string_view SSL_IP_TAG("dest_ip"sv);
 static constexpr std::string_view SSL_CERT_TAG("ssl_cert_name"sv);
 static constexpr std::string_view SSL_PRIVATE_KEY_TAG("ssl_key_name"sv);
+static constexpr std::string_view SSL_OCSP_RESPONSE_TAG("ssl_ocsp_name"sv);
 static constexpr std::string_view SSL_CA_TAG("ssl_ca_name"sv);
 static constexpr std::string_view SSL_ACTION_TAG("action"sv);
 static constexpr std::string_view SSL_ACTION_TUNNEL_TAG("tunnel"sv);
@@ -1360,26 +1361,6 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, co
   SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, nullptr);
   SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, nullptr);
 
-#if TS_USE_TLS_OCSP
-  if (SSLConfigParams::ssl_ocsp_enabled) {
-    Debug("ssl", "SSL OCSP Stapling is enabled");
-    SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
-    const char *cert_name = sslMultCertSettings ? sslMultCertSettings->cert.get() : nullptr;
-
-    for (auto cert : cert_list) {
-      if (!ssl_stapling_init_cert(ctx, cert, cert_name)) {
-        Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", cert_name);
-      }
-    }
-  } else {
-    Debug("ssl", "SSL OCSP Stapling is disabled");
-  }
-#else
-  if (SSLConfigParams::ssl_ocsp_enabled) {
-    Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
-  }
-#endif /* TS_USE_TLS_OCSP */
-
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(ctx, true);
   }
@@ -1526,6 +1507,10 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
 
     if (strcasecmp(label, SSL_PRIVATE_KEY_TAG) == 0) {
       sslMultCertSettings.key = ats_strdup(value);
+    }
+
+    if (strcasecmp(label, SSL_OCSP_RESPONSE_TAG) == 0) {
+      sslMultCertSettings.ocsp_response = ats_strdup(value);
     }
 
     if (strcasecmp(label, SSL_SESSION_TICKET_ENABLED) == 0) {
@@ -1785,6 +1770,27 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<X509 *> &cert_lis
     }
   }
 
+#if TS_USE_TLS_OCSP
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Debug("ssl", "SSL OCSP Stapling is enabled");
+    SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
+  } else {
+    Debug("ssl", "SSL OCSP Stapling is disabled");
+  }
+  SimpleTokenizer ocsp_tok("", SSL_CERT_SEPARATE_DELIM);
+  if (sslMultCertSettings->ocsp_response) {
+    ocsp_tok.setString(sslMultCertSettings->ocsp_response);
+    if (cert_tok.getNumTokensRemaining() != ocsp_tok.getNumTokensRemaining()) {
+      Error("the number of certificates in ssl_cert_name and ssl_ocsp_name doesn't match");
+      return false;
+    }
+  }
+#else
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
+  }
+#endif /* TS_USE_TLS_OCSP */
+
   for (const char *certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
     std::string completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
     scoped_BIO bio(BIO_new_file(completeServerCertPath.c_str(), "r"));
@@ -1845,6 +1851,21 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<X509 *> &cert_lis
         }
       }
     }
+#if TS_USE_TLS_OCSP
+    if (SSLConfigParams::ssl_ocsp_enabled) {
+      if (sslMultCertSettings->ocsp_response) {
+        const char *ocsp_response_name = ocsp_tok.getNext();
+        ats_scoped_str completeOCSPResponsePath(Layout::relative_to(params->ssl_ocsp_response_path_only, ocsp_response_name));
+        if (!ssl_stapling_init_cert(ctx, cert, certname, (const char *)completeOCSPResponsePath)) {
+          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", certname);
+        }
+      } else {
+        if (!ssl_stapling_init_cert(ctx, cert, certname, nullptr)) {
+          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", certname);
+        }
+      }
+    }
+#endif /* TS_USE_TLS_OCSP */
   }
 
   return true;
