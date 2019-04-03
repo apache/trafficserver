@@ -91,13 +91,14 @@ private:
 class Http3SettingsFramer : public Http3FrameGenerator
 {
 public:
-  Http3SettingsFramer(){};
+  Http3SettingsFramer(NetVConnectionContext_t context) : _context(context) {};
 
   // Http3FrameGenerator
   Http3FrameUPtr generate_frame(uint16_t max_size) override;
   bool is_done() const override;
 
 private:
+  NetVConnectionContext_t _context;
   bool _is_done = false; ///< Becarefull when set FIN flag on CONTROL stream. Maybe never?
   bool _is_sent = false; ///< Send SETTINGS frame only once
 };

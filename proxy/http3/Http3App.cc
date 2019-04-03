@@ -46,7 +46,7 @@ Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QU
   this->_settings_handler = new Http3SettingsHandler(this->_client_session);
   this->_control_stream_dispatcher.add_handler(this->_settings_handler);
 
-  this->_settings_framer = new Http3SettingsFramer();
+  this->_settings_framer = new Http3SettingsFramer(client_vc->get_context());
   this->_control_stream_collector.add_generator(this->_settings_framer);
 
   SET_HANDLER(&Http3App::main_event_handler);
@@ -343,15 +343,18 @@ Http3SettingsFramer::generate_frame(uint16_t max_size)
   }
 
   if (params->max_header_list_size() != HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE) {
-    frame->set(Http3SettingsId::NUM_PLACEHOLDERS, params->max_header_list_size());
+    frame->set(Http3SettingsId::MAX_HEADER_LIST_SIZE, params->max_header_list_size());
   }
 
   if (params->qpack_blocked_streams() != HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS) {
     frame->set(Http3SettingsId::QPACK_BLOCKED_STREAMS, params->qpack_blocked_streams());
   }
 
-  if (params->num_placeholders() != HTTP3_DEFAULT_NUM_PLACEHOLDERS) {
-    frame->set(Http3SettingsId::NUM_PLACEHOLDERS, params->num_placeholders());
+  // Server side only
+  if (this->_context == NET_VCONNECTION_IN) {
+   if (params->num_placeholders() != HTTP3_DEFAULT_NUM_PLACEHOLDERS) {
+     frame->set(Http3SettingsId::NUM_PLACEHOLDERS, params->num_placeholders());
+    }
   }
 
   return Http3SettingsFrameUPtr(frame, &Http3FrameDeleter::delete_settings_frame);

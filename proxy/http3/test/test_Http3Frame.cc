@@ -173,6 +173,27 @@ TEST_CASE("Store SETTINGS Frame", "[http3]")
     CHECK(len == sizeof(expected));
     CHECK(memcmp(buf, expected, len) == 0);
   }
+
+  SECTION("Normal from Client")
+  {
+    uint8_t expected[] = {
+      0x07,       // Length
+      0x04,       // Type
+      0x00, 0x06, // Identifier
+      0x44, 0x00, // Value
+      0x0a, 0x0a, // Identifier
+      0x00,       // Value
+    };
+
+    Http3SettingsFrame settings_frame;
+    settings_frame.set(Http3SettingsId::MAX_HEADER_LIST_SIZE, 0x0400);
+
+    uint8_t buf[32] = {0};
+    size_t len;
+    settings_frame.store(buf, &len);
+    CHECK(len == sizeof(expected));
+    CHECK(memcmp(buf, expected, len) == 0);
+  }
 }
 
 TEST_CASE("Http3FrameFactory Create Unknown Frame", "[http3]")
