@@ -2266,7 +2266,7 @@ LogAccess::marshal_server_resp_time_ms(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
+    int64_t val        = elapsed >= 0(int64_t)ink_hrtime_to_msec(elapsed) : 0;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -2277,7 +2277,7 @@ LogAccess::marshal_server_resp_time_s(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
+    int64_t val        = elapsed >= 0 ? (int64_t)ink_hrtime_to_sec(elapsed) : 0;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -2462,7 +2462,7 @@ LogAccess::marshal_transfer_time_ms(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
+    int64_t val        = elapsed >= 0 ? (int64_t)ink_hrtime_to_msec(elapsed) : 0;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -2473,7 +2473,7 @@ LogAccess::marshal_transfer_time_s(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
+    int64_t val        = elapsed >= 0 ? (int64_t)ink_hrtime_to_sec(elapsed) : 0;
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
