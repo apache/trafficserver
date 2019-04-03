@@ -2265,9 +2265,7 @@ int
 LogAccess::marshal_server_resp_time_ms(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf, m_http_sm->milestones.difference_msec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE));
   }
   return INK_MIN_ALIGN;
 }
@@ -2276,9 +2274,8 @@ int
 LogAccess::marshal_server_resp_time_s(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf,
+                static_cast<int64_t>(m_http_sm->milestones.difference_sec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE)));
   }
   return INK_MIN_ALIGN;
 }
@@ -2461,9 +2458,7 @@ int
 LogAccess::marshal_transfer_time_ms(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf, m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH));
   }
   return INK_MIN_ALIGN;
 }
@@ -2472,9 +2467,7 @@ int
 LogAccess::marshal_transfer_time_s(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf, static_cast<int64_t>(m_http_sm->milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH)));
   }
   return INK_MIN_ALIGN;
 }
@@ -2786,8 +2779,7 @@ int
 LogAccess::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones.elapsed(ms2, ms1);
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
+    int64_t val = m_http_sm->milestones.difference_msec(ms2, ms1);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
