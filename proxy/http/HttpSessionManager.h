@@ -35,17 +35,42 @@
 #include "P_EventSystem.h"
 #include "HttpServerSession.h"
 #include "tscore/IntrusiveHashMap.h"
+#include "tscore/MT_hashtable.h"
 
 class ProxyClientTransaction;
 class HttpSM;
 
 void initialize_thread_for_http_sessions(EThread *thread, int thread_index);
-
+typedef HashTableIteratorState<uint32_t, HttpServerSession *> IPTable_iter;
+typedef HashTableIteratorState<uint64_t, HttpServerSession *> FqdnTable_iter;
 enum HSMresult_t {
   HSM_DONE,
   HSM_RETRY,
   HSM_NOT_FOUND,
 };
+
+// class ServerSessionPoolCont;
+
+class ServerSessionPoolCont : public Continuation
+{
+public:
+  ServerSessionPoolCont() : m_session(nullptr), m_ip_key(0), m_net_vc(nullptr), m_event(0){};
+  Action m_action;
+  void init(Continuation *cont, HttpServerSession *s);
+  void init(Continuation *cont, uint32 ip_key, NetVConnection *net_vc, int event);
+  int removeFQDNEntry(int /* event ATS_UNUSED */, Event *e);
+  int removeIPAndFQDNEntry(int /* event ATS_UNUSED */, Event *e);
+  void destroy();
+
+private:
+  HttpServerSession *m_session;
+  uint32 m_ip_key;
+  NetVConnection *m_net_vc;
+  int m_event;
+};
+using ServerSessionPoolContHandler = int (ServerSessionPoolCont::*)(int, void *);
+
+extern ClassAllocator<ServerSessionPoolCont> serverSessionPoolContAllocator;
 
 /** A pool of server sessions.
 
@@ -62,13 +87,16 @@ public:
   /// Default constructor.
   /// Constructs an empty pool.
   ServerSessionPool();
+  static uint32_t ip_hash_of(sockaddr const *addr);
+
   /// Handle events from server sessions.
   int eventHandler(int event, void *data);
   static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
+  bool removeSession(uint32 ip_key, NetVConnection *net_vc, int event);
 
 protected:
-  using IPTable   = IntrusiveHashMap<HttpServerSession::IPLinkage>;
-  using FQDNTable = IntrusiveHashMap<HttpServerSession::FQDNLinkage>;
+  using IPTable   = MTHashTable<uint32_t, HttpServerSession *>;
+  using FQDNTable = MTHashTable<uint64_t, HttpServerSession *>;
 
 public:
   /** Check if a session matches address and host name.
@@ -109,6 +137,11 @@ public:
   void purge_keepalives();
   void init();
   int main_handler(int event, void *data);
+  ServerSessionPool *
+  get_pool() const
+  {
+    return m_g_pool;
+  }
 
 private:
   /// Global pool, used if not per thread pools.
