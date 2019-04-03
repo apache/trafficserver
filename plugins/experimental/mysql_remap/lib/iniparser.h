@@ -42,9 +42,9 @@
                                                                 Includes
  ---------------------------------------------------------------------------*/
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <stdio.h>  // NOLINT(modernize-deprecated-headers)
+#include <stdlib.h> // NOLINT(modernize-deprecated-headers)
+#include <string.h> // NOLINT(modernize-deprecated-headers)
 
 /*
  * The following #include is necessary on many Unixes but not Linux.
