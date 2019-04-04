@@ -286,9 +286,9 @@ QUICDebugNames::key_phase(QUICKeyPhase phase)
   case QUICKeyPhase::PHASE_1:
     return "PHASE_1";
   case QUICKeyPhase::INITIAL:
-    return "CLEARTEXT";
+    return "INITIAL";
   case QUICKeyPhase::ZERO_RTT:
-    return "ZERORTT";
+    return "ZERO_RTT";
   case QUICKeyPhase::HANDSHAKE:
     return "HANDSHAKE";
   default:
