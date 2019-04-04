@@ -1927,3 +1927,13 @@ SSLMultiCertConfigLoader::clear_pw_references(SSL_CTX *ssl_ctx)
   SSL_CTX_set_default_passwd_cb(ssl_ctx, nullptr);
   SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, nullptr);
 }
+
+// Define XX to expand, then concatenate two identifiers.
+#undef X
+#undef XX
+#define X(A, B) A##B
+#define XX(A, B) X(A, B)
+
+// The following variable is define only to be used with the 'nm' utility to determine what version of openssl the
+// executable was linked with.
+char XX(TS_version_of_openssl_compiled_against_, OPENSSL_VERSION_NUMBER);

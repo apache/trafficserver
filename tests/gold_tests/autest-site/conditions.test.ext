@@ -16,8 +16,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import subprocess
+
 def HasOpenSSLVersion(self, version):
-    return self.EnsureVersion(["openssl","version"],min_version=version)
+    output = subprocess.check_output(
+        "nm " + os.path.join(self.Variables.BINDIR, "traffic_server") + " | tr ' \t' '\n' | " +
+        "grep -F 'TS_version_of_openssl_compiled_against_' | sed 's/TS_version_of_openssl_compiled_against_0x0*//' | " +
+        r"sed 's/[^0-9]*$//' | sed 's/..$//' | grep '^[1-9]0[0-9]0[0-9]$' | sed 's/^\(.\)0\(.\)0\(.\)$/\1.\2.\3/'",
+        shell = True
+    )
+    exe_ver = output.decode('utf-8').rstrip('\n')
+    if exe_ver == '':
+        raise ValueError("Error determining version of openssl library needed by traffic_server executable")
+    return self.Condition(
+        lambda: exe_ver >= version,
+        "openssl library version is " + exe_ver + ", must be at least " + version
+    )
 
 def HasCurlFeature(self, feature):
 
