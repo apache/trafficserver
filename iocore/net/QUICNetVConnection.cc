@@ -2384,15 +2384,17 @@ QUICNetVConnection::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint
     return frame;
   }
 
-  // TODO Make expiration period configurable
-  QUICResumptionToken token(this->get_remote_endpoint(), this->connection_id(), Thread::get_hrtime() + HRTIME_HOURS(24));
-  frame = QUICFrameFactory::create_new_token_frame(buf, token, this->_issue_frame_id(), this);
-  if (frame) {
-    if (frame->size() < maximum_frame_size) {
-      this->_is_resumption_token_sent = true;
-    } else {
-      // Cancel generating frame
-      frame = nullptr;
+  if (this->direction() == NET_VCONNECTION_IN) {
+    // TODO Make expiration period configurable
+    QUICResumptionToken token(this->get_remote_endpoint(), this->connection_id(), Thread::get_hrtime() + HRTIME_HOURS(24));
+    frame = QUICFrameFactory::create_new_token_frame(buf, token, this->_issue_frame_id(), this);
+    if (frame) {
+      if (frame->size() < maximum_frame_size) {
+        this->_is_resumption_token_sent = true;
+      } else {
+        // Cancel generating frame
+        frame = nullptr;
+      }
     }
   }
 
