@@ -7,9 +7,9 @@
 #pragma once
 #endif
 
+#include "yaml-cpp/noncopyable.h"
 #include <memory>
 #include <vector>
-#include "yaml-cpp/noncopyable.h"
 
 namespace YAML {
 class SettingChangeBase;
@@ -90,6 +90,6 @@ class SettingChanges : private noncopyable {
   typedef std::vector<std::unique_ptr<SettingChangeBase>> setting_changes;
   setting_changes m_settingChanges;
 };
-}
+}  // namespace YAML
 
 #endif  // SETTING_H_62B23520_7C8E_11DE_8A39_0800200C9A66

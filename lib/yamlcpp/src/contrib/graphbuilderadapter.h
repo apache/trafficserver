@@ -74,6 +74,6 @@ class GraphBuilderAdapter : public EventHandler {
   void RegisterAnchor(anchor_t anchor, void* pNode);
   void DispositionNode(void* pNode);
 };
-}
+}  // namespace YAML
 
 #endif  // GRAPHBUILDERADAPTER_H_62B23520_7C8E_11DE_8A39_0800200C9A66

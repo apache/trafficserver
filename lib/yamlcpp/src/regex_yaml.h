@@ -80,7 +80,7 @@ class YAML_CPP_API RegEx {
   char m_a, m_z;
   std::vector<RegEx> m_params;
 };
-}
+}  // namespace YAML
 
 #include "regeximpl.h"
 

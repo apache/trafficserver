@@ -7,8 +7,8 @@
 #pragma once
 #endif
 
-#include "yaml-cpp/noncopyable.h"
 #include "yaml-cpp/mark.h"
+#include "yaml-cpp/noncopyable.h"
 #include <cstddef>
 #include <deque>
 #include <ios>
@@ -71,6 +71,6 @@ inline bool Stream::ReadAheadTo(size_t i) const {
     return true;
   return _ReadAheadTo(i);
 }
-}
+}  // namespace YAML
 
 #endif  // STREAM_H_62B23520_7C8E_11DE_8A39_0800200C9A66

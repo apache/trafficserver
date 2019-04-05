@@ -39,8 +39,7 @@
 
 namespace ts
 {
-
-template < typename T > class IntrusivePtr; // forward declare
+template <typename T> class IntrusivePtr; // forward declare
 
 /* ----------------------------------------------------------------------- */
 /** Reference counter mixin.
@@ -62,9 +61,10 @@ template < typename T > class IntrusivePtr; // forward declare
   */
 class IntrusivePtrCounter
 {
-  template < typename T > friend class IntrusivePtr;
+  template <typename T> friend class IntrusivePtr;
 
   using self_type = IntrusivePtrCounter;
+
 public:
   /** Copy constructor.
 
@@ -72,9 +72,9 @@ public:
       client that uses a default copy constructor will _copy the ref count into the new object_.
       That way lies madness.
   */
-  IntrusivePtrCounter(self_type const & that);
+  IntrusivePtrCounter(self_type const &that);
   /// No move constructor - that won't work for an object that is the target of a shared pointer.
-  IntrusivePtrCounter(self_type && that) = delete;
+  IntrusivePtrCounter(self_type &&that) = delete;
 
   /** Assignment operator.
 
@@ -100,15 +100,15 @@ protected:
  */
 class IntrusivePtrAtomicCounter
 {
-  template < typename T > friend class IntrusivePtr;
+  template <typename T> friend class IntrusivePtr;
 
   using self_type = IntrusivePtrAtomicCounter; ///< Self reference type.
 
 public:
   /// Copy constructor - do not copy reference count.
-  IntrusivePtrAtomicCounter(self_type const & that);
+  IntrusivePtrAtomicCounter(self_type const &that);
   /// No move constructor - that won't work for an object that is the target of a shared pointer.
-  IntrusivePtrAtomicCounter(self_type && that) = delete;
+  IntrusivePtrAtomicCounter(self_type &&that) = delete;
 
   /// Self assignment - do not copy reference count.
   self_type &operator=(self_type const &that);
@@ -144,9 +144,9 @@ protected:
 */
 template <typename T> class IntrusivePtr
 {
-private:                          /* don't pollute client with these typedefs */
-  using self_type = IntrusivePtr;      ///< Self reference type.
-  template < typename U > friend class IntrusivePtr; // Make friends with siblings for cross type casts.
+private:                                           /* don't pollute client with these typedefs */
+  using self_type = IntrusivePtr;                  ///< Self reference type.
+  template <typename U> friend class IntrusivePtr; // Make friends with siblings for cross type casts.
 public:
   /// The externally used type for the reference count.
   using counter_type = long int;
@@ -160,13 +160,13 @@ public:
   ~IntrusivePtr();
 
   /// Copy constructor. A new reference to the object is created.
-  IntrusivePtr(self_type const& that);
+  IntrusivePtr(self_type const &that);
   /// Move constructor. The reference in @a that is moved to @a this.
-  IntrusivePtr(self_type && that);
+  IntrusivePtr(self_type &&that);
   /// Self assignment. A new reference to the object is created.
-  self_type& operator=(self_type const& that);
+  self_type &operator=(self_type const &that);
   /// Move assignment. The reference in @a that is moved to @a this.
-  self_type& operator=(self_type && that);
+  self_type &operator=(self_type &&that);
 
   /** Assign from instance.
 
@@ -190,7 +190,7 @@ public:
       @return @c true if there are no references upon return,
       @c false if the reference count is not zero.
    */
-  T* release();
+  T *release();
 
   /// Test for not @c nullptr
   explicit operator bool() const;
@@ -213,20 +213,16 @@ public:
   /** Cross type construction.
       This succeeds if an @a U* can be implicitly converted to a @a T*.
   */
-  template <typename U>
-  IntrusivePtr(IntrusivePtr<U> const &that);
+  template <typename U> IntrusivePtr(IntrusivePtr<U> const &that);
 
-  template <typename U>
-  IntrusivePtr(IntrusivePtr<U> && that);
+  template <typename U> IntrusivePtr(IntrusivePtr<U> &&that);
 
   /** Cross type assignment.
       This succeeds if an @a U* can be implicitily converted to a @a T*.
   */
-  template <typename U>
-  self_type &operator=(IntrusivePtr<U> const &that);
+  template <typename U> self_type &operator=(IntrusivePtr<U> const &that);
 
-  template <typename U>
-  self_type &operator=(IntrusivePtr<U> && that);
+  template <typename U> self_type &operator=(IntrusivePtr<U> &&that);
 
   /// Reference count.
   /// @return Number of references.
@@ -345,7 +341,8 @@ public:
 };
 
 // If no specialization is provided then use the default;
-template < typename T > struct IntrusivePtrPolicy : public IntrusivePtrDefaultPolicy<T> {};
+template <typename T> struct IntrusivePtrPolicy : public IntrusivePtrDefaultPolicy<T> {
+};
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
 /* Inline Methods */
@@ -405,60 +402,53 @@ template <typename T> IntrusivePtr<T>::~IntrusivePtr()
   this->unset();
 }
 
-template < typename T >
-IntrusivePtr<T>::IntrusivePtr(self_type const &that)
+template <typename T> IntrusivePtr<T>::IntrusivePtr(self_type const &that)
 {
   this->set(that.m_obj);
 }
 
-template <typename T>
-template <typename U>
-IntrusivePtr<T>::IntrusivePtr(IntrusivePtr<U> const &that)
+template <typename T> template <typename U> IntrusivePtr<T>::IntrusivePtr(IntrusivePtr<U> const &that)
 {
-  static_assert(std::is_convertible<U*, T*>::value, "The argument type is not implicitly convertible to the return type.");
+  static_assert(std::is_convertible<U *, T *>::value, "The argument type is not implicitly convertible to the return type.");
   this->set(that.m_obj);
 }
 
-template < typename T >
-IntrusivePtr<T>::IntrusivePtr(self_type && that)
+template <typename T> IntrusivePtr<T>::IntrusivePtr(self_type &&that)
 {
-  std::swap<T*>(m_obj, that.m_obj);
+  std::swap<T *>(m_obj, that.m_obj);
+}
+
+template <typename T> template <typename U> IntrusivePtr<T>::IntrusivePtr(IntrusivePtr<U> &&that)
+{
+  static_assert(std::is_convertible<U *, T *>::value, "The argument type is not implicitly convertible to the return type.");
+  std::swap<T *>(m_obj, that.get());
 }
 
 template <typename T>
-template <typename U>
-IntrusivePtr<T>::IntrusivePtr(IntrusivePtr<U> && that)
-{
-  static_assert(std::is_convertible<U*, T*>::value, "The argument type is not implicitly convertible to the return type.");
-  std::swap<T*>(m_obj, that.get());
-}
-
-template < typename T >
 IntrusivePtr<T> &
-IntrusivePtr<T>::operator=(self_type const& that)
+IntrusivePtr<T>::operator=(self_type const &that)
 {
   this->reset(that.get());
   return *this;
 }
 
-
 template <typename T>
 template <typename U>
 IntrusivePtr<T> &
-IntrusivePtr<T>::operator=(IntrusivePtr<U> const& that)
+IntrusivePtr<T>::operator=(IntrusivePtr<U> const &that)
 {
-  static_assert(std::is_convertible<U*, T*>::value, "The argument type is not implicitly convertible to the return type.");
+  static_assert(std::is_convertible<U *, T *>::value, "The argument type is not implicitly convertible to the return type.");
   this->reset(that.get());
   return *this;
 }
 
-template < typename T >
+template <typename T>
 IntrusivePtr<T> &
-IntrusivePtr<T>::operator=(self_type && that)
+IntrusivePtr<T>::operator=(self_type &&that)
 {
   if (m_obj != that.m_obj) {
     this->unset();
-    m_obj = that.m_obj;
+    m_obj      = that.m_obj;
     that.m_obj = nullptr;
   } else {
     that.unset();
@@ -469,12 +459,12 @@ IntrusivePtr<T>::operator=(self_type && that)
 template <typename T>
 template <typename U>
 IntrusivePtr<T> &
-IntrusivePtr<T>::operator=(IntrusivePtr<U> && that)
+IntrusivePtr<T>::operator=(IntrusivePtr<U> &&that)
 {
-  static_assert(std::is_convertible<U*, T*>::value, "The argument type is not implicitly convertible to the return type.");
+  static_assert(std::is_convertible<U *, T *>::value, "The argument type is not implicitly convertible to the return type.");
   if (m_obj != that.m_obj) {
     this->unset();
-    m_obj = that.m_obj;
+    m_obj      = that.m_obj;
     that.m_obj = nullptr;
   } else {
     that.unset();
@@ -530,7 +520,7 @@ template <typename T>
 void
 IntrusivePtr<T>::set(T *obj)
 {
-  m_obj = obj;    /* update to new object */
+  m_obj = obj;          /* update to new object */
   if (nullptr != m_obj) /* if a real object, bump the ref count */
     ++(m_obj->m_intrusive_pointer_reference_count);
 }
@@ -546,10 +536,10 @@ IntrusivePtr<T>::reset(T *obj)
 }
 
 template <typename T>
-T*
+T *
 IntrusivePtr<T>::release()
 {
-  T* zret = m_obj;
+  T *zret = m_obj;
   if (m_obj) {
     auto &cp = m_obj->m_intrusive_pointer_reference_count;
     // If the client is using this method, they're doing something funky
@@ -561,8 +551,7 @@ IntrusivePtr<T>::release()
   return zret;
 }
 
-template <typename T>
-IntrusivePtr<T>::operator bool() const
+template <typename T> IntrusivePtr<T>::operator bool() const
 {
   return m_obj != nullptr;
 }

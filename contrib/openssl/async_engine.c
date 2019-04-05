@@ -39,11 +39,9 @@
 #include <pthread.h>
 #include <unistd.h>
 
-
 /* Engine Id and Name */
-static const char *engine_id = "async-test";
+static const char *engine_id   = "async-test";
 static const char *engine_name = "Asynchronous test engine";
-
 
 /* Engine Lifetime functions */
 static int async_destroy(ENGINE *e);
@@ -51,162 +49,156 @@ static int engine_async_init(ENGINE *e);
 static int async_finish(ENGINE *e);
 void engine_load_async_int(void);
 
-
 static void async_pause_job(void);
 
 /* RSA */
 
-static int async_pub_enc(int flen, const unsigned char *from,
-                    unsigned char *to, RSA *rsa, int padding);
-static int async_pub_dec(int flen, const unsigned char *from,
-                    unsigned char *to, RSA *rsa, int padding);
-static int async_rsa_priv_enc(int flen, const unsigned char *from,
-                      unsigned char *to, RSA *rsa, int padding);
-static int async_rsa_priv_dec(int flen, const unsigned char *from,
-                      unsigned char *to, RSA *rsa, int padding);
-static int async_rsa_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa,
-                              BN_CTX *ctx);
+static int async_pub_enc(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding);
+static int async_pub_dec(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding);
+static int async_rsa_priv_enc(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding);
+static int async_rsa_priv_dec(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding);
+static int async_rsa_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx);
 
 static int async_rsa_init(RSA *rsa);
 static int async_rsa_finish(RSA *rsa);
 
 static RSA_METHOD *async_rsa_method = NULL;
 
-static int bind_async(ENGINE *e)
+static int
+bind_async(ENGINE *e)
 {
-    /* Setup RSA_METHOD */
-    if ((async_rsa_method = RSA_meth_new("Async RSA method", 0)) == NULL
-        || RSA_meth_set_pub_enc(async_rsa_method, async_pub_enc) == 0
-        || RSA_meth_set_pub_dec(async_rsa_method, async_pub_dec) == 0
-        || RSA_meth_set_priv_enc(async_rsa_method, async_rsa_priv_enc) == 0
-        || RSA_meth_set_priv_dec(async_rsa_method, async_rsa_priv_dec) == 0
-        || RSA_meth_set_mod_exp(async_rsa_method, async_rsa_mod_exp) == 0
-        || RSA_meth_set_bn_mod_exp(async_rsa_method, BN_mod_exp_mont) == 0
-        || RSA_meth_set_init(async_rsa_method, async_rsa_init) == 0
-        || RSA_meth_set_finish(async_rsa_method, async_rsa_finish) == 0) {
-        fprintf(stderr, "Failed to initialize rsa method\n");
-        return 0;
-    }
+  /* Setup RSA_METHOD */
+  if ((async_rsa_method = RSA_meth_new("Async RSA method", 0)) == NULL ||
+      RSA_meth_set_pub_enc(async_rsa_method, async_pub_enc) == 0 || RSA_meth_set_pub_dec(async_rsa_method, async_pub_dec) == 0 ||
+      RSA_meth_set_priv_enc(async_rsa_method, async_rsa_priv_enc) == 0 ||
+      RSA_meth_set_priv_dec(async_rsa_method, async_rsa_priv_dec) == 0 ||
+      RSA_meth_set_mod_exp(async_rsa_method, async_rsa_mod_exp) == 0 ||
+      RSA_meth_set_bn_mod_exp(async_rsa_method, BN_mod_exp_mont) == 0 || RSA_meth_set_init(async_rsa_method, async_rsa_init) == 0 ||
+      RSA_meth_set_finish(async_rsa_method, async_rsa_finish) == 0) {
+    fprintf(stderr, "Failed to initialize rsa method\n");
+    return 0;
+  }
 
-    /* Ensure the dasync error handling is set up */
-    ERR_load_ASYNC_strings();
+  /* Ensure the dasync error handling is set up */
+  ERR_load_ASYNC_strings();
 
-    if (!ENGINE_set_id(e, engine_id)
-        || !ENGINE_set_name(e, engine_name)
-        || !ENGINE_set_RSA(e, async_rsa_method)
-        || !ENGINE_set_destroy_function(e, async_destroy)
-        || !ENGINE_set_init_function(e, engine_async_init)
-        || !ENGINE_set_finish_function(e, async_finish)) {
-        fprintf(stderr, "Failed to initialize\n");
-        return 0;
-    }
+  if (!ENGINE_set_id(e, engine_id) || !ENGINE_set_name(e, engine_name) || !ENGINE_set_RSA(e, async_rsa_method) ||
+      !ENGINE_set_destroy_function(e, async_destroy) || !ENGINE_set_init_function(e, engine_async_init) ||
+      !ENGINE_set_finish_function(e, async_finish)) {
+    fprintf(stderr, "Failed to initialize\n");
+    return 0;
+  }
 
-    return 1;
+  return 1;
 }
 
-# ifndef OPENSSL_NO_DYNAMIC_ENGINE
-static int bind_helper(ENGINE *e, const char *id)
+#ifndef OPENSSL_NO_DYNAMIC_ENGINE
+static int
+bind_helper(ENGINE *e, const char *id)
 {
-    if (id && (strcmp(id, engine_id) != 0))
-        return 0;
-    if (!bind_async(e))
-        return 0;
-    return 1;
+  if (id && (strcmp(id, engine_id) != 0))
+    return 0;
+  if (!bind_async(e))
+    return 0;
+  return 1;
 }
 
 IMPLEMENT_DYNAMIC_CHECK_FN()
-    IMPLEMENT_DYNAMIC_BIND_FN(bind_helper)
-# endif
+IMPLEMENT_DYNAMIC_BIND_FN(bind_helper)
+#endif
 
-static ENGINE *engine_async(void)
+static ENGINE *
+engine_async(void)
 {
-    ENGINE *ret = ENGINE_new();
-    if (!ret)
-        return NULL;
-    if (!bind_async(ret)) {
-        ENGINE_free(ret);
-        return NULL;
-    }
-    return ret;
+  ENGINE *ret = ENGINE_new();
+  if (!ret)
+    return NULL;
+  if (!bind_async(ret)) {
+    ENGINE_free(ret);
+    return NULL;
+  }
+  return ret;
 }
 
-void engine_load_async_int(void)
+void
+engine_load_async_int(void)
 {
-    ENGINE *toadd = engine_async();
-    if (!toadd)
-        return;
-    ENGINE_add(toadd);
-    ENGINE_free(toadd);
-    ERR_clear_error();
+  ENGINE *toadd = engine_async();
+  if (!toadd)
+    return;
+  ENGINE_add(toadd);
+  ENGINE_free(toadd);
+  ERR_clear_error();
 }
 
-static int engine_async_init(ENGINE *e)
+static int
+engine_async_init(ENGINE *e)
 {
-    return 1;
+  return 1;
 }
 
-
-static int async_finish(ENGINE *e)
+static int
+async_finish(ENGINE *e)
 {
-    return 1;
+  return 1;
 }
 
-
-static int async_destroy(ENGINE *e)
+static int
+async_destroy(ENGINE *e)
 {
-    RSA_meth_free(async_rsa_method);
-    return 1;
+  RSA_meth_free(async_rsa_method);
+  return 1;
 }
 
-static void wait_cleanup(ASYNC_WAIT_CTX *ctx, const void *key,
-                         OSSL_ASYNC_FD readfd, void *pvwritefd)
+static void
+wait_cleanup(ASYNC_WAIT_CTX *ctx, const void *key, OSSL_ASYNC_FD readfd, void *pvwritefd)
 {
-    OSSL_ASYNC_FD *pwritefd = (OSSL_ASYNC_FD *)pvwritefd;
-    close(readfd);
-    close(*pwritefd);
-    OPENSSL_free(pwritefd);
+  OSSL_ASYNC_FD *pwritefd = (OSSL_ASYNC_FD *)pvwritefd;
+  close(readfd);
+  close(*pwritefd);
+  OPENSSL_free(pwritefd);
 }
 
 #define DUMMY_CHAR 'X'
 
-static void async_pause_job(void) {
-    ASYNC_JOB *job;
-    ASYNC_WAIT_CTX *waitctx;
-    OSSL_ASYNC_FD pipefds[2] = {0, 0};
-    OSSL_ASYNC_FD *writefd;
-    char buf = DUMMY_CHAR;
+static void
+async_pause_job(void)
+{
+  ASYNC_JOB *job;
+  ASYNC_WAIT_CTX *waitctx;
+  OSSL_ASYNC_FD pipefds[2] = {0, 0};
+  OSSL_ASYNC_FD *writefd;
+  char buf = DUMMY_CHAR;
 
-    if ((job = ASYNC_get_current_job()) == NULL)
-        return;
+  if ((job = ASYNC_get_current_job()) == NULL)
+    return;
 
-    waitctx = ASYNC_get_wait_ctx(job);
+  waitctx = ASYNC_get_wait_ctx(job);
 
-    if (ASYNC_WAIT_CTX_get_fd(waitctx, engine_id, &pipefds[0],
-                              (void **)&writefd)) {
-        pipefds[1] = *writefd;
-    } else {
-        writefd = (OSSL_ASYNC_FD *)OPENSSL_malloc(sizeof(*writefd));
-        if (writefd == NULL)
-            return;
-        if (pipe(pipefds) != 0) {
-            OPENSSL_free(writefd);
-            return;
-        }
-        *writefd = pipefds[1];
-
-        if(!ASYNC_WAIT_CTX_set_wait_fd(waitctx, engine_id, pipefds[0],
-                                       writefd, wait_cleanup)) {
-            wait_cleanup(waitctx, engine_id, pipefds[0], writefd);
-            return;
-        }
+  if (ASYNC_WAIT_CTX_get_fd(waitctx, engine_id, &pipefds[0], (void **)&writefd)) {
+    pipefds[1] = *writefd;
+  } else {
+    writefd = (OSSL_ASYNC_FD *)OPENSSL_malloc(sizeof(*writefd));
+    if (writefd == NULL)
+      return;
+    if (pipe(pipefds) != 0) {
+      OPENSSL_free(writefd);
+      return;
     }
+    *writefd = pipefds[1];
 
-    /* Ignore errors - we carry on anyway */
-    ASYNC_pause_job();
+    if (!ASYNC_WAIT_CTX_set_wait_fd(waitctx, engine_id, pipefds[0], writefd, wait_cleanup)) {
+      wait_cleanup(waitctx, engine_id, pipefds[0], writefd);
+      return;
+    }
+  }
 
-    /* Clear the wake signal */
-    if (read(pipefds[0], &buf, 1) < 0)
-        return;
+  /* Ignore errors - we carry on anyway */
+  ASYNC_pause_job();
+
+  /* Clear the wake signal */
+  if (read(pipefds[0], &buf, 1) < 0)
+    return;
 }
 
 void *
@@ -218,7 +210,6 @@ delay_method(void *arg)
   write(signal_fd, &buf, sizeof(buf));
 }
 
-
 void
 spawn_delay_thread()
 {
@@ -227,15 +218,15 @@ spawn_delay_thread()
   OSSL_ASYNC_FD pipefds[2] = {0, 0};
   ASYNC_JOB *job;
   if ((job = ASYNC_get_current_job()) == NULL)
-      return;
+    return;
 
   ASYNC_WAIT_CTX *waitctx = ASYNC_get_wait_ctx(job);
 
   size_t numfds;
   if (ASYNC_WAIT_CTX_get_all_fds(waitctx, &signal_fd, &numfds) && numfds > 0) {
   } else {
-    OSSL_ASYNC_FD pipefds[2] = {0,0};
-    OSSL_ASYNC_FD *writefd = OPENSSL_malloc(sizeof(*writefd));
+    OSSL_ASYNC_FD pipefds[2] = {0, 0};
+    OSSL_ASYNC_FD *writefd   = OPENSSL_malloc(sizeof(*writefd));
     pipe(pipefds);
     signal_fd = *writefd = pipefds[1];
     ASYNC_WAIT_CTX_set_wait_fd(waitctx, engine_id, pipefds[0], writefd, wait_cleanup);
@@ -244,54 +235,53 @@ spawn_delay_thread()
   pthread_create(&thread_id, NULL, delay_method, (void *)((intptr_t)signal_fd));
 }
 
-
 /*
  * RSA implementation
  */
 
-static int async_pub_enc(int flen, const unsigned char *from,
-                    unsigned char *to, RSA *rsa, int padding) {
-    return RSA_meth_get_pub_enc(RSA_PKCS1_OpenSSL())
-        (flen, from, to, rsa, padding);
-}
-
-static int async_pub_dec(int flen, const unsigned char *from,
-                    unsigned char *to, RSA *rsa, int padding) {
-    return RSA_meth_get_pub_dec(RSA_PKCS1_OpenSSL())
-        (flen, from, to, rsa, padding);
-}
-
-static int async_rsa_priv_enc(int flen, const unsigned char *from,
-                      unsigned char *to, RSA *rsa, int padding)
+static int
+async_pub_enc(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding)
 {
-    //printf("async_priv_enc\n");
-    spawn_delay_thread();
-    async_pause_job();
-    return RSA_meth_get_priv_enc(RSA_PKCS1_OpenSSL())
-        (flen, from, to, rsa, padding);
+  return RSA_meth_get_pub_enc(RSA_PKCS1_OpenSSL())(flen, from, to, rsa, padding);
 }
 
-static int async_rsa_priv_dec(int flen, const unsigned char *from,
-                      unsigned char *to, RSA *rsa, int padding)
+static int
+async_pub_dec(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding)
 {
-    //printf("async_priv_dec\n");
-    spawn_delay_thread();
-    async_pause_job();
-    return RSA_meth_get_priv_dec(RSA_PKCS1_OpenSSL())
-        (flen, from, to, rsa, padding);
+  return RSA_meth_get_pub_dec(RSA_PKCS1_OpenSSL())(flen, from, to, rsa, padding);
 }
 
-static int async_rsa_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx)
+static int
+async_rsa_priv_enc(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding)
 {
-    return RSA_meth_get_mod_exp(RSA_PKCS1_OpenSSL())(r0, I, rsa, ctx);
+  // printf("async_priv_enc\n");
+  spawn_delay_thread();
+  async_pause_job();
+  return RSA_meth_get_priv_enc(RSA_PKCS1_OpenSSL())(flen, from, to, rsa, padding);
 }
 
-static int async_rsa_init(RSA *rsa)
+static int
+async_rsa_priv_dec(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding)
 {
-    return RSA_meth_get_init(RSA_PKCS1_OpenSSL())(rsa);
-}
-static int async_rsa_finish(RSA *rsa)
-{
-    return RSA_meth_get_finish(RSA_PKCS1_OpenSSL())(rsa);
+  // printf("async_priv_dec\n");
+  spawn_delay_thread();
+  async_pause_job();
+  return RSA_meth_get_priv_dec(RSA_PKCS1_OpenSSL())(flen, from, to, rsa, padding);
 }
 
+static int
+async_rsa_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx)
+{
+  return RSA_meth_get_mod_exp(RSA_PKCS1_OpenSSL())(r0, I, rsa, ctx);
+}
+
+static int
+async_rsa_init(RSA *rsa)
+{
+  return RSA_meth_get_init(RSA_PKCS1_OpenSSL())(rsa);
+}
+static int
+async_rsa_finish(RSA *rsa)
+{
+  return RSA_meth_get_finish(RSA_PKCS1_OpenSSL())(rsa);
+}
