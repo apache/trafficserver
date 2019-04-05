@@ -64,12 +64,20 @@ HQClientTransaction::HQClientTransaction(HQClientSession *session, QUICStreamIO 
   this->set_parent(session);
 
   this->sm_reader = this->_read_vio_buf.alloc_reader();
-  this->_request_header.create(HTTP_TYPE_REQUEST);
+
+  HTTPType http_type = HTTP_TYPE_UNKNOWN;
+  if (this->direction() == NET_VCONNECTION_OUT) {
+    http_type = HTTP_TYPE_RESPONSE;
+  } else {
+    http_type = HTTP_TYPE_REQUEST;
+  }
+
+  this->_header.create(http_type);
 }
 
 HQClientTransaction::~HQClientTransaction()
 {
-  this->_request_header.destroy();
+  this->_header.destroy();
 }
 
 void
@@ -236,6 +244,12 @@ HQClientTransaction::decrement_client_transactions_stat()
   // TODO
 }
 
+NetVConnectionContext_t
+HQClientTransaction::direction() const
+{
+  return this->parent->get_netvc()->get_context();
+}
+
 /**
  * @brief Replace existing event only if the new event is different than the inprogress event
  */
@@ -311,7 +325,7 @@ Http3ClientTransaction::Http3ClientTransaction(Http3ClientSession *session, QUIC
   this->_frame_collector.add_generator(this->_data_framer);
   // this->_frame_collector.add_generator(this->_push_controller);
 
-  this->_header_handler = new Http3HeaderVIOAdaptor(&this->_request_header, session->remote_qpack(), this, stream_io->stream_id());
+  this->_header_handler = new Http3HeaderVIOAdaptor(&this->_header, session->remote_qpack(), this, stream_io->stream_id());
   this->_data_handler   = new Http3StreamDataVIOAdaptor(&this->_read_vio);
 
   this->_frame_dispatcher.add_handler(this->_header_handler);
@@ -332,8 +346,6 @@ int
 Http3ClientTransaction::state_stream_open(int event, void *edata)
 {
   // TODO: should check recursive call?
-  Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
-
   if (this->_thread != this_ethread()) {
     // Send on to the owning thread
     if (this->_cross_thread_event == nullptr) {
@@ -352,6 +364,7 @@ Http3ClientTransaction::state_stream_open(int event, void *edata)
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE: {
+    Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     int64_t len = this->_process_read_vio();
     // if no progress, don't need to signal
     if (len > 0) {
@@ -363,7 +376,9 @@ Http3ClientTransaction::state_stream_open(int event, void *edata)
   }
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE: {
+    Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     int64_t len = this->_process_write_vio();
+    // if no progress, don't need to signal
     if (len > 0) {
       this->_signal_write_event();
     }
@@ -379,6 +394,7 @@ Http3ClientTransaction::state_stream_open(int event, void *edata)
     break;
   }
   case QPACK_EVENT_DECODE_COMPLETE: {
+    Http3TransVDebug("%s (%d)", "QPACK_EVENT_DECODE_COMPLETE", event);
     int res = this->_on_qpack_decode_complete();
     if (res) {
       // If READ_READY event is scheduled, should it be canceled?
@@ -387,6 +403,7 @@ Http3ClientTransaction::state_stream_open(int event, void *edata)
     break;
   }
   case QPACK_EVENT_DECODE_FAILED: {
+    Http3TransVDebug("%s (%d)", "QPACK_EVENT_DECODE_FAILED", event);
     // FIXME: handle error
     break;
   }
@@ -506,20 +523,22 @@ Http3ClientTransaction::_convert_header_from_3_to_1_1(HTTPHdr *hdrs)
 {
   // TODO: do HTTP/3 specific convert, if there
 
-  // Dirty hack to bypass checks
-  MIMEField *field;
-  if ((field = hdrs->field_find(HTTP3_VALUE_SCHEME, HTTP3_LEN_SCHEME)) == nullptr) {
-    char value_s[]          = "https";
-    MIMEField *scheme_field = hdrs->field_create(HTTP3_VALUE_SCHEME, HTTP3_LEN_SCHEME);
-    scheme_field->value_set(hdrs->m_heap, hdrs->m_mime, value_s, sizeof(value_s) - 1);
-    hdrs->field_attach(scheme_field);
-  }
+  if (http_hdr_type_get(hdrs->m_http) == HTTP_TYPE_REQUEST) {
+    // Dirty hack to bypass checks
+    MIMEField *field;
+    if ((field = hdrs->field_find(HTTP3_VALUE_SCHEME, HTTP3_LEN_SCHEME)) == nullptr) {
+      char value_s[]          = "https";
+      MIMEField *scheme_field = hdrs->field_create(HTTP3_VALUE_SCHEME, HTTP3_LEN_SCHEME);
+      scheme_field->value_set(hdrs->m_heap, hdrs->m_mime, value_s, sizeof(value_s) - 1);
+      hdrs->field_attach(scheme_field);
+    }
 
-  if ((field = hdrs->field_find(HTTP3_VALUE_AUTHORITY, HTTP3_LEN_AUTHORITY)) == nullptr) {
-    char value_a[]             = "localhost";
-    MIMEField *authority_field = hdrs->field_create(HTTP3_VALUE_AUTHORITY, HTTP3_LEN_AUTHORITY);
-    authority_field->value_set(hdrs->m_heap, hdrs->m_mime, value_a, sizeof(value_a) - 1);
-    hdrs->field_attach(authority_field);
+    if ((field = hdrs->field_find(HTTP3_VALUE_AUTHORITY, HTTP3_LEN_AUTHORITY)) == nullptr) {
+      char value_a[]             = "localhost";
+      MIMEField *authority_field = hdrs->field_create(HTTP3_VALUE_AUTHORITY, HTTP3_LEN_AUTHORITY);
+      authority_field->value_set(hdrs->m_heap, hdrs->m_mime, value_a, sizeof(value_a) - 1);
+      hdrs->field_attach(authority_field);
+    }
   }
 
   return http2_convert_header_from_2_to_1_1(hdrs);
@@ -528,8 +547,9 @@ Http3ClientTransaction::_convert_header_from_3_to_1_1(HTTPHdr *hdrs)
 int
 Http3ClientTransaction::_on_qpack_decode_complete()
 {
-  ParseResult res = this->_convert_header_from_3_to_1_1(&this->_request_header);
+  ParseResult res = this->_convert_header_from_3_to_1_1(&this->_header);
   if (res == PARSE_RESULT_ERROR) {
+    Http3TransDebug("PARSE_RESULT_ERROR");
     return -1;
   }
 
@@ -554,7 +574,7 @@ Http3ClientTransaction::_on_qpack_decode_complete()
       writer->add_block();
       block = writer->get_current_block();
     }
-    done = this->_request_header.print(block->start(), block->write_avail(), &bufindex, &tmp);
+    done = this->_header.print(block->end(), block->write_avail(), &bufindex, &tmp);
     dumpoffset += bufindex;
     writer->fill(bufindex);
     if (!done) {

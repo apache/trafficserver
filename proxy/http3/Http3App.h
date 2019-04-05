@@ -44,23 +44,29 @@ class Http3App : public QUICApplication
 {
 public:
   Http3App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl);
-  ~Http3App();
+  virtual ~Http3App();
 
-  void start();
-  int main_event_handler(int event, Event *data);
+  virtual void start();
+  virtual int main_event_handler(int event, Event *data);
 
   // TODO: Return StreamIO. It looks bother that coller have to look up StreamIO by stream id.
   // Why not create_bidi_stream ?
   QUICConnectionErrorUPtr create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type);
 
+protected:
+  // TODO: create Http3Session
+  Http3ClientSession *_ssn = nullptr;
+
 private:
   void _handle_uni_stream_on_read_ready(int event, QUICStreamIO *stream_io);
-  void _handle_bidi_stream_on_read_ready(int event, QUICStreamIO *stream_io);
   void _handle_uni_stream_on_write_ready(int event, QUICStreamIO *stream_io);
+  void _handle_uni_stream_on_eos(int event, QUICStreamIO *stream_io);
+  void _handle_bidi_stream_on_read_ready(int event, QUICStreamIO *stream_io);
   void _handle_bidi_stream_on_write_ready(int event, QUICStreamIO *stream_io);
+  void _handle_bidi_stream_on_eos(int event, QUICStreamIO *stream_io);
+
   void _set_qpack_stream(Http3StreamType type, QUICStreamIO *stream_io);
 
-  Http3ClientSession *_client_session   = nullptr;
   Http3FrameHandler *_settings_handler  = nullptr;
   Http3FrameGenerator *_settings_framer = nullptr;
 

@@ -66,6 +66,7 @@ public:
   // HQClientTransaction
   virtual int state_stream_open(int, void *)             = 0;
   virtual int state_stream_closed(int event, void *data) = 0;
+  NetVConnectionContext_t direction() const;
 
 protected:
   virtual int64_t _process_read_vio()  = 0;
@@ -85,7 +86,7 @@ protected:
   Event *_read_event  = nullptr;
   Event *_write_event = nullptr;
 
-  HTTPHdr _request_header;
+  HTTPHdr _header; ///< HTTP header buffer for decoding
 };
 
 class Http3ClientTransaction : public HQClientTransaction
