@@ -21,10 +21,24 @@
   limitations under the License.
  */
 
+#include <openssl/crypto.h>
 #include "tscore/I_Layout.h"
+#include "tscore/BufferWriter.h"
 #include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
 #include "info.h"
+
+#if HAVE_ZLIB_H
+#include <zlib.h>
+#endif
+
+#if HAVE_LZMA_H
+#include <lzma.h>
+#endif
+
+#if HAVE_BROTLI_ENCODE_H
+#include <brotli/encode.h>
+#endif
 
 // Produce output about compile time features, useful for checking how things were built, as well
 // as for our TSQA test harness.
@@ -59,17 +73,17 @@ produce_features(bool json)
   print_feature("BUILD_PERSON", BUILD_PERSON, json);
   print_feature("BUILD_GROUP", BUILD_GROUP, json);
   print_feature("BUILD_NUMBER", BUILD_NUMBER, json);
-#ifdef HAVE_ZLIB_H
+#if HAVE_ZLIB_H
   print_feature("TS_HAS_LIBZ", 1, json);
 #else
   print_feature("TS_HAS_LIBZ", 0, json);
 #endif
-#ifdef HAVE_LZMA_H
+#if HAVE_LZMA_H
   print_feature("TS_HAS_LZMA", 1, json);
 #else
   print_feature("TS_HAS_LZMA", 0, json);
 #endif
-#ifdef HAVE_BROTLI_ENCODE_H
+#if HAVE_BROTLI_ENCODE_H
   print_feature("TS_HAS_BROTLI", 1, json);
 #else
   print_feature("TS_HAS_BROTLI", 0, json);
@@ -148,6 +162,51 @@ produce_layout(bool json)
   print_var("hosting.config", RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);
   print_var("volume.config", RecConfigReadConfigPath("proxy.config.cache.volume_filename"), json);
   print_var("ip_allow.config", RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true);
+  if (json) {
+    printf("}\n");
+  }
+}
+
+void
+produce_versions(bool json)
+{
+  using LBW = ts::LocalBufferWriter<128>;
+  static const std::string_view undef{"undef"};
+
+  if (json) {
+    printf("{\n");
+  }
+
+  print_var("openssl", LBW().print("{:#x}", OPENSSL_VERSION_NUMBER).view(), json);
+  print_var("openssl_str", LBW().print(OPENSSL_VERSION_TEXT).view(), json);
+  print_var("pcre", LBW().print("{}.{}", PCRE_MAJOR, PCRE_MINOR).view(), json);
+  // These are optional, for now at least.
+#if TS_USE_HWLOC
+  print_var("hwloc", LBW().print("{:#x}", HWLOC_API_VERSION).view(), json);
+  print_var("hwloc.run", LBW().print("{:#x}", hwloc_get_api_version()).view(), json);
+#else
+  print_var("hwloc", undef, json);
+#endif
+#if HAVE_ZLIB_H
+  print_var("libz", LBW().print("{}", ZLIB_VERSION).view(), json);
+#else
+  print_var("libz", undef, json);
+#endif
+#if HAVE_LZMA_H
+  print_var("lzma", LBW().print("{}", LZMA_VERSION_STRING).view(), json);
+  print_var("lzma.run", LBW().print("{}", lzma_version_string()).view(), json);
+#else
+  print_var("lzma", undef, json);
+#endif
+#if HAVE_BROTLI_ENCODE_H
+  print_var("lzma", LBW().print("{}", BrotliEncoderVersion).view(), json);
+#else
+  print_var("brotli", undef, json);
+#endif
+
+  // This should always be last
+  print_var("traffic-server", LBW().print(TS_VERSION_STRING).view(), json, true);
+
   if (json) {
     printf("}\n");
   }

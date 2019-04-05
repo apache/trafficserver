@@ -162,6 +162,8 @@ LayoutEngine::info()
 
   if (arguments.get("features")) {
     produce_features(json);
+  } else if (arguments.get("versions")) {
+    produce_versions(json);
   } else {
     produce_layout(json);
   }
