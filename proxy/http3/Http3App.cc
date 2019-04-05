@@ -37,13 +37,13 @@ static constexpr char debug_tag_v[] = "v_http3";
 
 Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QUICApplication(client_vc)
 {
-  this->_client_session      = new Http3ClientSession(client_vc);
-  this->_client_session->acl = std::move(session_acl);
-  this->_client_session->new_connection(client_vc, nullptr, nullptr);
+  this->_ssn      = new Http3ClientSession(client_vc);
+  this->_ssn->acl = std::move(session_acl);
+  this->_ssn->new_connection(client_vc, nullptr, nullptr);
 
   this->_qc->stream_manager()->set_default_application(this);
 
-  this->_settings_handler = new Http3SettingsHandler(this->_client_session);
+  this->_settings_handler = new Http3SettingsHandler(this->_ssn);
   this->_control_stream_dispatcher.add_handler(this->_settings_handler);
 
   this->_settings_framer = new Http3SettingsFramer(client_vc->get_context());
@@ -54,7 +54,7 @@ Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QU
 
 Http3App::~Http3App()
 {
-  delete this->_client_session;
+  delete this->_ssn;
   delete this->_settings_handler;
   delete this->_settings_framer;
 }
@@ -71,15 +71,16 @@ Http3App::start()
     this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_local_control_stream);
   }
 
-  error = this->create_uni_stream(stream_id, Http3StreamType::QPACK_ENCODER);
-  if (error == nullptr) {
-    this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_find_stream_io(stream_id));
-  }
+  // TODO: Open uni streams for QPACK when dynamic table is used
+  // error = this->create_uni_stream(stream_id, Http3StreamType::QPACK_ENCODER);
+  // if (error == nullptr) {
+  //   this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_find_stream_io(stream_id));
+  // }
 
-  error = this->create_uni_stream(stream_id, Http3StreamType::QPACK_DECODER);
-  if (error == nullptr) {
-    this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_find_stream_io(stream_id));
-  }
+  // error = this->create_uni_stream(stream_id, Http3StreamType::QPACK_DECODER);
+  // if (error == nullptr) {
+  //   this->_handle_uni_stream_on_write_ready(VC_EVENT_WRITE_READY, this->_find_stream_io(stream_id));
+  // }
 }
 
 int
@@ -113,6 +114,12 @@ Http3App::main_event_handler(int event, Event *data)
     }
     break;
   case VC_EVENT_EOS:
+    if (stream_io->is_bidirectional()) {
+      this->_handle_bidi_stream_on_eos(event, stream_io);
+    } else {
+      this->_handle_uni_stream_on_eos(event, stream_io);
+    }
+    break;
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
@@ -196,10 +203,10 @@ Http3App::_handle_bidi_stream_on_read_ready(int event, QUICStreamIO *stream_io)
   uint8_t dummy;
   if (stream_io->peek(&dummy, 1)) {
     QUICStreamId stream_id      = stream_io->stream_id();
-    Http3ClientTransaction *txn = static_cast<Http3ClientTransaction *>(this->_client_session->get_transaction(stream_id));
+    Http3ClientTransaction *txn = static_cast<Http3ClientTransaction *>(this->_ssn->get_transaction(stream_id));
 
     if (txn == nullptr) {
-      txn = new Http3ClientTransaction(this->_client_session, stream_io);
+      txn = new Http3ClientTransaction(this->_ssn, stream_io);
       SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
 
       txn->new_transaction();
@@ -237,20 +244,32 @@ Http3App::_handle_uni_stream_on_write_ready(int /* event */, QUICStreamIO *strea
 }
 
 void
+Http3App::_handle_bidi_stream_on_eos(int /* event */, QUICStreamIO *stream_io)
+{
+  // TODO: handle eos
+}
+
+void
+Http3App::_handle_uni_stream_on_eos(int /* event */, QUICStreamIO *stream_io)
+{
+  // TODO: handle eos
+}
+
+void
 Http3App::_set_qpack_stream(Http3StreamType type, QUICStreamIO *stream_io)
 {
   // Change app to QPACK from Http3
   if (type == Http3StreamType::QPACK_ENCODER) {
     if (this->_qc->direction() == NET_VCONNECTION_IN) {
-      this->_client_session->remote_qpack()->set_encoder_stream(stream_io);
+      this->_ssn->remote_qpack()->set_encoder_stream(stream_io);
     } else {
-      this->_client_session->local_qpack()->set_encoder_stream(stream_io);
+      this->_ssn->local_qpack()->set_encoder_stream(stream_io);
     }
   } else if (type == Http3StreamType::QPACK_DECODER) {
     if (this->_qc->direction() == NET_VCONNECTION_IN) {
-      this->_client_session->local_qpack()->set_decoder_stream(stream_io);
+      this->_ssn->local_qpack()->set_decoder_stream(stream_io);
     } else {
-      this->_client_session->remote_qpack()->set_decoder_stream(stream_io);
+      this->_ssn->remote_qpack()->set_decoder_stream(stream_io);
     }
   } else {
     ink_abort("unkown stream type");
@@ -261,7 +280,7 @@ void
 Http3App::_handle_bidi_stream_on_write_ready(int event, QUICStreamIO *stream_io)
 {
   QUICStreamId stream_id      = stream_io->stream_id();
-  Http3ClientTransaction *txn = static_cast<Http3ClientTransaction *>(this->_client_session->get_transaction(stream_id));
+  Http3ClientTransaction *txn = static_cast<Http3ClientTransaction *>(this->_ssn->get_transaction(stream_id));
   if (txn != nullptr) {
     SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
     txn->handleEvent(event);

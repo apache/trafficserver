@@ -70,60 +70,31 @@ Http3HeaderFramer::is_done() const
   return this->_sent_all_data;
 }
 
-const char *HTTP3_VALUE_STATUS           = ":status";
-const unsigned HTTP3_LEN_STATUS          = countof(":status") - 1;
-static size_t HTTP3_LEN_STATUS_VALUE_STR = 3;
-
-// Copy code from http2_generate_h2_header_from_1_1(h1_hdrs, h3_hdrs);
 void
 Http3HeaderFramer::_convert_header_from_1_1_to_3(HTTPHdr *h3_hdrs, HTTPHdr *h1_hdrs)
 {
-  // Add ':status' header field
-  char status_str[HTTP3_LEN_STATUS_VALUE_STR + 1];
-  snprintf(status_str, sizeof(status_str), "%d", h1_hdrs->status_get());
-  MIMEField *status_field = h3_hdrs->field_create(HTTP3_VALUE_STATUS, HTTP3_LEN_STATUS);
-  status_field->value_set(h3_hdrs->m_heap, h3_hdrs->m_mime, status_str, HTTP3_LEN_STATUS_VALUE_STR);
-  h3_hdrs->field_attach(status_field);
-
-  // Copy headers
-  // Intermediaries SHOULD remove connection-specific header fields.
-  MIMEFieldIter field_iter;
-  for (MIMEField *field = h1_hdrs->iter_get_first(&field_iter); field != nullptr; field = h1_hdrs->iter_get_next(&field_iter)) {
-    const char *name;
-    int name_len;
-    const char *value;
-    int value_len;
-    name = field->name_get(&name_len);
-    if ((name_len == MIME_LEN_CONNECTION && strncasecmp(name, MIME_FIELD_CONNECTION, name_len) == 0) ||
-        (name_len == MIME_LEN_KEEP_ALIVE && strncasecmp(name, MIME_FIELD_KEEP_ALIVE, name_len) == 0) ||
-        (name_len == MIME_LEN_PROXY_CONNECTION && strncasecmp(name, MIME_FIELD_PROXY_CONNECTION, name_len) == 0) ||
-        (name_len == MIME_LEN_TRANSFER_ENCODING && strncasecmp(name, MIME_FIELD_TRANSFER_ENCODING, name_len) == 0) ||
-        (name_len == MIME_LEN_UPGRADE && strncasecmp(name, MIME_FIELD_UPGRADE, name_len) == 0)) {
-      continue;
-    }
-    MIMEField *newfield;
-    name     = field->name_get(&name_len);
-    newfield = h3_hdrs->field_create(name, name_len);
-    value    = field->value_get(&value_len);
-    newfield->value_set(h3_hdrs->m_heap, h3_hdrs->m_mime, value, value_len);
-    h3_hdrs->field_attach(newfield);
-  }
+  http2_generate_h2_header_from_1_1(h1_hdrs, h3_hdrs);
 }
 
 void
 Http3HeaderFramer::_generate_header_block()
 {
   // Prase response header and generate header block
-  int bytes_used = 0;
-  // TODO Use HTTP_TYPE_REQUEST if this is for requests
-  this->_header.create(HTTP_TYPE_RESPONSE);
-  int parse_result = this->_header.parse_resp(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
+  int bytes_used           = 0;
+  ParseResult parse_result = PARSE_RESULT_ERROR;
+
+  if (this->_transaction->direction() == NET_VCONNECTION_OUT) {
+    this->_header.create(HTTP_TYPE_REQUEST);
+    parse_result = this->_header.parse_req(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
+  } else {
+    this->_header.create(HTTP_TYPE_RESPONSE);
+    parse_result = this->_header.parse_resp(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
+  }
   this->_source_vio->ndone += this->_header.length_get();
 
   switch (parse_result) {
   case PARSE_RESULT_DONE: {
     HTTPHdr h3_hdr;
-    h3_hdr.create(HTTP_TYPE_RESPONSE);
     this->_convert_header_from_1_1_to_3(&h3_hdr, &this->_header);
 
     this->_header_block        = new_MIOBuffer();
@@ -135,6 +106,7 @@ Http3HeaderFramer::_generate_header_block()
   case PARSE_RESULT_CONT:
     break;
   default:
+    Debug("http3_trans", "Ignore ivalid headers");
     break;
   }
 }

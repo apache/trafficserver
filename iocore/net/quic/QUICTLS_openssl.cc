@@ -329,13 +329,16 @@ QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t 
 }
 
 QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx,
-                 const char *session_file)
+                 const NetVCOptions &netvc_options, const char *session_file)
   : QUICHandshakeProtocol(pp_key_info), _session_file(session_file), _ssl(SSL_new(ssl_ctx)), _netvc_context(nvc_ctx)
 {
   ink_assert(this->_netvc_context != NET_VCONNECTION_UNSET);
 
   if (this->_netvc_context == NET_VCONNECTION_OUT) {
     SSL_set_connect_state(this->_ssl);
+
+    SSL_set_alpn_protos(this->_ssl, reinterpret_cast<const unsigned char *>(netvc_options.alpn_protos.data()), netvc_options.alpn_protos.size());
+    SSL_set_tlsext_host_name(this->_ssl, netvc_options.sni_servername.get());
   } else {
     SSL_set_accept_state(this->_ssl);
   }

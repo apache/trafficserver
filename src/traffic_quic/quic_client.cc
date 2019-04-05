@@ -25,6 +25,17 @@
 
 #include <iostream>
 #include <fstream>
+#include <string_view>
+
+#include "Http3ClientSession.h"
+#include "Http3ClientTransaction.h"
+
+// OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
+// https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
+// Should be integrate with IP_PROTO_TAG_HTTP_QUIC in ts/ink_inet.h ?
+using namespace std::literals;
+static constexpr std::string_view HQ_ALPN_PROTO_LIST("\5hq-18"sv);
+static constexpr std::string_view H3_ALPN_PROTO_LIST("\5h3-18"sv);
 
 QUICClient::QUICClient(const QUICClientConfig *config) : Continuation(new_ProxyMutex()), _config(config)
 {
@@ -55,6 +66,13 @@ QUICClient::start(int, void *)
     return EVENT_DONE;
   }
 
+  std::string_view alpn_protos;
+  if (this->_config->http3) {
+    alpn_protos = H3_ALPN_PROTO_LIST;
+  } else {
+    alpn_protos = HQ_ALPN_PROTO_LIST;
+  }
+
   for (struct addrinfo *info = this->_remote_addr_info; info != nullptr; info = info->ai_next) {
     NetVCOptions opt;
     opt.ip_proto            = NetVCOptions::USE_UDP;
@@ -62,6 +80,8 @@ QUICClient::start(int, void *)
     opt.etype               = ET_NET;
     opt.socket_recv_bufsize = 1048576;
     opt.socket_send_bufsize = 1048576;
+    opt.alpn_protos         = alpn_protos;
+    opt.set_sni_servername(this->_config->addr, strnlen(this->_config->addr, 1023));
 
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
@@ -83,8 +103,19 @@ QUICClient::state_http_server_open(int event, void *data)
     Debug("quic_client", "start proxy server ssn/txn");
 
     QUICNetVConnection *conn = static_cast<QUICNetVConnection *>(data);
-    QUICClientApp *app       = new QUICClientApp(conn, this->_config);
-    app->start(this->_config->path);
+
+    if (this->_config->http0_9) {
+      Http09ClientApp *app = new Http09ClientApp(conn, this->_config);
+      app->start();
+    } else if (this->_config->http3) {
+      // TODO: see what server session is doing with IpAllow::ACL
+      IpAllow::ACL session_acl;
+      Http3ClientApp *app = new Http3ClientApp(conn, std::move(session_acl), this->_config);
+      SCOPED_MUTEX_LOCK(lock, app->mutex, this_ethread());
+      app->start();
+    } else {
+      ink_abort("invalid config");
+    }
 
     break;
   }
@@ -104,20 +135,20 @@ QUICClient::state_http_server_open(int event, void *data)
 }
 
 //
-// QUICClientApp
+// Http09ClientApp
 //
-#define QUICClientAppDebug(fmt, ...) Debug("quic_client_app", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
-#define QUICClientAppVDebug(fmt, ...) Debug("v_quic_client_app", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
+#define Http09ClientAppDebug(fmt, ...) Debug("quic_client_app", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
+#define Http09ClientAppVDebug(fmt, ...) Debug("v_quic_client_app", "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
-QUICClientApp::QUICClientApp(QUICNetVConnection *qvc, const QUICClientConfig *config) : QUICApplication(qvc), _config(config)
+Http09ClientApp::Http09ClientApp(QUICNetVConnection *qvc, const QUICClientConfig *config) : QUICApplication(qvc), _config(config)
 {
   this->_qc->stream_manager()->set_default_application(this);
 
-  SET_HANDLER(&QUICClientApp::main_event_handler);
+  SET_HANDLER(&Http09ClientApp::main_event_handler);
 }
 
 void
-QUICClientApp::start(const char *path)
+Http09ClientApp::start()
 {
   if (this->_config->output[0] != 0x0) {
     this->_filename = this->_config->output;
@@ -128,15 +159,11 @@ QUICClientApp::start(const char *path)
     std::ofstream f_stream(this->_filename, std::ios::binary | std::ios::trunc);
   }
 
-  if (this->_config->http3) {
-    this->_start_http_3_session(path);
-  } else {
-    this->_start_http_09_session(path);
-  }
+  this->_do_http_request();
 }
 
 void
-QUICClientApp::_start_http_09_session(const char *path)
+Http09ClientApp::_do_http_request()
 {
   QUICStreamId stream_id;
   QUICConnectionErrorUPtr error = this->_qc->stream_manager()->create_bidi_stream(stream_id);
@@ -148,44 +175,9 @@ QUICClientApp::_start_http_09_session(const char *path)
 
   // TODO: move to transaction
   char request[1024] = {0};
-  int request_len    = snprintf(request, sizeof(request), "GET %s\r\n", path);
+  int request_len    = snprintf(request, sizeof(request), "GET %s\r\n", this->_config->path);
 
-  QUICClientAppDebug("\n%s", request);
-
-  QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
-
-  stream_io->write(reinterpret_cast<uint8_t *>(request), request_len);
-  stream_io->write_done();
-  stream_io->write_reenable();
-}
-
-void
-QUICClientApp::_start_http_3_session(const char *path)
-{
-  QUICConnectionErrorUPtr error;
-
-  QUICStreamId settings_stream_id;
-  error = this->_qc->stream_manager()->create_uni_stream(settings_stream_id);
-
-  if (error != nullptr) {
-    Error("%s", error->msg);
-    ink_abort("Could not create uni stream : %s", error->msg);
-  }
-  // TODO: send settings frame
-
-  QUICStreamId stream_id;
-  error = this->_qc->stream_manager()->create_bidi_stream(stream_id);
-
-  if (error != nullptr) {
-    Error("%s", error->msg);
-    ink_abort("Could not create bidi stream : %s", error->msg);
-  }
-
-  // TODO: move to transaction
-  char request[1024] = {0};
-  int request_len    = snprintf(request, sizeof(request), "GET %s\r\n", path);
-
-  QUICClientAppDebug("\n%s", request);
+  Http09ClientAppDebug("\n%s", request);
 
   QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
 
@@ -195,15 +187,15 @@ QUICClientApp::_start_http_3_session(const char *path)
 }
 
 int
-QUICClientApp::main_event_handler(int event, Event *data)
+Http09ClientApp::main_event_handler(int event, Event *data)
 {
-  QUICClientAppVDebug("%s (%d)", get_vc_event_name(event), event);
+  Http09ClientAppVDebug("%s (%d)", get_vc_event_name(event), event);
 
   VIO *vio                = reinterpret_cast<VIO *>(data);
   QUICStreamIO *stream_io = this->_find_stream_io(vio);
 
   if (stream_io == nullptr) {
-    QUICClientAppDebug("Unknown Stream");
+    Http09ClientAppDebug("Unknown Stream");
     return -1;
   }
 
@@ -247,6 +239,143 @@ QUICClientApp::main_event_handler(int event, Event *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
     ink_assert(false);
     break;
+  default:
+    break;
+  }
+
+  return EVENT_CONT;
+}
+
+//
+// Http3ClientApp
+//
+Http3ClientApp::Http3ClientApp(QUICNetVConnection *qvc, IpAllow::ACL session_acl, const QUICClientConfig *config)
+  : super(qvc, std::move(session_acl)), _config(config)
+{
+}
+
+Http3ClientApp::~Http3ClientApp()
+{
+  free_MIOBuffer(this->_req_buf);
+  this->_req_buf = nullptr;
+
+  free_MIOBuffer(this->_resp_buf);
+  this->_resp_buf = nullptr;
+
+  delete this->_resp_handler;
+}
+
+void
+Http3ClientApp::start()
+{
+  this->_req_buf                  = new_MIOBuffer();
+  this->_resp_buf                 = new_MIOBuffer();
+  IOBufferReader *resp_buf_reader = _resp_buf->alloc_reader();
+
+  this->_resp_handler = new RespHandler(this->_config, resp_buf_reader);
+
+  super::start();
+  this->_do_http_request();
+}
+
+void
+Http3ClientApp::_do_http_request()
+{
+  QUICConnectionErrorUPtr error;
+  QUICStreamId stream_id;
+  error = this->_qc->stream_manager()->create_bidi_stream(stream_id);
+  if (error != nullptr) {
+    Error("%s", error->msg);
+    ink_abort("Could not create bidi stream : %s", error->msg);
+  }
+
+  QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
+
+  // TODO: create Http3ServerTransaction
+  Http3ClientTransaction *txn = new Http3ClientTransaction(this->_ssn, stream_io);
+  SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
+
+  // TODO: fix below issue with H2 origin conn stuff
+  // Do not call ProxyClientTransaction::new_transaction(), but need to setup txn - e.g. do_io_write / do_io_read
+  VIO *read_vio = txn->do_io_read(this->_resp_handler, INT64_MAX, this->_resp_buf);
+  this->_resp_handler->set_read_vio(read_vio);
+
+  // Write HTTP Request to write_vio
+  char request[1024] = {0};
+  std::string format;
+  if (this->_config->path[0] == '/') {
+    format = "GET https://%s%s HTTP/1.1\r\n\r\n";
+  } else {
+    format = "GET https://%s/%s HTTP/1.1\r\n\r\n";
+  }
+
+  int request_len = snprintf(request, sizeof(request), format.c_str(), this->_config->addr, this->_config->path);
+
+  Http09ClientAppDebug("\n%s", request);
+
+  // TODO: check write avail size
+  int64_t nbytes            = this->_req_buf->write(request, request_len);
+  IOBufferReader *buf_start = this->_req_buf->alloc_reader();
+  txn->do_io_write(this, nbytes, buf_start);
+}
+
+//
+// Response Handler
+//
+RespHandler::RespHandler(const QUICClientConfig *config, IOBufferReader *reader)
+  : Continuation(new_ProxyMutex()), _config(config), _reader(reader)
+{
+  if (this->_config->output[0] != 0x0) {
+    this->_filename = this->_config->output;
+  }
+
+  if (this->_filename) {
+    // Destroy contents if file already exists
+    std::ofstream f_stream(this->_filename, std::ios::binary | std::ios::trunc);
+  }
+
+  SET_HANDLER(&RespHandler::main_event_handler);
+}
+
+void
+RespHandler::set_read_vio(VIO *vio)
+{
+  this->_read_vio = vio;
+}
+
+int
+RespHandler::main_event_handler(int event, Event *data)
+{
+  Debug("v_http3", "%s", get_vc_event_name(event));
+  switch (event) {
+  case VC_EVENT_READ_READY:
+  case VC_EVENT_READ_COMPLETE: {
+    std::streambuf *default_stream = nullptr;
+    std::ofstream f_stream;
+
+    if (this->_filename) {
+      default_stream = std::cout.rdbuf();
+      f_stream       = std::ofstream(this->_filename, std::ios::binary | std::ios::app);
+      std::cout.rdbuf(f_stream.rdbuf());
+    }
+
+    uint8_t buf[8192] = {0};
+    int64_t nread;
+    while ((nread = this->_reader->read(buf, sizeof(buf))) > 0) {
+      std::cout.write(reinterpret_cast<char *>(buf), nread);
+      this->_read_vio->ndone += nread;
+    }
+    std::cout.flush();
+
+    if (this->_filename) {
+      f_stream.close();
+      std::cout.rdbuf(default_stream);
+    }
+
+    break;
+  }
+  case VC_EVENT_WRITE_READY:
+  case VC_EVENT_WRITE_COMPLETE:
   default:
     break;
   }

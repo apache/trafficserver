@@ -29,17 +29,33 @@
 #include "P_QUICNetProcessor.h"
 
 #include "QUICApplication.h"
+#include "Http3App.h"
 
 // TODO: add quic version option
+// TODO: add host header option (also should be used for SNI)
 struct QUICClientConfig {
   char addr[1024]       = "127.0.0.1";
   char output[1024]     = {0};
   char port[16]         = "4433";
   char path[1018]       = "/";
-  char debug_tags[1024] = "quic|vv_quic_crypto";
+  char debug_tags[1024] = "quic|vv_quic_crypto|http3|qpack";
   int close             = false;
   int http0_9           = true;
   int http3             = false;
+};
+
+class RespHandler : public Continuation
+{
+public:
+  RespHandler(const QUICClientConfig *config, IOBufferReader *reader);
+  int main_event_handler(int event, Event *data);
+  void set_read_vio(VIO *vio);
+
+private:
+  const QUICClientConfig *_config = nullptr;
+  const char *_filename           = nullptr;
+  IOBufferReader *_reader         = nullptr;
+  VIO *_read_vio                  = nullptr;
 };
 
 class QUICClient : public Continuation
@@ -56,18 +72,37 @@ private:
   struct addrinfo *_remote_addr_info = nullptr;
 };
 
-class QUICClientApp : public QUICApplication
+class Http09ClientApp : public QUICApplication
 {
 public:
-  QUICClientApp(QUICNetVConnection *qvc, const QUICClientConfig *config);
+  Http09ClientApp(QUICNetVConnection *qvc, const QUICClientConfig *config);
 
-  void start(const char *path);
+  void start();
   int main_event_handler(int event, Event *data);
 
 private:
-  void _start_http_09_session(const char *path);
-  void _start_http_3_session(const char *path);
+  void _do_http_request();
 
   const QUICClientConfig *_config = nullptr;
   const char *_filename           = nullptr;
+};
+
+class Http3ClientApp : public Http3App
+{
+public:
+  using super = Http3App;
+
+  Http3ClientApp(QUICNetVConnection *qvc, IpAllow::ACL session_acl, const QUICClientConfig *config);
+  ~Http3ClientApp();
+
+  void start() override;
+
+private:
+  void _do_http_request();
+
+  RespHandler *_resp_handler      = nullptr;
+  const QUICClientConfig *_config = nullptr;
+
+  MIOBuffer *_req_buf  = nullptr;
+  MIOBuffer *_resp_buf = nullptr;
 };

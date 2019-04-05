@@ -49,11 +49,12 @@ Http3HeaderVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame)
   if (res == 0) {
     // When decoding is not blocked, continuation should be called directly?
   } else if (res == 1) {
-    // Decoding is blocked. Callback will be fired.
+    // Decoding is blocked.
+    Debug("http3", "Decoding is blocked. DecodeRequest is scheduled");
   } else if (res < 0) {
-    // error
+    Debug("http3", "Error on decoding header (%d)", res);
   } else {
-    // should not be here
+    ink_abort("should not be here");
   }
 
   return Http3ErrorUPtr(new Http3NoError());

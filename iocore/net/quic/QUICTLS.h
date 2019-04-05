@@ -40,7 +40,7 @@ class QUICTLS : public QUICHandshakeProtocol
 {
 public:
   QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx,
-          const char *session_file = nullptr);
+          const NetVCOptions &netvc_options, const char *session_file = nullptr);
   ~QUICTLS();
 
   // TODO: integrate with _early_data_processed

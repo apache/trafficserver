@@ -27,6 +27,11 @@
 #include "tscore/I_Version.h"
 
 #include "RecordsConfig.h"
+#include "URL.h"
+#include "MIME.h"
+#include "HTTP.h"
+#include "HuffmanCodec.h"
+#include "Http3Config.h"
 
 #include "diags.h"
 #include "quic_client.h"
@@ -94,6 +99,14 @@ main(int argc, const char **argv)
   eventProcessor.start(THREADS);
   udpNet.start(1, stacksize);
   quic_NetProcessor.start(-1, stacksize);
+
+  // Same to init_http_header(); in traffic_server.cc
+  url_init();
+  mime_init();
+  http_init();
+  hpack_huffman_init();
+
+  Http3Config::startup();
 
   QUICClient client(&config);
   eventProcessor.schedule_in(&client, 1, ET_NET);
@@ -168,6 +181,7 @@ Log::trace_out(sockaddr const *, unsigned short, char const *, ...)
 }
 
 #include "InkAPIInternal.h"
+
 int
 APIHook::invoke(int, void *)
 {
@@ -187,6 +201,24 @@ APIHooks::get() const
 {
   ink_assert(false);
   return nullptr;
+}
+
+void
+APIHooks::clear()
+{
+  ink_abort("do not call stub");
+}
+
+void
+APIHooks::append(INKContInternal *)
+{
+  ink_abort("do not call stub");
+}
+
+void
+APIHooks::prepend(INKContInternal *)
+{
+  ink_abort("do not call stub");
 }
 
 void
@@ -227,19 +259,76 @@ HttpRequestData::get_client_ip()
 SslAPIHooks *ssl_hooks = nullptr;
 StatPagesManager statPagesManager;
 
-#include "ProcessManager.h"
-inkcoreapi ProcessManager *pmgmt = nullptr;
-
-int
-BaseManager::registerMgmtCallback(int, const MgmtCallback &)
+#include "HttpDebugNames.h"
+const char *
+HttpDebugNames::get_api_hook_name(TSHttpHookID t)
 {
-  ink_assert(false);
-  return 0;
+  return "dummy";
+}
+
+#include "HttpSM.h"
+HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
+
+void
+HttpSM::cleanup()
+{
+  ink_abort("do not call stub");
 }
 
 void
-ProcessManager::signalManager(int, char const *, int)
+HttpSM::destroy()
 {
-  ink_assert(false);
-  return;
+  ink_abort("do not call stub");
+}
+
+void
+HttpSM::set_next_state()
+{
+  ink_abort("do not call stub");
+}
+
+void
+HttpSM::handle_api_return()
+{
+  ink_abort("do not call stub");
+}
+
+int
+HttpSM::kill_this_async_hook(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
+{
+  return EVENT_DONE;
+}
+
+void
+HttpSM::attach_client_session(ProxyClientTransaction *, IOBufferReader *)
+{
+  ink_abort("do not call stub");
+}
+
+void
+HttpSM::init()
+{
+  ink_abort("do not call stub");
+}
+
+ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
+HttpAPIHooks *http_global_hooks;
+
+HttpVCTable::HttpVCTable(HttpSM *) {}
+
+PostDataBuffers::~PostDataBuffers() {}
+
+#include "HttpTunnel.h"
+HttpTunnel::HttpTunnel() : Continuation(nullptr) {}
+HttpTunnelConsumer::HttpTunnelConsumer() {}
+HttpTunnelProducer::HttpTunnelProducer() {}
+ChunkedHandler::ChunkedHandler() {}
+
+#include "HttpCacheSM.h"
+HttpCacheSM::HttpCacheSM() {}
+
+HttpCacheAction::HttpCacheAction() : sm(nullptr) {}
+void
+HttpCacheAction::cancel(Continuation *c)
+{
 }

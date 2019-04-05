@@ -19,39 +19,45 @@ bin_PROGRAMS += traffic_quic/traffic_quic
 
 traffic_quic_traffic_quic_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
-  $(iocore_include_dirs) \
-  -I$(abs_top_srcdir)/lib \
-  -I$(abs_top_srcdir)/lib/records \
-  -I$(abs_top_srcdir)/mgmt \
-  -I$(abs_top_srcdir)/mgmt/utils \
-  -I$(abs_top_srcdir)/proxy \
-  -I$(abs_top_srcdir)/proxy/hdrs \
-  -I$(abs_top_srcdir)/proxy/http \
-  -I$(abs_top_srcdir)/proxy/logging \
-  -I$(abs_top_srcdir)/proxy/shared \
-  $(TS_INCLUDES) \
-  @OPENSSL_INCLUDES@
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/lib/records \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/http/remap \
+	-I$(abs_top_srcdir)/proxy/http3 \
+	-I$(abs_top_srcdir)/proxy/logging \
+	-I$(abs_top_srcdir)/proxy/shared \
+	$(TS_INCLUDES) \
+	@OPENSSL_INCLUDES@
 
 traffic_quic_traffic_quic_LDFLAGS = \
-  $(AM_LDFLAGS) \
-  @OPENSSL_LDFLAGS@
+	$(AM_LDFLAGS) \
+	@OPENSSL_LDFLAGS@
 
 traffic_quic_traffic_quic_SOURCES = \
-  traffic_quic/quic_client.cc \
-  traffic_quic/traffic_quic.cc
+	traffic_quic/quic_client.cc \
+	traffic_quic/traffic_quic.cc
 
 traffic_quic_traffic_quic_LDADD = \
-  $(top_builddir)/iocore/net/libinknet.a \
-  $(top_builddir)/iocore/aio/libinkaio.a \
-  $(top_builddir)/iocore/net/quic/libquic.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/src/tscore/libtscore.la \
-  $(top_builddir)/src/tscpp/util/libtscpputil.la \
-  $(top_builddir)/lib/tsconfig/libtsconfig.la \
-  $(top_builddir)/proxy/ParentSelectionStrategy.o \
-  @HWLOC_LIBS@ \
-  @YAMLCPP_LIBS@ \
-  @OPENSSL_LIBS@ \
-  @LIBPCRE@
+	$(top_builddir)/iocore/net/libinknet.a \
+	$(top_builddir)/iocore/aio/libinkaio.a \
+	$(top_builddir)/iocore/net/quic/libquic.a \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/lib/tsconfig/libtsconfig.la \
+	$(top_builddir)/proxy/ParentSelectionStrategy.o \
+	$(top_builddir)/proxy/libproxy.a \
+	$(top_builddir)/proxy/hdrs/libhdrs.a \
+	$(top_builddir)/proxy/http2/libhttp2.a \
+	$(top_builddir)/proxy/http3/libhttp3.a \
+	@HWLOC_LIBS@ \
+	@YAMLCPP_LIBS@ \
+	@OPENSSL_LIBS@ \
+	@LIBPCRE@

@@ -179,6 +179,10 @@ struct NetVCOptions {
 
   EventType etype;
 
+  /** ALPN protocol-lists. The format is OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
+      https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
+   */
+  std::string_view alpn_protos;
   /** Server name to use for SNI data on an outbound connection.
    */
   ats_scoped_str sni_servername;
@@ -224,6 +228,7 @@ struct NetVCOptions {
 
   NetVCOptions() { reset(); }
   ~NetVCOptions() {}
+
   /** Set the SNI server name.
       A local copy is made of @a name.
   */
@@ -240,6 +245,7 @@ struct NetVCOptions {
     }
     return *this;
   }
+
   self &
   set_ssl_servername(const char *name)
   {

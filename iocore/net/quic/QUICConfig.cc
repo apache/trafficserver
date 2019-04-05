@@ -35,11 +35,6 @@
 
 #define QUICConfDebug(fmt, ...) Debug("quic_conf", fmt, ##__VA_ARGS__)
 
-// OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
-// https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
-// Should be integrate with IP_PROTO_TAG_HTTP_QUIC in ts/ink_inet.h ?
-using namespace std::literals;
-static constexpr std::string_view QUIC_ALPN_PROTO_LIST("\5hq-18"sv);
 
 int QUICConfig::_config_id                   = 0;
 int QUICConfigParams::_connection_table_size = 65521;
@@ -74,15 +69,13 @@ quic_new_ssl_ctx()
   return ssl_ctx;
 }
 
+/**
+   ALPN and SNI should be set to SSL object with NETVC_OPTIONS
+ **/
 static SSL_CTX *
 quic_init_client_ssl_ctx(const QUICConfigParams *params)
 {
   SSL_CTX *ssl_ctx = quic_new_ssl_ctx();
-
-  if (SSL_CTX_set_alpn_protos(ssl_ctx, reinterpret_cast<const unsigned char *>(QUIC_ALPN_PROTO_LIST.data()),
-                              QUIC_ALPN_PROTO_LIST.size()) != 0) {
-    Error("SSL_CTX_set_alpn_protos failed");
-  }
 
   if (params->client_supported_groups() != nullptr) {
     if (SSL_CTX_set1_groups_list(ssl_ctx, params->client_supported_groups()) != 1) {
