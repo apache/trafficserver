@@ -47,6 +47,7 @@ main(int argc, const char **argv)
   // info command
   engine.parser.add_command("info", "Show the layout as default", [&]() { engine.info(); })
     .add_option("--features", "", "Show the compiled features")
+    .add_option("--versions", "", "Show various library and other versioning information")
     .add_option("--json", "-j", "Produce output in JSON format (when supported)")
     .set_default();
   // init command
