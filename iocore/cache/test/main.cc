@@ -65,8 +65,9 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     thread->set_specific();
     init_buffer_allocators(0);
 
-    Layout::get()->sysconfdir = std::string_view("./test");
-    Layout::get()->prefix     = std::string_view("./test");
+    std::string src_dir       = std::string(TS_ABS_TOP_SRCDIR) + "/iocore/cache/test";
+    Layout::get()->sysconfdir = src_dir;
+    Layout::get()->prefix     = src_dir;
     ::remove("./test/var/trafficserver/cache.db");
   }
 };
