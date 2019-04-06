@@ -118,6 +118,8 @@
 #define TS_BUILD_CACHEDIR "@rel_cachedir@"
 #define TS_BUILD_INFODIR "@rel_infodir@"
 
+#define TS_ABS_TOP_SRCDIR "@abs_top_srcdir@"
+
 #define TS_BUILD_CANONICAL_HOST "@host@"
 
 #define TS_BUILD_DEFAULT_LOOPBACK_IFACE "@default_loopback_iface@"
