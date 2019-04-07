@@ -57,7 +57,7 @@
 static const char *tcpi_headers[] = {
   "timestamp event client server rtt",
   "timestamp event client server rtt rttvar last_sent last_recv "
-  "snd_ssthresh rcv_ssthresh unacked sacked lost retrans fackets all_retrans",
+  "snd_cwnd snd_ssthresh rcv_ssthresh unacked sacked lost retrans fackets all_retrans",
 };
 
 struct Config {
