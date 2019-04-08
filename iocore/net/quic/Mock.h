@@ -253,7 +253,7 @@ public:
   std::string_view
   negotiated_application_name() const override
   {
-    return "h3-18";
+    return "h3-19";
   }
 
   int _transmit_count   = 0;
@@ -333,7 +333,7 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
   std::string_view
   negotiated_application_name() const override
   {
-    return "h3-18";
+    return "h3-19";
   }
 };
 
