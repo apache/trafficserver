@@ -91,7 +91,6 @@ QUICPacketProtectionKeyInfo::set_encryption_key_available(QUICKeyPhase phase)
     this->_is_server_key_available[index] = true;
   } else {
     this->_is_client_key_available[index] = true;
-    ;
   }
 }
 

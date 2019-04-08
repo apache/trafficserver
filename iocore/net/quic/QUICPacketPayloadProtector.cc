@@ -34,14 +34,15 @@ QUICPacketPayloadProtector::protect(const Ptr<IOBufferBlock> unprotected_header,
   Ptr<IOBufferBlock> protected_payload;
   protected_payload = nullptr;
 
+  if (!this->_pp_key_info.is_encryption_key_available(phase)) {
+    Debug(tag, "Failed to encrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
+    return protected_payload;
+  }
+
   size_t tag_len     = this->_pp_key_info.get_tag_len(phase);
   const uint8_t *key = this->_pp_key_info.encryption_key(phase);
   const uint8_t *iv  = this->_pp_key_info.encryption_iv(phase);
   size_t iv_len      = *this->_pp_key_info.encryption_iv_len(phase);
-  if (!key || key[0] == 0x00) {
-    Debug(tag, "Failed to encrypt a packet: keys for %s is not ready", QUICDebugNames::key_phase(phase));
-    return protected_payload;
-  }
 
   const QUIC_EVP_CIPHER *aead = this->_pp_key_info.get_cipher(phase);
 

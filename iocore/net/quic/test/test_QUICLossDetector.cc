@@ -31,6 +31,8 @@
 TEST_CASE("QUICLossDetector_Loss", "[quic]")
 {
   MockQUICPacketProtectionKeyInfo pp_key_info;
+  pp_key_info.set_encryption_key_available(QUICKeyPhase::PHASE_0);
+
   QUICPacketFactory pf(pp_key_info);
   QUICRTTMeasure rtt_measure;
 
@@ -96,6 +98,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet1  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false);
+    REQUIRE(packet1 != nullptr);
     payload                 = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet2  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false);
