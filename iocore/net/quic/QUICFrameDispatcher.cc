@@ -70,7 +70,7 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
     if (is_debug_tag_set(tag) && type != QUICFrameType::PADDING) {
       char msg[1024];
       frame.debug_msg(msg, sizeof(msg));
-      QUICDebug("[RX] %s", msg);
+      QUICDebug("[RX] | %s", msg);
     }
 
     if (type != QUICFrameType::PADDING && type != QUICFrameType::ACK) {

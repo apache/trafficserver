@@ -1491,7 +1491,7 @@ QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_a
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
     char msg[1024];
     frame.debug_msg(msg, sizeof(msg));
-    QUICConDebug("[TX] %s", msg);
+    QUICConDebug("[TX] | %s", msg);
   }
 
   frames.emplace_back(frame.id(), frame.generated_by());

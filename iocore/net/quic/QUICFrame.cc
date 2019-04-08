@@ -124,7 +124,7 @@ QUICFrame::to_io_buffer_block(size_t limit) const
 int
 QUICFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| %s size=%zu", QUICDebugNames::frame_type(this->type()), this->size());
+  return snprintf(msg, msg_len, "%s size=%zu", QUICDebugNames::frame_type(this->type()), this->size());
 }
 
 bool
@@ -270,7 +270,7 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICStreamFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| STREAM size=%zu id=%" PRIu64 " offset=%" PRIu64 " data_len=%" PRIu64 " fin=%d", this->size(),
+  return snprintf(msg, msg_len, "STREAM size=%zu id=%" PRIu64 " offset=%" PRIu64 " data_len=%" PRIu64 " fin=%d", this->size(),
                   this->stream_id(), this->offset(), this->data_length(), this->has_fin_flag());
 }
 
@@ -461,7 +461,7 @@ QUICCryptoFrame::size() const
 int
 QUICCryptoFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| CRYPTO size=%zu offset=%" PRIu64 " data_len=%" PRIu64, this->size(), this->offset(),
+  return snprintf(msg, msg_len, "CRYPTO size=%zu offset=%" PRIu64 " data_len=%" PRIu64, this->size(), this->offset(),
                   this->data_length());
 }
 
@@ -675,7 +675,7 @@ QUICAckFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICAckFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  int len = snprintf(msg, msg_len, "| ACK size=%zu largest_acked=%" PRIu64 " delay=%" PRIu64 " block_count=%" PRIu64, this->size(),
+  int len = snprintf(msg, msg_len, "ACK size=%zu largest_acked=%" PRIu64 " delay=%" PRIu64 " block_count=%" PRIu64, this->size(),
                      this->largest_acknowledged(), this->ack_delay(), this->ack_block_count());
   msg_len -= len;
 
@@ -1043,7 +1043,7 @@ QUICRstStreamFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICRstStreamFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| RESET_STREAM size=%zu stream_id=%" PRIu64 " code=0x%" PRIx16, this->size(), this->stream_id(),
+  return snprintf(msg, msg_len, "RESET_STREAM size=%zu stream_id=%" PRIu64 " code=0x%" PRIx16, this->size(), this->stream_id(),
                   this->error_code());
 }
 
@@ -1313,11 +1313,11 @@ QUICConnectionCloseFrame::debug_msg(char *msg, size_t msg_len) const
   int len;
   if (this->_type == 0x1c) {
     len =
-      snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=%s (0x%" PRIx16 ") frame=%s", this->size(),
+      snprintf(msg, msg_len, "CONNECTION_CLOSE size=%zu code=%s (0x%" PRIx16 ") frame=%s", this->size(),
                QUICDebugNames::error_code(this->error_code()), this->error_code(), QUICDebugNames::frame_type(this->frame_type()));
   } else {
     // Application-specific error. It doesn't have a frame type and we don't know string representations of error codes.
-    len = snprintf(msg, msg_len, "| CONNECTION_CLOSE size=%zu code=0x%" PRIx16 " ", this->size(), this->error_code());
+    len = snprintf(msg, msg_len, "CONNECTION_CLOSE size=%zu code=0x%" PRIx16 " ", this->size(), this->error_code());
   }
 
   if (this->reason_phrase_length() != 0 && this->reason_phrase() != nullptr) {
@@ -1435,7 +1435,7 @@ QUICMaxDataFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICMaxDataFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| MAX_DATA size=%zu maximum=%" PRIu64, this->size(), this->maximum_data());
+  return snprintf(msg, msg_len, "MAX_DATA size=%zu maximum=%" PRIu64, this->size(), this->maximum_data());
 }
 
 uint64_t
@@ -1530,7 +1530,7 @@ QUICMaxStreamDataFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICMaxStreamDataFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| MAX_STREAM_DATA size=%zu id=%" PRIu64 " maximum=%" PRIu64, this->size(), this->stream_id(),
+  return snprintf(msg, msg_len, "MAX_STREAM_DATA size=%zu id=%" PRIu64 " maximum=%" PRIu64, this->size(), this->stream_id(),
                   this->maximum_stream_data());
 }
 
@@ -1665,7 +1665,7 @@ QUICDataBlockedFrame::parse(const uint8_t *buf, size_t len)
 int
 QUICDataBlockedFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| DATA_BLOCKED size=%zu offset=%" PRIu64, this->size(), this->offset());
+  return snprintf(msg, msg_len, "DATA_BLOCKED size=%zu offset=%" PRIu64, this->size(), this->offset());
 }
 
 QUICFrameType
@@ -1753,7 +1753,7 @@ QUICStreamDataBlockedFrame::parse(const uint8_t *buf, size_t len)
 int
 QUICStreamDataBlockedFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| STREAM_DATA_BLOCKED size=%zu id=%" PRIu64 " offset=%" PRIu64, this->size(), this->stream_id(),
+  return snprintf(msg, msg_len, "STREAM_DATA_BLOCKED size=%zu id=%" PRIu64 " offset=%" PRIu64, this->size(), this->stream_id(),
                   this->offset());
 }
 
@@ -1983,7 +1983,7 @@ QUICNewConnectionIdFrame::debug_msg(char *msg, size_t msg_len) const
   char cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
   this->connection_id().hex(cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
 
-  return snprintf(msg, msg_len, "| NEW_CONNECTION_ID size=%zu seq=%" PRIu64 " cid=0x%s", this->size(), this->sequence(), cid_str);
+  return snprintf(msg, msg_len, "NEW_CONNECTION_ID size=%zu seq=%" PRIu64 " cid=0x%s", this->size(), this->sequence(), cid_str);
 }
 
 uint64_t
@@ -2422,7 +2422,7 @@ QUICRetireConnectionIdFrame::store(uint8_t *buf, size_t *len, size_t limit) cons
 int
 QUICRetireConnectionIdFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "| RETIRE_CONNECTION_ID size=%zu seq_num=%" PRIu64, this->size(), this->seq_num());
+  return snprintf(msg, msg_len, "RETIRE_CONNECTION_ID size=%zu seq_num=%" PRIu64, this->size(), this->seq_num());
 }
 
 uint64_t
