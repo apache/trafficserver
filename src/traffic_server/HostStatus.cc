@@ -203,7 +203,7 @@ HostStatus::createHostStat(const char *name)
       std::string reason_stat;
       getStatName(reason_stat, name, i);
       if (hosts_stats_ids.find(reason_stat) == hosts_stats_ids.end()) {
-        RecRegisterRawStat(host_status_rsb, RECT_PROCESS, (reason_stat).c_str(), RECD_INT, RECP_NON_PERSISTENT, (int)next_stat_id,
+        RecRegisterRawStat(host_status_rsb, RECT_PROCESS, (reason_stat).c_str(), RECD_INT, RECP_PERSISTENT, (int)next_stat_id,
                            RecRawStatSyncSum);
         RecSetRawStatCount(host_status_rsb, next_stat_id, 1);
         RecSetRawStatSum(host_status_rsb, next_stat_id, 1);
