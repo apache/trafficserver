@@ -31,7 +31,7 @@ char working_dir[1024] = {0};
 void
 test_done()
 {
-  shutdown_event_system = true;
+  TSSystemState::shut_down_event_system();
 }
 
 const char *GLOBAL_DATA = (char *)ats_malloc(10 * 1024 * 1024 + 3); // 10M

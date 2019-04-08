@@ -29,6 +29,7 @@
 
 #include "tscore/I_Layout.h"
 #include "tscore/Diags.h"
+#include "tscore/TSSystemState.h"
 
 #include "RecordsConfig.h"
 #include "records/I_RecProcess.h"
