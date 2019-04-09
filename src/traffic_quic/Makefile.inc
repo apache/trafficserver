@@ -47,17 +47,18 @@ traffic_quic_traffic_quic_LDADD = \
 	$(top_builddir)/iocore/aio/libinkaio.a \
 	$(top_builddir)/iocore/net/quic/libquic.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
+	$(top_builddir)/proxy/http3/libhttp3.a \
+	$(top_builddir)/proxy/http2/libhttp2.a \
 	$(top_builddir)/proxy/libproxy.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/proxy/http2/libhttp2.a \
-	$(top_builddir)/proxy/http3/libhttp3.a \
 	@HWLOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@OPENSSL_LIBS@ \
 	@LIBPCRE@
+
