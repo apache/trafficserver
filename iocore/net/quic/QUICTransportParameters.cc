@@ -81,7 +81,7 @@ void
 QUICTransportParameters::_load(const uint8_t *buf, size_t len)
 {
   bool has_error   = false;
-  const uint8_t *p = buf + this->_parameters_offset(buf);
+  const uint8_t *p = buf;
 
   // Read size of parameters field
   uint16_t nbytes = (p[0] << 8) + p[1];
@@ -320,7 +320,6 @@ QUICTransportParameters::_print() const
 
 QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const uint8_t *buf, size_t len)
 {
-  this->_initial_version = QUICTypeUtil::read_QUICVersion(buf);
   this->_load(buf, len);
   if (is_debug_tag_set(tag)) {
     this->_print();
@@ -330,10 +329,7 @@ QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const
 void
 QUICTransportParametersInClientHello::_store(uint8_t *buf, uint16_t *len) const
 {
-  size_t l;
   *len = 0;
-  QUICTypeUtil::write_QUICVersion(this->_initial_version, buf, &l);
-  *len += l;
 }
 
 std::ptrdiff_t
@@ -376,11 +372,6 @@ QUICTransportParametersInClientHello::initial_version() const
 
 QUICTransportParametersInEncryptedExtensions::QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len)
 {
-  this->_negotiated_version = QUICTypeUtil::read_QUICVersion(buf);
-  this->_n_versions         = buf[4] / 4;
-  for (int i = 0; i < this->_n_versions; ++i) {
-    this->_versions[i] = QUICTypeUtil::read_QUICVersion(buf + 5 + (i * 4));
-  }
   this->_load(buf, len);
   if (is_debug_tag_set(tag)) {
     this->_print();
@@ -390,21 +381,7 @@ QUICTransportParametersInEncryptedExtensions::QUICTransportParametersInEncrypted
 void
 QUICTransportParametersInEncryptedExtensions::_store(uint8_t *buf, uint16_t *len) const
 {
-  uint8_t *p = buf;
-  size_t l;
-
-  // negotiated_version
-  QUICTypeUtil::write_QUICVersion(this->_negotiated_version, buf, &l);
-  p += l;
-
-  // supported_versions
-  p[0] = this->_n_versions * sizeof(uint32_t);
-  ++p;
-  for (int i = 0; i < this->_n_versions; ++i) {
-    QUICTypeUtil::write_QUICVersion(this->_versions[i], p, &l);
-    p += l;
-  }
-  *len = p - buf;
+  *len = 0;
 }
 
 QUICVersion
