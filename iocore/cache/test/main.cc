@@ -27,7 +27,6 @@
 #define THREADS 1
 #define DIAGS_LOG_FILE "diags.log"
 
-char working_dir[1024] = {0};
 void
 test_done()
 {
@@ -42,7 +41,6 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
   virtual void
   testRunStarting(Catch::TestRunInfo const &testRunInfo) override
   {
-    getcwd(working_dir, 1024);
     BaseLogFile *base_log_file = new BaseLogFile("stderr");
     diags                      = new Diags(testRunInfo.name.c_str(), "*" /* tags */, "" /* actions */, base_log_file);
     diags->activate_taglist("cache.*|agg.*|locks", DiagsTagType_Debug);
