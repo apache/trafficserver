@@ -103,16 +103,20 @@ handle_record_read(const RecRecord *rec, void *edata)
 
   if (rec) {
     // parse the hostname from the stat name
-
     char *s = const_cast<char *>(rec->name);
     // 1st move the pointer past the stat prefix.
     s += strlen(stat_prefix.c_str());
     hostname = s;
-    reason   = hostname.substr(hostname.find('_'));
+    // parse the reason from the stat name.
+    reason = hostname.substr(hostname.find('_'));
     reason.erase(0, 1);
     // erase the reason tag
     hostname.erase(hostname.find('_'));
-    if (Reasons::validReason(reason.c_str())) {
+
+    // if the data loaded from stats indicates that the host was down,
+    // then update the state so that the host remains down until
+    // specificcaly marked up using traffic_ctl.
+    if (rec->data.rec_int == 0 && Reasons::validReason(reason.c_str())) {
       hs.setHostStatus(hostname.c_str(), HOST_STATUS_DOWN, 0, reason.c_str());
     }
   }
@@ -125,10 +129,6 @@ HostStatus::HostStatus()
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, &mgmt_host_status_up_callback);
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, &mgmt_host_status_down_callback);
   host_status_rsb = RecAllocateRawStatBlock((int)TS_MAX_API_STATS);
-
-  if (RecLookupMatchingRecords(RECT_ALL, stat_prefix.c_str(), handle_record_read, nullptr) != REC_ERR_OKAY) {
-    Error("[HostStatus] - Error reading stats.");
-  }
 }
 
 HostStatus::~HostStatus()
@@ -139,6 +139,14 @@ HostStatus::~HostStatus()
   // release host_stats_ids hash and the read and writer locks.
   ink_rwlock_destroy(&host_status_rwlock);
   ink_rwlock_destroy(&host_statids_rwlock);
+}
+
+void
+HostStatus::loadHostStatusFromStats()
+{
+  if (RecLookupMatchingRecords(RECT_ALL, stat_prefix.c_str(), handle_record_read, nullptr) != REC_ERR_OKAY) {
+    Error("[HostStatus] - While loading HostStatus stats, there was an Error reading HostStatus stats.");
+  }
 }
 
 void
