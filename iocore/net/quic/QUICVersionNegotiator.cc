@@ -69,45 +69,8 @@ QUICVersionNegotiator::negotiate(const QUICPacket &packet)
 }
 
 QUICVersionNegotiationStatus
-QUICVersionNegotiator::validate(const QUICTransportParametersInClientHello *tp)
+QUICVersionNegotiator::validate()
 {
-  if (this->_negotiated_version == tp->initial_version()) {
-    this->_status = QUICVersionNegotiationStatus::VALIDATED;
-  } else {
-    // Version negotiation was performed
-    if (QUICTypeUtil::is_supported_version(tp->initial_version())) {
-      this->_status             = QUICVersionNegotiationStatus::FAILED;
-      this->_negotiated_version = 0;
-    } else {
-      this->_status = QUICVersionNegotiationStatus::VALIDATED;
-    }
-  }
-  return this->_status;
-}
-
-QUICVersionNegotiationStatus
-QUICVersionNegotiator::validate(const QUICTransportParametersInEncryptedExtensions *tp)
-{
-  if (!tp->is_valid_negotiated_version()) {
-    this->_status             = QUICVersionNegotiationStatus::FAILED;
-    this->_negotiated_version = 0;
-
-    return this->_status;
-  }
-
-  if (this->_status == QUICVersionNegotiationStatus::NEGOTIATED) {
-    // Version negotiation was performed
-    if (this->_negotiated_version == tp->negotiated_version()) {
-      this->_status = QUICVersionNegotiationStatus::VALIDATED;
-    } else {
-      this->_status             = QUICVersionNegotiationStatus::FAILED;
-      this->_negotiated_version = 0;
-    }
-  } else {
-    this->_status             = QUICVersionNegotiationStatus::VALIDATED;
-    this->_negotiated_version = tp->negotiated_version();
-  }
-
   return this->_status;
 }
 

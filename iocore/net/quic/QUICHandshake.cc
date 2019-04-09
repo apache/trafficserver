@@ -112,7 +112,7 @@ QUICHandshake::start(const QUICTPConfig &tp_config, QUICPacketFactory *packet_fa
     initital_version = QUIC_EXERCISE_VERSION;
   }
 
-  this->_load_local_client_transport_parameters(tp_config, initital_version);
+  this->_load_local_client_transport_parameters(tp_config);
   packet_factory->set_version(initital_version);
 
   return nullptr;
@@ -130,7 +130,7 @@ QUICHandshake::start(const QUICTPConfig &tp_config, const QUICPacket &initial_pa
     if (initial_packet.version()) {
       if (this->_version_negotiator->negotiate(initial_packet) == QUICVersionNegotiationStatus::NEGOTIATED) {
         QUICHSDebug("Version negotiation succeeded: %x", initial_packet.version());
-        this->_load_local_server_transport_parameters(tp_config, initial_packet.version(), pref_addr);
+        this->_load_local_server_transport_parameters(tp_config, pref_addr);
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
       } else {
         ink_assert(!"Unsupported version initial packet should be droped QUICPakcetHandler");
@@ -246,14 +246,6 @@ QUICHandshake::_check_remote_transport_parameters(std::shared_ptr<const QUICTran
 
   this->_remote_transport_parameters = tp;
 
-  // Version revalidation
-  if (this->_version_negotiator->validate(tp.get()) != QUICVersionNegotiationStatus::VALIDATED) {
-    QUICHSDebug("Version revalidation failed");
-    this->_abort_handshake(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
-    return false;
-  }
-
-  QUICHSDebug("Version negotiation validated: %x", tp->initial_version());
   return true;
 }
 
@@ -268,13 +260,6 @@ QUICHandshake::_check_remote_transport_parameters(std::shared_ptr<const QUICTran
   }
 
   this->_remote_transport_parameters = tp;
-
-  // Version revalidation
-  if (this->_version_negotiator->validate(tp.get()) != QUICVersionNegotiationStatus::VALIDATED) {
-    QUICHSDebug("Version revalidation failed");
-    this->_abort_handshake(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
-    return false;
-  }
 
   return true;
 }
@@ -361,10 +346,9 @@ QUICHandshake::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t 
 }
 
 void
-QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_config, QUICVersion negotiated_version,
-                                                       const QUICPreferredAddress *pref_addr)
+QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_config, const QUICPreferredAddress *pref_addr)
 {
-  QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions(negotiated_version);
+  QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions();
 
   // MUSTs
   tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
@@ -410,9 +394,9 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
 }
 
 void
-QUICHandshake::_load_local_client_transport_parameters(const QUICTPConfig &tp_config, QUICVersion initial_version)
+QUICHandshake::_load_local_client_transport_parameters(const QUICTPConfig &tp_config)
 {
-  QUICTransportParametersInClientHello *tp = new QUICTransportParametersInClientHello(initial_version);
+  QUICTransportParametersInClientHello *tp = new QUICTransportParametersInClientHello();
 
   // MUSTs
   tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));

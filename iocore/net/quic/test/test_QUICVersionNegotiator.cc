@@ -50,12 +50,6 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     REQUIRE(initial_packet != nullptr);
     vn.negotiate(*initial_packet);
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
-
-    // Validate version
-    QUICTransportParametersInClientHello tp(QUIC_SUPPORTED_VERSIONS[0]);
-    vn.validate(&tp);
-    CHECK(vn.status() == QUICVersionNegotiationStatus::VALIDATED);
-    CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);
   }
 
   SECTION("Negotiation case")
@@ -71,12 +65,6 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     REQUIRE(initial_packet != nullptr);
     vn.negotiate(*initial_packet);
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
-
-    // Validate version
-    QUICTransportParametersInClientHello tp(QUIC_EXERCISE_VERSION);
-    vn.validate(&tp);
-    CHECK(vn.status() == QUICVersionNegotiationStatus::VALIDATED);
-    CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);
   }
 
   SECTION("Downgrade case")
@@ -92,12 +80,6 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     REQUIRE(initial_packet != nullptr);
     vn.negotiate(*initial_packet);
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
-
-    // Validate version
-    QUICTransportParametersInClientHello tp(QUIC_SUPPORTED_VERSIONS[0]);
-    vn.validate(&tp);
-    CHECK(vn.status() == QUICVersionNegotiationStatus::FAILED);
-    CHECK(vn.negotiated_version() != QUIC_SUPPORTED_VERSIONS[0]);
   }
 }
 
@@ -117,14 +99,6 @@ TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
     // No Version Negotiation packet from server
-
-    // Validate version
-    QUICTransportParametersInEncryptedExtensions tp(QUIC_SUPPORTED_VERSIONS[0]);
-    tp.add_version(QUIC_SUPPORTED_VERSIONS[0]);
-
-    vn.validate(&tp);
-    CHECK(vn.status() == QUICVersionNegotiationStatus::VALIDATED);
-    CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);
   }
 
   SECTION("Negotiation case")
@@ -147,12 +121,5 @@ TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
     vn.negotiate(*vn_packet);
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
     CHECK(vn.negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]);
-
-    // Validate version
-    QUICTransportParametersInEncryptedExtensions tp(QUIC_SUPPORTED_VERSIONS[0]);
-    tp.add_version(QUIC_SUPPORTED_VERSIONS[0]);
-
-    vn.validate(&tp);
-    CHECK(vn.status() == QUICVersionNegotiationStatus::VALIDATED);
   }
 }

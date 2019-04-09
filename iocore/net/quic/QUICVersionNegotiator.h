@@ -36,8 +36,7 @@ class QUICVersionNegotiator
 public:
   QUICVersionNegotiationStatus status();
   QUICVersionNegotiationStatus negotiate(const QUICPacket &initial_packet);
-  QUICVersionNegotiationStatus validate(const QUICTransportParametersInClientHello *tp);
-  QUICVersionNegotiationStatus validate(const QUICTransportParametersInEncryptedExtensions *tp);
+  QUICVersionNegotiationStatus validate();
   QUICVersion negotiated_version();
 
 private:

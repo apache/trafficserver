@@ -101,9 +101,8 @@ private:
       QUICEncryptionLevel::ONE_RTT,
     };
   }
-  void _load_local_server_transport_parameters(const QUICTPConfig &tp_config, QUICVersion negotiated_version,
-                                               const QUICPreferredAddress *pref_addr);
-  void _load_local_client_transport_parameters(const QUICTPConfig &tp_config, QUICVersion initial_version);
+  void _load_local_server_transport_parameters(const QUICTPConfig &tp_config, const QUICPreferredAddress *pref_addr);
+  void _load_local_client_transport_parameters(const QUICTPConfig &tp_config);
   bool _check_remote_transport_parameters(std::shared_ptr<const QUICTransportParametersInClientHello> tp);
   bool _check_remote_transport_parameters(std::shared_ptr<const QUICTransportParametersInEncryptedExtensions> tp);
   std::shared_ptr<const QUICTransportParameters> _local_transport_parameters  = nullptr;

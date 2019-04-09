@@ -30,7 +30,6 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
   SECTION("OK")
   {
     uint8_t buf[] = {
-      0x05, 0x06, 0x07, 0x08, // initial version
       0x00, 0x1c,             // size of parameters
       0x00, 0x00,             // parameter id
       0x00, 0x04,             // length of value
@@ -48,7 +47,6 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
 
     QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf));
     CHECK(params_in_ch.is_valid());
-    CHECK(params_in_ch.initial_version() == 0x05060708);
 
     uint16_t len        = 0;
     const uint8_t *data = nullptr;
@@ -77,7 +75,6 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
   SECTION("Duplicate parameters")
   {
     uint8_t buf[] = {
-      0x05, 0x06, 0x07, 0x08, // initial version
       0x00, 0x10,             // size of parameters
       0x00, 0x00,             // parameter id
       0x00, 0x04,             // length of value
@@ -98,7 +95,6 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   uint16_t len;
 
   uint8_t expected[] = {
-    0x05, 0x06, 0x07, 0x08,                         // initial version
     0x00, 0x22,                                     // size of parameters
     0x00, 0x02,                                     // parameter id
     0x00, 0x10,                                     // length of value
@@ -112,7 +108,7 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
     0x91, 0x22, 0x33, 0x44,                         // value
   };
 
-  QUICTransportParametersInClientHello params_in_ch(0x05060708);
+  QUICTransportParametersInClientHello params_in_ch;
 
   uint32_t max_stream_data = 0x11223344;
   params_in_ch.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, max_stream_data);
@@ -125,7 +121,7 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   params_in_ch.set(QUICTransportParameterId::STATELESS_RESET_TOKEN, stateless_reset_token, 16);
 
   params_in_ch.store(buf, &len);
-  CHECK(len == 40);
+  CHECK(len == 36);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
@@ -134,9 +130,6 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
   SECTION("OK case")
   {
     uint8_t buf[] = {
-      0x01, 0x02, 0x03, 0x04,                                                             // negotiated version
-      0x04,                                                                               // size of supported versions
-      0x01, 0x02, 0x03, 0x04,                                                             //
       0x00, 0x2a,                                                                         // size of parameters
       0x00, 0x01,                                                                         // parameter id
       0x00, 0x02,                                                                         // length of value
@@ -154,8 +147,6 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
 
     QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
     CHECK(params_in_ee.is_valid());
-    CHECK(params_in_ee.is_valid_negotiated_version());
-    CHECK(params_in_ee.negotiated_version() == 0x01020304);
 
     uint16_t len        = 0;
     const uint8_t *data = nullptr;
@@ -174,7 +165,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
 
     data = params_in_ee.getAsBytes(QUICTransportParameterId::STATELESS_RESET_TOKEN, len);
     CHECK(len == 16);
-    CHECK(memcmp(data, buf + 21, 16) == 0);
+    CHECK(memcmp(data, buf + 12, 16) == 0);
 
     CHECK(!params_in_ee.contains(QUICTransportParameterId::DISABLE_MIGRATION));
   }
@@ -182,9 +173,6 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
   SECTION("OK case - zero length value")
   {
     uint8_t buf[] = {
-      0x01, 0x02, 0x03, 0x04, // negotiated version
-      0x04,                   // size of supported versions
-      0x01, 0x02, 0x03, 0x04, //
       0x00, 0x1a,             // size of parameters
       0x00, 0x01,             // parameter id
       0x00, 0x02,             // length of value
@@ -223,9 +211,6 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
   SECTION("Duplicate parameters")
   {
     uint8_t buf[] = {
-      0x01, 0x02, 0x03, 0x04, // negotiated version
-      0x04,                   // size of supported versions
-      0x01, 0x02, 0x03, 0x04, //
       0x00, 0x1e,             // size of parameters
       0x00, 0x00,             // parameter id
       0x00, 0x04,             // length of value
@@ -248,10 +233,6 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     uint16_t len;
 
     uint8_t expected[] = {
-      0x01, 0x02, 0x03, 0x04, // negotiated version
-      0x08,                   // size of supported versions
-      0x01, 0x02, 0x03, 0x04, // version 1
-      0x05, 0x06, 0x07, 0x08, // version 2
       0x00, 0x0e,             // size of parameters
       0x00, 0x03,             // parameter id
       0x00, 0x02,             // length of value
@@ -261,7 +242,7 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
       0x91, 0x22, 0x33, 0x44, // value
     };
 
-    QUICTransportParametersInEncryptedExtensions params_in_ee(0x01020304);
+    QUICTransportParametersInEncryptedExtensions params_in_ee;
 
     uint32_t max_stream_data = 0x11223344;
     params_in_ee.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, max_stream_data);
@@ -272,7 +253,7 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     params_in_ee.add_version(0x01020304);
     params_in_ee.add_version(0x05060708);
     params_in_ee.store(buf, &len);
-    CHECK(len == 29);
+    CHECK(len == 16);
     CHECK(memcmp(buf, expected, len) == 0);
   }
 
@@ -282,10 +263,6 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     uint16_t len;
 
     uint8_t expected[] = {
-      0x01, 0x02, 0x03, 0x04, // negotiated version
-      0x08,                   // size of supported versions
-      0x01, 0x02, 0x03, 0x04, // version 1
-      0x05, 0x06, 0x07, 0x08, // version 2
       0x00, 0x12,             // size of parameters
       0x00, 0x03,             // parameter id
       0x00, 0x02,             // length of value
@@ -297,7 +274,7 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
       0x00, 0x00,             // length of value
     };
 
-    QUICTransportParametersInEncryptedExtensions params_in_ee(0x01020304);
+    QUICTransportParametersInEncryptedExtensions params_in_ee;
 
     uint32_t max_stream_data = 0x11223344;
     params_in_ee.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, max_stream_data);
@@ -309,7 +286,7 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     params_in_ee.add_version(0x01020304);
     params_in_ee.add_version(0x05060708);
     params_in_ee.store(buf, &len);
-    CHECK(len == 33);
+    CHECK(len == 20);
     CHECK(memcmp(buf, expected, len) == 0);
   }
 }

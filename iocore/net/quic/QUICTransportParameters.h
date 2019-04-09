@@ -117,10 +117,8 @@ protected:
 class QUICTransportParametersInClientHello : public QUICTransportParameters
 {
 public:
-  QUICTransportParametersInClientHello(QUICVersion initial_version)
-    : QUICTransportParameters(), _initial_version(initial_version){};
+  QUICTransportParametersInClientHello() : QUICTransportParameters(){};
   QUICTransportParametersInClientHello(const uint8_t *buf, size_t len);
-  QUICVersion initial_version() const;
 
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
@@ -128,27 +126,22 @@ protected:
   void _store(uint8_t *buf, uint16_t *len) const override;
 
 private:
-  QUICVersion _initial_version = 0;
 };
 
 class QUICTransportParametersInEncryptedExtensions : public QUICTransportParameters
 {
 public:
-  QUICTransportParametersInEncryptedExtensions(QUICVersion negotiated_version)
-    : QUICTransportParameters(), _negotiated_version(negotiated_version){};
+  QUICTransportParametersInEncryptedExtensions() : QUICTransportParameters(){};
   QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len);
-  QUICVersion negotiated_version() const;
   void add_version(QUICVersion version);
-  bool is_valid_negotiated_version() const;
 
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
   int _validate_parameters() const override;
   void _store(uint8_t *buf, uint16_t *len) const override;
 
-  QUICVersion _negotiated_version = 0;
-  uint8_t _n_versions             = 0;
-  QUICVersion _versions[256]      = {};
+  uint8_t _n_versions        = 0;
+  QUICVersion _versions[256] = {};
 };
 
 class QUICTransportParametersHandler
