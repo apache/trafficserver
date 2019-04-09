@@ -1782,6 +1782,12 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   FP;
   RE(verify(result, PARENT_SPECIFIED, "carol", 80), 211);
 
+  // cleanup, allow changes to be persisted to records.snap
+  // so that subsequent test runs do not fail unexpectedly.
+  _st.setHostStatus("curly", HOST_STATUS_UP, 0, Reasons::MANUAL);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reasons::MANUAL);
+  sleep(2);
+
   delete request;
   delete result;
   delete params;

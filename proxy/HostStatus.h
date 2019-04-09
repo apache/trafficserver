@@ -86,6 +86,7 @@ struct HostStatus {
   void setHostStatus(const char *name, const HostStatus_t status, const unsigned int down_time, const char *reason);
   HostStatus_t getHostStatus(const char *name);
   void createHostStat(const char *name);
+  void loadHostStatusFromStats();
   int getHostStatId(const char *name);
 
 private:
