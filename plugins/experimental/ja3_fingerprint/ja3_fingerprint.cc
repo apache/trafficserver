@@ -227,14 +227,21 @@ custom_get_ja3(SSL *s)
   // Get cipher suites
   len = SSL_client_hello_get0_ciphers(s, &p);
   custom_get_ja3_prefixed(2, p, len, ja3);
+  ja3 += ',';
 
   // Get extenstions
   int *o;
   std::string eclist, ecpflist;
   if (SSL_client_hello_get0_ext(s, 0x0a, &p, &len) == 1) {
+    // Skip first 2 bytes since we already have length
+    p += 2;
+    len -= 2;
     custom_get_ja3_prefixed(2, p, len, eclist);
   }
   if (SSL_client_hello_get0_ext(s, 0x0b, &p, &len) == 1) {
+    // Skip first byte since we already have length
+    ++p;
+    --len;
     custom_get_ja3_prefixed(1, p, len, ecpflist);
   }
   if (SSL_client_hello_get1_extensions_present(s, &o, &len) == 1) {
@@ -249,6 +256,7 @@ custom_get_ja3(SSL *s)
         ja3 += std::to_string(type);
       }
     }
+    OPENSSL_free(o);
   }
   ja3 += "," + eclist + "," + ecpflist;
   return ja3;
