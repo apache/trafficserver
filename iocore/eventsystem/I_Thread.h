@@ -125,6 +125,8 @@ public:
   ProxyAllocator quicClientSessionAllocator;
   ProxyAllocator quicHandshakeAllocator;
   ProxyAllocator quicBidiStreamAllocator;
+  ProxyAllocator quicSendStreamAllocator;
+  ProxyAllocator quicReceiveStreamAllocator;
   ProxyAllocator quicStreamManagerAllocator;
   ProxyAllocator httpServerSessionAllocator;
   ProxyAllocator hdrHeapAllocator;

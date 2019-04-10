@@ -42,8 +42,21 @@ QUICStreamIO::QUICStreamIO(QUICApplication *app, QUICStreamVConnection *stream_v
   this->_read_buffer_reader  = this->_read_buffer->alloc_reader();
   this->_write_buffer_reader = this->_write_buffer->alloc_reader();
 
-  this->_read_vio  = stream_vc->do_io_read(app, INT64_MAX, this->_read_buffer);
-  this->_write_vio = stream_vc->do_io_write(app, INT64_MAX, this->_write_buffer_reader);
+  switch (stream_vc->direction()) {
+  case QUICStreamDirection::BIDIRECTIONAL:
+    this->_read_vio  = stream_vc->do_io_read(app, INT64_MAX, this->_read_buffer);
+    this->_write_vio = stream_vc->do_io_write(app, INT64_MAX, this->_write_buffer_reader);
+    break;
+  case QUICStreamDirection::SEND:
+    this->_write_vio = stream_vc->do_io_write(app, INT64_MAX, this->_write_buffer_reader);
+    break;
+  case QUICStreamDirection::RECEIVE:
+    this->_read_vio = stream_vc->do_io_read(app, INT64_MAX, this->_read_buffer);
+    break;
+  default:
+    ink_assert(false);
+    break;
+  }
 }
 
 QUICStreamIO::~QUICStreamIO()

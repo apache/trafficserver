@@ -30,10 +30,9 @@ static constexpr char tag[]                     = "quic_stream_manager";
 static constexpr QUICStreamId QUIC_STREAM_TYPES = 4;
 
 ClassAllocator<QUICStreamManager> quicStreamManagerAllocator("quicStreamManagerAllocator");
-ClassAllocator<QUICBidirectionalStream> quicBidiStreamAllocator("quicStreamAllocator");
 
 QUICStreamManager::QUICStreamManager(QUICConnectionInfoProvider *info, QUICRTTProvider *rtt_provider, QUICApplicationMap *app_map)
-  : _info(info), _rtt_provider(rtt_provider), _app_map(app_map)
+  : _stream_factory(rtt_provider, info), _info(info), _app_map(app_map)
 {
   if (this->_info->direction() == NET_VCONNECTION_OUT) {
     this->_next_stream_id_bidi = static_cast<uint32_t>(QUICStreamType::CLIENT_BIDI);
@@ -309,7 +308,6 @@ QUICStreamManager::_find_or_create_stream_vc(QUICStreamId stream_id)
         local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
         remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
       }
-
       break;
     case QUICStreamType::SERVER_UNI:
       if (this->_remote_max_streams_uni == 0 || stream_id > this->_remote_max_streams_uni) {
@@ -318,15 +316,14 @@ QUICStreamManager::_find_or_create_stream_vc(QUICStreamId stream_id)
 
       local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
       remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
-
+      break;
+    default:
+      ink_release_assert(false);
       break;
     }
 
-    // TODO Free the stream somewhere
-    stream = THREAD_ALLOC(quicBidiStreamAllocator, this_ethread());
-    new (stream)
-      QUICBidirectionalStream(this->_rtt_provider, this->_info, stream_id, local_max_stream_data, remote_max_stream_data);
-
+    stream = this->_stream_factory.create(stream_id, local_max_stream_data, remote_max_stream_data);
+    ink_assert(stream != nullptr);
     this->stream_list.push(stream);
   }
 

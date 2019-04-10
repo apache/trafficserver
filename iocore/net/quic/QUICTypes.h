@@ -26,6 +26,10 @@
 #include <cstring>
 #include "tscore/ink_endian.h"
 #include "tscore/ink_hrtime.h"
+#include "tscore/Ptr.h"
+#include "I_EventSystem.h"
+
+#include "I_NetVConnection.h"
 
 #include <memory>
 #include <random>
@@ -431,6 +435,13 @@ enum class QUICStreamType : uint8_t {
   SERVER_UNI,
 };
 
+enum class QUICStreamDirection : uint8_t {
+  UNKNOWN = 0,
+  SEND,
+  RECEIVE,
+  BIDIRECTIONAL,
+};
+
 class QUICFiveTuple
 {
 public:
@@ -489,6 +500,7 @@ class QUICTypeUtil
 public:
   static bool is_supported_version(QUICVersion version);
   static QUICStreamType detect_stream_type(QUICStreamId id);
+  static QUICStreamDirection detect_stream_direction(QUICStreamId id, NetVConnectionContext_t context);
   static QUICEncryptionLevel encryption_level(QUICPacketType type);
   static QUICPacketType packet_type(QUICEncryptionLevel level);
   static QUICKeyPhase key_phase(QUICPacketType type);

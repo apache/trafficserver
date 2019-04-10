@@ -30,6 +30,9 @@ class QUICSendStream : public QUICStreamVConnection
 public:
   QUICSendStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid, uint64_t send_max_stream_data);
   QUICSendStream() : _remote_flow_controller(0, 0), _state(nullptr, nullptr) {}
+
+  ~QUICSendStream() {}
+
   int state_stream_open(int event, void *data);
   int state_stream_closed(int event, void *data);
 
@@ -76,6 +79,8 @@ public:
   QUICReceiveStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
                     uint64_t recv_max_stream_data);
   QUICReceiveStream() : _local_flow_controller(nullptr, 0, 0), _state(nullptr, nullptr) {}
+
+  ~QUICReceiveStream() {}
 
   int state_stream_open(int event, void *data);
   int state_stream_closed(int event, void *data);

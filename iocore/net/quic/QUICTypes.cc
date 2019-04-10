@@ -68,6 +68,28 @@ QUICTypeUtil::detect_stream_type(QUICStreamId id)
   return static_cast<QUICStreamType>(type);
 }
 
+QUICStreamDirection
+QUICTypeUtil::detect_stream_direction(QUICStreamId id, NetVConnectionContext_t context)
+{
+  switch (QUICTypeUtil::detect_stream_type(id)) {
+  case QUICStreamType::CLIENT_BIDI:
+  case QUICStreamType::SERVER_BIDI:
+    return QUICStreamDirection::BIDIRECTIONAL;
+  case QUICStreamType::CLIENT_UNI:
+    if (context == NET_VCONNECTION_OUT) {
+      return QUICStreamDirection::SEND;
+    }
+    return QUICStreamDirection::RECEIVE;
+  case QUICStreamType::SERVER_UNI:
+    if (context == NET_VCONNECTION_IN) {
+      return QUICStreamDirection::SEND;
+    }
+    return QUICStreamDirection::RECEIVE;
+  default:
+    return QUICStreamDirection::UNKNOWN;
+  }
+}
+
 QUICEncryptionLevel
 QUICTypeUtil::encryption_level(QUICPacketType type)
 {
