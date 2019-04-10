@@ -99,8 +99,9 @@ TEST_CASE("QUICHandshakeProtocol")
   {
     QUICPacketProtectionKeyInfo pp_key_info_client;
     QUICPacketProtectionKeyInfo pp_key_info_server;
-    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT);
-    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN);
+    NetVCOptions netvc_options;
+    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
+    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
     QUICPacketPayloadProtector ppp_client(pp_key_info_client);
     QUICPacketPayloadProtector ppp_server(pp_key_info_server);
 
@@ -226,8 +227,9 @@ TEST_CASE("QUICHandshakeProtocol")
 
     QUICPacketProtectionKeyInfo pp_key_info_client;
     QUICPacketProtectionKeyInfo pp_key_info_server;
-    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT);
-    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN);
+    NetVCOptions netvc_options;
+    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
+    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
     QUICPacketPayloadProtector ppp_client(pp_key_info_client);
     QUICPacketPayloadProtector ppp_server(pp_key_info_server);
 
@@ -365,7 +367,8 @@ TEST_CASE("QUICHandshakeProtocol")
   SECTION("Alert", "[quic]")
   {
     QUICPacketProtectionKeyInfo pp_key_info_server;
-    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN);
+    NetVCOptions netvc_options;
+    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
     // Malformed CH (finished)
@@ -400,8 +403,9 @@ TEST_CASE("QUICHandshakeProtocol")
   {
     QUICPacketProtectionKeyInfo pp_key_info_client;
     QUICPacketProtectionKeyInfo pp_key_info_server;
-    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT);
-    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN);
+    NetVCOptions netvc_options;
+    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
+    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
 
     CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
