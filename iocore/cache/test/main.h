@@ -197,6 +197,7 @@ public:
   void do_io_write(size_t size = 0) override;
 
   HTTPInfo info;
+  HTTPInfo old_info;
 
 private:
   size_t _size             = 0;
