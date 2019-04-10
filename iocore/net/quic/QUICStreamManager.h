@@ -25,19 +25,19 @@
 
 #include "QUICTypes.h"
 #include "QUICBidirectionalStream.h"
+#include "QUICUnidirectionalStream.h"
 #include "QUICApplicationMap.h"
 #include "QUICFrameHandler.h"
 #include "QUICFrame.h"
+#include "QUICStreamFactory.h"
 #include "QUICLossDetector.h"
-
-extern ClassAllocator<QUICBidirectionalStream> quicBidiStreamAllocator;
 
 class QUICTransportParameters;
 
 class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
-  QUICStreamManager(){};
+  QUICStreamManager() : _stream_factory(nullptr, nullptr){};
   QUICStreamManager(QUICConnectionInfoProvider *info, QUICRTTProvider *rtt_provider, QUICApplicationMap *app_map);
 
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
@@ -86,8 +86,9 @@ private:
     };
   }
 
+  QUICStreamFactory _stream_factory;
+
   QUICConnectionInfoProvider *_info                         = nullptr;
-  QUICRTTProvider *_rtt_provider                            = nullptr;
   QUICApplicationMap *_app_map                              = nullptr;
   std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;
   std::shared_ptr<const QUICTransportParameters> _remote_tp = nullptr;

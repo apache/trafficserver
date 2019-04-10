@@ -49,6 +49,7 @@ public:
   virtual ~QUICStream();
 
   QUICStreamId id() const;
+  QUICStreamDirection direction() const;
   const QUICConnectionInfoProvider *connection_info() const;
   bool is_bidirectional() const;
   QUICOffset final_offset() const;

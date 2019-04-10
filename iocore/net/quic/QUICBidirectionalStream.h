@@ -38,6 +38,8 @@ public:
   {
   }
 
+  ~QUICBidirectionalStream() {}
+
   int state_stream_open(int event, void *data);
   int state_stream_closed(int event, void *data);
 

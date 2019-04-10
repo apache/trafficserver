@@ -37,6 +37,12 @@ QUICStream::id() const
   return this->_id;
 }
 
+QUICStreamDirection
+QUICStream::direction() const
+{
+  return QUICTypeUtil::detect_stream_direction(this->_id, this->_connection_info->direction());
+}
+
 const QUICConnectionInfoProvider *
 QUICStream::connection_info() const
 {
@@ -46,7 +52,7 @@ QUICStream::connection_info() const
 bool
 QUICStream::is_bidirectional() const
 {
-  return (this->_id & 0x03) < 0x02;
+  return ((this->_id & 0x03) < 0x02);
 }
 
 QUICOffset
