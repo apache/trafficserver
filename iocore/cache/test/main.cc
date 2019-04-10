@@ -204,8 +204,13 @@ CacheWriteTest::start_test(int event, void *e)
   HttpCacheKey key;
   key = generate_key(this->info);
 
+  HTTPInfo *old_info = &this->old_info;
+  if (!old_info->valid()) {
+    old_info = nullptr;
+  }
+
   SET_HANDLER(&CacheWriteTest::write_event);
-  cacheProcessor.open_write(this, 0, &key, (CacheHTTPHdr *)this->info.request_get(), nullptr);
+  cacheProcessor.open_write(this, 0, &key, (CacheHTTPHdr *)this->info.request_get(), old_info);
   return 0;
 }
 
