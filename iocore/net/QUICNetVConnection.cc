@@ -2236,8 +2236,7 @@ QUICNetVConnection::_setup_handshake_protocol(SSL_CTX *ctx)
 {
   // Initialize handshake protocol specific stuff
   // For QUICv1 TLS is the only option
-  QUICTLS *tls =
-    new QUICTLS(this->_pp_key_info, ctx, this->direction(), this->options, this->_quic_config->session_file());
+  QUICTLS *tls = new QUICTLS(this->_pp_key_info, ctx, this->direction(), this->options, this->_quic_config->session_file());
   SSL_set_ex_data(tls->ssl_handle(), QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
   return tls;
 }

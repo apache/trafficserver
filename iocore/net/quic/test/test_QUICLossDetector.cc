@@ -95,8 +95,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   SECTION("1-RTT")
   {
     // Send packet (1) to (7)
-    payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet1  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
+    payload                = ats_unique_malloc(payload_len);
+    QUICPacketUPtr packet1 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
                                                         payload_len, true, false);
     REQUIRE(packet1 != nullptr);
     payload                 = ats_unique_malloc(payload_len);

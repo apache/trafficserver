@@ -337,7 +337,8 @@ QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, Net
   if (this->_netvc_context == NET_VCONNECTION_OUT) {
     SSL_set_connect_state(this->_ssl);
 
-    SSL_set_alpn_protos(this->_ssl, reinterpret_cast<const unsigned char *>(netvc_options.alpn_protos.data()), netvc_options.alpn_protos.size());
+    SSL_set_alpn_protos(this->_ssl, reinterpret_cast<const unsigned char *>(netvc_options.alpn_protos.data()),
+                        netvc_options.alpn_protos.size());
     SSL_set_tlsext_host_name(this->_ssl, netvc_options.sni_servername.get());
   } else {
     SSL_set_accept_state(this->_ssl);

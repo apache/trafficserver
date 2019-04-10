@@ -371,8 +371,8 @@ Http3SettingsFramer::generate_frame(uint16_t max_size)
 
   // Server side only
   if (this->_context == NET_VCONNECTION_IN) {
-   if (params->num_placeholders() != HTTP3_DEFAULT_NUM_PLACEHOLDERS) {
-     frame->set(Http3SettingsId::NUM_PLACEHOLDERS, params->num_placeholders());
+    if (params->num_placeholders() != HTTP3_DEFAULT_NUM_PLACEHOLDERS) {
+      frame->set(Http3SettingsId::NUM_PLACEHOLDERS, params->num_placeholders());
     }
   }
 

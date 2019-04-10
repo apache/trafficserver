@@ -35,7 +35,6 @@
 
 #define QUICConfDebug(fmt, ...) Debug("quic_conf", fmt, ##__VA_ARGS__)
 
-
 int QUICConfig::_config_id                   = 0;
 int QUICConfigParams::_connection_table_size = 65521;
 int QUICCertConfig::_config_id               = 0;

@@ -97,7 +97,7 @@ private:
 class Http3SettingsFramer : public Http3FrameGenerator
 {
 public:
-  Http3SettingsFramer(NetVConnectionContext_t context) : _context(context) {};
+  Http3SettingsFramer(NetVConnectionContext_t context) : _context(context){};
 
   // Http3FrameGenerator
   Http3FrameUPtr generate_frame(uint16_t max_size) override;
