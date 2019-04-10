@@ -30,26 +30,6 @@
 
 class CacheRWWTest;
 
-struct SimpleCont : public Continuation {
-  SimpleCont(CacheTestBase *base) : base(base)
-  {
-    REQUIRE(base != nullptr);
-    SET_HANDLER(&SimpleCont::handle_event);
-    this->mutex = base->mutex;
-  }
-
-  int
-  handle_event(int event, void *data)
-  {
-    Debug("cache_rww_test", "cache write reenable");
-    base->reenable();
-    delete this;
-    return 0;
-  }
-
-  CacheTestBase *base = nullptr;
-};
-
 class CacheRWWTest : public CacheTestHandler
 {
 public:
@@ -97,11 +77,13 @@ public:
   }
 
 protected:
-  size_t _size        = 0;
-  Event *_read_event  = nullptr;
-  bool _is_read_start = false;
-  CacheTestBase *_rt  = nullptr;
-  CacheTestBase *_wt  = nullptr;
+  // start at 1 framgents
+  int64_t _latest_fragments = 1;
+  size_t _size              = 0;
+  Event *_read_event        = nullptr;
+  bool _is_read_start       = false;
+  CacheTestBase *_rt        = nullptr;
+  CacheTestBase *_wt        = nullptr;
 };
 
 int
@@ -122,7 +104,6 @@ CacheRWWTest::process_write_event(int event, CacheTestBase *base)
   case VC_EVENT_WRITE_READY:
     // schedule read test imm
     if (this->_size != SMALL_FILE && !this->_wt->vc->fragment) {
-      Debug("cache_rww_test", "cache write reenable");
       base->reenable();
       return;
     }
@@ -134,13 +115,17 @@ CacheRWWTest::process_write_event(int event, CacheTestBase *base)
       return;
     }
 
-    // stop writing for a while and wait for reading
-    // data->vio->reenable();
-    this_ethread()->schedule_imm(new SimpleCont(base));
+    // write at least one fragment before read it
+    if (this->_latest_fragments == this->_wt->vc->fragment) {
+      base->reenable();
+      return;
+    }
+
+    this->_latest_fragments = this->_wt->vc->fragment;
+    this->_rt->reenable();
     break;
   case VC_EVENT_WRITE_COMPLETE:
     this->close_write();
-
     break;
   default:
     REQUIRE(event == 0);
@@ -148,10 +133,6 @@ CacheRWWTest::process_write_event(int event, CacheTestBase *base)
     this->close_write();
     this->close_read();
     return;
-  }
-
-  if (this->_rt) {
-    this->_rt->reenable();
   }
 }
 
@@ -166,7 +147,6 @@ CacheRWWTest::process_read_event(int event, CacheTestBase *base)
     Debug("cache_rww_test", "cache read reenable");
     this->_read_event    = nullptr;
     this->_is_read_start = true;
-    base->reenable();
     break;
   case VC_EVENT_READ_COMPLETE:
     this->close_read();
@@ -245,7 +225,15 @@ public:
         this->close_write(100);
         return;
       }
-      this_ethread()->schedule_imm(new SimpleCont(base));
+
+      // write at least one fragment before read it
+      if (this->_latest_fragments == this->_wt->vc->fragment) {
+        base->reenable();
+        return;
+      }
+
+      this->_latest_fragments = this->_wt->vc->fragment;
+      this->_rt->reenable();
       break;
 
     case VC_EVENT_WRITE_COMPLETE:
@@ -274,7 +262,6 @@ public:
       this->close_read();
       return;
     case VC_EVENT_READ_READY:
-      base->reenable();
       if (this->_wt) {
         this->_wt->reenable();
       }
@@ -347,7 +334,15 @@ public:
         }
         return;
       }
-      this_ethread()->schedule_imm(new SimpleCont(base));
+
+      // write at least one fragment before read it
+      if (this->_latest_fragments == this->_wt->vc->fragment) {
+        base->reenable();
+        return;
+      }
+
+      this->_latest_fragments = this->_wt->vc->fragment;
+      this->_rt->reenable();
       break;
 
     case VC_EVENT_WRITE_COMPLETE:
@@ -370,7 +365,6 @@ public:
       base->do_io_read(UINT32_MAX);
       break;
     case VC_EVENT_READ_READY:
-      base->reenable();
       if (this->_wt) {
         this->_wt->reenable();
       }
