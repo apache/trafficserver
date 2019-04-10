@@ -53,6 +53,24 @@ HttpHeader::setStatus(TSHttpStatus const newstatus)
   return TS_SUCCESS == TSHttpHdrStatusSet(m_buffer, m_lochdr, newstatus);
 }
 
+char *
+HttpHeader ::urlString(int *const urllen) const
+{
+  char *urlstr = nullptr;
+  TSAssert(nullptr != urllen);
+
+  TSMLoc locurl            = nullptr;
+  TSReturnCode const rcode = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurl);
+  if (TS_SUCCESS == rcode && nullptr != locurl) {
+    urlstr = TSUrlStringGet(m_buffer, locurl, urllen);
+    TSHandleMLocRelease(m_buffer, m_lochdr, locurl);
+  } else {
+    *urllen = 0;
+  }
+
+  return urlstr;
+}
+
 bool
 HttpHeader::setUrl(TSMBuffer const bufurl, TSMLoc const locurl)
 {
@@ -102,6 +120,10 @@ HttpHeader::getCharPtr(CharPtrGetFunc func, int *const len) const
     }
   }
 
+  if (nullptr == res && nullptr != len) {
+    *len = 0;
+  }
+
   return res;
 }
 
@@ -144,6 +166,7 @@ bool
 HttpHeader::valueForKey(char const *const keystr, int const keylen, char *const valstr, int *const vallen, int const index) const
 {
   if (!isValid()) {
+    *vallen = 0;
     return false;
   }
 
@@ -169,9 +192,6 @@ HttpHeader::valueForKey(char const *const keystr, int const keylen, char *const 
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
   } else {
     *vallen = 0;
-  }
-
-  if (!status) {
   }
 
   return status;
@@ -224,16 +244,12 @@ HttpHeader::toString() const
   case TS_HTTP_TYPE_REQUEST: {
     res.append(method());
 
-    TSMLoc locurl            = nullptr;
-    TSReturnCode const rcode = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurl);
-    if (TS_SUCCESS == rcode && nullptr != locurl) {
-      int urllen         = 0;
-      char *const urlstr = TSUrlStringGet(m_buffer, locurl, &urllen);
+    int urllen         = 0;
+    char *const urlstr = urlString(&urllen);
+    if (nullptr != urlstr) {
       res.append(" ");
       res.append(urlstr, urllen);
       TSfree(urlstr);
-
-      TSHandleMLocRelease(m_buffer, m_lochdr, locurl);
     } else {
       res.append(" UnknownURL");
     }

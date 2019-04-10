@@ -38,7 +38,7 @@ requestBlock(TSCont contp, Data *const data)
   Range blockbe(blockbeg, blockbeg + data->m_blockbytes_config);
 
   char rangestr[1024];
-  int rangelen      = 1023;
+  int rangelen      = sizeof(rangestr);
   bool const rpstat = blockbe.toStringClosed(rangestr, &rangelen);
   TSAssert(rpstat);
 
@@ -114,7 +114,7 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     Range rangebe;
 
     char rangestr[1024];
-    int rangelen        = 1024;
+    int rangelen        = sizeof(rangestr);
     bool const hasRange = header.valueForKey(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rangestr, &rangelen,
                                              0); // <-- first range only
     if (hasRange) {
@@ -135,7 +135,7 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
       }
     } else {
       DEBUG_LOG("Full content request");
-      static char const *const valstr = "full content request";
+      static char const *const valstr = "-";
       static size_t const vallen      = strlen(valstr);
       header.setKeyVal(SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO), valstr, vallen);
       data->m_statustype = TS_HTTP_STATUS_OK;

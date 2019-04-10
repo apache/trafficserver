@@ -57,10 +57,10 @@ Range::fromStringClosed(char const *const rangestr)
   }
 
   // rip out any whitespace
-  static int const RLEN = 1024;
-  char rangebuf[RLEN];
-  char *pbuf = rangebuf;
-  while ('\0' != *pstr && (pbuf - rangebuf) < RLEN) {
+  char rangebuf[1024];
+  int const rangelen = sizeof(rangebuf);
+  char *pbuf         = rangebuf;
+  while ('\0' != *pstr && (pbuf - rangebuf) < rangelen) {
     if (!isblank(*pstr)) {
       *pbuf++ = *pstr;
     }

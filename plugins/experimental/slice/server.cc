@@ -22,6 +22,8 @@
 #include "response.h"
 #include "transfer.h"
 
+#include "ts/experimental.h"
+
 #include <cinttypes>
 
 namespace
@@ -42,9 +44,8 @@ contentRangeFrom(HttpHeader const &header)
   /* Pull content length off the response header
     and manipulate it into a client response header
    */
-  static int const RLEN = 1024;
-  char rangestr[RLEN];
-  int rangelen = RLEN - 1;
+  char rangestr[1024];
+  int rangelen = sizeof(rangestr);
 
   // look for expected Content-Range field
   bool const hasContentRange(header.valueForKey(TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE, rangestr, &rangelen));
@@ -63,11 +64,13 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
 {
   HttpHeader header(data->m_resp_hdrmgr.m_buffer, data->m_resp_hdrmgr.m_lochdr);
 
+  //  DEBUG_LOG("First header\n%s", header.toString().c_str());
+
   data->m_dnstream.setupVioWrite(contp);
 
   // only process a 206, everything else gets a pass through
   if (TS_HTTP_STATUS_PARTIAL_CONTENT != header.status()) {
-    DEBUG_LOG("Non 206 response from parent: %d", header.status());
+    DEBUG_LOG("Initial reponse other than 206: %d", header.status());
     data->m_bail = true;
 
     TSHttpHdrPrint(header.m_buffer, header.m_lochdr, data->m_dnstream.m_write.m_iobuf);
@@ -138,7 +141,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     respcr.m_length = data->m_contentlen;
 
     char rangestr[1024];
-    int rangelen      = 1023;
+    int rangelen      = sizeof(rangestr);
     bool const crstat = respcr.toStringClosed(rangestr, &rangelen);
 
     // corner case, return 500 ??
@@ -163,7 +166,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   }
 
   char bufstr[1024];
-  int const buflen = snprintf(bufstr, 1023, "%" PRId64, bodybytes);
+  int const buflen = snprintf(bufstr, sizeof(bufstr), "%" PRId64, bodybytes);
   header.setKeyVal(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, bufstr, buflen);
 
   // add the response header length to the total bytes to send
@@ -180,29 +183,124 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   return true;
 }
 
+void
+logSliceError(char const *const message, Data const *const data, HttpHeader const &header_resp)
+{
+  HttpHeader const header_req(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
+
+  TSHRTime const timenowus = TShrtime();
+  int64_t const msecs      = timenowus / 1000000;
+  int64_t const secs       = msecs / 1000;
+  int64_t const ms         = msecs % 1000;
+
+  // Gather information on the request, must delete urlstr
+  int urllen         = 0;
+  char *const urlstr = header_req.urlString(&urllen);
+
+  char urlpstr[16384];
+  size_t urlplen = sizeof(urlpstr);
+  TSStringPercentEncode(urlstr, urllen, urlpstr, urlplen, &urlplen, nullptr);
+
+  if (nullptr != urlstr) {
+    TSfree(urlstr);
+  }
+
+  // uas
+  char uasstr[8192];
+  int uaslen = sizeof(uasstr);
+  header_req.valueForKey(TS_MIME_FIELD_USER_AGENT, TS_MIME_LEN_USER_AGENT, uasstr, &uaslen);
+
+  // raw range request
+  char rangestr[1024];
+  int rangelen = sizeof(rangestr);
+  header_req.valueForKey(SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO), rangestr, &rangelen);
+
+  // Normalized range request
+  ContentRange const crange(data->m_req_range.m_beg, data->m_req_range.m_end, data->m_contentlen);
+  char normstr[1024];
+  int normlen = sizeof(normstr);
+  crange.toStringClosed(normstr, &normlen);
+
+  // block range request
+  int64_t const blockbeg = data->m_blocknum * data->m_blockbytes_config;
+  int64_t const blockend = std::min(blockbeg + data->m_blockbytes_config, data->m_contentlen);
+
+  // Block response data
+  TSHttpStatus const statusgot = header_resp.status();
+
+  // content range
+  char crstr[1024];
+  int crlen = sizeof(crstr);
+  header_resp.valueForKey(TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE, crstr, &crlen);
+
+  // etag
+  char etagstr[1024];
+  int etaglen = sizeof(etagstr);
+  header_resp.valueForKey(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG, etagstr, &etaglen);
+
+  // last modified
+  char lmstr[1024];
+  int lmlen = sizeof(lmstr);
+  header_resp.valueForKey(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED, lmstr, &lmlen);
+
+  // cc
+  char ccstr[2048];
+  int cclen = sizeof(ccstr);
+  header_resp.valueForKey(TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, ccstr, &cclen);
+
+  // via tag
+  char viastr[8192];
+  int vialen = sizeof(viastr);
+  header_resp.valueForKey(TS_MIME_FIELD_VIA, TS_MIME_LEN_VIA, viastr, &vialen);
+
+  char etagexpstr[1024];
+  size_t etagexplen = sizeof(etagexpstr);
+  TSStringPercentEncode(data->m_etag, data->m_etaglen, etagexpstr, etagexplen, &etagexplen, nullptr);
+
+  char etaggotstr[1024];
+  size_t etaggotlen = sizeof(etaggotstr);
+  TSStringPercentEncode(etagstr, etaglen, etaggotstr, etaggotlen, &etaggotlen, nullptr);
+
+  TSError("[%s] %" PRId64 ".%" PRId64 " reason=\"%s\""
+          " uri=\"%.*s\""
+          " uas=\"%.*s\""
+          " req_range=\"%.*s\""
+          " norm_range=\"%.*s\""
+
+          " etag_exp=\"%.*s\""
+          " lm_exp=\"%.*s\""
+
+          " blk_range=\"%" PRId64 "-%" PRId64 "\""
+
+          " status_got=\"%d\""
+          " cr_got=\"%.*s\""
+          " etag_got=\"%.*s\""
+          " lm_got=\"%.*s\""
+          " cc=\"%.*s\""
+          " via=\"%.*s\"",
+          PLUGIN_NAME, secs, ms, message, (int)urlplen, urlpstr, uaslen, uasstr, rangelen, rangestr, normlen, normstr,
+          (int)etagexplen, etagexpstr, data->m_lastmodifiedlen, data->m_lastmodified, blockbeg, blockend - 1, statusgot, crlen,
+          crstr, (int)etaggotlen, etaggotstr, lmlen, lmstr, cclen, ccstr, vialen, viastr);
+}
+
 bool
 handleNextServerHeader(Data *const data, TSCont const contp)
 {
+  // block response header
   HttpHeader header(data->m_resp_hdrmgr.m_buffer, data->m_resp_hdrmgr.m_lochdr);
+  //  DEBUG_LOG("Next Header:\n%s", header.toString().c_str());
 
   // only process a 206, everything else just aborts
   if (TS_HTTP_STATUS_PARTIAL_CONTENT != header.status()) {
-    ERROR_LOG("Non 206 internal block response from parent: %d", header.status());
+    logSliceError("Non 206 internal block response", data, header);
     data->m_bail = true;
     return false;
   }
 
   // can't parse the content range header, abort -- might be too strict
   ContentRange const blockcr = contentRangeFrom(header);
-  if (!blockcr.isValid()) {
-    ERROR_LOG("Unable to parse internal block Content-Range header");
-    data->m_bail = true;
-    return false;
-  }
-
-  // make sure the block comes from the same asset as the first block
-  if (data->m_contentlen != blockcr.m_length) {
-    ERROR_LOG("Mismatch in slice block Content-Range Len %" PRId64 " and %" PRId64, data->m_contentlen, blockcr.m_length);
+  if (!blockcr.isValid() || blockcr.m_length != data->m_contentlen) {
+    logSliceError("Mismatch/Bad block Content-Range", data, header);
     data->m_bail = true;
     return false;
   }
@@ -211,23 +309,22 @@ handleNextServerHeader(Data *const data, TSCont const contp)
 
   // prefer the etag but use Last-Modified if we must.
   char etag[8192];
-  int etaglen = sizeof(etag) - 1;
+  int etaglen = sizeof(etag);
   header.valueForKey(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG, etag, &etaglen);
 
   if (0 < data->m_etaglen || 0 < etaglen) {
     same = data->m_etaglen == etaglen && 0 == strncmp(etag, data->m_etag, etaglen);
     if (!same) {
-      ERROR_LOG("Mismatch in slice block ETAG '%.*s' and '%.*s'", data->m_etaglen, data->m_etag, etaglen, etag);
+      logSliceError("Mismatch block Etag", data, header);
     }
   } else {
     char lastmodified[8192];
-    int lastmodifiedlen = sizeof(lastmodified) - 1;
+    int lastmodifiedlen = sizeof(lastmodified);
     header.valueForKey(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED, lastmodified, &lastmodifiedlen);
     if (0 < data->m_lastmodifiedlen || 0 != lastmodifiedlen) {
       same = data->m_lastmodifiedlen == lastmodifiedlen && 0 == strncmp(lastmodified, data->m_lastmodified, lastmodifiedlen);
       if (!same) {
-        ERROR_LOG("Mismatch in slice block Last-Modified '%.*s' and '%.*s'", data->m_lastmodifiedlen, data->m_lastmodified,
-                  lastmodifiedlen, lastmodified);
+        logSliceError("Mismatch block Last-Modified", data, header);
       }
     }
   }
