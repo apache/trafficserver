@@ -32,6 +32,8 @@
 #include <utility>
 #include <vector>
 #include <algorithm>
+#include <random>
+#include <chrono>
 
 HostDBProcessor hostDBProcessor;
 int HostDBProcessor::hostdb_strict_round_robin = 0;
@@ -2055,8 +2057,8 @@ register_ShowHostDB(Continuation *c, HTTPHdr *h)
   return &s->action;
 }
 
-#define HOSTDB_TEST_MAX_OUTSTANDING 100
-#define HOSTDB_TEST_LENGTH 100000
+static constexpr int HOSTDB_TEST_MAX_OUTSTANDING = 20;
+static constexpr int HOSTDB_TEST_LENGTH          = 200;
 
 struct HostDBTestReverse;
 using HostDBTestReverseHandler = int (HostDBTestReverse::*)(int, void *);
@@ -2065,34 +2067,26 @@ struct HostDBTestReverse : public Continuation {
   int type;
   int *status;
 
-  int outstanding;
-  int total;
-#if HAVE_LRAND48_R
-  struct drand48_data dr;
-#endif
+  int outstanding = 0;
+  int total       = 0;
+  std::ranlux48 randu;
 
   int
   mainEvent(int event, Event *e)
   {
     if (event == EVENT_HOST_DB_LOOKUP) {
-      HostDBInfo *i = (HostDBInfo *)e;
+      HostDBInfo *i = reinterpret_cast<HostDBInfo *>(e);
       if (i) {
         rprintf(test, "HostDBTestReverse: reversed %s\n", i->hostname());
       }
       outstanding--;
     }
     while (outstanding < HOSTDB_TEST_MAX_OUTSTANDING && total < HOSTDB_TEST_LENGTH) {
-      long l = 0;
-#if HAVE_LRAND48_R
-      lrand48_r(&dr, &l);
-#else
-      l = lrand48();
-#endif
       IpEndpoint ip;
-      ip.sin.sin_addr.s_addr = static_cast<in_addr_t>(l);
+      ip.assign(IpAddr(static_cast<in_addr_t>(randu())));
       outstanding++;
       total++;
-      if (!(outstanding % 1000)) {
+      if (!(outstanding % 100)) {
         rprintf(test, "HostDBTestReverse: %d\n", total);
       }
       hostDBProcessor.getbyaddr_re(this, &ip.sa);
@@ -2105,14 +2099,10 @@ struct HostDBTestReverse : public Continuation {
     return EVENT_CONT;
   }
   HostDBTestReverse(RegressionTest *t, int atype, int *astatus)
-    : Continuation(new_ProxyMutex()), test(t), type(atype), status(astatus), outstanding(0), total(0)
+    : Continuation(new_ProxyMutex()), test(t), type(atype), status(astatus)
   {
     SET_HANDLER((HostDBTestReverseHandler)&HostDBTestReverse::mainEvent);
-#if HAVE_SRAND48_R
-    srand48_r(time(nullptr), &dr);
-#else
-    srand48(time(nullptr));
-#endif
+    randu.seed(std::chrono::system_clock::now().time_since_epoch().count());
   }
 };
 
