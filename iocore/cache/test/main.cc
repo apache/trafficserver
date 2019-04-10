@@ -54,6 +54,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     ink_net_init(ts::ModuleVersion(1, 0, ts::ModuleVersion::PRIVATE));
     ink_assert(GLOBAL_DATA != nullptr);
 
+    statPagesManager.init(); // mutex needs to be initialized before calling netProcessor.init
     netProcessor.init();
     eventProcessor.start(THREADS);
 
