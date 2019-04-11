@@ -1,0 +1,75 @@
+Changes with Apache Traffic Server 8.1.0
+  #3749 - ats_fastcgi experimental plugin
+  #3899 - Add a --reason tag option to the host subcommand
+  #3923 - Check version in the snap file on ATS upgrade
+  #3988 - Fix issue caused by snap file
+  #4019 - Ensure that continuation lock is held before calling handler.
+  #4020 - Add logic to clean up vios on HttpSM shutdown
+  #4053 - Test for proxy.config.http.connect_attempts_timeout
+  #4082 - Lock continuation to avoid handleEvent assert.
+  #4105 - Deal with the case when the hostdb cont may not have a mutex
+  #4111 - Replace TRY_MUTEX_LOCK_FOR with equivalent TRY_MUTEX_LOCK
+  #4117 - Add transform TSIOBuffer watermark APIs.
+  #4118 - disable address sanitizer for our own CompileParseRules binary
+  #4142 - Lock continuation before calling event handler.
+  #4156 - Move handleEvent back into the header file.
+  #4164 - Reset the inactivity timeout when reusing connections
+  #4203 - Allow enabling MPTCP on a listening socket through the records.config
+  #4253 - Add the capability to mark origins down with traffic_ctl.
+  #4302 - Adds support using temporary security credentials
+  #4338 - Schedule event to ensure contination is locked before handler is called.
+  #4379 - Assert if operations on keep_alive_queue and active_queue are not thread-safe
+  #4383 - TCL: Remove TCL dependency from RecCore
+  #4392 - Update logic to watch config files even if they are not default
+  #4395 - TCL: Remove MgmtHashTable.h
+  #4403 - TCL: Remove TCL dependency from TSControl and EventControl
+  #4407 - Fix traffic_via problem with string length
+  #4441 - Corrects the wording of the usage messages for traffic_ctl host subcommand
+  #4538 - Fix privilege acquisition to work better with docker
+  #4571 - ArgParser: standardize version message and usage exit code
+  #4590 - Print thread name instead of thread id
+  #4605 - Ability to turn off traffic manager listening to proxy ports
+  #4624 - Do not reload remap.config when calling verify_config
+  #4625 - Fix mips & mipsel builds
+  #4626 - Fix and add tests for requiring TLS certs from user agent.
+  #4644 - Add h2disable test.
+  #4655 - Add verify_server test without pristine header.
+  #4658 - Add SNI-based cert selection test.
+  #4664 - Use hash string when it is provided for hashing
+  #4713 - regex_revalidate: don't start a new self scheduling config handler on every config reload
+  #4717 - Add TLS client keep alive test.
+  #4740 - Fix a NXDOMAIN related issue
+  #4751 - Add addreess checks to cert selection test.
+  #4755 - The mutex of NetAccept::action_->continuation is optional when the EVENT_ERROR event is called back.
+  #4761 - Cookie remap plugin
+  #4762 - Fix OCSP stapling with dual cert
+  #4793 - Update common.m4 to correctly use $LIBS instead of $LDFLAGS
+  #4860 - Assert when sm callback to wrong thread
+  #4864 - Remove cookie_remap plugin's unit tests until I fix the broken build
+  #4873 - Clean up ua_entry when client_vc is closed
+  #4902 - Adjust follow redirect logic to address a crash and avoid arguments shadowing
+  #4904 - Adding back the cookie_remap unit tests.
+  #4907 - Avoid rescheduling HostDBContinuation to the ET_DNS thread.
+  #4912 - Address performance issue by removing use of read_avail
+  #4913 - Don't Alert and immediate shutdown during a normal shutdown.
+  #4963 - Remove header set for uninitialized response.
+  #4967 - Close a H2 connection if its stream error rate is high
+  #5006 - Fix typo of SNI
+  #5025 - Adds websocket note for remap config
+  #5026 - Fixes some formatting in remap docs
+  #5047 - Merge url_scheme_get into only calling class method
+  #5057 - Added connect_end to the slow log report
+  #5071 - Doc: Clarify how to update the ssl sessions ticket file
+  #5104 - tscore/eventnotify: change fcntl include path
+  #5105 - tscore/ink_hrtime: add missing cstdint import
+  #5107 - traffic_layout/engine: add missing stat import
+  #5119 - Fixing a previous fix to fully allocate strings when heap mismatch detected
+  #5121 - Remove duplicate calls to TSHttpTxnReenable in xdebug
+  #5137 - Doc: open_read_retry_time is overridable
+  #5143 - Fix a self detection issue where parents are not marked down during ATS startup.
+  #5163 - Fix memleak in ProcessManager::stop()
+  #5171 - Updated traffic_via to be more consistent on output and make the test command line runnable
+  #5173 - Documentation: Fix ssl.server.{cert,private_key}.path examples
+  #5197 - fallback to curves list if available
+  #5234 - Correct interpretation of proxy.config.ssl.client.verify.server
+  #5235 - Fix lost pending_actions causing actions on stale objects.
