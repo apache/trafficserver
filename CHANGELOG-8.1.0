@@ -15,6 +15,7 @@ Changes with Apache Traffic Server 8.1.0
   #4156 - Move handleEvent back into the header file.
   #4164 - Reset the inactivity timeout when reusing connections
   #4203 - Allow enabling MPTCP on a listening socket through the records.config
+  #4217 - Fix a regression in the traffic_ctl host status subcommand
   #4253 - Add the capability to mark origins down with traffic_ctl.
   #4302 - Adds support using temporary security credentials
   #4338 - Schedule event to ensure contination is locked before handler is called.
@@ -52,6 +53,7 @@ Changes with Apache Traffic Server 8.1.0
   #4907 - Avoid rescheduling HostDBContinuation to the ET_DNS thread.
   #4912 - Address performance issue by removing use of read_avail
   #4913 - Don't Alert and immediate shutdown during a normal shutdown.
+  #4944 - Add history to HTTP/2
   #4963 - Remove header set for uninitialized response.
   #4967 - Close a H2 connection if its stream error rate is high
   #5006 - Fix typo of SNI
@@ -67,9 +69,22 @@ Changes with Apache Traffic Server 8.1.0
   #5121 - Remove duplicate calls to TSHttpTxnReenable in xdebug
   #5137 - Doc: open_read_retry_time is overridable
   #5143 - Fix a self detection issue where parents are not marked down during ATS startup.
+  #5149 - Add nullptr check on ConfigProcessor::release()
   #5163 - Fix memleak in ProcessManager::stop()
   #5171 - Updated traffic_via to be more consistent on output and make the test command line runnable
   #5173 - Documentation: Fix ssl.server.{cert,private_key}.path examples
   #5197 - fallback to curves list if available
+  #5202 - Doc: fix copy-paste leftover in ts.stat_find
+  #5203 - Doc: Changing volume.config invalidates the cache
+  #5206 - Don't allow header values to overflow into negative values
+  #5207 - HostDB: cancel timeout on free
+  #5209 - Allows logging of negative values
+  #5210 - Fix stale heap triggering assert in TSHttpTxnCachedRespGet
+  #5213 - Remove quotes from records.config documentation examples
+  #5218 - Doc: Add IPv6 CIDR Mask example
+  #5220 - Fix compilation error in wccp
+  #5227 - Normalize on negative value for milestone metrics
   #5234 - Correct interpretation of proxy.config.ssl.client.verify.server
   #5235 - Fix lost pending_actions causing actions on stale objects.
+  #5236 - Update documentation for SSL VERIFY hooks.
+  #5242 - Adds a missing header field for the tcpinfo log
