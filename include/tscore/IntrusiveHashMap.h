@@ -343,6 +343,9 @@ IntrusiveHashMap<H>::Bucket::clear()
   _v       = nullptr;
   _count   = 0;
   _mixed_p = false;
+  // These can be left set during an expansion, when the bucket did have elements before but not
+  // after. Therefore make sure they are cleared.
+  _link._next = _link._prev = nullptr;
 }
 
 template <typename H>
