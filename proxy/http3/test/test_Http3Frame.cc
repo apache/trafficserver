@@ -30,8 +30,8 @@ TEST_CASE("Http3Frame Type", "[http3]")
 {
   CHECK(Http3Frame::type(reinterpret_cast<const uint8_t *>("\x00\x00"), 2) == Http3FrameType::DATA);
   // Undefined ragne
-  CHECK(Http3Frame::type(reinterpret_cast<const uint8_t *>("\x00\x0f"), 2) == Http3FrameType::UNKNOWN);
-  CHECK(Http3Frame::type(reinterpret_cast<const uint8_t *>("\x00\xff"), 2) == Http3FrameType::UNKNOWN);
+  CHECK(Http3Frame::type(reinterpret_cast<const uint8_t *>("\x0f\x00"), 2) == Http3FrameType::UNKNOWN);
+  CHECK(Http3Frame::type(reinterpret_cast<const uint8_t *>("\xff\xff\xff\xff\xff\xff\xff\x00"), 9) == Http3FrameType::UNKNOWN);
 }
 
 TEST_CASE("Load DATA Frame", "[http3]")
@@ -39,8 +39,8 @@ TEST_CASE("Load DATA Frame", "[http3]")
   SECTION("No flags")
   {
     uint8_t buf1[] = {
-      0x04,                   // Length
       0x00,                   // Type
+      0x04,                   // Length
       0x11, 0x22, 0x33, 0x44, // Payload
     };
     std::shared_ptr<const Http3Frame> frame1 = Http3FrameFactory::create(buf1, sizeof(buf1));
@@ -56,8 +56,8 @@ TEST_CASE("Load DATA Frame", "[http3]")
   SECTION("Have flags (invalid)")
   {
     uint8_t buf1[] = {
-      0x04,                   // Length
       0x00,                   // Type
+      0x04,                   // Length
       0x11, 0x22, 0x33, 0x44, // Payload
     };
     std::shared_ptr<const Http3Frame> frame1 = Http3FrameFactory::create(buf1, sizeof(buf1));
@@ -78,8 +78,8 @@ TEST_CASE("Store DATA Frame", "[http3]")
     uint8_t buf[32] = {0};
     size_t len;
     uint8_t expected1[] = {
-      0x04,                   // Length
       0x00,                   // Type
+      0x04,                   // Length
       0x11, 0x22, 0x33, 0x44, // Payload
     };
 
@@ -103,8 +103,8 @@ TEST_CASE("Store HEADERS Frame", "[http3]")
     uint8_t buf[32] = {0};
     size_t len;
     uint8_t expected1[] = {
-      0x04,                   // Length
       0x01,                   // Type
+      0x04,                   // Length
       0x11, 0x22, 0x33, 0x44, // Payload
     };
 
@@ -126,13 +126,13 @@ TEST_CASE("Load SETTINGS Frame", "[http3]")
   SECTION("Normal")
   {
     uint8_t buf[] = {
-      0x0a,       // Length
       0x04,       // Type
-      0x00, 0x06, // Identifier
+      0x08,       // Length
+      0x06,       // Identifier
       0x44, 0x00, // Value
-      0x00, 0x08, // Identifier
+      0x08,       // Identifier
       0x0f,       // Value
-      0xba, 0xba, // Identifier
+      0x4a, 0xba, // Identifier
       0x00,       // Value
     };
 
@@ -153,13 +153,13 @@ TEST_CASE("Store SETTINGS Frame", "[http3]")
   SECTION("Normal")
   {
     uint8_t expected[] = {
-      0x0a,       // Length
       0x04,       // Type
-      0x00, 0x06, // Identifier
+      0x08,       // Length
+      0x06,       // Identifier
       0x44, 0x00, // Value
-      0x00, 0x08, // Identifier
+      0x08,       // Identifier
       0x0f,       // Value
-      0x0a, 0x0a, // Identifier
+      0x4a, 0x0a, // Identifier
       0x00,       // Value
     };
 
@@ -177,11 +177,11 @@ TEST_CASE("Store SETTINGS Frame", "[http3]")
   SECTION("Normal from Client")
   {
     uint8_t expected[] = {
-      0x07,       // Length
       0x04,       // Type
-      0x00, 0x06, // Identifier
+      0x06,       // Length
+      0x06,       // Identifier
       0x44, 0x00, // Value
-      0x0a, 0x0a, // Identifier
+      0x4a, 0x0a, // Identifier
       0x00,       // Value
     };
 
@@ -199,8 +199,8 @@ TEST_CASE("Store SETTINGS Frame", "[http3]")
 TEST_CASE("Http3FrameFactory Create Unknown Frame", "[http3]")
 {
   uint8_t buf1[] = {
+    0x0f, // Type
     0x00, // Length
-    0xff, // Type
   };
   std::shared_ptr<const Http3Frame> frame1 = Http3FrameFactory::create(buf1, sizeof(buf1));
   CHECK(frame1);
@@ -213,13 +213,13 @@ TEST_CASE("Http3FrameFactory Fast Create Frame", "[http3]")
   Http3FrameFactory factory;
 
   uint8_t buf1[] = {
-    0x04,                   // Length
     0x00,                   // Type
+    0x04,                   // Length
     0x11, 0x22, 0x33, 0x44, // Payload
   };
   uint8_t buf2[] = {
-    0x04,                   // Length
     0x00,                   // Type
+    0x04,                   // Length
     0xaa, 0xbb, 0xcc, 0xdd, // Payload
   };
   std::shared_ptr<const Http3Frame> frame1 = factory.fast_create(buf1, sizeof(buf1));
