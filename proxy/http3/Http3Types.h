@@ -36,7 +36,7 @@ enum class Http3StreamType : uint8_t {
   UNKOWN        = 0xFF,
 };
 
-enum class Http3SettingsId : uint16_t {
+enum class Http3SettingsId : uint64_t {
   HEADER_TABLE_SIZE     = 0x01, ///< QPACK Settings
   RESERVED_1            = 0x02, ///< HTTP/3 Settings
   RESERVED_2            = 0x03, ///< HTTP/3 Settings

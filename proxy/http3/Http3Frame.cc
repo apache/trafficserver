@@ -228,8 +228,9 @@ Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len) : Htt
   size_t len = this->_payload_offset;
 
   while (len < buf_len) {
-    uint16_t id = QUICIntUtil::read_nbytes_as_uint(buf + len, 2);
-    len += 2;
+    size_t id_len = QUICVariableInt::size(buf + len);
+    uint16_t id   = QUICIntUtil::read_QUICVariableInt(buf + len);
+    len += id_len;
 
     size_t value_len = QUICVariableInt::size(buf + len);
     uint64_t value   = QUICIntUtil::read_QUICVariableInt(buf + len);
@@ -238,7 +239,7 @@ Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len) : Htt
     // Ignore any SETTINGS identifier it does not understand.
     bool ignore = true;
     for (const auto &known_id : Http3SettingsFrame::VALID_SETTINGS_IDS) {
-      if (id == static_cast<uint16_t>(known_id)) {
+      if (id == static_cast<uint64_t>(known_id)) {
         ignore = false;
         break;
       }
@@ -264,14 +265,14 @@ Http3SettingsFrame::store(uint8_t *buf, size_t *len) const
   size_t l                                              = 0;
 
   for (auto &it : this->_settings) {
-    QUICIntUtil::write_uint_as_nbytes(static_cast<uint16_t>(it.first), sizeof(uint16_t), p, &l);
+    QUICIntUtil::write_QUICVariableInt(static_cast<uint64_t>(it.first), p, &l);
     p += l;
     QUICIntUtil::write_QUICVariableInt(it.second, p, &l);
     p += l;
   }
 
   // Exercise the requirement that unknown identifiers be ignored. - 4.2.5.1.
-  QUICIntUtil::write_uint_as_nbytes(static_cast<uint16_t>(Http3SettingsId::UNKNOWN), sizeof(uint16_t), p, &l);
+  QUICIntUtil::write_QUICVariableInt(static_cast<uint64_t>(Http3SettingsId::UNKNOWN), p, &l);
   p += l;
   QUICIntUtil::write_QUICVariableInt(0, p, &l);
   p += l;
