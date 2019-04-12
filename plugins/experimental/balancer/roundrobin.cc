@@ -31,7 +31,7 @@
 namespace
 {
 struct RoundRobinBalancer : public BalancerInstance {
-  RoundRobinBalancer() : targets(), next(0) {}
+  RoundRobinBalancer() : targets() {}
   void
   push_target(const BalancerTarget &target) override
   {
@@ -45,7 +45,7 @@ struct RoundRobinBalancer : public BalancerInstance {
   }
 
   std::vector<BalancerTarget> targets;
-  unsigned next;
+  unsigned next = 0;
 };
 
 } // namespace

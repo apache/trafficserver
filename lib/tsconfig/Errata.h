@@ -517,7 +517,7 @@ struct Errata::Data : public IntrusivePtrCounter {
   void push(Message && msg);
 
   /// Log this when it is deleted.
-  mutable bool m_log_on_delete;
+  mutable bool m_log_on_delete = true;
 
   //! The message stack.
   Container m_items;
@@ -827,7 +827,7 @@ inline size_t Errata::size() const {
 }
 
 inline bool Errata::isOK() const {
-  return 0 == m_data
+  return nullptr == m_data
     || 0 == m_data->size()
     || Message::Success_Test(this->top())
     ;
@@ -867,7 +867,7 @@ inline Errata& Errata::doNotLog() {
   return *this;
 }
 
-inline Errata::Data::Data() : m_log_on_delete(true) {}
+inline Errata::Data::Data()  {}
 inline size_t Errata::Data::size() const { return m_items.size(); }
 
 inline Errata::iterator::iterator() { }

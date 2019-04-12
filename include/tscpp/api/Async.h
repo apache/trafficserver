@@ -26,6 +26,7 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <utility>
 
 #include "tscpp/api/noncopyable.h"
 
@@ -105,7 +106,7 @@ private:
   void
   doRun(std::shared_ptr<AsyncDispatchControllerBase> dispatch_controller)
   {
-    dispatch_controller_ = dispatch_controller;
+    dispatch_controller_ = std::move(dispatch_controller);
     run();
   }
   friend class Async;
@@ -157,7 +158,7 @@ public:
    * @param mutex Mutex of the receiver that is locked during the dispatch
    */
   AsyncDispatchController(AsyncEventReceiverType *event_receiver, AsyncProviderType *provider, std::shared_ptr<Mutex> mutex)
-    : event_receiver_(event_receiver), dispatch_mutex_(mutex), provider_(provider)
+    : event_receiver_(event_receiver), dispatch_mutex_(std::move(mutex)), provider_(provider)
   {
   }
 

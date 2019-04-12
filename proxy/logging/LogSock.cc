@@ -38,7 +38,7 @@ static const int LS_PROTOCOL = 0;
   first entry of the table (index 0) to be the port on which new
   connections are accepted.
 */
-LogSock::LogSock(int max_connects) : ct((ConnectTable *)nullptr), m_accept_connections(false), m_max_connections(max_connects + 1)
+LogSock::LogSock(int max_connects) : ct((ConnectTable *)nullptr), m_max_connections(max_connects + 1)
 {
   ink_assert(m_max_connections > 0);
 

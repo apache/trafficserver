@@ -100,9 +100,9 @@ int program_counter = 0;
 
 #if defined(darwin) || defined(freebsd) || defined(solaris) || defined(openbsd) // FIXME: solaris x86
 // TODO: Cleanup multiple includes
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstdint>
 #include "tscore/ink_platform.h"
 #include "CoreUtils.h"
 #endif /* darwin || freebsd || solaris */

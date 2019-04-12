@@ -90,7 +90,7 @@ public:
   void demote();
 
 private:
-  bool elevated;
+  bool elevated = false;
   uid_t saved_uid;
   unsigned level;
 

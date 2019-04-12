@@ -45,7 +45,7 @@
     Debug("http_cache", "[%" PRId64 "] [%s, %s]", master_sm->sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
   }
 
-HttpCacheAction::HttpCacheAction() : sm(nullptr) {}
+HttpCacheAction::HttpCacheAction() {}
 
 void
 HttpCacheAction::cancel(Continuation *c)
@@ -61,25 +61,9 @@ HttpCacheAction::cancel(Continuation *c)
 
 HttpCacheSM::HttpCacheSM()
   : Continuation(nullptr),
-    cache_read_vc(nullptr),
-    cache_write_vc(nullptr),
-    read_locked(false),
-    write_locked(false),
-    readwhilewrite_inprogress(false),
-    master_sm(nullptr),
-    pending_action(nullptr),
-    captive_action(),
-    open_read_cb(false),
-    open_write_cb(false),
-    open_read_tries(0),
-    read_request_hdr(nullptr),
-    http_params(nullptr),
-    read_pin_in_cache(0),
-    retry_write(true),
-    open_write_tries(0),
-    lookup_url(nullptr),
-    lookup_max_recursive(0),
-    current_lookup_level(0)
+
+    captive_action()
+
 {
 }
 

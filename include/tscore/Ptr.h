@@ -44,8 +44,8 @@ struct ForceVFPTToTop {
 class RefCountObj : public ForceVFPTToTop
 {
 public:
-  RefCountObj() : m_refcount(0) {}
-  RefCountObj(const RefCountObj &s) : m_refcount(0)
+  RefCountObj() {}
+  RefCountObj(const RefCountObj &s)
   {
     (void)s;
     return;
@@ -86,7 +86,7 @@ public:
   }
 
 private:
-  int m_refcount;
+  int m_refcount = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////

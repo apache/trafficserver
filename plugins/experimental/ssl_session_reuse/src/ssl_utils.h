@@ -26,6 +26,8 @@
 #include <openssl/ssl.h>
 #include <string>
 #include <ts/ts.h>
+#include <mutex>
+#include <deque>
 
 #include "publisher.h"
 #include "subscriber.h"
@@ -38,11 +40,40 @@ struct ssl_session_param {
   int stek_master;                 // bool - Am I the STEK setter/rotator for POD?
   ssl_ticket_key_t ticket_keys[2]; // current and past STEK
   std::string redis_auth_key_file;
-  RedisPublisher *pub;
+  RedisPublisher *pub = nullptr;
   RedisSubscriber *sub;
 
   ssl_session_param();
   ~ssl_session_param();
+};
+
+class PluginThreads
+{
+public:
+  void
+  store(const pthread_t &th)
+  {
+    std::lock_guard<std::mutex> lock(threads_mutex);
+    threads_queue.push_back(th);
+  }
+
+  void
+  terminate()
+  {
+    std::lock_guard<std::mutex> lock(threads_mutex);
+    for (pthread_t th : threads_queue) {
+      ::pthread_cancel(th);
+    }
+    while (!threads_queue.empty()) {
+      pthread_t th = threads_queue.front();
+      ::pthread_join(th, nullptr);
+      threads_queue.pop_front();
+    }
+  }
+
+private:
+  std::deque<pthread_t> threads_queue;
+  std::mutex threads_mutex;
 };
 
 int STEK_init_keys();
@@ -66,3 +97,5 @@ int init_subscriber();
 int SSL_session_callback(TSCont contp, TSEvent event, void *edata);
 
 extern ssl_session_param ssl_param; // almost everything one needs is stored in here
+
+extern PluginThreads plugin_threads;

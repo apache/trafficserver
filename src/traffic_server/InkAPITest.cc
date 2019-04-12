@@ -160,7 +160,7 @@ static char *generate_response(const char *request);
 static int get_request_id(TSHttpTxn txnp);
 
 /* client side */
-static ClientTxn *synclient_txn_create(void);
+static ClientTxn *synclient_txn_create();
 static int synclient_txn_delete(ClientTxn *txn);
 static void synclient_txn_close(ClientTxn *txn);
 static int synclient_txn_send_request(ClientTxn *txn, char *request);
@@ -503,7 +503,7 @@ get_response_id(TSHttpTxn txnp)
 //////////////////////////////////////////////////////////////////////////////
 
 static ClientTxn *
-synclient_txn_create(void)
+synclient_txn_create()
 {
   const HttpProxyPort *proxy_port;
 

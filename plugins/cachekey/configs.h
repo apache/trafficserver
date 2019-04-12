@@ -41,7 +41,7 @@ enum CacheKeyUriType {
 class ConfigElements
 {
 public:
-  ConfigElements() : _sort(false), _remove(false), _skip(false) {}
+  ConfigElements() {}
   virtual ~ConfigElements();
   void setExclude(const char *arg);
   void setInclude(const char *arg);
@@ -82,9 +82,9 @@ protected:
   MultiPattern _includePatterns;
   MultiPattern _excludePatterns;
 
-  bool _sort;
-  bool _remove;
-  bool _skip;
+  bool _sort   = false;
+  bool _remove = false;
+  bool _skip   = false;
 
   std::map<String, MultiPattern *> _captures;
 };

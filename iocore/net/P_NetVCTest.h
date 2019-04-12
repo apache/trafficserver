@@ -73,11 +73,11 @@ public:
   NetTestDriver();
   ~NetTestDriver() override;
 
-  int errors;
+  int errors = 0;
 
 protected:
-  RegressionTest *r;
-  int *pstatus;
+  RegressionTest *r = nullptr;
+  int *pstatus      = nullptr;
 };
 
 class NetVCTest : public Continuation
@@ -85,7 +85,7 @@ class NetVCTest : public Continuation
 public:
   NetVCTest();
   ~NetVCTest() override;
-  NetVcTestType_t test_cont_type;
+  NetVcTestType_t test_cont_type = NET_VC_TEST_ACTIVE;
 
   int main_handler(int event, void *data);
   void read_handler(int event);
@@ -103,41 +103,41 @@ public:
   void finished();
   void record_error(const char *msg);
 
-  NetVConnection *test_vc;
-  RegressionTest *regress;
-  NetTestDriver *driver;
+  NetVConnection *test_vc = nullptr;
+  RegressionTest *regress = nullptr;
+  NetTestDriver *driver   = nullptr;
 
-  VIO *read_vio;
-  VIO *write_vio;
+  VIO *read_vio  = nullptr;
+  VIO *write_vio = nullptr;
 
-  MIOBuffer *read_buffer;
-  MIOBuffer *write_buffer;
+  MIOBuffer *read_buffer  = nullptr;
+  MIOBuffer *write_buffer = nullptr;
 
-  IOBufferReader *reader_for_rbuf;
-  IOBufferReader *reader_for_wbuf;
+  IOBufferReader *reader_for_rbuf = nullptr;
+  IOBufferReader *reader_for_wbuf = nullptr;
 
-  int write_bytes_to_add_per;
-  int timeout;
+  int write_bytes_to_add_per = 0;
+  int timeout                = 0;
 
-  int actual_bytes_read;
-  int actual_bytes_sent;
+  int actual_bytes_read = 0;
+  int actual_bytes_sent = 0;
 
-  bool write_done;
-  bool read_done;
+  bool write_done = false;
+  bool read_done  = false;
 
-  uint8_t read_seed;
-  uint8_t write_seed;
+  uint8_t read_seed  = 0;
+  uint8_t write_seed = 0;
 
-  int bytes_to_send;
-  int bytes_to_read;
+  int bytes_to_send = 0;
+  int bytes_to_read = 0;
 
-  int nbytes_read;
-  int nbytes_write;
+  int nbytes_read  = 0;
+  int nbytes_write = 0;
 
-  int expected_read_term;
-  int expected_write_term;
+  int expected_read_term  = 0;
+  int expected_write_term = 0;
 
-  const char *test_name;
-  const char *module_name;
-  const char *debug_tag;
+  const char *test_name   = nullptr;
+  const char *module_name = nullptr;
+  const char *debug_tag   = nullptr;
 };

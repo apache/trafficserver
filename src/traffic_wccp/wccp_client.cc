@@ -20,9 +20,9 @@
     limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
-#include <stdarg.h>
+#include <cstdarg>
 #include <memory.h>
 #include <strings.h>
 #include <iostream>

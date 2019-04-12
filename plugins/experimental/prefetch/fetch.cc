@@ -25,9 +25,9 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
-#include <string.h>
+#include <cstring>
 #include <sys/socket.h>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "ts/ts.h" /* ATS API */
 #include "fetch.h"
@@ -114,7 +114,7 @@ createStat(const String &prefix, const String &space, const char *module, const 
   return true;
 }
 
-BgFetchState::BgFetchState() : _policy(nullptr), _unique(nullptr), _concurrentFetches(0), _concurrentFetchesMax(0), _log(nullptr)
+BgFetchState::BgFetchState()
 {
   _policyLock = TSMutexCreate();
   if (nullptr == _policyLock) {

@@ -55,11 +55,11 @@ struct core_stack_state {
 #endif // linux check
 
 #if defined(darwin) || defined(freebsd) || defined(solaris) || defined(openbsd) // FIXME: solaris x86
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
 
 #define NO_OF_ARGS                                              \
   10 /* The argument depth up to which we would be looking into \

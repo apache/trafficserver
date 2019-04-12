@@ -51,8 +51,7 @@ acl_filter_rule::reset()
   internal    = 0;
 }
 
-acl_filter_rule::acl_filter_rule()
-  : next(nullptr), filter_name(nullptr), allow_flag(1), src_ip_valid(0), active_queue_flag(0), internal(0), argc(0)
+acl_filter_rule::acl_filter_rule() : allow_flag(1), src_ip_valid(0), active_queue_flag(0), internal(0)
 {
   standard_method_lookup.resize(HTTP_WKSIDX_METHODS_CNT);
   ink_zero(argv);

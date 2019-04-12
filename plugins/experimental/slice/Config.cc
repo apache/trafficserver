@@ -76,7 +76,7 @@ Config::fromArgs(int const argc, char const *const argv[], char *const errbuf, i
   for (int index = 0; index < argc; ++index) {
     std::string const argstr = argv[index];
 
-    std::size_t const spos = argstr.find_first_of(":");
+    std::size_t const spos = argstr.find_first_of(':');
     if (spos != std::string::npos) {
       std::string key = argstr.substr(0, spos);
       std::string val = argstr.substr(spos + 1);

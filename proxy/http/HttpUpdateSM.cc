@@ -42,7 +42,7 @@ ClassAllocator<HttpUpdateSM> httpUpdateSMAllocator("httpUpdateSMAllocator");
     Debug("http", "[%" PRId64 "] [%s, %s]", sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
   }
 
-HttpUpdateSM::HttpUpdateSM() : cb_occured(false), cb_cont(nullptr), cb_action(), cb_event(HTTP_SCH_UPDATE_EVENT_ERROR) {}
+HttpUpdateSM::HttpUpdateSM() : cb_action(), cb_event(HTTP_SCH_UPDATE_EVENT_ERROR) {}
 
 void
 HttpUpdateSM::destroy()

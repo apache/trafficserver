@@ -425,7 +425,7 @@ struct CacheVC : public CacheVConnection {
 
   OpenDirEntry *od;
   AIOCallbackInternal io;
-  int alternate_index; // preferred position in vector
+  int alternate_index = CACHE_ALT_INDEX_DEFAULT; // preferred position in vector
   LINK(CacheVC, opendir_link);
 #ifdef CACHE_STAT_PAGES
   LINK(CacheVC, stat_link);
@@ -440,7 +440,6 @@ struct CacheVC : public CacheVConnection {
   // NOTE: NOTE: NOTE: If vio is NOT the start, then CHANGE the
   // size_to_init initialization
   VIO vio;
-  EThread *initial_thread; // initial thread open_XX was called on
   CacheFragType frag_type;
   CacheHTTPInfo *info;
   CacheHTTPInfoVector *write_vector;
@@ -549,9 +548,9 @@ new_CacheVC(Continuation *cont)
   CacheVC *c          = THREAD_ALLOC(cacheVConnectionAllocator, t);
   c->vector.data.data = &c->vector.data.fast_data[0];
   c->_action          = cont;
-  c->initial_thread   = t->tt == DEDICATED ? nullptr : t;
   c->mutex            = cont->mutex;
   c->start_time       = Thread::get_hrtime();
+  c->setThreadAffinity(t);
   ink_assert(c->trigger == nullptr);
   Debug("cache_new", "new %p", c);
 #ifdef CACHE_STAT_PAGES
@@ -956,8 +955,8 @@ CacheRemoveCont::event_handler(int event, void *data)
   return EVENT_DONE;
 }
 
-int64_t cache_bytes_used(void);
-int64_t cache_bytes_total(void);
+int64_t cache_bytes_used();
+int64_t cache_bytes_total();
 
 #ifdef DEBUG
 #define CACHE_DEBUG_INCREMENT_DYN_STAT(_x) CACHE_INCREMENT_DYN_STAT(_x)
@@ -972,14 +971,14 @@ struct Vol;
 class CacheHostTable;
 
 struct Cache {
-  int cache_read_done;
-  int total_good_nvol;
-  int total_nvol;
-  int ready;
-  int64_t cache_size; // in store block size
-  CacheHostTable *hosttable;
-  int total_initialized_vol;
-  CacheType scheme;
+  int cache_read_done       = 0;
+  int total_good_nvol       = 0;
+  int total_nvol            = 0;
+  int ready                 = CACHE_INITIALIZING;
+  int64_t cache_size        = 0; // in store block size
+  CacheHostTable *hosttable = nullptr;
+  int total_initialized_vol = 0;
+  CacheType scheme          = CACHE_NONE_TYPE;
 
   int open(bool reconfigure, bool fix);
   int close();
@@ -1010,17 +1009,7 @@ struct Cache {
 
   Vol *key_to_vol(const CacheKey *key, const char *hostname, int host_len);
 
-  Cache()
-    : cache_read_done(0),
-      total_good_nvol(0),
-      total_nvol(0),
-      ready(CACHE_INITIALIZING),
-      cache_size(0), // in store block size
-      hosttable(nullptr),
-      total_initialized_vol(0),
-      scheme(CACHE_NONE_TYPE)
-  {
-  }
+  Cache() {}
 };
 
 extern Cache *theCache;

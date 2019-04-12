@@ -81,7 +81,7 @@ class TunnelDestination : public ActionItem
 {
 public:
   TunnelDestination(const std::string_view &dest, bool decrypt) : destination(dest), tunnel_decrypt(decrypt) {}
-  ~TunnelDestination() {}
+  ~TunnelDestination() override {}
 
   int
   SNIAction(Continuation *cont) const override
@@ -117,7 +117,7 @@ public:
 
 class TLSValidProtocols : public ActionItem
 {
-  bool unset;
+  bool unset = true;
   unsigned long protocol_mask;
 
 public:
@@ -126,7 +126,7 @@ public:
 #else
   static const unsigned long max_mask = SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2;
 #endif
-  TLSValidProtocols() : unset(true), protocol_mask(max_mask) {}
+  TLSValidProtocols() : protocol_mask(max_mask) {}
   TLSValidProtocols(unsigned long protocols) : unset(false), protocol_mask(protocols) {}
   int
   SNIAction(Continuation *cont) const override

@@ -57,7 +57,7 @@ NetVCOptions::toString(addr_bind_style s)
   return ANY_ADDR == s ? "any" : INTF_ADDR == s ? "interface" : "foreign";
 }
 
-Connection::Connection() : fd(NO_FD), is_bound(false), is_connected(false), sock_type(0)
+Connection::Connection() : fd(NO_FD)
 {
   memset(&addr, 0, sizeof(addr));
 }

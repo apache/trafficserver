@@ -24,17 +24,17 @@
 #pragma once
 
 #include "tscore/ink_config.h"
-#include <stddef.h>
+#include <stddef.h> // NOLINT(modernize-deprecated-headers)
 #include <sys/mman.h>
 
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
 #else
 // TODO: Add "standard" int types?
 #endif
 
 #ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
+#include <inttypes.h> // NOLINT(modernize-deprecated-headers)
 #else
 // TODO: add PRI*64 stuff?
 #endif
@@ -129,13 +129,4 @@ int ink_login_name_max();
 #if TS_USE_HWLOC
 // Get the hardware topology
 hwloc_topology_t ink_get_topology();
-#endif
-
-/** Constants.
- */
-#ifdef __cplusplus
-namespace ts
-{
-static const int NO_FD = -1; ///< No or invalid file descriptor.
-}
 #endif

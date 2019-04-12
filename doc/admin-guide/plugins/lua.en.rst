@@ -3738,7 +3738,7 @@ Here is an example.
 
 ts.stat_find
 ------------
-**syntax:** *val = ts.stat_create(STAT_NAME)*
+**syntax:** *val = ts.stat_find(STAT_NAME)*
 
 **context:** global
 

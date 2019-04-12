@@ -33,6 +33,7 @@
 
  ***************************************************************************/
 #include "tscore/ink_platform.h"
+#include "tscore/TSSystemState.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
 #include "I_Machine.h"
@@ -496,6 +497,16 @@ Log::init_fields()
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssr", field);
+
+  field = new LogField("client_req_is_internal", "cqint", LogField::sINT, &LogAccess::marshal_client_req_is_internal,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqint", field);
+
+  field = new LogField("client_req_mptcp", "cqmpt", LogField::sINT, &LogAccess::marshal_client_req_mptcp_state,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqmpt", field);
 
   field = new LogField("client_sec_protocol", "cqssv", LogField::STRING, &LogAccess::marshal_client_security_protocol,
                        (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
@@ -1238,7 +1249,7 @@ Log::preproc_thread_main(void *args)
   Log::preproc_notify[idx].lock();
 
   while (true) {
-    if (unlikely(shutdown_event_system == true)) {
+    if (TSSystemState::is_event_system_shut_down()) {
       return nullptr;
     }
     size_t buffers_preproced = 0;
@@ -1281,7 +1292,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
   Log::flush_notify->lock();
 
   while (true) {
-    if (unlikely(shutdown_event_system == true)) {
+    if (TSSystemState::is_event_system_shut_down()) {
       return nullptr;
     }
     fdata = (LogFlushData *)ink_atomiclist_popall(flush_data_list);

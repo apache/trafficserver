@@ -259,28 +259,25 @@ struct Http2SettingsParameter {
 
 // [RFC 7540] 6.3 PRIORITY Format
 struct Http2Priority {
-  Http2Priority()
-    : exclusive_flag(false), weight(HTTP2_PRIORITY_DEFAULT_WEIGHT), stream_dependency(HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY)
-  {
-  }
+  Http2Priority() : weight(HTTP2_PRIORITY_DEFAULT_WEIGHT), stream_dependency(HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY) {}
 
-  bool exclusive_flag;
+  bool exclusive_flag = false;
   uint8_t weight;
   uint32_t stream_dependency;
 };
 
 // [RFC 7540] 6.2 HEADERS Format
 struct Http2HeadersParameter {
-  Http2HeadersParameter() : pad_length(0) {}
-  uint8_t pad_length;
+  Http2HeadersParameter() {}
+  uint8_t pad_length = 0;
   Http2Priority priority;
 };
 
 // [RFC 7540] 6.8 GOAWAY Format
 struct Http2Goaway {
-  Http2Goaway() : last_streamid(0), error_code(Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {}
-  Http2StreamId last_streamid;
-  Http2ErrorCode error_code;
+  Http2Goaway() {}
+  Http2StreamId last_streamid = 0;
+  Http2ErrorCode error_code   = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 
   // NOTE: we don't (de)serialize the variable length debug data at this layer
   // because there's
@@ -296,9 +293,9 @@ struct Http2RstStream {
 
 // [RFC 7540] 6.6 PUSH_PROMISE Format
 struct Http2PushPromise {
-  Http2PushPromise() : pad_length(0), promised_streamid(0) {}
-  uint8_t pad_length;
-  Http2StreamId promised_streamid;
+  Http2PushPromise() {}
+  uint8_t pad_length              = 0;
+  Http2StreamId promised_streamid = 0;
 };
 
 static inline bool

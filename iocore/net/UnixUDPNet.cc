@@ -297,13 +297,10 @@ UDPReadContinuation::UDPReadContinuation(Event *completionToken)
   : Continuation(nullptr),
     event(completionToken),
     readbuf(nullptr),
-    readlen(0),
-    fromaddrlen(nullptr),
+
     fd(-1),
-    ifd(-1),
-    period(0),
-    elapsed_time(0),
-    timeout_interval(0)
+    ifd(-1)
+
 {
   if (completionToken->continuation) {
     this->mutex = completionToken->continuation->mutex;

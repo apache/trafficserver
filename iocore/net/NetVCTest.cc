@@ -80,37 +80,7 @@ NVC_test_def netvc_tests_def[] = {
 };
 const unsigned num_netvc_tests = countof(netvc_tests_def);
 
-NetVCTest::NetVCTest()
-  : Continuation(nullptr),
-    test_cont_type(NET_VC_TEST_ACTIVE),
-    test_vc(nullptr),
-    regress(nullptr),
-    driver(nullptr),
-    read_vio(nullptr),
-    write_vio(nullptr),
-    read_buffer(nullptr),
-    write_buffer(nullptr),
-    reader_for_rbuf(nullptr),
-    reader_for_wbuf(nullptr),
-    write_bytes_to_add_per(0),
-    timeout(0),
-    actual_bytes_read(0),
-    actual_bytes_sent(0),
-    write_done(false),
-    read_done(false),
-    read_seed(0),
-    write_seed(0),
-    bytes_to_send(0),
-    bytes_to_read(0),
-    nbytes_read(0),
-    nbytes_write(0),
-    expected_read_term(0),
-    expected_write_term(0),
-    test_name(nullptr),
-    module_name(nullptr),
-    debug_tag(nullptr)
-{
-}
+NetVCTest::NetVCTest() : Continuation(nullptr) {}
 
 NetVCTest::~NetVCTest()
 {
@@ -395,6 +365,6 @@ NetVCTest::main_handler(int event, void *data)
   return 0;
 }
 
-NetTestDriver::NetTestDriver() : Continuation(nullptr), errors(0), r(nullptr), pstatus(nullptr) {}
+NetTestDriver::NetTestDriver() : Continuation(nullptr) {}
 
 NetTestDriver::~NetTestDriver() {}

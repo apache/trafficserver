@@ -21,8 +21,10 @@
   limitations under the License.
 
  */
-
 #pragma once
+
+#include <string_view>
+#include <optional>
 
 #include "tscore/ink_inet.h"
 #include "I_Action.h"
@@ -32,7 +34,6 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 #include "ts/apidefs.h"
-#include <string_view>
 #include "YamlSNIConfig.h"
 #include "tscpp/util/TextView.h"
 #include "tscore/IpMap.h"
@@ -618,8 +619,8 @@ public:
   // is enabled by SocksProxy
   SocksAddrType socks_addr;
 
-  unsigned int attributes;
-  EThread *thread;
+  unsigned int attributes = 0;
+  EThread *thread         = nullptr;
 
   /// PRIVATE: The public interface is VIO::reenable()
   void reenable(VIO *vio) override = 0;
@@ -655,6 +656,9 @@ public:
   /** Set remote sock addr struct. */
   virtual void set_remote_addr(const sockaddr *) = 0;
 
+  /** Set the MPTCP state for this connection */
+  virtual void set_mptcp_state() = 0;
+
   // for InkAPI
   bool
   get_is_internal_request() const
@@ -674,6 +678,14 @@ public:
   {
     return is_transparent;
   }
+
+  /// Get the MPTCP state of the VC.
+  std::optional<bool>
+  get_mptcp_state() const
+  {
+    return mptcp_state;
+  }
+
   /// Set the transparency state.
   void
   set_is_transparent(bool state = true)
@@ -821,31 +833,24 @@ protected:
   IpEndpoint local_addr;
   IpEndpoint remote_addr;
 
-  bool got_local_addr;
-  bool got_remote_addr;
+  bool got_local_addr  = false;
+  bool got_remote_addr = false;
 
-  bool is_internal_request;
+  bool is_internal_request = false;
   /// Set if this connection is transparent.
-  bool is_transparent;
+  bool is_transparent = false;
   /// Set if proxy protocol is enabled
-  bool is_proxy_protocol;
+  bool is_proxy_protocol = false;
+  /// This is essentially a tri-state, we leave it undefined to mean no MPTCP support
+  std::optional<bool> mptcp_state;
   /// Set if the next write IO that empties the write buffer should generate an event.
-  int write_buffer_empty_event;
+  int write_buffer_empty_event = 0;
   /// NetVConnection Context.
-  NetVConnectionContext_t netvc_context;
+  NetVConnectionContext_t netvc_context = NET_VCONNECTION_UNSET;
 };
 
-inline NetVConnection::NetVConnection()
-  : AnnotatedVConnection(nullptr),
-    attributes(0),
-    thread(nullptr),
-    got_local_addr(false),
-    got_remote_addr(false),
-    is_internal_request(false),
-    is_transparent(false),
-    is_proxy_protocol(false),
-    write_buffer_empty_event(0),
-    netvc_context(NET_VCONNECTION_UNSET)
+inline NetVConnection::NetVConnection() : AnnotatedVConnection(nullptr)
+
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);

@@ -307,6 +307,8 @@ e.g.::
 
     cond %{CIDR:8} ="8.0.0.0"
         set-header X-Is-Eight "Yes"
+    cond %{CIDR:,8} ="fd00::" #note the IPv6 Mask is in the second position
+        set-header IPv6Internal "true"
 
 This condition has no requirements other than access to the Client IP, hence,
 it should work in any and all hooks.

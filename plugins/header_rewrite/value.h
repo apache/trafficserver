@@ -41,7 +41,7 @@ class Value : Statement
 public:
   Value() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Value"); }
 
-  virtual ~Value();
+  ~Value() override;
 
   // noncopyable
   Value(const Value &) = delete;
@@ -53,8 +53,8 @@ public:
   append_value(std::string &s, const Resources &res) const
   {
     if (!_cond_vals.empty()) {
-      for (auto it = _cond_vals.begin(); it != _cond_vals.end(); it++) {
-        (*it)->append_value(s, res);
+      for (auto _cond_val : _cond_vals) {
+        _cond_val->append_value(s, res);
       }
     } else {
       s += _value;

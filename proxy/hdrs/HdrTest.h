@@ -39,9 +39,9 @@
 class HdrTest
 {
 public:
-  RegressionTest *rtest;
+  RegressionTest *rtest = nullptr;
 
-  HdrTest() : rtest(nullptr){};
+  HdrTest(){};
   ~HdrTest(){};
 
   int go(RegressionTest *t, int atype);

@@ -46,16 +46,16 @@ struct BUILD_TABLE_INFO {
   BUILD_TABLE_INFO();
   ~BUILD_TABLE_INFO();
 
-  unsigned long remap_optflg;
-  int paramc;
-  int argc;
+  unsigned long remap_optflg = 0;
+  int paramc                 = 0;
+  int argc                   = 0;
   char *paramv[BUILD_TABLE_MAX_ARGS];
   char *argv[BUILD_TABLE_MAX_ARGS];
 
-  bool ip_allow_check_enabled_p;
-  bool accept_check_p;
-  acl_filter_rule *rules_list; // all rules defined in config files as .define_filter foobar @src_ip=.....
-  UrlRewrite *rewrite;         // Pointer to the UrlRewrite object we are parsing for.
+  bool ip_allow_check_enabled_p = true;
+  bool accept_check_p           = true;
+  acl_filter_rule *rules_list   = nullptr; // all rules defined in config files as .define_filter foobar @src_ip=.....
+  UrlRewrite *rewrite           = nullptr; // Pointer to the UrlRewrite object we are parsing for.
 
   // Clear the argument vector.
   void reset();

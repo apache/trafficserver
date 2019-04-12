@@ -77,11 +77,11 @@ public:
   Ptr<RefCountObj> item;
   RefCountCacheHashEntry *_next{nullptr};
   RefCountCacheHashEntry *_prev{nullptr};
-  PriorityQueueEntry<RefCountCacheHashEntry *> *expiry_entry;
+  PriorityQueueEntry<RefCountCacheHashEntry *> *expiry_entry = nullptr;
   RefCountCacheItemMeta meta;
 
   // Need a no-argument constructor to use the classAllocator
-  RefCountCacheHashEntry() : item(Ptr<RefCountObj>()), expiry_entry(nullptr), meta(0, 0) {}
+  RefCountCacheHashEntry() : item(Ptr<RefCountObj>()), meta(0, 0) {}
   void
   set(RefCountObj *i, uint64_t key, unsigned int size, int expire_time)
   {
@@ -368,7 +368,7 @@ RefCountCachePartition<C>::get_map()
 class RefCountCacheHeader
 {
 public:
-  unsigned int magic;
+  unsigned int magic = REFCOUNTCACHE_MAGIC_NUMBER;
   ts::VersionNumber version{REFCOUNTCACHE_VERSION};
   ts::VersionNumber object_version; // version passed in of whatever it is we are caching
 
@@ -396,7 +396,7 @@ template <class C> class RefCountCache
 public:
   // Constructor
   RefCountCache(unsigned int num_partitions, int size = -1, int items = -1, ts::VersionNumber object_version = ts::VersionNumber(),
-                std::string metrics_prefix = "");
+                const std::string &metrics_prefix = "");
   // Destructor
   ~RefCountCache();
 
@@ -427,7 +427,7 @@ private:
 
 template <class C>
 RefCountCache<C>::RefCountCache(unsigned int num_partitions, int size, int items, ts::VersionNumber object_version,
-                                std::string metrics_prefix)
+                                const std::string &metrics_prefix)
   : header(RefCountCacheHeader(object_version)), rsb(nullptr)
 {
   this->max_size       = size;
@@ -568,7 +568,7 @@ RefCountCache<C>::clear()
 // Errors are -1
 template <typename CacheEntryType>
 int
-LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, std::string dirname, std::string filepath,
+LoadRefCountCacheFromPath(RefCountCache<CacheEntryType> &cache, const std::string &dirname, const std::string &filepath,
                           CacheEntryType *(*load_func)(char *, unsigned int))
 {
   // If we have no load method, then we can't load anything so lets just stop right here

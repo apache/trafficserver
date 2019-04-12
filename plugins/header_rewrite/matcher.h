@@ -67,7 +67,7 @@ public:
   };
 
   void
-  setRegex(const std::string /* data ATS_UNUSED */)
+  setRegex(const std::string & /* data ATS_UNUSED */)
   {
     if (!helper.setRegexMatch(_data)) {
       std::stringstream ss;

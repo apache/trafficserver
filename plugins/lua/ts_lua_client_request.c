@@ -483,6 +483,7 @@ ts_lua_client_request_set_url_port(lua_State *L)
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
+  // NOLINTNEXTLINE
   port = luaL_checkint(L, 1);
 
   TSUrlPortSet(http_ctx->client_request_bufp, http_ctx->client_request_url, port);

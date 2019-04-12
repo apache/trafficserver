@@ -43,7 +43,7 @@
  */
 
 #include <stdbool.h>
-#include <stdint.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -1291,6 +1291,13 @@ typedef enum {
 #define TS_UUID_STRING_LEN 36
 #define TS_CRUUID_STRING_LEN (TS_UUID_STRING_LEN + 19 + 1) /* UUID-len + len(uint64_t) + '-' */
 typedef struct tsapi_uuid *TSUuid;
+
+#ifdef __cplusplus
+namespace ts
+{
+  static const int NO_FD = -1; ///< No or invalid file descriptor.
+}
+#endif
 
 #ifdef __cplusplus
 }

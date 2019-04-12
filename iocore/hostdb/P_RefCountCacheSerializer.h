@@ -25,6 +25,7 @@
 
 #include "P_RefCountCache.h"
 
+#include <utility>
 #include <vector>
 
 // This continuation is responsible for persisting RefCountCache to disk
@@ -57,7 +58,7 @@ public:
   int write_to_disk(const void *, size_t);
 
   RefCountCacheSerializer(Continuation *acont, RefCountCache<C> *cc, int frequency, std::string dirname, std::string filename);
-  ~RefCountCacheSerializer();
+  ~RefCountCacheSerializer() override;
 
 private:
   std::vector<RefCountCacheHashEntry *> partition_items;
@@ -85,8 +86,8 @@ RefCountCacheSerializer<C>::RefCountCacheSerializer(Continuation *acont, RefCoun
     cache(cc),
     cont(acont),
     fd(-1),
-    dirname(dirname),
-    filename(filename),
+    dirname(std::move(dirname)),
+    filename(std::move(filename)),
     time_per_partition(HRTIME_SECONDS(frequency) / cc->partition_count()),
     start(Thread::get_hrtime()),
     total_items(0),

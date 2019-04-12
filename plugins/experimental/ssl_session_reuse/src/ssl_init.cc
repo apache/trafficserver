@@ -23,7 +23,7 @@
  */
 
 #include <string>
-#include <string.h>
+#include <cstring>
 #include "ssl_utils.h"
 #include "Config.h"
 #include "common.h"
@@ -83,7 +83,7 @@ init_ssl_params(const std::string &conf)
   return 0;
 }
 
-ssl_session_param::ssl_session_param() : pub(nullptr) {}
+ssl_session_param::ssl_session_param() {}
 
 ssl_session_param::~ssl_session_param()
 {

@@ -130,7 +130,7 @@ struct SSLConfigParams : public ConfigInfo {
   mutable std::unordered_map<std::string, CTX_MAP *> top_level_ctx_map;
   mutable ink_mutex ctxMapLock;
 
-  SSL_CTX *getClientSSL_CTX(void) const;
+  SSL_CTX *getClientSSL_CTX() const;
   SSL_CTX *getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file, const char *ca_bundle_path) const;
   void cleanupCTXTable();
 

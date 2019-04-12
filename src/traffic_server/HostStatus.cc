@@ -94,6 +94,34 @@ mgmt_host_status_down_callback(ts::MemSpan span)
   }
 }
 
+static void
+handle_record_read(const RecRecord *rec, void *edata)
+{
+  HostStatus &hs = HostStatus::instance();
+  std::string hostname;
+  std::string reason;
+
+  if (rec) {
+    // parse the hostname from the stat name
+    char *s = const_cast<char *>(rec->name);
+    // 1st move the pointer past the stat prefix.
+    s += strlen(stat_prefix.c_str());
+    hostname = s;
+    // parse the reason from the stat name.
+    reason = hostname.substr(hostname.find('_'));
+    reason.erase(0, 1);
+    // erase the reason tag
+    hostname.erase(hostname.find('_'));
+
+    // if the data loaded from stats indicates that the host was down,
+    // then update the state so that the host remains down until
+    // specificcaly marked up using traffic_ctl.
+    if (rec->data.rec_int == 0 && Reasons::validReason(reason.c_str())) {
+      hs.setHostStatus(hostname.c_str(), HOST_STATUS_DOWN, 0, reason.c_str());
+    }
+  }
+}
+
 HostStatus::HostStatus()
 {
   ink_rwlock_init(&host_status_rwlock);
@@ -111,6 +139,14 @@ HostStatus::~HostStatus()
   // release host_stats_ids hash and the read and writer locks.
   ink_rwlock_destroy(&host_status_rwlock);
   ink_rwlock_destroy(&host_statids_rwlock);
+}
+
+void
+HostStatus::loadHostStatusFromStats()
+{
+  if (RecLookupMatchingRecords(RECT_ALL, stat_prefix.c_str(), handle_record_read, nullptr) != REC_ERR_OKAY) {
+    Error("[HostStatus] - While loading HostStatus stats, there was an Error reading HostStatus stats.");
+  }
 }
 
 void
@@ -203,7 +239,7 @@ HostStatus::createHostStat(const char *name)
       std::string reason_stat;
       getStatName(reason_stat, name, i);
       if (hosts_stats_ids.find(reason_stat) == hosts_stats_ids.end()) {
-        RecRegisterRawStat(host_status_rsb, RECT_PROCESS, (reason_stat).c_str(), RECD_INT, RECP_NON_PERSISTENT, (int)next_stat_id,
+        RecRegisterRawStat(host_status_rsb, RECT_PROCESS, (reason_stat).c_str(), RECD_INT, RECP_PERSISTENT, (int)next_stat_id,
                            RecRawStatSyncSum);
         RecSetRawStatCount(host_status_rsb, next_stat_id, 1);
         RecSetRawStatSum(host_status_rsb, next_stat_id, 1);

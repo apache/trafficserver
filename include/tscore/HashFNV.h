@@ -31,7 +31,7 @@
 #include <cstdint>
 
 struct ATSHash32FNV1a : ATSHash32 {
-  ATSHash32FNV1a(void);
+  ATSHash32FNV1a();
 
   template <typename Transform> void update(const void *data, size_t len, Transform xfrm);
   void
@@ -40,9 +40,9 @@ struct ATSHash32FNV1a : ATSHash32 {
     update(data, len, ATSHash::nullxfrm());
   }
 
-  void final(void) override;
-  uint32_t get(void) const override;
-  void clear(void) override;
+  void final() override;
+  uint32_t get() const override;
+  void clear() override;
 
 private:
   uint32_t hval;
@@ -62,7 +62,7 @@ ATSHash32FNV1a::update(const void *data, size_t len, Transform xfrm)
 }
 
 struct ATSHash64FNV1a : ATSHash64 {
-  ATSHash64FNV1a(void);
+  ATSHash64FNV1a();
 
   template <typename Transform> void update(const void *data, size_t len, Transform xfrm);
   void
@@ -71,9 +71,9 @@ struct ATSHash64FNV1a : ATSHash64 {
     update(data, len, ATSHash::nullxfrm());
   }
 
-  void final(void) override;
-  uint64_t get(void) const override;
-  void clear(void) override;
+  void final() override;
+  uint64_t get() const override;
+  void clear() override;
 
 private:
   uint64_t hval;

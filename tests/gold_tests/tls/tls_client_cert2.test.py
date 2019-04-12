@@ -96,6 +96,9 @@ ts.Disk.ssl_server_name_yaml.AddLines([
     '- fqdn: "*bar.com"',
     '  client_cert: {0}/signed2-bar.pem'.format(ts.Variables.SSLDir),
     '  client_key: {0}/signed-bar.key'.format(ts.Variables.SSLDir),
+    '- fqdn: "foo.com"',
+    '  client_cert: {0}/signed2-foo.pem'.format(ts.Variables.SSLDir),
+    '  client_key: {0}/signed-foo.key'.format(ts.Variables.SSLDir),
 ])
 
 
@@ -153,6 +156,24 @@ trfail.StillRunningAfter = ts
 trfail.StillRunningAfter = server
 trfail.StillRunningAfter = server2
 trfail.Processes.Default.Command = 'curl -H host:random.bar.com  http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
+trfail.Processes.Default.ReturnCode = 0
+trfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
+
+# Should fail
+tr = Test.AddTestRun("random.foo.com to server 2")
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+tr.StillRunningAfter = server2
+tr.Processes.Default.Command = "curl -H host:random.foo.com  http://127.0.0.1:{0}/case2".format(ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
+
+#Should fail
+trfail = Test.AddTestRun("random.foo.com to server 1")
+trfail.StillRunningAfter = ts
+trfail.StillRunningAfter = server
+trfail.StillRunningAfter = server2
+trfail.Processes.Default.Command = 'curl -H host:random.foo.com  http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
 trfail.Processes.Default.ReturnCode = 0
 trfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 

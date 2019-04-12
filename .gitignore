@@ -124,6 +124,7 @@ iocore/hostdb/test_RefCountCache
 
 proxy/hdrs/test_mime
 proxy/hdrs/test_Huffmancode
+proxy/hdrs/test_proxy_hdrs
 proxy/http/test_proxy_http
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_HPACK
@@ -134,6 +135,7 @@ proxy/logging/test_LogUtils
 proxy/logging/test_LogUtils2
 
 plugins/header_rewrite/header_rewrite_test
+plugins/experimental/cookie_remap/test_cookiejar
 plugins/experimental/esi/*_test
 plugins/experimental/slice/test_*
 plugins/experimental/sslheaders/test_sslheaders
@@ -202,3 +204,6 @@ RELEASE
 
 # autest
 tests/env-test/
+
+iocore/cache/test_*
+iocore/cache/test/var/trafficserver/cache.db

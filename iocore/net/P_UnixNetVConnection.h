@@ -232,7 +232,7 @@ public:
   UnixNetVConnection *migrateToCurrentThread(Continuation *c, EThread *t);
 
   Action action_;
-  int closed;
+  int closed = 0;
   NetState read;
   NetState write;
 
@@ -244,14 +244,14 @@ public:
   LINK(UnixNetVConnection, keep_alive_queue_link);
   LINK(UnixNetVConnection, active_queue_link);
 
-  ink_hrtime inactivity_timeout_in;
-  ink_hrtime active_timeout_in;
-  ink_hrtime next_inactivity_timeout_at;
-  ink_hrtime next_activity_timeout_at;
+  ink_hrtime inactivity_timeout_in      = 0;
+  ink_hrtime active_timeout_in          = 0;
+  ink_hrtime next_inactivity_timeout_at = 0;
+  ink_hrtime next_activity_timeout_at   = 0;
 
   EventIO ep;
-  NetHandler *nh;
-  unsigned int id;
+  NetHandler *nh  = nullptr;
+  unsigned int id = 0;
 
   union {
     unsigned int flags;
@@ -264,11 +264,11 @@ public:
   };
 
   Connection con;
-  int recursion;
-  ink_hrtime submit_time;
-  OOB_callback *oob_ptr;
-  bool from_accept_thread;
-  NetAccept *accept_object;
+  int recursion            = 0;
+  ink_hrtime submit_time   = 0;
+  OOB_callback *oob_ptr    = nullptr;
+  bool from_accept_thread  = false;
+  NetAccept *accept_object = nullptr;
 
   // es - origin_trace associated connections
   bool origin_trace;
@@ -292,6 +292,7 @@ public:
   ink_hrtime get_active_timeout() override;
 
   virtual void set_local_addr() override;
+  void set_mptcp_state() override;
   virtual void set_remote_addr() override;
   void set_remote_addr(const sockaddr *) override;
   int set_tcp_init_cwnd(int init_cwnd) override;
@@ -345,6 +346,21 @@ UnixNetVConnection::set_local_addr()
   // `local_addr` is checked within get_local_addr() and the `got_local_addr`
   // is set only with a valid `local_addr`.
   ATS_UNUSED_RETURN(safe_getsockname(con.fd, &local_addr.sa, &local_sa_size));
+}
+
+// Update the internal VC state variable for MPTCP
+inline void
+UnixNetVConnection::set_mptcp_state()
+{
+  int mptcp_enabled      = -1;
+  int mptcp_enabled_size = sizeof(mptcp_enabled);
+
+  if (0 == safe_getsockopt(con.fd, IPPROTO_TCP, MPTCP_ENABLED, (char *)&mptcp_enabled, &mptcp_enabled_size)) {
+    Debug("socket_mptcp", "MPTCP socket state: %d", mptcp_enabled);
+    mptcp_state = mptcp_enabled > 0 ? true : false;
+  } else {
+    Debug("socket_mptcp", "MPTCP failed getsockopt(): %s", strerror(errno));
+  }
 }
 
 inline ink_hrtime

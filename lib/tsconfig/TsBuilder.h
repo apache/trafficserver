@@ -36,9 +36,9 @@ class Builder {
 public:
   typedef Builder self;
   struct Handler {
-    self* _ptr; ///< Pointer to Builder instance.
+    self* _ptr = nullptr; ///< Pointer to Builder instance.
     /// Pointer to method to invoke for this event.
-    void (self::*_method)(Token const& token);
+    void (self::*_method)(Token const& token) = nullptr;
 
     /// Default constructor.
     Handler();
@@ -92,7 +92,7 @@ public:
   self& init();
 };
 
-inline Builder::Handler::Handler() : _ptr(nullptr), _method(nullptr) { }
+inline Builder::Handler::Handler()  { }
 inline Builder::Builder() { this->init(); }
 inline Builder::Builder(Configuration const& config) : _config(config) { this->init(); }
 

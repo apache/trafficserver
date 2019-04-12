@@ -43,10 +43,10 @@ struct SContData {
   TSCont contp;
 
   struct IoHandle {
-    TSVIO vio;
-    TSIOBuffer buffer;
-    TSIOBufferReader reader;
-    IoHandle() : vio(nullptr), buffer(nullptr), reader(nullptr){};
+    TSVIO vio               = nullptr;
+    TSIOBuffer buffer       = nullptr;
+    TSIOBufferReader reader = nullptr;
+    IoHandle(){};
     ~IoHandle()
     {
       if (reader) {

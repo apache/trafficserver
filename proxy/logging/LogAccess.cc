@@ -438,7 +438,7 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
 }
 
 inline int
-LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
+LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFieldAliasMap> &map, const char *msg)
 {
   long int codeStrLen = 0;
 
@@ -511,23 +511,27 @@ LogAccess::unmarshal_itoa(int64_t val, char *dest, int field_width, char leading
 {
   ink_assert(dest != nullptr);
 
-  char *p = dest;
+  char *p       = dest;
+  bool negative = false;
 
-  if (val <= 0) {
-    *p-- = '0';
-    while (dest - p < field_width) {
-      *p-- = leading_char;
-    }
-    return (int)(dest - p);
+  if (val < 0) {
+    negative = true;
+    val      = -val;
   }
 
-  while (val) {
+  do {
     *p-- = '0' + (val % 10);
     val /= 10;
-  }
+  } while (val);
+
   while (dest - p < field_width) {
     *p-- = leading_char;
   }
+
+  if (negative) {
+    *p-- = '-';
+  }
+
   return (int)(dest - p);
 }
 
@@ -951,7 +955,7 @@ LogAccess::unmarshal_ip_to_hex(char **buf, char *dest, int len)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -969,7 +973,7 @@ LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAlia
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -987,7 +991,7 @@ LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogField
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -1005,7 +1009,7 @@ LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAli
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -1015,7 +1019,7 @@ LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFiel
 }
 
 int
-LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -1689,37 +1693,49 @@ int
 LogAccess::marshal_client_req_tcp_reused(char *buf)
 {
   if (buf) {
-    int64_t tcp_reused;
-    tcp_reused = m_http_sm->client_tcp_reused;
-    marshal_int(buf, tcp_reused);
+    marshal_int(buf, m_http_sm->client_tcp_reused ? 1 : 0);
   }
   return INK_MIN_ALIGN;
 }
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 int
 LogAccess::marshal_client_req_is_ssl(char *buf)
 {
   if (buf) {
-    int64_t is_ssl;
-    is_ssl = m_http_sm->client_connection_is_ssl;
-    marshal_int(buf, is_ssl);
+    marshal_int(buf, m_http_sm->client_connection_is_ssl ? 1 : 0);
   }
   return INK_MIN_ALIGN;
 }
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 int
 LogAccess::marshal_client_req_ssl_reused(char *buf)
 {
   if (buf) {
-    int64_t ssl_session_reused;
-    ssl_session_reused = m_http_sm->client_ssl_reused;
-    marshal_int(buf, ssl_session_reused);
+    marshal_int(buf, m_http_sm->client_ssl_reused ? 1 : 0);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_client_req_is_internal(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, m_http_sm->is_internal ? 1 : 0);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_client_req_mptcp_state(char *buf)
+{
+  if (buf) {
+    int val = -1;
+
+    if (m_http_sm->mptcp_state.has_value()) {
+      val = m_http_sm->mptcp_state.value() ? 1 : 0;
+    } else {
+    }
+    marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
 }
@@ -2249,9 +2265,7 @@ int
 LogAccess::marshal_server_resp_time_ms(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf, m_http_sm->milestones.difference_msec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE));
   }
   return INK_MIN_ALIGN;
 }
@@ -2260,9 +2274,8 @@ int
 LogAccess::marshal_server_resp_time_s(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf,
+                static_cast<int64_t>(m_http_sm->milestones.difference_sec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE)));
   }
   return INK_MIN_ALIGN;
 }
@@ -2445,9 +2458,7 @@ int
 LogAccess::marshal_transfer_time_ms(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf, m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH));
   }
   return INK_MIN_ALIGN;
 }
@@ -2456,9 +2467,7 @@ int
 LogAccess::marshal_transfer_time_s(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf, static_cast<int64_t>(m_http_sm->milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH)));
   }
   return INK_MIN_ALIGN;
 }
@@ -2770,8 +2779,7 @@ int
 LogAccess::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones.elapsed(ms2, ms1);
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
+    int64_t val = m_http_sm->milestones.difference_msec(ms2, ms1);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;

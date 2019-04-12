@@ -301,7 +301,7 @@ public:
 private:
   Queue<LogFilter> m_filter_list;
 
-  bool m_does_conjunction;
+  bool m_does_conjunction = true;
   // If m_does_conjunction = true
   // toss_this_entry returns true
   // if ANY filter tosses entry away.

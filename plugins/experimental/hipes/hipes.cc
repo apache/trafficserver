@@ -129,30 +129,24 @@ struct HIPESService {
     : url_param("url"),
       path(""),
       svc_server(""),
-      svc_port(80),
-      ssl(false),
+
       hipes_server(HIPES_SERVER_NAME),
-      hipes_port(80),
-      default_redirect_flag(1),
-      x_hipes_header("X-HIPES-Redirect"),
-      active_timeout(-1),
-      no_activity_timeout(-1),
-      connect_timeout(-1),
-      dns_timeout(-1){};
+
+      x_hipes_header("X-HIPES-Redirect"){};
 
   std::string url_param;
   std::string path;
   std::string svc_server;
-  int svc_port;
-  bool ssl;
+  int svc_port = 80;
+  bool ssl     = false;
   std::string hipes_server;
-  int hipes_port;
-  unsigned int default_redirect_flag;
+  int hipes_port                     = 80;
+  unsigned int default_redirect_flag = 1;
   std::string x_hipes_header;
-  int active_timeout;
-  int no_activity_timeout;
-  int connect_timeout;
-  int dns_timeout;
+  int active_timeout      = -1;
+  int no_activity_timeout = -1;
+  int connect_timeout     = -1;
+  int dns_timeout         = -1;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

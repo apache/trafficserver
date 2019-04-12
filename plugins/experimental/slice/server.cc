@@ -35,7 +35,7 @@ shutdown(TSCont const contp, Data *const data)
 }
 
 ContentRange
-contentRangeFrom(HttpHeader &header)
+contentRangeFrom(HttpHeader const &header)
 {
   ContentRange bcr;
 

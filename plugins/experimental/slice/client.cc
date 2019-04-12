@@ -65,6 +65,11 @@ requestBlock(TSCont contp, Data *const data)
   TSHttpHdrPrint(header.m_buffer, header.m_lochdr, data->m_upstream.m_write.m_iobuf);
   TSVIOReenable(data->m_upstream.m_write.m_vio);
 
+  /*
+          std::string const headerstr(header.toString());
+          DEBUG_LOG("Headers\n%s", headerstr.c_str());
+  */
+
   // get ready for data back from the server
   data->m_upstream.setupVioRead(contp);
 

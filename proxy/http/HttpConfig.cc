@@ -921,7 +921,7 @@ set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpCo
       } else if (n <= 0 || n >= HTTP_STATUS_NUMBER) {
         Error("Invalid status code '%.*s' for negative caching: out of range", static_cast<int>(token.size()), token.data());
       } else {
-        set[n] = 1;
+        set[n] = true;
       }
     }
   }

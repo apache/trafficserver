@@ -460,14 +460,20 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
   _client_transaction_id = ua_txn->get_transaction_id();
   {
     auto p = ua_txn->get_parent();
+
     if (p) {
       _client_connection_id = p->connection_id();
     }
   }
 
-  // Collect log & stats information
-  client_tcp_reused         = !(ua_txn->is_first_transaction());
+  // Collect log & stats information. We've already verified that the netvc is !nullptr above,
+  // and netvc == ua_txn->get_netvc().
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+
+  is_internal       = netvc->get_is_internal_request();
+  mptcp_state       = netvc->get_mptcp_state();
+  client_tcp_reused = !(ua_txn->is_first_transaction());
+
   if (ssl_vc != nullptr) {
     client_connection_is_ssl = true;
     client_ssl_reused        = ssl_vc->getSSLSessionCacheHit();
@@ -3274,13 +3280,8 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     //   set the ua_txn into half close mode
 
     // only external POSTs should be subject to this logic; ruling out internal POSTs here
-    bool is_eligible_post_request = (t_state.method == HTTP_WKSIDX_POST);
-    if (is_eligible_post_request) {
-      NetVConnection *vc = ua_txn->get_netvc();
-      if (vc) {
-        is_eligible_post_request &= !vc->get_is_internal_request();
-      }
-    }
+    bool is_eligible_post_request = ((t_state.method == HTTP_WKSIDX_POST) && !is_internal);
+
     if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && c->producer->vc_type != HT_STATIC &&
         event == VC_EVENT_WRITE_COMPLETE) {
       ua_txn->set_half_close_flag(true);

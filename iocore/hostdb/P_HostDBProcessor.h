@@ -194,12 +194,12 @@ struct HostDBCache {
   // Map to contain all of the host file overrides, initialize it to empty
   Ptr<RefCountedHostsFileMap> hosts_file_ptr;
   // TODO: make ATS call a close() method or something on shutdown (it does nothing of the sort today)
-  RefCountCache<HostDBInfo> *refcountcache;
+  RefCountCache<HostDBInfo> *refcountcache = nullptr;
 
   // TODO configurable number of items in the cache
-  Queue<HostDBContinuation, Continuation::Link_link> *pending_dns;
+  Queue<HostDBContinuation, Continuation::Link_link> *pending_dns = nullptr;
   Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(const CryptoHash &hash);
-  Queue<HostDBContinuation, Continuation::Link_link> *remoteHostDBQueue;
+  Queue<HostDBContinuation, Continuation::Link_link> *remoteHostDBQueue = nullptr;
   HostDBCache();
   bool is_pending_dns_for_hash(const CryptoHash &hash);
 };
@@ -399,16 +399,16 @@ struct HostDBHash {
 
   CryptoHash hash; ///< The hash value.
 
-  const char *host_name; ///< Host name.
-  int host_len;          ///< Length of @a _host_name
-  IpAddr ip;             ///< IP address.
-  in_port_t port;        ///< IP port (host order).
+  const char *host_name = nullptr; ///< Host name.
+  int host_len          = 0;       ///< Length of @a _host_name
+  IpAddr ip;                       ///< IP address.
+  in_port_t port = 0;              ///< IP port (host order).
   /// DNS server. Not strictly part of the hash data but
   /// it's both used by @c HostDBContinuation and provides access to
   /// hash data. It's just handier to store it here for both uses.
-  DNSServer *dns_server;
-  SplitDNS *pSD;      ///< Hold the container for @a dns_server.
-  HostDBMark db_mark; ///< Mark / type of record.
+  DNSServer *dns_server = nullptr;
+  SplitDNS *pSD         = nullptr;             ///< Hold the container for @a dns_server.
+  HostDBMark db_mark    = HOSTDB_MARK_GENERIC; ///< Mark / type of record.
 
   /// Default constructor.
   HostDBHash();
@@ -490,12 +490,12 @@ struct HostDBContinuation : public Continuation {
   struct Options {
     typedef Options self; ///< Self reference type.
 
-    int timeout;                 ///< Timeout value. Default 0
-    HostResStyle host_res_style; ///< IP address family fallback. Default @c HOST_RES_NONE
-    bool force_dns;              ///< Force DNS lookup. Default @c false
-    Continuation *cont;          ///< Continuation / action. Default @c nullptr (none)
+    int timeout                 = 0;             ///< Timeout value. Default 0
+    HostResStyle host_res_style = HOST_RES_NONE; ///< IP address family fallback. Default @c HOST_RES_NONE
+    bool force_dns              = false;         ///< Force DNS lookup. Default @c false
+    Continuation *cont          = nullptr;       ///< Continuation / action. Default @c nullptr (none)
 
-    Options() : timeout(0), host_res_style(HOST_RES_NONE), force_dns(false), cont(nullptr) {}
+    Options() {}
   };
   static const Options DEFAULT_OPTIONS; ///< Default defaults.
   void init(HostDBHash const &hash, Options const &opt = DEFAULT_OPTIONS);

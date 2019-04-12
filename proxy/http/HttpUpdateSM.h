@@ -50,20 +50,20 @@ public:
   HttpUpdateSM();
 
   static HttpUpdateSM *allocate();
-  void destroy();
+  void destroy() override;
 
   Action *start_scheduled_update(Continuation *cont, HTTPHdr *req);
 
   //  private:
-  bool cb_occured;
-  Continuation *cb_cont;
+  bool cb_occured       = false;
+  Continuation *cb_cont = nullptr;
   Action cb_action;
   int cb_event;
 
 protected:
-  void handle_api_return();
-  void set_next_state();
-  int kill_this_async_hook(int event, void *data);
+  void handle_api_return() override;
+  void set_next_state() override;
+  int kill_this_async_hook(int event, void *data) override;
 };
 
 inline HttpUpdateSM *

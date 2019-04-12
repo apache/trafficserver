@@ -71,9 +71,9 @@ struct RamCacheCLFUSEntry {
 };
 
 struct RamCacheCLFUS : public RamCache {
-  int64_t max_bytes;
-  int64_t bytes;
-  int64_t objects;
+  int64_t max_bytes = 0;
+  int64_t bytes     = 0;
+  int64_t objects   = 0;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
   int get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0) override;
@@ -85,16 +85,16 @@ struct RamCacheCLFUS : public RamCache {
   void init(int64_t max_bytes, Vol *vol) override;
 
   // private
-  Vol *vol; // for stats
-  double average_value;
-  int64_t history;
-  int ibuckets;
-  int nbuckets;
+  Vol *vol             = nullptr; // for stats
+  double average_value = 0;
+  int64_t history      = 0;
+  int ibuckets         = 0;
+  int nbuckets         = 0;
   DList(RamCacheCLFUSEntry, hash_link) * bucket;
   Que(RamCacheCLFUSEntry, lru_link) lru[2];
-  uint16_t *seen;
-  int ncompressed;
-  RamCacheCLFUSEntry *compressed; // first uncompressed lru[0] entry
+  uint16_t *seen                 = nullptr;
+  int ncompressed                = 0;
+  RamCacheCLFUSEntry *compressed = nullptr; // first uncompressed lru[0] entry
   void compress_entries(EThread *thread, int do_at_most = INT_MAX);
   void resize_hashtable();
   void victimize(RamCacheCLFUSEntry *e);
@@ -102,21 +102,7 @@ struct RamCacheCLFUS : public RamCache {
   RamCacheCLFUSEntry *destroy(RamCacheCLFUSEntry *e);
   void requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims);
   void tick(); // move CLOCK on history
-  RamCacheCLFUS()
-    : max_bytes(0),
-      bytes(0),
-      objects(0),
-      vol(nullptr),
-      average_value(0),
-      history(0),
-      ibuckets(0),
-      nbuckets(0),
-      bucket(nullptr),
-      seen(nullptr),
-      ncompressed(0),
-      compressed(nullptr)
-  {
-  }
+  RamCacheCLFUS() : bucket(nullptr) {}
 };
 
 int64_t

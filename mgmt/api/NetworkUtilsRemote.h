@@ -35,6 +35,7 @@
 #pragma once
 
 #include "mgmtapi.h"
+#include "ts/apidefs.h"
 #include "NetworkMessage.h"
 #include "EventCallback.h"
 

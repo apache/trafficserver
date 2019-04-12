@@ -47,7 +47,7 @@ const static struct {
   uint8_t *encoded_field;
   int encoded_field_len;
   int prefix;
-} integer_test_case[] = {{10, (uint8_t *)"\x0A", 1, 5}, {1337, (uint8_t *)"\x1F\x9A\x0A", 3, 5}, {42, (uint8_t *)"\x2A", 1, 8}};
+} integer_test_case[] = {{10, (uint8_t *)"\x0A", 1, 5}, {1337, (uint8_t *)"\x1F\x9A\x0A", 3, 5}, {42, (uint8_t *)R"(*)", 1, 8}};
 
 // Example: custom-key: custom-header
 const static struct {

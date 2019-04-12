@@ -7211,11 +7211,16 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   current_age = HttpTransactHeaders::calculate_document_age(s->request_sent_time, s->response_received_time, cached_obj_response,
                                                             response_date, s->current.now);
 
-  // Overflow ?
+  // First check overflow status
+  // Second if current_age is under the max, use the smaller value
+  // Finally we take the max of current age or guaranteed max, this ensures it will
+  // age out properly, otherwise a doc will never expire if guaranteed < document max-age
   if (current_age < 0) {
     current_age = s->txn_conf->cache_guaranteed_max_lifetime;
-  } else {
+  } else if (current_age < s->txn_conf->cache_guaranteed_max_lifetime) {
     current_age = std::min((time_t)s->txn_conf->cache_guaranteed_max_lifetime, current_age);
+  } else {
+    current_age = std::max((time_t)s->txn_conf->cache_guaranteed_max_lifetime, current_age);
   }
 
   TxnDebug("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %" PRId64, fresh_limit, (int64_t)current_age);

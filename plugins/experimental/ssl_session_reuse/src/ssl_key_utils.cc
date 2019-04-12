@@ -23,14 +23,14 @@
  */
 
 #include <unistd.h>
-#include <string.h>
+#include <cstring>
 #include <mutex>
 #include <sys/time.h>
 #include <ts/ts.h>
 #include <openssl/rand.h>
 
 #include "ssl_utils.h"
-#include "assert.h"
+#include <cassert>
 #include "redis_auth.h"
 #include "stek.h"
 #include "common.h"
@@ -284,6 +284,10 @@ STEK_Send_To_Network(struct ssl_ticket_key_t *stekToSend)
 static void *
 STEK_Update_Setter_Thread(void *arg)
 {
+  plugin_threads.store(::pthread_self());
+  ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+  ::pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
+
   int sleepInterval;
   struct ssl_ticket_key_t newKey;
   int startProblem = 0; // counter for start up and retry issues.
@@ -303,7 +307,7 @@ STEK_Update_Setter_Thread(void *arg)
   stek_master_setter_running = 1;
   TSDebug(PLUGIN, "Will now act as the STEK rotator for pod");
 
-  while (1) {
+  while (true) {
     // Create new STEK, set it for me, and then send it to the POD.
     if ((!STEK_CreateNew(&newKey, 0, 1 /* entropy ensured */)) || (!STEK_Send_To_Network(&newKey))) {
       // Error occurred. We will retry after a short interval.
@@ -368,6 +372,10 @@ STEK_update(const std::string &encrypted_stek)
 static void *
 STEK_Update_Checker_Thread(void *arg)
 {
+  plugin_threads.store(::pthread_self());
+  ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+  ::pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
+
   time_t currentTime;
   time_t lastWarningTime; // last time we put out a warning
 
@@ -381,7 +389,7 @@ STEK_Update_Checker_Thread(void *arg)
 
   lastChangeTime = lastWarningTime = time(&currentTime); // init to current to supress a startup warning.
 
-  while (1) {
+  while (true) {
     if (!stek_initialized && ssl_param.pub) {
       // Launch a request for the master to resend you the ticket key
       std::string redis_channel = ssl_param.cluster_name + "." + STEK_ID_RESEND;

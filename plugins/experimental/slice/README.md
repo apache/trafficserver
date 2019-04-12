@@ -31,7 +31,7 @@ cache_range_requests.so
 **Note**: cache_range_requests **MUST** follow slice.so Put these plugins at the end of the plugin list
 **Note**: blockbytes is defined in bytes. 1048576 (1MB) is the default.
 
-For testing purposes an unchecked value of "blockbytestest" is also available.
+For testing purposes an unchecked value of "bytesover" is also available.
 
 Debug output can be enable by setting the debug tag: **slice**
 

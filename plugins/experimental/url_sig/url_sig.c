@@ -23,9 +23,9 @@
     _a < _b ? _a : _b;      \
   })
 
-#include "tscore/ink_defs.h"
 #include "url_sig.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -538,7 +538,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   char sig_string[2 * MAX_SIG_SIZE + 1];
 
   if (current_url_len >= MAX_REQ_LEN - 1) {
-    err_log(url, "URL string too long");
+    err_log(current_url, "Request Url string too long");
     goto deny;
   }
 
@@ -555,14 +555,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       err_log(url, "Pristine URL string too long.");
       goto deny;
     }
-
   } else {
     url_len = current_url_len;
   }
 
   TSDebug(PLUGIN_NAME, "%s", url);
-
-  const char *query = strchr(url, '?');
 
   if (cfg->regex) {
     const int offset = 0, options = 0;
@@ -580,12 +577,17 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     }
   }
 
+  const char *query = strchr(url, '?');
+
   // check for path params.
   if (query == NULL || strstr(query, "E=") == NULL) {
-    if ((url = urlParse(url, cfg->sig_anchor, new_path, 8192, path_params, 8192)) == NULL) {
+    char *const parsed = urlParse(url, cfg->sig_anchor, new_path, 8192, path_params, 8192);
+    if (NULL == parsed) {
       err_log(url, "Has no signing query string or signing path parameters.");
       goto deny;
     }
+
+    url             = parsed;
     has_path_params = true;
     query           = strstr(url, ";");
 

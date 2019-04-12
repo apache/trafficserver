@@ -49,8 +49,8 @@ struct Buffer {
   typedef Buffer self; ///< Self reference type.
   typedef bool (self::*pseudo_bool)() const;
 
-  char *_ptr;   ///< Pointer to base of memory chunk.
-  size_t _size; ///< Size of memory chunk.
+  char *_ptr   = nullptr; ///< Pointer to base of memory chunk.
+  size_t _size = 0;       ///< Size of memory chunk.
 
   /// Default constructor (empty buffer).
   Buffer();
@@ -129,8 +129,8 @@ struct ConstBuffer {
   typedef ConstBuffer self; ///< Self reference type.
   typedef bool (self::*pseudo_bool)() const;
 
-  char const *_ptr; ///< Pointer to base of memory chunk.
-  size_t _size;     ///< Size of memory chunk.
+  char const *_ptr = nullptr; ///< Pointer to base of memory chunk.
+  size_t _size     = 0;       ///< Size of memory chunk.
 
   /// Default constructor (empty buffer).
   ConstBuffer();
@@ -286,7 +286,7 @@ struct ConstBuffer {
 // ----------------------------------------------------------
 // Inline implementations.
 
-inline Buffer::Buffer() : _ptr(nullptr), _size(0) {}
+inline Buffer::Buffer() {}
 inline Buffer::Buffer(char *ptr, size_t n) : _ptr(ptr), _size(n) {}
 inline Buffer &
 Buffer::set(char *ptr, size_t n)
@@ -353,7 +353,7 @@ Buffer::size() const
   return _size;
 }
 
-inline ConstBuffer::ConstBuffer() : _ptr(nullptr), _size(0) {}
+inline ConstBuffer::ConstBuffer() {}
 inline ConstBuffer::ConstBuffer(char const *ptr, size_t n) : _ptr(ptr), _size(n) {}
 inline ConstBuffer::ConstBuffer(char const *start, char const *end) : _ptr(start), _size(end - start) {}
 inline ConstBuffer::ConstBuffer(Buffer const &that) : _ptr(that._ptr), _size(that._size) {}

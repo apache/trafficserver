@@ -92,7 +92,7 @@ struct TransformationPluginState : noncopyable, public detail::ResumeAfterPauseC
     output_buffer_reader_ = TSIOBufferReaderAlloc(output_buffer_);
   };
 
-  ~TransformationPluginState()
+  ~TransformationPluginState() override
   {
     if (output_buffer_reader_) {
       TSIOBufferReaderFree(output_buffer_reader_);

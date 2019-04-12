@@ -183,8 +183,8 @@ ConfigElements::noIncludeExcludeRules() const
 
 ConfigElements::~ConfigElements()
 {
-  for (auto it = _captures.begin(); it != _captures.end(); it++) {
-    delete it->second;
+  for (auto &_capture : _captures) {
+    delete _capture.second;
   }
 }
 

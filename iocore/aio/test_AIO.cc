@@ -24,6 +24,7 @@
 #include "P_AIO.h"
 #include "InkAPIInternal.h"
 #include "tscore/I_Layout.h"
+#include "tscore/TSSystemState.h"
 #include <iostream>
 #include <fstream>
 
@@ -469,7 +470,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     }
   }
 
-  while (!shutdown_event_system) {
+  while (!TSSystemState::is_event_system_shut_down()) {
     sleep(1);
   }
   delete main_thread;

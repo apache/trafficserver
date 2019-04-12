@@ -41,12 +41,12 @@ struct RemapConfigs {
     int _data_len; // Used when data is a string
   };
 
-  RemapConfigs() : _current(0) { memset(_items, 0, sizeof(_items)); };
+  RemapConfigs() { memset(_items, 0, sizeof(_items)); };
   bool parse_file(const char *filename);
   bool parse_inline(const char *arg);
 
   Item _items[MAX_OVERRIDABLE_CONFIGS];
-  int _current;
+  int _current = 0;
 };
 
 // Helper functionfor the parser

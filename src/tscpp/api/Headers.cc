@@ -101,11 +101,11 @@ HeaderFieldName::operator!=(const std::string &field_name)
  * @private
  */
 struct HeaderFieldValueIteratorState : noncopyable {
-  TSMBuffer hdr_buf_;
-  TSMLoc hdr_loc_;
-  TSMLoc field_loc_;
-  int index_;
-  HeaderFieldValueIteratorState() : hdr_buf_(nullptr), hdr_loc_(nullptr), field_loc_(nullptr), index_(0) {}
+  TSMBuffer hdr_buf_ = nullptr;
+  TSMLoc hdr_loc_    = nullptr;
+  TSMLoc field_loc_  = nullptr;
+  int index_         = 0;
+  HeaderFieldValueIteratorState() {}
   void
   reset(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc field_loc, int index)
   {

@@ -73,7 +73,7 @@ public:
 
       // set the host
       size_t start = _url.find(":");
-      size_t end   = _url.find("/", start + 3);
+      size_t end   = _url.find('/', start + 3);
       _host        = _url.substr(start + 3, end - start - 3);
       end          = _host.find(":");
       if (end != string::npos) {

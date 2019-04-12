@@ -124,6 +124,9 @@ hostdb_cont_free(HostDBContinuation *cont)
   if (cont->pending_action) {
     cont->pending_action->cancel();
   }
+  if (cont->timeout) {
+    cont->timeout->cancel();
+  }
   cont->mutex        = nullptr;
   cont->action.mutex = nullptr;
   hostDBContAllocator.free(cont);
@@ -217,9 +220,7 @@ HostDBHash::refresh()
   ctx.finalize(hash);
 }
 
-HostDBHash::HostDBHash() : host_name(nullptr), host_len(0), port(0), dns_server(nullptr), pSD(nullptr), db_mark(HOSTDB_MARK_GENERIC)
-{
-}
+HostDBHash::HostDBHash() {}
 
 HostDBHash::~HostDBHash()
 {
@@ -228,7 +229,7 @@ HostDBHash::~HostDBHash()
   }
 }
 
-HostDBCache::HostDBCache() : refcountcache(nullptr), pending_dns(nullptr), remoteHostDBQueue(nullptr)
+HostDBCache::HostDBCache()
 {
   hosts_file_ptr = new RefCountedHostsFileMap();
 }
@@ -533,7 +534,7 @@ db_mark_for(IpAddr const &ip)
 }
 
 Ptr<HostDBInfo>
-probe(Ptr<ProxyMutex> mutex, HostDBHash const &hash, bool ignore_timeout)
+probe(const Ptr<ProxyMutex> &mutex, HostDBHash const &hash, bool ignore_timeout)
 {
   // If hostdb is disabled, don't return anything
   if (!hostdb_enable) {
@@ -1578,7 +1579,8 @@ int
 HostDBContinuation::set_check_pending_dns()
 {
   Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
-  HostDBContinuation *c        = q.head;
+  this->setThreadAffinity(this_ethread());
+  HostDBContinuation *c = q.head;
   for (; c; c = (HostDBContinuation *)c->link.next) {
     if (hash.hash == c->hash.hash) {
       Debug("hostdb", "enqueuing additional request");
@@ -1606,8 +1608,15 @@ HostDBContinuation::remove_trigger_pending_dns()
     }
     c = n;
   }
+  EThread *thread = this_ethread();
   while ((c = qq.dequeue())) {
-    c->handleEvent(EVENT_IMMEDIATE, nullptr);
+    // resume all queued HostDBCont in the thread associated with the netvc to avoid nethandler locking issues.
+    EThread *affinity_thread = c->getThreadAffinity();
+    if (!affinity_thread || affinity_thread == thread) {
+      c->handleEvent(EVENT_IMMEDIATE, nullptr);
+    } else {
+      eventProcessor.schedule_imm(c);
+    }
   }
 }
 

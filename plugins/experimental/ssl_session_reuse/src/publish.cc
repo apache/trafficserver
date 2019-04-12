@@ -26,17 +26,22 @@
 #include <unistd.h>
 #include <iostream>
 #include <exception>
-#include <string.h>
+#include <cstring>
 #include <memory>
 #include <ts/ts.h>
 #include "common.h"
 #include "publisher.h"
 #include "Config.h"
 #include "redis_auth.h"
+#include "ssl_utils.h"
 
 void *
 RedisPublisher::start_worker_thread(void *arg)
 {
+  plugin_threads.store(::pthread_self());
+  ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
+  ::pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
+
   RedisPublisher *publisher = static_cast<RedisPublisher *>(arg);
   publisher->runWorker();
   return arg;
@@ -44,14 +49,14 @@ RedisPublisher::start_worker_thread(void *arg)
 
 RedisPublisher::RedisPublisher(const std::string &conf)
   : m_redisEndpointsStr(cDefaultRedisEndpoint),
-    m_endpointIndex(0),
+
     m_numWorkers(cPubNumWorkerThreads),
     m_redisConnectTimeout(cDefaultRedisConnectTimeout),
     m_redisConnectTries(cDefaultRedisConnectTries),
     m_redisPublishTries(cDefaultRedisPublishTries),
     m_redisRetryDelay(cDefaultRedisRetryDelay),
-    m_maxQueuedMessages(cDefaultMaxQueuedMessages),
-    err(false)
+    m_maxQueuedMessages(cDefaultMaxQueuedMessages)
+
 {
   if (Config::getSingleton().loadConfig(conf)) {
     Config::getSingleton().getValue("pubconfig", "PubNumWorkers", m_numWorkers);

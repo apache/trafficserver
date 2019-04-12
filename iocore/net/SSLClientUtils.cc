@@ -169,9 +169,13 @@ SSLInitClientContext(const SSLConfigParams *params)
   }
 #endif
 
-#ifdef SSL_CTX_set1_groups_list
+#if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
   if (params->client_groups_list != nullptr) {
+#ifdef SSL_CTX_set1_groups_list
     if (!SSL_CTX_set1_groups_list(client_ctx, params->client_groups_list)) {
+#else
+    if (!SSL_CTX_set1_curves_list(client_ctx, params->client_groups_list)) {
+#endif
       SSLError("invalid groups list for client in records.config");
       goto fail;
     }

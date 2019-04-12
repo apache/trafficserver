@@ -382,13 +382,6 @@ new_IOBufferBlock_internal(
 
 TS_INLINE
 IOBufferBlock::IOBufferBlock()
-  : _start(nullptr),
-    _end(nullptr),
-    _buf_end(nullptr)
-#ifdef TRACK_BUFFER_USER
-    ,
-    _location(nullptr)
-#endif
 {
   return;
 }

@@ -56,7 +56,7 @@
 
 static const std::string magic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-WSBuffer::WSBuffer() : frame_(0) {}
+WSBuffer::WSBuffer() {}
 
 void
 WSBuffer::buffer(std::string const &data)

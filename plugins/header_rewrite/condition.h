@@ -49,7 +49,7 @@ class Condition : public Statement
 public:
   Condition() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition"); }
 
-  virtual ~Condition()
+  ~Condition() override
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Condition");
     delete _matcher;

@@ -64,19 +64,19 @@ struct src_ip_info_t {
 class acl_filter_rule
 {
 private:
-  void reset(void);
+  void reset();
 
 public:
-  acl_filter_rule *next;
-  char *filter_name;           // optional filter name
-  unsigned int allow_flag : 1, // action allow deny
-    src_ip_valid : 1,          // src_ip range valid
+  acl_filter_rule *next = nullptr;
+  char *filter_name     = nullptr; // optional filter name
+  unsigned int allow_flag : 1,     // action allow deny
+    src_ip_valid : 1,              // src_ip range valid
     in_ip_valid : 1,
     active_queue_flag : 1, // filter is in active state (used by .useflt directive)
     internal : 1;          // filter internal HTTP requests
 
   // we need arguments as string array for directive processing
-  int argc;                        // argument counter (only for filter defs)
+  int argc = 0;                    // argument counter (only for filter defs)
   char *argv[ACL_FILTER_MAX_ARGV]; // argument strings (only for filter defs)
 
   // methods
@@ -98,7 +98,7 @@ public:
   ~acl_filter_rule();
   void name(const char *_name = nullptr);
   int add_argv(int _argc, char *_argv[]);
-  void print(void);
+  void print();
 
   static acl_filter_rule *find_byname(acl_filter_rule *list, const char *name);
   static void delete_byname(acl_filter_rule **list, const char *name);

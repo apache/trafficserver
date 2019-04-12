@@ -31,8 +31,7 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/Diags.h"
-
-#include "P_SSLClientUtils.h"
+#include "records/I_RecCore.h"
 #include "P_SSLCertLookup.h"
 
 struct SSLConfigParams;
@@ -44,10 +43,7 @@ typedef int ssl_error_t;
    @brief Gather user provided settings from ssl_multicert.config in to this single struct
  */
 struct SSLMultiCertConfigParams {
-  SSLMultiCertConfigParams() : opt(SSLCertContext::OPT_NONE)
-  {
-    REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable");
-  }
+  SSLMultiCertConfigParams() { REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable"); }
 
   int session_ticket_enabled; ///< session ticket enabled
   ats_scoped_str addr;        ///< IPv[64] address to match
@@ -57,7 +53,7 @@ struct SSLMultiCertConfigParams {
   ats_scoped_str key;         ///< Private key
   ats_scoped_str dialog;      ///< Private key dialog
   ats_scoped_str servername;  ///< Destination server
-  SSLCertContext::Option opt; ///< SSLCertContext special handling option
+  SSLCertContext::Option opt = SSLCertContext::OPT_NONE; ///< SSLCertContext special handling option
 };
 
 /**
@@ -174,7 +170,7 @@ namespace detail
 struct ats_wildcard_matcher {
   ats_wildcard_matcher()
   {
-    if (!regex.compile("^\\*\\.[^\\*.]+")) {
+    if (!regex.compile(R"(^\*\.[^\*.]+)")) {
       Fatal("failed to compile TLS wildcard matching regex");
     }
   }

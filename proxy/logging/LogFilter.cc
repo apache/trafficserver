@@ -927,7 +927,7 @@ filters_are_equal(LogFilter *filt1, LogFilter *filt2)
   add() function is overloaded for each sub-type of LogFilter.
   -------------------------------------------------------------------------*/
 
-LogFilterList::LogFilterList() : m_does_conjunction(true) {}
+LogFilterList::LogFilterList() {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

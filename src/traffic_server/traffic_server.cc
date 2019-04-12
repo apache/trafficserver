@@ -96,6 +96,7 @@ extern "C" int plock(int);
 #include "HTTP2.h"
 #include "tscore/ink_config.h"
 #include "P_SSLSNI.h"
+#include "P_SSLClientUtils.h"
 
 #if TS_USE_QUIC == 1
 #include "Http3.h"
@@ -175,12 +176,6 @@ static bool signal_received[NSIG];
 // -1: cache is already initialized, don't delay.
 static int delay_listen_for_cache_p;
 
-// Keeps track if the server is in draining state, follows the proxy.node.config.draining metric
-bool ts_is_draining = false;
-
-// Flag to stop ssl handshakes during shutdown.
-extern bool stop_ssl_handshake;
-
 AppVersionInfo appVersionInfo; // Build info for this application
 
 static ArgumentDescription argument_descriptions[] = {
@@ -230,7 +225,7 @@ struct AutoStopCont : public Continuation {
   int
   mainEvent(int /* event */, Event * /* e */)
   {
-    stop_ssl_handshake = true;
+    TSSystemState::stop_ssl_handshaking();
 
     APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
     while (hook) {
@@ -240,7 +235,7 @@ struct AutoStopCont : public Continuation {
     }
 
     pmgmt->stop();
-    shutdown_event_system = true;
+    TSSystemState::shut_down_event_system();
     delete this;
     return EVENT_CONT;
   }
@@ -298,7 +293,7 @@ public:
       RecInt timeout = 0;
       if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) == REC_ERR_OKAY && timeout) {
         RecSetRecordInt("proxy.node.config.draining", 1, REC_SOURCE_DEFAULT);
-        ts_is_draining = true;
+        TSSystemState::drain(true);
         if (!remote_management_flag) {
           // Close listening sockets here only if TS is running standalone
           RecInt close_sockets = 0;
@@ -403,7 +398,7 @@ public:
 class MemoryLimit : public Continuation
 {
 public:
-  MemoryLimit() : Continuation(new_ProxyMutex()), _memory_limit(0)
+  MemoryLimit() : Continuation(new_ProxyMutex())
   {
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
@@ -453,7 +448,7 @@ public:
   }
 
 private:
-  int64_t _memory_limit;
+  int64_t _memory_limit = 0;
   struct rusage _usage;
 };
 
@@ -1177,18 +1172,18 @@ struct ShowStats : public Continuation {
 #ifdef ENABLE_TIME_TRACE
   FILE *fp;
 #endif
-  int cycle;
-  int64_t last_cc;
-  int64_t last_rb;
-  int64_t last_w;
-  int64_t last_r;
-  int64_t last_wb;
-  int64_t last_nrb;
-  int64_t last_nw;
-  int64_t last_nr;
-  int64_t last_nwb;
-  int64_t last_p;
-  int64_t last_o;
+  int cycle        = 0;
+  int64_t last_cc  = 0;
+  int64_t last_rb  = 0;
+  int64_t last_w   = 0;
+  int64_t last_r   = 0;
+  int64_t last_wb  = 0;
+  int64_t last_nrb = 0;
+  int64_t last_nw  = 0;
+  int64_t last_nr  = 0;
+  int64_t last_nwb = 0;
+  int64_t last_p   = 0;
+  int64_t last_o   = 0;
   int
   mainEvent(int event, Event *e)
   {
@@ -1288,20 +1283,8 @@ struct ShowStats : public Continuation {
 #endif
     return EVENT_CONT;
   }
-  ShowStats()
-    : Continuation(nullptr),
-      cycle(0),
-      last_cc(0),
-      last_rb(0),
-      last_w(0),
-      last_r(0),
-      last_wb(0),
-      last_nrb(0),
-      last_nw(0),
-      last_nr(0),
-      last_nwb(0),
-      last_p(0),
-      last_o(0)
+  ShowStats() : Continuation(nullptr)
+
   {
     SET_HANDLER(&ShowStats::mainEvent);
 #ifdef ENABLE_TIME_TRACE
@@ -1356,9 +1339,9 @@ init_http_header()
 
 #if TS_HAS_TESTS
 struct RegressionCont : public Continuation {
-  int initialized;
-  int waits;
-  int started;
+  int initialized = 0;
+  int waits       = 0;
+  int started     = 0;
 
   int
   mainEvent(int event, Event *e)
@@ -1381,16 +1364,13 @@ struct RegressionCont : public Continuation {
       return EVENT_CONT;
     }
 
-    shutdown_event_system = true;
+    TSSystemState::shut_down_event_system();
     fprintf(stderr, "REGRESSION_TEST DONE: %s\n", regression_status_string(res));
     ::exit(res == REGRESSION_TEST_PASSED ? 0 : 1);
     return EVENT_CONT;
   }
 
-  RegressionCont() : Continuation(new_ProxyMutex()), initialized(0), waits(0), started(0)
-  {
-    SET_HANDLER(&RegressionCont::mainEvent);
-  }
+  RegressionCont() : Continuation(new_ProxyMutex()) { SET_HANDLER(&RegressionCont::mainEvent); }
 };
 
 static void
@@ -1897,8 +1877,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     RecProcessStart();
     initCacheControl();
     IpAllow::startup();
+    HostStatus::instance().loadHostStatusFromStats();
     ParentConfig::startup();
-    HostStatus::instance();
 #ifdef SPLIT_DNS
     SplitDNSConfig::startup();
 #endif
@@ -2035,7 +2015,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 #endif
 
-  while (!shutdown_event_system) {
+  while (!TSSystemState::is_event_system_shut_down()) {
     sleep(1);
   }
 
@@ -2065,9 +2045,9 @@ static void mgmt_restart_shutdown_callback(ts::MemSpan)
 static void
 mgmt_drain_callback(ts::MemSpan span)
 {
-  char *arg      = static_cast<char *>(span.data());
-  ts_is_draining = (span.size() == 2 && arg[0] == '1');
-  RecSetRecordInt("proxy.node.config.draining", ts_is_draining ? 1 : 0, REC_SOURCE_DEFAULT);
+  char *arg = static_cast<char *>(span.data());
+  TSSystemState::drain(span.size() == 2 && arg[0] == '1');
+  RecSetRecordInt("proxy.node.config.draining", TSSystemState::is_draining() ? 1 : 0, REC_SOURCE_DEFAULT);
 }
 
 static void

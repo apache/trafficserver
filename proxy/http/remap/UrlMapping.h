@@ -55,7 +55,7 @@ public:
 class redirect_tag_str
 {
 public:
-  redirect_tag_str() : next(nullptr), chunk_str(nullptr), type(0) {}
+  redirect_tag_str() {}
   ~redirect_tag_str()
   {
     type = 0;
@@ -65,9 +65,9 @@ public:
     }
   }
 
-  redirect_tag_str *next;
-  char *chunk_str;
-  char type; /* s - string, r - referer, t - url_to, f - url_from, o - origin url */
+  redirect_tag_str *next = nullptr;
+  char *chunk_str        = nullptr;
+  char type              = 0; /* s - string, r - referer, t - url_to, f - url_from, o - origin url */
   static redirect_tag_str *parse_format_redirect_url(char *url);
 };
 
@@ -134,8 +134,8 @@ private:
 class UrlMappingContainer
 {
 public:
-  UrlMappingContainer() : _mapping(nullptr), _toURLPtr(nullptr), _heap(nullptr) {}
-  explicit UrlMappingContainer(HdrHeap *heap) : _mapping(nullptr), _toURLPtr(nullptr), _heap(heap) {}
+  UrlMappingContainer() {}
+  explicit UrlMappingContainer(HdrHeap *heap) : _heap(heap) {}
   ~UrlMappingContainer() { deleteToURL(); }
   URL *
   getToURL() const
@@ -200,8 +200,8 @@ public:
   UrlMappingContainer &operator=(const UrlMappingContainer &rhs) = delete;
 
 private:
-  url_mapping *_mapping;
-  URL *_toURLPtr;
+  url_mapping *_mapping = nullptr;
+  URL *_toURLPtr        = nullptr;
   URL _toURL;
-  HdrHeap *_heap;
+  HdrHeap *_heap = nullptr;
 };

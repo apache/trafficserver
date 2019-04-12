@@ -64,17 +64,22 @@ constexpr int UDP_NH_PERIOD = UDP_PERIOD + 1;
 class PacketQueue
 {
 public:
-  PacketQueue() { init(); }
+  PacketQueue()
+  {
+    lastPullLongTermQ = 0;
+    init();
+  }
+
   virtual ~PacketQueue() {}
-  int nPackets                 = 0;
-  ink_hrtime lastPullLongTermQ = 0;
+  int nPackets = 0;
+  ink_hrtime lastPullLongTermQ;
   Queue<UDPPacketInternal> longTermQ;
   Queue<UDPPacketInternal> bucket[N_SLOTS];
   ink_hrtime delivery_time[N_SLOTS];
   int now_slot = 0;
 
   void
-  init(void)
+  init()
   {
     now_slot       = 0;
     ink_hrtime now = ink_get_hrtime_internal();

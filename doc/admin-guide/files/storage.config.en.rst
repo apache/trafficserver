@@ -48,6 +48,10 @@ partitions. :arg:`volume` and arg:`seed` are optional.
 
    If the :arg:`id` option is used every use must have a unique value for :arg:`string`.
 
+.. note::
+
+   Any change to this files can (and almost always will) invalidate the existing cache in its entirety.
+
 You can use any partition of any size. For best performance:
 
 -  Use raw disk partitions.

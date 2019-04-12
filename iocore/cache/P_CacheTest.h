@@ -48,17 +48,17 @@ struct PinnedDocTable : public Continuation {
 };
 
 struct CacheTestHost {
-  char *name;
-  unsigned int xlast_cachable_id;
-  double xprev_host_prob;
-  double xnext_host_prob;
+  char *name                     = nullptr;
+  unsigned int xlast_cachable_id = 0;
+  double xprev_host_prob         = 0;
+  double xnext_host_prob         = 0;
 
-  CacheTestHost() : name(nullptr), xlast_cachable_id(0), xprev_host_prob(0), xnext_host_prob(0) {}
+  CacheTestHost() {}
 };
 
 struct CacheTestHeader {
-  CacheTestHeader() : serial(0) {}
-  uint64_t serial;
+  CacheTestHeader() {}
+  uint64_t serial = 0;
 };
 
 struct CacheTestSM : public RegressionSM {

@@ -551,17 +551,17 @@ using ruleset_t = std::vector<rule_t>;
 using rule_p    = ruleset_t::const_iterator;
 
 typedef struct contdata_t {
-  TSCont cont;
-  TSIOBuffer out_buf;
-  TSIOBufferReader out_rd;
-  TSVIO out_vio;
+  TSCont cont             = nullptr;
+  TSIOBuffer out_buf      = nullptr;
+  TSIOBufferReader out_rd = nullptr;
+  TSVIO out_vio           = nullptr;
   ruleset_t rules;
   std::string contbuf;
-  size_t contbuf_sz;
-  int64_t bytes_in;
-  int64_t bytes_out;
+  size_t contbuf_sz = 0;
+  int64_t bytes_in  = 0;
+  int64_t bytes_out = 0;
   /* Use new/delete so destructor does cleanup for us */
-  contdata_t() : cont(nullptr), out_buf(nullptr), out_rd(nullptr), out_vio(nullptr), contbuf_sz(0), bytes_in(0), bytes_out(0) {}
+  contdata_t() {}
   ~contdata_t()
   {
     if (out_rd) {

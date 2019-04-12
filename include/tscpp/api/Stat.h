@@ -21,7 +21,9 @@
 
 #pragma once
 
+#include "ts/apidefs.h"
 #include "tscpp/api/noncopyable.h"
+
 #include <cstdint>
 #include <string>
 
@@ -97,7 +99,7 @@ public:
   void set(int64_t value);
 
 private:
-  int stat_id_; /**< The internal stat ID */
+  int stat_id_ = TS_ERROR; /**< The internal stat ID */
 };
 
 } // namespace atscppapi

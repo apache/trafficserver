@@ -42,6 +42,7 @@
 
 #include "P_Net.h"
 #include "P_SSLUtils.h"
+#include "P_SSLClientUtils.h"
 #include "P_SSLCertLookup.h"
 #include "SSLDiags.h"
 #include "SSLSessionCache.h"

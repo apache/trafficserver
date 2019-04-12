@@ -27,15 +27,7 @@
 
 #define HttpTxnDebug(fmt, ...) SsnDebug(this, "http_txn", fmt, __VA_ARGS__)
 
-ProxyClientTransaction::ProxyClientTransaction()
-  : VConnection(nullptr),
-    parent(nullptr),
-    current_reader(nullptr),
-    sm_reader(nullptr),
-    host_res_style(HOST_RES_NONE),
-    restart_immediate(false)
-{
-}
+ProxyClientTransaction::ProxyClientTransaction() : VConnection(nullptr) {}
 
 void
 ProxyClientTransaction::new_transaction()

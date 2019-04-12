@@ -64,13 +64,13 @@
 typedef Action *(*StatPagesFunc)(Continuation *cont, HTTPHdr *header);
 
 struct StatPageData {
-  char *data;
-  char *type;
-  int length;
+  char *data = nullptr;
+  char *type = nullptr;
+  int length = 0;
 
-  StatPageData() : data(nullptr), type(nullptr), length(0) {}
-  StatPageData(char *adata) : data(adata), type(nullptr) { length = strlen(adata); }
-  StatPageData(char *adata, int alength) : data(adata), type(nullptr), length(alength) {}
+  StatPageData() {}
+  StatPageData(char *adata) : data(adata) { length = strlen(adata); }
+  StatPageData(char *adata, int alength) : data(adata), length(alength) {}
 };
 
 struct StatPagesManager {
@@ -97,17 +97,17 @@ public:
   ~BaseStatPagesHandler() override { resp_clear(); };
 
 protected:
-  inkcoreapi void resp_clear(void);
+  inkcoreapi void resp_clear();
   inkcoreapi void resp_add(const char *fmt, ...);
-  inkcoreapi void resp_add_sep(void);
+  inkcoreapi void resp_add_sep();
   inkcoreapi void resp_begin(const char *title);
-  inkcoreapi void resp_end(void);
-  void resp_begin_numbered(void);
-  void resp_end_numbered(void);
-  inkcoreapi void resp_begin_unnumbered(void);
-  inkcoreapi void resp_end_unnumbered(void);
-  inkcoreapi void resp_begin_item(void);
-  void resp_end_item(void);
+  inkcoreapi void resp_end();
+  void resp_begin_numbered();
+  void resp_end_numbered();
+  inkcoreapi void resp_begin_unnumbered();
+  inkcoreapi void resp_end_unnumbered();
+  inkcoreapi void resp_begin_item();
+  void resp_end_item();
   inkcoreapi void resp_begin_table(int border, int columns, int percent);
   inkcoreapi void resp_end_table();
   inkcoreapi void resp_begin_row();

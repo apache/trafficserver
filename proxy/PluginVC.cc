@@ -963,6 +963,12 @@ PluginVC::set_remote_addr(const sockaddr * /* new_sa ATS_UNUSED */)
   return;
 }
 
+void
+PluginVC::set_mptcp_state()
+{
+  return;
+}
+
 int
 PluginVC::set_tcp_init_cwnd(int /* init_cwnd ATS_UNUSED */)
 {
@@ -1281,11 +1287,11 @@ public:
   int main_handler(int event, void *data);
 
 private:
-  unsigned i;
-  unsigned completions_received;
+  unsigned i                    = 0;
+  unsigned completions_received = 0;
 };
 
-PVCTestDriver::PVCTestDriver() : NetTestDriver(), i(0), completions_received(0) {}
+PVCTestDriver::PVCTestDriver() : NetTestDriver() {}
 
 PVCTestDriver::~PVCTestDriver()
 {

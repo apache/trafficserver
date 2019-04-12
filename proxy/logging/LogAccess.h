@@ -149,6 +149,8 @@ public:
   inkcoreapi int marshal_client_req_tcp_reused(char *);         // INT
   inkcoreapi int marshal_client_req_is_ssl(char *);             // INT
   inkcoreapi int marshal_client_req_ssl_reused(char *);         // INT
+  inkcoreapi int marshal_client_req_is_internal(char *);        // INT
+  inkcoreapi int marshal_client_req_mptcp_state(char *);        // INT
   inkcoreapi int marshal_client_security_protocol(char *);      // STR
   inkcoreapi int marshal_client_security_cipher_suite(char *);  // STR
   inkcoreapi int marshal_client_finish_status_code(char *);     // INT
@@ -299,14 +301,14 @@ public:
   static int unmarshal_ip(char **buf, IpEndpoint *dest);
   static int unmarshal_ip_to_str(char **buf, char *dest, int len);
   static int unmarshal_ip_to_hex(char **buf, char *dest, int len);
-  static int unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
-  static int unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
-  static int unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
-  static int unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
-  static int unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
+  static int unmarshal_hierarchy(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int unmarshal_finish_status(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int unmarshal_cache_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int unmarshal_cache_hit_miss(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int unmarshal_cache_write_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
   static int unmarshal_client_protocol_stack(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
 
-  static int unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg = nullptr);
+  static int unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFieldAliasMap> &map, const char *msg = nullptr);
 
   static int unmarshal_record(char **buf, char *dest, int len);
 
@@ -358,10 +360,10 @@ private:
   char *m_cache_lookup_url_canon_str;
   int m_cache_lookup_url_canon_len;
 
-  void validate_unmapped_url(void);
-  void validate_unmapped_url_path(void);
+  void validate_unmapped_url();
+  void validate_unmapped_url_path();
 
-  void validate_lookup_url(void);
+  void validate_lookup_url();
 };
 
 inline int
