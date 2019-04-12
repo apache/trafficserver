@@ -2,6 +2,7 @@ Changes with Apache Traffic Server 8.1.0
   #3749 - ats_fastcgi experimental plugin
   #3899 - Add a --reason tag option to the host subcommand
   #3923 - Check version in the snap file on ATS upgrade
+  #3961 - Add information about the connect failure and source port
   #3988 - Fix issue caused by snap file
   #4019 - Ensure that continuation lock is held before calling handler.
   #4020 - Add logic to clean up vios on HttpSM shutdown
@@ -14,6 +15,7 @@ Changes with Apache Traffic Server 8.1.0
   #4142 - Lock continuation before calling event handler.
   #4156 - Move handleEvent back into the header file.
   #4164 - Reset the inactivity timeout when reusing connections
+  #4185 - Amend Layer 4 routing documentation
   #4203 - Allow enabling MPTCP on a listening socket through the records.config
   #4217 - Fix a regression in the traffic_ctl host status subcommand
   #4253 - Add the capability to mark origins down with traffic_ctl.
@@ -87,4 +89,5 @@ Changes with Apache Traffic Server 8.1.0
   #5234 - Correct interpretation of proxy.config.ssl.client.verify.server
   #5235 - Fix lost pending_actions causing actions on stale objects.
   #5236 - Update documentation for SSL VERIFY hooks.
+  #5237 - Add hooks for outbound TLS start and close.
   #5242 - Adds a missing header field for the tcpinfo log
