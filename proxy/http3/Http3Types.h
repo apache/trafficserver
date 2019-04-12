@@ -28,11 +28,11 @@
 #include <memory>
 
 enum class Http3StreamType : uint8_t {
-  CONTROL       = 0x43, ///< HTTP/3
-  QPACK_ENCODER = 0x48, ///< QPACK : encoder -> decoder
-  PUSH          = 0x50, ///< HTTP/3
-  QPACK_DECODER = 0x68, ///< QPACK : decoder -> encoder
-  RESERVED      = 0x1F,
+  CONTROL       = 0x00, ///< HTTP/3
+  PUSH          = 0x01, ///< HTTP/3
+  QPACK_ENCODER = 0x02, ///< QPACK : encoder -> decoder
+  QPACK_DECODER = 0x03, ///< QPACK : decoder -> encoder
+  RESERVED      = 0x21,
   UNKOWN        = 0xFF,
 };
 
@@ -49,7 +49,7 @@ enum class Http3SettingsId : uint16_t {
 };
 
 // Update Http3Frame::type(const uint8_t *) too when you modify this list
-enum class Http3FrameType : uint8_t {
+enum class Http3FrameType : uint64_t {
   DATA              = 0x00,
   HEADERS           = 0x01,
   PRIORITY          = 0x02,

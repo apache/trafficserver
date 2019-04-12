@@ -37,10 +37,12 @@ public:
 
 private:
   enum READING_STATE {
+    READING_TYPE_LEN,
     READING_LENGTH_LEN,
     READING_PAYLOAD_LEN,
     READING_PAYLOAD,
-  } _reading_state = READING_LENGTH_LEN;
+  } _reading_state = READING_TYPE_LEN;
+  int64_t _reading_frame_type_len;
   int64_t _reading_frame_length_len;
   uint64_t _reading_frame_payload_len;
   Http3FrameFactory _frame_factory;

@@ -44,12 +44,12 @@ Http3Frame::length(const uint8_t *buf, size_t buf_len, uint64_t &length)
 Http3FrameType
 Http3Frame::type(const uint8_t *buf, size_t buf_len)
 {
-  uint64_t length            = 0;
-  size_t length_field_length = 0;
-  int ret                    = QUICVariableInt::decode(length, length_field_length, buf, buf_len);
+  uint64_t type            = 0;
+  size_t type_field_length = 0;
+  int ret                  = QUICVariableInt::decode(type, type_field_length, buf, buf_len);
   ink_assert(ret != 1);
-  if (buf[length_field_length] <= static_cast<uint8_t>(Http3FrameType::X_MAX_DEFINED)) {
-    return static_cast<Http3FrameType>(buf[length_field_length]);
+  if (type <= static_cast<uint8_t>(Http3FrameType::X_MAX_DEFINED)) {
+    return static_cast<Http3FrameType>(type);
   } else {
     return Http3FrameType::UNKNOWN;
   }
@@ -61,16 +61,18 @@ Http3Frame::type(const uint8_t *buf, size_t buf_len)
 
 Http3Frame::Http3Frame(const uint8_t *buf, size_t buf_len)
 {
-  // Length
-  size_t length_field_length = 0;
-  int ret                    = QUICVariableInt::decode(this->_length, length_field_length, buf, buf_len);
+  // Type
+  size_t type_field_length = 0;
+  int ret                  = QUICVariableInt::decode(reinterpret_cast<uint64_t &>(this->_type), type_field_length, buf, buf_len);
   ink_assert(ret != 1);
 
-  // Type
-  this->_type = Http3FrameType(buf[length_field_length]);
+  // Length
+  size_t length_field_length = 0;
+  ret = QUICVariableInt::decode(this->_length, length_field_length, buf + type_field_length, buf_len - type_field_length);
+  ink_assert(ret != 1);
 
   // Payload offset
-  this->_payload_offset = length_field_length + 1;
+  this->_payload_offset = type_field_length + length_field_length;
 }
 
 Http3Frame::Http3Frame(Http3FrameType type) : _type(type) {}
@@ -139,8 +141,11 @@ void
 Http3DataFrame::store(uint8_t *buf, size_t *len) const
 {
   size_t written = 0;
-  QUICVariableInt::encode(buf, UINT64_MAX, written, this->_length);
-  buf[written++] = static_cast<uint8_t>(this->_type);
+  size_t n;
+  QUICVariableInt::encode(buf, UINT64_MAX, n, static_cast<uint64_t>(this->_type));
+  written += n;
+  QUICVariableInt::encode(buf + written, UINT64_MAX, n, this->_length);
+  written += n;
   memcpy(buf + written, this->_payload, this->_payload_len);
   written += this->_payload_len;
   *len = written;
@@ -185,8 +190,11 @@ void
 Http3HeadersFrame::store(uint8_t *buf, size_t *len) const
 {
   size_t written = 0;
-  QUICVariableInt::encode(buf, UINT64_MAX, written, this->_length);
-  buf[written++] = static_cast<uint8_t>(this->_type);
+  size_t n;
+  QUICVariableInt::encode(buf, UINT64_MAX, n, static_cast<uint64_t>(this->_type));
+  written += n;
+  QUICVariableInt::encode(buf + written, UINT64_MAX, n, this->_length);
+  written += n;
   memcpy(buf + written, this->_header_block, this->_header_block_len);
   written += this->_header_block_len;
   *len = written;
@@ -271,11 +279,11 @@ Http3SettingsFrame::store(uint8_t *buf, size_t *len) const
   size_t written     = 0;
   size_t payload_len = p - payload;
 
-  // Length
-  QUICVariableInt::encode(buf, UINT64_MAX, written, payload_len);
-
-  // Type
-  buf[written++] = static_cast<uint8_t>(this->_type);
+  size_t n;
+  QUICVariableInt::encode(buf, UINT64_MAX, n, static_cast<uint64_t>(this->_type));
+  written += n;
+  QUICVariableInt::encode(buf + written, UINT64_MAX, n, payload_len);
+  written += n;
 
   // Payload
   memcpy(buf + written, payload, payload_len);
