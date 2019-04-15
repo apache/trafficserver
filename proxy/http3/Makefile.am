@@ -79,7 +79,8 @@ test_LDADD = \
   $(top_builddir)/lib/tsconfig/libtsconfig.la \
   $(top_builddir)/proxy/ParentSelectionStrategy.o \
   $(top_builddir)/proxy/libproxy.a \
-  $(top_builddir)/proxy/hdrs/libhdrs.a
+  $(top_builddir)/proxy/hdrs/libhdrs.a \
+  @HWLOC_LIBS@
 
 test_libhttp3_CPPFLAGS = $(test_CPPFLAGS)
 test_libhttp3_LDFLAGS = @AM_LDFLAGS@
