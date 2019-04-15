@@ -24,10 +24,12 @@
 #pragma once
 
 #include <cstring>
+// I had to move this here, because I really needed to avoid including ink_platform.h in here,
+// because of a conflict on linux/tcp.h vs netinet/tcp.h.
+#include <limits.h> // NOLINT(modernize-deprecated-headers)
 
 #include "tscore/ink_defs.h"
 #include "tscore/ink_apidefs.h"
-#include "tscore/ink_platform.h"
 
 typedef unsigned int CTypeResult;
 
