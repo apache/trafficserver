@@ -169,7 +169,7 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
   return SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
 }
 
-bool
+static bool
 ssl_session_timed_out(SSL_SESSION *session)
 {
   return SSL_SESSION_get_timeout(session) < (long)(time(nullptr) - SSL_SESSION_get_time(session));
@@ -273,7 +273,7 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
   session_cache->removeSession(sid);
 }
 
-int
+static int
 set_context_cert(SSL *ssl)
 {
   SSL_CTX *ctx       = nullptr;
@@ -344,7 +344,7 @@ done:
 }
 
 // Callback function for verifying client certificate
-int
+static int
 ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
   Debug("ssl", "Callback: verify client cert");
