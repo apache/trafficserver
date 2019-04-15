@@ -78,8 +78,11 @@ test_LDADD = \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
   $(top_builddir)/lib/tsconfig/libtsconfig.la \
   $(top_builddir)/proxy/ParentSelectionStrategy.o \
+  $(top_builddir)/proxy/libhttp2.a \
   $(top_builddir)/proxy/libproxy.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
+  @LIBPCRE@ \
+  @OPENSSL_LIBS@ \
   @HWLOC_LIBS@
 
 test_libhttp3_CPPFLAGS = $(test_CPPFLAGS)
@@ -88,6 +91,7 @@ test_libhttp3_LDADD = $(test_LDADD)
 test_libhttp3_SOURCES = \
   ./test/main.cc \
   ./test/test_Http3Frame.cc \
+  ./test/stub.cc \
   ../http/HttpConfig.cc \
   ../http/HttpConnectionCount.cc \
   ../http/ForwardedConfig.cc \
@@ -99,6 +103,7 @@ test_qpack_LDADD = $(test_LDADD)
 test_qpack_SOURCES = \
   ./test/main_qpack.cc \
   ./test/test_QPACK.cc \
+  ./test/stub.cc \
   ../http/HttpConfig.cc \
   ../http/HttpConnectionCount.cc \
   ../http/ForwardedConfig.cc \
