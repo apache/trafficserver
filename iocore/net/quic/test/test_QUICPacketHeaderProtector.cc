@@ -27,6 +27,11 @@
 #include "QUICPacketHeaderProtector.h"
 #include "QUICTLS.h"
 
+struct PollCont;
+#include "P_UDPConnection.h"
+#include "P_UnixNet.h"
+#include "P_UnixNetVConnection.h"
+
 // depends on size of cert
 static constexpr uint32_t MAX_HANDSHAKE_MSG_LEN = 8192;
 

@@ -39,6 +39,12 @@
 #include "QUICPacketProtectionKeyInfo.h"
 #include "QUICTLS.h"
 
+// XXX For NetVCOptions::reset
+struct PollCont;
+#include "P_UDPConnection.h"
+#include "P_UnixNet.h"
+#include "P_UnixNetVConnection.h"
+
 // depends on size of cert
 static constexpr uint32_t MAX_HANDSHAKE_MSG_LEN = 8192;
 
