@@ -78,7 +78,7 @@ test_LDADD = \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
   $(top_builddir)/lib/tsconfig/libtsconfig.la \
   $(top_builddir)/proxy/ParentSelectionStrategy.o \
-  $(top_builddir)/proxy/libhttp2.a \
+  $(top_builddir)/proxy/http2/libhttp2.a \
   $(top_builddir)/proxy/libproxy.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   @LIBPCRE@ \
