@@ -1818,10 +1818,12 @@ AC_LINK_IFELSE([
 ])
 
 # BSD-derived systems populate the socket length in the structure itself. It's
-# redundant to check all of these, but hey, I need the typing practice.
+# redundant to check all of these, but hey, I need the typing practice. Also, we
+# check for the linux updated version of tcp.h, in linux/tcp.h
 AC_CHECK_MEMBER([struct sockaddr.sa_len], [], [], [#include <netinet/in.h>])
 AC_CHECK_MEMBER([struct sockaddr_in.sin_len], [], [], [#include <netinet/in.h>])
 AC_CHECK_MEMBER([struct sockaddr_in6.sin6_len], [], [], [#include <netinet/in.h>])
+AC_CHECK_MEMBER([struct tcp_info.tcpi_data_segs_out], [], [], [#include <linux/tcp.h>])
 
 if test "x${ac_cv_member_struct_sockaddr_sa_len}" = "xyes"; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_SA_LEN, 1,
@@ -1836,6 +1838,11 @@ fi
 if test "x${ac_cv_member_struct_sockaddr_in6_sin6_len}" = "xyes"; then
     AC_DEFINE(HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN, 1,
             [Whether struct sockaddr_in6 has the sin6_len member])
+fi
+
+if test "x${ac_cv_member_struct_tcp_info_tcpi_data_segs_out}" = "xyes"; then
+    AC_DEFINE(HAVE_STRUCT_LINUX_TCP_INFO, 1,
+            [Whether struct tcp_info have the tcpi_data_segs_{in,out} member])
 fi
 
 if test "x${with_profiler}" = "xyes"; then
