@@ -138,7 +138,7 @@ HostEnt::free()
   dnsBufAllocator.free(this);
 }
 
-void
+size_t
 make_ipv4_ptr(in_addr_t addr, char *buffer)
 {
   char *p          = buffer;
@@ -176,10 +176,10 @@ make_ipv4_ptr(in_addr_t addr, char *buffer)
   }
   *p++ = u[0] % 10 + '0';
   *p++ = '.';
-  ink_strlcpy(p, "in-addr.arpa", MAXDNAME - (p - buffer + 1));
+  return ink_strlcpy(p, "in-addr.arpa", MAXDNAME - (p - buffer + 1));
 }
 
-void
+size_t
 make_ipv6_ptr(in6_addr const *addr, char *buffer)
 {
   const char hex_digit[] = "0123456789abcdef";
@@ -194,7 +194,7 @@ make_ipv6_ptr(in6_addr const *addr, char *buffer)
     *p++ = '.';
   }
 
-  ink_strlcpy(p, "ip6.arpa", MAXDNAME - (p - buffer + 1));
+  return ink_strlcpy(p, "ip6.arpa", MAXDNAME - (p - buffer + 1));
 }
 
 //  Public functions
@@ -437,9 +437,9 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSPr
   } else { // T_PTR
     IpAddr const *ip = reinterpret_cast<IpAddr const *>(x);
     if (ip->isIp6()) {
-      make_ipv6_ptr(&ip->_addr._ip6, qname);
+      orig_qname_len = qname_len = make_ipv6_ptr(&ip->_addr._ip6, qname);
     } else if (ip->isIp4()) {
-      make_ipv4_ptr(ip->_addr._ip4, qname);
+      orig_qname_len = qname_len = make_ipv4_ptr(ip->_addr._ip4, qname);
     } else {
       ink_assert(!"T_PTR query to DNS must be IP address.");
     }
