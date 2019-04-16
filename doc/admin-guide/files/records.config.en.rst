@@ -2577,7 +2577,7 @@ HostDB
          value become a minimum TTL.
    ===== ======================================================================
 
-.. ts:cv:: CONFIG proxy.config.hostdb.timeout INT 1440
+.. ts:cv:: CONFIG proxy.config.hostdb.timeout INT 86400
    :units: seconds
    :reloadable:
 
