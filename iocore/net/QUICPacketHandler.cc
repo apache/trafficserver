@@ -295,6 +295,17 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   // Servers MUST drop incoming packets under all other circumstances. They SHOULD send a Stateless Reset (Section 6.10.4) if a
   // connection ID is present in the header.
   if ((!vc && !QUICInvariants::is_long_header(buf)) || (vc && vc->in_closed_queue)) {
+    if (is_debug_tag_set(debug_tag)) {
+      char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+      dcid.hex(dcid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+
+      if (!vc && !QUICInvariants::is_long_header(buf)) {
+        QUICDebugDS(scid, dcid, "sent Stateless Reset : connection not found, dcid=%s", dcid_str);
+      } else if (vc && vc->in_closed_queue) {
+        QUICDebugDS(scid, dcid, "sent Stateless Reset : connection is already closed, dcid=%s", dcid_str);
+      }
+    }
+
     QUICStatelessResetToken token(dcid, params->instance_id());
     auto packet = QUICPacketFactory::create_stateless_reset_packet(dcid, token);
     this->_send_packet(*packet, udp_packet->getConnection(), udp_packet->from, 1200, nullptr, 0);
