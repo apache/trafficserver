@@ -42,7 +42,7 @@ luajit__v_1 =
 all-local:
 	@echo "Making all in luajit"
 	test -d "$(top_builddir)/$(subdir)/luajit/src" || cp -rf "$(srcdir)/luajit" "$(top_builddir)/$(subdir)/"
-	cd luajit && $(MAKE) $(AM_MAKEFLAGS) \
+	cd luajit && MACOSX_DEPLOYMENT_TARGET=10.13 $(MAKE) $(AM_MAKEFLAGS) \
 		BUILDMODE="static" \
 		PREFIX="$(prefix)" \
 		CC="$(CC)" \
