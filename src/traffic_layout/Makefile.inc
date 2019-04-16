@@ -29,7 +29,7 @@ traffic_layout_traffic_layout_CPPFLAGS = \
 
 traffic_layout_traffic_layout_LDFLAGS =	\
     $(AM_LDFLAGS) \
-    @YAMLCPP_LDFLAGS@
+    @YAMLCPP_LDFLAGS@ $(BROTLIENC_LIB)
 
 traffic_layout_traffic_layout_SOURCES = \
 	traffic_layout/traffic_layout.cc \
