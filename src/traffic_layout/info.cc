@@ -199,7 +199,7 @@ produce_versions(bool json)
   print_var("lzma", undef, json);
 #endif
 #if HAVE_BROTLI_ENCODE_H
-  print_var("lzma", LBW().print("{}", BrotliEncoderVersion).view(), json);
+  print_var("brotli", LBW().print("{:#x}", BrotliEncoderVersion()).view(), json);
 #else
   print_var("brotli", undef, json);
 #endif
