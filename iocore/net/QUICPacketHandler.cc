@@ -230,9 +230,11 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
 
     if (is_debug_tag_set(debug_tag)) {
-      ip_port_text_buffer ipb;
-      QUICDebugDS(scid, dcid, "recv LH packet from %s size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
-                  udp_packet->getPktLength());
+      ip_port_text_buffer ipb_from;
+      ip_port_text_buffer ipb_to;
+      QUICDebugDS(scid, dcid, "recv LH packet from %s to %s size=%" PRId64,
+                  ats_ip_nptop(&udp_packet->from.sa, ipb_from, sizeof(ipb_from)),
+                  ats_ip_nptop(&udp_packet->to.sa, ipb_to, sizeof(ipb_to)), udp_packet->getPktLength());
     }
 
     QUICVersion v;
@@ -271,9 +273,11 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   } else {
     // TODO: lookup DCID by 5-tuple when ATS omits SCID
     if (is_debug_tag_set(debug_tag)) {
-      ip_port_text_buffer ipb;
-      QUICDebugDS(scid, dcid, "recv SH packet from %s size=%" PRId64, ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)),
-                  udp_packet->getPktLength());
+      ip_port_text_buffer ipb_from;
+      ip_port_text_buffer ipb_to;
+      QUICDebugDS(scid, dcid, "recv SH packet from %s to %s size=%" PRId64,
+                  ats_ip_nptop(&udp_packet->from.sa, ipb_from, sizeof(ipb_from)),
+                  ats_ip_nptop(&udp_packet->to.sa, ipb_to, sizeof(ipb_to)), udp_packet->getPktLength());
     }
   }
 
@@ -471,9 +475,11 @@ QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
     IOBufferBlock *block = udp_packet->getIOBlockChain();
     const uint8_t *buf   = reinterpret_cast<uint8_t *>(block->buf());
 
-    ip_port_text_buffer ipb;
-    QUICDebugQC(this->_vc, "recv %s packet from %s size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),
-                ats_ip_nptop(&udp_packet->from.sa, ipb, sizeof(ipb)), udp_packet->getPktLength());
+    ip_port_text_buffer ipb_from;
+    ip_port_text_buffer ipb_to;
+    QUICDebugQC(this->_vc, "recv %s packet from %s to %s size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),
+                ats_ip_nptop(&udp_packet->from.sa, ipb_from, sizeof(ipb_from)),
+                ats_ip_nptop(&udp_packet->to.sa, ipb_to, sizeof(ipb_to)), udp_packet->getPktLength());
   }
 
   this->_vc->handle_received_packet(udp_packet);

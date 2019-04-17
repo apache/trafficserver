@@ -29,6 +29,11 @@
 
  ****************************************************************************/
 
+#if defined(darwin)
+/* This is for IPV6_PKTINFO and IPV6_RECVPKTINFO */
+#define __APPLE_USE_RFC_3542
+#endif
+
 #include "P_Net.h"
 #include "P_UDPNet.h"
 
@@ -164,12 +169,15 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
 
     // build struct msghdr
     sockaddr_in6 fromaddr;
+    sockaddr_in6 toaddr;
+    int toaddr_len = sizeof(toaddr);
+    char *cbuf[1024];
     msg.msg_name       = &fromaddr;
     msg.msg_namelen    = sizeof(fromaddr);
     msg.msg_iov        = tiovec;
     msg.msg_iovlen     = niov;
-    msg.msg_control    = nullptr;
-    msg.msg_controllen = 0;
+    msg.msg_control    = cbuf;
+    msg.msg_controllen = sizeof(cbuf);
 
     // receive data by recvmsg
     r = socketManager.recvmsg(uc->getFd(), &msg, 0);
@@ -199,8 +207,38 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
       }
     }
 
+    safe_getsockname(xuc->getFd(), reinterpret_cast<struct sockaddr *>(&toaddr), &toaddr_len);
+    for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg != nullptr; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+      switch (cmsg->cmsg_type) {
+#ifdef IP_PKTINFO
+      case IP_PKTINFO:
+        if (cmsg->cmsg_level == IPPROTO_IP) {
+          struct in_pktinfo *pktinfo                                = reinterpret_cast<struct in_pktinfo *>(CMSG_DATA(cmsg));
+          reinterpret_cast<sockaddr_in *>(&toaddr)->sin_addr.s_addr = pktinfo->ipi_addr.s_addr;
+        }
+        break;
+#endif
+#ifdef IP_RECVDSTADDR
+      case IP_RECVDSTADDR:
+        if (cmsg->cmsg_level == IPPROTO_IP) {
+          struct in_addr *addr                                      = reinterpret_cast<struct in_addr *>(CMSG_DATA(cmsg));
+          reinterpret_cast<sockaddr_in *>(&toaddr)->sin_addr.s_addr = addr->s_addr;
+        }
+        break;
+#endif
+#if defined(IPV6_PKTINFO) || defined(IPV6_RECVPKTINFO)
+      case IPV6_PKTINFO: // IPV6_RECVPKTINFO uses IPV6_PKTINFO too
+        if (cmsg->cmsg_level == IPPROTO_IPV6) {
+          struct in6_pktinfo *pktinfo = reinterpret_cast<struct in6_pktinfo *>(CMSG_DATA(cmsg));
+          memcpy(toaddr.sin6_addr.s6_addr, &pktinfo->ipi6_addr, 16);
+        }
+        break;
+#endif
+      }
+    }
+
     // create packet
-    UDPPacket *p = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), chain);
+    UDPPacket *p = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), ats_ip_sa_cast(&toaddr), chain);
     p->setConnection(uc);
     // queue onto the UDPConnection
     uc->inQueue.push((UDPPacketInternal *)p);
@@ -630,6 +668,24 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
     }
   }
 
+  if (opt.ip_family == AF_INET) {
+    int enable = 1;
+#ifdef IP_PKTINFO
+    safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+#endif
+#ifdef IP_RECVDSTADDR
+    safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable));
+#endif
+  } else if (opt.ip_family == AF_INET6) {
+    int enable = 1;
+#ifdef IPV6_PKTINFO
+    safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+#endif
+#ifdef IPV6_RECVPKTINFO
+    safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+#endif
+  }
+
   if (local_addr.port() || !is_any_address) {
     if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
       char buff[INET6_ADDRPORTSTRLEN];
@@ -683,6 +739,24 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   fd = res;
   if ((res = fcntl(fd, F_SETFL, O_NONBLOCK) < 0)) {
     goto Lerror;
+  }
+
+  if (addr->sa_family == AF_INET) {
+    int enable = 1;
+#ifdef IP_PKTINFO
+    safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+#endif
+#ifdef IP_RECVDSTADDR
+    safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable));
+#endif
+  } else if (addr->sa_family == AF_INET6) {
+    int enable = 1;
+#ifdef IPV6_PKTINFO
+    safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+#endif
+#ifdef IPV6_RECVPKTINFO
+    safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+#endif
   }
 
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
