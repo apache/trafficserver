@@ -66,7 +66,7 @@ tr.Processes.Default.Env=ts.Env
 These are the current variables that are defined dynamically for Trafficserver
 
 port - the ipv4 port to listen on
-portv6 - the ipv4 port to listen on
+portv6 - the ipv6 port to listen on
 manager_port - the manager port used. This is set even is select_port is False
 admin_port - the admin port used. This is set even is select_port is False
 
