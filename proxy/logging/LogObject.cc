@@ -413,6 +413,8 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
       retry = false;
       break;
 
+    case LogBuffer::LB_RETRY:
+      // no more room, but another thread should be taking care of creating a new buffer, so try again
     case LogBuffer::LB_FULL_ACTIVE_WRITERS:
     case LogBuffer::LB_FULL_NO_WRITERS:
       // no more room in current buffer, create a new one
@@ -448,10 +450,6 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
       }
 
       decremented = true;
-      break;
-
-    case LogBuffer::LB_RETRY:
-      // no more room, but another thread should be taking care of creating a new buffer, so try again
       break;
 
     case LogBuffer::LB_BUFFER_TOO_SMALL:
