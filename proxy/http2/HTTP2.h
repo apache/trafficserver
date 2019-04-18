@@ -376,6 +376,8 @@ public:
   static uint32_t push_diary_size;
   static uint32_t zombie_timeout_in;
   static float stream_error_rate_threshold;
+  static uint32_t max_settings_per_frame;
+  static uint32_t max_settings_per_minute;
 
   static void init();
 };

@@ -548,7 +548,14 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                       "recv settings header wrong length");
   }
 
+  uint32_t n_settings = 0;
   while (nbytes < frame.header().length) {
+    if (n_settings >= Http2::max_settings_per_frame) {
+      Http2StreamDebug(cstate.ua_session, stream_id, "Observed too many settings in a frame");
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
+                        "recv settings too many settings in a frame");
+    }
+
     unsigned read_bytes = read_rcv_buffer(buf, sizeof(buf), nbytes, frame);
 
     if (!http2_parse_settings_parameter(make_iovec(buf, read_bytes), param)) {
@@ -577,6 +584,17 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
 
     cstate.client_settings.set(static_cast<Http2SettingsIdentifier>(param.id), param.value);
+    ++n_settings;
+  }
+
+  // Update settigs count per minute
+  cstate.increment_received_settings_count(n_settings);
+  // Close this conection if its settings count received exceeds a limit
+  if (cstate.get_received_settings_count() > Http2::max_settings_per_minute) {
+    Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent setting changes: %u settings within a last minute",
+                     cstate.get_received_settings_count());
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
+                      "recv settings too frequent setting changes");
   }
 
   // [RFC 7540] 6.5. Once all values have been applied, the recipient MUST
@@ -1833,6 +1851,28 @@ Http2ConnectionState::send_window_update_frame(Http2StreamId id, uint32_t size)
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &window_update);
+}
+
+void
+Http2ConnectionState::increment_received_settings_count(uint32_t count)
+{
+  ink_hrtime hrtime_sec = Thread::get_hrtime() / HRTIME_SECOND;
+  uint8_t counter_index = ((hrtime_sec % 60) >= 30);
+
+  if ((hrtime_sec - 60) > this->settings_count_last_update) {
+    this->settings_count[0] = 0;
+    this->settings_count[1] = 0;
+  } else if (counter_index != ((this->settings_count_last_update % 60) >= 30)) {
+    this->settings_count[counter_index] = 0;
+  }
+  this->settings_count[counter_index] += count;
+  this->settings_count_last_update = hrtime_sec;
+}
+
+uint32_t
+Http2ConnectionState::get_received_settings_count()
+{
+  return this->settings_count[0] + this->settings_count[1];
 }
 
 // Return min_concurrent_streams_in when current client streams number is larger than max_active_streams_in.

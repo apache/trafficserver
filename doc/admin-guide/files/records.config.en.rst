@@ -3614,6 +3614,20 @@ HTTP/2 Configuration
    |TS| gracefully closes connections that have stream error rates above this
    setting by sending GOAWAY frames.
 
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 7
+   :reloadable:
+
+   Specifies how many settings in an HTTP/2 SETTINGS frame |TS| accepts.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_minute INT 14
+   :reloadable:
+
+   Specifies how many settings in HTTP/2 SETTINGS frames |TS| accept for a minute.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
 Plug-in Configuration
 =====================
 
