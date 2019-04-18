@@ -84,3 +84,34 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     req_hdr.destroy();
   }
 }
+
+TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
+{
+  constexpr ts::TextView const message = "GET /index.html HTTP/1.0\r\n";
+
+  struct Fragment {
+    ts::TextView msg;
+    bool shares_input;
+    int expected_result;
+  };
+  constexpr std::array<Fragment, 3> const fragments = {{
+    {message.substr(0, 11), true, PARSE_RESULT_CONT},
+    {message.substr(11, 11), true, PARSE_RESULT_CONT},
+    {message.substr(22), false, PARSE_RESULT_OK},
+  }};
+
+  MIMEScanner scanner;
+  ts::TextView output; // only set on last call
+
+  for (auto const &frag : fragments) {
+    ts::TextView input          = frag.msg;
+    bool got_shares_input       = !frag.shares_input;
+    constexpr bool const is_eof = false;
+    ParseResult const got_res   = scanner.get(input, output, got_shares_input, is_eof, MIMEScanner::LINE);
+
+    REQUIRE(frag.expected_result == got_res);
+    REQUIRE(frag.shares_input == got_shares_input);
+  }
+
+  REQUIRE(message == output);
+}

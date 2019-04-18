@@ -2334,6 +2334,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
   while (PARSE_RESULT_CONT == zret && !text.empty()) {
     switch (m_state) {
     case MIME_PARSE_BEFORE: // waiting to find a field.
+      m_line.resize(0);     // any caller should already be done with the buffer
       if (ParseRules::is_cr(*text)) {
         ++text;
         if (!text.empty() && ParseRules::is_lf(*text)) {
@@ -2445,8 +2446,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
   output_shares_input = true;
   if (PARSE_RESULT_CONT != zret) {
     if (!m_line.empty()) {
-      output = m_line;
-      m_line.resize(0); // depending resize(0) not deallocating internal string memory.
+      output              = m_line; // cleared when called with state MIME_PARSE_BEFORE
       output_shares_input = false;
     } else {
       output = parsed_text;
