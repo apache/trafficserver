@@ -293,6 +293,9 @@ public:
     }
   }
 
+  void increment_received_settings_count(uint32_t count);
+  uint32_t get_received_settings_count();
+
 private:
   unsigned _adjust_concurrent_stream();
 
@@ -315,6 +318,11 @@ private:
 
   // Counter for current active streams and streams in the process of shutting down
   std::atomic<uint32_t> total_client_streams_count = 0;
+
+  // Counter for settings received within last 60 seconds
+  // Each item holds a count for 30 seconds.
+  uint16_t settings_count[2]            = {0};
+  ink_hrtime settings_count_last_update = 0;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS
