@@ -649,6 +649,9 @@ void mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups
 void mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups = false);
 void mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool delete_all_dups = false);
 
+/**
+ * Returned slotnum is not a persistent value. A slotnum may refer a different field after making changes to a mime header.
+ */
 int mime_hdr_field_slotnum(MIMEHdrImpl *mh, MIMEField *field);
 inkcoreapi MIMEField *mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int name_length);
 
