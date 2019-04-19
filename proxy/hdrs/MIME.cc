@@ -1635,20 +1635,8 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
 {
   if (delete_all_dups) {
     while (field) {
-      // NOTE: we pass zero to field_detach for detach_all_dups
-      //       since this loop will already detach each dup
       MIMEField *next = field->m_next_dup;
-
-      heap->free_string(field->m_ptr_name, field->m_len_name);
-      heap->free_string(field->m_ptr_value, field->m_len_value);
-
-      MIME_HDR_SANITY_CHECK(mh);
-      mime_hdr_field_detach(mh, field, false);
-
-      MIME_HDR_SANITY_CHECK(mh);
-      mime_field_destroy(mh, field);
-
-      MIME_HDR_SANITY_CHECK(mh);
+      mime_hdr_field_delete(heap, mh, field, false);
       field = next;
     }
   } else {
@@ -1660,6 +1648,32 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
 
     MIME_HDR_SANITY_CHECK(mh);
     mime_field_destroy(mh, field);
+
+    MIMEFieldBlockImpl *prev_block = nullptr;
+    bool can_destroy_block         = true;
+    for (auto fblock = &(mh->m_first_fblock); fblock != nullptr; fblock = fblock->m_next) {
+      if (prev_block != nullptr) {
+        if (fblock->m_freetop == MIME_FIELD_BLOCK_SLOTS && fblock->contains(field)) {
+          // Check if fields in all slots are deleted
+          for (int i = 0; i < MIME_FIELD_BLOCK_SLOTS; ++i) {
+            if (fblock->m_field_slots[i].m_readiness != MIME_FIELD_SLOT_READINESS_DELETED) {
+              can_destroy_block = false;
+              break;
+            }
+          }
+          // Destroy a block and maintain the chain
+          if (can_destroy_block) {
+            prev_block->m_next = fblock->m_next;
+            _mime_field_block_destroy(heap, fblock);
+            if (prev_block->m_next == nullptr) {
+              mh->m_fblock_list_tail = prev_block;
+            }
+          }
+          break;
+        }
+      }
+      prev_block = fblock;
+    }
   }
 
   MIME_HDR_SANITY_CHECK(mh);
