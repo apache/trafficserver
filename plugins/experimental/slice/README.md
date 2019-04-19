@@ -18,18 +18,47 @@ To enable the plugin, specify the plugin library via @plugin at the end
 of a remap line as follows (2MB slice in this example):
 
 ```
-map http://ats-cache/ http://parent/ @plugin=slice.so @pparam=blockbytes:2097152 @plugin=cache_range_requests.so
+map http://ats-cache/ http://parent/ @plugin=slice.so @pparam=--blockbytes=2M @plugin=cache_range_requests.so
+```
+
+alternatively
+
+```
+map http://ats-cache/ http://parent/ @plugin=slice.so @pparam=-b @pparam=2M @plugin=cache_range_requests.so
 ```
 
 for global plugins.
 
 ```
-slice.so blockbytes:2097152
+slice.so --blockbytes=2097152
 cache_range_requests.so
 ```
 
-**Note**: cache_range_requests **MUST** follow slice.so Put these plugins at the end of the plugin list
-**Note**: blockbytes is defined in bytes. 1048576 (1MB) is the default.
+alternatively:
+
+```
+slice.so -b 2M
+cache_range_requests.so
+```
+
+Options for the slice plugin:
+```
+--blockbytes=<number bytes, can be followed by K, M or G>
+  also -b <num bytes> can be used
+
+--bytesover=<number bytes, can be followed by K, M or G>
+
+--disable-errorlog
+  This should only be used if there is an origin error that is
+	overly spamming diags.log.
+
+```
+
+**Note**: cache_range_requests **MUST** follow slice.so Put these plugins
+at the end of the plugin list
+
+**Note**: blockbytes is defined in bytes. Postfix for 'K', 'M' and 'G'
+may be used.  1048576 (1MB) is the default.
 
 For testing purposes an unchecked value of "bytesover" is also available.
 
@@ -47,6 +76,13 @@ Range: bytes=-<last N bytes>
 are supported as multi part range responses are non trivial to implement.
 This matches with the cache_range_requests.so plugin capability.
 
+By default the slice plugin will generate special error log messages
+that are written to diags.log
+
+The may look something like
+```
+[Apr 19 20:26:13.639] [ET_NET 17] ERROR: [slice] 1555705573.639 reason="Non 206 internal block response" uri="http://localhost:18080/%7Ep.tex/%7Es.50M/%7Eui.20000/" uas="curl/7.29.0" req_range="bytes=1000000-" norm_range="bytes 1000000-52428799/52428800" etag_exp="%221603934496%22" lm_exp="Fri, 19 Apr 2019 18:53:20 GMT" blk_range="21000000-21999999" status_got="400" cr_got="" etag_got="" lm_got="" cc="no-store" via=""
+```
 ---
 
 Important things to note:

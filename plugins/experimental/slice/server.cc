@@ -222,8 +222,8 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
   crange.toStringClosed(normstr, &normlen);
 
   // block range request
-  int64_t const blockbeg = data->m_blocknum * data->m_blockbytes_config;
-  int64_t const blockend = std::min(blockbeg + data->m_blockbytes_config, data->m_contentlen);
+  int64_t const blockbeg = data->m_blocknum * data->m_config->m_blockbytes;
+  int64_t const blockend = std::min(blockbeg + data->m_config->m_blockbytes, data->m_contentlen);
 
   // Block response data
   TSHttpStatus const statusgot = header_resp.status();
@@ -292,7 +292,9 @@ handleNextServerHeader(Data *const data, TSCont const contp)
 
   // only process a 206, everything else just aborts
   if (TS_HTTP_STATUS_PARTIAL_CONTENT != header.status()) {
-    logSliceError("Non 206 internal block response", data, header);
+    if (!data->m_config->m_disable_errorlog) {
+      logSliceError("Non 206 internal block response", data, header);
+    }
     data->m_bail = true;
     return false;
   }
@@ -300,7 +302,9 @@ handleNextServerHeader(Data *const data, TSCont const contp)
   // can't parse the content range header, abort -- might be too strict
   ContentRange const blockcr = contentRangeFrom(header);
   if (!blockcr.isValid() || blockcr.m_length != data->m_contentlen) {
-    logSliceError("Mismatch/Bad block Content-Range", data, header);
+    if (!data->m_config->m_disable_errorlog) {
+      logSliceError("Mismatch/Bad block Content-Range", data, header);
+    }
     data->m_bail = true;
     return false;
   }
@@ -315,7 +319,9 @@ handleNextServerHeader(Data *const data, TSCont const contp)
   if (0 < data->m_etaglen || 0 < etaglen) {
     same = data->m_etaglen == etaglen && 0 == strncmp(etag, data->m_etag, etaglen);
     if (!same) {
-      logSliceError("Mismatch block Etag", data, header);
+      if (!data->m_config->m_disable_errorlog) {
+        logSliceError("Mismatch block Etag", data, header);
+      }
     }
   } else {
     char lastmodified[8192];
@@ -324,7 +330,9 @@ handleNextServerHeader(Data *const data, TSCont const contp)
     if (0 < data->m_lastmodifiedlen || 0 != lastmodifiedlen) {
       same = data->m_lastmodifiedlen == lastmodifiedlen && 0 == strncmp(lastmodified, data->m_lastmodified, lastmodifiedlen);
       if (!same) {
-        logSliceError("Mismatch block Last-Modified", data, header);
+        if (!data->m_config->m_disable_errorlog) {
+          logSliceError("Mismatch block Last-Modified", data, header);
+        }
       }
     }
   }
@@ -378,7 +386,7 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       }
 
       // how much to fast forward into this data block
-      data->m_blockskip = data->m_req_range.skipBytesForBlock(data->m_blockbytes_config, data->m_blocknum);
+      data->m_blockskip = data->m_req_range.skipBytesForBlock(data->m_config->m_blockbytes, data->m_blocknum);
     }
 
     transfer_content_bytes(data);
@@ -424,13 +432,13 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
     // issues a speculative request for the first block
     // in that case fast forward to the real first in range block
     // Btw this isn't implemented yet, to be handled
-    int64_t const firstblock(data->m_req_range.firstBlockFor(data->m_blockbytes_config));
+    int64_t const firstblock(data->m_req_range.firstBlockFor(data->m_config->m_blockbytes));
     if (data->m_blocknum < firstblock) {
       data->m_blocknum = firstblock;
     }
 
     // done processing blocks?
-    if (!data->m_req_range.blockIsInside(data->m_blockbytes_config, data->m_blocknum)) {
+    if (!data->m_req_range.blockIsInside(data->m_config->m_blockbytes, data->m_blocknum)) {
       data->m_blocknum = -1; // signal value no more blocks
     }
   } else {

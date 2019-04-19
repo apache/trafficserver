@@ -18,22 +18,21 @@
 
 #include "Config.h"
 
-#include <algorithm>
 #include <cctype>
 #include <cinttypes>
-#include <map>
-#include <string>
+#include <cstdlib>
+#include <getopt.h>
+#include <string_view>
 
 int64_t
-Config::bytesFrom(std::string const &valstr)
+Config::bytesFrom(char const *const valstr)
 {
-  char const *const nptr = valstr.c_str();
-  char *endptr           = nullptr;
-  int64_t blockbytes     = strtoll(nptr, &endptr, 10);
+  char *endptr       = nullptr;
+  int64_t blockbytes = strtoll(valstr, &endptr, 10);
 
-  if (nullptr != endptr && nptr < endptr) {
-    size_t const dist = endptr - nptr;
-    if (dist < valstr.size() && 0 <= blockbytes) {
+  if (nullptr != endptr && valstr < endptr) {
+    size_t const dist = endptr - valstr;
+    if (dist < strlen(valstr) && 0 <= blockbytes) {
       switch (tolower(*endptr)) {
       case 'g':
         blockbytes *= ((int64_t)1024 * (int64_t)1024 * (int64_t)1024);
@@ -58,95 +57,93 @@ Config::bytesFrom(std::string const &valstr)
 }
 
 bool
-Config::fromArgs(int const argc, char const *const argv[], char *const errbuf, int const errbuf_size)
+Config::fromArgs(int const argc, char const *const argv[])
 {
-#if !defined(SLICE_UNIT_TEST)
   DEBUG_LOG("Number of arguments: %d", argc);
   for (int index = 0; index < argc; ++index) {
     DEBUG_LOG("args[%d] = %s", index, argv[index]);
   }
-#endif
 
-  std::map<std::string, std::string> keyvals;
+  // current "best" blockbytes from configuration
+  int64_t blockbytes = 0;
 
-  static std::string const bbstr(blockbytesstr);
-  static std::string const bostr(bytesoverstr);
-
-  // collect all args
+  // backwards compat: look for blockbytes
   for (int index = 0; index < argc; ++index) {
-    std::string const argstr = argv[index];
+    std::string_view const argstr = argv[index];
 
     std::size_t const spos = argstr.find_first_of(':');
-    if (spos != std::string::npos) {
-      std::string key = argstr.substr(0, spos);
-      std::string val = argstr.substr(spos + 1);
+    if (spos != std::string_view::npos) {
+      std::string_view const key = argstr.substr(0, spos);
+      std::string_view const val = argstr.substr(spos + 1);
 
-      if (!key.empty()) {
-        std::for_each(key.begin(), key.end(), [](char &ch) { ch = tolower(ch); });
+      if (!key.empty() && !val.empty()) {
+        char const *const valstr = val.data(); // inherits argv's null
+        int64_t const bytesread  = bytesFrom(valstr);
 
-        // blockbytes and bytesover collide
-        if (bbstr == key) {
-          keyvals.erase(bostr);
-        } else if (bostr == key) {
-          keyvals.erase(bbstr);
+        if (blockbytesmin <= bytesread && bytesread <= blockbytesmax) {
+          DEBUG_LOG("Found deprecated blockbytes %" PRId64, bytesread);
+          blockbytes = bytesread;
         }
-
-        keyvals[std::move(key)] = std::move(val);
       }
     }
   }
 
-  std::map<std::string, std::string>::const_iterator itfind;
+  // standard parsing
+  constexpr const struct option longopts[] = {
+    {const_cast<char *>("blockbytes"), required_argument, nullptr, 'b'},
+    {const_cast<char *>("bytesover"), required_argument, nullptr, 'o'},
+    {const_cast<char *>("disable-errorlog"), no_argument, nullptr, 'd'},
+    {nullptr, 0, nullptr, 0},
+  };
 
-  // blockbytes checked range string
-  itfind = keyvals.find(bbstr);
-  if (keyvals.end() != itfind) {
-    std::string val = itfind->second;
-    if (!val.empty()) {
-      int64_t const blockbytes = bytesFrom(val);
+  // getopt assumes args start at '1' so this hack is needed
+  char *const *argvp = ((char *const *)argv - 1);
 
-      if (blockbytes < blockbytesmin || blockbytesmax < blockbytes) {
-#if !defined(SLICE_UNIT_TEST)
-        DEBUG_LOG("Block Bytes %" PRId64 " outside checked limits %" PRId64 "-%" PRId64, blockbytes, blockbytesmin, blockbytesmax);
-        DEBUG_LOG("Block Bytes kept at %" PRId64, m_blockbytes);
-#endif
+  for (;;) {
+    int const opt = getopt_long(argc + 1, argvp, "b:", longopts, nullptr);
+    if (-1 == opt) {
+      break;
+    }
+
+    DEBUG_LOG("processing '%c' %s", (char)opt, argvp[optind - 1]);
+
+    switch (opt) {
+    case 'b': {
+      int64_t const bytesread = bytesFrom(optarg);
+      if (blockbytesmin <= bytesread && bytesread <= blockbytesmax) {
+        DEBUG_LOG("Using blockbytes %" PRId64, bytesread);
+        blockbytes = bytesread;
       } else {
-#if !defined(SLICE_UNIT_TEST)
-        DEBUG_LOG("Block Bytes set to %" PRId64, blockbytes);
-#endif
-        m_blockbytes = blockbytes;
+        ERROR_LOG("Invalid blockbytes: %s", optarg);
       }
-    }
-
-    keyvals.erase(itfind);
-  }
-
-  // bytesover unchecked range string
-  itfind = keyvals.find(bostr);
-  if (keyvals.end() != itfind) {
-    std::string val = itfind->second;
-    if (!val.empty()) {
-      int64_t const bytesover = bytesFrom(val);
-
-      if (bytesover <= 0) {
-#if !defined(SLICE_UNIT_TEST)
-        DEBUG_LOG("Bytes Over %" PRId64 " <= 0", bytesover);
-        DEBUG_LOG("Block Bytes kept at %" PRId64, m_blockbytes);
-#endif
+    } break;
+    case 'o':
+      if (0 == blockbytes) {
+        int64_t const bytesread = bytesFrom(optarg);
+        if (0 < bytesread) {
+          DEBUG_LOG("Using bytesover %" PRId64, bytesread);
+          blockbytes = bytesread;
+        } else {
+          ERROR_LOG("Invalid bytesover: %s", optarg);
+        }
       } else {
-#if !defined(SLICE_UNIT_TEST)
-        DEBUG_LOG("Block Bytes set to %" PRId64, bytesover);
-#endif
-        m_blockbytes = bytesover;
+        DEBUG_LOG("Skipping bytesover in favor of blockbytes");
       }
+      break;
+    case 'd':
+      DEBUG_LOG("Disabling block stitching error logs");
+      m_disable_errorlog = true;
+      break;
+    default:
+      break;
     }
-    keyvals.erase(itfind);
   }
 
-  for (std::map<std::string, std::string>::const_iterator itkv(keyvals.cbegin()); keyvals.cend() != itkv; ++itkv) {
-#if !defined(SLICE_UNIT_TEST)
-    ERROR_LOG("Unhandled pparam %s", itkv->first.c_str());
-#endif
+  if (0 < blockbytes) {
+    DEBUG_LOG("Using configured blockbytes %" PRId64, blockbytes);
+    m_blockbytes = blockbytes;
+  } else {
+    DEBUG_LOG("Using default blockbytes %" PRId64, m_blockbytes);
   }
 
   return true;

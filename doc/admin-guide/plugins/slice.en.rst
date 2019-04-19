@@ -63,14 +63,18 @@ Plugin Options
 
 Slice block sizes can specified using the blockbytes parameter::
 
-    @plugin=slice.so @pparam=blockbytes:1000000 @cache_range_requests.so
+    @plugin=slice.so @pparam=--blockbytes=1000000 @cache_range_requests.so
+
+Or alternatively::
+
+    @plugin=slice.so @pparam=-b @pparam=1000000 @cache_range_requests.so
 
 In adition to bytes, 'k', 'm' and 'g' suffixes may be used for
 kilobytes, megabytes and gigabytes::
 
-    @plugin=slice.so @pparam=blockbytes:5m @cache_range_requests.so
-    @plugin=slice.so @pparam=blockbytes:512k @cache_range_requests.so
-    @plugin=slice.so @pparam=blockbytes:32m @cache_range_requests.so
+    @plugin=slice.so @pparam=--blockbytes=5m @cache_range_requests.so
+    @plugin=slice.so @pparam=--blockbytes=512k @cache_range_requests.so
+    @plugin=slice.so @pparam=--blockbytes=32m @cache_range_requests.so
 
 paramater ``blockbytes`` is checked to be between 32kb and 32mb
 inclusive.
@@ -78,12 +82,20 @@ inclusive.
 For testing and extreme purposes the parameter ``bytesover`` may
 be used instead which is unchecked::
 
-    @plugin=slice.so @pparam=bytesover:1G @cache_range_requests.so
-    @plugin=slice.so @pparam=bytesover:13 @cache_range_requests.so
+    @plugin=slice.so @pparam=--bytesover=1G @cache_range_requests.so
+    @plugin=slice.so @pparam=--bytesover=13 @cache_range_requests.so
 
 After modifying :file:`remap.config`, restart or reload traffic server
 (sudo traffic_ctl config reload) or (sudo traffic_ctl server restart)
 to activate the new configuration values.
+
+Slice block stitching errors are logged to diags.log.  In some special
+cases the volume of these logs may start to overwhelm the system.
+In this case adding the --disable-errorlog flag::
+
+    @plugin=slice.so @pparam=--disable-errorlog @cache_range_requests.so
+
+Will turn off logging these errors to diags.log
 
 Implementation Notes
 ====================

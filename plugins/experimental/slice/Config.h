@@ -20,21 +20,17 @@
 
 #include "slice.h"
 
-#include <string>
-
 // Data Structures and Classes
 struct Config {
-  static int64_t const blockbytesmin     = 1024 * 256;       // 256KB
-  static int64_t const blockbytesmax     = 1024 * 1024 * 32; // 32MB
-  static int64_t const blockbytesdefault = 1024 * 1024;      // 1MB
-
-  static constexpr char const *const blockbytesstr = "blockbytes";
-  static constexpr char const *const bytesoverstr  = "bytesover";
+  static constexpr int64_t const blockbytesmin     = 1024 * 256;       // 256KB
+  static constexpr int64_t const blockbytesmax     = 1024 * 1024 * 32; // 32MB
+  static constexpr int64_t const blockbytesdefault = 1024 * 1024;      // 1MB
 
   int64_t m_blockbytes{blockbytesdefault};
+  bool m_disable_errorlog{false};
 
   // Last one wins
-  bool fromArgs(int const argc, char const *const argv[], char *const errbuf, int const errbuf_size);
+  bool fromArgs(int const argc, char const *const argv[]);
 
-  static int64_t bytesFrom(std::string const &valstr);
+  static int64_t bytesFrom(char const *const valstr);
 };
