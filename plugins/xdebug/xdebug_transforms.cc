@@ -132,14 +132,14 @@ body_transform(TSCont contp, TSEvent event, void *edata)
     }
 
     int64_t towrite = TSVIONTodoGet(src_vio);
-    TSDebug("xdebug_transform", "body_transform(): %li bytes of body is expected", towrite);
+    TSDebug("xdebug_transform", "body_transform(): %" PRId64 " bytes of body is expected", towrite);
     int64_t avail = TSIOBufferReaderAvail(TSVIOReaderGet(src_vio));
     towrite       = towrite > avail ? avail : towrite;
     if (towrite > 0) {
       TSIOBufferCopy(TSVIOBufferGet(data->output_vio), TSVIOReaderGet(src_vio), towrite, 0);
       TSIOBufferReaderConsume(TSVIOReaderGet(src_vio), towrite);
       TSVIONDoneSet(src_vio, TSVIONDoneGet(src_vio) + towrite);
-      TSDebug("xdebug_transform", "body_transform(): writing %li bytes of body", towrite);
+      TSDebug("xdebug_transform", "body_transform(): writing %" PRId64 " bytes of body", towrite);
     }
 
     if (TSVIONTodoGet(src_vio) > 0) {
