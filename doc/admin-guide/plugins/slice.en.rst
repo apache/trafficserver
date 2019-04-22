@@ -61,39 +61,87 @@ In this case, the plugin will use the default behaviour:
 Plugin Options
 --------------
 
-Slice block sizes can specified using the blockbytes parameter::
+The slice plugin supports the following options::
 
-    @plugin=slice.so @pparam=blockbytes:1000000 @cache_range_requests.so
+    --blockbytes=<bytes> (optional)
+        Default is 1m or 1048576 bytes
+        -b <bytes> for short.
+        Suffix k,m,g supported
+        Limited to 32k and 32m inclusive.
 
-In adition to bytes, 'k', 'm' and 'g' suffixes may be used for
-kilobytes, megabytes and gigabytes::
+    --test-blockbytes=<bytes> (optional)
+        Suffix k,m,g supported
+        -t <bytes> for short.
+        Limited to any positive number.
+        Ignored if --blockbytes provided.
 
-    @plugin=slice.so @pparam=blockbytes:5m @cache_range_requests.so
-    @plugin=slice.so @pparam=blockbytes:512k @cache_range_requests.so
-    @plugin=slice.so @pparam=blockbytes:32m @cache_range_requests.so
+    --pace-errorlog=<seconds> (optional)
+        Limit stitching error logs to every 'n' second(s)
 
-paramater ``blockbytes`` is checked to be between 32kb and 32mb
-inclusive.
+    --disable-errorlog (optional)
+        Disable writing block stitch errors to the error log.
 
-For testing and extreme purposes the parameter ``bytesover`` may
+Examples::
+
+    @plugin=slice.so @pparam=--blockbytes=1000000 @plugin=cache_range_requests.so
+
+Or alternatively::
+
+    @plugin=slice.so @pparam=-b @pparam=1000000 @plugin=cache_range_requests.so
+
+Byte suffix examples::
+
+    slice.so --blockbytes=5m
+    slice.so -b 512k
+    slice.so --blockbytes=32m
+
+For testing and extreme purposes the parameter ``test-blockbytes`` may
 be used instead which is unchecked::
 
-    @plugin=slice.so @pparam=bytesover:1G @cache_range_requests.so
-    @plugin=slice.so @pparam=bytesover:13 @cache_range_requests.so
+    slice.so --test-blockbytes=1G
+    slice.so -t 13
+
+Because the slice plugin is susceptible to errors during block stitching
+extra logs related to stitching are written to ``diags.log``.  Worst case
+an error log entry could be generated for every transaction.  The
+following options are provided to help with log overrun::
+
+    slice.so --pace-errorlog=5
+    slice.so -p 1
+    slice.so --disable-errorlog
 
 After modifying :file:`remap.config`, restart or reload traffic server
 (sudo traffic_ctl config reload) or (sudo traffic_ctl server restart)
 to activate the new configuration values.
 
+Debug Options
+-------------
+
+While the current slice plugin is able to detect block consistency
+errors during the block stitching process, it can only abort the
+client connection.  A CDN can only "fix" these by issuing an appropriate
+content revalidation.
+
+Under normal logging these slice block errors tend to show up as::
+
+    pscl value 0
+    crc value ERR_READ_ERROR
+
+By default more detailed stitching errors are written to ``diags.log``.
+An example is as follows::
+
+[Apr 19 20:26:13.639] [ET_NET 17] ERROR: [slice] 1555705573.639 reason="Non 206 internal block response" uri="http://localhost:18080/%7Ep.tex/%7Es.50M/%7Eui.20000/" uas="curl/7.29.0" req_range="bytes=1000000-" norm_range="bytes 1000000-52428799/52428800" etag_exp="%221603934496%22" lm_exp="Fri, 19 Apr 2019 18:53:20 GMT" blk_range="21000000-21999999" status_got="400" cr_got="" etag_got="" lm_got="" cc="no-store" via=""
+
+Whether or how often these detailed log entries are written are
+configurable plugin options.
+
 Implementation Notes
 ====================
 
-This slice plugin is by no means a best solution for adding
-blocking support to ATS.
-
-The slice plugin as is designed to provide a basic capability to block
-requests for arbitrary range requests and for blocking large assets for
-ease of caching.
+This slice plugin is a stop gap plugin for handling special cases
+involving very large assets that may be range requested. Hopefully
+the slice plugin is deprecated in the future when partial object
+caching is finally implemented.
 
 Slice *ONLY* handles slicing up requests into blocks, it delegates
 actual caching and fetching to the cache_range_requests.so plugin.
@@ -133,7 +181,7 @@ the block fetch to ensure the block is cached.
 Important Notes
 ===============
 
-This plugin also assumes that the content requested is cacheable.
+This plugin assumes that the content requested is cacheable.
 
 Any first block server response that is not a 206 is passed directly
 down to the client.  If that response is a '200' only the first
@@ -145,7 +193,7 @@ remove these headers.
 
 The only 416 response that this plugin handles itself is if the
 requested range is inside the last slice block but past the end of
-the asset contents.  Other 416 responses are handled by the parents.
+the asset contents.  Other 416 responses are handled by the parent.
 
 If a client aborts mid transaction the current slice block continues to
 be read from the server until it is complete to ensure that the block
@@ -166,5 +214,4 @@ check for the existence of any headers they may have created the
 first time they have were visited.
 
 Since the Slice plugin is written as an intercept handler it loses the
-ability to use state machine hooks and transaction states.
-
+ability to use normal state machine hooks and transaction states.

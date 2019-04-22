@@ -186,6 +186,15 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
 void
 logSliceError(char const *const message, Data const *const data, HttpHeader const &header_resp)
 {
+  Config *const config = data->m_config;
+
+  bool const logToError = config->canLogError();
+
+  // always write block stitch errors while in debug mode
+  if (!logToError && !TSIsDebugTagSet(PLUGIN_NAME)) {
+    return;
+  }
+
   HttpHeader const header_req(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
 
   TSHRTime const timenowus = TShrtime();
@@ -222,8 +231,8 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
   crange.toStringClosed(normstr, &normlen);
 
   // block range request
-  int64_t const blockbeg = data->m_blocknum * data->m_blockbytes_config;
-  int64_t const blockend = std::min(blockbeg + data->m_blockbytes_config, data->m_contentlen);
+  int64_t const blockbeg = data->m_blocknum * data->m_config->m_blockbytes;
+  int64_t const blockend = std::min(blockbeg + data->m_config->m_blockbytes, data->m_contentlen);
 
   // Block response data
   TSHttpStatus const statusgot = header_resp.status();
@@ -261,26 +270,28 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
   size_t etaggotlen = sizeof(etaggotstr);
   TSStringPercentEncode(etagstr, etaglen, etaggotstr, etaggotlen, &etaggotlen, nullptr);
 
-  TSError("[%s] %" PRId64 ".%" PRId64 " reason=\"%s\""
-          " uri=\"%.*s\""
-          " uas=\"%.*s\""
-          " req_range=\"%.*s\""
-          " norm_range=\"%.*s\""
+  DEBUG_LOG("Logging Block Stitch error");
 
-          " etag_exp=\"%.*s\""
-          " lm_exp=\"%.*s\""
+  ERROR_LOG("%" PRId64 ".%" PRId64 " reason=\"%s\""
+            " uri=\"%.*s\""
+            " uas=\"%.*s\""
+            " req_range=\"%.*s\""
+            " norm_range=\"%.*s\""
 
-          " blk_range=\"%" PRId64 "-%" PRId64 "\""
+            " etag_exp=\"%.*s\""
+            " lm_exp=\"%.*s\""
 
-          " status_got=\"%d\""
-          " cr_got=\"%.*s\""
-          " etag_got=\"%.*s\""
-          " lm_got=\"%.*s\""
-          " cc=\"%.*s\""
-          " via=\"%.*s\"",
-          PLUGIN_NAME, secs, ms, message, (int)urlplen, urlpstr, uaslen, uasstr, rangelen, rangestr, normlen, normstr,
-          (int)etagexplen, etagexpstr, data->m_lastmodifiedlen, data->m_lastmodified, blockbeg, blockend - 1, statusgot, crlen,
-          crstr, (int)etaggotlen, etaggotstr, lmlen, lmstr, cclen, ccstr, vialen, viastr);
+            " blk_range=\"%" PRId64 "-%" PRId64 "\""
+
+            " status_got=\"%d\""
+            " cr_got=\"%.*s\""
+            " etag_got=\"%.*s\""
+            " lm_got=\"%.*s\""
+            " cc=\"%.*s\""
+            " via=\"%.*s\"",
+            secs, ms, message, (int)urlplen, urlpstr, uaslen, uasstr, rangelen, rangestr, normlen, normstr, (int)etagexplen,
+            etagexpstr, data->m_lastmodifiedlen, data->m_lastmodified, blockbeg, blockend - 1, statusgot, crlen, crstr,
+            (int)etaggotlen, etaggotstr, lmlen, lmstr, cclen, ccstr, vialen, viastr);
 }
 
 bool
@@ -378,7 +389,7 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       }
 
       // how much to fast forward into this data block
-      data->m_blockskip = data->m_req_range.skipBytesForBlock(data->m_blockbytes_config, data->m_blocknum);
+      data->m_blockskip = data->m_req_range.skipBytesForBlock(data->m_config->m_blockbytes, data->m_blocknum);
     }
 
     transfer_content_bytes(data);
@@ -424,13 +435,13 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
     // issues a speculative request for the first block
     // in that case fast forward to the real first in range block
     // Btw this isn't implemented yet, to be handled
-    int64_t const firstblock(data->m_req_range.firstBlockFor(data->m_blockbytes_config));
+    int64_t const firstblock(data->m_req_range.firstBlockFor(data->m_config->m_blockbytes));
     if (data->m_blocknum < firstblock) {
       data->m_blocknum = firstblock;
     }
 
     // done processing blocks?
-    if (!data->m_req_range.blockIsInside(data->m_blockbytes_config, data->m_blocknum)) {
+    if (!data->m_req_range.blockIsInside(data->m_config->m_blockbytes, data->m_blocknum)) {
       data->m_blocknum = -1; // signal value no more blocks
     }
   } else {

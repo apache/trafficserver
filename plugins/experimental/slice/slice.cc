@@ -33,7 +33,7 @@ namespace
 Config globalConfig;
 
 bool
-read_request(TSHttpTxn txnp, Config const *const config)
+read_request(TSHttpTxn txnp, Config *const config)
 {
   DEBUG_LOG("slice read_request");
   TxnHdrMgr hdrmgr;
@@ -55,7 +55,8 @@ read_request(TSHttpTxn txnp, Config const *const config)
         return false;
       }
 
-      Data *const data = new Data(config->m_blockbytes);
+      TSAssert(nullptr != config);
+      Data *const data = new Data(config);
 
       // set up feedback connect
       if (AF_INET == ip->sa_family) {
@@ -150,11 +151,11 @@ TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type)
 
 SLICE_EXPORT
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
   Config *const config = new Config;
   if (2 < argc) {
-    config->fromArgs(argc - 2, argv + 2, errbuf, errbuf_size);
+    config->fromArgs(argc - 2, argv + 2);
   }
   *ih = static_cast<void *>(config);
   return TS_SUCCESS;
@@ -195,7 +196,7 @@ TSPluginInit(int argc, char const *argv[])
   }
 
   if (1 < argc) {
-    globalConfig.fromArgs(argc - 1, argv + 1, nullptr, 0);
+    globalConfig.fromArgs(argc - 1, argv + 1);
   }
 
   TSCont const contp(TSContCreate(global_read_request_hook, nullptr));
