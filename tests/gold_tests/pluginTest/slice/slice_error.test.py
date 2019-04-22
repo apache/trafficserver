@@ -245,12 +245,12 @@ curl_and_args = 'sh curlsort.sh -H "Host: www.example.com"'
 # set up whole asset fetch into cache
 ts.Disk.remap_config.AddLine(
   'map / http://127.0.0.1:{}'.format(server.Variables.Port) +
-    ' @plugin=slice.so @pparam=bytesover:{}'.format(blockbytes)
+    ' @plugin=slice.so @pparam=--test-blockbytes={}'.format(blockbytes)
 )
 
 # minimal configuration
 ts.Disk.records_config.update({
-  'proxy.config.diags.debug.enabled': 1,
+  'proxy.config.diags.debug.enabled': 0,
   'proxy.config.diags.debug.tags': 'slice',
   'proxy.config.http.cache.http': 0,
   'proxy.config.http.wait_for_cache': 0,

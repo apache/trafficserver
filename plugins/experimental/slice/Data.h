@@ -20,10 +20,10 @@
 
 #include "ts/ts.h"
 
+#include "Config.h"
 #include "HttpHeader.h"
 #include "Range.h"
 #include "Stage.h"
-#include "slice.h"
 
 #include <netinet/in.h>
 
@@ -35,7 +35,8 @@ struct Data {
   Data(Data const &) = delete;
   Data &operator=(Data const &) = delete;
 
-  int64_t const m_blockbytes_config; // configured slice block size
+  Config *const m_config;
+
   sockaddr_storage m_client_ip;
 
   // for pristine url coming in
@@ -76,8 +77,8 @@ struct Data {
 
   TSHttpParser m_http_parser{nullptr}; //!< cached for reuse
 
-  explicit Data(int64_t const blockbytes)
-    : m_blockbytes_config(blockbytes),
+  explicit Data(Config *const config)
+    : m_config(config),
       m_client_ip(),
       m_urlbuffer(nullptr),
       m_urlloc(nullptr),

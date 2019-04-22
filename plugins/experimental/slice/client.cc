@@ -34,8 +34,8 @@ shutdown(TSCont const contp, Data *const data)
 bool
 requestBlock(TSCont contp, Data *const data)
 {
-  int64_t const blockbeg = (data->m_blockbytes_config * data->m_blocknum);
-  Range blockbe(blockbeg, blockbeg + data->m_blockbytes_config);
+  int64_t const blockbeg = (data->m_config->m_blockbytes * data->m_blocknum);
+  Range blockbe(blockbeg, blockbeg + data->m_config->m_blockbytes);
 
   char rangestr[1024];
   int rangelen      = sizeof(rangestr);
@@ -131,7 +131,7 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
         data->m_statustype = TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE;
 
         // First block will give Content-Length
-        rangebe = Range(0, data->m_blockbytes_config);
+        rangebe = Range(0, data->m_config->m_blockbytes);
       }
     } else {
       DEBUG_LOG("Full content request");
@@ -143,7 +143,7 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     }
 
     // set to the first block in range
-    data->m_blocknum  = rangebe.firstBlockFor(data->m_blockbytes_config);
+    data->m_blocknum  = rangebe.firstBlockFor(data->m_config->m_blockbytes);
     data->m_req_range = rangebe;
 
     // remove ATS keys to avoid 404 loop
