@@ -75,22 +75,6 @@ Machine::instance()
   return nullptr;
 }
 
-#include "LogCollationAccept.h"
-LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port) {}
-LogCollationAccept::~LogCollationAccept() {}
-
-#include "LogCollationClientSM.h"
-LogCollationClientSM::LogCollationClientSM(LogHost *log_host) : Continuation(new_ProxyMutex()), m_log_host(log_host) {}
-
-LogCollationClientSM::~LogCollationClientSM() {}
-
-int
-LogCollationClientSM::send(LogBuffer * /* log_buffer ATS_UNUSED */)
-{
-  ink_release_assert(false);
-  return 0;
-}
-
 NetAccept *
 UnixNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 {

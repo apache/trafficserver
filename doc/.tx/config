@@ -162,11 +162,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/log-build
 source_file = _build/locale/pot/admin-guide/monitoring/logging/log-builder.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--monitoring--logging--log-collation_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/log-collation.en.po
-source_file = _build/locale/pot/admin-guide/monitoring/logging/log-collation.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--monitoring--logging--log-formats_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/log-formats.en.po
 source_file = _build/locale/pot/admin-guide/monitoring/logging/log-formats.en.pot

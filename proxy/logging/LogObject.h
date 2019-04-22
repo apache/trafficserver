@@ -28,7 +28,6 @@
 #include "LogFile.h"
 #include "LogFormat.h"
 #include "LogFilter.h"
-#include "LogHost.h"
 #include "LogBuffer.h"
 #include "LogAccess.h"
 #include "LogFilter.h"
@@ -87,14 +86,11 @@ class LogObject : public RefCountObj
 public:
   enum LogObjectFlags {
     BINARY                   = 1,
-    REMOTE_DATA              = 2,
     WRITES_TO_PIPE           = 4,
     LOG_OBJECT_FMT_TIMESTAMP = 8, // always format a timestamp into each log line (for raw text logs)
   };
 
   // BINARY: log is written in binary format (rather than ascii)
-  // REMOTE_DATA: object receives data from remote collation clients, so
-  //              it should not be destroyed during a reconfiguration
   // WRITES_TO_PIPE: object writes to a named pipe rather than to a file
 
   LogObject(const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format, const char *header,
@@ -105,13 +101,7 @@ public:
 
   void add_filter(LogFilter *filter, bool copy = true);
   void set_filter_list(const LogFilterList &list, bool copy = true);
-  void add_loghost(LogHost *host, bool copy = true);
 
-  inline void
-  set_remote_flag()
-  {
-    m_flags |= REMOTE_DATA;
-  };
   inline void
   set_fmt_timestamps()
   {
@@ -153,11 +143,8 @@ public:
       idx = m_buffer_manager_idx++ % m_flush_threads;
     }
 
-    if (m_logFile) {
-      nfb = m_buffer_manager[idx].preproc_buffers(m_logFile.get());
-    } else {
-      nfb = m_buffer_manager[idx].preproc_buffers(&m_host_list);
-    }
+    nfb = m_buffer_manager[idx].preproc_buffers(m_logFile.get());
+
     return nfb;
   }
 
@@ -227,16 +214,6 @@ public:
   }
 
   inline bool
-  is_collation_client() const
-  {
-    return (m_logFile ? false : true);
-  }
-  inline bool
-  receives_remote_data() const
-  {
-    return (m_flags & REMOTE_DATA) ? true : false;
-  }
-  inline bool
   writes_to_pipe() const
   {
     return (m_flags & WRITES_TO_PIPE) ? true : false;
@@ -276,11 +253,9 @@ public:
   bool operator==(LogObject &rhs);
 
 public:
-  bool m_auto_created;
   LogFormat *m_format;
   Ptr<LogFile> m_logFile;
   LogFilterList m_filter_list;
-  LogHostList m_host_list;
 
 private:
   char *m_basename; // the name of the file associated
@@ -426,41 +401,19 @@ public:
   {
     return _objects.size();
   }
-  unsigned get_num_collation_clients() const;
 };
 
 inline bool
 LogObject::operator==(LogObject &old)
 {
-  if (!receives_remote_data() && !old.receives_remote_data()) {
-    return (get_signature() == old.get_signature() &&
-            (is_collation_client() && old.is_collation_client() ?
-               m_host_list == old.m_host_list :
-               m_logFile && old.m_logFile && strcmp(m_logFile->get_name(), old.m_logFile->get_name()) == 0) &&
-            (m_filter_list == old.m_filter_list) &&
-            (m_rolling_interval_sec == old.m_rolling_interval_sec && m_rolling_offset_hr == old.m_rolling_offset_hr &&
-             m_rolling_size_mb == old.m_rolling_size_mb));
-  }
-  return false;
+  return (get_signature() == old.get_signature() && m_logFile && old.m_logFile &&
+          strcmp(m_logFile->get_name(), old.m_logFile->get_name()) == 0 && (m_filter_list == old.m_filter_list) &&
+          (m_rolling_interval_sec == old.m_rolling_interval_sec && m_rolling_offset_hr == old.m_rolling_offset_hr &&
+           m_rolling_size_mb == old.m_rolling_size_mb));
 }
 
 inline off_t
 LogObject::get_file_size_bytes()
 {
-  if (m_logFile) {
-    return m_logFile->get_size_bytes();
-  } else {
-    off_t max_size = 0;
-    LogHost *host;
-    for (host = m_host_list.first(); host; host = m_host_list.next(host)) {
-      LogFile *orphan_logfile = host->get_orphan_logfile();
-      if (orphan_logfile) {
-        off_t s = orphan_logfile->get_size_bytes();
-        if (s > max_size) {
-          max_size = s;
-        }
-      }
-    }
-    return max_size;
-  }
+  return m_logFile->get_size_bytes();
 }

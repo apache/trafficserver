@@ -521,7 +521,6 @@ Logging Configuration
 
    binary vs. ascii output
    multiple log formats (netscape+squid+custom vs. just custom)
-   overhead to log collation
    using direct writes vs. syslog target
 
 Plugin Tuning
