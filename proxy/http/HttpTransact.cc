@@ -4717,9 +4717,6 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
     cache_info->request_get()->method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
   }
 
-  // Set-Cookie should not be put in the cache to prevent
-  //  sending person A's cookie to person B
-  cache_info->response_get()->field_delete(MIME_FIELD_SET_COOKIE, MIME_LEN_SET_COOKIE);
   cache_info->request_get()->field_delete(MIME_FIELD_VIA, MIME_LEN_VIA);
   // server 200 Ok for Range request
   cache_info->request_get()->field_delete(MIME_FIELD_RANGE, MIME_LEN_RANGE);
@@ -4763,12 +4760,6 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     // dont cache content-length field //
     /////////////////////////////////////
     if (name == MIME_FIELD_CONTENT_LENGTH) {
-      continue;
-    }
-    /////////////////////////////////////
-    // dont cache Set-Cookie headers   //
-    /////////////////////////////////////
-    if (name == MIME_FIELD_SET_COOKIE) {
       continue;
     }
     /////////////////////////////////////////
