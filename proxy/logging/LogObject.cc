@@ -91,8 +91,7 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
 LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
                      const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
                      int rolling_offset_hr, int rolling_size_mb, bool auto_created)
-  : m_auto_created(auto_created),
-    m_alt_filename(nullptr),
+  : m_alt_filename(nullptr),
     m_flags(0),
     m_signature(0),
     m_flush_threads(flush_threads),
@@ -117,9 +116,6 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
   // compute_signature is a static function
   m_signature = compute_signature(m_format, m_basename, m_flags);
 
-  // by default, create a LogFile for this object, if a loghost is
-  // later specified, then we will delete the LogFile object
-  //
   m_logFile = new LogFile(m_filename, header, file_format, m_signature, Log::config->ascii_buffer_size, Log::config->max_line_size);
 
   LogBuffer *b = new LogBuffer(this, Log::config->log_buffer_size);
@@ -133,7 +129,6 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
 
 LogObject::LogObject(LogObject &rhs)
   : RefCountObj(rhs),
-    m_auto_created(rhs.m_auto_created),
     m_basename(ats_strdup(rhs.m_basename)),
     m_filename(ats_strdup(rhs.m_filename)),
     m_alt_filename(ats_strdup(rhs.m_alt_filename)),
@@ -162,11 +157,6 @@ LogObject::LogObject(LogObject &rhs)
     add_filter(filter);
   }
 
-  LogHost *host;
-  for (host = rhs.m_host_list.first(); host; host = rhs.m_host_list.next(host)) {
-    add_loghost(host);
-  }
-
   // copy gets a fresh log buffer
   //
   LogBuffer *b = new LogBuffer(this, Log::config->log_buffer_size);
@@ -184,13 +174,6 @@ LogObject::~LogObject()
   Debug("log-config", "entering LogObject destructor, this=%p", this);
 
   preproc_buffers();
-
-  // here we need to free LogHost if it is remote logging.
-  if (is_collation_client()) {
-    if (m_host_list.count()) {
-      m_host_list.clear();
-    }
-  }
   ats_free(m_basename);
   ats_free(m_filename);
   ats_free(m_alt_filename);
@@ -302,23 +285,6 @@ LogObject::set_filter_list(const LogFilterList &list, bool copy)
   m_filter_list.set_conjunction(list.does_conjunction());
 }
 
-void
-LogObject::add_loghost(LogHost *host, bool copy)
-{
-  if (!host) {
-    return;
-  }
-  m_host_list.add(host, copy);
-
-  // A LogObject either writes to a file, or sends to a collation host, but
-  // not both. By default, it writes to a file. If a LogHost is specified,
-  // then clear the intelligent Ptr containing LogFile.
-  //
-  m_logFile.clear();
-
-  Debug("log", "added log host %p to object %p for target %s:%d", host, this, host->name(), host->port());
-}
-
 // we conpute the object signature from the fieldlist_str and the printf_str
 // of the LogFormat rather than from the format_str because the format_str
 // is not part of a LogBuffer header
@@ -355,11 +321,8 @@ LogObject::display(FILE *fd)
           "flags = %u\n"
           "signature = %" PRIu64 "\n",
           this, m_format->name(), m_format, m_basename, m_flags, m_signature);
-  if (is_collation_client()) {
-    m_host_list.display(fd);
-  } else {
-    fprintf(fd, "full path = %s\n", get_full_filename());
-  }
+
+  fprintf(fd, "full path = %s\n", get_full_filename());
   m_filter_list.display(fd);
   fprintf(fd, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 }
@@ -785,15 +748,8 @@ LogObject::_roll_files(long last_roll_time, long time_now)
     if (!writes_to_pipe()) {
       num_rolled += m_logFile->roll(last_roll_time, time_now);
     }
-  } else {
-    LogHost *host;
-    for (host = m_host_list.first(); host; host = m_host_list.next(host)) {
-      LogFile *orphan_logfile = host->get_orphan_logfile();
-      if (orphan_logfile) {
-        num_rolled += orphan_logfile->roll(last_roll_time, time_now);
-      }
-    }
   }
+
   m_last_roll_time = time_now;
   return num_rolled;
 }
@@ -895,14 +851,10 @@ LogObjectManager::_manage_object(LogObject *log_object, bool is_api_object, int 
     ACQUIRE_API_MUTEX("A LogObjectManager::_manage_object");
   }
 
-  bool col_client = log_object->is_collation_client();
-  int retVal      = _solve_internal_filename_conflicts(log_object, maxConflicts);
+  int retVal = _solve_internal_filename_conflicts(log_object, maxConflicts);
 
   if (retVal == NO_FILENAME_CONFLICTS) {
-    // check for external conflicts only if the object is not a collation
-    // client
-    //
-    if (col_client || (retVal = _solve_filename_conflicts(log_object, maxConflicts), retVal == NO_FILENAME_CONFLICTS)) {
+    if (retVal = _solve_filename_conflicts(log_object, maxConflicts), retVal == NO_FILENAME_CONFLICTS) {
       // do filesystem checks
       //
       {
@@ -920,16 +872,15 @@ LogObjectManager::_manage_object(LogObject *log_object, bool is_api_object, int 
         Debug("log",
               "LogObjectManager managing object %s (%s) "
               "[signature = %" PRIu64 ", address = %p]",
-              log_object->get_base_filename(), col_client ? "collation client" : log_object->get_full_filename(),
-              log_object->get_signature(), log_object);
+              log_object->get_base_filename(), log_object->get_full_filename(), log_object->get_signature(), log_object);
 
         if (log_object->has_alternate_name()) {
-          Warning("The full path for the (%s) LogObject %s "
+          Warning("The full path for the (%s) LogObject "
                   "with signature %" PRIu64 " "
                   "has been set to %s rather than %s because the latter "
                   "is being used by another LogObject",
-                  log_object->receives_remote_data() ? "remote" : "local", log_object->get_base_filename(),
-                  log_object->get_signature(), log_object->get_full_filename(), log_object->get_original_filename());
+                  log_object->get_base_filename(), log_object->get_signature(), log_object->get_full_filename(),
+                  log_object->get_original_filename());
         }
       }
     }
@@ -1063,14 +1014,12 @@ bool
 LogObjectManager::_has_internal_filename_conflict(const char *filename, LogObjectList &objects)
 {
   for (auto &object : objects) {
-    if (!object->is_collation_client()) {
-      // an internal conflict exists if two objects request the
-      // same filename, regardless of the object signatures, since
-      // two objects writing to the same file would produce a
-      // log with duplicate entries and non monotonic timestamps
-      if (strcmp(object->get_full_filename(), filename) == 0) {
-        return true;
-      }
+    // an internal conflict exists if two objects request the
+    // same filename, regardless of the object signatures, since
+    // two objects writing to the same file would produce a
+    // log with duplicate entries and non monotonic timestamps
+    if (strcmp(object->get_full_filename(), filename) == 0) {
+      return true;
     }
   }
   return false;
@@ -1189,7 +1138,7 @@ LogObjectManager::open_local_pipes()
   //
   for (unsigned i = 0; i < this->_objects.size(); i++) {
     LogObject *obj = _objects[i];
-    if (obj->writes_to_pipe() && !obj->is_collation_client()) {
+    if (obj->writes_to_pipe()) {
       obj->m_logFile->open_file();
     }
   }
@@ -1299,19 +1248,6 @@ LogObjectManager::find_by_format_name(const char *name) const
   return nullptr;
 }
 
-unsigned
-LogObjectManager::get_num_collation_clients() const
-{
-  unsigned coll_clients = 0;
-
-  for (auto _object : this->_objects) {
-    if (_object && _object->is_collation_client()) {
-      ++coll_clients;
-    }
-  }
-  return coll_clients;
-}
-
 int
 LogObjectManager::log(LogAccess *lad)
 {
@@ -1319,15 +1255,6 @@ LogObjectManager::log(LogAccess *lad)
   ProxyMutex *mutex = this_thread()->mutex.get();
 
   for (unsigned i = 0; i < this->_objects.size(); i++) {
-    //
-    // Auto created LogObject is only applied to LogBuffer
-    // data received from network in collation host. It should
-    // be ignored here.
-    //
-    if (_objects[i]->m_auto_created) {
-      continue;
-    }
-
     ret |= _objects[i]->log(lad);
   }
 

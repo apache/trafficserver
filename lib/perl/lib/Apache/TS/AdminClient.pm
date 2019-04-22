@@ -520,12 +520,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.local_state_dir
  proxy.config.log.ascii_buffer_size
  proxy.config.log.auto_delete_rolled_files
- proxy.config.log.collation_host
- proxy.config.log.collation_host_tagged
- proxy.config.log.collation_max_send_buffers
- proxy.config.log.collation_port
- proxy.config.log.collation_retry_sec
- proxy.config.log.collation_secret
  proxy.config.log.file_stat_frequency
  proxy.config.log.hostname
  proxy.config.log.log_buffer_size
@@ -535,7 +529,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.max_line_size
  proxy.config.log.max_secs_per_buffer
  proxy.config.log.max_space_mb_for_logs
- proxy.config.log.max_space_mb_for_orphan_logs
  proxy.config.log.max_space_mb_headroom
  proxy.config.log.overspill_report_count
  proxy.config.log.rolling_enabled

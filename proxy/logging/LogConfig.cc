@@ -41,13 +41,10 @@
 #include "LogFormat.h"
 #include "LogFile.h"
 #include "LogBuffer.h"
-#include "LogHost.h"
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "LogUtils.h"
 #include "tscore/SimpleTokenizer.h"
-
-#include "LogCollationAccept.h"
 
 #include "YamlLogConfig.h"
 
@@ -75,22 +72,14 @@ LogConfig::setup_default_values()
   }
   hostname = ats_strdup(name);
 
-  log_buffer_size              = (int)(10 * LOG_KILOBYTE);
-  max_secs_per_buffer          = 5;
-  max_space_mb_for_logs        = 100;
-  max_space_mb_for_orphan_logs = 25;
-  max_space_mb_headroom        = 10;
-  logfile_perm                 = 0644;
-  logfile_dir                  = ats_strdup(".");
+  log_buffer_size       = (int)(10 * LOG_KILOBYTE);
+  max_secs_per_buffer   = 5;
+  max_space_mb_for_logs = 100;
+  max_space_mb_headroom = 10;
+  logfile_perm          = 0644;
+  logfile_dir           = ats_strdup(".");
 
-  collation_mode             = Log::NO_COLLATION;
-  collation_host             = ats_strdup("none");
-  collation_port             = 0;
-  collation_host_tagged      = false;
-  collation_preproc_threads  = 1;
-  collation_secret           = ats_strdup("foobar");
-  collation_retry_sec        = 0;
-  collation_max_send_buffers = 0;
+  preproc_threads = 1;
 
   rolling_enabled          = Log::NO_ROLLING;
   rolling_interval_sec     = 86400; // 24 hours
@@ -102,8 +91,6 @@ LogConfig::setup_default_values()
   sampling_frequency   = 1;
   file_stat_frequency  = 16;
   space_used_frequency = 900;
-
-  use_orphan_log_space_value = false;
 
   ascii_buffer_size = 4 * 9216;
   max_line_size     = 9216; // size of pipe buffer for SunOS 5.6
@@ -136,11 +123,6 @@ LogConfig::read_configuration_variables()
     max_space_mb_for_logs = val;
   }
 
-  val = (int)REC_ConfigReadInteger("proxy.config.log.max_space_mb_for_orphan_logs");
-  if (val > 0) {
-    max_space_mb_for_orphan_logs = val;
-  }
-
   val = (int)REC_ConfigReadInteger("proxy.config.log.max_space_mb_headroom");
   if (val > 0) {
     max_space_mb_headroom = val;
@@ -169,45 +151,9 @@ LogConfig::read_configuration_variables()
     ::exit(1);
   }
 
-  // COLLATION
-  val = (int)REC_ConfigReadInteger("proxy.local.log.collation_mode");
-  // do not restrict value so that error message is logged if
-  // collation_mode is out of range
-  collation_mode = val;
-
-  ptr = REC_ConfigReadString("proxy.config.log.collation_host");
-  if (ptr != nullptr) {
-    ats_free(collation_host);
-    collation_host = ptr;
-  }
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.collation_port");
-  if (val >= 0) {
-    collation_port = val;
-  }
-
-  val                   = (int)REC_ConfigReadInteger("proxy.config.log.collation_host_tagged");
-  collation_host_tagged = (val > 0);
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.collation_preproc_threads");
+  val = (int)REC_ConfigReadInteger("proxy.config.log.preproc_threads");
   if (val > 0 && val <= 128) {
-    collation_preproc_threads = val;
-  }
-
-  ptr = REC_ConfigReadString("proxy.config.log.collation_secret");
-  if (ptr != nullptr) {
-    ats_free(collation_secret);
-    collation_secret = ptr;
-  }
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.collation_retry_sec");
-  if (val >= 0) {
-    collation_retry_sec = val;
-  }
-
-  val = (int)REC_ConfigReadInteger("proxy.config.log.collation_max_send_buffers");
-  if (val >= 0) {
-    collation_max_send_buffers = val;
+    preproc_threads = val;
   }
 
   // ROLLING
@@ -302,77 +248,7 @@ LogConfig::LogConfig() : m_partition_space_left((int64_t)UINT_MAX)
 
 LogConfig::~LogConfig()
 {
-  // we don't delete the log collation accept because it may be transferred
-  // to another LogConfig object
-  //
-  //    delete m_log_collation_accept;
-
-  ats_free(hostname);
   ats_free(logfile_dir);
-  ats_free(collation_host);
-  ats_free(collation_secret);
-}
-
-/*-------------------------------------------------------------------------
-  LogConfig::setup_collation
-  -------------------------------------------------------------------------*/
-
-void
-LogConfig::setup_collation(LogConfig *prev_config)
-{
-  // Set-up the collation status, but only if collation is enabled and
-  // there are valid entries for the collation host and port.
-  //
-  if (collation_mode < Log::NO_COLLATION || collation_mode >= Log::N_COLLATION_MODES) {
-    Note("Invalid value %d for proxy.local.log.collation_mode"
-         " configuration variable (valid range is from %d to %d)\n"
-         "Log collation disabled",
-         collation_mode, Log::NO_COLLATION, Log::N_COLLATION_MODES - 1);
-  } else if (collation_mode == Log::NO_COLLATION) {
-    // if the previous configuration had a collation accept, delete it
-    //
-    if (prev_config && prev_config->m_log_collation_accept) {
-      delete prev_config->m_log_collation_accept;
-      prev_config->m_log_collation_accept = nullptr;
-    }
-  } else {
-    Warning("Log collation is deprecated as of ATS v8.0.0!");
-    if (!collation_port) {
-      Note("Cannot activate log collation, %d is an invalid collation port", collation_port);
-    } else if (collation_mode > Log::COLLATION_HOST && strcmp(collation_host, "none") == 0) {
-      Note("Cannot activate log collation, \"%s\" is an invalid collation host", collation_host);
-    } else {
-      if (collation_mode == Log::COLLATION_HOST) {
-        ink_assert(m_log_collation_accept == nullptr);
-
-        if (prev_config && prev_config->m_log_collation_accept) {
-          if (prev_config->collation_port == collation_port) {
-            m_log_collation_accept = prev_config->m_log_collation_accept;
-          } else {
-            delete prev_config->m_log_collation_accept;
-          }
-        }
-
-        if (!m_log_collation_accept) {
-          Log::collation_port    = collation_port;
-          m_log_collation_accept = new LogCollationAccept(collation_port);
-        }
-        Debug("log", "I am a collation host listening on port %d.", collation_port);
-      } else {
-        Debug("log",
-              "I am a collation client (%d)."
-              " My collation host is %s:%d",
-              collation_mode, collation_host, collation_port);
-      }
-
-      Debug("log", "using iocore log collation");
-      if (collation_host_tagged) {
-        LogFormat::turn_tagging_on();
-      } else {
-        LogFormat::turn_tagging_off();
-      }
-    }
-  }
 }
 
 /*-------------------------------------------------------------------------
@@ -385,8 +261,6 @@ LogConfig::init(LogConfig *prev_config)
   LogObject *errlog = nullptr;
 
   ink_assert(!initialized);
-
-  setup_collation(prev_config);
 
   update_space_used();
 
@@ -404,7 +278,7 @@ LogConfig::init(LogConfig *prev_config)
     Debug("log", "creating predefined error log object");
 
     errlog = new LogObject(fmt.get(), logfile_dir, "error.log", LOG_FILE_ASCII, nullptr, (Log::RollingEnabledValues)rolling_enabled,
-                           collation_preproc_threads, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
+                           preproc_threads, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
 
     log_object_manager.manage_object(errlog);
     errlog->set_fmt_timestamps();
@@ -425,16 +299,6 @@ LogConfig::init(LogConfig *prev_config)
 
   ink_atomic_swap(&Log::error_log, errlog);
 
-  // determine if we should use the orphan log space value or not
-  // we use it if all objects are collation clients, or if some are and
-  // the specified space for collation is larger than that for local files
-  //
-  size_t num_collation_clients = log_object_manager.get_num_collation_clients();
-  use_orphan_log_space_value   = (num_collation_clients == 0 ? false :
-                                                             (log_object_manager.get_num_objects() == num_collation_clients ?
-                                                                true :
-                                                                max_space_mb_for_orphan_logs > max_space_mb_for_logs));
-
   initialized = true;
 }
 
@@ -454,18 +318,12 @@ LogConfig::display(FILE *fd)
   fprintf(fd, "   log_buffer_size = %d\n", log_buffer_size);
   fprintf(fd, "   max_secs_per_buffer = %d\n", max_secs_per_buffer);
   fprintf(fd, "   max_space_mb_for_logs = %d\n", max_space_mb_for_logs);
-  fprintf(fd, "   max_space_mb_for_orphan_logs = %d\n", max_space_mb_for_orphan_logs);
-  fprintf(fd, "   use_orphan_log_space_value = %d\n", use_orphan_log_space_value);
   fprintf(fd, "   max_space_mb_headroom = %d\n", max_space_mb_headroom);
   fprintf(fd, "   hostname = %s\n", hostname);
   fprintf(fd, "   logfile_dir = %s\n", logfile_dir);
   fprintf(fd, "   logfile_perm = 0%o\n", logfile_perm);
-  fprintf(fd, "   collation_mode = %d\n", collation_mode);
-  fprintf(fd, "   collation_host = %s\n", collation_host);
-  fprintf(fd, "   collation_port = %d\n", collation_port);
-  fprintf(fd, "   collation_host_tagged = %d\n", collation_host_tagged);
-  fprintf(fd, "   collation_preproc_threads = %d\n", collation_preproc_threads);
-  fprintf(fd, "   collation_secret = %s\n", collation_secret);
+
+  fprintf(fd, "   preproc_threads = %d\n", preproc_threads);
   fprintf(fd, "   rolling_enabled = %d\n", rolling_enabled);
   fprintf(fd, "   rolling_interval_sec = %d\n", rolling_interval_sec);
   fprintf(fd, "   rolling_offset_hr = %d\n", rolling_offset_hr);
@@ -543,29 +401,11 @@ void
 LogConfig::register_config_callbacks()
 {
   static const char *names[] = {
-    "proxy.config.log.log_buffer_size",
-    "proxy.config.log.max_secs_per_buffer",
-    "proxy.config.log.max_space_mb_for_logs",
-    "proxy.config.log.max_space_mb_for_orphan_logs",
-    "proxy.config.log.max_space_mb_headroom",
-    "proxy.config.log.logfile_perm",
-    "proxy.config.log.hostname",
-    "proxy.config.log.logfile_dir",
-    "proxy.local.log.collation_mode",
-    "proxy.config.log.collation_host",
-    "proxy.config.log.collation_port",
-    "proxy.config.log.collation_host_tagged",
-    "proxy.config.log.collation_secret",
-    "proxy.config.log.collation_retry_sec",
-    "proxy.config.log.collation_max_send_buffers",
-    "proxy.config.log.rolling_enabled",
-    "proxy.config.log.rolling_interval_sec",
-    "proxy.config.log.rolling_offset_hr",
-    "proxy.config.log.rolling_size_mb",
-    "proxy.config.log.auto_delete_rolled_files",
-    "proxy.config.log.config.filename",
-    "proxy.config.log.sampling_frequency",
-    "proxy.config.log.file_stat_frequency",
+    "proxy.config.log.log_buffer_size",       "proxy.config.log.max_secs_per_buffer", "proxy.config.log.max_space_mb_for_logs",
+    "proxy.config.log.max_space_mb_headroom", "proxy.config.log.logfile_perm",        "proxy.config.log.hostname",
+    "proxy.config.log.logfile_dir",           "proxy.config.log.rolling_enabled",     "proxy.config.log.rolling_interval_sec",
+    "proxy.config.log.rolling_offset_hr",     "proxy.config.log.rolling_size_mb",     "proxy.config.log.auto_delete_rolled_files",
+    "proxy.config.log.config.filename",       "proxy.config.log.sampling_frequency",  "proxy.config.log.file_stat_frequency",
     "proxy.config.log.space_used_frequency",
   };
 

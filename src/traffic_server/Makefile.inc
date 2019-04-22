@@ -65,7 +65,6 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/proxy/http2/libhttp2.a \
 	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/proxy/logging/liblogcollation.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/utils/libinkutils.a \

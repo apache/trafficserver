@@ -2087,8 +2087,7 @@ tsapi void TSRecordDump(int rec_type, TSRecordDumpCb callback, void *edata);
     Creates a new custom log file that your plugin can write to. You
     can design the fields and inputs to the log file using the
     TSTextLogObjectWrite() function. The logs you create are treated
-    like ordinary logs; they are rolled if log rolling is enabled. (Log
-    collation is not supported though).
+    like ordinary logs; they are rolled if log rolling is enabled.
 
     @param filename new log file being created. The new log file
       is created in the logs directory. You can specify a path to a

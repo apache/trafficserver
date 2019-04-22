@@ -67,8 +67,7 @@ the following information:
 
 -  The original log file's name (such as ``access.log``).
 
--  The hostname of the |TS| node that generated the log file (useful in |TS|
-   log collation configurations).
+-  The hostname of the |TS| node that generated the log file.
 
 -  Two timestamps separated by a hyphen (``-``). The first timestamp is
    a *lower bound* for the timestamp of the first record in the log

@@ -40,7 +40,6 @@
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogFormat.h"
-#include "LogHost.h"
 #include "LogBuffer.h"
 #include "LogObject.h"
 #include "LogConfig.h"
@@ -199,32 +198,6 @@ LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval
   // A LOG_FORMAT_TEXT is a log without a format string, everything else is a LOG_FORMAT_CUSTOM. It's possible that we could get
   // rid of log types altogether, but LogFile currently tests whether a format is a LOG_FORMAT_TEXT format ...
   m_format_type = format_str ? LOG_FORMAT_CUSTOM : LOG_FORMAT_TEXT;
-}
-
-//-----------------------------------------------------------------------------
-// This constructor is used only in Log::match_logobject
-//
-// It is awkward because it does not take a format_str but a fieldlist_str
-// and a printf_str. These should be derived from a format_str but a
-// LogBufferHeader does not store the format_str, if it did, we could probably
-// delete this.
-//
-LogFormat::LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec)
-  : m_interval_sec(0),
-    m_interval_next(0),
-    m_agg_marshal_space(nullptr),
-    m_valid(false),
-    m_name_str(nullptr),
-    m_name_id(0),
-    m_fieldlist_str(nullptr),
-    m_fieldlist_id(0),
-    m_field_count(0),
-    m_printf_str(nullptr),
-    m_aggregate(false),
-    m_format_str(nullptr)
-{
-  init_variables(name, fieldlist_str, printf_str, interval_sec);
-  m_format_type = LOG_FORMAT_CUSTOM;
 }
 
 /*-------------------------------------------------------------------------

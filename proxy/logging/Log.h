@@ -132,11 +132,8 @@ public:
 
   enum ConfigFlags {
     NO_REMOTE_MANAGEMENT = 1,
-    STANDALONE_COLLATOR  = 2,
     LOGCAT               = 4,
   };
-
-  enum CollationMode { NO_COLLATION = 0, COLLATION_HOST, N_COLLATION_MODES };
 
   enum RollingEnabledValues {
     NO_ROLLING = 0,
@@ -195,14 +192,7 @@ public:
   static InkAtomicList *flush_data_list;
   static void *flush_thread_main(void *args);
 
-  // collation thread stuff
-  static EventNotify collate_notify;
-  static ink_thread collate_thread;
-  static int collation_preproc_threads;
-  static int collation_accept_file_descriptor;
-  static int collation_port;
-  static void *collate_thread_main(void *args);
-  static LogObject *match_logobject(LogBufferHeader *header);
+  static int preproc_threads;
 
   // reconfiguration stuff
   static void change_configuration();

@@ -288,13 +288,6 @@ rolling_min_count      number      Specifies the minimum number of rolled logs t
 filters                array of    The optional list of filter objects which
                        filters     restrict the individual events logged. The array
                                    may only contain one accept filter.
-collation_hosts        array of    If present, one or more strings specifying the
-                       strings     log collation hosts to which logs should be
-                                   delivered, each in the form of "<ip>:<port>".
-                                   :ref:`admin-logging-collation` for more
-                                   information. NOTE: This is a deprecated feature,
-                                   which will be removed in ATS v9.0.0. See the
-                                   logging documentation (above) for more details.
 ====================== =========== =================================================
 
 Enabling log rolling may be done globally in :file:`records.config`, or on a

@@ -104,8 +104,8 @@ TsEnumDescriptor ROLLING_MODE_LUA  = {
   {{"log.roll.none", 0}, {"log.roll.time", 1}, {"log.roll.size", 2}, {"log.roll.both", 3}, {"log.roll.any", 4}}};
 
 std::set<std::string> valid_log_object_keys = {
-  "filename",          "format",          "mode",    "header",          "rolling_enabled", "rolling_interval_sec",
-  "rolling_offset_hr", "rolling_size_mb", "filters", "collation_hosts", "min_count"};
+  "filename",          "format",          "mode",    "header",   "rolling_enabled", "rolling_interval_sec",
+  "rolling_offset_hr", "rolling_size_mb", "filters", "min_count"};
 
 LogObject *
 YamlLogConfig::decodeLogObject(const YAML::Node &node)
@@ -183,8 +183,8 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   }
 
   auto logObject = new LogObject(fmt, Log::config->logfile_dir, filename.c_str(), file_type, header.c_str(),
-                                 (Log::RollingEnabledValues)obj_rolling_enabled, Log::config->collation_preproc_threads,
-                                 obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb);
+                                 (Log::RollingEnabledValues)obj_rolling_enabled, obj_rolling_interval_sec, obj_rolling_offset_hr,
+                                 obj_rolling_size_mb);
 
   // Generate LogDeletingInfo entry for later use
   std::string ext;
@@ -220,54 +220,6 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
       Warning("Filter %s is not a known filter; cannot add to this LogObject", filter_name.c_str());
     } else {
       logObject->add_filter(f);
-    }
-  }
-
-  auto collation_host_list = node["collation_hosts"];
-  if (!collation_host_list) {
-    return logObject;
-  }
-
-  if (!collation_host_list.IsSequence()) {
-    throw YAML::ParserException(collation_host_list.Mark(), "'collation_hosts' should be a list of collation_host objects");
-  }
-
-  for (auto const &collation_host : collation_host_list) {
-    if (!collation_host["host"]) {
-      Warning("no collation 'host' name; cannot add this Collation host");
-      continue;
-    }
-
-    auto collation_host_name = collation_host["host"].as<std::string>();
-
-    LogHost *lh = new LogHost(logObject->get_full_filename(), logObject->get_signature());
-    if (!lh->set_name_or_ipstr(collation_host_name.c_str())) {
-      Warning("Could not set \"%s\" as collation host", collation_host_name.c_str());
-      delete lh;
-      continue;
-    }
-
-    logObject->add_loghost(lh, false);
-    if (!collation_host["failover"]) {
-      continue;
-    }
-
-    if (!collation_host["failover"].IsSequence()) {
-      delete lh;
-      throw YAML::ParserException(collation_host["failover"].Mark(), "'failover' should be a list of host names");
-    }
-
-    LogHost *prev = lh;
-    for (auto const &failover_host : collation_host["failover"]) {
-      auto failover_host_name = failover_host.as<std::string>();
-      LogHost *flh            = new LogHost(logObject->get_full_filename(), logObject->get_signature());
-      if (!flh->set_name_or_ipstr(failover_host_name.c_str())) {
-        Warning("Could not set \"%s\" as a failover host", failover_host_name.c_str());
-        delete flh;
-        continue;
-      }
-      prev->failover_link.next = flh;
-      prev                     = flh;
     }
   }
 
