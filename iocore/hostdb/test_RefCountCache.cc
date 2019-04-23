@@ -63,7 +63,7 @@ public:
   {
     this->idx = -1;
     items_freed.insert(this);
-    printf("freeing: %p items_freed.size(): %zd\n", this, items_freed.size());
+    printf("freeing: %p items_freed.size(): %zu\n", this, items_freed.size());
   }
 
   static ExampleStruct *
