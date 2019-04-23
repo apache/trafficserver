@@ -52,6 +52,7 @@ struct NetTesterSM : public Continuation {
       str = new char[r + 10];
       reader->read(str, r);
       printf("%s", str);
+      delete[] str;
       fflush(stdout);
       break;
     case VC_EVENT_READ_COMPLETE:
@@ -61,6 +62,7 @@ struct NetTesterSM : public Continuation {
       str = new char[r + 10];
       reader->read(str, r);
       printf("%s", str);
+      delete[] str;
       fflush(stdout);
     case VC_EVENT_ERROR:
       vc->do_io_close();
@@ -74,4 +76,7 @@ struct NetTesterSM : public Continuation {
   }
 };
 
-main() {}
+int
+main()
+{
+}
