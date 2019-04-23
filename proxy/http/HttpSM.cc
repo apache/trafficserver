@@ -7733,7 +7733,9 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       // Prepend a slash and parse again.
       char redirect_url_leading_slash[arg_redirect_len + 1];
       redirect_url_leading_slash[0] = '/';
-      memcpy(redirect_url_leading_slash + 1, arg_redirect_url, arg_redirect_len + 1);
+      if (arg_redirect_len > 0) {
+        memcpy(redirect_url_leading_slash + 1, arg_redirect_url, arg_redirect_len);
+      }
       url_nuke_proxy_stuff(redirectUrl.m_url_impl);
       redirectUrl.parse(redirect_url_leading_slash, arg_redirect_len + 1);
     }
