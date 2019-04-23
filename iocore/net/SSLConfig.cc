@@ -475,7 +475,7 @@ SSLConfig::reconfigure()
 SSLConfigParams *
 SSLConfig::acquire()
 {
-  return ((SSLConfigParams *)configProcessor.get(configid));
+  return static_cast<SSLConfigParams *>(configProcessor.get(configid));
 }
 
 void
@@ -544,7 +544,7 @@ SSLCertificateConfig::reconfigure()
 SSLCertLookup *
 SSLCertificateConfig::acquire()
 {
-  return (SSLCertLookup *)configProcessor.get(configid);
+  return static_cast<SSLCertLookup *>(configProcessor.get(configid));
 }
 
 void
