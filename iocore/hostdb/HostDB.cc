@@ -240,7 +240,7 @@ bool
 HostDBCache::is_pending_dns_for_hash(const CryptoHash &hash)
 {
   Queue<HostDBContinuation> &q = pending_dns_for_hash(hash);
-  for (HostDBContinuation *c = q.head; c; c = (HostDBContinuation *)c->link.next) {
+  for (HostDBContinuation *c = q.head; c; c = static_cast<HostDBContinuation *>(c->link.next)) {
     if (hash == c->hash.hash) {
       return true;
     }
@@ -1320,7 +1320,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     if (is_rr) {
       r->app.rr.offset = offset;
       // This will only be set if is_rr
-      HostDBRoundRobin *rr_data = (HostDBRoundRobin *)(r->rr());
+      HostDBRoundRobin *rr_data = static_cast<HostDBRoundRobin *>(r->rr());
       ;
       if (is_srv()) {
         int skip  = 0;
@@ -1583,7 +1583,7 @@ HostDBContinuation::set_check_pending_dns()
   Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
   this->setThreadAffinity(this_ethread());
   HostDBContinuation *c = q.head;
-  for (; c; c = (HostDBContinuation *)c->link.next) {
+  for (; c; c = static_cast<HostDBContinuation *>(c->link.next)) {
     if (hash.hash == c->hash.hash) {
       Debug("hostdb", "enqueuing additional request");
       q.enqueue(this);
@@ -1602,7 +1602,7 @@ HostDBContinuation::remove_trigger_pending_dns()
   HostDBContinuation *c = q.head;
   Queue<HostDBContinuation> qq;
   while (c) {
-    HostDBContinuation *n = (HostDBContinuation *)c->link.next;
+    HostDBContinuation *n = static_cast<HostDBContinuation *>(c->link.next);
     if (hash.hash == c->hash.hash) {
       Debug("hostdb", "dequeuing additional request");
       q.remove(c);
@@ -1958,7 +1958,7 @@ struct ShowHostDB : public ShowCont {
   int
   showLookupDone(int event, Event *e)
   {
-    HostDBInfo *r = (HostDBInfo *)e;
+    HostDBInfo *r = reinterpret_cast<HostDBInfo *>(e);
 
     CHECK_SHOW(begin("HostDB Lookup"));
     if (name) {
