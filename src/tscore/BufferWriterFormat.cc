@@ -99,12 +99,11 @@ BWFSpec::Property::Property()
 }
 
 /// Parse a format specification.
-BWFSpec::BWFSpec(TextView fmt)
+BWFSpec::BWFSpec(TextView fmt) : _name(fmt.take_prefix_at(':'))
 {
   TextView num; // temporary for number parsing.
   intmax_t n;
 
-  _name = fmt.take_prefix_at(':');
   // if it's parsable as a number, treat it as an index.
   n = tv_to_positive_decimal(_name, &num);
   if (num.size()) {
