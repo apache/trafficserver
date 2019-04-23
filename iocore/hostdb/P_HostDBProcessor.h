@@ -306,10 +306,9 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
     Debug("hostdb", "Using default round robin");
     unsigned int best_hash_any = 0;
     unsigned int best_hash_up  = 0;
-    sockaddr const *ip;
     for (int i = 0; i < good; i++) {
-      ip             = info(i).ip();
-      unsigned int h = HOSTDB_CLIENT_IP_HASH(client_ip, ip);
+      sockaddr const *ip = info(i).ip();
+      unsigned int h     = HOSTDB_CLIENT_IP_HASH(client_ip, ip);
       if (best_hash_any <= h) {
         best_any      = i;
         best_hash_any = h;
