@@ -86,7 +86,7 @@ UDPPacketInternal::free()
 TS_INLINE void
 UDPPacket::append_block(IOBufferBlock *block)
 {
-  UDPPacketInternal *p = (UDPPacketInternal *)this;
+  UDPPacketInternal *p = static_cast<UDPPacketInternal *>(this);
 
   if (block) {
     if (p->chain) { // append to end
@@ -104,7 +104,7 @@ UDPPacket::append_block(IOBufferBlock *block)
 TS_INLINE int64_t
 UDPPacket::getPktLength() const
 {
-  UDPPacketInternal *p = (UDPPacketInternal *)this;
+  UDPPacketInternal *p = const_cast<UDPPacketInternal *>(static_cast<const UDPPacketInternal *>(this));
   IOBufferBlock *b;
 
   p->pktLength = 0;
@@ -119,13 +119,13 @@ UDPPacket::getPktLength() const
 TS_INLINE void
 UDPPacket::free()
 {
-  ((UDPPacketInternal *)this)->free();
+  static_cast<UDPPacketInternal *>(this)->free();
 }
 
 TS_INLINE void
 UDPPacket::setContinuation(Continuation *c)
 {
-  ((UDPPacketInternal *)this)->cont = c;
+  static_cast<UDPPacketInternal *>(this)->cont = c;
 }
 
 TS_INLINE void
@@ -138,7 +138,7 @@ UDPPacket::setConnection(UDPConnection *c)
      assert will prevent that.  The "if" clause enables correct
      handling of the connection ref. counts in such a scenario. */
 
-  UDPConnectionInternal *&conn = ((UDPPacketInternal *)this)->conn;
+  UDPConnectionInternal *&conn = static_cast<UDPPacketInternal *>(this)->conn;
 
   if (conn) {
     if (conn == c)
@@ -146,7 +146,7 @@ UDPPacket::setConnection(UDPConnection *c)
     conn->Release();
     conn = nullptr;
   }
-  conn = (UDPConnectionInternal *)c;
+  conn = static_cast<UDPConnectionInternal *>(c);
   conn->AddRef();
 }
 
@@ -154,13 +154,13 @@ TS_INLINE IOBufferBlock *
 UDPPacket::getIOBlockChain()
 {
   ink_assert(dynamic_cast<UDPPacketInternal *>(this) != nullptr);
-  return ((UDPPacketInternal *)this)->chain.get();
+  return static_cast<UDPPacketInternal *>(this)->chain.get();
 }
 
 TS_INLINE UDPConnection *
 UDPPacket::getConnection()
 {
-  return ((UDPPacketInternal *)this)->conn;
+  return static_cast<UDPPacketInternal *>(this)->conn;
 }
 
 TS_INLINE UDPPacket *
