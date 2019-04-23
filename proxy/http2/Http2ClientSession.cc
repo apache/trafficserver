@@ -338,7 +338,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   }
 
   case HTTP2_SESSION_EVENT_XMIT: {
-    Http2Frame *frame = (Http2Frame *)edata;
+    Http2Frame *frame = static_cast<Http2Frame *>(edata);
     total_write_len += frame->size();
     write_vio->nbytes = total_write_len;
     frame->xmit(this->write_buffer);
