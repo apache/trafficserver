@@ -673,7 +673,7 @@ DNSHandler::try_primary_named(bool reopen)
 void
 DNSHandler::switch_named(int ndx)
 {
-  for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
+  for (DNSEntry *e = entries.head; e; e = static_cast<DNSEntry *>(e->link.next)) {
     e->written_flag = false;
     if (e->retries < dns_retries) {
       ++(e->retries); // give them another chance
@@ -759,7 +759,7 @@ DNSHandler::rr_failure(int ndx)
     Warning("connection to all DNS servers lost, retrying");
     // actual retries will be done in retry_named called from mainEvent
     // mark any outstanding requests as not sent for later retry
-    for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
+    for (DNSEntry *e = entries.head; e; e = static_cast<DNSEntry *>(e->link.next)) {
       e->written_flag = false;
       if (e->retries < dns_retries) {
         ++(e->retries); // give them another chance
@@ -769,7 +769,7 @@ DNSHandler::rr_failure(int ndx)
     }
   } else {
     // move outstanding requests that were sent to this nameserver to another
-    for (DNSEntry *e = entries.head; e; e = (DNSEntry *)e->link.next) {
+    for (DNSEntry *e = entries.head; e; e = static_cast<DNSEntry *>(e->link.next)) {
       if (e->which_ns == ndx) {
         e->written_flag = false;
         if (e->retries < dns_retries) {
@@ -795,7 +795,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   DNSConnection *dnsc = nullptr;
   ip_text_buffer ipbuff1, ipbuff2;
   Ptr<HostEnt> buf;
-  while ((dnsc = (DNSConnection *)triggered.dequeue())) {
+  while ((dnsc = static_cast<DNSConnection *>(triggered.dequeue()))) {
     while (true) {
       int res;
       IpEndpoint from_ip;
@@ -967,7 +967,7 @@ DNSHandler::mainEvent(int event, Event *e)
 inline static DNSEntry *
 get_dns(DNSHandler *h, uint16_t id)
 {
-  for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *)e->link.next) {
+  for (DNSEntry *e = h->entries.head; e; e = static_cast<DNSEntry *>(e->link.next)) {
     if (e->once_written_flag) {
       for (int j : e->id) {
         if (j == id) {
@@ -986,7 +986,7 @@ get_dns(DNSHandler *h, uint16_t id)
 inline static DNSEntry *
 get_entry(DNSHandler *h, char *qname, int qtype)
 {
-  for (DNSEntry *e = h->entries.head; e; e = (DNSEntry *)e->link.next) {
+  for (DNSEntry *e = h->entries.head; e; e = static_cast<DNSEntry *>(e->link.next)) {
     if (e->qtype == qtype) {
       if (is_addr_query(qtype)) {
         if (!strcmp(qname, e->qname)) {
@@ -1027,7 +1027,7 @@ write_dns(DNSHandler *h, bool tcp_retry)
   if (h->in_flight < dns_max_dns_in_flight) {
     DNSEntry *e = h->entries.head;
     while (e) {
-      DNSEntry *n = (DNSEntry *)e->link.next;
+      DNSEntry *n = static_cast<DNSEntry *>(e->link.next);
       if (!e->written_flag) {
         if (dns_ns_rr) {
           int ns_start = h->name_server;
