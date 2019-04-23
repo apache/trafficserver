@@ -909,7 +909,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.dns.dedicated_thread", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.dns.connection.mode", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[0-2]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.dns.connection_mode", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[0-2]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.hostdb.ip_resolve", RECD_STRING, nullptr, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,

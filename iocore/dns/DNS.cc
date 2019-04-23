@@ -221,7 +221,7 @@ DNSProcessor::start(int, size_t stacksize)
   REC_ReadConfigStringAlloc(dns_resolv_conf, "proxy.config.dns.resolv_conf");
   REC_EstablishStaticConfigInt32(dns_thread, "proxy.config.dns.dedicated_thread");
   int dns_conn_mode_i = 0;
-  REC_EstablishStaticConfigInt32(dns_conn_mode_i, "proxy.config.dns.connection.mode");
+  REC_EstablishStaticConfigInt32(dns_conn_mode_i, "proxy.config.dns.connection_mode");
   dns_conn_mode = static_cast<DNS_CONN_MODE>(dns_conn_mode_i);
 
   if (dns_thread > 0) {
