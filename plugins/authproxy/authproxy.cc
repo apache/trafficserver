@@ -148,10 +148,10 @@ struct AuthRequestContext {
 
   const StateTransition *state = nullptr;
 
-  AuthRequestContext() : hparser(TSHttpParserCreate()), rheader(), iobuf(TS_IOBUFFER_SIZE_INDEX_4K)
+  AuthRequestContext()
+    : cont(TSContCreate(dispatch, TSMutexCreate())), hparser(TSHttpParserCreate()), rheader(), iobuf(TS_IOBUFFER_SIZE_INDEX_4K)
 
   {
-    this->cont = TSContCreate(dispatch, TSMutexCreate());
     TSContDataSet(this->cont, this);
   }
 
@@ -170,7 +170,7 @@ struct AuthRequestContext {
   {
     AuthOptions *opt;
 
-    opt = (AuthOptions *)TSHttpTxnArgGet(this->txn, AuthTaggedRequestArg);
+    opt = static_cast<AuthOptions *>(TSHttpTxnArgGet(this->txn, AuthTaggedRequestArg));
     return opt ? opt : AuthGlobalOptions;
   }
 
@@ -198,7 +198,7 @@ AuthRequestContext::destroy(AuthRequestContext *auth)
 int
 AuthRequestContext::dispatch(TSCont cont, TSEvent event, void *edata)
 {
-  AuthRequestContext *auth = (AuthRequestContext *)TSContDataGet(cont);
+  AuthRequestContext *auth = static_cast<AuthRequestContext *>(TSContDataGet(cont));
   const StateTransition *s;
 
 pump:
@@ -415,7 +415,6 @@ static TSEvent
 StateAuthProxyCompleteHeaders(AuthRequestContext *auth, void * /* edata ATS_UNUSED */)
 {
   TSHttpStatus status;
-  unsigned nbytes;
 
   HttpDebugHeader(auth->rheader.buffer, auth->rheader.header);
 
@@ -436,7 +435,7 @@ StateAuthProxyCompleteHeaders(AuthRequestContext *auth, void * /* edata ATS_UNUS
     } else {
       // OK, we have a non-chunked response. If there's any content, let's go and
       // buffer it so that we can send it on to the client.
-      nbytes = HttpGetContentLength(auth->rheader.buffer, auth->rheader.header);
+      unsigned nbytes = HttpGetContentLength(auth->rheader.buffer, auth->rheader.header);
       if (nbytes > 0) {
         AuthLogDebug("content length is %u", nbytes);
         return TS_EVENT_HTTP_CONTINUE;
@@ -628,7 +627,6 @@ AuthRequestIsTagged(TSHttpTxn txn)
 static int
 AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 {
-  AuthRequestContext *auth;
   TSHttpTxn txn = (TSHttpTxn)edata;
 
   AuthLogDebug("handling event=%d edata=%p", (int)event, edata);
@@ -653,9 +651,9 @@ AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
     // Hook this request if we are in global authorization mode or if a
     // remap rule tagged it.
     if (AuthGlobalOptions != nullptr || AuthRequestIsTagged(txn)) {
-      auth        = AuthRequestContext::allocate();
-      auth->state = StateTableInit;
-      auth->txn   = txn;
+      AuthRequestContext *auth = AuthRequestContext::allocate();
+      auth->state              = StateTableInit;
+      auth->txn                = txn;
       return AuthRequestContext::dispatch(auth->cont, event, edata);
     }
     // fallthru
@@ -778,14 +776,14 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char * /* err ATS_UN
 void
 TSRemapDeleteInstance(void *instance)
 {
-  AuthOptions *options = (AuthOptions *)instance;
+  AuthOptions *options = static_cast<AuthOptions *>(instance);
   AuthDelete(options);
 }
 
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
-  AuthOptions *options = (AuthOptions *)instance;
+  AuthOptions *options = static_cast<AuthOptions *>(instance);
 
   TSHttpTxnArgSet(txn, AuthTaggedRequestArg, options);
   TSHttpTxnHookAdd(txn, TS_HTTP_POST_REMAP_HOOK, AuthOsDnsContinuation);
