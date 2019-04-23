@@ -808,10 +808,10 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           // see if TS gets a two-byte size
           uint16_t tmp = 0;
           res          = socketManager.recv(dnsc->fd, &tmp, sizeof(tmp), MSG_PEEK);
-          if (res == -EAGAIN || res == 0 || res == 1) {
+          if (res == -EAGAIN || res == 1) {
             break;
           }
-          if (res < 0) {
+          if (res <= 0) {
             goto Lerror;
           }
           // reading total size
@@ -830,10 +830,10 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         // continue reading data
         void *buf_start = (char *)dnsc->tcp_data.buf_ptr->buf + dnsc->tcp_data.done_reading;
         res             = socketManager.recv(dnsc->fd, buf_start, dnsc->tcp_data.total_length - dnsc->tcp_data.done_reading, 0);
-        if (res == -EAGAIN || res == 0) {
+        if (res == -EAGAIN) {
           break;
         }
-        if (res < 0) {
+        if (res <= 0) {
           goto Lerror;
         }
         Debug("dns", "received packet size = %d over TCP", res);
