@@ -153,6 +153,9 @@ public:
   SSLSessionCache();
   ~SSLSessionCache();
 
+  SSLSessionCache(const SSLSessionCache &) = delete;
+  SSLSessionCache &operator=(const SSLSessionCache &) = delete;
+
 private:
   SSLSessionBucket *session_bucket = nullptr;
   size_t nbuckets;

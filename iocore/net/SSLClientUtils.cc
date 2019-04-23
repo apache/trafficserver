@@ -50,11 +50,12 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   // No enforcing, go away
-  if (netvc && netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
-    return true;       // Tell them that all is well
-  } else if (!netvc) { // No netvc, very bad.  Go away.  Things are not good.
+  if (netvc == nullptr) {
+    // No netvc, very bad.  Go away.  Things are not good.
     Warning("Netvc gone by in verify_callback");
     return false;
+  } else if (netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
+    return true; // Tell them that all is well
   }
 
   depth = X509_STORE_CTX_get_error_depth(ctx);
