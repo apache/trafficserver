@@ -519,7 +519,6 @@ bytesFromInt(RecInt bytes, char *bufVal)
   const int64_t gb  = 1073741824;
   const long int mb = 1048576;
   const long int kb = 1024;
-  int bytesP;
   double unitBytes;
 
   if (bytes >= gb) {
@@ -531,7 +530,7 @@ bytesFromInt(RecInt bytes, char *bufVal)
     //   has plenty of precision for a regular int
     //   and saves from 64 bit arithmetic which may
     //   be expensive on some processors
-    bytesP = (int)bytes;
+    int bytesP = (int)bytes;
     if (bytesP >= mb) {
       unitBytes = bytes / (double)mb;
       snprintf(bufVal, 15, "%.1f MB", unitBytes);
@@ -1041,9 +1040,6 @@ recordRegexCheck(const char *pattern, const char *value)
 bool
 recordRangeCheck(const char *pattern, const char *value)
 {
-  int l_limit;
-  int u_limit;
-  int val;
   char *p = (char *)pattern;
   Tokenizer dashTok("-");
 
@@ -1052,9 +1048,9 @@ recordRangeCheck(const char *pattern, const char *value)
       p++;
     } // skip to '['
     if (dashTok.Initialize(++p, COPY_TOKS) == 2) {
-      l_limit = atoi(dashTok[0]);
-      u_limit = atoi(dashTok[1]);
-      val     = atoi(value);
+      int l_limit = atoi(dashTok[0]);
+      int u_limit = atoi(dashTok[1]);
+      int val     = atoi(value);
       if (val >= l_limit && val <= u_limit) {
         return true;
       }
@@ -1075,12 +1071,11 @@ recordIPCheck(const char *pattern, const char *value)
 
   Tokenizer dotTok1(".");
   Tokenizer dotTok2(".");
-  int i;
 
   check = true;
   if (recordRegexCheck(range_pattern, pattern) && recordRegexCheck(ip_pattern, value)) {
     if (dotTok1.Initialize((char *)pattern, COPY_TOKS) == 4 && dotTok2.Initialize((char *)value, COPY_TOKS) == 4) {
-      for (i = 0; i < 4 && check; i++) {
+      for (int i = 0; i < 4 && check; i++) {
         if (!recordRangeCheck(dotTok1[i], dotTok2[i])) {
           check = false;
         }

@@ -507,7 +507,6 @@ send_register_all_callbacks(int fd, CallbackTable *cb_table)
 TSMgmtError
 send_unregister_all_callbacks(int fd, CallbackTable *cb_table)
 {
-  int event_id;
   LLQ *events_with_cb; // list of events with at least one callback
   int reg_callback[NUM_EVENTS];
   TSMgmtError err, send_err = TS_ERR_FAIL;
@@ -525,7 +524,7 @@ send_unregister_all_callbacks(int fd, CallbackTable *cb_table)
     int num_events = queue_len(events_with_cb);
     // iterate through the LLQ and mark events that have a callback
     for (int i = 0; i < num_events; i++) {
-      event_id               = *(int *)dequeue(events_with_cb);
+      int event_id           = *(int *)dequeue(events_with_cb);
       reg_callback[event_id] = 1; // mark the event as having a callback
     }
     delete_queue(events_with_cb);

@@ -183,7 +183,6 @@ TSMgmtError
 cb_table_register(CallbackTable *cb_table, const char *event_name, TSEventSignalFunc func, void *data, bool *first_cb)
 {
   bool first_time = false;
-  int id;
   EventCallbackT *event_cb; // create new EventCallbackT EACH TIME enqueue
 
   // the data and event_name can be NULL
@@ -211,8 +210,7 @@ cb_table_register(CallbackTable *cb_table, const char *event_name, TSEventSignal
       enqueue(i, event_cb);
     }
   } else { // register callback for specific alarm
-    // printf("[EventSignalCbRegister] Register callback for %s\n", event_name);
-    id = get_event_id(event_name);
+    int id = get_event_id(event_name);
     if (id != -1) {
       if (!cb_table->event_callback_l[id]) {
         cb_table->event_callback_l[id] = create_queue();

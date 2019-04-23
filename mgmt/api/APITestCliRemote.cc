@@ -126,7 +126,6 @@ void
 print_string_list(TSStringList list)
 {
   int i, count, buf_pos = 0;
-  char *str;
   char buf[1000];
 
   if (!list) {
@@ -134,7 +133,7 @@ print_string_list(TSStringList list)
   }
   count = TSStringListLen(list);
   for (i = 0; i < count; i++) {
-    str = TSStringListDequeue(list);
+    char *str = TSStringListDequeue(list);
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%s,", str);
     buf_pos = strlen(buf);
     TSStringListEnqueue(list, str);
@@ -149,12 +148,11 @@ void
 print_int_list(TSIntList list)
 {
   int i, count, buf_pos = 0;
-  int *elem;
   char buf[1000];
 
   count = TSIntListLen(list);
   for (i = 0; i < count; i++) {
-    elem = TSIntListDequeue(list);
+    int *elem = TSIntListDequeue(list);
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "%d:", *elem);
     buf_pos = strlen(buf);
     TSIntListEnqueue(list, elem);
@@ -504,7 +502,6 @@ test_rec_get(char *rec_name)
 void
 test_record_get_mlt()
 {
-  TSRecordEle *rec_ele;
   TSStringList name_list;
   TSList rec_list;
   int i, num;
@@ -547,7 +544,7 @@ test_record_get_mlt()
   }
 
   for (i = 0; i < num; i++) {
-    rec_ele = (TSRecordEle *)TSListDequeue(rec_list);
+    TSRecordEle *rec_ele = (TSRecordEle *)TSListDequeue(rec_list);
     if (!rec_ele) {
       printf("ERROR\n");
       break;
