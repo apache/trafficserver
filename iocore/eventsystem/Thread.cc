@@ -50,13 +50,13 @@ static bool initialized ATS_UNUSED = ([]() -> bool {
 Thread::Thread()
 {
   mutex = new_ProxyMutex();
-  MUTEX_TAKE_LOCK(mutex, (EThread *)this);
+  MUTEX_TAKE_LOCK(mutex, static_cast<EThread *>(this));
   mutex->nthread_holding += THREAD_MUTEX_THREAD_HOLDING;
 }
 
 Thread::~Thread()
 {
-  ink_release_assert(mutex->thread_holding == (EThread *)this);
+  ink_release_assert(mutex->thread_holding == static_cast<EThread *>(this));
 
   if (ink_thread_getspecific(Thread::thread_data_key) == this) {
     // Clear pointer to this object stored in thread-specific data by set_specific.
@@ -65,7 +65,7 @@ Thread::~Thread()
   }
 
   mutex->nthread_holding -= THREAD_MUTEX_THREAD_HOLDING;
-  MUTEX_UNTAKE_LOCK(mutex, (EThread *)this);
+  MUTEX_UNTAKE_LOCK(mutex, static_cast<EThread *>(this));
 }
 
 ///////////////////////////////////////////////
