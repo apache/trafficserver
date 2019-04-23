@@ -57,13 +57,13 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 {
   SSLCertificateConfig::scoped_config lookup;
   SSLTicketKeyConfig::scoped_config params;
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  SSLNetVConnection &netvc = *SSLNetVCAccess(ssl);
 
   // Get the IP address to look up the keyblock
   IpEndpoint ip;
   int namelen        = sizeof(ip);
   SSLCertContext *cc = nullptr;
-  if (0 == safe_getsockname(netvc->get_socket(), &ip.sa, &namelen)) {
+  if (0 == safe_getsockname(netvc.get_socket(), &ip.sa, &namelen)) {
     cc = lookup->find(ip);
   }
   ssl_ticket_key_block *keyblock = nullptr;
@@ -99,8 +99,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
           SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_old_key_stat);
         }
 
-        SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-        netvc->setSSLSessionCacheHit(true);
+        netvc.setSSLSessionCacheHit(true);
         // When we decrypt with an "older" key, encrypt the ticket again with the most recent key.
         return (i == 0) ? 1 : 2;
       }
