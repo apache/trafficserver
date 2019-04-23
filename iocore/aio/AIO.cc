@@ -206,16 +206,12 @@ struct AIOThreadInfo : public Continuation {
   }
 };
 
-/* priority scheduling */
-/* Have 2 queues per file descriptor - A queue for http requests and another
-   for non-http (streaming) request. Each file descriptor has a lock
-   and condition variable associated with it. A dedicated number of threads
-   (THREADS_PER_DISK) wait on the condition variable associated with the
-   file descriptor. The cache threads try to put the request in the
-   appropriate queue. If they fail to acquire the lock, they put the
-   request in the atomic list. Requests are served in the order of
-   highest priority first. If both the queues are empty, the aio threads
-   check if there is any request on the other disks */
+/*
+  A dedicated number of threads (THREADS_PER_DISK) wait on the condition
+  variable associated with the file descriptor. The cache threads try to put
+  the request in the appropriate queue. If they fail to acquire the lock, they
+  put the request in the atomic list.
+ */
 
 /* insert  an entry for file descriptor fildes into aio_reqs */
 static AIO_Reqs *
@@ -268,8 +264,7 @@ aio_init_fildes(int fildes, int fromAPI = 0)
   return request;
 }
 
-/* insert a request into either aio_todo or http_todo queue. aio_todo
-   list is kept sorted */
+/* insert a request into aio_todo queue. */
 static void
 aio_insert(AIOCallback *op, AIO_Reqs *req)
 {
@@ -277,22 +272,7 @@ aio_insert(AIOCallback *op, AIO_Reqs *req)
   num_requests++;
   req->queued++;
 #endif
-  if (op->aiocb.aio_reqprio == AIO_LOWEST_PRIORITY) // http request
-  {
-    req->http_aio_todo.enqueue(op);
-  } else {
-    AIOCallback *cb = (AIOCallback *)req->aio_todo.tail;
-
-    for (; cb; cb = (AIOCallback *)cb->link.prev) {
-      if (cb->aiocb.aio_reqprio >= op->aiocb.aio_reqprio) {
-        req->aio_todo.insert(op, cb);
-        return;
-      }
-    }
-
-    /* Either the queue was empty or this request has the highest priority */
-    req->aio_todo.push(op);
-  }
+  req->aio_todo.enqueue(op);
 }
 
 /* move the request from the atomic list to the queue */
@@ -466,7 +446,7 @@ aio_thread_main(void *arg)
       current_req = my_aio_req;
       /* check if any pending requests on the atomic list */
       aio_move(my_aio_req);
-      if (!(op = my_aio_req->aio_todo.pop()) && !(op = my_aio_req->http_aio_todo.pop())) {
+      if (!(op = my_aio_req->aio_todo.pop())) {
         break;
       }
 #ifdef AIO_STATS
@@ -578,7 +558,6 @@ Lagain:
 int
 ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
 {
-  op->aiocb.aio_reqprio    = AIO_DEFAULT_PRIORITY;
   op->aiocb.aio_lio_opcode = IO_CMD_PREAD;
   op->aiocb.data           = op;
   EThread *t               = this_ethread();
@@ -593,7 +572,6 @@ ink_aio_read(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
 int
 ink_aio_write(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
 {
-  op->aiocb.aio_reqprio    = AIO_DEFAULT_PRIORITY;
   op->aiocb.aio_lio_opcode = IO_CMD_PWRITE;
   op->aiocb.data           = op;
   EThread *t               = this_ethread();
@@ -614,7 +592,6 @@ ink_aio_readv(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
   int sz          = 0;
 
   while (io) {
-    io->aiocb.aio_reqprio    = AIO_DEFAULT_PRIORITY;
     io->aiocb.aio_lio_opcode = IO_CMD_PREAD;
     io->aiocb.data           = io;
 #ifdef HAVE_EVENTFD
@@ -645,7 +622,6 @@ ink_aio_writev(AIOCallback *op, int /* fromAPI ATS_UNUSED */)
   int sz          = 0;
 
   while (io) {
-    io->aiocb.aio_reqprio    = AIO_DEFAULT_PRIORITY;
     io->aiocb.aio_lio_opcode = IO_CMD_PWRITE;
     io->aiocb.data           = io;
 #ifdef HAVE_EVENTFD
