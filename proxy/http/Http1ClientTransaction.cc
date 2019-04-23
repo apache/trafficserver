@@ -49,15 +49,17 @@ Http1ClientTransaction::release(IOBufferReader *r)
 void
 Http1ClientTransaction::set_parent(ProxyClientSession *new_parent)
 {
-  parent                           = new_parent;
   Http1ClientSession *http1_parent = dynamic_cast<Http1ClientSession *>(new_parent);
+
   if (http1_parent) {
     outbound_port        = http1_parent->outbound_port;
     outbound_ip4         = http1_parent->outbound_ip4;
     outbound_ip6         = http1_parent->outbound_ip6;
     outbound_transparent = http1_parent->f_outbound_transparent;
+    super_type::set_parent(new_parent);
+  } else {
+    parent = nullptr;
   }
-  super_type::set_parent(new_parent);
 }
 
 void
