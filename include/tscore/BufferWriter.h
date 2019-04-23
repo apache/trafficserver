@@ -207,6 +207,9 @@ public:
 };
 
 /** A @c BufferWrite concrete subclass to write to a fixed size buffer.
+ *
+ * Copies and moves are forbidden because that leaves the original in a potentially bad state. An
+ * instance is cheap to construct and should be done explicitly when needed.
  */
 class FixedBufferWriter : public BufferWriter
 {
@@ -231,10 +234,8 @@ public:
 
   FixedBufferWriter(const FixedBufferWriter &) = delete;
   FixedBufferWriter &operator=(const FixedBufferWriter &) = delete;
-  /// Move constructor.
-  FixedBufferWriter(FixedBufferWriter &&) = default;
-  /// Move assignment.
-  FixedBufferWriter &operator=(FixedBufferWriter &&) = default;
+  FixedBufferWriter(FixedBufferWriter &&)                 = delete;
+  FixedBufferWriter &operator=(FixedBufferWriter &&) = delete;
 
   FixedBufferWriter(MemSpan &span) : _buf(span.begin()), _capacity(static_cast<size_t>(span.size())) {}
 
