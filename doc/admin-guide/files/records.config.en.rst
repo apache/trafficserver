@@ -3317,7 +3317,7 @@ SSL Termination
    The filename of the certificate authority that client certificates
    will be verified against.
 
-.. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING ssl_ticket.key
+.. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING NULL
 
    The filename of the default and global ticket key for SSL sessions. The location is relative to the
    :ts:cv:`proxy.config.ssl.server.cert.path` directory. One way to generate this would be to run
