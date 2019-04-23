@@ -336,11 +336,11 @@ struct PollCont;
 static inline PollCont *
 get_UDPPollCont(EThread *t)
 {
-  return (PollCont *)ETHREAD_GET_PTR(t, udpNetInternal.pollCont_offset);
+  return static_cast<PollCont *>(ETHREAD_GET_PTR(t, udpNetInternal.pollCont_offset));
 }
 
 static inline UDPNetHandler *
 get_UDPNetHandler(EThread *t)
 {
-  return (UDPNetHandler *)ETHREAD_GET_PTR(t, udpNetInternal.udpNetHandler_offset);
+  return static_cast<UDPNetHandler *>(ETHREAD_GET_PTR(t, udpNetInternal.udpNetHandler_offset));
 }
