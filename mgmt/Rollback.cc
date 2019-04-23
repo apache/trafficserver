@@ -72,11 +72,6 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
   int testFD;    // For open test
   int testErrno; // For open test
 
-  // In case the file is missing
-  char *highestSeenStr;
-  char *activeVerStr;
-  bool needZeroLength;
-
   ink_assert(fileName_ != nullptr);
 
   // parent must not also have a parent
@@ -133,11 +128,12 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
     // If it does not, create a zero length file to prevent total havoc
     //
     if (errno == ENOENT) {
+      bool needZeroLength;
       mgmt_log("[RollBack::Rollback] Missing Configuration File: %s\n", fileName);
 
       if (highestSeen > 0) {
-        highestSeenStr = createPathStr(highestSeen);
-        activeVerStr   = createPathStr(ACTIVE_VERSION);
+        char *highestSeenStr = createPathStr(highestSeen);
+        char *activeVerStr   = createPathStr(ACTIVE_VERSION);
 
         if (rename(highestSeenStr, activeVerStr) < 0) {
           mgmt_log("[RollBack::Rollback] Automatic Rollback to prior version failed for %s : %s\n", fileName, strerror(errno));
@@ -687,7 +683,7 @@ Rollback::findVersions_ml(ExpandingArray *listNames)
 version_t
 Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName)
 {
-  const char *currentVersionStr, *str;
+  const char *str;
   version_t version = INVALID_VERSION;
 
   // Check to see if the current entry is a rollback file
@@ -700,7 +696,7 @@ Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName
       // Check for the underscore
       if (*(testFileName + fileNameLen) == '_') {
         // Check for the integer version number
-        currentVersionStr = str = testFileName + fileNameLen + 1;
+        const char *currentVersionStr = str = testFileName + fileNameLen + 1;
 
         for (; isdigit(*str) && *str != '\0'; str++) {
           ;
@@ -714,12 +710,11 @@ Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName
           // Add info about version number and modTime
           if (listNames != nullptr) {
             struct stat fileInfo;
-            versionInfo *verInfo;
 
             if (statFile(version, &fileInfo) >= 0) {
-              verInfo          = (versionInfo *)ats_malloc(sizeof(versionInfo));
-              verInfo->version = version;
-              verInfo->modTime = fileInfo.st_mtime;
+              versionInfo *verInfo = (versionInfo *)ats_malloc(sizeof(versionInfo));
+              verInfo->version     = version;
+              verInfo->modTime     = fileInfo.st_mtime;
               listNames->addEntry((void *)verInfo);
             }
           }
@@ -744,7 +739,6 @@ Rollback::findVersions_ml(Queue<versionInfo> &q)
   ExpandingArray versions(25, true);
   int num;
   versionInfo *foundVer;
-  versionInfo *addInfo;
   version_t highest;
 
   // Get the version info and sort it
@@ -757,9 +751,9 @@ Rollback::findVersions_ml(Queue<versionInfo> &q)
     foundVer = (versionInfo *)versions[i];
     //  We need to create our own copy so that
     //   constructor gets run
-    addInfo          = new versionInfo;
-    addInfo->version = foundVer->version;
-    addInfo->modTime = foundVer->modTime;
+    versionInfo *addInfo = new versionInfo;
+    addInfo->version     = foundVer->version;
+    addInfo->modTime     = foundVer->modTime;
     q.enqueue(addInfo);
   }
 

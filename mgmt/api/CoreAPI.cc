@@ -789,9 +789,6 @@ EventResolve(const char *event_name)
 TSMgmtError
 ActiveEventGetMlt(LLQ *active_events)
 {
-  int event_id;
-  char *event_name;
-
   if (!active_events) {
     return TS_ERR_PARAMS;
   }
@@ -804,8 +801,8 @@ ActiveEventGetMlt(LLQ *active_events)
   // iterate through hash-table and insert event_name's into active_events list
   for (auto &&it : event_ht) {
     // convert key to int; insert into llQ
-    event_id   = ink_atoi(it.first.c_str());
-    event_name = get_event_name(event_id);
+    int event_id     = ink_atoi(it.first.c_str());
+    char *event_name = get_event_name(event_id);
     if (event_name) {
       if (!enqueue(active_events, event_name)) { // returns true if successful
         return TS_ERR_FAIL;

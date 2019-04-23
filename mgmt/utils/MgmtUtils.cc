@@ -53,11 +53,11 @@ mgmt_use_syslog()
 int
 mgmt_readline(int soc, char *buf, int maxlen)
 {
-  int n = 0, rc;
+  int n = 0;
   char c;
 
   for (; n < maxlen; n++) {
-    rc = read_socket(soc, &c, 1);
+    int rc = read_socket(soc, &c, 1);
     if (rc == 1) {
       *buf++ = c;
       if (c == '\n') {
@@ -105,12 +105,12 @@ mgmt_readline(int soc, char *buf, int maxlen)
 int
 mgmt_writeline(int soc, const char *data, int nbytes)
 {
-  int nleft, nwritten, n;
+  int nleft, n;
   const char *tmp = data;
 
   nleft = nbytes;
   while (nleft > 0) {
-    nwritten = write_socket(soc, tmp, nleft);
+    int nwritten = write_socket(soc, tmp, nleft);
     if (nwritten <= 0) { /* Error or nothing written */
       return nwritten;
     }
@@ -141,12 +141,11 @@ mgmt_writeline(int soc, const char *data, int nbytes)
 int
 mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
 {
-  int err        = 0;
   char *p        = buf;
   int bytes_read = 0;
 
   while (bytes_to_read > 0) {
-    err = read_socket(fd, p, bytes_to_read);
+    int err = read_socket(fd, p, bytes_to_read);
     if (err == 0) {
       return err;
     } else if (err < 0) {
@@ -183,12 +182,11 @@ mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
 int
 mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
 {
-  int err           = 0;
   char *p           = buf;
   int bytes_written = 0;
 
   while (bytes_to_write > 0) {
-    err = write_socket(fd, p, bytes_to_write);
+    int err = write_socket(fd, p, bytes_to_write);
     if (err == 0) {
       return err;
     } else if (err < 0) {
@@ -272,7 +270,6 @@ void
 mgmt_fatal(const int lerrno, const char *message_format, ...)
 {
   va_list ap;
-  char extended_format[4096], message[4096];
 
   va_start(ap, message_format);
 
@@ -283,6 +280,7 @@ mgmt_fatal(const int lerrno, const char *message_format, ...)
 
     FatalV(message_format, ap);
   } else {
+    char extended_format[4096], message[4096];
     snprintf(extended_format, sizeof(extended_format), "FATAL ==> %s", message_format);
     vsprintf(message, extended_format, ap);
 

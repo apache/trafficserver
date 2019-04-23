@@ -69,13 +69,12 @@ config_string_alloc_cb(void *data, void *value)
   char *_ss        = (char *)value;
   char *_new_value = nullptr;
 
-//#define DEBUG_CONFIG_STRING_UPDATE
 #if defined(DEBUG_CONFIG_STRING_UPDATE)
   printf("config callback [new, old] = [%s : %s]\n", (_ss) ? (_ss) : (""), (*(char **)data) ? (*(char **)data) : (""));
 #endif
-  int len = -1;
+
   if (_ss) {
-    len        = strlen(_ss);
+    int len    = strlen(_ss);
     _new_value = (char *)ats_malloc(len + 1);
     memcpy(_new_value, _ss, len + 1);
   }

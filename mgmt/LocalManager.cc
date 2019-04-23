@@ -312,7 +312,6 @@ LocalManager::initMgmtProcessServer()
 void
 LocalManager::pollMgmtProcessServer()
 {
-  int num;
   struct timeval timeout;
   fd_set fdlist;
 
@@ -355,7 +354,7 @@ LocalManager::pollMgmtProcessServer()
     }
 #endif
 
-    num = mgmt_select(FD_SETSIZE, &fdlist, nullptr, nullptr, &timeout);
+    int num = mgmt_select(FD_SETSIZE, &fdlist, nullptr, nullptr, &timeout);
 
     switch (num) {
     case 0:
@@ -402,16 +401,14 @@ LocalManager::pollMgmtProcessServer()
       if (ts::NO_FD != watched_process_fd && FD_ISSET(watched_process_fd, &fdlist)) {
         int res;
         MgmtMessageHdr mh_hdr;
-        MgmtMessageHdr *mh_full;
-        char *data_raw;
 
         keep_polling = true;
 
         // read the message
         if ((res = mgmt_read_pipe(watched_process_fd, (char *)&mh_hdr, sizeof(MgmtMessageHdr))) > 0) {
-          mh_full = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
+          MgmtMessageHdr *mh_full = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
           memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
-          data_raw = (char *)mh_full + sizeof(MgmtMessageHdr);
+          char *data_raw = (char *)mh_full + sizeof(MgmtMessageHdr);
           if ((res = mgmt_read_pipe(watched_process_fd, data_raw, mh_hdr.data_len)) > 0) {
             handleMgmtMsgFromProcesses(mh_full);
           } else if (res < 0) {
@@ -781,10 +778,8 @@ LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
 void
 LocalManager::processEventQueue()
 {
-  bool handled_by_mgmt;
-
   while (!this->queue_empty()) {
-    handled_by_mgmt = false;
+    bool handled_by_mgmt = false;
 
     MgmtMessageHdr *mh = this->dequeue();
     auto payload       = mh->payload();

@@ -177,11 +177,8 @@ delete_event_queue(LLQ *q)
     return;
   }
 
-  // now for every element, dequeue and free
-  TSMgmtEvent *ele;
-
   while (!queue_is_empty(q)) {
-    ele = (TSMgmtEvent *)dequeue(q);
+    TSMgmtEvent *ele = (TSMgmtEvent *)dequeue(q);
     ats_free(ele);
   }
 
@@ -257,7 +254,6 @@ event_callback_main(void *arg)
 
   fd_set selectFDs;           // for select call
   EventClientT *client_entry; // an entry of fd to alarms mapping
-  int fds_ready;              // return value for select go here
   struct timeval timeout;
 
   while (true) {
@@ -280,7 +276,7 @@ event_callback_main(void *arg)
     }
 
     // select call - timeout is set so we can check events at regular intervals
-    fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)nullptr, (fd_set *)nullptr, &timeout);
+    int fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)nullptr, (fd_set *)nullptr, &timeout);
 
     // check return
     if (fds_ready > 0) {
