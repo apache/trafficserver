@@ -482,24 +482,10 @@ CacheVC::set_pin_in_cache(time_t time_pin)
   return true;
 }
 
-bool
-CacheVC::set_disk_io_priority(int priority)
-{
-  ink_assert(priority >= AIO_LOWEST_PRIORITY);
-  io.aiocb.aio_reqprio = priority;
-  return true;
-}
-
 time_t
 CacheVC::get_pin_in_cache()
 {
   return pin_in_cache;
-}
-
-int
-CacheVC::get_disk_io_priority()
-{
-  return io.aiocb.aio_reqprio;
 }
 
 int

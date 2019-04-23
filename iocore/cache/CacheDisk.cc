@@ -61,10 +61,9 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
   skip           = askip;
   start          = skip;
   /* we can't use fractions of store blocks. */
-  len                  = blocks;
-  io.aiocb.aio_fildes  = fd;
-  io.aiocb.aio_reqprio = 0;
-  io.action            = this;
+  len                 = blocks;
+  io.aiocb.aio_fildes = fd;
+  io.action           = this;
   // determine header size and hence start point by successive approximation
   uint64_t l;
   for (int i = 0; i < 3; i++) {

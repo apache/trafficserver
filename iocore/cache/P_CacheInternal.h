@@ -388,8 +388,6 @@ struct CacheVC : public CacheVConnection {
   bool is_pread_capable() override;
   bool set_pin_in_cache(time_t time_pin) override;
   time_t get_pin_in_cache() override;
-  bool set_disk_io_priority(int priority) override;
-  int get_disk_io_priority() override;
 
 // offsets from the base stat
 #define CACHE_STAT_ACTIVE 0
@@ -585,9 +583,8 @@ free_CacheVC(CacheVC *cont)
   cont->io.action.continuation = nullptr;
   cont->io.action.mutex        = nullptr;
   cont->io.mutex.clear();
-  cont->io.aio_result        = 0;
-  cont->io.aiocb.aio_nbytes  = 0;
-  cont->io.aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
+  cont->io.aio_result       = 0;
+  cont->io.aiocb.aio_nbytes = 0;
   cont->request.reset();
   cont->vector.clear();
   cont->vio.buffer.clear();
