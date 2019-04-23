@@ -884,7 +884,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   // Initialize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_INIT: {
     ink_assert(this->ua_session == nullptr);
-    this->ua_session = (Http2ClientSession *)edata;
+    this->ua_session = static_cast<Http2ClientSession *>(edata);
     REMEMBER(event, this->recursion);
 
     // [RFC 7540] 3.5. HTTP/2 Connection Preface. Upon establishment of a TCP connection and
@@ -930,7 +930,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   // Parse received HTTP/2 frames
   case HTTP2_SESSION_EVENT_RECV: {
     REMEMBER(event, this->recursion);
-    const Http2Frame *frame       = (Http2Frame *)edata;
+    const Http2Frame *frame       = static_cast<Http2Frame *>(edata);
     const Http2StreamId stream_id = frame->header().streamid;
     Http2Error error;
 
@@ -1138,14 +1138,15 @@ Http2ConnectionState::find_stream(Http2StreamId id) const
 void
 Http2ConnectionState::restart_streams()
 {
-  // This is a static variable, so it is shared in Http2ConnectionState instances and will get incremented in subsequent calls.
-  // It doesn't need to be initialized with rand() nor time(), and doesn't need to be accessed with a lock, because it doesn't need
-  // that randomness and accuracy.
-  static uint16_t starting_point = 0;
-
-  Http2Stream *s   = stream_list.head;
-  Http2Stream *end = s;
+  Http2Stream *s = stream_list.head;
   if (s) {
+    Http2Stream *end = s;
+
+    // This is a static variable, so it is shared in Http2ConnectionState instances and will get incremented in subsequent calls.
+    // It doesn't need to be initialized with rand() nor time(), and doesn't need to be accessed with a lock, because it doesn't
+    // need that randomness and accuracy.
+    static uint16_t starting_point = 0;
+
     // Change the start point randomly
     for (int i = starting_point % total_client_streams_count; i >= 0; --i) {
       end = static_cast<Http2Stream *>(end->link.next ? end->link.next : stream_list.head);
@@ -1552,14 +1553,14 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     if (sent + payload_length == header_blocks_size) {
       flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
     }
-    Http2Frame headers(HTTP2_FRAME_TYPE_CONTINUATION, stream->get_id(), flags);
-    headers.alloc(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]);
-    http2_write_headers(buf + sent, payload_length, headers.write());
-    headers.finalize(payload_length);
-    stream->change_state(headers.header().type, headers.header().flags);
+    Http2Frame continuation_frame(HTTP2_FRAME_TYPE_CONTINUATION, stream->get_id(), flags);
+    continuation_frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]);
+    http2_write_headers(buf + sent, payload_length, continuation_frame.write());
+    continuation_frame.finalize(payload_length);
+    stream->change_state(continuation_frame.header().type, continuation_frame.header().flags);
     // xmit event
     SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-    this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &headers);
+    this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &continuation_frame);
     sent += payload_length;
   }
 
@@ -1629,15 +1630,15 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
     payload_length =
       BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_PUSH_PROMISE]) - sizeof(push_promise.promised_streamid);
   }
-  Http2Frame headers(HTTP2_FRAME_TYPE_PUSH_PROMISE, stream->get_id(), flags);
-  headers.alloc(buffer_size_index[HTTP2_FRAME_TYPE_PUSH_PROMISE]);
+  Http2Frame push_promise_frame(HTTP2_FRAME_TYPE_PUSH_PROMISE, stream->get_id(), flags);
+  push_promise_frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_PUSH_PROMISE]);
   Http2StreamId id               = this->get_latest_stream_id_out() + 2;
   push_promise.promised_streamid = id;
-  http2_write_push_promise(push_promise, buf, payload_length, headers.write());
-  headers.finalize(sizeof(push_promise.promised_streamid) + payload_length);
+  http2_write_push_promise(push_promise, buf, payload_length, push_promise_frame.write());
+  push_promise_frame.finalize(sizeof(push_promise.promised_streamid) + payload_length);
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &headers);
+  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &push_promise_frame);
   sent += payload_length;
 
   // Send CONTINUATION frames
@@ -1649,13 +1650,13 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
     if (sent + payload_length == header_blocks_size) {
       flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
     }
-    Http2Frame headers(HTTP2_FRAME_TYPE_CONTINUATION, stream->get_id(), flags);
-    headers.alloc(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]);
-    http2_write_headers(buf + sent, payload_length, headers.write());
-    headers.finalize(payload_length);
+    Http2Frame continuation_frame(HTTP2_FRAME_TYPE_CONTINUATION, stream->get_id(), flags);
+    continuation_frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]);
+    http2_write_headers(buf + sent, payload_length, continuation_frame.write());
+    continuation_frame.finalize(payload_length);
     // xmit event
     SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-    this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &headers);
+    this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &continuation_frame);
     sent += payload_length;
   }
   ats_free(buf);
