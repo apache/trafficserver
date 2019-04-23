@@ -33,6 +33,7 @@
 
 // For memcmp()
 #include <memory.h>
+#include <string_view>
 
 /// Apache Traffic Server commons.
 namespace ts
@@ -193,6 +194,8 @@ struct ConstBuffer {
   /// Check for non-empty buffer.
   /// @return @c true if the buffer has a non-zero pointer @b and size.
   operator pseudo_bool() const;
+
+  operator std::string_view() const { return {_ptr, _size}; }
 
   /// @name Accessors.
   //@{
