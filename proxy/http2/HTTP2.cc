@@ -89,6 +89,7 @@ write_and_advance(byte_pointer &dst, uint32_t src)
 {
   byte_addressable_value<uint32_t> pval;
 
+  // cppcheck-suppress unreadVariable ; it's an union and be read as pval.bytes
   pval.value = htonl(src);
   memcpy(dst.u8, pval.bytes, sizeof(pval.bytes));
   dst.u8 += sizeof(pval.bytes);
@@ -99,6 +100,7 @@ write_and_advance(byte_pointer &dst, uint16_t src)
 {
   byte_addressable_value<uint16_t> pval;
 
+  // cppcheck-suppress unreadVariable ; it's an union and be read as pval.bytes
   pval.value = htons(src);
   memcpy(dst.u8, pval.bytes, sizeof(pval.bytes));
   dst.u8 += sizeof(pval.bytes);
@@ -218,6 +220,7 @@ http2_write_frame_header(const Http2FrameHeader &hdr, IOVec iov)
   }
 
   byte_addressable_value<uint32_t> length;
+  // cppcheck-suppress unreadVariable ; it's an union and be read as pval.bytes
   length.value = htonl(hdr.length);
   // MSB length.bytes[0] is unused.
   write_and_advance(ptr, length.bytes[1]);
@@ -417,8 +420,8 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
   ink_assert(http_hdr_type_get(headers->m_http) != HTTP_TYPE_UNKNOWN);
 
   if (http_hdr_type_get(headers->m_http) == HTTP_TYPE_REQUEST) {
-    const char *scheme, *authority, *path, *method;
-    int scheme_len, authority_len, path_len, method_len;
+    const char *scheme, *authority, *path;
+    int scheme_len, authority_len, path_len;
 
     // Get values of :scheme, :authority and :path to assemble requested URL
     if ((field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME)) != nullptr && field->value_is_valid()) {
@@ -454,7 +457,8 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 
     // Get value of :method
     if ((field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD)) != nullptr && field->value_is_valid()) {
-      method = field->value_get(&method_len);
+      int method_len;
+      const char *method = field->value_get(&method_len);
 
       int method_wks_idx = hdrtoken_tokenize(method, method_len);
       http_hdr_method_set(headers->m_heap, headers->m_http, method, method_wks_idx, method_len, false);
@@ -478,11 +482,9 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     headers->field_delete(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
     headers->field_delete(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
   } else {
-    int status_len;
-    const char *status;
-
     if ((field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS)) != nullptr) {
-      status = field->value_get(&status_len);
+      int status_len;
+      const char *status = field->value_get(&status_len);
       headers->status_set(http_parse_status(status, status + status_len));
     } else {
       return PARSE_RESULT_ERROR;
@@ -494,8 +496,8 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 
   // Check validity of all names and values
   MIMEFieldIter iter;
-  for (const MIMEField *field = headers->iter_get_first(&iter); field != nullptr; field = headers->iter_get_next(&iter)) {
-    if (!field->name_is_valid() || !field->value_is_valid()) {
+  for (auto *mf = headers->iter_get_first(&iter); mf != nullptr; mf = headers->iter_get_next(&iter)) {
+    if (!mf->name_is_valid() || !mf->value_is_valid()) {
       return PARSE_RESULT_ERROR;
     }
   }
