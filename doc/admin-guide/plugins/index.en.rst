@@ -221,6 +221,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`MySQL Remap <mysql_remap.en>`
    Allows dynamic remaps from a MySQL database.
 
+:doc:`Prefetch <prefetch.en>`
+   Pre-fetch objects based on the requested URL path pattern.
+
 :doc:`Remap Purge <remap_purge.en>`
    This remap plugin allows the administrator to easily setup remotely
    controlled ``PURGE`` for the content of an entire remap rule.
