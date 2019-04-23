@@ -213,9 +213,9 @@ Http2ClientSession::set_upgrade_context(HTTPHdr *h)
   int svlen;
   const char *sv = settings->value_get(&svlen);
 
-  // Maybe size of data decoded by Base64URL is lower than size of encoded data.
-  unsigned char out_buf[svlen];
   if (sv && svlen > 0) {
+    // Maybe size of data decoded by Base64URL is lower than size of encoded data.
+    unsigned char out_buf[svlen];
     size_t decoded_len;
     ats_base64_decode(sv, svlen, out_buf, svlen, &decoded_len);
     for (size_t nbytes = 0; nbytes < decoded_len; nbytes += HTTP2_SETTINGS_PARAMETER_LEN) {
