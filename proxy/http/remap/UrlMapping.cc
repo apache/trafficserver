@@ -132,12 +132,12 @@ redirect_tag_str *
 redirect_tag_str::parse_format_redirect_url(char *url)
 {
   char *c;
-  redirect_tag_str *r, **rr;
+  redirect_tag_str *r;
   redirect_tag_str *list = nullptr;
-  char type              = 0;
 
   if (url && *url) {
-    for (rr = &list; *(c = url) != 0;) {
+    for (redirect_tag_str **rr = &list; *(c = url) != 0;) {
+      char type = 0;
       for (type = 's'; *c; c++) {
         if (c[0] == '%') {
           char tmp_type = (char)tolower((int)c[1]);
@@ -162,7 +162,6 @@ redirect_tag_str::parse_format_redirect_url(char *url)
         }
         (*rr = r)->next = nullptr;
         rr              = &(r->next);
-        // printf("\t***********'%c' - '%s'*******\n",r->type,r->chunk_str ? r->chunk_str : "<NULL>");
       } else {
         break; /* memory allocation error */
       }
