@@ -26,6 +26,7 @@
 
 #include "diags.i"
 
+int
 main()
 {
   init_diags("net_test", nullptr);
