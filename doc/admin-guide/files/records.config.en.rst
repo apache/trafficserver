@@ -3660,7 +3660,7 @@ HTTP/2 Configuration
    The maximum size of the header compression table used to decode header
    blocks.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 4294967295
+.. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 131072
    :reloadable:
 
    This advisory setting informs a peer of the maximum size of header list
