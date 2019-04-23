@@ -72,17 +72,8 @@ struct Http2UpgradeContext {
 class Http2Frame
 {
 public:
-  Http2Frame(const Http2FrameHeader &h, IOBufferReader *r)
-  {
-    this->hdr      = h;
-    this->ioreader = r;
-  }
-
-  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags)
-  {
-    this->hdr      = {0, (uint8_t)type, flags, streamid};
-    this->ioreader = nullptr;
-  }
+  Http2Frame(const Http2FrameHeader &h, IOBufferReader *r) : hdr(h), ioreader(r) {}
+  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags) : hdr({0, (uint8_t)type, flags, streamid}) {}
 
   IOBufferReader *
   reader() const
@@ -155,7 +146,7 @@ public:
 private:
   Http2FrameHeader hdr;       // frame header
   Ptr<IOBufferBlock> ioblock; // frame payload
-  IOBufferReader *ioreader;
+  IOBufferReader *ioreader = nullptr;
 };
 
 class Http2ClientSession : public ProxyClientSession
