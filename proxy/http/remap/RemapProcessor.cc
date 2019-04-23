@@ -144,11 +144,10 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
   HTTPHdr *request_header = &s->hdr_info.client_request;
   URL *request_url        = request_header->url_get();
   char **redirect_url     = &s->remap_redirect;
-  char host_hdr_buf[TS_MAX_HOST_NAME_LEN], tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048], *c;
+  char tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048];
   const char *remapped_host;
-  int remapped_host_len, remapped_port, tmp;
+  int remapped_host_len, tmp;
   int from_len;
-  bool remap_found = false;
   referer_info *ri;
 
   map = s->url_map.getMapping();
@@ -189,8 +188,9 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
         if ((s->filter_mask & URL_REMAP_FILTER_REDIRECT_FMT) != 0 && map->redir_chunk_list) {
           redirect_tag_str *rc;
           tmp_redirect_buf[(tmp = 0)] = 0;
+
           for (rc = map->redir_chunk_list; rc; rc = rc->next) {
-            c = nullptr;
+            char *c = nullptr;
             switch (rc->type) {
             case 's':
               c = rc->chunk_str;
@@ -233,8 +233,6 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
     }
   }
 
-  remap_found = true;
-
   // We also need to rewrite the "Host:" header if it exists and
   //   pristine host hdr is not enabled
   int host_len;
@@ -253,8 +251,10 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
     //   temporary buffer has adequate length
     //
     remapped_host = request_url->host_get(&remapped_host_len);
-    remapped_port = request_url->port_get_raw();
 
+    int remapped_port = request_url->port_get_raw();
+
+    char host_hdr_buf[TS_MAX_HOST_NAME_LEN];
     if (TS_MAX_HOST_NAME_LEN > remapped_host_len) {
       tmp = remapped_host_len;
       memcpy(host_hdr_buf, remapped_host, remapped_host_len);
@@ -280,7 +280,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 
   request_header->mark_target_dirty();
 
-  return remap_found;
+  return true;
 }
 
 Action *

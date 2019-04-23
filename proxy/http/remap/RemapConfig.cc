@@ -163,7 +163,6 @@ parse_define_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errbu
 {
   bool flg;
   acl_filter_rule *rp;
-  acl_filter_rule **rpp;
   const char *cstr = nullptr;
 
   if (bti->paramc < 2) {
@@ -181,6 +180,7 @@ parse_define_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errbu
   // coverity[alloc_arg]
   if ((cstr = remap_validate_filter_args(&rp, (const char **)bti->argv, bti->argc, errbuf, errbufsize)) == nullptr && rp) {
     if (flg) { // new filter - add to list
+      acl_filter_rule **rpp = nullptr;
       Debug("url_rewrite", "[parse_directive] new rule \"%s\" was created", bti->paramv[1]);
       for (rpp = &bti->rules_list; *rpp; rpp = &((*rpp)->next)) {
         ;
@@ -400,7 +400,7 @@ remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize)
   const char *directive = nullptr;
 
   // Check arguments
-  if (unlikely(!bti || !errbuf || errbufsize <= 0 || !bti->paramc || (directive = bti->paramv[0]) == nullptr)) {
+  if (unlikely(!bti || !errbuf || errbufsize == 0 || !bti->paramc || (directive = bti->paramv[0]) == nullptr)) {
     Debug("url_rewrite", "[parse_directive] Invalid argument(s)");
     return "Invalid argument(s)";
   }
@@ -420,8 +420,6 @@ const char *
 remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf, size_t errStrBufSize)
 {
   acl_filter_rule *rule;
-  unsigned long ul;
-  const char *argptr;
   src_ip_info_t *ipi;
   int i, j;
   bool new_rule_flg = false;
@@ -450,8 +448,10 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
   }
 
   for (i = 0; i < argc; i++) {
+    unsigned long ul;
     bool hasarg;
 
+    const char *argptr;
     if ((ul = remap_check_option((const char **)&argv[i], 1, 0, nullptr, &argptr)) == 0) {
       Debug("url_rewrite", "[validate_filter_args] Unknown remap option - %s", argv[i]);
       snprintf(errStrBuf, errStrBufSize, "Unknown option - \"%s\"", argv[i]);
@@ -718,8 +718,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   char *c, *err, tmpbuf[2048], default_path[PATH_NAME_MAX];
   const char *new_argv[1024];
   char *parv[1024];
-  int idx = 0, retcode = 0;
-  int parc = 0;
+  int idx = 0;
 
   *plugin_found_at = 0;
 
@@ -804,6 +803,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
       pi->do_remap_cb    = reinterpret_cast<RemapPluginInfo::Do_Remap_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_DO_REMAP));
       pi->os_response_cb = reinterpret_cast<RemapPluginInfo::OS_Response_F *>(dlsym(pi->dl_handle, TSREMAP_FUNCNAME_OS_RESPONSE));
 
+      int retcode = 0;
       if (!pi->init_cb) {
         snprintf(errbuf, errbufsize, R"(Can't find "%s" function in remap plugin "%s")", TSREMAP_FUNCNAME_INIT, c);
         retcode = -10;
@@ -851,6 +851,8 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     snprintf(errbuf, errbufsize, "Can't load fromURL from URL class");
     return -7;
   }
+
+  int parc     = 0;
   parv[parc++] = ats_strdup(err);
   ats_free(err);
 
@@ -1150,10 +1152,9 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     new_mapping->map_id = 0;
     if ((bti->remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {
       int idx = 0;
-      char *c;
       int ret = remap_check_option((const char **)bti->argv, bti->argc, REMAP_OPTFLG_MAP_ID, &idx);
       if (ret & REMAP_OPTFLG_MAP_ID) {
-        c                   = strchr(bti->argv[idx], (int)'=');
+        char *c             = strchr(bti->argv[idx], (int)'=');
         new_mapping->map_id = (unsigned int)atoi(++c);
       }
     }

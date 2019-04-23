@@ -74,7 +74,7 @@ public:
   Do_Remap_F *do_remap_cb               = nullptr;
   OS_Response_F *os_response_cb         = nullptr;
 
-  RemapPluginInfo(ts::file::path &&library_path);
+  explicit RemapPluginInfo(ts::file::path &&library_path);
   ~RemapPluginInfo();
 
   static self_type *find_by_path(std::string_view library_path);
