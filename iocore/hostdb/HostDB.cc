@@ -286,7 +286,7 @@ HostDBBackgroundTask::wait_event(int, void *)
 struct HostDBSync : public HostDBBackgroundTask {
   std::string storage_path;
   std::string full_path;
-  HostDBSync(int frequency, std::string storage_path, std::string full_path)
+  HostDBSync(int frequency, const std::string &storage_path, const std::string &full_path)
     : HostDBBackgroundTask(frequency), storage_path(std::move(storage_path)), full_path(std::move(full_path)){};
   int
   sync_event(int, void *) override
