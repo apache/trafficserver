@@ -66,9 +66,8 @@ pthread_mutex_t remap_entry::mutex; /* remap_entry class mutex */
 /* ----------------------- remap_entry::remap_entry ------------------------ */
 remap_entry::remap_entry(int _argc, char *_argv[]) : next(nullptr), argc(0), argv(nullptr)
 {
-  int i;
-
   if (_argc > 0 && _argv && (argv = (char **)TSmalloc(sizeof(char *) * (_argc + 1))) != nullptr) {
+    int i;
     argc = _argc;
     for (i = 0; i < argc; i++) {
       argv[i] = TSstrdup(_argv[i]);
@@ -80,10 +79,8 @@ remap_entry::remap_entry(int _argc, char *_argv[]) : next(nullptr), argc(0), arg
 /* ---------------------- remap_entry::~remap_entry ------------------------ */
 remap_entry::~remap_entry()
 {
-  int i;
-
   if (argc && argv) {
-    for (i = 0; i < argc; i++) {
+    for (int i = 0; i < argc; i++) {
       TSfree(argv[i]);
     }
     TSfree(argv);
@@ -106,10 +103,9 @@ remap_entry::add_to_list(remap_entry *re)
 void
 remap_entry::remove_from_list(remap_entry *re)
 {
-  remap_entry **rre;
   if (likely(re && plugin_init_counter)) {
     pthread_mutex_lock(&mutex);
-    for (rre = &active_list; *rre; rre = &((*rre)->next)) {
+    for (remap_entry **rre = &active_list; *rre; rre = &((*rre)->next)) {
       if (re == *rre) {
         *rre = re->next;
         break;
@@ -203,7 +199,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 void
 TSRemapDeleteInstance(void *ih)
 {
-  remap_entry *ri = (remap_entry *)ih;
+  remap_entry *ri = static_cast<remap_entry *>(ih);
 
   TSDebug(PLUGIN_NAME, "enter");
 
@@ -225,7 +221,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   TSMLoc cfield;
   uint64_t _processing_counter = processing_counter++;
 
-  remap_entry *ri = (remap_entry *)ih;
+  remap_entry *ri = static_cast<remap_entry *>(ih);
   TSDebug(PLUGIN_NAME, "enter");
 
   if (!ri || !rri) {
@@ -281,8 +277,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     char *tmp                   = (char *)TSmalloc(256);
     static int my_local_counter = 0;
 
-    size_t len = snprintf(tmp, 255, "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n",
-                          my_local_counter, TS_HTTP_STATUS_CONTINUE + my_local_counter);
+    len = snprintf(tmp, 255, "This is very small example of TS API usage!\nIteration %d!\nHTTP return code %d\n", my_local_counter,
+                   TS_HTTP_STATUS_CONTINUE + my_local_counter);
     TSHttpTxnStatusSet((TSHttpTxn)rh, (TSHttpStatus)((int)TS_HTTP_STATUS_CONTINUE + my_local_counter));
     TSHttpTxnErrorBodySet((TSHttpTxn)rh, tmp, len, nullptr); // Defaults to text/html
     my_local_counter++;
