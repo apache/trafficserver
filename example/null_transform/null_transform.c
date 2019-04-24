@@ -67,7 +67,6 @@ handle_transform(TSCont contp)
   TSVIO input_vio;
   MyData *data;
   int64_t towrite;
-  int64_t avail;
 
   TSDebug(PLUGIN_NAME, "Entering handle_transform()");
   /* Get the output (downstream) vconnection where we'll write data to. */
@@ -126,7 +125,7 @@ handle_transform(TSCont contp)
     /* The amount of data left to read needs to be truncated by
      * the amount of data actually in the read buffer.
      */
-    avail = TSIOBufferReaderAvail(TSVIOReaderGet(input_vio));
+    int64_t avail = TSIOBufferReaderAvail(TSVIOReaderGet(input_vio));
     TSDebug(PLUGIN_NAME, "\tavail is %" PRId64 "", avail);
     if (towrite > avail) {
       towrite = avail;

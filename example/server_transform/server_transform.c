@@ -285,7 +285,6 @@ transform_buffer_event(TSCont contp, TransformData *data, TSEvent event ATS_UNUS
 {
   TSVIO write_vio;
   int towrite;
-  int avail;
 
   if (!data->input_buf) {
     data->input_buf    = TSIOBufferCreate();
@@ -314,7 +313,7 @@ transform_buffer_event(TSCont contp, TransformData *data, TSEvent event ATS_UNUS
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
        the amount of data actually in the read buffer. */
-    avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
+    int avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
     if (towrite > avail) {
       towrite = avail;
     }
@@ -404,18 +403,16 @@ transform_read_status_event(TSCont contp, TransformData *data, TSEvent event, vo
     return transform_bypass(contp, data);
   case TS_EVENT_VCONN_READ_COMPLETE:
     if (TSIOBufferReaderAvail(data->output_reader) == sizeof(int)) {
-      TSIOBufferBlock blk;
-      char *buf;
       void *buf_ptr;
       int64_t avail;
       int64_t read_nbytes = sizeof(int);
-      int64_t read_ndone  = 0;
 
       buf_ptr = &data->content_length;
       while (read_nbytes > 0) {
-        blk        = TSIOBufferReaderStart(data->output_reader);
-        buf        = (char *)TSIOBufferBlockReadStart(blk, data->output_reader, &avail);
-        read_ndone = (avail >= read_nbytes) ? read_nbytes : avail;
+        TSIOBufferBlock blk = TSIOBufferReaderStart(data->output_reader);
+        char *buf           = (char *)TSIOBufferBlockReadStart(blk, data->output_reader, &avail);
+        int64_t read_ndone  = (avail >= read_nbytes) ? read_nbytes : avail;
+
         memcpy(buf_ptr, buf, read_ndone);
         if (read_ndone > 0) {
           TSIOBufferReaderConsume(data->output_reader, read_ndone);

@@ -150,7 +150,6 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  int i;
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = PLUGIN_NAME;
@@ -165,7 +164,7 @@ TSPluginInit(int argc, const char *argv[])
   if (nsites > 0) {
     sites = (char **)TSmalloc(sizeof(char *) * nsites);
 
-    for (i = 0; i < nsites; i++) {
+    for (int i = 0; i < nsites; i++) {
       sites[i] = TSstrdup(argv[i + 1]);
     }
 

@@ -92,7 +92,6 @@ handle_transform(TSCont contp)
   TSVIO write_vio;
   MyData *data;
   int64_t towrite;
-  int64_t avail;
 
   /* Get the output connection where we'll write data to. */
   output_conn = TSTransformOutputVConnGet(contp);
@@ -146,7 +145,7 @@ handle_transform(TSCont contp)
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
        the amount of data actually in the read buffer. */
-    avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
+    int64_t avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
     if (towrite > avail) {
       towrite = avail;
     }
@@ -247,9 +246,6 @@ transformable(TSHttpTxn txnp)
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc;
-  TSMLoc field_loc;
-  TSHttpStatus resp_status;
-  const char *value;
   int val_length;
 
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
@@ -257,16 +253,16 @@ transformable(TSHttpTxn txnp)
      *    We are only interested in "200 OK" responses.
      */
 
-    if (TS_HTTP_STATUS_OK == (resp_status = TSHttpHdrStatusGet(bufp, hdr_loc))) {
+    if (TS_HTTP_STATUS_OK == TSHttpHdrStatusGet(bufp, hdr_loc)) {
       /* We only want to do the transformation on documents that have a
          content type of "text/html". */
-      field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, "Content-Type", 12);
+      TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, "Content-Type", 12);
       if (!field_loc) {
         ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
         return 0;
       }
 
-      value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &val_length);
+      const char *value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &val_length);
       if (value && (strncasecmp(value, "text/html", sizeof("text/html") - 1) == 0)) {
         ASSERT_SUCCESS(TSHandleMLocRelease(bufp, hdr_loc, field_loc));
         ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
@@ -315,10 +311,7 @@ static int
 load(const char *filename)
 {
   TSFile fp;
-  TSIOBufferBlock blk;
-  char *p;
   int64_t avail;
-  int err;
 
   fp = TSfopen(filename, "r");
   if (!fp) {
@@ -329,10 +322,10 @@ load(const char *filename)
   append_buffer_reader = TSIOBufferReaderAlloc(append_buffer);
 
   for (;;) {
-    blk = TSIOBufferStart(append_buffer);
-    p   = TSIOBufferBlockWriteStart(blk, &avail);
+    TSIOBufferBlock blk = TSIOBufferStart(append_buffer);
+    char *p             = TSIOBufferBlockWriteStart(blk, &avail);
 
-    err = TSfread(fp, p, avail);
+    int err = TSfread(fp, p, avail);
     if (err > 0) {
       TSIOBufferProduce(append_buffer, err);
     } else {

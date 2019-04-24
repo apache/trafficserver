@@ -151,7 +151,6 @@ TSReturnCode
 TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_size)
 {
   int i;
-  char *ptr;
   secure_link_info *sli;
 
   // squash unused variable warnings ...
@@ -163,6 +162,7 @@ TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_si
   sli->strict = 0;
 
   for (i = 2; i < argc; i++) {
+    char *ptr;
     if ((ptr = strchr(argv[i], ':')) != NULL) {
       *ptr++ = '\0';
       if (strcmp(argv[i], "secret") == 0) {

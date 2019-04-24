@@ -42,7 +42,7 @@ GlobalPlugin *plugin;
 class AsyncHttpFetch2 : public AsyncHttpFetch
 {
 public:
-  AsyncHttpFetch2(const string &request) : AsyncHttpFetch(request){};
+  explicit AsyncHttpFetch2(const string &request) : AsyncHttpFetch(request){};
 };
 
 class AsyncHttpFetch3 : public AsyncHttpFetch
@@ -66,7 +66,9 @@ public:
   handleAsyncComplete(AsyncTimer & /*timer ATS_UNUSED */) override
   {
     TS_DEBUG(TAG, "Receiver should not be reachable");
-    assert(!getDispatchController()->dispatch());
+    if (!getDispatchController()->dispatch()) {
+      TS_ERROR(TAG, "Failed to dispatch()");
+    }
     delete this;
   }
   bool
@@ -88,7 +90,7 @@ class TransactionHookPlugin : public TransactionPlugin,
                               public AsyncReceiver<DelayedAsyncHttpFetch>
 {
 public:
-  TransactionHookPlugin(Transaction &transaction)
+  explicit TransactionHookPlugin(Transaction &transaction)
     : TransactionPlugin(transaction), transaction_(transaction), num_fetches_pending_(0), post_request_(nullptr)
   {
     TS_DEBUG(TAG, "Constructed TransactionHookPlugin, saved a reference to this transaction.");
@@ -118,9 +120,14 @@ public:
 
     // canceling right after starting in this case, but cancel() can be called any time
     TS_DEBUG(TAG, "Will cancel delayed fetch");
-    assert(delayed_provider->isAlive());
+    if (!delayed_provider->isAlive()) {
+      TS_ERROR(TAG, "provider is NOT alive!");
+    }
+
     delayed_provider->cancel();
-    assert(!delayed_provider->isAlive());
+    if (delayed_provider->isAlive()) {
+      TS_ERROR(TAG, "provider is alive!");
+    }
   }
 
   void

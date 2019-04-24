@@ -108,7 +108,7 @@ private:
   std::string current_code_string_;
 
 public:
-  IsRewritableCode(int current_code) : current_code_(current_code)
+  explicit IsRewritableCode(int current_code) : current_code_(current_code)
   {
     std::ostringstream oss;
     oss << current_code_;
@@ -218,12 +218,11 @@ BoomResponseRegistry::populate_error_responses(const std::string &base_directory
   // Filename (sans the .html suffix) becomes the entry to the
   // registry lookup table
   DIR *pDIR = nullptr;
-  struct dirent *entry;
 
   pDIR = opendir(base_error_directory_.c_str());
   if (pDIR != nullptr) {
     while (true) {
-      entry = readdir(pDIR);
+      struct dirent *entry = readdir(pDIR);
       if (entry == nullptr) {
         break;
       }
@@ -382,7 +381,7 @@ private:
   BoomResponseRegistry *response_registry_;
 
 public:
-  BoomGlobalPlugin(BoomResponseRegistry *response_registry) : response_registry_(response_registry)
+  explicit BoomGlobalPlugin(BoomResponseRegistry *response_registry) : response_registry_(response_registry)
   {
     TS_DEBUG(TAG, "Creating BoomGlobalHook %p", this);
     registerHook(HOOK_READ_RESPONSE_HEADERS);

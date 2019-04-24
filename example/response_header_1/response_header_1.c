@@ -68,7 +68,6 @@ modify_header(TSHttpTxn txnp)
   TSHttpStatus resp_status;
   TSMLoc new_field_loc;
   TSMLoc cached_field_loc;
-  time_t recvd_time;
 
   const char *chkptr;
   int chklength;
@@ -114,7 +113,8 @@ modify_header(TSHttpTxn txnp)
     TSDebug(PLUGIN_NAME, "Created new resp field with loc %p", new_field_loc);
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
     TSMimeHdrFieldNameSet(resp_bufp, resp_loc, new_field_loc, mimehdr2_name, strlen(mimehdr2_name));
-    recvd_time = time(NULL);
+
+    time_t recvd_time = time(NULL);
     TSMimeHdrFieldValueDateInsert(resp_bufp, resp_loc, new_field_loc, recvd_time);
 
     TSHandleMLocRelease(resp_bufp, resp_loc, new_field_loc);
