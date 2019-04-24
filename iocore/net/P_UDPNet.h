@@ -270,12 +270,6 @@ public:
     }
     return HRTIME_FOREVER;
   }
-
-private:
-  void
-  kill_cancelled_events()
-  {
-  }
 };
 
 class UDPQueue
