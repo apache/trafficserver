@@ -382,9 +382,11 @@ namespace detail
       if (n->_data == payload) {
         if (x) {
           if (n->_max <= max) {
+            N *next_n = next(x);
+
             // next range is covered, so we can remove and continue.
             this->remove(n);
-            n = next(x);
+            n = next_n;
           } else if (n->_min <= max_plus1) {
             // Overlap or adjacent with larger max - absorb and finish.
             x->setMax(n->_max);
