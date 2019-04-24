@@ -106,7 +106,13 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
          data should remain valid.
       */
       if (alternate_index >= 0) {
-        alternate.copy_frag_offsets_from(write_vector->get(alternate_index));
+        /*if length changed, fragment offset also need to change, if not cause range request error*/
+        if (total_len != write_vector->get(alternate_index)->object_size_get()) {
+          Debug("cache_update", "update length changed, new length:%d, old length:%d", total_len, write_vector->get(alternate_index)->object_size_get());  
+        } else {
+          /*do not copy everytimes, if data changed, this copy makes range request error*/
+          alternate.copy_frag_offsets_from(write_vector->get(alternate_index));
+        }
       }
       alternate_index = write_vector->insert(&alternate, alternate_index);
     }
