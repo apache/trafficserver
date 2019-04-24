@@ -31,12 +31,13 @@ GlobalPlugin *plugin;
 class TransactionHookPlugin : public atscppapi::TransactionPlugin
 {
 public:
-  TransactionHookPlugin(Transaction &transaction) : TransactionPlugin(transaction)
+  explicit TransactionHookPlugin(Transaction &transaction) : TransactionPlugin(transaction)
   {
     char_ptr_ = new char[100];
     TransactionPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
     std::cout << "Constructed!" << std::endl;
   }
+
   ~TransactionHookPlugin() override
   {
     delete[] char_ptr_; // cleanup

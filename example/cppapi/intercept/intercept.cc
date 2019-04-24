@@ -35,7 +35,7 @@ GlobalPlugin *plugin;
 class Intercept : public InterceptPlugin
 {
 public:
-  Intercept(Transaction &transaction) : InterceptPlugin(transaction, InterceptPlugin::SERVER_INTERCEPT) {}
+  explicit Intercept(Transaction &transaction) : InterceptPlugin(transaction, InterceptPlugin::SERVER_INTERCEPT) {}
   void consume(const string &data, InterceptPlugin::RequestDataType type) override;
   void handleInputComplete() override;
   ~Intercept() override { cout << "Shutting down" << endl; }

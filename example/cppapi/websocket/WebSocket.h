@@ -40,7 +40,7 @@ using atscppapi::GlobalPlugin;
 class WebSocket : public InterceptPlugin
 {
 public:
-  WebSocket(Transaction &transaction);
+  explicit WebSocket(Transaction &transaction);
   ~WebSocket() override;
 
   void consume(const std::string &data, InterceptPlugin::RequestDataType type) override;

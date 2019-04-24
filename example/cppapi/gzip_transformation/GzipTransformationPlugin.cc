@@ -89,7 +89,7 @@ public:
 class SomeTransformationPlugin : public TransformationPlugin
 {
 public:
-  SomeTransformationPlugin(Transaction &transaction)
+  explicit SomeTransformationPlugin(Transaction &transaction)
     : TransformationPlugin(transaction, RESPONSE_TRANSFORMATION), transaction_(transaction)
   {
     registerHook(HOOK_SEND_RESPONSE_HEADERS);

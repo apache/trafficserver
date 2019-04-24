@@ -98,7 +98,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *, int)
 
   // print all arguments for this particular remapping
 
-  rl       = (remap_line *)TSmalloc(sizeof(remap_line));
+  rl       = static_cast<remap_line *>(TSmalloc(sizeof(remap_line)));
   rl->argc = argc;
   rl->argv = argv;
   rl->nvc  = argc - 2; // the first two are the remap from and to

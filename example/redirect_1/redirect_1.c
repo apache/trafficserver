@@ -246,7 +246,6 @@ update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc)
 {
   const char *txn_method;
   int length;
-  int64_t tempint;
 
   txn_method = TSHttpHdrMethodGet(bufp, hdr_loc, &length);
 
@@ -264,7 +263,7 @@ update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc)
     } else if (0 == strncmp(txn_method, TS_HTTP_METHOD_OPTIONS, length)) {
       // This is a bad idea in a real plugin because it causes a race condition
       // with other transactions, but is here for illustrative purposes.
-      tempint = TSStatIntGet(redirect_count_options);
+      int64_t tempint = TSStatIntGet(redirect_count_options);
       ++tempint;
       TSStatIntSet(redirect_count_options, tempint);
     } else if (0 == strncmp(txn_method, TS_HTTP_METHOD_POST, length)) {
@@ -289,7 +288,6 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   const char prefix[] = "http://";
-  int uri_len;
   TSPluginRegistrationInfo info;
 
   info.plugin_name   = PLUGIN_NAME;
@@ -308,7 +306,7 @@ TSPluginInit(int argc, const char *argv[])
      */
 
     url_redirect = TSstrdup(argv[2]);
-    uri_len      = strlen(prefix) + strlen(url_redirect) + 1;
+    int uri_len  = strlen(prefix) + strlen(url_redirect) + 1;
     uri_redirect = TSmalloc(uri_len);
     TSstrlcpy(uri_redirect, prefix, uri_len);
     TSstrlcat(uri_redirect, url_redirect, uri_len);
