@@ -816,20 +816,22 @@ HostDBProcessor::getbyname_imm(Continuation *cont, process_hostdb_info_pfn proce
       loop = false; // loop only on explicit set for retry
       // find the partition lock
       ProxyMutex *bucket_mutex = hostDB.refcountcache->lock_for_key(md5.hash.fold());
-      SCOPED_MUTEX_LOCK(lock, bucket_mutex, thread);
-      // do a level 1 probe for immediate result.
-      Ptr<HostDBInfo> r = probe(bucket_mutex, md5, false);
-      if (r) {
-        if (r->is_failed()) // fail, see if we should retry with alternate
-          loop = check_for_retry(md5.db_mark, opt.host_res_style);
-        if (!loop) {
-          // No retry -> final result. Return it.
-          Debug("hostdb", "immediate answer for %.*s", md5.host_len, md5.host_name);
-          HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
-          (cont->*process_hostdb_info)(r.get());
-          return ACTION_RESULT_DONE;
+      MUTEX_TRY_LOCK(lock, bucket_mutex, thread);
+      if (lock.is_locked()) {
+        // do a level 1 probe for immediate result.
+        Ptr<HostDBInfo> r = probe(bucket_mutex, md5, false);
+        if (r) {
+          if (r->is_failed()) // fail, see if we should retry with alternate
+            loop = check_for_retry(md5.db_mark, opt.host_res_style);
+          if (!loop) {
+            // No retry -> final result. Return it.
+            Debug("hostdb", "immediate answer for %.*s", md5.host_len, md5.host_name);
+            HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
+            (cont->*process_hostdb_info)(r.get());
+            return ACTION_RESULT_DONE;
+          }
+          md5.refresh(); // Update for retry.
         }
-        md5.refresh(); // Update for retry.
       }
     } while (loop);
   }
