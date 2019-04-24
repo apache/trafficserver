@@ -610,7 +610,6 @@ HostDBContinuation::insert(unsigned int attl)
 Action *
 HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_result, HostDBHash &hash, Options const &opt)
 {
-  bool trylock          = (cb_process_result == nullptr);
   bool force_dns        = false;
   EThread *thread       = this_ethread();
   Ptr<ProxyMutex> mutex = thread->mutex;
@@ -651,10 +650,6 @@ HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_resu
       // find the partition lock
       Ptr<ProxyMutex> bucket_mutex = hostDB.refcountcache->lock_for_key(hash.hash.fold());
       MUTEX_TRY_LOCK(lock2, bucket_mutex, thread);
-      if (!lock2.is_locked() && !trylock) {
-        // Refer to: [TS-374](http://issues.apache.org/jira/browse/TS-374)
-        lock2.acquire(thread);
-      }
       if (lock2.is_locked()) {
         // If we can get the lock and a level 1 probe succeeds, return
         Ptr<HostDBInfo> r = probe(bucket_mutex, hash, false);
