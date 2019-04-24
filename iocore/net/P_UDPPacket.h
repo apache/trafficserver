@@ -189,7 +189,6 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, IOBufferBlock *buf, in
 {
   (void)len;
   UDPPacketInternal *p = udpPacketAllocator.alloc();
-  IOBufferBlock *body;
 
   p->in_the_priority_queue = 0;
   p->in_heap               = 0;
@@ -197,7 +196,7 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, IOBufferBlock *buf, in
   ats_ip_copy(&p->to, to);
 
   while (buf) {
-    body = buf->clone();
+    IOBufferBlock *body = buf->clone();
     p->append_block(body);
     buf = buf->next.get();
   }
