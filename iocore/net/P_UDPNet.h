@@ -167,12 +167,12 @@ public:
   void
   FreeCancelledPackets(int numSlots)
   {
-    UDPPacketInternal *p;
     Queue<UDPPacketInternal> tempQ;
-    int i, s;
+    int i;
 
     for (i = 0; i < numSlots; i++) {
-      s = (now_slot + i) % N_SLOTS;
+      int s = (now_slot + i) % N_SLOTS;
+      UDPPacketInternal *p;
       while (nullptr != (p = bucket[s].dequeue())) {
         if (IsCancelledPacket(p)) {
           p->free();
@@ -191,7 +191,6 @@ public:
   advanceNow(ink_hrtime t)
   {
     int s = now_slot;
-    int prev;
 
     if (ink_hrtime_to_msec(t - lastPullLongTermQ) >= SLOT_TIME_MSEC * ((N_SLOTS - 1) / 2)) {
       Queue<UDPPacketInternal> tempQ;
@@ -208,6 +207,8 @@ public:
     }
 
     while (!bucket[s].head && (t > delivery_time[s] + SLOT_TIME)) {
+      int prev;
+
       prev             = (s + N_SLOTS - 1) % N_SLOTS;
       delivery_time[s] = delivery_time[prev] + SLOT_TIME;
       s                = (s + 1) % N_SLOTS;
