@@ -3836,7 +3836,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     SDK_RPRINT(test, "TSUrlPasswordSet", "TestCase1", TC_FAIL, "Returned TS_ERROR");
   } else {
     password_get = TSUrlPasswordGet(bufp1, url_loc1, &length);
-    if (((password_get == nullptr) && (password == nullptr)) || (strncmp(password_get, password, length) == 0)) {
+    if ((password_get == nullptr) || (strncmp(password_get, password, length) == 0)) {
       SDK_RPRINT(test, "TSUrlPasswordSet&Get", "TestCase1", TC_PASS, "ok");
       test_passed_password = true;
     } else {
