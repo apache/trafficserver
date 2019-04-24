@@ -99,12 +99,11 @@ char *
 LogUtils::timestamp_to_netscape_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
-  static char gmtstr[16];
   static long last_timestamp = 0;
-  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -134,6 +133,8 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
       offset = zone / -60;
       sign   = '+';
     }
+
+    static char gmtstr[16];
     int glen = snprintf(gmtstr, 16, "%c%.2d%.2d", sign, offset / 60, offset % 60);
 
     strftime(timebuf, 64 - glen, "%d/%b/%Y:%H:%M:%S ", tms);
@@ -155,10 +156,10 @@ LogUtils::timestamp_to_date_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
   static long last_timestamp = 0;
-  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -187,10 +188,10 @@ LogUtils::timestamp_to_time_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
   static long last_timestamp = 0;
-  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -221,13 +222,13 @@ void
 LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, const char *msg, ...)
 {
   char msg_buf[LOG_MAX_FORMATTED_LINE];
-  va_list ap;
 
   ink_assert(alarm_type >= 0 && alarm_type < LogUtils::LOG_ALARM_N_TYPES);
 
   if (msg == nullptr) {
     snprintf(msg_buf, sizeof(msg_buf), "No Message");
   } else {
+    va_list ap;
     va_start(ap, msg);
     vsnprintf(msg_buf, LOG_MAX_FORMATTED_LINE, msg, ap);
     va_end(ap);
