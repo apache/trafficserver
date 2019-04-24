@@ -48,13 +48,10 @@ init_queue(Queue *q)
 void
 add_to_queue(Queue *q, void *data)
 {
-  Cell *new_cell;
-  int n;
-
   if (data != NULL) {
     TSMutexLock(q->mutex);
     /* Init the new cell */
-    new_cell           = TSmalloc(sizeof(Cell));
+    Cell *new_cell     = TSmalloc(sizeof(Cell));
     new_cell->magic    = MAGIC_ALIVE;
     new_cell->ptr_data = data;
     new_cell->ptr_next = q->tail;
@@ -71,7 +68,7 @@ add_to_queue(Queue *q, void *data)
       q->tail->ptr_prev = new_cell;
       q->tail           = new_cell;
     }
-    n = q->nb_elem++;
+    int n = q->nb_elem++;
     TSMutexUnlock(q->mutex);
 
     if (n > MAX_JOBS_ALARM) {
@@ -157,12 +154,10 @@ thread_init()
 void *
 thread_loop(void *arg ATS_UNUSED)
 {
-  Job *job_todo;
-
   /* Infinite loop */
   for (;;) {
     /* returns a job or NULL if no jobs to do */
-    job_todo = remove_from_queue(&job_queue);
+    Job *job_todo = remove_from_queue(&job_queue);
 
     if (job_todo != NULL) {
       TSAssert(job_todo->magic == MAGIC_ALIVE);

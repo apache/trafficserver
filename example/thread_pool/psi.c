@@ -449,7 +449,6 @@ psi_include(TSCont contp, void *edata ATS_UNUSED)
 #define BUFFER_SIZE 1024
   ContData *data;
   TSFile filep;
-  char buf[BUFFER_SIZE];
   char inc_file[PSI_PATH_MAX_SIZE + PSI_FILENAME_MAX_SIZE];
 
   /* We manipulate plugin continuation data from a separate thread.
@@ -472,19 +471,19 @@ psi_include(TSCont contp, void *edata ATS_UNUSED)
   if ((filep = TSfopen(inc_file, "r")) != NULL) {
     TSDebug(PLUGIN_NAME, "Reading include file %s", inc_file);
 
+    char buf[BUFFER_SIZE];
     while (TSfgets(filep, buf, BUFFER_SIZE) != NULL) {
-      TSIOBufferBlock block;
-      int64_t len, avail, ndone, ntodo, towrite;
-      char *ptr_block;
+      int64_t len, ndone, ntodo;
 
       len   = strlen(buf);
       ndone = 0;
       ntodo = len;
       while (ntodo > 0) {
         /* TSIOBufferStart allocates more blocks if required */
-        block     = TSIOBufferStart(data->psi_buffer);
-        ptr_block = TSIOBufferBlockWriteStart(block, &avail);
-        towrite   = MIN(ntodo, avail);
+        TSIOBufferBlock block = TSIOBufferStart(data->psi_buffer);
+        int64_t avail;
+        char *ptr_block = TSIOBufferBlockWriteStart(block, &avail);
+        int64_t towrite = MIN(ntodo, avail);
 
         memcpy(ptr_block, buf + ndone, towrite);
         TSIOBufferProduce(data->psi_buffer, towrite);
@@ -579,8 +578,7 @@ handle_transform(TSCont contp)
   TSVConn output_conn;
   TSVIO input_vio;
   ContData *data;
-  TSIOBufferReader input_reader;
-  int toread, avail, psi, toconsume = 0, towrite = 0;
+  int toread, toconsume = 0, towrite = 0;
 
   /* Get the output (downstream) vconnection where we'll write data to. */
   output_conn = TSTransformOutputVConnGet(contp);
@@ -610,11 +608,12 @@ handle_transform(TSCont contp)
   toread = TSVIONTodoGet(input_vio);
 
   if (toread > 0) {
-    input_reader = TSVIOReaderGet(input_vio);
-    avail        = TSIOBufferReaderAvail(input_reader);
+    TSIOBufferReader input_reader = TSVIOReaderGet(input_vio);
+    int avail                     = TSIOBufferReaderAvail(input_reader);
 
     /* There are some data available for reading. Let's parse it */
     if (avail > 0) {
+      int psi;
       /* No need to parse data if there are too few bytes left to contain
          an include command... */
       if (toread > (PSI_START_TAG_LEN + PSI_END_TAG_LEN)) {
@@ -685,20 +684,13 @@ static int
 dump_psi(TSCont contp)
 {
   ContData *data;
-  int psi_output_len;
-
-/* TODO: This is odd, do we need to get the input_vio, but never use it ?? */
-#if 0
-  TSVIO input_vio;
-  input_vio = TSVConnWriteVIOGet(contp);
-#endif
 
   data = TSContDataGet(contp);
   TSAssert(data->magic == MAGIC_ALIVE);
 
   /* If script exec succeeded, copy its output to the downstream vconn */
   if (data->psi_success == 1) {
-    psi_output_len = TSIOBufferReaderAvail(data->psi_reader);
+    int psi_output_len = TSIOBufferReaderAvail(data->psi_reader);
 
     if (psi_output_len > 0) {
       data->transform_bytes += psi_output_len;
@@ -733,7 +725,6 @@ dump_psi(TSCont contp)
 static int
 transform_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
 {
-  TSVIO input_vio;
   ContData *data;
   int state, retval;
 
@@ -773,6 +764,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
       return 1;
     }
   } else {
+    TSVIO input_vio;
     switch (event) {
     case TS_EVENT_ERROR:
       input_vio = TSVConnWriteVIOGet(contp);
@@ -853,9 +845,8 @@ transformable(TSHttpTxn txnp)
   /*  We are only interested in transforming "200 OK" responses
      with a Content-Type: text/ header and with X-Psi header */
   TSMBuffer bufp;
-  TSMLoc hdr_loc, field_loc;
+  TSMLoc hdr_loc;
   TSHttpStatus resp_status;
-  const char *value;
 
   if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
     resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
@@ -864,6 +855,7 @@ transformable(TSHttpTxn txnp)
       return 0;
     }
 
+    TSMLoc field_loc;
     field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
     if (field_loc == TS_NULL_MLOC) {
       TSError("[%s] Unable to search Content-Type field", PLUGIN_NAME);
@@ -871,7 +863,7 @@ transformable(TSHttpTxn txnp)
       return 0;
     }
 
-    value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, NULL);
+    const char *value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, NULL);
     if ((value == NULL) || (strncasecmp(value, "text/", sizeof("text/") - 1) != 0)) {
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);

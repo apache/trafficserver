@@ -134,9 +134,6 @@ TSResponsePut(void **resp_id /* return */, void *resp_buffer /* return */, int *
 {
   int i            = 0;
   RequestInfo *rid = *((RequestInfo **)resp_id);
-  int psi          = 0;
-  int len;
-  char psi_tag[PSI_TAG_MAX_SIZE];
 
   /* copy the header into the response buffer */
   if (!rid->done_sent_header) {
@@ -163,7 +160,8 @@ TSResponsePut(void **resp_id /* return */, void *resp_buffer /* return */, int *
     else {
       if (rid->psi) {
         /* generate our psi tag: <!--include=fileN.txt--> */
-        len = sprintf(psi_tag, PSI_TAG_FORMAT, rand() % 100);
+        char psi_tag[PSI_TAG_MAX_SIZE];
+        int len = sprintf(psi_tag, PSI_TAG_FORMAT, rand() % 100);
 
         /* hopefully enough space for our include command */
         if (rid->bytes_not_sent >= len) {
