@@ -127,9 +127,9 @@ BgFetchConfig::readConfig(const char *config_file)
       char *cfg_type  = strtok_r(buffer, " ", &savePtr);
       char *cfg_name  = nullptr;
       char *cfg_value = nullptr;
-      bool exclude    = false;
 
       if (cfg_type) {
+        bool exclude = false;
         if (!strcmp(cfg_type, "exclude")) {
           exclude = true;
         } else if (strcmp(cfg_type, "include")) {
