@@ -81,7 +81,6 @@ int
 LogSock::listen(int accept_port, int family)
 {
   IpEndpoint bind_addr;
-  int size = sizeof(bind_addr);
   char this_host[MAXDNAME];
   int ret;
   ats_scoped_fd accept_sd;
@@ -95,7 +94,8 @@ LogSock::listen(int accept_port, int family)
     return -1;
   }
   bind_addr.port() = htons(accept_port);
-  size             = ats_ip_size(&bind_addr.sa);
+
+  int size = ats_ip_size(&bind_addr.sa);
 
   //
   // create the socket for accepting new connections
@@ -287,7 +287,7 @@ LogSock::connect(sockaddr const *ip)
 bool
 LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
 {
-  int start_index, ret, n_poll_fds, i;
+  int ret, n_poll_fds, i;
   static struct pollfd fds[LS_CONST_MAX_CONNS];
   int fd_to_cid[LS_CONST_MAX_CONNS];
 
@@ -312,7 +312,7 @@ LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
     n_poll_fds     = 1;
 
   } else { // look for data on any INCOMING socket
-
+    int start_index;
     if (include_connects) {
       start_index = 0;
     } else {
@@ -561,8 +561,6 @@ LogSock::read_alloc(int cid, int *size)
 bool
 LogSock::is_connected(int cid, bool ping) const
 {
-  int i, j, flags;
-
   ink_assert(cid >= 0 && cid < m_max_connections);
 
   if (ct[cid].state == LogSock::LS_STATE_UNUSED) {
@@ -570,9 +568,10 @@ LogSock::is_connected(int cid, bool ping) const
   }
 
   if (ping) {
-    flags = fcntl(ct[cid].sd, F_GETFL);
+    int flags = fcntl(ct[cid].sd, F_GETFL);
     ::fcntl(ct[cid].sd, F_SETFL, O_NONBLOCK);
-    j = ::recv(ct[cid].sd, (char *)&i, sizeof(int), MSG_PEEK);
+    int i;
+    int j = ::recv(ct[cid].sd, (char *)&i, sizeof(int), MSG_PEEK);
     ::fcntl(ct[cid].sd, F_SETFL, flags);
     if (j != 0) {
       return true;
@@ -723,11 +722,10 @@ LogSock::read_body(int sd, void *buf, int bytes)
   }
 
   unsigned bytes_left = bytes;
-  unsigned bytes_read;
-  char *to = (char *)buf;
+  char *to            = (char *)buf;
 
   while (bytes_left) {
-    bytes_read = ::recv(sd, to, bytes_left, 0);
+    unsigned bytes_read = ::recv(sd, to, bytes_left, 0);
     to += bytes_read;
     bytes_left -= bytes_read;
   }
