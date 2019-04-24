@@ -67,12 +67,11 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
 int
 Http2SessionAccept::mainEvent(int event, void *data)
 {
-  NetVConnection *netvc;
   ink_release_assert(event == NET_EVENT_ACCEPT || event == EVENT_ERROR);
   ink_release_assert((event == NET_EVENT_ACCEPT) ? (data != nullptr) : (1));
 
   if (event == NET_EVENT_ACCEPT) {
-    netvc = static_cast<NetVConnection *>(data);
+    NetVConnection *netvc = static_cast<NetVConnection *>(data);
     if (!this->accept(netvc, nullptr, nullptr)) {
       netvc->do_io_close();
     }
