@@ -585,6 +585,7 @@ public:
     const_iterator() = default; ///< Default constructor.
 
     /// Copy constructor.
+    // cppcheck-suppress noExplicitConstructor; copy constructor
     const_iterator(self_type const &that);
 
     /// Assignment.
@@ -1298,6 +1299,7 @@ public:
 #endif
 
   MIOBuffer(void *b, int64_t bufsize, int64_t aWater_mark);
+  // cppcheck-suppress noExplicitConstructor; allow implicit conversion
   MIOBuffer(int64_t default_size_index);
   MIOBuffer();
   ~MIOBuffer();
@@ -1372,7 +1374,7 @@ class MIOBuffer_tracker
   const char *loc;
 
 public:
-  MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
+  explicit MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
   MIOBuffer *
   operator()(int64_t size_index = default_large_iobuffer_size)
   {
@@ -1393,7 +1395,7 @@ class Empty_MIOBuffer_tracker
   const char *loc;
 
 public:
-  Empty_MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
+  explicit Empty_MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
   MIOBuffer *
   operator()(int64_t size_index = default_large_iobuffer_size)
   {
@@ -1431,7 +1433,7 @@ class IOBufferBlock_tracker
   const char *loc;
 
 public:
-  IOBufferBlock_tracker(const char *_loc) : loc(_loc) {}
+  explicit IOBufferBlock_tracker(const char *_loc) : loc(_loc) {}
   IOBufferBlock *
   operator()()
   {
@@ -1477,7 +1479,7 @@ class IOBufferData_tracker
   const char *loc;
 
 public:
-  IOBufferData_tracker(const char *_loc) : loc(_loc) {}
+  explicit IOBufferData_tracker(const char *_loc) : loc(_loc) {}
   IOBufferData *
   operator()(int64_t size_index = default_large_iobuffer_size, AllocType type = DEFAULT_ALLOC)
   {
