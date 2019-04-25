@@ -382,8 +382,11 @@ namespace detail
       if (n->_data == payload) {
         if (x) {
           if (n->_max <= max) {
-            // next range is covered, so we can remove and continue.
-            this->remove(n);
+// next range is covered, so we can remove and continue.
+#if defined(__clang_analyzer__)
+            ink_assert(x != n)
+#endif
+              this->remove(n);
             n = next(x);
           } else if (n->_min <= max_plus1) {
             // Overlap or adjacent with larger max - absorb and finish.
@@ -642,10 +645,14 @@ namespace detail
   void
   IpMapBase<N>::insert_before(N *spot, N *n)
   {
-    N *c = left(spot);
-    if (!c) {
+    if (left(spot) == nullptr) {
       spot->setChild(n, N::LEFT);
     } else {
+// If there's a left child, there's a previous node, therefore spot->_prev is valid.
+// Clang analyzer doesn't realize this so it generates a false positive.
+#if defined(__clang_analyzer__)
+      ink_assert(spot->_prev != nullptr);
+#endif
       spot->_prev->setChild(n, N::RIGHT);
     }
 
