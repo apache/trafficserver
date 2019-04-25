@@ -79,7 +79,7 @@ public:
   // If the lock file open succeeds, it closes the lock file releasing
   // the lock.
   //
-  // The intial signal can be used to generate a core from the process while
+  // The initial signal can be used to generate a core from the process while
   // still ensuring it dies.
   void Kill(int sig, int initial_sig = 0, const char *pname = nullptr);
   void KillGroup(int sig, int initial_sig = 0, const char *pname = nullptr);

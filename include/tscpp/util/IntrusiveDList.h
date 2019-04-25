@@ -55,7 +55,7 @@ namespace ts
     It is the responsibility of the item class to initialize the link pointers. When an item is
     removed from the list the link pointers are set to @c nullptr.
 
-    An example declaration woudl be
+    An example declaration would be
 
     @code
       // Item in the list.
@@ -137,7 +137,7 @@ public:
     value_type *operator->() const;
 
     /// Convenience conversion to pointer type
-    /// Because of how this list is normally used, being able to pass an iterator as a pointer is quite convienent.
+    /// Because of how this list is normally used, being able to pass an iterator as a pointer is quite convenient.
     /// If the iterator isn't valid, it converts to @c nullptr.
     operator value_type *() const;
 
@@ -150,7 +150,7 @@ public:
   protected:
     // These are stored non-const to make implementing @c iterator easier. This class provides the required @c const
     // protection.
-    list_type *_list{nullptr};                   ///< Needed to descrement from @c end() position.
+    list_type *_list{nullptr};                   ///< Needed to decrement from @c end() position.
     typename list_type::value_type *_v{nullptr}; ///< Referenced element.
 
     /// Internal constructor for containers.
@@ -242,11 +242,11 @@ public:
   self_type &append(value_type *v);
 
   /// Remove the first element of the list.
-  /// @return A poiner to the removed item, or @c nullptr if the list was empty.
+  /// @return A pointer to the removed item, or @c nullptr if the list was empty.
   value_type *take_head();
 
   /// Remove the last element of the list.
-  /// @return A poiner to the removed item, or @c nullptr if the list was empty.
+  /// @return A pointer to the removed item, or @c nullptr if the list was empty.
   value_type *take_tail();
 
   /// Insert a new element @a elt after @a target.
@@ -354,7 +354,7 @@ protected:
  */
 template <typename T, T *(T::*NEXT) = &T::_next, T *(T::*PREV) = &T::_prev> struct IntrusiveLinkage {
   static T *&next_ptr(T *thing); ///< Retrieve reference to next pointer.
-  static T *&prev_ptr(T *thing); ///< Retrive reference to previous pointer.
+  static T *&prev_ptr(T *thing); ///< Retrieve reference to previous pointer.
 };
 
 template <typename T, T *(T::*NEXT), T *(T::*PREV)>

@@ -143,7 +143,7 @@ public:
   }
 
   // Return the raw pointer as a RefCount object. Typically
-  // this is for keeping a collection of heterogenous objects.
+  // this is for keeping a collection of ogenous objects.
   RefCountObj *
   object() const
   {

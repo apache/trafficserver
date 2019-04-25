@@ -126,7 +126,7 @@ public:
 
   /// Convenience - compute final @a hash for @a data.
   /// @note This is just as fast as the previous style, as a new context must be initialized
-  /// everytime this is done.
+  /// every time this is done.
   bool hash_immediate(CryptoHash &hash, void const *data, int length);
 };
 

@@ -59,7 +59,7 @@ public:
    * @param redirect Output argument that should be set to true if the (new) url should be used
    *                 as a redirect.
    *
-   * @return Result of the remap - will dictate futher processing by the system.
+   * @return Result of the remap - will dictate further processing by the system.
    */
   virtual Result
   doRemap(const Url &map_from_url ATSCPPAPI_UNUSED, const Url &map_to_url ATSCPPAPI_UNUSED,

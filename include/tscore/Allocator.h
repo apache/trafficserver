@@ -23,7 +23,7 @@
   Provides three classes
     - Allocator for allocating memory blocks of fixed size
     - ClassAllocator for allocating objects
-    - SpaceClassAllocator for allocating sparce objects (most members uninitialized)
+    - SpaceClassAllocator for allocating sparse objects (most members uninitialized)
 
   These class provides a efficient way for handling dynamic allocation.
   The fast allocator maintains its own freepool of objects from

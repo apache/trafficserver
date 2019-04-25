@@ -136,7 +136,7 @@ public:
   //////////////////
 
   static CTypeResult is_escape(const char *seq); // %<hex><hex>
-  static CTypeResult is_uchar(const char *seq);  // starts unresrvd or is escape
+  static CTypeResult is_uchar(const char *seq);  // starts unreserved or is escape
   static CTypeResult is_pchar(const char *seq);  // uchar,:,@,&,=,+ (see code)
 
   ///////////////////
@@ -766,7 +766,7 @@ ParseRules::strlen_eow(const char *s)
 //
 //  This function is the same as strstr(), except that it accepts strings
 //  that are terminated with '\r', '\n' or null.
-//  It returns a pointer to the first occurance of s2 within s1 (or null).
+//  It returns a pointer to the first occurrence of s2 within s1 (or null).
 //////////////////////////////////////////////////////////////////////////////
 inline const char *
 ParseRules::strstr_eow(const char *s1, const char *s2)

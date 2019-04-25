@@ -65,7 +65,7 @@ public:
   /**
    * You must initialize your Stat with a call to this init() method.
    *
-   * @param name The string name of the stat, this will be visbible via traffic_ctl, or through http stats.
+   * @param name The string name of the stat, this will be visible via traffic_ctl, or through http stats.
    * @param type The SyncType of the Stat, this decides how TrafficServer will treat your inputs. The default
    *   value is SYNC_COUNT.
    * @param persistent This determines if your Stats will persist, the default value is false.

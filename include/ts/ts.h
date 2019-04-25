@@ -1309,7 +1309,7 @@ tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_sta
 tsapi TSReturnCode TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
 
 /** Set the @a port value for the inbound (user agent) connection in the transaction @a txnp.
-    This is used primarily where the conection is synthetic and therefore does not have a port.
+    This is used primarily where the connection is synthetic and therefore does not have a port.
     @note @a port is in @b host @b order.
 */
 tsapi void TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port);
@@ -1452,8 +1452,8 @@ tsapi TSReturnCode TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp);
 /**
    Sets an error type body to a transaction. Note that both string arguments
    must be allocated with TSmalloc() or TSstrdup(). The mimetype argument is
-   optional, if not provided it defaults to "text/html". Sending an emptry
-   string would prevent setting a content type header (but that is not adviced).
+   optional, if not provided it defaults to "text/html". Sending an empty
+   string would prevent setting a content type header (but that is not advised).
 
    @param txnp HTTP transaction whose parent proxy to get.
    @param buf The body message (must be heap allocated).
@@ -1877,7 +1877,7 @@ tsapi TSAction TSCacheWrite(TSCont contp, TSCacheKey key);
     anything. The user does not get any vconnection from the cache,
     since no data needs to be transferred. When the cache calls
     contp back with TS_EVENT_CACHE_REMOVE, the remove has already
-    been commited.
+    been committed.
 
     @param contp continuation that the cache calls back reporting the
       success or failure of the remove.
@@ -2019,7 +2019,7 @@ tsapi void TSStatIntDecrement(int the_stat, TSMgmtInt amount);
 tsapi TSMgmtInt TSStatIntGet(int the_stat);
 tsapi void TSStatIntSet(int the_stat, TSMgmtInt value);
 /* Currently not supported. */
-/* tsapi TSeturnCode TSStatFloatGet(int the_stat, float* value); */
+/* tsapi TSReturnCode TSStatFloatGet(int the_stat, float* value); */
 /* tsapi TSReturnCode TSStatFloatSet(int the_stat, float value); */
 
 tsapi TSReturnCode TSStatFindName(const char *name, int *idp);
@@ -2033,7 +2033,7 @@ tsapi void TSDebug(const char *tag, const char *format_str, ...) TS_PRINTFLIKE(2
     Output a debug line even if the debug tag is turned off, as long as
     debugging is enabled. Could be used as follows:
     @code
-    TSDebugSpecifc(TSHttpTxnDebugGet(txn), "plugin_tag" , "Hello World from transaction %p", txn);
+    TSDebugSpecific(TSHttpTxnDebugGet(txn), "plugin_tag" , "Hello World from transaction %p", txn);
     @endcode
     will be printed if the plugin_tag is enabled or the transaction specific
     debugging is turned on for txn.
@@ -2397,7 +2397,7 @@ tsapi TSReturnCode TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milest
 tsapi int TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response);
 
 /**
-   Return a string respresentation for a TSServerState value. This is useful for plugin debugging.
+   Return a string representation for a TSServerState value. This is useful for plugin debugging.
 
    @param state the value of this TSServerState
 
@@ -2406,7 +2406,7 @@ tsapi int TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer resp
 tsapi const char *TSHttpServerStateNameLookup(TSServerState state);
 
 /**
-   Return a string respresentation for a TSHttpHookID value. This is useful for plugin debugging.
+   Return a string representation for a TSHttpHookID value. This is useful for plugin debugging.
 
    @param hook the value of this TSHttpHookID
 
@@ -2415,7 +2415,7 @@ tsapi const char *TSHttpServerStateNameLookup(TSServerState state);
 tsapi const char *TSHttpHookNameLookup(TSHttpHookID hook);
 
 /**
-   Return a string respresentation for a TSEvent value. This is useful for plugin debugging.
+   Return a string representation for a TSEvent value. This is useful for plugin debugging.
 
    @param event the value of this TSHttpHookID
 

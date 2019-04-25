@@ -176,7 +176,7 @@ public:
     // The help & version messages
     void help_message(std::string_view err = "") const;
     void version_message() const;
-    // Helpr method for parse()
+    // Helper method for parse()
     void append_option_data(Arguments &ret, AP_StrVec &args, int index);
     // The command name and help message
     std::string _name;
@@ -227,7 +227,7 @@ public:
                        std::string const &key = "");
   Command &add_command(std::string const &cmd_name, std::string const &cmd_description, std::string const &cmd_envvar,
                        unsigned cmd_arg_num, Function const &f = nullptr, std::string const &key = "");
-  // give a defaut command to this parser
+  // give a default command to this parser
   void set_default_command(std::string const &cmd);
   /** Main parsing function
       @return The Arguments object available for program using

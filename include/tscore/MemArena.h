@@ -168,7 +168,7 @@ public:
 
   /** Release all memory.
 
-      Empties the entire arena and deallocates all underlying memory. The hint for the next reservered block size will
+      Empties the entire arena and deallocates all underlying memory. The hint for the next reserved block size will
       be @a n if @a n is not zero, otherwise it will be the sum of all allocations when this method was called.
 
       @return @c *this

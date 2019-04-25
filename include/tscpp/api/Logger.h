@@ -34,7 +34,7 @@
 #if !defined(ATSCPPAPI_PRINTFLIKE)
 #if defined(__GNUC__) || defined(__clang__)
 /**
- * This macro will tell GCC that the function takes printf like arugments
+ * This macro will tell GCC that the function takes printf like arguments
  * this is helpful because it can produce better warning and error messages
  * when a user doesn't use the methods correctly.
  *
@@ -81,7 +81,7 @@
 /**
  * We forward declare this because if we didn't we end up writing our
  * own version to do the vsnprintf just to call TSDebug and have it do
- * an unncessary vsnprintf.
+ * an unnecessary vsnprintf.
  *
  * @private
  */
@@ -90,7 +90,7 @@ extern "C" void TSDebug(const char *tag, const char *fmt, ...) ATSCPPAPI_PRINTFL
 /**
  * We forward declare this because if we didn't we end up writing our
  * own version to do the vsnprintf just to call TSError and have it do
- * an unncessary vsnprintf.
+ * an unnecessary vsnprintf.
  *
  * @private
  */
@@ -225,7 +225,7 @@ public:
 
   /**
    * This method allows you to flush any log lines that might have been buffered.
-   * @warning This method can cause serious performance degredation so you should only
+   * @warning This method can cause serious performance degradation so you should only
    * use it when absolutely necessary.
    */
   void flush();

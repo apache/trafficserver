@@ -298,7 +298,7 @@ protected:
 
   Bucket *bucket_for(key_type key);
 
-  ExpansionPolicy _expansion_policy{DEFAULT_EXPANSION_POLICY}; ///< When to exand the table.
+  ExpansionPolicy _expansion_policy{DEFAULT_EXPANSION_POLICY}; ///< When to expand the table.
   size_t _expansion_limit{DEFAULT_EXPANSION_LIMIT};            ///< Limit value for expansion.
 
   // noncopyable
