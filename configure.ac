@@ -1277,6 +1277,9 @@ TS_CHECK_CRYPTO_OCSP
 # Check for SSL_CTX_set_ciphersuites call
 TS_CHECK_CRYPTO_SET_CIPHERSUITES
 
+# Check for openssl early data support
+TS_CHECK_EARLY_DATA
+
 saved_LIBS="$LIBS"
 TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
 

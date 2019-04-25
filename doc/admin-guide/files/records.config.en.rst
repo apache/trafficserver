@@ -3497,6 +3497,24 @@ Client-Related Configuration
    engines. This setting assumes an absolute path.  An example config file is at
    :ts:git:`contrib/openssl/load_engine.cnf`.
 
+TLS v1.3 0-RTT Configuration
+----------------------------
+
+.. note::
+   TLS v1.3 must be enabled in order to utilize 0-RTT early data.
+
+.. ts:cv:: CONFIG proxy.config.ssl.server.max_early_data INT 0
+
+   Specifies the maximum amount of early data in bytes that is permitted to be sent on a single connection.
+
+   The minimum value that enables early data, and the suggested value for this option are both 16384 (16KB).
+
+   Setting to ``0`` effectively disables 0-RTT.
+
+.. ts:cv:: CONFIG proxy.config.ssl.server.allow_early_data_params INT 0
+
+   Set to ``1`` to allow HTTP parameters on early data requests.
+
 OCSP Stapling Configuration
 ===========================
 

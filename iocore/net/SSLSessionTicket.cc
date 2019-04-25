@@ -55,6 +55,7 @@ int
 ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx,
                             int enc)
 {
+  SSLConfig::scoped_config config;
   SSLCertificateConfig::scoped_config lookup;
   SSLTicketKeyConfig::scoped_config params;
   SSLNetVConnection &netvc = *SSLNetVCAccess(ssl);
@@ -82,7 +83,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
     EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), nullptr, most_recent_key.aes_key, iv);
     HMAC_Init_ex(hctx, most_recent_key.hmac_secret, sizeof(most_recent_key.hmac_secret), evp_md_func, nullptr);
 
-    Debug("ssl", "create ticket for a new session.");
+    Debug("ssl_session_ticket", "create ticket for a new session.");
     SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
     return 1;
   } else if (enc == 0) {
@@ -91,7 +92,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
         EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), nullptr, keyblock->keys[i].aes_key, iv);
         HMAC_Init_ex(hctx, keyblock->keys[i].hmac_secret, sizeof(keyblock->keys[i].hmac_secret), evp_md_func, nullptr);
 
-        Debug("ssl", "verify the ticket for an existing session.");
+        Debug("ssl_session_ticket", "verify the ticket for an existing session.");
         // Increase the total number of decrypted tickets.
         SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_stat);
 
@@ -100,12 +101,20 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
         }
 
         netvc.setSSLSessionCacheHit(true);
+
+#if TS_HAS_TLS_EARLY_DATA
+        if (SSL_version(ssl) >= TLS1_3_VERSION && config->server_max_early_data > 0) {
+          Debug("ssl_session_ticket", "make sure tickets are only used once.");
+          return 2;
+        }
+#endif
+
         // When we decrypt with an "older" key, encrypt the ticket again with the most recent key.
         return (i == 0) ? 1 : 2;
       }
     }
 
-    Debug("ssl", "keyname is not consistent.");
+    Debug("ssl_session_ticket", "keyname is not consistent.");
     SSL_INCREMENT_DYN_STAT(ssl_total_tickets_not_found_stat);
     return 0;
   }

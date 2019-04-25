@@ -40,6 +40,8 @@
 #include "SSLSessionCache.h"
 #include "YamlSNIConfig.h"
 
+#include "P_SSLUtils.h"
+
 struct SSLCertLookup;
 struct ssl_ticket_key_block;
 
@@ -99,6 +101,12 @@ struct SSLConfigParams : public ConfigInfo {
   char *client_tls13_cipher_suites;
   char *server_groups_list;
   char *client_groups_list;
+
+#if TS_HAS_TLS_EARLY_DATA
+  static uint32_t server_max_early_data;
+  static uint32_t server_recv_max_early_data;
+  static bool server_allow_early_data_params;
+#endif
 
   static int ssl_maxrecord;
   static bool ssl_allow_client_renegotiation;

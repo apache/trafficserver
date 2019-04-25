@@ -78,6 +78,7 @@ enum HTTPStatus {
   HTTP_STATUS_REQUEST_URI_TOO_LONG          = 414,
   HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE        = 415,
   HTTP_STATUS_RANGE_NOT_SATISFIABLE         = 416,
+  HTTP_STATUS_TOO_EARLY                     = 425,
 
   HTTP_STATUS_INTERNAL_SERVER_ERROR = 500,
   HTTP_STATUS_NOT_IMPLEMENTED       = 501,
@@ -506,6 +507,8 @@ public:
   /// also had a port, @c false otherwise.
   mutable bool m_port_in_header = false;
 
+  mutable bool early_data = false;
+
   HTTPHdr() = default; // Force the creation of the default constructor
 
   int valid() const;
@@ -628,6 +631,9 @@ public:
 
   const char *reason_get(int *length);
   void reason_set(const char *value, int length);
+
+  void mark_early_data(bool flag = true) const;
+  bool is_early_data() const;
 
   ParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing = false,
                         size_t max_request_line_size = UINT16_MAX, size_t max_hdr_field_size = 131070);
@@ -1197,6 +1203,26 @@ HTTPHdr::reason_set(const char *value, int length)
   ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
   http_hdr_reason_set(m_heap, m_http, value, length, true);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline void
+HTTPHdr::mark_early_data(bool flag) const
+{
+  ink_assert(valid());
+  early_data = flag;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline bool
+HTTPHdr::is_early_data() const
+{
+  ink_assert(valid());
+  return early_data;
 }
 
 /*-------------------------------------------------------------------------

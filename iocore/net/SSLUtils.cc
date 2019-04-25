@@ -1108,7 +1108,8 @@ SSLMultiCertConfigLoader::index_certificate(SSLCertLookup *lookup, SSLCertContex
 static void
 ssl_callback_info(const SSL *ssl, int where, int ret)
 {
-  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d State: %s", ssl, where, ret, SSL_state_string_long(ssl));
+  Debug("ssl", "ssl_callback_info ssl: %p, where: %d, ret: %d, State: %s", ssl, where, ret, SSL_state_string_long(ssl));
+
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
@@ -1130,6 +1131,13 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
     if (state == TLS_ST_SR_CLNT_HELLO) {
 #endif
 #endif
+#endif
+#ifdef TLS1_3_VERSION
+      // TLSv1.3 has no renegotiation.
+      if (SSL_version(ssl) >= TLS1_3_VERSION) {
+        Debug("ssl", "TLSv1.3 has no renegotiation.");
+        return;
+      }
 #endif
       netvc->setSSLClientRenegotiationAbort(true);
       Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
@@ -1236,7 +1244,6 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, co
     SSL_CTX_sess_set_get_cb(ctx, ssl_get_cached_session);
 
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_SERVER | SSL_SESS_CACHE_NO_INTERNAL | additional_cache_flags);
-
     break;
   }
   }
@@ -1695,7 +1702,26 @@ SSLWriteBuffer(SSL *ssl, const void *buf, int64_t nbytes, int64_t &nwritten)
     return SSL_ERROR_NONE;
   }
   ERR_clear_error();
-  int ret = SSL_write(ssl, buf, static_cast<int>(nbytes));
+
+  int ret;
+#if TS_HAS_TLS_EARLY_DATA
+  if (SSL_version(ssl) >= TLS1_3_VERSION) {
+    if (SSL_is_init_finished(ssl)) {
+      ret = SSL_write(ssl, buf, static_cast<int>(nbytes));
+    } else {
+      size_t nwrite;
+      ret = SSL_write_early_data(ssl, buf, static_cast<size_t>(nbytes), &nwrite);
+      if (ret == 1) {
+        ret = nwrite;
+      }
+    }
+  } else {
+    ret = SSL_write(ssl, buf, static_cast<int>(nbytes));
+  }
+#else
+  ret = SSL_write(ssl, buf, static_cast<int>(nbytes));
+#endif
+
   if (ret > 0) {
     nwritten = ret;
     BIO *bio = SSL_get_wbio(ssl);
@@ -1723,6 +1749,65 @@ SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread)
     return SSL_ERROR_NONE;
   }
   ERR_clear_error();
+
+#if TS_HAS_TLS_EARLY_DATA
+  Debug("ssl_early_data", "SSL version = %s", SSL_get_version(ssl));
+  if (SSL_version(ssl) >= TLS1_3_VERSION) {
+    SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+
+    int64_t early_data_len = 0;
+    if (netvc->early_data_reader != nullptr) {
+      early_data_len = netvc->early_data_reader->read_avail();
+    }
+
+    if (early_data_len > 0) {
+      Debug("ssl_early_data", "Reading from early data buffer.");
+      netvc->early_data_reader->read(buf, nbytes < early_data_len ? nbytes : early_data_len);
+      netvc->read_from_early_data = true;
+
+      if (nbytes < early_data_len) {
+        nread = nbytes;
+      } else {
+        nread = early_data_len;
+      }
+
+      return SSL_ERROR_NONE;
+    }
+
+    if (SSLConfigParams::server_max_early_data > 0 && !netvc->early_data_finish) {
+      Debug("ssl_early_data", "More early data to read.");
+      ssl_error_t ssl_error = SSL_ERROR_NONE;
+      size_t read_bytes     = 0;
+
+      int ret = SSL_read_early_data(ssl, buf, static_cast<size_t>(nbytes), &read_bytes);
+
+      if (ret == SSL_READ_EARLY_DATA_ERROR) {
+        Debug("ssl_early_data", "SSL_READ_EARLY_DATA_ERROR");
+        ssl_error = SSL_get_error(ssl, ret);
+        Debug("ssl_early_data", "Error reading early data: %s", ERR_error_string(ERR_get_error(), nullptr));
+      } else {
+        if ((nread = read_bytes) > 0) {
+          netvc->read_from_early_data = true;
+          SSL_INCREMENT_DYN_STAT(ssl_early_data_received_count);
+          if (is_debug_tag_set("ssl_early_data_show_received")) {
+            std::string early_data_str(reinterpret_cast<char *>(buf), nread);
+            Debug("ssl_early_data_show_received", "Early data buffer: \n%s", early_data_str.c_str());
+          }
+        }
+
+        if (ret == SSL_READ_EARLY_DATA_FINISH) {
+          netvc->early_data_finish = true;
+          Debug("ssl_early_data", "SSL_READ_EARLY_DATA_FINISH: size = %lu", nread);
+        } else {
+          Debug("ssl_early_data", "SSL_READ_EARLY_DATA_SUCCESS: size = %lu", nread);
+        }
+      }
+
+      return ssl_error;
+    }
+  }
+#endif
+
   int ret = SSL_read(ssl, buf, static_cast<int>(nbytes));
   if (ret > 0) {
     nread = ret;
@@ -1743,11 +1828,64 @@ ssl_error_t
 SSLAccept(SSL *ssl)
 {
   ERR_clear_error();
-  int ret = SSL_accept(ssl);
+
+  int ret       = 0;
+  int ssl_error = SSL_ERROR_NONE;
+
+#if TS_HAS_TLS_EARLY_DATA
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  if (SSLConfigParams::server_max_early_data > 0 && !netvc->early_data_finish) {
+    size_t nread;
+    if (netvc->early_data_buf == nullptr) {
+      netvc->early_data_buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_16K);
+      netvc->early_data_reader = netvc->early_data_buf->alloc_reader();
+    }
+
+    while (true) {
+      IOBufferBlock *block = new_IOBufferBlock();
+      block->alloc(BUFFER_SIZE_INDEX_16K);
+      ret = SSL_read_early_data(ssl, block->buf(), index_to_buffer_size(BUFFER_SIZE_INDEX_16K), &nread);
+
+      if (ret == SSL_READ_EARLY_DATA_ERROR) {
+        Debug("ssl_early_data", "SSL_READ_EARLY_DATA_ERROR, SSL version = %s", SSL_get_version(ssl));
+        break;
+      } else {
+        if (nread > 0) {
+          block->fill(nread);
+          netvc->early_data_buf->append_block(block);
+          SSL_INCREMENT_DYN_STAT(ssl_early_data_received_count);
+
+          if (is_debug_tag_set("ssl_early_data_show_received")) {
+            std::string early_data_str(reinterpret_cast<char *>(block->buf()), nread);
+            Debug("ssl_early_data_show_received", "Early data buffer: \n%s", early_data_str.c_str());
+          }
+        }
+
+        if (ret == SSL_READ_EARLY_DATA_FINISH) {
+          netvc->early_data_finish = true;
+          Debug("ssl_early_data", "SSL_READ_EARLY_DATA_FINISH: size = %lu", nread);
+
+          if (netvc->early_data_reader->read_avail() == 0) {
+            Debug("ssl_early_data", "no data in early data buffer");
+            ERR_clear_error();
+            ret = SSL_accept(ssl);
+          }
+          break;
+        }
+        Debug("ssl_early_data", "SSL_READ_EARLY_DATA_SUCCESS: size = %lu", nread);
+      }
+    }
+  } else {
+    ret = SSL_accept(ssl);
+  }
+#else
+  ret = SSL_accept(ssl);
+#endif
+
   if (ret > 0) {
     return SSL_ERROR_NONE;
   }
-  int ssl_error = SSL_get_error(ssl, ret);
+  ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.accept")) {
     char buf[512];
     unsigned long e = ERR_peek_last_error();
