@@ -51,7 +51,7 @@ QUICPinger::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
     return false;
   }
 
-  return this->_need_to_fire[QUICTypeUtil::pn_space_index(level)] > 0;
+  return this->_need_to_fire[static_cast<int>(QUICTypeUtil::pn_space(level))] > 0;
 }
 
 /**

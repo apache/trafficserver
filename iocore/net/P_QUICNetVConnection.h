@@ -241,7 +241,7 @@ private:
   // or make them just member variables.
   QUICHandshake *_handshake_handler                 = nullptr;
   QUICHandshakeProtocol *_hs_protocol               = nullptr;
-  QUICLossDetector *_loss_detector[3]               = {nullptr};
+  QUICLossDetector *_loss_detector                  = nullptr;
   QUICFrameDispatcher *_frame_dispatcher            = nullptr;
   QUICStreamManager *_stream_manager                = nullptr;
   QUICCongestionController *_congestion_controller  = nullptr;

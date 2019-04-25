@@ -314,15 +314,15 @@ QUICDebugNames::encryption_level(QUICEncryptionLevel level)
 }
 
 const char *
-QUICDebugNames::pn_space(int index)
+QUICDebugNames::pn_space(QUICPacketNumberSpace pn_space)
 {
-  switch (index) {
-  case 0:
-    return "INITIAL";
-  case 1:
-    return "PROTECTED";
-  case 2:
-    return "HANDSHAKE";
+  switch (pn_space) {
+  case QUICPacketNumberSpace::Initial:
+    return "QUICPacketNumberSpace::Initial";
+  case QUICPacketNumberSpace::Handshake:
+    return "QUICPacketNumberSpace::Handshake";
+  case QUICPacketNumberSpace::ApplicationData:
+    return "QUICPacketNumberSpace::ApplicationData";
   default:
     return "UNKNOWN";
   }

@@ -42,7 +42,7 @@ public:
   static const char *quic_event(int event);
   static const char *key_phase(QUICKeyPhase phase);
   static const char *encryption_level(QUICEncryptionLevel level);
-  static const char *pn_space(int index);
+  static const char *pn_space(QUICPacketNumberSpace pn_space);
 };
 
 class QUICDebug
