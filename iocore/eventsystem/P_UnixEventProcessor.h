@@ -61,6 +61,31 @@ EventProcessor::assign_thread(EventType etype)
   return tg->_thread[next];
 }
 
+// If thread_holding is the correct type, return it.
+//
+// Otherwise check if there is already an affinity associated with the continuation,
+// return it if the type is the same, return the next available thread of "etype" if
+// the type is different.
+//
+// Only assign new affinity when there is currently none.
+TS_INLINE EThread *
+EventProcessor::assign_affinity_by_type(Continuation *cont, EventType etype)
+{
+  EThread *ethread = cont->mutex->thread_holding;
+  if (!ethread->is_event_type(etype)) {
+    ethread = cont->getThreadAffinity();
+    if (ethread == nullptr || !ethread->is_event_type(etype)) {
+      ethread = assign_thread(etype);
+    }
+  }
+
+  if (cont->getThreadAffinity() == nullptr) {
+    cont->setThreadAffinity(ethread);
+  }
+
+  return ethread;
+}
+
 TS_INLINE Event *
 EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
 {
