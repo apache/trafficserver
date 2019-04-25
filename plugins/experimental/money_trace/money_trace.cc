@@ -289,7 +289,7 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
     mt_send_client_response(txnp, txn_data);
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
-    LOG_DEBUG("handling transacation close.");
+    LOG_DEBUG("handling transaction close.");
     freeTransactionData(txn_data);
     TSContDestroy(contp);
     break;

@@ -433,13 +433,13 @@ urlParse(char *url, char *anchor, char *new_path_seg, int new_path_seg_len, char
     if (strlen(sig_anchor) < signed_seg_len) {
       memcpy(signed_seg, sig_anchor, strlen(sig_anchor));
     } else {
-      TSError("insuficient space to copy into new_path_seg buffer.");
+      TSError("insufficient space to copy into new_path_seg buffer.");
     }
   } else { // no signature anchor string was found, assum it is in the last path segment.
     if (strlen(segment[numtoks - 2]) < signed_seg_len) {
       memcpy(signed_seg, segment[numtoks - 2], strlen(segment[numtoks - 2]));
     } else {
-      TSError("insuficient space to copy into new_path_seg buffer.");
+      TSError("insufficient space to copy into new_path_seg buffer.");
       return NULL;
     }
   }

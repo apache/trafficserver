@@ -38,7 +38,7 @@ extern "C" {
 #define STRIP_FLAG_LEAVE_WHITESP 0x4   /**< all: avoid trimming spaces */
 #define STRIP_FLAG_UNSAFE_QUOTES 0x8   /**< html: dont encode quotes */
 #define STRIP_FLAG_UNSAFE_SLASHES 0x10 /**< all: dont encode backslashes */
-#define STRIP_FLAG_UNSAFE_SPACES 0x20  /**< html: stipped tag isnt space */
+#define STRIP_FLAG_UNSAFE_SPACES 0x20  /**< html: stripped tag isnt space */
 
 /** Output the input after stripping all characters that are
  *  unsafe in an HTML context.
@@ -59,7 +59,7 @@ extern "C" {
  *
  *   - leaves a single space character in place of each
  *     sequence of stripped characters if no other space
- *     preceeded the stripped sequence (e.g., "a <b>b" becomes
+ *     preceded the stripped sequence (e.g., "a <b>b" becomes
  *     "a b", but "a<b>b" becomes "a b")
  *
  * @param[in]     in        character array (string)

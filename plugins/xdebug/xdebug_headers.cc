@@ -45,15 +45,15 @@ escape_char_for_json(char const &c, bool &parsing_key)
   case '\t':
     return {"\\t"};
 
-  // Special header reformating
+  // Special header reformatting
   case '\r':
     return {""};
   case '\n':
     parsing_key = true;
-    return {"',\r\n\t'"}; // replace new line with pair delemiter
+    return {"',\r\n\t'"}; // replace new line with pair delimiter
   case ':':
     if (parsing_key) {
-      return {"' : "}; // replace colon after keywith quote + colon
+      return {"' : "}; // replace colon after key with quote + colon
     }
     return {":"};
   case ' ':

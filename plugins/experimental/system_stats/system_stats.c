@@ -135,7 +135,7 @@ setNetStat(TSMutex stat_creation_mutex, const char *interface, const char *entry
   // Generate the ATS stats name
   snprintf(&stat_name[0], sizeof(stat_name), "%s%s.%s", NET_STATS, interface, entry);
 
-  // Determine if this is a toplevel netdev stat, or one from stastistics.
+  // Determine if this is a toplevel netdev stat, or one from statistics.
   if (subdir == NULL) {
     snprintf(&sysfs_name[0], sizeof(sysfs_name), "%s/%s/%s", NET_STATS_DIR, interface, entry);
   } else {

@@ -849,10 +849,10 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (rewrites_in != nullptr) {
-    TSDebug("[stream-editor]", "initialising input filtering");
+    TSDebug("[stream-editor]", "initializing input filtering");
     inputcont = TSContCreate(streamedit_setup, nullptr);
     if (inputcont == nullptr) {
-      TSError("[stream-editor] failed to initialise input filtering!");
+      TSError("[stream-editor] failed to initialize input filtering!");
     } else {
       TSContDataSet(inputcont, rewrites_in);
       TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, inputcont);
@@ -862,10 +862,10 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (rewrites_out != nullptr) {
-    TSDebug("[stream-editor]", "initialising output filtering");
+    TSDebug("[stream-editor]", "initializing output filtering");
     outputcont = TSContCreate(streamedit_setup, nullptr);
     if (outputcont == nullptr) {
-      TSError("[stream-editor] failed to initialise output filtering!");
+      TSError("[stream-editor] failed to initialize output filtering!");
     } else {
       TSContDataSet(outputcont, rewrites_out);
       TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, outputcont);

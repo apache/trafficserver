@@ -148,7 +148,7 @@ public:
   /**
    * @brief provides means for post-processing of the plugin parameters to finalize the configuration or to "cache" some of the
    * decisions for later use.
-   * @return true if succesful, false if failure.
+   * @return true if successful, false if failure.
    */
   bool finalize();
 

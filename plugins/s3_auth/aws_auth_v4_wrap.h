@@ -18,7 +18,7 @@
 
 /**
  * @file aws_auth_v4_ts.h
- * @brief TS API adaptor and header iterator using the TS API which are swapped with mocks during testing.
+ * @brief TS API adapter and header iterator using the TS API which are swapped with mocks during testing.
  * @see aws_auth_v4.h
  */
 

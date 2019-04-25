@@ -77,7 +77,7 @@ make_absolute_path(char *dest, int dest_len, const char *file, int file_len)
   for (i = 0; i < file_len; ++i) {
     char c = file[i];
 
-    /* Assure that only Base64-URL chracter are in the path */
+    /* Assure that only Base64-URL character are in the path */
     if (!(c == '-' || c == '_' || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
       TSDebug(PLUGIN_NAME, "Invalid Base64 character found, error");
       return 0;

@@ -188,7 +188,7 @@ transform_plugin(TSCont, TSEvent e, void *d)
     break;
 
   default:
-    assert(false); // UNRECHEABLE
+    assert(false); // UNREACHABLE
     break;
   }
 
@@ -213,5 +213,5 @@ TSPluginInit(int, const char **)
   return;
 
 error:
-  TSError("[null-tranform] Unable to initialize plugin (disabled).\n");
+  TSError("[null-transform] Unable to initialize plugin (disabled).\n");
 }

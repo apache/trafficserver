@@ -206,7 +206,7 @@ hc_thread(void *data ATS_UNUSED)
         do {
           HCFileData *next = fdata->_next;
 
-          TSDebug(PLUGIN_NAME, "Cleaning up entry from frelist");
+          TSDebug(PLUGIN_NAME, "Cleaning up entry from freelist");
           TSfree(fdata);
           fdata = next;
         } while (fdata);
@@ -477,7 +477,7 @@ hc_process_accept(TSCont contp, HCState *my_state)
   my_state->read_vio    = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
 }
 
-/* Imlement the server intercept */
+/* Implement the server intercept */
 static int
 hc_intercept(TSCont contp, TSEvent event, void *edata)
 {
@@ -512,7 +512,7 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
     int path_len     = 0;
     const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
 
-    /* Short circuit the / path, common case, and we won't allow healthecks on / */
+    /* Short circuit the / path, common case, and we won't allow healthchecks on / */
     if (!path || !path_len) {
       goto cleanup;
     }

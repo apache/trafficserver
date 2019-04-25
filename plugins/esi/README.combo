@@ -12,7 +12,7 @@ The arguments in the plugin.config line in order represent
 2) The name of the key used for signature verification (disabled
    by default) [verification not implemented yet]
 
-3) A colon separated list of headers which, if present on atleast one
+3) A colon separated list of headers which, if present on at least one
    response, will be added to the combo response.
 
 A "-" can be supplied as a value for any of these arguments to request

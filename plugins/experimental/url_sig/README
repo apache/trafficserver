@@ -85,7 +85,7 @@ Signing a URL using path parameters instead of using a query string.
   the file part of the request and are never part of the sign string.
 
   Path parameters are separated by a ';' in the path.  The complete signature
-  string is base64 encoded as a single path parameter that is assinged to the
+  string is base64 encoded as a single path parameter that is assigned to the
   'siganchor', and will appear in that path as siganchor=base64string. The
   following is an example signed request using the path parameter method and
   with an origin application query string:
