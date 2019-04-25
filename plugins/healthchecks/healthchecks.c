@@ -458,7 +458,7 @@ hc_process_write(TSCont contp, TSEvent event, HCState *my_state)
     }
     TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
     TSVIOReenable(my_state->write_vio);
-  } else if (TS_EVENT_VCONN_WRITE_COMPLETE) {
+  } else if (event == TS_EVENT_VCONN_WRITE_COMPLETE) {
     cleanup(contp, my_state);
   } else if (event == TS_EVENT_ERROR) {
     TSError("[healthchecks] hc_process_write: Received TS_EVENT_ERROR");
