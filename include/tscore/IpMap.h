@@ -75,7 +75,7 @@ namespace detail
     data. Marking takes a painter's algorithm approach -- any marking
     overwrites any previous marking on an address. Details of marking
     calls are discarded and only the final results are kept. That is,
-    a client cannot unmark expliticly any previous marking. Only a
+    a client cannot unmark explicitly any previous marking. Only a
     specific range of addresses can be unmarked.
 
     Both IPv4 and IPv6 are supported in the same map. Mixed ranges are
@@ -310,7 +310,7 @@ public:
 
   /** Test for membership.
 
-      @note Covenience overload for IPv4.
+      @note Convenience overload for IPv4.
 
       @return @c true if the address is in the map, @c false if not.
       If the address is in the map and @a ptr is not @c nullptr, @c *ptr

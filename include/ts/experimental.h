@@ -192,7 +192,7 @@ tsapi TSReturnCode TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSM
 
 /****************************************************************************
  *  TSHttpTxnCacheLookupCountGet
- *  Return: TS_SUCESS/TS_ERROR
+ *  Return: TS_SUCCESS/TS_ERROR
  ****************************************************************************/
 tsapi TSReturnCode TSHttpTxnCacheLookupCountGet(TSHttpTxn txnp, int *lookup_count);
 tsapi TSReturnCode TSHttpTxnServerRespIgnore(TSHttpTxn txnp);
@@ -390,7 +390,7 @@ tsapi void TSFetchWriteData(TSFetchSM fetch_sm, const void *data, size_t len);
 tsapi ssize_t TSFetchReadData(TSFetchSM fetch_sm, void *buf, size_t len);
 
 /*
- * Lanuch FetchSM to do http request, before calling this API,
+ * Launch FetchSM to do http request, before calling this API,
  * you should append http request header into fetch sm through
  * TSFetchWriteData() API
  *

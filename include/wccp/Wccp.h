@@ -255,7 +255,7 @@ public:
   /// Perform house keeping, including sending outbound messages.
   int housekeeping();
 
-  /// Recieve and process a message on the socket.
+  /// Receive and process a message on the socket.
   /// @return 0 for success, -ERRNO on system error.
   ts::Rv<int> handleMessage();
 

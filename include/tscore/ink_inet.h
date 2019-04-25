@@ -117,7 +117,7 @@ union IpEndpoint {
   in_port_t &port();
   /// Port in network order.
   in_port_t port() const;
-  /// Port in host horder.
+  /// Port in host order.
   in_port_t host_order_port() const;
 
   operator sockaddr *() { return &sa; }

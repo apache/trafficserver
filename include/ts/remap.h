@@ -43,7 +43,7 @@ typedef struct _tsremap_api_info {
 typedef struct _tm_remap_request_info {
   /* Important: You should *not* release these buf pointers or TSMLocs from your plugin! */
 
-  /* these URL mloc's are read only, use normal ts/ts.h APIs for accesing  */
+  /* these URL mloc's are read only, use normal ts/ts.h APIs for accessing  */
   TSMLoc mapFromUrl;
   TSMLoc mapToUrl;
 
@@ -61,7 +61,7 @@ typedef struct _tm_remap_request_info {
 
 /* This is the type returned by the TSRemapDoRemap() callback */
 typedef enum {
-  TSREMAP_NO_REMAP       = 0, /* No remaping was done, continue with next in chain */
+  TSREMAP_NO_REMAP       = 0, /* No remapping was done, continue with next in chain */
   TSREMAP_DID_REMAP      = 1, /* Remapping was done, continue with next in chain */
   TSREMAP_NO_REMAP_STOP  = 2, /* No remapping was done, and stop plugin chain evaluation */
   TSREMAP_DID_REMAP_STOP = 3, /* Remapping was done, but stop plugin chain evaluation */
@@ -88,7 +88,7 @@ typedef enum {
 */
 tsapi TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size);
 
-/* This gets called everytime remap.config is reloaded. This is complementary
+/* This gets called every time remap.config is reloaded. This is complementary
    to TSRemapInit() which gets called when the plugin is first loaded. You can
    not fail, or cause reload to stop here, it's merely a notification.
    Optional function.
@@ -99,7 +99,7 @@ tsapi void TSRemapConfigReload(void);
 /* Remap new request
    Mandatory interface function.
    Remap API plugin can/should use SDK API function calls inside this function!
-   return: TSREMAP_NO_REMAP - No remaping was done, continue with next in chain
+   return: TSREMAP_NO_REMAP - No remapping was done, continue with next in chain
            TSREMAP_DID_REMAP - Remapping was done, continue with next in chain
            TSREMAP_NO_REMAP_STOP - No remapping was done, and stop plugin chain evaluation
            TSREMAP_DID_REMAP_STOP -  Remapping was done, but stop plugin chain evaluation
@@ -113,7 +113,7 @@ tsapi void TSRemapDone(void);
 /* Plugin new instance. Create new plugin processing entry for unique remap record.
    First two arguments in argv vector are - fromURL and toURL from remap record.
    Please keep in mind that fromURL and toURL will be converted to canonical view.
-   Return: TS_SUCESS
+   Return: TS_SUCCESS
            TS_ERROR - instance creation error
 */
 tsapi TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);

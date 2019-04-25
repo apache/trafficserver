@@ -25,7 +25,7 @@
 
 /****************************************************************************
  *
- *  TextBuffer.h - A self-expanding buffer, primarly meant for strings
+ *  TextBuffer.h - A self-expanding buffer, primarily meant for strings
  *
  *
  *

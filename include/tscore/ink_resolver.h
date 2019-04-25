@@ -109,7 +109,7 @@
 #define INK_RES_AAONLY 0x00000004         /*%< authoritative answers only (!IMPL)*/
 #define INK_RES_USEVC 0x00000008          /*%< use virtual circuit */
 #define INK_RES_PRIMARY 0x00000010        /*%< query primary server only (!IMPL) */
-#define INK_RES_IGNTC 0x00000020          /*%< ignore trucation errors */
+#define INK_RES_IGNTC 0x00000020          /*%< ignore truncation errors */
 #define INK_RES_RECURSE 0x00000040        /*%< recursion desired */
 #define INK_RES_DEFNAMES 0x00000080       /*%< use default domain name */
 #define INK_RES_STAYOPEN 0x00000100       /*%< Keep TCP socket open */
@@ -181,7 +181,7 @@ enum HostResStyle {
 /// Strings for host resolution styles
 extern const char *const HOST_RES_STYLE_STRING[];
 
-/// Caclulate the effective resolution preferences.
+/// Calculate the effective resolution preferences.
 extern HostResStyle ats_host_res_from(int family,            ///< Connection family
                                       HostResPreferenceOrder ///< Preference ordering.
 );
