@@ -29,8 +29,8 @@
 QUICAckFrameManager::QUICAckFrameManager()
 {
   for (auto level : QUIC_PN_SPACES) {
-    int index                 = QUICTypeUtil::pn_space_index(level);
-    this->_ack_creator[index] = std::make_unique<QUICAckFrameCreator>(level, this);
+    auto index                                  = QUICTypeUtil::pn_space(level);
+    this->_ack_creator[static_cast<int>(index)] = std::make_unique<QUICAckFrameCreator>(level, this);
   }
 }
 
@@ -51,8 +51,8 @@ QUICAckFrameManager::update(QUICEncryptionLevel level, QUICPacketNumber packet_n
     return 0;
   }
 
-  int index         = QUICTypeUtil::pn_space_index(level);
-  auto &ack_creator = this->_ack_creator[index];
+  auto index        = QUICTypeUtil::pn_space(level);
+  auto &ack_creator = this->_ack_creator[static_cast<int>(index)];
   ack_creator->push_back(packet_number, size, ack_only);
   return 0;
 }
@@ -70,8 +70,8 @@ QUICAckFrameManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uin
     return ack_frame;
   }
 
-  int index         = QUICTypeUtil::pn_space_index(level);
-  auto &ack_creator = this->_ack_creator[index];
+  auto index        = QUICTypeUtil::pn_space(level);
+  auto &ack_creator = this->_ack_creator[static_cast<int>(index)];
   ack_frame         = ack_creator->generate_ack_frame(buf, maximum_frame_size);
 
   if (ack_frame != nullptr) {
@@ -95,8 +95,8 @@ QUICAckFrameManager::will_generate_frame(QUICEncryptionLevel level, ink_hrtime t
     return false;
   }
 
-  int index = QUICTypeUtil::pn_space_index(level);
-  return this->_ack_creator[index]->is_ack_frame_ready();
+  auto index = QUICTypeUtil::pn_space(level);
+  return this->_ack_creator[static_cast<int>(index)]->is_ack_frame_ready();
 }
 
 void
@@ -104,17 +104,17 @@ QUICAckFrameManager::_on_frame_acked(QUICFrameInformationUPtr &info)
 {
   ink_assert(info->type == QUICFrameType::ACK);
   AckFrameInfo *ack_info = reinterpret_cast<AckFrameInfo *>(info->data);
-  int index              = QUICTypeUtil::pn_space_index(info->level);
-  this->_ack_creator[index]->forget(ack_info->largest_acknowledged);
+  auto index             = QUICTypeUtil::pn_space(info->level);
+  this->_ack_creator[static_cast<int>(index)]->forget(ack_info->largest_acknowledged);
 }
 
 void
 QUICAckFrameManager::_on_frame_lost(QUICFrameInformationUPtr &info)
 {
   ink_assert(info->type == QUICFrameType::ACK);
-  int index = QUICTypeUtil::pn_space_index(info->level);
+  auto index = QUICTypeUtil::pn_space(info->level);
   // when ack frame lost. Force to refresh the frame.
-  this->_ack_creator[index]->refresh_state();
+  this->_ack_creator[static_cast<int>(index)]->refresh_state();
 }
 
 QUICFrameId

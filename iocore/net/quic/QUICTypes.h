@@ -76,6 +76,13 @@ constexpr QUICEncryptionLevel QUIC_ENCRYPTION_LEVELS[] = {
   QUICEncryptionLevel::ONE_RTT,
 };
 
+// introduce by draft-19 kPacketNumberSpace
+enum class QUICPacketNumberSpace {
+  Initial,
+  Handshake,
+  ApplicationData,
+};
+
 // 0-RTT and 1-RTT use same Packet Number Space
 constexpr QUICEncryptionLevel QUIC_PN_SPACES[] = {
   QUICEncryptionLevel::INITIAL,
@@ -504,7 +511,7 @@ public:
   static QUICEncryptionLevel encryption_level(QUICPacketType type);
   static QUICPacketType packet_type(QUICEncryptionLevel level);
   static QUICKeyPhase key_phase(QUICPacketType type);
-  static int pn_space_index(QUICEncryptionLevel level);
+  static QUICPacketNumberSpace pn_space(QUICEncryptionLevel level);
 
   static QUICConnectionId read_QUICConnectionId(const uint8_t *buf, uint8_t n);
   static int read_QUICPacketNumberLen(const uint8_t *buf);

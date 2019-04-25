@@ -452,12 +452,9 @@ QUICNetVConnection::start()
   QUICCCConfigQCP cc_config(this->_quic_config);
   QUICLDConfigQCP ld_config(this->_quic_config);
   this->_congestion_controller = new QUICCongestionController(this, cc_config);
-  for (auto s : QUIC_PN_SPACES) {
-    int index            = static_cast<int>(s);
-    QUICLossDetector *ld = new QUICLossDetector(this, this->_congestion_controller, &this->_rtt_measure, index, ld_config);
-    this->_frame_dispatcher->add_handler(ld);
-    this->_loss_detector[index] = ld;
-  }
+  this->_loss_detector         = new QUICLossDetector(this, this->_congestion_controller, &this->_rtt_measure, ld_config);
+  this->_frame_dispatcher->add_handler(this->_loss_detector);
+
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
   this->_local_flow_controller  = new QUICLocalConnectionFlowController(&this->_rtt_measure, UINT64_MAX);
   this->_path_validator         = new QUICPathValidator();
@@ -943,11 +940,8 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
 
     // TODO: Drop record from Connection-ID - QUICNetVConnection table in QUICPacketHandler
     // Shutdown loss detector
-    for (auto s : QUIC_PN_SPACES) {
-      QUICLossDetector *ld = this->_loss_detector[static_cast<int>(s)];
-      SCOPED_MUTEX_LOCK(lock, ld->mutex, this_ethread());
-      ld->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
-    }
+    SCOPED_MUTEX_LOCK(lock2, this->_loss_detector->mutex, this_ethread());
+    this->_loss_detector->handleEvent(QUIC_EVENT_LD_SHUTDOWN, nullptr);
 
     // FIXME I'm not sure whether we can block here, but it's needed to not crash.
     SCOPED_MUTEX_LOCK(lock, this->nh->mutex, this_ethread());
@@ -1039,9 +1033,9 @@ QUICNetVConnection::next_protocol_set() const
 QUICPacketNumber
 QUICNetVConnection::_largest_acked_packet_number(QUICEncryptionLevel level) const
 {
-  int index = QUICTypeUtil::pn_space_index(level);
+  auto index = QUICTypeUtil::pn_space(level);
 
-  return this->_loss_detector[index]->largest_acked_packet_number();
+  return this->_loss_detector->largest_acked_packet_number(index);
 }
 
 std::string_view
@@ -1105,9 +1099,8 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(const QU
     error = this->_handshake_handler->negotiate_version(packet, &this->_packet_factory);
 
     // discard all transport state except packet number
-    for (auto s : QUIC_PN_SPACES) {
-      this->_loss_detector[static_cast<int>(s)]->reset();
-    }
+    this->_loss_detector->reset();
+
     this->_congestion_controller->reset();
 
     // start handshake over
@@ -1181,9 +1174,8 @@ QUICNetVConnection::_state_handshake_process_retry_packet(const QUICPacket &pack
   // discard all transport state
   this->_handshake_handler->reset();
   this->_packet_factory.reset();
-  for (auto s : QUIC_PN_SPACES) {
-    this->_loss_detector[static_cast<int>(s)]->reset();
-  }
+  this->_loss_detector->reset();
+
   this->_congestion_controller->reset();
   this->_packet_recv_queue.reset();
 
@@ -1397,7 +1389,8 @@ QUICNetVConnection::_state_common_send_packet()
         } else {
           packet_info->sent_bytes = 0;
         }
-        packet_info->type = packet->type();
+        packet_info->type     = packet->type();
+        packet_info->pn_space = QUICTypeUtil::pn_space(level);
 
         if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
           QUICConDebug("send to unverified window: %u", this->_verfied_state.windows());
@@ -1423,8 +1416,7 @@ QUICNetVConnection::_state_common_send_packet()
           this->_minimum_encryption_level = QUICEncryptionLevel::HANDSHAKE;
         }
 
-        int index = QUICTypeUtil::pn_space_index(level);
-        this->_loss_detector[index]->on_packet_sent(std::move(packet_info));
+        this->_loss_detector->on_packet_sent(std::move(packet_info));
         packet_count++;
       }
     }
@@ -1974,10 +1966,9 @@ QUICNetVConnection::_complete_handshake_if_possible()
                                   this->_handshake_handler->remote_transport_parameters());
 
   // PN space doesn't matter but seems like this is the way to pick the LossDetector for 0-RTT and Short packet
-  int index_for_1rtt = QUICTypeUtil::pn_space_index(QUICEncryptionLevel::ONE_RTT);
   uint64_t ack_delay_exponent =
     this->_handshake_handler->remote_transport_parameters()->getAsUInt(QUICTransportParameterId::ACK_DELAY_EXPONENT);
-  this->_loss_detector[index_for_1rtt]->update_ack_delay_exponent(ack_delay_exponent);
+  this->_loss_detector->update_ack_delay_exponent(ack_delay_exponent);
 
   this->_start_application();
 
@@ -2090,8 +2081,7 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   this->remove_from_active_queue();
   this->set_inactivity_timeout(0);
 
-  int index      = QUICTypeUtil::pn_space_index(this->_hs_protocol->current_encryption_level());
-  ink_hrtime rto = this->_loss_detector[index]->current_rto_period();
+  ink_hrtime rto = this->_loss_detector->current_rto_period();
 
   QUICConDebug("Enter state_connection_closing");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
@@ -2119,8 +2109,7 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
   this->remove_from_active_queue();
   this->set_inactivity_timeout(0);
 
-  int index      = QUICTypeUtil::pn_space_index(this->_hs_protocol->current_encryption_level());
-  ink_hrtime rto = this->_loss_detector[index]->current_rto_period();
+  ink_hrtime rto = this->_loss_detector->current_rto_period();
 
   QUICConDebug("Enter state_connection_draining");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_draining);
@@ -2161,15 +2150,7 @@ QUICNetVConnection::_validate_new_path()
   this->_path_validator->validate();
   // Not sure how long we should wait. The spec says just "enough time".
   // Use the same time amount as the closing timeout.
-  ink_hrtime rto          = 0;
-  int current_level_index = QUICTypeUtil::pn_space_index(this->_hs_protocol->current_encryption_level());
-
-  // Workaround fix for #5111 - walk through PN Spaces to get correct RTO
-  // This could be removed when _loss_detectors are combined.
-  for (int i = 0; i <= current_level_index; ++i) {
-    rto = std::max(rto, this->_loss_detector[i]->current_rto_period());
-  }
-
+  ink_hrtime rto = this->_loss_detector->current_rto_period();
   this->_schedule_path_validation_timeout(3 * rto);
 }
 

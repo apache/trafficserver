@@ -146,14 +146,17 @@ QUICTypeUtil::key_phase(QUICPacketType type)
 }
 
 // 0-RTT and 1-RTT use same Packet Number Space
-int
-QUICTypeUtil::pn_space_index(QUICEncryptionLevel level)
+QUICPacketNumberSpace
+QUICTypeUtil::pn_space(QUICEncryptionLevel level)
 {
-  if (level == QUICEncryptionLevel::ONE_RTT) {
-    level = QUICEncryptionLevel::ZERO_RTT;
+  switch (level) {
+  case QUICEncryptionLevel::HANDSHAKE:
+    return QUICPacketNumberSpace::Handshake;
+  case QUICEncryptionLevel::INITIAL:
+    return QUICPacketNumberSpace::Initial;
+  default:
+    return QUICPacketNumberSpace::ApplicationData;
   }
-
-  return static_cast<int>(level);
 }
 
 QUICConnectionId
