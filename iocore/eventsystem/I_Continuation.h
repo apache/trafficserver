@@ -198,8 +198,8 @@ protected:
     @param amutex Lock to be set for this Continuation.
 
   */
-  Continuation(ProxyMutex *amutex = nullptr);
-  Continuation(Ptr<ProxyMutex> &amutex);
+  explicit Continuation(ProxyMutex *amutex = nullptr);
+  explicit Continuation(Ptr<ProxyMutex> &amutex);
 };
 
 /**

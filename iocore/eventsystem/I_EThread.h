@@ -358,6 +358,7 @@ public:
   */
   class DefaultTailHandler : public LoopTailHandler
   {
+    // cppcheck-suppress noExplicitConstructor; allow implicit conversion
     DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
 
     int

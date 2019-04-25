@@ -313,8 +313,8 @@ public:
   */
   virtual void do_io_shutdown(ShutdownHowTo_t howto) = 0;
 
-  VConnection(ProxyMutex *aMutex);
-  VConnection(Ptr<ProxyMutex> &aMutex);
+  explicit VConnection(ProxyMutex *aMutex);
+  explicit VConnection(Ptr<ProxyMutex> &aMutex);
 
   // Private
   // Set continuation on a given vio. The public interface
@@ -389,8 +389,8 @@ class AnnotatedVConnection : public VConnection
   using super_type = VConnection;
 
 public:
-  AnnotatedVConnection(ProxyMutex *aMutex) : super_type(aMutex){};
-  AnnotatedVConnection(Ptr<ProxyMutex> &aMutex) : super_type(aMutex){};
+  explicit AnnotatedVConnection(ProxyMutex *aMutex) : super_type(aMutex){};
+  explicit AnnotatedVConnection(Ptr<ProxyMutex> &aMutex) : super_type(aMutex){};
 
   void *
   get_user_arg(unsigned ix) const
@@ -440,5 +440,5 @@ struct DummyVConnection : public AnnotatedVConnection {
                 "cannot use default implementation");
   }
 
-  DummyVConnection(ProxyMutex *m) : AnnotatedVConnection(m) {}
+  explicit DummyVConnection(ProxyMutex *m) : AnnotatedVConnection(m) {}
 };

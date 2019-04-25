@@ -46,8 +46,6 @@ int64_t max_iobuffer_size           = DEFAULT_BUFFER_SIZES - 1;
 void
 init_buffer_allocators(int iobuffer_advice)
 {
-  char *name;
-
   for (int i = 0; i < DEFAULT_BUFFER_SIZES; i++) {
     int64_t s = DEFAULT_BUFFER_BASE_SIZE * (((int64_t)1) << i);
     int64_t a = DEFAULT_BUFFER_ALIGNMENT;
@@ -56,7 +54,7 @@ init_buffer_allocators(int iobuffer_advice)
       a = s;
     }
 
-    name = new char[64];
+    auto name = new char[64];
     snprintf(name, 64, "ioBufAllocator[%d]", i);
     ioBufAllocator[i].re_init(name, s, n, a, iobuffer_advice);
   }

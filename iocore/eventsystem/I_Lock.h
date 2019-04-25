@@ -245,7 +245,7 @@ Mutex_trylock(
   Ptr<ProxyMutex> &m, EThread *t)
 {
   ink_assert(t != nullptr);
-  ink_assert(t == (EThread *)this_thread());
+  ink_assert(t == reinterpret_cast<EThread *>(this_thread()));
   if (m->thread_holding != t) {
     if (!ink_mutex_try_acquire(&m->the_mutex)) {
 #ifdef DEBUG

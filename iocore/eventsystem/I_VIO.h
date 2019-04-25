@@ -139,7 +139,7 @@ public:
   */
   inkcoreapi void reenable_re();
 
-  VIO(int aop);
+  explicit VIO(int aop);
   VIO();
 
   enum {
