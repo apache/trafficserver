@@ -41,7 +41,6 @@
 #include "HttpConfig.h"
 
 #include "P_Net.h"
-#include "P_SSLUtils.h"
 #include "P_SSLClientUtils.h"
 #include "P_SSLCertLookup.h"
 #include "SSLDiags.h"
@@ -65,6 +64,12 @@ size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
 IpMap *SSLConfigParams::proxy_protocol_ipmap                = nullptr;
+
+#if TS_HAS_TLS_EARLY_DATA
+#define EARLY_DATA_DEFAULT_SIZE 16384
+int SSLConfigParams::server_max_early_data      = 0;
+int SSLConfigParams::server_recv_max_early_data = EARLY_DATA_DEFAULT_SIZE;
+#endif
 
 int SSLConfigParams::async_handshake_enabled = 0;
 char *SSLConfigParams::engine_conf_file      = nullptr;
@@ -282,6 +287,18 @@ SSLConfigParams::initialize()
 #ifdef SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION
   ssl_ctx_options |= SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
   ssl_client_ctx_options |= SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
+#endif
+
+#if TS_HAS_TLS_EARLY_DATA
+  REC_ReadConfigInteger(server_max_early_data, "proxy.config.ssl.server.max_early_data");
+
+  if (server_max_early_data < 0) {
+    Fatal("proxy.config.ssl.server.max_early_data must be a positive number.");
+  } else {
+    // According to OpenSSL the default value is 16384,
+    // we keep it unless "server_max_early_data" is higher.
+    server_recv_max_early_data = server_max_early_data <= EARLY_DATA_DEFAULT_SIZE ? EARLY_DATA_DEFAULT_SIZE : server_max_early_data;
+  }
 #endif
 
   REC_ReadConfigStringAlloc(serverCertChainFilename, "proxy.config.ssl.server.cert_chain.filename");

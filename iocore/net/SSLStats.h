@@ -83,6 +83,7 @@ enum SSL_Stats {
   ssl_session_cache_eviction,
   ssl_session_cache_lock_contention,
   ssl_session_cache_new_session,
+  ssl_early_data_received_count, // how many times we received early data
 
   /* error stats */
   ssl_error_want_write,

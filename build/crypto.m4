@@ -225,3 +225,28 @@ AC_DEFUN([TS_CHECK_CRYPTO_SET_CIPHERSUITES], [
   TS_ARG_ENABLE_VAR([use], [tls-set-ciphersuites])
   AC_SUBST(use_tls_set_ciphersuites)
 ])
+
+dnl
+dnl Since OpenSSL 1.1.1
+dnl
+AC_DEFUN([TS_CHECK_EARLY_DATA], [
+  AC_MSG_CHECKING([OpenSSL early data support])
+  AC_TRY_RUN([
+#include <openssl/opensslv.h>
+int main() {
+  if (OPENSSL_VERSION_NUMBER >= 0x10101000L) {
+    return 0;
+  }
+  return 1;
+}
+  ],
+  [
+    AC_MSG_RESULT([yes])
+    has_tls_early_data=1
+  ],
+  [
+    AC_MSG_RESULT([no])
+    has_tls_early_data=0
+  ])
+  AC_SUBST(has_tls_early_data)
+])

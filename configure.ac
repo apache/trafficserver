@@ -1197,6 +1197,9 @@ TS_CHECK_CRYPTO_OCSP
 # Check for SSL_CTX_set_ciphersuites call
 TS_CHECK_CRYPTO_SET_CIPHERSUITES
 
+# Check for openssl early data support
+TS_CHECK_EARLY_DATA
+
 saved_LIBS="$LIBS"
 TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
 
@@ -1233,7 +1236,7 @@ AC_CHECK_FUNC([EVP_MD_CTX_free], [],
 
 LIBS="$saved_LIBS"
 
-# 
+#
 # Check OpenSSL version for JA3 Fingerprint
 #
 AC_MSG_CHECKING([for JA3 compatible OpenSSL version])

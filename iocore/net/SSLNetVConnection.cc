@@ -35,7 +35,6 @@
 
 #include "P_Net.h"
 #include "P_SSLNextProtocolSet.h"
-#include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 #include "P_SSLClientUtils.h"
 #include "P_SSLSNI.h"
@@ -940,6 +939,19 @@ SSLNetVConnection::free(EThread *t)
 
   ats_free(tunnel_host);
 
+#if TS_HAS_TLS_EARLY_DATA
+  if (early_data_reader != nullptr) {
+    early_data_reader->dealloc();
+  }
+
+  if (early_data_buf != nullptr) {
+    free_MIOBuffer(early_data_buf);
+  }
+
+  early_data_reader = nullptr;
+  early_data_buf    = nullptr;
+#endif
+
   clear();
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
   ink_assert(con.fd == NO_FD);
@@ -1194,16 +1206,18 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
 #if TS_USE_TLS_ASYNC
   if (SSLConfigParams::async_handshake_enabled) {
-    SSL_set_mode(ssl, SSL_MODE_ASYNC);
+    SSL_set_mode(this->ssl, SSL_MODE_ASYNC);
   }
 #endif
-  ssl_error_t ssl_error = SSLAccept(ssl);
+
+  ssl_error_t ssl_error = SSLAccept(this->ssl);
+
 #if TS_USE_TLS_ASYNC
   if (ssl_error == SSL_ERROR_WANT_ASYNC) {
     size_t numfds;
     OSSL_ASYNC_FD waitfd;
     // Set up the epoll entry for the signalling
-    if (SSL_get_all_async_fds(ssl, &waitfd, &numfds) && numfds > 0) {
+    if (SSL_get_all_async_fds(this->ssl, &waitfd, &numfds) && numfds > 0) {
       // Temporarily disable regular net
       read_disable(nh, this);
       this->ep.stop(); // Modify used in read_disable doesn't work for edge triggered epol
@@ -1216,7 +1230,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     }
   } else if (SSLConfigParams::async_handshake_enabled) {
     // Clean up the epoll entry for signalling
-    SSL_clear_mode(ssl, SSL_MODE_ASYNC);
+    SSL_clear_mode(this->ssl, SSL_MODE_ASYNC);
     this->ep.stop();
     // Reactivate the socket, ready to rock
     PollDescriptor *pd = get_PollDescriptor(this_ethread());
@@ -1247,7 +1261,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (is_debug_tag_set("ssl")) {
-      X509 *cert = SSL_get_peer_certificate(ssl);
+      X509 *cert = SSL_get_peer_certificate(this->ssl);
 
       Debug("ssl", "SSL server handshake completed successfully");
       if (cert) {
@@ -1276,9 +1290,9 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       // is preferred since it is the server's preference.  The server
       // preference would not be meaningful if we let the client
       // preference have priority.
-      SSL_get0_alpn_selected(ssl, &proto, &len);
+      SSL_get0_alpn_selected(this->ssl, &proto, &len);
       if (len == 0) {
-        SSL_get0_next_proto_negotiated(ssl, &proto, &len);
+        SSL_get0_next_proto_negotiated(this->ssl, &proto, &len);
       }
 
       if (len) {

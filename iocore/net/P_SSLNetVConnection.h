@@ -41,6 +41,7 @@
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
+#include "P_SSLUtils.h"
 
 // These are included here because older OpenSSL libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -382,6 +383,12 @@ public:
 
   bool protocol_mask_set = false;
   unsigned long protocol_mask;
+
+#if TS_HAS_TLS_EARLY_DATA
+  bool early_data_finish            = false;
+  MIOBuffer *early_data_buf         = nullptr;
+  IOBufferReader *early_data_reader = nullptr;
+#endif
 
   // Only applies during the VERIFY certificate hooks (client and server side)
   // Means to give the plugin access to the data structure passed in during the underlying
