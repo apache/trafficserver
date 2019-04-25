@@ -154,11 +154,10 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
   int bufindex;
   int dumpoffset = 0;
   int done, tmp;
-  IOBufferBlock *block;
   do {
-    bufindex = 0;
-    tmp      = dumpoffset;
-    block    = request_buffer.get_current_block();
+    bufindex             = 0;
+    tmp                  = dumpoffset;
+    IOBufferBlock *block = request_buffer.get_current_block();
     if (!block) {
       request_buffer.add_block();
       block = request_buffer.get_current_block();
