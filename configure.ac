@@ -1200,12 +1200,19 @@ TS_CHECK_CRYPTO_TLS13
 
 # Check for QUIC support
 enable_quic=no
-AS_IF([test "x$enable_tls13" = "xyes"], [
-  enable_quic=yes
-])
+AC_MSG_CHECKING([whether APIs for QUIC are available])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
+                                   [[
+                                     #ifndef SSL_MODE_QUIC_HACK
+                                     # error no hack for quic
+                                     #endif
+                                   ]])
+                  ],
+                  [AC_MSG_RESULT([yes]); enable_quic=yes],
+                  [AC_MSG_RESULT([no])])
+AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
 TS_ARG_ENABLE_VAR([use], [quic])
 AC_SUBST(use_quic)
-AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
 
 # Check for OCSP
 TS_CHECK_CRYPTO_OCSP
