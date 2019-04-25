@@ -178,7 +178,7 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   if (TSSystemState::is_event_system_shut_down()) {
     return ACTION_RESULT_NONE;
   }
-  EThread *t             = cont->mutex->thread_holding;
+  EThread *t             = eventProcessor.assign_affinity_by_type(cont, opt->etype);
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
 
   if (opt) {
@@ -232,27 +232,22 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
     vc->action_ = cont;
   }
 
-  if (t->is_event_type(opt->etype)) {
-    MUTEX_TRY_LOCK(lock, cont->mutex, t);
-    if (lock.is_locked()) {
-      MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
-      if (lock2.is_locked()) {
-        int ret;
-        ret = vc->connectUp(t, NO_FD);
-        if ((using_socks) && (ret == CONNECT_SUCCESS)) {
-          return &socksEntry->action_;
-        } else {
-          return ACTION_RESULT_DONE;
-        }
+  MUTEX_TRY_LOCK(lock, cont->mutex, t);
+  if (lock.is_locked()) {
+    MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
+    if (lock2.is_locked()) {
+      int ret;
+      ret = vc->connectUp(t, NO_FD);
+      if ((using_socks) && (ret == CONNECT_SUCCESS)) {
+        return &socksEntry->action_;
+      } else {
+        return ACTION_RESULT_DONE;
       }
     }
   }
-  // Try to stay on the current thread if it is the right type
-  if (t->is_event_type(opt->etype)) {
-    t->schedule_imm(vc);
-  } else { // Otherwise, pass along to another thread of the right type
-    eventProcessor.schedule_imm(vc, opt->etype);
-  }
+
+  t->schedule_imm(vc);
+
   if (using_socks) {
     return &socksEntry->action_;
   } else {
