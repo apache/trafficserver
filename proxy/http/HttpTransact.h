@@ -1105,6 +1105,12 @@ is_response_body_precluded(HTTPStatus status_code)
 }
 
 inline bool
+is_response_body_not_required(HTTPStatus status_code)
+{
+  return is_response_body_precluded(status_code) || (status_code >= 400);
+}
+
+inline bool
 is_response_body_precluded(HTTPStatus status_code, int method)
 {
   if ((method == HTTP_WKSIDX_HEAD) || (method == HTTP_WKSIDX_CONNECT) || is_response_body_precluded(status_code)) {

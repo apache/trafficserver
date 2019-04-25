@@ -6850,6 +6850,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
          (s->state_machine->plugin_tag && (!strncmp(s->state_machine->plugin_tag, "http/2", 6)))) &&
         // if we're not sending a body, don't set a chunked header regardless of server response
         !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
+        !is_response_body_not_required(s->hdr_info.client_response.status_get()) &&
         // we do not need chunked encoding for internal error messages
         // that are sent to the client if the server response is not valid.
         (((s->source == SOURCE_HTTP_ORIGIN_SERVER || s->source == SOURCE_TRANSFORM) && s->hdr_info.server_response.valid() &&
