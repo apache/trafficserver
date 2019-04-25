@@ -105,7 +105,7 @@ private:
 class HpackDynamicTable
 {
 public:
-  HpackDynamicTable(uint32_t size) : _current_size(0), _maximum_size(size)
+  explicit HpackDynamicTable(uint32_t size) : _current_size(0), _maximum_size(size)
   {
     _mhdr = new MIMEHdr();
     _mhdr->create();
@@ -118,6 +118,10 @@ public:
     _mhdr->destroy();
     delete _mhdr;
   }
+
+  // noncopyable
+  HpackDynamicTable(HpackDynamicTable &) = delete;
+  HpackDynamicTable &operator=(const HpackDynamicTable &) = delete;
 
   const MIMEField *get_header_field(uint32_t index) const;
   void add_header_field(const MIMEField *field);
@@ -140,8 +144,13 @@ private:
 class HpackIndexingTable
 {
 public:
-  HpackIndexingTable(uint32_t size) { _dynamic_table = new HpackDynamicTable(size); }
+  explicit HpackIndexingTable(uint32_t size) { _dynamic_table = new HpackDynamicTable(size); }
   ~HpackIndexingTable() { delete _dynamic_table; }
+
+  // noncopyable
+  HpackIndexingTable(HpackIndexingTable &) = delete;
+  HpackIndexingTable &operator=(const HpackIndexingTable &) = delete;
+
   HpackLookupResult lookup(const MIMEFieldWrapper &field) const;
   HpackLookupResult lookup(const char *name, int name_len, const char *value, int value_len) const;
   int get_header_field(uint32_t index, MIMEFieldWrapper &header_field) const;

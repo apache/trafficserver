@@ -385,7 +385,7 @@ bool
 HpackDynamicTable::update_maximum_size(uint32_t new_size)
 {
   while (_current_size > new_size) {
-    if (_headers.size() <= 0) {
+    if (_headers.size() == 0) {
       return false;
     }
     int last_name_len, last_value_len;
@@ -450,7 +450,7 @@ encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, siz
   int64_t data_len = 0;
 
   // TODO Choose whether to use Huffman encoding wisely
-
+  // cppcheck-suppress knownConditionTrueFalse; leaving "use_huffman" for wise huffman usage in the future
   if (use_huffman && value_len) {
     data = static_cast<char *>(ats_malloc(value_len * 4));
     if (data == nullptr) {
