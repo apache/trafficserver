@@ -42,6 +42,7 @@ data_is_nul_terminated(const MgmtMarshallData *data)
 {
   const char *str = (const char *)(data->ptr);
 
+  ink_assert(str);
   if (str[data->len - 1] != '\0') {
     return false;
   }
