@@ -25,7 +25,7 @@
 #pragma once
 
 #include <algorithm> /* transform() */
-#include <cstddef>   /* soze_t */
+#include <cstddef>   /* size_t */
 #include <string>    /* std::string */
 #include <sstream>   /* std::stringstream */
 #include <map>       /* std::map */

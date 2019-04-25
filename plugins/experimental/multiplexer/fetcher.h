@@ -272,7 +272,7 @@ template <class T> struct HttpTransaction {
       break;
 
     default:
-      assert(false); // UNRECHEABLE.
+      assert(false); // UNREACHABLE.
     }
     return 0;
   }

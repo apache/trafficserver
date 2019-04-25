@@ -53,7 +53,7 @@
 
 // Log format headers. These are emitted once at the start of a log file. Note that we
 // carefully order the fields so the field ordering is compatible. This lets you change
-// the verbosity without breaking a perser that is moderately robust.
+// the verbosity without breaking a parser that is moderately robust.
 static const char *tcpi_headers[] = {
   "timestamp event client server rtt",
   "timestamp event client server rtt rttvar last_sent last_recv "
@@ -254,7 +254,7 @@ parse_unsigned(const char *str, unsigned long &lval)
   }
 
   if (end && *end != '\0') {
-    // Not all charaters consumed.
+    // Not all characters consumed.
     return false;
   }
 

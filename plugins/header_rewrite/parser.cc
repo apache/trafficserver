@@ -95,7 +95,7 @@ Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
       }
 
       if ((line[i] == '=') || (line[i] == '+')) {
-        // These are always a seperate token
+        // These are always a separate token
         _tokens.push_back(std::string(1, line[i]));
         continue;
       }

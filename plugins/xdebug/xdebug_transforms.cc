@@ -86,7 +86,7 @@ body_transform(TSCont contp, TSEvent event, void *edata)
     return TS_ERROR;
   }
   if (TSVConnClosedGet(contp)) {
-    // write connection destoried. cleanup.
+    // write connection destroyed. cleanup.
     delete data;
     TSContDestroy(contp);
     return 0;
@@ -106,7 +106,7 @@ body_transform(TSCont contp, TSEvent event, void *edata)
   }
   case TS_EVENT_VCONN_WRITE_READY:
     TSDebug("xdebug_transform", "body_transform(): Event is TS_EVENT_VCONN_WRITE_READY");
-  // fallthru
+  // fall through
   default:
     if (!data->output_buffer) {
       data->output_buffer = TSIOBufferCreate();

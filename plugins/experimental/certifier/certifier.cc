@@ -108,7 +108,7 @@ private:
   using scoped_SslData = std::unique_ptr<SslLRUList::SslData>;
 
   // unordered_map is much faster in terms of insertion/lookup/removal
-  // Althogh it uses more space than map, the time efficiency should be more important
+  // Although it uses more space than map, the time efficiency should be more important
   std::unordered_map<std::string, scoped_SslData> cnDataMap; ///< Map from CN to sslData
   TSMutex list_mutex;
 
@@ -455,7 +455,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
   if (cert == nullptr) {
     if (!sign_enabled) {
       TSDebug(PLUGIN_NAME, "shadow_cert_generator(): No certs found and dynamic generation disabled. Marked as wontdo.");
-      // There won't be certs avaiable. Mark this servername as wontdo
+      // There won't be certs available. Mark this servername as wontdo
       // Pass on as if plugin doesn't exist
       ssl_list->setup_data_ctx(commonName, localQ, nullptr, nullptr, true);
       while (!localQ.empty()) {
@@ -576,7 +576,7 @@ cert_retriever(TSCont contp, TSEvent event, void *edata)
     TSVConnReenable(ssl_vc);
   }
 
-  /// For scheduled connections, the schduled continuation will handle the reenabling
+  /// For scheduled connections, the scheduled continuation will handle the reenabling
   return TS_SUCCESS;
 }
 

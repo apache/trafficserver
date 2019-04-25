@@ -11,7 +11,7 @@ Upload proxy specs for phase I:
 
 1. Memory buffering (buffer the entire POST data in IOBuffer before connecting to OS)
   1.1. Memory buffer size is configured with "mem_buffer_size" in config file. Default and minimum value is 32K
-       You can increase it in the config file. If a request's size is larger than "mem_buffer_size" specifiied
+       You can increase it in the config file. If a request's size is larger than "mem_buffer_size" specified
        in config file, then the upload proxy feature will be disabled for this particular request
 
 2. Disk buffering (buffer the entire POST data on disk before connecting to OS)
@@ -43,9 +43,9 @@ Upload proxy specs for phase I:
   5.1. for now check if the "host" part in the URL is same as the proxy server name, then will do this conversion
   5.2. To turn on URL conversion feature, set "convert_url 1" in config file
 
-6. All request headers inlcuding cookies plus the entire POST data will be buffered (either in memory or on disk)
+6. All request headers including cookies plus the entire POST data will be buffered (either in memory or on disk)
 
-7. Config file can be explicitly sepcified as a parameter in command line (in plugin.config file)
+7. Config file can be explicitly specified as a parameter in command line (in plugin.config file)
 
 
 a sample config file:

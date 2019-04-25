@@ -140,7 +140,7 @@ testParseRange()
 
   for (size_t index(0); index < gots.size(); ++index) {
     if (exps[index] != gots[index] || expsres[index] != gotsres[index]) {
-      oss << "Eror parsing index: " << index << std::endl;
+      oss << "Error parsing index: " << index << std::endl;
       oss << "test: '" << teststrings[index] << "'" << std::endl;
       oss << "exp: " << exps[index].m_beg << ' ' << exps[index].m_end << std::endl;
       oss << "expsres: " << (int)expsres[index] << std::endl;

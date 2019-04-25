@@ -229,7 +229,7 @@ custom_get_ja3(SSL *s)
   custom_get_ja3_prefixed(2, p, len, ja3);
   ja3 += ',';
 
-  // Get extenstions
+  // Get extensions
   int *o;
   std::string eclist, ecpflist;
   if (SSL_client_hello_get0_ext(s, 0x0a, &p, &len) == 1) {

@@ -21,7 +21,7 @@
  * This plugin looks for range requests and then creates a new
  * cache key url so that each individual range requests is written
  * to the cache as a individual object so that subsequent range
- * requests are read accross different disk drives reducing I/O
+ * requests are read across different disk drives reducing I/O
  * wait and load averages when there are large numbers of range
  * requests.
  */
@@ -94,7 +94,7 @@ create_pluginconfig(int argc, const char *argv[])
 }
 
 /**
- * Destroy pluginconfig data stucture.
+ * Destroy pluginconfig data structure.
  */
 static void
 delete_pluginconfig(struct pluginconfig *pc)

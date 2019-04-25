@@ -274,7 +274,7 @@ TSPluginInit(int argc, const char *argv[])
     case SSL_HEADERS_ATTACH_SERVER:
       TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);
       break;
-    case SSL_HEADERS_ATTACH_BOTH: /* fallthru */
+    case SSL_HEADERS_ATTACH_BOTH: /* fallthrough */
     case SSL_HEADERS_ATTACH_CLIENT:
       TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, hdr->cont);
       TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);
@@ -319,7 +319,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
   case SSL_HEADERS_ATTACH_SERVER:
     TSHttpTxnHookAdd(txn, TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);
     break;
-  case SSL_HEADERS_ATTACH_BOTH: /* fallthru */
+  case SSL_HEADERS_ATTACH_BOTH: /* fallthrough */
   case SSL_HEADERS_ATTACH_CLIENT:
     TSHttpTxnHookAdd(txn, TS_HTTP_READ_REQUEST_HDR_HOOK, hdr->cont);
     TSHttpTxnHookAdd(txn, TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);

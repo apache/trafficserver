@@ -415,7 +415,7 @@ Mp4Meta::mp4_read_ftyp_atom(int64_t atom_header_size, int64_t atom_data_size)
 
   atom_size = atom_header_size + atom_data_size;
 
-  if (meta_avail < atom_size) { // data unsufficient, reasonable from the first level
+  if (meta_avail < atom_size) { // data insufficient, reasonable from the first level
     return 0;
   }
 
@@ -447,7 +447,7 @@ Mp4Meta::mp4_read_moov_atom(int64_t atom_header_size, int64_t atom_data_size)
     return -1;
   }
 
-  if (meta_avail < atom_size) { // data unsufficient, wait
+  if (meta_avail < atom_size) { // data insufficient, wait
     return 0;
   }
 

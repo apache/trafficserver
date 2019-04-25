@@ -98,7 +98,7 @@ read_request(TSHttpTxn txnp, Config *const config)
         data->m_urlloc    = newloc;
       }
 
-      // we'll intercept this GET and do it ourselfs
+      // we'll intercept this GET and do it ourselves
       TSCont const icontp(TSContCreate(intercept_hook, TSMutexCreate()));
       TSContDataSet(icontp, (void *)data);
       //      TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, icontp);

@@ -108,7 +108,7 @@ ts_lua_client_response_header_get(lua_State *L)
         next_field_loc = TSMimeHdrFieldNextDup(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, field_loc);
         lua_pushlstring(L, val, val_len);
         count++;
-        // multiple headers with the same name must be semantically the same as one value which is comma seperated
+        // multiple headers with the same name must be semantically the same as one value which is comma separated
         if (next_field_loc != TS_NULL_MLOC) {
           lua_pushlstring(L, ",", 1);
           count++;

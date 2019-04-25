@@ -1537,7 +1537,7 @@ globalHookHandler(TSCont contp, TSEvent event, void *edata)
         TSDebug(DEBUG_TAG, "[%s] handling cache lookup complete event", __FUNCTION__);
         if (isCacheObjTransformable(txnp, &intercept_header, &head_only)) {
           // we make the assumption above that a transformable cache
-          // object would already have a tranformation. We should revisit
+          // object would already have a transformation. We should revisit
           // that assumption in case we change the statement below
           addTransform(txnp, false, intercept_header, head_only, pOptionInfo);
           Stats::increment(Stats::N_CACHE_DOCS);

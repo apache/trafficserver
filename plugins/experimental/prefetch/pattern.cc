@@ -150,7 +150,7 @@ Pattern::pcreFree()
 }
 
 /**
- * @bried Destructor, frees PCRE related resources.
+ * @brief Destructor, frees PCRE related resources.
  */
 Pattern::~Pattern()
 {

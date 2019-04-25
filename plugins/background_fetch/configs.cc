@@ -72,7 +72,7 @@ BgFetchConfig::parseOptions(int argc, const char *argv[])
   return true;
 }
 
-// Read a config file, populare the linked list (chain the BgFetchRule's)
+// Read a config file, populate the linked list (chain the BgFetchRule's)
 bool
 BgFetchConfig::readConfig(const char *config_file)
 {

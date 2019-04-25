@@ -104,7 +104,7 @@ CookieJar::parse(const string &arg, const char *sepstr, bool val_check, bool mai
         }
 
         /* verify that the value is valid according to our configured
-         * opton and possibly strip out invalid characters. */
+         * option and possibly strip out invalid characters. */
 
         if (val_check && verify_value(addme, val_len) != 0)
           continue;
