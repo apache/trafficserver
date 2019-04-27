@@ -47,17 +47,17 @@ Pattern::Pattern() : _pattern(""), _replacement("") {}
  * @return true if successful, false if failure
  */
 bool
-Pattern::init(const String &pattern, const String &replacenemt)
+Pattern::init(const String &pattern, const String &replacement)
 {
   pcreFree();
 
   _pattern.assign(pattern);
-  _replacement.assign(replacenemt);
+  _replacement.assign(replacement);
 
   _tokenCount = 0;
 
   if (!compile()) {
-    PrefetchDebug("failed to initialize pattern:'%s', replacement:'%s'", pattern.c_str(), replacenemt.c_str());
+    PrefetchDebug("failed to initialize pattern:'%s', replacement:'%s'", pattern.c_str(), replacement.c_str());
     pcreFree();
     return false;
   }
