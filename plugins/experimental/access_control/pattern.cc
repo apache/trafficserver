@@ -47,18 +47,18 @@ Pattern::Pattern() : _pattern(""), _replacement("") {}
  * @return true if successful, false if failure
  */
 bool
-Pattern::init(const String &pattern, const String &replacenemt, bool replace)
+Pattern::init(const String &pattern, const String &replacement, bool replace)
 {
   pcreFree();
 
   _pattern.assign(pattern);
-  _replacement.assign(replacenemt);
+  _replacement.assign(replacement);
   _replace = replace;
 
   _tokenCount = 0;
 
   if (!compile()) {
-    AccessControlDebug("failed to initialize pattern:'%s', replacement:'%s'", pattern.c_str(), replacenemt.c_str());
+    AccessControlDebug("failed to initialize pattern:'%s', replacement:'%s'", pattern.c_str(), replacement.c_str());
     pcreFree();
     return false;
   }
