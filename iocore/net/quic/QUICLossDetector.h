@@ -199,5 +199,4 @@ private:
   QUICConnectionInfoProvider *_info = nullptr;
   QUICCongestionController *_cc     = nullptr;
   QUICRTTMeasure *_rtt_measure      = nullptr;
-  int _pn_space_index               = -1;
 };
