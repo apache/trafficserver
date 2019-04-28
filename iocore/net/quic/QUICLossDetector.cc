@@ -165,6 +165,9 @@ QUICLossDetector::reset()
     this->_loss_detection_timer = nullptr;
   }
 
+  this->_ack_eliciting_outstanding = 0;
+  this->_crypto_outstanding        = 0;
+
   // [draft-17 recovery] 6.4.3.  Initialization
   this->_crypto_count                           = 0;
   this->_pto_count                              = 0;
@@ -384,9 +387,13 @@ QUICLossDetector::_on_loss_detection_timeout()
               this->_crypto_outstanding.load());
 
   if (is_debug_tag_set("v_quic_loss_detector")) {
-    for (auto &unacked : this->_sent_packets[static_cast<int>(pn_space)]) {
-      QUICLDVDebug("[%s] #%" PRIu64 " is_crypto=%i ack_eliciting=%i size=%zu", QUICDebugNames::pn_space(pn_space), unacked.first,
-                   unacked.second->is_crypto_packet, unacked.second->ack_eliciting, unacked.second->sent_bytes);
+    for (auto i = 0; i < 3; i++) {
+      for (auto &unacked : this->_sent_packets[i]) {
+        QUICLDVDebug("[%s] #%" PRIu64 " is_crypto=%i ack_eliciting=%i size=%zu %u %u",
+                     QUICDebugNames::pn_space(static_cast<QUICPacketNumberSpace>(i)), unacked.first,
+                     unacked.second->is_crypto_packet, unacked.second->ack_eliciting, unacked.second->sent_bytes,
+                     this->_ack_eliciting_outstanding.load(), this->_crypto_outstanding.load());
+      }
     }
   }
 
@@ -463,10 +470,9 @@ void
 QUICLossDetector::_retransmit_all_unacked_crypto_data()
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-  std::set<QUICPacketNumber> retransmitted_crypto_packets;
-  std::map<QUICPacketNumber, QUICPacketInfo *> lost_packets;
-
   for (auto i = 0; i < kPacketNumberSpace; i++) {
+    std::set<QUICPacketNumber> retransmitted_crypto_packets;
+    std::map<QUICPacketNumber, QUICPacketInfo *> lost_packets;
     for (auto &info : this->_sent_packets[i]) {
       if (info.second->is_crypto_packet) {
         retransmitted_crypto_packets.insert(info.first);
@@ -539,7 +545,7 @@ QUICLossDetector::_add_to_sent_packet_list(QUICPacketNumber packet_number, QUICP
       ++this->_crypto_outstanding;
       ink_assert(this->_crypto_outstanding.load() > 0);
     }
-    if (!ite->second->ack_eliciting) {
+    if (ite->second->ack_eliciting) {
       ++this->_ack_eliciting_outstanding;
       ink_assert(this->_ack_eliciting_outstanding.load() > 0);
     }
@@ -576,7 +582,7 @@ QUICLossDetector::_decrement_outstanding_counters(std::map<QUICPacketNumber, QUI
       ink_assert(this->_crypto_outstanding.load() > 0);
       --this->_crypto_outstanding;
     }
-    if (!it->second->ack_eliciting) {
+    if (it->second->ack_eliciting) {
       ink_assert(this->_ack_eliciting_outstanding.load() > 0);
       --this->_ack_eliciting_outstanding;
     }
