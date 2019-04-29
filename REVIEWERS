@@ -18,12 +18,12 @@ Committers: add modules as needed and any qualifications after your e-mail addre
 all/general interest
         jplevyak@apache.org
         bcall@apache.org
-	briang@apache.org
+        briang@apache.org
         mturk@apache.org
         zwoop@apache.org
         jim@apache.org
         ericb@apache.org
-	manjesh@apache.org
+        manjesh@apache.org
 lib/ts
         jplevyak@apache.org
         zwoop@apache.org
@@ -33,19 +33,19 @@ lib/ts
 lib/records
         bcall@apache.org
         georgep@apache.org
-	      zwoop@apache.org
+        zwoop@apache.org
 Event System/Buffering/VIO/VConnection
         jplevyak@apache.org
         bcall@apache.org
-	briang@apache.org
+        briang@apache.org
         georgep@apache.org
 Network I/O
         jplevyak@apache.org - not including SSL or UDP except where it intersects the other code
         bcall@apache.org
         georgep@apache.org
-	briang@apache.org
+        briang@apache.org
         jim@apache.org
-	zwoop@apache.org
+        zwoop@apache.org
 Raw Cache and AIO
         jplevyak@apache.org
         bcall@apache.org
@@ -53,13 +53,12 @@ Raw Cache and AIO
 HTTP Caching
         bcall@apache.org
         jim@apache.org
-	      zwoop@apache.org
+        zwoop@apache.org
 Block-Cache
-Clustering
         jplevyak@apache.org
         georgep@apache.org
         jim@apache.org
-	zym@apache.org
+        zym@apache.org
 DNS/HostDB
         jplevyak@apache.org
         zwoop@apache.org
@@ -68,11 +67,11 @@ DNS/HostDB
         ericb@apache.org
 FastIO
 Docs
-	      dianes@apache.org
+        dianes@apache.org
 Examples/Plugins
         zwoop@apache.org
         bcall@apache.org
-	briang@apache.org
+        briang@apache.org
         ericb@apache.org
 HDRs
         bcall@apache.org
@@ -81,7 +80,7 @@ HDRs
 HTTP
         bcall@apache.org
         zwoop@apache.org
-	briang@apache.org
+        briang@apache.org
         jim@apache.org
         ericb@apache.org
 Remap
@@ -91,7 +90,7 @@ Remap
         ericb@apache.org
 API
         zwoop@apache.org
-	briang@apache.org
+        briang@apache.org
         bcall@apache.org
         georgep@apache.org
         ericb@apache.org
@@ -106,8 +105,8 @@ MGMT
 Stats
         bcall@apache.org
         georgep@apache.org
-	briang@apache.org
-	zwoop@apache.org
+        briang@apache.org
+        zwoop@apache.org
 Build System
         zwoop@apache.org
         bcall@apache.org
