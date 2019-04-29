@@ -38,7 +38,7 @@ typedef struct redis_endpoint {
 
 typedef struct redis_endpoint_compare {
   bool
-  operator()(const RedisEndpoint &lhs, const RedisEndpoint &rhs)
+  operator()(const RedisEndpoint &lhs, const RedisEndpoint &rhs) const
   {
     return lhs.m_hostname < rhs.m_hostname || (lhs.m_hostname == rhs.m_hostname && lhs.m_port < rhs.m_port);
   }
