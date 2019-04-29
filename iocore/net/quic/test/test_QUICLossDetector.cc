@@ -42,7 +42,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   MockQUICLDConfig ld_config;
   MockQUICConnectionInfoProvider info;
   MockQUICCongestionController cc(&info, cc_config);
-  QUICLossDetector detector(&info, &cc, &rtt_measure, 0, ld_config);
+  QUICLossDetector detector(&info, &cc, &rtt_measure, ld_config);
   ats_unique_buf payload = ats_unique_malloc(512);
   size_t payload_len     = 512;
   QUICPacketUPtr packet  = QUICPacketFactory::create_null_packet();
@@ -71,14 +71,17 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                               false, std::move(payload), sizeof(raw));
     QUICPacketUPtr packet = QUICPacketUPtr(new QUICPacket(std::move(header), std::move(payload), sizeof(raw), true, false),
                                            [](QUICPacket *p) { delete p; });
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet->packet_number(),
-                                                                  Thread::get_hrtime(),
-                                                                  packet->is_ack_eliciting(),
-                                                                  packet->is_crypto_packet(),
-                                                                  true,
-                                                                  packet->size(),
-                                                                  packet->type(),
-                                                                  {}}));
+    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{
+      packet->packet_number(),
+      Thread::get_hrtime(),
+      packet->is_ack_eliciting(),
+      packet->is_crypto_packet(),
+      true,
+      packet->size(),
+      packet->type(),
+      {},
+      QUICPacketNumberSpace::Handshake,
+    }));
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
     CHECK(g.lost_frame_count >= 0);
 
@@ -95,37 +98,38 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   SECTION("1-RTT")
   {
     // Send packet (1) to (7)
-    payload                = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet1 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false);
+    QUICPacketNumberSpace pn_space = QUICPacketNumberSpace::ApplicationData;
+    payload                        = ats_unique_malloc(payload_len);
+    QUICPacketUPtr packet1         = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
+                                                        std::move(payload), payload_len, true, false);
     REQUIRE(packet1 != nullptr);
     payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet2  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false);
+    QUICPacketUPtr packet2  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
+                                                        std::move(payload), payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet3  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false);
+    QUICPacketUPtr packet3  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
+                                                        std::move(payload), payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet4  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false);
+    QUICPacketUPtr packet4  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
+                                                        std::move(payload), payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet5  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false);
+    QUICPacketUPtr packet5  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
+                                                        std::move(payload), payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet6  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false);
+    QUICPacketUPtr packet6  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
+                                                        std::move(payload), payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet7  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false);
+    QUICPacketUPtr packet7  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
+                                                        std::move(payload), payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet8  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false);
+    QUICPacketUPtr packet8  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
+                                                        std::move(payload), payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet9  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                        payload_len, true, false);
+    QUICPacketUPtr packet9  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
+                                                        std::move(payload), payload_len, true, false);
     payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet10 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(), std::move(payload),
-                                                         payload_len, true, false);
+    QUICPacketUPtr packet10 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
+                                                         std::move(payload), payload_len, true, false);
 
     QUICPacketNumber pn1  = packet1->packet_number();
     QUICPacketNumber pn2  = packet2->packet_number();
@@ -146,7 +150,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                   true,
                                                                   packet1->size(),
                                                                   packet1->type(),
-                                                                  {}}));
+                                                                  {},
+                                                                  pn_space}));
     detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet2->packet_number(),
                                                                   Thread::get_hrtime(),
                                                                   packet2->is_ack_eliciting(),
@@ -154,7 +159,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                   true,
                                                                   packet2->size(),
                                                                   packet2->type(),
-                                                                  {}}));
+                                                                  {},
+                                                                  pn_space}));
     detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet3->packet_number(),
                                                                   Thread::get_hrtime(),
                                                                   packet3->is_ack_eliciting(),
@@ -162,7 +168,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                   true,
                                                                   packet3->size(),
                                                                   packet3->type(),
-                                                                  {}}));
+                                                                  {},
+                                                                  pn_space}));
     detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet4->packet_number(),
                                                                   Thread::get_hrtime(),
                                                                   packet4->is_ack_eliciting(),
@@ -170,7 +177,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                   true,
                                                                   packet4->size(),
                                                                   packet4->type(),
-                                                                  {}}));
+                                                                  {},
+                                                                  pn_space}));
     detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet5->packet_number(),
                                                                   Thread::get_hrtime(),
                                                                   packet5->is_ack_eliciting(),
@@ -178,7 +186,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                   true,
                                                                   packet5->size(),
                                                                   packet5->type(),
-                                                                  {}}));
+                                                                  {},
+                                                                  pn_space}));
     detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet6->packet_number(),
                                                                   Thread::get_hrtime(),
                                                                   packet6->is_ack_eliciting(),
@@ -186,7 +195,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                   true,
                                                                   packet6->size(),
                                                                   packet6->type(),
-                                                                  {}}));
+                                                                  {},
+                                                                  pn_space}));
     detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet7->packet_number(),
                                                                   Thread::get_hrtime(),
                                                                   packet6->is_ack_eliciting(),
@@ -194,7 +204,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                   true,
                                                                   packet7->size(),
                                                                   packet7->type(),
-                                                                  {}}));
+                                                                  {},
+                                                                  pn_space}));
     detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet8->packet_number(),
                                                                   Thread::get_hrtime(),
                                                                   packet6->is_ack_eliciting(),
@@ -202,7 +213,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                   true,
                                                                   packet8->size(),
                                                                   packet8->type(),
-                                                                  {}}));
+                                                                  {},
+                                                                  pn_space}));
     detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet9->packet_number(),
                                                                   Thread::get_hrtime(),
                                                                   packet6->is_ack_eliciting(),
@@ -210,7 +222,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                   true,
                                                                   packet9->size(),
                                                                   packet9->type(),
-                                                                  {}}));
+                                                                  {},
+                                                                  pn_space}));
     detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet10->packet_number(),
                                                                   Thread::get_hrtime(),
                                                                   packet10->is_ack_eliciting(),
@@ -218,7 +231,8 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
                                                                   true,
                                                                   packet10->size(),
                                                                   packet10->type(),
-                                                                  {}}));
+                                                                  {},
+                                                                  pn_space}));
 
     ink_hrtime_sleep(HRTIME_MSECONDS(2000));
     // Receive an ACK for (1) (4) (5) (7) (8) (9)
@@ -259,7 +273,7 @@ TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
   MockQUICLDConfig ld_config;
   MockQUICCongestionController cc(&info, cc_config);
   QUICRTTMeasure rtt_measure;
-  QUICLossDetector detector(&info, &cc, &rtt_measure, 0, ld_config);
+  QUICLossDetector detector(&info, &cc, &rtt_measure, ld_config);
 
   auto t1           = Thread::get_hrtime();
   QUICAckFrame *ack = QUICFrameFactory::create_ack_frame(frame_buf, 100000000, 100, 10000000);

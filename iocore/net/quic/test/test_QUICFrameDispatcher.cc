@@ -43,7 +43,7 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   MockQUICConnectionInfoProvider info;
   MockQUICCongestionController cc(&info, cc_config);
   QUICRTTMeasure rtt_measure;
-  MockQUICLossDetector lossDetector(&info, &cc, &rtt_measure, 0, ld_config);
+  MockQUICLossDetector lossDetector(&info, &cc, &rtt_measure, ld_config);
 
   QUICFrameDispatcher quicFrameDispatcher(&info);
   quicFrameDispatcher.add_handler(&connection);
