@@ -212,7 +212,7 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame, QUICPacketNumb
   // if (ACK frame contains ECN information):
   //   ProcessECN(ack)
   if (ack_frame.ecn_section() != nullptr && pi != this->_sent_packets[index].end()) {
-    this->_cc->process_ecn(*pi->second, ack_frame.ecn_section(), this->_pto_count);
+    this->_cc->process_ecn(*pi->second, ack_frame.ecn_section());
   }
 
   // Find all newly acked packets.
@@ -449,7 +449,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumberSpace pn_space)
   // Inform the congestion controller of lost packets and
   // lets it decide whether to retransmit immediately.
   if (!lost_packets.empty()) {
-    this->_cc->on_packets_lost(lost_packets, this->_pto_count);
+    this->_cc->on_packets_lost(lost_packets);
     for (auto lost_packet : lost_packets) {
       // -- ADDITIONAL CODE --
       // Not sure how we can get feedback from congestion control and when we should retransmit the lost packets but we need to send
@@ -481,7 +481,7 @@ QUICLossDetector::_retransmit_all_unacked_crypto_data()
       }
     }
 
-    this->_cc->on_packets_lost(lost_packets, this->_pto_count);
+    this->_cc->on_packets_lost(lost_packets);
     for (auto packet_number : retransmitted_crypto_packets) {
       this->_remove_from_sent_packet_list(packet_number, static_cast<QUICPacketNumberSpace>(i));
     }
@@ -597,6 +597,13 @@ QUICLossDetector::current_rto_period()
   alarm_duration = std::max(alarm_duration, this->_k_granularity);
   alarm_duration = alarm_duration * (1 << this->_pto_count);
   return alarm_duration;
+}
+
+ink_hrtime
+QUICLossDetector::congestion_period(uint32_t threshold) const
+{
+  ink_hrtime pto = this->_smoothed_rtt + std::max(this->_rttvar * 4, this->_k_granularity);
+  return pto * (1 << (threshold - 1));
 }
 
 //

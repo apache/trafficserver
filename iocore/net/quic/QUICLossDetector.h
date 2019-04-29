@@ -82,12 +82,14 @@ public:
   virtual ~QUICCongestionController() {}
   void on_packet_sent(size_t bytes_sent);
   void on_packet_acked(const QUICPacketInfo &acked_packet);
-  virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets, uint32_t pto_count);
+  virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets);
   void on_retransmission_timeout_verified();
-  void process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section, uint32_t pto_count);
+  void process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section);
   bool check_credit() const;
   uint32_t open_window() const;
   void reset();
+  bool is_app_limited();
+  void bind_loss_detector(QUICLossDetector *loss_detector);
 
   // Debug
   uint32_t bytes_in_flight() const;
@@ -97,7 +99,11 @@ public:
 private:
   Ptr<ProxyMutex> _cc_mutex;
 
-  void _congestion_event(ink_hrtime sent_time, uint32_t pto_count);
+  void _congestion_event(ink_hrtime sent_time);
+  bool _in_persistent_congestion(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets,
+                                 QUICPacketInfo *largest_lost_packet);
+  bool _in_window_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets, QUICPacketInfo *largest_lost_packet,
+                       ink_hrtime period) const;
 
   // [draft-17 recovery] 7.9.1. Constants of interest
   // Values will be loaded from records.config via QUICConfig at constructor
@@ -115,6 +121,7 @@ private:
   uint32_t _ssthresh              = UINT32_MAX;
 
   QUICConnectionInfoProvider *_info = nullptr;
+  QUICLossDetector *_loss_detector  = nullptr;
 
   bool _in_recovery(ink_hrtime sent_time);
 };
@@ -135,6 +142,7 @@ public:
   void update_ack_delay_exponent(uint8_t ack_delay_exponent);
   void reset();
   ink_hrtime current_rto_period();
+  ink_hrtime congestion_period(uint32_t threshold) const;
 
 private:
   Ptr<ProxyMutex> _loss_detection_mutex;
