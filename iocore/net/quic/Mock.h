@@ -346,7 +346,7 @@ public:
   }
   // Override
   virtual void
-  on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets, uint32_t pto_count) override
+  on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets) override
   {
     for (auto &p : packets) {
       lost_packets.insert(p.first);
@@ -388,9 +388,9 @@ private:
 class MockQUICLossDetector : public QUICLossDetector
 {
 public:
-  MockQUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, int index,
+  MockQUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
                        const QUICLDConfig &ld_config)
-    : QUICLossDetector(info, cc, rtt_measure, index, ld_config)
+    : QUICLossDetector(info, cc, rtt_measure, ld_config)
   {
   }
   void
