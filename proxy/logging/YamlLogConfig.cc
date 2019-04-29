@@ -183,8 +183,8 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   }
 
   auto logObject = new LogObject(fmt, Log::config->logfile_dir, filename.c_str(), file_type, header.c_str(),
-                                 (Log::RollingEnabledValues)obj_rolling_enabled, obj_rolling_interval_sec, obj_rolling_offset_hr,
-                                 obj_rolling_size_mb);
+                                 (Log::RollingEnabledValues)obj_rolling_enabled, Log::config->preproc_threads,
+                                 obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb);
 
   // Generate LogDeletingInfo entry for later use
   std::string ext;
