@@ -62,6 +62,13 @@ QUICCongestionController::_in_recovery(ink_hrtime sent_time)
   return sent_time <= this->_recovery_start_time;
 }
 
+bool
+QUICCongestionController::is_app_limited()
+{
+  // FIXME : don't known how does app worked here
+  return false;
+}
+
 void
 QUICCongestionController::on_packet_acked(const QUICPacketInfo &acked_packet)
 {
@@ -72,6 +79,13 @@ QUICCongestionController::on_packet_acked(const QUICPacketInfo &acked_packet)
     // Do not increase congestion window in recovery period.
     return;
   }
+
+  if (this->is_app_limited()) {
+    // Do not increase congestion_window if application
+    // limited.
+    return;
+  }
+
   if (this->_congestion_window < this->_ssthresh) {
     // Slow start.
     this->_congestion_window += acked_packet.sent_bytes;
@@ -87,7 +101,7 @@ QUICCongestionController::on_packet_acked(const QUICPacketInfo &acked_packet)
 // the original one is:
 //   CongestionEvent(sent_time):
 void
-QUICCongestionController::_congestion_event(ink_hrtime sent_time, uint32_t pto_count)
+QUICCongestionController::_congestion_event(ink_hrtime sent_time)
 {
   // Start a new congestion event if the sent time is larger
   // than the start time of the previous recovery epoch.
@@ -96,9 +110,6 @@ QUICCongestionController::_congestion_event(ink_hrtime sent_time, uint32_t pto_c
     this->_congestion_window *= this->_k_loss_reduction_factor;
     this->_congestion_window = std::max(this->_congestion_window, this->_k_minimum_window);
     this->_ssthresh          = this->_congestion_window;
-    if (pto_count > this->_k_persistent_congestion_threshold) {
-      this->_congestion_window = this->_k_minimum_window;
-    }
   }
 }
 
@@ -106,8 +117,7 @@ QUICCongestionController::_congestion_event(ink_hrtime sent_time, uint32_t pto_c
 // the original one is:
 //   ProcessECN(ack):
 void
-QUICCongestionController::process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section,
-                                      uint32_t pto_count)
+QUICCongestionController::process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section)
 {
   // If the ECN-CE counter reported by the peer has increased,
   // this could be a new congestion event.
@@ -116,15 +126,26 @@ QUICCongestionController::process_ecn(const QUICPacketInfo &acked_largest_packet
     // Start a new congestion event if the last acknowledged
     // packet was sent after the start of the previous
     // recovery epoch.
-    this->_congestion_event(acked_largest_packet.time_sent, pto_count);
+    this->_congestion_event(acked_largest_packet.time_sent);
   }
+}
+
+bool
+QUICCongestionController::_in_persistent_congestion(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets,
+                                                    QUICPacketInfo *largest_lost_packet)
+{
+  ink_hrtime period = this->_loss_detector->congestion_period(this->_k_persistent_congestion_threshold);
+  // Determine if all packets in the window before the
+  // newest lost packet, including the edges, are marked
+  // lost
+  return this->_in_window_lost(lost_packets, largest_lost_packet, period);
 }
 
 // additional code
 // the original one is:
 //   OnPacketsLost(lost_packets):
 void
-QUICCongestionController::on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets, uint32_t pto_count)
+QUICCongestionController::on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets)
 {
   if (lost_packets.empty()) {
     return;
@@ -135,10 +156,15 @@ QUICCongestionController::on_packets_lost(const std::map<QUICPacketNumber, QUICP
   for (auto &lost_packet : lost_packets) {
     this->_bytes_in_flight -= lost_packet.second->sent_bytes;
   }
-  auto &largest_lost_packet = lost_packets.rbegin()->second;
+  QUICPacketInfo *largest_lost_packet = lost_packets.rbegin()->second;
   // Start a new recovery epoch if the lost packet is larger
   // than the end of the previous recovery epoch.
-  this->_congestion_event(largest_lost_packet->time_sent, pto_count);
+  this->_congestion_event(largest_lost_packet->time_sent);
+
+  // Collapse congestion window if persistent congestion
+  if (this->_in_persistent_congestion(lost_packets, largest_lost_packet)) {
+    this->_congestion_window = this->_k_minimum_window;
+  }
 }
 
 bool
@@ -189,4 +215,33 @@ QUICCongestionController::reset()
   this->_congestion_window   = this->_k_initial_window;
   this->_recovery_start_time = 0;
   this->_ssthresh            = UINT32_MAX;
+}
+
+void
+QUICCongestionController::bind_loss_detector(QUICLossDetector *loss_detector)
+{
+  this->_loss_detector = loss_detector;
+}
+
+bool
+QUICCongestionController::_in_window_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets,
+                                          QUICPacketInfo *largest_lost_packet, ink_hrtime period) const
+{
+  QUICPacketNumber next_expected = UINT64_MAX;
+  for (auto &it : lost_packets) {
+    if (it.second->time_sent >= largest_lost_packet->time_sent - period) {
+      if (next_expected == UINT64_MAX) {
+        next_expected = it.second->packet_number + 1;
+        continue;
+      }
+
+      if (next_expected != it.second->packet_number) {
+        return false;
+      }
+
+      next_expected = it.second->packet_number + 1;
+    }
+  }
+
+  return next_expected == UINT64_MAX ? false : true;
 }
