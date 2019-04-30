@@ -438,7 +438,7 @@ _basename(const char *filename)
     data      continuation for the current transaction
   Output :
     data->psi_buffer  contains the file content
-    data->psi_sucess  0 if include failed, 1 if success
+    data->psi_success  0 if include failed, 1 if success
   Return Value:
     0  if failure
     1  if success

@@ -136,7 +136,7 @@ function dev() {
     git clone git://git.apache.org/trafficserver.git
     cd $EC2_EPHEMERAL/$trafficserver
 
-    #swtich to dev build
+    #switch to dev build
     git checkout -b remotes/origin/dev
     #------------------------------------------------------
 }

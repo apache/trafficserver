@@ -195,7 +195,7 @@ modify_header(TSHttpTxn txnp)
    *  Additional 200/304 processing can go here, if so desired.
    */
 
-  /* Caller reneables */
+  /* Caller reenables */
 }
 
 static int

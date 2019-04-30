@@ -11,13 +11,13 @@ plugins to build large scale web applications.
   |-- ci/ ................... Quality assurance and other CI tools and configs
   |-- configs/ .............. Configurations
   |-- contrib/ .............. Various contributed auxiliary pieces
-  |-- doc/ .................. Documentations for Traffic Server
+  |-- doc/ .................. Documentation for Traffic Server
       |-- admin-guide/ ...... Admin guide documentations
       |-- appendices/ ....... Appendices of Traffic Server
-      |-- developer-guide/ .. Documentaions for developers
+      |-- developer-guide/ .. Documentation for developers
       |-- dot/ .............. Graphviz source files for docs pictures
       |-- static/ ........... Static resources
-      |-- uml/ .............. Documentations in UML
+      |-- uml/ .............. Documentation in UML
   |-- example/ .............. Example plugins
   |-- iocore/ ...............
       |-- aio/ .............. Asynchronous I/O core

@@ -29,7 +29,7 @@
  *      - PSI header
  *      - PSI include in body
  *
- *   Ratio for generating PSI response is specifid in config file.
+ *   Ratio for generating PSI response is specified in config file.
  *
  * Added Options in Synth_server.config -
  *     psi_ratio : percentage of response with psi embedded we want to generate

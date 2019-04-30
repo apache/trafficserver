@@ -66,7 +66,7 @@ while (<>) {
 }
 
 print "Total runs: ", $runs, "\n";
-printf "%d fetches on %d conns, %d max parallell, %.5e bytes in %d seconds\n",
+printf "%d fetches on %d conns, %d max parallel, %.5e bytes in %d seconds\n",
   $fetches, $conns, $parallel, $bytes, $seconds / $runs;
 print $mean_bytes/ $runs, " mean bytes/fetch\n";
 printf "%.2f fetches/sec, %.5e bytes/sec\n", $fetches_sec, $bytes_sec;
