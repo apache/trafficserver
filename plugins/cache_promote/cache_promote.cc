@@ -31,6 +31,9 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "tscore/ink_config.h"
+#include "tscpp/api/Continuation.h"
+
+using atscppapi::ContinueInMemberFunc;
 
 #define MINIMUM_BUCKET_SIZE 10
 
@@ -102,13 +105,29 @@ public:
   }
 
   // These are pure virtual
-  virtual bool doPromote(TSHttpTxn txnp) = 0;
+
+  // Overrides must reenable transaction, and call cache_turned_off() or cache_left_on().
+  virtual void doPromote(TSHttpTxn txnp) = 0;
+
   virtual const char *policyName() const = 0;
   virtual void usage() const             = 0;
 
 private:
   float _sample = 0.0;
 };
+
+void
+cache_turned_off(TSHttpTxn txnp)
+{
+  TSDebug(PLUGIN_NAME, "turning off the cache (not promoted)");
+  TSHttpTxnServerRespNoStoreSet(txnp, 1);
+}
+
+void
+cache_left_on()
+{
+  TSDebug(PLUGIN_NAME, "leaving cache on (promoted)");
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // This is the simplest of all policies, just give each request a (small)
@@ -117,10 +136,15 @@ private:
 class ChancePolicy : public PromotionPolicy
 {
 public:
-  bool doPromote(TSHttpTxn /* txnp ATS_UNUSED */) override
+  void
+  doPromote(TSHttpTxn txnp) override
   {
     TSDebug(PLUGIN_NAME, "ChancePolicy::doPromote(%f)", getSample());
-    return true;
+
+    cache_left_on();
+
+    // Reenable and continue with the state machine.
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   }
 
   void
@@ -196,7 +220,7 @@ static LRUEntry NULL_LRU_ENTRY; // Used to create an "empty" new LRUEntry
 class LRUPolicy : public PromotionPolicy
 {
 public:
-  LRUPolicy() : PromotionPolicy(), _lock(TSMutexCreate()) {}
+  LRUPolicy() : PromotionPolicy() {}
   ~LRUPolicy() override
   {
     TSDebug(PLUGIN_NAME, "deleting LRUPolicy object");
@@ -239,85 +263,10 @@ public:
     return true;
   }
 
-  bool
+  void
   doPromote(TSHttpTxn txnp) override
   {
-    LRUHash hash;
-    LRUMap::iterator map_it;
-    char *url   = nullptr;
-    int url_len = 0;
-    bool ret    = false;
-    TSMBuffer request;
-    TSMLoc req_hdr;
-
-    if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
-      TSMLoc c_url = TS_NULL_MLOC;
-
-      // Get the cache key URL (for now), since this has better lookup behavior when using
-      // e.g. the cachekey plugin.
-      if (TS_SUCCESS == TSUrlCreate(request, &c_url)) {
-        if (TS_SUCCESS == TSHttpTxnCacheLookupUrlGet(txnp, request, c_url)) {
-          url = TSUrlStringGet(request, c_url, &url_len);
-          TSHandleMLocRelease(request, TS_NULL_MLOC, c_url);
-        }
-      }
-      TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
-    }
-
-    // Generally shouldn't happen ...
-    if (!url) {
-      return false;
-    }
-
-    TSDebug(PLUGIN_NAME, "LRUPolicy::doPromote(%.*s%s)", url_len > 100 ? 100 : url_len, url, url_len > 100 ? "..." : "");
-    hash.init(url, url_len);
-    TSfree(url);
-
-    // We have to hold the lock across all list and hash access / updates
-    TSMutexLock(_lock);
-
-    map_it = _map.find(&hash);
-    if (_map.end() != map_it) {
-      // We have an entry in the LRU
-      TSAssert(_list_size > 0); // mismatch in the LRUs hash and list, shouldn't happen
-      if (++(map_it->second->second) >= _hits) {
-        // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
-        TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
-        _freelist.splice(_freelist.begin(), _list, map_it->second);
-        ++_freelist_size;
-        --_list_size;
-        _map.erase(map_it->first);
-        ret = true;
-      } else {
-        // It's still not promoted, make sure it's moved to the front of the list
-        TSDebug(PLUGIN_NAME, "still not promoted, got %d hits so far", map_it->second->second);
-        _list.splice(_list.begin(), _list, map_it->second);
-      }
-    } else {
-      // New LRU entry for the URL, try to repurpose the list entry as much as possible
-      if (_list_size >= _buckets) {
-        TSDebug(PLUGIN_NAME, "repurposing last LRUHash entry");
-        _list.splice(_list.begin(), _list, --_list.end());
-        _map.erase(&(_list.begin()->first));
-      } else if (_freelist_size > 0) {
-        TSDebug(PLUGIN_NAME, "reusing LRUEntry from freelist");
-        _list.splice(_list.begin(), _freelist, _freelist.begin());
-        --_freelist_size;
-        ++_list_size;
-      } else {
-        TSDebug(PLUGIN_NAME, "creating new LRUEntry");
-        _list.push_front(NULL_LRU_ENTRY);
-        ++_list_size;
-      }
-      // Update the "new" LRUEntry and add it to the hash
-      _list.begin()->first          = hash;
-      _list.begin()->second         = 1;
-      _map[&(_list.begin()->first)] = _list.begin();
-    }
-
-    TSMutexUnlock(_lock);
-
-    return ret;
+    (*new Do_promote_steps(txnp, this))();
   }
 
   void
@@ -338,10 +287,128 @@ private:
   unsigned _hits    = 10;
   // For the LRU. Note that we keep track of the List sizes, because some versions fo STL have broken
   // implementations of size(), making them obsessively slow on calling ::size().
-  TSMutex _lock;
+  TSMutex _lock{TSMutexCreate()};
   LRUMap _map;
   LRUList _list, _freelist;
   size_t _list_size = 0, _freelist_size = 0;
+
+  class Do_promote_steps
+  {
+  public:
+    Do_promote_steps(TSHttpTxn txnp, LRUPolicy *policy) : _txnp(txnp), _policy(policy) {}
+
+    void
+    operator()()
+    {
+      char *url   = nullptr;
+      int url_len = 0;
+      TSMBuffer request;
+      TSMLoc req_hdr;
+
+      if (TS_SUCCESS == TSHttpTxnClientReqGet(_txnp, &request, &req_hdr)) {
+        TSMLoc c_url = TS_NULL_MLOC;
+
+        // Get the cache key URL (for now), since this has better lookup behavior when using
+        // e.g. the cachekey plugin.
+        if (TS_SUCCESS == TSUrlCreate(request, &c_url)) {
+          if (TS_SUCCESS == TSHttpTxnCacheLookupUrlGet(_txnp, request, c_url)) {
+            url = TSUrlStringGet(request, c_url, &url_len);
+            TSHandleMLocRelease(request, TS_NULL_MLOC, c_url);
+          }
+        }
+        TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
+      }
+
+      // Generally shouldn't happen ...
+      if (!url) {
+        cache_turned_off(_txnp);
+
+        // Reenable and continue with the state machine.
+        TSHttpTxnReenable(_txnp, TS_EVENT_HTTP_CONTINUE);
+
+        delete this;
+
+        return;
+      }
+
+      TSDebug(PLUGIN_NAME, "LRUPolicy::doPromote(%.*s%s)", url_len > 100 ? 100 : url_len, url, url_len > 100 ? "..." : "");
+      _hash.init(url, url_len);
+      TSfree(url);
+
+      ContinueInMemberFunc<Do_promote_steps, &Do_promote_steps::critical_section>::once(*this, _policy->_lock)->schedule();
+    }
+
+  private:
+    TSHttpTxn _txnp;
+    LRUPolicy *_policy;
+
+    bool _success = false;
+    LRUHash _hash;
+
+    int
+    critical_section(TSEvent, void *)
+    {
+      LRUMap::iterator map_it = _policy->_map.find(&_hash);
+      if (_policy->_map.end() != map_it) {
+        // We have an entry in the LRU
+        TSAssert(_policy->_list_size > 0); // mismatch in the LRUs hash and list, shouldn't happen
+        if (++(map_it->second->second) >= _policy->_hits) {
+          // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
+          TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
+          _policy->_freelist.splice(_policy->_freelist.begin(), _policy->_list, map_it->second);
+          ++_policy->_freelist_size;
+          --_policy->_list_size;
+          _policy->_map.erase(map_it->first);
+          _success = true;
+        } else {
+          // It's still not promoted, make sure it's moved to the front of the list
+          TSDebug(PLUGIN_NAME, "still not promoted, got %d hits so far", map_it->second->second);
+          _policy->_list.splice(_policy->_list.begin(), _policy->_list, map_it->second);
+        }
+      } else {
+        // New LRU entry for the URL, try to repurpose the list entry as much as possible
+        if (_policy->_list_size >= _policy->_buckets) {
+          TSDebug(PLUGIN_NAME, "repurposing last LRUHash entry");
+          _policy->_list.splice(_policy->_list.begin(), _policy->_list, --_policy->_list.end());
+          _policy->_map.erase(&(_policy->_list.begin()->first));
+        } else if (_policy->_freelist_size > 0) {
+          TSDebug(PLUGIN_NAME, "reusing LRUEntry from freelist");
+          _policy->_list.splice(_policy->_list.begin(), _policy->_freelist, _policy->_freelist.begin());
+          --_policy->_freelist_size;
+          ++_policy->_list_size;
+        } else {
+          TSDebug(PLUGIN_NAME, "creating new LRUEntry");
+          _policy->_list.push_front(NULL_LRU_ENTRY);
+          ++_policy->_list_size;
+        }
+        // Update the "new" LRUEntry and add it to the hash
+        _policy->_list.begin()->first                   = _hash;
+        _policy->_list.begin()->second                  = 1;
+        _policy->_map[&(_policy->_list.begin()->first)] = _policy->_list.begin();
+      }
+
+      ContinueInMemberFunc<Do_promote_steps, &Do_promote_steps::after_critical_section>::once(*this, nullptr)->schedule();
+
+      return 0;
+    }
+
+    int
+    after_critical_section(TSEvent, void *)
+    {
+      if (_success) {
+        cache_left_on();
+      } else {
+        cache_turned_off(_txnp);
+      }
+
+      // Reenable and continue with the state machine.
+      TSHttpTxnReenable(_txnp, TS_EVENT_HTTP_CONTINUE);
+
+      delete this;
+
+      return 0;
+    }
+  };
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -419,6 +486,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp          = static_cast<TSHttpTxn>(edata);
   PromotionConfig *config = static_cast<PromotionConfig *>(TSContDataGet(contp));
+  bool reenable_belayed   = false;
 
   switch (event) {
   // Main HOOK
@@ -427,14 +495,15 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
       int obj_status;
 
       if (TS_ERROR != TSHttpTxnCacheLookupStatusGet(txnp, &obj_status)) {
+        TSDebug(PLUGIN_NAME, "cache-status is %d", obj_status);
         switch (obj_status) {
         case TS_CACHE_LOOKUP_MISS:
         case TS_CACHE_LOOKUP_SKIPPED:
-          if (config->getPolicy()->doSample() && config->getPolicy()->doPromote(txnp)) {
-            TSDebug(PLUGIN_NAME, "cache-status is %d, and leaving cache on (promoted)", obj_status);
+          if (config->getPolicy()->doSample()) {
+            config->getPolicy()->doPromote(txnp);
+            reenable_belayed = true;
           } else {
-            TSDebug(PLUGIN_NAME, "cache-status is %d, and turning off the cache (not promoted)", obj_status);
-            TSHttpTxnServerRespNoStoreSet(txnp, 1);
+            cache_turned_off(txnp);
           }
           break;
         default:
@@ -454,8 +523,10 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
     break;
   }
 
-  // Reenable and continue with the state machine.
-  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  if (!reenable_belayed) {
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  }
+
   return 0;
 }
 
