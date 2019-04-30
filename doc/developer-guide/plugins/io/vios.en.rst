@@ -26,7 +26,7 @@ A **VIO**, or **virtual IO**, is a description of an IO operation that's
 currently in progress. The VIO data structure is used by vconnection
 users to determine how much progress has been made on a particular IO
 operation and to re-enable an IO operation when it stalls due to buffer
-space issues. VIOs are used by vconnection implementors to determine the
+space issues. VIOs are used by vconnection implementers to determine the
 buffer for an IO operation, how much work to do on the IO operation, and
 which continuation to call back when progress on the IO operation is
 made.

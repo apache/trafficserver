@@ -120,7 +120,7 @@ accessed by other continuations or processes. Here's how:
 
 If any other functions want to access ``contp``'s data, then it is up to
 them to get ``contp``'s mutex (using, for example, ``TSContMutexGet``)
-to lock it. For usage, ssee the sample Protocol plugin.
+to lock it. For usage, see the sample Protocol plugin.
 
 How to Associate a Continuation With Every HTTP Transaction
 ===========================================================
@@ -197,7 +197,7 @@ In the plugin continuation handler, create the new continuation
                return 0;
            }
 
-Remember that the ``txn_contp`` handler must destory itself when the
+Remember that the ``txn_contp`` handler must destroy itself when the
 HTTP transaction is closed. If you forget to do this, then your plugin
 will have a memory leak.
 

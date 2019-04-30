@@ -33,7 +33,7 @@ Memory buffering (buffer the entire POST data in IOBuffer before connecting to O
 ==================================================================================
 
 Memory buffer size is configured with "mem_buffer_size" in config file. Default and minimum value is 32K. You can
-increase it in the config file. If the size of a request is larger than the "mem_buffer_size" value specifiied in the
+increase it in the config file. If the size of a request is larger than the "mem_buffer_size" value specified in the
 config file, then the upload proxy feature will be disabled for this particular request
 
 Disk buffering (buffer the entire POST data on disk before connecting to OS)
@@ -63,7 +63,7 @@ Other Features
 1. Default buffering mode is disk aio buffering mode. To turn off disk buffering, add a "use_disk_buffer 0" line in
 config file
 
-2. All request headers inlcuding cookies plus the entire POST data will be buffered (either in memory or on disk)
+2. All request headers including cookies plus the entire POST data will be buffered (either in memory or on disk)
 
 Configuration File
 ==================

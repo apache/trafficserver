@@ -48,7 +48,7 @@ Named after the desirable properties of a database, ACID_ acronym:
 
 * Atomic - reads and writes avoid skew, by using mutex locks.
 * Consistent - data can only be changed by a commit, and only one commit can exist at a time per data.
-* Isolated - commits of a single point of data are not concurrent. But commits of seperate data can be conncurrent.
+* Isolated - commits of a single point of data are not concurrent. But commits of separate data can be concurrent.
 * Durable - shared_ptr is used to keep older versions of data in memory while references exist.
 
 .. _ACID: https://en.wikipedia.org/wiki/ACID_(computer_science)

@@ -106,7 +106,7 @@ of bytes to be written. The **ndone** value is the current progress, or
 the number of bytes that have been written at a specific point in time.
 
 When writing a transformation plugin, you must understand implementation
-as well as the use of ``VConnection``\ s. The *implementor's side*
+as well as the use of ``VConnection``\ s. The *implementer's side*
 refers to how to implement a ``VConnection`` that others can use. At
 minimum, a transform plugin creates a transformation that sits in the
 data stream and must be able to handle the events that the upstream and
@@ -126,7 +126,7 @@ A ``VIO`` or virtual IO is a description of an in progress IO
 operation. The ``VIO`` data structure is used by ``VConnection`` users
 to determine how much progress has been made on a particular IO
 operation, and to reenable an IO operation when it stalls due to buffer
-space. ``VConnection`` implementors use ``VIO``\ s to determine the
+space. ``VConnection`` implementers use ``VIO``\ s to determine the
 buffer for an IO operation, how much work to do on the IO operation, and
 which continuation to call back when progress on the IO operation is
 made.

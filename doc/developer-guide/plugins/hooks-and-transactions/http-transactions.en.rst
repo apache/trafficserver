@@ -41,7 +41,7 @@ transaction and associate data to the transaction.
     /*
     * Simple plugin that illustrates:
     * - how to register locally to a transaction
-    * - how to deal with data that's associated with a tranaction
+    * - how to deal with data that's associated with a transaction
     *
     * Note: for readability, error checking is omitted
     */
@@ -148,7 +148,7 @@ transaction and associate data to the transaction.
           and doesn't have any data associated with it */
        contp = TSContCreate(global_hook_handler, NULL);
 
-       /* Register gloabally */
+       /* Register globally */
        TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, contp);
     }
 

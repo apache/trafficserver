@@ -80,7 +80,7 @@ specified by the functions (see the example in the description of
 **Note:** MIME headers may contain more than one MIME field with the
 same name. Previous versions of Traffic Server joined multiple fields
 with the same name into one field with composite values, but this
-behavior came at a performance cost and caused compatability issues with
+behavior came at a performance cost and caused compatibility issues with
 older clients and servers. Hence, the current version of Traffic Server
 does not coalesce duplicate fields. Correctly-behaving plugins should
 check for the presence of duplicate fields and iterate over the

@@ -98,7 +98,7 @@ Below is an overview of the null transform plugin:
     transformation vconnection is ``null_transform``.
 
 4.  Get a handle to the output vconnection (that receives data from the
-    tranformation).
+    transformation).
 
     .. code-block:: c
 

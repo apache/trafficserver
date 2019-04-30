@@ -117,7 +117,7 @@ According to `Transferring Payload in a Single Chunk <http://docs.aws.amazon.com
 the ``CanonicalHeaders`` list *must* include the ``Host`` header,  the ``Content-Type`` header if present in the request and all the ``x-amz-*`` headers
 so ``--v4-include-headers`` and ``--v4-exclude-headers`` do not impact those headers and they are *always* signed.
 
-The ``Via`` and ``X-Forwarded-For`` headers are *always* excluded from the signature since they are meant to be changed by the proxies and signing them could lead to invalidation of the signatue.
+The ``Via`` and ``X-Forwarded-For`` headers are *always* excluded from the signature since they are meant to be changed by the proxies and signing them could lead to invalidation of the signature.
 
 If ``--v4-include-headers`` is not specified all headers except those specified in ``--v4-exclude-headers`` will be signed.
 
@@ -138,7 +138,7 @@ There are 4 plugin configuration options for version 2::
     --config        <config file>
     --version=2
 
-This is a pretty barebone start for the S3 services, it is missing a number of features:
+This is a pretty bare bone start for the S3 services, it is missing a number of features:
 
 - It does not do UTF8 encoding (as required)
 - It does not deal with canonicalization of AMZ headers.

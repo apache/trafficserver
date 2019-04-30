@@ -62,7 +62,7 @@ all of those have completed, the resulting storage is distributed across the
 Stripe Assignment
 =================
 
-Every object that is stored in stored in a single, specific stripe. Stripe assignment is determing
+Every object that is stored in stored in a single, specific stripe. Stripe assignment is determining
 for an object what stripe that is. The logic described here sets up the stripe assignment table maps
 from the cache key to a specific stripe.
 
@@ -131,7 +131,7 @@ can be seen as the arrow color in the previous figure. This provides a reasonabl
 size assignment of slots to stripes. It is also a consistent hash in that if a stripe is removed,
 the recomputation will tend to distribute assignments for the missing stripe across the other
 stripes in proportion to their sizes while not changing the assignment of any slot not assigned to
-the missing stripe. In essence for each sample point (assignment slot) a permuation of the stripes
+the missing stripe. In essence for each sample point (assignment slot) a permutation of the stripes
 is implied by the order of the random value nodes past that sample point. The randomization serves
 to spread re-assigned slots to various stripes instead of a single one.
 

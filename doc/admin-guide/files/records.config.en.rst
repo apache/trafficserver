@@ -264,7 +264,7 @@ System Variables
    :reloadable:
    :units: seconds
 
-   Specifies how often the output log is rolled, in seconds. The timer starts on |TS| bootup.
+   Specifies how often the output log is rolled, in seconds. The timer starts on |TS| startup.
 
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_size_mb INT 100
    :reloadable:
@@ -794,7 +794,7 @@ mptcp
 
 .. note::
 
-   The ``Via`` transaction acode can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction code can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.response_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -1768,7 +1768,7 @@ Proxy User Variables
        information.
        See :ts:cv:`proxy.config.http.server_ports` for information on how to enable Proxy Protocol on a port.
 
-   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header`.
+   See :ref:`proxy-protocol` for more discussion on how |TS| transforms the `Forwarded: header`.
 
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae INT 1
    :reloadable:
@@ -1908,7 +1908,7 @@ Cache Control
    option is combined with the cache key at cache lookup time.
    Changing this value has the effect of an instantaneous, zero-cost
    cache purge since it will cause all subsequent cache keys to
-   change. Since this is an overrideable configuration, it can be
+   change. Since this is an overridable configuration, it can be
    used to purge the entire cache, or just a specific :file:`remap.config`
    rule.
 
@@ -2150,7 +2150,7 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_percent INT 0
 
    The size of the region (as a percentage of the total content storage in a :term:`cache stripe`) in front of the
-   :term:`write cursor` that constitutes a recent access hit for evacutating the accessed object.
+   :term:`write cursor` that constitutes a recent access hit for evacuating the accessed object.
 
    When an object is accessed it can be marked for evacuation, that is to be copied over the write cursor and
    thereby preserved from being overwritten. This is done if it is no more than a specific number of bytes in front of
@@ -2379,7 +2379,7 @@ Customizable User Response Pages
     :overridable:
 
     A prefix for the file name to use to find an error template file. If set (not the empty string)
-    this value and an underscore are predended to the file name to find in the template sets
+    this value and an underscore are prepended to the file name to find in the template sets
     directory. See :ref:`body-factory`.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_max_size INT 8192
@@ -2412,7 +2412,7 @@ Customizable User Response Pages
    ``3`` Enable all http UI endpoints.
    ===== ======================================================================
 
-   To enable any enpoint there needs to be an entry in :file:`remap.config` which
+   To enable any endpoint there needs to be an entry in :file:`remap.config` which
    specifically enables it. Such a line would look like: ::
 
         map / http://{cache}
@@ -2721,7 +2721,7 @@ HostDB
    Set the frequency (in seconds) to sync hostdb to disk. If set to zero (default as of v9.0.0), we won't
    sync to disk ever.
 
-   Note: hostdb is syncd to disk on a per-partition basis (of which there are 64).
+   Note: hostdb is synced to disk on a per-partition basis (of which there are 64).
    This means that the minimum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
 
 Logging Configuration
@@ -2772,7 +2772,7 @@ Logging Configuration
    :reloadable:
 
    The tolerance for the log space limit (in megabytes). If the variable :ts:cv:`proxy.config.log.auto_delete_rolled_files` is set to ``1``
-   (enabled), then autodeletion of log files is triggered when the amount of free space available in the logging directory is less than
+   (enabled), then auto-deletion of log files is triggered when the amount of free space available in the logging directory is less than
    the value specified here.
 
 .. ts:cv:: CONFIG proxy.config.log.hostname STRING localhost
@@ -2908,7 +2908,7 @@ Diagnostic Logging Configuration
 .. ts:cv:: CONFIG proxy.config.diags.output.alert STRING L
 .. ts:cv:: CONFIG proxy.config.diags.output.emergency STRING SL
 
-   The diagnosic output configuration variables control where Traffic
+   The diagnostic output configuration variables control where Traffic
    Server should log diagnostic output. Messages at each diagnostic level
    can be directed to any combination of diagnostic destinations.
    Valid diagnostic message destinations are:
@@ -3008,7 +3008,7 @@ Diagnostic Logging Configuration
    :reloadable:
    :units: seconds
 
-   Specifies how often the diagnostics log is rolled, in seconds. The timer starts on |TS| bootup.
+   Specifies how often the diagnostics log is rolled, in seconds. The timer starts on |TS| startup.
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_size_mb INT 100
    :reloadable:
@@ -3661,7 +3661,7 @@ SOCKS Processor
 
 .. ts:cv::  CONFIG proxy.config.socks.socks_config_file STRING socks.config
 
-   The socks_onfig file allows you to specify ranges of IP addresses
+   The socks.config file allows you to specify ranges of IP addresses
    that will not be relayed to the SOCKS server. It can also be used
    to configure AUTH information for SOCKSv5 servers.
 
@@ -3860,7 +3860,7 @@ Sockets
 
    Changing this configuration can reduce CPU usage on an idle system, since
    periodic tasks gets processed at these intervals. On busy servers, this
-   overhead is diminished, since polled events triggers morefrequently.
+   overhead is diminished, since polled events triggers more frequently.
    However, increasing the setting can also introduce additional latency for
    certain operations, and timed events. It's recommended not to touch this
    setting unless your CPU usage is unacceptable at idle workload. Some

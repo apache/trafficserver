@@ -52,7 +52,7 @@ intercepted by the |Name| plugin inside |TS| if the destination matches one of t
 destinations. The plugin then makes a TLS connection to the peer |TS| using the configured level of
 security. The original ``CONNECT`` request from the Client to the ingress |TS| is then sent to the
 peer |TS| to create a connection from the peer |TS| to the Service. After this the Client has a
-virtual circut to the Service and can use any TCP based communication (including TLS). Effectively
+virtual circuit to the Service and can use any TCP based communication (including TLS). Effectively
 the plugin causes the explicit proxy to work as if the Client had done the ``CONNECT`` directly to
 the peer |TS|. Note this means the DNS lookup for the Service is done by the peer |TS|, not the
 ingress |TS|.
@@ -164,7 +164,7 @@ useful case.
       tls_bridge.so --file bridge.config .*[.]service[.]com peer.ats:4443
 
    These are not identical - direct mappings and file mappings are processed in order. This means in
-   the first example, the direct mapping is checked before any mappping in "bridge.config", and in
+   the first example, the direct mapping is checked before any mapping in "bridge.config", and in
    the latter example the mappings in "bridge.config" are checked before the direct mappings. There
    can be multiple "--file" arguments, which are processed in the order they appear in
    "plugin.config". The file name can be absolute, or relative. If the file name is relative, it is
@@ -215,7 +215,7 @@ this
 The key points are
 
 *  |TS| does no TLS negotiation at all. The properties of the connection between the Ingress |TS|
-   and the Service are completely determined by the Client and Server negotation.
+   and the Service are completely determined by the Client and Server negotiation.
 *  No packets are modified, the ""CLIENT HELLO"" sent by the Ingress |TS| is an exact copy of that
    sent to the Ingress |TS| by the Client. It is only examined for the SNI data in order to select
    the Service.
@@ -265,7 +265,7 @@ The overall exchange looks like the following:
    Client <--> Service
    lvc <-> ingress : <&arrow-thick-left> Move data <&arrow-thick-right>
    ingress <-> rvc : <&arrow-thick-left> Move data <&arrow-thick-right>
-   note over ingress : Plugin explicitlys moves this data.
+   note over ingress : Plugin explicitly moves this data.
 
    @enduml
 

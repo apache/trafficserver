@@ -32,7 +32,7 @@ Purpose
 This plugin's intended use is the selective forcing of revalidations on cache
 objects which are not yet marked as stale in |TS| but which may have been
 updated at the origin - without needing to alter cache control headers,
-pre-emptively purge the object from the cache manually, or adjust the global
+preemptively purge the object from the cache manually, or adjust the global
 cache revalidation settings (such as fuzz times) used by other plugins.
 
 Forced cache revalidations may be as specifically or loosely targeted as a
