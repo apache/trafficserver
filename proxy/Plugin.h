@@ -2,6 +2,7 @@
 
   Plugin init declarations
 
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -27,6 +28,7 @@
 
 struct PluginRegInfo {
   PluginRegInfo();
+
   ~PluginRegInfo();
 
   bool plugin_registered = false;
@@ -83,5 +85,6 @@ public:
   getPluginId() const
   {
     return 0;
+
   }
 };
