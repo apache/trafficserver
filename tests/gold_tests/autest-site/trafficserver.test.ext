@@ -254,15 +254,12 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     else:
         p.Variables.port = 8080
         p.Variables.portv6 = 8080
-    get_port(p, "manager_port")
     get_port(p, "admin_port")
 
     # set the ports
     if select_ports:
         p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = "{0} {1}:ipv6".format(
             p.Variables.port, p.Variables.portv6)  # your own listen port
-    p.Env['PROXY_CONFIG_PROCESS_MANAGER_MGMT_PORT'] = str(
-        p.Variables.manager_port)
     p.Env['PROXY_CONFIG_ADMIN_SYNTHETIC_PORT'] = str(p.Variables.admin_port)
     p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT'] = str(
         p.Variables.admin_port)  # support pre ATS 6.x
