@@ -137,7 +137,7 @@ Function    Description
             within the interval. May be used with any type of field; numeric or
             otherwise.
 ``LAST``    The value of the last event, chronologically, which was observed
-            within the interval. May be used with any type of field; nuemric or
+            within the interval. May be used with any type of field; numeric or
             otherwise.
 ``SUM``     Sum of the given field's value from all events within the interval.
             May only be used on numeric fields.

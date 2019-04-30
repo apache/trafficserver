@@ -17,7 +17,7 @@
 
 .. include:: ../../../common.defs
 
-.. _developer-pluings-hooks-initiate-http:
+.. _developer-plugins-hooks-initiate-http:
 
 Initiate HTTP Connection
 ************************

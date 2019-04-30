@@ -138,7 +138,7 @@ Client/Traffic Server connections, you must do the following:
    ===== =======================================================================
    ``0`` Client certificates not required.
    ``1`` Client certificates optional. If present, will be used to validate.
-   ``2`` Client certficates required, and must validate based on configured CAs.
+   ``2`` Client certificates required, and must validate based on configured CAs.
    ===== =======================================================================
 
 #. *Optional*: Configure the use of Certification Authorities (CAs). CAs add
@@ -274,7 +274,7 @@ revocation status of all configured SSL certificates, and present them to the
 client when the client requests the status.  Traffic Server will automatically
 query the OCSP responder specified in the SSL certificate to gather the latest
 revocation status.  Traffic Server will then cache the results for each
-configured certifcate.  The location of the OCSP responder is taken from the
+configured certificate.  The location of the OCSP responder is taken from the
 Authority Information Access field of the signed certificate. For example::
 
     Authority Information Access:

@@ -819,7 +819,7 @@ Note: In versions prior to ATS v9.0.0, an alternative string expansion was avail
 expansions are no longer available, but the following table can help migrations:
 
 ======================== ==========================================================================
-Old expansion variable   Condition variable to use with concatenatinos
+Old expansion variable   Condition variable to use with concatenations
 ======================== ==========================================================================
 %<proto>                 %{CLIENT-URL:SCHEME}
 %<port>                  %{CLIENT-URL:PORT}

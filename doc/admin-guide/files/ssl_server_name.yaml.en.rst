@@ -33,13 +33,13 @@ the items specified by this file and if there is a match, the values specified i
 the defaults. This is done during the inbound connection processing and be some outbound properties
 can be overridden again later, such as via :file:`remap.config` or plugins.
 
-By default this is named :file:`ssl_server_name.yaml`. The file can be changed by settting
+By default this is named :file:`ssl_server_name.yaml`. The file can be changed by setting
 :ts:cv:`proxy.config.ssl.servername.filename`. This file is loaded on start up and by
 :option:`traffic_ctl config reload` if the file has been modified since process start.
 
 The configuration file is yaml-based. After parsing the configuration, a list of tables will be the result.
 Each table is a set of key / value pairs that create a configuration item. This configuration file accepts
-wildcard entries. To apply an SNI based setting on all the servernames with a common upper level domain name,
+wildcard entries. To apply an SNI based setting on all the server names with a common upper level domain name,
 the user needs to enter the fqdn in the configuration with a ``*.`` followed by the common domain name. (``*.yahoo.com`` for e.g.,).
 
 .. _override-verify-origin-server:
@@ -74,7 +74,7 @@ verify_client             One of the values :code:`NONE`, :code:`MODERATE`, or :
                           By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
 
 valid_tls_versions_in     This specifies the list of TLS protocols that will be offered to user agents during 
-                          the TLS negotiaton.  This replaces the global settings in :ts:cv:`proxy.config.ssl.TLSv1`,
+                          the TLS negotiation.  This replaces the global settings in :ts:cv:`proxy.config.ssl.TLSv1`,
                           :ts:cv:`proxy.config.ssl.TLSv1_1`, :ts:cv:`proxy.config.ssl.TLSv1_2`,
                           and :ts:cv:`proxy.config.ssl.TLSv1_3`. The potential values are TLSv1, TLSv1_1, TLSv1_2, and 
                           TLSv1_3.  You must list all protocols that |TS| should offer to the client when using 
@@ -117,7 +117,7 @@ forward_route             Destination as an FQDN and port, separated by a colon 
                           need to be HTTP.
 ========================= ==============================================================================
 
-Client verification, via ``verify_client``, correponds to setting
+Client verification, via ``verify_client``, corresponds to setting
 :ts:cv:`proxy.config.ssl.client.certification_level` for this connection as noted below.
 
 :code:`NONE` -- ``0``
@@ -176,7 +176,7 @@ Disable HTTP/2 for ``no-http2.example.com``.
    - fqdn: no-http2.example.com
      disable_h2: true
 
-Require client certificate verification for ``example.com`` and any server name ending with ``.yahoo.com``. Therefore, client request for a server name ending with yahoo.com (for e.g., def.yahoo.com, abc.yahoo.com etc.) will cause |TS| require and verify the client certificate. By contrast, |TS| will allow a client certficate to be provided for ``example.com`` and if it is, |TS| will require the certificate to be valid.
+Require client certificate verification for ``example.com`` and any server name ending with ``.yahoo.com``. Therefore, client request for a server name ending with yahoo.com (for e.g., def.yahoo.com, abc.yahoo.com etc.) will cause |TS| require and verify the client certificate. By contrast, |TS| will allow a client certificate to be provided for ``example.com`` and if it is, |TS| will require the certificate to be valid.
 
 .. code-block:: yaml
 

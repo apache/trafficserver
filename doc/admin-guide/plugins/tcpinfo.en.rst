@@ -110,10 +110,10 @@ The following options may be specified in :file:`plugin.config`:
   :ts:cv:`proxy.config.output.logfile.rolling_enabled` setting in :file:`records.config`
   for the ``tcpinfo`` plugin.  The setting may range from ``0`` to ``3``.
   ``0`` disables logfile rolling.  ``1`` is the ``default`` and enables logfile
-  rolling at specfic intervals set by ``--rolling-interval-sec`` discussed
+  rolling at specific intervals set by ``--rolling-interval-sec`` discussed
   below.  ``2`` enables logfile rolling by logfile size, see
   ``--rolling-size-mb`` below.  Finally a value of ``3`` enables logfile rolling
-  at specfic intervals or size, whichever occurs first using the interval or size
+  at specific intervals or size, whichever occurs first using the interval or size
   settings discussed below.
 
 --rolling-offset-hr=VALUE

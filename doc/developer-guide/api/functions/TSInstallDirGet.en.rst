@@ -60,7 +60,7 @@ To load a file that is located in the Traffic Server configuration directory::
     char * path;
     asprintf(&path, "%s/example.conf", TSConfigDirGet());
 
-See Slso
+See Also
 ========
 
 :manpage:`TSAPI(3ts)`

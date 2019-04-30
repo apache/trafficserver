@@ -44,7 +44,7 @@ address to which |TS| connects) is checked against the specified IP address rang
 
 Range specifications can be IPv4 or IPv6, but any single range must be one or the other. Ranges can
 be specified by two addresses, the lower address and the upper address, separated by a dash, ``-``.
-Such a range inclusive and contains the lower, upper addresses and all addresses inbetween. A range
+Such a range inclusive and contains the lower, upper addresses and all addresses in between. A range
 can also be specified by an address and a CIDR mask, separated by a slash, ``/``. This case is
 converted to a range of the previous case by retaining only the left most ``mask`` bits, clearing
 the rest for the lower address and setting them for the upper address. For instance, a mask of
@@ -63,7 +63,7 @@ The ``action`` must be either ``ip_allow`` or ``ip_deny``. This controls what |T
 address is in the range and the method matches. If there is a match, |TS| allows the connection (for
 ``ip_allow``) or denies it (``ip_deny``).
 
-For each inbound or outbound connection the applicable rule is selectd by first match on the IP
+For each inbound or outbound connection the applicable rule is selected by first match on the IP
 address. The rule is then applied (if the method matches) or its opposite is applied (if the method
 doesn't match). If no rule is matched access is allowed. This makes each rule both an accept and
 deny, one explicit and the other implicit. The ``src_ip`` rules are checked when a host connects
@@ -128,7 +128,7 @@ or::
 
    dest_ip=10.0.0.0/16 action=ip_allow method=GET|HEAD
 
-This will match the IP address for the targer servers on the outbound connection. Then, if the
+This will match the IP address for the target servers on the outbound connection. Then, if the
 method is ``GET`` or ``HEAD`` the connection will be allowed, otherwise the connection will be
 denied.
 

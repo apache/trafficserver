@@ -55,7 +55,7 @@ Stats Over HTTP
 ===============
 
 |TS| includes a stable plugin, :ref:`admin-plugins-stats-over-http`, which provides
-HTTP access to all |TS| statistcs. The plugin returns a JSON object with all
+HTTP access to all |TS| statistics. The plugin returns a JSON object with all
 statistics and their current values. It is not possible to return a subset of
 the statistics. The plugin must be enabled before you may use it.
 

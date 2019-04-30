@@ -60,7 +60,7 @@ Diags
 Probe
     All request and response headers are written to the response body. Because
     the body is altered, it disables writing to cache.
-    In conjuction with the `fwd` tag, the response body will contain a
+    In conjunction with the `fwd` tag, the response body will contain a
     chronological log of all headers for all transactions used for this
     response.
 

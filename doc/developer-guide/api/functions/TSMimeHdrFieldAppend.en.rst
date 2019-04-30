@@ -31,7 +31,7 @@ Synopsis
 Description
 ===========
 
-Attaches a MIME :arg:`field` to a header. The header is represented by the :arg:`bufp` and :arg:`hdr`
+Attatches a MIME :arg:`field` to a header. The header is represented by the :arg:`bufp` and :arg:`hdr`
 arguments which should have been obtained by a call to :func:`TSHttpTxnClientReqGet` or similar. If
 the field in :arg:`field` was created by calling :func:`TSMimeHdrFieldCreateNamed` the same
 :arg:`bufp` and :arg:`hdr` passed to that should be passed to this function.

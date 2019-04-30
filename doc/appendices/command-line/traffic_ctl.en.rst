@@ -288,7 +288,7 @@ endpoint.
    :option:`--time` is included the host is marked down for the specified number of seconds after
    which the host will automatically be marked up. A host is not marked up until all reason codes
    are cleared by marking up the host for the specified reason code.
-    
+
    Supports :option:`--time`, :option:`--reason`.
 
 .. option:: up HOSTNAME [HOSTNAME ...]
@@ -312,8 +312,8 @@ Mark down a host with `traffic_ctl` and view the associated host stats::
    proxy.process.host_status.cdn-cache-02.foo.com HOST_STATUS_UP,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0
    proxy.process.host_status.cdn-cache-origin-01.foo.com HOST_STATUS_UP,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0
 
-In the example above, 'cdn-cache-01.foo.com' is unavailable, `HOST_STATUS_DOWN` and was marked down 
-for the `manual` reason, `MANUAL:DOWN:1556896844:0`, at the time indicated by the UNIX time stamp 
+In the example above, 'cdn-cache-01.foo.com' is unavailable, `HOST_STATUS_DOWN` and was marked down
+for the `manual` reason, `MANUAL:DOWN:1556896844:0`, at the time indicated by the UNIX time stamp
 `1556896844`.  To make the host available, one would have to clear the `manual` reason using ::
 
    $ traffic_ctl host up cdn-cache-01.foo.com --reason manual

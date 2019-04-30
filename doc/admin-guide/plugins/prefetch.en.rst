@@ -112,7 +112,7 @@ request, it will either find it in cache or begin the fetch from its next tier.
 Since the request from the child has the special header, the parent will only
 send the headers of the object back to the client, saving network and processing
 bytes. The child thus does not cache the pre-fetched object which is ok since
-the user may not hit that same child for the subsquent object.
+the user may not hit that same child for the subsequent object.
 
 Then, when the user makes their next request for the pre-fetched object, the
 child that handles the request will perform the consistent-hash, find the
@@ -186,12 +186,12 @@ attempts to minimize the extraneous resources used.
 Minimizing **next object** prefetch overhead
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The current implementation relies on the following assumptions and egnineering
+The current implementation relies on the following assumptions and engineering
 compromises:
 
 * **First match the next object pattern** defined by ``--fetch-path-pattern``
   plugin parameter, not matching requests are ignored (prefetch is never triggered)
-* **Define a prefetch policy** which tries to suppress uneccessary **next object**
+* **Define a prefetch policy** which tries to suppress unnecessary **next object**
   prefetches for the most recently used requests which are assumed should be already
   in cache. Currently only ``lru:n`` policy is supported, it is using an URI-hash LRU
   cache which evicts the least recently used elements first. Every request's **cache key**
@@ -250,7 +250,7 @@ The plugin maintains the following metrics:
 
 * Prefetch request status related
     * ``fetch.active`` - number of currently active prefetch requests (counter)
-    * ``fetch.completed``- number of succesfully completed prefetch requests (counter)
+    * ``fetch.completed``- number of successfully completed prefetch requests (counter)
     * ``fetch.errors`` - number of failed prefetch requests (counter)
     * ``fetch.timeouts`` - number of timed-out prefetch requests (counter)
     * ``fetch.throttled`` - number of throttled prefetch requests (counter), throttle limit defined by ``--fetch-max``

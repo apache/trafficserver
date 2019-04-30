@@ -143,7 +143,7 @@ remap.config. The following options are available ::
 
 This can be useful to force a particular response for some URLs, e.g. ::
 
-    ^/(ogre.*)/bad      http://www.examle.com/  @status=404
+    ^/(ogre.*)/bad      http://www.example.com/  @status=404
 
 Or, to force a 302 redirect ::
 

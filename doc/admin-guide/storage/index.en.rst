@@ -406,7 +406,7 @@ with a ``304 Not Modified`` HTTP message.
 
 This table describes how Traffic Server handles these types of requests: ::
 
-    OS = Origin Server's respose HTTP message
+    OS = Origin Server's response HTTP message
     IMS = A GET request w/ an If-Modified-Since header
     LMs = Last-Modified header date returned by server
     INM = A GET request w/ an If-None-Match header

@@ -59,7 +59,7 @@ Offloading Heavily-Used Origin Servers
 
 Traffic Server can accept requests on behalf of the origin server and improve
 the speed and quality of web serving by reducing load and hot spots on
-backup origin servers. For example, a web hoster can maintain a scalable
+backup origin servers. For example, a web host can maintain a scalable
 Traffic Server system with a set of low-cost, low-performance,
 less-reliable PC origin servers as backup servers. In fact, a single
 Traffic Server can act as the virtual origin server for multiple backup

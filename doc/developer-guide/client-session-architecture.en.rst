@@ -28,7 +28,7 @@ submitting sequences of requests over the session. ATS supports several session 
 HTTP/1.x and HTTP/2. A HTTP State Machine is created for each request to process the request.
 
 ATS uses the generic classes ProxyClientSession and ProxyClientTransaction to hide the details of
-the underlaying protocols from the HTTP State Machine.
+the underlying protocols from the HTTP State Machine.
 
 Classes
 =======
@@ -54,7 +54,7 @@ ProxyClientTransaction
    :alt: ProxyClientTransaction hierarchy
 
 The ProxyClientTransaction class abstracts the key features of a client transaction.  It has a reference to its
-paraent ProxyClientSession.  One HttpSM is created for each ProxyClientTransaction.
+parent ProxyClientSession.  One HttpSM is created for each ProxyClientTransaction.
 
 There are two concrete subclasses: Http1ClientTransaction and Http2Stream.
 
@@ -72,7 +72,7 @@ This diagram shows the relationships between objects created as part of a HTTP/1
 object performs the basic network level protocols.  The Http1ClientSession object has a reference to the
 associated NetVC object.  The NetVC object is available via the :code:`ProxyClientSession::get_netvc()` method.
 
-The Http1ClientSession object contains a Http1ClientTransaction objet.  For each HTTP request, it calls
+The Http1ClientSession object contains a Http1ClientTransaction object.  For each HTTP request, it calls
 the :code:`ProxyClientSession::new_transaction()` method to instantiate the Http1ClientTransaction object.  With the HTTP/1.x
 protocol at most one transaction can be active at a time.
 
@@ -104,7 +104,7 @@ Transaction and Session Shutdown
 
 One of the trickiest bits of managing sessions and transactions is cleaning things up accurately and in a timely fashion.
 In addition, the TXN_CLOSE hooks and SSN_CLOSE hooks must be executed accurately.  The TXN_CLOSE hooks must be
-executely exactly once.  The SSN_CLOSE hook must also be executed exactly once and only after all the TXN_CLOSE
+executed exactly once.  The SSN_CLOSE hook must also be executed exactly once and only after all the TXN_CLOSE
 hooks of all the child transactions have been executed.  The CLOSE hooks are important for many plugins to ensure that
 plugin allocated objects are appropriately reclaimed.
 

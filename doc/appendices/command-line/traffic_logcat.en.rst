@@ -30,7 +30,7 @@ Synopsis
 Description
 ===========
 
-To analyse a binary log file using standard tools, you must first convert
+To analyze a binary log file using standard tools, you must first convert
 it to ASCII. :program:`traffic_logcat` does exactly that.
 
 Options

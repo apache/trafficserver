@@ -46,8 +46,8 @@ The functions also work with the :type:`TSSslSession` object which can be cast t
 
 These functions perform the appropriate locking on the session cache to avoid errors.
 
-The :func:`TSSslSessionGet` and :func:`TSSslSessionGetBuffer` functions retrieve the :type:`TSSslSession` object that is identifed by the
-:type:`TSSslSessionID` object.  If there is no matching sesion object, :func:`TSSslSessionGet` returns NULL and :func:`TSSslSessionGetBuffer`
+The :func:`TSSslSessionGet` and :func:`TSSslSessionGetBuffer` functions retrieve the :type:`TSSslSession` object that is identified by the
+:type:`TSSslSessionID` object.  If there is no matching session object, :func:`TSSslSessionGet` returns NULL and :func:`TSSslSessionGetBuffer`
 returns 0.
 
 :func:`TSSslSessionGetBuffer` returns the session information serialized in a buffer that can be shared between processes.
@@ -64,4 +64,4 @@ updating the session ticket encrypt key file with new data and reloading the cur
 require writing session ticket encryption keys to disk.
 
 If both the ticket key files and :func:`TSSslTicketKeyUpdate` are used to update session ticket encryption keys, ATS will use the most recent update
-reguarless if whether it was made by file and configuration reload or API.
+regardless if whether it was made by file and configuration reload or API.

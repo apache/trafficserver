@@ -82,7 +82,7 @@ more widely. Those are described on this page.
 
 .. type:: TSHttpSsn
 
-   An opaque type that represents a Traffic SeUuirver :term:`session`.
+   An opaque type that represents a Traffic Server :term:`session`.
 
 .. type:: TSHttpTxn
 
@@ -126,7 +126,7 @@ more widely. Those are described on this page.
 .. type:: TSMLoc
 
    This is a memory location relative to a :term:`header heap` represented by a :c:type:`TSMBuffer` and
-   must always be used in conjuction with that :c:type:`TSMBuffer` instance. It identifies a specific
+   must always be used in conjunction with that :c:type:`TSMBuffer` instance. It identifies a specific
    object in the :c:type:`TSMBuffer`. This indirection is needed so that the :c:type:`TSMBuffer`
    can reallocate space as needed. Therefore a raw address obtained from a :c:type:`TSMLoc` should
    be considered volatile that may become invalid across any API call.
@@ -209,7 +209,7 @@ more widely. Those are described on this page.
 
 .. cpp:class:: template<typename T> DLL
 
-    An anchor for a double linked instrusive list of instance of :arg:`T`.
+    An anchor for a double linked intrusive list of instance of :arg:`T`.
 
 .. cpp:class:: template<typename T> Queue
 

@@ -115,7 +115,7 @@ Provides a wildcard pattern which will be applied to request URLs. Any which
 match the pattern will be considered compressible, and only deflated versions
 of the objects will be cached and returned to clients. This may be useful for
 objects which already have their own compression built-in, to avoid the expense
-of multiple rounds of compression for trivial gains. If the regex is preceeded by
+of multiple rounds of compression for trivial gains. If the regex is preceded by
 ``!`` (for example ``allow !*/nothere/*``), it disables the plugin from those machine URLs.
 
 enabled

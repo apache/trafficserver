@@ -260,7 +260,7 @@ settings have been configured as shown below::
     This setting requires that a remap rule exist before |TS| will proxy the
     request and ensures that your proxy cannot be used to access the content of
     arbitrary websites (allowing someone of malicious intent to potentially
-    mask their identity to an unknowning third party).
+    mask their identity to an unknowing third party).
 
 :ts:cv:`proxy.config.url_remap.pristine_host_hdr`
     This setting causes |TS| to keep the ``Host:`` client request header intact

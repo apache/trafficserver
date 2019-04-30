@@ -93,7 +93,7 @@ Management Events
 .. c:macro:: MGMT_EVENT_LIFECYCLE_MESSAGE
 
 
-OpTypes (Possible operations or msgs that can be sent between TM and remote clients)
+OpTypes (Possible operations or messages that can be sent between TM and remote clients)
 ====================================================================================
 
 .. cpp:type:: OpType

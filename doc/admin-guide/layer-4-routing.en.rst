@@ -31,7 +31,7 @@ data read on one connection to the other and vice versa.
 .. figure:: ../uml/images/l4-basic-sequence.svg
    :align: center
 
-In this way it acts similary to `nc <https://linux.die.net/man/1/nc>`__.
+In this way it acts similarly to `nc <https://linux.die.net/man/1/nc>`__.
 
 The primary differences between different types of layer 4 routing is the mechanism by which |TS|
 creates the outbound connection. This is described in detail in the type specific documentation.
@@ -125,5 +125,5 @@ In this case the proxy request is available in the :c:macro:`TS_HTTP_TXN_START_H
 cannot be done using remap because for a ``CONNECT`` there is no remap phase. Note that for a
 tunneled connection like this, the only transaction hooks that will be triggered are
 :c:macro:`TS_HTTP_TXN_START_HOOK` and :c:macro:`TS_HTTP_TXN_CLOSE_HOOK`. In addition, because |TS|
-does not terminate (and thefore does not decrypt) the connection, it cannot be cached or served from
+does not terminate (and therefore does not decrypt) the connection, it cannot be cached or served from
 cache.

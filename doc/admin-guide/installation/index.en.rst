@@ -131,7 +131,7 @@ Layouts
 Preparing the Source Tree
 -------------------------
 
-If you are buiding from a checkout of the Git repository, you will need to
+If you are building from a checkout of the Git repository, you will need to
 prepare the source tree by regenerating the configuration scripts. This is
 performed by running::
 
