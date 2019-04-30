@@ -36,13 +36,23 @@ TEST_CASE("config default", "[AWS][slice][utility]")
 
 TEST_CASE("config bytesfrom valid parsing", "[AWS][slice][utility]")
 {
-  static std::array<std::string, 6> const teststrings = {
-    "1000", "1m", "5g", "2k", "3kb", "1z",
-  };
+  static std::array<std::string, 6> const teststrings = {{
+    "1000",
+    "1m",
+    "5g",
+    "2k",
+    "3kb",
+    "1z",
+  }};
 
-  constexpr std::array<int64_t, 6> const expvals = {
-    1000, 1024 * 1024, int64_t(1024) * 1024 * 1024 * 5, 1024 * 2, 1024 * 3, 1,
-  };
+  constexpr std::array<int64_t, 6> const expvals = {{
+    1000,
+    1024 * 1024,
+    int64_t(1024) * 1024 * 1024 * 5,
+    1024 * 2,
+    1024 * 3,
+    1,
+  }};
 
   for (size_t index = 0; index < teststrings.size(); ++index) {
     std::string const &teststr = teststrings[index];
@@ -58,13 +68,13 @@ TEST_CASE("config bytesfrom valid parsing", "[AWS][slice][utility]")
 
 TEST_CASE("config bytesfrom invalid parsing", "[AWS][slice][utility]")
 {
-  static std::array<std::string, 5> const badstrings = {
+  static std::array<std::string, 5> const badstrings = {{
     "abc",  // alpha
     "g00",  // giga
     "M00",  // mega
     "k00",  // kilo
     "-500", // negative
-  };
+  }};
 
   for (std::string const &badstr : badstrings) {
     int64_t const val = Config::bytesFrom(badstr.c_str());
