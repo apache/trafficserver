@@ -1806,7 +1806,7 @@ poll_loop()
     if (ip >= POLL_GROUP_SIZE || i == last_fd) {
       int n = poll(pfd, ip, POLL_TIMEOUT);
       if (n > 0) {
-        for (int j = 0; j < ip; j++) {
+        for (int j = 0; j < n; j++) {
           if (pfd[j].revents & (POLLIN | POLLERR | POLLHUP | POLLNVAL)) {
             if (verbose) {
               printf("poll read %d %X\n", pfd[j].fd, pfd[j].revents);
