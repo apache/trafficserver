@@ -212,7 +212,7 @@ compromises:
   object** would be cached as well.
 * **Don't fetch the response body** and **never cache** at the **front-tier**.
   The **front-tier** marks the prefetch request with a special API header defined
-  by ``--api-header`` plugin parameter. When recieved the  **back-tier** responds
+  by ``--api-header`` plugin parameter. When received the  **back-tier** responds
   right away before actually fetching the object (without a body), it just
   schedules the real prefetch at the **back-tier**. ``Cache-Control: no-store``
   is used to make sure the prefetch request response is never cached at the **front-tier**.

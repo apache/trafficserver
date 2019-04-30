@@ -63,7 +63,7 @@ Runtime Structure
 Message Passing
 ===============
 
-Sequence diagram for a command sent from |TCtl| to when it is recieved by a plugin.
+Sequence diagram for a command sent from |TCtl| to when it is received by a plugin.
 
 .. figure:: ../../uml/images/RPC-sequence-diagram.svg
 
