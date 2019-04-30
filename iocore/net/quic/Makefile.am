@@ -304,5 +304,5 @@ test_QUICAddrVerifyState_SOURCES = \
 #
 include $(top_srcdir)/build/tidy.mk
 
-tidy-local: $(DIST_SOURCES)
+clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

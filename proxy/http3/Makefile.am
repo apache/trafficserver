@@ -115,5 +115,5 @@ test_qpack_SOURCES = \
 #
 include $(top_srcdir)/build/tidy.mk
 
-tidy-local: $(libhttp3_a_SOURCES) \
+clang-tidy-local: $(libhttp3_a_SOURCES) \
 	$(CXX_Clang_Tidy)
