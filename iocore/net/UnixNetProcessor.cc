@@ -296,7 +296,18 @@ UnixNetProcessor::init()
   d.rec_int = 0;
   change_net_connections_throttle(nullptr, RECD_INT, d, nullptr);
 
-  // Socks
+  /*
+   * Stat pages
+   */
+  extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
+  if (etype == ET_NET) {
+    statPagesManager.register_http("net", register_ShowNet);
+  }
+}
+
+void
+UnixNetProcessor::init_socks()
+{
   if (!netProcessor.socks_conf_stuff) {
     socks_conf_stuff = new socks_conf_struct;
     loadSocksConfiguration(socks_conf_stuff);
@@ -308,14 +319,6 @@ UnixNetProcessor::init()
       // this is sslNetprocessor
       socks_conf_stuff = netProcessor.socks_conf_stuff;
     }
-  }
-
-  /*
-   * Stat pages
-   */
-  extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
-  if (etype == ET_NET) {
-    statPagesManager.register_http("net", register_ShowNet);
   }
 }
 

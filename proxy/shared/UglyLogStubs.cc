@@ -88,6 +88,12 @@ UnixNetProcessor::init()
   ink_release_assert(false);
 }
 
+void
+UnixNetProcessor::init_socks()
+{
+  ink_release_assert(false);
+}
+
 // TODO: The following was necessary only for Solaris, should examine more.
 NetVCOptions const Connection::DEFAULT_OPTIONS;
 NetProcessor::AcceptOptions const NetProcessor::DEFAULT_ACCEPT_OPTIONS;

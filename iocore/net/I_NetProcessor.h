@@ -198,6 +198,8 @@ public:
   */
   virtual void init() = 0;
 
+  virtual void init_socks() = 0;
+
   inkcoreapi virtual NetVConnection *allocate_vc(EThread *) = 0;
 
   /** Private constructor. */
