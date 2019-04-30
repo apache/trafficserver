@@ -1,6 +1,6 @@
 /** @file
  *
- *  QUIC Packet Header Protector (OpenSSL specific code)
+ *  HKDF utility (BoringSSL version)
  *
  *  @section license License
  *
@@ -20,34 +20,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#include "tscore/HKDF.h"
+#include <openssl/kdf.h>
 
-#include "QUICPacketHeaderProtector.h"
-
-bool
-QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *aead) const
+HKDF::HKDF(const EVP_MD *digest) : _digest(digest)
 {
-  static constexpr unsigned char FIVE_ZEROS[] = {0x00, 0x00, 0x00, 0x00, 0x00};
-  EVP_CIPHER_CTX *ctx                         = EVP_CIPHER_CTX_new();
+  ink_assert(!"not implemented");
+}
 
-  if (!ctx || !EVP_EncryptInit_ex(ctx, aead, nullptr, key, sample)) {
-    return false;
-  }
+int
+HKDF::extract(uint8_t *dst, size_t *dst_len, const uint8_t *salt, size_t salt_len, const uint8_t *ikm, size_t ikm_len)
+{
+  ink_assert(!"not implemented");
+  return 0;
+}
 
-  int len = 0;
-  if (aead == EVP_chacha20()) {
-    if (!EVP_EncryptUpdate(ctx, mask, &len, FIVE_ZEROS, sizeof(FIVE_ZEROS))) {
-      return false;
-    }
-  } else {
-    if (!EVP_EncryptUpdate(ctx, mask, &len, sample, 16)) {
-      return false;
-    }
-  }
-  if (!EVP_EncryptFinal_ex(ctx, mask + len, &len)) {
-    return false;
-  }
-
-  EVP_CIPHER_CTX_free(ctx);
-
-  return true;
+int
+HKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *prk, size_t prk_len, const uint8_t *info, size_t info_len,
+             uint16_t length)
+{
+  ink_assert(!"not implemented");
+  return 0;
 }

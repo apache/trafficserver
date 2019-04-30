@@ -1,6 +1,6 @@
 /** @file
  *
- *  QUIC Packet Header Protector
+ *  QUIC Packet Payload Protector (OpenSSL specific code)
  *
  *  @section license License
  *
