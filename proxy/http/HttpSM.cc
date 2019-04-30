@@ -1728,7 +1728,10 @@ HttpSM::state_http_server_open(int event, void *data)
     netvc = static_cast<NetVConnection *>(data);
     session->attach_hostname(t_state.current.server->name);
     UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(data);
-    ink_release_assert(pending_action == nullptr || pending_action == vc->get_action());
+    // Since the UnixNetVConnection::action_ or SocksEntry::action_ may be returned from netProcessor.connect_re, and the
+    // SocksEntry::action_ will be copied into UnixNetVConnection::action_ before call back NET_EVENT_OPEN from SocksEntry::free(),
+    // so we just compare the Continuation between pending_action and VC's action_.
+    ink_release_assert(pending_action == nullptr || pending_action->continuation == vc->get_action()->continuation);
     pending_action = nullptr;
 
     session->new_connection(vc);
