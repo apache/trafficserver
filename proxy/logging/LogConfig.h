@@ -204,7 +204,7 @@ public:
   void read_configuration_variables();
 
   // CVR This is the mgmt callback function, hence all the strange arguments
-  static void reconfigure_mgmt_variables(ts::MemSpan);
+  static void reconfigure_mgmt_variables(ts::MemSpan<void>);
 
   int
   get_max_space_mb() const

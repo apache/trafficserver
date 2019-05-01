@@ -94,10 +94,10 @@
 struct MgmtMessageHdr {
   int msg_id;
   int data_len;
-  ts::MemSpan
+  ts::MemSpan<void>
   payload()
   {
-    return {reinterpret_cast<char *>(this) + sizeof(*this), data_len};
+    return {this + 1, static_cast<size_t>(data_len)};
   }
 };
 
@@ -136,7 +136,7 @@ public:
   MgmtMessageHdr *dequeue();
 
 protected:
-  void executeMgmtCallback(int msg_id, ts::MemSpan span);
+  void executeMgmtCallback(int msg_id, ts::MemSpan<void> span);
 
   /// The mapping from an event type to a list of callbacks to invoke.
   std::unordered_map<int, MgmtCallbackList> mgmt_callback_table;

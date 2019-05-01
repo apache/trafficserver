@@ -344,7 +344,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
 // check if the url looks valid
 bool
-CacheScan::check_url(ts::MemSpan &mem, URLImpl *url)
+CacheScan::check_url(ts::MemSpan<char> &mem, URLImpl *url)
 {
   bool in_bound = false; // boolean to check if address in bound
   if (!url->m_ptr_scheme) {
@@ -364,7 +364,7 @@ CacheScan::get_alternates(const char *buf, int length, bool search)
 
   char *start            = (char *)buf;
   RefCountObj *block_ref = nullptr;
-  ts::MemSpan doc_mem((char *)buf, length);
+  ts::MemSpan<char> doc_mem((char *)buf, length);
 
   while (length - (buf - start) > (int)sizeof(HTTPCacheAlt)) {
     HTTPCacheAlt *a = (HTTPCacheAlt *)buf;

@@ -464,11 +464,12 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
   case MGMT_EVENT_ROLL_LOG_FILES:
     executeMgmtCallback(MGMT_EVENT_ROLL_LOG_FILES, {});
     break;
-  case MGMT_EVENT_PLUGIN_CONFIG_UPDATE:
-    if (!payload.empty() && payload.at<char>(0) != '\0' && this->cbtable) {
-      this->cbtable->invoke(static_cast<char const *>(payload.data()));
+  case MGMT_EVENT_PLUGIN_CONFIG_UPDATE: {
+    auto msg{payload.rebind<char>()};
+    if (!msg.empty() && msg[0] != '\0' && this->cbtable) {
+      this->cbtable->invoke(msg.data());
     }
-    break;
+  } break;
   case MGMT_EVENT_CONFIG_FILE_UPDATE:
   case MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION:
     /*

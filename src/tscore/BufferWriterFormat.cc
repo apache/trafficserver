@@ -617,10 +617,10 @@ bwformat(BufferWriter &w, BWFSpec const &spec, std::string_view sv)
 }
 
 BufferWriter &
-bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan const &span)
+bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan<void> const &span)
 {
   static const BWFormat default_fmt{"{:#x}@{:p}"};
-  if (spec._ext.size() && 'd' == spec._ext.front()) {
+  if ('x' == spec._type || 'X' == spec._type) {
     bwformat(w, spec, bwf::detail::MemDump(span.data(), span.size()));
   } else {
     w.print(default_fmt, span.size(), span.data());
