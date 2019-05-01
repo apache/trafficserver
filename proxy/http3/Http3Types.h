@@ -44,7 +44,7 @@ enum class Http3SettingsId : uint64_t {
   RESERVED_4            = 0x05, ///< HTTP/3 Settings
   MAX_HEADER_LIST_SIZE  = 0x06, ///< HTTP/3 Settings
   QPACK_BLOCKED_STREAMS = 0x07, ///< QPACK Settings
-  NUM_PLACEHOLDERS      = 0x08, ///< HTTP/3 Settings
+  NUM_PLACEHOLDERS      = 0x09, ///< HTTP/3 Settings
   UNKNOWN               = 0x0A0A,
 };
 

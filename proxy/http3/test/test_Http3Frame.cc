@@ -130,7 +130,7 @@ TEST_CASE("Load SETTINGS Frame", "[http3]")
       0x08,       // Length
       0x06,       // Identifier
       0x44, 0x00, // Value
-      0x08,       // Identifier
+      0x09,       // Identifier
       0x0f,       // Value
       0x4a, 0xba, // Identifier
       0x00,       // Value
@@ -157,7 +157,7 @@ TEST_CASE("Store SETTINGS Frame", "[http3]")
       0x08,       // Length
       0x06,       // Identifier
       0x44, 0x00, // Value
-      0x08,       // Identifier
+      0x09,       // Identifier
       0x0f,       // Value
       0x4a, 0x0a, // Identifier
       0x00,       // Value
