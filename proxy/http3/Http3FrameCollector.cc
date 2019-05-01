@@ -42,7 +42,7 @@ Http3FrameCollector::on_write_ready(QUICStreamIO *stream_io, size_t &nwritten)
       frame->store(tmp + nwritten, &len);
       nwritten += len;
 
-      Debug("http3", "[TX] [%d] | %s", stream_io->stream_id(), Http3DebugNames::frame_type(frame->type()));
+      Debug("http3", "[TX] [%d] | %s size=%zu", stream_io->stream_id(), Http3DebugNames::frame_type(frame->type()), len);
     }
 
     all_done &= g->is_done();
