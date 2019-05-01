@@ -233,6 +233,7 @@ public:
    * Creates a DATA frame.
    */
   static Http3DataFrameUPtr create_data_frame(const uint8_t *data, size_t data_len);
+  static Http3DataFrameUPtr create_data_frame(IOBufferReader *reader, size_t data_len);
 
 private:
   std::shared_ptr<Http3Frame> _unknown_frame        = nullptr;

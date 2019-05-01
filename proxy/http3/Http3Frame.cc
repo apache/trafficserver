@@ -453,3 +453,30 @@ Http3FrameFactory::create_data_frame(const uint8_t *payload, size_t payload_len)
   new (frame) Http3DataFrame(std::move(buf), payload_len);
   return Http3DataFrameUPtr(frame, &Http3FrameDeleter::delete_data_frame);
 }
+
+// TODO: This should clone IOBufferBlock chain to avoid memcpy
+Http3DataFrameUPtr
+Http3FrameFactory::create_data_frame(IOBufferReader *reader, size_t payload_len)
+{
+  ats_unique_buf buf = ats_unique_malloc(payload_len);
+  size_t written     = 0;
+
+  while (written < payload_len) {
+    int64_t len = reader->block_read_avail();
+
+    if (written + len > payload_len) {
+      len = payload_len - written;
+    }
+
+    memcpy(buf.get() + written, reinterpret_cast<uint8_t *>(reader->start()), len);
+    reader->consume(len);
+    written += len;
+  }
+
+  ink_assert(written == payload_len);
+
+  Http3DataFrame *frame = http3DataFrameAllocator.alloc();
+  new (frame) Http3DataFrame(std::move(buf), payload_len);
+
+  return Http3DataFrameUPtr(frame, &Http3FrameDeleter::delete_data_frame);
+}

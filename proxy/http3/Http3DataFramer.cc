@@ -49,8 +49,7 @@ Http3DataFramer::generate_frame(uint16_t max_size)
   }
 
   if (payload_len) {
-    frame = Http3FrameFactory::create_data_frame(reinterpret_cast<uint8_t *>(reader->start()), payload_len);
-    reader->consume(payload_len);
+    frame = Http3FrameFactory::create_data_frame(reader, payload_len);
     this->_source_vio->ndone += payload_len;
   }
 
