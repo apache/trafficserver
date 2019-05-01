@@ -38,11 +38,20 @@ Http3DataFramer::generate_frame(uint16_t max_size)
 
   Http3FrameUPtr frame   = Http3FrameFactory::create_null_frame();
   IOBufferReader *reader = this->_source_vio->get_reader();
-  size_t len             = std::min(reader->read_avail(), static_cast<int64_t>(max_size));
-  if (len) {
-    frame = Http3FrameFactory::create_data_frame(reinterpret_cast<uint8_t *>(reader->start()), len);
-    reader->consume(len);
-    this->_source_vio->ndone += len;
+
+  if (max_size <= Http3Frame::MAX_FRAM_HEADER_OVERHEAD) {
+    return frame;
+  }
+
+  size_t payload_len = max_size - Http3Frame::MAX_FRAM_HEADER_OVERHEAD;
+  if (!reader->is_read_avail_more_than(payload_len)) {
+    payload_len = reader->read_avail();
+  }
+
+  if (payload_len) {
+    frame = Http3FrameFactory::create_data_frame(reinterpret_cast<uint8_t *>(reader->start()), payload_len);
+    reader->consume(payload_len);
+    this->_source_vio->ndone += payload_len;
   }
 
   return frame;

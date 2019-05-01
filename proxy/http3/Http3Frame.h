@@ -32,6 +32,8 @@
 class Http3Frame
 {
 public:
+  constexpr static size_t MAX_FRAM_HEADER_OVERHEAD = 128; ///< Type (i) + Length (i)
+
   Http3Frame() {}
   Http3Frame(const uint8_t *buf, size_t len);
   Http3Frame(Http3FrameType type);
