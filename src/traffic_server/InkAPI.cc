@@ -8962,6 +8962,17 @@ TSVConnSSLConnectionGet(TSVConn sslp)
   return ssl;
 }
 
+tsapi TSSslVerifyCTX
+TSVConnSslVerifyCTXGet(TSVConn sslp)
+{
+  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+  if (ssl_vc != nullptr) {
+    return reinterpret_cast<TSSslVerifyCTX>(ssl_vc->get_verify_cert());
+  }
+  return nullptr;
+}
+
 tsapi TSSslContext
 TSSslContextFindByName(const char *name)
 {
