@@ -352,7 +352,15 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   auto *ssl                = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
+  netvc->set_verify_cert(ctx);
   netvc->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
+  netvc->set_verify_cert(nullptr);
+
+  if (netvc->getSSLHandShakeComplete()) { // hook moved the handshake state to terminal
+    Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", netvc->options.sni_servername.get());
+    return false;
+  }
+
   return preverify_ok;
 }
 
@@ -1164,7 +1172,7 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
   }
 
   Debug("ssl", "setting cert level to %d", server_verify_client);
-  SSL_set_verify(ssl, server_verify_client, nullptr);
+  SSL_set_verify(ssl, server_verify_client, ssl_verify_client_callback);
   SSL_set_verify_depth(ssl, params->verify_depth); // might want to make configurable at some point.
 }
 

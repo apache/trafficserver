@@ -1230,6 +1230,8 @@ tsapi void TSVConnReenableEx(TSVConn sslvcp, TSEvent event);
 tsapi TSReturnCode TSVConnTunnel(TSVConn sslp);
 /*  Return the SSL object associated with the connection */
 tsapi TSSslConnection TSVConnSSLConnectionGet(TSVConn sslp);
+/* Return the intermediate X509StoreCTX object that references the certificate being validated */
+tsapi TSSslVerifyCTX TSVConnSslVerifyCTXGet(TSVConn sslp);
 /*  Fetch a SSL context from the global lookup table */
 tsapi TSSslContext TSSslContextFindByName(const char *name);
 tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const *);
