@@ -30,6 +30,9 @@
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
 
+using namespace std::literals;
+std::string_view negotiated_application_name_sv = "h3-20"sv;
+
 class MockQUICStreamManager : public QUICStreamManager
 {
 public:
@@ -253,7 +256,7 @@ public:
   std::string_view
   negotiated_application_name() const override
   {
-    return "h3-19";
+    return negotiated_application_name_sv;
   }
 
   int _transmit_count   = 0;
@@ -333,7 +336,7 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
   std::string_view
   negotiated_application_name() const override
   {
-    return "h3-19";
+    return negotiated_application_name_sv;
   }
 };
 
