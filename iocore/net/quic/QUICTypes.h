@@ -38,11 +38,6 @@
 #include "tscore/ink_inet.h"
 #include "openssl/evp.h"
 
-// These magical defines should be removed when we implement seriously
-#define MAGIC_NUMBER_0 0
-#define MAGIC_NUMBER_1 1
-#define MAGIC_NUMBER_TRUE true
-
 using QUICPacketNumber = uint64_t;
 using QUICVersion      = uint32_t;
 using QUICStreamId     = uint64_t;
