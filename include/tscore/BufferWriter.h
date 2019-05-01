@@ -237,7 +237,7 @@ public:
   FixedBufferWriter(FixedBufferWriter &&)                 = delete;
   FixedBufferWriter &operator=(FixedBufferWriter &&) = delete;
 
-  FixedBufferWriter(MemSpan &span) : _buf(span.begin()), _capacity(static_cast<size_t>(span.size())) {}
+  FixedBufferWriter(MemSpan<char> &span) : _buf(span.begin()), _capacity(static_cast<size_t>(span.size())) {}
 
   /// Write a single character @a c to the buffer.
   FixedBufferWriter &
@@ -734,7 +734,7 @@ bwformat(BufferWriter &w, BWFSpec const &spec, const void *ptr)
 }
 
 // MemSpan
-BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan const &span);
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, MemSpan<void> const &span);
 
 // -- Common formatters --
 

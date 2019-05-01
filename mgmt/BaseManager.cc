@@ -73,7 +73,7 @@ BaseManager::registerMgmtCallback(int msg_id, MgmtCallback const &cb)
 }
 
 void
-BaseManager::executeMgmtCallback(int msg_id, ts::MemSpan span)
+BaseManager::executeMgmtCallback(int msg_id, ts::MemSpan<void> span)
 {
   if (auto it = mgmt_callback_table.find(msg_id); it != mgmt_callback_table.end()) {
     for (auto &&cb : it->second) {

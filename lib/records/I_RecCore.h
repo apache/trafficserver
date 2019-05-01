@@ -307,5 +307,5 @@ RecErrT RecSetSyncRequired(char *name, bool lock = true);
 //------------------------------------------------------------------------
 // Manager Callback
 //------------------------------------------------------------------------
-using RecManagerCb = std::function<void(ts::MemSpan)>;
+using RecManagerCb = std::function<void(ts::MemSpan<void>)>;
 int RecRegisterManagerCb(int _signal, RecManagerCb const &_fn);

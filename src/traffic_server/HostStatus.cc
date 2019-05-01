@@ -38,7 +38,7 @@ getStatName(std::string &stat_name, const char *name, const char *reason)
 }
 
 static void
-mgmt_host_status_up_callback(ts::MemSpan span)
+mgmt_host_status_up_callback(ts::MemSpan<void> span)
 {
   MgmtInt op;
   MgmtMarshallString name;
@@ -66,7 +66,7 @@ mgmt_host_status_up_callback(ts::MemSpan span)
 }
 
 static void
-mgmt_host_status_down_callback(ts::MemSpan span)
+mgmt_host_status_down_callback(ts::MemSpan<void> span)
 {
   MgmtInt op;
   MgmtMarshallString name;

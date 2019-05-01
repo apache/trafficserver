@@ -203,7 +203,7 @@ Stripe::Chunk::~Chunk()
   this->clear();
 }
 void
-Stripe::Chunk::append(MemSpan m)
+Stripe::Chunk::append(MemSpan<void> m)
 {
   _chain.push_back(m);
 }
@@ -270,17 +270,17 @@ Stripe::validateMeta(StripeMeta const *meta)
 }
 
 bool
-Stripe::probeMeta(MemSpan &mem, StripeMeta const *base_meta)
+Stripe::probeMeta(MemSpan<void> &mem, StripeMeta const *base_meta)
 {
   while (mem.size() >= sizeof(StripeMeta)) {
-    StripeMeta const *meta = mem.ptr<StripeMeta>(0);
+    StripeMeta const *meta = static_cast<StripeMeta *>(mem.data());
     if (this->validateMeta(meta) && (base_meta == nullptr ||               // no base version to check against.
                                      (meta->version == base_meta->version) // need more checks here I think.
                                      )) {
       return true;
     }
     // The meta data is stored aligned on a stripe block boundary, so only need to check there.
-    mem += CacheStoreBlocks::SCALE;
+    mem.remove_prefix(CacheStoreBlocks::SCALE);
   }
   return false;
 }
@@ -884,7 +884,7 @@ Stripe::loadMeta()
   int fd = _span->_fd;
   Bytes n;
   bool found;
-  MemSpan data; // The current view of the read buffer.
+  MemSpan<void> data; // The current view of the read buffer.
   Bytes delta;
   Bytes pos = _start;
   // Avoid searching the entire span, because some of it must be content. Assume that AOS is more than 160
@@ -908,10 +908,10 @@ Stripe::loadMeta()
   ssize_t headerbyteCount = pread(fd, stripe_buff2, SBSIZE, pos);
   n.assign(headerbyteCount);
   data.assign(stripe_buff2, n);
-  meta = data.ptr<StripeMeta>(0);
+  meta = static_cast<StripeMeta *>(data.data());
   // TODO:: We need to read more data at this point  to populate dir
   if (this->validateMeta(meta)) {
-    delta              = Bytes(data.ptr<char>(0) - stripe_buff2);
+    delta              = Bytes(data.rebind<char>().data() - stripe_buff2);
     _meta[A][HEAD]     = *meta;
     _meta_pos[A][HEAD] = round_down(pos + Bytes(delta));
     pos += round_up(SBSIZE);
@@ -925,15 +925,15 @@ Stripe::loadMeta()
       data.assign(buff, n);
       found = this->probeMeta(data, &_meta[A][HEAD]);
       if (found) {
-        ptrdiff_t diff     = data.ptr<char>(0) - buff;
-        _meta[A][FOOT]     = data.template at<StripeMeta>(0);
+        ptrdiff_t diff     = data.rebind<char>().data() - buff;
+        _meta[A][FOOT]     = static_cast<StripeMeta *>(data.data())[0];
         _meta_pos[A][FOOT] = round_down(pos + Bytes(diff));
         // don't bother attaching block if the footer is at the start
         if (diff > 0) {
           _directory._clip = Bytes(N - diff);
           _directory.append({bulk_buff.release(), N});
         }
-        data += SBSIZE; // skip footer for checking on B copy.
+        data.remove_prefix(SBSIZE); // skip footer for checking on B copy.
         break;
       } else {
         _directory.append({bulk_buff.release(), N});
@@ -956,7 +956,7 @@ Stripe::loadMeta()
     //      data.assign(stripe_buff, n);
     //    }
     pos  = this->_start + Bytes(vol_dirlen());
-    meta = data.ptr<StripeMeta>(0);
+    meta = static_cast<StripeMeta *>(data.data());
     if (this->validateMeta(meta)) {
       _meta[B][HEAD]     = *meta;
       _meta_pos[B][HEAD] = round_down(pos);
@@ -965,7 +965,7 @@ Stripe::loadMeta()
       pos += delta;
       n = Bytes(pread(fd, stripe_buff, ts::CacheStoreBlocks::SCALE, pos));
       data.assign(stripe_buff, n);
-      meta = data.ptr<StripeMeta>(0);
+      meta = static_cast<StripeMeta *>(data.data());
       if (this->validateMeta(meta)) {
         _meta[B][FOOT]     = *meta;
         _meta_pos[B][FOOT] = round_down(pos);
@@ -988,7 +988,7 @@ Stripe::loadMeta()
 
   n.assign(headerbyteCount);
   data.assign(stripe_buff2, n);
-  meta = data.ptr<StripeMeta>(0);
+  meta = static_cast<StripeMeta *>(data.data());
   // copy freelist
   freelist = (uint16_t *)malloc(_segments * sizeof(uint16_t));
   for (int i = 0; i < _segments; i++) {
