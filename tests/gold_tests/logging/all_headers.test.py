@@ -69,10 +69,6 @@ logs:
 Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log.san'),
                exists=True, content='gold/test_all_headers.gold')
 
-# Ask the OS if the port is ready for connect()
-#
-def CheckPort(Port):
-    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
 
 def reallyLong():
     value = 'abcdefghijklmnop'
@@ -85,8 +81,8 @@ def reallyLong():
     return retval
 
 tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(server, ready=CheckPort(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=CheckPort(ts.Variables.port))
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = (
 'curl "http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong()
 )

@@ -1,13 +1,15 @@
 
 # Getting Started
 
-This directory contains different tests for Apache Trafficserver. It is recommended that all test move to this common area under the correct location based on the type of test being added.
+This directory contains different tests for Apache Trafficserver. It is recommended that all tests move to this common area under the correct location based on the type of test being added.
 
 ## Layout
 The current layout is:
 
 **gold_tests/** - contains all the TSQA v4 based tests that run on the Reusable Gold Testing System (AuTest)
+
 **tools/** - contains programs used to help with testing.
+
 **include/** - contains headers used for unit testing.
 
 ## Scripts
@@ -15,24 +17,28 @@ The current layout is:
 To help with easy running of the tests, there is autest.sh and bootstrap.py.
 
 ### autest.sh
-This file is a simple wrapper that will call the Reusable Gold Testing System (Autest) program in a python virtualenv. If the virtualenv is not setup, the script will try to install it on the system. That will set up the Autest on most systems in a Python virtual environment. The wrapper add some basic options to the command to point to the location of the tests. Use --help for more details on options for running Autest.
+This file is a simple wrapper that will call the Reusable Gold Testing System (Autest) program in a python virtualenv. If the virtualenv is not setup, the script will try to install it on the system. That will set up the Autest on most systems in a Python virtual environment. The wrapper adds some basic options to the command to point to the location of the tests. Use --help for more details on options for running Autest.
 
 ### bootstrap.py
 This script will try to install python35 or better on the system, and the needed python packages for running the tests.
 
+# Basic setup
+
+AuTest can be run using the script file autest.sh listed above. Run the file from the tests/ directory followed by --ats-bin and the bin name. (ie ~/ats/bin) This will run the wrapper for the tests. See documentation for more details.
+
 # Advanced setup
 
-AuTest and the relevant tools can be install manually instead of using the wrapper script. The advange of this is that it is often easier to debug issues with the testing system, or the tests. There are two ways this can be done.
-1. run the bootstrap script then source the path with a "source ./env-test/bin/activate" command. At this point autest command should run without the wrapper script
-2. The other way is to make sure you install python 3.5 or better on your system. From there install these python packages ( ie pip install ):
+AuTest and the relevant tools can be install manually instead of using the wrapper script. By doing this, it is often easier to debug issues with the testing system, or the tests. There are two ways this can be done.
+1. Run the bootstrap script then source the path with a "source ./env-test/bin/activate" command. At this point autest command should run without the wrapper script
+2. Make sure you install python 3.5 or better on your system. From there install these python packages ( ie pip install ):
   - hyper
   - git+https://bitbucket.org/autestsuite/reusable-gold-testing-system.git
   - [traffic-replay](https://bitbucket.org/autestsuite/trafficreplay/src/master/) (This will automatically install [MicroDNS](https://bitbucket.org/autestsuite/microdns/src/master/), [MicroServer](https://bitbucket.org/autestsuite/microserver/src/master/), [TrafficReplayLibrary](https://bitbucket.org/autestsuite/trafficreplaylibrary/src/master/), and dnslib as part of the dependencies.)
 
-# Writting tests for AuTest
-When writting for the AuTest system please refer to the current documenation on the [online wiki](https://bitbucket.org/dragon512/reusable-gold-testing-system/wiki/Home) for general use of the system.
+# Writing tests for AuTest
+When writing for the AuTest system please refer to the current [Online Documentation](https://autestsuite.bitbucket.io/) for general use of the system.
 
-## Documenation of AuTest extension for ATS.
+## Documentation of AuTest extension for ATS.
 Autest allows for the creation of extensions to help specialize and simplify test writing for a given application domain. Minus API addition the extension code will check that python 3.5 or better is used. There is also a new command line argumented added specifically for Trafficserver:
 
 --ats-bin < path to bin directory >
