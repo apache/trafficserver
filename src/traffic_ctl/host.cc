@@ -37,7 +37,7 @@ status_get(unsigned argc, const char **argv)
     TSMgmtError error;
     std::string str = stat_prefix + file_arguments[i];
 
-    for (const char *_reason_tag : Reasons::reasons) {
+    for (const char *_reason_tag : Reason::reasons) {
       std::string _stat = str + "_" + _reason_tag;
       error             = record.fetch(_stat.c_str());
       if (error != TS_ERR_OKAY) {
@@ -73,10 +73,10 @@ status_down(unsigned argc, const char **argv)
 
   // if reason is not set, set it to manual (default)
   if (reason == nullptr) {
-    reason = ats_strdup(Reasons::MANUAL);
+    reason = ats_strdup(Reason::MANUAL_REASON);
   }
 
-  if (!Reasons::validReason(reason)) {
+  if (!Reason::validReason(reason)) {
     fprintf(stderr, "\nInvalid reason: '%s'\n\n", reason);
     return CtrlCommandUsage(usage, opts, countof(opts));
   }
@@ -110,10 +110,10 @@ status_up(unsigned argc, const char **argv)
 
   // if reason is not set, set it to manual (default)
   if (reason == nullptr) {
-    reason = ats_strdup(Reasons::MANUAL);
+    reason = ats_strdup(Reason::MANUAL_REASON);
   }
 
-  if (!Reasons::validReason(reason)) {
+  if (!Reason::validReason(reason)) {
     fprintf(stderr, "\nInvalid reason: '%s'\n\n", reason);
     return CtrlCommandUsage(usage, opts, countof(opts));
   }
