@@ -37,17 +37,14 @@ status_get(unsigned argc, const char **argv)
     TSMgmtError error;
     std::string str = stat_prefix + file_arguments[i];
 
-    for (const char *_reason_tag : Reasons::reasons) {
-      std::string _stat = str + "_" + _reason_tag;
-      error             = record.fetch(_stat.c_str());
-      if (error != TS_ERR_OKAY) {
-        CtrlMgmtError(error, "failed to fetch %s", file_arguments[i]);
-        return CTRL_EX_ERROR;
-      }
+    error = record.fetch(str.c_str());
+    if (error != TS_ERR_OKAY) {
+      CtrlMgmtError(error, "failed to fetch %s", file_arguments[i]);
+      return CTRL_EX_ERROR;
+    }
 
-      if (REC_TYPE_IS_STAT(record.rclass())) {
-        printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
-      }
+    if (REC_TYPE_IS_STAT(record.rclass())) {
+      printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
     }
   }
 
@@ -71,12 +68,19 @@ status_down(unsigned argc, const char **argv)
     return CtrlCommandUsage(usage, opts, countof(opts));
   }
 
-  // if reason is not set, set it to manual (default)
-  if (reason == nullptr) {
-    reason = ats_strdup(Reasons::MANUAL);
+  for (unsigned i = 0; i < n_file_arguments; i++) {
+    if (strncmp(file_arguments[i], "--", 2) == 0) {
+      fprintf(stderr, "Invalid syntax, Usage: %s\n", usage);
+      return CTRL_EX_ERROR;
+    }
   }
 
-  if (!Reasons::validReason(reason)) {
+  // if reason is not set, set it to manual (default)
+  if (reason == nullptr) {
+    reason = ats_strdup(Reason::MANUAL_REASON);
+  }
+
+  if (!Reason::validReason(reason)) {
     fprintf(stderr, "\nInvalid reason: '%s'\n\n", reason);
     return CtrlCommandUsage(usage, opts, countof(opts));
   }
@@ -108,12 +112,19 @@ status_up(unsigned argc, const char **argv)
     return CtrlCommandUsage(usage, nullptr, 0);
   }
 
-  // if reason is not set, set it to manual (default)
-  if (reason == nullptr) {
-    reason = ats_strdup(Reasons::MANUAL);
+  for (unsigned i = 0; i < n_file_arguments; i++) {
+    if (strncmp(file_arguments[i], "--", 2) == 0) {
+      fprintf(stderr, "Invalid syntax, Usage: %s\n", usage);
+      return CTRL_EX_ERROR;
+    }
   }
 
-  if (!Reasons::validReason(reason)) {
+  // if reason is not set, set it to manual (default)
+  if (reason == nullptr) {
+    reason = ats_strdup(Reason::MANUAL_REASON);
+  }
+
+  if (!Reason::validReason(reason)) {
     fprintf(stderr, "\nInvalid reason: '%s'\n\n", reason);
     return CtrlCommandUsage(usage, opts, countof(opts));
   }
