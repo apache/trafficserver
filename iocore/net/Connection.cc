@@ -140,7 +140,8 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 
   ink_assert(fd != NO_FD);
 
-  if (http_accept_filter) {
+  if (opt.etype == ET_NET && opt.defer_accept > 0) {
+    http_accept_filter = true;
     add_http_filter(fd);
   }
 
@@ -250,6 +251,22 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *)&NetProcessor::accept_mss, sizeof(int))) < 0) {
       goto Lerror;
     }
+  }
+#endif
+
+#ifdef TCP_DEFER_ACCEPT
+  // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
+  // data on the socket ready to be read
+  if (opt.defer_accept > 0 && (res = setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int))) < 0) {
+    // FIXME: should we go to the error
+    // goto error;
+    Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
+  }
+#endif
+
+#ifdef TCP_INIT_CWND
+  if (opt.init_cwnd > 0 && (res = setsockopt(fd, IPPROTO_TCP, TCP_INIT_CWND, &opt.init_cwnd, sizeof(int))) < 0) {
+    Error("[Server::listen] Cannot set initial congestion window to %d error: %d", tcp_init_cwnd, errno);
   }
 #endif
 
