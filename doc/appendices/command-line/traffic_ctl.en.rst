@@ -258,26 +258,52 @@ traffic_ctl host
     Get the current status of the hosts used in parent.config as a next hop in a multi-tiered cache hierarchy.  The value 0 or 1 is returned indicating that the host is marked as down '0' or marked as up '1'.  If a host is marked as down, it will not be used as the next hop parent, another host marked as up will be chosen.
 
 .. program:: traffic_ctl host
-.. option:: down --time seconds --reason 'manual|active|local' HOSTNAME [HOSTNAME ...]
+.. option:: down --time seconds --reason 'active|local|manual' HOSTNAME [HOSTNAME ...]
 
     Marks the listed hosts as down so that they will not be chosen as a next hop parent.
     If the --time option is included, the host is marked down for the specified number of
     seconds after which the host will automatically be marked up.  0 seconds marks the host
     down indefinitely until marked up manually and is the default. A reason tag may be used
-    when marking a host down.  Valid values are 'manual', 'active', or 'local', 'manual' is
-    used as the default.  The tags are used to indicate wehter the host was marked down
-    manually or by an 'active' or 'local' health check.  There are three reason tag
-    metrics for each host that may be viewed to see the reason a host was marked down.
+    when marking a host down.  Valid values are 'manual', 'active', and 'local', 'manual'
+    is used as the default if no reason is specified.  The tags are used to indicate wether the host 
+    was marked down manually or by an 'active' or 'local' health check.  'self_detect' indicates
+    that a parent entry in parent.config was marked down because the entry refers to the
+    local host so, it is automatically marked down to prevent requests from looping. A host is
+    not marked up until all reason codes are cleared by marking up the host for the specified
+    reason code. 
+    
+    A stat is created for each host, with a the host fqdn and is prefixed with the string 
+    `proxy.process.host_status` with a string value.  The string value is a 
+    serialized representation of the Host status struct showing all current data ie, reasons, 
+    marked down times, and down time for each host.  The stats may be viewed using the 
+    `traffic_ctl metric` command or through the `stats_over_http` endpoint.
 
 .. program:: traffic_ctl host
-.. option:: up --reason 'manual|active|local' HOSTNAME [HOSTNAME ...]
+.. option:: up --reason 'active|local|manual' HOSTNAME [HOSTNAME ...]
 
     Marks the listed hosts as up so that they will be available for use as a next hop parent.
     By default, the 'manual' reason tag is used when marking up a host.  Use the --reason
-    tag to mark the host reason stat as up using one of 'manual', 'active', or 'local'.
+    tag to mark the host reason code as up using one of 'manual', 'active', or 'local'.
+    The 'self_detect' is an internal reason code used by parent selection to mark down
+    a parent when it is identified as itself and `proxy.config.http.parent_proxy.self_detect'
+    is set to the default of 2.  'self_detect' down cannot be set or unset with traffic_ctl
 
 Examples
 ========
+
+Mark down a host with `traffic_ctl` and view the associated host stats::
+
+$ traffic_ctl host down cdn-cache-02.foo.com --reason manual
+
+$ /opt/trafficserver/bin/traffic_ctl metric match host_status
+proxy.process.host_status.cdn-cache-01.foo.com HOST_STATUS_DOWN,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:DOWN:1556896844:0,SELF_DETECT:UP:0
+proxy.process.host_status.cdn-cache-02.foo.com HOST_STATUS_UP,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0
+proxy.process.host_status.cdn-cache-origin-01.foo.com HOST_STATUS_UP,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0
+
+In the example above, 'cdn-cache-01.foo.com' is unavailable, `HOST_STATUS_DOWN` and was marked down 
+for the `manual` reason, `MANUAL:DOWN:1556896844:0`, at the time indicated by the UNIX time stamp 
+`1556896844`.  To make the host available, one would have to clear the `manual` reason using:: 
+`traffic_ctl host up cdn-cache-01.foo.com --reason manual`
 
 Configure Traffic Server to insert ``Via`` header in the response to
 the client::
