@@ -201,7 +201,8 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
       pRec = nullptr;
     }
     if (firstCall) {
-      result->first_choice_status = (pRec) ? pStatus.getHostStatus(pRec->hostname) : HostStatus_t::HOST_STATUS_INIT;
+      HostStatRec *hst            = (pRec) ? pStatus.getHostStatus(pRec->hostname) : nullptr;
+      result->first_choice_status = (hst) ? hst->status : HostStatus_t::HOST_STATUS_UP;
       break;
     }
   } while (pRec && !firstCall && last_lookup == PRIMARY && strcmp(pRec->hostname, result->hostname) == 0);
@@ -213,7 +214,8 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   // ----------------------------------------------------------------------------------------------------
 
   // didn't find a parent or the parent is marked unavailable or the parent is marked down
-  host_stat = (pRec) ? pStatus.getHostStatus(pRec->hostname) : HostStatus_t::HOST_STATUS_INIT;
+  HostStatRec *hst = (pRec) ? pStatus.getHostStatus(pRec->hostname) : nullptr;
+  host_stat        = (hst) ? hst->status : HostStatus_t::HOST_STATUS_UP;
   if (!pRec || (pRec && !pRec->available) || host_stat == HOST_STATUS_DOWN) {
     do {
       // check if the host is retryable.  It's retryable if the retry window has elapsed
@@ -285,7 +287,8 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
         Debug("parent_select", "No available parents.");
         break;
       }
-      host_stat = (pRec) ? pStatus.getHostStatus(pRec->hostname) : HostStatus_t::HOST_STATUS_INIT;
+      HostStatRec *hst = (pRec) ? pStatus.getHostStatus(pRec->hostname) : nullptr;
+      host_stat        = (hst) ? hst->status : HostStatus_t::HOST_STATUS_UP;
     } while (!pRec || !pRec->available || host_stat == HOST_STATUS_DOWN);
   }
 
@@ -296,7 +299,8 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   // ----------------------------------------------------------------------------------------------------
 
   // use the available or marked for retry parent.
-  host_stat = (pRec) ? pStatus.getHostStatus(pRec->hostname) : HostStatus_t::HOST_STATUS_INIT;
+  hst       = (pRec) ? pStatus.getHostStatus(pRec->hostname) : nullptr;
+  host_stat = (hst) ? hst->status : HostStatus_t::HOST_STATUS_UP;
   if (pRec && host_stat == HOST_STATUS_UP && (pRec->available || result->retry)) {
     result->result      = PARENT_SPECIFIED;
     result->hostname    = pRec->hostname;
