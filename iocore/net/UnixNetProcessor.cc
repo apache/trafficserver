@@ -129,13 +129,6 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     Debug("http_tproxy", "Marked accept server %p on port %d for proxy protocol", na, opt.local_port);
   }
 
-  int should_filter_int         = 0;
-  na->server.http_accept_filter = false;
-  REC_ReadConfigInteger(should_filter_int, "proxy.config.net.defer_accept");
-  if (should_filter_int > 0 && opt.etype == ET_NET) {
-    na->server.http_accept_filter = true;
-  }
-
   SessionAccept *sa = dynamic_cast<SessionAccept *>(cont);
   na->proxyPort     = sa ? sa->proxyPort : nullptr;
   na->snpa          = dynamic_cast<SSLNextProtocolAccept *>(cont);
@@ -172,25 +165,6 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
     naVec.push_back(na);
   }
-
-#ifdef TCP_DEFER_ACCEPT
-  // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
-  // data on the socket ready to be read
-  if (should_filter_int > 0) {
-    setsockopt(na->server.fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &should_filter_int, sizeof(int));
-  }
-#endif
-
-#ifdef TCP_INIT_CWND
-  int tcp_init_cwnd = 0;
-  REC_ReadConfigInteger(tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
-  if (tcp_init_cwnd > 0) {
-    Debug("net", "Setting initial congestion window to %d", tcp_init_cwnd);
-    if (setsockopt(na->server.fd, IPPROTO_TCP, TCP_INIT_CWND, &tcp_init_cwnd, sizeof(int)) != 0) {
-      Error("Cannot set initial congestion window to %d", tcp_init_cwnd);
-    }
-  }
-#endif
 
   return na->action_.get();
 }
