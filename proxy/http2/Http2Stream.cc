@@ -333,14 +333,14 @@ Http2Stream::do_io_close(int /* flags */)
     // by the time this is called from transaction_done.
     closed = true;
 
+    clear_timers();
+    clear_io_events();
+
     if (proxy_ssn && this->is_client_state_writeable()) {
       // Make sure any trailing end of stream frames are sent
       // Wee will be removed at send_data_frames or closing connection phase
       static_cast<Http2ClientSession *>(proxy_ssn)->connection_state.send_data_frames(this);
     }
-
-    clear_timers();
-    clear_io_events();
 
     // Wait until transaction_done is called from HttpSM to signal that the TXN_CLOSE hook has been executed
   }
@@ -691,10 +691,13 @@ Http2Stream::send_response_body(bool call_update)
     // when write_vio is consumed
   } else {
     SCOPED_MUTEX_LOCK(lock, proxy_ssn->connection_state.mutex, this_ethread());
-    proxy_ssn->connection_state.send_data_frames(this);
-    this->signal_write_event(call_update);
-    // XXX The call to signal_write_event can destroy/free the Http2Stream.
-    // Don't modify the Http2Stream after calling this method.
+    // send_data_frames returns true if the stream was deleted during processing
+    // Don't do any more processing if the stream has already been deleted
+    if (!proxy_ssn->connection_state.send_data_frames(this)) {
+      this->signal_write_event(call_update);
+      // XXX The call to signal_write_event can destroy/free the Http2Stream.
+      // Don't modify the Http2Stream after calling this method.
+    }
   }
 }
 

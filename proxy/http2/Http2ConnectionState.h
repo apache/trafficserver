@@ -245,7 +245,7 @@ public:
   // HTTP/2 frame sender
   void schedule_stream(Http2Stream *stream);
   void send_data_frames_depends_on_priority();
-  void send_data_frames(Http2Stream *stream);
+  bool send_data_frames(Http2Stream *stream);
   Http2SendDataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
   void send_headers_frame(Http2Stream *stream);
   void send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
