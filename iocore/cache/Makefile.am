@@ -128,7 +128,8 @@ check_PROGRAMS = \
   test_Alternate_S_to_L_remove_S \
   test_Alternate_S_to_L_remove_L \
   test_Update_L_to_S \
-  test_Update_S_to_L
+  test_Update_S_to_L \
+  test_Update_header
 
 test_main_SOURCES = \
   ./test/main.cc \
@@ -204,6 +205,13 @@ test_Update_S_to_L_LDADD = $(test_LDADD)
 test_Update_S_to_L_SOURCES = \
   $(test_main_SOURCES) \
   ./test/test_Update_S_to_L.cc
+
+test_Update_header_CPPFLAGS = $(test_CPPFLAGS)
+test_Update_header_LDFLAGS = @AM_LDFLAGS@
+test_Update_header_LDADD = $(test_LDADD)
+test_Update_header_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_Update_header.cc
 
 include $(top_srcdir)/build/tidy.mk
 
