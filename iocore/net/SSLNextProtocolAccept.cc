@@ -139,7 +139,9 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
     netvc->do_io_read(new SSLNextProtocolTrampoline(this, netvc->mutex), 0, this->buffer);
     return EVENT_CONT;
   default:
-    netvc->do_io_close();
+    if (netvc) {
+      netvc->do_io_close();
+    }
     return EVENT_DONE;
   }
 }
