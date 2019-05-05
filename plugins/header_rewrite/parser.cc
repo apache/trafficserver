@@ -30,7 +30,8 @@
 
 enum ParserState { PARSER_DEFAULT, PARSER_IN_QUOTE, PARSER_IN_REGEX, PARSER_IN_EXPANSION };
 
-Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
+bool
+Parser::parse_line(const std::string &original_line)
 {
   std::string line        = original_line;
   ParserState state       = PARSER_DEFAULT;
@@ -85,7 +86,7 @@ Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
         TSError("[%s] malformed line \"%s\", ignoring", PLUGIN_NAME, line.c_str());
         _tokens.clear();
         _empty = true;
-        return;
+        return false;
       }
     } else if (!extracting_token) {
       if (_tokens.empty() && line[i] == '#') {
@@ -114,21 +115,49 @@ Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
       TSError("[%s] malformed line, unterminated quotation: \"%s\", ignoring", PLUGIN_NAME, line.c_str());
       _tokens.clear();
       _empty = true;
-      return;
+      return false;
     }
   }
 
   if (_tokens.empty()) {
     _empty = true;
   } else {
-    preprocess(_tokens);
+    return preprocess(_tokens);
   }
+
+  return true;
 }
 
-// This is the core "parser", parsing rule sets
-void
+// This is the main "parser", a helper function to the above tokenizer. NOTE: this modifies (possibly) the tokens list,
+// therefore, we pass in a copy of the parsers tokens here, such that the original token list is retained (useful for tests etc.).
+bool
 Parser::preprocess(std::vector<std::string> tokens)
 {
+  // The last token might be the "flags" section, lets consume it if it is
+  if (tokens.size() > 0) {
+    std::string m = tokens[tokens.size() - 1];
+
+    if (!m.empty() && (m[0] == '[')) {
+      if (m[m.size() - 1] == ']') {
+        m = m.substr(1, m.size() - 2);
+        if (m.find_first_of(',') != std::string::npos) {
+          std::istringstream iss(m);
+          std::string t;
+          while (getline(iss, t, ',')) {
+            _mods.push_back(t);
+          }
+        } else {
+          _mods.push_back(m);
+        }
+        tokens.pop_back(); // consume it, so we don't concatenate it into the value
+      } else {
+        // Syntax error
+        TSError("[%s] mods have to be enclosed in []", PLUGIN_NAME);
+        return false;
+      }
+    }
+  }
+
   // Special case for "conditional" values
   if (tokens[0].substr(0, 2) == "%{") {
     _cond = true;
@@ -155,7 +184,7 @@ Parser::preprocess(std::vector<std::string> tokens)
       }
     } else {
       TSError("[%s] conditions must be embraced in %%{}", PLUGIN_NAME);
-      return;
+      return false;
     }
   } else {
     // Operator has no qualifiers, but could take an optional second argument
@@ -179,29 +208,7 @@ Parser::preprocess(std::vector<std::string> tokens)
     }
   }
 
-  // The last token might be the "flags" section
-  if (tokens.size() > 0) {
-    std::string m = tokens[tokens.size() - 1];
-
-    if (!m.empty() && (m[0] == '[')) {
-      if (m[m.size() - 1] == ']') {
-        m = m.substr(1, m.size() - 2);
-        if (m.find_first_of(',') != std::string::npos) {
-          std::istringstream iss(m);
-          std::string t;
-          while (getline(iss, t, ',')) {
-            _mods.push_back(t);
-          }
-        } else {
-          _mods.push_back(m);
-        }
-      } else {
-        // Syntax error
-        TSError("[%s] mods have to be enclosed in []", PLUGIN_NAME);
-        return;
-      }
-    }
-  }
+  return true;
 }
 
 // Check if the operator is a condition, a hook, and if so, which hook. If the cond is not a hook
@@ -239,12 +246,6 @@ Parser::cond_is_hook(TSHttpHookID &hook) const
   }
 
   return false;
-}
-
-const std::vector<std::string> &
-Parser::get_tokens() const
-{
-  return _tokens;
 }
 
 SimpleTokenizer::SimpleTokenizer(const std::string &original_line)
@@ -293,10 +294,4 @@ SimpleTokenizer::SimpleTokenizer(const std::string &original_line)
   if (extracting_token) {
     _tokens.push_back(line.substr(cur_token_start));
   }
-}
-
-const std::vector<std::string> &
-SimpleTokenizer::get_tokens() const
-{
-  return _tokens;
 }
