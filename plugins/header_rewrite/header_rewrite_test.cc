@@ -44,7 +44,12 @@ TSError(const char *fmt, ...)
 class ParserTest : public Parser
 {
 public:
-  ParserTest(const std::string &line) : Parser(line), res(true) { std::cout << "Finished parser test: " << line << std::endl; }
+  ParserTest(const std::string &line) : res(true)
+  {
+    Parser::parse_line(line);
+    std::cout << "Finished parser test: " << line << std::endl;
+  }
+
   std::vector<std::string>
   getTokens() const
   {
@@ -364,12 +369,13 @@ test_parsing()
   }
 
   {
-    ParserTest p(R"(set-header Alt-Svc "quic=\":443\"; v=\"35\"")");
+    ParserTest p(R"(set-header Alt-Svc "quic=\":443\"; v=\"35\"" [L])");
 
-    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens().size(), 4UL);
     CHECK_EQ(p.getTokens()[0], "set-header");
     CHECK_EQ(p.getTokens()[1], "Alt-Svc");
     CHECK_EQ(p.getTokens()[2], R"(quic=":443"; v="35")");
+    CHECK_EQ(p.get_value(), R"(quic=":443"; v="35")");
 
     END_TEST();
   }
@@ -472,12 +478,16 @@ test_tokenizer()
     SimpleTokenizerTest p("a simple test");
     CHECK_EQ(p.get_tokens().size(), 1UL);
     CHECK_EQ(p.get_tokens()[0], "a simple test");
+
+    END_TEST();
   }
 
   {
     SimpleTokenizerTest p(R"(quic=":443"; v="35")");
     CHECK_EQ(p.get_tokens().size(), 1UL);
     CHECK_EQ(p.get_tokens()[0], R"(quic=":443"; v="35")");
+
+    END_TEST();
   }
 
   {
@@ -485,6 +495,8 @@ test_tokenizer()
     CHECK_EQ(p.get_tokens().size(), 2UL);
     CHECK_EQ(p.get_tokens()[0], "let's party like it's  ");
     CHECK_EQ(p.get_tokens()[1], "%{NOW:YEAR}");
+
+    END_TEST();
   }
   {
     SimpleTokenizerTest p("A racoon's favorite tag is %<cqhm> in %{NOW:YEAR}!");
@@ -494,6 +506,8 @@ test_tokenizer()
     CHECK_EQ(p.get_tokens()[2], " in ");
     CHECK_EQ(p.get_tokens()[3], "%{NOW:YEAR}");
     CHECK_EQ(p.get_tokens()[4], "!");
+
+    END_TEST();
   }
 
   {
@@ -503,6 +517,8 @@ test_tokenizer()
     CHECK_EQ(p.get_tokens()[1], "%{IP:SERVER}");
     CHECK_EQ(p.get_tokens()[2], ":");
     CHECK_EQ(p.get_tokens()[3], "%{INBOUND:LOCAL-PORT}");
+
+    END_TEST();
   }
 
   return errors;

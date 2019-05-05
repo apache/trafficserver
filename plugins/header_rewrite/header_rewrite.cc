@@ -185,8 +185,10 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
       continue;
     }
 
-    Parser p(line); // Tokenize and parse this line
-    if (p.empty()) {
+    Parser p;
+
+    // Tokenize and parse this line
+    if (!p.parse_line(line) || p.empty()) {
       continue;
     }
 
