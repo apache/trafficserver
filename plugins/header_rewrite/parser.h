@@ -33,7 +33,7 @@
 class Parser
 {
 public:
-  explicit Parser(const std::string &line);
+  Parser(){};
 
   // noncopyable
   Parser(const Parser &) = delete;
@@ -76,13 +76,20 @@ public:
   }
 
   bool cond_is_hook(TSHttpHookID &hook) const;
-  const std::vector<std::string> &get_tokens() const;
+
+  const std::vector<std::string> &
+  get_tokens() const
+  {
+    return _tokens;
+  }
+
+  bool parse_line(const std::string &original_line);
 
 private:
-  void preprocess(std::vector<std::string> tokens);
+  bool preprocess(std::vector<std::string> tokens);
 
-  bool _cond;
-  bool _empty;
+  bool _cond  = false;
+  bool _empty = false;
   std::vector<std::string> _mods;
   std::string _op;
   std::string _arg;
@@ -101,7 +108,11 @@ public:
   SimpleTokenizer(const SimpleTokenizer &) = delete;
   void operator=(const SimpleTokenizer &) = delete;
 
-  const std::vector<std::string> &get_tokens() const;
+  const std::vector<std::string> &
+  get_tokens() const
+  {
+    return _tokens;
+  }
 
 protected:
   std::vector<std::string> _tokens;
