@@ -132,6 +132,7 @@ struct Connection {
 
   virtual ~Connection();
   Connection();
+  Connection(Connection const &that) = delete;
 
   /// Default options.
   static NetVCOptions const DEFAULT_OPTIONS;
@@ -141,12 +142,16 @@ struct Connection {
    */
   void move(Connection &);
 
-private:
-  // Don't want copy constructors to avoid having the deconstructor on
-  // temporarly copies close the file descriptor too soon. Use move instead
-  Connection(Connection const &);
-
 protected:
+  /** Assignment operator.
+   *
+   * @param that Source object.
+   * @return @a this
+   *
+   * This is protected because it is not safe in the general case, but is valid for
+   * certain subclasses. Those provide a public assignemnt that depends on this method.
+   */
+  Connection &operator=(Connection const &that) = default;
   void _cleanup();
 };
 
