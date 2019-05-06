@@ -1,0 +1,100 @@
+' Licensed under the Apache License, Version 2.0 (the "License");
+' you may not use this file except in compliance with the License.
+' You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+' Unless required by  applicable law or agreed to in writing, software distributed under the License is distributed
+' on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the License for the specific language governing permissions and limitations under the License.
+
+@startuml
+
+hide empty members
+
+class UrlRewrite << RefCountObj >> {
+  forward_mappings
+  reverse_mappings
+  permanent_redirects
+  temporary_redirects
+  forward_mappings_with_recv_port
+}
+
+UrlRewrite --* MappingStore
+
+class MappingStore {
+  Rule collection
+}
+
+MappingStore --* "1" RegexMappingList
+MappingStore --* "1" URLTable
+
+class URLTable <<std::unordered_map>> {
+  key: FQDN
+  value: UrlMappingPathIndex
+}
+
+URLTable --* "*" UrlMappingPathIndex
+
+class acl_filter_rule {
+  Access check
+  ============
+  string name
+  IpMap src_ip
+  IpMap proxy_ip
+  std::vector<RemapArg> argv
+}
+
+acl_filter_rule --* "next" acl_filter_rule
+' acl_filter_rule --* "*" RemapArg
+' acl_filter_rule --* "2" IpMap
+
+class url_mapping {
+  rewrite rule
+  ================
+  URL from
+  URL to
+}
+note right: Mapping type is determined by\nwhich MappingStore owns\nthis mapping.
+
+url_mapping --* "1" acl_filter_rule
+note bottom: Local rule and copies of defined filters
+
+url_mapping --* "1" "std::vector<RemapPluginInfo*>"
+url_mapping --* "1" "std::vector<void*>"
+note bottom: "Plugin instance data"
+url_mapping --* "1" referrer_info
+url_mapping --* "1" redirect_tag_str
+url_mapping --* "2" URL
+
+"std::vector<RemapPluginInfo*>" --o "*" RemapPluginInfo
+
+redirect_tag_str --* "next" redirect_tag_str
+note bottom: Redirect URL format elements
+
+class referrer_info {
+  Host rewrite Referer data
+}
+
+referrer_info --* "next" referrer_info
+
+class UrlMappingPathIndex {
+}
+
+class UrlMappingTrie << Trie >> {
+  key: path
+  value: url_mapping
+}
+
+class UrlMappingGroup << std::map >> {
+  key: { scheme, port }
+  value: UrlMappingTrie
+}
+
+UrlMappingPathIndex --* "1" UrlMappingGroup
+UrlMappingGroup --* "*" UrlMappingTrie
+UrlMappingTrie --* "*" url_mapping
+
+RegexMappingList --* "*" url_mapping
+
+class RegexMappingList << Queue >> {
+}
+
+@enduml
