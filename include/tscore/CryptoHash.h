@@ -45,6 +45,8 @@ union CryptoHash {
 
   /// Default constructor - init to zero.
   CryptoHash() { memset(this, 0, sizeof(*this)); }
+  /// Copy constructor.
+  CryptoHash(CryptoHash const &that) = default;
 
   /// Assignment - bitwise copy.
   CryptoHash &
