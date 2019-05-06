@@ -464,14 +464,15 @@ HTTPValTE *http_parse_te(const char *buf, int len, Arena *arena);
 class HTTPVersion
 {
 public:
-  HTTPVersion();
+  HTTPVersion()                        = default;
+  HTTPVersion(HTTPVersion const &that) = default;
   explicit HTTPVersion(int32_t version);
   HTTPVersion(int ver_major, int ver_minor);
 
   void set(HTTPVersion ver);
   void set(int ver_major, int ver_minor);
 
-  HTTPVersion &operator=(const HTTPVersion &hv);
+  HTTPVersion &operator=(const HTTPVersion &hv) = default;
   int operator==(const HTTPVersion &hv) const;
   int operator!=(const HTTPVersion &hv) const;
   int operator>(const HTTPVersion &hv) const;
@@ -480,7 +481,7 @@ public:
   int operator<=(const HTTPVersion &hv) const;
 
 public:
-  int32_t m_version;
+  int32_t m_version{HTTP_VERSION(1, 0)};
 };
 
 class IOBufferReader;
@@ -657,11 +658,6 @@ private:
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion() : m_version(HTTP_VERSION(1, 0)) {}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 inline HTTPVersion::HTTPVersion(int32_t version) : m_version(version) {}
 
 /*-------------------------------------------------------------------------
@@ -685,17 +681,6 @@ inline void
 HTTPVersion::set(int ver_major, int ver_minor)
 {
   m_version = HTTP_VERSION(ver_major, ver_minor);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline HTTPVersion &
-HTTPVersion::operator=(const HTTPVersion &hv)
-{
-  m_version = hv.m_version;
-
-  return *this;
 }
 
 /*-------------------------------------------------------------------------
