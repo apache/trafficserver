@@ -26,7 +26,7 @@ Test various options for requiring certificate from client for mutual authentica
 
 Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
 
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 server = Test.MakeOriginServer("server")
@@ -42,7 +42,6 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
@@ -77,7 +76,7 @@ ts.Disk.ssl_server_name_yaml.AddLines([
 
 # to foo.com w/o client cert.  Should fail
 tr = Test.AddTestRun("Connect to foo.com without cert")
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(server)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
