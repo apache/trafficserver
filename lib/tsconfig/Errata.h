@@ -378,7 +378,7 @@ struct Errata::Message {
 
   /// Default constructor.
   /// The message has Id = 0, default code,  and empty text.
-  Message();
+  Message() = default;
 
   /// Construct from text.
   /// Id is zero and Code is default.
@@ -482,8 +482,8 @@ struct Errata::Message {
 
   template < typename ... Args> static std::string stringify(Args const& ... items);
 
-  Id m_id; ///< Message ID.
-  Code m_code; ///< Message code.
+  Id m_id = 0; ///< Message ID.
+  Code m_code = Default_Code; ///< Message code.
   std::string m_text; ///< Final text.
   Errata m_errata; ///< Nested errata.
 };
@@ -749,17 +749,14 @@ MakeRv(
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
 // Inline methods.
-inline Errata::Message::Message()
-  : m_id(0), m_code(Default_Code) {
-}
 inline Errata::Message::Message(std::string const& text)
-  : m_id(0), m_code(Default_Code), m_text(text) {
+  : m_text(text) {
 }
 inline Errata::Message::Message(Id id, std::string const& text)
-  : m_id(id), m_code(Default_Code), m_text(text) {
+  : m_text(text) {
 }
 inline Errata::Message::Message(Id id, Code code, std::string const& text)
-  : m_id(id), m_code(code), m_text(text) {
+  : m_text(text) {
 }
 template < typename ... Args>
 Errata::Message::Message(Id id, Code code, Args const& ... text)
