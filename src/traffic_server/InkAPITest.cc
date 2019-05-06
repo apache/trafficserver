@@ -1313,28 +1313,20 @@ REGRESSION_TEST(SDK_API_TSPluginDirGet)(RegressionTest *test, int /* atype ATS_U
 //                    TSConfigRelease
 //                    TSConfigDataGet
 ////////////////////////////////////////////////
-static int my_config_id = -1;
-typedef struct {
+static int my_config_id = 0;
+struct ConfigData {
   const char *a;
   const char *b;
-} ConfigData;
-
-static void
-config_destroy_func(void *data)
-{
-  ConfigData *config = (ConfigData *)data;
-  TSfree(config);
-  return;
-}
+};
 
 REGRESSION_TEST(SDK_API_TSConfig)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus           = REGRESSION_TEST_INPROGRESS;
-  ConfigData *config = (ConfigData *)TSmalloc(sizeof(ConfigData));
+  ConfigData *config = new ConfigData;
   config->a          = "unit";
   config->b          = "test";
 
-  my_config_id = TSConfigSet(0, config, config_destroy_func);
+  my_config_id = TSConfigSet(my_config_id, config, [](void *cfg) { delete static_cast<ConfigData *>(cfg); });
 
   TSConfig test_config = nullptr;
   test_config          = TSConfigGet(my_config_id);
