@@ -170,11 +170,17 @@ public:
   }
 
   /// Copy constructor.
-  /// @internal Prior to this implementation handling the char* pointers was done manual
-  /// at every call site. We also need this because we have ats_scoped_str members.
+  /// @internal Prior to this implementation handling the char* pointers was done manually
+  /// at every call site. We also need this because we have @c ats_scoped_str members and need
+  /// to make copies.
   Span(Span const &that)
   {
-    memcpy(this, &that, reinterpret_cast<intptr_t>(&(static_cast<Span *>(nullptr)->pathname)));
+    /* I looked at simplifying this by changing the @c ats_scoped_str instances to @c std::string
+     * but that actually makes it worse. The copy constructor @b must be overriden to get the
+     * internal link (@a link.next) correct. Given that, changing to @c std::string means doing
+     * explicit assignment for every member, which has its own problems.
+     */
+    memcpy(static_cast<void *>(this), &that, reinterpret_cast<intptr_t>(&(static_cast<Span *>(nullptr)->pathname)));
     if (that.pathname) {
       pathname = ats_strdup(that.pathname);
     }
