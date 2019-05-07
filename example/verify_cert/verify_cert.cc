@@ -1,11 +1,8 @@
 /** @file
 
-  SSL Preaccept test plugin.
+  Verify certificate test plugin.
 
-  Implements blind tunneling based on the client IP address
-  The client ip addresses are specified in the plugin's
-  config file as an array of IP addresses or IP address ranges under the
-  key "client-blind-tunnel"
+  Example showing how to use TS_SSL_VERIFY_CLIENT_HOOK
 
   @section license License
 
@@ -30,12 +27,7 @@
 #include <memory.h>
 #include <cinttypes>
 #include <ts/ts.h>
-#include <tsconfig/TsValue.h>
 #include <openssl/ssl.h>
-#include <getopt.h>
-
-using ts::config::Configuration;
-using ts::config::Value;
 
 #define PLUGIN_NAME "verify_cert"
 #define PCP "[" PLUGIN_NAME "] "
@@ -92,11 +84,7 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_cert                       = nullptr; // Certificate callback continuation
-  static const struct option longopt[] = {
-    {const_cast<char *>("config"), required_argument, nullptr, 'c'},
-    {nullptr, no_argument, nullptr, '\0'},
-  };
+  TSCont cb_cert = nullptr; // Certificate callback continuation
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";
