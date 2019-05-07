@@ -30,25 +30,18 @@
 #include <memory.h>
 #include <cinttypes>
 #include <ts/ts.h>
-#include <tsconfig/TsValue.h>
 #include "tscore/ink_inet.h"
 #include <algorithm>
-#include <getopt.h>
-
-using ts::config::Configuration;
-using ts::config::Value;
+#include <deque>
 
 #define PLUGIN_NAME "ssl-preaccept"
 #define PCP "[" PLUGIN_NAME "] "
 
 namespace
 {
-std::string ConfigPath;
 typedef std::pair<IpAddr, IpAddr> IpRange;
 using IpRangeQueue = std::deque<IpRange>;
 IpRangeQueue ClientBlindTunnelIp;
-
-Configuration Config; // global configuration
 
 void
 Parse_Addr_String(std::string_view const &text, IpRange &range)
@@ -66,54 +59,6 @@ Parse_Addr_String(std::string_view const &text, IpRange &range)
     range.first  = newAddr;
     range.second = newAddr;
   }
-}
-
-/// Get a string value from a config node.
-void
-Load_Config_Value(Value const &parent, const char *name, IpRangeQueue &addrs)
-{
-  Value v = parent[name];
-  std::string zret;
-  IpRange ipRange;
-  if (v.isLiteral()) {
-    auto txt = v.getText();
-    Parse_Addr_String(std::string_view(txt._ptr, txt._size), ipRange);
-    addrs.push_back(ipRange);
-  } else if (v.isContainer()) {
-    size_t i;
-    for (i = 0; i < v.childCount(); i++) {
-      auto txt = v[i].getText();
-      Parse_Addr_String(std::string_view(txt._ptr, txt._size), ipRange);
-      addrs.push_back(ipRange);
-    }
-  }
-}
-
-int
-Load_Config_File()
-{
-  ts::Rv<Configuration> cv = Configuration::loadFromPath(ConfigPath.c_str());
-  if (!cv.isOK()) {
-    TSError(PCP "Failed to parse %s as TSConfig format", ConfigPath.c_str());
-    return -1;
-  }
-  Config = cv;
-  return 1;
-}
-
-int
-Load_Configuration()
-{
-  int ret = Load_Config_File();
-  if (ret != 0) {
-    TSError(PCP "Failed to load the config file, check debug output for errata");
-  }
-
-  // Still need to use the file
-  Value root = Config.getRoot();
-  Load_Config_Value(root, "client-blind-tunnel", ClientBlindTunnelIp);
-
-  return 0;
 }
 
 int
@@ -158,39 +103,26 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
-  TSPluginRegistrationInfo info;
-  TSCont cb_pa                         = nullptr; // pre-accept callback continuation
-  static const struct option longopt[] = {
-    {const_cast<char *>("config"), required_argument, nullptr, 'c'},
-    {nullptr, no_argument, nullptr, '\0'},
-  };
+  TSCont cb_pa = nullptr; // pre-accept callback continuation
 
+  TSPluginRegistrationInfo info;
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
-  int opt = 0;
-  while (opt >= 0) {
-    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, nullptr);
-    switch (opt) {
-    case 'c':
-      ConfigPath = optarg;
-      ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(optarg);
-      break;
-    }
+  if (argc < 2) {
+    TSError(PCP "Usage: ssl_preaccept.so <ip or network>");
+    return;
   }
-  if (ConfigPath.length() == 0) {
-    static const char *const DEFAULT_CONFIG_PATH = "ssl_preaccept.config";
-    ConfigPath                                   = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
-    TSDebug(PLUGIN_NAME, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
-  }
+
+  IpRange ipRange;
+  Parse_Addr_String(std::string_view(argv[1]), ipRange);
+  ClientBlindTunnelIp.push_back(ipRange);
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
     TSError(PCP "registration failed");
   } else if (TSTrafficServerVersionGetMajor() < 2) {
     TSError(PCP "requires Traffic Server 2.0 or later");
-  } else if (0 > Load_Configuration()) {
-    TSError(PCP "Failed to load config file");
   } else if (nullptr == (cb_pa = TSContCreate(&CB_Pre_Accept, TSMutexCreate()))) {
     TSError(PCP "Failed to pre-accept callback");
   } else {
