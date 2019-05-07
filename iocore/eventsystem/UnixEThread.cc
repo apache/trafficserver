@@ -129,6 +129,10 @@ EThread::process_event(Event *e, int calling_code)
     }
     Continuation *c_temp = e->continuation;
     // Make sure that the continuation is locked before calling the handler
+
+    // Restore the client IP debugging flags
+    set_cont_flags(e->continuation->control_flags);
+
     e->continuation->handleEvent(calling_code, e);
     ink_assert(!e->in_the_priority_queue);
     ink_assert(c_temp == e->continuation);
