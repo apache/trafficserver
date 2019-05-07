@@ -43,7 +43,7 @@ class Http3ClientSession;
 class Http3App : public QUICApplication
 {
 public:
-  Http3App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl);
+  Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl);
   virtual ~Http3App();
 
   virtual void start();

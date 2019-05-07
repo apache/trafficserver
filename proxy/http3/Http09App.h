@@ -39,7 +39,7 @@ class Http09ClientSession;
 class Http09App : public QUICApplication
 {
 public:
-  Http09App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl);
+  Http09App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl);
   ~Http09App();
 
   int main_event_handler(int event, Event *data);

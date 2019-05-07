@@ -33,7 +33,7 @@
 static constexpr char debug_tag[]   = "quic_simple_app";
 static constexpr char debug_tag_v[] = "v_quic_simple_app";
 
-Http09App::Http09App(QUICNetVConnection *client_vc, IpAllow::ACL session_acl) : QUICApplication(client_vc)
+Http09App::Http09App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl) : QUICApplication(client_vc)
 {
   this->_client_session      = new Http09ClientSession(client_vc);
   this->_client_session->acl = std::move(session_acl);

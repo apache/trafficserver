@@ -581,7 +581,7 @@ QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, c
     const char *cert_name = multi_cert_params ? multi_cert_params->cert.get() : nullptr;
 
     for (auto cert : cert_list) {
-      if (!ssl_stapling_init_cert(ctx, cert, cert_name)) {
+      if (!ssl_stapling_init_cert(ctx, cert, cert_name, nullptr)) {
         Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", cert_name);
       }
     }

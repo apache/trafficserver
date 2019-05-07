@@ -92,7 +92,7 @@ class Http3ClientApp : public Http3App
 public:
   using super = Http3App;
 
-  Http3ClientApp(QUICNetVConnection *qvc, IpAllow::ACL session_acl, const QUICClientConfig *config);
+  Http3ClientApp(QUICNetVConnection *qvc, IpAllow::ACL &&session_acl, const QUICClientConfig *config);
   ~Http3ClientApp();
 
   void start() override;

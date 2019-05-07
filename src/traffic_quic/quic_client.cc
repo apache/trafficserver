@@ -249,7 +249,7 @@ Http09ClientApp::main_event_handler(int event, Event *data)
 //
 // Http3ClientApp
 //
-Http3ClientApp::Http3ClientApp(QUICNetVConnection *qvc, IpAllow::ACL session_acl, const QUICClientConfig *config)
+Http3ClientApp::Http3ClientApp(QUICNetVConnection *qvc, IpAllow::ACL &&session_acl, const QUICClientConfig *config)
   : super(qvc, std::move(session_acl)), _config(config)
 {
 }
