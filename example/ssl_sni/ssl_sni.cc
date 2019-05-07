@@ -1,11 +1,9 @@
 /** @file
 
-  SSL Preaccept test plugin.
+  SSL SNI test plugin.
 
-  Implements blind tunneling based on the client IP address
-  The client ip addresses are specified in the plugin's
-  config file as an array of IP addresses or IP address ranges under the
-  key "client-blind-tunnel"
+  Somewhat nonsensically exercise some scenarios of proxying
+  and blind tunneling from the SNI callback plugin
 
   @section license License
 
@@ -30,45 +28,14 @@
 #include <memory.h>
 #include <cinttypes>
 #include <ts/ts.h>
-#include <tsconfig/TsValue.h>
-#include <openssl/ssl.h>
-#include <getopt.h>
 
-using ts::config::Configuration;
-using ts::config::Value;
+#include <openssl/ssl.h>
 
 #define PLUGIN_NAME "ssl_sni"
 #define PCP "[" PLUGIN_NAME "] "
 
 namespace
 {
-std::string ConfigPath;
-
-Configuration Config; // global configuration
-
-int
-Load_Config_File()
-{
-  ts::Rv<Configuration> cv = Configuration::loadFromPath(ConfigPath.c_str());
-  if (!cv.isOK()) {
-    TSError(PCP "Failed to parse %s as TSConfig format", ConfigPath.c_str());
-    return -1;
-  }
-  Config = cv;
-  return 1;
-}
-
-int
-Load_Configuration()
-{
-  int ret = Load_Config_File();
-  if (ret != 0) {
-    TSError(PCP "Failed to load the config file, check debug output for errata");
-  }
-
-  return 0;
-}
-
 /**
    Somewhat nonsensically exercise some scenarios of proxying
    and blind tunneling from the SNI callback plugin
@@ -126,38 +93,16 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_cert                       = nullptr; // Certificate callback continuation
-  static const struct option longopt[] = {
-    {const_cast<char *>("config"), required_argument, nullptr, 'c'},
-    {nullptr, no_argument, nullptr, '\0'},
-  };
+  TSCont cb_cert = nullptr; // Certificate callback continuation
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
-  int opt = 0;
-  while (opt >= 0) {
-    opt = getopt_long(argc, (char *const *)argv, "c:", longopt, nullptr);
-    switch (opt) {
-    case 'c':
-      ConfigPath = optarg;
-      ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(optarg);
-      break;
-    }
-  }
-  if (ConfigPath.length() == 0) {
-    static const char *const DEFAULT_CONFIG_PATH = "ssl_sni.config";
-    ConfigPath                                   = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
-    TSDebug(PLUGIN_NAME, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
-  }
-
   if (TS_SUCCESS != TSPluginRegister(&info)) {
     TSError(PCP "registration failed");
   } else if (TSTrafficServerVersionGetMajor() < 2) {
     TSError(PCP "requires Traffic Server 2.0 or later");
-  } else if (0 > Load_Configuration()) {
-    TSError(PCP "Failed to load config file");
   } else if (nullptr == (cb_cert = TSContCreate(&CB_servername, TSMutexCreate()))) {
     TSError(PCP "Failed to create cert callback");
   } else {
