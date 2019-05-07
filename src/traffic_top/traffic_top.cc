@@ -247,7 +247,7 @@ help(const string &host, const string &version)
     attron(A_BOLD);
     mvprintw(7, 0, "Definitions:");
     attroff(A_BOLD);
-    mvprintw(8, 0, "Fresh      => Requests that were servered by fresh entries in cache");
+    mvprintw(8, 0, "Fresh      => Requests that were served by fresh entries in cache");
     mvprintw(9, 0, "Revalidate => Requests that contacted the origin to verify if still valid");
     mvprintw(10, 0, "Cold       => Requests that were not in cache at all");
     mvprintw(11, 0, "Changed    => Requests that required entries in cache to be updated");

@@ -91,7 +91,6 @@ void
 TSRemapDeleteInstance(void *ih)
 {
   /* Release instance memory allocated in TSRemapNewInstance */
-  int i;
   TSDebug(PLUGIN_NAME, "deleting instance %p", ih);
 
   if (ih) {
@@ -100,7 +99,7 @@ TSRemapDeleteInstance(void *ih)
       TSfree(qri->param_name);
     }
     if (qri->hosts) {
-      for (i = 0; i < qri->num_hosts; ++i) {
+      for (int i = 0; i < qri->num_hosts; ++i) {
         TSfree(qri->hosts[i]);
       }
       TSfree(qri->hosts);
@@ -112,7 +111,6 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
 {
-  int hostidx           = -1;
   query_remap_info *qri = (query_remap_info *)ih;
 
   if (!qri || !rri) {
@@ -125,7 +123,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
 
   if (req_query && req_query_len > 0) {
     char *q, *key;
-    char *s = NULL;
+    char *s     = NULL;
+    int hostidx = -1;
 
     /* make a copy of the query, as it is read only */
     q = (char *)TSstrndup(req_query, req_query_len + 1);

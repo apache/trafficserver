@@ -26,7 +26,7 @@
    NetVCTest.cc
 
    Description:
-       Unit test for infastructure for VConnections implementing the
+       Unit test for infrastructure for VConnections implementing the
          NetVConnection interface
 
 
@@ -67,7 +67,7 @@ NVC_test_def netvc_tests_def[] = {
   {"itimeout", 6000, 8000, 10, 10, 512, 10, VC_EVENT_READ_COMPLETE, VC_EVENT_INACTIVITY_TIMEOUT},
   {"itimeout", 10, 10, 6000, 8000, 512, 20, VC_EVENT_EOS, VC_EVENT_WRITE_COMPLETE},
 
-  // Test the small transfer code one byts at a time
+  // Test the small transfer code one byte at a time
   {"smallt", 400, 400, 500, 500, 1, 15, VC_EVENT_READ_COMPLETE, VC_EVENT_WRITE_COMPLETE},
   {"smallt", 500, 500, 400, 400, 1, 15, VC_EVENT_READ_COMPLETE, VC_EVENT_WRITE_COMPLETE},
 

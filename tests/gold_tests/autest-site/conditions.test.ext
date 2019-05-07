@@ -19,6 +19,9 @@
 def HasOpenSSLVersion(self, version):
     return self.EnsureVersion(["openssl","version"],min_version=version)
 
+def HasCurlVersion(self, version):
+    return self.EnsureVersion(["curl","--version"],min_version=version)
+
 def HasCurlFeature(self, feature):
 
     def default(output):
@@ -60,6 +63,7 @@ def PluginExists(self, pluginname):
 
 ExtendCondition(HasOpenSSLVersion)
 ExtendCondition(HasATSFeature)
+ExtendCondition(HasCurlVersion)
 ExtendCondition(HasCurlFeature)
 ExtendCondition(PluginExists)
 

@@ -382,8 +382,11 @@ namespace detail
       if (n->_data == payload) {
         if (x) {
           if (n->_max <= max) {
-            // next range is covered, so we can remove and continue.
-            this->remove(n);
+// next range is covered, so we can remove and continue.
+#if defined(__clang_analyzer__)
+            ink_assert(x != n)
+#endif
+              this->remove(n);
             n = next(x);
           } else if (n->_min <= max_plus1) {
             // Overlap or adjacent with larger max - absorb and finish.
@@ -642,10 +645,14 @@ namespace detail
   void
   IpMapBase<N>::insert_before(N *spot, N *n)
   {
-    N *c = left(spot);
-    if (!c) {
+    if (left(spot) == nullptr) {
       spot->setChild(n, N::LEFT);
     } else {
+// If there's a left child, there's a previous node, therefore spot->_prev is valid.
+// Clang analyzer doesn't realize this so it generates a false positive.
+#if defined(__clang_analyzer__)
+      ink_assert(spot->_prev != nullptr);
+#endif
       spot->_prev->setChild(n, N::RIGHT);
     }
 
@@ -842,7 +849,7 @@ namespace detail
     {
       return this->setMin(min + 1);
     }
-    /** Decremement the maximum value in place.
+    /** decrement the maximum value in place.
         @return This object.
     */
     self_type &
@@ -921,7 +928,7 @@ namespace detail
     /** Construct from the argument type.
      *
      * @param min Minimum value in the range.
-     * @param max Maximum value in the range (inclusvie).
+     * @param max Maximum value in the range (inclusive).
      * @param data Data to attach to the range.
      */
 
@@ -936,7 +943,7 @@ namespace detail
     /** Construct from the underlying @c Metric type @a min to @a max
      *
      * @param min Minimum value in the range.
-     * @param max Maximum value in the range (inclusvie).
+     * @param max Maximum value in the range (inclusive).
      * @param data Data to attach to the range.
      */
     Ip6Node(Metric const &min, Metric const &max, void *data) : Node(data), Ip6Span(min, max) {}
@@ -1028,7 +1035,7 @@ namespace detail
       inc(_min);
       return *this;
     }
-    /** Decremement the maximum value in place.
+    /** Decrement the maximum value in place.
         @return This object.
     */
     self_type &
@@ -1037,7 +1044,7 @@ namespace detail
       dec(_max);
       return *this;
     }
-    /** Increment the mininimum value in place.
+    /** Increment the minimum value in place.
         @return This object.
     */
     self_type &

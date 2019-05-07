@@ -49,7 +49,7 @@ bool do_daemon = false;
 
 static const char USAGE_TEXT[] = "%s\n"
                                  "--address IP address to bind.\n"
-                                 "--router Booststrap IP address for routers.\n"
+                                 "--router Bootstrap IP address for routers.\n"
                                  "--service Path to service group definitions.\n"
                                  "--debug Print debugging information.\n"
                                  "--daemon Run as daemon.\n"

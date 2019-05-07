@@ -721,7 +721,7 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
 
   logf(LVL_DEBUG, "Received WCCP2_I_SEE_YOU for group %d.", group.m_svc.getSvcId());
 
-  // Prefered address for router.
+  // Preferred address for router.
   uint32_t router_addr = msg.m_router_id.idElt().getAddr();
   // Where we sent our packet.
   uint32_t to_addr = msg.m_router_id.getToAddr();

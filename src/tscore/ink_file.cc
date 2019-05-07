@@ -174,7 +174,7 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
   } else {
     // If INK_FILEPATH_NOTABSOLUTE is specified, the caller
     // requires a relative result.  If the rootpath is
-    // ommitted, we do not retrieve the working path,
+    // omitted, we do not retrieve the working path,
     // if rootpath was supplied as absolute then fail.
     //
     if (flags & INK_FILEPATH_NOTABSOLUTE) {
@@ -490,7 +490,7 @@ ink_file_get_geometry(int fd ATS_UNUSED, ink_device_geometry &geometry)
 #if defined(BLKALIGNOFF)
   // BLKALIGNOFF gets the number of bytes needed to align the I/Os to the block device with
   // and underlying block devices. This might be non-zero when you are using a logical volume
-  // backed by JBOD or RAID device(s). BLKALIGNOFF was addeed in 2.6.32, so it's not present in
+  // backed by JBOD or RAID device(s). BLKALIGNOFF was added in 2.6.32, so it's not present in
   // RHEL 5.
   if (ioctl(fd, BLKALIGNOFF, &arg.u32) == 0) {
     geometry.alignsz = arg.u32;

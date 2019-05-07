@@ -45,14 +45,15 @@ typedef int ssl_error_t;
 struct SSLMultiCertConfigParams {
   SSLMultiCertConfigParams() { REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable"); }
 
-  int session_ticket_enabled; ///< session ticket enabled
-  ats_scoped_str addr;        ///< IPv[64] address to match
-  ats_scoped_str cert;        ///< certificate
-  ats_scoped_str first_cert;  ///< the first certificate name when multiple cert files are in 'ssl_cert_name'
-  ats_scoped_str ca;          ///< CA public certificate
-  ats_scoped_str key;         ///< Private key
-  ats_scoped_str dialog;      ///< Private key dialog
-  ats_scoped_str servername;  ///< Destination server
+  int session_ticket_enabled;   ///< session ticket enabled
+  ats_scoped_str addr;          ///< IPv[64] address to match
+  ats_scoped_str cert;          ///< certificate
+  ats_scoped_str first_cert;    ///< the first certificate name when multiple cert files are in 'ssl_cert_name'
+  ats_scoped_str ca;            ///< CA public certificate
+  ats_scoped_str key;           ///< Private key
+  ats_scoped_str ocsp_response; ///< prefetched OCSP response
+  ats_scoped_str dialog;        ///< Private key dialog
+  ats_scoped_str servername;    ///< Destination server
   SSLCertContext::Option opt = SSLCertContext::OPT_NONE; ///< SSLCertContext special handling option
 };
 

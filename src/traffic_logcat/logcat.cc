@@ -38,12 +38,10 @@
 #include "LogFilter.h"
 #include "LogFormat.h"
 #include "LogFile.h"
-#include "LogHost.h"
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "LogBuffer.h"
 #include "LogUtils.h"
-#include "LogSock.h"
 #include "Log.h"
 
 // logcat-specific command-line flags

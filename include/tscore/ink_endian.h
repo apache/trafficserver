@@ -1,6 +1,6 @@
 /** @file
  *
- *  Endian convertion routines
+ *  Endian conversion routines
  *
  *  @section license License
  *

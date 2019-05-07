@@ -36,7 +36,7 @@ class Response;
 
 /**
  * @brief A HeaderFieldName is a lightweight wrapper around a string that allows for case insensitive comparisons.
- * Because header field names must be case insensitive this allows easy case insentive comparisons of names.
+ * Because header field names must be case insensitive this allows easy case insensitive comparisons of names.
  *
  */
 class HeaderFieldName
@@ -75,7 +75,7 @@ public:
   std::string str();
 
   /**
-   * @return a const char * which points to the name of this HeaderFIeldName
+   * @return a const char * which points to the name of this HeaderFieldName
    */
   const char *c_str();
 
@@ -119,7 +119,7 @@ public:
    * Constructor for header_field_value_iterator, this shouldn't need to be used directly.
    * @param bufp the TSMBuffer associated with the headers
    * @param mloc the TSMLoc associated with the headers.
-   * @param field_loc the TSMLoc assocated with the field.
+   * @param field_loc the TSMLoc associated with the field.
    * @param index the index of the value in the HeaderField
    * @warning This shouldn't need to be used directly!
    */
@@ -358,14 +358,14 @@ public:
   /**
    * Set the VALUES of the header field to the given value string
    * @param string - the values to set on the current header field
-   * @return true if the value is sucessfully changed.
+   * @return true if the value is successfully changed.
    */
   bool operator=(const std::string &field_value);
 
   /**
    * Set the VALUES of the header field to the given value string
    * @param the values to set on the current header field
-   * @return true if the value is sucessfully changed.
+   * @return true if the value is successfully changed.
    */
   bool operator=(const char *field_value);
 
@@ -464,7 +464,7 @@ public:
 
   /**
    * Clears all headers.
-   * @return true if the headers were succesfully cleared.
+   * @return true if the headers were successfully cleared.
    */
   bool clear();
 
@@ -574,7 +574,7 @@ public:
    * @param key the name of the header field whose value to set.
    * @return an iterator to the new header field or the end() iterator if append fails.
    * @warning This will create a header field with the given name, thus it should not be
-   * used to check for the existance of a header, use count() or find() instead.
+   * used to check for the existence of a header, use count() or find() instead.
    */
   HeaderField operator[](const std::string &key);
 

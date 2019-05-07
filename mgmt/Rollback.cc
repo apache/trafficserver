@@ -63,7 +63,7 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
     numberBackups(0)
 {
   version_t highestSeen;             // the highest backup version
-  ExpandingArray existVer(25, true); // Exsisting versions
+  ExpandingArray existVer(25, true); // Existing versions
   struct stat fileInfo;
   MgmtInt numBak;
   char *alarmMsg;
@@ -71,11 +71,6 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
   // To Test, Read/Write access to the file
   int testFD;    // For open test
   int testErrno; // For open test
-
-  // In case the file is missing
-  char *highestSeenStr;
-  char *activeVerStr;
-  bool needZeroLength;
 
   ink_assert(fileName_ != nullptr);
 
@@ -128,16 +123,17 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
   //
   if (statFile(ACTIVE_VERSION, &fileInfo) < 0) {
     // If we can't find an active version because there is not
-    //   one, attempt to rollback to a previous verision if one exists
+    //   one, attempt to rollback to a previous version if one exists
     //
     // If it does not, create a zero length file to prevent total havoc
     //
     if (errno == ENOENT) {
+      bool needZeroLength;
       mgmt_log("[RollBack::Rollback] Missing Configuration File: %s\n", fileName);
 
       if (highestSeen > 0) {
-        highestSeenStr = createPathStr(highestSeen);
-        activeVerStr   = createPathStr(ACTIVE_VERSION);
+        char *highestSeenStr = createPathStr(highestSeen);
+        char *activeVerStr   = createPathStr(ACTIVE_VERSION);
 
         if (rename(highestSeenStr, activeVerStr) < 0) {
           mgmt_log("[RollBack::Rollback] Automatic Rollback to prior version failed for %s : %s\n", fileName, strerror(errno));
@@ -147,7 +143,7 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
           needZeroLength = false;
           highestSeen--;
           // Since we've made the highestVersion active
-          //  remove it from the backup verision q
+          //  remove it from the backup version q
           versionQ.remove(versionQ.tail);
         }
         ats_free(highestSeenStr);
@@ -387,7 +383,7 @@ Rollback::internalUpdate(TextBuffer *buf, version_t newVersion, bool notifyChang
 
   // Check to see if the callee has specified a newVersion number
   //   If the newVersion argument is less than zero, the callee
-  //   is telling us to use the next version in squence
+  //   is telling us to use the next version in sequence
   if (newVersion < 0) {
     newVersion = this->currentVersion + 1;
     if (incVersion) {
@@ -473,7 +469,7 @@ Rollback::internalUpdate(TextBuffer *buf, version_t newVersion, bool notifyChang
     newBak->modTime = 0;
     versionQ.enqueue(newBak);
   }
-  // Update instance varibles
+  // Update instance variables
   this->numVersions++;
   this->currentVersion = newVersion;
 
@@ -687,7 +683,7 @@ Rollback::findVersions_ml(ExpandingArray *listNames)
 version_t
 Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName)
 {
-  const char *currentVersionStr, *str;
+  const char *str;
   version_t version = INVALID_VERSION;
 
   // Check to see if the current entry is a rollback file
@@ -700,7 +696,7 @@ Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName
       // Check for the underscore
       if (*(testFileName + fileNameLen) == '_') {
         // Check for the integer version number
-        currentVersionStr = str = testFileName + fileNameLen + 1;
+        const char *currentVersionStr = str = testFileName + fileNameLen + 1;
 
         for (; isdigit(*str) && *str != '\0'; str++) {
           ;
@@ -714,12 +710,11 @@ Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName
           // Add info about version number and modTime
           if (listNames != nullptr) {
             struct stat fileInfo;
-            versionInfo *verInfo;
 
             if (statFile(version, &fileInfo) >= 0) {
-              verInfo          = (versionInfo *)ats_malloc(sizeof(versionInfo));
-              verInfo->version = version;
-              verInfo->modTime = fileInfo.st_mtime;
+              versionInfo *verInfo = (versionInfo *)ats_malloc(sizeof(versionInfo));
+              verInfo->version     = version;
+              verInfo->modTime     = fileInfo.st_mtime;
               listNames->addEntry((void *)verInfo);
             }
           }
@@ -736,7 +731,7 @@ Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName
 //   Add wrapper to
 //     version_t Rollback::findVersions_ml(ExpandingArray* listNames)
 //
-//   Puts the data in a queue rather than an ExpaningArray
+//   Puts the data in a queue rather than an ExpandingArray
 //
 version_t
 Rollback::findVersions_ml(Queue<versionInfo> &q)
@@ -744,7 +739,6 @@ Rollback::findVersions_ml(Queue<versionInfo> &q)
   ExpandingArray versions(25, true);
   int num;
   versionInfo *foundVer;
-  versionInfo *addInfo;
   version_t highest;
 
   // Get the version info and sort it
@@ -757,9 +751,9 @@ Rollback::findVersions_ml(Queue<versionInfo> &q)
     foundVer = (versionInfo *)versions[i];
     //  We need to create our own copy so that
     //   constructor gets run
-    addInfo          = new versionInfo;
-    addInfo->version = foundVer->version;
-    addInfo->modTime = foundVer->modTime;
+    versionInfo *addInfo = new versionInfo;
+    addInfo->version     = foundVer->version;
+    addInfo->modTime     = foundVer->modTime;
     q.enqueue(addInfo);
   }
 
@@ -866,7 +860,7 @@ Rollback::setLastModifiedTime()
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
     return true;
   } else {
-    // We really shoudn't fail to stat the file since we just
+    // We really shouldn't fail to stat the file since we just
     //  created it.  If we do, just punt and just use the current
     //  time.
     fileLastModified = (time(nullptr) - ink_timezone()) * 1000000000;
@@ -878,14 +872,14 @@ Rollback::setLastModifiedTime()
 //
 //  Called to check if the file has been changed
 //    by the user.  Timestamps are compared to see if a
-//    change occured
+//    change occurred
 //
 //  If the file has been changed, a new version is rolled.
-//    The new current version and its predicessor will
+//    The new current version and its predecessor will
 //    be the same in this case.  While this is pointless,
 //    for Rolling backward, we need to the version number
 //    to up'ed so that WebFileEdit knows that the file has
-//    changed.  Rolling a new verion also has the effect
+//    changed.  Rolling a new version also has the effect
 //    of creating a new timestamp
 //
 bool

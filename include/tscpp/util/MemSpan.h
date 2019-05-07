@@ -224,7 +224,7 @@ public:
    */
 
   self_type remove_prefix(void const *p);
-  /** Shringt the span from the front.
+  /** Shrink the span from the front.
    *
    * @param n The number of bytes to remove.
    * @return @c *this
@@ -254,7 +254,7 @@ public:
    */
   self_type &remove_suffix(void const *p);
 
-  /** Shringt the span from the back.
+  /** Shrink the span from the back.
    *
    * @param n The number of bytes to remove.
    * @return @c *this

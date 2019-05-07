@@ -38,7 +38,6 @@
 
 #include "P_EventSystem.h"
 #include "I_Machine.h"
-#include "LogSock.h"
 
 #include "tscore/BaseLogFile.h"
 #include "LogField.h"
@@ -46,7 +45,6 @@
 #include "LogFormat.h"
 #include "LogBuffer.h"
 #include "LogFile.h"
-#include "LogHost.h"
 #include "LogObject.h"
 #include "LogUtils.h"
 #include "LogConfig.h"

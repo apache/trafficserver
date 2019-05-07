@@ -67,7 +67,7 @@ struct SslHdrExpansion {
   ExpansionScope scope = SSL_HEADERS_SCOPE_NONE;
   ExpansionField field = SSL_HEADERS_FIELD_NONE;
 
-  // noncopyable but moveable
+  // noncopyable but movable
   SslHdrExpansion(const SslHdrExpansion &) = delete;
   SslHdrExpansion &operator=(const SslHdrExpansion &) = delete;
   SslHdrExpansion(SslHdrExpansion &&)                 = default;

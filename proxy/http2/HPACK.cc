@@ -385,7 +385,7 @@ bool
 HpackDynamicTable::update_maximum_size(uint32_t new_size)
 {
   while (_current_size > new_size) {
-    if (_headers.size() <= 0) {
+    if (_headers.size() == 0) {
       return false;
     }
     int last_name_len, last_value_len;
@@ -407,6 +407,92 @@ uint32_t
 HpackDynamicTable::length() const
 {
   return _headers.size();
+}
+
+//
+// [RFC 7541] 5.1. Integer representation
+//
+int64_t
+encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8_t n)
+{
+  if (buf_start >= buf_end) {
+    return -1;
+  }
+
+  uint8_t *p = buf_start;
+
+  if (value < (static_cast<uint32_t>(1 << n) - 1)) {
+    *(p++) = value;
+  } else {
+    *(p++) = (1 << n) - 1;
+    value -= (1 << n) - 1;
+    while (value >= 128) {
+      if (p >= buf_end) {
+        return -1;
+      }
+      *(p++) = (value & 0x7F) | 0x80;
+      value  = value >> 7;
+    }
+    if (p + 1 >= buf_end) {
+      return -1;
+    }
+    *(p++) = value;
+  }
+  return p - buf_start;
+}
+
+int64_t
+encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, size_t value_len)
+{
+  uint8_t *p       = buf_start;
+  bool use_huffman = true;
+  char *data       = nullptr;
+  int64_t data_len = 0;
+
+  // TODO Choose whether to use Huffman encoding wisely
+  // cppcheck-suppress knownConditionTrueFalse; leaving "use_huffman" for wise huffman usage in the future
+  if (use_huffman && value_len) {
+    data = static_cast<char *>(ats_malloc(value_len * 4));
+    if (data == nullptr) {
+      return -1;
+    }
+    data_len = huffman_encode(reinterpret_cast<uint8_t *>(data), reinterpret_cast<const uint8_t *>(value), value_len);
+  }
+
+  // Length
+  const int64_t len = encode_integer(p, buf_end, data_len, 7);
+  if (len == -1) {
+    if (use_huffman) {
+      ats_free(data);
+    }
+
+    return -1;
+  }
+
+  if (use_huffman) {
+    *p |= 0x80;
+  }
+  p += len;
+
+  if (buf_end < p || buf_end - p < data_len) {
+    if (use_huffman) {
+      ats_free(data);
+    }
+
+    return -1;
+  }
+
+  // Value
+  if (data_len) {
+    memcpy(p, data, data_len);
+    p += data_len;
+  }
+
+  if (use_huffman) {
+    ats_free(data);
+  }
+
+  return p - buf_start;
 }
 
 int64_t

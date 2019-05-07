@@ -2846,7 +2846,7 @@ close_connection(int cnum)
   url_num = connections[cnum].url_num;
 
   /* Only check to update got_bytes, byte count errors and/or checksums
-     if the request was succesful (i.e. no HTTP error). */
+     if the request was successful (i.e. no HTTP error). */
   if (connections[cnum].http_status >= 0 && connections[cnum].http_status < 400) {
     if (do_checksum) {
       if (!urls[url_num].got_checksum) {

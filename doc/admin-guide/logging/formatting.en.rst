@@ -89,7 +89,6 @@ down into the following broad categories for (hopefully) easier reference:
 - :ref:`admin-logging-fields-methods`
 - :ref:`admin-logging-fields-ids`
 - :ref:`admin-logging-fields-lengths`
-- :ref:`admin-logging-fields-collation`
 - :ref:`admin-logging-fields-network`
 - :ref:`admin-logging-fields-plugin`
 - :ref:`admin-logging-fields-proto`
@@ -446,28 +445,6 @@ sshl  Origin Response        Header length of the origin server response.
 ssql  Origin Response        Content body and header length combined of the
                              origin server response to |TS|.
 ===== ====================== ==================================================
-
-.. _admin-logging-fields-collation:
-
-Log Collation
-~~~~~~~~~~~~~
-
-.. _phn:
-.. _phi:
-
-Logging fields related to :ref:`admin-logging-collation`.
-
-===== ====== ==================================================================
-Field Source Description
-===== ====== ==================================================================
-phn   Proxy  Hostname of the |TS| node which generated the collated log entry.
-phi   Proxy  IP of the |TS| node which generated the collated log entry.
-===== ====== ==================================================================
-
-.. note::
-
-   Log collation is a *deprecated* feature as of ATS v8.0.0, and  will be
-   removed in ATS v9.0.0.
 
 .. _admin-logging-fields-network:
 

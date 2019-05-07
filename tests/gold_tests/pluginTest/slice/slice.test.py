@@ -117,7 +117,7 @@ tr = Test.AddTestRun("Load Slice plugin")
 remap_config_path = ts.Disk.remap_config.Name
 tr.Disk.File(remap_config_path, typename="ats:config").AddLines([
   'map / http://127.0.0.1:{}'.format(server.Variables.Port) +
-    ' @plugin=slice.so @pparam=bytesover:{}'.format(block_bytes)
+    ' @plugin=slice.so @pparam=--test-blockbytes={}'.format(block_bytes)
 ])
 
 tr.StillRunningAfter = ts

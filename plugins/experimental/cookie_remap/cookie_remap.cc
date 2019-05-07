@@ -902,7 +902,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 }
 
 //----------------------------------------------------------------------------
-// called whenever we need to perform substiturions on a string; used to replace
+// called whenever we need to perform substitutions on a string; used to replace
 // things like
 //  $url, $unmatched_path, $cr_req_url, and $cr_url_encode
 // returns 0 if no substitutions, 1 otw.

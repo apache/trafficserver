@@ -81,7 +81,6 @@
 #define RAFT_EVENT_EVENTS_START 3200
 #define SIMPLE_EVENT_EVENTS_START 3300
 #define UPDATE_EVENT_EVENTS_START 3500
-#define LOG_COLLATION_EVENT_EVENTS_START 3800
 #define AIO_EVENT_EVENTS_START 3900
 #define BLOCK_CACHE_EVENT_EVENTS_START 4000
 #define UTILS_EVENT_EVENTS_START 5000
@@ -170,7 +169,7 @@ public:
      Instructs the event object to reschedule itself at the time
      specified in atimeout_at on the EventProcessor.
 
-     @param atimeout_at Time at which to callcallback. See the Remarks section.
+     @param atimeout_at Time at which to call the callback. See the Remarks section.
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */
@@ -181,7 +180,7 @@ public:
      Instructs the event object to reschedule itself at the time
      specified in atimeout_at on the EventProcessor.
 
-     @param atimeout_in Time at which to callcallback. See the Remarks section.
+     @param atimeout_in Time at which to call the callback. See the Remarks section.
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */
@@ -192,7 +191,7 @@ public:
      the event object to reschedule itself to callback every 'aperiod'
      from now.
 
-     @param aperiod Time period at which to callcallback. See the Remarks section.
+     @param aperiod Time period at which to call the callback. See the Remarks section.
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */

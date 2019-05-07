@@ -177,7 +177,7 @@ StrListOverflow::create_heap(int user_size)
   //  matter since we are talking about strings but since this is a
   //  last minute emergency bug fix, I'm not take any changes.  If
   //  allocations are not of aligned values then subsequents allocations
-  //  aren't aligned, again mirroring the previous implemnetation
+  //  aren't aligned, again mirroring the previous implementation
   int total_size = overflow_head_hdr_size + user_size;
 
   StrListOverflow *o = (StrListOverflow *)ats_malloc(total_size);

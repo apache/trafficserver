@@ -65,7 +65,6 @@ using cache_scan_state = struct cache_scan_state_t;
 static int
 handle_scan(TSCont contp, TSEvent event, void *edata)
 {
-  TSCacheHttpInfo cache_infop;
   cache_scan_state *cstate = (cache_scan_state *)TSContDataGet(contp);
 
   if (event == TS_EVENT_CACHE_REMOVE) {
@@ -120,19 +119,18 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     if (cstate->done) {
       return TS_CACHE_SCAN_RESULT_DONE;
     }
-    cache_infop = (TSCacheHttpInfo)edata;
+    TSCacheHttpInfo cache_infop = (TSCacheHttpInfo)edata;
 
     TSMBuffer req_bufp, resp_bufp;
     TSMLoc req_hdr_loc, resp_hdr_loc;
     TSMLoc url_loc;
 
-    char *url;
     int url_len;
     const char s1[] = "URL: ", s2[] = "\n";
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s1, sizeof(s1) - 1);
     TSCacheHttpInfoReqGet(cache_infop, &req_bufp, &req_hdr_loc);
     if (TS_SUCCESS == TSHttpHdrUrlGet(req_bufp, req_hdr_loc, &url_loc)) {
-      url = TSUrlStringGet(req_bufp, url_loc, &url_len);
+      char *url = TSUrlStringGet(req_bufp, url_loc, &url_len);
 
       cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, url, url_len);
       cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s2, sizeof(s2) - 1);

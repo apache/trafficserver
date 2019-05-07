@@ -92,7 +92,7 @@ JemallocNodumpAllocator::extend_and_setup_arena()
 }
 
 /**
- * This will retain the orignal functionality if
+ * This will retain the original functionality if
  * !defined(JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED)
  */
 void *
@@ -121,7 +121,7 @@ JemallocNodumpAllocator::allocate(InkFreeList *f)
 }
 
 /**
- * This will retain the orignal functionality if
+ * This will retain the original functionality if
  * !defined(JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED)
  */
 void

@@ -133,7 +133,6 @@ ts_ctrl_main(void *arg)
 
   fd_set selectFDs;      // for select call
   ClientT *client_entry; // an entry of fd to alarms mapping
-  int fds_ready;         // stores return value for select
   struct timeval timeout;
 
   // loops until TM dies; waits for and processes requests from clients
@@ -158,7 +157,7 @@ ts_ctrl_main(void *arg)
     }
 
     // select call - timeout is set so we can check events at regular intervals
-    fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)nullptr, (fd_set *)nullptr, &timeout);
+    int fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)nullptr, (fd_set *)nullptr, &timeout);
 
     // check if have any connections or requests
     if (fds_ready > 0) {
@@ -829,7 +828,7 @@ handle_host_status_down(int fd, void *req, size_t reqlen)
 /**************************************************************************
  * handle_api_ping
  *
- * purpose: handles the API_PING messaghat is sent by API clients to keep
+ * purpose: handles the API_PING message that is sent by API clients to keep
  *    the management socket alive
  * output: TS_ERR_xx. There is no response message.
  *************************************************************************/

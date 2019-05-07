@@ -133,10 +133,7 @@ IpAllow::match(sockaddr const *ip, match_key_t key)
 //   End API functions
 //
 
-IpAllow::IpAllow(const char *config_var)
-{
-  config_file_path = RecConfigReadConfigPath(config_var);
-}
+IpAllow::IpAllow(const char *config_var) : config_file_path(RecConfigReadConfigPath(config_var)) {}
 
 void
 IpAllow::PrintMap(IpMap *map)

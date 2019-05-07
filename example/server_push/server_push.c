@@ -47,16 +47,16 @@ bool
 should_push(TSHttpTxn txnp)
 {
   TSMBuffer mbuf;
-  TSMLoc hdr, url;
+  TSMLoc hdr, in_url;
   if (TSHttpTxnClientReqGet(txnp, &mbuf, &hdr) != TS_SUCCESS) {
     return false;
   }
-  if (TSHttpHdrUrlGet(mbuf, hdr, &url) != TS_SUCCESS) {
+  if (TSHttpHdrUrlGet(mbuf, hdr, &in_url) != TS_SUCCESS) {
     return false;
   }
   int len;
-  TSUrlHttpQueryGet(mbuf, url, &len);
-  TSHandleMLocRelease(mbuf, hdr, url);
+  TSUrlHttpQueryGet(mbuf, in_url, &len);
+  TSHandleMLocRelease(mbuf, hdr, in_url);
   TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdr);
   if (len > 0) {
     return true;

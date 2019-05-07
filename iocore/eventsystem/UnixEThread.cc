@@ -128,7 +128,7 @@ EThread::process_event(Event *e, int calling_code)
       return;
     }
     Continuation *c_temp = e->continuation;
-    // Make sure that the contination is locked before calling the handler
+    // Make sure that the continuation is locked before calling the handler
     e->continuation->handleEvent(calling_code, e);
     ink_assert(!e->in_the_priority_queue);
     ink_assert(c_temp == e->continuation);
@@ -193,16 +193,16 @@ EThread::execute_regular()
 {
   Event *e;
   Que(Event, link) NegativeQueue;
-  ink_hrtime next_time = 0;
-  ink_hrtime delta     = 0;    // time spent in the event loop
+  ink_hrtime next_time;
+  ink_hrtime delta;            // time spent in the event loop
   ink_hrtime loop_start_time;  // Time the loop started.
   ink_hrtime loop_finish_time; // Time at the end of the loop.
 
   // Track this so we can update on boundary crossing.
   EventMetrics *prev_metric = this->prev(metrics + (ink_get_hrtime_internal() / HRTIME_SECOND) % N_EVENT_METRICS);
 
-  int nq_count = 0;
-  int ev_count = 0;
+  int nq_count;
+  int ev_count;
 
   // A statically initialized instance we can use as a prototype for initializing other instances.
   static EventMetrics METRIC_INIT;

@@ -21,7 +21,7 @@
 #  limitations under the License.
 
 ################################################################################
-# These can (should?) be overriden from the command line with ----build-arg, e.g.
+# These can (should?) be overridden from the command line with ----build-arg, e.g.
 #    docker build --build-arg OS_VERSION=7 --build-arg OS_TYPE=centos
 #
 ARG OS_VERSION=28

@@ -68,7 +68,7 @@ areStaticsFrozen()
  * @brief Allows code (and Plugins) to declare member variables during system init.
  *
  * The size of this structure is actually zero, so it will not change the size of your derived class.
- * But new and delete are overriden to use allocate enough bytes of the derived type + added fields.
+ * But new and delete are overridden to use allocate enough bytes of the derived type + added fields.
  * All bool's are packed to save space using the *Bit methods.
  * This API is focused on thread safe data types that allow minimally blocked reading.
  * This is templated so static variables are instanced per Derived type. B/c we need to have different
@@ -196,7 +196,7 @@ template <typename Derived_t> struct Extendible {
   }; // end Schema struct
 
 private:
-  // Extendible convience methods
+  // Extendible convenience methods
   char *this_as_char_ptr();
   char const *this_as_char_ptr() const;
 
@@ -392,7 +392,7 @@ void
 Extendible<Derived_t>::Schema::call_construct(char *ext_as_char_ptr)
 {
   ++instance_count; // don't allow schema modification
-  // init all extendible memory to 0, incase constructors don't
+  // init all extendible memory to 0, in case constructors don't
   memset(ext_as_char_ptr + sizeof(Derived_t), 0, alloc_size - sizeof(Derived_t));
 
   for (auto const &elm : fields) {

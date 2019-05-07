@@ -152,7 +152,7 @@ PollCont::do_poll(ink_hrtime timeout)
       poll_timeout = net_config_poll_timeout;
     }
   }
-// wait for fd's to tigger, or don't wait if timeout is 0
+// wait for fd's to trigger, or don't wait if timeout is 0
 #if TS_USE_EPOLL
   pollDescriptor->result =
     epoll_wait(pollDescriptor->epoll_fd, pollDescriptor->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);

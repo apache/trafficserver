@@ -43,21 +43,21 @@ experimental_slice_slice_la_SOURCES = \
 
 check_PROGRAMS += experimental/slice/test_content_range
 
-experimental_slice_test_content_range_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DSLICE_UNIT_TEST
+experimental_slice_test_content_range_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DUNITTEST
 experimental_slice_test_content_range_SOURCES = \
   experimental/slice/unit-tests/test_content_range.cc \
   experimental/slice/ContentRange.cc
 
 check_PROGRAMS += experimental/slice/test_range
 
-experimental_slice_test_range_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DSLICE_UNIT_TEST
+experimental_slice_test_range_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DUNITTEST
 experimental_slice_test_range_SOURCES = \
   experimental/slice/unit-tests/test_range.cc \
   experimental/slice/Range.cc
 
 check_PROGRAMS += experimental/slice/test_config
 
-experimental_slice_test_config_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DSLICE_UNIT_TEST
+experimental_slice_test_config_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DUNITTEST
 experimental_slice_test_config_SOURCES = \
   experimental/slice/unit-tests/test_config.cc \
   experimental/slice/Config.cc

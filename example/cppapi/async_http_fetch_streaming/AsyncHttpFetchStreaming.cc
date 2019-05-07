@@ -42,11 +42,14 @@ GlobalPlugin *plugin;
 class Intercept : public InterceptPlugin, public AsyncReceiver<AsyncHttpFetch>
 {
 public:
-  Intercept(Transaction &transaction)
-    : InterceptPlugin(transaction, InterceptPlugin::SERVER_INTERCEPT), transaction_(transaction), num_fetches_(0)
+  explicit Intercept(Transaction &transaction)
+    : InterceptPlugin(transaction, InterceptPlugin::SERVER_INTERCEPT),
+      transaction_(transaction),
+      main_url_(transaction.getClientRequest().getUrl().getUrlString()),
+      num_fetches_(0)
   {
-    main_url_ = transaction.getClientRequest().getUrl().getUrlString();
   }
+
   void consume(const string &data, InterceptPlugin::RequestDataType type) override;
   void handleInputComplete() override;
   void handleAsyncComplete(AsyncHttpFetch &async_http_fetch) override;

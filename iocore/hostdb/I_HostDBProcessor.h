@@ -51,7 +51,7 @@ struct HostDBContinuation;
 // IP address.
 //
 // Since host information is relatively small, we can afford to have
-// a reasonable size memory cache, and use a (relatively) sparce
+// a reasonable size memory cache, and use a (relatively) sparse
 // disk representation to decrease # of seeks.
 //
 extern int hostdb_enable;
@@ -84,7 +84,7 @@ makeHostHash(const char *string)
 //
 // This structure contains the host information required by
 // the application.  Except for the initial fields it
-// is treated as opacque by the database.
+// is treated as opaque by the database.
 //
 
 union HostDBApplicationInfo {
@@ -395,13 +395,13 @@ struct HostDBRoundRobin {
 struct HostDBCache;
 struct HostDBHash;
 
-// Prototype for inline completion functionf or
+// Prototype for inline completion function or
 //  getbyname_imm()
 typedef void (Continuation::*cb_process_result_pfn)(HostDBInfo *r);
 
 Action *iterate(Continuation *cont);
 
-/** The Host Databse access interface. */
+/** The Host Database access interface. */
 struct HostDBProcessor : public Processor {
   friend struct HostDBSync;
   // Public Interface

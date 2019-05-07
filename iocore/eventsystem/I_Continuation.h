@@ -23,7 +23,7 @@
   @section details Details
 
   Continuations have a handleEvent() method to invoke them. Users
-  can determine the behavior of a Continuation by suppling a
+  can determine the behavior of a Continuation by supplying a
   "ContinuationHandler" (member function name) which is invoked
   when events arrive. This function can be changed with the
   "setHandler" method.
@@ -198,8 +198,8 @@ protected:
     @param amutex Lock to be set for this Continuation.
 
   */
-  Continuation(ProxyMutex *amutex = nullptr);
-  Continuation(Ptr<ProxyMutex> &amutex);
+  explicit Continuation(ProxyMutex *amutex = nullptr);
+  explicit Continuation(Ptr<ProxyMutex> &amutex);
 };
 
 /**

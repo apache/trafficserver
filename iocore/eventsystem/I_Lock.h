@@ -129,7 +129,7 @@ inkcoreapi extern void lock_taken(const SourceLocation &, const char *handler);
 
   A ProxyMutex object has an ink_mutex member (defined in ink_mutex.h)
   which is a wrapper around the platform dependent mutex type. This
-  member allows the ProxyMutex to provide the functionallity required
+  member allows the ProxyMutex to provide the functionality required
   by the users of the class without the burden of platform specific
   function calls.
 
@@ -234,7 +234,7 @@ public:
   }
 };
 
-// The ClassAlocator for ProxyMutexes
+// The ClassAllocator for ProxyMutexes
 extern inkcoreapi ClassAllocator<ProxyMutex> mutexAllocator;
 
 inline bool
@@ -245,7 +245,7 @@ Mutex_trylock(
   Ptr<ProxyMutex> &m, EThread *t)
 {
   ink_assert(t != nullptr);
-  ink_assert(t == (EThread *)this_thread());
+  ink_assert(t == reinterpret_cast<EThread *>(this_thread()));
   if (m->thread_holding != t) {
     if (!ink_mutex_try_acquire(&m->the_mutex)) {
 #ifdef DEBUG

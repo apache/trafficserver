@@ -99,7 +99,6 @@ test_LDADD = \
 	$(top_builddir)/iocore/hostdb/libinkhostdb.a \
 	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/proxy/logging/liblogcollation.a \
 	$(top_builddir)/proxy/shared/libdiagsconfig.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/utils/libinkutils.a \

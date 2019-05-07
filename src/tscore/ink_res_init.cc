@@ -129,7 +129,7 @@ ink_res_setservers(ink_res_state statp, IpEndpoint const *set, int cnt)
 
   /* The goal here seems to be to compress the source list (@a set) by
      squeezing out invalid addresses. We handle the special case where
-     the destination and sourcea are the same.
+     the destination and source are the same.
   */
   int nserv = 0;
   for (IpEndpoint const *limit = set + cnt; nserv < INK_MAXNS && set < limit; ++set) {
@@ -275,7 +275,7 @@ ink_res_randomid()
  * there will have precedence.  Otherwise, the server address is set to
  * INADDR_ANY and the default domain name comes from the gethostname().
  *
- * An interrim version of this code (BIND 4.9, pre-4.4BSD) used 127.0.0.1
+ * An interim version of this code (BIND 4.9, pre-4.4BSD) used 127.0.0.1
  * rather than INADDR_ANY ("0.0.0.0") as the default name server address
  * since it was noted that INADDR_ANY actually meant ``the first interface
  * you "ifconfig"'d at boot time'' and if this was a SLIP or PPP interface,
@@ -382,7 +382,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   }
 
   /* ---------------------------------------------
-     Default domain name and doamin Search list:
+     Default domain name and domain Search list:
 
      if we are supplied a default domain name,
      and/or search list we will use it. Otherwise,
@@ -427,7 +427,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   }
 
   /* -------------------------------------------
-     we must be provided with atleast a named!
+     we must be provided with at least a named!
      ------------------------------------------- */
   if (pHostList) {
     if (pHostListSize > INK_MAXNS) {

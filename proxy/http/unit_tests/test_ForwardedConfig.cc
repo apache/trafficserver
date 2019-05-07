@@ -36,7 +36,7 @@ using namespace HttpForwarded;
 class OptionBitSetListInit : public OptionBitSet
 {
 public:
-  OptionBitSetListInit(std::initializer_list<std::size_t> il)
+  explicit OptionBitSetListInit(std::initializer_list<std::size_t> il)
   {
     for (std::size_t i : il) {
       this->set(i);
@@ -68,7 +68,7 @@ private:
   std::string s;
 
 public:
-  XS(const char *in) : s{nextWs()}
+  explicit XS(const char *in) : s{nextWs()}
   {
     bool upper{true};
     for (; *in; ++in) {
@@ -92,7 +92,7 @@ public:
 };
 
 void
-test(const char *spec, const char *reqErr, OptionBitSet bS)
+test(const char *spec, const char *reqErr, const OptionBitSet &bS)
 {
   ts::LocalBufferWriter<1024> error;
 

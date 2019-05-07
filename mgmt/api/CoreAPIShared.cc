@@ -77,7 +77,7 @@ END:
 }
 
 /* readHTTPResponse
- * - read from an openned socket to memory-allocated buffer and close the
+ * - read from an opened socket to memory-allocated buffer and close the
  *   socket regardless success or failure.
  * INPUT:  sock -- the socket to read the response from
  *         buffer -- the buffer to be filled with the HTTP response
@@ -132,7 +132,7 @@ error: /* "Houston, we have a problem!" (Apollo 13) */
 }
 
 /* sendHTTPRequest
- * - Compose a HTTP GET request and sent it via an openned socket.
+ * - Compose a HTTP GET request and sent it via an opened socket.
  * INPUT:  sock -- the socket to send the message to
  *         req  -- the request to send
  * OUTPUT: bool -- true if everything went well. false otherwise (and sock is
@@ -182,7 +182,6 @@ error: /* "Houston, we have a problem!" (Apollo 13) */
   return TS_ERR_NET_WRITE;
 }
 
-/* Modified from TrafficCop.cc (open_socket) */
 int
 connectDirect(const char *host, int port, uint64_t /* timeout ATS_UNUSED */)
 {
@@ -241,7 +240,6 @@ error:
   return -1;
 } /* connectDirect */
 
-/* COPIED direclty form TrafficCop.cc */
 static int
 poll_read(int fd, int timeout)
 {
@@ -336,7 +334,7 @@ get_event_id(const char *event_name)
 /**********************************************************************
  * get_event_id
  *
- * Purpose: based on alarm_id, determine the corresonding alarm name
+ * Purpose: based on alarm_id, determine the corresponding alarm name
  * Note:    allocates memory for the name returned
  *********************************************************************/
 char *

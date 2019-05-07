@@ -220,7 +220,7 @@ private:
 // This needs the txnp temporarily, so it can copy the pristine request
 // URL. The txnp is not used once initialize() returns.
 //
-// Upon succesful completion, the struct should be ready to start a
+// Upon successful completion, the struct should be ready to start a
 // background fetch.
 bool
 BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
@@ -678,7 +678,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &req_hdrs)) {
     TSMLoc field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
 
-    if (!field_loc) { // Less common case, but also allow If-Range header to triger, but only if Range not present
+    if (!field_loc) { // Less common case, but also allow If-Range header to trigger, but only if Range not present
       field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_IF_RANGE, TS_MIME_LEN_IF_RANGE);
     }
 

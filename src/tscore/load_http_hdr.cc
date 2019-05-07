@@ -128,7 +128,7 @@ load_buffer(int fd, hdr_type h_type)
       fprintf(stderr, "Failed to read data file : %s\n", strerror(errno));
       exit(1);
     } else if (done == 0) {
-      fprintf(stderr, "EOF encounted\n", strerror(errno));
+      fprintf(stderr, "EOF encountered\n", strerror(errno));
       exit(1);
     }
 

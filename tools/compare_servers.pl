@@ -79,7 +79,7 @@ sub compareHeaderValues($$)
 
     my @test_headers =
       qw(ETag Cache-Control Connection Accept-Ranges Server Content-Type Access-Control-Allow-Methods Access-Control-Allow-Origin Strict-Transport-Security);
-    my $return_val = 0;    # header valuse match
+    my $return_val = 0;    # header value match
 
     if ($verbose >= 3) {
         foreach my $field ($response1->header_field_names) {

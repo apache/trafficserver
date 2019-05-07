@@ -118,7 +118,7 @@ public:
   {
   }
 
-  LogAccess(HttpSM *sm);
+  explicit LogAccess(HttpSM *sm);
 
   inkcoreapi ~LogAccess() {}
   inkcoreapi void init();

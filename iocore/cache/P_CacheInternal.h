@@ -388,8 +388,6 @@ struct CacheVC : public CacheVConnection {
   bool is_pread_capable() override;
   bool set_pin_in_cache(time_t time_pin) override;
   time_t get_pin_in_cache() override;
-  bool set_disk_io_priority(int priority) override;
-  int get_disk_io_priority() override;
 
 // offsets from the base stat
 #define CACHE_STAT_ACTIVE 0
@@ -435,7 +433,7 @@ struct CacheVC : public CacheVConnection {
   // Start Region C
   // These variables are memset to 0 when the structure is freed.
   // The size of this region is size_to_init which is initialized
-  // in the CacheVC constuctor. It assumes that vio is the start
+  // in the CacheVC constructor. It assumes that vio is the start
   // of this region.
   // NOTE: NOTE: NOTE: If vio is NOT the start, then CHANGE the
   // size_to_init initialization
@@ -580,14 +578,13 @@ free_CacheVC(CacheVC *cont)
   ink_assert(!cont->is_io_in_progress());
   ink_assert(!cont->od);
   /* calling cont->io.action = nullptr causes compile problem on 2.6 solaris
-     release build....wierd??? For now, null out continuation and mutex
+     release build....weird??? For now, null out continuation and mutex
      of the action separately */
   cont->io.action.continuation = nullptr;
   cont->io.action.mutex        = nullptr;
   cont->io.mutex.clear();
-  cont->io.aio_result        = 0;
-  cont->io.aiocb.aio_nbytes  = 0;
-  cont->io.aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
+  cont->io.aio_result       = 0;
+  cont->io.aiocb.aio_nbytes = 0;
   cont->request.reset();
   cont->vector.clear();
   cont->vio.buffer.clear();

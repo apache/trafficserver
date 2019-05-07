@@ -94,7 +94,7 @@ private:
 
   /* Mechanisms to avoid concurrent fetches and applying limits */
   FetchPolicy *_unique = nullptr; /* make sure we never download same object multiple times at the same time */
-  TSMutex _lock;                  /* protects the deduplication object only */
+  TSMutex _lock;                  /* protects the de-duplication object only */
   size_t _concurrentFetches                        = 0;
   size_t _concurrentFetchesMax                     = 0;
   PrefetchMetricInfo _metrics[FETCHES_MAX_METRICS] = {

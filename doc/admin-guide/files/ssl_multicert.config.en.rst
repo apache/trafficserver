@@ -93,6 +93,14 @@ ssl_ca_name=FILENAME (optional)
   the certificate chain. *FILENAME* is resolved relative to the
   :ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable.
 
+ssl_ocsp_name=FILENAME (optional)
+  The name of the file containing the prefetched OCSP stapling response
+  for this certificate. This field can be omitted to let trafficserver
+  fetch OCSP responses dynamically. Otherwise, when included, the administrator is
+  responsible for updating the file's content. *FILENAME* is resolved
+  relative to the :ts:cv:`proxy.config.ssl.ocsp.response.path`
+  configuration variable.
+
 ssl_ticket_enabled=1|0 (optional)
   Enable RFC 5077 stateless TLS session tickets. To support this,
   OpenSSL should be upgraded to version 0.9.8f or higher. This

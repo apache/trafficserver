@@ -265,13 +265,10 @@ DiagsConfig::RegisterDiagConfig()
 }
 
 DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const char *tags, const char *actions, bool use_records)
-  : diags_log(nullptr)
+  : callbacks_established(false), diags_log(nullptr), diags(nullptr)
 {
   char diags_logpath[PATH_NAME_MAX];
   ats_scoped_str logpath;
-
-  callbacks_established = false;
-  diags                 = nullptr;
 
   ////////////////////////////////////////////////////////////////////
   //  If we aren't using the manager records for configuation       //

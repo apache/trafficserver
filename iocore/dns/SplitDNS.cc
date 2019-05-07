@@ -94,7 +94,7 @@ SplitDNS::~SplitDNS()
 SplitDNS *
 SplitDNSConfig::acquire()
 {
-  return (SplitDNS *)configProcessor.get(SplitDNSConfig::m_id);
+  return static_cast<SplitDNS *>(configProcessor.get(SplitDNSConfig::m_id));
 }
 
 /* --------------------------------------------------------------
@@ -255,7 +255,7 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
       int res = memcmp(pH, pMatch, pxHL[i].match.size());
 
       if ((0 != res && '!' == cNot) || (0 == res && '!' != cNot)) {
-        data_ptr = (SplitDNSRecord *)pxHL[i].opaque_data;
+        data_ptr = static_cast<SplitDNSRecord *>(pxHL[i].opaque_data);
         data_ptr->UpdateMatch(result, rdata);
         break;
       }
@@ -298,9 +298,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
 {
   Tokenizer pTok(",; \t\r");
   int numTok;
-  const char *current;
-  int port = 0;
-  char *tmp;
+  int port  = 0;
   int totsz = 0, sz = 0;
 
   numTok = pTok.Initialize(val, SHARE_TOKS);
@@ -317,8 +315,8 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
      set of servers specified
      ------------------------------------------------ */
   for (int i = 0; i < numTok; i++) {
-    current = pTok[i];
-    tmp     = (char *)strchr(current, ':');
+    const char *current = pTok[i];
+    char *tmp           = (char *)strchr(current, ':');
     // coverity[secure_coding]
     if (tmp != nullptr && sscanf(tmp + 1, "%d", &port) != 1) {
       return "Malformed DNS port";
@@ -402,9 +400,8 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
 {
   Tokenizer pTok(",; \t\r");
   int numTok;
-  int cnt = 0, sz = 0;
+  int sz    = 0;
   char *pSp = nullptr;
-  const char *current;
 
   numTok = pTok.Initialize(val, SHARE_TOKS);
 
@@ -415,8 +412,8 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
   pSp = &m_servers.x_domain_srch_list[0];
 
   for (int i = 0; i < numTok; i++) {
-    current = pTok[i];
-    cnt     = sz += strlen(current);
+    const char *current = pTok[i];
+    int cnt             = sz += strlen(current);
 
     if (MAXDNAME - 1 < sz) {
       break;
@@ -440,14 +437,11 @@ Result
 SplitDNSRecord::Init(matcher_line *line_info)
 {
   const char *errPtr = nullptr;
-  const char *tmp;
-  char *label;
-  char *val;
 
   this->line_num = line_info->line_num;
   for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
-    label = line_info->line[0][i];
-    val   = line_info->line[1][i];
+    char *label = line_info->line[0][i];
+    char *val   = line_info->line[1][i];
 
     if (label == nullptr) {
       continue;
@@ -509,7 +503,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
      Process any modifiers to the directive, if they exist
      ----------------------------------------------------- */
   if (line_info->num_el > 0) {
-    tmp = ProcessModifiers(line_info);
+    const char *tmp = ProcessModifiers(line_info);
     if (tmp != nullptr) {
       return Result::failure("%s %s at line %d in splitdns.config", modulePrefix, tmp, line_num);
     }

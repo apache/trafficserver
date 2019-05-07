@@ -49,7 +49,7 @@ struct RemapConfigs {
   int _current = 0;
 };
 
-// Helper functionfor the parser
+// Helper function for the parser
 inline TSRecordDataType
 str_to_datatype(const char *str)
 {

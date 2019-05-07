@@ -31,7 +31,7 @@
 
 //////////////////////////////////////////////////////
 /// AtomicBit for inplace atomic bit operations
-/* useful when you refernce a bit packed into a byte (unit_8) as a bool&,
+/* useful when you reference a bit packed into a byte (unit_8) as a bool&,
  * you want a bit to 'walk and talk' like an std::atomic<bool> or std::atomic_flag.
  * In practice this is constructed at time of the operation(s),
  * storing it would defeat the purpose of packing the bits.

@@ -290,9 +290,9 @@ RefCountCachePartition<C>::clear()
   // Hence, this monstrosity.
   auto it = this->item_map.begin();
   while (it != this->item_map.end()) {
-    auto cur = it;
+    auto cur = it++;
 
-    it = this->item_map.erase(it);
+    this->item_map.erase(cur);
     this->dealloc_entry(cur);
   }
 }

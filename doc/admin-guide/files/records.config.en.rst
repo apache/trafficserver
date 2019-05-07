@@ -2203,10 +2203,10 @@ RAM Cache
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 1
 
-   Two distinct RAM caches are supported, the default (0) being the **CLFUS**
-   (*Clocked Least Frequently Used by Size*). As an alternative, a simpler
-   **LRU** (*Least Recently Used*) cache is also available, by changing this
-   configuration to 1.
+   Two distinct RAM caches are supported, the default (1) being the simpler
+   **LRU** (*Least Recently Used*) cache. As an alternative, the **CLFUS**
+   (*Clocked Least Frequently Used by Size*) is also available, by changing this
+   configuration to 0.
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.use_seen_filter INT 1
 
@@ -2577,7 +2577,7 @@ HostDB
          value become a minimum TTL.
    ===== ======================================================================
 
-.. ts:cv:: CONFIG proxy.config.hostdb.timeout INT 1440
+.. ts:cv:: CONFIG proxy.config.hostdb.timeout INT 86400
    :units: seconds
    :reloadable:
 
@@ -2765,25 +2765,7 @@ Logging Configuration
 .. note::
 
    All files in the logging directory contribute to the space used,
-   even if they are not log files. In collation client mode, if
-   there is no local disk logging, or
-   :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs` is set
-   to a higher value than :ts:cv:`proxy.config.log.max_space_mb_for_logs`,
-   |TS| will take :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs`
-   for maximum allowed log space.
-
-.. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_orphan_logs INT 25
-   :units: megabytes
-   :reloadable:
-
-   The amount of space allocated to the logging directory (in MB) if this node is acting as a collation client.
-
-.. note::
-
-   When max_space_mb_for_orphan_logs is take as the maximum allowed log space in the logging system, the same rule apply
-   to proxy.config.log.max_space_mb_for_logs also apply to proxy.config.log.max_space_mb_for_orphan_logs, ie: All files
-   in the logging directory contribute to the space used, even if they are not log files. you may need to consider this
-   when you enable full remote logging, and bump to the same size as proxy.config.log.max_space_mb_for_logs.
+   even if they are not log files.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_headroom INT 1000
    :units: megabytes
@@ -2825,85 +2807,6 @@ Logging Configuration
    means that a umask setting of ``002`` will not allow write permission for
    others, even if specified in the configuration file. Permissions for
    existing log files are not changed when the configuration is modified.
-
-.. ts:cv:: LOCAL proxy.local.log.collation_mode INT 0
-   :reloadable:
-   :deprecated:
-
-   Set the log collation mode.
-
-   ===== ======================================================================
-   Value Effect
-   ===== ======================================================================
-   ``0`` Log collation is disabled.
-   ``1`` This host is a log collation server.
-   ``2`` This host is a collation client and sends entries using standard
-         formats to the collation server.
-   ``3`` This host is a collation client and sends entries using the
-         traditional custom formats to the collation server.
-   ``4`` This host is a collation client and sends entries that use both the
-         standard and traditional custom formats to the collation server.
-   ===== ======================================================================
-
-   For information on sending custom formats to the collation server,
-   refer to :ref:`admin-logging-collating-custom-formats` and
-   :file:`logging.yaml`.
-
-.. note::
-
-   Log collation is a *deprecated* feature as of ATS v8.0.0, and  will be
-   removed in ATS v9.0.0. Our recommendation is to use one of the many existing
-   log collection tools, such as Kafka, LogStash, FileBeat, Fluentd or even
-   syslog / syslog-ng.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_host STRING NULL
-   :deprecated:
-
-   The hostname of the log collation server.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_port INT 8085
-   :reloadable:
-   :deprecated:
-
-   The port used for communication between the collation server and client.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_secret STRING foobar
-   :reloadable:
-   :deprecated:
-
-   The password used to validate logging data and prevent the exchange of unauthorized information when a collation server is being used.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_host_tagged INT 0
-   :reloadable:
-   :deprecated:
-
-   When enabled (``1``), configures |TS| to include the hostname of the collation client that generated the log entry in each entry.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_retry_sec INT 5
-   :reloadable:
-   :deprecated:
-
-   The number of seconds between collation server connection retries.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_host_timeout INT 86390
-   :deprecated:
-
-   The number of seconds before inactivity time-out events for the host side.
-   This setting over-rides the default set with proxy.config.net.default_inactivity_timeout
-   for log collation connections.
-
-   The default is set for 10s less on the host side to help prevent any possible race
-   conditions. If the host disconnects first, the client will see the disconnect
-   before its own time-out and re-connect automatically. If the client does not see
-   the disconnect, i.e., connection is "locked-up" for some reason, it will disconnect
-   when it reaches its own time-out and then re-connect automatically.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_client_timeout INT 86400
-   :deprecated:
-
-   The number of seconds before inactivity time-out events for the client side.
-   This setting over-rides the default set with proxy.config.net.default_inactivity_timeout
-   for log collation connections.
 
 .. ts:cv:: CONFIG proxy.config.log.rolling_enabled INT 1
    :reloadable:
@@ -3317,7 +3220,7 @@ SSL Termination
    The filename of the certificate authority that client certificates
    will be verified against.
 
-.. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING ssl_ticket.key
+.. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING NULL
 
    The filename of the default and global ticket key for SSL sessions. The location is relative to the
    :ts:cv:`proxy.config.ssl.server.cert.path` directory. One way to generate this would be to run
@@ -3613,6 +3516,14 @@ OCSP Stapling Configuration
 
    Update period (in seconds) for stapling caches.
 
+.. ts:cv:: CONFIG proxy.config.ssl.ocsp.response.path STRING NULL
+
+   The directory path of the prefetched OCSP stapling responses. Change this
+   variable only if you intend to use and administratively maintain
+   prefetched OCSP stapling responses. All stapling responses listed in
+   :file:`ssl_multicert.config` will be loaded relative to this
+   path.
+
 HTTP/2 Configuration
 ====================
 
@@ -3660,7 +3571,7 @@ HTTP/2 Configuration
    The maximum size of the header compression table used to decode header
    blocks.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 4294967295
+.. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 131072
    :reloadable:
 
    This advisory setting informs a peer of the maximum size of header list

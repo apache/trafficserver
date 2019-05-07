@@ -29,7 +29,6 @@
 #include "tscore/ink_platform.h"
 #include "LogBufferSink.h"
 
-class LogSock;
 class LogBuffer;
 struct LogBufferHeader;
 class LogObject;

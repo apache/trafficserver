@@ -69,7 +69,7 @@ struct TransformationPluginState : noncopyable, public detail::ResumeAfterPauseC
   // We can only send a single WRITE_COMPLETE even though
   // we may receive an immediate event after we've sent a
   // write complete, so we'll keep track of whether or not we've
-  // sent the input end our write complte.
+  // sent the input end our write complete.
   bool input_complete_dispatched_;
 
   std::string request_xform_output_; // in case of request xform, data produced is buffered here
@@ -263,7 +263,7 @@ handleTransformationPluginEvents(TSCont contp, TSEvent event, void *edata)
     return 0;
   }
 
-  // All other events includign WRITE_READY will just attempt to transform more data.
+  // All other events including WRITE_READY will just attempt to transform more data.
   return handleTransformationPluginRead(state->vconn_, state);
 }
 
@@ -426,7 +426,7 @@ TransformationPlugin::setOutputComplete()
               state_->txn_);
 
     // We're done without ever outputting anything, to correctly
-    // clean up we'll initiate a write then immeidately set it to 0 bytes done.
+    // clean up we'll initiate a write then immediately set it to 0 bytes done.
     state_->output_vio_ = TSVConnWrite(TSTransformOutputVConnGet(state_->vconn_), state_->vconn_, state_->output_buffer_reader_, 0);
 
     if (state_->output_vio_) {

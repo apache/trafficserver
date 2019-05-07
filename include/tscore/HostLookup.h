@@ -36,7 +36,7 @@
 #include <functional>
 #include <unordered_map>
 
-// HostLookup  constantss
+// HostLookup constants
 constexpr int HOST_TABLE_DEPTH = 3; // Controls the max number of levels in the logical tree
 constexpr int HOST_ARRAY_MAX   = 8; // Sets the fixed array size
 

@@ -213,9 +213,9 @@ Http2ClientSession::set_upgrade_context(HTTPHdr *h)
   int svlen;
   const char *sv = settings->value_get(&svlen);
 
-  // Maybe size of data decoded by Base64URL is lower than size of encoded data.
-  unsigned char out_buf[svlen];
   if (sv && svlen > 0) {
+    // Maybe size of data decoded by Base64URL is lower than size of encoded data.
+    unsigned char out_buf[svlen];
     size_t decoded_len;
     ats_base64_decode(sv, svlen, out_buf, svlen, &decoded_len);
     for (size_t nbytes = 0; nbytes < decoded_len; nbytes += HTTP2_SETTINGS_PARAMETER_LEN) {
@@ -338,7 +338,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   }
 
   case HTTP2_SESSION_EVENT_XMIT: {
-    Http2Frame *frame = (Http2Frame *)edata;
+    Http2Frame *frame = static_cast<Http2Frame *>(edata);
     total_write_len += frame->size();
     write_vio->nbytes = total_write_len;
     frame->xmit(this->write_buffer);
@@ -543,6 +543,11 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
   }
 
   while (this->sm_reader->read_avail() >= (int64_t)HTTP2_FRAME_HEADER_LEN) {
+    // Cancel reading if there was an error
+    if (connection_state.tx_error_code.code != static_cast<uint32_t>(Http2ErrorCode::HTTP2_ERROR_NO_ERROR)) {
+      Http2SsnDebug("reading a frame has been canceled (%u)", connection_state.tx_error_code.code);
+      break;
+    }
     // Return if there was an error
     Http2ErrorCode err;
     if (do_start_frame_read(err) < 0) {

@@ -181,7 +181,7 @@ struct HashBalancer : public BalancerInstance {
 
     // OK, now look up this hash in the hash ring. lower_bound() finds the first element that is not less than the
     // target, so the element we find is the first key that is greater than our target. To visualize this in the
-    // hash ring, that means that each node owns the preceeding keyspace (ie. the node is at the end of each keyspace
+    // hash ring, that means that each node owns the preceding keyspace (ie. the node is at the end of each keyspace
     // range). This means that when we wrap, the first node owns the wrapping portion of the keyspace.
     loc = this->hash_ring.lower_bound(key);
     if (loc == this->hash_ring.end()) {

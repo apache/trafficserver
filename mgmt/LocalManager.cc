@@ -151,8 +151,8 @@ LocalManager::clearStats(const char *name)
   //  before the proxy clears them, but this should be rare.
   //
   //  Doing things in the opposite order prevents that race
-  //   but excerbates the race between the node and cluster
-  //   stats getting cleared by progation of clearing the
+  //   but exacerbates the race between the node and cluster
+  //   stats getting cleared by propagation of clearing the
   //   cluster stats
   //
   if (name && *name) {
@@ -312,7 +312,6 @@ LocalManager::initMgmtProcessServer()
 void
 LocalManager::pollMgmtProcessServer()
 {
-  int num;
   struct timeval timeout;
   fd_set fdlist;
 
@@ -355,7 +354,7 @@ LocalManager::pollMgmtProcessServer()
     }
 #endif
 
-    num = mgmt_select(FD_SETSIZE, &fdlist, nullptr, nullptr, &timeout);
+    int num = mgmt_select(FD_SETSIZE, &fdlist, nullptr, nullptr, &timeout);
 
     switch (num) {
     case 0:
@@ -402,16 +401,14 @@ LocalManager::pollMgmtProcessServer()
       if (ts::NO_FD != watched_process_fd && FD_ISSET(watched_process_fd, &fdlist)) {
         int res;
         MgmtMessageHdr mh_hdr;
-        MgmtMessageHdr *mh_full;
-        char *data_raw;
 
         keep_polling = true;
 
         // read the message
         if ((res = mgmt_read_pipe(watched_process_fd, (char *)&mh_hdr, sizeof(MgmtMessageHdr))) > 0) {
-          mh_full = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
+          MgmtMessageHdr *mh_full = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
           memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
-          data_raw = (char *)mh_full + sizeof(MgmtMessageHdr);
+          char *data_raw = (char *)mh_full + sizeof(MgmtMessageHdr);
           if ((res = mgmt_read_pipe(watched_process_fd, data_raw, mh_hdr.data_len)) > 0) {
             handleMgmtMsgFromProcesses(mh_full);
           } else if (res < 0) {
@@ -759,10 +756,10 @@ LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
 
 #if HAVE_EVENTFD
   // we don't care about the actual value of wakeup_fd, so just keep adding 1. just need to
-  // wakeup the fd. also, note that wakeup_fd was initalized to non-blocking so we can
+  // wakeup the fd. also, note that wakeup_fd was initialized to non-blocking so we can
   // directly write to it without any timeout checking.
   //
-  // don't tigger if MGMT_EVENT_LIBRECORD because they happen all the time
+  // don't trigger if MGMT_EVENT_LIBRECORD because they happen all the time
   // and don't require a quick response. for MGMT_EVENT_LIBRECORD, rely on timeouts so
   // traffic_server can spend more time doing other things
   uint64_t one = 1;
@@ -781,10 +778,8 @@ LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
 void
 LocalManager::processEventQueue()
 {
-  bool handled_by_mgmt;
-
   while (!this->queue_empty()) {
-    handled_by_mgmt = false;
+    bool handled_by_mgmt = false;
 
     MgmtMessageHdr *mh = this->dequeue();
     auto payload       = mh->payload();
@@ -839,7 +834,7 @@ LocalManager::startProxy(const char *onetime_options)
   pid_t pid;
 
   // Before we do anything lets check for the existence of
-  // the traffic server binary along with it's execute permmissions
+  // the traffic server binary along with it's execute permissions
   if (access(absolute_proxy_binary, F_OK) < 0) {
     // Error can't find traffic_server
     mgmt_elog(errno, "[LocalManager::startProxy] Unable to find traffic server at %s\n", absolute_proxy_binary);
@@ -848,7 +843,7 @@ LocalManager::startProxy(const char *onetime_options)
   // traffic server binary exists, check permissions
   else if (access(absolute_proxy_binary, R_OK | X_OK) < 0) {
     // Error don't have proper permissions
-    mgmt_elog(errno, "[LocalManager::startProxy] Unable to access %s due to bad permisssions \n", absolute_proxy_binary);
+    mgmt_elog(errno, "[LocalManager::startProxy] Unable to access %s due to bad permissions \n", absolute_proxy_binary);
     return false;
   }
 
@@ -986,7 +981,7 @@ LocalManager::listenForProxy()
       this->bindProxyPort(p);
     }
 
-    // read backlong configuration value and overwrite the default value if found
+    // read backlog configuration value and overwrite the default value if found
     bool found;
     std::string_view fam{ats_ip_family_name(p.m_family)};
     RecInt backlog = REC_readInteger("proxy.config.net.listen_backlog", &found);

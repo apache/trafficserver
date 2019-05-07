@@ -42,7 +42,7 @@ class MIOBufferWriter : public ts::BufferWriter
   using self_type = MIOBufferWriter; ///< Self reference type.
 
 public:
-  MIOBufferWriter(MIOBuffer *miob) : _miob(miob) {}
+  explicit MIOBufferWriter(MIOBuffer *miob) : _miob(miob) {}
 
   self_type &write(const void *data_, size_t length) override;
 

@@ -56,7 +56,8 @@ void set_socket_paths(const char *path);
  * the client connection information stored in the variables in
  * NetworkUtilsRemote.cc
  */
-TSMgmtError ts_connect(); /* TODO: update documenation, Renamed due to conflict with connect() in <sys/socket.h> on some platforms*/
+TSMgmtError
+ts_connect(); /* TODO: update documentation, Renamed due to conflict with connect() in <sys/socket.h> on some platforms*/
 TSMgmtError disconnect();
 TSMgmtError reconnect();
 TSMgmtError reconnect_loop(int num_attempts);

@@ -285,7 +285,7 @@ appendCacheKey(const TSHttpTxn txnp, const TSMBuffer reqBuffer, String &key)
 /**
  * @brief Find out if the object was found fresh in cache.
  *
- * This function finaly controls if the pre-fetch should be scheduled or not.
+ * This function finely controls if the pre-fetch should be scheduled or not.
  * @param txnp HTTP transaction structure
  * @return true - hit fresh, false - miss/stale/skipped or error
  */
@@ -476,7 +476,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
         /* first-pass */
         if (!config.isExactMatch()) {
           data->_fetchable = state->acquire(data->_cachekey);
-          PrefetchDebug("request is%sfetchable", data->_fetchable ? " " : " not ");
+          PrefetchDebug("request is %s fetchable", data->_fetchable ? " " : " not ");
         }
       }
     }
@@ -489,7 +489,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
         /* second-pass */
         data->_fetchable = state->acquire(data->_cachekey);
         data->_fetchable = data->_fetchable && state->uniqueAcquire(data->_cachekey);
-        PrefetchDebug("request is%sfetchable", data->_fetchable ? " " : " not ");
+        PrefetchDebug("request is %s fetchable", data->_fetchable ? " " : " not ");
 
         if (isFetchable(txnp, data)) {
           if (!data->_fetchable) {

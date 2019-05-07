@@ -189,12 +189,10 @@ struct CacheVConnection : public VConnection {
   virtual void set_http_info(CacheHTTPInfo *info)  = 0;
   virtual void get_http_info(CacheHTTPInfo **info) = 0;
 
-  virtual bool is_ram_cache_hit() const           = 0;
-  virtual bool set_disk_io_priority(int priority) = 0;
-  virtual int get_disk_io_priority()              = 0;
-  virtual bool set_pin_in_cache(time_t t)         = 0;
-  virtual time_t get_pin_in_cache()               = 0;
-  virtual int64_t get_object_size()               = 0;
+  virtual bool is_ram_cache_hit() const   = 0;
+  virtual bool set_pin_in_cache(time_t t) = 0;
+  virtual time_t get_pin_in_cache()       = 0;
+  virtual int64_t get_object_size()       = 0;
   virtual bool
   is_compressed_in_ram() const
   {

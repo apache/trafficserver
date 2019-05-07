@@ -47,7 +47,7 @@ Request::Request(const std::string &h, const TSMBuffer b, const TSMLoc l) : host
   /*
    * TSHttpHdrLengthGet returns the size with possible "internal" headers
    * which are not printed by TSHttpHdrPrint.
-   * Therefore the greater than or equal comparisson
+   * Therefore the greater than or equal comparison
    */
   assert(TSHttpHdrLengthGet(b, l) >= length);
 }

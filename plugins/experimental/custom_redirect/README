@@ -7,7 +7,7 @@ In /home/y/conf/yts/plugin.config, you can add
 
 Case 1) means using the default header (x-redirect-url) to specify a URL to redirect to;
 Case 2) user specifies their specific header name (to replace the default one) to specify a URL to redirect to;
-Case 3) user sepcifies the specific return code, if return code matches, then plugin will force to redirect to the
+Case 3) user specifies the specific return code, if return code matches, then plugin will force to redirect to the
 URL specified in standard "Location" header.
 
 For simplicity, we recommend to use case 1)

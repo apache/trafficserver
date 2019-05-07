@@ -161,6 +161,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Multiplexer <multiplexer.en>
    MySQL Remap <mysql_remap.en>
    Signed URLs <url_sig.en>
+   Slicer <slice.en>
    SSL Headers <sslheaders.en>
    SSL Session Reuse <ssl_session_reuse.en>
    System Statistics <system_stats.en>
@@ -220,12 +221,20 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`MySQL Remap <mysql_remap.en>`
    Allows dynamic remaps from a MySQL database.
 
+:doc:`Prefetch <prefetch.en>`
+   Pre-fetch objects based on the requested URL path pattern.
+
 :doc:`Remap Purge <remap_purge.en>`
    This remap plugin allows the administrator to easily setup remotely
    controlled ``PURGE`` for the content of an entire remap rule.
 
 :doc:`Signed URLs <url_sig.en>`
    Adds support for verifying URL signatures for incoming requests to either deny or redirect access.
+
+:doc:`Slicer <slice.en>`
+   Slice full file or range based requests into deterministic chunks, allowing large files to be
+   spread across multiple cache stripes. Allows range requests to be satisfied by stitching these
+   chunks together.
 
 :doc:`SSL Session Reuse <ssl_session_reuse.en>`
    Coordinates Session ID and ticket based TLS session resumption between a group of ATS machines.

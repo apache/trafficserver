@@ -31,7 +31,7 @@ GlobalPlugin *plugin;
 class MultipleTransactionHookPluginsOne : public atscppapi::TransactionPlugin
 {
 public:
-  MultipleTransactionHookPluginsOne(Transaction &transaction) : TransactionPlugin(transaction)
+  explicit MultipleTransactionHookPluginsOne(Transaction &transaction) : TransactionPlugin(transaction)
   {
     TransactionPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
     std::cout << "Constructed MultipleTransactionHookPluginsOne!" << std::endl;
@@ -49,7 +49,7 @@ public:
 class MultipleTransactionHookPluginsTwo : public atscppapi::TransactionPlugin
 {
 public:
-  MultipleTransactionHookPluginsTwo(Transaction &transaction) : TransactionPlugin(transaction)
+  explicit MultipleTransactionHookPluginsTwo(Transaction &transaction) : TransactionPlugin(transaction)
   {
     TransactionPlugin::registerHook(HOOK_SEND_REQUEST_HEADERS);
     TransactionPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);

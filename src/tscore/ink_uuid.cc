@@ -52,11 +52,13 @@ ATSUuid::initialize(TSUuidVersion v)
 
 // Copy assignment
 ATSUuid &
-ATSUuid::operator=(const ATSUuid other)
+ATSUuid::operator=(const ATSUuid &other)
 {
-  memcpy(_uuid.data, other._uuid.data, sizeof(_uuid.data));
-  memcpy(_string, other._string, sizeof(_string));
-  _version = other._version;
+  if (this != &other) { // Self assignment guard
+    memcpy(_uuid.data, other._uuid.data, sizeof(_uuid.data));
+    memcpy(_string, other._string, sizeof(_string));
+    _version = other._version;
+  }
 
   return *this;
 }

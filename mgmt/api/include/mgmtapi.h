@@ -432,7 +432,7 @@ tsapi TSMgmtError TSHostStatusSetUp(const char *host_name, int down_time, const 
 tsapi TSMgmtError TSHostStatusSetDown(const char *host_name, int down_time, const char *reason);
 /*--- statistics operations -----------------------------------------------*/
 /* TSStatsReset: sets all the statistics variables to their default values
- * Outpue: TSErrr
+ * Output: TSMgmtError
  */
 tsapi TSMgmtError TSStatsReset(const char *name);
 

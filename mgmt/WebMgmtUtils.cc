@@ -100,11 +100,11 @@ varSetFromStr(const char *varName, const char *value)
 
 // bool varSetFloat(const char* varName, RecFloat value)
 //
-//  Sets the variable specifed by varName to value.  varName
+//  Sets the variable specified by varName to value.  varName
 //   must be a RecFloat variable.  No conversion is done for
 //   other types unless convert is set to ture. In the case
 //   of convert is ture, type conversion is perform if applicable.
-//   By default, convert is set to be false and can be overrided
+//   By default, convert is set to be false and can be overridden
 //   when the function is called.
 //
 bool
@@ -151,11 +151,11 @@ varSetFloat(const char *varName, RecFloat value, bool convert)
 
 // bool varSetCounter(const char* varName, RecCounter value)
 //
-//  Sets the variable specifed by varName to value.  varName
+//  Sets the variable specified by varName to value.  varName
 //   must be an RecCounter variable.  No conversion is done for
 //   other types unless convert is set to ture. In the case
 //   of convert is ture, type conversion is perform if applicable.
-//   By default, convert is set to be false and can be overrided
+//   By default, convert is set to be false and can be overridden
 //   when the function is called.
 //
 bool
@@ -201,11 +201,11 @@ varSetCounter(const char *varName, RecCounter value, bool convert)
 
 // bool varSetInt(const char* varName, RecInt value)
 //
-//  Sets the variable specifed by varName to value.  varName
+//  Sets the variable specified by varName to value.  varName
 //   must be an RecInt variable.  No conversion is done for
 //   other types unless convert is set to ture. In the case
 //   of convert is ture, type conversion is perform if applicable.
-//   By default, convert is set to be false and can be overrided
+//   By default, convert is set to be false and can be overridden
 //   when the function is called.
 //
 bool
@@ -251,7 +251,7 @@ varSetInt(const char *varName, RecInt value, bool convert)
 
 // bool varSetData(RecDataT varType, const char *varName, RecData value)
 //
-//  Sets the variable specifed by varName to value. value and varName
+//  Sets the variable specified by varName to value. value and varName
 //   must be varType variables.
 //
 bool
@@ -279,7 +279,7 @@ varSetData(RecDataT varType, const char *varName, RecData value)
 //
 //   Sets the *value to value of the varName according varType.
 //
-//  return true if bufVal was succefully set
+//  return true if bufVal was successfully set
 //    and false otherwise
 //
 bool
@@ -296,7 +296,7 @@ varDataFromName(RecDataT varType, const char *varName, RecData *value)
 //
 //   Sets the *value to value of the varName.
 //
-//  return true if bufVal was succefully set
+//  return true if bufVal was successfully set
 //    and false otherwise
 //
 bool
@@ -345,7 +345,7 @@ varCounterFromName(const char *varName, RecCounter *value)
 //
 //   Sets the *value to value of the varName.
 //
-//  return true if bufVal was succefully set
+//  return true if bufVal was successfully set
 //    and false otherwise
 //
 bool
@@ -395,7 +395,7 @@ varFloatFromName(const char *varName, RecFloat *value)
 //
 //   Sets the *value to value of the varName.
 //
-//  return true if bufVal was succefully set
+//  return true if bufVal was successfully set
 //    and false otherwise
 //
 bool
@@ -519,7 +519,6 @@ bytesFromInt(RecInt bytes, char *bufVal)
   const int64_t gb  = 1073741824;
   const long int mb = 1048576;
   const long int kb = 1024;
-  int bytesP;
   double unitBytes;
 
   if (bytes >= gb) {
@@ -531,7 +530,7 @@ bytesFromInt(RecInt bytes, char *bufVal)
     //   has plenty of precision for a regular int
     //   and saves from 64 bit arithmetic which may
     //   be expensive on some processors
-    bytesP = (int)bytes;
+    int bytesP = (int)bytes;
     if (bytesP >= mb) {
       unitBytes = bytes / (double)mb;
       snprintf(bufVal, 15, "%.1f MB", unitBytes);
@@ -549,12 +548,12 @@ bytesFromInt(RecInt bytes, char *bufVal)
 //   Sets the bufVal string to the value of the local manager
 //     named by varName.  bufLen is size of bufVal
 //
-//  return true if bufVal was succefully set
+//  return true if bufVal was successfully set
 //    and false otherwise
 //
 //  EVIL ALERT: overviewRecord::varStrFromName is extremely
 //    similar to this function except in how it gets it's
-//    data.  Changes to this fuction must be propogated
+//    data.  Changes to this function must be propagated
 //    to its twin.  Cut and Paste sucks but there is not
 //    an easy way to merge the functions
 //
@@ -934,7 +933,7 @@ setHostnameVar()
   return 0;
 }
 
-// void appendDefautDomain(char* hostname, int bufLength)
+// void appendDefaultDomain(char* hostname, int bufLength)
 //
 //   Appends the pasted in hostname with the default
 //     domain if the hostname is an unqualified name
@@ -950,7 +949,7 @@ appendDefaultDomain(char *hostname, int bufLength)
 {
   int len                 = strlen(hostname);
   const char msg[]        = "Nodes will be know by their unqualified host name";
-  static int error_before = 0; // Race ok since effect is multple error msg
+  static int error_before = 0; // Race ok since effect is multiple error msg
 
   ink_assert(len < bufLength);
   ink_assert(bufLength >= 64);
@@ -1041,9 +1040,6 @@ recordRegexCheck(const char *pattern, const char *value)
 bool
 recordRangeCheck(const char *pattern, const char *value)
 {
-  int l_limit;
-  int u_limit;
-  int val;
   char *p = (char *)pattern;
   Tokenizer dashTok("-");
 
@@ -1052,9 +1048,9 @@ recordRangeCheck(const char *pattern, const char *value)
       p++;
     } // skip to '['
     if (dashTok.Initialize(++p, COPY_TOKS) == 2) {
-      l_limit = atoi(dashTok[0]);
-      u_limit = atoi(dashTok[1]);
-      val     = atoi(value);
+      int l_limit = atoi(dashTok[0]);
+      int u_limit = atoi(dashTok[1]);
+      int val     = atoi(value);
       if (val >= l_limit && val <= u_limit) {
         return true;
       }
@@ -1075,12 +1071,11 @@ recordIPCheck(const char *pattern, const char *value)
 
   Tokenizer dotTok1(".");
   Tokenizer dotTok2(".");
-  int i;
 
   check = true;
   if (recordRegexCheck(range_pattern, pattern) && recordRegexCheck(ip_pattern, value)) {
     if (dotTok1.Initialize((char *)pattern, COPY_TOKS) == 4 && dotTok2.Initialize((char *)value, COPY_TOKS) == 4) {
-      for (i = 0; i < 4 && check; i++) {
+      for (int i = 0; i < 4 && check; i++) {
         if (!recordRangeCheck(dotTok1[i], dotTok2[i])) {
           check = false;
         }

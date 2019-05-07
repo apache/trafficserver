@@ -75,7 +75,7 @@ ink_atoi64(const char *str)
     while (*str && ParseRules::is_digit(*str)) {
       num = (num * 10) - (*str++ - '0');
     }
-#if USE_SI_MULTILIERS
+#if USE_SI_MULTIPLIERS
     if (*str) {
       if (*str == 'K') {
         num = num * (1LL << 10);
@@ -113,7 +113,7 @@ ink_atoui64(const char *str)
     while (*str && ParseRules::is_digit(*str)) {
       num = (num * 10) + (*str++ - '0');
     }
-#if USE_SI_MULTILIERS
+#if USE_SI_MULTIPLIERS
     if (*str) {
       if (*str == 'K') {
         num = num * (1LL << 10);
@@ -165,7 +165,7 @@ ink_atoi64(const char *str, int len)
       num = (num * 10) - (*str++ - '0');
       len--;
     }
-#if USE_SI_MULTILIERS
+#if USE_SI_MULTIPLIERS
     if (len > 0 && *str) {
       if (*str == 'K') {
         num = num * (1 << 10);

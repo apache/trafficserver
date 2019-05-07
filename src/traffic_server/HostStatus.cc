@@ -115,7 +115,7 @@ handle_record_read(const RecRecord *rec, void *edata)
 
     // if the data loaded from stats indicates that the host was down,
     // then update the state so that the host remains down until
-    // specificcaly marked up using traffic_ctl.
+    // specifically marked up using traffic_ctl.
     if (rec->data.rec_int == 0 && Reasons::validReason(reason.c_str())) {
       hs.setHostStatus(hostname.c_str(), HOST_STATUS_DOWN, 0, reason.c_str());
     }

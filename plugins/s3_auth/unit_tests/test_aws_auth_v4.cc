@@ -364,7 +364,7 @@ ValidateBench(TsInterface &api, bool signPayload, time_t *now, const char *bench
   CAPTURE(signedHeaders);
   CHECK_FALSE(signedHeaders.compare(bench[6]));
 
-  /* Test the formating of the date and time */
+  /* Test the formatting of the date and time */
   char dateTime[sizeof("20170428T010203Z")];
   size_t dateTimeLen = getIso8601Time(now, dateTime, sizeof(dateTime));
   CAPTURE(String(dateTime, dateTimeLen));

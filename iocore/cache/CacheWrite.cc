@@ -400,7 +400,7 @@ CacheVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
   if (!io.ok()) {
     goto Ldone;
   }
-  // a directory entry which is nolonger valid may have been overwritten
+  // a directory entry which is no longer valid may have been overwritten
   if (!dir_valid(vol, &dir)) {
     last_collision = nullptr;
     goto Lcollision;
@@ -500,7 +500,7 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         dir_overwrite(&doc->key, vol, &dir, &overwrite_dir);
       }
       // if the tag in the overwrite_dir matches the first_key in the
-      // document, then it has to be the vector. We gaurantee that
+      // document, then it has to be the vector. We guarantee that
       // the first_key and the earliest_key will never collide (see
       // Cache::open_write). Once we know its the vector, we can
       // safely overwrite the first_key in the directory.
@@ -677,7 +677,7 @@ Vol::evacuateDocReadDone(int event, Event *e)
     b->f.unused = 87;
   }
   // if the tag in the c->dir does match the first_key in the
-  // document, then it has to be the earliest fragment. We gaurantee that
+  // document, then it has to be the earliest fragment. We guarantee that
   // the first_key and the earliest_key will never collide (see
   // Cache::open_write).
   if (!dir_head(&b->dir) || !dir_compare_tag(&b->dir, &doc->first_key)) {

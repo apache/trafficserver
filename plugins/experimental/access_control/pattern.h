@@ -43,7 +43,7 @@ public:
   Pattern();
   virtual ~Pattern();
 
-  bool init(const String &pattern, const String &replacenemt, bool replace);
+  bool init(const String &pattern, const String &replacement, bool replace);
   bool init(const String &config);
   bool empty() const;
   bool match(const String &subject);

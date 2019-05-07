@@ -36,7 +36,7 @@ struct NetCmdOperation {
   const MgmtMarshallType fields[MAX_OPERATION_FIELDS];
 };
 
-// Requests always begin with a OpType, followed by aditional fields.
+// Requests always begin with a OpType, followed by additional fields.
 static const struct NetCmdOperation requests[] = {
   /* RECORD_SET                 */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING}},
   /* RECORD_GET                 */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},

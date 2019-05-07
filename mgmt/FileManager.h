@@ -62,7 +62,7 @@ enum lockAction_t {
 //       a binding and false otherwise
 //
 //  registerCallback(FileCallbackFunc) - registers a callback function
-//       which will get called everytime a managed file changes.  The
+//       which will get called every time a managed file changes.  The
 //       callback function should NOT use the calling thread to
 //       access any Rollback objects or block for a long time
 //

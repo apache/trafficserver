@@ -30,7 +30,6 @@ lib_LTLIBRARIES = libtscore.la
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
-	-I$(abs_top_srcdir)/include/records \
 	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@

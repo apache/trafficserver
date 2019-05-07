@@ -84,7 +84,7 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
         return;
       }
       if (ids & RSRC_RESPONSE_STATUS) {
-        TSDebug(PLUGIN_NAME, "\tAdding TXN client esponse status resource");
+        TSDebug(PLUGIN_NAME, "\tAdding TXN client response status resource");
         resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
       }
     }

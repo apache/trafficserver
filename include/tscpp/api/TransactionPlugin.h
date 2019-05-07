@@ -17,7 +17,7 @@
  */
 /**
  * @file TransactionPlugin.h
- * @brief Contains the interface used in creating Transaciton plugins.
+ * @brief Contains the interface used in creating Transaction plugins.
  */
 
 #pragma once
@@ -62,7 +62,7 @@ struct TransactionPluginState;
  * You must always be sure to implement the appropriate callback for the type of hook you register.
  *
  * \code
- * // For a more detailed example see examples/transactionhook/
+ * // For a more detailed example see example/cppapi/transactionhook/
  * class TransactionHookPlugin : publicTransactionPlugin {
  * public:
  *   TransactionHookPlugin(Transaction &transaction) : TransactionPlugin(transaction) {
@@ -89,9 +89,9 @@ public:
   /**
    * registerHook is the mechanism used to attach a transaction hook.
    *
-   * \note Whenever you register a hook you must have the appropriate callback definied in your TransactionPlugin
+   * \note Whenever you register a hook you must have the appropriate callback defined in your TransactionPlugin
    *  see HookType and Plugin for the correspond HookTypes and callback methods. If you fail to implement the
-   *  callback, a default implmentation will be used that will only resume the Transaction.
+   *  callback, a default implementation will be used that will only resume the Transaction.
    *
    * @param HookType the type of hook you wish to register
    * @see HookType

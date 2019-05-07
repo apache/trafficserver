@@ -41,7 +41,7 @@ class Thread;
    processors in the IO Core. A processor is multithreaded subsystem
    specialized in some type of task or application. For example,
    the Event System module includes the EventProcessor which provides
-   schedulling services, the Net module includes the NetProcessor
+   scheduling services, the Net module includes the NetProcessor
    which provides networking services, etc.
 
    You cannot create objects of the Processor class and its methods
@@ -76,7 +76,7 @@ public:
   virtual int get_thread_count();
 
   /**
-    This function attemps to stop the processor. Please refer to
+    This function attempts to stop the processor. Please refer to
     the documentation on each processor to determine if it is
     supported.
 

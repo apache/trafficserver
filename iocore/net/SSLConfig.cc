@@ -183,6 +183,7 @@ SSLConfigParams::initialize()
   char *clientCACertRelativePath        = nullptr;
   char *ssl_server_ca_cert_filename     = nullptr;
   char *ssl_client_ca_cert_filename     = nullptr;
+  char *ssl_ocsp_response_path          = nullptr;
 
   cleanup();
 
@@ -327,6 +328,9 @@ SSLConfigParams::initialize()
   REC_EstablishStaticConfigInt32(ssl_ocsp_cache_timeout, "proxy.config.ssl.ocsp.cache_timeout");
   REC_EstablishStaticConfigInt32(ssl_ocsp_request_timeout, "proxy.config.ssl.ocsp.request_timeout");
   REC_EstablishStaticConfigInt32(ssl_ocsp_update_period, "proxy.config.ssl.ocsp.update_period");
+  REC_ReadConfigStringAlloc(ssl_ocsp_response_path, "proxy.config.ssl.ocsp.response.path");
+  set_paths_helper(ssl_ocsp_response_path, nullptr, &ssl_ocsp_response_path_only, nullptr);
+  ats_free(ssl_ocsp_response_path);
 
   REC_ReadConfigInt32(async_handshake_enabled, "proxy.config.ssl.async.handshake.enabled");
   REC_ReadConfigStringAlloc(engine_conf_file, "proxy.config.ssl.engine.conf_file");
@@ -475,7 +479,7 @@ SSLConfig::reconfigure()
 SSLConfigParams *
 SSLConfig::acquire()
 {
-  return ((SSLConfigParams *)configProcessor.get(configid));
+  return static_cast<SSLConfigParams *>(configProcessor.get(configid));
 }
 
 void
@@ -514,7 +518,7 @@ SSLCertificateConfig::reconfigure()
   // twice the healthcheck period to simulate a loading a large certificate set.
   if (is_action_tag_set("test.multicert.delay")) {
     const int secs = 60;
-    Debug("ssl", "delaying certificate reload by %dsecs", secs);
+    Debug("ssl", "delaying certificate reload by %d secs", secs);
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
@@ -544,7 +548,7 @@ SSLCertificateConfig::reconfigure()
 SSLCertLookup *
 SSLCertificateConfig::acquire()
 {
-  return (SSLCertLookup *)configProcessor.get(configid);
+  return static_cast<SSLCertLookup *>(configProcessor.get(configid));
 }
 
 void

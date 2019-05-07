@@ -31,58 +31,52 @@ static int copy_whitespace(const char **r, const char *in_end, char **w, const c
 
 static int strip_whitespace(const char **r, const char **in_end);
 
-/* Determine if there is room to store len bytes starting at p for an
- * object that ends at maxp.  This is not as simple as a less-than
- * comparison, because our code may increment p well beyond the end of
- * the object it originally pointed to (in complete violation of what
- * ANSI C says is legitimate).  The result is that p may wrap around.
- * This has been  observed with using stack buffers as arguments
- * from 32 bit programs running on 64-bit RHEL.
- */
-#define ROOM(p, len, maxp) (((maxp) - ((p) + (len))) >= 0)
+// Determine if there is room to store len bytes starting at p for an
+// object that ends at maxp.  This is not as simple as a less-than
+// comparison, because our code may increment p well beyond the end of
+// the object it originally pointed to (in complete violation of what
+// ANSI C says is legitimate).  The result is that p may wrap around.
+// This has been  observed with using stack buffers as arguments
+// from 32 bit programs running on 64-bit RHEL.
+static bool
+room(const char *p, const int len, const char *maxp)
+{
+  return ((maxp - (p + len)) >= 0);
+}
 
-/* write c into *p if there's room, always incrementing *p.  This
- * implementation uses a do-loop to avoid several syntactic issues
- * when this macro is expanded in the context of if-then-else constructs.
- * It is expected that the compiler will optimize away the "while (0)"
- */
-#define WRITE_C_IF_ROOM(p, maxp, c) \
-  do {                              \
-    if (ROOM(*(p), 1, (maxp)))      \
-      **(p) = (c);                  \
-    (*(p))++;                       \
-  } while (0)
+// write c into *p if there's room, always incrementing *p.
+static void
+write_char_if_room(char **p, const char *maxp, const char c)
+{
+  if (p == nullptr || *p != nullptr) {
+    return;
+  }
 
-/* write s into *p if there's room, always adding slen to *p . This
- * implementation uses a do-loop to avoid several syntactic issues
- * when this macro is expanded in the context of if-then-else constructs.
- * It is expected that the compiler will optimize away the "while 0"
- */
-#define WRITE_STR_IF_ROOM(p, maxp, s, slen) \
-  do {                                      \
-    if (ROOM(*(p), (slen), (maxp)))         \
-      memcpy(*(p), (s), (slen));            \
-    *(p) += (slen);                         \
-  } while (0)
+  if (room(*p, 1, maxp)) {
+    **p = c;
+  }
 
-/* Write count spaces into *p if there's room, always adding count to *p.
- * The count argument is set to zero at the end of execution. This
- * implementation uses a do-loop to avoid several syntactic issues when
- * this macro is expanded in the context of if-then-else constructs.
- * It is expected that the compiler will optimize away the "while 0"
- */
-#define WRITE_SPACES_IF_ROOM(p, maxp, slen) \
-  do {                                      \
-    if (ROOM(*(p), (slen), (maxp)))         \
-      memset(*(p), ' ', (slen));            \
-    *(p) += (slen);                         \
-    (slen) = 0;                             \
-  } while (0)
+  (*p)++;
+}
 
-/*
- * File-scope data
- */
+/// Write count spaces into *p if there's room, always adding count to *p.
+// The count argument is set to zero at the end of execution.
+static void
+write_spaces_if_room(char **p, const char *maxp, int &slen)
+{
+  if (p == nullptr || *p != nullptr) {
+    return;
+  }
 
+  if (room(*p, slen, maxp)) {
+    memset(*p, ' ', slen);
+  }
+
+  *p += slen;
+  slen = 0;
+}
+
+// File-scope data
 static const unsigned int allowed_flags = (STRIP_FLAG_LEAVE_WHITESP | STRIP_FLAG_STRIP_LOW | STRIP_FLAG_STRIP_HIGH |
                                            STRIP_FLAG_UNSAFE_QUOTES | STRIP_FLAG_UNSAFE_SLASHES | STRIP_FLAG_UNSAFE_SPACES);
 
@@ -98,7 +92,7 @@ stripped_core(const char *r, const char *in_end, char **w, const char *out_end, 
 
   /* parse the string, stripping risky characters/sequences */
   for (/* already established */; r < in_end; r++) {
-    unsigned char c = *r;
+    unsigned char c = static_cast<unsigned char>(*r);
     if (in_tag) {
       switch (c) {
       case '>':
@@ -171,17 +165,18 @@ stripped_core(const char *r, const char *in_end, char **w, const char *out_end, 
           space = 1; /* replace stripped sequence with space */
         }
         stripped = 0; /* reset until next stripped sequence */
-        WRITE_SPACES_IF_ROOM(w, out_end, space);
+        write_spaces_if_room(w, out_end, space);
 
         /* Process as single character. */
-        WRITE_C_IF_ROOM(w, out_end, c);
+        write_char_if_room(w, out_end, c);
       }
     }
   }
 
   /* Restore trailing whitespace if asked */
-  if (flags & STRIP_FLAG_LEAVE_WHITESP)
-    WRITE_SPACES_IF_ROOM(w, out_end, space);
+  if (flags & STRIP_FLAG_LEAVE_WHITESP) {
+    write_spaces_if_room(w, out_end, space);
+  }
 
   return STRIP_RESULT_OK;
 }
@@ -223,7 +218,7 @@ get_stripped(const char *in, ssize_t in_len, char *out, int *out_len, unsigned i
 
   /* handle empty input case (null terminated or not) */
   if ((!(flags & STRIP_FLAG_LEAVE_WHITESP) && r >= in_end) || ((flags & STRIP_FLAG_LEAVE_WHITESP) && in_len == 0)) {
-    WRITE_C_IF_ROOM(&w, out_end, '\0'); /* make out empty string */
+    write_char_if_room(&w, out_end, '\0'); /* make out empty string */
     *out_len = 1;
     return STRIP_RESULT_EMPTY_IN; /* input is empty string */
   }
@@ -232,8 +227,8 @@ get_stripped(const char *in, ssize_t in_len, char *out, int *out_len, unsigned i
   retval = stripped_core(r, in_end, &w, out_end, flags);
 
   /* null terminate */
-  out_end += out_end ? 1 : 0;         /* undo decrement at start */
-  WRITE_C_IF_ROOM(&w, out_end, '\0'); /* try to term at end of output */
+  out_end += out_end ? 1 : 0;            /* undo decrement at start */
+  write_char_if_room(&w, out_end, '\0'); /* try to term at end of output */
 
   /* report the required/used length */
   *out_len = w - out;
@@ -245,7 +240,7 @@ get_stripped(const char *in, ssize_t in_len, char *out, int *out_len, unsigned i
 
   if (retval != STRIP_RESULT_OK) {
     /* return the empty string on all errors */
-    WRITE_C_IF_ROOM(&out, out_end, '\0'); /* make out the empty string */
+    write_char_if_room(&out, out_end, '\0'); /* make out the empty string */
     if (retval != STRIP_RESULT_OUTLEN_SMALL) {
       *out_len = 1; /* even if retried, we won't use more than 1 byte */
     }
@@ -262,7 +257,7 @@ copy_whitespace(const char **r, const char *in_end, char **w, const char *out_en
 {
   char c;
   while (*r < in_end && (c = **r) && (c == ' ' || c == '\t' || c == '\r' || c == '\n')) {
-    WRITE_C_IF_ROOM(w, out_end, c);
+    write_char_if_room(w, out_end, c);
     (*r)++;
   }
   return 0;

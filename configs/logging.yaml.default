@@ -3,7 +3,7 @@
 # Documentation on logging:
 #    https://docs.trafficserver.apache.org/en/8.0.x/admin-guide/logging/index.en.html
 #
-# Documentaion on logging.yaml file format:
+# Documentation on logging.yaml file format:
 #    https://docs.trafficserver.apache.org/en/8.0.x/admin-guide/files/logging.yaml.en.html
 #
 # Example log configurations:

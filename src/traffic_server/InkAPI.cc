@@ -95,10 +95,6 @@ extern AppVersionInfo appVersionInfo;
 static int api_rsb_index;
 static RecRawStatBlock *api_rsb;
 
-static std::type_info const &TYPE_INFO_MGMT_INT   = typeid(MgmtInt);
-static std::type_info const &TYPE_INFO_MGMT_BYTE  = typeid(MgmtByte);
-static std::type_info const &TYPE_INFO_MGMT_FLOAT = typeid(MgmtFloat);
-
 /** Reservation for a user arg.
  */
 struct UserArg {
@@ -3514,7 +3510,7 @@ TSMimeHdrFieldValueDateInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t v
 
   char tmp[33];
   int len = mime_format_date(tmp, value);
-  // idx ignored, overwrite all exisiting values
+  // idx ignored, overwrite all existing values
   // (void)TSMimeFieldValueInsert(bufp, field_obj, tmp, len, idx);
   (void)TSMimeFieldValueSet(bufp, field, -1, tmp, len);
   return TS_SUCCESS;
@@ -7261,10 +7257,9 @@ TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_objec
     return TS_ERROR;
   }
 
-  TextLogObject *tlog =
-    new TextLogObject(filename, Log::config->logfile_dir, (bool)mode & TS_LOG_MODE_ADD_TIMESTAMP, nullptr,
-                      Log::config->rolling_enabled, Log::config->collation_preproc_threads, Log::config->rolling_interval_sec,
-                      Log::config->rolling_offset_hr, Log::config->rolling_size_mb);
+  TextLogObject *tlog = new TextLogObject(
+    filename, Log::config->logfile_dir, (bool)mode & TS_LOG_MODE_ADD_TIMESTAMP, nullptr, Log::config->rolling_enabled,
+    Log::config->preproc_threads, Log::config->rolling_interval_sec, Log::config->rolling_offset_hr, Log::config->rolling_size_mb);
   if (tlog == nullptr) {
     *new_object = nullptr;
     return TS_ERROR;
@@ -7512,7 +7507,7 @@ TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
 
   // tell manager to set the configuration; note that this is not
   // transactional (e.g. we return control to the plugin before the
-  // value is commited to disk by the manager)
+  // value is committed to disk by the manager)
   RecSignalManager(MGMT_SIGNAL_PLUGIN_SET_CONFIG, buffer);
 
   return TS_SUCCESS;
@@ -7944,32 +7939,63 @@ TSSkipRemappingSet(TSHttpTxn txnp, int flag)
  * to this API handling, with the rest of the code base using the natural types.
  */
 
+/// Unhandled API conversions.
+/// Because the code around the specially handled types still uses this in the default case,
+/// it must compile for those cases. To indicate unhandled, return @c nullptr for @a conv.
+/// @internal This should be a temporary state, eventually the other cases should be handled
+/// via specializations here.
+/// @internal C++ note - THIS MUST BE FIRST IN THE DECLARATIONS or it might be falsely used.
 template <typename T>
 inline void *
 _memberp_to_generic(T *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter IntConverter([](void *data) -> MgmtInt { return *static_cast<MgmtInt *>(data); },
-                                          [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; });
+  conv = nullptr;
+  return ptr;
+}
 
-  static const MgmtConverter ByteConverter{[](void *data) -> MgmtInt { return *static_cast<MgmtByte *>(data); },
-                                           [](void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; }};
+/// API conversion for @c MgmtInt, identify conversion as integer.
+inline void *
+_memberp_to_generic(MgmtInt *ptr, MgmtConverter const *&conv)
+{
+  static const MgmtConverter converter([](void *data) -> MgmtInt { return *static_cast<MgmtInt *>(data); },
+                                       [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; });
 
-  static const MgmtConverter FloatConverter{[](void *data) -> MgmtFloat { return *static_cast<MgmtFloat *>(data); },
-                                            [](void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; }};
+  conv = &converter;
+  return ptr;
+}
 
-  // For now, strings are special.
+/// API conversion for @c MgmtByte, handles integer / byte size differences.
+inline void *
+_memberp_to_generic(MgmtByte *ptr, MgmtConverter const *&conv)
+{
+  static const MgmtConverter converter{[](void *data) -> MgmtInt { return *static_cast<MgmtByte *>(data); },
+                                       [](void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; }};
 
-  auto type = &typeid(T);
-  if (*type == TYPE_INFO_MGMT_INT) {
-    conv = &IntConverter;
-  } else if (*type == TYPE_INFO_MGMT_BYTE) {
-    conv = &ByteConverter;
-  } else if (*type == TYPE_INFO_MGMT_FLOAT) {
-    conv = &FloatConverter;
-  } else {
-    conv = nullptr;
-  }
+  conv = &converter;
+  return ptr;
+}
 
+/// API conversion for @c MgmtFloat, identity conversion as float.
+inline void *
+_memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv)
+{
+  static const MgmtConverter converter{[](void *data) -> MgmtFloat { return *static_cast<MgmtFloat *>(data); },
+                                       [](void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; }};
+
+  conv = &converter;
+  return ptr;
+}
+
+/// API conversion for arbitrary enum.
+/// Handle casting to and from the enum type @a E.
+template <typename E>
+inline auto
+_memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std::enable_if<std::is_enum<E>::value, void *>::type
+{
+  static const MgmtConverter converter{[](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<E *>(data)); },
+                                       [](void *data, MgmtInt i) -> void { *static_cast<E *>(data) = static_cast<E>(i); }};
+
+  conv = &converter;
   return ptr;
 }
 
@@ -8972,7 +8998,7 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
 }
 
 tsapi TSSslContext
-TSSslServerContextCreate(TSSslX509 cert, const char *certname)
+TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file)
 {
   TSSslContext ret        = nullptr;
   SSLConfigParams *config = SSLConfig::acquire();
@@ -8981,7 +9007,7 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname)
 #if TS_USE_TLS_OCSP
     if (ret && SSLConfigParams::ssl_ocsp_enabled && cert && certname) {
       if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ret), ssl_callback_ocsp_stapling)) {
-        if (!ssl_stapling_init_cert(reinterpret_cast<SSL_CTX *>(ret), reinterpret_cast<X509 *>(cert), certname)) {
+        if (!ssl_stapling_init_cert(reinterpret_cast<SSL_CTX *>(ret), reinterpret_cast<X509 *>(cert), certname, rsp_file)) {
           Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", (const char *)certname);
         }
       }

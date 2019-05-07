@@ -548,7 +548,7 @@ ShowCache::lookup_regex(int event, Event *e)
                   "		form.elements[0].value += urllist[c]+ \"%%0D%%0A\";\n"
                   "	}\n"
                   "   if (form.elements[0].value == \"\"){\n"
-                  "	    alert(\"Please select atleast one url before clicking delete\");\n"
+                  "	    alert(\"Please select at least one url before clicking delete\");\n"
                   "       return true;\n"
                   "}\n"
                   "   srcfile=\"./delete_url?url=\" + form.elements[0].value;\n"

@@ -26,13 +26,15 @@
 #include <cstdint>
 #include <cinttypes>
 #include <string_view>
+#include <unistd.h>
 
 #include <ts/ts.h>
 #include "tscore/ink_defs.h"
 #include "tscpp/util/PostScript.h"
 #include "tscpp/util/TextView.h"
 
-#define DEBUG_TAG_LOG_HEADERS "xdebug.headers"
+#include "xdebug_headers.cc"
+#include "xdebug_transforms.cc"
 
 static struct {
   const char *str;
@@ -47,9 +49,11 @@ enum {
   XHEADER_X_TRANSACTION_ID = 1u << 6,
   XHEADER_X_DUMP_HEADERS   = 1u << 7,
   XHEADER_X_REMAP          = 1u << 8,
+  XHEADER_X_PROBE_HEADERS  = 1u << 9,
 };
 
 static int XArgIndex              = 0;
+static int BodyBuilderArgIndex    = 0;
 static TSCont XInjectHeadersCont  = nullptr;
 static TSCont XDeleteDebugHdrCont = nullptr;
 
@@ -321,48 +325,6 @@ InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   }
 }
 
-///////////////////////////////////////////////////////////////////////////
-// Dump a header on stderr, useful together with TSDebug().
-void
-log_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, const char *msg_type)
-{
-  if (!TSIsDebugTagSet(DEBUG_TAG_LOG_HEADERS)) {
-    return;
-  }
-
-  TSIOBuffer output_buffer;
-  TSIOBufferReader reader;
-  TSIOBufferBlock block;
-  const char *block_start;
-  int64_t block_avail;
-
-  std::stringstream ss;
-  ss << "TxnID:" << TSHttpTxnIdGet(txn) << " " << msg_type << " Headers are...";
-
-  output_buffer = TSIOBufferCreate();
-  reader        = TSIOBufferReaderAlloc(output_buffer);
-
-  /* This will print  just MIMEFields and not the http request line */
-  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
-
-  /* We need to loop over all the buffer blocks, there can be more than 1 */
-  block = TSIOBufferReaderStart(reader);
-  do {
-    block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
-    if (block_avail > 0) {
-      ss << "\n" << std::string(block_start, static_cast<int>(block_avail));
-    }
-    TSIOBufferReaderConsume(reader, block_avail);
-    block = TSIOBufferReaderStart(reader);
-  } while (block && block_avail != 0);
-
-  /* Free up the TSIOBuffer that we used to print out the header */
-  TSIOBufferReaderFree(reader);
-  TSIOBufferDestroy(output_buffer);
-
-  TSDebug(DEBUG_TAG_LOG_HEADERS, "%s", ss.str().c_str());
-}
-
 static int
 XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
@@ -401,12 +363,25 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
     InjectTxnUuidHeader(txn, buffer, hdr);
   }
 
+  if (xheaders & XHEADER_X_REMAP) {
+    InjectRemapHeader(txn, buffer, hdr);
+  }
+
+  // intentionally placed after all injected headers.
+
   if (xheaders & XHEADER_X_DUMP_HEADERS) {
     log_headers(txn, buffer, hdr, "ClientResponse");
   }
 
-  if (xheaders & XHEADER_X_REMAP) {
-    InjectRemapHeader(txn, buffer, hdr);
+  if (xheaders & XHEADER_X_PROBE_HEADERS) {
+    BodyBuilder *data = static_cast<BodyBuilder *>(TSHttpTxnArgGet(txn, BodyBuilderArgIndex));
+    TSDebug("xdebug_transform", "XInjectResponseHeaders(): client resp header ready");
+    if (data == nullptr) {
+      TSHttpTxnReenable(txn, TS_EVENT_HTTP_ERROR);
+      return TS_ERROR;
+    }
+    data->hdr_ready = true;
+    writePostBody(data);
   }
 
 done:
@@ -519,42 +494,36 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
       } else if (header_field_eq("diags", value, vsize)) {
         // Enable diagnostics for DebugTxn()'s only
         TSHttpTxnDebugSet(txn, 1);
-      } else if (header_field_eq("log-headers", value, vsize)) {
-        xheaders |= XHEADER_X_DUMP_HEADERS;
-        log_headers(txn, buffer, hdr, "ClientRequest");
 
-        // dump on server request
-        auto send_req_dump = [](TSCont /* contp */, TSEvent event, void *edata) -> int {
-          TSHttpTxn txn = (TSHttpTxn)edata;
-          TSMBuffer buffer;
-          TSMLoc hdr;
-          if (TSHttpTxnServerReqGet(txn, &buffer, &hdr) == TS_SUCCESS) {
-            // re-add header "X-Debug: log-headers", but only once
-            TSMLoc dst = TSMimeHdrFieldFind(buffer, hdr, xDebugHeader.str, xDebugHeader.len);
-            if (dst == TS_NULL_MLOC) {
-              if (TSMimeHdrFieldCreateNamed(buffer, hdr, xDebugHeader.str, xDebugHeader.len, &dst) == TS_SUCCESS) {
-                TSReleaseAssert(TSMimeHdrFieldAppend(buffer, hdr, dst) == TS_SUCCESS);
-                TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, "log-headers",
-                                                                lengthof("log-headers")) == TS_SUCCESS);
-                log_headers(txn, buffer, hdr, "ServerRequest");
-              }
-            }
-          }
+      } else if (header_field_eq("probe", value, vsize)) {
+        xheaders |= XHEADER_X_PROBE_HEADERS;
+
+        // prefix request headers and postfix response headers
+        BodyBuilder *data = new BodyBuilder();
+        data->txn         = txn;
+
+        TSVConn connp = TSTransformCreate(body_transform, txn);
+        TSContDataSet(connp, data);
+        TSHttpTxnHookAdd(txn, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
+
+        // store data pointer in txnarg to use in global cont XInjectResponseHeaders
+        TSHttpTxnArgSet(txn, BodyBuilderArgIndex, data);
+
+        // create a self-cleanup on close
+        auto cleanupBodyBuilder = [](TSCont /* contp */, TSEvent event, void *edata) -> int {
+          TSHttpTxn txn     = (TSHttpTxn)edata;
+          BodyBuilder *data = static_cast<BodyBuilder *>(TSHttpTxnArgGet(txn, BodyBuilderArgIndex));
+          delete data;
           return TS_EVENT_NONE;
         };
-        TSHttpTxnHookAdd(txn, TS_HTTP_SEND_REQUEST_HDR_HOOK, TSContCreate(send_req_dump, nullptr));
+        TSHttpTxnHookAdd(txn, TS_HTTP_TXN_CLOSE_HOOK, TSContCreate(cleanupBodyBuilder, nullptr));
 
-        // dump on server response
-        auto read_resp_dump = [](TSCont /* contp */, TSEvent event, void *edata) -> int {
-          TSHttpTxn txn = (TSHttpTxn)edata;
-          TSMBuffer buffer;
-          TSMLoc hdr;
-          if (TSHttpTxnServerRespGet(txn, &buffer, &hdr) == TS_SUCCESS) {
-            log_headers(txn, buffer, hdr, "ServerResponse");
-          }
-          return TS_EVENT_NONE;
-        };
-        TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(read_resp_dump, nullptr));
+        // disable writing to cache because we are injecting data into the body.
+        TSHttpTxnReqCacheableSet(txn, 0);
+        TSHttpTxnRespCacheableSet(txn, 0);
+        TSHttpTxnServerRespNoStoreSet(txn, 1);
+        TSHttpTxnTransformedRespCache(txn, 0);
+        TSHttpTxnUntransformedRespCache(txn, 0);
 
       } else if (isFwdFieldValue(std::string_view(value, vsize), fwdCnt)) {
         if (fwdCnt > 0) {
@@ -666,7 +635,10 @@ TSPluginInit(int argc, const char *argv[])
 
   // Setup the global hook
   TSReleaseAssert(TSHttpTxnArgIndexReserve("xdebug", "xdebug header requests", &XArgIndex) == TS_SUCCESS);
+  TSReleaseAssert(TSHttpTxnArgIndexReserve("bodyTransform", "BodyBuilder*", &XArgIndex) == TS_SUCCESS);
   TSReleaseAssert(XInjectHeadersCont = TSContCreate(XInjectResponseHeaders, nullptr));
   TSReleaseAssert(XDeleteDebugHdrCont = TSContCreate(XDeleteDebugHdr, nullptr));
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(XScanRequestHeaders, nullptr));
+
+  gethostname(Hostname, 1024);
 }

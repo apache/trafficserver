@@ -46,7 +46,7 @@ struct ssl_ticket_key_block;
 //
 // struct SSLConfigParams
 //
-// configuration parameters as they apear in the global
+// configuration parameters as they appear in the global
 // configuration file.
 /////////////////////////////////////////////////////////////
 
@@ -107,6 +107,7 @@ struct SSLConfigParams : public ConfigInfo {
   static int ssl_ocsp_request_timeout;
   static int ssl_ocsp_update_period;
   static int ssl_handshake_timeout_in;
+  char *ssl_ocsp_response_path_only;
 
   static size_t session_cache_number_buckets;
   static size_t session_cache_max_bucket_size;

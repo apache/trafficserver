@@ -80,6 +80,14 @@ public:
     /// Socket transmit buffer size.
     /// 0 => OS default.
     int send_bufsize;
+    /// defer accpet for @c sockopt.
+    /// 0 => OS default.
+    int defer_accept;
+#ifdef TCP_INIT_CWND
+    /// tcp init cwnd for @c sockopt
+    /// OS default
+    int init_cwnd;
+#endif
     /// Socket options for @c sockopt.
     /// 0 => do not set options.
     uint32_t sockopt_flags;
@@ -190,6 +198,8 @@ public:
   */
   virtual void init() = 0;
 
+  virtual void init_socks() = 0;
+
   inkcoreapi virtual NetVConnection *allocate_vc(EThread *) = 0;
 
   /** Private constructor. */
@@ -240,7 +250,7 @@ private:
   object.
 
   @code
-    netProcesors.accept(my_cont, ...);
+    netProcessor.accept(my_cont, ...);
     netProcessor.connect_re(my_cont, ...);
   @endcode
 

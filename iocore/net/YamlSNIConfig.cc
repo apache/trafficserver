@@ -147,7 +147,7 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     // remove before 9.0.0 release
-    // backwards compatibiity
+    // backwards compatibility
     if (node[TS_verify_origin_server]) {
       auto value                    = node[TS_verify_origin_server].as<std::string>();
       YamlSNIConfig::Level level    = static_cast<YamlSNIConfig::Level>(LEVEL_DESCRIPTOR.get(value));

@@ -34,7 +34,7 @@ class ATSUuid
 public:
   // Constructors
   ATSUuid() {}
-  ATSUuid &operator=(const ATSUuid other);
+  ATSUuid &operator=(const ATSUuid &other);
 
   // Initialize the UUID from a string
   bool parseString(const char *str);

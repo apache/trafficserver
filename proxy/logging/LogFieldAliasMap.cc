@@ -44,7 +44,6 @@ LogFieldAliasTable::init(size_t numPairs, ...)
   size_t n;
   va_list ap;
   va_start(ap, numPairs);
-  char *name;
 
   /* A note on the varargs -
      Although IntType is used internally the compiler doesn't know that
@@ -73,7 +72,7 @@ LogFieldAliasTable::init(size_t numPairs, ...)
   for (n = 0; n < numPairs; n++) {
     IntType val = va_arg(ap, int);
     size_t i    = val - m_min;
-    name        = va_arg(ap, char *);
+    char *name  = va_arg(ap, char *);
 
     m_table[i].name   = ats_strdup(name);
     m_table[i].length = strlen(name);

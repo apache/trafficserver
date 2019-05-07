@@ -22,10 +22,8 @@
 */
 
 #include <catch.hpp>
+
 #include "tscore/Scalar.h"
-//#include <string>
-//#include <cstdarg>
-//#include <iostream>
 
 using Bytes      = ts::Scalar<1, off_t>;
 using Paragraphs = ts::Scalar<16, off_t>;

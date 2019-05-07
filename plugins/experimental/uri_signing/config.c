@@ -21,8 +21,6 @@
 #include "timing.h"
 #include "jwt.h"
 
-#include <ts/ts.h>
-
 #include <cjose/cjose.h>
 #include <jansson.h>
 
@@ -46,6 +44,7 @@ struct config {
   struct signer signer;
   struct auth_directive *auth_directives;
   char *id;
+  bool strip_token;
 };
 
 cjose_jwk_t **
@@ -87,6 +86,12 @@ config_get_id(struct config *cfg)
   return cfg->id;
 }
 
+bool
+config_strip_token(struct config *cfg)
+{
+  return cfg->strip_token;
+}
+
 struct config *
 config_new(size_t n)
 {
@@ -113,6 +118,8 @@ config_new(size_t n)
 
   cfg->auth_directives = NULL;
   cfg->id              = NULL;
+
+  cfg->strip_token = false;
 
   PluginDebug("New config object created at %p", cfg);
   return cfg;
@@ -283,6 +290,11 @@ read_config(const char *path)
       }
     }
     json_decref(id_json);
+
+    json_t *strip_json = json_object_get(jwks, "strip_token");
+    if (strip_json) {
+      cfg->strip_token = json_boolean_value(strip_json);
+    }
 
     size_t jwks_ct     = json_array_size(key_ary);
     cjose_jwk_t **jwks = (*jwkis++ = malloc((jwks_ct + 1) * sizeof *jwks));

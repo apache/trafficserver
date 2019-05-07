@@ -43,7 +43,7 @@ struct PermissionEntry {
 // PermissionEntry contains the read/write/execute mode and the result of output
 using PermissionMapType = std::unordered_map<std::string, PermissionEntry>;
 
-// structure for informaiton of the runroot passing around
+// structure for information of the runroot passing around
 struct LayoutEngine {
   // default output of all layouts
   void info();
@@ -62,7 +62,7 @@ struct LayoutEngine {
   ts::ArgParser parser;
   // parsed arguments
   ts::Arguments arguments;
-  // mordern argv
+  // modern argv
   std::vector<std::string> _argv;
 
   int status_code = 0;

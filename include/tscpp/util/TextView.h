@@ -99,7 +99,7 @@ public:
 
   /** Construct explicitly with a pointer and size.
       If @a n is negative it is treated as 0.
-      @internal Overload for convience, otherwise get "narrow conversion" errors.
+      @internal Overload for convenience, otherwise get "narrow conversion" errors.
    */
   constexpr TextView(const char *ptr, ///< Pointer to buffer.
                      int n            ///< Size of buffer.
@@ -116,7 +116,7 @@ public:
 
       Construct directly from an array of characters. All elements of the array are
       included in the view unless the last element is nul, in which case it is elided.
-      If this is inapropriate then a constructor with an explicit size should be used.
+      If this is inappropriate then a constructor with an explicit size should be used.
 
       @code
         TextView a("A literal string");
@@ -291,10 +291,10 @@ public:
   /// Overload to provide better return type.
   self_type &remove_prefix(size_t n);
 
-  /// Remove the prefix delimited by the first occurence of @a c.
+  /// Remove the prefix delimited by the first occurrence of @a c.
   self_type &remove_prefix_at(char c);
 
-  /// Remove the prefix delimited by the first occurence of a character for which @a pred is @c true.
+  /// Remove the prefix delimited by the first occurrence of a character for which @a pred is @c true.
   template <typename F> self_type &remove_prefix_if(F const &pred);
 
   /** Split a prefix from the view on the character at offset @a n.
@@ -391,10 +391,10 @@ public:
   /// Overload to provide better return type.
   self_type &remove_suffix(size_t n);
 
-  /// Remove a suffix, delimited by the last occurence of @c c.
+  /// Remove a suffix, delimited by the last occurrence of @c c.
   self_type &remove_suffix_at(char c);
 
-  /// Remove a suffix, delimited by the last occurence of a character for which @a pred is @c true.
+  /// Remove a suffix, delimited by the last occurrence of a character for which @a pred is @c true.
   template <typename F> self_type &remove_suffix_if(F const &f);
 
   /** Split the view to get a suffix of size @a n.

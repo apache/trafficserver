@@ -204,7 +204,7 @@ Diags::~Diags()
 //
 //      This routine outputs to all of the output targets enabled for this
 //      debugging level in config.outputs[diags_level].  Many higher level
-//      diagnosting printing routines are built upon print_va, including:
+//      diagnostics printing routines are built upon print_va, including:
 //
 //              void print(...)
 //              void log_va(...)

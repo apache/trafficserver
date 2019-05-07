@@ -180,7 +180,7 @@ struct GeneratorRequest {
   ~GeneratorRequest() {}
 };
 
-// Destroy a generator request, iincluding the per-txn continuation.
+// Destroy a generator request, including the per-txn continuation.
 static void
 GeneratorRequestDestroy(GeneratorRequest *grq, TSVIO vio, TSCont contp)
 {

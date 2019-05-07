@@ -41,7 +41,6 @@
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  TSFile filep;
   char buf[4096];
   int i;
   TSPluginRegistrationInfo info;
@@ -55,7 +54,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   for (i = 1; i < argc; i++) {
-    filep = TSfopen(argv[i], "r");
+    TSFile filep = TSfopen(argv[i], "r");
     if (!filep) {
       continue;
     }

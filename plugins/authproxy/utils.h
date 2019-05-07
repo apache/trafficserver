@@ -43,9 +43,8 @@ struct HttpIoBuffer {
   TSIOBufferReader reader;
 
   explicit HttpIoBuffer(TSIOBufferSizeIndex size = TS_IOBUFFER_SIZE_INDEX_32K)
+    : buffer(TSIOBufferSizedCreate(size)), reader(TSIOBufferReaderAlloc(buffer))
   {
-    this->buffer = TSIOBufferSizedCreate(size);
-    this->reader = TSIOBufferReaderAlloc(this->buffer);
   }
 
   ~HttpIoBuffer()

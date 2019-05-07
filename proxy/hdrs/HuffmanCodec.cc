@@ -93,12 +93,12 @@ static Node *
 make_huffman_tree()
 {
   Node *root = make_huffman_tree_node();
-  Node *current;
-  uint32_t bit_len;
+
   // insert leafs for each ascii code
   for (unsigned i = 0; i < countof(huffman_table); i++) {
-    bit_len = huffman_table[i].bit_len;
-    current = root;
+    uint32_t bit_len = huffman_table[i].bit_len;
+    Node *current    = root;
+
     while (bit_len > 0) {
       if (huffman_table[i].code_as_hex & (1 << (bit_len - 1))) {
         if (!current->right) {
@@ -116,6 +116,7 @@ make_huffman_tree()
     current->ascii_code = i;
     current->leaf_node  = true;
   }
+
   return root;
 }
 

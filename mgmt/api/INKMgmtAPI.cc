@@ -147,7 +147,6 @@ tsapi bool
 TSListIsValid(TSList l)
 {
   int i, len;
-  void *ele;
 
   if (!l) {
     return false;
@@ -155,7 +154,7 @@ TSListIsValid(TSList l)
 
   len = queue_len((LLQ *)l);
   for (i = 0; i < len; i++) {
-    ele = (void *)dequeue((LLQ *)l);
+    void *ele = (void *)dequeue((LLQ *)l);
     if (!ele) {
       return false;
     }
@@ -175,15 +174,13 @@ TSStringListCreate()
 tsapi void
 TSStringListDestroy(TSStringList strl)
 {
-  char *str;
-
   if (!strl) {
     return;
   }
 
   /* dequeue each element and free it */
   while (!queue_is_empty((LLQ *)strl)) {
-    str = (char *)dequeue((LLQ *)strl);
+    char *str = (char *)dequeue((LLQ *)strl);
     ats_free(str);
   }
 
@@ -246,7 +243,6 @@ tsapi bool
 TSStringListIsValid(TSStringList strl)
 {
   int i, len;
-  char *str;
 
   if (!strl) {
     return false;
@@ -254,7 +250,7 @@ TSStringListIsValid(TSStringList strl)
 
   len = queue_len((LLQ *)strl);
   for (i = 0; i < len; i++) {
-    str = (char *)dequeue((LLQ *)strl);
+    char *str = (char *)dequeue((LLQ *)strl);
     if (!str) {
       return false;
     }
@@ -274,15 +270,13 @@ TSIntListCreate()
 tsapi void
 TSIntListDestroy(TSIntList intl)
 {
-  int *iPtr;
-
   if (!intl) {
     return;
   }
 
   /* dequeue each element and free it */
   while (!queue_is_empty((LLQ *)intl)) {
-    iPtr = (int *)dequeue((LLQ *)intl);
+    int *iPtr = (int *)dequeue((LLQ *)intl);
     ats_free(iPtr);
   }
 
@@ -518,7 +512,7 @@ END:
  *-------------------------------------------------------------------------
  * Purpose: Retrieves list of record values specified in the rec_names list
  * Input: rec_names - list of record names to retrieve
- *        rec_vals  - queue of TSRecordEle* that correspons to rec_names
+ *        rec_vals  - queue of TSRecordEle* that corresponds to rec_names
  * Output: If at any point, while retrieving one of the records there's a
  *         a failure then the entire process is aborted, all the allocated
  *         TSRecordEle's are deallocated and TS_ERR_FAIL is returned.
@@ -534,8 +528,6 @@ END:
 tsapi TSMgmtError
 TSRecordGetMlt(TSStringList rec_names, TSList rec_vals)
 {
-  TSRecordEle *ele;
-  char *rec_name;
   int num_recs, i, j;
   TSMgmtError ret;
 
@@ -545,12 +537,12 @@ TSRecordGetMlt(TSStringList rec_names, TSList rec_vals)
 
   num_recs = queue_len((LLQ *)rec_names);
   for (i = 0; i < num_recs; i++) {
-    rec_name = (char *)dequeue((LLQ *)rec_names); // remove name from list
+    char *rec_name = (char *)dequeue((LLQ *)rec_names); // remove name from list
     if (!rec_name) {
       return TS_ERR_PARAMS; // NULL is invalid record name
     }
 
-    ele = TSRecordEleCreate();
+    TSRecordEle *ele = TSRecordEleCreate();
 
     ret = MgmtRecordGet(rec_name, ele);
     enqueue((LLQ *)rec_names, rec_name); // return name to list
@@ -632,7 +624,6 @@ tsapi TSMgmtError
 TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need)
 {
   int num_recs, ret, i;
-  TSRecordEle *ele;
   TSMgmtError status           = TS_ERR_OKAY;
   TSActionNeedT top_action_req = TS_ACTION_UNDEFINED;
 
@@ -643,7 +634,7 @@ TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need)
   num_recs = queue_len((LLQ *)rec_list);
 
   for (i = 0; i < num_recs; i++) {
-    ele = (TSRecordEle *)dequeue((LLQ *)rec_list);
+    TSRecordEle *ele = (TSRecordEle *)dequeue((LLQ *)rec_list);
     if (ele) {
       switch (ele->rec_type) {
       case TS_REC_INT:
@@ -667,7 +658,7 @@ TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need)
       }
 
       // keep track of most severe action; reset if needed
-      // the TSACtionNeedT should be listed such that most severe actions have
+      // the TSActionNeedT should be listed such that most severe actions have
       // a lower number (so most severe action == 0)
       if (*action_need < top_action_req) { // a more severe action
         top_action_req = *action_need;

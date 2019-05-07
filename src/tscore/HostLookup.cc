@@ -49,7 +49,7 @@ namespace
 bool
 domaincmp(string_view hostname, string_view domain)
 {
-  // Check to see if were passed emtpy strings for either
+  // Check to see if were passed empty strings for either
   //  argument.  Empty strings do not match anything
   //
   if (domain.empty() || hostname.empty()) {
@@ -150,7 +150,7 @@ hostcmp(string_view lhs, string_view rhs)
 //   '_' is also included although it is not in the spec (RFC 883)
 //
 //   Uppercase and lowercase "a-z" both map to same indexes
-//     since hostnames are not case sensative
+//     since hostnames are not case sensitive
 //
 //   Illegal characters map to 255
 //
@@ -177,7 +177,7 @@ static const unsigned char asciiToTable[256] = {
   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
 
-// Number of legal characters in the acssiToTable array
+// Number of legal characters in the asciiToTable array
 static const int numLegalChars = 38;
 
 // struct CharIndexBlock
@@ -193,7 +193,7 @@ struct CharIndexBlock {
 };
 
 // class CharIndex - A constant time string matcher intended for
-//    short strings in a sparsely populated DNS paritition
+//    short strings in a sparsely populated DNS partition
 //
 //    Creates a look up table for character in data string
 //
@@ -458,7 +458,7 @@ CharIndex::iterator::operator!=(const self_type &that) const
 
 // class HostArray
 //
-//   Is a fixed size array for holding HostBrach*
+//   Is a fixed size array for holding HostBranch*
 //   Allows only sequential access to data
 //
 
@@ -656,7 +656,7 @@ HostLookup::TableNewLevel(HostBranch *from, string_view level_data)
 // HostBranch* HostLookup::InsertBranch(HostBranch* insert_to, const char* level_data)
 //
 //
-//    Abstrction to place a new node for level_data below node
+//    Abstraction to place a new node for level_data below node
 //      insert to.  Inserts into any of the data types used by
 //      by class HostMatcher
 //

@@ -309,7 +309,7 @@ initSignalHandlers()
 
   // Block the delivery of any signals we are not catching
   //
-  //  except for SIGALARM since we use it
+  //  except for SIGALRM since we use it
   //    to break out of deadlock on semaphore
   //    we share with the proxy
   //
