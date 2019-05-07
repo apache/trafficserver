@@ -43,7 +43,9 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-con
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.Disk.records_config.update({
+    # Do not accept connections from clients until cache subsystem is operational.
     'proxy.config.http.wait_for_cache': 1,
+
     'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'http|dns',
 })
@@ -58,7 +60,7 @@ ts.Disk.logging_yaml.AddLines(
     '''
 formats:
   - name: custom
-    format: " %<cqah> %<pssc> %<psah> %<ssah> %<pqah> %<cssah> " 
+    format: "%<cqah> ___FS___ %<pssc> ___FS___ %<psah> ___FS___ %<ssah> ___FS___ %<pqah> ___FS___ %<cssah> ___FS___ END_TXN"
 logs:
   - filename: test_all_headers
     format: custom
@@ -101,8 +103,9 @@ tr.Processes.Default.ReturnCode = 0
 #
 tr = Test.AddTestRun()
 tr.DelayStart = 10
-tr.Processes.Default.Command = 'python {0} {3} < {1} > {2}'.format(
+tr.Processes.Default.Command = 'python {0} {4} < {2} | . {1} > {3}'.format(
     os.path.join(Test.TestDirectory, 'all_headers_sanitizer.py'),
+    os.path.join(Test.TestDirectory, 'all_headers_sanitizer.sh'),
     os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log'),
     os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log.san'),
     server.Variables.Port)
