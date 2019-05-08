@@ -87,13 +87,13 @@ union head_p {
 
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
   using version_type = int32_t;
-  using data_type = int64_t;
+  using data_type    = int64_t;
 #elif TS_HAS_128BIT_CAS
   using version_type = int64_t;
-  using data_type = __int128_t;
+  using data_type    = __int128_t;
 #else
   using version_type = uint64_t;
-  using data_type = uint64_t;
+  using data_type    = uint64_t;
 #endif
 
   struct {
