@@ -36,7 +36,7 @@ int SSL_session_callback(TSCont contp, TSEvent event, void *edata);
 static int
 shutdown_handler(TSCont contp, TSEvent event, void *edata)
 {
-  if ((event == TS_EVENT_LIFECYCLE_SHUTDOWN)) {
+  if (event == TS_EVENT_LIFECYCLE_SHUTDOWN) {
     plugin_threads.terminate();
   }
   return 0;
