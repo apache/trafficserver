@@ -1283,7 +1283,7 @@ public:
   ~PVCTestDriver() override;
 
   void start_tests(RegressionTest *r_arg, int *pstatus_arg);
-  bool run_next_test();
+  void run_next_test();
   int main_handler(int event, void *data);
 
 private:
@@ -1306,13 +1306,12 @@ PVCTestDriver::start_tests(RegressionTest *r_arg, int *pstatus_arg)
 
   r       = r_arg;
   pstatus = pstatus_arg;
+  SET_HANDLER(&PVCTestDriver::main_handler);
 
-  if (run_next_test()) {
-    SET_HANDLER(&PVCTestDriver::main_handler);
-  }
+  run_next_test();
 }
 
-bool
+void
 PVCTestDriver::run_next_test()
 {
   unsigned a_index = i * 2;
@@ -1326,7 +1325,7 @@ PVCTestDriver::run_next_test()
       *pstatus = REGRESSION_TEST_FAILED;
     }
     delete this;
-    return false;
+    return;
   }
   completions_received = 0;
   i++;
@@ -1341,8 +1340,6 @@ PVCTestDriver::run_next_test()
   PluginVC *a_vc = core->connect();
 
   a->init_test(NET_VC_TEST_ACTIVE, this, a_vc, r, &netvc_tests_def[a_index], "PluginVC", "pvc_test_detail");
-
-  return true;
 }
 
 int
