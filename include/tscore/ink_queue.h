@@ -139,7 +139,8 @@ union head_p {
 #elif defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__aarch64__) || defined(__mips64)
 #define FREELIST_POINTER(_x) ((void *)(((uintptr_t)(_x).data) & 0x0000FFFFFFFFFFFF))
 #define FREELIST_VERSION(_x) (((uintptr_t)(_x).data) >> 48)
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((uintptr_t)(_p)) & 0x0000FFFFFFFFFFFFULL) | (((_v)&0xFFFFULL) << 48))
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) \
+  (_x).data = ((((uintptr_t)(_p)) & 0x0000FFFFFFFFFFFFULL) | (((_v)&0xFFFFULL) << 48))
 #else
 #error "unsupported processor"
 #endif
