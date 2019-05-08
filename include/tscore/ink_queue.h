@@ -62,7 +62,7 @@ extern "C" {
 
 void ink_queue_load_64(void *dst, void *src);
 
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__aarch64__)
 #define INK_QUEUE_LD64(dst, src) *((uint64_t *)&(dst)) = *((uint64_t *)&(src))
 #else
 #define INK_QUEUE_LD64(dst, src) (ink_queue_load_64((void *)&(dst), (void *)&(src)))
@@ -92,8 +92,8 @@ union head_p {
   typedef int64_t version_type;
   typedef __int128_t data_type;
 #else
-  typedef int64_t version_type;
-  typedef int64_t data_type;
+  typedef uint64_t version_type;
+  typedef uint64_t data_type;
 #endif
 
   struct {
@@ -137,10 +137,9 @@ union head_p {
   (_x).s.pointer = _p;                           \
   (_x).s.version = _v
 #elif defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__aarch64__) || defined(__mips64)
-#define FREELIST_POINTER(_x) \
-  ((void *)(((((intptr_t)(_x).data) << 16) >> 16) | (((~((((intptr_t)(_x).data) << 16 >> 63) - 1)) >> 48) << 48))) // sign extend
-#define FREELIST_VERSION(_x) (((intptr_t)(_x).data) >> 48)
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x0000FFFFFFFFFFFFULL) | (((_v)&0xFFFFULL) << 48))
+#define FREELIST_POINTER(_x) ((void *)(((uintptr_t)(_x).data) & 0x0000FFFFFFFFFFFF))
+#define FREELIST_VERSION(_x) (((uintptr_t)(_x).data) >> 48)
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((uintptr_t)(_p)) & 0x0000FFFFFFFFFFFFULL) | (((_v)&0xFFFFULL) << 48))
 #else
 #error "unsupported processor"
 #endif
