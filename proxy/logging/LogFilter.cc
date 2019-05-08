@@ -476,7 +476,6 @@ LogFilterInt::_setValues(size_t n, int64_t *value)
   }
 }
 
-// TODO: ival should be int64_t
 int
 LogFilterInt::_convertStringToInt(char *value, int64_t *ival, LogFieldAliasMap *map)
 {
@@ -521,7 +520,6 @@ LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action 
   : LogFilter(name, field, action, oper)
 {
   // parse the comma-separated list of values and construct array
-  //
   int64_t *val_array = nullptr;
   size_t i           = 0;
   SimpleTokenizer tok(values, ',');
@@ -532,9 +530,8 @@ LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action 
     char *t;
     while (t = tok.getNext(), t != nullptr) {
       int64_t ival;
-      if (!_convertStringToInt(t, &ival, field->map().get())) {
+      if (auto map = field->map(); !_convertStringToInt(t, &ival, map.get())) {
         // conversion was successful, add entry to array
-        //
         val_array[i++] = ival;
       }
     }
