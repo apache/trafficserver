@@ -70,12 +70,12 @@
 
 // Signal flows: traffic server -> traffic manager
 #define MGMT_SIGNAL_PID 0
-#define MGMT_SIGNAL_MACHINE_UP 1 /* Data is ip addr */
-#define MGMT_SIGNAL_MACHINE_DOWN 2
+// Currently unused: 1
+// Currently unused: 2
 #define MGMT_SIGNAL_CONFIG_ERROR 3 /* Data is descriptive string */
 #define MGMT_SIGNAL_SYSTEM_ERROR 4
-#define MGMT_SIGNAL_LOG_SPACE_CRISIS 5
-#define MGMT_SIGNAL_CONFIG_FILE_READ 6
+// Currently unused: 5
+// Currently unused: 6
 #define MGMT_SIGNAL_CACHE_ERROR 7
 #define MGMT_SIGNAL_CACHE_WARNING 8
 #define MGMT_SIGNAL_LOGGING_ERROR 9
@@ -84,12 +84,10 @@
 // Currently unused: 12
 // Currently unused: 13
 #define MGMT_SIGNAL_PLUGIN_SET_CONFIG 14
-#define MGMT_SIGNAL_LOG_FILES_ROLLED 15
+// Currently unused: 15
 #define MGMT_SIGNAL_LIBRECORDS 16
-
+// Currently unused: 17 - 21
 #define MGMT_SIGNAL_CONFIG_FILE_CHILD 22
-
-#define MGMT_SIGNAL_SAC_SERVER_DOWN 400
 
 struct MgmtMessageHdr {
   int msg_id;

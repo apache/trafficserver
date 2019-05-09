@@ -40,35 +40,27 @@ class AppVersionInfo;
 // When adding new alarms, please make sure add the
 //   corresponding alarm text
 //
+#define MGMT_ALARM_UNDEFINED 0
+
 #define MGMT_ALARM_PROXY_PROCESS_DIED 1
 #define MGMT_ALARM_PROXY_PROCESS_BORN 2
-#define MGMT_ALARM_PROXY_PEER_BORN 3 /* Data is ip addr */
-#define MGMT_ALARM_PROXY_PEER_DIED 4
+// Currently unused: 3
+// Currently unused: 4
 #define MGMT_ALARM_PROXY_CONFIG_ERROR 5 /* Data is descriptive string */
 #define MGMT_ALARM_PROXY_SYSTEM_ERROR 6
-#define MGMT_ALARM_PROXY_LOG_SPACE_CRISIS 7
+// Currently unused: 7
 #define MGMT_ALARM_PROXY_CACHE_ERROR 8
 #define MGMT_ALARM_PROXY_CACHE_WARNING 9
 #define MGMT_ALARM_PROXY_LOGGING_ERROR 10
 #define MGMT_ALARM_PROXY_LOGGING_WARNING 11
-#define MGMT_ALARM_MGMT_TEST 13 /* to aid in debugging */
+// Currently unused: 13
 #define MGMT_ALARM_CONFIG_UPDATE_FAILED 14
-#define MGMT_ALARM_WEB_ERROR 15
-#define MGMT_ALARM_PING_FAILURE 16
+// Currently unused: 15
+// Currently unused: 16
 #define MGMT_ALARM_MGMT_CONFIG_ERROR 17
-#define MGMT_ALARM_ADD_ALARM 18              /* OEM_ALARM */
-#define MGMT_ALARM_PROXY_LOG_SPACE_ROLLED 19 /* Alarm when log files will be rolled */
-
-#define MGMT_ALARM_SAC_SERVER_DOWN 400
 
 extern const char *alarmText[];
 extern const int alarmTextNum;
-
-/* OEM_ALARM: the alarm type is used as a key for hash tables;
-   need offset and modulo constants which will keep the unique
-   keys for OEM alarms within a specified range */
-const int minOEMkey = 1000; // used as offset
-const int maxOEMkey = 6000;
 
 typedef int alarm_t;
 typedef void (*AlarmCallbackFunc)(alarm_t, const char *, const char *);
@@ -116,10 +108,4 @@ private:
   std::unordered_map<std::string, AlarmCallbackFunc> cblist;
   std::unordered_map<std::string, Alarm *> local_alarms;
   std::unordered_map<std::string, Alarm *> remote_alarms;
-
-  /* counter is added in order to provide unique keys for OEM alarms,
-     since an OEM_ALARM type can be associated with many different
-     alarm descriptions */
-  int alarmOEMcount;
-
 }; /* End class Alarms */

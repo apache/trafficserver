@@ -44,24 +44,24 @@
  * access to these values for its event handling
  */
 #define MGMT_ALARM_UNDEFINED 0
+
 #define MGMT_ALARM_PROXY_PROCESS_DIED 1
 #define MGMT_ALARM_PROXY_PROCESS_BORN 2
-#define MGMT_ALARM_PROXY_PEER_BORN 3
-#define MGMT_ALARM_PROXY_PEER_DIED 4
+// Currently unused: 3
+// Currently unused: 4
 #define MGMT_ALARM_PROXY_CONFIG_ERROR 5
 #define MGMT_ALARM_PROXY_SYSTEM_ERROR 6
-#define MGMT_ALARM_PROXY_LOG_SPACE_CRISIS 7
+// Currently unused: 7
 #define MGMT_ALARM_PROXY_CACHE_ERROR 8
 #define MGMT_ALARM_PROXY_CACHE_WARNING 9
 #define MGMT_ALARM_PROXY_LOGGING_ERROR 10
 #define MGMT_ALARM_PROXY_LOGGING_WARNING 11
 // Currently unused: 12
-#define MGMT_ALARM_MGMT_TEST 13
+// Currently unused: 13
 #define MGMT_ALARM_CONFIG_UPDATE_FAILED 14
-#define MGMT_ALARM_WEB_ERROR 15
-#define MGMT_ALARM_PING_FAILURE 16
+// Currently unused: 15
+// Currently unused: 16
 #define MGMT_ALARM_MGMT_CONFIG_ERROR 17
-#define MGMT_ALARM_ADD_ALARM 18
 
 // used by TSReadFromUrl
 #define HTTP_DIVIDER "\r\n\r\n"
