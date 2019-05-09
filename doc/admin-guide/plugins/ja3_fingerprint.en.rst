@@ -22,28 +22,53 @@
 
 
 JA3 Fingerprint Plugin
-*******************
+**********************
 
 Description
 ===========
 
-``JA3 Fingerprint`` calculates JA3 fingerprints for incoming SSL traffic. "JA3 is a method for creating SSL/TLS client fingerprints" by concatenating values in ClientHello packet and MD5 hash the result to produce a 32 character fingerprint. Malwares tend to use the same encryption code/client, which makes it an effective way to detect malicious clients. More info about ja3 is available: https://github.com/salesforce/ja3.
+The JA3 fingerprint plugin calculates JA3 fingerprints for incoming SSL traffic. "JA3" is a method
+for creating SSL/TLS client fingerprints by concatenating values in the `TLS Client Hello
+<https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__ and hashing the result using `MD5
+<https://www.openssl.org/docs/man1.1.0/man3/MD5_Init.html>`__ to produce a 32 character fingerprint.
+A particular instance of malware tends to use the same encryption code/client, which makes it an
+effective way to detect malicious clients even when superficial details are modifed. More info about
+JA3 is available `here <https://github.com/salesforce/ja3>`__.
 
-The calculated JA3 fingerprints are then appended to upstream request (to be processed at upstream) and/or logged locally (depending on the config).
+The calculated JA3 fingerprints are then appended to upstream request in the field ``X-JA3-Sig``
+(to be processed at upstream). The signatures can also be logged locally.
 
 Plugin Configuration
 ====================
 .. program:: ja3_fingerprint.so
 
-* ``ja3_fingerprint`` can be used as a global/remap plugin and is configured via :file:`plugin.config` or :file:`remap.config`.
-   .. option:: --ja3raw
+``ja3_fingerprint`` can be used as a global/remap plugin and is configured via :file:`plugin.config`
+or :file:`remap.config`.
 
-   (`optional`, default:unused) - enables raw fingerprints header. With this option, the plugin will append additional header `X-JA3-Raw` to proxy request.
+.. option:: --ja3raw
 
-   .. option:: --ja3log
+   This option cause the plugin to append the field ``X-JA3-Raw`` to proxy request. The field value
+   is the raw JA3 fingerprint.
 
-   (`optional`, default:unused) - enables local logging. With this option, the plugin will log JA3 info to :file:`ja3_fingerprint.log` in the standard logging directory. The format is: [time] [client IP] [JA3 string] [JA3 hash]
+   By default this is not enabled.
+
+.. option:: --ja3log
+
+
+   This option enables logging to the file ``ja3_fingerprint.log`` in the standard logging
+   directory. The format is ::
+
+      [time] [client IP] [JA3 string] [JA3 hash]
+
+   By default this is not enabled.
 
 Requirement
 =============
-Won't compile against OpenSSL 1.1.0 due to API changes and opaque structures.
+
+This requires OpenSSL 1.0.1, 1.0.2, or OpenSSL 1.1.1 or later. OpenSSL 1.1.0 will not work due to
+API changes with regard to opaque structures.
+
+There is a potential issue with very old TLS clients which can cause a crash in the plugin. This is
+due to a `bug in OpenSSL <https://github.com/openssl/openssl/pull/8756>`__ which should be fixed in
+a future release.
+
