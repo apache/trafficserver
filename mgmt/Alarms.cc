@@ -31,25 +31,24 @@
 #include "records/P_RecCore.h"
 
 const char *alarmText[] = {
-  "Unknown Alarm",
-  "[TrafficManager] Traffic Server process was reset.",
-  "[TrafficManager] Traffic Server process established.",
-  "New Peer",
-  "Peer Died",
-  "Invalid Configuration",
-  "System Error",
-  "Log Space Crisis",
-  "Cache Error",
-  "Cache Warning",
-  "Logging Error",
-  "Logging Warning",
-  "Mgmt Debugging Alarm",
-  "Configuration File Update Failed",
-  "Unable to Establish Manager User-Interface Services",
-  "Ping Failure",
-  "",
-  "Add OEM Alarm",
-  "",
+  "Unknown Alarm",                                        // 0
+  "[TrafficManager] Traffic Server process was reset.",   // 1
+  "[TrafficManager] Traffic Server process established.", // 2
+  "",                                                     // 3
+  "",                                                     // 4
+  "Invalid Configuration",                                // 5
+  "System Error",                                         // 6
+  "",                                                     // 7
+  "Cache Error",                                          // 8
+  "Cache Warning",                                        // 9
+  "Logging Error",                                        // 10
+  "Logging Warning",                                      // 11
+  "",                                                     // 12
+  "",                                                     // 13
+  "Alarms configuration update failed",                   // 14
+  "Ping Failure",                                         // 15
+  "",                                                     // 16
+  "Alarms configuration error",                           // 17
 };
 
 const int alarmTextNum = sizeof(alarmText) / sizeof(char *);
@@ -73,7 +72,6 @@ Alarms::Alarms()
 {
   cur_cb = 0;
   ink_mutex_init(&mutex);
-  alarmOEMcount = minOEMkey;
 } /* End Alarms::Alarms */
 
 Alarms::~Alarms()
@@ -166,24 +164,12 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     break;
   case MGMT_ALARM_PROXY_CACHE_WARNING:
     return;
-  case MGMT_ALARM_PROXY_PEER_BORN:
-    priority = 3;
-    break;
-  case MGMT_ALARM_PROXY_PEER_DIED:
-    priority = 3;
-    break;
-  case MGMT_ALARM_PING_FAILURE:
-    priority = 1;
-    break;
   case MGMT_ALARM_PROXY_PROCESS_DIED:
     priority = 1;
     break;
   case MGMT_ALARM_PROXY_PROCESS_BORN:
     mgmt_log("[Alarms::signalAlarm] Server Process born\n");
     return;
-  case MGMT_ALARM_ADD_ALARM:
-    priority = 2;
-    break;
   default:
     priority = 2;
     break;
@@ -222,12 +208,6 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 
   ink_mutex_acquire(&mutex);
   if (!ip) {
-    // if an OEM alarm, then must create the unique key alarm type;
-    // this key is used to hash the new OEM alarm description in the hash table
-    if (a == MGMT_ALARM_ADD_ALARM) {
-      a = (alarmOEMcount - minOEMkey) % (maxOEMkey - minOEMkey) + minOEMkey;
-      alarmOEMcount++;
-    }
     snprintf(buf, sizeof(buf), "%d", a);
     if (local_alarms.find(buf) != local_alarms.end()) {
       ink_mutex_release(&mutex);
