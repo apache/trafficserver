@@ -7788,7 +7788,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
 
       if (redirectScheme == nullptr) {
         clientUrl.scheme_set(scheme_str, scheme_len);
-        SMDebug("http_redirect", "[HttpSM::redirect_request] URL without scheme %.*s", redirectSchemeLen, redirectScheme);
+        SMDebug("http_redirect", "[HttpSM::redirect_request] URL without scheme");
       }
 
       if (noPortInHost) {
