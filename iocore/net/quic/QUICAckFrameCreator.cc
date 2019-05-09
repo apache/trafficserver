@@ -28,9 +28,8 @@
 
 QUICAckFrameManager::QUICAckFrameManager()
 {
-  for (auto level : QUIC_PN_SPACES) {
-    auto index                                  = QUICTypeUtil::pn_space(level);
-    this->_ack_creator[static_cast<int>(index)] = std::make_unique<QUICAckFrameCreator>(level, this);
+  for (auto i = 0; i < kPacketNumberSpace; i++) {
+    this->_ack_creator[i] = std::make_unique<QUICAckFrameCreator>(static_cast<QUICPacketNumberSpace>(i), this);
   }
 }
 
@@ -132,8 +131,8 @@ QUICAckFrameManager::ack_delay_exponent() const
 void
 QUICAckFrameManager::set_max_ack_delay(uint16_t delay)
 {
-  for (auto level : QUIC_PN_SPACES) {
-    this->_ack_creator[static_cast<int>(level)]->set_max_ack_delay(delay);
+  for (auto i = 0; i < kPacketNumberSpace; i++) {
+    this->_ack_creator[i]->set_max_ack_delay(delay);
   }
 }
 
@@ -196,7 +195,7 @@ QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_numb
   }
 
   // can not delay handshake packet
-  if ((this->_level == QUICEncryptionLevel::INITIAL || this->_level == QUICEncryptionLevel::HANDSHAKE) && !ack_only) {
+  if ((this->_pn_space == QUICPacketNumberSpace::Initial || this->_pn_space == QUICPacketNumberSpace::Handshake) && !ack_only) {
     this->_should_send = true;
   }
 
@@ -338,7 +337,7 @@ QUICAckFrameManager::QUICAckFrameCreator::_calculate_delay()
   ink_hrtime now             = Thread::get_hrtime();
   uint64_t delay             = (now - this->_largest_ack_received_time) / 1000;
   uint8_t ack_delay_exponent = 3;
-  if (this->_level != QUICEncryptionLevel::INITIAL && this->_level != QUICEncryptionLevel::HANDSHAKE) {
+  if (this->_pn_space != QUICPacketNumberSpace::Initial && this->_pn_space != QUICPacketNumberSpace::Handshake) {
     ack_delay_exponent = this->_ack_manager->ack_delay_exponent();
   }
   return delay >> ack_delay_exponent;
@@ -368,8 +367,8 @@ QUICAckFrameManager::QUICAckFrameCreator::set_max_ack_delay(uint16_t delay)
   this->_max_ack_delay = delay;
 }
 
-QUICAckFrameManager::QUICAckFrameCreator::QUICAckFrameCreator(QUICEncryptionLevel level, QUICAckFrameManager *ack_manager)
-  : _ack_manager(ack_manager), _level(level)
+QUICAckFrameManager::QUICAckFrameCreator::QUICAckFrameCreator(QUICPacketNumberSpace pn_space, QUICAckFrameManager *ack_manager)
+  : _ack_manager(ack_manager), _pn_space(pn_space)
 {
 }
 

@@ -41,7 +41,7 @@ public:
       bool ack_only                  = false;
       QUICPacketNumber packet_number = 0;
     };
-    QUICAckFrameCreator(QUICEncryptionLevel level, QUICAckFrameManager *ack_manager);
+    QUICAckFrameCreator(QUICPacketNumberSpace pn_space, QUICAckFrameManager *ack_manager);
     ~QUICAckFrameCreator();
 
     void push_back(QUICPacketNumber packet_number, size_t size, bool ack_only);
@@ -79,7 +79,7 @@ public:
 
     QUICAckFrameManager *_ack_manager = nullptr;
 
-    QUICEncryptionLevel _level = QUICEncryptionLevel::NONE;
+    QUICPacketNumberSpace _pn_space = QUICPacketNumberSpace::Initial;
   };
 
   static constexpr int MAXIMUM_PACKET_COUNT = 256;
