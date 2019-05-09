@@ -486,9 +486,6 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     http_hdr_version_set(headers->m_http, version);
 
     // Set status from :status
-    int status_len;
-    const char *status;
-
     if ((field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS)) != nullptr) {
       int status_len;
       const char *status = field->value_get(&status_len);
