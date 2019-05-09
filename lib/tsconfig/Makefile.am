@@ -17,19 +17,14 @@
 #  limitations under the License.
 
 lib_LTLIBRARIES = libtsconfig.la
-check_PROGRAMS = test-tsconfig
 libtsconfig_la_LDFLAGS = -version-info @TS_LIBTOOL_VERSION@
 
 AM_CFLAGS += @FLEX_CFLAGS@
-AM_YFLAGS = --yacc -d -p tsconfig
 
 AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES)
-
-BUILT_SOURCES = \
-	TsConfigGrammar.hpp
 
 CLEANFILES = $(BUILT_SOURCES)
 
@@ -37,39 +32,7 @@ libtsconfig_la_SOURCES = \
 	Errata.cc \
 	Errata.h \
 	IntrusivePtr.h \
-	NumericType.h \
-	TsBuilder.cc \
-	TsBuilder.h \
-	TsConfigGrammar.hpp \
-	TsConfigLexer.h \
-	TsConfigParseEvents.h \
-	TsConfigTypes.h \
-	TsErrataUtil.cc \
-	TsErrataUtil.h \
-	TsValue.cc \
-	TsValue.h
-
-# Depend on the original grammar files only if we can build them.
-if BUILD_TSCONFIG_GRAMMAR
-libtsconfig_la_SOURCES += TsConfigGrammar.y TsConfigSyntax.l
-else
-libtsconfig_la_SOURCES += TsConfigGrammar.c TsConfigGrammar.h TsConfigSyntax.c
-
-# Prevent automatic rules from firing if invalid.
-TsConfigSyntax.c: ;
-TsConfigGrammar.h: ;
-TsConfigGrammar.c: ;
-
-endif
-
-test_tsconfig_SOURCES = test-tsconfig.cc
-
-test_tsconfig_LDADD = libtsconfig.la $(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la
-
-# Strip to just the enum in the ts::config namespace so we can use
-# it more easily in C++.
-TsConfigGrammar.hpp: TsConfigGrammar.h BisonHeaderToC++.sed
-	$(SED) -f $(srcdir)/BisonHeaderToC++.sed $(srcdir)/TsConfigGrammar.h > $@
+	NumericType.h
 
 include $(top_srcdir)/build/tidy.mk
 
