@@ -451,9 +451,9 @@ QUICNetVConnection::start()
   // Create frame handlers
   QUICCCConfigQCP cc_config(this->_quic_config);
   QUICLDConfigQCP ld_config(this->_quic_config);
-  this->_congestion_controller = new QUICCongestionController(this, cc_config);
+  this->_rtt_measure.init(ld_config);
+  this->_congestion_controller = new QUICCongestionController(&this->_rtt_measure, this, cc_config);
   this->_loss_detector         = new QUICLossDetector(this, this->_congestion_controller, &this->_rtt_measure, ld_config);
-  this->_congestion_controller->bind_loss_detector(this->_loss_detector);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
@@ -2082,7 +2082,7 @@ QUICNetVConnection::_switch_to_closing_state(QUICConnectionErrorUPtr error)
   this->remove_from_active_queue();
   this->set_inactivity_timeout(0);
 
-  ink_hrtime rto = this->_loss_detector->current_rto_period();
+  ink_hrtime rto = this->_rtt_measure.current_pto_period();
 
   QUICConDebug("Enter state_connection_closing");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_closing);
@@ -2110,7 +2110,7 @@ QUICNetVConnection::_switch_to_draining_state(QUICConnectionErrorUPtr error)
   this->remove_from_active_queue();
   this->set_inactivity_timeout(0);
 
-  ink_hrtime rto = this->_loss_detector->current_rto_period();
+  ink_hrtime rto = this->_rtt_measure.current_pto_period();
 
   QUICConDebug("Enter state_connection_draining");
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_draining);
@@ -2151,7 +2151,7 @@ QUICNetVConnection::_validate_new_path()
   this->_path_validator->validate();
   // Not sure how long we should wait. The spec says just "enough time".
   // Use the same time amount as the closing timeout.
-  ink_hrtime rto = this->_loss_detector->current_rto_period();
+  ink_hrtime rto = this->_rtt_measure.current_pto_period();
   this->_schedule_path_validation_timeout(3 * rto);
 }
 

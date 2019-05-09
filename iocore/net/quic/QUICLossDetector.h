@@ -38,6 +38,7 @@
 #include "QUICConnection.h"
 
 class QUICLossDetector;
+class QUICRTTMeasure;
 
 struct QUICPacketInfo {
   // 6.3.1.  Sent Packet Fields
@@ -57,28 +58,18 @@ struct QUICPacketInfo {
 
 using QUICPacketInfoUPtr = std::unique_ptr<QUICPacketInfo>;
 
-static constexpr uint8_t kPacketNumberSpace = 3;
-
 class QUICRTTProvider
 {
 public:
   virtual ink_hrtime smoothed_rtt() const = 0;
-};
-
-class QUICRTTMeasure : public QUICRTTProvider
-{
-public:
-  ink_hrtime smoothed_rtt() const override;
-  void update_smoothed_rtt(ink_hrtime rtt);
-
-private:
-  std::atomic<ink_hrtime> _smoothed_rtt = 0;
+  virtual ink_hrtime rttvar() const       = 0;
+  virtual ink_hrtime latest_rtt() const   = 0;
 };
 
 class QUICCongestionController
 {
 public:
-  QUICCongestionController(QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config);
+  QUICCongestionController(QUICRTTMeasure *rtt_measure, QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config);
   virtual ~QUICCongestionController() {}
   void on_packet_sent(size_t bytes_sent);
   void on_packet_acked(const QUICPacketInfo &acked_packet);
@@ -89,7 +80,6 @@ public:
   uint32_t open_window() const;
   void reset();
   bool is_app_limited();
-  void bind_loss_detector(QUICLossDetector *loss_detector);
 
   // Debug
   uint32_t bytes_in_flight() const;
@@ -121,7 +111,7 @@ private:
   uint32_t _ssthresh              = UINT32_MAX;
 
   QUICConnectionInfoProvider *_info = nullptr;
-  QUICLossDetector *_loss_detector  = nullptr;
+  QUICRTTMeasure *_rtt_measure      = nullptr;
 
   bool _in_recovery(ink_hrtime sent_time);
 };
@@ -141,8 +131,6 @@ public:
   QUICPacketNumber largest_acked_packet_number(QUICPacketNumberSpace pn_space);
   void update_ack_delay_exponent(uint8_t ack_delay_exponent);
   void reset();
-  ink_hrtime current_rto_period();
-  ink_hrtime congestion_period(uint32_t threshold) const;
 
 private:
   Ptr<ProxyMutex> _loss_detection_mutex;
@@ -153,21 +141,12 @@ private:
   // Values will be loaded from records.config via QUICConfig at constructor
   uint32_t _k_packet_threshold = 0;
   float _k_time_threshold      = 0.0;
-  ink_hrtime _k_granularity    = 0;
-  ink_hrtime _k_initial_rtt    = 0;
 
   // [draft-11 recovery] 3.5.2.  Variables of interest
   // Keep the order as the same as the spec so that we can see the difference easily.
   Action *_loss_detection_timer                              = nullptr;
-  uint32_t _crypto_count                                     = 0;
-  uint32_t _pto_count                                        = 0;
   ink_hrtime _time_of_last_sent_ack_eliciting_packet         = 0;
   ink_hrtime _time_of_last_sent_crypto_packet                = 0;
-  ink_hrtime _latest_rtt                                     = 0;
-  ink_hrtime _smoothed_rtt                                   = 0;
-  ink_hrtime _rttvar                                         = 0;
-  ink_hrtime _min_rtt                                        = INT64_MAX;
-  ink_hrtime _max_ack_delay                                  = 0;
   ink_hrtime _loss_time[kPacketNumberSpace]                  = {0};
   QUICPacketNumber _largest_acked_packet[kPacketNumberSpace] = {0};
   std::map<QUICPacketNumber, QUICPacketInfoUPtr> _sent_packets[kPacketNumberSpace];
@@ -190,7 +169,6 @@ private:
 
   void _on_ack_received(const QUICAckFrame &ack_frame, QUICPacketNumberSpace pn_space);
   void _on_packet_acked(const QUICPacketInfo &acked_packet);
-  void _update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay);
   void _detect_lost_packets(QUICPacketNumberSpace pn_space);
   void _set_loss_detection_timer();
   void _on_loss_detection_timeout();
@@ -205,6 +183,53 @@ private:
   void _send_two_packets();
 
   QUICConnectionInfoProvider *_info = nullptr;
-  QUICCongestionController *_cc     = nullptr;
   QUICRTTMeasure *_rtt_measure      = nullptr;
+  QUICCongestionController *_cc     = nullptr;
+};
+
+class QUICRTTMeasure : public QUICRTTProvider
+{
+public:
+  // use `friend` so ld can acesss RTTMeasure.
+  // friend QUICLossDetector;
+
+  QUICRTTMeasure(const QUICLDConfig &ld_config);
+  QUICRTTMeasure() = default;
+
+  void init(const QUICLDConfig &ld_config);
+
+  // period
+  ink_hrtime handshake_retransmit_timeout() const;
+  ink_hrtime current_pto_period() const;
+  ink_hrtime congestion_period(uint32_t threshold) const;
+
+  // get members
+  ink_hrtime smoothed_rtt() const override;
+  ink_hrtime rttvar() const override;
+  ink_hrtime latest_rtt() const override;
+
+  uint32_t pto_count() const;
+  uint32_t crypto_count() const;
+
+  void set_crypto_count(uint32_t count);
+  void set_pto_count(uint32_t count);
+
+  void update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay);
+  void reset();
+
+private:
+  // related to rtt calculate
+  uint32_t _crypto_count    = 0;
+  uint32_t _pto_count       = 0;
+  ink_hrtime _max_ack_delay = 0;
+
+  // rtt vars
+  ink_hrtime _latest_rtt   = 0;
+  ink_hrtime _smoothed_rtt = 0;
+  ink_hrtime _rttvar       = 0;
+  ink_hrtime _min_rtt      = INT64_MAX;
+
+  // config
+  ink_hrtime _k_granularity = 0;
+  ink_hrtime _k_initial_rtt = 0;
 };

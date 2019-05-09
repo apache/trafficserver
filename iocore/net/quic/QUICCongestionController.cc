@@ -36,7 +36,9 @@
         "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt, \
         this->_info->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, ##__VA_ARGS__)
 
-QUICCongestionController::QUICCongestionController(QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config) : _info(info)
+QUICCongestionController::QUICCongestionController(QUICRTTMeasure *rtt_measure, QUICConnectionInfoProvider *info,
+                                                   const QUICCCConfig &cc_config)
+  : _info(info), _rtt_measure(rtt_measure)
 {
   this->_cc_mutex = new_ProxyMutex();
 
@@ -134,7 +136,7 @@ bool
 QUICCongestionController::_in_persistent_congestion(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets,
                                                     QUICPacketInfo *largest_lost_packet)
 {
-  ink_hrtime period = this->_loss_detector->congestion_period(this->_k_persistent_congestion_threshold);
+  ink_hrtime period = this->_rtt_measure->congestion_period(this->_k_persistent_congestion_threshold);
   // Determine if all packets in the window before the
   // newest lost packet, including the edges, are marked
   // lost
@@ -217,16 +219,11 @@ QUICCongestionController::reset()
   this->_ssthresh            = UINT32_MAX;
 }
 
-void
-QUICCongestionController::bind_loss_detector(QUICLossDetector *loss_detector)
-{
-  this->_loss_detector = loss_detector;
-}
-
 bool
 QUICCongestionController::_in_window_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets,
                                           QUICPacketInfo *largest_lost_packet, ink_hrtime period) const
 {
+  // check whether packets are continuous. return true if all continuous packets are in period
   QUICPacketNumber next_expected = UINT64_MAX;
   for (auto &it : lost_packets) {
     if (it.second->time_sent >= largest_lost_packet->time_sent - period) {

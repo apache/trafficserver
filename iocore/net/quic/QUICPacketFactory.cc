@@ -355,7 +355,7 @@ QUICPacketFactory::is_ready_to_create_protected_packet()
 void
 QUICPacketFactory::reset()
 {
-  for (auto s : QUIC_PN_SPACES) {
-    this->_packet_number_generator[static_cast<int>(s)].reset();
+  for (auto i = 0; i < kPacketNumberSpace; i++) {
+    this->_packet_number_generator[i].reset();
   }
 }

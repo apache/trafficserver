@@ -43,6 +43,8 @@ using QUICVersion      = uint32_t;
 using QUICStreamId     = uint64_t;
 using QUICOffset       = uint64_t;
 
+static constexpr uint8_t kPacketNumberSpace = 3;
+
 // TODO: Update version number
 // Note: Prefix for drafts (0xff000000) + draft number
 // Note: Fix "Supported Version" field in test case of QUICPacketFactory_Create_VersionNegotiationPacket
@@ -76,13 +78,6 @@ enum class QUICPacketNumberSpace {
   Initial,
   Handshake,
   ApplicationData,
-};
-
-// 0-RTT and 1-RTT use same Packet Number Space
-constexpr QUICEncryptionLevel QUIC_PN_SPACES[] = {
-  QUICEncryptionLevel::INITIAL,
-  QUICEncryptionLevel::ZERO_RTT,
-  QUICEncryptionLevel::HANDSHAKE,
 };
 
 // Devide to QUICPacketType and QUICPacketLongHeaderType ?
