@@ -91,9 +91,9 @@ Http2Stream::main_event_handler(int event, void *edata)
   case VC_EVENT_WRITE_COMPLETE:
     inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
     if (e->cookie == &write_vio) {
-      if (write_vio.mutex) {
+      if (write_vio.mutex && write_vio.cont && this->current_reader) {
         MUTEX_TRY_LOCK(lock, write_vio.mutex, this_ethread());
-        if (lock.is_locked() && write_vio.cont && this->current_reader) {
+        if (lock.is_locked()) {
           write_vio.cont->handleEvent(event, &write_vio);
         } else {
           this_ethread()->schedule_imm(write_vio.cont, event, &write_vio);
@@ -107,9 +107,9 @@ Http2Stream::main_event_handler(int event, void *edata)
   case VC_EVENT_READ_READY:
     inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
     if (e->cookie == &read_vio) {
-      if (read_vio.mutex) {
+      if (read_vio.mutex && read_vio.cont && this->current_reader) {
         MUTEX_TRY_LOCK(lock, read_vio.mutex, this_ethread());
-        if (lock.is_locked() && read_vio.cont && this->current_reader) {
+        if (lock.is_locked()) {
           read_vio.cont->handleEvent(event, &read_vio);
         } else {
           this_ethread()->schedule_imm(read_vio.cont, event, &read_vio);
