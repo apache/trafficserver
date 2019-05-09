@@ -384,9 +384,9 @@ namespace detail
           if (n->_max <= max) {
 // next range is covered, so we can remove and continue.
 #if defined(__clang_analyzer__)
-            ink_assert(x != n)
+            ink_assert(x != n);
 #endif
-              this->remove(n);
+            this->remove(n);
             n = next(x);
           } else if (n->_min <= max_plus1) {
             // Overlap or adjacent with larger max - absorb and finish.
