@@ -386,8 +386,9 @@ namespace detail
 #if defined(__clang_analyzer__)
             ink_assert(x != n);
 #endif
-            this->remove(n);
-            n = next(x);
+            N *tmp = n;
+            n      = next(x);
+            this->remove(tmp);
           } else if (n->_min <= max_plus1) {
             // Overlap or adjacent with larger max - absorb and finish.
             x->setMax(n->_max);
