@@ -36,9 +36,9 @@
         "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt, \
         this->_info->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, ##__VA_ARGS__)
 
-QUICCongestionController::QUICCongestionController(QUICRTTMeasure *rtt_measure, QUICConnectionInfoProvider *info,
+QUICCongestionController::QUICCongestionController(const QUICRTTProvider &rtt_provider, QUICConnectionInfoProvider *info,
                                                    const QUICCCConfig &cc_config)
-  : _info(info), _rtt_measure(rtt_measure)
+  : _info(info), _rtt_provider(rtt_provider)
 {
   this->_cc_mutex = new_ProxyMutex();
 
@@ -136,7 +136,7 @@ bool
 QUICCongestionController::_in_persistent_congestion(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets,
                                                     QUICPacketInfo *largest_lost_packet)
 {
-  ink_hrtime period = this->_rtt_measure->congestion_period(this->_k_persistent_congestion_threshold);
+  ink_hrtime period = this->_rtt_provider.congestion_period(this->_k_persistent_congestion_threshold);
   // Determine if all packets in the window before the
   // newest lost packet, including the edges, are marked
   // lost

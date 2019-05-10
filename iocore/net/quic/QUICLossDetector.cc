@@ -577,6 +577,10 @@ QUICRTTMeasure::update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay)
   // Adjust for ack delay if it's plausible.
   if (this->_latest_rtt - this->_min_rtt > ack_delay) {
     this->_latest_rtt -= ack_delay;
+
+    // the newest spec has removed the max_ack_delay assignment. but we need to assign it in somewhere
+    // this code is from draft-19
+    this->_max_ack_delay = std::max(ack_delay, this->_max_ack_delay);
   }
   // Based on {{RFC6298}}.
   if (this->_smoothed_rtt == 0) {
