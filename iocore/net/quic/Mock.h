@@ -341,7 +341,7 @@ class MockQUICCongestionController : public QUICCongestionController
 {
 public:
   MockQUICCongestionController(QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config)
-    : QUICCongestionController(info, cc_config)
+    : QUICCongestionController(&this->_rtt_measure, info, cc_config)
   {
   }
   // Override
@@ -383,6 +383,8 @@ public:
 private:
   int _totalFrameCount = 0;
   int _frameCount[256] = {0};
+
+  QUICRTTMeasure _rtt_measure;
 };
 
 class MockQUICLossDetector : public QUICLossDetector
@@ -547,7 +549,19 @@ public:
 class MockQUICRTTProvider : public QUICRTTProvider
 {
   ink_hrtime
-  smoothed_rtt() const
+  latest_rtt() const override
+  {
+    return HRTIME_MSECONDS(1);
+  }
+
+  ink_hrtime
+  rttvar() const override
+  {
+    return HRTIME_MSECONDS(1);
+  }
+
+  ink_hrtime
+  smoothed_rtt() const override
   {
     return HRTIME_MSECONDS(1);
   }

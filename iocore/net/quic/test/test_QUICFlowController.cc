@@ -45,6 +45,18 @@ public:
     this->_smoothed_rtt = rtt;
   }
 
+  ink_hrtime
+  latest_rtt() const override
+  {
+    return HRTIME_MSECONDS(1);
+  }
+
+  ink_hrtime
+  rttvar() const override
+  {
+    return HRTIME_MSECONDS(1);
+  }
+
 private:
   ink_hrtime _smoothed_rtt = 0;
 };

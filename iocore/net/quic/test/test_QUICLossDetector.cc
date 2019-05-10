@@ -99,6 +99,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   {
     // Send packet (1) to (7)
     QUICPacketNumberSpace pn_space = QUICPacketNumberSpace::ApplicationData;
+    QUICEncryptionLevel level      = QUICEncryptionLevel::ONE_RTT;
     payload                        = ats_unique_malloc(payload_len);
     QUICPacketUPtr packet1         = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
                                                         std::move(payload), payload_len, true, false);
@@ -236,18 +237,18 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
 
     ink_hrtime_sleep(HRTIME_MSECONDS(2000));
     // Receive an ACK for (1) (4) (5) (7) (8) (9)
-    afm.update(QUICEncryptionLevel::INITIAL, pn1, payload_len, false);
-    afm.update(QUICEncryptionLevel::INITIAL, pn4, payload_len, false);
-    afm.update(QUICEncryptionLevel::INITIAL, pn5, payload_len, false);
-    afm.update(QUICEncryptionLevel::INITIAL, pn7, payload_len, false);
-    afm.update(QUICEncryptionLevel::INITIAL, pn8, payload_len, false);
-    afm.update(QUICEncryptionLevel::INITIAL, pn9, payload_len, false);
-    afm.update(QUICEncryptionLevel::INITIAL, pn10, payload_len, false);
+    afm.update(level, pn1, payload_len, false);
+    afm.update(level, pn4, payload_len, false);
+    afm.update(level, pn5, payload_len, false);
+    afm.update(level, pn7, payload_len, false);
+    afm.update(level, pn8, payload_len, false);
+    afm.update(level, pn9, payload_len, false);
+    afm.update(level, pn10, payload_len, false);
     uint8_t buf[QUICFrame::MAX_INSTANCE_SIZE];
-    QUICFrame *x = afm.generate_frame(buf, QUICEncryptionLevel::INITIAL, 2048, 2048, 0);
+    QUICFrame *x = afm.generate_frame(buf, level, 2048, 2048, 0);
     frame        = static_cast<QUICAckFrame *>(x);
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
-    detector.handle_frame(QUICEncryptionLevel::INITIAL, *frame);
+    detector.handle_frame(level, *frame);
 
     // Lost because of packet_threshold.
     CHECK(cc.lost_packets.size() == 3);
