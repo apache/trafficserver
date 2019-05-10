@@ -350,11 +350,6 @@ Alarms::execAlarmBin(const char *desc)
     return;
   }
 
-  // get email info
-  alarm_email_from_name = REC_readString("proxy.config.product_name", nullptr);
-  alarm_email_from_addr = REC_readString("proxy.config.admin.admin_user", nullptr);
-  alarm_email_to_addr   = REC_readString("proxy.config.alarm_email", nullptr);
-
   ink_filepath_make(cmd_line, sizeof(cmd_line), bindir, alarm_bin);
 
 #ifdef POSIX_THREAD
@@ -391,13 +386,8 @@ Alarms::execAlarmBin(const char *desc)
       waitpid(pid, &status, 0); // to reap the thread
     }
   } else {
-    int res;
-    if (alarm_email_from_name && alarm_email_from_addr && alarm_email_to_addr) {
-      res = execl(cmd_line, (const char *)alarm_bin, desc, (const char *)alarm_email_from_name, (const char *)alarm_email_from_addr,
-                  (const char *)alarm_email_to_addr, (char *)nullptr);
-    } else {
-      res = execl(cmd_line, (const char *)alarm_bin, desc, (char *)nullptr);
-    }
+    int res = execl(cmd_line, (const char *)alarm_bin, desc, (char *)nullptr);
+
     _exit(res);
   }
 }
