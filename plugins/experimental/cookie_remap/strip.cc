@@ -48,7 +48,7 @@ room(const char *p, const int len, const char *maxp)
 static void
 write_char_if_room(char **p, const char *maxp, const char c)
 {
-  if (p == nullptr || *p != nullptr) {
+  if (p == nullptr || *p == nullptr) {
     return;
   }
 
@@ -64,7 +64,7 @@ write_char_if_room(char **p, const char *maxp, const char c)
 static void
 write_spaces_if_room(char **p, const char *maxp, int &slen)
 {
-  if (p == nullptr || *p != nullptr) {
+  if (p == nullptr || *p == nullptr) {
     return;
   }
 

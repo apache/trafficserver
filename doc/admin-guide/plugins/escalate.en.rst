@@ -31,7 +31,7 @@ Plugin Configuration
 --------------------
 
 The escalate plugin is a remap plugin (not global) and takes a parameter
-with two delimitated fields: ``comma-separated-error-codes:secondary-origin-server``.  For instance,
+with two delimited fields: ``comma-separated-error-codes:secondary-origin-server``.  For instance,
 
     ``@pparam=401,404,410,502:second-origin.example.com``
 

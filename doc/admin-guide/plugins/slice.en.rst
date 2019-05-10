@@ -164,7 +164,7 @@ restored.
 
 For each of these blocks separate sequential TSHttpConnect(s) are made
 back into the front end of ATS and all of the remap plugins are rerun.
-Slice skips the remap due to presense of the X-Slicer-Info header and
+Slice skips the remap due to presence of the X-Slicer-Info header and
 allows cache_range_requests.so to serve the slice block back to Slice
 either via cache OR parent request.
 
@@ -207,7 +207,7 @@ of bytes are actually transferred and cached.
 Current Limitations
 ===================
 
-By restoring the prisine Url the plugin as it works today reuses the
+By restoring the pristine Url the plugin as it works today reuses the
 same remap rule for each slice block.  This is wasteful in that it reruns
 the previous remap rules, and those remap rules must be smart enough to
 check for the existence of any headers they may have created the

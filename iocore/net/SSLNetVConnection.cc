@@ -1021,7 +1021,6 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       SSLErrorVC(this, "failed to create SSL server session");
       return EVENT_ERROR;
     }
-
     return sslServerHandShakeEvent(err);
 
   case SSL_EVENT_CLIENT:
@@ -1540,6 +1539,7 @@ SSLNetVConnection::reenable(NetHandler *nh, int event)
     sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
     break;
   case HANDSHAKE_HOOKS_VERIFY_SERVER:
+  case HANDSHAKE_HOOKS_CLIENT_CERT:
     if (event == TS_EVENT_ERROR) {
       sslHandshakeStatus = SSL_HANDSHAKE_ERROR;
     }

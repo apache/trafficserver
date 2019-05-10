@@ -498,7 +498,7 @@ Config checker
 --------------
 
 Traffic Server supports the below command to validate the config offline, in order to
-allow the config to be pre-checked for possible service disruptions due to synatx errors::
+allow the config to be pre-checked for possible service disruptions due to syntax errors::
 
    traffic_server -Cverify_config -D<config_dir>
 

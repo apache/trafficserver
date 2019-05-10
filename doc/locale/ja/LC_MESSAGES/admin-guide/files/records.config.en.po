@@ -3554,7 +3554,7 @@ msgid "The DNS servers."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:2295
-msgid "Indicates whether to use SRV records for orgin server lookup."
+msgid "Indicates whether to use SRV records for origin server lookup."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:2299

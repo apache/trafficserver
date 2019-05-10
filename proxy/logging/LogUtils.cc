@@ -591,7 +591,7 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
 
 namespace
 {
-// Get a string out of a MIMEField using one of its member funcitions, and put it into a buffer writer, terminated with a nul.
+// Get a string out of a MIMEField using one of its member functions, and put it into a buffer writer, terminated with a nul.
 //
 void
 marshalStr(ts::FixedBufferWriter &bw, const MIMEField &mf, const char *(MIMEField::*get_func)(int *length) const)

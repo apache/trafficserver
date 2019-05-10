@@ -51,7 +51,7 @@ Cache Layout
 ============
 
 The following sections describe how persistent cache data is structured. |TS|
-treats its persisent storage as an undifferentiated collection of bytes,
+treats its persistent storage as an undifferentiated collection of bytes,
 assuming no other structure to it. In particular, it does not use the file
 system of the host operating system. If a file is used it is used only to mark
 out the set of bytes to be used.
@@ -602,14 +602,14 @@ This value should be chosen so that it is a multiple of a
 :ref:`cache entry multiplier <big-mult>`. It is not necessary to make it a
 power of two [#cache-mult-value]_. Larger fragments increase I/O efficiency but
 lead to more wasted space. The default size (1M, 2^20) is a reasonable choice
-in most circumstances, altough in very specific cases there can be benefit from
+in most circumstances, although in very specific cases there can be benefit from
 tuning this parameter. |TS| imposes an internal maximum of a 4,194,232 bytes,
 which is 4M (2^22), less the size of a struct :cpp:class:`Doc`. In practice,
 the largest reasonable target fragment size is 4M - 262,144 = 3,932,160.
 
 When a fragment is stored to disk, the size data in the cache index entry is
 set to the finest granularity permitted by the size of the fragment. To
-determine this, consult the :ref:`cache entry multipler <big-mult>` table and
+determine this, consult the :ref:`cache entry multiplier <big-mult>` table and
 find the smallest maximum size that is at least as large as the fragment. That
 will indicate the value of *big* selected and therefore the granularity of the
 approximate size. That represents the largest possible amount of wasted disk I/O
@@ -982,8 +982,8 @@ to evacuate. It is assumed that an evacuation block is placed in the evacuation
 bucket (array element) that corresponds to the evacuation region in which the
 fragment is located although no ordering per bucket is enforced in the linked
 list (this sorting is handled during evacuation). Objects are evacuated by
-specifying the first or earliest fragment in the evactuation block. The
-evactuation operation will then continue the evacuation for subsequent fragments
+specifying the first or earliest fragment in the evacuation block. The
+evacuation operation will then continue the evacuation for subsequent fragments
 in the object by adding those fragments in evacuation blocks. Note that the
 actual evacuation of those fragments is delayed until the write cursor reaches
 the fragments, it is not necessarily done at the time the earliest fragment is
@@ -1029,7 +1029,7 @@ written out in turn. Because the fragment data is now in memory it is acceptable
 to overwrite the disk image.
 
 Note that when normal stripe writing is resumed, this same check is done again,
-each time evauating (if needed) a fragment and queuing them for writing in turn.
+each time evaluating (if needed) a fragment and queuing them for writing in turn.
 
 Updates to the directory are done when the write for the evacuated fragment
 completes. Multi-fragment objects are detected after the read completes for a

@@ -117,7 +117,9 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
     }
   }
   // If the previous configured checks passed, give the hook a try
+  netvc->set_verify_cert(ctx);
   netvc->callHooks(TS_EVENT_SSL_VERIFY_SERVER);
+  netvc->set_verify_cert(nullptr);
   if (netvc->getSSLHandShakeComplete()) { // hook moved the handshake state to terminal
     unsigned char *sni_name;
     char buff[INET6_ADDRSTRLEN];

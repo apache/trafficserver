@@ -158,7 +158,7 @@ specifiers of the rule in question.
    Value                       Effect
    =========================== ================================================
    ``never-cache``             Never cache specified objects, it will be
-                               overwrited by ``ttl-in-cache``.
+                               overwritten by ``ttl-in-cache``.
    ``ignore-no-cache``         Ignore all ``Cache-Control: no-cache`` headers.
    ``ignore-client-no-cache``  Ignore ``Cache-Control: no-cache`` headers from
                                client requests.
@@ -255,7 +255,7 @@ ttl-in-cache and never-cache
 ----------------------------
 
 When multiple rules are matched in the same request, ``never-cache`` will always
-be overwrited by ``ttl-in-cache``. For example::
+be overwritten by ``ttl-in-cache``. For example::
 
     # ttl-in-cache=1d never-cache=false
     dest_domain=example.com action=never-cache

@@ -29,7 +29,7 @@ void
 Http1ClientTransaction::release(IOBufferReader *r)
 {
   // Must set this inactivity count here rather than in the session because the state machine
-  // is not availble then
+  // is not available then
   MgmtInt ka_in = current_reader->t_state.txn_conf->keep_alive_no_activity_timeout_in;
   set_inactivity_timeout(HRTIME_SECONDS(ka_in));
 

@@ -37,9 +37,9 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/explicit-forwa
 source_file = _build/locale/pot/admin-guide/configuration/explicit-forward-proxying.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--configuration--hierachical-caching_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/hierachical-caching.en.po
-source_file = _build/locale/pot/admin-guide/configuration/hierachical-caching.en.pot
+[apache-traffic-server-6x.admin-guide--configuration--hierarchical-caching_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/hierarchical-caching.en.po
+source_file = _build/locale/pot/admin-guide/configuration/hierarchical-caching.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--configuration--index_en]

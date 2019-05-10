@@ -95,23 +95,27 @@ TS_SSL_VERIFY_CLIENT_HOOK
 
 This hook is called when a client connects to Traffic Server and presents a
 client certificate in the case of a mutual TLS handshake.  The callback can
-get the SSL object from the TSVConn argument and use that to access the client
-certificate and make any additional checks.
+use the TSVConn argument and fetch the TSSslVerifyCTX object using the :c:func:`TXVConnSslVerifyCTXGet()`
+method and fetch the peer's certificates to make any additional checks.
 
 Processing will continue regardless of whether the hook callback executes
 :c:func:`TSVConnReenable()` since the openssl implementation does not allow
-for pausing processing during the certificate verify callback.
+for pausing processing during the certificate verify callback.  The plugin can
+use the :c:func:`TSConnReenableEx()` function to pass in the TS_EVENT_ERROR and
+stop the TLS handshake.
 
 TS_SSL_VERIFY_SERVER_HOOK
 -------------------------
 
-This hooks is called when a Traffic Server connects to an origin and the origin
-presents a certificate.  The callback can get the SSL object from the TSVConn
-argument and use that to access the origin certificate and make any additional checks.
+This hook is called when a Traffic Server connects to an origin and the origin
+presents a certificate.  The callback can use the TSVConn argument and fetch the 
+TSSslVerifyCTX object using the :c:func:`TXVConnSslVerifyCTXGet()`
+method and fetch the peer's certificates to make any additional checks.
 
 Processing will continue regardless of whether the hook callback executes
 :c:func:`TSVConnReenable()` since the openssl implementation does not allow
-for pausing processing during the certificate verify callback.
+for pausing processing during the certificate verify callback.  The plugin can use
+the :c:func:`TSConnReenableEx()` function to pass in the TS_EVENT_ERROR and
 
 TS_VCONN_OUTBOUND_START_HOOK
 ----------------------------

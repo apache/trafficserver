@@ -114,7 +114,7 @@ class factory(protocol.ClientFactory):
             def handleStatus(version, status, message):
                 del ctx.handleHeader
 
-                def handleStatus(version, staus, message):
+                def handleStatus(version, status, message):
                     def handleHeader(k, v):
                         if k.lower() == 'location':
                             if v != 'http://{0}:{1}/location'.format(*origin.socket.getsockname()):

@@ -78,14 +78,14 @@ protected:
     size_t remaining() const;
 
     /// Span of unallocated storage.
-    MemSpan remnant();
+    MemSpan<void> remnant();
 
     /** Allocate @a n bytes from this block.
      *
      * @param n Number of bytes to allocate.
      * @return The span of memory allocated.
      */
-    MemSpan alloc(size_t n);
+    MemSpan<void> alloc(size_t n);
 
     /** Check if the byte at address @a ptr is in this block.
      *
@@ -129,7 +129,7 @@ public:
       @param n number of bytes to allocate.
       @return a MemSpan of the allocated memory.
    */
-  MemSpan alloc(size_t n);
+  MemSpan<void> alloc(size_t n);
 
   /** Allocate and initialize a block of memory.
 
@@ -183,7 +183,7 @@ public:
   size_t remaining() const;
 
   /// @returns the remaining contiguous space in the active generation.
-  MemSpan remnant() const;
+  MemSpan<void> remnant() const;
 
   /// @returns the total number of bytes allocated within the arena.
   size_t allocated_size() const;
@@ -259,11 +259,11 @@ MemArena::Block::remaining() const
   return size - allocated;
 }
 
-inline MemSpan
+inline MemSpan<void>
 MemArena::Block::alloc(size_t n)
 {
   ink_assert(n <= this->remaining());
-  MemSpan zret = this->remnant().prefix(n);
+  MemSpan<void> zret = this->remnant().prefix(n);
   allocated += n;
   return zret;
 }
@@ -277,10 +277,10 @@ MemArena::make(Args &&... args)
 
 inline MemArena::MemArena(size_t n) : _reserve_hint(n) {}
 
-inline MemSpan
+inline MemSpan<void>
 MemArena::Block::remnant()
 {
-  return {this->data() + allocated, static_cast<ptrdiff_t>(this->remaining())};
+  return {this->data() + allocated, this->remaining()};
 }
 
 inline size_t
@@ -301,10 +301,10 @@ MemArena::remaining() const
   return _active ? _active->remaining() : 0;
 }
 
-inline MemSpan
+inline MemSpan<void>
 MemArena::remnant() const
 {
-  return _active ? _active->remnant() : MemSpan{};
+  return _active ? _active->remnant() : MemSpan<void>{};
 }
 
 inline size_t

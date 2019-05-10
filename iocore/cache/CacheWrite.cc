@@ -780,7 +780,13 @@ agg_copy(char *p, CacheVC *vc)
       if (doc->data_len() || vc->f.allow_empty_doc) {
         doc->key = vc->earliest_key;
       } else { // the vector is being written by itself
-        prev_CacheKey(&doc->key, &vc->earliest_key);
+        if (vc->earliest_key == zero_key) {
+          do {
+            rand_CacheKey(&doc->key, vc->vol->mutex);
+          } while (DIR_MASK_TAG(doc->key.slice32(2)) == DIR_MASK_TAG(vc->first_key.slice32(2)));
+        } else {
+          prev_CacheKey(&doc->key, &vc->earliest_key);
+        }
       }
       dir_set_head(&vc->dir, true);
     } else {

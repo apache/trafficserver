@@ -482,12 +482,12 @@ struct Stripe {
     Bytes _skip;  ///< # of bytes not valid at the start of the first block.
     Bytes _clip;  ///< # of bytes not valid at the end of the last block.
 
-    typedef std::vector<MemSpan> Chain;
+    typedef std::vector<MemSpan<void>> Chain;
     Chain _chain; ///< Chain of blocks.
 
     ~Chunk();
 
-    void append(MemSpan m);
+    void append(MemSpan<void> m);
     void clear();
   };
 
@@ -505,7 +505,7 @@ struct Stripe {
 
       @return @c true if @a mem has valid data, @c false otherwise.
   */
-  bool probeMeta(MemSpan &mem, StripeMeta const *meta = nullptr);
+  bool probeMeta(MemSpan<void> &mem, StripeMeta const *meta = nullptr);
 
   /// Check a buffer for being valid stripe metadata.
   /// @return @c true if valid, @c false otherwise.

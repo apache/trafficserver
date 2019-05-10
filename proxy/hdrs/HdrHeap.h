@@ -47,7 +47,7 @@ static constexpr size_t HDR_PTR_ALIGNMENT_MASK = HDR_PTR_SIZE - 1L;
 using HdrHeapMarshalBlocks                     = ts::Scalar<HDR_PTR_SIZE>;
 
 // A many of the operations regarding read-only str
-//  heaps are hand unrolled in the code.  Chaning
+//  heaps are hand unrolled in the code.  Changing
 //  this value requires a full pass through HdrBuf.cc
 //  to fix the unrolled operations
 static constexpr unsigned HDR_BUF_RONLY_HEAPS = 3;
@@ -203,7 +203,7 @@ public:
   void set_ronly_str_heap_end(int slot, const char *end);
 
   // Lock read only str heaps so that can't be moved around
-  //  by a heap consolidation.  Does NOT lock for Multi-Threaed
+  //  by a heap consolidation.  Does NOT lock for Multi-Threaded
   //  access!
   void
   lock_ronly_str_heap(unsigned i)

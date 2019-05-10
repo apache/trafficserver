@@ -81,7 +81,7 @@ ts.Disk.remap_config.AddLine(
 # Test 0 - Fill a 3 byte object with Last-Modified time into cache.
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(ts, ready=1)
+tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
 tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: Fill" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "cache_and_req_body-miss.gold"

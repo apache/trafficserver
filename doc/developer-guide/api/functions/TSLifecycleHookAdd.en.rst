@@ -180,7 +180,7 @@ initialization, which was problematic because all of them could effectively
 only be called from :func:`TSPluginInit` . The solution was to move
 :func:`TSPluginInit` as early as possible in the process initialization and
 provide hooks for API calls that needed to be invoked later which served
-essentially as additional pluging initialization points.
+essentially as additional plugin initialization points.
 
 See Also
 ========

@@ -101,7 +101,7 @@ return status code, :type:`TSReturnCode`. You should verify the success of
 those APIs, of course.
 
 The :func:`TSUuidStringGet` function will return ``NULL`` if the :type:`TSUuid`
-object is not properly inititialized. Likewise, :func:`TSUuidVersionGet` would
+object is not properly initialized. Likewise, :func:`TSUuidVersionGet` would
 then return ``TS_UUID_UNDEFINED``.
 
 The :func:`TSUuidDestroy` function can not fail, and does not have a return

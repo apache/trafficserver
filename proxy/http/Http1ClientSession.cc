@@ -276,7 +276,7 @@ Http1ClientSession::do_io_close(int alerrno)
 
     if (client_vc) {
       // We want the client to know that that we're finished
-      //  writing.  The write shutdown accomplishes this.  Unfortuantely,
+      //  writing.  The write shutdown accomplishes this.  Unfortunately,
       //  the IO Core semantics don't stop us from getting events
       //  on the write side of the connection like timeouts so we
       //  need to zero out the write of the continuation with

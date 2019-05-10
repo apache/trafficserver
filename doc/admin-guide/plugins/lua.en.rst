@@ -2202,7 +2202,7 @@ ts.http.resp_transform.get_upstream_bytes
 
 **context:** transform handler
 
-**description**: This function can be used to retrive the total bytes to be received from the upstream. If we got
+**description**: This function can be used to retrieve the total bytes to be received from the upstream. If we got
 chunked response body from origin server, TS_LUA_INT64_MAX will be returned.
 
 Here is an example:
@@ -2243,7 +2243,7 @@ ts.http.resp_transform.get_upstream_watermark_bytes
 
 **context:** transform handler
 
-**description**: This function can be used to retrive the current watermark bytes for the upstream transform buffer.
+**description**: This function can be used to retrieve the current watermark bytes for the upstream transform buffer.
 
 
 `TOP <#lua-plugin>`_
@@ -2344,7 +2344,7 @@ ts.http.is_websocket
 
 **context:** do_remap/do_os_response or do_global_* or later
 
-**description:** This function can be used to tell if the transacton is websocket
+**description:** This function can be used to tell if the transaction is websocket
 
 Here is an example:
 
@@ -2833,7 +2833,7 @@ ts.fetch
 
 **description:** Issues a synchronous but still non-block http request with the ``url`` and the optional ``table``.
 
-Returns a Lua table with serveral slots (res.status, res.header, res.body, and res.truncated).
+Returns a Lua table with several slots (res.status, res.header, res.body, and res.truncated).
 
 ``res.status`` holds the response status code.
 
@@ -2864,7 +2864,7 @@ Here is a basic example:
         ts.hook(TS_LUA_HOOK_POST_REMAP, post_remap)
     end
 
-We can set the optional table with serveral members:
+We can set the optional table with several members:
 
 ``header`` holds the request header table.
 
@@ -3516,7 +3516,7 @@ ts.http.enable_redirect
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**decription:** This function can be used to make transaction follow redirect
+**description:** This function can be used to make transaction follow redirect
 
 Here is an example:
 
@@ -3536,7 +3536,7 @@ ts.http.set_debug
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**decription:** This function can be used to enable debug log for the transaction
+**description:** This function can be used to enable debug log for the transaction
 
 Here is an example:
 
@@ -3556,7 +3556,7 @@ ts.http.cntl_get
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**description:** This function can be used to retireve the value of control channel.
+**description:** This function can be used to retrieve the value of control channel.
 
 ::
 
@@ -3605,7 +3605,7 @@ ts.http.milestone_get
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**description:** This function can be used to retireve the various milestone times. They are how long the
+**description:** This function can be used to retrieve the various milestone times. They are how long the
 transaction took to traverse portions of the HTTP state machine. Each milestone value is a fractional number
 of seconds since the beginning of the transaction.
 

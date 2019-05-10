@@ -3387,7 +3387,7 @@ mime_parse_date(const char *buf, const char *end)
       if (!mime_parse_time(buf, end, &tp.tm_hour, &tp.tm_min, &tp.tm_sec)) {
         return (time_t)0;
       }
-      // ignore timezone specifier...should always be GMT anways
+      // ignore timezone specifier...should always be GMT anyways
     } else {
       // ANSI C's asctime format
       if (!mime_parse_month(buf, end, &tp.tm_mon)) {

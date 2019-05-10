@@ -568,7 +568,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
   }
   case MGMT_SIGNAL_LIBRECORDS:
     if (mh->data_len > 0) {
-      executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, {data_raw, mh->data_len});
+      executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, {data_raw, static_cast<size_t>(mh->data_len)});
     } else {
       executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, {});
     }
@@ -782,7 +782,7 @@ LocalManager::processEventQueue()
     bool handled_by_mgmt = false;
 
     MgmtMessageHdr *mh = this->dequeue();
-    auto payload       = mh->payload();
+    auto payload       = mh->payload().rebind<char>();
 
     // check if we have a local file update
     if (mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE || mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION) {

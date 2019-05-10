@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  CacheControl.cc - Implementation to Cache Control systtem
+ *  CacheControl.cc - Implementation to Cache Control system
  *
  *
  ****************************************************************************/

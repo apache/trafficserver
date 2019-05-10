@@ -33,18 +33,15 @@ CtrlEngine::status_get()
     TSMgmtError error;
     std::string str = stat_prefix + it;
 
-    for (const char *_reason_tag : Reasons::reasons) {
-      std::string _stat = str + "_" + _reason_tag;
-      error             = record.fetch(_stat.c_str());
-      if (error != TS_ERR_OKAY) {
-        CtrlMgmtError(error, "failed to fetch %s", it.c_str());
-        status_code = CTRL_EX_ERROR;
-        return;
-      }
+    error = record.fetch(str.c_str());
+    if (error != TS_ERR_OKAY) {
+      CtrlMgmtError(error, "failed to fetch %s", it.c_str());
+      status_code = CTRL_EX_ERROR;
+      return;
+    }
 
-      if (REC_TYPE_IS_STAT(record.rclass())) {
-        std::cout << record.name() << ' ' << CtrlMgmtRecordValue(record).c_str() << std::endl;
-      }
+    if (REC_TYPE_IS_STAT(record.rclass())) {
+      std::cout << record.name() << ' ' << CtrlMgmtRecordValue(record).c_str() << std::endl;
     }
   }
 }
@@ -52,21 +49,34 @@ CtrlEngine::status_get()
 void
 CtrlEngine::status_down()
 {
-  int down_time      = 0;
-  std::string reason = arguments.get("reason").value();
+  const char *usage      = "traffic_ctl host down --reason 'active | local | manual' --time seconds host ....";
+  unsigned int down_time = 0;
+  std::string reason     = arguments.get("reason").value();
+  std::string down       = arguments.get("time").value();
 
   // if reason is not set, set it to manual (default)
   if (reason.empty()) {
-    reason = Reasons::MANUAL;
+    reason = Reason::MANUAL;
+  }
+  if (!down.empty()) {
+    down_time = atoi(down.c_str());
   }
 
-  if (!Reasons::validReason(reason.c_str())) {
+  if (!Reason::validReason(reason.c_str())) {
     fprintf(stderr, "\nInvalid reason: '%s'\n\n", reason.c_str());
-    parser.help_message();
+    fprintf(stderr, "Usage: %s\n\n", usage);
+    status_code = CTRL_EX_ERROR;
+    return;
   }
 
   TSMgmtError error = TS_ERR_OKAY;
   for (const auto &it : arguments.get("down")) {
+    if (strncmp(it.c_str(), "--", 2) == 0) {
+      fprintf(stderr, "\nInvalid option: %s\n", it.c_str());
+      fprintf(stderr, "Usage: %s\n\n", usage);
+      status_code = CTRL_EX_ERROR;
+      return;
+    }
     error = TSHostStatusSetDown(it.c_str(), down_time, reason.c_str());
     if (error != TS_ERR_OKAY) {
       CtrlMgmtError(error, "failed to set %s", it.c_str());
@@ -78,21 +88,29 @@ CtrlEngine::status_down()
 void
 CtrlEngine::status_up()
 {
+  const char *usage  = "traffic_ctl host up --reason 'active | local | manual' host ....";
   std::string reason = arguments.get("reason").value();
 
   // if reason is not set, set it to manual (default)
   if (reason.empty()) {
-    reason = Reasons::MANUAL;
+    reason = Reason::MANUAL;
   }
 
-  if (!Reasons::validReason(reason.c_str())) {
+  if (!Reason::validReason(reason.c_str())) {
     fprintf(stderr, "\nInvalid reason: '%s'\n\n", reason.c_str());
-    parser.help_message();
+    fprintf(stderr, "Usage: %s\n\n", usage);
+    status_code = CTRL_EX_ERROR;
+    return;
   }
 
   TSMgmtError error;
   for (const auto &it : arguments.get("up")) {
     error = TSHostStatusSetUp(it.c_str(), 0, reason.c_str());
+    if (strncmp("--", it.c_str(), 2) == 0) {
+      fprintf(stderr, "\nInvalid option: %s\n", it.c_str());
+      fprintf(stderr, "Usage: %s\n\n", usage);
+      status_code = CTRL_EX_ERROR;
+    }
     if (error != TS_ERR_OKAY) {
       CtrlMgmtError(error, "failed to set %s", it.c_str());
       status_code = CTRL_EX_ERROR;

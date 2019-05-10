@@ -43,7 +43,7 @@
 #include "Show.h"
 
 /**
- * Singleton class to keep track of the number of outbound connnections.
+ * Singleton class to keep track of the number of outbound connections.
  *
  * Outbound connections are divided in to equivalence classes (called "groups" here) based on the
  * session matching setting. Tracking data is stored for each group.
@@ -227,7 +227,7 @@ public:
    */
   static void config_init(GlobalConfig *global, TxnConfig *txn);
 
-  /// Tag used for debugging otuput.
+  /// Tag used for debugging output.
   static constexpr char const *const DEBUG_TAG{"conn_track"};
 
   /** Convert a string to a match type.

@@ -48,7 +48,7 @@ be abbreviated to any unique initial substring (e.g. "--sp" for "--span").
 .. option:: --spans
 
     Specify the span (storage) configuration. This can be a device, a cache directory, or a
-    configuration file in the formof :file:`storage.config`. In the latter case all devices listed
+    configuration file in the form of :file:`storage.config`. In the latter case all devices listed
     in the configuration file become active.
 
 .. option:: --volumes

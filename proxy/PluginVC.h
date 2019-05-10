@@ -97,7 +97,7 @@ public:
   ink_hrtime get_active_timeout() override;
   ink_hrtime get_inactivity_timeout() override;
 
-  // Pure virutal functions we need to compile
+  // Pure virtual functions we need to compile
   SOCKET get_socket() override;
   void set_local_addr() override;
   void set_remote_addr() override;

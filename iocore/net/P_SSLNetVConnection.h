@@ -383,6 +383,21 @@ public:
   bool protocol_mask_set = false;
   unsigned long protocol_mask;
 
+  // Only applies during the VERIFY certificate hooks (client and server side)
+  // Means to give the plugin access to the data structure passed in during the underlying
+  // openssl callback so the plugin can make more detailed decisions about the
+  // validity of the certificate in their cases
+  X509_STORE_CTX *
+  get_verify_cert()
+  {
+    return verify_cert;
+  }
+  void
+  set_verify_cert(X509_STORE_CTX *ctx)
+  {
+    verify_cert = ctx;
+  }
+
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
   bool update_rbio(bool move_to_socket);
@@ -425,6 +440,7 @@ private:
   char *tunnel_host                = nullptr;
   in_port_t tunnel_port            = 0;
   bool tunnel_decrypt              = false;
+  X509_STORE_CTX *verify_cert      = nullptr;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

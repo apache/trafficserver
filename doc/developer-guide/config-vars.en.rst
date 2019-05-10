@@ -93,9 +93,9 @@ type:``RecT``
 
 name:``char const*``
    The fully qualified name of the configuration variable. Although there
-   appears to be a hierarchial naming scheme, that's just a convention, and it
+   appears to be a hierarchical naming scheme, that's just a convention, and it
    is not actually used by the code. Nonetheless, new variables should adhere
-   to the hierarchial scheme.
+   to the hierarchical scheme.
 
 value_type:``RecDataT``
    The data type of the value. It should be one of ``RECD_INT``,
@@ -172,7 +172,7 @@ generally via :option:`traffic_ctl config reload`. This is handled in a generic 
 described in the next section, or in a :ref:`more specialized way <http-config-var-impl>`
 (built on top of the generic mechanism) for HTTP related configuration
 variables. This is only needed if the variable is marked as dynamically
-updateable (|RECU_DYNAMIC|_) although HTTP configuration variables should be
+updatable (|RECU_DYNAMIC|_) although HTTP configuration variables should be
 dynamic if possible.
 
 Documentation and Defaults
@@ -260,11 +260,11 @@ action.
 
    The callback occurs asynchronously. For HTTP variables as described in the
    next section, this is handled by the more specialized HTTP update mechanisms.
-   Otherwise it is the implementor's responsibility to avoid race conditions.
+   Otherwise it is the implementer's responsibility to avoid race conditions.
 
 .. _http-config-var-impl:
 
-HTTP Configuation Values
+HTTP Configuration Values
 ------------------------
 
 Variables used for HTTP processing should be declared as members of the
@@ -310,7 +310,7 @@ required for generic access:
 
 #. Augment the ``TSHttpTxnConfigFind`` function to return this enumeration value
    when given the name of the configuration variable. Be sure to count the
-   charaters very carefully.
+   characters very carefully.
 
 #. Augment the ``_conf_to_memberp`` function in |InkAPI.cc|_ to return a pointer
    to the appropriate member of ``OverridableHttpConfigParams`` and set the type

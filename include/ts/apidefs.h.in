@@ -898,6 +898,7 @@ typedef struct tsapi_httpparser *TSHttpParser;
 typedef struct tsapi_cachekey *TSCacheKey;
 typedef struct tsapi_cachehttpinfo *TSCacheHttpInfo;
 typedef struct tsapi_cachetxn *TSCacheTxn;
+typedef struct tsapi_x509_store_ctx *TSSslVerifyCTX;
 
 typedef struct tsapi_port *TSPortDescriptor;
 typedef struct tsapi_vio *TSVIO;

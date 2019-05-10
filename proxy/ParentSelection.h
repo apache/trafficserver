@@ -91,7 +91,7 @@ private:
 
 // struct pRecord
 //
-//    A record for an invidual parent
+//    A record for an individual parent
 //
 struct pRecord : ATSConsistentHashNode {
   char hostname[MAXDNAME + 1];
