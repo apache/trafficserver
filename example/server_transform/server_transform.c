@@ -237,6 +237,7 @@ transform_read(TSCont contp, TransformData *data)
   data->input_reader = NULL;
 
   data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, data->content_length);
+  TSIOBufferWaterMarkSet( data->output_buf, data->content_length - sizeof( int ) ); // for performance
   data->output_vc  = TSTransformOutputVConnGet((TSVConn)contp);
   if (data->output_vc == NULL) {
     TSError("[%s] TSTransformOutputVConnGet returns NULL", PLUGIN_NAME);
