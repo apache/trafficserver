@@ -254,8 +254,7 @@ TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
 TEST_CASE("QUICAckFrameManager_QUICAckFrameCreator", "[quic]")
 {
   QUICAckFrameManager ack_manager;
-  QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
-  QUICAckFrameManager::QUICAckFrameCreator packet_numbers(level, &ack_manager);
+  QUICAckFrameManager::QUICAckFrameCreator packet_numbers(QUICPacketNumberSpace::Initial, &ack_manager);
 
   CHECK(packet_numbers.size() == 0);
   CHECK(packet_numbers.largest_ack_number() == 0);
