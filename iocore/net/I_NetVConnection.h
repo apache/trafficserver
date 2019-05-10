@@ -635,9 +635,6 @@ public:
 
   virtual SOCKET get_socket() = 0;
 
-  /** Set the TCP initial congestion window */
-  virtual int set_tcp_init_cwnd(int init_cwnd) = 0;
-
   /** Set the TCP congestion control algorithm */
   virtual int set_tcp_congestion_control(int side) = 0;
 

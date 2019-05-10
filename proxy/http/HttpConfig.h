@@ -585,11 +585,6 @@ struct OverridableHttpConfigParams {
   MgmtInt sock_packet_mark_out      = 0;
   MgmtInt sock_packet_tos_out       = 0;
 
-  ///////////////////////////////
-  // Initial congestion window //
-  ///////////////////////////////
-  MgmtInt server_tcp_init_cwnd = 0;
-
   ///////////////
   // Hdr Limit //
   ///////////////

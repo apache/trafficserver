@@ -913,13 +913,6 @@ mptcp
    options ``2`` and ``3`` for this configuration variable cause the proxy
    to use the client HTTP version for upstream requests.
 
-.. ts:cv:: CONFIG proxy.config.http.server_tcp_init_cwnd INT 0
-   :overridable:
-
-   Configures the size, in packets, of the initial TCP congestion window on
-   sockets used by the HTTP engine. This option may only be used on operating
-   systems which support the ``TCP_INIT_CWND`` option on TCP sockets.
-
 .. ts:cv:: CONFIG proxy.config.http.auth_server_session_private INT 1
    :overridable:
 

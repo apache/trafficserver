@@ -209,33 +209,10 @@ Http1ClientSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 VIO *
 Http1ClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
-  /* conditionally set the tcp initial congestion window
-     before our first write. */
-  HttpSsnDebug("tcp_init_cwnd_set %d", (int)tcp_init_cwnd_set);
-  if (!tcp_init_cwnd_set) {
-    tcp_init_cwnd_set = true;
-    set_tcp_init_cwnd();
-  }
   if (client_vc) {
     return client_vc->do_io_write(c, nbytes, buf, owner);
   } else {
     return nullptr;
-  }
-}
-
-void
-Http1ClientSession::set_tcp_init_cwnd()
-{
-  if (!trans.get_sm()) {
-    return;
-  }
-  int desired_tcp_init_cwnd = trans.get_sm()->t_state.txn_conf->server_tcp_init_cwnd;
-  HttpSsnDebug("desired TCP congestion window is %d", desired_tcp_init_cwnd);
-  if (desired_tcp_init_cwnd == 0) {
-    return;
-  }
-  if (get_netvc()->set_tcp_init_cwnd(desired_tcp_init_cwnd) != 0) {
-    HttpSsnDebug("set_tcp_init_cwnd(%d) failed", desired_tcp_init_cwnd);
   }
 }
 

@@ -8589,7 +8589,6 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.insert_client_ip",
    "proxy.config.http.response_server_enabled",
    "proxy.config.http.insert_squid_x_forwarded_for",
-   "proxy.config.http.server_tcp_init_cwnd",
    "proxy.config.http.send_http11_requests",
    "proxy.config.http.cache.http",
    "proxy.config.http.cache.ignore_client_no_cache",
