@@ -64,12 +64,14 @@ public:
   virtual ink_hrtime smoothed_rtt() const = 0;
   virtual ink_hrtime rttvar() const       = 0;
   virtual ink_hrtime latest_rtt() const   = 0;
+
+  virtual ink_hrtime congestion_period(uint32_t period) const = 0;
 };
 
 class QUICCongestionController
 {
 public:
-  QUICCongestionController(QUICRTTMeasure *rtt_measure, QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config);
+  QUICCongestionController(const QUICRTTProvider &rtt_provider, QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config);
   virtual ~QUICCongestionController() {}
   void on_packet_sent(size_t bytes_sent);
   void on_packet_acked(const QUICPacketInfo &acked_packet);
@@ -111,7 +113,7 @@ private:
   uint32_t _ssthresh              = UINT32_MAX;
 
   QUICConnectionInfoProvider *_info = nullptr;
-  QUICRTTMeasure *_rtt_measure      = nullptr;
+  const QUICRTTProvider &_rtt_provider;
 
   bool _in_recovery(ink_hrtime sent_time);
 };
@@ -201,7 +203,7 @@ public:
   // period
   ink_hrtime handshake_retransmit_timeout() const;
   ink_hrtime current_pto_period() const;
-  ink_hrtime congestion_period(uint32_t threshold) const;
+  ink_hrtime congestion_period(uint32_t threshold) const override;
 
   // get members
   ink_hrtime smoothed_rtt() const override;

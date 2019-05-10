@@ -452,7 +452,7 @@ QUICNetVConnection::start()
   QUICCCConfigQCP cc_config(this->_quic_config);
   QUICLDConfigQCP ld_config(this->_quic_config);
   this->_rtt_measure.init(ld_config);
-  this->_congestion_controller = new QUICCongestionController(&this->_rtt_measure, this, cc_config);
+  this->_congestion_controller = new QUICCongestionController(this->_rtt_measure, this, cc_config);
   this->_loss_detector         = new QUICLossDetector(this, this->_congestion_controller, &this->_rtt_measure, ld_config);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
 
