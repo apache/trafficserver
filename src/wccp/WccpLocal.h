@@ -24,12 +24,18 @@
 
 #include "wccp/Wccp.h"
 #include "WccpUtil.h"
-#include "tscore/TsBuffer.h"
 #include "ts/apidefs.h"
+#include "tsconfig/Errata.h"
 // Needed for template use of byte ordering functions.
 #include <netinet/in.h>
 #include <memory.h>
 #include <map>
+#include <string_view>
+
+namespace YAML
+{
+class Node;
+};
 
 namespace wccp
 {
@@ -2206,7 +2212,7 @@ public:
   );
 
   /// Use MD5 security.
-  void useMD5Security(ts::ConstBuffer const &key ///< Shared key.
+  void useMD5Security(std::string_view const key ///< Shared key.
   );
 
   /// Perform all scheduled housekeeping functions.
@@ -2374,7 +2380,7 @@ namespace detail
 
       GroupData(); ///< Default constructor.
 
-      void setProcName(const ts::ConstBuffer &name);
+      void setProcName(const std::string_view name);
       const char *getProcName();
 
       /// Find a router by IP @a addr.
@@ -2431,7 +2437,7 @@ namespace detail
       return m_proc_name;
     }
     inline void
-    GroupData::setProcName(const ts::ConstBuffer &name)
+    GroupData::setProcName(const std::string_view name)
     {
       m_proc_name = ats_strndup(name.data(), name.size());
     }
@@ -2526,7 +2532,11 @@ protected:
   typedef std::map<uint8_t, GroupData> GroupMap;
   /// Active service groups.
   GroupMap m_groups;
+
+private:
+  ts::Errata loader(const YAML::Node &node);
 };
+
 // ------------------------------------------------------
 namespace detail
 {
@@ -2889,33 +2899,11 @@ CacheIdElt::setMask(bool state)
   return *this;
 }
 
-#if 0
-inline uint16_t CacheIdElt::getWeight() const { return ntohs(m_weight); }
-inline CacheIdElt&
-CacheIdElt::setWeight(uint16_t w) {
-  m_weight = htons(w);
-  return *this;
-}
-inline uint16_t CacheIdElt::getStatus() const { return ntohs(m_status); }
-inline CacheIdElt&
-CacheIdElt::setStatus(uint16_t s) {
-  m_status = htons(s);
-  return *this;
-}
-#endif
-
 inline CacheIdElt::Tail *
 CacheHashIdElt::getTailPtr()
 {
   return &m_tail;
 }
-
-#if 0
-inline bool
-CacheHashIdElt::getBucket(int idx) const {
-  return 0 != (m_buckets[idx>>3] & (1<<(idx & 7)));
-}
-#endif
 
 inline uint32_t
 CacheMaskIdElt::getCount() const
@@ -3177,41 +3165,6 @@ CacheIdComp::setUnassigned(bool state)
   this->cacheId().setUnassigned(state);
   return *this;
 }
-#if 0
-inline uint16_t
-CacheIdComp::getWeight() const {
-  return this->idElt().getWeight();
-}
-inline CacheIdComp&
-CacheIdComp::setWeight(uint16_t w) {
-  this->idElt().setWeight(w);
-  return *this;
-}
-inline uint16_t
-CacheIdComp::getStatus() const {
-  return this->idElt().getStatus();
-}
-inline CacheIdComp&
-CacheIdComp::setStatus(uint16_t s) {
-  this->idElt().setStatus(s);
-  return *this;
-}
-inline bool
-CacheIdComp::getBucket(int idx) const {
-  return this->idElt().getBucket(idx);
-}
-inline CacheIdComp&
-CacheIdComp::setBucket(int idx, bool state) {
-  this->idElt().setBucket(idx, state);
-  return *this;
-}
-inline CacheIdComp&
-CacheIdComp::setBuckets(bool state) {
-  this->idElt().setBuckets(state);
-  return *this;
-}
-inline size_t CacheIdComp::calcSize() { return sizeof(raw_t); }
-#endif
 
 inline bool
 detail::Assignment::isActive() const

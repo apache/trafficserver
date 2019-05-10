@@ -24,6 +24,8 @@
 
 #include <vector>
 
+#include "tsconfig/Errata.h"
+
 namespace wccp
 {
 /// @name Message severity levels.
