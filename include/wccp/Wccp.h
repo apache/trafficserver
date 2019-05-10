@@ -34,6 +34,8 @@
 // INADDR_ANY
 #include <netinet/in.h>
 
+#include <string_view>
+
 /// WCCP Support.
 namespace wccp
 {
@@ -246,10 +248,7 @@ public:
   int getSocket() const;
 
   /// Use MD5 based security with @a key.
-  void useMD5Security(char const *key ///< Shared hash key.
-  );
-  /// Use MD5 based security with @a key.
-  void useMD5Security(ts::ConstBuffer const &key ///< Shared hash key.
+  void useMD5Security(std::string_view const key ///< Shared hash key.
   );
 
   /// Perform house keeping, including sending outbound messages.
@@ -503,11 +502,6 @@ inline Cache::Service::Service() {}
 
 inline Cache::Service::Service(Cache const &cache, detail::cache::GroupData &group) : m_cache(cache), m_group(&group) {}
 
-inline void
-EndPoint::useMD5Security(char const *key)
-{
-  this->useMD5Security(ts::ConstBuffer(key, strlen(key)));
-}
 // ------------------------------------------------------
 
 } // namespace wccp
