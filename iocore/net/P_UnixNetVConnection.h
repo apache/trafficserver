@@ -295,7 +295,6 @@ public:
   void set_mptcp_state() override;
   void set_remote_addr() override;
   void set_remote_addr(const sockaddr *) override;
-  int set_tcp_init_cwnd(int init_cwnd) override;
   int set_tcp_congestion_control(int side) override;
   void apply_options() override;
 
@@ -397,21 +396,6 @@ UnixNetVConnection::cancel_active_timeout()
   Debug("socket", "Cancel active timeout for NetVC=%p", this);
   active_timeout_in        = 0;
   next_activity_timeout_at = 0;
-}
-
-inline int
-UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
-{
-#ifdef TCP_INIT_CWND
-  int rv;
-  uint32_t val = init_cwnd;
-  rv           = setsockopt(con.fd, IPPROTO_TCP, TCP_INIT_CWND, &val, sizeof(val));
-  Debug("socket", "Setting TCP initial congestion window (%d) -> %d", init_cwnd, rv);
-  return rv;
-#else
-  Debug("socket", "Setting TCP initial congestion window %d -> unsupported", init_cwnd);
-  return -1;
-#endif
 }
 
 inline UnixNetVConnection::~UnixNetVConnection() {}

@@ -984,7 +984,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
   HttpEstablishStaticConfigLongLong(c.max_websocket_connections, "proxy.config.http.websocket.max_number_of_connections");
-  HttpEstablishStaticConfigLongLong(c.oride.server_tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.per_server.min_keep_alive");
   HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
 
@@ -1266,10 +1265,9 @@ HttpConfig::reconfigure()
   params->disable_ssl_parenting        = INT_TO_BOOL(m_master.disable_ssl_parenting);
   params->oride.forward_connect_method = INT_TO_BOOL(m_master.oride.forward_connect_method);
 
-  params->server_max_connections     = m_master.server_max_connections;
-  params->max_websocket_connections  = m_master.max_websocket_connections;
-  params->oride.server_tcp_init_cwnd = m_master.oride.server_tcp_init_cwnd;
-  params->oride.outbound_conntrack   = m_master.oride.outbound_conntrack;
+  params->server_max_connections    = m_master.server_max_connections;
+  params->max_websocket_connections = m_master.max_websocket_connections;
+  params->oride.outbound_conntrack  = m_master.oride.outbound_conntrack;
   // If queuing for outbound connection tracking is enabled without enabling max connections, it is meaningless, so we'll warn
   if (params->outbound_conntrack.queue_size > 0 &&
       !(params->oride.outbound_conntrack.max > 0 || params->origin_min_keep_alive_connections)) {

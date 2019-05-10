@@ -159,7 +159,6 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_RESPONSE_SERVER_STR`                       :ts:cv:`proxy.config.http.response_server_str`
 :c:macro:`TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS`                      :ts:cv:`proxy.config.http.send_http11_requests`
 :c:macro:`TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH`              :ts:cv:`proxy.config.http.server_session_sharing.match`
-:c:macro:`TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND`                      :ts:cv:`proxy.config.http.server_tcp_init_cwnd`
 :c:macro:`TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD`                        :ts:cv:`proxy.config.http.slow.log.threshold`
 :c:macro:`TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN`             :ts:cv:`proxy.config.http.transaction_active_timeout_in`
 :c:macro:`TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT`            :ts:cv:`proxy.config.http.transaction_active_timeout_out`

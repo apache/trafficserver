@@ -173,7 +173,6 @@ private:
   int state_keep_alive(int event, void *data);
   int state_slave_keep_alive(int event, void *data);
   int state_wait_for_close(int event, void *data);
-  void set_tcp_init_cwnd();
 
   enum C_Read_State {
     HCS_INIT,
@@ -186,7 +185,6 @@ private:
   NetVConnection *client_vc = nullptr;
   int magic                 = HTTP_SS_MAGIC_DEAD;
   int transact_count        = 0;
-  bool tcp_init_cwnd_set    = false;
   bool half_close           = false;
   bool conn_decrease        = false;
 

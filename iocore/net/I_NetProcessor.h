@@ -83,11 +83,6 @@ public:
     /// defer accpet for @c sockopt.
     /// 0 => OS default.
     int defer_accept;
-#ifdef TCP_INIT_CWND
-    /// tcp init cwnd for @c sockopt
-    /// OS default
-    int init_cwnd;
-#endif
     /// Socket options for @c sockopt.
     /// 0 => do not set options.
     uint32_t sockopt_flags;
