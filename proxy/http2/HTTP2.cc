@@ -482,6 +482,11 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     headers->field_delete(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
     headers->field_delete(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
   } else {
+    // Set HTTP Version 1.1
+    int32_t version = HTTP_VERSION(1, 1);
+    http_hdr_version_set(headers->m_http, version);
+
+    // Set status from :status
     if ((field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS)) != nullptr) {
       int status_len;
       const char *status = field->value_get(&status_len);
@@ -524,6 +529,9 @@ http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers)
     int value_len;
 
     // Add ':authority' header field
+    // TODO: remove host/Host header
+    // [RFC 7540] 8.1.2.3. Clients that generate HTTP/2 requests directly SHOULD use the ":authority" pseudo-header field instead of
+    // the Host header field.
     field = h2_headers->field_create(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
     value = headers->host_get(&value_len);
     if (headers->is_port_in_header()) {
