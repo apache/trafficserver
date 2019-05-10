@@ -272,7 +272,6 @@ void
 acknowledge_header_block(TestQUICStream *stream, uint64_t stream_id)
 {
   uint8_t buf[128];
-  int buf_len = 0;
 
   buf[0]  = 0x80;
   int ret = xpack_encode_integer(buf, buf + sizeof(buf), stream_id, 7);
