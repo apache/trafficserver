@@ -26,19 +26,6 @@ Traffic Manager Alarms
 allocated to event logs could be full or |TS| may not be able to write to a
 configuration file.
 
-Email Alarms
-============
-
-To configure |TS| to send an email to a specific address whenever an alarm
-occurs, follow the steps below:
-
-#. Set :ts:cv:`proxy.config.alarm_email` in :file:`records.config` to the email
-   address you want to receive alarm notifications. ::
-
-        CONFIG proxy.config.alarm_email STRING alerts@example.com
-
-#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
-
 Using a Script File for Alarms
 ------------------------------
 

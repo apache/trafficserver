@@ -1096,10 +1096,6 @@ msgstr ""
 msgid "The value of :ts:cv:`proxy.config.admin.user_id`."
 msgstr ""
 
-#: ../../../admin-guide/files/records.config.en.rst:627
-msgid "The value of :ts:cv:`proxy.config.alarm_email`."
-msgstr ""
-
 #: ../../../admin-guide/files/records.config.en.rst:632
 msgid ""
 "The absolute path to the directory containing the alarm script. If this is "

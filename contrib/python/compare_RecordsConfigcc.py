@@ -32,7 +32,6 @@ ignore_keys = {
     "proxy.config.ssl.server.cert.path": 1,
     "proxy.config.admin.user_id": 1,
     "proxy.config.ssl.client.cert.path": 1,
-    "proxy.config.alarm_email": 1,
     "proxy.config.log.logfile_dir": 1,
     "proxy.config.ssl.CA.cert.path": 1,
     "proxy.config.ssl.client.CA.cert.path": 1,

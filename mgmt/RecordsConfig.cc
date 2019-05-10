@@ -63,8 +63,6 @@ static const RecordElement RecordsConfig[] =
   // Jira TS-21
   {RECT_CONFIG, "proxy.config.local_state_dir", RECD_STRING, TS_BUILD_RUNTIMEDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_READ_ONLY}
   ,
-  {RECT_CONFIG, "proxy.config.alarm_email", RECD_STRING, TS_PKGSYSUSER, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.syslog_facility", RECD_STRING, "LOG_DAEMON", RECU_RESTART_TM, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
   //# Negative core limit means max out limit
@@ -245,8 +243,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.lm.pserver_timeout_msecs", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.admin.autoconf.localhost_only", RECD_INT, "1", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.admin.admin_user", RECD_STRING, "admin", RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".+", RECA_NO_ACCESS}
   ,
   {RECT_CONFIG, "proxy.config.admin.number_config_bak", RECD_INT, "3", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
