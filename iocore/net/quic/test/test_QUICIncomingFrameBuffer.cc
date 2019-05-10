@@ -141,7 +141,6 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
   uint8_t frame_buf3[QUICFrame::MAX_INSTANCE_SIZE];
   uint8_t frame_buf4[QUICFrame::MAX_INSTANCE_SIZE];
   uint8_t frame_buf5[QUICFrame::MAX_INSTANCE_SIZE];
-  uint8_t frame_buf6[QUICFrame::MAX_INSTANCE_SIZE];
   QUICStreamFrame *stream1_frame_0_r   = QUICFrameFactory::create_stream_frame(frame_buf0, block_1024, 1, 0);
   QUICStreamFrame *stream1_frame_1_r   = QUICFrameFactory::create_stream_frame(frame_buf1, block_1024, 1, 1024);
   QUICStreamFrame *stream1_frame_empty = QUICFrameFactory::create_stream_frame(frame_buf2, block_0, 1, 2048);

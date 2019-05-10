@@ -219,7 +219,7 @@ output_decoded_headers(FILE *fd, HTTPHdr **headers, uint64_t n)
     if (!header_set) {
       continue;
     }
-    fprintf(fd, "# stream %llu\n", i + 1);
+    fprintf(fd, "# stream %" PRIu64 "\n", i + 1);
     MIMEFieldIter field_iter;
     for (MIMEField *field = header_set->iter_get_first(&field_iter); field != nullptr;
          field            = header_set->iter_get_next(&field_iter)) {

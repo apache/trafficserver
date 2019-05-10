@@ -401,7 +401,6 @@ TEST_CASE("Frame retransmission", "[quic]")
 
   SECTION("MAX_DATA frame")
   {
-    int ret = 0;
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
     MockRTTProvider rp(DEFAULT_RTT);
     QUICLocalConnectionFlowController fc(&rp, 1024);
@@ -438,7 +437,6 @@ TEST_CASE("Frame retransmission", "[quic]")
 
   SECTION("MAX_STREAM_DATA frame")
   {
-    int ret = 0;
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
     MockRTTProvider rp(DEFAULT_RTT);
     QUICLocalStreamFlowController fc(&rp, 1024, 0);

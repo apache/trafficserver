@@ -590,16 +590,10 @@ TEST_CASE("QUIC receive only stream", "[quic]")
 
   SECTION("Retransmit STOP_SENDING frame")
   {
-    MIOBuffer *write_buffer             = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
-    IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
-
     MockQUICRTTProvider rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICReceiveStream> stream(new QUICReceiveStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX));
     SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
-
-    MockContinuation mock_cont(stream->mutex);
-    // stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     QUICFrame *frame          = nullptr;
@@ -675,7 +669,6 @@ TEST_CASE("QUIC send only stream", "[quic]")
   {
     std::unique_ptr<QUICError> error = nullptr;
 
-    MIOBuffer *read_buffer              = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     MIOBuffer *write_buffer             = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
 
@@ -685,7 +678,6 @@ TEST_CASE("QUIC send only stream", "[quic]")
     SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
 
     MockContinuation mock_cont(stream->mutex);
-    // stream->do_io_read(nullptr, INT64_MAX, read_buffer);
     stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;

@@ -200,8 +200,8 @@ QUICApplication::QUICApplication(QUICConnection *qc) : Continuation(new_ProxyMut
 
 QUICApplication::~QUICApplication()
 {
-  for (const auto &[stream_id, stream_io] : this->_stream_map) {
-    delete stream_io;
+  for (auto const &kv : this->_stream_map) {
+    delete kv.second;
   }
 }
 
