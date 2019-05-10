@@ -3802,7 +3802,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     SDK_RPRINT(test, "TSUrlSchemeSet", "TestCase1", TC_FAIL, "TSUrlSchemeSet Returned TS_ERROR");
   } else {
     scheme_get = TSUrlSchemeGet(bufp1, url_loc1, &length);
-    if (strncmp(scheme_get, scheme, length) == 0) {
+    if (scheme_get != nullptr && strncmp(scheme_get, scheme, length) == 0) {
       SDK_RPRINT(test, "TSUrlSchemeSet&Get", "TestCase1", TC_PASS, "ok");
       test_passed_scheme = true;
     } else {
@@ -3815,7 +3815,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     SDK_RPRINT(test, "TSUrlUserSet", "TestCase1", TC_FAIL, "Returned TS_ERROR");
   } else {
     user_get = TSUrlUserGet(bufp1, url_loc1, &length);
-    if (((user_get == nullptr) && (user == nullptr)) || (strncmp(user_get, user, length) == 0)) {
+    if (user_get != nullptr && strncmp(user_get, user, length) == 0) {
       SDK_RPRINT(test, "TSUrlUserSet&Get", "TestCase1", TC_PASS, "ok");
       test_passed_user = true;
     } else {
@@ -3828,7 +3828,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     SDK_RPRINT(test, "TSUrlPasswordSet", "TestCase1", TC_FAIL, "Returned TS_ERROR");
   } else {
     password_get = TSUrlPasswordGet(bufp1, url_loc1, &length);
-    if ((password_get == nullptr) || (strncmp(password_get, password, length) == 0)) {
+    if (password_get != nullptr && strncmp(password_get, password, length) == 0) {
       SDK_RPRINT(test, "TSUrlPasswordSet&Get", "TestCase1", TC_PASS, "ok");
       test_passed_password = true;
     } else {
@@ -3841,7 +3841,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     SDK_RPRINT(test, "TSUrlHostSet", "TestCase1", TC_FAIL, "Returned TS_ERROR");
   } else {
     host_get = TSUrlHostGet(bufp1, url_loc1, &length);
-    if (strncmp(host_get, host, length) == 0) {
+    if (host_get != nullptr && strncmp(host_get, host, length) == 0) {
       SDK_RPRINT(test, "TSUrlHostSet&Get", "TestCase1", TC_PASS, "ok");
       test_passed_host = true;
     } else {
@@ -3867,7 +3867,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     SDK_RPRINT(test, "TSUrlPathSet", "TestCase1", TC_FAIL, "Returned TS_ERROR");
   } else {
     path_get = TSUrlPathGet(bufp1, url_loc1, &length);
-    if (((path == nullptr) && (path_get == nullptr)) || (strncmp(path, path_get, length) == 0)) {
+    if (path_get != nullptr && strncmp(path, path_get, length) == 0) {
       SDK_RPRINT(test, "TSUrlPathSet&Get", "TestCase1", TC_PASS, "ok");
       test_passed_path = true;
     } else {
@@ -3880,7 +3880,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     SDK_RPRINT(test, "TSUrlHttpParamsSet", "TestCase1", TC_FAIL, "Returned TS_ERROR");
   } else {
     params_get = TSUrlHttpParamsGet(bufp1, url_loc1, &length);
-    if (((params == nullptr) && (params_get == nullptr)) || (strncmp(params, params_get, length) == 0)) {
+    if (params_get != nullptr && strncmp(params, params_get, length) == 0) {
       SDK_RPRINT(test, "TSUrlHttpParamsSet&Get", "TestCase1", TC_PASS, "ok");
       test_passed_params = true;
     } else {
@@ -3893,7 +3893,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     SDK_RPRINT(test, "TSUrlHttpQuerySet", "TestCase1", TC_FAIL, "Returned TS_ERROR");
   } else {
     query_get = TSUrlHttpQueryGet(bufp1, url_loc1, &length);
-    if (((query == nullptr) && (query_get == nullptr)) || (strncmp(query, query_get, length) == 0)) {
+    if (query_get != nullptr && strncmp(query, query_get, length) == 0) {
       SDK_RPRINT(test, "TSUrlHttpQuerySet&Get", "TestCase1", TC_PASS, "ok");
       test_passed_query = true;
     } else {
@@ -3906,7 +3906,7 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     SDK_RPRINT(test, "TSUrlHttpFragmentSet", "TestCase1", TC_FAIL, "Returned TS_ERROR");
   } else {
     fragment_get = TSUrlHttpFragmentGet(bufp1, url_loc1, &length);
-    if (((fragment == nullptr) && (fragment_get == nullptr)) || (strncmp(fragment, fragment_get, length) == 0)) {
+    if (fragment_get != nullptr && strncmp(fragment, fragment_get, length) == 0) {
       SDK_RPRINT(test, "TSUrlHttpFragmentSet&Get", "TestCase1", TC_PASS, "ok");
       test_passed_fragment = true;
     } else {
