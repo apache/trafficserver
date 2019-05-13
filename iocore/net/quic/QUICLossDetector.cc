@@ -390,7 +390,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumberSpace pn_space)
 
       if (unacked->in_flight) {
         lost_packets.insert({it->first, it->second.get()});
-      } else if (this->_loss_time == 0) {
+      } else if (this->_loss_time[static_cast<int>(pn_space)] == 0) {
         this->_loss_time[static_cast<int>(pn_space)] = unacked->time_sent + loss_delay;
       } else {
         this->_loss_time[static_cast<int>(pn_space)] =
