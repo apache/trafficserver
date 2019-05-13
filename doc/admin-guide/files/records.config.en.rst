@@ -3087,6 +3087,11 @@ SSL Termination
 
    This configuration works with OpenSSL v1.1.1 and above.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.honor_cipher_order INT 1
+
+   By default (``1``) |TS| will use the server's cipher suites preferences instead of the client preferences.
+   By disabling it (``0``) |TS| will use client's cipher suites preferences.
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3.cipher_suites STRING <See notes under proxy.config.ssl.server.tls.cipher_suites>
 
    Configures the cipher_suites which |TS| will use for TLSv1.3
