@@ -1768,13 +1768,6 @@ msgid ""
 "use the client HTTP version for upstream requests."
 msgstr ""
 
-#: ../../../admin-guide/files/records.config.en.rst:955
-msgid ""
-"Configures the size, in packets, of the initial TCP congestion window on "
-"sockets used by the HTTP engine. This option may only be used on operating "
-"systems which support the ``TCP_INIT_CWND`` option on TCP sockets."
-msgstr ""
-
 #: ../../../admin-guide/files/records.config.en.rst:961
 msgid ""
 "If enabled (``1``) anytime a request contains a ``Authorization``, ``Proxy-"

@@ -2254,7 +2254,7 @@ ts.http.resp_transform.set_upstream_watermark_bytes
 
 **context:** transform handler
 
-**description**: This function can be used to set the watermark bytes of the upstream transform buffer. 
+**description**: This function can be used to set the watermark bytes of the upstream transform buffer.
 
 Setting the watermark bytes above 32kb may improve the performance of the transform handler.
 
@@ -3299,7 +3299,6 @@ Http config constants
     TS_LUA_CONFIG_HTTP_RESPONSE_SERVER_ENABLED
     TS_LUA_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR
     TS_LUA_CONFIG_HTTP_INSERT_FORWARDED
-    TS_LUA_CONFIG_HTTP_SERVER_TCP_INIT_CWND
     TS_LUA_CONFIG_HTTP_SEND_HTTP11_REQUESTS
     TS_LUA_CONFIG_HTTP_CACHE_HTTP
     TS_LUA_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE

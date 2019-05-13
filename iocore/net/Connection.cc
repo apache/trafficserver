@@ -264,12 +264,6 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
   }
 #endif
 
-#ifdef TCP_INIT_CWND
-  if (opt.init_cwnd > 0 && (res = setsockopt(fd, IPPROTO_TCP, TCP_INIT_CWND, &opt.init_cwnd, sizeof(int))) < 0) {
-    Error("[Server::listen] Cannot set initial congestion window to %d error: %d", tcp_init_cwnd, errno);
-  }
-#endif
-
   if (non_blocking) {
     if ((res = safe_nonblocking(fd)) < 0) {
       goto Lerror;

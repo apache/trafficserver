@@ -8073,9 +8073,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_INSERT_FORWARDED:
     ret = _memberp_to_generic(&overridableHttpConfig->insert_forwarded, conv);
     break;
-  case TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND:
-    ret = _memberp_to_generic(&overridableHttpConfig->server_tcp_init_cwnd, conv);
-    break;
   case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
     ret = _memberp_to_generic(&overridableHttpConfig->send_http11_requests, conv);
     break;
@@ -8613,7 +8610,6 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
    {"proxy.config.net.sock_option_flag_out", {TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT, TS_RECORDDATATYPE_INT}},
    {"proxy.config.net.sock_packet_mark_out", {TS_CONFIG_NET_SOCK_PACKET_MARK_OUT, TS_RECORDDATATYPE_INT}},
    {"proxy.config.websocket.active_timeout", {TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.server_tcp_init_cwnd", {TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.flow_control.enabled", {TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.send_http11_requests", {TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS, TS_RECORDDATATYPE_INT}},
    {"proxy.config.body_factory.template_base", {TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE, TS_RECORDDATATYPE_STRING}},

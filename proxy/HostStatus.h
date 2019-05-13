@@ -125,6 +125,8 @@ struct HostStatRec {
   }
   ~HostStatRec() {}
 
+  HostStatRec &operator=(const HostStatRec &source) = default;
+
   // serialize this HostStatusRec
   std::stringstream &
   operator<<(std::stringstream &os)

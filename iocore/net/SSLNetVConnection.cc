@@ -534,7 +534,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 
   // Continue on if we are still in the handshake
   if (!getSSLHandShakeComplete()) {
-    int err;
+    int err = 0;
 
     if (get_context() == NET_VCONNECTION_OUT) {
       ret = sslStartHandShake(SSL_EVENT_CLIENT, err);

@@ -168,10 +168,6 @@ msgstr ""
 msgid ":ts:cv:`proxy.config.http.insert_squid_x_forwarded_for`"
 msgstr ":ts:cv:`proxy.config.http.insert_squid_x_forwarded_for`"
 
-#: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:86
-msgid ":ts:cv:`proxy.config.http.server_tcp_init_cwnd`"
-msgstr ""
-
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:87
 msgid ":ts:cv:`proxy.config.http.send_http11_requests`"
 msgstr ""
