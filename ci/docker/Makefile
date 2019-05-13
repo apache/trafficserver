@@ -19,9 +19,11 @@
 .DEFAULT_GOAL := help
 
 help:
-	@echo 'fedora26         create ATS docker image for Fedora 27'
+	@echo 'fedora26         create ATS docker image for Fedora 26'
 	@echo 'fedora27         create ATS docker image for Fedora 27'
 	@echo 'fedora28         create ATS docker image for Fedora 28'
+	@echo 'fedora29         create ATS docker image for Fedora 29'
+	@echo 'fedora30         create ATS docker image for Fedora 30'
 	@echo 'centos6          create ATS docker image for Centos 6'
 	@echo 'centos7          create ATS docker image for Centos 7'
 	@echo 'all              build all images'
@@ -39,6 +41,12 @@ fedora27:
 
 fedora28:
 	docker build -t ats_$@ --build-arg OS_VERSION=28 --build-arg OS_TYPE=fedora yum/
+
+fedora29:
+	docker build -t ats_$@ --build-arg OS_VERSION=29 --build-arg OS_TYPE=fedora yum/
+
+fedora30:
+	docker build -t ats_$@ --build-arg OS_VERSION=30 --build-arg OS_TYPE=fedora yum/
 
 # Centos Docker images
 centos: centos6 centos7
