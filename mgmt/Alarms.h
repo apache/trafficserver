@@ -44,20 +44,13 @@ class AppVersionInfo;
 
 #define MGMT_ALARM_PROXY_PROCESS_DIED 1
 #define MGMT_ALARM_PROXY_PROCESS_BORN 2
-// Currently unused: 3
-// Currently unused: 4
-#define MGMT_ALARM_PROXY_CONFIG_ERROR 5 /* Data is descriptive string */
-#define MGMT_ALARM_PROXY_SYSTEM_ERROR 6
-// Currently unused: 7
-#define MGMT_ALARM_PROXY_CACHE_ERROR 8
-#define MGMT_ALARM_PROXY_CACHE_WARNING 9
-#define MGMT_ALARM_PROXY_LOGGING_ERROR 10
-#define MGMT_ALARM_PROXY_LOGGING_WARNING 11
-// Currently unused: 13
-#define MGMT_ALARM_CONFIG_UPDATE_FAILED 14
-// Currently unused: 15
-// Currently unused: 16
-#define MGMT_ALARM_MGMT_CONFIG_ERROR 17
+#define MGMT_ALARM_PROXY_CONFIG_ERROR 3
+#define MGMT_ALARM_PROXY_SYSTEM_ERROR 4
+#define MGMT_ALARM_PROXY_CACHE_ERROR 5
+#define MGMT_ALARM_PROXY_CACHE_WARNING 6
+#define MGMT_ALARM_PROXY_LOGGING_ERROR 7
+#define MGMT_ALARM_PROXY_LOGGING_WARNING 8
+#define MGMT_ALARM_CONFIG_UPDATE_FAILED 9
 
 extern const char *alarmText[];
 extern const int alarmTextNum;

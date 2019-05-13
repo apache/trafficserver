@@ -24,21 +24,18 @@
 #pragma once
 
 // copy from mgmt/BaseManager.h
-
 #define REC_SIGNAL_PID 0
-// Currently unused: 1
-// Currently unused: 2
+
+#define REC_SIGNAL_PROXY_PROCESS_DIED 1
+#define REC_SIGNAL_PROXY_PROCESS_BORN 2
 #define REC_SIGNAL_CONFIG_ERROR 3
 #define REC_SIGNAL_SYSTEM_ERROR 4
-// Currently unused: 5
-// Currently unused: 6
-#define REC_SIGNAL_CACHE_ERROR 7
-#define REC_SIGNAL_CACHE_WARNING 8
-#define REC_SIGNAL_LOGGING_ERROR 9
-#define REC_SIGNAL_LOGGING_WARNING 10
-// Currently unused: 11 - 13
-#define REC_SIGNAL_PLUGIN_SET_CONFIG 14
-// Currently unused: 15
-#define REC_SIGNAL_LIBRECORDS 16
-// Currently unused: 17 - 21
-#define REC_SIGNAL_CONFIG_FILE_CHILD 22
+#define REC_SIGNAL_CACHE_ERROR 5
+#define REC_SIGNAL_CACHE_WARNING 6
+#define REC_SIGNAL_LOGGING_ERROR 7
+#define REC_SIGNAL_LOGGING_WARNING 8
+#define REC_SIGNAL_PLUGIN_SET_CONFIG 9
+
+// This are additional on top of the ones defined in Alarms.h. Que?
+#define REC_SIGNAL_LIBRECORDS 10
+#define REC_SIGNAL_CONFIG_FILE_CHILD 11
