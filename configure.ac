@@ -1173,6 +1173,10 @@ TS_CHECK_CRYPTO_SET_RBIO
 # Check for DH_get_2048_256
 TS_CHECK_CRYPTO_DH_GET_2048_256
 
+# Check for HKDF support
+TS_CHECK_CRYPTO_HKDF
+AM_CONDITIONAL([HAS_HKDF], [test "x$enable_hkdf" = "xyes"])
+
 # Check for OCSP
 TS_CHECK_CRYPTO_OCSP
 
@@ -1212,6 +1216,18 @@ AC_CHECK_FUNC([EVP_MD_CTX_reset], [],
               [AC_DEFINE([EVP_MD_CTX_reset], [EVP_MD_CTX_cleanup], [Renamed in OpenSSL 1.1])])
 AC_CHECK_FUNC([EVP_MD_CTX_free], [],
               [AC_DEFINE([EVP_MD_CTX_free], [EVP_MD_CTX_destroy], [Renamed in OpenSSL 1.1])])
+
+AC_MSG_CHECKING([for OpenSSL is BoringSSL])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/base.h>]],
+                                   [[
+                                     #ifndef OPENSSL_IS_BORINGSSL
+                                     # error not boringssl
+                                     #endif
+                                   ]])
+                  ],
+                  [AC_MSG_RESULT([yes]); openssl_is_boringssl=1],
+                  [AC_MSG_RESULT([no])])
+AM_CONDITIONAL([OPENSSL_IS_BORINGSSL], [test -n "$openssl_is_boringssl"])
 
 LIBS="$saved_LIBS"
 

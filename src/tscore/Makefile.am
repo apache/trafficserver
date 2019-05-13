@@ -118,6 +118,17 @@ libtscore_la_SOURCES = \
 	Version.cc \
 	X509HostnameValidator.cc
 
+if HAS_HKDF
+if OPENSSL_IS_BORINGSSL
+HKDF_impl = HKDF_boringssl.cc
+else
+HKDF_impl = HKDF_openssl.cc
+endif
+libtscore_la_SOURCES += \
+  HKDF.h \
+  $(HKDF_impl)
+endif
+
 BufferWriterFormat.o : AM_CPPFLAGS += -Wno-char-subscripts
 
 #test_UNUSED_SOURCES = \
@@ -151,7 +162,7 @@ test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
 test_tscore_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a
+test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a @OPENSSL_LIBS@
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_AcidPtr.cc \
@@ -176,6 +187,11 @@ test_tscore_SOURCES = \
 	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
 	unit_tests/test_ts_file.cc
+
+if HAS_HKDF
+test_tscore_SOURCES += \
+	unit_tests/test_HKDF.cc
+endif
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 

@@ -190,6 +190,37 @@ AC_DEFUN([TS_CHECK_CRYPTO_DH_GET_2048_256], [
   AC_SUBST(use_dh_get_2048_256)
 ])
 
+AC_DEFUN([TS_CHECK_CRYPTO_HKDF], [
+  enable_hkdf=no
+  _hkdf_saved_LIBS=$LIBS
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_MSG_CHECKING([for EVP_PKEY_CTX_hkdf_mode])
+  AC_LINK_IFELSE(
+  [
+    AC_LANG_PROGRAM([[
+#include <openssl/kdf.h>
+    ]],
+    [[
+#ifndef EVP_PKEY_CTX_hkdf_mode
+# error no EVP_PKEY_CTX_hkdf_mode support
+#endif
+    ]])
+  ],
+  [
+    AC_MSG_RESULT([yes])
+    enable_hkdf=yes
+  ],
+  [
+    AC_MSG_RESULT([no])
+  ])
+  AC_CHECK_FUNC(HKDF_extract, [
+    enable_hkdf=yes
+  ], [])
+  LIBS=$_hkdf_saved_LIBS
+  TS_ARG_ENABLE_VAR([use], [hkdf])
+  AC_SUBST(use_hkdf)
+])
+
 dnl
 dnl Since OpenSSL 1.1.0
 dnl
