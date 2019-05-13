@@ -34,21 +34,15 @@ const char *alarmText[] = {
   "Unknown Alarm",                                        // 0
   "[TrafficManager] Traffic Server process was reset.",   // 1
   "[TrafficManager] Traffic Server process established.", // 2
-  "",                                                     // 3
-  "",                                                     // 4
-  "Invalid Configuration",                                // 5
-  "System Error",                                         // 6
-  "",                                                     // 7
-  "Cache Error",                                          // 8
-  "Cache Warning",                                        // 9
-  "Logging Error",                                        // 10
-  "Logging Warning",                                      // 11
-  "",                                                     // 12
-  "",                                                     // 13
-  "Alarms configuration update failed",                   // 14
-  "Ping Failure",                                         // 15
-  "",                                                     // 16
-  "Alarms configuration error",                           // 17
+  "Invalid Configuration",                                // 3
+  "System Error",                                         // 4
+  "Cache Error",                                          // 5
+  "Cache Warning",                                        // 6
+  "Logging Error",                                        // 7
+  "Logging Warning",                                      // 8
+  "Alarms configuration update failed",                   // 9
+  "Librecords",                                           // 10 (unclear if needed / used)
+  "Plugin set configuration",                             // 11 (unclear if needed / used)
 };
 
 const int alarmTextNum = sizeof(alarmText) / sizeof(char *);

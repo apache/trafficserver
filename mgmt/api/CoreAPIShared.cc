@@ -359,9 +359,6 @@ get_event_name(int id)
   case MGMT_ALARM_CONFIG_UPDATE_FAILED:
     ink_strlcpy(name, "MGMT_ALARM_CONFIG_UPDATE_FAILED", sizeof(name));
     break;
-  case MGMT_ALARM_MGMT_CONFIG_ERROR:
-    ink_strlcpy(name, "MGMT_ALARM_MGMT_CONFIG_ERROR", sizeof(name));
-    break;
   default:
     return nullptr;
   }
