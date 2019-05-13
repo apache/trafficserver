@@ -88,7 +88,7 @@ private:
   bool _is_transfer_complete = false;
   bool _is_reset_complete    = false;
 
-  QUICTransferProgressProviderVIO _progress_vio = {this->_read_vio};
+  QUICTransferProgressProviderVIO _progress_vio = {this->_write_vio};
 
   QUICRemoteStreamFlowController _remote_flow_controller;
   QUICLocalStreamFlowController _local_flow_controller;
