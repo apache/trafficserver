@@ -361,7 +361,7 @@ QUICStreamManager::total_offset_sent() const
 }
 
 void
-QUICStreamManager::add_total_offset_sent(uint32_t sent_byte)
+QUICStreamManager::_add_total_offset_sent(uint32_t sent_byte)
 {
   // FIXME: use atomic increment
   this->_total_offset_sent += sent_byte;
@@ -428,7 +428,7 @@ QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
   }
 
   if (frame != nullptr && frame->type() == QUICFrameType::STREAM) {
-    this->add_total_offset_sent(static_cast<QUICStreamFrame *>(frame)->data_length());
+    this->_add_total_offset_sent(static_cast<QUICStreamFrame *>(frame)->data_length());
   }
 
   return frame;

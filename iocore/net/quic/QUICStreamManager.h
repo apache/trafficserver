@@ -47,7 +47,6 @@ public:
   uint64_t total_reordered_bytes() const;
   uint64_t total_offset_received() const;
   uint64_t total_offset_sent() const;
-  void add_total_offset_sent(uint32_t sent_byte);
 
   uint32_t stream_count() const;
   QUICConnectionErrorUPtr create_stream(QUICStreamId stream_id);
@@ -71,6 +70,7 @@ public:
 private:
   QUICStreamVConnection *_find_stream_vc(QUICStreamId id);
   QUICStreamVConnection *_find_or_create_stream_vc(QUICStreamId stream_id);
+  void _add_total_offset_sent(uint32_t sent_byte);
   QUICConnectionErrorUPtr _handle_frame(const QUICStreamFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICRstStreamFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICStopSendingFrame &frame);

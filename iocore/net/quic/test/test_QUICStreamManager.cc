@@ -199,19 +199,25 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   QUICStreamManager sm(new MockQUICConnectionInfoProvider(), &rtt_provider, &app_map);
 
   uint8_t local_tp_buf[] = {
-    0x00, 0x06, // size of parameters
-    0x00, 0x08, // parameter id - initial_max_streams_bidi
-    0x00, 0x02, // length of value
-    0x40, 0x10  // value
+    0x00, 0x0e,            // size of parameters
+    0x00, 0x08,            // parameter id - initial_max_streams_bidi
+    0x00, 0x02,            // length of value
+    0x40, 0x10,            // value
+    0x00, 0x05,            // parameter id - initial_max_stream_data_bidi_local
+    0x00, 0x04,            // length of value
+    0xbf, 0xff, 0xff, 0xff // value
   };
   std::shared_ptr<QUICTransportParameters> local_tp =
     std::make_shared<QUICTransportParametersInEncryptedExtensions>(local_tp_buf, sizeof(local_tp_buf));
 
   uint8_t remote_tp_buf[] = {
-    0x00, 0x06, // size of parameters
-    0x00, 0x08, // parameter id - initial_max_streams_bidi
-    0x00, 0x02, // length of value
-    0x40, 0x10  // value
+    0x00, 0x0e,            // size of parameters
+    0x00, 0x08,            // parameter id - initial_max_streams_bidi
+    0x00, 0x02,            // length of value
+    0x40, 0x10,            // value
+    0x00, 0x06,            // parameter id - initial_max_stream_data_bidi_remote
+    0x00, 0x04,            // length of value
+    0xbf, 0xff, 0xff, 0xff // value
   };
   std::shared_ptr<QUICTransportParameters> remote_tp =
     std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf));
@@ -239,18 +245,13 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   CHECK(block_1024->read_avail() == 1024);
 
   // total_offset should be a integer in unit of octets
-  uint8_t stream_frame0_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  QUICFrame *stream_frame_0 = QUICFrameFactory::create_stream_frame(stream_frame0_buf, block_1024, 0, 0);
+  uint8_t frame_buf[4096];
   mock_app.send(reinterpret_cast<uint8_t *>(block_1024->buf()), 1024, 0);
-  sm.add_total_offset_sent(1024);
-  sleep(2);
+  sm.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 16384, 16384, 0);
   CHECK(sm.total_offset_sent() == 1024);
 
   // total_offset should be a integer in unit of octets
-  uint8_t stream_frame4_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  QUICFrame *stream_frame_4 = QUICFrameFactory::create_stream_frame(stream_frame4_buf, block_1024, 4, 0);
   mock_app.send(reinterpret_cast<uint8_t *>(block_1024->buf()), 1024, 4);
-  sm.add_total_offset_sent(1024);
-  sleep(2);
+  sm.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 16384, 16384, 0);
   CHECK(sm.total_offset_sent() == 2048);
 }
