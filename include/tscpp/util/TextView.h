@@ -33,37 +33,61 @@
 #include <string>
 #include <string_view>
 
-/// Compare the strings in two views.
-/// Return based on the first different character. If one argument is a prefix of the other, the prefix
-/// is considered the "smaller" value. The values are compared ignoring case.
-/// @note This works for @c ts::TextView because it is a subclass of @c std::string_view.
-/// @return
-/// - -1 if @a lhs char is less than @a rhs char.
-/// -  1 if @a lhs char is greater than @a rhs char.
-/// -  0 if the views contain identical strings.
+/** Compare views with ordering, ignoring case.
+ *
+ * @param lhs input view
+ * @param rhs input view
+ * @return The ordered comparison value.
+ *
+ * - -1 if @a lhs is less than @a rhs
+ * -  1 if @a lhs is greater than @a rhs
+ * -  0 if the views have identical content.
+ *
+ * If one view is the prefix of the other, the shorter view is less (first in the ordering).
+ */
 int strcasecmp(const std::string_view &lhs, const std::string_view &rhs);
+
+/** Compare views with ordering.
+ *
+ * @param lhs input view
+ * @param rhs input view
+ * @return The ordered comparison value.
+ *
+ * - -1 if @a lhs is less than @a rhs
+ * -  1 if @a lhs is greater than @a rhs
+ * -  0 if the views have identical content.
+ *
+ * If one view is the prefix of the other, the shorter view is less (first in the ordering).
+ *
+ * @note For string views, there is no difference between @c strcmp and @c memcmp.
+ * @see strcmp
+ */
+int memcmp(const std::string_view &lhs, const std::string_view &rhs);
+
+/** Compare views with ordering.
+ *
+ * @param lhs input view
+ * @param rhs input view
+ * @return The ordered comparison value.
+ *
+ * - -1 if @a lhs is less than @a rhs
+ * -  1 if @a lhs is greater than @a rhs
+ * -  0 if the views have identical content.
+ *
+ * If one view is the prefix of the other, the shorter view is less (first in the ordering).
+ *
+ * @note For string views, there is no difference between @c strcmp and @c memcmp.
+ * @see memcmp
+ */
+inline int
+strcmp(const std::string_view &lhs, const std::string_view &rhs)
+{
+  return memcmp(lhs, rhs);
+}
 
 namespace ts
 {
 class TextView;
-/// Compare the memory in two views.
-/// Return based on the first different byte. If one argument is a prefix of the other, the prefix
-/// is considered the "smaller" value.
-/// @return
-/// - -1 if @a lhs byte is less than @a rhs byte.
-/// -  1 if @a lhs byte is greater than @a rhs byte.
-/// -  0 if the views contain identical memory.
-int memcmp(TextView const &lhs, TextView const &rhs);
-using ::memcmp; // Make this an overload, not an override.
-/// Compare the strings in two views.
-/// Return based on the first different character. If one argument is a prefix of the other, the prefix
-/// is considered the "smaller" value.
-/// @return
-/// - -1 if @a lhs char is less than @a rhs char.
-/// -  1 if @a lhs char is greater than @a rhs char.
-/// -  0 if the views contain identical strings.
-int strcmp(TextView const &lhs, TextView const &rhs);
-using ::strcmp; // Make this an overload, not an override.
 
 /** A read only view of contiguous piece of memory.
 
@@ -1132,12 +1156,6 @@ inline bool
 TextView::isNoCasePrefixOf(super_type const &that) const
 {
   return this->size() <= that.size() && 0 == strncasecmp(this->data(), that.data(), this->size());
-}
-
-inline int
-strcmp(TextView const &lhs, TextView const &rhs)
-{
-  return memcmp(lhs, rhs);
 }
 
 template <typename Stream>
