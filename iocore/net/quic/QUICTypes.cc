@@ -562,10 +562,7 @@ QUICConnectionId::ZERO()
   return QUICConnectionId(zero, sizeof(zero));
 }
 
-QUICConnectionId::QUICConnectionId()
-{
-  this->randomize();
-}
+QUICConnectionId::QUICConnectionId() {}
 
 QUICConnectionId::QUICConnectionId(const uint8_t *buf, uint8_t len) : _len(len)
 {
