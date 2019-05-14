@@ -3383,6 +3383,21 @@ HTTP/2 Configuration
    HTTP/2 connection to avoid duplicate pushes on the same connection. If the
    maximum number is reached, new entries are not remembered.
 
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 7
+   :reloadable:
+
+   Specifies how many settings in an HTTP/2 SETTINGS frame |TS| accepts.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_minute INT 14
+   :reloadable:
+
+   Specifies how many settings in HTTP/2 SETTINGS frames |TS| accept for a minute.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+
 Plug-in Configuration
 =====================
 
