@@ -65,7 +65,7 @@ public:
   virtual ink_hrtime rttvar() const       = 0;
   virtual ink_hrtime latest_rtt() const   = 0;
 
-  virtual ink_hrtime congestion_period(uint32_t period) const = 0;
+  virtual ink_hrtime congestion_period(uint32_t threshold) const = 0;
 };
 
 class QUICCongestionController

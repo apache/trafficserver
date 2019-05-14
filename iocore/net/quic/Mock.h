@@ -568,6 +568,12 @@ class MockQUICRTTProvider : public QUICRTTProvider
   {
     return HRTIME_MSECONDS(1);
   }
+
+  ink_hrtime
+  congestion_period(uint32_t threshold) const override
+  {
+    return HRTIME_MSECONDS(1);
+  }
 };
 
 class MockQUICTransferProgressProvider : public QUICTransferProgressProvider
