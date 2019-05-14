@@ -57,6 +57,12 @@ public:
     return HRTIME_MSECONDS(1);
   }
 
+  ink_hrtime
+  congestion_period(uint32_t period) const override
+  {
+    return HRTIME_MSECONDS(1);
+  }
+
 private:
   ink_hrtime _smoothed_rtt = 0;
 };

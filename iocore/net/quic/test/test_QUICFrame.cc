@@ -1520,7 +1520,7 @@ TEST_CASE("QUICFrameFactory Create CONNECTION_CLOSE with a QUICConnectionError",
 TEST_CASE("QUICFrameFactory Create RESET_STREAM with a QUICStreamError", "[quic]")
 {
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  MockQUICRTTProvider mock_rtt;
+  QUICRTTMeasure mock_rtt;
   MockQUICConnection mock_connection;
   QUICBidirectionalStream stream(&mock_rtt, &mock_connection, 0x1234, 0, 0);
   std::unique_ptr<QUICStreamError> error =
