@@ -465,112 +465,60 @@ LogFilterString::display(FILE *fd)
   LogFilterInt::LogFilterInt
   -------------------------------------------------------------------------*/
 
-void
-LogFilterInt::_setValues(size_t n, int64_t *value)
+LogFilterInt::LogFilterInt(LogFilterInt const &that) : LogFilter(that.m_name, that.m_field, that.m_action, that.m_operator)
 {
   m_type       = INT_FILTER;
-  m_num_values = n;
-  if (n) {
-    m_value = new int64_t[n];
-    memcpy(m_value, value, n * sizeof(int64_t));
-  }
+  m_value      = that.m_value;
+  m_num_values = m_value.size();
 }
 
-// TODO: ival should be int64_t
-int
-LogFilterInt::_convertStringToInt(char *value, int64_t *ival, LogFieldAliasMap *map)
+std::tuple<int64_t, bool>
+LogFilterInt::_convertStringToInt(ts::TextView val, LogFieldAliasMap *map)
 {
-  size_t i, l = strlen(value);
-  for (i = 0; i < l && ParseRules::is_digit(value[i]); i++) {
-    ;
-  }
+  ts::TextView parsed;
+  auto n = ts::svtoi(val, &parsed);
 
-  if (i < l) {
-    // not all characters of value are digits, assume that
-    // value is an alias and try to get the actual integer value
-    // from the log field alias map if field has one
-    //
-    if (map == nullptr || map->asInt(value, ival) != LogFieldAliasMap::ALL_OK) {
-      return -1; // error
-    };
+  if (parsed.size() == val.size()) {
+    return {n, true};
   } else {
-    // all characters of value are digits, simply convert
-    // the string to int
-    //
-    *ival = ink_atoui(value);
+    // not all characters of value are digits, assume that value is an alias and try to get the
+    // actual integer value from the log field alias map if field has one
+
+    int64_t ival;
+    if (map != nullptr && map->asInt(val, &ival) == LogFieldAliasMap::ALL_OK) {
+      return {ival, true};
+    }
   }
-  return 0; // all OK
-}
-
-LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, int64_t value)
-  : LogFilter(name, field, action, oper)
-{
-  int64_t v[1];
-  v[0] = value;
-  _setValues(1, v);
-}
-
-LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, size_t num_values,
-                           int64_t *value)
-  : LogFilter(name, field, action, oper)
-{
-  _setValues(num_values, value);
+  return {0, false}; // failure.
 }
 
 LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, char *values)
   : LogFilter(name, field, action, oper)
 {
-  // parse the comma-separated list of values and construct array
-  //
-  int64_t *val_array = nullptr;
-  size_t i           = 0;
-  SimpleTokenizer tok(values, ',');
-  size_t n = tok.getNumTokensRemaining();
+  ts::TextView text(values, strlen(values));
   auto field_map{field->map()}; // because clang-analyzer freaks out if this is inlined.
                                 // It doesn't realize the value is held in place by the smart
                                 // pointer in @c field.
 
-  if (n) {
-    val_array = new int64_t[n];
-    char *t;
-    while (t = tok.getNext(), t != nullptr) {
-      int64_t ival;
-      if (!_convertStringToInt(t, &ival, field_map.get())) {
-        // conversion was successful, add entry to array
-        //
-        val_array[i++] = ival;
-      }
+  while (text) {
+    auto token{text.take_prefix_at(',').trim_if(&isspace)};
+    if (!token) { // ignore empty elements.
+      continue;
     }
-    if (i < n) {
-      Warning("There were invalid values in the definition of filter %s"
-              " only %zu out of %zu values will be used.",
-              name, i, n);
+
+    auto [ival, valid_p] = this->_convertStringToInt(token, field_map.get());
+    if (valid_p) {
+      m_value.push_back(ival);
+    } else {
+      Warning(R"(Invalid value "%.*s" in filter "%s")", static_cast<int>(token.size()), token.data(), name);
     }
-  } else {
-    Warning("No values in the definition of filter %s.", name);
+  }
+  if (m_value.empty()) {
+    Warning(R"(No valid values for filter "%s")", name);
   }
 
-  _setValues(i, val_array);
-
-  if (n) {
-    delete[] val_array;
-  }
-}
-
-LogFilterInt::LogFilterInt(const LogFilterInt &rhs) : LogFilter(rhs.m_name, rhs.m_field, rhs.m_action, rhs.m_operator)
-{
-  _setValues(rhs.m_num_values, rhs.m_value);
-}
-
-/*-------------------------------------------------------------------------
-  LogFilterInt::~LogFilterInt
-  -------------------------------------------------------------------------*/
-
-LogFilterInt::~LogFilterInt()
-{
-  if (m_num_values > 0) {
-    delete[] m_value;
-  }
+  m_type       = INT_FILTER;
+  m_num_values = m_value.size();
 }
 
 /*-------------------------------------------------------------------------
@@ -586,16 +534,8 @@ LogFilterInt::~LogFilterInt()
 bool
 LogFilterInt::operator==(LogFilterInt &rhs)
 {
-  if (m_type == rhs.m_type && *m_field == *rhs.m_field && m_action == rhs.m_action && m_operator == rhs.m_operator &&
-      m_num_values == rhs.m_num_values) {
-    for (size_t i = 0; i < m_num_values; i++) {
-      if (m_value[i] != rhs.m_value[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-  return false;
+  return m_type == rhs.m_type && *m_field == *rhs.m_field && m_action == rhs.m_action && m_operator == rhs.m_operator &&
+         m_num_values == rhs.m_num_values && m_value == rhs.m_value;
 }
 
 /*-------------------------------------------------------------------------
@@ -605,11 +545,10 @@ LogFilterInt::operator==(LogFilterInt &rhs)
 bool
 LogFilterInt::wipe_this_entry(LogAccess *lad)
 {
-  if (m_num_values == 0 || m_field == nullptr || lad == nullptr || m_action != WIPE_FIELD_VALUE) {
+  if (m_value.empty() || m_field == nullptr || lad == nullptr || m_action != WIPE_FIELD_VALUE) {
     return false;
   }
 
-  bool cond_satisfied = false;
   int64_t value;
 
   m_field->marshal(lad, (char *)&value);
@@ -621,19 +560,11 @@ LogFilterInt::wipe_this_entry(LogAccess *lad)
   //
 
   // most common case is single value, speed it up a little bit by unrolling
-  //
-  if (m_num_values == 1) {
-    cond_satisfied = (value == *m_value);
-  } else {
-    for (size_t i = 0; i < m_num_values; ++i) {
-      if (value == m_value[i]) {
-        cond_satisfied = true;
-        break;
-      }
-    }
+  if (m_value.size() == 1) {
+    return value == m_value.front();
   }
 
-  return cond_satisfied;
+  return std::any_of(m_value.begin(), m_value.end(), [=](int64_t x) { return x == value; });
 }
 
 /*-------------------------------------------------------------------------
@@ -643,14 +574,14 @@ LogFilterInt::wipe_this_entry(LogAccess *lad)
 bool
 LogFilterInt::toss_this_entry(LogAccess *lad)
 {
-  if (m_num_values == 0 || m_field == nullptr || lad == nullptr) {
+  if (m_value.empty() || m_field == nullptr || lad == nullptr) {
     return false;
   }
 
-  bool cond_satisfied = false;
   int64_t value;
 
   m_field->marshal(lad, (char *)&value);
+
   // This used to do an ntohl() on value, but that breaks various filters.
   // Long term we should move IPs to their own log type.
 
@@ -658,20 +589,13 @@ LogFilterInt::toss_this_entry(LogAccess *lad)
   // equivalent to "MATCH" for an integer field
   //
 
-  // most common case is single value, speed it up a little bit by unrolling
-  //
-  if (m_num_values == 1) {
-    cond_satisfied = (value == *m_value);
-  } else {
-    for (size_t i = 0; i < m_num_values; ++i) {
-      if (value == m_value[i]) {
-        cond_satisfied = true;
-        break;
-      }
-    }
+  if (REJECT == m_action) {
+    return std::any_of(m_value.begin(), m_value.end(), [=](int64_t x) { return x == value; });
+  } else if (ACCEPT == m_action) {
+    return std::none_of(m_value.begin(), m_value.end(), [=](int64_t x) { return x == value; });
   }
 
-  return (m_action == REJECT && cond_satisfied) || (m_action == ACCEPT && !cond_satisfied);
+  return false;
 }
 
 /*-------------------------------------------------------------------------
@@ -987,7 +911,7 @@ LogFilterList::add(LogFilter *filter, bool copy)
   ink_assert(filter != nullptr);
   if (copy) {
     if (filter->type() == LogFilter::INT_FILTER) {
-      LogFilterInt *f = new LogFilterInt(*((LogFilterInt *)filter));
+      LogFilterInt *f = new LogFilterInt(*static_cast<LogFilterInt *>(filter));
       m_filter_list.enqueue(f);
     } else if (filter->type() == LogFilter::IP_FILTER) {
       LogFilterIP *f = new LogFilterIP(*((LogFilterIP *)filter));

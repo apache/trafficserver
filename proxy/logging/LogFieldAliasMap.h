@@ -35,6 +35,7 @@
 #include "tscore/Ptr.h"
 #include "LogUtils.h"
 #include "tscore/ink_string.h"
+#include "tscpp/util/TextView.h"
 
 /*****************************************************************************
 
@@ -86,7 +87,12 @@ public:
     BUFFER_TOO_SMALL,
   };
 
-  virtual int asInt(char *key, IntType *val, bool case_sensitive = false) const                 = 0;
+  virtual int asInt(std::string_view key, IntType *val, bool case_sensitive = false) const = 0;
+  int
+  asInt(char *key, IntType *val, bool case_sensitive = false)
+  {
+    return this->asInt(std::string_view{key}, val, case_sensitive);
+  }
   virtual int asString(IntType key, char *buf, size_t bufLen, size_t *numChars = nullptr) const = 0;
 };
 
@@ -130,7 +136,7 @@ public:
   void init(size_t numPairs, ...);
 
   int
-  asInt(char *key, IntType *val, bool case_sensitive) const override
+  asInt(std::string_view key, IntType *val, bool case_sensitive) const override
   {
     int retVal = INVALID_STRING;
 
@@ -146,7 +152,7 @@ public:
         found = false;
       }
       if (found) {
-        *val   = (unsigned int)(i + m_min);
+        *val   = static_cast<unsigned int>(i + m_min);
         retVal = ALL_OK;
         break;
       }

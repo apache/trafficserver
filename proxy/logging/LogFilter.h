@@ -185,28 +185,30 @@ private:
 class LogFilterInt : public LogFilter
 {
 public:
-  LogFilterInt(const char *name, LogField *field, Action a, Operator o, int64_t value);
-  LogFilterInt(const char *name, LogField *field, Action a, Operator o, size_t num_values, int64_t *value);
   LogFilterInt(const char *name, LogField *field, Action a, Operator o, char *values);
   LogFilterInt(const LogFilterInt &rhs);
-  ~LogFilterInt() override;
   bool operator==(LogFilterInt &rhs);
 
   bool toss_this_entry(LogAccess *lad) override;
   bool wipe_this_entry(LogAccess *lad) override;
   void display(FILE *fd = stdout) override;
 
-  // noncopyable
+  // unassignable
   LogFilterInt &operator=(LogFilterInt &rhs) = delete;
 
 private:
-  int64_t *m_value = nullptr; // the array of values
+  std::vector<int64_t> m_value; ///< Array of values.
 
-  void _setValues(size_t n, int64_t *value);
-  int _convertStringToInt(char *val, int64_t *ival, LogFieldAliasMap *map);
-
-  // -- member functions that are not allowed --
-  LogFilterInt();
+  /** Convert the text @a val into a integral value.
+   *
+   * @param val Input string.
+   * @param map Aliases.
+   * @return A tuple of the integer value and a success flag.
+   *
+   * If the success flag is @c false the input @a val was malformed and the return integer
+   * value is garbage.
+   */
+  std::tuple<int64_t, bool> _convertStringToInt(ts::TextView val, LogFieldAliasMap *map);
 };
 
 /*-------------------------------------------------------------------------
