@@ -132,6 +132,8 @@ public:
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
   }
 
+  ProxyError rx_error_code;
+  ProxyError tx_error_code;
   Http2ClientSession *ua_session;
   HpackHandle *local_hpack_handle;
   HpackHandle *remote_hpack_handle;

@@ -636,6 +636,7 @@ rcv_goaway_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   Http2StreamDebug(cstate.ua_session, stream_id, "GOAWAY: last stream id=%d, error code=%d", goaway.last_streamid,
                    static_cast<int>(goaway.error_code));
 
+  cstate.rx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(goaway.error_code)};
   cstate.handleEvent(HTTP2_SESSION_EVENT_FINI, nullptr);
   // eventProcessor.schedule_imm(&cs, ET_NET, VC_EVENT_ERROR);
 
@@ -1723,6 +1724,8 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
   frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_GOAWAY]);
   http2_write_goaway(goaway, frame.write());
   frame.finalize(HTTP2_GOAWAY_LEN);
+
+  this->tx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(ec)};
 
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
