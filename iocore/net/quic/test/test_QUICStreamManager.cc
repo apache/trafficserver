@@ -37,7 +37,7 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
   MockQUICConnectionInfoProvider cinfo_provider;
-  MockQUICRTTProvider rtt_provider;
+  QUICRTTMeasure rtt_provider;
   QUICStreamManager sm(&cinfo_provider, &rtt_provider, &app_map);
 
   uint8_t local_tp_buf[] = {
@@ -111,7 +111,7 @@ TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
   MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
   MockQUICConnectionInfoProvider cinfo_provider;
-  MockQUICRTTProvider rtt_provider;
+  QUICRTTMeasure rtt_provider;
   QUICStreamManager sm(&cinfo_provider, &rtt_provider, &app_map);
   std::shared_ptr<QUICTransportParameters> local_tp  = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
   std::shared_ptr<QUICTransportParameters> remote_tp = std::make_shared<QUICTransportParametersInClientHello>();
@@ -137,7 +137,8 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
   MockQUICConnection connection;
   MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(new MockQUICConnectionInfoProvider(), new MockQUICRTTProvider(), &app_map);
+  QUICRTTMeasure rtt_provider;
+  QUICStreamManager sm(new MockQUICConnectionInfoProvider(), &rtt_provider, &app_map);
 
   uint8_t local_tp_buf[] = {
     0x00, 0x0e,            // size of parameters
@@ -194,7 +195,8 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   MockQUICConnection connection;
   MockQUICApplication mock_app(&connection);
   app_map.set_default(&mock_app);
-  QUICStreamManager sm(new MockQUICConnectionInfoProvider(), new MockQUICRTTProvider(), &app_map);
+  QUICRTTMeasure rtt_provider;
+  QUICStreamManager sm(new MockQUICConnectionInfoProvider(), &rtt_provider, &app_map);
 
   uint8_t local_tp_buf[] = {
     0x00, 0x06, // size of parameters

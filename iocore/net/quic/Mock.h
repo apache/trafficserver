@@ -344,7 +344,7 @@ class MockQUICCongestionController : public QUICCongestionController
 {
 public:
   MockQUICCongestionController(QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config)
-    : QUICCongestionController(&this->_rtt_measure, info, cc_config)
+    : QUICCongestionController(this->_rtt_measure, info, cc_config)
   {
   }
   // Override
