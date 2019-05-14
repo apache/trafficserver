@@ -127,7 +127,7 @@ QUICSendStream::state_stream_closed(int event, void *data)
 bool
 QUICSendStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
-  return !this->is_retransmited_frame_queue_empty() || (this->_write_vio.get_reader()->read_avail() > 0);
+  return !this->is_retransmited_frame_queue_empty() || this->_write_vio.get_reader()->is_read_avail_more_than(0);
 }
 
 QUICFrame *

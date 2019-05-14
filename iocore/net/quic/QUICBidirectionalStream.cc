@@ -355,7 +355,7 @@ bool
 QUICBidirectionalStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
   return this->_local_flow_controller.will_generate_frame(level, timestamp) || !this->is_retransmited_frame_queue_empty() ||
-         (this->_write_vio.get_reader()->read_avail() > 0);
+         this->_write_vio.get_reader()->is_read_avail_more_than(0);
 }
 
 QUICFrame *
