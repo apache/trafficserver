@@ -837,7 +837,7 @@ ConditionNow::eval(const Resources &res)
 const char *
 ConditionGeo::get_geo_string(const sockaddr *addr) const
 {
-  const char *ret = nullptr;
+  const char *ret = "(unknown)";
   int v           = 4;
 
   if (addr) {
