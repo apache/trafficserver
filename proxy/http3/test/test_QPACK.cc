@@ -399,7 +399,7 @@ TEST_CASE("Encoding", "[qpack-encode]")
   strcat(out_file, encdir);
 
   while ((d = readdir(dir)) != nullptr) {
-    char section_name[128];
+    char section_name[1024];
     sprintf(section_name, "%s: DTS=%d, MBS=%d, AM=%d", d->d_name, tablesize, streams, ackmode);
     SECTION(section_name)
     {
@@ -408,8 +408,7 @@ TEST_CASE("Encoding", "[qpack-encode]")
       ink_strlcat(qif_file, d->d_name, sizeof(qif_file));
       stat(qif_file, &st);
       if (S_ISREG(st.st_mode) && strstr(d->d_name, ".qif") == (d->d_name + (strlen(d->d_name) - 4))) {
-        out_file[strlen(encdir)] = '\0';
-        sprintf(out_file, "%s/ats/%s.ats.%d.%d.%d", out_file, d->d_name, tablesize, streams, ackmode);
+        sprintf(out_file + strlen(encdir), "/ats/%s.ats.%d.%d.%d", d->d_name, tablesize, streams, ackmode);
         CHECK(test_encode(qif_file, out_file, tablesize, streams, ackmode) == 0);
       }
     }
@@ -434,17 +433,14 @@ TEST_CASE("Decoding", "[qpack-decode]")
   strcat(out_file, decdir);
 
   while ((d = readdir(dir)) != nullptr) {
-    char section_name[128];
+    char section_name[1024];
     sprintf(section_name, "%s: DTS=%d, MBS=%d, AM=%d, APP=%s", d->d_name, tablesize, streams, ackmode, appname);
     SECTION(section_name)
     {
-      enc_file[strlen(encdir)]     = '/';
-      enc_file[strlen(encdir) + 1] = '\0';
-      sprintf(enc_file, "%s/%s/%s", enc_file, appname, d->d_name);
+      sprintf(enc_file + strlen(encdir), "/%s/%s", appname, d->d_name);
       stat(enc_file, &st);
       if (S_ISREG(st.st_mode) && strstr(d->d_name, pattern)) {
-        out_file[strlen(decdir)] = '\0';
-        sprintf(out_file, "%s/%s/%s.decoded", out_file, appname, d->d_name);
+        sprintf(out_file + strlen(decdir), "/%s/%s.decoded", appname, d->d_name);
         CHECK(test_decode(enc_file, out_file, tablesize, streams, ackmode, appname) == 0);
       }
     }

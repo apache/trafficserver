@@ -255,7 +255,7 @@ QUICPacketType
 QUICPacketLongHeader::type() const
 {
   if (this->_buf) {
-    QUICPacketType type;
+    QUICPacketType type = QUICPacketType::UNINITIALIZED;
     QUICPacketLongHeader::type(type, this->_buf.get(), this->_buf_len);
     return type;
   } else {
@@ -326,7 +326,7 @@ QUICPacketLongHeader::scil(uint8_t &scil, const uint8_t *packet, size_t packet_l
 bool
 QUICPacketLongHeader::token_length(size_t &token_length, uint8_t *field_len, const uint8_t *packet, size_t packet_len)
 {
-  QUICPacketType type;
+  QUICPacketType type = QUICPacketType::UNINITIALIZED;
   QUICPacketLongHeader::type(type, packet, packet_len);
 
   if (type != QUICPacketType::INITIAL) {
@@ -408,7 +408,7 @@ QUICPacketLongHeader::packet_number_offset(uint8_t &pn_offset, const uint8_t *pa
 bool
 QUICPacketLongHeader::key_phase(QUICKeyPhase &phase, const uint8_t *packet, size_t packet_len)
 {
-  QUICPacketType type;
+  QUICPacketType type = QUICPacketType::UNINITIALIZED;
   QUICPacketLongHeader::type(type, packet, packet_len);
   phase = QUICTypeUtil::key_phase(type);
   return true;
@@ -464,7 +464,7 @@ QUICVersion
 QUICPacketLongHeader::version() const
 {
   if (this->_buf) {
-    QUICVersion version;
+    QUICVersion version = 0;
     QUICPacketLongHeader::version(version, this->_buf.get(), this->_buf_len);
     return version;
   } else {
@@ -707,7 +707,7 @@ QUICKeyPhase
 QUICPacketShortHeader::key_phase() const
 {
   if (this->_buf) {
-    QUICKeyPhase phase;
+    QUICKeyPhase phase = QUICKeyPhase::INITIAL;
     QUICPacketShortHeader::key_phase(phase, this->_buf.get(), this->_buf_len);
     return phase;
   } else {
