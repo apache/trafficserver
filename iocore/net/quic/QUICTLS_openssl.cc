@@ -420,7 +420,7 @@ QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, Net
       return;
     }
 
-    auto session = PEM_read_bio_SSL_SESSION(file, nullptr, 0, nullptr);
+    auto session = PEM_read_bio_SSL_SESSION(file, nullptr, nullptr, nullptr);
     if (session == nullptr) {
       Debug(tag, "Could not read tls session file %s", session_file);
     } else {
