@@ -1625,8 +1625,8 @@ Ldone : {
   if (clear_start <= clear_end) {
     dir_clear_range(clear_start, clear_end, this);
   } else {
-    dir_clear_range(clear_end, DIR_OFFSET_MAX, this);
-    dir_clear_range(1, clear_start, this);
+    dir_clear_range(clear_start, DIR_OFFSET_MAX, this);
+    dir_clear_range(1, clear_end, this);
   }
 
   Note("recovery clearing offsets of Vol %s : [%" PRIu64 ", %" PRIu64 "] sync_serial %d next %d\n", hash_text.get(),
