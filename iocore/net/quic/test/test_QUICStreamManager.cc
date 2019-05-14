@@ -254,4 +254,7 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   mock_app.send(reinterpret_cast<uint8_t *>(block_1024->buf()), 1024, 4);
   sm.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 16384, 16384, 0);
   CHECK(sm.total_offset_sent() == 2048);
+
+  // Wait for event processing
+  sleep(2);
 }
