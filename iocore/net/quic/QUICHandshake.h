@@ -80,6 +80,9 @@ public:
   bool is_stateless_retry_enabled() const;
   bool has_remote_tp() const;
 
+protected:
+  virtual bool _is_level_matched(QUICEncryptionLevel level) override;
+
 private:
   QUICConnection *_qc                 = nullptr;
   QUICHandshakeProtocol *_hs_protocol = nullptr;
@@ -91,16 +94,6 @@ private:
 
   QUICCryptoStream _crypto_streams[4];
 
-  std::vector<QUICEncryptionLevel>
-  _encryption_level_filter() override
-  {
-    return {
-      QUICEncryptionLevel::INITIAL,
-      QUICEncryptionLevel::ZERO_RTT,
-      QUICEncryptionLevel::HANDSHAKE,
-      QUICEncryptionLevel::ONE_RTT,
-    };
-  }
   void _load_local_server_transport_parameters(const QUICTPConfig &tp_config, const QUICPreferredAddress *pref_addr);
   void _load_local_client_transport_parameters(const QUICTPConfig &tp_config);
   bool _check_remote_transport_parameters(std::shared_ptr<const QUICTransportParametersInClientHello> tp);

@@ -373,3 +373,20 @@ QUICAckFrameManager::QUICAckFrameCreator::QUICAckFrameCreator(QUICPacketNumberSp
 }
 
 QUICAckFrameManager::QUICAckFrameCreator::~QUICAckFrameCreator() {}
+
+/*
+   No limit of encryption level.
+   ```
+   std::array<QUICEncryptionLevel, 4> _encryption_level_filter = {
+     QUICEncryptionLevel::INITIAL,
+     QUICEncryptionLevel::ZERO_RTT,
+     QUICEncryptionLevel::HANDSHAKE,
+     QUICEncryptionLevel::ONE_RTT,
+   };
+   ```
+*/
+bool
+QUICAckFrameManager::_is_level_matched(QUICEncryptionLevel level)
+{
+  return true;
+}

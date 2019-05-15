@@ -433,3 +433,15 @@ QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
 
   return frame;
 }
+
+bool
+QUICStreamManager::_is_level_matched(QUICEncryptionLevel level)
+{
+  for (auto l : this->_encryption_level_filter) {
+    if (l == level) {
+      return true;
+    }
+  }
+
+  return false;
+}

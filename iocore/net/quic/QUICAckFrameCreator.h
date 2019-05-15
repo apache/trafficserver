@@ -112,6 +112,9 @@ public:
   QUICFrameId issue_frame_id();
   uint8_t ack_delay_exponent() const;
 
+protected:
+  virtual bool _is_level_matched(QUICEncryptionLevel level) override;
+
 private:
   virtual void _on_frame_acked(QUICFrameInformationUPtr &info) override;
   virtual void _on_frame_lost(QUICFrameInformationUPtr &info) override;
@@ -122,16 +125,6 @@ private:
    */
   QUICAckFrame *_create_ack_frame(uint8_t *buf, QUICEncryptionLevel level);
   uint64_t _calculate_delay(QUICEncryptionLevel level);
-  std::vector<QUICEncryptionLevel>
-  _encryption_level_filter() override
-  {
-    return {
-      QUICEncryptionLevel::INITIAL,
-      QUICEncryptionLevel::ZERO_RTT,
-      QUICEncryptionLevel::HANDSHAKE,
-      QUICEncryptionLevel::ONE_RTT,
-    };
-  }
 
   bool _available[4]   = {false};
   bool _should_send[4] = {false};

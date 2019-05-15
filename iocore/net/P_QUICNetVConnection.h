@@ -364,13 +364,6 @@ private:
 
   // QUICFrameGenerator
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
-  std::vector<QUICEncryptionLevel>
-  _encryption_level_filter() override
-  {
-    return {
-      QUICEncryptionLevel::ONE_RTT,
-    };
-  }
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);

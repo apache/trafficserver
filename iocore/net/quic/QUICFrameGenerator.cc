@@ -29,21 +29,14 @@ QUICFrameGenerator::_records_frame(QUICFrameId id, QUICFrameInformationUPtr info
   this->_info.insert(std::make_pair(id, std::move(info)));
 }
 
-std::vector<QUICEncryptionLevel>
-QUICFrameGenerator::_encryption_level_filter()
-{
-  return {QUICEncryptionLevel::ONE_RTT};
-}
-
 bool
 QUICFrameGenerator::_is_level_matched(QUICEncryptionLevel level)
 {
-  for (auto l : this->_encryption_level_filter()) {
-    if (l == level) {
-      return true;
-    }
+  if (level == this->_encryption_level_filter) {
+    return true;
+  } else {
+    return false;
   }
-  return false;
 }
 
 void

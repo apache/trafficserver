@@ -59,11 +59,11 @@ protected:
   {
   }
 
-  virtual std::vector<QUICEncryptionLevel> _encryption_level_filter();
   virtual bool _is_level_matched(QUICEncryptionLevel level);
   void _records_frame(QUICFrameId id, QUICFrameInformationUPtr info);
 
 private:
-  QUICFrameId _latest_frame_Id = 0;
+  QUICFrameId _latest_frame_Id                 = 0;
+  QUICEncryptionLevel _encryption_level_filter = QUICEncryptionLevel::ONE_RTT;
   std::map<QUICFrameId, QUICFrameInformationUPtr> _info;
 };

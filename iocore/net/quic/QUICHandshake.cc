@@ -491,3 +491,20 @@ QUICHandshake::_abort_handshake(QUICTransErrorCode code)
 
   this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
 }
+
+/*
+   No limit of encryption level.
+   ```
+   std::array<QUICEncryptionLevel, 4> _encryption_level_filter = {
+     QUICEncryptionLevel::INITIAL,
+     QUICEncryptionLevel::ZERO_RTT,
+     QUICEncryptionLevel::HANDSHAKE,
+     QUICEncryptionLevel::ONE_RTT,
+   };
+   ```
+*/
+bool
+QUICHandshake::_is_level_matched(QUICEncryptionLevel level)
+{
+  return true;
+}

@@ -44,13 +44,4 @@ public:
 private:
   // Initial, 0/1-RTT, and Handshake
   uint64_t _need_to_fire[4] = {0};
-
-  // QUICFrameGenerator
-  std::vector<QUICEncryptionLevel>
-  _encryption_level_filter() override
-  {
-    return {
-      QUICEncryptionLevel::ONE_RTT,
-    };
-  }
 };

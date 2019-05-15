@@ -67,6 +67,9 @@ public:
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
                             ink_hrtime timestamp) override;
 
+protected:
+  virtual bool _is_level_matched(QUICEncryptionLevel level) override;
+
 private:
   QUICStreamVConnection *_find_stream_vc(QUICStreamId id);
   QUICStreamVConnection *_find_or_create_stream_vc(QUICStreamId stream_id);
@@ -77,26 +80,22 @@ private:
   QUICConnectionErrorUPtr _handle_frame(const QUICMaxStreamDataFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICStreamDataBlockedFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICMaxStreamsFrame &frame);
-  std::vector<QUICEncryptionLevel>
-  _encryption_level_filter() override
-  {
-    return {
-      QUICEncryptionLevel::ZERO_RTT,
-      QUICEncryptionLevel::ONE_RTT,
-    };
-  }
 
   QUICStreamFactory _stream_factory;
 
-  QUICConnectionInfoProvider *_info                         = nullptr;
-  QUICApplicationMap *_app_map                              = nullptr;
-  std::shared_ptr<const QUICTransportParameters> _local_tp  = nullptr;
-  std::shared_ptr<const QUICTransportParameters> _remote_tp = nullptr;
-  QUICStreamId _local_max_streams_bidi                      = 0;
-  QUICStreamId _local_max_streams_uni                       = 0;
-  QUICStreamId _remote_max_streams_bidi                     = 0;
-  QUICStreamId _remote_max_streams_uni                      = 0;
-  QUICStreamId _next_stream_id_uni                          = 0;
-  QUICStreamId _next_stream_id_bidi                         = 0;
-  uint64_t _total_offset_sent                               = 0;
+  QUICConnectionInfoProvider *_info                           = nullptr;
+  QUICApplicationMap *_app_map                                = nullptr;
+  std::shared_ptr<const QUICTransportParameters> _local_tp    = nullptr;
+  std::shared_ptr<const QUICTransportParameters> _remote_tp   = nullptr;
+  QUICStreamId _local_max_streams_bidi                        = 0;
+  QUICStreamId _local_max_streams_uni                         = 0;
+  QUICStreamId _remote_max_streams_bidi                       = 0;
+  QUICStreamId _remote_max_streams_uni                        = 0;
+  QUICStreamId _next_stream_id_uni                            = 0;
+  QUICStreamId _next_stream_id_bidi                           = 0;
+  uint64_t _total_offset_sent                                 = 0;
+  std::array<QUICEncryptionLevel, 2> _encryption_level_filter = {
+    QUICEncryptionLevel::ZERO_RTT,
+    QUICEncryptionLevel::ONE_RTT,
+  };
 };
