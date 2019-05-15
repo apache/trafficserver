@@ -34,6 +34,7 @@ example_Plugins = \
 	bnull_transform.la \
 	request_buffer.la \
 	cache_scan.la \
+	client_context_dump.la \
 	file_1.la \
 	hello.la \
 	intercept.la \
@@ -103,6 +104,7 @@ blacklist_1_la_SOURCES = blacklist_1/blacklist_1.c
 bnull_transform_la_SOURCES = bnull_transform/bnull_transform.c
 request_buffer_la_SOURCES = request_buffer/request_buffer.c
 cache_scan_la_SOURCES = cache_scan/cache_scan.cc
+client_context_dump_la_SOURCES = client_context_dump/client_context_dump.cc
 file_1_la_SOURCES = file_1/file_1.c
 hello_la_SOURCES = hello/hello.c
 intercept_la_SOURCES = intercept/intercept.cc
