@@ -1490,6 +1490,9 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
       }
     }
 
+    // If execution reaches here, then @c got_len > 0 and e == s + got_len therefore s < e
+    // clang analyzer can't figure this out, so be explicit.
+    ink_assert(s < e);
     while (s < e) {
       doc = (Doc *)s;
 
