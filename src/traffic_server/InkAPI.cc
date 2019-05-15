@@ -9004,6 +9004,79 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
   return ret;
 }
 
+/**
+ * This function retrieves an array of lookup keys for client contexts loaded in
+ * traffic server. Given a 2-level mapping for client contexts, every 2 lookup keys
+ * can be used to locate and identify 1 context.
+ * @param n Allocated size for result array.
+ * @param result Const char pointer arrays to be filled with lookup keys.
+ * @param actual Total number of lookup keys.
+ */
+tsapi TSReturnCode
+TSSslClientContextsNamesGet(int n, const char **result, int *actual)
+{
+  sdk_assert(n == 0 || result != nullptr);
+  int idx = 0, count = 0;
+  SSLConfigParams *params = SSLConfig::acquire();
+
+  if (params) {
+    auto &ctx_map_lock = params->ctxMapLock;
+    auto &ca_map       = params->top_level_ctx_map;
+    auto mem           = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
+    ink_mutex_acquire(&ctx_map_lock);
+    for (auto &ca_pair : ca_map) {
+      // Populate mem array with 2 strings each time
+      for (auto &ctx_pair : *ca_pair.second) {
+        if (idx + 1 < n) {
+          mem[idx++] = ca_pair.first;
+          mem[idx++] = ctx_pair.first;
+        }
+        count += 2;
+      }
+    }
+    ink_mutex_release(&ctx_map_lock);
+    for (int i = 0; i < idx; i++) {
+      result[i] = mem[i].data();
+    }
+  }
+  if (actual) {
+    *actual = count;
+  }
+  SSLConfig::release(params);
+  return TS_SUCCESS;
+}
+
+/**
+ * This function returns the client context corresponding to the lookup keys provided.
+ * User should call TSSslClientContextsGet() first to determine which lookup keys are
+ * present before querying for them.
+ * Returns valid TSSslContext on success and nullptr on failure.
+ * @param first_key Key string for the top level.
+ * @param second_key Key string for the second level.
+ */
+tsapi TSSslContext
+TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths)
+{
+  if (!ca_paths || !ck_paths || ca_paths[0] == '\0' || ck_paths[0] == '\0') {
+    return nullptr;
+  }
+  SSLConfigParams *params = SSLConfig::acquire();
+  TSSslContext retval     = nullptr;
+  if (params) {
+    ink_mutex_acquire(&params->ctxMapLock);
+    auto ca_iter = params->top_level_ctx_map.find(ca_paths);
+    if (ca_iter != params->top_level_ctx_map.end()) {
+      auto ctx_iter = ca_iter->second->find(ck_paths);
+      if (ctx_iter != ca_iter->second->end()) {
+        retval = reinterpret_cast<TSSslContext>(ctx_iter->second);
+      }
+    }
+    ink_mutex_release(&params->ctxMapLock);
+  }
+  SSLConfig::release(params);
+  return retval;
+}
+
 tsapi TSSslContext
 TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file)
 {
