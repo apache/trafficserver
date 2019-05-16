@@ -108,6 +108,7 @@ void
 HQClientTransaction::release(IOBufferReader *r)
 {
   super::release(r);
+  this->do_io_close();
   this->current_reader = nullptr;
 }
 
