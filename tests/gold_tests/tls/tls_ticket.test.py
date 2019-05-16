@@ -22,11 +22,6 @@ Test.Summary = '''
 Test tls tickets
 '''
 
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
-
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False)
 ts2 = Test.MakeATSProcess("ts2", select_ports=False)

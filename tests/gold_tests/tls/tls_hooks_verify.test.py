@@ -24,8 +24,6 @@ Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.
 '''
 
-Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
-
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server", ssl=True)
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -107,4 +105,3 @@ ts.Streams.All += Testers.ContainsExpression("Server verify callback 0 [\da-fx]+
 ts.Streams.All += Testers.ContainsExpression("Server verify callback 1 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times")
 ts.Streams.All += Testers.ContainsExpression("Server verify callback 0 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
 ts.Streams.All += Testers.ContainsExpression("Server verify callback 1 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
-

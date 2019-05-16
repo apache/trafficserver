@@ -25,7 +25,6 @@ Test basic post redirection
 MAX_REDIRECT = 99
 
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.HasProgram("truncate", "truncate need to be installed on system for this test to work")
 )
 

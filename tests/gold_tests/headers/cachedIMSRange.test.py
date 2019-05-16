@@ -24,11 +24,6 @@ Test revalidating cached objects
 '''
 
 testName = "RevalidateCacheObject"
-
-# Needs Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "curl needs to be installed on system for this test to work"),
-)
 Test.ContinueOnFail = True
 
 # Set up Origin server

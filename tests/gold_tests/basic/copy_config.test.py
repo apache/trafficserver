@@ -18,9 +18,6 @@
 
 Test.Summary = "Test start up of Traffic server with configuration modification of starting port of different servers at the same time"
 
-Test.SkipUnless(Condition.HasProgram("curl",
-                                     "Curl needs to be installed on your system for this test to work"))
-
 # set up some ATS processes
 ts1 = Test.MakeATSProcess("ts1", select_ports=False)
 ts1.Setup.ts.CopyConfig('config/records_8090.config', 'records.config')

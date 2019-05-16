@@ -24,8 +24,6 @@ Test.Summary = '''
 Test various options for requiring certificate from client for mutual authentication TLS
 '''
 
-Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
-
 ts = Test.MakeATSProcess("ts", select_ports=False)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
@@ -164,4 +162,3 @@ tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./server.pem --key ./server.key --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/case1".format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("alert unknown ca", "TLS handshake should succeed")
-

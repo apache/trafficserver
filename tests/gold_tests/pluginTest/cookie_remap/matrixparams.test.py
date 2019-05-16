@@ -21,10 +21,6 @@ Test.Summary = '''
 
 '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: Tests when matrix parameters are present"
 Test.SkipIf(Condition.true("Test is temporarily turned off, to be fixed according to an incompatible plugin API change (PR #4964)"))
@@ -172,4 +168,3 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
 server.Streams.All = "gold/matrix.gold"
-

@@ -21,11 +21,6 @@ Test.Summary = '''
 Test tls server  certificate verification options. Exercise conf_remap for ca bundle
 '''
 
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
-
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server1 = Test.MakeOriginServer("server1", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
@@ -87,7 +82,7 @@ ts.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1
 })
 
-# Should succeed 
+# Should succeed
 tr = Test.AddTestRun("Use corrcect ca bundle for server 1")
 tr.Processes.Default.Command = 'curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
 tr.ReturnCode = 0
@@ -115,7 +110,7 @@ tr2.Processes.Default.Command = "curl -k -H \"host: random.com\"  http://127.0.0
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server2
 tr2.StillRunningAfter = ts
-# Should succeed, but will be message in log about signature 
+# Should succeed, but will be message in log about signature
 tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr3 = Test.AddTestRun("User incorrect ca bundle for server 2")
@@ -125,5 +120,3 @@ tr3.StillRunningAfter = server2
 tr3.StillRunningAfter = ts
 # Should succeed.  No error messages
 tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have succeeded")
-
-

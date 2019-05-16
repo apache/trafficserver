@@ -24,8 +24,6 @@ Test.Summary = '''
 Test conf_remp to specify different client certificates to offer to the origin
 '''
 
-Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
-
 ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=False)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
@@ -132,5 +130,3 @@ trbarfail.StillRunningAfter = server2
 trbarfail.Processes.Default.Command = 'curl -H host:bar.com  http://127.0.0.1:{0}/badcase2'.format(ts.Variables.port)
 trbarfail.Processes.Default.ReturnCode = 0
 trbarfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-
-

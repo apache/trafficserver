@@ -33,7 +33,6 @@ Test a basic regex_revalidate
 # A rule's expiry can't be changed after the fact!
 
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.PluginExists('regex_revalidate.so'),
     Condition.PluginExists('xdebug.so')
 )
@@ -138,7 +137,7 @@ path1_rule = 'path1 {}\n'.format(int(time.time()) + 600)
 
 # Define first revistion for when trafficserver starts
 ts.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    "# Empty\n"    
+    "# Empty\n"
 ])
 
 ts.Disk.remap_config.AddLine(

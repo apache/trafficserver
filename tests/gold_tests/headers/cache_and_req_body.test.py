@@ -22,11 +22,6 @@ Test.Summary = '''
 Test cached responses and requests with bodies
 '''
 
-# Needs Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "curl needs to be installed on system for this test to work"),
-    Condition.HasProgram("nc", "nc needs to be installed on system for this test to work")
-)
 Test.ContinueOnFail = True
 
 # Define default ATS

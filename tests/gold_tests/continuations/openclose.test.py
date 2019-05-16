@@ -22,10 +22,6 @@ Test.Summary = '''
 Test transactions and sessions, making sure they open and close in the proper order.
 '''
 
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl needs to be installed on system for this test to work")
-)
-
 # Define default ATS
 ts = Test.MakeATSProcess("ts", command="traffic_manager")
 

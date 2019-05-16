@@ -22,9 +22,6 @@ Test.Summary = '''
 Test transactions and sessions for http1, making sure the two continuations catch the same number of hooks.
 '''
 
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl needs to be installed on system for this test to work"),
-)
 Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False, command="traffic_manager")

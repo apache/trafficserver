@@ -24,8 +24,6 @@ Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.
 '''
 
-Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
-
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server", ssl=True)
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -57,7 +55,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'ssl_hook_test.cc'), ts, '-out_start_delay=2')
- 
+
 tr = Test.AddTestRun("Test outbound delay start")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))

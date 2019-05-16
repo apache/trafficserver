@@ -20,8 +20,6 @@
 import os
 
 Test.Summary = 'Test TSContSchedule API'
-Test.SkipUnless(Condition.HasProgram('curl', 'Curl need to be installed on system for this test to work'))
-
 Test.ContinueOnFail = True
 
 # Define default ATS

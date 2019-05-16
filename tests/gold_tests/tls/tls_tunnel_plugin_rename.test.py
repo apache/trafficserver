@@ -21,11 +21,6 @@ Test.Summary = '''
 Test tunneling based on SNI renaming
 '''
 
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
-
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server_bar = Test.MakeOriginServer("server_bar", ssl=True)
@@ -74,7 +69,7 @@ ts.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1
 })
 
-# bar.com should terminate.  
+# bar.com should terminate.
 # empty should tunnel to server_random (should not happen)
 # newname should tunnel to server_bar
 ts.Disk.ssl_server_name_yaml.AddLines([
@@ -97,4 +92,3 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connec
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ok bar", "Body is expected")
-
