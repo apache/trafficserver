@@ -153,10 +153,10 @@ HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned 
 {
 }
 
-HostStatus_t
+HostStatRec *
 HostStatus::getHostStatus(const char *name)
 {
-  return (HostStatus_t)0;
+  return nullptr;
 }
 
 void
