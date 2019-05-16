@@ -362,7 +362,7 @@ HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned 
 HostStatRec *
 HostStatus::getHostStatus(const char *name)
 {
-  HostStatRec *_status = 0;
+  HostStatRec *_status = nullptr;
   time_t now           = time(0);
   bool lookup          = false;
 
@@ -405,6 +405,10 @@ HostStatus::getHostStatus(const char *name)
       }
     }
     _status->reasons = reasons;
+  }
+  // didn't find this host in host status db, create the record
+  if (!lookup) {
+    createHostStat(name);
   }
 
   return _status;

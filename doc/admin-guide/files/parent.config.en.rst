@@ -286,6 +286,17 @@ The following list shows the possible actions and their allowed values.
        is especially useful when using the ``consistent_hash`` selection strategy,
        and a random query string would prevent a consistent parent selection.
 
+.. _parent-config-format-ignore_self_detect:
+
+``ignore_self_detect``
+    One of the following values:
+
+  -  ``true`` - Ignore the marked down status of a host, typically the local host,
+      when the reason code is Reason::SELF_DETECT and use the host as if it were
+      marked up.
+
+  -  ``false`` - The default.  Do not ignore the host status.
+
 Examples
 ========
 
