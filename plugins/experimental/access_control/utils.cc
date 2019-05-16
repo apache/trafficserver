@@ -27,6 +27,7 @@
 #include <openssl/bio.h>    /* BIO I/O abstraction */
 #include <openssl/buffer.h> /* buf_mem_st */
 #include <openssl/err.h>    /* ERR_get_error() and ERR_error_string_n() */
+#include <openssl/crypto.h>
 
 #include "common.h"
 #include "utils.h"
@@ -253,7 +254,11 @@ cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen,
   if (!(ctx = EVP_MD_CTX_create())) {
     AccessControlError("failed to create EVP message digest context: %s", cryptoErrStr(buffer, sizeof(buffer)));
   } else {
+#ifndef OPENSSL_IS_BORINGSSL
     if (!(pkey = EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, nullptr, (const unsigned char *)key, keyLen))) {
+#else
+    if (false) {
+#endif
       AccessControlError("failed to create EVP private key. %s", cryptoErrStr(buffer, sizeof(buffer)));
       EVP_MD_CTX_destroy(ctx);
     } else {

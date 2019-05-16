@@ -25,6 +25,7 @@
 
 #include <openssl/safestack.h>
 #include <openssl/tls1.h>
+#include <openssl/ssl.h>
 
 // Check if the ticket_key callback #define is available, and if so, enable session tickets.
 #ifdef SSL_CTX_set_tlsext_ticket_key_cb
