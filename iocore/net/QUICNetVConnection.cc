@@ -1466,8 +1466,8 @@ QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_a
   size_added             = 0;
   Ptr<IOBufferBlock> tmp = new_block;
   while (tmp) {
-    size_added += new_block->size();
-    tmp = new_block->next;
+    size_added += tmp->size();
+    tmp = tmp->next;
   }
 
   if (parent_block == nullptr) {
@@ -1526,11 +1526,13 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   }
   max_frame_size = std::min(max_frame_size, this->_maximum_stream_frame_data_size());
 
-  bool probing    = false;
-  int frame_count = 0;
-  size_t len      = 0;
-  Ptr<IOBufferBlock> first_block;
-  Ptr<IOBufferBlock> last_block;
+  bool probing                   = false;
+  int frame_count                = 0;
+  size_t len                     = 0;
+  Ptr<IOBufferBlock> first_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  Ptr<IOBufferBlock> last_block  = first_block;
+  first_block->alloc(iobuffer_size_to_index(0));
+  first_block->fill(0);
 
   if (!this->_has_ack_eliciting_packet_out) {
     // Sent too much ack_only packet. At this moment we need to packetize a ping frame
@@ -1566,10 +1568,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
         }
         last_block = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
         len += size_added;
-
-        if (first_block == nullptr) {
-          first_block = last_block;
-        }
 
         // FIXME ACK frame should have priority
         if (frame->type() == QUICFrameType::STREAM) {
@@ -1710,7 +1708,7 @@ QUICNetVConnection::_build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> 
   uint8_t *raw_buf   = buf.get();
   size_t len         = 0;
   while (parent_block) {
-    memcpy(raw_buf + len, parent_block->buf(), parent_block->size());
+    memcpy(raw_buf + len, parent_block->start(), parent_block->size());
     len += parent_block->size();
     parent_block = parent_block->next;
   }

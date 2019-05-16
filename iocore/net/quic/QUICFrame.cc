@@ -274,13 +274,33 @@ QUICStreamFrame::debug_msg(char *msg, size_t msg_len) const
                   this->stream_id(), this->offset(), this->data_length(), this->has_fin_flag());
 }
 
-size_t
-QUICStreamFrame::store(uint8_t *buf, size_t *len, size_t limit, bool include_length_field) const
+Ptr<IOBufferBlock>
+QUICStreamFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> header;
+
   if (limit < this->size()) {
-    return 0;
+    return header;
   }
 
+  // Create header block
+  size_t written_len = 0;
+  header             = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  header->alloc(iobuffer_size_to_index(MAX_HEADER_SIZE));
+  this->_store_header(reinterpret_cast<uint8_t *>(header->start()), &written_len, true);
+  header->fill(written_len);
+
+  // Append payload block to a chain
+  ink_assert(written_len + this->data_length() <= limit);
+  header->next = this->data();
+
+  // Return the chain
+  return header;
+}
+
+size_t
+QUICStreamFrame::_store_header(uint8_t *buf, size_t *len, bool include_length_field) const
+{
   // Build Frame Type: "0b0010OLF"
   buf[0] = static_cast<uint8_t>(QUICFrameType::STREAM);
   *len   = 1;
@@ -310,11 +330,14 @@ QUICStreamFrame::store(uint8_t *buf, size_t *len, size_t limit, bool include_len
     buf[0] += 0x01;
   }
 
-  // Stream Data (*)
-  memcpy(buf + *len, this->data()->start(), this->data_length());
-  *len += this->data_length();
-
   return *len;
+}
+
+size_t
+QUICStreamFrame::store(uint8_t *buf, size_t *len, size_t limit, bool include_length_field) const
+{
+  ink_assert(!"Call to_io_buffer_block() instead");
+  return 0;
 }
 
 QUICStreamId

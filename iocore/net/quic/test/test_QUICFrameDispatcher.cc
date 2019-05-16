@@ -55,9 +55,13 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   CHECK(streamManager.getTotalFrameCount() == 0);
 
   // STREAM frame
-  uint8_t buf[4096] = {0};
-  size_t len        = 0;
-  streamFrame.store(buf, &len, 4096);
+  uint8_t buf[4096]      = {0};
+  size_t len             = 0;
+  Ptr<IOBufferBlock> ibb = streamFrame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
   bool should_send_ack;
   bool is_flow_controlled;
   quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr);

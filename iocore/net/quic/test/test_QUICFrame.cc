@@ -186,8 +186,8 @@ TEST_CASE("Store STREAM Frame", "[quic]")
 {
   SECTION("8bit stream id, 0bit offset")
   {
-    uint8_t buf[32] = {0};
-    size_t len;
+    uint8_t buf[32]     = {0};
+    size_t len          = 0;
     uint8_t expected1[] = {
       0x0a,                         // 0b00001OLF (OLF=010)
       0x01,                         // Stream ID
@@ -204,15 +204,19 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(block, 0x01, 0x00, false, false, true);
     CHECK(stream_frame.size() == 8);
 
-    stream_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = stream_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == 8);
     CHECK(memcmp(buf, expected1, len) == 0);
   }
 
   SECTION("8bit stream id, 16bit offset")
   {
-    uint8_t buf[32] = {0};
-    size_t len;
+    uint8_t buf[32]     = {0};
+    size_t len          = 0;
     uint8_t expected2[] = {
       0x0e,                         // 0b00001OLF (OLF=110)
       0x01,                         // Stream ID
@@ -229,15 +233,19 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(block, 0x01, 0x01);
     CHECK(stream_frame.size() == 9);
 
-    stream_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = stream_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == 9);
     CHECK(memcmp(buf, expected2, len) == 0);
   }
 
   SECTION("8bit stream id, 32bit offset")
   {
-    uint8_t buf[32] = {0};
-    size_t len;
+    uint8_t buf[32]     = {0};
+    size_t len          = 0;
     uint8_t expected3[] = {
       0x0e,                         // 0b00001OLF (OLF=110)
       0x01,                         // Stream ID
@@ -254,15 +262,19 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(block, 0x01, 0x010000);
     CHECK(stream_frame.size() == 12);
 
-    stream_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = stream_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == 12);
     CHECK(memcmp(buf, expected3, len) == 0);
   }
 
   SECTION("8bit stream id, 64bit offset")
   {
-    uint8_t buf[32] = {0};
-    size_t len;
+    uint8_t buf[32]     = {0};
+    size_t len          = 0;
     uint8_t expected4[] = {
       0x0e,                                           // 0b00001OLF (OLF=110)
       0x01,                                           // Stream ID
@@ -279,15 +291,19 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(block, 0x01, 0x0100000000);
     CHECK(stream_frame.size() == 16);
 
-    stream_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = stream_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == 16);
     CHECK(memcmp(buf, expected4, len) == 0);
   }
 
   SECTION("16bit stream id, 64bit offset")
   {
-    uint8_t buf[32] = {0};
-    size_t len;
+    uint8_t buf[32]     = {0};
+    size_t len          = 0;
     uint8_t expected5[] = {
       0x0e,                                           // 0b00001OLF (OLF=110)
       0x41, 0x00,                                     // Stream ID
@@ -304,15 +320,19 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(block, 0x0100, 0x0100000000);
     CHECK(stream_frame.size() == 17);
 
-    stream_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = stream_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == 17);
     CHECK(memcmp(buf, expected5, len) == 0);
   }
 
   SECTION("24bit stream id, 64bit offset")
   {
-    uint8_t buf[32] = {0};
-    size_t len;
+    uint8_t buf[32]     = {0};
+    size_t len          = 0;
     uint8_t expected6[] = {
       0x0e,                                           // 0b00001OLF (OLF=110)
       0x80, 0x01, 0x00, 0x00,                         // Stream ID
@@ -329,15 +349,19 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(block, 0x010000, 0x0100000000);
     CHECK(stream_frame.size() == 19);
 
-    stream_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = stream_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == 19);
     CHECK(memcmp(buf, expected6, len) == 0);
   }
 
   SECTION("32bit stream id, 64bit offset")
   {
-    uint8_t buf[32] = {0};
-    size_t len;
+    uint8_t buf[32]     = {0};
+    size_t len          = 0;
     uint8_t expected7[] = {
       0x0e,                                           // 0b00001OLF (OLF=110)
       0x81, 0x00, 0x00, 0x00,                         // Stream ID
@@ -354,15 +378,19 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(block, 0x01000000, 0x0100000000);
     CHECK(stream_frame.size() == 19);
 
-    stream_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = stream_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == 19);
     CHECK(memcmp(buf, expected7, len) == 0);
   }
 
   SECTION("32bit stream id, 64bit offset, FIN bit")
   {
-    uint8_t buf[32] = {0};
-    size_t len;
+    uint8_t buf[32]    = {0};
+    size_t len         = 0;
     uint8_t expected[] = {
       0x0f,                                           // 0b00001OLF (OLF=111)
       0x81, 0x00, 0x00, 0x00,                         // Stream ID
@@ -379,7 +407,11 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     QUICStreamFrame stream_frame(block, 0x01000000, 0x0100000000, true);
     CHECK(stream_frame.size() == 19);
 
-    stream_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = stream_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == 19);
     CHECK(memcmp(buf, expected, len) == 0);
   }

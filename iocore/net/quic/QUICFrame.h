@@ -90,6 +90,7 @@ public:
   virtual size_t size() const override;
   virtual bool is_flow_controlled() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
 
@@ -105,7 +106,11 @@ public:
   LINK(QUICStreamFrame, link);
 
 private:
+  static constexpr uint8_t MAX_HEADER_SIZE = 32;
+
   virtual void _reset() override;
+
+  size_t _store_header(uint8_t *buf, size_t *len, bool include_length_field) const;
 
   Ptr<IOBufferBlock> _block;
   QUICStreamId _stream_id = 0;
