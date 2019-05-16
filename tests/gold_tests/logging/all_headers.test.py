@@ -22,12 +22,6 @@ import subprocess
 Test.Summary = '''
 Test new "all headers" log fields
 '''
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram(
-        "curl", "Curl need to be installed on system for this test to work"),
-    # Condition.IsPlatform("linux"), Don't see the need for this.
-)
 
 # Define ATS.
 #

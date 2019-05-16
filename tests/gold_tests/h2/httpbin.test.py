@@ -26,7 +26,6 @@ Test HTTP/2 with httpbin origin server
 '''
 # Require HTTP/2 enabled Curl
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2'),
     Condition.HasProgram("shasum", "shasum need to be installed on system for this test to work"),
 )

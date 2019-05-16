@@ -18,9 +18,6 @@
 
 Test.Summary = "Test start up of Traffic server with generated ports of more than one servers at the same time"
 
-Test.SkipUnless(Condition.HasProgram("curl",
-                                     "Curl needs to be installed on your system for this test to work"))
-
 # set up some ATS processes
 ts1 = Test.MakeATSProcess("ts1")
 ts2 = Test.MakeATSProcess("ts2")

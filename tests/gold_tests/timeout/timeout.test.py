@@ -18,10 +18,6 @@
 
 Test.Summary = 'Testing ATS TCP handshake timeout'
 
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
-
 ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server", delay=15)
 dns = Test.MakeDNServer("dns", ip='127.0.0.1', default=['127.0.0.1'])

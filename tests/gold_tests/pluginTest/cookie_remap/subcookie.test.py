@@ -21,10 +21,6 @@ Test.Summary = '''
 
 '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: test connector"
 Test.SkipIf(Condition.true("Test is temporarily turned off, to be fixed according to an incompatible plugin API change (PR #4964)"))
@@ -77,11 +73,11 @@ tr = Test.AddTestRun("cookie value matches")
 # be interpreted by the autest framework or the shell (tried escaping with \)
 tr.Processes.Default.Command = 'curl --proxy 127.0.0.1:{0} "http://www.example.com/magic" -H"Cookie: fpbeta=a=1&b=2&c=3" -H "Proxy-Connection: keep-alive" --verbose '.format(ts.Variables.port)
 #tr.Processes.Default.Command = '''
-#curl 
-#--proxy 127.0.0.1:{0} 
-#"http://www.example.com/magic" 
-#-H\"Cookie: fpbeta=a=1&b=2&c=3\" 
-#-H "Proxy-Connection: keep-alive" 
+#curl
+#--proxy 127.0.0.1:{0}
+#"http://www.example.com/magic"
+#-H\"Cookie: fpbeta=a=1&b=2&c=3\"
+#-H "Proxy-Connection: keep-alive"
 #--verbose
 #'''.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0

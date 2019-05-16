@@ -28,7 +28,6 @@ Basic slice plugin test
 # Request content through the slice plugin
 
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl needs to be installed on system for this test to work"),
     Condition.PluginExists('slice.so'),
 )
 Test.ContinueOnFail = False
@@ -185,4 +184,3 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/slice_mid.stdout.gold"
 tr.Processes.Default.Streams.stderr = "gold/slice_mid.stderr.gold"
 tr.StillRunningAfter = ts
-

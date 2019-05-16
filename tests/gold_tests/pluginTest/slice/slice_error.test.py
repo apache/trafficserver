@@ -28,7 +28,6 @@ Slice plugin error.log test
 # Request content through the slice plugin
 
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl needs to be installed on system for this test to work"),
     Condition.PluginExists('slice.so'),
 )
 Test.ContinueOnFail = False

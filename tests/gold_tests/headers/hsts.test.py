@@ -22,10 +22,6 @@ Test.Summary = '''
 heck hsts header is set correctly
 '''
 
-# Needs Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
 Test.ContinueOnFail = True
 
 # Define default ATS

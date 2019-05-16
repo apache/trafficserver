@@ -24,8 +24,6 @@ Test.Summary = '''
 Test client certs to origin selected via wildcard names in ssl_server_name
 '''
 
-Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
-
 ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=False)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
@@ -176,4 +174,3 @@ trfail.StillRunningAfter = server2
 trfail.Processes.Default.Command = 'curl -H host:random.foo.com  http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
 trfail.Processes.Default.ReturnCode = 0
 trfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-

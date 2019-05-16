@@ -26,7 +26,6 @@ Test TLS protocol offering  based on SNI
 
 # need Curl
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.HasOpenSSLVersion("1.1.1")
 )
 
@@ -98,4 +97,3 @@ tr = Test.AddTestRun("bar.com TLSv1_2")
 tr.Processes.Default.Command = "curl -v --tls-max 1.2 --tlsv1.2 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
-

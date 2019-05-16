@@ -23,10 +23,6 @@ pluginName = 'ats_ssl_plugin'
 path=os.path.abspath(".")
 configFile='./packages/rhel.6.5.package/conf/trafficserver/ats_ssl_session_reuse.xml'
 
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl","Curl need to be installed on system for this test to work")
-    )
 Test.ContinueOnFail=True
 # Define default ATS
 ts=Test.MakeATSProcess("ts")

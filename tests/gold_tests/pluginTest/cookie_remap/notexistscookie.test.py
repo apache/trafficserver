@@ -21,10 +21,6 @@ Test.Summary = '''
 
 '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: cookie not exists"
 
@@ -73,11 +69,11 @@ ts.Disk.remap_config.AddLine(
 # Positive test case that remaps because cookie doesn't exist
 tr = Test.AddTestRun("cookie fpbeta doesn't exist")
 tr.Processes.Default.Command = '''
-curl 
---proxy 127.0.0.1:{0} 
-"http://www.example.com/magic" 
--H "Proxy-Connection: keep-alive" 
---verbose
+curl \
+--proxy 127.0.0.1:{0} \
+"http://www.example.com/magic" \
+-H "Proxy-Connection: keep-alive" \
+--verbose \
 '''.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
@@ -90,12 +86,12 @@ server.Streams.All = "gold/doesntexistcookie.gold"
 # Negative test case that doesn't remap because cookie exists
 tr = Test.AddTestRun("cooke fpbeta exists")
 tr.Processes.Default.Command = '''
-curl 
---proxy 127.0.0.1:{0} 
-"http://www.example.com/magic" 
--H"Cookie: fpbeta=etc" 
--H "Proxy-Connection: keep-alive" 
---verbose
+curl \
+--proxy 127.0.0.1:{0} \
+"http://www.example.com/magic" \
+-H"Cookie: fpbeta=etc" \
+-H "Proxy-Connection: keep-alive" \
+--verbose \
 '''.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server2, ready=When.PortOpen(server2.Variables.Port))
