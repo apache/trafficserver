@@ -270,7 +270,7 @@ QUICAckFrameManager::QUICAckFrameCreator::generate_ack_frame(uint8_t *buf, uint1
 QUICAckFrame *
 QUICAckFrameManager::QUICAckFrameCreator::_create_ack_frame(uint8_t *buf)
 {
-  ink_assert(this->_packet_numbers.size() > 0);
+  ink_assert(!this->_packet_numbers.empty());
   QUICAckFrame *ack_frame = nullptr;
   this->sort();
   std::list<RecvdPacket> &list = this->_packet_numbers;

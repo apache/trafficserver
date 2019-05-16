@@ -546,9 +546,8 @@ QUICLossDetector::_decrement_outstanding_counters(std::map<QUICPacketNumber, QUI
 // QUICRTTMeasure
 //
 QUICRTTMeasure::QUICRTTMeasure(const QUICLDConfig &ld_config)
+  : _k_granularity(ld_config.granularity()), _k_initial_rtt(ld_config.initial_rtt())
 {
-  this->_k_granularity = ld_config.granularity();
-  this->_k_initial_rtt = ld_config.initial_rtt();
 }
 
 void

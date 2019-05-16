@@ -38,13 +38,13 @@ public:
   /**
    * Constructor for clients
    */
-  QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, QUICConnectionId peer_initial_cid, uint32_t instance_id,
-                           uint8_t num_alt_con, const QUICPreferredAddress preferred_address);
+  QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, const QUICConnectionId &peer_initial_cid,
+                           uint32_t instance_id, uint8_t num_alt_con, const QUICPreferredAddress &preferred_address);
   /**
    * Constructor for servers
    */
-  QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, QUICConnectionId peer_initial_cid, uint32_t instance_id,
-                           uint8_t num_alt_con, const IpEndpoint *preferred_endpoint_ipv4 = nullptr,
+  QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, const QUICConnectionId &peer_initial_cid,
+                           uint32_t instance_id, uint8_t num_alt_con, const IpEndpoint *preferred_endpoint_ipv4 = nullptr,
                            const IpEndpoint *preferred_endpoint_ipv6 = nullptr);
   ~QUICAltConnectionManager();
 
@@ -64,9 +64,9 @@ public:
    *
    * cid need to match with one of alt CID that AltConnnectionManager prepared.
    */
-  bool migrate_to(QUICConnectionId cid, QUICStatelessResetToken &new_reset_token);
+  bool migrate_to(const QUICConnectionId &cid, QUICStatelessResetToken &new_reset_token);
 
-  void drop_cid(QUICConnectionId cid);
+  void drop_cid(const QUICConnectionId &cid);
 
   /**
    * Invalidate all CIDs prepared

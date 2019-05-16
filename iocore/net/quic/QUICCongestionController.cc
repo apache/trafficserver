@@ -38,10 +38,8 @@
 
 QUICCongestionController::QUICCongestionController(const QUICRTTProvider &rtt_provider, QUICConnectionInfoProvider *info,
                                                    const QUICCCConfig &cc_config)
-  : _info(info), _rtt_provider(rtt_provider)
+  : _cc_mutex(new_ProxyMutex()), _info(info), _rtt_provider(rtt_provider)
 {
-  this->_cc_mutex = new_ProxyMutex();
-
   this->_k_max_datagram_size               = cc_config.max_datagram_size();
   this->_k_initial_window                  = cc_config.initial_window();
   this->_k_minimum_window                  = cc_config.minimum_window();

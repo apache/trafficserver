@@ -269,7 +269,7 @@ QUICTypeUtil::write_QUICMaxData(uint64_t max_data, uint8_t *buf, size_t *len)
   QUICIntUtil::write_QUICVariableInt(max_data, buf, len);
 }
 
-QUICStatelessResetToken::QUICStatelessResetToken(QUICConnectionId conn_id, uint32_t instance_id)
+QUICStatelessResetToken::QUICStatelessResetToken(const QUICConnectionId &conn_id, uint32_t instance_id)
 {
   uint64_t data = conn_id ^ instance_id;
   CryptoHash _hash;

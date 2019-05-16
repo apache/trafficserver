@@ -540,7 +540,7 @@ class QUICNewConnectionIdFrame : public QUICFrame
 public:
   QUICNewConnectionIdFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
   QUICNewConnectionIdFrame(const uint8_t *buf, size_t len);
-  QUICNewConnectionIdFrame(uint64_t seq, QUICConnectionId cid, QUICStatelessResetToken token, QUICFrameId id = 0,
+  QUICNewConnectionIdFrame(uint64_t seq, const QUICConnectionId &cid, QUICStatelessResetToken token, QUICFrameId id = 0,
                            QUICFrameGenerator *owner = nullptr)
     : QUICFrame(id, owner), _sequence(seq), _connection_id(cid), _stateless_reset_token(token){};
 

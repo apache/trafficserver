@@ -29,8 +29,8 @@ static constexpr char V_DEBUG_TAG[] = "v_quic_alt_con";
 #define QUICACMVDebug(fmt, ...) Debug(V_DEBUG_TAG, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
 QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
-                                                   QUICConnectionId peer_initial_cid, uint32_t instance_id, uint8_t num_alt_con,
-                                                   const QUICPreferredAddress preferred_address)
+                                                   const QUICConnectionId &peer_initial_cid, uint32_t instance_id,
+                                                   uint8_t num_alt_con, const QUICPreferredAddress &preferred_address)
   : _qc(qc), _ctable(ctable), _instance_id(instance_id), _nids(num_alt_con)
 {
   // Sequence number of the initial CID is 0
@@ -45,8 +45,8 @@ QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConne
 }
 
 QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
-                                                   QUICConnectionId peer_initial_cid, uint32_t instance_id, uint8_t num_alt_con,
-                                                   const IpEndpoint *preferred_endpoint_ipv4,
+                                                   const QUICConnectionId &peer_initial_cid, uint32_t instance_id,
+                                                   uint8_t num_alt_con, const IpEndpoint *preferred_endpoint_ipv4,
                                                    const IpEndpoint *preferred_endpoint_ipv6)
   : _qc(qc), _ctable(ctable), _instance_id(instance_id), _nids(num_alt_con)
 {
@@ -231,7 +231,7 @@ QUICAltConnectionManager::migrate_to_alt_cid()
 }
 
 bool
-QUICAltConnectionManager::migrate_to(QUICConnectionId cid, QUICStatelessResetToken &new_reset_token)
+QUICAltConnectionManager::migrate_to(const QUICConnectionId &cid, QUICStatelessResetToken &new_reset_token)
 {
   for (unsigned int i = 0; i < this->_nids; ++i) {
     AltConnectionInfo &info = this->_alt_quic_connection_ids_local[i];
@@ -245,7 +245,7 @@ QUICAltConnectionManager::migrate_to(QUICConnectionId cid, QUICStatelessResetTok
 }
 
 void
-QUICAltConnectionManager::drop_cid(QUICConnectionId cid)
+QUICAltConnectionManager::drop_cid(const QUICConnectionId &cid)
 {
   for (auto it = this->_alt_quic_connection_ids_remote.begin(); it != this->_alt_quic_connection_ids_remote.end(); ++it) {
     if (it->id == cid) {

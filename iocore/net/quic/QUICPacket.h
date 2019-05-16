@@ -170,6 +170,16 @@ public:
 
 protected:
   QUICPacketHeader(){};
+  QUICPacketHeader(QUICPacketType type, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, bool has_version,
+                   QUICVersion version, ats_unique_buf payload, size_t payload_length, QUICKeyPhase key_phase)
+    : _payload(std::move(payload)),
+      _type(type),
+      _key_phase(key_phase),
+      _packet_number(packet_number),
+      _base_packet_number(base_packet_number),
+      _version(version),
+      _payload_length(payload_length),
+      _has_version(has_version){};
   // Token field in Initial packet could be very long.
   static constexpr size_t MAX_PACKET_HEADER_LEN = 256;
 
@@ -198,11 +208,12 @@ public:
   QUICPacketLongHeader() : QUICPacketHeader(){};
   virtual ~QUICPacketLongHeader(){};
   QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
-  QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                       QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, QUICVersion version, bool crypto,
-                       ats_unique_buf buf, size_t len, ats_unique_buf token = ats_unique_buf(nullptr), size_t token_len = 0);
-  QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICVersion version, QUICConnectionId destination_cid,
-                       QUICConnectionId source_cid, QUICConnectionId original_dcid, ats_unique_buf retry_token,
+  QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, const QUICConnectionId &destination_cid,
+                       const QUICConnectionId &source_cid, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
+                       QUICVersion version, bool crypto, ats_unique_buf buf, size_t len,
+                       ats_unique_buf token = ats_unique_buf(nullptr), size_t token_len = 0);
+  QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICVersion version, const QUICConnectionId &destination_cid,
+                       const QUICConnectionId &source_cid, const QUICConnectionId &original_dcid, ats_unique_buf retry_token,
                        size_t retry_token_len);
 
   QUICPacketType type() const override;
@@ -237,7 +248,6 @@ public:
   static bool packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len);
 
 private:
-  QUICPacketNumber _packet_number;
   QUICConnectionId _destination_cid = QUICConnectionId::ZERO();
   QUICConnectionId _source_cid      = QUICConnectionId::ZERO();
   QUICConnectionId _original_dcid   = QUICConnectionId::ZERO(); //< RETRY packet only
@@ -256,8 +266,8 @@ public:
   QUICPacketShortHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
   QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
-  QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id, QUICPacketNumber packet_number,
-                        QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
+  QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, const QUICConnectionId &connection_id,
+                        QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
   QUICPacketType type() const override;
   QUICConnectionId destination_cid() const override;
   QUICConnectionId

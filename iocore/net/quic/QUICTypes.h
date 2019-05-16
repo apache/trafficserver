@@ -277,7 +277,7 @@ public:
   constexpr static int8_t LEN = 16;
 
   QUICStatelessResetToken() {}
-  QUICStatelessResetToken(QUICConnectionId conn_id, uint32_t instance_id);
+  QUICStatelessResetToken(const QUICConnectionId &conn_id, uint32_t instance_id);
   QUICStatelessResetToken(const uint8_t *buf) { memcpy(this->_token, buf, QUICStatelessResetToken::LEN); }
 
   bool
@@ -401,7 +401,8 @@ public:
   constexpr static int16_t MIN_LEN = 26;
   constexpr static int16_t MAX_LEN = 295;
 
-  QUICPreferredAddress(IpEndpoint endpoint_ipv4, IpEndpoint endpoint_ipv6, QUICConnectionId cid, QUICStatelessResetToken token)
+  QUICPreferredAddress(IpEndpoint endpoint_ipv4, IpEndpoint endpoint_ipv6, const QUICConnectionId &cid,
+                       QUICStatelessResetToken token)
     : _endpoint_ipv4(endpoint_ipv4), _endpoint_ipv6(endpoint_ipv6), _cid(cid), _token(token), _valid(true)
   {
   }

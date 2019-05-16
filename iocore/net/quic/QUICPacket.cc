@@ -206,25 +206,17 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf
   this->_payload_length = len - this->_payload_offset;
 }
 
-QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid,
-                                           QUICConnectionId source_cid, QUICPacketNumber packet_number,
+QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, const QUICConnectionId &destination_cid,
+                                           const QUICConnectionId &source_cid, QUICPacketNumber packet_number,
                                            QUICPacketNumber base_packet_number, QUICVersion version, bool crypto,
                                            ats_unique_buf buf, size_t len, ats_unique_buf token, size_t token_len)
+  : QUICPacketHeader(type, packet_number, base_packet_number, true, version, std::move(buf), len, key_phase),
+    _destination_cid(destination_cid),
+    _source_cid(source_cid),
+    _token_len(token_len),
+    _token(std::move(token)),
+    _is_crypto_packet(crypto)
 {
-  this->_type               = type;
-  this->_destination_cid    = destination_cid;
-  this->_source_cid         = source_cid;
-  this->_packet_number      = packet_number;
-  this->_base_packet_number = base_packet_number;
-  this->_has_version        = true;
-  this->_version            = version;
-  this->_token              = std::move(token);
-  this->_token_len          = token_len;
-  this->_payload            = std::move(buf);
-  this->_payload_length     = len;
-  this->_key_phase          = key_phase;
-  this->_is_crypto_packet   = crypto;
-
   if (this->_type == QUICPacketType::VERSION_NEGOTIATION) {
     this->_buf_len =
       LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() + this->_payload_length;
@@ -234,19 +226,15 @@ QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key
 }
 
 QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICVersion version,
-                                           QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                           QUICConnectionId original_dcid, ats_unique_buf retry_token, size_t retry_token_len)
-{
-  this->_type            = type;
-  this->_destination_cid = destination_cid;
-  this->_source_cid      = source_cid;
-  this->_original_dcid   = original_dcid;
-  this->_has_version     = true;
-  this->_version         = version;
-  this->_payload         = std::move(retry_token);
-  this->_payload_length  = retry_token_len;
-  this->_key_phase       = key_phase;
+                                           const QUICConnectionId &destination_cid, const QUICConnectionId &source_cid,
+                                           const QUICConnectionId &original_dcid, ats_unique_buf retry_token,
+                                           size_t retry_token_len)
+  : QUICPacketHeader(type, 0, 0, true, version, std::move(retry_token), retry_token_len, key_phase),
+    _destination_cid(destination_cid),
+    _source_cid(source_cid),
+    _original_dcid(original_dcid)
 
+{
   // this->_buf_len will be set
   this->buf();
 }
@@ -626,7 +614,7 @@ QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase k
   this->_payload_length     = len;
 }
 
-QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id,
+QUICPacketShortHeader::QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, const QUICConnectionId &connection_id,
                                              QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
                                              ats_unique_buf buf, size_t len)
 {
@@ -783,19 +771,17 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
 QUICPacket::QUICPacket() {}
 
 QUICPacket::QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len)
+  : _header(std::move(header)), _payload(std::move(payload)), _payload_size(payload_len)
 {
-  this->_header       = std::move(header);
-  this->_payload      = std::move(payload);
-  this->_payload_size = payload_len;
 }
 
 QUICPacket::QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool ack_eliciting, bool probing)
+  : _header(std::move(header)),
+    _payload(std::move(payload)),
+    _payload_size(payload_len),
+    _is_ack_eliciting(ack_eliciting),
+    _is_probing_packet(probing)
 {
-  this->_header            = std::move(header);
-  this->_payload           = std::move(payload);
-  this->_payload_size      = payload_len;
-  this->_is_ack_eliciting  = ack_eliciting;
-  this->_is_probing_packet = probing;
 }
 
 QUICPacket::~QUICPacket()
