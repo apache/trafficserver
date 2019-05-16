@@ -26,12 +26,13 @@ import platform
 import sys
 
 pip_packages = [
-    "autest==1.7.0",
+    "autest==1.7.3",
     "hyper",
     "requests",
     "dnslib",
     "httpbin",
-    "traffic-replay" # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
+    "gunicorn",
+    "traffic-replay"  # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
 ]
 
 
