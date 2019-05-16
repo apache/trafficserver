@@ -24,6 +24,8 @@ Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.
 '''
 
+Test.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"))
+
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server", ssl=True)
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
