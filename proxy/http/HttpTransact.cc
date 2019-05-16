@@ -2378,7 +2378,8 @@ HttpTransact::CallOSDNSLookup(State *s)
 {
   TxnDebug("http", "[HttpTransact::callos] %s ", s->server_info.name);
   HostStatus &pstatus = HostStatus::instance();
-  if (pstatus.getHostStatus(s->server_info.name) == HostStatus_t::HOST_STATUS_DOWN) {
+  HostStatRec *hst    = pstatus.getHostStatus(s->server_info.name);
+  if (hst && hst->status == HostStatus_t::HOST_STATUS_DOWN) {
     TxnDebug("http", "[HttpTransact::callos] %d ", s->cache_lookup_result);
     s->current.state = OUTBOUND_CONGESTION;
     if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||

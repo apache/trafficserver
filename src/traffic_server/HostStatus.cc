@@ -361,10 +361,10 @@ HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned 
   }
 }
 
-HostStatus_t
+HostStatRec *
 HostStatus::getHostStatus(const char *name)
 {
-  HostStatRec *_status = 0;
+  HostStatRec *_status = nullptr;
   time_t now           = time(0);
   bool lookup          = false;
 
@@ -406,18 +406,14 @@ HostStatus::getHostStatus(const char *name)
         reasons ^= Reason::MANUAL;
       }
     }
-    if (reasons == 0) {
-      return HostStatus_t::HOST_STATUS_UP;
-    } else {
-      return HostStatus_t::HOST_STATUS_DOWN;
-    }
+    _status->reasons = reasons;
   }
   // didn't find this host in host status db, create the record
   if (!lookup) {
     createHostStat(name);
   }
 
-  return lookup ? static_cast<HostStatus_t>(_status->status) : HostStatus_t::HOST_STATUS_UP;
+  return _status;
 }
 
 void
