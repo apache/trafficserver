@@ -43,7 +43,6 @@ public:
   NetVConnection *allocate_vc(EThread *t) override;
 
   void init() override;
-  void init_socks() override;
 
   Event *accept_thread_event;
 

@@ -23,23 +23,16 @@
 
 /*****************************************************************************
  *
- *  HostStatus.h - Interface to Host Status System
+ *  HostSelection.h - Interface to Host Selection System
  *
  *
  ****************************************************************************/
 
 #pragma once
 
-#include <time.h>
-#include <string>
-#include <sstream>
-#include "tscore/ink_rwlock.h"
+#include "ControlBase.h"
+#include "ControlMatcher.h"
 #include "records/P_RecProcess.h"
-
-#include <unordered_map>
-
-// host_status stats prefix.
-static const std::string stat_prefix = "proxy.process.host_status.";
 
 enum HostStatus_t {
   HOST_STATUS_INIT,
@@ -47,132 +40,13 @@ enum HostStatus_t {
   HOST_STATUS_UP,
 };
 
-static const constexpr char *HostStatusNames[3] = {"HOST_STATUS_INIT", "HOST_STATUS_DOWN", "HOST_STATUS_UP"};
-static const constexpr char *ReasonStatus[2]    = {"UP", "DOWN"};
-
-struct Reason {
-  static constexpr const unsigned int ACTIVE      = 0x1;
-  static constexpr const unsigned int LOCAL       = 0x2;
-  static constexpr const unsigned int MANUAL      = 0x4;
-  static constexpr const unsigned int SELF_DETECT = 0x8;
-  static constexpr const unsigned int ALL         = 0xf;
-
-  static constexpr const char *ACTIVE_REASON      = "active";
-  static constexpr const char *LOCAL_REASON       = "local";
-  static constexpr const char *MANUAL_REASON      = "manual";
-  static constexpr const char *SELF_DETECT_REASON = "self_detect";
-  static constexpr const char *ALL_REASON         = "all";
-
-  static constexpr const char *reasons[5] = {ACTIVE_REASON, LOCAL_REASON, MANUAL_REASON, SELF_DETECT_REASON, ALL_REASON};
-
-  static bool
-  validReason(const char *reason)
-  {
-    for (const char *i : reasons) {
-      if (strcmp(i, reason) == 0) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  static unsigned int
-  getReason(const char *reason_str)
-  {
-    if (strcmp(reason_str, ACTIVE_REASON) == 0) {
-      return ACTIVE;
-    } else if (strcmp(reason_str, LOCAL_REASON) == 0) {
-      return LOCAL;
-    } else if (strcmp(reason_str, MANUAL_REASON) == 0) {
-      return MANUAL;
-    } else if (strcmp(reason_str, SELF_DETECT_REASON) == 0) {
-      return SELF_DETECT;
-    } else if (strcmp(reason_str, ALL_REASON) == 0) {
-      return ALL;
-    }
-    // default is MANUAL
-    return MANUAL;
-  }
-};
-
-// host status POD
-struct HostStatRec {
+struct HostStatRec_t {
   HostStatus_t status;
-  unsigned int reasons;
-  // time the host was marked down for a given reason.
-  time_t active_marked_down;
-  time_t local_marked_down;
-  time_t manual_marked_down;
-  time_t self_detect_marked_down;
-  // number of seconds that the host should be marked down for a given reason.
-  unsigned int active_down_time;
-  unsigned int local_down_time;
-  unsigned int manual_down_time;
-  unsigned int self_detect_down_time;
-
-  HostStatRec();
-  HostStatRec(std::string str);
-  HostStatRec(const HostStatRec &src)
-  {
-    status                  = src.status;
-    reasons                 = src.reasons;
-    active_marked_down      = src.active_marked_down;
-    active_down_time        = src.active_down_time;
-    local_marked_down       = src.local_marked_down;
-    local_down_time         = src.local_down_time;
-    manual_marked_down      = src.manual_marked_down;
-    manual_down_time        = src.manual_down_time;
-    self_detect_marked_down = src.self_detect_marked_down;
-    self_detect_down_time   = src.self_detect_down_time;
-  }
-  ~HostStatRec() {}
-
-  // serialize this HostStatusRec
-  std::stringstream &
-  operator<<(std::stringstream &os)
-  {
-    unsigned int r = getReasonState(Reason::ACTIVE);
-    os << HostStatusNames[status];
-    os << ",ACTIVE:" << ReasonStatus[r] << ":" << active_marked_down << ":" << active_down_time;
-    r = getReasonState(Reason::LOCAL);
-    os << ",LOCAL:" << ReasonStatus[r] << ":" << local_marked_down << ":" << local_down_time;
-    r = getReasonState(Reason::MANUAL);
-    os << ",MANUAL:" << ReasonStatus[r] << ":" << manual_marked_down << ":" << manual_down_time;
-    r = getReasonState(Reason::SELF_DETECT);
-    os << ",SELF_DETECT:" << ReasonStatus[r] << ":" << self_detect_marked_down << ":" << self_detect_down_time;
-
-    return os;
-  }
-
-  // serialize a HostStatRec
-  friend std::stringstream &
-  operator<<(std::stringstream &os, HostStatRec &hs)
-  {
-    unsigned int r = hs.getReasonState(Reason::ACTIVE);
-    os << HostStatusNames[hs.status];
-    os << ",ACTIVE:" << ReasonStatus[r] << ":" << hs.active_marked_down << ":" << hs.active_down_time;
-    r = hs.getReasonState(Reason::LOCAL);
-    os << ",LOCAL:" << ReasonStatus[r] << ":" << hs.local_marked_down << ":" << hs.local_down_time;
-    r = hs.getReasonState(Reason::MANUAL);
-    os << ",MANUAL:" << ReasonStatus[r] << ":" << hs.manual_marked_down << ":" << hs.manual_down_time;
-    r = hs.getReasonState(Reason::SELF_DETECT);
-    os << ",SELF_DETECT:" << ReasonStatus[r] << ":" << hs.self_detect_marked_down << ":" << hs.self_detect_down_time;
-
-    return os;
-  }
-
-  inline unsigned int
-  getReasonState(unsigned int reason)
-  {
-    unsigned int r = 0;
-    if (reasons == 0) {
-      r = 0;
-    } else if (reasons & reason) {
-      r = 1;
-    }
-    return r;
-  }
+  time_t marked_down;     // the time that this host was marked down.
+  unsigned int down_time; // number of seconds that the host should be down, 0 is indefinately
 };
+
+const std::string stat_prefix = "host_status.";
 
 /**
  * Singleton placeholder for next hop status.
@@ -186,20 +60,19 @@ struct HostStatus {
     static HostStatus instance;
     return instance;
   }
-  void setHostStatus(const char *name, const HostStatus_t status, const unsigned int down_time, const unsigned int reason);
+  void setHostStatus(const char *name, const HostStatus_t status, const unsigned int down_time);
   HostStatus_t getHostStatus(const char *name);
-  void createHostStat(const char *name, const char *data = nullptr);
-  void loadHostStatusFromStats();
-  void loadRecord(std::string &name, HostStatRec &h);
-  int getHostStat(std::string &stat_name, char *buf, unsigned int buf_len);
+  void createHostStat(const char *name);
 
 private:
+  int next_stat_id = 1;
   HostStatus();
   HostStatus(const HostStatus &obj) = delete;
   HostStatus &operator=(HostStatus const &) = delete;
+  int getHostStatId(const char *name);
 
-  // next hop status, key is hostname or ip string, data is HostStatRec
-  std::unordered_map<std::string, HostStatRec *> hosts_statuses;
-
+  InkHashTable *hosts_statuses;  // next hop status, key is hostname or ip string, data is bool (available).
+  InkHashTable *hosts_stats_ids; // next hop stat ids, key is hostname or ip string, data is int stat id.
   ink_rwlock host_status_rwlock;
+  ink_rwlock host_statids_rwlock;
 };
