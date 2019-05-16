@@ -22,21 +22,31 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <array>
 #include <ctime>
 #include <thread>
 #include <atomic>
+#include <condition_variable>
+#include <chrono>
 
 using namespace std;
 
 TEST_CASE("AcidPtr Atomicity")
 {
   // fail if skew is detected.
-  const int N = 1000;
-  AcidPtr<vector<int>> ptr(new vector<int>(50));
-  std::thread workers[N];
-  atomic<int> errors = {0};
+  constexpr int N = 1000; // Number of threads
+  constexpr int K = 50;   // Size of data sample.
+  AcidPtr<vector<int>> ptr(new vector<int>(K));
+  atomic<int> errors{0};
+  atomic<unsigned> count{0};
+  condition_variable gate;
+  mutex gate_mutex;
 
-  auto job_read_write = [&ptr, &errors]() {
+  auto job_read_write = [&]() {
+    {
+      unique_lock<mutex> gate_lock(gate_mutex);
+      gate.wait(gate_lock);
+    }
     int r = rand();
     AcidCommitPtr<vector<int>> cptr(ptr);
     int old = (*cptr)[0];
@@ -46,8 +56,14 @@ TEST_CASE("AcidPtr Atomicity")
       }
       i = r;
     }
+    ++count;
   };
-  auto job_read = [&ptr, &errors]() {
+
+  auto job_read = [&]() {
+    {
+      unique_lock<mutex> gate_lock(gate_mutex);
+      gate.wait(gate_lock);
+    }
     auto sptr = ptr.getPtr();
     int old   = (*sptr)[0];
     for (int const &i : *sptr) {
@@ -55,20 +71,32 @@ TEST_CASE("AcidPtr Atomicity")
         errors++;
       }
     }
+    ++count;
   };
 
-  std::thread writers[N];
-  std::thread readers[N];
+  array<thread, N> writers;
+  array<thread, N> readers;
 
+  // Use a for loop so the threads start in pairs.
   for (int i = 0; i < N; i++) {
-    writers[i] = std::thread(job_read_write);
-    readers[i] = std::thread(job_read);
+    writers[i] = thread(job_read_write);
+    readers[i] = thread(job_read);
+    gate.notify_all();
   }
 
-  for (int i = 0; i < N; i++) {
-    writers[i].join();
-    readers[i].join();
+  while (count < 2 * N) {
+    gate.notify_all();
+    this_thread::sleep_for(chrono::milliseconds{10});
   }
+
+  for (auto &t : readers) {
+    t.join();
+  }
+
+  for (auto &t : writers) {
+    t.join();
+  }
+
   REQUIRE(errors == 0); // skew detected
 }
 

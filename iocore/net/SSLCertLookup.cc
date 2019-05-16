@@ -138,6 +138,24 @@ private:
   int store(SSLCertContext const &cc);
 };
 
+namespace
+{
+/** Copy @a src to @a dst, transforming to lower case.
+ *
+ * @param src Input string.
+ * @param dst Output buffer.
+ */
+inline void
+transform_lower(std::string_view src, ts::MemSpan<char> dst)
+{
+  if (src.size() > dst.size() - 1) { // clip @a src, reserving space for the terminal nul.
+    src = std::string_view{src.data(), dst.size() - 1};
+  }
+  auto final = std::transform(src.begin(), src.end(), dst.data(), [](char c) -> char { return std::tolower(c); });
+  *final++   = '\0';
+}
+} // namespace
+
 // Zero out and free the heap space allocated for ticket keys to avoid leaking secrets.
 // The first several bytes stores the number of keys and the rest stores the ticket keys.
 void
@@ -297,20 +315,6 @@ SSLCertLookup::get(unsigned i) const
   return ssl_storage->get(i);
 }
 
-static void
-make_to_lower_case(const char *name, char *lower_case_name, int buf_len)
-{
-  int name_len = strlen(name);
-  int i;
-  if (name_len > (buf_len - 1)) {
-    name_len = buf_len - 1;
-  }
-  for (i = 0; i < name_len; i++) {
-    lower_case_name[i] = ParseRules::ink_tolower(name[i]);
-  }
-  lower_case_name[i] = '\0';
-}
-
 SSLContextStorage::SSLContextStorage() {}
 
 bool
@@ -358,7 +362,7 @@ SSLContextStorage::insert(const char *name, int idx)
 {
   ats_wildcard_matcher wildcard;
   char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
-  make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
+  transform_lower(name, lower_case_name);
   if (wildcard.match(lower_case_name)) {
     // Strip the wildcard and store the subdomain
     const char *subdomain = index(lower_case_name, '*');
@@ -407,7 +411,7 @@ SSLContextStorage::lookup(const char *name)
   }
   // Try lower casing it
   char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
-  make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
+  transform_lower(name, lower_case_name);
   if (auto it_lower = this->hostnames.find(lower_case_name); it_lower != this->hostnames.end()) {
     return &(this->ctx_store[it_lower->second]);
   }
@@ -452,7 +456,7 @@ reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1
       *(--ptr) = '.';
     }
   }
-  make_to_lower_case(ptr, ptr, strlen(ptr) + 1);
+  transform_lower(ptr, {ptr, strlen(ptr) + 1});
 
   return ptr;
 }

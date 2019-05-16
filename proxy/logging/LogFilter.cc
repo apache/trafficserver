@@ -526,13 +526,16 @@ LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action 
   size_t i           = 0;
   SimpleTokenizer tok(values, ',');
   size_t n = tok.getNumTokensRemaining();
+  auto field_map{field->map()}; // because clang-analyzer freaks out if this is inlined.
+                                // It doesn't realize the value is held in place by the smart
+                                // pointer in @c field.
 
   if (n) {
     val_array = new int64_t[n];
     char *t;
     while (t = tok.getNext(), t != nullptr) {
       int64_t ival;
-      if (!_convertStringToInt(t, &ival, field->map().get())) {
+      if (!_convertStringToInt(t, &ival, field_map.get())) {
         // conversion was successful, add entry to array
         //
         val_array[i++] = ival;

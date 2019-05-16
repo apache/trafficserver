@@ -465,7 +465,7 @@ psi_include(TSCont contp, void *edata ATS_UNUSED)
   /* For security reason, we do not allow to include files that are
      not in the directory <plugin_path>/include.
      Also include file cannot contain any path. */
-  sprintf(inc_file, "%s/%s", psi_directory, _basename(data->psi_filename));
+  snprintf(inc_file, sizeof(inc_file), "%s/%s", psi_directory, _basename(data->psi_filename));
 
   /* Read the include file and copy content into iobuffer */
   if ((filep = TSfopen(inc_file, "r")) != NULL) {
@@ -963,7 +963,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   }
 
   /* Initialize the psi directory = <plugin_path>/include */
-  sprintf(psi_directory, "%s/%s", TSPluginDirGet(), PSI_PATH);
+  snprintf(psi_directory, sizeof(psi_directory), "%s/%s", TSPluginDirGet(), PSI_PATH);
 
   /* create an TSTextLogObject to log any psi include */
   retval = TSTextLogObjectCreate("psi", TS_LOG_MODE_ADD_TIMESTAMP, &log);
