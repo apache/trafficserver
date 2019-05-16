@@ -146,6 +146,7 @@ public:
   int max_simple_retries                                             = 1;
   int max_unavailable_server_retries                                 = 1;
   int secondary_mode                                                 = 1;
+  bool ignore_self_detect                                            = false;
 };
 
 // If the parent was set by the external customer api,

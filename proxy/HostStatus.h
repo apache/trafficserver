@@ -187,7 +187,7 @@ struct HostStatus {
     return instance;
   }
   void setHostStatus(const char *name, const HostStatus_t status, const unsigned int down_time, const unsigned int reason);
-  HostStatus_t getHostStatus(const char *name);
+  HostStatRec *getHostStatus(const char *name);
   void createHostStat(const char *name, const char *data = nullptr);
   void loadHostStatusFromStats();
   void loadRecord(std::string &name, HostStatRec &h);
