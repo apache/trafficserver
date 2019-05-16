@@ -26,12 +26,13 @@ import platform
 import sys
 
 pip_packages = [
-    "autest==1.7.2",
+    "autest==1.7.3",
     "hyper",
     "requests",
     "dnslib",
     "httpbin",
-    "traffic-replay" # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
+    "gunicorn",
+    "traffic-replay"  # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
 ]
 
 
@@ -50,7 +51,7 @@ distro_packages = {
         "install python3",
         "install python3-virtualenv",
         "install virtualenv",
-	"install python3-dev"
+        "install python3-dev"
     ],
     "CentOS": [
         "install epel-release",
