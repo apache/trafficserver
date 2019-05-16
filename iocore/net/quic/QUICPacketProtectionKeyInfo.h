@@ -38,10 +38,10 @@ public:
 
   // Payload Protection (common)
 
-  virtual const QUIC_EVP_CIPHER *get_cipher(QUICKeyPhase phase) const;
+  virtual const EVP_CIPHER *get_cipher(QUICKeyPhase phase) const;
   virtual size_t get_tag_len(QUICKeyPhase phase) const;
-  virtual void set_cipher_initial(const QUIC_EVP_CIPHER *cipher);
-  virtual void set_cipher(const QUIC_EVP_CIPHER *cipher, size_t tag_len);
+  virtual void set_cipher_initial(const EVP_CIPHER *cipher);
+  virtual void set_cipher(const EVP_CIPHER *cipher, size_t tag_len);
 
   // Payload Protection (encryption)
 
@@ -77,9 +77,9 @@ public:
 
   // Header Protection
 
-  virtual const QUIC_EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const;
-  virtual void set_cipher_for_hp_initial(const QUIC_EVP_CIPHER *cipher);
-  virtual void set_cipher_for_hp(const QUIC_EVP_CIPHER *cipher);
+  virtual const EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const;
+  virtual void set_cipher_for_hp_initial(const EVP_CIPHER *cipher);
+  virtual void set_cipher_for_hp(const EVP_CIPHER *cipher);
 
   virtual const uint8_t *encryption_key_for_hp(QUICKeyPhase phase) const;
   virtual uint8_t *encryption_key_for_hp(QUICKeyPhase phase);
@@ -96,9 +96,9 @@ private:
 
   // Payload Protection
 
-  const QUIC_EVP_CIPHER *_cipher_initial = nullptr;
-  const QUIC_EVP_CIPHER *_cipher         = nullptr;
-  size_t _tag_len                        = 0;
+  const EVP_CIPHER *_cipher_initial = nullptr;
+  const EVP_CIPHER *_cipher         = nullptr;
+  size_t _tag_len                   = 0;
 
   bool _is_client_key_available[5] = {false};
   bool _is_server_key_available[5] = {false};
@@ -115,8 +115,8 @@ private:
 
   // Header Protection
 
-  const QUIC_EVP_CIPHER *_cipher_for_hp_initial = nullptr;
-  const QUIC_EVP_CIPHER *_cipher_for_hp         = nullptr;
+  const EVP_CIPHER *_cipher_for_hp_initial = nullptr;
+  const EVP_CIPHER *_cipher_for_hp         = nullptr;
 
   uint8_t _client_key_for_hp[5][512];
   uint8_t _server_key_for_hp[5][512];

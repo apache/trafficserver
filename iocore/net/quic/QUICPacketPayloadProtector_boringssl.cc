@@ -25,21 +25,23 @@
 #include "QUICPacketPayloadProtector.h"
 #include "tscore/Diags.h"
 
-static constexpr char tag[] = "quic_ppp";
+// static constexpr char tag[] = "quic_ppp";
 
 bool
-QUICPacketPayloadProtector::_protect(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const Ptr<IOBufferBlock> plain,
-                                     uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key, const uint8_t *iv,
-                                     size_t iv_len, const EVP_CIPHER *aead, size_t tag_len) const
+QUICPacketPayloadProtector::_protect(uint8_t *protected_payload, size_t &protected_payload_len, size_t max_protecgted_payload_len,
+                                     const Ptr<IOBufferBlock> plain, uint64_t pkt_num, const uint8_t *ad, size_t ad_len,
+                                     const uint8_t *key, const uint8_t *iv, size_t iv_len, const EVP_CIPHER *cipher,
+                                     size_t tag_len) const
 {
   ink_assert(!"not implemented");
   return false;
 }
 
 bool
-QUICPacketPayloadProtector::_unprotect(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher,
-                                       size_t cipher_len, uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const uint8_t *key,
-                                       const uint8_t *iv, size_t iv_len, const EVP_CIPHER *aead, size_t tag_len) const
+QUICPacketPayloadProtector::_unprotect(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *protected_payload,
+                                       size_t protected_payload_len, uint64_t pkt_num, const uint8_t *ad, size_t ad_len,
+                                       const uint8_t *key, const uint8_t *iv, size_t iv_len, const EVP_CIPHER *cipher,
+                                       size_t tag_len) const
 {
   ink_assert(!"not implemented");
   return false;

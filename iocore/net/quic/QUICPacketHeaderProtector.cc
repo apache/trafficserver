@@ -54,7 +54,7 @@ QUICPacketHeaderProtector::protect(uint8_t *unprotected_packet, size_t unprotect
   Debug("v_quic_pne", "Protecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
         QUICDebugNames::key_phase(phase));
 
-  const QUIC_EVP_CIPHER *aead = this->_pp_key_info.get_cipher_for_hp(phase);
+  const EVP_CIPHER *aead = this->_pp_key_info.get_cipher_for_hp(phase);
   if (!aead) {
     Debug("quic_pne", "Failed to encrypt a packet number: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;
@@ -116,7 +116,7 @@ QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected
   Debug("v_quic_pne", "Unprotecting a packet number of %s packet using %s", QUICDebugNames::packet_type(type),
         QUICDebugNames::key_phase(phase));
 
-  const QUIC_EVP_CIPHER *aead = this->_pp_key_info.get_cipher_for_hp(phase);
+  const EVP_CIPHER *aead = this->_pp_key_info.get_cipher_for_hp(phase);
   if (!aead) {
     Debug("quic_pne", "Failed to decrypt a packet number: keys for %s is not ready", QUICDebugNames::key_phase(phase));
     return false;

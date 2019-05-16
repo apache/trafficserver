@@ -50,7 +50,7 @@ QUICPacketProtectionKeyInfo::drop_keys(QUICKeyPhase phase)
   memset(this->_server_key_for_hp[index], 0x00, sizeof(this->_server_key_for_hp[index]));
 }
 
-const QUIC_EVP_CIPHER *
+const EVP_CIPHER *
 QUICPacketProtectionKeyInfo::get_cipher(QUICKeyPhase phase) const
 {
   switch (phase) {
@@ -114,7 +114,7 @@ QUICPacketProtectionKeyInfo::encryption_key(QUICKeyPhase phase)
 size_t
 QUICPacketProtectionKeyInfo::encryption_key_len(QUICKeyPhase phase) const
 {
-  const QUIC_EVP_CIPHER *cipher;
+  const EVP_CIPHER *cipher;
 
   switch (phase) {
   case QUICKeyPhase::INITIAL:
@@ -205,7 +205,7 @@ QUICPacketProtectionKeyInfo::decryption_key(QUICKeyPhase phase)
 size_t
 QUICPacketProtectionKeyInfo::decryption_key_len(QUICKeyPhase phase) const
 {
-  const QUIC_EVP_CIPHER *cipher;
+  const EVP_CIPHER *cipher;
 
   switch (phase) {
   case QUICKeyPhase::INITIAL:
@@ -254,19 +254,19 @@ QUICPacketProtectionKeyInfo::decryption_iv_len(QUICKeyPhase phase)
 }
 
 void
-QUICPacketProtectionKeyInfo::set_cipher_initial(const QUIC_EVP_CIPHER *cipher)
+QUICPacketProtectionKeyInfo::set_cipher_initial(const EVP_CIPHER *cipher)
 {
   this->_cipher_initial = cipher;
 }
 
 void
-QUICPacketProtectionKeyInfo::set_cipher(const QUIC_EVP_CIPHER *cipher, size_t tag_len)
+QUICPacketProtectionKeyInfo::set_cipher(const EVP_CIPHER *cipher, size_t tag_len)
 {
   this->_cipher  = cipher;
   this->_tag_len = tag_len;
 }
 
-const QUIC_EVP_CIPHER *
+const EVP_CIPHER *
 QUICPacketProtectionKeyInfo::get_cipher_for_hp(QUICKeyPhase phase) const
 {
   switch (phase) {
@@ -278,13 +278,13 @@ QUICPacketProtectionKeyInfo::get_cipher_for_hp(QUICKeyPhase phase) const
 }
 
 void
-QUICPacketProtectionKeyInfo::set_cipher_for_hp_initial(const QUIC_EVP_CIPHER *cipher)
+QUICPacketProtectionKeyInfo::set_cipher_for_hp_initial(const EVP_CIPHER *cipher)
 {
   this->_cipher_for_hp_initial = cipher;
 }
 
 void
-QUICPacketProtectionKeyInfo::set_cipher_for_hp(const QUIC_EVP_CIPHER *cipher)
+QUICPacketProtectionKeyInfo::set_cipher_for_hp(const EVP_CIPHER *cipher)
 {
   this->_cipher_for_hp = cipher;
 }
@@ -314,7 +314,7 @@ QUICPacketProtectionKeyInfo::encryption_key_for_hp(QUICKeyPhase phase)
 size_t
 QUICPacketProtectionKeyInfo::encryption_key_for_hp_len(QUICKeyPhase phase) const
 {
-  const QUIC_EVP_CIPHER *cipher;
+  const EVP_CIPHER *cipher;
 
   switch (phase) {
   case QUICKeyPhase::INITIAL:
@@ -353,7 +353,7 @@ QUICPacketProtectionKeyInfo::decryption_key_for_hp(QUICKeyPhase phase)
 size_t
 QUICPacketProtectionKeyInfo::decryption_key_for_hp_len(QUICKeyPhase phase) const
 {
-  const QUIC_EVP_CIPHER *cipher;
+  const EVP_CIPHER *cipher;
 
   switch (phase) {
   case QUICKeyPhase::INITIAL:

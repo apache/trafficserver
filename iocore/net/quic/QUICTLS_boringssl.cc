@@ -29,12 +29,15 @@
 #include <openssl/hkdf.h>
 #include <openssl/aead.h>
 
-static constexpr char tag[] = "quic_tls";
+// static constexpr char tag[] = "quic_tls";
 
-QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx) : QUICTLS(ssl, nvc_ctx, false) {}
-
-QUICTLS::QUICTLS(SSL *ssl, NetVConnectionContext_t nvc_ctx, bool stateless)
-  : QUICHandshakeProtocol(), _ssl(ssl), _netvc_context(nvc_ctx), _stateless(stateless)
+QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx,
+                 const NetVCOptions &netvc_options, const char *session_file, const char *keylog_file)
+  : QUICHandshakeProtocol(pp_key_info),
+    _session_file(session_file),
+    _keylog_file(keylog_file),
+    _ssl(SSL_new(ssl_ctx)),
+    _netvc_context(nvc_ctx)
 {
   ink_assert(this->_netvc_context != NET_VCONNECTION_UNSET);
 }
@@ -66,6 +69,7 @@ QUICTLS::_read_early_data()
   return 1;
 }
 
+/*
 const EVP_AEAD *
 QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
 {
@@ -173,3 +177,4 @@ QUICTLS::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const
 
   return true;
 }
+*/

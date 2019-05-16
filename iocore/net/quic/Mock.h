@@ -29,6 +29,7 @@
 #include "QUICStreamManager.h"
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
+#include <openssl/cipher.h>
 
 using namespace std::literals;
 std::string_view negotiated_application_name_sv = "h3-20"sv;
@@ -437,7 +438,7 @@ public:
 class MockQUICPacketProtectionKeyInfo : public QUICPacketProtectionKeyInfo
 {
 public:
-  const QUIC_EVP_CIPHER *
+  const EVP_CIPHER *
   get_cipher(QUICKeyPhase phase) const override
   {
     return EVP_aes_128_gcm();

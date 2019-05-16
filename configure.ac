@@ -1203,8 +1203,12 @@ enable_quic=no
 AC_MSG_CHECKING([whether APIs for QUIC are available])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
                                    [[
+                                     #ifdef OPENSSL_IS_BORINGSSL
+                                     SSL_QUIC_METHOD var;
+                                     #else
                                      #ifndef SSL_MODE_QUIC_HACK
                                      # error no hack for quic
+                                     #endif
                                      #endif
                                    ]])
                   ],

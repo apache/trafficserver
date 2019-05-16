@@ -32,8 +32,7 @@
 #include "QUICTLS.h"
 #include "QUICTypes.h"
 
-static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
-static constexpr char tag[]                            = "quic_handshake";
+static constexpr char tag[] = "quic_handshake";
 
 static constexpr uint32_t TP_ERROR_LENGTH = 0x010000;
 static constexpr uint32_t TP_ERROR_VALUE  = 0x020000;
@@ -424,6 +423,10 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
   return 0;
 }
 
+#ifndef OPENSSL_IS_BORINGSSL
+
+static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
+
 //
 // QUICTransportParametersHandler
 //
@@ -465,3 +468,4 @@ QUICTransportParametersHandler::parse(SSL *s, unsigned int ext_type, unsigned in
 
   return 1;
 }
+#endif

@@ -20,7 +20,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-#include "ts/ink_assert.h"
+#include "tscore/ink_assert.h"
 #include "QUICKeyGenerator.h"
 
 #include <openssl/ssl.h>
@@ -59,6 +59,7 @@ QUICKeyGenerator::_get_cipher_for_protected_packet(const SSL *ssl) const
 }
 
 // SSL_HANDSHAKE_MAC_SHA256, SSL_HANDSHAKE_MAC_SHA384 are defind in `ssl/internal.h` of BoringSSL
+/*
 const EVP_MD *
 QUICKeyGenerator::get_handshake_digest(const SSL *ssl)
 {
@@ -73,3 +74,4 @@ QUICKeyGenerator::get_handshake_digest(const SSL *ssl)
     return nullptr;
   }
 }
+*/

@@ -81,7 +81,9 @@ TEST_CASE("QUICHandshakeProtocol")
   SSL_CTX *client_ssl_ctx = SSL_CTX_new(TLS_method());
   SSL_CTX_set_min_proto_version(client_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(client_ssl_ctx, TLS1_3_VERSION);
+#ifndef OPENSSL_IS_BORINGSSL
   SSL_CTX_clear_options(client_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+#endif
 #ifdef SSL_MODE_QUIC_HACK
   SSL_CTX_set_mode(client_ssl_ctx, SSL_MODE_QUIC_HACK);
 #endif
@@ -90,7 +92,9 @@ TEST_CASE("QUICHandshakeProtocol")
   SSL_CTX *server_ssl_ctx = SSL_CTX_new(TLS_method());
   SSL_CTX_set_min_proto_version(server_ssl_ctx, TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(server_ssl_ctx, TLS1_3_VERSION);
+#ifndef OPENSSL_IS_BORINGSSL
   SSL_CTX_clear_options(server_ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+#endif
 #ifdef SSL_MODE_QUIC_HACK
   SSL_CTX_set_mode(server_ssl_ctx, SSL_MODE_QUIC_HACK);
 #endif
@@ -227,7 +231,11 @@ TEST_CASE("QUICHandshakeProtocol")
   SECTION("Full Handshake with HRR", "[quic]")
   {
     // client key_share will be X25519 (default of OpenSSL)
+#ifdef SSL_CTX_set1_groups_list
     if (SSL_CTX_set1_groups_list(server_ssl_ctx, "P-521:P-384:P-256") != 1) {
+#else
+    if (SSL_CTX_set1_curves_list(server_ssl_ctx, "P-521:P-384:P-256") != 1) {
+#endif
       REQUIRE(false);
     }
 
@@ -362,7 +370,11 @@ TEST_CASE("QUICHandshakeProtocol")
 
     // Teardown
     // Make it back to the default settings
+#ifdef SSL_CTX_set1_groups_list
     if (SSL_CTX_set1_groups_list(server_ssl_ctx, "X25519:P-521:P-384:P-256") != 1) {
+#else
+    if (SSL_CTX_set1_curves_list(server_ssl_ctx, "X25519:P-521:P-384:P-256") != 1) {
+#endif
       REQUIRE(false);
     }
 

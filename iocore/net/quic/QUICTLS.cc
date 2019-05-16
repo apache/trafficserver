@@ -79,6 +79,12 @@ QUICTLS::~QUICTLS()
   SSL_free(this->_ssl);
 }
 
+void
+QUICTLS::reset()
+{
+  SSL_clear(this->_ssl);
+}
+
 uint16_t
 QUICTLS::convert_to_quic_trans_error_code(uint8_t alert)
 {

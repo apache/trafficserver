@@ -24,17 +24,17 @@
 #include "QUICPacketHeaderProtector.h"
 
 bool
-QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *aead) const
+QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *cipher) const
 {
   static constexpr unsigned char FIVE_ZEROS[] = {0x00, 0x00, 0x00, 0x00, 0x00};
   EVP_CIPHER_CTX *ctx                         = EVP_CIPHER_CTX_new();
 
-  if (!ctx || !EVP_EncryptInit_ex(ctx, aead, nullptr, key, sample)) {
+  if (!ctx || !EVP_EncryptInit_ex(ctx, cipher, nullptr, key, sample)) {
     return false;
   }
 
   int len = 0;
-  if (aead == EVP_chacha20()) {
+  if (cipher == EVP_chacha20()) {
     if (!EVP_EncryptUpdate(ctx, mask, &len, FIVE_ZEROS, sizeof(FIVE_ZEROS))) {
       return false;
     }

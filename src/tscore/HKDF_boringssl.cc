@@ -21,7 +21,8 @@
  *  limitations under the License.
  */
 #include "tscore/HKDF.h"
-#include <openssl/kdf.h>
+#include "tscore/ink_assert.h"
+#include <openssl/hkdf.h>
 
 HKDF::HKDF(const EVP_MD *digest) : _digest(digest)
 {

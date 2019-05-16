@@ -41,7 +41,7 @@ private:
 
   bool _calc_sample_offset(uint8_t *sample_offset, const uint8_t *protected_packet, size_t protected_packet_len, int dcil) const;
 
-  bool _generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const QUIC_EVP_CIPHER *aead) const;
+  bool _generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *cipher) const;
 
   bool _unprotect(uint8_t *packet, size_t packet_len, const uint8_t *mask) const;
   bool _protect(uint8_t *packet, size_t packet_len, const uint8_t *mask, int dcil) const;

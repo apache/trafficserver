@@ -581,12 +581,6 @@ QUICTLS::_process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHand
 }
 
 void
-QUICTLS::reset()
-{
-  SSL_clear(this->_ssl);
-}
-
-void
 QUICTLS::_store_negotiated_cipher()
 {
   ink_assert(this->_ssl);

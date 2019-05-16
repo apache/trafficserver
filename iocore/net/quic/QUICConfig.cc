@@ -50,7 +50,6 @@ quic_new_ssl_ctx()
 #ifndef OPENSSL_IS_BORINGSSL
   // FIXME: OpenSSL (1.1.1-alpha) enable this option by default. But this shoule be removed when OpenSSL disable this by default.
   SSL_CTX_clear_options(ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
-#endif
 
   SSL_CTX_set_max_early_data(ssl_ctx, UINT32_C(0xFFFFFFFF));
 
@@ -58,6 +57,9 @@ quic_new_ssl_ctx()
                          SSL_EXT_TLS_ONLY | SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS,
                          &QUICTransportParametersHandler::add, &QUICTransportParametersHandler::free, nullptr,
                          &QUICTransportParametersHandler::parse, nullptr);
+#else
+  // QUIC Transport Parameters are accesible with SSL_set_quic_transport_params and SSL_get_peer_quic_transport_params
+#endif
 
 #ifdef SSL_MODE_QUIC_HACK
   // tatsuhiro-t's custom OpenSSL for QUIC draft-13
@@ -76,11 +78,17 @@ quic_init_client_ssl_ctx(const QUICConfigParams *params)
 {
   SSL_CTX *ssl_ctx = quic_new_ssl_ctx();
 
+#if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
   if (params->client_supported_groups() != nullptr) {
+#ifdef SSL_CTX_set1_groups_list
     if (SSL_CTX_set1_groups_list(ssl_ctx, params->client_supported_groups()) != 1) {
+#else
+    if (SSL_CTX_set1_curves_list(ssl_ctx, params->client_supported_groups()) != 1) {
+#endif
       Error("SSL_CTX_set1_groups_list failed");
     }
   }
+#endif
 
   if (params->client_session_file() != nullptr) {
     SSL_CTX_set_session_cache_mode(ssl_ctx, SSL_SESS_CACHE_CLIENT | SSL_SESS_CACHE_NO_INTERNAL_STORE);
@@ -557,24 +565,33 @@ QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, c
     goto fail;
   }
 
+#if TS_USE_TLS_SET_CIPHERSUITES
   if (params->server_tls13_cipher_suites != nullptr) {
     if (!SSL_CTX_set_ciphersuites(ctx, params->server_tls13_cipher_suites)) {
       Error("invalid tls server cipher suites in records.config");
       goto fail;
     }
   }
+#endif
 
+#if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
   if (params->server_groups_list != nullptr) {
+#ifdef SSL_CTX_set1_groups_list
     if (!SSL_CTX_set1_groups_list(ctx, params->server_groups_list)) {
+#else
+    if (!SSL_CTX_set1_curves_list(ctx, params->server_groups_list)) {
+#endif
       Error("invalid groups list for server in records.config");
       goto fail;
     }
   }
+#endif
 
   // SSL_CTX_set_info_callback(ctx, ssl_callback_info);
 
   SSL_CTX_set_alpn_select_cb(ctx, QUIC::ssl_select_next_protocol, nullptr);
 
+#if TS_USE_TLS_OCSP
   if (SSLConfigParams::ssl_ocsp_enabled) {
     QUICConfDebug("SSL OCSP Stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
@@ -588,6 +605,11 @@ QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, c
   } else {
     QUICConfDebug("SSL OCSP Stapling is disabled");
   }
+#else
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
+  }
+#endif /* TS_USE_TLS_OCSP */
 
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(ctx, true);
