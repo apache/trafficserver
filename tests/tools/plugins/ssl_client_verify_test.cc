@@ -64,7 +64,7 @@ check_names(X509 *cert)
 
       X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
       ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
-      char *subj_name    = strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(cn)), ASN1_STRING_length(cn));
+      char *subj_name    = strndup(reinterpret_cast<const char *>(ASN1_STRING_data(cn)), ASN1_STRING_length(cn));
       retval             = check_name(subj_name);
       free(subj_name);
     }
@@ -80,7 +80,7 @@ check_names(X509 *cert)
         name = sk_GENERAL_NAME_value(names, i);
         if (name->type == GEN_DNS) {
           char *dns =
-            strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(name->d.dNSName)), ASN1_STRING_length(name->d.dNSName));
+            strndup(reinterpret_cast<const char *>(ASN1_STRING_data(name->d.dNSName)), ASN1_STRING_length(name->d.dNSName));
           retval = check_name(dns);
           free(dns);
         }
