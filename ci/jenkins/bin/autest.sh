@@ -20,7 +20,8 @@ set +x
 
 INSTALL="${WORKSPACE}/${BUILD_NUMBER}/install"
 URL="https://ci.trafficserver.apache.org/autest"
-AUSB="ausb-${ghprbPullId}.${BUILD_NUMBER}"
+JOB_ID=${ghprbPullId:-${ATS_BRANCH:-master}}
+AUSB="ausb-${JOB_ID}.${BUILD_NUMBER}"
 SANDBOX="/var/tmp/${AUSB}"
 
 # Optional settings

@@ -24,7 +24,7 @@ OUTPUT_BASE=${OUTPUT_BASE:-/home/jenkins/clang-analyzer}
 
 # Options
 options="--status-bugs --keep-empty"
-configure="--enable-experimental-plugins --enable-luajit"
+configure="--enable-experimental-plugins --with-luajit"
 
 # Additional checkers
 # Phil says these are all FP's: -enable-checker alpha.security.ArrayBoundV2
@@ -68,15 +68,18 @@ export CCC_CXX=${LLVM_BASE}/bin/clang++
 # This can be used to override any of those settings above
 [ -f ./.clang-analyzer ] && source ./.clang-analyzer
 
-# Don't do clang-analyzer runs on 7.1.x branch
-grep -q 700100 configure.ac && echo "7.1.x branch detected, stop here!" && exit 0
+# Don't do clang-analyzer runs on 7.1.x branch, for e.g. Github PRs
+grep -q 70010 configure.ac && echo "7.1.x branch detected, stop here!" && exit 0
+grep -q 80000 configure.ac && echo "8.0.x branch detected, stop here!" && exit 0
+grep -q 80010 configure.ac && echo "8.1.x branch detected, stop here!" && exit 0
 
 # Start the build / scan
 [ "$output" != "/tmp" ] && echo "Results (if any) can be found at ${results_url}"
 autoreconf -fi
-${LLVM_BASE}/bin/scan-build ./configure ${configure} \
-    CXXFLAGS="-stdlib=libc++ -I${LLVM_BASE}/include/c++/v1 -std=c++17" \
-    LDFLAGS="-L${LLVM_BASE}/lib64 -Wl,-rpath=${LLVM_BASE}/lib64" || exit 1
+${LLVM_BASE}/bin/scan-build --keep-cc ./configure ${configure} \
+    CXXFLAGS="-stdlib=libc++ -I${LLVM_BASE}/include/c++/v1" \
+    LDFLAGS="-L${LLVM_BASE}/lib64 -Wl,-rpath=${LLVM_BASE}/lib64" \
+    || exit 1
 
 # Since we don't want the analyzer to look at yamlcpp, build it first
 # without scan-build. The subsequent make will then skip it.
@@ -84,14 +87,14 @@ ${LLVM_BASE}/bin/scan-build ./configure ${configure} \
 # by making yaml cpp a SUBDIRS in lib/Makefile.am.
 ${ATS_MAKE} -j $NPROCS -C lib all-local V=1 Q= || exit 1
 
-${LLVM_BASE}/bin/scan-build ${checkers} ${options} -o ${output} \
+${LLVM_BASE}/bin/scan-build --keep-cc ${checkers} ${options} -o ${output} \
     --html-title="clang-analyzer: ${ATS_BRANCH}${github_pr}" \
     ${ATS_MAKE} -j $NPROCS V=1 Q=
 status=$?
 
-# Clean the work area unless NOCLEAN is set. This is jsut for debugging when you
+# Clean the work area unless NOCLEAN is set. This is just for debugging when you
 # need to see what the generated build did.
-if [ ! -z "$NOCLEAN" ]; then
+if [ -z "$NOCLEAN" ]; then
     ${ATS_MAKE} distclean
 fi
 [ "$output" != "/tmp" ] && echo "Results (if any) can be found at ${results_url}"
