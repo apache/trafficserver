@@ -260,15 +260,6 @@ NetAccept::do_listen(bool non_blocking)
     }
   }
 
-  if (opt.f_callback_on_open && !action_->cancelled) {
-    if (res) {
-      action_->continuation->handleEvent(NET_EVENT_ACCEPT_FAILED, this);
-    } else {
-      action_->continuation->handleEvent(NET_EVENT_ACCEPT_SUCCEED, this);
-    }
-    mutex = nullptr;
-  }
-
   return res;
 }
 

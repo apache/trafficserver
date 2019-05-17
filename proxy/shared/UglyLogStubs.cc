@@ -107,7 +107,6 @@ NetProcessor::AcceptOptions::reset()
   accept_threads        = 0;
   ip_family             = AF_INET;
   etype                 = ET_NET;
-  f_callback_on_open    = false;
   recv_bufsize          = 0;
   send_bufsize          = 0;
   sockopt_flags         = 0;
