@@ -21,11 +21,6 @@ Test.Summary = '''
 Test tls server certificate verification options
 '''
 
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
-
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
@@ -144,7 +139,7 @@ tr4.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Con
 tr4.ReturnCode = 0
 tr4.StillRunningAfter = server
 tr4.StillRunningAfter = ts
- 
+
 tr5 = Test.AddTestRun("Exercise-wildcard-cert-underscore-name-check")
 tr5.Processes.Default.Command = "curl -v -k -H \"host: foo_bar.wild.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
 tr5.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")

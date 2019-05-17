@@ -23,7 +23,6 @@ Test disabling H2 on a per domain basis
 
 # need Curl
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2')
 )
 
@@ -98,5 +97,3 @@ tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("Using HTTP2", "Curl should not negotiate HTTP2")
 tr2.TimeOut = 5
-
-

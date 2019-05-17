@@ -21,10 +21,6 @@ Test.Summary = '''
 
 '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: match cookie"
 

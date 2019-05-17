@@ -21,11 +21,6 @@ Test.Summary = '''
 Forwarding a non-HTTP protocol out of TLS
 '''
 
-# need nc
-Test.SkipUnless(
-    Condition.HasProgram("nc", "nc need to be installed on system for this test to work")
-)
-
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False)
 
@@ -71,4 +66,3 @@ tr.StillRunningAfter = ts
 testout_path = os.path.join(Test.RunDirectory, "test.out")
 tr.Disk.File(testout_path, id = "testout")
 tr.Processes.Default.Streams.All += Testers.IncludesExpression("This is a reply", "s_client should get response")
-

@@ -20,8 +20,6 @@ import sys
 
 
 Test.Summary = 'Test that Trafficserver starts with different thread configurations.'
-Test.SkipUnless(Condition.HasProgram('curl', 'Curl need to be installed on system for this test to work'))
-
 Test.ContinueOnFail = True
 
 ts = Test.MakeATSProcess('ts')

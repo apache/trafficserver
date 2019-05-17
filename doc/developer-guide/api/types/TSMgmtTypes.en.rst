@@ -30,15 +30,9 @@ Management Signals
 
 .. c:macro:: MGMT_SIGNAL_PID
 
-.. c:macro:: MGMT_SIGNAL_MACHINE_UP
-
-.. c:macro:: MGMT_SIGNAL_MACHINE_DOWN
-
 .. c:macro:: MGMT_SIGNAL_CONFIG_ERROR
 
 .. c:macro:: MGMT_SIGNAL_SYSTEM_ERROR
-
-.. c:macro:: MGMT_SIGNAL_LOG_SPACE_CRISIS
 
 .. c:macro:: MGMT_SIGNAL_CONFIG_FILE_READ
 
@@ -52,8 +46,6 @@ Management Signals
 
 .. c:macro:: MGMT_SIGNAL_PLUGIN_SET_CONFIG
 
-.. c:macro:: MGMT_SIGNAL_LOG_FILES_ROLLED
-
 .. c:macro:: MGMT_SIGNAL_LIBRECORDS
 
 .. c:macro:: MGMT_SIGNAL_HTTP_CONGESTED_SERVER
@@ -61,8 +53,6 @@ Management Signals
 .. c:macro:: MGMT_SIGNAL_HTTP_ALLEVIATED_SERVER
 
 .. c:macro:: MGMT_SIGNAL_CONFIG_FILE_CHILD
-
-.. c:macro:: MGMT_SIGNAL_SAC_SERVER_DOWN
 
 
 Management Events

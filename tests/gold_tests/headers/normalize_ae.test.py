@@ -25,7 +25,6 @@ Test normalizations of the Accept-Encoding header field.
 '''
 
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.HasATSFeature('TS_HAS_BROTLI')
 )
 

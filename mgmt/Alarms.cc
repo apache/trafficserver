@@ -31,25 +31,18 @@
 #include "records/P_RecCore.h"
 
 const char *alarmText[] = {
-  "Unknown Alarm",
-  "[TrafficManager] Traffic Server process was reset.",
-  "[TrafficManager] Traffic Server process established.",
-  "New Peer",
-  "Peer Died",
-  "Invalid Configuration",
-  "System Error",
-  "Log Space Crisis",
-  "Cache Error",
-  "Cache Warning",
-  "Logging Error",
-  "Logging Warning",
-  "Mgmt Debugging Alarm",
-  "Configuration File Update Failed",
-  "Unable to Establish Manager User-Interface Services",
-  "Ping Failure",
-  "",
-  "Add OEM Alarm",
-  "",
+  "Unknown Alarm",                                        // 0
+  "[TrafficManager] Traffic Server process was reset.",   // 1
+  "[TrafficManager] Traffic Server process established.", // 2
+  "Invalid Configuration",                                // 3
+  "System Error",                                         // 4
+  "Cache Error",                                          // 5
+  "Cache Warning",                                        // 6
+  "Logging Error",                                        // 7
+  "Logging Warning",                                      // 8
+  "Alarms configuration update failed",                   // 9
+  "Librecords",                                           // 10 (unclear if needed / used)
+  "Plugin set configuration",                             // 11 (unclear if needed / used)
 };
 
 const int alarmTextNum = sizeof(alarmText) / sizeof(char *);
@@ -73,7 +66,6 @@ Alarms::Alarms()
 {
   cur_cb = 0;
   ink_mutex_init(&mutex);
-  alarmOEMcount = minOEMkey;
 } /* End Alarms::Alarms */
 
 Alarms::~Alarms()
@@ -166,24 +158,12 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     break;
   case MGMT_ALARM_PROXY_CACHE_WARNING:
     return;
-  case MGMT_ALARM_PROXY_PEER_BORN:
-    priority = 3;
-    break;
-  case MGMT_ALARM_PROXY_PEER_DIED:
-    priority = 3;
-    break;
-  case MGMT_ALARM_PING_FAILURE:
-    priority = 1;
-    break;
   case MGMT_ALARM_PROXY_PROCESS_DIED:
     priority = 1;
     break;
   case MGMT_ALARM_PROXY_PROCESS_BORN:
     mgmt_log("[Alarms::signalAlarm] Server Process born\n");
     return;
-  case MGMT_ALARM_ADD_ALARM:
-    priority = 2;
-    break;
   default:
     priority = 2;
     break;
@@ -222,12 +202,6 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 
   ink_mutex_acquire(&mutex);
   if (!ip) {
-    // if an OEM alarm, then must create the unique key alarm type;
-    // this key is used to hash the new OEM alarm description in the hash table
-    if (a == MGMT_ALARM_ADD_ALARM) {
-      a = (alarmOEMcount - minOEMkey) % (maxOEMkey - minOEMkey) + minOEMkey;
-      alarmOEMcount++;
-    }
     snprintf(buf, sizeof(buf), "%d", a);
     if (local_alarms.find(buf) != local_alarms.end()) {
       ink_mutex_release(&mutex);
@@ -370,11 +344,6 @@ Alarms::execAlarmBin(const char *desc)
     return;
   }
 
-  // get email info
-  alarm_email_from_name = REC_readString("proxy.config.product_name", nullptr);
-  alarm_email_from_addr = REC_readString("proxy.config.admin.admin_user", nullptr);
-  alarm_email_to_addr   = REC_readString("proxy.config.alarm_email", nullptr);
-
   ink_filepath_make(cmd_line, sizeof(cmd_line), bindir, alarm_bin);
 
 #ifdef POSIX_THREAD
@@ -411,13 +380,8 @@ Alarms::execAlarmBin(const char *desc)
       waitpid(pid, &status, 0); // to reap the thread
     }
   } else {
-    int res;
-    if (alarm_email_from_name && alarm_email_from_addr && alarm_email_to_addr) {
-      res = execl(cmd_line, (const char *)alarm_bin, desc, (const char *)alarm_email_from_name, (const char *)alarm_email_from_addr,
-                  (const char *)alarm_email_to_addr, (char *)nullptr);
-    } else {
-      res = execl(cmd_line, (const char *)alarm_bin, desc, (char *)nullptr);
-    }
+    int res = execl(cmd_line, (const char *)alarm_bin, desc, (char *)nullptr);
+
     _exit(res);
   }
 }

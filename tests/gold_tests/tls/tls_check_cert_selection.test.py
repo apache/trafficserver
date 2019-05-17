@@ -21,11 +21,6 @@ Test.Summary = '''
 Test ATS offering different certificates based on SNI
 '''
 
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
-
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server", ssl=True)
@@ -122,4 +117,3 @@ tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connec
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "Cert should contain foo.com")
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=bar.com", "Cert should not contain bar.com")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
-

@@ -671,14 +671,12 @@ main(int argc, const char **argv)
   mode_t oldmask = umask(0);
   mode_t newmode = api_socket_is_restricted() ? 00700 : 00777;
 
-  int mgmtapiFD         = -1; // FD for the api interface to issue commands
-  int eventapiFD        = -1; // FD for the api and clients to handle event callbacks
-  char mgmtapiFailMsg[] = "Traffic server management API service Interface Failed to Initialize.";
+  int mgmtapiFD  = -1; // FD for the api interface to issue commands
+  int eventapiFD = -1; // FD for the api and clients to handle event callbacks
 
   mgmtapiFD = bind_unix_domain_socket(apisock.c_str(), newmode);
   if (mgmtapiFD == -1) {
     mgmt_log("[WebIntrMain] Unable to set up socket for handling management API calls. API socket path = %s\n", apisock.c_str());
-    lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, mgmtapiFailMsg);
   }
 
   eventapiFD = bind_unix_domain_socket(eventsock.c_str(), newmode);

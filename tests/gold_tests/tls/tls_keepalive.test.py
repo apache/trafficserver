@@ -25,7 +25,6 @@ Verify that the client-side keep alive is honored for TLS and different versions
 '''
 
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2')
 )
 
@@ -105,4 +104,3 @@ tr.Processes.Default.Command = 'ls'
 tr.Processes.Default.ReturnCode = 0
 
 ts.Disk.squid_log.Content = "gold/accesslog.gold"
-

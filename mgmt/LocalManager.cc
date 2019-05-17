@@ -493,25 +493,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     RecSetRecordInt("proxy.node.proxy_running", 1, REC_SOURCE_DEFAULT);
     break;
 
-  case MGMT_SIGNAL_MACHINE_UP:
-    /*
-       {
-       struct in_addr addr;
-       addr.s_addr = *((unsigned int*)data_raw);
-       alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PEER_BORN, inet_ntoa(addr));
-       }
-     */
-    break;
-  case MGMT_SIGNAL_MACHINE_DOWN:
-    /*
-       {
-       struct in_addr addr;
-       addr.s_addr = *((unsigned int*)data_raw);
-       alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_PEER_DIED, inet_ntoa(addr));
-       }
-     */
-    break;
-
   // FIX: This is very messy need to correlate mgmt signals and
   // alarms better
   case MGMT_SIGNAL_CONFIG_ERROR:
@@ -519,9 +500,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     break;
   case MGMT_SIGNAL_SYSTEM_ERROR:
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR, data_raw);
-    break;
-  case MGMT_SIGNAL_LOG_SPACE_CRISIS:
-    alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_LOG_SPACE_CRISIS, data_raw);
     break;
   case MGMT_SIGNAL_CACHE_ERROR:
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_CACHE_ERROR, data_raw);
@@ -534,9 +512,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     break;
   case MGMT_SIGNAL_LOGGING_WARNING:
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_LOGGING_WARNING, data_raw);
-    break;
-  case MGMT_SIGNAL_CONFIG_FILE_READ:
-    mgmt_log("[LocalManager::handleMgmtMsgFromProcesses] File done '%d'\n", data_raw);
     break;
   case MGMT_SIGNAL_PLUGIN_SET_CONFIG: {
     char var_name[256];
@@ -562,10 +537,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
       break;
     }
   } break;
-  case MGMT_SIGNAL_LOG_FILES_ROLLED: {
-    Debug("lm", "Rolling logs %s", (char *)data_raw);
-    break;
-  }
   case MGMT_SIGNAL_LIBRECORDS:
     if (mh->data_len > 0) {
       executeMgmtCallback(MGMT_SIGNAL_LIBRECORDS, {data_raw, static_cast<size_t>(mh->data_len)});
@@ -588,9 +559,6 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     ats_free_null(parent);
     ats_free_null(child);
   } break;
-  case MGMT_SIGNAL_SAC_SERVER_DOWN:
-    alarm_keeper->signalAlarm(MGMT_ALARM_SAC_SERVER_DOWN, data_raw);
-    break;
 
   default:
     break;

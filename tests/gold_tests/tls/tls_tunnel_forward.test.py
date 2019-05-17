@@ -21,11 +21,6 @@ Test.Summary = '''
 Test tunneling and forwarding based on SNI
 '''
 
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
-
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=False)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True)
@@ -122,4 +117,3 @@ tr3.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Ac
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "Should TLS terminate on Traffic Server")
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("ok random", "Body is expected")
-

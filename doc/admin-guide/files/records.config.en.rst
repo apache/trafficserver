@@ -551,22 +551,6 @@ Local Manager
 Alarm Configuration
 ===================
 
-.. ts:cv:: CONFIG proxy.config.alarm_email STRING
-   :reloadable:
-
-   The address to which the alarm script should send email.
-
-.. ts:cv:: CONFIG proxy.config.alarm.bin STRING example_alarm_bin.sh
-   :reloadable:
-
-   Name of the script file that can execute certain actions when
-   an alarm is signaled. The script is invoked with up to 4 arguments:
-
-   - The alarm message.
-   - The value of :ts:cv:`proxy.config.product_name`.
-   - The value of :ts:cv:`proxy.config.admin.user_id`.
-   - The value of :ts:cv:`proxy.config.alarm_email`.
-
 .. ts:cv:: CONFIG proxy.config.alarm.abs_path STRING NULL
    :reloadable:
 

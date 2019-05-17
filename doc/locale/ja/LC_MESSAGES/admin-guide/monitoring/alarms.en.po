@@ -53,14 +53,6 @@ msgstr ""
 "アラームが発生したときに |TS| が指定したアドレスに E メールを送信するように"
 "設定するには、以下の手順に従ってください。"
 
-#: ../../../admin-guide/monitoring/alarms.en.rst:35
-msgid ""
-"Set :ts:cv:`proxy.config.alarm_email` in :file:`records.config` to the "
-"email address you want to receive alarm notifications. ::"
-msgstr ""
-":file:`records.config` の :ts:cv:`proxy.config.alarm_email` にアラーム通知を"
-"受け取りたいメールアドレスを設定 ::"
-
 #: ../../../admin-guide/monitoring/alarms.en.rst:40
 msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply the "
