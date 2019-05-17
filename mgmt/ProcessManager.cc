@@ -471,7 +471,6 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
     }
   } break;
   case MGMT_EVENT_CONFIG_FILE_UPDATE:
-  case MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION:
     /*
       librecords -- we don't do anything in here because we are traffic_server
       and we are not the owner of proxy.config.* variables.

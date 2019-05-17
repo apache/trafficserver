@@ -49,16 +49,15 @@
 #define MGMT_EVENT_PLUGIN_CONFIG_UPDATE 10006
 #define MGMT_EVENT_ROLL_LOG_FILES 10008
 #define MGMT_EVENT_LIBRECORDS 10009
-#define MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION 10010
 // cache storage operations - each is a distinct event.
 // this is done because the code paths share nothing but boilerplate logic
 // so it's easier to do this than to try to encode an opcode and yet another
 // case statement.
-#define MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE 10011
-#define MGMT_EVENT_LIFECYCLE_MESSAGE 10012
-#define MGMT_EVENT_DRAIN 10013
-#define MGMT_EVENT_HOST_STATUS_UP 10014
-#define MGMT_EVENT_HOST_STATUS_DOWN 10015
+#define MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE 10010
+#define MGMT_EVENT_LIFECYCLE_MESSAGE 10011
+#define MGMT_EVENT_DRAIN 10012
+#define MGMT_EVENT_HOST_STATUS_UP 10013
+#define MGMT_EVENT_HOST_STATUS_DOWN 10014
 
 /***********************************************************************
  *
