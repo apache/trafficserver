@@ -582,6 +582,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       this->read.triggered = 0;
       readSignalError(nh, err);
     } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
+      ink_assert(this->handShakeReader != nullptr);
       if (SSLConfigParams::ssl_handshake_timeout_in > 0) {
         double handshake_time = ((double)(Thread::get_hrtime() - sslHandshakeBeginTime) / 1000000000);
         Debug("ssl", "ssl handshake for vc %p, took %.3f seconds, configured handshake_timer: %d", this, handshake_time,
