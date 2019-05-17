@@ -62,18 +62,9 @@ struct versionInfo {
 //  removeVersion(version_t ) - removes the specified version from the
 //    configuration directory
 //
-//  revertToVersion(version_t) - rolls the active version to a new file
-//    The specified version of the file is copied to the active version
-//
 //  getVersion(version_t version, TextBuffer** buffer, version_t) -
 //    creates a new TextBuffer that contains the contents of the specified
 //    version.  CALLEE MUST DELETE the buffer
-//
-//  updateVersion(TextBuffer* buf, version_t basedOn) - checks to
-//    if basedOn is the current version.  If it is not, the update
-//    rejected.  If it is current, the active file is versioned and
-//    the contents of buf become the new active file. newVersion tells us what
-//    the new version number should be.  -1 means the next in sequence
 //
 //  forceUpdate(TextBuffer* buf, version_t) - Does not check is the new version
 //    is based on the current version, which can lead to data loss.  versions
@@ -146,10 +137,7 @@ public:
     ink_mutex_release(&fileAccessLock);
   };
   RollBackCodes removeVersion_ml(version_t version);
-  RollBackCodes revertToVersion_ml(version_t version);
   RollBackCodes getVersion_ml(version_t version, TextBuffer **buffer);
-  RollBackCodes updateVersion_ml(TextBuffer *buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true,
-                                 bool incVersion = true);
   RollBackCodes forceUpdate_ml(TextBuffer *buf, version_t newVersion = -1);
   version_t findVersions_ml(ExpandingArray *listNames);
   version_t findVersions_ml(Queue<versionInfo> &q);
@@ -159,10 +147,7 @@ public:
   // Automatically take out lock
   bool checkForUserUpdate();
   RollBackCodes removeVersion(version_t version);
-  RollBackCodes revertToVersion(version_t version);
   RollBackCodes getVersion(version_t version, TextBuffer **buffer);
-  RollBackCodes updateVersion(TextBuffer *buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true,
-                              bool incVersion = true);
   RollBackCodes forceUpdate(TextBuffer *buf, version_t newVersion = -1);
   version_t findVersions(ExpandingArray *);
   time_t versionTimeStamp(version_t version);
