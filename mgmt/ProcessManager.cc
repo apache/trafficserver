@@ -216,11 +216,11 @@ ProcessManager::reconfigure()
 }
 
 void
-ProcessManager::signalConfigFileChild(const char *parent, const char *child, unsigned int options)
+ProcessManager::signalConfigFileChild(const char *parent, const char *child)
 {
   static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
 
-  MgmtMarshallInt mgmtopt = options;
+  MgmtMarshallInt mgmtopt = 0; // ToDo: This seems like we could get rid of at some point ?
 
   size_t len   = mgmt_message_length(fields, countof(fields), &parent, &child, &mgmtopt);
   void *buffer = ats_malloc(len);

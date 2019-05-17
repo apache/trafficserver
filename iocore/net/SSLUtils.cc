@@ -952,7 +952,7 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const std::str
       return false;
     }
     if (SSLConfigParams::load_ssl_file_cb) {
-      SSLConfigParams::load_ssl_file_cb(completeServerKeyPath, CONFIG_FLAG_UNVERSIONED);
+      SSLConfigParams::load_ssl_file_cb(completeServerKeyPath);
     }
   } else {
     SSLError("empty SSL private key path in records.config");
@@ -1831,7 +1831,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<X509 *> &cert_lis
 
     cert_list.push_back(cert);
     if (SSLConfigParams::load_ssl_file_cb) {
-      SSLConfigParams::load_ssl_file_cb(completeServerCertPath.c_str(), CONFIG_FLAG_UNVERSIONED);
+      SSLConfigParams::load_ssl_file_cb(completeServerCertPath.c_str());
     }
 
     // Must load all the intermediate certificates before starting the next chain
@@ -1846,7 +1846,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<X509 *> &cert_lis
         return false;
       }
       if (SSLConfigParams::load_ssl_file_cb) {
-        SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+        SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath);
       }
     }
 
@@ -1860,7 +1860,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<X509 *> &cert_lis
           return false;
         }
         if (SSLConfigParams::load_ssl_file_cb) {
-          SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+          SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath);
         }
       }
     }

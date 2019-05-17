@@ -175,9 +175,10 @@ FileManager::rereadConfig()
   std::vector<Rollback *> parentFileNeedChange;
   size_t n;
   ink_mutex_acquire(&accessLock);
+
   for (auto &&it : bindings) {
     rb = it.second;
-    if (rb->checkForUserUpdate(rb->isVersioned() ? ROLLBACK_CHECK_AND_UPDATE : ROLLBACK_CHECK_ONLY)) {
+    if (rb->checkForUserUpdate()) {
       changedFiles.push_back(rb);
       if (rb->isChildRollback()) {
         if (std::find(parentFileNeedChange.begin(), parentFileNeedChange.end(), rb->getParentRollback()) ==
@@ -236,7 +237,7 @@ FileManager::isConfigStale()
   ink_mutex_acquire(&accessLock);
   for (auto &&it : bindings) {
     rb = it.second;
-    if (rb->checkForUserUpdate(ROLLBACK_CHECK_ONLY)) {
+    if (rb->checkForUserUpdate()) {
       stale = true;
       break;
     }
