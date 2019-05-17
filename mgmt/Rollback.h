@@ -59,17 +59,9 @@ struct versionInfo {
 //    simply grab the lock, call the corresponding _ml function,
 //    and then release the lock
 //
-//  forceUpdate(TextBuffer* buf, version_t) - Does not check is the new version
-//    is based on the current version, which can lead to data loss.  versions
-//    the active file and places the contents of buf into the active file
-//
 //  getCurrentVersion() - returns the current version number.  Unless the
 //    callee was acquired the fileAccessLock, the return value only represents
 //    a snap shot in time
-//
-//  numberOfVersions() - returns the number of versions in the config dir.
-//    Unless the callee was acquired the fileAccessLock, the return value
-//    only represents a snap shot in time
 //
 //  checkForUserUpdate() - compares the last known modification time
 //    of the active version of the file with that files current modification
@@ -112,16 +104,15 @@ public:
   {
     ink_mutex_acquire(&fileAccessLock);
   };
+
   void
   releaseLock()
   {
     ink_mutex_release(&fileAccessLock);
   };
-  RollBackCodes forceUpdate_ml(TextBuffer *buf, version_t newVersion = -1);
 
   // Automatically take out lock
   bool checkForUserUpdate();
-  RollBackCodes forceUpdate(TextBuffer *buf, version_t newVersion = -1);
   bool setLastModifiedTime();
 
   // Lock not necessary since these are only valid for a
@@ -131,11 +122,6 @@ public:
   {
     return currentVersion;
   };
-  int
-  numberOfVersions() const
-  {
-    return numVersions;
-  }
 
   // Not file based so no lock necessary
   const char *
@@ -195,7 +181,6 @@ private:
   Rollback *parentRollback;
   version_t currentVersion;
   time_t fileLastModified;
-  int numVersions;
   Queue<versionInfo> versionQ; // stores the backup version info
 };
 

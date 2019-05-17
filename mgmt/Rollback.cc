@@ -57,8 +57,7 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
     root_access_needed(root_access_needed_),
     parentRollback(parentRollback_),
     currentVersion(0),
-    fileLastModified(0),
-    numVersions(0)
+    fileLastModified(0)
 {
   ExpandingArray existVer(25, true); // Existing versions
 
@@ -182,24 +181,6 @@ Rollback::closeFile(int fd, bool callSync)
   return result;
 }
 
-RollBackCodes
-Rollback::forceUpdate(TextBuffer *buf, version_t newVersion)
-{
-  RollBackCodes r;
-
-  ink_mutex_acquire(&fileAccessLock);
-  r = this->forceUpdate_ml(buf, newVersion);
-  ink_mutex_release(&fileAccessLock);
-
-  return r;
-}
-
-RollBackCodes
-Rollback::forceUpdate_ml(TextBuffer *buf, version_t newVersion)
-{
-  return this->internalUpdate(buf, newVersion);
-}
-
 // Rollback::internalUpdate()
 //
 //  Creates a version from buf.  Callee must be holding the lock
@@ -295,7 +276,6 @@ Rollback::internalUpdate(TextBuffer *buf, version_t newVersion, bool notifyChang
     versionQ.enqueue(newBak);
   }
   // Update instance variables
-  this->numVersions++;
   this->currentVersion = newVersion;
 
   returnCode = OK_ROLLBACK;
