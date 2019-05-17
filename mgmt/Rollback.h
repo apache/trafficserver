@@ -122,7 +122,6 @@ public:
   // Automatically take out lock
   bool checkForUserUpdate();
   RollBackCodes forceUpdate(TextBuffer *buf, version_t newVersion = -1);
-  int statVersion(version_t, struct stat *buf);
   bool setLastModifiedTime();
 
   // Lock not necessary since these are only valid for a

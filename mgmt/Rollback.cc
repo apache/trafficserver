@@ -330,18 +330,6 @@ UPDATE_CLEANUP:
   return returnCode;
 }
 
-int
-Rollback::statVersion(version_t version, struct stat *buf)
-{
-  int r;
-
-  ink_mutex_acquire(&fileAccessLock);
-  r = this->statFile(version, buf);
-  ink_mutex_release(&fileAccessLock);
-
-  return r;
-}
-
 bool
 Rollback::setLastModifiedTime()
 {
