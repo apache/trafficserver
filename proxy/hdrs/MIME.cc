@@ -559,6 +559,8 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
   uint32_t slot_index, index;
   uint64_t masksum;
 
+  ink_assert(mh != nullptr);
+
   masksum     = 0;
   slot_index  = 0;
   last_fblock = nullptr;
