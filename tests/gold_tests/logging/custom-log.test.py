@@ -36,12 +36,13 @@ ts.Disk.remap_config.AddLine(
 
 ts.Disk.logging_yaml.AddLines(
     '''
-formats:
-  - name: custom
-    format: "%<hii> %<hiih>"
-logs:
-  - filename: test_log_field
-    format: custom
+logging:
+  formats:
+    - name: custom
+      format: "%<hii> %<hiih>"
+  logs:
+    - filename: test_log_field
+      format: custom
 '''.split("\n")
 )
 

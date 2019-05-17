@@ -55,13 +55,13 @@ ts.Disk.remap_config.AddLine(
 
 ts.Disk.logging_yaml.AddLines(
     '''
-formats:
-  - name: custom
-    format: '%<{Content-Type}essh>'
-
-logs:
-  - filename: field-test
-    format: custom
+logging:
+  formats:
+    - name: custom
+      format: '%<{Content-Type}essh>'
+  logs:
+    - filename: field-test
+      format: custom
 '''.split("\n")
 )
 

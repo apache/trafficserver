@@ -58,14 +58,18 @@ ts.Disk.remap_config.AddLine(
     'map https://example.com:4443 http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
-ts.Disk.logging_yaml.AddLines([
-    'formats:',
-    '- name: testformat',
-    "  format: '%<cqssl> %<cqtr>'",
-    "logs:",
-    "- mode: ascii",
-    "  format: testformat",
-    "  filename: squid" ])
+ts.Disk.logging_yaml.AddLines(
+'''
+logging:
+  formats:
+    - name: testformat
+      format: '%<cqssl> %<cqtr>'
+  logs:
+    - mode: ascii
+      format: testformat
+      filename: squid
+'''.split("\n")
+)
 
 Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'ssl_hook_test.cc'), ts, '-preaccept=1')
 
