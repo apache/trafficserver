@@ -549,8 +549,9 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     char *parent                           = nullptr;
     char *child                            = nullptr;
     MgmtMarshallInt options                = 0;
+
     if (mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child, &options) != -1) {
-      configFiles->configFileChild(parent, child, (unsigned int)options);
+      configFiles->configFileChild(parent, child);
     } else {
       mgmt_log("[LocalManager::handleMgmtMsgFromProcesses] "
                "MGMT_SIGNAL_CONFIG_FILE_CHILD mgmt_message_parse error\n");
