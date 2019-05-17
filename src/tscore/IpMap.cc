@@ -368,23 +368,23 @@ namespace detail
     // Work through the rest of the nodes of interest.
     // Invariant: n->_min >= min
 
-    // Careful here -- because max_plus1 might wrap we need to use it only
-    // if we can certain it didn't. This is done by ordering the range
-    // tests so that when max_plus1 is used when we know there exists a
-    // larger value than max.
+    // Careful here -- because max_plus1 might wrap we need to use it only if we can be certain it
+    // didn't. This is done by ordering the range tests so that when max_plus1 is used when we know
+    // there exists a larger value than max.
     Metric max_plus1 = max;
     N::inc(max_plus1);
+
     /* Notes:
-       - max (and thence max_plus1) never change during the loop.
-       - we must have either x != 0 or adjust min but not both.
+       - max (and thence also max_plus1) never change during the loop.
+       - we must have either x != 0 or adjust min but not both for each loop iteration.
     */
     while (n) {
       if (n->_data == payload) {
         if (x) {
-          if (n->_max <= max) {
-// next range is covered, so we can remove and continue.
+          if (n->_max <= max) { // next range is covered, so we can remove and continue.
 #if defined(__clang_analyzer__)
-            ink_assert(x != n);
+            x->_next = n->_next; // done in @c remove, but CA doesn't realize that.
+                                 // It's insufficient to assert(x->_next != n) after the remove.
 #endif
             this->remove(n);
             n = next(x);
