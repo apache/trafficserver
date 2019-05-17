@@ -27,37 +27,11 @@
 #include "tscore/List.h"
 
 class FileManager;
-class TextBuffer;
-
-typedef int version_t;
-
-enum RollBackCodes {
-  OK_ROLLBACK,
-  FILE_NOT_FOUND_ROLLBACK,
-  VERSION_NOT_CURRENT_ROLLBACK,
-  SYS_CALL_ERROR_ROLLBACK,
-  INVALID_VERSION_ROLLBACK
-};
-
-class ExpandingArray;
-
-// Stores info about a backup version
-//   Can be put in to List.h lists
-struct versionInfo {
-  version_t version;
-  time_t modTime;
-  LINK(versionInfo, link);
-};
 
 //
 //  class Rollback
 //
 //  public functions
-//
-//  _ml functions assume the callee is handling locking issues
-//    via acquireLock() and releaseLock().  The non _ml
-//    simply grab the lock, call the corresponding _ml function,
-//    and then release the lock
 //
 //  checkForUserUpdate() - compares the last known modification time
 //    of the active version of the file with that files current modification
@@ -66,21 +40,11 @@ struct versionInfo {
 ////
 // private functions
 //
-//  CURRENT_VERSION means the active version.  The active version does not
-//    have _version appended to its name.  All prior versions are stored
-//    as fileName_version.  Calling file operations with CURRENT_VERSION
-//    and this->currentVersion have different meanings.  this->currentVersion
-//    refers to a file with an _version which does not exist for the active
-//    version.
+//  openFile(int oflags) - a wrapper for open
 //
-//  openFile(version_t version, int oflags) - a wrapper for open
-//    opens a file based on version number
+//  statFile(struct stat*) - a wrapper for stat
 //
-//  statFile(version_t, struct stat*) - a wrapper for stat that
-//    that stats the specified version
-//
-//  createPathStr(version_t) - creates a string to the specified
-//    version of the file.  CALLEE DELETES storage
+//  createPathStr() - creates a string to the file. Callee deletes storage.
 //
 
 class Rollback
@@ -96,25 +60,19 @@ public:
   acquireLock()
   {
     ink_mutex_acquire(&fileAccessLock);
-  };
+  }
 
   void
   releaseLock()
   {
     ink_mutex_release(&fileAccessLock);
-  };
+  }
 
   // Automatically take out lock
   bool checkForUserUpdate();
   bool setLastModifiedTime();
 
   // Not file based so no lock necessary
-  const char *
-  getBaseName() const
-  {
-    return fileBaseName;
-  }
-
   const char *
   getFileName() const
   {
@@ -152,10 +110,11 @@ public:
   Rollback &operator=(const Rollback &) = delete;
 
 private:
-  int openFile(version_t version, int oflags, int *errnoPtr = nullptr);
+  int openFile(int oflags, int *errnoPtr = nullptr);
   int closeFile(int fd, bool callSync);
-  int statFile(version_t version, struct stat *buf);
-  char *createPathStr(version_t version);
+  int statFile(struct stat *buf);
+  char *createPathStr();
+
   ink_mutex fileAccessLock;
   char *fileName;
   char *fileBaseName;
@@ -163,6 +122,5 @@ private:
   size_t fileNameLen;
   bool root_access_needed;
   Rollback *parentRollback;
-  version_t currentVersion;
   time_t fileLastModified;
 };

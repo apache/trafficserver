@@ -37,8 +37,6 @@
 #define MAX_VERSION_DIGITS 11
 #define DEFAULT_BACKUPS 2
 
-constexpr int ACTIVE_VERSION = 0;
-
 #if HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
 #define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000 + (t).st_mtimespec.tv_nsec)
 #elif HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
@@ -53,14 +51,8 @@ const char *RollbackStrings[] = {"Rollback Ok", "File was not found", "Version w
 
 Rollback::Rollback(const char *fileName_, const char *configName_, bool root_access_needed_, Rollback *parentRollback_,
                    unsigned flags)
-  : configFiles(nullptr),
-    root_access_needed(root_access_needed_),
-    parentRollback(parentRollback_),
-    currentVersion(0),
-    fileLastModified(0)
+  : configFiles(nullptr), root_access_needed(root_access_needed_), parentRollback(parentRollback_), fileLastModified(0)
 {
-  ExpandingArray existVer(25, true); // Existing versions
-
   ink_assert(fileName_ != nullptr);
 
   // parent must not also have a parent
@@ -84,7 +76,6 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
   ink_mutex_init(&fileAccessLock);
 
   // ToDo: This was the case when versioning was off, do we still need any of this ?
-  currentVersion = 0;
   setLastModifiedTime();
 }
 
@@ -93,43 +84,35 @@ Rollback::~Rollback()
   ats_free(fileName);
 }
 
-// Rollback::createPathStr(version_t version)
+// Rollback::createPathStr()
 //
 //   CALLEE DELETES STORAGE
 //
 char *
-Rollback::createPathStr(version_t version)
+Rollback::createPathStr()
 {
   int bufSize  = 0;
   char *buffer = nullptr;
   std::string sysconfdir(RecConfigReadConfigDir());
-  bufSize = sysconfdir.size() + fileNameLen + MAX_VERSION_DIGITS + 1;
+
+  bufSize = sysconfdir.size() + fileNameLen + 2;
   buffer  = (char *)ats_malloc(bufSize);
   Layout::get()->relative_to(buffer, bufSize, sysconfdir, fileName);
-  if (version != ACTIVE_VERSION) {
-    size_t pos = strlen(buffer);
-    snprintf(buffer + pos, bufSize - pos, "_%d", version);
-  }
 
   return buffer;
 }
 
 //
 //
-// int Rollback::statFile(version_t)
+// int Rollback::statFile()
 //
-//  A wrapper for stat()
+//  A wrapper for stat(). ToDo: do we still need this ?
 //
 int
-Rollback::statFile(version_t version, struct stat *buf)
+Rollback::statFile(struct stat *buf)
 {
   int statResult;
-
-  if (version == this->currentVersion) {
-    version = ACTIVE_VERSION;
-  }
-
-  ats_scoped_str filePath(createPathStr(version));
+  ats_scoped_str filePath(createPathStr());
 
   statResult = root_access_needed ? elevating_stat(filePath, buf) : stat(filePath, buf);
 
@@ -137,16 +120,16 @@ Rollback::statFile(version_t version, struct stat *buf)
 }
 
 //
-// int Rollback::openFile(version_t)
+// int Rollback::openFile()
 //
 //  a wrapper for open()
 //
 int
-Rollback::openFile(version_t version, int oflags, int *errnoPtr)
+Rollback::openFile(int oflags, int *errnoPtr)
 {
   int fd;
 
-  ats_scoped_str filePath(createPathStr(version));
+  ats_scoped_str filePath(createPathStr());
   // TODO: Use the original permissions
   //       Anyhow the _1 files should not be created inside Syconfdir.
   //
@@ -186,8 +169,8 @@ Rollback::setLastModifiedTime()
 {
   struct stat fileInfo;
 
-  // Now we need to get the modification time off of the new active file
-  if (statFile(ACTIVE_VERSION, &fileInfo) >= 0) {
+  // Now we need to get the modification time off of the file
+  if (statFile(&fileInfo) >= 0) {
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
     return true;
   } else {
@@ -221,7 +204,7 @@ Rollback::checkForUserUpdate()
 
   ink_mutex_acquire(&fileAccessLock);
 
-  if (this->statFile(ACTIVE_VERSION, &fileInfo) < 0) {
+  if (this->statFile(&fileInfo) < 0) {
     ink_mutex_release(&fileAccessLock);
     return false;
   }
