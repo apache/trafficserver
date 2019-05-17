@@ -331,58 +331,6 @@ UPDATE_CLEANUP:
   return returnCode;
 }
 
-version_t
-Rollback::findVersions(ExpandingArray *listNames)
-{
-  version_t result;
-
-  ink_mutex_acquire(&fileAccessLock);
-  result = this->findVersions_ml(listNames);
-  ink_mutex_release(&fileAccessLock);
-
-  return result;
-}
-
-// Rollback::findVersions_ml()
-//
-// scans the configuration directory and returns the high
-//   version number encountered.  If no versions of the
-//   file were found, zero is returned
-//
-version_t
-Rollback::findVersions_ml(ExpandingArray *listNames)
-{
-  int count             = 0;
-  version_t highestSeen = 0, version = 0;
-  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
-
-  DIR *dir;
-  struct dirent *entryPtr;
-
-  dir = opendir(sysconfdir);
-
-  if (dir == nullptr) {
-    mgmt_log("[Rollback::findVersions] Unable to open configuration directory: %s: %s\n", (const char *)sysconfdir,
-             strerror(errno));
-    return INVALID_VERSION;
-  }
-
-  while ((entryPtr = readdir(dir))) {
-    if ((version = extractVersionInfo(listNames, entryPtr->d_name)) != INVALID_VERSION) {
-      count++;
-
-      if (version > highestSeen) {
-        highestSeen = version;
-      }
-    }
-  }
-
-  closedir(dir);
-
-  numVersions = count;
-  return highestSeen;
-}
-
 // version_t Rollback::extractVersionInfo(ExpandingArray* listNames,
 //                                        const char* testFileName)
 //
@@ -435,40 +383,6 @@ Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName
   }
 
   return version;
-}
-
-// version_t Rollback::findVersions_ml(Queue<versionInfo>& q)
-//
-//   Add wrapper to
-//     version_t Rollback::findVersions_ml(ExpandingArray* listNames)
-//
-//   Puts the data in a queue rather than an ExpandingArray
-//
-version_t
-Rollback::findVersions_ml(Queue<versionInfo> &q)
-{
-  ExpandingArray versions(25, true);
-  int num;
-  versionInfo *foundVer;
-  version_t highest;
-
-  // Get the version info and sort it
-  highest = this->findVersions_ml(&versions);
-  num     = versions.getNumEntries();
-  versions.sortWithFunction(versionCmp);
-
-  // Add the entries on to our passed in q
-  for (int i = 0; i < num; i++) {
-    foundVer = (versionInfo *)versions[i];
-    //  We need to create our own copy so that
-    //   constructor gets run
-    versionInfo *addInfo = new versionInfo;
-    addInfo->version     = foundVer->version;
-    addInfo->modTime     = foundVer->modTime;
-    q.enqueue(addInfo);
-  }
-
-  return highest;
 }
 
 time_t
