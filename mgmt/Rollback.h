@@ -59,9 +59,6 @@ struct versionInfo {
 //    simply grab the lock, call the corresponding _ml function,
 //    and then release the lock
 //
-//  removeVersion(version_t ) - removes the specified version from the
-//    configuration directory
-//
 //  getVersion(version_t version, TextBuffer** buffer, version_t) -
 //    creates a new TextBuffer that contains the contents of the specified
 //    version.  CALLEE MUST DELETE the buffer
@@ -136,7 +133,6 @@ public:
   {
     ink_mutex_release(&fileAccessLock);
   };
-  RollBackCodes removeVersion_ml(version_t version);
   RollBackCodes getVersion_ml(version_t version, TextBuffer **buffer);
   RollBackCodes forceUpdate_ml(TextBuffer *buf, version_t newVersion = -1);
   version_t findVersions_ml(ExpandingArray *listNames);
@@ -146,7 +142,6 @@ public:
 
   // Automatically take out lock
   bool checkForUserUpdate();
-  RollBackCodes removeVersion(version_t version);
   RollBackCodes getVersion(version_t version, TextBuffer **buffer);
   RollBackCodes forceUpdate(TextBuffer *buf, version_t newVersion = -1);
   version_t findVersions(ExpandingArray *);
