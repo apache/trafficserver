@@ -58,6 +58,13 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
     return false;
   }
 
+  if (config["logging"]) {
+    config = config["logging"];
+  } else {
+    Error("malformed logging.yaml file; expected a toplevel 'logging' node");
+    return false;
+  }
+
   auto formats = config["formats"];
   for (auto const &node : formats) {
     auto fmt = node.as<std::unique_ptr<LogFormat>>().release();

@@ -56,12 +56,13 @@ ts.Disk.ssl_multicert_config.AddLine(
 
 ts.Disk.logging_yaml.AddLines(
     '''
-formats:
-  - name: custom
-    format: "%<ccid> %<ctid>"
-logs:
-  - filename: test_ccid_ctid
-    format: custom
+logging:
+  formats:
+    - name: custom
+      format: "%<ccid> %<ctid>"
+  logs:
+    - filename: test_ccid_ctid
+      format: custom
 '''.split("\n")
 )
 
