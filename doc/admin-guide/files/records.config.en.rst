@@ -76,12 +76,6 @@ Prefix Description  Equivalent in Bytes
 ``T``  Terabytes    1,099,511,627,776 bytes (1024\ :sup:`4`)
 ====== ============ ===========================================================
 
-.. important::
-
-   Unless :ts:cv:`proxy.config.disable_configuration_modification` is enabled,
-   |TS| writes configurations back to disk periodically. When doing so, the
-   unit prefixes are not preserved.
-
 Floating point variables (``FLOAT``) must be expressed as a regular decimal
 number. Unit prefixes are not supported, nor are alternate notations (scientific,
 exponent, etc.).
@@ -539,14 +533,6 @@ Local Manager
 
    This setting is not reloadable, since it is must be applied when
    program:`traffic_manager` initializes.
-
-.. ts:cv:: CONFIG proxy.config.disable_configuration_modification INT 0
-   :reloadable:
-
-   This setting prevents |TS| from rewriting the :file:`records.config`
-   configuration file. Dynamic configuration changes can still be made using
-   :program:`traffic_ctl config set`, but these changes will not be persisted
-   on service restarts or when :option:`traffic_ctl config reload` is run.
 
 Alarm Configuration
 ===================

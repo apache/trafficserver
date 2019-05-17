@@ -77,12 +77,9 @@ RecErrT RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data
 //-------------------------------------------------------------------------
 // Read/Sync to Disk
 //-------------------------------------------------------------------------
-
 RecErrT RecReadStatsFile();
 RecErrT RecSyncStatsFile();
 RecErrT RecReadConfigFile(bool inc_version);
-RecErrT RecWriteConfigFile(TextBuffer *tb);
-RecErrT RecSyncConfigToTB(TextBuffer *tb, bool *inc_version = nullptr);
 
 //-------------------------------------------------------------------------
 // Misc

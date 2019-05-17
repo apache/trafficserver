@@ -61,44 +61,13 @@ i_am_the_record_owner(RecT rec_type)
 static void *
 sync_thr(void *data)
 {
-  TextBuffer *tb           = new TextBuffer(65536);
   FileManager *configFiles = (FileManager *)data;
 
   while (true) {
-    bool inc_version;
-    RecBool disabled = false;
-    RecBool check    = true;
-
-    RecGetRecordBool("proxy.config.disable_configuration_modification", &disabled);
-    if (disabled) {
-      RecDebug(DL_Debug, "configuration modification is disabled, skipping it");
-    }
+    RecBool check = true;
 
     send_push_message();
     RecSyncStatsFile();
-
-    if (!disabled && RecSyncConfigToTB(tb, &inc_version) == REC_ERR_OKAY) {
-      bool written = false;
-      Rollback *rb = nullptr;
-
-      if (configFiles->getRollbackObj(REC_CONFIG_FILE, &rb)) {
-        if (inc_version) {
-          RecDebug(DL_Note, "Rollback: '%s'", REC_CONFIG_FILE);
-          version_t ver = rb->getCurrentVersion();
-          if ((rb->updateVersion(tb, ver, -1, false)) != OK_ROLLBACK) {
-            RecDebug(DL_Note, "Rollback failed: '%s'", REC_CONFIG_FILE);
-          }
-          written = true;
-        }
-      }
-
-      if (!written) {
-        if (RecWriteConfigFile(tb) == REC_ERR_OKAY) {
-          rb->setLastModifiedTime();
-          check = false;
-        }
-      }
-    }
 
     // If we didn't successfully sync to disk, check whether we need to update ....
     if (check) {
