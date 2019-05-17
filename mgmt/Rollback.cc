@@ -147,23 +147,6 @@ Rollback::openFile(int oflags, int *errnoPtr)
   return fd;
 }
 
-int
-Rollback::closeFile(int fd, bool callSync)
-{
-  int result = 0;
-  if (callSync && fsync(fd) < 0) {
-    result = -1;
-    mgmt_log("[Rollback::closeFile] fsync failed for file '%s' (%d: %s)\n", fileName, errno, strerror(errno));
-  }
-
-  if (result == 0) {
-    result = close(fd);
-  } else {
-    close(fd);
-  }
-  return result;
-}
-
 bool
 Rollback::setLastModifiedTime()
 {

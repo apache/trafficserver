@@ -78,14 +78,6 @@ Process Warnings
 Alarm Messages
 ==============
 
-``[Rollback::Rollback] Config file is read-only: <filename>``
-   Go to the Traffic Server ``config`` directory and check the
-   indicated file permissions; change if necessary.
-
-``[Rollback::Rollback] Unable to read or write config file <filename>``
-   Go to the Traffic Server ``config`` directory and make sure the
-   indicated file exists. Check permissions and modify if necessary.
-
 ``[Traffic Manager] Configuration File Update Failed: <error number>``
    Go to the Traffic Server ``config`` directory and check the
    indicated file permissions; change if necessary.
@@ -311,4 +303,3 @@ with corresponding HTTP response codes and customizable files.
    Cannot perform your request for the document ``URL`` because the
    protocol scheme is unknown.
    ``request#scheme_unsupported``
-

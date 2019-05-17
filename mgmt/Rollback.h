@@ -111,7 +111,6 @@ public:
 
 private:
   int openFile(int oflags, int *errnoPtr = nullptr);
-  int closeFile(int fd, bool callSync);
   int statFile(struct stat *buf);
   char *createPathStr();
 
