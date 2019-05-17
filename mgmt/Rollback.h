@@ -118,7 +118,6 @@ public:
     ink_mutex_release(&fileAccessLock);
   };
   RollBackCodes forceUpdate_ml(TextBuffer *buf, version_t newVersion = -1);
-  version_t extractVersionInfo(ExpandingArray *listNames, const char *testFileName);
 
   // Automatically take out lock
   bool checkForUserUpdate();

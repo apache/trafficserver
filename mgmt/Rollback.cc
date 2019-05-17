@@ -37,8 +37,7 @@
 #define MAX_VERSION_DIGITS 11
 #define DEFAULT_BACKUPS 2
 
-constexpr int ACTIVE_VERSION  = 0;
-constexpr int INVALID_VERSION = -1;
+constexpr int ACTIVE_VERSION = 0;
 
 #if HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
 #define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000 + (t).st_mtimespec.tv_nsec)
@@ -329,60 +328,6 @@ UPDATE_CLEANUP:
   ats_free(nextVersion);
 
   return returnCode;
-}
-
-// version_t Rollback::extractVersionInfo(ExpandingArray* listNames,
-//                                        const char* testFileName)
-//
-//   Extracts the version number out of testFileName if it matches
-//     with the fileName_version format; adds the fileInfo to
-//     listNames if there is a match; returns INVALID_VERSION
-//     if there is no match.
-//
-version_t
-Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName)
-{
-  const char *str;
-  version_t version = INVALID_VERSION;
-
-  // Check to see if the current entry is a rollback file
-  //   fileFormat: fileName_version
-  //
-  // Check to see if the prefix of the current entry
-  //  is the same as our fileName
-  if (strlen(testFileName) > fileNameLen) {
-    if (strncmp(testFileName, fileName, fileNameLen) == 0) {
-      // Check for the underscore
-      if (*(testFileName + fileNameLen) == '_') {
-        // Check for the integer version number
-        const char *currentVersionStr = str = testFileName + fileNameLen + 1;
-
-        for (; isdigit(*str) && *str != '\0'; str++) {
-          ;
-        }
-
-        // Do not tolerate anything but numbers on the end
-        //   of the file
-        if (*str == '\0') {
-          version = atoi(currentVersionStr);
-
-          // Add info about version number and modTime
-          if (listNames != nullptr) {
-            struct stat fileInfo;
-
-            if (statFile(version, &fileInfo) >= 0) {
-              versionInfo *verInfo = (versionInfo *)ats_malloc(sizeof(versionInfo));
-              verInfo->version     = version;
-              verInfo->modTime     = fileInfo.st_mtime;
-              listNames->addEntry((void *)verInfo);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return version;
 }
 
 int
