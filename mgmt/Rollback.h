@@ -59,10 +59,6 @@ struct versionInfo {
 //    simply grab the lock, call the corresponding _ml function,
 //    and then release the lock
 //
-//  getVersion(version_t version, TextBuffer** buffer, version_t) -
-//    creates a new TextBuffer that contains the contents of the specified
-//    version.  CALLEE MUST DELETE the buffer
-//
 //  forceUpdate(TextBuffer* buf, version_t) - Does not check is the new version
 //    is based on the current version, which can lead to data loss.  versions
 //    the active file and places the contents of buf into the active file
@@ -133,7 +129,6 @@ public:
   {
     ink_mutex_release(&fileAccessLock);
   };
-  RollBackCodes getVersion_ml(version_t version, TextBuffer **buffer);
   RollBackCodes forceUpdate_ml(TextBuffer *buf, version_t newVersion = -1);
   version_t findVersions_ml(ExpandingArray *listNames);
   version_t findVersions_ml(Queue<versionInfo> &q);
@@ -142,7 +137,6 @@ public:
 
   // Automatically take out lock
   bool checkForUserUpdate();
-  RollBackCodes getVersion(version_t version, TextBuffer **buffer);
   RollBackCodes forceUpdate(TextBuffer *buf, version_t newVersion = -1);
   version_t findVersions(ExpandingArray *);
   time_t versionTimeStamp(version_t version);
