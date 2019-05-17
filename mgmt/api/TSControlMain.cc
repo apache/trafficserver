@@ -50,8 +50,6 @@ static std::unordered_map<int, ClientT *> accepted_con; // a list of all accepte
 
 static TSMgmtError handle_control_message(int fd, void *msg, size_t msglen);
 
-static RecBool disable_modification = false;
-
 /*********************************************************************
  * create_client
  *
@@ -161,8 +159,6 @@ ts_ctrl_main(void *arg)
 
     // check if have any connections or requests
     if (fds_ready > 0) {
-      RecGetRecordBool("proxy.config.disable_configuration_modification", &disable_modification);
-
       // first check for connections!
       if (con_socket_fd >= 0 && FD_ISSET(con_socket_fd, &selectFDs)) {
         fds_ready--;

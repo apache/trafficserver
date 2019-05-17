@@ -218,13 +218,6 @@ msgstr ""
 msgid "1,099,511,627,776 bytes (1024\\ :sup:`4`)"
 msgstr ""
 
-#: ../../../admin-guide/files/records.config.en.rst:91
-msgid ""
-"Unless :ts:cv:`proxy.config.disable_configuration_modification` is enabled, "
-"|TS| writes configurations back to disk periodically. When doing so, the "
-"unit prefixes are not preserved."
-msgstr ""
-
 #: ../../../admin-guide/files/records.config.en.rst:95
 msgid ""
 "Floating point variables (``FLOAT``) must be expressed as a regular decimal "

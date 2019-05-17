@@ -188,15 +188,8 @@ struct sync_cont : public Continuation {
   int
   sync(int /* event */, Event * /* e */)
   {
-    RecBool disabled = false;
-    RecGetRecordBool("proxy.config.disable_configuration_modification", &disabled);
-
     send_push_message();
     RecSyncStatsFile();
-
-    if (!disabled && RecSyncConfigToTB(m_tb) == REC_ERR_OKAY) {
-      RecWriteConfigFile(m_tb);
-    }
 
     Debug("statsproc", "sync_cont() processed");
 
