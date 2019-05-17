@@ -30,7 +30,7 @@ Http3DataFramer::Http3DataFramer(Http3ClientTransaction *transaction, VIO *sourc
 }
 
 Http3FrameUPtr
-Http3DataFramer::generate_frame(uint16_t max_size)
+Http3DataFramer::generate_frame(uint64_t max_size)
 {
   if (!this->_transaction->is_response_header_sent()) {
     return Http3FrameFactory::create_null_frame();

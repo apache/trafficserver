@@ -35,7 +35,7 @@ public:
   Http3DataFramer(Http3ClientTransaction *transaction, VIO *source);
 
   // Http3FrameGenerator
-  Http3FrameUPtr generate_frame(uint16_t max_size) override;
+  Http3FrameUPtr generate_frame(uint64_t max_size) override;
   bool is_done() const override;
 
 private:

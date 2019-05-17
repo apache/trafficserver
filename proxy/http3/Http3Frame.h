@@ -42,7 +42,7 @@ public:
   uint64_t total_length() const;
   uint64_t length() const;
   Http3FrameType type() const;
-  virtual void store(uint8_t *buf, size_t *len) const;
+  virtual int64_t store(QUICStreamIO *stream_io);
   virtual void reset(const uint8_t *buf, size_t len);
   static int length(const uint8_t *buf, size_t buf_len, uint64_t &length);
   static Http3FrameType type(const uint8_t *buf, size_t buf_len);
@@ -59,7 +59,7 @@ public:
   Http3UnknownFrame() : Http3Frame() {}
   Http3UnknownFrame(const uint8_t *buf, size_t len);
 
-  void store(uint8_t *buf, size_t *len) const override;
+  int64_t store(QUICStreamIO *stream_io) override;
 
 protected:
   const uint8_t *_buf = nullptr;
@@ -75,18 +75,17 @@ class Http3DataFrame : public Http3Frame
 public:
   Http3DataFrame() : Http3Frame() {}
   Http3DataFrame(const uint8_t *buf, size_t len);
-  Http3DataFrame(ats_unique_buf payload, size_t payload_len);
+  Http3DataFrame(IOBufferReader *reader, size_t payload_len);
 
-  void store(uint8_t *buf, size_t *len) const override;
+  int64_t store(QUICStreamIO *stream_io) override;
   void reset(const uint8_t *buf, size_t len) override;
 
-  const uint8_t *payload() const;
+  IOBufferReader *payload();
   uint64_t payload_length() const;
 
 private:
-  const uint8_t *_payload      = nullptr;
-  ats_unique_buf _payload_uptr = {nullptr};
-  size_t _payload_len          = 0;
+  MIOBuffer _write_buffer;
+  size_t _payload_len = 0;
 };
 
 //
@@ -98,18 +97,17 @@ class Http3HeadersFrame : public Http3Frame
 public:
   Http3HeadersFrame() : Http3Frame() {}
   Http3HeadersFrame(const uint8_t *buf, size_t len);
-  Http3HeadersFrame(ats_unique_buf header_block, size_t header_block_len);
+  Http3HeadersFrame(IOBufferReader *reader, size_t header_block_len);
 
-  void store(uint8_t *buf, size_t *len) const override;
+  int64_t store(QUICStreamIO *stream_io) override;
   void reset(const uint8_t *buf, size_t len) override;
 
-  const uint8_t *header_block() const;
+  IOBufferReader *header_block();
   uint64_t header_block_length() const;
 
 private:
-  const uint8_t *_header_block      = nullptr;
-  ats_unique_buf _header_block_uptr = {nullptr};
-  size_t _header_block_len          = 0;
+  MIOBuffer _write_buffer;
+  size_t _header_block_len = 0;
 };
 
 //
@@ -130,7 +128,7 @@ public:
     Http3SettingsId::NUM_PLACEHOLDERS,
   };
 
-  void store(uint8_t *buf, size_t *len) const override;
+  int64_t store(QUICStreamIO *stream_io) override;
   void reset(const uint8_t *buf, size_t len) override;
 
   bool is_valid() const;
@@ -220,8 +218,8 @@ public:
    * This works almost the same as create() but it reuses created objects for performance.
    * If you create a frame object which has the same frame type that you created before, the object will be reset by new data.
    */
-  std::shared_ptr<const Http3Frame> fast_create(QUICStreamIO &stream_io, size_t frame_len);
-  std::shared_ptr<const Http3Frame> fast_create(const uint8_t *buf, size_t len);
+  std::shared_ptr<Http3Frame> fast_create(QUICStreamIO &stream_io, size_t frame_len);
+  std::shared_ptr<Http3Frame> fast_create(const uint8_t *buf, size_t len);
 
   /*
    * Creates a HEADERS frame.

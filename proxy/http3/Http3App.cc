@@ -297,7 +297,7 @@ Http3SettingsHandler::interests()
 }
 
 Http3ErrorUPtr
-Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame)
+Http3SettingsHandler::handle_frame(std::shared_ptr<Http3Frame> frame)
 {
   ink_assert(frame->type() == Http3FrameType::SETTINGS);
 
@@ -344,7 +344,7 @@ Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame)
 // SETTINGS frame framer
 //
 Http3FrameUPtr
-Http3SettingsFramer::generate_frame(uint16_t max_size)
+Http3SettingsFramer::generate_frame(uint64_t max_size)
 {
   if (this->_is_sent) {
     return Http3FrameFactory::create_null_frame();

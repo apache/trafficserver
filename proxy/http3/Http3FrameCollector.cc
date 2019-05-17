@@ -29,28 +29,22 @@ Http3ErrorUPtr
 Http3FrameCollector::on_write_ready(QUICStreamIO *stream_io, size_t &nwritten)
 {
   bool all_done = true;
-  uint8_t tmp[32768];
-  nwritten = 0;
+  nwritten      = 0;
 
   for (auto g : this->_generators) {
     if (g->is_done()) {
       continue;
     }
     size_t len           = 0;
-    Http3FrameUPtr frame = g->generate_frame(sizeof(tmp) - nwritten);
+    Http3FrameUPtr frame = g->generate_frame(UINT64_MAX);
     if (frame) {
-      frame->store(tmp + nwritten, &len);
+      len = frame->store(stream_io);
       nwritten += len;
 
       Debug("http3", "[TX] [%d] | %s size=%zu", stream_io->stream_id(), Http3DebugNames::frame_type(frame->type()), len);
     }
 
     all_done &= g->is_done();
-  }
-
-  if (nwritten) {
-    int64_t len = stream_io->write(tmp, nwritten);
-    ink_assert(len > 0 && (uint64_t)len == nwritten);
   }
 
   if (all_done) {

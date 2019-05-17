@@ -87,7 +87,8 @@ public:
 
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
-  Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame) override;
+
+  Http3ErrorUPtr handle_frame(std::shared_ptr<Http3Frame> frame) override;
 
 private:
   // TODO: clarify Http3ClientSession I/F for Http3SettingsHandler and Http3App
@@ -100,7 +101,7 @@ public:
   Http3SettingsFramer(NetVConnectionContext_t context) : _context(context){};
 
   // Http3FrameGenerator
-  Http3FrameUPtr generate_frame(uint16_t max_size) override;
+  Http3FrameUPtr generate_frame(uint64_t max_size) override;
   bool is_done() const override;
 
 private:

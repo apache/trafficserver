@@ -38,13 +38,16 @@ Http3HeaderVIOAdaptor::interests()
 }
 
 Http3ErrorUPtr
-Http3HeaderVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame)
+Http3HeaderVIOAdaptor::handle_frame(std::shared_ptr<Http3Frame> frame)
 {
   ink_assert(frame->type() == Http3FrameType::HEADERS);
-  const Http3HeadersFrame *hframe = dynamic_cast<const Http3HeadersFrame *>(frame.get());
+  Http3HeadersFrame *hframe = dynamic_cast<Http3HeadersFrame *>(frame.get());
+  auto reader               = hframe->header_block();
+  ats_unique_buf buf        = ats_unique_malloc(reader->read_avail());
 
-  int res = this->_qpack->decode(this->_stream_id, hframe->header_block(), hframe->header_block_length(), *this->_request_header,
-                                 this->_cont);
+  reader->read(buf.get(), hframe->header_block_length());
+
+  int res = this->_qpack->decode(this->_stream_id, buf.get(), hframe->header_block_length(), *this->_request_header, this->_cont);
 
   if (res == 0) {
     // When decoding is not blocked, continuation should be called directly?

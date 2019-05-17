@@ -34,7 +34,7 @@ public:
 
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
-  Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame) override;
+  Http3ErrorUPtr handle_frame(std::shared_ptr<Http3Frame> frame) override;
 
 private:
   VIO *_sink_vio = nullptr;

@@ -26,7 +26,11 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
+#include "I_EventSystem.h"
+
+#include "tscore/I_Layout.h"
 #include "tscore/Diags.h"
+#include "RecordsConfig.h"
 
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
@@ -39,6 +43,15 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     diags->activate_taglist("vv_quic|quic", DiagsTagType_Debug);
     diags->config.enabled[DiagsTagType_Debug] = true;
     diags->show_location                      = SHOW_LOCATION_DEBUG;
+
+    Layout::create();
+    RecProcessInit(RECM_STAND_ALONE);
+    LibRecordsConfigInit();
+
+    ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
+    EThread *thread = new EThread();
+    thread->set_specific();
+    init_buffer_allocators(0);
   }
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);

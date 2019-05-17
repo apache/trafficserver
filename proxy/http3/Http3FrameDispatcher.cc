@@ -43,7 +43,7 @@ Http3FrameDispatcher::add_handler(Http3FrameHandler *handler)
 Http3ErrorUPtr
 Http3FrameDispatcher::on_read_ready(QUICStreamIO &stream_io, uint64_t &nread)
 {
-  std::shared_ptr<const Http3Frame> frame(nullptr);
+  std::shared_ptr<Http3Frame> frame(nullptr);
   Http3ErrorUPtr error = Http3ErrorUPtr(new Http3NoError());
   nread                = 0;
 

@@ -31,6 +31,7 @@ class Http3FrameHandler
 {
 public:
   virtual ~Http3FrameHandler(){};
-  virtual std::vector<Http3FrameType> interests()                              = 0;
-  virtual Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame) = 0;
+
+  virtual std::vector<Http3FrameType> interests()                        = 0;
+  virtual Http3ErrorUPtr handle_frame(std::shared_ptr<Http3Frame> frame) = 0;
 };

@@ -43,19 +43,21 @@ public:
   uint32_t stream_id() const;
   bool is_bidirectional() const;
 
-  int64_t read(uint8_t *buf, int64_t len);
-  int64_t peek(uint8_t *buf, int64_t len);
-  void consume(int64_t len);
+  virtual int64_t read(uint8_t *buf, int64_t len);
+  virtual int64_t peek(uint8_t *buf, int64_t len);
+  virtual void consume(int64_t len);
   bool is_read_done();
   virtual void read_reenable();
 
-  int64_t write(const uint8_t *buf, int64_t len);
-  int64_t write(IOBufferReader *r, int64_t len);
-  int64_t write(IOBufferBlock *b);
+  virtual int64_t write(const uint8_t *buf, int64_t len);
+  virtual int64_t write(IOBufferReader *r, int64_t len);
+  virtual int64_t write(IOBufferBlock *b);
   void write_done();
   virtual void write_reenable();
 
 protected:
+  QUICStreamIO(); // test only
+
   MIOBuffer *_read_buffer  = nullptr;
   MIOBuffer *_write_buffer = nullptr;
 

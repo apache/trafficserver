@@ -34,7 +34,8 @@ public:
   Http3HeaderVIOAdaptor(HTTPHdr *hdr, QPACK *qpack, Continuation *cont, uint64_t stream_id);
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
-  Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame) override;
+
+  Http3ErrorUPtr handle_frame(std::shared_ptr<Http3Frame> frame) override;
 
 private:
   HTTPHdr *_request_header = nullptr;

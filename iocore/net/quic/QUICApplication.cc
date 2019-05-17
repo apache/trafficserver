@@ -34,6 +34,15 @@ static constexpr char tag_app[]       = "quic_app";
 //
 // QUICStreamIO
 //
+QUICStreamIO::QUICStreamIO()
+{
+  this->_read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+  this->_write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+
+  this->_read_buffer_reader  = this->_read_buffer->alloc_reader();
+  this->_write_buffer_reader = this->_write_buffer->alloc_reader();
+}
+
 QUICStreamIO::QUICStreamIO(QUICApplication *app, QUICStreamVConnection *stream_vc) : _stream_vc(stream_vc)
 {
   this->_read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
@@ -138,38 +147,15 @@ QUICStreamIO::write(IOBufferReader *r, int64_t len)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio->mutex, this_ethread());
 
-  int64_t bytes_avail = this->_write_buffer->write_avail();
-
-  if (bytes_avail > 0) {
-    if (is_debug_tag_set(tag_stream_io)) {
-      if (this->_write_vio->nbytes == INT64_MAX) {
-        QUICStreamIODebug("nbytes=- ndone=%" PRId64 " write_avail=%" PRId64 " write_len=%" PRId64, this->_write_vio->ndone,
-                          bytes_avail, len);
-      } else {
-        QUICStreamIODebug("nbytes=%" PRId64 " ndone=%" PRId64 " write_avail=%" PRId64 " write_len=%" PRId64,
-                          this->_write_vio->nbytes, this->_write_vio->ndone, bytes_avail, len);
-      }
-    }
-
-    int64_t bytes_len = std::min(bytes_avail, len);
-    int64_t nwritten  = this->_write_buffer->write(r, bytes_len);
-
-    if (nwritten > 0) {
-      this->_nwritten += nwritten;
-    }
-
-    return nwritten;
-  } else {
-    return 0;
-  }
+  this->_write_buffer->write(r, len);
+  return len;
 }
 
-// TODO: Similar to other "write" apis, but do not copy.
 int64_t
 QUICStreamIO::write(IOBufferBlock *b)
 {
-  ink_assert(!"not implemented yet");
-  return 0;
+  this->_write_buffer->append_block(b);
+  return b->read_avail();
 }
 
 void

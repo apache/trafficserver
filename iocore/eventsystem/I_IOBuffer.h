@@ -1254,7 +1254,7 @@ public:
   clear()
   {
     dealloc();
-    size_index = BUFFER_SIZE_NOT_ALLOCATED;
+    size_index = default_large_iobuffer_size;
     water_mark = 0;
   }
 

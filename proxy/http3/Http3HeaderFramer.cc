@@ -38,7 +38,7 @@ Http3HeaderFramer::Http3HeaderFramer(Http3ClientTransaction *transaction, VIO *s
 }
 
 Http3FrameUPtr
-Http3HeaderFramer::generate_frame(uint16_t max_size)
+Http3HeaderFramer::generate_frame(uint64_t max_size)
 {
   ink_assert(!this->_transaction->is_response_header_sent());
 
