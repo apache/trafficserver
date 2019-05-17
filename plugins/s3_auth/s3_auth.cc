@@ -652,10 +652,13 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
 static size_t
 str_concat(char *dst, size_t dst_len, const char *src, size_t src_len)
 {
-  size_t to_copy = (src_len < dst_len) ? src_len : dst_len;
+  // Need an extra byte of source for the terminating null.
+  size_t to_copy = std::min<size_t>(src_len + 1, dst_len);
 
-  if (to_copy > 0) {
-    (void)strncat(dst, src, to_copy);
+  if (to_copy > 1) {
+    --to_copy; // don't explicitly count the terminating nul.
+    memcpy(dst, src, to_copy);
+    dst[to_copy] = '\0';
   }
 
   return to_copy;
