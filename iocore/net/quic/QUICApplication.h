@@ -56,7 +56,7 @@ public:
   virtual void write_reenable();
 
 protected:
-  QUICStreamIO(); // test only
+  QUICStreamIO() = default; // test only
 
   MIOBuffer *_read_buffer  = nullptr;
   MIOBuffer *_write_buffer = nullptr;

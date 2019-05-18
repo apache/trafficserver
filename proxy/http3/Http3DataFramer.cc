@@ -43,8 +43,8 @@ Http3DataFramer::generate_frame(uint64_t max_size)
     return frame;
   }
 
-  size_t payload_len = max_size - Http3Frame::MAX_FRAM_HEADER_OVERHEAD;
-  if (!reader->is_read_avail_more_than(payload_len)) {
+  size_t payload_len = 0;
+  if (reader->is_read_avail_more_than(Http3Frame::MAX_FRAM_HEADER_OVERHEAD)) {
     payload_len = reader->read_avail();
   }
 

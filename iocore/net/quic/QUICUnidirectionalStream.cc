@@ -174,7 +174,7 @@ QUICSendStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t
   uint64_t len           = 0;
   IOBufferReader *reader = this->_write_vio.get_reader();
   if (!pure_fin) {
-    uint64_t data_len = reader->block_read_avail();
+    uint64_t data_len = reader->read_avail();
     if (data_len == 0) {
       return frame;
     }
@@ -202,15 +202,15 @@ QUICSendStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t
     }
   }
 
-  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(reader->get_current_block()->clone());
-  block->consume(reader->start_offset);
-  block->_end = std::min(block->start() + len, block->_buf_end);
-  ink_assert(static_cast<uint64_t>(block->read_avail()) == len);
+  MIOBuffer buffer;
+  IOBufferReader *tmp_reader = buffer.alloc_reader();
+  buffer.write(reader, len);
+  ink_assert(static_cast<uint64_t>(reader->read_avail()) == len);
 
   // STREAM - Pure FIN or data length is lager than 0
   // FIXME has_length_flag and has_offset_flag should be configurable
-  frame = QUICFrameFactory::create_stream_frame(buf, block, this->_id, this->_send_offset, fin, true, true, this->_issue_frame_id(),
-                                                this);
+  frame = QUICFrameFactory::create_stream_frame(buf, tmp_reader, this->_id, this->_send_offset, fin, true, true,
+                                                this->_issue_frame_id(), this);
   if (!this->_state.is_allowed_to_send(*frame)) {
     QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
     return frame;

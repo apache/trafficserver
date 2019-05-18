@@ -291,13 +291,11 @@ private:
   uint32_t _minimum_quic_packet_size();
   uint64_t _maximum_stream_frame_data_size();
 
-  Ptr<IOBufferBlock> _store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_added, uint64_t &max_frame_size, QUICFrame &frame,
-                                  std::vector<QUICFrameInfo> &frames);
+  void _store_frame(MIOBuffer &buffer, uint64_t &max_frame_size, QUICFrame &frame, std::vector<QUICFrameInfo> &frames);
   QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size, std::vector<QUICFrameInfo> &frames);
   void _packetize_closing_frame();
   Ptr<IOBufferBlock> _generate_padding_frame(size_t frame_size);
-  QUICPacketUPtr _build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block, bool retransmittable, bool probing,
-                               bool crypto);
+  QUICPacketUPtr _build_packet(QUICEncryptionLevel level, IOBufferReader *reader, bool retransmittable, bool probing, bool crypto);
 
   QUICConnectionErrorUPtr _recv_and_ack(const QUICPacket &packet, bool *has_non_probing_frame = nullptr);
 

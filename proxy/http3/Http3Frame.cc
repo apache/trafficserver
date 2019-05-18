@@ -129,14 +129,15 @@ Http3UnknownFrame::store(QUICStreamIO *stream_io)
 //
 // DATA Frame
 //
-Http3DataFrame::Http3DataFrame(const uint8_t *buf, size_t buf_len) : Http3Frame(buf, buf_len)
+Http3DataFrame::Http3DataFrame(const uint8_t *buf, size_t buf_len)
+  : Http3Frame(buf, buf_len), _reader(this->_write_buffer.alloc_reader())
 {
   this->_payload_len = buf_len - this->_payload_offset;
   this->_write_buffer.write(buf + this->_payload_offset, this->_payload_len);
 }
 
 Http3DataFrame::Http3DataFrame(IOBufferReader *reader, size_t payload_len)
-  : Http3Frame(Http3FrameType::DATA), _payload_len(payload_len)
+  : Http3Frame(Http3FrameType::DATA), _reader(this->_write_buffer.alloc_reader()), _payload_len(payload_len)
 {
   this->_length = this->_payload_len;
   this->_write_buffer.write(reader, payload_len);
@@ -189,14 +190,15 @@ Http3DataFrame::payload_length() const
 //
 // HEADERS Frame
 //
-Http3HeadersFrame::Http3HeadersFrame(const uint8_t *buf, size_t buf_len) : Http3Frame(buf, buf_len)
+Http3HeadersFrame::Http3HeadersFrame(const uint8_t *buf, size_t buf_len)
+  : Http3Frame(buf, buf_len), _reader(this->_write_buffer.alloc_reader())
 {
   this->_header_block_len = buf_len - this->_payload_offset;
   this->_write_buffer.write(buf + this->_payload_offset, this->_header_block_len);
 }
 
 Http3HeadersFrame::Http3HeadersFrame(IOBufferReader *reader, size_t header_block_len)
-  : Http3Frame(Http3FrameType::HEADERS), _header_block_len(header_block_len)
+  : Http3Frame(Http3FrameType::HEADERS), _reader(this->_write_buffer.alloc_reader()), _header_block_len(header_block_len)
 {
   this->_length = header_block_len;
   this->_write_buffer.write(reader, header_block_len);

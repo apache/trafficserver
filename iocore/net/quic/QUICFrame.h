@@ -734,7 +734,7 @@ public:
    * Creates a STREAM frame.
    * You have to make sure that the data size won't exceed the maximum size of QUIC packet.
    */
-  static QUICStreamFrame *create_stream_frame(uint8_t *buf, Ptr<IOBufferBlock> &block, QUICStreamId stream_id, QUICOffset offset,
+  static QUICStreamFrame *create_stream_frame(uint8_t *buf, IOBufferReader *reader, QUICStreamId stream_id, QUICOffset offset,
                                               bool last = false, bool has_offset_field = true, bool has_length_field = true,
                                               QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 

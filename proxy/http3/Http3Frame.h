@@ -85,7 +85,8 @@ public:
 
 private:
   MIOBuffer _write_buffer;
-  size_t _payload_len = 0;
+  IOBufferReader *_reader = nullptr; // guard of the blocks of write_buffer
+  size_t _payload_len     = 0;
 };
 
 //
@@ -107,6 +108,7 @@ public:
 
 private:
   MIOBuffer _write_buffer;
+  IOBufferReader *_reader  = nullptr; // guard of the blocks of write_buffer
   size_t _header_block_len = 0;
 };
 

@@ -34,15 +34,6 @@ static constexpr char tag_app[]       = "quic_app";
 //
 // QUICStreamIO
 //
-QUICStreamIO::QUICStreamIO()
-{
-  this->_read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
-  this->_write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
-
-  this->_read_buffer_reader  = this->_read_buffer->alloc_reader();
-  this->_write_buffer_reader = this->_write_buffer->alloc_reader();
-}
-
 QUICStreamIO::QUICStreamIO(QUICApplication *app, QUICStreamVConnection *stream_vc) : _stream_vc(stream_vc)
 {
   this->_read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
@@ -147,15 +138,25 @@ QUICStreamIO::write(IOBufferReader *r, int64_t len)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio->mutex, this_ethread());
 
-  this->_write_buffer->write(r, len);
-  return len;
+  int64_t written = this->_write_buffer->write(r, len);
+  if (written > 0) {
+    this->_nwritten += written;
+  }
+
+  return written;
 }
 
 int64_t
 QUICStreamIO::write(IOBufferBlock *b)
 {
+  int64_t written = b->read_avail();
+  if (written == 0) {
+    return 0;
+  }
+
   this->_write_buffer->append_block(b);
-  return b->read_avail();
+  this->_nwritten += written;
+  return written;
 }
 
 void

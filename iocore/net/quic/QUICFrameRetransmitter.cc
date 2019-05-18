@@ -107,18 +107,21 @@ QUICFrameRetransmitter::_create_stream_frame(uint8_t *buf, QUICFrameInformationU
     tmp_queue.push_back(std::move(info));
     return frame;
   }
+  MIOBuffer buffer;
+  IOBufferReader *reader = buffer.alloc_reader();
+  buffer.append_block(stream_info->block.get());
 
   // FIXME MAX_STREAM_FRAME_OVERHEAD is here and there
   // These size calculation should not exist multiple places
   uint64_t maximum_data_size = maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD;
   if (maximum_data_size >= static_cast<uint64_t>(stream_info->block->size())) {
-    frame = QUICFrameFactory::create_stream_frame(buf, stream_info->block, stream_info->stream_id, stream_info->offset,
-                                                  stream_info->has_fin, true, true, id, owner);
+    frame = QUICFrameFactory::create_stream_frame(buf, reader, stream_info->stream_id, stream_info->offset, stream_info->has_fin,
+                                                  true, true, id, owner);
     ink_assert(frame->size() <= maximum_frame_size);
     stream_info->block = nullptr;
   } else {
-    frame = QUICFrameFactory::create_stream_frame(buf, stream_info->block, stream_info->stream_id, stream_info->offset, false, true,
-                                                  true, id, owner);
+    frame =
+      QUICFrameFactory::create_stream_frame(buf, reader, stream_info->stream_id, stream_info->offset, false, true, true, id, owner);
     QUICStreamFrame *stream_frame = static_cast<QUICStreamFrame *>(frame);
     IOBufferBlock *block          = stream_frame->data();
     size_t over_length            = stream_frame->data_length() - maximum_data_size;

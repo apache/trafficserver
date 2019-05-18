@@ -2582,11 +2582,10 @@ QUICFrameFactory::fast_create(const uint8_t *buf, size_t len)
 }
 
 QUICStreamFrame *
-QUICFrameFactory::create_stream_frame(uint8_t *buf, Ptr<IOBufferBlock> &block, QUICStreamId stream_id, QUICOffset offset, bool last,
+QUICFrameFactory::create_stream_frame(uint8_t *buf, IOBufferReader *reader, QUICStreamId stream_id, QUICOffset offset, bool last,
                                       bool has_offset_field, bool has_length_field, QUICFrameId id, QUICFrameGenerator *owner)
 {
-  Ptr<IOBufferBlock> new_block = make_ptr<IOBufferBlock>(block->clone());
-  new (buf) QUICStreamFrame(new_block, stream_id, offset, last, has_offset_field, has_length_field, id, owner);
+  new (buf) QUICStreamFrame(reader->block, stream_id, offset, last, has_offset_field, has_length_field, id, owner);
   return reinterpret_cast<QUICStreamFrame *>(buf);
 }
 
