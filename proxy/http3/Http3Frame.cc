@@ -161,9 +161,9 @@ Http3DataFrame::store(QUICStreamIO *stream_io)
 
   stream_io->write(block);
 
-  IOBufferReader *reader = this->_write_buffer.alloc_reader();
-  stream_io->write(reader, this->_payload_len);
-  this->_write_buffer.dealloc_reader(reader);
+  stream_io->write(this->_reader, this->_payload_len);
+  // stream_io->write(this->_reader, this->_header_block_len);
+  ink_assert(stream_io->write(this->_reader, this->_payload_len) == this->_reader->read_avail());
 
   return written + this->_payload_len;
 }
@@ -178,7 +178,7 @@ Http3DataFrame::reset(const uint8_t *buf, size_t len)
 IOBufferReader *
 Http3DataFrame::payload()
 {
-  return this->_write_buffer.alloc_reader();
+  return this->_reader->clone();
 }
 
 uint64_t
@@ -221,10 +221,8 @@ Http3HeadersFrame::store(QUICStreamIO *stream_io)
   block->fill(written);
 
   stream_io->write(block);
-
-  IOBufferReader *reader = this->_write_buffer.alloc_reader();
-  stream_io->write(reader, this->_header_block_len);
-  this->_write_buffer.dealloc_reader(reader);
+  // stream_io->write(this->_reader, this->_header_block_len);
+  ink_assert(stream_io->write(this->_reader, this->_header_block_len) == this->_reader->read_avail());
 
   return written + this->_header_block_len;
 }
@@ -239,7 +237,7 @@ Http3HeadersFrame::reset(const uint8_t *buf, size_t len)
 IOBufferReader *
 Http3HeadersFrame::header_block()
 {
-  return this->_write_buffer.alloc_reader();
+  return this->_reader->clone();
 }
 
 uint64_t

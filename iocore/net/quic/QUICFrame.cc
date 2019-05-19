@@ -359,7 +359,10 @@ QUICStreamFrame::offset() const
 uint64_t
 QUICStreamFrame::data_length() const
 {
-  return this->_block->read_avail();
+  MIOBuffer buffer;
+  IOBufferReader *reader = buffer.alloc_reader();
+  buffer.append_block(this->_block.get());
+  return reader->read_avail();
 }
 
 IOBufferBlock *

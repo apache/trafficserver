@@ -942,12 +942,13 @@ MIOBuffer::append_block_internal(IOBufferBlock *b)
   } else {
     ink_assert(!_writer->next || !_writer->next->read_avail());
     _writer->next = b;
-    while (b->read_avail()) {
-      _writer = b;
-      b       = b->next.get();
-      if (!b) {
-        break;
-      }
+  }
+
+  while (b->read_avail()) {
+    _writer = b;
+    b       = b->next.get();
+    if (!b) {
+      break;
     }
   }
   while (_writer->next && !_writer->write_avail() && _writer->next->read_avail()) {
