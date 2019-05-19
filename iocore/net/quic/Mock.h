@@ -29,7 +29,6 @@
 #include "QUICStreamManager.h"
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
-#include <openssl/cipher.h>
 
 using namespace std::literals;
 std::string_view negotiated_application_name_sv = "h3-20"sv;
