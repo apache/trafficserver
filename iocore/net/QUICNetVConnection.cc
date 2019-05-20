@@ -745,9 +745,9 @@ QUICNetVConnection::state_pre_handshake(int event, Event *data)
 
   // FIXME: Should be accept_no_activity_timeout?
   if (this->get_context() == NET_VCONNECTION_IN) {
-    this->set_inactivity_timeout(HRTIME_SECONDS(this->_quic_config->no_activity_timeout_in()));
+    this->set_inactivity_timeout(HRTIME_MSECONDS(this->_quic_config->no_activity_timeout_in()));
   } else {
-    this->set_inactivity_timeout(HRTIME_SECONDS(this->_quic_config->no_activity_timeout_out()));
+    this->set_inactivity_timeout(HRTIME_MSECONDS(this->_quic_config->no_activity_timeout_out()));
   }
 
   this->add_to_active_queue();

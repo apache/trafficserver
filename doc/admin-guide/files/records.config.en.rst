@@ -3694,12 +3694,12 @@ removed in the future without prior notice.
    Only available for :program:`traffic_quic`.
    If specified, key information will be stored to the file.
 
-.. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_in INT 30
+.. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_in INT 30000
    :reloadable:
 
    This value will be advertised as ``idle_timeout`` Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_out INT 30
+.. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_out INT 30000
    :reloadable:
 
    This value will be advertised as  ``idle_timeout`` Transport Parameter.
