@@ -607,8 +607,9 @@ uint64_t
 QUICConnectionId::_hashcode() const
 {
   return (static_cast<uint64_t>(this->_id[0]) << 56) + (static_cast<uint64_t>(this->_id[1]) << 48) +
-         (static_cast<uint64_t>(this->_id[2]) << 40) + (static_cast<uint64_t>(this->_id[3]) << 32) + (this->_id[4] << 24) +
-         (this->_id[5] << 16) + (this->_id[6] << 8) + this->_id[7];
+         (static_cast<uint64_t>(this->_id[2]) << 40) + (static_cast<uint64_t>(this->_id[3]) << 32) +
+         (static_cast<uint64_t>(this->_id[4]) << 24) + (static_cast<uint64_t>(this->_id[5]) << 16) +
+         (static_cast<uint64_t>(this->_id[6]) << 8) + (static_cast<uint64_t>(this->_id[7]));
 }
 
 uint32_t
