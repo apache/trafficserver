@@ -374,10 +374,6 @@ Http3FrameFactory::create(const uint8_t *buf, size_t len)
 std::shared_ptr<const Http3Frame>
 Http3FrameFactory::fast_create(const uint8_t *buf, size_t len)
 {
-  uint64_t frame_length = 0;
-  if (Http3Frame::length(buf, len, frame_length) == -1 || frame_length > len) {
-    return nullptr;
-  }
   Http3FrameType type = Http3Frame::type(buf, len);
   if (type == Http3FrameType::UNKNOWN) {
     if (!this->_unknown_frame) {
