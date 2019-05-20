@@ -41,7 +41,7 @@
 #include "UrlRewrite.h"
 #include "HttpTunnel.h"
 #include "InkAPIInternal.h"
-#include "../ProxyClientTransaction.h"
+#include "../ProxyTransaction.h"
 #include "HdrUtils.h"
 #include "tscore/History.h"
 

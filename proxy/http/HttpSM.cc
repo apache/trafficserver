@@ -22,12 +22,12 @@
 
  */
 
-#include "../ProxyClientTransaction.h"
+#include "../ProxyTransaction.h"
 #include "HttpSM.h"
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
 #include "ProxyConfig.h"
-#include "HttpServerSession.h"
+#include "Http1ServerSession.h"
 #include "HttpDebugNames.h"
 #include "HttpSessionManager.h"
 #include "P_Cache.h"

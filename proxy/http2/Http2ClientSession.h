@@ -25,7 +25,7 @@
 
 #include "HTTP2.h"
 #include "Plugin.h"
-#include "ProxyClientSession.h"
+#include "ProxySession.h"
 #include "Http2ConnectionState.h"
 #include <string_view>
 #include "tscore/ink_inet.h"

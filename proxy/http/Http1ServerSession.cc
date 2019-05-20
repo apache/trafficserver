@@ -23,7 +23,7 @@
 
 /****************************************************************************
 
-   HttpServerSession.cc
+   Http1ServerSession.cc
 
    Description:
 
@@ -32,7 +32,7 @@
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
 #include "tscore/Allocator.h"
-#include "HttpServerSession.h"
+#include "Http1ServerSession.h"
 #include "HttpSessionManager.h"
 #include "HttpSM.h"
 

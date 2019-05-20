@@ -1,6 +1,6 @@
 /** @file
 
-  Http1ClientTransaction.cc - The Transaction class for Http1*
+  Http1Transaction.cc - The Transaction class for Http1*
 
   @section license License
 
@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "Http1ClientTransaction.h"
+#include "Http1Transaction.h"
 #include "Http1ClientSession.h"
 #include "HttpSM.h"
 

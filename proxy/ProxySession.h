@@ -29,7 +29,7 @@
 #include <string_view>
 #include "P_Net.h"
 #include "InkAPIInternal.h"
-#include "http/HttpServerSession.h"
+#include "http/Http1ServerSession.h"
 #include "IPAllow.h"
 
 // Emit a debug message conditional on whether this particular client session
