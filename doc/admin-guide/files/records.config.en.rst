@@ -496,10 +496,6 @@ Network
 Local Manager
 =============
 
-.. ts:cv:: CONFIG proxy.config.admin.number_config_bak INT 3
-
-   The maximum number of copies of rolled configuration files to keep.
-
 .. ts:cv:: CONFIG proxy.config.admin.user_id STRING nobody
 
    Designates the non-privileged account to run the :program:`traffic_server`

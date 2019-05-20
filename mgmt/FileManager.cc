@@ -177,7 +177,9 @@ FileManager::rereadConfig()
   ink_mutex_acquire(&accessLock);
   for (auto &&it : bindings) {
     rb = it.second;
-    if (rb->checkForUserUpdate(rb->isVersioned() ? ROLLBACK_CHECK_AND_UPDATE : ROLLBACK_CHECK_ONLY)) {
+    // ToDo: rb->isVersions() was always true before, because numberBackups was always >= 1. So ROLLBACK_CHECK_ONLY could not
+    // happen at all...
+    if (rb->checkForUserUpdate(ROLLBACK_CHECK_AND_UPDATE)) {
       changedFiles.push_back(rb);
       if (rb->isChildRollback()) {
         if (std::find(parentFileNeedChange.begin(), parentFileNeedChange.end(), rb->getParentRollback()) ==

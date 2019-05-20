@@ -193,31 +193,31 @@ public:
   {
     return fileBaseName;
   }
+
   const char *
   getFileName() const
   {
     return fileName;
   }
+
   const char *
   getConfigName() const
   {
     return configName;
   }
+
   bool
   isChildRollback() const
   {
     return parentRollback != nullptr;
   }
+
   Rollback *
   getParentRollback() const
   {
     return parentRollback;
   }
-  bool
-  isVersioned() const
-  {
-    return numberBackups > 0;
-  }
+
   bool
   rootAccessNeeded() const
   {
@@ -246,7 +246,6 @@ private:
   version_t currentVersion;
   time_t fileLastModified;
   int numVersions;
-  int numberBackups;
   Queue<versionInfo> versionQ; // stores the backup version info
 };
 
