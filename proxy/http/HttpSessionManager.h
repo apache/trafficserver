@@ -33,7 +33,7 @@
 #pragma once
 
 #include "P_EventSystem.h"
-#include "HttpServerSession.h"
+#include "Http1ServerSession.h"
 #include "tscore/IntrusiveHashMap.h"
 
 class ProxyClientTransaction;

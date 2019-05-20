@@ -31,8 +31,8 @@
  ****************************************************************************/
 
 #include "HttpSessionManager.h"
-#include "../ProxyClientSession.h"
-#include "HttpServerSession.h"
+#include "../ProxySession.h"
+#include "Http1ServerSession.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
 

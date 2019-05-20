@@ -24,7 +24,7 @@
 #pragma once
 
 #include "HTTP2.h"
-#include "../ProxyClientTransaction.h"
+#include "../ProxyTransaction.h"
 #include "Http2DebugNames.h"
 #include "../http/HttpTunnel.h" // To get ChunkedHandler
 #include "Http2DependencyTree.h"

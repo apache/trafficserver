@@ -23,7 +23,7 @@
 
 /****************************************************************************
 
-   HttpServerSession.h
+   Http1ServerSession.h
 
    Description:
 

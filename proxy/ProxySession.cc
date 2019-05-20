@@ -23,7 +23,7 @@
 
 #include "HttpConfig.h"
 #include "HttpDebugNames.h"
-#include "ProxyClientSession.h"
+#include "ProxySession.h"
 
 static int64_t next_cs_id = 0;
 

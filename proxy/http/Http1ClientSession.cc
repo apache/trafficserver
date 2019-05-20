@@ -32,10 +32,10 @@
 
 #include "tscore/ink_resolver.h"
 #include "Http1ClientSession.h"
-#include "Http1ClientTransaction.h"
+#include "Http1Transaction.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
-#include "HttpServerSession.h"
+#include "Http1ServerSession.h"
 #include "Plugin.h"
 
 #define HttpSsnDebug(fmt, ...) SsnDebug(this, "http_cs", fmt, __VA_ARGS__)
