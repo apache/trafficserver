@@ -942,15 +942,15 @@ MIOBuffer::append_block_internal(IOBufferBlock *b)
   } else {
     ink_assert(!_writer->next || !_writer->next->read_avail());
     _writer->next = b;
-  }
-
-  while (b->read_avail()) {
-    _writer = b;
-    b       = b->next.get();
-    if (!b) {
-      break;
+    while (b->read_avail()) {
+      _writer = b;
+      b       = b->next.get();
+      if (!b) {
+        break;
+      }
     }
   }
+
   while (_writer->next && !_writer->write_avail() && _writer->next->read_avail()) {
     _writer = _writer->next;
   }
@@ -961,6 +961,27 @@ MIOBuffer::append_block(IOBufferBlock *b)
 {
   ink_assert(b->read_avail());
   append_block_internal(b);
+}
+
+TS_INLINE void
+MIOBuffer::append_block2(IOBufferBlock *b)
+{
+  ink_assert(b->read_avail());
+  if (!this->_writer) {
+    this->_writer = b;
+    init_readers();
+  } else {
+    // complete the chain so block can be read by readers.
+    this->_writer->next = b;
+  }
+
+  // MOVE to the end of the chain. no matter whether it is write available or not.
+  // Because `write` operation will append it if needed.
+  while (b->next != nullptr) {
+    b = b->next.get();
+  }
+
+  this->_writer = b;
 }
 
 ////////////////////////////////////////////////////////////////

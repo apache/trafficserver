@@ -361,7 +361,7 @@ QUICStreamFrame::data_length() const
 {
   MIOBuffer buffer;
   IOBufferReader *reader = buffer.alloc_reader();
-  buffer.append_block(this->_block.get());
+  buffer.append_block2(this->_block.get());
   return reader->read_avail();
 }
 

@@ -288,7 +288,7 @@ int64_t
 Http3SettingsFrame::store(QUICStreamIO *stream_io)
 {
   // header + payload
-  uint8_t header[128]                                   = {0};
+  uint8_t header[Http3Frame::MAX_FRAM_HEADER_OVERHEAD]  = {0};
   uint8_t payload[Http3SettingsFrame::MAX_PAYLOAD_SIZE] = {0};
   uint8_t *p                                            = payload;
   size_t l                                              = 0;

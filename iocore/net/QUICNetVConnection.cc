@@ -1404,9 +1404,6 @@ QUICNetVConnection::_state_common_send_packet()
         packet->store(buf, &len);
         udp_payload->fill(len);
         written += len;
-        if (len <= 47 && packet->type() == QUICPacketType::PROTECTED) {
-          printf("scw fuck");
-        }
 
         int dcil = (this->_peer_quic_connection_id == QUICConnectionId::ZERO()) ? 0 : this->_peer_quic_connection_id.length();
         this->_ph_protector.protect(buf, len, dcil);
@@ -1472,10 +1469,6 @@ QUICNetVConnection::_store_frame(MIOBuffer &buffer, uint64_t &max_frame_size, QU
     tmp = tmp->next;
   }
 
-  if (frame.type() == QUICFrameType::STREAM && static_cast<QUICStreamFrame &>(frame).data_length() == 1129) {
-    printf("scw fuck");
-  }
-
   // frame should be stored because it's created with max_frame_size
   ink_assert(size_added != 0);
 
@@ -1489,7 +1482,7 @@ QUICNetVConnection::_store_frame(MIOBuffer &buffer, uint64_t &max_frame_size, QU
 
   frames.emplace_back(frame.id(), frame.generated_by());
 
-  buffer.append_block(new_block.get());
+  buffer.append_block2(new_block.get());
 }
 
 // FIXME QUICNetVConnection should not know the actual type value of PADDING frame
@@ -1601,14 +1594,14 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
       if (min_size > len) {
         Ptr<IOBufferBlock> pad_block = _generate_padding_frame(min_size - len);
-        buffer.append_block(pad_block.get());
+        buffer.append_block2(pad_block.get());
         len += pad_block->size();
       }
     } else {
       // Pad with PADDING frames to make sure payload length satisfy the minimum length for sampling for header protection
       if (MIN_PKT_PAYLOAD_LEN > len) {
         Ptr<IOBufferBlock> pad_block = _generate_padding_frame(MIN_PKT_PAYLOAD_LEN - len);
-        buffer.append_block(pad_block.get());
+        buffer.append_block2(pad_block.get());
         len += pad_block->size();
       }
     }
@@ -1617,10 +1610,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     // Packet is retransmittable if it's not ack only packet
     packet                              = this->_build_packet(level, reader, ack_eliciting, probing, crypto);
     this->_has_ack_eliciting_packet_out = ack_eliciting;
-
-    if (packet->size() <= 31 && packet->type() == QUICPacketType::PROTECTED) {
-      printf("scw fuck ");
-    }
   }
 
   return packet;

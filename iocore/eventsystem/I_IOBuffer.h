@@ -947,6 +947,15 @@ public:
   /**
     Adds a new block to the end of the block list. The size is determined
     by asize_index. See the remarks section for a mapping of indexes to
+    buffer block sizes. For QUIC only
+
+    TODO combine the two `append_block` into one.
+  */
+  void append_block2(IOBufferBlock *b);
+
+  /**
+    Adds a new block to the end of the block list. The size is determined
+    by asize_index. See the remarks section for a mapping of indexes to
     buffer block sizes.
 
   */

@@ -109,7 +109,7 @@ QUICFrameRetransmitter::_create_stream_frame(uint8_t *buf, QUICFrameInformationU
   }
   MIOBuffer buffer;
   IOBufferReader *reader = buffer.alloc_reader();
-  buffer.append_block(stream_info->block.get());
+  buffer.append_block2(stream_info->block.get());
 
   // FIXME MAX_STREAM_FRAME_OVERHEAD is here and there
   // These size calculation should not exist multiple places

@@ -418,8 +418,7 @@ QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level,
   uint64_t len           = 0;
   IOBufferReader *reader = this->_write_vio.get_reader();
   if (!pure_fin) {
-    uint64_t data_len = reader->read_avail();
-    if (data_len == 0) {
+    if (!reader->is_read_avail_more_than(0)) {
       return frame;
     }
 
@@ -436,7 +435,8 @@ QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level,
       return frame;
     }
 
-    len = std::min(data_len, std::min(maximum_data_size, std::min(stream_credit, connection_credit)));
+    len = std::min(maximum_data_size, std::min(stream_credit, connection_credit));
+    len = reader->is_read_avail_more_than(len - 1) ? len : reader->read_avail();
 
     // data_len, maximum_data_size, stream_credit and connection_credit are already checked they're larger than 0
     ink_assert(len != 0);
@@ -449,11 +449,7 @@ QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level,
   MIOBuffer buffer;
   IOBufferReader *tmp_reader = buffer.alloc_reader();
   buffer.write(reader, len);
-  ink_assert(static_cast<uint64_t>(reader->read_avail()) == len);
-
-  if (len == 1142) {
-    printf("scw fuck");
-  }
+  ink_assert(static_cast<uint64_t>(tmp_reader->read_avail()) == len);
 
   // STREAM - Pure FIN or data length is lager than 0
   // FIXME has_length_flag and has_offset_flag should be configurable
@@ -462,13 +458,6 @@ QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level,
   if (!this->_state.is_allowed_to_send(*frame)) {
     QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
     return frame;
-  }
-
-  if (frame != nullptr) {
-    QUICStreamFrame *stream_frame = static_cast<QUICStreamFrame *>(frame);
-    if (stream_frame->data_length() == 3) {
-      printf("scw fuck");
-    }
   }
 
   if (!pure_fin) {

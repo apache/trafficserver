@@ -152,15 +152,15 @@ QUICStreamIO::write(IOBufferBlock *b)
   MIOBuffer buffer;
   IOBufferReader *reader = buffer.alloc_reader();
 
-  // TODO: removing copy block.
-  buffer.append_block(b);
+  buffer.append_block2(b);
 
+  // TODO: Remove this read_avail
   int64_t written = reader->read_avail();
   if (written == 0) {
     return 0;
   }
 
-  this->_write_buffer->write(reader, written);
+  this->_write_buffer->append_block2(b);
   this->_nwritten += written;
   return written;
 }
