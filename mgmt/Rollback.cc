@@ -59,19 +59,11 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
     parentRollback(parentRollback_),
     currentVersion(0),
     fileLastModified(0),
-    numVersions(0),
-    numberBackups(0)
+    numVersions(0)
 {
   version_t highestSeen;             // the highest backup version
   ExpandingArray existVer(25, true); // Existing versions
   struct stat fileInfo;
-  MgmtInt numBak;
-  char *alarmMsg;
-
-  // To Test, Read/Write access to the file
-  int testFD;    // For open test
-  int testErrno; // For open test
-
   ink_assert(fileName_ != nullptr);
 
   // parent must not also have a parent
@@ -94,134 +86,27 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
 
   ink_mutex_init(&fileAccessLock);
 
-  if (varIntFromName("proxy.config.admin.number_config_bak", &numBak) == true) {
-    if (numBak > 1) {
-      numberBackups = (int)numBak;
-    } else {
-      numberBackups = 1;
-    }
-  } else {
-    numberBackups = DEFAULT_BACKUPS;
-  }
-
-  // If we are not doing backups, bail early.
-  if ((numberBackups <= 0) || (flags & CONFIG_FLAG_UNVERSIONED)) {
+  // ToDo: This was really broken before, it  used to check if numberBackups <=0, but that could never happen.
+  if (flags & CONFIG_FLAG_UNVERSIONED) {
     currentVersion = 0;
     setLastModifiedTime();
-    numberBackups = 0;
     return;
   }
 
   currentVersion = 0; // Prevent UMR with stat file
-  highestSeen    = findVersions_ml(versionQ);
+  highestSeen    = 0;
 
-  // Check to make sure that our configuratio file exists
-  //
-  //  If we can't find our file, do our best to rollback
-  //    or create an empty one.  If that fails, just
-  //    give up
+  // Check to make sure that our configuration file exists
   //
   if (statFile(ACTIVE_VERSION, &fileInfo) < 0) {
-    // If we can't find an active version because there is not
-    //   one, attempt to rollback to a previous version if one exists
-    //
-    // If it does not, create a zero length file to prevent total havoc
-    //
-    if (errno == ENOENT) {
-      bool needZeroLength;
-      mgmt_log("[RollBack::Rollback] Missing Configuration File: %s\n", fileName);
+    // If we can't find an active version because there is none we have a hard failure.
+    mgmt_fatal(0, "[RollBack::Rollback] Unable to find configuration file %s.\n\tStat failed : %s\n", fileName, strerror(errno));
 
-      if (highestSeen > 0) {
-        char *highestSeenStr = createPathStr(highestSeen);
-        char *activeVerStr   = createPathStr(ACTIVE_VERSION);
-
-        if (rename(highestSeenStr, activeVerStr) < 0) {
-          mgmt_log("[RollBack::Rollback] Automatic Rollback to prior version failed for %s : %s\n", fileName, strerror(errno));
-          needZeroLength = true;
-        } else {
-          mgmt_log("[RollBack::Rollback] Automatic Rollback to version succeeded for %s\n", fileName, strerror(errno));
-          needZeroLength = false;
-          highestSeen--;
-          // Since we've made the highestVersion active
-          //  remove it from the backup version q
-          versionQ.remove(versionQ.tail);
-        }
-        ats_free(highestSeenStr);
-        ats_free(activeVerStr);
-      } else {
-        needZeroLength = true;
-      }
-
-      if (needZeroLength == true) {
-        int fd = openFile(ACTIVE_VERSION, O_RDWR | O_CREAT);
-        if (fd >= 0) {
-          alarmMsg = (char *)ats_malloc(2048);
-          snprintf(alarmMsg, 2048, "Created zero length place holder for config file %s", fileName);
-          mgmt_log("[RollBack::Rollback] %s\n", alarmMsg);
-          lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
-          ats_free(alarmMsg);
-          closeFile(fd, true);
-        } else {
-          mgmt_fatal(0, "[RollBack::Rollback] Unable to find configuration file %s.\n\tCreation of a placeholder failed : %s\n",
-                     fileName, strerror(errno));
-        }
-      }
-
-      currentVersion = highestSeen + 1;
-      setLastModifiedTime();
-    } else {
-      // If is there but we can not stat it, it is unusable to manager
-      //   probably due to permissions problems.  Bail!
-      mgmt_fatal(0, "[RollBack::Rollback] Unable to find configuration file %s.\n\tStat failed : %s\n", fileName, strerror(errno));
-    }
   } else {
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
     currentVersion   = highestSeen + 1;
 
-    // Make sure that we have a backup of the file
-    if (highestSeen == 0) {
-      TextBuffer *version0 = nullptr;
-      char failStr[]       = "[Rollback::Rollback] Automatic Roll of Version 1 failed: %s";
-      if (getVersion_ml(ACTIVE_VERSION, &version0) != OK_ROLLBACK) {
-        mgmt_log(failStr, fileName);
-      } else {
-        if (forceUpdate_ml(version0) != OK_ROLLBACK) {
-          mgmt_log(failStr, fileName);
-        }
-      }
-      if (version0 != nullptr) {
-        delete version0;
-      }
-    }
-
     Debug("rollback", "[Rollback::Rollback] Current Version of %s is %d", fileName, currentVersion);
-  }
-
-  // Now that we'll got every thing set up, try opening
-  //   the file to make sure that we will actually be able to
-  //   read and write it
-  testFD = openFile(ACTIVE_VERSION, O_RDWR, &testErrno);
-  if (testFD < 0) {
-    // We failed to open read-write
-    alarmMsg = (char *)ats_malloc(2048);
-    testFD   = openFile(ACTIVE_VERSION, O_RDONLY, &testErrno);
-
-    if (testFD < 0) {
-      // We are unable to either read or write the file
-      snprintf(alarmMsg, 2048, "Unable to read or write config file");
-      mgmt_log("[Rollback::Rollback] %s %s: %s\n", alarmMsg, fileName, strerror(errno));
-      lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
-
-    } else {
-      // Read is OK and write fails
-      snprintf(alarmMsg, 2048, "Config file is read-only");
-      mgmt_log("[Rollback::Rollback] %s : %s\n", alarmMsg, fileName);
-      lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
-      closeFile(testFD, false);
-    }
-    ats_free(alarmMsg);
-  } else {
-    closeFile(testFD, true);
   }
 }
 
@@ -376,7 +261,6 @@ Rollback::internalUpdate(TextBuffer *buf, version_t newVersion, bool notifyChang
   ssize_t writeBytes;
   int diskFD;
   int ret;
-  versionInfo *toRemove;
   versionInfo *newBak;
   bool failedLink = false;
   char *alarmMsg  = nullptr;
@@ -448,19 +332,9 @@ Rollback::internalUpdate(TextBuffer *buf, version_t newVersion, bool notifyChang
   }
 
   setLastModifiedTime();
-  // Check to see if we need to delete an excess backup versions
-  //
-  //  We subtract one from numVersions to exclude the active
-  //   copy we just created.  If we subtracted two, but left
-  //   the toRemove calculation the same, version one would
-  //   never get deleted
-  //
-  if (numVersions >= this->numberBackups && failedLink == false) {
-    toRemove = versionQ.head;
-    ink_release_assert(toRemove != nullptr);
-    ink_assert((toRemove->version) < this->currentVersion);
-    removeVersion_ml(toRemove->version);
-  }
+
+  // ToDo: We used to call removeVersion_ml() here.
+
   // If we created a backup version add it to the
   //  List of backup Versions
   if (failedLink == false) {

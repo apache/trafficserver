@@ -319,7 +319,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.task_threads
  proxy.config.admin.synthetic_port
  proxy.config.admin.cli_path
- proxy.config.admin.number_config_bak
  proxy.config.admin.user_id
  proxy.config.alarm.abs_path
  proxy.config.alarm.bin
