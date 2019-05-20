@@ -270,24 +270,36 @@ QUICStreamManager::_find_or_create_stream_vc(QUICStreamId stream_id)
 
     switch (QUICTypeUtil::detect_stream_type(stream_id)) {
     case QUICStreamType::CLIENT_BIDI:
-      if (this->_local_max_streams_bidi == 0 || stream_id > this->_local_max_streams_bidi) {
-        return nullptr;
-      }
-
       if (this->_info->direction() == NET_VCONNECTION_OUT) {
         // client
+        if (this->_remote_max_streams_bidi == 0 || stream_id > this->_remote_max_streams_bidi) {
+          return nullptr;
+        }
+
         local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
         remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
       } else {
         // server
+        if (this->_local_max_streams_bidi == 0 || stream_id > this->_local_max_streams_bidi) {
+          return nullptr;
+        }
+
         local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
         remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
       }
 
       break;
     case QUICStreamType::CLIENT_UNI:
-      if (this->_local_max_streams_uni == 0 || stream_id > this->_local_max_streams_uni) {
-        return nullptr;
+      if (this->_info->direction() == NET_VCONNECTION_OUT) {
+        // client
+        if (this->_remote_max_streams_uni == 0 || stream_id > this->_remote_max_streams_uni) {
+          return nullptr;
+        }
+      } else {
+        // server
+        if (this->_local_max_streams_uni == 0 || stream_id > this->_local_max_streams_uni) {
+          return nullptr;
+        }
       }
 
       local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
@@ -295,27 +307,38 @@ QUICStreamManager::_find_or_create_stream_vc(QUICStreamId stream_id)
 
       break;
     case QUICStreamType::SERVER_BIDI:
-      if (this->_remote_max_streams_bidi == 0 || stream_id > this->_remote_max_streams_bidi) {
-        return nullptr;
-      }
-
       if (this->_info->direction() == NET_VCONNECTION_OUT) {
         // client
+        if (this->_local_max_streams_bidi == 0 || stream_id > this->_local_max_streams_bidi) {
+          return nullptr;
+        }
+
         local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
         remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
       } else {
         // server
+        if (this->_remote_max_streams_bidi == 0 || stream_id > this->_remote_max_streams_bidi) {
+          return nullptr;
+        }
+
         local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
         remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
       }
       break;
     case QUICStreamType::SERVER_UNI:
-      if (this->_remote_max_streams_uni == 0 || stream_id > this->_remote_max_streams_uni) {
-        return nullptr;
+      if (this->_info->direction() == NET_VCONNECTION_OUT) {
+        if (this->_local_max_streams_uni == 0 || stream_id > this->_local_max_streams_uni) {
+          return nullptr;
+        }
+      } else {
+        if (this->_remote_max_streams_uni == 0 || stream_id > this->_remote_max_streams_uni) {
+          return nullptr;
+        }
       }
 
       local_max_stream_data  = this->_local_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
       remote_max_stream_data = this->_remote_tp->getAsUInt(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI);
+
       break;
     default:
       ink_release_assert(false);
