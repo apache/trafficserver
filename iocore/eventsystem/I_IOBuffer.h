@@ -945,6 +945,14 @@ public:
   void append_block(IOBufferBlock *b);
 
   /**
+    Adds a block to the end of the block list. The block added to list
+    must be writable by this buffer and must not be writable by any
+    other buffer. For QUIC mostly
+
+  */
+  void append_block2(IOBufferBlock *b);
+
+  /**
     Adds a new block to the end of the block list. The size is determined
     by asize_index. See the remarks section for a mapping of indexes to
     buffer block sizes.
