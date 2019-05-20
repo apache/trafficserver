@@ -56,7 +56,7 @@ QUICKeyGenerator::generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t
     this->_generate_initial_secret(secret, &secret_len, hkdf, cid, LABEL_FOR_CLIENT_INITIAL_SECRET.data(),
                                    LABEL_FOR_CLIENT_INITIAL_SECRET.length(), EVP_MD_size(md));
     if (is_debug_tag_set("vv_quic_crypto")) {
-      uint8_t print_buf[512];
+      uint8_t print_buf[1024 + 1];
       QUICDebug::to_hex(print_buf, secret, secret_len);
       Debug("vv_quic_crypto", "client_in_secret=%s", print_buf);
     }
@@ -66,7 +66,7 @@ QUICKeyGenerator::generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t
     this->_generate_initial_secret(secret, &secret_len, hkdf, cid, LABEL_FOR_SERVER_INITIAL_SECRET.data(),
                                    LABEL_FOR_SERVER_INITIAL_SECRET.length(), EVP_MD_size(md));
     if (is_debug_tag_set("vv_quic_crypto")) {
-      uint8_t print_buf[512];
+      uint8_t print_buf[1024 + 1];
       QUICDebug::to_hex(print_buf, secret, secret_len);
       Debug("vv_quic_crypto", "server_in_secret=%s", print_buf);
     }
@@ -117,7 +117,7 @@ QUICKeyGenerator::_generate_initial_secret(uint8_t *out, size_t *out_len, QUICHK
   }
 
   if (is_debug_tag_set("vv_quic_crypto")) {
-    uint8_t print_buf[512];
+    uint8_t print_buf[1024 + 1];
     QUICDebug::to_hex(print_buf, initial_secret, initial_secret_len);
     Debug("vv_quic_crypto", "initial_secret=%s", print_buf);
   }
