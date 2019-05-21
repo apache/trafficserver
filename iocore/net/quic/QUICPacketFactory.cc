@@ -108,10 +108,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
     case QUICPacketType::PROTECTED:
       if (this->_pp_key_info.is_decryption_key_available(header->key_phase())) {
         plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
-        memcpy(plain_txt.get(), plain->buf(), plain->size());
-        plain_txt_len = plain->size();
         if (plain != nullptr) {
-          result = QUICPacketCreationResult::SUCCESS;
+          memcpy(plain_txt.get(), plain->buf(), plain->size());
+          plain_txt_len = plain->size();
+          result        = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::FAILED;
         }
@@ -123,10 +123,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
       if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL)) {
         if (QUICTypeUtil::is_supported_version(header->version())) {
           plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
-          memcpy(plain_txt.get(), plain->buf(), plain->size());
-          plain_txt_len = plain->size();
           if (plain != nullptr) {
-            result = QUICPacketCreationResult::SUCCESS;
+            memcpy(plain_txt.get(), plain->buf(), plain->size());
+            plain_txt_len = plain->size();
+            result        = QUICPacketCreationResult::SUCCESS;
           } else {
             result = QUICPacketCreationResult::FAILED;
           }
@@ -140,10 +140,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
     case QUICPacketType::HANDSHAKE:
       if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::HANDSHAKE)) {
         plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
-        memcpy(plain_txt.get(), plain->buf(), plain->size());
-        plain_txt_len = plain->size();
         if (plain != nullptr) {
-          result = QUICPacketCreationResult::SUCCESS;
+          memcpy(plain_txt.get(), plain->buf(), plain->size());
+          plain_txt_len = plain->size();
+          result        = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::FAILED;
         }
@@ -154,10 +154,10 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
     case QUICPacketType::ZERO_RTT_PROTECTED:
       if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::ZERO_RTT)) {
         plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
-        memcpy(plain_txt.get(), plain->buf(), plain->size());
-        plain_txt_len = plain->size();
         if (plain != nullptr) {
-          result = QUICPacketCreationResult::SUCCESS;
+          memcpy(plain_txt.get(), plain->buf(), plain->size());
+          plain_txt_len = plain->size();
+          result        = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::IGNORED;
         }
