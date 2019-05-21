@@ -753,7 +753,7 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
 
   char *value;
   uint64_t value_len;
-  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len - read_len, 7)) < 0) {
+  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
     return -1;
   }
   read_len += ret;
