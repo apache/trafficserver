@@ -72,7 +72,7 @@ SSLInitializeStatistics()
   STACK_OF(SSL_CIPHER) * ciphers;
 
   // Allocate SSL statistics block.
-  ssl_rsb = RecAllocateRawStatBlock((int)Ssl_Stat_Count);
+  ssl_rsb = RecAllocateRawStatBlock(static_cast<int>(Ssl_Stat_Count));
   ink_assert(ssl_rsb != nullptr);
 
   // SSL client errors.
@@ -227,7 +227,7 @@ SSLInitializeStatistics()
 
     // If not already registered ...
     if (cipherName && cipher_map.find(cipherName) == cipher_map.end()) {
-      cipher_map.emplace(cipherName, (intptr_t)(ssl_cipher_stats_start + index));
+      cipher_map.emplace(cipherName, static_cast<intptr_t>(ssl_cipher_stats_start + index));
       // Register as non-persistent since the order/index is dependent upon configuration.
       RecRegisterRawStat(ssl_rsb, RECT_PROCESS, statName.c_str(), RECD_INT, RECP_NON_PERSISTENT,
                          (int)ssl_cipher_stats_start + index, RecRawStatSyncSum);

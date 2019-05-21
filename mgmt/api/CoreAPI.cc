@@ -220,7 +220,7 @@ threads_for_process(pid_t proc)
   char path[64];
   threadlist threads;
 
-  if (snprintf(path, sizeof(path), "/proc/%ld/task", (long)proc) >= (int)sizeof(path)) {
+  if (snprintf(path, sizeof(path), "/proc/%ld/task", static_cast<long>(proc)) >= static_cast<int>(sizeof(path))) {
     goto done;
   }
 
@@ -304,10 +304,10 @@ backtrace_for_thread(pid_t threadid, TextBuffer &text)
     if (unw_get_proc_name(&cursor, buf, sizeof(buf), &offset) == 0) {
       int status;
       char *name = abi::__cxa_demangle(buf, nullptr, nullptr, &status);
-      text.format("%-4u 0x%016llx %s + %p\n", level, (unsigned long long)ip, name ? name : buf, (void *)offset);
+      text.format("%-4u 0x%016llx %s + %p\n", level, static_cast<unsigned long long>(ip), name ? name : buf, (void *)offset);
       free(name);
     } else {
-      text.format("%-4u 0x%016llx 0x0 + %p\n", level, (unsigned long long)ip, (void *)offset);
+      text.format("%-4u 0x%016llx 0x0 + %p\n", level, static_cast<unsigned long long>(ip), (void *)offset);
     }
 
     ++level;
@@ -346,14 +346,14 @@ ServerBacktrace(unsigned /* options */, char **trace)
     ats_scoped_fd fd;
     char threadname[128];
 
-    snprintf(threadname, sizeof(threadname), "/proc/%ld/comm", (long)threadid);
+    snprintf(threadname, sizeof(threadname), "/proc/%ld/comm", static_cast<long>(threadid));
     fd = open(threadname, O_RDONLY);
     if (fd >= 0) {
-      text.format("Thread %ld, ", (long)threadid);
+      text.format("Thread %ld, ", static_cast<long>(threadid));
       text.readFromFD(fd);
       text.chomp();
     } else {
-      text.format("Thread %ld", (long)threadid);
+      text.format("Thread %ld", static_cast<long>(threadid));
     }
 
     text.format(":\n");
@@ -518,7 +518,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
     if (!varCounterFromName(rec_name, &(counter_val))) {
       return TS_ERR_FAIL;
     }
-    rec_ele->valueT.counter_val = (TSCounter)counter_val;
+    rec_ele->valueT.counter_val = static_cast<TSCounter>(counter_val);
 
     Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %" PRId64 "", rec_ele->rec_name, rec_ele->valueT.counter_val);
     break;
@@ -528,7 +528,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
     if (!varIntFromName(rec_name, &(int_val))) {
       return TS_ERR_FAIL;
     }
-    rec_ele->valueT.int_val = (TSInt)int_val;
+    rec_ele->valueT.int_val = static_cast<TSInt>(int_val);
 
     Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %" PRId64 "", rec_ele->rec_name, rec_ele->valueT.int_val);
     break;

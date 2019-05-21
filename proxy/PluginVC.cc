@@ -124,7 +124,7 @@ PluginVC::main_handler(int event, void *data)
   ink_assert(!deletable);
   ink_assert(data != nullptr);
 
-  Event *call_event   = (Event *)data;
+  Event *call_event   = static_cast<Event *>(data);
   EThread *my_ethread = mutex->thread_holding;
   ink_release_assert(my_ethread != nullptr);
 
@@ -990,23 +990,23 @@ PluginVC::get_data(int id, void *data)
   switch (id) {
   case PLUGIN_VC_DATA_LOCAL:
     if (vc_type == PLUGIN_VC_ACTIVE) {
-      *(void **)data = core_obj->active_data;
+      *static_cast<void **>(data) = core_obj->active_data;
     } else {
-      *(void **)data = core_obj->passive_data;
+      *static_cast<void **>(data) = core_obj->passive_data;
     }
     return true;
   case PLUGIN_VC_DATA_REMOTE:
     if (vc_type == PLUGIN_VC_ACTIVE) {
-      *(void **)data = core_obj->passive_data;
+      *static_cast<void **>(data) = core_obj->passive_data;
     } else {
-      *(void **)data = core_obj->active_data;
+      *static_cast<void **>(data) = core_obj->active_data;
     }
     return true;
   case TS_API_DATA_CLOSED:
     *static_cast<int *>(data) = this->closed;
     return true;
   default:
-    *(void **)data = nullptr;
+    *static_cast<void **>(data) = nullptr;
     return false;
   }
 }

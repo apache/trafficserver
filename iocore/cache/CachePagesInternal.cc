@@ -205,7 +205,7 @@ ShowCacheInternal::showVolEvacuations(int event, Event *e)
   for (int i = 0; i < last; i++) {
     for (b = p->evacuate[i].head; b; b = b->link.next) {
       char offset[60];
-      sprintf(offset, "%" PRIu64 "", (uint64_t)p->vol_offset(&b->dir));
+      sprintf(offset, "%" PRIu64 "", static_cast<uint64_t>(p->vol_offset(&b->dir)));
       CHECK_SHOW(show("<tr>"
                       "<td>%s</td>" // offset
                       "<td>%d</td>" // estimated size

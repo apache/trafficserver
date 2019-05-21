@@ -941,11 +941,11 @@ Cache::build_stripe_hash_table()
 {
   int num_stripes = globalVec_stripe.size();
   CacheStoreBlocks total;
-  unsigned int *forvol         = (unsigned int *)ats_malloc(sizeof(unsigned int) * num_stripes);
-  unsigned int *gotvol         = (unsigned int *)ats_malloc(sizeof(unsigned int) * num_stripes);
-  unsigned int *rnd            = (unsigned int *)ats_malloc(sizeof(unsigned int) * num_stripes);
-  unsigned short *ttable       = (unsigned short *)ats_malloc(sizeof(unsigned short) * VOL_HASH_TABLE_SIZE);
-  unsigned int *rtable_entries = (unsigned int *)ats_malloc(sizeof(unsigned int) * num_stripes);
+  unsigned int *forvol         = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
+  unsigned int *gotvol         = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
+  unsigned int *rnd            = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
+  unsigned short *ttable       = static_cast<unsigned short *>(ats_malloc(sizeof(unsigned short) * VOL_HASH_TABLE_SIZE));
+  unsigned int *rtable_entries = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
   unsigned int rtable_size     = 0;
   int i                        = 0;
   uint64_t used                = 0;
@@ -981,10 +981,10 @@ Cache::build_stripe_hash_table()
   }
 
   // generate random numbers proportional to allocation
-  rtable_pair *rtable = (rtable_pair *)ats_malloc(sizeof(rtable_pair) * rtable_size);
+  rtable_pair *rtable = static_cast<rtable_pair *>(ats_malloc(sizeof(rtable_pair) * rtable_size));
   int rindex          = 0;
   for (int i = 0; i < num_stripes; i++) {
-    for (int j = 0; j < (int)rtable_entries[i]; j++) {
+    for (int j = 0; j < static_cast<int>(rtable_entries[i]); j++) {
       rtable[rindex].rval = next_rand(&rnd[i]);
       rtable[rindex].idx  = i;
       rindex++;
@@ -999,7 +999,7 @@ Cache::build_stripe_hash_table()
   i = 0; // index moving through the random numbers
   for (int j = 0; j < VOL_HASH_TABLE_SIZE; j++) {
     pos = width / 2 + j * width; // position to select closest to
-    while (pos > rtable[i].rval && i < (int)rtable_size - 1) {
+    while (pos > rtable[i].rval && i < static_cast<int>(rtable_size) - 1) {
       i++;
     }
     ttable[j] = rtable[i].idx;

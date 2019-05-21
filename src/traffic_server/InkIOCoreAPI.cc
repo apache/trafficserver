@@ -122,7 +122,7 @@ static void *
 ink_thread_trampoline(void *data)
 {
   void *retval;
-  INKThreadInternal *ithread = (INKThreadInternal *)data;
+  INKThreadInternal *ithread = static_cast<INKThreadInternal *>(data);
 
   ithread->set_specific();
   retval = ithread->func(ithread->data);
@@ -158,7 +158,7 @@ TSThreadCreate(TSThreadFunc func, void *data)
     return (TSThread) nullptr;
   }
 
-  return (TSThread)thread;
+  return reinterpret_cast<TSThread>(thread);
 }
 
 // Wait for a thread to complete. When a thread calls TSThreadCreate,
@@ -171,7 +171,7 @@ void
 TSThreadWait(TSThread thread)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
-  INKThreadInternal *ithread = (INKThreadInternal *)thread;
+  INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
 
   ink_mutex_acquire(&ithread->completion.lock);
 
@@ -205,7 +205,7 @@ TSThreadDestroy(TSThread thread)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
 
-  INKThreadInternal *ithread = (INKThreadInternal *)thread;
+  INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
 
   // The thread must be destroyed by the same thread that created
   // it because that thread is holding the thread mutex.

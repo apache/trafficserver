@@ -88,14 +88,14 @@ InkRand::random()
   if (mti >= NN) { /* generate NN words at one time */
     for (i = 0; i < NN - MM; i++) {
       x     = (mt[i] & UM) | (mt[i + 1] & LM);
-      mt[i] = mt[i + MM] ^ (x >> 1) ^ mag01[(int)(x & 1ULL)];
+      mt[i] = mt[i + MM] ^ (x >> 1) ^ mag01[static_cast<int>(x & 1ULL)];
     }
     for (; i < NN - 1; i++) {
       x     = (mt[i] & UM) | (mt[i + 1] & LM);
-      mt[i] = mt[i + (MM - NN)] ^ (x >> 1) ^ mag01[(int)(x & 1ULL)];
+      mt[i] = mt[i + (MM - NN)] ^ (x >> 1) ^ mag01[static_cast<int>(x & 1ULL)];
     }
     x          = (mt[NN - 1] & UM) | (mt[0] & LM);
-    mt[NN - 1] = mt[MM - 1] ^ (x >> 1) ^ mag01[(int)(x & 1ULL)];
+    mt[NN - 1] = mt[MM - 1] ^ (x >> 1) ^ mag01[static_cast<int>(x & 1ULL)];
 
     mti = 0;
   }

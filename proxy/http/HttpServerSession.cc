@@ -36,7 +36,7 @@
 #include "HttpSessionManager.h"
 #include "HttpSM.h"
 
-static int64_t next_ss_id = (int64_t)0;
+static int64_t next_ss_id = static_cast<int64_t>(0);
 ClassAllocator<HttpServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
 
 void
@@ -69,7 +69,7 @@ HttpServerSession::new_connection(NetVConnection *new_vc)
   mutex = new_vc->mutex;
 
   // Unique client session identifier.
-  con_id = ink_atomic_increment((int64_t *)(&next_ss_id), 1);
+  con_id = ink_atomic_increment((&next_ss_id), 1);
 
   magic = HTTP_SS_MAGIC_ALIVE;
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, 1); // Update the true global stat
