@@ -39,6 +39,7 @@
 
 #include "tscore/ink_platform.h"
 #include "P_Net.h"
+#include "quic/QUICConnectionTable.h"
 
 class UnixNetVConnection;
 struct NetAccept;
@@ -56,7 +57,6 @@ public:
 
   void init() override;
   virtual int start(int, size_t stacksize) override;
-  void cleanup();
   // TODO: refactoring NetProcessor::connect_re and UnixNetProcessor::connect_re_internal
   // Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opts) override;
   Action *connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opts);
@@ -71,6 +71,8 @@ public:
 private:
   QUICNetProcessor(const QUICNetProcessor &);
   QUICNetProcessor &operator=(const QUICNetProcessor &);
+
+  QUICConnectionTable *_ctable = nullptr;
 };
 
 extern QUICNetProcessor quic_NetProcessor;

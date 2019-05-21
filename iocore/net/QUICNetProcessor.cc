@@ -38,12 +38,8 @@ QUICNetProcessor::QUICNetProcessor() {}
 
 QUICNetProcessor::~QUICNetProcessor()
 {
-  cleanup();
-}
-
-void
-QUICNetProcessor::cleanup()
-{
+  // TODO: clear all values before destory the table.
+  delete this->_ctable;
 }
 
 void
@@ -76,7 +72,11 @@ QUICNetProcessor::start(int, size_t stacksize)
 NetAccept *
 QUICNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 {
-  return (NetAccept *)new QUICPacketHandlerIn(opt);
+  if (this->_ctable == nullptr) {
+    QUICConfig::scoped_config params;
+    this->_ctable = new QUICConnectionTable(params->connection_table_size());
+  }
+  return (NetAccept *)new QUICPacketHandlerIn(opt, *this->_ctable);
 }
 
 NetVConnection *

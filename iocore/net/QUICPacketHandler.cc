@@ -122,19 +122,15 @@ QUICPacketHandler::_send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IO
 //
 // QUICPacketHandlerIn
 //
-QUICPacketHandlerIn::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt) : NetAccept(opt), QUICPacketHandler()
+QUICPacketHandlerIn::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, QUICConnectionTable &ctable)
+  : NetAccept(opt), QUICPacketHandler(), _ctable(ctable)
 {
   this->mutex = new_ProxyMutex();
   // create Connection Table
   QUICConfig::scoped_config params;
-  _ctable = new QUICConnectionTable(params->connection_table_size());
 }
 
-QUICPacketHandlerIn::~QUICPacketHandlerIn()
-{
-  // TODO: clear all values before destory the table.
-  delete _ctable;
-}
+QUICPacketHandlerIn::~QUICPacketHandlerIn() {}
 
 NetProcessor *
 QUICPacketHandlerIn::getNetProcessor() const
@@ -146,7 +142,7 @@ NetAccept *
 QUICPacketHandlerIn::clone() const
 {
   NetAccept *na;
-  na  = new QUICPacketHandlerIn(opt);
+  na  = new QUICPacketHandlerIn(opt, this->_ctable);
   *na = *this;
   return na;
 }
@@ -281,7 +277,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
   }
 
-  QUICConnection *qc     = this->_ctable->lookup(dcid);
+  QUICConnection *qc     = this->_ctable.lookup(dcid);
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(qc);
 
   // Server Stateless Retry
@@ -334,7 +330,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
 
     vc = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
-    vc->init(peer_cid, original_cid, cid_in_retry_token, udp_packet->getConnection(), this, this->_ctable);
+    vc->init(peer_cid, original_cid, cid_in_retry_token, udp_packet->getConnection(), this, &this->_ctable);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();

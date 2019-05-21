@@ -67,7 +67,7 @@ protected:
 class QUICPacketHandlerIn : public NetAccept, public QUICPacketHandler
 {
 public:
-  QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt);
+  QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, QUICConnectionTable &ctable);
   ~QUICPacketHandlerIn();
 
   // NetAccept
@@ -85,7 +85,7 @@ private:
   int _stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPConnection *connection, IpEndpoint from, QUICConnectionId dcid,
                        QUICConnectionId scid, QUICConnectionId *original_cid);
 
-  QUICConnectionTable *_ctable = nullptr;
+  QUICConnectionTable &_ctable;
 };
 
 /*
