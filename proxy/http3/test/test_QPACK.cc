@@ -284,6 +284,11 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
   int ret = 0;
 
   FILE *fd = fopen(out_file, "w");
+  if (!fd) {
+    std::cerr << "couldn't open file: " << out_file << std::endl;
+    REQUIRE(false);
+    return -1;
+  }
 
   HTTPHdr *requests[MAX_SEQUENCE] = {nullptr};
   int n_requests                  = load_qif_file(qif_file, requests);
@@ -327,8 +332,19 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
 {
   int ret = 0;
 
-  FILE *fd_in  = fopen(enc_file, "r");
+  FILE *fd_in = fopen(enc_file, "r");
+  if (!fd_in) {
+    std::cerr << "couldn't open file: " << enc_file << std::endl;
+    REQUIRE(false);
+    return -1;
+  }
+
   FILE *fd_out = fopen(out_file, "w");
+  if (!fd_out) {
+    std::cerr << "couldn't open file: " << out_file << std::endl;
+    REQUIRE(false);
+    return -1;
+  }
 
   // HTTPHdr *requests[MAX_SEQUENCE];
   // int n_requests = load_qif_file(qif_file, requests);
@@ -389,6 +405,8 @@ TEST_CASE("Encoding", "[qpack-encode]")
   DIR *dir = opendir(qifdir);
 
   if (dir == nullptr) {
+    std::cerr << "couldn't open dir: " << qifdir << std::endl;
+    REQUIRE(false);
     return;
   }
 
@@ -423,6 +441,8 @@ TEST_CASE("Decoding", "[qpack-decode]")
   DIR *dir = opendir(app_dir);
 
   if (dir == nullptr) {
+    std::cerr << "couldn't open dir: " << qifdir << std::endl;
+    REQUIRE(false);
     return;
   }
 
