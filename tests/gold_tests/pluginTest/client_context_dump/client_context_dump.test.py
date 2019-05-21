@@ -48,6 +48,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 ts.Disk.sni_yaml.AddLines([
+    'sni:',
     '- fqdn: "*one.com"',
     '  client_cert: "one.com.pem"',
     '- fqdn: "*two.com"',

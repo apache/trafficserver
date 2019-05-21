@@ -42,6 +42,11 @@ YamlSNIConfig::loader(const char *cfgFilename)
       return ts::Errata();
     }
 
+    if (!config["sni"]) {
+      return ts::Errata::Message(1, 1, "malformed ssl_server_name.yaml file; expected a toplevel 'sni' node");
+    }
+
+    config = config["sni"];
     if (!config.IsSequence()) {
       return ts::Errata::Message(1, 1, "expected sequence");
     }

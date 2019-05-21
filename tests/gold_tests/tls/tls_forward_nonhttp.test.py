@@ -53,6 +53,7 @@ ts.Disk.records_config.update({
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
 ts.Disk.sni_yaml.AddLines([
+  "sni:",
   "- fqdn: bar.com",
   "  forward_route: localhost:4444"
   ])

@@ -67,6 +67,7 @@ ts.Disk.remap_config.AddLines([
 ])
 
 ts.Disk.sni_yaml.AddLines([
+    'sni:',
     '- fqdn: "*foo.com"',
     '  client_cert: "client1.pem"',
 ])

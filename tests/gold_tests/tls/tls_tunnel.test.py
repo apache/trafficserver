@@ -73,6 +73,7 @@ ts.Disk.records_config.update({
 # bar.com should terminate.
 # empty SNI should tunnel to server_bar
 ts.Disk.sni_yaml.AddLines([
+  'sni:',
   '- fqdn: foo.com',
   "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
   "- fqdn: bob.*.com",
@@ -131,8 +132,9 @@ snipath = ts.Disk.sni_yaml.AbsPath
 recordspath = ts.Disk.records_config.AbsPath
 tr.Disk.File(snipath, id = "sni_yaml", typename="ats:config"),
 tr.Disk.sni_yaml.AddLines([
+  'sni:',
   '- fqdn: bar.com',
-  "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port),
+  '  tunnel_route: localhost:{0}'.format(server_bar.Variables.SSL_Port),
 ])
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server_foo
