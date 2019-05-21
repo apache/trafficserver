@@ -62,8 +62,8 @@ QUICPacketFactory::create_null_packet()
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base_packet_number,
-                          QUICPacketCreationResult &result)
+QUICPacketFactory::create(UDPConnection *udp_con, IpEndpoint from, ats_unique_buf buf, size_t len,
+                          QUICPacketNumber base_packet_number, QUICPacketCreationResult &result)
 {
   size_t max_plain_txt_len = 2048;
   ats_unique_buf plain_txt = ats_unique_malloc(max_plain_txt_len);
@@ -174,7 +174,7 @@ QUICPacketFactory::create(IpEndpoint from, ats_unique_buf buf, size_t len, QUICP
   QUICPacket *packet = nullptr;
   if (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::UNSUPPORTED) {
     packet = quicPacketAllocator.alloc();
-    new (packet) QUICPacket(std::move(header), std::move(plain_txt), plain_txt_len);
+    new (packet) QUICPacket(udp_con, std::move(header), std::move(plain_txt), plain_txt_len);
   }
 
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);

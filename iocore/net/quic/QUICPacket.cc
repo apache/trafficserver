@@ -770,8 +770,8 @@ QUICPacketShortHeader::store(uint8_t *buf, size_t *len) const
 
 QUICPacket::QUICPacket() {}
 
-QUICPacket::QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len)
-  : _header(std::move(header)), _payload(std::move(payload)), _payload_size(payload_len)
+QUICPacket::QUICPacket(UDPConnection *udp_con, QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len)
+  : _udp_con(udp_con), _header(std::move(header)), _payload(std::move(payload)), _payload_size(payload_len)
 {
 }
 
@@ -793,6 +793,12 @@ const IpEndpoint &
 QUICPacket::from() const
 {
   return this->_header->from();
+}
+
+UDPConnection *
+QUICPacket::udp_con() const
+{
+  return this->_udp_con;
 }
 
 /**

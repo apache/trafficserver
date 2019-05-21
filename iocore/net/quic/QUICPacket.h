@@ -39,6 +39,7 @@
 #define QUIC_FIELD_OFFSET_PACKET_NUMBER 4
 #define QUIC_FIELD_OFFSET_PAYLOAD 5
 
+class UDPConnection;
 class QUICPacketHeader;
 class QUICPacket;
 class QUICPacketLongHeader;
@@ -330,7 +331,7 @@ public:
    * This will be used for receiving packets. Therefore, it is expected that payload is already decrypted.
    * However,  QUICPacket class itself doesn't care about whether the payload is protected (encrypted) or not.
    */
-  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len);
+  QUICPacket(UDPConnection *udp_con, QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len);
 
   QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, std::vector<QUICFrameInfo> &frames);
 
@@ -348,6 +349,7 @@ public:
 
   ~QUICPacket();
 
+  UDPConnection *udp_con() const;
   const IpEndpoint &from() const;
   QUICPacketType type() const;
   QUICConnectionId destination_cid() const;
@@ -387,6 +389,7 @@ public:
   LINK(QUICPacket, link);
 
 private:
+  UDPConnection *_udp_con      = nullptr;
   QUICPacketHeaderUPtr _header = QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
   ats_unique_buf _payload      = ats_unique_buf(nullptr);
   size_t _payload_size         = 0;

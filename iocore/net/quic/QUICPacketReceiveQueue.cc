@@ -89,6 +89,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     }
 
     // Create a QUIC packet
+    this->_udp_con     = udp_packet->getConnection();
     this->_from        = udp_packet->from;
     this->_payload_len = udp_packet->getPktLength();
     this->_payload     = ats_unique_malloc(this->_payload_len);
@@ -176,7 +177,8 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
   }
 
   if (this->_ph_protector.unprotect(pkt.get(), pkt_len)) {
-    quic_packet = this->_packet_factory.create(this->_from, std::move(pkt), pkt_len, this->_largest_received_packet_number, result);
+    quic_packet = this->_packet_factory.create(this->_udp_con, this->_from, std::move(pkt), pkt_len,
+                                               this->_largest_received_packet_number, result);
   } else {
     // ZERO_RTT might be rejected
     if (type == QUICPacketType::ZERO_RTT_PROTECTED) {

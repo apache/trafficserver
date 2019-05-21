@@ -49,5 +49,6 @@ private:
   ats_unique_buf _payload = {nullptr};
   size_t _payload_len     = 0;
   size_t _offset          = 0;
+  UDPConnection *_udp_con;
   IpEndpoint _from;
 };
