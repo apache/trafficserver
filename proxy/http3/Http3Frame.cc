@@ -24,6 +24,7 @@
 #include "tscore/Diags.h"
 #include "quic/QUICIntUtil.h"
 #include "Http3Frame.h"
+#include "Http3Config.h"
 
 ClassAllocator<Http3Frame> http3FrameAllocator("http3FrameAllocator");
 ClassAllocator<Http3DataFrame> http3DataFrameAllocator("http3DataFrameAllocator");
@@ -227,11 +228,18 @@ Http3HeadersFrame::header_block_length() const
 // SETTINGS Frame
 //
 
-Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len) : Http3Frame(buf, buf_len)
+Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len, uint32_t max_settings) : Http3Frame(buf, buf_len)
 {
-  size_t len = this->_payload_offset;
+  size_t len         = this->_payload_offset;
+  uint32_t nsettings = 0;
 
   while (len < buf_len) {
+    if (nsettings >= max_settings) {
+      this->_error_code   = Http3ErrorCode::EXCESSIVE_LOAD;
+      this->_error_reason = reinterpret_cast<const char *>("too many settings");
+      break;
+    }
+
     size_t id_len = QUICVariableInt::size(buf + len);
     uint16_t id   = QUICIntUtil::read_QUICVariableInt(buf + len);
     len += id_len;
@@ -254,6 +262,7 @@ Http3SettingsFrame::Http3SettingsFrame(const uint8_t *buf, size_t buf_len) : Htt
     }
 
     this->_settings.insert(std::make_pair(static_cast<Http3SettingsId>(id), value));
+    ++nsettings;
   }
 
   if (len == buf_len) {
@@ -310,6 +319,12 @@ Http3SettingsFrame::is_valid() const
   return this->_valid;
 }
 
+Http3ErrorUPtr
+Http3SettingsFrame::get_error() const
+{
+  return std::make_unique<Http3ConnectionError>(this->_error_code, this->_error_reason);
+}
+
 bool
 Http3SettingsFrame::contains(Http3SettingsId id) const
 {
@@ -346,6 +361,7 @@ Http3FrameFactory::create_null_frame()
 Http3FrameUPtr
 Http3FrameFactory::create(const uint8_t *buf, size_t len)
 {
+  Http3Config::scoped_config params;
   Http3Frame *frame   = nullptr;
   Http3FrameType type = Http3Frame::type(buf, len);
 
@@ -360,7 +376,7 @@ Http3FrameFactory::create(const uint8_t *buf, size_t len)
     return Http3FrameUPtr(frame, &Http3FrameDeleter::delete_data_frame);
   case Http3FrameType::SETTINGS:
     frame = http3SettingsFrameAllocator.alloc();
-    new (frame) Http3SettingsFrame(buf, len);
+    new (frame) Http3SettingsFrame(buf, len, params->max_settings());
     return Http3FrameUPtr(frame, &Http3FrameDeleter::delete_settings_frame);
   default:
     // Unknown frame

@@ -35,6 +35,7 @@ Http3ConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_max_header_list_size, "proxy.config.http3.max_header_list_size");
   REC_EstablishStaticConfigInt32U(this->_qpack_blocked_streams, "proxy.config.http3.qpack_blocked_streams");
   REC_EstablishStaticConfigInt32U(this->_num_placeholders, "proxy.config.http3.num_placeholders");
+  REC_EstablishStaticConfigInt32U(this->_max_settings, "proxy.config.http3.max_settings");
 }
 
 uint32_t
@@ -59,6 +60,12 @@ uint32_t
 Http3ConfigParams::num_placeholders() const
 {
   return this->_num_placeholders;
+}
+
+uint32_t
+Http3ConfigParams::max_settings() const
+{
+  return this->_max_settings;
 }
 
 //

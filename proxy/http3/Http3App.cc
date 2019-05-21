@@ -308,6 +308,10 @@ Http3SettingsHandler::handle_frame(std::shared_ptr<const Http3Frame> frame)
     return Http3ErrorUPtr(new Http3NoError());
   }
 
+  if (settings_frame->is_valid()) {
+    return settings_frame->get_error();
+  }
+
   // TODO: Add length check: the maximum number of values are 2^62 - 1, but some fields have shorter maximum than it.
   if (settings_frame->contains(Http3SettingsId::HEADER_TABLE_SIZE)) {
     uint64_t header_table_size = settings_frame->get(Http3SettingsId::HEADER_TABLE_SIZE);

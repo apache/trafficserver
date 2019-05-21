@@ -116,8 +116,8 @@ Http3DebugNames::error_code(uint16_t code)
     return "VERSION_FALLBACK";
   case static_cast<uint16_t>(Http3ErrorCode::WRONG_STREAM):
     return "WRONG_STREAM";
-  case static_cast<uint16_t>(Http3ErrorCode::PUSH_LIMIT_EXCEEDED):
-    return "PUSH_LIMIT_EXCEEDED";
+  case static_cast<uint16_t>(Http3ErrorCode::LIMIT_EXCEEDED):
+    return "LIMIT_EXCEEDED";
   case static_cast<uint16_t>(Http3ErrorCode::DUPLICATE_PUSH):
     return "DUPLICATE_PUSH";
   case static_cast<uint16_t>(Http3ErrorCode::UNKNOWN_STREAM_TYPE):
@@ -134,14 +134,14 @@ Http3DebugNames::error_code(uint16_t code)
     return "MISSING_SETTINGS";
   case static_cast<uint16_t>(Http3ErrorCode::UNEXPECTED_FRAME):
     return "UNEXPECTED_FRAME";
+  case static_cast<uint16_t>(Http3ErrorCode::REQUEST_REJECTED):
+    return "REQUEST_REJECTED";
   case static_cast<uint16_t>(Http3ErrorCode::QPACK_DECOMPRESSION_FAILED):
     return "QPACK_DECOMPRESSION_FAILED";
   case static_cast<uint16_t>(Http3ErrorCode::QPACK_ENCODER_STREAM_ERROR):
     return "QPACK_ENCODER_STREAM_ERROR";
   case static_cast<uint16_t>(Http3ErrorCode::QPACK_DECODER_STREAM_ERROR):
     return "QPACK_DECODER_STREAM_ERROR";
-  case static_cast<uint16_t>(Http3ErrorCode::GENERAL_PROTOCOL_ERROR):
-    return "GENERAL_PROTOCOL_ERROR";
   default:
     if (0x0100 <= code && code <= 0x01FF) {
       return "MALFORMED_FRAME";

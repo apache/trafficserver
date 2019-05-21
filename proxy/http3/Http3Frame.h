@@ -120,7 +120,7 @@ class Http3SettingsFrame : public Http3Frame
 {
 public:
   Http3SettingsFrame() : Http3Frame(Http3FrameType::SETTINGS) {}
-  Http3SettingsFrame(const uint8_t *buf, size_t len);
+  Http3SettingsFrame(const uint8_t *buf, size_t len, uint32_t max_settings = 0);
 
   static constexpr size_t MAX_PAYLOAD_SIZE = 60;
   static constexpr std::array<Http3SettingsId, 4> VALID_SETTINGS_IDS{
@@ -134,6 +134,7 @@ public:
   void reset(const uint8_t *buf, size_t len) override;
 
   bool is_valid() const;
+  Http3ErrorUPtr get_error() const;
 
   bool contains(Http3SettingsId id) const;
   uint64_t get(Http3SettingsId id) const;
@@ -143,6 +144,8 @@ private:
   std::map<Http3SettingsId, uint64_t> _settings;
   // TODO: make connection error with HTTP_MALFORMED_FRAME
   bool _valid = false;
+  Http3ErrorCode _error_code;
+  const char *_error_reason = nullptr;
 };
 
 using Http3FrameDeleterFunc  = void (*)(Http3Frame *p);
