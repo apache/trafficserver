@@ -715,7 +715,7 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
   Arena arena;
   char *value;
   uint64_t value_len;
-  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len - read_len, 7)) < 0) {
+  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
     return -1;
   }
   read_len += ret;
@@ -841,7 +841,7 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
   Arena arena;
   char *value;
   uint64_t value_len;
-  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len - read_len, 7)) < 0) {
+  if ((ret = xpack_decode_string(arena, &value, value_len, buf + read_len, buf + buf_len, 7)) < 0) {
     return -1;
   }
   read_len += ret;
