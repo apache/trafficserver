@@ -72,6 +72,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 ts.Disk.sni_yaml.AddLines([
+    'sni:',
     '- fqdn: "*bar.com"',
     '  verify_client: STRICT',
 ])

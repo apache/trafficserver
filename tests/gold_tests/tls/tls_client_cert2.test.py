@@ -86,6 +86,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 ts.Disk.sni_yaml.AddLines([
+    'sni:',
     '- fqdn: bob.bar.com',
     '  client_cert: signed-bar.pem',
     '  client_key: signed-bar.key',

@@ -60,6 +60,7 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.sni_yaml.AddLines([
+  'sni:',
   '- fqdn: bar.com',
   '  disable_h2: true',
   '- fqdn: bob.*.com',

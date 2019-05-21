@@ -81,6 +81,7 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.sni_yaml.AddLines([
+  'sni:',
   '- fqdn: bar.com',
   '  verify_server_policy: ENFORCED',
   '  verify_server_properties: ALL',

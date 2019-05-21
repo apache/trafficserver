@@ -68,6 +68,7 @@ ts.Disk.records_config.update({
 # bar.com should terminate.
 # empty SNI should tunnel to server_bar
 ts.Disk.sni_yaml.AddLines([
+  'sni:',
   '- fqdn: foo.com',
   '  valid_tls_versions_in: [ TLSv1, TLSv1_1 ]'
 ])

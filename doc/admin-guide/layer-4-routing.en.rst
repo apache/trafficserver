@@ -101,6 +101,7 @@ The :file:`sni.yaml` contents would be
 .. code:: yaml
 
 
+   sni:
    - tunnel_route: app-server-29:443
      fqdn: service-1.example.com
 

@@ -92,6 +92,8 @@ ts.Disk.remap_config.AddLine(
 )
 
 ts.Disk.sni_yaml.AddLine(
+    'sni:')
+ts.Disk.sni_yaml.AddLine(
     '- fqdn: bar.com')
 ts.Disk.sni_yaml.AddLine(
     '  client_cert: {0}/signed2-bar.pem'.format(ts.Variables.SSLDir))
@@ -143,6 +145,8 @@ tr2 = Test.AddTestRun("Update config files")
 snipath = ts.Disk.sni_yaml.AbsPath
 recordspath = ts.Disk.records_config.AbsPath
 tr2.Disk.File(snipath, id = "sni_yaml", typename="ats:config"),
+tr2.Disk.sni_yaml.AddLine(
+    'sni:')
 tr2.Disk.sni_yaml.AddLine(
     '- fqdn: bar.com')
 tr2.Disk.sni_yaml.AddLine(

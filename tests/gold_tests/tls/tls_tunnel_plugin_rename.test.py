@@ -73,6 +73,7 @@ ts.Disk.records_config.update({
 # empty should tunnel to server_random (should not happen)
 # newname should tunnel to server_bar
 ts.Disk.sni_yaml.AddLines([
+  "sni:",
   "- fqdn: newname",
   "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port),
   "- fqdn: ''",  #default case

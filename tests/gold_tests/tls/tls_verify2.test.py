@@ -81,6 +81,8 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.sni_yaml.AddLine(
+  'sni:')
+ts.Disk.sni_yaml.AddLine(
   '- fqdn: bar.com')
 ts.Disk.sni_yaml.AddLine(
   '  verify_server_policy: PERMISSIVE')

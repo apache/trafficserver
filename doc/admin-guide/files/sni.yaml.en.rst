@@ -173,6 +173,7 @@ Disable HTTP/2 for ``no-http2.example.com``.
 
 .. code-block:: yaml
 
+   sni:
    - fqdn: no-http2.example.com
      disable_h2: true
 
@@ -180,6 +181,7 @@ Require client certificate verification for ``example.com`` and any server name 
 
 .. code-block:: yaml
 
+   sni:
    - fqdn: example.com
      verify_client: MODERATE
    - fqdn: '*.yahoo.com'
@@ -190,6 +192,7 @@ client certificate.
 
 .. code-block:: yaml
 
+   sni:
    - fqdn: trusted.example.com
      verify_server_policy: DISABLED
      verify_client: STRICT
