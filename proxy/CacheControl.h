@@ -36,9 +36,9 @@
 
 struct RequestData;
 
-const int CC_UNSET_TIME = -1;
+static constexpr int CC_UNSET_TIME = -1;
 
-#define CACHE_CONTROL_TIMEOUT (HRTIME_HOUR * 1)
+static constexpr auto CACHE_CONTROL_TIMEOUT = HRTIME_HOUR;
 
 //   Use 10 second time for purify testing under low
 //     load to verify memory allocation
@@ -53,7 +53,7 @@ enum CacheControlType {
   CC_IGNORE_CLIENT_NO_CACHE,
   CC_IGNORE_SERVER_NO_CACHE,
   CC_PIN_IN_CACHE,
-  CC_TTL_IN_CACHE,
+  CC_TTL_VALUE,
   CC_NUM_TYPES
 };
 
@@ -62,16 +62,21 @@ struct matcher_line;
 class CacheControlResult
 {
 public:
-  inkcoreapi CacheControlResult();
-  void Print();
+  /// @return @c true if TTL is active for this record, @c false if not.
+  bool
+  has_ttl() const
+  {
+    return ttl_min != CC_UNSET_TIME || ttl_max != CC_UNSET_TIME;
+  }
 
   // Data for external use
   //
   //   Describes the cache-control for a specific URL
   //
-  int revalidate_after;
-  int pin_in_cache_for;
-  int ttl_in_cache;
+  int revalidate_after           = CC_UNSET_TIME;
+  int pin_in_cache_for           = CC_UNSET_TIME;
+  int ttl_min                    = CC_UNSET_TIME;
+  int ttl_max                    = CC_UNSET_TIME;
   bool never_cache               = false;
   bool ignore_client_no_cache    = false;
   bool ignore_server_no_cache    = false;
@@ -94,25 +99,18 @@ public:
   int ignore_server_line = -1;
 };
 
-inline CacheControlResult::CacheControlResult()
-  : revalidate_after(CC_UNSET_TIME), pin_in_cache_for(CC_UNSET_TIME), ttl_in_cache(CC_UNSET_TIME)
-
-{
-}
-
 class CacheControlRecord : public ControlBase
 {
 public:
-  CacheControlRecord();
-  CacheControlType directive     = CC_INVALID;
-  int time_arg                   = 0;
-  int cache_responses_to_cookies = -1;
+  CacheControlRecord()                           = default;
+  CacheControlType directive                     = CC_INVALID;
+  int time_arg                                   = CC_UNSET_TIME;
+  enum { EXACTLY, AT_LEAST, AT_MOST } time_style = EXACTLY;
+  int cache_responses_to_cookies                 = -1;
   Result Init(matcher_line *line_info);
   inkcoreapi void UpdateMatch(CacheControlResult *result, RequestData *rdata);
   void Print();
 };
-
-inline CacheControlRecord::CacheControlRecord() : ControlBase() {}
 
 //
 // API to outside world
@@ -121,10 +119,8 @@ class URL;
 struct HttpConfigParams;
 struct OverridableHttpConfigParams;
 
-inkcoreapi void getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableHttpConfigParams *h_txn_conf,
-                                char *tag = nullptr);
-inkcoreapi bool host_rule_in_CacheControlTable();
-inkcoreapi bool ip_rule_in_CacheControlTable();
-
+void getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableHttpConfigParams *h_txn_conf,
+                     char *tag = nullptr);
+bool CacheControl_has_ip_rule();
 void initCacheControl();
 void reloadCacheControl();

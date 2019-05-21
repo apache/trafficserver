@@ -41,6 +41,7 @@
 #     pin-in-cache=<time>
 #     revalidate=<time>
 #     ttl-in-cache=<time>             (force caching and expire after <time>)
+#     ttl-mode=<mode>                 (control use of ttl-in-cache value vs. response)
 #
 # Each line may also contain various "tweaks" which adjust caching parameters.
 #   Tweaks are

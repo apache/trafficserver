@@ -41,34 +41,27 @@
 #include "P_Cache.h"
 #include "tscore/Regex.h"
 
-static const char modulePrefix[] = "[CacheControl]";
+namespace
+{
+constexpr std::string_view MODULE_PREFIX{"[CacheControl]"};
+constexpr std::string_view DEFAULT_TAG{"default"};
 
-#define TWEAK_CACHE_RESPONSES_TO_COOKIES "cache-responses-to-cookies"
+// This is handled outside ControlMatcher because it does not have a value.
+constexpr std::string_view TWEAK_CACHE_RESPONSES_TO_COOKIES{"cache-responses-to-cookies"};
 
-static const char *CC_directive_str[CC_NUM_TYPES] = {
-  "INVALID",
-  "REVALIDATE_AFTER",
-  "NEVER_CACHE",
-  "STANDARD_CACHE",
-  "IGNORE_NO_CACHE",
-  "IGNORE_CLIENT_NO_CACHE",
-  "IGNORE_SERVER_NO_CACHE",
-  "PIN_IN_CACHE",
-  "TTL_IN_CACHE"
-  // "CACHE_AUTH_CONTENT"
-};
+std::array<char const *, CC_NUM_TYPES> CC_directive_str{{"INVALID", "REVALIDATE_AFTER", "NEVER_CACHE", "STANDARD_CACHE",
+                                                         "IGNORE_NO_CACHE", "IGNORE_CLIENT_NO_CACHE", "IGNORE_SERVER_NO_CACHE",
+                                                         "PIN_IN_CACHE", "TTL_IN_CACHE"}};
 
-typedef ControlMatcher<CacheControlRecord, CacheControlResult> CC_table;
+std::array<char const *, 3> CC_TIME_MODE_TAG{{"exactly", "at least", "at most"}};
+
+using CC_Table = ControlMatcher<CacheControlRecord, CacheControlResult>;
 
 // Global Ptrs
-static Ptr<ProxyMutex> reconfig_mutex;
-CC_table *CacheControlTable = nullptr;
+Ptr<ProxyMutex> reconfig_mutex;
+CC_Table *CacheControlTable = nullptr;
 
-void
-CC_delete_table()
-{
-  delete CacheControlTable;
-}
+} // namespace
 
 // struct CC_FreerContinuation
 // Continuation to free old cache control lists after
@@ -77,7 +70,7 @@ CC_delete_table()
 struct CC_FreerContinuation;
 using CC_FreerContHandler = int (CC_FreerContinuation::*)(int, void *);
 struct CC_FreerContinuation : public Continuation {
-  CC_table *p;
+  CC_Table *p;
   int
   freeEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
@@ -86,7 +79,7 @@ struct CC_FreerContinuation : public Continuation {
     delete this;
     return EVENT_DONE;
   }
-  CC_FreerContinuation(CC_table *ap) : Continuation(nullptr), p(ap)
+  CC_FreerContinuation(CC_Table *ap) : Continuation(nullptr), p(ap)
   {
     SET_HANDLER((CC_FreerContHandler)&CC_FreerContinuation::freeEvent);
   }
@@ -119,16 +112,11 @@ cacheControlFile_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type AT
 //
 //   Begin API functions
 //
-bool
-host_rule_in_CacheControlTable()
-{
-  return (CacheControlTable->hostMatch ? true : false);
-}
 
 bool
-ip_rule_in_CacheControlTable()
+CacheControl_has_ip_rule()
 {
-  return (CacheControlTable->ipMatch ? true : false);
+  return CacheControlTable->ipMatch;
 }
 
 void
@@ -136,8 +124,11 @@ initCacheControl()
 {
   ink_assert(CacheControlTable == nullptr);
   reconfig_mutex    = new_ProxyMutex();
-  CacheControlTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
+  CacheControlTable = new CC_Table("proxy.config.cache.control.filename", MODULE_PREFIX.data(), &http_dest_tags);
   REC_RegisterConfigUpdateFunc("proxy.config.cache.control.filename", cacheControlFile_CB, nullptr);
+  if (is_debug_tag_set("cache_control")) {
+    CacheControlTable->Print();
+  }
 }
 
 // void reloadCacheControl()
@@ -151,12 +142,15 @@ reloadCacheControl()
 {
   Note("cache.config loading ...");
 
-  CC_table *newTable;
+  CC_Table *newTable;
 
   Debug("cache_control", "cache.config updated, reloading");
   eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CACHE);
-  newTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
+  newTable = new CC_Table("proxy.config.cache.control.filename", MODULE_PREFIX.data(), &http_dest_tags);
   ink_atomic_swap(&CacheControlTable, newTable);
+  if (is_debug_tag_set("cache_control")) {
+    CacheControlTable->Print();
+  }
 
   Note("cache.config finished loading");
 }
@@ -178,22 +172,14 @@ getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableH
   if (!h_txn_conf->cache_ignore_client_cc_max_age) {
     result->ignore_client_cc_max_age = false;
   }
+  Debug("cache_control", "reval: %d, never-cache: %d, pin: %d, ignore-c: %d ignore-s: %d, ttl: %d .. %d", result->revalidate_after,
+        result->never_cache, result->pin_in_cache_for, result->ignore_client_no_cache, result->ignore_server_no_cache,
+        result->ttl_min, result->ttl_max);
 }
 
 //
 //   End API functions
 //
-
-// void CacheControlResult::Print()
-//
-//  Debugging Method
-//
-void
-CacheControlResult::Print()
-{
-  printf("\t reval: %d, never-cache: %d, pin: %d, ignore-c: %d ignore-s: %d\n", revalidate_after, never_cache, pin_in_cache_for,
-         ignore_client_no_cache, ignore_server_no_cache);
-}
 
 // void CacheControlRecord::Print()
 //
@@ -209,8 +195,8 @@ CacheControlRecord::Print()
   case CC_PIN_IN_CACHE:
     printf("\t\tDirective: %s : %d\n", CC_directive_str[CC_PIN_IN_CACHE], this->time_arg);
     break;
-  case CC_TTL_IN_CACHE:
-    printf("\t\tDirective: %s : %d\n", CC_directive_str[CC_TTL_IN_CACHE], this->time_arg);
+  case CC_TTL_VALUE:
+    printf("\t\tDirective: %s : %s %d\n", CC_directive_str[CC_TTL_VALUE], CC_TIME_MODE_TAG[int(this->time_style)], this->time_arg);
     break;
   case CC_IGNORE_CLIENT_NO_CACHE:
   case CC_IGNORE_SERVER_NO_CACHE:
@@ -225,7 +211,7 @@ CacheControlRecord::Print()
     break;
   }
   if (cache_responses_to_cookies >= 0) {
-    printf("\t\t  - " TWEAK_CACHE_RESPONSES_TO_COOKIES ":%d\n", cache_responses_to_cookies);
+    printf("\t\t  - %s:%d\n", TWEAK_CACHE_RESPONSES_TO_COOKIES.data(), cache_responses_to_cookies);
   }
   ControlBase::Print();
 }
@@ -251,6 +237,9 @@ CacheControlRecord::Init(matcher_line *line_info)
   this->line_num = line_info->line_num;
 
   // First pass for optional tweaks.
+  // This is done because the main loop drops out as soon as a directive is found and anything past
+  // that must be a built in modifier. Therefore any non-built in modifier must be handled in this
+  // special manner. I beseech you, Great Machine Spirits, bring us YAML real soon now...
   for (int i = 0; i < MATCHER_MAX_TOKENS && line_info->num_el; ++i) {
     bool used = false;
     label     = line_info->line[0][i];
@@ -260,12 +249,12 @@ CacheControlRecord::Init(matcher_line *line_info)
     }
 
     if (strcasecmp(label, TWEAK_CACHE_RESPONSES_TO_COOKIES) == 0) {
-      char *ptr = nullptr;
-      int v     = strtol(val, &ptr, 0);
-      if (!ptr || v < 0 || v > 4) {
-        return Result::failure("Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES " must be an integer in the range 0..4");
+      ts::TextView tv{val, strlen(val)};
+      auto v{ts::svto_radix<10>(tv)};
+      if (!tv.empty() || v > 4) {
+        return Result::failure("Value for %s must be an integer in the range 0..4", TWEAK_CACHE_RESPONSES_TO_COOKIES.data());
       } else {
-        cache_responses_to_cookies = v;
+        cache_responses_to_cookies = int(v);
       }
       used = true;
     }
@@ -303,7 +292,7 @@ CacheControlRecord::Init(matcher_line *line_info)
         directive = CC_IGNORE_SERVER_NO_CACHE;
         d_found   = true;
       } else {
-        return Result::failure("%s Invalid action at line %d in cache.config", modulePrefix, line_num);
+        return Result::failure("%s Invalid action at line %d in cache.config", MODULE_PREFIX.data(), line_num);
       }
     } else {
       if (strcasecmp(label, "revalidate") == 0) {
@@ -313,17 +302,30 @@ CacheControlRecord::Init(matcher_line *line_info)
         directive = CC_PIN_IN_CACHE;
         d_found   = true;
       } else if (strcasecmp(label, "ttl-in-cache") == 0) {
-        directive = CC_TTL_IN_CACHE;
+        directive = CC_TTL_VALUE;
         d_found   = true;
+        if ('>' == *val) {
+          time_style = AT_LEAST;
+          ++val;
+        } else if ('<' == *val) {
+          time_style = AT_MOST;
+          ++val;
+        } else {
+          time_style = EXACTLY;
+        }
       }
       // Process the time argument for the remaining directives
       if (d_found == true) {
-        tmp = processDurationString(val, &time_in);
-        if (tmp == nullptr) {
-          this->time_arg = time_in;
-
+        if (0 == strcasecmp(DEFAULT_TAG, val)) {
+          this->time_arg = CC_UNSET_TIME;
         } else {
-          return Result::failure("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
+          tmp = processDurationString(val, &time_in);
+          if (tmp == nullptr) {
+            this->time_arg = time_in;
+
+          } else {
+            return Result::failure("%s %s at line %d in cache.config", MODULE_PREFIX.data(), tmp, line_num);
+          }
         }
       }
     }
@@ -337,14 +339,14 @@ CacheControlRecord::Init(matcher_line *line_info)
   }
 
   if (d_found == false) {
-    return Result::failure("%s No directive in cache.config at line %d", modulePrefix, line_num);
+    return Result::failure("%s No directive in cache.config at line %d", MODULE_PREFIX.data(), line_num);
   }
   // Process any modifiers to the directive, if they exist
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
 
     if (tmp != nullptr) {
-      return Result::failure("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
+      return Result::failure("%s %s at line %d in cache.config", MODULE_PREFIX.data(), tmp, line_num);
     }
   }
 
@@ -364,16 +366,16 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
 
   switch (this->directive) {
   case CC_REVALIDATE_AFTER:
-    if (this->CheckForMatch(h_rdata, result->reval_line) == true) {
+    if (this->CheckForMatch(h_rdata, -1) == true) {
       result->revalidate_after = time_arg;
       result->reval_line       = this->line_num;
       match                    = true;
     }
     break;
   case CC_NEVER_CACHE:
-    if (this->CheckForMatch(h_rdata, result->never_line) == true) {
+    if (this->CheckForMatch(h_rdata, -1) == true) {
       // ttl-in-cache overrides never-cache
-      if (result->ttl_line == -1) {
+      if (!result->has_ttl()) {
         result->never_cache = true;
         result->never_line  = this->line_num;
         match               = true;
@@ -382,7 +384,7 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
     break;
   case CC_STANDARD_CACHE:
     // Standard cache just overrides never-cache
-    if (this->CheckForMatch(h_rdata, result->never_line) == true) {
+    if (this->CheckForMatch(h_rdata, -1) == true) {
       result->never_cache = false;
       result->never_line  = this->line_num;
       match               = true;
@@ -392,7 +394,7 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
   // We cover both client & server cases for this directive
   //  FALLTHROUGH
   case CC_IGNORE_CLIENT_NO_CACHE:
-    if (this->CheckForMatch(h_rdata, result->ignore_client_line) == true) {
+    if (this->CheckForMatch(h_rdata, -1) == true) {
       result->ignore_client_no_cache = true;
       result->ignore_client_line     = this->line_num;
       match                          = true;
@@ -402,27 +404,36 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
     }
   // FALLTHROUGH
   case CC_IGNORE_SERVER_NO_CACHE:
-    if (this->CheckForMatch(h_rdata, result->ignore_server_line) == true) {
+    if (this->CheckForMatch(h_rdata, -1) == true) {
       result->ignore_server_no_cache = true;
       result->ignore_server_line     = this->line_num;
       match                          = true;
     }
     break;
   case CC_PIN_IN_CACHE:
-    if (this->CheckForMatch(h_rdata, result->pin_line) == true) {
+    if (this->CheckForMatch(h_rdata, -1) == true) {
       result->pin_in_cache_for = time_arg;
       result->pin_line         = this->line_num;
       match                    = true;
     }
     break;
-  case CC_TTL_IN_CACHE:
-    if (this->CheckForMatch(h_rdata, result->ttl_line) == true) {
-      result->ttl_in_cache = time_arg;
-      result->ttl_line     = this->line_num;
-      // ttl-in-cache overrides never-cache
-      result->never_cache = false;
-      result->never_line  = this->line_num;
-      match               = true;
+  case CC_TTL_VALUE:
+    if (this->CheckForMatch(h_rdata, -1) == true) {
+      if (time_arg == CC_UNSET_TIME) {
+        result->ttl_min = result->ttl_max = CC_UNSET_TIME;
+      } else {
+        // ttl-in-cache overrides never-cache
+        result->never_cache = false;
+        result->never_line  = this->line_num;
+        if (time_style == AT_LEAST || time_style == EXACTLY) {
+          result->ttl_min = time_arg;
+        }
+        if (time_style == AT_MOST || time_style == EXACTLY) {
+          result->ttl_max = time_arg;
+        }
+      }
+      result->ttl_line = this->line_num;
+      match            = true;
     }
     break;
   case CC_INVALID:
@@ -438,14 +449,12 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
     result->cache_responses_to_cookies = cache_responses_to_cookies;
   }
 
-  if (match == true) {
-    char crtc_debug[80];
+  if (match == true && is_debug_tag_set("cache_control")) {
+    ts::LocalBufferWriter<256> bw;
+    bw.print("Matched '{}' at line {}", CC_directive_str[this->directive], this->line_num);
     if (result->cache_responses_to_cookies >= 0) {
-      snprintf(crtc_debug, sizeof(crtc_debug), " [" TWEAK_CACHE_RESPONSES_TO_COOKIES "=%d]", result->cache_responses_to_cookies);
-    } else {
-      crtc_debug[0] = 0;
+      bw.print(" [{}={:s}]", TWEAK_CACHE_RESPONSES_TO_COOKIES, result->cache_responses_to_cookies);
     }
-
-    Debug("cache_control", "Matched with for %s at line %d%s", CC_directive_str[this->directive], this->line_num, crtc_debug);
+    Debug("cache_control", "%.*s", int(bw.size()), bw.data());
   }
 }

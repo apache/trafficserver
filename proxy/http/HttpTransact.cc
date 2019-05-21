@@ -24,6 +24,7 @@
 #include "tscore/ink_platform.h"
 
 #include <strings.h>
+#include <algorithm>
 #include <cmath>
 
 #include "HttpTransact.h"
@@ -5725,7 +5726,7 @@ HttpTransact::is_cache_response_returnable(State *s)
     return false;
   }
   // If cookies in response and no TTL set, we do not cache the doc
-  if ((s->cache_control.ttl_in_cache <= 0) &&
+  if (!s->cache_control.has_ttl() &&
       do_cookies_prevent_caching((int)s->txn_conf->cache_responses_to_cookies, &s->hdr_info.client_request,
                                  s->cache_info.object_read->response_get(), s->cache_info.object_read->request_get())) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
@@ -5895,7 +5896,7 @@ HttpTransact::is_request_cache_lookupable(State *s)
 
   // If url looks dynamic but a ttl is set, request is cache lookupable
   if ((!s->txn_conf->cache_urls_that_look_dynamic) && url_looks_dynamic(s->hdr_info.client_request.url_get()) &&
-      (s->cache_control.ttl_in_cache <= 0)) {
+      (!s->cache_control.has_ttl())) {
     // We do not want to forward the request for a dynamic URL onto the
     // origin server if the value of the Max-Forwards header is zero.
     int max_forwards = -1;
@@ -6016,7 +6017,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
 
   // Check whether the response is cachable based on its cookie
   // If there are cookies in response but a ttl is set, allow caching
-  if ((s->cache_control.ttl_in_cache <= 0) &&
+  if ((!s->cache_control.has_ttl()) &&
       do_cookies_prevent_caching((int)s->txn_conf->cache_responses_to_cookies, request, response)) {
     TxnDebug("http_trans", "[is_response_cacheable] "
                            "response has uncachable cookies, response is not cachable");
@@ -6030,7 +6031,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   }
   // does server explicitly forbid storing?
   // If OS forbids storing but a ttl is set, allow caching
-  if (!s->cache_info.directives.does_server_permit_storing && (s->cache_control.ttl_in_cache <= 0)) {
+  if (!s->cache_info.directives.does_server_permit_storing && (s->cache_control.ttl_min <= 0)) {
     TxnDebug("http_trans", "[is_response_cacheable] server does not permit storing and config file does not "
                            "indicate that server directive should be ignored");
     return false;
@@ -6039,10 +6040,9 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
 
   // does config explicitly forbid storing?
   // ttl overrides other config parameters
-  if ((!s->cache_info.directives.does_config_permit_storing && (s->cache_control.ttl_in_cache <= 0)) ||
-      (s->cache_control.never_cache)) {
+  if ((!s->cache_info.directives.does_config_permit_storing && (s->cache_control.ttl_max <= 0)) || (s->cache_control.never_cache)) {
     TxnDebug("http_trans", "[is_response_cacheable] config doesn't allow storing, and cache control does not "
-                           "say to ignore no-cache and does not specify never-cache or a ttl");
+                           "say to ignore no-cache and does not specify never-cache or a minimum ttl");
     return false;
   }
   // TxnDebug("http_trans", "[is_response_cacheable] config permits storing");
@@ -6061,9 +6061,9 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // only makes sense when the server sends back a
   // 200 and a document.
   if (response_code == HTTP_STATUS_OK) {
-    // If a ttl is set: no header required for caching
-    // otherwise: follow parameter http.cache.required_headers
-    if (s->cache_control.ttl_in_cache <= 0) {
+    // If a minimum ttl is set then no header required for caching
+    // otherwise follow parameter http.cache.required_headers
+    if (s->cache_control.ttl_min <= 0) {
       uint32_t cc_mask = (MIME_COOKED_MASK_CC_MAX_AGE | MIME_COOKED_MASK_CC_S_MAXAGE);
       // server did not send expires header or last modified
       // and we are configured to not cache without them.
@@ -6116,11 +6116,11 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     return true;
   } else if (indicator < 0) { // not cacheable indicated by cache control header
 
-    // If a ttl is set, allow caching even if response contains
+    // If a minimum ttl is set, allow caching even if response contains
     // Cache-Control headers to prevent caching
-    if (s->cache_control.ttl_in_cache > 0) {
+    if (s->cache_control.ttl_min > 0) {
       TxnDebug("http_trans",
-               "[is_response_cacheable] Cache-control header directives in response overridden by ttl in cache.config");
+               "[is_response_cacheable] Cache-control header directives in response overridden by minimum ttl in cache.config");
     } else {
       TxnDebug("http_trans", "[is_response_cacheable] NO by response cache control");
       return false;
@@ -6152,9 +6152,9 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   }
   // if it's a POST request and no positive indicator from cache-control
   if (req_method == HTTP_WKSIDX_POST) {
-    // allow caching for a POST requests w/o Expires but with a ttl
-    if (s->cache_control.ttl_in_cache > 0) {
-      TxnDebug("http_trans", "[is_response_cacheable] POST method with a TTL");
+    // allow caching for a POST requests w/o Expires but with a minimum ttl
+    if (s->cache_control.ttl_min > 0) {
+      TxnDebug("http_trans", "[is_response_cacheable] POST method with a minimum TTL");
     } else {
       TxnDebug("http_trans", "[is_response_cacheable] NO POST w/o Expires or CC");
       return false;
@@ -7122,7 +7122,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
   }
 
   // The freshness limit must always fall within the min and max guaranteed bounds.
-  min_freshness_bounds = std::max((MgmtInt)0, s->txn_conf->cache_guaranteed_min_lifetime);
+  min_freshness_bounds = std::max<MgmtInt>(0, s->txn_conf->cache_guaranteed_min_lifetime);
   max_freshness_bounds = s->txn_conf->cache_guaranteed_max_lifetime;
 
   // Heuristic freshness can be more strict.
@@ -7130,17 +7130,19 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
     min_freshness_bounds = std::max(min_freshness_bounds, s->txn_conf->cache_heuristic_min_lifetime);
     max_freshness_bounds = std::min(max_freshness_bounds, s->txn_conf->cache_heuristic_max_lifetime);
   }
-  // Now clip the freshness limit.
-  if (freshness_limit > max_freshness_bounds) {
-    freshness_limit = max_freshness_bounds;
+  // clamp if TTL values are set.
+  if (s->cache_control.ttl_min > 0) {
+    min_freshness_bounds = std::max<MgmtInt>(min_freshness_bounds, s->cache_control.ttl_min);
   }
-  if (freshness_limit < min_freshness_bounds) {
-    freshness_limit = min_freshness_bounds;
+  if (s->cache_control.ttl_max > 0) {
+    max_freshness_bounds = std::min<MgmtInt>(max_freshness_bounds, s->cache_control.ttl_max);
   }
+
+  freshness_limit = std::clamp<int>(freshness_limit, min_freshness_bounds, max_freshness_bounds);
 
   TxnDebug("http_match", "calculate_document_freshness_limit --- final freshness_limit = %d", freshness_limit);
 
-  return (freshness_limit);
+  return freshness_limit;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -7169,26 +7171,26 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   if (s->cache_open_write_fail_action & CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE) {
     if (is_stale_cache_response_returnable(s)) {
       TxnDebug("http_match", "[what_is_document_freshness] cache_serve_stale_on_write_lock_fail, return FRESH");
-      return (FRESHNESS_FRESH);
+      return FRESHNESS_FRESH;
     }
   }
 
-  //////////////////////////////////////////////////////
-  // If config file has a ttl-in-cache field set,     //
-  // it has priority over any other http headers and  //
-  // other configuration parameters.                  //
-  //////////////////////////////////////////////////////
-  if (s->cache_control.ttl_in_cache > 0) {
+  //////////////////////////////////////////////////////////
+  // If config file has a minimum ttl-in-cache field set, //
+  // it has priority over any other http headers and      //
+  // other configuration parameters.                      //
+  //////////////////////////////////////////////////////////
+  if (s->cache_control.has_ttl()) {
     // what matters if ttl is set is not the age of the document
     // but for how long it has been stored in the cache (resident time)
     int resident_time = s->current.now - s->response_received_time;
 
-    TxnDebug("http_match", "[..._document_freshness] ttl-in-cache = %d, resident time = %d", s->cache_control.ttl_in_cache,
-             resident_time);
-    if (resident_time > s->cache_control.ttl_in_cache) {
-      return (FRESHNESS_STALE);
-    } else {
-      return (FRESHNESS_FRESH);
+    TxnDebug("http_match", "[..._document_freshness] ttl-in-cache = [%d .. %d], resident time = %d", s->cache_control.ttl_min,
+             s->cache_control.ttl_max, resident_time);
+    if (s->cache_control.ttl_min > 0 && resident_time <= s->cache_control.ttl_min) {
+      return FRESHNESS_FRESH;
+    } else if (s->cache_control.ttl_max > 0 && resident_time > s->cache_control.ttl_max) {
+      return FRESHNESS_STALE;
     }
   }
 

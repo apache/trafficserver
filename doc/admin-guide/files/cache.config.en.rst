@@ -194,6 +194,7 @@ specifiers of the rule in question.
    -  ``m`` for minutes; for example: 5m
    -  ``s`` for seconds; for example: 20s
    -  mixed units; for example: 1h15m20s
+   -  ``default`` for default behavior; this must be literally ``default`` with no other characters.
 
 .. _cache-config-format-revalidate:
 
@@ -204,11 +205,24 @@ specifiers of the rule in question.
 .. _cache-config-format-ttl-in-cache:
 
 ``ttl-in-cache``
-   Forces object(s) to become cached, as if they had a
-   ``Cache-Control: max-age:<time>`` header. Can be overruled by requests with
-   cookies. The value is the amount of time object(s) are to be kept in the
-   cache, regardless of ``Cache-Control`` response headers from the origin
-   server. Use the same time formats as ``pin-in-cache``.
+   Sets the internal duration to cache an object. This is used to compute the effective TTL for an
+   object in cache. This can be an exact value, a minimum, or a maximum. That is determined by the
+   first character after the '='. If it is '>' then the time value is a minimum. If the character is
+   '<' then the time value is a maximum. Otherwise it is an exact time.
+
+   A minimum time will force an object to be cached regardless of cache control directives for at
+   least the time value. Header directives that specify a longer cache time will be effective.
+
+   A maximum time will prevent an object from being fresh in cache for longer than the time value.
+   Header directives that specify a short cache time will be effective (including ones that specify
+   no caching, e.g. a cache time of zero).
+
+   An exact time is both a minimum and a maximum and as a result header directives are ignored and
+   the cache time is forced to the time value.
+
+   A minimum and maximum can be specified using multiple rules. See `Examples`_.
+
+   This value uses the same time format as ``pin-in-cache``.
 
 Matching Multiple Rules
 =======================
@@ -251,15 +265,25 @@ prefix. The former fails at this goal, because the second rule will match all
 Javascript files and will override any previous ``revalidate`` values that may
 have been set by prior rules.
 
+The time value ``default`` exists to be used in this situation to effectively cancel a time value
+directive. If the time value is literally "default" then the directive is treated as if it had never
+been set. In this case, if Javascript files with the prefix "bar" should be revalidated in the
+normal (default) way, this could be done with the additional rule ::
+
+    dest_domain=example.com prefix=bar suffix=js revalidate=default
+
+While this can be done even for a single matching rule, that is no different than not having a rule
+at all.
+
 ttl-in-cache and never-cache
 ----------------------------
 
 When multiple rules are matched in the same request, ``never-cache`` will always
 be overwritten by ``ttl-in-cache``. For example::
 
-    # ttl-in-cache=1d never-cache=false
     dest_domain=example.com action=never-cache
     dest_domain=example.com ttl-in-cache=1d
+    # Result: ttl-in-cache=1d never-cache=false
 
 Examples
 ========
@@ -281,3 +305,15 @@ Prevent objects from being evicted from cache::
 
    url_regex=example.com/game/.* pin-in-cache=1h
 
+Prevent any object from ``example.com`` from being in the cache more than 30 minutes. ::
+
+   dest_domain=example.com ttl_in_cache=<30m
+
+As before, but have ".jpg" and ".gif" files to use the upstream specified TTL, and ".html" files
+to always be cached at least 60 minutes, longer if the upstream allows it, up to 7 days. ::
+
+   dest_domain=example.com ttl_in_cache=<30m
+   dest_domain=example.com suffix=.jpg ttl_in_cache=default
+   dest_domain=example.com suffix=.gif ttl_in_cache=default
+   dest_domain=example.com suffix=html ttl_in_cache=>60m
+   dest_domain=example.com suffix=html ttl_in_cache=<7d
