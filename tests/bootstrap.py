@@ -28,11 +28,13 @@ import sys
 pip_packages = [
     "autest==1.7.3",
     "hyper",
-    "requests",
     "dnslib",
-    "httpbin",
+    "traffic-replay",  # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
+    # These are likely to be available via yum/dnf or apt-get
+    "requests",
+    "httpbin",  # pulls in quite a lot
     "gunicorn",
-    "traffic-replay"  # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
+    "pipenv"
 ]
 
 
