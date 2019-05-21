@@ -111,8 +111,8 @@ QUICPacketHandler::_send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IO
       }
     }
 
-    QUICDebugDS(dcid, scid, "send %s packet to %s size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),
-                ats_ip_nptop(&addr, ipb, sizeof(ipb)), buf_len);
+    QUICDebugDS(dcid, scid, "send %s packet to %s from port %u size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),
+                ats_ip_nptop(&addr, ipb, sizeof(ipb)), udp_con->getPortNum(), buf_len);
   }
 
   udp_con->send(this->_get_continuation(), udp_packet);
