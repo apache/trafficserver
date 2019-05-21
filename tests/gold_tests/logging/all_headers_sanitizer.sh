@@ -21,5 +21,5 @@ do
     # individual headers on separate lines, then sort the lines.
     #
     echo $LN | sed 's/}}/}}\
-/g' | sort
+/g' | sort --ignore-nonprinting  --dictionary-order
 done

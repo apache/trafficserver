@@ -9,21 +9,21 @@
 
 ({__AGE__}}
 ({__ATS_SERVER__}}
-({__DATE__}}
 {{Cache-Control}:{max-age=85000}}
 {{Connection}:{keep-alive}}
 {{Content-Length}:{3}}
-
 ({__DATE__}}
+
 {{Cache-Control}:{max-age=85000}}
 {{Connection}:{close}}
 {{Content-Length}:{3}}
+({__DATE__}}
 
-({__VIA__}}
 {{Accept}:{*/*}}
 {{Client-ip}:{127.0.0.1}}
 {{Host}:{127.0.0.1__TS_PORT__}}
 {{User-Agent}:{007}}
+({__VIA__}}
 {{X-Forwarded-For}:{127.0.0.1}}
 {{x-header0}:{abcdefghijklmnopabcdefghijklmnopabcdefghijklmnopabcdefghijklmnopabcdefghijklmnopabcdefghijklmnopabcdefghijklmnopabcdefghijklmnop}}
 {{x-header1}:{abcdefghijklmnopabcdefghijklmnopabcdefghijklmnopabcdefghijklmnopabcdefghijklmnopabcdefghijklmnopabcdefghijklmnopabcdefghijklmnop}}
@@ -42,18 +42,18 @@ END_TXN
 
 ({__AGE__}}
 ({__ATS_SERVER__}}
-({__DATE__}}
 {{Cache-Control}:{max-age=85000}}
 {{Connection}:{keep-alive}}
 {{Content-Length}:{3}}
+({__DATE__}}
 
 
 
 ({__AGE__}}
 ({__ATS_SERVER__}}
-({__DATE__}}
 {{Cache-Control}:{max-age=85000}}
 {{Connection}:{keep-alive}}
 {{Content-Length}:{3}}
+({__DATE__}}
 END_TXN
 
