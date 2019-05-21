@@ -39,7 +39,6 @@ YamlSNIConfig::loader(const char *cfgFilename)
   try {
     YAML::Node config = YAML::LoadFile(cfgFilename);
     if (config.IsNull()) {
-      Warning("%s is empty", cfgFilename);
       return ts::Errata();
     }
 

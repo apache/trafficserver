@@ -50,7 +50,6 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
   YAML::Node config = YAML::LoadFile(cfgFilename);
 
   if (config.IsNull()) {
-    Warning("logging.yaml is empty");
     return false;
   }
 
