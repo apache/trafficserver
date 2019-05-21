@@ -247,5 +247,6 @@ TEST_CASE("Http3FrameFactory Fast Create Unknown Frame", "[http3]")
     0x0f, // Type
   };
   std::shared_ptr<const Http3Frame> frame1 = factory.fast_create(buf1, sizeof(buf1));
-  CHECK(frame1 == nullptr);
+  CHECK(frame1);
+  CHECK(frame1->type() == Http3FrameType::UNKNOWN);
 }
