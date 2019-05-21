@@ -64,7 +64,7 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
   if (format_str) {
     const char *tag                = " %<phn>";
     const size_t m_format_str_size = strlen(format_str) + (m_tagging_on ? strlen(tag) : 0) + 1;
-    m_format_str                   = (char *)ats_malloc(m_format_str_size);
+    m_format_str                   = static_cast<char *>(ats_malloc(m_format_str_size));
     ink_strlcpy(m_format_str, format_str, m_format_str_size);
     if (m_tagging_on) {
       Note("Log tagging enabled, adding %%<phn> field at the end of "
@@ -114,7 +114,7 @@ LogFormat::id_from_name(const char *name)
      * This problem is only known to occur on Linux which
      * is a 32-bit OS.
      */
-    id = (int32_t)hash.fold() & 0x7fffffff;
+    id = static_cast<int32_t>(hash.fold()) & 0x7fffffff;
 #else
     id = (int32_t)hash.fold();
 #endif
@@ -139,7 +139,7 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
     m_valid = false;
   } else {
     if (m_aggregate) {
-      m_agg_marshal_space = (char *)ats_malloc(m_field_count * INK_MIN_ALIGN);
+      m_agg_marshal_space = static_cast<char *>(ats_malloc(m_field_count * INK_MIN_ALIGN));
     }
 
     if (m_name_str) {
@@ -572,9 +572,9 @@ LogFormat::parse_escape_string(const char *str, int len)
     return -1;
   }
 
-  a = (unsigned char)str[start + 1];
-  b = (unsigned char)str[start + 2];
-  c = (unsigned char)str[start + 3];
+  a = static_cast<unsigned char>(str[start + 1]);
+  b = static_cast<unsigned char>(str[start + 2]);
+  c = static_cast<unsigned char>(str[start + 3]);
 
   if (isdigit(a) && isdigit(b)) {
     sum = (a - '0') * 64 + (b - '0') * 8 + (c - '0');
@@ -643,9 +643,9 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
   // each is guaranteed to be smaller (or the same size) as the format
   // string.
   //
-  unsigned len = (unsigned)::strlen(format_str);
-  *printf_str  = (char *)ats_malloc(len + 1);
-  *fields_str  = (char *)ats_malloc(len + 1);
+  unsigned len = static_cast<unsigned>(::strlen(format_str));
+  *printf_str  = static_cast<char *>(ats_malloc(len + 1));
+  *fields_str  = static_cast<char *>(ats_malloc(len + 1));
 
   unsigned printf_pos  = 0;
   unsigned fields_pos  = 0;
@@ -692,10 +692,10 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
 
         if (escape_char == '\\') {
           start += 1;
-          (*printf_str)[printf_pos++] = (char)escape_char;
+          (*printf_str)[printf_pos++] = static_cast<char>(escape_char);
         } else if (escape_char >= 0) {
           start += 3;
-          (*printf_str)[printf_pos++] = (char)escape_char;
+          (*printf_str)[printf_pos++] = static_cast<char>(escape_char);
         } else {
           memcpy(&(*printf_str)[printf_pos], &format_str[start], stop - start + 1);
           printf_pos += stop - start + 1;
@@ -710,10 +710,10 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
 
       if (escape_char == '\\') {
         start += 1;
-        (*printf_str)[printf_pos++] = (char)escape_char;
+        (*printf_str)[printf_pos++] = static_cast<char>(escape_char);
       } else if (escape_char >= 0) {
         start += 3;
-        (*printf_str)[printf_pos++] = (char)escape_char;
+        (*printf_str)[printf_pos++] = static_cast<char>(escape_char);
       } else {
         (*printf_str)[printf_pos++] = format_str[start];
       }

@@ -502,7 +502,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
       host_hdr_len = 0;
     }
 
-    const char *tmp = (const char *)memchr(host_hdr, ':', host_hdr_len);
+    const char *tmp = static_cast<const char *>(memchr(host_hdr, ':', host_hdr_len));
 
     if (tmp == nullptr) {
       host_len = host_hdr_len;

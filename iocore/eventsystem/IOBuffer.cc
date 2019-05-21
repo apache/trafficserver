@@ -47,7 +47,7 @@ void
 init_buffer_allocators(int iobuffer_advice)
 {
   for (int i = 0; i < DEFAULT_BUFFER_SIZES; i++) {
-    int64_t s = DEFAULT_BUFFER_BASE_SIZE * (((int64_t)1) << i);
+    int64_t s = DEFAULT_BUFFER_BASE_SIZE * ((static_cast<int64_t>(1)) << i);
     int64_t a = DEFAULT_BUFFER_ALIGNMENT;
     int n     = i <= default_large_iobuffer_size ? DEFAULT_BUFFER_NUMBER : DEFAULT_HUGE_BUFFER_NUMBER;
     if (s < a) {
@@ -83,7 +83,7 @@ MIOBuffer::remove_append(IOBufferReader *r)
 int64_t
 MIOBuffer::write(const void *abuf, int64_t alen)
 {
-  const char *buf = (const char *)abuf;
+  const char *buf = static_cast<const char *>(abuf);
   int64_t len     = alen;
   while (len) {
     if (!_writer) {
@@ -186,7 +186,7 @@ MIOBuffer::puts(char *s, int64_t len)
       return -1;
     }
     if (!*pb || *pb == '\n') {
-      int64_t n = (int64_t)(pb - s);
+      int64_t n = static_cast<int64_t>(pb - s);
       memcpy(end(), s, n + 1); // Up to and including '\n'
       end()[n + 1] = 0;
       fill(n + 1);
@@ -201,7 +201,7 @@ MIOBuffer::puts(char *s, int64_t len)
 int64_t
 IOBufferReader::read(void *ab, int64_t len)
 {
-  char *b       = (char *)ab;
+  char *b       = static_cast<char *>(ab);
   int64_t n     = len;
   int64_t l     = block_read_avail();
   int64_t bytes = 0;
@@ -243,9 +243,9 @@ IOBufferReader::memchr(char c, int64_t len, int64_t offset)
       bytes = len;
     }
     char *s = b->start() + offset;
-    char *p = (char *)::memchr(s, c, bytes);
+    char *p = static_cast<char *>(::memchr(s, c, bytes));
     if (p) {
-      return (int64_t)(o - start_offset + p - s);
+      return static_cast<int64_t>(o - start_offset + p - s);
     }
     o += bytes;
     len -= bytes;

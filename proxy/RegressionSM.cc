@@ -100,7 +100,7 @@ RegressionSM::regression_sm_waiting(int /* event ATS_UNUSED */, void *data)
     return EVENT_DONE;
   }
   if (parallel || nwaiting > 1) {
-    ((Event *)data)->schedule_in(REGRESSION_SM_RETRY);
+    (static_cast<Event *>(data))->schedule_in(REGRESSION_SM_RETRY);
     return EVENT_CONT;
   }
   run();
@@ -193,9 +193,9 @@ RegressionSM::run()
         x = children[ichild];
       } else {
         if (ichild != n - 1) {
-          x = children[(intptr_t)0]->clone();
+          x = children[static_cast<intptr_t>(0)]->clone();
         } else {
-          x = children[(intptr_t)0];
+          x = children[static_cast<intptr_t>(0)];
         }
       }
       if (!ichild) {
@@ -221,7 +221,7 @@ Lretry:
 
 RegressionSM::RegressionSM(const RegressionSM &ao) : Continuation(ao)
 {
-  RegressionSM &o = *(RegressionSM *)&ao;
+  RegressionSM &o = *const_cast<RegressionSM *>(&ao);
 
   t        = o.t;
   status   = o.status;

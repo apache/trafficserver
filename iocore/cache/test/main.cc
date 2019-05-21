@@ -33,7 +33,7 @@ test_done()
   TSSystemState::shut_down_event_system();
 }
 
-const char *GLOBAL_DATA = (char *)ats_malloc(10 * 1024 * 1024 + 3); // 10M
+const char *GLOBAL_DATA = static_cast<char *>(ats_malloc(10 * 1024 * 1024 + 3)); // 10M
 
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
@@ -166,7 +166,7 @@ CacheWriteTest::write_event(int event, void *e)
 {
   switch (event) {
   case CACHE_EVENT_OPEN_WRITE:
-    this->vc = (CacheVC *)e;
+    this->vc = static_cast<CacheVC *>(e);
     /* fall through */
   case CACHE_EVENT_OPEN_WRITE_FAILED:
     this->process_event(event);
@@ -219,7 +219,7 @@ CacheReadTest::read_event(int event, void *e)
 {
   switch (event) {
   case CACHE_EVENT_OPEN_READ:
-    this->vc = (CacheVC *)e;
+    this->vc = static_cast<CacheVC *>(e);
     /* fall through */
   case CACHE_EVENT_OPEN_READ_FAILED:
     this->process_event(event);

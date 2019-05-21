@@ -99,7 +99,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
         }
         break;
       case P_STRICT_ROUND_ROBIN:
-        cur_index = ink_atomic_increment((int32_t *)&result->rec->rr_next, 1);
+        cur_index = ink_atomic_increment(reinterpret_cast<int32_t *>(&result->rec->rr_next), 1);
         cur_index = result->start_parent = cur_index % num_parents;
         break;
       case P_NO_ROUND_ROBIN:
@@ -117,7 +117,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
     latched_parent = cur_index = (result->last_parent + 1) % num_parents;
 
     // Check to see if we have wrapped around
-    if ((unsigned int)cur_index == result->start_parent) {
+    if (static_cast<unsigned int>(cur_index) == result->start_parent) {
       // We've wrapped around so bypass if we can
       if (result->rec->go_direct == true) {
         // Could not find a parent
@@ -181,7 +181,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       return;
     }
     latched_parent = cur_index = (cur_index + 1) % num_parents;
-  } while ((unsigned int)cur_index != result->start_parent);
+  } while (static_cast<unsigned int>(cur_index) != result->start_parent);
 
   if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
     result->result = PARENT_DIRECT;

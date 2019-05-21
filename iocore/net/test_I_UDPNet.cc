@@ -161,15 +161,15 @@ udp_client(char *buf)
   tv.tv_sec  = 20;
   tv.tv_usec = 0;
 
-  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv));
-  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
+  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<char *>(&tv), sizeof(tv));
+  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char *>(&tv), sizeof(tv));
 
   sockaddr_in addr;
   addr.sin_family      = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   addr.sin_port        = htons(port);
 
-  ssize_t n = sendto(sock, payload, sizeof(payload), 0, (struct sockaddr *)&addr, sizeof(addr));
+  ssize_t n = sendto(sock, payload, sizeof(payload), 0, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr));
   if (n < 0) {
     std::cout << "Couldn't send udp packet" << std::endl;
     close(sock);

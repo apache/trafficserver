@@ -29,7 +29,7 @@
 
 using namespace std;
 
-uint32_t test_values[] = {
+const int32_t test_values[] = {
   0x1ff8,     13, 0x7fffd8,  23, 0xfffffe2,  28, 0xfffffe3, 28, 0xfffffe4, 28, 0xfffffe5,  28, 0xfffffe6,  28, 0xfffffe7, 28,
   0xfffffe8,  28, 0xffffea,  24, 0x3ffffffc, 30, 0xfffffe9, 28, 0xfffffea, 28, 0x3ffffffd, 30, 0xfffffeb,  28, 0xfffffec, 28,
   0xfffffed,  28, 0xfffffee, 28, 0xfffffef,  28, 0xffffff0, 28, 0xffffff1, 28, 0xffffff2,  28, 0x3ffffffe, 30, 0xffffff3, 28,
@@ -68,14 +68,14 @@ void
 random_test()
 {
   const int size  = 1024;
-  char *dst_start = (char *)malloc(size * 2);
+  char *dst_start = static_cast<char *>(malloc(size * 2));
   char string[size];
   for (char &i : string) {
     // coverity[dont_call]
     long num = lrand48();
-    i        = (char)num;
+    i        = static_cast<char>(num);
   }
-  const uint8_t *src = (const uint8_t *)string;
+  const uint8_t *src = reinterpret_cast<const uint8_t *>(string);
   uint32_t src_len   = sizeof(string);
 
   int bytes = huffman_decode(dst_start, src, src_len);
@@ -143,19 +143,20 @@ values_test()
 
 // NOTE: Test data from "C.6.1 First Response" in RFC 7541.
 const static struct {
-  uint8_t *src;
+  const uint8_t *src;
   int64_t src_len;
-  uint8_t *expect;
+  const uint8_t *expect;
   int64_t expect_len;
 } huffman_encode_test_data[] = {
-  {(uint8_t *)"", 0, (uint8_t *)"", 0},
-  {(uint8_t *)"0", 1, (uint8_t *)"\x07", 1},
-  {(uint8_t *)"302", 3, (uint8_t *)"\x64\x02", 2},
-  {(uint8_t *)"private", 7, (uint8_t *)"\xae\xc3\x77\x1a\x4b", 5},
-  {(uint8_t *)"Mon, 21 Oct 2013 20:13:21 GMT", 29,
-   (uint8_t *)"\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66\xe0\x82\xa6\x2d\x1b\xff", 22},
-  {(uint8_t *)"https://www.example.com", 23, (uint8_t *)"\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43\xd3",
-   17}};
+  {reinterpret_cast<const uint8_t *>(""), 0, reinterpret_cast<const uint8_t *>(""), 0},
+  {reinterpret_cast<const uint8_t *>("0"), 1, reinterpret_cast<const uint8_t *>("\x07"), 1},
+  {reinterpret_cast<const uint8_t *>("302"), 3, reinterpret_cast<const uint8_t *>("\x64\x02"), 2},
+  {reinterpret_cast<const uint8_t *>("private"), 7, reinterpret_cast<const uint8_t *>("\xae\xc3\x77\x1a\x4b"), 5},
+  {reinterpret_cast<const uint8_t *>("Mon, 21 Oct 2013 20:13:21 GMT"), 29,
+   reinterpret_cast<const uint8_t *>("\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66\xe0\x82\xa6\x2d\x1b\xff"),
+   22},
+  {reinterpret_cast<const uint8_t *>("https://www.example.com"), 23,
+   reinterpret_cast<const uint8_t *>("\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43\xd3"), 17}};
 
 void
 encode_test()

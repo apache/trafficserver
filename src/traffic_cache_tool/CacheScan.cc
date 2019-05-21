@@ -39,7 +39,7 @@ CacheScan::Scan(bool search)
   int64_t guessed_size = 1048576; // 1M
   Errata zret;
   std::bitset<65536> dir_bitset;
-  char *stripe_buff2 = (char *)ats_memalign(ats_pagesize(), guessed_size);
+  char *stripe_buff2 = static_cast<char *>(ats_memalign(ats_pagesize(), guessed_size));
   for (int s = 0; s < this->stripe->_segments; s++) {
     dir_bitset.reset();
     for (int b = 0; b < this->stripe->_buckets; b++) {
@@ -54,7 +54,7 @@ CacheScan::Scan(bool search)
           int64_t size = dir_approx_size(e);
           if (size > guessed_size) {
             ats_free(stripe_buff2);
-            stripe_buff2 = (char *)ats_memalign(ats_pagesize(), dir_approx_size(e));
+            stripe_buff2 = static_cast<char *>(ats_memalign(ats_pagesize(), dir_approx_size(e)));
           }
           int fd         = this->stripe->_span->_fd;
           int64_t offset = this->stripe->stripe_offset(e);
@@ -182,8 +182,8 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
   ink_assert(hh->m_free_start == nullptr);
 
   // Convert Heap offsets to pointers
-  hh->m_data_start                 = ((char *)hh) + (intptr_t)hh->m_data_start;
-  hh->m_free_start                 = ((char *)hh) + hh->m_size;
+  hh->m_data_start                 = (reinterpret_cast<char *>(hh)) + (intptr_t)hh->m_data_start;
+  hh->m_free_start                 = (reinterpret_cast<char *>(hh)) + hh->m_size;
   hh->m_ronly_heap[0].m_heap_start = ((char *)hh) + (intptr_t)hh->m_ronly_heap[0].m_heap_start;
 
   // Crazy Invariant - If we are sitting in a ref counted block,
@@ -206,13 +206,13 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
   intptr_t offset = (intptr_t)hh;
 
   while (obj_data < hh->m_free_start) {
-    HdrHeapObjImpl *obj = (HdrHeapObjImpl *)obj_data;
+    HdrHeapObjImpl *obj = reinterpret_cast<HdrHeapObjImpl *>(obj_data);
     if (!obj_is_aligned(obj)) {
       std::cout << "Invalid alignment of object of type HdrHeapObjImpl" << std::endl;
       return zret;
     }
 
-    if (obj->m_type == (unsigned)obj_type && *found_obj == nullptr) {
+    if (obj->m_type == static_cast<unsigned>(obj_type) && *found_obj == nullptr) {
       *found_obj = obj;
     }
     // TODO : fix this switch
@@ -255,7 +255,7 @@ Errata
 CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 {
   Errata zret;
-  HTTPCacheAlt *alt = (HTTPCacheAlt *)buf;
+  HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
   int orig_len      = len;
 
   if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
@@ -305,11 +305,11 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
   // request hdrs
 
-  HdrHeap *heap   = (HdrHeap *)(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
+  HdrHeap *heap   = reinterpret_cast<HdrHeap *>(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
   HTTPHdrImpl *hh = nullptr;
   int tmp         = 0;
-  if (heap != nullptr && ((char *)heap - buf) < len) {
-    tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
+  if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < len) {
+    tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       zret.push(0, 0, "HTTPInfo::request unmarshal failed");
       return zret;
@@ -323,9 +323,9 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
   // response hdrs
 
-  heap = (HdrHeap *)(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
-  if (heap != nullptr && ((char *)heap - buf) < len) {
-    tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
+  heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
+  if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < len) {
+    tmp = this->unmarshal(heap, len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       zret.push(0, 0, "HTTPInfo::response unmarshal failed");
       return zret;
@@ -349,11 +349,12 @@ CacheScan::check_url(ts::MemSpan<char> &mem, URLImpl *url)
   bool in_bound = false; // boolean to check if address in bound
   if (!url->m_ptr_scheme) {
     in_bound = true; // nullptr is valid
-  } else if (mem.contains((char *)url->m_ptr_scheme)) {
+  } else if (mem.contains(const_cast<char *>(url->m_ptr_scheme))) {
     in_bound = true;
   }
 
-  return in_bound && mem.contains((char *)url) && !(url == nullptr || url->m_length <= 0 || url->m_type != HDR_HEAP_OBJ_URL);
+  return in_bound && mem.contains(reinterpret_cast<char *>(url)) &&
+         !(url == nullptr || url->m_length <= 0 || url->m_type != HDR_HEAP_OBJ_URL);
 }
 
 Errata
@@ -362,11 +363,11 @@ CacheScan::get_alternates(const char *buf, int length, bool search)
   Errata zret;
   ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
 
-  char *start            = (char *)buf;
+  char *start            = const_cast<char *>(buf);
   RefCountObj *block_ref = nullptr;
-  ts::MemSpan<char> doc_mem((char *)buf, length);
+  ts::MemSpan<char> doc_mem(const_cast<char *>(buf), length);
 
-  while (length - (buf - start) > (int)sizeof(HTTPCacheAlt)) {
+  while (length - (buf - start) > static_cast<int>(sizeof(HTTPCacheAlt))) {
     HTTPCacheAlt *a = (HTTPCacheAlt *)buf;
 
     if (a->m_magic == CACHE_ALT_MAGIC_MARSHALED) {
@@ -377,7 +378,7 @@ CacheScan::get_alternates(const char *buf, int length, bool search)
       } else if (!a->m_request_hdr.m_http) {
         std::cerr << "no http object found in the request header object" << std::endl;
         return zret;
-      } else if (!doc_mem.contains((char *)a->m_request_hdr.m_http)) {
+      } else if (!doc_mem.contains(reinterpret_cast<char *>(a->m_request_hdr.m_http))) {
         std::cerr << "out of bounds request header in the alternate" << std::endl;
         return zret;
       }

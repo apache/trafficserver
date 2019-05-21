@@ -165,8 +165,8 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 
     if (request_header->presence(MIME_PRESENCE_REFERER) &&
         (referer_hdr = request_header->value_get(MIME_FIELD_REFERER, MIME_LEN_REFERER, &referer_len)) != nullptr) {
-      if (referer_len >= (int)sizeof(tmp_referer_buf)) {
-        referer_len = (int)(sizeof(tmp_referer_buf) - 1);
+      if (referer_len >= static_cast<int>(sizeof(tmp_referer_buf))) {
+        referer_len = static_cast<int>(sizeof(tmp_referer_buf) - 1);
       }
       memcpy(tmp_referer_buf, referer_hdr, referer_len);
       tmp_referer_buf[referer_len] = 0;
@@ -201,8 +201,8 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
             case 'f':
             case 't':
               remapped_host = (rc->type == 'f') ?
-                                map->fromURL.string_get_buf(tmp_buf, (int)sizeof(tmp_buf), &from_len) :
-                                ((s->url_map).getToURL())->string_get_buf(tmp_buf, (int)sizeof(tmp_buf), &from_len);
+                                map->fromURL.string_get_buf(tmp_buf, static_cast<int>(sizeof(tmp_buf)), &from_len) :
+                                ((s->url_map).getToURL())->string_get_buf(tmp_buf, static_cast<int>(sizeof(tmp_buf)), &from_len);
               if (remapped_host && from_len > 0) {
                 c = &tmp_buf[0];
               }
@@ -212,7 +212,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
               break;
             };
 
-            if (c && tmp < (int)(sizeof(tmp_redirect_buf) - 1)) {
+            if (c && tmp < static_cast<int>(sizeof(tmp_redirect_buf) - 1)) {
               tmp += snprintf(&tmp_redirect_buf[tmp], sizeof(tmp_redirect_buf) - tmp, "%s", c);
             }
           }
@@ -241,7 +241,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
   if (request_url && host_hdr != nullptr && s->txn_conf->maintain_pristine_host_hdr == 0) {
     if (is_debug_tag_set("url_rewrite")) {
       int old_host_hdr_len;
-      char *old_host_hdr = (char *)request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &old_host_hdr_len);
+      char *old_host_hdr = const_cast<char *>(request_header->value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &old_host_hdr_len));
       if (old_host_hdr) {
         Debug("url_rewrite", "Host: Header before rewrite %.*s", old_host_hdr_len, old_host_hdr);
       }
