@@ -17,14 +17,28 @@ The current layout is:
 To help with easy running of the tests, there is autest.sh and bootstrap.py.
 
 ### autest.sh
-This file is a simple wrapper that will call the Reusable Gold Testing System (Autest) program in a python virtualenv. If the virtualenv is not setup, the script will try to install it on the system. That will set up the Autest on most systems in a Python virtual environment. The wrapper adds some basic options to the command to point to the location of the tests. Use --help for more details on options for running Autest.
+This file is a simple wrapper that will call the Reusable Gold Testing System (Autest) program in a pipenv. If the pipenv is not setup, the script will prompt user the missing components. That will set up the Autest on most systems in a Python virtual environment. The wrapper adds some basic options to the command to point to the location of the tests. Use --help for more details on options for running Autest.
 
-### bootstrap.py
-This script will try to install python35 or better on the system, and the needed python packages for running the tests.
+### test-env-check.sh
+This script will check for the necessary packages needed to create a pipenv that can run Autest. If any package is missing, the script will alert the user. If all packages are available, it install a virtual environment using the provided Pipfile.
+
+### Pipfile
+This file is used to setup a virtual environment using pipenv. It contains information including the packages needed for Autest. 
+A set of commands for pipenv:
+ * **pipenv install**: create virtual environment from the Pipfile. 
+ * **pipenv shell**: launch a shell with the environment running(type "exit" to leave the shell).
+ * **pipenv run cmd**: run command in the virtual environment without entering a shell, where cmd is the shell command to run.
+ * **pipenv --rm**: remove the environment.
 
 # Basic setup
 
-AuTest can be run using the script file autest.sh listed above. Run the file from the tests/ directory followed by --ats-bin and the bin name. (ie ~/ats/bin) This will run the wrapper for the tests. See documentation for more details.
+AuTest can be run using the script file autest.sh listed above. Run the file from the tests/ directory followed by --ats-bin and the bin name. (ie ~/ats/bin) This will run the wrapper for the tests.  
+
+To run autest manually, the recommended way is to follow these steps:
+1. **pipenv install**: create the virtual environment(only needed once).
+2. **pipenv shell**: enter a shell in the virtual environment(type "exit" to leave the shell).
+3. **cd gold_tests**: enter the directory containing the test files.
+4. **autest --ats-bin user_ats_bin**: run autest where user_ats_bin is the bin directory in the user's ats directory.
 
 # Advanced setup
 
