@@ -845,12 +845,6 @@ mptcp
          origin server has previously returned HTTP/1.1.
    ===== ======================================================================
 
-.. note::
-
-   If HTTP/1.1 is used, then |TS| can use keep-alive connections to origin servers.
-
-   If HTTP/1.0 is used, then |TS| can use keep-alive connections to origin servers.
-
 .. ts:cv:: CONFIG proxy.config.http.chunking.size INT 4096
    :overridable:
 
