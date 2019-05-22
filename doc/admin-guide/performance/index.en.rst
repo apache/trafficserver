@@ -488,7 +488,7 @@ Network Tuning
 :ts:cv:`proxy.config.net.connections_throttle`
 
 Error responses from origins are consistent and costly
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If error responses are costly for your origin server to generate, you may elect
 to have |TS| cache these responses for a period of time. The default behavior is
