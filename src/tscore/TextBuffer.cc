@@ -22,6 +22,7 @@
  */
 
 #include <cstdarg>
+#include <cstdio>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/TextBuffer.h"
