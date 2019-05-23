@@ -1098,11 +1098,6 @@ mptcp
 Parent Proxy Configuration
 ==========================
 
-.. ts:cv:: CONFIG proxy.config.http.parent_proxy_routing_enable INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) the parent caching option. Refer to :ref:`admin-hierarchical-caching`.
-
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.retry_time INT 300
    :reloadable:
    :overridable:

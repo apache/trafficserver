@@ -7093,16 +7093,6 @@ struct ParentTest {
     this->magic      = MAGIC_ALIVE;
     this->configured = false;
     this->browser    = synclient_txn_create();
-
-    /* If parent proxy routing is not enabled, enable it for the life of the test. */
-    RecGetRecordBool("proxy.config.http.parent_proxy_routing_enable", &this->parent_proxy_routing_enable);
-    if (!this->parent_proxy_routing_enable) {
-      rprintf(this->regtest, "enabling proxy.config.http.parent_proxy_routing_enable\n");
-      RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", 1, REC_SOURCE_EXPLICIT);
-
-      // Force the config change to sync.
-      RecExecConfigUpdateCbs(REC_UPDATE_REQUIRED);
-    }
   }
 
   ~ParentTest()
@@ -7135,7 +7125,6 @@ struct ParentTest {
   ClientTxn *browser;
   TSEventFunc handler;
 
-  RecBool parent_proxy_routing_enable;
   unsigned int magic;
 };
 
@@ -7259,8 +7248,6 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
 
     } else {
       // Otherwise the test completed so clean up.
-      RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", ptest->parent_proxy_routing_enable, REC_SOURCE_EXPLICIT);
-
       TSContDataSet(contp, nullptr);
       delete ptest;
     }
@@ -7282,7 +7269,6 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
     if (status != REGRESSION_TEST_INPROGRESS) {
       int *pstatus = ptest->pstatus;
 
-      RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", ptest->parent_proxy_routing_enable, REC_SOURCE_EXPLICIT);
       TSContDataSet(contp, nullptr);
       delete ptest;
 

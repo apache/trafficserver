@@ -45,7 +45,6 @@ static int self_detect                                       = 2;
 static const char *file_var      = "proxy.config.http.parent_proxy.file";
 static const char *default_var   = "proxy.config.http.parent_proxies";
 static const char *retry_var     = "proxy.config.http.parent_proxy.retry_time";
-static const char *enable_var    = "proxy.config.http.parent_proxy_routing_enable";
 static const char *threshold_var = "proxy.config.http.parent_proxy.fail_threshold";
 
 static const char *ParentResultStr[] = {"PARENT_UNDEFINED", "PARENT_DIRECT", "PARENT_SPECIFIED", "PARENT_AGENT", "PARENT_FAIL"};
@@ -64,17 +63,12 @@ enum ParentCB_t {
 
 ParentSelectionPolicy::ParentSelectionPolicy()
 {
-  bool enable            = false;
   int32_t retry_time     = 0;
   int32_t fail_threshold = 0;
 
   // Handle parent timeout
   REC_ReadConfigInteger(retry_time, retry_var);
   ParentRetryTime = retry_time;
-
-  // Handle parent enable
-  REC_ReadConfigInteger(enable, enable_var);
-  ParentEnable = enable;
 
   // Handle the fail threshold
   REC_ReadConfigInteger(fail_threshold, threshold_var);
@@ -116,12 +110,6 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
   Debug("parent_select", "In ParentConfigParams::findParent(): parent_table: %p.", parent_table);
   ink_assert(result->result == PARENT_UNDEFINED);
 
-  // Check to see if we are enabled
-  Debug("parent_select", "policy.ParentEnable: %d", policy.ParentEnable);
-  if (policy.ParentEnable == 0) {
-    result->result = PARENT_DIRECT;
-    return;
-  }
   // Initialize the result structure
   result->reset();
 
@@ -269,9 +257,6 @@ ParentConfig::startup()
   parentConfigUpdate->attach(default_var);
   //   Retry time
   parentConfigUpdate->attach(retry_var);
-  //   Enable
-  parentConfigUpdate->attach(enable_var);
-
   //   Fail Threshold
   parentConfigUpdate->attach(threshold_var);
 }
@@ -308,7 +293,7 @@ ParentConfig::print()
   ParentConfigParams *params = ParentConfig::acquire();
 
   printf("Parent Selection Config\n");
-  printf("\tEnabled %d\tRetryTime %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime);
+  printf("\tRetryTime %d\n", params->policy.ParentRetryTime);
   if (params->DefaultParent == nullptr) {
     printf("\tNo Default Parent\n");
   } else {
@@ -931,10 +916,6 @@ SocksServerConfig::reconfigure()
   REC_ReadConfigInteger(retry_time, "proxy.config.socks.server_retry_time");
   params->policy.ParentRetryTime = retry_time;
 
-  // Handle parent enable
-  // enable is always true for use. We will come here only if socks is enabled
-  params->policy.ParentEnable = 1;
-
   // Handle the fail threshold
   REC_ReadConfigInteger(fail_threshold, "proxy.config.socks.server_fail_threshold");
   params->policy.FailThreshold = fail_threshold;
@@ -954,7 +935,7 @@ SocksServerConfig::print()
   ParentConfigParams *params = SocksServerConfig::acquire();
 
   printf("Parent Selection Config for Socks Server\n");
-  printf("\tEnabled %d\tRetryTime %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime);
+  printf("\tRetryTime %d\n", params->policy.ParentRetryTime);
   if (params->DefaultParent == nullptr) {
     printf("\tNo Default Parent\n");
   } else {
@@ -1024,7 +1005,6 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     ParentTable->BuildTableFromString(tbl);                                                                                \
     RecSetRecordInt("proxy.config.http.parent_proxy.fail_threshold", fail_threshold, REC_SOURCE_DEFAULT);                  \
     RecSetRecordInt("proxy.config.http.parent_proxy.retry_time", retry_time, REC_SOURCE_DEFAULT);                          \
-    RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", 1, REC_SOURCE_DEFAULT);                               \
     params = new ParentConfigParams(ParentTable);                                                                          \
   } while (0)
 

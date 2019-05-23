@@ -416,8 +416,6 @@ static const RecordElement RecordsConfig[] =
   //        ##############################
   //        # parent proxy configuration #
   //        ##############################
-  {RECT_CONFIG, "proxy.config.http.parent_proxy_routing_enable", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.http.parent_proxies", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.parent_proxy.file", RECD_STRING, "parent.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
