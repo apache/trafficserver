@@ -124,12 +124,6 @@ msgid ""
 "proxy."
 msgstr ""
 
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:143
-msgid ""
-"Enable the parent caching option by adjusting :ts:cv:`proxy.config.http."
-"parent_proxy_routing_enable` in :file:`records.config`. ::"
-msgstr ""
-
 #: ../../admin-guide/configuration/hierachical-caching.en.rst:57
 msgid ""
 "The figure below illustrates a simple cache hierarchy with a Traffic Server "

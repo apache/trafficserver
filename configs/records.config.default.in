@@ -34,7 +34,6 @@ CONFIG proxy.config.http.insert_response_via_str INT 0
 #    https://docs.trafficserver.apache.org/records.config#parent-proxy-configuration
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/parent.config.en.html
 ##############################################################################
-CONFIG proxy.config.http.parent_proxy_routing_enable INT 0
 CONFIG proxy.config.http.parent_proxy.retry_time INT 300
 CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
 CONFIG proxy.config.http.forward.proxy_auth_to_parent INT 0
