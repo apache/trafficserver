@@ -23,6 +23,7 @@
 
 #include <string>
 #include <sstream>
+#include <stdexcept>
 
 #include "ts/ts.h"
 
@@ -73,9 +74,11 @@ public:
       std::stringstream ss;
       ss << _data;
       TSError("[%s] Invalid regex: failed to precompile: %s", PLUGIN_NAME, ss.str().c_str());
-      abort();
+      TSDebug(PLUGIN_NAME, "Invalid regex: failed to precompile: %s", ss.str().c_str());
+      throw std::runtime_error("Malformed regex");
+    } else {
+      TSDebug(PLUGIN_NAME, "Regex precompiled successfully");
     }
-    TSDebug(PLUGIN_NAME, "Regex precompiled successfully");
   }
 
   void
