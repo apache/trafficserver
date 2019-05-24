@@ -158,51 +158,6 @@ Rollback::statFile(version_t version, struct stat *buf)
   return statResult;
 }
 
-//
-// int Rollback::openFile(version_t)
-//
-//  a wrapper for open()
-//
-int
-Rollback::openFile(version_t version, int oflags, int *errnoPtr)
-{
-  int fd;
-
-  ats_scoped_str filePath(createPathStr(version));
-  // TODO: Use the original permissions
-  //       Anyhow the _1 files should not be created inside Syconfdir.
-  //
-  fd = mgmt_open_mode_elevate(filePath, oflags, 0644, root_access_needed);
-
-  if (fd < 0) {
-    if (errnoPtr != nullptr) {
-      *errnoPtr = errno;
-    }
-    mgmt_log("[Rollback::openFile] Open of %s failed: %s\n", fileName, strerror(errno));
-  } else {
-    fcntl(fd, F_SETFD, FD_CLOEXEC);
-  }
-
-  return fd;
-}
-
-int
-Rollback::closeFile(int fd, bool callSync)
-{
-  int result = 0;
-  if (callSync && fsync(fd) < 0) {
-    result = -1;
-    mgmt_log("[Rollback::closeFile] fsync failed for file '%s' (%d: %s)\n", fileName, errno, strerror(errno));
-  }
-
-  if (result == 0) {
-    result = close(fd);
-  } else {
-    close(fd);
-  }
-  return result;
-}
-
 bool
 Rollback::setLastModifiedTime()
 {
