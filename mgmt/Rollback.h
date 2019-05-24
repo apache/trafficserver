@@ -60,11 +60,7 @@ struct versionInfo {
 //    refers to a file with an _version which does not exist for the active
 //    version.
 //
-//  statFile(version_t, struct stat*) - a wrapper for stat that
-//    that stats the specified version
-//
-//  createPathStr(version_t) - creates a string to the specified
-//    version of the file.  CALLEE DELETES storage
+//  statFile(struct stat*) - a wrapper for stat(), using layout engine
 //
 class Rollback
 {
@@ -135,8 +131,7 @@ public:
   Rollback &operator=(const Rollback &) = delete;
 
 private:
-  int statFile(version_t version, struct stat *buf);
-  char *createPathStr(version_t version);
+  int statFile(struct stat *buf);
   ink_mutex fileAccessLock;
   char *fileName;
   char *fileBaseName;
