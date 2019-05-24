@@ -76,10 +76,6 @@ struct versionInfo {
 //    time.  Returns true if the file has been changed manually or false
 //    if it hasn't
 //
-//  versionTimeStamp(version_t) - returns the modification time (mtime)
-//    of the version passed in.  If the version is not foundl, -1 is
-//    returned
-//
 // private functions
 //
 //  CURRENT_VERSION means the active version.  The active version does not
@@ -117,12 +113,10 @@ public:
   {
     ink_mutex_release(&fileAccessLock);
   };
-  time_t versionTimeStamp_ml(version_t version);
   version_t extractVersionInfo(ExpandingArray *listNames, const char *testFileName);
 
   // Automatically take out lock
   bool checkForUserUpdate();
-  time_t versionTimeStamp(version_t version);
   int statVersion(version_t, struct stat *buf);
   bool setLastModifiedTime();
 
