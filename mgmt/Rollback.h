@@ -113,7 +113,6 @@ public:
   {
     ink_mutex_release(&fileAccessLock);
   };
-  version_t extractVersionInfo(ExpandingArray *listNames, const char *testFileName);
 
   // Automatically take out lock
   bool checkForUserUpdate();
