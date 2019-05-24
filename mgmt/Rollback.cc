@@ -489,60 +489,6 @@ Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName
   return version;
 }
 
-RollBackCodes
-Rollback::removeVersion(version_t version)
-{
-  RollBackCodes r;
-
-  ink_mutex_acquire(&fileAccessLock);
-  r = this->removeVersion_ml(version);
-  ink_mutex_release(&fileAccessLock);
-
-  return r;
-}
-
-RollBackCodes
-Rollback::removeVersion_ml(version_t version)
-{
-  struct stat statInfo;
-  char *versionPath;
-  versionInfo *removeInfo = nullptr;
-  bool infoFound          = false;
-
-  if (this->statFile(version, &statInfo) < 0) {
-    mgmt_log("[Rollback::removeVersion] Stat failed on %s version %d\n", fileName, version);
-    return FILE_NOT_FOUND_ROLLBACK;
-  }
-
-  versionPath = createPathStr(version);
-  if (unlink(versionPath) < 0) {
-    ats_free(versionPath);
-    mgmt_log("[Rollback::removeVersion] Unlink failed on %s version %d: %s\n", fileName, version, strerror(errno));
-    return SYS_CALL_ERROR_ROLLBACK;
-  }
-  // Take the version we just removed off of the backup queue
-  //   We are doing a linear search but since we almost always
-  //    are deleting the oldest version, the head of the queue
-  //    should be what we are looking for
-  for (removeInfo = versionQ.head; removeInfo != nullptr; removeInfo = removeInfo->link.next) {
-    if (removeInfo->version == version) {
-      infoFound = true;
-      break;
-    }
-  }
-  if (infoFound == true) {
-    versionQ.remove(removeInfo);
-    delete removeInfo;
-  } else {
-    mgmt_log("[Rollback::removeVersion] Unable to find info about %s version %d\n", fileName, version);
-  }
-
-  numVersions--;
-
-  ats_free(versionPath);
-  return OK_ROLLBACK;
-}
-
 time_t
 Rollback::versionTimeStamp(version_t version)
 {
