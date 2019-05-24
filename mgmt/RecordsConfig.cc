@@ -416,8 +416,6 @@ static const RecordElement RecordsConfig[] =
   //        ##############################
   //        # parent proxy configuration #
   //        ##############################
-  {RECT_CONFIG, "proxy.config.http.parent_proxy_routing_enable", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.http.parent_proxies", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.parent_proxy.file", RECD_STRING, "parent.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -1061,24 +1059,18 @@ static const RecordElement RecordsConfig[] =
   //##############################################################################
   {RECT_CONFIG, "proxy.config.ssl.server.session_ticket.enable", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.TLSv1", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.TLSv1", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.TLSv1_1", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.TLSv1_1", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   // Disable this when using some versions of OpenSSL that causes crashes. See TS-2355.
   {RECT_CONFIG, "proxy.config.ssl.TLSv1_2", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.TLSv1_3", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-
-  // Client SSL protocols
-#if TS_USE_SSLV3_CLIENT
-  {RECT_CONFIG, "proxy.config.ssl.client.SSLv3", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.client.TLSv1", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-#endif
-  {RECT_CONFIG, "proxy.config.ssl.client.TLSv1", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.ssl.client.TLSv1_1", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.client.TLSv1_1", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.client.TLSv1_2", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
@@ -1100,7 +1092,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.multicert.exit_on_load_fail", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
 ,
-  {RECT_CONFIG, "proxy.config.ssl.servername.filename", RECD_STRING, "ssl_server_name.yaml", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.servername.filename", RECD_STRING, "sni.yaml", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.ticket_key.filename", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,

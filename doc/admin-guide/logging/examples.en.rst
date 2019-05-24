@@ -310,18 +310,19 @@ the request to clients during that hour.
 
 .. code:: yaml
 
-   formats:
-   - name: originrepformat
-     format: '%<FIRST(cqtq)> %<COUNT(*)> %<AVERAGE(ttms)>'
-     interval: 3600
+   logging:
+     formats:
+     - name: originrepformat
+       format: '%<FIRST(cqtq)> %<COUNT(*)> %<AVERAGE(ttms)>'
+       interval: 3600
 
-   filters:
-   - name: originfilter
-     reject: crc CONTAINS "HIT"
-
-   logs:
-   - mode: ascii
-     format: originrepformat
      filters:
-     - originfilter
-     filename: origin_access_summary
+     - name: originfilter
+       reject: crc CONTAINS "HIT"
+
+     logs:
+     - mode: ascii
+       format: originrepformat
+       filters:
+       - originfilter
+       filename: origin_access_summary

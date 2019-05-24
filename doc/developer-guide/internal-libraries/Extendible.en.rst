@@ -45,14 +45,12 @@ In C++, the |FieldId| are strongly typed field handles, which allows you to use 
 Use Case:
 
   TSCore
-
     Defines class ``Host`` as |Extendible|
 
   TSPlugin ``HealthStatus``
-
     Extend the ``Host`` datatype with field ``<int> down reason code``. API returns a handle.
 
-    Use the (Data*, handle) to read & write fields.
+    Use :arg:`Data` and :arg:`handle` to read & write fields.
 
 
 Description
@@ -96,9 +94,9 @@ Memory Layout
 One block of memory is allocated per |Extendible|, which included all member variables and extended fields.
 Within the block, memory is arranged in the following order:
 
-   #. Derived members (+padding align next field)
-   #. Fields (largest to smallest)
-   #. Packed Bits
+#. Derived members (+padding align next field)
+#. Fields (largest to smallest)
+#. Packed Bits
 
 When using inheritance, all base cases arranged from most super to most derived,
 then all |Extendible| blocks are arranged from most super to most derived.
@@ -196,18 +194,19 @@ Inheritance
    C &x = *(ext::alloc<C>());
    ext::viewFormat(x);
 
-:func:`viewFormat` prints a diagram of the position and size of bytes used within the allocated memory.
-::
+:func:`viewFormat` prints a diagram of the position and size of bytes used within the allocated
+memory.
 
-   1A | EXT  | 2b | ##________##__
-   1A | BASE | 2b | __##__________
-   1B | BASE | 2b | ____##________
-   1C | EXT  | 2b | ______##____##
-   1C | BASE | 2b | ________##____
+.. code-block:: text
+
+   1A | EXT  | 2b | ##________##__ |
+   1A | BASE | 2b | __##__________ |
+   1B | BASE | 2b | ____##________ |
+   1C | EXT  | 2b | ______##____## |
+   1C | BASE | 2b | ________##____ |
 
 
-
-See src/tscore/unit_tests/test_Extendible.cc for more examples.
+See :ts:git:`src/tscore/unit_tests/test_Extendible.cc` for more examples.
 
 Reference
 +++++++++
@@ -235,7 +234,6 @@ Namespace `ext`
    .. member:: static Schema  schema
 
       one schema instance per |Extendible| to define contained |FieldDesc|
-
 
 .. function:: template<typename Derived_t> Extendible* alloc()
 

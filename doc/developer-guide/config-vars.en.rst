@@ -265,7 +265,7 @@ action.
 .. _http-config-var-impl:
 
 HTTP Configuration Values
-------------------------
+-------------------------
 
 Variables used for HTTP processing should be declared as members of the
 ``HTTPConfigParams`` structure (but see :ref:`overridable-config-vars` for

@@ -30,7 +30,7 @@ ts.addSSLfile("ssl/server.key")
 
 ts.Variables.ssl_port = 4443
 
-# Need no remap rules.  Everything should be proccessed by ssl_server_name
+# Need no remap rules.  Everything should be proccessed by sni
 
 # Make sure the TS server certs are different from the origin certs
 ts.Disk.ssl_multicert_config.AddLine(
@@ -52,7 +52,7 @@ ts.Disk.records_config.update({
 
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
   "- fqdn: bar.com",
   "  forward_route: localhost:4444"
   ])

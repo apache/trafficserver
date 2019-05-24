@@ -58,8 +58,6 @@ more widely. Those are described on this page.
 
 .. type:: TSConfig
 
-.. type:: TSConfigDestroyFunc
-
 .. type:: TSCont
 
    An opaque type that represents a Traffic Server :term:`continuation`.

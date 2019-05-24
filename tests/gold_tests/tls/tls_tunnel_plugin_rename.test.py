@@ -47,7 +47,7 @@ ts.addSSLfile("ssl/signer.key")
 
 ts.Variables.ssl_port = 4443
 
-# Need no remap rules.  Everything should be proccessed by ssl_server_name
+# Need no remap rules.  Everything should be proccessed by sni
 
 # Make sure the TS server certs are different from the origin certs
 ts.Disk.ssl_multicert_config.AddLine(
@@ -72,7 +72,7 @@ ts.Disk.records_config.update({
 # bar.com should terminate.
 # empty should tunnel to server_random (should not happen)
 # newname should tunnel to server_bar
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
   "- fqdn: newname",
   "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port),
   "- fqdn: ''",  #default case

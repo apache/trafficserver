@@ -56,6 +56,7 @@ libtscore_la_SOURCES = \
 	ContFlags.cc \
 	CryptoHash.cc \
 	Diags.cc \
+	Errata.cc \
 	EventNotify.cc \
 	Extendible.cc \
 	fastlz.c \

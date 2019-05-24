@@ -30,3 +30,21 @@ Synopsis
 
 Description
 ===========
+
+Get a URL object from an HTTP header. :arg:`bufp` and :arg:`offset` must have been retrieved from
+a header object previously (such as via :func:`TSHttpTxnClientReqGet`). :arg:`locp` is updated
+on success to refer to the URL object. Note this is a URL *object*, from which URL related
+information can be extracted.
+
+The value placed in :arg:`locp` is stable only for a single callback, as other callbacks can
+change the URL object itself (see :func:`TSHttpHdrUrlSet`), not just the data in it. That value is
+also valid only if this function return ``TS_SUCCESS``.
+
+See Also
+========
+
+:manpage:`TSAPI(3ts)`,
+:manpage:`TSHttpTxnClientReqGet(3ts)`,
+:manpage:`TSHttpTxnServerReqGet(3ts)`,
+:manpage:`TSHttpTxnServerRespGet(3ts)`,
+:manpage:`TSHttpTxnClientRespGet(3ts)`

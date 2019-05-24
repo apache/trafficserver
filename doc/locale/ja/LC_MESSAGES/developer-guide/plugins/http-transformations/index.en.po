@@ -235,7 +235,7 @@ msgstr ""
 #: ../../developer-guide/plugins/http-transformations/index.en.rst:184
 msgid ""
 "There is an `example plugin <https://github.com/apache/trafficserver/blob/"
-"master/example/txn-data-sink/txn-data-sink.c>`_ that demonstrates this used "
+"master/example/plugins/c-api/txn-data-sink/txn-data-sink.c>`_ that demonstrates this used "
 "as a pure data sink to keep the transaction up regardless of whether the "
 "user agent disconnects."
 msgstr ""

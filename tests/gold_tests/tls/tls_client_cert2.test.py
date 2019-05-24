@@ -21,7 +21,7 @@ import os
 import re
 
 Test.Summary = '''
-Test client certs to origin selected via wildcard names in ssl_server_name
+Test client certs to origin selected via wildcard names in sni
 '''
 
 ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=False)
@@ -85,7 +85,7 @@ ts.Disk.remap_config.AddLine(
     'map /case2 https://127.0.0.1:{0}/'.format(server2.Variables.SSL_Port)
 )
 
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
     '- fqdn: bob.bar.com',
     '  client_cert: signed-bar.pem',
     '  client_key: signed-bar.key',

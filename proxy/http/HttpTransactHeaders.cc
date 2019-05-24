@@ -631,11 +631,13 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     log_code  = SQUID_LOG_TCP_SWAPFAIL;
     hier_code = SQUID_HIER_NONE;
     break;
+  case VIA_ERROR_LOOP_DETECTED:
+    log_code  = SQUID_LOG_ERR_LOOP_DETECTED;
+    hier_code = SQUID_HIER_NONE;
+    break;
   default:
     break;
   }
-
-  Debug("http_trans", "[Squid code generation] Hit/Miss: %c, Log: %c, Hier: %c", hit_miss_code, log_code, hier_code);
 
   squid_codes->log_code      = log_code;
   squid_codes->hier_code     = hier_code;

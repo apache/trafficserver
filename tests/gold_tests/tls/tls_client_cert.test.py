@@ -91,11 +91,11 @@ ts.Disk.remap_config.AddLine(
     'map /case2 https://127.0.0.1:{0}/'.format(server2.Variables.SSL_Port)
 )
 
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
     '- fqdn: bar.com')
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
     '  client_cert: {0}/signed2-bar.pem'.format(ts.Variables.SSLDir))
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
     '  client_key: {0}/signed-bar.key'.format(ts.Variables.SSLDir))
 
 
@@ -140,14 +140,14 @@ trbarfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could N
 
 tr2 = Test.AddTestRun("Update config files")
 # Update the SNI config
-snipath = ts.Disk.ssl_server_name_yaml.AbsPath
+snipath = ts.Disk.sni_yaml.AbsPath
 recordspath = ts.Disk.records_config.AbsPath
-tr2.Disk.File(snipath, id = "ssl_server_name_yaml", typename="ats:config"),
-tr2.Disk.ssl_server_name_yaml.AddLine(
+tr2.Disk.File(snipath, id = "sni_yaml", typename="ats:config"),
+tr2.Disk.sni_yaml.AddLine(
     '- fqdn: bar.com')
-tr2.Disk.ssl_server_name_yaml.AddLine(
+tr2.Disk.sni_yaml.AddLine(
     '  client_cert: {0}/signed-bar.pem'.format(ts.Variables.SSLDir))
-tr2.Disk.ssl_server_name_yaml.AddLine(
+tr2.Disk.sni_yaml.AddLine(
     '  client_key: {0}/signed-bar.key'.format(ts.Variables.SSLDir))
 # recreate the records.config with the cert filename changed
 tr2.Disk.File(recordspath, id = "records_config", typename="ats:config:records"),
@@ -172,11 +172,11 @@ tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
 
 # Parking this as a ready tester on a meaningless process
-# Stall the test runs until the ssl_server_name reload has completed
-# At that point the new ssl_server_name settings are ready to go
-def ssl_server_name_reload_done(tsenv):
+# Stall the test runs until the sni reload has completed
+# At that point the new sni settings are ready to go
+def sni_reload_done(tsenv):
   def done_reload(process, hasRunFor, **kw):
-    cmd = "grep 'ssl_server_name.yaml finished loading' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
+    cmd = "grep 'sni.yaml finished loading' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
     retval = subprocess.run(cmd, shell=True, env=tsenv)
     if retval.returncode == 0:
       cmd ="if [ -f {0}/test.out -a \"`cat {0}/test.out`\" = \"2\" ] ; then true; else false; fi".format(Test.RunDirectory)
@@ -198,7 +198,7 @@ tr2reload.Processes.Default.ReturnCode = 0
 #Should succeed
 tr3bar = Test.AddTestRun("Make request with other bar cert to first server")
 # Wait for the reload to complete
-tr3bar.Processes.Default.StartBefore(server3, ready=ssl_server_name_reload_done(ts.Env))
+tr3bar.Processes.Default.StartBefore(server3, ready=sni_reload_done(ts.Env))
 tr3bar.StillRunningAfter = ts
 tr3bar.StillRunningAfter = server
 tr3bar.StillRunningAfter = server2

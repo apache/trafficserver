@@ -750,7 +750,6 @@ INPUT                  = mainpage.doc \
                          ../lib/cppapi/include/atscppapi \
                          ../lib/records \
                          ../lib/ts \
-                         ../lib/tsconfig \
                          ../proxy
 
 # This tag can be used to specify the character encoding of the source files

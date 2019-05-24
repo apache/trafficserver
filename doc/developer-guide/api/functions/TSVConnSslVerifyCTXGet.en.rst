@@ -40,11 +40,6 @@ invoked from the TS_SSL_VERIFY_SERVER_HOOK and TS_SSL_VERIFY_CLIENT_HOOK.
 Types
 =====
 
-.. type:: TSSslConnection
-
-	The SSL (per connection) object. This is an opaque type that can be cast to the
-	appropriate type (:code:`SSL *` for the OpenSSL library).
-
 .. type:: TSSslVerifyCTX
 
         The SSL object that corresponds to the peer certificates being verified.  This is an

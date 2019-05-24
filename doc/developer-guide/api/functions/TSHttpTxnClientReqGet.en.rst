@@ -30,3 +30,23 @@ Synopsis
 
 Description
 ===========
+
+Get the client request. The :arg:`txnp` must be passed in and the values in :arg:`bufp` and
+:arg:`offset` are updated to refer to the client request in the transaction. A typical use case
+would look like ::
+
+   int
+   CB_Read_Req_Hdr_Hook(TSCont contp, TSEvent event, void* data) {
+      auto txnp = reinterpret_cast<TSHttpTxn>(data);
+      TSMBuffer creq_buff;
+      TSMLoc creq_loc;
+      if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &creq_buff, &creq_loc)) {
+         // use the client request
+      } // else values in creq_buff, creq_loc are garbage.
+      TSHttpTxnReenable(txnp);
+      return 0;
+   }
+
+The values placed in :arg:`bufp` and :arg:`offset` are stable for the transaction and need only be
+retrieved once per transaction. Note these values are valid only if this function returns
+``TS_SUCCESS``.

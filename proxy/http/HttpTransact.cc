@@ -2378,7 +2378,8 @@ HttpTransact::CallOSDNSLookup(State *s)
 {
   TxnDebug("http", "[HttpTransact::callos] %s ", s->server_info.name);
   HostStatus &pstatus = HostStatus::instance();
-  if (pstatus.getHostStatus(s->server_info.name) == HostStatus_t::HOST_STATUS_DOWN) {
+  HostStatRec *hst    = pstatus.getHostStatus(s->server_info.name);
+  if (hst && hst->status == HostStatus_t::HOST_STATUS_DOWN) {
     TxnDebug("http", "[HttpTransact::callos] %d ", s->cache_lookup_result);
     s->current.state = OUTBOUND_CONGESTION;
     if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
@@ -6513,15 +6514,13 @@ HttpTransact::will_this_request_self_loop(State *s)
       if (host_port == local_port) {
         switch (s->dns_info.looking_up) {
         case ORIGIN_SERVER:
-          TxnDebug("http_transact", "[will_this_request_self_loop] host ip and port same as local ip and port - bailing");
+          TxnDebug("http_transact", "host ip and port same as local ip and port - bailing");
           break;
         case PARENT_PROXY:
-          TxnDebug("http_transact", "[will_this_request_self_loop] "
-                                    "parent proxy ip and port same as local ip and port - bailing");
+          TxnDebug("http_transact", "parent proxy ip and port same as local ip and port - bailing");
           break;
         default:
-          TxnDebug("http_transact", "[will_this_request_self_loop] "
-                                    "unknown's ip and port same as local ip and port - bailing");
+          TxnDebug("http_transact", "unknown's ip and port same as local ip and port - bailing");
           break;
         }
         build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected");
@@ -6540,8 +6539,9 @@ HttpTransact::will_this_request_self_loop(State *s)
       const char *via_string = via_field->value_get(&via_len);
 
       if (via_string && ptr_len_str(via_string, via_len, uuid)) {
-        TxnDebug("http_transact", "[will_this_request_self_loop] Incoming via: %.*s has (%s[%s] (%s))", via_len, via_string,
-                 s->http_config_param->proxy_hostname, uuid, s->http_config_param->proxy_request_via_string);
+        SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
+        TxnDebug("http_transact", "Incoming via: %.*s has (%s[%s] (%s))", via_len, via_string, s->http_config_param->proxy_hostname,
+                 uuid, s->http_config_param->proxy_request_via_string);
         build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected", "request#cycle_detected");
         return true;
       }
@@ -7815,7 +7815,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
 
-  if (s->state_machine->ua_txn && s->state_machine->ua_txn->get_parent()->is_draining()) {
+  if (s->state_machine->ua_txn && s->state_machine->ua_txn->get_proxy_ssn()->is_draining()) {
     HttpTransactHeaders::add_connection_close(outgoing_response);
   }
 
@@ -7900,7 +7900,10 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   switch (status_code) {
   case HTTP_STATUS_BAD_REQUEST:
     SET_VIA_STRING(VIA_CLIENT_REQUEST, VIA_CLIENT_ERROR);
-    SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_HEADER_SYNTAX);
+    // Did the via error already get set by the loop detection
+    if (s->via_string[VIA_ERROR_TYPE] != VIA_ERROR_LOOP_DETECTED) {
+      SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_HEADER_SYNTAX);
+    }
     break;
   case HTTP_STATUS_BAD_GATEWAY:
     SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_CONNECTION);
@@ -7940,9 +7943,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   const char *reason_phrase = (reason_phrase_or_null ? reason_phrase_or_null : (char *)(http_hdr_reason_lookup(status_code)));
   if (unlikely(!reason_phrase)) {
     reason_phrase = "Unknown HTTP Status";
-
-    // set the source to internal so that chunking is handled correctly
   }
+
+  // set the source to internal so that chunking is handled correctly
   s->source = SOURCE_INTERNAL;
   build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status_code, reason_phrase);
 

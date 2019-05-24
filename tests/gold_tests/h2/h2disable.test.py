@@ -59,7 +59,7 @@ ts.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1
 })
 
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
   '- fqdn: bar.com',
   '  disable_h2: true',
   '- fqdn: bob.*.com',

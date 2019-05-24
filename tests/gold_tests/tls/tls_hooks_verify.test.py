@@ -64,9 +64,9 @@ ts.Disk.remap_config.AddLine(
     'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
 )
 
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
   '- fqdn: bar.com')
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
   '  verify_server_policy: PERMISSIVE')
 
 Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'ssl_verify_test.cc'), ts, '-count=2 -bad=random.com -bad=bar.com')

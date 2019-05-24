@@ -40,24 +40,6 @@ class SSLNetVConnection;
 typedef int ssl_error_t;
 
 /**
-   @brief Gather user provided settings from ssl_multicert.config in to this single struct
- */
-struct SSLMultiCertConfigParams {
-  SSLMultiCertConfigParams() { REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable"); }
-
-  int session_ticket_enabled;   ///< session ticket enabled
-  ats_scoped_str addr;          ///< IPv[64] address to match
-  ats_scoped_str cert;          ///< certificate
-  ats_scoped_str first_cert;    ///< the first certificate name when multiple cert files are in 'ssl_cert_name'
-  ats_scoped_str ca;            ///< CA public certificate
-  ats_scoped_str key;           ///< Private key
-  ats_scoped_str ocsp_response; ///< prefetched OCSP response
-  ats_scoped_str dialog;        ///< Private key dialog
-  ats_scoped_str servername;    ///< Destination server
-  SSLCertContext::Option opt = SSLCertContext::OPT_NONE; ///< SSLCertContext special handling option
-};
-
-/**
     @brief Load SSL certificates from ssl_multicert.config and setup SSLCertLookup for SSLCertificateConfig
  */
 class SSLMultiCertConfigLoader
@@ -84,13 +66,14 @@ protected:
   const SSLConfigParams *_params;
 
 private:
-  virtual SSL_CTX *_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiCertConfigParams *ssl_multi_cert_params);
+  virtual SSL_CTX *_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams ssl_multi_cert_params);
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);
 };
 
-// Create a new SSL server context fully configured.
-// Used by TS API (TSSslServerContextCreate)
-SSL_CTX *SSLCreateServerContext(const SSLConfigParams *params);
+// Create a new SSL server context fully configured (cert and keys are optional).
+// Used by TS API (TSSslServerContextCreate and TSSslServerCertUpdate)
+SSL_CTX *SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigParams *sslMultiCertSettings,
+                                const char *cert_path = nullptr, const char *key_path = nullptr);
 
 // Release SSL_CTX and the associated data. This works for both
 // client and server contexts and gracefully accepts nullptr.

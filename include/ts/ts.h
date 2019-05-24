@@ -1235,7 +1235,15 @@ tsapi TSSslVerifyCTX TSVConnSslVerifyCTXGet(TSVConn sslp);
 /*  Fetch a SSL context from the global lookup table */
 tsapi TSSslContext TSSslContextFindByName(const char *name);
 tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const *);
-/*  Create a new SSL context based on the settings in records.config */
+/* Fetch SSL client contexts from the global lookup table */
+tsapi TSReturnCode TSSslClientContextsNamesGet(int n, const char **result, int *actual);
+tsapi TSSslContext TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths);
+
+/* Update SSL certs in internal storage from given path */
+tsapi TSReturnCode TSSslClientCertUpdate(const char *cert_path, const char *key_path);
+tsapi TSReturnCode TSSslServerCertUpdate(const char *cert_path, const char *key_path);
+
+/* Create a new SSL context based on the settings in records.config */
 tsapi TSSslContext TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file);
 tsapi void TSSslContextDestroy(TSSslContext ctx);
 tsapi void TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen);

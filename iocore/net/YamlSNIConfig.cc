@@ -30,7 +30,7 @@
 
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
-#include "tsconfig/Errata.h"
+#include "tscore/Errata.h"
 #include "P_SNIActionPerformer.h"
 
 ts::Errata
@@ -39,7 +39,6 @@ YamlSNIConfig::loader(const char *cfgFilename)
   try {
     YAML::Node config = YAML::LoadFile(cfgFilename);
     if (config.IsNull()) {
-      Warning("%s is empty", cfgFilename);
       return ts::Errata();
     }
 

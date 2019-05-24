@@ -52,12 +52,13 @@ ts.Disk.remap_config.AddLine(
 #
 ts.Disk.logging_yaml.AddLines(
     '''
-formats:
-  - name: custom
-    format: "%<cqah> ___FS___ %<pssc> ___FS___ %<psah> ___FS___ %<ssah> ___FS___ %<pqah> ___FS___ %<cssah> ___FS___ END_TXN"
-logs:
-  - filename: test_all_headers
-    format: custom
+logging:
+  formats:
+    - name: custom
+      format: "%<cqah> ___FS___ %<pssc> ___FS___ %<psah> ___FS___ %<ssah> ___FS___ %<pqah> ___FS___ %<cssah> ___FS___ END_TXN"
+  logs:
+    - filename: test_all_headers
+      format: custom
 '''.split("\n")
 )
 

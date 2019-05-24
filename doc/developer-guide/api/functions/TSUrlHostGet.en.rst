@@ -77,6 +77,7 @@ See Also
 
 :manpage:`TSAPI(3ts)`,
 :manpage:`TSUrlCreate(3ts)`,
+:manpage:`TSHttpHdrUrlGet(3ts)`,
 :manpage:`TSUrlHostSet(3ts)`,
 :manpage:`TSUrlStringGet(3ts)`,
 :manpage:`TSUrlPercentEncode(3ts)`

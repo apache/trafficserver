@@ -71,7 +71,7 @@ ts.Disk.remap_config.AddLine(
     'map https://bar.com http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
     '- fqdn: "*bar.com"',
     '  verify_client: STRICT',
 ])

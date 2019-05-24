@@ -92,7 +92,7 @@ instance that appears to store unscaled values in a quantized way. The count is 
 needed.
 
 Assignment
-=========
+==========
 
 Assigning values to, from, and between :class:`Scalar` instances is usually straightforward with a few simple rules.
 

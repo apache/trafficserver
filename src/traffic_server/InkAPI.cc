@@ -37,9 +37,9 @@
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
-#include "ProxyClientSession.h"
+#include "ProxySession.h"
 #include "Http2ClientSession.h"
-#include "HttpServerSession.h"
+#include "Http1ServerSession.h"
 #include "HttpSM.h"
 #include "HttpConfig.h"
 #include "P_Net.h"
@@ -49,6 +49,9 @@
 #include "P_Cache.h"
 #include "records/I_RecCore.h"
 #include "P_SSLConfig.h"
+#include "P_SSLClientUtils.h"
+#include "SSLDiags.h"
+#include "SSLInternal.h"
 #include "ProxyConfig.h"
 #include "Plugin.h"
 #include "LogObject.h"
@@ -4717,7 +4720,7 @@ TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_hook_id(id) == TS_SUCCESS);
 
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   cs->ssn_hook_append(id, (INKContInternal *)contp);
 }
 
@@ -4726,28 +4729,28 @@ TSHttpSsnTransactionCount(TSHttpSsn ssnp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
 
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return cs->get_transact_count();
 }
 
 TSVConn
 TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
 {
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return reinterpret_cast<TSVConn>(cs->get_netvc());
 }
 
 TSVConn
 TSHttpSsnServerVConnGet(TSHttpSsn ssnp)
 {
-  HttpServerSession *ss = reinterpret_cast<HttpServerSession *>(ssnp);
+  Http1ServerSession *ss = reinterpret_cast<Http1ServerSession *>(ssnp);
   return reinterpret_cast<TSVConn>(ss->get_netvc());
 }
 
 class TSHttpSsnCallback : public Continuation
 {
 public:
-  TSHttpSsnCallback(ProxyClientSession *cs, TSEvent event) : Continuation(cs->mutex), m_cs(cs), m_event(event)
+  TSHttpSsnCallback(ProxySession *cs, TSEvent event) : Continuation(cs->mutex), m_cs(cs), m_event(event)
   {
     SET_HANDLER(&TSHttpSsnCallback::event_handler);
   }
@@ -4761,7 +4764,7 @@ public:
   }
 
 private:
-  ProxyClientSession *m_cs;
+  ProxySession *m_cs;
   TSEvent m_event;
 };
 
@@ -4770,8 +4773,8 @@ TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
 
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
-  EThread *eth           = this_ethread();
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  EThread *eth     = this_ethread();
 
   // If this function is being executed on a thread created by the API
   // which is DEDICATED, the continuation needs to be called back on a
@@ -4833,7 +4836,7 @@ TSHttpTxnSsnGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  return reinterpret_cast<TSHttpSsn>(sm->ua_txn ? (TSHttpSsn)sm->ua_txn->get_parent() : nullptr);
+  return reinterpret_cast<TSHttpSsn>(sm->ua_txn ? (TSHttpSsn)sm->ua_txn->get_proxy_ssn() : nullptr);
 }
 
 // TODO: Is this still necessary ??
@@ -5472,7 +5475,7 @@ TSHttpTxnTransformRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 sockaddr const *
 TSHttpSsnClientAddrGet(TSHttpSsn ssnp)
 {
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
   if (cs == nullptr) {
     return nullptr;
@@ -5491,7 +5494,7 @@ TSHttpTxnClientAddrGet(TSHttpTxn txnp)
 sockaddr const *
 TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp)
 {
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
   if (cs == nullptr) {
     return nullptr;
@@ -5514,7 +5517,7 @@ TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp)
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
 
-  HttpServerSession *ssn = sm->get_server_session();
+  Http1ServerSession *ssn = sm->get_server_session();
   if (ssn == nullptr) {
     return nullptr;
   }
@@ -5632,7 +5635,7 @@ TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
 
   // change the mark on an active server session
   if (nullptr != sm->ua_txn) {
-    HttpServerSession *ssn = sm->ua_txn->get_server_session();
+    Http1ServerSession *ssn = sm->ua_txn->get_server_session();
     if (nullptr != ssn) {
       NetVConnection *vc = ssn->get_netvc();
       if (vc != nullptr) {
@@ -5674,7 +5677,7 @@ TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
 
   // change the tos on an active server session
   if (nullptr != sm->ua_txn) {
-    HttpServerSession *ssn = sm->ua_txn->get_server_session();
+    Http1ServerSession *ssn = sm->ua_txn->get_server_session();
     if (nullptr != ssn) {
       NetVConnection *vc = ssn->get_netvc();
       if (vc != nullptr) {
@@ -5716,7 +5719,7 @@ TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp)
 
   // change the tos on an active server session
   if (nullptr != sm->ua_txn) {
-    HttpServerSession *ssn = sm->ua_txn->get_server_session();
+    Http1ServerSession *ssn = sm->ua_txn->get_server_session();
     if (nullptr != ssn) {
       NetVConnection *vc = ssn->get_netvc();
       if (vc != nullptr) {
@@ -6070,7 +6073,7 @@ TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg)
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
 
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
   cs->set_user_arg(arg_idx, arg);
 }
@@ -6081,7 +6084,7 @@ TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx)
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
 
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return cs->get_user_arg(arg_idx);
 }
 
@@ -6216,14 +6219,14 @@ void
 TSHttpSsnDebugSet(TSHttpSsn ssnp, int on)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  (reinterpret_cast<ProxyClientSession *>(ssnp))->set_debug(0 != on);
+  (reinterpret_cast<ProxySession *>(ssnp))->set_debug(0 != on);
 }
 
 int
 TSHttpSsnDebugGet(TSHttpSsn ssnp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  return (reinterpret_cast<ProxyClientSession *>(ssnp))->debug();
+  return (reinterpret_cast<ProxySession *>(ssnp))->debug();
 }
 
 int
@@ -7376,8 +7379,8 @@ TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)fdp) == TS_SUCCESS);
 
-  VConnection *basecs    = reinterpret_cast<VConnection *>(ssnp);
-  ProxyClientSession *cs = dynamic_cast<ProxyClientSession *>(basecs);
+  VConnection *basecs = reinterpret_cast<VConnection *>(ssnp);
+  ProxySession *cs    = dynamic_cast<ProxySession *>(basecs);
 
   if (cs == nullptr) {
     return TS_ERROR;
@@ -7410,7 +7413,7 @@ TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   *fdp       = -1;
 
-  HttpServerSession *ss = sm->get_server_session();
+  Http1ServerSession *ss = sm->get_server_session();
   if (ss == nullptr) {
     return TS_ERROR;
   }
@@ -7778,7 +7781,7 @@ TSFetchRespHdrMLocGet(TSFetchSM fetch_sm)
 int
 TSHttpSsnIsInternal(TSHttpSsn ssnp)
 {
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
   if (!cs) {
     return 0;
@@ -7814,7 +7817,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   HttpSM *sm          = reinterpret_cast<HttpSM *>(txnp);
   Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
   if (stream) {
-    Http2ClientSession *ua_session = static_cast<Http2ClientSession *>(stream->get_parent());
+    Http2ClientSession *ua_session = static_cast<Http2ClientSession *>(stream->get_proxy_ssn());
     SCOPED_MUTEX_LOCK(lock, ua_session->mutex, this_ethread());
     if (!ua_session->connection_state.is_state_closed() && !ua_session->is_url_pushed(url, url_len)) {
       HTTPHdr *hptr = &(sm->t_state.hdr_info.client_request);
@@ -8980,8 +8983,11 @@ TSSslContextFindByName(const char *name)
   SSLCertLookup *lookup = SSLCertificateConfig::acquire();
   if (lookup != nullptr) {
     SSLCertContext *cc = lookup->find(name);
-    if (cc && cc->ctx) {
-      ret = reinterpret_cast<TSSslContext>(cc->ctx);
+    if (cc) {
+      shared_SSL_CTX ctx = cc->getCtx();
+      if (ctx) {
+        ret = reinterpret_cast<TSSslContext>(ctx.get());
+      }
     }
     SSLCertificateConfig::release(lookup);
   }
@@ -8996,12 +9002,90 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
     IpEndpoint ip;
     ip.assign(addr);
     SSLCertContext *cc = lookup->find(ip);
-    if (cc && cc->ctx) {
-      ret = reinterpret_cast<TSSslContext>(cc->ctx);
+    if (cc) {
+      shared_SSL_CTX ctx = cc->getCtx();
+      if (ctx) {
+        ret = reinterpret_cast<TSSslContext>(ctx.get());
+      }
     }
     SSLCertificateConfig::release(lookup);
   }
   return ret;
+}
+
+/**
+ * This function retrieves an array of lookup keys for client contexts loaded in
+ * traffic server. Given a 2-level mapping for client contexts, every 2 lookup keys
+ * can be used to locate and identify 1 context.
+ * @param n Allocated size for result array.
+ * @param result Const char pointer arrays to be filled with lookup keys.
+ * @param actual Total number of lookup keys.
+ */
+tsapi TSReturnCode
+TSSslClientContextsNamesGet(int n, const char **result, int *actual)
+{
+  sdk_assert(n == 0 || result != nullptr);
+  int idx = 0, count = 0;
+  SSLConfigParams *params = SSLConfig::acquire();
+
+  if (params) {
+    auto &ctx_map_lock = params->ctxMapLock;
+    auto &ca_map       = params->top_level_ctx_map;
+    auto mem           = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
+    ink_mutex_acquire(&ctx_map_lock);
+    for (auto &ca_pair : ca_map) {
+      // Populate mem array with 2 strings each time
+      for (auto &ctx_pair : ca_pair.second) {
+        if (idx + 1 < n) {
+          mem[idx++] = ca_pair.first;
+          mem[idx++] = ctx_pair.first;
+        }
+        count += 2;
+      }
+    }
+    ink_mutex_release(&ctx_map_lock);
+    for (int i = 0; i < idx; i++) {
+      result[i] = mem[i].data();
+    }
+  }
+  if (actual) {
+    *actual = count;
+  }
+  SSLConfig::release(params);
+  return TS_SUCCESS;
+}
+
+/**
+ * This function returns the client context corresponding to the lookup keys provided.
+ * User should call TSSslClientContextsGet() first to determine which lookup keys are
+ * present before querying for them. User will need to release the context returned
+ * from this function.
+ * Returns valid TSSslContext on success and nullptr on failure.
+ * @param first_key Key string for the top level.
+ * @param second_key Key string for the second level.
+ */
+tsapi TSSslContext
+TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths)
+{
+  if (!ca_paths || !ck_paths || ca_paths[0] == '\0' || ck_paths[0] == '\0') {
+    return nullptr;
+  }
+  SSLConfigParams *params = SSLConfig::acquire();
+  TSSslContext retval     = nullptr;
+  if (params) {
+    ink_mutex_acquire(&params->ctxMapLock);
+    auto ca_iter = params->top_level_ctx_map.find(ca_paths);
+    if (ca_iter != params->top_level_ctx_map.end()) {
+      auto ctx_iter = ca_iter->second.find(ck_paths);
+      if (ctx_iter != ca_iter->second.end()) {
+        SSL_CTX_up_ref(ctx_iter->second.get());
+        retval = reinterpret_cast<TSSslContext>(ctx_iter->second.get());
+      }
+    }
+    ink_mutex_release(&params->ctxMapLock);
+  }
+  SSLConfig::release(params);
+  return retval;
 }
 
 tsapi TSSslContext
@@ -9010,7 +9094,7 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_f
   TSSslContext ret        = nullptr;
   SSLConfigParams *config = SSLConfig::acquire();
   if (config != nullptr) {
-    ret = reinterpret_cast<TSSslContext>(SSLCreateServerContext(config));
+    ret = reinterpret_cast<TSSslContext>(SSLCreateServerContext(config, nullptr));
 #if TS_USE_TLS_OCSP
     if (ret && SSLConfigParams::ssl_ocsp_enabled && cert && certname) {
       if (SSL_CTX_set_tlsext_status_cb(reinterpret_cast<SSL_CTX *>(ret), ssl_callback_ocsp_stapling)) {
@@ -9029,6 +9113,124 @@ tsapi void
 TSSslContextDestroy(TSSslContext ctx)
 {
   SSLReleaseContext(reinterpret_cast<SSL_CTX *>(ctx));
+}
+
+TSReturnCode
+TSSslClientCertUpdate(const char *cert_path, const char *key_path)
+{
+  if (nullptr == cert_path) {
+    return TS_ERROR;
+  }
+
+  std::string key;
+  shared_SSL_CTX client_ctx = nullptr;
+  SSLConfigParams *params   = SSLConfig::acquire();
+
+  // Generate second level key for client context lookup
+  ts::bwprint(key, "{}:{}", cert_path, key_path);
+  Debug("ssl.cert_update", "TSSslClientCertUpdate(): Use %.*s as key for lookup", static_cast<int>(key.size()), key.data());
+
+  if (nullptr != params) {
+    // Try to update client contexts maps
+    auto &ca_paths_map = params->top_level_ctx_map;
+    auto &map_lock     = params->ctxMapLock;
+    std::string ca_paths_key;
+    // First try to locate the client context and its CA path (by top level)
+    ink_mutex_acquire(&map_lock);
+    for (auto &ca_paths_pair : ca_paths_map) {
+      auto &ctx_map = ca_paths_pair.second;
+      auto iter     = ctx_map.find(key);
+      if (iter != ctx_map.end() && iter->second != nullptr) {
+        ca_paths_key = ca_paths_pair.first;
+        break;
+      }
+    }
+    ink_mutex_release(&map_lock);
+
+    // Only update on existing
+    if (ca_paths_key.empty()) {
+      return TS_ERROR;
+    }
+
+    // Extract CA related paths
+    size_t sep                 = ca_paths_key.find(':');
+    std::string ca_bundle_file = ca_paths_key.substr(0, sep);
+    std::string ca_bundle_path = ca_paths_key.substr(sep + 1);
+
+    // Build new client context
+    client_ctx =
+      shared_SSL_CTX(SSLCreateClientContext(params, ca_bundle_path.empty() ? nullptr : ca_bundle_path.c_str(),
+                                            ca_bundle_file.empty() ? nullptr : ca_bundle_file.c_str(), cert_path, key_path),
+                     SSL_CTX_free);
+
+    // Successfully generates a client context, update in the map
+    ink_mutex_acquire(&map_lock);
+    auto iter = ca_paths_map.find(ca_paths_key);
+    if (iter != ca_paths_map.end() && iter->second.count(key)) {
+      iter->second[key] = client_ctx;
+    } else {
+      client_ctx = nullptr;
+    }
+    ink_mutex_release(&map_lock);
+  }
+
+  return client_ctx ? TS_SUCCESS : TS_ERROR;
+}
+
+TSReturnCode
+TSSslServerCertUpdate(const char *cert_path, const char *key_path)
+{
+  if (nullptr == cert_path) {
+    return TS_ERROR;
+  }
+
+  if (!key_path || key_path[0] == '\0') {
+    key_path = cert_path;
+  }
+
+  SSLCertContext *cc         = nullptr;
+  shared_SSL_CTX test_ctx    = nullptr;
+  std::shared_ptr<X509> cert = nullptr;
+
+  SSLConfig::scoped_config config;
+  SSLCertificateConfig::scoped_config lookup;
+
+  if (lookup && config) {
+    // Read cert from path to extract lookup key (common name)
+    scoped_BIO bio(BIO_new_file(cert_path, "r"));
+    if (bio) {
+      cert = std::shared_ptr<X509>(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr), X509_free);
+    }
+    if (!bio || !cert) {
+      SSLError("Failed to load certificate/key from %s", cert_path);
+      return TS_ERROR;
+    }
+
+    // Extract common name
+    int pos                       = X509_NAME_get_index_by_NID(X509_get_subject_name(cert.get()), NID_commonName, -1);
+    X509_NAME_ENTRY *common_name  = X509_NAME_get_entry(X509_get_subject_name(cert.get()), pos);
+    ASN1_STRING *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
+    char *common_name_str         = reinterpret_cast<char *>(const_cast<unsigned char *>(ASN1_STRING_get0_data(common_name_asn1)));
+    if (ASN1_STRING_length(common_name_asn1) != static_cast<int>(strlen(common_name_str))) {
+      // Embedded NULL char
+      return TS_ERROR;
+    }
+    Debug("ssl.cert_update", "Updating from %s with common name %s", cert_path, common_name_str);
+
+    // Update context to use cert
+    cc = lookup->find(common_name_str);
+    if (cc && cc->getCtx()) {
+      test_ctx = shared_SSL_CTX(SSLCreateServerContext(config, cc->userconfig.get(), cert_path, key_path), SSLReleaseContext);
+      if (!test_ctx) {
+        return TS_ERROR;
+      }
+      // Atomic Swap
+      cc->setCtx(test_ctx);
+      return TS_SUCCESS;
+    }
+  }
+
+  return TS_ERROR;
 }
 
 tsapi void
@@ -9304,7 +9506,7 @@ int64_t
 TSHttpSsnIdGet(TSHttpSsn ssnp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return cs->connection_id();
 }
 
@@ -9334,8 +9536,8 @@ TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int 
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   sdk_assert(n == 0 || result != nullptr);
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
-  int count              = 0;
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  int count        = 0;
   if (cs && n > 0) {
     auto mem = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
     count    = cs->populate_protocol(mem, n);
@@ -9367,7 +9569,7 @@ const char *
 TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return cs->protocol_contains(std::string_view{tag});
 }
 

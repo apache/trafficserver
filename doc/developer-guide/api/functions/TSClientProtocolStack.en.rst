@@ -102,10 +102,10 @@ QUIC        quic
 Examples
 --------
 
-The example below is excerpted from `example/protocol_stack/protocol_stack.cc`
+The example below is excerpted from `example/plugins/c-api/protocol_stack/protocol_stack.cc`
 in the Traffic Server source distribution. It demonstrates how to
 use :func:`TSHttpTxnClientProtocolStackGet` and :func:`TSHttpTxnClientProtocolStackContains`
 
-.. literalinclude:: ../../../../example/protocol_stack/protocol_stack.cc
+.. literalinclude:: ../../../../example/plugins/c-api/protocol_stack/protocol_stack.cc
   :language: c
   :lines: 31-46

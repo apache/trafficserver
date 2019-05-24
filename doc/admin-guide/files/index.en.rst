@@ -35,7 +35,7 @@ Configuration Files
    remap.config.en
    splitdns.config.en
    ssl_multicert.config.en
-   ssl_server_name.yaml.en
+   sni.yaml.en
    storage.config.en
    volume.config.en
 
@@ -74,7 +74,7 @@ Configuration Files
    Configures |TS| to use different server certificates for SSL termination
    when listening on multiple addresses or when clients employ SNI.
 
-:doc:`ssl_server_name.yaml.en`
+:doc:`sni.yaml.en`
    Configures SNI based Layer 4 routing.
 
 :doc:`storage.config.en`

@@ -845,12 +845,6 @@ mptcp
          origin server has previously returned HTTP/1.1.
    ===== ======================================================================
 
-.. note::
-
-   If HTTP/1.1 is used, then |TS| can use keep-alive connections to origin servers.
-
-   If HTTP/1.0 is used, then |TS| can use keep-alive connections to origin servers.
-
 .. ts:cv:: CONFIG proxy.config.http.chunking.size INT 4096
    :overridable:
 
@@ -1103,11 +1097,6 @@ mptcp
 
 Parent Proxy Configuration
 ==========================
-
-.. ts:cv:: CONFIG proxy.config.http.parent_proxy_routing_enable INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) the parent caching option. Refer to :ref:`admin-hierarchical-caching`.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.retry_time INT 300
    :reloadable:
@@ -3092,11 +3081,11 @@ SSL Termination
 
    This configuration works with OpenSSL v1.0.2 and above.
 
-.. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 0
 
-   Enables (``1``) or disables (``0``) TLSv1.
+   Enables (``1``) or disables (``0``) TLSv1.0.
 
-.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 0
 
    Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
 
@@ -3196,9 +3185,9 @@ SSL Termination
    note that OpenSSL session tickets are sensitive to the version of the ca-certificates. Once the
    file is changed with new tickets, use :option:`traffic_ctl config reload` to begin using them.
 
-.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.yaml
+.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING sni.yaml
 
-   The filename of the :file:`ssl_server_name.yaml` configuration file.
+   The filename of the :file:`sni.yaml` configuration file.
    If relative, it is relative to the configuration directory.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
@@ -3325,9 +3314,9 @@ Client-Related Configuration
    Configures |TS| to verify the origin server certificate
    with the Certificate Authority (CA). This configuration takes a value of :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`
 
-   You can override this global setting on a per domain basis in the ssl_server_name.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
+   You can override this global setting on a per domain basis in the sni.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in ssl_server_name.yaml.
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in sni.yaml.
 
 :code:`DISABLED`
    Server Certificate will not be verified
@@ -3344,7 +3333,7 @@ Client-Related Configuration
 
    You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_server_properties attribute<override-verify-server-properties>`.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in ssl_server_name.yaml.
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in sni.yaml.
 
 :code:`NONE`
    Check nothing in the standard callback.  Rely entirely on plugins to check the certificate.
@@ -3418,15 +3407,11 @@ Client-Related Configuration
    `host` which means the host header field value is used for the SNI.  If `remap` is specified, the
    remapped origin name is used for the SNI value.
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.SSLv3 INT 0
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 0
 
-   Enables (``1``) or disables (``0``) SSLv3 in the ATS client context. Disabled by default
+   Enables (``1``) or disables (``0``) TLSv1.0 in the ATS client context. If not specified, enabled by default
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 1
-
-   Enables (``1``) or disables (``0``) TLSv1 in the ATS client context. If not specified, enabled by default
-
-.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_1 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_1 INT 0
 
    Enables (``1``) or disables (``0``) TLSv1_1 in the ATS client context. If not specified, enabled by default
 

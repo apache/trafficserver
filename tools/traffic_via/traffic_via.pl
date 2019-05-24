@@ -88,6 +88,7 @@ my @proxy_header_array = (
             'D' => "dns failure",
             'N' => "no error",
             'F' => "request forbidden",
+            'L' => "loop detected",
         },
     }, {
         "Tunnel info", {
@@ -143,8 +144,6 @@ sub usage()
     print "\n-h for help\n";
     exit;
 }
-
-
 
 #Subroutine to decode via header
 sub decode_via_header($)
@@ -222,7 +221,7 @@ sub valid_char ($$)
 sub validate_keys($)
 {
     my($viaHeader) = @_;
-    my($main, $detail) = split(';', $viaHeader);
+    my($main, $detail) = split(/[:;]/, $viaHeader);
     my $running_main = 1;
     my $return_value_valid = 1;
 
@@ -285,7 +284,7 @@ sub get_via_header_flags($$$)
 
         for my $element (@userinput) {
             #Pattern matching for Via
-            if ($element =~ /Via:\s+\[(.+)\]/i || $element =~ /\[(.+)\]/ ) {
+            if ($element =~ /Via:\s+\[([^\]]+)\]/i || $element =~ /\[([^\]]+)\]/ ) {
                 #Search and grep via header
                 my $via_string = $1;
                 chomp($via_string);
@@ -305,7 +304,7 @@ sub get_via_header_flags($$$)
         );
 
         if (defined $via_header) {
-            if ($via_header =~ /Via:\s+\[(.+)\]/i || $via_header =~ /\[(.+)\]/ || $via_header =~ /(.+)/) {
+            if ($via_header =~ /Via:\s+\[([^\]]+)\]/i || $via_header =~ /\[([^\]]+)\]/ || $via_header =~ /(.+)/) {
                 #if passed through commandline dashed argument
                 my $via_string = $1;
                 print "Via header is [$via_string], Length is ", length($via_string), "\n";

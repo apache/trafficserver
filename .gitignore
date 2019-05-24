@@ -164,10 +164,6 @@ GTAGS
 ETAGS
 CTAGS
 
-lib/tsconfig/TsConfigGrammar.hpp
-lib/tsconfig/TsConfigSyntax.c
-lib/tsconfig/test-tsconfig
-
 tools/http_load/http_load
 tools/jtest/jtest
 tools/trafficserver.pc
@@ -178,6 +174,7 @@ RELEASE
 
 # autest
 tests/env-test/
+tests/Pipfile.lock
 
 iocore/cache/test_*
 iocore/cache/test/var/trafficserver/cache.db

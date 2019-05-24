@@ -485,7 +485,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.parent_proxy.file
  proxy.config.http.parent_proxy.per_parent_connect_attempts
  proxy.config.http.parent_proxy.retry_time
- proxy.config.http.parent_proxy_routing_enable
  proxy.config.http.parent_proxy.total_connect_attempts
  proxy.config.http.post_connect_attempts_timeout
  proxy.config.http.post_copy_size
@@ -592,9 +591,10 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.server.cipher_suite
  proxy.config.ssl.server.honor_cipher_order
  proxy.config.ssl.server.dhparams_file
- proxy.config.ssl.SSLv2
- proxy.config.ssl.SSLv3
  proxy.config.ssl.TLSv1
+ proxy.config.ssl.TLSv1_1
+ proxy.config.ssl.TLSv1_2
+ proxy.config.ssl.TLSv1_3
  proxy.config.ssl.server.multicert.filename
  proxy.config.ssl.server.private_key.path
  proxy.config.stat_collector.interval
