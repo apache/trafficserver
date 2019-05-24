@@ -203,32 +203,6 @@ Rollback::closeFile(int fd, bool callSync)
   return result;
 }
 
-RollBackCodes
-Rollback::updateVersion(TextBuffer *buf, version_t basedOn, version_t newVersion, bool notifyChange, bool incVersion)
-{
-  RollBackCodes returnCode;
-
-  this->acquireLock();
-  returnCode = this->updateVersion_ml(buf, basedOn, newVersion, notifyChange, incVersion);
-  this->releaseLock();
-
-  return returnCode;
-}
-
-RollBackCodes
-Rollback::updateVersion_ml(TextBuffer *buf, version_t basedOn, version_t newVersion, bool notifyChange, bool incVersion)
-{
-  RollBackCodes returnCode;
-
-  if (basedOn != currentVersion) {
-    returnCode = VERSION_NOT_CURRENT_ROLLBACK;
-  } else {
-    returnCode = internalUpdate(buf, newVersion, notifyChange, incVersion);
-  }
-
-  return returnCode;
-}
-
 // Rollback::internalUpdate()
 //
 //  Creates a version from buf.  Callee must be holding the lock

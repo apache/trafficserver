@@ -63,12 +63,6 @@ struct versionInfo {
 //    creates a new TextBuffer that contains the contents of the specified
 //    version.  CALLEE MUST DELETE the buffer
 //
-//  updateVersion(TextBuffer* buf, version_t basedOn) - checks to
-//    if basedOn is the current version.  If it is not, the update
-//    rejected.  If it is current, the active file is versioned and
-//    the contents of buf become the new active file. newVersion tells us what
-//    the new version number should be.  -1 means the next in sequence
-//
 //  getCurrentVersion() - returns the current version number.  Unless the
 //    callee was acquired the fileAccessLock, the return value only represents
 //    a snap shot in time
@@ -128,16 +122,12 @@ public:
     ink_mutex_release(&fileAccessLock);
   };
   RollBackCodes getVersion_ml(version_t version, TextBuffer **buffer);
-  RollBackCodes updateVersion_ml(TextBuffer *buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true,
-                                 bool incVersion = true);
   time_t versionTimeStamp_ml(version_t version);
   version_t extractVersionInfo(ExpandingArray *listNames, const char *testFileName);
 
   // Automatically take out lock
   bool checkForUserUpdate();
   RollBackCodes getVersion(version_t version, TextBuffer **buffer);
-  RollBackCodes updateVersion(TextBuffer *buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true,
-                              bool incVersion = true);
   time_t versionTimeStamp(version_t version);
   int statVersion(version_t, struct stat *buf);
   bool setLastModifiedTime();
