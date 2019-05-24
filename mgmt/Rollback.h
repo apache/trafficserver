@@ -54,23 +54,6 @@ struct versionInfo {
 //
 //  public functions
 //
-//  _ml functions assume the callee is handling locking issues
-//    via acquireLock() and releaseLock().  The non _ml
-//    simply grab the lock, call the corresponding _ml function,
-//    and then release the lock
-//
-//  getVersion(version_t version, TextBuffer** buffer, version_t) -
-//    creates a new TextBuffer that contains the contents of the specified
-//    version.  CALLEE MUST DELETE the buffer
-//
-//  getCurrentVersion() - returns the current version number.  Unless the
-//    callee was acquired the fileAccessLock, the return value only represents
-//    a snap shot in time
-//
-//  numberOfVersions() - returns the number of versions in the config dir.
-//    Unless the callee was acquired the fileAccessLock, the return value
-//    only represents a snap shot in time
-//
 //  checkForUserUpdate() - compares the last known modification time
 //    of the active version of the file with that files current modification
 //    time.  Returns true if the file has been changed manually or false
@@ -114,19 +97,6 @@ public:
   // Automatically take out lock
   bool checkForUserUpdate();
   bool setLastModifiedTime();
-
-  // Lock not necessary since these are only valid for a
-  //  snap shot in time
-  version_t
-  getCurrentVersion() const
-  {
-    return currentVersion;
-  };
-  int
-  numberOfVersions() const
-  {
-    return numVersions;
-  }
 
   // Not file based so no lock necessary
   const char *
