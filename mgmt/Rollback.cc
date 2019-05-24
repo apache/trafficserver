@@ -34,12 +34,6 @@
 #include "FileManager.h"
 #include "ProxyConfig.h"
 
-#define MAX_VERSION_DIGITS 11
-#define DEFAULT_BACKUPS 2
-
-constexpr int ACTIVE_VERSION  = 0;
-constexpr int INVALID_VERSION = -1;
-
 #if HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
 #define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000 + (t).st_mtimespec.tv_nsec)
 #elif HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
@@ -97,7 +91,7 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
 
   // Check to make sure that our configuration file exists
   //
-  if (statFile(ACTIVE_VERSION, &fileInfo) < 0) {
+  if (statFile(&fileInfo) < 0) {
     // If we can't find an active version because there is none we have a hard failure.
     mgmt_fatal(0, "[RollBack::Rollback] Unable to find configuration file %s.\n\tStat failed : %s\n", fileName, strerror(errno));
 
@@ -114,45 +108,20 @@ Rollback::~Rollback()
   ats_free(fileName);
 }
 
-// Rollback::createPathStr(version_t version)
-//
-//   CALLEE DELETES STORAGE
-//
-char *
-Rollback::createPathStr(version_t version)
-{
-  int bufSize  = 0;
-  char *buffer = nullptr;
-  std::string sysconfdir(RecConfigReadConfigDir());
-  bufSize = sysconfdir.size() + fileNameLen + MAX_VERSION_DIGITS + 1;
-  buffer  = (char *)ats_malloc(bufSize);
-  Layout::get()->relative_to(buffer, bufSize, sysconfdir, fileName);
-  if (version != ACTIVE_VERSION) {
-    size_t pos = strlen(buffer);
-    snprintf(buffer + pos, bufSize - pos, "_%d", version);
-  }
-
-  return buffer;
-}
-
 //
 //
-// int Rollback::statFile(version_t)
+// int Rollback::statFile()
 //
 //  A wrapper for stat()
 //
 int
-Rollback::statFile(version_t version, struct stat *buf)
+Rollback::statFile(struct stat *buf)
 {
   int statResult;
+  std::string sysconfdir(RecConfigReadConfigDir());
+  std::string filePath = Layout::get()->relative_to(sysconfdir, fileName);
 
-  if (version == this->currentVersion) {
-    version = ACTIVE_VERSION;
-  }
-
-  ats_scoped_str filePath(createPathStr(version));
-
-  statResult = root_access_needed ? elevating_stat(filePath, buf) : stat(filePath, buf);
+  statResult = root_access_needed ? elevating_stat(filePath.c_str(), buf) : stat(filePath.c_str(), buf);
 
   return statResult;
 }
@@ -163,7 +132,7 @@ Rollback::setLastModifiedTime()
   struct stat fileInfo;
 
   // Now we need to get the modification time off of the new active file
-  if (statFile(ACTIVE_VERSION, &fileInfo) >= 0) {
+  if (statFile(&fileInfo) >= 0) {
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
     return true;
   } else {
@@ -187,7 +156,7 @@ Rollback::checkForUserUpdate()
 
   ink_mutex_acquire(&fileAccessLock);
 
-  if (this->statFile(ACTIVE_VERSION, &fileInfo) < 0) {
+  if (this->statFile(&fileInfo) < 0) {
     ink_mutex_release(&fileAccessLock);
     return false;
   }
