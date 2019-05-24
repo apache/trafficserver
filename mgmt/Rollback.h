@@ -98,10 +98,6 @@ struct versionInfo {
 //  createPathStr(version_t) - creates a string to the specified
 //    version of the file.  CALLEE DELETES storage
 //
-//  internalUpdate(TextBuffer*, version_t) - does the really work of the
-//    public update functions.  newVersion tells us what the new
-//    version number should be.  -1 means the next in sequence
-
 class Rollback
 {
 public:
@@ -193,7 +189,6 @@ private:
   int closeFile(int fd, bool callSync);
   int statFile(version_t version, struct stat *buf);
   char *createPathStr(version_t version);
-  RollBackCodes internalUpdate(TextBuffer *buf, version_t newVersion, bool notifyChange = true, bool incVersion = true);
   ink_mutex fileAccessLock;
   char *fileName;
   char *fileBaseName;
