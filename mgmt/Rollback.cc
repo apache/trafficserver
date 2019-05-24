@@ -545,28 +545,13 @@ Rollback::setLastModifiedTime()
 
 // bool Rollback::checkForUserUpdate()
 //
-//  Called to check if the file has been changed
-//    by the user.  Timestamps are compared to see if a
-//    change occurred
-//
-//  If the file has been changed, a new version is rolled.
-//    The new current version and its predecessor will
-//    be the same in this case.  While this is pointless,
-//    for Rolling backward, we need to the version number
-//    to up'ed so that WebFileEdit knows that the file has
-//    changed.  Rolling a new version also has the effect
-//    of creating a new timestamp
-//
+//  Called to check if the file has been changed  by the user.
+//  Timestamps are compared to see if a change occurred
 bool
-Rollback::checkForUserUpdate(RollBackCheckType how)
+Rollback::checkForUserUpdate()
 {
   struct stat fileInfo;
   bool result;
-
-  // Variables to roll the current version
-  version_t currentVersion_local;
-  TextBuffer *buf;
-  RollBackCodes r;
 
   ink_mutex_acquire(&fileAccessLock);
 
@@ -576,20 +561,9 @@ Rollback::checkForUserUpdate(RollBackCheckType how)
   }
 
   if (fileLastModified < TS_ARCHIVE_STAT_MTIME(fileInfo)) {
-    if (how == ROLLBACK_CHECK_AND_UPDATE) {
-      // We've been modified, Roll a new version
-      currentVersion_local = this->getCurrentVersion();
-      r                    = this->getVersion_ml(currentVersion_local, &buf);
-      if (r == OK_ROLLBACK) {
-        r = this->updateVersion_ml(buf, currentVersion_local);
-        delete buf;
-      }
-      if (r != OK_ROLLBACK) {
-        mgmt_log("[Rollback::checkForUserUpdate] Failed to roll changed user file %s: %s", fileName, RollbackStrings[r]);
-      }
-
-      mgmt_log("User has changed config file %s\n", fileName);
-    }
+    setLastModifiedTime();
+    configFiles->fileChanged(fileName, configName, true);
+    mgmt_log("User has changed config file %s\n", fileName);
 
     result = true;
   } else {
