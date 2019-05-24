@@ -31,14 +31,6 @@ class TextBuffer;
 
 typedef int version_t;
 
-enum RollBackCodes {
-  OK_ROLLBACK,
-  FILE_NOT_FOUND_ROLLBACK,
-  VERSION_NOT_CURRENT_ROLLBACK,
-  SYS_CALL_ERROR_ROLLBACK,
-  INVALID_VERSION_ROLLBACK
-};
-
 class ExpandingArray;
 
 // Stores info about a backup version
@@ -88,6 +80,7 @@ public:
   {
     ink_mutex_acquire(&fileAccessLock);
   };
+
   void
   releaseLock()
   {
@@ -153,6 +146,4 @@ private:
   Rollback *parentRollback;
   version_t currentVersion;
   time_t fileLastModified;
-  int numVersions;
-  Queue<versionInfo> versionQ; // stores the backup version info
 };
