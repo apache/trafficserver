@@ -257,30 +257,6 @@ Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName
   return version;
 }
 
-time_t
-Rollback::versionTimeStamp(version_t version)
-{
-  time_t t;
-
-  ink_mutex_acquire(&fileAccessLock);
-  t = versionTimeStamp_ml(version);
-  ink_mutex_release(&fileAccessLock);
-
-  return t;
-}
-
-time_t
-Rollback::versionTimeStamp_ml(version_t version)
-{
-  struct stat buf;
-
-  if (this->statFile(version, &buf) < 0) {
-    return -1;
-  } else {
-    return buf.st_mtime;
-  }
-}
-
 int
 Rollback::statVersion(version_t version, struct stat *buf)
 {
