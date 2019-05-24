@@ -117,7 +117,6 @@ public:
 
   // Automatically take out lock
   bool checkForUserUpdate();
-  int statVersion(version_t, struct stat *buf);
   bool setLastModifiedTime();
 
   // Lock not necessary since these are only valid for a
