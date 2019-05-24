@@ -58,8 +58,7 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
     root_access_needed(root_access_needed_),
     parentRollback(parentRollback_),
     currentVersion(0),
-    fileLastModified(0),
-    numVersions(0)
+    fileLastModified(0)
 {
   version_t highestSeen;             // the highest backup version
   ExpandingArray existVer(25, true); // Existing versions
