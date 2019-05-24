@@ -101,11 +101,6 @@ struct versionInfo {
 //    of the version passed in.  If the version is not foundl, -1 is
 //    returned
 //
-//  findVersions(ExpandingArray* listNames) - scans the config directory for
-//    all versions of the file.  If listNames is not NULL, pointers to versionInfo
-//    structures are inserted into it.  If is the callee's responsibility
-//    to ats_free the versionInfo structures.  They are allocated by ats_malloc
-//
 // private functions
 //
 //  CURRENT_VERSION means the active version.  The active version does not
@@ -114,9 +109,6 @@ struct versionInfo {
 //    and this->currentVersion have different meanings.  this->currentVersion
 //    refers to a file with an _version which does not exist for the active
 //    version.
-//
-//  findVersions() - scans the configuration directory and returns
-//    the highest version number encountered
 //
 //  openFile(version_t version, int oflags) - a wrapper for open
 //    opens a file based on version number
@@ -156,8 +148,6 @@ public:
   RollBackCodes updateVersion_ml(TextBuffer *buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true,
                                  bool incVersion = true);
   RollBackCodes forceUpdate_ml(TextBuffer *buf, version_t newVersion = -1);
-  version_t findVersions_ml(ExpandingArray *listNames);
-  version_t findVersions_ml(Queue<versionInfo> &q);
   time_t versionTimeStamp_ml(version_t version);
   version_t extractVersionInfo(ExpandingArray *listNames, const char *testFileName);
 
@@ -169,7 +159,6 @@ public:
   RollBackCodes updateVersion(TextBuffer *buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true,
                               bool incVersion = true);
   RollBackCodes forceUpdate(TextBuffer *buf, version_t newVersion = -1);
-  version_t findVersions(ExpandingArray *);
   time_t versionTimeStamp(version_t version);
   int statVersion(version_t, struct stat *buf);
   bool setLastModifiedTime();
@@ -248,7 +237,3 @@ private:
   int numVersions;
   Queue<versionInfo> versionQ; // stores the backup version info
 };
-
-// qSort compatible function to sort versionInfo*
-//   based on version number
-int versionCmp(const void *i1, const void *i2);
