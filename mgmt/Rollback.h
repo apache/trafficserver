@@ -85,9 +85,6 @@ struct versionInfo {
 //    refers to a file with an _version which does not exist for the active
 //    version.
 //
-//  openFile(version_t version, int oflags) - a wrapper for open
-//    opens a file based on version number
-//
 //  statFile(version_t, struct stat*) - a wrapper for stat that
 //    that stats the specified version
 //
@@ -175,8 +172,6 @@ public:
   Rollback &operator=(const Rollback &) = delete;
 
 private:
-  int openFile(version_t version, int oflags, int *errnoPtr = nullptr);
-  int closeFile(int fd, bool callSync);
   int statFile(version_t version, struct stat *buf);
   char *createPathStr(version_t version);
   ink_mutex fileAccessLock;
