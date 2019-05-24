@@ -117,13 +117,11 @@ public:
   {
     ink_mutex_release(&fileAccessLock);
   };
-  RollBackCodes getVersion_ml(version_t version, TextBuffer **buffer);
   time_t versionTimeStamp_ml(version_t version);
   version_t extractVersionInfo(ExpandingArray *listNames, const char *testFileName);
 
   // Automatically take out lock
   bool checkForUserUpdate();
-  RollBackCodes getVersion(version_t version, TextBuffer **buffer);
   time_t versionTimeStamp(version_t version);
   int statVersion(version_t, struct stat *buf);
   bool setLastModifiedTime();
