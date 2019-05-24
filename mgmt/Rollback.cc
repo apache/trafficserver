@@ -453,47 +453,6 @@ GET_CLEANUP:
   return returnCode;
 }
 
-RollBackCodes
-Rollback::revertToVersion(version_t version)
-{
-  RollBackCodes r;
-
-  ink_mutex_acquire(&fileAccessLock);
-  r = this->revertToVersion_ml(version);
-  ink_mutex_release(&fileAccessLock);
-
-  return r;
-}
-
-// Rollback::revertToVersion_ml(version_t version)
-//
-//  assumes callee is holding this->fileAccessLock
-//
-//  moves the current version to fileName_currentVersion
-//  copies fileName_revertToVersion fileName
-//  increases this->currentVersion, this->numVersion
-//
-RollBackCodes
-Rollback::revertToVersion_ml(version_t version)
-{
-  RollBackCodes returnCode;
-  TextBuffer *revertTo;
-
-  returnCode = this->getVersion_ml(version, &revertTo);
-  if (returnCode != OK_ROLLBACK) {
-    mgmt_log("[Rollback::revertToVersion] Unable to open version %d of %s\n", version, fileName);
-    return returnCode;
-  }
-
-  returnCode = forceUpdate_ml(revertTo);
-  if (returnCode != OK_ROLLBACK) {
-    mgmt_log("[Rollback::revertToVersion] Unable to revert to version %d of %s\n", version, fileName);
-  }
-
-  delete revertTo;
-  return OK_ROLLBACK;
-}
-
 // version_t Rollback::extractVersionInfo(ExpandingArray* listNames,
 //                                        const char* testFileName)
 //
