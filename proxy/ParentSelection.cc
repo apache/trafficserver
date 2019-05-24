@@ -1055,6 +1055,17 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     params->findParent(request, result, fail_threshold, retry_time); \
   } while (0)
 
+  // start tests by marking up all tests hosts that will be marked down
+  // as part of testing.  This will insure that test hosts are not loaded
+  // from records.snap as DOWN due to previous testing.
+  //
+  HostStatus &_st = HostStatus::instance();
+  _st.setHostStatus("furry", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fluffy", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("frisky", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("curly", HOST_STATUS_UP, 0, Reason::MANUAL);
+
   // Test 1
   tbl[0] = '\0';
   ST(1);
@@ -1439,7 +1450,6 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 184
   // mark fuzzy down with HostStatus API.
-  HostStatus &_st = HostStatus::instance();
   _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
 
   ST(184);
@@ -1770,12 +1780,6 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.stooges.net");
   FP;
   RE(verify(result, PARENT_SPECIFIED, "carol", 80), 211);
-
-  // cleanup, allow changes to be persisted to records.snap
-  // so that subsequent test runs do not fail unexpectedly.
-  _st.setHostStatus("curly", HOST_STATUS_UP, 0, Reason::MANUAL);
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
-  sleep(2);
 
   delete request;
   delete result;
