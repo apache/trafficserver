@@ -229,24 +229,6 @@ Rollback::updateVersion_ml(TextBuffer *buf, version_t basedOn, version_t newVers
   return returnCode;
 }
 
-RollBackCodes
-Rollback::forceUpdate(TextBuffer *buf, version_t newVersion)
-{
-  RollBackCodes r;
-
-  ink_mutex_acquire(&fileAccessLock);
-  r = this->forceUpdate_ml(buf, newVersion);
-  ink_mutex_release(&fileAccessLock);
-
-  return r;
-}
-
-RollBackCodes
-Rollback::forceUpdate_ml(TextBuffer *buf, version_t newVersion)
-{
-  return this->internalUpdate(buf, newVersion);
-}
-
 // Rollback::internalUpdate()
 //
 //  Creates a version from buf.  Callee must be holding the lock

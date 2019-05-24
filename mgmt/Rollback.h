@@ -77,10 +77,6 @@ struct versionInfo {
 //    the contents of buf become the new active file. newVersion tells us what
 //    the new version number should be.  -1 means the next in sequence
 //
-//  forceUpdate(TextBuffer* buf, version_t) - Does not check is the new version
-//    is based on the current version, which can lead to data loss.  versions
-//    the active file and places the contents of buf into the active file
-//
 //  getCurrentVersion() - returns the current version number.  Unless the
 //    callee was acquired the fileAccessLock, the return value only represents
 //    a snap shot in time
@@ -143,7 +139,6 @@ public:
   RollBackCodes getVersion_ml(version_t version, TextBuffer **buffer);
   RollBackCodes updateVersion_ml(TextBuffer *buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true,
                                  bool incVersion = true);
-  RollBackCodes forceUpdate_ml(TextBuffer *buf, version_t newVersion = -1);
   time_t versionTimeStamp_ml(version_t version);
   version_t extractVersionInfo(ExpandingArray *listNames, const char *testFileName);
 
@@ -153,7 +148,6 @@ public:
   RollBackCodes getVersion(version_t version, TextBuffer **buffer);
   RollBackCodes updateVersion(TextBuffer *buf, version_t basedOn, version_t newVersion = -1, bool notifyChange = true,
                               bool incVersion = true);
-  RollBackCodes forceUpdate(TextBuffer *buf, version_t newVersion = -1);
   time_t versionTimeStamp(version_t version);
   int statVersion(version_t, struct stat *buf);
   bool setLastModifiedTime();
