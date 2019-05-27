@@ -29,17 +29,7 @@
 class FileManager;
 class TextBuffer;
 
-typedef int version_t;
-
 class ExpandingArray;
-
-// Stores info about a backup version
-//   Can be put in to List.h lists
-struct versionInfo {
-  version_t version;
-  time_t modTime;
-  LINK(versionInfo, link);
-};
 
 //
 //  class Rollback
@@ -78,7 +68,6 @@ public:
 
   // Automatically take out lock
   bool checkForUserUpdate();
-  bool setLastModifiedTime();
 
   // Not file based so no lock necessary
   const char *
