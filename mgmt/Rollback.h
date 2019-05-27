@@ -53,13 +53,6 @@ struct versionInfo {
 //
 // private functions
 //
-//  CURRENT_VERSION means the active version.  The active version does not
-//    have _version appended to its name.  All prior versions are stored
-//    as fileName_version.  Calling file operations with CURRENT_VERSION
-//    and this->currentVersion have different meanings.  this->currentVersion
-//    refers to a file with an _version which does not exist for the active
-//    version.
-//
 //  statFile(struct stat*) - a wrapper for stat(), using layout engine
 //
 class Rollback
@@ -139,6 +132,5 @@ private:
   size_t fileNameLen;
   bool root_access_needed;
   Rollback *parentRollback;
-  version_t currentVersion;
   time_t fileLastModified;
 };

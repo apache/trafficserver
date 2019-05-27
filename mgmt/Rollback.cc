@@ -48,13 +48,8 @@ const char *RollbackStrings[] = {"Rollback Ok", "File was not found", "Version w
 
 Rollback::Rollback(const char *fileName_, const char *configName_, bool root_access_needed_, Rollback *parentRollback_,
                    unsigned flags)
-  : configFiles(nullptr),
-    root_access_needed(root_access_needed_),
-    parentRollback(parentRollback_),
-    currentVersion(0),
-    fileLastModified(0)
+  : configFiles(nullptr), root_access_needed(root_access_needed_), parentRollback(parentRollback_), fileLastModified(0)
 {
-  version_t highestSeen;             // the highest backup version
   ExpandingArray existVer(25, true); // Existing versions
   struct stat fileInfo;
   ink_assert(fileName_ != nullptr);
@@ -81,13 +76,9 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
 
   // ToDo: This was really broken before, it  used to check if numberBackups <=0, but that could never happen.
   if (flags & CONFIG_FLAG_UNVERSIONED) {
-    currentVersion = 0;
     setLastModifiedTime();
     return;
   }
-
-  currentVersion = 0; // Prevent UMR with stat file
-  highestSeen    = 0;
 
   // Check to make sure that our configuration file exists
   //
@@ -97,9 +88,6 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
 
   } else {
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
-    currentVersion   = highestSeen + 1;
-
-    Debug("rollback", "[Rollback::Rollback] Current Version of %s is %d", fileName, currentVersion);
   }
 }
 
