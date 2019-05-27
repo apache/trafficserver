@@ -49,8 +49,7 @@ class Rollback
 {
 public:
   // fileName_ should be rooted or a base file name.
-  Rollback(const char *fileName_, const char *configName_, bool root_access_needed, Rollback *parentRollback = nullptr,
-           unsigned flags = 0);
+  Rollback(const char *fileName_, const char *configName_, bool root_access_needed, Rollback *parentRollback);
   ~Rollback();
 
   // Manual take out of lock required
@@ -66,16 +65,10 @@ public:
     ink_mutex_release(&fileAccessLock);
   };
 
-  // Automatically take out lock
+  // Check if a file has changed, automatically holds the lock. Used by FileManager.
   bool checkForUserUpdate();
 
-  // Not file based so no lock necessary
-  const char *
-  getBaseName() const
-  {
-    return fileBaseName;
-  }
-
+  // These are getters, for FileManager to get info about a particular configuration.
   const char *
   getFileName() const
   {
@@ -106,7 +99,7 @@ public:
     return root_access_needed;
   }
 
-  FileManager *configFiles; // Manager to notify on an update.
+  FileManager *configFiles = nullptr; // Manager to notify on an update.
 
   // noncopyable
   Rollback(const Rollback &) = delete;
@@ -114,12 +107,11 @@ public:
 
 private:
   int statFile(struct stat *buf);
+
   ink_mutex fileAccessLock;
   char *fileName;
-  char *fileBaseName;
   char *configName;
-  size_t fileNameLen;
   bool root_access_needed;
   Rollback *parentRollback;
-  time_t fileLastModified;
+  time_t fileLastModified = 0;
 };

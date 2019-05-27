@@ -107,7 +107,7 @@ FileManager::addFileHelper(const char *fileName, const char *configName, bool ro
 {
   ink_assert(fileName != nullptr);
 
-  Rollback *rb    = new Rollback(fileName, configName, root_access_needed, parentRollback, flags);
+  Rollback *rb    = new Rollback(fileName, configName, root_access_needed, parentRollback);
   rb->configFiles = this;
 
   bindings.emplace(rb->getFileName(), rb);
