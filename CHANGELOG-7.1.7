@@ -6,8 +6,13 @@ Changes with Apache Traffic Server 7.1.7
   #4896 - [Backport] Manually brought in changes from #4797
   #4951 - Use one setting for H2 consistently for header size limit on H2 connections
   #4959 - Mark H2 connection inactive only if it is NOT shutting down
+  #4996 - Avoid ats_malloc in unmarshal
   #4997 - Fix TSHttpTxnEffectiveUrlStringGet to correctly set the port when it …
   #4998 - Cached object's size can be used as content length for 304 response
   #5001 - Manually merging changes from #4442
   #5013 - don't start a new self scheduling config handler on each config reload
+  #5027 - Fix an failed assertion in HttpSM::parse_range_and_compare
   #5170 - Revert "Assert if operations on keep_alive_queue and active_queue are…
+  #5280 - Fix build issues on modern macOS for LuaJIT
+  #5359 - Revert TS-374 to avoid deadlocks
+  #5485 - Don't read frames after sending GOAWAY with an error code
