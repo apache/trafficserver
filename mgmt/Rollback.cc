@@ -74,12 +74,6 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
 
   ink_mutex_init(&fileAccessLock);
 
-  // ToDo: This was really broken before, it  used to check if numberBackups <=0, but that could never happen.
-  if (flags & CONFIG_FLAG_UNVERSIONED) {
-    setLastModifiedTime();
-    return;
-  }
-
   // Check to make sure that our configuration file exists
   //
   if (statFile(&fileInfo) < 0) {
@@ -114,24 +108,6 @@ Rollback::statFile(struct stat *buf)
   return statResult;
 }
 
-bool
-Rollback::setLastModifiedTime()
-{
-  struct stat fileInfo;
-
-  // Now we need to get the modification time off of the new active file
-  if (statFile(&fileInfo) >= 0) {
-    fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
-    return true;
-  } else {
-    // We really shouldn't fail to stat the file since we just
-    //  created it.  If we do, just punt and just use the current
-    //  time.
-    fileLastModified = (time(nullptr) - ink_timezone()) * 1000000000;
-    return false;
-  }
-}
-
 // bool Rollback::checkForUserUpdate()
 //
 //  Called to check if the file has been changed  by the user.
@@ -150,7 +126,7 @@ Rollback::checkForUserUpdate()
   }
 
   if (fileLastModified < TS_ARCHIVE_STAT_MTIME(fileInfo)) {
-    setLastModifiedTime();
+    fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
     configFiles->fileChanged(fileName, configName, true);
     mgmt_log("User has changed config file %s\n", fileName);
 
