@@ -153,10 +153,10 @@ HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned 
 {
 }
 
-HostStatus_t
+HostStatRec *
 HostStatus::getHostStatus(const char *name)
 {
-  return (HostStatus_t)0;
+  return nullptr;
 }
 
 void
@@ -240,7 +240,7 @@ INKVConnInternal::retry(unsigned int delay)
 {
 }
 
-INKContInternal::INKContInternal(TSEventFunc funcp, TSMutex mutexp) : DummyVConnection((ProxyMutex *)mutexp) {}
+INKContInternal::INKContInternal(TSEventFunc funcp, TSMutex mutexp) : DummyVConnection(reinterpret_cast<ProxyMutex *>(mutexp)) {}
 
 INKContInternal::INKContInternal() : DummyVConnection(nullptr) {}
 

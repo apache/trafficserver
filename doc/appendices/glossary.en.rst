@@ -55,6 +55,12 @@ Glossary
       cache. A transaction begins when |TS| receives a request, and ends when
       |TS| sends the response.
 
+   client request
+      The HTTP request sent from the user agent (the client) to |TS|.
+
+   proxy request
+      The HTTP request sent from |TS| (the proxy) to the upstream.
+
    cache volume
       A user defined unit of persistent storage for the cache. Cache volumes
       are defined in :file:`volume.config`. A cache volume is by default spread

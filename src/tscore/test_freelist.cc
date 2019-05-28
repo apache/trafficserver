@@ -45,8 +45,8 @@ test(void *d)
     m3 = ink_freelist_new(flist);
 
     if ((m1 == m2) || (m1 == m3) || (m2 == m3)) {
-      printf("0x%08" PRIx64 "   0x%08" PRIx64 "   0x%08" PRIx64 "\n", (uint64_t)(uintptr_t)m1, (uint64_t)(uintptr_t)m2,
-             (uint64_t)(uintptr_t)m3);
+      printf("0x%08" PRIx64 "   0x%08" PRIx64 "   0x%08" PRIx64 "\n", static_cast<uint64_t>((uintptr_t)m1),
+             static_cast<uint64_t>((uintptr_t)m2), static_cast<uint64_t>((uintptr_t)m3));
       exit(1);
     }
 
@@ -74,7 +74,7 @@ main(int /* argc ATS_UNUSED */, char * /*argv ATS_UNUSED */ [])
 
   for (i = 0; i < NTHREADS; i++) {
     fprintf(stderr, "Create thread %d\n", i);
-    ink_thread_create(nullptr, test, (void *)((intptr_t)i), 0, 0, nullptr);
+    ink_thread_create(nullptr, test, (void *)(static_cast<intptr_t>(i)), 0, 0, nullptr);
   }
 
   test((void *)NTHREADS);

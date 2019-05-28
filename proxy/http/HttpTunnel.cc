@@ -1452,7 +1452,7 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer *p, bool chain)
         if (c->write_vio->nbytes < 0) {
           // TODO: Wtf, printf?
           fprintf(stderr, "[HttpTunnel::finish_all_internal] ERROR: Incorrect total_bytes - c->skip_bytes = %" PRId64 "\n",
-                  (int64_t)(total_bytes - c->skip_bytes));
+                  static_cast<int64_t>(total_bytes - c->skip_bytes));
         }
       }
 
@@ -1558,10 +1558,10 @@ HttpTunnel::main_handler(int event, void *data)
   ink_assert(sm->magic == HTTP_SM_MAGIC_ALIVE);
 
   // Find the appropriate entry
-  if ((p = get_producer((VIO *)data)) != nullptr) {
+  if ((p = get_producer(static_cast<VIO *>(data))) != nullptr) {
     sm_callback = producer_handler(event, p);
   } else {
-    if ((c = get_consumer((VIO *)data)) != nullptr) {
+    if ((c = get_consumer(static_cast<VIO *>(data))) != nullptr) {
       ink_assert(c->write_vio == (VIO *)data || c->vc == ((VIO *)data)->vc_server);
       sm_callback = consumer_handler(event, c);
     } else {

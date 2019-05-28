@@ -76,12 +76,6 @@ Prefix Description  Equivalent in Bytes
 ``T``  Terabytes    1,099,511,627,776 bytes (1024\ :sup:`4`)
 ====== ============ ===========================================================
 
-.. important::
-
-   Unless :ts:cv:`proxy.config.disable_configuration_modification` is enabled,
-   |TS| writes configurations back to disk periodically. When doing so, the
-   unit prefixes are not preserved.
-
 Floating point variables (``FLOAT``) must be expressed as a regular decimal
 number. Unit prefixes are not supported, nor are alternate notations (scientific,
 exponent, etc.).
@@ -540,14 +534,6 @@ Local Manager
    This setting is not reloadable, since it is must be applied when
    program:`traffic_manager` initializes.
 
-.. ts:cv:: CONFIG proxy.config.disable_configuration_modification INT 0
-   :reloadable:
-
-   This setting prevents |TS| from rewriting the :file:`records.config`
-   configuration file. Dynamic configuration changes can still be made using
-   :program:`traffic_ctl config set`, but these changes will not be persisted
-   on service restarts or when :option:`traffic_ctl config reload` is run.
-
 Alarm Configuration
 ===================
 
@@ -872,12 +858,6 @@ mptcp
          origin server has previously returned HTTP/1.1.
    ===== ======================================================================
 
-.. note::
-
-   If HTTP/1.1 is used, then |TS| can use keep-alive connections to origin servers.
-
-   If HTTP/1.0 is used, then |TS| can use keep-alive connections to origin servers.
-
 .. ts:cv:: CONFIG proxy.config.http.chunking.size INT 4096
    :overridable:
 
@@ -1130,11 +1110,6 @@ mptcp
 
 Parent Proxy Configuration
 ==========================
-
-.. ts:cv:: CONFIG proxy.config.http.parent_proxy_routing_enable INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) the parent caching option. Refer to :ref:`admin-hierarchical-caching`.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.retry_time INT 300
    :reloadable:
@@ -3626,6 +3601,20 @@ HTTP/2 Configuration
    This is the maximum stream error rate |TS| allows on an HTTP/2 connection.
    |TS| gracefully closes connections that have stream error rates above this
    setting by sending GOAWAY frames.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 7
+   :reloadable:
+
+   Specifies how many settings in an HTTP/2 SETTINGS frame |TS| accepts.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_minute INT 14
+   :reloadable:
+
+   Specifies how many settings in HTTP/2 SETTINGS frames |TS| accept for a minute.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
 
 HTTP/3 Configuration
 ====================

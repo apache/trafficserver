@@ -485,7 +485,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.parent_proxy.file
  proxy.config.http.parent_proxy.per_parent_connect_attempts
  proxy.config.http.parent_proxy.retry_time
- proxy.config.http.parent_proxy_routing_enable
  proxy.config.http.parent_proxy.total_connect_attempts
  proxy.config.http.post_connect_attempts_timeout
  proxy.config.http.post_copy_size

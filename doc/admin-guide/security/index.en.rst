@@ -284,9 +284,10 @@ Authority Information Access field of the signed certificate. For example::
 Traffic Server can also use prefetched OCSP stapling responses if ssl_ocsp_name parameter
 is used in :file:`ssl_multicert.config`. Take into account that when using prefetched
 OCSP stapling responses traffic server will not refresh them and it should be done
-externally. This can be done using openssl:
+externally. This can be done using openssl::
+
     $ openssl ocsp -issuer ca.crt -cert cert.crt -host ocsp.digicert.com:80 \
-      -header "Host=ocsp.digicert.com" -respout /var/cache/ocsp/cert.ocsp
+    -header "Host=ocsp.digicert.com" -respout /var/cache/ocsp/cert.ocsp
 
 Support for OCSP Stapling can be tested using the -status option of the OpenSSL client::
 

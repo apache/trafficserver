@@ -416,8 +416,6 @@ static const RecordElement RecordsConfig[] =
   //        ##############################
   //        # parent proxy configuration #
   //        ##############################
-  {RECT_CONFIG, "proxy.config.http.parent_proxy_routing_enable", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.http.parent_proxies", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.parent_proxy.file", RECD_STRING, "parent.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -961,8 +959,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.hostdb.host_file.interval", RECD_INT, "86400", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.disable_configuration_modification", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
-  ,
   //##########################################################################
   //#
   //# HTTP
@@ -1310,6 +1306,10 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http2.zombie_debug_timeout_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http2.stream_error_rate_threshold", RECD_FLOAT, "0.1", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http2.max_settings_per_frame", RECD_INT, "7", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http2.max_settings_per_minute", RECD_INT, "14", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
 
   //############

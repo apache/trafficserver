@@ -23,13 +23,29 @@ import time
 Test.Summary = '''
 Test for verify of runroot from traffic_layout.
 '''
-Test.ContinueOnFail = True
-Test.SkipUnless(Test.Variables.BINDIR.startswith(Test.Variables.PREFIX),
-                "need to guarantee bin path starts with prefix for runroot")
+
+prefix = Test.Variables["PREFIX"]
+bindir = Test.Variables["BINDIR"]
+logdir = Test.Variables["LOGDIR"]
+
+if bindir.startswith(prefix):
+    # get the bin directory based on removing the common prefix
+    binsuffix = bindir[len(prefix)+1:]
+else:
+    # given a custom setup this might work.. or it might not
+    binsuffix = bindir
+
+if logdir.startswith(prefix):
+    # get the bin directory based on removing the common prefix
+    logsuffix = bindir[len(prefix)+1:]
+else:
+    # given a custom setup this might work.. or it might not
+    logsuffix = logdir
+
 
 # create runroot
 path = os.path.join(Test.RunDirectory, "runroot")
-tr = Test.AddTestRun()
+tr = Test.AddTestRun("Create runroot")
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path
 f = tr.Disk.File(os.path.join(path, "runroot.yaml"))
 f.Exists = True
@@ -37,23 +53,16 @@ f.Exists = True
 # verify test #1
 tr = Test.AddTestRun("verify runroot test1")
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout verify --path " + path
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    os.path.join(path, "bin"), "example bindir output")
-tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    os.path.join(path, "var/log/trafficserver"), "example logdir output")
+
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(os.path.join(path, binsuffix), "example bindir output")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(os.path.join(path, logsuffix), "example logdir output")
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("PASSED", "contain passed message")
 
 # verify test #2
-bin_path = Test.Variables.BINDIR[Test.Variables.BINDIR.find(
-    Test.Variables.PREFIX) + len(Test.Variables.PREFIX) + 1:]
+bin_path = Test.Variables.BINDIR[Test.Variables.BINDIR.find(Test.Variables.PREFIX) + len(Test.Variables.PREFIX) + 1:]
 tr = Test.AddTestRun("verify runroot test2")
-tr.Processes.Default.Command = "cd " + path + ";" + \
-    os.path.join(bin_path, "traffic_layout") + " verify --path " + path
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    os.path.join(path, "bin"), "example bindir output")
-tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    os.path.join(path, "var/log/trafficserver"), "example logdir output")
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("PASSED", "contain passed message")
+tr.Processes.Default.Command = "cd " + path + ";" + os.path.join(bin_path, "traffic_layout") + " verify --path " + path
 
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(os.path.join(path, binsuffix), "example bindir output")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(os.path.join(path, logsuffix), "example logdir output")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("PASSED", "contain passed message")

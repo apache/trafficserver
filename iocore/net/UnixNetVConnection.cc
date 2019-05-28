@@ -279,7 +279,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
         return;
       }
       vc->read.triggered = 0;
-      read_signal_error(nh, vc, (int)-r);
+      read_signal_error(nh, vc, static_cast<int>(-r));
       return;
     }
     NET_SUM_DYN_STAT(net_read_bytes_stat, r);
@@ -480,7 +480,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     }
 
     vc->write.triggered = 0;
-    write_signal_error(nh, vc, (int)-total_written);
+    write_signal_error(nh, vc, static_cast<int>(-total_written));
     return;
   } else {                                        // Wrote data.  Finished without error
     int wbe_event = vc->write_buffer_empty_event; // save so we can clear if needed.
@@ -548,10 +548,10 @@ UnixNetVConnection::get_data(int id, void *data)
 
   switch (id) {
   case TS_API_DATA_READ_VIO:
-    *ptr.vio = (TSVIO) & this->read.vio;
+    *ptr.vio = reinterpret_cast<TSVIO>(&this->read.vio);
     return true;
   case TS_API_DATA_WRITE_VIO:
-    *ptr.vio = (TSVIO) & this->write.vio;
+    *ptr.vio = reinterpret_cast<TSVIO>(&this->write.vio);
     return true;
   case TS_API_DATA_CLOSED:
     *ptr.n = this->closed;
@@ -668,7 +668,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
 {
   switch (howto) {
   case IO_SHUTDOWN_READ:
-    socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, 0);
+    socketManager.shutdown((this)->con.fd, 0);
     read.enabled = 0;
     read.vio.buffer.clear();
     read.vio.nbytes = 0;
@@ -676,7 +676,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     f.shutdown |= NET_VC_SHUTDOWN_READ;
     break;
   case IO_SHUTDOWN_WRITE:
-    socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, 1);
+    socketManager.shutdown((this)->con.fd, 1);
     write.enabled = 0;
     write.vio.buffer.clear();
     write.vio.nbytes = 0;
@@ -684,7 +684,7 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
     f.shutdown |= NET_VC_SHUTDOWN_WRITE;
     break;
   case IO_SHUTDOWN_READWRITE:
-    socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, 2);
+    socketManager.shutdown((this)->con.fd, 2);
     read.enabled  = 0;
     write.enabled = 0;
     read.vio.buffer.clear();
@@ -714,7 +714,7 @@ OOB_callback::retry_OOB_send(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED
 void
 UnixNetVConnection::cancel_OOB()
 {
-  UnixNetVConnection *u = (UnixNetVConnection *)this;
+  UnixNetVConnection *u = this;
   if (u->oob_ptr) {
     if (u->oob_ptr->trigger) {
       u->oob_ptr->trigger->cancel_action();
@@ -728,7 +728,7 @@ UnixNetVConnection::cancel_OOB()
 Action *
 UnixNetVConnection::send_OOB(Continuation *cont, char *buf, int len)
 {
-  UnixNetVConnection *u = (UnixNetVConnection *)this;
+  UnixNetVConnection *u = this;
   ink_assert(len > 0);
   ink_assert(buf);
   ink_assert(!u->oob_ptr);
@@ -1228,7 +1228,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     // This call will fail if fd is not a socket (e.g. it is a
     // eventfd or a regular file fd.  That is ok, because sock_type
     // is only used when setting up the socket.
-    safe_getsockopt(fd, SOL_SOCKET, SO_TYPE, (char *)&con.sock_type, &len);
+    safe_getsockopt(fd, SOL_SOCKET, SO_TYPE, reinterpret_cast<char *>(&con.sock_type), &len);
     safe_nonblocking(fd);
     con.fd           = fd;
     con.is_connected = true;
@@ -1267,7 +1267,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 
 fail:
   lerrno = -res;
-  action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)res);
+  action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)static_cast<intptr_t>(res));
   if (fd != NO_FD) {
     con.fd = NO_FD;
   }

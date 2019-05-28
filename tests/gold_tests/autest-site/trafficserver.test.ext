@@ -89,6 +89,11 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     # copy all basic config files we need to get this to work
     cfg_dir = os.path.join(AUTEST_SITE_PATH, "min_cfg")
 
+    p.Setup.MakeDir(config_dir)
+    p.Setup.Chown(config_dir, "nobody", "nobody", ignore=True)
+    # covers ubuntu's unprivileged group
+    p.Setup.Chown(config_dir, "nobody", "nogroup", ignore=True)
+
     for f in os.listdir(cfg_dir):
         p.Setup.CopyAs(os.path.join(cfg_dir, f), config_dir)
 
@@ -122,6 +127,8 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     # log directory has to be created with correct permissions
     p.Setup.MakeDir(log_dir)  # log directory has to be created
     p.Setup.Chown(log_dir, "nobody", "nobody", ignore=True)
+    # covers ubuntu's unprivileged group
+    p.Setup.Chown(log_dir, "nobody", "nogroup", ignore=True)
 
     # set env so traffic server uses correct locations
     p.Env['PROXY_CONFIG_LOG_LOGFILE_DIR'] = log_dir
@@ -136,6 +143,10 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     p.Variables.LOCALSTATEDIR = runtime_dir
 
     p.Setup.MakeDir(runtime_dir)
+    p.Setup.Chown(runtime_dir, "nobody", "nobody", ignore=True)
+    # covers ubuntu's unprivileged group
+    p.Setup.Chown(runtime_dir, "nobody", "nogroup", ignore=True)
+
     # will need this for traffic_manager is it runs
     p.Setup.MakeDir(os.path.join(config_dir, 'snapshots'))
     p.Env['PROXY_CONFIG_SNAPSHOT_DIR'] = os.path.join(config_dir, 'snapshots')
@@ -144,6 +155,8 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     # ssl directory has to be created for keeping certs and keys
     p.Setup.MakeDir(ssl_dir)
     p.Setup.Chown(ssl_dir, "nobody", "nobody", ignore=True)
+    # covers ubuntu's unprivileged server
+    p.Setup.Chown(ssl_dir, "nobody", "nogroup", ignore=True)
 
     # set env so traffic server uses correct locations
     p.Env['PROXY_CONFIG_SSL_DIR'] = ssl_dir
@@ -153,6 +166,9 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
     # cache.db directory
     p.Setup.MakeDir(storage_dir)
     p.Setup.Chown(storage_dir, "nobody", "nobody", ignore=True)
+    # covers ubuntu's unprivileged group
+    p.Setup.Chown(storage_dir, "nobody", "nogroup", ignore=True)
+
     # set env so traffic server uses correct locations
     p.Env['PROXY_CONFIG_STORAGE_DIR'] = storage_dir
     p.Variables.STORAGEDIR = storage_dir

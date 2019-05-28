@@ -41,7 +41,6 @@ NetProcessor::AcceptOptions::reset()
   accept_threads        = -1;
   ip_family             = AF_INET;
   etype                 = ET_NET;
-  f_callback_on_open    = false;
   localhost_only        = false;
   frequent_accept       = true;
   backdoor              = false;
@@ -64,7 +63,7 @@ net_next_connection_number()
 {
   unsigned int res = 0;
   do {
-    res = (unsigned int)ink_atomic_increment(&net_connection_number, 1);
+    res = static_cast<unsigned int>(ink_atomic_increment(&net_connection_number, 1));
   } while (!res);
   return res;
 }
@@ -136,10 +135,6 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   na->action_         = new NetAcceptAction();
   *na->action_        = cont;
   na->action_->server = &na->server;
-
-  if (na->opt.f_callback_on_open) {
-    na->mutex = cont->mutex;
-  }
 
   if (opt.frequent_accept) { // true
     if (accept_threads > 0) {

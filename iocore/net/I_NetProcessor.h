@@ -64,10 +64,7 @@ public:
         @c NET_EVENT_ACCEPT_SUCCEED
         or @c NET_EVENT_ACCEPT_FAILED on success and failure resp.
     */
-    bool f_callback_on_open;
-    /** Accept only on the loopback address.
-        Default: @c false.
-     */
+
     bool localhost_only;
     /// Are frequent accepts expected?
     /// Default: @c false.

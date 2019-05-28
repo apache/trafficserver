@@ -159,12 +159,6 @@ the configuration adjustments detailed below.
     configured to serve the child's origin server, no additional configuration is
     needed for the nodes acting as Traffic Server parent caches.
 
-#. Enable the parent caching option by adjusting
-   :ts:cv:`proxy.config.http.parent_proxy_routing_enable` in
-   :file:`records.config`. ::
-
-        CONFIG proxy.config.http.parent_proxy_routing_enable INT 1
-
 #. Identify the parent cache you want to use to service missed requests. To
    use parent failover, you must identify more than one parent cache so that
    when a parent cache is unavailable, requests are sent to another parent

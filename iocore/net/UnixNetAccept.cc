@@ -49,7 +49,7 @@ safe_delay(int msec)
 int
 net_accept(NetAccept *na, void *ep, bool blockable)
 {
-  Event *e               = (Event *)ep;
+  Event *e               = static_cast<Event *>(ep);
   int res                = 0;
   int count              = 0;
   int loop               = accept_till_done;
@@ -71,10 +71,10 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       }
       if (na->server.fd != NO_FD && !na->action_->cancelled) {
         if (!blockable) {
-          na->action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
+          na->action_->continuation->handleEvent(EVENT_ERROR, (void *)static_cast<intptr_t>(res));
         } else {
           SCOPED_MUTEX_LOCK(lock, na->action_->mutex, e->ethread);
-          na->action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
+          na->action_->continuation->handleEvent(EVENT_ERROR, (void *)static_cast<intptr_t>(res));
         }
       }
       count = res;
@@ -260,15 +260,6 @@ NetAccept::do_listen(bool non_blocking)
     }
   }
 
-  if (opt.f_callback_on_open && !action_->cancelled) {
-    if (res) {
-      action_->continuation->handleEvent(NET_EVENT_ACCEPT_FAILED, this);
-    } else {
-      action_->continuation->handleEvent(NET_EVENT_ACCEPT_SUCCEED, this);
-    }
-    mutex = nullptr;
-  }
-
   return res;
 }
 
@@ -295,7 +286,7 @@ NetAccept::do_blocking_accept(EThread *t)
       }
       if (!action_->cancelled) {
         SCOPED_MUTEX_LOCK(lock, action_->mutex ? action_->mutex : t->mutex, t);
-        action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
+        action_->continuation->handleEvent(EVENT_ERROR, (void *)static_cast<intptr_t>(res));
         Warning("accept thread received fatal error: errno = %d", errno);
       }
       return -1;
@@ -359,7 +350,7 @@ int
 NetAccept::acceptEvent(int event, void *ep)
 {
   (void)event;
-  Event *e = (Event *)ep;
+  Event *e = static_cast<Event *>(ep);
   // PollDescriptor *pd = get_PollDescriptor(e->ethread);
   Ptr<ProxyMutex> m;
 
@@ -401,7 +392,7 @@ NetAccept::acceptEvent(int event, void *ep)
 int
 NetAccept::acceptFastEvent(int event, void *ep)
 {
-  Event *e = (Event *)ep;
+  Event *e = static_cast<Event *>(ep);
   (void)event;
   (void)e;
   int bufsz, res = 0;
@@ -463,7 +454,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
         goto Ldone;
       }
       if (!action_->cancelled) {
-        action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
+        action_->continuation->handleEvent(EVENT_ERROR, (void *)static_cast<intptr_t>(res));
       }
       goto Lerror;
     }

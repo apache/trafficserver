@@ -170,12 +170,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_DH_GET_2048_256], [
   AC_LINK_IFELSE(
   [
     AC_LANG_PROGRAM([[
-#if HAVE_OPENSSL_SSL_H
-#include <openssl/ssl.h>
-#endif
-#if HAVE_OPENSSL_TLS1_H
-#include <openssl/tls1.h>
-#endif
+#include<openssl/dh.h>
       ]],
       [[DH_get_2048_256();]])
   ],

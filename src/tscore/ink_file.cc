@@ -129,7 +129,7 @@ ink_file_fd_writestring(int fd, const char *buf)
 {
   int len, i = 0;
 
-  if (buf && (len = strlen(buf)) > 0 && (i = (int)write(fd, buf, (size_t)len) != len)) {
+  if (buf && (len = strlen(buf)) > 0 && (i = static_cast<int>(write(fd, buf, static_cast<size_t>(len))) != len)) {
     i = -1;
   }
 
@@ -199,7 +199,7 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
   maxlen  = rootlen + strlen(addpath) + 4; // 4 for slashes at start, after
                                            // root, and at end, plus trailing
                                            // null
-  if (maxlen > (size_t)pathsz) {
+  if (maxlen > static_cast<size_t>(pathsz)) {
     return E2BIG; // APR_ENAMETOOLONG;
   }
   if (addpath[0] == '/') {
@@ -360,9 +360,9 @@ ink_filepath_make(char *path, int pathsz, const char *rootpath, const char *addp
   }
   rootlen = strlen(rootpath);
   maxlen  = strlen(addpath) + 2;
-  if (maxlen > (size_t)pathsz) {
+  if (maxlen > static_cast<size_t>(pathsz)) {
     *path = '\0';
-    return (int)maxlen;
+    return static_cast<int>(maxlen);
   }
   ink_strlcpy(path, rootpath, pathsz);
   path += rootlen;
@@ -531,7 +531,7 @@ ink_fileperm_parse(const char *perms)
 {
   if (perms && strlen(perms) == 9) {
     int re  = 0;
-    char *c = (char *)perms;
+    char *c = const_cast<char *>(perms);
     if (*c == 'r') {
       re |= S_IRUSR;
     }

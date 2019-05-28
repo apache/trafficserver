@@ -131,7 +131,7 @@ char *ptr_data;
 intptr_t
 CoreUtils::find_vaddr(intptr_t vaddr, intptr_t upper, intptr_t lower)
 {
-  intptr_t index = (intptr_t)floor((double)((upper + lower) / 2));
+  intptr_t index = static_cast<intptr_t>(floor(static_cast<double>((upper + lower) / 2)));
 
   // match in table, returns index to be inserted into
   if (arrayMem[index].vaddr == vaddr) {
@@ -338,11 +338,11 @@ CoreUtils::find_stuff(StuffTest_f f)
 void
 CoreUtils::test_HdrHeap(void *arg)
 {
-  HdrHeap *hheap_test = (HdrHeap *)arg;
+  HdrHeap *hheap_test = static_cast<HdrHeap *>(arg);
   uint32_t *magic_ptr = &(hheap_test->m_magic);
   uint32_t magic      = 0;
 
-  if (read_from_core((intptr_t)magic_ptr, sizeof(uint32_t), (char *)&magic) != 0) {
+  if (read_from_core((intptr_t)magic_ptr, sizeof(uint32_t), reinterpret_cast<char *>(&magic)) != 0) {
     if (magic == HDR_BUF_MAGIC_ALIVE || magic == HDR_BUF_MAGIC_DEAD || magic == HDR_BUF_MAGIC_CORRUPT ||
         magic == HDR_BUF_MAGIC_MARSHALED) {
       printf("Found Hdr Heap @ 0x%p\n", arg);
@@ -384,11 +384,11 @@ CoreUtils::test_HttpSM_from_tunnel(void *arg)
 void
 CoreUtils::test_HttpSM(void *arg)
 {
-  HttpSM *hsm_test        = (HttpSM *)arg;
+  HttpSM *hsm_test        = static_cast<HttpSM *>(arg);
   unsigned int *magic_ptr = &(hsm_test->magic);
   unsigned int magic      = 0;
 
-  if (read_from_core((intptr_t)magic_ptr, sizeof(int), (char *)&magic) != 0) {
+  if (read_from_core((intptr_t)magic_ptr, sizeof(int), reinterpret_cast<char *>(&magic)) != 0) {
     if (magic == HTTP_SM_MAGIC_ALIVE || magic == HTTP_SM_MAGIC_DEAD) {
       printf("test_HttpSM:******MATCH*****\n");
       process_HttpSM(hsm_test);
@@ -562,7 +562,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
     }
 
     char *free_start = (char *)(((HdrStrHeap *)str_hdr)->m_free_start);
-    int nto_copy     = std::abs((char *)copy_start - free_start);
+    int nto_copy     = std::abs(copy_start - free_start);
     ats_free(str_hdr);
     char rw_heap[sizeof(char) * nto_copy];
     if (read_from_core((intptr_t)copy_start, nto_copy, rw_heap) == -1) {
@@ -686,7 +686,7 @@ CoreUtils::process_EThread(EThread *eth_test)
   char *buf = (char *)ats_malloc(sizeof(char) * sizeof(EThread));
 
   if (read_from_core((intptr_t)eth_test, sizeof(EThread), buf) != -1) {
-    EThread *loaded_eth = (EThread *)buf;
+    EThread *loaded_eth = reinterpret_cast<EThread *>(buf);
 
     printf("----------- EThread @ 0x%p ----------\n", eth_test);
 #if !defined(kfreebsd) && (defined(freebsd) || defined(darwin) || defined(openbsd))
@@ -715,7 +715,7 @@ CoreUtils::process_NetVC(UnixNetVConnection *nvc_test)
   char *buf = (char *)ats_malloc(sizeof(char) * sizeof(UnixNetVConnection));
 
   if (read_from_core((intptr_t)nvc_test, sizeof(UnixNetVConnection), buf) != -1) {
-    UnixNetVConnection *loaded_nvc = (UnixNetVConnection *)buf;
+    UnixNetVConnection *loaded_nvc = reinterpret_cast<UnixNetVConnection *>(buf);
     char addrbuf[INET6_ADDRSTRLEN];
 
     printf("----------- UnixNetVConnection @ 0x%p ----------\n", nvc_test);
@@ -836,7 +836,7 @@ process_core(char *fname)
 
               len = sizeof *thdr + ((thdr->n_namesz + 3) & ~3) + ((thdr->n_descsz + 3) & ~3);
               // making sure the offset is byte aligned
-              char *offset = (char *)(thdr + 1) + ((thdr->n_namesz + 3) & ~3);
+              char *offset = reinterpret_cast<char *>(thdr + 1) + ((thdr->n_namesz + 3) & ~3);
 
               if (len < 0 || len > size) {
                 ::exit(1);
@@ -851,12 +851,12 @@ process_core(char *fname)
 
               switch (thdr->n_type) {
               case NT_PRSTATUS:
-                ps = (prstatus_t *)offset;
+                ps = reinterpret_cast<prstatus_t *>(offset);
                 memcpy(&pstat, ps, sizeof(prstatus_t));
                 printf("\n*** printing registers****\n");
                 for (j = 0; j < ELF_NGREG; j++) {
                   rinfo[j] = pstat.pr_reg[j];
-                  printf("%#x ", (unsigned int)rinfo[j]);
+                  printf("%#x ", static_cast<unsigned int>(rinfo[j]));
                 }
                 printf("\n");
 
@@ -867,15 +867,15 @@ process_core(char *fname)
 
                 printf("Signal that caused this core dump is signal  = %d\n", pstat.pr_cursig);
 
-                printf("stack pointer = %#x\n", (unsigned int)pstat.pr_reg[SP_REGNUM]); // UESP
+                printf("stack pointer = %#x\n", static_cast<unsigned int>(pstat.pr_reg[SP_REGNUM])); // UESP
                 framep = pstat.pr_reg[FP_REGNUM];
                 pc     = pstat.pr_reg[PC_REGNUM];
-                printf("frame pointer = %#x\n", (unsigned int)pstat.pr_reg[FP_REGNUM]); // EBP
-                printf("program counter if no save = %#x\n", (unsigned int)pstat.pr_reg[PC_REGNUM]);
+                printf("frame pointer = %#x\n", static_cast<unsigned int>(pstat.pr_reg[FP_REGNUM])); // EBP
+                printf("program counter if no save = %#x\n", static_cast<unsigned int>(pstat.pr_reg[PC_REGNUM]));
                 break;
 
               case NT_PRPSINFO:
-                ist = (prpsinfo_t *)offset;
+                ist = reinterpret_cast<prpsinfo_t *>(offset);
                 memcpy(&infostat, ist, sizeof(prpsinfo_t));
 
                 if (is_debug_tag_set("note")) {
@@ -888,7 +888,7 @@ process_core(char *fname)
                 }
                 break;
               }
-              thdr = (Elf32_Nhdr *)((char *)thdr + len);
+              thdr = reinterpret_cast<Elf32_Nhdr *>(reinterpret_cast<char *>(thdr) + len);
               sum += len;
               size -= len;
             }

@@ -34,7 +34,7 @@ Synopsis
 
 .. code-block:: cpp
 
-   #include "ts/AcidPtr.h"
+   #include "tscore/AcidPtr.h"
 
 |AcidPtr| provides atomic access to a std::shared_ptr.
 |AcidCommitPtr| provides exclusive write access to data.
