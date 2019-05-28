@@ -494,8 +494,8 @@ ocsp_update()
       certinfo_map *map = stapling_get_cert_info(ctx);
       if (map) {
         // Walk over all certs associated with this CTX
-        for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
-          cinf = iter->second;
+        for (auto &iter : *map) {
+          cinf = iter.second;
           ink_mutex_acquire(&cinf->stapling_mutex);
           current_time = time(nullptr);
           if ((cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) && !cinf->is_prefetched) {

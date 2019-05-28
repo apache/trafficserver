@@ -800,8 +800,9 @@ PluginVC::process_timeout(Event **e, int event_to_send)
 void
 PluginVC::clear_event(Event **e)
 {
-  if (e == nullptr || *e == nullptr)
+  if (e == nullptr || *e == nullptr) {
     return;
+  }
   if (*e == inactive_event) {
     inactive_event->cancel();
     inactive_timeout_at = 0;

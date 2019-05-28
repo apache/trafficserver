@@ -153,8 +153,9 @@ NetAccept::init_accept_loop()
   int i, n;
   char thr_name[MAX_THREAD_NAME_LENGTH];
   size_t stacksize;
-  if (do_listen(BLOCKING))
+  if (do_listen(BLOCKING)) {
     return;
+  }
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
 

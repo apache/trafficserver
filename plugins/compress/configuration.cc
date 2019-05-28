@@ -46,7 +46,7 @@ ltrim_if(string &s, int (*fp)(int))
 void
 rtrim_if(string &s, int (*fp)(int))
 {
-  for (ssize_t i = (ssize_t)s.size() - 1; i >= 0; i--) {
+  for (ssize_t i = static_cast<ssize_t>(s.size()) - 1; i >= 0; i--) {
     if (fp(s[i])) {
       s.erase(i, 1);
     } else {

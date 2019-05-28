@@ -46,8 +46,9 @@ registerFile(const char *configName, const char *defaultName)
 {
   bool found        = false;
   const char *fname = REC_readString(configName, &found);
-  if (!found)
+  if (!found) {
     fname = defaultName;
+  }
   configFiles->addFile(fname, configName, false);
 }
 

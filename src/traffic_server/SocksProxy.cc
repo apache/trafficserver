@@ -43,7 +43,7 @@ static RecRawStatBlock *socksproxy_stat_block;
 #define SOCKSPROXY_INC_STAT(x) RecIncrRawStat(socksproxy_stat_block, mutex->thread_holding, x)
 
 struct SocksProxy;
-typedef int (SocksProxy::*SocksProxyHandler)(int event, void *data);
+using SocksProxyHandler = int (SocksProxy::*)(int, void *);
 
 struct SocksProxy : public Continuation {
   using EventHandler = int (SocksProxy::*)(int, void *);
@@ -340,8 +340,9 @@ SocksProxy::state_read_socks4_client_request(int event, void *data)
   unsigned char *p = (unsigned char *)reader->start();
   int i;
   // Skip UserID
-  for (i = 8; i < n && p[i] != 0; i++)
+  for (i = 8; i < n && p[i] != 0; i++) {
     ;
+  }
 
   if (p[i] == 0) {
     port                      = p[2] * 256 + p[3];

@@ -86,7 +86,7 @@
 // STRUCTURES
 //////////////////////////////////////////////////////////////////////////////
 
-typedef int (*TxnHandler)(TSCont contp, TSEvent event, void *data);
+using TxnHandler = int (*)(TSCont, TSEvent, void *);
 
 /* Server transaction structure */
 typedef struct {

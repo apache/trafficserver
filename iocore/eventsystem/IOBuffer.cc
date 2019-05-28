@@ -304,8 +304,9 @@ IOBufferChain::write(IOBufferBlock *blocks, int64_t length, int64_t offset)
         block_bytes -= offset; // bytes really available to use.
         offset = 0;
       }
-      if (block_bytes > n)
+      if (block_bytes > n) {
         bb->_end -= (block_bytes - n);
+      }
       // Attach the cloned block since its data will be kept.
       this->append(bb);
       n -= bytes;
@@ -324,8 +325,9 @@ IOBufferChain::write(IOBufferData *data, int64_t length, int64_t offset)
   int64_t zret     = 0;
   IOBufferBlock *b = new_IOBufferBlock();
 
-  if (length < 0)
+  if (length < 0) {
     length = 0;
+  }
 
   b->set(data, length, offset);
   this->append(b);

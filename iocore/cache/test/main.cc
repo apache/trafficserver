@@ -38,7 +38,7 @@ const char *GLOBAL_DATA = static_cast<char *>(ats_malloc(10 * 1024 * 1024 + 3));
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
 
-  virtual void
+  void
   testRunStarting(Catch::TestRunInfo const &testRunInfo) override
   {
     BaseLogFile *base_log_file = new BaseLogFile("stderr");

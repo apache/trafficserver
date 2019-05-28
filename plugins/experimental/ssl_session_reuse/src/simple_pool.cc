@@ -58,8 +58,9 @@ simple_pool::get()
 void
 simple_pool::put(connection *conn)
 {
-  if (conn == nullptr)
+  if (conn == nullptr) {
     return;
+  }
 
   if (!conn->is_valid()) {
     delete conn;

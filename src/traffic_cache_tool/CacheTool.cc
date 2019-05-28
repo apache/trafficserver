@@ -125,8 +125,8 @@ struct VolumeConfig {
   };
 
   std::vector<Data> _volumes;
-  typedef std::vector<Data>::iterator iterator;
-  typedef std::vector<Data>::const_iterator const_iterator;
+  using iterator       = std::vector<Data>::iterator;
+  using const_iterator = std::vector<Data>::const_iterator;
 
   iterator
   begin()
@@ -263,8 +263,7 @@ class VolumeAllocator
     }
   };
 
-  typedef std::vector<V> AV;
-  AV _av; ///< Working vector of volume data.
+  std::vector<V> _av; ///< Working vector of volume data.
 
   Cache _cache;       ///< Current state.
   VolumeConfig _vols; ///< Configuration state.

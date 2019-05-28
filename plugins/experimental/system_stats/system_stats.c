@@ -68,8 +68,8 @@ statAdd(const char *name, TSRecordDataType record_type, TSMutex create_mutex)
 
   TSMutexLock(create_mutex);
 
-  if (TS_ERROR == TSStatFindName((const char *)name, &stat_id)) {
-    stat_id = TSStatCreate((const char *)name, record_type, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+  if (TS_ERROR == TSStatFindName(name, &stat_id)) {
+    stat_id = TSStatCreate(name, record_type, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     if (stat_id == TS_ERROR) {
       TSDebug(DEBUG_TAG, "Error creating stat_name: %s", name);
     } else {

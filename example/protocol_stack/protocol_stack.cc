@@ -31,7 +31,7 @@
 static int
 proto_stack_cb(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   const char *results[10];
   int count = 0;
   TSDebug(PLUGIN_NAME, "Protocols:");

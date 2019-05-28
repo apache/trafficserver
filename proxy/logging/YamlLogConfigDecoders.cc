@@ -38,7 +38,7 @@ convert<std::unique_ptr<LogFormat>>::decode(const Node &node, std::unique_ptr<Lo
 {
   for (auto &&item : node) {
     if (std::none_of(valid_log_format_keys.begin(), valid_log_format_keys.end(),
-                     [&item](std::string s) { return s == item.first.as<std::string>(); })) {
+                     [&item](const std::string &s) { return s == item.first.as<std::string>(); })) {
       throw YAML::ParserException(node.Mark(), "format: unsupported key '" + item.first.as<std::string>() + "'");
     }
   }
@@ -79,7 +79,7 @@ convert<std::unique_ptr<LogFilter>>::decode(const Node &node, std::unique_ptr<Lo
 {
   for (auto &&item : node) {
     if (std::none_of(valid_log_filter_keys.begin(), valid_log_filter_keys.end(),
-                     [&item](std::string s) { return s == item.first.as<std::string>(); })) {
+                     [&item](const std::string &s) { return s == item.first.as<std::string>(); })) {
       throw YAML::ParserException(node.Mark(), "filter: unsupported key '" + item.first.as<std::string>() + "'");
     }
   }

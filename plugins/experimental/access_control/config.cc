@@ -206,27 +206,27 @@ AccessControlConfig::init(int argc, char *argv[])
     switch (opt) {
     case 'a': /* invalid-syntax-status-code */
     {
-      _invalidSignature = (TSHttpStatus)string2int(optarg);
+      _invalidSignature = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'b': /* invalid-signature-status-code */
     {
-      _invalidSignature = (TSHttpStatus)string2int(optarg);
+      _invalidSignature = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'c': /* invalid-timing-status-code */
     {
-      _invalidTiming = (TSHttpStatus)string2int(optarg);
+      _invalidTiming = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'd': /* invalid-scope-status-code */
     {
-      _invalidScope = (TSHttpStatus)string2int(optarg);
+      _invalidScope = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'e': /* invalid-origin-response */
     {
-      _invalidOriginResponse = (TSHttpStatus)string2int(optarg);
+      _invalidOriginResponse = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'f': /* internal-error-status-code */
     {
-      _internalError = (TSHttpStatus)string2int(optarg);
+      _internalError = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'g': /* check-cookie */
     {

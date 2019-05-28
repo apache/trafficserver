@@ -209,7 +209,7 @@ Lerror:
 #include <sys/ptrace.h>
 #include <cxxabi.h>
 
-typedef std::vector<pid_t> threadlist;
+using threadlist = std::vector<pid_t>;
 
 static threadlist
 threads_for_process(pid_t proc)

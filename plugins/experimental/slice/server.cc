@@ -100,7 +100,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   if (data->m_req_range.isEndBytes()) {
     data->m_req_range.m_end += data->m_contentlen;
     data->m_req_range.m_beg += data->m_contentlen;
-    data->m_req_range.m_beg = std::max((int64_t)0, data->m_req_range.m_beg);
+    data->m_req_range.m_beg = std::max(static_cast<int64_t>(0), data->m_req_range.m_beg);
   } else {
     // fix up request range end now that we have the content length
     data->m_req_range.m_end = std::min(data->m_contentlen, data->m_req_range.m_end);

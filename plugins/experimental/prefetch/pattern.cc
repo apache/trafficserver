@@ -213,8 +213,9 @@ Pattern::match(const String &subject)
 
   matchCount = pcre_exec(_re, _extra, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, nullptr, 0);
   if (matchCount < 0) {
-    if (matchCount != PCRE_ERROR_NOMATCH)
+    if (matchCount != PCRE_ERROR_NOMATCH) {
       PrefetchError("matching error %d", matchCount);
+    }
     return false;
   }
 
@@ -240,8 +241,9 @@ Pattern::capture(const String &subject, StringVector &result)
 
   matchCount = pcre_exec(_re, nullptr, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
   if (matchCount < 0) {
-    if (matchCount != PCRE_ERROR_NOMATCH)
+    if (matchCount != PCRE_ERROR_NOMATCH) {
       PrefetchError("matching error %d", matchCount);
+    }
     return false;
   }
 
@@ -278,8 +280,9 @@ Pattern::replace(const String &subject, String &result)
 
   matchCount = pcre_exec(_re, nullptr, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
   if (matchCount < 0) {
-    if (matchCount != PCRE_ERROR_NOMATCH)
+    if (matchCount != PCRE_ERROR_NOMATCH) {
       PrefetchError("matching error %d", matchCount);
+    }
     return false;
   }
 

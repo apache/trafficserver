@@ -1003,9 +1003,9 @@ restoreCapabilities()
       cap_set_flag(cap_set, CAP_EFFECTIVE, 1, cap_list + i, CAP_CLEAR);
     }
   }
-  for (int i = 0; i < CAP_COUNT; i++) {
+  for (int i : cap_list) {
     cap_flag_value_t val;
-    if (cap_get_flag(cap_set, cap_list[i], CAP_EFFECTIVE, &val) < 0) {
+    if (cap_get_flag(cap_set, i, CAP_EFFECTIVE, &val) < 0) {
     } else {
       Warning("CAP_EFFECTIVE offiset %d is %s", i, val == CAP_SET ? "set" : "unset");
     }

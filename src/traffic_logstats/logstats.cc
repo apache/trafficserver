@@ -336,7 +336,7 @@ struct hash_fnv32 {
   }
 };
 
-typedef std::list<UrlStats> LruStack;
+using LruStack = std::list<UrlStats>;
 typedef std::unordered_map<const char *, OriginStats *, hash_fnv32, eqstr> OriginStorage;
 typedef std::unordered_set<const char *, hash_fnv32, eqstr> OriginSet;
 typedef std::unordered_map<const char *, LruStack::iterator, hash_fnv32, eqstr> LruHash;
