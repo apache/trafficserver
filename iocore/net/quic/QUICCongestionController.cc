@@ -24,17 +24,19 @@
 #include <tscore/Diags.h>
 #include <QUICLossDetector.h>
 
-#define QUICCCDebug(fmt, ...)                                                \
-  Debug("quic_cc",                                                           \
-        "[%s] "                                                              \
-        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt, \
-        this->_info->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, ##__VA_ARGS__)
+#define QUICCCDebug(fmt, ...)                                                                                                      \
+  Debug("quic_cc",                                                                                                                 \
+        "[%s] "                                                                                                                    \
+        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " extra: %" PRIu32 " " fmt,                                    \
+        this->_info->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, this->_extra_packets_count, \
+        ##__VA_ARGS__)
 
-#define QUICCCError(fmt, ...)                                                \
-  Error("quic_cc",                                                           \
-        "[%s] "                                                              \
-        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " " fmt, \
-        this->_info->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, ##__VA_ARGS__)
+#define QUICCCError(fmt, ...)                                                                                                      \
+  Error("quic_cc",                                                                                                                 \
+        "[%s] "                                                                                                                    \
+        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " extra %" PRIu32 " " fmt,                                     \
+        this->_info->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, this->_extra_packets_count, \
+        ##__VA_ARGS__)
 
 QUICCongestionController::QUICCongestionController(const QUICRTTProvider &rtt_provider, QUICConnectionInfoProvider *info,
                                                    const QUICCCConfig &cc_config)
@@ -53,6 +55,10 @@ void
 QUICCongestionController::on_packet_sent(size_t bytes_sent)
 {
   SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
+  if (this->_extra_packets_count > 0) {
+    --this->_extra_packets_count;
+  }
+
   this->_bytes_in_flight += bytes_sent;
 }
 
@@ -180,6 +186,10 @@ QUICCongestionController::check_credit() const
 uint32_t
 QUICCongestionController::open_window() const
 {
+  if (this->_extra_packets_count) {
+    return UINT32_MAX;
+  }
+
   if (this->check_credit()) {
     return this->_congestion_window - this->_bytes_in_flight;
   } else {
@@ -239,4 +249,10 @@ QUICCongestionController::_in_window_lost(const std::map<QUICPacketNumber, QUICP
   }
 
   return next_expected == UINT64_MAX ? false : true;
+}
+
+void
+QUICCongestionController::add_extra_packets_count()
+{
+  ++this->_extra_packets_count;
 }

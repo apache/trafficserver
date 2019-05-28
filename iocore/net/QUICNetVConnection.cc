@@ -451,9 +451,10 @@ QUICNetVConnection::start()
   // Create frame handlers
   QUICCCConfigQCP cc_config(this->_quic_config);
   QUICLDConfigQCP ld_config(this->_quic_config);
+  this->_pinger = new QUICPinger();
   this->_rtt_measure.init(ld_config);
   this->_congestion_controller = new QUICCongestionController(this->_rtt_measure, this, cc_config);
-  this->_loss_detector         = new QUICLossDetector(this, this->_congestion_controller, &this->_rtt_measure, ld_config);
+  this->_loss_detector = new QUICLossDetector(this, this->_congestion_controller, &this->_rtt_measure, this->_pinger, ld_config);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
@@ -469,7 +470,7 @@ QUICNetVConnection::start()
   this->_frame_generators.push_back(this);                          // NEW_TOKEN
   this->_frame_generators.push_back(this->_stream_manager);         // STREAM, MAX_STREAM_DATA, STREAM_DATA_BLOCKED
   this->_frame_generators.push_back(&this->_ack_frame_manager);     // ACK
-  this->_frame_generators.push_back(&this->_pinger);                // PING
+  // this->_frame_generators.push_back(&this->_pinger);                // PING
 
   // Register frame handlers
   this->_frame_dispatcher->add_handler(this);
@@ -670,7 +671,7 @@ QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 void
 QUICNetVConnection::ping()
 {
-  this->_pinger.request(QUICEncryptionLevel::ONE_RTT);
+  this->_pinger->request(QUICEncryptionLevel::ONE_RTT);
 }
 
 void
@@ -1537,7 +1538,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   if (!this->_has_ack_eliciting_packet_out) {
     // Sent too much ack_only packet. At this moment we need to packetize a ping frame
     // to force peer send ack frame.
-    this->_pinger.request(level);
+    this->_pinger->request(level);
   }
 
   size_t size_added  = 0;
@@ -1578,7 +1579,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
         if (!ack_eliciting && frame->type() != QUICFrameType::ACK) {
           ack_eliciting = true;
-          this->_pinger.cancel(level);
         }
 
         if (frame->type() == QUICFrameType::CRYPTO &&
@@ -1592,6 +1592,21 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
         break;
       }
     }
+  }
+
+  // one ping per packet if needed.
+  if (!ack_eliciting && this->_pinger->will_generate_frame(level, timestamp)) {
+    frame = this->_pinger->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size,
+                                          timestamp);
+    if (frame) {
+      ink_assert(frame->type() == QUICFrameType::PING);
+      ++frame_count;
+      last_block = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
+      len += size_added;
+      ack_eliciting = true;
+    }
+  } else if (ack_eliciting) {
+    this->_pinger->cancel(level);
   }
 
   // Schedule a packet

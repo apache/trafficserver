@@ -75,9 +75,10 @@ constexpr QUICEncryptionLevel QUIC_ENCRYPTION_LEVELS[] = {
 
 // introduce by draft-19 kPacketNumberSpace
 enum class QUICPacketNumberSpace {
-  Initial,
-  Handshake,
-  ApplicationData,
+  None            = -1,
+  Initial         = 0,
+  Handshake       = 1,
+  ApplicationData = 2,
 };
 
 // Devide to QUICPacketType and QUICPacketLongHeaderType ?

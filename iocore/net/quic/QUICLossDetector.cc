@@ -29,13 +29,14 @@
 #include "QUICEvents.h"
 #include "QUICDebugNames.h"
 #include "QUICFrameGenerator.h"
+#include "QUICPinger.h"
 
 #define QUICLDDebug(fmt, ...) Debug("quic_loss_detector", "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
 #define QUICLDVDebug(fmt, ...) Debug("v_quic_loss_detector", "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
 
 QUICLossDetector::QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
-                                   const QUICLDConfig &ld_config)
-  : _info(info), _rtt_measure(rtt_measure), _cc(cc)
+                                   QUICPinger *pinger, const QUICLDConfig &ld_config)
+  : _info(info), _rtt_measure(rtt_measure), _cc(cc), _pinger(pinger)
 {
   this->mutex                 = new_ProxyMutex();
   this->_loss_detection_mutex = new_ProxyMutex();
@@ -390,12 +391,12 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumberSpace pn_space)
 
       if (unacked->in_flight) {
         lost_packets.insert({it->first, it->second.get()});
-      } else if (this->_loss_time[static_cast<int>(pn_space)] == 0) {
-        this->_loss_time[static_cast<int>(pn_space)] = unacked->time_sent + loss_delay;
-      } else {
-        this->_loss_time[static_cast<int>(pn_space)] =
-          std::min(this->_loss_time[static_cast<int>(pn_space)], unacked->time_sent + loss_delay);
       }
+    } else if (this->_loss_time[static_cast<int>(pn_space)] == 0) {
+      this->_loss_time[static_cast<int>(pn_space)] = unacked->time_sent + loss_delay;
+    } else {
+      this->_loss_time[static_cast<int>(pn_space)] =
+        std::min(this->_loss_time[static_cast<int>(pn_space)], unacked->time_sent + loss_delay);
     }
   }
 
@@ -445,7 +446,42 @@ void
 QUICLossDetector::_send_two_packets()
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-  // TODO sent ping
+  QUICPacketNumberSpace pn_space = QUICPacketNumberSpace::None;
+  for (auto i = 0; i < kPacketNumberSpace; i++) {
+    for (auto it = this->_sent_packets[i].begin(); it != this->_sent_packets[i].end(); ++it) {
+      if (it->second->ack_eliciting) {
+        pn_space = static_cast<QUICPacketNumberSpace>(i);
+        break;
+      }
+    }
+  }
+
+  switch (pn_space) {
+  case QUICPacketNumberSpace::Initial:
+    this->_pinger->request(QUICEncryptionLevel::INITIAL);
+    this->_pinger->request(QUICEncryptionLevel::INITIAL);
+    ink_assert(this->_pinger->count(QUICEncryptionLevel::INITIAL) > 2);
+    QUICLDDebug("[%s] send ping frame %lu", QUICDebugNames::pn_space(pn_space), this->_pinger->count(QUICEncryptionLevel::INITIAL));
+    break;
+  case QUICPacketNumberSpace::Handshake:
+    this->_pinger->request(QUICEncryptionLevel::HANDSHAKE);
+    this->_pinger->request(QUICEncryptionLevel::HANDSHAKE);
+    ink_assert(this->_pinger->count(QUICEncryptionLevel::HANDSHAKE) > 2);
+    QUICLDDebug("[%s] send ping frame %lu", QUICDebugNames::pn_space(pn_space),
+                this->_pinger->count(QUICEncryptionLevel::HANDSHAKE));
+    break;
+  case QUICPacketNumberSpace::ApplicationData:
+    this->_pinger->request(QUICEncryptionLevel::ONE_RTT);
+    this->_pinger->request(QUICEncryptionLevel::ONE_RTT);
+    ink_assert(this->_pinger->count(QUICEncryptionLevel::ONE_RTT) > 2);
+    QUICLDDebug("[%s] send ping frame %lu", QUICDebugNames::pn_space(pn_space), this->_pinger->count(QUICEncryptionLevel::ONE_RTT));
+    break;
+  default:
+    ink_assert(0);
+  }
+
+  this->_cc->add_extra_packets_count();
+  this->_cc->add_extra_packets_count();
 }
 
 // ===== Functions below are helper functions =====
