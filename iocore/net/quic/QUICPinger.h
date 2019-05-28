@@ -28,13 +28,16 @@
 #include "QUICFrameHandler.h"
 #include "QUICFrameGenerator.h"
 
+#include "I_Lock.h"
+
 class QUICPinger : public QUICFrameGenerator
 {
 public:
-  QUICPinger() {}
+  QUICPinger() : _mutex(new_ProxyMutex()) {}
 
   void request(QUICEncryptionLevel level);
   void cancel(QUICEncryptionLevel level);
+  uint64_t count(QUICEncryptionLevel level);
 
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
@@ -42,6 +45,7 @@ public:
                             ink_hrtime timestamp) override;
 
 private:
+  Ptr<ProxyMutex> _mutex;
   // Initial, 0/1-RTT, and Handshake
   uint64_t _need_to_fire[4] = {0};
 };

@@ -37,6 +37,7 @@
 #include "QUICFrameHandler.h"
 #include "QUICConnection.h"
 
+class QUICPinger;
 class QUICLossDetector;
 class QUICRTTMeasure;
 
@@ -88,6 +89,8 @@ public:
   uint32_t congestion_window() const;
   uint32_t current_ssthresh() const;
 
+  void add_extra_packets_count();
+
 private:
   Ptr<ProxyMutex> _cc_mutex;
 
@@ -96,6 +99,8 @@ private:
                                  QUICPacketInfo *largest_lost_packet);
   bool _in_window_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets, QUICPacketInfo *largest_lost_packet,
                        ink_hrtime period) const;
+
+  uint32_t _extra_packets_count = 0;
 
   // [draft-17 recovery] 7.9.1. Constants of interest
   // Values will be loaded from records.config via QUICConfig at constructor
@@ -121,7 +126,7 @@ private:
 class QUICLossDetector : public Continuation, public QUICFrameHandler
 {
 public:
-  QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
+  QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, QUICPinger *pinger,
                    const QUICLDConfig &ld_config);
   ~QUICLossDetector();
 
@@ -187,6 +192,7 @@ private:
   QUICConnectionInfoProvider *_info = nullptr;
   QUICRTTMeasure *_rtt_measure      = nullptr;
   QUICCongestionController *_cc     = nullptr;
+  QUICPinger *_pinger               = nullptr;
 };
 
 class QUICRTTMeasure : public QUICRTTProvider

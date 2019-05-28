@@ -26,6 +26,7 @@
 void
 QUICPinger::request(QUICEncryptionLevel level)
 {
+  SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   if (!this->_is_level_matched(level)) {
     return;
   }
@@ -35,6 +36,7 @@ QUICPinger::request(QUICEncryptionLevel level)
 void
 QUICPinger::cancel(QUICEncryptionLevel level)
 {
+  SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   if (!this->_is_level_matched(level)) {
     return;
   }
@@ -47,11 +49,12 @@ QUICPinger::cancel(QUICEncryptionLevel level)
 bool
 QUICPinger::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
 {
+  SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   if (!this->_is_level_matched(level)) {
     return false;
   }
 
-  return this->_need_to_fire[static_cast<int>(QUICTypeUtil::pn_space(level))] > 0;
+  return this->_need_to_fire[static_cast<int>(level)] > 0;
 }
 
 /**
@@ -61,6 +64,7 @@ QUICFrame *
 QUICPinger::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */, uint16_t maximum_frame_size,
                            ink_hrtime timestamp)
 {
+  SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   QUICFrame *frame = nullptr;
 
   if (!this->_is_level_matched(level)) {
@@ -69,9 +73,16 @@ QUICPinger::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* 
 
   if (this->_need_to_fire[static_cast<int>(level)] > 0 && maximum_frame_size > 0) {
     // don't care ping frame lost or acked
-    frame                                        = QUICFrameFactory::create_ping_frame(buf, 0, nullptr);
-    this->_need_to_fire[static_cast<int>(level)] = 0;
+    frame = QUICFrameFactory::create_ping_frame(buf, 0, nullptr);
+    --this->_need_to_fire[static_cast<int>(level)];
   }
 
   return frame;
+}
+
+uint64_t
+QUICPinger::count(QUICEncryptionLevel level)
+{
+  SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
+  return this->_need_to_fire[static_cast<int>(level)];
 }

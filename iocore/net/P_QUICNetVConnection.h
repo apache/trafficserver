@@ -228,7 +228,6 @@ private:
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;
   QUICAckFrameManager _ack_frame_manager;
-  QUICPinger _pinger;
   QUICPacketHeaderProtector _ph_protector;
   QUICRTTMeasure _rtt_measure;
   QUICApplicationMap *_application_map = nullptr;
@@ -239,6 +238,7 @@ private:
 
   // TODO: use custom allocator and make them std::unique_ptr or std::shared_ptr
   // or make them just member variables.
+  QUICPinger *_pinger                               = nullptr;
   QUICHandshake *_handshake_handler                 = nullptr;
   QUICHandshakeProtocol *_hs_protocol               = nullptr;
   QUICLossDetector *_loss_detector                  = nullptr;
