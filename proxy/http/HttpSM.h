@@ -59,7 +59,7 @@ static size_t const HTTP_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ
 //   the larger buffer size
 static size_t const HTTP_SERVER_RESP_HDR_BUFFER_INDEX = BUFFER_SIZE_INDEX_8K;
 
-class HttpServerSession;
+class Http1ServerSession;
 class AuthHttpAdapter;
 
 class HttpSM;
@@ -215,22 +215,22 @@ public:
 
   void init();
 
-  void attach_client_session(ProxyClientTransaction *client_vc_arg, IOBufferReader *buffer_reader);
+  void attach_client_session(ProxyTransaction *client_vc_arg, IOBufferReader *buffer_reader);
 
   // Called by httpSessionManager so that we can reset
   //  the session timeouts and initiate a read while
   //  holding the lock for the server session
-  void attach_server_session(HttpServerSession *s);
+  void attach_server_session(Http1ServerSession *s);
 
   // Used to read attributes of
   // the current active server session
-  HttpServerSession *
+  Http1ServerSession *
   get_server_session()
   {
     return server_session;
   }
 
-  ProxyClientTransaction *
+  ProxyTransaction *
   get_ua_txn()
   {
     return ua_txn;
@@ -350,7 +350,7 @@ protected:
   void remove_ua_entry();
 
 public:
-  ProxyClientTransaction *ua_txn   = nullptr;
+  ProxyTransaction *ua_txn         = nullptr;
   BackgroundFill_t background_fill = BACKGROUND_FILL_NONE;
   // AuthHttpAdapter authAdapter;
   void set_http_schedule(Continuation *);
@@ -362,8 +362,8 @@ protected:
   IOBufferReader *ua_buffer_reader     = nullptr;
   IOBufferReader *ua_raw_buffer_reader = nullptr;
 
-  HttpVCTableEntry *server_entry    = nullptr;
-  HttpServerSession *server_session = nullptr;
+  HttpVCTableEntry *server_entry     = nullptr;
+  Http1ServerSession *server_session = nullptr;
 
   /* Because we don't want to take a session from a shared pool if we know that it will be private,
    * but we cannot set it to private until we have an attached server session.
@@ -700,7 +700,7 @@ HttpSM::txn_hook_get(TSHttpHookID id)
 inline bool
 HttpSM::is_transparent_passthrough_allowed()
 {
-  return (t_state.client_info.is_transparent && ua_txn->is_transparent_passthrough_allowed() && ua_txn->get_transact_count() == 1);
+  return (t_state.client_info.is_transparent && ua_txn->is_transparent_passthrough_allowed() && ua_txn->is_first_transaction());
 }
 
 inline int64_t

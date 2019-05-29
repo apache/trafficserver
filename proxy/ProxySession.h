@@ -1,6 +1,6 @@
 /** @file
 
-  ProxyClientSession - Base class for protocol client sessions.
+  ProxySession - Base class for protocol client sessions.
 
   @section license License
 
@@ -37,7 +37,7 @@
 // member function.
 #define SsnDebug(ssn, tag, ...) SpecificDebug((ssn)->debug(), tag, __VA_ARGS__)
 
-class ProxyClientTransaction;
+class ProxyTransaction;
 
 enum class ProxyErrorClass {
   NONE,
@@ -71,232 +71,96 @@ struct ProxyError {
 };
 
 /// Abstract class for HttpSM to interface with any session
-class ProxyClientSession : public VConnection
+class ProxySession : public VConnection
 {
 public:
-  ProxyClientSession();
+  ProxySession();
 
-  virtual void destroy() = 0;
-  virtual void free();
-  virtual void start() = 0;
-
-  virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) = 0;
-
-  virtual NetVConnection *get_netvc() const = 0;
-
-  virtual int get_transact_count() const = 0;
-
-  virtual const char *get_protocol_string() const = 0;
-
-  virtual void
-  ssn_hook_append(TSHttpHookID id, INKContInternal *cont)
-  {
-    this->api_hooks.append(id, cont);
-  }
-
-  virtual void
-  ssn_hook_prepend(TSHttpHookID id, INKContInternal *cont)
-  {
-    this->api_hooks.prepend(id, cont);
-  }
-
-  APIHook *
-  ssn_hook_get(TSHttpHookID id) const
-  {
-    return this->api_hooks.get(id);
-  }
-
-  void *
-  get_user_arg(unsigned ix) const
-  {
-    ink_assert(ix < countof(user_args));
-    return this->user_args[ix];
-  }
-
-  void
-  set_user_arg(unsigned ix, void *arg)
-  {
-    ink_assert(ix < countof(user_args));
-    user_args[ix] = arg;
-  }
-
-  void
-  set_debug(bool flag)
-  {
-    debug_on = flag;
-  }
-
-  // Return whether debugging is enabled for this session.
-  bool
-  debug() const
-  {
-    return this->debug_on;
-  }
-
-  bool
-  has_hooks() const
-  {
-    return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
-  }
-
-  bool
-  is_active() const
-  {
-    return m_active;
-  }
-
-  bool
-  is_draining() const
-  {
-    return TSSystemState::is_draining();
-  }
-
-  // Initiate an API hook invocation.
-  void do_api_callout(TSHttpHookID id);
-
-  // Override if your session protocol allows this.
-  virtual bool
-  is_transparent_passthrough_allowed() const
-  {
-    return false;
-  }
-
-  virtual bool
-  is_chunked_encoding_supported() const
-  {
-    return false;
-  }
-
-  // Override if your session protocol cares.
-  virtual void
-  set_half_close_flag(bool flag)
-  {
-  }
-
-  virtual bool
-  get_half_close_flag() const
-  {
-    return false;
-  }
-
-  // Indicate we are done with a transaction.
-  virtual void release(ProxyClientTransaction *trans) = 0;
-
-  virtual in_port_t
-  get_outbound_port() const
-  {
-    return outbound_port;
-  }
-
-  virtual IpAddr
-  get_outbound_ip4() const
-  {
-    return outbound_ip4;
-  }
-
-  virtual IpAddr
-  get_outbound_ip6() const
-  {
-    return outbound_ip6;
-  }
-
-  int64_t
-  connection_id() const
-  {
-    return con_id;
-  }
-
-  virtual void
-  attach_server_session(HttpServerSession *ssession, bool transaction_done = true)
-  {
-  }
-
-  virtual HttpServerSession *
-  get_server_session() const
-  {
-    return nullptr;
-  }
-
-  TSHttpHookID
-  get_hookid() const
-  {
-    return api_hookid;
-  }
-
-  virtual void
-  set_active_timeout(ink_hrtime timeout_in)
-  {
-  }
-
-  virtual void
-  set_inactivity_timeout(ink_hrtime timeout_in)
-  {
-  }
-
-  virtual void
-  cancel_inactivity_timeout()
-  {
-  }
-
-  bool
-  is_client_closed() const
-  {
-    return get_netvc() == nullptr;
-  }
-
-  virtual int
-  populate_protocol(std::string_view *result, int size) const
-  {
-    auto vc = this->get_netvc();
-    return vc ? vc->populate_protocol(result, size) : 0;
-  }
-
-  virtual const char *
-  protocol_contains(std::string_view tag_prefix) const
-  {
-    auto vc = this->get_netvc();
-    return vc ? vc->protocol_contains(tag_prefix) : nullptr;
-  }
-
-  void set_session_active();
-  void clear_session_active();
-  virtual void increment_current_active_client_connections_stat() = 0;
-  virtual void decrement_current_active_client_connections_stat() = 0;
+  // noncopyable
+  ProxySession(ProxySession &) = delete;
+  ProxySession &operator=(const ProxySession &) = delete;
 
   static int64_t next_connection_id();
 
-  virtual sockaddr const *
-  get_client_addr()
-  {
-    NetVConnection *netvc = get_netvc();
-    return netvc ? netvc->get_remote_addr() : nullptr;
-  }
-  virtual sockaddr const *
-  get_local_addr()
-  {
-    NetVConnection *netvc = get_netvc();
-    return netvc ? netvc->get_local_addr() : nullptr;
-  }
+  // Virtual Methods
+  virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) = 0;
+  virtual void start()                                                                          = 0;
+  virtual void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true);
 
-  /// IpAllow based method ACL.
-  IpAllow::ACL acl;
+  virtual void release(ProxyTransaction *trans) = 0;
 
-  /// Local address for outbound connection.
-  IpAddr outbound_ip4;
-  /// Local address for outbound connection.
-  IpAddr outbound_ip6;
-  /// Local port for outbound connection.
-  in_port_t outbound_port{0};
+  virtual void destroy() = 0;
+  virtual void free();
 
-  /// DNS resolution preferences.
-  HostResStyle host_res_style = HOST_RES_IPV4;
+  virtual void increment_current_active_client_connections_stat() = 0;
+  virtual void decrement_current_active_client_connections_stat() = 0;
+
+  // Virtual Accessors
+  virtual NetVConnection *get_netvc() const       = 0;
+  virtual int get_transact_count() const          = 0;
+  virtual const char *get_protocol_string() const = 0;
+  virtual bool is_transparent_passthrough_allowed() const;
+
+  virtual void ssn_hook_append(TSHttpHookID id, INKContInternal *cont);
+
+  virtual void ssn_hook_prepend(TSHttpHookID id, INKContInternal *cont);
+
+  virtual bool is_chunked_encoding_supported() const;
+
+  virtual void set_half_close_flag(bool flag);
+  virtual bool get_half_close_flag() const;
+
+  virtual in_port_t get_outbound_port() const;
+  virtual IpAddr get_outbound_ip4() const;
+  virtual IpAddr get_outbound_ip6() const;
+  virtual Http1ServerSession *get_server_session() const;
+
+  // Replicate NetVConnection API
+  virtual sockaddr const *get_client_addr();
+  virtual sockaddr const *get_local_addr();
+
+  virtual void set_active_timeout(ink_hrtime timeout_in);
+  virtual void set_inactivity_timeout(ink_hrtime timeout_in);
+  virtual void cancel_inactivity_timeout();
+
+  virtual int populate_protocol(std::string_view *result, int size) const;
+  virtual const char *protocol_contains(std::string_view tag_prefix) const;
+
+  // Non-Virtual Methods
+  void do_api_callout(TSHttpHookID id);
+
+  // Non-Virtual Accessors
+  void *get_user_arg(unsigned ix) const;
+  void set_user_arg(unsigned ix, void *arg);
+
+  void set_debug(bool flag);
+  bool debug() const;
+
+  void set_session_active();
+  void clear_session_active();
+  bool is_active() const;
+  bool is_draining() const;
+  bool is_client_closed() const;
+
+  int64_t connection_id() const;
+  TSHttpHookID get_hookid() const;
+  bool has_hooks() const;
+
+  APIHook *ssn_hook_get(TSHttpHookID id) const;
+
+  ////////////////////
+  // Members
+
+  IpAllow::ACL acl; ///< IpAllow based method ACL.
+
+  IpAddr outbound_ip4;        ///< Local address for outbound connection.
+  IpAddr outbound_ip6;        ///< Local address for outbound connection.
+  in_port_t outbound_port{0}; ///< Local port for outbound connection.
+
+  HostResStyle host_res_style = HOST_RES_NONE; ///< DNS resolution preferences.
 
   ink_hrtime ssn_start_time    = 0;
   ink_hrtime ssn_last_txn_time = 0;
-
-  // noncopyable
-  ProxyClientSession(ProxyClientSession &) = delete;
-  ProxyClientSession &operator=(const ProxyClientSession &) = delete;
 
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so

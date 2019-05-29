@@ -26,15 +26,15 @@
 #include "HttpSM.h"
 
 void
-Http1ClientTransaction::release(IOBufferReader *r)
+Http1Transaction::release(IOBufferReader *r)
 {
   // Must set this inactivity count here rather than in the session because the state machine
   // is not available then
   MgmtInt ka_in = current_reader->t_state.txn_conf->keep_alive_no_activity_timeout_in;
   set_inactivity_timeout(HRTIME_SECONDS(ka_in));
 
-  parent->clear_session_active();
-  parent->ssn_last_txn_time = Thread::get_hrtime();
+  proxy_ssn->clear_session_active();
+  proxy_ssn->ssn_last_txn_time = Thread::get_hrtime();
 
   // Make sure that the state machine is returning
   //  correct buffer reader
@@ -47,7 +47,7 @@ Http1ClientTransaction::release(IOBufferReader *r)
 }
 
 void
-Http1ClientTransaction::set_parent(ProxyClientSession *new_parent)
+Http1Transaction::set_parent(ProxySession *new_parent)
 {
   Http1ClientSession *http1_parent = dynamic_cast<Http1ClientSession *>(new_parent);
 
@@ -58,37 +58,37 @@ Http1ClientTransaction::set_parent(ProxyClientSession *new_parent)
     outbound_transparent = http1_parent->f_outbound_transparent;
     super_type::set_parent(new_parent);
   } else {
-    parent = nullptr;
+    proxy_ssn = nullptr;
   }
 }
 
 void
-Http1ClientTransaction::transaction_done()
+Http1Transaction::transaction_done()
 {
-  if (parent) {
-    static_cast<Http1ClientSession *>(parent)->release_transaction();
+  if (proxy_ssn) {
+    static_cast<Http1ClientSession *>(proxy_ssn)->release_transaction();
   }
 }
 
 bool
-Http1ClientTransaction::allow_half_open() const
+Http1Transaction::allow_half_open() const
 {
   bool config_allows_it = (current_reader) ? current_reader->t_state.txn_conf->allow_half_open > 0 : true;
   if (config_allows_it) {
     // Check with the session to make sure the underlying transport allows the half open scenario
-    return static_cast<Http1ClientSession *>(parent)->allow_half_open();
+    return static_cast<Http1ClientSession *>(proxy_ssn)->allow_half_open();
   }
   return false;
 }
 
 void
-Http1ClientTransaction::increment_client_transactions_stat()
+Http1Transaction::increment_client_transactions_stat()
 {
   HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
 }
 
 void
-Http1ClientTransaction::decrement_client_transactions_stat()
+Http1Transaction::decrement_client_transactions_stat()
 {
   HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
 }

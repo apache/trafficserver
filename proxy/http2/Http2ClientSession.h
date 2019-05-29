@@ -149,15 +149,15 @@ private:
   IOBufferReader *ioreader = nullptr;
 };
 
-class Http2ClientSession : public ProxyClientSession
+class Http2ClientSession : public ProxySession
 {
 public:
-  typedef ProxyClientSession super; ///< Parent type.
+  typedef ProxySession super; ///< Parent type.
   typedef int (Http2ClientSession::*SessionHandler)(int, void *);
 
   Http2ClientSession();
 
-  // Implement ProxyClientSession interface.
+  // Implement ProxySession interface.
   void start() override;
   void destroy() override;
   void free() override;
@@ -216,7 +216,7 @@ public:
   }
 
   void
-  release(ProxyClientTransaction *trans) override
+  release(ProxyTransaction *trans) override
   {
   }
 

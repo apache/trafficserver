@@ -1,6 +1,6 @@
 /** @file
 
-  ProxyClientSession - Base class for protocol client sessions.
+  ProxySession - Base class for protocol client sessions.
 
   @section license License
 
@@ -27,13 +27,13 @@
 
 static int64_t next_cs_id = 0;
 
-ProxyClientSession::ProxyClientSession() : VConnection(nullptr)
+ProxySession::ProxySession() : VConnection(nullptr)
 {
   ink_zero(this->user_args);
 }
 
 void
-ProxyClientSession::set_session_active()
+ProxySession::set_session_active()
 {
   if (!m_active) {
     m_active = true;
@@ -42,7 +42,7 @@ ProxyClientSession::set_session_active()
 }
 
 void
-ProxyClientSession::clear_session_active()
+ProxySession::clear_session_active()
 {
   if (m_active) {
     m_active = false;
@@ -51,7 +51,7 @@ ProxyClientSession::clear_session_active()
 }
 
 int64_t
-ProxyClientSession::next_connection_id()
+ProxySession::next_connection_id()
 {
   return ink_atomic_increment(&next_cs_id, 1);
 }
@@ -84,7 +84,7 @@ is_valid_hook(TSHttpHookID hookid)
 }
 
 void
-ProxyClientSession::free()
+ProxySession::free()
 {
   if (schedule_event) {
     schedule_event->cancel();
@@ -96,7 +96,7 @@ ProxyClientSession::free()
 }
 
 int
-ProxyClientSession::state_api_callout(int event, void *data)
+ProxySession::state_api_callout(int event, void *data)
 {
   Event *e = static_cast<Event *>(data);
   if (e == schedule_event) {
@@ -124,7 +124,7 @@ ProxyClientSession::state_api_callout(int event, void *data)
         MUTEX_TRY_LOCK(lock, hook->m_cont->mutex, mutex->thread_holding);
         // Have a mutex but did't get the lock, reschedule
         if (!lock.is_locked()) {
-          SET_HANDLER(&ProxyClientSession::state_api_callout);
+          SET_HANDLER(&ProxySession::state_api_callout);
           if (!schedule_event) { // Don't bother to schedule is there is already one out.
             schedule_event = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
           }
@@ -153,7 +153,7 @@ ProxyClientSession::state_api_callout(int event, void *data)
 }
 
 void
-ProxyClientSession::do_api_callout(TSHttpHookID id)
+ProxySession::do_api_callout(TSHttpHookID id)
 {
   ink_assert(id == TS_HTTP_SSN_START_HOOK || id == TS_HTTP_SSN_CLOSE_HOOK);
 
@@ -162,7 +162,7 @@ ProxyClientSession::do_api_callout(TSHttpHookID id)
   this->api_current = nullptr;
 
   if (this->has_hooks()) {
-    SET_HANDLER(&ProxyClientSession::state_api_callout);
+    SET_HANDLER(&ProxySession::state_api_callout);
     this->state_api_callout(EVENT_NONE, nullptr);
   } else {
     this->handle_api_return(TS_EVENT_HTTP_CONTINUE);
@@ -170,11 +170,11 @@ ProxyClientSession::do_api_callout(TSHttpHookID id)
 }
 
 void
-ProxyClientSession::handle_api_return(int event)
+ProxySession::handle_api_return(int event)
 {
   TSHttpHookID hookid = this->api_hookid;
 
-  SET_HANDLER(&ProxyClientSession::state_api_callout);
+  SET_HANDLER(&ProxySession::state_api_callout);
 
   this->api_hookid  = TS_HTTP_LAST_HOOK;
   this->api_scope   = API_HOOK_SCOPE_NONE;
@@ -196,4 +196,182 @@ ProxyClientSession::handle_api_return(int event)
     Fatal("received invalid session hook %s (%d)", HttpDebugNames::get_api_hook_name(hookid), hookid);
     break;
   }
+}
+
+void *
+
+ProxySession::get_user_arg(unsigned ix) const
+{
+  ink_assert(ix < countof(user_args));
+  return this->user_args[ix];
+}
+
+void
+ProxySession::set_user_arg(unsigned ix, void *arg)
+{
+  ink_assert(ix < countof(user_args));
+  user_args[ix] = arg;
+}
+
+void
+ProxySession::set_debug(bool flag)
+{
+  debug_on = flag;
+}
+
+// Return whether debugging is enabled for this session.
+bool
+ProxySession::debug() const
+{
+  return this->debug_on;
+}
+
+bool
+ProxySession::is_active() const
+{
+  return m_active;
+}
+
+bool
+ProxySession::is_draining() const
+{
+  return TSSystemState::is_draining();
+}
+
+// Override if your session protocol allows this.
+bool
+ProxySession::is_transparent_passthrough_allowed() const
+{
+  return false;
+}
+
+bool
+ProxySession::is_chunked_encoding_supported() const
+{
+  return false;
+}
+
+// Override if your session protocol cares.
+void
+ProxySession::set_half_close_flag(bool flag)
+{
+}
+
+bool
+ProxySession::get_half_close_flag() const
+{
+  return false;
+}
+
+in_port_t
+ProxySession::get_outbound_port() const
+{
+  return outbound_port;
+}
+
+IpAddr
+ProxySession::get_outbound_ip4() const
+{
+  return outbound_ip4;
+}
+
+IpAddr
+ProxySession::get_outbound_ip6() const
+{
+  return outbound_ip6;
+}
+
+int64_t
+ProxySession::connection_id() const
+{
+  return con_id;
+}
+
+void
+ProxySession::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
+{
+}
+
+Http1ServerSession *
+ProxySession::get_server_session() const
+{
+  return nullptr;
+}
+
+TSHttpHookID
+ProxySession::get_hookid() const
+{
+  return api_hookid;
+}
+
+void
+ProxySession::set_active_timeout(ink_hrtime timeout_in)
+{
+}
+
+void
+ProxySession::set_inactivity_timeout(ink_hrtime timeout_in)
+{
+}
+
+void
+ProxySession::cancel_inactivity_timeout()
+{
+}
+
+bool
+ProxySession::is_client_closed() const
+{
+  return get_netvc() == nullptr;
+}
+
+int
+ProxySession::populate_protocol(std::string_view *result, int size) const
+{
+  auto vc = this->get_netvc();
+  return vc ? vc->populate_protocol(result, size) : 0;
+}
+
+const char *
+ProxySession::protocol_contains(std::string_view tag_prefix) const
+{
+  auto vc = this->get_netvc();
+  return vc ? vc->protocol_contains(tag_prefix) : nullptr;
+}
+
+sockaddr const *
+ProxySession::get_client_addr()
+{
+  NetVConnection *netvc = get_netvc();
+  return netvc ? netvc->get_remote_addr() : nullptr;
+}
+sockaddr const *
+ProxySession::get_local_addr()
+{
+  NetVConnection *netvc = get_netvc();
+  return netvc ? netvc->get_local_addr() : nullptr;
+}
+
+void
+ProxySession::ssn_hook_append(TSHttpHookID id, INKContInternal *cont)
+{
+  this->api_hooks.append(id, cont);
+}
+
+void
+ProxySession::ssn_hook_prepend(TSHttpHookID id, INKContInternal *cont)
+{
+  this->api_hooks.prepend(id, cont);
+}
+
+APIHook *
+ProxySession::ssn_hook_get(TSHttpHookID id) const
+{
+  return this->api_hooks.get(id);
+}
+
+bool
+ProxySession::has_hooks() const
+{
+  return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
 }
