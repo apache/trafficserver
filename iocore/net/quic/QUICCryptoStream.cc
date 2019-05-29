@@ -102,7 +102,7 @@ QUICCryptoStream::write(const uint8_t *buf, int64_t len)
 }
 
 bool
-QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
 {
   return this->_write_buffer_reader->is_read_avail_more_than(0) || !this->is_retransmited_frame_queue_empty();
 }
@@ -112,7 +112,7 @@ QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime time
  */
 QUICFrame *
 QUICCryptoStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
-                                 uint16_t maximum_frame_size, ink_hrtime timestamp)
+                                 uint16_t maximum_frame_size, uint32_t seq_num)
 {
   QUICConnectionErrorUPtr error = nullptr;
 

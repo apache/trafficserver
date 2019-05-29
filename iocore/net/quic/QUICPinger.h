@@ -40,12 +40,13 @@ public:
   uint64_t count(QUICEncryptionLevel level);
 
   // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
+  bool will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            ink_hrtime timestamp) override;
+                            uint32_t seq_num) override;
 
 private:
   Ptr<ProxyMutex> _mutex;
   // Initial, 0/1-RTT, and Handshake
   uint64_t _need_to_fire[4] = {0};
+  uint32_t _latest_seq_num  = 0;
 };

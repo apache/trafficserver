@@ -83,9 +83,9 @@ public:
   virtual QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
+  bool will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            ink_hrtime timestamp) override;
+                            uint32_t seq_num) override;
 
 private:
   struct AltConnectionInfo {

@@ -30,14 +30,14 @@ class QUICFrameGenerator
 {
 public:
   virtual ~QUICFrameGenerator(){};
-  virtual bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) = 0;
+  virtual bool will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num) = 0;
 
   /*
    * This function constructs an instance of QUICFrame on buf.
    * It returns a pointer for the frame if it succeeded, and returns nullptr if it failed.
    */
   virtual QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
-                                    uint16_t maximum_frame_size, ink_hrtime timestamp) = 0;
+                                    uint16_t maximum_frame_size, uint32_t seq_num) = 0;
 
   void on_frame_acked(QUICFrameId id);
   void on_frame_lost(QUICFrameId id);

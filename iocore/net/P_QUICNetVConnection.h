@@ -195,9 +195,9 @@ public:
   QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
+  bool will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            ink_hrtime timestamp) override;
+                            uint32_t seq_num) override;
 
   int in_closed_queue = 0;
 
@@ -364,6 +364,9 @@ private:
 
   // QUICFrameGenerator
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
+
+  // seq_num in packetize_frame
+  uint32_t _seq_num = 0;
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);

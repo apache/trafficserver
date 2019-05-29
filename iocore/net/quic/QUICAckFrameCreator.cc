@@ -61,7 +61,7 @@ QUICAckFrameManager::update(QUICEncryptionLevel level, QUICPacketNumber packet_n
  */
 QUICFrame *
 QUICAckFrameManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
-                                    uint16_t maximum_frame_size, ink_hrtime timestamp)
+                                    uint16_t maximum_frame_size, uint32_t seq_num)
 {
   QUICAckFrame *ack_frame = nullptr;
 
@@ -87,7 +87,7 @@ QUICAckFrameManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uin
 }
 
 bool
-QUICAckFrameManager::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICAckFrameManager::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
 {
   // No ACK frame on ZERO_RTT level
   if (!this->_is_level_matched(level) || level == QUICEncryptionLevel::ZERO_RTT) {
