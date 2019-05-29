@@ -53,14 +53,14 @@ enum {
   HTTP_SS_MAGIC_DEAD  = 0xDEADFEED,
 };
 
-class HttpServerSession : public VConnection
+class Http1ServerSession : public VConnection
 {
-  using self_type  = HttpServerSession;
+  using self_type  = Http1ServerSession;
   using super_type = VConnection;
 
 public:
-  HttpServerSession() : super_type(nullptr) {}
-  HttpServerSession(self_type const &) = delete;
+  Http1ServerSession() : super_type(nullptr) {}
+  Http1ServerSession(self_type const &) = delete;
   self_type &operator=(self_type const &) = delete;
 
   void destroy();
@@ -149,8 +149,8 @@ public:
     static sockaddr const *key_of(self_type const *ssn);
     static bool equal(sockaddr const *lhs, sockaddr const *rhs);
     // Add a couple overloads for internal convenience.
-    static bool equal(sockaddr const *lhs, HttpServerSession const *rhs);
-    static bool equal(HttpServerSession const *lhs, sockaddr const *rhs);
+    static bool equal(sockaddr const *lhs, Http1ServerSession const *rhs);
+    static bool equal(Http1ServerSession const *lhs, sockaddr const *rhs);
   } _ip_link;
 
   /// Hash map descriptor class for FQDN map.
@@ -199,86 +199,86 @@ private:
   IOBufferReader *buf_reader = nullptr;
 };
 
-extern ClassAllocator<HttpServerSession> httpServerSessionAllocator;
+extern ClassAllocator<Http1ServerSession> httpServerSessionAllocator;
 
 // --- Implementation ---
 
 inline void
-HttpServerSession::attach_hostname(const char *hostname)
+Http1ServerSession::attach_hostname(const char *hostname)
 {
   if (CRYPTO_HASH_ZERO == hostname_hash) {
     CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
   }
 }
 
-inline HttpServerSession *&
-HttpServerSession::IPLinkage::next_ptr(self_type *ssn)
+inline Http1ServerSession *&
+Http1ServerSession::IPLinkage::next_ptr(self_type *ssn)
 {
   return ssn->_ip_link._next;
 }
 
-inline HttpServerSession *&
-HttpServerSession::IPLinkage::prev_ptr(self_type *ssn)
+inline Http1ServerSession *&
+Http1ServerSession::IPLinkage::prev_ptr(self_type *ssn)
 {
   return ssn->_ip_link._prev;
 }
 
 inline uint32_t
-HttpServerSession::IPLinkage::hash_of(sockaddr const *key)
+Http1ServerSession::IPLinkage::hash_of(sockaddr const *key)
 {
   return ats_ip_hash(key);
 }
 
 inline sockaddr const *
-HttpServerSession::IPLinkage::key_of(self_type const *ssn)
+Http1ServerSession::IPLinkage::key_of(self_type const *ssn)
 {
   return &ssn->get_server_ip().sa;
 }
 
 inline bool
-HttpServerSession::IPLinkage::equal(sockaddr const *lhs, sockaddr const *rhs)
+Http1ServerSession::IPLinkage::equal(sockaddr const *lhs, sockaddr const *rhs)
 {
   return ats_ip_addr_port_eq(lhs, rhs);
 }
 
 inline bool
-HttpServerSession::IPLinkage::equal(sockaddr const *lhs, HttpServerSession const *rhs)
+Http1ServerSession::IPLinkage::equal(sockaddr const *lhs, Http1ServerSession const *rhs)
 {
   return ats_ip_addr_port_eq(lhs, key_of(rhs));
 }
 
 inline bool
-HttpServerSession::IPLinkage::equal(HttpServerSession const *lhs, sockaddr const *rhs)
+Http1ServerSession::IPLinkage::equal(Http1ServerSession const *lhs, sockaddr const *rhs)
 {
   return ats_ip_addr_port_eq(key_of(lhs), rhs);
 }
 
-inline HttpServerSession *&
-HttpServerSession::FQDNLinkage::next_ptr(self_type *ssn)
+inline Http1ServerSession *&
+Http1ServerSession::FQDNLinkage::next_ptr(self_type *ssn)
 {
   return ssn->_fqdn_link._next;
 }
 
-inline HttpServerSession *&
-HttpServerSession::FQDNLinkage::prev_ptr(self_type *ssn)
+inline Http1ServerSession *&
+Http1ServerSession::FQDNLinkage::prev_ptr(self_type *ssn)
 {
   return ssn->_fqdn_link._prev;
 }
 
 inline uint64_t
-HttpServerSession::FQDNLinkage::hash_of(CryptoHash const &key)
+Http1ServerSession::FQDNLinkage::hash_of(CryptoHash const &key)
 {
   return key.fold();
 }
 
 inline CryptoHash const &
-HttpServerSession::FQDNLinkage::key_of(self_type *ssn)
+Http1ServerSession::FQDNLinkage::key_of(self_type *ssn)
 {
   return ssn->hostname_hash;
 }
 
 inline bool
-HttpServerSession::FQDNLinkage::equal(CryptoHash const &lhs, CryptoHash const &rhs)
+Http1ServerSession::FQDNLinkage::equal(CryptoHash const &lhs, CryptoHash const &rhs)
 {
   return lhs == rhs;
 }

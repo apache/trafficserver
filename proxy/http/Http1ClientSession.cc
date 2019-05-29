@@ -143,7 +143,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ink_assert(lock.is_locked());
 
   // Unique client session identifier.
-  con_id = ProxyClientSession::next_connection_id();
+  con_id = ProxySession::next_connection_id();
 
   schedule_event = nullptr;
 
@@ -408,9 +408,9 @@ Http1ClientSession::reenable(VIO *vio)
   client_vc->reenable(vio);
 }
 
-// Called from the Http1ClientTransaction::release
+// Called from the Http1Transaction::release
 void
-Http1ClientSession::release(ProxyClientTransaction *trans)
+Http1ClientSession::release(ProxyTransaction *trans)
 {
   ink_assert(read_state == HCS_ACTIVE_READER || read_state == HCS_INIT);
 
@@ -466,7 +466,7 @@ Http1ClientSession::new_transaction()
 }
 
 void
-Http1ClientSession::attach_server_session(HttpServerSession *ssession, bool transaction_done)
+Http1ClientSession::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
 {
   if (ssession) {
     ink_assert(bound_ss == nullptr);

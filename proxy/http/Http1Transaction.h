@@ -27,33 +27,33 @@
 
 class Continuation;
 
-class Http1ClientTransaction : public ProxyClientTransaction
+class Http1Transaction : public ProxyTransaction
 {
 public:
-  using super_type = ProxyClientTransaction;
+  using super_type = ProxyTransaction;
 
-  Http1ClientTransaction() {}
+  Http1Transaction() {}
   // Implement VConnection interface.
   VIO *
   do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override
   {
-    return parent->do_io_read(c, nbytes, buf);
+    return proxy_ssn->do_io_read(c, nbytes, buf);
   }
   VIO *
   do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr, bool owner = false) override
   {
-    return parent->do_io_write(c, nbytes, buf, owner);
+    return proxy_ssn->do_io_write(c, nbytes, buf, owner);
   }
 
   void
   do_io_close(int lerrno = -1) override
   {
-    parent->do_io_close(lerrno);
+    proxy_ssn->do_io_close(lerrno);
     // this->destroy(); Parent owns this data structure.  No need for separate destroy.
   }
 
   // Don't destroy your elements.  Rely on the Http1ClientSession to clean up the
-  // Http1ClientTransaction class as necessary.  The super::destroy() clears the
+  // Http1Transaction class as necessary.  The super::destroy() clears the
   // mutex, which Http1ClientSession owns.
   void
   destroy() override
@@ -64,13 +64,13 @@ public:
   void
   do_io_shutdown(ShutdownHowTo_t howto) override
   {
-    parent->do_io_shutdown(howto);
+    proxy_ssn->do_io_shutdown(howto);
   }
 
   void
   reenable(VIO *vio) override
   {
-    parent->reenable(vio);
+    proxy_ssn->reenable(vio);
   }
 
   void
@@ -83,7 +83,7 @@ public:
 
   bool allow_half_open() const override;
 
-  void set_parent(ProxyClientSession *new_parent) override;
+  void set_parent(ProxySession *new_parent) override;
 
   bool
   is_outbound_transparent() const override
@@ -100,20 +100,20 @@ public:
   void
   set_active_timeout(ink_hrtime timeout_in) override
   {
-    if (parent)
-      parent->set_active_timeout(timeout_in);
+    if (proxy_ssn)
+      proxy_ssn->set_active_timeout(timeout_in);
   }
   void
   set_inactivity_timeout(ink_hrtime timeout_in) override
   {
-    if (parent)
-      parent->set_inactivity_timeout(timeout_in);
+    if (proxy_ssn)
+      proxy_ssn->set_inactivity_timeout(timeout_in);
   }
   void
   cancel_inactivity_timeout() override
   {
-    if (parent)
-      parent->cancel_inactivity_timeout();
+    if (proxy_ssn)
+      proxy_ssn->cancel_inactivity_timeout();
   }
   void transaction_done() override;
 
@@ -124,7 +124,7 @@ public:
     // presumed not to increase during the lifetime of a transaction, thus this function will return a consistent unique transaction
     // identifier.
     //
-    return get_transact_count();
+    return proxy_ssn->get_transact_count();
   }
 
   void increment_client_transactions_stat() override;
