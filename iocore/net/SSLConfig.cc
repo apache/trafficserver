@@ -558,9 +558,10 @@ SSLCertificateConfig::release(SSLCertLookup *lookup)
 }
 
 bool
-SSLTicketParams::LoadTicket()
+SSLTicketParams::LoadTicket(bool &nochange)
 {
   cleanup();
+  nochange = true;
 
 #if TS_HAVE_OPENSSL_SESSION_TICKETS
   ssl_ticket_key_block *keyblock = nullptr;
@@ -572,7 +573,7 @@ SSLTicketParams::LoadTicket()
   SSLTicketKeyConfig::scoped_config ticket_params;
   if (ticket_params) {
     last_load_time      = ticket_params->load_time;
-    no_default_keyblock = ticket_params->default_global_keyblock != nullptr;
+    no_default_keyblock = ticket_params->default_global_keyblock == nullptr;
   }
 
   if (REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename") == REC_ERR_OKAY &&
@@ -584,22 +585,25 @@ SSLTicketParams::LoadTicket()
       if (sdata.st_mtime && sdata.st_mtime <= last_load_time) {
         Debug("ssl", "ticket key %s has not changed", ticket_key_filename);
         // No updates since last load
-        return false;
+        return true;
       }
     }
+    nochange = false;
     keyblock = ssl_create_ticket_keyblock(ticket_key_path);
     // Initialize if we don't have one yet
   } else if (no_default_keyblock) {
+    nochange = false;
     keyblock = ssl_create_ticket_keyblock(nullptr);
   } else {
     // No need to update.  Keep the previous ticket param
-    return false;
+    return true;
   }
   if (!keyblock) {
     Error("Could not load ticket key from %s", ticket_key_filename);
     return false;
   }
   default_global_keyblock = keyblock;
+  load_time               = time(NULL);
 
   Debug("ssl", "ticket key reloaded from %s", ticket_key_filename);
   return true;
@@ -638,9 +642,15 @@ SSLTicketKeyConfig::reconfigure()
   SSLTicketParams *ticketKey = new SSLTicketParams();
 
   if (ticketKey) {
-    if (!ticketKey->LoadTicket()) {
+    bool nochange = false;
+    if (!ticketKey->LoadTicket(nochange)) {
       delete ticketKey;
       return false;
+    }
+    // Nothing updated, leave the original configuration
+    if (nochange) {
+      delete ticketKey;
+      return true;
     }
   }
   configid = configProcessor.set(configid, ticketKey);
