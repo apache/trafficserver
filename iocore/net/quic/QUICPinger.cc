@@ -47,13 +47,18 @@ QUICPinger::cancel(QUICEncryptionLevel level)
 }
 
 bool
-QUICPinger::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICPinger::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   if (!this->_is_level_matched(level)) {
     return false;
   }
 
+  if (seq_num == this->_latest_seq_num) {
+    return false;
+  }
+
+  this->_latest_seq_num = seq_num;
   return this->_need_to_fire[static_cast<int>(level)] > 0;
 }
 
@@ -62,7 +67,7 @@ QUICPinger::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
  */
 QUICFrame *
 QUICPinger::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */, uint16_t maximum_frame_size,
-                           ink_hrtime timestamp)
+                           uint32_t seq_num)
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   QUICFrame *frame = nullptr;
@@ -77,6 +82,7 @@ QUICPinger::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* 
     --this->_need_to_fire[static_cast<int>(level)];
   }
 
+  this->_latest_seq_num = seq_num;
   return frame;
 }
 

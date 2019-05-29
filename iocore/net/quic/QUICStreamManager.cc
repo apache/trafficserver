@@ -407,7 +407,7 @@ QUICStreamManager::set_default_application(QUICApplication *app)
 }
 
 bool
-QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;
@@ -419,7 +419,7 @@ QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, ink_hrtime tim
   }
 
   for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
-    if (s->will_generate_frame(level, timestamp)) {
+    if (s->will_generate_frame(level, seq_num)) {
       return true;
     }
   }
@@ -429,7 +429,7 @@ QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, ink_hrtime tim
 
 QUICFrame *
 QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                                  ink_hrtime timestamp)
+                                  uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
 
@@ -444,7 +444,7 @@ QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
 
   // FIXME We should pick a stream based on priority
   for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
-    frame = s->generate_frame(buf, level, connection_credit, maximum_frame_size, timestamp);
+    frame = s->generate_frame(buf, level, connection_credit, maximum_frame_size, seq_num);
     if (frame) {
       break;
     }

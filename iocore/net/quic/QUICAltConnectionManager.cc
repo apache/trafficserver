@@ -266,7 +266,7 @@ QUICAltConnectionManager::invalidate_alt_connections()
 }
 
 bool
-QUICAltConnectionManager::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICAltConnectionManager::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;
@@ -280,7 +280,7 @@ QUICAltConnectionManager::will_generate_frame(QUICEncryptionLevel level, ink_hrt
  */
 QUICFrame *
 QUICAltConnectionManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
-                                         uint16_t maximum_frame_size, ink_hrtime timestamp)
+                                         uint16_t maximum_frame_size, uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
   if (!this->_is_level_matched(level)) {

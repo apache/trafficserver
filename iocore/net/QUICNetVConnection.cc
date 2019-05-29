@@ -470,7 +470,7 @@ QUICNetVConnection::start()
   this->_frame_generators.push_back(this);                          // NEW_TOKEN
   this->_frame_generators.push_back(this->_stream_manager);         // STREAM, MAX_STREAM_DATA, STREAM_DATA_BLOCKED
   this->_frame_generators.push_back(&this->_ack_frame_manager);     // ACK
-  // this->_frame_generators.push_back(&this->_pinger);                // PING
+  this->_frame_generators.push_back(this->_pinger);                 // PING
 
   // Register frame handlers
   this->_frame_dispatcher->add_handler(this);
@@ -1513,8 +1513,6 @@ QUICNetVConnection::_generate_padding_frame(size_t frame_size)
 QUICPacketUPtr
 QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size, std::vector<QUICFrameInfo> &frames)
 {
-  ink_hrtime timestamp = Thread::get_hrtime();
-
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
   if (max_packet_size <= MAX_PACKET_OVERHEAD) {
     return packet;
@@ -1541,15 +1539,17 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     this->_pinger->request(level);
   }
 
+  uint32_t seq_num   = this->_seq_num++;
   size_t size_added  = 0;
   bool ack_eliciting = false;
   bool crypto        = false;
+  bool has_ping      = true;
   uint8_t frame_instance_buffer[QUICFrame::MAX_INSTANCE_SIZE]; // This is for a frame instance but not serialized frame data
   QUICFrame *frame = nullptr;
   for (auto g : this->_frame_generators) {
-    while (g->will_generate_frame(level, timestamp)) {
+    while (g->will_generate_frame(level, seq_num)) {
       // FIXME will_generate_frame should receive more parameters so we don't need extra checks
-      if (g == this->_remote_flow_controller && !this->_stream_manager->will_generate_frame(level, timestamp)) {
+      if (g == this->_remote_flow_controller && !this->_stream_manager->will_generate_frame(level, seq_num)) {
         break;
       }
       if (g == this->_stream_manager && this->_path_validator->is_validating()) {
@@ -1557,7 +1557,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       }
 
       // Common block
-      frame = g->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size, timestamp);
+      frame = g->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size, seq_num);
       if (frame) {
         ++frame_count;
         probing |= frame->is_probing_frame();
@@ -1581,6 +1581,10 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
           ack_eliciting = true;
         }
 
+        if (frame->type() == QUICFrameType::PING) {
+          has_ping = true;
+        }
+
         if (frame->type() == QUICFrameType::CRYPTO &&
             (level == QUICEncryptionLevel::INITIAL || level == QUICEncryptionLevel::HANDSHAKE)) {
           crypto = true;
@@ -1594,18 +1598,9 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
     }
   }
 
-  // one ping per packet if needed.
-  if (!ack_eliciting && this->_pinger->will_generate_frame(level, timestamp)) {
-    frame = this->_pinger->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size,
-                                          timestamp);
-    if (frame) {
-      ink_assert(frame->type() == QUICFrameType::PING);
-      ++frame_count;
-      last_block = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
-      len += size_added;
-      ack_eliciting = true;
-    }
-  } else if (ack_eliciting) {
+  // if we don't packetize ping frame and packet is ack_eliciting
+  // we need to consume ping's count
+  if (!has_ping && ack_eliciting) {
     this->_pinger->cancel(level);
   }
 
@@ -2302,13 +2297,12 @@ QUICNetVConnection::_state_connection_established_initiate_connection_migration(
   ink_assert(this->netvc_context == NET_VCONNECTION_OUT);
 
   QUICConnectionErrorUPtr error = nullptr;
-  ink_hrtime timestamp          = Thread::get_hrtime();
 
   std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
 
   if (this->_connection_migration_initiated || remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION) ||
       !this->_alt_con_manager->is_ready_to_migrate() ||
-      this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT, timestamp)) {
+      this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT, this->_seq_num++)) {
     return error;
   }
 
@@ -2325,10 +2319,9 @@ QUICNetVConnection::_state_connection_established_initiate_connection_migration(
 void
 QUICNetVConnection::_handle_periodic_ack_event()
 {
-  ink_hrtime timestamp = Thread::get_hrtime();
-  bool need_schedule   = false;
+  bool need_schedule = false;
   for (int i = static_cast<int>(this->_minimum_encryption_level); i <= static_cast<int>(QUICEncryptionLevel::ONE_RTT); ++i) {
-    if (this->_ack_frame_manager.will_generate_frame(QUIC_ENCRYPTION_LEVELS[i], timestamp)) {
+    if (this->_ack_frame_manager.will_generate_frame(QUIC_ENCRYPTION_LEVELS[i], this->_seq_num++)) {
       need_schedule = true;
       break;
     }
@@ -2360,7 +2353,7 @@ QUICNetVConnection::_handle_path_validation_timeout(Event *data)
 
 // QUICFrameGenerator
 bool
-QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;
@@ -2371,7 +2364,7 @@ QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level, ink_hrtime ti
 
 QUICFrame *
 QUICNetVConnection::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                                   ink_hrtime timestamp)
+                                   uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
 
