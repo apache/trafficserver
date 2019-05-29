@@ -253,6 +253,9 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
     } else if (type == HTTP2_FRAME_TYPE_HEADERS) { // w/o END_STREAM flag
       // No state change here. Expect a following DATA frame with END_STREAM flag.
       return true;
+    } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) { // w/o END_STREAM flag
+      // No state change here. Expect a following DATA frame with END_STREAM flag.
+      return true;
     } else {
       // Error, set state closed
       _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
