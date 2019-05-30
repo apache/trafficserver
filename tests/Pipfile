@@ -24,12 +24,12 @@ verify_ssl = true
 [packages]
 autest = "==1.7.3"
 traffic-replay = "*" # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
-# These are likely to be available via yum/dnf or apt-get
 hyper = "*"
-requests = "*"
 dnslib = "*"
+# These are likely to be available via yum/dnf or apt-get
+requests = "*"
 gunicorn = "*"
-httpbin = "*" # pulls in quite a lot
+httpbin = "*"
 
 [requires]
 python_version = "3"

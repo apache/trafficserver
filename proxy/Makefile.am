@@ -64,10 +64,10 @@ libproxy_a_SOURCES = \
 	PluginVC.h \
 	ProtocolProbeSessionAccept.cc \
 	ProtocolProbeSessionAccept.h \
-	ProxyClientSession.cc \
-	ProxyClientSession.h \
-	ProxyClientTransaction.cc \
-	ProxyClientTransaction.h \
+	ProxySession.cc \
+	ProxySession.h \
+	ProxyTransaction.cc \
+	ProxyTransaction.h \
 	ReverseProxy.cc \
 	ReverseProxy.h \
 	StatPages.cc \
