@@ -925,7 +925,7 @@ UDPNetHandler::startNetEvent(int event, Event *e)
   (void)event;
   SET_HANDLER((UDPNetContHandler)&UDPNetHandler::mainNetEvent);
   trigger_event = e;
-  e->schedule_every(-HRTIME_MSECONDS(9));
+  e->schedule_every(-HRTIME_MSECONDS(UDP_PERIOD));
   return EVENT_CONT;
 }
 

@@ -58,6 +58,8 @@ extern UDPNetProcessorInternal udpNetInternal;
 #define SLOT_TIME HRTIME_MSECONDS(SLOT_TIME_MSEC)
 #define N_SLOTS 2048
 
+constexpr int UDP_PERIOD = 9;
+
 class PacketQueue
 {
 public:
