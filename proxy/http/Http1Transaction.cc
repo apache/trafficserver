@@ -47,16 +47,16 @@ Http1Transaction::release(IOBufferReader *r)
 }
 
 void
-Http1Transaction::set_parent(ProxySession *new_parent)
+Http1Transaction::set_proxy_ssn(ProxySession *new_proxy_ssn)
 {
-  Http1ClientSession *http1_parent = dynamic_cast<Http1ClientSession *>(new_parent);
+  Http1ClientSession *http1_proxy_ssn = dynamic_cast<Http1ClientSession *>(new_proxy_ssn);
 
-  if (http1_parent) {
-    outbound_port        = http1_parent->outbound_port;
-    outbound_ip4         = http1_parent->outbound_ip4;
-    outbound_ip6         = http1_parent->outbound_ip6;
-    outbound_transparent = http1_parent->f_outbound_transparent;
-    super_type::set_parent(new_parent);
+  if (http1_proxy_ssn) {
+    outbound_port        = http1_proxy_ssn->outbound_port;
+    outbound_ip4         = http1_proxy_ssn->outbound_ip4;
+    outbound_ip6         = http1_proxy_ssn->outbound_ip6;
+    outbound_transparent = http1_proxy_ssn->f_outbound_transparent;
+    super_type::set_proxy_ssn(new_proxy_ssn);
   } else {
     proxy_ssn = nullptr;
   }

@@ -4833,7 +4833,7 @@ TSHttpTxnSsnGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  return reinterpret_cast<TSHttpSsn>(sm->ua_txn ? (TSHttpSsn)sm->ua_txn->get_parent() : nullptr);
+  return reinterpret_cast<TSHttpSsn>(sm->ua_txn ? (TSHttpSsn)sm->ua_txn->get_proxy_ssn() : nullptr);
 }
 
 // TODO: Is this still necessary ??
@@ -7814,7 +7814,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   HttpSM *sm          = reinterpret_cast<HttpSM *>(txnp);
   Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
   if (stream) {
-    Http2ClientSession *ua_session = static_cast<Http2ClientSession *>(stream->get_parent());
+    Http2ClientSession *ua_session = static_cast<Http2ClientSession *>(stream->get_proxy_ssn());
     SCOPED_MUTEX_LOCK(lock, ua_session->mutex, this_ethread());
     if (!ua_session->connection_state.is_state_closed() && !ua_session->is_url_pushed(url, url_len)) {
       HTTPHdr *hptr = &(sm->t_state.hdr_info.client_request);

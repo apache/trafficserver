@@ -7815,7 +7815,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   HttpTransactHeaders::add_server_header_to_response(s->txn_conf, outgoing_response);
 
-  if (s->state_machine->ua_txn && s->state_machine->ua_txn->get_parent()->is_draining()) {
+  if (s->state_machine->ua_txn && s->state_machine->ua_txn->get_proxy_ssn()->is_draining()) {
     HttpTransactHeaders::add_connection_close(outgoing_response);
   }
 

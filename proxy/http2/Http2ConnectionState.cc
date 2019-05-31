@@ -1132,7 +1132,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
     zombie_event = nullptr;
   }
 
-  new_stream->set_parent(ua_session);
+  new_stream->set_proxy_ssn(ua_session);
   new_stream->mutex                     = new_ProxyMutex();
   new_stream->is_first_transaction_flag = get_stream_requests() == 0;
   increment_stream_requests();
