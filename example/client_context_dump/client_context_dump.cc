@@ -115,7 +115,7 @@ dump_context(const char *ca_path, const char *ck_path)
         }
 
         // Serial number
-        long sn = 0;
+        int64_t sn = 0;
 #if OPENSSL_VERSION_NUMBER >= 0x010100000
         ASN1_INTEGER_get_int64(&sn, serial);
 #else
