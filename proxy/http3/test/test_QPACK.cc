@@ -406,7 +406,6 @@ TEST_CASE("Encoding", "[qpack-encode]")
 
   if (dir == nullptr) {
     std::cerr << "couldn't open dir: " << qifdir << std::endl;
-    REQUIRE(false);
     return;
   }
 
@@ -441,8 +440,7 @@ TEST_CASE("Decoding", "[qpack-decode]")
   DIR *dir = opendir(app_dir);
 
   if (dir == nullptr) {
-    std::cerr << "couldn't open dir: " << qifdir << std::endl;
-    REQUIRE(false);
+    std::cerr << "couldn't open dir: " << app_dir << std::endl;
     return;
   }
 
