@@ -29,9 +29,9 @@
 #include "HTTP2.h"
 
 #include "Http3Frame.h"
-#include "Http3ClientTransaction.h"
+#include "Http3Transaction.h"
 
-Http3HeaderFramer::Http3HeaderFramer(Http3ClientTransaction *transaction, VIO *source, QPACK *qpack, uint64_t stream_id)
+Http3HeaderFramer::Http3HeaderFramer(Http3Transaction *transaction, VIO *source, QPACK *qpack, uint64_t stream_id)
   : _transaction(transaction), _source_vio(source), _qpack(qpack), _stream_id(stream_id)
 {
   http_parser_init(&this->_http_parser);

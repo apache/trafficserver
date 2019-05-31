@@ -35,13 +35,13 @@ class Http3ClientSession;
 class Http3HeaderFramer;
 class Http3DataFramer;
 
-class HQClientTransaction : public ProxyTransaction
+class HQTransaction : public ProxyTransaction
 {
 public:
   using super = ProxyTransaction;
 
-  HQClientTransaction(HQClientSession *session, QUICStreamIO *stream_io);
-  virtual ~HQClientTransaction();
+  HQTransaction(HQClientSession *session, QUICStreamIO *stream_io);
+  virtual ~HQTransaction();
 
   // Implement ProxyClienTransaction interface
   void set_active_timeout(ink_hrtime timeout_in) override;
@@ -63,7 +63,7 @@ public:
   virtual void do_io_shutdown(ShutdownHowTo_t) override;
   virtual void reenable(VIO *) override;
 
-  // HQClientTransaction
+  // HQTransaction
   virtual int state_stream_open(int, void *)             = 0;
   virtual int state_stream_closed(int event, void *data) = 0;
   NetVConnectionContext_t direction() const;
@@ -89,13 +89,13 @@ protected:
   HTTPHdr _header; ///< HTTP header buffer for decoding
 };
 
-class Http3ClientTransaction : public HQClientTransaction
+class Http3Transaction : public HQTransaction
 {
 public:
-  using super = HQClientTransaction;
+  using super = HQTransaction;
 
-  Http3ClientTransaction(Http3ClientSession *session, QUICStreamIO *stream_io);
-  ~Http3ClientTransaction();
+  Http3Transaction(Http3ClientSession *session, QUICStreamIO *stream_io);
+  ~Http3Transaction();
 
   int state_stream_open(int event, void *data) override;
   int state_stream_closed(int event, void *data) override;
@@ -124,13 +124,13 @@ private:
 /**
    Only for interop. Will be removed.
  */
-class Http09ClientTransaction : public HQClientTransaction
+class Http09Transaction : public HQTransaction
 {
 public:
-  using super = HQClientTransaction;
+  using super = HQTransaction;
 
-  Http09ClientTransaction(Http09ClientSession *session, QUICStreamIO *stream_io);
-  ~Http09ClientTransaction();
+  Http09Transaction(Http09ClientSession *session, QUICStreamIO *stream_io);
+  ~Http09Transaction();
 
   int state_stream_open(int event, void *data) override;
   int state_stream_closed(int event, void *data) override;

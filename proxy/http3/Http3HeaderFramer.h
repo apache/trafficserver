@@ -30,20 +30,20 @@
 #include "Http3FrameGenerator.h"
 #include "Http3Frame.h"
 
-class Http3ClientTransaction;
+class Http3Transaction;
 class VIO;
 
 class Http3HeaderFramer : public Http3FrameGenerator
 {
 public:
-  Http3HeaderFramer(Http3ClientTransaction *transaction, VIO *source, QPACK *qpack, uint64_t stream_id);
+  Http3HeaderFramer(Http3Transaction *transaction, VIO *source, QPACK *qpack, uint64_t stream_id);
 
   // Http3FrameGenerator
   Http3FrameUPtr generate_frame(uint16_t max_size) override;
   bool is_done() const override;
 
 private:
-  Http3ClientTransaction *_transaction = nullptr;
+  Http3Transaction *_transaction       = nullptr;
   VIO *_source_vio                     = nullptr;
   QPACK *_qpack                        = nullptr;
   MIOBuffer *_header_block             = nullptr;

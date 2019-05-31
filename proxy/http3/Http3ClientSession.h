@@ -24,7 +24,7 @@
 #pragma once
 
 #include "ProxySession.h"
-#include "Http3ClientTransaction.h"
+#include "Http3Transaction.h"
 #include "QPACK.h"
 
 class HQClientSession : public ProxySession
@@ -51,15 +51,15 @@ public:
   int get_transact_count() const override;
 
   // HQClientSession
-  void add_transaction(HQClientTransaction *);
-  HQClientTransaction *get_transaction(QUICStreamId);
+  void add_transaction(HQTransaction *);
+  HQTransaction *get_transaction(QUICStreamId);
 
 protected:
   NetVConnection *_client_vc = nullptr;
 
 private:
   // this should be unordered map?
-  Queue<HQClientTransaction> _transaction_list;
+  Queue<HQTransaction> _transaction_list;
 };
 
 class Http3ClientSession : public HQClientSession

@@ -30,23 +30,23 @@
 //
 HQClientSession ::~HQClientSession()
 {
-  for (HQClientTransaction *t = this->_transaction_list.head; t; t = static_cast<HQClientTransaction *>(t->link.next)) {
+  for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
     delete t;
   }
 }
 
 void
-HQClientSession::add_transaction(HQClientTransaction *trans)
+HQClientSession::add_transaction(HQTransaction *trans)
 {
   this->_transaction_list.enqueue(trans);
 
   return;
 }
 
-HQClientTransaction *
+HQTransaction *
 HQClientSession::get_transaction(QUICStreamId id)
 {
-  for (HQClientTransaction *t = this->_transaction_list.head; t; t = static_cast<Http3ClientTransaction *>(t->link.next)) {
+  for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
     if (t->get_transaction_id() == static_cast<int>(id)) {
       return t;
     }

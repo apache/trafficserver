@@ -32,7 +32,7 @@
 #include "Http3Config.h"
 #include "Http3DebugNames.h"
 #include "Http3ClientSession.h"
-#include "Http3ClientTransaction.h"
+#include "Http3Transaction.h"
 
 static constexpr char debug_tag[]   = "http3";
 static constexpr char debug_tag_v[] = "v_http3";
@@ -212,11 +212,11 @@ Http3App::_handle_bidi_stream_on_read_ready(int event, QUICStreamIO *stream_io)
 {
   uint8_t dummy;
   if (stream_io->peek(&dummy, 1)) {
-    QUICStreamId stream_id      = stream_io->stream_id();
-    Http3ClientTransaction *txn = static_cast<Http3ClientTransaction *>(this->_ssn->get_transaction(stream_id));
+    QUICStreamId stream_id = stream_io->stream_id();
+    Http3Transaction *txn  = static_cast<Http3Transaction *>(this->_ssn->get_transaction(stream_id));
 
     if (txn == nullptr) {
-      txn = new Http3ClientTransaction(this->_ssn, stream_io);
+      txn = new Http3Transaction(this->_ssn, stream_io);
       SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
 
       txn->new_transaction();
@@ -289,8 +289,8 @@ Http3App::_set_qpack_stream(Http3StreamType type, QUICStreamIO *stream_io)
 void
 Http3App::_handle_bidi_stream_on_write_ready(int event, QUICStreamIO *stream_io)
 {
-  QUICStreamId stream_id      = stream_io->stream_id();
-  Http3ClientTransaction *txn = static_cast<Http3ClientTransaction *>(this->_ssn->get_transaction(stream_id));
+  QUICStreamId stream_id = stream_io->stream_id();
+  Http3Transaction *txn  = static_cast<Http3Transaction *>(this->_ssn->get_transaction(stream_id));
   if (txn != nullptr) {
     SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
     txn->handleEvent(event);

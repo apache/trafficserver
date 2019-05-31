@@ -28,7 +28,7 @@
 #include <string_view>
 
 #include "Http3ClientSession.h"
-#include "Http3ClientTransaction.h"
+#include "Http3Transaction.h"
 
 // OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
 // https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
@@ -293,7 +293,7 @@ Http3ClientApp::_do_http_request()
   QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
 
   // TODO: create Http3ServerTransaction
-  Http3ClientTransaction *txn = new Http3ClientTransaction(this->_ssn, stream_io);
+  Http3Transaction *txn = new Http3Transaction(this->_ssn, stream_io);
   SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
 
   // TODO: fix below issue with H2 origin conn stuff

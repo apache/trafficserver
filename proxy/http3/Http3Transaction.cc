@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "Http3ClientTransaction.h"
+#include "Http3Transaction.h"
 
 #include "QUICDebugNames.h"
 
@@ -54,9 +54,9 @@
 // }
 
 //
-// HQClientTransaction
+// HQTransaction
 //
-HQClientTransaction::HQClientTransaction(HQClientSession *session, QUICStreamIO *stream_io) : super(), _stream_io(stream_io)
+HQTransaction::HQTransaction(HQClientSession *session, QUICStreamIO *stream_io) : super(), _stream_io(stream_io)
 {
   this->mutex   = new_ProxyMutex();
   this->_thread = this_ethread();
@@ -75,13 +75,13 @@ HQClientTransaction::HQClientTransaction(HQClientSession *session, QUICStreamIO 
   this->_header.create(http_type);
 }
 
-HQClientTransaction::~HQClientTransaction()
+HQTransaction::~HQTransaction()
 {
   this->_header.destroy();
 }
 
 void
-HQClientTransaction::set_active_timeout(ink_hrtime timeout_in)
+HQTransaction::set_active_timeout(ink_hrtime timeout_in)
 {
   if (this->proxy_ssn) {
     this->proxy_ssn->set_active_timeout(timeout_in);
@@ -89,7 +89,7 @@ HQClientTransaction::set_active_timeout(ink_hrtime timeout_in)
 }
 
 void
-HQClientTransaction::set_inactivity_timeout(ink_hrtime timeout_in)
+HQTransaction::set_inactivity_timeout(ink_hrtime timeout_in)
 {
   if (this->proxy_ssn) {
     this->proxy_ssn->set_inactivity_timeout(timeout_in);
@@ -97,7 +97,7 @@ HQClientTransaction::set_inactivity_timeout(ink_hrtime timeout_in)
 }
 
 void
-HQClientTransaction::cancel_inactivity_timeout()
+HQTransaction::cancel_inactivity_timeout()
 {
   if (this->proxy_ssn) {
     this->proxy_ssn->cancel_inactivity_timeout();
@@ -105,7 +105,7 @@ HQClientTransaction::cancel_inactivity_timeout()
 }
 
 void
-HQClientTransaction::release(IOBufferReader *r)
+HQTransaction::release(IOBufferReader *r)
 {
   super::release(r);
   this->do_io_close();
@@ -113,13 +113,13 @@ HQClientTransaction::release(IOBufferReader *r)
 }
 
 bool
-HQClientTransaction::allow_half_open() const
+HQTransaction::allow_half_open() const
 {
   return false;
 }
 
 VIO *
-HQClientTransaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+HQTransaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   if (buf) {
     this->_read_vio.buffer.writer_for(buf);
@@ -141,7 +141,7 @@ HQClientTransaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 }
 
 VIO *
-HQClientTransaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+HQTransaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
   if (buf) {
     this->_write_vio.buffer.reader_for(buf);
@@ -163,7 +163,7 @@ HQClientTransaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader
 }
 
 void
-HQClientTransaction::do_io_close(int lerrno)
+HQTransaction::do_io_close(int lerrno)
 {
   if (this->_read_event) {
     this->_read_event->cancel();
@@ -189,13 +189,13 @@ HQClientTransaction::do_io_close(int lerrno)
 }
 
 void
-HQClientTransaction::do_io_shutdown(ShutdownHowTo_t howto)
+HQTransaction::do_io_shutdown(ShutdownHowTo_t howto)
 {
   return;
 }
 
 void
-HQClientTransaction::reenable(VIO *vio)
+HQTransaction::reenable(VIO *vio)
 {
   if (vio->op == VIO::READ) {
     int64_t len = this->_process_read_vio();
@@ -215,38 +215,38 @@ HQClientTransaction::reenable(VIO *vio)
 }
 
 void
-HQClientTransaction::destroy()
+HQTransaction::destroy()
 {
   current_reader = nullptr;
 }
 
 void
-HQClientTransaction::transaction_done()
+HQTransaction::transaction_done()
 {
   // TODO: start closing transaction
   return;
 }
 
 int
-HQClientTransaction::get_transaction_id() const
+HQTransaction::get_transaction_id() const
 {
   return this->_stream_io->stream_id();
 }
 
 void
-HQClientTransaction::increment_client_transactions_stat()
+HQTransaction::increment_client_transactions_stat()
 {
   // TODO
 }
 
 void
-HQClientTransaction::decrement_client_transactions_stat()
+HQTransaction::decrement_client_transactions_stat()
 {
   // TODO
 }
 
 NetVConnectionContext_t
-HQClientTransaction::direction() const
+HQTransaction::direction() const
 {
   return this->proxy_ssn->get_netvc()->get_context();
 }
@@ -255,7 +255,7 @@ HQClientTransaction::direction() const
  * @brief Replace existing event only if the new event is different than the inprogress event
  */
 Event *
-HQClientTransaction::_send_tracked_event(Event *event, int send_event, VIO *vio)
+HQTransaction::_send_tracked_event(Event *event, int send_event, VIO *vio)
 {
   if (event != nullptr) {
     if (event->callback_event != send_event) {
@@ -275,7 +275,7 @@ HQClientTransaction::_send_tracked_event(Event *event, int send_event, VIO *vio)
  * @brief Signal event to this->_read_vio.cont
  */
 void
-HQClientTransaction::_signal_read_event()
+HQTransaction::_signal_read_event()
 {
   if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
     return;
@@ -296,7 +296,7 @@ HQClientTransaction::_signal_read_event()
  * @brief Signal event to this->_write_vio.cont
  */
 void
-HQClientTransaction::_signal_write_event()
+HQTransaction::_signal_write_event()
 {
   if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
     return;
@@ -314,11 +314,11 @@ HQClientTransaction::_signal_write_event()
 }
 
 //
-// Http3ClientTransaction
+// Http3Transaction
 //
-Http3ClientTransaction::Http3ClientTransaction(Http3ClientSession *session, QUICStreamIO *stream_io) : super(session, stream_io)
+Http3Transaction::Http3Transaction(Http3ClientSession *session, QUICStreamIO *stream_io) : super(session, stream_io)
 {
-  static_cast<HQClientSession *>(this->proxy_ssn)->add_transaction(static_cast<HQClientTransaction *>(this));
+  static_cast<HQClientSession *>(this->proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
 
   this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_io->stream_id());
   this->_data_framer   = new Http3DataFramer(this, &this->_write_vio);
@@ -332,10 +332,10 @@ Http3ClientTransaction::Http3ClientTransaction(Http3ClientSession *session, QUIC
   this->_frame_dispatcher.add_handler(this->_header_handler);
   this->_frame_dispatcher.add_handler(this->_data_handler);
 
-  SET_HANDLER(&Http3ClientTransaction::state_stream_open);
+  SET_HANDLER(&Http3Transaction::state_stream_open);
 }
 
-Http3ClientTransaction::~Http3ClientTransaction()
+Http3Transaction::~Http3Transaction()
 {
   delete this->_header_framer;
   delete this->_data_framer;
@@ -344,7 +344,7 @@ Http3ClientTransaction::~Http3ClientTransaction()
 }
 
 int
-Http3ClientTransaction::state_stream_open(int event, void *edata)
+Http3Transaction::state_stream_open(int event, void *edata)
 {
   // TODO: should check recursive call?
   if (this->_thread != this_ethread()) {
@@ -416,7 +416,7 @@ Http3ClientTransaction::state_stream_open(int event, void *edata)
 }
 
 int
-Http3ClientTransaction::state_stream_closed(int event, void *data)
+Http3Transaction::state_stream_closed(int event, void *data)
 {
   Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
 
@@ -447,26 +447,26 @@ Http3ClientTransaction::state_stream_closed(int event, void *data)
 }
 
 void
-Http3ClientTransaction::do_io_close(int lerrno)
+Http3Transaction::do_io_close(int lerrno)
 {
-  SET_HANDLER(&Http3ClientTransaction::state_stream_closed);
+  SET_HANDLER(&Http3Transaction::state_stream_closed);
   super::do_io_close(lerrno);
 }
 
 bool
-Http3ClientTransaction::is_response_header_sent() const
+Http3Transaction::is_response_header_sent() const
 {
   return this->_header_framer->is_done();
 }
 
 bool
-Http3ClientTransaction::is_response_body_sent() const
+Http3Transaction::is_response_body_sent() const
 {
   return this->_data_framer->is_done();
 }
 
 int64_t
-Http3ClientTransaction::_process_read_vio()
+Http3Transaction::_process_read_vio()
 {
   if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
     return 0;
@@ -489,7 +489,7 @@ Http3ClientTransaction::_process_read_vio()
 }
 
 int64_t
-Http3ClientTransaction::_process_write_vio()
+Http3Transaction::_process_write_vio()
 {
   if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
     return 0;
@@ -520,7 +520,7 @@ const unsigned HTTP3_LEN_SCHEME    = countof(":scheme") - 1;
 const unsigned HTTP3_LEN_AUTHORITY = countof(":authority") - 1;
 
 ParseResult
-Http3ClientTransaction::_convert_header_from_3_to_1_1(HTTPHdr *hdrs)
+Http3Transaction::_convert_header_from_3_to_1_1(HTTPHdr *hdrs)
 {
   // TODO: do HTTP/3 specific convert, if there
 
@@ -546,7 +546,7 @@ Http3ClientTransaction::_convert_header_from_3_to_1_1(HTTPHdr *hdrs)
 }
 
 int
-Http3ClientTransaction::_on_qpack_decode_complete()
+Http3Transaction::_on_qpack_decode_complete()
 {
   ParseResult res = this->_convert_header_from_3_to_1_1(&this->_header);
   if (res == PARSE_RESULT_ERROR) {
@@ -593,19 +593,19 @@ Http3ClientTransaction::_on_qpack_decode_complete()
 }
 
 //
-// Http09ClientTransaction
+// Http09Transaction
 //
-Http09ClientTransaction::Http09ClientTransaction(Http09ClientSession *session, QUICStreamIO *stream_io) : super(session, stream_io)
+Http09Transaction::Http09Transaction(Http09ClientSession *session, QUICStreamIO *stream_io) : super(session, stream_io)
 {
-  static_cast<HQClientSession *>(this->proxy_ssn)->add_transaction(static_cast<HQClientTransaction *>(this));
+  static_cast<HQClientSession *>(this->proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
 
-  SET_HANDLER(&Http09ClientTransaction::state_stream_open);
+  SET_HANDLER(&Http09Transaction::state_stream_open);
 }
 
-Http09ClientTransaction::~Http09ClientTransaction() {}
+Http09Transaction::~Http09Transaction() {}
 
 int
-Http09ClientTransaction::state_stream_open(int event, void *edata)
+Http09Transaction::state_stream_open(int event, void *edata)
 {
   // TODO: should check recursive call?
   Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
@@ -662,14 +662,14 @@ Http09ClientTransaction::state_stream_open(int event, void *edata)
 }
 
 void
-Http09ClientTransaction::do_io_close(int lerrno)
+Http09Transaction::do_io_close(int lerrno)
 {
-  SET_HANDLER(&Http09ClientTransaction::state_stream_closed);
+  SET_HANDLER(&Http09Transaction::state_stream_closed);
   super::do_io_close(lerrno);
 }
 
 int
-Http09ClientTransaction::state_stream_closed(int event, void *data)
+Http09Transaction::state_stream_closed(int event, void *data)
 {
   Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
 
@@ -700,7 +700,7 @@ Http09ClientTransaction::state_stream_closed(int event, void *data)
 
 // Convert HTTP/0.9 to HTTP/1.1
 int64_t
-Http09ClientTransaction::_process_read_vio()
+Http09Transaction::_process_read_vio()
 {
   if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
     return 0;
@@ -788,7 +788,7 @@ static constexpr char http_1_1_version[] = "HTTP/1.1";
 
 // Convert HTTP/1.1 to HTTP/0.9
 int64_t
-Http09ClientTransaction::_process_write_vio()
+Http09Transaction::_process_write_vio()
 {
   if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
     return 0;

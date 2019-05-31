@@ -26,19 +26,19 @@
 #include "Http3FrameGenerator.h"
 #include "Http3Frame.h"
 
-class Http3ClientTransaction;
+class Http3Transaction;
 class VIO;
 
 class Http3DataFramer : public Http3FrameGenerator
 {
 public:
-  Http3DataFramer(Http3ClientTransaction *transaction, VIO *source);
+  Http3DataFramer(Http3Transaction *transaction, VIO *source);
 
   // Http3FrameGenerator
   Http3FrameUPtr generate_frame(uint16_t max_size) override;
   bool is_done() const override;
 
 private:
-  Http3ClientTransaction *_transaction = nullptr;
-  VIO *_source_vio                     = nullptr;
+  Http3Transaction *_transaction = nullptr;
+  VIO *_source_vio               = nullptr;
 };

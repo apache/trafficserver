@@ -23,11 +23,9 @@
 
 #include "Http3Frame.h"
 #include "Http3DataFramer.h"
-#include "Http3ClientTransaction.h"
+#include "Http3Transaction.h"
 
-Http3DataFramer::Http3DataFramer(Http3ClientTransaction *transaction, VIO *source) : _transaction(transaction), _source_vio(source)
-{
-}
+Http3DataFramer::Http3DataFramer(Http3Transaction *transaction, VIO *source) : _transaction(transaction), _source_vio(source) {}
 
 Http3FrameUPtr
 Http3DataFramer::generate_frame(uint16_t max_size)

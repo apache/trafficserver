@@ -30,7 +30,7 @@
 #include "QUICDebugNames.h"
 
 #include "Http3ClientSession.h"
-#include "Http3ClientTransaction.h"
+#include "Http3Transaction.h"
 
 static constexpr char debug_tag[]   = "quic_simple_app";
 static constexpr char debug_tag_v[] = "v_quic_simple_app";
@@ -71,8 +71,8 @@ Http09App::main_event_handler(int event, Event *data)
     return -1;
   }
 
-  QUICStreamId stream_id       = stream_io->stream_id();
-  Http09ClientTransaction *txn = static_cast<Http09ClientTransaction *>(this->_ssn->get_transaction(stream_id));
+  QUICStreamId stream_id = stream_io->stream_id();
+  Http09Transaction *txn = static_cast<Http09Transaction *>(this->_ssn->get_transaction(stream_id));
 
   uint8_t dummy;
   switch (event) {
@@ -84,7 +84,7 @@ Http09App::main_event_handler(int event, Event *data)
     }
     if (stream_io->peek(&dummy, 1)) {
       if (txn == nullptr) {
-        txn = new Http09ClientTransaction(this->_ssn, stream_io);
+        txn = new Http09Transaction(this->_ssn, stream_io);
         SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
 
         txn->new_transaction();
