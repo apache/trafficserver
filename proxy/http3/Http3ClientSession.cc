@@ -113,7 +113,7 @@ HQClientSession::destroy()
 }
 
 void
-HQClientSession::release(ProxyClientTransaction *trans)
+HQClientSession::release(ProxyTransaction *trans)
 {
   return;
 }

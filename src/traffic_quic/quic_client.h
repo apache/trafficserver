@@ -70,6 +70,7 @@ public:
 private:
   const QUICClientConfig *_config    = nullptr;
   struct addrinfo *_remote_addr_info = nullptr;
+  HttpSessionAccept::Options options;
 };
 
 class Http09ClientApp : public QUICApplication
@@ -92,7 +93,8 @@ class Http3ClientApp : public Http3App
 public:
   using super = Http3App;
 
-  Http3ClientApp(QUICNetVConnection *qvc, IpAllow::ACL &&session_acl, const QUICClientConfig *config);
+  Http3ClientApp(QUICNetVConnection *qvc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options,
+                 const QUICClientConfig *config);
   ~Http3ClientApp();
 
   void start() override;

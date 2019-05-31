@@ -110,7 +110,7 @@ QUICClient::state_http_server_open(int event, void *data)
     } else if (this->_config->http3) {
       // TODO: see what server session is doing with IpAllow::ACL
       IpAllow::ACL session_acl;
-      Http3ClientApp *app = new Http3ClientApp(conn, std::move(session_acl), this->_config);
+      Http3ClientApp *app = new Http3ClientApp(conn, std::move(session_acl), options, this->_config);
       SCOPED_MUTEX_LOCK(lock, app->mutex, this_ethread());
       app->start();
     } else {
@@ -249,8 +249,9 @@ Http09ClientApp::main_event_handler(int event, Event *data)
 //
 // Http3ClientApp
 //
-Http3ClientApp::Http3ClientApp(QUICNetVConnection *qvc, IpAllow::ACL &&session_acl, const QUICClientConfig *config)
-  : super(qvc, std::move(session_acl)), _config(config)
+Http3ClientApp::Http3ClientApp(QUICNetVConnection *qvc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options,
+                               const QUICClientConfig *config)
+  : super(qvc, std::move(session_acl), options), _config(config)
 {
 }
 

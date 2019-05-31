@@ -23,14 +23,14 @@
 
 #pragma once
 
-#include "ProxyClientSession.h"
+#include "ProxySession.h"
 #include "Http3ClientTransaction.h"
 #include "QPACK.h"
 
-class HQClientSession : public ProxyClientSession
+class HQClientSession : public ProxySession
 {
 public:
-  using super = ProxyClientSession; ///< Parent type
+  using super = ProxySession; ///< Parent type
 
   HQClientSession(NetVConnection *vc) : _client_vc(vc){};
   virtual ~HQClientSession();
@@ -42,11 +42,11 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
-  // Implement ProxyClienSession interface
+  // Implement ProxySession interface
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
   void start() override;
   void destroy() override;
-  void release(ProxyClientTransaction *trans) override;
+  void release(ProxyTransaction *trans) override;
   NetVConnection *get_netvc() const override;
   int get_transact_count() const override;
 
@@ -70,7 +70,7 @@ public:
   Http3ClientSession(NetVConnection *vc);
   ~Http3ClientSession();
 
-  // ProxyClienSession interface
+  // ProxySession interface
   const char *get_protocol_string() const override;
   int populate_protocol(std::string_view *result, int size) const override;
   void increment_current_active_client_connections_stat() override;
@@ -95,7 +95,7 @@ public:
   Http09ClientSession(NetVConnection *vc) : HQClientSession(vc) {}
   ~Http09ClientSession();
 
-  // ProxyClienSession interface
+  // ProxySession interface
   const char *get_protocol_string() const override;
   int populate_protocol(std::string_view *result, int size) const override;
   void increment_current_active_client_connections_stat() override;

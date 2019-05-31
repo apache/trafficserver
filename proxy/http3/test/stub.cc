@@ -85,7 +85,7 @@ HttpSM::kill_this_async_hook(int /* event ATS_UNUSED */, void * /* data ATS_UNUS
 }
 
 void
-HttpSM::attach_client_session(ProxyClientTransaction *, IOBufferReader *)
+HttpSM::attach_client_session(ProxyTransaction *, IOBufferReader *)
 {
   ink_abort("do not call stub");
 }

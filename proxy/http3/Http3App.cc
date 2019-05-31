@@ -23,6 +23,8 @@
 
 #include "Http3App.h"
 
+#include "tscore/ink_resolver.h"
+
 #include "P_Net.h"
 #include "P_VConnection.h"
 
@@ -35,10 +37,18 @@
 static constexpr char debug_tag[]   = "http3";
 static constexpr char debug_tag_v[] = "v_http3";
 
-Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl) : QUICApplication(client_vc)
+Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options)
+  : QUICApplication(client_vc)
 {
   this->_ssn      = new Http3ClientSession(client_vc);
   this->_ssn->acl = std::move(session_acl);
+  // TODO: avoid const cast
+  this->_ssn->host_res_style =
+    ats_host_res_from(client_vc->get_remote_addr()->sa_family, const_cast<HostResPreference *>(options.host_res_preference));
+  this->_ssn->outbound_ip4  = options.outbound_ip4;
+  this->_ssn->outbound_ip6  = options.outbound_ip6;
+  this->_ssn->outbound_port = options.outbound_port;
+
   this->_ssn->new_connection(client_vc, nullptr, nullptr);
 
   this->_qc->stream_manager()->set_default_application(this);

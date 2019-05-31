@@ -24,7 +24,7 @@
 #pragma once
 
 #include "I_VConnection.h"
-#include "ProxyClientTransaction.h"
+#include "ProxyTransaction.h"
 #include "Http3FrameDispatcher.h"
 #include "Http3FrameCollector.h"
 
@@ -35,10 +35,10 @@ class Http3ClientSession;
 class Http3HeaderFramer;
 class Http3DataFramer;
 
-class HQClientTransaction : public ProxyClientTransaction
+class HQClientTransaction : public ProxyTransaction
 {
 public:
-  using super = ProxyClientTransaction;
+  using super = ProxyTransaction;
 
   HQClientTransaction(HQClientSession *session, QUICStreamIO *stream_io);
   virtual ~HQClientTransaction();

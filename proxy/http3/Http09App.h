@@ -25,6 +25,8 @@
 
 #include "IPAllow.h"
 
+#include "HttpSessionAccept.h"
+
 #include "QUICApplication.h"
 
 class QUICNetVConnection;
@@ -39,11 +41,11 @@ class Http09ClientSession;
 class Http09App : public QUICApplication
 {
 public:
-  Http09App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl);
+  Http09App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
   ~Http09App();
 
   int main_event_handler(int event, Event *data);
 
 private:
-  Http09ClientSession *_client_session = nullptr;
+  Http09ClientSession *_ssn = nullptr;
 };

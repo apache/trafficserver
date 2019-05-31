@@ -23,6 +23,8 @@
 
 #include "Http09App.h"
 
+#include "tscore/ink_resolver.h"
+
 #include "P_Net.h"
 #include "P_VConnection.h"
 #include "QUICDebugNames.h"
@@ -33,11 +35,18 @@
 static constexpr char debug_tag[]   = "quic_simple_app";
 static constexpr char debug_tag_v[] = "v_quic_simple_app";
 
-Http09App::Http09App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl) : QUICApplication(client_vc)
+Http09App::Http09App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options)
+  : QUICApplication(client_vc)
 {
-  this->_client_session      = new Http09ClientSession(client_vc);
-  this->_client_session->acl = std::move(session_acl);
-  this->_client_session->new_connection(client_vc, nullptr, nullptr);
+  this->_ssn      = new Http09ClientSession(client_vc);
+  this->_ssn->acl = std::move(session_acl);
+  // TODO: avoid const cast
+  this->_ssn->host_res_style =
+    ats_host_res_from(client_vc->get_remote_addr()->sa_family, const_cast<HostResPreference *>(options.host_res_preference));
+  this->_ssn->outbound_ip4  = options.outbound_ip4;
+  this->_ssn->outbound_ip6  = options.outbound_ip6;
+  this->_ssn->outbound_port = options.outbound_port;
+  this->_ssn->new_connection(client_vc, nullptr, nullptr);
 
   this->_qc->stream_manager()->set_default_application(this);
 
@@ -46,7 +55,7 @@ Http09App::Http09App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl) 
 
 Http09App::~Http09App()
 {
-  delete this->_client_session;
+  delete this->_ssn;
 }
 
 int
@@ -63,7 +72,7 @@ Http09App::main_event_handler(int event, Event *data)
   }
 
   QUICStreamId stream_id       = stream_io->stream_id();
-  Http09ClientTransaction *txn = static_cast<Http09ClientTransaction *>(this->_client_session->get_transaction(stream_id));
+  Http09ClientTransaction *txn = static_cast<Http09ClientTransaction *>(this->_ssn->get_transaction(stream_id));
 
   uint8_t dummy;
   switch (event) {
@@ -75,7 +84,7 @@ Http09App::main_event_handler(int event, Event *data)
     }
     if (stream_io->peek(&dummy, 1)) {
       if (txn == nullptr) {
-        txn = new Http09ClientTransaction(this->_client_session, stream_io);
+        txn = new Http09ClientTransaction(this->_ssn, stream_io);
         SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
 
         txn->new_transaction();

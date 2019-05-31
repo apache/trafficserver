@@ -33,14 +33,14 @@
 #include "HttpSM.h"
 #include "HTTP2.h"
 
-#define Http3TransDebug(fmt, ...)                                                                                        \
-  Debug("http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                        \
-        static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->parent->get_netvc()))->cids().data(), \
+#define Http3TransDebug(fmt, ...)                                                                                           \
+  Debug("http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                           \
+        static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->proxy_ssn->get_netvc()))->cids().data(), \
         this->get_transaction_id(), ##__VA_ARGS__)
 
-#define Http3TransVDebug(fmt, ...)                                                                                       \
-  Debug("v_http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                      \
-        static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->parent->get_netvc()))->cids().data(), \
+#define Http3TransVDebug(fmt, ...)                                                                                          \
+  Debug("v_http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                         \
+        static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->proxy_ssn->get_netvc()))->cids().data(), \
         this->get_transaction_id(), ##__VA_ARGS__)
 
 // static void
@@ -83,24 +83,24 @@ HQClientTransaction::~HQClientTransaction()
 void
 HQClientTransaction::set_active_timeout(ink_hrtime timeout_in)
 {
-  if (parent) {
-    parent->set_active_timeout(timeout_in);
+  if (this->proxy_ssn) {
+    this->proxy_ssn->set_active_timeout(timeout_in);
   }
 }
 
 void
 HQClientTransaction::set_inactivity_timeout(ink_hrtime timeout_in)
 {
-  if (parent) {
-    parent->set_inactivity_timeout(timeout_in);
+  if (this->proxy_ssn) {
+    this->proxy_ssn->set_inactivity_timeout(timeout_in);
   }
 }
 
 void
 HQClientTransaction::cancel_inactivity_timeout()
 {
-  if (parent) {
-    parent->cancel_inactivity_timeout();
+  if (this->proxy_ssn) {
+    this->proxy_ssn->cancel_inactivity_timeout();
   }
 }
 
@@ -185,7 +185,7 @@ HQClientTransaction::do_io_close(int lerrno)
   this->_write_vio.op     = VIO::NONE;
   this->_write_vio.cont   = nullptr;
 
-  parent->do_io_close(lerrno);
+  this->proxy_ssn->do_io_close(lerrno);
 }
 
 void
@@ -248,7 +248,7 @@ HQClientTransaction::decrement_client_transactions_stat()
 NetVConnectionContext_t
 HQClientTransaction::direction() const
 {
-  return this->parent->get_netvc()->get_context();
+  return this->proxy_ssn->get_netvc()->get_context();
 }
 
 /**
@@ -318,7 +318,7 @@ HQClientTransaction::_signal_write_event()
 //
 Http3ClientTransaction::Http3ClientTransaction(Http3ClientSession *session, QUICStreamIO *stream_io) : super(session, stream_io)
 {
-  static_cast<HQClientSession *>(this->parent)->add_transaction(static_cast<HQClientTransaction *>(this));
+  static_cast<HQClientSession *>(this->proxy_ssn)->add_transaction(static_cast<HQClientTransaction *>(this));
 
   this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_io->stream_id());
   this->_data_framer   = new Http3DataFramer(this, &this->_write_vio);
@@ -597,7 +597,7 @@ Http3ClientTransaction::_on_qpack_decode_complete()
 //
 Http09ClientTransaction::Http09ClientTransaction(Http09ClientSession *session, QUICStreamIO *stream_io) : super(session, stream_io)
 {
-  static_cast<HQClientSession *>(this->parent)->add_transaction(static_cast<HQClientTransaction *>(this));
+  static_cast<HQClientSession *>(this->proxy_ssn)->add_transaction(static_cast<HQClientTransaction *>(this));
 
   SET_HANDLER(&Http09ClientTransaction::state_stream_open);
 }

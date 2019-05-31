@@ -27,6 +27,8 @@
 
 #include "QUICApplication.h"
 
+#include "HttpSessionAccept.h"
+
 #include "Http3Types.h"
 #include "Http3FrameDispatcher.h"
 #include "Http3FrameCollector.h"
@@ -43,7 +45,7 @@ class Http3ClientSession;
 class Http3App : public QUICApplication
 {
 public:
-  Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl);
+  Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
   virtual ~Http3App();
 
   virtual void start();

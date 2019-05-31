@@ -68,11 +68,11 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
       Debug("http3", "[%s] start HTTP/0.9 app (ALPN=%s)", qvc->cids().data(), IP_PROTO_TAG_HTTP_QUIC.data());
     }
 
-    new Http09App(qvc, std::move(session_acl));
+    new Http09App(qvc, std::move(session_acl), this->options);
   } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0) {
     Debug("http3", "[%s] start HTTP/3 app (ALPN=%s)", qvc->cids().data(), IP_PROTO_TAG_HTTP_3.data());
 
-    Http3App *app = new Http3App(qvc, std::move(session_acl));
+    Http3App *app = new Http3App(qvc, std::move(session_acl), this->options);
     app->start();
   } else {
     ink_abort("Negotiated App Name is unknown");
