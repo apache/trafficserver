@@ -66,11 +66,11 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
   }
 
   if (val < 10) {
-    *out_buf-- = '0' + static_cast<char>(val);
+    *out_buf-- = '0' + (char)val;
     ++num_chars;
   } else {
     do {
-      *out_buf-- = static_cast<char>(val % 10) + '0';
+      *out_buf-- = (char)(val % 10) + '0';
       val /= 10;
       ++num_chars;
     } while (val);
@@ -169,7 +169,7 @@ squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, lon
     memcpy(buf, ts_s, chars_to_write);
     res = chars_to_write;
   } else {
-    res = -(static_cast<int>(chars_to_write));
+    res = -((int)chars_to_write);
   }
 
   return res;

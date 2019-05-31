@@ -154,5 +154,5 @@ ink_bvsprintf(char *buffer, const char *format, va_list ap)
   ++d;
 
   va_end(ap_local);
-  return static_cast<int>(d - buffer);
+  return (int)(d - buffer);
 }

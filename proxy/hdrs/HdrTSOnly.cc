@@ -75,7 +75,7 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
     m_heap->set_ronly_str_heap_end(heap_slot, tmp);
     m_heap->unlock_ronly_str_heap(heap_slot);
 
-    used = static_cast<int>(tmp - start);
+    used = (int)(tmp - start);
     r->consume(used);
     *bytes_used += used;
 
@@ -123,7 +123,7 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
     m_heap->set_ronly_str_heap_end(heap_slot, tmp);
     m_heap->unlock_ronly_str_heap(heap_slot);
 
-    used = static_cast<int>(tmp - start);
+    used = (int)(tmp - start);
     r->consume(used);
     *bytes_used += used;
 
@@ -150,7 +150,7 @@ HdrHeap::set_ronly_str_heap_end(int slot, const char *end)
   ink_assert(m_ronly_heap[slot].m_heap_start <= end);
   ink_assert(end <= m_ronly_heap[slot].m_heap_start + m_ronly_heap[slot].m_heap_len);
 
-  m_ronly_heap[slot].m_heap_len = static_cast<int>(end - m_ronly_heap[slot].m_heap_start);
+  m_ronly_heap[slot].m_heap_len = (int)(end - m_ronly_heap[slot].m_heap_start);
 }
 
 // void HdrHeap::attach_block(IOBufferBlock* b, const char* use_start)

@@ -85,7 +85,7 @@ RamCacheLRU::resize_hashtable()
   int anbuckets = bucket_sizes[ibuckets];
   DDebug("ram_cache", "resize hashtable %d", anbuckets);
   int64_t s                                      = anbuckets * sizeof(DList(RamCacheLRUEntry, hash_link));
-  DList(RamCacheLRUEntry, hash_link) *new_bucket = static_cast<DList(RamCacheLRUEntry, hash_link) *>(ats_malloc(s));
+  DList(RamCacheLRUEntry, hash_link) *new_bucket = (DList(RamCacheLRUEntry, hash_link) *)ats_malloc(s);
   memset(static_cast<void *>(new_bucket), 0, s);
   if (bucket) {
     for (int64_t i = 0; i < nbuckets; i++) {
@@ -101,7 +101,7 @@ RamCacheLRU::resize_hashtable()
   ats_free(seen);
   int size = bucket_sizes[ibuckets] * sizeof(uint16_t);
   if (cache_config_ram_cache_use_seen_filter) {
-    seen = static_cast<uint16_t *>(ats_malloc(size));
+    seen = (uint16_t *)ats_malloc(size);
     memset(seen, 0, size);
   }
 }
@@ -170,7 +170,7 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool, uint32
     uint16_t k  = key->slice32(3) >> 16;
     uint16_t kk = seen[i];
     seen[i]     = k;
-    if ((kk != k)) {
+    if ((kk != (uint16_t)k)) {
       DDebug("ram_cache", "put %X %d %d len %d UNSEEN", key->slice32(3), auxkey1, auxkey2, len);
       return 0;
     }

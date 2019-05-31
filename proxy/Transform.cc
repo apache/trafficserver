@@ -139,7 +139,7 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
 
   m_deletable = ((m_closed != 0) && (m_tvc->m_closed != 0));
 
-  val = ink_atomic_increment(&m_event_count, -1);
+  val = ink_atomic_increment((int *)&m_event_count, -1);
 
   Debug("transform", "[TransformTerminus::handle_event] event_count %d", m_event_count);
 
@@ -275,7 +275,7 @@ TransformTerminus::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   m_read_vio.ndone     = 0;
   m_read_vio.vc_server = this;
 
-  if (ink_atomic_increment(&m_event_count, 1) < 0) {
+  if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
     ink_assert(!"not reached");
   }
   Debug("transform", "[TransformTerminus::do_io_read] event_count %d", m_event_count);
@@ -300,7 +300,7 @@ TransformTerminus::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *
   m_write_vio.ndone     = 0;
   m_write_vio.vc_server = this;
 
-  if (ink_atomic_increment(&m_event_count, 1) < 0) {
+  if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
     ink_assert(!"not reached");
   }
   Debug("transform", "[TransformTerminus::do_io_write] event_count %d", m_event_count);
@@ -316,7 +316,7 @@ TransformTerminus::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *
 void
 TransformTerminus::do_io_close(int error)
 {
-  if (ink_atomic_increment(&m_event_count, 1) < 0) {
+  if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
     ink_assert(!"not reached");
   }
 
@@ -364,7 +364,7 @@ TransformTerminus::reenable(VIO *vio)
   ink_assert((vio == &m_read_vio) || (vio == &m_write_vio));
 
   if (m_event_count == 0) {
-    if (ink_atomic_increment(&m_event_count, 1) < 0) {
+    if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
       ink_assert(!"not reached");
     }
     Debug("transform", "[TransformTerminus::reenable] event_count %d", m_event_count);
@@ -1018,7 +1018,7 @@ RangeTransform::change_response_header()
 
   status_code = HTTP_STATUS_PARTIAL_CONTENT;
   m_transform_resp->status_set(status_code);
-  reason_phrase = const_cast<char *>(http_hdr_reason_lookup(status_code));
+  reason_phrase = (char *)(http_hdr_reason_lookup(status_code));
   m_transform_resp->reason_set(reason_phrase, strlen(reason_phrase));
 
   if (m_num_range_fields > 1) {

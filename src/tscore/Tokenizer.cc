@@ -42,7 +42,7 @@ Tokenizer::Tokenizer(const char *StrOfDelimiters)
   if (StrOfDelimiters == nullptr) {
     strOfDelimit = nullptr;
   } else {
-    length       = static_cast<int>(strlen(StrOfDelimiters) + 1);
+    length       = (int)(strlen(StrOfDelimiters) + 1);
     strOfDelimit = new char[length];
     memcpy(strOfDelimit, StrOfDelimiters, length);
   }
@@ -89,7 +89,7 @@ Tokenizer::~Tokenizer()
 unsigned
 Tokenizer::Initialize(const char *str)
 {
-  return Initialize(const_cast<char *>(str), COPY_TOKS);
+  return Initialize((char *)str, COPY_TOKS);
 }
 
 inline int
@@ -163,7 +163,7 @@ Tokenizer::Initialize(char *str, unsigned opt)
     //          to skip past repeated delimiters
     if (options & ALLOW_EMPTY_TOKS) {
       if (isDelimiter(*str)) {
-        addToken(tokStart, static_cast<int>(str - tokStart));
+        addToken(tokStart, (int)(str - tokStart));
         tok_count++;
         tokStart            = str + 1;
         priorCharWasDelimit = 1;
@@ -175,7 +175,7 @@ Tokenizer::Initialize(char *str, unsigned opt)
       if (isDelimiter(*str)) {
         if (priorCharWasDelimit == 0) {
           // This is a word end, so add it
-          addToken(tokStart, static_cast<int>(str - tokStart));
+          addToken(tokStart, (int)(str - tokStart));
           tok_count++;
         }
         priorCharWasDelimit = 1;
@@ -236,7 +236,7 @@ Tokenizer::Initialize(char *str, unsigned opt)
   //  only have gotten it if the string ended with a delimiter
   if (priorCharWasDelimit == 0) {
     // We did not get it
-    addToken(tokStart, static_cast<int>(str - tokStart));
+    addToken(tokStart, (int)(str - tokStart));
     tok_count++;
   }
 
@@ -252,7 +252,7 @@ Tokenizer::addToken(char *startAddr, int length)
     startAddr[length] = '\0';
     add_ptr           = startAddr;
   } else {
-    add_ptr = static_cast<char *>(ats_malloc(length + 1));
+    add_ptr = (char *)ats_malloc(length + 1);
     memcpy(add_ptr, startAddr, length);
     add_ptr[length] = '\0';
   }
@@ -267,7 +267,7 @@ Tokenizer::addToken(char *startAddr, int length)
   //   if there is not a next one
   if (add_index >= TOK_NODE_ELEMENTS) {
     if (add_node->next == nullptr) {
-      add_node->next = static_cast<tok_node *>(ats_malloc(sizeof(tok_node)));
+      add_node->next = (tok_node *)ats_malloc(sizeof(tok_node));
       memset(add_node->next, 0, sizeof(tok_node));
     }
     add_node  = add_node->next;

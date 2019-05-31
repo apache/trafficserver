@@ -58,7 +58,7 @@ using certinfo_map = std::map<X509 *, certinfo *>;
 void
 certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
-  certinfo_map *map = static_cast<certinfo_map *>(ptr);
+  certinfo_map *map = (certinfo_map *)ptr;
 
   if (!map) {
     return;
@@ -548,7 +548,7 @@ ssl_callback_ocsp_stapling(SSL *ssl)
     Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
     return SSL_TLSEXT_ERR_NOACK;
   } else {
-    unsigned char *p = static_cast<unsigned char *>(OPENSSL_malloc(cinf->resp_derlen));
+    unsigned char *p = (unsigned char *)OPENSSL_malloc(cinf->resp_derlen);
     unsigned int len = cinf->resp_derlen;
     memcpy(p, cinf->resp_der, cinf->resp_derlen);
     ink_mutex_release(&cinf->stapling_mutex);

@@ -73,7 +73,7 @@ freerec(LLQ *Q, LLQrec *rec)
 LLQ *
 create_queue()
 {
-  LLQ *new_val = static_cast<LLQ *>(ats_malloc(sizeof(LLQ)));
+  LLQ *new_val = (LLQ *)ats_malloc(sizeof(LLQ));
 
   ink_sem_init(&(new_val->sema), 0);
   ink_mutex_init(&(new_val->mux));
@@ -104,7 +104,7 @@ enqueue(LLQ *Q, void *data)
   LLQrec *new_val;
 
   ink_mutex_acquire(&(Q->mux));
-  new_val       = static_cast<LLQrec *>(ats_malloc(sizeof(LLQrec)));
+  new_val       = (LLQrec *)ats_malloc(sizeof(LLQrec));
   new_val->data = data;
   new_val->next = nullptr;
 

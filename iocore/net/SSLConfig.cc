@@ -119,26 +119,26 @@ SSLConfigParams::reset()
 void
 SSLConfigParams::cleanup()
 {
-  serverCertChainFilename = static_cast<char *>(ats_free_null(serverCertChainFilename));
-  serverCACertFilename    = static_cast<char *>(ats_free_null(serverCACertFilename));
-  serverCACertPath        = static_cast<char *>(ats_free_null(serverCACertPath));
-  clientCertPath          = static_cast<char *>(ats_free_null(clientCertPath));
-  clientCertPathOnly      = static_cast<char *>(ats_free_null(clientCertPathOnly));
-  clientKeyPath           = static_cast<char *>(ats_free_null(clientKeyPath));
-  clientKeyPathOnly       = static_cast<char *>(ats_free_null(clientKeyPathOnly));
-  clientCACertFilename    = static_cast<char *>(ats_free_null(clientCACertFilename));
-  clientCACertPath        = static_cast<char *>(ats_free_null(clientCACertPath));
-  configFilePath          = static_cast<char *>(ats_free_null(configFilePath));
-  serverCertPathOnly      = static_cast<char *>(ats_free_null(serverCertPathOnly));
-  serverKeyPathOnly       = static_cast<char *>(ats_free_null(serverKeyPathOnly));
-  cipherSuite             = static_cast<char *>(ats_free_null(cipherSuite));
-  client_cipherSuite      = static_cast<char *>(ats_free_null(client_cipherSuite));
-  dhparamsFile            = static_cast<char *>(ats_free_null(dhparamsFile));
+  serverCertChainFilename = (char *)ats_free_null(serverCertChainFilename);
+  serverCACertFilename    = (char *)ats_free_null(serverCACertFilename);
+  serverCACertPath        = (char *)ats_free_null(serverCACertPath);
+  clientCertPath          = (char *)ats_free_null(clientCertPath);
+  clientCertPathOnly      = (char *)ats_free_null(clientCertPathOnly);
+  clientKeyPath           = (char *)ats_free_null(clientKeyPath);
+  clientKeyPathOnly       = (char *)ats_free_null(clientKeyPathOnly);
+  clientCACertFilename    = (char *)ats_free_null(clientCACertFilename);
+  clientCACertPath        = (char *)ats_free_null(clientCACertPath);
+  configFilePath          = (char *)ats_free_null(configFilePath);
+  serverCertPathOnly      = (char *)ats_free_null(serverCertPathOnly);
+  serverKeyPathOnly       = (char *)ats_free_null(serverKeyPathOnly);
+  cipherSuite             = (char *)ats_free_null(cipherSuite);
+  client_cipherSuite      = (char *)ats_free_null(client_cipherSuite);
+  dhparamsFile            = (char *)ats_free_null(dhparamsFile);
 
-  server_tls13_cipher_suites = static_cast<char *>(ats_free_null(server_tls13_cipher_suites));
-  client_tls13_cipher_suites = static_cast<char *>(ats_free_null(client_tls13_cipher_suites));
-  server_groups_list         = static_cast<char *>(ats_free_null(server_groups_list));
-  client_groups_list         = static_cast<char *>(ats_free_null(client_groups_list));
+  server_tls13_cipher_suites = (char *)ats_free_null(server_tls13_cipher_suites);
+  client_tls13_cipher_suites = (char *)ats_free_null(client_tls13_cipher_suites);
+  server_groups_list         = (char *)ats_free_null(server_groups_list);
+  client_groups_list         = (char *)ats_free_null(client_groups_list);
 
   cleanupCTXTable();
   reset();
@@ -312,8 +312,7 @@ SSLConfigParams::initialize()
   REC_ReadConfigInteger(ssl_session_cache_timeout, "proxy.config.ssl.session_cache.timeout");
   REC_ReadConfigInteger(ssl_session_cache_auto_clear, "proxy.config.ssl.session_cache.auto_clear");
 
-  SSLConfigParams::session_cache_max_bucket_size =
-    static_cast<size_t>(ceil(static_cast<double>(ssl_session_cache_size) / ssl_session_cache_num_buckets));
+  SSLConfigParams::session_cache_max_bucket_size = (size_t)ceil((double)ssl_session_cache_size / ssl_session_cache_num_buckets);
   SSLConfigParams::session_cache_skip_on_lock_contention = ssl_session_cache_skip_on_contention;
   SSLConfigParams::session_cache_number_buckets          = ssl_session_cache_num_buckets;
 
@@ -663,7 +662,7 @@ void
 SSLTicketParams::cleanup()
 {
   ticket_block_free(default_global_keyblock);
-  ticket_key_filename = static_cast<char *>(ats_free_null(ticket_key_filename));
+  ticket_key_filename = (char *)ats_free_null(ticket_key_filename);
 }
 
 SSL_CTX *

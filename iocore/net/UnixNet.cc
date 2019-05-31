@@ -217,8 +217,8 @@ initialize_thread_for_net(EThread *thread)
 {
   NetHandler *nh = get_NetHandler(thread);
 
-  new (reinterpret_cast<ink_dummy_for_new *>(nh)) NetHandler();
-  new (reinterpret_cast<ink_dummy_for_new *>(get_PollCont(thread))) PollCont(thread->mutex, nh);
+  new ((ink_dummy_for_new *)nh) NetHandler();
+  new ((ink_dummy_for_new *)get_PollCont(thread)) PollCont(thread->mutex, nh);
   nh->mutex  = new_ProxyMutex();
   nh->thread = thread;
 
@@ -234,7 +234,7 @@ initialize_thread_for_net(EThread *thread)
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
 
   thread->set_tail_handler(nh);
-  thread->ep       = static_cast<EventIO *>(ats_malloc(sizeof(EventIO)));
+  thread->ep       = (EventIO *)ats_malloc(sizeof(EventIO));
   thread->ep->type = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
   thread->ep->start(pd, thread->evfd, nullptr, EVENTIO_READ);
@@ -480,7 +480,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
   PollDescriptor *pd     = get_PollDescriptor(this->thread);
   UnixNetVConnection *vc = nullptr;
   for (int x = 0; x < pd->result; x++) {
-    epd = static_cast<EventIO *> get_ev_data(pd, x);
+    epd = (EventIO *)get_ev_data(pd, x);
     if (epd->type == EVENTIO_READWRITE_VC) {
       vc = epd->data.vc;
       // Remove triggered NetVC from cop_list because it won't be timeout before next InactivityCop runs.

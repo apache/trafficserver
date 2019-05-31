@@ -121,11 +121,11 @@ struct AIO_Device : public Continuation {
     if (!touch_data) {
       return;
     }
-    unsigned int len    = static_cast<unsigned int>(orig_len);
-    unsigned int offset = static_cast<unsigned int>(orig_offset);
+    unsigned int len    = (unsigned int)orig_len;
+    unsigned int offset = (unsigned int)orig_offset;
     offset              = offset % 1024;
     char *b             = buf;
-    unsigned *x         = reinterpret_cast<unsigned *>(b);
+    unsigned *x         = (unsigned *)b;
     for (unsigned j = 0; j < (len / sizeof(int)); j++) {
       x[j]   = offset;
       offset = (offset + 1) % 1024;
@@ -137,10 +137,10 @@ struct AIO_Device : public Continuation {
     if (!touch_data) {
       return 0;
     }
-    unsigned int len    = static_cast<unsigned int>(orig_len);
-    unsigned int offset = static_cast<unsigned int>(orig_offset);
+    unsigned int len    = (unsigned int)orig_len;
+    unsigned int offset = (unsigned int)orig_offset;
     offset              = offset % 1024;
-    unsigned *x         = reinterpret_cast<unsigned *>(buf);
+    unsigned *x         = (unsigned *)buf;
     for (unsigned j = 0; j < (len / sizeof(int)); j++) {
       if (x[j] != offset) {
         return 1;
@@ -223,7 +223,7 @@ dump_summary()
 int
 AIO_Device::do_hotset(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  off_t max_offset         = (static_cast<off_t>(disk_size)) * 1024 * 1024;
+  off_t max_offset         = ((off_t)disk_size) * 1024 * 1024;
   io->aiocb.aio_lio_opcode = LIO_WRITE;
   io->aiocb.aio_fildes     = fd;
   io->aiocb.aio_offset     = MIN_OFFSET + hotset_idx * max_size;
@@ -233,8 +233,8 @@ AIO_Device::do_hotset(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     fprintf(stderr, "Starting hotset document writing \n");
   }
   if (io->aiocb.aio_offset > max_offset) {
-    fprintf(stderr, "Finished hotset documents  [%d] offset [%6.0f] size [%6.0f]\n", hotset_idx, static_cast<float> MIN_OFFSET,
-            static_cast<float>(max_size));
+    fprintf(stderr, "Finished hotset documents  [%d] offset [%6.0f] size [%6.0f]\n", hotset_idx, (float)MIN_OFFSET,
+            (float)max_size);
     SET_HANDLER(&AIO_Device::do_fd);
     eventProcessor.schedule_imm(this);
     return (0);
@@ -264,10 +264,10 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     return 0;
   }
 
-  off_t max_offset        = (static_cast<off_t>(disk_size)) * 1024 * 1024;   // MB-GB
-  off_t max_hotset_offset = (static_cast<off_t>(hotset_size)) * 1024 * 1024; // MB-GB
-  off_t seq_read_point    = (static_cast<off_t> MIN_OFFSET);
-  off_t seq_write_point   = (static_cast<off_t> MIN_OFFSET) + max_offset / 2 + write_after * 1024 * 1024;
+  off_t max_offset        = ((off_t)disk_size) * 1024 * 1024;   // MB-GB
+  off_t max_hotset_offset = ((off_t)hotset_size) * 1024 * 1024; // MB-GB
+  off_t seq_read_point    = ((off_t)MIN_OFFSET);
+  off_t seq_write_point   = ((off_t)MIN_OFFSET) + max_offset / 2 + write_after * 1024 * 1024;
   seq_write_point += (id % n_disk_path) * (max_offset / (threads_per_disk * 4));
   if (seq_write_point > max_offset) {
     seq_write_point = MIN_OFFSET;
@@ -298,7 +298,7 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     io->aiocb.aio_offset     = seq_write_point;
     io->aiocb.aio_nbytes     = seq_write_size;
     io->aiocb.aio_lio_opcode = LIO_WRITE;
-    do_touch_data(seq_write_size, (static_cast<int>(seq_write_point)) % 1024);
+    do_touch_data(seq_write_size, ((int)seq_write_point) % 1024);
     ink_assert(ink_aio_write(io) >= 0);
     seq_write_point += seq_write_size;
     seq_write_point += write_skip;
@@ -315,9 +315,9 @@ AIO_Device::do_fd(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     f       = drand48();
     off_t o = 0;
     if (f < hotset_frequency) {
-      o = static_cast<off_t>(p) * max_hotset_offset;
+      o = (off_t)p * max_hotset_offset;
     } else {
-      o = static_cast<off_t>(p) * (max_offset - rand_read_size);
+      o = (off_t)p * (max_offset - rand_read_size);
     }
     if (o < MIN_OFFSET) {
       o = MIN_OFFSET;
@@ -464,7 +464,7 @@ main(int /* argc ATS_UNUSED */, char *argv[])
         perror(disk_path[i]);
         exit(1);
       }
-      dev[n_accessors]->buf = static_cast<char *>(valloc(max_size));
+      dev[n_accessors]->buf = (char *)valloc(max_size);
       eventProcessor.schedule_imm(dev[n_accessors]);
       n_accessors++;
     }

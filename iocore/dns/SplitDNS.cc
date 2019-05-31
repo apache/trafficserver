@@ -226,14 +226,14 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
      --------------------------- */
   if (m_bEnableFastPath) {
     SplitDNSRecord *data_ptr = nullptr;
-    char *pHost              = const_cast<char *>(rdata->get_host());
+    char *pHost              = (char *)rdata->get_host();
     if (nullptr == pHost) {
       Warning("SplitDNS: No host to match !");
       return;
     }
 
     int len        = strlen(pHost);
-    HostLeaf *pxHL = static_cast<HostLeaf *>(m_pxLeafArray);
+    HostLeaf *pxHL = (HostLeaf *)m_pxLeafArray;
     for (int i = 0; i < m_numEle; i++) {
       if (nullptr == pxHL) {
         break;
@@ -316,7 +316,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
      ------------------------------------------------ */
   for (int i = 0; i < numTok; i++) {
     const char *current = pTok[i];
-    char *tmp           = const_cast<char *>(strchr(current, ':'));
+    char *tmp           = (char *)strchr(current, ':');
     // coverity[secure_coding]
     if (tmp != nullptr && sscanf(tmp + 1, "%d", &port) != 1) {
       return "Malformed DNS port";

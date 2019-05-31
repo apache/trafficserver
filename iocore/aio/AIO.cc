@@ -104,7 +104,7 @@ aio_stats_cb(const char * /* name ATS_UNUSED */, RecDataT data_type, RecData *da
   diff = new_val - sum;
   RecSetGlobalRawStatSum(aio_rsb, id, new_val);
   RecSetGlobalRawStatCount(aio_rsb, id, now);
-  data->rec_float = static_cast<float>(diff) * 1000.00 / static_cast<float>(time_diff);
+  data->rec_float = (float)diff * 1000.00 / (float)time_diff;
   return 0;
 }
 
@@ -149,7 +149,7 @@ ink_aio_init(ts::ModuleVersion v)
 {
   ink_release_assert(v.check(AIO_MODULE_INTERNAL_VERSION));
 
-  aio_rsb = RecAllocateRawStatBlock(static_cast<int>(AIO_STAT_COUNT));
+  aio_rsb = RecAllocateRawStatBlock((int)AIO_STAT_COUNT);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.read_per_sec", RECD_FLOAT, RECP_PERSISTENT,
                      (int)AIO_STAT_READ_PER_SEC, aio_stats_cb);
   RecRegisterRawStat(aio_rsb, RECT_PROCESS, "proxy.process.cache.write_per_sec", RECD_FLOAT, RECP_PERSISTENT,
@@ -382,9 +382,9 @@ cache_op(AIOCallbackInternal *op)
     while (a->aio_nbytes - res > 0) {
       do {
         if (read) {
-          err = pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pread(a->aio_fildes, ((char *)a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
         } else {
-          err = pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pwrite(a->aio_fildes, ((char *)a->aio_buf) + res, a->aio_nbytes - res, a->aio_offset + res);
         }
       } while ((err < 0) && (errno == EINTR || errno == ENOBUFS || errno == ENOMEM));
       if (err <= 0) {
@@ -432,8 +432,8 @@ ink_aio_thread_num_set(int thread_num)
 void *
 aio_thread_main(void *arg)
 {
-  AIOThreadInfo *thr_info = static_cast<AIOThreadInfo *>(arg);
-  AIO_Reqs *my_aio_req    = thr_info->req;
+  AIOThreadInfo *thr_info = (AIOThreadInfo *)arg;
+  AIO_Reqs *my_aio_req    = (AIO_Reqs *)thr_info->req;
   AIO_Reqs *current_req   = nullptr;
   AIOCallback *op         = nullptr;
   ink_mutex_acquire(&my_aio_req->aio_mutex);
@@ -464,7 +464,7 @@ aio_thread_main(void *arg)
       }
       ink_mutex_release(&current_req->aio_mutex);
       cache_op((AIOCallbackInternal *)op);
-      ink_atomic_increment(&current_req->requests_queued, -1);
+      ink_atomic_increment((int *)&current_req->requests_queued, -1);
 #ifdef AIO_STATS
       ink_atomic_increment((int *)&current_req->pending, -1);
 #endif

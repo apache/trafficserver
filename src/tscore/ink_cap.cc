@@ -108,7 +108,7 @@ max_passwd_size()
 #if defined(_SC_GETPW_R_SIZE_MAX)
   long val = sysconf(_SC_GETPW_R_SIZE_MAX);
   if (val > 0) {
-    return static_cast<unsigned>(val);
+    return (unsigned)val;
   }
 #endif
 
@@ -225,7 +225,7 @@ ImpersonateUser(const char *user, ImpersonationLevel level)
 
   if (*user == '#') {
     // Numeric user notation.
-    uid_t uid = static_cast<uid_t>(atoi(&user[1]));
+    uid_t uid = (uid_t)atoi(&user[1]);
     if (getpwuid_r(uid, &pbuf, buf, sizeof(buf), &pwd) != 0) {
       Fatal("missing password database entry for UID %ld: %s", (long)uid, strerror(errno));
     }

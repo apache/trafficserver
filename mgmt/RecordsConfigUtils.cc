@@ -120,12 +120,12 @@ initialize_record(const RecordElement *record, void *)
 
     switch (record->value_type) {
     case RECD_INT:
-      tempInt = static_cast<RecInt>(ink_atoi64(record->value));
+      tempInt = (RecInt)ink_atoi64(record->value);
       RecRegisterStatInt(type, record->name, tempInt, RECP_NON_PERSISTENT);
       break;
 
     case RECD_FLOAT:
-      tempFloat = static_cast<RecFloat>(atof(record->value));
+      tempFloat = (RecFloat)atof(record->value);
       RecRegisterStatFloat(type, record->name, tempFloat, RECP_NON_PERSISTENT);
       break;
 
@@ -134,7 +134,7 @@ initialize_record(const RecordElement *record, void *)
       break;
 
     case RECD_COUNTER:
-      tempCounter = static_cast<RecCounter>(ink_atoi64(record->value));
+      tempCounter = (RecCounter)ink_atoi64(record->value);
       RecRegisterStatCounter(type, record->name, tempCounter, RECP_NON_PERSISTENT);
       break;
 

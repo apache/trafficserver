@@ -55,7 +55,7 @@ ATSConsistentHash::insert(ATSConsistentHashNode *node, float weight, ATSHash64 *
   string_stream << *node;
   std_string = string_stream.str();
 
-  for (i = 0; i < static_cast<int>(roundf(replicas * weight)); i++) {
+  for (i = 0; i < (int)roundf(replicas * weight); i++) {
     snprintf(numstr, 256, "%d-", i);
     thash->update(numstr, strlen(numstr));
     thash->update(std_string.c_str(), strlen(std_string.c_str()));

@@ -342,7 +342,7 @@ RecErrT
 RecRegisterConfigString(RecT rec_type, const char *name, const char *data_default_tmp, RecUpdateT update_type, RecCheckT check_type,
                         const char *check_regex, RecSourceT source, RecAccessT access_type)
 {
-  RecString data_default = const_cast<RecString>(data_default_tmp);
+  RecString data_default = (RecString)data_default_tmp;
   ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_string, RECD_STRING);
 }

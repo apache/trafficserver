@@ -84,6 +84,6 @@ Http2SessionAccept::mainEvent(int event, void *data)
     HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_pre_accept_hangups_stat, 0);
   }
 
-  ink_abort("HTTP/2 accept received fatal error: errno = %d", -(static_cast<int>((intptr_t)data)));
+  ink_abort("HTTP/2 accept received fatal error: errno = %d", -((int)(intptr_t)data));
   return EVENT_CONT;
 }
