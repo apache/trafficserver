@@ -117,7 +117,7 @@ Rollback::checkForUserUpdate()
 
   if (fileLastModified < TS_ARCHIVE_STAT_MTIME(fileInfo)) {
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
-    configFiles->fileChanged(fileName, configName, true);
+    configFiles->fileChanged(fileName, configName);
     mgmt_log("User has changed config file %s\n", fileName);
 
     result = true;

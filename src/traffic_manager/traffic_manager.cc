@@ -71,7 +71,7 @@ using namespace std::literals;
 LocalManager *lmgmt = nullptr;
 FileManager *configFiles;
 
-static void fileUpdated(char *fname, char *configName, bool incVersion);
+static void fileUpdated(char *fname, char *configName);
 static void runAsUser(const char *userName);
 
 #if defined(freebsd)
@@ -948,7 +948,7 @@ SigChldHandler(int /* sig ATS_UNUSED */)
 }
 
 void
-fileUpdated(char *fname, char *configName, bool incVersion)
+fileUpdated(char *fname, char *configName)
 {
   // If there is no config name recorded, assume this file is not reloadable
   // Just log a message

@@ -139,7 +139,7 @@ FileManager::getRollbackObj(const char *fileName, Rollback **rbPtr)
 //
 //
 void
-FileManager::fileChanged(const char *fileName, const char *configName, bool incVersion)
+FileManager::fileChanged(const char *fileName, const char *configName)
 {
   callbackListable *cb;
   char *filenameCopy, *confignameCopy;
@@ -151,7 +151,7 @@ FileManager::fileChanged(const char *fileName, const char *configName, bool incV
     //  defensive in case it's modified when it's not supposed to be
     confignameCopy = ats_strdup(configName);
     filenameCopy   = ats_strdup(fileName);
-    (*cb->func)(filenameCopy, confignameCopy, incVersion);
+    (*cb->func)(filenameCopy, confignameCopy);
     ats_free(filenameCopy);
     ats_free(confignameCopy);
   }
@@ -216,17 +216,18 @@ FileManager::rereadConfig()
   n = parentFileNeedChange.size();
   for (size_t i = 0; i < n; i++) {
     if (std::find(changedFiles.begin(), changedFiles.end(), parentFileNeedChange[i]) == changedFiles.end()) {
-      fileChanged(parentFileNeedChange[i]->getFileName(), parentFileNeedChange[i]->getConfigName(), true);
+      fileChanged(parentFileNeedChange[i]->getFileName(), parentFileNeedChange[i]->getConfigName());
     }
   }
   // INKqa11910
   // need to first check that enable_customizations is enabled
   bool found;
   int enabled = (int)REC_readInteger("proxy.config.body_factory.enable_customizations", &found);
+
   if (found && enabled) {
-    fileChanged("proxy.config.body_factory.template_sets_dir", "proxy.config.body_factory.template_sets_dir", true);
+    fileChanged("proxy.config.body_factory.template_sets_dir", "proxy.config.body_factory.template_sets_dir");
   }
-  fileChanged("proxy.config.ssl.server.ticket_key.filename", "proxy.config.ssl.server.ticket_key.filename", true);
+  fileChanged("proxy.config.ssl.server.ticket_key.filename", "proxy.config.ssl.server.ticket_key.filename");
 }
 
 bool

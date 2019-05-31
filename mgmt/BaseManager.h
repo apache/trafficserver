@@ -49,7 +49,7 @@
 #define MGMT_EVENT_PLUGIN_CONFIG_UPDATE 10006
 #define MGMT_EVENT_ROLL_LOG_FILES 10008
 #define MGMT_EVENT_LIBRECORDS 10009
-#define MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION 10010
+// 10010 is unused
 // cache storage operations - each is a distinct event.
 // this is done because the code paths share nothing but boilerplate logic
 // so it's easier to do this than to try to encode an opcode and yet another

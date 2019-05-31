@@ -341,7 +341,7 @@ HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned 
   if (result == REC_ERR_OKAY) {
     std::stringstream status_rec;
     status_rec << *host_stat;
-    RecSetRecordString(stat_name.c_str(), const_cast<char *>(status_rec.str().c_str()), REC_SOURCE_EXPLICIT, true, false);
+    RecSetRecordString(stat_name.c_str(), const_cast<char *>(status_rec.str().c_str()), REC_SOURCE_EXPLICIT, true);
     if (status == HostStatus_t::HOST_STATUS_UP) {
       Debug("host_statuses", "set status up for name: %s, status: %d, stat_name: %s", name, status, stat_name.c_str());
     } else {

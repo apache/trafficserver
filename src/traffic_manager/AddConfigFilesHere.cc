@@ -36,7 +36,7 @@ extern FileManager *configFiles;
  ****************************************************************************/
 
 void
-testcall(char *foo, char * /*configName */, bool /* incVersion */)
+testcall(char *foo, char * /*configName */)
 {
   Debug("lm", "Received Callback that %s has changed", foo);
 }
