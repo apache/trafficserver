@@ -64,7 +64,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 # Scenario 1:  Default no client cert required.  cert required for bar.com
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
     '- fqdn: bob.bar.com',
     '  verify_client: STRICT',
     '- fqdn: bob.*.com',

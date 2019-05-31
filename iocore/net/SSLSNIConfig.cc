@@ -125,11 +125,11 @@ SNIConfigParams::Initialize()
 {
   sni_filename = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.servername.filename"));
 
-  Note("ssl_server_name.yaml loading ...");
+  Note("sni.yaml loading ...");
 
   struct stat sbuf;
   if (stat(sni_filename, &sbuf) == -1 && errno == ENOENT) {
-    Note("ssl_server_name.yaml failed to load");
+    Note("sni.yaml failed to load");
     Warning("Loading SNI configuration - filename: %s doesn't exist", sni_filename);
     return 1;
   }
@@ -138,12 +138,12 @@ SNIConfigParams::Initialize()
   if (!zret.isOK()) {
     std::stringstream errMsg;
     errMsg << zret;
-    Error("ssl_server_name.yaml failed to load: %s", errMsg.str().c_str());
+    Error("sni.yaml failed to load: %s", errMsg.str().c_str());
     return 1;
   }
 
   loadSNIConfig();
-  Note("ssl_server_name.yaml finished loading");
+  Note("sni.yaml finished loading");
 
   return 0;
 }

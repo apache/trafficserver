@@ -66,7 +66,7 @@ ts.Disk.remap_config.AddLine(
     'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
 )
 
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
     '- fqdn: bar.com',
     '  verify_client: STRICT',
     '- fqdn: foo.com',

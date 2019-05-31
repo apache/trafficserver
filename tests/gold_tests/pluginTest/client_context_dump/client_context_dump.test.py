@@ -47,7 +47,7 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=one.com.pem ssl_key_name=one.com.pem'
 )
 
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
     '- fqdn: "*one.com"',
     '  client_cert: "one.com.pem"',
     '- fqdn: "*two.com"',

@@ -1,4 +1,4 @@
-# ssl_server_name.config.default
+# sni.yaml
 #
 # This configuration file
 #     - sets the SSL actions to be performed based on the servername provided during SSL handhshake phase (SNI extension)

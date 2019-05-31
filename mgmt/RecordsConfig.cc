@@ -1092,7 +1092,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.multicert.exit_on_load_fail", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
 ,
-  {RECT_CONFIG, "proxy.config.ssl.servername.filename", RECD_STRING, "ssl_server_name.yaml", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.servername.filename", RECD_STRING, "sni.yaml", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.server.ticket_key.filename", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
