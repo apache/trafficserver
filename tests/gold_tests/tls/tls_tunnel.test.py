@@ -47,7 +47,7 @@ ts.addSSLfile("ssl/signer.key")
 
 ts.Variables.ssl_port = 4443
 
-# Need no remap rules.  Everything should be proccessed by ssl_server_name
+# Need no remap rules.  Everything should be proccessed by sni
 
 # Make sure the TS server certs are different from the origin certs
 ts.Disk.ssl_multicert_config.AddLine(
@@ -72,7 +72,7 @@ ts.Disk.records_config.update({
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.
 # empty SNI should tunnel to server_bar
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
   '- fqdn: foo.com',
   "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
   "- fqdn: bob.*.com",
@@ -124,13 +124,13 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK"
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
 
-# Update ssl_server_name file and reload
+# Update sni file and reload
 tr = Test.AddTestRun("Update config files")
 # Update the SNI config
-snipath = ts.Disk.ssl_server_name_yaml.AbsPath
+snipath = ts.Disk.sni_yaml.AbsPath
 recordspath = ts.Disk.records_config.AbsPath
-tr.Disk.File(snipath, id = "ssl_server_name_yaml", typename="ats:config"),
-tr.Disk.ssl_server_name_yaml.AddLines([
+tr.Disk.File(snipath, id = "sni_yaml", typename="ats:config"),
+tr.Disk.sni_yaml.AddLines([
   '- fqdn: bar.com',
   "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port),
 ])
@@ -151,11 +151,11 @@ trreload.Processes.Default.Env = ts.Env
 trreload.Processes.Default.ReturnCode = 0
 
 # Parking this as a ready tester on a meaningless process
-# Stall the test runs until the ssl_server_name reload has completed
-# At that point the new ssl_server_name settings are ready to go
-def ssl_server_name_reload_done(tsenv):
+# Stall the test runs until the sni reload has completed
+# At that point the new sni settings are ready to go
+def sni_reload_done(tsenv):
   def done_reload(process, hasRunFor, **kw):
-    cmd = "grep 'ssl_server_name.yaml finished loading' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
+    cmd = "grep 'sni.yaml finished loading' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
     retval = subprocess.run(cmd, shell=True, env=tsenv)
     if retval.returncode == 0:
       cmd ="if [ -f {0}/test.out -a \"`cat {0}/test.out`\" = \"2\" ] ; then true; else false; fi".format(Test.RunDirectory)
@@ -167,8 +167,8 @@ def ssl_server_name_reload_done(tsenv):
 # Should termimate on traffic_server (not tunnel)
 tr = Test.AddTestRun("foo.com no Tunnel-test")
 tr.StillRunningAfter = ts
-# Wait for the reload to complete by running the ssl_server_name_reload_done test
-tr.Processes.Default.StartBefore(server2, ready=ssl_server_name_reload_done(ts.Env))
+# Wait for the reload to complete by running the sni_reload_done test
+tr.Processes.Default.StartBefore(server2, ready=sni_reload_done(ts.Env))
 tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")

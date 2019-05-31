@@ -84,7 +84,7 @@ initializeRegistry()
   registerFile("", "plugin.config");
   registerFile("proxy.config.dns.splitdns.filename", "splitdns.config");
   registerFile("proxy.config.ssl.server.multicert.filename", "ssl_multicert.config");
-  registerFile("proxy.config.ssl.servername.filename", SSL_SERVER_NAME_CONFIG);
+  registerFile("proxy.config.ssl.servername.filename", "sni.config");
 
   configFiles->registerCallback(testcall);
 }

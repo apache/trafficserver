@@ -80,21 +80,21 @@ ts.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1
 })
 
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
   '- fqdn: bar.com')
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
   '  verify_server_policy: PERMISSIVE')
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
   '  verify_server_properties: SIGNATURE')
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
   '- fqdn: bad_bar.com')
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
   '  verify_server_policy: PERMISSIVE')
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
   '  verify_server_properties: SIGNATURE')
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
   '- fqdn: random.com')
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
   '  verify_server_policy: DISABLED')
 
 tr = Test.AddTestRun("default-enforce")

@@ -3185,9 +3185,9 @@ SSL Termination
    note that OpenSSL session tickets are sensitive to the version of the ca-certificates. Once the
    file is changed with new tickets, use :option:`traffic_ctl config reload` to begin using them.
 
-.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.yaml
+.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING sni.yaml
 
-   The filename of the :file:`ssl_server_name.yaml` configuration file.
+   The filename of the :file:`sni.yaml` configuration file.
    If relative, it is relative to the configuration directory.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
@@ -3314,9 +3314,9 @@ Client-Related Configuration
    Configures |TS| to verify the origin server certificate
    with the Certificate Authority (CA). This configuration takes a value of :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`
 
-   You can override this global setting on a per domain basis in the ssl_server_name.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
+   You can override this global setting on a per domain basis in the sni.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in ssl_server_name.yaml.
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in sni.yaml.
 
 :code:`DISABLED`
    Server Certificate will not be verified
@@ -3333,7 +3333,7 @@ Client-Related Configuration
 
    You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_server_properties attribute<override-verify-server-properties>`.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in ssl_server_name.yaml.
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in sni.yaml.
 
 :code:`NONE`
    Check nothing in the standard callback.  Rely entirely on plugins to check the certificate.

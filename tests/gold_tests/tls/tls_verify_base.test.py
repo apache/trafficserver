@@ -80,7 +80,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.client.sni_policy': 'host'
 })
 
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
   '- fqdn: bar.com',
   '  verify_server_policy: ENFORCED',
   '  verify_server_properties: ALL',
