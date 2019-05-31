@@ -246,15 +246,15 @@ ProxyTransaction::set_outbound_transparent(bool flag)
 }
 
 ProxySession *
-ProxyTransaction::get_parent()
+ProxyTransaction::get_proxy_ssn()
 {
   return proxy_ssn;
 }
 
 void
-ProxyTransaction::set_parent(ProxySession *new_parent)
+ProxyTransaction::set_proxy_ssn(ProxySession *new_proxy_ssn)
 {
-  proxy_ssn      = new_parent;
+  proxy_ssn      = new_proxy_ssn;
   host_res_style = proxy_ssn->host_res_style;
 }
 

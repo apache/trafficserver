@@ -458,7 +458,7 @@ Http1ClientSession::new_transaction()
 
   read_state = HCS_ACTIVE_READER;
 
-  trans.set_parent(this);
+  trans.set_proxy_ssn(this);
   transact_count++;
 
   client_vc->add_to_active_queue();
