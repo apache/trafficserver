@@ -160,7 +160,7 @@ NetVCTest::start_test()
 int
 NetVCTest::fill_buffer(MIOBuffer *buf, uint8_t *seed, int bytes)
 {
-  char *space = static_cast<char *>(ats_malloc(bytes));
+  char *space = (char *)ats_malloc(bytes);
   char *tmp   = space;
   int to_add  = bytes;
 
@@ -190,7 +190,7 @@ NetVCTest::consume_and_check_bytes(IOBufferReader *r, uint8_t *seed)
   while (r->read_avail() > 0) {
     int64_t b_avail = r->block_read_avail();
 
-    tmp        = reinterpret_cast<uint8_t *>(r->start());
+    tmp        = (uint8_t *)r->start();
     end        = tmp + b_avail;
     b_consumed = 0;
 
@@ -349,7 +349,7 @@ int
 NetVCTest::main_handler(int event, void *data)
 {
   if (event == NET_EVENT_ACCEPT) {
-    test_vc = static_cast<NetVConnection *>(data);
+    test_vc = (NetVConnection *)data;
     start_test();
     return 0;
   }

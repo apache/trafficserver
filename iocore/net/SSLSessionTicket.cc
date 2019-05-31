@@ -43,7 +43,7 @@
 void
 ssl_session_ticket_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
-  ticket_block_free(static_cast<struct ssl_ticket_key_block *>(ptr));
+  ticket_block_free((struct ssl_ticket_key_block *)ptr);
 }
 
 /*

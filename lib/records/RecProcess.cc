@@ -315,7 +315,7 @@ RecMessageSend(RecMessage *msg)
   if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
     msg->o_end = msg->o_write;
     msg_size   = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
-    pmgmt->signalManager(MGMT_SIGNAL_LIBRECORDS, reinterpret_cast<char *>(msg), msg_size);
+    pmgmt->signalManager(MGMT_SIGNAL_LIBRECORDS, (char *)msg, msg_size);
   }
 
   return REC_ERR_OKAY;

@@ -32,21 +32,21 @@ ConfigProcessor configProcessor;
 void *
 config_int_cb(void *data, void *value)
 {
-  *static_cast<int *>(data) = *static_cast<int64_t *>(value);
+  *(int *)data = *(int64_t *)value;
   return nullptr;
 }
 
 void *
 config_float_cb(void *data, void *value)
 {
-  *static_cast<float *>(data) = *static_cast<float *>(value);
+  *(float *)data = *(float *)value;
   return nullptr;
 }
 
 void *
 config_long_long_cb(void *data, void *value)
 {
-  *static_cast<int64_t *>(data) = *static_cast<int64_t *>(value);
+  *(int64_t *)data = *(int64_t *)value;
   return nullptr;
 }
 
@@ -66,7 +66,7 @@ config_long_long_cb(void *data, void *value)
 void *
 config_string_alloc_cb(void *data, void *value)
 {
-  char *_ss        = static_cast<char *>(value);
+  char *_ss        = (char *)value;
   char *_new_value = nullptr;
 
 #if defined(DEBUG_CONFIG_STRING_UPDATE)
@@ -75,12 +75,12 @@ config_string_alloc_cb(void *data, void *value)
 
   if (_ss) {
     int len    = strlen(_ss);
-    _new_value = static_cast<char *>(ats_malloc(len + 1));
+    _new_value = (char *)ats_malloc(len + 1);
     memcpy(_new_value, _ss, len + 1);
   }
 
-  char *_temp2                = *static_cast<char **>(data);
-  *static_cast<char **>(data) = _new_value;
+  char *_temp2   = *(char **)data;
+  *(char **)data = _new_value;
 
   // free old data
   if (_temp2 != nullptr) {

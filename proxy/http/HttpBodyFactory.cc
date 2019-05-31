@@ -160,7 +160,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
                  set, type, *resulting_buffer_length, max_buffer_length);
     }
     *resulting_buffer_length = 0;
-    buffer                   = static_cast<char *>(ats_free_null(buffer));
+    buffer                   = (char *)ats_free_null(buffer);
   }
   /////////////////////////////////////////////////////////////////////
   // handle return of instantiated template and generate the content //
@@ -231,7 +231,7 @@ static int
 config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
                 void *cookie)
 {
-  HttpBodyFactory *body_factory = static_cast<HttpBodyFactory *>(cookie);
+  HttpBodyFactory *body_factory = (HttpBodyFactory *)cookie;
   body_factory->reconfigure();
   return 0;
 }
@@ -1110,7 +1110,7 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   ////////////////////////////////////////
 
   new_byte_count                      = stat_buf.st_size;
-  new_template_buffer                 = static_cast<char *>(ats_malloc(new_byte_count + 1));
+  new_template_buffer                 = (char *)ats_malloc(new_byte_count + 1);
   bytes_read                          = read(fd, new_template_buffer, new_byte_count);
   new_template_buffer[new_byte_count] = '\0';
   close(fd);

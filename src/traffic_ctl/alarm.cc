@@ -35,7 +35,7 @@ struct AlarmListPolicy {
   static entry_type
   cast(void *ptr)
   {
-    return static_cast<entry_type>(ptr);
+    return (entry_type)ptr;
   }
 };
 

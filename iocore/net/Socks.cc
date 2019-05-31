@@ -164,7 +164,7 @@ SocksEntry::free()
     if (lerrno || !netVConnection) {
       Debug("Socks", "retryevent: Sent errno %d to HTTP", lerrno);
       NET_INCREMENT_DYN_STAT(socks_connections_unsuccessful_stat);
-      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)static_cast<intptr_t>(-lerrno));
+      action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)(-lerrno));
     } else {
       netVConnection->do_io_read(this, 0, nullptr);
       netVConnection->do_io_write(this, 0, nullptr);
@@ -189,7 +189,7 @@ int
 SocksEntry::startEvent(int event, void *data)
 {
   if (event == NET_EVENT_OPEN) {
-    netVConnection = static_cast<SocksNetVC *>(data);
+    netVConnection = (SocksNetVC *)data;
 
     if (version == SOCKS5_VERSION) {
       auth_handler = &socks5BasicAuthHandler;
@@ -248,7 +248,7 @@ SocksEntry::mainEvent(int event, void *data)
   case NET_EVENT_OPEN:
     buf->reset();
     unsigned short ts;
-    p = reinterpret_cast<unsigned char *>(buf->start());
+    p = (unsigned char *)buf->start();
     ink_assert(netVConnection);
 
     if (auth_handler) {
@@ -340,8 +340,8 @@ SocksEntry::mainEvent(int event, void *data)
     ret = EVENT_CONT;
 
     if (version == SOCKS5_VERSION && auth_handler == nullptr) {
-      VIO *vio = static_cast<VIO *>(data);
-      p        = reinterpret_cast<unsigned char *>(buf->start());
+      VIO *vio = (VIO *)data;
+      p        = (unsigned char *)buf->start();
 
       if (vio->ndone >= 5) {
         int reply_len;
@@ -379,7 +379,7 @@ SocksEntry::mainEvent(int event, void *data)
       timeout = nullptr;
     }
     // Debug("Socks", "Successfully read the reply from the SOCKS server");
-    p = reinterpret_cast<unsigned char *>(buf->start());
+    p = (unsigned char *)buf->start();
 
     if (auth_handler) {
       SocksAuthHandler temp = auth_handler;
@@ -574,7 +574,7 @@ loadSocksAuthInfo(int fd, socks_conf_struct *socks_stuff)
 
       socks_stuff->user_name_n_passwd_len = len1 + len2 + 2;
 
-      char *ptr = static_cast<char *>(ats_malloc(socks_stuff->user_name_n_passwd_len));
+      char *ptr = (char *)ats_malloc(socks_stuff->user_name_n_passwd_len);
       ptr[0]    = len1;
       memcpy(&ptr[1], user_name, len1);
       ptr[len1 + 1] = len2;
@@ -630,7 +630,7 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
           ret    = -1;
           *h_ptr = nullptr;
         } else {
-          *reinterpret_cast<SocksAuthHandler *>(h_ptr) = &socks5PasswdAuthHandler;
+          *(SocksAuthHandler *)h_ptr = &socks5PasswdAuthHandler;
         }
 
         break;

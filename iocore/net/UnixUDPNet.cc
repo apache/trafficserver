@@ -62,8 +62,8 @@ initialize_thread_for_udp_net(EThread *thread)
 {
   UDPNetHandler *nh = get_UDPNetHandler(thread);
 
-  new (reinterpret_cast<ink_dummy_for_new *>(nh)) UDPNetHandler;
-  new (reinterpret_cast<ink_dummy_for_new *>(get_UDPPollCont(thread))) PollCont(thread->mutex);
+  new ((ink_dummy_for_new *)nh) UDPNetHandler;
+  new ((ink_dummy_for_new *)get_UDPPollCont(thread)) PollCont(thread->mutex);
   // The UDPNetHandler cannot be accessed across EThreads.
   // Because the UDPNetHandler should be called back immediately after UDPPollCont.
   nh->mutex  = thread->mutex.get();
@@ -89,7 +89,7 @@ initialize_thread_for_udp_net(EThread *thread)
   g_udp_numSendRetries = g_udp_numSendRetries < 0 ? 0 : g_udp_numSendRetries;
 
   thread->set_tail_handler(nh);
-  thread->ep = static_cast<EventIO *>(ats_malloc(sizeof(EventIO)));
+  thread->ep = (EventIO *)ats_malloc(sizeof(EventIO));
   new (thread->ep) EventIO();
   thread->ep->type = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
@@ -577,7 +577,7 @@ UDPNetProcessor::sendto_re(Continuation *cont, void *token, int fd, struct socka
     cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_COMPLETE, (void *)-1);
     return ACTION_RESULT_DONE;
   } else {
-    cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_ERROR, (void *)static_cast<intptr_t>(nbytes_sent));
+    cont->handleEvent(NET_EVENT_DATAGRAM_WRITE_ERROR, (void *)(intptr_t)nbytes_sent);
     return ACTION_IO_ERROR;
   }
 }
@@ -689,8 +689,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   if (ats_is_ip_multicast(addr)) {
     int enable_reuseaddr = 1;
 
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr),
-                               sizeof(enable_reuseaddr)) < 0)) {
+    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
       goto Lerror;
     }
   }
@@ -802,7 +801,7 @@ UDPQueue::SendPackets()
 
 sendPackets:
   sentOne       = false;
-  bytesThisPipe = bytesThisSlot;
+  bytesThisPipe = (int32_t)bytesThisSlot;
 
   while ((bytesThisPipe > 0) && (pipeInfo.firstPacket(send_threshold_time))) {
     p      = pipeInfo.getFirstPacket();
@@ -860,12 +859,12 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   msg.msg_controllen = 0;
   msg.msg_flags      = 0;
 #endif
-  msg.msg_name    = reinterpret_cast<caddr_t>(&p->to.sa);
+  msg.msg_name    = (caddr_t)&p->to.sa;
   msg.msg_namelen = sizeof(p->to.sa);
   iov_len         = 0;
 
   for (IOBufferBlock *b = p->chain.get(); b != nullptr; b = b->next.get()) {
-    iov[iov_len].iov_base = static_cast<caddr_t>(b->start());
+    iov[iov_len].iov_base = (caddr_t)b->start();
     iov[iov_len].iov_len  = b->size();
     real_len += iov[iov_len].iov_len;
     iov_len++;
@@ -975,7 +974,7 @@ UDPNetHandler::waitForActivity(ink_hrtime timeout)
   int i, nread = 0;
   EventIO *epd = nullptr;
   for (i = 0; i < pc->pollDescriptor->result; i++) {
-    epd = static_cast<EventIO *> get_ev_data(pc->pollDescriptor, i);
+    epd = (EventIO *)get_ev_data(pc->pollDescriptor, i);
     if (epd->type == EVENTIO_UDP_CONNECTION) {
       // TODO: handle EVENTIO_ERROR
       if (get_ev_events(pc->pollDescriptor, i) & EVENTIO_READ) {

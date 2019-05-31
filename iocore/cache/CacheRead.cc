@@ -224,7 +224,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
     }
     // check if all the writers who came before this reader have
     // set the http_info.
-    for (w = static_cast<CacheVC *>(od->writers.head); w; w = static_cast<CacheVC *>(w->opendir_link.next)) {
+    for (w = (CacheVC *)od->writers.head; w; w = (CacheVC *)w->opendir_link.next) {
       if (w->start_time > start_time || w->closed < 0) {
         continue;
       }
@@ -278,7 +278,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
       alternate_index = 0;
     }
     CacheHTTPInfo *obj = vector.get(alternate_index);
-    for (w = static_cast<CacheVC *>(od->writers.head); w; w = static_cast<CacheVC *>(w->opendir_link.next)) {
+    for (w = (CacheVC *)od->writers.head; w; w = (CacheVC *)w->opendir_link.next) {
       if (obj->m_alt == w->alternate.m_alt) {
         write_vc = w;
         break;
@@ -423,7 +423,7 @@ CacheVC::openReadFromWriter(int event, Event *e)
         // the resident alternate is being updated and its a
         // header only update. The first_buf of the writer has the
         // document body.
-        Doc *doc   = reinterpret_cast<Doc *>(write_vc->first_buf->data());
+        Doc *doc   = (Doc *)write_vc->first_buf->data();
         writer_buf = new_IOBufferBlock(write_vc->first_buf, doc->data_len(), doc->prefix_len());
         MUTEX_RELEASE(writer_lock);
         ink_assert(doc_len == doc->data_len());
@@ -489,7 +489,7 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
   if (ntodo <= 0) {
     return EVENT_CONT;
   }
-  if (length < (static_cast<int64_t>(doc_len)) - vio.ndone) {
+  if (length < ((int64_t)doc_len) - vio.ndone) {
     DDebug("cache_read_agg", "truncation %X", first_key.slice32(1));
     if (is_action_tag_set("cache")) {
       ink_release_assert(false);
@@ -499,7 +499,7 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
   }
   /* its possible that the user did a do_io_close before
      openWriteWriteDone was called. */
-  if (length > (static_cast<int64_t>(doc_len)) - vio.ndone) {
+  if (length > ((int64_t)doc_len) - vio.ndone) {
     int64_t skip_bytes = length - (doc_len - vio.ndone);
     iobufferblock_skip(writer_buf.get(), &writer_offset, &length, skip_bytes);
   }
@@ -507,7 +507,7 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
   if (bytes > vio.ntodo()) {
     bytes = vio.ntodo();
   }
-  if (vio.ndone >= static_cast<int64_t>(doc_len)) {
+  if (vio.ndone >= (int64_t)doc_len) {
     ink_assert(bytes <= 0);
     // reached the end of the document and the user still wants more
     return calluser(VC_EVENT_EOS);
@@ -571,7 +571,7 @@ CacheVC::openReadReadDone(int event, Event *e)
     if (last_collision &&     // no missed lock
         dir_valid(vol, &dir)) // object still valid
     {
-      doc = reinterpret_cast<Doc *>(buf->data());
+      doc = (Doc *)buf->data();
       if (doc->magic != DOC_MAGIC) {
         char tmpstring[CRYPTO_HEX_SIZE];
         if (doc->magic == DOC_CORRUPT) {
@@ -645,7 +645,7 @@ int
 CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   cancel_trigger();
-  Doc *doc         = reinterpret_cast<Doc *>(buf->data());
+  Doc *doc         = (Doc *)buf->data();
   int64_t ntodo    = vio.ntodo();
   int64_t bytes    = doc->len - doc_pos;
   IOBufferBlock *b = nullptr;
@@ -754,7 +754,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     return EVENT_CONT;
   }
 Lread : {
-  if (vio.ndone >= static_cast<int64_t>(doc_len)) {
+  if (vio.ndone >= (int64_t)doc_len) {
     // reached the end of the document and the user still wants more
     return calluser(VC_EVENT_EOS);
   }
@@ -844,7 +844,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
       }
       goto Lread;
     }
-    doc = reinterpret_cast<Doc *>(buf->data());
+    doc = (Doc *)buf->data();
     if (doc->magic != DOC_MAGIC) {
       char tmpstring[CRYPTO_HEX_SIZE];
       if (is_action_tag_set("cache")) {
@@ -873,7 +873,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     next_CacheKey(&key, &doc->key);
     vol->begin_read(this);
     if (vol->within_hit_evacuate_window(&earliest_dir) &&
-        (!cache_config_hit_evacuate_size_limit || doc_len <= static_cast<uint64_t>(cache_config_hit_evacuate_size_limit))) {
+        (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
       DDebug("cache_hit_evac", "dir: %" PRId64 ", write: %" PRId64 ", phase: %d", dir_offset(&earliest_dir),
              vol->offset_to_vol_offset(vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
@@ -892,7 +892,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     if (!f.read_from_writer_called && frag_type == CACHE_FRAG_TYPE_HTTP) {
       // don't want any writers while we are evacuating the vector
       if (!vol->open_write(this, false, 1)) {
-        Doc *doc1    = reinterpret_cast<Doc *>(first_buf->data());
+        Doc *doc1    = (Doc *)first_buf->data();
         uint32_t len = this->load_http_info(write_vector, doc1);
         ink_assert(len == doc1->hlen && write_vector->count() > 0);
         write_vector->remove(alternate_index, true);
@@ -1047,7 +1047,7 @@ CacheVC::openReadStartHead(int event, Event *e)
       }
       goto Lread;
     }
-    doc = reinterpret_cast<Doc *>(buf->data());
+    doc = (Doc *)buf->data();
     if (doc->magic != DOC_MAGIC) {
       char tmpstring[CRYPTO_HEX_SIZE];
       if (is_action_tag_set("cache")) {
@@ -1157,7 +1157,7 @@ CacheVC::openReadStartHead(int event, Event *e)
     }
 
     if (vol->within_hit_evacuate_window(&dir) &&
-        (!cache_config_hit_evacuate_size_limit || doc_len <= static_cast<uint64_t>(cache_config_hit_evacuate_size_limit))) {
+        (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
       DDebug("cache_hit_evac", "dir: %" PRId64 ", write: %" PRId64 ", phase: %d", dir_offset(&dir),
              vol->offset_to_vol_offset(vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;

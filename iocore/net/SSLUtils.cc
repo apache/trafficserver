@@ -173,7 +173,7 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
 static bool
 ssl_session_timed_out(SSL_SESSION *session)
 {
-  return SSL_SESSION_get_timeout(session) < (time(nullptr) - SSL_SESSION_get_time(session));
+  return SSL_SESSION_get_timeout(session) < (long)(time(nullptr) - SSL_SESSION_get_time(session));
 }
 
 static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess);
@@ -298,7 +298,7 @@ set_context_cert(SSL *ssl)
   // don't find a name-based match at this point, we *do not* want to mess with the context because we've
   // already made a best effort to find the best match.
   if (likely(servername)) {
-    cc = lookup->find(const_cast<char *>(servername));
+    cc = lookup->find((char *)servername);
     if (cc && cc->ctx) {
       ctx = cc->ctx;
     }
@@ -886,7 +886,7 @@ SSLInitializeLibrary()
     Debug("ssl", "FIPS_mode: %d", mode);
 #endif
 
-    mutex_buf = static_cast<ink_mutex *>(OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ink_mutex)));
+    mutex_buf = (ink_mutex *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ink_mutex));
 
     for (int i = 0; i < CRYPTO_num_locks(); i++) {
       ink_mutex_init(&mutex_buf[i]);
@@ -1070,7 +1070,7 @@ SSLMultiCertConfigLoader::index_certificate(SSLCertLookup *lookup, SSLCertContex
 
 #if HAVE_OPENSSL_TS_H
   // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
-  GENERAL_NAMES *names = static_cast<GENERAL_NAMES *>(X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
+  GENERAL_NAMES *names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr);
   if (names) {
     unsigned count = sk_GENERAL_NAME_num(names);
     for (unsigned i = 0; i < count; ++i) {
@@ -1677,7 +1677,7 @@ SSLWriteBuffer(SSL *ssl, const void *buf, int64_t nbytes, int64_t &nwritten)
     return SSL_ERROR_NONE;
   }
   ERR_clear_error();
-  int ret = SSL_write(ssl, buf, static_cast<int>(nbytes));
+  int ret = SSL_write(ssl, buf, (int)nbytes);
   if (ret > 0) {
     nwritten = ret;
     BIO *bio = SSL_get_wbio(ssl);
@@ -1705,7 +1705,7 @@ SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread)
     return SSL_ERROR_NONE;
   }
   ERR_clear_error();
-  int ret = SSL_read(ssl, buf, static_cast<int>(nbytes));
+  int ret = SSL_read(ssl, buf, (int)nbytes);
   if (ret > 0) {
     nread = ret;
     return SSL_ERROR_NONE;

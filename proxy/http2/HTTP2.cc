@@ -536,7 +536,7 @@ http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers)
     value = headers->host_get(&value_len);
     if (headers->is_port_in_header()) {
       int port            = headers->port_get();
-      char *host_and_port = static_cast<char *>(ats_malloc(value_len + 8));
+      char *host_and_port = (char *)ats_malloc(value_len + 8);
       value_len           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value, port);
       field->value_set(h2_headers->m_heap, h2_headers->m_mime, host_and_port, value_len);
       ats_free(host_and_port);
@@ -554,7 +554,7 @@ http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers)
     // Add ':path' header field
     field      = h2_headers->field_create(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
     value      = headers->path_get(&value_len);
-    char *path = static_cast<char *>(ats_malloc(value_len + 1));
+    char *path = (char *)ats_malloc(value_len + 1);
     path[0]    = '/';
     memcpy(path + 1, value, value_len);
     field->value_set(h2_headers->m_heap, h2_headers->m_mime, path, value_len + 1);

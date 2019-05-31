@@ -46,7 +46,7 @@ TextBuffer::TextBuffer(int size)
       size = 1024;
     }
 
-    bufferStart = static_cast<char *>(ats_malloc(size));
+    bufferStart = (char *)ats_malloc(size);
     nextAdd     = bufferStart;
     currentSize = size;
     spaceLeft   = size - 1; // Leave room for a terminator;
@@ -135,9 +135,9 @@ TextBuffer::enlargeBuffer(unsigned N)
 
     addedSize = newSize - currentSize;
 
-    newSpace = static_cast<char *>(ats_realloc(bufferStart, newSize));
+    newSpace = (char *)ats_realloc(bufferStart, newSize);
     if (newSpace != nullptr) {
-      nextAdd     = newSpace + static_cast<unsigned>(nextAdd - bufferStart);
+      nextAdd     = newSpace + (unsigned)(nextAdd - bufferStart);
       bufferStart = newSpace;
       spaceLeft += addedSize;
       currentSize = newSize;
@@ -245,7 +245,7 @@ TextBuffer::vformat(const char *fmt, va_list ap)
 
     va_end(args);
 
-    if (static_cast<unsigned>(num) < this->spaceLeft) {
+    if ((unsigned)num < this->spaceLeft) {
       // We had enough space to format including the NUL. Since the returned character
       // count does not include the NUL, we can just increment and the next format will
       // overwrite the previous NUL.

@@ -98,10 +98,10 @@ ATSHash64Sip24::final()
   int i;
 
   if (!finalized) {
-    last7 = static_cast<uint64_t>(total_len & 0xff) << 56;
+    last7 = (uint64_t)(total_len & 0xff) << 56;
 
     for (i = block_buffer_len - 1; i >= 0; i--) {
-      last7 |= static_cast<uint64_t>(block_buffer[i]) << (i * 8);
+      last7 |= (uint64_t)block_buffer[i] << (i * 8);
     }
 
     v3 ^= last7;

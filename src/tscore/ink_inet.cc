@@ -389,7 +389,7 @@ ats_ip_port_hash(sockaddr const *addr)
     CryptoContext hash_context;
     hash_context.update(const_cast<uint8_t *>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE);
     in_port_t port = ats_ip_port_cast(addr);
-    hash_context.update(reinterpret_cast<uint8_t *>(&port), sizeof(port));
+    hash_context.update((uint8_t *)(&port), sizeof(port));
     hash_context.finalize(hash);
     return hash.u64[0];
   } else {

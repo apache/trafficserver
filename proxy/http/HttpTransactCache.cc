@@ -53,7 +53,7 @@ find_etag(const char *raw_tag_field, int raw_tag_field_len, int *length)
   if ((etag_start < etag_end) && (*etag_start == '"')) {
     ++etag_start;
     --etag_length;
-    quote = static_cast<const char *>(memchr(etag_start, '"', etag_length));
+    quote = (const char *)memchr(etag_start, '"', etag_length);
     if (quote) {
       etag_length = quote - etag_start;
     }
@@ -94,7 +94,7 @@ do_strings_match_strongly(const char *raw_tag_field, int raw_tag_field_len, cons
 
     n = 0;
 
-    if ((static_cast<int>(tag->len - n) == etag_length) && (strncmp(etag_start, tag->str + n, etag_length) == 0)) {
+    if (((int)(tag->len - n) == etag_length) && (strncmp(etag_start, tag->str + n, etag_length) == 0)) {
       return true;
     }
   }
@@ -212,7 +212,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
           current_age = CacheHighAgeWatermark;
         }
       } else {
-        current_age = static_cast<time_t>(0);
+        current_age = (time_t)0;
       }
 
       if (is_debug_tag_set("http_alts")) {
@@ -289,7 +289,7 @@ HttpTransactCache::calculate_quality_of_match(OverridableHttpConfigParams *http_
 {
   // For PURGE requests, any alternate is good really.
   if (client_request->method_get_wksidx() == HTTP_WKSIDX_PURGE) {
-    return static_cast<float>(1.0);
+    return (float)1.0;
   }
 
   // Now calculate a quality based on all sorts of logic
@@ -630,13 +630,13 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
     ca_raw = cached_accept_field->value_get(&ca_raw_len);
     if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
       Debug("http_alternate", "Exact match for ACCEPT CHARSET");
-      return static_cast<float>(1.001); // slightly higher weight to this guy
+      return (float)1.001; // slightly higher weight to this guy
     }
   }
   // return match if either ac or ct is missing
   // this check is different from accept-encoding
   if (accept_field == nullptr || content_field == nullptr) {
-    return static_cast<float>(1.0);
+    return (float)1.0;
   }
   // get the charset of this content-type //
   c_raw = content_field->value_get(&c_raw_len);
@@ -657,7 +657,7 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw, a_raw_len);
 
     if (a_param_list.head) {
-      a_charset     = const_cast<char *>(a_param_list.head->str);
+      a_charset     = (char *)a_param_list.head->str;
       a_charset_len = a_param_list.head->len;
     } else {
       continue;
@@ -760,7 +760,7 @@ HttpTransactCache::match_content_encoding(MIMEField *accept_field, const char *e
     a_raw = a_value->str;
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw);
     if (a_param_list.head) {
-      a_encoding = const_cast<char *>(a_param_list.head->str);
+      a_encoding = (char *)a_param_list.head->str;
     } else {
       continue;
     }
@@ -798,7 +798,7 @@ match_accept_content_encoding(const char *c_raw, MIMEField *accept_field, bool *
     // break Accept-Encoding piece into semi-colon separated parts //
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw);
     if (a_param_list.head) {
-      a_encoding = const_cast<char *>(a_param_list.head->str);
+      a_encoding = (char *)a_param_list.head->str;
     } else {
       continue;
     }
@@ -842,13 +842,13 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
     ca_raw = cached_accept_field->value_get(&ca_raw_len);
     if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
       Debug("http_alternate", "Exact match for ACCEPT ENCODING");
-      return static_cast<float>(1.001); // slightly higher weight to this guy
+      return (float)1.001; // slightly higher weight to this guy
     }
   }
   // return match if both ae and ce are missing
   // this check is different from accept charset
   if (accept_field == nullptr && content_field == nullptr) {
-    return static_cast<float>(1.0);
+    return (float)1.0;
   }
   // if no Content-Encoding, treat as "identity" //
   if (!content_field) {
@@ -888,12 +888,12 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
   if (!accept_field) {
     if (is_identity_encoding) {
       if (!cached_accept_field) {
-        return (static_cast<float>(1.0));
+        return ((float)1.0);
       } else {
-        return (static_cast<float>(0.001));
+        return ((float)0.001);
       }
     } else {
-      return (static_cast<float>(-1.0));
+      return ((float)-1.0);
     }
   }
 
@@ -1022,7 +1022,7 @@ match_accept_content_language(const char *c_raw, MIMEField *accept_field, bool *
     // was specified, this document matches all accept headers.        //
     /////////////////////////////////////////////////////////////////////
     if (a_param_list.head) {
-      a_range         = const_cast<char *>(a_param_list.head->str);
+      a_range         = (char *)a_param_list.head->str;
       *a_range_length = a_param_list.head->len;
     } else {
       continue;
@@ -1073,7 +1073,7 @@ HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField *accept_
     ca_raw = cached_accept_field->value_get(&ca_raw_len);
     if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
       Debug("http_alternate", "Exact match for ACCEPT LANGUAGE");
-      return static_cast<float>(1.001); // slightly higher weight to this guy
+      return (float)1.001; // slightly higher weight to this guy
     }
   }
 
@@ -1208,13 +1208,13 @@ HttpTransactCache::CalcVariability(OverridableHttpConfigParams *http_config_para
       // Special case: if 'proxy.config.http.global_user_agent_header' set                  //
       // we should ignore Vary: User-Agent.                                                 //
       ////////////////////////////////////////////////////////////////////////////////////////
-      if (http_config_params->global_user_agent_header && !strcasecmp(const_cast<char *>(field->str), "User-Agent")) {
+      if (http_config_params->global_user_agent_header && !strcasecmp((char *)field->str, "User-Agent")) {
         continue;
       }
 
       // Disable Vary mismatch checking for Accept-Encoding.  This is only safe to
       // set if you are promising to fix any Accept-Encoding/Content-Encoding mismatches.
-      if (http_config_params->ignore_accept_encoding_mismatch && !strcasecmp(const_cast<char *>(field->str), "Accept-Encoding")) {
+      if (http_config_params->ignore_accept_encoding_mismatch && !strcasecmp((char *)field->str, "Accept-Encoding")) {
         continue;
       }
 
@@ -1235,9 +1235,9 @@ HttpTransactCache::CalcVariability(OverridableHttpConfigParams *http_config_para
 
       ink_assert(strlen(field->str) == field->len);
 
-      char *field_name_str = const_cast<char *>(hdrtoken_string_to_wks(field->str, field->len));
+      char *field_name_str = (char *)hdrtoken_string_to_wks(field->str, field->len);
       if (field_name_str == nullptr) {
-        field_name_str = const_cast<char *>(field->str);
+        field_name_str = (char *)field->str;
       }
 
       MIMEField *cached_hdr_field  = obj_client_request->field_find(field_name_str, field->len);
