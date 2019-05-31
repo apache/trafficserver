@@ -27,17 +27,11 @@
           },
           "internal": {
             "description": "A boolean value, true or false, specifying if the rule should match (or not match) a transaction originating from an internal API.",
-            "enum": [
-              true,
-              false
-            ]
+            "type": "boolean"
           },
           "go_direct": {
             "description": "send the request directly to the origin bypassing the parent list.",
-            "enum": [
-              true,
-              false
-            ]
+            "type": "boolean"
           },
           "max_simple_retries": {
             "description": "The maximum number of retries for a simple retry.",
@@ -72,10 +66,7 @@
           },
           "parent_is_proxy": {
             "description": "The parents listed in parent and secondary_parent are caching proxies, set to false if they are origins",
-            "enum": [
-              true,
-              false
-            ]
+            "type": "boolean"
           },
           "port": {
             "description": "A requested URL port.",
