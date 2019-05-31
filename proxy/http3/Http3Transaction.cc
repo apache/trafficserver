@@ -25,7 +25,7 @@
 
 #include "QUICDebugNames.h"
 
-#include "Http3ClientSession.h"
+#include "Http3Session.h"
 #include "Http3StreamDataVIOAdaptor.h"
 #include "Http3HeaderVIOAdaptor.h"
 #include "Http3HeaderFramer.h"
@@ -56,7 +56,7 @@
 //
 // HQTransaction
 //
-HQTransaction::HQTransaction(HQClientSession *session, QUICStreamIO *stream_io) : super(), _stream_io(stream_io)
+HQTransaction::HQTransaction(HQSession *session, QUICStreamIO *stream_io) : super(), _stream_io(stream_io)
 {
   this->mutex   = new_ProxyMutex();
   this->_thread = this_ethread();
@@ -316,9 +316,9 @@ HQTransaction::_signal_write_event()
 //
 // Http3Transaction
 //
-Http3Transaction::Http3Transaction(Http3ClientSession *session, QUICStreamIO *stream_io) : super(session, stream_io)
+Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamIO *stream_io) : super(session, stream_io)
 {
-  static_cast<HQClientSession *>(this->proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
+  static_cast<HQSession *>(this->proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
 
   this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_io->stream_id());
   this->_data_framer   = new Http3DataFramer(this, &this->_write_vio);
@@ -595,9 +595,9 @@ Http3Transaction::_on_qpack_decode_complete()
 //
 // Http09Transaction
 //
-Http09Transaction::Http09Transaction(Http09ClientSession *session, QUICStreamIO *stream_io) : super(session, stream_io)
+Http09Transaction::Http09Transaction(Http09Session *session, QUICStreamIO *stream_io) : super(session, stream_io)
 {
-  static_cast<HQClientSession *>(this->proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
+  static_cast<HQSession *>(this->proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
 
   SET_HANDLER(&Http09Transaction::state_stream_open);
 }

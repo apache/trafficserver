@@ -21,14 +21,14 @@
   limitations under the License.
  */
 
-#include "Http3ClientSession.h"
+#include "Http3Session.h"
 
 #include "Http3.h"
 
 //
-// HQClientSession
+// HQSession
 //
-HQClientSession ::~HQClientSession()
+HQSession ::~HQSession()
 {
   for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
     delete t;
@@ -36,7 +36,7 @@ HQClientSession ::~HQClientSession()
 }
 
 void
-HQClientSession::add_transaction(HQTransaction *trans)
+HQSession::add_transaction(HQTransaction *trans)
 {
   this->_transaction_list.enqueue(trans);
 
@@ -44,7 +44,7 @@ HQClientSession::add_transaction(HQTransaction *trans)
 }
 
 HQTransaction *
-HQClientSession::get_transaction(QUICStreamId id)
+HQSession::get_transaction(QUICStreamId id)
 {
   for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
     if (t->get_transaction_id() == static_cast<int>(id)) {
@@ -56,42 +56,42 @@ HQClientSession::get_transaction(QUICStreamId id)
 }
 
 VIO *
-HQClientSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+HQSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
   ink_assert(false);
   return nullptr;
 }
 
 VIO *
-HQClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+HQSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
   ink_assert(false);
   return nullptr;
 }
 
 void
-HQClientSession::do_io_close(int lerrno)
+HQSession::do_io_close(int lerrno)
 {
   // TODO
   return;
 }
 
 void
-HQClientSession::do_io_shutdown(ShutdownHowTo_t howto)
+HQSession::do_io_shutdown(ShutdownHowTo_t howto)
 {
   ink_assert(false);
   return;
 }
 
 void
-HQClientSession::reenable(VIO *vio)
+HQSession::reenable(VIO *vio)
 {
   ink_assert(false);
   return;
 }
 
 void
-HQClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reade)
+HQSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reade)
 {
   this->con_id = static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(new_vc))->connection_id();
 
@@ -99,41 +99,41 @@ HQClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBuff
 }
 
 void
-HQClientSession::start()
+HQSession::start()
 {
   ink_assert(false);
   return;
 }
 
 void
-HQClientSession::destroy()
+HQSession::destroy()
 {
   ink_assert(false);
   return;
 }
 
 void
-HQClientSession::release(ProxyTransaction *trans)
+HQSession::release(ProxyTransaction *trans)
 {
   return;
 }
 
 NetVConnection *
-HQClientSession::get_netvc() const
+HQSession::get_netvc() const
 {
   return this->_client_vc;
 }
 
 int
-HQClientSession::get_transact_count() const
+HQSession::get_transact_count() const
 {
   return 0;
 }
 
 //
-// Http3ClientSession
+// Http3Session
 //
-Http3ClientSession::Http3ClientSession(NetVConnection *vc) : HQClientSession(vc)
+Http3Session::Http3Session(NetVConnection *vc) : HQSession(vc)
 {
   this->_local_qpack  = new QPACK(static_cast<QUICNetVConnection *>(vc), HTTP3_DEFAULT_MAX_HEADER_LIST_SIZE,
                                  HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
@@ -141,7 +141,7 @@ Http3ClientSession::Http3ClientSession(NetVConnection *vc) : HQClientSession(vc)
                                   HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
 }
 
-Http3ClientSession::~Http3ClientSession()
+Http3Session::~Http3Session()
 {
   this->_client_vc = nullptr;
   delete this->_local_qpack;
@@ -149,13 +149,13 @@ Http3ClientSession::~Http3ClientSession()
 }
 
 const char *
-Http3ClientSession::get_protocol_string() const
+Http3Session::get_protocol_string() const
 {
   return IP_PROTO_TAG_HTTP_3.data();
 }
 
 int
-Http3ClientSession::populate_protocol(std::string_view *result, int size) const
+Http3Session::populate_protocol(std::string_view *result, int size) const
 {
   int retval = 0;
   if (size > retval) {
@@ -168,45 +168,45 @@ Http3ClientSession::populate_protocol(std::string_view *result, int size) const
 }
 
 void
-Http3ClientSession::increment_current_active_client_connections_stat()
+Http3Session::increment_current_active_client_connections_stat()
 {
   // TODO Implement stats
 }
 
 void
-Http3ClientSession::decrement_current_active_client_connections_stat()
+Http3Session::decrement_current_active_client_connections_stat()
 {
   // TODO Implement stats
 }
 
 QPACK *
-Http3ClientSession::local_qpack()
+Http3Session::local_qpack()
 {
   return this->_local_qpack;
 }
 
 QPACK *
-Http3ClientSession::remote_qpack()
+Http3Session::remote_qpack()
 {
   return this->_remote_qpack;
 }
 
 //
-// Http09ClientSession
+// Http09Session
 //
-Http09ClientSession::~Http09ClientSession()
+Http09Session::~Http09Session()
 {
   this->_client_vc = nullptr;
 }
 
 const char *
-Http09ClientSession::get_protocol_string() const
+Http09Session::get_protocol_string() const
 {
   return IP_PROTO_TAG_HTTP_QUIC.data();
 }
 
 int
-Http09ClientSession::populate_protocol(std::string_view *result, int size) const
+Http09Session::populate_protocol(std::string_view *result, int size) const
 {
   int retval = 0;
   if (size > retval) {
@@ -219,13 +219,13 @@ Http09ClientSession::populate_protocol(std::string_view *result, int size) const
 }
 
 void
-Http09ClientSession::increment_current_active_client_connections_stat()
+Http09Session::increment_current_active_client_connections_stat()
 {
   // TODO Implement stats
 }
 
 void
-Http09ClientSession::decrement_current_active_client_connections_stat()
+Http09Session::decrement_current_active_client_connections_stat()
 {
   // TODO Implement stats
 }

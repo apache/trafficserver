@@ -27,13 +27,13 @@
 #include "Http3Transaction.h"
 #include "QPACK.h"
 
-class HQClientSession : public ProxySession
+class HQSession : public ProxySession
 {
 public:
   using super = ProxySession; ///< Parent type
 
-  HQClientSession(NetVConnection *vc) : _client_vc(vc){};
-  virtual ~HQClientSession();
+  HQSession(NetVConnection *vc) : _client_vc(vc){};
+  virtual ~HQSession();
 
   // Implement VConnection interface
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
@@ -50,7 +50,7 @@ public:
   NetVConnection *get_netvc() const override;
   int get_transact_count() const override;
 
-  // HQClientSession
+  // HQSession
   void add_transaction(HQTransaction *);
   HQTransaction *get_transaction(QUICStreamId);
 
@@ -62,13 +62,13 @@ private:
   Queue<HQTransaction> _transaction_list;
 };
 
-class Http3ClientSession : public HQClientSession
+class Http3Session : public HQSession
 {
 public:
-  using super = HQClientSession; ///< Parent type
+  using super = HQSession; ///< Parent type
 
-  Http3ClientSession(NetVConnection *vc);
-  ~Http3ClientSession();
+  Http3Session(NetVConnection *vc);
+  ~Http3Session();
 
   // ProxySession interface
   const char *get_protocol_string() const override;
@@ -87,13 +87,13 @@ private:
 /**
    Only for interop. Will be removed.
  */
-class Http09ClientSession : public HQClientSession
+class Http09Session : public HQSession
 {
 public:
-  using super = HQClientSession; ///< Parent type
+  using super = HQSession; ///< Parent type
 
-  Http09ClientSession(NetVConnection *vc) : HQClientSession(vc) {}
-  ~Http09ClientSession();
+  Http09Session(NetVConnection *vc) : HQSession(vc) {}
+  ~Http09Session();
 
   // ProxySession interface
   const char *get_protocol_string() const override;

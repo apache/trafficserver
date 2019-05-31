@@ -36,7 +36,7 @@
 #include "Http3FrameHandler.h"
 
 class QUICNetVConnection;
-class Http3ClientSession;
+class Http3Session;
 
 /**
  * @brief A HTTP/3 application
@@ -56,8 +56,7 @@ public:
   QUICConnectionErrorUPtr create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type);
 
 protected:
-  // TODO: create Http3Session
-  Http3ClientSession *_ssn = nullptr;
+  Http3Session *_ssn = nullptr;
 
 private:
   void _handle_uni_stream_on_read_ready(int event, QUICStreamIO *stream_io);
@@ -85,15 +84,15 @@ private:
 class Http3SettingsHandler : public Http3FrameHandler
 {
 public:
-  Http3SettingsHandler(Http3ClientSession *session) : _session(session){};
+  Http3SettingsHandler(Http3Session *session) : _session(session){};
 
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
   Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame) override;
 
 private:
-  // TODO: clarify Http3ClientSession I/F for Http3SettingsHandler and Http3App
-  Http3ClientSession *_session = nullptr;
+  // TODO: clarify Http3Session I/F for Http3SettingsHandler and Http3App
+  Http3Session *_session = nullptr;
 };
 
 class Http3SettingsFramer : public Http3FrameGenerator

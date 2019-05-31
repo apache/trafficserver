@@ -29,9 +29,9 @@
 #include "Http3FrameCollector.h"
 
 class QUICStreamIO;
-class HQClientSession;
-class Http09ClientSession;
-class Http3ClientSession;
+class HQSession;
+class Http09Session;
+class Http3Session;
 class Http3HeaderFramer;
 class Http3DataFramer;
 
@@ -40,7 +40,7 @@ class HQTransaction : public ProxyTransaction
 public:
   using super = ProxyTransaction;
 
-  HQTransaction(HQClientSession *session, QUICStreamIO *stream_io);
+  HQTransaction(HQSession *session, QUICStreamIO *stream_io);
   virtual ~HQTransaction();
 
   // Implement ProxyClienTransaction interface
@@ -94,7 +94,7 @@ class Http3Transaction : public HQTransaction
 public:
   using super = HQTransaction;
 
-  Http3Transaction(Http3ClientSession *session, QUICStreamIO *stream_io);
+  Http3Transaction(Http3Session *session, QUICStreamIO *stream_io);
   ~Http3Transaction();
 
   int state_stream_open(int event, void *data) override;
@@ -129,7 +129,7 @@ class Http09Transaction : public HQTransaction
 public:
   using super = HQTransaction;
 
-  Http09Transaction(Http09ClientSession *session, QUICStreamIO *stream_io);
+  Http09Transaction(Http09Session *session, QUICStreamIO *stream_io);
   ~Http09Transaction();
 
   int state_stream_open(int event, void *data) override;

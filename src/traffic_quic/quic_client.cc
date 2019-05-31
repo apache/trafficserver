@@ -27,7 +27,6 @@
 #include <fstream>
 #include <string_view>
 
-#include "Http3ClientSession.h"
 #include "Http3Transaction.h"
 
 // OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)

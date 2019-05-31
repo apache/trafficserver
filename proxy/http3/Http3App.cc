@@ -31,7 +31,7 @@
 #include "Http3.h"
 #include "Http3Config.h"
 #include "Http3DebugNames.h"
-#include "Http3ClientSession.h"
+#include "Http3Session.h"
 #include "Http3Transaction.h"
 
 static constexpr char debug_tag[]   = "http3";
@@ -40,7 +40,7 @@ static constexpr char debug_tag_v[] = "v_http3";
 Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options)
   : QUICApplication(client_vc)
 {
-  this->_ssn      = new Http3ClientSession(client_vc);
+  this->_ssn      = new Http3Session(client_vc);
   this->_ssn->acl = std::move(session_acl);
   // TODO: avoid const cast
   this->_ssn->host_res_style =
