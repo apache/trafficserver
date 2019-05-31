@@ -133,7 +133,7 @@ RecConfigOverrideFromEnvironment(const char *name, const char *value)
 // RecParseConfigFile
 //-------------------------------------------------------------------------
 int
-RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_version)
+RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
 {
   char *fbuf;
   int fsize;
@@ -254,7 +254,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
 
     // OK, we parsed the record, send it to the handler ...
     value_str = RecConfigOverrideFromEnvironment(name_str, data_str);
-    handler(rec_type, data_type, name_str, value_str, value_str == data_str ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV, inc_version);
+    handler(rec_type, data_type, name_str, value_str, value_str == data_str ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);
 
     // update our g_rec_config_contents_xxx
     cfe             = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));

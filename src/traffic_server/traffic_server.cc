@@ -867,7 +867,7 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
     fprintf(stderr, "INFO: Successfully loaded remap.config\n\n");
   }
 
-  if (RecReadConfigFile(false) != REC_ERR_OKAY) {
+  if (RecReadConfigFile() != REC_ERR_OKAY) {
     exitStatus |= (1 << 1);
     fprintf(stderr, "ERROR: Failed to load records.config, exitStatus %d\n\n", exitStatus);
   } else {

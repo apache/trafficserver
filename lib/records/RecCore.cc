@@ -224,7 +224,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     }
 
     if (file_exists) {
-      RecReadConfigFile(true);
+      RecReadConfigFile();
     }
   }
 

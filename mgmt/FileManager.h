@@ -31,7 +31,7 @@
 class ExpandingArray;
 class Rollback;
 
-typedef void (*FileCallbackFunc)(char *, char *, bool);
+typedef void (*FileCallbackFunc)(char *, char *);
 
 struct callbackListable {
 public:
@@ -84,7 +84,7 @@ public:
                unsigned flags = 0);
   bool getRollbackObj(const char *fileName, Rollback **rbPtr);
   void registerCallback(FileCallbackFunc func);
-  void fileChanged(const char *fileName, const char *configName, bool incVersion);
+  void fileChanged(const char *fileName, const char *configName);
   void rereadConfig();
   bool isConfigStale();
   void configFileChild(const char *parent, const char *child, unsigned int options);

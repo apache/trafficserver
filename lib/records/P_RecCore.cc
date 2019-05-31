@@ -359,8 +359,7 @@ RecRegisterConfigCounter(RecT rec_type, const char *name, RecCounter data_defaul
 // RecSetRecordXXX
 //-------------------------------------------------------------------------
 RecErrT
-RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, RecSourceT source, bool lock,
-             bool inc_version)
+RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, RecSourceT source, bool lock)
 {
   RecErrT err = REC_ERR_OKAY;
   RecRecord *r1;
@@ -389,10 +388,6 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
 
         if (rec_updated_p) {
           r1->sync_required = REC_SYNC_REQUIRED;
-          if (inc_version) {
-            r1->sync_required |= REC_INC_CONFIG_VERSION;
-          }
-
           if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
             r1->config_meta.update_required = REC_UPDATE_REQUIRED;
           }
@@ -457,43 +452,43 @@ Ldone:
 }
 
 RecErrT
-RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock, bool inc_version)
+RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock)
 {
   RecData data;
   data.rec_string = rec_string;
-  return RecSetRecord(RECT_NULL, name, RECD_NULL, &data, nullptr, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_NULL, &data, nullptr, source, lock);
 }
 
 RecErrT
-RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock, bool inc_version)
+RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock)
 {
   RecData data;
   data.rec_int = rec_int;
-  return RecSetRecord(RECT_NULL, name, RECD_INT, &data, nullptr, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_INT, &data, nullptr, source, lock);
 }
 
 RecErrT
-RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock, bool inc_version)
+RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock)
 {
   RecData data;
   data.rec_float = rec_float;
-  return RecSetRecord(RECT_NULL, name, RECD_FLOAT, &data, nullptr, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_FLOAT, &data, nullptr, source, lock);
 }
 
 RecErrT
-RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock, bool inc_version)
+RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock)
 {
   RecData data;
   data.rec_string = rec_string;
-  return RecSetRecord(RECT_NULL, name, RECD_STRING, &data, nullptr, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_STRING, &data, nullptr, source, lock);
 }
 
 RecErrT
-RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock, bool inc_version)
+RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock)
 {
   RecData data;
   data.rec_counter = rec_counter;
-  return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, nullptr, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, nullptr, source, lock);
 }
 
 // check the version of the snap file to remove records.snap or not
@@ -620,13 +615,13 @@ RecSyncStatsFile()
 
 // Consume a parsed record, pushing it into the records hash table.
 static void
-RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char *name, const char *value, RecSourceT source, bool inc_version)
+RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char *name, const char *value, RecSourceT source)
 {
   RecData data;
 
   memset(&data, 0, sizeof(RecData));
   RecDataSetFromString(data_type, &data, value);
-  RecSetRecord(rec_type, name, data_type, &data, nullptr, source, false, inc_version);
+  RecSetRecord(rec_type, name, data_type, &data, nullptr, source, false);
   RecDataZero(data_type, &data);
 }
 
@@ -634,7 +629,7 @@ RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char *name, const
 // RecReadConfigFile
 //-------------------------------------------------------------------------
 RecErrT
-RecReadConfigFile(bool inc_version)
+RecReadConfigFile()
 {
   RecDebug(DL_Note, "Reading '%s'", g_rec_config_fpath);
 
@@ -642,7 +637,7 @@ RecReadConfigFile(bool inc_version)
   ink_rwlock_wrlock(&g_records_rwlock);
 
   // Parse the actual file and hash the values.
-  RecConfigFileParse(g_rec_config_fpath, RecConsumeConfigEntry, inc_version);
+  RecConfigFileParse(g_rec_config_fpath, RecConsumeConfigEntry);
 
   // release our hash table
   ink_rwlock_unlock(&g_records_rwlock);
