@@ -545,12 +545,11 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     }
     break;
   case MGMT_SIGNAL_CONFIG_FILE_CHILD: {
-    static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
+    static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING};
     char *parent                           = nullptr;
     char *child                            = nullptr;
-    MgmtMarshallInt options                = 0;
-    if (mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child, &options) != -1) {
-      configFiles->configFileChild(parent, child, (unsigned int)options);
+    if (mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child) != -1) {
+      configFiles->configFileChild(parent, child);
     } else {
       mgmt_log("[LocalManager::handleMgmtMsgFromProcesses] "
                "MGMT_SIGNAL_CONFIG_FILE_CHILD mgmt_message_parse error\n");

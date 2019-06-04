@@ -216,16 +216,14 @@ ProcessManager::reconfigure()
 }
 
 void
-ProcessManager::signalConfigFileChild(const char *parent, const char *child, unsigned int options)
+ProcessManager::signalConfigFileChild(const char *parent, const char *child)
 {
-  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
+  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING};
 
-  MgmtMarshallInt mgmtopt = options;
-
-  size_t len   = mgmt_message_length(fields, countof(fields), &parent, &child, &mgmtopt);
+  size_t len   = mgmt_message_length(fields, countof(fields), &parent, &child);
   void *buffer = ats_malloc(len);
 
-  mgmt_message_marshall(buffer, len, fields, countof(fields), &parent, &child, &mgmtopt);
+  mgmt_message_marshall(buffer, len, fields, countof(fields), &parent, &child);
   signalManager(MGMT_SIGNAL_CONFIG_FILE_CHILD, (const char *)buffer, len);
 
   ats_free(buffer);
