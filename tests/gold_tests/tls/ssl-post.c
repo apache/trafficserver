@@ -85,7 +85,7 @@ spawn_same_session_send(void *arg)
   fcntl(sfd, F_SETFL, O_NONBLOCK);
   // Make sure we are nagling
   int one = 0;
-  setsockopt(sfd, SOL_TCP, TCP_NODELAY, &one, sizeof(one));
+  setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 
   SSL_CTX *client_ctx = SSL_CTX_new(SSLv23_client_method());
   SSL *ssl            = SSL_new(client_ctx);
