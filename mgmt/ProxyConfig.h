@@ -36,10 +36,6 @@ void *config_float_cb(void *data, void *value);
 void *config_string511_cb(void *data, void *value);
 void *config_string_alloc_cb(void *data, void *value);
 
-// Configuration file flags shared by proxy configuration and mgmt.
-static constexpr unsigned int CONFIG_FLAG_NONE        = 0;
-static constexpr unsigned int CONFIG_FLAG_UNVERSIONED = 1; // Don't version this config file
-
 //
 // Macros that spin waiting for the data to be bound
 //

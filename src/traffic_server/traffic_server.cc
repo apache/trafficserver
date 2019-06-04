@@ -120,7 +120,7 @@ static void mgmt_drain_callback(ts::MemSpan<void>);
 static void mgmt_storage_device_cmd_callback(int cmd, std::string_view const &arg);
 static void mgmt_lifecycle_msg_callback(ts::MemSpan<void>);
 static void init_ssl_ctx_callback(void *ctx, bool server);
-static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
+static void load_ssl_file_callback(const char *ssl_file);
 static void load_remap_file_callback(const char *remap_file);
 static void task_threads_started_callback();
 
@@ -2087,15 +2087,15 @@ init_ssl_ctx_callback(void *ctx, bool server)
 }
 
 static void
-load_ssl_file_callback(const char *ssl_file, unsigned int options)
+load_ssl_file_callback(const char *ssl_file)
 {
-  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file, options);
+  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file);
 }
 
 static void
 load_remap_file_callback(const char *remap_file)
 {
-  pmgmt->signalConfigFileChild("remap.config", remap_file, CONFIG_FLAG_UNVERSIONED);
+  pmgmt->signalConfigFileChild("remap.config", remap_file);
 }
 
 static void

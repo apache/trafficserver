@@ -92,18 +92,16 @@ FileManager::registerCallback(FileCallbackFunc func)
 //  Pointers to the new objects are stored in the bindings hashtable
 //
 void
-FileManager::addFile(const char *fileName, const char *configName, bool root_access_needed, Rollback *parentRollback,
-                     unsigned flags)
+FileManager::addFile(const char *fileName, const char *configName, bool root_access_needed, Rollback *parentRollback)
 {
   ink_mutex_acquire(&accessLock);
-  addFileHelper(fileName, configName, root_access_needed, parentRollback, flags);
+  addFileHelper(fileName, configName, root_access_needed, parentRollback);
   ink_mutex_release(&accessLock);
 }
 
 // caller must hold the lock
 void
-FileManager::addFileHelper(const char *fileName, const char *configName, bool root_access_needed, Rollback *parentRollback,
-                           unsigned flags)
+FileManager::addFileHelper(const char *fileName, const char *configName, bool root_access_needed, Rollback *parentRollback)
 {
   ink_assert(fileName != nullptr);
 
@@ -253,13 +251,13 @@ FileManager::isConfigStale()
 //
 // Add child to the bindings with parentRollback
 void
-FileManager::configFileChild(const char *parent, const char *child, unsigned flags)
+FileManager::configFileChild(const char *parent, const char *child)
 {
   Rollback *parentRollback = nullptr;
   ink_mutex_acquire(&accessLock);
   if (auto it = bindings.find(parent); it != bindings.end()) {
     parentRollback = it->second;
-    addFileHelper(child, "", parentRollback->rootAccessNeeded(), parentRollback, flags);
+    addFileHelper(child, "", parentRollback->rootAccessNeeded(), parentRollback);
   }
   ink_mutex_release(&accessLock);
 }
