@@ -47,22 +47,6 @@ Http1Transaction::release(IOBufferReader *r)
 }
 
 void
-Http1Transaction::set_proxy_ssn(ProxySession *new_proxy_ssn)
-{
-  Http1ClientSession *http1_proxy_ssn = dynamic_cast<Http1ClientSession *>(new_proxy_ssn);
-
-  if (http1_proxy_ssn) {
-    outbound_port        = http1_proxy_ssn->outbound_port;
-    outbound_ip4         = http1_proxy_ssn->outbound_ip4;
-    outbound_ip6         = http1_proxy_ssn->outbound_ip6;
-    outbound_transparent = http1_proxy_ssn->f_outbound_transparent;
-    super_type::set_proxy_ssn(new_proxy_ssn);
-  } else {
-    proxy_ssn = nullptr;
-  }
-}
-
-void
 Http1Transaction::transaction_done()
 {
   if (proxy_ssn) {

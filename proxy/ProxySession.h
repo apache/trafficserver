@@ -30,6 +30,7 @@
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "http/Http1ServerSession.h"
+#include "http/HttpSessionAccept.h"
 #include "IPAllow.h"
 
 // Emit a debug message conditional on whether this particular client session
@@ -99,7 +100,6 @@ public:
   virtual NetVConnection *get_netvc() const       = 0;
   virtual int get_transact_count() const          = 0;
   virtual const char *get_protocol_string() const = 0;
-  virtual bool is_transparent_passthrough_allowed() const;
 
   virtual void hook_add(TSHttpHookID id, INKContInternal *cont);
 
@@ -108,9 +108,6 @@ public:
   virtual void set_half_close_flag(bool flag);
   virtual bool get_half_close_flag() const;
 
-  virtual in_port_t get_outbound_port() const;
-  virtual IpAddr get_outbound_ip4() const;
-  virtual IpAddr get_outbound_ip6() const;
   virtual Http1ServerSession *get_server_session() const;
 
   // Replicate NetVConnection API
@@ -151,9 +148,7 @@ public:
 
   IpAllow::ACL acl; ///< IpAllow based method ACL.
 
-  IpAddr outbound_ip4;        ///< Local address for outbound connection.
-  IpAddr outbound_ip6;        ///< Local address for outbound connection.
-  in_port_t outbound_port{0}; ///< Local port for outbound connection.
+  HttpSessionAccept::Options const *accept_options; ///< connection info // L7R TODO: set in constructor
 
   HostResStyle host_res_style = HOST_RES_NONE; ///< DNS resolution preferences.
 
