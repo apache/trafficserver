@@ -89,13 +89,8 @@ public:
 
   bool debug() const;
 
-  APIHook *hook_get(TSHttpHookID id) const;
-  HttpAPIHooks const *feature_hooks() const;
-  bool has_hooks() const;
-
   HostResStyle get_host_res_style() const;
   void set_host_res_style(HostResStyle style);
-
   const IpAllow::ACL &get_acl() const;
 
   ProxySession *get_proxy_ssn();
@@ -120,9 +115,7 @@ protected:
   HttpSM *current_reader    = nullptr;
   IOBufferReader *sm_reader = nullptr;
 
-  /// DNS resolution preferences.
-  HostResStyle host_res_style = HOST_RES_NONE;
-  bool restart_immediate      = false;
+  bool restart_immediate = false;
 
 private:
 };

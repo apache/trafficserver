@@ -52,7 +52,6 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   Http1ClientSession *new_session = THREAD_ALLOC_INIT(http1ClientSessionAllocator, this_ethread());
 
   new_session->accept_options = static_cast<Options *>(this);
-  new_session->host_res_style = ats_host_res_from(client_ip->sa_family, host_res_preference);
   new_session->acl            = std::move(acl);
 
   new_session->new_connection(netvc, iobuf, reader);
