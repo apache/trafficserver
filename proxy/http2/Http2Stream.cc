@@ -60,6 +60,7 @@ Http2Stream::init(Http2StreamId sid, ssize_t initial_rwnd)
   // FIXME: Are you sure? every "stream" needs request_header?
   _req_header.create(HTTP_TYPE_REQUEST);
   response_header.create(HTTP_TYPE_RESPONSE);
+  http_parser_init(&http_parser);
 }
 
 int
@@ -808,6 +809,7 @@ Http2Stream::destroy()
   chunked_handler.clear();
   clear_timers();
   clear_io_events();
+  http_parser_clear(&http_parser);
 
   super::destroy();
   THREAD_FREE(this, http2StreamAllocator, this_ethread());
