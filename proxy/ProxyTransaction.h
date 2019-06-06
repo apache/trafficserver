@@ -97,6 +97,10 @@ public:
   Http1ServerSession *get_server_session() const;
   HttpSM *get_sm() const;
 
+  bool has_hooks() const;
+  APIHook *hook_get(TSHttpHookID id) const;
+  HttpAPIHooks const *feature_hooks() const;
+
   void set_restart_immediate(bool val);
   bool get_restart_immediate() const;
 
@@ -114,8 +118,6 @@ protected:
   ProxySession *proxy_ssn   = nullptr;
   HttpSM *current_reader    = nullptr;
   IOBufferReader *sm_reader = nullptr;
-
-  bool restart_immediate = false;
 
 private:
 };
