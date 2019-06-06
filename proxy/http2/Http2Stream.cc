@@ -755,6 +755,7 @@ Http2Stream::destroy()
   chunked_handler.clear();
   clear_timers();
   clear_io_events();
+  http_parser_clear(&http_parser);
 
   super::destroy();
   THREAD_FREE(this, http2StreamAllocator, this_ethread());
