@@ -510,8 +510,6 @@ struct OverridableHttpConfigParams {
   MgmtByte cache_range_write              = 0;
   MgmtByte allow_multi_range              = 0;
 
-  MgmtByte cache_enable_default_vary_headers = 0;
-
   MgmtByte ignore_accept_mismatch          = 0;
   MgmtByte ignore_accept_language_mismatch = 0;
   MgmtByte ignore_accept_encoding_mismatch = 0;
@@ -674,10 +672,6 @@ struct OverridableHttpConfigParams {
   char *ssl_client_cert_filename        = nullptr;
   char *ssl_client_private_key_filename = nullptr;
   char *ssl_client_ca_cert_filename     = nullptr;
-
-  char *cache_vary_default_text   = nullptr;
-  char *cache_vary_default_images = nullptr;
-  char *cache_vary_default_other  = nullptr;
 };
 
 /////////////////////////////////////////////////////////////
@@ -846,9 +840,6 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.ssl_client_cert_filename);
   ats_free(oride.ssl_client_private_key_filename);
   ats_free(oride.ssl_client_ca_cert_filename);
-  ats_free(oride.cache_vary_default_text);
-  ats_free(oride.cache_vary_default_images);
-  ats_free(oride.cache_vary_default_other);
   ats_free(connect_ports_string);
   ats_free(reverse_proxy_no_host_redirect);
   ats_free(redirect_actions_string);

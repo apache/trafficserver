@@ -8310,18 +8310,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB:
     ret = _memberp_to_generic(&overridableHttpConfig->parent_failures_update_hostdb, conv);
     break;
-  case TS_CONFIG_HTTP_CACHE_ENABLE_DEFAULT_VARY_HEADER:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_enable_default_vary_headers, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_TEXT:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_vary_default_text, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_IMAGES:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_vary_default_images, conv);
-    break;
-  case TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_OTHER:
-    ret = _memberp_to_generic(&overridableHttpConfig->cache_vary_default_other, conv);
-    break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH:
     ret = _memberp_to_generic(&overridableHttpConfig->ignore_accept_mismatch, conv);
     break;
@@ -8636,13 +8624,11 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
    {"proxy.config.http.parent_proxy.retry_time", {TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.insert_response_via_str", {TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.flow_control.high_water", {TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.vary_default_text", {TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_TEXT, TS_RECORDDATATYPE_STRING}},
    {"proxy.config.http.negative_caching_enabled", {TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.cache.when_to_revalidate", {TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.response_header_max_size", {TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.anonymize_remove_referer", {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.global_user_agent_header", {TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.http.cache.vary_default_other", {TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_OTHER, TS_RECORDDATATYPE_STRING}},
    {"proxy.config.net.sock_recv_buffer_size_out", {TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT, TS_RECORDDATATYPE_INT}},
    {"proxy.config.net.sock_send_buffer_size_out", {TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.connect_attempts_timeout", {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT, TS_RECORDDATATYPE_INT}},
@@ -8650,7 +8636,6 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
    {"proxy.config.http.negative_caching_lifetime", {TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.default_buffer_water_mark", {TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.cache.heuristic_lm_factor", {TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR, TS_RECORDDATATYPE_FLOAT}},
-   {"proxy.config.http.cache.vary_default_images", {TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_IMAGES, TS_RECORDDATATYPE_STRING}},
    {OutboundConnTrack::CONFIG_VAR_MAX, {TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.anonymize_remove_client_ip", {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.cache.open_read_retry_time", {TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME, TS_RECORDDATATYPE_INT}},
@@ -8691,8 +8676,6 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
     {TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.post.check.content_length.enabled",
     {TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.enable_default_vary_headers",
-    {TS_CONFIG_HTTP_CACHE_ENABLE_DEFAULT_VARY_HEADER, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.cache.cache_urls_that_look_dynamic",
     {TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.transaction_no_activity_timeout_in",

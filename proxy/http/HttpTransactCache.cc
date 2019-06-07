@@ -1138,115 +1138,77 @@ HttpTransactCache::CalcVariability(OverridableHttpConfigParams *http_config_para
   ink_assert(obj_origin_server_response != nullptr);
 
   Variability_t variability = VARIABILITY_NONE;
-  if (http_config_params->cache_enable_default_vary_headers || obj_origin_server_response->presence(MIME_PRESENCE_VARY)) {
-    ///////////////////////////////////////////////////////////////////////
-    // If the origin server sent a Vary header in the response, use that //
-    // Vary, otherwise use the default. Ivry adds: However if the origin //
-    // server was a non-compliant 1.1 and did not send a Vary header,    //
-    // treat as 1.0 with no Vary header.                                 //
-    ///////////////////////////////////////////////////////////////////////
+  if (obj_origin_server_response->presence(MIME_PRESENCE_VARY)) {
     StrList vary_list;
-    int num_vary_values = obj_origin_server_response->value_get_comma_list(MIME_FIELD_VARY, MIME_LEN_VARY, &vary_list);
 
-    if (num_vary_values <= 0) { // no vary hdr, so use defaults if enabled
-      const char *vary_values = nullptr;
-      const char *content_type;
-      int content_type_len;
-      char type[32], subtype[32];
-
-      content_type = obj_origin_server_response->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &content_type_len);
-
-      if (content_type) {
-        HttpCompat::parse_mime_type_with_len(content_type, content_type_len, type, subtype, sizeof(type), sizeof(subtype));
-      } else {
-        type[0]    = '\0';
-        subtype[0] = '\0';
+    if (obj_origin_server_response->value_get_comma_list(MIME_FIELD_VARY, MIME_LEN_VARY, &vary_list) > 0) {
+      if (is_debug_tag_set("http_match") && vary_list.head) {
+        Debug("http_match", "Vary list of %d elements", vary_list.count);
+        vary_list.dump(stderr);
       }
 
-      Debug("http_match", "      type = '%s', subtype = '%s'", type, subtype);
-
-      if (http_config_params->cache_enable_default_vary_headers) {
-        if (strcasecmp(type, "text") == 0) {
-          Debug("http_match", "      Using default text vary headers");
-          vary_values = http_config_params->cache_vary_default_text;
-        } else if (strcasecmp(type, "image") == 0) {
-          Debug("http_match", "      Using default image vary headers");
-          vary_values = http_config_params->cache_vary_default_images;
-        } else {
-          Debug("http_match", "      Using default other vary headers");
-          vary_values = http_config_params->cache_vary_default_other;
+      // for each field that varies, see if current & original hdrs match //
+      for (Str *field = vary_list.head; field != nullptr; field = field->next) {
+        if (field->len == 0) {
+          continue;
         }
-      }
-      // convert the comma-sep string from the config var into a list
-      HttpCompat::parse_comma_list(&vary_list, (vary_values ? vary_values : ""));
-    }
 
-    if (is_debug_tag_set("http_match") && (vary_list.head)) {
-      Debug("http_match", "Vary list of %d elements", vary_list.count);
-      vary_list.dump(stderr);
-    }
+        /////////////////////////////////////////////////////////////
+        // If the field name is unhandled, we should probably do a //
+        // string comparison on the values of this extension field //
+        // but currently we just treat it equivalent to a '*'.     //
+        /////////////////////////////////////////////////////////////
 
-    // for each field that varies, see if current & original hdrs match //
-    for (Str *field = vary_list.head; field != nullptr; field = field->next) {
-      if (field->len == 0) {
-        continue;
-      }
+        Debug("http_match", "Vary: %s", field->str);
+        if (((field->str[0] == '*') && (field->str[1] == NUL))) {
+          Debug("http_match", "Wildcard variability --- object not served from cache");
+          variability = VARIABILITY_ALL;
+          break;
+        }
+        ////////////////////////////////////////////////////////////////////////////////////////
+        // Special case: if 'proxy.config.http.global_user_agent_header' set                  //
+        // we should ignore Vary: User-Agent.                                                 //
+        ////////////////////////////////////////////////////////////////////////////////////////
+        if (http_config_params->global_user_agent_header && !strcasecmp((char *)field->str, "User-Agent")) {
+          continue;
+        }
 
-      /////////////////////////////////////////////////////////////
-      // If the field name is unhandled, we should probably do a //
-      // string comparison on the values of this extension field //
-      // but currently we just treat it equivalent to a '*'.     //
-      /////////////////////////////////////////////////////////////
+        // Disable Vary mismatch checking for Accept-Encoding.  This is only safe to
+        // set if you are promising to fix any Accept-Encoding/Content-Encoding mismatches.
+        if (http_config_params->ignore_accept_encoding_mismatch && !strcasecmp((char *)field->str, "Accept-Encoding")) {
+          continue;
+        }
 
-      Debug("http_match", "Vary: %s", field->str);
-      if (((field->str[0] == '*') && (field->str[1] == NUL))) {
-        Debug("http_match", "Wildcard variability --- object not served from cache");
-        variability = VARIABILITY_ALL;
-        break;
-      }
-      ////////////////////////////////////////////////////////////////////////////////////////
-      // Special case: if 'proxy.config.http.global_user_agent_header' set                  //
-      // we should ignore Vary: User-Agent.                                                 //
-      ////////////////////////////////////////////////////////////////////////////////////////
-      if (http_config_params->global_user_agent_header && !strcasecmp((char *)field->str, "User-Agent")) {
-        continue;
-      }
+        ///////////////////////////////////////////////////////////////////
+        // Take the current vary field and look up the headers in        //
+        // the current client, and the original client.  The cached      //
+        // object varies unless BOTH the current client and the original //
+        // client contain the header, and the header values are equal.   //
+        // We relax this to allow a match if NEITHER have the header.    //
+        //                                                               //
+        // While header "equality" appears to be header-specific, the    //
+        // RFC2068 spec implies that matching only needs to account for  //
+        // differences in whitespace and support for multiple headers    //
+        // with the same name.  Case is presumably also insignificant.   //
+        // Other variations (such as q=1 vs. a field with no q factor)   //
+        // mean that the values DO NOT match.                            //
+        ///////////////////////////////////////////////////////////////////
 
-      // Disable Vary mismatch checking for Accept-Encoding.  This is only safe to
-      // set if you are promising to fix any Accept-Encoding/Content-Encoding mismatches.
-      if (http_config_params->ignore_accept_encoding_mismatch && !strcasecmp((char *)field->str, "Accept-Encoding")) {
-        continue;
-      }
+        ink_assert(strlen(field->str) == field->len);
 
-      ///////////////////////////////////////////////////////////////////
-      // Take the current vary field and look up the headers in        //
-      // the current client, and the original client.  The cached      //
-      // object varies unless BOTH the current client and the original //
-      // client contain the header, and the header values are equal.   //
-      // We relax this to allow a match if NEITHER have the header.    //
-      //                                                               //
-      // While header "equality" appears to be header-specific, the    //
-      // RFC2068 spec implies that matching only needs to account for  //
-      // differences in whitespace and support for multiple headers    //
-      // with the same name.  Case is presumably also insignificant.   //
-      // Other variations (such as q=1 vs. a field with no q factor)   //
-      // mean that the values DO NOT match.                            //
-      ///////////////////////////////////////////////////////////////////
+        char *field_name_str = (char *)hdrtoken_string_to_wks(field->str, field->len);
+        if (field_name_str == nullptr) {
+          field_name_str = (char *)field->str;
+        }
 
-      ink_assert(strlen(field->str) == field->len);
+        MIMEField *cached_hdr_field  = obj_client_request->field_find(field_name_str, field->len);
+        MIMEField *current_hdr_field = client_request->field_find(field_name_str, field->len);
 
-      char *field_name_str = (char *)hdrtoken_string_to_wks(field->str, field->len);
-      if (field_name_str == nullptr) {
-        field_name_str = (char *)field->str;
-      }
-
-      MIMEField *cached_hdr_field  = obj_client_request->field_find(field_name_str, field->len);
-      MIMEField *current_hdr_field = client_request->field_find(field_name_str, field->len);
-
-      // Header values match? //
-      if (!HttpCompat::do_header_values_rfc2068_14_43_match(cached_hdr_field, current_hdr_field)) {
-        variability = VARIABILITY_SOME;
-        break;
+        // Header values match? //
+        if (!HttpCompat::do_vary_header_values_match(cached_hdr_field, current_hdr_field)) {
+          variability = VARIABILITY_SOME;
+          break;
+        }
       }
     }
   }

@@ -1945,12 +1945,6 @@ Cache Control
    mark (``?``), a semicolon (``;``), or ``cgi``. For a full list, please refer to
    `HttpTransact::url_looks_dynamic </link/to/doxygen>`_
 
-.. ts:cv:: CONFIG proxy.config.http.cache.enable_default_vary_headers INT 0
-   :reloadable:
-   :overridable:
-
-   Enables (``1``) or disables (``0``) caching of alternate versions of HTTP objects that do not contain the ``Vary`` header.
-
 .. ts:cv:: CONFIG proxy.config.http.cache.when_to_revalidate INT 0
    :reloadable:
    :overridable:
@@ -2235,27 +2229,6 @@ Heuristic Expiration
 
 Dynamic Content & Content Negotiation
 =====================================
-
-.. ts:cv:: CONFIG proxy.config.http.cache.vary_default_text STRING NULL
-   :reloadable:
-   :overridable:
-
-   The header on which |TS| varies for text documents.
-
-For example: if you specify ``User-agent``, then |TS| caches
-all the different user-agent versions of documents it encounters.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.vary_default_images STRING NULL
-   :reloadable:
-   :overridable:
-
-   The header on which |TS| varies for images.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.vary_default_other STRING NULL
-   :reloadable:
-   :overridable:
-
-   The header on which |TS| varies for anything other than text and images.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.open_read_retry_time INT 10
    :reloadable:

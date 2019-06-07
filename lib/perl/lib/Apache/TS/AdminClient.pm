@@ -415,7 +415,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.background_fill_completed_threshold
  proxy.config.http.cache.cache_responses_to_cookies
  proxy.config.http.cache.cache_urls_that_look_dynamic
- proxy.config.http.cache.enable_default_vary_headers
  proxy.config.http.cache.guaranteed_max_lifetime
  proxy.config.http.cache.guaranteed_min_lifetime
  proxy.config.http.cache.heuristic_lm_factor
@@ -438,9 +437,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.cache.range.lookup
  proxy.config.http.cache.range.write
  proxy.config.http.cache.required_headers
- proxy.config.http.cache.vary_default_images
- proxy.config.http.cache.vary_default_other
- proxy.config.http.cache.vary_default_text
  proxy.config.http.cache.when_to_revalidate
  proxy.config.http.chunking_enabled
  proxy.config.http.connect_attempts_max_retries
