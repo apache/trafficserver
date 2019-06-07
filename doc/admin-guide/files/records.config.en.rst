@@ -3081,11 +3081,11 @@ SSL Termination
 
    This configuration works with OpenSSL v1.0.2 and above.
 
-.. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 0
 
-   Enables (``1``) or disables (``0``) TLSv1.
+   Enables (``1``) or disables (``0``) TLSv1.0.
 
-.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 0
 
    Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
 
@@ -3411,11 +3411,11 @@ Client-Related Configuration
 
    Enables (``1``) or disables (``0``) SSLv3 in the ATS client context. Disabled by default
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 0
 
-   Enables (``1``) or disables (``0``) TLSv1 in the ATS client context. If not specified, enabled by default
+   Enables (``1``) or disables (``0``) TLSv1.0 in the ATS client context. If not specified, enabled by default
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_1 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_1 INT 0
 
    Enables (``1``) or disables (``0``) TLSv1_1 in the ATS client context. If not specified, enabled by default
 
