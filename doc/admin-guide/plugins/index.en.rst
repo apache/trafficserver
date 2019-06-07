@@ -147,6 +147,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Balancer <balancer.en>
    Buffer Upload <buffer_upload.en>
    Certifier <certifier.en>
+   Cert Reporting Tool <cert_reporting_tool.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
    GeoIP ACL <geoip_acl.en>
    FQ Pacing <fq_pacing.en>
@@ -180,6 +181,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Certifier <certifier.en>`
    Manages and/or generates certificates for incoming HTTPS requests.
+
+:doc:`Cert Reporting Tool <cert_reporting_tool.en>`
+   Examines and logs information on loaded certificates.
 
 :doc:`Collapsed-Forwarding <collapsed_forwarding.en>`
    Allows to Collapse multiple Concurrent requests by downloading once from the Origin and serving
