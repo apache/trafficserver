@@ -3407,10 +3407,6 @@ Client-Related Configuration
    `host` which means the host header field value is used for the SNI.  If `remap` is specified, the
    remapped origin name is used for the SNI value.
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.SSLv3 INT 0
-
-   Enables (``1``) or disables (``0``) SSLv3 in the ATS client context. Disabled by default
-
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 0
 
    Enables (``1``) or disables (``0``) TLSv1.0 in the ATS client context. If not specified, enabled by default

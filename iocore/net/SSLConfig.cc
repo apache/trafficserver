@@ -200,12 +200,6 @@ SSLConfigParams::initialize()
 
   int option = 0;
 
-#if TS_USE_SSLV3_CLIENT
-  REC_ReadConfigInteger(option, "proxy.config.ssl.client.SSLv3");
-  if (option)
-    ssl_client_ctx_options &= ~SSL_OP_NO_SSLv3;
-#endif
-
   REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1");
   if (!option) {
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
