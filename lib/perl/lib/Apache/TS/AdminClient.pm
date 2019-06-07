@@ -591,9 +591,10 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.server.cipher_suite
  proxy.config.ssl.server.honor_cipher_order
  proxy.config.ssl.server.dhparams_file
- proxy.config.ssl.SSLv2
- proxy.config.ssl.SSLv3
  proxy.config.ssl.TLSv1
+ proxy.config.ssl.TLSv1_1
+ proxy.config.ssl.TLSv1_2
+ proxy.config.ssl.TLSv1_3
  proxy.config.ssl.server.multicert.filename
  proxy.config.ssl.server.private_key.path
  proxy.config.stat_collector.interval

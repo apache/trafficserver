@@ -42,42 +42,30 @@ increment_ssl_client_error(unsigned long err)
   // (we ignore FUNCTION with the prejudice that we don't care what function
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_expired_cert_stat);
     break;
-#endif
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_revoked_cert_stat);
     break;
-#endif
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_cert_stat);
     break;
-#endif
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_cert_verify_failed_stat);
     break;
-#ifdef SSL_R_SSLV3_ALERT_BAD_CERTIFICATE
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_bad_cert_stat);
     break;
-#endif
-#ifdef SSL_R_TLSV1_ALERT_DECRYPTION_FAILED
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_decryption_failed_stat);
     break;
-#endif
   case SSL_R_WRONG_VERSION_NUMBER:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_wrong_version_stat);
     break;
-#ifdef SSL_R_TLSV1_ALERT_UNKNOWN_CA
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_ca_stat);
     break;
-#endif
   default:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_other_errors_stat);
     return false;
@@ -101,42 +89,30 @@ increment_ssl_server_error(unsigned long err)
   // (we ignore FUNCTION with the prejudice that we don't care what function
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_expired_cert_stat);
     break;
-#endif
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_revoked_cert_stat);
     break;
-#endif
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_cert_stat);
     break;
-#endif
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_cert_verify_failed_stat);
     break;
-#ifdef SSL_R_SSLV3_ALERT_BAD_CERTIFICATE
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_bad_cert_stat);
     break;
-#endif
-#ifdef SSL_R_TLSV1_ALERT_DECRYPTION_FAILED
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_decryption_failed_stat);
     break;
-#endif
   case SSL_R_WRONG_VERSION_NUMBER:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_wrong_version_stat);
     break;
-#ifdef SSL_R_TLSV1_ALERT_UNKNOWN_CA
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_ca_stat);
     break;
-#endif
   default:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_other_errors_stat);
     return false;

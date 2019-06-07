@@ -440,18 +440,6 @@ AC_ARG_ENABLE([hardening],
 AC_MSG_RESULT([$enable_hardening])
 
 #
-# Enable SSLv3 to origin
-#
-AC_MSG_CHECKING([whether to enable SSLv3 config for origin connections])
-AC_ARG_ENABLE([sslv3-client],
-  [AS_HELP_STRING([--enable-sslv3-client],[Enable SSLv3 config for origin connections (Only do this if you understand the risks)])],
-  [],
-  [enable_sslv3_client="no"]
-)
-AC_MSG_RESULT([$enable_sslv3_client])
-TS_ARG_ENABLE_VAR([use], [sslv3-client])
-
-#
 # Use TPROXY for connection transparency.
 #
 AC_MSG_CHECKING([whether to enable TPROXY based transparency])
@@ -1233,7 +1221,7 @@ AC_CHECK_FUNC([EVP_MD_CTX_free], [],
 
 LIBS="$saved_LIBS"
 
-# 
+#
 # Check OpenSSL version for JA3 Fingerprint
 #
 AC_MSG_CHECKING([for JA3 compatible OpenSSL version])
