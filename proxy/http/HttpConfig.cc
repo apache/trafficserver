@@ -1120,10 +1120,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.allow_half_open, "proxy.config.http.allow_half_open");
 
-  HttpEstablishStaticConfigStringAlloc(c.oride.cache_vary_default_text, "proxy.config.http.cache.vary_default_text");
-  HttpEstablishStaticConfigStringAlloc(c.oride.cache_vary_default_images, "proxy.config.http.cache.vary_default_images");
-  HttpEstablishStaticConfigStringAlloc(c.oride.cache_vary_default_other, "proxy.config.http.cache.vary_default_other");
-
   // open read failure retries
   HttpEstablishStaticConfigLongLong(c.oride.max_cache_open_read_retries, "proxy.config.http.cache.max_open_read_retries");
   HttpEstablishStaticConfigLongLong(c.oride.cache_open_read_retry_time, "proxy.config.http.cache.open_read_retry_time");
@@ -1141,7 +1137,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.cache_ignore_auth, "proxy.config.http.cache.ignore_authentication");
   HttpEstablishStaticConfigByte(c.oride.cache_urls_that_look_dynamic, "proxy.config.http.cache.cache_urls_that_look_dynamic");
-  HttpEstablishStaticConfigByte(c.oride.cache_enable_default_vary_headers, "proxy.config.http.cache.enable_default_vary_headers");
   HttpEstablishStaticConfigByte(c.cache_post_method, "proxy.config.http.cache.post_method");
 
   HttpEstablishStaticConfigByte(c.oride.ignore_accept_mismatch, "proxy.config.http.cache.ignore_accept_mismatch");
@@ -1402,10 +1397,6 @@ HttpConfig::reconfigure()
 
   params->oride.cache_max_stale_age = m_master.oride.cache_max_stale_age;
 
-  params->oride.cache_vary_default_text   = ats_strdup(m_master.oride.cache_vary_default_text);
-  params->oride.cache_vary_default_images = ats_strdup(m_master.oride.cache_vary_default_images);
-  params->oride.cache_vary_default_other  = ats_strdup(m_master.oride.cache_vary_default_other);
-
   params->oride.srv_enabled = m_master.oride.srv_enabled;
 
   params->oride.allow_half_open = m_master.oride.allow_half_open;
@@ -1418,16 +1409,15 @@ HttpConfig::reconfigure()
   // open write failure retries
   params->oride.max_cache_open_write_retries = m_master.oride.max_cache_open_write_retries;
 
-  params->oride.cache_http                        = INT_TO_BOOL(m_master.oride.cache_http);
-  params->oride.cache_ignore_client_no_cache      = INT_TO_BOOL(m_master.oride.cache_ignore_client_no_cache);
-  params->oride.cache_ignore_client_cc_max_age    = INT_TO_BOOL(m_master.oride.cache_ignore_client_cc_max_age);
-  params->oride.cache_ims_on_client_no_cache      = INT_TO_BOOL(m_master.oride.cache_ims_on_client_no_cache);
-  params->oride.cache_ignore_server_no_cache      = INT_TO_BOOL(m_master.oride.cache_ignore_server_no_cache);
-  params->oride.cache_responses_to_cookies        = m_master.oride.cache_responses_to_cookies;
-  params->oride.cache_ignore_auth                 = INT_TO_BOOL(m_master.oride.cache_ignore_auth);
-  params->oride.cache_urls_that_look_dynamic      = INT_TO_BOOL(m_master.oride.cache_urls_that_look_dynamic);
-  params->oride.cache_enable_default_vary_headers = INT_TO_BOOL(m_master.oride.cache_enable_default_vary_headers);
-  params->cache_post_method                       = INT_TO_BOOL(m_master.cache_post_method);
+  params->oride.cache_http                     = INT_TO_BOOL(m_master.oride.cache_http);
+  params->oride.cache_ignore_client_no_cache   = INT_TO_BOOL(m_master.oride.cache_ignore_client_no_cache);
+  params->oride.cache_ignore_client_cc_max_age = INT_TO_BOOL(m_master.oride.cache_ignore_client_cc_max_age);
+  params->oride.cache_ims_on_client_no_cache   = INT_TO_BOOL(m_master.oride.cache_ims_on_client_no_cache);
+  params->oride.cache_ignore_server_no_cache   = INT_TO_BOOL(m_master.oride.cache_ignore_server_no_cache);
+  params->oride.cache_responses_to_cookies     = m_master.oride.cache_responses_to_cookies;
+  params->oride.cache_ignore_auth              = INT_TO_BOOL(m_master.oride.cache_ignore_auth);
+  params->oride.cache_urls_that_look_dynamic   = INT_TO_BOOL(m_master.oride.cache_urls_that_look_dynamic);
+  params->cache_post_method                    = INT_TO_BOOL(m_master.cache_post_method);
 
   params->oride.ignore_accept_mismatch          = m_master.oride.ignore_accept_mismatch;
   params->oride.ignore_accept_language_mismatch = m_master.oride.ignore_accept_language_mismatch;

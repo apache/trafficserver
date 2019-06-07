@@ -407,7 +407,7 @@ HttpCompat::parse_mime_type_with_len(const char *mime_string, int mime_string_le
 
 //////////////////////////////////////////////////////////////////////////////
 //
-//      bool HttpCompat::do_header_values_match(MIMEField *hv1, MIMEField *hv2)
+//      bool HttpCompat::do_vary_header_values_match(MIMEField *hv1, MIMEField *hv2)
 //
 //      This routine takes two HTTP header fields and determines
 //      if their values "match", as in section 14.43 of RFC2068:
@@ -430,7 +430,7 @@ HttpCompat::parse_mime_type_with_len(const char *mime_string, int mime_string_le
 //
 //////////////////////////////////////////////////////////////////////////////
 bool
-HttpCompat::do_header_values_rfc2068_14_43_match(MIMEField *hdr1, MIMEField *hdr2)
+HttpCompat::do_vary_header_values_match(MIMEField *hdr1, MIMEField *hdr2)
 {
   // If both headers are missing, the headers match.
   if (!hdr1 && !hdr2) {

@@ -584,8 +584,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.cache.cache_urls_that_look_dynamic", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.cache.enable_default_vary_headers", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.http.cache.post_method", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.cache.max_open_read_retries", RECD_INT, "-1", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -640,16 +638,6 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http.cache.guaranteed_min_lifetime", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.cache.guaranteed_max_lifetime", RECD_INT, "31536000", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-
-  //        #########################################
-  //        # dynamic content & content negotiation #
-  //        #########################################
-  {RECT_CONFIG, "proxy.config.http.cache.vary_default_text", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.http.cache.vary_default_images", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.http.cache.vary_default_other", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
 
   //        ###################
