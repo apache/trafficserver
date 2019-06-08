@@ -429,7 +429,7 @@ QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_n
 
 QUICFrame *
 QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                                  uint32_t seq_num)
+                                  size_t current_packet_size, uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
 
@@ -444,7 +444,7 @@ QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
 
   // FIXME We should pick a stream based on priority
   for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
-    frame = s->generate_frame(buf, level, connection_credit, maximum_frame_size, seq_num);
+    frame = s->generate_frame(buf, level, connection_credit, maximum_frame_size, current_packet_size, seq_num);
     if (frame) {
       break;
     }

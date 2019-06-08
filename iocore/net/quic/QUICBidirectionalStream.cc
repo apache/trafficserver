@@ -360,7 +360,7 @@ QUICBidirectionalStream::will_generate_frame(QUICEncryptionLevel level, uint32_t
 
 QUICFrame *
 QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
-                                        uint16_t maximum_frame_size, uint32_t seq_num)
+                                        uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
@@ -391,7 +391,7 @@ QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level,
   }
 
   // MAX_STREAM_DATA
-  frame = this->_local_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, seq_num);
+  frame = this->_local_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, current_packet_size, seq_num);
   if (frame) {
     return frame;
   }
@@ -427,7 +427,8 @@ QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level,
     uint64_t stream_credit = this->_remote_flow_controller.credit();
     if (stream_credit == 0) {
       // STREAM_DATA_BLOCKED
-      frame = this->_remote_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, seq_num);
+      frame =
+        this->_remote_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, current_packet_size, seq_num);
       return frame;
     }
 

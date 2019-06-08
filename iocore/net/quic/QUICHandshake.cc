@@ -333,13 +333,13 @@ QUICHandshake::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
 
 QUICFrame *
 QUICHandshake::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                              uint32_t seq_num)
+                              size_t current_packet_size, uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
 
   if (this->_is_level_matched(level)) {
-    frame =
-      this->_crypto_streams[static_cast<int>(level)].generate_frame(buf, level, connection_credit, maximum_frame_size, seq_num);
+    frame = this->_crypto_streams[static_cast<int>(level)].generate_frame(buf, level, connection_credit, maximum_frame_size,
+                                                                          current_packet_size, seq_num);
   }
 
   return frame;

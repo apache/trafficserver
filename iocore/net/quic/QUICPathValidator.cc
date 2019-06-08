@@ -135,7 +135,7 @@ QUICPathValidator::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_n
  */
 QUICFrame *
 QUICPathValidator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
-                                  uint16_t maximum_frame_size, uint32_t seq_num)
+                                  uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
 

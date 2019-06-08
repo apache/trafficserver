@@ -59,6 +59,14 @@ QUICFrame::type() const
 }
 
 bool
+QUICFrame::ack_eliciting() const
+{
+  auto type = this->type();
+
+  return type != QUICFrameType::PADDING && type != QUICFrameType::ACK;
+}
+
+bool
 QUICFrame::is_probing_frame() const
 {
   return false;
@@ -1142,8 +1150,14 @@ QUICPaddingFrame::parse(const uint8_t *buf, size_t len)
 {
   ink_assert(len >= 1);
   this->_reset();
+  this->_size  = 0;
   this->_valid = true;
-  this->_size  = 1;
+  // find out how many padding frames in this buf
+  for (size_t i = 0; i < len; i++) {
+    if (*(buf + i) == static_cast<uint8_t>(QUICFrameType::PADDING)) {
+      ++this->_size;
+    }
+  }
 }
 
 QUICFrameType
@@ -1155,7 +1169,7 @@ QUICPaddingFrame::type() const
 size_t
 QUICPaddingFrame::size() const
 {
-  return 1;
+  return this->_size;
 }
 
 bool
@@ -1171,8 +1185,8 @@ QUICPaddingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
     return 0;
   }
 
-  buf[0] = static_cast<uint8_t>(QUICFrameType::PADDING);
-  *len   = 1;
+  *len = this->_size;
+  memset(buf, 0, *len);
   return *len;
 }
 
@@ -2654,6 +2668,13 @@ QUICFrameFactory::create_ping_frame(uint8_t *buf, QUICFrameId id, QUICFrameGener
 {
   new (buf) QUICPingFrame(id, owner);
   return reinterpret_cast<QUICPingFrame *>(buf);
+}
+
+QUICPaddingFrame *
+QUICFrameFactory::create_padding_frame(uint8_t *buf, size_t size, QUICFrameId id, QUICFrameGenerator *owner)
+{
+  new (buf) QUICPaddingFrame(size);
+  return reinterpret_cast<QUICPaddingFrame *>(buf);
 }
 
 QUICPathChallengeFrame *

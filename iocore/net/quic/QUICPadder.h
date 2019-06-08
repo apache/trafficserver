@@ -23,42 +23,37 @@
 
 #pragma once
 
-#include <vector>
 #include "QUICTypes.h"
 #include "QUICFrameHandler.h"
 #include "QUICFrameGenerator.h"
 
-class QUICPathValidator : public QUICFrameHandler, public QUICFrameGenerator
+#include "I_Lock.h"
+
+class QUICPadder : public QUICFrameGenerator
 {
 public:
-  QUICPathValidator() {}
-  bool is_validating();
-  bool is_validated();
-  void validate();
+  QUICPadder(NetVConnectionContext_t context) : _mutex(new_ProxyMutex()), _context(context) {}
 
-  // QUICFrameHandler
-  std::vector<QUICFrameType> interests() override;
-  QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
+  void request(QUICEncryptionLevel level);
+  void cancel(QUICEncryptionLevel level);
+  uint64_t count(QUICEncryptionLevel level);
+  void set_av_token_len(uint32_t len);
 
-  // QUICFrameGeneratro
+  // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num) override;
+  // a trick, Different from other generator padder will generate multi-pad-frames.
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
                             size_t current_packet_size, uint32_t seq_num) override;
 
 private:
-  enum class ValidationState : int {
-    NOT_VALIDATED,
-    VALIDATING,
-    VALIDATED,
-  };
-  ValidationState _state      = ValidationState::NOT_VALIDATED;
-  int _has_outgoing_challenge = 0;
-  bool _has_outgoing_response = false;
-  uint32_t _latest_seq_num    = 0;
-  uint8_t _incoming_challenge[QUICPathChallengeFrame::DATA_LEN];
-  uint8_t _outgoing_challenge[QUICPathChallengeFrame::DATA_LEN * 3];
+  uint32_t _minimum_quic_packet_size();
 
-  void _generate_challenge();
-  void _generate_response(const QUICPathChallengeFrame &frame);
-  QUICConnectionErrorUPtr _validate_response(const QUICPathResponseFrame &frame);
+  Ptr<ProxyMutex> _mutex;
+  std::random_device _rnd;
+
+  uint32_t _av_token_len   = 0;
+  uint32_t _latest_seq_num = 0;
+  // Initial, 0/1-RTT, and Handshake
+  uint64_t _need_to_fire[4]        = {0};
+  NetVConnectionContext_t _context = NET_VCONNECTION_OUT;
 };
