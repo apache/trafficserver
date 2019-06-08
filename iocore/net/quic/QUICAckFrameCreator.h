@@ -107,7 +107,7 @@ public:
    * Calls create directly.
    */
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            uint32_t seq_num) override;
+                            size_t current_packet_size, uint32_t seq_num) override;
 
   QUICFrameId issue_frame_id();
   uint8_t ack_delay_exponent() const;

@@ -247,12 +247,12 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   // total_offset should be a integer in unit of octets
   uint8_t frame_buf[4096];
   mock_app.send(reinterpret_cast<uint8_t *>(block_1024->buf()), 1024, 0);
-  sm.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 16384, 16384, 0);
+  sm.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 16384, 16384, 0, 0);
   CHECK(sm.total_offset_sent() == 1024);
 
   // total_offset should be a integer in unit of octets
   mock_app.send(reinterpret_cast<uint8_t *>(block_1024->buf()), 1024, 4);
-  sm.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 16384, 16384, 0);
+  sm.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 16384, 16384, 0, 0);
   CHECK(sm.total_offset_sent() == 2048);
 
   // Wait for event processing

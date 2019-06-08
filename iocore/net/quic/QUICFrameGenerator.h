@@ -37,7 +37,7 @@ public:
    * It returns a pointer for the frame if it succeeded, and returns nullptr if it failed.
    */
   virtual QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
-                                    uint16_t maximum_frame_size, uint32_t seq_num) = 0;
+                                    uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num) = 0;
 
   void on_frame_acked(QUICFrameId id);
   void on_frame_lost(QUICFrameId id);

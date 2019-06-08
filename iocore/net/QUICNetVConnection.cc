@@ -452,6 +452,7 @@ QUICNetVConnection::start()
   QUICCCConfigQCP cc_config(this->_quic_config);
   QUICLDConfigQCP ld_config(this->_quic_config);
   this->_pinger = new QUICPinger();
+  this->_padder = new QUICPadder(this->netvc_context);
   this->_rtt_measure.init(ld_config);
   this->_congestion_controller = new QUICCongestionController(this->_rtt_measure, this, cc_config);
   this->_loss_detector = new QUICLossDetector(this, this->_congestion_controller, &this->_rtt_measure, this->_pinger, ld_config);
@@ -471,6 +472,9 @@ QUICNetVConnection::start()
   this->_frame_generators.push_back(this->_stream_manager);         // STREAM, MAX_STREAM_DATA, STREAM_DATA_BLOCKED
   this->_frame_generators.push_back(&this->_ack_frame_manager);     // ACK
   this->_frame_generators.push_back(this->_pinger);                 // PING
+
+  // Warning: padder should be tail of the frame generators
+  this->_frame_generators.push_back(this->_padder); // PADDING
 
   // Register frame handlers
   this->_frame_dispatcher->add_handler(this);
@@ -1173,6 +1177,8 @@ QUICNetVConnection::_state_handshake_process_retry_packet(const QUICPacket &pack
   this->_av_token     = ats_unique_malloc(this->_av_token_len);
   memcpy(this->_av_token.get(), packet.payload(), this->_av_token_len);
 
+  this->_padder->set_av_token_len(this->_av_token_len);
+
   // discard all transport state
   this->_handshake_handler->reset();
   this->_packet_factory.reset();
@@ -1496,20 +1502,6 @@ QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_a
   return parent_block;
 }
 
-// FIXME QUICNetVConnection should not know the actual type value of PADDING frame
-Ptr<IOBufferBlock>
-QUICNetVConnection::_generate_padding_frame(size_t frame_size)
-{
-  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(frame_size));
-  memset(block->start(), 0, frame_size);
-  block->fill(frame_size);
-
-  ink_assert(frame_size == static_cast<size_t>(block->size()));
-
-  return block;
-}
-
 QUICPacketUPtr
 QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size, std::vector<QUICFrameInfo> &frames)
 {
@@ -1557,7 +1549,8 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       }
 
       // Common block
-      frame = g->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size, seq_num);
+      frame =
+        g->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size, len, seq_num);
       if (frame) {
         ++frame_count;
         probing |= frame->is_probing_frame();
@@ -1577,7 +1570,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
           }
         }
 
-        if (!ack_eliciting && frame->type() != QUICFrameType::ACK) {
+        if (!ack_eliciting && frame->ack_eliciting()) {
           ack_eliciting = true;
         }
 
@@ -1585,8 +1578,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
           has_ping = true;
         }
 
-        if (frame->type() == QUICFrameType::CRYPTO &&
-            (level == QUICEncryptionLevel::INITIAL || level == QUICEncryptionLevel::HANDSHAKE)) {
+        if (frame->type() == QUICFrameType::CRYPTO && frame->ack_eliciting()) {
           crypto = true;
         }
 
@@ -1606,28 +1598,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
 
   // Schedule a packet
   if (len != 0) {
-    if (level == QUICEncryptionLevel::INITIAL && this->netvc_context == NET_VCONNECTION_OUT) {
-      // Pad with PADDING frames
-      uint64_t min_size = this->_minimum_quic_packet_size();
-      if (this->_av_token) {
-        min_size = min_size - this->_av_token_len;
-      }
-      min_size = std::min(min_size, max_packet_size);
-
-      if (min_size > len) {
-        Ptr<IOBufferBlock> pad_block = _generate_padding_frame(min_size - len);
-        last_block->next             = pad_block;
-        len += pad_block->size();
-      }
-    } else {
-      // Pad with PADDING frames to make sure payload length satisfy the minimum length for sampling for header protection
-      if (MIN_PKT_PAYLOAD_LEN > len) {
-        Ptr<IOBufferBlock> pad_block = _generate_padding_frame(MIN_PKT_PAYLOAD_LEN - len);
-        last_block->next             = pad_block;
-        len += pad_block->size();
-      }
-    }
-
     // Packet is retransmittable if it's not ack only packet
     packet                              = this->_build_packet(level, first_block, ack_eliciting, probing, crypto);
     this->_has_ack_eliciting_packet_out = ack_eliciting;
@@ -2364,7 +2334,7 @@ QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_
 
 QUICFrame *
 QUICNetVConnection::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                                   uint32_t seq_num)
+                                   size_t current_packet_size, uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
 

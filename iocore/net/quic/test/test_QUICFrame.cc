@@ -772,11 +772,11 @@ TEST_CASE("Load Padding Frame", "[quic]")
 {
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   uint8_t buf1[] = {
-    0x00, // Type
+    0x00, 0x00, 0x00 // Type
   };
   const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
   CHECK(frame1->type() == QUICFrameType::PADDING);
-  CHECK(frame1->size() == 1);
+  CHECK(frame1->size() == 3);
   const QUICPaddingFrame *paddingFrame1 = static_cast<const QUICPaddingFrame *>(frame1);
   CHECK(paddingFrame1 != nullptr);
 }
@@ -787,11 +787,11 @@ TEST_CASE("Store Padding Frame", "[quic]")
   size_t len;
 
   uint8_t expected[] = {
-    0x00, // Type
+    0x00, 0x00, 0x00, // Type
   };
-  QUICPaddingFrame padding_frame;
+  QUICPaddingFrame padding_frame(3);
   padding_frame.store(buf, &len, 65535);
-  CHECK(len == 1);
+  CHECK(len == 3);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 

@@ -61,7 +61,7 @@ QUICAckFrameManager::update(QUICEncryptionLevel level, QUICPacketNumber packet_n
  */
 QUICFrame *
 QUICAckFrameManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
-                                    uint16_t maximum_frame_size, uint32_t seq_num)
+                                    uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num)
 {
   QUICAckFrame *ack_frame = nullptr;
 

@@ -395,7 +395,7 @@ class MockQUICLossDetector : public QUICLossDetector
 public:
   MockQUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
                        const QUICLDConfig &ld_config)
-    : QUICLossDetector(info, cc, rtt_measure, ld_config)
+    : QUICLossDetector(info, cc, rtt_measure, &this->_pinger, ld_config)
   {
   }
   void
@@ -407,6 +407,9 @@ public:
   on_packet_sent(QUICPacketUPtr packet)
   {
   }
+
+private:
+  QUICPinger _pinger;
 };
 
 class MockQUICApplication : public QUICApplication
@@ -644,14 +647,14 @@ class MockQUICFrameGenerator : public QUICFrameGenerator
 {
 public:
   bool
-  will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override
+  will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num) override
   {
     return true;
   }
 
   QUICFrame *
   generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                 ink_hrtime timestamp) override
+                 size_t current_packet_size, uint32_t seq_num) override
   {
     QUICFrame *frame              = QUICFrameFactory::create_ping_frame(buf, 0, this);
     QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());

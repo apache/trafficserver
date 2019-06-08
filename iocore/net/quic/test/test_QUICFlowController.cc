@@ -116,7 +116,7 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
   fc.forward_limit(2048);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 2048);
-  QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0);
+  QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0, 0);
   CHECK(frame);
   CHECK(frame->type() == QUICFrameType::MAX_DATA);
 
@@ -168,7 +168,7 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
   CHECK(fc.current_offset() == 1000);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret != 0);
-  QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0);
+  QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0, 0);
   CHECK(frame);
   CHECK(frame->type() == QUICFrameType::DATA_BLOCKED);
 
@@ -201,7 +201,7 @@ TEST_CASE("QUICFlowController_Remote_Connection_ZERO_Credit", "[quic]")
 
   CHECK(fc.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0));
   // if there're anything to send
-  QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0);
+  QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0, 0);
   CHECK(frame);
   CHECK(frame->type() == QUICFrameType::DATA_BLOCKED);
 
@@ -265,7 +265,7 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
   fc.forward_limit(2048);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 2048);
-  QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0);
+  QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0, 0);
   CHECK(frame);
   CHECK(frame->type() == QUICFrameType::MAX_STREAM_DATA);
 
@@ -342,23 +342,23 @@ TEST_CASE("Frame retransmission", "[quic]")
     QUICRemoteConnectionFlowController fc(1024);
 
     // Check initial state
-    auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     CHECK(!frame);
 
     ret = fc.update(1024);
     CHECK(ret == 0);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICDataBlockedFrame *>(frame)->offset() == 1024);
     QUICFrameId id = frame->id();
 
     // Don't retransmit unless the frame is lost
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(!frame);
 
     // Retransmit
     fc.on_frame_lost(id);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICDataBlockedFrame *>(frame)->offset() == 1024);
 
@@ -366,12 +366,12 @@ TEST_CASE("Frame retransmission", "[quic]")
     fc.on_frame_lost(frame->id());
     fc.forward_limit(2048);
     ret   = fc.update(1536);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     CHECK(!frame);
 
     // This should not be retransmition
     ret   = fc.update(2048);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICDataBlockedFrame *>(frame)->offset() == 2048);
   }
@@ -383,23 +383,23 @@ TEST_CASE("Frame retransmission", "[quic]")
     QUICRemoteStreamFlowController fc(1024, 0);
 
     // Check initial state
-    auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     CHECK(!frame);
 
     ret = fc.update(1024);
     CHECK(ret == 0);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICStreamDataBlockedFrame *>(frame)->offset() == 1024);
     QUICFrameId id = frame->id();
 
     // Don't retransmit unless the frame is lost
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(!frame);
 
     // Retransmit
     fc.on_frame_lost(id);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICStreamDataBlockedFrame *>(frame)->offset() == 1024);
 
@@ -407,12 +407,12 @@ TEST_CASE("Frame retransmission", "[quic]")
     fc.on_frame_lost(frame->id());
     fc.forward_limit(2048);
     ret   = fc.update(1536);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     CHECK(!frame);
 
     // This should not be retransmition
     ret   = fc.update(2048);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICStreamDataBlockedFrame *>(frame)->offset() == 2048);
   }
@@ -424,23 +424,23 @@ TEST_CASE("Frame retransmission", "[quic]")
     QUICLocalConnectionFlowController fc(&rp, 1024);
 
     // Check initial state
-    auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     CHECK(!frame);
 
     fc.update(1024);
     fc.forward_limit(1024);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICMaxDataFrame *>(frame)->maximum_data() == 1024);
     QUICFrameId id = frame->id();
 
     // Don't retransmit unless the frame is lost
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(!frame);
 
     // Retransmit
     fc.on_frame_lost(id);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICMaxDataFrame *>(frame)->maximum_data() == 1024);
 
@@ -448,7 +448,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     fc.on_frame_lost(id);
     fc.forward_limit(2048);
     fc.update(2048);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICMaxDataFrame *>(frame)->maximum_data() == 2048);
   }
@@ -460,23 +460,23 @@ TEST_CASE("Frame retransmission", "[quic]")
     QUICLocalStreamFlowController fc(&rp, 1024, 0);
 
     // Check initial state
-    auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     CHECK(!frame);
 
     fc.update(1024);
     fc.forward_limit(1024);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICMaxStreamDataFrame *>(frame)->maximum_stream_data() == 1024);
     QUICFrameId id = frame->id();
 
     // Don't retransmit unless the frame is lost
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(!frame);
 
     // Retransmit
     fc.on_frame_lost(id);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICMaxStreamDataFrame *>(frame)->maximum_stream_data() == 1024);
 
@@ -484,7 +484,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     fc.on_frame_lost(id);
     fc.forward_limit(2048);
     fc.update(2048);
-    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0);
+    frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICMaxStreamDataFrame *>(frame)->maximum_stream_data() == 2048);
   }

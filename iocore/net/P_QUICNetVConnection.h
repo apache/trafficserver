@@ -54,6 +54,7 @@
 #include "quic/QUICHandshakeProtocol.h"
 #include "quic/QUICAckFrameCreator.h"
 #include "quic/QUICPinger.h"
+#include "quic/QUICPadder.h"
 #include "quic/QUICLossDetector.h"
 #include "quic/QUICStreamManager.h"
 #include "quic/QUICAltConnectionManager.h"
@@ -197,7 +198,7 @@ public:
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            uint32_t seq_num) override;
+                            size_t current_packet_size, uint32_t seq_num) override;
 
   int in_closed_queue = 0;
 
@@ -239,6 +240,7 @@ private:
   // TODO: use custom allocator and make them std::unique_ptr or std::shared_ptr
   // or make them just member variables.
   QUICPinger *_pinger                               = nullptr;
+  QUICPadder *_padder                               = nullptr;
   QUICHandshake *_handshake_handler                 = nullptr;
   QUICHandshakeProtocol *_hs_protocol               = nullptr;
   QUICLossDetector *_loss_detector                  = nullptr;
@@ -295,7 +297,6 @@ private:
                                   std::vector<QUICFrameInfo> &frames);
   QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size, std::vector<QUICFrameInfo> &frames);
   void _packetize_closing_frame();
-  Ptr<IOBufferBlock> _generate_padding_frame(size_t frame_size);
   QUICPacketUPtr _build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block, bool retransmittable, bool probing,
                                bool crypto);
 

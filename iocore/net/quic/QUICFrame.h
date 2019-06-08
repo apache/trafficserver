@@ -61,6 +61,7 @@ public:
   virtual void parse(const uint8_t *buf, size_t len){};
   virtual QUICFrameGenerator *generated_by();
   bool valid() const;
+  bool ack_eliciting() const;
   LINK(QUICFrame, link);
 
 protected:
@@ -335,13 +336,18 @@ private:
 class QUICPaddingFrame : public QUICFrame
 {
 public:
-  QUICPaddingFrame() {}
+  QUICPaddingFrame(size_t size) : _size(size) {}
   QUICPaddingFrame(const uint8_t *buf, size_t len);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual bool is_probing_frame() const override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
+
+private:
+  // padding frame is a resident of padding frames
+  // size indicate how many padding frames in this QUICPaddingFrame
+  size_t _size = 0;
 };
 
 //
@@ -848,6 +854,11 @@ public:
    */
   static QUICRetireConnectionIdFrame *create_retire_connection_id_frame(uint8_t *buf, uint64_t seq_num, QUICFrameId id = 0,
                                                                         QUICFrameGenerator *owner = nullptr);
+
+  /*
+   * Creates a PADDING frame
+   */
+  static QUICPaddingFrame *create_padding_frame(uint8_t *buf, size_t size, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
 private:
   // FIXME Actual number of frame types is several but some of the values are not sequential.
