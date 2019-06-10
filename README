@@ -22,23 +22,19 @@ plugins to build large scale web applications.
   |-- iocore/ ...............
       |-- aio/ .............. Asynchronous I/O core
       |-- cache/ ............ Disk and RAM cache
-      |-- eventsystem/ ...... Event Driven Engine
       |-- dns/ .............. DNS (asynchronous)
+      |-- eventsystem/ ...... Event Driven Engine
       |-- hostdb/ ........... Internal DNS cache
       |-- net/ .............. Network
       |-- utils/ ............ Utilities
   |-- lib/ ..................
-      |-- cppapi/ ........... C++ api wrapper for plugin developers
       |-- perl/ ............. Perl libraries for e.g. mgmt access and configurations
       |-- records/ .......... Library for config files
-      |-- ts/ ............... Base / core library
-      |-- wccp/ ............. WCCP implementation
       |-- yamlcpp/ .......... Library for YAML of C++
   |-- mgmt/ ................. Management server and tools
   |-- plugins/ .............. Stable core plugins
       |-- experimental/ ..... Experimental core plugins
   |-- proxy/ ................ HTTP proxy logic
-      |-- api/ .............. Plugin API includes
       |-- hdrs/ ............. Headers parsing and management
       |-- http/ ............. The actual HTTP protocol implementation
       |---http2/ ............ HTTP/2 implementation
@@ -57,6 +53,9 @@ plugins to build large scale web applications.
       |-- traffic_top/ ...... Top like tool for viewing Traffic Server statistics
       |-- traffic_via/ ...... Tool for decoding the Traffic Server Via header codes
       |-- traffic_wccp/ ..... Program speaking the client side of the WCCP
+      |-- tscore/ ........... Base / core library
+      |-- tscpp/ ............ C++ api wrapper for plugin developers
+      |-- wccp/ ............. WCCP implementation
   |-- tests/ ................ Different tests for Traffic Server
   |-- tools/ ................ Directory of various tools
   |-- INSTALL ............... Build and installation guide
