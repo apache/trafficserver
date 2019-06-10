@@ -78,6 +78,7 @@ test_UDPNet_LDADD = \
 	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
 
 test_UDPNet_SOURCES = \
+	libinknet_stub.cc \
 	test_I_UDPNet.cc
 
 libinknet_a_SOURCES = \
