@@ -47,7 +47,7 @@ patch_file=$(mktemp -t clang-format.XXXXXXXXXX)
 trap "rm -f $patch_file" 0 1 2 3 5 15
 
 # Loop over all files that are changed, and produce a diff file
-git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/tsconfig|lib/yamlcpp" | while read file; do
+git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/yamlcpp" | while read file; do
     case "$file" in
 	*.cc | *.c | *.h | *.h.in)
 	    ${FORMAT} "$file" | diff -u "$file" - >> "$patch_file"

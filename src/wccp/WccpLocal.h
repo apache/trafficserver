@@ -25,7 +25,7 @@
 #include "wccp/Wccp.h"
 #include "WccpUtil.h"
 #include "ts/apidefs.h"
-#include "tsconfig/Errata.h"
+#include "tscore/Errata.h"
 // Needed for template use of byte ordering functions.
 #include <netinet/in.h>
 #include <memory.h>

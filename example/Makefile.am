@@ -21,7 +21,6 @@ AM_CXXFLAGS += -Wno-unused-variable
 AM_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 libtscppapi = $(top_builddir)/src/tscpp/api/libtscppapi.la
-libtsconfig = $(top_builddir)/lib/tsconfig/libtsconfig.la
 
 if BUILD_EXAMPLE_PLUGINS
 
@@ -127,9 +126,7 @@ server_push_la_SOURCES = server_push/server_push.c
 server_transform_la_SOURCES = server_transform/server_transform.c
 ssl_preaccept_la_SOURCES = ssl_preaccept/ssl_preaccept.cc
 ssl_sni_la_SOURCES = ssl_sni/ssl_sni.cc
-ssl_sni_la_LIBADD = $(libtsconfig)
 ssl_sni_whitelist_la_SOURCES = ssl_sni_whitelist/ssl_sni_whitelist.cc
-ssl_sni_whitelist_la_LIBADD = $(libtsconfig)
 disable_http2_la_SOURCES = disable_http2/disable_http2.cc
 verify_cert_la_SOURCES = verify_cert/verify_cert.cc
 statistic_la_SOURCES = statistic/statistic.cc

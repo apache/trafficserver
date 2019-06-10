@@ -30,7 +30,7 @@
 
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
-#include "tsconfig/Errata.h"
+#include "tscore/Errata.h"
 #include "P_SNIActionPerformer.h"
 
 ts::Errata

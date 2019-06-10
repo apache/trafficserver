@@ -57,6 +57,5 @@ traffic_manager_traffic_manager_LDADD = \
 if BUILD_WCCP
 traffic_manager_traffic_manager_LDADD += \
 	wccp/libwccp.a \
-	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	@OPENSSL_LIBS@
 endif

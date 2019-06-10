@@ -24,7 +24,7 @@
 
 #include <vector>
 
-#include "tsconfig/Errata.h"
+#include "tscore/Errata.h"
 
 namespace wccp
 {
