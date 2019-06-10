@@ -150,3 +150,28 @@ HTTP Transaction
    :units: seconds
    :ungathered:
 
+
+HTTP/2
+------
+
+
+.. ts:stat:: global proxy.process.http2.total_client_streams integer
+   :type: counter
+
+   Represents the total number of HTTP/2 streams from client to the |TS|.
+
+.. ts:stat:: global proxy.process.http2.current_client_streams integer
+   :type: gauge
+
+   Represents the current number of HTTP/2 streams from client to the |TS|.
+
+.. ts:stat:: global proxy.process.http2.total_transactions_time integer
+   :type: counter
+   :units: seconds
+
+   Represents the total transaction time of HTTP/2 streams from client to the |TS|.
+
+.. ts:stat:: global proxy.process.http2.stream_errors integer
+   :type: counter
+
+   Represents the total number of HTTP/2 stream errors.
