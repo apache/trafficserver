@@ -21,9 +21,10 @@
     limitations under the License.
 */
 
+#include "tscore/IntrusivePtr.h"
+
 #include <string>
 #include <sstream>
-#include <tsconfig/IntrusivePtr.h>
 #include <catch.hpp>
 
 struct Thing : public ts::IntrusivePtrCounter {

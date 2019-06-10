@@ -1233,7 +1233,7 @@ AC_CHECK_FUNC([EVP_MD_CTX_free], [],
 
 LIBS="$saved_LIBS"
 
-# 
+#
 # Check OpenSSL version for JA3 Fingerprint
 #
 AC_MSG_CHECKING([for JA3 compatible OpenSSL version])
@@ -2058,7 +2058,6 @@ AC_CONFIG_FILES([
   lib/records/Makefile
   include/ts/apidefs.h
   include/tscore/ink_config.h
-  lib/tsconfig/Makefile
   src/wccp/Makefile
   lib/yamlcpp/Makefile
   mgmt/Makefile

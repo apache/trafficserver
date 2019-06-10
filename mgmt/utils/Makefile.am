@@ -22,7 +22,6 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/api \
 	-I$(abs_top_srcdir)/mgmt/api/include \
-	-I$(abs_top_srcdir)/include/tsconfig \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \

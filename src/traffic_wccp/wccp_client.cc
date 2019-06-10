@@ -40,7 +40,7 @@
 #include "wccp/Wccp.h"
 #include "../wccp/WccpUtil.h"
 #include "tscore/ink_lockfile.h"
-#include "tsconfig/Errata.h"
+#include "tscore/Errata.h"
 
 #define WCCP_LOCK "wccp.pid"
 

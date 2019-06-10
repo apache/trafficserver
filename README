@@ -32,7 +32,6 @@ plugins to build large scale web applications.
       |-- perl/ ............. Perl libraries for e.g. mgmt access and configurations
       |-- records/ .......... Library for config files
       |-- ts/ ............... Base / core library
-      |-- tsconfig/.......... New config parser and library (experimental)
       |-- wccp/ ............. WCCP implementation
       |-- yamlcpp/ .......... Library for YAML of C++
   |-- mgmt/ ................. Management server and tools

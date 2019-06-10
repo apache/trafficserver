@@ -106,7 +106,6 @@ test_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \
 	@LIBRESOLV@ \
@@ -116,7 +115,6 @@ test_LDADD = \
 	@OPENSSL_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	-lm
-
 
 check_PROGRAMS = \
   test_Cache \

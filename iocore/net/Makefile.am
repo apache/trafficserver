@@ -75,7 +75,6 @@ test_UDPNet_LDADD = \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
-	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
 
 test_UDPNet_SOURCES = \
@@ -166,9 +165,6 @@ libinknet_a_SOURCES += \
 	NetVCTest.cc \
 	P_NetVCTest.h
 endif
-
-libinknet_a_LIBADD = \
-	$(top_builddir)/lib/tsconfig/libtsconfig.la
 
 include $(top_srcdir)/build/tidy.mk
 

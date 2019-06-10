@@ -29,7 +29,7 @@
 #include <utility>
 #include "tscpp/util/MemSpan.h"
 #include "tscore/Scalar.h"
-#include <tsconfig/IntrusivePtr.h>
+#include "tscore/IntrusivePtr.h"
 
 /// Apache Traffic Server commons.
 namespace ts
