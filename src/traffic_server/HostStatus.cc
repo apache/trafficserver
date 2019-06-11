@@ -23,8 +23,6 @@
 #include "HostStatus.h"
 #include "ProcessManager.h"
 
-static RecRawStatBlock *host_status_rsb = nullptr;
-
 inline void
 getStatName(std::string &stat_name, const char *name)
 {
@@ -208,7 +206,6 @@ HostStatus::HostStatus()
   ink_rwlock_init(&host_status_rwlock);
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, &mgmt_host_status_up_callback);
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, &mgmt_host_status_down_callback);
-  host_status_rsb = RecAllocateRawStatBlock((int)TS_MAX_API_STATS);
 }
 
 HostStatus::~HostStatus()
