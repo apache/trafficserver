@@ -77,8 +77,6 @@ function updateInstall() {
         make \
         libtool \
         libssl-dev \
-        tcl-dev \
-        libexpat1-dev \
         libpcre3-dev \
         curl
         apt-get install -y subversion git git-svn
@@ -96,8 +94,6 @@ function updateInstall() {
                 gcc-c++ \
                 glibc-devel \
                 openssl-devel \
-                tcl-devel \
-                expat-devel \
                 db4-devel \
                 pcre \
                 pcre-devel
@@ -110,8 +106,6 @@ function updateInstall() {
                 gcc-c++ \
                 glibc-devel \
                 openssl-devel \
-                tcl-devel \
-                expat-devel \
                 pcre \
                 pcre-devel
         fi
@@ -142,7 +136,7 @@ function dev() {
     git clone git://git.apache.org/trafficserver.git
     cd $EC2_EPHEMERAL/$trafficserver
 
-    #swtich to dev build
+    #switch to dev build
     git checkout -b remotes/origin/dev
     #------------------------------------------------------
 }

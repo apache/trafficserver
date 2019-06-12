@@ -25,6 +25,7 @@ $network = {
   "omnios" => "192.168.2.108",
   "fedora23_64" => "192.168.2.109",
   "xenial_64" => "192.168.2.110",
+  "fedora24_64" => "192.168.2.111",
 }
 
 $vmspec = {
@@ -57,6 +58,9 @@ $vmspec = {
   ],
   "fedora23_64" => [
     "fedora/23-cloud-base"
+  ],
+  "fedora24_64" => [
+    "fedora/24-cloud-base"
   ],
 }
 

@@ -143,7 +143,7 @@ dnl   Adds path to variable with the '-rpath' directive.
 dnl
 AC_DEFUN([TS_ADDTO_RPATH], [
   AC_MSG_NOTICE([adding $1 to RPATH])
-  TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R$1])
+  TS_ADDTO(AM_LDFLAGS, [-R$1])
 ])dnl
 
 dnl
@@ -194,6 +194,21 @@ AC_DEFUN([TS_TRY_COMPILE_NO_WARNING],
  AC_LINK_IFELSE([AC_LANG_PROGRAM([$1], [$2])], [$3], [$4])
  CFLAGS=$ats_save_CFLAGS
 ])
+
+dnl
+dnl TS_LINK_WITH_FLAGS_IFELSE(LIBS, FUNCTION-BODY,
+dnl                           [ACTIONS-IF-LINKS], [ACTIONS-IF-LINK-FAILS])
+dnl
+dnl Tries a link test with the provided flags.
+dnl
+
+AC_DEFUN([TS_LINK_WITH_FLAGS_IFELSE],
+[ats_save_LIBS=$LIBS
+ LIBS="$LIBS $1"
+ AC_LINK_IFELSE([$2],[$3],[$4])
+ LIBS=$ats_save_LIBS
+])
+
 
 
 dnl Iteratively interpolate the contents of the second argument

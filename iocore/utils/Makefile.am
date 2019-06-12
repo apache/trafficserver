@@ -16,17 +16,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/iocore/eventsystem
+AM_CPPFLAGS += \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/iocore/eventsystem \
+	$(TS_INCLUDES)
 
 noinst_LIBRARIES = libinkutils.a
 
 libinkutils_a_SOURCES = \
-  I_Machine.h \
-  I_OneWayMultiTunnel.h \
-  I_OneWayTunnel.h \
-  Machine.cc \
-  OneWayMultiTunnel.cc \
-  OneWayTunnel.cc
+	I_Machine.h \
+	I_OneWayMultiTunnel.h \
+	I_OneWayTunnel.h \
+	Machine.cc \
+	OneWayMultiTunnel.cc \
+	OneWayTunnel.cc
+
+include $(top_srcdir)/build/tidy.mk
+
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

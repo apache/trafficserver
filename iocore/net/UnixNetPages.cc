@@ -21,13 +21,13 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_Net.h"
 #include "Show.h"
 #include "I_Tasks.h"
 
 struct ShowNet;
-typedef int (ShowNet::*ShowNetEventHandler)(int event, Event *data);
+using ShowNetEventHandler = int (ShowNet::*)(int, Event *);
 struct ShowNet : public ShowCont {
   int ithread;
   IpEndpoint addr;
@@ -53,7 +53,7 @@ struct ShowNet : public ShowCont {
   showConnectionsOnThread(int event, Event *e)
   {
     EThread *ethread = e->ethread;
-    NetHandler *nh = get_NetHandler(ethread);
+    NetHandler *nh   = get_NetHandler(ethread);
     MUTEX_TRY_LOCK(lock, nh->mutex, ethread);
     if (!lock.is_locked()) {
       ethread->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
@@ -64,12 +64,13 @@ struct ShowNet : public ShowCont {
     forl_LL(UnixNetVConnection, vc, nh->open_list)
     {
       //      uint16_t port = ats_ip_port_host_order(&addr.sa);
-      if (ats_is_ip(&addr) && addr != vc->server_addr)
+      if (ats_is_ip(&addr) && !ats_ip_addr_port_eq(&addr.sa, vc->get_remote_addr())) {
         continue;
+      }
       //      if (port && port != ats_ip_port_host_order(&vc->server_addr.sa) && port != vc->accept_port)
       //        continue;
       char ipbuf[INET6_ADDRSTRLEN];
-      ats_ip_ntop(&vc->server_addr.sa, ipbuf, sizeof(ipbuf));
+      ats_ip_ntop(vc->get_remote_addr(), ipbuf, sizeof(ipbuf));
       char opt_ipbuf[INET6_ADDRSTRLEN];
       char interbuf[80];
       snprintf(interbuf, sizeof(interbuf), "[%s] %s:%d", vc->options.toString(vc->options.addr_binding),
@@ -95,7 +96,7 @@ struct ShowNet : public ShowCont {
                       "<td>%d</td>"          // shutdown
                       "<td>-%s</td>"         // comments
                       "</tr>\n",
-                      vc->id, ipbuf, ats_ip_port_host_order(&vc->server_addr), vc->con.fd, interbuf,
+                      vc->id, ipbuf, ats_ip_port_host_order(vc->get_remote_addr()), vc->con.fd, interbuf,
                       //                      vc->accept_port,
                       (int)((now - vc->submit_time) / HRTIME_SECOND), ethread->id, vc->read.enabled, vc->read.vio.nbytes,
                       vc->read.vio.ndone, vc->write.enabled, vc->write.vio.nbytes, vc->write.vio.ndone,
@@ -103,9 +104,9 @@ struct ShowNet : public ShowCont {
                       vc->f.shutdown, vc->closed ? "closed " : ""));
     }
     ithread++;
-    if (ithread < eventProcessor.n_threads_for_type[ET_NET])
-      eventProcessor.eventthread[ET_NET][ithread]->schedule_imm(this);
-    else {
+    if (ithread < eventProcessor.thread_group[ET_NET]._count) {
+      eventProcessor.thread_group[ET_NET]._thread[ithread]->schedule_imm(this);
+    } else {
       CHECK_SHOW(show("</table>\n"));
       return complete(event, e);
     }
@@ -138,15 +139,15 @@ struct ShowNet : public ShowCont {
                     "<th>Comments</th>"
                     "</tr>\n"));
     SET_HANDLER(&ShowNet::showConnectionsOnThread);
-    eventProcessor.eventthread[ET_NET][0]->schedule_imm(this); // This can not use ET_TASK.
+    eventProcessor.thread_group[ET_NET]._thread[0]->schedule_imm(this); // This can not use ET_TASK.
     return EVENT_CONT;
   }
 
   int
   showSingleThread(int event, Event *e)
   {
-    EThread *ethread = e->ethread;
-    NetHandler *nh = get_NetHandler(ethread);
+    EThread *ethread               = e->ethread;
+    NetHandler *nh                 = get_NetHandler(ethread);
     PollDescriptor *pollDescriptor = get_PollDescriptor(ethread);
     MUTEX_TRY_LOCK(lock, nh->mutex, ethread);
     if (!lock.is_locked()) {
@@ -166,10 +167,11 @@ struct ShowNet : public ShowCont {
     CHECK_SHOW(show("<tr><th>#</th><th>Read Priority</th><th>Read Bucket</th><th>Write Priority</th><th>Write Bucket</th></tr>\n"));
     CHECK_SHOW(show("</table>\n"));
     ithread++;
-    if (ithread < eventProcessor.n_threads_for_type[ET_NET])
-      eventProcessor.eventthread[ET_NET][ithread]->schedule_imm(this);
-    else
+    if (ithread < eventProcessor.thread_group[ET_NET]._count) {
+      eventProcessor.thread_group[ET_NET]._thread[ithread]->schedule_imm(this);
+    } else {
       return complete(event, e);
+    }
     return EVENT_CONT;
   }
 
@@ -178,7 +180,7 @@ struct ShowNet : public ShowCont {
   {
     CHECK_SHOW(begin("Net Threads"));
     SET_HANDLER(&ShowNet::showSingleThread);
-    eventProcessor.eventthread[ET_NET][0]->schedule_imm(this); // This can not use ET_TASK
+    eventProcessor.thread_group[ET_NET]._thread[0]->schedule_imm(this); // This can not use ET_TASK
     return EVENT_CONT;
   }
   int
@@ -218,22 +220,26 @@ register_ShowNet(Continuation *c, HTTPHdr *h)
   } else if (STREQ_PREFIX(path, path_len, "ips")) {
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);
-    s->sarg = ats_strndup(query, query_len);
-    char *gn = NULL;
-    if (s->sarg)
+    s->sarg           = ats_strndup(query, query_len);
+    char *gn          = nullptr;
+    if (s->sarg) {
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
-    if (gn)
+    }
+    if (gn) {
       ats_ip_pton(gn + 1, &s->addr);
+    }
     SET_CONTINUATION_HANDLER(s, &ShowNet::showConnections);
   } else if (STREQ_PREFIX(path, path_len, "ports")) {
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);
-    s->sarg = ats_strndup(query, query_len);
-    char *gn = NULL;
-    if (s->sarg)
+    s->sarg           = ats_strndup(query, query_len);
+    char *gn          = nullptr;
+    if (s->sarg) {
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
-    if (gn)
+    }
+    if (gn) {
       ats_ip_port_cast(&s->addr.sa) = htons(atoi(gn + 1));
+    }
     SET_CONTINUATION_HANDLER(s, &ShowNet::showConnections);
   }
   eventProcessor.schedule_imm(s, ET_TASK);

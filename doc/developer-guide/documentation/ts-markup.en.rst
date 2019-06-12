@@ -55,6 +55,8 @@ argument (the default value). ::
 
     :ts:cv: <scope> <variable name> <data type> <value>
 
+This corresponds exactly to the line in :file:`records.config`.
+
 Definition
 ~~~~~~~~~~
 
@@ -90,7 +92,17 @@ Value
 Options
 ~~~~~~~
 
-The domain for configuration variables takes only a single option at this time.
+The domain for configuration variables takes serveral options.
+
+reloadable
+   If marked the effect of the variable can be changed by reloading the |TS| configuration.
+
+overridable
+   A flag option that should be set if the variable is overridable per transaction.
+
+units
+   This takes a string option which is a description of the units for the variable. The most common
+   case is to distinguish time values with units such as "seconds", "minutes", "milliseconds", etc.
 
 deprecated
     A simple flag option which, when attached to a configuration variable, is
@@ -204,3 +216,22 @@ domain reference markup should be used::
 
 References should not include the collection name, data type, or any other
 components aside from the statistic name.
+
+Referencing source code
+-----------------------
+
+To reference source code from the documentation, use the following markup::
+
+    :ts:git:`path/to/source/file`
+
+This creates a link to Github. Sphinx does its best to pin the reference to the
+current release version of |ATS|.
+
+Avoid using hard links to Github as Github may be replaced with another host
+in the future.
+
+.. note::
+
+    Although adding the ability to point to a specific line number would not be
+    difficult, code shifts around too much and this feature would only cause
+    confusion to a downstream reader. This feature was deliberately omitted.

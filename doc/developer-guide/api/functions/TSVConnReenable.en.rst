@@ -26,19 +26,18 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: void TSSslVConnReenable(TSVConn svc)
+.. function:: void TSVConnReenable(TSVConn svc)
 
 Description
 ===========
 
 Reenable the SSL connection :arg:`svc`. If a plugin hook is called, ATS
-processing on that connnection will not resume until this is invoked for that
+processing on that connection will not resume until this is invoked for that
 connection.
 
-If the server is running OpenSSL 1.0.1 with the appropraite patch installed or
-it is running OpenSSL 1.0.2, the plugin writer can pause SSL handshake
-processing by not reenabling the connection. Without the OpenSSL patch or
-running an OpenSSL versions older than 1.0.2, the handshake processing in
+If the server is running OpenSSL 1.0.2, the plugin writer can pause SSL handshake
+processing at the certificate callback  by not reenabling the connection.
+Running an OpenSSL versions older than 1.0.2, the handshake processing in
 ``SSL_accept`` will not be stopped even if the SNI callback does not reenable
 the connection.
 
@@ -49,3 +48,26 @@ Traffic Server.
 
 This call does appropriate locking and scheduling, so it is safe to call from
 another thread.
+
+TSVConnReenableEx
+*****************
+
+Synopsis
+========
+
+`#include <ts/ts.h>`
+
+.. function:: void TSVConnReenableEx(TSVConn svc, TSEvent event)
+
+Description
+===========
+
+An extended version of TSVConnEnable that allows the plugin to return a status to
+the core logic.  If all goes well this is TS_EVENT_CONTINUE.  However, if
+the plugin wants to stop the processing it can set the event to TS_EVENT_ERROR.
+
+For example, in the case of the TS_SSL_VERIFY_SERVER_HOOK, the plugin make decide the 
+origin certificate is bad.  By calling TSVonnReenable with TS_EVENT_ERROR, the 
+certificate check will error and the TLS handshake will fail.
+
+

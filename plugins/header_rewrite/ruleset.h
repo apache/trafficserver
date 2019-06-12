@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __RULESET_H__
-#define __RULESET_H__ 1
+#pragma once
 
 #include <string>
 
@@ -36,29 +35,36 @@
 class RuleSet
 {
 public:
-  RuleSet()
-    : next(NULL),
-      _cond(NULL),
-      _oper(NULL),
-      _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK),
-      _ids(RSRC_NONE),
-      _opermods(OPER_NONE),
-      _last(false){};
+  RuleSet() { TSDebug(PLUGIN_NAME_DBG, "RuleSet CTOR"); }
+
+  ~RuleSet()
+  {
+    TSDebug(PLUGIN_NAME_DBG, "RulesSet DTOR");
+    delete next;
+    delete _cond;
+    delete _oper;
+  }
+
+  // noncopyable
+  RuleSet(const RuleSet &) = delete;
+  void operator=(const RuleSet &) = delete;
 
   // No reason to inline these
   void append(RuleSet *rule);
+  bool add_condition(Parser &p, const char *filename, int lineno);
+  bool add_operator(Parser &p, const char *filename, int lineno);
+  ResourceIDs get_all_resource_ids() const;
 
-  void add_condition(Parser &p);
-  void add_operator(Parser &p);
   bool
   has_operator() const
   {
-    return NULL != _oper;
+    return nullptr != _oper;
   }
+
   bool
   has_condition() const
   {
-    return NULL != _cond;
+    return nullptr != _cond;
   }
 
   void
@@ -66,15 +72,15 @@ public:
   {
     _hook = hook;
   }
-  const TSHttpHookID
+
+  TSHttpHookID
   get_hook() const
   {
     return _hook;
   }
 
-  // Inline
-  const ResourceIDs
-  get_all_resource_ids() const
+  ResourceIDs
+  get_resource_ids() const
   {
     return _ids;
   }
@@ -82,7 +88,7 @@ public:
   bool
   eval(const Resources &res) const
   {
-    if (NULL == _cond) {
+    if (nullptr == _cond) {
       return true;
     } else {
       return _cond->do_eval(res);
@@ -102,19 +108,15 @@ public:
     return _opermods;
   }
 
-  RuleSet *next; // Linked list
+  RuleSet *next = nullptr; // Linked list
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(RuleSet);
-
-  Condition *_cond;   // First pre-condition (linked list)
-  Operator *_oper;    // First operator (linked list)
-  TSHttpHookID _hook; // Which hook is this rule for
+  Condition *_cond   = nullptr;                        // First pre-condition (linked list)
+  Operator *_oper    = nullptr;                        // First operator (linked list)
+  TSHttpHookID _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK; // Which hook is this rule for
 
   // State values (updated when conds / operators are added)
-  ResourceIDs _ids;
-  OperModifiers _opermods;
-  bool _last;
+  ResourceIDs _ids        = RSRC_NONE;
+  OperModifiers _opermods = OPER_NONE;
+  bool _last              = false;
 };
-
-#endif // __RULESET_H

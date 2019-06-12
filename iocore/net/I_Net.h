@@ -22,9 +22,9 @@
 
   @section details Details
 
-  Net subsystem is a layer on top the operations sytem network apis. It
+  Net subsystem is a layer on top the operations system network apis. It
   provides an interface for accepting/creating new connection oriented
-  (TCP) and connection less (UDP) connetions and for reading/writing
+  (TCP) and connection less (UDP) connections and for reading/writing
   data through these. The net system can manage 1000s of connections
   very efficiently. Another advantage of using the net system is that
   the SMs dont have be concerned about differences in the net apis of
@@ -38,19 +38,21 @@
   has socks and ssl support.
 
  */
-#ifndef __I_NET_H_
-#define __I_NET_H_
+#pragma once
 
-#include "ts/I_Version.h"
+#include "tscore/I_Version.h"
 #include "I_EventSystem.h"
 #include <netinet/in.h>
 
-#define NET_SYSTEM_MODULE_MAJOR_VERSION 1
-#define NET_SYSTEM_MODULE_MINOR_VERSION 0
-#define NET_SYSTEM_MODULE_VERSION \
-  makeModuleVersion(NET_SYSTEM_MODULE_MAJOR_VERSION, NET_SYSTEM_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
+#ifndef UIO_MAXIOV
+#define NET_MAX_IOV 16 // UIO_MAXIOV shall be at least 16 1003.1g (5.4.1.1)
+#else
+#define NET_MAX_IOV UIO_MAXIOV
+#endif
 
-static int const NO_FD = -1;
+static constexpr ts::ModuleVersion NET_SYSTEM_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);
+
+static constexpr int NO_FD = -1;
 
 // All in milli-seconds
 extern int net_config_poll_timeout;
@@ -58,6 +60,9 @@ extern int net_event_period;
 extern int net_accept_period;
 extern int net_retry_delay;
 extern int net_throttle_delay;
+
+extern std::string_view net_ccp_in;
+extern std::string_view net_ccp_out;
 
 #define NET_EVENT_OPEN (NET_EVENT_EVENTS_START)
 #define NET_EVENT_OPEN_FAILED (NET_EVENT_EVENTS_START + 1)
@@ -88,5 +93,4 @@ extern int net_throttle_delay;
 #include "I_NetProcessor.h"
 #include "I_SessionAccept.h"
 
-void ink_net_init(ModuleVersion version);
-#endif
+void ink_net_init(ts::ModuleVersion version);

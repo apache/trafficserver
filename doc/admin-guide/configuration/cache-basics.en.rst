@@ -639,38 +639,6 @@ To alter the limit on the number of alternates:
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
-.. _using-congestion-control:
-
-Using Congestion Control
-========================
-
-The *Congestion Control* option enables you to configure Traffic
-Server to stop forwarding HTTP requests to origin servers when they
-become congested. Traffic Server then sends the client a message to
-retry the congested origin server later.
-
-To enable this option:
-
-#. Set :ts:cv:`proxy.config.http.congestion_control.enabled` to ``1`` in
-   :file:`records.config`. ::
-
-        CONFIG proxy.config.http.congestion_control.enabled INT 1
-
-#. Create rules in :file:`congestion.config` to specify:
-
-   -  Which origin servers Traffic Server tracks for congestion.
-
-   -  The timeouts Traffic Server uses, depending on whether a server is
-      congested.
-
-   -  The page Traffic Server sends to the client when a server becomes
-      congested.
-
-   -  Whether Traffic Server tracks the origin servers by IP address or by
-      hostname.
-
-#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
-
 .. _transaction-buffering-control:
 
 Using Transaction Buffering Control
@@ -708,13 +676,13 @@ any buffers associated with :ref:`transform plugins <developer-plugins-http-tran
 Transaction buffering control can be enabled globally by using configuration
 variables or by :c:func:`TSHttpTxnConfigIntSet` in a plugin.
 
-================= ================================================== ================================================
+================= ================================================== =======================================================
 Value             Variable                                           :c:func:`TSHttpTxnConfigIntSet` key
-================= ================================================== ================================================
-Enable buffering  :ts:cv:`proxy.config.http.flow_control.enabled`    :c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`
-Set high water    :ts:cv:`proxy.config.http.flow_control.high_water` :c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER`
-Set low water     :ts:cv:`proxy.config.http.flow_control.low_water`  :c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER`
-================= ================================================== ================================================
+================= ================================================== =======================================================
+Enable buffering  :ts:cv:`proxy.config.http.flow_control.enabled`    :c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`
+Set high water    :ts:cv:`proxy.config.http.flow_control.high_water` :c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK`
+Set low water     :ts:cv:`proxy.config.http.flow_control.low_water`  :c:member:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK`
+================= ================================================== =======================================================
 
 Be careful to always have the low water mark equal or less than the high water
 mark. If you set only one, the other will be set to the same value.
@@ -797,65 +765,6 @@ of the object is completed::
 
     CONFIG proxy.config.cache.read_while_writer_retry.delay INT 50
 
-.. _fuzzy-revalidation:
-
-Fuzzy Revalidation
-------------------
-
-.. note::
-
-    These options are deprecated as of v6.2.0.
-
-Traffic Server can be set to attempt to revalidate an object before it becomes
-stale in cache. :file:`records.config` contains the settings::
-
-    CONFIG proxy.config.http.cache.fuzz.time INT 240
-    CONFIG proxy.config.http.cache.fuzz.min_time INT 0
-    CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.005
-
-For every request for an object that occurs
-:ts:cv:`proxy.config.http.cache.fuzz.time` before (in the example above, 240
-seconds) the object is set to become stale, there is a small
-chance (:ts:cv:`proxy.config.http.cache.fuzz.probability` == 0.5%) that the
-request will trigger a revalidation request to the origin.
-
-.. note::
-
-    When revalidation occurs, the requested object is no longer available to be
-    served from cache. Subsequent requests for that object will be proxied to
-    the origin.
-
-For objects getting a few requests per second, these settings would offer a
-fairly low probability of revalidating the cached object before it becomes
-stale. This feature is not typically necessary at those rates, though, since
-odds are only one or a small number of connections would hit origin upon the
-objects going stale.
-
-Once request raise rise, the same ``fuzz.probability`` leads to a greater
-chance the object may be revalidated before becoming stale. This can prevent
-multiple clients simultaneously triggering contact with the origin server
-under higher loads, as they would do if no fuzziness was employed for
-revalidations.
-
-These settings are also overridable by remap rules and via plugins, so can be
-adjusted per request if necessary.
-
-Finally, :ts:cv:`proxy.config.http.cache.fuzz.min_time` allows for
-different time periods to evaluate the probability of revalidation for small
-TTLs and large TTLs. Objects with small TTLs will start "rolling the
-revalidation dice" near the ``fuzz.min_time``, while objects with large TTLs
-would start at ``fuzz.time``.
-
-A logarithmic like function between determines the revalidation evaluation
-start time (which will be between ``fuzz.min_time`` and ``fuzz.time``). As the
-object gets closer to expiring, the window start becomes more likely. By
-default this setting is not enabled, but should be enabled anytime you have
-objects with small TTLs. Note that this option predates overridable
-configurations, so you can achieve something similar with a plugin or
-:file:`remap.config` settings.
-
-These configuration options are similar to Squid's refresh_stale_hit
-configuration option.
 
 Open Read Retry Timeout
 -----------------------

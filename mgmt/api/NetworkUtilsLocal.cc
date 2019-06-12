@@ -30,9 +30,9 @@
  *
  ***************************************************************************/
 
-#include "ts/ink_platform.h"
-#include "ts/ink_sock.h"
-#include "ts/Diags.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_sock.h"
+#include "tscore/Diags.h"
 #include "MgmtUtils.h"
 #include "MgmtSocket.h"
 #include "MgmtMarshall.h"
@@ -57,7 +57,7 @@ preprocess_msg(int fd, void **req, size_t *reqlen)
   TSMgmtError ret;
   MgmtMarshallData msg;
 
-  *req = NULL;
+  *req    = nullptr;
   *reqlen = 0;
 
   ret = recv_mgmt_message(fd, msg);
@@ -66,12 +66,12 @@ preprocess_msg(int fd, void **req, size_t *reqlen)
   }
 
   // We should never receive an empty payload.
-  if (msg.ptr == NULL) {
+  if (msg.ptr == nullptr) {
     return TS_ERR_NET_READ;
   }
 
-  *req = msg.ptr;
+  *req    = msg.ptr;
   *reqlen = msg.len;
-  Debug("ts_main", "[preprocess_msg] read message length = %zd\n", msg.len);
+  Debug("ts_main", "[preprocess_msg] read message length = %zd", msg.len);
   return TS_ERR_OKAY;
 }

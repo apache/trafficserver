@@ -32,14 +32,10 @@
 #include "P_Net.h"
 #include "P_UDPNet.h"
 
-typedef int (UDPNetHandler::*UDPNetContHandler)(int, void *);
+using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
 
 inkcoreapi ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
 EventType ET_UDP;
-
-#if defined(linux) && !defined(DEBUG)
-#define NODIAGS
-#endif
 
 //
 // Global Data
@@ -64,9 +60,20 @@ sockaddr_in6 G_bwGrapherLoc;
 void
 initialize_thread_for_udp_net(EThread *thread)
 {
-  new ((ink_dummy_for_new *)get_UDPPollCont(thread)) PollCont(thread->mutex);
-  new ((ink_dummy_for_new *)get_UDPNetHandler(thread)) UDPNetHandler;
+  UDPNetHandler *nh = get_UDPNetHandler(thread);
 
+  new ((ink_dummy_for_new *)nh) UDPNetHandler;
+  new ((ink_dummy_for_new *)get_UDPPollCont(thread)) PollCont(thread->mutex);
+  // The UDPNetHandler cannot be accessed across EThreads.
+  // Because the UDPNetHandler should be called back immediately after UDPPollCont.
+  nh->mutex  = thread->mutex.get();
+  nh->thread = thread;
+
+  PollCont *upc       = get_UDPPollCont(thread);
+  PollDescriptor *upd = upc->pollDescriptor;
+  // due to ET_UDP is really simple, it should sleep for a long time
+  // TODO: fixed size
+  upc->poll_timeout = 100;
   // This variable controls how often we cleanup the cancelled packets.
   // If it is set to 0, then cleanup never occurs.
   REC_ReadConfigInt32(g_udp_periodicFreeCancelledPkts, "proxy.config.udp.free_cancelled_pkts_sec");
@@ -81,25 +88,30 @@ initialize_thread_for_udp_net(EThread *thread)
   REC_ReadConfigInt32(g_udp_numSendRetries, "proxy.config.udp.send_retries");
   g_udp_numSendRetries = g_udp_numSendRetries < 0 ? 0 : g_udp_numSendRetries;
 
-  thread->schedule_every(get_UDPPollCont(thread), -9);
-  thread->schedule_imm(get_UDPNetHandler(thread));
+  thread->set_tail_handler(nh);
+  thread->ep = (EventIO *)ats_malloc(sizeof(EventIO));
+  new (thread->ep) EventIO();
+  thread->ep->type = EVENTIO_ASYNC_SIGNAL;
+#if HAVE_EVENTFD
+  thread->ep->start(upd, thread->evfd, nullptr, EVENTIO_READ);
+#else
+  thread->ep->start(upd, thread->evpipe[0], nullptr, EVENTIO_READ);
+#endif
 }
 
 int
 UDPNetProcessorInternal::start(int n_upd_threads, size_t stacksize)
 {
-  if (n_upd_threads < 1)
+  if (n_upd_threads < 1) {
     return -1;
+  }
 
-  ET_UDP = eventProcessor.spawn_event_threads(n_upd_threads, "ET_UDP", stacksize);
-  if (ET_UDP < 0) // Probably can't happen, maybe at some point EventType should be unsigned ?
-    return -1;
-
-  pollCont_offset = eventProcessor.allocate(sizeof(PollCont));
+  pollCont_offset      = eventProcessor.allocate(sizeof(PollCont));
   udpNetHandler_offset = eventProcessor.allocate(sizeof(UDPNetHandler));
 
-  for (int i = 0; i < eventProcessor.n_threads_for_type[ET_UDP]; i++)
-    initialize_thread_for_udp_net(eventProcessor.eventthread[ET_UDP][i]);
+  ET_UDP = eventProcessor.register_event_type("ET_UDP");
+  eventProcessor.schedule_spawn(&initialize_thread_for_udp_net, ET_UDP);
+  eventProcessor.spawn_event_threads(ET_UDP, n_upd_threads, stacksize);
 
   return 0;
 }
@@ -111,26 +123,91 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
 
   // receive packet and queue onto UDPConnection.
   // don't call back connection at this time.
-  int r;
-  int iters = 0;
+  int64_t r;
+  int iters         = 0;
+  unsigned max_niov = 32;
+
+  struct msghdr msg;
+  Ptr<IOBufferBlock> chain, next_chain;
+  struct iovec tiovec[max_niov];
+  int64_t size_index  = BUFFER_SIZE_INDEX_2K;
+  int64_t buffer_size = BUFFER_SIZE_FOR_INDEX(size_index);
+  // The max length of receive buffer is 32 * buffer_size (2048) = 65536 bytes.
+  // Because the 'UDP Length' is type of uint16_t defined in RFC 768.
+  // And there is 8 octets in 'User Datagram Header' which means the max length of payload is no more than 65527 bytes.
   do {
+    // create IOBufferBlock chain to receive data
+    unsigned int niov;
+    IOBufferBlock *b, *last;
+
+    // build struct iov
+    // reuse the block in chain if available
+    b    = chain.get();
+    last = nullptr;
+    for (niov = 0; niov < max_niov; niov++) {
+      if (b == nullptr) {
+        b = new_IOBufferBlock();
+        b->alloc(size_index);
+        if (last == nullptr) {
+          chain = b;
+        } else {
+          last->next = b;
+        }
+      }
+
+      tiovec[niov].iov_base = b->buf();
+      tiovec[niov].iov_len  = b->block_size();
+
+      last = b;
+      b    = b->next.get();
+    }
+
+    // build struct msghdr
     sockaddr_in6 fromaddr;
-    socklen_t fromlen = sizeof(fromaddr);
-    // XXX: want to be 0 copy.
-    // XXX: really should read into next contiguous region of an IOBufferData
-    // which gets referenced by IOBufferBlock.
-    char buf[65536];
-    int buflen = sizeof(buf);
-    r = socketManager.recvfrom(uc->getFd(), buf, buflen, 0, (struct sockaddr *)&fromaddr, &fromlen);
+    msg.msg_name       = &fromaddr;
+    msg.msg_namelen    = sizeof(fromaddr);
+    msg.msg_iov        = tiovec;
+    msg.msg_iovlen     = niov;
+    msg.msg_control    = nullptr;
+    msg.msg_controllen = 0;
+
+    // receive data by recvmsg
+    r = socketManager.recvmsg(uc->getFd(), &msg, 0);
     if (r <= 0) {
       // error
       break;
     }
+
+    // truncated check
+    if (msg.msg_flags & MSG_TRUNC) {
+      Debug("udp-read", "The UDP packet is truncated");
+    }
+
+    // fill the IOBufferBlock chain
+    int64_t saved = r;
+    b             = chain.get();
+    while (b && saved > 0) {
+      if (saved > buffer_size) {
+        b->fill(buffer_size);
+        saved -= buffer_size;
+        b = b->next.get();
+      } else {
+        b->fill(saved);
+        saved      = 0;
+        next_chain = b->next.get();
+        b->next    = nullptr;
+      }
+    }
+
     // create packet
-    UDPPacket *p = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), buf, r);
+    UDPPacket *p = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), chain);
     p->setConnection(uc);
     // queue onto the UDPConnection
-    ink_atomiclist_push(&uc->inQueue, p);
+    uc->inQueue.push((UDPPacketInternal *)p);
+
+    // reload the unused block
+    chain      = next_chain;
+    next_chain = nullptr;
     iters++;
   } while (r > 0);
   if (iters >= 1) {
@@ -138,8 +215,8 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
   }
   // if not already on to-be-called-back queue, then add it.
   if (!uc->onCallbackQueue) {
-    ink_assert(uc->callback_link.next == NULL);
-    ink_assert(uc->callback_link.prev == NULL);
+    ink_assert(uc->callback_link.next == nullptr);
+    ink_assert(uc->callback_link.prev == nullptr);
     uc->AddRef();
     nh->udp_callbacks.enqueue(uc);
     uc->onCallbackQueue = 1;
@@ -153,12 +230,12 @@ UDPNetProcessorInternal::udp_callback(UDPNetHandler *nh, UDPConnection *xuc, ETh
   UnixUDPConnection *uc = (UnixUDPConnection *)xuc;
 
   if (uc->continuation && uc->mutex) {
-    MUTEX_TRY_LOCK_FOR(lock, uc->mutex, thread, uc->continuation);
+    MUTEX_TRY_LOCK(lock, uc->mutex, thread);
     if (!lock.is_locked()) {
       return 1;
     }
     uc->AddRef();
-    uc->callbackHandler(0, 0);
+    uc->callbackHandler(0, nullptr);
     return 0;
   } else {
     ink_assert(!"doesn't reach here");
@@ -170,14 +247,16 @@ UDPNetProcessorInternal::udp_callback(UDPNetHandler *nh, UDPConnection *xuc, ETh
   }
 }
 
+#define UNINITIALIZED_EVENT_PTR (Event *)0xdeadbeef
+
 // cheesy implementation of a asynchronous read and callback for Unix
 class UDPReadContinuation : public Continuation
 {
 public:
   UDPReadContinuation(Event *completionToken);
   UDPReadContinuation();
-  ~UDPReadContinuation();
-  inline void free(void);
+  ~UDPReadContinuation() override;
+  inline void free();
   inline void init_token(Event *completionToken);
   inline void init_read(int fd, IOBufferBlock *buf, int len, struct sockaddr *fromaddr, socklen_t *fromaddrlen);
 
@@ -199,70 +278,54 @@ public:
   void setupPollDescriptor();
 
 private:
-  Event *event; // the completion event token created
+  Event *event = UNINITIALIZED_EVENT_PTR; // the completion event token created
   // on behalf of the client
-  Ptr<IOBufferBlock> readbuf;
-  int readlen;
-  struct sockaddr_in6 *fromaddr;
-  socklen_t *fromaddrlen;
-  int fd;            // fd we are reading from
-  int ifd;           // poll fd index
-  ink_hrtime period; // polling period
-  ink_hrtime elapsed_time;
-  ink_hrtime timeout_interval;
+  Ptr<IOBufferBlock> readbuf{nullptr};
+  int readlen                   = 0;
+  struct sockaddr_in6 *fromaddr = nullptr;
+  socklen_t *fromaddrlen        = nullptr;
+  int fd                        = NO_FD; // fd we are reading from
+  int ifd                       = NO_FD; // poll fd index
+  ink_hrtime period             = 0;     // polling period
+  ink_hrtime elapsed_time       = 0;
+  ink_hrtime timeout_interval   = 0;
 };
 
 ClassAllocator<UDPReadContinuation> udpReadContAllocator("udpReadContAllocator");
 
-#define UNINITIALIZED_EVENT_PTR (Event *)0xdeadbeef
-
 UDPReadContinuation::UDPReadContinuation(Event *completionToken)
-  : Continuation(NULL),
+  : Continuation(nullptr),
     event(completionToken),
-    readbuf(NULL),
-    readlen(0),
-    fromaddrlen(0),
+    readbuf(nullptr),
+
     fd(-1),
-    ifd(-1),
-    period(0),
-    elapsed_time(0),
-    timeout_interval(0)
+    ifd(-1)
+
 {
-  if (completionToken->continuation)
+  if (completionToken->continuation) {
     this->mutex = completionToken->continuation->mutex;
-  else
+  } else {
     this->mutex = new_ProxyMutex();
+  }
 }
 
-UDPReadContinuation::UDPReadContinuation()
-  : Continuation(NULL),
-    event(UNINITIALIZED_EVENT_PTR),
-    readbuf(NULL),
-    readlen(0),
-    fromaddrlen(0),
-    fd(-1),
-    ifd(-1),
-    period(0),
-    elapsed_time(0),
-    timeout_interval(0)
-{
-}
+UDPReadContinuation::UDPReadContinuation() : Continuation(nullptr) {}
 
 inline void
-UDPReadContinuation::free(void)
+UDPReadContinuation::free()
 {
-  ink_assert(event != NULL);
+  ink_assert(event != nullptr);
   completionUtil::destroy(event);
-  event = NULL;
-  readbuf = NULL;
-  readlen = 0;
-  fromaddrlen = 0;
-  fd = -1;
-  ifd = -1;
-  period = 0;
-  elapsed_time = 0;
+  event            = nullptr;
+  readbuf          = nullptr;
+  readlen          = 0;
+  fromaddrlen      = nullptr;
+  fd               = -1;
+  ifd              = -1;
+  period           = 0;
+  elapsed_time     = 0;
   timeout_interval = 0;
-  mutex = NULL;
+  mutex            = nullptr;
   udpReadContAllocator.free(this);
 }
 
@@ -280,11 +343,11 @@ UDPReadContinuation::init_token(Event *completionToken)
 inline void
 UDPReadContinuation::init_read(int rfd, IOBufferBlock *buf, int len, struct sockaddr *fromaddr_, socklen_t *fromaddrlen_)
 {
-  ink_assert(rfd >= 0 && buf != NULL && fromaddr_ != NULL && fromaddrlen_ != NULL);
-  fd = rfd;
-  readbuf = buf;
-  readlen = len;
-  fromaddr = ats_ip6_cast(fromaddr_);
+  ink_assert(rfd >= 0 && buf != nullptr && fromaddr_ != nullptr && fromaddrlen_ != nullptr);
+  fd          = rfd;
+  readbuf     = buf;
+  readlen     = len;
+  fromaddr    = ats_ip6_cast(fromaddr_);
   fromaddrlen = fromaddrlen_;
   SET_HANDLER(&UDPReadContinuation::readPollEvent);
   period = -HRTIME_MSECONDS(net_event_period);
@@ -295,9 +358,9 @@ UDPReadContinuation::init_read(int rfd, IOBufferBlock *buf, int len, struct sock
 UDPReadContinuation::~UDPReadContinuation()
 {
   if (event != UNINITIALIZED_EVENT_PTR) {
-    ink_assert(event != NULL);
+    ink_assert(event != nullptr);
     completionUtil::destroy(event);
-    event = NULL;
+    event = nullptr;
   }
 }
 
@@ -313,16 +376,16 @@ UDPReadContinuation::setupPollDescriptor()
 {
 #if TS_USE_EPOLL
   Pollfd *pfd;
-  EThread *et = (EThread *)this_thread();
+  EThread *et  = (EThread *)this_thread();
   PollCont *pc = get_PollCont(et);
-  if (pc->nextPollDescriptor == NULL) {
+  if (pc->nextPollDescriptor == nullptr) {
     pc->nextPollDescriptor = new PollDescriptor();
   }
-  pfd = pc->nextPollDescriptor->alloc();
+  pfd     = pc->nextPollDescriptor->alloc();
   pfd->fd = fd;
-  ifd = pfd - pc->nextPollDescriptor->pfd;
+  ifd     = pfd - pc->nextPollDescriptor->pfd;
   ink_assert(pc->nextPollDescriptor->nfds > ifd);
-  pfd->events = POLLIN;
+  pfd->events  = POLLIN;
   pfd->revents = 0;
 #endif
 }
@@ -362,7 +425,7 @@ UDPReadContinuation::readPollEvent(int event_, Event *e)
   c = completionUtil::getContinuation(event);
   // do read
   socklen_t tmp_fromlen = *fromaddrlen;
-  int rlen = socketManager.recvfrom(fd, readbuf->end(), readlen, 0, ats_ip_sa_cast(fromaddr), &tmp_fromlen);
+  int rlen              = socketManager.recvfrom(fd, readbuf->end(), readlen, 0, ats_ip_sa_cast(fromaddr), &tmp_fromlen);
 
   completionUtil::setThread(event, e->ethread);
   // call back user with their event
@@ -389,7 +452,7 @@ UDPReadContinuation::readPollEvent(int event_, Event *e)
     // delete this;
     return EVENT_DONE;
   } else {
-    completionUtil::setThread(event, NULL);
+    completionUtil::setThread(event, nullptr);
   }
 
   if (event->cancelled) {
@@ -520,54 +583,85 @@ UDPNetProcessor::sendto_re(Continuation *cont, void *token, int fd, struct socka
 }
 
 bool
-UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, sockaddr *local_addr, int *local_addr_len,
-                                 Action **status, int send_bufsize, int recv_bufsize)
+UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions &opt)
 {
   int res = 0, fd = -1;
+  int local_addr_len;
+  IpEndpoint local_addr;
 
-  ink_assert(ats_ip_are_compatible(remote_addr, local_addr));
+  // Need to do address calculations first, so we can determine the
+  // address family for socket creation.
+  ink_zero(local_addr);
+
+  bool is_any_address = false;
+  if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding || NetVCOptions::INTF_ADDR == opt.addr_binding) {
+    // Same for now, transparency for foreign addresses must be handled
+    // *after* the socket is created, and we need to do this calculation
+    // before the socket to get the IP family correct.
+    ink_release_assert(opt.local_ip.isValid());
+    local_addr.assign(opt.local_ip, htons(opt.local_port));
+    ink_assert(ats_ip_are_compatible(remote_addr, &local_addr.sa));
+  } else {
+    // No local address specified, so use family option if possible.
+    int family = ats_is_ip(opt.ip_family) ? opt.ip_family : AF_INET;
+    local_addr.setToAnyAddr(family);
+    is_any_address    = true;
+    local_addr.port() = htons(opt.local_port);
+  }
 
   *resfd = -1;
-  if ((res = socketManager.socket(remote_addr->sa_family, SOCK_DGRAM, 0)) < 0)
+  if ((res = socketManager.socket(remote_addr->sa_family, SOCK_DGRAM, 0)) < 0) {
     goto HardError;
-  fd = res;
-  if ((res = safe_fcntl(fd, F_SETFL, O_NONBLOCK)) < 0)
-    goto HardError;
-  if ((res = socketManager.ink_bind(fd, remote_addr, ats_ip_size(remote_addr), IPPROTO_UDP)) < 0) {
-    char buff[INET6_ADDRPORTSTRLEN];
-    Debug("udpnet", "ink bind failed on %s", ats_ip_nptop(remote_addr, buff, sizeof(buff)));
-    goto SoftError;
   }
 
-  if (recv_bufsize) {
-    if (unlikely(socketManager.set_rcvbuf_size(fd, recv_bufsize)))
-      Debug("udpnet", "set_dnsbuf_size(%d) failed", recv_bufsize);
-  }
-  if (send_bufsize) {
-    if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize)))
-      Debug("udpnet", "set_dnsbuf_size(%d) failed", send_bufsize);
-  }
-  if ((res = safe_getsockname(fd, local_addr, local_addr_len)) < 0) {
-    Debug("udpnet", "CreateUdpsocket: getsockname didnt' work");
+  fd = res;
+  if ((res = safe_fcntl(fd, F_SETFL, O_NONBLOCK)) < 0) {
     goto HardError;
   }
-  *resfd = fd;
-  *status = NULL;
+
+  if (opt.socket_recv_bufsize > 0) {
+    if (unlikely(socketManager.set_rcvbuf_size(fd, opt.socket_recv_bufsize))) {
+      Debug("udpnet", "set_dnsbuf_size(%d) failed", opt.socket_recv_bufsize);
+    }
+  }
+  if (opt.socket_send_bufsize > 0) {
+    if (unlikely(socketManager.set_sndbuf_size(fd, opt.socket_send_bufsize))) {
+      Debug("udpnet", "set_dnsbuf_size(%d) failed", opt.socket_send_bufsize);
+    }
+  }
+
+  if (local_addr.port() || !is_any_address) {
+    if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
+      char buff[INET6_ADDRPORTSTRLEN];
+      Debug("udpnet", "ink bind failed on %s", ats_ip_nptop(local_addr, buff, sizeof(buff)));
+      goto SoftError;
+    }
+
+    if ((res = safe_getsockname(fd, &local_addr.sa, &local_addr_len)) < 0) {
+      Debug("udpnet", "CreateUdpsocket: getsockname didn't work");
+      goto HardError;
+    }
+  }
+
+  *resfd  = fd;
+  *status = nullptr;
   Debug("udpnet", "creating a udp socket port = %d, %d---success", ats_ip_port_host_order(remote_addr),
         ats_ip_port_host_order(local_addr));
   return true;
 SoftError:
   Debug("udpnet", "creating a udp socket port = %d---soft failure", ats_ip_port_host_order(local_addr));
-  if (fd != -1)
+  if (fd != -1) {
     socketManager.close(fd);
-  *resfd = -1;
-  *status = NULL;
+  }
+  *resfd  = -1;
+  *status = nullptr;
   return false;
 HardError:
   Debug("udpnet", "creating a udp socket port = %d---hard failure", ats_ip_port_host_order(local_addr));
-  if (fd != -1)
+  if (fd != -1) {
     socketManager.close(fd);
-  *resfd = -1;
+  }
+  *resfd  = -1;
   *status = ACTION_IO_ERROR;
   return false;
 }
@@ -575,17 +669,21 @@ HardError:
 Action *
 UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufsize, int recv_bufsize)
 {
-  int res = 0;
-  int fd = -1;
-  UnixUDPConnection *n = NULL;
+  int res              = 0;
+  int fd               = -1;
+  UnixUDPConnection *n = nullptr;
   IpEndpoint myaddr;
-  int myaddr_len = sizeof(myaddr);
+  int myaddr_len     = sizeof(myaddr);
+  PollCont *pc       = nullptr;
+  PollDescriptor *pd = nullptr;
 
-  if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0)
+  if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
     goto Lerror;
+  }
   fd = res;
-  if ((res = fcntl(fd, F_SETFL, O_NONBLOCK) < 0))
+  if ((res = fcntl(fd, F_SETFL, O_NONBLOCK) < 0)) {
     goto Lerror;
+  }
 
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
   if (ats_is_ip_multicast(addr)) {
@@ -601,12 +699,14 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   }
 
   if (recv_bufsize) {
-    if (unlikely(socketManager.set_rcvbuf_size(fd, recv_bufsize)))
+    if (unlikely(socketManager.set_rcvbuf_size(fd, recv_bufsize))) {
       Debug("udpnet", "set_dnsbuf_size(%d) failed", recv_bufsize);
+    }
   }
   if (send_bufsize) {
-    if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize)))
+    if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize))) {
       Debug("udpnet", "set_dnsbuf_size(%d) failed", send_bufsize);
+    }
   }
   if ((res = safe_getsockname(fd, &myaddr.sa, &myaddr_len)) < 0) {
     goto Lerror;
@@ -617,23 +717,25 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   n->setBinding(&myaddr.sa);
   n->bindToThread(cont);
 
+  pc = get_UDPPollCont(n->ethread);
+  pd = pc->pollDescriptor;
+
+  n->ep.start(pd, n, EVENTIO_READ);
+
   cont->handleEvent(NET_EVENT_DATAGRAM_OPEN, n);
   return ACTION_RESULT_DONE;
 Lerror:
-  if (fd != NO_FD)
+  if (fd != NO_FD) {
     socketManager.close(fd);
-  cont->handleEvent(NET_EVENT_DATAGRAM_ERROR, NULL);
+  }
+  cont->handleEvent(NET_EVENT_DATAGRAM_ERROR, nullptr);
   return ACTION_IO_ERROR;
 }
 
 // send out all packets that need to be sent out as of time=now
-UDPQueue::UDPQueue() : last_report(0), last_service(0), packets(0), added(0)
-{
-}
+UDPQueue::UDPQueue() {}
 
-UDPQueue::~UDPQueue()
-{
-}
+UDPQueue::~UDPQueue() {}
 
 /*
  * Driver function that aggregates packets across cont's and sends them
@@ -642,42 +744,34 @@ void
 UDPQueue::service(UDPNetHandler *nh)
 {
   (void)nh;
-  ink_hrtime now = Thread::get_hrtime_updated();
+  ink_hrtime now     = Thread::get_hrtime_updated();
   uint64_t timeSpent = 0;
   uint64_t pktSendStartTime;
-  UDPPacketInternal *p;
   ink_hrtime pktSendTime;
+  UDPPacketInternal *p = nullptr;
 
-  p = (UDPPacketInternal *)ink_atomiclist_popall(&atomicQueue);
-  if (p) {
-    UDPPacketInternal *pnext = NULL;
-    Queue<UDPPacketInternal> stk;
+  SList(UDPPacketInternal, alink) aq(outQueue.popall());
+  Queue<UDPPacketInternal> stk;
+  while ((p = aq.pop())) {
+    stk.push(p);
+  }
 
-    while (p) {
-      pnext = p->alink.next;
-      p->alink.next = NULL;
-      stk.push(p);
-      p = pnext;
+  // walk backwards down list since this is actually an atomic stack.
+  while ((p = stk.pop())) {
+    ink_assert(p->link.prev == nullptr);
+    ink_assert(p->link.next == nullptr);
+    // insert into our queue.
+    Debug("udp-send", "Adding %p", p);
+    if (p->conn->lastPktStartTime == 0) {
+      pktSendStartTime = std::max(now, p->delivery_time);
+    } else {
+      pktSendTime      = p->delivery_time;
+      pktSendStartTime = std::max(std::max(now, pktSendTime), p->delivery_time);
     }
+    p->conn->lastPktStartTime = pktSendStartTime;
+    p->delivery_time          = pktSendStartTime;
 
-    // walk backwards down list since this is actually an atomic stack.
-    while (stk.head) {
-      p = stk.pop();
-      ink_assert(p->link.prev == NULL);
-      ink_assert(p->link.next == NULL);
-      // insert into our queue.
-      Debug("udp-send", "Adding %p", p);
-      if (p->conn->lastPktStartTime == 0) {
-        pktSendStartTime = MAX(now, p->delivery_time);
-      } else {
-        pktSendTime = p->delivery_time;
-        pktSendStartTime = MAX(MAX(now, pktSendTime), p->delivery_time);
-      }
-      p->conn->lastPktStartTime = pktSendStartTime;
-      p->delivery_time = pktSendStartTime;
-
-      pipeInfo.addPacket(p, now);
-    }
+    pipeInfo.addPacket(p, now);
   }
 
   pipeInfo.advanceNow(now);
@@ -686,8 +780,8 @@ UDPQueue::service(UDPNetHandler *nh)
   timeSpent = ink_hrtime_to_msec(now - last_report);
   if (timeSpent > 10000) {
     last_report = now;
-    added = 0;
-    packets = 0;
+    added       = 0;
+    packets     = 0;
   }
   last_service = now;
 }
@@ -697,8 +791,8 @@ UDPQueue::SendPackets()
 {
   UDPPacketInternal *p;
   static ink_hrtime lastCleanupTime = Thread::get_hrtime_updated();
-  ink_hrtime now = Thread::get_hrtime_updated();
-  ink_hrtime send_threshold_time = now + SLOT_TIME;
+  ink_hrtime now                    = Thread::get_hrtime_updated();
+  ink_hrtime send_threshold_time    = now + SLOT_TIME;
   int32_t bytesThisSlot = INT_MAX, bytesUsed = 0;
   int32_t bytesThisPipe, sentOne;
   int64_t pktLen;
@@ -706,17 +800,19 @@ UDPQueue::SendPackets()
   bytesThisSlot = INT_MAX;
 
 sendPackets:
-  sentOne = false;
+  sentOne       = false;
   bytesThisPipe = (int32_t)bytesThisSlot;
 
   while ((bytesThisPipe > 0) && (pipeInfo.firstPacket(send_threshold_time))) {
-    p = pipeInfo.getFirstPacket();
+    p      = pipeInfo.getFirstPacket();
     pktLen = p->getPktLength();
 
-    if (p->conn->shouldDestroy())
+    if (p->conn->shouldDestroy()) {
       goto next_pkt;
-    if (p->conn->GetSendGenerationNumber() != p->reqGenerationNum)
+    }
+    if (p->conn->GetSendGenerationNumber() != p->reqGenerationNum) {
       goto next_pkt;
+    }
 
     SendUDPPacket(p, pktLen);
     bytesUsed += pktLen;
@@ -725,8 +821,9 @@ sendPackets:
     sentOne = true;
     p->free();
 
-    if (bytesThisPipe < 0)
+    if (bytesThisPipe < 0) {
       break;
+    }
   }
 
   bytesThisSlot -= bytesUsed;
@@ -734,7 +831,7 @@ sendPackets:
   if ((bytesThisSlot > 0) && sentOne) {
     // redistribute the slack...
     now = Thread::get_hrtime_updated();
-    if (pipeInfo.firstPacket(now) == NULL) {
+    if (pipeInfo.firstPacket(now) == nullptr) {
       pipeInfo.advanceNow(now);
     }
     goto sendPackets;
@@ -758,30 +855,31 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   Debug("udp-send", "Sending %p", p);
 
 #if !defined(solaris)
-  msg.msg_control = 0;
+  msg.msg_control    = nullptr;
   msg.msg_controllen = 0;
-  msg.msg_flags = 0;
+  msg.msg_flags      = 0;
 #endif
-  msg.msg_name = (caddr_t)&p->to;
-  msg.msg_namelen = sizeof(p->to);
-  iov_len = 0;
+  msg.msg_name    = (caddr_t)&p->to.sa;
+  msg.msg_namelen = sizeof(p->to.sa);
+  iov_len         = 0;
 
-  for (IOBufferBlock *b = p->chain.get(); b != NULL; b = b->next.get()) {
+  for (IOBufferBlock *b = p->chain.get(); b != nullptr; b = b->next.get()) {
     iov[iov_len].iov_base = (caddr_t)b->start();
-    iov[iov_len].iov_len = b->size();
+    iov[iov_len].iov_len  = b->size();
     real_len += iov[iov_len].iov_len;
     iov_len++;
   }
-  msg.msg_iov = iov;
+  msg.msg_iov    = iov;
   msg.msg_iovlen = iov_len;
 
   count = 0;
-  while (1) {
+  while (true) {
     // stupid Linux problem: sendmsg can return EAGAIN
     n = ::sendmsg(p->conn->getFd(), &msg, 0);
-    if ((n >= 0) || ((n < 0) && (errno != EAGAIN)))
+    if ((n >= 0) || ((n < 0) && (errno != EAGAIN))) {
       // send succeeded or some random error happened.
       break;
+    }
     if (errno == EAGAIN) {
       ++count;
       if ((g_udp_numSendRetries > 0) && (count >= g_udp_numSendRetries)) {
@@ -797,16 +895,27 @@ void
 UDPQueue::send(UDPPacket *p)
 {
   // XXX: maybe fastpath for immediate send?
-  ink_atomiclist_push(&atomicQueue, p);
+  outQueue.push((UDPPacketInternal *)p);
 }
 
 #undef LINK
 
+static void
+net_signal_hook_callback(EThread *thread)
+{
+#if HAVE_EVENTFD
+  uint64_t counter;
+  ATS_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(uint64_t)));
+#elif TS_USE_PORT
+/* Nothing to drain or do */
+#else
+  char dummy[1024];
+  ATS_UNUSED_RETURN(read(thread->evpipe[0], &dummy[0], 1024));
+#endif
+}
+
 UDPNetHandler::UDPNetHandler()
 {
-  mutex = new_ProxyMutex();
-  ink_atomiclist_init(&udpOutQueue.atomicQueue, "Outgoing UDP Packet queue", offsetof(UDPPacketInternal, alink.next));
-  ink_atomiclist_init(&udpNewConnections, "UDP Connection queue", offsetof(UnixUDPConnection, newconn_alink.next));
   nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
   lastCheck = 0;
   SET_HANDLER((UDPNetContHandler)&UDPNetHandler::startNetEvent);
@@ -826,47 +935,86 @@ int
 UDPNetHandler::mainNetEvent(int event, Event *e)
 {
   ink_assert(trigger_event == e && event == EVENT_POLL);
-  (void)event;
-  (void)e;
+  return this->waitForActivity(net_config_poll_timeout);
+}
 
-  PollCont *pc = get_UDPPollCont(e->ethread);
+int
+UDPNetHandler::waitForActivity(ink_hrtime timeout)
+{
+  UnixUDPConnection *uc;
+  PollCont *pc = get_UDPPollCont(this->thread);
+  pc->do_poll(timeout);
+
+  /* Notice: the race between traversal of newconn_list and UDPBind()
+   *
+   * If the UDPBind() is called after the traversal of newconn_list,
+   * the UDPConnection, the one from the pollDescriptor->result, did not push into the open_list.
+   *
+   * TODO:
+   *
+   * Take UnixNetVConnection::acceptEvent() as reference to create UnixUDPConnection::newconnEvent().
+   */
+
+  // handle new UDP connection
+  SList(UnixUDPConnection, newconn_alink) ncq(newconn_list.popall());
+  while ((uc = ncq.pop())) {
+    if (uc->shouldDestroy()) {
+      open_list.remove(uc); // due to the above race
+      uc->Release();
+    } else {
+      ink_assert(uc->mutex && uc->continuation);
+      open_list.in_or_enqueue(uc); // due to the above race
+    }
+  }
 
   // handle UDP outgoing engine
   udpOutQueue.service(this);
 
   // handle UDP read operations
-  UnixUDPConnection *uc, *next;
-  int i;
-  int nread = 0;
-
-  EventIO *temp_eptr = NULL;
+  int i, nread = 0;
+  EventIO *epd = nullptr;
   for (i = 0; i < pc->pollDescriptor->result; i++) {
-    temp_eptr = (EventIO *)get_ev_data(pc->pollDescriptor, i);
-    if ((get_ev_events(pc->pollDescriptor, i) & EVENTIO_READ) && temp_eptr->type == EVENTIO_UDP_CONNECTION) {
-      uc = temp_eptr->data.uc;
-      ink_assert(uc && uc->mutex && uc->continuation);
-      ink_assert(uc->refcount >= 1);
-      if (uc->shouldDestroy()) {
-        // udp_polling->remove(uc,uc->polling_link);
-        uc->Release();
+    epd = (EventIO *)get_ev_data(pc->pollDescriptor, i);
+    if (epd->type == EVENTIO_UDP_CONNECTION) {
+      // TODO: handle EVENTIO_ERROR
+      if (get_ev_events(pc->pollDescriptor, i) & EVENTIO_READ) {
+        uc = epd->data.uc;
+        ink_assert(uc && uc->mutex && uc->continuation);
+        ink_assert(uc->refcount >= 1);
+        open_list.in_or_enqueue(uc); // due to the above race
+        if (uc->shouldDestroy()) {
+          open_list.remove(uc);
+          uc->Release();
+        } else {
+          udpNetInternal.udp_read_from_net(this, uc);
+          nread++;
+        }
       } else {
-        udpNetInternal.udp_read_from_net(this, uc);
-        nread++;
+        Debug("iocore_udp_main", "Unhandled epoll event: 0x%04x", get_ev_events(pc->pollDescriptor, i));
       }
-    } // if EPOLLIN
-  }   // end for
+    } else if (epd->type == EVENTIO_DNS_CONNECTION) {
+      // TODO: handle DNS conn if there is ET_UDP
+      if (epd->data.dnscon != nullptr) {
+        epd->data.dnscon->trigger();
+#if defined(USE_EDGE_TRIGGER)
+        epd->refresh(EVENTIO_READ);
+#endif
+      }
+    } else if (epd->type == EVENTIO_ASYNC_SIGNAL) {
+      net_signal_hook_callback(this->thread);
+    }
+  } // end for
 
   // remove dead UDP connections
   ink_hrtime now = Thread::get_hrtime_updated();
   if (now >= nextCheck) {
-    for (uc = udp_polling.head; uc; uc = next) {
-      ink_assert(uc->mutex && uc->continuation);
-      ink_assert(uc->refcount >= 1);
-      next = uc->polling_link.next;
-      if (uc->shouldDestroy()) {
-        // changed by YTS Team, yamsat
-        // udp_polling->remove(uc,uc->polling_link);
-        uc->Release();
+    forl_LL(UnixUDPConnection, xuc, open_list)
+    {
+      ink_assert(xuc->mutex && xuc->continuation);
+      ink_assert(xuc->refcount >= 1);
+      if (xuc->shouldDestroy()) {
+        open_list.remove(xuc);
+        xuc->Release();
       }
     }
     nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
@@ -876,18 +1024,33 @@ UDPNetHandler::mainNetEvent(int event, Event *e)
   udp_callbacks.clear();
   while ((uc = q.dequeue())) {
     ink_assert(uc->mutex && uc->continuation);
-    if (udpNetInternal.udp_callback(this, uc, trigger_event->ethread)) { // not successful
+    if (udpNetInternal.udp_callback(this, uc, this->thread)) { // not successful
       // schedule on a thread of its own.
-      ink_assert(uc->callback_link.next == NULL);
-      ink_assert(uc->callback_link.prev == NULL);
+      ink_assert(uc->callback_link.next == nullptr);
+      ink_assert(uc->callback_link.prev == nullptr);
       udp_callbacks.enqueue(uc);
     } else {
-      ink_assert(uc->callback_link.next == NULL);
-      ink_assert(uc->callback_link.prev == NULL);
+      ink_assert(uc->callback_link.next == nullptr);
+      ink_assert(uc->callback_link.prev == nullptr);
       uc->onCallbackQueue = 0;
       uc->Release();
     }
   }
 
   return EVENT_CONT;
+}
+
+void
+UDPNetHandler::signalActivity()
+{
+#if HAVE_EVENTFD
+  uint64_t counter = 1;
+  ATS_UNUSED_RETURN(write(thread->evfd, &counter, sizeof(uint64_t)));
+#elif TS_USE_PORT
+  PollDescriptor *pd = get_PollDescriptor(thread);
+  ATS_UNUSED_RETURN(port_send(pd->port_fd, 0, thread->ep));
+#else
+  char dummy = 1;
+  ATS_UNUSED_RETURN(write(thread->evpipe[1], &dummy, 1));
+#endif
 }

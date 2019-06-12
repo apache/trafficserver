@@ -1,0 +1,11 @@
+``
+> GET /bigfile HTTP/{}
+> Host: ``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/2{} 200 ``
+< server:{}ATS/``
+``
+< content-length:{}1048576
+``

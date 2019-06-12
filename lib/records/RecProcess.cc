@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/EventNotify.h"
+#include "tscore/ink_platform.h"
+#include "tscore/EventNotify.h"
 
 #include "I_Tasks.h"
 
@@ -38,11 +38,11 @@
 
 // Marks whether the message handler has been initialized.
 static bool message_initialized_p = false;
-static bool g_started = false;
+static bool g_started             = false;
 static EventNotify g_force_req_notify;
 static int g_rec_raw_stat_sync_interval_ms = REC_RAW_STAT_SYNC_INTERVAL_MS;
 static int g_rec_config_update_interval_ms = REC_CONFIG_UPDATE_INTERVAL_MS;
-static int g_rec_remote_sync_interval_ms = REC_REMOTE_SYNC_INTERVAL_MS;
+static int g_rec_remote_sync_interval_ms   = REC_REMOTE_SYNC_INTERVAL_MS;
 static Event *raw_stat_sync_cont_event;
 static Event *config_update_cont_event;
 static Event *sync_cont_event;
@@ -60,7 +60,6 @@ i_am_the_record_owner(RecT rec_type)
       return true;
     case RECT_CONFIG:
     case RECT_NODE:
-    case RECT_CLUSTER:
     case RECT_LOCAL:
       return false;
     default:
@@ -72,7 +71,6 @@ i_am_the_record_owner(RecT rec_type)
     case RECT_CONFIG:
     case RECT_PROCESS:
     case RECT_NODE:
-    case RECT_CLUSTER:
     case RECT_LOCAL:
     case RECT_PLUGIN:
       return true;
@@ -122,10 +120,10 @@ RecProcess_set_remote_sync_interval_ms(int ms)
 //-------------------------------------------------------------------------
 // recv_message_cb__process
 //-------------------------------------------------------------------------
-static int
+static RecErrT
 recv_message_cb__process(RecMessage *msg, RecMessageT msg_type, void *cookie)
 {
-  int err;
+  RecErrT err;
 
   if ((err = recv_message_cb(msg, msg_type, cookie)) == REC_ERR_OKAY) {
     if (msg_type == RECG_PULL_ACK) {
@@ -171,19 +169,19 @@ struct config_update_cont : public Continuation {
 // sync_cont
 //-------------------------------------------------------------------------
 struct sync_cont : public Continuation {
-  textBuffer *m_tb;
+  TextBuffer *m_tb;
 
   sync_cont(ProxyMutex *m) : Continuation(m)
   {
     SET_HANDLER(&sync_cont::sync);
-    m_tb = new textBuffer(65536);
+    m_tb = new TextBuffer(65536);
   }
 
-  ~sync_cont()
+  ~sync_cont() override
   {
-    if (m_tb != NULL) {
+    if (m_tb != nullptr) {
       delete m_tb;
-      m_tb = NULL;
+      m_tb = nullptr;
     }
   }
 
@@ -192,9 +190,7 @@ struct sync_cont : public Continuation {
   {
     send_push_message();
     RecSyncStatsFile();
-    if (RecSyncConfigToTB(m_tb) == REC_ERR_OKAY) {
-      RecWriteConfigFile(m_tb);
-    }
+
     Debug("statsproc", "sync_cont() processed");
 
     return EVENT_CONT;
@@ -219,25 +215,6 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
     return REC_ERR_FAIL;
   }
 
-  /* -- defer RecMessageInit() until ProcessManager is initialized and
-   *    started
-   if (RecMessageInit(mode_type) == REC_ERR_FAIL) {
-   return REC_ERR_FAIL;
-   }
-
-   if (RecMessageRegisterRecvCb(recv_message_cb__process, NULL)) {
-   return REC_ERR_FAIL;
-   }
-
-   ink_cond_init(&g_force_req_cond);
-   ink_mutex_init(&g_force_req_mutex, NULL);
-   if (mode_type == RECM_CLIENT) {
-   send_pull_message(RECG_PULL_REQ);
-   ink_cond_wait(&g_force_req_cond, &g_force_req_mutex);
-   ink_mutex_release(&g_force_req_mutex);
-   }
-   */
-
   initialized_p = true;
 
   return REC_ERR_OKAY;
@@ -247,7 +224,7 @@ void
 RecMessageInit()
 {
   ink_assert(g_mode_type != RECM_NULL);
-  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, RecMessageRecvThis, NULL);
+  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, &RecMessageRecvThis);
   message_initialized_p = true;
 }
 
@@ -264,7 +241,7 @@ RecProcessInitMessage(RecModeT mode_type)
   }
 
   RecMessageInit();
-  if (RecMessageRegisterRecvCb(recv_message_cb__process, NULL)) {
+  if (RecMessageRegisterRecvCb(recv_message_cb__process, nullptr)) {
     return REC_ERR_FAIL;
   }
 
@@ -284,7 +261,7 @@ RecProcessInitMessage(RecModeT mode_type)
 // RecProcessStart
 //-------------------------------------------------------------------------
 int
-RecProcessStart(void)
+RecProcessStart()
 {
   if (g_started) {
     return REC_ERR_OKAY;
@@ -295,16 +272,9 @@ RecProcessStart(void)
   Debug("statsproc", "raw-stat syncer");
   raw_stat_sync_cont_event = eventProcessor.schedule_every(rssc, HRTIME_MSECONDS(g_rec_raw_stat_sync_interval_ms), ET_TASK);
 
-  RecInt disable_modification = 0;
-  RecGetRecordInt("proxy.config.disable_configuration_modification", &disable_modification);
-  // Schedule continuation to call the configuration callbacks if we are allowed to modify configuration in RAM
-  if (disable_modification == 1) {
-    Debug("statsproc", "Disabled configuration modification");
-  } else {
-    config_update_cont *cuc = new config_update_cont(new_ProxyMutex());
-    Debug("statsproc", "config syncer");
-    config_update_cont_event = eventProcessor.schedule_every(cuc, HRTIME_MSECONDS(g_rec_config_update_interval_ms), ET_TASK);
-  }
+  config_update_cont *cuc = new config_update_cont(new_ProxyMutex());
+  Debug("statsproc", "config syncer");
+  config_update_cont_event = eventProcessor.schedule_every(cuc, HRTIME_MSECONDS(g_rec_config_update_interval_ms), ET_TASK);
 
   sync_cont *sc = new sync_cont(new_ProxyMutex());
   Debug("statsproc", "remote syncer");
@@ -323,9 +293,9 @@ RecSignalManager(int id, const char *msg, size_t msgsize)
 }
 
 int
-RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
+RecRegisterManagerCb(int _signal, RecManagerCb const &_fn)
 {
-  return pmgmt->registerMgmtCallback(_signal, _fn, _data);
+  return pmgmt->registerMgmtCallback(_signal, _fn);
 }
 
 //-------------------------------------------------------------------------
@@ -337,13 +307,14 @@ RecMessageSend(RecMessage *msg)
 {
   int msg_size;
 
-  if (!message_initialized_p)
+  if (!message_initialized_p) {
     return REC_ERR_OKAY;
+  }
 
   // Make a copy of the record, but truncate it to the size actually used
   if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
     msg->o_end = msg->o_write;
-    msg_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
+    msg_size   = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
     pmgmt->signalManager(MGMT_SIGNAL_LIBRECORDS, (char *)msg, msg_size);
   }
 

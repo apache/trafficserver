@@ -51,9 +51,7 @@ Enumeration Members
 
 .. c:member:: TSServerState TS_SRVSTATE_TRANSACTION_COMPLETE
 
-.. c:member:: TSServerState TS_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_F
-
-.. c:member:: TSServerState TS_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_M
+.. c:member:: TSServerState TS_SRVSTATE_PARENT_RETRY
 
 Description
 ===========

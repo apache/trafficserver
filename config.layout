@@ -36,7 +36,7 @@
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec+
     infodir:       ${prefix}/info
-    mandir:        ${prefix}/man
+    mandir:        ${prefix}/share/man
     sysconfdir:    ${prefix}/etc+
     datadir:       ${prefix}/share+
     docdir:        ${prefix}/share/doc+
@@ -57,7 +57,7 @@
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/modules
     infodir:       ${prefix}/info
-    mandir:        ${prefix}/man
+    mandir:        ${prefix}/share/man
     sysconfdir:    ${prefix}/conf
     datadir:       ${prefix}/share
     docdir:        ${prefix}/share/doc+
@@ -77,9 +77,9 @@
     bindir:        ${exec_prefix}/bin
     sbindir:       ${exec_prefix}/sbin
     libdir:        ${exec_prefix}/lib
-    libexecdir:    ${exec_prefix}/libexec
+    libexecdir:    ${exec_prefix}/libexec+
     infodir:       ${prefix}/info
-    mandir:        ${prefix}/man
+    mandir:        ${prefix}/share/man
     sysconfdir:    ${prefix}/etc+
     datadir:       ${prefix}/share+
     docdir:        ${prefix}/share/doc+
@@ -142,7 +142,7 @@
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec
     infodir:       ${prefix}/info
-    mandir:        ${prefix}/man
+    mandir:        ${prefix}/share/man
     sysconfdir:    /etc${prefix}
     datadir:       ${prefix}/share
     docdir:        ${prefix}/share/doc+
@@ -184,7 +184,7 @@
     bindir:        ${exec_prefix}/bin
     sbindir:       ${exec_prefix}/sbin
     libdir:        ${exec_prefix}/lib+
-    libexecdir:    ${exec_prefix}/lib/trafficserver/modules
+    libexecdir:    ${libdir}/modules
     infodir:       ${prefix}/share/info
     mandir:        ${prefix}/share/man
     sysconfdir:    /etc+
@@ -224,7 +224,7 @@
     prefix:        /usr/local
     exec_prefix:   ${prefix}
     bindir:        ${exec_prefix}/bin
-    sbindir:       ${exec_prefix}/bin
+    sbindir:       ${exec_prefix}/sbin
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec+
     infodir:       ${prefix}/info

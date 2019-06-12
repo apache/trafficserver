@@ -21,11 +21,10 @@
   limitations under the License.
  */
 
-#if !defined(_HttpDebugNames_h_)
-#define _HttpDebugNames_h_
+#pragma once
 
 #include "HttpTransact.h"
-#include "api/ts/ts.h"
+#include "tscore/BufferWriter.h"
 
 class HttpDebugNames
 {
@@ -38,4 +37,7 @@ public:
   static const char *get_server_state_name(HttpTransact::ServerState_t state);
 };
 
-#endif
+ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, HttpTransact::ServerState_t state);
+ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, HttpTransact::CacheAction_t state);
+ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, HttpTransact::StateMachineAction_t state);
+ts::BufferWriter &bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, TSHttpHookID id);

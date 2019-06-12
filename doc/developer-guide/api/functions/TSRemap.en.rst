@@ -30,6 +30,7 @@ Synopsis
 `#include <ts/remap.h>`
 
 .. function:: TSReturnCode TSRemapInit(TSRemapInterface * api_info, char * errbuf, int errbuf_size)
+.. function:: void TSRemapConfigReload(void)
 .. function:: void TSRemapDone(void)
 .. function:: TSRemapStatus TSRemapDoRemap(void * ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
 .. function:: TSReturnCode TSRemapNewInstance(int argc, char * argv[], void ** ih, char * errbuf, int errbuf_size)
@@ -57,11 +58,50 @@ the remap plugin.
 A remap plugin may be invoked for different remap rules. Traffic Server
 will call the entry point each time a plugin is specified in a remap
 rule. When a remap plugin instance is no longer required, Traffic Server
-will call :func:`TSRemapDeleteInstance`.
+will call :func:`TSRemapDeleteInstance`. At that point, it's safe to remove
+any data or continuations associated with that instance.
 
 :func:`TSRemapDoRemap` is called for each HTTP transaction. This is a mandatory
 entry point. In this function, the remap plugin may examine and modify
 the HTTP transaction.
+
+:func:`TSRemapConfigReload` is called once for every remap plugin just before the
+remap configuration file (:file:`remap.config`) is reloaded. This is an optional
+entry point, which takes no arguments and has no return value.
+
+Generally speaking, calls to these functions are mutually exclusive. The exception
+is for functions which take an HTTP transaction as a parameter. Calls to these
+transaction-specific functions for different transactions are not necessarily mutually exclusive
+of each other.
+
+Types
+=====
+
+.. type:: TSRemapStatus
+
+    Status return value for remap callback.
+
+    .. macro:: TSREMAP_DID_REMAP
+
+        The remap callback modified the request.
+
+    .. macro:: TSREMAP_DID_REMAP_STOP
+
+        The remap callback modified the request and that no more remapping callbacks should be invoked.
+
+    .. macro:: TSREMAP_NO_REMAP
+
+        The remap callback did not modify the request.
+
+    .. macro:: TSREMAP_NO_REMAP_STOP
+
+        The remap callback did not modify the request and that no further remapping
+        callbacks should be invoked.
+
+    .. macro:: TSREMAP_ERROR
+
+        The remapping attempt in general failed and the transaction should fail with an
+        error return to the user agent.
 
 Return Values
 =============
@@ -70,16 +110,13 @@ Return Values
 :data:`TS_SUCCESS` on success, and :data:`TS_ERROR` otherwise. A
 return value of :data:`TS_ERROR` is unrecoverable.
 
-:func:`TSRemapDoRemap` returns a status code that indicates whether
-the HTTP transaction has been modified and whether Traffic Server
-should continue to evaluate the chain of remap plugins. If the
-transaction was modified, the plugin should return
-:data:`TSREMAP_DID_REMAP` or :data:`TSREMAP_DID_REMAP_STOP`; otherwise
-it should return :data:`TSREMAP_NO_REMAP` or :data:`TSREMAP_NO_REMAP_STOP`.
-If Traffic Server should not send the transaction to subsequent
-plugins in the remap chain, return :data:`TSREMAP_NO_REMAP_STOP`
-or :data:`TSREMAP_DID_REMAP_STOP`.  Returning :data:`TSREMAP_ERROR`
-causes Traffic Server to stop evaluating the remap chain and respond
+:func:`TSRemapDoRemap` returns a status code that indicates whether the HTTP transaction has been
+modified and whether Traffic Server should continue to evaluate the chain of remap plugins. If the
+transaction was modified, the plugin should return :macro:`TSREMAP_DID_REMAP` or
+:macro:`TSREMAP_DID_REMAP_STOP`; otherwise it should return :macro:`TSREMAP_NO_REMAP` or
+:macro:`TSREMAP_NO_REMAP_STOP`. If Traffic Server should not send the transaction to subsequent
+plugins in the remap chain, return :macro:`TSREMAP_NO_REMAP_STOP` or :macro:`TSREMAP_DID_REMAP_STOP`.
+Returning :macro:`TSREMAP_ERROR` causes Traffic Server to stop evaluating the remap chain and respond
 with an error.
 
 See Also

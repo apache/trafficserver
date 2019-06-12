@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -41,10 +41,7 @@ server specification:
    domains are specified
 
 After you modify the :file:`splitdns.config` file,
-run the :option:`traffic_ctl config reload`
-command to apply the changes. When you apply changes to a node in a
-cluster, Traffic Server automatically applies the changes to all other
-nodes in the cluster.
+run the :option:`traffic_ctl config reload` command to apply the changes.
 
 Format
 ======

@@ -36,7 +36,7 @@ Description
 :type:`TSNetAcceptNamedProtocol` registers the specified :arg:`protocol`
 for all statically configured TLS ports.  When a client using the TLS
 Next Protocol Negotiation extension negotiates the requested protocol,
-:type:`TrafficServer` will route the request to the given handler :arg:`contp`.
+|TS| will route the request to the given handler :arg:`contp`.
 
 .. note::
 

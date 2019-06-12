@@ -1,3 +1,5 @@
+.. include:: ../../common.defs
+
 .. _escalate-plugin:
 
 Escalate Plugin
@@ -29,7 +31,7 @@ Plugin Configuration
 --------------------
 
 The escalate plugin is a remap plugin (not global) and takes a parameter
-with two delimitated fields: ``comma-separated-error-codes:secondary-origin-server``.  For instance,
+with two delimited fields: ``comma-separated-error-codes:secondary-origin-server``.  For instance,
 
     ``@pparam=401,404,410,502:second-origin.example.com``
 
@@ -44,18 +46,15 @@ when the origin server in the remap rule returns a 401,
 Installation
 ------------
 
-This plugin is only built if the configure option ::
-
-    --enable-experimental-plugins
-
-is given at build time.
+This plugin is considered stable and is included with |TS| by default. There
+are no special steps necessary for its installation.
 
 Example
 -------
 
 With this line in :file:`remap.config` ::
 
-    map cdn.example.com origin.example.com
+    map cdn.example.com origin.example.com \
       @plugin=escalate.so @pparam=401,404,410,502:second-origin.example.com @pparam=--pristine
 
 Traffic Server would accept a request for ``cdn.example.com`` and, on a cache miss, proxy the

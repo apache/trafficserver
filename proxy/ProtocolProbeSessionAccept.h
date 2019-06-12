@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef ProtocolProbeSessionAccept_H_
-#define ProtocolProbeSessionAccept_H_
+#pragma once
 
 #include "I_SessionAccept.h"
 
@@ -33,7 +32,6 @@ struct ProtocolProbeSessionAcceptEnums {
   enum ProtoGroupKey {
     PROTO_HTTP,    ///< HTTP group (0.9-1.1)
     PROTO_HTTP2,   ///< HTTP 2 group
-    PROTO_SPDY,    ///< All SPDY versions
     N_PROTO_GROUPS ///< Size value.
   };
 };
@@ -41,20 +39,24 @@ struct ProtocolProbeSessionAcceptEnums {
 class ProtocolProbeSessionAccept : public SessionAccept, public ProtocolProbeSessionAcceptEnums
 {
 public:
-  ProtocolProbeSessionAccept() : SessionAccept(NULL)
+  ProtocolProbeSessionAccept() : SessionAccept(nullptr)
   {
     memset(endpoint, 0, sizeof(endpoint));
     SET_HANDLER(&ProtocolProbeSessionAccept::mainEvent);
   }
-  ~ProtocolProbeSessionAccept() {}
+  ~ProtocolProbeSessionAccept() override {}
   void registerEndpoint(ProtoGroupKey key, SessionAccept *ap);
 
-  void accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
+  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
+
+  // noncopyable
+  ProtocolProbeSessionAccept(const ProtocolProbeSessionAccept &) = delete;            // disabled
+  ProtocolProbeSessionAccept &operator=(const ProtocolProbeSessionAccept &) = delete; // disabled
+
+  IpMap *proxy_protocol_ipmap = nullptr;
 
 private:
-  int mainEvent(int event, void *netvc);
-  ProtocolProbeSessionAccept(const ProtocolProbeSessionAccept &);            // disabled
-  ProtocolProbeSessionAccept &operator=(const ProtocolProbeSessionAccept &); // disabled
+  int mainEvent(int event, void *netvc) override;
 
   /** Child acceptors, index by @c ProtoGroupKey
 
@@ -66,5 +68,3 @@ private:
 
   friend struct ProtocolProbeTrampoline;
 };
-
-#endif /* ProtocolProbeSessionAccept_H_ */

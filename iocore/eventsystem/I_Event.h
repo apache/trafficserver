@@ -22,10 +22,9 @@
 
  */
 
-#ifndef _Event_h_
-#define _Event_h_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_Action.h"
 
 //
@@ -57,19 +56,17 @@
 #define VC_EVENT_EVENTS_START 100
 #define NET_EVENT_EVENTS_START 200
 #define DISK_EVENT_EVENTS_START 300
-#define CLUSTER_EVENT_EVENTS_START 400
 #define HOSTDB_EVENT_EVENTS_START 500
 #define DNS_EVENT_EVENTS_START 600
 #define CONFIG_EVENT_EVENTS_START 800
 #define LOG_EVENT_EVENTS_START 900
-#define MULTI_CACHE_EVENT_EVENTS_START 1000
+#define REFCOUNT_CACHE_EVENT_EVENTS_START 1000
 #define CACHE_EVENT_EVENTS_START 1100
 #define CACHE_DIRECTORY_EVENT_EVENTS_START 1200
 #define CACHE_DB_EVENT_EVENTS_START 1300
 #define HTTP_NET_CONNECTION_EVENT_EVENTS_START 1400
 #define HTTP_NET_VCONNECTION_EVENT_EVENTS_START 1500
 #define GC_EVENT_EVENTS_START 1600
-#define ICP_EVENT_EVENTS_START 1800
 #define TRANSFORM_EVENTS_START 2000
 #define STAT_PAGES_EVENTS_START 2100
 #define HTTP_SESSION_EVENTS_START 2200
@@ -81,21 +78,18 @@
 #define RAFT_EVENT_EVENTS_START 3200
 #define SIMPLE_EVENT_EVENTS_START 3300
 #define UPDATE_EVENT_EVENTS_START 3500
-#define LOG_COLLATION_EVENT_EVENTS_START 3800
 #define AIO_EVENT_EVENTS_START 3900
 #define BLOCK_CACHE_EVENT_EVENTS_START 4000
 #define UTILS_EVENT_EVENTS_START 5000
-#define CONGESTION_EVENT_EVENTS_START 5100
 #define INK_API_EVENT_EVENTS_START 60000
 #define SRV_EVENT_EVENTS_START 62000
 #define REMAP_EVENT_EVENTS_START 63000
 
 // define misc events here
 #define ONE_WAY_TUNNEL_EVENT_PEER_CLOSE (SIMPLE_EVENT_EVENTS_START + 1)
-#define PREFETCH_EVENT_SEND_URL (SIMPLE_EVENT_EVENTS_START + 2)
 
 typedef int EventType;
-const int ET_CALL = 0;
+const int ET_CALL         = 0;
 const int MAX_EVENT_TYPES = 8; // conservative, these are dynamically allocated
 
 class EThread;
@@ -111,16 +105,16 @@ class EThread;
 
   <b>Remarks</b>
 
-  When reschedulling an event through any of the Event class
-  schedulling fuctions, state machines must not make these calls
+  When rescheduling an event through any of the Event class
+  scheduling functions, state machines must not make these calls
   in other thread other than the one that called them back. They
   also must have acquired the continuation's lock before calling
-  any of the schedulling functions.
+  any of the scheduling functions.
 
-  The rules for cancelling an event are the same as those for
+  The rules for canceling an event are the same as those for
   actions:
 
-  The canceller of an event must be the state machine that will be
+  The canceler of an event must be the state machine that will be
   called back by the task and that state machine's lock must be
   held while calling cancel. Any reference to that event object
   (ie. pointer) held by the state machine must not be used after
@@ -138,7 +132,7 @@ class EThread;
 
   Time values:
 
-  The schedulling functions use a time parameter typed as ink_hrtime
+  The scheduling functions use a time parameter typed as ink_hrtime
   for specifying the timeouts or periods. This is a nanosecond value
   supported by libts and you should use the time functions and
   macros defined in ink_hrtime.h.
@@ -172,7 +166,7 @@ public:
      Instructs the event object to reschedule itself at the time
      specified in atimeout_at on the EventProcessor.
 
-     @param atimeout_at Time at which to callcallback. See the Remarks section.
+     @param atimeout_at Time at which to call the callback. See the Remarks section.
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */
@@ -183,7 +177,7 @@ public:
      Instructs the event object to reschedule itself at the time
      specified in atimeout_at on the EventProcessor.
 
-     @param atimeout_in Time at which to callcallback. See the Remarks section.
+     @param atimeout_in Time at which to call the callback. See the Remarks section.
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */
@@ -194,28 +188,28 @@ public:
      the event object to reschedule itself to callback every 'aperiod'
      from now.
 
-     @param aperiod Time period at which to callcallback. See the Remarks section.
+     @param aperiod Time period at which to call the callback. See the Remarks section.
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */
   void schedule_every(ink_hrtime aperiod, int callback_event = EVENT_INTERVAL);
 
   // inherited from Action::cancel
-  // virtual void cancel(Continuation * c = NULL);
+  // virtual void cancel(Continuation * c = nullptr);
 
   void free();
 
-  EThread *ethread;
+  EThread *ethread = nullptr;
 
   unsigned int in_the_prot_queue : 1;
   unsigned int in_the_priority_queue : 1;
   unsigned int immediate : 1;
   unsigned int globally_allocated : 1;
   unsigned int in_heap : 4;
-  int callback_event;
+  int callback_event = 0;
 
-  ink_hrtime timeout_at;
-  ink_hrtime period;
+  ink_hrtime timeout_at = 0;
+  ink_hrtime period     = 0;
 
   /**
     This field can be set when an event is created. It is returned
@@ -223,7 +217,7 @@ public:
     is called.
 
   */
-  void *cookie;
+  void *cookie = nullptr;
 
   // Private
 
@@ -235,20 +229,19 @@ public:
   ink_hrtime start_time;
 #endif
 
-private:
-  void *operator new(size_t size); // use the fast allocators
+  // noncopyable: prevent unauthorized copies (Not implemented)
+  Event(const Event &) = delete;
+  Event &operator=(const Event &) = delete;
 
 private:
-  // prevent unauthorized copies (Not implemented)
-  Event(const Event &);
-  Event &operator=(const Event &);
+  void *operator new(size_t size); // use the fast allocators
 
 public:
   LINK(Event, link);
 
-/*-------------------------------------------------------*\
-| UNIX/non-NT Interface                                   |
-\*-------------------------------------------------------*/
+  /*-------------------------------------------------------*\
+  | UNIX/non-NT Interface                                   |
+  \*-------------------------------------------------------*/
 
 #ifdef ONLY_USED_FOR_FIB_AND_BIN_HEAP
   void *node_pointer;
@@ -265,7 +258,7 @@ public:
 #endif
 
 #if defined(__GNUC__)
-  virtual ~Event() {}
+  ~Event() override {}
 #endif
 };
 
@@ -276,10 +269,8 @@ extern ClassAllocator<Event> eventAllocator;
 
 #define EVENT_ALLOC(_a, _t) THREAD_ALLOC(_a, _t)
 #define EVENT_FREE(_p, _a, _t) \
-  _p->mutex = NULL;            \
+  _p->mutex = nullptr;         \
   if (_p->globally_allocated)  \
     ::_a.free(_p);             \
   else                         \
-  THREAD_FREE(_p, _a, _t)
-
-#endif /*_Event_h_*/
+    THREAD_FREE(_p, _a, _t)

@@ -21,15 +21,18 @@ cd "${WORKSPACE}/src"
 autoreconf -fi
 
 ./configure \
+    --with-user=jenkins \
     --enable-ccache \
     --enable-debug \
     --enable-werror \
     --enable-experimental-plugins \
-    --enable-example-plugins \
-    --enable-test-tools
+    --enable-example-plugins
 
 ${ATS_MAKE} asf-dist
 
 # Make an "atomic" copy of the artifact (and leave it here for the archive)
 cp trafficserver-*.tar.bz2 ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2.new
 mv ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2.new ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2
+
+# Make sure we get a chance to synchronize the /CA/src directory to remote sites.
+sleep 5

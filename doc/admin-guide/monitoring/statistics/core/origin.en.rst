@@ -22,70 +22,60 @@
 Origin Server
 *************
 
-.. ts:stat:: global proxy.node.http.origin_server_current_connections_count integer
+.. ts:stat:: global proxy.process.http.origin_server_total_request_bytes integer
    :type: counter
+   :units: bytes
 
-.. ts:stat:: global proxy.node.http.origin_server_total_request_bytes integer
+.. ts:stat:: global proxy.process.http.origin_server_total_response_bytes integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
-.. ts:stat:: global proxy.node.http.origin_server_total_response_bytes integer
+.. ts:stat:: global proxy.process.origin_server_total_bytes integer
    :type: counter
-   :unit: bytes
-
-.. ts:stat:: global proxy.node.http.origin_server_total_transactions_count integer
-   :type: counter
-
-.. ts:stat:: global proxy.node.origin_server_total_bytes_avg_10s float
-   :type: derivative
-   :unit: bytes
-
-.. ts:stat:: global proxy.node.origin_server_total_bytes integer
-   :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.origin_server_request_document_total_size integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.origin_server_request_header_total_size integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.origin_server_response_document_total_size integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.origin_server_response_header_total_size integer
    :type: counter
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_100 integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_100K integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_100M integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_10K integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_10M integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_1K integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
 
 .. ts:stat:: global proxy.process.http.origin_server_speed_bytes_per_sec_1M integer
    :type: derivative
-   :unit: bytes
+   :units: bytes
 
 

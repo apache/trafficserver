@@ -34,7 +34,7 @@ class ProtocolServer extends Thread
 	ioe.printStackTrace();
       }
   }
-  
+
   public synchronized void run ()
   {
     while (true)
@@ -74,7 +74,7 @@ class ProtocolRequestHandler extends Thread
 
   public synchronized void run ()
   {
-    try 
+    try
       {
 	// unmarshal the request
 	System.out.println ("call unmarshalRequest");
@@ -111,10 +111,10 @@ class ProtocolRequestHandler extends Thread
   }
 
   protected String unmarshalRequest() throws Exception
-  { 
+  {
     BufferedReader requestReader =
       new BufferedReader (new InputStreamReader(socket.getInputStream()));
-    
+
     String request = requestReader.readLine();
     requestReader.readLine();
     System.out.println ("request is " + request);
@@ -134,7 +134,7 @@ class ProtocolRequestHandler extends Thread
     File responseFile = new File (requestBody);
     if (responseFile.canRead())
       {
-	FileInputStream responseFileStream = 
+	FileInputStream responseFileStream =
 	  new FileInputStream (responseFile);
 
 	// read data from the file.
@@ -150,7 +150,7 @@ class ProtocolRequestHandler extends Thread
 	      responseBody[i] = temp[i];
 	    for (int i = 0; i < bytesRead; i++)
 	      responseBody[temp.length + i] = buffer[i];
-	  }	
+	  }
       }
     else
       {
@@ -171,7 +171,7 @@ public class ProtocolServerTest
     {
         int port = 8175;
         if(args.length > 0)
-            port = Integer.parseInt(args[0]); 
+            port = Integer.parseInt(args[0]);
 
         // Call networkClient and make connection to server through socket.
         ProtocolServer protocolServer = ProtocolServer.getInstance (port);

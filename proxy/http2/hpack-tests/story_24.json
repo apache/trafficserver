@@ -1,0 +1,1253 @@
+{
+  "cases": [
+    {
+      "seqnum": 0,
+      "headers": [
+        {
+          ":status": "302"
+        },
+        {
+          "content-type": "text/html; charset=iso-8859-1"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "location": "http://www.craigslist.org/about/sites/"
+        },
+        {
+          "transfer-encoding": "chunked"
+        },
+        {
+          "date": "Sat, 03 Nov 2012 13:34:16 GMT"
+        },
+        {
+          "server": "Apache"
+        }
+      ],
+      "wire": "488264025f95497ca589d34d1f6a1271d882a60320eb3cf36fac1f408721eaa8a4498f57842507417f6e9b9d29aee30c78f1e17258334c8a0c84ae7b2660719ed4b08324a863798624f6d5d4b27f6196dc34fd280654d27eea0801128166e32d5c0b8a62d1bf768586b19272ff"
+    },
+    {
+      "seqnum": 1,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=14400"
+        },
+        {
+          "last-modified": "Sat, 03 Nov 2012 10:03:45 GMT"
+        },
+        {
+          "date": "Sat, 03 Nov 2012 10:03:45 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "10344"
+        },
+        {
+          "content-type": "text/html; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Mon, 03 Dec 2012 10:03:45 GMT"
+        }
+      ],
+      "wire": "88c25890aed8e8313e94a47e561cc5802d34007f6c96dc34fd280654d27eea0801128105c03371a6d4c5a37f6196dc34fd280654d27eea0801128105c03371a6d4c5a37f5a839bd9ab7b8b84842d695b05443c86aa6f5c84081969afc9408bf2b4b60e92ac7ad263d48f9d868a0fe16c361e95274a6b45c61894f65b4a17258334c8a0c84ae7b26fc56496d07abe94032a5f2914100225020b8066e34da98b46ff"
+    },
+    {
+      "seqnum": 2,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Tue, 16 Oct 2012 22:03:00 GMT"
+        },
+        {
+          "date": "Tue, 16 Oct 2012 22:03:00 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "1099"
+        },
+        {
+          "content-type": "text/css; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Thu, 15 Nov 2012 22:03:00 GMT"
+        }
+      ],
+      "wire": "88ca5891a47e561cc5804dbe20001f4a576c74189f6c96df697e940b8a6a2254100225042b8066e000a62d1bff6196df697e940b8a6a2254100225042b8066e000a62d1bffc5c45c83081f7f5f94497ca582211f6a1271d882a60320eb3cf36fac1fc4cb6496df3dbf4a05b5349fba820044a085700cdc0014c5a37f"
+    },
+    {
+      "seqnum": 3,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=15, public"
+        },
+        {
+          "last-modified": "Sat, 03 Nov 2012 13:33:59 GMT"
+        },
+        {
+          "date": "Sat, 03 Nov 2012 13:33:59 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "6344"
+        },
+        {
+          "content-type": "text/javascript; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Sat, 03 Nov 2012 13:34:14 GMT"
+        }
+      ],
+      "wire": "88d0588ea47e561cc5802dfd295db1d0627f6c96dc34fd280654d27eea0801128166e32cdc6df53168df6196dc34fd280654d27eea0801128166e32cdc6df53168dfcbca5c8371969a5f99497ca58e83ee3412c3569fb50938ec41530190759e79b7d60fcad16496dc34fd280654d27eea0801128166e32d5c0b4a62d1bf"
+    },
+    {
+      "seqnum": 4,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Tue, 09 Oct 2012 06:13:28 GMT"
+        },
+        {
+          "date": "Tue, 09 Oct 2012 06:13:28 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "28017"
+        },
+        {
+          "content-type": "text/javascript; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Thu, 08 Nov 2012 06:13:28 GMT"
+        }
+      ],
+      "wire": "88d6c96c96df697e9403ea6a225410022500e5c0b3704f298b46ff6196df697e9403ea6a225410022500e5c0b3704f298b46ffd0cf5c8413c00bbfc2ced56496df3dbf4a01e5349fba820044a01cb8166e09e53168df"
+    },
+    {
+      "seqnum": 5,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "last-modified": "Mon, 23 Jun 2008 23:06:11 GMT"
+        },
+        {
+          "cache-control": "public, max-age=315360000"
+        },
+        {
+          "accept-ranges": "bytes"
+        },
+        {
+          "date": "Tue, 09 Oct 2012 05:33:00 GMT"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "1150"
+        },
+        {
+          "content-type": "text/plain"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Fri, 07 Oct 2022 05:33:00 GMT"
+        }
+      ],
+      "wire": "88da6c96d07abe94132a65b6a504003ca099b8072e042a62d1bf5892aed8e8313e94a47e561cc58190b6cb80000152848fd24a8f6196df697e9403ea6a225410022500ddc659b800298b46ffd55c83085b075f87497ca58ae819aadc6496c361be9403aa6a225410042500ddc659b800298b46ff"
+    },
+    {
+      "seqnum": 6,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=3600, public"
+        },
+        {
+          "last-modified": "Sat, 03 Nov 2012 12:36:54 GMT"
+        },
+        {
+          "set-cookie": "cl_def_hp=shoals; domain=.craigslist.org; path=/; expires=Sun, 03-Nov-13 12:36:54 GMT"
+        },
+        {
+          "date": "Sat, 03 Nov 2012 12:36:54 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "6245"
+        },
+        {
+          "content-type": "text/html; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Sat, 03 Nov 2012 13:36:54 GMT"
+        }
+      ],
+      "wire": "88e1588fa47e561cc58197000fa52bb63a0c4f6c96dc34fd280654d27eea0801128115c65cb8db4a62d1bf77bf25114859629eb81139c7423ed490f48cd540b92c19a6450642573d937da958d33c0c7da85f359ac2a20dd6d5f4a0195b49fbac165408ae32e5c6da53168dff6196dc34fd280654d27eea0801128115c65cb8db4a62d1bfdddc5c83704d37e7dbe26496dc34fd280654d27eea0801128166e32e5c6da53168df"
+    },
+    {
+      "seqnum": 7,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Thu, 01 Nov 2012 20:53:37 GMT"
+        },
+        {
+          "date": "Thu, 01 Nov 2012 20:53:37 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "6047"
+        },
+        {
+          "content-type": "text/css; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Sat, 01 Dec 2012 20:53:37 GMT"
+        }
+      ],
+      "wire": "88e7da6c96df3dbf4a002a693f750400894102e36cdc65d53168df6196df3dbf4a002a693f750400894102e36cdc65d53168dfe1e05c83700d3bd9dfe66496dc34fd2800a97ca450400894102e36cdc65d53168dff"
+    },
+    {
+      "seqnum": 8,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Thu, 01 Nov 2012 20:53:17 GMT"
+        },
+        {
+          "date": "Thu, 01 Nov 2012 20:53:17 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "6344"
+        },
+        {
+          "content-type": "text/javascript; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Sat, 01 Dec 2012 20:53:17 GMT"
+        }
+      ],
+      "wire": "88ebde6c96df3dbf4a002a693f750400894102e36cdc0baa62d1bf6196df3dbf4a002a693f750400894102e36cdc0baa62d1bfe5e4d7d6e2e96496dc34fd2800a97ca450400894102e36cdc0baa62d1bff"
+    },
+    {
+      "seqnum": 9,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Tue, 09 Oct 2012 06:01:51 GMT"
+        },
+        {
+          "date": "Tue, 09 Oct 2012 06:01:51 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "473"
+        },
+        {
+          "content-type": "text/javascript; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Thu, 08 Nov 2012 06:01:51 GMT"
+        }
+      ],
+      "wire": "88eee16c96df697e9403ea6a225410022500e5c006e36153168dff6196df697e9403ea6a225410022500e5c006e36153168dffe8e75c8369d67fdae6ed6496df3dbf4a01e5349fba820044a01cb800dc6c2a62d1bf"
+    },
+    {
+      "seqnum": 10,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Tue, 09 Oct 2012 06:01:55 GMT"
+        },
+        {
+          "date": "Tue, 09 Oct 2012 06:01:55 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "28017"
+        },
+        {
+          "content-type": "text/javascript; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Thu, 08 Nov 2012 06:01:55 GMT"
+        }
+      ],
+      "wire": "88f2e56c96df697e9403ea6a225410022500e5c006e36da98b46ff6196df697e9403ea6a225410022500e5c006e36da98b46ffecebd9dde9f06496df3dbf4a01e5349fba820044a01cb800dc6db53168df"
+    },
+    {
+      "seqnum": 11,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "last-modified": "Mon, 23 Jun 2008 23:06:11 GMT"
+        },
+        {
+          "cache-control": "public, max-age=315360000"
+        },
+        {
+          "accept-ranges": "bytes"
+        },
+        {
+          "date": "Tue, 09 Oct 2012 05:33:00 GMT"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "1150"
+        },
+        {
+          "content-type": "text/plain"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Fri, 07 Oct 2022 05:33:00 GMT"
+        }
+      ],
+      "wire": "88f5d8d7d6d5ecd4d3f1d2"
+    },
+    {
+      "seqnum": 12,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=600"
+        },
+        {
+          "last-modified": "Sat, 03 Nov 2012 13:34:21 GMT"
+        },
+        {
+          "date": "Sat, 03 Nov 2012 13:34:21 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "9660"
+        },
+        {
+          "content-type": "text/html; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Sat, 03 Nov 2012 13:49:21 GMT"
+        }
+      ],
+      "wire": "88f5588eaed8e8313e94a47e561cc581c0036c96dc34fd280654d27eea0801128166e32d5c1054c5a37f6196dc34fd280654d27eea0801128166e32d5c1054c5a37ff0ef5c837dc701faeef56496dc34fd280654d27eea0801128166e34fdc1054c5a37f"
+    },
+    {
+      "seqnum": 13,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Tue, 09 Oct 2012 06:21:38 GMT"
+        },
+        {
+          "date": "Tue, 09 Oct 2012 06:21:38 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "225"
+        },
+        {
+          "content-type": "text/javascript; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Thu, 08 Nov 2012 06:21:38 GMT"
+        }
+      ],
+      "wire": "88faed6c96df697e9403ea6a225410022500e5c106e32f298b46ff6196df697e9403ea6a225410022500e5c106e32f298b46fff4f35c82109be6f2f96496df3dbf4a01e5349fba820044a01cb820dc65e53168df"
+    },
+    {
+      "seqnum": 14,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Tue, 09 Oct 2012 07:20:18 GMT"
+        },
+        {
+          "date": "Tue, 09 Oct 2012 07:20:18 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "2857"
+        },
+        {
+          "content-type": "text/javascript; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Thu, 08 Nov 2012 07:20:18 GMT"
+        }
+      ],
+      "wire": "88408721eaa8a4498f57842507417ff26c96df697e9403ea6a225410022500edc102e05e53168dff6196df697e9403ea6a225410022500edc102e05e53168dfff9f85c8313cdbbebf7768586b19272ff6496df3dbf4a01e5349fba820044a01db8205c0bca62d1bf"
+    },
+    {
+      "seqnum": 15,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Tue, 30 Oct 2012 21:50:50 GMT"
+        },
+        {
+          "date": "Tue, 30 Oct 2012 21:50:50 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "1398"
+        },
+        {
+          "content-type": "text/javascript; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Thu, 29 Nov 2012 21:50:50 GMT"
+        }
+      ],
+      "wire": "88c3f76c96df697e94640a6a2254100225041b8d82e36053168dff6196df697e94640a6a2254100225041b8d82e36053168dff5a839bd9ab7b8b84842d695b05443c86aa6f5c830b2fbdf2408bf2b4b60e92ac7ad263d48f9d868a0fe16c361e95274a6b45c61894f65b4a17258334c8a0c84ae7b26fc56496df3dbf4a09f5349fba820044a08371b05c6c0a62d1bf"
+    },
+    {
+      "seqnum": 16,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Thu, 01 Nov 2012 21:26:48 GMT"
+        },
+        {
+          "date": "Thu, 01 Nov 2012 21:26:48 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "40353"
+        },
+        {
+          "content-type": "text/javascript; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Sat, 01 Dec 2012 21:26:48 GMT"
+        }
+      ],
+      "wire": "88ca5891a47e561cc5804dbe20001f4a576c74189f6c96df3dbf4a002a693f750400894106e09cb8d3ca62d1bf6196df3dbf4a002a693f750400894106e09cb8d3ca62d1bfc5c45c84680cb6cff8c3ca6496dc34fd2800a97ca450400894106e09cb8d3ca62d1bff"
+    },
+    {
+      "seqnum": 17,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Fri, 02 Nov 2012 21:46:27 GMT"
+        },
+        {
+          "date": "Fri, 02 Nov 2012 21:46:27 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "2458"
+        },
+        {
+          "content-type": "text/html; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Sun, 02 Dec 2012 21:46:27 GMT"
+        }
+      ],
+      "wire": "88cfc26c96c361be940094d27eea080112820dc69cb82754c5a37f6196c361be940094d27eea080112820dc69cb82754c5a37fc9c85c83134dbd5f95497ca589d34d1f6a1271d882a60320eb3cf36fac1fc8cf6496dd6d5f4a004a5f2914100225041b8d39704ea98b46ff"
+    },
+    {
+      "seqnum": 18,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Mon, 15 Oct 2012 22:07:17 GMT"
+        },
+        {
+          "date": "Mon, 15 Oct 2012 22:07:17 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "727"
+        },
+        {
+          "content-type": "text/javascript; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Wed, 14 Nov 2012 22:07:17 GMT"
+        }
+      ],
+      "wire": "88d4c76c96d07abe940b6a6a2254100225042b8076e05d53168dff6196d07abe940b6a6a2254100225042b8076e05d53168dffcecd5c83744eff5f99497ca58e83ee3412c3569fb50938ec41530190759e79b7d60fcdd46496e4593e940b4a693f75040089410ae01db81754c5a37f"
+    },
+    {
+      "seqnum": 19,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "content-type": "image/jpeg"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=2592000"
+        },
+        {
+          "transfer-encoding": "chunked"
+        },
+        {
+          "date": "Fri, 02 Nov 2012 21:46:28 GMT"
+        },
+        {
+          "server": "Apache"
+        }
+      ],
+      "wire": "885f88352398ac74acb37fda5891aed8e8313e94a47e561cc5804dbe20001f798624f6d5d4b27f6196c361be940094d27eea080112820dc69cb82794c5a37fd9"
+    },
+    {
+      "seqnum": 20,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "content-type": "image/jpeg"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=2592000"
+        },
+        {
+          "transfer-encoding": "chunked"
+        },
+        {
+          "date": "Fri, 02 Nov 2012 21:46:27 GMT"
+        },
+        {
+          "server": "Apache"
+        }
+      ],
+      "wire": "88c1ddc0bfcad9"
+    },
+    {
+      "seqnum": 21,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "content-type": "image/jpeg"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=2592000"
+        },
+        {
+          "transfer-encoding": "chunked"
+        },
+        {
+          "date": "Fri, 02 Nov 2012 21:46:28 GMT"
+        },
+        {
+          "server": "Apache"
+        }
+      ],
+      "wire": "88c1ddc0bfbed9"
+    },
+    {
+      "seqnum": 22,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "content-type": "image/jpeg"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=2592000"
+        },
+        {
+          "transfer-encoding": "chunked"
+        },
+        {
+          "date": "Fri, 02 Nov 2012 21:46:27 GMT"
+        },
+        {
+          "server": "Apache"
+        }
+      ],
+      "wire": "88c1ddc0bfcad9"
+    },
+    {
+      "seqnum": 23,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=600"
+        },
+        {
+          "last-modified": "Sat, 03 Nov 2012 13:34:18 GMT"
+        },
+        {
+          "date": "Sat, 03 Nov 2012 13:34:17 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "10780"
+        },
+        {
+          "content-type": "text/html; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Sat, 03 Nov 2012 13:49:18 GMT"
+        }
+      ],
+      "wire": "88dde66c96dc34fd280654d27eea0801128166e32d5c0bca62d1bf6196dc34fd280654d27eea0801128166e32d5c0baa62d1bfd7d65c84081d781fcbd5dc6496dc34fd280654d27eea0801128166e34fdc0bca62d1bf"
+    },
+    {
+      "seqnum": 24,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Sat, 03 Nov 2012 13:17:50 GMT"
+        },
+        {
+          "date": "Sat, 03 Nov 2012 13:17:50 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "2245"
+        },
+        {
+          "content-type": "text/html; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Mon, 03 Dec 2012 13:17:50 GMT"
+        }
+      ],
+      "wire": "88e1d46c96dc34fd280654d27eea0801128166e05db8d814c5a37f6196dc34fd280654d27eea0801128166e05db8d814c5a37fdbda5c83109a6fcfd9e06496d07abe94032a5f291410022502cdc0bb71b0298b46ff"
+    },
+    {
+      "seqnum": 25,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "content-type": "image/jpeg"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=2592000"
+        },
+        {
+          "transfer-encoding": "chunked"
+        },
+        {
+          "date": "Mon, 22 Oct 2012 22:00:11 GMT"
+        },
+        {
+          "server": "Apache"
+        }
+      ],
+      "wire": "88c9e5c8c76195d07abe941094d444a820044a0857000b810a98b46fe2"
+    },
+    {
+      "seqnum": 26,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "content-type": "image/jpeg"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=2592000"
+        },
+        {
+          "transfer-encoding": "chunked"
+        },
+        {
+          "date": "Sat, 27 Oct 2012 12:09:05 GMT"
+        },
+        {
+          "server": "Apache"
+        }
+      ],
+      "wire": "88cae6c9c86196dc34fd282754d444a820044a045700fdc036a62d1bffe3"
+    },
+    {
+      "seqnum": 27,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "content-type": "image/jpeg"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=2592000"
+        },
+        {
+          "transfer-encoding": "chunked"
+        },
+        {
+          "date": "Sat, 27 Oct 2012 07:36:12 GMT"
+        },
+        {
+          "server": "Apache"
+        }
+      ],
+      "wire": "88cbe7cac96196dc34fd282754d444a820044a01db8cb9702253168dffe4"
+    },
+    {
+      "seqnum": 28,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "content-type": "image/jpeg"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=2592000"
+        },
+        {
+          "transfer-encoding": "chunked"
+        },
+        {
+          "date": "Mon, 22 Oct 2012 22:00:12 GMT"
+        },
+        {
+          "server": "Apache"
+        }
+      ],
+      "wire": "88cce8cbca6195d07abe941094d444a820044a0857000b811298b46fe5"
+    },
+    {
+      "seqnum": 29,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=14400"
+        },
+        {
+          "last-modified": "Sat, 03 Nov 2012 12:53:23 GMT"
+        },
+        {
+          "date": "Sat, 03 Nov 2012 12:53:23 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "5733"
+        },
+        {
+          "content-type": "text/html; charset=utf-8"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Mon, 03 Dec 2012 12:53:23 GMT"
+        }
+      ],
+      "wire": "88e95890aed8e8313e94a47e561cc5802d34007f6c96dc34fd280654d27eea0801128115c6d9b82654c5a37f6196dc34fd280654d27eea0801128115c6d9b82654c5a37fe4e35c836dd6595f92497ca589d34d1f6a1271d882a60b532acf7fe3ea6496d07abe94032a5f2914100225022b8db3704ca98b46ff"
+    },
+    {
+      "seqnum": 30,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=14400"
+        },
+        {
+          "last-modified": "Sat, 03 Nov 2012 10:58:55 GMT"
+        },
+        {
+          "date": "Sat, 03 Nov 2012 10:58:55 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "1480"
+        },
+        {
+          "content-type": "text/html; charset=utf-8"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Mon, 03 Dec 2012 10:58:55 GMT"
+        }
+      ],
+      "wire": "88efc36c96dc34fd280654d27eea0801128105c6deb8db6a62d1bf6196dc34fd280654d27eea0801128105c6deb8db6a62d1bfe9e85c830b4f03c2e7ee6496d07abe94032a5f2914100225020b8dbd71b6d4c5a37f"
+    },
+    {
+      "seqnum": 31,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "public, max-age=14400"
+        },
+        {
+          "last-modified": "Sat, 03 Nov 2012 09:53:38 GMT"
+        },
+        {
+          "date": "Sat, 03 Nov 2012 09:53:38 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "10400"
+        },
+        {
+          "content-type": "text/html; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Mon, 03 Dec 2012 09:53:38 GMT"
+        }
+      ],
+      "wire": "88f3c76c96dc34fd280654d27eea080112807ee36cdc65e53168df6196dc34fd280654d27eea080112807ee36cdc65e53168dfedec5c84081a003fe1ebf26496d07abe94032a5f291410022500fdc6d9b8cbca62d1bf"
+    },
+    {
+      "seqnum": 32,
+      "headers": [
+        {
+          ":status": "200"
+        },
+        {
+          "connection": "close"
+        },
+        {
+          "cache-control": "max-age=2592000, public"
+        },
+        {
+          "last-modified": "Tue, 09 Oct 2012 06:01:47 GMT"
+        },
+        {
+          "date": "Tue, 09 Oct 2012 06:01:47 GMT"
+        },
+        {
+          "content-encoding": "gzip"
+        },
+        {
+          "vary": "Accept-Encoding"
+        },
+        {
+          "content-length": "4861"
+        },
+        {
+          "content-type": "text/css; charset=iso-8859-1"
+        },
+        {
+          "x-frame-options": "Allow-From https://forums.craigslist.org"
+        },
+        {
+          "server": "Apache"
+        },
+        {
+          "expires": "Thu, 08 Nov 2012 06:01:47 GMT"
+        }
+      ],
+      "wire": "88f7ea6c96df697e9403ea6a225410022500e5c006e34ea98b46ff6196df697e9403ea6a225410022500e5c006e34ea98b46fff1f05c8369e7035f94497ca582211f6a1271d882a60320eb3cf36fac1ff0f76496df3dbf4a01e5349fba820044a01cb800dc69d53168df"
+    }
+  ],
+  "description": "Apache Traffic Server"
+}

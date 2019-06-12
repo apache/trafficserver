@@ -49,19 +49,19 @@ Here's how the interface works:
 
     /* Assume that you have previously defined a plugin configuration
      * data structure named ConfigData, along with its constructor
-     * plugin_config_allocator () and its destructor 
+     * plugin_config_allocator () and its destructor
      * plugin_config_destructor (ConfigData *data)
      */
     ConfigData *plugin_config;
 
     /* You will need to assign plugin_config a unique identifier of type
      * unsigned int. It is important to initialize this identifier to zero
-     * (see the documentation of the  function). 
+     * (see the documentation of the  function).
      */
     static unsigned int   my_id = 0;
 
-    /* You will need an TSConfig pointer to access a snapshot of the 
-     * current plugin_config. 
+    /* You will need an TSConfig pointer to access a snapshot of the
+     * current plugin_config.
      */
     TSConfig config_ptr;
 
@@ -74,8 +74,8 @@ Here's how the interface works:
     /* Get a snapshot of the current configuration using TSConfigGet. */
     config_ptr = TSConfigGet (my_id);
 
-    /* With an TSConfig pointer to the current configuration, you can 
-     * retrieve the configuration's current data using TSConfigDataGet. 
+    /* With an TSConfig pointer to the current configuration, you can
+     * retrieve the configuration's current data using TSConfigDataGet.
      */
     plugin_config = (ConfigData*) TSConfigDataGet (config_ptr);
 
@@ -87,9 +87,9 @@ Here's how the interface works:
     TSConfigRelease (my_id, config_ptr);
 
     /* Any time you want to modify plugin_config, you must repeat these
-     * steps, starting with 
+     * steps, starting with
      * my_id = TSConfigSet (my_id,plugin_config, plugin_config_destructor);
-     * and continuing up to TSConfigRelease. 
+     * and continuing up to TSConfigRelease.
      */
 
 The configuration functions are:

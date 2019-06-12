@@ -21,16 +21,14 @@
   limitations under the License.
  */
 
-#ifndef LOG_FILE_H
-#define LOG_FILE_H
+#pragma once
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "LogBufferSink.h"
 
-class LogSock;
 class LogBuffer;
 struct LogBufferHeader;
 class LogObject;
@@ -47,7 +45,7 @@ public:
   LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size = 4 * 9216,
           size_t max_line_size = 9216);
   LogFile(const LogFile &);
-  ~LogFile();
+  ~LogFile() override;
 
   enum {
     LOG_FILE_NO_ERROR = 0,
@@ -58,7 +56,7 @@ public:
     LOG_FILE_FILESYSTEM_CHECKS_FAILED
   };
 
-  int preproc_and_try_delete(LogBuffer *lb);
+  int preproc_and_try_delete(LogBuffer *lb) override;
 
   int roll(long interval_start, long interval_end);
 
@@ -76,14 +74,15 @@ public:
   {
     return m_file_format;
   }
+
   const char *
   get_format_name() const
   {
     return (m_file_format == LOG_FILE_BINARY ? "binary" : (m_file_format == LOG_FILE_PIPE ? "ascii_pipe" : "ascii"));
   }
 
-  static int write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const char *path, const char *alt_format = NULL);
-  int write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_format = NULL);
+  static int write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const char *path, const char *alt_format = nullptr);
+  int write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_format = nullptr);
   static bool rolled_logfile(char *file);
   static bool exists(const char *pathname);
 
@@ -99,12 +98,7 @@ public:
       return m_log->get_size_bytes();
     else
       return 0;
-  };
-  int
-  do_filesystem_checks()
-  {
-    return 0;
-  }; // TODO: this need to be tidy up when to redo the file checking
+  }
 
 public:
   bool is_open();
@@ -122,23 +116,17 @@ private:
 public:
   BaseLogFile *m_log; // BaseLogFile backs the actual file on disk
   char *m_header;
-  uint64_t m_signature; // signature of log object stored
-
+  uint64_t m_signature;       // signature of log object stored
   size_t m_ascii_buffer_size; // size of ascii buffer
   size_t m_max_line_size;     // size of longest log line (record)
+  int m_fd;                   // this could back m_log or a pipe, depending on the situation
 
-  int m_fd; // this could back m_log or a pipe, depending on the situation
 public:
   Link<LogFile> link;
+  // noncopyable
+  LogFile &operator=(const LogFile &) = delete;
 
 private:
   // -- member functions not allowed --
   LogFile();
-  LogFile &operator=(const LogFile &);
 };
-
-/***************************************************************************
- LogFileList IS NOT USED
-****************************************************************************/
-
-#endif

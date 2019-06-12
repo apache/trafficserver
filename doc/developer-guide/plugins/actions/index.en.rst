@@ -81,7 +81,7 @@ Below is an example of typical usage for an action:
                 /* Net connection failed */
                 TSContDataSet (contp, NULL);
                 return 0;
-            } 
+            }
             return 0;
         }
 
@@ -97,7 +97,7 @@ Below is an example of typical usage for an action:
                system is initialized. We'll simply schedule an event
                on the continuation to occur as soon as the rest of
                the system is started up. */
-            TSContSchedule (contp, 0);
+            TSContScheduleOnPool (contp, 0, TS_THREAD_POOL_NET);
         }
 
 The example above shows a simple plugin that creates a continuation and
@@ -127,7 +127,7 @@ cancel the action. The following sample code implements this:
         {
             switch (event) {
                 case (TS_EVENT_IMMEDIATE):
-                    TSContSchedule (contp, 30000);
+                    TSContScheduleOnPool (contp, 30000, TS_THREAD_POOL_NET);
                     TSAction actionp = TSNetConnect(contp, 127.0.0.1, 9999);
                     if (!TSActionDone (actionp)) {
                         TSContDataSet (contp, actionp);
@@ -153,7 +153,7 @@ cancel the action. The following sample code implements this:
                     TSContDataSet (contp, NULL);
                     break;
 
-            } 
+            }
             return 0;
         }
 
@@ -168,11 +168,10 @@ cancel the action. The following sample code implements this:
                system is initialized. We'll simply schedule an event
                on the continuation to occur as soon as the rest of
                the system is started up. */
-            TSContSchedule (contp, 0);
+            TSContScheduleOnPool (contp, 0, TS_THREAD_POOL_NET);
         }
 
 The action functions are:
 
 -  :c:func:`TSActionCancel`
 -  :c:func:`TSActionDone`
-

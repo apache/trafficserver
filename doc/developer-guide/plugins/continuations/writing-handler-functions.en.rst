@@ -67,6 +67,12 @@ it receives:
    continuation before you make sure that all incoming events, such as
    those sent because of :func:`TSHttpTxnHookAdd`, have been handled.
 
+.. caution::
+
+   TS_HTTP_SEND_REQUEST_HDR_HOOK may callback several times when the
+   OS crashed. Be careful to use functions such as TSContDestroy in
+   TS_HTTP_SEND_REQUEST_HDR_HOOK hook.
+
 The following table lists events and the corresponding type of
 `void* data` passed to handler functions:
 
@@ -90,6 +96,8 @@ Event                                        Event Sender                       
 :data:`TS_EVENT_IMMEDIATE`                   :func:`TSVConnClose`
                                              :func:`TSVIOReenable`
                                              :func:`TSContSchedule`
+                                             :func:`TSContScheduleOnPool`
+                                             :func:`TSContScheduleOnThread`
 :data:`TS_EVENT_IMMEDIATE`                   :data:`TS_HTTP_REQUEST_TRANSFORM_HOOK`
 :data:`TS_EVENT_IMMEDIATE`                   :data:`TS_HTTP_RESPONSE_TRANSFORM_HOOK`
 :data:`TS_EVENT_CACHE_OPEN_READ`             :func:`TSCacheRead`                         Cache VC
@@ -106,6 +114,8 @@ Event                                        Event Sender                       
                                              :func:`TSHttpTxnIntercept`
 :data:`TS_EVENT_HOST_LOOKUP`                 :func:`TSHostLookup`                        :type:`TSHostLookupResult`
 :data:`TS_EVENT_TIMEOUT`                     :func:`TSContSchedule`
+                                             :func:`TSContScheduleOnPool`
+                                             :func:`TSContScheduleOnThread`
 :data:`TS_EVENT_ERROR`
 :data:`TS_EVENT_VCONN_READ_READY`            :func:`TSVConnRead`                         :type:`TSVIO`
 :data:`TS_EVENT_VCONN_WRITE_READY`           :func:`TSVConnWrite`                        :type:`TSVIO`
@@ -128,3 +138,5 @@ The continuation functions are listed below:
 -  :func:`TSContDestroy`
 -  :func:`TSContMutexGet`
 -  :func:`TSContSchedule`
+-  :func:`TSContScheduleOnPool`
+-  :func:`TSContScheduleOnThread`

@@ -1,0 +1,17 @@
+# This is a test configuration
+
+# Do a regex against the cookie
+op:
+  cookie: fpbeta.a
+  operation: string
+  match: 1
+  connector: and
+  cookie: fpbeta.b
+  operation: string
+  match: 2
+  connector: and
+  cookie: fpbeta.c
+  operation: string
+  match: 3
+  sendto: http://127.0.0.10:$PORT/cookiematches
+  else: http://127.0.0.11:$ALTPORT/cookiedoesntmatch

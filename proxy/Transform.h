@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __TRANSFORM_H__
-#define __TRANSFORM_H__
+#pragma once
 
 #include "P_EventSystem.h"
 #include "HTTP.h"
@@ -31,10 +30,10 @@
 #define TRANSFORM_READ_READY (TRANSFORM_EVENTS_START + 0)
 
 typedef struct _RangeRecord {
-  _RangeRecord() : _start(-1), _end(-1), _done_byte(-1) {}
-  int64_t _start;
-  int64_t _end;
-  int64_t _done_byte;
+  _RangeRecord() {}
+  int64_t _start     = -1;
+  int64_t _end       = -1;
+  int64_t _done_byte = -1;
 } RangeRecord;
 
 class TransformProcessor
@@ -49,7 +48,7 @@ public:
                                     int content_type_len, int64_t content_length);
 };
 
-#ifdef TS_HAS_TESTS
+#if TS_HAS_TESTS
 class TransformTest
 {
 public:
@@ -79,9 +78,7 @@ public:
                            ) = 0;
 };
 
-inline TransformVCChain::TransformVCChain(ProxyMutex *m) : VConnection(m)
-{
-}
+inline TransformVCChain::TransformVCChain(ProxyMutex *m) : VConnection(m) {}
 
 ///////////////////////////////////////////////////////////////////
 /// RangeTransform implementation
@@ -96,15 +93,15 @@ num_chars_for_int(int64_t i)
 {
   int k = 1;
 
-  if (i < 0)
+  if (i < 0) {
     return 0;
+  }
 
-  while ((i /= 10) != 0)
+  while ((i /= 10) != 0) {
     ++k;
+  }
 
   return k;
 }
 
 extern TransformProcessor transformProcessor;
-
-#endif /* __TRANSFORM_H__ */

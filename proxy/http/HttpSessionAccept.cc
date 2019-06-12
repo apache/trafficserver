@@ -25,29 +25,18 @@
 #include "IPAllow.h"
 #include "Http1ClientSession.h"
 #include "I_Machine.h"
-#include "Error.h"
 
-void
+bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
   sockaddr const *client_ip = netvc->get_remote_addr();
-  const AclRecord *acl_record = NULL;
+  IpAllow::ACL acl;
   ip_port_text_buffer ipb;
 
-  // The backdoor port is now only bound to "localhost", so no
-  // reason to check for if it's incoming from "localhost" or not.
-  if (backdoor) {
-    acl_record = IpAllow::AllMethodAcl();
-  } else {
-    acl_record = testIpAllowPolicy(client_ip);
-    if (!acl_record) {
-      ////////////////////////////////////////////////////
-      // if client address forbidden, close immediately //
-      ////////////////////////////////////////////////////
-      Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
-      netvc->do_io_close();
-      return;
-    }
+  acl = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
+  if (!acl.isValid()) { // if there's no ACL, it's a hard deny.
+    Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
+    return false;
   }
 
   // Set the transport type if not already set
@@ -63,27 +52,31 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   Http1ClientSession *new_session = THREAD_ALLOC_INIT(http1ClientSessionAllocator, this_ethread());
 
   // copy over session related data.
-  new_session->f_outbound_transparent = f_outbound_transparent;
+  new_session->f_outbound_transparent    = f_outbound_transparent;
   new_session->f_transparent_passthrough = f_transparent_passthrough;
-  new_session->outbound_ip4 = outbound_ip4;
-  new_session->outbound_ip6 = outbound_ip6;
-  new_session->outbound_port = outbound_port;
-  new_session->host_res_style = ats_host_res_from(client_ip->sa_family, host_res_preference);
-  new_session->acl_record = acl_record;
+  new_session->outbound_ip4              = outbound_ip4;
+  new_session->outbound_ip6              = outbound_ip6;
+  new_session->outbound_port             = outbound_port;
+  new_session->host_res_style            = ats_host_res_from(client_ip->sa_family, host_res_preference);
+  new_session->acl                       = std::move(acl);
 
-  new_session->new_connection(netvc, iobuf, reader, backdoor);
+  new_session->new_connection(netvc, iobuf, reader);
 
-  return;
+  return true;
 }
 
 int
 HttpSessionAccept::mainEvent(int event, void *data)
 {
+  NetVConnection *netvc;
   ink_release_assert(event == NET_EVENT_ACCEPT || event == EVENT_ERROR);
-  ink_release_assert((event == NET_EVENT_ACCEPT) ? (data != 0) : (1));
+  ink_release_assert((event == NET_EVENT_ACCEPT) ? (data != nullptr) : (1));
 
   if (event == NET_EVENT_ACCEPT) {
-    this->accept(static_cast<NetVConnection *>(data), NULL, NULL);
+    netvc = static_cast<NetVConnection *>(data);
+    if (!this->accept(netvc, nullptr, nullptr)) {
+      netvc->do_io_close();
+    }
     return EVENT_CONT;
   }
 
@@ -105,6 +98,6 @@ HttpSessionAccept::mainEvent(int event, void *data)
     HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_pre_accept_hangups_stat, 0);
   }
 
-  MachineFatal("HTTP accept received fatal error: errno = %d", -((int)(intptr_t)data));
+  ink_abort("HTTP accept received fatal error: errno = %d", -((int)(intptr_t)data));
   return EVENT_CONT;
 }

@@ -1,6 +1,6 @@
 /** @file
 
-  Multiplexes request to other origins.
+  Chunk decoding.
 
   @section license License
 
@@ -21,7 +21,7 @@
   limitations under the License.
  */
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 
 #include "chunk-decoder.h"
 
@@ -45,13 +45,12 @@ ChunkDecoder::parseSizeCharacter(const char a)
 int
 ChunkDecoder::parseSize(const char *p, const int64_t s)
 {
-  assert(p != NULL);
+  assert(p != nullptr);
   assert(s > 0);
   int length = 0;
   while (state_ != State::kData && *p != '\0' && length < s) {
     assert(state_ < State::kUpperBound); // VALID RANGE
     switch (state_) {
-    case State::kUnknown:
     case State::kData:
     case State::kInvalid:
     case State::kEnd:
@@ -91,7 +90,7 @@ ChunkDecoder::parseSize(const char *p, const int64_t s)
 }
 
 bool
-ChunkDecoder::isSizeState(void) const
+ChunkDecoder::isSizeState() const
 {
   return state_ == State::kDataN || state_ == State::kEndN || state_ == State::kSize || state_ == State::kSizeN ||
          state_ == State::kSizeR;
@@ -100,7 +99,7 @@ ChunkDecoder::isSizeState(void) const
 int
 ChunkDecoder::decode(const TSIOBufferReader &r)
 {
-  assert(r != NULL);
+  assert(r != nullptr);
 
   if (state_ == State::kEnd) {
     return 0;
@@ -108,7 +107,9 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
 
   {
     const int l = TSIOBufferReaderAvail(r);
-    if (l < size_) {
+    if (l == 0) {
+      return 0;
+    } else if (l < size_) {
       size_ -= l;
       return l;
     }
@@ -117,10 +118,11 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
   int64_t size;
   TSIOBufferBlock block = TSIOBufferReaderStart(r);
 
+  // Trying to parse a size.
   if (isSizeState()) {
-    while (block != NULL && size_ == 0) {
+    while (block != nullptr && size_ == 0) {
       const char *p = TSIOBufferBlockReadStart(block, r, &size);
-      assert(p != NULL);
+      assert(p != nullptr);
       const int i = parseSize(p, size);
       size -= i;
       TSIOBufferReaderConsume(r, i);
@@ -137,13 +139,13 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
 
   int length = 0;
 
-  while (block != NULL && state_ == State::kData) {
+  while (block != nullptr && state_ == State::kData) {
     assert(size_ > 0);
     const char *p = TSIOBufferBlockReadStart(block, r, &size);
-    if (p != NULL) {
-      if (size > size_) {
+    if (p != nullptr) {
+      if (size >= size_) {
         length += size_;
-        size_ = 0;
+        size_  = 0;
         state_ = State::kSizeR;
         break;
       } else {

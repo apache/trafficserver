@@ -17,11 +17,11 @@
 #  limitations under the License.
 
 my $len = 32;
-my @chars = ( 'a' .. 'z', 'A' .. 'Z', '0' .. '9', '_' );
-foreach my $i ( 0 .. 15 ) {
+my @chars = ('a' .. 'z', 'A' .. 'Z', '0' .. '9', '_');
+foreach my $i (0 .. 15) {
     my $string = "";
-    foreach ( 1 .. $len ) {
-        $string .= $chars[ rand @chars ];
+    foreach (1 .. $len) {
+        $string .= $chars[rand @chars];
     }
     print "key" . $i . " = " . $string . "\n";
 }

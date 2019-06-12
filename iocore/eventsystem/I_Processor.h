@@ -22,10 +22,9 @@
 
  */
 
-#ifndef _I_Processor_h_
-#define _I_Processor_h_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #define PROCESSOR_RECONFIGURE 0x01
 #define PROCESSOR_CHECK 0x02
@@ -42,7 +41,7 @@ class Thread;
    processors in the IO Core. A processor is multithreaded subsystem
    specialized in some type of task or application. For example,
    the Event System module includes the EventProcessor which provides
-   schedulling services, the Net module includes the NetProcessor
+   scheduling services, the Net module includes the NetProcessor
    which provides networking services, etc.
 
    You cannot create objects of the Processor class and its methods
@@ -77,7 +76,7 @@ public:
   virtual int get_thread_count();
 
   /**
-    This function attemps to stop the processor. Please refer to
+    This function attempts to stop the processor. Please refer to
     the documentation on each processor to determine if it is
     supported.
 
@@ -107,13 +106,10 @@ public:
     return 0;
   }
 
+  // noncopyable, prevent unauthorized copies (Not implemented)
+  Processor(const Processor &) = delete;
+  Processor &operator=(const Processor &) = delete;
+
 protected:
   Processor();
-
-private:
-  // prevent unauthorized copies (Not implemented)
-  Processor(const Processor &);
-  Processor &operator=(const Processor &);
 };
-
-#endif //_I_Processor_h_

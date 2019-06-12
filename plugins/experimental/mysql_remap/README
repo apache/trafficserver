@@ -5,7 +5,7 @@ Apache Traffic Server MySQL-based remap plugin
   This is a basic plugin for doing dynamic "remaps" from a database. It essentially rewrites the incoming request's Host header / origin server connection
 to one retrieved from a database.
 
-The generic proxying setup is the following: 
+The generic proxying setup is the following:
 
 UA ----> Traffic Server ----> Origin Server
 
@@ -19,15 +19,15 @@ Ends up requesting http://original.host.com/path/to/something
 With this plugin enabled, you can easily change that to anywhere you desire. Imagine the many possibilities....
 
 I have benchmarked this at about 9200 requests/sec (1.7k object) on a junky imac with mysql, ab & trafficserver local. Real performance
-is likely substantially higher up to your mysql's max queries / second. 
+is likely substantially higher up to your mysql's max queries / second.
 
 == Build ==
   A simple
 
 % make install
 
-should do it, assuming that you have the tsxs script in your search path. 
-This script is installed with your installation of Apache Traffic Server. 
+should do it, assuming that you have the tsxs script in your search path.
+This script is installed with your installation of Apache Traffic Server.
 
 NOTE: you may need to open the Makefile and adjust the paths to MySQL client includes & libraries
 
@@ -49,7 +49,7 @@ The INI file should contain the following values:
 mysql_host     = localhost   #default
 mysql_port     = 3306        #default
 mysql_username = root
-mysql_password = 
+mysql_password =
 mysql_database = mysql_remap #default
 
 To debug errors, start trafficserver manually using:
@@ -63,7 +63,7 @@ And resolve any errors or warnings displayed.
   * ericb@apache.org / eric@ericbalsa.com
   * http://www.ericbalsa.com
 
-== TODO == 
+== TODO ==
   * some stupid bug in the ini parsing requiring a blank trailing \n
   * make db backend pluggable
   * handle mysql connections a bit more intelligently

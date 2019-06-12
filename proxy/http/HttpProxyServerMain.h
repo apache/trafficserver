@@ -21,17 +21,34 @@
   limitations under the License.
  */
 
+#pragma once
+
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
+
 struct HttpProxyPort;
 
-/** Initialize all HTTP proxy port data structures needed to run.
+/// Perform any pre-thread start initialization.
+void prep_HttpProxyServer();
+
+/** Initialize all HTTP proxy port data structures needed to accept connections.
  */
-void init_HttpProxyServer(int n_accept_threads = 0);
+void init_accept_HttpProxyServer(int n_accept_threads = 0);
+
+/** Checkes whether we can call start_HttpProxyServer().
+ */
+void init_HttpProxyServer(EThread *);
 
 /** Start the proxy server.
-    The port data should have been created by @c init_HttpProxyServer().
+    The port data should have been created by @c prep_HttpProxyServer().
 */
 void start_HttpProxyServer();
 
-void start_HttpProxyServerBackDoor(int port, int accept_threads = 0);
+void stop_HttpProxyServer();
 
-NetProcessor::AcceptOptions make_net_accept_options(const HttpProxyPort &port, unsigned nthreads);
+NetProcessor::AcceptOptions make_net_accept_options(const HttpProxyPort *port, unsigned nthreads);
+
+extern std::mutex proxyServerMutex;
+extern std::condition_variable proxyServerCheck;
+extern bool et_net_threads_ready;

@@ -18,8 +18,8 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <string.h>
-#include <list>
+#include <cstring>
+#include <vector>
 #include <string>
 
 extern "C" {
@@ -62,30 +62,33 @@ enum ExpansionField {
 };
 
 struct SslHdrExpansion {
-  SslHdrExpansion() : name(), scope(SSL_HEADERS_SCOPE_NONE), field(SSL_HEADERS_FIELD_NONE) {}
+  SslHdrExpansion() : name() {}
   std::string name; // HTTP header name
-  ExpansionScope scope;
-  ExpansionField field;
+  ExpansionScope scope = SSL_HEADERS_SCOPE_NONE;
+  ExpansionField field = SSL_HEADERS_FIELD_NONE;
 
-private:
-  SslHdrExpansion &operator=(const SslHdrExpansion &);
+  // noncopyable but movable
+  SslHdrExpansion(const SslHdrExpansion &) = delete;
+  SslHdrExpansion &operator=(const SslHdrExpansion &) = delete;
+  SslHdrExpansion(SslHdrExpansion &&)                 = default;
+  SslHdrExpansion &operator=(SslHdrExpansion &&) = default;
 };
 
 struct SslHdrInstance {
-  typedef std::list<SslHdrExpansion> expansion_list;
+  typedef std::vector<SslHdrExpansion> expansion_list;
 
   SslHdrInstance();
   ~SslHdrInstance();
 
   expansion_list expansions;
-  AttachOptions attach;
+  AttachOptions attach = SSL_HEADERS_ATTACH_SERVER;
   TSCont cont;
 
   void register_hooks();
 
-private:
-  SslHdrInstance(const SslHdrInstance &);
-  SslHdrInstance &operator=(const SslHdrInstance &);
+  // noncopyable
+  SslHdrInstance(const SslHdrInstance &) = delete;
+  SslHdrInstance &operator=(const SslHdrInstance &) = delete;
 };
 
 bool SslHdrParseExpansion(const char *spec, SslHdrExpansion &exp);

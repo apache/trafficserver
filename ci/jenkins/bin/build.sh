@@ -16,34 +16,36 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+set +x
+
 # Check if it's a debug or release build
-enable_debug=""
-test "${JOB_NAME#*type=debug}" != "${JOB_NAME}" && enable_debug="--enable-debug"
+DEBUG=""
+test "${JOB_NAME#*type=debug}" != "${JOB_NAME}" && DEBUG="--enable-debug"
 
-# When to turn on ccache, disabled for all clang / llvm builds
-enable_ccache="--enable-ccache"
-test "${JOB_NAME#*compiler=clang}" != "${JOB_NAME}" && enable_ccache=""
+# When to turn on ccache, disabled for some builds
+CCACHE="--enable-ccache"
 
-# When to enable -Werror, turned off for RHEL5 node (due to LuaJIT / gcc issues on RHEL5)
-enable_werror="--enable-werror"
-test "${NODE_NAME#RHEL 5}" != "${NODE_NAME}" && enable_werror=""
+# When to enable -Werror
+WERROR="--enable-werror"
 
-# When to enable SPDY (this expects a spdylday installation in e.g. /opt/spdylay)
-enable_spdy=""
-test "${JOB_NAME#*type=spdy}" != "${JOB_NAME}" && enable_spdy="--enable-spdy"
+echo "DEBUG: $DEBUG"
+echo "CCACHE: $CCACHE"
+echo "WERROR: $WERROR"
 
 # Change to the build area (this is previously setup in extract.sh)
 cd "${WORKSPACE}/${BUILD_NUMBER}/build"
-
 mkdir -p BUILDS && cd BUILDS
+
+# Restore verbose shell output
+set -x
+
 ../configure \
     --prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
     --enable-experimental-plugins \
     --enable-example-plugins \
-    --enable-test-tools \
-    ${enable_spdy} \
-    ${enable_ccache} \
-    ${enable_werror} \
-    ${enable_debug}
+    --with-user=jenkins \
+    ${CCACHE} \
+    ${WERROR} \
+    ${DEBUG}
 
-${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=
+${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q= || exit 1

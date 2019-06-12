@@ -21,15 +21,12 @@
   limitations under the License.
  */
 
-#ifndef _NETWORK_UTILS_LOCAL_H_
-#define _NETWORK_UTILS_LOCAL_H_
+#pragma once
 
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 #include "mgmtapi.h"
 
 /*****************************************************************************
  * Unmarshalling/marshalling
  *****************************************************************************/
 TSMgmtError preprocess_msg(int fd, void **req, size_t *reqlen);
-
-#endif /* _NETWORK_UTILS_LOCAL_H_ */

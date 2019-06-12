@@ -20,57 +20,18 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __LULU_H__
-#define __LULU_H__ 1
+#pragma once
 
 #include <string>
 
-#include "ts/ink_defs.h"
-#include "ts/ink_platform.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_platform.h"
+
+#define TS_REMAP_PSEUDO_HOOK TS_HTTP_LAST_HOOK // Ugly, but use the "last hook" for remap instances.
 
 std::string getIP(sockaddr const *s_sockaddr);
 char *getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN]);
 uint16_t getPort(sockaddr const *s_sockaddr);
 
-// Memory barriers
-#if defined(__i386__)
-#define mb() __asm__ __volatile__("lock; addl $0,0(%%esp)" : : : "memory")
-#define rmb() __asm__ __volatile__("lock; addl $0,0(%%esp)" : : : "memory")
-#define wmb() __asm__ __volatile__("" : : : "memory")
-#elif defined(__x86_64__)
-#define mb() __asm__ __volatile__("mfence" : : : "memory")
-#define rmb() __asm__ __volatile__("lfence" : : : "memory")
-#define wmb() __asm__ __volatile__("" : : : "memory")
-#elif defined(__mips__)
-#define mb() __asm__ __volatile__("sync" : : : "memory")
-#define rmb() __asm__ __volatile__("sync" : : : "memory")
-#define wmb() __asm__ __volatile__("" : : : "memory")
-#elif defined(__arm__)
-#define mb() __asm__ __volatile__("dmb" : : : "memory")
-#define rmb() __asm__ __volatile__("dmb" : : : "memory")
-#define wmb() __asm__ __volatile__("" : : : "memory")
-#elif defined(__mips__)
-#define mb() __asm__ __volatile__("sync" : : : "memory")
-#define rmb() __asm__ __volatile__("sync" : : : "memory")
-#define wmb() __asm__ __volatile__("" : : : "memory")
-#elif defined(__powerpc64__)
-#define mb() __asm__ __volatile__("sync" : : : "memory")
-#define rmb() __asm__ __volatile__("sync" : : : "memory")
-#define wmb() __asm__ __volatile__("sync" : : : "memory")
-#elif defined(__aarch64__)
-#define mb() __asm__ __volatile__("dsb sy" : : : "memory")
-#define rmb() __asm__ __volatile__("dsb ld" : : : "memory")
-#define wmb() __asm__ __volatile__("dsb st" : : : "memory")
-#else
-#error "Define barriers"
-#endif
-
 extern const char PLUGIN_NAME[];
 extern const char PLUGIN_NAME_DBG[];
-
-// From google styleguide: http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName &);              \
-  void operator=(const TypeName &)
-
-#endif // __LULU_H__

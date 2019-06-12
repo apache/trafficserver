@@ -32,7 +32,7 @@ Description
 ===========
 
 Retrieves the location of a specified MIME field within the MIME
-header located at :arg:`hdr_loc` within :arg:`bufp`.
+header located at :arg:`hdr` within :arg:`bufp`.
 
 The :arg:`idx` parameter specifies which field to retrieve.  The fields are
 numbered from :literal:`0` to ``TSMimeHdrFieldsCount(bufp, hdr_loc)`` - 1.  If

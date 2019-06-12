@@ -28,8 +28,7 @@
 
  ****************************************************************************/
 
-#ifndef _Show_h_
-#define _Show_h_
+#pragma once
 
 #include "StatPages.h"
 
@@ -59,14 +58,14 @@ public:
 
     if (needed >= avail) {
       ptrdiff_t bufsz = ebuf - start;
-      ptrdiff_t used = buf - start;
+      ptrdiff_t used  = buf - start;
 
       Debug("cache_inspector", "needed %d bytes, reallocating to %d bytes", (int)needed, (int)bufsz + (int)needed);
 
       bufsz += ROUNDUP(needed, ats_pagesize());
       start = (char *)ats_realloc(start, bufsz);
-      ebuf = start + bufsz;
-      buf = start + used;
+      ebuf  = start + bufsz;
+      buf   = start + used;
       avail = ebuf - buf;
 
       needed = vsnprintf(buf, avail, s, aap);
@@ -92,10 +91,10 @@ public:
     if (!action.cancelled) {
       StatPageData data(start, buf - start);
       action.continuation->handleEvent(STAT_PAGE_SUCCESS, &data);
-      start = 0;
+      start = nullptr;
     } else {
       ats_free(start);
-      start = NULL;
+      start = nullptr;
     }
     return done(VIO::CLOSE, event, e);
   }
@@ -117,9 +116,10 @@ public:
   complete_error(int event, Event *e)
   {
     ats_free(start);
-    start = NULL;
-    if (!action.cancelled)
-      action.continuation->handleEvent(STAT_PAGE_FAILURE, NULL);
+    start = nullptr;
+    if (!action.cancelled) {
+      action.continuation->handleEvent(STAT_PAGE_FAILURE, nullptr);
+    }
     return done(VIO::ABORT, event, e);
   }
 
@@ -145,22 +145,20 @@ public:
     return EVENT_DONE;
   }
 
-  ShowCont(Continuation *c, HTTPHdr * /* h ATS_UNUSED */) : Continuation(NULL), sarg(0)
+  ShowCont(Continuation *c, HTTPHdr * /* h ATS_UNUSED */) : Continuation(nullptr), sarg(nullptr)
   {
     size_t sz = ats_pagesize();
 
-    mutex = c->mutex;
+    mutex  = c->mutex;
     action = c;
-    buf = (char *)ats_malloc(sz);
-    start = buf;
-    ebuf = buf + sz;
+    buf    = (char *)ats_malloc(sz);
+    start  = buf;
+    ebuf   = buf + sz;
   }
 
-  ~ShowCont()
+  ~ShowCont() override
   {
     ats_free(sarg);
     ats_free(start);
   }
 };
-
-#endif

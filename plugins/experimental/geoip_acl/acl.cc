@@ -56,7 +56,7 @@ int
 Acl::country_id_by_addr(const sockaddr *addr) const
 {
   int iso = -1;
-  int v = 4;
+  int v   = 4;
 
   switch (addr->sa_family) {
   case AF_INET: {
@@ -68,7 +68,7 @@ Acl::country_id_by_addr(const sockaddr *addr) const
     geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
     iso = GeoIP_id_by_ipnum_v6(_geoip6, ip);
-    v = 6;
+    v   = 6;
   } break;
   default:
     break;
@@ -102,7 +102,7 @@ Acl::country_id_by_addr(const sockaddr *addr) const
 }
 #endif /* HAVE_GEOIP_H */
 
-// This is the rest of the ACL baseclass, which is the same for all underlying Geo libraries.
+// This is the rest of the ACL base class, which is the same for all underlying Geo libraries.
 void
 Acl::read_html(const char *fn)
 {
@@ -137,7 +137,7 @@ RegexAcl::parse_line(const char *filename, const std::string &line, int lineno, 
   pos2 = line.find_first_of(_SEPARATOR, pos1);
   if (pos2 != std::string::npos) {
     regex = line.substr(pos1, pos2 - pos1);
-    pos1 = line.find_first_not_of(_SEPARATOR, pos2);
+    pos1  = line.find_first_not_of(_SEPARATOR, pos2);
     if (pos1 != std::string::npos) {
       pos2 = line.find_first_of(_SEPARATOR, pos1);
       if (pos2 != std::string::npos) {
@@ -153,7 +153,7 @@ RegexAcl::parse_line(const char *filename, const std::string &line, int lineno, 
         // The rest are "tokens"
         while ((pos1 = line.find_first_not_of(_SEPARATOR, pos2)) != std::string::npos) {
           pos2 = line.find_first_of(_SEPARATOR, pos1);
-          tmp = line.substr(pos1, pos2 - pos1);
+          tmp  = line.substr(pos1, pos2 - pos1);
           _acl->add_token(tmp);
           ++tokens;
         }
@@ -174,11 +174,11 @@ RegexAcl::compile(const std::string &str, const char *filename, int lineno)
   int erroffset;
 
   _regex_s = str;
-  _rex = pcre_compile(_regex_s.c_str(), 0, &error, &erroffset, NULL);
+  _rex     = pcre_compile(_regex_s.c_str(), 0, &error, &erroffset, nullptr);
 
-  if (NULL != _rex) {
+  if (nullptr != _rex) {
     _extra = pcre_study(_rex, 0, &error);
-    if ((NULL == _extra) && error && (*error != 0)) {
+    if ((nullptr == _extra) && error && (*error != 0)) {
       TSError("[%s] Failed to study regular expression in %s:line %d at offset %d: %s", PLUGIN_NAME, filename, lineno, erroffset,
               error);
       return false;
@@ -194,13 +194,14 @@ RegexAcl::compile(const std::string &str, const char *filename, int lineno)
 void
 RegexAcl::append(RegexAcl *ra)
 {
-  if (NULL == _next) {
+  if (nullptr == _next) {
     _next = ra;
   } else {
     RegexAcl *cur = _next;
 
-    while (cur->_next)
+    while (cur->_next) {
       cur = cur->_next;
+    }
     cur->_next = ra;
   }
 }
@@ -229,14 +230,14 @@ CountryAcl::read_regex(const char *fn, int &tokens)
   f.open(fn, std::ios::in);
   if (f.is_open()) {
     std::string line;
-    RegexAcl *acl = NULL;
+    RegexAcl *acl = nullptr;
 
     while (!f.eof()) {
       getline(f, line);
       ++lineno;
       acl = new RegexAcl(new CountryAcl());
       if (acl->parse_line(fn, line, lineno, tokens)) {
-        if (NULL == _regexes) {
+        if (nullptr == _regexes) {
           _regexes = acl;
         } else {
           _regexes->append(acl);
@@ -262,7 +263,7 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
   // If there are regex rules, they take priority first. If a regex matches, we will
   // honor it's eval() rule. If no regexes matches, fall back on the default (which is
   // "allow" if nothing else is specified).
-  if (NULL != _regexes) {
+  if (nullptr != _regexes) {
     RegexAcl *acl = _regexes;
     int path_len;
     const char *path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);

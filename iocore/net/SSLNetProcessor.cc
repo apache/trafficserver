@@ -19,13 +19,15 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 
 #include "P_Net.h"
-#include "ts/I_Layout.h"
-#include "I_RecHttp.h"
+#include "tscore/I_Layout.h"
+#include "records/I_RecHttp.h"
 #include "P_SSLUtils.h"
 #include "P_OCSPStapling.h"
+#include "P_SSLSNI.h"
+#include "SSLStats.h"
 
 //
 // Global Data
@@ -33,9 +35,9 @@
 
 SSLNetProcessor ssl_NetProcessor;
 NetProcessor &sslNetProcessor = ssl_NetProcessor;
-EventType SSLNetProcessor::ET_SSL;
+SNIActionPerformer sni_action_performer;
 
-#ifdef HAVE_OPENSSL_OCSP_STAPLING
+#if TS_USE_TLS_OCSP
 struct OCSPContinuation : public Continuation {
   int
   mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
@@ -47,77 +49,51 @@ struct OCSPContinuation : public Continuation {
 
   OCSPContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&OCSPContinuation::mainEvent); }
 };
-#endif /* HAVE_OPENSSL_OCSP_STAPLING */
+#endif /* TS_USE_TLS_OCSP */
 
 void
-SSLNetProcessor::cleanup(void)
+SSLNetProcessor::cleanup()
 {
-  SSLReleaseContext(client_ctx);
-  client_ctx = NULL;
 }
 
 int
-SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
+SSLNetProcessor::start(int, size_t stacksize)
 {
   // This initialization order matters ...
   SSLInitializeLibrary();
   SSLConfig::startup();
+  SSLPostConfigInitialize();
+  SNIConfig::startup();
 
-  if (!SSLCertificateConfig::startup())
+  if (!SSLCertificateConfig::startup()) {
     return -1;
+  }
+  SSLTicketKeyConfig::startup();
 
   // Acquire a SSLConfigParams instance *after* we start SSL up.
-  SSLConfig::scoped_config params;
-
-  // Enable client regardless of config file settings as remap file
-  // can cause HTTP layer to connect using SSL. But only if SSL
-  // initialization hasn't failed already.
-  client_ctx = SSLInitClientContext(params);
-  if (!client_ctx) {
-    SSLError("Can't initialize the SSL client, HTTPS in remap rules will not function");
-  }
+  // SSLConfig::scoped_config params;
 
   // Initialize SSL statistics. This depends on an initial set of certificates being loaded above.
   SSLInitializeStatistics();
 
-  // Shouldn't this be handled the same as -1?
-  if (number_of_ssl_threads == 0) {
-    return -1;
-  }
-
-#ifdef HAVE_OPENSSL_OCSP_STAPLING
+#if TS_USE_TLS_OCSP
   if (SSLConfigParams::ssl_ocsp_enabled) {
-    EventType ET_OCSP = eventProcessor.spawn_event_threads(1, "ET_OCSP", stacksize);
+    // Call the update initially to get things populated
+    ocsp_update();
+    EventType ET_OCSP = eventProcessor.spawn_event_threads("ET_OCSP", 1, stacksize);
     eventProcessor.schedule_every(new OCSPContinuation(), HRTIME_SECONDS(SSLConfigParams::ssl_ocsp_update_period), ET_OCSP);
   }
-#endif /* HAVE_OPENSSL_OCSP_STAPLING */
+#endif /* TS_USE_TLS_OCSP */
 
-  if (number_of_ssl_threads == -1) {
-    // We've disabled ET_SSL threads, so we will mark all ET_NET threads as having
-    // ET_SSL thread capabilities and just keep on chugging.
-    SSLDebug("Disabling ET_SSL threads (config is set to -1), using thread group ET_NET=%d", ET_NET);
-    SSLNetProcessor::ET_SSL = ET_NET; // Set the event type for ET_SSL to be ET_NET.
-    return 0;
-  }
-
-  SSLNetProcessor::ET_SSL = eventProcessor.spawn_event_threads(number_of_ssl_threads, "ET_SSL", stacksize);
-  return UnixNetProcessor::start(0, stacksize);
+  // We have removed the difference between ET_SSL threads and ET_NET threads,
+  // So just keep on chugging
+  return 0;
 }
 
 NetAccept *
-SSLNetProcessor::createNetAccept()
+SSLNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 {
-  return (NetAccept *)new SSLNetAccept;
-}
-
-// Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does
-// nothing for NetProcessor
-void
-SSLNetProcessor::upgradeEtype(EventType &etype)
-{
-  if (etype == ET_NET) {
-    etype = ET_SSL;
-  }
+  return (NetAccept *)new SSLNetAccept(opt);
 }
 
 NetVConnection *
@@ -136,9 +112,7 @@ SSLNetProcessor::allocate_vc(EThread *t)
   return vc;
 }
 
-SSLNetProcessor::SSLNetProcessor() : client_ctx(NULL)
-{
-}
+SSLNetProcessor::SSLNetProcessor() {}
 
 SSLNetProcessor::~SSLNetProcessor()
 {

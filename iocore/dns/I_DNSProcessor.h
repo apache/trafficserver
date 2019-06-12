@@ -21,17 +21,18 @@
   limitations under the License.
  */
 
-#ifndef _I_DNSProcessor_h_
-#define _I_DNSProcessor_h_
+#pragma once
 
 #include "SRV.h"
 
-#define MAX_DNS_PACKET_LEN 8192
-#define DNS_MAX_ALIASES 35
-#define DNS_MAX_ADDRS 35
-#define DNS_HOSTBUF_SIZE 8192
-#define DOMAIN_SERVICE_PORT 53
-#define DEFAULT_DOMAIN_NAME_SERVER 0 // use the default server
+const int DOMAIN_SERVICE_PORT        = NAMESERVER_PORT;
+const int DEFAULT_DOMAIN_NAME_SERVER = 0;
+
+const int MAX_DNS_PACKET_LEN = 8192;
+const int DNS_RR_MAX_COUNT   = (MAX_DNS_PACKET_LEN - HFIXEDSZ + RRFIXEDSZ - 1) / RRFIXEDSZ;
+const int DNS_MAX_ALIASES    = DNS_RR_MAX_COUNT;
+const int DNS_MAX_ADDRS      = DNS_RR_MAX_COUNT;
+const int DNS_HOSTBUF_SIZE   = MAX_DNS_PACKET_LEN;
 
 /**
   All buffering required to handle a DNS receipt. For asynchronous DNS,
@@ -40,23 +41,17 @@
 
 */
 struct HostEnt : RefCountObj {
-  struct hostent ent;
-  uint32_t ttl;
-  int packet_size;
-  char buf[MAX_DNS_PACKET_LEN];
-  u_char *host_aliases[DNS_MAX_ALIASES];
-  u_char *h_addr_ptrs[DNS_MAX_ADDRS + 1];
-  u_char hostbuf[DNS_HOSTBUF_SIZE];
-
+  struct hostent ent           = {.h_name = nullptr, .h_aliases = nullptr, .h_addrtype = 0, .h_length = 0, .h_addr_list = nullptr};
+  uint32_t ttl                 = 0;
+  int packet_size              = 0;
+  char buf[MAX_DNS_PACKET_LEN] = {0};
+  u_char *host_aliases[DNS_MAX_ALIASES]  = {nullptr};
+  u_char *h_addr_ptrs[DNS_MAX_ADDRS + 1] = {nullptr};
+  u_char hostbuf[DNS_HOSTBUF_SIZE]       = {0};
   SRVHosts srv_hosts;
-
-  virtual void free();
-
-  HostEnt()
-  {
-    size_t base = sizeof(force_VFPT_to_top); // preserve VFPT
-    memset(((char *)this) + base, 0, sizeof(*this) - base);
-  }
+  bool good = true;
+  bool isNameError();
+  void free() override;
 };
 
 extern EventType ET_DNS;
@@ -73,13 +68,13 @@ struct DNSProcessor : public Processor {
 
     /// Query handler to use.
     /// Default: single threaded handler.
-    DNSHandler *handler;
+    DNSHandler *handler = nullptr;
     /// Query timeout value.
     /// Default: @c DEFAULT_DNS_TIMEOUT (or as set in records.config)
-    int timeout; ///< Timeout value for request.
+    int timeout = 0; ///< Timeout value for request.
     /// Host resolution style.
     /// Default: IPv4, IPv6 ( @c HOST_RES_IPV4 )
-    HostResStyle host_res_style;
+    HostResStyle host_res_style = HOST_RES_IPV4;
 
     /// Default constructor.
     Options();
@@ -103,7 +98,7 @@ struct DNSProcessor : public Processor {
 
   // DNS lookup
   //   calls: cont->handleEvent( DNS_EVENT_LOOKUP, HostEnt *ent) on success
-  //          cont->handleEvent( DNS_EVENT_LOOKUP, NULL) on failure
+  //          cont->handleEvent( DNS_EVENT_LOOKUP, nullptr) on failure
   // NOTE: the HostEnt *block is freed when the function returns
   //
 
@@ -116,18 +111,18 @@ struct DNSProcessor : public Processor {
   //
   /* currently dns system uses event threads
    * dont pass any value to the call */
-  int start(int no_of_extra_dns_threads = 0, size_t stacksize = DEFAULT_STACKSIZE);
+  int start(int no_of_extra_dns_threads = 0, size_t stacksize = DEFAULT_STACKSIZE) override;
 
   // Open/close a link to a 'named' (done in start())
   //
-  void open(sockaddr const *ns = 0);
+  void open(sockaddr const *ns = nullptr);
 
   DNSProcessor();
 
   // private:
   //
-  EThread *thread;
-  DNSHandler *handler;
+  EThread *thread     = nullptr;
+  DNSHandler *handler = nullptr;
   ts_imp_res_state l_res;
   IpEndpoint local_ipv6;
   IpEndpoint local_ipv4;
@@ -174,12 +169,10 @@ DNSProcessor::gethostbyname(Continuation *cont, const char *name, int len, Optio
 inline Action *
 DNSProcessor::gethostbyaddr(Continuation *cont, IpAddr const *addr, Options const &opt)
 {
-  return getby(reinterpret_cast<char const *>(addr), 0, T_PTR, cont, opt);
+  return getby(reinterpret_cast<const char *>(addr), 0, T_PTR, cont, opt);
 }
 
-inline DNSProcessor::Options::Options() : handler(0), timeout(0), host_res_style(HOST_RES_IPV4)
-{
-}
+inline DNSProcessor::Options::Options() {}
 
 inline DNSProcessor::Options &
 DNSProcessor::Options::setHandler(DNSHandler *h)
@@ -209,6 +202,4 @@ DNSProcessor::Options::reset()
   return *this;
 }
 
-void ink_dns_init(ModuleVersion version);
-
-#endif
+void ink_dns_init(ts::ModuleVersion version);

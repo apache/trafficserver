@@ -21,6 +21,7 @@
 # Ignores FLOAT differences and @foo@ values from the source code defaults.
 import sys
 
+
 def parse_records_file(filename):
     fh = open(filename)
     settings = {}
@@ -47,6 +48,7 @@ def parse_records_file(filename):
                 continue
     return settings
 
+
 def compare_settings(old, new):
     for key in sorted(tuple(set(old) | set(new))):
         if key not in old:
@@ -60,6 +62,7 @@ def compare_settings(old, new):
             continue
         if old[key] != new[key]:
             print "%s %s -> %s" % (key, old[key], new[key])
+
 
 if __name__ == '__main__':
     settings_orig = parse_records_file(sys.argv[1])

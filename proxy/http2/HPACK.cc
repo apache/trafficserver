@@ -95,79 +95,84 @@ typedef enum {
   TS_HPACK_STATIC_TABLE_ENTRY_NUM
 } TS_HPACK_STATIC_TABLE_ENTRY;
 
-const static struct {
+struct StaticTable {
+  StaticTable(const char *n, const char *v) : name(n), value(v), name_size(strlen(name)), value_size(strlen(value)) {}
   const char *name;
   const char *value;
-} STATIC_TABLE[] = {{"", ""},
-                    {":authority", ""},
-                    {":method", "GET"},
-                    {":method", "POST"},
-                    {":path", "/"},
-                    {":path", "/index.html"},
-                    {":scheme", "http"},
-                    {":scheme", "https"},
-                    {":status", "200"},
-                    {":status", "204"},
-                    {":status", "206"},
-                    {":status", "304"},
-                    {":status", "400"},
-                    {":status", "404"},
-                    {":status", "500"},
-                    {"accept-charset", ""},
-                    {"accept-encoding", "gzip, deflate"},
-                    {"accept-language", ""},
-                    {"accept-ranges", ""},
-                    {"accept", ""},
-                    {"access-control-allow-origin", ""},
-                    {"age", ""},
-                    {"allow", ""},
-                    {"authorization", ""},
-                    {"cache-control", ""},
-                    {"content-disposition", ""},
-                    {"content-encoding", ""},
-                    {"content-language", ""},
-                    {"content-length", ""},
-                    {"content-location", ""},
-                    {"content-range", ""},
-                    {"content-type", ""},
-                    {"cookie", ""},
-                    {"date", ""},
-                    {"etag", ""},
-                    {"expect", ""},
-                    {"expires", ""},
-                    {"from", ""},
-                    {"host", ""},
-                    {"if-match", ""},
-                    {"if-modified-since", ""},
-                    {"if-none-match", ""},
-                    {"if-range", ""},
-                    {"if-unmodified-since", ""},
-                    {"last-modified", ""},
-                    {"link", ""},
-                    {"location", ""},
-                    {"max-forwards", ""},
-                    {"proxy-authenticate", ""},
-                    {"proxy-authorization", ""},
-                    {"range", ""},
-                    {"referer", ""},
-                    {"refresh", ""},
-                    {"retry-after", ""},
-                    {"server", ""},
-                    {"set-cookie", ""},
-                    {"strict-transport-security", ""},
-                    {"transfer-encoding", ""},
-                    {"user-agent", ""},
-                    {"vary", ""},
-                    {"via", ""},
-                    {"www-authenticate", ""}};
+  const int name_size;
+  const int value_size;
+};
+
+static const StaticTable STATIC_TABLE[] = {{"", ""},
+                                           {":authority", ""},
+                                           {":method", "GET"},
+                                           {":method", "POST"},
+                                           {":path", "/"},
+                                           {":path", "/index.html"},
+                                           {":scheme", "http"},
+                                           {":scheme", "https"},
+                                           {":status", "200"},
+                                           {":status", "204"},
+                                           {":status", "206"},
+                                           {":status", "304"},
+                                           {":status", "400"},
+                                           {":status", "404"},
+                                           {":status", "500"},
+                                           {"accept-charset", ""},
+                                           {"accept-encoding", "gzip, deflate"},
+                                           {"accept-language", ""},
+                                           {"accept-ranges", ""},
+                                           {"accept", ""},
+                                           {"access-control-allow-origin", ""},
+                                           {"age", ""},
+                                           {"allow", ""},
+                                           {"authorization", ""},
+                                           {"cache-control", ""},
+                                           {"content-disposition", ""},
+                                           {"content-encoding", ""},
+                                           {"content-language", ""},
+                                           {"content-length", ""},
+                                           {"content-location", ""},
+                                           {"content-range", ""},
+                                           {"content-type", ""},
+                                           {"cookie", ""},
+                                           {"date", ""},
+                                           {"etag", ""},
+                                           {"expect", ""},
+                                           {"expires", ""},
+                                           {"from", ""},
+                                           {"host", ""},
+                                           {"if-match", ""},
+                                           {"if-modified-since", ""},
+                                           {"if-none-match", ""},
+                                           {"if-range", ""},
+                                           {"if-unmodified-since", ""},
+                                           {"last-modified", ""},
+                                           {"link", ""},
+                                           {"location", ""},
+                                           {"max-forwards", ""},
+                                           {"proxy-authenticate", ""},
+                                           {"proxy-authorization", ""},
+                                           {"range", ""},
+                                           {"referer", ""},
+                                           {"refresh", ""},
+                                           {"retry-after", ""},
+                                           {"server", ""},
+                                           {"set-cookie", ""},
+                                           {"strict-transport-security", ""},
+                                           {"transfer-encoding", ""},
+                                           {"user-agent", ""},
+                                           {"vary", ""},
+                                           {"via", ""},
+                                           {"www-authenticate", ""}};
 
 /******************
  * Local functions
  ******************/
 static inline bool
-hpack_field_is_literal(HpackFieldType ftype)
+hpack_field_is_literal(HpackField ftype)
 {
-  return ftype == HPACK_FIELD_INDEXED_LITERAL || ftype == HPACK_FIELD_NOINDEX_LITERAL || ftype == HPACK_FIELD_NEVERINDEX_LITERAL;
+  return ftype == HpackField::INDEXED_LITERAL || ftype == HpackField::NOINDEX_LITERAL || ftype == HpackField::NEVERINDEX_LITERAL;
 }
 
 //
@@ -175,27 +180,27 @@ hpack_field_is_literal(HpackFieldType ftype)
 // kind of field it is. Field types are specified in the high 4 bits
 // and all bits are defined, so there's no way to get an invalid field type.
 //
-HpackFieldType
+HpackField
 hpack_parse_field_type(uint8_t ftype)
 {
   if (ftype & 0x80) {
-    return HPACK_FIELD_INDEX;
+    return HpackField::INDEX;
   }
 
   if (ftype & 0x40) {
-    return HPACK_FIELD_INDEXED_LITERAL;
+    return HpackField::INDEXED_LITERAL;
   }
 
   if (ftype & 0x20) {
-    return HPACK_FIELD_TABLESIZE_UPDATE;
+    return HpackField::TABLESIZE_UPDATE;
   }
 
   if (ftype & 0x10) {
-    return HPACK_FIELD_NEVERINDEX_LITERAL;
+    return HpackField::NEVERINDEX_LITERAL;
   }
 
   ink_assert((ftype & 0xf0) == 0x0);
-  return HPACK_FIELD_NOINDEX_LITERAL;
+  return HpackField::NOINDEX_LITERAL;
 }
 
 /************************
@@ -205,7 +210,7 @@ HpackLookupResult
 HpackIndexingTable::lookup(const MIMEFieldWrapper &field) const
 {
   int target_name_len = 0, target_value_len = 0;
-  const char *target_name = field.name_get(&target_name_len);
+  const char *target_name  = field.name_get(&target_name_len);
   const char *target_value = field.value_get(&target_value_len);
   return lookup(target_name, target_name_len, target_value, target_value_len);
 }
@@ -214,43 +219,43 @@ HpackLookupResult
 HpackIndexingTable::lookup(const char *name, int name_len, const char *value, int value_len) const
 {
   HpackLookupResult result;
-  const int entry_num = TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table->length();
+  const unsigned int entry_num = TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table->length();
 
-  for (int index = 1; index < entry_num; ++index) {
+  for (unsigned int index = 1; index < entry_num; ++index) {
     const char *table_name, *table_value;
     int table_name_len = 0, table_value_len = 0;
 
     if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM) {
       // static table
-      table_name = STATIC_TABLE[index].name;
-      table_value = STATIC_TABLE[index].value;
-      table_name_len = strlen(table_name);
-      table_value_len = strlen(table_value);
+      table_name      = STATIC_TABLE[index].name;
+      table_value     = STATIC_TABLE[index].value;
+      table_name_len  = STATIC_TABLE[index].name_size;
+      table_value_len = STATIC_TABLE[index].value_size;
     } else {
       // dynamic table
       const MIMEField *m_field = _dynamic_table->get_header_field(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
 
-      table_name = m_field->name_get(&table_name_len);
+      table_name  = m_field->name_get(&table_name_len);
       table_value = m_field->value_get(&table_value_len);
     }
 
     // Check whether name (and value) are matched
     if (ptr_len_casecmp(name, name_len, table_name, table_name_len) == 0) {
-      if (ptr_len_cmp(value, value_len, table_value, table_value_len) == 0) {
-        result.index = index;
-        result.match_type = HPACK_EXACT_MATCH;
+      if ((value_len == table_value_len) && (memcmp(value, table_value, value_len) == 0)) {
+        result.index      = index;
+        result.match_type = HpackMatch::EXACT;
         break;
       } else if (!result.index) {
-        result.index = index;
-        result.match_type = HPACK_NAME_MATCH;
+        result.index      = index;
+        result.match_type = HpackMatch::NAME;
       }
     }
   }
-  if (result.match_type != HPACK_NO_MATCH) {
+  if (result.match_type != HpackMatch::NONE) {
     if (result.index < TS_HPACK_STATIC_TABLE_ENTRY_NUM) {
-      result.index_type = HPACK_INDEX_TYPE_STATIC;
+      result.index_type = HpackIndex::STATIC;
     } else {
-      result.index_type = HPACK_INDEX_TYPE_DYNAMIC;
+      result.index_type = HpackIndex::DYNAMIC;
     }
   }
 
@@ -261,19 +266,20 @@ int
 HpackIndexingTable::get_header_field(uint32_t index, MIMEFieldWrapper &field) const
 {
   // Index Address Space starts at 1, so index == 0 is invalid.
-  if (!index)
+  if (!index) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM) {
     // static table
-    field.name_set(STATIC_TABLE[index].name, strlen(STATIC_TABLE[index].name));
-    field.value_set(STATIC_TABLE[index].value, strlen(STATIC_TABLE[index].value));
+    field.name_set(STATIC_TABLE[index].name, STATIC_TABLE[index].name_size);
+    field.value_set(STATIC_TABLE[index].value, STATIC_TABLE[index].value_size);
   } else if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table->length()) {
     // dynamic table
     const MIMEField *m_field = _dynamic_table->get_header_field(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
 
     int name_len, value_len;
-    const char *name = m_field->name_get(&name_len);
+    const char *name  = m_field->name_get(&name_len);
     const char *value = m_field->value_get(&value_len);
 
     field.name_set(name, name_len);
@@ -295,6 +301,12 @@ HpackIndexingTable::add_header_field(const MIMEField *field)
 }
 
 uint32_t
+HpackIndexingTable::maximum_size() const
+{
+  return _dynamic_table->maximum_size();
+}
+
+uint32_t
 HpackIndexingTable::size() const
 {
   return _dynamic_table->size();
@@ -309,15 +321,15 @@ HpackIndexingTable::update_maximum_size(uint32_t new_size)
 const MIMEField *
 HpackDynamicTable::get_header_field(uint32_t index) const
 {
-  return _headers.get(index);
+  return _headers.at(index);
 }
 
 void
 HpackDynamicTable::add_header_field(const MIMEField *field)
 {
   int name_len, value_len;
-  const char *name = field->name_get(&name_len);
-  const char *value = field->value_get(&value_len);
+  const char *name     = field->name_get(&name_len);
+  const char *value    = field->value_get(&value_len);
   uint32_t header_size = ADDITIONAL_OCTETS + name_len + value_len;
 
   if (header_size > _maximum_size) {
@@ -332,13 +344,13 @@ HpackDynamicTable::add_header_field(const MIMEField *field)
     _current_size += header_size;
     while (_current_size > _maximum_size) {
       int last_name_len, last_value_len;
-      MIMEField *last_field = _headers.last();
+      MIMEField *last_field = _headers.back();
 
       last_field->name_get(&last_name_len);
       last_field->value_get(&last_value_len);
       _current_size -= ADDITIONAL_OCTETS + last_name_len + last_value_len;
 
-      _headers.remove_index(_headers.length() - 1);
+      _headers.erase(_headers.begin() + _headers.size() - 1);
       _mhdr->field_delete(last_field, false);
     }
 
@@ -346,8 +358,14 @@ HpackDynamicTable::add_header_field(const MIMEField *field)
     new_field->value_set(_mhdr->m_heap, _mhdr->m_mime, value, value_len);
     _mhdr->field_attach(new_field);
     // XXX Because entire Vec instance is copied, Its too expensive!
-    _headers.insert(0, new_field);
+    _headers.insert(_headers.begin(), new_field);
   }
+}
+
+uint32_t
+HpackDynamicTable::maximum_size() const
+{
+  return _maximum_size;
 }
 
 uint32_t
@@ -367,17 +385,17 @@ bool
 HpackDynamicTable::update_maximum_size(uint32_t new_size)
 {
   while (_current_size > new_size) {
-    if (_headers.n <= 0) {
+    if (_headers.size() == 0) {
       return false;
     }
     int last_name_len, last_value_len;
-    MIMEField *last_field = _headers.last();
+    MIMEField *last_field = _headers.back();
 
     last_field->name_get(&last_name_len);
     last_field->value_get(&last_value_len);
     _current_size -= ADDITIONAL_OCTETS + last_name_len + last_value_len;
 
-    _headers.remove_index(_headers.length() - 1);
+    _headers.erase(_headers.begin() + _headers.size() - 1);
     _mhdr->field_delete(last_field, false);
   }
 
@@ -388,7 +406,7 @@ HpackDynamicTable::update_maximum_size(uint32_t new_size)
 uint32_t
 HpackDynamicTable::length() const
 {
-  return _headers.length();
+  return _headers.size();
 }
 
 //
@@ -397,8 +415,9 @@ HpackDynamicTable::length() const
 int64_t
 encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8_t n)
 {
-  if (buf_start >= buf_end)
+  if (buf_start >= buf_end) {
     return -1;
+  }
 
   uint8_t *p = buf_start;
 
@@ -412,7 +431,7 @@ encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8
         return -1;
       }
       *(p++) = (value & 0x7F) | 0x80;
-      value = value >> 7;
+      value  = value >> 7;
     }
     if (p + 1 >= buf_end) {
       return -1;
@@ -425,17 +444,18 @@ encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8
 int64_t
 encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, size_t value_len)
 {
-  uint8_t *p = buf_start;
+  uint8_t *p       = buf_start;
   bool use_huffman = true;
-  char *data = NULL;
+  char *data       = nullptr;
   int64_t data_len = 0;
 
   // TODO Choose whether to use Huffman encoding wisely
-
+  // cppcheck-suppress knownConditionTrueFalse; leaving "use_huffman" for wise huffman usage in the future
   if (use_huffman && value_len) {
     data = static_cast<char *>(ats_malloc(value_len * 4));
-    if (data == NULL)
+    if (data == nullptr) {
       return -1;
+    }
     data_len = huffman_encode(reinterpret_cast<uint8_t *>(data), reinterpret_cast<const uint8_t *>(value), value_len);
   }
 
@@ -478,15 +498,17 @@ encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, siz
 int64_t
 encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index)
 {
-  if (buf_start >= buf_end)
+  if (buf_start >= buf_end) {
     return -1;
+  }
 
   uint8_t *p = buf_start;
 
   // Index
   const int64_t len = encode_integer(p, buf_end, index, 7);
-  if (len == -1)
+  if (len == -1) {
     return -1;
+  }
 
   // Representation type
   if (p + 1 >= buf_end) {
@@ -502,7 +524,7 @@ encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t
 
 int64_t
 encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
-                                              uint32_t index, HpackIndexingTable &indexing_table, HpackFieldType type)
+                                              uint32_t index, HpackIndexingTable &indexing_table, HpackField type)
 {
   uint8_t *p = buf_start;
   int64_t len;
@@ -511,18 +533,18 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   ink_assert(hpack_field_is_literal(type));
 
   switch (type) {
-  case HPACK_FIELD_INDEXED_LITERAL:
+  case HpackField::INDEXED_LITERAL:
     indexing_table.add_header_field(header.field_get());
     prefix = 6;
-    flag = 0x40;
+    flag   = 0x40;
     break;
-  case HPACK_FIELD_NOINDEX_LITERAL:
+  case HpackField::NOINDEX_LITERAL:
     prefix = 4;
-    flag = 0x00;
+    flag   = 0x00;
     break;
-  case HPACK_FIELD_NEVERINDEX_LITERAL:
+  case HpackField::NEVERINDEX_LITERAL:
     prefix = 4;
-    flag = 0x10;
+    flag   = 0x10;
     break;
   default:
     return -1;
@@ -530,8 +552,9 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
 
   // Index
   len = encode_integer(p, buf_end, index, prefix);
-  if (len == -1)
+  if (len == -1) {
     return -1;
+  }
 
   // Representation type
   if (p + 1 >= buf_end) {
@@ -543,9 +566,10 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   // Value String
   int value_len;
   const char *value = header.value_get(&value_len);
-  len = encode_string(p, buf_end, value, value_len);
-  if (len == -1)
+  len               = encode_string(p, buf_end, value, value_len);
+  if (len == -1) {
     return -1;
+  }
   p += len;
 
   Debug("hpack_encode", "Encoded field: %d: %.*s", index, value_len, value);
@@ -554,7 +578,7 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
 
 int64_t
 encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
-                                          HpackIndexingTable &indexing_table, HpackFieldType type)
+                                          HpackIndexingTable &indexing_table, HpackField type)
 {
   uint8_t *p = buf_start;
   int64_t len;
@@ -563,14 +587,14 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   ink_assert(hpack_field_is_literal(type));
 
   switch (type) {
-  case HPACK_FIELD_INDEXED_LITERAL:
+  case HpackField::INDEXED_LITERAL:
     indexing_table.add_header_field(header.field_get());
     flag = 0x40;
     break;
-  case HPACK_FIELD_NOINDEX_LITERAL:
+  case HpackField::NOINDEX_LITERAL:
     flag = 0x00;
     break;
-  case HPACK_FIELD_NEVERINDEX_LITERAL:
+  case HpackField::NEVERINDEX_LITERAL:
     flag = 0x10;
     break;
   default:
@@ -587,8 +611,9 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   int name_len;
   const char *name = header.name_get(&name_len);
   char *lower_name = arena.str_store(name, name_len);
-  for (int i = 0; i < name_len; i++)
+  for (int i = 0; i < name_len; i++) {
     lower_name[i] = ParseRules::ink_tolower(lower_name[i]);
+  }
 
   // Name String
   len = encode_string(p, buf_end, lower_name, name_len);
@@ -600,7 +625,7 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   // Value String
   int value_len;
   const char *value = header.value_get(&value_len);
-  len = encode_string(p, buf_end, value, value_len);
+  len               = encode_string(p, buf_end, value, value_len);
   if (len == -1) {
     return -1;
   }
@@ -609,6 +634,18 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
 
   Debug("hpack_encode", "Encoded field: %.*s: %.*s", name_len, name, value_len, value);
   return p - buf_start;
+}
+
+int64_t
+encode_dynamic_table_size_update(uint8_t *buf_start, const uint8_t *buf_end, uint32_t size)
+{
+  const int64_t len = encode_integer(buf_start, buf_end, size, 5);
+  if (len == -1) {
+    return -1;
+  }
+  buf_start[0] |= 0x20;
+
+  return len;
 }
 
 //
@@ -627,8 +664,9 @@ decode_integer(uint32_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, 
   if (dst == static_cast<uint32_t>(1 << n) - 1) {
     int m = 0;
     do {
-      if (++p >= buf_end)
+      if (++p >= buf_end) {
         return HPACK_ERROR_COMPRESSION_ERROR;
+      }
 
       uint32_t added_value = *p & 0x7f;
       if ((UINT32_MAX >> m) < added_value) {
@@ -655,14 +693,15 @@ decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
-  const uint8_t *p = buf_start;
-  bool isHuffman = *p & 0x80;
+  const uint8_t *p            = buf_start;
+  bool isHuffman              = *p & 0x80;
   uint32_t encoded_string_len = 0;
-  int64_t len = 0;
+  int64_t len                 = 0;
 
   len = decode_integer(encoded_string_len, p, buf_end, 7);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR)
+  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
   p += len;
 
   if ((p + encoded_string_len) > buf_end) {
@@ -674,8 +713,9 @@ decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf
     *str = arena.str_alloc(encoded_string_len * 2);
 
     len = huffman_decode(*str, p, encoded_string_len);
-    if (len == HPACK_ERROR_COMPRESSION_ERROR)
+    if (len < 0) {
       return HPACK_ERROR_COMPRESSION_ERROR;
+    }
     str_length = len;
   } else {
     *str = arena.str_alloc(encoded_string_len);
@@ -696,11 +736,12 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
                             HpackIndexingTable &indexing_table)
 {
   uint32_t index = 0;
-  int64_t len = 0;
+  int64_t len    = 0;
 
   len = decode_integer(index, buf_start, buf_end, 7);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR)
+  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   if (indexing_table.get_header_field(index, header) == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
@@ -728,25 +769,26 @@ int64_t
 decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
                             HpackIndexingTable &indexing_table)
 {
-  const uint8_t *p = buf_start;
-  bool isIncremental = false;
-  uint32_t index = 0;
-  int64_t len = 0;
-  HpackFieldType ftype = hpack_parse_field_type(*p);
+  const uint8_t *p         = buf_start;
+  bool isIncremental       = false;
+  uint32_t index           = 0;
+  int64_t len              = 0;
+  HpackField ftype         = hpack_parse_field_type(*p);
   bool has_http2_violation = false;
 
-  if (ftype == HPACK_FIELD_INDEXED_LITERAL) {
-    len = decode_integer(index, p, buf_end, 6);
+  if (ftype == HpackField::INDEXED_LITERAL) {
+    len           = decode_integer(index, p, buf_end, 6);
     isIncremental = true;
-  } else if (ftype == HPACK_FIELD_NEVERINDEX_LITERAL) {
+  } else if (ftype == HpackField::NEVERINDEX_LITERAL) {
     len = decode_integer(index, p, buf_end, 4);
   } else {
-    ink_assert(ftype == HPACK_FIELD_NOINDEX_LITERAL);
+    ink_assert(ftype == HpackField::NOINDEX_LITERAL);
     len = decode_integer(index, p, buf_end, 4);
   }
 
-  if (len == HPACK_ERROR_COMPRESSION_ERROR)
+  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   p += len;
 
@@ -756,12 +798,13 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   if (index) {
     indexing_table.get_header_field(index, header);
   } else {
-    char *name_str = NULL;
+    char *name_str        = nullptr;
     uint32_t name_str_len = 0;
 
     len = decode_string(arena, &name_str, name_str_len, p, buf_end);
-    if (len == HPACK_ERROR_COMPRESSION_ERROR)
+    if (len == HPACK_ERROR_COMPRESSION_ERROR) {
       return HPACK_ERROR_COMPRESSION_ERROR;
+    }
 
     // Check whether header field name is lower case
     // XXX This check shouldn't be here because this rule is not a part of HPACK but HTTP2.
@@ -777,12 +820,13 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   }
 
   // Decode header field value
-  char *value_str = NULL;
+  char *value_str        = nullptr;
   uint32_t value_str_len = 0;
 
   len = decode_string(arena, &value_str, value_str_len, p, buf_end);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR)
+  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   p += len;
   header.value_set(value_str, value_str_len);
@@ -815,16 +859,23 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 // [RFC 7541] 6.3. Dynamic Table Size Update
 //
 int64_t
-update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, HpackIndexingTable &indexing_table)
+update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, HpackIndexingTable &indexing_table,
+                          uint32_t maximum_table_size)
 {
-  if (buf_start == buf_end)
+  if (buf_start == buf_end) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   // Update header table size if its required.
   uint32_t size = 0;
-  int64_t len = decode_integer(size, buf_start, buf_end, 5);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR)
+  int64_t len   = decode_integer(size, buf_start, buf_end, 5);
+  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
+
+  if (size > maximum_table_size) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   if (indexing_table.update_maximum_size(size) == false) {
     return HPACK_ERROR_COMPRESSION_ERROR;
@@ -834,14 +885,16 @@ update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Hpac
 }
 
 int64_t
-hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len)
+hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len,
+                          uint32_t max_header_size, uint32_t maximum_table_size)
 {
-  const uint8_t *cursor = in_buf;
+  const uint8_t *cursor           = in_buf;
   const uint8_t *const in_buf_end = in_buf + in_buf_len;
-  HdrHeap *heap = hdr->m_heap;
-  HTTPHdrImpl *hh = hdr->m_http;
-  bool header_field_started = false;
-  bool has_http2_violation = false;
+  HdrHeap *heap                   = hdr->m_heap;
+  HTTPHdrImpl *hh                 = hdr->m_http;
+  bool header_field_started       = false;
+  bool has_http2_violation        = false;
+  uint32_t total_header_size      = 0;
 
   while (cursor < in_buf_end) {
     int64_t read_bytes = 0;
@@ -849,10 +902,10 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
     // decode a header field encoded by HPACK
     MIMEField *field = mime_field_create(heap, hh->m_fields_impl);
     MIMEFieldWrapper header(field, heap, hh->m_fields_impl);
-    HpackFieldType ftype = hpack_parse_field_type(*cursor);
+    HpackField ftype = hpack_parse_field_type(*cursor);
 
     switch (ftype) {
-    case HPACK_FIELD_INDEX:
+    case HpackField::INDEX:
       read_bytes = decode_indexed_header_field(header, cursor, in_buf_end, indexing_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
@@ -860,33 +913,45 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
       cursor += read_bytes;
       header_field_started = true;
       break;
-    case HPACK_FIELD_INDEXED_LITERAL:
-    case HPACK_FIELD_NOINDEX_LITERAL:
-    case HPACK_FIELD_NEVERINDEX_LITERAL:
+    case HpackField::INDEXED_LITERAL:
+    case HpackField::NOINDEX_LITERAL:
+    case HpackField::NEVERINDEX_LITERAL:
       read_bytes = decode_literal_header_field(header, cursor, in_buf_end, indexing_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
       if (read_bytes < 0) {
         has_http2_violation = true;
-        read_bytes = -read_bytes;
+        read_bytes          = -read_bytes;
       }
       cursor += read_bytes;
       header_field_started = true;
       break;
-    case HPACK_FIELD_TABLESIZE_UPDATE:
+    case HpackField::TABLESIZE_UPDATE:
       if (header_field_started) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
-      read_bytes = update_dynamic_table_size(cursor, in_buf_end, indexing_table);
+      read_bytes = update_dynamic_table_size(cursor, in_buf_end, indexing_table, maximum_table_size);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
       cursor += read_bytes;
       continue;
     }
+
+    int name_len  = 0;
+    int value_len = 0;
+
+    field->name_get(&name_len);
+    field->value_get(&value_len);
+    total_header_size += name_len + value_len;
+
+    if (total_header_size > max_header_size) {
+      return HPACK_ERROR_SIZE_EXCEEDED_ERROR;
+    }
+
     // Store to HdrHeap
-    mime_hdr_field_attach(hh->m_fields_impl, field, 1, NULL);
+    mime_hdr_field_attach(hh->m_fields_impl, field, 1, nullptr);
   }
   // Parsing all headers is done
   if (has_http2_violation) {
@@ -897,17 +962,28 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
 }
 
 int64_t
-hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr)
+hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr,
+                          int32_t maximum_table_size)
 {
-  uint8_t *cursor = out_buf;
+  uint8_t *cursor                  = out_buf;
   const uint8_t *const out_buf_end = out_buf + out_buf_len;
-  int64_t written = 0;
+  int64_t written                  = 0;
 
   ink_assert(http_hdr_type_get(hdr->m_http) != HTTP_TYPE_UNKNOWN);
 
+  // Update dynamic table size
+  if (maximum_table_size >= 0) {
+    indexing_table.update_maximum_size(maximum_table_size);
+    written = encode_dynamic_table_size_update(cursor, out_buf_end, maximum_table_size);
+    if (written == HPACK_ERROR_COMPRESSION_ERROR) {
+      return HPACK_ERROR_COMPRESSION_ERROR;
+    }
+    cursor += written;
+  }
+
   MIMEFieldIter field_iter;
-  for (MIMEField *field = hdr->iter_get_first(&field_iter); field != NULL; field = hdr->iter_get_next(&field_iter)) {
-    HpackFieldType field_type;
+  for (MIMEField *field = hdr->iter_get_first(&field_iter); field != nullptr; field = hdr->iter_get_next(&field_iter)) {
+    HpackField field_type;
     MIMEFieldWrapper header(field, hdr->m_heap, hdr->m_http->m_fields_impl);
     int name_len;
     int value_len;
@@ -918,20 +994,20 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
     // - Short Cookie header should not be indexed because of low entropy
     if ((ptr_len_casecmp(name, name_len, MIME_FIELD_COOKIE, MIME_LEN_COOKIE) == 0 && value_len < 20) ||
         (ptr_len_casecmp(name, name_len, MIME_FIELD_AUTHORIZATION, MIME_LEN_AUTHORIZATION) == 0)) {
-      field_type = HPACK_FIELD_NEVERINDEX_LITERAL;
+      field_type = HpackField::NEVERINDEX_LITERAL;
     } else {
-      field_type = HPACK_FIELD_INDEXED_LITERAL;
+      field_type = HpackField::INDEXED_LITERAL;
     }
     const HpackLookupResult result = indexing_table.lookup(header);
     switch (result.match_type) {
-    case HPACK_NO_MATCH:
+    case HpackMatch::NONE:
       written = encode_literal_header_field_with_new_name(cursor, out_buf_end, header, indexing_table, field_type);
       break;
-    case HPACK_NAME_MATCH:
+    case HpackMatch::NAME:
       written =
         encode_literal_header_field_with_indexed_name(cursor, out_buf_end, header, result.index, indexing_table, field_type);
       break;
-    case HPACK_EXACT_MATCH:
+    case HpackMatch::EXACT:
       written = encode_indexed_header_field(cursor, out_buf_end, result.index);
       break;
     default:
@@ -945,4 +1021,10 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
     cursor += written;
   }
   return cursor - out_buf;
+}
+
+int32_t
+hpack_get_maximum_table_size(HpackIndexingTable &indexing_table)
+{
+  return indexing_table.maximum_size();
 }

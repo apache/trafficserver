@@ -52,7 +52,7 @@ ssl_netvc_cast(int event, void *edata)
     ptr.vio = static_cast<VIO *>(edata);
     return dynamic_cast<SSLNetVConnection *>(ptr.vio->vc_server);
   default:
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -74,9 +74,9 @@ struct SSLNextProtocolTrampoline : public Continuation {
     Continuation *plugin;
     SSLNetVConnection *netvc;
 
-    vio = static_cast<VIO *>(edata);
+    vio   = static_cast<VIO *>(edata);
     netvc = dynamic_cast<SSLNetVConnection *>(vio->vc_server);
-    ink_assert(netvc != NULL);
+    ink_assert(netvc != nullptr);
 
     switch (event) {
     case VC_EVENT_EOS:
@@ -84,8 +84,8 @@ struct SSLNextProtocolTrampoline : public Continuation {
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
       // Cancel the read before we have a chance to delete the continuation
-      netvc->do_io_read(NULL, 0, NULL);
-      netvc->do_io(VIO::CLOSE);
+      netvc->do_io_read(nullptr, 0, nullptr);
+      netvc->do_io_close();
       delete this;
       return EVENT_ERROR;
     case VC_EVENT_READ_COMPLETE:
@@ -97,10 +97,10 @@ struct SSLNextProtocolTrampoline : public Continuation {
     // Cancel the action, so later timeouts and errors don't try to
     // send the event to the Accept object.  After this point, the accept
     // object does not care.
-    netvc->set_action(NULL);
+    netvc->set_action(nullptr);
 
     // Cancel the read before we have a chance to delete the continuation
-    netvc->do_io_read(NULL, 0, NULL);
+    netvc->do_io_read(nullptr, 0, nullptr);
     plugin = netvc->endpoint();
     if (plugin) {
       send_plugin_event(plugin, NET_EVENT_ACCEPT, netvc);
@@ -109,7 +109,7 @@ struct SSLNextProtocolTrampoline : public Continuation {
       send_plugin_event(npnParent->endpoint, NET_EVENT_ACCEPT, netvc);
     } else {
       // No handler, what should we do? Best to just kill the VC while we can.
-      netvc->do_io(VIO::CLOSE);
+      netvc->do_io_close();
     }
 
     delete this;
@@ -125,10 +125,9 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
   SSLNetVConnection *netvc = ssl_netvc_cast(event, edata);
 
   Debug("ssl", "[SSLNextProtocolAccept:mainEvent] event %d netvc %p", event, netvc);
-
   switch (event) {
   case NET_EVENT_ACCEPT:
-    ink_release_assert(netvc != NULL);
+    ink_release_assert(netvc != nullptr);
 
     netvc->setTransparentPassThrough(transparent_passthrough);
 
@@ -137,19 +136,21 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
     // the endpoint that there is an accept to handle until the read completes
     // and we know which protocol was negotiated.
     netvc->registerNextProtocolSet(&this->protoset);
-    netvc->do_io(VIO::READ, new SSLNextProtocolTrampoline(this, netvc->mutex), 0, this->buffer, 0);
-    netvc->set_session_accept_pointer(this);
+    netvc->do_io_read(new SSLNextProtocolTrampoline(this, netvc->mutex), 0, this->buffer);
     return EVENT_CONT;
   default:
-    netvc->do_io(VIO::CLOSE);
+    if (netvc) {
+      netvc->do_io_close();
+    }
     return EVENT_DONE;
   }
 }
 
-void
+bool
 SSLNextProtocolAccept::accept(NetVConnection *, MIOBuffer *, IOBufferReader *)
 {
   ink_release_assert(0);
+  return false;
 }
 
 bool
@@ -165,9 +166,21 @@ SSLNextProtocolAccept::unregisterEndpoint(const char *protocol, Continuation *ha
 }
 
 SSLNextProtocolAccept::SSLNextProtocolAccept(Continuation *ep, bool transparent_passthrough)
-  : SessionAccept(NULL), buffer(new_empty_MIOBuffer()), endpoint(ep), transparent_passthrough(transparent_passthrough)
+  : SessionAccept(nullptr), buffer(new_empty_MIOBuffer()), endpoint(ep), transparent_passthrough(transparent_passthrough)
 {
   SET_HANDLER(&SSLNextProtocolAccept::mainEvent);
+}
+
+SSLNextProtocolSet *
+SSLNextProtocolAccept::getProtoSet()
+{
+  return &this->protoset;
+}
+
+SSLNextProtocolSet *
+SSLNextProtocolAccept::cloneProtoSet()
+{
+  return this->protoset.clone();
 }
 
 SSLNextProtocolAccept::~SSLNextProtocolAccept()

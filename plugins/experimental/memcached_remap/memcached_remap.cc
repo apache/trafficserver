@@ -18,11 +18,10 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <unistd.h>
 
-// change this on your box
 #include <libmemcached/memcached.h>
 
 // global settings
@@ -43,9 +42,9 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
   int request_host_length = 0;
   const char *request_scheme;
   int request_scheme_length = 0;
-  int request_port = 80;
+  int request_port          = 80;
   char ikey[1024];
-  char *m_result = NULL;
+  char *m_result = nullptr;
   size_t oval_length;
   uint32_t flags;
   memcached_return_t lrc;
@@ -68,13 +67,13 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
   }
 
   request_host = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field_loc, -1, &request_host_length);
-  if (request_host == NULL || strlen(request_host) < 1) {
+  if (request_host == nullptr || strlen(request_host) < 1) {
     TSDebug(PLUGIN_NAME, "couldn't find request HOST header");
     goto release_field;
   }
 
   request_scheme = TSUrlSchemeGet(reqp, url_loc, &request_scheme_length);
-  request_port = TSUrlPortGet(reqp, url_loc);
+  request_port   = TSUrlPortGet(reqp, url_loc);
 
   TSDebug(PLUGIN_NAME, "      +++++MEMCACHED REMAP+++++      ");
 
@@ -96,7 +95,7 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
       if (m_result)
         free(m_result);
       TSDebug(PLUGIN_NAME, "\nOUTGOING REQUEST ->\n ::: to_scheme_desc: %s\n ::: to_hostname: %s\n ::: to_port: %d", oscheme, ohost,
-              oport); // row[0],row[1],row[2]);
+              oport);
       TSMimeHdrFieldValueStringSet(reqp, hdr_loc, field_loc, 0, ohost, -1);
       TSUrlHostSet(reqp, url_loc, ohost, -1);
       TSUrlSchemeSet(reqp, url_loc, oscheme, -1);
@@ -112,30 +111,26 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
     goto not_found;
   }
 
-  goto free_stuff; // free the result set after processed
+  goto release_field; // free the result set after processed
 
 not_found:
   // lets build up a nice 404 message for someone
   if (!ret_val) {
     TSHttpHdrStatusSet(reqp, hdr_loc, TS_HTTP_STATUS_NOT_FOUND);
-    TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_NOT_FOUND);
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_NOT_FOUND);
   }
-free_stuff:
-#if (TS_VERSION_NUMBER < 2001005)
-  if (request_host)
-    TSHandleStringRelease(reqp, hdr_loc, request_host);
-  if (request_scheme)
-    TSHandleStringRelease(reqp, hdr_loc, request_scheme);
-#endif
 release_field:
-  if (field_loc)
+  if (field_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, field_loc);
+  }
 release_url:
-  if (url_loc)
+  if (url_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, url_loc);
+  }
 release_hdr:
-  if (hdr_loc)
+  if (hdr_loc) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
+  }
 
   return ret_val;
 }
@@ -143,7 +138,7 @@ release_hdr:
 static int
 memcached_remap(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp   = (TSHttpTxn)edata;
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
   if (event == TS_EVENT_HTTP_READ_REQUEST_HDR) {
@@ -163,46 +158,18 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
   memcached_return_t rc;
-  // FILE *fp;
-  // char servers_string[8192];
 
-  info.plugin_name = const_cast<char *>(PLUGIN_NAME);
-  info.vendor_name = const_cast<char *>("Apache Software Foundation");
+  info.plugin_name   = const_cast<char *>(PLUGIN_NAME);
+  info.vendor_name   = const_cast<char *>("Apache Software Foundation");
   info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
 
   TSDebug(PLUGIN_NAME, "about to init memcached");
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[memcached_remap] Plugin registration failed.");
+    TSError("[memcached_remap] Plugin registration failed");
     return;
   }
 
-  // parse the configuration file
-  // TODO: this is still under testing 1.0.2 version should have this feature
-  /*
-  if(argc < 1) {
-      TSError("memcached_remap: you should pass a configuration file as argument to plugin with list of servers.\n");
-      return;
-  }
-
-  fp = fopen(argv[0], "r");
-  if(!fp) {
-      TSError("memcached_remap: Failed to open the configuration file %s\n", argv[0]);
-      return;
-  }
-
-  while(!feof(fp)) {
-      fscanf(fp,"servers=%[^\n] ", servers_string);
-  }
-
-  fclose(fp);
-  */
-
-  // initialize the memcache
-  // fp = NULL;
-  // snprintf(servers_string, 1,"%c",'h');
   memc = memcached_create(NULL);
-
-  // servers = memcached_servers_parse(servers_string);
 
   servers = memcached_server_list_append(NULL, "localhost", 11211, &rc);
   if (rc != MEMCACHED_SUCCESS) {

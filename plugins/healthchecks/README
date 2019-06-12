@@ -1,6 +1,6 @@
 This is a simple plugin, to provide basic (but configurable) health checks.
 This is a server intercept plugin, and it takes one single  configuration
-option in plugin.config, the configuration file name. 
+option in plugin.config, the configuration file name.
 
 This configuration contains one, or several, lines of the format
 

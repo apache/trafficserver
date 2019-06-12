@@ -28,10 +28,10 @@
 
  ****************************************************************************/
 
-#ifndef _Store_h_
-#define _Store_h_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Result.h"
 
 #define STORE_BLOCK_SIZE 8192
 #define STORE_BLOCK_SHIFT 13
@@ -70,17 +70,17 @@ struct span_diskid_t {
 // Those on the same disk should be in a linked list.
 //
 struct Span {
-  int64_t blocks; // in STORE_BLOCK_SIZE blocks
-  int64_t offset; // used only if (file == true); in bytes
-  unsigned hw_sector_size;
-  unsigned alignment;
+  int64_t blocks          = 0; // in STORE_BLOCK_SIZE blocks
+  int64_t offset          = 0; // used only if (file == true); in bytes
+  unsigned hw_sector_size = DEFAULT_HW_SECTOR_SIZE;
+  unsigned alignment      = 0;
   span_diskid_t disk_id;
-  int forced_volume_num; ///< Force span in to specific volume.
+  int forced_volume_num = -1; ///< Force span in to specific volume.
 private:
-  bool is_mmapable_internal;
+  bool is_mmapable_internal = false;
 
 public:
-  bool file_pathname; // the pathname is a file
+  bool file_pathname = false; // the pathname is a file
   // v- used as a magic location for copy constructor.
   // we memcpy everything before this member and do explicit assignment for the rest.
   ats_scoped_str pathname;
@@ -117,8 +117,9 @@ public:
   nth(unsigned i)
   {
     Span *x = this;
-    while (x && i--)
+    while (x && i--) {
       x = x->link.next;
+    }
     return x;
   }
 
@@ -126,8 +127,10 @@ public:
   paths() const
   {
     int i = 0;
-    for (const Span *x = this; x; i++, x = x->link.next)
+    for (const Span *x = this; x; i++, x = x->link.next) {
       ;
+    }
+
     return i;
   }
 
@@ -150,33 +153,31 @@ public:
            char *buf, int buflen); // where to store the path
 
   /// Set the hash seed string.
-  void hash_base_string_set(char const *s);
+  void hash_base_string_set(const char *s);
   /// Set the volume number.
   void volume_number_set(int n);
 
-  Span()
-    : blocks(0),
-      offset(0),
-      hw_sector_size(DEFAULT_HW_SECTOR_SIZE),
-      alignment(0),
-      forced_volume_num(-1),
-      is_mmapable_internal(false),
-      file_pathname(false)
-  {
-    disk_id[0] = disk_id[1] = 0;
-  }
+  Span() { disk_id[0] = disk_id[1] = 0; }
 
   /// Copy constructor.
-  /// @internal Prior to this implementation handling the char* pointers was done manual
-  /// at every call site. We also need this because we have ats_scoped_str members.
+  /// @internal Prior to this implementation handling the char* pointers was done manually
+  /// at every call site. We also need this because we have @c ats_scoped_str members and need
+  /// to make copies.
   Span(Span const &that)
   {
-    memcpy(this, &that, reinterpret_cast<intptr_t>(&(static_cast<Span *>(0)->pathname)));
-    if (that.pathname)
+    /* I looked at simplifying this by changing the @c ats_scoped_str instances to @c std::string
+     * but that actually makes it worse. The copy constructor @b must be overriden to get the
+     * internal link (@a link.next) correct. Given that, changing to @c std::string means doing
+     * explicit assignment for every member, which has its own problems.
+     */
+    memcpy(static_cast<void *>(this), &that, reinterpret_cast<intptr_t>(&(static_cast<Span *>(nullptr)->pathname)));
+    if (that.pathname) {
       pathname = ats_strdup(that.pathname);
-    if (that.hash_base_string)
+    }
+    if (that.hash_base_string) {
       hash_base_string = ats_strdup(that.hash_base_string);
-    link.next = NULL;
+    }
+    link.next = nullptr;
   }
 
   ~Span();
@@ -200,12 +201,12 @@ struct Store {
     Store s;
     alloc(s, blocks, true, mmapable);
     if (s.n_disks) {
-      Span *t = s.disk[0];
-      s.disk[0] = NULL;
+      Span *t   = s.disk[0];
+      s.disk[0] = nullptr;
       return t;
     }
 
-    return NULL;
+    return nullptr;
   }
   // try to allocate, return (s == gotten, diff == not gotten)
   void try_realloc(Store &s, Store &diff);
@@ -223,7 +224,7 @@ struct Store {
     if (i > n_disks) {
       disk = (Span **)ats_realloc(disk, i * sizeof(Span *));
       for (unsigned j = n_disks; j < i; j++) {
-        disk[j] = NULL;
+        disk[j] = nullptr;
       }
       n_disks = i;
     }
@@ -254,24 +255,19 @@ struct Store {
   ~Store();
 
   // The number of disks/paths defined in storage.config
-  unsigned n_disks_in_config;
+  unsigned n_disks_in_config = 0;
   // The number of disks/paths we could actually read and parse.
-  unsigned n_disks;
-  Span **disk;
-  //
-  // returns NULL on success
-  // if fd >= 0 then on failure it returns an error string
-  //            otherwise on failure it returns (char *)-1
-  //
-  const char *read_config();
+  unsigned n_disks = 0;
+  Span **disk      = nullptr;
+
+  Result read_config();
+
   int write_config_data(int fd) const;
 
   /// Additional configuration key values.
-  static char const VOLUME_KEY[];
-  static char const HASH_BASE_STRING_KEY[];
+  static const char VOLUME_KEY[];
+  static const char HASH_BASE_STRING_KEY[];
 };
 
 // store either free or in the cache, can be stolen for reconfiguration
 void stealStore(Store &s, int blocks);
-
-#endif

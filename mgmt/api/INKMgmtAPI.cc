@@ -29,23 +29,18 @@
  *
  *
  ***************************************************************************/
-#include "ts/ink_platform.h"
-#include "ts/ink_code.h"
-#include "ts/ParseRules.h"
-#include <limits.h>
-#include "ts/I_Layout.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_code.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ParseRules.h"
+#include <climits>
+#include "tscore/I_Layout.h"
 
 #include "mgmtapi.h"
-#include "CfgContextManager.h"
-#include "CfgContextImpl.h"
-#include "CfgContextUtils.h"
 #include "CoreAPI.h"
 #include "CoreAPIShared.h"
 
-#include "ts/TextBuffer.h"
-
-// forward declarations
-void init_pdss_format(TSPdSsFormat &info);
+#include "tscore/TextBuffer.h"
 
 /***************************************************************************
  * API Memory Management
@@ -89,8 +84,9 @@ TSListCreate(void)
 tsapi void
 TSListDestroy(TSList l)
 {
-  if (!l)
+  if (!l) {
     return;
+  }
 
   delete_queue((LLQ *)l);
   return;
@@ -102,8 +98,9 @@ TSListEnqueue(TSList l, void *data)
   int ret;
 
   ink_assert(l && data);
-  if (!l || !data)
+  if (!l || !data) {
     return TS_ERR_PARAMS;
+  }
 
   ret = enqueue((LLQ *)l, data); /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
@@ -117,8 +114,9 @@ tsapi void *
 TSListDequeue(TSList l)
 {
   ink_assert(l);
-  if (!l || queue_is_empty((LLQ *)l))
-    return NULL;
+  if (!l || queue_is_empty((LLQ *)l)) {
+    return nullptr;
+  }
 
   return dequeue((LLQ *)l);
 }
@@ -127,8 +125,9 @@ tsapi bool
 TSListIsEmpty(TSList l)
 {
   ink_assert(l);
-  if (!l)
+  if (!l) {
     return true; // list doesn't exist, so it's empty
+  }
 
   return queue_is_empty((LLQ *)l);
 }
@@ -137,8 +136,9 @@ tsapi int
 TSListLen(TSList l)
 {
   ink_assert(l);
-  if (!l)
+  if (!l) {
     return -1;
+  }
 
   return queue_len((LLQ *)l);
 }
@@ -147,323 +147,18 @@ tsapi bool
 TSListIsValid(TSList l)
 {
   int i, len;
-  void *ele;
 
-  if (!l)
+  if (!l) {
     return false;
+  }
 
   len = queue_len((LLQ *)l);
   for (i = 0; i < len; i++) {
-    ele = (void *)dequeue((LLQ *)l);
-    if (!ele)
+    void *ele = (void *)dequeue((LLQ *)l);
+    if (!ele) {
       return false;
+    }
     enqueue((LLQ *)l, ele);
-  }
-  return true;
-}
-
-/*--- TSIpAddrList operations -------------------------------------------------*/
-tsapi TSIpAddrList
-TSIpAddrListCreate(void)
-{
-  return (void *)create_queue(); /* this queue will be a list of IpAddrEle* */
-}
-
-tsapi void
-TSIpAddrListDestroy(TSIpAddrList ip_addrl)
-{
-  TSIpAddrEle *ipaddr_ele;
-
-  if (!ip_addrl) {
-    return;
-  }
-
-  /* dequeue each element and free it;
-     currently, an element can only be an TSIpAddrEle
-     or it can be an TSIpAddr ?? */
-  while (!queue_is_empty((LLQ *)ip_addrl)) {
-    ipaddr_ele = (TSIpAddrEle *)dequeue((LLQ *)ip_addrl);
-
-    if (!ipaddr_ele)
-      continue;
-
-    TSIpAddrEleDestroy(ipaddr_ele);
-  }
-
-  /* we have removed everything on the list so free list */
-  delete_queue((LLQ *)ip_addrl);
-  return;
-}
-
-tsapi TSMgmtError
-TSIpAddrListEnqueue(TSIpAddrList ip_addrl, TSIpAddrEle *ip_addr)
-{
-  int ret;
-
-  ink_assert(ip_addrl && ip_addr);
-  if (!ip_addrl || !ip_addr)
-    return TS_ERR_PARAMS;
-
-  ret = enqueue((LLQ *)ip_addrl, ip_addr);
-  if (ret == 0) {
-    return TS_ERR_FAIL;
-  } else {
-    return TS_ERR_OKAY;
-  }
-}
-
-/* The the TSIpAddrEle returned is actually removed from the end of list */
-tsapi TSIpAddrEle *
-TSIpAddrListDequeue(TSIpAddrList ip_addrl)
-{
-  ink_assert(ip_addrl);
-  if (!ip_addrl || queue_is_empty((LLQ *)ip_addrl))
-    return NULL;
-
-  return (TSIpAddrEle *)dequeue((LLQ *)ip_addrl);
-}
-
-tsapi int
-TSIpAddrListLen(TSIpAddrList ip_addrl)
-{
-  ink_assert(ip_addrl);
-  if (!ip_addrl)
-    return -1;
-
-  return queue_len((LLQ *)ip_addrl);
-}
-
-tsapi bool
-TSIpAddrListIsEmpty(TSIpAddrList ip_addrl)
-{
-  ink_assert(ip_addrl);
-  if (!ip_addrl)
-    return true;
-
-  return queue_is_empty((LLQ *)ip_addrl);
-}
-
-// returns false if any of the IpAddrEle is not an valid IP address by making
-// use of ccu_checkIpAddrEle; if return false, the ip's may be reordered
-// from the original list
-tsapi bool
-TSIpAddrListIsValid(TSIpAddrList ip_addrl)
-{
-  int i, len;
-  TSIpAddrEle *ele;
-
-  if (!ip_addrl)
-    return false;
-
-  len = queue_len((LLQ *)ip_addrl);
-  for (i = 0; i < len; i++) {
-    ele = (TSIpAddrEle *)dequeue((LLQ *)ip_addrl);
-    if (!ccu_checkIpAddrEle(ele)) {
-      enqueue((LLQ *)ip_addrl, ele);
-      return false;
-    }
-    enqueue((LLQ *)ip_addrl, ele);
-  }
-  return true;
-}
-
-/*--- TSPortList operations ----------------------------------------------*/
-tsapi TSPortList
-TSPortListCreate()
-{
-  return (void *)create_queue(); /* this queue will be a list of TSPortEle* */
-}
-
-tsapi void
-TSPortListDestroy(TSPortList portl)
-{
-  TSPortEle *port_ele;
-
-  if (!portl) {
-    return;
-  }
-  // dequeue each element and free it
-  while (!queue_is_empty((LLQ *)portl)) {
-    port_ele = (TSPortEle *)dequeue((LLQ *)portl);
-
-    if (!port_ele)
-      continue;
-
-    TSPortEleDestroy(port_ele);
-  }
-
-  /* we have removed everything on the list so free list */
-  delete_queue((LLQ *)portl);
-  return;
-}
-
-tsapi TSMgmtError
-TSPortListEnqueue(TSPortList portl, TSPortEle *port)
-{
-  int ret;
-
-  ink_assert(portl && port);
-  if (!portl || !port)
-    return TS_ERR_PARAMS;
-
-  ret = enqueue((LLQ *)portl, port); /* returns TRUE=1 or FALSE=0 */
-  if (ret == 0) {
-    return TS_ERR_FAIL;
-  } else {
-    return TS_ERR_OKAY;
-  }
-}
-
-tsapi TSPortEle *
-TSPortListDequeue(TSPortList portl)
-{
-  ink_assert(portl);
-  if (!portl || queue_is_empty((LLQ *)portl))
-    return NULL;
-
-  return (TSPortEle *)dequeue((LLQ *)portl);
-}
-
-tsapi int
-TSPortListLen(TSPortList portl)
-{
-  ink_assert(portl);
-  if (!portl)
-    return -1;
-
-  return queue_len((LLQ *)portl);
-}
-
-tsapi bool
-TSPortListIsEmpty(TSPortList portl)
-{
-  ink_assert(portl);
-  if (!portl)
-    return true;
-
-  return queue_is_empty((LLQ *)portl);
-}
-
-// returns false if any of the PortEle's has a port_a <= 0;
-// if returns false, then will return the entire port list
-// intact, although the ports may not be ordered in the same way
-tsapi bool
-TSPortListIsValid(TSPortList portl)
-{
-  int i, len;
-  TSPortEle *ele;
-
-  if (!portl)
-    return false;
-
-  len = queue_len((LLQ *)portl);
-  for (i = 0; i < len; i++) {
-    ele = (TSPortEle *)dequeue((LLQ *)portl);
-    if (!ccu_checkPortEle(ele)) {
-      enqueue((LLQ *)portl, ele);
-      return false;
-    }
-    enqueue((LLQ *)portl, ele);
-  }
-  return true;
-}
-
-/*--- TSDomainList operations -----------------------------------------*/
-tsapi TSDomainList
-TSDomainListCreate()
-{
-  return (void *)create_queue(); /* this queue will be a list of char* */
-}
-
-tsapi void
-TSDomainListDestroy(TSDomainList domainl)
-{
-  TSDomain *domain;
-
-  if (!domainl) {
-    return;
-  }
-
-  /* dequeue each element and free it */
-  while (!queue_is_empty((LLQ *)domainl)) {
-    domain = (TSDomain *)dequeue((LLQ *)domainl);
-
-    if (!domain)
-      continue;
-
-    TSDomainDestroy(domain);
-  }
-
-  delete_queue((LLQ *)domainl);
-}
-
-tsapi TSMgmtError
-TSDomainListEnqueue(TSDomainList domainl, TSDomain *domain)
-{
-  int ret;
-
-  ink_assert(domainl && domain);
-  if (!domainl || !domain)
-    return TS_ERR_PARAMS;
-
-  ret = enqueue((LLQ *)domainl, domain); /* returns TRUE=1 or FALSE=0 */
-  if (ret == 0) {
-    return TS_ERR_FAIL;
-  } else {
-    return TS_ERR_OKAY;
-  }
-}
-
-tsapi TSDomain *
-TSDomainListDequeue(TSDomainList domainl)
-{
-  ink_assert(domainl);
-  if (!domainl || queue_is_empty((LLQ *)domainl))
-    return NULL;
-
-  return (TSDomain *)dequeue((LLQ *)domainl);
-}
-
-tsapi bool
-TSDomainListIsEmpty(TSDomainList domainl)
-{
-  ink_assert(domainl);
-  if (!domainl)
-    return true;
-
-  return queue_is_empty((LLQ *)domainl);
-}
-
-tsapi int
-TSDomainListLen(TSDomainList domainl)
-{
-  ink_assert(domainl);
-  if (!domainl)
-    return -1;
-
-  return queue_len((LLQ *)domainl);
-}
-
-// returns false if encounter a NULL hostname and ip
-tsapi bool
-TSDomainListIsValid(TSDomainList domainl)
-{
-  int i, len;
-  TSDomain *dom;
-
-  if (!domainl)
-    return false;
-
-  len = queue_len((LLQ *)domainl);
-  for (i = 0; i < len; i++) {
-    dom = (TSDomain *)dequeue((LLQ *)domainl);
-    if (!dom) {
-      return false;
-    }
-    if (!dom->domain_val) {
-      return false;
-    }
-    enqueue((LLQ *)domainl, dom);
   }
   return true;
 }
@@ -479,15 +174,13 @@ TSStringListCreate()
 tsapi void
 TSStringListDestroy(TSStringList strl)
 {
-  char *str;
-
   if (!strl) {
     return;
   }
 
   /* dequeue each element and free it */
   while (!queue_is_empty((LLQ *)strl)) {
-    str = (char *)dequeue((LLQ *)strl);
+    char *str = (char *)dequeue((LLQ *)strl);
     ats_free(str);
   }
 
@@ -500,8 +193,9 @@ TSStringListEnqueue(TSStringList strl, char *str)
   int ret;
 
   ink_assert(strl && str);
-  if (!strl || !str)
+  if (!strl || !str) {
     return TS_ERR_PARAMS;
+  }
 
   ret = enqueue((LLQ *)strl, str); /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
@@ -515,8 +209,9 @@ tsapi char *
 TSStringListDequeue(TSStringList strl)
 {
   ink_assert(strl);
-  if (!strl || queue_is_empty((LLQ *)strl))
-    return NULL;
+  if (!strl || queue_is_empty((LLQ *)strl)) {
+    return nullptr;
+  }
 
   return (char *)dequeue((LLQ *)strl);
 }
@@ -525,8 +220,9 @@ tsapi bool
 TSStringListIsEmpty(TSStringList strl)
 {
   ink_assert(strl);
-  if (!strl)
+  if (!strl) {
     return true;
+  }
 
   return queue_is_empty((LLQ *)strl);
 }
@@ -535,8 +231,9 @@ tsapi int
 TSStringListLen(TSStringList strl)
 {
   ink_assert(strl);
-  if (!strl)
+  if (!strl) {
     return -1;
+  }
 
   return queue_len((LLQ *)strl);
 }
@@ -546,16 +243,17 @@ tsapi bool
 TSStringListIsValid(TSStringList strl)
 {
   int i, len;
-  char *str;
 
-  if (!strl)
+  if (!strl) {
     return false;
+  }
 
   len = queue_len((LLQ *)strl);
   for (i = 0; i < len; i++) {
-    str = (char *)dequeue((LLQ *)strl);
-    if (!str)
+    char *str = (char *)dequeue((LLQ *)strl);
+    if (!str) {
       return false;
+    }
     enqueue((LLQ *)strl, str);
   }
   return true;
@@ -572,14 +270,13 @@ TSIntListCreate()
 tsapi void
 TSIntListDestroy(TSIntList intl)
 {
-  int *iPtr;
-
-  if (!intl)
+  if (!intl) {
     return;
+  }
 
   /* dequeue each element and free it */
   while (!queue_is_empty((LLQ *)intl)) {
-    iPtr = (int *)dequeue((LLQ *)intl);
+    int *iPtr = (int *)dequeue((LLQ *)intl);
     ats_free(iPtr);
   }
 
@@ -593,8 +290,9 @@ TSIntListEnqueue(TSIntList intl, int *elem)
   int ret;
 
   ink_assert(intl && elem);
-  if (!intl || !elem)
+  if (!intl || !elem) {
     return TS_ERR_PARAMS;
+  }
 
   ret = enqueue((LLQ *)intl, elem); /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
@@ -608,8 +306,9 @@ tsapi int *
 TSIntListDequeue(TSIntList intl)
 {
   ink_assert(intl);
-  if (!intl || queue_is_empty((LLQ *)intl))
-    return NULL;
+  if (!intl || queue_is_empty((LLQ *)intl)) {
+    return nullptr;
+  }
 
   return (int *)dequeue((LLQ *)intl);
 }
@@ -618,8 +317,9 @@ tsapi bool
 TSIntListIsEmpty(TSIntList intl)
 {
   ink_assert(intl);
-  if (!intl)
+  if (!intl) {
     return true;
+  }
 
   return queue_is_empty((LLQ *)intl);
 }
@@ -628,8 +328,9 @@ tsapi int
 TSIntListLen(TSIntList intl)
 {
   ink_assert(intl);
-  if (!intl)
+  if (!intl) {
     return -1;
+  }
 
   return queue_len((LLQ *)intl);
 }
@@ -637,8 +338,9 @@ TSIntListLen(TSIntList intl)
 tsapi bool
 TSIntListIsValid(TSIntList intl, int min, int max)
 {
-  if (!intl)
+  if (!intl) {
     return false;
+  }
 
   for (unsigned long i = 0; i < queue_len((LLQ *)intl); i++) {
     int *item = (int *)dequeue((LLQ *)intl);
@@ -653,35 +355,16 @@ TSIntListIsValid(TSIntList intl, int min, int max)
   return true;
 }
 
-// helper fn that sets default values for the info passed in
-void
-init_pdss_format(TSPdSsFormat &info)
-{
-  info.pd_type = TS_PD_UNDEFINED;
-  info.pd_val = NULL;
-  info.sec_spec.active = 0;
-  info.sec_spec.time.hour_a = 0;
-  info.sec_spec.time.min_a = 0;
-  info.sec_spec.time.hour_b = 0;
-  info.sec_spec.time.min_b = 0;
-  info.sec_spec.src_ip = TS_INVALID_IP_ADDR;
-  info.sec_spec.prefix = NULL;
-  info.sec_spec.suffix = NULL;
-  info.sec_spec.port = TS_INVALID_PORT;
-  info.sec_spec.method = TS_METHOD_UNDEFINED;
-  info.sec_spec.scheme = TS_SCHEME_UNDEFINED;
-}
-
 /*--- allocate/deallocate operations --------------------------------------*/
 tsapi TSMgmtEvent *
 TSEventCreate(void)
 {
   TSMgmtEvent *event = (TSMgmtEvent *)ats_malloc(sizeof(TSMgmtEvent));
 
-  event->id = -1;
-  event->name = NULL;
-  event->description = NULL;
-  event->priority = TS_EVENT_PRIORITY_UNDEFINED;
+  event->id          = -1;
+  event->name        = nullptr;
+  event->description = nullptr;
+  event->priority    = TS_EVENT_PRIORITY_UNDEFINED;
 
   return event;
 }
@@ -702,7 +385,7 @@ TSRecordEleCreate(void)
 {
   TSRecordEle *ele = (TSRecordEle *)ats_malloc(sizeof(TSRecordEle));
 
-  ele->rec_name = NULL;
+  ele->rec_name = nullptr;
   ele->rec_type = TS_REC_UNDEFINED;
 
   return ele;
@@ -713,682 +396,36 @@ TSRecordEleDestroy(TSRecordEle *ele)
 {
   if (ele) {
     ats_free(ele->rec_name);
-    if (ele->rec_type == TS_REC_STRING && ele->valueT.string_val)
+    if (ele->rec_type == TS_REC_STRING && ele->valueT.string_val) {
       ats_free(ele->valueT.string_val);
+    }
     ats_free(ele);
   }
   return;
-}
-
-tsapi TSIpAddrEle *
-TSIpAddrEleCreate(void)
-{
-  TSIpAddrEle *ele = (TSIpAddrEle *)ats_malloc(sizeof(TSIpAddrEle));
-
-  /* set default values */
-  ele->type = TS_IP_UNDEFINED;
-  ele->ip_a = TS_INVALID_IP_ADDR;
-  ele->cidr_a = TS_INVALID_IP_CIDR;
-  ele->port_a = TS_INVALID_PORT;
-  ele->ip_b = TS_INVALID_IP_ADDR;
-  ele->cidr_b = TS_INVALID_IP_CIDR;
-  ele->port_b = TS_INVALID_PORT;
-  return ele;
-}
-
-tsapi void
-TSIpAddrEleDestroy(TSIpAddrEle *ele)
-{
-  if (ele) {
-    ats_free(ele->ip_a);
-    ats_free(ele->ip_b);
-    ats_free(ele);
-  }
-
-  return;
-}
-
-tsapi TSPortEle *
-TSPortEleCreate(void)
-{
-  TSPortEle *ele = (TSPortEle *)ats_malloc(sizeof(TSPortEle));
-
-  ele->port_a = TS_INVALID_PORT;
-  ele->port_b = TS_INVALID_PORT;
-
-  return ele;
-}
-
-tsapi void
-TSPortEleDestroy(TSPortEle *ele)
-{
-  ats_free(ele);
-  return;
-}
-
-tsapi TSDomain *
-TSDomainCreate()
-{
-  TSDomain *ele = (TSDomain *)ats_malloc(sizeof(TSDomain));
-
-  ele->domain_val = NULL;
-  ele->port = TS_INVALID_PORT;
-
-  return ele;
-}
-
-tsapi void
-TSDomainDestroy(TSDomain *ele)
-{
-  if (ele) {
-    ats_free(ele->domain_val);
-    ats_free(ele);
-  }
-}
-
-tsapi TSSspec *
-TSSspecCreate(void)
-{
-  TSSspec *sec_spec = (TSSspec *)ats_malloc(sizeof(TSSspec));
-
-  /* set defaults */
-  sec_spec->active = 0;
-  (sec_spec->time).hour_a = 0;
-  (sec_spec->time).min_a = 0;
-  (sec_spec->time).hour_b = 0;
-  (sec_spec->time).min_b = 0;
-  sec_spec->src_ip = TS_INVALID_IP_ADDR;
-  sec_spec->prefix = NULL;
-  sec_spec->suffix = NULL;
-  sec_spec->port = NULL;
-  sec_spec->method = TS_METHOD_UNDEFINED;
-  sec_spec->scheme = TS_SCHEME_UNDEFINED;
-  return sec_spec;
-}
-
-tsapi void
-TSSspecDestroy(TSSspec *ele)
-{
-  if (ele) {
-    ats_free(ele->prefix);
-    ats_free(ele->suffix);
-    if (ele->port)
-      TSPortEleDestroy(ele->port);
-    ats_free(ele);
-  }
-  return;
-}
-
-tsapi TSPdSsFormat *
-TSPdSsFormatCreate(void)
-{
-  TSPdSsFormat *ele = (TSPdSsFormat *)ats_malloc(sizeof(TSPdSsFormat));
-
-  /* should set default values here */
-  ele->pd_type = TS_PD_UNDEFINED;
-  ele->pd_val = NULL;
-
-  ele->sec_spec.active = 0;
-  (ele->sec_spec.time).hour_a = -1;
-  (ele->sec_spec.time).min_a = -1;
-  (ele->sec_spec.time).hour_b = -1;
-  (ele->sec_spec.time).min_b = -1;
-  ele->sec_spec.src_ip = TS_INVALID_IP_ADDR;
-  ele->sec_spec.prefix = NULL;
-  ele->sec_spec.suffix = NULL;
-  ele->sec_spec.port = NULL;
-  ele->sec_spec.method = TS_METHOD_UNDEFINED;
-  ele->sec_spec.scheme = TS_SCHEME_UNDEFINED;
-
-  return ele;
-}
-
-tsapi void
-TSPdSsFormatDestroy(TSPdSsFormat &ele)
-{
-  ats_free(ele.pd_val);
-  ats_free(ele.sec_spec.src_ip);
-  ats_free(ele.sec_spec.prefix);
-  ats_free(ele.sec_spec.suffix);
-  if (ele.sec_spec.port)
-    TSPortEleDestroy(ele.sec_spec.port);
-}
-
-/*-------------------------------------------------------------
- * CacheObj
- *-------------------------------------------------------------*/
-tsapi TSCacheEle *
-TSCacheEleCreate(TSRuleTypeT type)
-{
-  TSCacheEle *ele;
-
-  if (type != TS_CACHE_NEVER && type != TS_CACHE_IGNORE_NO_CACHE && type != TS_CACHE_CLUSTER_CACHE_LOCAL &&
-      type != TS_CACHE_IGNORE_CLIENT_NO_CACHE && type != TS_CACHE_IGNORE_SERVER_NO_CACHE && type != TS_CACHE_PIN_IN_CACHE &&
-      type != TS_CACHE_REVALIDATE && type != TS_CACHE_TTL_IN_CACHE && type != TS_CACHE_AUTH_CONTENT && type != TS_TYPE_UNDEFINED)
-    return NULL; // invalid type
-
-  ele = (TSCacheEle *)ats_malloc(sizeof(TSCacheEle));
-
-  /* set defaults */
-  ele->cfg_ele.type = type;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  init_pdss_format(ele->cache_info);
-  ele->time_period.d = 0;
-  ele->time_period.h = 0;
-  ele->time_period.m = 0;
-  ele->time_period.s = 0;
-
-  return ele;
-}
-
-tsapi void
-TSCacheEleDestroy(TSCacheEle *ele)
-{
-  if (ele) {
-    TSPdSsFormatDestroy(ele->cache_info);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * CongestionObj
- *-------------------------------------------------------------*/
-// FIXME: for now use defaults specified in feature spec; the
-// defaults though are configurable as records, so should use
-// records values instead
-tsapi TSCongestionEle *
-TSCongestionEleCreate()
-{
-  TSCongestionEle *ele = (TSCongestionEle *)ats_malloc(sizeof(TSCongestionEle));
-
-  /* set defaults */
-  ele->cfg_ele.type = TS_CONGESTION;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  // init_pdss_format(ele->congestion_info);
-  ele->pd_type = TS_PD_UNDEFINED;
-  ele->pd_val = NULL;
-  ele->prefix = NULL;
-  ele->port = TS_INVALID_PORT;
-  ele->scheme = TS_HTTP_CONGEST_PER_IP;
-  ele->max_connection_failures = 5;
-  ele->fail_window = 120;
-  ele->proxy_retry_interval = 10;
-  ele->client_wait_interval = 300;
-  ele->wait_interval_alpha = 30;
-  ele->live_os_conn_timeout = 60;
-  ele->live_os_conn_retries = 2;
-  ele->dead_os_conn_timeout = 15;
-  ele->dead_os_conn_retries = 1;
-  ele->max_connection = -1;
-  ele->error_page_uri = ats_strdup("congestion#retryAfter");
-
-  return ele;
-}
-
-tsapi void
-TSCongestionEleDestroy(TSCongestionEle *ele)
-{
-  if (ele) {
-    ats_free(ele->pd_val);
-    ats_free(ele->prefix);
-    ats_free(ele->error_page_uri);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * HostingObj
- *-------------------------------------------------------------*/
-tsapi TSHostingEle *
-TSHostingEleCreate()
-{
-  TSHostingEle *ele = (TSHostingEle *)ats_malloc(sizeof(TSHostingEle));
-
-  ele->cfg_ele.type = TS_HOSTING;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->pd_type = TS_PD_UNDEFINED;
-  ele->pd_val = NULL;
-  ele->volumes = TS_INVALID_LIST;
-
-  return ele;
-}
-
-tsapi void
-TSHostingEleDestroy(TSHostingEle *ele)
-{
-  if (ele) {
-    ats_free(ele->pd_val);
-    if (ele->volumes)
-      TSIntListDestroy(ele->volumes);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * IcpObject
- *-------------------------------------------------------------*/
-tsapi TSIcpEle *
-TSIcpEleCreate()
-{
-  TSIcpEle *ele = (TSIcpEle *)ats_malloc(sizeof(TSIcpEle));
-
-  /* set defaults */
-  ele->cfg_ele.type = TS_ICP;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->peer_hostname = NULL;
-  ele->peer_host_ip_addr = TS_INVALID_IP_ADDR;
-  ele->peer_type = TS_ICP_UNDEFINED;
-  ele->peer_proxy_port = TS_INVALID_PORT;
-  ele->peer_icp_port = TS_INVALID_PORT;
-  ele->is_multicast = false;
-  ele->mc_ip_addr = TS_INVALID_IP_ADDR;
-  ele->mc_ttl = TS_MC_TTL_SINGLE_SUBNET; // default value
-
-  return ele;
-}
-
-tsapi void
-TSIcpEleDestroy(TSIcpEle *ele)
-{
-  if (ele) {
-    ats_free(ele->peer_hostname);
-    ats_free(ele->peer_host_ip_addr);
-    ats_free(ele->mc_ip_addr);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * TSIpAllowEle
- *-------------------------------------------------------------*/
-tsapi TSIpAllowEle *
-TSIpAllowEleCreate()
-{
-  TSIpAllowEle *ele = (TSIpAllowEle *)ats_malloc(sizeof(TSIpAllowEle));
-
-  ele->cfg_ele.type = TS_IP_ALLOW;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->src_ip_addr = TS_INVALID_IP_ADDR;
-  ele->action = TS_IP_ALLOW_UNDEFINED;
-
-  return ele;
-}
-
-tsapi void
-TSIpAllowEleDestroy(TSIpAllowEle *ele)
-{
-  if (ele) {
-    if (ele->src_ip_addr)
-      TSIpAddrEleDestroy(ele->src_ip_addr);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * TSLogFilterEle
- *-------------------------------------------------------------*/
-tsapi TSLogFilterEle *
-TSLogFilterEleCreate()
-{
-  TSLogFilterEle *ele = (TSLogFilterEle *)ats_malloc(sizeof(TSLogFilterEle));
-
-  ele->cfg_ele.type = TS_LOG_FILTER;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->action = TS_LOG_FILT_UNDEFINED;
-  ele->filter_name = NULL;
-  ele->log_field = NULL;
-  ele->compare_op = TS_LOG_COND_UNDEFINED;
-  ele->compare_str = NULL;
-  ele->compare_int = -1;
-  return ele;
-}
-
-tsapi void
-TSLogFilterEleDestroy(TSLogFilterEle *ele)
-{
-  if (ele) {
-    ats_free(ele->filter_name);
-    ats_free(ele->log_field);
-    ats_free(ele->compare_str);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * TSLogFormatEle
- *-------------------------------------------------------------*/
-tsapi TSLogFormatEle *
-TSLogFormatEleCreate()
-{
-  TSLogFormatEle *ele = (TSLogFormatEle *)ats_malloc(sizeof(TSLogFormatEle));
-
-  ele->cfg_ele.type = TS_LOG_FORMAT;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->name = NULL;
-  ele->format = NULL;
-  ele->aggregate_interval_secs = 0;
-
-  return ele;
-}
-
-tsapi void
-TSLogFormatEleDestroy(TSLogFormatEle *ele)
-{
-  if (ele) {
-    ats_free(ele->name);
-    ats_free(ele->format);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * TSLogObjectEle
- *-------------------------------------------------------------*/
-tsapi TSLogObjectEle *
-TSLogObjectEleCreate()
-{
-  TSLogObjectEle *ele = (TSLogObjectEle *)ats_malloc(sizeof(TSLogObjectEle));
-
-  ele->cfg_ele.type = TS_LOG_OBJECT;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->format_name = NULL;
-  ele->file_name = NULL;
-  ele->log_mode = TS_LOG_MODE_UNDEFINED;
-  ele->collation_hosts = TS_INVALID_LIST;
-  ele->filters = TS_INVALID_LIST;
-  ele->protocols = TS_INVALID_LIST;
-  ele->server_hosts = TS_INVALID_LIST;
-
-  return ele;
-}
-
-tsapi void
-TSLogObjectEleDestroy(TSLogObjectEle *ele)
-{
-  if (ele) {
-    ats_free(ele->format_name);
-    ats_free(ele->file_name);
-    if (ele->collation_hosts)
-      TSDomainListDestroy(ele->collation_hosts);
-    if (ele->filters)
-      TSStringListDestroy(ele->filters);
-    if (ele->protocols)
-      TSStringListDestroy(ele->protocols);
-    if (ele->server_hosts)
-      TSStringListDestroy(ele->server_hosts);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * TSParentProxyEleCreate
- *-------------------------------------------------------------*/
-tsapi TSParentProxyEle *
-TSParentProxyEleCreate(TSRuleTypeT type)
-{
-  TSParentProxyEle *ele;
-
-  if (type != TS_PP_PARENT && type != TS_PP_GO_DIRECT && type != TS_TYPE_UNDEFINED)
-    return NULL;
-
-  ele = (TSParentProxyEle *)ats_malloc(sizeof(TSParentProxyEle));
-
-  ele->cfg_ele.type = type;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  init_pdss_format(ele->parent_info);
-  ele->rr = TS_RR_NONE;
-  ele->proxy_list = TS_INVALID_LIST;
-  ele->direct = false;
-
-  return ele;
-}
-
-tsapi void
-TSParentProxyEleDestroy(TSParentProxyEle *ele)
-{
-  if (ele) {
-    TSPdSsFormatDestroy(ele->parent_info);
-    if (ele->proxy_list)
-      TSDomainListDestroy(ele->proxy_list);
-    ats_free(ele);
-  }
-
-  return;
-}
-
-/*-------------------------------------------------------------
- * TSVolumeEle
- *-------------------------------------------------------------*/
-tsapi TSVolumeEle *
-TSVolumeEleCreate()
-{
-  TSVolumeEle *ele = (TSVolumeEle *)ats_malloc(sizeof(TSVolumeEle));
-
-  ele->cfg_ele.type = TS_VOLUME;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->volume_num = 0;
-  ele->scheme = TS_VOLUME_UNDEFINED;
-  ele->volume_size = 0;
-  ele->size_format = TS_SIZE_FMT_UNDEFINED;
-
-  return ele;
-}
-
-tsapi void
-TSVolumeEleDestroy(TSVolumeEle *ele)
-{
-  ats_free(ele);
-  return;
-}
-
-/*-------------------------------------------------------------
- * TSPluginEle
- *-------------------------------------------------------------*/
-tsapi TSPluginEle *
-TSPluginEleCreate()
-{
-  TSPluginEle *ele = (TSPluginEle *)ats_malloc(sizeof(TSPluginEle));
-
-  ele->cfg_ele.type = TS_PLUGIN;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->name = NULL;
-  ele->args = TS_INVALID_LIST;
-
-  return ele;
-}
-
-tsapi void
-TSPluginEleDestroy(TSPluginEle *ele)
-{
-  if (ele) {
-    ats_free(ele->name);
-    if (ele->args)
-      TSStringListDestroy(ele->args);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * TSRemapEle
- *-------------------------------------------------------------*/
-TSRemapEle *
-TSRemapEleCreate(TSRuleTypeT type)
-{
-  TSRemapEle *ele;
-
-  if (type != TS_REMAP_MAP && type != TS_REMAP_REVERSE_MAP && type != TS_REMAP_REDIRECT && type != TS_REMAP_REDIRECT_TEMP &&
-      type != TS_TYPE_UNDEFINED)
-    return NULL;
-
-  ele = (TSRemapEle *)ats_malloc(sizeof(TSRemapEle));
-  ele->cfg_ele.type = type;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->map = true;
-  ele->from_scheme = TS_SCHEME_UNDEFINED;
-  ele->from_host = NULL;
-  ele->from_port = TS_INVALID_PORT;
-  ele->from_path_prefix = NULL;
-  ele->to_scheme = TS_SCHEME_UNDEFINED;
-  ele->to_host = NULL;
-  ele->to_port = TS_INVALID_PORT;
-  ele->to_path_prefix = NULL;
-
-  return ele;
-}
-
-void
-TSRemapEleDestroy(TSRemapEle *ele)
-{
-  if (ele) {
-    ats_free(ele->from_host);
-    ats_free(ele->from_path_prefix);
-    ats_free(ele->to_host);
-    ats_free(ele->to_path_prefix);
-    ats_free(ele);
-  }
-}
-
-/*-------------------------------------------------------------
- * TSSocksEle
- *-------------------------------------------------------------*/
-TSSocksEle *
-TSSocksEleCreate(TSRuleTypeT type)
-{
-  TSSocksEle *ele = (TSSocksEle *)ats_malloc(sizeof(TSSocksEle));
-
-  ele->cfg_ele.type = type;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->ip_addrs = TS_INVALID_LIST;
-  ele->dest_ip_addr = TS_INVALID_IP_ADDR;
-  ele->socks_servers = TS_INVALID_LIST;
-  ele->rr = TS_RR_NONE;
-  ele->username = NULL;
-  ele->password = NULL;
-
-  return ele;
-}
-
-void
-TSSocksEleDestroy(TSSocksEle *ele)
-{
-  if (ele) {
-    if (ele->ip_addrs)
-      TSIpAddrListDestroy(ele->ip_addrs);
-    if (ele->dest_ip_addr)
-      TSIpAddrEleDestroy(ele->dest_ip_addr);
-    if (ele->socks_servers)
-      TSDomainListDestroy(ele->socks_servers);
-    ats_free(ele->username);
-    ats_free(ele->password);
-    ats_free(ele);
-  }
-}
-
-/*-------------------------------------------------------------
- * TSSplitDnsEle
- *-------------------------------------------------------------*/
-TSSplitDnsEle *
-TSSplitDnsEleCreate()
-{
-  TSSplitDnsEle *ele = (TSSplitDnsEle *)ats_malloc(sizeof(TSSplitDnsEle));
-
-  ele->cfg_ele.type = TS_SPLIT_DNS;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->pd_type = TS_PD_UNDEFINED;
-  ele->pd_val = NULL;
-  ele->dns_servers_addrs = TS_INVALID_LIST;
-  ele->def_domain = NULL;
-  ele->search_list = TS_INVALID_LIST;
-
-  return ele;
-}
-
-void
-TSSplitDnsEleDestroy(TSSplitDnsEle *ele)
-{
-  if (ele) {
-    ats_free(ele->pd_val);
-    if (ele->dns_servers_addrs)
-      TSDomainListDestroy(ele->dns_servers_addrs);
-    ats_free(ele->def_domain);
-    if (ele->search_list)
-      TSDomainListDestroy(ele->search_list);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * TSStorageEle
- *-------------------------------------------------------------*/
-TSStorageEle *
-TSStorageEleCreate()
-{
-  TSStorageEle *ele = (TSStorageEle *)ats_malloc(sizeof(TSStorageEle));
-
-  ele->cfg_ele.type = TS_STORAGE;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->pathname = NULL;
-  ele->size = -1;
-
-  return ele;
-}
-
-void
-TSStorageEleDestroy(TSStorageEle *ele)
-{
-  if (ele) {
-    ats_free(ele->pathname);
-    ats_free(ele);
-  }
-  return;
-}
-
-/*-------------------------------------------------------------
- * TSVirtIpAddrEle
- *-------------------------------------------------------------*/
-TSVirtIpAddrEle *
-TSVirtIpAddrEleCreate()
-{
-  TSVirtIpAddrEle *ele = (TSVirtIpAddrEle *)ats_malloc(sizeof(TSVirtIpAddrEle));
-
-  ele->cfg_ele.type = TS_VADDRS;
-  ele->cfg_ele.error = TS_ERR_OKAY;
-  ele->intr = NULL;
-  ele->sub_intr = -1;
-  ele->ip_addr = TS_INVALID_IP_ADDR;
-
-  return ele;
-}
-
-void
-TSVirtIpAddrEleDestroy(TSVirtIpAddrEle *ele)
-{
-  if (ele) {
-    ats_free(ele->intr);
-    ats_free(ele->ip_addr);
-    ats_free(ele);
-  }
 }
 
 /***************************************************************************
  * API Core
  ***************************************************************************/
 
+/*--- host status operations ----------------------------------------------- */
+tsapi TSMgmtError
+TSHostStatusSetUp(const char *host_name, int down_time, const char *reason)
+{
+  return HostStatusSetUp(host_name, down_time, reason);
+}
+
+tsapi TSMgmtError
+TSHostStatusSetDown(const char *host_name, int down_time, const char *reason)
+{
+  return HostStatusSetDown(host_name, down_time, reason);
+}
+
 /*--- statistics operations ----------------------------------------------- */
 tsapi TSMgmtError
-TSStatsReset(bool cluster, const char *name)
+TSStatsReset(const char *name)
 {
-  return StatsReset(cluster, name);
+  return StatsReset(name);
 }
 
 /*--- variable operations ------------------------------------------------- */
@@ -1406,9 +443,10 @@ TSRecordGetInt(const char *rec_name, TSInt *int_val)
   TSMgmtError ret = TS_ERR_OKAY;
 
   TSRecordEle *ele = TSRecordEleCreate();
-  ret = MgmtRecordGet(rec_name, ele);
-  if (ret != TS_ERR_OKAY)
+  ret              = MgmtRecordGet(rec_name, ele);
+  if (ret != TS_ERR_OKAY) {
     goto END;
+  }
 
   *int_val = ele->valueT.int_val;
 
@@ -1423,9 +461,10 @@ TSRecordGetCounter(const char *rec_name, TSCounter *counter_val)
   TSMgmtError ret;
 
   TSRecordEle *ele = TSRecordEleCreate();
-  ret = MgmtRecordGet(rec_name, ele);
-  if (ret != TS_ERR_OKAY)
+  ret              = MgmtRecordGet(rec_name, ele);
+  if (ret != TS_ERR_OKAY) {
     goto END;
+  }
   *counter_val = ele->valueT.counter_val;
 
 END:
@@ -1439,9 +478,10 @@ TSRecordGetFloat(const char *rec_name, TSFloat *float_val)
   TSMgmtError ret;
 
   TSRecordEle *ele = TSRecordEleCreate();
-  ret = MgmtRecordGet(rec_name, ele);
-  if (ret != TS_ERR_OKAY)
+  ret              = MgmtRecordGet(rec_name, ele);
+  if (ret != TS_ERR_OKAY) {
     goto END;
+  }
   *float_val = ele->valueT.float_val;
 
 END:
@@ -1455,9 +495,10 @@ TSRecordGetString(const char *rec_name, TSString *string_val)
   TSMgmtError ret;
 
   TSRecordEle *ele = TSRecordEleCreate();
-  ret = MgmtRecordGet(rec_name, ele);
-  if (ret != TS_ERR_OKAY)
+  ret              = MgmtRecordGet(rec_name, ele);
+  if (ret != TS_ERR_OKAY) {
     goto END;
+  }
 
   *string_val = ats_strdup(ele->valueT.string_val);
 
@@ -1471,7 +512,7 @@ END:
  *-------------------------------------------------------------------------
  * Purpose: Retrieves list of record values specified in the rec_names list
  * Input: rec_names - list of record names to retrieve
- *        rec_vals  - queue of TSRecordEle* that correspons to rec_names
+ *        rec_vals  - queue of TSRecordEle* that corresponds to rec_names
  * Output: If at any point, while retrieving one of the records there's a
  *         a failure then the entire process is aborted, all the allocated
  *         TSRecordEle's are deallocated and TS_ERR_FAIL is returned.
@@ -1487,21 +528,21 @@ END:
 tsapi TSMgmtError
 TSRecordGetMlt(TSStringList rec_names, TSList rec_vals)
 {
-  TSRecordEle *ele;
-  char *rec_name;
   int num_recs, i, j;
   TSMgmtError ret;
 
-  if (!rec_names || !rec_vals)
+  if (!rec_names || !rec_vals) {
     return TS_ERR_PARAMS;
+  }
 
   num_recs = queue_len((LLQ *)rec_names);
   for (i = 0; i < num_recs; i++) {
-    rec_name = (char *)dequeue((LLQ *)rec_names); // remove name from list
-    if (!rec_name)
+    char *rec_name = (char *)dequeue((LLQ *)rec_names); // remove name from list
+    if (!rec_name) {
       return TS_ERR_PARAMS; // NULL is invalid record name
+    }
 
-    ele = TSRecordEleCreate();
+    TSRecordEle *ele = TSRecordEleCreate();
 
     ret = MgmtRecordGet(rec_name, ele);
     enqueue((LLQ *)rec_names, rec_name); // return name to list
@@ -1511,8 +552,9 @@ TSRecordGetMlt(TSStringList rec_names, TSList rec_vals)
       TSRecordEleDestroy(ele);
       for (j = 0; j < i; j++) {
         ele = (TSRecordEle *)dequeue((LLQ *)rec_vals);
-        if (ele)
+        if (ele) {
           TSRecordEleDestroy(ele);
+        }
       }
       return ret;
     }
@@ -1582,17 +624,17 @@ tsapi TSMgmtError
 TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need)
 {
   int num_recs, ret, i;
-  TSRecordEle *ele;
-  TSMgmtError status = TS_ERR_OKAY;
+  TSMgmtError status           = TS_ERR_OKAY;
   TSActionNeedT top_action_req = TS_ACTION_UNDEFINED;
 
-  if (!rec_list || !action_need)
+  if (!rec_list || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   num_recs = queue_len((LLQ *)rec_list);
 
   for (i = 0; i < num_recs; i++) {
-    ele = (TSRecordEle *)dequeue((LLQ *)rec_list);
+    TSRecordEle *ele = (TSRecordEle *)dequeue((LLQ *)rec_list);
     if (ele) {
       switch (ele->rec_type) {
       case TS_REC_INT:
@@ -1611,14 +653,16 @@ TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need)
         ret = TS_ERR_FAIL;
         break;
       }; /* end of switch (ele->rec_type) */
-      if (ret != TS_ERR_OKAY)
+      if (ret != TS_ERR_OKAY) {
         status = TS_ERR_FAIL;
+      }
 
       // keep track of most severe action; reset if needed
-      // the TSACtionNeedT should be listed such that most severe actions have
+      // the TSActionNeedT should be listed such that most severe actions have
       // a lower number (so most severe action == 0)
-      if (*action_need < top_action_req) // a more severe action
+      if (*action_need < top_action_req) { // a more severe action
         top_action_req = *action_need;
+      }
     }
     enqueue((LLQ *)rec_list, ele);
   }
@@ -1708,7 +752,7 @@ TSProxyBacktraceGet(unsigned options, TSString *trace)
     return TS_ERR_PARAMS;
   }
 
-  if (trace == NULL) {
+  if (trace == nullptr) {
     return TS_ERR_PARAMS;
   }
 
@@ -1773,23 +817,27 @@ TSBounce(unsigned options)
 }
 
 tsapi TSMgmtError
-TSStorageDeviceCmdOffline(char const *dev)
+TSStop(unsigned options)
+{
+  return Stop(options);
+}
+
+tsapi TSMgmtError
+TSDrain(unsigned options)
+{
+  return Drain(options);
+}
+
+tsapi TSMgmtError
+TSStorageDeviceCmdOffline(const char *dev)
 {
   return StorageDeviceCmdOffline(dev);
 }
 
-/*--- diags output operations ---------------------------------------------*/
-tsapi void
-TSDiags(TSDiagsT mode, const char *fmt, ...)
+tsapi TSMgmtError
+TSLifecycleMessage(const char *tag, void const *data, size_t data_size)
 {
-  // need to find way to pass arguments to the function
-  va_list ap;
-
-  va_start(ap, fmt); // initialize the argument pointer ap
-  DiagnosticMessage(mode, fmt, ap);
-  va_end(ap);
-
-  return;
+  return LifecycleMessage(tag, data, data_size);
 }
 
 /* NOTE: user must deallocate the memory for the string returned */
@@ -1797,7 +845,7 @@ char *
 TSGetErrorMessage(TSMgmtError err_id)
 {
   char msg[1024]; // need to define a MAX_ERR_MSG_SIZE???
-  char *err_msg = NULL;
+  char *err_msg = nullptr;
 
   switch (err_id) {
   case TS_ERR_OKAY:
@@ -1855,46 +903,6 @@ TSGetErrorMessage(TSMgmtError err_id)
   return err_msg;
 }
 
-/*--- password operations -------------------------------------------------*/
-tsapi TSMgmtError
-TSEncryptPassword(char *passwd, char **e_passwd)
-{
-  INK_DIGEST_CTX md5_context;
-  char passwd_md5[16];
-  char *passwd_md5_str;
-  int passwd_md5_str_len = 32;
-
-  ink_assert(passwd);
-  ink_assert(TS_ENCRYPT_PASSWD_LEN <= passwd_md5_str_len);
-
-  const size_t md5StringSize = (passwd_md5_str_len + 1) * sizeof(char);
-  passwd_md5_str = (char *)ats_malloc(md5StringSize);
-
-  ink_code_incr_md5_init(&md5_context);
-  ink_code_incr_md5_update(&md5_context, passwd, strlen(passwd));
-  ink_code_incr_md5_final(passwd_md5, &md5_context);
-  ink_code_md5_stringify(passwd_md5_str, md5StringSize, passwd_md5);
-
-  // use only a subset of the MD5 string
-  passwd_md5_str[TS_ENCRYPT_PASSWD_LEN] = '\0';
-  *e_passwd = passwd_md5_str;
-
-  return TS_ERR_OKAY;
-}
-
-/*--- direct file operations ----------------------------------------------*/
-tsapi TSMgmtError
-TSConfigFileRead(TSFileNameT file, char **text, int *size, int *version)
-{
-  return ReadFile(file, text, size, version);
-}
-
-tsapi TSMgmtError
-TSConfigFileWrite(TSFileNameT file, char *text, int size, int version)
-{
-  return WriteFile(file, text, size, version);
-}
-
 /* ReadFromUrl: reads a remotely located config file into a buffer
  * Input:  url        - remote location of the file
  *         header     - a buffer is allocated on the header char* pointer
@@ -1922,11 +930,11 @@ TSReadFromUrl(char *url, char **header, int *headerSize, char **body, int *bodyS
 tsapi TSMgmtError
 TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, int *bodySize, int timeout)
 {
-  int hFD = -1;
-  char *httpHost = NULL;
-  char *httpPath = NULL;
-  int httpPort = HTTP_PORT;
-  int bufsize = URL_BUFSIZE;
+  int hFD        = -1;
+  char *httpHost = nullptr;
+  char *httpPath = nullptr;
+  int httpPort   = HTTP_PORT;
+  int bufsize    = URL_BUFSIZE;
   char buffer[URL_BUFSIZE];
   char request[BUFSIZE];
   char *hdr_temp;
@@ -1934,8 +942,9 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
   TSMgmtError status = TS_ERR_OKAY;
 
   // Sanity check
-  if (!url)
+  if (!url) {
     return TS_ERR_FAIL;
+  }
   if (timeout < 0) {
     timeout = URL_TIMEOUT;
   }
@@ -1953,7 +962,7 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
     httpPath = ats_strdup(tempPath);
   } else {
     host_and_port = ats_strdup(url);
-    httpPath = ats_strdup("");
+    httpPath      = ats_strdup("");
   }
 
   // the port proceed by a ":", if it exists
@@ -1962,8 +971,9 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
     httpHost = ats_strndup(host_and_port, strlen(host_and_port) - strlen(colon));
     colon += 1; // advance one position to get rid of leading ':'
     httpPort = ink_atoi(colon);
-    if (httpPort <= 0)
+    if (httpPort <= 0) {
       httpPort = HTTP_PORT;
+    }
   } else {
     httpHost = ats_strdup(host_and_port);
   }
@@ -1977,18 +987,22 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
 
   /* sending the HTTP request via the established socket */
   snprintf(request, BUFSIZE, "http://%s:%d/%s", httpHost, httpPort, httpPath);
-  if ((status = sendHTTPRequest(hFD, request, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((status = sendHTTPRequest(hFD, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   memset(buffer, 0, bufsize); /* empty the buffer */
-  if ((status = readHTTPResponse(hFD, buffer, bufsize, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((status = readHTTPResponse(hFD, buffer, bufsize, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
-  if ((status = parseHTTPResponse(buffer, &hdr_temp, headerSize, &bdy_temp, bodySize)) != TS_ERR_OKAY)
+  if ((status = parseHTTPResponse(buffer, &hdr_temp, headerSize, &bdy_temp, bodySize)) != TS_ERR_OKAY) {
     goto END;
+  }
 
-  if (header && headerSize)
+  if (header && headerSize) {
     *header = ats_strndup(hdr_temp, *headerSize);
+  }
   *body = ats_strndup(bdy_temp, *bodySize);
 
 END:
@@ -2011,26 +1025,30 @@ TSLookupFromCacheUrl(TSString url, TSString *info)
   char *body;
   int hdr_size;
   int bdy_size;
-  int timeout = URL_TIMEOUT;
+  int timeout   = URL_TIMEOUT;
   TSInt ts_port = 8080;
 
-  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY)
+  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   if ((fd = connectDirect("localhost", ts_port, timeout)) < 0) {
     err = TS_ERR_FAIL;
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/lookup_url?url=%s", url);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
-  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
+  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   *info = ats_strndup(body, bdy_size);
 
@@ -2042,33 +1060,37 @@ tsapi TSMgmtError
 TSLookupFromCacheUrlRegex(TSString url_regex, TSString *list)
 {
   TSMgmtError err = TS_ERR_OKAY;
-  int fd = -1;
+  int fd          = -1;
   char request[BUFSIZE];
   char response[URL_BUFSIZE];
   char *header;
   char *body;
   int hdr_size;
   int bdy_size;
-  int timeout = -1;
+  int timeout   = -1;
   TSInt ts_port = 8080;
 
-  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY)
+  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   if ((fd = connectDirect("localhost", ts_port, timeout)) < 0) {
     err = TS_ERR_FAIL;
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/lookup_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
-  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
+  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   *list = ats_strndup(body, bdy_size);
 END:
@@ -2079,33 +1101,37 @@ tsapi TSMgmtError
 TSDeleteFromCacheUrl(TSString url, TSString *info)
 {
   TSMgmtError err = TS_ERR_OKAY;
-  int fd = -1;
+  int fd          = -1;
   char request[BUFSIZE];
   char response[URL_BUFSIZE];
   char *header;
   char *body;
   int hdr_size;
   int bdy_size;
-  int timeout = URL_TIMEOUT;
+  int timeout   = URL_TIMEOUT;
   TSInt ts_port = 8080;
 
-  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY)
+  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   if ((fd = connectDirect("localhost", ts_port, timeout)) < 0) {
     err = TS_ERR_FAIL;
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/delete_url?url=%s", url);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
-  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
+  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   *info = ats_strndup(body, bdy_size);
 
@@ -2117,33 +1143,37 @@ tsapi TSMgmtError
 TSDeleteFromCacheUrlRegex(TSString url_regex, TSString *list)
 {
   TSMgmtError err = TS_ERR_OKAY;
-  int fd = -1;
+  int fd          = -1;
   char request[BUFSIZE];
   char response[URL_BUFSIZE];
   char *header;
   char *body;
   int hdr_size;
   int bdy_size;
-  int timeout = -1;
+  int timeout   = -1;
   TSInt ts_port = 8080;
 
-  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY)
+  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   if ((fd = connectDirect("localhost", ts_port, timeout)) < 0) {
     err = TS_ERR_FAIL;
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/delete_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
-  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
+  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   *list = ats_strndup(body, bdy_size);
 END:
@@ -2154,62 +1184,41 @@ tsapi TSMgmtError
 TSInvalidateFromCacheUrlRegex(TSString url_regex, TSString *list)
 {
   TSMgmtError err = TS_ERR_OKAY;
-  int fd = -1;
+  int fd          = -1;
   char request[BUFSIZE];
   char response[URL_BUFSIZE];
   char *header;
   char *body;
   int hdr_size;
   int bdy_size;
-  int timeout = -1;
+  int timeout   = -1;
   TSInt ts_port = 8080;
 
-  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY)
+  if ((err = TSRecordGetInt("proxy.config.http.server_port", &ts_port)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   if ((fd = connectDirect("localhost", ts_port, timeout)) < 0) {
     err = TS_ERR_FAIL;
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/invalidate_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY)
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
     goto END;
+  }
 
-  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY)
+  if ((err = parseHTTPResponse(response, &header, &hdr_size, &body, &bdy_size)) != TS_ERR_OKAY) {
     goto END;
+  }
 
   *list = ats_strndup(body, bdy_size);
 END:
   return err;
-}
-
-/*--- snapshot operations -------------------------------------------------*/
-tsapi TSMgmtError
-TSSnapshotTake(char *snapshot_name)
-{
-  return SnapshotTake(snapshot_name);
-}
-
-tsapi TSMgmtError
-TSSnapshotRestore(char *snapshot_name)
-{
-  return SnapshotRestore(snapshot_name);
-}
-
-tsapi TSMgmtError
-TSSnapshotRemove(char *snapshot_name)
-{
-  return SnapshotRemove(snapshot_name);
-}
-
-tsapi TSMgmtError
-TSSnapshotGetMlt(TSStringList snapshots)
-{
-  return SnapshotGetMlt((LLQ *)snapshots);
 }
 
 /*--- events --------------------------------------------------------------*/
@@ -2253,115 +1262,6 @@ tsapi TSMgmtError
 TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func)
 {
   return EventSignalCbUnregister(event_name, func);
-}
-
-/***************************************************************************
- * API Helper Functions for Data Carrier Structures
- ***************************************************************************/
-
-/*--- abstracted file operations ------------------------------------------*/
-
-/* calls teh CfgContext class constructor */
-tsapi TSCfgContext
-TSCfgContextCreate(TSFileNameT file)
-{
-  return ((void *)CfgContextCreate(file));
-}
-
-/* calls the CfgContext class destructor */
-tsapi TSMgmtError
-TSCfgContextDestroy(TSCfgContext ctx)
-{
-  return (CfgContextDestroy((CfgContext *)ctx));
-}
-
-tsapi TSMgmtError
-TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT * /* action_need ATS_UNUSED */, TSIntList errRules)
-{
-  return (CfgContextCommit((CfgContext *)ctx, (LLQ *)errRules));
-}
-
-tsapi TSMgmtError
-TSCfgContextGet(TSCfgContext ctx)
-{
-  return (CfgContextGet((CfgContext *)ctx));
-}
-
-/*--- helper operations ---------------------------------------------------*/
-/* returns number of ele's in the TSCfgContext */
-int
-TSCfgContextGetCount(TSCfgContext ctx)
-{
-  return CfgContextGetCount((CfgContext *)ctx);
-}
-
-/* user must typecast the TSCfgEle to appropriate TSEle before using */
-TSCfgEle *
-TSCfgContextGetEleAt(TSCfgContext ctx, int index)
-{
-  return CfgContextGetEleAt((CfgContext *)ctx, index);
-}
-
-/* iterator */
-TSCfgEle *
-TSCfgContextGetFirst(TSCfgContext ctx, TSCfgIterState *state)
-{
-  return CfgContextGetFirst((CfgContext *)ctx, state);
-}
-
-TSCfgEle *
-TSCfgContextGetNext(TSCfgContext ctx, TSCfgIterState *state)
-{
-  return CfgContextGetNext((CfgContext *)ctx, state);
-}
-
-TSMgmtError
-TSCfgContextMoveEleUp(TSCfgContext ctx, int index)
-{
-  return CfgContextMoveEleUp((CfgContext *)ctx, index);
-}
-
-TSMgmtError
-TSCfgContextMoveEleDown(TSCfgContext ctx, int index)
-{
-  return CfgContextMoveEleDown((CfgContext *)ctx, index);
-}
-
-TSMgmtError
-TSCfgContextAppendEle(TSCfgContext ctx, TSCfgEle *ele)
-{
-  return CfgContextAppendEle((CfgContext *)ctx, ele);
-}
-
-TSMgmtError
-TSCfgContextInsertEleAt(TSCfgContext ctx, TSCfgEle *ele, int index)
-{
-  return CfgContextInsertEleAt((CfgContext *)ctx, ele, index);
-}
-
-TSMgmtError
-TSCfgContextRemoveEleAt(TSCfgContext ctx, int index)
-{
-  return CfgContextRemoveEleAt((CfgContext *)ctx, index);
-}
-
-TSMgmtError
-TSCfgContextRemoveAll(TSCfgContext ctx)
-{
-  return CfgContextRemoveAll((CfgContext *)ctx);
-}
-
-/* checks if the fields in the ele are all valid */
-bool
-TSIsValid(TSCfgEle *ele)
-{
-  CfgEleObj *ele_obj;
-
-  if (!ele)
-    return false;
-
-  ele_obj = create_ele_obj_from_ele(ele);
-  return (ele_obj->isValid());
 }
 
 TSConfigRecordDescription *

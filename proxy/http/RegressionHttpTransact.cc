@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/Regression.h"
+#include "tscore/Regression.h"
 #include "HttpTransact.h"
 #include "HttpSM.h"
 
@@ -34,7 +34,7 @@ static void
 init_sm(HttpSM *sm)
 {
   sm->init();
-  sm->t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST, NULL);
+  sm->t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST, nullptr);
 }
 
 static void
@@ -42,7 +42,7 @@ setup_client_request(HttpSM *sm, const char *scheme, const char *request)
 {
   init_sm(sm);
 
-  MIOBuffer *read_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
+  MIOBuffer *read_buffer        = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   IOBufferReader *buffer_reader = read_buffer->alloc_reader();
   read_buffer->write(request, strlen(request));
 
@@ -90,7 +90,7 @@ REGRESSION_TEST(HttpTransact_is_request_valid)(RegressionTest *t, int /* level *
                   {"http", "POST / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
                   {"http", "PUSH / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
                   {"http", "PUT / HTTP/1.1\r\nHost: abc.com\r\n\r\n", false},
-                  {NULL, NULL, false}};
+                  {nullptr, nullptr, false}};
   for (int i = 0; requests[i].req; i++) {
     setup_client_request(&sm, requests[i].scheme, requests[i].req);
 
@@ -114,7 +114,7 @@ REGRESSION_TEST(HttpTransact_handle_trace_and_options_requests)(RegressionTest *
     bool result;
   } requests[] = {// good trace request
                   {"http", "TRACE www.abc.com/ HTTP/1.1\r\nHost: abc.com\r\nMax-Forwards: 0\r\n\r\n", true},
-                  {NULL, NULL, false}};
+                  {nullptr, nullptr, false}};
   for (int i = 0; requests[i].req; i++) {
     setup_client_request(&sm, requests[i].scheme, requests[i].req);
 

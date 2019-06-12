@@ -30,6 +30,6 @@ the Traffic Server abstraction for doing asynchronous IO.
 
 The netvconnection functions are listed below:
 
--  [dox 'TSNetAccept'] in [dox "TSNetAccept" :src\_file]
--  [dox %TSNetConnect%] in [dox :src\_file]
+-  :c:func:`TSNetAccept`
+-  :c:func:`TSNetConnect`
 

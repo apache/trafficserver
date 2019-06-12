@@ -33,8 +33,6 @@ Enumeration Members
 
 .. c:member:: TSLookingUpType TS_LOOKUP_UNDEFINED_LOOKUP
 
-.. c:member:: TSLookingUpType TS_LOOKUP_ICP_SUGGESTED_HOST
-
 .. c:member:: TSLookingUpType TS_LOOKUP_PARENT_PROXY
 
 .. c:member:: TSLookingUpType TS_LOOKUP_ORIGIN_SERVER

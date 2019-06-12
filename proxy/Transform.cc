@@ -65,9 +65,6 @@
 #include "HdrUtils.h"
 #include "Log.h"
 
-#define ART 1
-#define AGIF 2
-
 TransformProcessor transformProcessor;
 
 /*-------------------------------------------------------------------------
@@ -76,9 +73,6 @@ TransformProcessor transformProcessor;
 void
 TransformProcessor::start()
 {
-#ifdef PREFETCH
-  prefetchProcessor.start();
-#endif
 }
 
 /*-------------------------------------------------------------------------
@@ -90,7 +84,7 @@ TransformProcessor::open(Continuation *cont, APIHook *hooks)
   if (hooks) {
     return new TransformVConnection(cont, hooks);
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -213,10 +207,10 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
 
       if (m_write_vio.ntodo() > 0) {
         if (towrite > 0) {
-          m_write_vio._cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
+          m_write_vio.cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
         }
       } else {
-        m_write_vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
+        m_write_vio.cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
       }
 
       // We could have closed on the write callback
@@ -226,12 +220,12 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
 
       if (m_read_vio.ntodo() > 0) {
         if (m_write_vio.ntodo() <= 0) {
-          m_read_vio._cont->handleEvent(VC_EVENT_EOS, &m_read_vio);
+          m_read_vio.cont->handleEvent(VC_EVENT_EOS, &m_read_vio);
         } else if (towrite > 0) {
-          m_read_vio._cont->handleEvent(VC_EVENT_READ_READY, &m_read_vio);
+          m_read_vio.cont->handleEvent(VC_EVENT_READ_READY, &m_read_vio);
         }
       } else {
-        m_read_vio._cont->handleEvent(VC_EVENT_READ_COMPLETE, &m_read_vio);
+        m_read_vio.cont->handleEvent(VC_EVENT_READ_COMPLETE, &m_read_vio);
       }
     }
   } else {
@@ -254,10 +248,10 @@ TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
 
         if (!m_called_user) {
           m_called_user = 1;
-          m_tvc->m_cont->handleEvent(ev, NULL);
+          m_tvc->m_cont->handleEvent(ev, &m_read_vio);
         } else {
-          ink_assert(m_read_vio._cont != NULL);
-          m_read_vio._cont->handleEvent(ev, &m_read_vio);
+          ink_assert(m_read_vio.cont != nullptr);
+          m_read_vio.cont->handleEvent(ev, &m_read_vio);
         }
       }
 
@@ -277,8 +271,8 @@ TransformTerminus::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   m_read_vio.buffer.writer_for(buf);
   m_read_vio.op = VIO::READ;
   m_read_vio.set_continuation(c);
-  m_read_vio.nbytes = nbytes;
-  m_read_vio.ndone = 0;
+  m_read_vio.nbytes    = nbytes;
+  m_read_vio.ndone     = 0;
   m_read_vio.vc_server = this;
 
   if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
@@ -302,8 +296,8 @@ TransformTerminus::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *
   m_write_vio.buffer.reader_for(buf);
   m_write_vio.op = VIO::WRITE;
   m_write_vio.set_continuation(c);
-  m_write_vio.nbytes = nbytes;
-  m_write_vio.ndone = 0;
+  m_write_vio.nbytes    = nbytes;
+  m_write_vio.ndone     = 0;
   m_write_vio.vc_server = this;
 
   if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
@@ -329,7 +323,7 @@ TransformTerminus::do_io_close(int error)
   INK_WRITE_MEMORY_BARRIER;
 
   if (error != -1) {
-    lerrno = error;
+    lerrno   = error;
     m_closed = TS_VC_CLOSE_ABORT;
   } else {
     m_closed = TS_VC_CLOSE_NORMAL;
@@ -391,7 +385,7 @@ TransformVConnection::TransformVConnection(Continuation *cont, APIHook *hooks)
 
   SET_HANDLER(&TransformVConnection::handle_event);
 
-  ink_assert(hooks != NULL);
+  ink_assert(hooks != nullptr);
 
   m_transform = hooks->m_cont;
   while (hooks->m_link.next) {
@@ -412,10 +406,10 @@ TransformVConnection::~TransformVConnection()
 {
   // Clear the continuations in terminus VConnections so that
   //  mutex's get released (INKqa05596)
-  m_terminus.m_read_vio.set_continuation(NULL);
-  m_terminus.m_write_vio.set_continuation(NULL);
-  m_terminus.mutex = NULL;
-  this->mutex = NULL;
+  m_terminus.m_read_vio.set_continuation(nullptr);
+  m_terminus.m_write_vio.set_continuation(nullptr);
+  m_terminus.mutex = nullptr;
+  this->mutex      = nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -458,6 +452,10 @@ TransformVConnection::do_io_close(int error)
 {
   Debug("transform", "TransformVConnection do_io_close: %d [0x%lx]", error, (long)this);
 
+  if (m_closed != 0) {
+    return;
+  }
+
   if (error != -1) {
     m_closed = TS_VC_CLOSE_ABORT;
   } else {
@@ -465,6 +463,7 @@ TransformVConnection::do_io_close(int error)
   }
 
   m_transform->do_io_close(error);
+  m_transform = nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -495,32 +494,37 @@ TransformVConnection::reenable(VIO * /* vio ATS_UNUSED */)
 uint64_t
 TransformVConnection::backlog(uint64_t limit)
 {
-  uint64_t b = 0; // backlog
+  uint64_t b          = 0; // backlog
   VConnection *raw_vc = m_transform;
   MIOBuffer *w;
   while (raw_vc && raw_vc != &m_terminus) {
     INKVConnInternal *vc = static_cast<INKVConnInternal *>(raw_vc);
-    if (0 != (w = vc->m_read_vio.buffer.writer()))
+    if (nullptr != (w = vc->m_read_vio.buffer.writer())) {
       b += w->max_read_avail();
-    if (b >= limit)
+    }
+    if (b >= limit) {
       return b;
+    }
     raw_vc = vc->m_output_vc;
   }
-  if (0 != (w = m_terminus.m_read_vio.buffer.writer()))
+  if (nullptr != (w = m_terminus.m_read_vio.buffer.writer())) {
     b += w->max_read_avail();
-  if (b >= limit)
+  }
+  if (b >= limit) {
     return b;
+  }
 
   IOBufferReader *r = m_terminus.m_write_vio.get_reader();
-  if (r)
+  if (r) {
     b += r->read_avail();
+  }
   return b;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-TransformControl::TransformControl() : Continuation(new_ProxyMutex()), m_hooks(), m_tvc(NULL), m_read_buf(NULL), m_write_buf(NULL)
+TransformControl::TransformControl() : Continuation(new_ProxyMutex()), m_hooks()
 {
   SET_HANDLER(&TransformControl::handle_event);
 
@@ -537,17 +541,17 @@ TransformControl::handle_event(int event, void * /* edata ATS_UNUSED */)
   case EVENT_IMMEDIATE: {
     char *s, *e;
 
-    ink_assert(m_tvc == NULL);
+    ink_assert(m_tvc == nullptr);
     if (http_global_hooks && http_global_hooks->get(TS_HTTP_RESPONSE_TRANSFORM_HOOK)) {
       m_tvc = transformProcessor.open(this, http_global_hooks->get(TS_HTTP_RESPONSE_TRANSFORM_HOOK));
     } else {
       m_tvc = transformProcessor.open(this, m_hooks.get());
     }
-    ink_assert(m_tvc != NULL);
+    ink_assert(m_tvc != nullptr);
 
     m_write_buf = new_MIOBuffer();
-    s = m_write_buf->end();
-    e = m_write_buf->buf_end();
+    s           = m_write_buf->end();
+    e           = m_write_buf->buf_end();
 
     memset(s, 'a', e - s);
     m_write_buf->fill(e - s);
@@ -569,10 +573,10 @@ TransformControl::handle_event(int event, void * /* edata ATS_UNUSED */)
     m_tvc->do_io_close();
 
     free_MIOBuffer(m_read_buf->mbuf);
-    m_read_buf = NULL;
+    m_read_buf = nullptr;
 
     free_MIOBuffer(m_write_buf);
-    m_write_buf = NULL;
+    m_write_buf = nullptr;
     break;
 
   case VC_EVENT_WRITE_COMPLETE:
@@ -590,7 +594,10 @@ TransformControl::handle_event(int event, void * /* edata ATS_UNUSED */)
   -------------------------------------------------------------------------*/
 
 NullTransform::NullTransform(ProxyMutex *_mutex)
-  : INKVConnInternal(NULL, reinterpret_cast<TSMutex>(_mutex)), m_output_buf(NULL), m_output_reader(NULL), m_output_vio(NULL)
+  : INKVConnInternal(nullptr, reinterpret_cast<TSMutex>(_mutex)),
+    m_output_buf(nullptr),
+    m_output_reader(nullptr),
+    m_output_vio(nullptr)
 {
   SET_HANDLER(&NullTransform::handle_event);
 
@@ -625,7 +632,7 @@ NullTransform::handle_event(int event, void *edata)
   } else {
     switch (event) {
     case VC_EVENT_ERROR:
-      m_write_vio._cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
+      m_write_vio.cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
       break;
     case VC_EVENT_WRITE_COMPLETE:
       ink_assert(m_output_vio == (VIO *)edata);
@@ -642,12 +649,12 @@ NullTransform::handle_event(int event, void *edata)
       int64_t towrite;
       int64_t avail;
 
-      ink_assert(m_output_vc != NULL);
+      ink_assert(m_output_vc != nullptr);
 
       if (!m_output_vio) {
-        m_output_buf = new_empty_MIOBuffer();
+        m_output_buf    = new_empty_MIOBuffer();
         m_output_reader = m_output_buf->alloc_reader();
-        m_output_vio = m_output_vc->do_io_write(this, m_write_vio.nbytes, m_output_reader);
+        m_output_vio    = m_output_vc->do_io_write(this, m_write_vio.nbytes, m_output_reader);
       }
 
       MUTEX_TRY_LOCK(trylock, m_write_vio.mutex, this_ethread());
@@ -674,8 +681,9 @@ NullTransform::handle_event(int event, void *edata)
         }
 
         if (towrite > 0) {
-          Debug("transform", "[NullTransform::handle_event] "
-                             "writing %" PRId64 " bytes to output",
+          Debug("transform",
+                "[NullTransform::handle_event] "
+                "writing %" PRId64 " bytes to output",
                 towrite);
           m_output_buf->write(m_write_vio.get_reader(), towrite);
 
@@ -687,12 +695,12 @@ NullTransform::handle_event(int event, void *edata)
       if (m_write_vio.ntodo() > 0) {
         if (towrite > 0) {
           m_output_vio->reenable();
-          m_write_vio._cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
+          m_write_vio.cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
         }
       } else {
         m_output_vio->nbytes = m_write_vio.ndone;
         m_output_vio->reenable();
-        m_write_vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
+        m_write_vio.cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &m_write_vio);
       }
 
       break;
@@ -718,7 +726,7 @@ NullTransform::handle_event(int event, void *edata)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-#ifdef TS_HAS_TESTS
+#if TS_HAS_TESTS
 void
 TransformTest::run()
 {
@@ -733,11 +741,11 @@ TransformTest::run()
 
 RangeTransform::RangeTransform(ProxyMutex *mut, RangeRecord *ranges, int num_fields, HTTPHdr *transform_resp,
                                const char *content_type, int content_type_len, int64_t content_length)
-  : INKVConnInternal(NULL, reinterpret_cast<TSMutex>(mut)),
-    m_output_buf(NULL),
-    m_output_reader(NULL),
+  : INKVConnInternal(nullptr, reinterpret_cast<TSMutex>(mut)),
+    m_output_buf(nullptr),
+    m_output_reader(nullptr),
     m_transform_resp(transform_resp),
-    m_output_vio(NULL),
+    m_output_vio(nullptr),
     m_range_content_length(0),
     m_num_range_fields(num_fields),
     m_current_range(0),
@@ -758,8 +766,9 @@ RangeTransform::RangeTransform(ProxyMutex *mut, RangeRecord *ranges, int num_fie
 
 RangeTransform::~RangeTransform()
 {
-  if (m_output_buf)
+  if (m_output_buf) {
     free_MIOBuffer(m_output_buf);
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -772,13 +781,17 @@ RangeTransform::handle_event(int event, void *edata)
 
   if (m_closed) {
     if (m_deletable) {
-      Debug("http_trans", "RangeTransform destroy: %p ndone=%" PRId64, this, m_output_vio ? m_output_vio->ndone : 0);
+      if (m_output_vc != nullptr) {
+        Debug("http_trans", "RangeTransform destroy: %p ndone=%" PRId64, this, m_output_vio ? m_output_vio->ndone : 0);
+      } else {
+        Debug("http_trans", "RangeTransform destroy");
+      }
       delete this;
     }
   } else {
     switch (event) {
     case VC_EVENT_ERROR:
-      m_write_vio._cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
+      m_write_vio.cont->handleEvent(VC_EVENT_ERROR, &m_write_vio);
       break;
     case VC_EVENT_WRITE_COMPLETE:
       ink_assert(m_output_vio == (VIO *)edata);
@@ -786,12 +799,12 @@ RangeTransform::handle_event(int event, void *edata)
       break;
     case VC_EVENT_WRITE_READY:
     default:
-      ink_assert(m_output_vc != NULL);
+      ink_assert(m_output_vc != nullptr);
 
       if (!m_output_vio) {
-        m_output_buf = new_empty_MIOBuffer();
+        m_output_buf    = new_empty_MIOBuffer();
         m_output_reader = m_output_buf->alloc_reader();
-        m_output_vio = m_output_vc->do_io_write(this, m_output_cl, m_output_reader);
+        m_output_vio    = m_output_vc->do_io_write(this, m_output_cl, m_output_reader);
 
         change_response_header();
 
@@ -837,17 +850,18 @@ RangeTransform::transform_to_range()
   int64_t prev_end = 0;
   int64_t *done_byte;
 
-  end = &m_ranges[m_current_range]._end;
+  end       = &m_ranges[m_current_range]._end;
   done_byte = &m_ranges[m_current_range]._done_byte;
-  start = &m_ranges[m_current_range]._start;
-  avail = reader->read_avail();
+  start     = &m_ranges[m_current_range]._start;
+  avail     = reader->read_avail();
 
   while (true) {
     if (*done_byte < (*start - 1)) {
       toskip = *start - *done_byte - 1;
 
-      if (toskip > avail)
+      if (toskip > avail) {
         toskip = avail;
+      }
 
       if (toskip > 0) {
         reader->consume(toskip);
@@ -859,8 +873,9 @@ RangeTransform::transform_to_range()
     if (avail > 0) {
       tosend = *end - *done_byte;
 
-      if (tosend > avail)
+      if (tosend > avail) {
         tosend = avail;
+      }
 
       m_output_buf->write(reader, tosend);
       reader->consume(tosend);
@@ -869,8 +884,9 @@ RangeTransform::transform_to_range()
       *done_byte += tosend;
     }
 
-    if (*done_byte == *end)
+    if (*done_byte == *end) {
       prev_end = *end;
+    }
 
     // move to next Range if done one
     // ignore bad Range: _done_byte -1, _end -1
@@ -891,13 +907,13 @@ RangeTransform::transform_to_range()
         //   input data, send VC_EVENT_EOS to let the upstream know
         //   that it can rely on us consuming any more data
         int cb_event = (m_write_vio.ntodo() > 0) ? VC_EVENT_EOS : VC_EVENT_WRITE_COMPLETE;
-        m_write_vio._cont->handleEvent(cb_event, &m_write_vio);
+        m_write_vio.cont->handleEvent(cb_event, &m_write_vio);
         return;
       }
 
-      end = &m_ranges[m_current_range]._end;
+      end       = &m_ranges[m_current_range]._end;
       done_byte = &m_ranges[m_current_range]._done_byte;
-      start = &m_ranges[m_current_range]._start;
+      start     = &m_ranges[m_current_range]._start;
 
       // if this is a good Range
       if (*end != -1) {
@@ -921,12 +937,13 @@ RangeTransform::transform_to_range()
 
     // When we need to read and there is nothing available
     avail = reader->read_avail();
-    if (avail == 0)
+    if (avail == 0) {
       break;
+    }
   }
 
   m_output_vio->reenable();
-  m_write_vio._cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
+  m_write_vio.cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
 }
 
 /*-------------------------------------------------------------------------
@@ -936,9 +953,9 @@ RangeTransform::transform_to_range()
  * these two need be changed at the same time
  */
 
-static char bound[] = "RANGE_SEPARATOR";
+static char bound[]      = "RANGE_SEPARATOR";
 static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
-static char cont_type[] = "Content-type: ";
+static char cont_type[]  = "Content-type: ";
 static char cont_range[] = "Content-range: bytes ";
 
 void
@@ -947,8 +964,9 @@ RangeTransform::add_boundary(bool end)
   m_done += m_output_buf->write("--", 2);
   m_done += m_output_buf->write(bound, sizeof(bound) - 1);
 
-  if (end)
+  if (end) {
     m_done += m_output_buf->write("--", 2);
+  }
 
   m_done += m_output_buf->write("\r\n", 2);
 }
@@ -966,16 +984,18 @@ RangeTransform::add_sub_header(int index)
   int len;
 
   m_done += m_output_buf->write(cont_type, sizeof(cont_type) - 1);
-  if (m_content_type)
+  if (m_content_type) {
     m_done += m_output_buf->write(m_content_type, m_content_type_len);
+  }
   m_done += m_output_buf->write("\r\n", 2);
   m_done += m_output_buf->write(cont_range, sizeof(cont_range) - 1);
 
   snprintf(numbers, sizeof(numbers), "%" PRId64 "-%" PRId64 "/%" PRId64 "", m_ranges[index]._start, m_ranges[index]._end,
            m_output_cl);
   len = strlen(numbers);
-  if (len < RANGE_NUMBERS_LENGTH)
+  if (len < RANGE_NUMBERS_LENGTH) {
     m_done += m_output_buf->write(numbers, len);
+  }
   m_done += m_output_buf->write("\r\n\r\n", 4);
 }
 
@@ -1005,8 +1025,9 @@ RangeTransform::change_response_header()
     // set the right Content-Type for multiple entry Range
     field = m_transform_resp->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
 
-    if (field != NULL)
+    if (field != nullptr) {
       m_transform_resp->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    }
 
     field = m_transform_resp->field_create(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     field->value_append(m_transform_resp->m_heap, m_transform_resp->m_mime, range_type, sizeof(range_type) - 1);

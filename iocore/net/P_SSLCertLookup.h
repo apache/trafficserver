@@ -21,14 +21,44 @@
   limitations under the License.
  */
 
-#ifndef __P_SSLCERTLOOKUP_H__
-#define __P_SSLCERTLOOKUP_H__
+#pragma once
+
+#include <openssl/ssl.h>
 
 #include "ProxyConfig.h"
-#include "P_SSLUtils.h"
 
 struct SSLConfigParams;
 struct SSLContextStorage;
+
+/** Special things to do instead of use a context.
+    In general an option will be associated with a @c nullptr context because
+    the context is not used.
+*/
+enum class SSLCertContextOption {
+  OPT_NONE,  ///< Nothing special. Implies valid context.
+  OPT_TUNNEL ///< Just tunnel, don't terminate.
+};
+
+/**
+   @brief Gather user provided settings from ssl_multicert.config in to this single struct
+ */
+struct SSLMultiCertConfigParams {
+  SSLMultiCertConfigParams() : opt(SSLCertContextOption::OPT_NONE)
+  {
+    REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable");
+  }
+
+  int session_ticket_enabled;   ///< session ticket enabled
+  ats_scoped_str addr;          ///< IPv[64] address to match
+  ats_scoped_str cert;          ///< certificate
+  ats_scoped_str first_cert;    ///< the first certificate name when multiple cert files are in 'ssl_cert_name'
+  ats_scoped_str ca;            ///< CA public certificate
+  ats_scoped_str key;           ///< Private key
+  ats_scoped_str ocsp_response; ///< prefetched OCSP response
+  ats_scoped_str dialog;        ///< Private key dialog
+  ats_scoped_str servername;    ///< Destination server
+  SSLCertContextOption opt;     ///< SSLCertContext special handling option
+};
 
 struct ssl_ticket_key_t {
   unsigned char key_name[16];
@@ -40,6 +70,10 @@ struct ssl_ticket_key_block {
   unsigned num_keys;
   ssl_ticket_key_t keys[];
 };
+
+using shared_SSLMultiCertConfigParams = std::shared_ptr<SSLMultiCertConfigParams>;
+using shared_SSL_CTX                  = std::shared_ptr<SSL_CTX>;
+using shared_ssl_ticket_key_block     = std::shared_ptr<ssl_ticket_key_block>;
 
 /** A certificate context.
 
@@ -53,30 +87,42 @@ struct ssl_ticket_key_block {
 
 */
 struct SSLCertContext {
-  /** Special things to do instead of use a context.
-      In general an option will be associated with a @c NULL context because
-      the context is not used.
-  */
-  enum Option {
-    OPT_NONE,  ///< Nothing special. Implies valid context.
-    OPT_TUNNEL ///< Just tunnel, don't terminate.
-  };
+private:
+  mutable std::mutex ctx_mutex;
+  shared_SSL_CTX ctx;
 
-  SSLCertContext() : ctx(0), opt(OPT_NONE), keyblock(NULL) {}
-  explicit SSLCertContext(SSL_CTX *c) : ctx(c), opt(OPT_NONE), keyblock(NULL) {}
-  SSLCertContext(SSL_CTX *c, Option o) : ctx(c), opt(o), keyblock(NULL) {}
-  SSLCertContext(SSL_CTX *c, Option o, ssl_ticket_key_block *kb) : ctx(c), opt(o), keyblock(kb) {}
+public:
+  SSLCertContext() : ctx_mutex(), ctx(nullptr), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr), keyblock(nullptr) {}
+  explicit SSLCertContext(SSL_CTX *c)
+    : ctx_mutex(), ctx(c, SSL_CTX_free), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr), keyblock(nullptr)
+  {
+  }
+  SSLCertContext(shared_SSL_CTX sc, shared_SSLMultiCertConfigParams u)
+    : ctx_mutex(), ctx(sc), opt(u->opt), userconfig(nullptr), keyblock(nullptr)
+  {
+  }
+  SSLCertContext(shared_SSL_CTX sc, shared_SSLMultiCertConfigParams u, shared_ssl_ticket_key_block kb)
+    : ctx_mutex(), ctx(sc), opt(u->opt), userconfig(u), keyblock(kb)
+  {
+  }
+  SSLCertContext(SSLCertContext const &other);
+  SSLCertContext &operator=(SSLCertContext const &other);
+  ~SSLCertContext() {}
+
+  /// Threadsafe Functions to get and set shared SSL_CTX pointer
+  shared_SSL_CTX getCtx();
+  void setCtx(shared_SSL_CTX sc);
   void release();
 
-  SSL_CTX *ctx;                   ///< openSSL context.
-  Option opt;                     ///< Special handling option.
-  ssl_ticket_key_block *keyblock; ///< session keys associated with this address
+  SSLCertContextOption opt                   = SSLCertContextOption::OPT_NONE; ///< Special handling option.
+  shared_SSLMultiCertConfigParams userconfig = nullptr;                        ///< User provided settings
+  shared_ssl_ticket_key_block keyblock       = nullptr;                        ///< session keys associated with this address
 };
 
 struct SSLCertLookup : public ConfigInfo {
   SSLContextStorage *ssl_storage;
-  SSL_CTX *ssl_default;
-  bool is_valid;
+  shared_SSL_CTX ssl_default;
+  bool is_valid = true;
 
   int insert(const char *name, SSLCertContext const &cc);
   int insert(const IpEndpoint &address, SSLCertContext const &cc);
@@ -84,31 +130,31 @@ struct SSLCertLookup : public ConfigInfo {
   /** Find certificate context by IP address.
       The IP addresses are taken from the socket @a s.
       Exact matches have priority, then wildcards. The destination address is preferred to the source address.
-      @return @c A pointer to the matched context, @c NULL if no match is found.
+      @return @c A pointer to the matched context, @c nullptr if no match is found.
   */
   SSLCertContext *find(const IpEndpoint &address) const;
 
   /** Find certificate context by name (FQDN).
       Exact matches have priority, then wildcards. Only destination based matches are checked.
-      @return @c A pointer to the matched context, @c NULL if no match is found.
+      @return @c A pointer to the matched context, @c nullptr if no match is found.
   */
-  SSLCertContext *find(char const *name) const;
+  SSLCertContext *find(const char *name) const;
 
   // Return the last-resort default TLS context if there is no name or address match.
   SSL_CTX *
   defaultContext() const
   {
-    return ssl_default;
+    return ssl_default.get();
   }
 
   unsigned count() const;
   SSLCertContext *get(unsigned i) const;
 
   SSLCertLookup();
-  virtual ~SSLCertLookup();
+  ~SSLCertLookup() override;
 };
 
 void ticket_block_free(void *ptr);
 ssl_ticket_key_block *ticket_block_alloc(unsigned count);
-
-#endif /* __P_SSLCERTLOOKUP_H__ */
+ssl_ticket_key_block *ticket_block_create(char *ticket_key_data, int ticket_key_len);
+ssl_ticket_key_block *ssl_create_ticket_keyblock(const char *ticket_key_path);

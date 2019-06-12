@@ -36,28 +36,20 @@
 
 
  ****************************************************************************/
-#if !defined(_SSLNetAccept_h_)
-#define _SSLNetAccept_h_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"
-
-class Event;
-class UnixNetVConnection;
 
 //
 // NetAccept
 // Handles accepting connections.
 //
 struct SSLNetAccept : public NetAccept {
-  virtual NetProcessor *getNetProcessor() const;
-  virtual EventType getEtype() const;
-  virtual void init_accept_per_thread(bool isTransparent);
-  virtual NetAccept *clone() const;
+  NetProcessor *getNetProcessor() const override;
+  NetAccept *clone() const override;
 
-  SSLNetAccept(){};
-
-  virtual ~SSLNetAccept(){};
+  SSLNetAccept(const NetProcessor::AcceptOptions &opt);
+  ~SSLNetAccept() override;
 };
-#endif

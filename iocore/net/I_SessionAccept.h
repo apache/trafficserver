@@ -21,27 +21,58 @@
   limitations under the License.
  */
 
-#ifndef I_SessionAccept_H_
-#define I_SessionAccept_H_
+#pragma once
 
 #include "I_Net.h"
 #include "I_VConnection.h"
 
 struct AclRecord;
+struct HttpProxyPort;
+/**
+   The base class SessionAccept can not be used directly. The inherited class of
+   SessionAccept (ex. HttpSessionAccept) is designed to:
+
+     - Check IPAllow policy.
+     - Create ClientSession.
+     - Pass NetVC and MIOBuffer by call ClientSession::new_connection().
+
+   nullptr mutex:
+
+     - One specific protocol has ONLY one inherited class of SessionAccept.
+     - The object of this class is shared by all incoming request / NetVC that
+       identified as the protocol by ProtocolSessionProbe.
+     - The inherited class of SessionAccept is non-blocking to allow parallel accepts/
+
+   To implement a inherited class of SessionAccept:
+
+     - No state is recorded by the handler.
+     - Values are required to be set during construction and never changed.
+     - Can not put into EventSystem.
+
+   So a nullptr mutex is safe for the continuation.
+*/
 
 class SessionAccept : public Continuation
 {
 public:
   SessionAccept(ProxyMutex *amutex) : Continuation(amutex) { SET_HANDLER(&SessionAccept::mainEvent); }
-  ~SessionAccept() {}
-  virtual void accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
+  ~SessionAccept() override {}
+  /**
+    Accept a new connection on this session.
 
-  /* Returns NULL if the specified client_ip is not allowed by ip_allow
-   * Returns a pointer to the relevant IP policy for later processing otherwise */
-  static const AclRecord *testIpAllowPolicy(sockaddr const *client_ip);
+    If the session accepts the connection by returning true, it
+    takes ownership of all the arguments.
+
+    If the session rejects the connection by returning false, the
+    arguments are unmodified and the caller retains ownership.
+    Typically in this case, the caller would simply destroy all the
+    arguments.
+
+   */
+  virtual bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
+  /// The proxy port on which this session arrived.
+  HttpProxyPort *proxyPort = nullptr;
 
 private:
   virtual int mainEvent(int event, void *netvc) = 0;
 };
-
-#endif /* I_SessionAccept_H_ */

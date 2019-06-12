@@ -26,17 +26,15 @@
    HttpPages.h
 
    Description:
-       Data structurs and stat page generators for http info
+       Data structures and stat page generators for http info
 
 
  ****************************************************************************/
 
-#ifndef _HTTP_PAGES_H_
-#define _HTTP_PAGES_H_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
-#include "ts/DynArray.h"
 #include "HTTP.h"
 #include "StatPages.h"
 #include "HttpSM.h"
@@ -44,7 +42,7 @@
 class HttpSM;
 
 const int HTTP_LIST_BUCKETS = 63;
-const int HTTP_LIST_RETRY = HRTIME_MSECONDS(10);
+const int HTTP_LIST_RETRY   = HRTIME_MSECONDS(10);
 
 struct HttpSMListBucket {
   Ptr<ProxyMutex> mutex;
@@ -57,7 +55,7 @@ class HttpPagesHandler : public BaseStatPagesHandler
 {
 public:
   HttpPagesHandler(Continuation *cont, HTTPHdr *header);
-  ~HttpPagesHandler();
+  ~HttpPagesHandler() override;
 
   int handle_smlist(int event, void *edata);
   int handle_smdetails(int event, void *edata);
@@ -86,5 +84,3 @@ private:
 };
 
 void http_pages_init();
-
-#endif

@@ -28,8 +28,7 @@
 
 
  ****************************************************************************/
-#ifndef __P_UDPCONNECTION_H_
-#define __P_UDPCONNECTION_H_
+#pragma once
 
 #include "I_UDPNet.h"
 
@@ -37,16 +36,16 @@ class UDPConnectionInternal : public UDPConnection
 {
 public:
   UDPConnectionInternal();
-  virtual ~UDPConnectionInternal();
+  ~UDPConnectionInternal() override;
 
-  Continuation *continuation;
-  int recvActive; // interested in receiving
-  int refcount;   // public for assertion
+  Continuation *continuation = nullptr;
+  int recvActive             = 0; // interested in receiving
+  int refcount               = 0; // public for assertion
 
   SOCKET fd;
   IpEndpoint binding;
-  int binding_valid;
-  int tobedestroyed;
+  int binding_valid = 0;
+  int tobedestroyed = 0;
   int sendGenerationNum;
   int64_t lastSentPktTSSeqNum;
 
@@ -61,41 +60,50 @@ public:
 };
 
 TS_INLINE
-UDPConnectionInternal::UDPConnectionInternal()
-  : continuation(NULL), recvActive(0), refcount(0), fd(-1), binding_valid(0), tobedestroyed(0)
+UDPConnectionInternal::UDPConnectionInternal() : fd(-1)
 {
-  sendGenerationNum = 0;
-  lastSentPktTSSeqNum = -1;
+  sendGenerationNum    = 0;
+  lastSentPktTSSeqNum  = -1;
   lastSentPktStartTime = 0;
-  lastPktStartTime = 0;
+  lastPktStartTime     = 0;
   memset(&binding, 0, sizeof binding);
 }
 
 TS_INLINE
 UDPConnectionInternal::~UDPConnectionInternal()
 {
-  continuation = NULL;
-  mutex = NULL;
+  continuation = nullptr;
+  mutex        = nullptr;
 }
 
 TS_INLINE SOCKET
 UDPConnection::getFd()
 {
-  return ((UDPConnectionInternal *)this)->fd;
+  return static_cast<UDPConnectionInternal *>(this)->fd;
 }
 
 TS_INLINE void
 UDPConnection::setBinding(struct sockaddr const *s)
 {
-  UDPConnectionInternal *p = (UDPConnectionInternal *)this;
+  UDPConnectionInternal *p = static_cast<UDPConnectionInternal *>(this);
   ats_ip_copy(&p->binding, s);
+  p->binding_valid = 1;
+}
+
+TS_INLINE void
+UDPConnection::setBinding(IpAddr const &ip, in_port_t port)
+{
+  UDPConnectionInternal *p = static_cast<UDPConnectionInternal *>(this);
+  IpEndpoint addr;
+  addr.assign(ip, htons(port));
+  ats_ip_copy(&p->binding, addr);
   p->binding_valid = 1;
 }
 
 TS_INLINE int
 UDPConnection::getBinding(struct sockaddr *s)
 {
-  UDPConnectionInternal *p = (UDPConnectionInternal *)this;
+  UDPConnectionInternal *p = static_cast<UDPConnectionInternal *>(this);
   ats_ip_copy(s, &p->binding);
   return p->binding_valid;
 }
@@ -103,13 +111,13 @@ UDPConnection::getBinding(struct sockaddr *s)
 TS_INLINE void
 UDPConnection::destroy()
 {
-  ((UDPConnectionInternal *)this)->tobedestroyed = 1;
+  static_cast<UDPConnectionInternal *>(this)->tobedestroyed = 1;
 }
 
 TS_INLINE int
 UDPConnection::shouldDestroy()
 {
-  return ((UDPConnectionInternal *)this)->tobedestroyed;
+  return static_cast<UDPConnectionInternal *>(this)->tobedestroyed;
 }
 
 TS_INLINE void
@@ -121,25 +129,25 @@ UDPConnection::AddRef()
 TS_INLINE int
 UDPConnection::GetRefCount()
 {
-  return ((UDPConnectionInternal *)this)->refcount;
+  return static_cast<UDPConnectionInternal *>(this)->refcount;
 }
 
 TS_INLINE int
 UDPConnection::GetSendGenerationNumber()
 {
-  return ((UDPConnectionInternal *)this)->sendGenerationNum;
+  return static_cast<UDPConnectionInternal *>(this)->sendGenerationNum;
 }
 
 TS_INLINE int
-UDPConnection::getPortNum(void)
+UDPConnection::getPortNum()
 {
   return ats_ip_port_host_order(&static_cast<UDPConnectionInternal *>(this)->binding);
 }
 
 TS_INLINE int64_t
-UDPConnection::cancel(void)
+UDPConnection::cancel()
 {
-  UDPConnectionInternal *p = (UDPConnectionInternal *)this;
+  UDPConnectionInternal *p = static_cast<UDPConnectionInternal *>(this);
 
   p->sendGenerationNum++;
   p->lastPktStartTime = p->lastSentPktStartTime;
@@ -149,16 +157,14 @@ UDPConnection::cancel(void)
 TS_INLINE void
 UDPConnection::SetLastSentPktTSSeqNum(int64_t sentSeqNum)
 {
-  ((UDPConnectionInternal *)this)->lastSentPktTSSeqNum = sentSeqNum;
+  static_cast<UDPConnectionInternal *>(this)->lastSentPktTSSeqNum = sentSeqNum;
 }
 
 TS_INLINE void
 UDPConnection::setContinuation(Continuation *c)
 {
   // it is not safe to switch among continuations that don't share locks
-  ink_assert(mutex.get() == NULL || c->mutex == mutex);
-  mutex = c->mutex;
-  ((UDPConnectionInternal *)this)->continuation = c;
+  ink_assert(mutex.get() == nullptr || c->mutex == mutex);
+  mutex                                                    = c->mutex;
+  static_cast<UDPConnectionInternal *>(this)->continuation = c;
 }
-
-#endif //__P_UDPCONNECTION_H_

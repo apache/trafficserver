@@ -21,13 +21,12 @@
   limitations under the License.
  */
 
-#if !defined(_Milestones_h_)
-#define _Milestones_h_
+#pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/ink_hrtime.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_hrtime.h"
 #include "ts/apidefs.h"
-#include "../lib/ts/ink_hrtime.h"
+#include "tscore/ink_hrtime.h"
 
 /////////////////////////////////////////////////////////////
 //
@@ -44,7 +43,7 @@ public:
    * Takes two milestones and returns the difference.
    * @param start The start time
    * @param end The end time
-   * @return A double that is the time in seconds
+   * @return The difference time in milliseconds
    */
   int64_t
   difference_msec(TSMilestonesType ms_start, TSMilestonesType ms_end) const
@@ -55,10 +54,16 @@ public:
     return ink_hrtime_to_msec(milestones[ms_end] - milestones[ms_start]);
   }
 
+  /**
+   * Takes two milestones and returns the difference.
+   * @param start The start time
+   * @param end The end time
+   * @return A double that is the difference time in seconds
+   */
   double
-  difference(TSMilestonesType ms_start, TSMilestonesType ms_end) const
+  difference_sec(TSMilestonesType ms_start, TSMilestonesType ms_end) const
   {
-    return (double)difference_msec(ms_start, ms_end);
+    return (double)difference_msec(ms_start, ms_end) / 1000.0;
   }
 
   ink_hrtime
@@ -70,5 +75,3 @@ public:
 private:
   ink_hrtime milestones[TS_MILESTONE_LAST_ENTRY];
 };
-
-#endif /* _Milestones_h_ */

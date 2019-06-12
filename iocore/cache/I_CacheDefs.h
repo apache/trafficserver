@@ -21,10 +21,9 @@
   limitations under the License.
  */
 
-#ifndef _I_CACHE_DEFS_H__
-#define _I_CACHE_DEFS_H__
+#pragma once
 
-#include "ts/CryptoHash.h"
+#include "tscore/CryptoHash.h"
 
 #define CACHE_INIT_FAILED -1
 #define CACHE_INITIALIZING 0
@@ -33,11 +32,15 @@
 #define CACHE_ALT_INDEX_DEFAULT -1
 #define CACHE_ALT_REMOVED -2
 
-#define CACHE_DB_MAJOR_VERSION 24
-#define CACHE_DB_MINOR_VERSION 0
+static const uint8_t CACHE_DB_MAJOR_VERSION = 24;
+static const uint8_t CACHE_DB_MINOR_VERSION = 2;
+// This is used in various comparisons because otherwise if the minor version is 0,
+// the compile fails because the condition is always true or false. Running it through
+// VersionNumber prevents that.
+extern const ts::VersionNumber CACHE_DB_VERSION;
 
-#define CACHE_DIR_MAJOR_VERSION 18
-#define CACHE_DIR_MINOR_VERSION 0
+static const uint8_t CACHE_DIR_MAJOR_VERSION = 18;
+static const uint8_t CACHE_DIR_MINOR_VERSION = 0;
 
 #define CACHE_DB_FDS 128
 
@@ -65,27 +68,27 @@ enum CacheType {
 // NOTE: All the failures are ODD, and one greater than the success
 //       Some of these must match those in <ts/ts.h>
 enum CacheEventType {
-  CACHE_EVENT_LOOKUP = CACHE_EVENT_EVENTS_START + 0,
-  CACHE_EVENT_LOOKUP_FAILED = CACHE_EVENT_EVENTS_START + 1,
-  CACHE_EVENT_OPEN_READ = CACHE_EVENT_EVENTS_START + 2,
+  CACHE_EVENT_LOOKUP           = CACHE_EVENT_EVENTS_START + 0,
+  CACHE_EVENT_LOOKUP_FAILED    = CACHE_EVENT_EVENTS_START + 1,
+  CACHE_EVENT_OPEN_READ        = CACHE_EVENT_EVENTS_START + 2,
   CACHE_EVENT_OPEN_READ_FAILED = CACHE_EVENT_EVENTS_START + 3,
   // 4-7 unused
-  CACHE_EVENT_OPEN_WRITE = CACHE_EVENT_EVENTS_START + 8,
+  CACHE_EVENT_OPEN_WRITE        = CACHE_EVENT_EVENTS_START + 8,
   CACHE_EVENT_OPEN_WRITE_FAILED = CACHE_EVENT_EVENTS_START + 9,
-  CACHE_EVENT_REMOVE = CACHE_EVENT_EVENTS_START + 12,
-  CACHE_EVENT_REMOVE_FAILED = CACHE_EVENT_EVENTS_START + 13,
+  CACHE_EVENT_REMOVE            = CACHE_EVENT_EVENTS_START + 12,
+  CACHE_EVENT_REMOVE_FAILED     = CACHE_EVENT_EVENTS_START + 13,
   CACHE_EVENT_UPDATE,
   CACHE_EVENT_UPDATE_FAILED,
   CACHE_EVENT_LINK,
   CACHE_EVENT_LINK_FAILED,
   CACHE_EVENT_DEREF,
   CACHE_EVENT_DEREF_FAILED,
-  CACHE_EVENT_SCAN = CACHE_EVENT_EVENTS_START + 20,
-  CACHE_EVENT_SCAN_FAILED = CACHE_EVENT_EVENTS_START + 21,
-  CACHE_EVENT_SCAN_OBJECT = CACHE_EVENT_EVENTS_START + 22,
+  CACHE_EVENT_SCAN                   = CACHE_EVENT_EVENTS_START + 20,
+  CACHE_EVENT_SCAN_FAILED            = CACHE_EVENT_EVENTS_START + 21,
+  CACHE_EVENT_SCAN_OBJECT            = CACHE_EVENT_EVENTS_START + 22,
   CACHE_EVENT_SCAN_OPERATION_BLOCKED = CACHE_EVENT_EVENTS_START + 23,
-  CACHE_EVENT_SCAN_OPERATION_FAILED = CACHE_EVENT_EVENTS_START + 24,
-  CACHE_EVENT_SCAN_DONE = CACHE_EVENT_EVENTS_START + 25,
+  CACHE_EVENT_SCAN_OPERATION_FAILED  = CACHE_EVENT_EVENTS_START + 24,
+  CACHE_EVENT_SCAN_DONE              = CACHE_EVENT_EVENTS_START + 25,
   //////////////////////////
   // Internal error codes //
   //////////////////////////
@@ -96,8 +99,8 @@ enum CacheEventType {
 
 enum CacheScanResult {
   CACHE_SCAN_RESULT_CONTINUE = EVENT_CONT,
-  CACHE_SCAN_RESULT_DONE = EVENT_DONE,
-  CACHE_SCAN_RESULT_DELETE = 10,
+  CACHE_SCAN_RESULT_DONE     = EVENT_DONE,
+  CACHE_SCAN_RESULT_DELETE   = 10,
   CACHE_SCAN_RESULT_DELETE_ALL_ALTERNATES,
   CACHE_SCAN_RESULT_UPDATE,
   CACHE_SCAN_RESULT_RETRY
@@ -120,20 +123,10 @@ enum CacheFragType {
 typedef CryptoHash CacheKey;
 
 struct HttpCacheKey {
-  uint64_t
-  slice64(int i) const
-  {
-    return hash.slice64(i);
-  }
-  uint32_t
-  slice32(int i) const
-  {
-    return hash.slice32(i);
-  }
-
   int hostlen;
   const char *hostname;
   CacheKey hash;
+  CacheKey hash2;
 };
 
 #define CACHE_ALLOW_MULTIPLE_WRITES 1
@@ -145,4 +138,3 @@ struct HttpCacheKey {
    word(2) - tag (lower bits), hosttable hash (upper bits)
    word(3) - ram cache hash, lookaside cache
  */
-#endif // __CACHE_DEFS_H__

@@ -27,28 +27,24 @@
 
  ***************************************************************************/
 
-#include "ts/ink_platform.h"
-#include "ts/SimpleTokenizer.h"
-#include "ts/ink_file.h"
+#include "tscore/ink_platform.h"
+#include "tscore/SimpleTokenizer.h"
+#include "tscore/ink_file.h"
 
-#include <errno.h>
+#include <cerrno>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "Error.h"
-
 #include "P_EventSystem.h"
 #include "I_Machine.h"
-#include "LogSock.h"
 
-#include "ts/BaseLogFile.h"
+#include "tscore/BaseLogFile.h"
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogFormat.h"
 #include "LogBuffer.h"
 #include "LogFile.h"
-#include "LogHost.h"
 #include "LogObject.h"
 #include "LogUtils.h"
 #include "LogConfig.h"
@@ -73,10 +69,10 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
     m_log = new BaseLogFile(name, m_signature);
     m_log->set_hostname(Machine::instance()->hostname);
   } else {
-    m_log = NULL;
+    m_log = nullptr;
   }
 
-  m_fd = -1;
+  m_fd                = -1;
   m_ascii_buffer_size = (ascii_buffer_size < max_line_size ? max_line_size : ascii_buffer_size);
 
   Debug("log-file", "exiting LogFile constructor, m_name=%s, this=%p", m_name, this);
@@ -89,7 +85,8 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const LogFile &copy)
-  : m_file_format(copy.m_file_format),
+  : RefCountObj(copy),
+    m_file_format(copy.m_file_format),
     m_name(ats_strdup(copy.m_name)),
     m_header(ats_strdup(copy.m_header)),
     m_signature(copy.m_signature),
@@ -102,7 +99,7 @@ LogFile::LogFile(const LogFile &copy)
   if (copy.m_log) {
     m_log = new BaseLogFile(*(copy.m_log));
   } else {
-    m_log = NULL;
+    m_log = nullptr;
   }
 
   Debug("log-file", "exiting LogFile copy constructor, m_name=%s, this=%p", m_name, this);
@@ -128,8 +125,9 @@ void
 LogFile::change_name(const char *new_name)
 {
   ats_free(m_name);
-  if (m_log)
+  if (m_log) {
     m_log->change_name(new_name);
+  }
   m_name = ats_strdup(new_name);
 }
 
@@ -155,7 +153,7 @@ int
 LogFile::open_file()
 {
   // whatever we want to open should have a name
-  ink_assert(m_name != NULL);
+  ink_assert(m_name != nullptr);
 
   // is_open() takes into account if we're using BaseLogFile or a naked fd
   if (is_open()) {
@@ -185,19 +183,12 @@ LogFile::open_file()
   } else {
     if (m_log) {
       int status = m_log->open_file(Log::config->logfile_perm);
-      if (status == BaseLogFile::LOG_FILE_COULD_NOT_OPEN_FILE)
+      if (status == BaseLogFile::LOG_FILE_COULD_NOT_OPEN_FILE) {
         return LOG_FILE_COULD_NOT_OPEN_FILE;
+      }
     } else {
       return LOG_FILE_COULD_NOT_OPEN_FILE;
     }
-  }
-
-  int e = do_filesystem_checks();
-  if (e != 0) {
-    m_fd = -1; // reset to error condition
-    delete m_log;
-    m_log = NULL;
-    return LOG_FILE_FILESYSTEM_CHECKS_FAILED;
   }
 
   //
@@ -236,8 +227,6 @@ LogFile::close_file()
     } else if (m_log) {
       m_log->close_file();
       Debug("log-file", "LogFile %s is closed", m_log->get_name());
-      delete m_log;
-      m_log = NULL;
     } else {
       Warning("LogFile %s is open but was not closed", m_name);
     }
@@ -256,7 +245,20 @@ int
 LogFile::roll(long interval_start, long interval_end)
 {
   if (m_log) {
-    return m_log->roll(interval_start, interval_end);
+    // Due to commit 346b419 the BaseLogFile::close_file() is no longer called within BaseLogFile::roll().
+    // For diagnostic log files, the rolling is implemented by renaming and destroying the BaseLogFile object
+    // and then creating a new BaseLogFile object with the original filename. Due to possible race conditions
+    // the old/new object swap happens within lock/unlock calls within Diags.cc.
+    // For logging log files, the rolling is implemented by renaming the original file and closing it.
+    // Afterwards, the LogFile object will re-open a new file with the original file name using the original object.
+    // There is no need to protect against contention since the open/close/writes are all executed under a
+    // single log flush thread.
+    // Since these two methods of using BaseLogFile are not compatible, we perform the logging log file specific
+    // close file operation here within the containing LogFile object.
+    if (m_log->roll(interval_start, interval_end)) {
+      m_log->close_file();
+      return 1;
+    }
   }
 
   return 0;
@@ -274,14 +276,14 @@ LogFile::preproc_and_try_delete(LogBuffer *lb)
   int ret = -1;
   LogBufferHeader *buffer_header;
 
-  if (lb == NULL) {
+  if (lb == nullptr) {
     Note("Cannot write LogBuffer to LogFile %s; LogBuffer is NULL", m_name);
     return -1;
   }
 
   ink_atomic_increment(&lb->m_references, 1);
 
-  if ((buffer_header = lb->header()) == NULL) {
+  if ((buffer_header = lb->header()) == nullptr) {
     Note("Cannot write LogBuffer to LogFile %s; LogBufferHeader is NULL", m_name);
     goto done;
   }
@@ -353,16 +355,16 @@ done:
 int
 LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const char *path, const char *alt_format)
 {
-  ink_assert(buffer_header != NULL);
+  ink_assert(buffer_header != nullptr);
   ink_assert(fd >= 0);
 
   char fmt_buf[LOG_MAX_FORMATTED_BUFFER];
   char fmt_line[LOG_MAX_FORMATTED_LINE];
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
-  int fmt_buf_bytes = 0;
+  int fmt_buf_bytes  = 0;
   int fmt_line_bytes = 0;
-  int bytes = 0;
+  int bytes          = 0;
 
   LogFormatType format_type;
   char *fieldlist_str;
@@ -373,7 +375,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
     format_type = (LogFormatType)buffer_header->format_type;
 
     fieldlist_str = buffer_header->fmt_fieldlist();
-    printf_str = buffer_header->fmt_printf();
+    printf_str    = buffer_header->fmt_printf();
     break;
 
   default:
@@ -417,17 +419,18 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
 int
 LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_format)
 {
-  Debug("log-file", "entering LogFile::write_ascii_logbuffer3 for %s "
-                    "(this=%p)",
+  Debug("log-file",
+        "entering LogFile::write_ascii_logbuffer3 for %s "
+        "(this=%p)",
         m_name, this);
-  ink_assert(buffer_header != NULL);
+  ink_assert(buffer_header != nullptr);
 
   ProxyMutex *mutex = this_thread()->mutex.get();
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
   int fmt_entry_count = 0;
-  int fmt_buf_bytes = 0;
-  int total_bytes = 0;
+  int fmt_buf_bytes   = 0;
+  int total_bytes     = 0;
 
   LogFormatType format_type;
   char *fieldlist_str;
@@ -436,9 +439,9 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
-    format_type = (LogFormatType)buffer_header->format_type;
+    format_type   = (LogFormatType)buffer_header->format_type;
     fieldlist_str = buffer_header->fmt_fieldlist();
-    printf_str = buffer_header->fmt_printf();
+    printf_str    = buffer_header->fmt_printf();
     break;
 
   default:
@@ -450,12 +453,13 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
 
   while ((entry_header = iter.next())) {
     fmt_entry_count = 0;
-    fmt_buf_bytes = 0;
+    fmt_buf_bytes   = 0;
 
-    if (m_file_format == LOG_FILE_PIPE)
-      ascii_buffer = (char *)malloc(m_max_line_size);
-    else
-      ascii_buffer = (char *)malloc(m_ascii_buffer_size);
+    if (m_file_format == LOG_FILE_PIPE) {
+      ascii_buffer = (char *)ats_malloc(m_max_line_size);
+    } else {
+      ascii_buffer = (char *)ats_malloc(m_ascii_buffer_size);
+    }
 
     // fill the buffer with as many records as possible
     //
@@ -483,11 +487,13 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
       // record to avoid as much as possible overflowing the
       // pipe buffer
       //
-      if (m_file_format == LOG_FILE_PIPE)
+      if (m_file_format == LOG_FILE_PIPE) {
         break;
+      }
 
-      if (m_ascii_buffer_size - fmt_buf_bytes < m_max_line_size)
+      if (m_ascii_buffer_size - fmt_buf_bytes < m_max_line_size) {
         break;
+      }
     } while ((entry_header = iter.next()));
 
     // send the buffer to flush thread
@@ -557,8 +563,9 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 
     if ((bytes_this_write = (int)::writev(fd, (const struct iovec *)wvec, vcnt)) < 0) {
       Warning("An error was encountered in writing to %s: %s.", ((path) ? path : "logfile"), strerror(errno));
-    } else
+    } else {
       total_bytes = bytes_this_write;
+    }
   }
   return total_bytes;
 }
@@ -576,14 +583,14 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 void
 LogFile::check_fd()
 {
-  static bool failure_last_call = false;
+  static bool failure_last_call    = false;
   static unsigned stat_check_count = 1;
 
   if ((stat_check_count % Log::config->file_stat_frequency) == 0) {
     //
     // It's time to see if the file really exists.  If we can't see
     // the file (via access), then we'll close our descriptor and
-    // attept to re-open it, which will create the file if it's not
+    // attempt to re-open it, which will create the file if it's not
     // there.
     //
     if (m_name && !LogFile::exists(m_name)) {
@@ -616,10 +623,11 @@ LogFile::display(FILE *fd)
 bool
 LogFile::is_open()
 {
-  if (m_file_format == LOG_FILE_PIPE)
+  if (m_file_format == LOG_FILE_PIPE) {
     return m_fd >= 0;
-  else
+  } else {
     return m_log && m_log->is_open();
+  }
 }
 
 /*
@@ -639,7 +647,3 @@ LogFile::get_fd()
     return -1;
   }
 }
-
-/***************************************************************************
- LogFileList IS NOT USED
-****************************************************************************/

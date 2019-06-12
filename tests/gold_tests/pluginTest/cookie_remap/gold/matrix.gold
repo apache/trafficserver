@@ -1,0 +1,11 @@
+``
+Serving GET /eighth/magic;matrix=1/eighth... Finished
+``
+Serving GET /eighth/magic;matrix=1/eighth?hello=10... Finished
+``
+Serving GET /tenth/magic/tenth;matrix=2... Finished
+``
+Serving GET /tenth/magic/tenth;matrix=2?query=10... Finished
+``
+Serving GET /eleventh/magic;matrix=4/eleventh;matrix=2?query=true... Finished
+``

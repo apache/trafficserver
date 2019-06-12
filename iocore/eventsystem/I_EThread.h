@@ -22,12 +22,11 @@
 
  */
 
-#ifndef _EThread_h_
-#define _EThread_h_
+#pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/ink_rand.h"
-#include "ts/I_Version.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_rand.h"
+#include "tscore/I_Version.h"
 #include "I_Thread.h"
 #include "I_PriorityEventQueue.h"
 #include "I_ProtectedQueue.h"
@@ -40,9 +39,6 @@
 // instead.
 #define MUTEX_RETRY_DELAY HRTIME_MSECONDS(20)
 
-/** Maximum number of accept events per thread. */
-#define MAX_ACCEPT_EVENTS 20
-
 struct DiskHandler;
 struct EventIO;
 
@@ -52,18 +48,15 @@ class Continuation;
 
 enum ThreadType {
   REGULAR = 0,
-  MONITOR,
   DEDICATED,
 };
-
-extern bool shutdown_event_system;
 
 /**
   Event System specific type of thread.
 
   The EThread class is the type of thread created and managed by
   the Event System. It is one of the available interfaces for
-  schedulling events in the event system (another two are the Event
+  scheduling events in the event system (another two are the Event
   and EventProcessor classes).
 
   In order to handle events, each EThread object has two event
@@ -80,7 +73,7 @@ extern bool shutdown_event_system;
 
   Scheduling Interface:
 
-  There are eight schedulling functions provided by EThread and
+  There are eight scheduling functions provided by EThread and
   they are a wrapper around their counterparts in EventProcessor.
 
   @see EventProcessor
@@ -90,6 +83,27 @@ extern bool shutdown_event_system;
 class EThread : public Thread
 {
 public:
+  /** Handler for tail of event loop.
+
+      The event loop should not spin. To avoid that a tail handler is called to block for a limited time.
+      This is a protocol class that defines the interface to the handler.
+  */
+  class LoopTailHandler
+  {
+  public:
+    /** Called at the end of the event loop to block.
+        @a timeout is the maximum length of time (in ns) to block.
+    */
+    virtual int waitForActivity(ink_hrtime timeout) = 0;
+    /** Unblock.
+
+        This is required to unblock (wake up) the block created by calling @a cb.
+    */
+    virtual void signalActivity() = 0;
+
+    virtual ~LoopTailHandler() {}
+  };
+
   /*-------------------------------------------------------*\
   |  Common Interface                                       |
   \*-------------------------------------------------------*/
@@ -107,12 +121,12 @@ public:
       continuation's handler. See the the EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return Reference to an Event object representing the schedulling
+    @return Reference to an Event object representing the scheduling
       of this callback.
 
   */
-  Event *schedule_imm(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
-  Event *schedule_imm_signal(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_imm(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = nullptr);
+  Event *schedule_imm_signal(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -129,11 +143,11 @@ public:
       continuation's handler. See the EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
-  Event *schedule_at(Continuation *c, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_at(Continuation *c, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -149,11 +163,11 @@ public:
       continuation's handler. See the EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
-  Event *schedule_in(Continuation *c, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_in(Continuation *c, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -163,18 +177,18 @@ public:
     to occur every time 'aperiod' elapses. It is scheduled on this
     EThread.
 
-    @param c Continuation to call back everytime 'aperiod' elapses.
+    @param c Continuation to call back every time 'aperiod' elapses.
     @param aperiod Duration of the time period between callbacks.
     @param callback_event Event code to be passed back to the
       continuation's handler. See the Remarks section in the
       EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
-  Event *schedule_every(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_every(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -188,11 +202,11 @@ public:
       continuation's handler. See the EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
-  Event *schedule_imm_local(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = NULL);
+  Event *schedule_imm_local(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -209,11 +223,11 @@ public:
       continuation's handler. See the EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
-  Event *schedule_at_local(Continuation *c, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_at_local(Continuation *c, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -230,11 +244,11 @@ public:
       EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
-  Event *schedule_in_local(Continuation *c, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_in_local(Continuation *c, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -243,48 +257,56 @@ public:
     Schedules the callback to the continuation 'c' to occur every
     time 'aperiod' elapses. It is scheduled on this EThread.
 
-    @param c Continuation to call back everytime 'aperiod' elapses.
+    @param c Continuation to call back every time 'aperiod' elapses.
     @param aperiod Duration of the time period between callbacks.
     @param callback_event Event code to be passed back to the
       continuation's handler. See the Remarks section in the
       EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
-  Event *schedule_every_local(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_every_local(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = nullptr);
+
+  /** Schedule an event called once when the thread is spawned.
+
+      This is useful only for regular threads and if called before @c Thread::start. The event will be
+      called first before the event loop.
+
+      @Note This will override the event for a dedicate thread so that this is called instead of the
+      event passed to the constructor.
+  */
+  Event *schedule_spawn(Continuation *c, int ev = EVENT_IMMEDIATE, void *cookie = nullptr);
+
+  // Set the tail handler.
+  void set_tail_handler(LoopTailHandler *handler);
 
   /* private */
 
   Event *schedule_local(Event *e);
 
-  InkRand generator;
-
-private:
-  // prevent unauthorized copies (Not implemented)
-  EThread(const EThread &);
-  EThread &operator=(const EThread &);
+  InkRand generator = static_cast<uint64_t>(Thread::get_hrtime_updated() ^ reinterpret_cast<uintptr_t>(this));
 
   /*-------------------------------------------------------*\
   |  UNIX Interface                                         |
   \*-------------------------------------------------------*/
 
-public:
   EThread();
   EThread(ThreadType att, int anid);
   EThread(ThreadType att, Event *e);
-  virtual ~EThread();
+  EThread(const EThread &) = delete;
+  EThread &operator=(const EThread &) = delete;
+  ~EThread() override;
 
-  Event *schedule_spawn(Continuation *cont);
   Event *schedule(Event *e, bool fast_signal = false);
 
   /** Block of memory to allocate thread specific data e.g. stat system arrays. */
   char thread_private[PER_THREAD_DATA];
 
   /** Private Data for the Disk Processor. */
-  DiskHandler *diskHandler;
+  DiskHandler *diskHandler = nullptr;
 
   /** Private Data for AIO. */
   Que(Continuation, link) aio_ops;
@@ -292,35 +314,150 @@ public:
   ProtectedQueue EventQueueExternal;
   PriorityEventQueue EventQueue;
 
-  EThread **ethreads_to_be_signalled;
-  int n_ethreads_to_be_signalled;
+  EThread **ethreads_to_be_signalled = nullptr;
+  int n_ethreads_to_be_signalled     = 0;
 
-  Event *accept_event[MAX_ACCEPT_EVENTS];
-  int main_accept_index;
-
-  int id;
-  unsigned int event_types;
+  static constexpr int NO_ETHREAD_ID = -1;
+  int id                             = NO_ETHREAD_ID;
+  unsigned int event_types           = 0;
   bool is_event_type(EventType et);
   void set_event_type(EventType et);
 
   // Private Interface
 
-  void execute();
+  void execute() override;
+  void execute_regular();
+  void process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_count);
   void process_event(Event *e, int calling_code);
   void free_event(Event *e);
-  void (*signal_hook)(EThread *);
+  LoopTailHandler *tail_cb = &DEFAULT_TAIL_HANDLER;
 
 #if HAVE_EVENTFD
-  int evfd;
+  int evfd = ts::NO_FD;
 #else
   int evpipe[2];
 #endif
-  EventIO *ep;
+  EventIO *ep = nullptr;
 
-  ThreadType tt;
-  Event *oneevent; // For dedicated event thread
+  ThreadType tt = REGULAR;
+  /** Initial event to call, before any scheduling.
 
-  ServerSessionPool *server_session_pool;
+      For dedicated threads this is the only event called.
+      For regular threads this is called first before the event loop starts.
+      @internal For regular threads this is used by the EventProcessor to get called back after
+      the thread starts but before any other events can be dispatched to provide initializations
+      needed for the thread.
+  */
+  Event *start_event = nullptr;
+
+  ServerSessionPool *server_session_pool = nullptr;
+
+  /** Default handler used until it is overridden.
+
+      This uses the cond var wait in @a ExternalQueue.
+  */
+  class DefaultTailHandler : public LoopTailHandler
+  {
+    // cppcheck-suppress noExplicitConstructor; allow implicit conversion
+    DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
+
+    int
+    waitForActivity(ink_hrtime timeout) override
+    {
+      _q.wait(Thread::get_hrtime() + timeout);
+      return 0;
+    }
+    void
+    signalActivity() override
+    {
+      /* Try to acquire the `EThread::lock` of the Event Thread:
+       *   - Acquired, indicating that the Event Thread is sleep,
+       *               must send a wakeup signal to the Event Thread.
+       *   - Failed, indicating that the Event Thread is busy, do nothing.
+       */
+      (void)_q.try_signal();
+    }
+
+    ProtectedQueue &_q;
+
+    friend class EThread;
+  } DEFAULT_TAIL_HANDLER = EventQueueExternal;
+
+  /// Statistics data for event dispatching.
+  struct EventMetrics {
+    /// Time the loop was active, not including wait time but including event dispatch time.
+    struct LoopTimes {
+      ink_hrtime _start = 0;         ///< The time of the first loop for this sample. Used to mark valid entries.
+      ink_hrtime _min   = INT64_MAX; ///< Shortest loop time.
+      ink_hrtime _max   = 0;         ///< Longest loop time.
+      LoopTimes() {}
+    } _loop_time;
+
+    struct Events {
+      int _min   = INT_MAX;
+      int _max   = 0;
+      int _total = 0;
+      Events() {}
+    } _events;
+
+    int _count = 0; ///< # of times the loop executed.
+    int _wait  = 0; ///< # of timed wait for events
+
+    /// Add @a that to @a this data.
+    /// This embodies the custom logic per member concerning whether each is a sum, min, or max.
+    EventMetrics &operator+=(EventMetrics const &that);
+
+    EventMetrics() {}
+  };
+
+  /** The number of metric blocks kept.
+      This is a circular buffer, with one block per second. We have a bit more than the required 1000
+      to provide sufficient slop for cross thread reading of the data (as only the current metric block
+      is being updated).
+  */
+  static int const N_EVENT_METRICS = 1024;
+
+  volatile EventMetrics *current_metric = nullptr; ///< The current element of @a metrics
+  EventMetrics metrics[N_EVENT_METRICS];
+
+  /** The various stats provided to the administrator.
+      THE ORDER IS VERY SENSITIVE.
+      More than one part of the code depends on this exact order. Be careful and thorough when changing.
+  */
+  enum STAT_ID {
+    STAT_LOOP_COUNT,      ///< # of event loops executed.
+    STAT_LOOP_EVENTS,     ///< # of events
+    STAT_LOOP_EVENTS_MIN, ///< min # of events dispatched in a loop
+    STAT_LOOP_EVENTS_MAX, ///< max # of events dispatched in a loop
+    STAT_LOOP_WAIT,       ///< # of loops that did a conditional wait.
+    STAT_LOOP_TIME_MIN,   ///< Shortest time spent in loop.
+    STAT_LOOP_TIME_MAX,   ///< Longest time spent in loop.
+    N_EVENT_STATS         ///< NOT A VALID STAT INDEX - # of different stat types.
+  };
+
+  static char const *const STAT_NAME[N_EVENT_STATS];
+
+  /** The number of time scales used in the event statistics.
+      Currently these are 10s, 100s, 1000s.
+  */
+  static int const N_EVENT_TIMESCALES = 3;
+  /// # of samples for each time scale.
+  static int const SAMPLE_COUNT[N_EVENT_TIMESCALES];
+
+  /// Process the last 1000s of data and write out the summaries to @a summary.
+  void summarize_stats(EventMetrics summary[N_EVENT_TIMESCALES]);
+  /// Back up the metric pointer, wrapping as needed.
+  EventMetrics *
+  prev(EventMetrics volatile *current)
+  {
+    return const_cast<EventMetrics *>(--current < metrics ? &metrics[N_EVENT_METRICS - 1] : current); // cast to remove volatile
+  }
+  /// Advance the metric pointer, wrapping as needed.
+  EventMetrics *
+  next(EventMetrics volatile *current)
+  {
+    return const_cast<EventMetrics *>(++current > &metrics[N_EVENT_METRICS - 1] ? metrics : current); // cast to remove volatile
+  }
 };
 
 /**
@@ -340,4 +477,5 @@ operator new(size_t, ink_dummy_for_new *p)
 #define ETHREAD_GET_PTR(thread, offset) ((void *)((char *)(thread) + (offset)))
 
 extern EThread *this_ethread();
-#endif /*_EThread_h_*/
+
+extern int thread_max_heartbeat_mseconds;

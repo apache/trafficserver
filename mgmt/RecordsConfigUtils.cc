@@ -21,9 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
+#include "tscore/ink_config.h"
 #include "RecordsConfig.h"
-#include "ts/ParseRules.h"
 
 //-------------------------------------------------------------------------
 // RecordsConfigOverrideFromEnvironment
@@ -36,13 +35,13 @@ override_record(const RecordElement *record, void *)
     const char *value;
     RecData data = {0};
 
-    if ((value = RecConfigOverrideFromEnvironment(record->name, NULL))) {
+    if ((value = RecConfigOverrideFromEnvironment(record->name, nullptr))) {
       if (RecDataSetFromString(record->value_type, &data, value)) {
         // WARNING: If we are not the record owner, RecSetRecord() doesn't set our copy
         // of the record. It sends a set message to the local manager. This can cause
         // "interesting" results if you are trying to override configuration values
         // early in startup (before we have synced with the local manager).
-        RecSetRecord(record->type, record->name, record->value_type, &data, NULL, REC_SOURCE_ENV, false);
+        RecSetRecord(record->type, record->name, record->value_type, &data, nullptr, REC_SOURCE_ENV, false);
         RecDataZero(record->value_type, &data);
       }
     }
@@ -51,11 +50,11 @@ override_record(const RecordElement *record, void *)
 
 // We process environment variable overrides when we parse the records.config configuration file, but the
 // operator might choose to override a variable that is not present in records.config so we have to post-
-// process the full set of configuration valriables as well.
+// process the full set of configuration variables as well.
 void
 RecordsConfigOverrideFromEnvironment()
 {
-  RecordsConfigIterate(override_record, NULL);
+  RecordsConfigIterate(override_record, nullptr);
 }
 
 //-------------------------------------------------------------------------
@@ -65,8 +64,8 @@ RecordsConfigOverrideFromEnvironment()
 static void
 initialize_record(const RecordElement *record, void *)
 {
-  RecInt tempInt = 0;
-  RecFloat tempFloat = 0.0;
+  RecInt tempInt         = 0;
+  RecFloat tempFloat     = 0.0;
   RecCounter tempCounter = 0;
 
   RecUpdateT update;
@@ -75,19 +74,19 @@ initialize_record(const RecordElement *record, void *)
   RecT type;
 
   // Less typing ...
-  type = record->type;
+  type   = record->type;
   update = record->update;
-  check = record->check;
+  check  = record->check;
   access = record->access;
 
   if (REC_TYPE_IS_CONFIG(type)) {
     const char *value = RecConfigOverrideFromEnvironment(record->name, record->value);
-    RecData data = {0};
+    RecData data      = {0};
     RecSourceT source = value == record->value ? REC_SOURCE_DEFAULT : REC_SOURCE_ENV;
 
     // If you specify a consistency check, you have to specify a regex expression. We abort here
     // so that this breaks QA completely.
-    if (record->check != RECC_NULL && record->regex == NULL) {
+    if (record->check != RECC_NULL && record->regex == nullptr) {
       ink_fatal("%s has a consistency check but no regular expression", record->name);
     }
 
@@ -149,14 +148,5 @@ initialize_record(const RecordElement *record, void *)
 void
 LibRecordsConfigInit()
 {
-  RecordsConfigIterate(initialize_record, NULL);
-}
-
-void
-test_librecords()
-{
-  RecRegisterStatInt(RECT_PROCESS, "proxy.process.librecords.testing.int", (RecInt)100, RECP_NON_PERSISTENT);
-  RecRegisterStatFloat(RECT_NODE, "proxy.node.librecords.testing.float", (RecFloat)100.1, RECP_NON_PERSISTENT);
-  RecRegisterStatString(RECT_CLUSTER, "proxy.cluster.librecords.testing.string", (RecString) "Hello World\n", RECP_NON_PERSISTENT);
-  RecRegisterStatCounter(RECT_LOCAL, "proxy.local.librecords.testing.counter", (RecCounter)99, RECP_NON_PERSISTENT);
+  RecordsConfigIterate(initialize_record, nullptr);
 }

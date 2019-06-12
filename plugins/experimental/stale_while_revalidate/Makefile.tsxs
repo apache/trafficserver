@@ -18,7 +18,7 @@ PLUGIN=stale_while_revalidate
 TSXS?=tsxs
 
 all:	${PLUGIN}.c
-	$(TSXS) -v -o ${PLUGIN}.so $? 
+	$(TSXS) -v -o ${PLUGIN}.so $?
 
 install:
 	$(TSXS) -i -o ${PLUGIN}.so

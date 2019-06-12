@@ -17,7 +17,7 @@ Multiplexer dispatches the request in background without blocking the original
 
 A global timeout can be overwritten through "multiplexer__timeout" environment variable representing how many nanoseconds to wait. A default 1s timeout is hard-coded.
 
-Please use "mutiplexer" tag for debugging purposes. While debugging, multiplexed requests and responses are printed into the logs.
+Please use "multiplexer" tag for debugging purposes. While debugging, multiplexed requests and responses are printed into the logs.
 
 Multiplexer produces the following statistics consumed with traffic_ctl:
  - failures: number of failed multiplexed requests

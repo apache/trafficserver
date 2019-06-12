@@ -15,10 +15,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#ifndef REGEX_HELPER_H
-#define REGEX_HELPER_H
+#pragma once
 
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -33,26 +32,18 @@ const int OVECCOUNT = 30; // We support $1 - $9 only, and this needs to be 3x th
 class regexHelper
 {
 public:
-  regexHelper() : regex(NULL), regexExtra(NULL), regexCcount(0) {}
   ~regexHelper()
   {
-    if (regex)
-      pcre_free(regex);
-
-    if (regexExtra)
-      pcre_free(regexExtra);
+    pcre_free(regex);
+    pcre_free(regexExtra);
   }
 
   bool setRegexMatch(const std::string &s);
-  const std::string &getRegexString() const;
-  int getRegexCcount() const;
   int regexMatch(const char *, int, int ovector[]) const;
 
 private:
-  pcre *regex;
-  pcre_extra *regexExtra;
   std::string regexString;
-  int regexCcount;
+  pcre *regex            = nullptr;
+  pcre_extra *regexExtra = nullptr;
+  int regexCcount        = 0;
 };
-
-#endif

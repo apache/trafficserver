@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __CONDITION_H__
-#define __CONDITION_H__ 1
+#pragma once
 
 #include <string>
 
@@ -33,13 +32,13 @@
 
 // Condition modifiers
 enum CondModifiers {
-  COND_NONE = 0,
-  COND_OR = 1,
-  COND_AND = 2,
-  COND_NOT = 4,
+  COND_NONE   = 0,
+  COND_OR     = 1,
+  COND_AND    = 2,
+  COND_NOT    = 4,
   COND_NOCASE = 8, // Not implemented
-  COND_LAST = 16,
-  COND_CHAIN = 32 // Not implemented
+  COND_LAST   = 16,
+  COND_CHAIN  = 32 // Not implemented
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -48,10 +47,17 @@ enum CondModifiers {
 class Condition : public Statement
 {
 public:
-  Condition() : _qualifier(""), _cond_op(MATCH_EQUAL), _matcher(NULL), _mods(COND_NONE)
+  Condition() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition"); }
+
+  ~Condition() override
   {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Condition");
+    TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Condition");
+    delete _matcher;
   }
+
+  // noncopyable
+  Condition(const Condition &) = delete;
+  void operator=(const Condition &) = delete;
 
   // Inline this, it's critical for speed (and only used twice)
   bool
@@ -59,18 +65,20 @@ public:
   {
     bool rt = eval(res);
 
-    if (_mods & COND_NOT)
+    if (_mods & COND_NOT) {
       rt = !rt;
+    }
 
     if (_next) {
       if (_mods & COND_OR) {
         return rt || (static_cast<Condition *>(_next)->do_eval(res));
       } else { // AND is the default
         // Short circuit if we're an AND and the first condition is FALSE.
-        if (rt)
+        if (rt) {
           return static_cast<Condition *>(_next)->do_eval(res);
-        else
+        } else {
           return false;
+        }
       }
     } else {
       return rt;
@@ -98,11 +106,13 @@ public:
   {
     return _matcher;
   }
-  const MatcherOps
+
+  MatcherOps
   get_cond_op() const
   {
     return _cond_op;
   }
+
   const std::string
   get_qualifier() const
   {
@@ -110,7 +120,7 @@ public:
   }
 
   // Virtual methods, has to be implemented by each conditional;
-  virtual void initialize(Parser &p);
+  void initialize(Parser &p) override;
   virtual void append_value(std::string &s, const Resources &res) = 0;
 
 protected:
@@ -118,13 +128,9 @@ protected:
   virtual bool eval(const Resources &res) = 0;
 
   std::string _qualifier;
-  MatcherOps _cond_op;
-  Matcher *_matcher;
+  MatcherOps _cond_op = MATCH_EQUAL;
+  Matcher *_matcher   = nullptr;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(Condition);
-
-  CondModifiers _mods;
+  CondModifiers _mods = COND_NONE;
 };
-
-#endif // __CONDITION_H

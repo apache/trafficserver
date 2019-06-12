@@ -39,5 +39,5 @@ used, but the following resources may be consulted for further details.
 
 - `Sphinx Documentation Generator <http://sphinx-doc.org/>`_
 
-- `RST Primary by Sphinx <http://sphinx-doc.org/rest.html>`_
+- `RST Primer by Sphinx <http://sphinx-doc.org/rest.html>`_
 

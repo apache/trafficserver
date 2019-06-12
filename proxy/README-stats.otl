@@ -12,7 +12,7 @@ existing stat system:
 6) relationship with manager.
 
 Specifically, some of the stats reported seemed incorrect.
-In the cases where individual stats were incorrect (e.g. 
+In the cases where individual stats were incorrect (e.g.
 number of bytes transferred), it is suspected that atomicity
 issues played a role. For example, if the stat variable was
 64 bits long, were all 64 bits being read and written atomically?
@@ -28,13 +28,13 @@ the hit rate may appear incorrect.
 
 Some stats are interrelated with other stats (e.g. number of
 client requests and number of cache lookups). Inconsistencies
-between such stats may show up if for example one of the 
+between such stats may show up if for example one of the
 values is accessed and before the other value is accessed, it
 is allowed to change. A single client request may then, for example,
 show two cache lookups.
 
 These issues can be aggravated by allowing administrators to
-clear stat values. This lead us to introduce persistence: 
+clear stat values. This lead us to introduce persistence:
 disallow clearing of stats. While this does deal with the problems
 associated with clearing, it does not address the coupling,
 inconsistency or atomicity problems. Those remain.
@@ -98,7 +98,7 @@ require just atomic access, however, it may be better to allow direct
 access, without getting a lock. This may reduce lock contention.
 
 We ran two experiments to investigate the performance issue.
-The existing stat system allows for individual atomic access to all stats. 
+The existing stat system allows for individual atomic access to all stats.
 We compared the performance of this system with a system where instead of
 atomic access, all access requires getting a single lock. The results from
 inkbench are as follows.
@@ -144,8 +144,8 @@ consistency, coupling, clearing and persistence problems.
 Brian's Rant:
 -------------
 In any case, I want to change the stats system once to address all the issues
-of clearing, persistence, monotonicity, coupled computations, cluster
-aggregation, etc.  Let's be sure we all understand the design issues and do
+of clearing, persistence, monotonicity, coupled computations,
+etc.  Let's be sure we all understand the design issues and do
 the right thing one time.  We've gone through lots of band-aids in the past
 which got us nowhere, so let's get the design right.
 ---------------------------------------------------------------------------------
@@ -155,8 +155,7 @@ Issues:
 2) Persistence
 3) Monotonicity
 4) Coupled computations
-5) Cluster aggregation
-6) Inconsistencies between related stats
+5) Inconsistencies between related stats
 
 - Want to be able to clear stats
 - Do not want to see inconsistencies between stats
@@ -176,17 +175,17 @@ divide stats into 2 groups:
 Types Of Stats:
 ---------------
 * event system stats
-	** average idle time per thread 
-	** variance of idle time per thread 
-	** average event exec rate per thread 
-	** variance of event exec rate per thread 
-	** average execution time per event 
-	** variance of execution time per event 
-	** average failed mutexes per event 
-	** variance of failed mutexes per event 
+	** average idle time per thread
+	** variance of idle time per thread
+	** average event exec rate per thread
+	** variance of event exec rate per thread
+	** average execution time per event
+	** variance of execution time per event
+	** average failed mutexes per event
+	** variance of failed mutexes per event
 	** average time lag per event
 	** variance of time lag per event
-	
+
 * socks processor stats
 	** connections unsuccessful
 	** connections successful
@@ -205,85 +204,6 @@ Types Of Stats:
 	*** Delete operations per second.
 	*** Operations per second.
 
----------------------------------------------------------------------------------
-* ICP Stats
-proxy.process.icp.config_mgmt_callouts
-  - Manager callouts for ICP config changes
-
-proxy.process.icp.reconfig_polls
-  - ICP config change periodic polls
-
-proxy.process.icp.reconfig_events
-  - ICP config change polls which detected config changes
-
-proxy.process.icp.invalid_poll_data
-  - Negative event callouts with invalid poll data
-
-proxy.process.icp.no_data_read
-  - Read on ICP socket returned <= 0 bytes
-
-proxy.process.icp.short_read
-  - ICP msg len != bytes read
-
-proxy.process.icp.invalid_sender
-  - ICP msg sender unknown
-
-proxy.process.icp.read_not_v2_icp
-  - Sent ICP msg not version 2
-
-(UI) proxy.process.icp.icp_remote_query_requests
-  - Remote ICP query requests received
-
-    proxy.process.icp.icp_remote_responses
-  - ICP replies received for locally generated queries
-
-(UI) proxy.process.icp.cache_lookup_success
-  - ICP queries resulting in Cache lookup success 
-
-(UI) proxy.process.icp.cache_lookup_fail
-  - ICP queries resulting in Cache lookup failure 
-
-(UI) proxy.process.icp.query_response_write
-  - ICP query responses sent
-
-proxy.process.icp.query_response_partial_write
-  - ICP query responses which were short writes
-
-proxy.process.icp.no_icp_request_for_response
-  - Received ICP query responses associated with no ICP request
-
-proxy.process.icp.icp_response_request_nolock
-  - ICP request lock acquire miss
-
-proxy.process.icp.icp_start_icpoff
-  - Local ICP queries aborted due to ICP off
-
-proxy.process.icp.send_query_partial_write
-  - ICP query sends which were short writes
-
-proxy.process.icp.icp_queries_no_expected_replies
-  - Local ICP queries sent where no response was expected
-
-(UI) proxy.process.icp.icp_query_hits
-  - ICP hits received for locally generated queries
-
-(UI) proxy.process.icp.icp_query_misses
-  - ICP misses received for locally generated queries
-
-proxy.process.icp.invalid_icp_query_response
-  - ICP responses with invalid opcodes
-
-(UI) proxy.process.icp.icp_query_requests
-  - Locally generated ICP requests
-
-(UI) proxy.process.icp.total_icp_response_time
-  - Avg response time of each locally generated ICP query
-
-(UI) proxy.process.icp.total_udp_send_queries
-  - Total ICP query sends
-
-(UI) proxy.process.icp.total_icp_request_time
-  - Overall avg response time of locally generated ICP request
 ---------------------------------------------------------------------------------
 * hostdb/dns stats
 	** hostdb
@@ -353,7 +273,7 @@ proxy.process.icp.invalid_icp_query_response
  			**** POSTs
  			**** DELETEs
  			**** CONNECTs
- 		*** number of invalid requests 
+ 		*** number of invalid requests
  		*** number of broken client connections
  		*** number of proxied requests
  			**** user-specified
@@ -424,7 +344,7 @@ STAT(Count, log2_stat_log_files_space_used),		UI
 // events
 STAT(Count, log2_stat_event_log_error),			UI
 STAT(Count, log2_stat_event_log_access),		UI
-STAT(Count, log2_stat_event_log_access_fail),		
+STAT(Count, log2_stat_event_log_access_fail),
 STAT(Count, log2_stat_event_log_access_skip),		UI
 
 ---------------------------------------------------------------------------------
@@ -525,14 +445,6 @@ cache hit time
 
 Logging
 total  logging space used
-
-Cluster
-cluster network utilization %
-
-ICP
-total icp responses
-icp hit rate
-total icp requests
 ---------------------------------------------------------------------------------
 Subject: Re: Simple UI for TS100
 Date: Thu, 26 Mar 1998 11:48:15 -0800
@@ -609,7 +521,6 @@ Adam Beguelin wrote:
 >  o Cache/Freshness
 >  o Cache/Variable Content
 >  o HostDB page
->  o Logging/Log Collation
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------

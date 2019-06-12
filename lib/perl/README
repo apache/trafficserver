@@ -29,8 +29,8 @@ IO::Socket::UNIX
 IO::Select
 Carp;
 
-Additionally this module requires that Apache Traffic Server is 
-running on localhost so it has something to talk to.  
+Additionally this module requires that Apache Traffic Server is
+running on localhost so it has something to talk to.
 
 COPYRIGHT AND LICENSE
 ==================================

@@ -32,10 +32,9 @@
 
 
  ****************************************************************************/
-#ifndef _I_ProtectedQueue_h_
-#define _I_ProtectedQueue_h_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_Event.h"
 struct ProtectedQueue {
   void enqueue(Event *e, bool fast_signal = false);
@@ -45,6 +44,8 @@ struct ProtectedQueue {
   void remove(Event *e);
   Event *dequeue_local();
   void dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool sleep);
+  void dequeue_external();       // Dequeue any external events.
+  void wait(ink_hrtime timeout); // Wait for @a timeout nanoseconds on a condition variable if there are no events.
 
   InkAtomicList al;
   ink_mutex lock;
@@ -55,5 +56,3 @@ struct ProtectedQueue {
 };
 
 void flush_signals(EThread *t);
-
-#endif

@@ -64,7 +64,7 @@ stack via the loopback interface.
    reserved to mean "not set" and can be used as a default if this
    functionality is not needed.
 
-The virtual connection returned as the :c:type:`TSCVonn` is API
+The virtual connection returned as the :c:type:`TSVConn` is API
 equivalent to a network virtual connection both to the plugin and
 to internal mechanisms. Data is read and written to the connection
 (and thence to the target system) by reading and writing on this
@@ -79,21 +79,20 @@ virtual connection.
 
 The combination of :arg:`tag` and :arg:`id` is intended to enable correlation
 in log post processing. The :arg:`tag` identifies the connection as related
-to the plugin and the :arg:`id` can be used in conjuction with plugin
+to the plugin and the :arg:`id` can be used in conjunction with plugin
 generated logs to correlate the log records.
 
 Notes
 =====
 
-The SPDY implementation uses this to correlate client sessions
-with SPDY streams. Each client connection is assigned a distinct
+The H2 implementation uses this to correlate client sessions
+with H2 streams. Each client connection is assigned a distinct
 numeric identifier. This is passed as the :arg:`id` to
 :c:func:`TSHttpConnectWithPluginId`. The :arg:`tag` is selected
 to be the NPN string for the client session protocol, e.g.
-"spdy/3" or "spdy/3.1". Log post processing can then count the
-number of connections for the various supported protocols and
-the number of SPDY virtual streams for each real client connection
-to Traffic Server.
+"h2". Log post processing can then count the number of connections for the
+various supported protocols and the number of H2 virtual streams for each
+real client connection to Traffic Server.
 
 See Also
 ========

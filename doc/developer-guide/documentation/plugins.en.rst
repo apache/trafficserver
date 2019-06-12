@@ -150,3 +150,7 @@ features of the documentation which may be relevant for your plugin. Developers
 are very strongly encouraged to use this template whenever possible, as a means
 of producing and maintaining a consistent format for plugin documentation.
 
+
+.. _developer-doc-plugin-template:
+
+.. note:: *to be done*

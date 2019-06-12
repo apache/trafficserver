@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_CACHE_DISK_H__
-#define _P_CACHE_DISK_H__
+#pragma once
 
 #include "I_Cache.h"
 
@@ -54,11 +53,11 @@ struct DiskVolBlock {
 };
 
 struct DiskVolBlockQueue {
-  DiskVolBlock *b;
-  int new_block; /* whether an existing vol or a new one */
+  DiskVolBlock *b = nullptr;
+  int new_block   = 0; /* whether an existing vol or a new one */
   LINK(DiskVolBlockQueue, link);
 
-  DiskVolBlockQueue() : b(NULL), new_block(0) {}
+  DiskVolBlockQueue() {}
 };
 
 struct DiskVol {
@@ -80,50 +79,32 @@ struct DiskHeader {
 };
 
 struct CacheDisk : public Continuation {
-  DiskHeader *header;
-  char *path;
-  int header_len;
+  DiskHeader *header = nullptr;
+  char *path         = nullptr;
+  int header_len     = 0;
   AIOCallbackInternal io;
-  off_t len; // in blocks (STORE_BLOCK)
-  off_t start;
-  off_t skip;
-  off_t num_usable_blocks;
-  int hw_sector_size;
-  int fd;
-  off_t free_space;
-  off_t wasted_space;
-  DiskVol **disk_vols;
-  DiskVol *free_blocks;
-  int num_errors;
-  int cleared;
-  bool read_only_p;
+  off_t len               = 0; // in blocks (STORE_BLOCK)
+  off_t start             = 0;
+  off_t skip              = 0;
+  off_t num_usable_blocks = 0;
+  int hw_sector_size      = 0;
+  int fd                  = -1;
+  off_t free_space        = 0;
+  off_t wasted_space      = 0;
+  DiskVol **disk_vols     = nullptr;
+  DiskVol *free_blocks    = nullptr;
+  int num_errors          = 0;
+  int cleared             = 0;
+  bool read_only_p        = false;
+  bool online             = true; /* flag marking cache disk online or offline (because of too many failures or by the operator). */
 
   // Extra configuration values
-  int forced_volume_num;           ///< Volume number for this disk.
+  int forced_volume_num = -1;      ///< Volume number for this disk.
   ats_scoped_str hash_base_string; ///< Base string for hash seed.
 
-  CacheDisk()
-    : Continuation(new_ProxyMutex()),
-      header(NULL),
-      path(NULL),
-      header_len(0),
-      len(0),
-      start(0),
-      skip(0),
-      num_usable_blocks(0),
-      fd(-1),
-      free_space(0),
-      wasted_space(0),
-      disk_vols(NULL),
-      free_blocks(NULL),
-      num_errors(0),
-      cleared(0),
-      read_only_p(false),
-      forced_volume_num(-1)
-  {
-  }
+  CacheDisk() : Continuation(new_ProxyMutex()) {}
 
-  ~CacheDisk();
+  ~CacheDisk() override;
 
   int open(bool clear);
   int open(char *s, off_t blocks, off_t skip, int hw_sector_size, int fildes, bool clear);
@@ -138,6 +119,5 @@ struct CacheDisk : public Continuation {
   int delete_all_volumes();
   void update_header();
   DiskVol *get_diskvol(int vol_number);
+  void incrErrors(const AIOCallback *io);
 };
-
-#endif

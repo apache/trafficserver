@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include <assert.h>
+#include <cassert>
 #include <iostream>
 #include <sstream>
 
@@ -40,7 +40,7 @@ namespace inliner
     assert(sink_->data_);
     assert(sink2_);
     assert(sink2_->data_);
-    assert(reader_ != NULL);
+    assert(reader_ != nullptr);
     *sink_ << "<script>"
               "var a=document,b=a.getElementsByTagName(\"img\"),c=b.length,w=window,d=function(){var "
               "m=w.addEventListener,n=w.attachEvent;return "
@@ -67,15 +67,15 @@ namespace inliner
   }
 
   void
-  Handler::parse(void)
+  Handler::parse()
   {
-    assert(reader_ != NULL);
+    assert(reader_ != nullptr);
     TSIOBufferBlock block = TSIOBufferReaderStart(reader_);
-    int64_t offset = 0;
-    while (block != NULL) {
-      int64_t length = 0;
+    int64_t offset        = 0;
+    while (block != nullptr) {
+      int64_t length           = 0;
       const char *const buffer = TSIOBufferBlockReadStart(block, reader_, &length);
-      assert(buffer != NULL);
+      assert(buffer != nullptr);
       if (length > 0) {
         HtmlParser::parse(buffer, length, offset);
         offset += length;
@@ -94,43 +94,43 @@ namespace inliner
   {
     std::string src;
 
-    for (Attributes::const_iterator item = a.begin(); item != a.end(); ++item) {
-      if (!item->first.empty()) {
-        src = item->second;
+    for (const auto &item : a) {
+      if (!item.first.empty()) {
+        src = item.second;
       }
     }
 
     const bool isTagged =
-      (src.find("http://") == 0 || src.find("https://") == 0) && src.find("inline", src.find("#")) != std::string::npos;
+      (src.find("http://") == 0 || src.find("https://") == 0) && src.find("inline", src.find('#')) != std::string::npos;
 
     if (isTagged) {
       std::string classes, original = " ";
-      for (Attributes::const_iterator item = a.begin(); item != a.end(); ++item) {
-        if (!item->first.empty()) {
-          if (!item->second.empty()) {
-            if (item->first == "class") {
-              classes = item->second;
-            } else if (item->first.find("src") == std::string::npos) {
-              original += item->first + "=\"" + item->second += "\" ";
+      for (const auto &item : a) {
+        if (!item.first.empty()) {
+          if (!item.second.empty()) {
+            if (item.first == "class") {
+              classes = item.second;
+            } else if (item.first.find("src") == std::string::npos) {
+              original += item.first + "=\"" + item.second += "\" ";
             }
           }
         } else {
-          original += item->first + " ";
+          original += item.first + " ";
         }
       }
 
-      assert(sink_ != NULL);
-      assert(sink2_ != NULL);
+      assert(sink_ != nullptr);
+      assert(sink2_ != nullptr);
       src.erase(src.find('#'));
       cache::fetch<CacheHandler>(src + VERSION, src, original, classes, generateId(), sink2_->branch(), sink_);
     } else {
-      assert(sink2_ != NULL);
+      assert(sink2_ != nullptr);
       *sink2_ << " " << static_cast<std::string>(a);
     }
   }
 
   std::string
-  Handler::generateId(void)
+  Handler::generateId()
   {
     std::stringstream ss;
     // TODO(dmorilha): stop using memory address here.
@@ -139,12 +139,12 @@ namespace inliner
   }
 
   void
-  Handler::abort(void)
+  Handler::abort()
   {
     abort_ = true;
     assert(ioSink_);
     ioSink_->abort();
   }
 
-} // end of inliner namespace
-} // end of ats namespace
+} // namespace inliner
+} // namespace ats

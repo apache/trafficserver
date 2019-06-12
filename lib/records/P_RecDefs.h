@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _P_REC_DEFS_H_
-#define _P_REC_DEFS_H_
+#pragma once
 
 #include "I_RecDefs.h"
 
@@ -118,12 +117,6 @@ struct RecRecord {
   int rsb_id;
 };
 
-// Used for cluster. TODO: Do we still need this?
-struct RecRecords {
-  int num_recs;
-  RecRecord *recs;
-};
-
 //-------------------------------------------------------------------------
 // Message Items
 //-------------------------------------------------------------------------
@@ -161,6 +154,4 @@ typedef RecMessageHdr RecMessage;
 
 typedef void (*RecDumpEntryCb)(RecT rec_type, void *edata, int registered, const char *name, int data_type, RecData *datum);
 
-typedef int (*RecMessageRecvCb)(RecMessage *msg, RecMessageT msg_type, void *cookie);
-
-#endif
+typedef RecErrT (*RecMessageRecvCb)(RecMessage *msg, RecMessageT msg_type, void *cookie);

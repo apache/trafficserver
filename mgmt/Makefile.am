@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = cluster utils api
+SUBDIRS = utils api
 
 # Decoder ring:
 # 	libmgmt_c.la 	Configuration records (defaults).
@@ -25,54 +25,60 @@ SUBDIRS = cluster utils api
 # 	libmgmt_p.la	libmgmt for Process Manager applications (everything else)
 noinst_LTLIBRARIES = libmgmt_c.la libmgmt_p.la libmgmt_lm.la
 
-AM_CPPFLAGS = \
-  $(iocore_include_dirs) \
-  -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/proxy/api/ts \
-  -I$(top_srcdir)/proxy \
-  -I$(top_srcdir)/proxy/hdrs \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib
+AM_CPPFLAGS += \
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	$(TS_INCLUDES)
 
 libmgmt_c_la_SOURCES = \
-  RecordsConfig.cc \
-  RecordsConfig.h
+	RecordsConfig.cc \
+	RecordsConfig.h
 
 libmgmt_COMMON = \
-  BaseManager.cc \
-  BaseManager.h \
-  MgmtDefs.h \
-  RecordsConfigUtils.cc
+	BaseManager.cc \
+	BaseManager.h \
+	MgmtDefs.h \
+	RecordsConfigUtils.cc
 
 libmgmt_p_la_SOURCES = \
-  $(libmgmt_COMMON) \
-  ProcessManager.cc \
-  ProcessManager.h \
-  ProxyConfig.cc \
-  ProxyConfig.h
+	$(libmgmt_COMMON) \
+	ProcessManager.cc \
+	ProcessManager.h \
+	ProxyConfig.cc \
+	ProxyConfig.h
 
 libmgmt_lm_la_SOURCES = \
-  $(libmgmt_COMMON) \
-  Alarms.cc \
-  Alarms.h \
-  FileManager.cc \
-  FileManager.h \
-  LocalManager.cc \
-  LocalManager.h \
-  MultiFile.cc \
-  MultiFile.h \
-  Rollback.cc \
-  Rollback.h \
-  WebMgmtUtils.cc \
-  WebMgmtUtils.h
+	$(libmgmt_COMMON) \
+	Alarms.cc \
+	Alarms.h \
+	DerivativeMetrics.cc \
+	DerivativeMetrics.h \
+	FileManager.cc \
+	FileManager.h \
+	LocalManager.cc \
+	LocalManager.h \
+	Rollback.cc \
+	Rollback.h \
+	DerivativeMetrics.cc \
+	DerivativeMetrics.h \
+	WebMgmtUtils.cc \
+	WebMgmtUtils.h
 
 libmgmt_lm_la_LIBADD = \
-  libmgmt_c.la \
-  $(top_builddir)/mgmt/cluster/libcluster.la \
-  $(top_builddir)/mgmt/utils/libutils_lm.la
+	libmgmt_c.la \
+	$(top_builddir)/mgmt/utils/libutils_lm.la
 
 libmgmt_p_la_LIBADD = \
-  libmgmt_c.la \
-  $(top_builddir)/mgmt/utils/libutils_p.la
+	libmgmt_c.la \
+	$(top_builddir)/mgmt/utils/libutils_p.la
+
+include $(top_srcdir)/build/tidy.mk
+
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

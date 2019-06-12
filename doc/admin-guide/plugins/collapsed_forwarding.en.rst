@@ -53,7 +53,7 @@ and perform the following::
 Using the plugin
 ----------------
 
-This plugin functions as a per remap plugin, and it takes two optional
+This plugin can function as a per remap plugin or a global plugin, and it takes two optional
 arguments for specifying the delay between successive retries and a max
 number of retries.
 
@@ -61,6 +61,12 @@ To activate the plugin in per remap mode, in :file:`remap.config`, simply append
 below to the specific remap line::
 
   @plugin=collapsed_forwarding.so @pparam=--delay=<delay> @pparam=--retries=<retries>
+
+To activate the plugin globally, in :file:`plugin.config`, add the following line::
+
+  collapsed_forwarding.so --delay=<delay> --retries=<retries>
+
+If the plugin is enabled both globally and per remap, Traffic Server will issue an error on startup.
 
 Functionality
 -------------
@@ -77,7 +83,6 @@ plugin to work::
 
 :ts:cv:`proxy.config.http.cache.open_write_fail_action`        1
 :ts:cv:`proxy.config.cache.enable_read_while_writer`           1
-:ts:cv:`proxy.config.http.redirection_enabled`                 1
 :ts:cv:`proxy.config.http.number_of_redirections`             10
 :ts:cv:`proxy.config.http.redirect_use_orig_cache_key`         1
 :ts:cv:`proxy.config.http.background_fill_active_timeout`      0
@@ -109,7 +114,7 @@ Traffic Server supports several kind of connection collapse mechanisms including
 Read-While-Writer (RWW), Stale-While-Revalidate (SWR) etc each very effective
 dealing with a majority of the use cases that can result in the
 Thundering herd problem.
- 
+
 For a large scale Video Streaming scenario, there’s a combination of a
 large number of revalidations (e.g. media playlists) and cache misses
 (e.g. media segments) that occur for the same file. Traffic Server’s
@@ -122,13 +127,13 @@ the same file that are received before the response headers arrive are
 leaked upstream, which can result in a severe Thundering herd problem,
 depending on the network latencies (which impact the TTFB for the
 response headers) at a given instant of time.
- 
+
 To address this limitation, Traffic Server supports a few Cache tuning
 solutions, such as Open Read Retry, and a new feature called
 Open Write Fail action from 6.0. To understand how these approaches work,
 it is important to understand the high level flow of how Traffic Server
 handles a GET request.
- 
+
 On receiving a HTTP GET request, Traffic Server generates the cache key
 (basically, a hash of the request URL) and looks up for the directory
 entry (dirent) using the generated index. On a cache miss, the lookup
@@ -156,13 +161,13 @@ mode::
     3.1). If write lock succeeds, download the object into cache and to the client in parallel
     3.2). If write lock fails, disable cache, and download to the client in a proxy-only mode.
   4). Done
- 
+
 As can be seen above, if a majority of concurrent requests arrive before
 response headers are received, they hit (2.2) and (3.2) above. Open Read
 Retry can help to repeat (2) after a configured delay on 2.2, thereby
 increasing the chances for obtaining a read lock and being able to serve
 from the cache.
- 
+
 However, the Open Read Retry can not help with the concurrent requests
 that hit (1.1) above, jumping to (3) directly. Only one such request will
 be able to obtain the exclusive write lock and all other requests are
@@ -178,7 +183,7 @@ and performs an internal 3xx Redirect back to the same host, the configured
 number of times with the configured amount of delay between consecutive
 retries, allowing to be able to initiate RWW, whenever the response headers
 are received for the request that was allowed to go to the Origin.
- 
+
 
 More details are available at
 

@@ -131,9 +131,6 @@ To configure Traffic Server set the following values in
 
 - :ts:cv:`proxy.config.url_remap.remap_required` ``0``
 
-You may also need to set :ts:cv:`proxy.config.cluster.ethernet_interface` to
-"br0" (the name of the bridge interface from the Bridge Commands).
-
 Additional troubleshooting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

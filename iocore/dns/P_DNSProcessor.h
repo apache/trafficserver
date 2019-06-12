@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#if !defined(_P_DNSProcessor_h_)
-#define _P_DNSProcessor_h_
+#pragma once
 
 /*
   #include "I_DNS.h"
@@ -62,12 +61,12 @@ extern unsigned int dns_sequence_number;
 // Constants
 //
 
-#define DNS_PERIOD HRTIME_MSECONDS(-100)
+#define DNS_PERIOD HRTIME_MSECONDS(100)
 #define DNS_DELAY_PERIOD HRTIME_MSECONDS(10)
 #define DNS_SEQUENCE_NUMBER_RESTART_OFFSET 4000
 #define DNS_PRIMARY_RETRY_PERIOD HRTIME_SECONDS(5)
 #define DNS_PRIMARY_REOPEN_PERIOD HRTIME_SECONDS(60)
-#define BAD_DNS_RESULT ((HostEnt *)(uintptr_t)-1)
+#define BAD_DNS_RESULT (reinterpret_cast<HostEnt *>((uintptr_t)-1))
 #define DEFAULT_NUM_TRY_SERVER 8
 
 // these are from nameser.h
@@ -137,53 +136,38 @@ extern RecRawStatBlock *dns_rsb;
 */
 struct DNSEntry : public Continuation {
   int id[MAX_DNS_RETRIES];
-  int qtype;                   ///< Type of query to send.
-  HostResStyle host_res_style; ///< Preferred IP address family.
-  int retries;
-  int which_ns;
-  ink_hrtime submit_time;
-  ink_hrtime send_time;
+  int qtype                   = 0;             ///< Type of query to send.
+  HostResStyle host_res_style = HOST_RES_NONE; ///< Preferred IP address family.
+  int retries                 = DEFAULT_DNS_RETRIES;
+  int which_ns                = NO_NAMESERVER_SELECTED;
+  ink_hrtime submit_time      = 0;
+  ink_hrtime send_time        = 0;
   char qname[MAXDNAME];
-  int qname_len;
-  int orig_qname_len;
-  char **domains;
-  EThread *submit_thread;
+  int qname_len          = 0;
+  int orig_qname_len     = 0;
+  char **domains         = nullptr;
+  EThread *submit_thread = nullptr;
   Action action;
-  Event *timeout;
+  Event *timeout = nullptr;
   Ptr<HostEnt> result_ent;
-  DNSHandler *dnsH;
-  bool written_flag;
-  bool once_written_flag;
-  bool last;
+  DNSHandler *dnsH       = nullptr;
+  bool written_flag      = false;
+  bool once_written_flag = false;
+  bool last              = false;
   LINK(DNSEntry, dup_link);
   Que(DNSEntry, dup_link) dups;
 
   int mainEvent(int event, Event *e);
   int delayEvent(int event, Event *e);
+  int postAllEvent(int event, Event *e);
   int post(DNSHandler *h, HostEnt *ent);
-  int postEvent(int event, Event *e);
+  int postOneEvent(int event, Event *e);
   void init(const char *x, int len, int qtype_arg, Continuation *acont, DNSProcessor::Options const &opt);
 
   DNSEntry()
-    : Continuation(NULL),
-      qtype(0),
-      host_res_style(HOST_RES_NONE),
-      retries(DEFAULT_DNS_RETRIES),
-      which_ns(NO_NAMESERVER_SELECTED),
-      submit_time(0),
-      send_time(0),
-      qname_len(0),
-      orig_qname_len(0),
-      domains(0),
-      timeout(0),
-      result_ent(0),
-      dnsH(0),
-      written_flag(false),
-      once_written_flag(false),
-      last(false)
   {
-    for (int i = 0; i < MAX_DNS_RETRIES; i++)
-      id[i] = -1;
+    for (int &i : id)
+      i = -1;
     memset(qname, 0, MAXDNAME);
   }
 };
@@ -203,24 +187,25 @@ struct DNSHandler : public Continuation {
   IpEndpoint local_ipv6; ///< Local V6 address if set.
   IpEndpoint local_ipv4; ///< Local V4 address if set.
   int ifd[MAX_NAMED];
-  int n_con;
-  DNSConnection con[MAX_NAMED];
+  int n_con = 0;
+  DNSConnection tcpcon[MAX_NAMED];
+  DNSConnection udpcon[MAX_NAMED];
   Queue<DNSEntry> entries;
   Queue<DNSConnection> triggered;
-  int in_flight;
-  int name_server;
-  int in_write_dns;
-  HostEnt *hostent_cache;
+  int in_flight          = 0;
+  int name_server        = 0;
+  int in_write_dns       = 0;
+  HostEnt *hostent_cache = nullptr;
 
   int ns_down[MAX_NAMED];
   int failover_number[MAX_NAMED];
   int failover_soon_number[MAX_NAMED];
   ink_hrtime crossed_failover_number[MAX_NAMED];
-  ink_hrtime last_primary_retry;
-  ink_hrtime last_primary_reopen;
+  ink_hrtime last_primary_retry  = 0;
+  ink_hrtime last_primary_reopen = 0;
 
-  ink_res_state m_res;
-  int txn_lookup_timeout;
+  ink_res_state m_res    = nullptr;
+  int txn_lookup_timeout = 0;
 
   InkRand generator;
   // bitmap of query ids in use
@@ -266,7 +251,8 @@ struct DNSHandler : public Continuation {
   int startEvent_sdns(int event, Event *e);
   int mainEvent(int event, Event *e);
 
-  void open_con(sockaddr const *addr, bool failed = false, int icon = 0);
+  void open_cons(sockaddr const *addr, bool failed = false, int icon = 0);
+  void open_con(sockaddr const *addr, bool failed = false, int icon = 0, bool over_tcp = false);
   void failover();
   void rr_failure(int ndx);
   void recover();
@@ -312,9 +298,9 @@ struct DNSServer {
   char x_def_domain[MAXDNAME];
   char x_domain_srch_list[MAXDNAME];
 
-  DNSHandler *x_dnsH;
+  DNSHandler *x_dnsH = nullptr;
 
-  DNSServer() : x_dnsH(NULL)
+  DNSServer()
   {
     memset(x_server_ip, 0, sizeof(x_server_ip));
 
@@ -326,26 +312,19 @@ struct DNSServer {
 
 TS_INLINE
 DNSHandler::DNSHandler()
-  : Continuation(NULL),
-    n_con(0),
-    in_flight(0),
-    name_server(0),
-    in_write_dns(0),
-    hostent_cache(0),
-    last_primary_retry(0),
-    last_primary_reopen(0),
-    m_res(0),
-    txn_lookup_timeout(0),
-    generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t)this))
+  : Continuation(nullptr),
+
+    generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this))
 {
   ats_ip_invalidate(&ip);
   for (int i = 0; i < MAX_NAMED; i++) {
-    ifd[i] = -1;
-    failover_number[i] = 0;
-    failover_soon_number[i] = 0;
+    ifd[i]                     = -1;
+    failover_number[i]         = 0;
+    failover_soon_number[i]    = 0;
     crossed_failover_number[i] = 0;
-    ns_down[i] = 1;
-    con[i].handler = this;
+    ns_down[i]                 = 1;
+    tcpcon[i].handler          = this;
+    udpcon[i].handler          = this;
   }
   memset(&qid_in_flight, 0, sizeof(qid_in_flight));
   SET_HANDLER(&DNSHandler::startEvent);
@@ -354,5 +333,3 @@ DNSHandler::DNSHandler()
 
 #define DOT_SEPARATED(_x) \
   ((unsigned char *)&(_x))[0], ((unsigned char *)&(_x))[1], ((unsigned char *)&(_x))[2], ((unsigned char *)&(_x))[3]
-
-#endif

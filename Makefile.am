@@ -26,11 +26,12 @@ export CCACHE_BASEDIR
 # TODO: There's still some weirdness in the dependencies between proxy
 # and mgmt, hence we have to build proxy/hdrs first.
 
-# proxy/api/ts has to be built first, since so much of libraries and "core
 # depends on the generates ts/ts.h include file.
+SUBDIRS = src/tscpp/util lib src/tscore iocore proxy mgmt src plugins tools example rc configs include
 
-SUBDIRS = proxy/api/ts iocore lib proxy/hdrs proxy/shared mgmt proxy cmd plugins tools example rc doc
-
+if BUILD_DOCS
+SUBDIRS += doc include
+endif
 
 DIST_BUILD_USER=`id -nu`
 DIST_BUILD_USER_GROUP=`id -ng`
@@ -40,6 +41,9 @@ EXTRA_DIST=CHANGES INSTALL STATUS NOTICE LAYOUT LICENSE example contrib README-E
 
 # Default value when creating release candidates
 RC = 0
+
+# Make sure the git pre-commit hook gets installed on build time
+all-local: $(abs_top_srcdir)/.git/hooks/pre-commit
 
 # igalic can't remember if this is make check or make test and neither should you.
 test: check
@@ -54,8 +58,7 @@ doxygen:
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) $@
 
 changelog:
-	./tools/changelog.pl $(VERSION) > CHANGELOG-$(VERSION)
-	-git add CHANGELOG-$(VERSION) && git commit -m "Adding CHANGELOG-$(VERSION)"
+	./tools/changelog.pl apache trafficserver $(VERSION) $(AUTHTOKEN) > CHANGELOG-$(VERSION)
 
 asf-dist: asf-distdir
 	tardir=$(distdir) && $(am__tar) --mtime=./configure.ac | bzip2 -9 -c >$(distdir).tar.bz2
@@ -72,13 +75,11 @@ asf-distdir:
 	$(RM) -r -- $(distdir)/autom4te.cache $(distdir)/ci `find $(distdir) -name .git -o -name .gitignore -o -name .gitmodules`
 
 asf-dist-sign: asf-dist
-	md5sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.md5
-	sha1sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.sha1
+	sha512sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.sha512
 	gpg --armor --output $(distdir).tar.bz2.asc  --detach-sig $(distdir).tar.bz2
 
 asf-dist-sign-rc: asf-dist-rc
-	md5sum -b $(distdir)-rc$(RC).tar.bz2 >$(distdir)-rc$(RC).tar.bz2.md5
-	sha1sum -b $(distdir)-rc$(RC).tar.bz2 >$(distdir)-rc$(RC).tar.bz2.sha1
+	sha512sum -b $(distdir)-rc$(RC).tar.bz2 >$(distdir)-rc$(RC).tar.bz2.sha512
 	gpg --armor --output $(distdir)-rc$(RC).tar.bz2.asc  --detach-sig $(distdir)-rc$(RC).tar.bz2
 
 release: asf-dist-sign
@@ -93,11 +94,23 @@ examples: all
 install-examples: examples
 	@cd example && $(MAKE) $(AM_MAKEFLAGS) install pkglibdir=$(pkglibexecdir)
 
+$(abs_top_srcdir)/.git/hooks/pre-commit: $(abs_top_srcdir)/tools/git/pre-commit
+	@if [ -d $(abs_top_srcdir)/.git/hooks ]; then \
+		cp $(abs_top_srcdir)/tools/git/pre-commit $(abs_top_srcdir)/.git/hooks/pre-commit; \
+	fi
+
 install-data-hook:
+if BUILD_DOCS
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) install-man
+endif
+
+TESTS = tools/check-unused-dependencies
 
 rat:
-	java -jar $(top_srcdir)/ci/apache-rat-0.11-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
+	java -jar $(top_srcdir)/ci/apache-rat-0.13-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
+
+autopep8:
+	@autopep8 -i -r $(top_srcdir)
 
 #
 # These are rules to make clang-format easy and fast to run. Run it with e.g.
@@ -105,14 +118,14 @@ rat:
 #
 # If you make changes to directory structures, you must update this as well.
 #
-.PHONY:	clang-format-cmd clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
-	clang-format-plugins clang-format-proxy clang-format-tools
+.PHONY:	clang-format-src clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
+	clang-format-plugins clang-format-proxy clang-format-tools perltidy
 
-clang-format: 	clang-format-cmd clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
-		clang-format-plugins clang-format-proxy clang-format-tools
+clang-format: 	clang-format-src clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
+		clang-format-plugins clang-format-proxy clang-format-tools clang-format-tests
 
-clang-format-cmd:
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/cmd
+clang-format-src:
+	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/src
 
 clang-format-example:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/example
@@ -121,11 +134,8 @@ clang-format-iocore:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/iocore
 
 clang-format-lib:
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/atscppapi
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/raft
+	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/include
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/records
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/ts
-	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/wccp
 
 clang-format-mgmt:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/mgmt
@@ -139,22 +149,30 @@ clang-format-proxy:
 clang-format-tools:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/tools
 
+clang-format-tests:
+	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/tests
+
+perltidy:
+	perltidy -q -b -bext='/' `find . -name \*.pm -o -name \*.pl`
+
 help:
-	@echo 'all             default target for building the package' && \
-	echo 'check            run the test suite, if any' && \
-	echo 'clean            remove whatever make created' && \
-	echo 'distclean        remove whatever configure created' && \
-	echo 'dist             DEPRECATED: recreate source package' && \
-	echo 'examples         make examples' && \
-	echo 'asf-dist         recreate source package' && \
-	echo 'asf-dist-sign    recreate source package, with checksums and signature' && \
-	echo 'release          recreate a signed release source package and a signed git tag' && \
-	echo 'rel-candidate    recreate a signed relelease candidate source package and a signed git tag' && \
-	echo 'distcheck        verify dist by performing VPATH build and then distclean' && \
-	echo 'rat              produce a RAT licence compliance report of the source' && \
-	echo 'doxygen          generate doxygen docs in doc/html dir' && \
-	echo 'clang-format     run clang-format over most C and C++ files (not git subtrees)' && \
-	echo 'help             display this list of make targets' && \
-	echo 'install          install by copying the built files to system-wide dirs' && \
-	echo 'install-strip    same as install but then strips debugging symbols' && \
-	echo 'install-examples install examples by copying the built files to system-wide dirs'
+	@echo 'all              default target for building the package'
+	@echo 'asf-dist         recreate source package'
+	@echo 'asf-dist-sign    recreate source package, with checksums and signature'
+	@echo 'check            run the test suite, if any'
+	@echo 'clang-format     run clang-format over most C and C++ files (not git subtrees)'
+	@echo 'clang-tidy       run clang-tidy in fix-it mode'
+	@echo 'clean            remove whatever make created'
+	@echo 'dist             DEPRECATED: recreate source package'
+	@echo 'distcheck        verify dist by performing VPATH build and then distclean'
+	@echo 'distclean        remove whatever configure created'
+	@echo 'doxygen          generate doxygen docs in doc/html dir'
+	@echo 'examples         make examples'
+	@echo 'help             display this list of make targets'
+	@echo 'install          install by copying the built files to system-wide dirs'
+	@echo 'install-examples install examples by copying the built files to system-wide dirs'
+	@echo 'install-strip    same as install but then strips debugging symbols'
+	@echo 'rat              produce a RAT licence compliance report of the source'
+	@echo 'rel-candidate    recreate a signed relelease candidate source package and a signed git tag'
+	@echo 'release          recreate a signed release source package and a signed git tag'
+	@echo 'autopep8         run autopep8 over python files'

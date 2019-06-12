@@ -21,19 +21,16 @@
   limitations under the License.
  */
 
-#ifndef _P_CACHE_H__
-#define _P_CACHE_H__
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
 #include "P_AIO.h"
-#include "I_RecProcess.h"
+#include "records/I_RecProcess.h"
 
-#ifdef HTTP_CACHE
 #include "HTTP.h"
 #include "MIME.h"
 #include "HttpTransactCache.h"
-#endif
 
 #include "I_Cache.h"
 #include "P_CacheDisk.h"
@@ -43,4 +40,3 @@
 #include "P_CacheInternal.h"
 #include "P_CacheHosting.h"
 #include "P_CacheHttp.h"
-#endif /* _P_CACHE_H */

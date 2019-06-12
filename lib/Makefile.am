@@ -16,41 +16,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = ts records tsconfig bindings
+SUBDIRS = . records tsconfig
 
 if BUILD_PERL_LIB
 SUBDIRS += perl
 endif
 
-if BUILD_WCCP
-SUBDIRS += wccp
+# to prevent Clang Analyzer warning
+LOCAL =
+
+if BUILD_YAML_CPP
+LOCAL += yamlcpp
 endif
 
-if ENABLE_CPPAPI
-SUBDIRS += atscppapi
-endif
-
-# Some special hacks around building the luajit.
-#
-#  - Copy the luajit source tree if we're doing out-of-source builds
-#  - Upon clean, remove the luajit tree from the out-of-source build tree
-#
-# Note: The LUA_LDFLAGS is a bit of a hack, since LuaJIT on OmniOS needs
-#       the -m64 flag. See configure.ac.
-#
-if BUILD_LUAJIT
-all-local:
-	@echo "Making all in luajit"
-	test -d "$(top_builddir)/$(subdir)/luajit/src" || cp -rf "$(srcdir)/luajit" "$(top_builddir)/$(subdir)/"
-	cd luajit && $(MAKE) $(AM_MAKEFLAGS) \
-		BUILDMODE="static" \
-		PREFIX="$(prefix)" \
-		CC="$(CC)" \
-		CFLAGS="$(LUA_CFLAGS)" \
-		XCFLAGS="" \
-		LDFLAGS="$(LUA_LDFLAGS)"
+all-local:	$(LOCAL)
+	$(MAKE) -C yamlcpp
 
 clean-local:
-	test "$(top_srcdir)" != "$(top_builddir)" || (cd "$(top_builddir)/$(subdir)/luajit" && $(MAKE) clean)
-	test "$(top_srcdir)" = "$(top_builddir)" || rm -rf "$(top_builddir)/$(subdir)/luajit"
-endif
+	$(MAKE) -C yamlcpp clean

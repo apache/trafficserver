@@ -23,33 +23,28 @@
 
 /**
  * Remap plugin processor
-**/
-#if !defined(_REMAPPROCESSOR_h_)
-#define _REMAPPROCESSOR_h_
+ **/
+#pragma once
 
 #include "I_EventSystem.h"
 #include "RemapPlugins.h"
 #include "RemapPluginInfo.h"
 #include "ReverseProxy.h"
-#undef std // FIXME: remove dependency on the STL
-#include <map>
 
 #define EVENT_REMAP_START (REMAP_EVENT_EVENTS_START + 0)
 #define EVENT_REMAP_ERROR (REMAP_EVENT_EVENTS_START + 1)
 #define EVENT_REMAP_COMPLETE (REMAP_EVENT_EVENTS_START + 2)
 
-class url_mapping;
-
 class RemapProcessor : public Processor
 {
 public:
-  RemapProcessor() : ET_REMAP(0), _use_separate_remap_thread(false) {}
-  ~RemapProcessor() {}
-  bool setup_for_remap(HttpTransact::State *s);
-  bool finish_remap(HttpTransact::State *s);
+  RemapProcessor() {}
+  ~RemapProcessor() override {}
+  bool setup_for_remap(HttpTransact::State *s, UrlRewrite *table);
+  bool finish_remap(HttpTransact::State *s, UrlRewrite *table);
 
   Action *perform_remap(Continuation *cont, HttpTransact::State *s);
-  int start(int num_threads, size_t stacksize);
+  int start(int num_threads, size_t stacksize) override;
   bool LessThan(HttpTransact::State *, HttpTransact::State *);
   void
   setUseSeparateThread()
@@ -63,13 +58,11 @@ public:
   }
 
 private:
-  EventType ET_REMAP;
-  bool _use_separate_remap_thread;
+  EventType ET_REMAP              = 0;
+  bool _use_separate_remap_thread = false;
 };
 
 /**
  * the global remapProcessor that everyone uses
-**/
+ **/
 extern RemapProcessor remapProcessor;
-
-#endif

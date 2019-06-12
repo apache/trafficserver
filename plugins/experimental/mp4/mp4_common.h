@@ -16,14 +16,13 @@
   limitations under the License.
 */
 
-#ifndef _MP4_COMMON_H
-#define _MP4_COMMON_H
+#pragma once
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
 #include <unistd.h>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include <ts/ts.h>
 #include <ts/experimental.h>
@@ -33,25 +32,25 @@
 class IOHandle
 {
 public:
-  IOHandle() : vio(NULL), buffer(NULL), reader(NULL){};
+  IOHandle(){};
 
   ~IOHandle()
   {
     if (reader) {
       TSIOBufferReaderFree(reader);
-      reader = NULL;
+      reader = nullptr;
     }
 
     if (buffer) {
       TSIOBufferDestroy(buffer);
-      buffer = NULL;
+      buffer = nullptr;
     }
   }
 
 public:
-  TSVIO vio;
-  TSIOBuffer buffer;
-  TSIOBufferReader reader;
+  TSVIO vio               = nullptr;
+  TSIOBuffer buffer       = nullptr;
+  TSIOBufferReader reader = nullptr;
 };
 
 class Mp4TransformContext
@@ -65,7 +64,7 @@ public:
     dup_reader = TSIOBufferReaderAlloc(res_buffer);
 
     mm.start = offset * 1000;
-    mm.cl = cl;
+    mm.cl    = cl;
   }
 
   ~Mp4TransformContext()
@@ -103,13 +102,13 @@ public:
 class Mp4Context
 {
 public:
-  Mp4Context(float s) : start(s), cl(0), mtc(NULL), transform_added(false){};
+  Mp4Context(float s) : start(s), cl(0), mtc(nullptr), transform_added(false){};
 
   ~Mp4Context()
   {
     if (mtc) {
       delete mtc;
-      mtc = NULL;
+      mtc = nullptr;
     }
   }
 
@@ -121,5 +120,3 @@ public:
 
   bool transform_added;
 };
-
-#endif

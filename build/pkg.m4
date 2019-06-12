@@ -1,6 +1,6 @@
 # pkg.m4 - Macros to locate and utilise pkg-config.            -*- Autoconf -*-
 # serial 1 (pkg-config-0.24)
-# 
+#
 # Copyright © 2004 Scott James Remnant <scott@netsplit.com>.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,7 @@ fi[]dnl
 # to PKG_CHECK_MODULES(), but does not set variables or print errors.
 #
 # Please remember that m4 expands AC_REQUIRE([PKG_PROG_PKG_CONFIG])
-# only at the first occurence in configure.ac, so if the first place
+# only at the first occurrence in configure.ac, so if the first place
 # it's called might be skipped (such as if it is within an "if", you
 # have to call PKG_CHECK_EXISTS manually
 # --------------------------------------------------------------
@@ -123,7 +123,7 @@ if test $pkg_failed = yes; then
         _PKG_SHORT_ERRORS_SUPPORTED
         if test $_pkg_short_errors_supported = yes; then
 	        $1[]_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$2" 2>&1`
-        else 
+        else
 	        $1[]_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$2" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs

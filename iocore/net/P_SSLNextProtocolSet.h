@@ -21,10 +21,9 @@
   limitations under the License.
  */
 
-#ifndef P_SSLNextProtocolSet_H_
-#define P_SSLNextProtocolSet_H_
+#pragma once
 
-#include "ts/List.h"
+#include "tscore/List.h"
 #include "I_Net.h"
 
 class Continuation;
@@ -37,7 +36,9 @@ public:
 
   bool registerEndpoint(const char *, Continuation *);
   bool unregisterEndpoint(const char *, Continuation *);
+  bool unregisterEndpoint(const char *proto);
   bool advertiseProtocols(const unsigned char **out, unsigned *len) const;
+  SSLNextProtocolSet *clone() const;
 
   Continuation *findEndpoint(const unsigned char *, unsigned) const;
 
@@ -54,14 +55,13 @@ public:
     typedef DLL<NextProtocolEndpoint> list_type;
   };
 
-private:
-  SSLNextProtocolSet(const SSLNextProtocolSet &);            // disabled
-  SSLNextProtocolSet &operator=(const SSLNextProtocolSet &); // disabled
+  // noncopyable
+  SSLNextProtocolSet(const SSLNextProtocolSet &) = delete;            // disabled
+  SSLNextProtocolSet &operator=(const SSLNextProtocolSet &) = delete; // disabled
 
-  mutable unsigned char *npn;
-  mutable size_t npnsz;
+private:
+  mutable unsigned char *npn = nullptr;
+  mutable size_t npnsz       = 0;
 
   NextProtocolEndpoint::list_type endpoints;
 };
-
-#endif /* P_SSLNextProtocolSet_H_ */

@@ -31,6 +31,7 @@
  ****************************************************************************/
 
 #include "P_Net.h"
+#include "ts/apidefs.h"
 
 Action *
 NetVConnection::send_OOB(Continuation *, char *, int)
@@ -42,4 +43,32 @@ void
 NetVConnection::cancel_OOB()
 {
   return;
+}
+
+std::string_view
+NetVCOptions::get_proto_string() const
+{
+  switch (ip_proto) {
+  case USE_TCP:
+    return IP_PROTO_TAG_TCP;
+  case USE_UDP:
+    return IP_PROTO_TAG_UDP;
+  default:
+    break;
+  }
+  return {};
+}
+
+std::string_view
+NetVCOptions::get_family_string() const
+{
+  switch (ip_family) {
+  case AF_INET:
+    return IP_PROTO_TAG_IPV4;
+  case AF_INET6:
+    return IP_PROTO_TAG_IPV6;
+  default:
+    break;
+  }
+  return {};
 }

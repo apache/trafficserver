@@ -28,15 +28,16 @@
   struct DNSConnection
   **************************************************************************/
 
-#ifndef __P_DNSCONNECTION_H__
-#define __P_DNSCONNECTION_H__
+#pragma once
 
 #include "I_EventSystem.h"
+#include "I_DNSProcessor.h"
 
 //
 // Connection
 //
 struct DNSHandler;
+enum class DNS_CONN_MODE { UDP_ONLY, TCP_RETRY, TCP_ONLY };
 
 struct DNSConnection {
   /// Options for connecting.
@@ -45,22 +46,22 @@ struct DNSConnection {
 
     /// Connection is done non-blocking.
     /// Default: @c true.
-    bool _non_blocking_connect;
+    bool _non_blocking_connect = true;
     /// Set socket to have non-blocking I/O.
     /// Default: @c true.
-    bool _non_blocking_io;
+    bool _non_blocking_io = true;
     /// Use TCP if @c true, use UDP if @c false.
     /// Default: @c false.
-    bool _use_tcp;
+    bool _use_tcp = false;
     /// Bind to a random port.
     /// Default: @c true.
-    bool _bind_random_port;
+    bool _bind_random_port = true;
     /// Bind to this local address when using IPv6.
     /// Default: unset, bind to IN6ADDR_ANY.
-    sockaddr const *_local_ipv6;
+    sockaddr const *_local_ipv6 = nullptr;
     /// Bind to this local address when using IPv4.
     /// Default: unset, bind to INADDRY_ANY.
-    sockaddr const *_local_ipv4;
+    sockaddr const *_local_ipv4 = nullptr;
 
     Options();
 
@@ -74,11 +75,26 @@ struct DNSConnection {
 
   int fd;
   IpEndpoint ip;
-  int num;
+  int num = 0;
+  Options opt;
   LINK(DNSConnection, link);
   EventIO eio;
   InkRand generator;
-  DNSHandler *handler;
+  DNSHandler *handler = nullptr;
+
+  /// TCPData structure is to track the reading progress of a TCP connection
+  struct TCPData {
+    Ptr<HostEnt> buf_ptr;
+    unsigned short total_length = 0;
+    unsigned short done_reading = 0;
+    void
+    reset()
+    {
+      buf_ptr.clear();
+      total_length = 0;
+      done_reading = 0;
+    }
+  } tcp_data;
 
   int connect(sockaddr const *addr, Options const &opt = DEFAULT_OPTIONS);
   /*
@@ -94,10 +110,7 @@ struct DNSConnection {
   static Options const DEFAULT_OPTIONS;
 };
 
-inline DNSConnection::Options::Options()
-  : _non_blocking_connect(true), _non_blocking_io(true), _use_tcp(false), _bind_random_port(true), _local_ipv6(0), _local_ipv4(0)
-{
-}
+inline DNSConnection::Options::Options() {}
 
 inline DNSConnection::Options &
 DNSConnection::Options::setNonBlockingIo(bool p)
@@ -135,5 +148,3 @@ DNSConnection::Options::setLocalIpv6(sockaddr const *ip)
   _local_ipv6 = ip;
   return *this;
 }
-
-#endif /*_P_DNSConnection_h*/

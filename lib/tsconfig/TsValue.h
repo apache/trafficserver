@@ -24,12 +24,13 @@
     limitations under the License.
  */
 
-# include <string.h>
-# include <ts/TsBuffer.h>
-# include <tsconfig/NumericType.h>
-# include <tsconfig/IntrusivePtr.h>
-# include <tsconfig/Errata.h>
-# include <vector>
+#include <cstring>
+#include "tscore/TsBuffer.h"
+#include <tsconfig/NumericType.h>
+#include <tsconfig/IntrusivePtr.h>
+#include <tsconfig/Errata.h>
+#include <utility>
+#include <vector>
 
 namespace ts { namespace config {
 
@@ -158,7 +159,7 @@ public:
         - ERROR: A syntax error was encountered. See the errata for detail. Do not continue parsing.
     */
     Rv<Result> parse(
-      ConstBuffer* cbuff = 0 ///< [out] Parsed path element.
+      ConstBuffer* cbuff = nullptr ///< [out] Parsed path element.
     );
 
     /// Check if input is available.
@@ -216,13 +217,13 @@ namespace detail {
     /// Get item type.
     ValueType getType() const;
   protected:
-    ValueType _type;      ///< Type of value.
-    ValueIndex _parent;   ///< Table index of parent value.
+    ValueType _type = VoidValue;      ///< Type of value.
+    ValueIndex _parent = 0;   ///< Table index of parent value.
     ConstBuffer _text;    ///< Text of value (if scalar).
     ConstBuffer _name;    ///< Local name of value, if available.
-    size_t _local_index;  ///< Index among siblings.
-    int _srcLine;         ///< Source line.
-    int _srcColumn;       ///< Source column.
+    size_t _local_index = 0;  ///< Index among siblings.
+    int _srcLine = 0;         ///< Source line.
+    int _srcColumn = 0;       ///< Source column.
 
     /// Container for children of this item.
     typedef std::vector<ValueIndex> ChildGroup;
@@ -642,16 +643,16 @@ namespace detail {
   inline size_t ValueTable::size() const { return _ptr ? _ptr->_values.size() : 0; }
   inline Generation ValueTable::generation() const { return _ptr ? _ptr->_generation : Generation(0); }
   inline ValueItem const& ValueTable::operator [] (ValueIndex idx) const { return const_cast<self*>(this)->operator [] (idx); }
-  inline ValueTable& ValueTable::reset() { _ptr = 0; return *this; }
+  inline ValueTable& ValueTable::reset() { _ptr.reset(); return *this; }
 
-  inline ValueItem::ValueItem() : _type(VoidValue), _local_index(0), _srcLine(0), _srcColumn(0) {}
-  inline ValueItem::ValueItem(ValueType type) : _type(type), _local_index(0), _srcLine(0), _srcColumn(0) {}
+  inline ValueItem::ValueItem()  {}
+  inline ValueItem::ValueItem(ValueType type) : _type(type) {}
   inline ValueType ValueItem::getType() const { return _type; }
 }
 
 inline Value::~Value() { }
 inline Value::Value() : _vidx(detail::NULL_VALUE_INDEX) {}
-inline Value::Value(Configuration cfg, detail::ValueIndex vidx) : _config(cfg), _vidx(vidx) { }
+inline Value::Value(Configuration cfg, detail::ValueIndex vidx) : _config(std::move(cfg)), _vidx(vidx) { }
 inline bool Value::hasValue() const { return _config && _vidx != detail::NULL_VALUE_INDEX; }
 inline Value::operator detail::PseudoBool::Type () const { return this->hasValue() ? detail::PseudoBool::TRUE : detail::PseudoBool::FALSE; }
 inline bool Value::operator ! () const { return ! this->hasValue(); }
@@ -678,7 +679,7 @@ inline bool Value::isContainer() const { return 0 != (detail::IS_CONTAINER & det
 inline Value Value::getParent() const { return this->hasValue() ? Value(_config, _config._table[_vidx]._parent) : Value(); }
 inline bool Value::isRoot() const { return this->hasValue() && _vidx == 0; }
 inline Value& Value::reset() { _config = Configuration(); _vidx = detail::NULL_VALUE_INDEX; return *this; }
-inline detail::ValueItem* Value::item() { return this->hasValue() ? &(_config._table[_vidx]) : 0; }
+inline detail::ValueItem* Value::item() { return this->hasValue() ? &(_config._table[_vidx]) : nullptr; }
 inline detail::ValueItem const* Value::item() const { return const_cast<self*>(this)->item(); }
 inline Value Value::operator [] (char const* name) const { return (*this)[ConstBuffer(name, strlen(name))]; }
 inline size_t Value::childCount() const {
@@ -716,9 +717,9 @@ inline Value& Value::setSource(int line, int col) {
 inline Path::ImplType::ImplType() { }
 
 inline Path::Path() { }
-inline Path::ImplType* Path::instance() { if (!_ptr) _ptr = new ImplType; return _ptr.get(); }
+inline Path::ImplType* Path::instance() { if (!_ptr) _ptr.reset(new ImplType); return _ptr.get(); }
 inline Path& Path::append(ConstBuffer const& tag) { this->instance()->_elements.push_back(tag); return *this; }
-inline Path& Path::append(size_t index) { this->instance()->_elements.push_back(ConstBuffer(0, index)); return *this; }
+inline Path& Path::append(size_t index) { this->instance()->_elements.push_back(ConstBuffer(nullptr, index)); return *this; }
 inline size_t Path::count() const { return _ptr ? _ptr->_elements.size() : 0; }
 inline ConstBuffer const& Path::operator [] (size_t idx) const { return _ptr ? _ptr->_elements[idx] : detail::NULL_CONST_BUFFER; }
 

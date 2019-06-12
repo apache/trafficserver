@@ -22,10 +22,10 @@
  */
 
 #include "balancer.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include <openssl/md5.h>
 #include <netinet/in.h>
-#include <string.h>
+#include <cstring>
 #include <map>
 #include <string>
 #include <vector>
@@ -43,6 +43,8 @@ sockaddrlen(const struct sockaddr *sa)
   default:
     TSReleaseAssert(0 && "unsupported socket type");
   }
+
+  return 0;
 }
 
 struct md5_key {
@@ -67,7 +69,7 @@ struct md5_key {
   unsigned char key[MD5_DIGEST_LENGTH];
 };
 
-typedef void (*HashComponent)(TSHttpTxn txn, TSRemapRequestInfo *, MD5_CTX *);
+using HashComponent = void (*)(TSHttpTxn, TSRemapRequestInfo *, MD5_CTX *);
 
 // Hash on the source (client) IP address.
 void
@@ -116,7 +118,7 @@ void
 HashTxnKey(TSHttpTxn txn, TSRemapRequestInfo *rri, MD5_CTX *ctx)
 {
   TSMLoc url = TS_NULL_MLOC;
-  char *str = NULL;
+  char *str  = nullptr;
   int len;
 
   if (TSUrlCreate(rri->requestBufp, &url) != TS_SUCCESS) {
@@ -144,7 +146,7 @@ done:
 
 struct HashBalancer : public BalancerInstance {
   typedef std::map<md5_key, BalancerTarget> hash_ring_type;
-  typedef std::vector<HashComponent> hash_part_type;
+  using hash_part_type = std::vector<HashComponent>;
 
   enum {
     iterations = 10,
@@ -152,7 +154,7 @@ struct HashBalancer : public BalancerInstance {
 
   HashBalancer() { this->hash_parts.push_back(HashTxnUrl); }
   void
-  push_target(const BalancerTarget &target)
+  push_target(const BalancerTarget &target) override
   {
     for (unsigned i = 0; i < iterations; ++i) {
       this->hash_ring.insert(std::make_pair(md5_key(target, i), target));
@@ -160,7 +162,7 @@ struct HashBalancer : public BalancerInstance {
   }
 
   const BalancerTarget &
-  balance(TSHttpTxn txn, TSRemapRequestInfo *rri)
+  balance(TSHttpTxn txn, TSRemapRequestInfo *rri) override
   {
     md5_key key;
     MD5_CTX ctx;
@@ -179,7 +181,7 @@ struct HashBalancer : public BalancerInstance {
 
     // OK, now look up this hash in the hash ring. lower_bound() finds the first element that is not less than the
     // target, so the element we find is the first key that is greater than our target. To visualize this in the
-    // hash ring, that means that each node owns the preceeding keyspace (ie. the node is at the end of each keyspace
+    // hash ring, that means that each node owns the preceding keyspace (ie. the node is at the end of each keyspace
     // range). This means that when we wrap, the first node owns the wrapping portion of the keyspace.
     loc = this->hash_ring.lower_bound(key);
     if (loc == this->hash_ring.end()) {
@@ -207,7 +209,7 @@ MakeHashBalancer(const char *options)
   if (options) {
     hash->hash_parts.clear(); // clear the default hash type if we have options
     options = tmp = strdup(options);
-    while ((opt = strsep(&tmp, ",")) != NULL) {
+    while ((opt = strsep(&tmp, ",")) != nullptr) {
       if (strcmp(opt, "key") == 0) {
         hash->hash_parts.push_back(HashTxnKey);
       } else if (strcmp(opt, "url") == 0) {

@@ -21,13 +21,9 @@
   limitations under the License.
  */
 
-#ifndef __TRANSFORM_INTERNAL_H__
-#define __TRANSFORM_INTERNAL_H__
+#pragma once
 
 #include "HttpSM.h"
-#include "MIME.h"
-#include "Transform.h"
-#include "P_EventSystem.h"
 
 class TransformVConnection;
 
@@ -38,20 +34,20 @@ public:
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
-  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
-  void do_io_close(int lerrno = -1);
-  void do_io_shutdown(ShutdownHowTo_t howto);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
+  void do_io_close(int lerrno = -1) override;
+  void do_io_shutdown(ShutdownHowTo_t howto) override;
 
-  void reenable(VIO *vio);
+  void reenable(VIO *vio) override;
 
 public:
   TransformVConnection *m_tvc;
   VIO m_read_vio;
   VIO m_write_vio;
-  volatile int m_event_count;
-  volatile int m_deletable;
-  volatile int m_closed;
+  int m_event_count;
+  int m_deletable;
+  int m_closed;
   int m_called_user;
 };
 
@@ -59,27 +55,27 @@ class TransformVConnection : public TransformVCChain
 {
 public:
   TransformVConnection(Continuation *cont, APIHook *hooks);
-  ~TransformVConnection();
+  ~TransformVConnection() override;
 
   int handle_event(int event, void *edata);
 
-  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
-  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false);
-  void do_io_close(int lerrno = -1);
-  void do_io_shutdown(ShutdownHowTo_t howto);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
+  void do_io_close(int lerrno = -1) override;
+  void do_io_shutdown(ShutdownHowTo_t howto) override;
 
-  void reenable(VIO *vio);
+  void reenable(VIO *vio) override;
 
   /** Compute the backlog.
       @return The actual backlog, or a value at least @a limit.
   */
-  virtual uint64_t backlog(uint64_t limit = UINT64_MAX);
+  uint64_t backlog(uint64_t limit = UINT64_MAX) override;
 
 public:
   VConnection *m_transform;
   Continuation *m_cont;
   TransformTerminus m_terminus;
-  volatile int m_closed;
+  int m_closed;
 };
 
 class TransformControl : public Continuation
@@ -91,16 +87,16 @@ public:
 
 public:
   APIHooks m_hooks;
-  VConnection *m_tvc;
-  IOBufferReader *m_read_buf;
-  MIOBuffer *m_write_buf;
+  VConnection *m_tvc         = nullptr;
+  IOBufferReader *m_read_buf = nullptr;
+  MIOBuffer *m_write_buf     = nullptr;
 };
 
 class NullTransform : public INKVConnInternal
 {
 public:
   NullTransform(ProxyMutex *mutex);
-  ~NullTransform();
+  ~NullTransform() override;
 
   int handle_event(int event, void *edata);
 
@@ -115,9 +111,8 @@ class RangeTransform : public INKVConnInternal
 public:
   RangeTransform(ProxyMutex *mutex, RangeRecord *ranges, int num_fields, HTTPHdr *transform_resp, const char *content_type,
                  int content_type_len, int64_t content_length);
-  ~RangeTransform();
+  ~RangeTransform() override;
 
-  // void parse_range_and_compare();
   int handle_event(int event, void *edata);
 
   void transform_to_range();
@@ -130,7 +125,6 @@ public:
   MIOBuffer *m_output_buf;
   IOBufferReader *m_output_reader;
 
-  // MIMEField *m_range_field;
   HTTPHdr *m_transform_resp;
   VIO *m_output_vio;
   int64_t m_range_content_length;
@@ -143,15 +137,3 @@ public:
   int64_t m_output_cl;
   int64_t m_done;
 };
-
-#ifdef PREFETCH
-class PrefetchProcessor
-{
-public:
-  void start();
-};
-
-extern PrefetchProcessor prefetchProcessor;
-#endif // PREFETCH
-
-#endif /* __TRANSFORM_INTERNAL_H__ */

@@ -26,10 +26,11 @@
 
 #include "diags.i"
 
+int
 main()
 {
-  init_diags("net_test", NULL);
-  ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
+  init_diags("net_test", nullptr);
+  ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
 
   signal(SIGPIPE, SIG_IGN);
   eventProcessor.start(2);

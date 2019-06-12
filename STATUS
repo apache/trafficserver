@@ -1,13 +1,29 @@
-Traffic Server 6.0 STATUS:                                              -*-text-*-
+Traffic Server 7.0 STATUS:                                              -*-text-*-
 Last modified at [$Date$]
 
 The current version of this file can be found at:
 
-  * http://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=blob;f=STATUS;hb=master
-
+  * https://github.com/apache/trafficserver/blob/master/STATUS
 
 Release history:
+    8.0.3           : Release on <TBD>,  2019
+    8.0.2           : Release on Jan 29th, 2019
+    8.0.1           : Release on Nov 29th, 2018
+    8.0.0           : Release on Sep 25th, 2018
 
+    7.1.7           : Released on <TBD>, 2019
+    7.1.6           : Released on Jan 29th, 2019
+    7.1.5           : Released on Nov 24th, 2018
+    7.1.4           : Released on Aug 1st, 2018
+    7.1.3           : Released on Apr 16th, 2018
+    7.1.2           : Released on Jan 10th, 2018
+    7.1.1           : Released on Sep 7th, 2017
+    7.1.0           : Released on Jul 24th, 2017
+
+    6.2.2           : Released on Aug 10th, 2016
+    6.2.1           : Released on Jan 20th, 2017
+    6.2.0           : Released on Jul 25th, 2016
+    6.1.1           : Released on Feb 8th, 2016
     6.1.0           : Released on Jan 26th, 2016
     6.0.0           : Released on Sep 21th, 2015
 
@@ -48,7 +64,6 @@ Release history:
     2.0.1           : Released on August 31, 2010
     2.0.0           : Released on April 28, 2010
 
-
 Contributors looking for a mission:
 
   * Just do an egrep on "TODO" or "XXX" in the source.
@@ -59,13 +74,11 @@ Contributors looking for a mission:
 
   * Open bugs in the bug database.
 
-
 UPCOMING WORK:
 
 A list of all bugs open for the next release can be found at
 
   http://s.apache.org/ats-next
-
 
 RELEASE PROCESS
 
@@ -76,7 +89,6 @@ The Traffic Server release process and support cycles are documented at
 and
 
     https://cwiki.apache.org/confluence/display/TS/New+Release+Processes
-
 
 Current status of all build systems is available at
 

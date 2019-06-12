@@ -18,12 +18,12 @@
 
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <cctype>
+#include <cstdlib>
 #include <string>
 
 static const char PLUGIN_NAME[] = "conf_remap";
@@ -41,22 +41,23 @@ struct RemapConfigs {
     int _data_len; // Used when data is a string
   };
 
-  RemapConfigs() : _current(0) { memset(_items, 0, sizeof(_items)); };
+  RemapConfigs() { memset(_items, 0, sizeof(_items)); };
   bool parse_file(const char *filename);
   bool parse_inline(const char *arg);
 
   Item _items[MAX_OVERRIDABLE_CONFIGS];
-  int _current;
+  int _current = 0;
 };
 
-// Helper functionfor the parser
+// Helper function for the parser
 inline TSRecordDataType
 str_to_datatype(const char *str)
 {
   TSRecordDataType type = TS_RECORDDATATYPE_NULL;
 
-  if (!str || !*str)
+  if (!str || !*str) {
     return TS_RECORDDATATYPE_NULL;
+  }
 
   if (!strcmp(str, "INT")) {
     type = TS_RECORDDATATYPE_INT;
@@ -78,31 +79,31 @@ RemapConfigs::parse_inline(const char *arg)
   TSOverridableConfigKey name;
   TSRecordDataType type;
 
-  // Each token should be a status code then a URL, separated by '='.
+  // Each token should be a configuration variable then a value, separated by '='.
   sep = strchr(arg, '=');
-  if (sep == NULL) {
+  if (sep == nullptr) {
     return false;
   }
 
-  key = std::string(arg, std::distance(arg, sep));
+  key   = std::string(arg, std::distance(arg, sep));
   value = std::string(sep + 1, std::distance(sep + 1, arg + strlen(arg)));
 
   if (TSHttpTxnConfigFind(key.c_str(), -1 /* len */, &name, &type) != TS_SUCCESS) {
     TSError("[%s] Invalid configuration variable '%s'", PLUGIN_NAME, key.c_str());
-    return false;
+    return true;
   }
 
   switch (type) {
   case TS_RECORDDATATYPE_INT:
-    _items[_current]._data.rec_int = strtoll(value.c_str(), NULL, 10);
+    _items[_current]._data.rec_int = strtoll(value.c_str(), nullptr, 10);
     break;
   case TS_RECORDDATATYPE_STRING:
     if (strcmp(value.c_str(), "NULL") == 0) {
-      _items[_current]._data.rec_string = NULL;
-      _items[_current]._data_len = 0;
+      _items[_current]._data.rec_string = nullptr;
+      _items[_current]._data_len        = 0;
     } else {
       _items[_current]._data.rec_string = TSstrdup(value.c_str());
-      _items[_current]._data_len = value.size();
+      _items[_current]._data_len        = value.size();
     }
     break;
   default:
@@ -128,8 +129,9 @@ RemapConfigs::parse_file(const char *filename)
 
   std::string path;
 
-  if (!filename || ('\0' == *filename))
+  if (!filename || ('\0' == *filename)) {
     return false;
+  }
 
   if (*filename == '/') {
     // Absolute path, just use it.
@@ -141,25 +143,27 @@ RemapConfigs::parse_file(const char *filename)
     path += filename;
   }
 
-  if (NULL == (file = TSfopen(path.c_str(), "r"))) {
+  if (nullptr == (file = TSfopen(path.c_str(), "r"))) {
     TSError("[%s] Could not open config file %s", PLUGIN_NAME, path.c_str());
     return false;
   }
 
   TSDebug(PLUGIN_NAME, "loading configuration file %s", path.c_str());
 
-  while (NULL != TSfgets(file, buf, sizeof(buf))) {
+  while (nullptr != TSfgets(file, buf, sizeof(buf))) {
     char *ln, *tok;
     char *s = buf;
 
     ++line_num; // First line is #1 ...
-    while (isspace(*s))
+    while (isspace(*s)) {
       ++s;
+    }
     tok = strtok_r(s, " \t", &ln);
 
     // check for blank lines and comments
-    if ((!tok) || (tok && ('#' == *tok)))
+    if ((!tok) || (tok && ('#' == *tok))) {
       continue;
+    }
 
     if (strncmp(tok, "CONFIG", 6)) {
       TSError("[%s] File %s, line %d: non-CONFIG line encountered", PLUGIN_NAME, path.c_str(), line_num);
@@ -167,14 +171,15 @@ RemapConfigs::parse_file(const char *filename)
     }
 
     // Find the configuration name
-    tok = strtok_r(NULL, " \t", &ln);
+    tok = strtok_r(nullptr, " \t", &ln);
     if (TSHttpTxnConfigFind(tok, -1, &name, &expected_type) != TS_SUCCESS) {
-      TSError("[%s] File %s, line %d: no records.config name given", PLUGIN_NAME, path.c_str(), line_num);
+      TSError("[%s] File %s, line %d: %s is not a configuration variable or cannot be overridden", PLUGIN_NAME, path.c_str(),
+              line_num, tok);
       continue;
     }
 
     // Find the type (INT or STRING only)
-    tok = strtok_r(NULL, " \t", &ln);
+    tok = strtok_r(nullptr, " \t", &ln);
     if (TS_RECORDDATATYPE_NULL == (type = str_to_datatype(tok))) {
       TSError("[%s] file %s, line %d: only INT and STRING types supported", PLUGIN_NAME, path.c_str(), line_num);
       continue;
@@ -187,22 +192,25 @@ RemapConfigs::parse_file(const char *filename)
 
     // Find the value (which depends on the type above)
     if (ln) {
-      while (isspace(*ln))
+      while (isspace(*ln)) {
         ++ln;
+      }
       if ('\0' == *ln) {
-        tok = NULL;
+        tok = nullptr;
       } else {
         tok = ln;
-        while (*ln != '\0')
+        while (*ln != '\0') {
           ++ln;
+        }
         --ln;
-        while (isspace(*ln) && (ln > tok))
+        while (isspace(*ln) && (ln > tok)) {
           --ln;
+        }
         ++ln;
         *ln = '\0';
       }
     } else {
-      tok = NULL;
+      tok = nullptr;
     }
     if (!tok) {
       TSError("[%s] file %s, line %d: the configuration must provide a value", PLUGIN_NAME, path.c_str(), line_num);
@@ -212,15 +220,15 @@ RemapConfigs::parse_file(const char *filename)
     // Now store the new config
     switch (type) {
     case TS_RECORDDATATYPE_INT:
-      _items[_current]._data.rec_int = strtoll(tok, NULL, 10);
+      _items[_current]._data.rec_int = strtoll(tok, nullptr, 10);
       break;
     case TS_RECORDDATATYPE_STRING:
       if (strcmp(tok, "NULL") == 0) {
-        _items[_current]._data.rec_string = NULL;
-        _items[_current]._data_len = 0;
+        _items[_current]._data.rec_string = nullptr;
+        _items[_current]._data_len        = 0;
       } else {
         _items[_current]._data.rec_string = TSstrdup(tok);
-        _items[_current]._data_len = strlen(tok);
+        _items[_current]._data_len        = strlen(tok);
       }
       break;
     default:
@@ -267,7 +275,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   RemapConfigs *conf = new (RemapConfigs);
   for (int i = 2; i < argc; ++i) {
-    if (strchr(argv[i], '=') != NULL) {
+    if (strchr(argv[i], '=') != nullptr) {
       // Parse as an inline key=value pair ...
       if (!conf->parse_inline(argv[i])) {
         goto fail;
@@ -294,8 +302,9 @@ TSRemapDeleteInstance(void *ih)
   RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
 
   for (int ix = 0; ix < conf->_current; ++ix) {
-    if (TS_RECORDDATATYPE_STRING == conf->_items[ix]._type)
+    if (TS_RECORDDATATYPE_STRING == conf->_items[ix]._type) {
       TSfree(conf->_items[ix]._data.rec_string);
+    }
   }
 
   delete conf;
@@ -307,9 +316,9 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */)
 {
-  if (NULL != ih) {
+  if (nullptr != ih) {
     RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
-    TSHttpTxn txnp = static_cast<TSHttpTxn>(rh);
+    TSHttpTxn txnp     = static_cast<TSHttpTxn>(rh);
 
     for (int ix = 0; ix < conf->_current; ++ix) {
       switch (conf->_items[ix]._type) {

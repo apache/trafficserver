@@ -26,24 +26,21 @@
 
 
  ***************************************************************************/
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
-#include "Error.h"
 #include "LogUtils.h"
 #include "LogFilter.h"
 #include "LogField.h"
 #include "LogFormat.h"
 #include "LogFile.h"
 #include "LogBuffer.h"
-#include "LogHost.h"
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "Log.h"
-//#include "ts/ink_ctype.h"
-#include "ts/SimpleTokenizer.h"
+#include "tscore/SimpleTokenizer.h"
 
 const char *LogFilter::OPERATOR_NAME[] = {"MATCH", "CASE_INSENSITIVE_MATCH", "CONTAIN", "CASE_INSENSITIVE_CONTAIN"};
-const char *LogFilter::ACTION_NAME[] = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};
+const char *LogFilter::ACTION_NAME[]   = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};
 
 /*-------------------------------------------------------------------------
   LogFilter::LogFilter
@@ -53,7 +50,7 @@ const char *LogFilter::ACTION_NAME[] = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};
   between the classes and I think should be removed.     ltavera
   -------------------------------------------------------------------------*/
 LogFilter::LogFilter(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper)
-  : m_name(ats_strdup(name)), m_field(NULL), m_action(action), m_operator(oper), m_type(INT_FILTER), m_num_values(0)
+  : m_name(ats_strdup(name)), m_field(nullptr), m_action(action), m_operator(oper), m_type(INT_FILTER), m_num_values(0)
 {
   m_field = new LogField(*field);
   ink_assert(m_field);
@@ -68,22 +65,143 @@ LogFilter::~LogFilter()
   delete m_field;
 }
 
+LogFilter *
+LogFilter::parse(const char *name, Action action, const char *condition)
+{
+  SimpleTokenizer tok(condition);
+  ats_scoped_obj<LogField> logfield;
+
+  ink_release_assert(action != N_ACTIONS);
+
+  if (tok.getNumTokensRemaining() < 3) {
+    Error("Invalid condition syntax '%s'; cannot create filter '%s'", condition, name);
+    return nullptr;
+  }
+
+  char *field_str = tok.getNext();
+  char *oper_str  = tok.getNext();
+  char *val_str   = tok.getRest();
+
+  // validate field symbol
+  if (strlen(field_str) > 2 && field_str[0] == '%' && field_str[1] == '<') {
+    Debug("log", "Field symbol has <> form: %s", field_str);
+    char *end = field_str;
+    while (*end && *end != '>') {
+      end++;
+    }
+    *end = '\0';
+    field_str += 2;
+    Debug("log", "... now field symbol is %s", field_str);
+  }
+
+  if (LogField *f = Log::global_field_list.find_by_symbol(field_str)) {
+    logfield = new LogField(*f);
+  }
+
+  if (!logfield) {
+    // check for container fields
+    if (*field_str == '{') {
+      Debug("log", "%s appears to be a container field", field_str);
+
+      char *fname;
+      char *cname;
+      char *fname_end;
+
+      fname_end = strchr(field_str, '}');
+      if (nullptr == fname_end) {
+        Error("Invalid container field specification: no trailing '}' in '%s' cannot create filter '%s'", field_str, name);
+        return nullptr;
+      }
+
+      fname      = field_str + 1;
+      *fname_end = 0; // changes '}' to '\0'
+
+      // start of container symbol
+      cname = fname_end + 1;
+
+      Debug("log", "found container field: Name = %s, symbol = %s", fname, cname);
+
+      LogField::Container container = LogField::valid_container_name(cname);
+      if (container == LogField::NO_CONTAINER) {
+        Error("'%s' is not a valid container; cannot create filter '%s'", cname, name);
+        return nullptr;
+      }
+
+      logfield = new LogField(fname, container);
+      ink_assert(logfield != nullptr);
+    }
+  }
+
+  if (!logfield) {
+    Error("'%s' is not a valid field; cannot create filter '%s'", field_str, name);
+    return nullptr;
+  }
+
+  // convert the operator string to an enum value and validate it
+  LogFilter::Operator oper = LogFilter::N_OPERATORS;
+  for (unsigned i = 0; i < LogFilter::N_OPERATORS; ++i) {
+    if (strcasecmp(oper_str, LogFilter::OPERATOR_NAME[i]) == 0) {
+      oper = (LogFilter::Operator)i;
+      break;
+    }
+  }
+
+  if (oper == LogFilter::N_OPERATORS) {
+    Error("'%s' is not a valid operator; cannot create filter '%s'", oper_str, name);
+    return nullptr;
+  }
+
+  // now create the correct LogFilter
+  LogField::Type field_type = logfield->type();
+  LogFilter *filter;
+
+  switch (field_type) {
+  case LogField::sINT:
+    filter = new LogFilterInt(name, logfield, action, oper, val_str);
+    break;
+
+  case LogField::dINT:
+    Error("Invalid field type (double int); cannot create filter '%s'", name);
+    return nullptr;
+
+  case LogField::STRING:
+    filter = new LogFilterString(name, logfield, action, oper, val_str);
+    break;
+
+  case LogField::IP:
+    filter = new LogFilterIP(name, logfield, action, oper, val_str);
+    break;
+
+  default:
+    Error("Unknown logging field type %d; cannot create filter '%s'", field_type, name);
+    return nullptr;
+  }
+
+  if (filter->get_num_values() == 0) {
+    Error("'%s' does not specify any valid values; cannot create filter '%s'", val_str, name);
+    delete filter;
+    return nullptr;
+  }
+
+  return filter;
+}
+
 /*-------------------------------------------------------------------------
   LogFilterString::LogFilterString
   -------------------------------------------------------------------------*/
 void
 LogFilterString::_setValues(size_t n, char **value)
 {
-  m_type = STRING_FILTER;
+  m_type       = STRING_FILTER;
   m_num_values = n;
   if (n) {
-    m_value = new char *[n];
+    m_value           = new char *[n];
     m_value_uppercase = new char *[n];
-    m_length = new size_t[n];
+    m_length          = new size_t[n];
     ink_assert(m_value && m_value_uppercase && m_length);
     for (size_t i = 0; i < n; ++i) {
-      m_value[i] = ats_strdup(value[i]);
-      m_length[i] = strlen(value[i]);
+      m_value[i]           = ats_strdup(value[i]);
+      m_length[i]          = strlen(value[i]);
       m_value_uppercase[i] = (char *)ats_malloc((unsigned int)m_length[i] + 1);
       size_t j;
       for (j = 0; j < m_length[i]; ++j) {
@@ -100,14 +218,14 @@ LogFilterString::LogFilterString(const char *name, LogField *field, LogFilter::A
 {
   // parse the comma-separated list of values and construct array
   //
-  char **val_array = 0;
-  size_t i = 0;
+  char **val_array = nullptr;
+  size_t i         = 0;
   SimpleTokenizer tok(values, ',');
   size_t n = tok.getNumTokensRemaining();
   if (n) {
     val_array = new char *[n];
     char *t;
-    while (t = tok.getNext(), t != NULL) {
+    while (t = tok.getNext(), t != nullptr) {
       val_array[i++] = t;
     }
     if (i < n) {
@@ -189,26 +307,26 @@ LogFilterString::operator==(LogFilterString &rhs)
 bool
 LogFilterString::wipe_this_entry(LogAccess *lad)
 {
-  if (m_num_values == 0 || m_field == NULL || lad == NULL || m_action != WIPE_FIELD_VALUE) {
+  if (m_num_values == 0 || m_field == nullptr || lad == nullptr || m_action != WIPE_FIELD_VALUE) {
     return false;
   }
 
   static const unsigned BUFSIZE = 1024;
   char small_buf[BUFSIZE];
-  char *big_buf = NULL;
-  char *buf = small_buf;
+  char *big_buf    = nullptr;
+  char *buf        = small_buf;
   size_t marsh_len = m_field->marshal_len(lad); // includes null termination
 
   if (marsh_len > BUFSIZE) {
     big_buf = (char *)ats_malloc(marsh_len);
-    ink_assert(big_buf != NULL);
+    ink_assert(big_buf != nullptr);
     buf = big_buf;
   }
 
-  ink_assert(buf != NULL);
+  ink_assert(buf != nullptr);
   m_field->marshal(lad, buf);
 
-  ink_assert(buf != NULL);
+  ink_assert(buf != nullptr);
 
   bool cond_satisfied = false;
   switch (m_operator) {
@@ -260,22 +378,22 @@ LogFilterString::wipe_this_entry(LogAccess *lad)
 bool
 LogFilterString::toss_this_entry(LogAccess *lad)
 {
-  if (m_num_values == 0 || m_field == NULL || lad == NULL) {
+  if (m_num_values == 0 || m_field == nullptr || lad == nullptr) {
     return false;
   }
 
   static const unsigned BUFSIZE = 1024;
   char small_buf[BUFSIZE];
   char small_buf_upper[BUFSIZE];
-  char *big_buf = NULL;
-  char *big_buf_upper = NULL;
-  char *buf = small_buf;
-  char *buf_upper = small_buf_upper;
-  size_t marsh_len = m_field->marshal_len(lad); // includes null termination
+  char *big_buf       = nullptr;
+  char *big_buf_upper = nullptr;
+  char *buf           = small_buf;
+  char *buf_upper     = small_buf_upper;
+  size_t marsh_len    = m_field->marshal_len(lad); // includes null termination
 
   if (marsh_len > BUFSIZE) {
     big_buf = (char *)ats_malloc((unsigned int)marsh_len);
-    ink_assert(big_buf != NULL);
+    ink_assert(big_buf != nullptr);
     buf = big_buf;
   }
 
@@ -303,7 +421,7 @@ LogFilterString::toss_this_entry(LogAccess *lad)
   case CASE_INSENSITIVE_CONTAIN: {
     if (big_buf) {
       big_buf_upper = (char *)ats_malloc((unsigned int)marsh_len);
-      buf_upper = big_buf_upper;
+      buf_upper     = big_buf_upper;
     } else {
       buf = small_buf; // make clang happy
     }
@@ -330,7 +448,7 @@ LogFilterString::toss_this_entry(LogAccess *lad)
 void
 LogFilterString::display(FILE *fd)
 {
-  ink_assert(fd != NULL);
+  ink_assert(fd != nullptr);
   if (m_num_values == 0) {
     fprintf(fd, "Filter \"%s\" is inactive, no values specified\n", m_name);
   } else {
@@ -343,28 +461,6 @@ LogFilterString::display(FILE *fd)
   }
 }
 
-void
-LogFilterString::display_as_XML(FILE *fd)
-{
-  ink_assert(fd != NULL);
-  fprintf(fd, "<LogFilter>\n"
-              "  <Name      = \"%s\"/>\n"
-              "  <Action    = \"%s\"/>\n"
-              "  <Condition = \"%s %s ",
-          m_name, ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
-
-  if (m_num_values == 0) {
-    fprintf(fd, "<no values>\"\n");
-  } else {
-    fprintf(fd, "%s", m_value[0]);
-    for (size_t i = 1; i < m_num_values; ++i) {
-      fprintf(fd, ", %s", m_value[i]);
-    }
-    fprintf(fd, "\"/>\n");
-  }
-  fprintf(fd, "</LogFilter>\n");
-}
-
 /*-------------------------------------------------------------------------
   LogFilterInt::LogFilterInt
   -------------------------------------------------------------------------*/
@@ -372,7 +468,7 @@ LogFilterString::display_as_XML(FILE *fd)
 void
 LogFilterInt::_setValues(size_t n, int64_t *value)
 {
-  m_type = INT_FILTER;
+  m_type       = INT_FILTER;
   m_num_values = n;
   if (n) {
     m_value = new int64_t[n];
@@ -385,15 +481,16 @@ int
 LogFilterInt::_convertStringToInt(char *value, int64_t *ival, LogFieldAliasMap *map)
 {
   size_t i, l = strlen(value);
-  for (i = 0; i < l && ParseRules::is_digit(value[i]); i++)
+  for (i = 0; i < l && ParseRules::is_digit(value[i]); i++) {
     ;
+  }
 
   if (i < l) {
     // not all characters of value are digits, assume that
     // value is an alias and try to get the actual integer value
     // from the log field alias map if field has one
     //
-    if (map == NULL || map->asInt(value, ival) != LogFieldAliasMap::ALL_OK) {
+    if (map == nullptr || map->asInt(value, ival) != LogFieldAliasMap::ALL_OK) {
       return -1; // error
     };
   } else {
@@ -425,17 +522,20 @@ LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action 
 {
   // parse the comma-separated list of values and construct array
   //
-  int64_t *val_array = 0;
-  size_t i = 0;
+  int64_t *val_array = nullptr;
+  size_t i           = 0;
   SimpleTokenizer tok(values, ',');
   size_t n = tok.getNumTokensRemaining();
+  auto field_map{field->map()}; // because clang-analyzer freaks out if this is inlined.
+                                // It doesn't realize the value is held in place by the smart
+                                // pointer in @c field.
 
   if (n) {
     val_array = new int64_t[n];
     char *t;
-    while (t = tok.getNext(), t != NULL) {
+    while (t = tok.getNext(), t != nullptr) {
       int64_t ival;
-      if (!_convertStringToInt(t, &ival, field->map().get())) {
+      if (!_convertStringToInt(t, &ival, field_map.get())) {
         // conversion was successful, add entry to array
         //
         val_array[i++] = ival;
@@ -505,7 +605,7 @@ LogFilterInt::operator==(LogFilterInt &rhs)
 bool
 LogFilterInt::wipe_this_entry(LogAccess *lad)
 {
-  if (m_num_values == 0 || m_field == NULL || lad == NULL || m_action != WIPE_FIELD_VALUE) {
+  if (m_num_values == 0 || m_field == nullptr || lad == nullptr || m_action != WIPE_FIELD_VALUE) {
     return false;
   }
 
@@ -543,7 +643,7 @@ LogFilterInt::wipe_this_entry(LogAccess *lad)
 bool
 LogFilterInt::toss_this_entry(LogAccess *lad)
 {
-  if (m_num_values == 0 || m_field == NULL || lad == NULL) {
+  if (m_num_values == 0 || m_field == nullptr || lad == nullptr) {
     return false;
   }
 
@@ -581,7 +681,7 @@ LogFilterInt::toss_this_entry(LogAccess *lad)
 void
 LogFilterInt::display(FILE *fd)
 {
-  ink_assert(fd != NULL);
+  ink_assert(fd != nullptr);
   if (m_num_values == 0) {
     fprintf(fd, "Filter \"%s\" is inactive, no values specified\n", m_name);
   } else {
@@ -592,28 +692,6 @@ LogFilterInt::display(FILE *fd)
     }
     fprintf(fd, "\n");
   }
-}
-
-void
-LogFilterInt::display_as_XML(FILE *fd)
-{
-  ink_assert(fd != NULL);
-  fprintf(fd, "<LogFilter>\n"
-              "  <Name      = \"%s\"/>\n"
-              "  <Action    = \"%s\"/>\n"
-              "  <Condition = \"%s %s ",
-          m_name, ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
-
-  if (m_num_values == 0) {
-    fprintf(fd, "<no values>\"\n");
-  } else {
-    fprintf(fd, "%" PRId64 "", m_value[0]);
-    for (size_t i = 1; i < m_num_values; ++i) {
-      fprintf(fd, ", %" PRId64 "", m_value[i]);
-    }
-    fprintf(fd, "\"/>\n");
-  }
-  fprintf(fd, "</LogFilter>\n");
 }
 
 /*-------------------------------------------------------------------------
@@ -630,8 +708,9 @@ LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action ac
                          IpAddr *value)
   : LogFilter(name, field, action, oper)
 {
-  for (IpAddr *limit = value + num_values; value != limit; ++value)
+  for (IpAddr *limit = value + num_values; value != limit; ++value) {
     m_map.mark(*value, *value);
+  }
   this->init();
 }
 
@@ -646,11 +725,12 @@ LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action ac
   char *t; // temp token pointer.
 
   if (n) {
-    while (t = tok.getNext(), t != NULL) {
+    while (t = tok.getNext(), t != nullptr) {
       IpAddr min, max;
       char *x = strchr(t, '-');
-      if (x)
+      if (x) {
         *x++ = 0;
+      }
       if (0 == min.load(t)) {
         if (x) {
           if (0 != max.load(x)) {
@@ -679,8 +759,8 @@ LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action ac
 
 LogFilterIP::LogFilterIP(const LogFilterIP &rhs) : LogFilter(rhs.m_name, rhs.m_field, rhs.m_action, rhs.m_operator)
 {
-  for (IpMap::iterator spot(rhs.m_map.begin()), limit(rhs.m_map.end()); spot != limit; ++spot) {
-    m_map.mark(spot->min(), spot->max(), spot->data());
+  for (auto &spot : rhs.m_map) {
+    m_map.mark(spot.min(), spot.max(), spot.data());
   }
   this->init();
 }
@@ -688,17 +768,15 @@ LogFilterIP::LogFilterIP(const LogFilterIP &rhs) : LogFilter(rhs.m_name, rhs.m_f
 void
 LogFilterIP::init()
 {
-  m_type = IP_FILTER;
-  m_num_values = m_map.getCount();
+  m_type       = IP_FILTER;
+  m_num_values = m_map.count();
 }
 
 /*-------------------------------------------------------------------------
   LogFilterIP::~LogFilterIP
   -------------------------------------------------------------------------*/
 
-LogFilterIP::~LogFilterIP()
-{
-}
+LogFilterIP::~LogFilterIP() {}
 
 /*-------------------------------------------------------------------------
   LogFilterIP::operator==
@@ -721,8 +799,9 @@ LogFilterIP::operator==(LogFilterIP &rhs)
     IpMap::iterator right_limit(rhs.m_map.end());
 
     while (left_spot != left_limit && right_spot != right_limit) {
-      if (!ats_ip_addr_eq(left_spot->min(), right_spot->min()) || !ats_ip_addr_eq(left_spot->max(), right_spot->max()))
+      if (!ats_ip_addr_eq(left_spot->min(), right_spot->min()) || !ats_ip_addr_eq(left_spot->max(), right_spot->max())) {
         break;
+      }
       ++left_spot;
       ++right_spot;
     }
@@ -784,8 +863,9 @@ LogFilterIP::displayRange(FILE *fd, IpMap::iterator const &iter)
 
   fprintf(fd, "%s", ats_ip_ntop(iter->min(), ipb, sizeof(ipb)));
 
-  if (!ats_ip_addr_eq(iter->min(), iter->max()))
+  if (!ats_ip_addr_eq(iter->min(), iter->max())) {
     fprintf(fd, "-%s", ats_ip_ntop(iter->max(), ipb, sizeof(ipb)));
+  }
 }
 
 void
@@ -806,34 +886,15 @@ LogFilterIP::displayRanges(FILE *fd)
 void
 LogFilterIP::display(FILE *fd)
 {
-  ink_assert(fd != NULL);
+  ink_assert(fd != nullptr);
 
-  if (0 == m_map.getCount()) {
+  if (0 == m_map.count()) {
     fprintf(fd, "Filter \"%s\" is inactive, no values specified\n", m_name);
   } else {
     fprintf(fd, "Filter \"%s\" %sS records if %s %s ", m_name, ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
     this->displayRanges(fd);
     fprintf(fd, "\n");
   }
-}
-
-void
-LogFilterIP::display_as_XML(FILE *fd)
-{
-  ink_assert(fd != NULL);
-  fprintf(fd, "<LogFilter>\n"
-              "  <Name      = \"%s\"/>\n"
-              "  <Action    = \"%s\"/>\n"
-              "  <Condition = \"%s %s ",
-          m_name, ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
-
-  if (m_map.getCount() == 0) {
-    fprintf(fd, "<no values>");
-  } else {
-    this->displayRanges(fd);
-  }
-  fprintf(fd, "\"/>\n");
-  fprintf(fd, "</LogFilter>\n");
 }
 
 bool
@@ -868,9 +929,7 @@ filters_are_equal(LogFilter *filt1, LogFilter *filt2)
   add() function is overloaded for each sub-type of LogFilter.
   -------------------------------------------------------------------------*/
 
-LogFilterList::LogFilterList() : m_does_conjunction(true)
-{
-}
+LogFilterList::LogFilterList() {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -887,7 +946,7 @@ bool
 LogFilterList::operator==(LogFilterList &rhs)
 {
   if (m_does_conjunction == rhs.does_conjunction()) {
-    LogFilter *f = first();
+    LogFilter *f    = first();
     LogFilter *rhsf = rhs.first();
 
     while (true) {
@@ -898,7 +957,7 @@ LogFilterList::operator==(LogFilterList &rhs)
       } else if (!filters_are_equal(f, rhsf)) {
         return false;
       } else {
-        f = next(f);
+        f    = next(f);
         rhsf = rhs.next(rhsf);
       }
     }
@@ -925,7 +984,7 @@ LogFilterList::clear()
 void
 LogFilterList::add(LogFilter *filter, bool copy)
 {
-  ink_assert(filter != NULL);
+  ink_assert(filter != nullptr);
   if (copy) {
     if (filter->type() == LogFilter::INT_FILTER) {
       LogFilterInt *f = new LogFilterInt(*((LogFilterInt *)filter));
@@ -988,21 +1047,21 @@ LogFilterList::toss_this_entry(LogAccess *lad)
   -------------------------------------------------------------------------*/
 
 LogFilter *
-LogFilterList::find_by_name(char *name)
+LogFilterList::find_by_name(const char *name)
 {
   for (LogFilter *f = first(); f; f = next(f)) {
     if (strcmp(f->name(), name) == 0) {
       return f;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 unsigned
-LogFilterList::count()
+LogFilterList::count() const
 {
   unsigned cnt = 0;
 
@@ -1020,10 +1079,43 @@ LogFilterList::display(FILE *fd)
   }
 }
 
-void
-LogFilterList::display_as_XML(FILE *fd)
+#if TS_HAS_TESTS
+#include "tscore/TestBox.h"
+
+REGRESSION_TEST(Log_FilterParse)(RegressionTest *t, int /* atype */, int *pstatus)
 {
-  for (LogFilter *f = first(); f; f = next(f)) {
-    f->display_as_XML(fd);
-  }
+  TestBox box(t, pstatus);
+
+#define CHECK_FORMAT_PARSE(fmt)                                   \
+  do {                                                            \
+    LogFilter *f = LogFilter::parse(fmt, LogFilter::ACCEPT, fmt); \
+    box.check(f != NULL, "failed to parse filter '%s'", fmt);     \
+    delete f;                                                     \
+  } while (0)
+
+  *pstatus = REGRESSION_TEST_PASSED;
+  LogFilter *retfilter;
+
+  retfilter = LogFilter::parse("t1", LogFilter::ACCEPT, "tok1 tok2");
+  box.check(retfilter == nullptr, "At least 3 tokens are required");
+  delete retfilter;
+  retfilter = LogFilter::parse("t2", LogFilter::ACCEPT, "%<sym operator value");
+  box.check(retfilter == nullptr, "Unclosed symbol token");
+  delete retfilter;
+  retfilter = LogFilter::parse("t3", LogFilter::ACCEPT, "%<{Age ssh> operator value");
+  box.check(retfilter == nullptr, "Unclosed container field");
+  delete retfilter;
+  retfilter = LogFilter::parse("t4", LogFilter::ACCEPT, "%<james> operator value");
+  box.check(retfilter == nullptr, "Invalid log field");
+  delete retfilter;
+  retfilter = LogFilter::parse("t5", LogFilter::ACCEPT, "%<chi> invalid value");
+  box.check(retfilter == nullptr, "Invalid operator name");
+  delete retfilter;
+
+  CHECK_FORMAT_PARSE("pssc MATCH 200");
+  CHECK_FORMAT_PARSE("shn CASE_INSENSITIVE_CONTAIN unwanted.com");
+
+#undef CHECK_FORMAT_PARSE
 }
+
+#endif

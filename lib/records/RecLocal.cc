@@ -21,9 +21,9 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "Rollback.h"
-#include "ts/ParseRules.h"
+#include "tscore/ParseRules.h"
 #include "P_RecCore.h"
 #include "P_RecLocal.h"
 #include "P_RecMessage.h"
@@ -44,7 +44,6 @@ i_am_the_record_owner(RecT rec_type)
   switch (rec_type) {
   case RECT_CONFIG:
   case RECT_NODE:
-  case RECT_CLUSTER:
   case RECT_LOCAL:
     return true;
   case RECT_PROCESS:
@@ -62,38 +61,16 @@ i_am_the_record_owner(RecT rec_type)
 static void *
 sync_thr(void *data)
 {
-  textBuffer *tb = new textBuffer(65536);
   FileManager *configFiles = (FileManager *)data;
 
-  Rollback *rb;
-  bool inc_version;
-  bool written;
+  while (true) {
+    RecBool check = true;
 
-  while (1) {
     send_push_message();
     RecSyncStatsFile();
-    if (RecSyncConfigToTB(tb, &inc_version) == REC_ERR_OKAY) {
-      written = false;
-      if (configFiles->getRollbackObj(REC_CONFIG_FILE, &rb)) {
-        if (inc_version) {
-          RecDebug(DL_Note, "Rollback: '%s'", REC_CONFIG_FILE);
-          version_t ver = rb->getCurrentVersion();
-          if ((rb->updateVersion(tb, ver, -1, false)) != OK_ROLLBACK) {
-            RecDebug(DL_Note, "Rollback failed: '%s'", REC_CONFIG_FILE);
-          }
-          written = true;
-        }
-      } else {
-        rb = NULL;
-      }
-      if (!written) {
-        RecWriteConfigFile(tb);
-        if (rb != NULL) {
-          rb->setLastModifiedTime();
-        }
-      }
-    } else {
-      // If we didn't sync to disk, check whether we need to update ....
+
+    // If we didn't successfully sync to disk, check whether we need to update ....
+    if (check) {
       if (configFiles->isConfigStale()) {
         RecSetRecordInt("proxy.node.config.reconfigure_required", 1, REC_SOURCE_DEFAULT);
       }
@@ -101,7 +78,8 @@ sync_thr(void *data)
 
     usleep(REC_REMOTE_SYNC_INTERVAL_MS * 1000);
   }
-  return NULL;
+
+  return nullptr;
 }
 
 //-------------------------------------------------------------------------
@@ -119,11 +97,6 @@ config_update_thr(void * /* data */)
       RecSetRecordInt("proxy.node.config.restart_required.proxy", 1, REC_SOURCE_DEFAULT);
       RecSetRecordInt("proxy.node.config.restart_required.manager", 1, REC_SOURCE_DEFAULT);
       break;
-    case RECU_RESTART_TC:
-      RecSetRecordInt("proxy.node.config.restart_required.proxy", 1, REC_SOURCE_DEFAULT);
-      RecSetRecordInt("proxy.node.config.restart_required.manager", 1, REC_SOURCE_DEFAULT);
-      RecSetRecordInt("proxy.node.config.restart_required.cop", 1, REC_SOURCE_DEFAULT);
-      break;
     case RECU_NULL:
     case RECU_DYNAMIC:
       break;
@@ -131,7 +104,7 @@ config_update_thr(void * /* data */)
 
     usleep(REC_CONFIG_UPDATE_INTERVAL_MS * 1000);
   }
-  return NULL;
+  return nullptr;
 }
 
 //-------------------------------------------------------------------------
@@ -141,7 +114,7 @@ void
 RecMessageInit()
 {
   ink_assert(g_mode_type != RECM_NULL);
-  lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, RecMessageRecvThis, NULL);
+  lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, &RecMessageRecvThis);
   message_initialized_p = true;
 }
 
@@ -164,15 +137,6 @@ RecLocalInit(Diags *_diags)
     return REC_ERR_FAIL;
   }
 
-  /* -- defer RecMessageInit() until LocalManager is initialized
-     if (RecMessageInit(RECM_SERVER) == REC_ERR_FAIL) {
-     return REC_ERR_FAIL;
-     }
-
-     if (RecMessageRegisterRecvCb(recv_message_cb, NULL)) {
-     return REC_ERR_FAIL;
-     }
-   */
   initialized_p = true;
 
   return REC_ERR_OKAY;
@@ -191,7 +155,7 @@ RecLocalInitMessage()
   }
 
   RecMessageInit();
-  if (RecMessageRegisterRecvCb(recv_message_cb, NULL)) {
+  if (RecMessageRegisterRecvCb(recv_message_cb, nullptr)) {
     return REC_ERR_FAIL;
   }
 
@@ -206,21 +170,15 @@ RecLocalInitMessage()
 int
 RecLocalStart(FileManager *configFiles)
 {
-  RecInt disable_modification = 0;
-  RecGetRecordInt("proxy.config.disable_configuration_modification", &disable_modification);
-  if (disable_modification == 1) {
-    RecDebug(DL_Debug, "Disable configuration modification");
-  } else {
-    ink_thread_create(sync_thr, configFiles);
-    ink_thread_create(config_update_thr, NULL);
-  }
+  ink_thread_create(nullptr, sync_thr, configFiles, 0, 0, nullptr);
+  ink_thread_create(nullptr, config_update_thr, nullptr, 0, 0, nullptr);
   return REC_ERR_OKAY;
 }
 
 int
-RecRegisterManagerCb(int id, RecManagerCb _fn, void *_data)
+RecRegisterManagerCb(int id, RecManagerCb const &_fn)
 {
-  return lmgmt->registerMgmtCallback(id, _fn, _data);
+  return lmgmt->registerMgmtCallback(id, _fn);
 }
 
 void
@@ -240,13 +198,14 @@ RecMessageSend(RecMessage *msg)
 {
   int msg_size;
 
-  if (!message_initialized_p)
+  if (!message_initialized_p) {
     return REC_ERR_OKAY;
+  }
 
   // Make a copy of the record, but truncate it to the size actually used
   if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
     msg->o_end = msg->o_write;
-    msg_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
+    msg_size   = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
     lmgmt->signalEvent(MGMT_EVENT_LIBRECORDS, (char *)msg, msg_size);
   }
 

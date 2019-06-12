@@ -21,16 +21,9 @@
   limitations under the License.
  */
 
-#ifndef _MGMT_SOCKET_H_
-#define _MGMT_SOCKET_H_
+#pragma once
 
-#include "ts/ink_platform.h"
-
-//-------------------------------------------------------------------------
-// defines
-//-------------------------------------------------------------------------
-
-#define MGMT_MAX_TRANSIENT_ERRORS 64
+#include "tscore/ink_platform.h"
 
 //-------------------------------------------------------------------------
 // transient_error
@@ -67,6 +60,12 @@ int mgmt_open(const char *path, int oflag);
 int mgmt_open_mode(const char *path, int oflag, mode_t mode);
 
 //-------------------------------------------------------------------------
+// mgmt_open_mode_elevate
+//-------------------------------------------------------------------------
+
+int mgmt_open_mode_elevate(const char *path, int oflag, mode_t mode, bool elevate_p = false);
+
+//-------------------------------------------------------------------------
 // mgmt_select
 //-------------------------------------------------------------------------
 
@@ -95,9 +94,7 @@ int mgmt_write_timeout(int fd, int sec, int usec);
 int mgmt_read_timeout(int fd, int sec, int usec);
 
 // Do we support passing Unix domain credentials on this platform?
-bool mgmt_has_peereid(void);
+bool mgmt_has_peereid();
 
 // Get the Unix domain peer credentials.
 int mgmt_get_peereid(int fd, uid_t *euid, gid_t *egid);
-
-#endif // _MGMT_SOCKET_H_

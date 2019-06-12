@@ -16,66 +16,89 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = \
-  $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib \
-  -I$(top_srcdir)/lib/records
+include $(top_srcdir)/build/tidy.mk
+
+AM_CPPFLAGS += \
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
+	$(TS_INCLUDES)
 
 noinst_LIBRARIES = libhdrs.a
 EXTRA_PROGRAMS = load_http_hdr
 
 # Http library source files.
 libhdrs_a_SOURCES = \
-  HTTP.cc \
-  HTTP.h \
-  HdrHeap.cc \
-  HdrHeap.h \
-  HdrTSOnly.cc \
-  HdrToken.cc \
-  HdrToken.h \
-  HdrUtils.cc \
-  HdrUtils.h \
-  HttpCompat.cc \
-  HttpCompat.h \
-  MIME.cc \
-  MIME.h \
-  URL.cc \
-  URL.h
+	HTTP.cc \
+	HTTP.h \
+	HdrHeap.cc \
+	HdrHeap.h \
+	HdrTSOnly.cc \
+	HdrToken.cc \
+	HdrToken.h \
+	HdrUtils.cc \
+	HdrUtils.h \
+	HttpCompat.cc \
+	HttpCompat.h \
+	MIME.cc \
+	MIME.h \
+	URL.cc \
+	URL.h
 
 if BUILD_TESTS
-  libhdrs_a_SOURCES += \
-    HdrTest.cc \
-    HdrTest.h
+libhdrs_a_SOURCES += \
+	HdrTest.cc \
+	HdrTest.h
 endif
 
 load_http_hdr_SOURCES = \
-  HTTP.h \
-  HdrHeap.h \
-  MIME.h \
-  load_http_hdr.cc
+	HTTP.h \
+	HdrHeap.h \
+	MIME.h \
+	load_http_hdr.cc
 
 load_http_hdr_LDADD = -L. -lhdrs \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@
-load_http_hdr_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
-check_PROGRAMS = test_mime
+check_PROGRAMS = test_mime test_proxy_hdrs
 
-TESTS = test_mime
+TESTS = $(check_PROGRAMS)
 
 test_mime_LDADD = -L. -lhdrs \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
-  @HWLOC_LIBS@ \
-  @LIBTCL@
-
-test_mime_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	@HWLOC_LIBS@ \
+	@LIBCAP@
 
 test_mime_SOURCES = test_mime.cc
 
+test_proxy_hdrs_CPPFLAGS = $(AM_CPPFLAGS)\
+        -I$(abs_top_srcdir)/tests/include
+
+test_proxy_hdrs_SOURCES = \
+	unit_tests/unit_test_main.cc \
+	unit_tests/test_Hdrs.cc \
+	unit_tests/test_HdrUtils.cc
+
+test_proxy_hdrs_LDADD = \
+	$(top_builddir)/src/tscore/libtscore.la \
+    -L. -lhdrs \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	@HWLOC_LIBS@ \
+	@LIBCAP@
+
 #test_UNUSED_SOURCES = \
-#  test_header.cc \
 #  test_urlhash.cc
+
+clang-tidy-local: $(libhdrs_a_SOURCES)
+	$(CXX_Clang_Tidy)

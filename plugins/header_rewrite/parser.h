@@ -19,13 +19,13 @@
 //
 // Interface for the config line parser
 //
-#ifndef __PARSER_H__
-#define __PARSER_H__ 1
+#pragma once
 
 #include <string>
 #include <vector>
 #include <algorithm>
 
+#include "ts/ts.h"
 #include "lulu.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -33,28 +33,22 @@
 class Parser
 {
 public:
-  explicit Parser(const std::string &line);
+  Parser(){};
+
+  // noncopyable
+  Parser(const Parser &) = delete;
+  void operator=(const Parser &) = delete;
 
   bool
   empty() const
   {
     return _empty;
   }
+
   bool
   is_cond() const
   {
     return _cond;
-  }
-
-  bool
-  cond_op_is(const std::string s) const
-  {
-    return _cond && (_op == s);
-  }
-  bool
-  oper_op_is(const std::string s) const
-  {
-    return !_cond && (_op == s);
   }
 
   const std::string &
@@ -62,11 +56,13 @@ public:
   {
     return _op;
   }
+
   std::string &
   get_arg()
   {
     return _arg;
   }
+
   const std::string &
   get_value() const
   {
@@ -74,17 +70,26 @@ public:
   }
 
   bool
-  mod_exist(const std::string m) const
+  mod_exist(const std::string &m) const
   {
-    return (std::find(_mods.begin(), _mods.end(), m) != _mods.end());
+    return std::find(_mods.begin(), _mods.end(), m) != _mods.end();
   }
 
-private:
-  void preprocess(std::vector<std::string> tokens);
-  DISALLOW_COPY_AND_ASSIGN(Parser);
+  bool cond_is_hook(TSHttpHookID &hook) const;
 
-  bool _cond;
-  bool _empty;
+  const std::vector<std::string> &
+  get_tokens() const
+  {
+    return _tokens;
+  }
+
+  bool parse_line(const std::string &original_line);
+
+private:
+  bool preprocess(std::vector<std::string> tokens);
+
+  bool _cond  = false;
+  bool _empty = false;
   std::vector<std::string> _mods;
   std::string _op;
   std::string _arg;
@@ -94,4 +99,21 @@ protected:
   std::vector<std::string> _tokens;
 };
 
-#endif // __PARSER_H
+class SimpleTokenizer
+{
+public:
+  explicit SimpleTokenizer(const std::string &line);
+
+  // noncopyable
+  SimpleTokenizer(const SimpleTokenizer &) = delete;
+  void operator=(const SimpleTokenizer &) = delete;
+
+  const std::vector<std::string> &
+  get_tokens() const
+  {
+    return _tokens;
+  }
+
+protected:
+  std::vector<std::string> _tokens;
+};

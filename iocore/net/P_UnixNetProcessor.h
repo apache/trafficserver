@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __UNIXNETPROCESSOR_H__
-#define __UNIXNETPROCESSOR_H__
+#pragma once
 #include "I_Net.h"
 #include "P_NetAccept.h"
 
@@ -37,19 +36,15 @@ struct UnixNetProcessor : public NetProcessor {
 public:
   virtual Action *accept_internal(Continuation *cont, int fd, AcceptOptions const &opt);
 
-  Action *connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *options = NULL);
-  Action *connect(Continuation *cont, UnixNetVConnection **vc, sockaddr const *target, NetVCOptions *opt = NULL);
+  Action *connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *options = nullptr);
+  Action *connect(Continuation *cont, UnixNetVConnection **vc, sockaddr const *target, NetVCOptions *opt = nullptr);
 
-  // Virtual function allows etype to be upgraded to ET_SSL for SSLNetProcessor.  Does
-  // nothing for NetProcessor
-  virtual void upgradeEtype(EventType & /* etype ATS_UNUSED */){};
+  virtual NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt);
+  NetVConnection *allocate_vc(EThread *t) override;
 
-  virtual NetAccept *createNetAccept();
-  virtual NetVConnection *allocate_vc(EThread *t);
+  void init() override;
+  void init_socks() override;
 
-  virtual int start(int number_of_net_threads, size_t stacksize);
-
-  char *throttle_error_message;
   Event *accept_thread_event;
 
   // offsets for per thread data structures
@@ -72,9 +67,6 @@ extern UnixNetProcessor unix_netProcessor;
 //
 // Set up a thread to receive events from the NetProcessor
 // This function should be called for all threads created to
-// accept such events by the EventProcesor.
+// accept such events by the EventProcessor.
 //
 extern void initialize_thread_for_net(EThread *thread);
-
-//#include "UnixNet.h"
-#endif

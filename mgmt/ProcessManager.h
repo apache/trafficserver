@@ -1,6 +1,8 @@
 /** @file
 
-  A brief file description
+  Process Manager Class, derived from BaseManager. Class provides callback
+  registration for management events as well as the interface to the outside
+  world.
 
   @section license License
 
@@ -21,68 +23,55 @@
   limitations under the License.
  */
 
-/*
- *
- * ProcessManager.h
- *   Process Manager Class, derived from BaseManager. Class provides callback
- * registration for management events as well as the interface to the outside
- * world.
- *
- * $Date: 2003-06-01 18:37:18 $
- *
- *
- */
+#pragma once
 
-#ifndef _PROCESS_MANAGER_H
-#define _PROCESS_MANAGER_H
+#include <functional>
+#include <string_view>
 
 #include "MgmtUtils.h"
 #include "BaseManager.h"
-#include "ts/ink_sock.h"
+#include "tscore/ink_sock.h"
 
-#include "ts/ink_apidefs.h"
+#include "tscore/ink_apidefs.h"
+
+#if HAVE_EVENTFD
+#include <sys/eventfd.h>
+#endif
 
 class ConfigUpdateCbTable;
 
-void *startProcessManager(void *arg);
 class ProcessManager : public BaseManager
 {
 public:
   ProcessManager(bool rlm);
-  ~ProcessManager()
-  {
-    close_socket(local_manager_sockfd);
-    while (!queue_is_empty(mgmt_signal_queue)) {
-      char *sig = (char *)dequeue(mgmt_signal_queue);
-      ats_free(sig);
-    }
-    ats_free(mgmt_signal_queue);
-  }
+  ~ProcessManager();
 
-  void
-  start()
-  {
-    ink_thread_create(startProcessManager, 0);
-  }
+  // Start a thread for the process manager. If @a cb is set then it
+  // is called after the thread is started and before any messages are
+  // processed.
+  void start(std::function<void()> const &cb = std::function<void()>());
 
-  void
-  stop()
-  {
-    mgmt_log(stderr, "[ProcessManager::stop] Bringing down connection\n");
-    close_socket(local_manager_sockfd);
-  }
+  // Stop the process manager, dropping any unprocessed messages.
+  void stop();
 
   inkcoreapi void signalConfigFileChild(const char *parent, const char *child, unsigned int options);
   inkcoreapi void signalManager(int msg_id, const char *data_str);
   inkcoreapi void signalManager(int msg_id, const char *data_raw, int data_len);
 
+  /** Send a management message of type @a msg_id with @a text.
+   *
+   * @param msg_id ID for the message.
+   * @param text Content for the message.
+   *
+   * A terminating null character is added automatically.
+   */
+  inkcoreapi void signalManager(int msg_id, std::string_view text);
+
+  inkcoreapi void signalManager(MgmtMessageHdr *mh);
+
   void reconfigure();
   void initLMConnection();
-  void pollLMConnection();
   void handleMgmtMsgFromLM(MgmtMessageHdr *mh);
-
-  bool processEventQueue();
-  bool processSignalQueue();
 
   void
   registerPluginCallbacks(ConfigUpdateCbTable *_cbtable)
@@ -90,21 +79,32 @@ public:
     cbtable = _cbtable;
   }
 
+private:
+  int pollLMConnection();
+  int processSignalQueue();
+  bool processEventQueue();
+
   bool require_lm;
-  time_t timeout;
-
+  RecInt timeout;
   LLQ *mgmt_signal_queue;
-
   pid_t pid;
 
+  ink_thread poll_thread = ink_thread_null();
+  int running            = 0;
+
+  /// Thread initialization callback.
+  /// This allows @c traffic_server and @c traffic_manager to perform different initialization in the thread.
+  std::function<void()> init;
+
   int local_manager_sockfd;
-
-private:
-  static const int MAX_MSGS_IN_A_ROW = 10000;
-
+#if HAVE_EVENTFD
+  int wakeup_fd; // external trigger to stop polling
+#endif
   ConfigUpdateCbTable *cbtable;
-}; /* End class ProcessManager */
+  int max_msgs_in_a_row;
+
+  static const int MAX_MSGS_IN_A_ROW = 10000;
+  static void *processManagerThread(void *arg);
+};
 
 inkcoreapi extern ProcessManager *pmgmt;
-
-#endif /* _PROCESS_MANAGER_H */

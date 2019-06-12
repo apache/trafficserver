@@ -23,8 +23,8 @@
 
 #include "HttpUpdateSM.h"
 #include "HttpDebugNames.h"
-#include "ts/Diags.h"
-#include "ts/ink_platform.h"
+#include "tscore/Diags.h"
+#include "tscore/ink_platform.h"
 
 #define MAX_ACTIVE_REQUESTS 5
 #define MAX_TOTAL_REQUESTS 100
@@ -117,7 +117,7 @@ init_http_update_test()
 {
   FILE *f = fopen("urls", "r");
 
-  if (f == NULL) {
+  if (f == nullptr) {
     Warning("[Http Update Tester] could not open URL file");
     return;
   }

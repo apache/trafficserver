@@ -23,7 +23,6 @@
 
 #include "P_Cache.h"
 
-#include "api/ts/ts.h"
 #include "Show.h"
 #include "I_Tasks.h"
 #include "CacheControl.h"
@@ -70,19 +69,19 @@ struct ShowCache : public ShowCont {
       vol_index(0),
       seg_index(0),
       scan_flag(scan_type_lookup),
-      cache_vc(0),
-      buffer(0),
-      buffer_reader(0),
+      cache_vc(nullptr),
+      buffer(nullptr),
+      buffer_reader(nullptr),
       content_length(0),
-      cvio(0)
+      cvio(nullptr)
   {
     urlstrs_index = 0;
-    linecount = 0;
+    linecount     = 0;
     int query_len;
     char query[4096];
     char unescapedQuery[sizeof(query)];
-    show_cache_urlstrs = NULL;
-    URL *u = h->url_get();
+    show_cache_urlstrs = nullptr;
+    URL *u             = h->url_get();
 
     // process the query string
     if (u->query_get(&query_len) && query_len < (int)sizeof(query)) {
@@ -106,15 +105,16 @@ struct ShowCache : public ShowCont {
       query[m] = '\0';
 
       unsigned nstrings = 1;
-      char *p = strstr(query, "url=");
+      char *p           = strstr(query, "url=");
       // count the no of urls
       if (p) {
         while ((p = strstr(p, "\n"))) {
           nstrings++;
-          if ((size_t)(p - query) >= strlen(query) - 1)
+          if ((size_t)(p - query) >= strlen(query) - 1) {
             break;
-          else
+          } else {
             p++;
+          }
         }
       }
       // initialize url array
@@ -126,13 +126,15 @@ struct ShowCache : public ShowCont {
       if (p) {
         p += 4; // 4 ==> strlen("url=")
         t = strchr(p, '&');
-        if (!t)
+        if (!t) {
           t = (char *)unescapedQuery + strlen(unescapedQuery);
+        }
         for (int s = 0; p < t; s++) {
           show_cache_urlstrs[s][0] = '\0';
-          q = strstr(p, "%0D%0A" /* \r\n */); // we used this in the JS to separate urls
-          if (!q)
+          q                        = strstr(p, "%0D%0A" /* \r\n */); // we used this in the JS to separate urls
+          if (!q) {
             q = t;
+          }
           ink_strlcpy(show_cache_urlstrs[s], p, q - p + 1);
           p = q + 6; // +6 ==> strlen(%0D%0A)
         }
@@ -153,10 +155,11 @@ struct ShowCache : public ShowCont {
     SET_HANDLER(&ShowCache::showMain);
   }
 
-  ~ShowCache()
+  ~ShowCache() override
   {
-    if (show_cache_urlstrs)
+    if (show_cache_urlstrs) {
       delete[] show_cache_urlstrs;
+    }
     url.destroy();
   }
 };
@@ -168,7 +171,7 @@ Action *
 register_ShowCache(Continuation *c, HTTPHdr *h)
 {
   ShowCache *theshowcache = new ShowCache(c, h);
-  URL *u = h->url_get();
+  URL *u                  = h->url_get();
   int path_len;
   const char *path = u->path_get(&path_len);
 
@@ -317,23 +320,30 @@ ShowCache::handleCacheEvent(int event, Event *e)
 
     if (buffer_reader) {
       buffer->dealloc_reader(buffer_reader);
-      buffer_reader = 0;
+      buffer_reader = nullptr;
     }
     if (buffer) {
       free_MIOBuffer(buffer);
-      buffer = 0;
+      buffer = nullptr;
     }
-    cvio = 0;
+    cvio = nullptr;
     cache_vc->do_io_close(-1);
-    cache_vc = 0;
+    cache_vc = nullptr;
     return complete(event, e);
   }
   case CACHE_EVENT_OPEN_READ: {
     // get the vector
-    cache_vc = (CacheVC *)e;
+    cache_vc                 = (CacheVC *)e;
     CacheHTTPInfoVector *vec = &(cache_vc->vector);
-    int alt_count = vec->count();
+    int alt_count            = vec->count();
     if (alt_count) {
+      // check cache_vc->first_buf is NULL, response cache lookup busy.
+      if (cache_vc->first_buf == nullptr) {
+        cache_vc->do_io_close(-1);
+        CHECK_SHOW(show("<H3>Cache Lookup Busy, please try again</H3>\n"));
+        return complete(event, e);
+      }
+
       Doc *d = (Doc *)(cache_vc->first_buf->data());
       time_t t;
       char tmpstr[4096];
@@ -363,11 +373,11 @@ ShowCache::handleCacheEvent(int event, Event *e)
         // unmarshal the alternate??
         CHECK_SHOW(show("<p><table border=1>\n"));
         CHECK_SHOW(show("<tr><th bgcolor=\"#FFF0E0\" colspan=2>Alternate %d</th></tr>\n", i + 1));
-        CacheHTTPInfo *obj = vec->get(i);
-        CacheKey obj_key = obj->object_key_get();
-        HTTPHdr *cached_request = obj->request_get();
+        CacheHTTPInfo *obj       = vec->get(i);
+        CacheKey obj_key         = obj->object_key_get();
+        HTTPHdr *cached_request  = obj->request_get();
         HTTPHdr *cached_response = obj->response_get();
-        int64_t obj_size = obj->object_size_get();
+        int64_t obj_size         = obj->object_size_get();
         int offset, tmp, used, done;
         char b[4096];
 
@@ -376,7 +386,7 @@ ShowCache::handleCacheEvent(int event, Event *e)
         offset = 0;
         do {
           used = 0;
-          tmp = offset;
+          tmp  = offset;
           done = cached_request->print(b, 4095, &used, &tmp);
           offset += used;
           b[used] = '\0';
@@ -389,7 +399,7 @@ ShowCache::handleCacheEvent(int event, Event *e)
         offset = 0;
         do {
           used = 0;
-          tmp = offset;
+          tmp  = offset;
           done = cached_response->print(b, 4095, &used, &tmp);
           offset += used;
           b[used] = '\0';
@@ -413,14 +423,17 @@ ShowCache::handleCacheEvent(int event, Event *e)
     }
     // open success but no vector, that is the Cluster open read, pass through
   }
+    // fallthrough
+
   case VC_EVENT_READ_READY:
     if (!cvio) {
-      buffer = new_empty_MIOBuffer();
-      buffer_reader = buffer->alloc_reader();
+      buffer         = new_empty_MIOBuffer();
+      buffer_reader  = buffer->alloc_reader();
       content_length = cache_vc->get_object_size();
-      cvio = cache_vc->do_io_read(this, content_length, buffer);
-    } else
+      cvio           = cache_vc->do_io_read(this, content_length, buffer);
+    } else {
       buffer_reader->consume(buffer_reader->read_avail());
+    }
     return EVENT_DONE;
   case CACHE_EVENT_OPEN_READ_FAILED:
     // something strange happen, or cache miss in cluster mode.
@@ -441,7 +454,7 @@ ShowCache::lookup_url(int event, Event *e)
 
   snprintf(header_str, sizeof(header_str), "<font color=red>%s</font>", show_cache_urlstrs[0]);
   CHECK_SHOW(begin(header_str));
-  url.create(NULL);
+  url.create(nullptr);
   const char *s;
   s = show_cache_urlstrs[0];
   url.parse(&s, s + strlen(s));
@@ -450,17 +463,18 @@ ShowCache::lookup_url(int event, Event *e)
   Cache::generate_key(&key, &url, generation);
 
   SET_HANDLER(&ShowCache::handleCacheEvent);
-  Action *lookup_result =
-    cacheProcessor.open_read(this, &key.hash, getClusterCacheLocal(&url), CACHE_FRAG_TYPE_HTTP, key.hostname, key.hostlen);
-  if (!lookup_result)
+  Action *lookup_result = cacheProcessor.open_read(this, &key.hash, CACHE_FRAG_TYPE_HTTP, key.hostname, key.hostlen);
+  if (!lookup_result) {
     lookup_result = ACTION_IO_ERROR;
-  if (lookup_result == ACTION_RESULT_DONE)
+  }
+  if (lookup_result == ACTION_RESULT_DONE) {
     return EVENT_DONE; // callback complete
-  else if (lookup_result == ACTION_IO_ERROR) {
-    handleEvent(CACHE_EVENT_OPEN_READ_FAILED, 0);
+  } else if (lookup_result == ACTION_IO_ERROR) {
+    handleEvent(CACHE_EVENT_OPEN_READ_FAILED, nullptr);
     return EVENT_DONE; // callback complete
-  } else
+  } else {
     return EVENT_CONT; // callback pending, will be a cluster read.
+  }
 }
 
 int
@@ -478,7 +492,7 @@ ShowCache::delete_url(int event, Event *e)
     CHECK_SHOW(show("</TABLE></B>\n"));
     return complete(event, e);
   }
-  url.create(NULL);
+  url.create(nullptr);
   const char *s;
   s = show_cache_urlstrs[urlstrs_index];
   CHECK_SHOW(show("<TR><TD>%s</TD>", s));
@@ -491,7 +505,7 @@ ShowCache::delete_url(int event, Event *e)
   HttpCacheKey key;
   Cache::generate_key(&key, &url); // XXX choose a cache generation number ...
 
-  cacheProcessor.remove(this, &key, getClusterCacheLocal(&url), CACHE_FRAG_TYPE_HTTP);
+  cacheProcessor.remove(this, &key, CACHE_FRAG_TYPE_HTTP);
   return EVENT_DONE;
 }
 
@@ -534,7 +548,7 @@ ShowCache::lookup_regex(int event, Event *e)
                   "		form.elements[0].value += urllist[c]+ \"%%0D%%0A\";\n"
                   "	}\n"
                   "   if (form.elements[0].value == \"\"){\n"
-                  "	    alert(\"Please select atleast one url before clicking delete\");\n"
+                  "	    alert(\"Please select at least one url before clicking delete\");\n"
                   "       return true;\n"
                   "}\n"
                   "   srcfile=\"./delete_url?url=\" + form.elements[0].value;\n"
@@ -601,12 +615,12 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
     for (unsigned s = 0; show_cache_urlstrs[s][0] != '\0'; s++) {
       const char *error;
       int erroffset;
-      pcre *preq = pcre_compile(show_cache_urlstrs[s], 0, &error, &erroffset, NULL);
+      pcre *preq = pcre_compile(show_cache_urlstrs[s], 0, &error, &erroffset, nullptr);
 
-      Debug("cache_inspector", "matching url '%s' '%s' with regex '%s'\n", m, xx, show_cache_urlstrs[s]);
+      Debug("cache_inspector", "matching url '%s' '%s' with regex '%s'", m, xx, show_cache_urlstrs[s]);
 
       if (preq) {
-        int r = pcre_exec(preq, NULL, xx, ib, 0, 0, NULL, 0);
+        int r = pcre_exec(preq, nullptr, xx, ib, 0, 0, nullptr, 0);
 
         pcre_free(preq);
         if (r != -1) {
@@ -655,12 +669,13 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
   }
   case CACHE_EVENT_SCAN_DONE:
     CHECK_SHOW(show("</TABLE></B>\n"));
-    if (scan_flag == 0)
+    if (scan_flag == 0) {
       if (linecount) {
         CHECK_SHOW(show("<P><INPUT TYPE=button value=\"Delete\" "
                         "onClick=\"setUrls(window.document.f)\"></P>"
                         "</FORM>\n"));
       }
+    }
     CHECK_SHOW(show("<H3>Done</H3>\n"));
     Debug("cache_inspector", "scan done");
     complete(event, e);

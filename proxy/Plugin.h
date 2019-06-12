@@ -21,23 +21,22 @@
   limitations under the License.
  */
 
-#ifndef __PLUGIN_H__
-#define __PLUGIN_H__
+#pragma once
 
-#include "ts/List.h"
+#include "tscore/List.h"
 
 struct PluginRegInfo {
   PluginRegInfo();
   ~PluginRegInfo();
 
-  bool plugin_registered;
-  char *plugin_path;
+  bool plugin_registered = false;
+  char *plugin_path      = nullptr;
 
-  char *plugin_name;
-  char *vendor_name;
-  char *support_email;
+  char *plugin_name   = nullptr;
+  char *vendor_name   = nullptr;
+  char *support_email = nullptr;
 
-  void *dlh;
+  void *dlh = nullptr;
 
   LINK(PluginRegInfo, link);
 };
@@ -74,7 +73,7 @@ public:
   virtual char const *
   getPluginTag() const
   {
-    return NULL;
+    return nullptr;
   }
   /** Get the plugin instance ID.
       A plugin can create multiple subsidiary instances. This is used as the
@@ -86,5 +85,3 @@ public:
     return 0;
   }
 };
-
-#endif /* __PLUGIN_H__ */

@@ -24,8 +24,9 @@
 
 UrlMappingPathIndex::~UrlMappingPathIndex()
 {
-  for (UrlMappingGroup::iterator group_iter = m_tries.begin(); group_iter != m_tries.end(); ++group_iter)
-    delete group_iter->second; // Delete the Trie
+  for (auto &m_trie : m_tries) {
+    delete m_trie.second; // Delete the Trie
+  }
   m_tries.clear();
 }
 
@@ -58,7 +59,7 @@ UrlMappingPathIndex::Insert(url_mapping *mapping)
 url_mapping *
 UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_search /* = true */) const
 {
-  url_mapping *retval = 0;
+  url_mapping *retval = nullptr;
   int scheme_idx;
   UrlMappingTrie *trie;
   int path_len;
@@ -79,12 +80,13 @@ UrlMappingPathIndex::Search(URL *request_url, int request_port, bool normal_sear
   return retval;
 
 lFail:
-  return 0;
+  return nullptr;
 }
 
 void
 UrlMappingPathIndex::Print()
 {
-  for (UrlMappingGroup::iterator group_iter = m_tries.begin(); group_iter != m_tries.end(); ++group_iter)
-    group_iter->second->Print();
+  for (auto &m_trie : m_tries) {
+    m_trie.second->Print();
+  }
 }

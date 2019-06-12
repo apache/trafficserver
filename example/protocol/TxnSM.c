@@ -23,7 +23,7 @@
 
 #include <sys/types.h>
 #include <netinet/in.h>
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 #include "TxnSM.h"
 
@@ -72,10 +72,10 @@ TSCacheKey CacheKeyCreate(char *file_name);
 int
 main_handler(TSCont contp, TSEvent event, void *data)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm                  = (TxnSM *)TSContDataGet(contp);
   TxnSMHandler q_current_handler = txn_sm->q_current_handler;
 
-  TSDebug("protocol", "main_handler (contp %p event %d)", contp, event);
+  TSDebug(PLUGIN_NAME, "main_handler (contp %p event %d)", contp, event);
 
   /* handle common cases errors */
   if (event == TS_EVENT_ERROR) {
@@ -88,7 +88,7 @@ main_handler(TSCont contp, TSEvent event, void *data)
     }
   }
 
-  TSDebug("protocol", "current_handler (%p)", q_current_handler);
+  TSDebug(PLUGIN_NAME, "current_handler (%p)", q_current_handler);
 
   return (*q_current_handler)(contp, event, data);
 }
@@ -102,7 +102,7 @@ TxnSMCreate(TSMutex pmutex, TSVConn client_vc, int server_port)
 
   txn_sm = (TxnSM *)TSmalloc(sizeof(TxnSM));
 
-  txn_sm->q_mutex = pmutex;
+  txn_sm->q_mutex          = pmutex;
   txn_sm->q_pending_action = NULL;
 
   /* Txn will use this server port to connect to the origin server. */
@@ -112,34 +112,34 @@ TxnSMCreate(TSMutex pmutex, TSVConn client_vc, int server_port)
   /* The server_vc will be created if Txn connects to the origin server. */
   txn_sm->q_server_vc = NULL;
 
-  txn_sm->q_client_read_vio = NULL;
-  txn_sm->q_client_write_vio = NULL;
-  txn_sm->q_client_request_buffer = NULL;
-  txn_sm->q_client_response_buffer = NULL;
-  txn_sm->q_client_request_buffer_reader = NULL;
+  txn_sm->q_client_read_vio               = NULL;
+  txn_sm->q_client_write_vio              = NULL;
+  txn_sm->q_client_request_buffer         = NULL;
+  txn_sm->q_client_response_buffer        = NULL;
+  txn_sm->q_client_request_buffer_reader  = NULL;
   txn_sm->q_client_response_buffer_reader = NULL;
 
-  txn_sm->q_server_read_vio = NULL;
-  txn_sm->q_server_write_vio = NULL;
-  txn_sm->q_server_request_buffer = NULL;
-  txn_sm->q_server_response_buffer = NULL;
+  txn_sm->q_server_read_vio              = NULL;
+  txn_sm->q_server_write_vio             = NULL;
+  txn_sm->q_server_request_buffer        = NULL;
+  txn_sm->q_server_response_buffer       = NULL;
   txn_sm->q_server_request_buffer_reader = NULL;
 
   /* Char buffers to store client request and server response. */
   txn_sm->q_client_request = (char *)TSmalloc(sizeof(char) * (MAX_REQUEST_LENGTH + 1));
   memset(txn_sm->q_client_request, '\0', (sizeof(char) * (MAX_REQUEST_LENGTH + 1)));
-  txn_sm->q_server_response = NULL;
-  txn_sm->q_server_response_length = 0;
-  txn_sm->q_block_bytes_read = 0;
-  txn_sm->q_cache_vc = NULL;
-  txn_sm->q_cache_response_length = 0;
-  txn_sm->q_cache_read_buffer = NULL;
+  txn_sm->q_server_response          = NULL;
+  txn_sm->q_server_response_length   = 0;
+  txn_sm->q_block_bytes_read         = 0;
+  txn_sm->q_cache_vc                 = NULL;
+  txn_sm->q_cache_response_length    = 0;
+  txn_sm->q_cache_read_buffer        = NULL;
   txn_sm->q_cache_read_buffer_reader = NULL;
 
   txn_sm->q_server_name = (char *)TSmalloc(sizeof(char) * (MAX_SERVER_NAME_LENGTH + 1));
-  txn_sm->q_file_name = (char *)TSmalloc(sizeof(char) * (MAX_FILE_NAME_LENGTH + 1));
+  txn_sm->q_file_name   = (char *)TSmalloc(sizeof(char) * (MAX_FILE_NAME_LENGTH + 1));
 
-  txn_sm->q_key = NULL;
+  txn_sm->q_key   = NULL;
   txn_sm->q_magic = TXN_SM_ALIVE;
 
   /* Set the current handler to be state_start. */
@@ -161,9 +161,11 @@ state_start(TSCont contp, TSEvent event ATS_UNUSED, void *data ATS_UNUSED)
   }
 
   txn_sm->q_client_request_buffer = TSIOBufferCreate();
+  if (!txn_sm->q_client_request_buffer) {
+    return prepare_to_die(contp);
+  }
   txn_sm->q_client_request_buffer_reader = TSIOBufferReaderAlloc(txn_sm->q_client_request_buffer);
-
-  if (!txn_sm->q_client_request_buffer || !txn_sm->q_client_request_buffer_reader) {
+  if (!txn_sm->q_client_request_buffer_reader) {
     return prepare_to_die(contp);
   }
 
@@ -190,12 +192,13 @@ state_interface_with_client(TSCont contp, TSEvent event, TSVIO vio)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter state_interface_with_client");
+  TSDebug(PLUGIN_NAME, "enter state_interface_with_client");
 
   txn_sm->q_pending_action = NULL;
 
-  if (vio == txn_sm->q_client_read_vio)
+  if (vio == txn_sm->q_client_read_vio) {
     return state_read_request_from_client(contp, event, vio);
+  }
 
   /* vio == txn_sm->q_client_write_vio */
   return state_send_response_to_client(contp, event, vio);
@@ -206,19 +209,18 @@ state_interface_with_client(TSCont contp, TSEvent event, TSVIO vio)
 int
 state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED)
 {
-  int bytes_read, parse_result;
-  char *temp_buf;
+  int bytes_read;
 
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter state_read_request_from_client");
+  TSDebug(PLUGIN_NAME, "enter state_read_request_from_client");
 
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
     bytes_read = TSIOBufferReaderAvail(txn_sm->q_client_request_buffer_reader);
 
     if (bytes_read > 0) {
-      temp_buf = (char *)get_info_from_buffer(txn_sm->q_client_request_buffer_reader);
+      char *temp_buf = get_info_from_buffer(txn_sm->q_client_request_buffer_reader);
       TSstrlcat(txn_sm->q_client_request, temp_buf, MAX_REQUEST_LENGTH + 1);
       TSfree(temp_buf);
 
@@ -227,14 +229,16 @@ state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED
         temp_buf = (char *)TSmalloc(sizeof(char) * (strlen(txn_sm->q_client_request) + 1));
         memcpy(temp_buf, txn_sm->q_client_request, strlen(txn_sm->q_client_request));
         temp_buf[strlen(txn_sm->q_client_request)] = '\0';
-        parse_result = parse_request(temp_buf, txn_sm->q_server_name, txn_sm->q_file_name);
+
+        int parse_result = parse_request(temp_buf, txn_sm->q_server_name, txn_sm->q_file_name);
         TSfree(temp_buf);
 
-        if (parse_result != 1)
+        if (parse_result != 1) {
           return prepare_to_die(contp);
+        }
 
         /* Start to do cache lookup */
-        TSDebug("protocol", "Key material: file name is %s*****", txn_sm->q_file_name);
+        TSDebug(PLUGIN_NAME, "Key material: file name is %s*****", txn_sm->q_file_name);
         txn_sm->q_key = (TSCacheKey)CacheKeyCreate(txn_sm->q_file_name);
 
         set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_handle_cache_lookup);
@@ -264,19 +268,20 @@ state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
   int64_t response_size;
   int ret_val;
 
-  TSDebug("protocol", "enter state_handle_cache_lookup");
+  TSDebug(PLUGIN_NAME, "enter state_handle_cache_lookup");
 
   switch (event) {
   case TS_EVENT_CACHE_OPEN_READ:
-    TSDebug("protocol", "cache hit!!!");
+    TSDebug(PLUGIN_NAME, "cache hit!!!");
     /* Cache hit. */
 
     /* Write log */
     ret_val = TSTextLogObjectWrite(protocol_plugin_log, "%s %s %d \n", txn_sm->q_file_name, txn_sm->q_server_name, 1);
-    if (ret_val != TS_SUCCESS)
-      TSError("[protocol] Fail to write into log");
+    if (ret_val != TS_SUCCESS) {
+      TSError("[%s] Fail to write into log", PLUGIN_NAME);
+    }
 
-    txn_sm->q_cache_vc = vc;
+    txn_sm->q_cache_vc       = vc;
     txn_sm->q_pending_action = NULL;
 
     /* Get the size of the cached doc. */
@@ -284,12 +289,19 @@ state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
 
     /* Allocate IOBuffer to store data from the cache. */
     txn_sm->q_client_response_buffer = TSIOBufferCreate();
+    if (!txn_sm->q_client_response_buffer) {
+      return prepare_to_die(contp);
+    }
     txn_sm->q_client_response_buffer_reader = TSIOBufferReaderAlloc(txn_sm->q_client_response_buffer);
+    if (!txn_sm->q_client_response_buffer_reader) {
+      return prepare_to_die(contp);
+    }
     txn_sm->q_cache_read_buffer = TSIOBufferCreate();
+    if (!txn_sm->q_cache_read_buffer) {
+      return prepare_to_die(contp);
+    }
     txn_sm->q_cache_read_buffer_reader = TSIOBufferReaderAlloc(txn_sm->q_cache_read_buffer);
-
-    if (!txn_sm->q_client_response_buffer || !txn_sm->q_client_response_buffer_reader || !txn_sm->q_cache_read_buffer ||
-        !txn_sm->q_cache_read_buffer_reader) {
+    if (!txn_sm->q_cache_read_buffer_reader) {
       return prepare_to_die(contp);
     }
 
@@ -301,12 +313,13 @@ state_handle_cache_lookup(TSCont contp, TSEvent event, TSVConn vc)
 
   case TS_EVENT_CACHE_OPEN_READ_FAILED:
     /* Cache miss or error, open cache write_vc. */
-    TSDebug("protocol", "cache miss or error!!!");
+    TSDebug(PLUGIN_NAME, "cache miss or error!!!");
     /* Write log */
     ret_val = TSTextLogObjectWrite(protocol_plugin_log, "%s %s %d \n", txn_sm->q_file_name, txn_sm->q_server_name, 0);
 
-    if (ret_val != TS_SUCCESS)
-      TSError("[protocol] Fail to write into log");
+    if (ret_val != TS_SUCCESS) {
+      TSError("[%s] Fail to write into log", PLUGIN_NAME);
+    }
 
     set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_handle_cache_prepare_for_write);
     txn_sm->q_pending_action = TSCacheWrite(contp, txn_sm->q_key);
@@ -328,8 +341,8 @@ load_buffer_cache_data(TxnSM *txn_sm)
      server response buffer */
   int rdr_avail = TSIOBufferReaderAvail(txn_sm->q_cache_read_buffer_reader);
 
-  TSDebug("protocol", "entering buffer_cache_data");
-  TSDebug("protocol", "loading %d bytes to buffer reader", rdr_avail);
+  TSDebug(PLUGIN_NAME, "entering buffer_cache_data");
+  TSDebug(PLUGIN_NAME, "loading %d bytes to buffer reader", rdr_avail);
 
   TSAssert(rdr_avail > 0);
 
@@ -350,7 +363,7 @@ state_handle_cache_read_response(TSCont contp, TSEvent event, TSVIO vio ATS_UNUS
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter state_handle_cache_read_response");
+  TSDebug(PLUGIN_NAME, "enter state_handle_cache_read_response");
 
   txn_sm->q_pending_action = NULL;
 
@@ -358,13 +371,13 @@ state_handle_cache_read_response(TSCont contp, TSEvent event, TSVIO vio ATS_UNUS
   case TS_EVENT_VCONN_READ_COMPLETE:
     load_buffer_cache_data(txn_sm);
     TSVConnClose(txn_sm->q_cache_vc);
-    txn_sm->q_cache_vc = NULL;
-    txn_sm->q_cache_read_vio = NULL;
+    txn_sm->q_cache_vc        = NULL;
+    txn_sm->q_cache_read_vio  = NULL;
     txn_sm->q_cache_write_vio = NULL;
     TSIOBufferReaderFree(txn_sm->q_cache_read_buffer_reader);
     TSIOBufferDestroy(txn_sm->q_cache_read_buffer);
     txn_sm->q_cache_read_buffer_reader = NULL;
-    txn_sm->q_cache_read_buffer = NULL;
+    txn_sm->q_cache_read_buffer        = NULL;
     return send_response_to_client(contp);
 
   case TS_EVENT_VCONN_READ_READY:
@@ -377,8 +390,8 @@ state_handle_cache_read_response(TSCont contp, TSEvent event, TSVIO vio ATS_UNUS
     /* Error */
     if (txn_sm->q_cache_vc) {
       TSVConnClose(txn_sm->q_cache_vc);
-      txn_sm->q_cache_vc = NULL;
-      txn_sm->q_cache_read_vio = NULL;
+      txn_sm->q_cache_vc        = NULL;
+      txn_sm->q_cache_read_vio  = NULL;
       txn_sm->q_cache_write_vio = NULL;
     }
 
@@ -400,7 +413,7 @@ state_handle_cache_prepare_for_write(TSCont contp, TSEvent event, TSVConn vc)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter state_handle_cache_prepare_for_write");
+  TSDebug(PLUGIN_NAME, "enter state_handle_cache_prepare_for_write");
 
   txn_sm->q_pending_action = NULL;
 
@@ -409,7 +422,7 @@ state_handle_cache_prepare_for_write(TSCont contp, TSEvent event, TSVConn vc)
     txn_sm->q_cache_vc = vc;
     break;
   default:
-    TSError("[protocol] Can't open cache write_vc, aborting txn");
+    TSError("[%s] Can't open cache write_vc, aborting txn", PLUGIN_NAME);
     txn_sm->q_cache_vc = NULL;
     return prepare_to_die(contp);
     break;
@@ -424,18 +437,24 @@ state_build_and_send_request(TSCont contp, TSEvent event ATS_UNUSED, void *data 
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter state_build_and_send_request");
+  TSDebug(PLUGIN_NAME, "enter state_build_and_send_request");
 
   txn_sm->q_pending_action = NULL;
 
   txn_sm->q_server_request_buffer = TSIOBufferCreate();
+  if (!txn_sm->q_server_request_buffer) {
+    return prepare_to_die(contp);
+  }
   txn_sm->q_server_request_buffer_reader = TSIOBufferReaderAlloc(txn_sm->q_server_request_buffer);
-
+  if (!txn_sm->q_server_request_buffer_reader) {
+    return prepare_to_die(contp);
+  }
   txn_sm->q_server_response_buffer = TSIOBufferCreate();
+  if (!txn_sm->q_server_response_buffer) {
+    return prepare_to_die(contp);
+  }
   txn_sm->q_cache_response_buffer_reader = TSIOBufferReaderAlloc(txn_sm->q_server_response_buffer);
-
-  if (!txn_sm->q_server_request_buffer || !txn_sm->q_server_request_buffer_reader || !txn_sm->q_server_response_buffer ||
-      !txn_sm->q_cache_response_buffer_reader) {
+  if (!txn_sm->q_cache_response_buffer_reader) {
     return prepare_to_die(contp);
   }
 
@@ -448,7 +467,7 @@ state_build_and_send_request(TSCont contp, TSEvent event ATS_UNUSED, void *data 
   txn_sm->q_pending_action = TSHostLookup(contp, txn_sm->q_server_name, strlen(txn_sm->q_server_name));
 
   TSAssert(txn_sm->q_pending_action);
-  TSDebug("protocol", "initiating host lookup");
+  TSDebug(PLUGIN_NAME, "initiating host lookup");
 
   return TS_SUCCESS;
 }
@@ -461,7 +480,7 @@ state_dns_lookup(TSCont contp, TSEvent event, TSHostLookupResult host_info)
   struct sockaddr const *q_server_addr;
   struct sockaddr_in ip_addr;
 
-  TSDebug("protocol", "enter state_dns_lookup");
+  TSDebug(PLUGIN_NAME, "enter state_dns_lookup");
 
   /* Can't find the server IP. */
   if (event != TS_EVENT_HOST_LOOKUP || !host_info) {
@@ -478,7 +497,7 @@ state_dns_lookup(TSCont contp, TSEvent event, TSHostLookupResult host_info)
   TSAssert(q_server_addr->sa_family == AF_INET); /* NO IPv6 in this plugin */
 
   memcpy(&ip_addr, q_server_addr, sizeof(ip_addr));
-  ip_addr.sin_port = txn_sm->q_server_port;
+  ip_addr.sin_port         = txn_sm->q_server_port;
   txn_sm->q_pending_action = TSNetConnect(contp, (struct sockaddr const *)&ip_addr);
 
   return TS_SUCCESS;
@@ -494,7 +513,7 @@ state_connect_to_server(TSCont contp, TSEvent event, TSVConn vc)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter state_connect_to_server");
+  TSDebug(PLUGIN_NAME, "enter state_connect_to_server");
 
   /* TSNetConnect failed. */
   if (event != TS_EVENT_NET_CONNECT) {
@@ -520,15 +539,13 @@ state_send_request_to_server(TSCont contp, TSEvent event, TSVIO vio)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter state_send_request_to_server");
+  TSDebug(PLUGIN_NAME, "enter state_send_request_to_server");
 
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
     TSVIOReenable(vio);
     break;
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    vio = NULL;
-
     /* Waiting for the incoming response. */
     set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_interface_with_server);
     txn_sm->q_server_read_vio = TSVConnRead(txn_sm->q_server_vc, contp, txn_sm->q_server_response_buffer, INT64_MAX);
@@ -547,7 +564,7 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter state_interface_with_server");
+  TSDebug(PLUGIN_NAME, "enter state_interface_with_server");
 
   txn_sm->q_pending_action = NULL;
 
@@ -565,13 +582,13 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
 
   /* all data of the response come in. */
   case TS_EVENT_VCONN_EOS:
-    TSDebug("protocol", "get server eos");
+    TSDebug(PLUGIN_NAME, "get server eos");
     /* There is no more use of server_vc, close it. */
     if (txn_sm->q_server_vc) {
       TSVConnClose(txn_sm->q_server_vc);
       txn_sm->q_server_vc = NULL;
     }
-    txn_sm->q_server_read_vio = NULL;
+    txn_sm->q_server_read_vio  = NULL;
     txn_sm->q_server_write_vio = NULL;
 
     /* Check if the response is good */
@@ -581,7 +598,7 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
         TSVConnClose(txn_sm->q_client_vc);
         txn_sm->q_client_vc = NULL;
       }
-      txn_sm->q_client_read_vio = NULL;
+      txn_sm->q_client_read_vio  = NULL;
       txn_sm->q_client_write_vio = NULL;
 
       /* Close cache_vc as well. */
@@ -596,7 +613,7 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
     if (txn_sm->q_cache_response_length >= txn_sm->q_server_response_length) {
       /* Write is complete, close the cache_vc. */
       TSVConnClose(txn_sm->q_cache_vc);
-      txn_sm->q_cache_vc = NULL;
+      txn_sm->q_cache_vc        = NULL;
       txn_sm->q_cache_write_vio = NULL;
       TSIOBufferReaderFree(txn_sm->q_cache_response_buffer_reader);
 
@@ -605,7 +622,7 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
       txn_sm->q_pending_action = TSCacheRead(contp, txn_sm->q_key);
     } else { /* not done with writing into cache */
 
-      TSDebug("protocol", "cache_response_length is %d, server response length is %d", txn_sm->q_cache_response_length,
+      TSDebug(PLUGIN_NAME, "cache_response_length is %d, server response length is %d", txn_sm->q_cache_response_length,
               txn_sm->q_server_response_length);
       TSVIOReenable(txn_sm->q_cache_write_vio);
     }
@@ -626,10 +643,10 @@ state_interface_with_server(TSCont contp, TSEvent event, TSVIO vio)
 int
 state_read_response_from_server(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vio ATS_UNUSED)
 {
-  TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
+  TxnSM *txn_sm  = (TxnSM *)TSContDataGet(contp);
   int bytes_read = 0;
 
-  TSDebug("protocol", "enter state_read_response_from_server");
+  TSDebug(PLUGIN_NAME, "enter state_read_response_from_server");
 
   bytes_read = TSIOBufferReaderAvail(txn_sm->q_cache_response_buffer_reader);
 
@@ -652,7 +669,7 @@ state_read_response_from_server(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vi
   }
 
   txn_sm->q_server_response_length += bytes_read;
-  TSDebug("protocol", "bytes read is %d, total response length is %d", bytes_read, txn_sm->q_server_response_length);
+  TSDebug(PLUGIN_NAME, "bytes read is %d, total response length is %d", bytes_read, txn_sm->q_server_response_length);
 
   return TS_SUCCESS;
 }
@@ -664,7 +681,7 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter state_write_to_cache");
+  TSDebug(PLUGIN_NAME, "enter state_write_to_cache");
 
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
@@ -672,27 +689,28 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
     return TS_SUCCESS;
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSDebug("protocol", "nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
-    /* Since the first write is through TSVConnWrite, which aleady consume
+    TSDebug(PLUGIN_NAME, "nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
+    /* Since the first write is through TSVConnWrite, which already consume
        the data in cache_buffer_reader, don't consume it again. */
-    if (txn_sm->q_cache_response_length > 0 && txn_sm->q_block_bytes_read > 0)
+    if (txn_sm->q_cache_response_length > 0 && txn_sm->q_block_bytes_read > 0) {
       TSIOBufferReaderConsume(txn_sm->q_cache_response_buffer_reader, txn_sm->q_block_bytes_read);
+    }
 
     txn_sm->q_cache_response_length += TSVIONBytesGet(vio);
 
     /* If not all data have been read in, we have to reenable the read_vio */
     if (txn_sm->q_server_vc != NULL) {
-      TSDebug("protocol", "re-enable server_read_vio");
+      TSDebug(PLUGIN_NAME, "re-enable server_read_vio");
       TSVIOReenable(txn_sm->q_server_read_vio);
       return TS_SUCCESS;
     }
 
     if (txn_sm->q_cache_response_length >= txn_sm->q_server_response_length) {
       /* Write is complete, close the cache_vc. */
-      TSDebug("protocol", "close cache_vc, cache_response_length is %d, server_response_lenght is %d",
+      TSDebug(PLUGIN_NAME, "close cache_vc, cache_response_length is %d, server_response_length is %d",
               txn_sm->q_cache_response_length, txn_sm->q_server_response_length);
       TSVConnClose(txn_sm->q_cache_vc);
-      txn_sm->q_cache_vc = NULL;
+      txn_sm->q_cache_vc        = NULL;
       txn_sm->q_cache_write_vio = NULL;
       TSIOBufferReaderFree(txn_sm->q_cache_response_buffer_reader);
 
@@ -701,7 +719,7 @@ state_write_to_cache(TSCont contp, TSEvent event, TSVIO vio)
       txn_sm->q_pending_action = TSCacheRead(contp, txn_sm->q_key);
     } else { /* not done with writing into cache */
 
-      TSDebug("protocol", "re-enable cache_write_vio");
+      TSDebug(PLUGIN_NAME, "re-enable cache_write_vio");
       TSVIOReenable(txn_sm->q_cache_write_vio);
     }
     return TS_SUCCESS;
@@ -721,34 +739,34 @@ state_send_response_to_client(TSCont contp, TSEvent event, TSVIO vio)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter state_send_response_to_client");
+  TSDebug(PLUGIN_NAME, "enter state_send_response_to_client");
 
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY:
-    TSDebug("protocol", " . wr ready");
-    TSDebug("protocol", "write_ready: nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
+    TSDebug(PLUGIN_NAME, " . wr ready");
+    TSDebug(PLUGIN_NAME, "write_ready: nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
     TSVIOReenable(txn_sm->q_client_write_vio);
     break;
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSDebug("protocol", " . wr complete");
-    TSDebug("protocol", "write_complete: nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
+    TSDebug(PLUGIN_NAME, " . wr complete");
+    TSDebug(PLUGIN_NAME, "write_complete: nbytes %" PRId64 ", ndone %" PRId64, TSVIONBytesGet(vio), TSVIONDoneGet(vio));
     /* Finished sending all data to client, close client_vc. */
     if (txn_sm->q_client_vc) {
       TSVConnClose(txn_sm->q_client_vc);
       txn_sm->q_client_vc = NULL;
     }
-    txn_sm->q_client_read_vio = NULL;
+    txn_sm->q_client_read_vio  = NULL;
     txn_sm->q_client_write_vio = NULL;
 
     return state_done(contp, 0, NULL);
 
   default:
-    TSDebug("protocol", " . default handler");
+    TSDebug(PLUGIN_NAME, " . default handler");
     return prepare_to_die(contp);
   }
 
-  TSDebug("protocol", "leaving send_response_to_client");
+  TSDebug(PLUGIN_NAME, "leaving send_response_to_client");
 
   return TS_SUCCESS;
 }
@@ -760,26 +778,26 @@ prepare_to_die(TSCont contp)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter prepare_to_die");
+  TSDebug(PLUGIN_NAME, "enter prepare_to_die");
   if (txn_sm->q_client_vc) {
     TSVConnAbort(txn_sm->q_client_vc, 1);
     txn_sm->q_client_vc = NULL;
   }
-  txn_sm->q_client_read_vio = NULL;
+  txn_sm->q_client_read_vio  = NULL;
   txn_sm->q_client_write_vio = NULL;
 
   if (txn_sm->q_server_vc) {
     TSVConnAbort(txn_sm->q_server_vc, 1);
     txn_sm->q_server_vc = NULL;
   }
-  txn_sm->q_server_read_vio = NULL;
+  txn_sm->q_server_read_vio  = NULL;
   txn_sm->q_server_write_vio = NULL;
 
   if (txn_sm->q_cache_vc) {
     TSVConnAbort(txn_sm->q_cache_vc, 1);
     txn_sm->q_cache_vc = NULL;
   }
-  txn_sm->q_cache_read_vio = NULL;
+  txn_sm->q_cache_read_vio  = NULL;
   txn_sm->q_cache_write_vio = NULL;
 
   return state_done(contp, 0, NULL);
@@ -790,48 +808,52 @@ state_done(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vio ATS_UNUSED)
 {
   TxnSM *txn_sm = (TxnSM *)TSContDataGet(contp);
 
-  TSDebug("protocol", "enter state_done");
+  TSDebug(PLUGIN_NAME, "enter state_done");
 
   if (txn_sm->q_pending_action && !TSActionDone(txn_sm->q_pending_action)) {
-    TSDebug("protocol", "cancelling pending action %p", txn_sm->q_pending_action);
+    TSDebug(PLUGIN_NAME, "cancelling pending action %p", txn_sm->q_pending_action);
     TSActionCancel(txn_sm->q_pending_action);
   } else if (txn_sm->q_pending_action) {
-    TSDebug("protocol", "action is done %p", txn_sm->q_pending_action);
+    TSDebug(PLUGIN_NAME, "action is done %p", txn_sm->q_pending_action);
   }
 
   txn_sm->q_pending_action = NULL;
-  txn_sm->q_mutex = NULL;
+  txn_sm->q_mutex          = NULL;
 
   if (txn_sm->q_client_request_buffer) {
-    if (txn_sm->q_client_request_buffer_reader)
+    if (txn_sm->q_client_request_buffer_reader) {
       TSIOBufferReaderFree(txn_sm->q_client_request_buffer_reader);
+    }
     TSIOBufferDestroy(txn_sm->q_client_request_buffer);
-    txn_sm->q_client_request_buffer = NULL;
+    txn_sm->q_client_request_buffer        = NULL;
     txn_sm->q_client_request_buffer_reader = NULL;
   }
 
   if (txn_sm->q_client_response_buffer) {
-    if (txn_sm->q_client_response_buffer_reader)
+    if (txn_sm->q_client_response_buffer_reader) {
       TSIOBufferReaderFree(txn_sm->q_client_response_buffer_reader);
+    }
 
     TSIOBufferDestroy(txn_sm->q_client_response_buffer);
-    txn_sm->q_client_response_buffer = NULL;
+    txn_sm->q_client_response_buffer        = NULL;
     txn_sm->q_client_response_buffer_reader = NULL;
   }
 
   if (txn_sm->q_cache_read_buffer) {
-    if (txn_sm->q_cache_read_buffer_reader)
+    if (txn_sm->q_cache_read_buffer_reader) {
       TSIOBufferReaderFree(txn_sm->q_cache_read_buffer_reader);
+    }
     TSIOBufferDestroy(txn_sm->q_cache_read_buffer);
-    txn_sm->q_cache_read_buffer = NULL;
+    txn_sm->q_cache_read_buffer        = NULL;
     txn_sm->q_cache_read_buffer_reader = NULL;
   }
 
   if (txn_sm->q_server_request_buffer) {
-    if (txn_sm->q_server_request_buffer_reader)
+    if (txn_sm->q_server_request_buffer_reader) {
       TSIOBufferReaderFree(txn_sm->q_server_request_buffer_reader);
+    }
     TSIOBufferDestroy(txn_sm->q_server_request_buffer);
-    txn_sm->q_server_request_buffer = NULL;
+    txn_sm->q_server_request_buffer        = NULL;
     txn_sm->q_server_request_buffer_reader = NULL;
   }
 
@@ -850,8 +872,9 @@ state_done(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vio ATS_UNUSED)
     txn_sm->q_file_name = NULL;
   }
 
-  if (txn_sm->q_key)
+  if (txn_sm->q_key) {
     TSCacheKeyDestroy(txn_sm->q_key);
+  }
 
   if (txn_sm->q_client_request) {
     TSfree(txn_sm->q_client_request);
@@ -863,10 +886,9 @@ state_done(TSCont contp, TSEvent event ATS_UNUSED, TSVIO vio ATS_UNUSED)
     txn_sm->q_server_response = NULL;
   }
 
-  if (txn_sm) {
-    txn_sm->q_magic = TXN_SM_DEAD;
-    TSfree(txn_sm);
-  }
+  txn_sm->q_magic = TXN_SM_DEAD;
+  TSfree(txn_sm);
+
   TSContDestroy(contp);
   return TS_EVENT_NONE;
 }
@@ -878,12 +900,12 @@ send_response_to_client(TSCont contp)
   TxnSM *txn_sm;
   int response_len;
 
-  TSDebug("protocol", "enter send_response_to_client");
+  TSDebug(PLUGIN_NAME, "enter send_response_to_client");
 
-  txn_sm = (TxnSM *)TSContDataGet(contp);
+  txn_sm       = (TxnSM *)TSContDataGet(contp);
   response_len = TSIOBufferReaderAvail(txn_sm->q_client_response_buffer_reader);
 
-  TSDebug("protocol", " . resp_len is %d", response_len);
+  TSDebug(PLUGIN_NAME, " . resp_len is %d", response_len);
 
   set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_interface_with_client);
   txn_sm->q_client_write_vio =
@@ -899,23 +921,23 @@ get_info_from_buffer(TSIOBufferReader the_reader)
   char *info_start;
 
   int64_t read_avail, read_done;
-  TSIOBufferBlock blk;
-  char *buf;
 
-  if (!the_reader)
+  if (!the_reader) {
     return NULL;
+  }
 
   read_avail = TSIOBufferReaderAvail(the_reader);
 
   info = (char *)TSmalloc(sizeof(char) * read_avail);
-  if (info == NULL)
+  if (info == NULL) {
     return NULL;
+  }
   info_start = info;
 
   /* Read the data out of the reader */
   while (read_avail > 0) {
-    blk = TSIOBufferReaderStart(the_reader);
-    buf = (char *)TSIOBufferBlockReadStart(blk, the_reader, &read_done);
+    TSIOBufferBlock blk = TSIOBufferReaderStart(the_reader);
+    char *buf           = (char *)TSIOBufferBlockReadStart(blk, the_reader, &read_done);
     memcpy(info, buf, read_done);
     if (read_done > 0) {
       TSIOBufferReaderConsume(the_reader, read_done);
@@ -932,8 +954,9 @@ int
 is_request_end(char *buf)
 {
   char *temp = strstr(buf, " \n\n");
-  if (!temp)
+  if (!temp) {
     return 0;
+  }
   return 1;
 }
 
@@ -942,18 +965,20 @@ int
 parse_request(char *request, char *server_name, char *file_name)
 {
   char *saveptr = NULL;
-  char *temp = strtok_r(request, " ", &saveptr);
+  char *temp    = strtok_r(request, " ", &saveptr);
 
-  if (temp != NULL)
+  if (temp != NULL) {
     TSstrlcpy(server_name, temp, MAX_SERVER_NAME_LENGTH + 1);
-  else
+  } else {
     return 0;
+  }
 
   temp = strtok_r(NULL, " ", &saveptr);
-  if (temp != NULL)
+  if (temp != NULL) {
     TSstrlcpy(file_name, temp, MAX_FILE_NAME_LENGTH + 1);
-  else
+  } else {
     return 0;
+  }
 
   return 1;
 }

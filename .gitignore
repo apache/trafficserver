@@ -10,6 +10,7 @@ Makefile.in
 *.log
 *.trs
 .*.sw*
+*.o.tmp
 
 .deps/
 
@@ -17,14 +18,18 @@ Makefile.in
 
 .project
 .cproject
+.idea
+
+.diags.log.meta
 
 /aclocal.m4
 /autom4te.cache
 /build-aux
 /configure
 /tags
+/_build
 
-build/aux/
+build/_aux/
 build/libtool.m4
 build/ltoptions.m4
 build/ltsugar.m4
@@ -33,11 +38,15 @@ build/lt~obsolete.m4
 
 Makefile
 Makefile-pl
+config.cache
 config.status
 config.nice
 config.h
 
-doc/_build/html/api/
+configs/records.config.default
+configs/storage.config.default
+
+doc/_build
 doc/docbuild/
 doc/locale/pot
 doc/xml/
@@ -45,53 +54,75 @@ doc/xml/
 MYMETA.*
 pm_to_blib
 
-cmd/traffic_cop/traffic_cop
-cmd/traffic_ctl/traffic_ctl
-cmd/traffic_crashlog/traffic_crashlog
-cmd/traffic_top/traffic_top
-cmd/traffic_manager/traffic_manager
-cmd/traffic_layout/traffic_layout
-cmd/traffic_via/traffic_via
-cmd/traffic_wccp/traffic_wccp
+src/traffic_cache_tool/traffic_cache_tool
+src/traffic_cop/traffic_cop
+src/traffic_crashlog/traffic_crashlog
+src/traffic_ctl/traffic_ctl
+src/traffic_layout/traffic_layout
+src/traffic_logcat/traffic_logcat
+src/traffic_logstats/traffic_logstats
+src/traffic_manager/traffic_manager
+src/traffic_server/traffic_server
+src/traffic_top/traffic_top
+src/traffic_via/traffic_via
+src/traffic_wccp/traffic_wccp
 
-lib/stamp-h1
-lib/ink_autoconf.h
-lib/ink_autoconf.h.in
-lib/ts/stamp-h1
-lib/ts/ink_autoconf.h
-lib/ts/ink_autoconf.h.in
-lib/ts/ink_config.h
-lib/ts/apidefs.h
-lib/ts/CompileParseRules
-lib/ts/ParseRulesCType
-lib/ts/ParseRulesCTypeToLower
-lib/ts/ParseRulesCTypeToUpper
-lib/ts/mkdfa
-lib/ts/test_List
-lib/ts/test_arena
-lib/ts/test_atomic
-lib/ts/test_freelist
-lib/ts/test_Map
-lib/ts/test_Vec
-lib/ts/test_geometry
-lib/ts/test_Regex
-lib/ts/test_PriorityQueue
-lib/ts/test_X509HostnameValidator
+include/stamp-h1
+include/ink_autoconf.h
+include/ink_autoconf.h.in
+src/tscore/stamp-h1
+src/tscore/ink_autoconf.h
+src/tscore/ink_autoconf.h.in
+include/tscore/ink_config.h
+include/ts/apidefs.h
+src/tscore/CompileParseRules
+src/tscore/ParseRulesCType
+src/tscore/ParseRulesCTypeToLower
+src/tscore/ParseRulesCTypeToUpper
+src/tscore/mkdfa
+src/tscore/test_atomic
+src/tscore/test_freelist
+src/tscore/test_geometry
+src/tscore/test_Regex
+src/tscore/test_X509HostnameValidator
+src/tscore/test_tscore
+src/tscpp/util/test_tscpputil
+lib/records/test_librecords
 lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
+iocore/net/test_UDPNet
 iocore/aio/test_AIO
 iocore/eventsystem/test_Buffer
 iocore/eventsystem/test_Event
-proxy/config/records.config.default
-proxy/config/storage.config.default
+iocore/eventsystem/test_MIOBufferWriter
+iocore/hostdb/test_RefCountCache
+
 proxy/hdrs/test_mime
+proxy/hdrs/test_proxy_hdrs
+proxy/http/test_proxy_http
 proxy/http2/test_Huffmancode
+proxy/http2/test_Http2DependencyTree
+proxy/http2/test_HPACK
+proxy/http2/hpack-tests/results
+proxy/logging/test_LogUtils
+proxy/logging/test_LogUtils2
 
 plugins/header_rewrite/header_rewrite_test
+plugins/experimental/cookie_remap/test_cookiejar
 plugins/experimental/esi/*_test
-plugins/experimental/spdy/zstream_test
+plugins/experimental/slice/test_*
 plugins/experimental/sslheaders/test_sslheaders
+plugins/s3_auth/test_s3auth
+
+plugins/esi/docnode_test
+plugins/esi/gzip_test
+plugins/esi/parser_test
+plugins/esi/processor_test
+plugins/esi/utils_test
+plugins/esi/vars_test
+
+plugins/experimental/uri_signing/test_uri_signing
 
 mgmt/api/traffic_api_cli_remote
 mgmt/tools/traffic_mcast_snoop
@@ -102,11 +133,6 @@ mgmt/tools/traffic_vip_config
 mgmt/api/api_cli_remote
 mgmt/tools/shmem_clean
 mgmt/utils/test_marshall
-proxy/traffic_logcat
-proxy/traffic_logstats
-proxy/traffic_sac
-proxy/traffic_server
-proxy/test_xml_parser
 
 libtool
 m4/libtool.m4
@@ -125,6 +151,7 @@ rc/trafficserver.service
 .libs/
 
 .svn/
+.vscode/
 
 tsxs
 
@@ -138,8 +165,8 @@ ETAGS
 CTAGS
 
 lib/tsconfig/TsConfigGrammar.hpp
-lib/tsconfig/test-tsconfig
 lib/tsconfig/TsConfigSyntax.c
+lib/tsconfig/test-tsconfig
 
 tools/http_load/http_load
 tools/jtest/jtest
@@ -148,3 +175,10 @@ tools/trafficserver.pc
 BUILDS
 DEBUG
 RELEASE
+
+# autest
+tests/env-test/
+tests/Pipfile.lock
+
+iocore/cache/test_*
+iocore/cache/test/var/trafficserver/cache.db

@@ -22,7 +22,7 @@
  */
 
 #include "P_SSLCertLookup.h"
-#include "ts/TestBox.h"
+#include "tscore/TestBox.h"
 #include <fstream>
 
 static IpEndpoint
@@ -39,11 +39,11 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
   TestBox box(t, pstatus);
   SSLCertLookup lookup;
 
-  SSL_CTX *wild = SSL_CTX_new(SSLv23_server_method());
-  SSL_CTX *notwild = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX *wild      = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX *notwild   = SSL_CTX_new(SSLv23_server_method());
   SSL_CTX *b_notwild = SSL_CTX_new(SSLv23_server_method());
-  SSL_CTX *foo = SSL_CTX_new(SSLv23_server_method());
-  SSL_CTX *all_com = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX *foo       = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX *all_com   = SSL_CTX_new(SSLv23_server_method());
   SSLCertContext wild_cc(wild);
   SSLCertContext notwild_cc(notwild);
   SSLCertContext b_notwild_cc(b_notwild);
@@ -52,11 +52,11 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
 
   box = REGRESSION_TEST_PASSED;
 
-  assert(wild != NULL);
-  assert(notwild != NULL);
-  assert(b_notwild != NULL);
-  assert(foo != NULL);
-  assert(all_com != NULL);
+  assert(wild != nullptr);
+  assert(notwild != nullptr);
+  assert(b_notwild != nullptr);
+  assert(foo != nullptr);
+  assert(all_com != nullptr);
 
   box.check(lookup.insert("www.foo.com", foo_cc) >= 0, "insert host context");
   // Insert the same SSL_CTX instance under another name too
@@ -77,19 +77,26 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
   box.check(lookup.insert("www.foo.com", all_com_cc) < 0, "insert wildcard context duplicate");
 
   // Basic wildcard cases.
-  box.check(lookup.find("a.wild.com")->ctx == wild, "wildcard lookup for a.wild.com");
-  box.check(lookup.find("b.wild.com")->ctx == wild, "wildcard lookup for b.wild.com");
+  box.check(lookup.find("a.wild.com")->getCtx().get() == wild, "wildcard lookup for a.wild.com");
+  box.check(lookup.find("b.wild.com")->getCtx().get() == wild, "wildcard lookup for b.wild.com");
   box.check(lookup.insert("www.foo.com", all_com_cc) < 0, "insert wildcard context duplicate");
 
   // Verify that wildcard does longest match.
-  box.check(lookup.find("a.notwild.com")->ctx == notwild, "wildcard lookup for a.notwild.com");
-  box.check(lookup.find("notwild.com")->ctx == all_com, "wildcard lookup for notwild.com");
-  box.check(lookup.find("c.b.notwild.com")->ctx == b_notwild, "wildcard lookup for c.b.notwild.com");
+  box.check(lookup.find("a.notwild.com")->getCtx().get() == notwild, "wildcard lookup for a.notwild.com");
+  box.check(lookup.find("notwild.com")->getCtx().get() == all_com, "wildcard lookup for notwild.com");
+  box.check(lookup.find("c.b.notwild.com")->getCtx().get() == b_notwild, "wildcard lookup for c.b.notwild.com");
 
   // Basic hostname cases.
-  box.check(lookup.find("www.foo.com")->ctx == foo, "host lookup for www.foo.com");
-  box.check(lookup.find("www.bar.com")->ctx == all_com, "host lookup for www.bar.com");
-  box.check(lookup.find("www.bar.net") == NULL, "host lookup for www.bar.net");
+  box.check(lookup.find("www.foo.com")->getCtx().get() == foo, "host lookup for www.foo.com");
+  box.check(lookup.find("www.bar.com") == nullptr, "www.bar.com won't match *.com because we only match one level");
+  box.check(lookup.find("www.bar.net") == nullptr, "host lookup for www.bar.net");
+
+  // Make sure cases are lowered
+  box.check(lookup.find("WWW.foo.com")->getCtx().get() == foo, "mixed case lookup for www.foo.com");
+  box.check(lookup.insert("Mixed.Case.Com", foo_cc) >= 0, "mixed case insert for Mixed.Case.Com");
+  box.check(lookup.find("Mixed.CASE.Com")->getCtx().get() == foo, "mixed case lookup 1 for Mixed.Case.Com");
+  box.check(lookup.find("Mixed.Case.Com")->getCtx().get() == foo, "mixed case lookup 2 for Mixed.Case.Com");
+  box.check(lookup.find("mixed.case.com")->getCtx().get() == foo, "lower case lookup for Mixed.Case.Com");
 }
 
 REGRESSION_TEST(SSLAddressLookup)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
@@ -111,18 +118,18 @@ REGRESSION_TEST(SSLAddressLookup)(RegressionTest *t, int /* atype ATS_UNUSED */,
     IpEndpoint ip4p;
   } endpoint;
 
-  context.ip6 = SSL_CTX_new(SSLv23_server_method());
+  context.ip6  = SSL_CTX_new(SSLv23_server_method());
   context.ip6p = SSL_CTX_new(SSLv23_server_method());
-  context.ip4 = SSL_CTX_new(SSLv23_server_method());
+  context.ip4  = SSL_CTX_new(SSLv23_server_method());
   context.ip4p = SSL_CTX_new(SSLv23_server_method());
   SSLCertContext ip6_cc(context.ip6);
   SSLCertContext ip6p_cc(context.ip6p);
   SSLCertContext ip4_cc(context.ip4);
   SSLCertContext ip4p_cc(context.ip4p);
 
-  endpoint.ip6 = make_endpoint("fe80::7ed1:c3ff:fe90:2582");
+  endpoint.ip6  = make_endpoint("fe80::7ed1:c3ff:fe90:2582");
   endpoint.ip6p = make_endpoint("[fe80::7ed1:c3ff:fe90:2582]:80");
-  endpoint.ip4 = make_endpoint("10.0.0.5");
+  endpoint.ip4  = make_endpoint("10.0.0.5");
   endpoint.ip4p = make_endpoint("10.0.0.5:80");
 
   box = REGRESSION_TEST_PASSED;
@@ -131,20 +138,20 @@ REGRESSION_TEST(SSLAddressLookup)(RegressionTest *t, int /* atype ATS_UNUSED */,
   // the most specific match (ie. find the context with the port if it is available) ...
 
   box.check(lookup.insert(endpoint.ip6, ip6_cc) >= 0, "insert IPv6 address");
-  box.check(lookup.find(endpoint.ip6)->ctx == context.ip6, "IPv6 exact match lookup");
-  box.check(lookup.find(endpoint.ip6p)->ctx == context.ip6, "IPv6 exact match lookup w/ port");
+  box.check(lookup.find(endpoint.ip6)->getCtx().get() == context.ip6, "IPv6 exact match lookup");
+  box.check(lookup.find(endpoint.ip6p)->getCtx().get() == context.ip6, "IPv6 exact match lookup w/ port");
 
   box.check(lookup.insert(endpoint.ip6p, ip6p_cc) >= 0, "insert IPv6 address w/ port");
-  box.check(lookup.find(endpoint.ip6)->ctx == context.ip6, "IPv6 longest match lookup");
-  box.check(lookup.find(endpoint.ip6p)->ctx == context.ip6p, "IPv6 longest match lookup w/ port");
+  box.check(lookup.find(endpoint.ip6)->getCtx().get() == context.ip6, "IPv6 longest match lookup");
+  box.check(lookup.find(endpoint.ip6p)->getCtx().get() == context.ip6p, "IPv6 longest match lookup w/ port");
 
   box.check(lookup.insert(endpoint.ip4, ip4_cc) >= 0, "insert IPv4 address");
-  box.check(lookup.find(endpoint.ip4)->ctx == context.ip4, "IPv4 exact match lookup");
-  box.check(lookup.find(endpoint.ip4p)->ctx == context.ip4, "IPv4 exact match lookup w/ port");
+  box.check(lookup.find(endpoint.ip4)->getCtx().get() == context.ip4, "IPv4 exact match lookup");
+  box.check(lookup.find(endpoint.ip4p)->getCtx().get() == context.ip4, "IPv4 exact match lookup w/ port");
 
   box.check(lookup.insert(endpoint.ip4p, ip4p_cc) >= 0, "insert IPv4 address w/ port");
-  box.check(lookup.find(endpoint.ip4)->ctx == context.ip4, "IPv4 longest match lookup");
-  box.check(lookup.find(endpoint.ip4p)->ctx == context.ip4p, "IPv4 longest match lookup w/ port");
+  box.check(lookup.find(endpoint.ip4)->getCtx().get() == context.ip4, "IPv4 longest match lookup");
+  box.check(lookup.find(endpoint.ip4p)->getCtx().get() == context.ip4p, "IPv4 longest match lookup w/ port");
 }
 
 static unsigned
@@ -161,7 +168,7 @@ load_hostnames_csv(const char *fname, SSLCertLookup &lookup)
   SSLCertContext ctx_cc(ctx);
 
   // The input should have 2 comma-separated fields; this is the format that you get when
-  // you download the top 1M sites from alexa.
+  // you download the top 1M sites from Alexa.
   //
   // For example:
   //    1,google.com
@@ -207,7 +214,7 @@ int
 main(int argc, const char **argv)
 {
   BaseLogFile *blf = new BaseLogFile("stdout");
-  diags = new Diags(NULL, NULL, blf);
+  diags            = new Diags("test_certlookup", nullptr, nullptr, blf);
   res_track_memory = 1;
 
   SSL_library_init();
@@ -225,7 +232,7 @@ main(int argc, const char **argv)
 
   } else {
     // Standard regression tests.
-    RegressionTest::run();
+    RegressionTest::run(nullptr, REGRESSION_TEST_QUICK);
   }
 
   ink_freelists_dump(stdout);

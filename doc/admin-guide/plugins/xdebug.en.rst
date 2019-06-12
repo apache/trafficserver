@@ -27,8 +27,11 @@ the Traffic Server cache using the default ``X-Debug`` header. The plugin
 is triggered by the presence of the ``X-Debug`` or the configured header in
 the client request. The contents of this header should be the names of the
 debug headers that are desired in the response. The `XDebug` plugin
-will remove the ``X-Debug`` header from the client request and
-inject the desired headers into the client response.
+will inject the desired headers into the client response.  In addition, a value of the
+form ``fwd=n`` may appear in the ``X-Debug`` header, where ``n`` is a nonnegative
+number.  If ``n`` is zero, the ``X-Debug`` header will be deleted.  Otherwise, ``n`` is
+decremented by 1.  ``=n`` may be omitted, in which case the ``X-Debug`` header will
+not be modified or deleted.
 
 `XDebug` is a global plugin. It is installed by adding it to the
 :file:`plugin.config` file. It currently takes a single, optional
@@ -53,6 +56,21 @@ Diags
     If the ``Diags`` header is requested, the `XDebug` plugin enables the
     transaction specific diagnostics for the transaction. This also requires
     that :ts:cv:`proxy.config.diags.debug.enabled` is set to ``1``.
+
+Probe
+    All request and response headers are written to the response body. Because
+    the body is altered, it disables writing to cache.
+    In conjunction with the `fwd` tag, the response body will contain a
+    chronological log of all headers for all transactions used for this
+    response.
+
+    Layout:
+
+    - Request Headers from Client  -> Proxy A
+    - Request Headers from Proxy A -> Proxy B
+    - Original content body
+    - Response Headers from Proxy B -> Proxy A
+    - Response Headers from Proxy A -> Client
 
 X-Cache-Key
     The ``X-Cache-Key`` header contains the URL that identifies the HTTP object in the
@@ -83,3 +101,11 @@ X-Milestones
     :c:func:`TSHttpTxnMilestoneGet` API. Each milestone value is a
     fractional number of seconds since the beginning of the
     transaction.
+
+X-Transaction-ID
+    A unique transaction ID, which identifies this request / transaction. This
+    matches the log field format that is also available, %<cruuid>.
+
+X-Remap
+    If the URL was remapped for a request, this header gives the *to* and *from* field from the line in remap.config that caused
+    the URL to be remapped.

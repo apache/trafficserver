@@ -30,13 +30,11 @@
  *
  ****************************************************************************/
 
-#ifndef _REVERSE_PROXY_H_
-#define _REVERSE_PROXY_H_
+#pragma once
 
-#include "P_RecProcess.h"
+#include "records/P_RecProcess.h"
 
-#include "ts/ink_hash_table.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 #include "HttpTransact.h"
 #include "RemapPluginInfo.h"
 #include "UrlRewrite.h"
@@ -47,26 +45,16 @@
 class url_mapping;
 struct host_hdr_info;
 
-// Variables for the CDN URL Remapping Feature
-extern int url_remap_mode;
-
 extern UrlRewrite *rewrite_table;
-extern remap_plugin_info *remap_pi_list;
 
 // API Functions
 int init_reverse_proxy();
 
-// Both Return true if a remapping was made and false otherwise
-// ebalsa@ Y! -- this happens in the remapProcessor now for the reverse proxy case (not CDN or BlindTunnel)
-bool request_url_remap(HttpTransact::State *s, HTTPHdr *request_header, char **redirect_url,
-                       unsigned int filter_mask = URL_REMAP_FILTER_NONE);
-
-mapping_type request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_url);
-bool response_url_remap(HTTPHdr *response_header);
+mapping_type request_url_remap_redirect(HTTPHdr *request_header, URL *redirect_url, UrlRewrite *table);
+bool response_url_remap(HTTPHdr *response_header, UrlRewrite *table);
 
 // Reload Functions
 bool reloadUrlRewrite();
+bool urlRewriteVerify();
 
 int url_rewrite_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
-
-#endif

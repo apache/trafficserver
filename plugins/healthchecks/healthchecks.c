@@ -33,21 +33,18 @@ limitations under the License.
 #include <libgen.h>
 
 #include "ts/ts.h"
-#include "ts/ink_platform.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_defs.h"
 
 static const char PLUGIN_NAME[] = "healthchecks";
-static const char SEPARATORS[] = " \t\n";
+static const char SEPARATORS[]  = " \t\n";
 
 #define MAX_PATH_LEN 4096
 #define MAX_BODY_LEN 16384
 #define FREELIST_TIMEOUT 300
 
-/* Some atomic stuff, from ATS core */
-typedef volatile void *vvoidp;
-
 static inline void *
-ink_atomic_swap_ptr(vvoidp mem, void *value)
+ink_atomic_swap_ptr(void *mem, void *value)
 {
   return __sync_lock_test_and_set((void **)mem, value);
 }
@@ -125,8 +122,9 @@ static HCDirEntry *
 find_direntry(const char *dname, HCDirEntry *dir)
 {
   while (dir) {
-    if (!strncmp(dname, dir->dname, MAX_PATH_LEN))
+    if (!strncmp(dname, dir->dname, MAX_PATH_LEN)) {
       return dir;
+    }
     dir = dir->_next;
   }
   return NULL;
@@ -136,7 +134,7 @@ find_direntry(const char *dname, HCDirEntry *dir)
 static HCDirEntry *
 setup_watchers(int fd)
 {
-  HCFileInfo *conf = g_config;
+  HCFileInfo *conf     = g_config;
   HCDirEntry *head_dir = NULL, *last_dir = NULL, *dir;
   char fname[MAX_PATH_LEN];
   char *dname;
@@ -144,7 +142,7 @@ setup_watchers(int fd)
   while (conf) {
     conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
     TSDebug(PLUGIN_NAME, "Setting up a watcher for %s", conf->fname);
-    strncpy(fname, conf->fname, MAX_PATH_LEN - 1);
+    strncpy(fname, conf->fname, MAX_PATH_LEN);
     dname = dirname(fname);
     /* Make sure to only watch each directory once */
     if (!(dir = find_direntry(dname, head_dir))) {
@@ -153,14 +151,15 @@ setup_watchers(int fd)
       memset(dir, 0, sizeof(HCDirEntry));
       strncpy(dir->dname, dname, MAX_PATH_LEN - 1);
       dir->wd = inotify_add_watch(fd, dname, IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO | IN_ATTRIB);
-      if (!head_dir)
+      if (!head_dir) {
         head_dir = dir;
-      else
+      } else {
         last_dir->_next = dir;
+      }
       last_dir = dir;
     }
     conf->dir = dir;
-    conf = conf->_next;
+    conf      = conf->_next;
   }
 
   return head_dir;
@@ -187,9 +186,9 @@ hc_thread(void *data ATS_UNUSED)
   while (1) {
     HCFileData *fdata = fl_head, *fdata_prev = NULL;
 
+    gettimeofday(&now, NULL);
     /* Read the inotify events, blocking until we get something */
     len = read(fd, buffer, INOTIFY_BUFLEN);
-    gettimeofday(&now, NULL);
 
     /* The fl_head is a linked list of previously released data entries. They
        are ordered "by time", so once we find one that is scheduled for deletion,
@@ -197,23 +196,24 @@ hc_thread(void *data ATS_UNUSED)
     while (fdata) {
       if (now.tv_sec > fdata->remove) {
         /* Now drop off the "tail" from the freelist */
-        if (fdata_prev)
+        if (fdata_prev) {
           fdata_prev->_next = NULL;
-        else
+        } else {
           fl_head = NULL;
+        }
 
         /* free() everything in the "tail" */
         do {
           HCFileData *next = fdata->_next;
 
-          TSDebug(PLUGIN_NAME, "Cleaning up entry from frelist");
+          TSDebug(PLUGIN_NAME, "Cleaning up entry from freelist");
           TSfree(fdata);
           fdata = next;
         } while (fdata);
         break; /* Stop the loop, there's nothing else left to examine */
       }
       fdata_prev = fdata;
-      fdata = fdata->_next;
+      fdata      = fdata->_next;
     }
 
     if (len >= 0) {
@@ -221,11 +221,10 @@ hc_thread(void *data ATS_UNUSED)
 
       while (i < len) {
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
-        HCFileInfo *finfo = g_config;
+        HCFileInfo *finfo           = g_config;
 
-        while (
-          finfo &&
-          !((event->wd == finfo->wd) || ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, event->len)))) {
+        while (finfo && !((event->wd == finfo->wd) ||
+                          ((event->wd == finfo->dir->wd) && !strncmp(event->name, finfo->basename, event->len)))) {
           finfo = finfo->_next;
         }
         if (finfo) {
@@ -249,9 +248,10 @@ hc_thread(void *data ATS_UNUSED)
 
           /* Add the old data to the head of the freelist */
           old_data->remove = now.tv_sec + FREELIST_TIMEOUT;
-          old_data->_next = fl_head;
-          fl_head = old_data;
+          old_data->_next  = fl_head;
+          fl_head          = old_data;
         }
+        /* coverity[ -tainted_data_return] */
         i += sizeof(struct inotify_event) + event->len;
       }
     }
@@ -285,7 +285,7 @@ gen_header(char *status_str, char *mime, int *header_len)
     status_reason = TSHttpHdrReasonLookup(status);
     len += strlen(status_reason);
     len += strlen(mime);
-    buf = TSmalloc(len);
+    buf         = TSmalloc(len);
     *header_len = snprintf(buf, len, HEADER_TEMPLATE, status, status_reason, mime);
   } else {
     *header_len = 0;
@@ -301,8 +301,23 @@ parse_configs(const char *fname)
   char buf[2 * 1024];
   HCFileInfo *head_finfo = NULL, *finfo = NULL, *prev_finfo = NULL;
 
-  if (NULL == (fd = fopen(fname, "r")))
+  if (!fname) {
     return NULL;
+  }
+
+  if ('/' == *fname) {
+    fd = fopen(fname, "r");
+  } else {
+    char filename[PATH_MAX + 1];
+
+    snprintf(filename, sizeof(filename), "%s/%s", TSConfigDirGet(), fname);
+    fd = fopen(filename, "r");
+  }
+
+  if (NULL == fd) {
+    TSError("%s: Could not open config file", PLUGIN_NAME);
+    return NULL;
+  }
 
   while (!feof(fd)) {
     char *str, *save;
@@ -318,16 +333,18 @@ parse_configs(const char *fname)
         if (strlen(str) > 0) {
           switch (state) {
           case 0:
-            if ('/' == *str)
+            if ('/' == *str) {
               ++str;
+            }
             strncpy(finfo->path, str, PATH_NAME_MAX - 1);
             finfo->p_len = strlen(finfo->path);
             break;
           case 1:
             strncpy(finfo->fname, str, MAX_PATH_LEN - 1);
             finfo->basename = strrchr(finfo->fname, '/');
-            if (finfo->basename)
+            if (finfo->basename) {
               ++(finfo->basename);
+            }
             break;
           case 2:
             mime = str;
@@ -347,7 +364,7 @@ parse_configs(const char *fname)
       /* Fill in the info if everything was ok */
       if (state > 4) {
         TSDebug(PLUGIN_NAME, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
-        finfo->ok = gen_header(ok, mime, &finfo->o_len);
+        finfo->ok   = gen_header(ok, mime, &finfo->o_len);
         finfo->miss = gen_header(miss, mime, &finfo->m_len);
         finfo->data = TSmalloc(sizeof(HCFileData));
         memset(finfo->data, 0, sizeof(HCFileData));
@@ -432,15 +449,16 @@ hc_process_write(TSCont contp, TSEvent event, HCState *my_state)
     char buf[48];
     int len;
 
-    len = snprintf(buf, sizeof(buf) - 1, "Content-Length: %d\r\n\r\n", my_state->data->b_len);
+    len = snprintf(buf, sizeof(buf), "Content-Length: %d\r\n\r\n", my_state->data->b_len);
     my_state->output_bytes += add_data_to_resp(buf, len, my_state);
-    if (my_state->data->b_len > 0)
+    if (my_state->data->b_len > 0) {
       my_state->output_bytes += add_data_to_resp(my_state->data->body, my_state->data->b_len, my_state);
-    else
+    } else {
       my_state->output_bytes += add_data_to_resp("\r\n", 2, my_state);
+    }
     TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
     TSVIOReenable(my_state->write_vio);
-  } else if (TS_EVENT_VCONN_WRITE_COMPLETE) {
+  } else if (event == TS_EVENT_VCONN_WRITE_COMPLETE) {
     cleanup(contp, my_state);
   } else if (event == TS_EVENT_ERROR) {
     TSError("[healthchecks] hc_process_write: Received TS_EVENT_ERROR");
@@ -453,13 +471,13 @@ hc_process_write(TSCont contp, TSEvent event, HCState *my_state)
 static void
 hc_process_accept(TSCont contp, HCState *my_state)
 {
-  my_state->req_buffer = TSIOBufferCreate();
+  my_state->req_buffer  = TSIOBufferCreate();
   my_state->resp_buffer = TSIOBufferCreate();
   my_state->resp_reader = TSIOBufferReaderAlloc(my_state->resp_buffer);
-  my_state->read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
+  my_state->read_vio    = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
 }
 
-/* Imlement the server intercept */
+/* Implement the server intercept */
 static int
 hc_intercept(TSCont contp, TSEvent event, void *edata)
 {
@@ -487,16 +505,17 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
   TSMLoc hdr_loc = NULL, url_loc = NULL;
   TSCont icontp;
   HCState *my_state;
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp   = (TSHttpTxn)edata;
   HCFileInfo *info = g_config;
 
   if ((TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc)) && (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc))) {
-    int path_len = 0;
+    int path_len     = 0;
     const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
 
-    /* Short circuit the / path, common case, and we won't allow healthecks on / */
-    if (!path || !path_len)
+    /* Short circuit the / path, common case, and we won't allow healthchecks on / */
+    if (!path || !path_len) {
       goto cleanup;
+    }
 
     while (info) {
       if (info->p_len == path_len && !memcmp(info->path, path, path_len)) {
@@ -506,13 +525,14 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
       info = info->_next;
     }
 
-    if (!info)
+    if (!info) {
       goto cleanup;
+    }
 
     TSSkipRemappingSet(txnp, 1); /* not strictly necessary, but speed is everything these days */
 
     /* This is us -- register our intercept */
-    icontp = TSContCreate(hc_intercept, TSMutexCreate());
+    icontp   = TSContCreate(hc_intercept, TSMutexCreate());
     my_state = (HCState *)TSmalloc(sizeof(*my_state));
     memset(my_state, 0, sizeof(*my_state));
     my_state->info = info;
@@ -522,10 +542,12 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
   }
 
 cleanup:
-  if (url_loc)
+  if (url_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, url_loc);
-  if (hdr_loc)
+  }
+  if (hdr_loc) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
+  }
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 
@@ -539,16 +561,16 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
 
   if (2 != argc) {
-    TSError("[healthchecks] Must specify a configuration file.");
+    TSError("[healthchecks] Must specify a configuration file");
     return;
   }
 
-  info.plugin_name = "health_checks";
-  info.vendor_name = "Apache Software Foundation";
+  info.plugin_name   = "health_checks";
+  info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError("[healthchecks] Plugin registration failed.");
+    TSError("[healthchecks] Plugin registration failed");
     return;
   }
 

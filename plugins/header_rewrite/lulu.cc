@@ -17,6 +17,7 @@
 */
 
 #include <string>
+#include <netinet/in.h>
 
 #include "ts/ts.h"
 #include "lulu.h"
@@ -27,8 +28,16 @@ getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN])
 {
   res[0] = '\0';
 
-  if (s_sockaddr == NULL) {
-    return NULL;
+  if (s_sockaddr == nullptr) {
+    return nullptr;
+  }
+
+  // This is a little kludgy, but the TS APIs that returns sockadd's don't return
+  // nullptr's in general (it seems). Maybe that should be fixed, or maybe we should
+  // export lib/ts/ink_inet.h as C APIs... (according to amc). But without this check,
+  // we get ::1 even when the sockaddr isn't populated (e.g. server addr on a cache hit).
+  if (AF_UNSPEC == s_sockaddr->sa_family) {
+    return nullptr;
   }
 
   switch (s_sockaddr->sa_family) {
@@ -42,7 +51,7 @@ getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN])
   } break;
   }
 
-  return res[0] ? res : NULL;
+  return res[0] ? res : nullptr;
 }
 
 // Return it as a std::string instead (more expensive, but sometimes convenient)
@@ -62,6 +71,10 @@ getIP(sockaddr const *s_sockaddr)
 uint16_t
 getPort(sockaddr const *s_sockaddr)
 {
+  if (!s_sockaddr) {
+    return 0;
+  }
+
   switch (s_sockaddr->sa_family) {
   case AF_INET: {
     const struct sockaddr_in *s_sockaddr_in = reinterpret_cast<const struct sockaddr_in *>(s_sockaddr);

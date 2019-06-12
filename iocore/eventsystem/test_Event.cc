@@ -22,7 +22,8 @@
  */
 
 #include "I_EventSystem.h"
-#include "ts/I_Layout.h"
+#include "tscore/I_Layout.h"
+#include "tscore/TSSystemState.h"
 
 #include "diags.i"
 
@@ -47,10 +48,12 @@ struct process_killer : public Continuation {
   kill_function(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
     printf("Count is %d \n", count);
-    if (count <= 0)
+    if (count <= 0) {
       exit(1);
-    if (count > TEST_TIME_SECOND * TEST_THREADS)
+    }
+    if (count > TEST_TIME_SECOND * TEST_THREADS) {
       exit(1);
+    }
     exit(0);
     return 0;
   }
@@ -60,19 +63,21 @@ int
 main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 {
   RecModeT mode_type = RECM_STAND_ALONE;
-  count = 0;
+  count              = 0;
 
   Layout::create();
-  init_diags("", NULL);
+  init_diags("", nullptr);
   RecProcessInit(mode_type);
 
-  ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
+  ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
   eventProcessor.start(TEST_THREADS, 1048576); // Hardcoded stacksize at 1MB
 
-  alarm_printer *alrm = new alarm_printer(new_ProxyMutex());
+  alarm_printer *alrm    = new alarm_printer(new_ProxyMutex());
   process_killer *killer = new process_killer(new_ProxyMutex());
   eventProcessor.schedule_in(killer, HRTIME_SECONDS(10));
   eventProcessor.schedule_every(alrm, HRTIME_SECONDS(1));
-  this_thread()->execute();
+  while (!TSSystemState::is_event_system_shut_down()) {
+    sleep(1);
+  }
   return 0;
 }

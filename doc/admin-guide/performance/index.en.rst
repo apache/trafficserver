@@ -111,7 +111,7 @@ megabytes of RAM cache for every gigabyte of disk cache storage, though this
 setting can be adjusted manually in :file:`records.config` using the setting
 :ts:cv:`proxy.config.cache.ram_cache.size`. |TS| will, under the default
 configuration, adjust this automatically if your system does not have enough
-physical memory to accomodate the aforementioned target.
+physical memory to accommodate the aforementioned target.
 
 Aside from the cost of physical memory, and necessary supporting hardware to
 make use of large amounts of RAM, there is little downside to increasing the
@@ -234,7 +234,7 @@ your cache, leaving the default at a minute or two, but enforce a much stricter
 timeout on a set of very small, incredibly heavily accessed objects for which
 you can construct a ``map`` rule with the goal of reducing the chances that a
 few bad actors (misconfigured or misbehaving clients) may generate too much
-connection pressure on your cache. The tradeoff may be that some perfectly
+connection pressure on your cache. The trade off may be that some perfectly
 innocent, but slow clients may have their connections terminated early. As with
 all performance tuning efforts, your needs are likely to vary from others' and
 should be carefully considered and closely monitored.
@@ -242,7 +242,7 @@ should be carefully considered and closely monitored.
 Default Inactivity Timeout
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The :ts:cv:`proxy.process.net.default_inactivity_timeout` setting is applied to
+The :ts:cv:`proxy.config.net.default_inactivity_timeout` setting is applied to
 the HTTP state machine when no other inactivity timeouts have been applied. In
 effect, it sets an upper limit, in seconds, on state machine inactivity.
 
@@ -276,7 +276,7 @@ When :ref:`background fills <admin-config-read-while-writer>` are enabled,
 time after which |TS| will abort the fill attempt and close the origin
 server connection that was being used. Setting this to zero disables the
 timeout, but modifying the value and enforcing a timeout may help in
-situtations where your origin servers stall connections without closing.
+situations where your origin servers stall connections without closing.
 
 ::
 
@@ -303,17 +303,6 @@ information on when this TTL value will actually be used).
     CONFIG proxy.config.hostdb.timeout INT 1440
     CONFIG proxy.config.hostdb.lookup_timeout INT 30
 
-ICP Timeout
-~~~~~~~~~~~
-
-When using :ref:`admin-icp-peering` for hierarchical caching configurations, a
-global timeout on all inter-cache queries may be set, in seconds, using
-:ts:cv:`proxy.config.icp.query_timeout`.
-
-::
-
-    CONFIG proxy.config.icp.query_timeout INT 2
-
 Keepalive Timeouts
 ~~~~~~~~~~~~~~~~~~
 
@@ -329,7 +318,7 @@ keepalive timeout which (if set lower) will likely take precedence.
 
 ::
 
-    CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
+    CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 120
     CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
 
 Origin Connection Timeouts
@@ -436,14 +425,15 @@ in seconds, which |TS| will spend sending/receiving data with a client or
 origin server, respectively. If the data transfer has not completed within the
 time specified then the connection will be closed automatically. This may
 result in the lack of a cache update, or partial data transmitted to a client.
-Both timeouts are disabled (set to ``0``) by default.
+:ts:cv:`proxy.config.http.transaction_active_timeout_out` is disabled (set to ``0``) by default.
+:ts:cv:`proxy.config.http.transaction_active_timeout_in` is set to 900 seconds by default.
 
 In general, it's unlikely you will want to enable either of these timeouts
 globally, especially if your cache contains objects of varying sizes and deals
 with clients which may support a range of speeds (and therefore take less or
 more time to complete normal, healthy data exchanges). However, there may be
 configurations in which small objects need to be exchanged in very short
-periods and you wish your |TS| cache to enforce these time resrictions by
+periods and you wish your |TS| cache to enforce these time restrictions by
 closing connections which exceed them.
 
 The variables :ts:cv:`proxy.config.http.transaction_no_activity_timeout_in` and
@@ -456,7 +446,7 @@ values prove somewhat more generally applicable.
 
 ::
 
-    CONFIG proxy.config.http.transaction_active_timeout_in INT 0
+    CONFIG proxy.config.http.transaction_active_timeout_in INT 900
     CONFIG proxy.config.http.transaction_active_timeout_out INT 0
     CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
     CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30
@@ -497,8 +487,8 @@ Network Tuning
 
 :ts:cv:`proxy.config.net.connections_throttle`
 
-Error responses from origins are conistent and costly
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Error responses from origins are consistent and costly
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If error responses are costly for your origin server to generate, you may elect
 to have |TS| cache these responses for a period of time. The default behavior is
@@ -507,10 +497,12 @@ client request to result in an origin request.
 
 This behavior is controlled by both enabling the feature via
 :ts:cv:`proxy.config.http.negative_caching_enabled` and setting the cache time
-(in seconds) with :ts:cv:`proxy.config.http.negative_caching_lifetime`. ::
+(in seconds) with :ts:cv:`proxy.config.http.negative_caching_lifetime`. Configured
+status code for negative caching can be set with :ts:cv:`proxy.config.http.negative_caching_list`. ::
 
     CONFIG proxy.config.http.negative_caching_enabled INT 1
     CONFIG proxy.config.http.negative_caching_lifetime INT 10
+    CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 405 414 500 501 502 503 504
 
 SSL-Specific Options
 ~~~~~~~~~~~~~~~~~~~~
@@ -529,7 +521,6 @@ Logging Configuration
 
    binary vs. ascii output
    multiple log formats (netscape+squid+custom vs. just custom)
-   overhead to log collation
    using direct writes vs. syslog target
 
 Plugin Tuning
@@ -544,6 +535,6 @@ shortcuts to identifying problem areas, or realizing easier performance gains.
 
 .. TODO::
 
-   - origins not sending proper expiration headers (can fix at the origin (preferable) or use proxy.config.http.cache.heuristic_(min|max)_lifetime as hacky bandaids)
+   - origins not sending proper expiration headers (can fix at the origin (preferable) or use proxy.config.http.cache.heuristic_(min|max)_lifetime as hacky band-aids)
    - cookies and http_auth prevent caching
    - avoid thundering herd with read-while-writer (link to section in http-proxy-caching)

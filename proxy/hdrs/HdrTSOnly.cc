@@ -37,14 +37,14 @@
 
  ****************************************************************************/
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "HTTP.h"
 #include "P_EventSystem.h"
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-MIMEParseResult
+ParseResult
 HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing)
 {
   const char *start;
@@ -55,8 +55,8 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
-  MIMEParseResult state = PARSE_CONT;
-  *bytes_used = 0;
+  ParseResult state = PARSE_RESULT_CONT;
+  *bytes_used       = 0;
 
   do {
     int64_t b_avail = r->block_read_avail();
@@ -66,7 +66,7 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
     }
 
     tmp = start = r->start();
-    end = start + b_avail;
+    end         = start + b_avail;
 
     int heap_slot = m_heap->attach_block(r->get_current_block(), start);
 
@@ -79,12 +79,12 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
     r->consume(used);
     *bytes_used += used;
 
-  } while (state == PARSE_CONT);
+  } while (state == PARSE_RESULT_CONT);
 
   return state;
 }
 
-MIMEParseResult
+ParseResult
 HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof)
 {
   const char *start;
@@ -95,17 +95,25 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
-  MIMEParseResult state = PARSE_CONT;
-  *bytes_used = 0;
+  ParseResult state = PARSE_RESULT_CONT;
+  *bytes_used       = 0;
 
   do {
     int64_t b_avail = r->block_read_avail();
+    tmp = start = r->start();
 
-    if (b_avail <= 0 && eof == false) {
-      break;
+    // No data currently available.
+    if (b_avail <= 0) {
+      if (eof == false) { // more data may arrive later, return CONTINUE state.
+        break;
+      } else if (nullptr == start) {
+        // EOF on empty MIOBuffer - that's a fail, don't bother with parsing.
+        // (otherwise will attempt to attach_block a non-existent block)
+        state = PARSE_RESULT_ERROR;
+        break;
+      }
     }
 
-    tmp = start = r->start();
     end = start + b_avail;
 
     int heap_slot = m_heap->attach_block(r->get_current_block(), start);
@@ -119,7 +127,7 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
     r->consume(used);
     *bytes_used += used;
 
-  } while (state == PARSE_CONT);
+  } while (state == PARSE_RESULT_CONT);
 
   return state;
 }
@@ -138,7 +146,7 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
 void
 HdrHeap::set_ronly_str_heap_end(int slot, const char *end)
 {
-  ink_assert(m_ronly_heap[slot].m_heap_start != NULL);
+  ink_assert(m_ronly_heap[slot].m_heap_start != nullptr);
   ink_assert(m_ronly_heap[slot].m_heap_start <= end);
   ink_assert(end <= m_ronly_heap[slot].m_heap_start + m_ronly_heap[slot].m_heap_len);
 
@@ -162,30 +170,29 @@ HdrHeap::attach_block(IOBufferBlock *b, const char *use_start)
 
 RETRY:
 
-  // It's my contention that since heaps are add to the
-  //   first available slot, one you find an empty slot
-  //   it's not possible that a heap ptr for this block
-  //   exists in a later slot
-  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
-    if (m_ronly_heap[i].m_heap_start == NULL) {
+  // It's my contention that since heaps are add to the first available slot, one you find an empty
+  // slot it's not possible that a heap ptr for this block exists in a later slot
+
+  for (auto &heap : m_ronly_heap) {
+    if (heap.m_heap_start == nullptr) {
       // Add block to heap in this slot
-      m_ronly_heap[i].m_heap_start = (char *)use_start;
-      m_ronly_heap[i].m_heap_len = (int)(b->end() - b->start());
-      m_ronly_heap[i].m_ref_count_ptr = b->data.object();
+      heap.m_heap_start    = static_cast<char const *>(use_start);
+      heap.m_heap_len      = static_cast<int>(b->end() - b->start());
+      heap.m_ref_count_ptr = b->data.object();
       //          printf("Attaching block at %X for %d in slot %d\n",
       //                 m_ronly_heap[i].m_heap_start,
       //                 m_ronly_heap[i].m_heap_len,
       //                 i);
-      return i;
-    } else if (m_ronly_heap[i].m_heap_start == b->buf()) {
+      return &heap - m_ronly_heap;
+    } else if (heap.m_heap_start == b->buf()) {
       // This block is already on the heap so just extend
       //   it's range
-      m_ronly_heap[i].m_heap_len = (int)(b->end() - b->buf());
+      heap.m_heap_len = static_cast<int>(b->end() - b->buf());
       //          printf("Extending block at %X to %d in slot %d\n",
       //                 m_ronly_heap[i].m_heap_start,
       //                 m_ronly_heap[i].m_heap_len,
       //                 i);
-      return i;
+      return &heap - m_ronly_heap;
     }
   }
 

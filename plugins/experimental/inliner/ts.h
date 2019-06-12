@@ -20,10 +20,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef TS_H
-#define TS_H
 
-#include <assert.h>
+#pragma once
+
+#include <cassert>
 #include <limits>
 #include <list>
 #include <memory>
@@ -47,19 +47,19 @@ namespace io
   struct IO {
     TSIOBuffer buffer;
     TSIOBufferReader reader;
-    TSVIO vio;
+    TSVIO vio = nullptr;
 
     ~IO()
     {
       consume();
-      assert(reader != NULL);
+      assert(reader != nullptr);
       TSIOBufferReaderFree(reader);
-      assert(buffer != NULL);
+      assert(buffer != nullptr);
       TSIOBufferDestroy(buffer);
     }
 
-    IO(void) : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)), vio(NULL) {}
-    IO(const TSIOBuffer &b) : buffer(b), reader(TSIOBufferReaderAlloc(buffer)), vio(NULL) { assert(buffer != NULL); }
+    IO() : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)) {}
+    IO(const TSIOBuffer &b) : buffer(b), reader(TSIOBufferReaderAlloc(buffer)) { assert(buffer != nullptr); }
     static IO *read(TSVConn, TSCont, const int64_t);
 
     static IO *
@@ -78,9 +78,9 @@ namespace io
 
     uint64_t copy(const std::string &) const;
 
-    int64_t consume(void) const;
+    int64_t consume() const;
 
-    int64_t done(void) const;
+    int64_t done() const;
   };
 
   struct ReaderSize {
@@ -90,22 +90,22 @@ namespace io
 
     ReaderSize(const TSIOBufferReader r, const size_t s, const size_t o = 0) : reader(r), offset(o), size(s)
     {
-      assert(reader != NULL);
+      assert(reader != nullptr);
     }
 
     ReaderSize(const ReaderSize &) = delete;
     ReaderSize &operator=(const ReaderSize &) = delete;
-    void *operator new(const std::size_t) throw(std::bad_alloc) = delete;
+    void *operator new(const std::size_t)     = delete;
   };
 
   struct ReaderOffset {
     const TSIOBufferReader reader;
     const size_t offset;
 
-    ReaderOffset(const TSIOBufferReader r, const size_t o) : reader(r), offset(o) { assert(reader != NULL); }
+    ReaderOffset(const TSIOBufferReader r, const size_t o) : reader(r), offset(o) { assert(reader != nullptr); }
     ReaderOffset(const ReaderOffset &) = delete;
     ReaderOffset &operator=(const ReaderOffset &) = delete;
-    void *operator new(const std::size_t) throw(std::bad_alloc) = delete;
+    void *operator new(const std::size_t)         = delete;
   };
 
   struct WriteOperation;
@@ -114,26 +114,27 @@ namespace io
   typedef std::weak_ptr<WriteOperation> WriteOperationWeakPointer;
 
   struct Lock {
-    const TSMutex mutex_;
+    const TSMutex mutex_ = nullptr;
 
     ~Lock()
     {
-      if (mutex_ != NULL) {
+      if (mutex_ != nullptr) {
         TSMutexUnlock(mutex_);
       }
     }
 
     Lock(const TSMutex m) : mutex_(m)
     {
-      if (mutex_ != NULL) {
+      if (mutex_ != nullptr) {
         TSMutexLock(mutex_);
       }
     }
 
-    Lock(void) : mutex_(NULL) {}
+    // noncopyable
+    Lock() {}
     Lock(const Lock &) = delete;
 
-    Lock(Lock &&l) : mutex_(l.mutex_) { const_cast<TSMutex &>(l.mutex_) = NULL; }
+    Lock(Lock &&l) : mutex_(l.mutex_) { const_cast<TSMutex &>(l.mutex_) = nullptr; }
     Lock &operator=(const Lock &) = delete;
   };
 
@@ -150,10 +151,11 @@ namespace io
     bool reenable_;
 
     static int Handle(TSCont, TSEvent, void *);
-    static WriteOperationWeakPointer Create(const TSVConn, const TSMutex mutex = NULL, const size_t timeout = 0);
+    static WriteOperationWeakPointer Create(const TSVConn, const TSMutex mutex = nullptr, const size_t timeout = 0);
 
     ~WriteOperation();
 
+    // noncopyable
     WriteOperation(const WriteOperation &) = delete;
     WriteOperation &operator=(const WriteOperation &) = delete;
 
@@ -164,8 +166,8 @@ namespace io
     WriteOperation &operator<<(const std::string &);
 
     void process(const size_t b = 0);
-    void close(void);
-    void abort(void);
+    void close();
+    void abort();
 
   private:
     WriteOperation(const TSVConn, const TSMutex, const size_t);
@@ -189,8 +191,9 @@ namespace io
     DataPointer data_;
 
     ~IOSink();
-    IOSink(const IOSink &) = delete;
 
+    // noncopyable
+    IOSink(const IOSink &) = delete;
     IOSink &operator=(const IOSink &) = delete;
 
     template <class T>
@@ -212,10 +215,10 @@ namespace io
       return IOSinkPointer(new IOSink(WriteOperation::Create(std::forward<A>(a)...)));
     }
 
-    void process(void);
-    SinkPointer branch(void);
-    Lock lock(void);
-    void abort(void);
+    void process();
+    SinkPointer branch();
+    Lock lock();
+    void abort();
 
   private:
     IOSink(WriteOperationWeakPointer &&p) : operation_(std::move(p)) {}
@@ -231,27 +234,28 @@ namespace io
   struct StringNode : Node {
     std::string string_;
     explicit StringNode(std::string &&s) : string_(std::move(s)) {}
-    Node::Result process(const TSIOBuffer);
+    Node::Result process(const TSIOBuffer) override;
   };
 
   struct BufferNode : Node {
     const TSIOBuffer buffer_;
     const TSIOBufferReader reader_;
 
-    ~BufferNode()
+    ~BufferNode() override
     {
-      assert(reader_ != NULL);
+      assert(reader_ != nullptr);
       TSIOBufferReaderFree(reader_);
-      assert(buffer_ != NULL);
+      assert(buffer_ != nullptr);
       TSIOBufferDestroy(buffer_);
     }
 
-    BufferNode(void) : buffer_(TSIOBufferCreate()), reader_(TSIOBufferReaderAlloc(buffer_))
+    BufferNode() : buffer_(TSIOBufferCreate()), reader_(TSIOBufferReaderAlloc(buffer_))
     {
-      assert(buffer_ != NULL);
-      assert(reader_ != NULL);
+      assert(buffer_ != nullptr);
+      assert(reader_ != nullptr);
     }
 
+    // noncopyable
     BufferNode(const BufferNode &) = delete;
     BufferNode &operator=(const BufferNode &) = delete;
     BufferNode &operator<<(const TSIOBufferReader);
@@ -259,7 +263,7 @@ namespace io
     BufferNode &operator<<(const ReaderOffset &);
     BufferNode &operator<<(const char *const);
     BufferNode &operator<<(const std::string &);
-    Node::Result process(const TSIOBuffer);
+    Node::Result process(const TSIOBuffer) override;
   };
 
   struct Data : Node {
@@ -268,10 +272,11 @@ namespace io
     bool first_;
 
     template <class T> Data(T &&t) : root_(std::forward<T>(t)), first_(false) {}
+    // noncopyable
     Data(const Data &) = delete;
     Data &operator=(const Data &) = delete;
 
-    Node::Result process(const TSIOBuffer);
+    Node::Result process(const TSIOBuffer) override;
   };
 
   struct Sink {
@@ -280,10 +285,11 @@ namespace io
     ~Sink();
 
     template <class... A> Sink(A &&... a) : data_(std::forward<A>(a)...) {}
+    // noncopyable
     Sink(const Sink &) = delete;
     Sink &operator=(const Sink &) = delete;
 
-    SinkPointer branch(void);
+    SinkPointer branch();
 
     Sink &operator<<(std::string &&);
 
@@ -293,7 +299,7 @@ namespace io
     {
       if (data_) {
         const Lock lock = data_->root_->lock();
-        assert(data_->root_ != NULL);
+        assert(data_->root_ != nullptr);
         const bool empty = data_->nodes_.empty();
         if (data_->first_ && empty) {
           // TSDebug(PLUGIN_TAG, "flushing");
@@ -301,15 +307,15 @@ namespace io
           *data_->root_ << std::forward<T>(t);
         } else {
           // TSDebug(PLUGIN_TAG, "buffering");
-          BufferNode *buffer = NULL;
+          BufferNode *buffer = nullptr;
           if (!empty) {
             buffer = dynamic_cast<BufferNode *>(data_->nodes_.back().get());
           }
-          if (buffer == NULL) {
+          if (buffer == nullptr) {
             data_->nodes_.emplace_back(new BufferNode());
             buffer = reinterpret_cast<BufferNode *>(data_->nodes_.back().get());
           }
-          assert(buffer != NULL);
+          assert(buffer != nullptr);
           *buffer << std::forward<T>(t);
         }
       }
@@ -317,7 +323,5 @@ namespace io
     }
   };
 
-} // end of io namespace
-} // end of ats namespace
-
-#endif // TS_H
+} // namespace io
+} // namespace ats

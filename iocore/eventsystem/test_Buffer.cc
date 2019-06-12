@@ -22,8 +22,8 @@
  */
 
 #include "I_EventSystem.h"
-#include "ts/I_Layout.h"
-#include "ts/ink_string.h"
+#include "tscore/I_Layout.h"
+#include "tscore/ink_string.h"
 
 #include "diags.i"
 
@@ -36,18 +36,21 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   RecModeT mode_type = RECM_STAND_ALONE;
 
   Layout::create();
-  init_diags("", NULL);
+  init_diags("", nullptr);
   RecProcessInit(mode_type);
 
-  ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
+  ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
   eventProcessor.start(TEST_THREADS);
 
+  Thread *main_thread = new EThread;
+  main_thread->set_specific();
+
   for (unsigned i = 0; i < 100; ++i) {
-    MIOBuffer *b1 = new_MIOBuffer(default_large_iobuffer_size);
+    MIOBuffer *b1                       = new_MIOBuffer(default_large_iobuffer_size);
     IOBufferReader *b1reader ATS_UNUSED = b1->alloc_reader();
     b1->fill(b1->write_avail());
 
-    MIOBuffer *b2 = new_MIOBuffer(default_large_iobuffer_size);
+    MIOBuffer *b2                       = new_MIOBuffer(default_large_iobuffer_size);
     IOBufferReader *b2reader ATS_UNUSED = b2->alloc_reader();
     b2->fill(b2->write_avail());
 
@@ -58,6 +61,4 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   }
 
   exit(0);
-  this_thread()->execute();
-  return 0;
 }

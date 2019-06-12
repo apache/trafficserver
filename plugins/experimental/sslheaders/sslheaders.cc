@@ -17,7 +17,7 @@
  */
 
 #include "sslheaders.h"
-#include "ts/ink_memory.h"
+#include "tscore/ink_memory.h"
 
 #include <getopt.h>
 #include <openssl/ssl.h>
@@ -32,11 +32,11 @@ SslHdrExpandRequestHook(TSCont cont, TSEvent event, void *edata)
   TSHttpTxn txn;
   TSMBuffer mbuf;
   TSMLoc mhdr;
-  SSL *ssl;
 
-  txn = (TSHttpTxn)edata;
-  hdr = (const SslHdrInstance *)TSContDataGet(cont);
-  ssl = (SSL *)TSHttpSsnSSLConnectionGet(TSHttpTxnSsnGet(txn));
+  txn                 = (TSHttpTxn)edata;
+  hdr                 = (const SslHdrInstance *)TSContDataGet(cont);
+  TSVConn vconn       = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txn));
+  TSSslConnection ssl = TSVConnSSLConnectionGet(vconn);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -53,7 +53,7 @@ SslHdrExpandRequestHook(TSCont cont, TSEvent event, void *edata)
     // If we are only attaching to the client request, NULL the SSL context in order to
     // nuke the SSL headers from the server request.
     if (hdr->attach == SSL_HEADERS_ATTACH_CLIENT) {
-      ssl = NULL;
+      ssl = nullptr;
     }
 
     break;
@@ -61,7 +61,7 @@ SslHdrExpandRequestHook(TSCont cont, TSEvent event, void *edata)
     goto done;
   }
 
-  SslHdrExpand(ssl, hdr->expansions, mbuf, mhdr);
+  SslHdrExpand((SSL *)ssl, hdr->expansions, mbuf, mhdr);
   TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
 
 done:
@@ -116,46 +116,90 @@ SslHdrSetHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string &name, BIO *value
   }
 }
 
+namespace
+{
+template <bool IsClient> class WrapX509
+{
+public:
+  WrapX509(SSL *ssl) : _ssl(ssl), _x509(_nonNullInvalidValue()) {}
+
+  X509 *
+  get()
+  {
+    if (_x509 == _nonNullInvalidValue()) {
+      _set();
+    }
+
+    return _x509;
+  }
+
+  ~WrapX509()
+  {
+    if (IsClient && (_x509 != _nonNullInvalidValue()) && (_x509 != nullptr)) {
+      X509_free(_x509);
+    }
+  }
+
+private:
+  SSL *_ssl;
+  X509 *_x509;
+
+  // The address of this object can not be a valid X509 structure address.
+  X509 *
+  _nonNullInvalidValue() const
+  {
+    return reinterpret_cast<X509 *>(const_cast<WrapX509 *>(this));
+  }
+
+  void
+  _set()
+  {
+    _x509 = (IsClient ? SSL_get_peer_certificate : SSL_get_certificate)(_ssl);
+  }
+};
+} // end anonymous namespace
+
 // Process SSL header expansions. If this is not an SSL connection, then we need to delete the SSL headers
 // so that malicious clients cannot inject bogus information. Otherwise, we populate the header with the
 // expanded value. If the value expands to something empty, we nuke the header.
 static void
 SslHdrExpand(SSL *ssl, const SslHdrInstance::expansion_list &expansions, TSMBuffer mbuf, TSMLoc mhdr)
 {
-  if (ssl == NULL) {
-    for (SslHdrInstance::expansion_list::const_iterator e = expansions.begin(); e != expansions.end(); ++e) {
-      SslHdrRemoveHeader(mbuf, mhdr, e->name);
+  if (ssl == nullptr) {
+    for (const auto &expansion : expansions) {
+      SslHdrRemoveHeader(mbuf, mhdr, expansion.name);
     }
   } else {
+    WrapX509<true> clientX509(ssl);
+    WrapX509<false> serverX509(ssl);
     X509 *x509;
+
     BIO *exp = BIO_new(BIO_s_mem());
 
-    for (SslHdrInstance::expansion_list::const_iterator e = expansions.begin(); e != expansions.end(); ++e) {
-      switch (e->scope) {
+    for (const auto &expansion : expansions) {
+      switch (expansion.scope) {
       case SSL_HEADERS_SCOPE_CLIENT:
-        x509 = SSL_get_peer_certificate(ssl);
+        x509 = clientX509.get();
+        if (x509 == nullptr) {
+          SslHdrRemoveHeader(mbuf, mhdr, expansion.name);
+          continue;
+        }
         break;
       case SSL_HEADERS_SCOPE_SERVER:
-        x509 = SSL_get_certificate(ssl);
+        x509 = serverX509.get();
+        if (x509 == nullptr) {
+          continue;
+        }
         break;
       default:
-        x509 = NULL;
-      }
-
-      if (x509 == NULL) {
         continue;
       }
 
-      SslHdrExpandX509Field(exp, x509, e->field);
+      SslHdrExpandX509Field(exp, x509, expansion.field);
       if (BIO_pending(exp)) {
-        SslHdrSetHeader(mbuf, mhdr, e->name, exp);
+        SslHdrSetHeader(mbuf, mhdr, expansion.name, exp);
       } else {
-        SslHdrRemoveHeader(mbuf, mhdr, e->name);
-      }
-
-      // Getting the peer certificate takes a reference count, but the server certificate doesn't.
-      if (x509 && e->scope == SSL_HEADERS_SCOPE_CLIENT) {
-        X509_free(x509);
+        SslHdrRemoveHeader(mbuf, mhdr, expansion.name);
       }
     }
 
@@ -166,19 +210,17 @@ SslHdrExpand(SSL *ssl, const SslHdrInstance::expansion_list &expansions, TSMBuff
 static SslHdrInstance *
 SslHdrParseOptions(int argc, const char **argv)
 {
-  static const struct option longopt[] = {{const_cast<char *>("attach"), required_argument, 0, 'a'}, {0, 0, 0, 0}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("attach"), required_argument, nullptr, 'a'},
+    {nullptr, 0, nullptr, 0},
+  };
 
   ats_scoped_obj<SslHdrInstance> hdr(new SslHdrInstance());
-
-  // We might parse arguments multiple times if we are loaded as a global
-  // plugin and a remap plugin. Reset optind so that getopt_long() does the
-  // right thing (ie. work instead of crash).
-  optind = 0;
 
   for (;;) {
     int opt;
 
-    opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
+    opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
     switch (opt) {
     case 'a':
       if (strcmp(optarg, "client") == 0) {
@@ -189,7 +231,7 @@ SslHdrParseOptions(int argc, const char **argv)
         hdr->attach = SSL_HEADERS_ATTACH_BOTH;
       } else {
         TSError("[%s] Invalid attach option '%s'", PLUGIN_NAME, optarg);
-        return NULL;
+        return nullptr;
       }
 
       break;
@@ -201,14 +243,12 @@ SslHdrParseOptions(int argc, const char **argv)
   }
 
   // Pick up the remaining options as SSL header expansions.
+  hdr->expansions.resize(argc - optind);
   for (int i = optind; i < argc; ++i) {
-    SslHdrExpansion exp;
-    if (!SslHdrParseExpansion(argv[i], exp)) {
+    if (!SslHdrParseExpansion(argv[i], hdr->expansions[i - optind])) {
       // If we fail, the expansion parsing logs the error.
-      return NULL;
+      return nullptr;
     }
-
-    hdr->expansions.push_back(exp);
   }
 
   return hdr.release();
@@ -220,8 +260,8 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
   SslHdrInstance *hdr;
 
-  info.plugin_name = (char *)"sslheaders";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"sslheaders";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -234,7 +274,7 @@ TSPluginInit(int argc, const char *argv[])
     case SSL_HEADERS_ATTACH_SERVER:
       TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);
       break;
-    case SSL_HEADERS_ATTACH_BOTH: /* fallthru */
+    case SSL_HEADERS_ATTACH_BOTH: /* fallthrough */
     case SSL_HEADERS_ATTACH_CLIENT:
       TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, hdr->cont);
       TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);
@@ -279,7 +319,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
   case SSL_HEADERS_ATTACH_SERVER:
     TSHttpTxnHookAdd(txn, TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);
     break;
-  case SSL_HEADERS_ATTACH_BOTH: /* fallthru */
+  case SSL_HEADERS_ATTACH_BOTH: /* fallthrough */
   case SSL_HEADERS_ATTACH_CLIENT:
     TSHttpTxnHookAdd(txn, TS_HTTP_READ_REQUEST_HDR_HOOK, hdr->cont);
     TSHttpTxnHookAdd(txn, TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);
@@ -289,8 +329,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
   return TSREMAP_NO_REMAP;
 }
 
-SslHdrInstance::SslHdrInstance()
-  : expansions(), attach(SSL_HEADERS_ATTACH_SERVER), cont(TSContCreate(SslHdrExpandRequestHook, NULL))
+SslHdrInstance::SslHdrInstance() : expansions(), cont(TSContCreate(SslHdrExpandRequestHook, nullptr))
 {
   TSContDataSet(cont, this);
 }

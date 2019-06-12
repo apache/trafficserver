@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _UNIX_COMPLETION_UTIL_H_
-#define _UNIX_COMPLETION_UTIL_H_
+#pragma once
 
 // platform specific wrappers for dealing with I/O completion events
 // passed into and back from the I/O core.
@@ -37,7 +36,7 @@ completionUtil::create()
 TS_INLINE void
 completionUtil::destroy(Event *e)
 {
-  ink_assert(e != NULL);
+  ink_assert(e != nullptr);
   UDPIOEvent *u = (UDPIOEvent *)e;
   UDPIOEvent::free(u);
 }
@@ -45,13 +44,13 @@ TS_INLINE void
 completionUtil::setThread(Event *e, EThread *t)
 {
   UDPIOEvent *u = (UDPIOEvent *)e;
-  u->ethread = t;
+  u->ethread    = t;
 }
 TS_INLINE void
 completionUtil::setContinuation(Event *e, Continuation *c)
 {
   UDPIOEvent *u = (UDPIOEvent *)e;
-  *(Action *)u = c;
+  *(Action *)u  = c;
 }
 TS_INLINE void *
 completionUtil::getHandle(Event *e)
@@ -101,4 +100,3 @@ completionUtil::getError(Event *e)
   UDPIOEvent *u = (UDPIOEvent *)e;
   return u->getError();
 }
-#endif

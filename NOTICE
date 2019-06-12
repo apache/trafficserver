@@ -35,11 +35,6 @@ Copyright (C) 2014 LinkedIn
 
 ~~~
 
-Cacheurl Plugin developed by OmniTI on behalf of Google.
-Copyright (C) 2011 Google Inc.
-
-~~~
-
 stale_while_revalidate Plugin developed by OmniTI on behalf of Oregon Health & Science University
 Copyright (C) 2012 Oregon Health & Science University
 
@@ -50,26 +45,13 @@ Copyright (C) 2013 GoDaddy Operating Company, LLC
 
 ~~~
 
-lib/atscppapi developed by LinkedIn
+lib/cppapi developed by LinkedIn
 Copyright (c) 2013 LinkedIn
 
 ~~~
 
 remap_stats and url_sig plugins developed by Comcast.
 Copyright (C) 2014 Comcast
-
-~~~
-
-LuaJIT -- a Just-In-Time Compiler for Lua. http://luajit.org/
-Copyright (C) 2005-2014 Mike Pall. All rights reserved.
-
-~~~
-
-ats_speed - PageSpeed for ATS. Author: oschaaf@we-amp.com (Otto van der Schaaf)
-Copyright (C) 2013 We-Amp B.V.
-
-prepare_psol.sh, ats_message_handler.cc and ats_message_handler.h for ats_speed:
-Copyright (C) 2012 Google Inc.
 
 ~~~
 
@@ -89,22 +71,34 @@ Copyright (C) 2012 GoDaddy Operating Company, LLC
 
 ~~~
 
-lib/ts/HashFNV.cc contains code derived from code at http://www.isthe.com/chongo/tech/comp/fnv/
+src/tscore/HashFNV.cc contains code derived from code at http://www.isthe.com/chongo/tech/comp/fnv/
 It is public domain and has no copyright.
 
 ~~
 
-lib/ts/HashSip.cc contains code derived from code at https://github.com/floodyberry/siphash
+src/tscore/HashSip.cc contains code derived from code at https://github.com/floodyberry/siphash
 The code is public domain.
 
 The algorithm info can be found at: https://131002.net/siphash/
 
 ~~
 
-lib/raft developed by Google.
-Copyright 2014 Google Inc. All Rights Reserved.
+plugins/experimental/memcache/protocol_binary.h developed by Sun Microsystems, Inc.
+Copyright (c) <2008>, Sun Microsystems, Inc.  All rights reserved.
 
 ~~
 
-plugins/experimental/memcache/protocol_binary.h developed by Sun Microsystems, Inc.
-Copyright (c) <2008>, Sun Microsystems, Inc.  All rights reserved.
+Reusable Gold Testing System
+https://bitbucket.org/dragon512/reusable-gold-testing-system
+Copyright (c) 2015-2016 Jason Kenny All Rights Reserved.
+
+~~
+
+Folly: Facebook Open-source Library
+https://github.com/facebook/folly
+
+
+~~
+
+yaml-cpp: A YAML parser and emitter in C++
+https://github.com/jbeder/yaml-cpp

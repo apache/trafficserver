@@ -26,27 +26,57 @@ Synopsis
 
 .. c:type:: TSRecordDataType
 
-Enum typedef.
+   The underlying data type of a data record (configuration variable or statistic).
 
-Enumeration Members
-===================
+   .. c:macro:: TS_RECORDDATATYPE_NULL
 
-.. c:member:: TSRecordDataType TS_RECORDDATATYPE_NULL
+      No data type. Used as an invalid initialization value.
 
-.. c:member:: TSRecordDataType TS_RECORDDATATYPE_INT
+   .. c:macro:: TS_RECORDDATATYPE_INT
 
-.. c:member:: TSRecordDataType TS_RECORDDATATYPE_FLOAT
+      An integer.
 
-.. c:member:: TSRecordDataType TS_RECORDDATATYPE_STRING
+   .. c:macro:: TS_RECORDDATATYPE_FLOAT
 
-.. c:member:: TSRecordDataType TS_RECORDDATATYPE_COUNTER
+       Floating point.
 
-.. c:member:: TSRecordDataType TS_RECORDDATATYPE_STAT_CONST
+   .. c:macro:: TS_RECORDDATATYPE_STRING
 
-.. c:member:: TSRecordDataType TS_RECORDDATATYPE_STAT_FX
+      A string.
 
-.. c:member:: TSRecordDataType TS_RECORDDATATYPE_MAX
+   .. c:macro:: TS_RECORDDATATYPE_COUNTER
+
+      A counter which has a count and a sum.
+
+   .. c:macro:: TS_RECORDDATATYPE_STAT_CONST
+
+      A value that is unchangeable.
+
+   .. c:macro:: TS_RECORDDATATYPE_STAT_FX
+
+      Unknown.
+
+.. c:type:: TSRecordData
+
+   A union that holds the data for a record. The correct member is indicated by a :c:type:`TSRecordType` value.
+
+   .. c:member:: int rec_int
+
+      Data for :c:macro:`TS_RECORDDATATYPE_INT`.
+
+   .. c:member:: float rec_float
+
+      Data for :c:macro:`TS_RECORDDATATYPE_FLOAT`.
+
+   .. c:member:: char * rec_string
+
+      Data for :c:macro:`TS_RECORDDATATYPE_STRING`.
+
+   .. c:member:: int64_t rec_counter
+
+      Data for :c:macro:`TS_RECORDDATATYPE_COUNTER`.
 
 Description
 ===========
 
+This data type describes the data stored in a management value such as a configuration value or a statistic value.

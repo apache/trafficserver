@@ -21,10 +21,9 @@
   limitations under the License.
  */
 
-#ifndef __HTTP2_SESSION_ACCEPT_H__
-#define __HTTP2_SESSION_ACCEPT_H__
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_Net.h"
 
 // XXX HttpSessionAccept::Options needs to be refactored and separated from HttpSessionAccept so that
@@ -41,16 +40,15 @@
 
 struct Http2SessionAccept : public SessionAccept {
   explicit Http2SessionAccept(const HttpSessionAccept::Options &);
-  ~Http2SessionAccept();
+  ~Http2SessionAccept() override;
 
-  void accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
-  int mainEvent(int event, void *netvc);
+  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
+  int mainEvent(int event, void *netvc) override;
+
+  // noncopyable
+  Http2SessionAccept(const Http2SessionAccept &) = delete;
+  Http2SessionAccept &operator=(const Http2SessionAccept &) = delete;
 
 private:
-  Http2SessionAccept(const Http2SessionAccept &);
-  Http2SessionAccept &operator=(const Http2SessionAccept &);
-
   HttpSessionAccept::Options options;
 };
-
-#endif // __HTTP2_SESSION_ACCEPT_H__

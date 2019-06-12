@@ -21,16 +21,15 @@
   limitations under the License.
  */
 
-#ifndef _P_REC_MESSAGE_H_
-#define _P_REC_MESSAGE_H_
+#pragma once
 
 #include "P_RecDefs.h"
+#include "tscpp/util/MemSpan.h"
 
 //-------------------------------------------------------------------------
 // Initialization
 //-------------------------------------------------------------------------
 
-// int RecMessageInit();
 void RecMessageRegister();
 
 //-------------------------------------------------------------------------
@@ -46,9 +45,7 @@ int RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **rec
 
 int RecMessageSend(RecMessage *msg);
 int RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie);
-void *RecMessageRecvThis(void *cookie, char *data_raw, int data_len);
+void RecMessageRecvThis(ts::MemSpan<void>);
 
 RecMessage *RecMessageReadFromDisk(const char *fpath);
 int RecMessageWriteToDisk(RecMessage *msg, const char *fpath);
-
-#endif

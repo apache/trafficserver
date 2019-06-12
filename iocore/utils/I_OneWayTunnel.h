@@ -28,8 +28,7 @@
 
  */
 
-#if !defined(_I_OneWayTunnel_h_)
-#define _I_OneWayTunnel_h_
+#pragma once
 
 #include "I_EventSystem.h"
 
@@ -41,12 +40,12 @@
 
 #define TUNNEL_TILL_DONE INT64_MAX
 
-#define ONE_WAY_TUNNEL_CLOSE_ALL NULL
+#define ONE_WAY_TUNNEL_CLOSE_ALL nullptr
 
 typedef void (*Transform_fn)(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf);
 
 /**
-  A generic state machine that connects two virtual conections. A
+  A generic state machine that connects two virtual connections. A
   OneWayTunnel is a module that connects two virtual connections, a source
   vc and a target vc, and copies the data between source and target. Once
   the tunnel is started using the init() call, it handles all the events
@@ -54,10 +53,10 @@ typedef void (*Transform_fn)(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_b
   its done. On success it calls back the continuation with VC_EVENT_EOS,
   and with VC_EVENT_ERROR on failure.
 
-  If manipulate_fn is not NULL, then the tunnel acts as a filter,
+  If manipulate_fn is not nullptr, then the tunnel acts as a filter,
   processing all data arriving from the source vc by the manipulate_fn
   function, before sending to the target vc. By default, the manipulate_fn
-  is set to NULL, yielding the identity function. manipulate_fn takes
+  is set to nullptr, yielding the identity function. manipulate_fn takes
   a IOBuffer containing the data to be written into the target virtual
   connection which it may manipulate in any manner it sees fit.
 
@@ -87,7 +86,7 @@ struct OneWayTunnel : public Continuation {
 
   static void SetupTwoWayTunnel(OneWayTunnel *east, OneWayTunnel *west);
   OneWayTunnel();
-  virtual ~OneWayTunnel();
+  ~OneWayTunnel() override;
 
   // Use One of the following init functions to start the tunnel.
   /**
@@ -121,9 +120,9 @@ struct OneWayTunnel : public Continuation {
     @param water_mark watermark for the MIOBuffer used for reading.
 
   */
-  void init(VConnection *vcSource, VConnection *vcTarget, Continuation *aCont = NULL, int size_estimate = 0, // 0 = best guess
-            ProxyMutex *aMutex = NULL, int64_t nbytes = TUNNEL_TILL_DONE, bool asingle_buffer = true, bool aclose_source = true,
-            bool aclose_target = true, Transform_fn manipulate_fn = NULL, int water_mark = 0);
+  void init(VConnection *vcSource, VConnection *vcTarget, Continuation *aCont = nullptr, int size_estimate = 0, // 0 = best guess
+            ProxyMutex *aMutex = nullptr, int64_t nbytes = TUNNEL_TILL_DONE, bool asingle_buffer = true, bool aclose_source = true,
+            bool aclose_target = true, Transform_fn manipulate_fn = nullptr, int water_mark = 0);
 
   /**
     This init function sets up only the write side. It assumes that the
@@ -173,7 +172,7 @@ struct OneWayTunnel : public Continuation {
   //
   // Private
   //
-  OneWayTunnel(Continuation *aCont, Transform_fn manipulate_fn = NULL, bool aclose_source = false, bool aclose_target = false);
+  OneWayTunnel(Continuation *aCont, Transform_fn manipulate_fn = nullptr, bool aclose_source = false, bool aclose_target = false);
 
   int startEvent(int event, void *data);
 
@@ -190,25 +189,23 @@ struct OneWayTunnel : public Continuation {
 
   bool last_connection();
 
-  VIO *vioSource;
-  VIO *vioTarget;
-  Continuation *cont;
-  Transform_fn manipulate_fn;
-  int n_connections;
-  int lerrno;
+  VIO *vioSource             = nullptr;
+  VIO *vioTarget             = nullptr;
+  Continuation *cont         = nullptr;
+  Transform_fn manipulate_fn = nullptr;
+  int n_connections          = 0;
+  int lerrno                 = 0;
 
-  bool single_buffer;
-  bool close_source;
-  bool close_target;
-  bool tunnel_till_done;
+  bool single_buffer    = false;
+  bool close_source     = false;
+  bool close_target     = false;
+  bool tunnel_till_done = false;
 
-  /** Non-NULL when this is one side of a two way tunnel. */
-  OneWayTunnel *tunnel_peer;
-  bool free_vcs;
+  /** Non-nullptr when this is one side of a two way tunnel. */
+  OneWayTunnel *tunnel_peer = nullptr;
+  bool free_vcs             = true;
 
-private:
-  OneWayTunnel(const OneWayTunnel &);
-  OneWayTunnel &operator=(const OneWayTunnel &);
+  // noncopyable
+  OneWayTunnel(const OneWayTunnel &) = delete;
+  OneWayTunnel &operator=(const OneWayTunnel &) = delete;
 };
-
-#endif

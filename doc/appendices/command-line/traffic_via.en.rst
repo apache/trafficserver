@@ -56,8 +56,8 @@ Examples
 
 Decode the Via header from command-line arguments::
 
-    $ traffic_via "[uScMsEf p eC:t cCMi p sF]"
-    Via header is uScMsEf p eC:t cCMi p sF, Length is 24
+    $ traffic_via "[uScMsEf p eC:t cCMp sF]"
+    Via header is [uScMsEf p eC:t cCMp sF], Length is 22
     Via Header Details:
     Request headers received from client                   :simple request (not conditional)
     Result of Traffic Server cache lookup for URL          :miss (a cache "MISS")
@@ -68,7 +68,6 @@ Decode the Via header from command-line arguments::
     Tunnel info                                            :no tunneling
     Cache Type                                             :cache
     Cache Lookup Result                                    :cache miss (url not in cache)
-    ICP status                                             :no icp
     Parent proxy connection status                         :no parent proxy or unknown
     Origin server connection status                        :connection open failed
 
@@ -86,6 +85,5 @@ Decode the Via header from a curl request, using the :ref:`X-Debug <admin-plugin
     Tunnel info                                            :no tunneling
     Cache Type                                             :cache
     Cache Lookup Result                                    :cache miss (url not in cache)
-    ICP status                                             :no icp
     Parent proxy connection status                         :no parent proxy or unknown
     Origin server connection status                        :connection opened successfully

@@ -1,0 +1,23 @@
+Apache Traffic Server Header Field Name Counter
+
+This is a plugin for ATS (Apache Traffic Server) that counts the
+number of times request header field names are used. For each request
+the name of each field is added to a running total for that name. Over
+time this provides a frequency map of header field names.
+
+
+Using the plugin
+----------------
+
+This is a global plugin and does not take any configuration. Simply add it to plugin.config.
+
+The frequency data is accessed via the plugin messaging facility. By
+default the data is sent to traffic.out but it can be appended to an
+arbitrary file. The first form logs to traffic.out, the second appends
+to /tmp/log.tx. Note that this file must be writeable to the
+traffic_server process user.
+
+    traffic_ctl plugin msg header_freq log
+
+    traffic_ctl plugin msg header_freq log:/tmp/log.txt
+

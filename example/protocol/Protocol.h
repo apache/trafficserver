@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef PROTOCOL_H
-#define PROTOCOL_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,6 +34,8 @@
 
 #include <ts/ts.h>
 
+#define PLUGIN_NAME "protocol"
+
 #define MAX_SERVER_NAME_LENGTH 1024
 #define MAX_FILE_NAME_LENGTH 1024
 
@@ -45,5 +46,3 @@
   {                         \
     _d = _s;                \
   }
-
-#endif /* PROTOCOL_H */

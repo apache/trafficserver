@@ -26,20 +26,21 @@ Statement::append(Statement *stmt)
 {
   Statement *tmp = this;
 
-  TSReleaseAssert(stmt->_next == NULL);
-  while (tmp->_next)
+  TSReleaseAssert(stmt->_next == nullptr);
+  while (tmp->_next) {
     tmp = tmp->_next;
+  }
   tmp->_next = stmt;
 }
 
-const ResourceIDs
+ResourceIDs
 Statement::get_resource_ids() const
 {
   const Statement *stmt = this;
-  ResourceIDs ids = RSRC_NONE;
+  ResourceIDs ids       = RSRC_NONE;
 
   while (stmt) {
-    ids = static_cast<ResourceIDs>(ids | stmt->_rsrc);
+    ids  = static_cast<ResourceIDs>(ids | stmt->_rsrc);
     stmt = stmt->_next;
   }
 
@@ -63,7 +64,7 @@ void
 Statement::initialize_hooks()
 {
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK);
+  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
   add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);

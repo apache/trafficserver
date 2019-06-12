@@ -60,7 +60,7 @@ the request for the objects), and do not execute on the server.
 In Squid- and Netscape-format log files, what do the cache result codes mean?
 -----------------------------------------------------------------------------
 
-This is described in detail in the :ref:`admin-logging-format-squid` documentation.
+This is described in detail in the :ref:`admin-logging-cache-results` documentation.
 
 What is recorded by the ``cqtx`` field in a custom log file?
 ------------------------------------------------------------
@@ -118,7 +118,7 @@ How do I interpret the Via: header code?
 
 The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
-The Via header is an optional HTTP header added by Traffic Server and other HTTP proxies. If a request goes through multiple proxies, each one appends its Via header content to the end of the existing Via header. Via header content is for general information and diagnostic use only and should not be used as a programmatic interface to Traffic Server.
+The Via header is an optional HTTP header added by Traffic Server and other HTTP proxies. If a request goes through multiple proxies, each one appends its Via header content to the end of the existing Via header. Via header content is for general information and diagnostic use only and should not be used as a programmatic interface to Traffic Server. The header is cached by each intermediary with the object as received from its downstream node. Thus, the last node in the list to report a cache hit is the end of the transaction for that specific request. Nodes reported earlier were from a previous transaction.
 
 The form of the Via header is
 
@@ -143,7 +143,7 @@ Via: HTTP/1.0 storm (Traffic-Server/4.0.0   [cMs f ])
 The short status code shows the cache-lookup, server-info and cache-fill information as listed in the full status code description below. The long status code list provided in older, commercial versions of Traffic Server can be restored by setting the verbose_via_str config variable.
 The character strings in the via-code show [<request results>:<proxy op>] where <request results> represents status information about the results of the client request and <proxy op> represent some information about the proxy operations performed during request processing. The full via-code status format is
 
-[u<client-info> c<cache-lookup> s<server-info> f<cache-fill> p<proxy-info> e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> i<icp-conn-info> p<parent-proxy> s<server-conn-info>]
+[u<client-info> c<cache-lookup> s<server-info> f<cache-fill> p<proxy-info> e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> p<parent-proxy> s<server-conn-info>]
 
 
 u client-info
@@ -225,6 +225,7 @@ Value             Meaning
 A     authorization failure
 C     connection to server failed
 D     dns failure
+L     loop detected
 F     request forbidden
 H     header syntax unacceptable
 N     no error
@@ -262,7 +263,6 @@ cache-type character value is one of
 Value             Meaning
 ===== ==========================
 C     cache
-I     icp
 L     cluster, (not used)
 P     parent
 S     server
@@ -284,19 +284,6 @@ N     conditional hit (client sent conditional, doc fresh in cache, returned 304
 S     cache hit, but expired
 U     cache hit, but client forces revalidate (e.g. Pragma: no-cache)
 blank no cache lookup
-===== ==========================
-
-i icp-conn-info
-^^^^^^^^^^^^^^^^^^^^^
-
-ICP status
-
-===== ==========================
-Value             Meaning
-===== ==========================
-F     connection open failed
-S     connection opened successfully
-blank no icp
 ===== ==========================
 
 p parent-proxy
@@ -324,30 +311,6 @@ blank no server connection
 ===== ==========================
 
 
-
-Support for HTTP Expect: Header
--------------------------------
-
-Traffic Server currently does not handle Expect: request headers
-according to the HTTP/1.1 spec.
-
-Clients such as cURL automatically send Expect: for POST
-requests with large POST bodies, with a 1 second timeout if a 100
-Continue response is not received. To avoid the timeout when using cURL
-as a client to Traffic Server, you can turn off the Expect: header::
-
-   curl -H"Expect:" http://www.example.com/
-
-Or with the C (libcurl) library from within your own applications::
-
-   struct curl_slist *header_list=NULL;
-   header_list = curl_slist_append(header_list, "Expect:");
-   curl_easy_setopt(my_curlp, CURLOPT_HTTPHEADER, header_list);
-
-Or with the PHP cURL library::
-
-   curl_setopt($ch, CURLOPT_HTTPHEADER, array('Expect:'));
-
 Troubleshooting Tips
 ====================
 
@@ -361,10 +324,10 @@ attributed to the last 10-second interval, although it can take several
 minutes to transfer the object. This inaccuracy is more noticeable with
 a light load. A heavier load yields a more accurate statistic.
 
-You are unable to execute Traffic Line commands
------------------------------------------------
+You are unable to execute Traffic Control commands
+--------------------------------------------------
 
-Traffic Line commands do not execute under the following conditions:
+:program:`traffic_ctl` commands do not execute under the following conditions:
 
 **When the traffic_manager process is not running**
     Check to see if the :program:`traffic_manager` process is running by entering the
@@ -386,23 +349,12 @@ Traffic Line commands do not execute under the following conditions:
 
 **When you are not executing the command from $TSHome/bin**
     If the Traffic Server ``bin`` directory is not in your path, then prepend the
-    Traffic Line commands with ``./`` (for example, ``./traffic_ctl -h``).
+    Traffic Control commands with ``./`` (for example, ``./traffic_ctl -h``).
 
 **When multiple Traffic Server installations are present and you are not
-executing the Traffic Line command from the active Traffic Server path
+executing the Traffic Control command from the active Traffic Server path
 specified in ``/etc/trafficserver``**
 
-
-You observe inconsistent behavior when one node obtains an object from another node in the cluster
---------------------------------------------------------------------------------------------------
-
-As part of the initial system preparation, you must synchronize the
-clocks on all nodes in your cluster. Minor time differences do not cause
-problems, but differences of more than a few minutes can affect Traffic
-Server operation.
-
-You should run a clock synchronization daemon such as xntpd. To obtain
-the latest version of xntpd, go to `<http://www.eecis.udel.edu/~ntp/>`_.
 
 Web browsers display an error document with a 'data missing' message
 --------------------------------------------------------------------
@@ -459,54 +411,6 @@ the cache, modify the :ts:cv:`proxy.config.cache.max_doc_size`
 variable in the records.config file. If you do not want to limit the
 size of objects in the cache, then set the document size
 to ``0`` (zero).
-
-'DrainIncomingChannel' message in the system log file
------------------------------------------------------
-
-The following messages may appear in the system log file: ::
-
-     Feb 20 23:53:40 louis traffic_manager[4414]: ERROR ==> [drainIncomingChannel] Unknown message: 'GET http://www.telechamada.pt/ HTTP/1.0'
-     Feb 20 23:53:46 louis last message repeated 1 time
-     Feb 20 23:53:58 louis traffic_manager[4414]: ERROR ==> [drainIncomingChannel] Unknown message: 'GET http://www.ip.pt/ HTTP/1.0'
-
-These error messages indicate that a browser is sending HTTP requests to
-one of the Traffic Server cluster ports, either ``rsport`` (default
-port 8088) or ``mcport`` (default port 8089). Traffic Server discards
-these requests. This error does not cause any Traffic Server problems. The
-misconfigured browser must be reconfigured to use the correct proxy
-port. Traffic Server clusters should ideally be configured to use a
-separate network interface and cluster on a private subnet, so that
-client machines have no access to the cluster ports.
-
-'No cop file' message in the system log file
---------------------------------------------
-
-The following message appears repeatedly in the system log file: ::
-
-     traffic_cop[16056]: encountered "var/trafficserver/no_cop" file...exiting
-
-The file ``var/trafficserver/no_cop`` acts as an administrative control
-that instructs the :program:`traffic_cop` process to exit immediately without
-starting :program:`traffic_manager` or performing any health checks. The
-``no_cop`` file prevents Traffic Server from starting automatically when
-it has been stopped with the option:`trafficserver stop` command. Without
-this static control, Traffic Server would restart automatically upon
-system reboot. The ``no_cop`` control keeps Traffic Server off until it
-is explicitly restarted with: ::
-
-   trafficserver start
-
-Warning in the system log file when manually editing vaddrs.config
-------------------------------------------------------------------
-
-If you manually edit :file:`vaddrs.config` as a non-root user, then
-Traffic Server issues a warning message in the system log file similar
-to the following::
-
-   WARNING: interface is ignored: Operation not permitted
-
-You can safely ignore this message as Traffic Server will still apply your
-configuration edits.
 
 Traffic Server is running but no log files are created
 ------------------------------------------------------
@@ -595,7 +499,7 @@ Config checker
 --------------
 
 Traffic Server supports the below command to validate the config offline, in order to
-allow the config to be pre-checked for possible service disruptions due to synatx errors::
+allow the config to be pre-checked for possible service disruptions due to syntax errors::
 
    traffic_server -Cverify_config -D<config_dir>
 
@@ -609,4 +513,3 @@ origin servers. If you cannot avoid such timeouts by otherwise addressing the
 performance on your origin servers, you may adjust the origin connection timeout
 in Traffic Server by changing :ts:cv:`proxy.config.http.connect_attempts_timeout`
 in :file:`records.config` to a larger value.
-

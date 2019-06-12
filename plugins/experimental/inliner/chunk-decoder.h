@@ -40,11 +40,11 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef CHUNK_DECODER_H
-#define CHUNK_DECODER_H
+
+#pragma once
 
 #include <ts/ts.h>
-#include <inttypes.h>
+#include <cinttypes>
 
 class ChunkDecoder
 {
@@ -66,21 +66,19 @@ class ChunkDecoder
     };
   };
 
-  State::STATES state_;
-  int64_t size_;
+  State::STATES state_ = State::kSize;
+  int64_t size_        = 0;
 
 public:
-  ChunkDecoder(void) : state_(State::kSize), size_(0) {}
+  ChunkDecoder() {}
   void parseSizeCharacter(const char);
   int parseSize(const char *, const int64_t);
   int decode(const TSIOBufferReader &);
-  bool isSizeState(void) const;
+  bool isSizeState() const;
 
   inline bool
-  isEnd(void) const
+  isEnd() const
   {
     return state_ == State::kEnd;
   }
 };
-
-#endif // CHUNK_DECODER_H

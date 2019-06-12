@@ -10,9 +10,9 @@ GeoIP ACLs Plugin
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -79,7 +79,7 @@ use case.
    example ::
 
     map http://example.com http://music.example.com \
-      @plugin=geoip_acl.so @pparam=country @pparam=allow @pparam= US
+      @plugin=geoip_acl.so @pparam=country @pparam=allow @pparam=US \
       @pparam=regex::/etc/music.regex
 
 This tells the plugin that in the situation where there is no matching
@@ -89,7 +89,7 @@ Finally, there's one additional parameter option that can be used ::
 
     @pparam=html::/some/path.html
 
-This will override the default reponse body for the denied responses
+This will override the default response body for the denied responses
 with a custom piece of HTML. This can be useful to explain to your users
 why they are getting denied access to a particular piece of content.
 This configuration can be used with any of the use cases described

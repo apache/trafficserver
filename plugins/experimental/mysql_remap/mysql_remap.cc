@@ -18,7 +18,7 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
 
 #include "mysql/mysql.h"
@@ -42,14 +42,14 @@ do_mysql_remap(TSCont contp, TSHttpTxn txnp)
   int request_host_length = 0;
   const char *request_scheme;
   int request_scheme_length = 0;
-  int request_port = 80;
+  int request_port          = 80;
   char *query;
 
   MYSQL_ROW row;
   MYSQL_RES *res;
 
   my_data *data = (my_data *)TSContDataGet(contp);
-  query = data->query;
+  query         = data->query;
 
   if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc) != TS_SUCCESS) {
     TSDebug(PLUGIN_NAME, "could not get request data");
@@ -77,7 +77,7 @@ do_mysql_remap(TSCont contp, TSHttpTxn txnp)
   }
 
   request_scheme = TSUrlSchemeGet(reqp, url_loc, &request_scheme_length);
-  request_port = TSUrlPortGet(reqp, url_loc);
+  request_port   = TSUrlPortGet(reqp, url_loc);
 
   TSDebug(PLUGIN_NAME, "      +++++MYSQL REMAP+++++      ");
 
@@ -118,7 +118,7 @@ do_mysql_remap(TSCont contp, TSHttpTxn txnp)
     TSUrlHostSet(reqp, url_loc, row[1], -1);
     TSUrlSchemeSet(reqp, url_loc, row[0], -1);
     TSUrlPortSet(reqp, url_loc, atoi(row[2]));
-  } while (0);
+  } while (false);
 
   ret_val = true;
 
@@ -126,7 +126,7 @@ not_found:
   if (!ret_val) {
     // lets build up a nice 404 message for someone
     TSHttpHdrStatusSet(reqp, hdr_loc, TS_HTTP_STATUS_NOT_FOUND);
-    TSHttpTxnSetHttpRetStatus(txnp, TS_HTTP_STATUS_NOT_FOUND);
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_NOT_FOUND);
   }
   if (res)
     mysql_free_result(res);
@@ -137,14 +137,17 @@ not_found:
     TSHandleStringRelease(reqp, hdr_loc, request_scheme);
 #endif
 release_field:
-  if (field_loc)
+  if (field_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, field_loc);
+  }
 release_url:
-  if (url_loc)
+  if (url_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, url_loc);
+  }
 release_hdr:
-  if (hdr_loc)
+  if (hdr_loc) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
+  }
 
   return ret_val;
 }
@@ -152,7 +155,7 @@ release_hdr:
 static int
 mysql_remap(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp   = (TSHttpTxn)edata;
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
   switch (event) {
@@ -184,14 +187,14 @@ TSPluginInit(int argc, const char *argv[])
   my_data *data = (my_data *)malloc(1 * sizeof(my_data));
 
   TSPluginRegistrationInfo info;
-  my_bool reconnect = 1;
+  bool reconnect = true;
 
-  info.plugin_name = const_cast<char *>(PLUGIN_NAME);
-  info.vendor_name = const_cast<char *>("Apache Software Foundation");
+  info.plugin_name   = const_cast<char *>(PLUGIN_NAME);
+  info.vendor_name   = const_cast<char *>("Apache Software Foundation");
   info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[mysql_remap] Plugin registration failed.");
+    TSError("[mysql_remap] Plugin registration failed");
   }
 
   if (argc != 2) {
@@ -206,11 +209,11 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  host = iniparser_getstring(ini, "mysql_remap:mysql_host", (char *)"localhost");
-  port = iniparser_getint(ini, "mysql_remap:mysql_port", 3306);
-  username = iniparser_getstring(ini, "mysql_remap:mysql_username", NULL);
-  password = iniparser_getstring(ini, "mysql_remap:mysql_password", NULL);
-  db = iniparser_getstring(ini, "mysql_remap:mysql_database", (char *)"mysql_remap");
+  host     = iniparser_getstring(ini, "mysql_remap:mysql_host", (char *)"localhost");
+  port     = iniparser_getint(ini, "mysql_remap:mysql_port", 3306);
+  username = iniparser_getstring(ini, "mysql_remap:mysql_username", nullptr);
+  password = iniparser_getstring(ini, "mysql_remap:mysql_password", nullptr);
+  db       = iniparser_getstring(ini, "mysql_remap:mysql_database", (char *)"mysql_remap");
 
   if (mysql_library_init(0, NULL, NULL)) {
     TSError("[mysql_remap] Error initializing mysql client library");

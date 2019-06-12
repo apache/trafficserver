@@ -32,26 +32,29 @@ RuleSet::append(RuleSet *rule)
 {
   RuleSet *tmp = this;
 
-  TSReleaseAssert(rule->next == NULL);
+  TSReleaseAssert(rule->next == nullptr);
 
-  while (tmp->next)
+  while (tmp->next) {
     tmp = tmp->next;
+  }
   tmp->next = rule;
 }
 
-void
-RuleSet::add_condition(Parser &p)
+bool
+RuleSet::add_condition(Parser &p, const char *filename, int lineno)
 {
   Condition *c = condition_factory(p.get_op());
 
-  if (NULL != c) {
-    TSDebug(PLUGIN_NAME, "   Adding condition: %%{%s} with arg: %s\n", p.get_op().c_str(), p.get_arg().c_str());
+  if (nullptr != c) {
+    TSDebug(PLUGIN_NAME, "   Adding condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
     c->initialize(p);
     if (!c->set_hook(_hook)) {
-      TSError("[%s] can't use this condition in this hook", PLUGIN_NAME);
-      return;
+      delete c;
+      TSError("[%s] in %s:%d: can't use this condition in hook=%s: %%{%s} with arg: %s", PLUGIN_NAME, filename, lineno,
+              TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
+      return false;
     }
-    if (NULL == _cond) {
+    if (nullptr == _cond) {
       _cond = c;
     } else {
       _cond->append(c);
@@ -60,23 +63,30 @@ RuleSet::add_condition(Parser &p)
     // Update some ruleset state based on this new condition
     _last |= c->last();
     _ids = static_cast<ResourceIDs>(_ids | _cond->get_resource_ids());
+
+    return true;
   }
+
+  return false;
 }
 
-void
-RuleSet::add_operator(Parser &p)
+bool
+RuleSet::add_operator(Parser &p, const char *filename, int lineno)
 {
   Operator *o = operator_factory(p.get_op());
 
-  if (NULL != o) {
-    // TODO: This should be extended to show both the "argument" and the "value" (if both are used)
-    TSDebug(PLUGIN_NAME, "   Adding operator: %s(%s)\n", p.get_op().c_str(), p.get_arg().c_str());
+  if (nullptr != o) {
+    TSDebug(PLUGIN_NAME, "   Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
     o->initialize(p);
     if (!o->set_hook(_hook)) {
-      TSError("[%s] can't use this operator in this hook", PLUGIN_NAME);
-      return;
+      delete o;
+      TSDebug(PLUGIN_NAME, "in %s:%d: can't use this operator in hook=%s:  %s(%s)", filename, lineno, TSHttpHookNameLookup(_hook),
+              p.get_op().c_str(), p.get_arg().c_str());
+      TSError("[%s] in %s:%d: can't use this operator in hook=%s:  %s(%s)", PLUGIN_NAME, filename, lineno,
+              TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
+      return false;
     }
-    if (NULL == _oper) {
+    if (nullptr == _oper) {
       _oper = o;
     } else {
       _oper->append(o);
@@ -84,6 +94,24 @@ RuleSet::add_operator(Parser &p)
 
     // Update some ruleset state based on this new operator
     _opermods = static_cast<OperModifiers>(_opermods | _oper->get_oper_modifiers());
-    _ids = static_cast<ResourceIDs>(_ids | _oper->get_resource_ids());
+    _ids      = static_cast<ResourceIDs>(_ids | _oper->get_resource_ids());
+
+    return true;
   }
+
+  return false;
+}
+
+ResourceIDs
+RuleSet::get_all_resource_ids() const
+{
+  ResourceIDs ids = _ids;
+  RuleSet *tmp    = this->next;
+
+  while (tmp) {
+    ids = static_cast<ResourceIDs>(ids | tmp->get_resource_ids());
+    tmp = tmp->next;
+  }
+
+  return ids;
 }

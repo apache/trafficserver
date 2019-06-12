@@ -37,8 +37,8 @@ pcre_exec(const pcre *argument_re, const pcre_extra *extra_data,
 
 
 // Indicate that our abort function really is that ...
-static void
-ink_die_die_die()
+void
+ink_abort(const char *message_format, ...)
 {
   __coverity_panic__();
 }
@@ -50,3 +50,13 @@ void _TSReleaseAssert(const char* txt, const char* f, int l)
 }
 
 } /* extern "C" */
+
+// Teach Coverity that the my_exit() in logstats.cc exits ...
+struct ExitStatus {
+};
+
+void
+my_exit(const ExitStatus &status)
+{
+  __coverity_panic__();
+}

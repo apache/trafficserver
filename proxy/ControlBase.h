@@ -29,11 +29,10 @@
  *
  ****************************************************************************/
 
-#ifndef _CONTROL_BASE_H_
-#define _CONTROL_BASE_H_
+#pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/Vec.h"
+#include "tscore/ink_platform.h"
+#include "vector"
 
 class HttpRequestData;
 class Tokenizer;
@@ -61,7 +60,7 @@ public:
     /// Return the modifier type.
     virtual Type type() const;
     /// Return the name for the modifier type.
-    virtual char const *name() const = 0;
+    virtual const char *name() const = 0;
     /** Test if the modifier matches the request.
         @return @c true if the request is matched, @c false if not.
     */
@@ -78,17 +77,17 @@ public:
   bool CheckModifiers(HttpRequestData *request_data);
   bool CheckForMatch(HttpRequestData *request_data, int last_number);
   void Print();
-  int line_num;
+  int line_num = 0;
   Modifier *findModOfType(Modifier::Type t) const;
 
 protected:
   /// Get the text for the Scheme modifier, if any.
   /// @return The text if present, 0 otherwise.
   /// @internal Ugly but it's the only place external access is needed.
-  char const *getSchemeModText() const;
+  const char *getSchemeModText() const;
 
 private:
-  typedef Vec<Modifier *> Array;
+  typedef std::vector<Modifier *> Array;
   Array _mods;
   const char *ProcessSrcIp(char *val, void **opaque_ptr);
   const char *ProcessTimeOfDay(char *val, void **opaque_ptr);
@@ -98,14 +97,10 @@ private:
   void clear();
 };
 
-inline ControlBase::ControlBase() : line_num(0)
-{
-}
+inline ControlBase::ControlBase() {}
 
 inline bool
 ControlBase::CheckForMatch(HttpRequestData *request_data, int last_number)
 {
   return (last_number < 0 || last_number > this->line_num) && this->CheckModifiers(request_data);
 }
-
-#endif

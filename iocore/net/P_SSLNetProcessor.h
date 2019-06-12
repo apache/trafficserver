@@ -23,16 +23,22 @@
 
 /****************************************************************************
 
-  Net.h
+  P_SSLNetProcessor.h
 
-  This file implements an I/O Processor for network I/O.
+  The SSL version of the UnixNetProcessor class.  The majority of the logic
+  is in UnixNetProcessor.  The SSLNetProcessor provides the following:
 
+  * SSL library initialization through the start() method.
+  * Allocation of a SSLNetVConnection through the allocate_vc virtual method.
+
+  Possibly another pass through could simplify the allocate_vc logic too, but
+  I think I will stop here for now.
 
  ****************************************************************************/
-#ifndef __P_SSLNETPROCESSOR_H
-#define __P_SSLNETPROCESSOR_H
 
-#include "ts/ink_platform.h"
+#pragma once
+
+#include "tscore/ink_platform.h"
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include <openssl/ssl.h>
@@ -47,39 +53,23 @@ struct NetAccept;
 //////////////////////////////////////////////////////////////////
 struct SSLNetProcessor : public UnixNetProcessor {
 public:
-  virtual int start(int no_of_ssl_threads, size_t stacksize);
+  int start(int, size_t stacksize) override;
 
-  void cleanup(void);
-
-  SSL_CTX *
-  getClientSSL_CTX(void) const
-  {
-    return client_ctx;
-  }
+  void cleanup();
 
   SSLNetProcessor();
-  virtual ~SSLNetProcessor();
-
-  SSL_CTX *client_ctx;
-
-  static EventType ET_SSL;
+  ~SSLNetProcessor() override;
 
   //
   // Private
   //
 
-  // Virtual function allows etype
-  // to be upgraded to ET_SSL for SSLNetProcessor.
-  virtual void upgradeEtype(EventType &etype);
+  NetAccept *createNetAccept(const NetProcessor::AcceptOptions &opt) override;
+  NetVConnection *allocate_vc(EThread *t) override;
 
-  virtual NetAccept *createNetAccept();
-  virtual NetVConnection *allocate_vc(EThread *t);
-
-private:
-  SSLNetProcessor(const SSLNetProcessor &);
-  SSLNetProcessor &operator=(const SSLNetProcessor &);
+  // noncopyable
+  SSLNetProcessor(const SSLNetProcessor &) = delete;
+  SSLNetProcessor &operator=(const SSLNetProcessor &) = delete;
 };
 
 extern SSLNetProcessor ssl_NetProcessor;
-
-#endif

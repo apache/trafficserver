@@ -29,12 +29,11 @@
 
  ****************************************************************************/
 
-#ifndef __UDPNET_H_
-#define __UDPNET_H_
+#pragma once
 
-#include "ts/I_Version.h"
+#include "tscore/I_Version.h"
 #include "I_EventSystem.h"
-#include "ts/ink_inet.h"
+#include "tscore/ink_inet.h"
 
 /**
    UDP service
@@ -45,12 +44,11 @@
 class UDPNetProcessor : public Processor
 {
 public:
-  virtual int start(int n_upd_threads, size_t stacksize) = 0;
+  int start(int n_upd_threads, size_t stacksize) override = 0;
 
-  // this function was interanal intially.. this is required for public and
+  // this function was internal initially.. this is required for public and
   // interface probably should change.
-  bool CreateUDPSocket(int *resfd, sockaddr const *remote_addr, sockaddr *local_addr, int *local_addr_len, Action **status,
-                       int send_bufsize = 0, int recv_bufsize = 0);
+  bool CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions &opt);
 
   /**
      create UDPConnection
@@ -71,7 +69,7 @@ public:
      @param recv_bufsize (optional) Socket buffer size for sending.
      Limits how much can be queued by OS before we read it.
      @return Action* Always returns ACTION_RESULT_DONE if socket was
-     created successfuly, or ACTION_IO_ERROR if not.
+     created successfully, or ACTION_IO_ERROR if not.
   */
   inkcoreapi Action *UDPBind(Continuation *c, sockaddr const *addr, int send_bufsize = 0, int recv_bufsize = 0);
 
@@ -104,8 +102,7 @@ public:
 };
 
 inkcoreapi extern UDPNetProcessor &udpNet;
+extern EventType ET_UDP;
 
 #include "I_UDPPacket.h"
 #include "I_UDPConnection.h"
-
-#endif //__UDPNET_H_

@@ -68,7 +68,7 @@ prog() {
 
 extras() {
   case $(uname -v) in
-    omnios*) echo --with-tcl=/opt/omni/lib/amd64 ;;
+    Darwin*) echo --with-openssl=$(brew --prefix openssl) ;;
   esac
 }
 
@@ -89,7 +89,6 @@ configure() {
       --enable-example-plugins \
       --enable-test-tools \
       --enable-experimental-plugins \
-      --enable-cppapi \
       $(extras) \
       CC="$CC" \
       CXX="$CXX" \
@@ -105,7 +104,8 @@ build() {
 # Run extended (level 3) regressions.
 regress() {
   ( cd $OBJROOT && $MAKE check ) && \
-  $DSTROOT/bin/traffic_server -k -K -R 1
+  $DSTROOT/bin/traffic_server -k -K -R 1 && \
+  $SRCROOT/tests/autest.sh --ats-bin=$DSTROOT/bin
 }
 
 CC=${CC:-$(prog cc)}

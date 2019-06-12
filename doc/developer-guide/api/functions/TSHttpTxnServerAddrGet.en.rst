@@ -38,3 +38,9 @@ Get the origin server address for transaction :arg:`txnp`.
    The pointer is valid only for the current callback. Clients that
    need to keep the value across callbacks must maintain their own
    storage.
+
+See Also
+========
+
+:manpage:`TSAPI(3ts)`,
+:manpage:`TSHttpTxnServerAddrSet(3ts)`

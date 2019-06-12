@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef PNG_H
-#define PNG_H
+
+#pragma once
 
 #include <algorithm>
 #include <exception>
@@ -63,13 +63,13 @@ namespace inliner
 
     public:
       uint32_t
-      length(void) const
+      length() const
       {
         return (length_[0] << 24) | (length_[1] << 16) | (length_[2] << 8) | length_[3];
       }
 
       std::string
-      type(void) const
+      type() const
       {
         return std::string(type_, 4);
       }
@@ -85,7 +85,7 @@ namespace inliner
       // chunk length (4) + chunk type (4) + chunk crc (4)
       const int32_t N = 12;
 
-      const char *iterator = content.data();
+      const char *iterator  = content.data();
       const char *const end = iterator + content.size();
 
       if (std::distance(iterator, end) > HEADER_SIZE) {
@@ -95,8 +95,8 @@ namespace inliner
 
         while (iterator < end) {
           const ChunkHeader *const header = reinterpret_cast<const ChunkHeader *>(iterator);
-          const std::string type = header->type();
-          const uint32_t length = header->length();
+          const std::string type          = header->type();
+          const uint32_t length           = header->length();
 
           // iterator cannot go backwards
           if (iterator >= iterator + (length + N)) {
@@ -118,7 +118,5 @@ namespace inliner
   };
 
   // const uint32_t PNG::HEADER_SIZE = 8;
-} // end of inliner namespace
-} // end of ats namespace
-
-#endif // PNG_H
+} // namespace inliner
+} // namespace ats

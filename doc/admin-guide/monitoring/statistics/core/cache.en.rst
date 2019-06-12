@@ -22,116 +22,23 @@
 Cache
 *****
 
-.. ts:stat:: global proxy.node.cache.bytes_free integer
-
-   The difference between :ts:stat:`proxy.process.cache.bytes_total` and
-   :ts:stat:`proxy.process.cache.bytes_used`.
-
-   Represents the amount of space allocated to the cache which is not currently
-   in use by objects.
-
-.. ts:stat:: global proxy.node.cache.bytes_free_mb integer
-
-   The value of :ts:stat:`proxy.node.cache.bytes_free` expressed in megabytes.
-
-.. ts:stat:: global proxy.node.cache.bytes_total integer
-
-   The total number of bytes allocated to the cache.
-
-.. ts:stat:: global proxy.node.cache.bytes_total_mb integer
-
-   The value of :ts:stat:`proxy.node.cache.bytes_total` expressed in megabytes.
-
 .. ts:stat:: global proxy.node.cache.contents.num_docs integer
    :ungathered:
 
    Represents the number of documents currently residing in the cache.
 
-.. ts:stat:: global proxy.node.cache_hit_mem_ratio_avg_10s float
-
-   Represents the ratio of cache lookups over the previous 10 seconds which
-   have been satisfied by the in-memory cache, thus avoiding disk cache I/O.
-
-.. ts:stat:: global proxy.node.cache_hit_mem_ratio_avg_10s_int_pct integer
-   :ungathered:
-
-   The value of :ts:stat:`proxy.node.cache_hit_mem_ratio_avg_10s` converted to
-   an integer percent.
-
-.. ts:stat:: global proxy.node.cache_hit_mem_ratio float
-
-   Represents the ratio of cache lookups which have been satisfied by the
-   in-memory cache since statistics collection began.
-
-.. ts:stat:: global proxy.node.cache_hit_mem_ratio_int_pct integer
-   :ungathered:
-
-   The value of :ts:stat:`proxy.node.cache_hit_mem_ratio` converted to an
-   integer percent.
-
-.. ts:stat:: global proxy.node.cache_hit_ratio_avg_10s float
-
-   Represents the ratio of cache lookups over the previous 10 seconds which
-   have been satisfied by either the in-memory cache or the disk cache, thus
-   avoiding revalidation or object retrieval from origin servers.
-
-.. ts:stat:: global proxy.node.cache_hit_ratio_avg_10s_int_pct integer
-
-   The value of :ts:stat:`proxy.node.cache_hit_ratio_avg_10s` converted to an
-   integer percent.
-
-.. ts:stat:: global proxy.node.cache_hit_ratio float
-
-   Represents the ratio of cache lookups which have been satisfied by either the
-   in-memory cache or the on-disk cache since statistics collection began.
-
-.. ts:stat:: global proxy.node.cache_hit_ratio_int_pct integer
-
-   The value of :ts:stat:`proxy.node.cache_hit_ratio` converted to an integer
-   percent.
-
-.. ts:stat:: global proxy.node.cache.percent_free float
-
-   Represents the percentage of allocated cache space which is not occupied by
-   cache objects.
-
-.. ts:stat:: global proxy.node.cache.percent_free_int_pct integer
-
-   The value of :ts:stat:`proxy.node.cache.percent_free` converted to an
-   integer percent.
-
-.. ts:stat:: global proxy.node.cache_total_hits_avg_10s float
-.. ts:stat:: global proxy.node.cache_total_hits counter
+.. ts:stat:: global proxy.process.cache_total_hits counter
 
    Represents the total number of cache lookups which have been satisfied by
    either the in-memory cache or the on-disk cache, since statistics collection
    began.
 
-.. ts:stat:: global proxy.node.cache_total_hits_mem_avg_10s float
-.. ts:stat:: global proxy.node.cache_total_hits_mem counter
-
-   Represents the total number of cache lookups which have been satisfied by the
-   in-memory cache, since statistics collection began.
-
-.. ts:stat:: global proxy.node.cache_total_misses_avg_10s float
-.. ts:stat:: global proxy.node.cache_total_misses counter
+.. ts:stat:: global proxy.process.cache_total_misses counter
 
    Represents the total number of cache lookups which could not be satisfied by
    either the in-memory cache or the on-disk cache, and which required origin
    server revalidation or retrieval.
 
-.. ts:stat:: global proxy.node.http.cache_current_connections_count integer
-.. ts:stat:: global proxy.node.http.cache_hit_fresh_avg_10s float
-.. ts:stat:: global proxy.node.http.cache_hit_ims_avg_10s float
-.. ts:stat:: global proxy.node.http.cache_hit_mem_fresh_avg_10s float
-.. ts:stat:: global proxy.node.http.cache_hit_revalidated_avg_10s float
-.. ts:stat:: global proxy.node.http.cache_hit_stale_served_avg_10s float
-.. ts:stat:: global proxy.node.http.cache_miss_changed_avg_10s float
-.. ts:stat:: global proxy.node.http.cache_miss_client_no_cache_avg_10s float
-.. ts:stat:: global proxy.node.http.cache_miss_cold_avg_10s float
-.. ts:stat:: global proxy.node.http.cache_miss_ims_avg_10s float
-.. ts:stat:: global proxy.node.http.cache_miss_not_cacheable_avg_10s float
-.. ts:stat:: global proxy.node.http.cache_read_error_avg_10s float
 .. ts:stat:: global proxy.process.cache.bytes_total integer
 .. ts:stat:: global proxy.process.cache.bytes_used integer
 .. ts:stat:: global proxy.process.cache.directory_collision integer
@@ -226,6 +133,34 @@ Cache
 .. ts:stat:: global proxy.process.cache.write.failure integer
 .. ts:stat:: global proxy.process.cache.write_per_sec float
 .. ts:stat:: global proxy.process.cache.write.success integer
+
+.. ts:stat:: global proxy.process.cache.span.errors.read integer
+
+   The number of span read errors (counter).
+
+.. ts:stat:: global proxy.process.cache.span.errors.write integer
+
+   The number of span write errors (counter).
+
+.. ts:stat:: global proxy.process.cache.span.failing integer
+
+   The number of failing spans (gauge) - errors > 0 && errors < `proxy.config.cache.max_disk_errors`.
+
+   `proxy.process.cache.span.failing` + `proxy.process.cache.span.offline` + `proxy.process.cache.span.online` = total number of spans.
+
+.. ts:stat:: global proxy.process.cache.span.offline integer
+
+   The number of offline spans (gauge) - errors >= `proxy.config.cache.max_disk_errors`.
+
+   `proxy.process.cache.span.failing` + `proxy.process.cache.span.offline` + `proxy.process.cache.span.online` = total number of spans.
+
+.. ts:stat:: global proxy.process.cache.span.online integer
+
+   The number of online spans (gauge) - errors == 0.
+
+   `proxy.process.cache.span.failing` + `proxy.process.cache.span.offline` + `proxy.process.cache.span.online` = total number of spans.
+
+
 .. ts:stat:: global proxy.process.http.background_fill_bytes_aborted_stat integer
    :ungathered:
 

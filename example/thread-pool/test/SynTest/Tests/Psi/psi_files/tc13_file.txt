@@ -1,3 +1,0 @@
-Server should abort in middle of body 
-<!--include=incfile1.txt-->
-include should be up there.

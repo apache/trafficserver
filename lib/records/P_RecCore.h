@@ -21,22 +21,23 @@
   limitations under the License.
  */
 
-#ifndef _P_REC_CORE_H_
-#define _P_REC_CORE_H_
+#pragma once
 
-#include "ts/ink_thread.h"
-#include "ts/ink_hash_table.h"
-#include "ts/ink_llqueue.h"
-#include "ts/ink_rwlock.h"
-#include "ts/TextBuffer.h"
+#include "tscore/ink_thread.h"
+#include "tscore/ink_llqueue.h"
+#include "tscore/ink_rwlock.h"
+#include "tscore/TextBuffer.h"
 
 #include "I_RecCore.h"
 #include "P_RecDefs.h"
 #include "P_RecUtils.h"
 
+#include <unordered_set>
+#include <unordered_map>
+
 // records, record hash-table, and hash-table rwlock
 extern RecRecord *g_records;
-extern InkHashTable *g_records_ht;
+extern std::unordered_map<std::string, RecRecord *> g_records_ht;
 extern ink_rwlock g_records_rwlock;
 extern int g_num_records;
 extern RecModeT g_mode_type;
@@ -44,7 +45,7 @@ extern RecModeT g_mode_type;
 // records.config items
 extern const char *g_rec_config_fpath;
 extern LLQ *g_rec_config_contents_llq;
-extern InkHashTable *g_rec_config_contents_ht;
+extern std::unordered_set<std::string> g_rec_config_contents_ht;
 extern ink_mutex g_rec_config_lock;
 
 //-------------------------------------------------------------------------
@@ -68,36 +69,29 @@ RecRecord *RecForceInsert(RecRecord *record);
 // Setting/Getting
 //-------------------------------------------------------------------------
 
-int RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *raw_stat, RecSourceT source,
-                 bool lock = true, bool inc_version = true);
+RecErrT RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *raw_stat, RecSourceT source,
+                     bool lock = true, bool inc_version = true);
 
-int RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool lock = true);
+RecErrT RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool lock = true);
 
 //-------------------------------------------------------------------------
 // Read/Sync to Disk
 //-------------------------------------------------------------------------
-
-int RecReadStatsFile();
-int RecSyncStatsFile();
-int RecReadConfigFile(bool inc_version);
-int RecWriteConfigFile(textBuffer *tb);
-int RecSyncConfigToTB(textBuffer *tb, bool *inc_version = NULL);
+RecErrT RecReadStatsFile();
+RecErrT RecSyncStatsFile();
+RecErrT RecReadConfigFile(bool inc_version);
 
 //-------------------------------------------------------------------------
 // Misc
 //-------------------------------------------------------------------------
 
 bool i_am_the_record_owner(RecT rec_type);
-int send_push_message();
-int send_pull_message(RecMessageT msg_type);
-int send_register_message(RecRecord *record);
-int recv_message_cb(RecMessage *msg, RecMessageT msg_type, void *cookie);
+RecErrT send_push_message();
+RecErrT send_pull_message(RecMessageT msg_type);
+RecErrT send_register_message(RecRecord *record);
+RecErrT recv_message_cb(RecMessage *msg, RecMessageT msg_type, void *cookie);
 RecUpdateT RecExecConfigUpdateCbs(unsigned int update_required_type);
-int RecExecStatUpdateFuncs();
-int RecExecRawStatUpdateFuncs();
 
 void RecDumpRecordsHt(RecT rec_type = RECT_NULL);
 
 void RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata);
-
-#endif

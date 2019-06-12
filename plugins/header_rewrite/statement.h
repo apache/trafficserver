@@ -20,11 +20,10 @@
 // Base class for all Conditions and Operations. We share the "linked" list, and the
 // resource management / requirements.
 //
-#ifndef __STATEMENT_H__
-#define __STATEMENT_H__ 1
+#pragma once
 
 #include <string>
-#include <time.h>
+#include <ctime>
 #include <vector>
 
 #include "ts/ts.h"
@@ -57,6 +56,7 @@ enum NowQualifiers {
   NOW_QUAL_YEARDAY
 };
 
+// GEO data
 enum GeoQualifiers {
   GEO_QUAL_COUNTRY,
   GEO_QUAL_COUNTRY_ISO,
@@ -64,41 +64,53 @@ enum GeoQualifiers {
   GEO_QUAL_ASN_NAME,
 };
 
+// ID data
+enum IdQualifiers {
+  ID_QUAL_REQUEST,
+  ID_QUAL_PROCESS,
+  ID_QUAL_UNIQUE,
+};
+
+// IP
+enum IpQualifiers {
+  IP_QUAL_CLIENT,
+  IP_QUAL_INBOUND,
+  // These two might not necessarily get populated, e.g. on a cache hit.
+  IP_QUAL_SERVER,
+  IP_QUAL_OUTBOUND,
+};
+
+enum NetworkSessionQualifiers {
+  NET_QUAL_LOCAL_ADDR,  ///< Local address.
+  NET_QUAL_LOCAL_PORT,  ///< Local port.
+  NET_QUAL_REMOTE_ADDR, ///< Remote address.
+  NET_QUAL_REMOTE_PORT, ///< Remote port.
+  NET_QUAL_TLS,         ///< TLS protocol
+  NET_QUAL_H2,          ///< 'h2' or not.
+  NET_QUAL_IPV4,        ///< 'ipv4' or not.
+  NET_QUAL_IPV6,        ///< 'ipv6' or not.
+  NET_QUAL_IP_FAMILY,   ///< IP protocol family.
+  NET_QUAL_STACK,       ///< Full protocol stack.
+};
+
 class Statement
 {
 public:
-  Statement() : _next(NULL), _pdata(NULL), _rsrc(RSRC_NONE), _initialized(false), _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK)
-  {
-    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Statement");
-  }
+  Statement() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Statement"); }
 
   virtual ~Statement()
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Statement");
-    free_pdata();
+    delete _next;
   }
 
-  // Private data
-  void
-  set_pdata(void *pdata)
-  {
-    _pdata = pdata;
-  }
-  void *
-  get_pdata() const
-  {
-    return (_pdata);
-  }
-  virtual void
-  free_pdata()
-  {
-    TSfree(_pdata);
-    _pdata = NULL;
-  }
+  // noncopyable
+  Statement(const Statement &) = delete;
+  void operator=(const Statement &) = delete;
 
   // Which hook are we adding this statement to?
   bool set_hook(TSHttpHookID hook);
-  const TSHttpHookID
+  TSHttpHookID
   get_hook() const
   {
     return _hook;
@@ -114,15 +126,16 @@ public:
   // Linked list.
   void append(Statement *stmt);
 
-  const ResourceIDs get_resource_ids() const;
+  ResourceIDs get_resource_ids() const;
 
   virtual void
   initialize(Parser &)
-  { // Parser &p
+  {
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
     _initialized = true;
   }
+
   bool
   initialized() const
   {
@@ -140,16 +153,11 @@ protected:
     _rsrc = static_cast<ResourceIDs>(_rsrc | ids);
   }
 
-  Statement *_next; // Linked list
+  Statement *_next = nullptr; // Linked list
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(Statement);
-
-  void *_pdata;
-  ResourceIDs _rsrc;
-  bool _initialized;
+  ResourceIDs _rsrc  = RSRC_NONE;
+  bool _initialized  = false;
+  TSHttpHookID _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
   std::vector<TSHttpHookID> _allowed_hooks;
-  TSHttpHookID _hook;
 };
-
-#endif // __STATEMENT_H

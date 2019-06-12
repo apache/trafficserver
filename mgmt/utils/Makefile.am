@@ -17,19 +17,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = \
-  -I$(top_srcdir)/iocore/utils \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/api \
-  -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/lib/tsconfig \
-  -I$(top_srcdir)/proxy \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/lib \
-  @OPENSSL_INCLUDES@
+AM_CPPFLAGS += \
+	-I$(abs_top_srcdir)/iocore/utils \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/api \
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	-I$(abs_top_srcdir)/include/tsconfig \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
+	$(TS_INCLUDES) \
+	@OPENSSL_INCLUDES@
 
 # header files used by other libraries
-EXTRA_DIST = MgmtHashTable.h MgmtSocket.h
+EXTRA_DIST = MgmtSocket.h
 
 noinst_LTLIBRARIES = libutils_lm.la libutils_p.la
 check_PROGRAMS = test_marshall
@@ -37,29 +38,34 @@ check_PROGRAMS = test_marshall
 TESTS = $(check_PROGRAMS)
 
 libutils_COMMON = \
-  MgmtMarshall.cc \
-  MgmtMarshall.h \
-  MgmtSocket.cc \
-  MgmtSocket.h \
-  MgmtUtils.cc \
-  MgmtUtils.h
+	MgmtMarshall.cc \
+	MgmtMarshall.h \
+	MgmtSocket.cc \
+	MgmtSocket.h \
+	MgmtUtils.cc \
+	MgmtUtils.h
 
 libutils_lm_la_SOURCES = \
-  $(libutils_COMMON) \
-  ExpandingArray.cc \
-  ExpandingArray.h \
-  MgmtLocalCleanup.cc
+	$(libutils_COMMON) \
+	ExpandingArray.cc \
+	ExpandingArray.h \
+	MgmtLocalCleanup.cc
 
 libutils_p_la_SOURCES = \
-  $(libutils_COMMON) \
-  MgmtProcessCleanup.cc
+	$(libutils_COMMON) \
+	MgmtProcessCleanup.cc
 
 test_marshall_LDFLAGS = \
-  @EXTRA_CXX_LDFLAGS@ \
-  @LIBTOOL_LINK_FLAGS@ \
-  @OPENSSL_LDFLAGS@
+	@AM_LDFLAGS@ \
+	@OPENSSL_LDFLAGS@
 
 test_marshall_SOURCES = test_marshall.cc
 test_marshall_LDADD = \
-  libutils_p.la \
-  $(top_builddir)/lib/ts/libtsutil.la
+	libutils_p.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
+
+include $(top_srcdir)/build/tidy.mk
+
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

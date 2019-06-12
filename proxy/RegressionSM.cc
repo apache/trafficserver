@@ -33,8 +33,9 @@ RegressionSM::set_status(int astatus)
   // INPROGRESS < NOT_RUN < PASSED < FAILED
   if (status != REGRESSION_TEST_FAILED) {
     if (status == REGRESSION_TEST_PASSED) {
-      if (astatus != REGRESSION_TEST_NOT_RUN)
+      if (astatus != REGRESSION_TEST_NOT_RUN) {
         status = astatus;
+      }
     } else {
       // INPROGRESS or NOT_RUN
       status = astatus;
@@ -47,13 +48,15 @@ RegressionSM::done(int astatus)
 {
   if (pending_action) {
     pending_action->cancel();
-    pending_action = 0;
+    pending_action = nullptr;
   }
   set_status(astatus);
-  if (pstatus)
+  if (pstatus) {
     *pstatus = status;
-  if (parent)
+  }
+  if (parent) {
     parent->child_done(status);
+  }
 }
 
 void
@@ -118,15 +121,14 @@ r_sequential(RegressionTest *t, RegressionSM *sm, ...)
   va_list ap;
   va_start(ap, sm);
   new_sm->parallel = false;
-  new_sm->repeat = false;
-  new_sm->ichild = 0;
-  new_sm->nchildren = 0;
+  new_sm->repeat   = false;
+  new_sm->ichild   = 0;
   new_sm->nwaiting = 0;
-  while (0 != sm) {
-    new_sm->children(new_sm->nchildren++) = sm;
+  while (sm) {
+    new_sm->children.push_back(sm);
     sm = va_arg(ap, RegressionSM *);
   }
-  new_sm->n = new_sm->nchildren;
+  new_sm->n = new_sm->children.size();
   va_end(ap);
   return new_sm;
 }
@@ -135,13 +137,12 @@ RegressionSM *
 r_sequential(RegressionTest *t, int an, RegressionSM *sm)
 {
   RegressionSM *new_sm = new RegressionSM(t);
-  new_sm->parallel = false;
-  new_sm->repeat = true;
-  new_sm->ichild = 0;
-  new_sm->nchildren = 1;
-  new_sm->children(0) = sm;
+  new_sm->parallel     = false;
+  new_sm->repeat       = true;
+  new_sm->ichild       = 0;
+  new_sm->children.push_back(sm);
   new_sm->nwaiting = 0;
-  new_sm->n = an;
+  new_sm->n        = an;
   return new_sm;
 }
 
@@ -152,15 +153,14 @@ r_parallel(RegressionTest *t, RegressionSM *sm, ...)
   va_list ap;
   va_start(ap, sm);
   new_sm->parallel = true;
-  new_sm->repeat = false;
-  new_sm->ichild = 0;
-  new_sm->nchildren = 0;
+  new_sm->repeat   = false;
+  new_sm->ichild   = 0;
   new_sm->nwaiting = 0;
   while (sm) {
-    new_sm->children(new_sm->nchildren++) = sm;
+    new_sm->children.push_back(sm);
     sm = va_arg(ap, RegressionSM *);
   }
-  new_sm->n = new_sm->nchildren;
+  new_sm->n = new_sm->children.size();
   va_end(ap);
   return new_sm;
 }
@@ -169,13 +169,12 @@ RegressionSM *
 r_parallel(RegressionTest *t, int an, RegressionSM *sm)
 {
   RegressionSM *new_sm = new RegressionSM(t);
-  new_sm->parallel = true;
-  new_sm->repeat = true;
-  new_sm->ichild = 0;
-  new_sm->nchildren = 1;
-  new_sm->children(0) = sm;
+  new_sm->parallel     = true;
+  new_sm->repeat       = true;
+  new_sm->ichild       = 0;
+  new_sm->children.push_back(sm);
   new_sm->nwaiting = 0;
-  new_sm->n = an;
+  new_sm->n        = an;
   return new_sm;
 }
 
@@ -185,9 +184,10 @@ RegressionSM::run()
   // TODO: Why introduce another scope here?
   {
     MUTEX_TRY_LOCK(l, mutex, this_ethread());
-    if (!l.is_locked() || nwaiting > 1)
+    if (!l.is_locked() || nwaiting > 1) {
       goto Lretry;
-    RegressionSM *x = 0;
+    }
+    RegressionSM *x = nullptr;
     while (ichild < n) {
       if (!repeat) {
         x = children[ichild];
@@ -198,12 +198,14 @@ RegressionSM::run()
           x = children[(intptr_t)0];
         }
       }
-      if (!ichild)
+      if (!ichild) {
         nwaiting++;
+      }
       x->xrun(this);
       ichild++;
-      if (!parallel && nwaiting > 1)
+      if (!parallel && nwaiting > 1) {
         goto Lretry;
+      }
     }
   }
   nwaiting--;
@@ -217,53 +219,59 @@ Lretry:
   pending_action = eventProcessor.schedule_in(this, REGRESSION_SM_RETRY);
 }
 
-RegressionSM::RegressionSM(const RegressionSM &ao)
+RegressionSM::RegressionSM(const RegressionSM &ao) : Continuation(ao)
 {
   RegressionSM &o = *(RegressionSM *)&ao;
-  t = o.t;
-  status = o.status;
-  pstatus = o.pstatus;
-  parent = &o;
+
+  t        = o.t;
+  status   = o.status;
+  pstatus  = o.pstatus;
+  parent   = &o;
   nwaiting = o.nwaiting;
-  nchildren = o.nchildren;
-  for (intptr_t i = 0; i < nchildren; i++)
-    children(i) = o.children[i]->clone();
-  n = o.n;
-  ichild = o.ichild;
-  parallel = o.parallel;
-  repeat = o.repeat;
+
+  for (auto &i : o.children) {
+    children.push_back(i->clone());
+  }
+
+  n              = o.n;
+  ichild         = o.ichild;
+  parallel       = o.parallel;
+  repeat         = o.repeat;
   pending_action = o.pending_action;
+
   ink_assert(status == REGRESSION_TEST_INPROGRESS);
   ink_assert(nwaiting == 0);
   ink_assert(ichild == 0);
+
   mutex = new_ProxyMutex();
 }
 
 struct ReRegressionSM : public RegressionSM {
-  virtual void
-  run()
+  void
+  run() override
   {
-    if (time(NULL) < 1) { // example test
+    if (time(nullptr) < 1) { // example test
       rprintf(t, "impossible");
       done(REGRESSION_TEST_FAILED);
-    } else
+    } else {
       done(REGRESSION_TEST_PASSED);
+    }
   }
   ReRegressionSM(RegressionTest *at) : RegressionSM(at) {}
-  virtual RegressionSM *
-  clone()
+  RegressionSM *
+  clone() override
   {
     return new ReRegressionSM(*this);
   }
-  ReRegressionSM(const ReRegressionSM &o) { t = o.t; }
+  ReRegressionSM(const ReRegressionSM &o) : RegressionSM(o) { t = o.t; }
 };
 
 REGRESSION_TEST(RegressionSM)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   RegressionSM *top_sm = r_sequential(
-    t, r_parallel(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL_PTR),
-    r_sequential(t, new ReRegressionSM(t), new ReRegressionSM(t), NULL_PTR), r_parallel(t, 3, new ReRegressionSM(t)),
+    t, r_parallel(t, new ReRegressionSM(t), new ReRegressionSM(t), nullptr),
+    r_sequential(t, new ReRegressionSM(t), new ReRegressionSM(t), nullptr), r_parallel(t, 3, new ReRegressionSM(t)),
     r_sequential(t, 3, new ReRegressionSM(t)),
-    r_parallel(t, r_sequential(t, 2, new ReRegressionSM(t)), r_parallel(t, 2, new ReRegressionSM(t)), NULL_PTR), NULL_PTR);
+    r_parallel(t, r_sequential(t, 2, new ReRegressionSM(t)), r_parallel(t, 2, new ReRegressionSM(t)), nullptr), nullptr);
   top_sm->run(pstatus);
 }

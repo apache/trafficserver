@@ -28,14 +28,9 @@
  *
  ****************************************************************************/
 
-#ifndef _I_SPLIT_DNS_H_
-#define _I_SPLIT_DNS_H_
+#pragma once
 
 #include "I_SplitDNSProcessor.h"
+#include "tscore/I_Version.h"
 
-#define SPLITDNS_MODULE_MAJOR_VERSION 1
-#define SPLITDNS_MODULE_MINOR_VERSION 0
-#define SPLITDNS_MODULE_VERSION \
-  makeModuleVersion(SPLITDNS_MODULE_MAJOR_VERSION, SPLITDNS_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
-
-#endif //_I_SPLIT_DNS_H_
+static constexpr ts::ModuleVersion SPLITDNS_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);

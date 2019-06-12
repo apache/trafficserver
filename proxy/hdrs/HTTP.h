@@ -21,16 +21,15 @@
   limitations under the License.
  */
 
-#ifndef __HTTP_H__
-#define __HTTP_H__
+#pragma once
 
-#include <assert.h>
-#include "ts/Arena.h"
-#include "ts/INK_MD5.h"
+#include <cassert>
+#include "tscore/Arena.h"
+#include "tscore/CryptoHash.h"
 #include "MIME.h"
 #include "URL.h"
 
-#include "ts/ink_apidefs.h"
+#include "tscore/ink_apidefs.h"
 
 #define HTTP_VERSION(a, b) ((((a)&0xFFFF) << 16) | ((b)&0xFFFF))
 #define HTTP_MINOR(v) ((v)&0xFFFF)
@@ -41,48 +40,50 @@ class Http2HeaderTable;
 enum HTTPStatus {
   HTTP_STATUS_NONE = 0,
 
-  HTTP_STATUS_CONTINUE = 100,
+  HTTP_STATUS_CONTINUE           = 100,
   HTTP_STATUS_SWITCHING_PROTOCOL = 101,
+  HTTP_STATUS_EARLY_HINTS        = 103,
 
-  HTTP_STATUS_OK = 200,
-  HTTP_STATUS_CREATED = 201,
-  HTTP_STATUS_ACCEPTED = 202,
+  HTTP_STATUS_OK                            = 200,
+  HTTP_STATUS_CREATED                       = 201,
+  HTTP_STATUS_ACCEPTED                      = 202,
   HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION = 203,
-  HTTP_STATUS_NO_CONTENT = 204,
-  HTTP_STATUS_RESET_CONTENT = 205,
-  HTTP_STATUS_PARTIAL_CONTENT = 206,
+  HTTP_STATUS_NO_CONTENT                    = 204,
+  HTTP_STATUS_RESET_CONTENT                 = 205,
+  HTTP_STATUS_PARTIAL_CONTENT               = 206,
 
-  HTTP_STATUS_MULTIPLE_CHOICES = 300,
-  HTTP_STATUS_MOVED_PERMANENTLY = 301,
-  HTTP_STATUS_MOVED_TEMPORARILY = 302,
-  HTTP_STATUS_SEE_OTHER = 303,
-  HTTP_STATUS_NOT_MODIFIED = 304,
-  HTTP_STATUS_USE_PROXY = 305,
+  HTTP_STATUS_MULTIPLE_CHOICES   = 300,
+  HTTP_STATUS_MOVED_PERMANENTLY  = 301,
+  HTTP_STATUS_MOVED_TEMPORARILY  = 302,
+  HTTP_STATUS_SEE_OTHER          = 303,
+  HTTP_STATUS_NOT_MODIFIED       = 304,
+  HTTP_STATUS_USE_PROXY          = 305,
   HTTP_STATUS_TEMPORARY_REDIRECT = 307,
+  HTTP_STATUS_PERMANENT_REDIRECT = 308,
 
-  HTTP_STATUS_BAD_REQUEST = 400,
-  HTTP_STATUS_UNAUTHORIZED = 401,
-  HTTP_STATUS_PAYMENT_REQUIRED = 402,
-  HTTP_STATUS_FORBIDDEN = 403,
-  HTTP_STATUS_NOT_FOUND = 404,
-  HTTP_STATUS_METHOD_NOT_ALLOWED = 405,
-  HTTP_STATUS_NOT_ACCEPTABLE = 406,
+  HTTP_STATUS_BAD_REQUEST                   = 400,
+  HTTP_STATUS_UNAUTHORIZED                  = 401,
+  HTTP_STATUS_PAYMENT_REQUIRED              = 402,
+  HTTP_STATUS_FORBIDDEN                     = 403,
+  HTTP_STATUS_NOT_FOUND                     = 404,
+  HTTP_STATUS_METHOD_NOT_ALLOWED            = 405,
+  HTTP_STATUS_NOT_ACCEPTABLE                = 406,
   HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED = 407,
-  HTTP_STATUS_REQUEST_TIMEOUT = 408,
-  HTTP_STATUS_CONFLICT = 409,
-  HTTP_STATUS_GONE = 410,
-  HTTP_STATUS_LENGTH_REQUIRED = 411,
-  HTTP_STATUS_PRECONDITION_FAILED = 412,
-  HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE = 413,
-  HTTP_STATUS_REQUEST_URI_TOO_LONG = 414,
-  HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE = 415,
-  HTTP_STATUS_RANGE_NOT_SATISFIABLE = 416,
+  HTTP_STATUS_REQUEST_TIMEOUT               = 408,
+  HTTP_STATUS_CONFLICT                      = 409,
+  HTTP_STATUS_GONE                          = 410,
+  HTTP_STATUS_LENGTH_REQUIRED               = 411,
+  HTTP_STATUS_PRECONDITION_FAILED           = 412,
+  HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE      = 413,
+  HTTP_STATUS_REQUEST_URI_TOO_LONG          = 414,
+  HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE        = 415,
+  HTTP_STATUS_RANGE_NOT_SATISFIABLE         = 416,
 
   HTTP_STATUS_INTERNAL_SERVER_ERROR = 500,
-  HTTP_STATUS_NOT_IMPLEMENTED = 501,
-  HTTP_STATUS_BAD_GATEWAY = 502,
-  HTTP_STATUS_SERVICE_UNAVAILABLE = 503,
-  HTTP_STATUS_GATEWAY_TIMEOUT = 504,
+  HTTP_STATUS_NOT_IMPLEMENTED       = 501,
+  HTTP_STATUS_BAD_GATEWAY           = 502,
+  HTTP_STATUS_SERVICE_UNAVAILABLE   = 503,
+  HTTP_STATUS_GATEWAY_TIMEOUT       = 504,
   HTTP_STATUS_HTTPVER_NOT_SUPPORTED = 505
 };
 
@@ -95,139 +96,146 @@ enum HTTPKeepAlive {
 enum HTTPWarningCode {
   HTTP_WARNING_CODE_NONE = 0,
 
-  HTTP_WARNING_CODE_RESPONSE_STALE = 110,
-  HTTP_WARNING_CODE_REVALIDATION_FAILED = 111,
+  HTTP_WARNING_CODE_RESPONSE_STALE         = 110,
+  HTTP_WARNING_CODE_REVALIDATION_FAILED    = 111,
   HTTP_WARNING_CODE_DISCONNECTED_OPERATION = 112,
-  HTTP_WARNING_CODE_HERUISTIC_EXPIRATION = 113,
+  HTTP_WARNING_CODE_HERUISTIC_EXPIRATION   = 113,
   HTTP_WARNING_CODE_TRANSFORMATION_APPLIED = 114,
-  HTTP_WARNING_CODE_MISC_WARNING = 199
+  HTTP_WARNING_CODE_MISC_WARNING           = 199
 };
 
-/* squild log codes */
+/* squild log codes
+   There is code (e.g. logstats) that depends on these errors coming at the end of this enum */
 enum SquidLogCode {
-  SQUID_LOG_EMPTY = '0',
-  SQUID_LOG_TCP_HIT = '1',
-  SQUID_LOG_TCP_DISK_HIT = '2',
-  SQUID_LOG_TCP_MEM_HIT = '.', // Don't want to change others codes
-  SQUID_LOG_TCP_MISS = '3',
-  SQUID_LOG_TCP_EXPIRED_MISS = '4',
-  SQUID_LOG_TCP_REFRESH_HIT = '5',
-  SQUID_LOG_TCP_REF_FAIL_HIT = '6',
-  SQUID_LOG_TCP_REFRESH_MISS = '7',
-  SQUID_LOG_TCP_CLIENT_REFRESH = '8',
-  SQUID_LOG_TCP_IMS_HIT = '9',
-  SQUID_LOG_TCP_IMS_MISS = 'a',
-  SQUID_LOG_TCP_SWAPFAIL = 'b',
-  SQUID_LOG_TCP_DENIED = 'c',
-  SQUID_LOG_TCP_WEBFETCH_MISS = 'd',
-  SQUID_LOG_TCP_FUTURE_2 = 'f',
-  SQUID_LOG_TCP_HIT_REDIRECT = '[',    // standard redirect
-  SQUID_LOG_TCP_MISS_REDIRECT = ']',   // standard redirect
-  SQUID_LOG_TCP_HIT_X_REDIRECT = '<',  // extended redirect
-  SQUID_LOG_TCP_MISS_X_REDIRECT = '>', // extended redirect
-  SQUID_LOG_UDP_HIT = 'g',
-  SQUID_LOG_UDP_WEAK_HIT = 'h',
-  SQUID_LOG_UDP_HIT_OBJ = 'i',
-  SQUID_LOG_UDP_MISS = 'j',
-  SQUID_LOG_UDP_DENIED = 'k',
-  SQUID_LOG_UDP_INVALID = 'l',
-  SQUID_LOG_UDP_RELOADING = 'm',
-  SQUID_LOG_UDP_FUTURE_1 = 'n',
-  SQUID_LOG_UDP_FUTURE_2 = 'o',
-  SQUID_LOG_ERR_READ_TIMEOUT = 'p',
-  SQUID_LOG_ERR_LIFETIME_EXP = 'q',
+  SQUID_LOG_EMPTY                     = '0',
+  SQUID_LOG_TCP_HIT                   = '1',
+  SQUID_LOG_TCP_DISK_HIT              = '2',
+  SQUID_LOG_TCP_MEM_HIT               = '.', // Don't want to change others codes
+  SQUID_LOG_TCP_MISS                  = '3',
+  SQUID_LOG_TCP_EXPIRED_MISS          = '4',
+  SQUID_LOG_TCP_REFRESH_HIT           = '5',
+  SQUID_LOG_TCP_REF_FAIL_HIT          = '6',
+  SQUID_LOG_TCP_REFRESH_MISS          = '7',
+  SQUID_LOG_TCP_CLIENT_REFRESH        = '8',
+  SQUID_LOG_TCP_IMS_HIT               = '9',
+  SQUID_LOG_TCP_IMS_MISS              = 'a',
+  SQUID_LOG_TCP_SWAPFAIL              = 'b',
+  SQUID_LOG_TCP_DENIED                = 'c',
+  SQUID_LOG_TCP_WEBFETCH_MISS         = 'd',
+  SQUID_LOG_TCP_FUTURE_2              = 'f',
+  SQUID_LOG_TCP_HIT_REDIRECT          = '[', // standard redirect
+  SQUID_LOG_TCP_MISS_REDIRECT         = ']', // standard redirect
+  SQUID_LOG_TCP_HIT_X_REDIRECT        = '<', // extended redirect
+  SQUID_LOG_TCP_MISS_X_REDIRECT       = '>', // extended redirect
+  SQUID_LOG_UDP_HIT                   = 'g',
+  SQUID_LOG_UDP_WEAK_HIT              = 'h',
+  SQUID_LOG_UDP_HIT_OBJ               = 'i',
+  SQUID_LOG_UDP_MISS                  = 'j',
+  SQUID_LOG_UDP_DENIED                = 'k',
+  SQUID_LOG_UDP_INVALID               = 'l',
+  SQUID_LOG_UDP_RELOADING             = 'm',
+  SQUID_LOG_UDP_FUTURE_1              = 'n',
+  SQUID_LOG_UDP_FUTURE_2              = 'o',
+  SQUID_LOG_ERR_READ_TIMEOUT          = 'p',
+  SQUID_LOG_ERR_LIFETIME_EXP          = 'q',
   SQUID_LOG_ERR_POST_ENTITY_TOO_LARGE = 'L',
-  SQUID_LOG_ERR_NO_CLIENTS_BIG_OBJ = 'r',
-  SQUID_LOG_ERR_READ_ERROR = 's',
-  SQUID_LOG_ERR_CLIENT_ABORT = 't',
-  SQUID_LOG_ERR_CONNECT_FAIL = 'u',
-  SQUID_LOG_ERR_INVALID_REQ = 'v',
-  SQUID_LOG_ERR_UNSUP_REQ = 'w',
-  SQUID_LOG_ERR_INVALID_URL = 'x',
-  SQUID_LOG_ERR_NO_FDS = 'y',
-  SQUID_LOG_ERR_DNS_FAIL = 'z',
-  SQUID_LOG_ERR_NOT_IMPLEMENTED = 'A',
-  SQUID_LOG_ERR_CANNOT_FETCH = 'B',
-  SQUID_LOG_ERR_NO_RELAY = 'C',
-  SQUID_LOG_ERR_DISK_IO = 'D',
-  SQUID_LOG_ERR_ZERO_SIZE_OBJECT = 'E',
-  SQUID_LOG_ERR_PROXY_DENIED = 'G',
-  SQUID_LOG_ERR_WEBFETCH_DETECTED = 'H',
-  SQUID_LOG_ERR_FUTURE_1 = 'I',
-  SQUID_LOG_ERR_UNKNOWN = 'Z'
+  SQUID_LOG_ERR_NO_CLIENTS_BIG_OBJ    = 'r',
+  SQUID_LOG_ERR_READ_ERROR            = 's',
+  SQUID_LOG_ERR_CLIENT_ABORT          = 't', // Client side abort logging
+  SQUID_LOG_ERR_CONNECT_FAIL          = 'u',
+  SQUID_LOG_ERR_INVALID_REQ           = 'v',
+  SQUID_LOG_ERR_UNSUP_REQ             = 'w',
+  SQUID_LOG_ERR_INVALID_URL           = 'x',
+  SQUID_LOG_ERR_NO_FDS                = 'y',
+  SQUID_LOG_ERR_DNS_FAIL              = 'z',
+  SQUID_LOG_ERR_NOT_IMPLEMENTED       = 'A',
+  SQUID_LOG_ERR_CANNOT_FETCH          = 'B',
+  SQUID_LOG_ERR_NO_RELAY              = 'C',
+  SQUID_LOG_ERR_DISK_IO               = 'D',
+  SQUID_LOG_ERR_ZERO_SIZE_OBJECT      = 'E',
+  SQUID_LOG_ERR_PROXY_DENIED          = 'G',
+  SQUID_LOG_ERR_WEBFETCH_DETECTED     = 'H',
+  SQUID_LOG_ERR_FUTURE_1              = 'I',
+  SQUID_LOG_ERR_CLIENT_READ_ERROR     = 'J', // Client side abort logging
+  SQUID_LOG_ERR_LOOP_DETECTED         = 'K', // Loop or cycle detected, request came back to this server
+  SQUID_LOG_ERR_UNKNOWN               = 'Z'
+};
+
+// squild log subcodes
+enum SquidSubcode {
+  SQUID_SUBCODE_EMPTY                     = '0',
+  SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED = '1',
 };
 
 /* squid hieratchy codes */
 enum SquidHierarchyCode {
-  SQUID_HIER_EMPTY = '0',
-  SQUID_HIER_NONE = '1',
-  SQUID_HIER_DIRECT = '2',
-  SQUID_HIER_SIBLING_HIT = '3',
-  SQUID_HIER_PARENT_HIT = '4',
-  SQUID_HIER_DEFAULT_PARENT = '5',
-  SQUID_HIER_SINGLE_PARENT = '6',
-  SQUID_HIER_FIRST_UP_PARENT = '7',
-  SQUID_HIER_NO_PARENT_DIRECT = '8',
-  SQUID_HIER_FIRST_PARENT_MISS = '9',
-  SQUID_HIER_LOCAL_IP_DIRECT = 'a',
-  SQUID_HIER_FIREWALL_IP_DIRECT = 'b',
-  SQUID_HIER_NO_DIRECT_FAIL = 'c',
-  SQUID_HIER_SOURCE_FASTEST = 'd',
-  SQUID_HIER_SIBLING_UDP_HIT_OBJ = 'e',
-  SQUID_HIER_PARENT_UDP_HIT_OBJ = 'f',
-  SQUID_HIER_PASSTHROUGH_PARENT = 'g',
-  SQUID_HIER_SSL_PARENT_MISS = 'h',
-  SQUID_HIER_INVALID_CODE = 'i',
-  SQUID_HIER_TIMEOUT_DIRECT = 'j',
-  SQUID_HIER_TIMEOUT_SIBLING_HIT = 'k',
-  SQUID_HIER_TIMEOUT_PARENT_HIT = 'l',
-  SQUID_HIER_TIMEOUT_DEFAULT_PARENT = 'm',
-  SQUID_HIER_TIMEOUT_SINGLE_PARENT = 'n',
-  SQUID_HIER_TIMEOUT_FIRST_UP_PARENT = 'o',
-  SQUID_HIER_TIMEOUT_NO_PARENT_DIRECT = 'p',
-  SQUID_HIER_TIMEOUT_FIRST_PARENT_MISS = 'q',
-  SQUID_HIER_TIMEOUT_LOCAL_IP_DIRECT = 'r',
-  SQUID_HIER_TIMEOUT_FIREWALL_IP_DIRECT = 's',
-  SQUID_HIER_TIMEOUT_NO_DIRECT_FAIL = 't',
-  SQUID_HIER_TIMEOUT_SOURCE_FASTEST = 'u',
-  SQUID_HIER_TIMEOUT_SIBLING_UDP_HIT_OBJ = 'v',
-  SQUID_HIER_TIMEOUT_PARENT_UDP_HIT_OBJ = 'w',
-  SQUID_HIER_TIMEOUT_PASSTHROUGH_PARENT = 'x',
+  SQUID_HIER_EMPTY                           = '0',
+  SQUID_HIER_NONE                            = '1',
+  SQUID_HIER_DIRECT                          = '2',
+  SQUID_HIER_SIBLING_HIT                     = '3',
+  SQUID_HIER_PARENT_HIT                      = '4',
+  SQUID_HIER_DEFAULT_PARENT                  = '5',
+  SQUID_HIER_SINGLE_PARENT                   = '6',
+  SQUID_HIER_FIRST_UP_PARENT                 = '7',
+  SQUID_HIER_NO_PARENT_DIRECT                = '8',
+  SQUID_HIER_FIRST_PARENT_MISS               = '9',
+  SQUID_HIER_LOCAL_IP_DIRECT                 = 'a',
+  SQUID_HIER_FIREWALL_IP_DIRECT              = 'b',
+  SQUID_HIER_NO_DIRECT_FAIL                  = 'c',
+  SQUID_HIER_SOURCE_FASTEST                  = 'd',
+  SQUID_HIER_SIBLING_UDP_HIT_OBJ             = 'e',
+  SQUID_HIER_PARENT_UDP_HIT_OBJ              = 'f',
+  SQUID_HIER_PASSTHROUGH_PARENT              = 'g',
+  SQUID_HIER_SSL_PARENT_MISS                 = 'h',
+  SQUID_HIER_INVALID_CODE                    = 'i',
+  SQUID_HIER_TIMEOUT_DIRECT                  = 'j',
+  SQUID_HIER_TIMEOUT_SIBLING_HIT             = 'k',
+  SQUID_HIER_TIMEOUT_PARENT_HIT              = 'l',
+  SQUID_HIER_TIMEOUT_DEFAULT_PARENT          = 'm',
+  SQUID_HIER_TIMEOUT_SINGLE_PARENT           = 'n',
+  SQUID_HIER_TIMEOUT_FIRST_UP_PARENT         = 'o',
+  SQUID_HIER_TIMEOUT_NO_PARENT_DIRECT        = 'p',
+  SQUID_HIER_TIMEOUT_FIRST_PARENT_MISS       = 'q',
+  SQUID_HIER_TIMEOUT_LOCAL_IP_DIRECT         = 'r',
+  SQUID_HIER_TIMEOUT_FIREWALL_IP_DIRECT      = 's',
+  SQUID_HIER_TIMEOUT_NO_DIRECT_FAIL          = 't',
+  SQUID_HIER_TIMEOUT_SOURCE_FASTEST          = 'u',
+  SQUID_HIER_TIMEOUT_SIBLING_UDP_HIT_OBJ     = 'v',
+  SQUID_HIER_TIMEOUT_PARENT_UDP_HIT_OBJ      = 'w',
+  SQUID_HIER_TIMEOUT_PASSTHROUGH_PARENT      = 'x',
   SQUID_HIER_TIMEOUT_TIMEOUT_SSL_PARENT_MISS = 'y',
-  SQUID_HIER_INVALID_ASSIGNED_CODE = 'z'
+  SQUID_HIER_INVALID_ASSIGNED_CODE           = 'z'
 };
 
 /* squid hit/miss codes */
 enum SquidHitMissCode {
-  SQUID_HIT_RESERVED = '0', // Kinda wonky that this is '0', so skipping 'A' for now
-  SQUID_HIT_LEVEL_1 = 'B',
-  SQUID_HIT_LEVEL_2 = 'C',
-  SQUID_HIT_LEVEL_3 = 'D',
-  SQUID_HIT_LEVEL_4 = 'E',
-  SQUID_HIT_LEVEL_5 = 'F',
-  SQUID_HIT_LEVEL_6 = 'G',
-  SQUID_HIT_LEVEL_7 = 'H',
-  SQUID_HIT_LEVEL_8 = 'I',
-  SQUID_HIT_LEVEl_9 = 'J',
-  SQUID_MISS_NONE = '1',
-  SQUID_MISS_ICP_AUTH = '2',
-  SQUID_MISS_HTTP_NON_CACHE = '3',
-  SQUID_MISS_ICP_STOPLIST = '4',
-  SQUID_MISS_HTTP_NO_DLE = '5',
-  SQUID_MISS_HTTP_NO_LE = '6',
-  SQUID_MISS_HTTP_CONTENT = '7',
-  SQUID_MISS_PRAGMA_NOCACHE = '8',
-  SQUID_MISS_PASS = '9',
-  SQUID_MISS_PRE_EXPIRED = 'a',
-  SQUID_MISS_ERROR = 'b',
-  SQUID_MISS_CACHE_BYPASS = 'c',
+  SQUID_HIT_RESERVED                   = '0', // Kinda wonky that this is '0', so skipping 'A' for now
+  SQUID_HIT_LEVEL_1                    = 'B',
+  SQUID_HIT_LEVEL_2                    = 'C',
+  SQUID_HIT_LEVEL_3                    = 'D',
+  SQUID_HIT_LEVEL_4                    = 'E',
+  SQUID_HIT_LEVEL_5                    = 'F',
+  SQUID_HIT_LEVEL_6                    = 'G',
+  SQUID_HIT_LEVEL_7                    = 'H',
+  SQUID_HIT_LEVEL_8                    = 'I',
+  SQUID_HIT_LEVEl_9                    = 'J',
+  SQUID_MISS_NONE                      = '1',
+  SQUID_MISS_HTTP_NON_CACHE            = '3',
+  SQUID_MISS_HTTP_NO_DLE               = '5',
+  SQUID_MISS_HTTP_NO_LE                = '6',
+  SQUID_MISS_HTTP_CONTENT              = '7',
+  SQUID_MISS_PRAGMA_NOCACHE            = '8',
+  SQUID_MISS_PASS                      = '9',
+  SQUID_MISS_PRE_EXPIRED               = 'a',
+  SQUID_MISS_ERROR                     = 'b',
+  SQUID_MISS_CACHE_BYPASS              = 'c',
   SQUID_HIT_MISS_INVALID_ASSIGNED_CODE = 'z',
   // These are pre-allocated with special semantics, added here for convenience
-  SQUID_HIT_RAM = SQUID_HIT_LEVEL_1,
-  SQUID_HIT_SSD = SQUID_HIT_LEVEL_2,
-  SQUID_HIT_DISK = SQUID_HIT_LEVEL_3,
+  SQUID_HIT_RAM     = SQUID_HIT_LEVEL_1,
+  SQUID_HIT_SSD     = SQUID_HIT_LEVEL_2,
+  SQUID_HIT_DISK    = SQUID_HIT_LEVEL_3,
   SQUID_HIT_CLUSTER = SQUID_HIT_LEVEL_4,
-  SQUID_HIT_NET = SQUID_HIT_LEVEL_5
+  SQUID_HIT_NET     = SQUID_HIT_LEVEL_5
 };
 
 enum HTTPType {
@@ -315,8 +323,7 @@ struct HTTPValTE {
 };
 
 struct HTTPParser {
-  bool m_parsing_http;
-  bool m_allow_non_http;
+  bool m_parsing_http = false;
   MIMEParser m_mime_parser;
 };
 
@@ -324,7 +331,6 @@ extern const char *HTTP_METHOD_CONNECT;
 extern const char *HTTP_METHOD_DELETE;
 extern const char *HTTP_METHOD_GET;
 extern const char *HTTP_METHOD_HEAD;
-extern const char *HTTP_METHOD_ICP_QUERY;
 extern const char *HTTP_METHOD_OPTIONS;
 extern const char *HTTP_METHOD_POST;
 extern const char *HTTP_METHOD_PURGE;
@@ -336,7 +342,6 @@ extern int HTTP_WKSIDX_CONNECT;
 extern int HTTP_WKSIDX_DELETE;
 extern int HTTP_WKSIDX_GET;
 extern int HTTP_WKSIDX_HEAD;
-extern int HTTP_WKSIDX_ICP_QUERY;
 extern int HTTP_WKSIDX_OPTIONS;
 extern int HTTP_WKSIDX_POST;
 extern int HTTP_WKSIDX_PURGE;
@@ -349,7 +354,6 @@ extern int HTTP_LEN_CONNECT;
 extern int HTTP_LEN_DELETE;
 extern int HTTP_LEN_GET;
 extern int HTTP_LEN_HEAD;
-extern int HTTP_LEN_ICP_QUERY;
 extern int HTTP_LEN_OPTIONS;
 extern int HTTP_LEN_POST;
 extern int HTTP_LEN_PURGE;
@@ -420,9 +424,6 @@ inkcoreapi int http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hh, char *buf, int buf
 
 void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 
-int http_hdr_length_get(HTTPHdrImpl *hh);
-// HTTPType               http_hdr_type_get (HTTPHdrImpl *hh);
-
 // int32_t                  http_hdr_version_get (HTTPHdrImpl *hh);
 inkcoreapi void http_hdr_version_set(HTTPHdrImpl *hh, int32_t ver);
 
@@ -440,11 +441,12 @@ const char *http_hdr_reason_lookup(unsigned status);
 
 void http_parser_init(HTTPParser *parser);
 void http_parser_clear(HTTPParser *parser);
-MIMEParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
-                                      bool must_copy_strings, bool eof, bool strict_uri_parsing);
-MIMEParseResult validate_hdr_host(HTTPHdrImpl *hh);
-MIMEParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
-                                       bool must_copy_strings, bool eof);
+ParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
+                                  bool must_copy_strings, bool eof, bool strict_uri_parsing);
+ParseResult validate_hdr_host(HTTPHdrImpl *hh);
+ParseResult validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh);
+ParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
+                                   bool must_copy_strings, bool eof);
 
 HTTPStatus http_parse_status(const char *start, const char *end);
 int32_t http_parse_version(const char *start, const char *end);
@@ -463,14 +465,15 @@ HTTPValTE *http_parse_te(const char *buf, int len, Arena *arena);
 class HTTPVersion
 {
 public:
-  HTTPVersion();
+  HTTPVersion()                        = default;
+  HTTPVersion(HTTPVersion const &that) = default;
   explicit HTTPVersion(int32_t version);
   HTTPVersion(int ver_major, int ver_minor);
 
   void set(HTTPVersion ver);
   void set(int ver_major, int ver_minor);
 
-  HTTPVersion &operator=(const HTTPVersion &hv);
+  HTTPVersion &operator=(const HTTPVersion &hv) = default;
   int operator==(const HTTPVersion &hv) const;
   int operator!=(const HTTPVersion &hv) const;
   int operator>(const HTTPVersion &hv) const;
@@ -479,7 +482,7 @@ public:
   int operator<=(const HTTPVersion &hv) const;
 
 public:
-  int32_t m_version;
+  int32_t m_version{HTTP_VERSION(1, 0)};
 };
 
 class IOBufferReader;
@@ -487,26 +490,26 @@ class IOBufferReader;
 class HTTPHdr : public MIMEHdr
 {
 public:
-  HTTPHdrImpl *m_http;
+  HTTPHdrImpl *m_http = nullptr;
   // This is all cached data and so is mutable.
   mutable URL m_url_cached;
-  mutable MIMEField *m_host_mime;
-  mutable int m_host_length;    ///< Length of hostname.
-  mutable int m_port;           ///< Target port.
-  mutable bool m_target_cached; ///< Whether host name and port are cached.
-  mutable bool m_target_in_url; ///< Whether host name and port are in the URL.
+  mutable MIMEField *m_host_mime       = nullptr;
+  mutable int m_host_length            = 0;     ///< Length of hostname.
+  mutable int m_port                   = 0;     ///< Target port.
+  mutable bool m_target_cached         = false; ///< Whether host name and port are cached.
+  mutable bool m_target_in_url         = false; ///< Whether host name and port are in the URL.
+  mutable bool m_100_continue_required = false; ///< Whether 100_continue is in the Expect header.
   /// Set if the port was effectively specified in the header.
   /// @c true if the target (in the URL or the HOST field) also specified
   /// a port. That is, @c true if whatever source had the target host
   /// also had a port, @c false otherwise.
-  mutable bool m_port_in_header;
+  mutable bool m_port_in_header = false;
 
-  HTTPHdr();
-  ~HTTPHdr();
+  HTTPHdr() = default; // Force the creation of the default constructor
 
   int valid() const;
 
-  void create(HTTPType polarity, HdrHeap *heap = NULL);
+  void create(HTTPType polarity, HdrHeap *heap = nullptr);
   void clear();
   void reset();
   void copy(const HTTPHdr *hdr);
@@ -516,7 +519,7 @@ public:
 
   int print(char *buf, int bufsize, int *bufindex, int *dumpoffset);
 
-  int length_get();
+  int length_get() const;
 
   HTTPType type_get() const;
 
@@ -539,16 +542,16 @@ public:
       and invoking @c URL::string_get if the host is in a header
       field and not explicitly in the URL.
    */
-  char *url_string_get(Arena *arena = 0, ///< Arena to use, or @c malloc if NULL.
-                       int *length = 0   ///< Store string length here.
-                       );
+  char *url_string_get(Arena *arena = nullptr, ///< Arena to use, or @c malloc if NULL.
+                       int *length  = nullptr  ///< Store string length here.
+  );
   /** Get a string with the effective URL in it.
       This is automatically allocated if needed in the request heap.
 
       @see url_string_get
    */
-  char *url_string_get_ref(int *length = 0 ///< Store string length here.
-                           );
+  char *url_string_get_ref(int *length = nullptr ///< Store string length here.
+  );
 
   /** Print the URL.
       Output is not null terminated.
@@ -558,21 +561,21 @@ public:
                 int length,  ///< Length of @a buffer
                 int *offset, ///< [in,out] ???
                 int *skip    ///< [in,out] ???
-                );
+  );
 
   /** Get the URL path.
       This is a reference, not allocated.
       @return A pointer to the path or @c NULL if there is no valid URL.
   */
-  char const *path_get(int *length ///< Storage for path length.
-                       );
+  const char *path_get(int *length ///< Storage for path length.
+  );
 
   /** Get the target host name.
       The length is returned in @a length if non-NULL.
       @note The results are cached so this is fast after the first call.
       @return A pointer to the host name.
   */
-  char const *host_get(int *length = 0);
+  const char *host_get(int *length = nullptr);
 
   /** Get the target port.
       If the target port is not found then it is adjusted to the
@@ -586,8 +589,8 @@ public:
       This is a reference, not allocated.
       @return A pointer to the scheme or @c NULL if there is no valid URL.
   */
-  char const *scheme_get(int *length ///< Storage for path length.
-                         );
+  const char *scheme_get(int *length ///< Storage for path length.
+  );
   void url_set(URL *url);
   void url_set_as_server_url(URL *url);
   void url_set(const char *str, int length);
@@ -605,7 +608,7 @@ public:
   /// If @a url is @c NULL the cached URL in this header is used.
   /// @note In the default case the copy is avoided if the cached URL already
   /// has the target. If @a url is non @c NULL the copy is always performed.
-  void set_url_target_from_host_field(URL *url = 0);
+  void set_url_target_from_host_field(URL *url = nullptr);
 
   /// Mark the target cache as invalid.
   /// @internal Ugly but too many places currently that touch the
@@ -618,11 +621,11 @@ public:
   const char *reason_get(int *length);
   void reason_set(const char *value, int length);
 
-  MIMEParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing = false);
-  MIMEParseResult parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof);
+  ParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing = false);
+  ParseResult parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof);
 
-  MIMEParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing = false);
-  MIMEParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
+  ParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing = false);
+  ParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
 
 public:
   // Utility routines
@@ -645,34 +648,23 @@ protected:
 
   static Arena *const USE_HDR_HEAP_MAGIC;
 
-private:
   // No gratuitous copies!
-  HTTPHdr(const HTTPHdr &m);
-  HTTPHdr &operator=(const HTTPHdr &m);
+  HTTPHdr(const HTTPHdr &m) = delete;
+  HTTPHdr &operator=(const HTTPHdr &m) = delete;
 
+private:
   friend class UrlPrintHack; // don't ask.
 };
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion() : m_version(HTTP_VERSION(1, 0))
-{
-}
+inline HTTPVersion::HTTPVersion(int32_t version) : m_version(version) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion(int32_t version) : m_version(version)
-{
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline HTTPVersion::HTTPVersion(int ver_major, int ver_minor) : m_version(HTTP_VERSION(ver_major, ver_minor))
-{
-}
+inline HTTPVersion::HTTPVersion(int ver_major, int ver_minor) : m_version(HTTP_VERSION(ver_major, ver_minor)) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -690,17 +682,6 @@ inline void
 HTTPVersion::set(int ver_major, int ver_minor)
 {
   m_version = HTTP_VERSION(ver_major, ver_minor);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline HTTPVersion &
-HTTPVersion::operator=(const HTTPVersion &hv)
-{
-  m_version = hv.m_version;
-
-  return *this;
 }
 
 /*-------------------------------------------------------------------------
@@ -760,19 +741,6 @@ HTTPVersion::operator<=(const HTTPVersion &hv) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPHdr::HTTPHdr() : MIMEHdr(), m_http(NULL), m_url_cached(), m_target_cached(false)
-{
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-inline HTTPHdr::~HTTPHdr()
-{ /* nop */
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 inline int
 HTTPHdr::valid() const
 {
@@ -802,16 +770,16 @@ HTTPHdr::clear()
     m_url_cached.clear();
   }
   this->HdrHeapSDKHandle::clear();
-  m_http = NULL;
-  m_mime = NULL;
+  m_http = nullptr;
+  m_mime = nullptr;
 }
 
 inline void
 HTTPHdr::reset()
 {
-  m_heap = NULL;
-  m_http = NULL;
-  m_mime = NULL;
+  m_heap = nullptr;
+  m_http = nullptr;
+  m_mime = nullptr;
   m_url_cached.reset();
 }
 
@@ -861,16 +829,6 @@ HTTPHdr::print(char *buf, int bufsize, int *bufindex, int *dumpoffset)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int
-HTTPHdr::length_get()
-{
-  ink_assert(valid());
-  return http_hdr_length_get(m_http);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 inline void
 HTTPHdr::_test_and_fill_target_cache() const
 {
@@ -881,7 +839,7 @@ HTTPHdr::_test_and_fill_target_cache() const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline char const *
+inline const char *
 HTTPHdr::host_get(int *length)
 {
   this->_test_and_fill_target_cache();
@@ -895,7 +853,7 @@ HTTPHdr::host_get(int *length)
 
   if (length)
     *length = 0;
-  return NULL;
+  return nullptr;
 }
 
 /*-------------------------------------------------------------------------
@@ -986,7 +944,7 @@ is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
     CON_TOKEN_CLOSE,
   };
 
-  int con_token = CON_TOKEN_NONE;
+  int con_token            = CON_TOKEN_NONE;
   HTTPKeepAlive keep_alive = HTTP_NO_KEEPALIVE;
   //    *unknown_tokens = false;
 
@@ -1017,12 +975,12 @@ inline HTTPKeepAlive
 HTTPHdr::keep_alive_get() const
 {
   HTTPKeepAlive retval = HTTP_NO_KEEPALIVE;
-  const MIMEField *pc = this->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
-  if (pc != NULL) {
+  const MIMEField *pc  = this->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
+  if (pc != nullptr) {
     retval = is_header_keep_alive(this->version_get(), pc);
   } else {
     const MIMEField *c = this->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
-    retval = is_header_keep_alive(this->version_get(), c);
+    retval             = is_header_keep_alive(this->version_get(), c);
   }
   return retval;
 }
@@ -1186,9 +1144,13 @@ inline HTTPStatus
 HTTPHdr::status_get()
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
-  return (NULL == m_http) ? HTTP_STATUS_NONE : http_hdr_status_get(m_http);
+  if (m_http) {
+    ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
+    return http_hdr_status_get(m_http);
+  }
+
+  return HTTP_STATUS_NONE;
 }
 
 /*-------------------------------------------------------------------------
@@ -1230,7 +1192,7 @@ HTTPHdr::reason_set(const char *value, int length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline MIMEParseResult
+inline ParseResult
 HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing)
 {
   ink_assert(valid());
@@ -1242,7 +1204,7 @@ HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline MIMEParseResult
+inline ParseResult
 HTTPHdr::parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof)
 {
   ink_assert(valid());
@@ -1260,7 +1222,7 @@ HTTPHdr::is_cache_control_set(const char *cc_directive_wks)
   ink_assert(valid());
   ink_assert(hdrtoken_is_wks(cc_directive_wks));
 
-  HdrTokenHeapPrefix *prefix = hdrtoken_wks_to_prefix(cc_directive_wks);
+  const HdrTokenHeapPrefix *prefix = hdrtoken_wks_to_prefix(cc_directive_wks);
   ink_assert(prefix->wks_token_type == HDRTOKEN_TYPE_CACHE_CONTROL);
 
   uint32_t cc_mask = prefix->wks_type_specific.u.cache_control.cc_mask;
@@ -1286,27 +1248,27 @@ HTTPHdr::url_string_get_ref(int *length)
   return this->url_string_get(USE_HDR_HEAP_MAGIC, length);
 }
 
-inline char const *
+inline const char *
 HTTPHdr::path_get(int *length)
 {
   URL *url = this->url_get();
-  return url ? url->path_get(length) : 0;
+  return url ? url->path_get(length) : nullptr;
 }
 
-inline char const *
+inline const char *
 HTTPHdr::scheme_get(int *length)
 {
   URL *url = this->url_get();
-  return url ? url->scheme_get(length) : 0;
+  return url ? url->scheme_get(length) : nullptr;
 }
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 enum {
-  CACHE_ALT_MAGIC_ALIVE = 0xabcddeed,
+  CACHE_ALT_MAGIC_ALIVE     = 0xabcddeed,
   CACHE_ALT_MAGIC_MARSHALED = 0xdcbadeed,
-  CACHE_ALT_MAGIC_DEAD = 0xdeadeed,
+  CACHE_ALT_MAGIC_DEAD      = 0xdeadeed,
 };
 
 // struct HTTPCacheAlt
@@ -1316,31 +1278,31 @@ struct HTTPCacheAlt {
   void copy_frag_offsets_from(HTTPCacheAlt *src);
   void destroy();
 
-  uint32_t m_magic;
+  uint32_t m_magic = CACHE_ALT_MAGIC_ALIVE;
 
   // Writeable is set to true is we reside
   //  in a buffer owned by this structure.
   // INVARIANT: if own the buffer this HttpCacheAlt
   //   we also own the buffers for the request &
   //   response headers
-  int32_t m_writeable;
-  int32_t m_unmarshal_len;
+  int32_t m_writeable     = 1;
+  int32_t m_unmarshal_len = -1;
 
-  int32_t m_id;
-  int32_t m_rid;
+  int32_t m_id  = -1;
+  int32_t m_rid = -1;
 
-  int32_t m_object_key[4];
+  int32_t m_object_key[sizeof(CryptoHash) / sizeof(int32_t)];
   int32_t m_object_size[2];
 
   HTTPHdr m_request_hdr;
   HTTPHdr m_response_hdr;
 
-  time_t m_request_sent_time;
-  time_t m_response_received_time;
+  time_t m_request_sent_time      = 0;
+  time_t m_response_received_time = 0;
 
   /// # of fragment offsets in this alternate.
   /// @note This is one less than the number of fragments.
-  int m_frag_offset_count;
+  int m_frag_offset_count = 0;
   /// Type of offset for a fragment.
   typedef uint64_t FragOffset;
   /// Table of fragment offsets.
@@ -1348,9 +1310,9 @@ struct HTTPCacheAlt {
   /// first byte past the end of fragment 0 which is also the first
   /// byte of fragment 1. For this reason there is no fragment offset
   /// for the last fragment.
-  FragOffset *m_frag_offsets;
+  FragOffset *m_frag_offsets = nullptr;
   /// # of fragment offsets built in to object.
-  static int const N_INTEGRAL_FRAG_OFFSETS = 4;
+  static int constexpr N_INTEGRAL_FRAG_OFFSETS = 4;
   /// Integral fragment offset table.
   FragOffset m_integral_frag_offsets[N_INTEGRAL_FRAG_OFFSETS];
 
@@ -1361,7 +1323,7 @@ struct HTTPCacheAlt {
   // We don't want to use a ref count ptr (Ptr<>)
   //  since our ownership model requires explicit
   //  destroys and ref count pointers defeat this
-  RefCountObj *m_ext_buffer;
+  RefCountObj *m_ext_buffer = nullptr;
 };
 
 class HTTPInfo
@@ -1369,19 +1331,19 @@ class HTTPInfo
 public:
   typedef HTTPCacheAlt::FragOffset FragOffset; ///< Import type.
 
-  HTTPCacheAlt *m_alt;
+  HTTPCacheAlt *m_alt = nullptr;
 
-  HTTPInfo() : m_alt(NULL) {}
+  HTTPInfo() {}
   ~HTTPInfo() { clear(); }
   void
   clear()
   {
-    m_alt = NULL;
+    m_alt = nullptr;
   }
   bool
   valid() const
   {
-    return m_alt != NULL;
+    return m_alt != nullptr;
   }
 
   void create();
@@ -1399,6 +1361,7 @@ public:
   inkcoreapi int marshal_length();
   inkcoreapi int marshal(char *buf, int len);
   static int unmarshal(char *buf, int len, RefCountObj *block_ref);
+  static int unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref);
   void set_buffer_reference(RefCountObj *block_ref);
   int get_handle(char *buf, int len);
 
@@ -1424,9 +1387,9 @@ public:
     m_alt->m_rid = id;
   }
 
-  INK_MD5 object_key_get();
-  void object_key_get(INK_MD5 *);
-  bool compare_object_key(const INK_MD5 *);
+  CryptoHash object_key_get();
+  void object_key_get(CryptoHash *);
+  bool compare_object_key(const CryptoHash *);
   int64_t object_size_get();
 
   void
@@ -1452,7 +1415,7 @@ public:
   }
 
   URL *
-  request_url_get(URL *url = NULL)
+  request_url_get(URL *url = nullptr)
   {
     return m_alt->m_request_hdr.url_get(url);
   }
@@ -1468,7 +1431,7 @@ public:
     return m_alt->m_response_received_time;
   }
 
-  void object_key_set(INK_MD5 &md5);
+  void object_key_set(CryptoHash &hash);
   void object_size_set(int64_t size);
 
   void
@@ -1531,42 +1494,35 @@ HTTPInfo::operator=(const HTTPInfo &m)
   return *this;
 }
 
-inline INK_MD5
+inline CryptoHash
 HTTPInfo::object_key_get()
 {
-  INK_MD5 val;
+  CryptoHash val;
   int32_t *pi = reinterpret_cast<int32_t *>(&val);
 
-  pi[0] = m_alt->m_object_key[0];
-  pi[1] = m_alt->m_object_key[1];
-  pi[2] = m_alt->m_object_key[2];
-  pi[3] = m_alt->m_object_key[3];
+  memcpy(pi, m_alt->m_object_key, sizeof(CryptoHash));
 
   return val;
 }
 
 inline void
-HTTPInfo::object_key_get(INK_MD5 *md5)
+HTTPInfo::object_key_get(CryptoHash *hash)
 {
-  int32_t *pi = reinterpret_cast<int32_t *>(md5);
-  pi[0] = m_alt->m_object_key[0];
-  pi[1] = m_alt->m_object_key[1];
-  pi[2] = m_alt->m_object_key[2];
-  pi[3] = m_alt->m_object_key[3];
+  int32_t *pi = reinterpret_cast<int32_t *>(hash);
+  memcpy(pi, m_alt->m_object_key, CRYPTO_HASH_SIZE);
 }
 
 inline bool
-HTTPInfo::compare_object_key(const INK_MD5 *md5)
+HTTPInfo::compare_object_key(const CryptoHash *hash)
 {
-  int32_t const *pi = reinterpret_cast<int32_t const *>(md5);
-  return ((m_alt->m_object_key[0] == pi[0]) && (m_alt->m_object_key[1] == pi[1]) && (m_alt->m_object_key[2] == pi[2]) &&
-          (m_alt->m_object_key[3] == pi[3]));
+  int32_t const *pi = reinterpret_cast<int32_t const *>(hash);
+  return memcmp(pi, m_alt->m_object_key, CRYPTO_HASH_SIZE) == 0;
 }
 
 inline int64_t
 HTTPInfo::object_size_get()
 {
-  int64_t val;
+  int64_t val = 0; // make gcc shut up.
   int32_t *pi = reinterpret_cast<int32_t *>(&val);
 
   pi[0] = m_alt->m_object_size[0];
@@ -1575,19 +1531,16 @@ HTTPInfo::object_size_get()
 }
 
 inline void
-HTTPInfo::object_key_set(INK_MD5 &md5)
+HTTPInfo::object_key_set(CryptoHash &hash)
 {
-  int32_t *pi = reinterpret_cast<int32_t *>(&md5);
-  m_alt->m_object_key[0] = pi[0];
-  m_alt->m_object_key[1] = pi[1];
-  m_alt->m_object_key[2] = pi[2];
-  m_alt->m_object_key[3] = pi[3];
+  int32_t *pi = reinterpret_cast<int32_t *>(&hash);
+  memcpy(m_alt->m_object_key, pi, CRYPTO_HASH_SIZE);
 }
 
 inline void
 HTTPInfo::object_size_set(int64_t size)
 {
-  int32_t *pi = reinterpret_cast<int32_t *>(&size);
+  int32_t *pi             = reinterpret_cast<int32_t *>(&size);
   m_alt->m_object_size[0] = pi[0];
   m_alt->m_object_size[1] = pi[1];
 }
@@ -1595,7 +1548,7 @@ HTTPInfo::object_size_set(int64_t size)
 inline HTTPInfo::FragOffset *
 HTTPInfo::get_frag_table()
 {
-  return m_alt ? m_alt->m_frag_offsets : 0;
+  return m_alt ? m_alt->m_frag_offsets : nullptr;
 }
 
 inline int
@@ -1603,5 +1556,3 @@ HTTPInfo::get_frag_offset_count()
 {
   return m_alt ? m_alt->m_frag_offset_count : 0;
 }
-
-#endif /* __HTTP_H__ */

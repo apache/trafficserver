@@ -32,28 +32,25 @@
 
  ****************************************************************************/
 
-#ifndef _HdrTest_H_
-#define _HdrTest_H_
+#pragma once
 
-#include "ts/Regression.h"
+#include "tscore/Regression.h"
 
 class HdrTest
 {
 public:
-  RegressionTest *rtest;
+  RegressionTest *rtest = nullptr;
 
-  HdrTest() : rtest(NULL){};
+  HdrTest(){};
   ~HdrTest(){};
 
   int go(RegressionTest *t, int atype);
 
 private:
-  int test_error_page_selection();
   int test_http_hdr_print_and_copy();
   int test_parse_date();
   int test_format_date();
   int test_url();
-  int test_http_parser_eos_boundary_cases();
   int test_arena();
   int test_regex();
   int test_accept_language_match();
@@ -77,5 +74,3 @@ private:
   void bri_box(const char *s);
   int failures_to_status(const char *testname, int nfail);
 };
-
-#endif

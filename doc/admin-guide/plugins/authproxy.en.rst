@@ -35,11 +35,11 @@ plugin. you can disable this behavior by setting
 :ts:cv:`proxy.config.http.doc_in_cache_skip_dns` to ``0`` in
 :file:`records.config`.
 
-Note that the authorization request will need to match a remap rule 
-(which, as a standalone remap rule, does not need to call the 
+Note that the authorization request will need to match a remap rule
+(which, as a standalone remap rule, does not need to call the
 AuthProxy plugin). If a second remap rule is required, by default,
-the authorization request will not have the same Host header as 
-the request from the client. It could be added using the 
+the authorization request will not have the same Host header as
+the request from the client. It could be added using the
 ``header_rewrite`` plugin (set-header Host "pristine_host.example.com").
 
 Plugin Options
@@ -97,7 +97,7 @@ HTTP request to a `HEAD` request and sending that to the origin server
   map http://cache.example.com http://origin.internal.com/ \
     @plugin=authproxy.so @pparam=--auth-transform=head
 
-  map http://origin.internal.com http://origin.internal.com/ 
+  map http://origin.internal.com http://origin.internal.com/
 
 
 In this example, the request is directed to a local authentication server
@@ -107,4 +107,4 @@ that authorizes the request based on internal policy rules::
     @plugin=authproxy.so @pparam=--auth-transform=redirect @pparam=--auth-host=127.0.0.1 @pparam=--auth-port=9000
 
   map http://origin.internal.com/ http://origin.internal.com/ \
-    @plugin=authproxy.so @pparam=--auth-transform=redirect @pparam=--auth-host=127.0.0.1 @pparam=--auth-port=9000    
+    @plugin=authproxy.so @pparam=--auth-transform=redirect @pparam=--auth-host=127.0.0.1 @pparam=--auth-port=9000

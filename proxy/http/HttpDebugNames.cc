@@ -26,9 +26,10 @@
 #include "StatPages.h"
 #include "HttpTunnel.h"
 #include "Transform.h"
-#include "ICPevents.h"
 #include "HttpSM.h"
 #include "HttpUpdateSM.h"
+#include <ts/apidefs.h>
+#include <I_Event.h>
 
 //----------------------------------------------------------------------------
 const char *
@@ -55,12 +56,10 @@ HttpDebugNames::get_server_state_name(HttpTransact::ServerState_t state)
     return "PARSE_ERROR";
   case HttpTransact::TRANSACTION_COMPLETE:
     return "TRANSACTION_COMPLETE";
-  case HttpTransact::CONGEST_CONTROL_CONGESTED_ON_F:
-    return "CONGEST_CONTROL_CONGESTED_ON_F";
-  case HttpTransact::CONGEST_CONTROL_CONGESTED_ON_M:
-    return "CONGEST_CONTROL_CONGESTED_ON_M";
-  case HttpTransact::PARENT_ORIGIN_RETRY:
-    return "PARENT_ORIGIN_RETRY";
+  case HttpTransact::PARENT_RETRY:
+    return "PARENT_RETRY";
+  case HttpTransact::OUTBOUND_CONGESTION:
+    return "OUTBOUND_CONGESTION";
   }
 
   return ("unknown state name");
@@ -106,135 +105,131 @@ const char *
 HttpDebugNames::get_event_name(int event)
 {
   switch (event) {
-  /////////////////////////
-  // VCONNECTION  EVENTS //
-  /////////////////////////
-  case VC_EVENT_NONE:
-    return ("VC_EVENT_NONE");
-  case VC_EVENT_IMMEDIATE:
-    return ("VC_EVENT_IMMEDIATE");
-  case VC_EVENT_READ_READY:
-    return ("VC_EVENT_READ_READY");
-  case VC_EVENT_WRITE_READY:
-    return ("VC_EVENT_WRITE_READY");
-  case VC_EVENT_READ_COMPLETE:
-    return ("VC_EVENT_READ_COMPLETE");
-  case VC_EVENT_WRITE_COMPLETE:
-    return ("VC_EVENT_WRITE_COMPLETE");
-  case VC_EVENT_EOS:
-    return ("VC_EVENT_EOS");
-  case VC_EVENT_ERROR:
-    return ("VC_EVENT_ERROR");
-  case VC_EVENT_INACTIVITY_TIMEOUT:
-    return ("VC_EVENT_INACTIVITY_TIMEOUT");
-  case VC_EVENT_ACTIVE_TIMEOUT:
-    return ("VC_EVENT_ACTIVE_TIMEOUT");
+  case EVENT_NONE:
+    static_assert(static_cast<int>(EVENT_NONE) == static_cast<int>(VC_EVENT_NONE));
+    return "EVENT_NONE/VC_EVENT_NONE";
+  case EVENT_IMMEDIATE:
+    static_assert(static_cast<int>(EVENT_IMMEDIATE) == static_cast<int>(TS_EVENT_IMMEDIATE));
+    static_assert(static_cast<int>(EVENT_IMMEDIATE) == static_cast<int>(VC_EVENT_IMMEDIATE));
+    return "EVENT_IMMEDIATE/TS_EVENT_IMMEDIATE/VC_EVENT_IMMEDIATE";
+  case EVENT_ERROR:
+    static_assert(static_cast<int>(EVENT_ERROR) == static_cast<int>(TS_EVENT_ERROR));
+    static_assert(static_cast<int>(EVENT_ERROR) == static_cast<int>(VC_EVENT_ERROR));
+    return "EVENT_ERROR/TS_EVENT_ERROR/VC_EVENT_ERROR";
   case EVENT_INTERVAL:
-    return ("VC_EVENT_INTERVAL");
+    return "EVENT_INTERVAL";
+  case VC_EVENT_READ_READY:
+    static_assert(static_cast<int>(VC_EVENT_READ_READY) == static_cast<int>(TS_EVENT_VCONN_READ_READY));
+    return "VC_EVENT_READ_READY/TS_EVENT_VCONN_READ_READY";
+  case VC_EVENT_WRITE_READY:
+    static_assert(static_cast<int>(VC_EVENT_WRITE_READY) == static_cast<int>(TS_EVENT_VCONN_WRITE_READY));
+    return "VC_EVENT_WRITE_READY/TS_EVENT_VCONN_WRITE_READY";
+  case VC_EVENT_READ_COMPLETE:
+    static_assert(static_cast<int>(VC_EVENT_READ_COMPLETE) == static_cast<int>(TS_EVENT_VCONN_READ_COMPLETE));
+    return "VC_EVENT_READ_COMPLETE/TS_EVENT_VCONN_READ_COMPLETE";
+  case VC_EVENT_WRITE_COMPLETE:
+    static_assert(static_cast<int>(VC_EVENT_WRITE_COMPLETE) == static_cast<int>(TS_EVENT_VCONN_WRITE_COMPLETE));
+    return "VC_EVENT_WRITE_COMPLETE/TS_EVENT_VCONN_WRITE_COMPLETE";
+  case VC_EVENT_EOS:
+    static_assert(static_cast<int>(VC_EVENT_EOS) == static_cast<int>(TS_EVENT_VCONN_EOS));
+    return "VC_EVENT_EOS/TS_EVENT_VCONN_EOS";
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+    static_assert(static_cast<int>(VC_EVENT_INACTIVITY_TIMEOUT) == static_cast<int>(TS_EVENT_VCONN_INACTIVITY_TIMEOUT));
+    return "VC_EVENT_INACTIVITY_TIMEOUT/TS_EVENT_VCONN_INACTIVITY_TIMEOUT";
+  case VC_EVENT_ACTIVE_TIMEOUT:
+    static_assert(static_cast<int>(VC_EVENT_ACTIVE_TIMEOUT) == static_cast<int>(TS_EVENT_VCONN_ACTIVE_TIMEOUT));
+    return "VC_EVENT_ACTIVE_TIMEOUT/TS_EVENT_VCONN_ACTIVE_TIMEOUT";
 
   /////////////////
   // NET  EVENTS //
   /////////////////
   case NET_EVENT_OPEN:
-    return ("NET_EVENT_OPEN");
+    static_assert(static_cast<int>(NET_EVENT_OPEN) == static_cast<int>(TS_EVENT_NET_CONNECT));
+    return "NET_EVENT_OPEN/TS_EVENT_NET_CONNECT";
   case NET_EVENT_ACCEPT:
-    return ("NET_EVENT_ACCEPT");
+    static_assert(static_cast<int>(NET_EVENT_ACCEPT) == static_cast<int>(TS_EVENT_NET_ACCEPT));
+    return "NET_EVENT_ACCEPT/TS_EVENT_NET_ACCEPT";
   case NET_EVENT_OPEN_FAILED:
-    return ("NET_EVENT_OPEN_FAILED");
+    static_assert(static_cast<int>(NET_EVENT_OPEN_FAILED) == static_cast<int>(TS_EVENT_NET_CONNECT_FAILED));
+    return "NET_EVENT_OPEN_FAILED/TS_EVENT_NET_CONNECT_FAILED";
 
   ////////////////////
   // HOSTDB  EVENTS //
   ////////////////////
   case EVENT_HOST_DB_LOOKUP:
-    return ("EVENT_HOST_DB_LOOKUP");
-
+    static_assert(static_cast<int>(EVENT_HOST_DB_LOOKUP) == static_cast<int>(TS_EVENT_HOST_LOOKUP));
+    return "EVENT_HOST_DB_LOOKUP/TS_EVENT_HOST_LOOKUP";
   case EVENT_HOST_DB_GET_RESPONSE:
-    return ("EVENT_HOST_DB_GET_RESPONSE");
-
-  ////////////////////
-  // HOSTDB  EVENTS //
-  ////////////////////
+    return "EVENT_HOST_DB_GET_RESPONSE";
   case EVENT_SRV_LOOKUP:
-    return ("EVENT_SRV_LOOKUP");
-
+    return "EVENT_SRV_LOOKUP";
   case EVENT_SRV_IP_REMOVED:
-    return ("EVENT_SRV_IP_REMOVED");
-
+    return "EVENT_SRV_IP_REMOVED";
   case EVENT_SRV_GET_RESPONSE:
-    return ("EVENT_SRV_GET_RESPONSE");
+    return "EVENT_SRV_GET_RESPONSE";
 
   ////////////////////
   // DNS     EVENTS //
   ////////////////////
   case DNS_EVENT_LOOKUP:
-    return ("DNS_EVENT_LOOKUP");
+    return "DNS_EVENT_LOOKUP";
 
   ////////////////////
   // CACHE   EVENTS //
   ////////////////////
-
-  case CACHE_EVENT_LOOKUP:
-    return ("CACHE_EVENT_LOOKUP");
   case CACHE_EVENT_LOOKUP_FAILED:
-    return ("CACHE_EVENT_LOOKUP_FAILED");
+    return "CACHE_EVENT_LOOKUP_FAILED";
   case CACHE_EVENT_OPEN_READ:
-    return ("CACHE_EVENT_OPEN_READ");
+    static_assert(static_cast<int>(CACHE_EVENT_OPEN_READ) == static_cast<int>(TS_EVENT_CACHE_OPEN_READ));
+    return "CACHE_EVENT_OPEN_READ/TS_EVENT_CACHE_OPEN_READ";
   case CACHE_EVENT_OPEN_READ_FAILED:
-    return ("CACHE_EVENT_OPEN_READ_FAILED");
+    static_assert(static_cast<int>(CACHE_EVENT_OPEN_READ_FAILED) == static_cast<int>(TS_EVENT_CACHE_OPEN_READ_FAILED));
+    return "CACHE_EVENT_OPEN_READ_FAILED/TS_EVENT_CACHE_OPEN_READ_FAILED";
   case CACHE_EVENT_OPEN_WRITE:
-    return ("CACHE_EVENT_OPEN_WRITE");
+    static_assert(static_cast<int>(CACHE_EVENT_OPEN_WRITE) == static_cast<int>(TS_EVENT_CACHE_OPEN_WRITE));
+    return "CACHE_EVENT_OPEN_WRITE/TS_EVENT_CACHE_OPEN_WRITE";
   case CACHE_EVENT_OPEN_WRITE_FAILED:
-    return ("CACHE_EVENT_OPEN_WRITE_FAILED");
+    static_assert(static_cast<int>(CACHE_EVENT_OPEN_WRITE_FAILED) == static_cast<int>(TS_EVENT_CACHE_OPEN_WRITE_FAILED));
+    return "CACHE_EVENT_OPEN_WRITE_FAILED/TS_EVENT_CACHE_OPEN_WRITE_FAILED";
   case CACHE_EVENT_REMOVE:
-    return ("CACHE_EVENT_REMOVE");
+    static_assert(static_cast<int>(CACHE_EVENT_REMOVE) == static_cast<int>(TS_EVENT_CACHE_REMOVE));
+    return "CACHE_EVENT_REMOVE/TS_EVENT_CACHE_REMOVE";
   case CACHE_EVENT_REMOVE_FAILED:
-    return ("CACHE_EVENT_REMOVE_FAILED");
+    static_assert(static_cast<int>(CACHE_EVENT_REMOVE_FAILED) == static_cast<int>(TS_EVENT_CACHE_REMOVE_FAILED));
+    return "CACHE_EVENT_REMOVE_FAILED/TS_EVENT_CACHE_REMOVE_FAILED";
   case CACHE_EVENT_UPDATE:
-    return ("CACHE_EVENT_UPDATE");
+    return "CACHE_EVENT_UPDATE";
   case CACHE_EVENT_UPDATE_FAILED:
-    return ("CACHE_EVENT_UPDATE_FAILED");
+    return "CACHE_EVENT_UPDATE_FAILED";
 
   case STAT_PAGE_SUCCESS:
-    return ("STAT_PAGE_SUCCESS");
+    return "STAT_PAGE_SUCCESS";
   case STAT_PAGE_FAILURE:
-    return ("STAT_PAGE_FAILURE");
+    return "STAT_PAGE_FAILURE";
 
   case TRANSFORM_READ_READY:
-    return ("TRANSFORM_READ_READY");
+    static_assert(static_cast<int>(TRANSFORM_READ_READY) == static_cast<int>(TS_EVENT_SSL_SESSION_GET));
+    return "TRANSFORM_READ_READY/TS_EVENT_SSL_SESSION_GET";
 
   /////////////////////////
-  //  HttpTunnel Events //
+  //  HttpTunnel Events  //
   /////////////////////////
   case HTTP_TUNNEL_EVENT_DONE:
-    return ("HTTP_TUNNEL_EVENT_DONE");
+    return "HTTP_TUNNEL_EVENT_DONE";
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
-    return ("HTTP_TUNNEL_EVENT_PRECOMPLETE");
+    return "HTTP_TUNNEL_EVENT_PRECOMPLETE";
   case HTTP_TUNNEL_EVENT_CONSUMER_DETACH:
-    return ("HTTP_TUNNEL_EVENT_CONSUMER_DETACH");
+    return "HTTP_TUNNEL_EVENT_CONSUMER_DETACH";
 
-  //////////////////////////
-  //  ICP Events
-  //////////////////////////
-  case ICP_LOOKUP_FOUND:
-    return ("ICP_LOOKUP_FOUND");
-  case ICP_LOOKUP_FAILED:
-    return ("ICP_LOOKUP_FAILED");
-
-  //////////////////////////////
-  //  CongestionControl Events
-  //////////////////////////////
-  case CONGESTION_EVENT_CONGESTED_ON_F:
-    return ("CONGESTION_EVENT_CONGESTED_ON_F");
-  case CONGESTION_EVENT_CONGESTED_ON_M:
-    return ("CONGESTION_EVENT_CONGESTED_ON_M");
-
-  //////////////////////////////
+  /////////////////////////////
   //  Plugin Events
-  //////////////////////////////
+  /////////////////////////////
   case HTTP_API_CONTINUE:
-    return ("HTTP_API_CONTINUE");
+    static_assert(static_cast<int>(HTTP_API_CONTINUE) == static_cast<int>(TS_EVENT_HTTP_CONTINUE));
+    return "HTTP_API_CONTINUE/TS_EVENT_HTTP_CONTINUE";
   case HTTP_API_ERROR:
-    return ("HTTP_API_ERROR");
+    static_assert(static_cast<int>(HTTP_API_ERROR) == static_cast<int>(TS_EVENT_HTTP_ERROR));
+    return "HTTP_API_ERROR/TS_EVENT_HTTP_ERROR";
 
   ///////////////////////////////
   //  Scheduled Update Events
@@ -251,6 +246,139 @@ HttpDebugNames::get_event_name(int event)
     return "HTTP_SCH_UPDATE_EVENT_ERROR";
   case HTTP_SCH_UPDATE_EVENT_NO_ACTION:
     return "HTTP_SCH_UPDATE_EVENT_NO_ACTION";
+
+  case TS_EVENT_NET_ACCEPT_FAILED:
+    return "TS_EVENT_NET_ACCEPT_FAILED";
+  case TS_EVENT_INTERNAL_206:
+    return "TS_EVENT_INTERNAL_206";
+  case TS_EVENT_INTERNAL_207:
+    return "TS_EVENT_INTERNAL_207";
+  case TS_EVENT_INTERNAL_208:
+    return "TS_EVENT_INTERNAL_208";
+  case TS_EVENT_INTERNAL_209:
+    return "TS_EVENT_INTERNAL_209";
+  case TS_EVENT_INTERNAL_210:
+    return "TS_EVENT_INTERNAL_210";
+  case TS_EVENT_INTERNAL_211:
+    return "TS_EVENT_INTERNAL_211";
+  case TS_EVENT_INTERNAL_212:
+    return "TS_EVENT_INTERNAL_212";
+  case TS_EVENT_CACHE_SCAN:
+    return "TS_EVENT_CACHE_SCAN";
+  case TS_EVENT_CACHE_SCAN_FAILED:
+    return "TS_EVENT_CACHE_SCAN_FAILED";
+  case TS_EVENT_CACHE_SCAN_OBJECT:
+    return "TS_EVENT_CACHE_SCAN_OBJECT";
+  case TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED:
+    return "TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED";
+  case TS_EVENT_CACHE_SCAN_OPERATION_FAILED:
+    return "TS_EVENT_CACHE_SCAN_OPERATION_FAILED";
+  case TS_EVENT_CACHE_SCAN_DONE:
+    return "TS_EVENT_CACHE_SCAN_DONE";
+  case TS_EVENT_CACHE_LOOKUP:
+    return "TS_EVENT_CACHE_LOOKUP";
+  case TS_EVENT_CACHE_READ:
+    return "TS_EVENT_CACHE_READ";
+  case TS_EVENT_CACHE_DELETE:
+    return "TS_EVENT_CACHE_DELETE";
+  case TS_EVENT_CACHE_WRITE:
+    return "TS_EVENT_CACHE_WRITE";
+  case TS_EVENT_CACHE_WRITE_HEADER:
+    return "TS_EVENT_CACHE_WRITE_HEADER";
+  case TS_EVENT_CACHE_CLOSE:
+    return "TS_EVENT_CACHE_CLOSE";
+  case TS_EVENT_CACHE_LOOKUP_READY:
+    return "TS_EVENT_CACHE_LOOKUP_READY";
+  case TS_EVENT_CACHE_LOOKUP_COMPLETE:
+    return "TS_EVENT_CACHE_LOOKUP_COMPLETE";
+  case TS_EVENT_CACHE_READ_READY:
+    return "TS_EVENT_CACHE_READ_READY";
+  case TS_EVENT_CACHE_READ_COMPLETE:
+    return "TS_EVENT_CACHE_READ_COMPLETE";
+  case TS_EVENT_INTERNAL_1200:
+    return "TS_EVENT_INTERNAL_1200";
+  case TS_EVENT_SSL_SESSION_NEW:
+    return "TS_EVENT_SSL_SESSION_NEW";
+  case TS_EVENT_SSL_SESSION_REMOVE:
+    return "TS_EVENT_SSL_SESSION_REMOVE";
+  case TS_EVENT_AIO_DONE:
+    return "TS_EVENT_AIO_DONE";
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    return "TS_EVENT_HTTP_READ_REQUEST_HDR";
+  case TS_EVENT_HTTP_OS_DNS:
+    return "TS_EVENT_HTTP_OS_DNS";
+  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
+    return "TS_EVENT_HTTP_SEND_REQUEST_HDR";
+  case TS_EVENT_HTTP_READ_CACHE_HDR:
+    return "TS_EVENT_HTTP_READ_CACHE_HDR";
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    return "TS_EVENT_HTTP_READ_RESPONSE_HDR";
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+    return "TS_EVENT_HTTP_SEND_RESPONSE_HDR";
+  case TS_EVENT_HTTP_REQUEST_TRANSFORM:
+    return "TS_EVENT_HTTP_REQUEST_TRANSFORM";
+  case TS_EVENT_HTTP_RESPONSE_TRANSFORM:
+    return "TS_EVENT_HTTP_RESPONSE_TRANSFORM";
+  case TS_EVENT_HTTP_SELECT_ALT:
+    return "TS_EVENT_HTTP_SELECT_ALT";
+  case TS_EVENT_HTTP_TXN_START:
+    return "TS_EVENT_HTTP_TXN_START";
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    return "TS_EVENT_HTTP_TXN_CLOSE";
+  case TS_EVENT_HTTP_SSN_START:
+    return "TS_EVENT_HTTP_SSN_START";
+  case TS_EVENT_HTTP_SSN_CLOSE:
+    return "TS_EVENT_HTTP_SSN_CLOSE";
+  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
+    return "TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE";
+  case TS_EVENT_HTTP_PRE_REMAP:
+    return "TS_EVENT_HTTP_PRE_REMAP";
+  case TS_EVENT_HTTP_POST_REMAP:
+    return "TS_EVENT_HTTP_POST_REMAP";
+  case TS_EVENT_LIFECYCLE_PORTS_INITIALIZED:
+    return "TS_EVENT_LIFECYCLE_PORTS_INITIALIZED";
+  case TS_EVENT_LIFECYCLE_PORTS_READY:
+    return "TS_EVENT_LIFECYCLE_PORTS_READY";
+  case TS_EVENT_LIFECYCLE_CACHE_READY:
+    return "TS_EVENT_LIFECYCLE_CACHE_READY";
+  case TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED:
+    return "TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED";
+  case TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED:
+    return "TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED";
+  case TS_EVENT_LIFECYCLE_TASK_THREADS_READY:
+    return "TS_EVENT_LIFECYCLE_TASK_THREADS_READY";
+  case TS_EVENT_LIFECYCLE_SHUTDOWN:
+    return "TS_EVENT_LIFECYCLE_SHUTDOWN";
+  case TS_EVENT_VCONN_START:
+    return "TS_EVENT_VCONN_START";
+  case TS_EVENT_VCONN_CLOSE:
+    return "TS_EVENT_VCONN_CLOSE";
+  case TS_EVENT_LIFECYCLE_MSG:
+    return "TS_EVENT_LIFECYCLE_MSG";
+  case TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE:
+    return "TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE";
+  case TS_EVENT_MGMT_UPDATE:
+    return "TS_EVENT_MGMT_UPDATE";
+  case TS_EVENT_INTERNAL_60200:
+    return "TS_EVENT_INTERNAL_60200";
+  case TS_EVENT_INTERNAL_60201:
+    return "TS_EVENT_INTERNAL_60201";
+  case TS_EVENT_INTERNAL_60202:
+    return "TS_EVENT_INTERNAL_60202";
+  case TS_EVENT_SSL_CLIENT_HELLO:
+    return "TS_EVENT_SSL_CLIENT_HELLO";
+  case TS_EVENT_SSL_CERT:
+    return "TS_EVENT_SSL_CERT";
+  case TS_EVENT_SSL_SERVERNAME:
+    return "TS_EVENT_SSL_SERVERNAME";
+  case TS_EVENT_SSL_VERIFY_SERVER:
+    return "TS_EVENT_SSL_VERIFY_SERVER";
+  case TS_EVENT_SSL_VERIFY_CLIENT:
+    return "TS_EVENT_SSL_VERIFY_CLIENT";
+  case TS_EVENT_VCONN_OUTBOUND_START:
+    return "TS_EVENT_VCONN_OUTBOUND_START";
+  case TS_EVENT_VCONN_OUTBOUND_CLOSE:
+    return "TS_EVENT_VCONN_OUTBOUND_CLOSE";
   }
 
   return ("unknown event");
@@ -282,9 +410,6 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
 
   case HttpTransact::SM_ACTION_DNS_REVERSE_LOOKUP:
     return ("SM_ACTION_DNS_REVERSE_LOOKUP");
-
-  case HttpTransact::SM_ACTION_ICP_QUERY:
-    return ("SM_ACTION_ICP_QUERY");
 
   case HttpTransact::SM_ACTION_CACHE_PREPARE_UPDATE:
     return ("SM_ACTION_CACHE_PREPARE_UPDATE");
@@ -367,11 +492,11 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
   case HttpTransact::SM_ACTION_TRANSFORM_READ:
     return ("SM_ACTION_TRANSFORM_READ");
 
-#ifdef PROXY_DRAIN
-  case HttpTransact::SM_ACTION_DRAIN_REQUEST_BODY:
-    return ("SM_ACTION_DRAIN_REQUEST_BODY");
-#endif /* PROXY_DRAIN */
+  case HttpTransact::SM_ACTION_WAIT_FOR_FULL_BODY:
+    return ("SM_ACTION_WAIT_FOR_FULL_BODY");
 
+  case HttpTransact::SM_ACTION_REQUEST_BUFFER_READ_COMPLETE:
+    return ("SM_ACTION_REQUEST_BUFFER_READ_COMPLETE");
   case HttpTransact::SM_ACTION_API_SM_START:
     return ("SM_ACTION_API_SM_START");
   case HttpTransact::SM_ACTION_REDIRECT_READ:
@@ -458,6 +583,8 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
     return "TS_HTTP_SEND_RESPONSE_HDR_HOOK";
   case TS_HTTP_REQUEST_TRANSFORM_HOOK:
     return "TS_HTTP_REQUEST_TRANSFORM_HOOK";
+  case TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK:
+    return "TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK";
   case TS_HTTP_RESPONSE_TRANSFORM_HOOK:
     return "TS_HTTP_RESPONSE_TRANSFORM_HOOK";
   case TS_HTTP_SELECT_ALT_HOOK:
@@ -478,11 +605,67 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
     return "TS_HTTP_RESPONSE_CLIENT_HOOK";
   case TS_HTTP_LAST_HOOK:
     return "TS_HTTP_LAST_HOOK";
-  case TS_VCONN_PRE_ACCEPT_HOOK:
-    return "TS_VCONN_PRE_ACCEPT_HOOK";
+  case TS_VCONN_START_HOOK:
+    return "TS_VCONN_START_HOOK";
+  case TS_VCONN_CLOSE_HOOK:
+    return "TS_VCONN_CLOSE_HOOK";
+  case TS_SSL_CLIENT_HELLO_HOOK:
+    return "TS_SSL_CLIENT_HELLO_HOOK";
   case TS_SSL_CERT_HOOK:
     return "TS_SSL_CERT_HOOK";
+  case TS_SSL_SERVERNAME_HOOK:
+    return "TS_SSL_SERVERNAME_HOOK";
+  case TS_SSL_VERIFY_SERVER_HOOK:
+    return "TS_SSL_VERIFY_SERVER_HOOK";
+  case TS_SSL_VERIFY_CLIENT_HOOK:
+    return "TS_SSL_VERIFY_CLIENT_HOOK";
+  case TS_SSL_SESSION_HOOK:
+    return "TS_SSL_SESSION_HOOK";
+  case TS_VCONN_OUTBOUND_START_HOOK:
+    return "TS_VCONN_OUTBOUND_START_HOOK";
+  case TS_VCONN_OUTBOUND_CLOSE_HOOK:
+    return "TS_VCONN_OUTBOUND_CLOSE_HOOK";
   }
 
   return "unknown hook";
+}
+
+ts::BufferWriter &
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, HttpTransact::ServerState_t state)
+{
+  if (spec.has_numeric_type()) {
+    return bwformat(w, spec, static_cast<uintmax_t>(state));
+  } else {
+    return bwformat(w, spec, HttpDebugNames::get_server_state_name(state));
+  }
+}
+
+ts::BufferWriter &
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, HttpTransact::CacheAction_t state)
+{
+  if (spec.has_numeric_type()) {
+    return bwformat(w, spec, static_cast<uintmax_t>(state));
+  } else {
+    return bwformat(w, spec, HttpDebugNames::get_cache_action_name(state));
+  }
+}
+
+ts::BufferWriter &
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, HttpTransact::StateMachineAction_t state)
+{
+  if (spec.has_numeric_type()) {
+    return bwformat(w, spec, static_cast<uintmax_t>(state));
+  } else {
+    return bwformat(w, spec, HttpDebugNames::get_action_name(state));
+  }
+}
+
+ts::BufferWriter &
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, TSHttpHookID id)
+{
+  if (spec.has_numeric_type()) {
+    return bwformat(w, spec, static_cast<uintmax_t>(id));
+  } else {
+    return bwformat(w, spec, HttpDebugNames::get_api_hook_name(id));
+  }
 }

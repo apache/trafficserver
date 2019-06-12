@@ -17,74 +17,73 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 SUBDIRS = include
 
-AM_CPPFLAGS = \
-  $(iocore_include_dirs) \
-  -I$(top_srcdir)/lib/records \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/cluster \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/lib \
-  $(LIBUNWIND_CFLAGS)
+AM_CPPFLAGS += \
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	$(TS_INCLUDES) \
+	$(LIBUNWIND_CFLAGS)
 
 noinst_LTLIBRARIES = libmgmtapilocal.la libmgmtapi.la
 lib_LTLIBRARIES = libtsmgmt.la
 
 libmgmtapi_la_SOURCES = \
-  CfgContextImpl.cc \
-  CfgContextImpl.h \
-  CfgContextManager.cc \
-  CfgContextManager.h \
-  CfgContextUtils.cc \
-  CfgContextUtils.h \
-  CoreAPI.h \
-  CoreAPIShared.cc \
-  CoreAPIShared.h \
-  EventCallback.cc \
-  EventCallback.h \
-  GenericParser.cc \
-  GenericParser.h \
-  INKMgmtAPI.cc \
-  NetworkMessage.cc \
-  NetworkMessage.h \
-  include/mgmtapi.h
+	CoreAPI.h \
+	CoreAPIShared.cc \
+	CoreAPIShared.h \
+	EventCallback.cc \
+	EventCallback.h \
+	INKMgmtAPI.cc \
+	NetworkMessage.cc \
+	NetworkMessage.h \
+	include/mgmtapi.h
 
 if BUILD_TESTS
-  noinst_PROGRAMS = traffic_api_cli_remote
+noinst_PROGRAMS = traffic_api_cli_remote
 endif
 
 libmgmtapilocal_la_SOURCES = \
-  CfgContextDefs.h \
-  CoreAPI.cc \
-  EventControlMain.cc \
-  EventControlMain.h \
-  NetworkUtilsLocal.cc \
-  NetworkUtilsLocal.h \
-  TSControlMain.cc \
-  TSControlMain.h
+	CoreAPI.cc \
+	EventControlMain.cc \
+	EventControlMain.h \
+	NetworkUtilsLocal.cc \
+	NetworkUtilsLocal.h \
+	TSControlMain.cc \
+	TSControlMain.h
 
 libtsmgmt_la_SOURCES = \
-  CoreAPIRemote.cc \
-  NetworkUtilsRemote.cc \
-  NetworkUtilsRemote.h
+	CoreAPIRemote.cc \
+	NetworkUtilsRemote.cc \
+	NetworkUtilsRemote.h
 
 libmgmtapilocal_la_LIBADD = \
-  libmgmtapi.la \
-  $(top_builddir)/lib/ts/libtsutil.la
+	libmgmtapi.la \
+	$(top_builddir)/src/tscore/libtscore.la
 
 libtsmgmt_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsmgmt_la_LIBADD = @LIBOBJS@ \
-  libmgmtapi.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  $(top_builddir)/mgmt/utils/libutils_p.la
+	libmgmtapi.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/mgmt/utils/libutils_p.la
 
 if BUILD_TESTS
-  traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
+traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
 endif
 
 traffic_api_cli_remote_LDADD = \
-  libtsmgmt.la \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBTCL@ @OPENSSL_LIBS@
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	libtsmgmt.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	@OPENSSL_LIBS@
+
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

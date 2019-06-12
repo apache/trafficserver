@@ -41,4 +41,4 @@ the cache calls :arg:`contp` back with the event
 In both of these callbacks, the user (:arg:`contp`) does not have to do
 anything.  The user does not get any vconnection from the cache, since
 no data needs to be transferred.  When the cache calls :arg:`contp` back with
-:data:`TS_EVENT_CACHE_REMOVE`, the remove has already been commited.
+:data:`TS_EVENT_CACHE_REMOVE`, the remove has already been committed.

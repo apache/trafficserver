@@ -16,6 +16,10 @@
 
 .. include:: ../../../common.defs
 
+.. Many types are here simply to avoid build errors in the documentation. It is reasonable to,
+   when providing additional documentation on the type, to move it from here to a more appropriate
+   file.
+
 .. default-domain:: c
 
 TSAPI Types
@@ -36,26 +40,27 @@ more widely. Those are described on this page.
 
 .. type:: ink_hrtime
 
+.. type:: INK_MD5
+
+   Buffer type sufficient to contain an MD5 hash value.
+
+.. cpp:class:: INK_MD5
+
+   See :type:`INK_MD5`.
+
+.. cpp:class:: RecRawStatBlock
+
+   A data block intended to contain |TS| statistics.
+
 .. type:: TSAction
 
 .. type:: TSCacheKey
 
 .. type:: TSConfig
 
-.. type:: TSConfigDestroyFunc
-
 .. type:: TSCont
 
    An opaque type that represents a Traffic Server :term:`continuation`.
-
-.. type:: TSEvent
-
-   :type:`TSEvents` are sent to continuations when they are called
-   back.
-
-   The :type:`TSEvent` provides the continuation's handler function
-   with information about the callback.  Based on the event it
-   receives, the handler function can decide what to do.
 
 .. type:: TSEventFunc
 
@@ -63,15 +68,13 @@ more widely. Those are described on this page.
 
 .. type:: TSHostLookupResult
 
+   A type representing the result of a call to :func:`TSHostLookup`. Use with :func:`TSHostLookupResultAddrGet`.
+
 .. type:: TSHRTime
 
    "High Resolution Time"
 
    A 64 bit time value, measured in nanoseconds.
-
-.. type:: TSHttpHookID
-
-   An enumeration that identifies a specific type of hook for HTTP transactions.
 
 .. type:: TSHttpParser
 
@@ -79,31 +82,9 @@ more widely. Those are described on this page.
 
    An opaque type that represents a Traffic Server :term:`session`.
 
-.. type:: TSHttpStatus
-
-   This set of enums represents possible return values from
-   :func:`TSHttpHdrStatusGet`, which retrieves the status code from an
-   HTTP response header (:func:`TSHttpHdrStatusGet` retrieves status
-   codes only from headers of type :data:`TS_HTTP_TYPE_RESPONSE`).
-
-   You can also set the :type:`TSHttpStatus` of a response header using
-   :func:`TSHttpHdrStatusSet`.
-
 .. type:: TSHttpTxn
 
    An opaque type that represents a Traffic Server HTTP :term:`transaction`.
-
-.. type:: TSHttpType
-
-   This set of enums represents the possible HTTP types that can be
-   assigned to an HTTP header.
-
-   When a header is created with :func:`TSHttpHdrCreate`, it is
-   automatically assigned a type of :data:`TS_HTTP_TYPE_UNKNOWN`.  You
-   can modify the HTTP type ONCE after it the header is created, using
-   :func:`TSHttpHdrTypeSet`.  After setting the HTTP type once, you
-   cannot set it again.  Use :func:`TSHttpHdrTypeGet` to obtain the
-   :type:`TSHttpType` of an HTTP header.
 
 .. type:: TSIOBuffer
 
@@ -118,6 +99,11 @@ more widely. Those are described on this page.
    An enumeration that identifies a :ref:`life cycle hook <ts-lifecycle-hook-add>`.
 
 .. type:: TSMBuffer
+
+   Internally, data for a transaction is stored in one more more :term:`header heap`\s. These are
+   storage local to the transaction, and generally each HTTP header is stored in a separate one.
+   This type is a handle to a header heap, and is provided or required by functions that locate HTTP
+   header related data.
 
 .. type:: TSMgmtCounter
 
@@ -137,12 +123,17 @@ more widely. Those are described on this page.
 
 .. type:: TSMLoc
 
+   This is a memory location relative to a :term:`header heap` represented by a :c:type:`TSMBuffer` and
+   must always be used in conjunction with that :c:type:`TSMBuffer` instance. It identifies a specific
+   object in the :c:type:`TSMBuffer`. This indirection is needed so that the :c:type:`TSMBuffer`
+   can reallocate space as needed. Therefore a raw address obtained from a :c:type:`TSMLoc` should
+   be considered volatile that may become invalid across any API call.
+
+.. var:: TSMLoc TS_NULL_MLOC
+
+   A predefined null valued :type:`TSMLoc` used to indicate the absence of an :type:`TSMLoc`.
+
 .. type:: TSMutex
-
-.. type:: TSParseResult
-
-   This set of enums are possible values returned by
-   :func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp`.
 
 .. type:: TSPluginRegistrationInfo
 
@@ -150,26 +141,13 @@ more widely. Those are described on this page.
 
    It stores registration information about the plugin.
 
-.. type:: TSRecordDataType
-
-   An enumeration that specifies the type of a value in an internal data structure that is accessible via the API.
-
 .. type:: TSRemapInterface
 
 .. type:: TSRemapRequestInfo
 
-.. type:: TSRemapStatus
+.. type:: TSSslX509
 
-.. type:: TSReturnCode
-
-   An indicator of the results of an API call. A value of :const:`TS_SUCCESS` means the call was successful. Any other value
-   indicates a failure and is specific to the API call.
-
-.. type:: TSSDKVersion
-
-   Starting 2.0, SDK now follows same versioning as Traffic Server.
-
-.. type:: TSServerState
+    This type represents the :code:`X509` object created from an SSL certificate.
 
 .. type:: TSTextLogObject
 
@@ -181,10 +159,72 @@ more widely. Those are described on this page.
 
 .. type:: TSThread
 
+      This represents an internal |TS| thread, created by the |TS| core. It is an opaque type which
+      can be used only to check for equality / inequality, and passed to API functions. An instance
+      that refers to the current thread can be obtained with :func:`TSThreadSelf`.
+
+.. type:: TSEventThread
+
+      This type represents an :term:`event thread`. It is an opaque which is used to specify a
+      particular event processing thread in |TS|. If plugin code is executing in an event thread
+      (which will be true if called from a hook or a scheduled event) then the current event thread
+      can be obtained via :func:`TSEventThreadSelf`.
+
+      A :code:`TSEventThread` is also a :type:`TSThread` and can be passed as an argument to any
+      parameter of type :type:`TSThread`.
+
 .. type:: TSThreadFunc
 
-.. type:: TSThreadPool
+.. type:: TSUuidVersion
+
+   A version value for at :type:`TSUuid`.
+
+   .. member:: TS_UUID_V4
+
+      A version 4 UUID. Currently only this value is used.
+
+.. var:: size_t TS_UUID_STRING_LEN
+
+   Length of a UUID string.
 
 .. type:: TSVConn
 
+    A virtual connection. This is the basic mechanism for abstracting I/O operations in |TS|.
+
+.. type:: TSNetVConnection
+
+    A subtype of :type:`TSVConn` that provides additional IP network information and operations.
+
 .. type:: TSVIO
+
+.. type:: ModuleVersion
+
+    A module version.
+
+.. cpp:type:: ModuleVersion
+
+    A module version.
+
+.. cpp:class:: template<typename T> DLL
+
+    An anchor for a double linked intrusive list of instance of :arg:`T`.
+
+.. cpp:class:: template<typename T> Queue
+
+.. type:: TSAcceptor
+
+.. type:: TSNextProtocolSet
+
+.. cpp:class:: template <typename T> LINK
+
+.. cpp:class:: VersionNumber
+
+   A two part version number, defined in :ts:git:`include/tscore/I_Version.h`.
+
+   .. cpp:member:: short int ink_major
+
+      Major version number.
+
+   .. cpp:member:: short int ink_minor
+
+      Minor version number.

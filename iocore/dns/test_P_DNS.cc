@@ -36,8 +36,8 @@ struct NetTesterSM : public Continuation {
     ink_release_assert(lock);
     vc = _vc;
     SET_HANDLER(&NetTesterSM::handle_read);
-    buf = new_MIOBuffer(8);
-    reader = buf->alloc_reader();
+    buf      = new_MIOBuffer(8);
+    reader   = buf->alloc_reader();
     read_vio = vc->do_io_read(this, INT64_MAX, buf);
   }
 
@@ -45,19 +45,19 @@ struct NetTesterSM : public Continuation {
   handle_read(int event, void *data)
   {
     int r;
-    char *str;
+    char *str = nullptr;
     switch (event) {
     case VC_EVENT_READ_READY:
-      r = reader->read_avail();
+      r   = reader->read_avail();
       str = new char[r + 10];
       reader->read(str, r);
       printf("%s", str);
       fflush(stdout);
       break;
     case VC_EVENT_READ_COMPLETE:
-    /* FALLSTHROUGH */
+    /* FALLTHROUGH */
     case VC_EVENT_EOS:
-      r = reader->read_avail();
+      r   = reader->read_avail();
       str = new char[r + 10];
       reader->read(str, r);
       printf("%s", str);
@@ -70,10 +70,12 @@ struct NetTesterSM : public Continuation {
     default:
       ink_release_assert(!"unknown event");
     }
+    delete[] str;
     return EVENT_CONT;
   }
 };
 
+int
 main()
 {
 }

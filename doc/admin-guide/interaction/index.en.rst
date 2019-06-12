@@ -25,8 +25,8 @@ Interacting with |TS|
 .. toctree::
    :maxdepth: 2
 
-Traffic Line
-============
+Traffic Control
+===============
 
 Stats Over HTTP
 ===============

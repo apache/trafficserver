@@ -24,19 +24,19 @@
 /* custom_redirect.cc: Allows read header set by origin for internal redirects
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 #include <iostream>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <ts/ts.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
-static char *redirect_url_header = NULL;
+static char *redirect_url_header   = nullptr;
 static int redirect_url_header_len = 0;
-static int return_code = TS_HTTP_STATUS_NONE;
+static int return_code             = TS_HTTP_STATUS_NONE;
 
 static void
 handle_response(TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
@@ -123,8 +123,8 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)"";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
   /* This plugin supports following types of url redirect here:
    *
@@ -138,23 +138,23 @@ TSPluginInit(int argc, const char *argv[])
    *OR:
    * 3. If nothing specified, plugin will assume the first case and use the default redirect-url
    *    header name "x-redirect-url"
-  */
+   */
   if (argc > 1) {
     if (isNumber(argv[1])) {
-      return_code = atoi(argv[1]);
+      return_code         = atoi(argv[1]);
       redirect_url_header = TSstrdup(TS_MIME_FIELD_LOCATION);
     } else {
       redirect_url_header = TSstrdup(argv[1]);
     }
   } else {
     // default header name is x-redirect-url
-    redirect_url_header = TSstrdup("x-redirect-url");
+    redirect_url_header     = TSstrdup("x-redirect-url");
     redirect_url_header_len = strlen(redirect_url_header);
   }
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[custom_redirect] Plugin registration failed.");
+    TSError("[custom_redirect] Plugin registration failed");
   }
-  TSError("[custom_redirect] Plugin registered successfully.");
-  TSCont mainCont = TSContCreate(plugin_main_handler, NULL);
+  TSError("[custom_redirect] Plugin registered successfully");
+  TSCont mainCont = TSContCreate(plugin_main_handler, nullptr);
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, mainCont);
 }

@@ -31,38 +31,39 @@
 */
 
 #include "P_Net.h"
-#include "ts/I_Layout.h"
-#include "ts/ink_sock.h"
-#include "ts/InkErrno.h"
-#include <ts/IpMapConf.h>
+#include "tscore/I_Layout.h"
+#include "tscore/ink_sock.h"
+#include "tscore/InkErrno.h"
+#include "tscore/IpMapConf.h"
 
-socks_conf_struct *g_socks_conf_stuff = 0;
+socks_conf_struct *g_socks_conf_stuff = nullptr;
 
 ClassAllocator<SocksEntry> socksAllocator("socksAllocator");
 
 void
 SocksEntry::init(Ptr<ProxyMutex> &m, SocksNetVC *vc, unsigned char socks_support, unsigned char ver)
 {
-  mutex = m;
-  buf = new_MIOBuffer();
+  mutex  = m;
+  buf    = new_MIOBuffer();
   reader = buf->alloc_reader();
 
   socks_cmd = socks_support;
 
-  if (ver == SOCKS_DEFAULT_VERSION)
+  if (ver == SOCKS_DEFAULT_VERSION) {
     version = netProcessor.socks_conf_stuff->default_version;
-  else
+  } else {
     version = ver;
+  }
 
   SET_HANDLER(&SocksEntry::startEvent);
 
-  ats_ip_copy(&target_addr, vc->get_local_addr());
+  ats_ip_copy(&target_addr, vc->get_remote_addr());
 
 #ifdef SOCKS_WITH_TS
-  req_data.hdr = 0;
-  req_data.hostname_str = 0;
-  req_data.api_info = 0;
-  req_data.xact_start = time(0);
+  req_data.hdr          = nullptr;
+  req_data.hostname_str = nullptr;
+  req_data.api_info     = nullptr;
+  req_data.xact_start   = time(nullptr);
 
   assert(ats_is_ip4(&target_addr));
   ats_ip_copy(&req_data.dest_ip, &target_addr);
@@ -76,7 +77,7 @@ SocksEntry::init(Ptr<ProxyMutex> &m, SocksNetVC *vc, unsigned char socks_support
   nattempts = 0;
   findServer();
 
-  timeout = this_ethread()->schedule_in(this, HRTIME_SECONDS(netProcessor.socks_conf_stuff->server_connect_timeout));
+  timeout    = this_ethread()->schedule_in(this, HRTIME_SECONDS(netProcessor.socks_conf_stuff->server_connect_timeout));
   write_done = false;
 }
 
@@ -84,22 +85,26 @@ void
 SocksEntry::findServer()
 {
   nattempts++;
+  unsigned int fail_threshold = server_params->policy.FailThreshold;
+  unsigned int retry_time     = server_params->policy.ParentRetryTime;
 
 #ifdef SOCKS_WITH_TS
   if (nattempts == 1) {
     ink_assert(server_result.result == PARENT_UNDEFINED);
-    server_params->findParent(&req_data, &server_result);
+    server_params->findParent(&req_data, &server_result, fail_threshold, retry_time);
   } else {
     socks_conf_struct *conf = netProcessor.socks_conf_stuff;
-    if ((nattempts - 1) % conf->per_server_connection_attempts)
+    if ((nattempts - 1) % conf->per_server_connection_attempts) {
       return; // attempt again
+    }
 
-    server_params->markParentDown(&server_result);
+    server_params->markParentDown(&server_result, fail_threshold, retry_time);
 
-    if (nattempts > conf->connection_attempts)
+    if (nattempts > conf->connection_attempts) {
       server_result.result = PARENT_FAIL;
-    else
-      server_params->nextParent(&req_data, &server_result);
+    } else {
+      server_params->nextParent(&req_data, &server_result, fail_threshold, retry_time);
+    }
   }
 
   switch (server_result.result) {
@@ -116,6 +121,7 @@ SocksEntry::findServer()
 
   default:
     ink_assert(!"Unexpected event");
+  // fallthrough
   case PARENT_DIRECT:
   case PARENT_FAIL:
     memset(&server_addr, 0, sizeof(server_addr));
@@ -136,23 +142,23 @@ void
 SocksEntry::free()
 {
   MUTEX_TRY_LOCK(lock, action_.mutex, this_ethread());
-  if (lock.is_locked()) {
-    // Socks continuation share the user's lock
-    // so acquiring a lock shouldn't fail
-    ink_assert(0);
-    return;
+  // Socks continuation share the user's lock
+  // so acquiring a lock shouldn't fail
+  ink_release_assert(lock.is_locked());
+
+  if (timeout) {
+    timeout->cancel(this);
   }
 
-  if (timeout)
-    timeout->cancel(this);
-
 #ifdef SOCKS_WITH_TS
-  if (!lerrno && netVConnection && server_result.retry)
+  if (!lerrno && netVConnection && server_result.retry) {
     server_params->markParentUp(&server_result);
+  }
 #endif
 
-  if ((action_.cancelled || lerrno) && netVConnection)
+  if ((action_.cancelled || lerrno) && netVConnection) {
     netVConnection->do_io_close();
+  }
 
   if (!action_.cancelled) {
     if (lerrno || !netVConnection) {
@@ -160,10 +166,10 @@ SocksEntry::free()
       NET_INCREMENT_DYN_STAT(socks_connections_unsuccessful_stat);
       action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)(intptr_t)(-lerrno));
     } else {
-      netVConnection->do_io_read(this, 0, 0);
-      netVConnection->do_io_write(this, 0, 0);
+      netVConnection->do_io_read(this, 0, nullptr);
+      netVConnection->do_io_write(this, 0, nullptr);
       netVConnection->action_ = action_; // assign the original continuation
-      ats_ip_copy(&netVConnection->server_addr, &server_addr);
+      netVConnection->con.setRemote(&server_addr.sa);
       Debug("Socks", "Sent success to HTTP");
       NET_INCREMENT_DYN_STAT(socks_connections_successful_stat);
       action_.continuation->handleEvent(NET_EVENT_OPEN, netVConnection);
@@ -174,8 +180,8 @@ SocksEntry::free()
 #endif
 
   free_MIOBuffer(buf);
-  action_ = NULL;
-  mutex = NULL;
+  action_ = nullptr;
+  mutex   = nullptr;
   socksAllocator.free(this);
 }
 
@@ -185,15 +191,16 @@ SocksEntry::startEvent(int event, void *data)
   if (event == NET_EVENT_OPEN) {
     netVConnection = (SocksNetVC *)data;
 
-    if (version == SOCKS5_VERSION)
+    if (version == SOCKS5_VERSION) {
       auth_handler = &socks5BasicAuthHandler;
+    }
 
     SET_HANDLER((SocksEntryHandler)&SocksEntry::mainEvent);
     mainEvent(NET_EVENT_OPEN, data);
   } else {
     if (timeout) {
       timeout->cancel(this);
-      timeout = NULL;
+      timeout = nullptr;
     }
 
     char buff[INET6_ADDRPORTSTRLEN];
@@ -210,12 +217,12 @@ SocksEntry::startEvent(int event, void *data)
 
     if (timeout) {
       timeout->cancel(this);
-      timeout = 0;
+      timeout = nullptr;
     }
 
     if (netVConnection) {
       netVConnection->do_io_close();
-      netVConnection = 0;
+      netVConnection = nullptr;
     }
 
     timeout = this_ethread()->schedule_in(this, HRTIME_SECONDS(netProcessor.socks_conf_stuff->server_connect_timeout));
@@ -233,7 +240,7 @@ SocksEntry::startEvent(int event, void *data)
 int
 SocksEntry::mainEvent(int event, void *data)
 {
-  int ret = EVENT_DONE;
+  int ret     = EVENT_DONE;
   int n_bytes = 0;
   unsigned char *p;
 
@@ -247,21 +254,21 @@ SocksEntry::mainEvent(int event, void *data)
     if (auth_handler) {
       n_bytes = invokeSocksAuthHandler(auth_handler, SOCKS_AUTH_OPEN, p);
     } else {
-      // Debug("Socks", " Got NET_EVENT_OPEN to SOCKS server\n");
+      // Debug("Socks", " Got NET_EVENT_OPEN to SOCKS server");
 
       p[n_bytes++] = version;
       p[n_bytes++] = (socks_cmd == NORMAL_SOCKS) ? SOCKS_CONNECT : socks_cmd;
-      ts = ntohs(ats_ip_port_cast(&server_addr));
+      ts           = ats_ip_port_cast(&target_addr);
 
       if (version == SOCKS5_VERSION) {
         p[n_bytes++] = 0; // Reserved
-        if (ats_is_ip4(&server_addr)) {
+        if (ats_is_ip4(&target_addr)) {
           p[n_bytes++] = 1; // IPv4 addr
-          memcpy(p + n_bytes, &server_addr.sin.sin_addr, 4);
+          memcpy(p + n_bytes, &target_addr.sin.sin_addr, 4);
           n_bytes += 4;
-        } else if (ats_is_ip6(&server_addr)) {
+        } else if (ats_is_ip6(&target_addr)) {
           p[n_bytes++] = 4; // IPv6 addr
-          memcpy(p + n_bytes, &server_addr.sin6.sin6_addr, TS_IP6_SIZE);
+          memcpy(p + n_bytes, &target_addr.sin6.sin6_addr, TS_IP6_SIZE);
           n_bytes += TS_IP6_SIZE;
         } else {
           Debug("Socks", "SOCKS supports only IP addresses.");
@@ -272,12 +279,12 @@ SocksEntry::mainEvent(int event, void *data)
       n_bytes += 2;
 
       if (version == SOCKS4_VERSION) {
-        if (ats_is_ip4(&server_addr)) {
+        if (ats_is_ip4(&target_addr)) {
           // for socks4, ip addr is after the port
-          memcpy(p + n_bytes, &server_addr.sin.sin_addr, 4);
+          memcpy(p + n_bytes, &target_addr.sin.sin_addr, 4);
           n_bytes += 4;
 
-          p[n_bytes++] = 0; // NULL
+          p[n_bytes++] = 0; // nullptr
         } else {
           Debug("Socks", "SOCKS v4 supports only IPv4 addresses.");
         }
@@ -291,8 +298,8 @@ SocksEntry::mainEvent(int event, void *data)
       timeout = this_ethread()->schedule_in(this, HRTIME_SECONDS(netProcessor.socks_conf_stuff->socks_timeout));
     }
 
-    netVConnection->do_io_write(this, n_bytes, reader, 0);
-    // Debug("Socks", "Sent the request to the SOCKS server\n");
+    netVConnection->do_io_write(this, n_bytes, reader, false);
+    // Debug("Socks", "Sent the request to the SOCKS server");
 
     ret = EVENT_CONT;
     break;
@@ -305,17 +312,17 @@ SocksEntry::mainEvent(int event, void *data)
   case VC_EVENT_WRITE_COMPLETE:
     if (timeout) {
       timeout->cancel(this);
-      timeout = NULL;
+      timeout    = nullptr;
       write_done = true;
     }
 
     buf->reset(); // Use the same buffer for a read now
 
-    if (auth_handler)
-      n_bytes = invokeSocksAuthHandler(auth_handler, SOCKS_AUTH_WRITE_COMPLETE, NULL);
-    else if (socks_cmd == NORMAL_SOCKS)
+    if (auth_handler) {
+      n_bytes = invokeSocksAuthHandler(auth_handler, SOCKS_AUTH_WRITE_COMPLETE, nullptr);
+    } else if (socks_cmd == NORMAL_SOCKS) {
       n_bytes = (version == SOCKS5_VERSION) ? SOCKS5_REP_LEN : SOCKS4_REP_LEN;
-    else {
+    } else {
       Debug("Socks", "Tunnelling the connection");
       // let the client handle the response
       free();
@@ -332,9 +339,9 @@ SocksEntry::mainEvent(int event, void *data)
   case VC_EVENT_READ_READY:
     ret = EVENT_CONT;
 
-    if (version == SOCKS5_VERSION && auth_handler == NULL) {
+    if (version == SOCKS5_VERSION && auth_handler == nullptr) {
       VIO *vio = (VIO *)data;
-      p = (unsigned char *)buf->start();
+      p        = (unsigned char *)buf->start();
 
       if (vio->ndone >= 5) {
         int reply_len;
@@ -357,20 +364,21 @@ SocksEntry::mainEvent(int event, void *data)
 
         if (vio->ndone >= reply_len) {
           vio->nbytes = vio->ndone;
-          ret = EVENT_DONE;
+          ret         = EVENT_DONE;
         }
       }
     }
 
-    if (ret == EVENT_CONT)
+    if (ret == EVENT_CONT) {
       break;
+    }
   // Fall Through
   case VC_EVENT_READ_COMPLETE:
     if (timeout) {
       timeout->cancel(this);
-      timeout = NULL;
+      timeout = nullptr;
     }
-    // Debug("Socks", "Successfully read the reply from the SOCKS server\n");
+    // Debug("Socks", "Successfully read the reply from the SOCKS server");
     p = (unsigned char *)buf->start();
 
     if (auth_handler) {
@@ -382,7 +390,7 @@ SocksEntry::mainEvent(int event, void *data)
       } else if (auth_handler != temp) {
         // here either authorization is done or there is another
         // stage left.
-        mainEvent(NET_EVENT_OPEN, NULL);
+        mainEvent(NET_EVENT_OPEN, nullptr);
       }
 
     } else {
@@ -390,8 +398,9 @@ SocksEntry::mainEvent(int event, void *data)
       if (version == SOCKS5_VERSION) {
         success = (p[0] == SOCKS5_VERSION && p[1] == SOCKS5_REQ_GRANTED);
         Debug("Socks", "received reply of length %" PRId64 " addr type %d", ((VIO *)data)->ndone, (int)p[3]);
-      } else
+      } else {
         success = (p[0] == 0 && p[1] == SOCKS4_REQ_GRANTED);
+      }
 
       // ink_assert(*(p) == 0);
       if (!success) { // SOCKS request failed
@@ -407,23 +416,23 @@ SocksEntry::mainEvent(int event, void *data)
     break;
 
   case EVENT_INTERVAL:
-    timeout = NULL;
+    timeout = nullptr;
     if (write_done) {
       lerrno = ESOCK_TIMEOUT;
       free();
       break;
     }
-  /* else
-     This is server_connect_timeout. So we treat this as server being
-     down.
-     Should cancel any pending connect() action. Important on windows
+    /* else
+       This is server_connect_timeout. So we treat this as server being
+       down.
+       Should cancel any pending connect() action. Important on windows
+    */
+    // fallthrough
 
-     fall through
-   */
   case VC_EVENT_ERROR:
     /*This is mostly ECONNREFUSED on Unix */
     SET_HANDLER(&SocksEntry::startEvent);
-    startEvent(NET_EVENT_OPEN_FAILED, NULL);
+    startEvent(NET_EVENT_OPEN_FAILED, nullptr);
     break;
 
   case VC_EVENT_EOS:
@@ -455,7 +464,7 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
 #endif
 
   socks_conf_stuff->accept_enabled = 0; // initialize it INKqa08593
-  socks_conf_stuff->socks_needed = REC_ConfigReadInteger("proxy.config.socks.socks_needed");
+  socks_conf_stuff->socks_needed   = REC_ConfigReadInteger("proxy.config.socks.socks_needed");
   if (!socks_conf_stuff->socks_needed) {
     Debug("Socks", "Socks Turned Off");
     return;
@@ -470,18 +479,19 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
   }
 
   socks_conf_stuff->server_connect_timeout = REC_ConfigReadInteger("proxy.config.socks.server_connect_timeout");
-  socks_conf_stuff->socks_timeout = REC_ConfigReadInteger("proxy.config.socks.socks_timeout");
-  Debug("Socks", "server connect timeout: %d socks respnonse timeout %d", socks_conf_stuff->server_connect_timeout,
+  socks_conf_stuff->socks_timeout          = REC_ConfigReadInteger("proxy.config.socks.socks_timeout");
+  Debug("Socks", "server connect timeout: %d socks response timeout %d", socks_conf_stuff->server_connect_timeout,
         socks_conf_stuff->socks_timeout);
 
   socks_conf_stuff->per_server_connection_attempts = REC_ConfigReadInteger("proxy.config.socks.per_server_connection_attempts");
-  socks_conf_stuff->connection_attempts = REC_ConfigReadInteger("proxy.config.socks.connection_attempts");
+  socks_conf_stuff->connection_attempts            = REC_ConfigReadInteger("proxy.config.socks.connection_attempts");
 
   socks_conf_stuff->accept_enabled = REC_ConfigReadInteger("proxy.config.socks.accept_enabled");
-  socks_conf_stuff->accept_port = REC_ConfigReadInteger("proxy.config.socks.accept_port");
-  socks_conf_stuff->http_port = REC_ConfigReadInteger("proxy.config.socks.http_port");
-  Debug("SocksProxy", "Read SocksProxy info: accept_enabled = %d "
-                      "accept_port = %d http_port = %d",
+  socks_conf_stuff->accept_port    = REC_ConfigReadInteger("proxy.config.socks.accept_port");
+  socks_conf_stuff->http_port      = REC_ConfigReadInteger("proxy.config.socks.http_port");
+  Debug("SocksProxy",
+        "Read SocksProxy info: accept_enabled = %d "
+        "accept_port = %d http_port = %d",
         socks_conf_stuff->accept_enabled, socks_conf_stuff->accept_port, socks_conf_stuff->http_port);
 
 #ifdef SOCKS_WITH_TS
@@ -523,19 +533,20 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
   return;
 error:
 
-  socks_conf_stuff->socks_needed = 0;
+  socks_conf_stuff->socks_needed   = 0;
   socks_conf_stuff->accept_enabled = 0;
-  if (socks_config_fd >= 0)
+  if (socks_config_fd >= 0) {
     ::close(socks_config_fd);
+  }
 }
 
 int
 loadSocksAuthInfo(int fd, socks_conf_struct *socks_stuff)
 {
-  char c = '\0';
-  char line[256] = {0}; // initialize all chars to nil
+  char c              = '\0';
+  char line[256]      = {0}; // initialize all chars to nil
   char user_name[256] = {0};
-  char passwd[256] = {0};
+  char passwd[256]    = {0};
 
   if (lseek(fd, 0, SEEK_SET) < 0) {
     Warning("Can not seek on Socks configuration file\n");
@@ -545,10 +556,12 @@ loadSocksAuthInfo(int fd, socks_conf_struct *socks_stuff)
   bool end_of_file = false;
   do {
     int n = 0, rc;
-    while (((rc = read(fd, &c, 1)) == 1) && (c != '\n') && (n < 254))
+    while (((rc = read(fd, &c, 1)) == 1) && (c != '\n') && (n < 254)) {
       line[n++] = c;
-    if (rc <= 0)
+    }
+    if (rc <= 0) {
       end_of_file = true;
+    }
     line[n] = '\0';
 
     // coverity[secure_coding]
@@ -562,7 +575,7 @@ loadSocksAuthInfo(int fd, socks_conf_struct *socks_stuff)
       socks_stuff->user_name_n_passwd_len = len1 + len2 + 2;
 
       char *ptr = (char *)ats_malloc(socks_stuff->user_name_n_passwd_len);
-      ptr[0] = len1;
+      ptr[0]    = len1;
       memcpy(&ptr[1], user_name, len1);
       ptr[len1 + 1] = len2;
       memcpy(&ptr[len1 + 2], passwd, len2);
@@ -580,7 +593,7 @@ int
 socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
 {
   // for more info on Socks5 see RFC 1928
-  int ret = 0;
+  int ret           = 0;
   char *pass_phrase = netProcessor.socks_conf_stuff->user_name_n_passwd;
 
   switch (event) {
@@ -588,8 +601,9 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
     p[ret++] = SOCKS5_VERSION;        // version
     p[ret++] = (pass_phrase) ? 2 : 1; //#Methods
     p[ret++] = 0;                     // no authentication
-    if (pass_phrase)
+    if (pass_phrase) {
       p[ret++] = 2;
+    }
 
     break;
 
@@ -605,7 +619,7 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
       case 0: // no authentication required
         Debug("Socks", "No authentication required for Socks server");
         // make sure this is ok for us. right now it is always ok for us.
-        *h_ptr = NULL;
+        *h_ptr = nullptr;
         break;
 
       case 2:
@@ -613,18 +627,19 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
         if (!pass_phrase) {
           Debug("Socks", "Buggy Socks server: asks for username/passwd "
                          "when not supplied as an option");
-          ret = -1;
-          *h_ptr = NULL;
-        } else
+          ret    = -1;
+          *h_ptr = nullptr;
+        } else {
           *(SocksAuthHandler *)h_ptr = &socks5PasswdAuthHandler;
+        }
 
         break;
 
       case 0xff:
-        Debug("Socks", "None of the Socks authentcations is acceptable "
+        Debug("Socks", "None of the Socks authentications is acceptable "
                        "to the server");
-        *h_ptr = NULL;
-        ret = -1;
+        *h_ptr = nullptr;
+        ret    = -1;
         break;
 
       default:
@@ -640,7 +655,7 @@ socks5BasicAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
     break;
 
   default:
-    // This should be inpossible
+    // This should be impossible
     ink_assert(!"bad case value");
     ret = -1;
     break;
@@ -659,7 +674,7 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
   switch (event) {
   case SOCKS_AUTH_OPEN:
     pass_phrase = netProcessor.socks_conf_stuff->user_name_n_passwd;
-    pass_len = netProcessor.socks_conf_stuff->user_name_n_passwd_len;
+    pass_len    = netProcessor.socks_conf_stuff->user_name_n_passwd_len;
     ink_assert(pass_phrase);
 
     p[0] = 1; // version
@@ -679,8 +694,8 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
     // NEC thinks it is 5 RFC seems to indicate 1.
     switch (p[1]) {
     case 0:
-      Debug("Socks", "Username/Passwd succeded");
-      *h_ptr = NULL;
+      Debug("Socks", "Username/Passwd succeeded");
+      *h_ptr = nullptr;
       break;
 
     default:

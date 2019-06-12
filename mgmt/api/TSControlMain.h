@@ -30,8 +30,7 @@
  *
  ***************************************************************************/
 
-#ifndef TS_CONTROL_MAIN_H
-#define TS_CONTROL_MAIN_H
+#pragma once
 
 #include "mgmtapi.h"
 
@@ -41,5 +40,3 @@ typedef struct {
 } ClientT;
 
 void *ts_ctrl_main(void *arg);
-
-#endif

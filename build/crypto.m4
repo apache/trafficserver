@@ -22,7 +22,7 @@ dnl
 dnl TS_CHECK_CRYPTO: look for crypto libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_CRYPTO], [
-  AC_SEARCH_LIBS([crypt], [crypt], [AC_SUBST([LIBCRYPT],["-lcrypt"])])
+  AC_CHECK_LIB([crypt], [crypt], [AC_SUBST([LIBCRYPT],["-lcrypt"])])
 
   AX_CHECK_OPENSSL([
     enable_crypto=yes
@@ -39,102 +39,60 @@ AC_DEFUN([TS_CHECK_CRYPTO], [
 
   dnl add checks for other varieties of ssl here
 ])
+
 dnl
-
-AC_DEFUN([TS_CHECK_CRYPTO_EC_KEYS], [
-  _eckeys_saved_LIBS=$LIBS
-  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_CHECK_HEADERS(openssl/ec.h)
-  AC_CHECK_FUNCS(EC_KEY_new_by_curve_name, [enable_tls_eckey=yes], [enable_tls_eckey=no])
-  LIBS=$_eckeys_saved_LIBS
-
-  AC_MSG_CHECKING(whether EC keys are supported)
-  AC_MSG_RESULT([$enable_tls_eckey])
-  TS_ARG_ENABLE_VAR([use], [tls-eckey])
-  AC_SUBST(use_tls_eckey)
+dnl Check OpenSSL Version
+dnl
+AC_DEFUN([TS_CHECK_CRYPTO_VERSION], [
+  AC_MSG_CHECKING([OpenSSL version])
+  AC_TRY_RUN([
+#include <openssl/opensslv.h>
+int main() {
+  if (OPENSSL_VERSION_NUMBER < 0x1000200fL) {
+    return 1;
+  }
+  return 0;
+}
+],
+  [AC_MSG_RESULT([ok])],
+  [AC_MSG_FAILURE([requires an OpenSSL version 1.0.2 or greater])])
 ])
 
-AC_DEFUN([TS_CHECK_CRYPTO_NEXTPROTONEG], [
-  enable_tls_npn=yes
-  _npn_saved_LIBS=$LIBS
+dnl
+dnl Since OpenSSL 1.1.0
+dnl
+AC_DEFUN([TS_CHECK_CRYPTO_ASYNC], [
+  enable_tls_async=yes
+  _async_saved_LIBS=$LIBS
+
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_CHECK_FUNCS(SSL_CTX_set_next_protos_advertised_cb SSL_CTX_set_next_proto_select_cb SSL_select_next_proto SSL_get0_next_proto_negotiated,
-    [], [enable_tls_npn=no]
+  AC_CHECK_FUNCS(SSL_get_all_async_fds ASYNC_init_thread,
+    [], [enable_tls_async=no]
   )
-  LIBS=$_npn_saved_LIBS
+  LIBS=$_async_saved_LIBS
 
-  AC_MSG_CHECKING(whether to enable Next Protocol Negotiation TLS extension support)
-  AC_MSG_RESULT([$enable_tls_npn])
-  TS_ARG_ENABLE_VAR([use], [tls-npn])
-  AC_SUBST(use_tls_npn)
+  AC_MSG_CHECKING(whether to enable ASYNC job openssl support)
+  AC_MSG_RESULT([$enable_tls_async])
+  TS_ARG_ENABLE_VAR([use], [tls-async])
+  AC_SUBST(use_tls_async)
 ])
 
-AC_DEFUN([TS_CHECK_CRYPTO_ALPN], [
-  enable_tls_alpn=yes
-  _alpn_saved_LIBS=$LIBS
-  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_CHECK_FUNCS(SSL_CTX_set_alpn_protos SSL_CTX_set_alpn_select_cb SSL_get0_alpn_selected SSL_select_next_proto,
-    [], [enable_tls_alpn=no]
-  )
-  LIBS=$_alpn_saved_LIBS
-
-  AC_MSG_CHECKING(whether to enable Application Layer Protocol Negotiation TLS extension support)
-  AC_MSG_RESULT([$enable_tls_alpn])
-  TS_ARG_ENABLE_VAR([use], [tls-alpn])
-  AC_SUBST(use_tls_alpn)
-])
-
-AC_DEFUN([TS_CHECK_CRYPTO_SNI], [
-  _sni_saved_LIBS=$LIBS
-  enable_tls_sni=yes
+dnl
+dnl Since OpenSSL 1.1.1
+dnl
+AC_DEFUN([TS_CHECK_CRYPTO_HELLO_CB], [
+  _hello_saved_LIBS=$LIBS
+  enable_hello_cb=yes
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
   AC_CHECK_HEADERS(openssl/ssl.h openssl/ts.h)
-  AC_CHECK_HEADERS(openssl/tls1.h, [], [], 
+  AC_CHECK_HEADERS(openssl/tls1.h, [], [],
 [ #if HAVE_OPENSSL_SSL_H
 #include <openssl/ssl.h>
 #include <openssl/tls1.h>
 #endif ])
 
-  # We are looking for SSL_CTX_set_tlsext_servername_callback, but it's a
-  # macro, so AC_CHECK_FUNCS is not going to do the business.
-  AC_MSG_CHECKING([for SSL_CTX_set_tlsext_servername_callback])
-  AC_COMPILE_IFELSE(
-  [
-    AC_LANG_PROGRAM([[
-#if HAVE_OPENSSL_SSL_H
-#include <openssl/ssl.h>
-#endif
-#if HAVE_OPENSSL_TLS1_H
-#include <openssl/tls1.h>
-#endif
-      ]],
-      [[SSL_CTX_set_tlsext_servername_callback(NULL, NULL);]])
-  ],
-  [
-    AC_MSG_RESULT([yes])
-  ],
-  [
-    AC_MSG_RESULT([no])
-    enable_tls_sni=no
-  ])
-
-  AC_CHECK_FUNCS(SSL_get_servername, [], [enable_tls_sni=no])
-
-  LIBS=$_sni_saved_LIBS
-
-  AC_MSG_CHECKING(whether to enable ServerNameIndication TLS extension support)
-  AC_MSG_RESULT([$enable_tls_sni])
-  TS_ARG_ENABLE_VAR([use], [tls-sni])
-  AC_SUBST(use_tls_sni)
-])
-
-AC_DEFUN([TS_CHECK_CRYPTO_CERT_CB], [
-  _cert_saved_LIBS=$LIBS
-  enable_cert_cb=yes
-
-  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_MSG_CHECKING([for SSL_CTX_set_cert_cb])
+  AC_MSG_CHECKING([for SSL_CTX_set_client_hello_cb])
   AC_LINK_IFELSE(
   [
     AC_LANG_PROGRAM([[
@@ -145,30 +103,33 @@ AC_DEFUN([TS_CHECK_CRYPTO_CERT_CB], [
 #include <openssl/tls1.h>
 #endif
       ]],
-      [[SSL_CTX_set_cert_cb(NULL, NULL, NULL);]])
+      [[SSL_CTX_set_client_hello_cb(NULL, NULL, NULL);]])
   ],
   [
     AC_MSG_RESULT([yes])
   ],
   [
     AC_MSG_RESULT([no])
-    enable_cert_cb=no
+    enable_hello_cb=no
   ])
 
-  LIBS=$_cert_saved_LIBS
+  LIBS=$_hello_saved_LIBS
 
-  AC_MSG_CHECKING(whether to enable TLS certificate callback support)
-  AC_MSG_RESULT([$enable_cert_cb])
-  TS_ARG_ENABLE_VAR([use], [cert-cb])
-  AC_SUBST(use_cert_cb)
+  AC_MSG_CHECKING(whether to enable TLS client hello callback support)
+  AC_MSG_RESULT([$enable_hello_cb])
+  TS_ARG_ENABLE_VAR([use], [hello-cb])
+  AC_SUBST(use_hello_cb)
 ])
 
+dnl
+dnl Since OpenSSL 1.1.0
+dnl
 AC_DEFUN([TS_CHECK_CRYPTO_SET_RBIO], [
   _rbio_saved_LIBS=$LIBS
   enable_set_rbio=yes
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_MSG_CHECKING([for SSL_set_rbio])
+  AC_MSG_CHECKING([for SSL_set0_rbio])
   AC_LINK_IFELSE(
   [
     AC_LANG_PROGRAM([[
@@ -179,7 +140,7 @@ AC_DEFUN([TS_CHECK_CRYPTO_SET_RBIO], [
 #include <openssl/tls1.h>
 #endif
       ]],
-      [[SSL_set_rbio(NULL, NULL);]])
+      [[SSL_set0_rbio(NULL, NULL);]])
   ],
   [
     AC_MSG_RESULT([yes])
@@ -195,4 +156,72 @@ AC_DEFUN([TS_CHECK_CRYPTO_SET_RBIO], [
   AC_MSG_RESULT([$enable_set_rbio])
   TS_ARG_ENABLE_VAR([use], [set-rbio])
   AC_SUBST(use_set_rbio)
+])
+
+dnl
+dnl Since OpenSSL 1.1.0
+dnl
+AC_DEFUN([TS_CHECK_CRYPTO_DH_GET_2048_256], [
+  _dh_saved_LIBS=$LIBS
+  enable_dh_get_2048_256=yes
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_MSG_CHECKING([for DH_get_2048_256])
+  AC_LINK_IFELSE(
+  [
+    AC_LANG_PROGRAM([[
+#include<openssl/dh.h>
+      ]],
+      [[DH_get_2048_256();]])
+  ],
+  [
+    AC_MSG_RESULT([yes])
+  ],
+  [
+    AC_MSG_RESULT([no])
+    enable_dh_get_2048_256=no
+  ])
+
+  LIBS=$_dh_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable DH_get_2048_256)
+  AC_MSG_RESULT([$enable_dh_get_2048_256])
+  TS_ARG_ENABLE_VAR([use], [dh_get_2048_256])
+  AC_SUBST(use_dh_get_2048_256)
+])
+
+dnl
+dnl Since OpenSSL 1.1.0
+dnl
+AC_DEFUN([TS_CHECK_CRYPTO_OCSP], [
+  _ocsp_saved_LIBS=$LIBS
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_HEADERS(openssl/ocsp.h)
+  AC_CHECK_FUNCS(OCSP_sendreq_new OCSP_REQ_CTX_add1_header OCSP_REQ_CTX_set1_req, [enable_tls_ocsp=yes], [enable_tls_ocsp=no])
+
+  LIBS=$_ocsp_saved_LIBS
+
+  AC_MSG_CHECKING(whether OCSP is supported)
+  AC_MSG_RESULT([$enable_tls_ocsp])
+  TS_ARG_ENABLE_VAR([use], [tls-ocsp])
+  AC_SUBST(use_tls_ocsp)
+])
+
+dnl
+dnl Since OpenSSL 1.1.1
+dnl
+AC_DEFUN([TS_CHECK_CRYPTO_SET_CIPHERSUITES], [
+  _set_ciphersuites_saved_LIBS=$LIBS
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_HEADERS(openssl/ssl.h)
+  AC_CHECK_FUNCS(SSL_CTX_set_ciphersuites, [enable_tls_set_ciphersuites=yes], [enable_tls_set_ciphersuites=no])
+
+  LIBS=$_set_ciphersuites_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable TLSv1.3 ciphersuites configuration is supported)
+  AC_MSG_RESULT([$enable_tls_set_ciphersuites])
+  TS_ARG_ENABLE_VAR([use], [tls-set-ciphersuites])
+  AC_SUBST(use_tls_set_ciphersuites)
 ])

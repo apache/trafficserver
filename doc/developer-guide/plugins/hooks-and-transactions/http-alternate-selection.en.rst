@@ -5,9 +5,9 @@
    to you under the Apache License, Version 2.0 (the
    "License"); you may not use this file except in compliance
    with the License.  You may obtain a copy of the License at
-  
+
     http://www.apache.org/licenses/LICENSE-2.0
-  
+
    Unless required by applicable law or agreed to in writing,
    software distributed under the License is distributed on an
    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -68,21 +68,21 @@ The sample code below shows how to call the alternate APIs.
    {
       TSMBuffer client_req_buf, cache_resp_buf;
       TSMLoc client_req_hdr, cache_resp_hdr;
-      
+
       TSMLoc accept_transform_field;
       TSMLoc content_transform_field;
-      
+
       int accept_transform_len = -1, content_transform_len = -1;
       const char* accept_transform_value = NULL;
       const char* content_transform_value = NULL;
       int content_plugin, accept_plugin;
-      
+
       float quality;
-      
+
       /* get client request, cached request and cached response */
       TSHttpAltInfoClientReqGet (infop, &client_req_buf, &client_req_hdr);
       TSHttpAltInfoCachedRespGet(infop, &cache_resp_buf, &cache_resp_hdr);
-      
+
       /* get the Accept-Transform field value from the client request */
       accept_transform_field = TSMimeHdrFieldFind(client_req_buf,
          client_req_hdr, "Accept-Transform", -1);
@@ -92,7 +92,7 @@ The sample code below shows how to call the alternate APIs.
          TSDebug(DBG_TAG, "Accept-Transform = |%s|",
             accept_transform_value);
       }
-       
+
       /* get the Content-Transform field value from cached server response */
       content_transform_field = TSMimeHdrFieldFind(cache_resp_buf,
          cache_resp_hdr, "Content-Transform", -1);
@@ -102,43 +102,43 @@ The sample code below shows how to call the alternate APIs.
          TSDebug(DBG_TAG, "Content-Transform = |%s|",
             content_transform_value);
       }
-       
+
       /* compute quality */
       accept_plugin = (accept_transform_value && (accept_transform_len > 0) &&
          (strncmp(accept_transform_value, "plugin",
             accept_transform_len) == 0));
-      
+
       content_plugin = (content_transform_value && (content_transform_len >0) &&
          (strncmp(content_transform_value, "plugin",
             content_transform_len) == 0));
-      
+
       if (accept_plugin) {
          quality = content_plugin ? 1.0 : 0.0;
       } else {
          quality = content_plugin ? 0.0 : 0.5;
       }
-      
+
       TSDebug(DBG_TAG, "Setting quality to %3.1f", quality);
-       
+
       /* set quality for this alternate */
       TSHttpAltInfoQualitySet(infop, quality);
-       
+
       /* cleanup */
       if (accept_transform_field)
          TSHandleMLocRelease(client_req_buf, client_req_hdr,
             accept_transform_field);
       TSHandleMLocRelease(client_req_buf, TS_NULL_MLOC, client_req_hdr);
-      
+
       if (content_transform_field)
          TSHandleMLocRelease(cache_resp_buf, cache_resp_hdr,
             content_transform_field);
       TSHandleMLocRelease(cache_resp_buf, TS_NULL_MLOC, cache_resp_hdr);
    }
-       
+
    static int alt_plugin(TSCont contp, TSEvent event, void *edata)
    {
       TSHttpAltInfo infop;
-      
+
       switch (event) {
          case TS_EVENT_HTTP_SELECT_ALT:
             infop = (TSHttpAltInfo)edata;
@@ -148,10 +148,10 @@ The sample code below shows how to call the alternate APIs.
          default:
             break;
       }
-      
+
       return 0;
    }
-       
+
    void TSPluginInit (int argc, const char *argv[])
    {
       TSHttpHookAdd(TS_HTTP_SELECT_ALT_HOOK, TSContCreate (alt_plugin,

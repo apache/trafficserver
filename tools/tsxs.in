@@ -7,9 +7,9 @@
 #   to you under the Apache License, Version 2.0 (the
 #   "License"); you may not use this file except in compliance
 #   with the License.  You may obtain a copy of the License at
-# 
+#
 #       http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,9 +24,10 @@ localstatedir="@localstatedir@"
 
 INSTALLDIR=`eval echo "@libexecdir@"`
 INCLUDEDIR=`eval echo "@includedir@"`
-CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR"
-CFLAGS="$CFLAGS @CFLAGS@"
-CXXFLAGS="$CXXFLAGS @CXXFLAGS@"
+CPPFLAGS="$CPPFLAGS -I$INCLUDEDIR @OPENSSL_INCLUDES@"
+CFLAGS="$CFLAGS @AM_CFLAGS@"
+CXXFLAGS="$CXXFLAGS @AM_CXXFLAGS@"
+LIBS="$LIBS @LIBS@ @OPENSSL_LIBS@"
 BUILD=
 DEBUGECHO=
 
@@ -55,8 +56,9 @@ $0 : a tool to compile, link and install trafficserver plugins.
 Compilation and Linking Options:
 -o modulename.so                        ## the name of the module
 -I include                              ## add -Iinclude to CFLAGS
--L library path				## add -Lpath to LDFLAGS
+-L library path                         ## add -Lpath to LDFLAGS
 -l library                              ## add -llib to the LDFLAGS
+-v                                      ## verbose, turn on debugging
 
 Installation Options:
 -o modulename.so                        ## the name of the module
@@ -76,8 +78,11 @@ query() {
   case $1 in
     CC) echo @CC@ ;;
     CXX) echo @CXX@ ;;
-    CFLAGS) echo @CFLAGS@ ;;
-    CXXFLAGS) echo @CXXFLAGS@ ;;
+    CFLAGS) echo $CFLAGS ;;
+    CXXFLAGS) echo $CXXFLAGS ;;
+	CPPFLAGS) echo $CPPFLAGS ;;
+	LIBS) echo $LIBS ;;
+	LDFLAGS) echo $LDFLAGS ;;
     PREFIX) echo @prefix@ ;;
     SYSCONFDIR) echo @sysconfdir@ ;;
     INCLUDEDIR) echo @includedir@ ;;
@@ -123,6 +128,8 @@ compile() {
 
 case $host in
 *-*-darwin*)
+        LDFLAGS="$LDFLAGS @OPENSSL_LDFLAGS@"
+        CPPFLAGS="$CPPFLAGS"
         PICFLAGS="-fPIC"
         MODULELD="$CC -bundle -flat_namespace -undefined suppress"
         MODULELDXX="$CXX -bundle -flat_namespace -undefined suppress"
@@ -143,7 +150,7 @@ case $host in
         NOWHOLE_ARCHIVE="-Wl,-z -Wl,defaultextract"
         ;;
 *-*-linux*)
-        LDFLAGS="$LDFLAGS -Wl,-E"
+        LDFLAGS="$LDFLAGS @OPENSSL_LDFLAGS@ -Wl,-E"
         CPPFLAGS="$CPPFLAGS"
         PICFLAGS="-fpic"
         MODULELD="$CC -shared"
@@ -173,7 +180,7 @@ files=()
 LD=$MODULELD
 while getopts "hivl:L:I:c:C:o:q:" OPTION
 do
-	case $OPTION in 
+	case $OPTION in
 	v)
 		DEBUGECHO=1
 		;;

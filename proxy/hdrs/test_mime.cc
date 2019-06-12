@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <ts/TestBox.h>
+#include "tscore/TestBox.h"
 #include "I_EventSystem.h"
 #include "MIME.h"
 
@@ -52,13 +52,53 @@ REGRESSION_TEST(MIME)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatu
   hdr.destroy();
 }
 
+REGRESSION_TEST(MIME_PARSERS)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  const char *end;
+  int value;
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  std::vector<std::pair<const char *, int>> tests = {{"0", 0},
+                                                     {"1234", 1234},
+                                                     {"-1234", -1234},
+                                                     {"2147483647", 2147483647},
+                                                     {"-2147483648", 2147483648},
+                                                     {"2147483648", INT_MAX},
+                                                     {"-2147483649", INT_MIN},
+                                                     {"2147483647", INT_MAX},
+                                                     {"-2147483648", INT_MIN},
+                                                     {"999999999999", INT_MAX},
+                                                     {"-999999999999", INT_MIN}};
+
+  for (const auto &it : tests) {
+    auto [buf, val] = it;
+
+    end = buf + strlen(buf);
+    box.check(mime_parse_int(buf, end) == val, "Failed mime_parse_int");
+    box.check(mime_parse_integer(buf, end, &value), "Failed mime_parse_integer call");
+    box.check(value == val, "Failed mime_parse_integer value");
+  }
+
+  // Also check the date parser, which relies heavily on the mime_parse_integer() function
+  const char *date1 = "Sun, 05 Dec 1999 08:49:37 GMT";
+  const char *date2 = "Sunday, 05-Dec-1999 08:49:37 GMT";
+
+  int d1 = mime_parse_date(date1, date1 + strlen(date1));
+  int d2 = mime_parse_date(date2, date2 + strlen(date2));
+
+  box.check(d1 == d2, "Failed mime_parse_date");
+
+  printf("Date1: %d\n", d1);
+  printf("Date2: %d\n", d2);
+}
+
 int
-main(int argc, char *argv[])
+main(int argc, const char **argv)
 {
   Thread *main_thread = new EThread();
   main_thread->set_specific();
   mime_init();
 
-  RegressionTest::run();
-  return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
+  return RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
 }

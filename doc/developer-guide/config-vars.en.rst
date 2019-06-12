@@ -29,7 +29,7 @@
 
 .. |apidefs.h.in| replace:: ``apidefs.h.in``
 
-.. _apidefs.h.in: https://github.com/apache/trafficserver/blob/master/lib/ts/apidefs.h.in
+.. _apidefs.h.in: https://github.com/apache/trafficserver/blob/master/include/ts/apidefs.h.in
 
 .. |InkAPI.cc| replace:: ``InkAPI.cc``
 
@@ -86,26 +86,16 @@ type:``RecT``
    ``RECT_NODE``
       Local statistic.
 
-   ``RECT_CLUSTER``
-      Cluster statistic.
-
-   ``RECT_LOCAL``
-      Configuration variable that is explicitly not shared across a cluster.
-
    ``RECT_PLUGIN``
       Plugin created statistic.
 
-   In general, ``RECT_CONFIG`` should be used unless it is required that the
-   value not be shared among members of a cluster, in which case ``RECT_LOCAL``
-   should be used. If you use ``RECT_LOCAL``, you must also start the line with
-   ``LOCAL`` instead of ``CONFIG`` and the name should use ``.local.`` instead
-   of ``.config.``.
+   In general, ``RECT_CONFIG`` should be used.
 
 name:``char const*``
    The fully qualified name of the configuration variable. Although there
-   appears to be a hierarchial naming scheme, that's just a convention, and it
+   appears to be a hierarchical naming scheme, that's just a convention, and it
    is not actually used by the code. Nonetheless, new variables should adhere
-   to the hierarchial scheme.
+   to the hierarchical scheme.
 
 value_type:``RecDataT``
    The data type of the value. It should be one of ``RECD_INT``,
@@ -131,9 +121,6 @@ update:``RecUpdateT``
 
    ``RECD_RESTART_TM``
       The :program:`traffic_manager` process must be restarted for a new value to take effect.
-
-   ``RECD_RESTART_TC``
-      The :program:`traffic_cop` process must be restarted for a new value to take effect.
 
 required:``RecordRequiredType``
    Effectively a boolean that specifies if the record is required to be present,
@@ -185,7 +172,7 @@ generally via :option:`traffic_ctl config reload`. This is handled in a generic 
 described in the next section, or in a :ref:`more specialized way <http-config-var-impl>`
 (built on top of the generic mechanism) for HTTP related configuration
 variables. This is only needed if the variable is marked as dynamically
-updateable (|RECU_DYNAMIC|_) although HTTP configuration variables should be
+updatable (|RECU_DYNAMIC|_) although HTTP configuration variables should be
 dynamic if possible.
 
 Documentation and Defaults
@@ -216,7 +203,7 @@ deprecated
 
    \:ts\:cv\:\`custom.variable\`
       :reloadable:
-      :metric: minutes
+      :units: minutes
       :deprecated:
 
 If you need to refer to another configuration variable in the documentation, you
@@ -273,12 +260,12 @@ action.
 
    The callback occurs asynchronously. For HTTP variables as described in the
    next section, this is handled by the more specialized HTTP update mechanisms.
-   Otherwise it is the implementor's responsibility to avoid race conditions.
+   Otherwise it is the implementer's responsibility to avoid race conditions.
 
 .. _http-config-var-impl:
 
-HTTP Configuation Values
-------------------------
+HTTP Configuration Values
+-------------------------
 
 Variables used for HTTP processing should be declared as members of the
 ``HTTPConfigParams`` structure (but see :ref:`overridable-config-vars` for
@@ -323,7 +310,7 @@ required for generic access:
 
 #. Augment the ``TSHttpTxnConfigFind`` function to return this enumeration value
    when given the name of the configuration variable. Be sure to count the
-   charaters very carefully.
+   characters very carefully.
 
 #. Augment the ``_conf_to_memberp`` function in |InkAPI.cc|_ to return a pointer
    to the appropriate member of ``OverridableHttpConfigParams`` and set the type
@@ -335,3 +322,29 @@ required for generic access:
 #. Update the Lua plugin enumeration ``TSLuaOverridableConfigKey`` in |ts_lua_http_config.c|_.
 
 #. Update the documentation of :ref:`ts-overridable-config` in |TSHttpOverridableConfig.en.rst|_.
+
+API conversions
+---------------
+
+A relatively new feature for overridable variables is the ability to keep them in more natural data
+types and convert as needed to the API types. This in turns enables defining the configuration
+locally in a module and then "exporting" it to the API interface. Modules then do not have to
+include headers for all types in all overridable configurations.
+
+The conversion is done through an instance of :code:`MgmtConverter`. This has 6 points to
+conversions, a load and store function for each of the types :code:`MgmtInt`, :code:`MgmtFloat`, and
+:code:`MgmtInt`. The :code:`MgmtByte` type is handled by the :code:`MgmtInt` conversions. In general
+each overridable variable will specify two of these, a load and store for a specific type, although
+it is possible to provide other pairs, e.g. if a value is an enumeration can should be settable
+as a string as well as an integer.
+
+The module is responsible for creating an instance of :code:`MgmtConverter` with the appropriate
+load / store function pairs set. The declaration must be visible in the :ts:git:`proxy/InkAPI.cc`
+file. The function :code:`_conf_to_memberp` sets up the conversion. For the value of the enumeration
+:c:type:`TSOverridableConfigKey` that specifies the overridable variable, code is added to specify
+the member and the conversion. There are default converters for the API types and if the overridable
+is one of those, it is only necessary to call :code:`_memberp_to_generic` passing in a pointer to
+the variable. For a variable with conversion, :arg:`ret` should be set to point to the variable and
+:arg:`conv` set to point to the converter for that variable. If multiple variables are of the same
+type they can use the same converter because a pointer to the specific member is passed to the
+converter.

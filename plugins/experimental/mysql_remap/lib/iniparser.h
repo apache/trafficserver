@@ -36,16 +36,15 @@
         $Revision: 1.24 $
 */
 
-#ifndef _INIPARSER_H_
-#define _INIPARSER_H_
+#pragma once
 
 /*---------------------------------------------------------------------------
                                                                 Includes
  ---------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>  // NOLINT(modernize-deprecated-headers)
+#include <stdlib.h> // NOLINT(modernize-deprecated-headers)
+#include <string.h> // NOLINT(modernize-deprecated-headers)
 
 /*
  * The following #include is necessary on many Unixes but not Linux.
@@ -294,5 +293,3 @@ dictionary *iniparser_load(const char *ininame);
  */
 /*--------------------------------------------------------------------------*/
 void iniparser_freedict(dictionary *d);
-
-#endif

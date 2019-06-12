@@ -27,8 +27,7 @@
 
 
 **************************************************************************/
-#ifndef __P_NET_H__
-#define __P_NET_H__
+#pragma once
 
 // Net Stats
 
@@ -53,6 +52,11 @@ enum Net_Stats {
   keep_alive_queue_timeout_total_stat,
   keep_alive_queue_timeout_count_stat,
   default_inactivity_timeout_stat,
+  net_fastopen_attempts_stat,
+  net_fastopen_successes_stat,
+  net_tcp_accept_stat,
+  net_connections_throttled_in_stat,
+  net_connections_throttled_out_stat,
   Net_Stat_Count
 };
 
@@ -87,7 +91,7 @@ extern RecRawStatBlock *net_rsb;
 #define NET_SUM_GLOBAL_DYN_STAT(_x, _r) RecIncrGlobalRawStatSum(net_rsb, (_x), (_r))
 #define NET_READ_GLOBAL_DYN_SUM(_x, _sum) RecGetGlobalRawStatSum(net_rsb, _x, &_sum)
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
 #include "I_Net.h"
 #include "P_NetVConnection.h"
@@ -106,21 +110,15 @@ extern RecRawStatBlock *net_rsb;
 #include "P_SSLNetAccept.h"
 #include "P_SSLCertLookup.h"
 
-#undef NET_SYSTEM_MODULE_VERSION
-#define NET_SYSTEM_MODULE_VERSION \
-  makeModuleVersion(NET_SYSTEM_MODULE_MAJOR_VERSION, NET_SYSTEM_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER)
+static constexpr ts::ModuleVersion NET_SYSTEM_MODULE_INTERNAL_VERSION(NET_SYSTEM_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE);
 
 // For very verbose iocore debugging.
 #ifndef DEBUG
-#define NetDebug \
-  if (0)         \
-  dummy_debug
+#define NetDebug(tag, fmt, ...)
 #else
-#define NetDebug Debug
+#define NetDebug(tag, fmt, ...) Debug(tag, fmt, ##__VA_ARGS__)
 #endif
 
 /// Default amount of buffer space to use for the initial read on an incoming connection.
 /// This is an IOBufferBlock index, not the size in bytes.
 static size_t const CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX = BUFFER_SIZE_INDEX_4K;
-
-#endif

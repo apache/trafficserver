@@ -15,14 +15,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <arpa/inet.h>
 
 #include <ts/ts.h>
 #include <ts/remap.h>
 
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -48,13 +48,13 @@ static const int NUM_ISO_CODES = 253;
 class Acl
 {
 public:
-  Acl() : _allow(true), _added_tokens(0) {}
+  Acl() {}
   virtual ~Acl() {}
   // These have to be implemented for each ACL type
-  virtual void read_regex(const char *fn, int &tokens) = 0;
-  virtual int process_args(int argc, char *argv[]) = 0;
+  virtual void read_regex(const char *fn, int &tokens)             = 0;
+  virtual int process_args(int argc, char *argv[])                 = 0;
   virtual bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const = 0;
-  virtual void add_token(const std::string &str) = 0;
+  virtual void add_token(const std::string &str)                   = 0;
 
   void
   set_allow(bool allow)
@@ -68,7 +68,7 @@ public:
     if (_html.size() > 0) {
       char *msg = TSstrdup(_html.c_str());
 
-      TSHttpTxnErrorBodySet(txnp, msg, _html.size(), NULL); // Defaults to text/html
+      TSHttpTxnErrorBodySet(txnp, msg, _html.size(), nullptr); // Defaults to text/html
     }
   }
 
@@ -81,8 +81,8 @@ public:
 
 protected:
   std::string _html;
-  bool _allow;
-  int _added_tokens;
+  bool _allow       = true;
+  int _added_tokens = 0;
 
   // Class members
   static GeoDBHandle _geoip;
@@ -93,7 +93,7 @@ protected:
 class RegexAcl
 {
 public:
-  RegexAcl(Acl *acl) : _extra(NULL), _next(NULL), _acl(acl) {}
+  RegexAcl(Acl *acl) : _rex(nullptr), _extra(nullptr), _next(nullptr), _acl(acl) {}
   const std::string &
   get_regex() const
   {
@@ -117,7 +117,7 @@ public:
       return false;
     }
 
-    return (pcre_exec(_rex, _extra, str, len, 0, PCRE_NOTEMPTY, NULL, 0) != -1);
+    return (pcre_exec(_rex, _extra, str, len, 0, PCRE_NOTEMPTY, nullptr, 0) != -1);
   }
 
   void append(RegexAcl *ra);
@@ -136,13 +136,13 @@ private:
 class CountryAcl : public Acl
 {
 public:
-  CountryAcl() : _regexes(NULL) { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
-  void read_regex(const char *fn, int &tokens);
-  int process_args(int argc, char *argv[]);
-  bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const;
-  void add_token(const std::string &str);
+  CountryAcl() { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
+  void read_regex(const char *fn, int &tokens) override;
+  int process_args(int argc, char *argv[]) override;
+  bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const override;
+  void add_token(const std::string &str) override;
 
 private:
   bool _iso_country_codes[NUM_ISO_CODES];
-  RegexAcl *_regexes;
+  RegexAcl *_regexes = nullptr;
 };

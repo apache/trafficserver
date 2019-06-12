@@ -21,10 +21,9 @@
   limitations under the License.
  */
 
-#ifndef _I_PriorityEventQueue_h_
-#define _I_PriorityEventQueue_h_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_Event.h"
 
 // <5ms, 10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120
@@ -42,7 +41,7 @@ struct PriorityEventQueue {
   enqueue(Event *e, ink_hrtime now)
   {
     ink_hrtime t = e->timeout_at - now;
-    int i = 0;
+    int i        = 0;
     // equivalent but faster
     if (t <= PQ_BUCKET_TIME(3)) {
       if (t <= PQ_BUCKET_TIME(1)) {
@@ -82,7 +81,7 @@ struct PriorityEventQueue {
       }
     }
     e->in_the_priority_queue = 1;
-    e->in_heap = i;
+    e->in_heap               = i;
     after[i].enqueue(e);
   }
 
@@ -112,13 +111,12 @@ struct PriorityEventQueue {
   earliest_timeout()
   {
     for (int i = 0; i < N_PQ_LIST; i++) {
-      if (after[i].head)
+      if (after[i].head) {
         return last_check_time + (PQ_BUCKET_TIME(i) / 2);
+      }
     }
     return last_check_time + HRTIME_FOREVER;
   }
 
   PriorityEventQueue();
 };
-
-#endif

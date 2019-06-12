@@ -24,16 +24,9 @@
 #include "P_Net.h"
 #include "I_Machine.h"
 #include "ProtocolProbeSessionAccept.h"
-#include "Error.h"
 #include "http2/HTTP2.h"
-
-static bool
-proto_is_spdy(IOBufferReader *reader)
-{
-  // SPDY clients have to start by sending a control frame (the high bit is set). Let's assume
-  // that no other protocol could possibly ever set this bit!
-  return ((uint8_t)(*reader)[0]) == 0x80u;
-}
+#include "ProxyProtocol.h"
+#include "I_NetVConnection.h"
 
 static bool
 proto_is_http2(IOBufferReader *reader)
@@ -42,7 +35,7 @@ proto_is_http2(IOBufferReader *reader)
   char *end;
   ptrdiff_t nbytes;
 
-  end = reader->memcpy(buf, sizeof(buf), 0 /* offset */);
+  end    = reader->memcpy(buf, sizeof(buf), 0 /* offset */);
   nbytes = end - buf;
 
   // Client must send at least 4 bytes to get a reasonable match.
@@ -55,7 +48,7 @@ proto_is_http2(IOBufferReader *reader)
 }
 
 struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessionAcceptEnums {
-  static const size_t minimum_read_size = 1;
+  static const size_t minimum_read_size   = 1;
   static const unsigned buffer_size_index = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
   IOBufferReader *reader;
 
@@ -63,7 +56,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
                                    IOBufferReader *reader)
     : Continuation(mutex), probeParent(probe)
   {
-    this->iobuf = buffer ? buffer : new_MIOBuffer(buffer_size_index);
+    this->iobuf  = buffer ? buffer : new_MIOBuffer(buffer_size_index);
     this->reader = reader ? reader : iobuf->alloc_reader(); // reader must be allocated only on a new MIOBuffer.
     SET_HANDLER(&ProtocolProbeTrampoline::ioCompletionEvent);
   }
@@ -75,7 +68,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     NetVConnection *netvc;
     ProtoGroupKey key = N_PROTO_GROUPS; // use this as an invalid value.
 
-    vio = static_cast<VIO *>(edata);
+    vio   = static_cast<VIO *>(edata);
     netvc = static_cast<NetVConnection *>(vio->vc_server);
 
     switch (event) {
@@ -84,7 +77,6 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
       // Error ....
-      netvc->do_io_close();
       goto done;
     case VC_EVENT_READ_READY:
     case VC_EVENT_READ_COMPLETE:
@@ -93,40 +85,76 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       return EVENT_ERROR;
     }
 
-    ink_assert(netvc != NULL);
+    ink_assert(netvc != nullptr);
 
     if (!reader->is_read_avail_more_than(minimum_read_size - 1)) {
       // Not enough data read. Well, that sucks.
-      netvc->do_io_close();
       goto done;
     }
 
-    // SPDY clients have to start by sending a control frame (the high bit is set). Let's assume
-    // that no other protocol could possibly ever set this bit!
-    if (proto_is_spdy(reader)) {
-      key = PROTO_SPDY;
-    } else if (proto_is_http2(reader)) {
+    // if proxy_protocol is enabled via port descriptor AND the src IP is in
+    // the trusted whitelist for proxy protocol, then check to see if it is
+    // present
+
+    IpMap *pp_ipmap;
+    pp_ipmap = probeParent->proxy_protocol_ipmap;
+
+    if (netvc->get_is_proxy_protocol()) {
+      Debug("proxyprotocol", "ioCompletionEvent: proxy protocol is enabled on this port");
+      if (pp_ipmap->count() > 0) {
+        Debug("proxyprotocol", "ioCompletionEvent: proxy protocol has a configured whitelist of trusted IPs - checking");
+        void *payload = nullptr;
+        if (!pp_ipmap->contains(netvc->get_remote_addr(), &payload)) {
+          Debug("proxyprotocol",
+                "ioCompletionEvent: proxy protocol src IP is NOT in the configured whitelist of trusted IPs - closing connection");
+          goto done;
+        } else {
+          char new_host[INET6_ADDRSTRLEN];
+          Debug("proxyprotocol", "ioCompletionEvent: Source IP [%s] is trusted in the whitelist for proxy protocol",
+                ats_ip_ntop(netvc->get_remote_addr(), new_host, sizeof(new_host)));
+        }
+      } else {
+        Debug("proxyprotocol",
+              "ioCompletionEvent: proxy protocol DOES NOT have a configured whitelist of trusted IPs but proxy protocol is "
+              "ernabled on this port - processing all connections");
+      }
+
+      if (http_has_proxy_v1(reader, netvc)) {
+        Debug("proxyprotocol", "ioCompletionEvent: http has proxy_v1 header");
+        netvc->set_remote_addr(netvc->get_proxy_protocol_src_addr());
+      } else {
+        Debug("proxyprotocol",
+              "ioCompletionEvent: proxy protocol was enabled, but required header was not present in the transaction - "
+              "closing connection");
+        goto done;
+      }
+    } // end of Proxy Protocol processing
+
+    if (proto_is_http2(reader)) {
       key = PROTO_HTTP2;
     } else {
       key = PROTO_HTTP;
     }
 
-    netvc->do_io_read(NULL, 0, NULL); // Disable the read IO that we started.
+    netvc->do_io_read(nullptr, 0, nullptr); // Disable the read IO that we started.
 
-    if (probeParent->endpoint[key] == NULL) {
+    if (probeParent->endpoint[key] == nullptr) {
       Warning("Unregistered protocol type %d", key);
-      netvc->do_io_close();
       goto done;
     }
 
     // Directly invoke the session acceptor, letting it take ownership of the input buffer.
-    probeParent->endpoint[key]->accept(netvc, this->iobuf, reader);
+    if (!probeParent->endpoint[key]->accept(netvc, this->iobuf, reader)) {
+      // IPAllow check fails in XxxSessionAccept::accept() if false returned.
+      goto done;
+    }
     delete this;
     return EVENT_CONT;
 
   done:
+    netvc->do_io_close();
     free_MIOBuffer(this->iobuf);
-    this->iobuf = NULL;
+    this->iobuf = nullptr;
     delete this;
     return EVENT_CONT;
   }
@@ -142,8 +170,8 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     ink_assert(data);
 
     VIO *vio;
-    NetVConnection *netvc = (NetVConnection *)data;
-    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, NULL, NULL);
+    NetVConnection *netvc          = (NetVConnection *)data;
+    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, nullptr, nullptr);
 
     // XXX we need to apply accept inactivity timeout here ...
 
@@ -153,25 +181,26 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
       vio->reenable();
     } else {
       Debug("http", "probe already has data, call ioComplete directly..");
-      vio = netvc->do_io_read(NULL, 0, NULL);
+      vio = netvc->do_io_read(nullptr, 0, nullptr);
       probe->ioCompletionEvent(VC_EVENT_READ_COMPLETE, (void *)vio);
     }
     return EVENT_CONT;
   }
 
-  MachineFatal("Protocol probe received a fatal error: errno = %d", -((int)(intptr_t)data));
+  ink_abort("Protocol probe received a fatal error: errno = %d", -((int)(intptr_t)data));
   return EVENT_CONT;
 }
 
-void
+bool
 ProtocolProbeSessionAccept::accept(NetVConnection *, MIOBuffer *, IOBufferReader *)
 {
   ink_release_assert(0);
+  return false;
 }
 
 void
 ProtocolProbeSessionAccept::registerEndpoint(ProtoGroupKey key, SessionAccept *ap)
 {
-  ink_release_assert(endpoint[key] == NULL);
+  ink_release_assert(endpoint[key] == nullptr);
   this->endpoint[key] = ap;
 }

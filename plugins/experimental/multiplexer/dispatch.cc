@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include <inttypes.h>
+#include <cinttypes>
 #include <sys/time.h>
 
 #include "dispatch.h"
@@ -33,60 +33,59 @@
 
 extern Statistics statistics;
 
-extern size_t timeout;
+size_t timeout;
 
 Request::Request(const std::string &h, const TSMBuffer b, const TSMLoc l) : host(h), length(0), io(new ats::io::IO())
 {
   assert(!host.empty());
-  assert(b != NULL);
-  assert(l != NULL);
-  assert(io.get() != NULL);
+  assert(b != nullptr);
+  assert(l != nullptr);
+  assert(io.get() != nullptr);
   TSHttpHdrPrint(b, l, io->buffer);
   length = TSIOBufferReaderAvail(io->reader);
   assert(length > 0);
   /*
    * TSHttpHdrLengthGet returns the size with possible "internal" headers
    * which are not printed by TSHttpHdrPrint.
-   * Therefore the greater than or equal comparisson
-  */
+   * Therefore the greater than or equal comparison
+   */
   assert(TSHttpHdrLengthGet(b, l) >= length);
 }
 
-Request::Request(const Request &r) : host(r.host), length(r.length), io(const_cast<Request &>(r).io.release())
+Request::Request(Request &&that) : host(std::move(that.host)), length(that.length), io(std::move(that.io))
 {
   assert(!host.empty());
   assert(length > 0);
-  assert(io.get() != NULL);
-  assert(r.io.get() != NULL);
+  assert(io.get() != nullptr);
 }
 
 Request &
 Request::operator=(const Request &r)
 {
-  host = r.host;
+  host   = r.host;
   length = r.length;
   io.reset(const_cast<Request &>(r).io.release());
   assert(!host.empty());
   assert(length > 0);
-  assert(io.get() != NULL);
-  assert(r.io.get() == NULL);
+  assert(io.get() != nullptr);
+  assert(r.io.get() == nullptr);
   return *this;
 }
 
 uint64_t
 copy(const TSIOBufferReader &r, const TSIOBuffer b)
 {
-  assert(r != NULL);
-  assert(b != NULL);
+  assert(r != nullptr);
+  assert(b != nullptr);
   TSIOBufferBlock block = TSIOBufferReaderStart(r);
 
   uint64_t length = 0;
 
   for (; block; block = TSIOBufferBlockNext(block)) {
-    int64_t size = 0;
+    int64_t size              = 0;
     const void *const pointer = TSIOBufferBlockReadStart(block, r, &size);
 
-    if (pointer != NULL && size > 0) {
+    if (pointer != nullptr && size > 0) {
       const int64_t size2 = TSIOBufferWrite(b, pointer, size);
       assert(size == size2);
       length += size;
@@ -99,7 +98,7 @@ copy(const TSIOBufferReader &r, const TSIOBuffer b)
 uint64_t
 read(const TSIOBufferReader &r, std::string &o, int64_t l = 0)
 {
-  assert(r != NULL);
+  assert(r != nullptr);
   TSIOBufferBlock block = TSIOBufferReaderStart(r);
 
   assert(l >= 0);
@@ -111,9 +110,9 @@ read(const TSIOBufferReader &r, std::string &o, int64_t l = 0)
   uint64_t length = 0;
 
   for (; block && l > 0; block = TSIOBufferBlockNext(block)) {
-    int64_t size = 0;
+    int64_t size              = 0;
     const char *const pointer = TSIOBufferBlockReadStart(block, r, &size);
-    if (pointer != NULL && size > 0) {
+    if (pointer != nullptr && size > 0) {
       size = std::min(size, l);
       o.append(pointer, size);
       length += size;
@@ -128,7 +127,7 @@ uint64_t
 read(const TSIOBuffer &b, std::string &o, const int64_t l = 0)
 {
   TSIOBufferReader reader = TSIOBufferReaderAlloc(b);
-  const uint64_t length = read(reader, o);
+  const uint64_t length   = read(reader, o);
   TSIOBufferReaderFree(reader);
   return length;
 }
@@ -146,18 +145,18 @@ public:
   {
     assert(!u.empty());
     const_cast<std::string &>(url).swap(u);
-    gettimeofday(&start, NULL);
+    gettimeofday(&start, nullptr);
   }
 
   void
-  error(void)
+  error()
   {
     TSError("[" PLUGIN_TAG "] error when communicating with \"%s\"\n", url.c_str());
     TSStatIntIncrement(statistics.failures, 1);
   }
 
   void
-  timeout(void)
+  timeout()
   {
     TSError("[" PLUGIN_TAG "] timeout when communicating with \"%s\"\n", url.c_str());
     TSStatIntIncrement(statistics.timeouts, 1);
@@ -189,11 +188,11 @@ public:
   }
 
   void
-  done(void)
+  done()
   {
     struct timeval end;
 
-    gettimeofday(&end, NULL);
+    gettimeofday(&end, nullptr);
 
     if (TSIsDebugTagSet(PLUGIN_TAG) > 0) {
       TSDebug(PLUGIN_TAG, "Response for \"%s\" was:\n%s", url.c_str(), response.c_str());
@@ -211,10 +210,10 @@ void
 generateRequests(const Origins &o, const TSMBuffer buffer, const TSMLoc location, Requests &r)
 {
   assert(!o.empty());
-  assert(buffer != NULL);
-  assert(location != NULL);
+  assert(buffer != nullptr);
+  assert(location != nullptr);
 
-  Origins::const_iterator iterator = o.begin();
+  Origins::const_iterator iterator  = o.begin();
   const Origins::const_iterator end = o.end();
 
   OriginalRequest request(buffer, location);
@@ -233,16 +232,16 @@ generateRequests(const Origins &o, const TSMBuffer buffer, const TSMLoc location
 void
 addBody(Requests &r, const TSIOBufferReader re)
 {
-  assert(re != NULL);
-  Requests::iterator iterator = r.begin();
+  assert(re != nullptr);
+  Requests::iterator iterator  = r.begin();
   const Requests::iterator end = r.end();
-  const int64_t length = TSIOBufferReaderAvail(re);
+  const int64_t length         = TSIOBufferReaderAvail(re);
   if (length == 0) {
     return;
   }
   assert(length > 0);
   for (; iterator != end; ++iterator) {
-    assert(iterator->io.get() != NULL);
+    assert(iterator->io.get() != nullptr);
     const int64_t size = copy(re, iterator->io->buffer);
     assert(size == length);
     iterator->length += size;
@@ -252,10 +251,10 @@ addBody(Requests &r, const TSIOBufferReader re)
 void
 dispatch(Requests &r, const int t)
 {
-  Requests::iterator iterator = r.begin();
+  Requests::iterator iterator  = r.begin();
   const Requests::iterator end = r.end();
   for (; iterator != end; ++iterator) {
-    assert(iterator->io.get() != NULL);
+    assert(iterator->io.get() != nullptr);
     if (TSIsDebugTagSet(PLUGIN_TAG) > 0) {
       TSDebug(PLUGIN_TAG, "Dispatching %i bytes to \"%s\"", iterator->length, iterator->host.c_str());
       std::string b;

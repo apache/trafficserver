@@ -30,23 +30,20 @@ trusty*|jessie*)
         clang \
         libcap-dev \
         libcurl4-openssl-dev \
-        libexpat-dev \
         libhwloc-dev \
         liblua5.2-dev \
         libpcre3-dev \
         libssl-dev \
-        libxml2-dev \
         m4 \
         ncurses-dev \
-        tcl-dev
-
+        git
 ;;
+
 centos*)
     yum install -y \
         autoconf \
         automake \
         clang \
-        expat-devel \
         flex \
         gcc \
         gcc-c++ \
@@ -54,14 +51,35 @@ centos*)
         libcap-devel \
         libcurl-devel d\
         libtool \
-        libxml2-devel \
         lua-devel \
         m4 \
         ncurses-devel \
         openssl-devel \
         pcre-devel \
-        tcl-devel
+        git
 ;;
+
+fedora*)
+    dnf install -y \
+        autoconf \
+        automake \
+        clang \
+        flex \
+        gcc \
+        gcc-c++ \
+        hwloc-devel \
+        libcap-devel \
+        libcurl-devel \
+        libtool \
+        lua-devel \
+        m4 \
+        ncurses-devel \
+        openssl-devel \
+        pcre-devel \
+        git \
+        make
+;;
+
 omnios)
     export PATH=/usr/gnu/bin:/usr/bin:/usr/sbin:/sbin:/opt/gcc-4.8.1/bin
     echo "export PATH=/usr/gnu/bin:/usr/bin:/usr/sbin:/sbin:/opt/gcc-4.8.1/bin" >> /root/.profile
@@ -82,9 +100,9 @@ omnios)
         developer/linker \
         developer/object-file \
         developer/parser/bison \
+        developer/versioning/git \
         library/idnkit \
         library/idnkit/header-idnkit \
-        omniti/runtime/tcl-8 \
         omniti/system/hwloc \
         system/header \
         system/library/math \
@@ -93,6 +111,7 @@ omnios)
         exit 1
     fi
 ;;
+
 *)
     echo "no config for ${1}"
     exit 1

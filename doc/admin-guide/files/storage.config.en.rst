@@ -48,6 +48,10 @@ partitions. :arg:`volume` and arg:`seed` are optional.
 
    If the :arg:`id` option is used every use must have a unique value for :arg:`string`.
 
+.. note::
+
+   Any change to this files can (and almost always will) invalidate the existing cache in its entirety.
+
 You can use any partition of any size. For best performance:
 
 -  Use raw disk partitions.
@@ -92,7 +96,7 @@ which will effectively clear most of the cache. This can be problem when drives 
 reboot causes the path names to change.
 
 The :arg:`id` option can be used to create a fixed string that an administrator can use to keep the
-assignment table consistent by maintaing the mapping from physical device to base string even in the presence of hardware changes and failures.
+assignment table consistent by maintaining the mapping from physical device to base string even in the presence of hardware changes and failures.
 
 Examples
 ========
@@ -115,7 +119,7 @@ cache file with::
 
 .. note::
     When using on-filesystem cache disk storage, you can only have one such
-    directory specified. This will be address in a future version.
+    directory specified. This will be addressed in a future version.
 
 
 Solaris Example
@@ -135,7 +139,7 @@ Linux Example
     modern Linux supports `alternative symlinked names for disk devices
     <https://wiki.archlinux.org/index.php/persistent_block_device_naming#by-id_and_by-path>`_ in the ``/dev/disk``
     directory structure. As noted for the :ref:`assignment-table` the path used for the disk can effect
-    the cache if it changes. This can be ameloriated in some cases by using one of the alternate paths
+    the cache if it changes. This can be ameliorated in some cases by using one of the alternate paths
     in via ``/dev/disk``. Note that if the ``by-id`` or ``by-path`` style is used, replacing a failed drive will cause
     that path to change because the new drive will have a different physical ID or path. The original hash string can
     be kept by adding :arg:`id` or :arg:`path` with the original path to the storage line.
@@ -184,3 +188,10 @@ following rules are stored in :manpage:`devfs.conf(5)`::
 
    # Assign /dev/ada1 and /dev/ada2 to the tserver user
    own    ada[12]  tserver:tserver
+
+Advanced
+--------
+
+Because relative paths in :file:`storage.config` are relative to the base prefix, when using customized runroot
+it may be necessary to adjust such paths in :file:`storage.config` or adjust ``runroot.yaml`` itself.
+Despite the name, the cachedir value is not used for this file.

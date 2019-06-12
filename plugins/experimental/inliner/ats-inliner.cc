@@ -20,12 +20,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 #include <dlfcn.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <limits>
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
 
 #include "inliner-handler.h"
@@ -44,8 +44,8 @@ struct MyData {
   MyData(const TSIOBufferReader r, const TSVConn v)
     : handler(r, ats::io::IOSink::Create(TSTransformOutputVConnGet(v), TSContMutexGet(v), timeout))
   {
-    assert(r != NULL);
-    assert(v != NULL);
+    assert(r != nullptr);
+    assert(v != nullptr);
   }
 };
 
@@ -58,7 +58,7 @@ handle_transform(const TSCont c)
 
   if (!TSVIOBufferGet(vio)) {
     TSVConnShutdown(c, 1, 0);
-    TSContDataSet(c, NULL);
+    TSContDataSet(c, nullptr);
     delete data;
     return;
   }
@@ -67,7 +67,7 @@ handle_transform(const TSCont c)
 
   if (todo > 0) {
     const TSIOBufferReader reader = TSVIOReaderGet(vio);
-    todo = std::min(todo, TSIOBufferReaderAvail(reader));
+    todo                          = std::min(todo, TSIOBufferReaderAvail(reader));
 
     if (todo > 0) {
       if (!data) {
@@ -89,7 +89,7 @@ handle_transform(const TSCont c)
   } else {
     TSContCall(TSVIOContGet(vio), TS_EVENT_VCONN_WRITE_COMPLETE, vio);
     TSVConnShutdown(c, 1, 0);
-    TSContDataSet(c, NULL);
+    TSContDataSet(c, nullptr);
     delete data;
   }
 }
@@ -100,8 +100,8 @@ inliner_transform(TSCont c, TSEvent e, void *)
   if (TSVConnClosedGet(c)) {
     TSDebug(PLUGIN_TAG, "connection closed");
     MyData *const data = static_cast<MyData *>(TSContDataGet(c));
-    if (data != NULL) {
-      TSContDataSet(c, NULL);
+    if (data != nullptr) {
+      TSContDataSet(c, nullptr);
       data->handler.abort();
       delete data;
     }
@@ -110,7 +110,7 @@ inliner_transform(TSCont c, TSEvent e, void *)
     switch (e) {
     case TS_EVENT_ERROR: {
       const TSVIO vio = TSVConnWriteVIOGet(c);
-      assert(vio != NULL);
+      assert(vio != nullptr);
       TSContCall(TSVIOContGet(vio), TS_EVENT_ERROR, vio);
     } break;
 
@@ -134,20 +134,20 @@ transformable(TSHttpTxn txnp)
   TSMBuffer buffer;
   TSMLoc location;
   CHECK(TSHttpTxnServerRespGet(txnp, &buffer, &location));
-  assert(buffer != NULL);
-  assert(location != NULL);
+  assert(buffer != nullptr);
+  assert(location != nullptr);
 
   returnValue = TSHttpHdrStatusGet(buffer, location) == TS_HTTP_STATUS_OK;
 
   if (returnValue) {
-    returnValue = false;
+    returnValue        = false;
     const TSMLoc field = TSMimeHdrFieldFind(buffer, location, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
 
     if (field != TS_NULL_MLOC) {
-      int length = 0;
+      int length                = 0;
       const char *const content = TSMimeHdrFieldValueStringGet(buffer, location, field, 0, &length);
 
-      if (content != NULL && length > 0) {
+      if (content != nullptr && length > 0) {
         returnValue = strncasecmp(content, "text/html", 9) == 0;
       }
 
@@ -157,16 +157,16 @@ transformable(TSHttpTxn txnp)
 
   CHECK(TSHandleMLocRelease(buffer, TS_NULL_MLOC, location));
 
-  returnValue &= TSHttpTxnIsInternal(txnp) != TS_SUCCESS;
+  returnValue &= !TSHttpTxnIsInternal(txnp);
   return returnValue;
 }
 
 void
 transform_add(const TSHttpTxn t)
 {
-  assert(t != NULL);
+  assert(t != nullptr);
   const TSVConn vconnection = TSTransformCreate(inliner_transform, t);
-  assert(vconnection != NULL);
+  assert(vconnection != nullptr);
   TSHttpTxnHookAdd(t, TS_HTTP_RESPONSE_TRANSFORM_HOOK, vconnection);
 }
 
@@ -174,7 +174,7 @@ int
 transform_plugin(TSCont, TSEvent e, void *d)
 {
   assert(TS_EVENT_HTTP_READ_RESPONSE_HDR == e);
-  assert(d != NULL);
+  assert(d != nullptr);
 
   const TSHttpTxn transaction = static_cast<TSHttpTxn>(d);
 
@@ -188,7 +188,7 @@ transform_plugin(TSCont, TSEvent e, void *d)
     break;
 
   default:
-    assert(false); // UNRECHEABLE
+    assert(false); // UNREACHABLE
     break;
   }
 
@@ -200,8 +200,8 @@ TSPluginInit(int, const char **)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = const_cast<char *>(PLUGIN_TAG);
-  info.vendor_name = const_cast<char *>("MyCompany");
+  info.plugin_name   = const_cast<char *>(PLUGIN_TAG);
+  info.vendor_name   = const_cast<char *>("MyCompany");
   info.support_email = const_cast<char *>("ts-api-support@MyCompany.com");
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -209,9 +209,9 @@ TSPluginInit(int, const char **)
     goto error;
   }
 
-  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, NULL));
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(transform_plugin, nullptr));
   return;
 
 error:
-  TSError("[null-tranform] Unable to initialize plugin (disabled).\n");
+  TSError("[null-transform] Unable to initialize plugin (disabled).\n");
 }

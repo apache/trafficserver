@@ -27,7 +27,7 @@
   Commonality across all platforms -- move out as required.
 
 **************************************************************************/
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #include "P_Net.h"
 
@@ -39,17 +39,13 @@
 
 #define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
-#ifndef FD_CLOEXEC
-#define FD_CLOEXEC 1
-#endif
-
 int
-get_listen_backlog(void)
+get_listen_backlog()
 {
   int listen_backlog;
 
   REC_ReadConfigInteger(listen_backlog, "proxy.config.net.listen_backlog");
-  return listen_backlog >= 0 ? listen_backlog : ats_tcp_somaxconn();
+  return (0 < listen_backlog && listen_backlog <= 65535) ? listen_backlog : ats_tcp_somaxconn();
 }
 
 //
@@ -61,7 +57,7 @@ NetVCOptions::toString(addr_bind_style s)
   return ANY_ADDR == s ? "any" : INTF_ADDR == s ? "interface" : "foreign";
 }
 
-Connection::Connection() : fd(NO_FD), is_bound(false), is_connected(false), sock_type(0)
+Connection::Connection() : fd(NO_FD)
 {
   memset(&addr, 0, sizeof(addr));
 }
@@ -74,45 +70,36 @@ Connection::~Connection()
 int
 Server::accept(Connection *c)
 {
-  int res = 0;
+  int res      = 0;
   socklen_t sz = sizeof(c->addr);
 
-  res = socketManager.accept(fd, &c->addr.sa, &sz);
-  if (res < 0)
+  res = socketManager.accept4(fd, &c->addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
+  if (res < 0) {
     return res;
+  }
   c->fd = res;
   if (is_debug_tag_set("iocore_net_server")) {
     ip_port_text_buffer ipb1, ipb2;
-    Debug("iocore_net_server", "Connection accepted [Server]. %s -> %s\n", ats_ip_nptop(&c->addr, ipb2, sizeof(ipb2)),
+    Debug("iocore_net_server", "Connection accepted [Server]. %s -> %s", ats_ip_nptop(&c->addr, ipb2, sizeof(ipb2)),
           ats_ip_nptop(&addr, ipb1, sizeof(ipb1)));
   }
 
-#ifdef SET_CLOSE_ON_EXEC
-  if ((res = safe_fcntl(fd, F_SETFD, FD_CLOEXEC)) < 0)
-    goto Lerror;
-#endif
-  if ((res = safe_nonblocking(c->fd)) < 0)
-    goto Lerror;
 #ifdef SEND_BUF_SIZE
   socketManager.set_sndbuf_size(c->fd, SEND_BUF_SIZE);
 #endif
 
   return 0;
-
-Lerror:
-  c->close();
-  return res;
 }
 
 int
 Connection::close()
 {
   is_connected = false;
-  is_bound = false;
+  is_bound     = false;
   // don't close any of the standards
   if (fd >= 2) {
     int fd_save = fd;
-    fd = NO_FD;
+    fd          = NO_FD;
     return socketManager.close(fd_save);
   } else {
     fd = NO_FD;
@@ -128,11 +115,11 @@ void
 Connection::move(Connection &orig)
 {
   this->is_connected = orig.is_connected;
-  this->is_bound = orig.is_bound;
-  this->fd = orig.fd;
+  this->is_bound     = orig.is_bound;
+  this->fd           = orig.fd;
   // The target has taken ownership of the file descriptor
-  orig.fd = NO_FD;
-  this->addr = orig.addr;
+  orig.fd         = NO_FD;
+  this->addr      = orig.addr;
   this->sock_type = orig.sock_type;
 }
 
@@ -147,20 +134,14 @@ add_http_filter(int fd ATS_UNUSED)
 }
 
 int
-Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool transparent)
+Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 {
   int res = 0;
-  int sockopt_flag_in = 0;
-  REC_ReadConfigInteger(sockopt_flag_in, "proxy.config.net.sock_option_flag_in");
-
-#ifdef TCP_FASTOPEN
-  int tfo_queue_length = 0;
-  REC_ReadConfigInteger(tfo_queue_length, "proxy.config.net.sock_option_tfo_queue_size_in");
-#endif
 
   ink_assert(fd != NO_FD);
 
-  if (http_accept_filter) {
+  if (opt.etype == ET_NET && opt.defer_accept > 0) {
+    http_accept_filter = true;
     add_http_filter(fd);
   }
 
@@ -182,10 +163,10 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
   }
 #endif
 
-  if (recv_bufsize) {
-    if (socketManager.set_rcvbuf_size(fd, recv_bufsize)) {
+  if (opt.recv_bufsize) {
+    if (socketManager.set_rcvbuf_size(fd, opt.recv_bufsize)) {
       // Round down until success
-      int rbufsz = ROUNDUP(recv_bufsize, 1024);
+      int rbufsz = ROUNDUP(opt.recv_bufsize, 1024);
       while (rbufsz) {
         if (socketManager.set_rcvbuf_size(fd, rbufsz)) {
           rbufsz -= 1024;
@@ -196,10 +177,10 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
     }
   }
 
-  if (send_bufsize) {
-    if (socketManager.set_sndbuf_size(fd, send_bufsize)) {
+  if (opt.send_bufsize) {
+    if (socketManager.set_sndbuf_size(fd, opt.send_bufsize)) {
       // Round down until success
-      int sbufsz = ROUNDUP(send_bufsize, 1024);
+      int sbufsz = ROUNDUP(opt.send_bufsize, 1024);
       while (sbufsz) {
         if (socketManager.set_sndbuf_size(fd, sbufsz)) {
           sbufsz -= 1024;
@@ -210,17 +191,15 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
     }
   }
 
-#ifdef SET_CLOSE_ON_EXEC
   if ((res = safe_fcntl(fd, F_SETFD, FD_CLOEXEC)) < 0) {
     goto Lerror;
   }
-#endif
 
   {
     struct linger l;
-    l.l_onoff = 0;
+    l.l_onoff  = 0;
     l.l_linger = 0;
-    if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_LINGER_ON) &&
+    if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) &&
         (res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
       goto Lerror;
     }
@@ -234,27 +213,27 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
     goto Lerror;
   }
 
-  if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_NO_DELAY) &&
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) &&
       (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
   }
 
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
-  if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_KEEP_ALIVE) &&
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) &&
       (res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
   }
 
 #ifdef TCP_FASTOPEN
-  if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) &&
-      (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&tfo_queue_length, sizeof(int)))) {
+  if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) &&
+      (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int)))) {
     goto Lerror;
   }
 #endif
 
-  if (transparent) {
+  if (opt.f_inbound_transparent) {
 #if TS_USE_TPROXY
-    Debug("http_tproxy", "Listen port inbound transparency enabled.\n");
+    Debug("http_tproxy", "Listen port inbound transparency enabled.");
     if (safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT, SOCKOPT_ON, sizeof(int)) < 0) {
       Fatal("[Server::listen] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
     }
@@ -263,11 +242,25 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
 #endif
   }
 
+  if (opt.f_proxy_protocol) {
+    Debug("proxyprotocol", "Proxy Protocol enabled.");
+  }
+
 #if defined(TCP_MAXSEG)
   if (NetProcessor::accept_mss > 0) {
     if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *)&NetProcessor::accept_mss, sizeof(int))) < 0) {
       goto Lerror;
     }
+  }
+#endif
+
+#ifdef TCP_DEFER_ACCEPT
+  // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
+  // data on the socket ready to be read
+  if (opt.defer_accept > 0 && (res = setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int))) < 0) {
+    // FIXME: should we go to the error
+    // goto error;
+    Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
   }
 #endif
 
@@ -285,14 +278,13 @@ Lerror:
   // coverity[check_after_sink]
   if (fd != NO_FD) {
     close();
-    fd = NO_FD;
   }
 
   return res;
 }
 
 int
-Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool transparent)
+Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 {
   ink_assert(fd == NO_FD);
   int res = 0;
@@ -309,7 +301,7 @@ Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool trans
     goto Lerror;
   }
 
-  res = setup_fd_for_listen(non_blocking, recv_bufsize, send_bufsize, transparent);
+  res = setup_fd_for_listen(non_blocking, opt);
   if (res < 0) {
     goto Lerror;
   }

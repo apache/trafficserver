@@ -104,10 +104,8 @@ development tools and libraries installed:
 -  libtool
 -  gcc (>= 4.3 or clang > 3.0)
 -  GNU make
--  openssl
--  tcl
--  expat
--  pcre
+-  openssl (libssl-dev for Ubuntu 16.04)
+-  pcre (libpcre3-dev for Ubuntu 16.04)
 -  libcap
 -  flex (for TPROXY)
 -  hwloc
@@ -120,6 +118,8 @@ If you're building from a git clone, you'll also need:
 -  git
 -  autoconf
 -  automake
+-  build-essential (for Ubuntu)
+-  libtool (for Ubuntu)
 
 .. _admin-layouts:
 
@@ -131,7 +131,7 @@ Layouts
 Preparing the Source Tree
 -------------------------
 
-If you are buiding from a checkout of the Git repository, you will need to
+If you are building from a checkout of the Git repository, you will need to
 prepare the source tree by regenerating the configuration scripts. This is
 performed by running::
 
@@ -190,44 +190,6 @@ working copy::
     cd /opt/ats
     sudo bin/traffic_server -R 1
 
-.. _admin-adding-spdy-support:
-
-Adding SPDY Support
--------------------
-
-Traffic Server v5.0.x and above are capable of supporting SPDY, but it is
-optional and must be explicitly configured during the build process. The
-support of SPDY is deprecated as of ATS v6.2.0, and will be removed in
-v7.0.0.
-
-#. Clone the spdylay Git repository from tatsuhiro. ::
-
-    git clone https://github.com/tatsuhiro-t/spdylay
-
-#. Generate fresh configure scripts. ::
-
-    autoreconf -if
-
-#. Run the generated configuration script, choosing an installation location
-   for the overlay. ::
-
-    ./configure --prefix=/opt/spdylay
-
-#. Build and install the overlay. ::
-
-    make install
-
-#. Set the ``PKG_CONFIG_PATH`` enviroment variable to the appropriate path
-   in your newly-installed overlay directory. ::
-
-    export PKG_CONFIG_PATH=/opt/spdylay/lib/pkgconfig/
-
-#. Finally, you may proceed with the regular building of |TS| from source, with
-   the addition of a single new configuration option to enable SPDY support in
-   the produced binaries. ::
-
-    ./configure --enable-spdy
-
 .. _start-traffic-server:
 
 Start Traffic Server
@@ -264,9 +226,8 @@ Stop Traffic Server
 
 To stop Traffic Server, always use the :program:`trafficserver` command,
 passing in the attribute ``stop``. This command stops all the Traffic
-Server processes (:program:`traffic_manager`, :program:`traffic_server`, and
-:program:`traffic_cop`). Do not manually stop processes, as this can lead to
-unpredictable results. ::
+Server processes (:program:`traffic_manager` and :program:`traffic_server`).
+Do not manually stop processes, as this can lead to unpredictable results. ::
 
     bin/trafficserver stop
 

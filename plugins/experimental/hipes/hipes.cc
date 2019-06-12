@@ -18,19 +18,19 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include <stdio.h>
+#include <cstdio>
 #include <sys/time.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 #include <string>
 
 #include <ts/ts.h>
 #include <ts/remap.h>
 
-static const char *PLUGIN_NAME = "hipes";
+static const char *PLUGIN_NAME       = "hipes";
 static const char *HIPES_SERVER_NAME = "hipes.example.com";
 
-static const int MAX_PATH_SIZE = 2048;
+static const int MAX_PATH_SIZE    = 2048;
 static const int MAX_REDIRECT_URL = 2048;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -47,18 +47,20 @@ escapify_url(const char *src, int src_len, char *dst, int dst_len)
   static char hex_digit[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
   const char *from = src;
-  char *to = dst;
-  int len = 0;
+  char *to         = dst;
+  int len          = 0;
 
   // Sanity check
-  if (!src)
+  if (!src) {
     return -1;
+  }
 
   while (from < (src + src_len)) {
     unsigned char c = *from;
 
-    if (len >= dst_len)
+    if (len >= dst_len) {
       return -1; // Does not fit.... abort!
+    }
 
     if (codes_to_escape[c / 8] & (1 << (7 - c % 8))) {
       *to++ = '%';
@@ -102,7 +104,7 @@ unescapify(const char *src, char *dst, int len)
       subStr[0] = *(++cur);
       subStr[1] = *(++cur);
       len -= 2;
-      *dst = (char)strtol(subStr, (char **)NULL, 16);
+      *dst = (char)strtol(subStr, (char **)nullptr, 16);
     } else {
       *dst = *cur;
     }
@@ -127,30 +129,24 @@ struct HIPESService {
     : url_param("url"),
       path(""),
       svc_server(""),
-      svc_port(80),
-      ssl(false),
+
       hipes_server(HIPES_SERVER_NAME),
-      hipes_port(80),
-      default_redirect_flag(1),
-      x_hipes_header("X-HIPES-Redirect"),
-      active_timeout(-1),
-      no_activity_timeout(-1),
-      connect_timeout(-1),
-      dns_timeout(-1){};
+
+      x_hipes_header("X-HIPES-Redirect"){};
 
   std::string url_param;
   std::string path;
   std::string svc_server;
-  int svc_port;
-  bool ssl;
+  int svc_port = 80;
+  bool ssl     = false;
   std::string hipes_server;
-  int hipes_port;
-  unsigned int default_redirect_flag;
+  int hipes_port                     = 80;
+  unsigned int default_redirect_flag = 1;
   std::string x_hipes_header;
-  int active_timeout;
-  int no_activity_timeout;
-  int connect_timeout;
-  int dns_timeout;
+  int active_timeout      = -1;
+  int no_activity_timeout = -1;
+  int connect_timeout     = -1;
+  int dns_timeout         = -1;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -165,7 +161,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   }
 
   if (api_info->tsremap_version < TSREMAP_VERSION) {
-    snprintf(errbuf, errbuf_size - 1, "[tsremap_init] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
+    snprintf(errbuf, errbuf_size, "[tsremap_init] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
              (api_info->tsremap_version & 0xffff));
     return TS_ERROR;
   }
@@ -184,14 +180,14 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   *ih = (void *)ri;
 
-  if (ri == NULL) {
+  if (ri == nullptr) {
     TSError("[hipes] Unable to create remap instance");
     return TS_ERROR;
   }
 
   for (int ix = 2; ix < argc; ++ix) {
-    std::string arg = argv[ix];
-    std::string::size_type sep = arg.find_first_of(":");
+    std::string arg            = argv[ix];
+    std::string::size_type sep = arg.find_first_of(':');
 
     if (sep == std::string::npos) {
       TSError("[hipes] Malformed options in url_remap: %s", argv[ix]);
@@ -202,29 +198,30 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
         ri->url_param = arg_val;
       } else if (arg.compare(0, 4, "path") == 0) {
         ri->path = arg_val;
-        if (arg_val[0] == '/')
+        if (arg_val[0] == '/') {
           ri->path = arg_val.substr(1);
-        else
+        } else {
           ri->path = arg_val;
+        }
       } else if (arg.compare(0, 3, "ssl") == 0) {
         ri->ssl = true;
       } else if (arg.compare(0, 7, "service") == 0) {
-        std::string::size_type port = arg_val.find_first_of(":");
+        std::string::size_type port = arg_val.find_first_of(':');
 
         if (port == std::string::npos) {
           ri->svc_server = arg_val;
         } else {
           ri->svc_server = arg_val.substr(0, port);
-          ri->svc_port = atoi(arg_val.substr(port + 1).c_str());
+          ri->svc_port   = atoi(arg_val.substr(port + 1).c_str());
         }
       } else if (arg.compare(0, 6, "server") == 0) {
-        std::string::size_type port = arg_val.find_first_of(":");
+        std::string::size_type port = arg_val.find_first_of(':');
 
         if (port == std::string::npos) {
           ri->hipes_server = arg_val;
         } else {
           ri->hipes_server = arg_val.substr(0, port);
-          ri->hipes_port = atoi(arg_val.substr(port + 1).c_str());
+          ri->hipes_port   = atoi(arg_val.substr(port + 1).c_str());
         }
       } else if (arg.compare(0, 14, "active_timeout") == 0) {
         ri->active_timeout = atoi(arg_val.c_str());
@@ -266,22 +263,22 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   char redirect_url[MAX_REDIRECT_URL];
   int redirect_url_size;
 
-  if (NULL == h_conf) {
+  if (nullptr == h_conf) {
     TSDebug(PLUGIN_NAME, "Falling back to default URL on URL remap without rules");
     return TSREMAP_NO_REMAP;
   }
 
-  int param_len = 0;
+  int param_len     = 0;
   const char *param = TSUrlHttpParamsGet(rri->requestBufp, rri->requestUrl, &param_len);
 
   // Make sure we have a matrix parameter, anything without is a bogus request.
   if (param_len <= 0) {
-    TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+    TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
     return TSREMAP_NO_REMAP;
   }
 
   if (param_len > MAX_PATH_SIZE) {
-    TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+    TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
     return TSREMAP_NO_REMAP;
   }
 
@@ -302,7 +299,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       len = 8 + h_conf->hipes_server.size() + (param_len - (slash - param) - 1);
     }
     if (len > MAX_PATH_SIZE) {
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
       return TSREMAP_NO_REMAP;
     }
     if (h_conf->hipes_port != 80) {
@@ -314,23 +311,23 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
     len = escapify_url(svc_url, len, svc_url_esc, MAX_PATH_SIZE);
     if (len < 0) {
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
       return TSREMAP_NO_REMAP;
     }
     TSDebug(PLUGIN_NAME, "Escaped service URL is %s(%d)", svc_url_esc, len);
 
     // Prepare the new query arguments, make sure it fits
     if (((slash - param) + 2 + (int)h_conf->url_param.size() + len) > MAX_PATH_SIZE) {
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
       return TSREMAP_NO_REMAP;
     }
 
     query_len = (slash - param);
     memcpy(new_query, param, query_len);
     ptr = new_query;
-    while ((ptr = static_cast<char *>(memchr(ptr, ';', (new_query + query_len) - ptr))))
+    while ((ptr = static_cast<char *>(memchr(ptr, ';', (new_query + query_len) - ptr)))) {
       *ptr = '&';
-
+    }
     new_query[query_len++] = '&';
     memcpy(new_query + query_len, h_conf->url_param.c_str(), h_conf->url_param.size());
     query_len += h_conf->url_param.size();
@@ -344,29 +341,30 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     new_query_size = param_len;
     memcpy(new_query, param, param_len);
     ptr = new_query;
-    while ((ptr = static_cast<char *>(memchr(ptr, ';', (new_query + new_query_size) - ptr))))
+    while ((ptr = static_cast<char *>(memchr(ptr, ';', (new_query + new_query_size) - ptr)))) {
       *ptr = '&';
-
+    }
     TSDebug(PLUGIN_NAME, "New query is %.*s(%d)", new_query_size, new_query, new_query_size);
   }
 
   // Test if we should redirect or not
-  bool do_redirect = false;
+  bool do_redirect  = false;
   int redirect_flag = h_conf->default_redirect_flag;
-  char *pos = new_query;
+  char *pos         = new_query;
 
   while (pos && (pos = (char *)memchr(pos, '_', new_query_size - (pos - new_query)))) {
     if (pos) {
       ++pos;
       if ((new_query_size - (pos - new_query)) < 10) { // redirect=n
-        pos = NULL;
+        pos = nullptr;
       } else {
         if ((*pos == 'r') && (!strncmp(pos, "redirect=", 9))) {
           redirect_flag = *(pos + 9) - '0';
-          if ((redirect_flag < 0) || (redirect_flag > 2))
+          if ((redirect_flag < 0) || (redirect_flag > 2)) {
             redirect_flag = h_conf->default_redirect_flag;
-          TSDebug(PLUGIN_NAME, "Found _redirect flag in URL: %d\n", redirect_flag);
-          pos = NULL;
+          }
+          TSDebug(PLUGIN_NAME, "Found _redirect flag in URL: %d", redirect_flag);
+          pos = nullptr;
         }
       }
     }
@@ -387,12 +385,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
         // Alright, now match up this header flag with the request (or default) flag
         TSDebug(PLUGIN_NAME, "Extracted %s header with value %d", h_conf->x_hipes_header.c_str(), hdr_flag);
         switch (redirect_flag) {
-        case 0:
-          if (hdr_flag == 2) {
-            TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
-            has_error = true;
-          } // Everything else is a "no"
-          break;
         case 1:
           if (hdr_flag == 2) {
             do_redirect = true;
@@ -402,29 +394,30 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
           if (hdr_flag == 2) {
             do_redirect = true;
           } else {
-            TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+            TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
             has_error = true;
           }
           break;
         default:
-          TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+          TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
           has_error = true;
           break;
         }
         TSHandleMLocRelease(bufp, hdr_loc, field_loc);
       } else {
         if (redirect_flag == 2) {
-          TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+          TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
           has_error = true;
         }
       }
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     } else {
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_BAD_REQUEST);
       has_error = true;
     }
-    if (has_error)
+    if (has_error) {
       return TSREMAP_NO_REMAP;
+    }
   }
 
   // If we redirect, just generate a 302 URL, otherwise update the RRI struct properly.
@@ -441,7 +434,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
     if (len > MAX_REDIRECT_URL) {
       TSError("[hipes] Redirect in HIPES URL too long");
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
     } else {
       int port = -1;
 
@@ -451,13 +444,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       if (h_conf->ssl) {
         memcpy(pos, "https://", 8);
         pos += 8;
-        if (h_conf->svc_port != 443)
+        if (h_conf->svc_port != 443) {
           port = h_conf->svc_port;
+        }
       } else {
         memcpy(pos, "http://", 7);
         pos += 7;
-        if (h_conf->svc_port != 80)
+        if (h_conf->svc_port != 80) {
           port = h_conf->svc_port;
+        }
       }
 
       // Server
@@ -465,8 +460,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       pos += h_conf->svc_server.size();
 
       // Port
-      if (port != -1)
+      if (port != -1) {
         pos += snprintf(pos, 6, ":%d", port);
+      }
 
       // Path
       *(pos++) = '/';
@@ -488,10 +484,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       redirect_url_size = pos - redirect_url + 1;
       TSDebug(PLUGIN_NAME, "Redirecting to %.*s", redirect_url_size, redirect_url);
       const char *start = redirect_url;
-      const char *end = start + redirect_url_size;
-      rri->redirect = 1;
+      const char *end   = start + redirect_url_size;
+      rri->redirect     = 1;
       TSUrlParse(rri->requestBufp, rri->requestUrl, &start, end);
-      TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_MOVED_TEMPORARILY);
+      TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_MOVED_TEMPORARILY);
     }
   } else { // Not a redirect, so proceed normally
     // Set timeouts (if requested)
@@ -525,8 +521,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     TSDebug(PLUGIN_NAME, "New path is %.*s", (int)h_conf->path.size(), h_conf->path.c_str());
 
     // Enable SSL?
-    if (h_conf->ssl)
+    if (h_conf->ssl) {
       TSUrlSchemeSet(rri->requestBufp, rri->requestUrl, "https", 5);
+    }
 
     // Clear previous matrix params
     TSUrlHttpParamsSet(rri->requestBufp, rri->requestUrl, "", 0);

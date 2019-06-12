@@ -21,11 +21,9 @@
   limitations under the License.
  */
 
-#ifndef _ACL_FILTERING_H_
-#define _ACL_FILTERING_H_
+#pragma once
 
-#include "Main.h"
-#include "ts/ink_inet.h"
+#include "tscore/ink_inet.h"
 
 #include <string>
 #include <set>
@@ -35,19 +33,19 @@
 // ACL like filtering defs (per one remap rule)
 
 static int const ACL_FILTER_MAX_SRC_IP = 128;
-static int const ACL_FILTER_MAX_IN_IP = 8;
-static int const ACL_FILTER_MAX_ARGV = 512;
+static int const ACL_FILTER_MAX_IN_IP  = 8;
+static int const ACL_FILTER_MAX_ARGV   = 512;
 
 struct src_ip_info_t {
-  IpEndpoint start; ///< Minimum value in range.
-  IpEndpoint end;   ///< Maximum value in range.
-  bool invert;      ///< Should we "invert" the meaning of this IP range ("not in range")
+  IpAddr start; ///< Minimum value in range.
+  IpAddr end;   ///< Maximum value in range.
+  bool invert;  ///< Should we "invert" the meaning of this IP range ("not in range")
 
   void
   reset()
   {
-    ink_zero(start);
-    ink_zero(end);
+    start.invalidate();
+    end.invalidate();
     invert = false;
   }
 
@@ -55,29 +53,30 @@ struct src_ip_info_t {
   bool
   contains(IpEndpoint const &ip)
   {
-    return ats_ip_addr_cmp(&start, &ip) <= 0 && ats_ip_addr_cmp(&ip, &end) <= 0;
+    IpAddr addr{ip};
+    return addr.cmp(start) >= 0 && addr.cmp(end) <= 0;
   }
 };
 
 /**
  *
-**/
+ **/
 class acl_filter_rule
 {
 private:
-  void reset(void);
+  void reset();
 
 public:
-  acl_filter_rule *next;
-  char *filter_name;           // optional filter name
-  unsigned int allow_flag : 1, // action allow deny
-    src_ip_valid : 1,          // src_ip range valid
+  acl_filter_rule *next = nullptr;
+  char *filter_name     = nullptr; // optional filter name
+  unsigned int allow_flag : 1,     // action allow deny
+    src_ip_valid : 1,              // src_ip range valid
     in_ip_valid : 1,
     active_queue_flag : 1, // filter is in active state (used by .useflt directive)
     internal : 1;          // filter internal HTTP requests
 
   // we need arguments as string array for directive processing
-  int argc;                        // argument counter (only for filter defs)
+  int argc = 0;                    // argument counter (only for filter defs)
   char *argv[ACL_FILTER_MAX_ARGV]; // argument strings (only for filter defs)
 
   // methods
@@ -92,19 +91,17 @@ public:
   src_ip_info_t src_ip_array[ACL_FILTER_MAX_SRC_IP];
 
   // in_ip
-  int in_ip_cnt; // how many valid dst_ip rules we have
+  int in_ip_cnt; // how many valid dest_ip rules we have
   src_ip_info_t in_ip_array[ACL_FILTER_MAX_IN_IP];
 
   acl_filter_rule();
   ~acl_filter_rule();
-  void name(const char *_name = NULL);
+  void name(const char *_name = nullptr);
   int add_argv(int _argc, char *_argv[]);
-  void print(void);
+  void print();
 
   static acl_filter_rule *find_byname(acl_filter_rule *list, const char *name);
   static void delete_byname(acl_filter_rule **list, const char *name);
   static void requeue_in_active_list(acl_filter_rule **list, acl_filter_rule *rp);
   static void requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule *rp);
 };
-
-#endif

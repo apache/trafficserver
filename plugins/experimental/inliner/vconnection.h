@@ -20,10 +20,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef VCONNECTION_H
-#define VCONNECTION_H
 
-#include <assert.h>
+#pragma once
+
+#include <cassert>
 
 #include "ts.h"
 
@@ -42,9 +42,9 @@ namespace io
 
       Read(TSVConn v, T &&t, const int64_t s) : vconnection_(v), t_(std::forward<T>(t))
       {
-        assert(vconnection_ != NULL);
-        TSCont continuation = TSContCreate(Self::handleRead, NULL);
-        assert(continuation != NULL);
+        assert(vconnection_ != nullptr);
+        TSCont continuation = TSContCreate(Self::handleRead, nullptr);
+        assert(continuation != nullptr);
         TSContDataSet(continuation, this);
         in_.vio = TSVConnRead(vconnection_, continuation, in_.buffer, s);
       }
@@ -52,9 +52,9 @@ namespace io
       static void
       close(Self *const s)
       {
-        assert(s != NULL);
+        assert(s != nullptr);
         TSIOBufferReaderConsume(s->in_.reader, TSIOBufferReaderAvail(s->in_.reader));
-        assert(s->vconnection_ != NULL);
+        assert(s->vconnection_ != nullptr);
         TSVConnShutdown(s->vconnection_, 1, 1);
         TSVConnClose(s->vconnection_);
         delete s;
@@ -64,7 +64,7 @@ namespace io
       handleRead(TSCont c, TSEvent e, void *)
       {
         Self *const self = static_cast<Self *const>(TSContDataGet(c));
-        assert(self != NULL);
+        assert(self != nullptr);
         switch (e) {
         case TS_EVENT_VCONN_EOS:
         case TS_EVENT_VCONN_READ_COMPLETE:
@@ -77,12 +77,12 @@ namespace io
           if (e == TS_EVENT_VCONN_READ_COMPLETE || e == TS_EVENT_VCONN_EOS) {
             self->t_.done();
             close(self);
-            TSContDataSet(c, NULL);
+            TSContDataSet(c, nullptr);
             TSContDestroy(c);
           }
         } break;
         default:
-          assert(false); // UNRECHEABLE.
+          assert(false); // UNREACHABLE.
           break;
         }
         return TS_SUCCESS;
@@ -98,8 +98,6 @@ namespace io
       new Read<C>(v, std::forward<C>(c), s);
     }
 
-  } // end of vconnection namespace
-} // end of io namespace
-} // end of ats namespace
-
-#endif // VCONNECTION_H
+  } // namespace vconnection
+} // namespace io
+} // namespace ats

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef LOG_BUFFER_SINK
-#define LOG_BUFFER_SINK
+#pragma once
 
 #include "LogBuffer.h"
 
@@ -47,5 +46,3 @@ public:
   virtual int preproc_and_try_delete(LogBuffer *buffer) = 0;
   virtual ~LogBufferSink(){};
 };
-
-#endif

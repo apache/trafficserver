@@ -32,10 +32,10 @@
  *
  ***************************************************************************/
 
-#ifndef _NETWORK_UTILS_REMOTE_H_
-#define _NETWORK_UTILS_REMOTE_H_
+#pragma once
 
 #include "mgmtapi.h"
+#include "ts/apidefs.h"
 #include "NetworkMessage.h"
 #include "EventCallback.h"
 
@@ -56,7 +56,8 @@ void set_socket_paths(const char *path);
  * the client connection information stored in the variables in
  * NetworkUtilsRemote.cc
  */
-TSMgmtError ts_connect(); /* TODO: update documenation, Renamed due to conflict with connect() in <sys/socket.h> on some platforms*/
+TSMgmtError
+ts_connect(); /* TODO: update documentation, Renamed due to conflict with connect() in <sys/socket.h> on some platforms*/
 TSMgmtError disconnect();
 TSMgmtError reconnect();
 TSMgmtError reconnect_loop(int num_attempts);
@@ -66,7 +67,12 @@ void *event_poll_thread_main(void *arg);
 
 struct mgmtapi_sender : public mgmt_message_sender {
   explicit mgmtapi_sender(int _fd) : fd(_fd) {}
-  virtual TSMgmtError send(void *msg, size_t msglen) const;
+  TSMgmtError send(void *msg, size_t msglen) const override;
+  bool
+  is_connected() const override
+  {
+    return fd != ts::NO_FD;
+  }
 
   int fd;
 };
@@ -87,5 +93,3 @@ TSMgmtError send_unregister_all_callbacks(int fd, CallbackTable *cb_table);
  * Un-marshalling (parse responses)
  *****************************************************************************/
 TSMgmtError parse_generic_response(OpType optype, int fd);
-
-#endif /* _NETWORK_UTILS_REMOTE_H_ */

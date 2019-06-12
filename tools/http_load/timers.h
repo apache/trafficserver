@@ -25,8 +25,7 @@
 ** SUCH DAMAGE.
 */
 
-#ifndef _TIMERS_H_
-#define _TIMERS_H_
+#pragma once
 
 #include <sys/time.h>
 
@@ -100,5 +99,3 @@ extern void tmr_cleanup(void);
 
 /* Cancel all timers and free storage, usually in preparation for exitting. */
 extern void tmr_destroy(void);
-
-#endif /* _TIMERS_H_ */

@@ -16,53 +16,92 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
-# This disables LuaJIT for now, to avoid all the warnings from it. Maybe we need
-# to talk to the author of it, or ideally, figure out how to get clang-analyzer to
-# ignore them ?
+# Where are our LLVM tools?
+LLVM_BASE=${LLVM:-/opt/llvm}
+NPROCS=${NPROCS:-$(getconf _NPROCESSORS_ONLN)}
+NOCLEAN=${NOCLEAN:-}
+OUTPUT_BASE=${OUTPUT_BASE:-/home/jenkins/clang-analyzer}
 
 # Options
 options="--status-bugs --keep-empty"
-configure="--enable-experimental-plugins --enable-cppapi --disable-luajit"
+configure="--enable-experimental-plugins --with-luajit"
 
 # Additional checkers
 # Phil says these are all FP's: -enable-checker alpha.security.ArrayBoundV2
+#           -enable-checker alpha.unix.PthreadLock\
 checkers="-enable-checker alpha.unix.cstring.BufferOverlap \
-          -enable-checker alpha.unix.PthreadLock\
           -enable-checker alpha.core.BoolAssignment \
           -enable-checker alpha.core.CastSize \
           -enable-checker alpha.core.SizeofPtr"
-
 
 # These shenanigans are here to allow it to run both manually, and via Jenkins
 test -z "${ATS_MAKE}" && ATS_MAKE="make"
 test ! -z "${WORKSPACE}" && cd "${WORKSPACE}/src"
 
+# Check to see if this is a Github PR build (so not a github branch per-se)
+test "${JOB_NAME#*-github}" != "${JOB_NAME}" && ATS_BRANCH="github"
+
 # Where to store the results, special case for the CI
 output="/tmp"
-test -d "/home/jenkins/clang-analyzer" && output="/home/jenkins/clang-analyzer"
 
+# Find a Jenkins output tree if possible
+if [ "${JOB_NAME#*-github}" != "${JOB_NAME}" ]; then
+    # This is a Github PR build, override the branch name accordingly
+    ATS_BRANCH="github"
+    if [ -w "${OUTPUT_BASE}/${ATS_BRANCH}" ]; then
+        output="${OUTPUT_BASE}/${ATS_BRANCH}/${ghprbPullId}"
+        [ ! -d "${output}"] && mkdir "${output}"
+    fi
+    github_pr=" PR #${ghprbPullId}"
+    results_url="https://ci.trafficserver.apache.org/clang-analyzer/${ATS_BRANCH}/${ghprbPullId}/"
+else
+    test -w "${OUTPUT_BASE}/${ATS_BRANCH}" && output="${OUTPUT_BASE}/${ATS_BRANCH}"
+    github_pr=""
+    results_url="https://ci.trafficserver.apache.org/clang-analyzer/${ATS_BRANCH}/"
+fi
+
+# Tell scan-build to use clang as the underlying compiler to actually build
+# source. If you don't do this, it will default to GCC.
+export CCC_CC=${LLVM_BASE}/bin/clang
+export CCC_CXX=${LLVM_BASE}/bin/clang++
+
+# This can be used to override any of those settings above
+[ -f ./.clang-analyzer ] && source ./.clang-analyzer
+
+# Don't do clang-analyzer runs on 7.1.x branch, for e.g. Github PRs
+grep -q 70010 configure.ac && echo "7.1.x branch detected, stop here!" && exit 0
+grep -q 80000 configure.ac && echo "8.0.x branch detected, stop here!" && exit 0
+grep -q 80010 configure.ac && echo "8.1.x branch detected, stop here!" && exit 0
+
+# Start the build / scan
+[ "$output" != "/tmp" ] && echo "Results (if any) can be found at ${results_url}"
 autoreconf -fi
-#scan-build ./configure ${configure}
-./configure ${configure}
-/opt/llvm/bin/scan-build ${checkers} ${options} -o ${output} --html-title="ATS master branch"  ${ATS_MAKE} -j4
+${LLVM_BASE}/bin/scan-build --keep-cc ./configure ${configure} \
+    CXXFLAGS="-stdlib=libc++ -I${LLVM_BASE}/include/c++/v1" \
+    LDFLAGS="-L${LLVM_BASE}/lib64 -Wl,-rpath=${LLVM_BASE}/lib64" \
+    || exit 1
+
+# Since we don't want the analyzer to look at yamlcpp, build it first
+# without scan-build. The subsequent make will then skip it.
+# the all-local can be taken out and lib changed to lib/yamlcpp
+# by making yaml cpp a SUBDIRS in lib/Makefile.am.
+${ATS_MAKE} -j $NPROCS -C lib all-local V=1 Q= || exit 1
+
+${LLVM_BASE}/bin/scan-build --keep-cc ${checkers} ${options} -o ${output} \
+    --html-title="clang-analyzer: ${ATS_BRANCH}${github_pr}" \
+    ${ATS_MAKE} -j $NPROCS V=1 Q=
 status=$?
 
-${ATS_MAKE} distclean
+# Clean the work area unless NOCLEAN is set. This is just for debugging when you
+# need to see what the generated build did.
+if [ -z "$NOCLEAN" ]; then
+    ${ATS_MAKE} distclean
+fi
+[ "$output" != "/tmp" ] && echo "Results (if any) can be found at ${results_url}"
 
-# Cleanup old reports (save the last 10 reports), but only for the CI
-if [ "/tmp" !=  "$output" ]; then
-    cd ${output} || exit -1
-    for old in $(/usr/bin/ls -1t | tail -n +11); do
-	rm -rf $old
-    done
-
-    # Setup the symlink to the latest report
-    rm -f latest
-    ln -s $(/usr/bin/ls -1t | head -1) latest
-
-    # Purge the cached URL
-    #curl -o /dev/null -k -s -X PURGE https://ci.trafficserver.apache.org/files/clang-analyzer/latest/
+# Cleanup old reports, for main clang and github as well (if the local helper script is available)
+if [ -x "/admin/bin/clean-clang.sh" ]; then
+    /admin/bin/clean-clang.sh
 fi
 
 # Exit with the scan-build exit code (thanks to --status-bugs)

@@ -21,6 +21,8 @@
 
 #include "P_SSLConfig.h"
 #include "SSLSessionCache.h"
+#include "SSLStats.h"
+
 #include <cstring>
 
 #define SSLSESSIONCACHE_STRINGIFY0(x) #x
@@ -33,10 +35,8 @@
 #define PRINT_BUCKET(x)
 #endif
 
-using ts::detail::RBNode;
-
 /* Session Cache */
-SSLSessionCache::SSLSessionCache() : session_bucket(NULL), nbuckets(SSLConfigParams::session_cache_number_buckets)
+SSLSessionCache::SSLSessionCache() : nbuckets(SSLConfigParams::session_cache_number_buckets)
 {
   Debug("ssl.session_cache", "Created new ssl session cache %p with %zu buckets each with size max size %zu", this, nbuckets,
         SSLConfigParams::session_cache_max_bucket_size);
@@ -49,11 +49,21 @@ SSLSessionCache::~SSLSessionCache()
   delete[] session_bucket;
 }
 
+int
+SSLSessionCache::getSessionBuffer(const SSLSessionID &sid, char *buffer, int &len) const
+{
+  uint64_t hash            = sid.hash();
+  uint64_t target_bucket   = hash % nbuckets;
+  SSLSessionBucket *bucket = &session_bucket[target_bucket];
+
+  return bucket->getSessionBuffer(sid, buffer, len);
+}
+
 bool
 SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
 {
-  uint64_t hash = sid.hash();
-  uint64_t target_bucket = hash % nbuckets;
+  uint64_t hash            = sid.hash();
+  uint64_t target_bucket   = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
 
   if (is_debug_tag_set("ssl.session_cache")) {
@@ -69,8 +79,8 @@ SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
 void
 SSLSessionCache::removeSession(const SSLSessionID &sid)
 {
-  uint64_t hash = sid.hash();
-  uint64_t target_bucket = hash % nbuckets;
+  uint64_t hash            = sid.hash();
+  uint64_t target_bucket   = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
 
   if (is_debug_tag_set("ssl.session_cache")) {
@@ -80,15 +90,17 @@ SSLSessionCache::removeSession(const SSLSessionID &sid)
           target_bucket, bucket, buf, hash);
   }
 
-  SSL_INCREMENT_DYN_STAT(ssl_session_cache_eviction);
+  if (ssl_rsb) {
+    SSL_INCREMENT_DYN_STAT(ssl_session_cache_eviction);
+  }
   bucket->removeSession(sid);
 }
 
 void
 SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess)
 {
-  uint64_t hash = sid.hash();
-  uint64_t target_bucket = hash % nbuckets;
+  uint64_t hash            = sid.hash();
+  uint64_t target_bucket   = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
 
   if (is_debug_tag_set("ssl.session_cache")) {
@@ -104,7 +116,7 @@ SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess)
 void
 SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
 {
-  size_t len = i2d_SSL_SESSION(sess, NULL); // make sure we're not going to need more than SSL_MAX_SESSION_SIZE bytes
+  size_t len = i2d_SSL_SESSION(sess, nullptr); // make sure we're not going to need more than SSL_MAX_SESSION_SIZE bytes
   /* do not cache a session that's too big. */
   if (len > (size_t)SSL_MAX_SESSION_SIZE) {
     Debug("ssl.session_cache", "Unable to save SSL session because size of %zd exceeds the max of %d", len, SSL_MAX_SESSION_SIZE);
@@ -117,20 +129,14 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
     Debug("ssl.session_cache", "Inserting session '%s' to bucket %p.", buf, this);
   }
 
-  Ptr<IOBufferData> buf;
-  buf = new_IOBufferData(buffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-  ink_release_assert(static_cast<size_t>(buf->block_size()) >= len);
-  unsigned char *loc = reinterpret_cast<unsigned char *>(buf->data());
-  i2d_SSL_SESSION(sess, &loc);
-
-  ats_scoped_obj<SSLSession> ssl_session(new SSLSession(id, buf, len));
-
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
   if (!lock.is_locked()) {
-    SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
-    if (SSLConfigParams::session_cache_skip_on_lock_contention)
+    if (ssl_rsb) {
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
+    }
+    if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return;
-
+    }
     lock.acquire(this_ethread());
   }
 
@@ -139,10 +145,62 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
     removeOldestSession();
   }
 
+  // Don't insert if it is already there
+  SSLSession *node = queue.tail;
+  while (node) {
+    if (node->session_id == id) {
+      return;
+    }
+    node = node->link.prev;
+  }
+
+  Ptr<IOBufferData> buf;
+  buf = new_IOBufferData(buffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  ink_release_assert(static_cast<size_t>(buf->block_size()) >= len);
+  unsigned char *loc = reinterpret_cast<unsigned char *>(buf->data());
+  i2d_SSL_SESSION(sess, &loc);
+
+  ats_scoped_obj<SSLSession> ssl_session(new SSLSession(id, buf, len));
+
   /* do the actual insert */
   queue.enqueue(ssl_session.release());
 
   PRINT_BUCKET("insertSession after")
+}
+
+int
+SSLSessionBucket::getSessionBuffer(const SSLSessionID &id, char *buffer, int &len)
+{
+  int true_len = 0;
+  MUTEX_TRY_LOCK(lock, mutex, this_ethread());
+  if (!lock.is_locked()) {
+    if (ssl_rsb) {
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
+    }
+    if (SSLConfigParams::session_cache_skip_on_lock_contention) {
+      return true_len;
+    }
+
+    lock.acquire(this_ethread());
+  }
+
+  // We work backwards because that's the most likely place we'll find our session...
+  SSLSession *node = queue.tail;
+  while (node) {
+    if (node->session_id == id) {
+      true_len = node->len_asn1_data;
+      if (buffer) {
+        const unsigned char *loc = reinterpret_cast<const unsigned char *>(node->asn1_data->data());
+        if (true_len < len) {
+          len = true_len;
+        }
+        memcpy(buffer, loc, len);
+        return true_len;
+      }
+    }
+    node = node->link.prev;
+  }
+  return 0;
 }
 
 bool
@@ -158,9 +216,12 @@ SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess)
 
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
   if (!lock.is_locked()) {
-    SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
-    if (SSLConfigParams::session_cache_skip_on_lock_contention)
+    if (ssl_rsb) {
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
+    }
+    if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return false;
+    }
 
     lock.acquire(this_ethread());
   }
@@ -172,7 +233,7 @@ SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess)
   while (node) {
     if (node->session_id == id) {
       const unsigned char *loc = reinterpret_cast<const unsigned char *>(node->asn1_data->data());
-      *sess = d2i_SSL_SESSION(NULL, &loc, node->len_asn1_data);
+      *sess                    = d2i_SSL_SESSION(nullptr, &loc, node->len_asn1_data);
 
       return true;
     }
@@ -233,14 +294,11 @@ SSLSessionBucket::removeSession(const SSLSessionID &id)
       delete node;
       return;
     }
+    node = node->link.next;
   }
 }
 
 /* Session Bucket */
-SSLSessionBucket::SSLSessionBucket() : mutex(new_ProxyMutex())
-{
-}
+SSLSessionBucket::SSLSessionBucket() : mutex(new_ProxyMutex()) {}
 
-SSLSessionBucket::~SSLSessionBucket()
-{
-}
+SSLSessionBucket::~SSLSessionBucket() {}

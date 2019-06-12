@@ -21,8 +21,8 @@
   limitations under the License.
  */
 
-#include "ts/ink_platform.h"
-#include "ts/ink_memory.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_memory.h"
 #include "ExpandingArray.h"
 
 ExpandingArray::ExpandingArray(int initialSize, bool freeContents)
@@ -34,8 +34,8 @@ ExpandingArray::ExpandingArray(int initialSize, bool freeContents)
   internalArray = (void **)ats_malloc(initialSize * sizeof(void *));
 
   freeContentsOnDestruct = freeContents;
-  internalArraySize = initialSize;
-  numValidValues = 0;
+  internalArraySize      = initialSize;
+  numValidValues         = 0;
 }
 
 ExpandingArray::~ExpandingArray()
@@ -53,7 +53,7 @@ void *ExpandingArray::operator[](int index)
   if (index < numValidValues) {
     return internalArray[index];
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 

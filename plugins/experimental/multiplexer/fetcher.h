@@ -20,15 +20,15 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef NEW_FETCHER_H
-#define NEW_FETCHER_H
+
+#pragma once
 
 #include <arpa/inet.h>
 #include <iostream>
 #include <limits>
 #include <netinet/in.h>
 
-#include <inttypes.h>
+#include <cinttypes>
 
 #include "chunk-decoder.h"
 #include "ts.h"
@@ -42,12 +42,12 @@
 namespace ats
 {
 struct HttpParser {
-  bool parsed_;
+  bool parsed_ = false;
   TSHttpParser parser_;
   TSMBuffer buffer_;
   TSMLoc location_;
 
-  void destroyParser(void);
+  void destroyParser();
 
   ~HttpParser()
   {
@@ -56,7 +56,7 @@ struct HttpParser {
     destroyParser();
   }
 
-  HttpParser(void) : parsed_(false), parser_(TSHttpParserCreate()), buffer_(TSMBufferCreate()), location_(TSHttpHdrCreate(buffer_))
+  HttpParser() : parser_(TSHttpParserCreate()), buffer_(TSMBufferCreate()), location_(TSHttpHdrCreate(buffer_))
   {
     TSHttpHdrTypeSet(buffer_, location_, TS_HTTP_TYPE_RESPONSE);
   }
@@ -64,7 +64,7 @@ struct HttpParser {
   bool parse(io::IO &);
 
   int
-  statusCode(void) const
+  statusCode() const
   {
     return static_cast<int>(TSHttpHdrStatusGet(buffer_, location_));
   }
@@ -112,12 +112,12 @@ template <class T> struct HttpTransaction {
     : parsingHeaders_(false),
       abort_(false),
       timeout_(false),
-      in_(NULL),
+      in_(nullptr),
       out_(i),
       vconnection_(v),
       continuation_(c),
       t_(t),
-      chunkDecoder_(NULL)
+      chunkDecoder_(nullptr)
   {
     assert(vconnection_ != NULL);
     assert(continuation_ != NULL);
@@ -157,14 +157,14 @@ template <class T> struct HttpTransaction {
   static bool
   isChunkEncoding(const TSMBuffer b, const TSMLoc l)
   {
-    assert(b != NULL);
-    assert(l != NULL);
-    bool result = false;
+    assert(b != nullptr);
+    assert(l != nullptr);
+    bool result        = false;
     const TSMLoc field = TSMimeHdrFieldFind(b, l, TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING);
-    if (field != NULL) {
+    if (field != nullptr) {
       int length;
       const char *const value = TSMimeHdrFieldValueStringGet(b, l, field, -1, &length);
-      if (value != NULL && length == TS_HTTP_LEN_CHUNKED) {
+      if (value != nullptr && length == TS_HTTP_LEN_CHUNKED) {
         result = strncasecmp(value, TS_HTTP_VALUE_CHUNKED, TS_HTTP_LEN_CHUNKED) == 0;
       }
       TSHandleMLocRelease(b, l, field);
@@ -183,7 +183,7 @@ template <class T> struct HttpTransaction {
       self->t_.error();
       self->abort();
       close(self);
-      TSContDataSet(c, NULL);
+      TSContDataSet(c, nullptr);
       break;
     case TS_EVENT_VCONN_EOS:
       TSDebug(PLUGIN_TAG, "HttpTransaction: EOS");
@@ -215,11 +215,14 @@ template <class T> struct HttpTransaction {
         if (!self->parsingHeaders_) {
           if (self->chunkDecoder_ != NULL) {
             available = self->chunkDecoder_->decode(self->in_->reader);
-            do {
+            if (available == 0) {
+              self->t_.data(self->in_->reader, available);
+            }
+            while (available > 0) {
               self->t_.data(self->in_->reader, available);
               TSIOBufferReaderConsume(self->in_->reader, available);
               available = self->chunkDecoder_->decode(self->in_->reader);
-            } while (available > 0);
+            }
           } else {
             self->t_.data(self->in_->reader, available);
             TSIOBufferReaderConsume(self->in_->reader, available);
@@ -229,14 +232,14 @@ template <class T> struct HttpTransaction {
       if (e == TS_EVENT_VCONN_READ_COMPLETE || e == TS_EVENT_VCONN_EOS) {
         self->t_.done();
         close(self);
-        TSContDataSet(c, NULL);
+        TSContDataSet(c, nullptr);
       } else if (self->chunkDecoder_ != NULL && self->chunkDecoder_->isEnd()) {
         assert(self->parsingHeaders_ == false);
         assert(isChunkEncoding(self->parser_.buffer_, self->parser_.location_));
         self->abort();
         self->t_.done();
         close(self);
-        TSContDataSet(c, NULL);
+        TSContDataSet(c, nullptr);
       } else {
         TSVIOReenable(self->in_->vio);
       }
@@ -265,11 +268,11 @@ template <class T> struct HttpTransaction {
       self->t_.timeout();
       self->abort();
       close(self);
-      TSContDataSet(c, NULL);
+      TSContDataSet(c, nullptr);
       break;
 
     default:
-      assert(false); // UNRECHEABLE.
+      assert(false); // UNREACHABLE.
     }
     return 0;
   }
@@ -282,15 +285,15 @@ get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const in
   typedef HttpTransaction<T> Transaction;
   struct sockaddr_in socket;
   socket.sin_family = AF_INET;
-  socket.sin_port = 80;
+  socket.sin_port   = 80;
   if (!inet_pton(AF_INET, a.c_str(), &socket.sin_addr)) {
     TSDebug(PLUGIN_TAG, "ats::get Invalid address provided \"%s\".", a.c_str());
     return false;
   }
   TSVConn vconn = TSHttpConnect(reinterpret_cast<sockaddr *>(&socket));
-  assert(vconn != NULL);
-  TSCont contp = TSContCreate(Transaction::handle, NULL);
-  assert(contp != NULL);
+  assert(vconn != nullptr);
+  TSCont contp = TSContCreate(Transaction::handle, TSMutexCreate());
+  assert(contp != nullptr);
   Transaction *transaction = new Transaction(vconn, contp, i, l, t);
   TSContDataSet(contp, transaction);
   if (ti > 0) {
@@ -306,6 +309,4 @@ get(io::IO *const i, const int64_t l, const T &t, const int64_t ti = 0)
 {
   return get("127.0.0.1", i, l, t, ti);
 }
-} // end of ats namespace
-
-#endif // NEW_FETCHER_H
+} // namespace ats

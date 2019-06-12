@@ -16,54 +16,77 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = \
-  -I$(top_srcdir)/iocore/eventsystem \
-  -I$(top_srcdir)/iocore/utils \
-  -I$(top_srcdir)/mgmt \
-  -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/lib
+include $(top_srcdir)/build/tidy.mk
 
-noinst_LIBRARIES = librecords_lm.a librecords_p.a librecords_cop.a
+check_PROGRAMS = test_librecords
+
+AM_CPPFLAGS += \
+	-I$(abs_top_srcdir)/iocore/eventsystem \
+	-I$(abs_top_srcdir)/iocore/utils \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/api/include \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/include \
+	-I$(abs_top_srcdir)/lib \
+	$(TS_INCLUDES)
+
+noinst_LIBRARIES = librecords_lm.a librecords_p.a
 
 librecords_COMMON = \
-  I_RecAlarms.h \
-  I_RecCore.h \
-  I_RecDefs.h \
-  I_RecEvents.h \
-  I_RecHttp.h \
-  I_RecMutex.h \
-  I_RecSignals.h \
-  P_RecCore.cc \
-  P_RecCore.h \
-  P_RecDefs.h \
-  P_RecFile.h \
-  P_RecFile.h \
-  P_RecMessage.h \
-  P_RecUtils.h \
-  RecConfigParse.cc \
-  RecCore.cc \
-  RecDebug.cc \
-  RecFile.cc \
-  RecHttp.cc \
-  RecMessage.cc \
-  RecMutex.cc \
-  RecRawStats.cc \
-  RecUtils.cc
+	I_RecAlarms.h \
+	I_RecCore.h \
+	I_RecDefs.h \
+	I_RecEvents.h \
+	I_RecHttp.h \
+	I_RecMutex.h \
+	I_RecSignals.h \
+	P_RecCore.cc \
+	P_RecCore.h \
+	P_RecDefs.h \
+	P_RecFile.h \
+	P_RecFile.h \
+	P_RecMessage.h \
+	P_RecUtils.h \
+	RecConfigParse.cc \
+	RecCore.cc \
+	RecDebug.cc \
+	RecFile.cc \
+	RecHttp.cc \
+	RecMessage.cc \
+	RecMutex.cc \
+	RecRawStats.cc \
+	RecUtils.cc
 
 librecords_lm_a_SOURCES = \
-  $(librecords_COMMON) \
-  I_RecLocal.h \
-  P_RecLocal.h \
-  RecLocal.cc
+	$(librecords_COMMON) \
+	I_RecLocal.h \
+	P_RecLocal.h \
+	RecLocal.cc
 
 librecords_p_a_SOURCES = \
-  $(librecords_COMMON) \
-  I_RecProcess.h \
-  P_RecProcess.h \
-  RecProcess.cc
+	$(librecords_COMMON) \
+	I_RecProcess.h \
+	P_RecProcess.h \
+	RecProcess.cc
 
-librecords_cop_a_SOURCES = \
-  RecConfigParse.cc \
-  RecFile.cc \
-  RecDebug.cc
+TESTS = $(check_PROGRAMS)
+
+test_librecords_CPPFLAGS = $(AM_CPPFLAGS)\
+        -I$(abs_top_srcdir)/tests/include
+
+test_librecords_SOURCES = \
+    unit_tests/unit_test_main.cc \
+    unit_tests/test_RecHttp.cc
+
+test_librecords_LDADD = \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	@HWLOC_LIBS@ @LIBCAP@
+
+
+clang-tidy-local: $(sort $(DIST_SOURCES))
+	$(CXX_Clang_Tidy)

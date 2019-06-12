@@ -23,8 +23,8 @@ Webp Transform Plugin
 *********************
 
 This plugin converts jpeg and png images and transforms them into webp format.
-All response with content-type 'image/jpeg' or 'image/png' will go through the transform. 
-Content-type is changed to 'image/webp' on successful transformation. 
+All response with content-type 'image/jpeg' or 'image/png' will go through the transform.
+Content-type is changed to 'image/webp' on successful transformation.
 
 Installation
 ============

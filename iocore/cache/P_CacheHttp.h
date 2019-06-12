@@ -21,11 +21,9 @@
   limitations under the License.
  */
 
-#ifndef __CACHE_HTTP_H__
-#define __CACHE_HTTP_H__
+#pragma once
 
 #include "P_CacheArray.h"
-#ifdef HTTP_CACHE
 #include "HTTP.h"
 #include "URL.h"
 
@@ -35,23 +33,17 @@ typedef HTTPInfo CacheHTTPInfo;
 
 #define OFFSET_BITS 24
 enum {
-  OWNER_NONE = 0,
+  OWNER_NONE  = 0,
   OWNER_CACHE = 1,
-  OWNER_HTTP = 2,
+  OWNER_HTTP  = 2,
 };
-
-#else
-struct CacheHTTPInfo {
-};
-
-#endif // HTTP_CACHE
 
 struct vec_info {
   CacheHTTPInfo alternate;
 };
 
 struct CacheHTTPInfoVector {
-  void *magic;
+  void *magic = nullptr;
 
   CacheHTTPInfoVector();
   ~CacheHTTPInfoVector();
@@ -76,11 +68,11 @@ struct CacheHTTPInfoVector {
 
   int marshal_length();
   int marshal(char *buf, int length);
-  uint32_t get_handles(const char *buf, int length, RefCountObj *block_ptr = NULL);
+  uint32_t get_handles(const char *buf, int length, RefCountObj *block_ptr = nullptr);
   int unmarshal(const char *buf, int length, RefCountObj *block_ptr);
 
   CacheArray<vec_info> data;
-  int xcount;
+  int xcount = 0;
   Ptr<RefCountObj> vector_buf;
 };
 
@@ -91,5 +83,3 @@ CacheHTTPInfoVector::get(int idx)
   ink_assert(idx < xcount);
   return &data[idx].alternate;
 }
-
-#endif /* __CACHE_HTTP_H__ */

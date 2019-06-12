@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _INK_BULK_IO_H
-#define _INK_BULK_IO_H
+#pragma once
 
 #ifndef _KERNEL_
 #include <netinet/ip.h>
@@ -141,7 +140,7 @@ struct InkBulkIORequest {
  */
 #define INKBIO_MAX_PKTS_PER_REQ_BLOCK                                                              \
   ((INKBIO_PKT_SIZE_WO_UDPHDR - (sizeof(struct InkBulkIORequest) + sizeof(struct InkBulkIOPkt))) / \
-   MAX((sizeof(struct InkBulkIORequest)), (sizeof(struct InkBulkIOPkt))))
+   std::max((sizeof(struct InkBulkIORequest)), (sizeof(struct InkBulkIOPkt))))
 
 /*
  * Requests are just block-ids---the block id points to the inkbio-block
@@ -153,7 +152,7 @@ struct InkBulkIORequest {
 
 /*
  * There is always 1 req. block and 1 pkt. block.  Next,
- * Leave space for 1 "NULL" block for the Address information.
+ * Leave space for 1 "nullptr" block for the Address information.
  */
 
 #define INKBIO_MAX_SPLIT_WO_HDR_PER_SPLIT_BLOCK                                                           \
@@ -165,5 +164,3 @@ struct InkBulkIORequest {
   ((INKBIO_PKT_SIZE_WO_UDPHDR -                                                                           \
     (sizeof(struct InkBulkIORequest) + sizeof(struct InkBulkIOPkt) + sizeof(struct InkBulkIOAddrInfo))) / \
    (sizeof(struct InkBulkIOPkt) + sizeof(struct InkBulkIOAddrInfo)))
-
-#endif

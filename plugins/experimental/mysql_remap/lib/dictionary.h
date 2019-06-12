@@ -42,8 +42,7 @@
         $Revision: 1.12 $
 */
 
-#ifndef _DICTIONARY_H_
-#define _DICTIONARY_H_
+#pragma once
 
 /*---------------------------------------------------------------------------
                                                                 Includes
@@ -188,5 +187,3 @@ void dictionary_unset(dictionary *d, char *key);
  */
 /*--------------------------------------------------------------------------*/
 void dictionary_dump(dictionary *d, FILE *out);
-
-#endif

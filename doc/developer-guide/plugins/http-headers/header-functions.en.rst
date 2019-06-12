@@ -52,9 +52,6 @@ the methods defined in the HTTP 1.1 specification
 ``TS_HTTP_METHOD_HEAD``
    "HEAD"
 
-``TS_HTTP_METHOD_ICP_QUERY``
-   "ICP\_QUERY"
-
 ``TS_HTTP_METHOD_OPTIONS``
    "OPTIONS"
 

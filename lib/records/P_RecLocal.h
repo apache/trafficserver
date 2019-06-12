@@ -21,9 +21,6 @@
   limitations under the License.
  */
 
-#ifndef _P_REC_LOCAL_H_
-#define _P_REC_LOCAL_H_
+#pragma once
 
 #include "I_RecLocal.h"
-
-#endif

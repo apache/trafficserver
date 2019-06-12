@@ -21,113 +21,97 @@
   limitations under the License.
  */
 
-#include "ts/ink_defs.h"
+#include "tscore/ink_defs.h"
 #include "UrlMapping.h"
-#include "I_RecCore.h"
-#include "ts/ink_cap.h"
-/**
- *
-**/
-url_mapping::url_mapping(int rank /* = 0 */)
-  : from_path_len(0),
-    fromURL(),
-    toUrl(),
-    homePageRedirect(false),
-    unique(false),
-    default_redirect_url(false),
-    optional_referer(false),
-    negative_referer(false),
-    wildcard_from_scheme(false),
-    tag(NULL),
-    filter_redirect_url(NULL),
-    referer_list(0),
-    redir_chunk_list(0),
-    filter(NULL),
-    _plugin_count(0),
-    _rank(rank)
-{
-  memset(_plugin_list, 0, sizeof(_plugin_list));
-  memset(_instance_data, 0, sizeof(_instance_data));
-}
+#include "records/I_RecCore.h"
+#include "tscore/ink_cap.h"
 
 /**
  *
-**/
+ **/
 bool
-url_mapping::add_plugin(remap_plugin_info *i, void *ih)
+url_mapping::add_plugin(RemapPluginInfo *i, void *ih)
 {
-  if (_plugin_count >= MAX_REMAP_PLUGIN_CHAIN)
-    return false;
-
-  _plugin_list[_plugin_count] = i;
-  _instance_data[_plugin_count] = ih;
-  ++_plugin_count;
+  _plugin_list.push_back(i);
+  _instance_data.push_back(ih);
 
   return true;
 }
 
 /**
  *
-**/
-remap_plugin_info *
-url_mapping::get_plugin(unsigned int index) const
+ **/
+RemapPluginInfo *
+url_mapping::get_plugin(std::size_t index) const
 {
-  Debug("url_rewrite", "get_plugin says we have %d plugins and asking for plugin %d", _plugin_count, index);
-  if ((_plugin_count == 0) || unlikely(index > _plugin_count))
-    return NULL;
+  Debug("url_rewrite", "get_plugin says we have %zu plugins and asking for plugin %zu", plugin_count(), index);
+  if (index < _plugin_list.size()) {
+    return _plugin_list[index];
+  }
+  return nullptr;
+}
 
-  return _plugin_list[index];
+void *
+url_mapping::get_instance(std::size_t index) const
+{
+  if (index < _instance_data.size()) {
+    return _instance_data[index];
+  }
+  return nullptr;
 }
 
 /**
  *
-**/
+ **/
 void
 url_mapping::delete_instance(unsigned int index)
 {
-  void *ih = get_instance(index);
-  remap_plugin_info *p = get_plugin(index);
+  void *ih           = get_instance(index);
+  RemapPluginInfo *p = get_plugin(index);
 
-  if (ih && p && p->fp_tsremap_delete_instance) {
-    p->fp_tsremap_delete_instance(ih);
+  if (ih && p && p->delete_instance_cb) {
+    p->delete_instance_cb(ih);
   }
 }
 
 /**
  *
-**/
+ **/
 url_mapping::~url_mapping()
 {
   referer_info *r;
   redirect_tag_str *rc;
   acl_filter_rule *afr;
 
-  tag = (char *)ats_free_null(tag);
+  tag                 = (char *)ats_free_null(tag);
   filter_redirect_url = (char *)ats_free_null(filter_redirect_url);
 
-  while ((r = referer_list) != 0) {
+  while ((r = referer_list) != nullptr) {
     referer_list = r->next;
     delete r;
   }
 
-  while ((rc = redir_chunk_list) != 0) {
+  while ((rc = redir_chunk_list) != nullptr) {
     redir_chunk_list = rc->next;
     delete rc;
   }
 
-  // Delete all instance data
-  for (unsigned int i = 0; i < _plugin_count; ++i)
+  // Delete all instance data, this gets ugly because to delete the instance data, we also
+  // must know which plugin this is associated with. Hence, looping with index instead of a
+  // normal iterator. ToDo: Maybe we can combine them into another container.
+  for (std::size_t i = 0; i < plugin_count(); ++i) {
     delete_instance(i);
+  }
 
   // Delete filters
-  while ((afr = filter) != NULL) {
+  while ((afr = filter) != nullptr) {
     filter = afr->next;
     delete afr;
   }
 
   // Destroy the URLs
   fromURL.destroy();
-  toUrl.destroy();
+  toURL.destroy();
 }
 
 void
@@ -136,30 +120,31 @@ url_mapping::Print()
   char from_url_buf[131072], to_url_buf[131072];
 
   fromURL.string_get_buf(from_url_buf, (int)sizeof(from_url_buf));
-  toUrl.string_get_buf(to_url_buf, (int)sizeof(to_url_buf));
-  printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %u plugins]\n", from_url_buf, unique ? "(unique)" : "",
-         to_url_buf, homePageRedirect ? "(R)" : "", tag ? tag : "", _plugin_count > 0 ? "are" : "not", _plugin_count);
+  toURL.string_get_buf(to_url_buf, (int)sizeof(to_url_buf));
+  printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %zu plugins]\n", from_url_buf, unique ? "(unique)" : "",
+         to_url_buf, homePageRedirect ? "(R)" : "", tag ? tag : "", plugin_count() > 0 ? "are" : "not", plugin_count());
 }
 
 /**
  *
-**/
+ **/
 redirect_tag_str *
 redirect_tag_str::parse_format_redirect_url(char *url)
 {
   char *c;
-  redirect_tag_str *r, **rr;
-  redirect_tag_str *list = 0;
-  char type = 0;
+  redirect_tag_str *r;
+  redirect_tag_str *list = nullptr;
 
   if (url && *url) {
-    for (rr = &list; *(c = url) != 0;) {
+    for (redirect_tag_str **rr = &list; *(c = url) != 0;) {
+      char type = 0;
       for (type = 's'; *c; c++) {
         if (c[0] == '%') {
           char tmp_type = (char)tolower((int)c[1]);
           if (tmp_type == 'r' || tmp_type == 'f' || tmp_type == 't' || tmp_type == 'o') {
-            if (url == c)
+            if (url == c) {
               type = tmp_type;
+            }
             break;
           }
         }
@@ -167,18 +152,19 @@ redirect_tag_str::parse_format_redirect_url(char *url)
       r = new redirect_tag_str();
       if (likely(r)) {
         if ((r->type = type) == 's') {
-          char svd = *c;
-          *c = 0;
+          char svd     = *c;
+          *c           = 0;
           r->chunk_str = ats_strdup(url);
-          *c = svd;
-          url = c;
-        } else
+          *c           = svd;
+          url          = c;
+        } else {
           url += 2;
-        (*rr = r)->next = 0;
-        rr = &(r->next);
-        // printf("\t***********'%c' - '%s'*******\n",r->type,r->chunk_str ? r->chunk_str : "<NULL>");
-      } else
+        }
+        (*rr = r)->next = nullptr;
+        rr              = &(r->next);
+      } else {
         break; /* memory allocation error */
+      }
     }
   }
   return list;
@@ -186,35 +172,39 @@ redirect_tag_str::parse_format_redirect_url(char *url)
 
 /**
  *
-**/
+ **/
 referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int errmsgbuf_size)
-  : next(0), referer(0), referer_size(0), any(false), negative(false), regx_valid(false)
+  : next(nullptr), referer(nullptr), referer_size(0), any(false), negative(false), regx_valid(false)
 {
   const char *error;
   int erroffset;
 
-  if (error_flag)
+  if (error_flag) {
     *error_flag = false;
-  regx = NULL;
+  }
+  regx = nullptr;
 
   if (_ref) {
     if (*_ref == '~') {
       negative = true;
       _ref++;
     }
-    if ((referer = ats_strdup(_ref)) != 0) {
+    if ((referer = ats_strdup(_ref)) != nullptr) {
       referer_size = strlen(referer);
-      if (!strcmp(referer, "*"))
+      if (!strcmp(referer, "*")) {
         any = true;
-      else {
-        regx = pcre_compile(referer, PCRE_CASELESS, &error, &erroffset, NULL);
+      } else {
+        regx = pcre_compile(referer, PCRE_CASELESS, &error, &erroffset, nullptr);
         if (!regx) {
-          if (errmsgbuf && (errmsgbuf_size - 1) > 0)
+          if (errmsgbuf && (errmsgbuf_size - 1) > 0) {
             ink_strlcpy(errmsgbuf, error, errmsgbuf_size);
-          if (error_flag)
+          }
+          if (error_flag) {
             *error_flag = true;
-        } else
+          }
+        } else {
           regx_valid = true;
+        }
       }
     }
   }
@@ -222,16 +212,16 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
 
 /**
  *
-**/
+ **/
 referer_info::~referer_info()
 {
   ats_free(referer);
-  referer = 0;
+  referer      = nullptr;
   referer_size = 0;
 
   if (regx_valid) {
     pcre_free(regx);
-    regx = NULL;
+    regx       = nullptr;
     regx_valid = false;
   }
 }

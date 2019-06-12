@@ -16,25 +16,29 @@
  * limitations under the License.
  */
 
+#include <array>
 #include "sslheaders.h"
 #include <memory>
-#include "ts/ink_defs.h"
 
 // Count of fields (not including SSL_HEADERS_FIELD_NONE).
 #define NUMFIELDS (SSL_HEADERS_FIELD_MAX - 1)
 
-static const struct _f {
+namespace
+{
+struct _f {
   const char *name;
   ExpansionField field;
-} fields[] = {
-  {"certificate", SSL_HEADERS_FIELD_CERTIFICATE}, {"subject", SSL_HEADERS_FIELD_SUBJECT},
-  {"issuer", SSL_HEADERS_FIELD_ISSUER},           {"serial", SSL_HEADERS_FIELD_SERIAL},
-  {"signature", SSL_HEADERS_FIELD_SIGNATURE},     {"notbefore", SSL_HEADERS_FIELD_NOTBEFORE},
-  {"notafter", SSL_HEADERS_FIELD_NOTAFTER},
 };
-
-// Static assert to guarantee the fields table is current.
-extern char assert_fields_are_populated[((sizeof(fields) / sizeof(fields[0])) - NUMFIELDS) == 0 ? 0 : -1];
+const std::array<_f, SSL_HEADERS_FIELD_MAX - 1> fields = {{
+  {"certificate", SSL_HEADERS_FIELD_CERTIFICATE},
+  {"subject", SSL_HEADERS_FIELD_SUBJECT},
+  {"issuer", SSL_HEADERS_FIELD_ISSUER},
+  {"serial", SSL_HEADERS_FIELD_SERIAL},
+  {"signature", SSL_HEADERS_FIELD_SIGNATURE},
+  {"notbefore", SSL_HEADERS_FIELD_NOTBEFORE},
+  {"notafter", SSL_HEADERS_FIELD_NOTAFTER},
+}};
+} // namespace
 
 bool
 SslHdrParseExpansion(const char *spec, SslHdrExpansion &exp)
@@ -44,7 +48,7 @@ SslHdrParseExpansion(const char *spec, SslHdrExpansion &exp)
 
   // First, split on '=' to separate the header name from the SSL expansion.
   sep = strchr(spec, '=');
-  if (sep == NULL) {
+  if (sep == nullptr) {
     SslHdrError("%s: missing '=' in SSL header expansion '%s'", PLUGIN_NAME, spec);
     return false;
   }
@@ -54,7 +58,7 @@ SslHdrParseExpansion(const char *spec, SslHdrExpansion &exp)
 
   // Next, split on '.' to separate the certificate selector from the field selector.
   sep = strchr(selector, '.');
-  if (sep == NULL) {
+  if (sep == nullptr) {
     SslHdrError("%s: missing '.' in SSL header expansion '%s'", PLUGIN_NAME, spec);
     return false;
   }
@@ -74,9 +78,9 @@ SslHdrParseExpansion(const char *spec, SslHdrExpansion &exp)
 
   // Push sep to point to the field selector.
   selector = sep + 1;
-  for (unsigned i = 0; i < countof(fields); ++i) {
-    if (strcmp(selector, fields[i].name) == 0) {
-      exp.field = fields[i].field;
+  for (auto field : fields) {
+    if (strcmp(selector, field.name) == 0) {
+      exp.field = field.field;
       return true;
     }
   }

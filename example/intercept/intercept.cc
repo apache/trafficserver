@@ -22,10 +22,10 @@
  */
 
 #include <ts/ts.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <string.h>
+#include <cstdlib>
+#include <cerrno>
+#include <cinttypes>
+#include <cstring>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -43,15 +43,15 @@
 // request. The TSQA test test-server-intercept exercises this plugin. You can
 // enable extensive logging with the "intercept" diagnostic tag.
 
-#define PLUGIN "intercept"
+#define PLUGIN_NAME "intercept"
 #define PORT 60000
 
-#define VDEBUG(fmt, ...) TSDebug(PLUGIN, fmt, ##__VA_ARGS__)
+#define VDEBUG(fmt, ...) TSDebug(PLUGIN_NAME, fmt, ##__VA_ARGS__)
 
 #if DEBUG
-#define VERROR(fmt, ...) TSDebug(PLUGIN, fmt, ##__VA_ARGS__)
+#define VERROR(fmt, ...) TSDebug(PLUGIN_NAME, fmt, ##__VA_ARGS__)
 #else
-#define VERROR(fmt, ...) TSError("[%s] %s: " fmt, PLUGIN, __FUNCTION__, ##__VA_ARGS__)
+#define VERROR(fmt, ...) TSError("[%s] %s: " fmt, PLUGIN_NAME, __FUNCTION__, ##__VA_ARGS__)
 #endif
 
 #define VIODEBUG(vio, fmt, ...)                                                                                              \
@@ -70,11 +70,11 @@ static int InterceptTxnHook(TSCont contp, TSEvent event, void *edata);
 // a write). We need two of these for each TSVConn; one to push
 // data into the TSVConn and one to pull data out.
 struct InterceptIOChannel {
-  TSVIO vio;
-  TSIOBuffer iobuf;
-  TSIOBufferReader reader;
+  TSVIO vio               = nullptr;
+  TSIOBuffer iobuf        = nullptr;
+  TSIOBufferReader reader = nullptr;
 
-  InterceptIOChannel() : vio(NULL), iobuf(NULL), reader(NULL) {}
+  InterceptIOChannel() {}
   ~InterceptIOChannel()
   {
     if (this->reader) {
@@ -89,7 +89,7 @@ struct InterceptIOChannel {
   void
   read(TSVConn vc, TSCont contp)
   {
-    TSReleaseAssert(this->vio == NULL);
+    TSReleaseAssert(this->vio == nullptr);
     TSReleaseAssert((this->iobuf = TSIOBufferCreate()));
     TSReleaseAssert((this->reader = TSIOBufferReaderAlloc(this->iobuf)));
 
@@ -99,7 +99,7 @@ struct InterceptIOChannel {
   void
   write(TSVConn vc, TSCont contp)
   {
-    TSReleaseAssert(this->vio == NULL);
+    TSReleaseAssert(this->vio == nullptr);
     TSReleaseAssert((this->iobuf = TSIOBufferCreate()));
     TSReleaseAssert((this->reader = TSIOBufferReaderAlloc(this->iobuf)));
 
@@ -120,8 +120,8 @@ struct InterceptIO {
     if (this->vc) {
       TSVConnClose(this->vc);
     }
-    this->vc = NULL;
-    this->readio.vio = this->writeio.vio = NULL;
+    this->vc         = nullptr;
+    this->readio.vio = this->writeio.vio = nullptr;
   }
 };
 
@@ -130,12 +130,12 @@ struct InterceptIO {
 // are intercepting is the server. Hence the "client" and
 // "server" nomenclature here.
 struct InterceptState {
-  TSHttpTxn txn; // The transaction on whose behalf we are intercepting.
+  TSHttpTxn txn = nullptr; // The transaction on whose behalf we are intercepting.
 
   InterceptIO client; // Server intercept VC state.
   InterceptIO server; // Intercept origin VC state.
 
-  InterceptState() : txn(NULL) {}
+  InterceptState() {}
   ~InterceptState() {}
 };
 
@@ -171,9 +171,9 @@ InterceptProxySideVC(const InterceptState *istate, TSVConn vc)
 static bool
 InterceptAttemptDestroy(InterceptState *istate, TSCont contp)
 {
-  if (istate->server.vc == NULL && istate->client.vc == NULL) {
+  if (istate->server.vc == nullptr && istate->client.vc == nullptr) {
     VDEBUG("destroying server intercept state istate=%p contp=%p", istate, contp);
-    TSContDataSet(contp, NULL); // Force a crash if we get additional events.
+    TSContDataSet(contp, nullptr); // Force a crash if we get additional events.
     TSContDestroy(contp);
     delete istate;
     return true;
@@ -282,7 +282,7 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     socket_type addr;
     argument_type cdata(TSContDataGet(contp));
     InterceptState *istate = new InterceptState();
-    int fd = -1;
+    int fd                 = -1;
 
     // This event is delivered by the continuation that we
     // attached in InterceptTxnHook, so the continuation data is
@@ -292,9 +292,9 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     // Set up a connection to our real origin, which will be
     // 127.0.0.1:$PORT.
     memset(&addr, 0, sizeof(addr));
-    addr.sin.sin_family = AF_INET;
+    addr.sin.sin_family      = AF_INET;
     addr.sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // XXX config option
-    addr.sin.sin_port = htons(PORT);                   // XXX config option
+    addr.sin.sin_port        = htons(PORT);            // XXX config option
 
     // Normally, we would use TSNetConnect to connect to a secondary service, but to demonstrate
     // the use of TSVConnFdCreate, we do a blocking connect inline. This it not recommended for
@@ -315,7 +315,7 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
       return TS_EVENT_NONE;
     }
 
-    if ((istate->server.vc = TSVConnFdCreate(fd)) == NULL) {
+    if ((istate->server.vc = TSVConnFdCreate(fd)) == nullptr) {
       VDEBUG("TSVconnFdCreate() failed");
       TSVConnAbort(arg.vc, TS_VC_CLOSE_ABORT);
 
@@ -329,7 +329,7 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     VDEBUG("binding client vc=%p to %s:%u", istate->client.vc, inet_ntop(AF_INET, &addr.sin.sin_addr, buf, sizeof(buf)),
            (unsigned)ntohs(addr.sin.sin_port));
 
-    istate->txn = cdata.txn;
+    istate->txn       = cdata.txn;
     istate->client.vc = arg.vc;
 
     // Reset the continuation data to be our intercept state
@@ -379,21 +379,21 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
 
   case TS_EVENT_VCONN_READ_READY: {
     argument_type cdata = TSContDataGet(contp);
-    TSVConn vc = TSVIOVConnGet(arg.vio);
-    InterceptIO *from = InterceptGetThisSide(cdata.istate, vc);
-    InterceptIO *to = InterceptGetOtherSide(cdata.istate, vc);
+    TSVConn vc          = TSVIOVConnGet(arg.vio);
+    InterceptIO *from   = InterceptGetThisSide(cdata.istate, vc);
+    InterceptIO *to     = InterceptGetOtherSide(cdata.istate, vc);
     int64_t nbytes;
 
     VIODEBUG(arg.vio, "ndone=%" PRId64 " ntodo=%" PRId64, TSVIONDoneGet(arg.vio), TSVIONTodoGet(arg.vio));
     VDEBUG("reading vio=%p vc=%p, istate=%p is bound to client vc=%p and server vc=%p", arg.vio, TSVIOVConnGet(arg.vio),
            cdata.istate, cdata.istate->client.vc, cdata.istate->server.vc);
 
-    if (to->vc == NULL) {
+    if (to->vc == nullptr) {
       VDEBUG("closing %s vc=%p", InterceptProxySide(cdata.istate, from), from->vc);
       from->close();
     }
 
-    if (from->vc == NULL) {
+    if (from->vc == nullptr) {
       VDEBUG("closing %s vc=%p", InterceptProxySide(cdata.istate, to), to->vc);
       to->close();
     }
@@ -425,13 +425,13 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     // The exception is where one side of the proxied connection
     // has been closed. Then we want to close the other side.
     argument_type cdata = TSContDataGet(contp);
-    TSVConn vc = TSVIOVConnGet(arg.vio);
-    InterceptIO *to = InterceptGetThisSide(cdata.istate, vc);
-    InterceptIO *from = InterceptGetOtherSide(cdata.istate, vc);
+    TSVConn vc          = TSVIOVConnGet(arg.vio);
+    InterceptIO *to     = InterceptGetThisSide(cdata.istate, vc);
+    InterceptIO *from   = InterceptGetOtherSide(cdata.istate, vc);
 
     // If the other side is closed, close this side too, but only if there
     // we have drained the write buffer.
-    if (from->vc == NULL) {
+    if (from->vc == nullptr) {
       VDEBUG("closing %s vc=%p with %" PRId64 " bytes to left", InterceptProxySide(cdata.istate, to), to->vc,
              TSIOBufferReaderAvail(to->writeio.reader));
       if (TSIOBufferReaderAvail(to->writeio.reader) == 0) {
@@ -453,11 +453,11 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     // to receiving EOS from the intercepted origin server, and
     // when handling errors.
 
-    TSVConn vc = TSVIOVConnGet(arg.vio);
+    TSVConn vc          = TSVIOVConnGet(arg.vio);
     argument_type cdata = TSContDataGet(contp);
 
     InterceptIO *from = InterceptGetThisSide(cdata.istate, vc);
-    InterceptIO *to = InterceptGetOtherSide(cdata.istate, vc);
+    InterceptIO *to   = InterceptGetOtherSide(cdata.istate, vc);
 
     VIODEBUG(arg.vio, "received EOS or ERROR from %s side", InterceptProxySideVC(cdata.istate, vc));
 
@@ -517,7 +517,7 @@ InterceptTxnHook(TSCont contp, TSEvent event, void *edata)
     if (InterceptShouldInterceptRequest(arg.txn)) {
       TSCont c = InterceptContCreate(InterceptInterceptionHook, TSMutexCreate(), arg.txn);
 
-      VDEBUG("intercepting orgin server request for txn=%p, cont=%p", arg.txn, c);
+      VDEBUG("intercepting origin server request for txn=%p, cont=%p", arg.txn, c);
       TSHttpTxnServerIntercept(c, arg.txn);
     }
 
@@ -538,9 +538,9 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)PLUGIN;
-  info.vendor_name = (char *)"MyCompany";
-  info.support_email = (char *)"ts-api-support@MyCompany.com";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
+  info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     VERROR("plugin registration failed\n");
@@ -548,8 +548,8 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
 
   // XXX accept hostname and port arguments
 
-  TxnHook = InterceptContCreate(InterceptTxnHook, NULL, NULL);
-  InterceptHook = InterceptContCreate(InterceptInterceptionHook, NULL, NULL);
+  TxnHook       = InterceptContCreate(InterceptTxnHook, nullptr, nullptr);
+  InterceptHook = InterceptContCreate(InterceptInterceptionHook, nullptr, nullptr);
 
   // Wait until after the cache lookup to decide whether to
   // intercept a request. For cache hits we will never intercept.

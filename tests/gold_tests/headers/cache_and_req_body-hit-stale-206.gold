@@ -1,0 +1,13 @@
+HTTP/1.1 206 Partial Content
+Last-Modified: ``
+Cache-Control: max-age=1
+Content-Length: 2
+Date: ``
+Age: ``
+Connection: keep-alive
+Via: ``
+Server: ``
+X-Cache-Key: http://127.0.0.1``
+X-Cache: hit-stale
+
+xx

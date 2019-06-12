@@ -29,11 +29,13 @@
  *
  ***************************************************************************/
 
-#ifndef EVENT_CONTROL_MAIN_H
-#define EVENT_CONTROL_MAIN_H
+#pragma once
 
 #include "mgmtapi.h"       //add the include path b/c included in web dir
 #include "CoreAPIShared.h" // for NUM_EVENTS
+#include "Alarms.h"
+
+#include <unordered_map>
 
 // use events_registered[event_id] as index to check if alarm is registered
 typedef struct {
@@ -44,7 +46,7 @@ typedef struct {
 
 EventClientT *new_event_client();
 void delete_event_client(EventClientT *client);
-void remove_event_client(EventClientT *client, InkHashTable *table);
+void remove_event_client(EventClientT *client, std::unordered_map<int, EventClientT *> &table);
 
 TSMgmtError init_mgmt_events();
 void delete_mgmt_events();
@@ -52,5 +54,3 @@ void delete_event_queue(LLQ *q);
 
 void apiAlarmCallback(alarm_t newAlarm, char *ip, char *desc);
 void *event_callback_main(void *arg);
-
-#endif

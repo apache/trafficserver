@@ -6,57 +6,68 @@ plugins to build large scale web applications.
 
 1. DIRECTORY STRUCTURE
 
-  traffic/ ............... top src dir
-  |-- ci/ ................ quality assurance and other CI tools and configs
-  |-- cmd/ ............... various command applications
-      |-- traffic_cop/ ..
-      |-- traffic_crashlog/
-      |-- traffic_ctl/ ... traffic_ctl command line management application
-      |-- traffic_layout/
-      |-- traffic_manager/
-      |-- traffic_top/ ... traffic_top application
-      |-- traffic_via/ ...
-      |-- traffic_wccp/ ..
-  |-- contrib ............ various contributed auxiliary pieces
-  |-- doc/ ...............
-      |-- admin/ ......... Admin guide documentations
-      |-- dot/ ........... Graphviz source files for docs pictures
-      |-- man/ ........... Unix style man-pages
-      |-- plugins/ ....... Documentation for our core plugins
-      |-- sdk/ ........... Plugin developer guide
-  |-- example/ ........... example plugins
-  |-- install/ ........... installation programs and scripts
-  |-- iocore/ ............
-      |-- aio/ ........... Asynchronous I/O core
-      |-- cache/ ......... Disk and RAM cache
-      |-- cluster/ ....... Cache and configuration clustering
-      |-- dns/ ........... DNS (asynchronous)
-      |-- hostdb/ ........ Internal DNS cache
-      |-- net/ ........... Network
-  |-- lib/ ...............
-      |-- atscppapi/ ....... C++ api wrapper for plugin developers
-      |-- records/ ....... library for config files
-      |-- perl/ .......... Perl libraries for e.g. mgmt access and configurations
-      |-- ts/ ............ Base / core library
-      |-- tsconfig/....... New config parser and library (experimental)
-      |-- wccp/ .......... WCCP implementation
-  |-- m4/ ................ custom macros for configure.ac
-  |-- mgmt/ .............. Management server and tools (including traffic_manager)
-  |-- plugins/ ........... Core plugins (stable and experiemental)
-  |-- proxy/ ............. HTTP proxy logic
-      |-- api/ ........... Plugin API includes
-      |-- config/ ........ Configurations
-      |-- congest/ ....... Congestion control
-      |-- hdrs/ .......... Headers parsing and management
-      |-- http/ .......... The actual HTTP protocol implementation
-      |---http2/ ......... HTTP/2 implementation
-      |-- logging/ ....... Flexible logging
-      |-- spdy/ .......... SPDY implementation
-  |-- README ............. intro, links, build info
-  |-- README-EC2 ......... info on EC2 support
-  |-- REVIEWERS .......... (incomplete) list of areas with committer interest
-  |-- LICENSE ............ full license text
-  `-- NOTICE ............. copyright notices
+  trafficserver/ ............ Top src dir
+  |-- build/ ................ Custom macros for configure.ac
+  |-- ci/ ................... Quality assurance and other CI tools and configs
+  |-- configs/ .............. Configurations
+  |-- contrib/ .............. Various contributed auxiliary pieces
+  |-- doc/ .................. Documentation for Traffic Server
+      |-- admin-guide/ ...... Admin guide documentations
+      |-- appendices/ ....... Appendices of Traffic Server
+      |-- developer-guide/ .. Documentation for developers
+      |-- dot/ .............. Graphviz source files for docs pictures
+      |-- static/ ........... Static resources
+      |-- uml/ .............. Documentation in UML
+  |-- example/ .............. Example plugins
+  |-- iocore/ ...............
+      |-- aio/ .............. Asynchronous I/O core
+      |-- cache/ ............ Disk and RAM cache
+      |-- eventsystem/ ...... Event Driven Engine
+      |-- dns/ .............. DNS (asynchronous)
+      |-- hostdb/ ........... Internal DNS cache
+      |-- net/ .............. Network
+      |-- utils/ ............ Utilities
+  |-- lib/ ..................
+      |-- cppapi/ ........... C++ api wrapper for plugin developers
+      |-- perl/ ............. Perl libraries for e.g. mgmt access and configurations
+      |-- records/ .......... Library for config files
+      |-- ts/ ............... Base / core library
+      |-- tsconfig/.......... New config parser and library (experimental)
+      |-- wccp/ ............. WCCP implementation
+      |-- yamlcpp/ .......... Library for YAML of C++
+  |-- mgmt/ ................. Management server and tools
+  |-- plugins/ .............. Stable core plugins
+      |-- experimental/ ..... Experimental core plugins
+  |-- proxy/ ................ HTTP proxy logic
+      |-- api/ .............. Plugin API includes
+      |-- hdrs/ ............. Headers parsing and management
+      |-- http/ ............. The actual HTTP protocol implementation
+      |---http2/ ............ HTTP/2 implementation
+      |-- logging/ .......... Flexible logging
+      |-- shared/ ........... Shared files
+  |-- rc/ ................... Installation programs and scripts
+  |-- src/ .................. Source for all the main binaries / applications
+      |-- traffic_cache_tool/ Tool to interact with the Traffic Server cache
+      |-- traffic_crashlog/ . Helper process that catches Traffic Server crashes
+      |-- traffic_ctl/ ...... Command line management tool
+      |-- traffic_layout/ ... Display information on the build and runtime directory structure
+      |-- traffic_logcat/ ... Convert binary log file to plain text
+      |-- traffic_logstats/ . Log parsing and metrics calculation utility
+      |-- traffic_manager/ .. The manager process for Traffic Server
+      |-- traffic_server/ ... Main proxy server
+      |-- traffic_top/ ...... Top like tool for viewing Traffic Server statistics
+      |-- traffic_via/ ...... Tool for decoding the Traffic Server Via header codes
+      |-- traffic_wccp/ ..... Program speaking the client side of the WCCP
+  |-- tests/ ................ Different tests for Traffic Server
+  |-- tools/ ................ Directory of various tools
+  |-- INSTALL ............... Build and installation guide
+  |-- LAYOUT ................ Traffic Server default layout
+  |-- LICENSE ............... Full license text
+  |-- NOTICE ................ Copyright notices
+  |-- README ................ Intro, links, build info
+  |-- README-EC2 ............ Info on EC2 support
+  |-- REVIEWERS ............. (Incomplete) list of areas with committer interest
+  `-- STATUS ................ Release history and information
 
 2. REQUIREMENTS
 
@@ -66,103 +77,66 @@ plugins to build large scale web applications.
 
   <https://cwiki.apache.org/confluence/display/TS/Building>.
 
-  Fedora 12-19 / CentOS / RHEL:
+  As of ATS v7.0.0 and later, gcc 4.8.1 or later is required, since we now use
+  and require the C++11 standard.
+
+  Fedora / CentOS / RHEL:
     autoconf
     automake
-    pkgconfig
     libtool
+    pkgconfig
     perl-ExtUtils-MakeMaker
-    gcc-c++
-    glibc-devel
+    gcc/g++ or clang/clang++
     openssl-devel
-    tcl-devel
-    expat-devel
-    pcre
     pcre-devel
+    ncurses-devel and libcurl-devel(optional, needed for traffic_top)
     libcap-devel (optional, highly recommended)
-    flex (optional, needed for e.g. WCCP)
     hwloc-devel (optional, highly recommended)
-    lua-devel (optional)
+    flex (optional, needed for e.g. WCCP)
 
-  Fedora 8 EC2 (Kernel: 2.6.21.7-2.ec2.v1.2.fc8xen):
-    FC8 on EC2 requires unique configure declarations, please see that section
-    below.
-
-    NOTE: Alternately you may use the install scripts in 'contrib' which
-          automate this or use the pre-built public Fedora Core 8 EC2 AMI
-          with ATS installed. Both of which are HIGHLY RECOMMENDED.
-          See 'README-EC2' for further details.
-
+  Ubuntu / Debian
     autoconf
     automake
-    pkgconfig
     libtool
-    perl-ExtUtils-MakeMaker
-    gcc-c++
-    glibc-devel
-    openssl-devel
-    tcl-devel
-    expat-devel
-    pcre
-
-  Ubuntu 8.* - 13.*:
-    autoconf
-    automake
     pkg-config
-    libtool
     libmodule-install-perl
-    g++
+    gcc/g++ or clang/clang++
     libssl-dev
-    tcl-dev
-    expat
-    libexpat-dev
     libpcre3-dev
     libcap-dev (optional, highly recommended)
-    flex (optional, required for e.g. WCCP)
     libhwloc-dev (optional, highly recommended)
-    liblua5.1-dev or libluajit-5.1-dev (optional)
     libncurses5-dev (optional, required for e.g.: traffic_top)
     libcurl4-openssl-dev (optional, required for e.g.: traffic_top)
+    flex (optional, required for e.g. WCCP)
 
-  Ubuntu EC2 9.10:
-    NOTE: Alternately you may use the install scripts in 'contrib' which
-          automate this or use the pre-built public Ubuntu EC2 AMI with
-          ATS installed. Both of which are HIGHLY RECOMMENDED.
-          See 'README-EC2' for further details.
+  Alpine Linux
+    build-base
+    libexecinfo-dev
+    pcre-dev
+    libressl-dev
+    autoconf
+    automake
+    libtool
+    linux-headers
 
-    Install these packages:
+  OSX (we recommend HomeBrew):
     autoconf
     automake
     pkg-config
     libtool
-    libmodule-install-perl
-    g++
-    libssl-dev
-    tcl-dev
-    expat
-    libexpat-dev
-    libpcre3-dev
-    flex (optional)
-    libhwloc-dev (optional, highly recommended)
-    liblua-dev (optional)
-    libncurses5-dev (optional, required for e.g.: traffic_top)
-    libcurl3-openssl-dev (optional, required for e.g.: traffic_top)
+    openssl
+    pcre
 
-  FreeBSD 7.2,8.0,9.0,9.1
-    GCC 4.2.1 compiler suite or clang. You can install the following
-	packages either from ports or via pkg_add or pkgng:
+  FreeBSD
     devel/gmake
     devel/autoconf
     devel/automake
     devel/pkgconf
     devel/libtool
-    lang/tcl85
-    textproc/expat (or expat2)
     security/openssl
     devel/pcre
     textproc/flex (optional, install newer version from ports, fix PATH)
     devel/hwloc (optional, highly recommended)
-    lang/lua (optional, on x64 don't use LuaJIT!)
 
   OmniOS:
     developer/gcc46
@@ -170,21 +144,8 @@ plugins to build large scale web applications.
     developer/build/autoconf
     developer/build/automake-111
     developer/build/libtool
-    omniti/runtime/tcl-8
-    library/expat
     library/security/openssl
     library/pcre
-
-  OSX 10.5:
-    GCC 4.2.4 compiler suite (ports collection)
-    autoconf
-    automake
-    pkgconfig
-    libtool
-    tcl
-    expat
-    openssl
-    pcre
 
 3. Building from distribution
 
@@ -210,8 +171,8 @@ the installation with
 
   mkdir -p ~/dev         # make yourself a development dir
   cd ~/dev               # enter your development dir
-  git clone ...          # get the source code from ASF Git repo
-  cd trafficserver       # enter the checkout dir
+  git clone ...          # get the source code from ASF Git repository
+  cd trafficserver       # enter the checkout directory
   autoreconf -if         # generate the configure script and Makefile.in files
   ./configure            # configure the build environment to create Makefiles
   make                   # execute the compile

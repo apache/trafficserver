@@ -28,20 +28,26 @@
    Description:
    SSL Configurations
  ****************************************************************************/
-#ifndef __P_SSLCONFIG_H__
-#define __P_SSLCONFIG_H__
+#pragma once
+
+#include <openssl/rand.h>
+
+#include "tscore/ink_inet.h"
+#include "tscore/IpMap.h"
 
 #include "ProxyConfig.h"
+
 #include "SSLSessionCache.h"
-#include "ts/ink_inet.h"
+#include "YamlSNIConfig.h"
 
 struct SSLCertLookup;
+struct ssl_ticket_key_block;
 
 /////////////////////////////////////////////////////////////
 //
 // struct SSLConfigParams
 //
-// configuration parameters as they apear in the global
+// configuration parameters as they appear in the global
 // configuration file.
 /////////////////////////////////////////////////////////////
 
@@ -50,13 +56,13 @@ typedef void (*load_ssl_file_func)(const char *, unsigned int);
 
 struct SSLConfigParams : public ConfigInfo {
   enum SSL_SESSION_CACHE_MODE {
-    SSL_SESSION_CACHE_MODE_OFF = 0,
+    SSL_SESSION_CACHE_MODE_OFF                 = 0,
     SSL_SESSION_CACHE_MODE_SERVER_OPENSSL_IMPL = 1,
-    SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL = 2
+    SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL     = 2
   };
 
   SSLConfigParams();
-  virtual ~SSLConfigParams();
+  ~SSLConfigParams() override;
 
   char *serverCertPathOnly;
   char *serverCertChainFilename;
@@ -78,13 +84,21 @@ struct SSLConfigParams : public ConfigInfo {
   int ssl_session_cache_auto_clear;
 
   char *clientCertPath;
+  char *clientCertPathOnly;
   char *clientKeyPath;
+  char *clientKeyPathOnly;
   char *clientCACertFilename;
   char *clientCACertPath;
-  int clientVerify;
+  YamlSNIConfig::Policy verifyServerPolicy;
+  YamlSNIConfig::Property verifyServerProperties;
   int client_verify_depth;
   long ssl_ctx_options;
-  long ssl_client_ctx_protocols;
+  long ssl_client_ctx_options;
+
+  char *server_tls13_cipher_suites;
+  char *client_tls13_cipher_suites;
+  char *server_groups_list;
+  char *client_groups_list;
 
   static int ssl_maxrecord;
   static bool ssl_allow_client_renegotiation;
@@ -94,23 +108,40 @@ struct SSLConfigParams : public ConfigInfo {
   static int ssl_ocsp_request_timeout;
   static int ssl_ocsp_update_period;
   static int ssl_handshake_timeout_in;
+  char *ssl_ocsp_response_path_only;
 
   static size_t session_cache_number_buckets;
   static size_t session_cache_max_bucket_size;
   static bool session_cache_skip_on_lock_contention;
 
-  // TS-3435 Wiretracing for SSL Connections
-  static int ssl_wire_trace_enabled;
-  static char *ssl_wire_trace_addr;
-  static IpAddr *ssl_wire_trace_ip;
-  static int ssl_wire_trace_percentage;
-  static char *ssl_wire_trace_server_name;
+  static IpMap *proxy_protocol_ipmap;
 
   static init_ssl_ctx_func init_ssl_ctx_cb;
   static load_ssl_file_func load_ssl_file_cb;
 
+  static int async_handshake_enabled;
+  static char *engine_conf_file;
+
+  shared_SSL_CTX client_ctx;
+
+  // Client contexts are held by 2-level map:
+  // The first level maps from CA bundle file&path to next level map;
+  // The second level maps from cert&key to actual SSL_CTX;
+  // The second level map owns the client SSL_CTX objects and is responsible for cleaning them up
+  using CTX_MAP = std::unordered_map<std::string, shared_SSL_CTX>;
+  mutable std::unordered_map<std::string, CTX_MAP> top_level_ctx_map;
+  mutable ink_mutex ctxMapLock;
+
+  shared_SSL_CTX getClientSSL_CTX() const;
+  shared_SSL_CTX getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file,
+                        const char *ca_bundle_path) const;
+
+  void cleanupCTXTable();
+
   void initialize();
   void cleanup();
+  void reset();
+  void SSLConfigInit(IpMap *global);
 };
 
 /////////////////////////////////////////////////////////////
@@ -124,7 +155,6 @@ struct SSLConfig {
   static void reconfigure();
   static SSLConfigParams *acquire();
   static void release(SSLConfigParams *params);
-
   typedef ConfigProcessor::scoped_config<SSLConfig, SSLConfigParams> scoped_config;
 
 private:
@@ -143,6 +173,40 @@ private:
   static int configid;
 };
 
-extern SSLSessionCache *session_cache;
+struct SSLTicketParams : public ConfigInfo {
+  ssl_ticket_key_block *default_global_keyblock = nullptr;
+  time_t load_time                              = 0;
+  char *ticket_key_filename;
+  bool LoadTicket(bool &nochange);
+  void LoadTicketData(char *ticket_data, int ticket_data_len);
+  void cleanup();
 
-#endif
+  ~SSLTicketParams() override { cleanup(); }
+};
+
+struct SSLTicketKeyConfig {
+  static void startup();
+  static bool reconfigure();
+  static bool reconfigure_data(char *ticket_data, int ticket_data_len);
+
+  static SSLTicketParams *
+  acquire()
+  {
+    return static_cast<SSLTicketParams *>(configProcessor.get(configid));
+  }
+
+  static void
+  release(SSLTicketParams *params)
+  {
+    if (configid > 0) {
+      configProcessor.release(configid, params);
+    }
+  }
+
+  typedef ConfigProcessor::scoped_config<SSLTicketKeyConfig, SSLTicketParams> scoped_config;
+
+private:
+  static int configid;
+};
+
+extern SSLSessionCache *session_cache;

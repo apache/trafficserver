@@ -19,12 +19,7 @@
   limitations under the License.
  */
 
-#ifndef __P_SSLUTILS_H__
-#define __P_SSLUTILS_H__
-
-#include "ts/ink_config.h"
-#include "ts/Diags.h"
-#include "P_SSLClientUtils.h"
+#pragma once
 
 #define OPENSSL_THREAD_DEFINES
 
@@ -34,101 +29,62 @@
 #endif
 #include <openssl/ssl.h>
 
+#include "tscore/ink_config.h"
+#include "tscore/Diags.h"
+#include "records/I_RecCore.h"
+#include "P_SSLCertLookup.h"
+
 struct SSLConfigParams;
-struct SSLCertLookup;
 class SSLNetVConnection;
-struct RecRawStatBlock;
 
 typedef int ssl_error_t;
 
-enum SSL_Stats {
-  ssl_origin_server_expired_cert_stat,
-  ssl_user_agent_expired_cert_stat,
-  ssl_origin_server_revoked_cert_stat,
-  ssl_user_agent_revoked_cert_stat,
-  ssl_origin_server_unknown_cert_stat,
-  ssl_user_agent_unknown_cert_stat,
-  ssl_origin_server_cert_verify_failed_stat,
-  ssl_user_agent_cert_verify_failed_stat,
-  ssl_origin_server_bad_cert_stat,
-  ssl_user_agent_bad_cert_stat,
-  ssl_origin_server_decryption_failed_stat,
-  ssl_user_agent_decryption_failed_stat,
-  ssl_origin_server_wrong_version_stat,
-  ssl_user_agent_wrong_version_stat,
-  ssl_origin_server_other_errors_stat,
-  ssl_user_agent_other_errors_stat,
-  ssl_origin_server_unknown_ca_stat,
-  ssl_user_agent_unknown_ca_stat,
-  ssl_user_agent_sessions_stat,
-  ssl_user_agent_session_hit_stat,
-  ssl_user_agent_session_miss_stat,
-  ssl_user_agent_session_timeout_stat,
-  ssl_total_handshake_time_stat,
-  ssl_total_success_handshake_count_in_stat,
-  ssl_total_tickets_created_stat,
-  ssl_total_tickets_verified_stat,
-  ssl_total_tickets_verified_old_key_stat, // verified with old key.
-  ssl_total_ticket_keys_renewed_stat,      // number of keys renewed.
-  ssl_total_tickets_not_found_stat,
-  ssl_total_tickets_renewed_stat,
-  ssl_total_dyn_def_tls_record_count,
-  ssl_total_dyn_max_tls_record_count,
-  ssl_session_cache_hit,
-  ssl_session_cache_miss,
-  ssl_session_cache_eviction,
-  ssl_session_cache_lock_contention,
-  ssl_session_cache_new_session,
+/**
+    @brief Load SSL certificates from ssl_multicert.config and setup SSLCertLookup for SSLCertificateConfig
+ */
+class SSLMultiCertConfigLoader
+{
+public:
+  SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
+  virtual ~SSLMultiCertConfigLoader(){};
 
-  /* error stats */
-  ssl_error_want_write,
-  ssl_error_want_read,
-  ssl_error_want_x509_lookup,
-  ssl_error_syscall,
-  ssl_error_read_eos,
-  ssl_error_zero_return,
-  ssl_error_ssl,
-  ssl_sni_name_set_failure,
-  ssl_total_success_handshake_count_out_stat,
+  bool load(SSLCertLookup *lookup);
 
-  /* ocsp stapling stats */
-  ssl_ocsp_revoked_cert_stat,
-  ssl_ocsp_unknown_cert_stat,
+  virtual SSL_CTX *default_server_ssl_ctx();
+  virtual SSL_CTX *init_server_ssl_ctx(std::vector<X509 *> &certList, const SSLMultiCertConfigParams *sslMultCertSettings);
 
-  ssl_cipher_stats_start = 100,
-  ssl_cipher_stats_end = 300,
+  static bool load_certs(SSL_CTX *ctx, std::vector<X509 *> &certList, const SSLConfigParams *params,
+                         const SSLMultiCertConfigParams *ssl_multi_cert_params);
+  static bool set_session_id_context(SSL_CTX *ctx, const SSLConfigParams *params,
+                                     const SSLMultiCertConfigParams *sslMultCertSettings);
 
-  Ssl_Stat_Count
+  static bool index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, const char *certname);
+  static int check_server_cert_now(X509 *cert, const char *certname);
+  static void clear_pw_references(SSL_CTX *ssl_ctx);
+
+protected:
+  const SSLConfigParams *_params;
+
+private:
+  virtual SSL_CTX *_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams ssl_multi_cert_params);
+  virtual void _set_handshake_callbacks(SSL_CTX *ctx);
 };
 
-extern RecRawStatBlock *ssl_rsb;
+// Create a new SSL server context fully configured (cert and keys are optional).
+// Used by TS API (TSSslServerContextCreate and TSSslServerCertUpdate)
+SSL_CTX *SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigParams *sslMultiCertSettings,
+                                const char *cert_path = nullptr, const char *key_path = nullptr);
 
-/* Stats should only be accessed using these macros */
-#define SSL_INCREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int)x, 1)
-#define SSL_DECREMENT_DYN_STAT(x) RecIncrRawStat(ssl_rsb, NULL, (int)x, -1)
-#define SSL_SET_COUNT_DYN_STAT(x, count) RecSetRawStatCount(ssl_rsb, x, count)
-#define SSL_INCREMENT_DYN_STAT_EX(x, y) RecIncrRawStat(ssl_rsb, NULL, (int)x, y)
-#define SSL_CLEAR_DYN_STAT(x)            \
-  do {                                   \
-    RecSetRawStatSum(ssl_rsb, (x), 0);   \
-    RecSetRawStatCount(ssl_rsb, (x), 0); \
-  } while (0)
-
-// Create a default SSL server context.
-SSL_CTX *SSLDefaultServerContext();
-
-// Create a new SSL server context fully configured.
-SSL_CTX *SSLCreateServerContext(const SSLConfigParams *params);
+// Release SSL_CTX and the associated data. This works for both
+// client and server contexts and gracefully accepts nullptr.
+// Used by TS API (TSSslContextDestroy)
+void SSLReleaseContext(SSL_CTX *ctx);
 
 // Initialize the SSL library.
 void SSLInitializeLibrary();
 
-// Initialize SSL statistics.
-void SSLInitializeStatistics();
-
-// Release SSL_CTX and the associated data. This works for both
-// client and server contexts and gracefully accepts NULL.
-void SSLReleaseContext(SSL_CTX *ctx);
+// Initialize SSL library based on configuration settings
+void SSLPostConfigInitialize();
 
 // Wrapper functions to SSL I/O routines
 ssl_error_t SSLWriteBuffer(SSL *ssl, const void *buf, int64_t nbytes, int64_t &nwritten);
@@ -136,29 +92,17 @@ ssl_error_t SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread);
 ssl_error_t SSLAccept(SSL *ssl);
 ssl_error_t SSLConnect(SSL *ssl);
 
-// Log an SSL error.
-#define SSLError(fmt, ...) SSLDiagnostic(MakeSourceLocation(), false, NULL, fmt, ##__VA_ARGS__)
-#define SSLErrorVC(vc, fmt, ...) SSLDiagnostic(MakeSourceLocation(), false, (vc), fmt, ##__VA_ARGS__)
-// Log a SSL diagnostic using the "ssl" diagnostic tag.
-#define SSLDebug(fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, NULL, fmt, ##__VA_ARGS__)
-#define SSLDebugVC(vc, fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, (vc), fmt, ##__VA_ARGS__)
+// Attach a SSL NetVC back pointer to a SSL session.
+void SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc);
 
-#define SSL_CLR_ERR_INCR_DYN_STAT(vc, x, fmt, ...) \
-  do {                                             \
-    SSLDebugVC((vc), fmt, ##__VA_ARGS__);          \
-    RecIncrRawStat(ssl_rsb, NULL, (int)x, 1);      \
-  } while (0)
+// Detach from SSL NetVC back pointer to a SSL session.
+void SSLNetVCDetach(SSL *ssl);
 
-void SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
+// Return the SSLNetVConnection (if any) attached to this SSL session.
+SSLNetVConnection *SSLNetVCAccess(const SSL *ssl);
 
-// Return a static string name for a SSL_ERROR constant.
-const char *SSLErrorName(int ssl_error);
-
-// Log a SSL network buffer.
-void SSLDebugBufferPrint(const char *tag, const char *buffer, unsigned buflen, const char *message);
-
-// Load the SSL certificate configuration.
-bool SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup);
+void setClientCertLevel(SSL *ssl, uint8_t certLevel);
+void setTLSValidProtocols(SSL *ssl, unsigned long proto_mask, unsigned long max_mask);
 
 namespace ssl
 {
@@ -169,12 +113,12 @@ namespace detail
     static value_type
     initValue()
     {
-      return NULL;
+      return nullptr;
     }
     static bool
     isValid(value_type x)
     {
-      return x != NULL;
+      return x != nullptr;
     }
     static void
     destroy(value_type x)
@@ -188,12 +132,12 @@ namespace detail
     static value_type
     initValue()
     {
-      return NULL;
+      return nullptr;
     }
     static bool
     isValid(value_type x)
     {
-      return x != NULL;
+      return x != nullptr;
     }
     static void
     destroy(value_type x)
@@ -201,10 +145,28 @@ namespace detail
       BIO_free(x);
     }
   };
-/* namespace ssl */ } /* namespace detail */
-}
+  /* namespace ssl */ // namespace detail
+} /* namespace detail */
+} // namespace ssl
+
+struct ats_wildcard_matcher {
+  ats_wildcard_matcher()
+  {
+    if (!regex.compile(R"(^\*\.[^\*.]+)")) {
+      Fatal("failed to compile TLS wildcard matching regex");
+    }
+  }
+
+  ~ats_wildcard_matcher() {}
+  bool
+  match(const char *hostname) const
+  {
+    return regex.match(hostname) != -1;
+  }
+
+private:
+  DFA regex;
+};
 
 typedef ats_scoped_resource<ssl::detail::SCOPED_X509_TRAITS> scoped_X509;
 typedef ats_scoped_resource<ssl::detail::SCOPED_BIO_TRAITS> scoped_BIO;
-
-#endif /* __P_SSLUTILS_H__ */

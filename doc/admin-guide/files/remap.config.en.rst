@@ -44,9 +44,7 @@ Refer to  :ref:`reverse-proxy-and-http-redirects`, for information about
 redirecting HTTP requests and using reverse proxy.
 
 After you modify the :file:`remap.config` run the
-:option:`traffic_ctl config reload` to apply the changes. When you apply the
-changes to one node in a cluster, Traffic Server automatically applies
-the changes to all other nodes in the cluster.
+:option:`traffic_ctl config reload` to apply the changes.
 
 Format
 ======
@@ -89,7 +87,7 @@ Traffic Server recognizes three space-delimited fields: ``type``,
        notify the browser of the URL change for the current request only
        (by returning an HTTP status code 307).
 
-       .. note: use the ``regex_`` prefix to indicate that the line has a regular expression (regex).
+       .. note:: use the ``regex_`` prefix to indicate that the line has a regular expression (regex).
 
 .. _remap-config-format-target:
 
@@ -109,6 +107,8 @@ Traffic Server recognizes three space-delimited fields: ``type``,
 
     where ``scheme`` is ``http``, ``https``, ``ws`` or ``wss``.
 
+   .. note:: A remap rule for requests that upgrade from HTTP to WebSocket still require a remap rule with the ``ws`` or ``wss`` scheme.
+
 
 .. _remap-config-precedence:
 
@@ -119,11 +119,17 @@ Remap rules are not processed top-down, but based on an internal
 priority. Once these rules are executed we pick the first match
 based on configuration file parse order.
 
-1. ``map_with_recv_port`` and ```regex_map_with_recv_port```
+1. ``map_with_recv_port`` and ``regex_map_with_recv_port``
 #. ``map`` and ``regex_map`` and ``reverse_map``
 #. ``redirect`` and ``redirect_temporary``
 #. ``regex_redirect`` and ``regex_redirect_temporary``
 
+For each precedence group the rules are checked in two phases. If the first phase fails to find a
+match then the second phase is performed against the same group of rules. In the first phase the
+rules are checked using the host name of the request. Only rules that specify a host name can match.
+If there is no match in that phase, then the rules are checked again with no host name and only
+rules without a host will match. The result is that rules with an explicit host take precedence over
+rules without.
 
 Match-All
 =========
@@ -202,11 +208,40 @@ that match the second rule also match the first rule. The first rule
 takes precedence because it appears earlier in the :file:`remap.config`
 file.
 
+This is different if one rule does not have a host. For example consider these rules using the `Match-All`_ rule::
+
+   map / http://127.0.0.1:8001/
+   map http://example.com/dist_get_user http://127.0.0.1:8001/denied.html
+
+These rules are set up to redirect requests to another local process. Using them will result in
+
+==================================== =====================================
+Client Request                       Translated Request
+==================================== =====================================
+``http://example.com/a.gif``         ``http://127.0.0.1:8001/a.gif``
+``http://example.com/dist_get_user`` ``http://127.0.0.1:8001/denied.html``
+==================================== =====================================
+
+For the first request the second rule host matches but the path does not and so the second rule is
+not selected. The first rule is then matched in the second phase when the rules are checked without
+a host value.
+
+The second request is matched by the second rule even though the rules have the same base
+precedence. Because the first rule does not have a host it will not match in the first phase. The
+second rule does have a host that matches the host in the second request along with the other parts
+of the URL and is therefore selected in the first phase.
+
+This will yield the same results if the rules are reversed because the rule selection happens in
+different phases making the order irrelevant. ::
+
+   map http://example.com/dist_get_user http://127.0.0.1:8001/denied.html
+   map / http://127.0.0.1:8001/
+
 The following example shows a mapping with a path prefix specified in
 the target and replacement::
 
-    map http://www.h.com/a/b/ http://server.h.com/customers/x/y
-    reverse_map http://server.h.com/customers/x/y/ http://www.h.com/a/b/
+   map http://www.h.com/a/b/ http://server.h.com/customers/x/y
+   reverse_map http://server.h.com/customers/x/y/ http://www.h.com/a/b/
 
 This rule results in the following translation.
 
@@ -382,7 +417,7 @@ Acl Filters
 
 Acl filters can be created to control access of specific remap lines. The markup
 is very similar to that of :file:`ip_allow.config`, with slight changes to
-accomodate remap markup
+accommodate remap markup
 
 Examples
 --------
@@ -491,5 +526,4 @@ The file `two.example.com.config` contains::
 
   .activatefilter allow_purge
   map http://two.example.com http://origin-two.example.com
-  .deactivatefilter dallowpurge
-
+  .deactivatefilter allow_purge

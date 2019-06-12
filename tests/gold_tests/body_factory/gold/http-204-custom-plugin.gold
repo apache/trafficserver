@@ -1,0 +1,19 @@
+HTTP/1.1 204 No Content
+Connection: keep-alive
+Cache-Control: no-store
+Content-Length: 282
+Content-Type: text/html
+
+<HTML>
+<HEAD>
+<TITLE>Spec-breaking 204!</TITLE>
+</HEAD>
+
+<BODY>
+<H1>This is body content for a 204.</H1>
+<HR>
+
+Description: According to rfc7231 I should not have been sent to you!<BR/>
+This response was sent via the custom204plugin via a call to TSHttpTxnErrorBodySet.
+<HR>
+</BODY>

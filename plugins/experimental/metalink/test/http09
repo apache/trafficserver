@@ -32,54 +32,60 @@ print '''1..1 http09
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
 
-def callback():
-  print 'not ok 1 - Why didn\'t the test finish yet?'
 
-  reactor.stop()
+def callback():
+    print 'not ok 1 - Why didn\'t the test finish yet?'
+
+    reactor.stop()
+
 
 reactor.callLater(2, callback)
 
-class factory(protocol.Factory):
-  class protocol(protocol.Protocol):
-    def connectionMade(ctx):
-      ctx.transport.write('http09\r\n')
 
-      # The proxy crashes only after the response is complete
-      ctx.transport.loseConnection()
+class factory(protocol.Factory):
+    class protocol(protocol.Protocol):
+        def connectionMade(ctx):
+            ctx.transport.write('http09\r\n')
+
+            # The proxy crashes only after the response is complete
+            ctx.transport.loseConnection()
+
 
 origin = tcp.Port(0, factory())
 origin.startListening()
 
 print '# Listening on {0}:{1}'.format(*origin.socket.getsockname())
 
+
 class factory(protocol.ClientFactory):
-  def clientConnectionFailed(ctx, connector, reason):
+    def clientConnectionFailed(ctx, connector, reason):
 
-    print 'Bail out!'
-    reason.printTraceback()
+        print 'Bail out!'
+        reason.printTraceback()
 
-    reactor.stop()
+        reactor.stop()
 
-  class protocol(protocol.Protocol):
-    def connectionLost(ctx, reason):
+    class protocol(protocol.Protocol):
+        def connectionLost(ctx, reason):
 
-      # Open another connection
-      class factory(protocol.ClientFactory):
-        def clientConnectionFailed(ctx, connector, reason):
-          print 'not ok 1 - Did the proxy crash?  (Can\'t open another connection to it.)'
+            # Open another connection
+            class factory(protocol.ClientFactory):
+                def clientConnectionFailed(ctx, connector, reason):
+                    print 'not ok 1 - Did the proxy crash?  (Can\'t open another connection to it.)'
 
-          reactor.stop()
+                    reactor.stop()
 
-        class protocol(protocol.Protocol):
-          def connectionMade(ctx):
-            print 'ok 1 - The proxy didn\'t crash (opened another connection to it)'
+                class protocol(protocol.Protocol):
+                    def connectionMade(ctx):
+                        print 'ok 1 - The proxy didn\'t crash (opened another connection to it)'
 
-            reactor.stop()
+                        reactor.stop()
 
-      reactor.callLater(1, tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect)
+            reactor.callLater(1, tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect)
 
-    def connectionMade(ctx):
-      ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
+        def connectionMade(ctx):
+            ctx.transport.write('GET {0}:{1} HTTP/1.1\r\n\r\n'.format(*origin.socket.getsockname()))
+
 
 tcp.Connector('localhost', 8080, factory(), 30, None, reactor).connect()
 

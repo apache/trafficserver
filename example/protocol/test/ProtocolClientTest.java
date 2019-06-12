@@ -23,7 +23,7 @@ class ProtocolClient
   protected String host;
   protected String proxy;
   protected int port;
-  
+
   // Constructor
   public ProtocolClient(String host, String proxy, int port)
   {
@@ -31,18 +31,18 @@ class ProtocolClient
     this.proxy = proxy;
     this.port = port;
   }// End of constructor
-  
+
   // Method connect()
   public void connect(String fileName)
   {
     try
       {
 	Socket client = new Socket(proxy, port);
-	
+
 	// Create output stream and input stream
 	BufferedInputStream inStream = new BufferedInputStream(client.getInputStream());
 	BufferedOutputStream outStream = new BufferedOutputStream(client.getOutputStream());
-	
+
 	// send out request
 	byte[] request = marshalRequest (fileName);
 	outStream.write (request);
@@ -52,7 +52,7 @@ class ProtocolClient
 	// to verify the response is correct.
 	String responseBody = unmarshalResponse (inStream);
 	System.out.println(responseBody);
-	
+
 	// Close socket
 	client.close();
       } catch (UnknownHostException uhe) {
@@ -64,7 +64,7 @@ class ProtocolClient
       } catch (Exception e) {
 	e.printStackTrace();
       }
-      
+
   }// End of connect()
 
   protected byte[] marshalRequest (String fileName) throws Exception
@@ -96,7 +96,7 @@ class ProtocolClient
 	for (int i = 0; i < bytesRead; i++)
 	  newObject[oldObject.length + i] = buffer[i];
       }
-    
+
     String responseBody = new String (newObject);
     return responseBody;
   }
@@ -104,7 +104,7 @@ class ProtocolClient
 }// End of class
 
 //*******************************************************
-// Test of ProtocolClient 
+// Test of ProtocolClient
 //*******************************************************
 
 public class ProtocolClientTest
@@ -153,7 +153,7 @@ public class ProtocolClientTest
 	    i ++;
 	  }
       }
-    
+
 
     Vector fileVector = new Vector ();
     File sourceFile = new File (fileName);
@@ -166,12 +166,12 @@ public class ProtocolClientTest
       {
 	try
 	  {
-	    LineNumberReader sourceFileReader = 
+	    LineNumberReader sourceFileReader =
 	      new LineNumberReader (new FileReader (sourceFile));
-	    
+
 	    // Read fileNames from the file.
 	    String currentFileName;
-	    
+
 	    while ((currentFileName = sourceFileReader.readLine()) != null)
 		fileVector.addElement (currentFileName);
 	  }

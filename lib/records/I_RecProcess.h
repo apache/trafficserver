@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef _I_REC_PROCESS_H_
-#define _I_REC_PROCESS_H_
+#pragma once
 
 #include "I_RecCore.h"
 #include "I_EventSystem.h"
@@ -30,9 +29,9 @@
 //-------------------------------------------------------------------------
 // Initialization/Starting
 //-------------------------------------------------------------------------
-int RecProcessInit(RecModeT mode_type, Diags *diags = NULL);
+int RecProcessInit(RecModeT mode_type, Diags *diags = nullptr);
 int RecProcessInitMessage(RecModeT mode_type);
-int RecProcessStart(void);
+int RecProcessStart();
 
 //-------------------------------------------------------------------------
 // Setters for manipulating internal sleep intervals
@@ -84,11 +83,9 @@ int RecRawStatUpdateSum(RecRawStatBlock *rsb, int id);
 inline int RecIncrRawStat(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t incr = 1);
 inline int RecIncrRawStatSum(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t incr = 1);
 inline int RecIncrRawStatCount(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t incr = 1);
-int RecIncrRawStatBlock(RecRawStatBlock *rsb, EThread *ethread, RecRawStat *stat_array);
 
 int RecSetRawStatSum(RecRawStatBlock *rsb, int id, int64_t data);
 int RecSetRawStatCount(RecRawStatBlock *rsb, int id, int64_t data);
-int RecSetRawStatBlock(RecRawStatBlock *rsb, RecRawStat *stat_array);
 
 int RecGetRawStatSum(RecRawStatBlock *rsb, int id, int64_t *data);
 int RecGetRawStatCount(RecRawStatBlock *rsb, int id, int64_t *data);
@@ -119,7 +116,7 @@ inline RecRawStat *
 raw_stat_get_tlp(RecRawStatBlock *rsb, int id, EThread *ethread)
 {
   ink_assert((id >= 0) && (id < rsb->max_stats));
-  if (ethread == NULL) {
+  if (ethread == nullptr) {
     ethread = this_ethread();
   }
   return (((RecRawStat *)((char *)(ethread) + rsb->ethr_stat_offset)) + id);
@@ -158,5 +155,3 @@ RecIncrRawStatCount(RecRawStatBlock *rsb, EThread *ethread, int id, int64_t incr
   tlp->count += incr;
   return REC_ERR_OKAY;
 }
-
-#endif /* !_I_REC_PROCESS_H_ */

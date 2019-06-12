@@ -28,12 +28,9 @@
 
  ****************************************************************************/
 
-#ifndef _I_DNS_h_
-#define _I_DNS_h_
+#pragma once
 
 #include "I_EventSystem.h"
 #include "I_HostDB.h"
 #include "I_Net.h"
 #include "I_DNSProcessor.h"
-
-#endif //_I_DNS_h_

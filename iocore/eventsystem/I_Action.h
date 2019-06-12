@@ -22,10 +22,9 @@
 
  */
 
-#ifndef _I_Action_h_
-#define _I_Action_h_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_Thread.h"
 #include "I_Continuation.h"
 
@@ -79,7 +78,7 @@
   Allocation policy:
 
   Actions are allocated by the Processor performing the actions.
-  It is the processor's responsbility to handle deallocation once
+  It is the processor's responsibility to handle deallocation once
   the action is complete or cancelled. A state machine MUST NOT
   access an action once the operation that returned the Action has
   completed or it has cancelled the Action.
@@ -89,22 +88,22 @@ class Action
 {
 public:
   /**
-    Contination that initiated this action.
+    Continuation that initiated this action.
 
     The reference to the initiating continuation is only used to
     verify that the action is being cancelled by the correct
-    continuation.  This field should not be accesed or modified
+    continuation.  This field should not be accessed or modified
     directly by the state machine.
 
   */
-  Continuation *continuation;
+  Continuation *continuation = nullptr;
 
   /**
     Reference to the Continuation's lock.
 
     Keeps a reference to the Continuation's lock to preserve the
     access to the cancelled field valid even when the state machine
-    has been deallocated. This field should not be accesed or
+    has been deallocated. This field should not be accessed or
     modified directly by the state machine.
 
   */
@@ -115,11 +114,11 @@ public:
     cancelled.
 
     This flag is set after a call to cancel or cancel_action and
-    it should not be accesed or modified directly by the state
+    it should not be accessed or modified directly by the state
     machine.
 
   */
-  volatile int cancelled;
+  int cancelled = false;
 
   /**
     Cancels the asynchronous operation represented by this action.
@@ -134,15 +133,16 @@ public:
 
   */
   virtual void
-  cancel(Continuation *c = NULL)
+  cancel(Continuation *c = nullptr)
   {
     ink_assert(!c || c == continuation);
 #ifdef DEBUG
     ink_assert(!cancelled);
     cancelled = true;
 #else
-    if (!cancelled)
+    if (!cancelled) {
       cancelled = true;
+    }
 #endif
   }
 
@@ -158,15 +158,16 @@ public:
 
   */
   void
-  cancel_action(Continuation *c = NULL)
+  cancel_action(Continuation *c = nullptr)
   {
     ink_assert(!c || c == continuation);
 #ifdef DEBUG
     ink_assert(!cancelled);
     cancelled = true;
 #else
-    if (!cancelled)
+    if (!cancelled) {
       cancelled = true;
+    }
 #endif
   }
 
@@ -174,10 +175,11 @@ public:
   operator=(Continuation *acont)
   {
     continuation = acont;
-    if (acont)
+    if (acont) {
       mutex = acont->mutex;
-    else
-      mutex = 0;
+    } else {
+      mutex = nullptr;
+    }
     return acont;
   }
 
@@ -187,10 +189,8 @@ public:
     Continuation.
 
   */
-  Action() : continuation(NULL), cancelled(false) {}
-#if defined(__GNUC__)
+  Action() {}
   virtual ~Action() {}
-#endif
 };
 
 #define ACTION_RESULT_NONE MAKE_ACTION_RESULT(0)
@@ -203,5 +203,3 @@ public:
 //   MAKE_ACTION_RESULT(ACTION_RESULT_HOST_DB_BASE + 0)
 
 #define MAKE_ACTION_RESULT(_x) (Action *)(((uintptr_t)((_x << 1) + 1)))
-
-#endif /*_Action_h_*/

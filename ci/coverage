@@ -1,0 +1,108 @@
+#! /usr/bin/env bash
+
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+LCOV=${LCOV:-lcov}
+GENHTML=${GENHTML:-genhtml}
+
+TMPDIR=${TMPDIR:-/tmp}
+BUILDID="org.apache.trafficserver.$$"
+
+SRCROOT=${SRCROOT:-$(cd $(dirname $0)/.. && pwd)} # where the source lives
+OBJROOT=${OBJROOT:-"$TMPDIR/$BUILDID/obj"} # where we are building
+DSTROOT=${DSTROOT:-"$TMPDIR/$BUILDID/dst"} # where we are installing
+
+# Force low make parallelization so that the build can complete in a VM with
+# only a small amount of memory.
+NPROCS=${NPROCS:-2}
+
+mkdir -p $SRCROOT
+mkdir -p $OBJROOT
+mkdir -p $DSTROOT
+
+autogen() {
+  (
+    cd "$SRCROOT"
+    [ configure -nt configure.ac -a Makefile.in -nt Makefile.am ] || autoreconf -fi
+  )
+}
+
+configure() {
+  (
+    cd $OBJROOT
+    $SRCROOT/configure \
+      --prefix=$DSTROOT \
+      --enable-debug \
+      --enable-coverage \
+      --enable-werror \
+      --enable-example-plugins \
+      --enable-test-tools \
+      --enable-experimental-plugins \
+      CC="$CC" \
+      CXX="$CXX" \
+      "$@"
+  )
+}
+
+build() {
+  ( cd $OBJROOT && $MAKE -j $NPROCS )
+  ( cd $OBJROOT && $MAKE install )
+}
+
+regress() {
+  ( cd $OBJROOT && $MAKE check ) && \
+  $DSTROOT/bin/traffic_server -k -K -R 1
+}
+
+CC=${CC:-gcc}
+CXX=${CXX:-g++}
+MAKE=${MAKE:-make}
+export CC CXX MAKE
+
+case $VERBOSE in
+  Y*) set -x ;;
+  y*) set -x ;;
+  1) set -x ;;
+  *) set +x ;;
+esac
+
+autogen || exit 1
+configure "$@" || exit 1
+build || exit 1
+
+$LCOV --quiet --capture --initial --directory $OBJROOT --output-file initial.info
+
+regress
+
+$LCOV --quiet --capture --directory $OBJROOT --output-file tests.info
+
+# The --add-tracefile option refuses to create an output file with
+# --output-file (contrary to documentation). Capture the combined
+# coverage from stdout instead.
+$LCOV \
+  --add-tracefile initial.info \
+  --add-tracefile tests.info \
+> combined.info
+
+# genhtml will puke because it can't find the original TSConfig files.
+# We don't need to bother generation anything for /usr/include.
+$LCOV --remove combined.info \
+  'TsConfigSyntax.*' \
+  'TsConfigGrammar.*' \
+  '/usr/include/*' > coverage.info
+
+$GENHTML --output-directory coverage.html coverage.info

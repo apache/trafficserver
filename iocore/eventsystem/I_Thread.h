@@ -49,30 +49,31 @@
   in the Event Subsystem are registered with this key. Thus, whenever you
   call this_ethread() you get a pointer to EThread. If you happen to call
   this_ethread() from inside a thread which is not an EThread, you will
-  get a NULL value (since that thread will not be  registered with the
+  get a nullptr value (since that thread will not be  registered with the
   EThread key). This will hopefully make the use of this_ethread() safer.
   Note that an event created with EThread can also call this_thread(),
   in which case, it will get a pointer to Thread (rather than to EThread).
 
  */
 
-#ifndef _I_Thread_h
-#define _I_Thread_h
+#pragma once
 
 #if !defined(_I_EventSystem_h) && !defined(_P_EventSystem_h)
 #error "include I_EventSystem.h or P_EventSystem.h"
 #endif
 
-#include "ts/ink_platform.h"
-#include "ts/ink_thread.h"
+#include <functional>
+
+#include "tscore/ink_platform.h"
+#include "tscore/ink_thread.h"
 #include "I_ProxyAllocator.h"
 
-class Thread;
 class ProxyMutex;
-typedef void *(*ThreadFunction)(void *arg);
 
-static const int MAX_THREAD_NAME_LENGTH = 16;
-static const int DEFAULT_STACKSIZE = 1048576; // 1MB
+constexpr int MAX_THREAD_NAME_LENGTH = 16;
+
+/// The signature of a function to be called by a thread.
+using ThreadFunction = std::function<void()>;
 
 /**
   Base class for the threads in the Event System. Thread is the base
@@ -91,10 +92,6 @@ static const int DEFAULT_STACKSIZE = 1048576; // 1MB
 class Thread
 {
 public:
-  /*-------------------------------------------*\
-  | Common Interface                            |
-  \*-------------------------------------------*/
-
   /**
     System-wide thread identifier. The thread identifier is represented
     by the platform independent type ink_thread and it is the system-wide
@@ -102,7 +99,8 @@ public:
     processors and you should not modify it directly.
 
   */
-  ink_thread tid;
+  // NOLINTNEXTLINE(modernize-use-nullptr)
+  ink_thread tid = 0;
 
   /**
     Thread lock to ensure atomic operations. The thread lock available
@@ -112,12 +110,8 @@ public:
   */
   Ptr<ProxyMutex> mutex;
 
-  // PRIVATE
   void set_specific();
-  Thread();
-  virtual ~Thread();
 
-  static ink_hrtime cur_time;
   inkcoreapi static ink_thread_key thread_data_key;
 
   // For THREAD_ALLOC
@@ -139,24 +133,21 @@ public:
   ProxyAllocator ioAllocator;
   ProxyAllocator ioBlockAllocator;
 
-private:
-  // prevent unauthorized copies (Not implemented)
-  Thread(const Thread &);
-  Thread &operator=(const Thread &);
+  /** Start the underlying thread.
 
-public:
-  ink_thread start(const char *name, size_t stacksize = DEFAULT_STACKSIZE, ThreadFunction f = NULL, void *a = NULL);
+      The thread name is set to @a name. The stack for the thread is either @a stack or, if that is
+      @c nullptr a stack of size @a stacksize is allocated and used. If @a f is present and valid it
+      is called in the thread context. Otherwise the method @c execute is invoked.
+  */
+  void start(const char *name, void *stack, size_t stacksize, ThreadFunction const &f = ThreadFunction());
 
-  virtual void
-  execute()
-  {
-  }
+  virtual void execute() = 0;
 
   /** Get the current ATS high resolution time.
       This gets a cached copy of the time so it is very fast and reasonably accurate.
       The cached time is updated every time the actual operating system time is fetched which is
       at least every 10ms and generally more frequently.
-      @note The cached copy shared among threads which means the cached copy is udpated
+      @note The cached copy shared among threads which means the cached copy is updated
       for all threads if any thread updates it.
   */
   static ink_hrtime get_hrtime();
@@ -169,6 +160,15 @@ public:
       @note This also updates the cached time.
   */
   static ink_hrtime get_hrtime_updated();
+
+  Thread(const Thread &) = delete;
+  Thread &operator=(const Thread &) = delete;
+  virtual ~Thread();
+
+protected:
+  Thread();
+
+  static ink_hrtime cur_time;
 };
 
 extern Thread *this_thread();
@@ -184,5 +184,3 @@ Thread::get_hrtime_updated()
 {
   return cur_time = ink_get_hrtime_internal();
 }
-
-#endif /*_I_Thread_h*/

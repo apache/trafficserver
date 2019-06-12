@@ -74,14 +74,11 @@
 #include "PluginVC.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
-#include "ts/Regression.h"
+#include "tscore/Regression.h"
 
 #define PVC_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
 #define PVC_DEFAULT_MAX_BYTES 32768
 #define MIN_BLOCK_TRANSFER_BYTES 128
-
-#define EVENT_PTR_LOCKED (void *)0x1
-#define EVENT_PTR_CLOSED (void *)0x2
 
 #define PVC_TYPE ((vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive")
 
@@ -90,31 +87,31 @@ PluginVC::PluginVC(PluginVCCore *core_obj)
     magic(PLUGIN_VC_MAGIC_ALIVE),
     vc_type(PLUGIN_VC_UNKNOWN),
     core_obj(core_obj),
-    other_side(NULL),
+    other_side(nullptr),
     read_state(),
     write_state(),
     need_read_process(false),
     need_write_process(false),
     closed(false),
-    sm_lock_retry_event(NULL),
-    core_lock_retry_event(NULL),
+    sm_lock_retry_event(nullptr),
+    core_lock_retry_event(nullptr),
     deletable(false),
     reentrancy_count(0),
     active_timeout(0),
-    active_event(NULL),
+    active_event(nullptr),
     inactive_timeout(0),
     inactive_timeout_at(0),
-    inactive_event(NULL),
-    plugin_tag(NULL),
+    inactive_event(nullptr),
+    plugin_tag(nullptr),
     plugin_id(0)
 {
-  ink_assert(core_obj != NULL);
+  ink_assert(core_obj != nullptr);
   SET_HANDLER(&PluginVC::main_handler);
 }
 
 PluginVC::~PluginVC()
 {
-  mutex = NULL;
+  mutex = nullptr;
 }
 
 int
@@ -125,23 +122,24 @@ PluginVC::main_handler(int event, void *data)
   ink_release_assert(event == EVENT_INTERVAL || event == EVENT_IMMEDIATE);
   ink_release_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
   ink_assert(!deletable);
-  ink_assert(data != NULL);
+  ink_assert(data != nullptr);
 
-  Event *call_event = (Event *)data;
+  Event *call_event   = (Event *)data;
   EThread *my_ethread = mutex->thread_holding;
-  ink_release_assert(my_ethread != NULL);
+  ink_release_assert(my_ethread != nullptr);
 
-  bool read_mutex_held = false;
-  bool write_mutex_held = false;
-  Ptr<ProxyMutex> read_side_mutex = read_state.vio.mutex;
+  bool read_mutex_held             = false;
+  bool write_mutex_held            = false;
+  Ptr<ProxyMutex> read_side_mutex  = read_state.vio.mutex;
   Ptr<ProxyMutex> write_side_mutex = write_state.vio.mutex;
 
   if (read_side_mutex) {
     read_mutex_held = MUTEX_TAKE_TRY_LOCK(read_side_mutex, my_ethread);
 
     if (!read_mutex_held) {
-      if (call_event != inactive_event)
+      if (call_event != inactive_event) {
         call_event->schedule_in(PVC_LOCK_RETRY_TIME);
+      }
       return 0;
     }
 
@@ -149,8 +147,9 @@ PluginVC::main_handler(int event, void *data)
       // It's possible some swapped the mutex on us before
       //  we were able to grab it
       Mutex_unlock(read_side_mutex, my_ethread);
-      if (call_event != inactive_event)
+      if (call_event != inactive_event) {
         call_event->schedule_in(PVC_LOCK_RETRY_TIME);
+      }
       return 0;
     }
   }
@@ -162,8 +161,9 @@ PluginVC::main_handler(int event, void *data)
       if (read_mutex_held) {
         Mutex_unlock(read_side_mutex, my_ethread);
       }
-      if (call_event != inactive_event)
+      if (call_event != inactive_event) {
         call_event->schedule_in(PVC_LOCK_RETRY_TIME);
+      }
       return 0;
     }
 
@@ -174,8 +174,9 @@ PluginVC::main_handler(int event, void *data)
       if (read_mutex_held) {
         Mutex_unlock(read_side_mutex, my_ethread);
       }
-      if (call_event != inactive_event)
+      if (call_event != inactive_event) {
         call_event->schedule_in(PVC_LOCK_RETRY_TIME);
+      }
       return 0;
     }
   }
@@ -207,14 +208,13 @@ PluginVC::main_handler(int event, void *data)
   } else if (call_event == inactive_event) {
     if (inactive_timeout_at && inactive_timeout_at < Thread::get_hrtime()) {
       process_timeout(&inactive_event, VC_EVENT_INACTIVITY_TIMEOUT);
-      call_event->cancel();
     }
   } else {
     if (call_event == sm_lock_retry_event) {
-      sm_lock_retry_event = NULL;
+      sm_lock_retry_event = nullptr;
     } else {
       ink_release_assert(call_event == core_lock_retry_event);
-      core_lock_retry_event = NULL;
+      core_lock_retry_event = nullptr;
     }
 
     if (need_read_process) {
@@ -256,12 +256,12 @@ PluginVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 
   // Note: we set vio.op last because process_read_side looks at it to
   //  tell if the VConnection is active.
-  read_state.vio.mutex = c->mutex;
-  read_state.vio._cont = c;
-  read_state.vio.nbytes = nbytes;
-  read_state.vio.ndone = 0;
+  read_state.vio.mutex     = c ? c->mutex : this->mutex;
+  read_state.vio.cont      = c;
+  read_state.vio.nbytes    = nbytes;
+  read_state.vio.ndone     = 0;
   read_state.vio.vc_server = (VConnection *)this;
-  read_state.vio.op = VIO::READ;
+  read_state.vio.op        = VIO::READ;
 
   Debug("pvc", "[%u] %s: do_io_read for %" PRId64 " bytes", core_obj->id, PVC_TYPE, nbytes);
 
@@ -288,12 +288,12 @@ PluginVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, 
 
   // Note: we set vio.op last because process_write_side looks at it to
   //  tell if the VConnection is active.
-  write_state.vio.mutex = c ? c->mutex : this->mutex;
-  write_state.vio._cont = c;
-  write_state.vio.nbytes = nbytes;
-  write_state.vio.ndone = 0;
+  write_state.vio.mutex     = c ? c->mutex : this->mutex;
+  write_state.vio.cont      = c;
+  write_state.vio.nbytes    = nbytes;
+  write_state.vio.ndone     = 0;
   write_state.vio.vc_server = (VConnection *)this;
-  write_state.vio.op = VIO::WRITE;
+  write_state.vio.op        = VIO::WRITE;
 
   Debug("pvc", "[%u] %s: do_io_write for %" PRId64 " bytes", core_obj->id, PVC_TYPE, nbytes);
 
@@ -310,6 +310,7 @@ PluginVC::reenable(VIO *vio)
 {
   ink_assert(!closed);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(vio->mutex->thread_holding == this_ethread());
 
   Ptr<ProxyMutex> sm_mutex = vio->mutex;
   SCOPED_MUTEX_LOCK(lock, sm_mutex, this_ethread());
@@ -332,6 +333,7 @@ PluginVC::reenable_re(VIO *vio)
 {
   ink_assert(!closed);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
+  ink_assert(vio->mutex->thread_holding == this_ethread());
 
   Debug("pvc", "[%u] %s: reenable_re %s", core_obj->id, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
@@ -375,8 +377,9 @@ PluginVC::do_io_close(int /* flag ATS_UNUSED */)
 
     // If re-entered then that earlier handler will clean up, otherwise set up a ping
     // to drive that process (too dangerous to do it here).
-    if (reentrancy_count <= 0)
+    if (reentrancy_count <= 0) {
       setup_event_cb(0, &sm_lock_retry_event);
+    }
   }
 }
 
@@ -394,7 +397,7 @@ PluginVC::do_io_shutdown(ShutdownHowTo_t howto)
     write_state.shutdown = true;
     break;
   case IO_SHUTDOWN_READWRITE:
-    read_state.shutdown = true;
+    read_state.shutdown  = true;
     write_state.shutdown = true;
     break;
   }
@@ -425,8 +428,8 @@ PluginVC::transfer_bytes(MIOBuffer *transfer_to, IOBufferReader *transfer_from, 
 
   while (act_on > 0) {
     int64_t block_read_avail = transfer_from->block_read_avail();
-    int64_t to_move = MIN(act_on, block_read_avail);
-    int64_t moved = 0;
+    int64_t to_move          = std::min(act_on, block_read_avail);
+    int64_t moved            = 0;
 
     if (to_move <= 0) {
       break;
@@ -472,25 +475,13 @@ PluginVC::process_write_side(bool other_side_call)
 
   MIOBuffer *core_buffer = (vc_type == PLUGIN_VC_ACTIVE) ? core_obj->a_to_p_buffer : core_obj->p_to_a_buffer;
 
+  Debug("pvc", "[%u] %s: process_write_side", core_obj->id, PVC_TYPE);
   need_write_process = false;
 
+  // Check write_state
   if (write_state.vio.op != VIO::WRITE || closed || write_state.shutdown) {
     return;
   }
-  // Acquire the lock of the write side continuation
-  EThread *my_ethread = mutex->thread_holding;
-  ink_assert(my_ethread != NULL);
-  MUTEX_TRY_LOCK(lock, write_state.vio.mutex, my_ethread);
-  if (!lock.is_locked()) {
-    Debug("pvc_event", "[%u] %s: process_write_side lock miss, retrying", core_obj->id, PVC_TYPE);
-
-    need_write_process = true;
-    setup_event_cb(PVC_LOCK_RETRY_TIME, &core_lock_retry_event);
-    return;
-  }
-
-  Debug("pvc", "[%u] %s: process_write_side", core_obj->id, PVC_TYPE);
-  need_write_process = false;
 
   // Check the state of our write buffer as well as ntodo
   int64_t ntodo = write_state.vio.ntodo();
@@ -499,13 +490,13 @@ PluginVC::process_write_side(bool other_side_call)
   }
 
   IOBufferReader *reader = write_state.vio.get_reader();
-  int64_t bytes_avail = reader->read_avail();
-  int64_t act_on = MIN(bytes_avail, ntodo);
+  int64_t bytes_avail    = reader->read_avail();
+  int64_t act_on         = std::min(bytes_avail, ntodo);
 
   Debug("pvc", "[%u] %s: process_write_side; act_on %" PRId64 "", core_obj->id, PVC_TYPE, act_on);
 
   if (other_side->closed || other_side->read_state.shutdown) {
-    write_state.vio._cont->handleEvent(VC_EVENT_ERROR, &write_state.vio);
+    write_state.vio.cont->handleEvent(VC_EVENT_ERROR, &write_state.vio);
     return;
   }
 
@@ -513,7 +504,7 @@ PluginVC::process_write_side(bool other_side_call)
     if (ntodo > 0) {
       // Notify the continuation that we are "disabling"
       //  ourselves due to to nothing to write
-      write_state.vio._cont->handleEvent(VC_EVENT_WRITE_READY, &write_state.vio);
+      write_state.vio.cont->handleEvent(VC_EVENT_WRITE_READY, &write_state.vio);
     }
     return;
   }
@@ -525,7 +516,7 @@ PluginVC::process_write_side(bool other_side_call)
     Debug("pvc", "[%u] %s: process_write_side no buffer space", core_obj->id, PVC_TYPE);
     return;
   }
-  act_on = MIN(act_on, buf_space);
+  act_on = std::min(act_on, buf_space);
 
   int64_t added = transfer_bytes(core_buffer, reader, act_on);
   if (added < 0) {
@@ -541,9 +532,9 @@ PluginVC::process_write_side(bool other_side_call)
   Debug("pvc", "[%u] %s: process_write_side; added %" PRId64 "", core_obj->id, PVC_TYPE, added);
 
   if (write_state.vio.ntodo() == 0) {
-    write_state.vio._cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &write_state.vio);
+    write_state.vio.cont->handleEvent(VC_EVENT_WRITE_COMPLETE, &write_state.vio);
   } else {
-    write_state.vio._cont->handleEvent(VC_EVENT_WRITE_READY, &write_state.vio);
+    write_state.vio.cont->handleEvent(VC_EVENT_WRITE_READY, &write_state.vio);
   }
 
   update_inactive_time();
@@ -551,6 +542,30 @@ PluginVC::process_write_side(bool other_side_call)
   // Wake up the read side on the other side to process these bytes
   if (!other_side->closed) {
     if (!other_side_call) {
+      /* To clear the `need_read_process`, the mutexes must be obtained:
+       *
+       *   - PluginVC::mutex
+       *   - PluginVC::read_state.vio.mutex
+       *
+       */
+      if (other_side->read_state.vio.op != VIO::READ || other_side->closed || other_side->read_state.shutdown) {
+        // Just return, no touch on `other_side->need_read_process`.
+        return;
+      }
+      // Acquire the lock of the read side continuation
+      EThread *my_ethread = mutex->thread_holding;
+      ink_assert(my_ethread != nullptr);
+      MUTEX_TRY_LOCK(lock, other_side->read_state.vio.mutex, my_ethread);
+      if (!lock.is_locked()) {
+        Debug("pvc_event", "[%u] %s: process_read_side from other side lock miss, retrying", other_side->core_obj->id,
+              ((other_side->vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive"));
+
+        // set need_read_process to enforce the read processing
+        other_side->need_read_process = true;
+        other_side->setup_event_cb(PVC_LOCK_RETRY_TIME, &other_side->core_lock_retry_event);
+        return;
+      }
+
       other_side->process_read_side(true);
     } else {
       other_side->read_state.vio.reenable();
@@ -586,28 +601,11 @@ PluginVC::process_read_side(bool other_side_call)
     core_reader = core_obj->a_to_p_reader;
   }
 
-  need_read_process = false;
-
-  if (read_state.vio.op != VIO::READ || closed) {
-    return;
-  }
-  // Acquire the lock of the read side continuation
-  EThread *my_ethread = mutex->thread_holding;
-  ink_assert(my_ethread != NULL);
-  MUTEX_TRY_LOCK(lock, read_state.vio.mutex, my_ethread);
-  if (!lock.is_locked()) {
-    Debug("pvc_event", "[%u] %s: process_read_side lock miss, retrying", core_obj->id, PVC_TYPE);
-
-    need_read_process = true;
-    setup_event_cb(PVC_LOCK_RETRY_TIME, &core_lock_retry_event);
-    return;
-  }
-
   Debug("pvc", "[%u] %s: process_read_side", core_obj->id, PVC_TYPE);
   need_read_process = false;
 
-  // Check read_state.shutdown after the lock has been obtained.
-  if (read_state.shutdown) {
+  // Check read_state
+  if (read_state.vio.op != VIO::READ || closed || read_state.shutdown) {
     return;
   }
 
@@ -618,13 +616,13 @@ PluginVC::process_read_side(bool other_side_call)
   }
 
   int64_t bytes_avail = core_reader->read_avail();
-  int64_t act_on = MIN(bytes_avail, ntodo);
+  int64_t act_on      = std::min(bytes_avail, ntodo);
 
   Debug("pvc", "[%u] %s: process_read_side; act_on %" PRId64 "", core_obj->id, PVC_TYPE, act_on);
 
   if (act_on <= 0) {
     if (other_side->closed || other_side->write_state.shutdown) {
-      read_state.vio._cont->handleEvent(VC_EVENT_EOS, &read_state.vio);
+      read_state.vio.cont->handleEvent(VC_EVENT_EOS, &read_state.vio);
     }
     return;
   }
@@ -634,13 +632,13 @@ PluginVC::process_read_side(bool other_side_call)
   MIOBuffer *output_buffer = read_state.vio.get_writer();
 
   int64_t water_mark = output_buffer->water_mark;
-  water_mark = MAX(water_mark, PVC_DEFAULT_MAX_BYTES);
-  int64_t buf_space = water_mark - output_buffer->max_read_avail();
+  water_mark         = std::max(water_mark, static_cast<int64_t>(PVC_DEFAULT_MAX_BYTES));
+  int64_t buf_space  = water_mark - output_buffer->max_read_avail();
   if (buf_space <= 0) {
     Debug("pvc", "[%u] %s: process_read_side no buffer space", core_obj->id, PVC_TYPE);
     return;
   }
-  act_on = MIN(act_on, buf_space);
+  act_on = std::min(act_on, buf_space);
 
   int64_t added = transfer_bytes(output_buffer, core_reader, act_on);
   if (added <= 0) {
@@ -656,9 +654,9 @@ PluginVC::process_read_side(bool other_side_call)
   Debug("pvc", "[%u] %s: process_read_side; added %" PRId64 "", core_obj->id, PVC_TYPE, added);
 
   if (read_state.vio.ntodo() == 0) {
-    read_state.vio._cont->handleEvent(VC_EVENT_READ_COMPLETE, &read_state.vio);
+    read_state.vio.cont->handleEvent(VC_EVENT_READ_COMPLETE, &read_state.vio);
   } else {
-    read_state.vio._cont->handleEvent(VC_EVENT_READ_READY, &read_state.vio);
+    read_state.vio.cont->handleEvent(VC_EVENT_READ_READY, &read_state.vio);
   }
 
   update_inactive_time();
@@ -667,6 +665,30 @@ PluginVC::process_read_side(bool other_side_call)
   //  intermediate buffer
   if (!other_side->closed) {
     if (!other_side_call) {
+      /* To clear the `need_write_process`, the mutexes must be obtained:
+       *
+       *   - PluginVC::mutex
+       *   - PluginVC::write_state.vio.mutex
+       *
+       */
+      if (other_side->write_state.vio.op != VIO::WRITE || other_side->closed || other_side->write_state.shutdown) {
+        // Just return, no touch on `other_side->need_write_process`.
+        return;
+      }
+      // Acquire the lock of the write side continuation
+      EThread *my_ethread = mutex->thread_holding;
+      ink_assert(my_ethread != nullptr);
+      MUTEX_TRY_LOCK(lock, other_side->write_state.vio.mutex, my_ethread);
+      if (!lock.is_locked()) {
+        Debug("pvc_event", "[%u] %s: process_write_side from other side lock miss, retrying", other_side->core_obj->id,
+              ((other_side->vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive"));
+
+        // set need_write_process to enforce the write processing
+        other_side->need_write_process = true;
+        other_side->setup_event_cb(PVC_LOCK_RETRY_TIME, &other_side->core_lock_retry_event);
+        return;
+      }
+
       other_side->process_write_side(true);
     } else {
       other_side->write_state.vio.reenable();
@@ -694,22 +716,22 @@ PluginVC::process_close()
 
   if (sm_lock_retry_event) {
     sm_lock_retry_event->cancel();
-    sm_lock_retry_event = NULL;
+    sm_lock_retry_event = nullptr;
   }
 
   if (core_lock_retry_event) {
     core_lock_retry_event->cancel();
-    core_lock_retry_event = NULL;
+    core_lock_retry_event = nullptr;
   }
 
   if (active_event) {
     active_event->cancel();
-    active_event = NULL;
+    active_event = nullptr;
   }
 
   if (inactive_event) {
     inactive_event->cancel();
-    inactive_event = NULL;
+    inactive_event      = nullptr;
     inactive_timeout_at = 0;
   }
   // If the other side of the PluginVC is not closed
@@ -718,7 +740,7 @@ PluginVC::process_close()
   //  the close
   if (!other_side->closed && core_obj->connected) {
     other_side->need_write_process = true;
-    other_side->need_read_process = true;
+    other_side->need_read_process  = true;
     other_side->setup_event_cb(0, &other_side->core_lock_retry_event);
   }
 
@@ -744,28 +766,47 @@ PluginVC::process_timeout(Event **e, int event_to_send)
   if (closed) {
     // already closed, ignore the timeout event
     // to avoid handle_event asserting use-after-free
+    clear_event(e);
     return;
   }
 
   if (read_state.vio.op == VIO::READ && !read_state.shutdown && read_state.vio.ntodo() > 0) {
     MUTEX_TRY_LOCK(lock, read_state.vio.mutex, (*e)->ethread);
     if (!lock.is_locked()) {
-      (*e)->schedule_in(PVC_LOCK_RETRY_TIME);
+      if (*e == active_event) {
+        // Only reschedule active_event due to inactive_event is perorid event.
+        (*e)->schedule_in(PVC_LOCK_RETRY_TIME);
+      }
       return;
     }
-    *e = NULL;
-    read_state.vio._cont->handleEvent(event_to_send, &read_state.vio);
+    clear_event(e);
+    read_state.vio.cont->handleEvent(event_to_send, &read_state.vio);
   } else if (write_state.vio.op == VIO::WRITE && !write_state.shutdown && write_state.vio.ntodo() > 0) {
     MUTEX_TRY_LOCK(lock, write_state.vio.mutex, (*e)->ethread);
     if (!lock.is_locked()) {
-      (*e)->schedule_in(PVC_LOCK_RETRY_TIME);
+      if (*e == active_event) {
+        // Only reschedule active_event due to inactive_event is perorid event.
+        (*e)->schedule_in(PVC_LOCK_RETRY_TIME);
+      }
       return;
     }
-    *e = NULL;
-    write_state.vio._cont->handleEvent(event_to_send, &write_state.vio);
+    clear_event(e);
+    write_state.vio.cont->handleEvent(event_to_send, &write_state.vio);
   } else {
-    *e = NULL;
+    clear_event(e);
   }
+}
+
+void
+PluginVC::clear_event(Event **e)
+{
+  if (e == nullptr || *e == nullptr)
+    return;
+  if (*e == inactive_event) {
+    inactive_event->cancel();
+    inactive_timeout_at = 0;
+  }
+  *e = nullptr;
 }
 
 void
@@ -789,7 +830,7 @@ PluginVC::setup_event_cb(ink_hrtime in, Event **e_ptr)
 {
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
 
-  if (*e_ptr == NULL) {
+  if (*e_ptr == nullptr) {
     // We locked the pointer so we can now allocate an event
     //   to call us back
     if (in == 0) {
@@ -818,7 +859,7 @@ PluginVC::set_active_timeout(ink_hrtime timeout_in)
   if (active_event) {
     ink_assert(!active_event->cancelled);
     active_event->cancel();
-    active_event = NULL;
+    active_event = nullptr;
   }
 
   if (active_timeout > 0) {
@@ -832,14 +873,14 @@ PluginVC::set_inactivity_timeout(ink_hrtime timeout_in)
   inactive_timeout = timeout_in;
   if (inactive_timeout != 0) {
     inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
-    if (inactive_event == NULL) {
+    if (inactive_event == nullptr) {
       inactive_event = eventProcessor.schedule_every(this, HRTIME_SECONDS(1));
     }
   } else {
     inactive_timeout_at = 0;
     if (inactive_event) {
       inactive_event->cancel();
-      inactive_event = NULL;
+      inactive_event = nullptr;
     }
   }
 }
@@ -916,14 +957,20 @@ PluginVC::set_remote_addr()
   }
 }
 
-int
-PluginVC::set_tcp_init_cwnd(int /* init_cwnd ATS_UNUSED */)
+void
+PluginVC::set_remote_addr(const sockaddr * /* new_sa ATS_UNUSED */)
 {
-  return -1;
+  return;
+}
+
+void
+PluginVC::set_mptcp_state()
+{
+  return;
 }
 
 int
-PluginVC::set_tcp_congestion_control(const char *ATS_UNUSED, int ATS_UNUSED)
+PluginVC::set_tcp_congestion_control(int ATS_UNUSED)
 {
   return -1;
 }
@@ -937,7 +984,7 @@ PluginVC::apply_options()
 bool
 PluginVC::get_data(int id, void *data)
 {
-  if (data == NULL) {
+  if (data == nullptr) {
     return false;
   }
   switch (id) {
@@ -959,7 +1006,7 @@ PluginVC::get_data(int id, void *data)
     *static_cast<int *>(data) = this->closed;
     return true;
   default:
-    *(void **)data = NULL;
+    *(void **)data = nullptr;
     return false;
   }
 }
@@ -989,17 +1036,16 @@ PluginVC::set_data(int id, void *data)
 
 // PluginVCCore
 
-vint32 PluginVCCore::nextid = 0;
+int32_t PluginVCCore::nextid;
 
-PluginVCCore::~PluginVCCore()
-{
-}
+PluginVCCore::~PluginVCCore() {}
 
 PluginVCCore *
-PluginVCCore::alloc()
+PluginVCCore::alloc(Continuation *acceptor)
 {
   PluginVCCore *pvc = new PluginVCCore;
   pvc->init();
+  pvc->connect_to = acceptor;
   return pvc;
 }
 
@@ -1008,17 +1054,17 @@ PluginVCCore::init()
 {
   mutex = new_ProxyMutex();
 
-  active_vc.vc_type = PLUGIN_VC_ACTIVE;
+  active_vc.vc_type    = PLUGIN_VC_ACTIVE;
   active_vc.other_side = &passive_vc;
-  active_vc.core_obj = this;
-  active_vc.mutex = mutex;
-  active_vc.thread = this_ethread();
+  active_vc.core_obj   = this;
+  active_vc.mutex      = mutex;
+  active_vc.thread     = this_ethread();
 
-  passive_vc.vc_type = PLUGIN_VC_PASSIVE;
+  passive_vc.vc_type    = PLUGIN_VC_PASSIVE;
   passive_vc.other_side = &active_vc;
-  passive_vc.core_obj = this;
-  passive_vc.mutex = mutex;
-  passive_vc.thread = active_vc.thread;
+  passive_vc.core_obj   = this;
+  passive_vc.mutex      = mutex;
+  passive_vc.thread     = active_vc.thread;
 
   p_to_a_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
   p_to_a_reader = p_to_a_buffer->alloc_reader();
@@ -1035,48 +1081,38 @@ PluginVCCore::destroy()
   Debug("pvc", "[%u] Destroying PluginVCCore at %p", id, this);
 
   ink_assert(active_vc.closed == true || !connected);
-  active_vc.mutex = NULL;
+  active_vc.mutex = nullptr;
   active_vc.read_state.vio.buffer.clear();
   active_vc.write_state.vio.buffer.clear();
   active_vc.magic = PLUGIN_VC_MAGIC_DEAD;
 
   ink_assert(passive_vc.closed == true || !connected);
-  passive_vc.mutex = NULL;
+  passive_vc.mutex = nullptr;
   passive_vc.read_state.vio.buffer.clear();
   passive_vc.write_state.vio.buffer.clear();
   passive_vc.magic = PLUGIN_VC_MAGIC_DEAD;
 
   if (p_to_a_buffer) {
     free_MIOBuffer(p_to_a_buffer);
-    p_to_a_buffer = NULL;
+    p_to_a_buffer = nullptr;
   }
 
   if (a_to_p_buffer) {
     free_MIOBuffer(a_to_p_buffer);
-    a_to_p_buffer = NULL;
+    a_to_p_buffer = nullptr;
   }
 
-  this->mutex = NULL;
+  this->mutex = nullptr;
   delete this;
-}
-
-void
-PluginVCCore::set_accept_cont(Continuation *c)
-{
-  connect_to = c;
-  // FIX ME - must return action
 }
 
 PluginVC *
 PluginVCCore::connect()
 {
-  // Make sure there is another end to connect to
-  if (connect_to == NULL) {
-    return NULL;
-  }
+  ink_release_assert(connect_to != nullptr);
 
   connected = true;
-  state_send_accept(EVENT_IMMEDIATE, NULL);
+  state_send_accept(EVENT_IMMEDIATE, nullptr);
 
   return &active_vc;
 }
@@ -1084,16 +1120,13 @@ PluginVCCore::connect()
 Action *
 PluginVCCore::connect_re(Continuation *c)
 {
-  // Make sure there is another end to connect to
-  if (connect_to == NULL) {
-    return NULL;
-  }
+  ink_release_assert(connect_to != nullptr);
 
   EThread *my_thread = this_ethread();
   MUTEX_TAKE_LOCK(this->mutex, my_thread);
 
   connected = true;
-  state_send_accept(EVENT_IMMEDIATE, NULL);
+  state_send_accept(EVENT_IMMEDIATE, nullptr);
 
   // We have to take out our mutex because rest of the
   //   system expects the VC mutex to held when calling back.
@@ -1109,14 +1142,19 @@ PluginVCCore::connect_re(Continuation *c)
 int
 PluginVCCore::state_send_accept_failed(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
-
-  if (lock.is_locked()) {
-    connect_to->handleEvent(NET_EVENT_ACCEPT_FAILED, NULL);
+  if (connect_to->mutex == nullptr) {
+    connect_to->handleEvent(NET_EVENT_ACCEPT_FAILED, nullptr);
     destroy();
   } else {
-    SET_HANDLER(&PluginVCCore::state_send_accept_failed);
-    eventProcessor.schedule_in(this, PVC_LOCK_RETRY_TIME);
+    MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
+
+    if (lock.is_locked()) {
+      connect_to->handleEvent(NET_EVENT_ACCEPT_FAILED, nullptr);
+      destroy();
+    } else {
+      SET_HANDLER(&PluginVCCore::state_send_accept_failed);
+      eventProcessor.schedule_in(this, PVC_LOCK_RETRY_TIME);
+    }
   }
 
   return 0;
@@ -1125,13 +1163,17 @@ PluginVCCore::state_send_accept_failed(int /* event ATS_UNUSED */, void * /* dat
 int
 PluginVCCore::state_send_accept(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
 {
-  MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
-
-  if (lock.is_locked()) {
+  if (connect_to->mutex == nullptr) {
     connect_to->handleEvent(NET_EVENT_ACCEPT, &passive_vc);
   } else {
-    SET_HANDLER(&PluginVCCore::state_send_accept);
-    eventProcessor.schedule_in(this, PVC_LOCK_RETRY_TIME);
+    MUTEX_TRY_LOCK(lock, connect_to->mutex, this_ethread());
+
+    if (lock.is_locked()) {
+      connect_to->handleEvent(NET_EVENT_ACCEPT, &passive_vc);
+    } else {
+      SET_HANDLER(&PluginVCCore::state_send_accept);
+      eventProcessor.schedule_in(this, PVC_LOCK_RETRY_TIME);
+    }
   }
 
   return 0;
@@ -1148,7 +1190,7 @@ PluginVCCore::attempt_delete()
     if (passive_vc.deletable) {
       destroy();
     } else if (!connected) {
-      state_send_accept_failed(EVENT_IMMEDIATE, NULL);
+      state_send_accept_failed(EVENT_IMMEDIATE, nullptr);
     }
   }
 }
@@ -1216,7 +1258,7 @@ PluginVCCore::set_plugin_id(int64_t id)
 }
 
 void
-PluginVCCore::set_plugin_tag(char const *tag)
+PluginVCCore::set_plugin_tag(const char *tag)
 {
   passive_vc.plugin_tag = active_vc.plugin_tag = tag;
 }
@@ -1232,24 +1274,22 @@ class PVCTestDriver : public NetTestDriver
 {
 public:
   PVCTestDriver();
-  ~PVCTestDriver();
+  ~PVCTestDriver() override;
 
   void start_tests(RegressionTest *r_arg, int *pstatus_arg);
   void run_next_test();
   int main_handler(int event, void *data);
 
 private:
-  unsigned i;
-  unsigned completions_received;
+  unsigned i                    = 0;
+  unsigned completions_received = 0;
 };
 
-PVCTestDriver::PVCTestDriver() : NetTestDriver(), i(0), completions_received(0)
-{
-}
+PVCTestDriver::PVCTestDriver() : NetTestDriver() {}
 
 PVCTestDriver::~PVCTestDriver()
 {
-  mutex = NULL;
+  mutex = nullptr;
 }
 
 void
@@ -1258,12 +1298,11 @@ PVCTestDriver::start_tests(RegressionTest *r_arg, int *pstatus_arg)
   mutex = new_ProxyMutex();
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
 
-  r = r_arg;
+  r       = r_arg;
   pstatus = pstatus_arg;
+  SET_HANDLER(&PVCTestDriver::main_handler);
 
   run_next_test();
-
-  SET_HANDLER(&PVCTestDriver::main_handler);
 }
 
 void
@@ -1287,12 +1326,11 @@ PVCTestDriver::run_next_test()
 
   Debug("pvc_test", "Starting test %s", netvc_tests_def[a_index].test_name);
 
-  NetVCTest *p = new NetVCTest;
-  NetVCTest *a = new NetVCTest;
-  PluginVCCore *core = PluginVCCore::alloc();
-  core->set_accept_cont(p);
+  NetVCTest *p       = new NetVCTest;
+  NetVCTest *a       = new NetVCTest;
+  PluginVCCore *core = PluginVCCore::alloc(p);
 
-  p->init_test(NET_VC_TEST_PASSIVE, this, NULL, r, &netvc_tests_def[p_index], "PluginVC", "pvc_test_detail");
+  p->init_test(NET_VC_TEST_PASSIVE, this, nullptr, r, &netvc_tests_def[p_index], "PluginVC", "pvc_test_detail");
   PluginVC *a_vc = core->connect();
 
   a->init_test(NET_VC_TEST_ACTIVE, this, a_vc, r, &netvc_tests_def[a_index], "PluginVC", "pvc_test_detail");

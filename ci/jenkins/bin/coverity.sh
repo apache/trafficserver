@@ -19,15 +19,16 @@
 cd "${WORKSPACE}/src"
 
 # Get the Coverity tools into our path
+source /opt/rh/devtoolset-7/enable
 export PATH=/home/coverity/bin:${PATH}
 
 COV_TARBALL=/tmp/trafficserver-${TODAY}.tgz
 COV_VERSION=$(git rev-parse --short HEAD)
 
 autoreconf -fi
-./configure --enable-experimental-plugins --enable-cppapi --enable-wccp
+./configure --enable-experimental-plugins --enable-wccp
 
-cov-build --dir cov-int ${ATS_MAKE} -j4
+cov-build --dir cov-int ${ATS_MAKE} -j4 V=1
 tar czvf ${COV_TARBALL} cov-int
 
 # Now submit this artifact

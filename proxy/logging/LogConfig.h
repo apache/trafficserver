@@ -21,12 +21,17 @@
   limitations under the License.
  */
 
-#ifndef LOG_CONFIG_H
-#define LOG_CONFIG_H
+#pragma once
 
-#include "ts/ink_platform.h"
-#include "P_RecProcess.h"
+#include <string_view>
+#include <string>
+
+#include "tscore/IntrusiveHashMap.h"
+#include "tscore/ink_platform.h"
+#include "records/P_RecProcess.h"
 #include "ProxyConfig.h"
+#include "LogObject.h"
+#include "tscpp/util/MemSpan.h"
 
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
    to enumerate its stats separately and register them with librecords
@@ -72,7 +77,73 @@ enum {
 extern RecRawStatBlock *log_rsb;
 
 struct dirent;
-struct LogCollationAccept;
+
+/*-------------------------------------------------------------------------
+  LogDeleteCandidate, LogDeletingInfo&Descriptor
+  -------------------------------------------------------------------------*/
+
+struct LogDeleteCandidate {
+  std::string name;
+  int64_t size;
+  time_t mtime;
+
+  LogDeleteCandidate(char *p_name, int64_t st_size, time_t st_time) : name(p_name), size(st_size), mtime(st_time) {}
+};
+
+struct LogDeletingInfo {
+  std::string name;
+  int min_count;
+  std::vector<LogDeleteCandidate> candidates;
+
+  LogDeletingInfo *_next{nullptr};
+  LogDeletingInfo *_prev{nullptr};
+
+  LogDeletingInfo(const char *type, int limit) : name(type), min_count(limit) {}
+  LogDeletingInfo(std::string_view type, int limit) : name(type), min_count(limit) {}
+
+  void
+  clear()
+  {
+    candidates.clear();
+  }
+};
+
+struct LogDeletingInfoDescriptor {
+  using key_type   = std::string_view;
+  using value_type = LogDeletingInfo;
+
+  static key_type
+  key_of(value_type *value)
+  {
+    return value->name;
+  }
+
+  static bool
+  equal(key_type const &lhs, key_type const &rhs)
+  {
+    return lhs == rhs;
+  }
+
+  static value_type *&
+  next_ptr(value_type *value)
+  {
+    return value->_next;
+  }
+
+  static value_type *&
+  prev_ptr(value_type *value)
+  {
+    return value->_prev;
+  }
+
+  static constexpr std::hash<std::string_view> hasher{};
+
+  static auto
+  hash_of(key_type s) -> decltype(hasher(s))
+  {
+    return hasher(s);
+  }
+};
 
 /*-------------------------------------------------------------------------
   this object keeps the state of the logging configuraion variables.  upon
@@ -102,9 +173,9 @@ class LogConfig : public ConfigInfo
 {
 public:
   LogConfig();
-  ~LogConfig();
+  ~LogConfig() override;
 
-  void init(LogConfig *previous_config = 0);
+  void init(LogConfig *previous_config = nullptr);
   void display(FILE *fd = stdout);
   void setup_log_objects();
 
@@ -114,15 +185,10 @@ public:
   static void register_stat_callbacks();
   static void register_mgmt_callbacks();
 
-  bool space_to_write(int64_t bytes_to_write);
+  bool space_to_write(int64_t bytes_to_write) const;
 
   bool
-  am_collation_host() const
-  {
-    return collation_mode == Log::COLLATION_HOST;
-  }
-  bool
-  space_is_short()
+  space_is_short() const
   {
     return !space_to_write(max_space_mb_headroom * LOG_MEGABYTE);
   };
@@ -138,12 +204,12 @@ public:
   void read_configuration_variables();
 
   // CVR This is the mgmt callback function, hence all the strange arguments
-  static void *reconfigure_mgmt_variables(void *token, char *data_raw, int data_len);
+  static void reconfigure_mgmt_variables(ts::MemSpan<void>);
 
   int
-  get_max_space_mb()
+  get_max_space_mb() const
   {
-    return (use_orphan_log_space_value ? max_space_mb_for_orphan_logs : max_space_mb_for_logs);
+    return max_space_mb_for_logs;
   }
 
   void
@@ -159,35 +225,34 @@ public:
   }
 
 public:
-  bool initialized;
-  bool reconfiguration_needed;
-  bool logging_space_exhausted;
-  int64_t m_space_used;
+  bool initialized             = false;
+  bool reconfiguration_needed  = false;
+  bool logging_space_exhausted = false;
+  int64_t m_space_used         = 0;
   int64_t m_partition_space_left;
   bool roll_log_files_now; // signal that files must be rolled
 
   LogObjectManager log_object_manager;
-  LogFilterList global_filter_list;
-  LogFormatList global_format_list;
+
+  LogFilterList filter_list;
+  LogFormatList format_list;
 
   int log_buffer_size;
   int max_secs_per_buffer;
   int max_space_mb_for_logs;
-  int max_space_mb_for_orphan_logs;
   int max_space_mb_headroom;
   int logfile_perm;
-  int collation_mode;
-  int collation_port;
-  bool collation_host_tagged;
-  int collation_preproc_threads;
-  int collation_retry_sec;
-  int collation_max_send_buffers;
+
+  int preproc_threads;
+
   Log::RollingEnabledValues rolling_enabled;
   int rolling_interval_sec;
   int rolling_offset_hr;
   int rolling_size_mb;
+  int rolling_min_count;
   bool auto_delete_rolled_files;
-  bool custom_logs_enabled;
+
+  IntrusiveHashMap<LogDeletingInfoDescriptor> deleting_info;
 
   int sampling_frequency;
   int file_stat_frequency;
@@ -198,46 +263,21 @@ public:
 
   char *hostname;
   char *logfile_dir;
-  char *collation_host;
-  char *collation_secret;
 
 private:
-  void read_xml_log_config();
-  char **read_log_hosts_file(size_t *nhosts);
+  bool evaluate_config();
 
   void setup_default_values();
-  void setup_collation(LogConfig *prev_config);
 
 private:
-  // if true, use max_space_mb_for_orphan_logs to determine the amount
-  // of space that logging can use, otherwise use max_space_mb_for_logs
-  //
-  bool use_orphan_log_space_value;
+  bool m_disk_full                  = false;
+  bool m_disk_low                   = false;
+  bool m_partition_full             = false;
+  bool m_partition_low              = false;
+  bool m_log_directory_inaccessible = false;
 
-  LogCollationAccept *m_log_collation_accept;
-
-  struct dirent *m_dir_entry;
-  char *m_pDir;
-  bool m_disk_full;
-  bool m_disk_low;
-  bool m_partition_full;
-  bool m_partition_low;
-  bool m_log_directory_inaccessible;
-
-private:
+  // noncopyable
   // -- member functions not allowed --
-  LogConfig(const LogConfig &);
-  LogConfig &operator=(const LogConfig &);
+  LogConfig(const LogConfig &) = delete;
+  LogConfig &operator=(const LogConfig &) = delete;
 };
-
-/*-------------------------------------------------------------------------
-  LogDeleteCandidate
-  -------------------------------------------------------------------------*/
-
-struct LogDeleteCandidate {
-  time_t mtime;
-  char *name;
-  int64_t size;
-};
-
-#endif

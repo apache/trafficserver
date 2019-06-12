@@ -32,21 +32,26 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[7.0.0])
-m4_define([TS_VERSION_N],[7000000])
+m4_define([TS_VERSION_S],[9.0.0])
+m4_define([TS_VERSION_N],[9000000])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
-AC_CONFIG_AUX_DIR([build/aux])
-AC_CONFIG_SRCDIR([proxy/Main.cc])
+AC_CONFIG_AUX_DIR([build/_aux])
+AC_CONFIG_SRCDIR([src/traffic_server/traffic_server.cc])
 AC_CONFIG_MACRO_DIR([build])
 
-AM_INIT_AUTOMAKE([-Wall -Werror tar-ustar foreign no-installinfo no-installman subdir-objects 1.9.2])
+# NOTE: we turn off portability warnings because the clang-tidy targets use
+# GNU make extensions to filter the sources list.
+AM_INIT_AUTOMAKE([-Wall -Werror -Wno-portability tar-ustar foreign no-installinfo no-installman subdir-objects 1.9.2])
 
 # See discussion at https://autotools.io/automake/maintainer.html.
 AM_MAINTAINER_MODE([enable])
 
-AC_CONFIG_HEADERS([lib/ink_autoconf.h])
+# Enable a recursive "tidy" rule for clang-tidy.
+m4_ifdef([AM_EXTRA_RECURSIVE_TARGETS], [AM_EXTRA_RECURSIVE_TARGETS([clang-tidy])])
+
+AC_CONFIG_HEADERS([include/ink_autoconf.h])
 
 # Configure with --disable-silent-rules to get verbose output. For more info, see
 # http://www.gnu.org/software/automake/manual/html_node/Automake-silent_002drules-Option.html
@@ -77,14 +82,7 @@ AC_SUBST(TS_VERSION_MICRO)
 
 dnl Hard-coded top of ink_autoconf.h:
 AH_TOP([
-#ifndef _ink_autoconf_h
-#define _ink_autoconf_h
-])
-
-dnl Hard-coded inclusion at the tail end of ink_autoconf.h:
-AH_BOTTOM([
-
-#endif /* _ink_autoconf_h */
+#pragma once
 ])
 
 #
@@ -162,6 +160,14 @@ AC_ARG_ENABLE([debug],
 )
 AC_MSG_RESULT([$enable_debug])
 
+AC_MSG_CHECKING([whether to enable mime sanity check])
+AC_ARG_ENABLE([mime-sanity-check],
+  [AS_HELP_STRING([--enable-mime-sanity-check],[turn on mime sanity check])],
+  [],
+  [enable_mime_sanity_check=no]
+)
+AC_MSG_RESULT([$enable_mime_sanity_check])
+
 # Enable code coverage instrumentation only if requested by the user.
 AC_MSG_CHECKING([whether to code coverage])
 AC_ARG_ENABLE([coverage],
@@ -183,6 +189,32 @@ AC_ARG_ENABLE([werror],
 )
 AC_MSG_RESULT([$enable_werror])
 
+# Enable ASAN for the builds
+AC_MSG_CHECKING([whether to enable asan])
+AC_ARG_ENABLE([asan],
+  [AS_HELP_STRING([--enable-asan],[enable Address Sanitizer])],
+  [],
+  [enable_asan=no]
+)
+AC_MSG_RESULT([$enable_asan])
+
+# Enable LSAN in stand-alone mode for the builds
+AC_MSG_CHECKING([whether to enable lsan])
+AC_ARG_ENABLE([lsan],
+  [AS_HELP_STRING([--enable-lsan],[enable stand-alone Leak Sanitizer])],
+  [],
+  [enable_lsan=no]
+)
+AC_MSG_RESULT([$enable_lsan])
+
+# Enable TSAN for the builds
+AC_MSG_CHECKING([whether to enable tsan])
+AC_ARG_ENABLE([tsan],
+  [AS_HELP_STRING([--enable-tsan],[turn on Thread Sanitizer])],
+  [],
+  [enable_tsan=no]
+)
+AC_MSG_RESULT([$enable_tsan])
 
 #
 # Fast SDK APIs, this disables the parameter checks (assert)
@@ -198,6 +230,19 @@ AC_ARG_ENABLE([fast-sdk],
 AC_MSG_RESULT([$enable_fast_sdk])
 TS_ARG_ENABLE_VAR([use], [fast-sdk])
 
+# Curl support for traffic_top
+AC_MSG_CHECKING([whether to enable CURL])
+AC_ARG_ENABLE([curl],
+  [AS_HELP_STRING([--disable-curl],[turn off CURL support for traffic_top])],
+  [],
+  [enable_curl=yes]
+)
+AC_MSG_RESULT([$enable_curl])
+
+if test "x${enable_curl}" = "xyes"; then
+AX_LIB_CURL([7.19], [AC_DEFINE([HAS_CURL], [1], [Define if libcurl >= 7.19.])])
+fi
+
 #
 # Diags
 #
@@ -210,6 +255,19 @@ AC_ARG_ENABLE([diags],
 )
 AC_MSG_RESULT([$enable_diags])
 TS_ARG_ENABLE_VAR([use], [diags])
+
+#
+# FIPS
+#
+
+AC_MSG_CHECKING([whether to enable fips])
+AC_ARG_ENABLE([fips],
+  [AS_HELP_STRING([--enable-fips],[turn on FIPS compliance])],
+  [],
+  [enable_fips=no]
+)
+AC_MSG_RESULT([$enable_fips])
+TS_ARG_ENABLE_VAR([enable], [fips])
 
 #
 # Build regression tests?
@@ -226,19 +284,66 @@ TS_ARG_ENABLE_VAR([has], [tests])
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
-# Force some static linkage (for testing / development only)
+# Build documentation?
 #
-AC_MSG_CHECKING([whether to build a static traffic_server binary])
-AC_ARG_ENABLE([static-proxy], [AS_HELP_STRING([--enable-static-proxy],[build a static traffic_server binary])], [
-    AC_ENABLE_STATIC
-  ], [
-    AC_DISABLE_STATIC
-    enable_static_proxy=no
-  ]
+
+# Java needed only for documentation building, but making it conditional
+# makes the diagnostic output ugly and hard to follow.
+AC_ARG_VAR(JAVA, [path to java executor])
+AC_CHECK_PROG(JAVA, java, java)
+AC_MSG_RESULT([Checking whether to build documentation:])
+AC_ARG_ENABLE([docs],
+  [AS_HELP_STRING([--enable-docs],[enable documentation building])],
+  [
+    enable_doc_build=yes
+    AM_PATH_PYTHON([3.4], [
+      TS_MAN1_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=1 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+      TS_MAN3_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=3 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+      TS_MAN5_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=5 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+      TS_MAN8_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
+    ], [
+      enable_doc_build=no
+      AC_ERROR([Doc building disabled, python 3.4 or better required])
+    ])
+
+    AS_IF([test -z "$JAVA"],
+      [
+        enable_doc_build=no
+        AC_ERROR([Doc building disabled, java required but not found])
+      ])
+    AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
+    AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
+    AC_PATH_PROG([SPHINXBUILD], [$SPHINXBUILD], [$PYTHON -m sphinx])
+    AS_IF(["$PYTHON" "$srcdir/doc/checkvers.py" --check-version],
+      [
+        sphinx_version_check=yes
+      ],[
+        sphinx_version_check=no
+        enable_doc_build=no
+        AC_ERROR([Doc building disabled, check sphinx installation])
+      ])
+
+
+    AC_SUBST(TS_MAN1_MANPAGES)
+    AC_SUBST(TS_MAN3_MANPAGES)
+    AC_SUBST(TS_MAN5_MANPAGES)
+    AC_SUBST(TS_MAN8_MANPAGES)
+
+    AC_MSG_CHECKING([whether to build man pages])
+    AS_IF([test "x$sphinx_version_check" = "xyes" -a "x$SPHINXBUILD" != "xfalse"], [
+      build_manpages=true
+      AC_MSG_RESULT([yes])
+    ], [
+      build_manpages=false
+      AC_MSG_RESULT([no])
+    ])
+
+  ],
+  [enable_doc_build=no]
 )
-AC_MSG_RESULT([$enable_static_proxy])
-TS_ARG_ENABLE_VAR([has],[static-proxy])
-AM_CONDITIONAL([BUILD_STATIC_PROXY], [test 0 -ne $has_static_proxy])
+AC_MSG_RESULT([Will build documentation: $enable_doc_build])
+AM_CONDITIONAL([BUILD_DOCS], [test "xyes" = "x$enable_doc_build"])
+AM_CONDITIONAL([BUILD_MANPAGES], [test "xtrue" = "x$build_manpages"])
 
 #
 # Remote Coverity Prevent commit
@@ -273,6 +378,9 @@ AC_ARG_WITH([profiler],
   [with_profiler=no]
 )
 AC_MSG_RESULT([$with_profiler])
+
+# Disable all static library builds
+AC_DISABLE_STATIC
 
 #
 # use eventfd() or pipes
@@ -363,18 +471,6 @@ AC_ARG_ENABLE([tproxy],
 AC_MSG_RESULT([$enable_tproxy])
 
 #
-# Options for SPDY
-#
-AC_MSG_CHECKING([whether to enable spdy])
-AC_ARG_ENABLE([spdy],
-        [AS_HELP_STRING([--enable-spdy], [turn on spdy protocol [DEPRECATED!]])],
-        [],
-        [enable_spdy="no"])
-AC_MSG_RESULT([$enable_spdy])
-TS_ARG_ENABLE_VAR([has], [spdy])
-AM_CONDITIONAL([BUILD_SPDY], [test 0 -ne $has_spdy])
-
-#
 # Configure how many stats to allocate for plugins. Default is 512.
 #
 AC_ARG_WITH([max-api-stats],
@@ -434,26 +530,35 @@ AM_CONDITIONAL([BUILD_MEMCACHED_REMAP_PLUGIN], [test "x${have_libmemcached}" = "
 #
 # Check Magick++ is available. Enable experimental/webp_transform plugin
 #
-PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++], [
+PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++ >= 7], [
+  TS_ADDTO(LIBMAGICKCPP_CFLAGS, [-DMAGICK_VERSION=7])
   have_libmagickcpp=yes
   AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
-    enable_webp_transform_plugin=yes
+    enable_image_magick_plugins=yes
   ])
 ],
 [
-  have_libmagickcpp=no
-])
+  PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++ < 7], [
+    TS_ADDTO(LIBMAGICKCPP_CFLAGS, [-DMAGICK_VERSION=6])
+    have_libmagickcpp=yes
+    AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
+      enable_image_magick_plugins=yes
+    ])
+  ],
+  [
+    have_libmagickcpp=no
+  ])])
 
-AM_CONDITIONAL([BUILD_WEBP_TRANSFORM_PLUGIN], [test "x${enable_webp_transform_plugin}" = "xyes"])
+AM_CONDITIONAL([BUILD_IMAGE_MAGICK_PLUGINS], [test "x${enable_image_magick_plugins}" = "xyes"])
 
 #
-# Example plugins. The example plugins are always built, but not always installed. Installing
+# Example plugins. The example plugins are only built and installed if this is enabled. Installing
 # them is useful for QA, but not useful for most users, so we default this to disabled.
 #
 
 AC_MSG_CHECKING([whether to install example plugins])
 AC_ARG_ENABLE([example-plugins],
-  [AS_HELP_STRING([--enable-example-plugins],[install example plugins])],
+  [AS_HELP_STRING([--enable-example-plugins],[build and install example plugins])],
   [],
   [enable_example_plugins=no]
 )
@@ -474,32 +579,6 @@ AC_ARG_ENABLE([test-tools],
 )
 AC_MSG_RESULT([$enable_test_tools])
 AM_CONDITIONAL([BUILD_TEST_TOOLS], [ test "x${enable_test_tools}" = "xyes" ])
-
-#
-# build c++ api
-#
-AC_MSG_CHECKING([whether to build c++ api])
-AC_ARG_ENABLE([cppapi],
-  [AS_HELP_STRING([--enable-cppapi],[Build the c++ api])],
-  [],
-  [enable_cppapi="no"]
-)
-AC_MSG_RESULT([$enable_cppapi])
-AM_CONDITIONAL([ENABLE_CPPAPI], [ test "x${enable_cppapi}" = "xyes" ])
-
-#
-# Disable LuaJIT? This is a interim option, when Lua becomes part of the core
-# requirements, we will remove this option.
-#
-AC_MSG_CHECKING([whether to disable LuaJIT])
-AC_ARG_ENABLE([luajit],
-  [AS_HELP_STRING([--disable-luajit],[turn off LuaJIT])],
-  [],
-  [enable_luajit="yes"]
-)
-AC_MSG_RESULT([$enable_luajit])
-AM_CONDITIONAL([BUILD_LUAJIT], [ test "x${enable_luajit}" = "xyes" ])
-TS_ARG_ENABLE_VAR([use], [luajit])
 
 #
 # Check if we should allow builds on 32-bit platforms
@@ -558,9 +637,8 @@ TS_SUBST([pkgdocdir])
 # Implementation note (toc)
 # 1) Get default compiler settings (case statement.)
 # 2) Check for over-rides of default compiler.
-# 3) Set standard CFLAGS, SHARED_CFLAGS, etc.
-# 4) (in first kludge mode block...) obtain any further CFLAG-type additions.
-# 5) Test compilers with all flags set.
+# 3) (in first kludge mode block...) obtain any further CFLAG-type additions.
+# 4) Test compilers with all flags set.
 
 # AC_PROG can sometimes mangle CFLAGS etc.
 # in particular, on Linux they insert -g -O2, here we preserve any user CFLAGS
@@ -584,31 +662,28 @@ CFLAGS="${_ts_saved_CFLAGS}"
 CXXFLAGS="${_ts_saved_CXXFLAGS}"
 
 # All compilers we support have 'gnu99' as an available C standard
-TS_ADDTO(CFLAGS, [-std=gnu99])
+TS_ADDTO(AM_CFLAGS, [-std=gnu99])
 
-# These tests requires C++
-AC_LANG_PUSH([C++])
-
-AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
-
-# And check for std::shared_ptr vs std::tr1::shared_ptr. For the CPPLIB
-AC_MSG_CHECKING([for std::shared_ptr])
+ac_save_CXX="$CXX"
+CXX="$CXX -std=c++17"
+AC_LANG_PUSH(C++)
+AC_MSG_CHECKING([checking whether $CXX supports -std=c++17])
 AC_COMPILE_IFELSE([
-  AC_LANG_PROGRAM([
-    #include <memory>
-    using std::shared_ptr;
+    AC_LANG_PROGRAM([
+#if __cplusplus < 201703L
+#error "This is not C++17"
+#endif
+    ], []
+    )], [
+    AC_MSG_RESULT(yes)
     ], [
-  ])],
-  [ have_std_shared_ptr=yes ],
-  [ have_std_shared_ptr=no ]
-)
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([*** A compiler with support for -std=c++17 is required.])
+])
+AC_LANG_POP
+CXX="$ac_save_CXX"
 
-AC_MSG_RESULT([$have_std_shared_ptr])
-if test "x${have_std_shared_ptr}" = "xyes" ; then
-  AC_DEFINE(HAVE_STD_SHARED_PTR, 1, [whether std::shared_ptr is available])
-fi
-
-AC_LANG_POP()
+TS_ADDTO(AM_CXXFLAGS, [-std=c++17])
 
 dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS
 dnl 5.9 still has an ancient version, but we have macros that require
@@ -625,26 +700,27 @@ ifdef([AC_PROG_SED], [], [
 # Various OS specific setup. Note that on Solaris, 32-bit is always the
 # default, even on a box that with 64-bit architecture.
 # This also sets up a "normalized" variable and define $host_os_def.
-defer_accept=1
 case $host_os in
   linux*)
     host_os_def="linux"
-    defer_accept=45
-    EXTRA_CXX_LDFLAGS="-rdynamic"
+    AM_LDFLAGS="-rdynamic"
     ;;
   darwin*)
     host_os_def="darwin"
     ;;
   freebsd*)
     host_os_def="freebsd"
-    EXTRA_CXX_LDFLAGS="-rdynamic"
-    TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
+    AM_LDFLAGS="-rdynamic"
+    TS_ADDTO(TS_INCLUDES, [-I/usr/local/include])
+    TS_ADDTO(AM_CPPFLAGS, [-D_GLIBCXX_USE_C99])
+    TS_ADDTO(AM_CPPFLAGS, [-D_GLIBCXX_USE_C99_MATH])
+    TS_ADDTO(AM_CPPFLAGS, [-D_GLIBCXX_USE_C99_MATH_TR1])
     ;;
   kfreebsd*)
     host_os_def="freebsd"
-    EXTRA_CXX_LDFLAGS="-rdynamic"
-    TS_ADDTO(CPPFLAGS, [-I/usr/local/include])
-    TS_ADDTO(CPPFLAGS, [-Dkfreebsd])
+    AM_LDFLAGS="-rdynamic"
+    TS_ADDTO(TS_INCLUDES, [-I/usr/local/include])
+    TS_ADDTO(AM_CPPFLAGS, [-Dkfreebsd])
     ;;
   openbsd*)
     host_os_def="openbsd"
@@ -653,21 +729,19 @@ case $host_os in
     host_os_def="solaris"
     case "`isalist`" in
       *amd64*)
-        TS_ADDTO(CFLAGS, -m64)
-        TS_ADDTO(CXXFLAGS, -m64)
-        TS_ADDTO(LUA_LDFLAGS, -m64)
+        TS_ADDTO(AM_CFLAGS, [-m64])
+        TS_ADDTO(AM_CXXFLAGS, [-m64])
+        TS_ADDTO(LUAJIT_LDFLAGS, [-m64])
         ;;
     esac
     ;;
   *)
-    EXTRA_CXX_LDFLAGS="-rdynamic"
+    AM_LDFLAGS="-rdynamic"
     host_os_def=unknown
     ;;
 esac
 
-TS_ADDTO(CPPFLAGS, [-D$host_os_def])
-AC_SUBST(defer_accept)
-
+TS_ADDTO(AM_CPPFLAGS, [-D$host_os_def])
 
 dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
 ifdef([AM_PROG_AR],
@@ -683,41 +757,12 @@ AC_CHECK_PROG(ASCPP, cpp, cpp)
 AC_CHECK_TOOL(AR, ar, ar)
 AC_ISC_POSIX
 
-AM_PATH_PYTHON([2.4], [
-  dnl action-if-found
-  TS_MAN1_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=1 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-  TS_MAN3_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=3 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-  TS_MAN5_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=5 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-  TS_MAN8_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
-
-  # If we have python, check if the Sphinx version looks OK.
-  AS_IF(["$PYTHON" "$srcdir/doc/checkvers.py" --check-version], [
-    sphinx_version_check=yes
-  ])
-
-], [
-  dnl action-if-not-found
-  :
-])
-
 AC_ARG_VAR(RPATH, [path to be added to rpath])
-AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
-AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
-AC_CHECK_PROG([SPHINXBUILD], [sphinx-build], [sphinx-build], [false])
 
-AC_SUBST(TS_MAN1_MANPAGES)
-AC_SUBST(TS_MAN3_MANPAGES)
-AC_SUBST(TS_MAN5_MANPAGES)
-AC_SUBST(TS_MAN8_MANPAGES)
+AC_ARG_VAR([CLANG_TIDY], [clang-tidy command])
 
-AC_MSG_CHECKING([whether to build man pages])
-AS_IF([test "x$sphinx_version_check" = "xyes" -a "x$SPHINXBUILD" != "xfalse"], [
-  AM_CONDITIONAL([BUILD_MANPAGES], [true])
-  AC_MSG_RESULT([yes])
-], [
-  AM_CONDITIONAL([BUILD_MANPAGES], [false])
-  AC_MSG_RESULT([no])
-])
+# Default CLANG_TIDY to "clang-tidy", or "false" if it is not present.
+AC_PATH_PROG([CLANG_TIDY], [clang-tidy],[false])
 
 # Do bison check by hand because we must do a version check.
 # Use YACC because it makes autotools shut up.
@@ -803,96 +848,82 @@ AS_IF([test "x${has_optimizer_flags}" = "xno"],
 case $host_os_def in
   linux)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xintel"], [
-      # -Wall goes crazy, so turned these specific checks off for now:
+      # -Wall is overzealous for us, so need to turn this off for now:
       #
-      #  111 is "statement is unreachable"
-      #  279 is "controlling expression is constant", triggered by our asserts
-      #  383 is "value copied to temporary, reference to temporary used"
-      #  444 is "destructor for base class is not virtual"
-      #  522 is "function "xyz" redeclared "inline" after being called
-      #  873 is "has no corresponding operator delete". ToDo: we should fix.
-      #  981 is "operands are evaluated in unspecified order"
-      # 1418 is "external function definition with no prior declaration"
-      # 1419 is "external declaration in primary source file"
-      # 1572 is "floating-point equality and inequality comparisons are unreliable"
-      # 1720 is "operator new" has no corresponding member operator delete"
-      # 2256 is "non-pointer conversion from "int" to "unsigned char" "
-      # 2259 is "non-pointer conversion from "int" to "unsigned char" "
-      #
-      # TODO: We should try to eliminate more of these -wd exclusions.
-      common_opt="-pipe -Wall -wd111 -wd279 -wd383 -wd522 -wd444 -wd873 -wd981 -wd1418 -wd1419 -wd1572 -wd1720 -wd2256 -wd2259"
-      debug_opt="-ggdb3 $common_opt"
+      #  #873 is "has no corresponding operator delete"
+      #  #279 is "controlling expression is constant" (which is e.g. TSReleaseAssert(!"Unexpected Event");
+      common_opt="-pipe -Wall -wd873 -wd279"
+      debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments"
+      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter"
       debug_opt="-ggdb3 $common_opt -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof"
-      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
       # This is useful for finding odd conversions
-      #    common_opt="-pipe -Wall -Wconversion -Wno-sign-conversion"
-      common_opt="-pipe -Wall"
+      #    common_opt="-pipe -Wall -Wconversion -Wno-sign-conversion -Wno-format-truncation"
+      common_opt="-pipe -Wall -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-format-truncation -Wno-cast-function-type -Wno-stringop-overflow"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
-      cxx_opt="-Wno-invalid-offsetof"
+      cxx_opt="-Wno-invalid-offsetof -Wno-noexcept-type"
       # Special options for flex generated .c files
       flex_cflags="-Wno-unused-parameter"
     ])
+
+    TS_ADDTO([AM_LDFLAGS], [-Wl,--as-needed])
 
     ;; # linux)
 
   darwin)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments"
+      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter"
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
     ], [
       AC_MSG_WARN([clang is the only supported compiler on Darwin])
     ])
 
     # NOTE: This seems semi-kludgy, but useful for MacPorts I think.
     AS_IF([test -d /opt/local/include], [
-      TS_ADDTO(CPPFLAGS, [-I/opt/local/include])
+      TS_ADDTO(TS_INCLUDES, [-I/opt/local/include])
     ])
     AS_IF([test -d /opt/local/lib], [
-      TS_ADDTO(LDFLAGS, [-L/opt/local/lib])
+      TS_ADDTO(AM_LDFLAGS, [-L/opt/local/lib])
     ])
 
     ;; # darwin)
 
   freebsd|kfreebsd)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xclang"], [
-      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments"
+      common_opt="-pipe -Wall -Wno-deprecated-declarations -Qunused-arguments -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
-      common_opt="-pipe -Wall"
+      common_opt="-pipe -Wall -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     ])
 
     AS_IF([test -d /usr/local/lib], [
-      TS_ADDTO(LDFLAGS, [-L/usr/local/lib])
+      TS_ADDTO(AM_LDFLAGS, [-L/usr/local/lib])
     ])
 
     ;; # freebsd|kfreebsd)
 
   solaris)
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
-      common_opt="-pipe -Wall"
+      common_opt="-pipe -Wall -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -903,7 +934,7 @@ case $host_os_def in
   *)
     # Not sure what platform this is, but take a stab at some general GCC options ...
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
-      common_opt="-pipe -Wall"
+      common_opt="-pipe -Wall -Wextra -Wno-ignored-qualifiers -Wno-unused-parameter"
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -feliminate-unused-debug-symbols -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
@@ -917,13 +948,13 @@ AS_IF([test x"$enable_coverage" = "xyes"], [
   # supported compiler to test coverage.
   AS_CASE("$ax_cv_c_compiler_vendor",
     [clang], [
-      TS_ADDTO(CXXFLAGS, "-fprofile-instr-generate")
-      TS_ADDTO(CXXFLAGS, "-fcoverage-mapping")
-      TS_ADDTO(CFLAGS, "-fprofile-instr-generate")
-      TS_ADDTO(CFLAGS, "-fcoverage-mapping")
+      TS_ADDTO(AM_CXXFLAGS, "-fprofile-instr-generate")
+      TS_ADDTO(AM_CXXFLAGS, "-fcoverage-mapping")
+      TS_ADDTO(AM_CFLAGS, "-fprofile-instr-generate")
+      TS_ADDTO(AM_CFLAGS, "-fcoverage-mapping")
     ], [gnu], [
-      TS_ADDTO(CXXFLAGS, "--coverage")
-      TS_ADDTO(CFLAGS, "--coverage")
+      TS_ADDTO(AM_CXXFLAGS, "--coverage")
+      TS_ADDTO(AM_CFLAGS, "--coverage")
       TS_ADDTO(LIBS, "-lgcov")
   ])
 ])
@@ -940,30 +971,47 @@ cc_oflag_dbg=$debug_opt
 cxx_oflag_opt="$release_opt $cxx_opt $cxx_rel"
 cxx_oflag_dbg="$debug_opt $cxx_opt $cxx_dbg"
 
-AM_CFLAGS="$ts_am_common_flags"
-AM_CXXFLAGS="$ts_am_common_flags"
-AC_SUBST(AM_CFLAGS)
-AC_SUBST(AM_CXXFLAGS)
-
 # Special compiler flag hacks for various pieces of the code
 AC_SUBST([FLEX_CFLAGS], $flex_cflags)
-
-SHARED_CFLAGS=-fPIC
-SHARED_LDFLAGS=-shared
-SHARED_CXXFLAGS=-fPIC
-SHARED_CXXLINKFLAGS=-shared
 
 #
 # _Here_ is where we go ahead and add the _optimizations_ to already
 #  existing CFLAGS/CXXFLAGS if some special values had been set.
 #
 if test "x${enable_debug}" = "xyes"; then
-  TS_ADDTO(CFLAGS, [${cc_oflag_dbg}])
-  TS_ADDTO(CXXFLAGS, [${cxx_oflag_dbg}])
-  TS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])
+  TS_ADDTO(AM_CFLAGS, [${cc_oflag_dbg}])
+  TS_ADDTO(AM_CXXFLAGS, [${cxx_oflag_dbg}])
+  TS_ADDTO(AM_CPPFLAGS, [-DDEBUG -D_DEBUG])
+  if test "x${enable_mime_sanity_check}" = "xyes"; then
+    TS_ADDTO(AM_CPPFLAGS, [-DENABLE_MIME_SANITY_CHECK])
+  fi
 else
-  TS_ADDTO(CFLAGS, [${cc_oflag_opt}])
-  TS_ADDTO(CXXFLAGS, [${cxx_oflag_opt}])
+  TS_ADDTO(AM_CFLAGS, [${cc_oflag_opt}])
+  TS_ADDTO(AM_CXXFLAGS, [${cxx_oflag_opt}])
+fi
+
+# Flags for ASAN
+if test "x${enable_asan}" = "xyes"; then
+  if test "x${enable_tsan}" = "xyes"; then
+    AC_ERROR([Cannot have ASAN and TSAN options at the same time, pick one])
+  fi
+  TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
+  TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
+fi
+
+# Flags for LSAN stand-alone mode
+if test "x${enable_lsan}" = "xyes"; then
+  if test "x${enable_asan}" = "xyes"; then
+    AC_ERROR([ASAN already specified, --enable-lsan is meant only for lsan stand-alone mode])
+  fi
+  TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
+  TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
+fi
+
+# Flags for TSAN
+if test "x${enable_tsan}" = "xyes"; then
+  TS_ADDTO(AM_CFLAGS, [-fsanitize=thread])
+  TS_ADDTO(AM_CXXFLAGS, [-fsanitize=thread])
 fi
 
 # Checks for pointer size.
@@ -972,7 +1020,6 @@ AC_CHECK_SIZEOF([void*])
 if test "x$ac_cv_sizeof_voidp" == "x"; then
   AC_ERROR([Cannot determine size of void*])
 fi
-AC_SUBST(ac_cv_sizeof_voidp)
 
 # Right now, 32-bit platform is a build error, unless we've forced it with --enable-32bit-build
 if test "${ac_cv_sizeof_voidp}" = "4"; then
@@ -1029,32 +1076,32 @@ AC_ARG_WITH(architecture, [AC_HELP_STRING([--with-architecture=ARCH],[use a spec
 ])
 
 if test "x$cpu_architecture" != "x"; then
-  TS_ADDTO(CFLAGS, [$cpu_architecture])
-  TS_ADDTO(CXXFLAGS, [$cpu_architecture])
+  TS_ADDTO(AM_CFLAGS, [$cpu_architecture])
+  TS_ADDTO(AM_CXXFLAGS, [$cpu_architecture])
 fi
 
 # 64-bit LFS support
 #
-TS_ADDTO(CPPFLAGS, [-D_LARGEFILE64_SOURCE=1])
+TS_ADDTO(AM_CPPFLAGS, [-D_LARGEFILE64_SOURCE=1])
 if test "${ac_cv_sizeof_voidp}" = "8"; then
-  TS_ADDTO(CPPFLAGS, [-D_COMPILE64BIT_SOURCE=1])
+  TS_ADDTO(AM_CPPFLAGS, [-D_COMPILE64BIT_SOURCE=1])
 else
-  TS_ADDTO(CPPFLAGS, [-D_FILE_OFFSET_BITS=64])
+  TS_ADDTO(AM_CPPFLAGS, [-D_FILE_OFFSET_BITS=64])
 fi
 TS_ADDTO(CPPFLAGS, [-D_GNU_SOURCE])
-TS_ADDTO(CPPFLAGS, [-D_REENTRANT])
-TS_ADDTO(CPPFLAGS, [-D__STDC_LIMIT_MACROS=1])
-TS_ADDTO(CPPFLAGS, [-D__STDC_FORMAT_MACROS=1])
+TS_ADDTO(AM_CPPFLAGS, [-D_REENTRANT])
+TS_ADDTO(AM_CPPFLAGS, [-D__STDC_LIMIT_MACROS=1])
+TS_ADDTO(AM_CPPFLAGS, [-D__STDC_FORMAT_MACROS=1])
 
 AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host_os_def])
 
 # Add hardening options to flags
 AS_IF([test "x${enable_hardening}" = "xyes"], [
-  TS_ADDTO(CPPFLAGS, [-D_FORTIFY_SOURCE=2])
-  TS_ADDTO(CXXFLAGS, [-fPIE -fstack-protector])
-  TS_ADDTO(CFLAGS, [-fPIE -fstack-protector])
+  TS_ADDTO(AM_CPPFLAGS, [-D_FORTIFY_SOURCE=2])
+  TS_ADDTO(AM_CXXFLAGS, [-fPIE -fstack-protector])
+  TS_ADDTO(AM_CFLAGS, [-fPIE -fstack-protector])
   AS_CASE("$host_os_def",
-    [linux], [TS_ADDTO(LDFLAGS, [-pie -Wl,-z,relro -Wl,-z,now])]
+    [linux], [TS_ADDTO(AM_LDFLAGS, [-pie -Wl,-z,relro -Wl,-z,now])]
   )
 ])
 
@@ -1064,20 +1111,6 @@ AS_IF([test "x${enable_hardening}" = "xyes"], [
 #         associated with our not wanting to use GNU for _everything_.
 # Note:  This macro may set certain parameters when run.
 #
-
-#
-# CPP 11 API
-# TODO: briang, this needs to be translated to a define
-# that can be used in the c++ api to enable c++11 api features.
-#
-#AC_MSG_CHECKING([whether to enable c++11 api])
-#AC_ARG_WITH([cpp11api],
-#  [AS_HELP_STRING([--with-cpp11api],[enable support for cpp11api [default=auto]])],
-#  [cpp11api=$withval],
-#  [cpp11api=$enable_cxx_11_support]
-#)
-#AC_MSG_RESULT([$cpp11api])
-#AM_CONDITIONAL([BUILD_CPP11API], [test "$cpp11api" = yes])
 
 # Check for ccache (if explicitly enabled)
 if test "x$enable_ccache" = "xyes"; then
@@ -1091,12 +1124,9 @@ fi
 # -----------------------------------------------------------------------------
 # 4. CHECK FOR LIBRARIES
 
-AC_SEARCH_LIBS([exc_capture_context], [exc], [], [])
-AC_SEARCH_LIBS([MLD_demangle_string], [mld], [], [])
 AC_SEARCH_LIBS([socket], [socket], [], [])
 AC_SEARCH_LIBS([gethostbyname], [nsl], [], [])
-AC_SEARCH_LIBS([clock_gettime], [rt], [], [])
-AC_SEARCH_LIBS([clock_gettime], [posix4], [], [])
+AC_SEARCH_LIBS([clock_gettime], [rt posix4], [], [])
 
 dnl We check for dlsym here instead of e.g. dlopen() because ASAN hijacks the latter.
 AC_SEARCH_LIBS([dlsym], [dl], [], [])
@@ -1105,6 +1135,7 @@ dnl Linux has pthread symbol stubss in both libc and libpthread, so it's importa
 dnl specifically for pthread_yield() here. In addition, ASAN hijacks pthread_create() so
 dnl we can't use that anymore.
 AC_SEARCH_LIBS([pthread_yield], [pthread], [], [])
+AC_CHECK_FUNCS([pthread_mutexattr_settype])
 
 dnl XXX The following check incorrectly causes the build to succeed
 dnl on Darwin. We should be using AC_SEARCH_LIBS, but rest_init is
@@ -1120,42 +1151,107 @@ AC_CHECK_LIB([resolv],[__putlong],[AC_SUBST([LIBRESOLV],["-lresolv"])])
 # ncurses compile tests does not generate unused variable warnings.
 __saved_CFLAGS="$CFLAGS"
 TS_REMOVEFROM(CFLAGS, -Werror)
+
+dnl Red Hat 6 requires special flags for curses to work.
+if test -r /etc/system-release ; then
+  case `cat /etc/system-release` in
+    Red\ Hat*release\ 6.*)
+      TS_ADDTO(CFLAGS, [-Wl,--add-needed])
+      curses_ldflags="-Wl,--add-needed"
+    ;;
+  esac
+fi
+
 AX_WITH_CURSES
 CFLAGS="$__saved_CFLAGS"
+AC_SUBST([CURSES_LDFLAGS],[$curses_ldflags])
 
-AX_LIB_CURL([7.19], [
-    AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [test "x$ax_cv_curses" = "xyes"])
-  ], [
-    AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [false])
-  ]
-)
+#
+# Check for -latomic need (at least for mips arch)
+TS_CHECK_ATOMIC
+TS_ADDTO([LDFLAGS], [$ATOMIC_LIBS])
 
 #
 # Check for SSL presence and usability
+#
 TS_CHECK_CRYPTO
 
-#
-# Check for NextProtocolNegotiation TLS extension support.
-TS_CHECK_CRYPTO_NEXTPROTONEG
+# Check for OpenSSL Version
+TS_CHECK_CRYPTO_VERSION
 
-#
-# Check for ALPN TLS extension support.
-TS_CHECK_CRYPTO_ALPN
-#
-# Check for EC key support.
-TS_CHECK_CRYPTO_EC_KEYS
+# Check for openssl ASYNC jobs
+TS_CHECK_CRYPTO_ASYNC
 
-#
-# Check for ServerNameIndication TLS extension support.
-TS_CHECK_CRYPTO_SNI
+# Check for the client hello callback
+TS_CHECK_CRYPTO_HELLO_CB
 
-#
-# Check for the presense of the certificate callback in the ssl library
-TS_CHECK_CRYPTO_CERT_CB
-
-#
-# Check for SSL_set_rbio call
+# Check for SSL_set0_rbio call
 TS_CHECK_CRYPTO_SET_RBIO
+
+# Check for DH_get_2048_256
+TS_CHECK_CRYPTO_DH_GET_2048_256
+
+# Check for OCSP
+TS_CHECK_CRYPTO_OCSP
+
+# Check for SSL_CTX_set_ciphersuites call
+TS_CHECK_CRYPTO_SET_CIPHERSUITES
+
+saved_LIBS="$LIBS"
+TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
+
+AC_CHECK_FUNCS([ \
+  BIO_meth_new \
+  BIO_sock_non_fatal_error \
+  CRYPTO_set_mem_functions \
+  HMAC_CTX_new \
+  X509_get0_signature \
+])
+
+AC_CHECK_FUNC([ASN1_STRING_get0_data], [],
+              [AC_DEFINE([ASN1_STRING_get0_data], [ASN1_STRING_data], [Added in OpenSSL 1.1])])
+
+AC_CHECK_FUNC([BIO_set_data], [],
+              [AC_DEFINE([BIO_set_data(a, _ptr)], [((a)->ptr = (_ptr))], [Added in OpenSSL 1.1])])
+AC_CHECK_FUNC([BIO_get_data], [],
+              [AC_DEFINE([BIO_get_data(a)], [((a)->ptr)], [Added in OpenSSL 1.1])])
+AC_CHECK_FUNC([BIO_get_shutdown], [],
+              [AC_DEFINE([BIO_get_shutdown(a)], [((a)->shutdown)], [Added in OpenSSL 1.1])])
+AC_CHECK_FUNC([BIO_meth_get_ctrl], [],
+              [AC_DEFINE([BIO_meth_get_ctrl(biom)], [((biom)->ctrl)], [Added in OpenSSL 1.1])])
+AC_CHECK_FUNC([BIO_meth_get_create], [],
+              [AC_DEFINE([BIO_meth_get_create(biom)], [((biom)->create)], [Added in OpenSSL 1.1])])
+AC_CHECK_FUNC([BIO_meth_get_destroy], [],
+              [AC_DEFINE([BIO_meth_get_destroy(biom)], [((biom)->destroy)], [Added in OpenSSL 1.1])])
+
+AC_CHECK_FUNC([EVP_MD_CTX_new], [],
+              [AC_DEFINE([EVP_MD_CTX_new], [EVP_MD_CTX_create], [Renamed in OpenSSL 1.1])])
+AC_CHECK_FUNC([EVP_MD_CTX_reset], [],
+              [AC_DEFINE([EVP_MD_CTX_reset], [EVP_MD_CTX_cleanup], [Renamed in OpenSSL 1.1])])
+AC_CHECK_FUNC([EVP_MD_CTX_free], [],
+              [AC_DEFINE([EVP_MD_CTX_free], [EVP_MD_CTX_destroy], [Renamed in OpenSSL 1.1])])
+
+LIBS="$saved_LIBS"
+
+# 
+# Check OpenSSL version for JA3 Fingerprint
+#
+AC_MSG_CHECKING([for JA3 compatible OpenSSL version])
+AC_EGREP_CPP(yes, [
+  #include <openssl/opensslv.h>
+  #if (OPENSSL_VERSION_NUMBER < 0x010100000L)
+  yes
+  #elif (OPENSSL_VERSION_NUMBER >= 0x010101000L)
+  yes
+  #endif
+  ], [
+    AC_MSG_RESULT(yes)
+    AS_IF([test "x${enable_experimental_plugins}" = "xyes"], [
+      enable_ja3_plugin=yes
+    ])
+  ], [AC_MSG_RESULT(no)])
+
+AM_CONDITIONAL([BUILD_JA3_PLUGIN], [test "x${enable_ja3_plugin}" = "xyes"])
 
 #
 # Check for zlib presence and usability
@@ -1165,35 +1261,10 @@ TS_CHECK_ZLIB
 # Check for lzma presence and usability
 TS_CHECK_LZMA
 
-#
-# Tcl macros provided by build/tcl.m4
-#
-# this will error out if tclConfig.sh is not found
-SC_PATH_TCLCONFIG
-
-# if tclConfig.sh loads properly, assume libraries are there and working
-SC_LOAD_TCLCONFIG
-
-# expect tclConfig.sh to populate TCL_LIB_FLAG and TCL_INCLUDE_SPEC
-if test "$host_os_def" == "darwin"; then
-    TCL_LIB_SPEC="-ltcl" # OSX fails to populate this variable
-fi
-AC_SUBST([LIBTCL],[$TCL_LIB_SPEC])
-
-
-if test "x${TCL_INCLUDE_SPEC}" != "x-I/usr/include"; then
-   TS_ADDTO(CPPFLAGS, [$TCL_INCLUDE_SPEC])
-fi
-
-#
-# Check for XML parser. Required.
-#
-TS_CHECK_XML
-
-AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate inotify_init])
-AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf sysctlbyname getpagesize])
+AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_fadvise posix_madvise posix_fallocate inotify_init])
+AC_CHECK_FUNCS([port_create strlcpy strlcat sysconf sysctlbyname getpagesize])
 AC_CHECK_FUNCS([getreuid getresuid getresgid setreuid setresuid getpeereid getpeerucred])
-AC_CHECK_FUNCS([strsignal psignal psiginfo])
+AC_CHECK_FUNCS([strsignal psignal psiginfo accept4])
 
 # Check for eventfd() and sys/eventfd.h (both must exist ...)
 AC_CHECK_HEADERS([sys/eventfd.h], [
@@ -1223,8 +1294,41 @@ if test "x${enable_pcre}" != "xyes"; then
   AC_MSG_ERROR([Cannot find pcre library. Configure --with-pcre=DIR])
 fi
 
-has_backtrace=0
+# Check for optional brotli library
+TS_CHECK_BROTLI
+
+# Check for optional luajit library
+TS_CHECK_LUAJIT
+
+#
+# Enable experimental/uri_singing plugin
+# This is here, instead of above, because it needs to know if PCRE is available.
+#
+
+#### Check for optional jansson library (uri_signing)
+TS_CHECK_JANSSON
+
+AC_CHECK_LIB([crypto],[HMAC],[has_libcrypto=1],[has_libcrypto=0])
+
+#### Check for optional cjose library (uri_signing)
+TS_CHECK_CJOSE
+
+AM_CONDITIONAL([BUILD_URI_SIGNING_PLUGIN], [test ! -z "${LIBCJOSE}" -a ! -z "${LIBJANSSON}" -a "x${enable_pcre}" = "xyes" -a "x${has_libcrypto}" = "x1"])
+AC_SUBST([LIBCJOSE])
+AC_SUBST([LIBJANSSON])
+
+# Check for yaml-cpp library
+#
+TS_CHECK_YAML_CPP
+AM_CONDITIONAL([BUILD_YAML_CPP], [test x"$has_yaml_cpp" = x"no"])
+
+# Check for optional hiredis library
+TS_CHECK_HIREDIS
+
+AM_CONDITIONAL([BUILD_SSL_SESSION_REUSE_PLUGIN], [test ! -z "${LIB_HIREDIS}" -a "x${has_hiredis}" = "x1" ])
+
 # Check for backtrace() support
+has_backtrace=0
 AC_CHECK_HEADERS([execinfo.h], [has_backtrace=1],[])
 if test "${has_backtrace}" = "1"; then
   # FreeBSD requires '/usr/ports/devel/libexecinfo' for gdb style backtrace() support
@@ -1232,16 +1336,38 @@ if test "${has_backtrace}" = "1"; then
 else
   AC_MSG_WARN([No backtrace() support found])
 fi
-AC_SUBST(execinfoh)
 AC_SUBST(has_backtrace)
 
-# Remote process unwinding is only implemented on Linux because it depends on various Linux-specific
-# features such as /proc filesystem nodes, ptrace(2) and waitpid(2) extensions.
-AS_IF([test "$host_os_def" = "linux"], [
-  PKG_CHECK_MODULES([LIBUNWIND], [libunwind-ptrace], [
-    enable_remote_unwinding=yes
+#
+# use unwind library when possible (can be disabled)
+#
+AC_MSG_CHECKING([whether to use unwind library])
+AC_ARG_ENABLE([unwind],
+  AS_HELP_STRING([--disable-unwind],[Don't use the unwind library]), [
   ], [
-    dnl no remote unwind support
+    enable_unwind="yes"
+    enable_unwind_default="yes"
+])
+AC_MSG_RESULT([$enable_unwind])
+
+AS_IF([test "x$enable_unwind" = "xyes"], [
+  # Remote process unwinding is only implemented on Linux because it depends on various Linux-specific
+  # features such as /proc filesystem nodes, ptrace(2) and waitpid(2) extensions.
+  AS_IF([test "$host_os_def" = "linux"], [
+    PKG_CHECK_MODULES([LIBUNWIND], [libunwind-ptrace], [
+      enable_remote_unwinding=yes
+    ], [
+      AS_IF([test "x$enable_unwind_default" = "xyes"], [
+        AC_MSG_WARN([unwind not found, try disabling it --disable-unwind])
+      ], [
+        AC_MSG_ERROR([unwind not found, try disabling it --disable-unwind])
+      ])
+    ])], [
+    AS_IF([test "x$enable_unwind_default" = "xyes"], [
+      AC_MSG_WARN([unwind only available on linux, try disabling it --disable-unwind])
+    ], [
+      AC_MSG_ERROR([unwind only available on linux, try disabling it --disable-unwind])
+    ])
   ])
 ])
 TS_ARG_ENABLE_VAR([use], [remote_unwinding])
@@ -1304,7 +1430,7 @@ AC_SUBST(use_port)
 # Profiler support
 has_profiler=0
 if test "x${with_profiler}" = "xyes"; then
-  AC_SEARCH_LIBS([ProfilerStart], [profiler],
+  AC_CHECK_LIB([profiler], [ProfilerStart],
     [AC_SUBST([LIBPROFILER], ["-lprofiler"])
      has_profiler=1
     ],
@@ -1332,7 +1458,7 @@ TS_TRY_COMPILE_NO_WARNING([],[
     has_128bit_cas=1
   ], [
     dnl If 128bit CAS fails, try again with the -mcx16 option. GCC needs this;
-    dnl clang doesn't; icc is unknown but presumed sane.
+    dnl clang doesn't; icc does not support -mcx16 (but gives a non-fatal warning).
     TS_ADDTO(CXXFLAGS, [-mcx16])
     TS_ADDTO(CFLAGS, [-mcx16])
     TS_TRY_COMPILE_NO_WARNING([],[
@@ -1352,15 +1478,17 @@ AC_LANG_POP
 AC_SUBST(has_128bit_cas)
 
 AS_IF([test "x$has_128bit_cas" = "x1"], [
-  TS_ADDTO(CFLAGS, [-mcx16])
-  TS_ADDTO(CXXFLAGS, [-mcx16])
+  AS_IF([test "x$ax_cv_c_compiler_vendor" != "xintel"], [
+    TS_ADDTO(AM_CFLAGS, [-mcx16])
+    TS_ADDTO(AM_CXXFLAGS, [-mcx16])
+  ])
 ])
 
 # Check for POSIX capabilities library.
 # If we don't find it, disable checking for header.
 use_posix_cap=0
 AS_IF([test "x$enable_posix_cap" != "xno"],
-  AC_SEARCH_LIBS([cap_set_proc],[cap],
+  AC_CHECK_LIB([cap], [cap_set_proc],
     [AC_SUBST([LIBCAP], ["-lcap"])
      use_posix_cap=1
     ],[
@@ -1375,13 +1503,13 @@ AS_IF([test "x$enable_posix_cap" != "xno"],
 AC_SUBST(use_posix_cap)
 
 #
-# If the OS is linux, we can use the '--enable-linux-native-aio' option to
+# If the OS is linux, we can use the '--enable-experimental-linux-native-aio' option to
 # replace the aio thread mode. Effective only on the linux system.
 #
 
 AC_MSG_CHECKING([whether to enable Linux native AIO])
-AC_ARG_ENABLE([linux-native-aio],
-  [AS_HELP_STRING([--enable-linux-native-aio], [enable native Linux AIO support @<:@default=no@:>@])],
+AC_ARG_ENABLE([experimental-linux-native-aio],
+  [AS_HELP_STRING([--enable-experimental-linux-native-aio], [WARNING this is experimental and has known issues enable native Linux AIO support @<:@default=no@:>@])],
   [enable_linux_native_aio="${enableval}"],
   [enable_linux_native_aio=no]
 )
@@ -1398,7 +1526,6 @@ AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
   AC_SEARCH_LIBS([io_submit], [aio], [],
     [AC_MSG_ERROR([Linux native AIO requires libaio])]
   )
-
 ])
 
 AC_MSG_RESULT([$enable_linux_native_aio])
@@ -1468,27 +1595,11 @@ TS_CHECK_TCMALLOC
 # Check for libreadline/libedit
 AX_LIB_READLINE
 
-# On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
-# http://luajit.org/install.html.
-case $host_os_def in
-  darwin)
-    LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
-    ;;
-esac
-
-# Flags for building and linking against our internal copy of LuaJIT.
-AC_SUBST([LUAJIT_LDFLAGS])
-AC_SUBST([LUAJIT_CPPFLAGS], ['-I$(top_srcdir)/lib/luajit/src'])
-AC_SUBST([LUAJIT_LIBS], ['$(top_builddir)/lib/luajit/src/libluajit.a'])
-
-
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 
-# Check for spdylay library
-if test "x${enable_spdy}" = "xyes"; then
-  PKG_CHECK_MODULES([SPDYLAY],[libspdylay])
-fi
+# We should only build traffic_top if we have curses
+AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [test "x$ax_cv_curses" = "xyes"])
 
 AC_CHECK_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
 AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])
@@ -1520,7 +1631,7 @@ AC_CHECK_HEADERS([sys/types.h \
                   sys/pset.h \
                   sched.h \
                   pthread.h \
-                  pthread_np.h \
+                  sys/endian.h \
                   machine/endian.h \
                   endian.h \
                   sys/sysinfo.h \
@@ -1539,7 +1650,6 @@ AC_CHECK_HEADERS([sys/types.h \
                   ctype.h \
                   siginfo.h \
                   malloc.h \
-                  wait.h \
                   float.h \
                   libgen.h \
                   values.h \
@@ -1548,7 +1658,6 @@ AC_CHECK_HEADERS([sys/types.h \
                   stropts.h \
                   sys/param.h \
                   sys/sysmacros.h \
-                  math.h \
                   stdint.h \
                   stdbool.h \
                   sysexits.h \
@@ -1558,48 +1667,8 @@ AC_CHECK_HEADERS([sys/types.h \
                   editline/readline.h \
                   ucred.h ])
 
-AC_SUBST(sys_epollh)
-AC_SUBST(sys_eventh)
-AC_SUBST(machine_endianh)
-AC_SUBST(endianh)
-AC_SUBST(pthread_nph)
-AC_SUBST(sys_paramh)
-AC_SUBST(sys_cpuseth)
-AC_SUBST(sys_pseth)
-AC_SUBST(schedh)
-AC_SUBST(netinet_inh)
-AC_SUBST(netinet_in_systmh)
-AC_SUBST(netinet_tcph)
-AC_SUBST(sys_ioctlh)
-AC_SUBST(sys_byteorderh)
-AC_SUBST(sys_sockioh)
-AC_SUBST(sys_sysctlh)
-AC_SUBST(sys_sysinfoh)
-AC_SUBST(sys_systeminfoh)
-AC_SUBST(arpa_ineth)
-AC_SUBST(arpa_nameserh)
-AC_SUBST(arpa_nameser_compath)
-AC_SUBST(execinfoh)
-AC_SUBST(netdbh)
-AC_SUBST(ctypeh)
-
-AC_SUBST(siginfoh)
-AC_SUBST(malloch)
-AC_SUBST(waith)
-AC_SUBST(floath)
-AC_SUBST(libgenh)
-AC_SUBST(valuesh)
-AC_SUBST(allocah)
-AC_SUBST(cpioh)
-AC_SUBST(stroptsh)
-AC_SUBST(sys_mounth)
-AC_SUBST(sys_paramh)
-AC_SUBST(sys_sysmacrosh)
-AC_SUBST(mathh)
-AC_SUBST(net_ppp_defsh)
-AC_SUBST(ifaddrsh)
-AC_SUBST(readline_readlineh)
-
+# On OpenBSD, pthread.h must be included before pthread_np.h
+AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 AC_CHECK_HEADERS([sys/statfs.h sys/statvfs.h sys/disk.h sys/disklabel.h])
 AC_CHECK_HEADERS([linux/hdreg.h linux/fs.h linux/major.h])
 
@@ -1657,8 +1726,6 @@ AC_CHECK_HEADERS([netinet/ip_icmp.h], [], [],
                    #endif
                  ]])
 
-AC_SUBST(netinet_iph)
-AC_SUBST(netinet_ip_icmph)
 
 # Test for additional pthread interfaces.
 
@@ -1720,6 +1787,46 @@ AC_LINK_IFELSE([
     AC_MSG_RESULT([yes])
   ], [
     AC_MSG_RESULT([no])
+])
+
+# pthread_getname_np / pthread_get_name_np:
+AC_MSG_CHECKING([pthread_getname_np()])
+AC_LINK_IFELSE([
+    AC_LANG_PROGRAM([
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#if PTHREAD_NP_H
+#include <pthread_np.h>
+#endif
+      ], [
+        char name[[32]];
+        pthread_getname_np(pthread_self(), name, sizeof(name));
+    ])
+  ], [
+    AC_DEFINE(HAVE_PTHREAD_GETNAME_NP, 1, [Whether pthread_getname_np() is available])
+    AC_MSG_RESULT([yes])
+  ], [
+    AC_MSG_RESULT([no])
+    AC_MSG_CHECKING([pthread_get_name_np()])
+    AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([
+    #if HAVE_PTHREAD_H
+    #include <pthread.h>
+    #endif
+    #if PTHREAD_NP_H
+    #include <pthread_np.h>
+    #endif
+          ], [
+            char name[[32]];
+            pthread_get_name_np(pthread_self(), name, sizeof(name));
+        ])
+      ], [
+        AC_DEFINE(HAVE_PTHREAD_GET_NAME_NP, 1, [Whether pthread_get_name_np() is available])
+        AC_MSG_RESULT([yes])
+      ], [
+        AC_MSG_RESULT([no])
+    ])
 ])
 
 # BSD-derived systems populate the socket length in the structure itself. It's
@@ -1853,7 +1960,6 @@ AC_SUBST(has_ip_tos)
 AC_SUBST(has_so_peercred)
 
 TS_CHECK_LOOPBACK_IFACE
-TS_CHECK_GETHOSTBYNAME_R_STYLE
 TS_CHECK_MACRO_IN6_IS_ADDR_UNSPECIFIED
 
 AC_CHECK_TYPE([struct tcp_info],
@@ -1878,44 +1984,41 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"],
 AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
   [ test "x$enable_experimental_plugins" = "xyes" -a "x$ac_cv_header_search_h" = "xyes" -a "x$ac_cv_type_struct_hsearch_data" = "xyes" -a "x$ac_cv_func_hcreate_r" = "xyes" -a "x$ac_cv_func_hsearch_r" = "xyes" ])
 
+AC_ARG_WITH([default-stack-size],
+  [AS_HELP_STRING([--with-default-stack-size],[specify the default stack size in bytes [default=1048576]])],
+  [
+  with_default_stack_size="$withval"
+  ],[
+  with_default_stack_size="1048576"
+  ]
+)
+
+AC_SUBST([default_stack_size], [$with_default_stack_size])
+
 #
 # use modular IOCORE
 #
 iocore_include_dirs="\
--I\$(top_srcdir)/iocore/eventsystem \
--I\$(top_srcdir)/iocore/net \
--I\$(top_srcdir)/iocore/aio \
--I\$(top_srcdir)/iocore/hostdb \
--I\$(top_srcdir)/iocore/cache \
--I\$(top_srcdir)/iocore/cluster \
--I\$(top_srcdir)/iocore/utils \
--I\$(top_srcdir)/iocore/dns"
+-I\$(abs_top_srcdir)/iocore/eventsystem \
+-I\$(abs_top_srcdir)/iocore/net \
+-I\$(abs_top_srcdir)/iocore/aio \
+-I\$(abs_top_srcdir)/iocore/hostdb \
+-I\$(abs_top_srcdir)/iocore/cache \
+-I\$(abs_top_srcdir)/iocore/utils \
+-I\$(abs_top_srcdir)/iocore/dns"
 
-# Flags for buildit LuaJIT itself. We take the latest version
-# of the generic flags, plus any Lua-specific flags so that we
-# can strip the coverage flags from Lua while keeping them by
-# default everywhere else.
-AC_SUBST([LUA_CFLAGS], [$CFLAGS $lua_cflags])
-AC_SUBST(LUA_LDFLAGS)
-
-TS_REMOVEFROM(LUA_CFLAGS, "-fprofile-instr-generate")
-TS_REMOVEFROM(LUA_CFLAGS, "-fcoverage-mapping")
-TS_REMOVEFROM(LUA_CFLAGS, "--coverage")
-
-AC_SUBST([CC])
-AC_SUBST([CFLAGS])
-AC_SUBST([CXX])
-AC_SUBST([CXXFLAGS])
-AC_SUBST([EXPAT_LDFLAGS])
-AC_SUBST([EXTRA_CC_LDFLAGS])
-AC_SUBST([EXTRA_CXX_LDFLAGS])
-AC_SUBST([LIBTOOL_LINK_FLAGS])
+AC_SUBST([AM_CPPFLAGS])
+AC_SUBST([AM_CFLAGS])
+AC_SUBST([AM_CXXFLAGS])
+AC_SUBST([AM_LDFLAGS])
 AC_SUBST([iocore_include_dirs])
-AC_SUBST([LDFLAGS])
-AC_SUBST([SHARED_CFLAGS])
-AC_SUBST([SHARED_CXXFLAGS])
-AC_SUBST([SHARED_CXXLINKFLAGS])
-AC_SUBST([SHARED_LDFLAGS])
+
+# NOTE: All additions to the default include path must be added to
+# TS_INCLUDES *not* to AM_CPPFLAGS. If you add then to AM_CPPFLAGS
+# then they are always prepended to the local AM_CPPFLAGS which risks
+# name collisions with in-tree files. We always want the in-tree files
+# to have precendence.
+AC_SUBST([TS_INCLUDES])
 
 AS_IF([test "x$RPATH" != "x"], [
        TS_ADDTO_RPATH([$RPATH])
@@ -1926,138 +2029,61 @@ AS_IF([test "x$RPATH" != "x"], [
 
 AC_CONFIG_FILES([
   Makefile
-  cmd/Makefile
-  cmd/traffic_cop/Makefile
-  cmd/traffic_crashlog/Makefile
-  cmd/traffic_ctl/Makefile
-  cmd/traffic_layout/Makefile
-  cmd/traffic_manager/Makefile
-  cmd/traffic_top/Makefile
-  cmd/traffic_via/Makefile
-  cmd/traffic_wccp/Makefile
+  src/Makefile
+  configs/Makefile
+  configs/body_factory/Makefile
+  configs/body_factory/default/Makefile
+  configs/records.config.default
+  configs/storage.config.default
   doc/Makefile
+  doc/ext/local-config.py
+  doc/uml/Makefile
   example/Makefile
+  include/Makefile
+  include/ts/Makefile
+  include/tscpp/api/Makefile
+  include/tscpp/util/Makefile
   iocore/Makefile
   iocore/aio/Makefile
   iocore/cache/Makefile
-  iocore/cluster/Makefile
   iocore/dns/Makefile
   iocore/eventsystem/Makefile
   iocore/hostdb/Makefile
   iocore/net/Makefile
   iocore/utils/Makefile
   lib/Makefile
-  lib/atscppapi/Makefile
-  lib/atscppapi/examples/Makefile
-  lib/atscppapi/examples/async_http_fetch/Makefile
-  lib/atscppapi/examples/async_http_fetch_streaming/Makefile
-  lib/atscppapi/examples/async_timer/Makefile
-  lib/atscppapi/examples/boom/Makefile
-  lib/atscppapi/examples/clientredirect/Makefile
-  lib/atscppapi/examples/clientrequest/Makefile
-  lib/atscppapi/examples/custom_error_remap_plugin/Makefile
-  lib/atscppapi/examples/customresponse/Makefile
-  lib/atscppapi/examples/globalhook/Makefile
-  lib/atscppapi/examples/gzip_transformation/Makefile
-  lib/atscppapi/examples/helloworld/Makefile
-  lib/atscppapi/examples/intercept/Makefile
-  lib/atscppapi/examples/internal_transaction_handling/Makefile
-  lib/atscppapi/examples/logger_example/Makefile
-  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
-  lib/atscppapi/examples/null_transformation_plugin/Makefile
-  lib/atscppapi/examples/post_buffer/Makefile
-  lib/atscppapi/examples/remap_plugin/Makefile
-  lib/atscppapi/examples/serverresponse/Makefile
-  lib/atscppapi/examples/stat_example/Makefile
-  lib/atscppapi/examples/timeout_example/Makefile
-  lib/atscppapi/examples/transactionhook/Makefile
-  lib/atscppapi/src/Makefile
-  lib/bindings/Makefile
+  src/tscpp/api/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
-  lib/ts/Makefile
-  lib/ts/apidefs.h
-  lib/ts/ink_config.h
+  include/ts/apidefs.h
+  include/tscore/ink_config.h
   lib/tsconfig/Makefile
-  lib/wccp/Makefile
+  src/wccp/Makefile
+  lib/yamlcpp/Makefile
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
-  mgmt/cluster/Makefile
   mgmt/utils/Makefile
   plugins/Makefile
-  plugins/cacheurl/Makefile
-  plugins/conf_remap/Makefile
-  plugins/experimental/Makefile
-  plugins/experimental/acme/Makefile
-  plugins/experimental/authproxy/Makefile
-  plugins/experimental/background_fetch/Makefile
-  plugins/experimental/balancer/Makefile
-  plugins/experimental/buffer_upload/Makefile
-  plugins/experimental/cache_key_genid/Makefile
-  plugins/experimental/cache_promote/Makefile
-  plugins/experimental/cache_range_requests/Makefile
-  plugins/experimental/cachekey/Makefile
-  plugins/experimental/channel_stats/Makefile
-  plugins/experimental/collapsed_connection/Makefile
-  plugins/experimental/custom_redirect/Makefile
-  plugins/experimental/epic/Makefile
-  plugins/experimental/escalate/Makefile
-  plugins/experimental/esi/Makefile
-  plugins/experimental/generator/Makefile
-  plugins/experimental/geoip_acl/Makefile
-  plugins/experimental/header_normalize/Makefile
-  plugins/experimental/collapsed_forwarding/Makefile
-  plugins/experimental/hipes/Makefile
-  plugins/experimental/inliner/Makefile
-  plugins/experimental/memcache/Makefile
-  plugins/experimental/memcached_remap/Makefile
-  plugins/experimental/metalink/Makefile
-  plugins/experimental/mp4/Makefile
-  plugins/experimental/multiplexer/Makefile
-  plugins/experimental/mysql_remap/Makefile
-  plugins/experimental/regex_revalidate/Makefile
-  plugins/experimental/remap_stats/Makefile
-  plugins/experimental/s3_auth/Makefile
-  plugins/experimental/ssl_cert_loader/Makefile
-  plugins/experimental/sslheaders/Makefile
-  plugins/experimental/stale_while_revalidate/Makefile
-  plugins/experimental/stream_editor/Makefile
-  plugins/experimental/ts_lua/Makefile
-  plugins/experimental/url_sig/Makefile
-  plugins/experimental/webp_transform/Makefile
-  plugins/experimental/xdebug/Makefile
-  plugins/gzip/Makefile
-  plugins/header_rewrite/Makefile
-  plugins/healthchecks/Makefile
-  plugins/libloader/Makefile
-  plugins/regex_remap/Makefile
-  plugins/stats_over_http/Makefile
-  plugins/tcpinfo/Makefile
   proxy/Makefile
-  proxy/api/ts/Makefile
-  proxy/config/Makefile
-  proxy/config/body_factory/Makefile
-  proxy/config/body_factory/default/Makefile
-  proxy/config/records.config.default
-  proxy/config/storage.config.default
-  proxy/congest/Makefile
   proxy/hdrs/Makefile
   proxy/http/Makefile
   proxy/http/remap/Makefile
   proxy/http2/Makefile
   proxy/logging/Makefile
   proxy/shared/Makefile
-  proxy/spdy/Makefile
   rc/Makefile
   rc/trafficserver
   rc/trafficserver.conf
   rc/trafficserver.service
   rc/trafficserver.xml
+  src/tscpp/util/Makefile
+  src/tscore/Makefile
   tools/Makefile
   tools/trafficserver.pc
   tools/tsxs
+  tests/unit_tests/Makefile
 ])
 
 # -----------------------------------------------------------------------------
@@ -2073,14 +2099,13 @@ AC_MSG_NOTICE([Build option summary:
     CXXFLAGS:           $CXXFLAGS
     CPPFLAGS:           $CPPFLAGS
     LDFLAGS:            $LDFLAGS
-    SHARED_CFLAGS:      $SHARED_CFLAGS
-    SHARED_CXXFLAGS:    $SHARED_CXXFLAGS
-    SHARED_CXXLINKFLAGS:$SHARED_LINKCXXFLAGS
-    SHARED_LDFLAGS:     $SHARED_LDFLAGS
+    AM@&t@_CFLAGS:          $AM_CFLAGS
+    AM@&t@_CXXFLAGS:        $AM_CXXFLAGS
+    AM@&t@_CPPFLAGS:        $AM_CPPFLAGS
+    AM@&t@_LDFLAGS:         $AM_LDFLAGS
+    TS_INCLUDES:        $TS_INCLUDES
     OPENSSL_LDFLAGS:    $OPENSSL_LDFLAGS
     OPENSSL_INCLUDES:   $OPENSSL_INCLUDES
-    EXTRA_CC_LDFLAGS:   $EXTRA_CC_LDFLAGS
-    EXTRA_CXX_LDFLAGS:  $EXTRA_CXX_LDFLAGS
-    LIBTOOL_LINK_FLAGS: $LIBTOOL_LINK_FLAGS
-
+    YAMLCPP_LDFLAGS:    $YAMLCPP_LDFLAGS
+    YAMLCPP_INCLUDES:   $YAMLCPP_INCLUDES
 ])

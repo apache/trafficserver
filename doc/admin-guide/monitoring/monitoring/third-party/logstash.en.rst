@@ -41,8 +41,8 @@ that is currently left as an exercise for the reader.
 ================
 
 |TS| provides a very flexible set of logging outputs. Almost any format can be
-constructed. The full range of options is covered in the
-:ref:`admin-monitoring-logging` chapter.
+constructed. The full range of options is covered in the :ref:`admin-logging`
+chapter.
 
 This guide will walk you through using the appropriate filters in Logstash for
 the common logging formats in |TS|. If you have constructed your own custom log
@@ -84,7 +84,7 @@ custom log formats for |TS|, you may need to write your own patterns, however.
 Squid Compatible
 ----------------
 
-The :ref:`admin-logging-format-squid` log format includes, unsurprisingly, a
+The :ref:`admin-logging-examples-squid` log format includes, unsurprisingly, a
 few useful fields for proxy servers. Using the following grok pattern will
 extract this information from your |TS| logs if you employ the Squid compatible
 log format::
@@ -107,7 +107,7 @@ timestamp   Date and time of the client request.
 timetoserve Time, in seconds, from initial client connection to |TS| until the
             last byte has been sent back to client from |TS|.
 clientip    Client IP address or hostname.
-cachecode   :ref:`admin-monitoring-logging-cache-result-codes`.
+cachecode   :ref:`admin-logging-crc`.
 response    HTTP response status code sent by |TS| to the client.
 bytes       Length, in bytes, of the |TS| response to the client, including
             headers.
@@ -122,7 +122,7 @@ contenttype Content type of the response.
 Netscape Common
 ---------------
 
-If your |TS| instance is already outputting :ref:`admin-logging-format-common`
+If your |TS| instance is already outputting :ref:`admin-logging-examples-netscape`
 format logs, then Logstash's ``COMMONAPACHELOG`` pattern will handle your logs
 out of the box. Add the following filter block to your Logstash configuration::
 
@@ -162,7 +162,7 @@ Netscape Extended
 -----------------
 
 The following pattern adds to Common Apache to support the additional fields
-found in :ref:`admin-logging-format-extended`::
+found in :ref:`admin-logging-examples-extended`::
 
     filter {
       grok {

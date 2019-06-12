@@ -21,11 +21,14 @@
   limitations under the License.
  */
 
-#ifndef LOG_FIELD_H
-#define LOG_FIELD_H
+#pragma once
 
-#include "ts/ink_platform.h"
-#include "ts/List.h"
+#include <string_view>
+#include <string>
+
+#include "tscore/ink_platform.h"
+#include "tscore/List.h"
+#include "tscore/TsBuffer.h"
 #include "LogFieldAliasMap.h"
 #include "Milestones.h"
 
@@ -39,15 +42,15 @@ struct LogSlice {
   LogSlice()
   {
     m_enable = false;
-    m_start = 0;
-    m_end = INT_MAX;
+    m_start  = 0;
+    m_end    = INT_MAX;
   }
 
   //
   // Initialize LogSlice by slice notation,
   // the str looks like: "xxx[0:30]".
   //
-  LogSlice(char *str);
+  explicit LogSlice(char *str);
 
   //
   // Convert slice notation to target string's offset,
@@ -76,7 +79,7 @@ public:
   typedef int (LogAccess::*MarshalFunc)(char *buf);
   typedef int (*UnmarshalFunc)(char **buf, char *dest, int len);
   typedef int (*UnmarshalFuncWithSlice)(char **buf, char *dest, int len, LogSlice *slice);
-  typedef int (*UnmarshalFuncWithMap)(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
+  typedef int (*UnmarshalFuncWithMap)(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
   typedef void (LogAccess::*SetFunc)(char *buf, int len);
 
   enum Type {
@@ -117,12 +120,13 @@ public:
     N_AGGREGATES,
   };
 
-  LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal, SetFunc _setFunc = NULL);
+  LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal,
+           SetFunc _setFunc = nullptr);
 
   LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
-           Ptr<LogFieldAliasMap> map, SetFunc _setFunc = NULL);
+           const Ptr<LogFieldAliasMap> &map, SetFunc _setFunc = nullptr);
 
-  LogField(const char *field, Container container, SetFunc _setFunc = NULL);
+  LogField(const char *field, Container container, SetFunc _setFunc = nullptr);
   LogField(const LogField &rhs);
   ~LogField();
 
@@ -134,33 +138,38 @@ public:
   bool operator==(LogField &rhs);
   void updateField(LogAccess *lad, char *val, int len);
 
-  char *
-  name()
+  const char *
+  name() const
   {
     return m_name;
   }
-  char *
-  symbol()
+
+  const char *
+  symbol() const
   {
     return m_symbol;
   }
+
   Type
-  type()
+  type() const
   {
     return m_type;
   }
+
   Ptr<LogFieldAliasMap>
   map()
   {
     return m_alias_map;
-  };
+  }
+
   Aggregate
-  aggregate()
+  aggregate() const
   {
     return m_agg_op;
   }
+
   bool
-  is_time_field()
+  is_time_field() const
   {
     return m_time_field;
   }
@@ -168,10 +177,10 @@ public:
   void set_aggregate_op(Aggregate agg_op);
   void update_aggregate(int64_t val);
 
-  static void init_milestone_container(void);
+  static void init_milestone_container();
   static Container valid_container_name(char *name);
   static Aggregate valid_aggregate_name(char *name);
-  static bool fieldlist_contains_aggregates(char *fieldlist);
+  static bool fieldlist_contains_aggregates(const char *fieldlist);
 
 private:
   char *m_name;
@@ -196,17 +205,13 @@ public:
   LINK(LogField, link);
   LogSlice m_slice;
 
-private:
-  // luis, check where this is used and what it does
-  //    void init (char *name, char *symbol, Type type);
-
+  // noncopyable
   // -- member functions that are not allowed --
-  LogField();
-  LogField &operator=(const LogField &rhs);
-};
+  LogField &operator=(const LogField &rhs) = delete;
 
-extern const char *container_names[];
-extern const char *aggregate_names[];
+private:
+  LogField();
+};
 
 /*-------------------------------------------------------------------------
   LogFieldList
@@ -241,13 +246,27 @@ public:
   unsigned count();
   void display(FILE *fd = stdout);
 
-private:
-  unsigned m_marshal_len;
-  Queue<LogField> m_field_list;
+  // Add a bad symbol seen in the log format to the list of bad symbols.
+  //
+  void addBadSymbol(std::string_view badSymbol);
 
+  // Return blank-separated list of added bad symbols.
+  //
+  std::string_view
+  badSymbols() const
+  {
+    return _badSymbols;
+  }
+
+  // noncopyable
   // -- member functions that are not allowed --
-  LogFieldList(const LogFieldList &rhs);
-  LogFieldList &operator=(const LogFieldList &rhs);
+  LogFieldList(const LogFieldList &rhs) = delete;
+  LogFieldList &operator=(const LogFieldList &rhs) = delete;
+
+private:
+  unsigned m_marshal_len = 0;
+  Queue<LogField> m_field_list;
+  std::string _badSymbols;
 };
 
 /** Base IP address data.
@@ -275,5 +294,3 @@ union LogFieldIpStorage {
   LogFieldIp4 _ip4;
   LogFieldIp6 _ip6;
 };
-
-#endif

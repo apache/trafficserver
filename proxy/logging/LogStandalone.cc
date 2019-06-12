@@ -27,16 +27,14 @@
 
  ***************************************************************************/
 
-#include "ts/ink_platform.h"
-#include "ts/ink_lockfile.h"
-#include "ts/ink_sys_control.h"
-#include "ts/signals.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_lockfile.h"
+#include "tscore/ink_sys_control.h"
+#include "tscore/signals.h"
 #include "DiagsConfig.h"
-#include "Main.h"
 
-#include "Error.h"
 #include "P_EventSystem.h"
-#include "P_RecProcess.h"
+#include "records/P_RecProcess.h"
 
 #include "ProcessManager.h"
 #include "MgmtUtils.h"
@@ -51,20 +49,20 @@ class HttpBodyFactory;
 extern int fds_limit;
 extern int cluster_port_number;
 
-int command_flag = 0;
-int http_accept_port_number = 0;
+int command_flag                = 0;
+int http_accept_port_number     = 0;
 int http_accept_file_descriptor = 0;
-int remote_management_flag = 0;
-int auto_clear_hostdb_flag = 0;
-char proxy_name[MAXDNAME + 1] = "unknown";
+int remote_management_flag      = 0;
+int auto_clear_hostdb_flag      = 0;
+char proxy_name[MAXDNAME + 1]   = "unknown";
 
-char error_tags[1024] = "";
-char action_tags[1024] = "";
+char error_tags[1024]    = "";
+char action_tags[1024]   = "";
 char command_string[512] = "";
 
 // Diags *diags = NULL;
-DiagsConfig *diagsConfig = NULL;
-HttpBodyFactory *body_factory = NULL;
+DiagsConfig *diagsConfig      = nullptr;
+HttpBodyFactory *body_factory = nullptr;
 AppVersionInfo appVersionInfo;
 
 /*-------------------------------------------------------------------------
@@ -82,7 +80,7 @@ logging_crash_handler(int signo, siginfo_t *info, void *ptr)
 static void
 init_system(bool notify_syslog)
 {
-  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE, true, false);
+  fds_limit = ink_max_out_rlimit(RLIMIT_NOFILE);
 
   signal_register_crash_handler(logging_crash_handler);
   if (notify_syslog) {
@@ -100,7 +98,7 @@ initialize_process_manager()
 {
   mgmt_use_syslog();
 
-  // Temporary Hack to Enable Communuication with LocalManager
+  // Temporary Hack to Enable Communication with LocalManager
   if (getenv("PROXY_REMOTE_MGMT")) {
     remote_management_flag = true;
   }
@@ -147,14 +145,14 @@ check_lockfile()
 {
   int err;
   pid_t holding_pid;
-  char *lockfile = NULL;
+  char *lockfile = nullptr;
 
-  if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
-    fprintf(stderr, "unable to access() dir'%s': %d, %s\n", Layout::get()->runtimedir, errno, strerror(errno));
+  if (access(Layout::get()->runtimedir.c_str(), R_OK | W_OK) == -1) {
+    fprintf(stderr, "unable to access() dir'%s': %d, %s\n", Layout::get()->runtimedir.c_str(), errno, strerror(errno));
     fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
     ::exit(1);
   }
-  lockfile = Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK);
+  lockfile = ats_stringdup(Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK));
 
   Lockfile server_lockfile(lockfile);
   err = server_lockfile.Get(&holding_pid);
@@ -203,15 +201,15 @@ init_log_standalone(const char *pgm_name, bool one_copy)
 
   // set stdin/stdout to be unbuffered
   //
-  setbuf(stdin, NULL);
-  setbuf(stdout, NULL);
+  setbuf(stdin, nullptr);
+  setbuf(stdout, nullptr);
 
   openlog(pgm_name, LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
 
   init_system(true);
   initialize_process_manager();
-  diagsConfig = new DiagsConfig(logfile, error_tags, action_tags);
-  diags = diagsConfig->diags;
+  diagsConfig = new DiagsConfig(pgm_name, logfile, error_tags, action_tags);
+  diags       = diagsConfig->diags;
 }
 
 /*-------------------------------------------------------------------------
@@ -238,10 +236,10 @@ init_log_standalone_basic(const char *pgm_name)
 
   init_system(false);
   const bool use_records = false;
-  diagsConfig = new DiagsConfig(logfile, error_tags, action_tags, use_records);
-  diags = diagsConfig->diags;
+  diagsConfig            = new DiagsConfig(pgm_name, logfile, error_tags, action_tags, use_records);
+  diags                  = diagsConfig->diags;
   // set stdin/stdout to be unbuffered
   //
-  setbuf(stdin, NULL);
-  setbuf(stdout, NULL);
+  setbuf(stdin, nullptr);
+  setbuf(stdout, nullptr);
 }

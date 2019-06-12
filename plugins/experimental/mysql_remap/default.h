@@ -16,10 +16,7 @@
   limitations under the License.
 */
 
-#ifndef __DEFAULT_H__
-#define __DEFAULT_H__ 1
+#pragma once
 
 static const char *PLUGIN_NAME = "mysql_remap";
 #define QSIZE 2048
-
-#endif // __DEFAULT_H__

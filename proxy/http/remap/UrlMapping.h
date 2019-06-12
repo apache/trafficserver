@@ -21,27 +21,24 @@
   limitations under the License.
  */
 
-#ifndef _URL_MAPPING_H_
-#define _URL_MAPPING_H_
+#pragma once
 
-#include "ts/ink_config.h"
+#include <vector>
+
+#include "tscore/ink_config.h"
 #include "AclFiltering.h"
-#include "Main.h"
-#include "Error.h"
 #include "URL.h"
 #include "RemapPluginInfo.h"
-#include "ts/Regex.h"
-#include "ts/List.h"
-
-static const unsigned int MAX_REMAP_PLUGIN_CHAIN = 10;
+#include "tscore/Regex.h"
+#include "tscore/List.h"
 
 /**
  * Used to store http referer strings (and/or regexp)
-**/
+ **/
 class referer_info
 {
 public:
-  referer_info(char *_ref, bool *error_flag = NULL, char *errmsgbuf = NULL, int errmsgbuf_size = 0);
+  referer_info(char *_ref, bool *error_flag = nullptr, char *errmsgbuf = nullptr, int errmsgbuf_size = 0);
   ~referer_info();
   referer_info *next;
   char *referer;
@@ -54,63 +51,64 @@ public:
 
 /**
  *
-**/
+ **/
 class redirect_tag_str
 {
 public:
-  redirect_tag_str() : next(0), chunk_str(NULL), type(0) {}
+  redirect_tag_str() {}
   ~redirect_tag_str()
   {
     type = 0;
     if (chunk_str) {
       ats_free(chunk_str);
-      chunk_str = NULL;
+      chunk_str = nullptr;
     }
   }
 
-  redirect_tag_str *next;
-  char *chunk_str;
-  char type; /* s - string, r - referer, t - url_to, f - url_from, o - origin url */
+  redirect_tag_str *next = nullptr;
+  char *chunk_str        = nullptr;
+  char type              = 0; /* s - string, r - referer, t - url_to, f - url_from, o - origin url */
   static redirect_tag_str *parse_format_redirect_url(char *url);
 };
 
 /**
  * Used to store the mapping for class UrlRewrite
-**/
+ **/
 class url_mapping
 {
 public:
-  url_mapping(int rank = 0);
   ~url_mapping();
 
-  bool add_plugin(remap_plugin_info *i, void *ih);
-  remap_plugin_info *get_plugin(unsigned int) const;
+  bool add_plugin(RemapPluginInfo *i, void *ih);
+  RemapPluginInfo *get_plugin(std::size_t) const;
+  void *get_instance(std::size_t) const;
 
-  void *
-  get_instance(unsigned int index) const
+  std::size_t
+  plugin_count() const
   {
-    return _instance_data[index];
-  };
+    return _plugin_list.size();
+  }
+
   void delete_instance(unsigned int index);
   void Print();
 
-  int from_path_len;
+  int from_path_len = 0;
   URL fromURL;
-  URL toUrl; // Default TO-URL (from remap.config)
-  bool homePageRedirect;
-  bool unique; // INKqa11970 - unique mapping
-  bool default_redirect_url;
-  bool optional_referer;
-  bool negative_referer;
-  bool wildcard_from_scheme; // from url is '/foo', only http or https for now
-  char *tag;                 // tag
-  char *filter_redirect_url; // redirect url when referer filtering enabled
-  unsigned int map_id;
-  referer_info *referer_list;
-  redirect_tag_str *redir_chunk_list;
-  acl_filter_rule *filter; // acl filtering (list of rules)
-  unsigned int _plugin_count;
-  LINK(url_mapping, link); // For use with the main Queue linked list holding all the mapping
+  URL toURL; // Default TO-URL (from remap.config)
+  bool homePageRedirect              = false;
+  bool unique                        = false; // INKqa11970 - unique mapping
+  bool default_redirect_url          = false;
+  bool optional_referer              = false;
+  bool negative_referer              = false;
+  bool wildcard_from_scheme          = false;   // from url is '/foo', only http or https for now
+  char *tag                          = nullptr; // tag
+  char *filter_redirect_url          = nullptr; // redirect url when referer filtering enabled
+  unsigned int map_id                = 0;
+  referer_info *referer_list         = nullptr;
+  redirect_tag_str *redir_chunk_list = nullptr;
+  bool ip_allow_check_enabled_p      = false;
+  acl_filter_rule *filter            = nullptr; // acl filtering (list of rules)
+  LINK(url_mapping, link);                      // For use with the main Queue linked list holding all the mapping
 
   int
   getRank() const
@@ -124,20 +122,20 @@ public:
   };
 
 private:
-  remap_plugin_info *_plugin_list[MAX_REMAP_PLUGIN_CHAIN];
-  void *_instance_data[MAX_REMAP_PLUGIN_CHAIN];
-  int _rank;
+  std::vector<RemapPluginInfo *> _plugin_list;
+  std::vector<void *> _instance_data;
+  int _rank = 0;
 };
 
 /**
  * UrlMappingContainer wraps a url_mapping object and allows a caller to rewrite the target URL.
  * This is used while evaluating remap rules.
-**/
+ **/
 class UrlMappingContainer
 {
 public:
-  UrlMappingContainer() : _mapping(NULL), _toURLPtr(NULL), _heap(NULL) {}
-  explicit UrlMappingContainer(HdrHeap *heap) : _mapping(NULL), _toURLPtr(NULL), _heap(heap) {}
+  UrlMappingContainer() {}
+  explicit UrlMappingContainer(HdrHeap *heap) : _heap(heap) {}
   ~UrlMappingContainer() { deleteToURL(); }
   URL *
   getToURL() const
@@ -147,7 +145,7 @@ public:
   URL *
   getFromURL() const
   {
-    return _mapping ? &(_mapping->fromURL) : NULL;
+    return _mapping ? &(_mapping->fromURL) : nullptr;
   };
 
   url_mapping *
@@ -160,8 +158,8 @@ public:
   set(url_mapping *m)
   {
     deleteToURL();
-    _mapping = m;
-    _toURLPtr = m ? &(m->toUrl) : NULL;
+    _mapping  = m;
+    _toURLPtr = m ? &(m->toURL) : nullptr;
   }
 
   void
@@ -173,7 +171,7 @@ public:
   URL *
   createNewToURL()
   {
-    ink_assert(_heap != NULL);
+    ink_assert(_heap != nullptr);
     deleteToURL();
     _toURL.create(_heap);
     _toURLPtr = &_toURL;
@@ -192,20 +190,18 @@ public:
   clear()
   {
     deleteToURL();
-    _mapping = NULL;
-    _toURLPtr = NULL;
-    _heap = NULL;
+    _mapping  = nullptr;
+    _toURLPtr = nullptr;
+    _heap     = nullptr;
   }
 
+  // noncopyable, non-assignable
+  UrlMappingContainer(const UrlMappingContainer &orig) = delete;
+  UrlMappingContainer &operator=(const UrlMappingContainer &rhs) = delete;
+
 private:
-  url_mapping *_mapping;
-  URL *_toURLPtr;
+  url_mapping *_mapping = nullptr;
+  URL *_toURLPtr        = nullptr;
   URL _toURL;
-  HdrHeap *_heap;
-
-  // non-copyable, non-assignable
-  UrlMappingContainer(const UrlMappingContainer &orig);
-  UrlMappingContainer &operator=(const UrlMappingContainer &rhs);
+  HdrHeap *_heap = nullptr;
 };
-
-#endif

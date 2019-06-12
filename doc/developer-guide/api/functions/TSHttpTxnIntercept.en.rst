@@ -34,14 +34,14 @@ Synopsis
 Description
 ===========
 
-:arg:`contp` will be sent :data:`TS_EVENT_NET_ACCEPT`. The edata passed
-with :data:`TS_NET_EVENT_ACCEPT` is an :c:type:`TSVConn` just as it
+:arg:`contp` will be sent :macro:`TS_EVENT_NET_ACCEPT`. The edata passed
+with :macro:`TS_EVENT_NET_ACCEPT` is an :c:type:`TSVConn` just as it
 would be for a normal accept. The plugin must act as if it is an HTTP
 server and read the HTTP request and body off the :c:type:`TSVConn`
 and send an HTTP response header and body.
 
 :func:`TSHttpTxnIntercept` must be called be called from only
-:data:`TS_HTTP_READ_REQUEST_HOOK`.  Using
+:data:`TS_HTTP_READ_REQUEST_HDR_HOOK`.  Using
 :type:`TSHttpTxnIntercept` will bypass the Traffic Server cache.  If
 response sent by the plugin should be cached, use
 :func:`TSHttpTxnServerIntercept` instead.

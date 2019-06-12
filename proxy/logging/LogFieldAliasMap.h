@@ -26,16 +26,15 @@
   easily remembered names can be used to refer to log fields of integer type.
  */
 
-#ifndef LOG_FIELD_ALIAS_MAP_H
-#define LOG_FIELD_ALIAS_MAP_H
+#pragma once
 
-#include <stdarg.h>
-#include <string.h>
+#include <cstdarg>
+#include <cstring>
 
-#include "ts/ink_platform.h"
-#include "ts/Ptr.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Ptr.h"
 #include "LogUtils.h"
-#include "ts/ink_string.h"
+#include "tscore/ink_string.h"
 
 /*****************************************************************************
 
@@ -87,8 +86,8 @@ public:
     BUFFER_TOO_SMALL,
   };
 
-  virtual int asInt(char *key, IntType *val, bool case_sensitive = 0) const = 0;
-  virtual int asString(IntType key, char *buf, size_t bufLen, size_t *numChars = 0) const = 0;
+  virtual int asInt(char *key, IntType *val, bool case_sensitive = false) const                 = 0;
+  virtual int asString(IntType key, char *buf, size_t bufLen, size_t *numChars = nullptr) const = 0;
 };
 
 /*****************************************************************************
@@ -104,11 +103,11 @@ table->init(3, 1, "one", 2, "two", 7, "seven")
  *****************************************************************************/
 
 struct LogFieldAliasTableEntry {
-  bool valid;    // entry in table is valid
-  char *name;    // the string equivalent
-  size_t length; // the length of the string
+  bool valid    = false;   // entry in table is valid
+  char *name    = nullptr; // the string equivalent
+  size_t length = 0;       // the length of the string
 
-  LogFieldAliasTableEntry() : valid(false), name(NULL), length(0) {}
+  LogFieldAliasTableEntry() {}
   ~LogFieldAliasTableEntry()
   {
     if (name) {
@@ -120,18 +119,18 @@ struct LogFieldAliasTableEntry {
 class LogFieldAliasTable : public LogFieldAliasMap
 {
 private:
-  IntType m_min;                    // minimum numeric value
-  IntType m_max;                    // maximum numeric value
-  IntType m_entries;                // number of entries in table
-  LogFieldAliasTableEntry *m_table; // array of table entries
+  IntType m_min                    = 0;       // minimum numeric value
+  IntType m_max                    = 0;       // maximum numeric value
+  IntType m_entries                = 0;       // number of entries in table
+  LogFieldAliasTableEntry *m_table = nullptr; // array of table entries
 
 public:
-  LogFieldAliasTable() : m_min(0), m_max(0), m_entries(0), m_table(0) {}
-  ~LogFieldAliasTable() { delete[] m_table; }
+  LogFieldAliasTable() {}
+  ~LogFieldAliasTable() override { delete[] m_table; }
   void init(size_t numPairs, ...);
 
   int
-  asInt(char *key, IntType *val, bool case_sensitive) const
+  asInt(char *key, IntType *val, bool case_sensitive) const override
   {
     int retVal = INVALID_STRING;
 
@@ -147,7 +146,7 @@ public:
         found = false;
       }
       if (found) {
-        *val = (unsigned int)(i + m_min);
+        *val   = (unsigned int)(i + m_min);
         retVal = ALL_OK;
         break;
       }
@@ -157,7 +156,7 @@ public:
   }
 
   int
-  asString(IntType key, char *buf, size_t bufLen, size_t *numCharsPtr = 0) const
+  asString(IntType key, char *buf, size_t bufLen, size_t *numCharsPtr = nullptr) const override
   {
     int retVal;
     size_t numChars;
@@ -168,14 +167,14 @@ public:
       if (l < bufLen) {
         ink_strlcpy(buf, m_table[key - m_min].name, bufLen);
         numChars = l;
-        retVal = ALL_OK;
+        retVal   = ALL_OK;
       } else {
         numChars = 0;
-        retVal = BUFFER_TOO_SMALL;
+        retVal   = BUFFER_TOO_SMALL;
       }
     } else {
       numChars = 0;
-      retVal = INVALID_INT;
+      retVal   = INVALID_INT;
     }
     if (numCharsPtr) {
       *numCharsPtr = numChars;
@@ -184,35 +183,4 @@ public:
   }
 };
 
-/*****************************************************************************
-
-The LogFieldAliasTimehex class implements a LogFieldAliasMap that converts time
-from their integer value to the "hex" notation and back.
-
- *****************************************************************************/
-
-class LogFieldAliasTimeHex : public LogFieldAliasMap
-{
-public:
-  int
-  asInt(char *str, IntType *time, bool /* case_sensitive ATS_UNUSED */) const
-  {
-    unsigned long a;
-    // coverity[secure_coding]
-    if (sscanf(str, "%lx", (unsigned long *)&a) == 1) {
-      *time = (IntType)a;
-      return ALL_OK;
-    } else {
-      return INVALID_STRING;
-    }
-  }
-
-  int
-  asString(IntType time, char *buf, size_t bufLen, size_t *numCharsPtr = 0) const
-  {
-    return (LogUtils::timestamp_to_hex_str(time, buf, bufLen, numCharsPtr) ? BUFFER_TOO_SMALL : ALL_OK);
-  }
-};
-
 // LOG_FIELD_ALIAS_MAP_H
-#endif

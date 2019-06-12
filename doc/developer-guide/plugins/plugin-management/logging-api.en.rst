@@ -58,7 +58,7 @@ The logging API enables you to:
    :c:func:`TSTextLogObjectDestroy`
 
 The steps below show how the logging API is used in the
-``blacklist-1.c`` sample plugin. For the complete source code, see the
+``blacklist_1.c`` sample plugin. For the complete source code, see the
 :ref:`developer-plugins-examples-blacklist-code` section.
 
 #. A new log file is defined as a global variable.
@@ -117,7 +117,7 @@ The steps below show how the logging API is used in the
        blacklisting site: sites[i]
 
    The log is not flushed or
-   destroyed in the ``blacklist-1`` plugin - it lives for the life of
+   destroyed in the ``blacklist_1`` plugin - it lives for the life of
    the plugin.
 
 

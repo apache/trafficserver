@@ -42,15 +42,13 @@ ClassAllocator<HttpUpdateSM> httpUpdateSMAllocator("httpUpdateSMAllocator");
     Debug("http", "[%" PRId64 "] [%s, %s]", sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
   }
 
-HttpUpdateSM::HttpUpdateSM() : cb_occured(false), cb_cont(NULL), cb_action(), cb_event(HTTP_SCH_UPDATE_EVENT_ERROR)
-{
-}
+HttpUpdateSM::HttpUpdateSM() : cb_action(), cb_event(HTTP_SCH_UPDATE_EVENT_ERROR) {}
 
 void
 HttpUpdateSM::destroy()
 {
   cleanup();
-  cb_action = NULL;
+  cb_action = nullptr;
   httpUpdateSMAllocator.free(this);
 }
 
@@ -62,7 +60,7 @@ HttpUpdateSM::start_scheduled_update(Continuation *cont, HTTPHdr *request)
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
   // Set up the Action
-  cb_cont = cont;
+  cb_cont   = cont;
   cb_action = cont;
 
   start_sub_sm();
@@ -74,7 +72,6 @@ HttpUpdateSM::start_scheduled_update(Continuation *cont, HTTPHdr *request)
   // Fix ME: What should these be set to since there is not a
   //   real client
   ats_ip4_set(&t_state.client_info.src_addr, htonl(INADDR_LOOPBACK), 0);
-  t_state.backdoor_request = 0;
   t_state.client_info.port_attribute = HttpProxyPort::TRANSPORT_DEFAULT;
 
   t_state.req_flavor = HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE;
@@ -87,7 +84,7 @@ HttpUpdateSM::start_scheduled_update(Continuation *cont, HTTPHdr *request)
   //   stack, do this by calling througth the main handler
   //   so the sm will be properly terminated
   this->default_handler = &HttpUpdateSM::state_add_to_list;
-  this->handleEvent(EVENT_NONE, NULL);
+  this->handleEvent(EVENT_NONE, nullptr);
 
   if (cb_occured == 0) {
     return &cb_action;
@@ -123,11 +120,12 @@ HttpUpdateSM::handle_api_return()
       // We aren't caching the transformed response abort the
       //  transform
 
-      Debug("http", "[%" PRId64 "] [HttpUpdateSM] aborting "
-                    "transform since result is not cached",
+      Debug("http",
+            "[%" PRId64 "] [HttpUpdateSM] aborting "
+            "transform since result is not cached",
             sm_id);
       HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
-      ink_release_assert(c != NULL);
+      ink_release_assert(c != nullptr);
 
       if (tunnel.is_tunnel_active()) {
         default_handler = &HttpUpdateSM::tunnel_handler;
@@ -156,9 +154,9 @@ HttpUpdateSM::handle_api_return()
   case HttpTransact::SM_ACTION_INTERNAL_CACHE_NOOP:
   case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP:
   case HttpTransact::SM_ACTION_SERVE_FROM_CACHE: {
-    cb_event = HTTP_SCH_UPDATE_EVENT_NOT_CACHED;
+    cb_event                     = HTTP_SCH_UPDATE_EVENT_NOT_CACHED;
     t_state.squid_codes.log_code = SQUID_LOG_TCP_MISS;
-    terminate_sm = true;
+    terminate_sm                 = true;
     return;
   }
 
@@ -186,7 +184,7 @@ HttpUpdateSM::set_next_state()
 {
   if (t_state.cache_info.action == HttpTransact::CACHE_DO_NO_ACTION || t_state.cache_info.action == HttpTransact::CACHE_DO_SERVE) {
     if (t_state.next_action == HttpTransact::SM_ACTION_SERVE_FROM_CACHE) {
-      cb_event = HTTP_SCH_UPDATE_EVENT_NO_ACTION;
+      cb_event                     = HTTP_SCH_UPDATE_EVENT_NO_ACTION;
       t_state.squid_codes.log_code = SQUID_LOG_TCP_HIT;
     } else {
       t_state.squid_codes.log_code = SQUID_LOG_TCP_MISS;
@@ -215,10 +213,10 @@ HttpUpdateSM::kill_this_async_hook(int event, void * /* data ATS_UNUSED */)
 
   if (!cb_action.cancelled) {
     Debug("http", "[%" PRId64 "] [HttpUpdateSM] calling back user with event %s", sm_id, HttpDebugNames::get_event_name(cb_event));
-    cb_cont->handleEvent(cb_event, NULL);
+    cb_cont->handleEvent(cb_event, nullptr);
   }
 
   cb_occured = true;
 
-  return HttpSM::kill_this_async_hook(EVENT_NONE, NULL);
+  return HttpSM::kill_this_async_hook(EVENT_NONE, nullptr);
 }

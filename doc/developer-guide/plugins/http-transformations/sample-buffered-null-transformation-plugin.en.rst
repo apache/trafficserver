@@ -22,7 +22,7 @@
 Sample Buffered Null Transform Plugin
 *************************************
 
-The buffered null transform, ``bnull-transform.c``, reads the response
+The buffered null transform, ``bnull_transform.c``, reads the response
 content into a buffer and then writes the full buffer out to the client.
 Many examples of transformations, such as compression, require you to
 gather the full response content in order to perform the transformation.

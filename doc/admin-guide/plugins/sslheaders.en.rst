@@ -66,7 +66,7 @@ The `client.certificate` and `server.certificate` fields emit
 the corresponding certificate in PEM format, with newline characters
 replaced by spaces.
 
-If the ``sslheaders`` plugin activtes on non-SSL connections, it
+If the ``sslheaders`` plugin activates on non-SSL connections, it
 will delete all the configured HTTP header names so that malicious
 clients cannot inject misleading information. If any of the SSL
 fields expand to an empty string, those headers are also deleted.
@@ -75,7 +75,7 @@ Examples:
 ---------
 
 In this example, the origin server is interested in the subject of
-the server certificate that was used to accept a client connetion.
+the server certificate that was used to accept a client connection.
 We can apply the ``sslheaders`` plugin to a generic remap rule to
 provide this information. The :file:`remap.config` configuration
 would be::

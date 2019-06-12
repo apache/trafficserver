@@ -30,46 +30,38 @@
 
  ****************************************************************************/
 
-#ifndef _HDR_HEAP_H_
-#define _HDR_HEAP_H_
+#pragma once
 
-#include "ts/Ptr.h"
-#include "ts/ink_defs.h"
-#include "ts/ink_assert.h"
-#include "ts/Arena.h"
+#include "tscore/Ptr.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_assert.h"
+#include "tscore/Arena.h"
+#include "tscore/Scalar.h"
 #include "HdrToken.h"
 
 // Objects in the heap must currently be aligned to 8 byte boundaries,
 // so their (address & HDR_PTR_ALIGNMENT_MASK) == 0
 
-#define HDR_PTR_SIZE (sizeof(uint64_t))
-#define HDR_PTR_ALIGNMENT_MASK ((HDR_PTR_SIZE)-1L)
-
-#define ROUND(x, l) (((x) + ((l)-1L)) & ~((l)-1L))
+static constexpr size_t HDR_PTR_SIZE           = sizeof(uint64_t);
+static constexpr size_t HDR_PTR_ALIGNMENT_MASK = HDR_PTR_SIZE - 1L;
+using HdrHeapMarshalBlocks                     = ts::Scalar<HDR_PTR_SIZE>;
 
 // A many of the operations regarding read-only str
-//  heaps are hand unrolled in the code.  Chaning
+//  heaps are hand unrolled in the code.  Changing
 //  this value requires a full pass through HdrBuf.cc
 //  to fix the unrolled operations
-#define HDR_BUF_RONLY_HEAPS 3
-
-#define HDR_HEAP_DEFAULT_SIZE 2048
-#define HDR_STR_HEAP_DEFAULT_SIZE 2048
-
-#define HDR_MAX_ALLOC_SIZE (HDR_HEAP_DEFAULT_SIZE - sizeof(HdrHeap))
-#define HDR_HEAP_HDR_SIZE ROUND(sizeof(HdrHeap), HDR_PTR_SIZE)
-#define STR_HEAP_HDR_SIZE sizeof(HdrStrHeap)
+static constexpr unsigned HDR_BUF_RONLY_HEAPS = 3;
 
 class CoreUtils;
 class IOBufferBlock;
 
 enum {
-  HDR_HEAP_OBJ_EMPTY = 0,
-  HDR_HEAP_OBJ_RAW = 1,
-  HDR_HEAP_OBJ_URL = 2,
-  HDR_HEAP_OBJ_HTTP_HEADER = 3,
-  HDR_HEAP_OBJ_MIME_HEADER = 4,
-  HDR_HEAP_OBJ_FIELD_BLOCK = 5,
+  HDR_HEAP_OBJ_EMPTY            = 0,
+  HDR_HEAP_OBJ_RAW              = 1,
+  HDR_HEAP_OBJ_URL              = 2,
+  HDR_HEAP_OBJ_HTTP_HEADER      = 3,
+  HDR_HEAP_OBJ_MIME_HEADER      = 4,
+  HDR_HEAP_OBJ_FIELD_BLOCK      = 5,
   HDR_HEAP_OBJ_FIELD_STANDALONE = 6, // not a type that lives in HdrHeaps
   HDR_HEAP_OBJ_FIELD_SDK_HANDLE = 7, // not a type that lives in HdrHeaps
 
@@ -96,7 +88,7 @@ obj_is_aligned(HdrHeapObjImpl *obj)
 inline void
 obj_clear_data(HdrHeapObjImpl *obj)
 {
-  char *ptr = (char *)obj;
+  char *ptr      = (char *)obj;
   int hdr_length = sizeof(HdrHeapObjImpl);
   memset(ptr + hdr_length, '\0', obj->m_length - hdr_length);
 }
@@ -109,8 +101,8 @@ obj_copy_data(HdrHeapObjImpl *s_obj, HdrHeapObjImpl *d_obj)
   ink_assert((s_obj->m_length == d_obj->m_length) && (s_obj->m_type == d_obj->m_type));
 
   int hdr_length = sizeof(HdrHeapObjImpl);
-  src = (char *)s_obj + hdr_length;
-  dst = (char *)d_obj + hdr_length;
+  src            = (char *)s_obj + hdr_length;
+  dst            = (char *)d_obj + hdr_length;
   memcpy(dst, src, d_obj->m_length - hdr_length);
 }
 
@@ -123,8 +115,8 @@ obj_copy(HdrHeapObjImpl *s_obj, char *d_addr)
 inline void
 obj_init_header(HdrHeapObjImpl *obj, uint32_t type, uint32_t nbytes, uint32_t obj_flags)
 {
-  obj->m_type = type;
-  obj->m_length = nbytes;
+  obj->m_type      = type;
+  obj->m_length    = nbytes;
   obj->m_obj_flags = obj_flags;
 }
 
@@ -132,16 +124,18 @@ obj_init_header(HdrHeapObjImpl *obj, uint32_t type, uint32_t nbytes, uint32_t ob
   -------------------------------------------------------------------------*/
 
 enum {
-  HDR_BUF_MAGIC_ALIVE = 0xabcdfeed,
+  HDR_BUF_MAGIC_ALIVE     = 0xabcdfeed,
   HDR_BUF_MAGIC_MARSHALED = 0xdcbafeed,
-  HDR_BUF_MAGIC_DEAD = 0xabcddead,
-  HDR_BUF_MAGIC_CORRUPT = 0xbadbadcc
+  HDR_BUF_MAGIC_DEAD      = 0xabcddead,
+  HDR_BUF_MAGIC_CORRUPT   = 0xbadbadcc
 };
 
 class HdrStrHeap : public RefCountObj
 {
 public:
-  virtual void free();
+  static constexpr int DEFAULT_SIZE = 2048;
+
+  void free() override;
 
   char *allocate(int nbytes);
   char *expand(char *ptr, int old_size, int new_size);
@@ -151,19 +145,22 @@ public:
   char *m_free_start;
   uint32_t m_free_size;
 
-  bool
-  contains(const char *str) const
-  {
-    return (str >= ((const char *)this + STR_HEAP_HDR_SIZE) && str < ((const char *)this + m_heap_size));
-  }
+  bool contains(const char *str) const;
 };
 
+inline bool
+HdrStrHeap::contains(const char *str) const
+{
+  return reinterpret_cast<char const *>(this + 1) <= str && str < reinterpret_cast<char const *>(this) + m_heap_size;
+}
+
 struct StrHeapDesc {
-  StrHeapDesc();
+  StrHeapDesc() = default;
+
   Ptr<RefCountObj> m_ref_count_ptr;
-  char *m_heap_start;
-  int32_t m_heap_len;
-  bool m_locked;
+  char const *m_heap_start = nullptr;
+  int32_t m_heap_len       = 0;
+  bool m_locked            = false;
 
   bool
   contains(const char *str) const
@@ -177,6 +174,8 @@ class HdrHeap
   friend class CoreUtils;
 
 public:
+  static constexpr int DEFAULT_SIZE = 2048;
+
   void init();
   inkcoreapi void destroy();
 
@@ -204,35 +203,56 @@ public:
   void set_ronly_str_heap_end(int slot, const char *end);
 
   // Lock read only str heaps so that can't be moved around
-  //  by a heap consolidation.  Does NOT lock for Multi-Threaed
+  //  by a heap consolidation.  Does NOT lock for Multi-Threaded
   //  access!
   void
-  lock_ronly_str_heap(int i)
+  lock_ronly_str_heap(unsigned i)
   {
     m_ronly_heap[i].m_locked = true;
   }
 
   void
-  unlock_ronly_str_heap(int i)
+  unlock_ronly_str_heap(unsigned i)
   {
     m_ronly_heap[i].m_locked = false;
     // INKqa11238
     // Move slot i to the first available slot in m_ronly_heap[].
     // The move is necessary because the rest of the code assumes
     // heaps are always allocated in order.
-    for (int j = 0; j < i; j++) {
-      if (m_ronly_heap[j].m_heap_start == NULL) {
+    for (unsigned j = 0; j < i; j++) {
+      if (m_ronly_heap[j].m_heap_start == nullptr) {
         // move slot i to slot j
         m_ronly_heap[j].m_ref_count_ptr = m_ronly_heap[i].m_ref_count_ptr;
-        m_ronly_heap[j].m_heap_start = m_ronly_heap[i].m_heap_start;
-        m_ronly_heap[j].m_heap_len = m_ronly_heap[i].m_heap_len;
-        m_ronly_heap[j].m_locked = m_ronly_heap[i].m_locked;
-        m_ronly_heap[i].m_ref_count_ptr = NULL;
-        m_ronly_heap[i].m_heap_start = NULL;
-        m_ronly_heap[i].m_heap_len = 0;
-        m_ronly_heap[i].m_locked = false;
+        m_ronly_heap[j].m_heap_start    = m_ronly_heap[i].m_heap_start;
+        m_ronly_heap[j].m_heap_len      = m_ronly_heap[i].m_heap_len;
+        m_ronly_heap[j].m_locked        = m_ronly_heap[i].m_locked;
+        m_ronly_heap[i].m_ref_count_ptr = nullptr;
+        m_ronly_heap[i].m_heap_start    = nullptr;
+        m_ronly_heap[i].m_heap_len      = 0;
+        m_ronly_heap[i].m_locked        = false;
+        break; // Did the move, time to go.
       }
     }
+  }
+
+  // Working function to copy strings into a new heap
+  // Unlike the HDR_MOVE_STR macro, this function will call
+  // allocate_str which will update the new_heap to create more space
+  // if there is not originally sufficient space
+  inline std::string_view
+  localize(const std::string_view &string)
+  {
+    auto length = string.length();
+    if (length > 0) {
+      char *new_str = this->allocate_str(length);
+      if (new_str) {
+        memcpy(new_str, string.data(), length);
+      } else {
+        length = 0;
+      }
+      return {new_str, length};
+    }
+    return {nullptr, 0};
   }
 
   // Sanity Check Functions
@@ -265,7 +285,7 @@ public:
   void coalesce_str_heaps(int incoming_size = 0);
   void evacuate_from_str_heaps(HdrStrHeap *new_heap);
   size_t required_space_for_evacuation();
-  bool attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *index);
+  bool attach_str_heap(char const *h_start, int h_len, RefCountObj *h_ref_obj, int *index);
 
   /** Struct to prevent garbage collection on heaps.
       This bumps the reference count to the heap containing the pointer
@@ -280,9 +300,9 @@ public:
       if (heap->m_read_write_heap && heap->m_read_write_heap->contains(str)) {
         m_ptr = heap->m_read_write_heap.get();
       } else {
-        for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
-          if (heap->m_ronly_heap[i].contains(str)) {
-            m_ptr = heap->m_ronly_heap[i].m_ref_count_ptr;
+        for (auto &i : heap->m_ronly_heap) {
+          if (i.contains(str)) {
+            m_ptr = i.m_ref_count_ptr;
             break;
           }
         }
@@ -302,6 +322,9 @@ public:
   int m_lost_string_space;
 };
 
+static constexpr HdrHeapMarshalBlocks HDR_HEAP_HDR_SIZE{ts::round_up(sizeof(HdrHeap))};
+static constexpr size_t HDR_MAX_ALLOC_SIZE = HdrHeap::DEFAULT_SIZE - HDR_HEAP_HDR_SIZE;
+
 inline void
 HdrHeap::free_string(const char *s, int len)
 {
@@ -318,26 +341,41 @@ HdrHeap::unmarshal_size() const
 
 //
 struct MarshalXlate {
-  char *start;
-  char *end;
-  char *offset;
+  char const *start  = nullptr;
+  char const *end    = nullptr;
+  char const *offset = nullptr;
+  MarshalXlate() {}
 };
 
 struct HeapCheck {
-  char *start;
-  char *end;
+  char const *start;
+  char const *end;
 };
 
 // Nasty macro to do string marshalling
-#define HDR_MARSHAL_STR(ptr, table, nentries)               \
+#define HDR_MARSHAL_STR(ptr, table, nentries)                 \
+  if (ptr) {                                                  \
+    int found = 0;                                            \
+    for (int i = 0; i < nentries; i++) {                      \
+      if (ptr >= table[i].start && ptr <= table[i].end) {     \
+        ptr   = (((char *)ptr) - (uintptr_t)table[i].offset); \
+        found = 1;                                            \
+        break;                                                \
+      }                                                       \
+    }                                                         \
+    ink_assert(found);                                        \
+    if (found == 0) {                                         \
+      return -1;                                              \
+    }                                                         \
+  }
+
+// Nasty macro to do string marshalling
+#define HDR_MARSHAL_STR_1(ptr, table)                       \
   if (ptr) {                                                \
     int found = 0;                                          \
-    for (int i = 0; i < nentries; i++) {                    \
-      if (ptr >= table[i].start && ptr <= table[i].end) {   \
-        ptr = (((char *)ptr) - (uintptr_t)table[i].offset); \
-        found = 1;                                          \
-        break;                                              \
-      }                                                     \
+    if (ptr >= table[0].start && ptr <= table[0].end) {     \
+      ptr   = (((char *)ptr) - (uintptr_t)table[0].offset); \
+      found = 1;                                            \
     }                                                       \
     ink_assert(found);                                      \
     if (found == 0) {                                       \
@@ -345,26 +383,12 @@ struct HeapCheck {
     }                                                       \
   }
 
-// Nasty macro to do string marshalling
-#define HDR_MARSHAL_STR_1(ptr, table)                     \
-  if (ptr) {                                              \
-    int found = 0;                                        \
-    if (ptr >= table[0].start && ptr <= table[0].end) {   \
-      ptr = (((char *)ptr) - (uintptr_t)table[0].offset); \
-      found = 1;                                          \
-    }                                                     \
-    ink_assert(found);                                    \
-    if (found == 0) {                                     \
-      return -1;                                          \
-    }                                                     \
-  }
-
 #define HDR_MARSHAL_PTR(ptr, type, table, nentries)                       \
   if (ptr) {                                                              \
     int found = 0;                                                        \
     for (int i = 0; i < nentries; i++) {                                  \
       if ((char *)ptr >= table[i].start && (char *)ptr <= table[i].end) { \
-        ptr = (type *)(((char *)ptr) - (uintptr_t)table[i].offset);       \
+        ptr   = (type *)(((char *)ptr) - (uintptr_t)table[i].offset);     \
         found = 1;                                                        \
         break;                                                            \
       }                                                                   \
@@ -379,7 +403,7 @@ struct HeapCheck {
   if (ptr) {                                                            \
     int found = 0;                                                      \
     if ((char *)ptr >= table[0].start && (char *)ptr <= table[0].end) { \
-      ptr = (type *)(((char *)ptr) - (uintptr_t)table[0].offset);       \
+      ptr   = (type *)(((char *)ptr) - (uintptr_t)table[0].offset);     \
       found = 1;                                                        \
     }                                                                   \
     ink_assert(found);                                                  \
@@ -434,7 +458,7 @@ struct HeapCheck {
 //
 struct HdrHeapSDKHandle {
 public:
-  HdrHeapSDKHandle() : m_heap(NULL) {}
+  HdrHeapSDKHandle() {}
   ~HdrHeapSDKHandle() { clear(); }
   // clear() only deallocates chained SDK return values
   //   The underlying MBuffer is left untouched
@@ -447,13 +471,12 @@ public:
   void set(const HdrHeapSDKHandle *from);
   const char *make_sdk_string(const char *raw_str, int raw_str_len);
 
-  HdrHeap *m_heap;
+  HdrHeap *m_heap = nullptr;
 
-private:
   // In order to prevent gratitous refcounting,
   //  automatic C++ copies are disabled!
-  HdrHeapSDKHandle(const HdrHeapSDKHandle &r);
-  HdrHeapSDKHandle &operator=(const HdrHeapSDKHandle &r);
+  HdrHeapSDKHandle(const HdrHeapSDKHandle &r) = delete;
+  HdrHeapSDKHandle &operator=(const HdrHeapSDKHandle &r) = delete;
 };
 
 inline void
@@ -468,7 +491,7 @@ HdrHeapSDKHandle::destroy()
 inline void
 HdrHeapSDKHandle::clear()
 {
-  m_heap = NULL;
+  m_heap = nullptr;
 }
 
 inline void
@@ -478,7 +501,7 @@ HdrHeapSDKHandle::set(const HdrHeapSDKHandle *from)
   m_heap = from->m_heap;
 }
 
-inkcoreapi HdrHeap *new_HdrHeap(int size = HDR_HEAP_DEFAULT_SIZE);
+HdrStrHeap *new_HdrStrHeap(int requested_size);
+inkcoreapi HdrHeap *new_HdrHeap(int size = HdrHeap::DEFAULT_SIZE);
 
 void hdr_heap_test();
-#endif

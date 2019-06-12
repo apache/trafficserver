@@ -28,8 +28,7 @@
  *
  ****************************************************************************/
 
-#ifndef _P_SPLIT_DNSProcessor_H_
-#define _P_SPLIT_DNSProcessor_H_
+#pragma once
 
 /*
 #include "P_DNS.h"
@@ -43,7 +42,7 @@
 /* ---------------------------
    forward declarations ...
    --------------------------- */
-void ink_split_dns_init(ModuleVersion version);
+void ink_split_dns_init(ts::ModuleVersion version);
 
 struct RequestData;
 
@@ -71,7 +70,7 @@ struct SplitDNSResult {
   /* ------------
      public
      ------------ */
-  DNSResultType r;
+  DNSResultType r = DNS_SRVR_UNDEFINED;
 
   DNSServer *get_dns_record();
   int get_dns_srvr_count();
@@ -79,10 +78,10 @@ struct SplitDNSResult {
   /* ------------
      private
      ------------ */
-  int m_line_number;
+  int m_line_number = 0;
 
-  SplitDNSRecord *m_rec;
-  bool m_wrap_around;
+  SplitDNSRecord *m_rec = nullptr;
+  bool m_wrap_around    = false;
 };
 
 /* --------------------------------------------------------------
@@ -90,22 +89,22 @@ struct SplitDNSResult {
    -------------------------------------------------------------- */
 struct SplitDNS : public ConfigInfo {
   SplitDNS();
-  ~SplitDNS();
+  ~SplitDNS() override;
 
   void *getDNSRecord(const char *hostname);
   void findServer(RequestData *rdata, SplitDNSResult *result);
 
-  DNS_table *m_DNSSrvrTable;
+  DNS_table *m_DNSSrvrTable = nullptr;
 
-  int32_t m_SplitDNSlEnable;
+  int32_t m_SplitDNSlEnable = 0;
 
   /* ----------------------------
      required by the alleged fast
      path
      ---------------------------- */
-  bool m_bEnableFastPath;
-  void *m_pxLeafArray;
-  int m_numEle;
+  bool m_bEnableFastPath = false;
+  void *m_pxLeafArray    = nullptr;
+  int m_numEle           = 0;
 };
 
 /* --------------------------------------------------------------
@@ -131,23 +130,21 @@ class DNSRequestData : public RequestData
 public:
   DNSRequestData();
 
-  char *get_string();
+  char *get_string() override;
 
-  const char *get_host();
+  const char *get_host() override;
 
-  sockaddr const *get_ip();        // unused required virtual method.
-  sockaddr const *get_client_ip(); // unused required virtual method.
+  sockaddr const *get_ip() override;        // unused required virtual method.
+  sockaddr const *get_client_ip() override; // unused required virtual method.
 
-  const char *m_pHost;
+  const char *m_pHost = nullptr;
 };
 
 /* --------------------------------------------------------------
    DNSRequestData::get_string()
    -------------------------------------------------------------- */
 TS_INLINE
-DNSRequestData::DNSRequestData() : m_pHost(0)
-{
-}
+DNSRequestData::DNSRequestData() {}
 
 /* --------------------------------------------------------------
    DNSRequestData::get_string()
@@ -173,7 +170,7 @@ DNSRequestData::get_host()
 TS_INLINE sockaddr const *
 DNSRequestData::get_ip()
 {
-  return NULL;
+  return nullptr;
 }
 
 /* --------------------------------------------------------------
@@ -182,7 +179,7 @@ DNSRequestData::get_ip()
 TS_INLINE sockaddr const *
 DNSRequestData::get_client_ip()
 {
-  return NULL;
+  return nullptr;
 }
 
 /* --------------------------------------------------------------
@@ -196,7 +193,7 @@ public:
   SplitDNSRecord();
   ~SplitDNSRecord();
 
-  config_parse_error Init(matcher_line *line_info);
+  Result Init(matcher_line *line_info);
 
   const char *ProcessDNSHosts(char *val);
   const char *ProcessDomainSrchList(char *val);
@@ -206,24 +203,20 @@ public:
   void Print();
 
   DNSServer m_servers;
-  int m_dnsSrvr_cnt;
-  int m_domain_srch_list;
+  int m_dnsSrvr_cnt      = 0;
+  int m_domain_srch_list = 0;
 };
 
 /* --------------------------------------------------------------
    SplitDNSRecord::SplitDNSRecord()
    -------------------------------------------------------------- */
 TS_INLINE
-SplitDNSRecord::SplitDNSRecord() : m_dnsSrvr_cnt(0), m_domain_srch_list(0)
-{
-}
+SplitDNSRecord::SplitDNSRecord() {}
 
 /* --------------------------------------------------------------
    SplitDNSRecord::~SplitDNSRecord()
    -------------------------------------------------------------- */
-TS_INLINE SplitDNSRecord::~SplitDNSRecord()
-{
-}
+TS_INLINE SplitDNSRecord::~SplitDNSRecord() {}
 
 /* ------------------
    Helper Functions
@@ -232,5 +225,3 @@ TS_INLINE SplitDNSRecord::~SplitDNSRecord()
 SplitDNSRecord *createDefaultServer();
 void reloadDefaultParent(char *val);
 void reloadParentFile();
-
-#endif

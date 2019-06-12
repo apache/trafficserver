@@ -35,6 +35,16 @@ Glossary
       invoked to continue the suspended processing. This can be considered
       similar to co-routines.
 
+   event loop
+      Code that executes callbacks in continuations from a queue of events.
+
+   event thread
+      A thread created by |TS| that has an :term:`event loop`. Event loops drive activity in |TS|
+      and are responsible for all network I/O handling, hook processing, and scheduled events.
+
+   header heap
+      A heap to manage transaction local memory for HTTP headers.
+
    session
       A single connection from a client to Traffic Server, covering all
       requests and responses on that connection. A session starts when the
@@ -44,6 +54,12 @@ Glossary
       A client request and response, either from the origin server or from the
       cache. A transaction begins when |TS| receives a request, and ends when
       |TS| sends the response.
+
+   client request
+      The HTTP request sent from the user agent (the client) to |TS|.
+
+   proxy request
+      The HTTP request sent from |TS| (the proxy) to the upstream.
 
    cache volume
       A user defined unit of persistent storage for the cache. Cache volumes
@@ -158,3 +174,10 @@ Glossary
       A plugin which operates only on transactions matching specific remap
       rules as defined in :file:`remap.config`. Contrast with
       :term:`global plugin`.
+
+   variable sized class
+      A class where the instances vary in size. This is done by allocating a block of memory at least
+      as large as the class and then constructing a class instance at the start of the block. The
+      class must be provided the size of this extended memory during construction and is presumed
+      to use it as part of the instance. This generally requires calling a helper function to
+      create the instance and extra care when de-allocating.

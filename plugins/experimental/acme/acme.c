@@ -25,12 +25,12 @@ limitations under the License.
 #include <sys/stat.h>
 
 #include "ts/ts.h"
-#include "ts/ink_platform.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_defs.h"
 
-static const char PLUGIN_NAME[] = "acme";
-static const char ACME_WK_PATH[] = ".well-known/acme-challenge/";
-static const char ACME_OK_RESP[] = "HTTP/1.1 200 OK\r\nContent-Type: application/jose\r\nCache-Control: no-cache\r\n";
+static const char PLUGIN_NAME[]      = "acme";
+static const char ACME_WK_PATH[]     = ".well-known/acme-challenge/";
+static const char ACME_OK_RESP[]     = "HTTP/1.1 200 OK\r\nContent-Type: application/jose\r\nCache-Control: no-cache\r\n";
 static const char ACME_DENIED_RESP[] = "HTTP/1.1 404 Not Found\r\nContent-Type: application/jose\r\nCache-Control: no-cache\r\n";
 
 #define MAX_PATH_LEN 4096
@@ -77,14 +77,14 @@ make_absolute_path(char *dest, int dest_len, const char *file, int file_len)
   for (i = 0; i < file_len; ++i) {
     char c = file[i];
 
-    /* Assure that only Base64-URL chracter are in the path */
+    /* Assure that only Base64-URL character are in the path */
     if (!(c == '-' || c == '_' || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
       TSDebug(PLUGIN_NAME, "Invalid Base64 character found, error");
       return 0;
     }
   }
 
-  return snprintf(dest, dest_len - 1, "%s/%.*s", gConfig.proof, file_len, file);
+  return snprintf(dest, dest_len, "%s/%.*s", gConfig.proof, file_len, file);
 }
 
 static void
@@ -202,13 +202,13 @@ acme_process_write(TSCont contp, TSEvent event, AcmeState *my_state)
     char buf[64]; /* Plenty of space for CL: header */
     int len;
 
-    len = snprintf(buf, sizeof(buf) - 1, "Content-Length: %zd\r\n\r\n", my_state->stat_buf.st_size);
+    len = snprintf(buf, sizeof(buf), "Content-Length: %zd\r\n\r\n", (size_t)my_state->stat_buf.st_size);
     my_state->output_bytes += add_data_to_resp(buf, len, my_state);
     my_state->output_bytes += add_file_to_resp(my_state);
 
     TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
     TSVIOReenable(my_state->write_vio);
-  } else if (TS_EVENT_VCONN_WRITE_COMPLETE) {
+  } else if (event == TS_EVENT_VCONN_WRITE_COMPLETE) {
     cleanup(contp, my_state);
   } else if (event == TS_EVENT_ERROR) {
     TSError("[%s] acme_process_write: Received TS_EVENT_ERROR", PLUGIN_NAME);
@@ -221,10 +221,10 @@ acme_process_write(TSCont contp, TSEvent event, AcmeState *my_state)
 static void
 acme_process_accept(TSCont contp, AcmeState *my_state)
 {
-  my_state->req_buffer = TSIOBufferCreate();
+  my_state->req_buffer  = TSIOBufferCreate();
   my_state->resp_buffer = TSIOBufferCreate();
   my_state->resp_reader = TSIOBufferReaderAlloc(my_state->resp_buffer);
-  my_state->read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
+  my_state->read_vio    = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
 }
 
 /* Implement the server intercept */
@@ -260,11 +260,11 @@ acme_hook(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   TSDebug(PLUGIN_NAME, "kicking off ACME hook");
 
   if ((TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc)) && (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc))) {
-    int path_len = 0;
+    int path_len     = 0;
     const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
 
     /* Short circuit the / path, common case */
-    if (!path || path_len < (strlen(ACME_WK_PATH) + 2) || *path != '.' || memcmp(path, ACME_WK_PATH, strlen(ACME_WK_PATH))) {
+    if (!path || path_len < (int)(strlen(ACME_WK_PATH) + 2) || *path != '.' || memcmp(path, ACME_WK_PATH, strlen(ACME_WK_PATH))) {
       TSDebug(PLUGIN_NAME, "skipping URL path = %.*s", path_len, path);
       goto cleanup;
     }
@@ -303,11 +303,11 @@ TSPluginInit(int argc, const char *argv[])
   const char *proof = "acme";
 
   static const struct option longopt[] = {
-    {(char *)"proof-directory", optional_argument, NULL, 'p'}, {NULL, no_argument, NULL, '\0'},
+    {(char *)"proof-directory", optional_argument, NULL, 'p'},
+    {NULL, no_argument, NULL, '\0'},
   };
 
   memset(&gConfig, 0, sizeof(gConfig));
-  optind = 0;
   while (true) {
     int opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
 
@@ -324,21 +324,21 @@ TSPluginInit(int argc, const char *argv[])
 
   if ('/' != *proof) {
     const char *confdir = TSConfigDirGet();
-    int len = strlen(proof) + strlen(confdir) + 8;
+    int len             = strlen(proof) + strlen(confdir) + 8;
 
     gConfig.proof = TSmalloc(len);
-    snprintf(gConfig.proof, len - 1, "%s/%s", confdir, proof);
+    snprintf(gConfig.proof, len, "%s/%s", confdir, proof);
     TSDebug(PLUGIN_NAME, "base directory for proof-types is %s", gConfig.proof);
   } else {
     gConfig.proof = TSstrdup(proof);
   }
 
-  info.plugin_name = "acme";
-  info.vendor_name = "Apache Software Foundation";
+  info.plugin_name   = "acme";
+  info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
-    TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
+    TSError("[%s] Plugin registration failed", PLUGIN_NAME);
     return;
   }
 

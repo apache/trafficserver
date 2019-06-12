@@ -29,35 +29,43 @@
 
 **************************************************************************/
 #include "P_EventSystem.h"
-#include "ts/ink_string.h"
+#include "tscore/ink_string.h"
 
 ///////////////////////////////////////////////
 // Common Interface impl                     //
 ///////////////////////////////////////////////
 
-static ink_thread_key init_thread_key();
+ink_hrtime Thread::cur_time = ink_get_hrtime_internal();
+inkcoreapi ink_thread_key Thread::thread_data_key;
 
-ink_hrtime Thread::cur_time = 0;
-inkcoreapi ink_thread_key Thread::thread_data_key = init_thread_key();
+namespace
+{
+static bool initialized ATS_UNUSED = ([]() -> bool {
+  // File scope initialization goes here.
+  ink_thread_key_create(&Thread::thread_data_key, nullptr);
+  return true;
+})();
+}
 
 Thread::Thread()
 {
   mutex = new_ProxyMutex();
-  MUTEX_TAKE_LOCK(mutex, (EThread *)this);
-  mutex->nthread_holding = THREAD_MUTEX_THREAD_HOLDING;
+  MUTEX_TAKE_LOCK(mutex, static_cast<EThread *>(this));
+  mutex->nthread_holding += THREAD_MUTEX_THREAD_HOLDING;
 }
 
-static void
-key_destructor(void *value)
+Thread::~Thread()
 {
-  (void)value;
-}
+  ink_release_assert(mutex->thread_holding == static_cast<EThread *>(this));
 
-ink_thread_key
-init_thread_key()
-{
-  ink_thread_key_create(&Thread::thread_data_key, key_destructor);
-  return Thread::thread_data_key;
+  if (ink_thread_getspecific(Thread::thread_data_key) == this) {
+    // Clear pointer to this object stored in thread-specific data by set_specific.
+    //
+    ink_thread_setspecific(Thread::thread_data_key, nullptr);
+  }
+
+  mutex->nthread_holding -= THREAD_MUTEX_THREAD_HOLDING;
+  MUTEX_UNTAKE_LOCK(mutex, static_cast<EThread *>(this));
 }
 
 ///////////////////////////////////////////////
@@ -65,38 +73,38 @@ init_thread_key()
 ///////////////////////////////////////////////
 
 struct thread_data_internal {
-  ThreadFunction f;
-  void *a;
-  Thread *me;
-  char name[MAX_THREAD_NAME_LENGTH];
+  ThreadFunction f;                  ///< Function to execute in the thread.
+  Thread *me;                        ///< The class instance.
+  char name[MAX_THREAD_NAME_LENGTH]; ///< Name for the thread.
 };
 
 static void *
 spawn_thread_internal(void *a)
 {
-  thread_data_internal *p = (thread_data_internal *)a;
+  auto *p = static_cast<thread_data_internal *>(a);
 
   p->me->set_specific();
   ink_set_thread_name(p->name);
-  if (p->f)
-    p->f(p->a);
-  else
+
+  if (p->f) {
+    p->f();
+  } else {
     p->me->execute();
-  ats_free(a);
-  return NULL;
+  }
+
+  delete p;
+  return nullptr;
 }
 
-ink_thread
-Thread::start(const char *name, size_t stacksize, ThreadFunction f, void *a)
+void
+Thread::start(const char *name, void *stack, size_t stacksize, ThreadFunction const &f)
 {
-  thread_data_internal *p = (thread_data_internal *)ats_malloc(sizeof(thread_data_internal));
+  auto *p = new thread_data_internal{f, this, ""};
 
-  p->f = f;
-  p->a = a;
-  p->me = this;
-  memset(p->name, 0, MAX_THREAD_NAME_LENGTH);
+  ink_zero(p->name);
   ink_strlcpy(p->name, name, MAX_THREAD_NAME_LENGTH);
-  tid = ink_thread_create(spawn_thread_internal, (void *)p, 0, stacksize);
-
-  return tid;
+  if (stacksize == 0) {
+    stacksize = DEFAULT_STACKSIZE;
+  }
+  ink_thread_create(&tid, spawn_thread_internal, p, 0, stacksize, stack);
 }

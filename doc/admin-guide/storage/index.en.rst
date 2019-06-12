@@ -77,7 +77,7 @@ The RAM cache supports two cache eviction algorithms, a regular *LRU*
 (Least Recently Used) and the more advanced *CLFUS* (Clocked Least
 Frequently Used by Size; which balances recentness, frequency, and size
 to maximize hit rate, similar to a most frequently used algorithm).
-The default is to use *CLFUS*, and this is controlled via
+The default is to use *LRU*, and this is controlled via
 :ts:cv:`proxy.config.cache.ram_cache.algorithm`.
 
 Both the *LRU* and *CLFUS* RAM caches support a configuration to increase
@@ -182,64 +182,16 @@ existing disk, or to remove disks from a Traffic Server node:
 Partitioning the Cache
 ======================
 
-You can manage your cache space more efficiently and restrict disk usage
-by creating :term:`cache volumes <cache volume>` with different sizes for
-specific protocols. You can further configure these volumes to store data from
-specific :term:`origin servers <origin server>` and/or domains. The volume
-configuration must be the same on all nodes in a :ref:`cluster <traffic-server-cluster>`.
-
-Creating Cache Partitions for Specific Protocols
-------------------------------------------------
-
-You can create separate :term:`volumes <cache volume>` for your cache that vary
-in size to store content according to protocol. This ensures that a certain
-amount of disk space is always available for a particular protocol. Traffic
-Server currently supports only the ``http`` partition type.
-
-To partition the cache according to protocol:
-
-#. Enter a line in :file:`volume.config` for each volume you want to create. ::
-
-    volume=1 scheme=http size=50%
-    volume=2 scheme=http size=50%
-
-#. Restart Traffic Server.
-
-.. important::
-
-    Volume definitions must be the same across all nodes in a cluster.
-
-Making Changes to Partition Sizes and Protocols
------------------------------------------------
-
-After you've configured your cache volumes based on protocol, you can
-make changes to the configuration at any time. Before making changes,
-note the following:
-
--  You must stop Traffic Server before you change the cache volume size
-   and protocol assignment.
-
--  When you increase the size of a volume, the contents of the volume
-   are *not* deleted. However, when you reduce the size of a volume, the
-   contents of the volume *are* deleted.
-
--  When you change the volume number, the volume is deleted and then
-   recreated, even if the size and protocol type remain the same.
-
--  When you add new disks to your Traffic Server node, volume sizes
-   specified in percentages will increase proportionately.
-
--  Substantial changes to volume sizes can result in disk fragmentation,
-   which affects performance and cache hit rate. You should clear the cache
-   before making many changes to cache volume sizes (refer to `Clearing the Cache`_).
+You can manage your cache space and restrict disk usage from specific
+:term:`origin servers <origin server>` and/or domains by creating
+:term:`cache volumes <cache volume>`.
 
 Partitioning the Cache According to Origin Server or Domain
 -----------------------------------------------------------
 
 .. XXX: rewrite to remove repetitious single-v-multiple points; break out global partition note for clarify; fix up plurality
 
-After you have partitioned the cache according to size and protocol, you
-can assign the volumes you created to specific origin servers and/or
+You can assign the volumes you create to specific origin servers and/or
 domains. You can assign a volume to a single origin server or to
 multiple origin servers. However, if a volume is assigned to multiple
 origin servers, then there is no guarantee on the space available in the
@@ -249,7 +201,8 @@ origin servers and domains, you must assign a generic volume to store
 content from all origin servers and domains that are not listed. This
 generic volume is also used if the partitions for a particular origin
 server or domain become corrupt. If you do not assign a generic volume,
-then Traffic Server will run in proxy-only mode.
+then Traffic Server will run in proxy-only mode. The volumes do
+not need to be the same size.
 
 .. note::
 
@@ -261,12 +214,6 @@ then Traffic Server will run in proxy-only mode.
 
 To partition the cache according to hostname and domain:
 
-#. Configure the cache volumes according to size and protocol, as
-   described in `Creating Cache Partitions for Specific Protocols`_.
-#. Create a separate volume based on protocol for each host and domain,
-   as well as an additional generic partition to use for content that
-   does not belong to these origin servers or domains. The volumes do
-   not need to be the same size.
 #. Enter a line in the :file:`hosting.config` file to
    allocate the volume(s) used for each origin server and/or domain.
 #. Assign a generic volume to use for content that does not belong to
@@ -350,9 +297,38 @@ The next time Traffic Server receives a request for the removed object,
 it will contact the origin server to retrieve a new copy, which will replace
 the previously cached version in Traffic Server.
 
-This procedure only removes an object from a specific Traffic Server cache.
-Users may still see the old (removed) content if it was cached by intermediary
-caches or by the end-users' web browser.
+This procedure only removes the index to the object from a specific Traffic Server
+cache. While the object remains on disk, Traffic Server will no longer able to find
+the object. The next request for that object will result in a fresh copy of the
+object fetched. Users may still see the old (removed) content if it was cached by
+intermediary caches or by the end-users' web browser.
+
+Pushing an Object into the Cache
+================================
+
+Traffic Server accepts the custom HTTP request method ``PUSH`` to put an object
+into the the cache. If the object is successfully written to the cache, then
+Traffic Server responds with a ``200 OK`` HTTP message; otherwise a
+``400 Malformed Pushed Response Header`` message is returned.
+
+To push an object, first save the object headers and body into a file. For instance: ::
+
+      $ curl -s -i -o /path/to/file "http://example.com/push_me.html"
+      $ cat /path/to/file
+      HTTP/1.1 200 OK
+      Date: Wed, 31 May 2017 16:01:59 GMT
+      Access-Control-Allow-Origin: *
+      Cache-Control: max-age=10800, public
+      Last-Modified: Wed, 31 May 2017 16:01:59 GMT
+      Content-Type: text/html
+      Age: 0
+      Content-Length: 176970
+
+      <!DOCTYPE html><html id= ...
+
+Then, to push the object, post the object using the PUSH method: ::
+
+      $ curl -x -s -o /dev/null -X PUSH --data-binary /path/to/file "http://example.com/push_me.html"
 
 .. _inspecting-the-cache:
 
@@ -421,3 +397,46 @@ Regex Invalidate
     Only one administrator should delete and invalidate cache entries from the
     Cache Inspector at any point in time. Changes made by multiple
     administrators at the same time can lead to unpredictable results.
+
+If-Modified-Since/If-None-Match
+-------------------------------
+
+Traffic Server will respond to matching If-Modified-Since/If-None-Match requests
+with a ``304 Not Modified`` HTTP message.
+
+This table describes how Traffic Server handles these types of requests: ::
+
+    OS = Origin Server's response HTTP message
+    IMS = A GET request w/ an If-Modified-Since header
+    LMs = Last-Modified header date returned by server
+    INM = A GET request w/ an If-None-Match header
+    E   = Etag header present
+    D, D' are Last modified dates returned by the origin server and are later used for IMS
+    The D date is earlier than the D' date
+
++----------+-----------+----------+-----------+--------------+
+| Client's | Cached    | Proxy's  |   Response to client     |
+| Request  | State     | Request  +-----------+--------------+
+|          |           |          | OS 200    |  OS 304      |
++==========+===========+==========+===========+==============+
+|  GET     | Fresh     | N/A      |  N/A      |  N/A         |
++----------+-----------+----------+-----------+--------------+
+|  GET     | Stale, D' | IMS  D'  | 200, new  | 200, cached  |
++----------+-----------+----------+-----------+--------------+
+|  GET     | Stale, E  | INM  E   | 200, new  | 200, cached  |
++----------+-----------+----------+-----------+--------------+
+|  INM E   | Stale, E  | INM  E   | 304       | 304          |
++----------+-----------+----------+-----------+--------------+
+|  INM E + | Stale,    | INM E    | 200, new *| 304          |
+|  IMS D'  | E + D'    | IMS D'   |           |              |
++----------+-----------+----------+-----------+--------------+
+|  IMS D   | None      | GET      | 200, new *|  N/A         |
++----------+-----------+----------+-----------+--------------+
+|  INM E   | None      | GET      | 200, new *|  N/A         |
++----------+-----------+----------+-----------+--------------+
+|  IMS D   | Stale, D' | IMS D'   | 200, new  | Compare      |
++----------+-----------+----------+-----------+ LMs & D'.    |
+|  IMS D'  | Stale, D' | IMS D'   | 200, new  | If match, 304|
++----------+-----------+----------+-----------+ If no match, |
+|  IMS D'  | Stale D   | IMS D    | 200, new *| 200, cached  |
++----------+-----------+----------+-----------+--------------+

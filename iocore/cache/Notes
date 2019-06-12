@@ -28,5 +28,5 @@ FIXME_CLUSTER_ARGUMENTS -> runtime arguments for clustering etc. Needs
 to be added by Eric
 
 cluster ifdefs
-FIXME_WIRELESS_API -> RPC API's for wireless which is probably not going to 
+FIXME_WIRELESS_API -> RPC API's for wireless which is probably not going to
 be used in the future

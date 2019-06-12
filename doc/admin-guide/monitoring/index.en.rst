@@ -19,15 +19,14 @@
 
 .. _admin-monitoring:
 
-Event and Error Monitoring
-**************************
+Monitoring
+**********
 
 .. toctree::
    :maxdepth: 3
 
-   logging/index.en
    alarms.en
    statistics/index.en
    monitoring/index.en
    error-messages.en
-
+   diagnostic-files.en

@@ -1,0 +1,59 @@
+{
+  "cases": [
+    {
+      "seqnum": 0,
+      "headers": [
+        {
+          ":method": "GET"
+        },
+        {
+          ":scheme": "http"
+        },
+        {
+          ":authority": "yahoo.co.jp"
+        },
+        {
+          ":path": "/"
+        }
+      ],
+      "wire": "82864188f439ce75c875fa5784"
+    },
+    {
+      "seqnum": 1,
+      "headers": [
+        {
+          ":method": "GET"
+        },
+        {
+          ":scheme": "http"
+        },
+        {
+          ":authority": "www.yahoo.co.jp"
+        },
+        {
+          ":path": "/"
+        }
+      ],
+      "wire": "8286418cf1e3c2fe8739ceb90ebf4aff84"
+    },
+    {
+      "seqnum": 2,
+      "headers": [
+        {
+          ":method": "GET"
+        },
+        {
+          ":scheme": "http"
+        },
+        {
+          ":authority": "k.yimg.jp"
+        },
+        {
+          ":path": "/images/top/sp2/cmn/logo-ns-130528.png"
+        }
+      ],
+      "wire": "82864187eabfa35332fd2b449b60d48e62a1849eb611589825353141e63ad52160b206c4f2f5d537"
+    }
+  ],
+  "description": "Apache Traffic Server"
+}

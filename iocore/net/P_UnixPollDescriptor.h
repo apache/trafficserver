@@ -27,10 +27,9 @@
 
 
 *****************************************************************************/
-#ifndef __P_UNIXPOLLDESCRIPTOR_H__
-#define __P_UNIXPOLLDESCRIPTOR_H__
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 #if TS_USE_KQUEUE
 #include <sys/event.h>
@@ -71,7 +70,7 @@ struct PollDescriptor {
 #if TS_USE_KQUEUE
   struct kevent kq_Triggered_Events[POLL_DESCRIPTOR_SIZE];
 /* we define these here as numbers, because for kqueue mapping them to a combination of
-*filters / flags is hard to do. */
+ *filters / flags is hard to do. */
 #define get_ev_port(a) ((a)->kqueue_fd)
 #define get_ev_events(a, x) ((a)->kq_event_convert((a)->kq_Triggered_Events[(x)].filter, (a)->kq_Triggered_Events[(x)].flags))
 #define get_ev_data(a, x) ((a)->kq_Triggered_Events[(x)].udata)
@@ -113,7 +112,7 @@ struct PollDescriptor {
     }
     return &pfd[nfds++];
 #else
-    return 0;
+    return nullptr;
 #endif
   }
 
@@ -123,7 +122,7 @@ private:
   {
     result = 0;
 #if TS_USE_EPOLL
-    nfds = 0;
+    nfds     = 0;
     epoll_fd = epoll_create(POLL_DESCRIPTOR_SIZE);
     memset(ePoll_Triggered_Events, 0, sizeof(ePoll_Triggered_Events));
     memset(pfd, 0, sizeof(pfd));
@@ -138,5 +137,3 @@ private:
 #endif
   }
 };
-
-#endif

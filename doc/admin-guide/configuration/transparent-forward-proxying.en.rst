@@ -88,6 +88,9 @@ You may also want to consider some of these configuration options:
 - The client request header X-Forwarded-For may be toggled with
   :ts:cv:`proxy.config.http.insert_squid_x_forwarded_for`.
 
+- The client request header Forwarded may be configured with
+  :ts:cv:`proxy.config.http.insert_forwarded`.
+
 Client Configuration
 ====================
 

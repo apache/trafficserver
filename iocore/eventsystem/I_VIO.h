@@ -22,18 +22,17 @@
 
  */
 
-#if !defined(I_VIO_h)
+#pragma once
 #define I_VIO_h
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_EventSystem.h"
 #if !defined(I_IOBuffer_h)
 #error "include I_IOBuffer.h"
--- -
-  include I_IOBuffer.h
+---include I_IOBuffer.h
 #endif
-#include "ts/ink_apidefs.h"
-  class Continuation;
+#include "tscore/ink_apidefs.h"
+   class Continuation;
 class VConnection;
 class IOVConnection;
 class MIOBuffer;
@@ -140,7 +139,7 @@ public:
   */
   inkcoreapi void reenable_re();
 
-  VIO(int aop);
+  explicit VIO(int aop);
   VIO();
 
   enum {
@@ -166,7 +165,7 @@ public:
     call with events for this operation.
 
   */
-  Continuation *_cont;
+  Continuation *cont = nullptr;
 
   /**
     Number of bytes to be done for this operation.
@@ -174,7 +173,7 @@ public:
     The total number of bytes this operation must complete.
 
   */
-  int64_t nbytes;
+  int64_t nbytes = 0;
 
   /**
     Number of bytes already completed.
@@ -184,7 +183,7 @@ public:
     the lock.
 
   */
-  int64_t ndone;
+  int64_t ndone = 0;
 
   /**
     Type of operation.
@@ -192,7 +191,7 @@ public:
     The type of operation that this VIO represents.
 
   */
-  int op;
+  int op = VIO::NONE;
 
   /**
     Provides access to the reader or writer for this operation.
@@ -208,7 +207,7 @@ public:
     functions.
 
   */
-  VConnection *vc_server;
+  VConnection *vc_server = nullptr;
 
   /**
     Reference to the state machine's mutex.
@@ -222,4 +221,3 @@ public:
 };
 
 #include "I_VConnection.h"
-#endif

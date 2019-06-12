@@ -21,21 +21,11 @@
   limitations under the License.
  */
 
-#ifndef __HTTP_COMPAT_H__
-#define __HTTP_COMPAT_H__
+#pragma once
 
-#include "ts/ink_string++.h"
+#include "tscore/ink_string++.h"
 #include "MIME.h"
-#include "ts/RawHashTable.h"
-#include "ts/Diags.h"
-
-struct HttpBodySetRawData {
-  unsigned int magic;
-  char *set_name;
-  char *content_language;
-  char *content_charset;
-  RawHashTable *table_of_pages;
-};
+#include "tscore/Diags.h"
 
 class HttpCompat
 {
@@ -64,9 +54,6 @@ public:
   static float match_accept_charset(const char *charset_str, int charset_len, StrList *acpt_charset_list, int *matching_index,
                                     bool ignore_wildcards = false);
 
-  static const char *determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt_language_list, StrList *acpt_charset_list,
-                                               float *Q_best_ptr, int *La_best_ptr, int *Lc_best_ptr, int *I_best_ptr);
-
   static void
   parse_comma_list(StrList *list, const char *comma_list_str)
   {
@@ -91,5 +78,3 @@ public:
     parse_tok_list(list, 1, comma_list_str, comma_list_len, ';');
   }
 };
-
-#endif /* __HTTP_COMPAT_H__ */

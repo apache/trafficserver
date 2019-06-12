@@ -20,8 +20,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#ifndef HTML_PARSER_H
-#define HTML_PARSER_H
+
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -35,7 +35,7 @@ namespace inliner
   typedef std::vector<Pair> AttributeVector;
 
   struct Attributes : AttributeVector {
-    operator std::string(void) const;
+    operator std::string() const;
   };
 
   struct Tag {
@@ -101,12 +101,12 @@ namespace inliner
   };
 
   struct AttributeParser {
-    Attribute::ATTRIBUTES state_;
+    Attribute::ATTRIBUTES state_ = Attribute::kPreName;
     Attributes attributes;
 
-    AttributeParser(void) : state_(Attribute::kPreName) {}
+    AttributeParser() {}
     void
-    reset(void)
+    reset()
     {
       state_ = Attribute::kPreName;
       attributes.clear();
@@ -129,19 +129,17 @@ namespace inliner
   };
 
   struct HtmlParser {
-    State::STATES state_;
-    Tag::TAGS tag_;
+    State::STATES state_ = State::kUndefined;
+    Tag::TAGS tag_       = Tag::kUndefined;
     AttributeParser attributeParser_;
 
-    HtmlParser(void) : state_(State::kUndefined), tag_(Tag::kUndefined) {}
+    HtmlParser() {}
     virtual ~HtmlParser() {}
     bool parseTag(const char);
     size_t parse(const char *, size_t, size_t o = 0);
-    virtual void handleImage(const Attributes &) = 0;
+    virtual void handleImage(const Attributes &)      = 0;
     virtual size_t bypass(const size_t, const size_t) = 0;
   };
 
-} // end of inliner namespace
-} // end of ats namespace
-
-#endif // HTML_PARSER_H
+} // namespace inliner
+} // namespace ats

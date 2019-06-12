@@ -19,8 +19,7 @@
 // Public interface for creating all operators. Don't user the operator.h interface
 // directly!
 //
-#ifndef __OPERATOR_H__
-#define __OPERATOR_H__ 1
+#pragma once
 
 #include <string>
 
@@ -35,7 +34,7 @@ enum OperModifiers {
   OPER_NONE = 0,
   OPER_LAST = 1,
   OPER_NEXT = 2,
-  OPER_QSA = 4,
+  OPER_QSA  = 4,
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -44,26 +43,29 @@ enum OperModifiers {
 class Operator : public Statement
 {
 public:
-  Operator() : _mods(OPER_NONE) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Operator"); }
+  Operator() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Operator"); }
+
+  // noncopyable
+  Operator(const Operator &) = delete;
+  void operator=(const Operator &) = delete;
+
+  OperModifiers get_oper_modifiers() const;
+  void initialize(Parser &p) override;
+
   void
   do_exec(const Resources &res) const
   {
     exec(res);
-    if (NULL != _next)
+    if (nullptr != _next) {
       static_cast<Operator *>(_next)->do_exec(res);
+    }
   }
-
-  const OperModifiers get_oper_modifiers() const;
-
-  virtual void initialize(Parser &p);
 
 protected:
   virtual void exec(const Resources &res) const = 0;
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(Operator);
-
-  OperModifiers _mods;
+  OperModifiers _mods = OPER_NONE;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -73,14 +75,33 @@ private:
 class OperatorHeaders : public Operator
 {
 public:
-  OperatorHeaders() : _header("") { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorHeaders"); }
-  void initialize(Parser &p);
+  OperatorHeaders() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorHeaders"); }
+
+  // noncopyable
+  OperatorHeaders(const OperatorHeaders &) = delete;
+  void operator=(const OperatorHeaders &) = delete;
+
+  void initialize(Parser &p) override;
 
 protected:
   std::string _header;
-
-private:
-  DISALLOW_COPY_AND_ASSIGN(OperatorHeaders);
 };
 
-#endif // __OPERATOR_H
+///////////////////////////////////////////////////////////////////////////////
+// Base class for all Cookie based Operators, this is obviously also an
+// Operator interface.
+//
+class OperatorCookies : public Operator
+{
+public:
+  OperatorCookies() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorCookies"); }
+
+  // noncopyable
+  OperatorCookies(const OperatorCookies &) = delete;
+  void operator=(const OperatorCookies &) = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  std::string _cookie;
+};

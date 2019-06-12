@@ -22,7 +22,7 @@
 Basic Authorization Plugin
 **************************
 
-The sample basic authorization plugin, ``basic-auth.c``, checks for
+The sample basic authorization plugin, ``basic_auth.c``, checks for
 basic HTTP proxy authorization. In HTTP basic proxy authorization,
 client user names and passwords are contained in the
 ``Proxy-Authorization`` header. The password is encoded using base64
@@ -41,7 +41,7 @@ The parent continuation and global hook are created as follows:
 
 .. important::
 
-   Authorization plugins which attach to ``TS_HTTP_OS_DNS_HOOK`` (as shown in
+   Authorization plugins which attach to :c:data:`TS_HTTP_OS_DNS_HOOK` (as shown in
    the example above) will not operate as expected unless
    :ts:cv:`proxy.config.http.doc_in_cache_skip_dns` is set to ``0``. Disabling
    this feature ensures that DNS hooks will still be executed even when a
@@ -54,4 +54,3 @@ The parent continuation and global hook are created as follows:
    implementing-the-handler-and-getting-a-handle-to-the-transaction.en
    working-with-http-headers.en
    setting-a-transaction-hook.en
-

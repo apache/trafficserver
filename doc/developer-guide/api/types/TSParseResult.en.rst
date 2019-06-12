@@ -36,8 +36,6 @@ Enumeration Members
 
 .. c:member:: TSParseResult TS_PARSE_DONE
 
-.. c:member:: TSParseResult TS_PARSE_OK
-
 .. c:member:: TSParseResult TS_PARSE_CONT
 
 Description

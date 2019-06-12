@@ -19,8 +19,7 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __RESOURCES_H__
-#define __RESOURCES_H__ 1
+#pragma once
 
 #include <string>
 
@@ -34,15 +33,13 @@
 extern GeoIP *gGeoIP[NUM_DB_TYPES];
 #endif
 
-#define TS_REMAP_PSEUDO_HOOK TS_HTTP_LAST_HOOK // Ugly, but use the "last hook" for remap instances.
-
 enum ResourceIDs {
-  RSRC_NONE = 0,
+  RSRC_NONE                    = 0,
   RSRC_SERVER_RESPONSE_HEADERS = 1,
-  RSRC_SERVER_REQUEST_HEADERS = 2,
-  RSRC_CLIENT_REQUEST_HEADERS = 4,
+  RSRC_SERVER_REQUEST_HEADERS  = 2,
+  RSRC_CLIENT_REQUEST_HEADERS  = 4,
   RSRC_CLIENT_RESPONSE_HEADERS = 8,
-  RSRC_RESPONSE_STATUS = 16,
+  RSRC_RESPONSE_STATUS         = 16,
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -51,37 +48,22 @@ enum ResourceIDs {
 class Resources
 {
 public:
-  explicit Resources(TSHttpTxn txnptr, TSCont contptr)
-    : txnp(txnptr),
-      contp(contptr),
-      bufp(NULL),
-      hdr_loc(NULL),
-      client_bufp(NULL),
-      client_hdr_loc(NULL),
-      resp_status(TS_HTTP_STATUS_NONE),
-      _rri(NULL),
-      changed_url(false),
-      _ready(false)
+  explicit Resources(TSHttpTxn txnptr, TSCont contptr) : txnp(txnptr), contp(contptr)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (InkAPI)");
   }
 
-  Resources(TSHttpTxn txnptr, TSRemapRequestInfo *rri)
-    : txnp(txnptr),
-      contp(NULL),
-      bufp(NULL),
-      hdr_loc(NULL),
-      client_bufp(NULL),
-      client_hdr_loc(NULL),
-      resp_status(TS_HTTP_STATUS_NONE),
-      _rri(rri),
-      changed_url(false),
-      _ready(false)
+  Resources(TSHttpTxn txnptr, TSRemapRequestInfo *rri) : txnp(txnptr), _rri(rri)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (RemapAPI)");
   }
 
   ~Resources() { destroy(); }
+
+  // noncopyable
+  Resources(const Resources &) = delete;
+  void operator=(const Resources &) = delete;
+
   void gather(const ResourceIDs ids, TSHttpHookID hook);
   bool
   ready() const
@@ -90,20 +72,17 @@ public:
   }
 
   TSHttpTxn txnp;
-  TSCont contp;
-  TSMBuffer bufp;
-  TSMLoc hdr_loc;
-  TSMBuffer client_bufp;
-  TSMLoc client_hdr_loc;
-  TSHttpStatus resp_status;
-  TSRemapRequestInfo *_rri;
-  bool changed_url;
+  TSCont contp             = nullptr;
+  TSRemapRequestInfo *_rri = nullptr;
+  TSMBuffer bufp           = nullptr;
+  TSMLoc hdr_loc           = nullptr;
+  TSMBuffer client_bufp    = nullptr;
+  TSMLoc client_hdr_loc    = nullptr;
+  TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
+  bool changed_url         = false;
 
 private:
   void destroy();
-  DISALLOW_COPY_AND_ASSIGN(Resources);
 
-  bool _ready;
+  bool _ready = false;
 };
-
-#endif // __RESOURCES_H

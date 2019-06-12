@@ -24,7 +24,7 @@
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
 
-static Diags *g_diags = NULL;
+static Diags *g_diags = nullptr;
 
 //-------------------------------------------------------------------------
 // RecSetDiags
@@ -42,13 +42,13 @@ RecSetDiags(Diags *_diags)
 // RecLog
 //-------------------------------------------------------------------------
 void
-RecLog(DiagsLevel dl, const char *format_string, ...)
+_RecLog(DiagsLevel dl, const SourceLocation &loc, const char *fmt, ...)
 {
   va_list ap;
 
-  va_start(ap, format_string);
+  va_start(ap, fmt);
   if (g_diags) {
-    g_diags->log_va(NULL, dl, NULL, format_string, ap);
+    g_diags->error_va(dl, &loc, fmt, ap);
   }
   va_end(ap);
 }
@@ -57,13 +57,13 @@ RecLog(DiagsLevel dl, const char *format_string, ...)
 // RecDebug
 //-------------------------------------------------------------------------
 void
-RecDebug(DiagsLevel dl, const char *format_string, ...)
+_RecDebug(DiagsLevel dl, const SourceLocation &loc, const char *fmt, ...)
 {
   va_list ap;
 
-  va_start(ap, format_string);
+  va_start(ap, fmt);
   if (g_diags) {
-    g_diags->log_va("rec", dl, NULL, format_string, ap);
+    g_diags->log_va("rec", dl, &loc, fmt, ap);
   }
   va_end(ap);
 }
@@ -74,5 +74,5 @@ RecDebug(DiagsLevel dl, const char *format_string, ...)
 void
 RecDebugOff()
 {
-  g_diags = NULL;
+  g_diags = nullptr;
 }

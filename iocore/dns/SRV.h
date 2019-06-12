@@ -21,27 +21,24 @@
   limitations under the License.
  */
 
-#ifndef _SRV_h_
-#define _SRV_h_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include <vector>
+#include "tscore/ink_platform.h"
 #include "I_HostDBProcessor.h"
 
 struct HostDBInfo;
 
-#define HOST_DB_MAX_ROUND_ROBIN_INFO 16
 #define RAND_INV_RANGE(r) ((int)((RAND_MAX + 1) / (r)))
 
 struct SRV {
-  unsigned int weight;
-  unsigned int port;
-  unsigned int priority;
-  unsigned int ttl;
-  unsigned int host_len;
-  unsigned int key;
-  char host[MAXDNAME];
-
-  SRV() : weight(0), port(0), priority(0), ttl(0), host_len(0), key(0) { host[0] = '\0'; }
+  unsigned int weight   = 0;
+  unsigned int port     = 0;
+  unsigned int priority = 0;
+  unsigned int ttl      = 0;
+  unsigned int host_len = 0;
+  unsigned int key      = 0;
+  char host[MAXDNAME]   = {0};
 };
 
 inline bool
@@ -52,12 +49,6 @@ operator<(const SRV &left, const SRV &right)
 }
 
 struct SRVHosts {
-  unsigned srv_host_count;
-  unsigned srv_hosts_length;
-  SRV hosts[HOST_DB_MAX_ROUND_ROBIN_INFO];
-
-  ~SRVHosts() {}
-  SRVHosts() : srv_host_count(0), srv_hosts_length(0) {}
+  unsigned int srv_hosts_length = 0;
+  std::vector<SRV> hosts;
 };
-
-#endif

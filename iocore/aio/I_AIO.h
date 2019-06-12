@@ -28,16 +28,13 @@
 
 
  ****************************************************************************/
-#if !defined(_I_AIO_h_)
-#define _I_AIO_h_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_EventSystem.h"
-#include "I_RecProcess.h"
+#include "records/I_RecProcess.h"
 
-#define AIO_MODULE_MAJOR_VERSION 1
-#define AIO_MODULE_MINOR_VERSION 0
-#define AIO_MODULE_VERSION makeModuleVersion(AIO_MODULE_MAJOR_VERSION, AIO_MODULE_MINOR_VERSION, PUBLIC_MODULE_HEADER)
+static constexpr ts::ModuleVersion AIO_MODULE_PUBLIC_VERSION(1, 0, ts::ModuleVersion::PUBLIC);
 
 #define AIO_EVENT_DONE (AIO_EVENT_EVENTS_START + 0)
 
@@ -59,7 +56,7 @@
 
 #define MAX_AIO_EVENTS 1024
 
-typedef struct iocb ink_aiocb_t;
+typedef struct iocb ink_aiocb;
 typedef struct io_event ink_io_event_t;
 
 // XXX hokey old-school compatibility with ink_aiocb.h ...
@@ -69,17 +66,16 @@ typedef struct io_event ink_io_event_t;
 
 #else
 
-typedef struct ink_aiocb {
-  int aio_fildes;
-  volatile void *aio_buf; /* buffer location */
-  size_t aio_nbytes;      /* length of transfer */
-  off_t aio_offset;       /* file offset */
+struct ink_aiocb {
+  int aio_fildes    = 0;
+  void *aio_buf     = nullptr; /* buffer location */
+  size_t aio_nbytes = 0;       /* length of transfer */
+  off_t aio_offset  = 0;       /* file offset */
 
-  int aio_reqprio;    /* request priority offset */
-  int aio_lio_opcode; /* listio operation */
-  int aio_state;      /* state flag for List I/O */
-  int aio__pad[1];    /* extension padding */
-} ink_aiocb_t;
+  int aio_lio_opcode = 0; /* listio operation */
+  int aio_state      = 0; /* state flag for List I/O */
+  int aio__pad[1];        /* extension padding */
+};
 
 bool ink_aio_thread_num_set(int thread_num);
 
@@ -89,20 +85,17 @@ bool ink_aio_thread_num_set(int thread_num);
 #define AIO_CALLBACK_THREAD_ANY ((EThread *)0) // any regular event thread
 #define AIO_CALLBACK_THREAD_AIO ((EThread *)-1)
 
-#define AIO_LOWEST_PRIORITY 0
-#define AIO_DEFAULT_PRIORITY AIO_LOWEST_PRIORITY
-
 struct AIOCallback : public Continuation {
   // set before calling aio_read/aio_write
-  ink_aiocb_t aiocb;
+  ink_aiocb aiocb;
   Action action;
-  EThread *thread;
-  AIOCallback *then;
+  EThread *thread   = AIO_CALLBACK_THREAD_ANY;
+  AIOCallback *then = nullptr;
   // set on return from aio_read/aio_write
-  int64_t aio_result;
+  int64_t aio_result = 0;
 
   int ok();
-  AIOCallback() : thread(AIO_CALLBACK_THREAD_ANY), then(0) { aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY; }
+  AIOCallback() {}
 };
 
 #if AIO_MODE == AIO_MODE_NATIVE
@@ -142,7 +135,7 @@ struct DiskHandler : public Continuation {
 };
 #endif
 
-void ink_aio_init(ModuleVersion version);
+void ink_aio_init(ts::ModuleVersion version);
 int ink_aio_start();
 void ink_aio_set_callback(Continuation *error_callback);
 
@@ -152,5 +145,4 @@ int ink_aio_write(AIOCallback *op, int fromAPI = 0);
 int ink_aio_readv(AIOCallback *op,
                   int fromAPI = 0); // fromAPI is a boolean to indicate if this is from a API call such as upload proxy feature
 int ink_aio_writev(AIOCallback *op, int fromAPI = 0);
-AIOCallback *new_AIOCallback(void);
-#endif
+AIOCallback *new_AIOCallback();

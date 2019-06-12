@@ -21,8 +21,7 @@
  *  limitations under the License.
  */
 
-#ifndef REMAPCONFIG_H_E862FB4C_EFFC_4F2A_8BF2_9AB6E1E5E9CF
-#define REMAPCONFIG_H_E862FB4C_EFFC_4F2A_8BF2_9AB6E1E5E9CF
+#pragma once
 
 #include "AclFiltering.h"
 
@@ -47,21 +46,23 @@ struct BUILD_TABLE_INFO {
   BUILD_TABLE_INFO();
   ~BUILD_TABLE_INFO();
 
-  unsigned long remap_optflg;
-  int paramc;
-  int argc;
+  unsigned long remap_optflg = 0;
+  int paramc                 = 0;
+  int argc                   = 0;
   char *paramv[BUILD_TABLE_MAX_ARGS];
   char *argv[BUILD_TABLE_MAX_ARGS];
 
-  acl_filter_rule *rules_list; // all rules defined in config files as .define_filter foobar @src_ip=.....
-  UrlRewrite *rewrite;         // Pointer to the UrlRewrite object we are parsing for.
+  bool ip_allow_check_enabled_p = true;
+  bool accept_check_p           = true;
+  acl_filter_rule *rules_list   = nullptr; // all rules defined in config files as .define_filter foobar @src_ip=.....
+  UrlRewrite *rewrite           = nullptr; // Pointer to the UrlRewrite object we are parsing for.
 
   // Clear the argument vector.
   void reset();
 
-private:
-  BUILD_TABLE_INFO(const BUILD_TABLE_INFO &);            // disabled
-  BUILD_TABLE_INFO &operator=(const BUILD_TABLE_INFO &); // disabled
+  // noncopyable
+  BUILD_TABLE_INFO(const BUILD_TABLE_INFO &) = delete;            // disabled
+  BUILD_TABLE_INFO &operator=(const BUILD_TABLE_INFO &) = delete; // disabled
 };
 
 const char *remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize);
@@ -69,9 +70,11 @@ const char *remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t er
 const char *remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf,
                                        size_t errStrBufSize);
 
-unsigned long remap_check_option(const char **argv, int argc, unsigned long findmode = 0, int *_ret_idx = NULL,
-                                 const char **argptr = NULL);
+unsigned long remap_check_option(const char **argv, int argc, unsigned long findmode = 0, int *_ret_idx = nullptr,
+                                 const char **argptr = nullptr);
 
 bool remap_parse_config(const char *path, UrlRewrite *rewrite);
 
-#endif /* REMAPCONFIG_H_E862FB4C_EFFC_4F2A_8BF2_9AB6E1E5E9CF */
+typedef void (*load_remap_file_func)(const char *);
+
+extern load_remap_file_func load_remap_file_cb;

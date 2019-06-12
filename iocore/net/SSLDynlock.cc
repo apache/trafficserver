@@ -21,13 +21,13 @@
 
 #include <openssl/crypto.h>
 
-#include "ts/ink_platform.h"
-#include "ts/ink_mutex.h"
-#include "ts/ink_assert.h"
-#include "ts/Diags.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_mutex.h"
+#include "tscore/ink_assert.h"
+#include "tscore/Diags.h"
 
 struct CRYPTO_dynlock_value {
-  CRYPTO_dynlock_value(const char *f, int l) : file(f), line(l) { ink_mutex_init(&mutex, NULL); }
+  CRYPTO_dynlock_value(const char *f, int l) : file(f), line(l) { ink_mutex_init(&mutex); }
   ~CRYPTO_dynlock_value() { ink_mutex_destroy(&mutex); }
   const char *file;
   int line;
@@ -43,6 +43,8 @@ ssl_dyn_create_callback(const char *file, int line)
   return value;
 }
 
+// The locking callback goes away with openssl 1.1 and CRYPTO_LOCK is on longer defined
+#ifdef CRYPTO_LOCK
 void
 ssl_dyn_lock_callback(int mode, struct CRYPTO_dynlock_value *value, const char *file, int line)
 {
@@ -57,6 +59,7 @@ ssl_dyn_lock_callback(int mode, struct CRYPTO_dynlock_value *value, const char *
     ink_release_assert(0);
   }
 }
+#endif
 
 void
 ssl_dyn_destroy_callback(struct CRYPTO_dynlock_value *value, const char *file, int line)

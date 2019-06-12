@@ -42,15 +42,14 @@
   The accept call is a blocking call while connect is non-blocking. They
   returns a new Connection instance which is an handle to the newly created
   connection. The connection `q instance can be used later for read/writes
-  using an intance of IOProcessor class.
+  using an instance of IOProcessor class.
 
 
   **************************************************************************/
 
-#ifndef __CONNECTION_H__
-#define __CONNECTION_H__
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 
 struct NetVCOptions;
 
@@ -79,11 +78,11 @@ struct NetVCOptions;
 //
 ///////////////////////////////////////////////////////////////////////
 struct Connection {
-  SOCKET fd;         ///< Socket for connection.
-  IpEndpoint addr;   ///< Associated address.
-  bool is_bound;     ///< Flag for already bound to a local address.
-  bool is_connected; ///< Flag for already connected.
-  int sock_type;
+  SOCKET fd;                 ///< Socket for connection.
+  IpEndpoint addr;           ///< Associated address.
+  bool is_bound     = false; ///< Flag for already bound to a local address.
+  bool is_connected = false; ///< Flag for already connected.
+  int sock_type     = 0;
 
   /** Create and initialize the socket for this connection.
 
@@ -97,7 +96,7 @@ struct Connection {
       @see connect
   */
   int open(NetVCOptions const &opt = DEFAULT_OPTIONS ///< Socket options.
-           );
+  );
 
   /** Connect the socket.
 
@@ -111,22 +110,21 @@ struct Connection {
   */
   int connect(sockaddr const *to,                       ///< Remote address and port.
               NetVCOptions const &opt = DEFAULT_OPTIONS ///< Socket options
-              );
+  );
 
   /// Set the internal socket address struct.
-  /// @internal Used only by ICP.
   void
   setRemote(sockaddr const *remote_addr ///< Address and port.
-            )
+  )
   {
     ats_ip_copy(&addr, remote_addr);
   }
 
   int setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool non_blocking = NON_BLOCKING, unsigned char mc_ttl = 1,
-                    bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation *c = NULL);
+                    bool mc_loopback = DISABLE_MC_LOOPBACK, Continuation *c = nullptr);
 
-  int setup_mc_receive(sockaddr const *from, sockaddr const *my_addr, bool non_blocking = NON_BLOCKING, Connection *sendchan = NULL,
-                       Continuation *c = NULL);
+  int setup_mc_receive(sockaddr const *from, sockaddr const *my_addr, bool non_blocking = NON_BLOCKING,
+                       Connection *sendchan = nullptr, Continuation *c = nullptr);
 
   int close(); // 0 on success, -errno on failure
 
@@ -134,6 +132,7 @@ struct Connection {
 
   virtual ~Connection();
   Connection();
+  Connection(Connection const &that) = delete;
 
   /// Default options.
   static NetVCOptions const DEFAULT_OPTIONS;
@@ -143,12 +142,16 @@ struct Connection {
    */
   void move(Connection &);
 
-private:
-  // Don't want copy constructors to avoid having the deconstructor on
-  // temporarly copies close the file descriptor too soon. Use move instead
-  Connection(Connection const &);
-
 protected:
+  /** Assignment operator.
+   *
+   * @param that Source object.
+   * @return @a this
+   *
+   * This is protected because it is not safe in the general case, but is valid for
+   * certain subclasses. Those provide a public assignemnt that depends on this method.
+   */
+  Connection &operator=(Connection const &that) = default;
   void _cleanup();
 };
 
@@ -161,16 +164,8 @@ struct Server : public Connection {
   /// Client side (inbound) local IP address.
   IpEndpoint accept_addr;
 
-  /// If set, the related incoming connect was transparent.
-  bool f_inbound_transparent;
-
   /// If set, a kernel HTTP accept filter
-  bool http_accept_filter;
-
-  //
-  // Use this call for the main proxy accept
-  //
-  int proxy_listen(bool non_blocking = false);
+  bool http_accept_filter = false;
 
   int accept(Connection *c);
 
@@ -180,12 +175,8 @@ struct Server : public Connection {
   // converted into network byte order
   //
 
-  int listen(bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0, bool transparent = false);
-  int setup_fd_for_listen(bool non_blocking = false, int recv_bufsize = 0, int send_bufsize = 0,
-                          bool transparent = false ///< Inbound transparent.
-                          );
+  int listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
+  int setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt);
 
-  Server() : Connection(), f_inbound_transparent(false) { ink_zero(accept_addr); }
+  Server() : Connection() { ink_zero(accept_addr); }
 };
-
-#endif /*_Connection_h*/

@@ -63,7 +63,7 @@
 	<exec_method
 		type='method'
 		name='start'
-		exec='@exp_bindir@/traffic_cop 2>&amp;1 &amp;'
+		exec='@exp_bindir@/traffic_manager 2>&amp;1 &amp;'
 		timeout_seconds='120' />
 
 	<exec_method

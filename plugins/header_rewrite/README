@@ -24,4 +24,4 @@ during the origin response header parsing, using READ_RESPONSE_HDR_HOOK.
 
 For more information on how to use this plugin, please see
 
-  http://docs.trafficserver.apache.org/en/latest/reference/plugins/header_rewrite.en.html
+  https://docs.trafficserver.apache.org/en/latest/admin-guide/plugins/header_rewrite.en.html

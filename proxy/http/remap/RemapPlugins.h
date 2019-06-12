@@ -23,31 +23,27 @@
 
 /**
  * Remap plugins class
-**/
+ **/
 
-#if !defined(_REMAPPLUGINS_h_)
-#define _REMAPPLUGINS_h_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_EventSystem.h"
 #include "RemapProcessor.h"
-#include "api/ts/ts.h"
-#include "api/ts/remap.h"
 #include "RemapPluginInfo.h"
 #include "HttpTransact.h"
 #include "ReverseProxy.h"
 
 /**
  * A class that represents a queue of plugins to run
-**/
+ **/
 struct RemapPlugins : public Continuation {
-  RemapPlugins() : _cur(0) {}
+  RemapPlugins() = default;
   RemapPlugins(HttpTransact::State *s, URL *u, HTTPHdr *h, host_hdr_info *hi)
-    : _cur(0), _s(s), _request_url(u), _request_header(h), _hh_ptr(hi)
+    : _s(s), _request_url(u), _request_header(h), _hh_ptr(hi)
   {
   }
 
-  ~RemapPlugins() { _cur = 0; }
   // Some basic setters
   void
   setState(HttpTransact::State *state)
@@ -71,17 +67,16 @@ struct RemapPlugins : public Continuation {
   }
 
   int run_remap(int event, Event *e);
-  int run_single_remap();
-  TSRemapStatus run_plugin(remap_plugin_info *plugin);
+  bool run_single_remap();
+  TSRemapStatus run_plugin(RemapPluginInfo *plugin);
 
   Action action;
 
 private:
-  unsigned int _cur;
-  HttpTransact::State *_s;
-  URL *_request_url;
-  HTTPHdr *_request_header;
-  host_hdr_info *_hh_ptr;
+  unsigned _cur            = 0;
+  unsigned _rewritten      = 0;
+  HttpTransact::State *_s  = nullptr;
+  URL *_request_url        = nullptr;
+  HTTPHdr *_request_header = nullptr;
+  host_hdr_info *_hh_ptr   = nullptr;
 };
-
-#endif

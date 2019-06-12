@@ -92,8 +92,9 @@ static char *
 xstrdup(char *s)
 {
   char *t;
-  if (!s)
+  if (!s) {
     return NULL;
+  }
   t = (char *)malloc(strlen(s) + 1);
   if (t) {
     strcpy(t, s);
@@ -152,15 +153,16 @@ dictionary_new(int size)
   dictionary *d;
 
   /* If no size was specified, allocate space for DICTMINSZ */
-  if (size < DICTMINSZ)
+  if (size < DICTMINSZ) {
     size = DICTMINSZ;
+  }
 
   if (!(d = (dictionary *)calloc(1, sizeof(dictionary)))) {
     return NULL;
   }
   d->size = size;
-  d->val = (char **)calloc(size, sizeof(char *));
-  d->key = (char **)calloc(size, sizeof(char *));
+  d->val  = (char **)calloc(size, sizeof(char *));
+  d->key  = (char **)calloc(size, sizeof(char *));
   d->hash = (unsigned int *)calloc(size, sizeof(unsigned));
   return d;
 }
@@ -179,13 +181,16 @@ dictionary_del(dictionary *d)
 {
   int i;
 
-  if (d == NULL)
+  if (d == NULL) {
     return;
+  }
   for (i = 0; i < d->size; i++) {
-    if (d->key[i] != NULL)
+    if (d->key[i] != NULL) {
       free(d->key[i]);
-    if (d->val[i] != NULL)
+    }
+    if (d->val[i] != NULL) {
       free(d->val[i]);
+    }
   }
   free(d->val);
   free(d->key);
@@ -216,8 +221,9 @@ dictionary_get(dictionary *d, char *key, char *def)
 
   hash = dictionary_hash(key);
   for (i = 0; i < d->size; i++) {
-    if (d->key[i] == NULL)
+    if (d->key[i] == NULL) {
       continue;
+    }
     /* Compare hash */
     if (hash == d->hash[i]) {
       /* Compare string, to avoid hash collisions */
@@ -261,21 +267,24 @@ dictionary_set(dictionary *d, char *key, char *val)
   int i;
   unsigned hash;
 
-  if (d == NULL || key == NULL)
+  if (d == NULL || key == NULL) {
     return -1;
+  }
 
   /* Compute hash for this key */
   hash = dictionary_hash(key);
   /* Find if value is already in dictionary */
   if (d->n > 0) {
     for (i = 0; i < d->size; i++) {
-      if (d->key[i] == NULL)
+      if (d->key[i] == NULL) {
         continue;
+      }
       if (hash == d->hash[i]) {        /* Same hash value */
         if (!strcmp(key, d->key[i])) { /* Same key */
           /* Found a value: modify and return */
-          if (d->val[i] != NULL)
+          if (d->val[i] != NULL) {
             free(d->val[i]);
+          }
           d->val[i] = val ? xstrdup(val) : NULL;
           /* Value has been modified: return */
           return 0;
@@ -287,8 +296,8 @@ dictionary_set(dictionary *d, char *key, char *val)
   /* See if dictionary needs to grow */
   if (d->n == d->size) {
     /* Reached maximum size: reallocate dictionary */
-    d->val = (char **)mem_double(d->val, d->size * sizeof(char *));
-    d->key = (char **)mem_double(d->key, d->size * sizeof(char *));
+    d->val  = (char **)mem_double(d->val, d->size * sizeof(char *));
+    d->key  = (char **)mem_double(d->key, d->size * sizeof(char *));
     d->hash = (unsigned int *)mem_double(d->hash, d->size * sizeof(unsigned));
     if ((d->val == NULL) || (d->key == NULL) || (d->hash == NULL)) {
       /* Cannot grow dictionary */
@@ -306,8 +315,8 @@ dictionary_set(dictionary *d, char *key, char *val)
     }
   }
   /* Copy key */
-  d->key[i] = xstrdup(key);
-  d->val[i] = val ? xstrdup(val) : NULL;
+  d->key[i]  = xstrdup(key);
+  d->val[i]  = val ? xstrdup(val) : NULL;
   d->hash[i] = hash;
   d->n++;
   return 0;
@@ -336,8 +345,9 @@ dictionary_unset(dictionary *d, char *key)
 
   hash = dictionary_hash(key);
   for (i = 0; i < d->size; i++) {
-    if (d->key[i] == NULL)
+    if (d->key[i] == NULL) {
       continue;
+    }
     /* Compare hash */
     if (hash == d->hash[i]) {
       /* Compare string, to avoid hash collisions */
@@ -347,9 +357,10 @@ dictionary_unset(dictionary *d, char *key)
       }
     }
   }
-  if (i >= d->size)
+  if (i >= d->size) {
     /* Key not found */
     return;
+  }
 
   free(d->key[i]);
   d->key[i] = NULL;
@@ -379,8 +390,9 @@ dictionary_dump(dictionary *d, FILE *out)
 {
   int i;
 
-  if (d == NULL || out == NULL)
+  if (d == NULL || out == NULL) {
     return;
+  }
   if (d->n < 1) {
     fprintf(out, "empty dictionary\n");
     return;

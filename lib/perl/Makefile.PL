@@ -18,6 +18,13 @@ require 5.006;
 use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
+
+sub MY::libscan {
+    my( $mm, $file ) = @_;
+    return if $file =~  /\.in$/; # SKIP
+    return $file;
+}
+
 WriteMakefile(
     NAME              => 'Apache::TS',
     VERSION_FROM      => 'lib/Apache/TS.pm', # finds $VERSION

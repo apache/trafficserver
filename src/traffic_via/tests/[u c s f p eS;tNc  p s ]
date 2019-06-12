@@ -1,0 +1,13 @@
+Via header is [u c s f p eS;tNc  p s ], Length is 22
+Via Header Details:
+Request headers received from client                   :unknown
+Result of Traffic Server cache lookup for URL          :no cache lookup
+Response information received from origin server       :no server connection needed
+Result of document write-to-cache:                     :no cache write performed
+Proxy operation result                                 :unknown
+Error codes (if any)                                   :server related error
+Tunnel info                                            :tunneling due to no forward
+Cache Type                                             :unknown
+Cache Lookup Result                                    :cache miss or no cache lookup
+Parent proxy connection status                         :no parent proxy or unknown
+Origin server connection status                        :no server connection needed

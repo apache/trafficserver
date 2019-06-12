@@ -122,7 +122,7 @@ RHEL / CentOS
 |TS| is available through the EPEL repositories. If you do not have those
 configured on your machine yet, you must install them first with the following::
 
-    wget https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+    wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     sudo rpm -Uvh epel-release-7*.rpm
 
 Ensuring that you replace the release number with a value that is appropriate
@@ -154,8 +154,6 @@ libraries on the machine used to build |TS|:
 - gcc (>= 4.3 or clang > 3.0)
 - GNU make
 - openssl
-- tcl
-- expat
 - pcre
 - libcap
 - flex (for TPROXY)
@@ -250,7 +248,7 @@ settings have been configured as shown below::
     CONFIG proxy.config.reverse_proxy.enabled INT 1
     CONFIG proxy.config.url_remap.remap_required INT 1
     CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
-    CONFIG proxy.config.http.server_ports STRING 8080
+    CONFIG proxy.config.http.server_ports STRING 8080 8080:ipv6
 
 :ts:cv:`proxy.config.http.cache.http`
     Enables caching of proxied HTTP requests.
@@ -262,7 +260,7 @@ settings have been configured as shown below::
     This setting requires that a remap rule exist before |TS| will proxy the
     request and ensures that your proxy cannot be used to access the content of
     arbitrary websites (allowing someone of malicious intent to potentially
-    mask their identity to an unknowning third party).
+    mask their identity to an unknowing third party).
 
 :ts:cv:`proxy.config.url_remap.pristine_host_hdr`
     This setting causes |TS| to keep the ``Host:`` client request header intact
@@ -271,7 +269,8 @@ settings have been configured as shown below::
     contents of that header.
 
 :ts:cv:`proxy.config.http.server_ports`
-    This configures |TS| to bind itself to the port ``8080`` for HTTP traffic.
+    This configures |TS| to bind itself to the port ``8080`` for HTTP traffic,
+    for both IPv4 and IPv6.
 
 Configure Origin Location
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -284,7 +283,12 @@ and want little more than to proxy all requests to our single origin server.
 This is accomplished with the following rule added to the :file:`remap.config`
 configuration::
 
-    regex_map http://(.*)/ http://localhost:80/
+    map http://www.acme.com/ http://localhost:80/
+
+With this mapping rule, all paths that |TS| receives with a Host: header of
+``www.acme.com`` will be proxied to ``localhost:80``. For instance, a request
+for ``http://www.acme.com/foo/bar`` will be proxied to ``http://localhost:80/foo/bar``,
+while requests with other Host: headers will be rejected.
 
 It is worth pausing at this point to note that in a reverse proxying scenario,
 it is |TS| itself which should be responding to HTTP requests made to your
@@ -304,12 +308,45 @@ they reconfigure their origin service to listen on port ``8080`` instead of the
 default, and change |TS| to bind to ``80`` itself. Updating the remap is thus
 required, and it should now be::
 
-    regex_map http://(.*)/ http://localhost:8080/
+    map http://www.acme.com/ http://localhost:8080/
 
 Now all requests made to ``www.acme.com`` are received by |TS| which knows to
 proxy those requests to ``localhost:8080`` if it cannot already serve them from
 its cache. Because we enabled pristine host headers earlier, the origin service
 will continue to receive ``Host: www.acme.com`` in the HTTP request.
+
+If |AW| decides to use |TS| to reverse proxy a second domain ``static.acme.com``
+with a different origin server than the original, they need to make further
+changes, as a new remap line needs to be added to handle the additional domain::
+
+    map http://static.acme.com/ http://origin-static.acme.com/
+
+If they also decide to have requests to ``www.acme.com`` with paths that start with
+``/api`` to a different origin server. The api origin server shouldn't get the ``/api``,
+they will remap it away. And, since the above remap rules catch all paths,
+this remap rule needs to be above it::
+
+    map http://www.acme.com/api/ http://api-origin.acme.com/
+
+With this remap rule in place, a request to ``http://www.acme.com/api/example/foo``
+will be proxied to ``http://api-origin.acme.com/example/foo``.
+
+Finally, if |AW| decides to secure their site with https, they will need two
+additional remap rules to handle the https requests. |TS| can translate an inbound
+https request to an http request to origin. So, they would have additional remap
+rules like::
+
+    map https://www.acme.com/ http://localhost:8080/
+    map https://static.acme.com/ https://origin-static.acme.com/
+
+This will require installing a certificate, and adding a line to
+:file:`ssl_multicert.config`. Assuming the cert has the static.acme.com alternate
+name, and that cert should be presented by default::
+
+    dest_ip=* ssl_cert_name=/path/to/secret/privatekey/acme.rsa
+
+Further information about configuring |TS| for TLS can be found :ref:`admin-ssl-termination`
+section of the documentation.
 
 Adjust Cache Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -342,15 +379,24 @@ entries:
     CONFIG proxy.config.reverse_proxy.enabled INT 1
     CONFIG proxy.config.url_remap.remap_required INT 1
     CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
-    CONFIG proxy.config.http.server_ports STRING 80
+    CONFIG proxy.config.http.server_ports STRING 80 80:ipv6
 
 :file:`remap.config`::
 
-    regex_map http://(.*)/ http://localhost:8080/
+    map http://www.acme.com/api/ http://api-origin.acme.com/
+    map https://www.acme.com/api/ https://api-origin.acme.com/
+    map http://www.acme.com/ http://localhost:8080/
+    map https://www.acme.com/ http://localhost:8080/
+    map http://static.acme.com/ http://origin-static.acme.com/
+    map https://static.acme.com/ https://origin-static.acme.com/
 
 :file:`storage.config`::
 
     /cache/trafficserver 500G
+
+:file:`ssl_multicert.config`::
+
+    ssl_cert_name=/path/to/secret/acme.rsa
 
 Configuring A Forward Proxy
 ---------------------------
@@ -422,16 +468,7 @@ Extended-2* format you may wish to enable that logging format in addition to,
 or instead of, the default |TS| logs.
 
 The Administrator's Guide discusses logging options in great detail in
-:ref:`admin-monitoring-logging`.
-
-Using Traffic Top
------------------
-
-Using Stats Over HTTP
----------------------
-
-Using Cache Inspector
----------------------
+:ref:`admin-logging`.
 
 Further Steps
 =============

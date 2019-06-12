@@ -21,14 +21,13 @@
   limitations under the License.
  */
 
-#ifndef __P_SOCKS_H__
-#define __P_SOCKS_H__
+#pragma once
 #include "P_EventSystem.h"
 #include "I_Socks.h"
 
 #ifdef SOCKS_WITH_TS
 #include "ParentSelection.h"
-#include <ts/IpMap.h>
+#include "tscore/IpMap.h"
 #endif
 
 enum {
@@ -40,20 +39,20 @@ enum {
 };
 
 struct socks_conf_struct {
-  int socks_needed;
-  int server_connect_timeout;
-  int socks_timeout;
-  unsigned char default_version;
-  char *user_name_n_passwd;
-  int user_name_n_passwd_len;
+  int socks_needed              = 0;
+  int server_connect_timeout    = 0;
+  int socks_timeout             = 100;
+  unsigned char default_version = 5;
+  char *user_name_n_passwd      = nullptr;
+  int user_name_n_passwd_len    = 0;
 
-  int per_server_connection_attempts;
-  int connection_attempts;
+  int per_server_connection_attempts = 1;
+  int connection_attempts            = 0;
 
   // the following ports are used by SocksProxy
-  int accept_enabled;
-  int accept_port;
-  unsigned short http_port;
+  int accept_enabled       = 0;
+  int accept_port          = 0;
+  unsigned short http_port = 1080;
 
 #ifdef SOCKS_WITH_TS
   IpMap ip_map;
@@ -64,17 +63,7 @@ struct socks_conf_struct {
 #endif
 
   socks_conf_struct()
-    : socks_needed(0),
-      server_connect_timeout(0),
-      socks_timeout(100),
-      default_version(5),
-      user_name_n_passwd(NULL),
-      user_name_n_passwd_len(0),
-      per_server_connection_attempts(1),
-      connection_attempts(0),
-      accept_enabled(0),
-      accept_port(0),
-      http_port(1080)
+
   {
 #if !defined(SOCKS_WITH_TS)
     memset(&server_addr, 0, sizeof(server_addr));
@@ -108,31 +97,31 @@ class UnixNetVConnection;
 typedef UnixNetVConnection SocksNetVC;
 
 struct SocksEntry : public Continuation {
-  MIOBuffer *buf;
-  IOBufferReader *reader;
+  MIOBuffer *buf         = nullptr;
+  IOBufferReader *reader = nullptr;
 
-  SocksNetVC *netVConnection;
+  SocksNetVC *netVConnection = nullptr;
 
   // Changed from @a ip and @a port.
   IpEndpoint target_addr; ///< Original target address.
   // Changed from @a server_ip, @a server_port.
   IpEndpoint server_addr; ///< Origin server address.
 
-  int nattempts;
+  int nattempts = 0;
 
   Action action_;
-  int lerrno;
-  Event *timeout;
-  unsigned char version;
+  int lerrno            = 0;
+  Event *timeout        = nullptr;
+  unsigned char version = 5;
 
-  bool write_done;
+  bool write_done = false;
 
-  SocksAuthHandler auth_handler;
-  unsigned char socks_cmd;
+  SocksAuthHandler auth_handler = nullptr;
+  unsigned char socks_cmd       = NORMAL_SOCKS;
 
 #ifdef SOCKS_WITH_TS
   // socks server selection:
-  ParentConfigParams *server_params;
+  ParentConfigParams *server_params = nullptr;
   HttpRequestData req_data; // We dont use any http specific fields.
   ParentResult server_result;
 #endif
@@ -144,15 +133,6 @@ struct SocksEntry : public Continuation {
   void free();
 
   SocksEntry()
-    : Continuation(NULL),
-      netVConnection(0),
-      nattempts(0),
-      lerrno(0),
-      timeout(0),
-      version(5),
-      write_done(false),
-      auth_handler(NULL),
-      socks_cmd(NORMAL_SOCKS)
   {
     memset(&target_addr, 0, sizeof(target_addr));
     memset(&server_addr, 0, sizeof(server_addr));
@@ -170,8 +150,6 @@ SocksAddrType::reset()
     ats_free(addr.buf);
   }
 
-  addr.buf = 0;
-  type = SOCKS_ATYPE_NONE;
+  addr.buf = nullptr;
+  type     = SOCKS_ATYPE_NONE;
 }
-
-#endif

@@ -28,8 +28,7 @@
  *
  ****************************************************************************/
 
-#ifndef _P_SPLIT_DNS_H_
-#define _P_SPLIT_DNS_H_
+#pragma once
 
 #include "P_DNS.h"
 #include "I_SplitDNS.h"
@@ -38,8 +37,4 @@
 #include "ControlMatcher.h"
 #include "P_SplitDNSProcessor.h"
 
-#undef SPLITDNS_MODULE_VERSION
-#define SPLITDNS_MODULE_VERSION \
-  makeModuleVersion(SPLITDNS_MODULE_MAJOR_VERSION, SPLITDNS_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER)
-
-#endif /* _P_SPLIT_DNS_H_ */
+static constexpr ts::ModuleVersion SPLITDNS_MODULE_INTERNAL_VERSION{SPLITDNS_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE};

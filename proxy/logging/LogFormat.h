@@ -21,20 +21,18 @@
   limitations under the License.
  */
 
-#ifndef LOG_FORMAT_H
-#define LOG_FORMAT_H
+#pragma once
 
 #define LOG_FIELD_MARKER '\377'
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "LogField.h"
-#include "InkXml.h"
 
 enum LogFormatType {
   // We start the numbering at 4 to compatibility with Traffic Server 4.x, which used
   // to have the predefined log formats enumerated above ...
   LOG_FORMAT_CUSTOM = 4,
-  LOG_FORMAT_TEXT = 5
+  LOG_FORMAT_TEXT   = 5
 };
 
 enum LogFileFormat {
@@ -51,17 +49,16 @@ enum LogFileFormat {
   which is defined as a set of fields.
   -------------------------------------------------------------------------*/
 
-class LogFormat
+class LogFormat : public RefCountObj
 {
 public:
   LogFormat(const char *name, const char *format_str, unsigned interval_sec = 0);
   LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec = 0);
   LogFormat(const LogFormat &rhs);
 
-  ~LogFormat();
+  ~LogFormat() override;
 
   void display(FILE *fd = stdout);
-  void displayAsXML(FILE *fd = stdout);
 
   bool
   valid() const
@@ -165,10 +162,12 @@ private:
 public:
   LINK(LogFormat, link);
 
+  // noncopyable
+  LogFormat &operator=(LogFormat &rhs) = delete;
+
 private:
   // -- member functions that are not allowed --
   LogFormat();
-  LogFormat &operator=(LogFormat &rhs);
 };
 
 // For text logs, there is no format string; we'll simply log the
@@ -177,7 +176,7 @@ private:
 static inline LogFormat *
 MakeTextLogFormat(const char *name = "text")
 {
-  return new LogFormat(name, NULL /* format_str */);
+  return new LogFormat(name, nullptr /* format_str */);
 }
 
 /*-------------------------------------------------------------------------
@@ -208,12 +207,11 @@ public:
   unsigned count();
   void display(FILE *fd = stdout);
 
+  // noncopyable
+  // -- member functions that are not allowed --
+  LogFormatList(const LogFormatList &rhs) = delete;
+  LogFormatList &operator=(const LogFormatList &rhs) = delete;
+
 private:
   Queue<LogFormat> m_format_list;
-
-  // -- member functions that are not allowed --
-  LogFormatList(const LogFormatList &rhs);
-  LogFormatList &operator=(const LogFormatList &rhs);
 };
-
-#endif

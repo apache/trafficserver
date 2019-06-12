@@ -93,7 +93,7 @@ struct State {
   int64_t nbytes_write; // number of bytes to write
   intte_t nbytes_read;  // number of bytes to read
 
-  State() : state(STATE_IDLE), tasks_count(0) {}
+  State() : state(STATE_IDLE), tasks_count(0), nbytes_write(0), {}
 };
 
 struct Conn {
@@ -115,7 +115,6 @@ char read_buf[10];
 int state_delay_ms = 0;
 
 #define IS_DONE(c) (c.state.state == STATE_DONE || c.state.state == STATE_ERROR)
-#define IS_IDLE(c) (c.state.state == STATE_IDLE)
 
 void main_loop();
 void state_act(Conn *c);
@@ -162,7 +161,7 @@ main(int argc, char **argv)
 
   client.state.tasks_count = 0;
   server.state.tasks_count = 1;
-  server.state.tasks[0] = TASK_LISTEN_SETUP;
+  server.state.tasks[0]    = TASK_LISTEN_SETUP;
 
   client.state_delay_ms = state_delay_ms;
   server.state_delay_ms = state_delay_ms;
@@ -218,18 +217,18 @@ state_act(Conn *c)
 
   if (IS_DONE(cr)) {
     cr.state.tasks_count = 1;
-    cr.state.tasks[0] = TASK_DONE;
+    cr.state.tasks[0]    = TASK_DONE;
   }
 
   if ((c == &client && IS_DONE(server)) || (c == &server && IS_DONE(client))) {
     cr.state.tasks_count = 1;
-    cr.state.tasks[0] = saved_task;
+    cr.state.tasks[0]    = saved_task;
   } else if (c == &client) {
     server.state.tasks_count = 1;
-    server.state.tasks[0] = client_set_next_server_task[saved_task];
+    server.state.tasks[0]    = client_set_next_server_task[saved_task];
   } else {
     client.state.tasks_count = 1;
-    client.state.tasks[0] = server_set_next_client_task[saved_task];
+    client.state.tasks[0]    = server_set_next_client_task[saved_task];
   }
   return;
 }
@@ -242,7 +241,6 @@ state_act(Conn *c)
 void
 state_act_task(Conn *c)
 {
-  int error;
   char write_ch = 'T', read_ch;
   int r;
 
@@ -333,7 +331,6 @@ int
 do_connect(Conn *from, Conn *to)
 {
   assert(to->listen_s > 0);
-  int error;
 
   // create a non-blocking socket
   if ((from->s = create_nonblocking_socket()) < 0) {
@@ -342,7 +339,7 @@ do_connect(Conn *from, Conn *to)
   }
   // connect
   if (connect(from->s, (struct sockaddr *)&to->addr, sizeof(to->addr)) < 0) {
-    error = -errno;
+    int error = -errno;
     if (error != -EINPROGRESS) {
       ::close(from->s);
       from->state.state = STATE_ERROR;
@@ -369,7 +366,7 @@ do_listen_setup(Conn *c, int port)
   c->addr.sin_family = AF_INET;
   memset(&c->addr.sin_zero, 0, 8);
   c->addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  c->addr.sin_port = htons(port);
+  c->addr.sin_port        = htons(port);
 
   // create a non-blocking socket
   if ((c->listen_s = create_nonblocking_socket()) < 0) {
@@ -416,12 +413,12 @@ do_accept(Conn *c)
 
   FD_ZERO(&readfds);
   FD_SET(c->listen_s, &readfds);
-  timeout.tv_sec = 0;
+  timeout.tv_sec  = 0;
   timeout.tv_usec = 10; /* 0.01 ms */
 
   if (select(c->listen_s + 1, &readfds, 0, 0, &timeout) > 0) {
     addrlen = sizeof(c->addr);
-    c->s = accept(c->listen_s, (struct sockaddr *)&c->addr, &addrlen);
+    c->s    = accept(c->listen_s, (struct sockaddr *)&c->addr, &addrlen);
     if (c->s < 0) {
       c->s = -errno;
       cout << "accept failed (" << c->s << ")" << endl;
@@ -464,11 +461,8 @@ create_nonblocking_socket()
 int
 set_nonblocking_socket(int s)
 {
-  int error = 0;
-  int on = 1;
-
   if (fcntl(s, F_SETFL, O_NDELAY) < 0) {
-    error = -errno;
+    int error = -errno;
     ::close(s);
     cout << "fcntl F_SETFD O_NDELAY failed (" << error << ")" << endl;
     return (error);
@@ -485,7 +479,7 @@ set_nonblocking_socket(int s)
 int
 do_shutdown(int s, Task_t task)
 {
-  int howto, error;
+  int howto;
 
   switch (task) {
   case TASK_SHUTDOWN_OUTPUT:
@@ -504,7 +498,7 @@ do_shutdown(int s, Task_t task)
     break;
   }
   if (shutdown(s, howto) < 0) {
-    error = -errno;
+    int error = -errno;
     cout << "shutdown failed (" << error << ")" << endl;
     return (error);
   }
@@ -570,18 +564,18 @@ setup_scenario(Scenario_t scenario)
   switch (scenario) {
   case SERVER_WRITE_CLIENT_READ:
     server_set_next_client_task[TASK_LISTEN_SETUP] = TASK_CONNECT;
-    client_set_next_server_task[TASK_CONNECT] = TASK_ACCEPT;
-    server_set_next_client_task[TASK_ACCEPT] = TASK_TRY_READ;
-    client_set_next_server_task[TASK_TRY_READ] = TASK_TRY_WRITE;
-    server_set_next_client_task[TASK_TRY_WRITE] = TASK_TRY_READ;
+    client_set_next_server_task[TASK_CONNECT]      = TASK_ACCEPT;
+    server_set_next_client_task[TASK_ACCEPT]       = TASK_TRY_READ;
+    client_set_next_server_task[TASK_TRY_READ]     = TASK_TRY_WRITE;
+    server_set_next_client_task[TASK_TRY_WRITE]    = TASK_TRY_READ;
     break;
 
   case SERVER_SHUTDOWN_OUTPUT_CLIENT_TRY_READ:
-    server_set_next_client_task[TASK_LISTEN_SETUP] = TASK_CONNECT;
-    server_set_next_client_task[TASK_ACCEPT] = TASK_TRY_READ;
+    server_set_next_client_task[TASK_LISTEN_SETUP]    = TASK_CONNECT;
+    server_set_next_client_task[TASK_ACCEPT]          = TASK_TRY_READ;
     server_set_next_client_task[TASK_SHUTDOWN_OUTPUT] = TASK_TRY_READ;
 
-    client_set_next_server_task[TASK_CONNECT] = TASK_ACCEPT;
+    client_set_next_server_task[TASK_CONNECT]  = TASK_ACCEPT;
     client_set_next_server_task[TASK_TRY_READ] = TASK_SHUTDOWN_OUTPUT;
     break;
 
@@ -608,13 +602,13 @@ setup_scenario(Scenario_t scenario)
   case CLIENT_SHUTDOWN_BOTH_SERVER_TRY_WRITE:
     break;
   case SERVER_WRITE_IMMIDIATE_SHUTDOWN_CLIENT_WRITE:
-    server_set_next_client_task[TASK_LISTEN_SETUP] = TASK_CONNECT;
-    client_set_next_server_task[TASK_CONNECT] = TASK_ACCEPT;
-    server_set_next_client_task[TASK_ACCEPT] = TASK_TRY_READ;
-    client_set_next_server_task[TASK_TRY_READ] = TASK_TRY_WRITE_THEN_SHUTDOWN_BOTH;
+    server_set_next_client_task[TASK_LISTEN_SETUP]                 = TASK_CONNECT;
+    client_set_next_server_task[TASK_CONNECT]                      = TASK_ACCEPT;
+    server_set_next_client_task[TASK_ACCEPT]                       = TASK_TRY_READ;
+    client_set_next_server_task[TASK_TRY_READ]                     = TASK_TRY_WRITE_THEN_SHUTDOWN_BOTH;
     server_set_next_client_task[TASK_TRY_WRITE_THEN_SHUTDOWN_BOTH] = TASK_TRY_READ;
-    server_set_next_client_task[TASK_DONE] = TASK_TRY_READ;
-    server.state.nbytes_write = sizeof(write_buf);
+    server_set_next_client_task[TASK_DONE]                         = TASK_TRY_READ;
+    server.state.nbytes_write                                      = sizeof(write_buf);
     break;
   }
   return;

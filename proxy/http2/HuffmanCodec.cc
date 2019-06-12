@@ -22,9 +22,9 @@
  */
 
 #include "HuffmanCodec.h"
-#include "ts/ink_platform.h"
-#include "ts/ink_memory.h"
-#include "ts/ink_defs.h"
+#include "tscore/ink_platform.h"
+#include "tscore/ink_memory.h"
+#include "tscore/ink_defs.h"
 
 struct huffman_entry {
   uint32_t code_as_hex;
@@ -81,11 +81,11 @@ Node *HUFFMAN_TREE_ROOT;
 static Node *
 make_huffman_tree_node()
 {
-  Node *n = static_cast<Node *>(ats_malloc(sizeof(Node)));
-  n->left = NULL;
-  n->right = NULL;
+  Node *n       = static_cast<Node *>(ats_malloc(sizeof(Node)));
+  n->left       = nullptr;
+  n->right      = nullptr;
   n->ascii_code = '\0';
-  n->leaf_node = false;
+  n->leaf_node  = false;
   return n;
 }
 
@@ -93,37 +93,42 @@ static Node *
 make_huffman_tree()
 {
   Node *root = make_huffman_tree_node();
-  Node *current;
-  uint32_t bit_len;
+
   // insert leafs for each ascii code
   for (unsigned i = 0; i < countof(huffman_table); i++) {
-    bit_len = huffman_table[i].bit_len;
-    current = root;
+    uint32_t bit_len = huffman_table[i].bit_len;
+    Node *current    = root;
+
     while (bit_len > 0) {
       if (huffman_table[i].code_as_hex & (1 << (bit_len - 1))) {
-        if (!current->right)
+        if (!current->right) {
           current->right = make_huffman_tree_node();
+        }
         current = current->right;
       } else {
-        if (!current->left)
+        if (!current->left) {
           current->left = make_huffman_tree_node();
+        }
         current = current->left;
       }
       bit_len--;
     }
     current->ascii_code = i;
-    current->leaf_node = true;
+    current->leaf_node  = true;
   }
+
   return root;
 }
 
 static void
 free_huffman_tree(Node *node)
 {
-  if (node->left)
+  if (node->left) {
     free_huffman_tree(node->left);
-  if (node->right)
+  }
+  if (node->right) {
     free_huffman_tree(node->right);
+  }
 
   ats_free(node);
 }
@@ -131,35 +136,42 @@ free_huffman_tree(Node *node)
 void
 hpack_huffman_init()
 {
-  if (!HUFFMAN_TREE_ROOT)
+  if (!HUFFMAN_TREE_ROOT) {
     HUFFMAN_TREE_ROOT = make_huffman_tree();
+  }
 }
 
 void
 hpack_huffman_fin()
 {
-  if (HUFFMAN_TREE_ROOT)
+  if (HUFFMAN_TREE_ROOT) {
     free_huffman_tree(HUFFMAN_TREE_ROOT);
+  }
 }
 
 int64_t
 huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
 {
-  char *dst_end = dst_start;
-  uint8_t shift = 7;
-  Node *current = HUFFMAN_TREE_ROOT;
+  char *dst_end             = dst_start;
+  uint8_t shift             = 7;
+  Node *current             = HUFFMAN_TREE_ROOT;
+  int byte_boundary_crossed = 0;
+  bool includes_zero        = false;
 
   while (src_len) {
     if (*src & (1 << shift)) {
       current = current->right;
     } else {
-      current = current->left;
+      current       = current->left;
+      includes_zero = true;
     }
 
     if (current->leaf_node == true) {
       *dst_end = current->ascii_code;
       ++dst_end;
-      current = HUFFMAN_TREE_ROOT;
+      current               = HUFFMAN_TREE_ROOT;
+      byte_boundary_crossed = 0;
+      includes_zero         = false;
     }
     if (shift) {
       --shift;
@@ -167,7 +179,17 @@ huffman_decode(char *dst_start, const uint8_t *src, uint32_t src_len)
       shift = 7;
       ++src;
       --src_len;
+      ++byte_boundary_crossed;
     }
+    if (byte_boundary_crossed > 3) {
+      return -1;
+    }
+  }
+  if (byte_boundary_crossed > 1) {
+    return -1;
+  }
+  if (includes_zero) {
+    return -1;
   }
 
   return dst_end - dst_start;
@@ -187,11 +209,11 @@ huffman_encode(uint8_t *dst_start, const uint8_t *src, uint32_t src_len)
 {
   uint8_t *dst = dst_start;
   // NOTE: The maximum length of Huffman Code is 30, thus using uint32_t as buffer.
-  uint32_t buf = 0;
+  uint32_t buf         = 0;
   uint32_t remain_bits = 32;
 
   for (uint32_t i = 0; i < src_len; ++i) {
-    const uint32_t hex = huffman_table[src[i]].code_as_hex;
+    const uint32_t hex     = huffman_table[src[i]].code_as_hex;
     const uint32_t bit_len = huffman_table[src[i]].bit_len;
 
     if (remain_bits > bit_len) {
@@ -199,14 +221,14 @@ huffman_encode(uint8_t *dst_start, const uint8_t *src, uint32_t src_len)
       buf |= hex << remain_bits;
     } else if (remain_bits == bit_len) {
       buf |= hex;
-      dst = huffman_encode_append(dst, buf);
+      dst         = huffman_encode_append(dst, buf);
       remain_bits = 32;
-      buf = 0;
+      buf         = 0;
     } else {
       buf |= hex >> (bit_len - remain_bits);
-      dst = huffman_encode_append(dst, buf);
+      dst         = huffman_encode_append(dst, buf);
       remain_bits = (32 - (bit_len - remain_bits));
-      buf = hex << remain_bits;
+      buf         = hex << remain_bits;
     }
   }
 

@@ -21,14 +21,13 @@
   limitations under the License.
  */
 
-#if !defined(_P_Freer_h_)
-#define _P_Freer_h_
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
 #include "I_Tasks.h"
 
 // Note that these should not be used for memory that wishes to retain
-// NUMA socket affinity. We'll potentially return these on an arbitarily
+// NUMA socket affinity. We'll potentially return these on an arbitrarily
 // selected processor/socket.
 
 template <class C> struct DeleterContinuation : public Continuation {
@@ -39,19 +38,27 @@ public: // Needed by WinNT compiler (compiler bug)
   {
     (void)event;
     (void)e;
-    if (p)
+    if (p) {
       delete p;
+    }
     delete this;
     return EVENT_DONE;
   }
-  DeleterContinuation(C *ap) : Continuation(new_ProxyMutex()), p(ap) { SET_HANDLER(&DeleterContinuation::dieEvent); }
+  explicit DeleterContinuation(C *ap) : Continuation(new_ProxyMutex()), p(ap) { SET_HANDLER(&DeleterContinuation::dieEvent); }
 };
 
+// This can be useful for two things (or both):
+//    1. Make sure to schedule a delete on an ET_TASK thread
+//    2. Delay the delete (this should be used sparingly)
 template <class C>
 TS_INLINE void
 new_Deleter(C *ap, ink_hrtime t)
 {
-  eventProcessor.schedule_in(new DeleterContinuation<C>(ap), t, ET_TASK);
+  if (t > 0) {
+    eventProcessor.schedule_in(new DeleterContinuation<C>(ap), t, ET_TASK);
+  } else {
+    eventProcessor.schedule_imm(new DeleterContinuation<C>(ap), ET_TASK);
+  }
 }
 
 template <class C> struct FreeCallContinuation : public Continuation {
@@ -66,7 +73,7 @@ public: // Needed by WinNT compiler (compiler bug)
     delete this;
     return EVENT_DONE;
   }
-  FreeCallContinuation(C *ap) : Continuation(NULL), p(ap) { SET_HANDLER(&FreeCallContinuation::dieEvent); }
+  explicit FreeCallContinuation(C *ap) : Continuation(nullptr), p(ap) { SET_HANDLER(&FreeCallContinuation::dieEvent); }
 };
 
 template <class C>
@@ -92,7 +99,10 @@ struct FreerContinuation : public Continuation {
     return EVENT_DONE;
   }
 
-  FreerContinuation(void *ap) : Continuation(NULL), p(ap) { SET_HANDLER((FreerContHandler)&FreerContinuation::dieEvent); }
+  explicit FreerContinuation(void *ap) : Continuation(nullptr), p(ap)
+  {
+    SET_HANDLER((FreerContHandler)&FreerContinuation::dieEvent);
+  }
 };
 
 TS_INLINE void
@@ -108,7 +118,7 @@ template <class C> struct DereferContinuation : public Continuation {
   dieEvent(int, Event *)
   {
     p->refcount_dec();
-    if (REF_COUNT_OBJ_REFCOUNT_DEC(p) == 0) {
+    if (p->refcount_dec() == 0) {
       delete p;
     }
 
@@ -116,7 +126,7 @@ template <class C> struct DereferContinuation : public Continuation {
     return EVENT_DONE;
   }
 
-  DereferContinuation(C *ap) : Continuation(NULL), p(ap) { SET_HANDLER(&DereferContinuation::dieEvent); }
+  explicit DereferContinuation(C *ap) : Continuation(nullptr), p(ap) { SET_HANDLER(&DereferContinuation::dieEvent); }
 };
 
 template <class C>
@@ -125,5 +135,3 @@ new_Derefer(C *ap, ink_hrtime t)
 {
   eventProcessor.schedule_in(new DereferContinuation<C>(ap), t, ET_TASK);
 }
-
-#endif /* _Freer_h_ */

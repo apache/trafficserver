@@ -21,18 +21,17 @@
   limitations under the License.
  */
 
-#ifndef __HDRTOKEN_H__
-#define __HDRTOKEN_H__
+#pragma once
 
-#include <assert.h>
+#include <cassert>
 #include <sys/types.h>
-#include "ts/ink_assert.h"
-#include "ts/ink_atomic.h"
-#include "ts/ink_defs.h"
-#include "ts/ink_string.h"
-#include "ts/Allocator.h"
-#include "ts/Regex.h"
-#include "ts/ink_apidefs.h"
+#include "tscore/ink_assert.h"
+#include "tscore/ink_atomic.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_string.h"
+#include "tscore/Allocator.h"
+#include "tscore/Regex.h"
+#include "tscore/ink_apidefs.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -43,10 +42,10 @@
 #define SIZEOF(x) (sizeof(x) / sizeof(x[0]))
 
 enum HdrTokenType {
-  HDRTOKEN_TYPE_OTHER = 0,
-  HDRTOKEN_TYPE_FIELD = 1,
-  HDRTOKEN_TYPE_METHOD = 2,
-  HDRTOKEN_TYPE_SCHEME = 3,
+  HDRTOKEN_TYPE_OTHER         = 0,
+  HDRTOKEN_TYPE_FIELD         = 1,
+  HDRTOKEN_TYPE_METHOD        = 2,
+  HDRTOKEN_TYPE_SCHEME        = 3,
   HDRTOKEN_TYPE_CACHE_CONTROL = 4
 };
 
@@ -79,10 +78,10 @@ struct HdrTokenHeapPrefix {
 };
 
 enum HdrTokenInfoFlags {
-  HTIF_NONE = 0,
-  HTIF_COMMAS = 1 << 0,
-  HTIF_MULTVALS = 1 << 1,
-  HTIF_HOPBYHOP = 1 << 2,
+  HTIF_NONE      = 0,
+  HTIF_COMMAS    = 1 << 0,
+  HTIF_MULTVALS  = 1 << 1,
+  HTIF_HOPBYHOP  = 1 << 2,
   HTIF_PROXYAUTH = 1 << 3
 };
 
@@ -109,8 +108,8 @@ extern uint32_t hdrtoken_str_flags[];
 ////////////////////////////////////////////////////////////////////////////
 
 extern void hdrtoken_init();
-extern int hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = NULL);
-inkcoreapi extern int hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = NULL);
+extern int hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = nullptr);
+inkcoreapi extern int hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr);
 extern const char *hdrtoken_string_to_wks(const char *string);
 extern const char *hdrtoken_string_to_wks(const char *string, int length);
 
@@ -138,11 +137,12 @@ hdrtoken_is_valid_wks_idx(int wks_idx)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// ToDo: This, and dependencies / users should probably be const HdrTokenHeapPrefix * IMO.
 inline HdrTokenHeapPrefix *
 hdrtoken_wks_to_prefix(const char *wks)
 {
   ink_assert(hdrtoken_is_wks(wks));
-  return ((HdrTokenHeapPrefix *)(wks - sizeof(HdrTokenHeapPrefix)));
+  return reinterpret_cast<HdrTokenHeapPrefix *>(const_cast<char *>(wks) - sizeof(HdrTokenHeapPrefix));
 }
 
 /*-------------------------------------------------------------------------
@@ -299,7 +299,7 @@ hdrtoken_wks_to_flags(const char *wks)
 ////////////////////////////////////////////////////////////////////////////
 
 // Windows insists on doing everything it's own completely
-//   inmcompatible way, including integer constant subscripts.
+//   incompatible way, including integer constant subscripts.
 //   It's too easy to match a subscript to a type since everything
 //   won't break if the type is a different size.  Oh no, we
 //   need to define the number of bits in our constants to make
@@ -380,9 +380,7 @@ hdrtoken_wks_to_flags(const char *wks)
   -------------------------------------------------------------------------*/
 
 // HTTP/2 Upgrade token
-#define MIME_UPGRADE_H2C_TOKEN "h2c-14"
+#define MIME_UPGRADE_H2C_TOKEN "h2c"
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-
-#endif /* __HDRTOKEN_H__ */

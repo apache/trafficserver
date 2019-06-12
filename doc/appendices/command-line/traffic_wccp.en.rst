@@ -46,7 +46,7 @@ Options
 
 .. option:: --address IP address to bind.
 
-.. option:: --router Booststrap IP address for routers.
+.. option:: --router Bootstrap IP address for routers.
 
 .. option:: --service Path to service group definitions.
 
@@ -56,7 +56,7 @@ Options
 
 You need to run at least with the ``--service`` arguments. An example service
 definition file, ``service-nogre-example.config``, is included in the
-``cmd/traffic_wccp`` directory. In this file you define your MD5 security
+``src/traffic_wccp`` directory. In this file you define your MD5 security
 password (highly recommended), and you define your service groups. The details
 of the service file are defined at :ref:`admin-wccp-service-config`.
 

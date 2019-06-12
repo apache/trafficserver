@@ -20,15 +20,12 @@
 //
 // Implement the classes for the various types of hash keys we support.
 //
-#ifndef __LULU_H__
-#define __LULU_H__ 1
+#pragma once
 
 #include <sys/types.h>
 
-#include "ts/ink_defs.h"
-#include "ts/ink_atomic.h"
+#include "tscore/ink_defs.h"
+#include "tscore/ink_atomic.h"
 
 // Used for Debug etc.
 static const char *PLUGIN_NAME = "geoip_acl";
-
-#endif // __LULU_H__

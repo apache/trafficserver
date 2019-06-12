@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __I_SOCKS_H__
-#define __I_SOCKS_H__
+#pragma once
 
 /*When this is being compiled with TS, we enable more features the use
   non modularized stuff. namely:
@@ -46,7 +45,7 @@ enum {
   // For these two, we need to pick two values which are not used for any of the
   //"commands" (eg: CONNECT, BIND) in SOCKS protocols.
   NORMAL_SOCKS = 0,
-  NO_SOCKS = 48
+  NO_SOCKS     = 48
 };
 
 enum {
@@ -57,7 +56,7 @@ enum {
 };
 
 struct SocksAddrType {
-  unsigned char type;
+  unsigned char type = SOCKS_ATYPE_NONE;
   union {
     // mostly it is ipv4. in other cases we will xalloc().
     unsigned char ipv4[4];
@@ -65,8 +64,6 @@ struct SocksAddrType {
   } addr;
 
   void reset();
-  SocksAddrType() : type(SOCKS_ATYPE_NONE) { addr.buf = 0; }
+  SocksAddrType() { addr.buf = nullptr; }
   ~SocksAddrType() { reset(); }
 };
-
-#endif

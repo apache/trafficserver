@@ -36,7 +36,6 @@ component to which they're related.
    core/hierarchical.en
    core/hostdb.en
    core/dns.en
-   core/cluster.en
    core/origin.en
    core/network-io.en
    core/ssl.en
@@ -48,7 +47,6 @@ component to which they're related.
    core/http-document-size.en
    core/http-header.en
    core/bandwidth.en
-   core/congestion.en
    core/socks.en
    core/websocket.en
    core/misc.en

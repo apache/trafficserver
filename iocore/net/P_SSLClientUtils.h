@@ -19,11 +19,10 @@
   limitations under the License.
  */
 
-#ifndef IOCORE_NET_P_SSLCLIENTUTILS_H_
-#define IOCORE_NET_P_SSLCLIENTUTILS_H_
+#pragma once
 
-#include "ts/ink_config.h"
-#include "ts/Diags.h"
+#include "tscore/ink_config.h"
+#include "tscore/Diags.h"
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 
@@ -36,8 +35,7 @@
 
 // Create and initialize a SSL client context.
 SSL_CTX *SSLInitClientContext(const struct SSLConfigParams *param);
+SSL_CTX *SSLCreateClientContext(const struct SSLConfigParams *params, const char *ca_bundle_file, const char *ca_bundle_path,
+                                const char *cert_path, const char *key_path);
 
-// Returns the index used to store our data on the SSL
-int get_ssl_client_data_index();
-
-#endif /* IOCORE_NET_P_SSLCLIENTUTILS_H_ */
+int verify_callback(int preverify_ok, X509_STORE_CTX *ctx);

@@ -88,21 +88,21 @@
 #define MAX_RX_MATCH 10
 #define WHITESPACE " \t\r\n"
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <vector>
 #include <set>
 #include <regex.h>
-#include <ctype.h>
-#include <assert.h>
-#include <string.h>
+#include <cctype>
+#include <cassert>
+#include <cstring>
 #include <string>
-#include <stdio.h>
+#include <cstdio>
 #include "ts/ts.h"
 
 struct edit_t;
-typedef std::set<edit_t> editset_t;
-typedef editset_t::const_iterator edit_p;
+using editset_t = std::set<edit_t>;
+using edit_p    = editset_t::const_iterator;
 
 struct edit_t {
   const size_t start;
@@ -125,8 +125,9 @@ struct edit_t {
        * and comparing to ourself then re-throws.
        * Need to exclude that case.
        */
-      if (*this != x)
+      if (*this != x) {
         throw x;
+      }
     }
     return start < x.start;
   }
@@ -206,11 +207,11 @@ class rxscope : public scope_t
 {
 private:
   regex_t rx;
-  virtual bool
+  bool
 
-  match(const char *str) const
+  match(const char *str) const override
   {
-    return (regexec(&rx, str, 0, NULL, 0) == 0) ? true : false;
+    return (regexec(&rx, str, 0, nullptr, 0) == 0) ? true : false;
   }
 
 public:
@@ -227,7 +228,7 @@ public:
     TSfree(str);
   }
 
-  virtual ~rxscope() { regfree(&rx); }
+  ~rxscope() override { regfree(&rx); }
 };
 
 class strscope : public scope_t
@@ -235,19 +236,20 @@ class strscope : public scope_t
 private:
   const bool icase;
   char *str;
-  virtual bool
+  bool
 
-  match(const char *p) const
+  match(const char *p) const override
   {
     return ((icase ? strncasecmp : strncmp)(str, p, strlen(str)) == 0) ? true : false;
   }
 
 public:
   strscope(const bool u, const bool i, const char *pattern, int len) : scope_t(u), icase(i) { str = TSstrndup(pattern, len); }
-  virtual ~strscope()
+  ~strscope() override
   {
-    if (str)
+    if (str) {
       TSfree(str);
+    }
   }
 };
 
@@ -255,7 +257,7 @@ class match_t
 {
 public:
   virtual bool find(const char *, size_t, size_t &, size_t &, const char *, std::string &) const = 0;
-  virtual size_t cont_size() const = 0;
+  virtual size_t cont_size() const                                                               = 0;
   virtual ~match_t() {}
 };
 
@@ -266,14 +268,14 @@ class strmatch : public match_t
   const size_t slen;
 
 public:
-  virtual bool
-  find(const char *buf, size_t len, size_t &found, size_t &found_len, const char *to, std::string &repl) const
+  bool
+  find(const char *buf, size_t len, size_t &found, size_t &found_len, const char *to, std::string &repl) const override
   {
     const char *match = icase ? strcasestr(buf, str) : strstr(buf, str);
     if (match) {
-      found = match - buf;
+      found     = match - buf;
       found_len = slen;
-      repl = to;
+      repl      = to;
       return (found + slen > len) ? false : true;
     } else {
       return false;
@@ -281,14 +283,15 @@ public:
   }
 
   strmatch(const bool i, const char *pattern, int len) : icase(i), slen(len) { str = TSstrndup(pattern, len); }
-  virtual ~strmatch()
+  ~strmatch() override
   {
-    if (str)
+    if (str) {
       TSfree(str);
+    }
   }
 
-  virtual size_t
-  cont_size() const
+  size_t
+  cont_size() const override
   {
     return slen;
   }
@@ -300,14 +303,14 @@ class rxmatch : public match_t
   regex_t rx;
 
 public:
-  virtual bool
-  find(const char *buf, size_t len, size_t &found, size_t &found_len, const char *tmpl, std::string &repl) const
+  bool
+  find(const char *buf, size_t len, size_t &found, size_t &found_len, const char *tmpl, std::string &repl) const override
   {
     regmatch_t pmatch[MAX_RX_MATCH];
     if (regexec(&rx, buf, MAX_RX_MATCH, pmatch, REG_NOTEOL) == 0) {
       char c;
       int n;
-      found = pmatch[0].rm_so;
+      found     = pmatch[0].rm_so;
       found_len = pmatch[0].rm_eo - found;
       while (c = *tmpl++, c != '\0') {
         switch (c) {
@@ -340,8 +343,8 @@ public:
     }
   }
 
-  virtual size_t
-  cont_size() const
+  size_t
+  cont_size() const override
   {
     return match_len;
   }
@@ -359,7 +362,7 @@ public:
     TSfree(str);
   }
 
-  virtual ~rxmatch() { regfree(&rx); }
+  ~rxmatch() override { regfree(&rx); }
 };
 
 #define PARSE_VERIFY(line, x, str) \
@@ -367,7 +370,7 @@ public:
     if (!isspace(*(x - 1)))        \
       x = strcasestr(x + 1, str);  \
     else                           \
-  break
+      break
 
 class rule_t
 {
@@ -379,15 +382,15 @@ private:
   int *refcount;
 
 public:
-  rule_t(const char *line) : scope(NULL), priority(5), from(NULL), to(NULL), refcount(NULL)
+  rule_t(const char *line) : scope(nullptr), priority(5), from(nullptr), to(nullptr), refcount(nullptr)
   {
     const char *scope_spec = strcasestr(line, "scope:");
-    const char *from_spec = strcasestr(line, "from:");
-    const char *to_spec = strcasestr(line, "to:");
-    const char *prio_spec = strcasestr(line, "prio:");
-    const char *len_spec = strcasestr(line, "len:");
-    bool icase = false;
-    bool rx = false;
+    const char *from_spec  = strcasestr(line, "from:");
+    const char *to_spec    = strcasestr(line, "to:");
+    const char *prio_spec  = strcasestr(line, "prio:");
+    const char *len_spec   = strcasestr(line, "len:");
+    bool icase             = false;
+    bool rx                = false;
     bool uri;
     size_t len, match_len;
     char delim;
@@ -443,8 +446,8 @@ public:
 
     if (scope_spec) {
       icase = false;
-      rx = false;
-      uri = true;
+      rx    = false;
+      uri   = true;
       for (scope_spec += 6; *scope_spec != ':'; ++scope_spec) {
         switch (*scope_spec) {
         case 'i':
@@ -497,12 +500,15 @@ public:
   {
     if (refcount) {
       if (!--*refcount) {
-        if (scope)
+        if (scope) {
           delete scope;
-        if (from)
+        }
+        if (from) {
           delete from;
-        if (to)
+        }
+        if (to) {
           TSfree(to);
+        }
         delete refcount;
       }
     }
@@ -541,35 +547,39 @@ public:
     }
   }
 };
-typedef std::vector<rule_t> ruleset_t;
-typedef ruleset_t::const_iterator rule_p;
+using ruleset_t = std::vector<rule_t>;
+using rule_p    = ruleset_t::const_iterator;
 
 typedef struct contdata_t {
-  TSCont cont;
-  TSIOBuffer out_buf;
-  TSIOBufferReader out_rd;
-  TSVIO out_vio;
+  TSCont cont             = nullptr;
+  TSIOBuffer out_buf      = nullptr;
+  TSIOBufferReader out_rd = nullptr;
+  TSVIO out_vio           = nullptr;
   ruleset_t rules;
   std::string contbuf;
-  size_t contbuf_sz;
-  int64_t bytes_in;
-  int64_t bytes_out;
+  size_t contbuf_sz = 0;
+  int64_t bytes_in  = 0;
+  int64_t bytes_out = 0;
   /* Use new/delete so destructor does cleanup for us */
-  contdata_t() : cont(NULL), out_buf(NULL), out_rd(NULL), out_vio(NULL), contbuf_sz(0), bytes_in(0), bytes_out(0) {}
+  contdata_t() {}
   ~contdata_t()
   {
-    if (out_rd)
+    if (out_rd) {
       TSIOBufferReaderFree(out_rd);
-    if (out_buf)
+    }
+    if (out_buf) {
       TSIOBufferDestroy(out_buf);
-    if (cont)
+    }
+    if (cont) {
       TSContDestroy(cont);
+    }
   }
   void
   set_cont_size(size_t sz)
   {
-    if (contbuf_sz < 2 * sz)
+    if (contbuf_sz < 2 * sz) {
       contbuf_sz = 2 * sz - 1;
+    }
   }
 } contdata_t;
 
@@ -583,21 +593,21 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
   const char *buf;
   TSIOBufferBlock block;
 
-  if (reader == NULL) { // We're just flushing anything we have buffered
-    keep = 0;
-    buf = contdata->contbuf.c_str();
+  if (reader == nullptr) { // We're just flushing anything we have buffered
+    keep   = 0;
+    buf    = contdata->contbuf.c_str();
     buflen = contdata->contbuf.length();
     nbytes = 0;
   } else {
     block = TSIOBufferReaderStart(reader);
-    buf = TSIOBufferBlockReadStart(block, reader, &nbytes);
+    buf   = TSIOBufferBlockReadStart(block, reader, &nbytes);
 
     if (contdata->contbuf.empty()) {
       /* Use the data as-is */
       buflen = nbytes;
     } else {
       contdata->contbuf.append(buf, nbytes);
-      buf = contdata->contbuf.c_str();
+      buf    = contdata->contbuf.c_str();
       buflen = contdata->contbuf.length();
     }
     keep = contdata->contbuf_sz;
@@ -612,8 +622,9 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
 
   for (edit_p p = edits.begin(); p != edits.end(); ++p) {
     /* Preserve continuity buffer */
-    if (p->start >= buflen - keep)
+    if (p->start >= buflen - keep) {
       break;
+    }
 
     /* pass through bytes before edit */
     start = p->start - bytes_read;
@@ -661,20 +672,20 @@ streamedit_process(TSCont contp)
   // Loop over edits, and apply them to the stream
   // Retain buffered data at the end
   int64_t ntodo, nbytes;
-  contdata_t *contdata = (contdata_t *)TSContDataGet(contp);
-  TSVIO input_vio = TSVConnWriteVIOGet(contp);
+  contdata_t *contdata      = (contdata_t *)TSContDataGet(contp);
+  TSVIO input_vio           = TSVConnWriteVIOGet(contp);
   TSIOBufferReader input_rd = TSVIOReaderGet(input_vio);
 
-  if (contdata->out_buf == NULL) {
+  if (contdata->out_buf == nullptr) {
     contdata->out_buf = TSIOBufferCreate();
-    contdata->out_rd = TSIOBufferReaderAlloc(contdata->out_buf);
+    contdata->out_rd  = TSIOBufferReaderAlloc(contdata->out_buf);
     contdata->out_vio = TSVConnWrite(TSTransformOutputVConnGet(contp), contp, contdata->out_rd, INT64_MAX);
   }
 
   TSIOBuffer in_buf = TSVIOBufferGet(input_vio);
   /* Test for EOS */
-  if (in_buf == NULL) {
-    process_block(contdata, NULL); // flush any buffered data
+  if (in_buf == nullptr) {
+    process_block(contdata, nullptr); // flush any buffered data
     TSVIONBytesSet(contdata->out_vio, contdata->bytes_out);
     TSVIOReenable(contdata->out_vio);
     return;
@@ -748,16 +759,16 @@ streamedit_filter(TSCont contp, TSEvent event, void *edata)
 static int
 streamedit_setup(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txn = (TSHttpTxn)edata;
-  ruleset_t *rules_in = (ruleset_t *)TSContDataGet(contp);
-  contdata_t *contdata = NULL;
+  TSHttpTxn txn        = (TSHttpTxn)edata;
+  ruleset_t *rules_in  = (ruleset_t *)TSContDataGet(contp);
+  contdata_t *contdata = nullptr;
 
   assert((event == TS_EVENT_HTTP_READ_RESPONSE_HDR) || (event == TS_EVENT_HTTP_READ_REQUEST_HDR));
 
   /* make a new list comprising those rules that are in scope */
   for (rule_p r = rules_in->begin(); r != rules_in->end(); ++r) {
     if (r->in_scope(txn)) {
-      if (contdata == NULL) {
+      if (contdata == nullptr) {
         contdata = new contdata_t();
       }
       contdata->rules.push_back(*r);
@@ -765,7 +776,7 @@ streamedit_setup(TSCont contp, TSEvent event, void *edata)
     }
   }
 
-  if (contdata == NULL) {
+  if (contdata == nullptr) {
     /* Nothing to do */
     return TS_SUCCESS;
   }
@@ -791,19 +802,19 @@ read_conf(const char *filename, ruleset_t *&in, ruleset_t *&out)
   char buf[MAX_CONFIG_LINE];
   FILE *file = fopen(filename, "r");
 
-  if (file == NULL) {
+  if (file == nullptr) {
     TSError("[stream-editor] Failed to open %s", filename);
     return;
   }
-  while (fgets(buf, MAX_CONFIG_LINE, file) != NULL) {
+  while (fgets(buf, MAX_CONFIG_LINE, file) != nullptr) {
     try {
       if (!strncasecmp(buf, "[in]", 4)) {
-        if (in == NULL) {
+        if (in == nullptr) {
           in = new ruleset_t();
         }
         in->push_back(rule_t(buf));
       } else if (!strncasecmp(buf, "[out]", 5)) {
-        if (out == NULL) {
+        if (out == nullptr) {
           out = new ruleset_t();
         }
         out->push_back(rule_t(buf));
@@ -820,15 +831,15 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
   TSCont inputcont, outputcont;
-  ruleset_t *rewrites_in = NULL;
-  ruleset_t *rewrites_out = NULL;
+  ruleset_t *rewrites_in  = nullptr;
+  ruleset_t *rewrites_out = nullptr;
 
-  info.plugin_name = (char *)"stream-editor";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"stream-editor";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"users@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[stream-editor] Plugin registration failed.");
+    TSError("[stream-editor] Plugin registration failed");
     return;
   }
 
@@ -837,11 +848,11 @@ TSPluginInit(int argc, const char *argv[])
     read_conf(*++argv, rewrites_in, rewrites_out);
   }
 
-  if (rewrites_in != NULL) {
-    TSDebug("[stream-editor]", "initialising input filtering");
-    inputcont = TSContCreate(streamedit_setup, NULL);
-    if (inputcont == NULL) {
-      TSError("[stream-editor] failed to initialise input filtering!");
+  if (rewrites_in != nullptr) {
+    TSDebug("[stream-editor]", "initializing input filtering");
+    inputcont = TSContCreate(streamedit_setup, nullptr);
+    if (inputcont == nullptr) {
+      TSError("[stream-editor] failed to initialize input filtering!");
     } else {
       TSContDataSet(inputcont, rewrites_in);
       TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, inputcont);
@@ -850,11 +861,11 @@ TSPluginInit(int argc, const char *argv[])
     TSDebug("[stream-editor]", "no input filter rules, skipping filter");
   }
 
-  if (rewrites_out != NULL) {
-    TSDebug("[stream-editor]", "initialising output filtering");
-    outputcont = TSContCreate(streamedit_setup, NULL);
-    if (outputcont == NULL) {
-      TSError("[stream-editor] failed to initialise output filtering!");
+  if (rewrites_out != nullptr) {
+    TSDebug("[stream-editor]", "initializing output filtering");
+    outputcont = TSContCreate(streamedit_setup, nullptr);
+    if (outputcont == nullptr) {
+      TSError("[stream-editor] failed to initialize output filtering!");
     } else {
       TSContDataSet(outputcont, rewrites_out);
       TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, outputcont);

@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,16 +23,10 @@ volume.config
 
 The :file:`volume.config` file enables you to manage your cache space more
 efficiently and restrict disk usage by creating cache volumes of
-different sizes for specific protocols. You can further configure these
-volumes to store data from certain origin servers and/or domains in the
-:file:`hosting.config` file.
-
-.. important::
-
-    The volume configuration must be the same on all nodes in
-    a cluster. You must stop Traffic Server before you change the cache
-    volume size and protocol assignment. For step-by-step instructions about
-    partitioning the cache, refer to :ref:`partitioning-the-cache`.
+different sizes. By distributing the cache across multiple volumes,
+you can help decrease single-lock pressure when there are not many hard drives
+present. You can further configure these volumes to store data from certain
+origin servers and/or domains in the :file:`hosting.config` file.
 
 Format
 ======
@@ -58,12 +52,19 @@ do not allocate all the disk space in the cache, then the extra disk
 space is not used. You can use the extra space later to create new
 volumes without deleting and clearing the existing volumes.
 
+.. important::
+
+   Changing this file to add, remove or modify volumes effectively invalidates
+   the cache.
+
 Examples
 ========
 
-The following example partitions the cache evenly between HTTP and HTTPS
-requests::
+The following example partitions the cache across 5 volumes to decreasing
+single-lock pressure for a machine with few drives.::
 
-    volume=1 scheme=http size=50%
-    volume=2 scheme=https size=50%
-
+    volume=1 scheme=http size=20%
+    volume=2 scheme=http size=20%
+    volume=3 scheme=http size=20%
+    volume=4 scheme=http size=20%
+    volume=5 scheme=http size=20%

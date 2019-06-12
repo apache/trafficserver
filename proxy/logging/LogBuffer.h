@@ -21,10 +21,10 @@
   limitations under the License.
  */
 
-#ifndef LOG_BUFFER_H
-#define LOG_BUFFER_H
+#pragma once
 
-#include "ts/ink_platform.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Diags.h"
 #include "LogFormat.h"
 #include "LogLimits.h"
 #include "LogAccess.h"
@@ -87,7 +87,6 @@ struct LogBufferHeader {
 
   // some helper functions to return the header strings
 
-  char *fmt_name(); // not used
   char *fmt_fieldlist();
   char *fmt_printf();
   char *src_hostname();
@@ -96,15 +95,15 @@ struct LogBufferHeader {
 
 union LB_State {
   LB_State() : ival(0) {}
-  LB_State(volatile LB_State &vs) { ival = vs.ival; }
+  LB_State(LB_State &vs) { ival = vs.ival; }
   LB_State &
-  operator=(volatile LB_State &vs)
+  operator=(LB_State &vs)
   {
     ival = vs.ival;
     return *this;
   }
 
-  int64_t ival;
+  int64_t ival; // ival is used to help do an atomic CAS for struct s
   struct {
     uint32_t offset;           // buffer offset(bytes in buffer)
     uint16_t num_entries;      // number of entries in buffer
@@ -153,12 +152,13 @@ public:
   void force_full();
 
   LogBufferHeader *
-  header()
+  header() const
   {
     return m_header;
   }
+
   long
-  expiration_time()
+  expiration_time() const
   {
     return m_expiration_time;
   }
@@ -167,10 +167,11 @@ public:
   void update_header_data();
 
   uint32_t
-  get_id()
+  get_id() const
   {
     return m_id;
   }
+
   LogObject *
   get_owner() const
   {
@@ -178,21 +179,20 @@ public:
   }
 
   LINK(LogBuffer, link);
-  ;
 
   // static variables
-  static vint32 M_ID;
+  static int32_t M_ID;
 
   // static functions
   static size_t max_entry_bytes();
   static int to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int max_len, const char *symbol_str, char *printf_str,
-                      unsigned buffer_version, const char *alt_format = NULL);
+                      unsigned buffer_version, const char *alt_format = nullptr);
   static int resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char *read_from, char *write_to, int write_to_len,
-                                  long timestamp, long timestamp_us, unsigned buffer_version, LogFieldList *alt_fieldlist = NULL,
-                                  char *alt_printf_str = NULL);
+                                  long timestamp, long timestamp_us, unsigned buffer_version, LogFieldList *alt_fieldlist = nullptr,
+                                  char *alt_printf_str = nullptr);
 
   static void
-  destroy(LogBuffer *lb)
+  destroy(LogBuffer *&lb)
   {
     // ink_atomic_increment() returns the previous value, so when it was 1, we are
     // the thread that decremented to zero and should delete ...
@@ -200,6 +200,7 @@ public:
 
     if (refcnt == 1) {
       delete lb;
+      lb = nullptr;
     }
 
     ink_release_assert(refcnt >= 0);
@@ -220,8 +221,14 @@ private:
 
   uint32_t m_id; // unique buffer id (for debugging)
 public:
-  volatile LB_State m_state; // buffer state
-  volatile int m_references; // oustanding checkout_write references.
+  LB_State m_state; // buffer state
+  int m_references; // oustanding checkout_write references.
+
+  // noncopyable
+  // -- member functions that are not allowed --
+  LogBuffer(const LogBuffer &rhs) = delete;
+  LogBuffer &operator=(const LogBuffer &rhs) = delete;
+
 private:
   // private functions
   size_t _add_buffer_header();
@@ -230,8 +237,6 @@ private:
 
   // -- member functions that are not allowed --
   LogBuffer();
-  LogBuffer(const LogBuffer &rhs);
-  LogBuffer &operator=(const LogBuffer &rhs);
 
   friend class LogBufferIterator;
 };
@@ -256,9 +261,9 @@ public:
   ~LogBufferList();
 
   void add(LogBuffer *lb);
-  LogBuffer *get(void);
+  LogBuffer *get();
   int
-  get_size(void)
+  get_size()
   {
     return m_size;
   }
@@ -278,6 +283,11 @@ public:
 
   LogEntryHeader *next();
 
+  // noncopyable
+  // -- member functions not allowed --
+  LogBufferIterator(const LogBufferIterator &) = delete;
+  LogBufferIterator &operator=(const LogBufferIterator &) = delete;
+
 private:
   bool m_in_network_order;
   char *m_next;
@@ -286,8 +296,6 @@ private:
 
   // -- member functions not allowed --
   LogBufferIterator();
-  LogBufferIterator(const LogBufferIterator &);
-  LogBufferIterator &operator=(const LogBufferIterator &);
 };
 
 /*-------------------------------------------------------------------------
@@ -298,13 +306,13 @@ private:
   -------------------------------------------------------------------------*/
 
 inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header, bool in_network_order)
-  : m_in_network_order(in_network_order), m_next(0), m_iter_entry_count(0), m_buffer_entry_count(0)
+  : m_in_network_order(in_network_order), m_next(nullptr), m_iter_entry_count(0), m_buffer_entry_count(0)
 {
   ink_assert(header);
 
   switch (header->version) {
   case LOG_SEGMENT_VERSION:
-    m_next = (char *)header + header->data_offset;
+    m_next               = (char *)header + header->data_offset;
     m_buffer_entry_count = header->entry_count;
     break;
 
@@ -319,7 +327,4 @@ inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header, bool in_net
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline LogBufferIterator::~LogBufferIterator()
-{
-}
-#endif
+inline LogBufferIterator::~LogBufferIterator() {}

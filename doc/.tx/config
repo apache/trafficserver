@@ -37,19 +37,14 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/explicit-forwa
 source_file = _build/locale/pot/admin-guide/configuration/explicit-forward-proxying.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--configuration--hierachical-caching_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/hierachical-caching.en.po
-source_file = _build/locale/pot/admin-guide/configuration/hierachical-caching.en.pot
+[apache-traffic-server-6x.admin-guide--configuration--hierarchical-caching_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/hierarchical-caching.en.po
+source_file = _build/locale/pot/admin-guide/configuration/hierarchical-caching.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--configuration--index_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/index.en.po
 source_file = _build/locale/pot/admin-guide/configuration/index.en.pot
-source_lang = en
-
-[apache-traffic-server-6x.admin-guide--configuration--multi-server-caches_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/multi-server-caches.en.po
-source_file = _build/locale/pot/admin-guide/configuration/multi-server-caches.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--configuration--redirecting-http-requests_en]
@@ -72,19 +67,9 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/cache.config.en.po
 source_file = _build/locale/pot/admin-guide/files/cache.config.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--files--congestion_config_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/congestion.config.en.po
-source_file = _build/locale/pot/admin-guide/files/congestion.config.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--files--hosting_config_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/hosting.config.en.po
 source_file = _build/locale/pot/admin-guide/files/hosting.config.en.pot
-source_lang = en
-
-[apache-traffic-server-6x.admin-guide--files--icp_config_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/icp.config.en.po
-source_file = _build/locale/pot/admin-guide/files/icp.config.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--files--index_en]
@@ -97,14 +82,9 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/ip_allow.config.en.po
 source_file = _build/locale/pot/admin-guide/files/ip_allow.config.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--files--log_hosts_config_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/log_hosts.config.en.po
-source_file = _build/locale/pot/admin-guide/files/log_hosts.config.en.pot
-source_lang = en
-
-[apache-traffic-server-6x.admin-guide--files--logs_xml_config_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/logs_xml.config.en.po
-source_file = _build/locale/pot/admin-guide/files/logs_xml.config.en.pot
+[apache-traffic-server-6x.admin-guide--files--logging.yaml_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/logging.yaml.en.po
+source_file = _build/locale/pot/admin-guide/files/logging.yaml.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--files--parent_config_en]
@@ -182,11 +162,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/log-build
 source_file = _build/locale/pot/admin-guide/monitoring/logging/log-builder.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--monitoring--logging--log-collation_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/log-collation.en.po
-source_file = _build/locale/pot/admin-guide/monitoring/logging/log-collation.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--monitoring--logging--log-formats_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/log-formats.en.po
 source_file = _build/locale/pot/admin-guide/monitoring/logging/log-formats.en.pot
@@ -260,16 +235,6 @@ source_lang = en
 [apache-traffic-server-6x.admin-guide--monitoring--statistics--core--cache_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/cache.en.po
 source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/cache.en.pot
-source_lang = en
-
-[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--cluster_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/cluster.en.po
-source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/cluster.en.pot
-source_lang = en
-
-[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--congestion_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/congestion.en.po
-source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/congestion.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--monitoring--statistics--core--dns_en]
@@ -397,11 +362,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/cachekey.en.po
 source_file = _build/locale/pot/admin-guide/plugins/cachekey.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--plugins--cacheurl_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/cacheurl.en.po
-source_file = _build/locale/pot/admin-guide/plugins/cacheurl.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--plugins--combo_handler_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/combo_handler.en.po
 source_file = _build/locale/pot/admin-guide/plugins/combo_handler.en.pot
@@ -410,11 +370,6 @@ source_lang = en
 [apache-traffic-server-6x.admin-guide--plugins--conf_remap_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/conf_remap.en.po
 source_file = _build/locale/pot/admin-guide/plugins/conf_remap.en.pot
-source_lang = en
-
-[apache-traffic-server-6x.admin-guide--plugins--epic_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/epic.en.po
-source_file = _build/locale/pot/admin-guide/plugins/epic.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--plugins--esi_en]
@@ -432,9 +387,9 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/geoip_acl.en.po
 source_file = _build/locale/pot/admin-guide/plugins/geoip_acl.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--plugins--gzip_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/gzip.en.po
-source_file = _build/locale/pot/admin-guide/plugins/gzip.en.pot
+[apache-traffic-server-6x.admin-guide--plugins--compress_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/compress.en.po
+source_file = _build/locale/pot/admin-guide/plugins/compress.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--plugins--header_rewrite_en]
@@ -575,11 +530,6 @@ source_lang = en
 [apache-traffic-server-6x.appendices--command-line--index_en]
 file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/index.en.po
 source_file = _build/locale/pot/appendices/command-line/index.en.pot
-source_lang = en
-
-[apache-traffic-server-6x.appendices--command-line--traffic_cop_en]
-file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_cop.en.po
-source_file = _build/locale/pot/appendices/command-line/traffic_cop.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.appendices--command-line--traffic_crashlog_en]
@@ -1452,11 +1402,6 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlCreat
 source_file = _build/locale/pot/developer-guide/api/functions/TSUrlCreate.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--api--functions--TSUrlDestroy_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlDestroy.en.po
-source_file = _build/locale/pot/developer-guide/api/functions/TSUrlDestroy.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.developer-guide--api--functions--TSUrlFtpTypeGet_en]
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlFtpTypeGet.en.po
 source_file = _build/locale/pot/developer-guide/api/functions/TSUrlFtpTypeGet.en.pot
@@ -2200,5 +2145,50 @@ source_lang = en
 [apache-traffic-server-6x.sdk--trafficserver-timers_en]
 file_filter = locale/<lang>/LC_MESSAGES/sdk/trafficserver-timers.en.po
 source_file = _build/locale/pot/sdk/trafficserver-timers.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy--bridge_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy/bridge.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy/bridge.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy--build_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy/build.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy/build.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy--router-inline_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy/router-inline.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy/router-inline.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy--wccp-configuration_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy/wccp-configuration.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy/wccp-configuration.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy--wccp-service-config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy/wccp-service-config.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy/wccp-service-config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--hooks-and-transactions--trafficserver-timers_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/hooks-and-transactions/trafficserver-timers.en.po
+source_file = _build/locale/pot/developer-guide/plugins/hooks-and-transactions/trafficserver-timers.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--url_sig_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/url_sig.en.po
+source_file = _build/locale/pot/admin-guide/plugins/url_sig.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--documentation--plugins_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/documentation/plugins.en.po
+source_file = _build/locale/pot/developer-guide/documentation/plugins.en.pot
 source_lang = en
 

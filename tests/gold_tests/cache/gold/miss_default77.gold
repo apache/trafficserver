@@ -1,0 +1,8 @@
+{}
+> GET /default/cache/10/{} HTTP/1.1
+{}
+< Server: ATS/{}
+< X-Cache-Key: http://127.0.0.1/cache/10/{}
+< X-Cache: miss
+< X-Cache-Generation: 77
+{}

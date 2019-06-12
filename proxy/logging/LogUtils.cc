@@ -21,15 +21,31 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
-#include "ts/ink_config.h"
-#include "ts/ink_string.h"
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <time.h>
+#include <tscore/ink_align.h>
+#include "tscore/ink_config.h"
+#include "tscore/ink_string.h"
+#include <tscore/ink_assert.h>
+#include <tscore/BufferWriter.h>
+
+#ifdef TEST_LOG_UTILS
+
+#include "unit-tests/test_LogUtils.h"
+
+#else
+
+#include <MIME.h>
+
+#endif
+
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstring>
+#include <ctime>
+#include <string_view>
+#include <cstdint>
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -40,7 +56,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "P_RecProcess.h"
+#include "records/P_RecProcess.h"
 // REC_SIGNAL_LOGGING_ERROR    is defined in I_RecSignals.h
 // REC_SIGNAL_LOGGING_WARNING  is defined in I_RecSignals.h
 
@@ -83,12 +99,11 @@ char *
 LogUtils::timestamp_to_netscape_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
-  static char gmtstr[16];
   static long last_timestamp = 0;
-  static char bad_time[] = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -113,11 +128,13 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
 
     if (zone >= 0) {
       offset = zone / 60;
-      sign = '-';
+      sign   = '-';
     } else {
       offset = zone / -60;
-      sign = '+';
+      sign   = '+';
     }
+
+    static char gmtstr[16];
     int glen = snprintf(gmtstr, 16, "%c%.2d%.2d", sign, offset / 60, offset % 60);
 
     strftime(timebuf, 64 - glen, "%d/%b/%Y:%H:%M:%S ", tms);
@@ -139,10 +156,10 @@ LogUtils::timestamp_to_date_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
   static long last_timestamp = 0;
-  static char bad_time[] = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -171,10 +188,10 @@ LogUtils::timestamp_to_time_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
   static long last_timestamp = 0;
-  static char bad_time[] = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -205,13 +222,13 @@ void
 LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, const char *msg, ...)
 {
   char msg_buf[LOG_MAX_FORMATTED_LINE];
-  va_list ap;
 
   ink_assert(alarm_type >= 0 && alarm_type < LogUtils::LOG_ALARM_N_TYPES);
 
-  if (msg == NULL) {
+  if (msg == nullptr) {
     snprintf(msg_buf, sizeof(msg_buf), "No Message");
   } else {
+    va_list ap;
     va_start(ap, msg);
     vsnprintf(msg_buf, LOG_MAX_FORMATTED_LINE, msg, ap);
     va_end(ap);
@@ -243,7 +260,7 @@ LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, const char *msg, ...)
 void
 LogUtils::strip_trailing_newline(char *buf)
 {
-  if (buf != NULL) {
+  if (buf != nullptr) {
     int len = ::strlen(buf);
     if (len > 0) {
       if (buf[len - 1] == '\n') {
@@ -254,16 +271,23 @@ LogUtils::strip_trailing_newline(char *buf)
 }
 
 /*-------------------------------------------------------------------------
-  LogUtils::escapify_url
+  LogUtils::escapify_url_common
 
   This routine will escapify a URL to remove spaces (and perhaps other ugly
   characters) from a URL and replace them with a hex escape sequence.
   Since the escapes are larger (multi-byte) than the characters being
   replaced, the string returned will be longer than the string passed.
+
+  This is a worker function called by escapify_url and pure_escapify_url.  These
+  functions differ on whether the function tries to detect and avoid
+  double URL encoding (escapify_url) or not (pure_escapify_url)
   -------------------------------------------------------------------------*/
 
+namespace
+{
 char *
-LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map)
+escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map,
+                    bool pure_escape)
 {
   // codes_to_escape is a bitmap encoding the codes that should be escaped.
   // These are all the codes defined in section 2.4.3 of RFC 2396
@@ -296,16 +320,17 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
 
   if (!url || (dst && dst_size < len_in)) {
     *len_out = 0;
-    return NULL;
+    return nullptr;
   }
 
-  if (!map)
+  if (!map) {
     map = codes_to_escape;
+  }
 
   // Count specials in the url, assuming that there won't be any.
   //
-  int count = 0;
-  char *p = url;
+  int count        = 0;
+  char *p          = url;
   char *in_url_end = url + len_in;
 
   while (p < in_url_end) {
@@ -320,8 +345,9 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
     // The common case, no escapes, so just return the source string.
     //
     *len_out = len_in;
-    if (dst)
+    if (dst) {
       ink_strlcpy(dst, url, dst_size);
+    }
     return url;
   }
 
@@ -336,7 +362,7 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
 
   if (dst && out_len > dst_size) {
     *len_out = 0;
-    return NULL;
+    return nullptr;
   }
 
   // To play it safe, we null terminate the string we return in case
@@ -345,17 +371,34 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
   //
   char *new_url;
 
-  if (dst)
+  if (dst) {
     new_url = dst;
-  else
+  } else {
     new_url = (char *)arena->str_alloc(out_len + 1);
+  }
 
   char *from = url;
-  char *to = new_url;
+  char *to   = new_url;
 
   while (from < in_url_end) {
     unsigned char c = *from;
     if (map[c / 8] & (1 << (7 - c % 8))) {
+      /*
+       * If two characters following a '%' don't need to be encoded, then it must
+       * mean that the three character sequence is already encoded.  Just copy it over.
+       */
+      if (!pure_escape && (*from == '%') && ((from + 2) < in_url_end)) {
+        unsigned char c1   = *(from + 1);
+        unsigned char c2   = *(from + 2);
+        bool needsEncoding = ((map[c1 / 8] & (1 << (7 - c1 % 8))) || (map[c2 / 8] & (1 << (7 - c2 % 8))));
+        if (!needsEncoding) {
+          out_len -= 2;
+          Debug("log-utils", "character already encoded..skipping %c, %c, %c", *from, *(from + 1), *(from + 2));
+          *to++ = *from++;
+          continue;
+        }
+      }
+
       *to++ = '%';
       *to++ = hex_digit[c / 16];
       *to++ = hex_digit[c % 16];
@@ -368,6 +411,20 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
 
   *len_out = out_len;
   return new_url;
+}
+} // namespace
+
+char *
+LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map)
+{
+  return escapify_url_common(arena, url, len_in, len_out, dst, dst_size, map, false);
+}
+
+char *
+LogUtils::pure_escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size,
+                            const unsigned char *map)
+{
+  return escapify_url_common(arena, url, len_in, len_out, dst, dst_size, map, true);
 }
 
 /*-------------------------------------------------------------------------
@@ -394,41 +451,6 @@ LogUtils::remove_content_type_attributes(char *type_str, int *type_len)
   }
 }
 
-/*-------------------------------------------------------------------------
-  LogUtils::timestamp_to_hex_str
-
-  This routine simply writes the given timestamp integer [time_t] in the equivalent
-  hexadecimal string format "xxxxxxxxxx" into the provided buffer [buf] of
-  size [bufLen].
-
-  It returns 1 if the provided buffer is not big enough to hold the
-  equivalent ip string (and its null terminator), and 0 otherwise.
-  If the buffer is not big enough, only the ip "segments" that completely
-  fit into it are written, and the buffer is null terminated.
-  -------------------------------------------------------------------------*/
-
-int
-LogUtils::timestamp_to_hex_str(unsigned ip, char *buf, size_t bufLen, size_t *numCharsPtr)
-{
-  static const char *table = "0123456789abcdef@";
-  int retVal = 1;
-  int shift = 28;
-  if (buf && bufLen > 0) {
-    if (bufLen > 8)
-      bufLen = 8;
-    for (retVal = 0; retVal < (int)bufLen;) {
-      buf[retVal++] = (char)table[((ip >> shift) & 0xf)];
-      shift -= 4;
-    }
-
-    if (numCharsPtr) {
-      *numCharsPtr = (size_t)retVal;
-    }
-    retVal = (retVal == 8) ? 0 : 1;
-  }
-  return retVal;
-}
-
 /*
 int
 LogUtils::ip_to_str (unsigned ip, char *str, unsigned len)
@@ -452,7 +474,7 @@ LogUtils::seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_
   struct tm lt;
   ink_localtime_r((const time_t *)&time_now, &lt);
   int sidl = lt.tm_sec + lt.tm_min * 60 + lt.tm_hour * 3600;
-  int tr = rolling_offset * 3600;
+  int tr   = rolling_offset * 3600;
   return ((tr >= sidl ? (tr - sidl) % rolling_interval : (86400 - (sidl - tr)) % rolling_interval));
 }
 
@@ -490,11 +512,12 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
     if (!(S_ISREG(stat_data.st_mode) || S_ISFIFO(stat_data.st_mode))) {
       ret_val = 1;
     } else if (!(stat_data.st_mode & S_IWUSR)) {
-      errno = EACCES;
+      errno   = EACCES;
       ret_val = -1;
     }
-    if (size_bytes)
+    if (size_bytes) {
       *size_bytes = stat_data.st_size;
+    }
   } else {
     // stat failed
     //
@@ -507,7 +530,7 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
       // write and execute permissions
 
       char *dir;
-      char *prefix = 0;
+      char *prefix = nullptr;
 
       // search for forward or reverse slash in full_filename
       // starting from the end
@@ -515,10 +538,10 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
       const char *slash = strrchr(full_filename, '/');
       if (slash) {
         size_t prefix_len = slash - full_filename + 1;
-        prefix = new char[prefix_len + 1];
+        prefix            = new char[prefix_len + 1];
         memcpy(prefix, full_filename, prefix_len);
         prefix[prefix_len] = 0;
-        dir = prefix;
+        dir                = prefix;
       } else {
         dir = (char *)"."; // full_filename has no prefix, use .
       }
@@ -529,8 +552,9 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
       if (e < 0) {
         ret_val = -1;
       } else {
-        if (size_bytes)
+        if (size_bytes) {
           *size_bytes = 0;
+        }
       }
 
       if (prefix) {
@@ -548,16 +572,174 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
       ret_val = -1;
     } else {
       if (limit_data.rlim_cur != (rlim_t)RLIM_INFINITY) {
-        if (has_size_limit)
+        if (has_size_limit) {
           *has_size_limit = true;
-        if (current_size_limit_bytes)
+        }
+        if (current_size_limit_bytes) {
           *current_size_limit_bytes = limit_data.rlim_cur;
+        }
       } else {
-        if (has_size_limit)
+        if (has_size_limit) {
           *has_size_limit = false;
+        }
       }
     }
   }
 
   return ret_val;
 }
+
+namespace
+{
+// Get a string out of a MIMEField using one of its member functions, and put it into a buffer writer, terminated with a nul.
+//
+void
+marshalStr(ts::FixedBufferWriter &bw, const MIMEField &mf, const char *(MIMEField::*get_func)(int *length) const)
+{
+  int length;
+  const char *data = (mf.*get_func)(&length);
+
+  if (!data or (*data == '\0')) {
+    // Empty string.  This is a problem, since it would result in two successive nul characters, which indicates the end of the
+    // marshaled hearer.  Change the string to a single blank character.
+
+    static const char Blank[] = " ";
+    data                      = Blank;
+    length                    = 1;
+  }
+
+  bw << std::string_view(data, length) << '\0';
+}
+
+void
+unmarshalStr(ts::FixedBufferWriter &bw, const char *&data)
+{
+  bw << '{';
+
+  while (*data) {
+    bw << *(data++);
+  }
+
+  // Skip over terminal nul.
+  ++data;
+
+  bw << '}';
+}
+
+} // end anonymous namespace
+
+namespace LogUtils
+{
+// Marshals header tags and values together, with a single terminating nul character.  Returns buffer space required.  'buf' points
+// to where to put the marshaled data.  If 'buf' is null, no data is marshaled, but the function returns the amount of space that
+// would have been used.
+//
+int
+marshalMimeHdr(MIMEHdr *hdr, char *buf)
+{
+  std::size_t bwSize = buf ? SIZE_MAX : 0;
+
+  ts::FixedBufferWriter bw(buf, bwSize);
+
+  if (hdr) {
+    MIMEFieldIter mfIter;
+    const MIMEField *mfp = hdr->iter_get_first(&mfIter);
+
+    while (mfp) {
+      marshalStr(bw, *mfp, &MIMEField::name_get);
+      marshalStr(bw, *mfp, &MIMEField::value_get);
+
+      mfp = hdr->iter_get_next(&mfIter);
+    }
+  }
+
+  bw << '\0';
+
+  return int(INK_ALIGN_DEFAULT(bw.extent()));
+}
+
+// Unmarshaled/printable format is {{{tag1}:{value1}}{{tag2}:{value2}} ... }
+//
+int
+unmarshalMimeHdr(char **buf, char *dest, int destLength)
+{
+  ink_assert(*buf != nullptr);
+
+  const char *data = *buf;
+
+  ink_assert(data != nullptr);
+
+  ts::FixedBufferWriter bw(dest, destLength);
+
+  bw << '{';
+
+  int pairEndFallback{0}, pairEndFallback2{0}, pairSeparatorFallback{0};
+
+  while (*data) {
+    if (!bw.error()) {
+      pairEndFallback2 = pairEndFallback;
+      pairEndFallback  = bw.size();
+    }
+
+    // Add open bracket of pair.
+    //
+    bw << '{';
+
+    // Unmarshal field name.
+    unmarshalStr(bw, data);
+
+    bw << ':';
+
+    if (!bw.error()) {
+      pairSeparatorFallback = bw.size();
+    }
+
+    // Unmarshal field value.
+    unmarshalStr(bw, data);
+
+    // Add close bracket of pair.
+    bw << '}';
+
+  } // end for loop
+
+  bw << '}';
+
+  if (bw.error()) {
+    // The output buffer wasn't big enough.
+
+    static std::string_view FULL_ELLIPSES("...}}}");
+
+    if ((pairSeparatorFallback > pairEndFallback) and ((pairSeparatorFallback + 7) <= destLength)) {
+      // In the report, we can show the existence of the last partial tag/value pair, and maybe part of the value.  If we only
+      // show part of the value, we want to end it with an elipsis, to make it clear it's not complete.
+
+      bw.reduce(destLength - FULL_ELLIPSES.size());
+      bw << FULL_ELLIPSES;
+
+    } else if (pairEndFallback and (pairEndFallback < destLength)) {
+      bw.reduce(pairEndFallback);
+      bw << '}';
+
+    } else if ((pairSeparatorFallback > pairEndFallback2) and ((pairSeparatorFallback + 7) <= destLength)) {
+      bw.reduce(destLength - FULL_ELLIPSES.size());
+      bw << FULL_ELLIPSES;
+
+    } else if (pairEndFallback2 and (pairEndFallback2 < destLength)) {
+      bw.reduce(pairEndFallback2);
+      bw << '}';
+
+    } else if (destLength > 1) {
+      bw.reduce(1);
+      bw << '}';
+
+    } else {
+      bw.reduce(0);
+    }
+  }
+
+  *buf += INK_ALIGN_DEFAULT(data - *buf + 1);
+
+  return bw.size();
+}
+
+} // end namespace LogUtils
