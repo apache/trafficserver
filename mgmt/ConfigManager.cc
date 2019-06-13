@@ -1,6 +1,6 @@
 /** @file
 
-  This file contains code for class to allow rollback of configuration files
+  This file contains code for class to allow management of configuration files
 
   @section license License
 
@@ -42,20 +42,16 @@
 #define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000)
 #endif
 
-// Error Strings
-const char *RollbackStrings[] = {"Rollback Ok", "File was not found", "Version was out of date", "System Call Error",
-                                 "Invalid Version - Version Numbers Must Increase"};
-
-Rollback::Rollback(const char *fileName_, const char *configName_, bool root_access_needed_, Rollback *parentRollback_)
-  : root_access_needed(root_access_needed_), parentRollback(parentRollback_)
+ConfigManager::ConfigManager(const char *fileName_, const char *configName_, bool root_access_needed_, ConfigManager *parentConfig_)
+  : root_access_needed(root_access_needed_), parentConfig(parentConfig_)
 {
   ExpandingArray existVer(25, true); // Existing versions
   struct stat fileInfo;
   ink_assert(fileName_ != nullptr);
 
   // parent must not also have a parent
-  if (parentRollback) {
-    ink_assert(parentRollback->parentRollback == nullptr);
+  if (parentConfig) {
+    ink_assert(parentConfig->parentConfig == nullptr);
   }
 
   // Copy the file name.
@@ -68,26 +64,27 @@ Rollback::Rollback(const char *fileName_, const char *configName_, bool root_acc
   //
   if (statFile(&fileInfo) < 0) {
     // If we can't find an active version because there is none we have a hard failure.
-    mgmt_fatal(0, "[RollBack::Rollback] Unable to find configuration file %s.\n\tStat failed : %s\n", fileName, strerror(errno));
+    mgmt_fatal(0, "[ConfigManager::ConfigManager] Unable to find configuration file %s.\n\tStat failed : %s\n", fileName,
+               strerror(errno));
 
   } else {
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
   }
 }
 
-Rollback::~Rollback()
+ConfigManager::~ConfigManager()
 {
   ats_free(fileName);
 }
 
 //
 //
-// int Rollback::statFile()
+// int ConfigManager::statFile()
 //
 //  A wrapper for stat()
 //
 int
-Rollback::statFile(struct stat *buf)
+ConfigManager::statFile(struct stat *buf)
 {
   int statResult;
   std::string sysconfdir(RecConfigReadConfigDir());
@@ -98,12 +95,12 @@ Rollback::statFile(struct stat *buf)
   return statResult;
 }
 
-// bool Rollback::checkForUserUpdate()
+// bool ConfigManager::checkForUserUpdate()
 //
 //  Called to check if the file has been changed  by the user.
 //  Timestamps are compared to see if a change occurred
 bool
-Rollback::checkForUserUpdate()
+ConfigManager::checkForUserUpdate()
 {
   struct stat fileInfo;
   bool result;
