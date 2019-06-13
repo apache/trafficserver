@@ -30,7 +30,7 @@ Test.SkipUnless(
     Condition.HasProgram("openssl","Openssl need to be installed on system for this test to work")
     )
 
-# Set up origin server 
+# Set up origin server
 server = Test.MakeOriginServer("server")
 request_header = {
     "headers": "GET / HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -71,7 +71,7 @@ ts.Disk.remap_config.AddLines([
     'map https://foo.com https://127.0.0.1:{0}'.format(s_server_port)
 ])
 
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
     '- fqdn: "*foo.com"',
     '  client_cert: "client1.pem"',
 ])
