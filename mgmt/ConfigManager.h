@@ -1,6 +1,6 @@
 /** @file
 
-  Interface for class to allow rollback of configuration files
+  Interface for class to allow management of configuration files
 
   @section license License
 
@@ -32,7 +32,7 @@ class TextBuffer;
 class ExpandingArray;
 
 //
-//  class Rollback
+//  class ConfigManager
 //
 //  public functions
 //
@@ -45,12 +45,12 @@ class ExpandingArray;
 //
 //  statFile(struct stat*) - a wrapper for stat(), using layout engine
 //
-class Rollback
+class ConfigManager
 {
 public:
   // fileName_ should be rooted or a base file name.
-  Rollback(const char *fileName_, const char *configName_, bool root_access_needed, Rollback *parentRollback);
-  ~Rollback();
+  ConfigManager(const char *fileName_, const char *configName_, bool root_access_needed, ConfigManager *parentConfig_);
+  ~ConfigManager();
 
   // Manual take out of lock required
   void
@@ -82,15 +82,15 @@ public:
   }
 
   bool
-  isChildRollback() const
+  isChildManaged() const
   {
-    return parentRollback != nullptr;
+    return parentConfig != nullptr;
   }
 
-  Rollback *
-  getParentRollback() const
+  ConfigManager *
+  getParentConfig() const
   {
-    return parentRollback;
+    return parentConfig;
   }
 
   bool
@@ -102,8 +102,8 @@ public:
   FileManager *configFiles = nullptr; // Manager to notify on an update.
 
   // noncopyable
-  Rollback(const Rollback &) = delete;
-  Rollback &operator=(const Rollback &) = delete;
+  ConfigManager(const ConfigManager &) = delete;
+  ConfigManager &operator=(const ConfigManager &) = delete;
 
 private:
   int statFile(struct stat *buf);
@@ -112,6 +112,6 @@ private:
   char *fileName;
   char *configName;
   bool root_access_needed;
-  Rollback *parentRollback;
+  ConfigManager *parentConfig;
   time_t fileLastModified = 0;
 };
