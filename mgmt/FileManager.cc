@@ -24,7 +24,7 @@
 #include "FileManager.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
-#include "Rollback.h"
+#include "ConfigManager.h"
 #include "WebMgmtUtils.h"
 
 #include <vector>
