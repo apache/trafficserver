@@ -26,7 +26,7 @@
 #include "tscore/ink_time.h"
 #include "Alarms.h"
 #include "LocalManager.h"
-#include "Rollback.h"
+#include "ConfigManager.h"
 #include "WebMgmtUtils.h"
 #include "ExpandingArray.h"
 #include "MgmtSocket.h"

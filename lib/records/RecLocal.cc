@@ -22,7 +22,7 @@
  */
 
 #include "tscore/ink_platform.h"
-#include "Rollback.h"
+#include "ConfigManager.h"
 #include "tscore/ParseRules.h"
 #include "P_RecCore.h"
 #include "P_RecLocal.h"

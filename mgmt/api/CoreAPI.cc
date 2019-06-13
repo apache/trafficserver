@@ -36,7 +36,7 @@
 #include "MgmtUtils.h"
 #include "LocalManager.h"
 #include "FileManager.h"
-#include "Rollback.h"
+#include "ConfigManager.h"
 #include "WebMgmtUtils.h"
 #include "tscore/Diags.h"
 #include "ExpandingArray.h"
