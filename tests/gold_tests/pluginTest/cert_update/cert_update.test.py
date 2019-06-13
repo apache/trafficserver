@@ -21,11 +21,6 @@ Test.Summary = '''
 Test cert_update plugin.
 '''
 
-# Check if curl --resolve and openssl exist
-Test.SkipUnless(
-    Condition.HasProgram("curl","Curl need to be installed on system for this test to work"),
-    Condition.HasCurlOption("--resolve")
-    )
 Test.SkipUnless(
     Condition.HasProgram("openssl","Openssl need to be installed on system for this test to work")
     )
