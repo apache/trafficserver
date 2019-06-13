@@ -23,7 +23,6 @@ Test transactions and sessions over http2, making sure they open and close in th
 '''
 
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl needs to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2')
 )
 
@@ -98,7 +97,7 @@ tr.StillRunningAfter = ts
 # Parking this as a ready tester on a meaningless process
 # To stall the test runs that check for the stats until the
 # stats have propagated and are ready to read.
-def make_done_stat_ready(tsenv): 
+def make_done_stat_ready(tsenv):
   def done_stat_ready(process, hasRunFor, **kw):
     retval = subprocess.run("traffic_ctl metric get ssntxnorder_verify.test.done > done  2> /dev/null", shell=True, env=tsenv)
     if retval.returncode == 0:
@@ -106,7 +105,7 @@ def make_done_stat_ready(tsenv):
     return retval.returncode == 0
 
   return done_stat_ready
-  
+
 # number of sessions/transactions opened and closed are equal
 tr = Test.AddTestRun("Check Ssn order errors")
 server2.StartupTimeout = 60

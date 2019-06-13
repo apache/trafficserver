@@ -21,16 +21,11 @@ Test.Summary = '''
 Test cert_update plugin.
 '''
 
-# Check if curl --resolve and openssl exist
-Test.SkipUnless(
-    Condition.HasProgram("curl","Curl need to be installed on system for this test to work"),
-    Condition.HasCurlOption("--resolve")
-    )
 Test.SkipUnless(
     Condition.HasProgram("openssl","Openssl need to be installed on system for this test to work")
     )
 
-# Set up origin server 
+# Set up origin server
 server = Test.MakeOriginServer("server")
 request_header = {
     "headers": "GET / HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
