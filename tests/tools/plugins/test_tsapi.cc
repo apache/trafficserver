@@ -23,6 +23,11 @@ Regression testing code for TS API.  Not comprehensive, hopefully will be built 
 #include <fstream>
 #include <cstdlib>
 #include <string_view>
+#include <cstdio>
+
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include <ts/ts.h>
 
@@ -46,9 +51,13 @@ std::fstream logFile;
 
 TSCont tCont, gCont;
 
+void testDbgOutputPerformance();
+
 void
 testsForReadReqHdrHook(TSHttpTxn txn)
 {
+  testDbgOutputPerformance();
+
   logFile << "TSHttpTxnEffectiveUrlStringGet():  ";
   int urlLength;
   char *urlStr = TSHttpTxnEffectiveUrlStringGet(txn, &urlLength);
@@ -174,6 +183,180 @@ TSPluginInit(int argc, const char *argv[])
 
 namespace
 {
+class Exe_tm
+{
+public:
+  Exe_tm()
+  {
+    struct rusage usage;
+
+    if (getrusage(RUSAGE_SELF, &usage)) {
+      TSError("FAIL:  getrusage() call failed");
+      ALWAYS_ASSERT(false)
+    }
+
+    _user_tm = usage.ru_utime;
+    _sys_tm  = usage.ru_stime;
+  }
+
+  void
+  done()
+  {
+    struct rusage usage;
+
+    if (getrusage(RUSAGE_SELF, &usage)) {
+      TSError("FAIL:  getrusage() call failed");
+      ALWAYS_ASSERT(false)
+    }
+
+    _since(_user_tm, usage.ru_utime);
+    _user_tm = usage.ru_utime;
+
+    _since(_sys_tm, usage.ru_stime);
+    _sys_tm = usage.ru_stime;
+  }
+
+  unsigned long
+  user_tm() const
+  {
+    return _usecs(_user_tm);
+  }
+
+  unsigned long
+  sys_tm() const
+  {
+    return _usecs(_sys_tm);
+  }
+
+private:
+  timeval _user_tm, _sys_tm;
+
+  static unsigned long
+  _usecs(const timeval &tv)
+  {
+    return (tv.tv_sec * 1000000) + tv.tv_usec;
+  }
+
+  // tm is end time on intput, time different from start to end on output.
+  static void
+  _since(const timeval start, timeval &tm)
+  {
+    if (tm.tv_sec == start.tv_sec) {
+      tm.tv_sec = 0;
+      tm.tv_usec -= start.tv_usec;
+    } else {
+      tm.tv_usec += 1000000 - start.tv_usec;
+      tm.tv_sec -= start.tv_sec + 1;
+      if (tm.tv_usec >= 1000000) {
+        tm.tv_usec -= 1000000;
+        ++tm.tv_sec;
+      }
+    }
+  }
+};
+
+void
+showPerformance(char const *tag, unsigned repetitions, const Exe_tm &tm)
+{
+  logFile << "Performance for " << tag << ", " << repetitions << " repetitions, microseconds user=" << tm.user_tm()
+          << " system=" << tm.sys_tm() << std::endl;
+}
+
+void
+testDbgOutputPerformance()
+{
+  static const char dbg_tag[]      = PINAME "_dbg_perf";
+  static const char env_var_name[] = "TS_AU_DBG_PERF_REPS";
+
+  static unsigned repetitions;
+
+  if (repetitions) {
+    // Already been done.
+    return;
+  }
+  char const *env_value = std::getenv(env_var_name);
+
+  if (!env_value || !*env_value) {
+    return;
+  }
+
+  if (std::sscanf(env_value, "%u", &repetitions) != 1) {
+    TSError("Environment variable %s is not a positive number", env_var_name);
+    return;
+  }
+
+  for (int i = 3; i--;) {
+    {
+      Exe_tm tm;
+
+      for (unsigned i = 0; i < repetitions; ++i) {
+        TSDebug(dbg_tag, "Debug output test no parameters");
+      }
+
+      tm.done();
+
+      showPerformance("TSDebug() with no parameters", repetitions, tm);
+    }
+    {
+      Exe_tm tm;
+
+      for (unsigned i = 0; i < repetitions; ++i) {
+        TSDEBUG(dbg_tag, "Debug output test no parameters");
+      }
+
+      tm.done();
+
+      showPerformance("TSDEBUG() with no parameters", repetitions, tm);
+    }
+    static int p[5];
+    {
+      Exe_tm tm;
+
+      for (unsigned i = 0; i < repetitions; ++i) {
+        TSDebug(dbg_tag, "Debug output test with parameters %d %d %d %d %d", p[0], p[1], p[2], p[3], p[4]);
+      }
+
+      tm.done();
+
+      showPerformance("TSDebug() with parameters", repetitions, tm);
+    }
+    {
+      Exe_tm tm;
+
+      for (unsigned i = 0; i < repetitions; ++i) {
+        TSDEBUG(dbg_tag, "Debug output test with parameters %d %d %d %d %d", p[0], p[1], p[2], p[3], p[4]);
+      }
+
+      tm.done();
+
+      showPerformance("TSDEBUG() with parameters", repetitions, tm);
+    }
+    static volatile int pv[5];
+    {
+      Exe_tm tm;
+
+      for (unsigned i = 0; i < repetitions; ++i) {
+        TSDebug(dbg_tag, "Debug output test with parameters %d %d %d %d %d", pv[0], pv[1], pv[2], pv[3], pv[4]);
+      }
+
+      tm.done();
+
+      showPerformance("TSDebug() with volatile parameters", repetitions, tm);
+    }
+    {
+      Exe_tm tm;
+
+      for (unsigned i = 0; i < repetitions; ++i) {
+        TSDEBUG(dbg_tag, "Debug output test with parameters %d %d %d %d %d", pv[0], pv[1], pv[2], pv[3], p[4]);
+      }
+
+      tm.done();
+
+      showPerformance("TSDEBUG() with volatile parameters", repetitions, tm);
+    }
+  }
+}
+
 class Cleanup
 {
 public:
