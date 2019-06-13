@@ -163,7 +163,6 @@ HttpBodyFactory *body_factory              = nullptr;
 static int accept_mss           = 0;
 static int poll_timeout         = -1; // No value set.
 static int cmd_disable_freelist = 0;
-
 static bool signal_received[NSIG];
 
 // 1: delay listen, wait for cache.
@@ -182,6 +181,8 @@ static ArgumentDescription argument_descriptions[] = {
   {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, "PROXY_DPRINTF_LEVEL", nullptr},
   {"disable_pfreelist", 'F', "Disable the freelist memory allocator in ProxyAllocator", "T", &cmd_disable_pfreelist,
    "PROXY_DPRINTF_LEVEL", nullptr},
+  {"maxRecords", 'm', "Max number of librecords metrics and configurations (default & minimum: 1600)", "I", &max_records_entries,
+   "PROXY_MAX_RECORDS", nullptr},
 
 #if TS_HAS_TESTS
   {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", nullptr},

@@ -25,10 +25,15 @@
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
 
+#include "RecordsConfig.h"
 #include "P_RecFile.h"
 #include "P_RecCore.h"
 #include "P_RecUtils.h"
 #include "tscore/I_Layout.h"
+
+// This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
+// and used (read) from several binaries / modules.
+int max_records_entries = REC_INTERNAL_RECORDS + REC_MIN_API_RECORDS;
 
 static bool g_initialized = false;
 
@@ -197,7 +202,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   g_num_records = 0;
 
   // initialize record array for our internal stats (this can be reallocated later)
-  g_records = (RecRecord *)ats_malloc(REC_MAX_RECORDS * sizeof(RecRecord));
+  g_records = (RecRecord *)ats_malloc(max_records_entries * sizeof(RecRecord));
 
   // initialize record rwlock
   ink_rwlock_init(&g_records_rwlock);

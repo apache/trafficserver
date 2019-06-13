@@ -87,8 +87,7 @@ static int proxy_off          = false;
 static int listen_off         = false;
 static char bind_stdout[512]  = "";
 static char bind_stderr[512]  = "";
-
-static const char *mgmt_path = nullptr;
+static const char *mgmt_path  = nullptr;
 
 // By default, set the current directory as base
 static const char *recs_conf = "records.config";
@@ -497,6 +496,8 @@ main(int argc, const char **argv)
     {"recordsConf", '-', "Path to records.config", "S*", &recs_conf, nullptr, nullptr},
     {"tsArgs", '-', "Additional arguments for traffic_server", "S*", &tsArgs, nullptr, nullptr},
     {"proxyPort", '-', "HTTP port descriptor", "S*", &proxy_port, nullptr, nullptr},
+    {"maxRecords", 'm', "Max number of librecords metrics and configurations (default & minimum: 1600)", "I", &max_records_entries,
+     "PROXY_MAX_RECORDS", nullptr},
     {TM_OPT_BIND_STDOUT, '-', "Regular file to bind stdout to", "S512", &bind_stdout, "PROXY_BIND_STDOUT", nullptr},
     {TM_OPT_BIND_STDERR, '-', "Regular file to bind stderr to", "S512", &bind_stderr, "PROXY_BIND_STDERR", nullptr},
 #if TS_USE_DIAGS

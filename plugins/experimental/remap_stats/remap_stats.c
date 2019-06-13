@@ -42,6 +42,9 @@ typedef struct {
   TSMutex stat_creation_mutex;
 } config_t;
 
+// From "core".... sigh, but we need it for now at least.
+extern int max_records_entries;
+
 static void
 stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex create_mutex)
 {
@@ -52,7 +55,7 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
 
   if (unlikely(!hash_init)) {
     // NOLINTNEXTLINE
-    hcreate_r(TS_MAX_API_STATS << 1, &stat_cache);
+    hcreate_r(max_records_entries << 1, &stat_cache); // This is weird, but oh well.
     hash_init = true;
     TSDebug(DEBUG_TAG, "stat cache hash init");
   }
