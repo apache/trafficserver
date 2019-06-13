@@ -40,6 +40,7 @@ Description
 .. option:: --proxyPort PORT
 .. option:: --recordsConf FILE
 .. option:: --tsArgs ARGUMENTS
+.. option:: --maxRecords RECORDS
 .. option:: --version
 
 Signals

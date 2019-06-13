@@ -26,6 +26,7 @@
 #include <string_view>
 #include <tuple>
 #include <unordered_map>
+#include <string_view>
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
@@ -66,11 +67,11 @@
 #include "I_Tasks.h"
 
 #include "P_OCSPStapling.h"
+#include "RecordsConfig.h"
 #include "records/I_RecDefs.h"
 #include "records/I_RecCore.h"
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
-#include <string_view>
 
 #include "ts/ts.h"
 
@@ -1678,12 +1679,13 @@ api_init()
     lifecycle_hooks   = new LifecycleAPIHooks;
     global_config_cbs = new ConfigUpdateCbTable;
 
-    if (TS_MAX_API_STATS > 0) {
-      api_rsb = RecAllocateRawStatBlock(TS_MAX_API_STATS);
+    int api_metrics = max_records_entries - REC_INTERNAL_RECORDS;
+    if (api_metrics > 0) {
+      api_rsb = RecAllocateRawStatBlock(api_metrics);
       if (nullptr == api_rsb) {
         Warning("Can't allocate API stats block");
       } else {
-        Debug("sdk", "initialized SDK stats APIs with %d slots", TS_MAX_API_STATS);
+        Debug("sdk", "initialized SDK stats APIs with %d slots", api_metrics);
       }
     } else {
       api_rsb = nullptr;

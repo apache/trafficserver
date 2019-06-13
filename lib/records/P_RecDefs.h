@@ -31,10 +31,11 @@
 
 #define REC_MESSAGE_ELE_MAGIC 0xF00DF00D
 
-// This is for the internal stats and configs, as well as API stats. We currently use
-// about 1600 stats + configs for the core, but we're allocating 2000 for some growth.
-// TODO: if/when we switch to a new config system, we should make this run-time dynamic.
-#define REC_MAX_RECORDS (2000 + TS_MAX_API_STATS)
+// We need at least this many internal record entries for our configurations and metrics. Any
+// additional slots in librecords will be allocated to the plugin metrics. These should be
+// updated if we change the internal librecords size significantly.
+#define REC_INTERNAL_RECORDS 1100
+#define REC_MIN_API_RECORDS 500
 
 #define REC_CONFIG_UPDATE_INTERVAL_MS 3000
 #define REC_REMOTE_SYNC_INTERVAL_MS 5000

@@ -92,8 +92,6 @@
 
 #define TS_MAX_HOST_NAME_LEN @max_host_name_len@
 
-#define TS_MAX_API_STATS @max_api_stats@
-
 #define SPLIT_DNS 1
 
 /* Defaults for user / group */
