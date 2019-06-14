@@ -85,7 +85,7 @@ public:
     if (0 < id && id < HTTP2_SETTINGS_MAX) {
       return this->settings[indexof(id)] = value;
     } else {
-      // Do nothing - 6.5.3 Unsupported parameters MUST be ignored.
+      // Do nothing - 6.5.2 Unsupported parameters MUST be ignored
     }
 
     return 0;

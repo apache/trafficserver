@@ -155,7 +155,8 @@ http2_settings_parameter_is_valid(const Http2SettingsParameter &param)
   };
 
   if (param.id == 0 || param.id >= HTTP2_SETTINGS_MAX) {
-    return false;
+    // Do nothing - 6.5.2 Unsupported parameters MUST be ignored
+    return true;
   }
 
   if (param.value > settings_max[param.id]) {
