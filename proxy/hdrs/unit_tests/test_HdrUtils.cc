@@ -120,3 +120,87 @@ TEST_CASE("HdrUtils", "[proxy][hdrutils]")
   value = iter.get_next();
   REQUIRE(value.empty());
 }
+
+TEST_CASE("HdrUtils 2", "[proxy][hdrutils]")
+{
+  // Test empty field.
+  static constexpr ts::TextView text{"Host: example.one\r\n"
+                                     "Connection: keep-alive\r\n"
+                                     "Vary:\r\n"
+                                     "After: value\r\n"
+                                     "\r\n"};
+  static constexpr ts::TextView connection_tag{"Connection"};
+  static constexpr ts::TextView vary_tag{"Vary"};
+  static constexpr ts::TextView after_tag{"After"};
+
+  char buff[text.size() + 1];
+
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+  MIMEParser parser;
+  char const *real_s = text.data();
+  char const *real_e = text.data_end();
+  MIMEHdr mime;
+
+  mime.create(heap);
+  mime_parser_init(&parser);
+  auto result = mime_parser_parse(&parser, heap, mime.m_mime, &real_s, real_e, false, true);
+  REQUIRE(PARSE_RESULT_DONE == result);
+
+  MIMEField *field{mime.field_find(connection_tag.data(), int(connection_tag.size()))};
+  REQUIRE(mime_hdr_fields_count(mime.m_mime) == 4);
+  REQUIRE(field != nullptr);
+  field = mime.field_find(vary_tag.data(), static_cast<int>(vary_tag.size()));
+  REQUIRE(field != nullptr);
+  REQUIRE(field->m_len_value == 0);
+  field = mime.field_find(after_tag.data(), static_cast<int>(after_tag.size()));
+  REQUIRE(field != nullptr);
+
+  int idx    = 0;
+  int skip   = 0;
+  auto parse = mime_hdr_print(heap, mime.m_mime, buff, static_cast<int>(sizeof(buff)), &idx, &skip);
+  REQUIRE(parse != 0);
+  REQUIRE(idx == text.size());
+  REQUIRE(0 == memcmp(ts::TextView(buff, idx), text));
+};
+
+TEST_CASE("HdrUtils 3", "[proxy][hdrutils]")
+{
+  // Test empty field.
+  static constexpr ts::TextView text{"Host: example.one\r\n"
+                                     "Connection: keep-alive\r\n"
+                                     "Before: value\r\n"
+                                     "Vary: \r\n"
+                                     "\r\n"};
+  static constexpr ts::TextView connection_tag{"Connection"};
+  static constexpr ts::TextView vary_tag{"Vary"};
+  static constexpr ts::TextView before_tag{"Before"};
+
+  char buff[text.size() + 1];
+
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+  MIMEParser parser;
+  char const *real_s = text.data();
+  char const *real_e = text.data_end();
+  MIMEHdr mime;
+
+  mime.create(heap);
+  mime_parser_init(&parser);
+  auto result = mime_parser_parse(&parser, heap, mime.m_mime, &real_s, real_e, false, true);
+  REQUIRE(PARSE_RESULT_DONE == result);
+
+  MIMEField *field{mime.field_find(connection_tag.data(), int(connection_tag.size()))};
+  REQUIRE(mime_hdr_fields_count(mime.m_mime) == 4);
+  REQUIRE(field != nullptr);
+  field = mime.field_find(vary_tag.data(), static_cast<int>(vary_tag.size()));
+  REQUIRE(field != nullptr);
+  REQUIRE(field->m_len_value == 0);
+  field = mime.field_find(before_tag.data(), static_cast<int>(before_tag.size()));
+  REQUIRE(field != nullptr);
+
+  int idx    = 0;
+  int skip   = 0;
+  auto parse = mime_hdr_print(heap, mime.m_mime, buff, static_cast<int>(sizeof(buff)), &idx, &skip);
+  REQUIRE(parse != 0);
+  REQUIRE(idx == text.size());
+  REQUIRE(0 == memcmp(ts::TextView(buff, idx), text));
+};
