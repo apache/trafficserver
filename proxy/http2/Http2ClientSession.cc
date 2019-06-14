@@ -543,11 +543,13 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
   }
 
   while (this->sm_reader->read_avail() >= (int64_t)HTTP2_FRAME_HEADER_LEN) {
-    // Cancel reading if there was an error
-    if (connection_state.tx_error_code.code != static_cast<uint32_t>(Http2ErrorCode::HTTP2_ERROR_NO_ERROR)) {
+    // Cancel reading if there was an error or connection is closed
+    if (connection_state.tx_error_code.code != static_cast<uint32_t>(Http2ErrorCode::HTTP2_ERROR_NO_ERROR) ||
+        connection_state.is_state_closed()) {
       Http2SsnDebug("reading a frame has been canceled (%u)", connection_state.tx_error_code.code);
       break;
     }
+
     // Return if there was an error
     Http2ErrorCode err;
     if (do_start_frame_read(err) < 0) {
