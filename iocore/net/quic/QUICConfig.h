@@ -134,7 +134,7 @@ private:
   uint32_t _ld_packet_threshold = 3;
   float _ld_time_threshold      = 1.25;
   ink_hrtime _ld_granularity    = HRTIME_MSECONDS(1);
-  ink_hrtime _ld_initial_rtt    = HRTIME_MSECONDS(100);
+  ink_hrtime _ld_initial_rtt    = HRTIME_MSECONDS(500);
 
   // [draft-11 recovery] 4.7.1.  Constants of interest
   uint32_t _cc_max_datagram_size               = 1200;
