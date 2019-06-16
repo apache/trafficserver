@@ -64,7 +64,7 @@ base plugin argument is reserved by calling :func:`TSHttpSsnArgIndexReserve`. Bo
 The functions return :code:`TS_SUCCESS` if an index was reserved,
 :code:`TS_ERROR` if not (most likely because all of the indices have already been reserved).
 Generally this will be a file or library scope global which is set at plugin initialization. This
-function is used in the example remap plugin :ts:git:`example/remap/remap.cc`. The index is stored
+function is used in the example remap plugin :ts:git:`example/plugins/c-api/remap/remap.cc`. The index is stored
 in the plugin global :code:`arg_index`. Transaction and session plugin argument indices are reserved
 independently.
 
