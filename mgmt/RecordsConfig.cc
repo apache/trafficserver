@@ -1382,7 +1382,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.quic.loss_detection.granularity", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.quic.loss_detection.initial_rtt", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.quic.loss_detection.initial_rtt", RECD_INT, "500", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
 
   // Constatns of Congestion Control

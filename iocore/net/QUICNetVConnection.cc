@@ -455,7 +455,8 @@ QUICNetVConnection::start()
   this->_padder = new QUICPadder(this->netvc_context);
   this->_rtt_measure.init(ld_config);
   this->_congestion_controller = new QUICCongestionController(this->_rtt_measure, this, cc_config);
-  this->_loss_detector = new QUICLossDetector(this, this->_congestion_controller, &this->_rtt_measure, this->_pinger, ld_config);
+  this->_loss_detector         = new QUICLossDetector(this, this->_congestion_controller, this->_pp_key_info, &this->_rtt_measure,
+                                              this->_pinger, this->_padder, ld_config, this->netvc_context);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);

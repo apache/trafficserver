@@ -37,6 +37,7 @@
 #include "QUICFrameHandler.h"
 #include "QUICConnection.h"
 
+class QUICPadder;
 class QUICPinger;
 class QUICLossDetector;
 class QUICRTTMeasure;
@@ -126,8 +127,9 @@ private:
 class QUICLossDetector : public Continuation, public QUICFrameHandler
 {
 public:
-  QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, QUICPinger *pinger,
-                   const QUICLDConfig &ld_config);
+  QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICPacketProtectionKeyInfo &key_info,
+                   QUICRTTMeasure *rtt_measure, QUICPinger *pinger, QUICPadder *padder, const QUICLDConfig &ld_config,
+                   NetVConnectionContext_t context);
   ~QUICLossDetector();
 
   int event_handler(int event, Event *edata);
@@ -183,16 +185,25 @@ private:
 
   ink_hrtime _get_earliest_loss_time(QUICPacketNumberSpace &pn_space);
 
-  std::set<QUICAckFrame::PacketNumberRange> _determine_newly_acked_packets(const QUICAckFrame &ack_frame);
+  std::vector<QUICPacketInfo *> _determine_newly_acked_packets(const QUICAckFrame &ack_frame, int pn_space);
+  bool _include_ack_eliciting(const std::vector<QUICPacketInfo *> &acked_packets, int index) const;
 
   void _retransmit_all_unacked_crypto_data();
-  void _send_one_packet();
-  void _send_two_packets();
+  void _send_one_or_two_packet();
+  void _send_one_handshake_packets();
+  void _send_one_padded_packets();
+
+  void _send_packet(QUICEncryptionLevel level, bool padded = false);
+
+  NetVConnectionContext_t _context = NET_VCONNECTION_UNSET;
 
   QUICConnectionInfoProvider *_info = nullptr;
   QUICRTTMeasure *_rtt_measure      = nullptr;
   QUICCongestionController *_cc     = nullptr;
   QUICPinger *_pinger               = nullptr;
+  QUICPadder *_padder               = nullptr;
+
+  const QUICPacketProtectionKeyInfo &_pp_key_info;
 };
 
 class QUICRTTMeasure : public QUICRTTProvider
@@ -225,11 +236,14 @@ public:
   void update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay);
   void reset();
 
+  ink_hrtime k_granularity() const;
+
 private:
   // related to rtt calculate
-  uint32_t _crypto_count    = 0;
-  uint32_t _pto_count       = 0;
-  ink_hrtime _max_ack_delay = 0;
+  uint32_t _crypto_count = 0;
+  uint32_t _pto_count    = 0;
+  // FIXME should be set by transport parameters
+  ink_hrtime _max_ack_delay = HRTIME_MSECONDS(25);
 
   // rtt vars
   ink_hrtime _latest_rtt   = 0;
@@ -239,5 +253,5 @@ private:
 
   // config
   ink_hrtime _k_granularity = 0;
-  ink_hrtime _k_initial_rtt = 0;
+  ink_hrtime _k_initial_rtt = HRTIME_MSECONDS(500);
 };
