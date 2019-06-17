@@ -141,7 +141,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
   LogFilter::Operator oper = LogFilter::N_OPERATORS;
   for (unsigned i = 0; i < LogFilter::N_OPERATORS; ++i) {
     if (strcasecmp(oper_str, LogFilter::OPERATOR_NAME[i]) == 0) {
-      oper = static_cast<LogFilter::Operator>(i);
+      oper = (LogFilter::Operator)i;
       break;
     }
   }
@@ -202,7 +202,7 @@ LogFilterString::_setValues(size_t n, char **value)
     for (size_t i = 0; i < n; ++i) {
       m_value[i]           = ats_strdup(value[i]);
       m_length[i]          = strlen(value[i]);
-      m_value_uppercase[i] = static_cast<char *>(ats_malloc(static_cast<unsigned int>(m_length[i]) + 1));
+      m_value_uppercase[i] = (char *)ats_malloc((unsigned int)m_length[i] + 1);
       size_t j;
       for (j = 0; j < m_length[i]; ++j) {
         m_value_uppercase[i][j] = ParseRules::ink_toupper(m_value[i][j]);
@@ -318,7 +318,7 @@ LogFilterString::wipe_this_entry(LogAccess *lad)
   size_t marsh_len = m_field->marshal_len(lad); // includes null termination
 
   if (marsh_len > BUFSIZE) {
-    big_buf = static_cast<char *>(ats_malloc(marsh_len));
+    big_buf = (char *)ats_malloc(marsh_len);
     ink_assert(big_buf != nullptr);
     buf = big_buf;
   }
@@ -392,7 +392,7 @@ LogFilterString::toss_this_entry(LogAccess *lad)
   size_t marsh_len    = m_field->marshal_len(lad); // includes null termination
 
   if (marsh_len > BUFSIZE) {
-    big_buf = static_cast<char *>(ats_malloc(static_cast<unsigned int>(marsh_len)));
+    big_buf = (char *)ats_malloc((unsigned int)marsh_len);
     ink_assert(big_buf != nullptr);
     buf = big_buf;
   }
@@ -420,7 +420,7 @@ LogFilterString::toss_this_entry(LogAccess *lad)
     break;
   case CASE_INSENSITIVE_CONTAIN: {
     if (big_buf) {
-      big_buf_upper = static_cast<char *>(ats_malloc(static_cast<unsigned int>(marsh_len)));
+      big_buf_upper = (char *)ats_malloc((unsigned int)marsh_len);
       buf_upper     = big_buf_upper;
     } else {
       buf = small_buf; // make clang happy
@@ -612,7 +612,7 @@ LogFilterInt::wipe_this_entry(LogAccess *lad)
   bool cond_satisfied = false;
   int64_t value;
 
-  m_field->marshal(lad, reinterpret_cast<char *>(&value));
+  m_field->marshal(lad, (char *)&value);
   // This used to do an ntohl() on value, but that breaks various filters.
   // Long term we should move IPs to their own log type.
 
@@ -650,7 +650,7 @@ LogFilterInt::toss_this_entry(LogAccess *lad)
   bool cond_satisfied = false;
   int64_t value;
 
-  m_field->marshal(lad, reinterpret_cast<char *>(&value));
+  m_field->marshal(lad, (char *)&value);
   // This used to do an ntohl() on value, but that breaks various filters.
   // Long term we should move IPs to their own log type.
 

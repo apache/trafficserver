@@ -78,7 +78,7 @@ HttpHeader::setUrl(TSMBuffer const bufurl, TSMLoc const locurl)
     return false;
   }
 
-  TSMLoc locurlout;
+  TSMLoc locurlout   = nullptr;
   TSReturnCode rcode = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurlout);
   if (TS_SUCCESS != rcode) {
     return false;
@@ -92,7 +92,7 @@ HttpHeader::setUrl(TSMBuffer const bufurl, TSMLoc const locurl)
     rcode = TSHttpHdrUrlSet(m_buffer, m_lochdr, locurlout);
   }
 
-  TSHandleMLocRelease(m_buffer, TS_NULL_MLOC, locurlout);
+  TSHandleMLocRelease(m_buffer, m_lochdr, locurlout);
 
   return TS_SUCCESS == rcode;
 }

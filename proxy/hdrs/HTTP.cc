@@ -700,7 +700,7 @@ http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
       heap->deallocate_obj(hh->u.req.m_url_impl);
     }
     // Clone into new heap if the URL was allocated against a different heap
-    if (reinterpret_cast<char *>(url) < heap->m_data_start || reinterpret_cast<char *>(url) >= heap->m_free_start) {
+    if ((char *)url < heap->m_data_start || (char *)url >= heap->m_free_start) {
       hh->u.req.m_url_impl = static_cast<URLImpl *>(heap->allocate_obj(url->m_length, url->m_type));
       memcpy(hh->u.req.m_url_impl, url, url->m_length);
       // Make sure there is a read_write heap
@@ -1093,8 +1093,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     ink_assert(url_start);
     ink_assert(url_end);
 
-    int method_wks_idx = hdrtoken_tokenize(method_start, static_cast<int>(method_end - method_start));
-    http_hdr_method_set(heap, hh, method_start, method_wks_idx, static_cast<int>(method_end - method_start), must_copy_strings);
+    int method_wks_idx = hdrtoken_tokenize(method_start, (int)(method_end - method_start));
+    http_hdr_method_set(heap, hh, method_start, method_wks_idx, (int)(method_end - method_start), must_copy_strings);
 
     ink_assert(hh->u.req.m_url_impl != nullptr);
 
@@ -1286,11 +1286,11 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
       }
 
       int32_t version   = HTTP_VERSION(cur[5] - '0', cur[7] - '0');
-      HTTPStatus status = static_cast<HTTPStatus>((cur[9] - '0') * 100 + (cur[10] - '0') * 10 + (cur[11] - '0'));
+      HTTPStatus status = (HTTPStatus)((cur[9] - '0') * 100 + (cur[10] - '0') * 10 + (cur[11] - '0'));
 
       http_hdr_version_set(hh, version);
       http_hdr_status_set(hh, status);
-      http_hdr_reason_set(heap, hh, reason_start, static_cast<int>(reason_end - reason_start), must_copy_strings);
+      http_hdr_reason_set(heap, hh, reason_start, (int)(reason_end - reason_start), must_copy_strings);
 
       end                    = real_end;
       parser->m_parsing_http = false;
@@ -1403,7 +1403,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     }
 
     if (reason_start && reason_end) {
-      http_hdr_reason_set(heap, hh, reason_start, static_cast<int>(reason_end - reason_start), must_copy_strings);
+      http_hdr_reason_set(heap, hh, reason_start, (int)(reason_end - reason_start), must_copy_strings);
     }
 
     end                    = real_end;
@@ -1429,7 +1429,7 @@ http_parse_status(const char *start, const char *end)
     status = (status * 10) + (*start++ - '0');
   }
 
-  return static_cast<HTTPStatus>(status);
+  return (HTTPStatus)status;
 }
 
 /*-------------------------------------------------------------------------
@@ -1483,7 +1483,7 @@ http_str_store(Arena *arena, const char *str, int length)
   if (idx < 0) {
     return arena->str_store(str, length);
   } else {
-    return const_cast<char *>(wks);
+    return (char *)wks;
   }
 }
 
@@ -1542,7 +1542,7 @@ http_parse_qvalue(const char *&buf, int &len)
 
           f = 10;
           while (len > 0 && *buf && ParseRules::is_digit(*buf)) {
-            n += (*buf++ - '0') / static_cast<double>(f);
+            n += (*buf++ - '0') / (double)f;
             f *= 10;
             len -= 1;
           }
@@ -1592,8 +1592,8 @@ http_parse_te(const char *buf, int len, Arena *arena)
     len -= 1;
   }
 
-  val           = static_cast<HTTPValTE *>(arena->alloc(sizeof(HTTPValTE)));
-  val->encoding = http_str_store(arena, s, static_cast<int>(buf - s));
+  val           = (HTTPValTE *)arena->alloc(sizeof(HTTPValTE));
+  val->encoding = http_str_store(arena, s, (int)(buf - s));
   val->qvalue   = http_parse_qvalue(buf, len);
 
   return val;
@@ -1785,9 +1785,9 @@ HTTPHdr::url_print(char *buff, int length, int *offset, int *skip)
 int
 HTTPHdr::unmarshal(char *buf, int len, RefCountObj *block_ref)
 {
-  m_heap = reinterpret_cast<HdrHeap *>(buf);
+  m_heap = (HdrHeap *)buf;
 
-  int res = m_heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&m_http), block_ref);
+  int res = m_heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&m_http, block_ref);
 
   if (res > 0) {
     m_mime = m_http->m_fields_impl;
@@ -1998,7 +1998,7 @@ HTTPInfo::marshal(char *buf, int len)
 {
   int tmp;
   int used                  = 0;
-  HTTPCacheAlt *marshal_alt = reinterpret_cast<HTTPCacheAlt *>(buf);
+  HTTPCacheAlt *marshal_alt = (HTTPCacheAlt *)buf;
   // non-zero only if the offsets are external. Otherwise they get
   // marshalled along with the alt struct.
   ink_assert(m_alt->m_magic == CACHE_ALT_MAGIC_ALIVE);
@@ -2032,7 +2032,7 @@ HTTPInfo::marshal(char *buf, int len)
   //    marshalling in to
   if (m_alt->m_request_hdr.valid()) {
     tmp                               = m_alt->m_request_hdr.m_heap->marshal(buf, len - used);
-    marshal_alt->m_request_hdr.m_heap = (HdrHeap *)static_cast<intptr_t>(used);
+    marshal_alt->m_request_hdr.m_heap = (HdrHeap *)(intptr_t)used;
     ink_assert(((intptr_t)marshal_alt->m_request_hdr.m_heap) < len);
     buf += tmp;
     used += tmp;
@@ -2042,7 +2042,7 @@ HTTPInfo::marshal(char *buf, int len)
 
   if (m_alt->m_response_hdr.valid()) {
     tmp                                = m_alt->m_response_hdr.m_heap->marshal(buf, len - used);
-    marshal_alt->m_response_hdr.m_heap = (HdrHeap *)static_cast<intptr_t>(used);
+    marshal_alt->m_response_hdr.m_heap = (HdrHeap *)(intptr_t)used;
     ink_assert(((intptr_t)marshal_alt->m_response_hdr.m_heap) < len);
     used += tmp;
   } else {
@@ -2061,7 +2061,7 @@ HTTPInfo::marshal(char *buf, int len)
 int
 HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
 {
-  HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
+  HTTPCacheAlt *alt = (HTTPCacheAlt *)buf;
   int orig_len      = len;
 
   if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
@@ -2090,11 +2090,11 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     alt->m_frag_offsets = nullptr; // should really already be zero.
   }
 
-  HdrHeap *heap   = reinterpret_cast<HdrHeap *>(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
+  HdrHeap *heap   = (HdrHeap *)(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
   HTTPHdrImpl *hh = nullptr;
   int tmp;
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::request unmarshal failed");
       return -1;
@@ -2106,9 +2106,9 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     alt->m_request_hdr.m_url_cached.m_heap = heap;
   }
 
-  heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
+  heap = (HdrHeap *)(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::response unmarshal failed");
       return -1;
@@ -2128,7 +2128,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
 int
 HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
 {
-  HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
+  HTTPCacheAlt *alt = (HTTPCacheAlt *)buf;
   int orig_len      = len;
 
   if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
@@ -2171,11 +2171,11 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
     alt->m_frag_offsets = nullptr; // should really already be zero.
   }
 
-  HdrHeap *heap   = reinterpret_cast<HdrHeap *>(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
+  HdrHeap *heap   = (HdrHeap *)(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
   HTTPHdrImpl *hh = nullptr;
   int tmp;
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::request unmarshal failed");
       return -1;
@@ -2187,9 +2187,9 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
     alt->m_request_hdr.m_url_cached.m_heap = heap;
   }
 
-  heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
+  heap = (HdrHeap *)(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
+    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::response unmarshal failed");
       return -1;
@@ -2213,7 +2213,7 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
 bool
 HTTPInfo::check_marshalled(char *buf, int len)
 {
-  HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
+  HTTPCacheAlt *alt = (HTTPCacheAlt *)buf;
 
   if (alt->m_magic != CACHE_ALT_MAGIC_MARSHALED) {
     return false;
@@ -2235,7 +2235,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
     return false;
   }
 
-  HdrHeap *heap = reinterpret_cast<HdrHeap *>(buf + (intptr_t)alt->m_request_hdr.m_heap);
+  HdrHeap *heap = (HdrHeap *)(buf + (intptr_t)alt->m_request_hdr.m_heap);
   if (heap->check_marshalled(len) == false) {
     return false;
   }
@@ -2248,7 +2248,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
     return false;
   }
 
-  heap = reinterpret_cast<HdrHeap *>(buf + (intptr_t)alt->m_response_hdr.m_heap);
+  heap = (HdrHeap *)(buf + (intptr_t)alt->m_response_hdr.m_heap);
   if (heap->check_marshalled(len) == false) {
     return false;
   }
@@ -2294,7 +2294,7 @@ HTTPInfo::get_handle(char *buf, int len)
 {
   // All the offsets have already swizzled to pointers.  All we
   //  need to do is set m_alt and make sure things are sane
-  HTTPCacheAlt *a = reinterpret_cast<HTTPCacheAlt *>(buf);
+  HTTPCacheAlt *a = (HTTPCacheAlt *)buf;
 
   if (a->m_magic == CACHE_ALT_MAGIC_ALIVE) {
     m_alt = a;

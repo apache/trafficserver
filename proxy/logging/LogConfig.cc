@@ -72,7 +72,7 @@ LogConfig::setup_default_values()
   }
   hostname = ats_strdup(name);
 
-  log_buffer_size       = static_cast<int>(10 * LOG_KILOBYTE);
+  log_buffer_size       = (int)(10 * LOG_KILOBYTE);
   max_secs_per_buffer   = 5;
   max_space_mb_for_logs = 100;
   max_space_mb_headroom = 10;
@@ -109,22 +109,22 @@ LogConfig::read_configuration_variables()
   int val;
   char *ptr;
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.log_buffer_size"));
+  val = (int)REC_ConfigReadInteger("proxy.config.log.log_buffer_size");
   if (val > 0) {
     log_buffer_size = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.max_secs_per_buffer"));
+  val = (int)REC_ConfigReadInteger("proxy.config.log.max_secs_per_buffer");
   if (val > 0) {
     max_secs_per_buffer = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.max_space_mb_for_logs"));
+  val = (int)REC_ConfigReadInteger("proxy.config.log.max_space_mb_for_logs");
   if (val > 0) {
     max_space_mb_for_logs = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.max_space_mb_headroom"));
+  val = (int)REC_ConfigReadInteger("proxy.config.log.max_space_mb_headroom");
   if (val > 0) {
     max_space_mb_headroom = val;
   }
@@ -152,7 +152,7 @@ LogConfig::read_configuration_variables()
     ::exit(1);
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.preproc_threads"));
+  val = (int)REC_ConfigReadInteger("proxy.config.log.preproc_threads");
   if (val > 0 && val <= 128) {
     preproc_threads = val;
   }
@@ -162,31 +162,31 @@ LogConfig::read_configuration_variables()
   // we don't check for valid values of rolling_enabled, rolling_interval_sec,
   // rolling_offset_hr, or rolling_size_mb because the LogObject takes care of this
   //
-  rolling_interval_sec = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_interval_sec"));
-  rolling_offset_hr    = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_offset_hr"));
-  rolling_size_mb      = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_size_mb"));
-  rolling_min_count    = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_min_count"));
-  val                  = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_enabled"));
+  rolling_interval_sec = (int)REC_ConfigReadInteger("proxy.config.log.rolling_interval_sec");
+  rolling_offset_hr    = (int)REC_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
+  rolling_size_mb      = (int)REC_ConfigReadInteger("proxy.config.log.rolling_size_mb");
+  rolling_min_count    = (int)REC_ConfigReadInteger("proxy.config.log.rolling_min_count");
+  val                  = (int)REC_ConfigReadInteger("proxy.config.log.rolling_enabled");
   if (LogRollingEnabledIsValid(val)) {
-    rolling_enabled = static_cast<Log::RollingEnabledValues>(val);
+    rolling_enabled = (Log::RollingEnabledValues)val;
   } else {
     Warning("invalid value '%d' for '%s', disabling log rolling", val, "proxy.config.log.rolling_enabled");
     rolling_enabled = Log::NO_ROLLING;
   }
 
-  val                      = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files"));
+  val                      = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
   auto_delete_rolled_files = (val > 0);
 
   // Read in min_count control values for auto deletion
   if (auto_delete_rolled_files) {
     // For diagnostic logs
-    val = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_min_count"));
+    val = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_min_count");
     val = ((val == 0) ? INT_MAX : val);
     deleting_info.insert(new LogDeletingInfo(DIAGS_LOG_FILENAME, val));
 
     // For traffic.out
     ats_scoped_str name(REC_ConfigReadString("proxy.config.output.logfile"));
-    val = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_min_count"));
+    val = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_min_count");
     val = ((val == 0) ? INT_MAX : val);
     if (name) {
       deleting_info.insert(new LogDeletingInfo(name.get(), val));
@@ -195,28 +195,28 @@ LogConfig::read_configuration_variables()
     }
   }
   // PERFORMANCE
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.sampling_frequency"));
+  val = (int)REC_ConfigReadInteger("proxy.config.log.sampling_frequency");
   if (val > 0) {
     sampling_frequency = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.file_stat_frequency"));
+  val = (int)REC_ConfigReadInteger("proxy.config.log.file_stat_frequency");
   if (val > 0) {
     file_stat_frequency = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.space_used_frequency"));
+  val = (int)REC_ConfigReadInteger("proxy.config.log.space_used_frequency");
   if (val > 0) {
     space_used_frequency = val;
   }
 
   // ASCII BUFFER
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.ascii_buffer_size"));
+  val = (int)REC_ConfigReadInteger("proxy.config.log.ascii_buffer_size");
   if (val > 0) {
     ascii_buffer_size = val;
   }
 
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.max_line_size"));
+  val = (int)REC_ConfigReadInteger("proxy.config.log.max_line_size");
   if (val > 0) {
     max_line_size = val;
   }
@@ -231,7 +231,7 @@ LogConfig::read_configuration_variables()
   -------------------------------------------------------------------------*/
 
 // TODO: Is UINT_MAX here really correct?
-LogConfig::LogConfig() : m_partition_space_left(static_cast<int64_t>(UINT_MAX))
+LogConfig::LogConfig() : m_partition_space_left((int64_t)UINT_MAX)
 
 {
   // Setup the default values for all LogConfig public variables so that
@@ -278,8 +278,8 @@ LogConfig::init(LogConfig *prev_config)
 
     Debug("log", "creating predefined error log object");
 
-    errlog = new LogObject(fmt.get(), logfile_dir, "error.log", LOG_FILE_ASCII, nullptr, rolling_enabled, preproc_threads,
-                           rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
+    errlog = new LogObject(fmt.get(), logfile_dir, "error.log", LOG_FILE_ASCII, nullptr, (Log::RollingEnabledValues)rolling_enabled,
+                           preproc_threads, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
 
     log_object_manager.manage_object(errlog);
     errlog->set_fmt_timestamps();
@@ -335,7 +335,7 @@ LogConfig::display(FILE *fd)
   fprintf(fd, "   space_used_frequency = %d\n", space_used_frequency);
 
   fprintf(fd, "\n");
-  fprintf(fd, "************ Log Objects (%u objects) ************\n", log_object_manager.get_num_objects());
+  fprintf(fd, "************ Log Objects (%u objects) ************\n", (unsigned int)log_object_manager.get_num_objects());
   log_object_manager.display(fd);
 
   fprintf(fd, "************ Filter List (%u filters) ************\n", filter_list.count());
@@ -513,11 +513,11 @@ LogConfig::space_to_write(int64_t bytes_to_write) const
   int64_t logical_space_used, physical_space_left;
   bool space;
 
-  config_space       = static_cast<int64_t>(get_max_space_mb()) * LOG_MEGABYTE;
-  partition_headroom = static_cast<int64_t>(PARTITION_HEADROOM_MB) * LOG_MEGABYTE;
+  config_space       = (int64_t)get_max_space_mb() * LOG_MEGABYTE;
+  partition_headroom = (int64_t)PARTITION_HEADROOM_MB * LOG_MEGABYTE;
 
   logical_space_used  = m_space_used + bytes_to_write;
-  physical_space_left = m_partition_space_left - bytes_to_write;
+  physical_space_left = m_partition_space_left - (int64_t)bytes_to_write;
 
   space = ((logical_space_used < config_space) && (physical_space_left > partition_headroom));
 
@@ -601,7 +601,7 @@ LogConfig::update_space_used()
 
     sret = ::stat(path, &sbuf);
     if (sret != -1 && S_ISREG(sbuf.st_mode)) {
-      total_space_used += static_cast<int64_t>(sbuf.st_size);
+      total_space_used += (int64_t)sbuf.st_size;
 
       if (auto_delete_rolled_files && LogFile::rolled_logfile(entry->d_name)) {
         //
@@ -617,7 +617,7 @@ LogConfig::update_space_used()
         }
 
         auto &candidates = iter->candidates;
-        candidates.push_back(LogDeleteCandidate(path, static_cast<int64_t>(sbuf.st_size), sbuf.st_mtime));
+        candidates.push_back(LogDeleteCandidate(path, (int64_t)sbuf.st_size, sbuf.st_mtime));
         candidate_count++;
       }
     }
@@ -633,7 +633,7 @@ LogConfig::update_space_used()
   struct statvfs fs;
 
   if (::statvfs(logfile_dir, &fs) >= 0) {
-    partition_space_left = static_cast<int64_t>(fs.f_bavail) * static_cast<int64_t>(fs.f_bsize);
+    partition_space_left = (int64_t)fs.f_bavail * (int64_t)fs.f_bsize;
   }
 
   //
@@ -658,8 +658,8 @@ LogConfig::update_space_used()
   // selected).
   //
 
-  int64_t max_space = static_cast<int64_t>(get_max_space_mb()) * LOG_MEGABYTE;
-  int64_t headroom  = static_cast<int64_t>(max_space_mb_headroom) * LOG_MEGABYTE;
+  int64_t max_space = (int64_t)get_max_space_mb() * LOG_MEGABYTE;
+  int64_t headroom  = (int64_t)max_space_mb_headroom * LOG_MEGABYTE;
 
   if (candidate_count > 0 && !space_to_write(headroom)) {
     Debug("logspace", "headroom reached, trying to clear space ...");

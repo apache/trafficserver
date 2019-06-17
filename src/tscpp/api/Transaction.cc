@@ -182,7 +182,7 @@ void
 Transaction::setErrorBody(const std::string &page)
 {
   LOG_DEBUG("Transaction tshttptxn=%p setting error body page length: %lu", state_->txn_, page.length());
-  char *body = static_cast<char *>(TSmalloc(page.length()));
+  char *body = (char *)TSmalloc(page.length());
   memcpy(body, page.data(), page.length());
   TSHttpTxnErrorBodySet(state_->txn_, body, page.length(), nullptr); // Default to text/html
 }
@@ -191,7 +191,7 @@ void
 Transaction::setErrorBody(const std::string &page, const std::string &mimetype)
 {
   LOG_DEBUG("Transaction tshttptxn=%p setting error body page length: %lu", state_->txn_, page.length());
-  char *body = static_cast<char *>(TSmalloc(page.length()));
+  char *body = (char *)TSmalloc(page.length());
   memcpy(body, page.data(), page.length());
   TSHttpTxnErrorBodySet(state_->txn_, body, page.length(), TSstrdup(mimetype.c_str()));
 }

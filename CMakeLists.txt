@@ -110,7 +110,6 @@ CPP_ADD_SOURCES(mgmt mgmt/utils)
 CPP_LIB(records lib/records lib/records)
 CPP_LIB(logging proxy/logging proxy/logging)
 
-CPP_LIB(tsconfig lib/tsconfig lib/tsconfig)
 CPP_LIB(wccp src/wccp include/wccp)
 
 file(GLOB plugin_files

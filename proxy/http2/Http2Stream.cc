@@ -253,6 +253,9 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
     } else if (type == HTTP2_FRAME_TYPE_HEADERS) { // w/o END_STREAM flag
       // No state change here. Expect a following DATA frame with END_STREAM flag.
       return true;
+    } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) { // w/o END_STREAM flag
+      // No state change here. Expect a following DATA frame with END_STREAM flag.
+      return true;
     } else {
       // Error, set state closed
       _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
@@ -544,7 +547,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
   }
   ink_release_assert(this->_thread == this_ethread());
 
-  Http2ClientSession *proxy_ssn = static_cast<Http2ClientSession *>(this->get_parent());
+  Http2ClientSession *proxy_ssn = static_cast<Http2ClientSession *>(this->get_proxy_ssn());
 
   SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
 
@@ -673,7 +676,7 @@ Http2Stream::signal_write_event(bool call_update)
 void
 Http2Stream::push_promise(URL &url, const MIMEField *accept_encoding)
 {
-  Http2ClientSession *proxy_ssn = static_cast<Http2ClientSession *>(this->get_parent());
+  Http2ClientSession *proxy_ssn = static_cast<Http2ClientSession *>(this->get_proxy_ssn());
   SCOPED_MUTEX_LOCK(lock, proxy_ssn->connection_state.mutex, this_ethread());
   proxy_ssn->connection_state.send_push_promise_frame(this, url, accept_encoding);
 }
@@ -681,7 +684,7 @@ Http2Stream::push_promise(URL &url, const MIMEField *accept_encoding)
 void
 Http2Stream::send_response_body(bool call_update)
 {
-  Http2ClientSession *proxy_ssn = static_cast<Http2ClientSession *>(this->get_parent());
+  Http2ClientSession *proxy_ssn = static_cast<Http2ClientSession *>(this->get_proxy_ssn());
   inactive_timeout_at           = Thread::get_hrtime() + inactive_timeout;
 
   if (Http2::stream_priority_enabled) {
@@ -724,14 +727,14 @@ Http2Stream::destroy()
 
   // Safe to initiate SSN_CLOSE if this is the last stream
   if (proxy_ssn) {
-    Http2ClientSession *h2_parent = static_cast<Http2ClientSession *>(proxy_ssn);
-    SCOPED_MUTEX_LOCK(lock, h2_parent->connection_state.mutex, this_ethread());
+    Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(proxy_ssn);
+    SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
     // Make sure the stream is removed from the stream list and priority tree
     // In many cases, this has been called earlier, so this call is a no-op
-    h2_parent->connection_state.delete_stream(this);
+    h2_proxy_ssn->connection_state.delete_stream(this);
 
     // Update session's stream counts, so it accurately goes into keep-alive state
-    h2_parent->connection_state.release_stream(this);
+    h2_proxy_ssn->connection_state.release_stream(this);
   }
 
   // Clean up the write VIO in case of inactivity timeout
@@ -755,6 +758,7 @@ Http2Stream::destroy()
   chunked_handler.clear();
   clear_timers();
   clear_io_events();
+  http_parser_clear(&http_parser);
 
   super::destroy();
   THREAD_FREE(this, http2StreamAllocator, this_ethread());

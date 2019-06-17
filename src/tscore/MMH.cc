@@ -101,10 +101,10 @@ ink_code_incr_MMH_init(MMH_CTX *ctx)
 {
   ctx->buffer_size = 0;
   ctx->blocks      = 0;
-  ctx->state[0]    = (MMH_x[MMH_X_SIZE + 0] << 32) + MMH_x[MMH_X_SIZE + 1];
-  ctx->state[1]    = (MMH_x[MMH_X_SIZE + 2] << 32) + MMH_x[MMH_X_SIZE + 3];
-  ctx->state[2]    = (MMH_x[MMH_X_SIZE + 4] << 32) + MMH_x[MMH_X_SIZE + 5];
-  ctx->state[3]    = (MMH_x[MMH_X_SIZE + 6] << 32) + MMH_x[MMH_X_SIZE + 7];
+  ctx->state[0]    = ((uint64_t)MMH_x[MMH_X_SIZE + 0] << 32) + MMH_x[MMH_X_SIZE + 1];
+  ctx->state[1]    = ((uint64_t)MMH_x[MMH_X_SIZE + 2] << 32) + MMH_x[MMH_X_SIZE + 3];
+  ctx->state[2]    = ((uint64_t)MMH_x[MMH_X_SIZE + 4] << 32) + MMH_x[MMH_X_SIZE + 5];
+  ctx->state[3]    = ((uint64_t)MMH_x[MMH_X_SIZE + 6] << 32) + MMH_x[MMH_X_SIZE + 7];
   return 0;
 }
 
@@ -113,7 +113,7 @@ ink_code_MMH(unsigned char *input, int len, unsigned char *sixteen_byte_hash)
 {
   MMH_CTX ctx;
   ink_code_incr_MMH_init(&ctx);
-  ink_code_incr_MMH_update(&ctx, reinterpret_cast<const char *>(input), len);
+  ink_code_incr_MMH_update(&ctx, (const char *)input, len);
   ink_code_incr_MMH_final(sixteen_byte_hash, &ctx);
   return 0;
 }
@@ -121,7 +121,7 @@ ink_code_MMH(unsigned char *input, int len, unsigned char *sixteen_byte_hash)
 static inline void
 MMH_update(MMH_CTX *ctx, unsigned char *ab)
 {
-  uint32_t *b = reinterpret_cast<uint32_t *>(ab);
+  uint32_t *b = (uint32_t *)ab;
   ctx->state[0] += b[0] * MMH_x[(ctx->blocks + 0) % MMH_X_SIZE];
   ctx->state[1] += b[1] * MMH_x[(ctx->blocks + 1) % MMH_X_SIZE];
   ctx->state[2] += b[2] * MMH_x[(ctx->blocks + 2) % MMH_X_SIZE];
@@ -132,7 +132,7 @@ MMH_update(MMH_CTX *ctx, unsigned char *ab)
 static inline void
 MMH_updateb1(MMH_CTX *ctx, unsigned char *ab)
 {
-  uint32_t *b = reinterpret_cast<uint32_t *>(ab - 1);
+  uint32_t *b = (uint32_t *)(ab - 1);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 << 8) + (b1 >> 24);
   b1 = (b1 << 8) + (b2 >> 24);
@@ -148,7 +148,7 @@ MMH_updateb1(MMH_CTX *ctx, unsigned char *ab)
 static inline void
 MMH_updateb2(MMH_CTX *ctx, unsigned char *ab)
 {
-  uint32_t *b = reinterpret_cast<uint32_t *>(ab - 2);
+  uint32_t *b = (uint32_t *)(ab - 2);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 << 16) + (b1 >> 16);
   b1 = (b1 << 16) + (b2 >> 16);
@@ -164,7 +164,7 @@ MMH_updateb2(MMH_CTX *ctx, unsigned char *ab)
 static inline void
 MMH_updateb3(MMH_CTX *ctx, unsigned char *ab)
 {
-  uint32_t *b = reinterpret_cast<uint32_t *>(ab - 3);
+  uint32_t *b = (uint32_t *)(ab - 3);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 << 24) + (b1 >> 8);
   b1 = (b1 << 24) + (b2 >> 8);
@@ -180,7 +180,7 @@ MMH_updateb3(MMH_CTX *ctx, unsigned char *ab)
 static inline void
 MMH_updatel1(MMH_CTX *ctx, unsigned char *ab)
 {
-  uint32_t *b = reinterpret_cast<uint32_t *>(ab - 1);
+  uint32_t *b = (uint32_t *)(ab - 1);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 >> 8) + (b1 << 24);
   b1 = (b1 >> 8) + (b2 << 24);
@@ -196,7 +196,7 @@ MMH_updatel1(MMH_CTX *ctx, unsigned char *ab)
 static inline void
 MMH_updatel2(MMH_CTX *ctx, unsigned char *ab)
 {
-  uint32_t *b = reinterpret_cast<uint32_t *>(ab - 2);
+  uint32_t *b = (uint32_t *)(ab - 2);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 >> 16) + (b1 << 16);
   b1 = (b1 >> 16) + (b2 << 16);
@@ -212,7 +212,7 @@ MMH_updatel2(MMH_CTX *ctx, unsigned char *ab)
 static inline void
 MMH_updatel3(MMH_CTX *ctx, unsigned char *ab)
 {
-  uint32_t *b = reinterpret_cast<uint32_t *>(ab - 3);
+  uint32_t *b = (uint32_t *)(ab - 3);
   uint32_t b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3], b4 = b[4];
   b0 = (b0 >> 24) + (b1 << 8);
   b1 = (b1 >> 24) + (b2 << 8);
@@ -246,7 +246,7 @@ ink_code_incr_MMH_update(MMH_CTX *ctx, const char *ainput, int input_length)
   }
   {
     // check alignment
-    int alignment = static_cast<int>((intptr_t)in & 0x3);
+    int alignment = (int)((intptr_t)in & 0x3);
     if (alignment) {
 #if defined(_BIG_ENDIAN)
 #define big_endian 1
@@ -254,7 +254,7 @@ ink_code_incr_MMH_update(MMH_CTX *ctx, const char *ainput, int input_length)
 #define big_endian 0
 #else
       unsigned int endian = 1;
-      int big_endian      = !*reinterpret_cast<char *>(&endian);
+      int big_endian      = !*(char *)&endian;
 #endif
       if (big_endian) {
         if (alignment == 1) {
@@ -301,11 +301,11 @@ ink_code_incr_MMH_update(MMH_CTX *ctx, const char *ainput, int input_length)
 Lstore:
   if (end - in) {
     int oldbs = ctx->buffer_size;
-    ctx->buffer_size += static_cast<int>(end - in);
+    ctx->buffer_size += (int)(end - in);
 #ifndef TEST
     ink_assert(ctx->buffer_size < 16);
 #endif
-    memcpy(ctx->buffer + oldbs, in, static_cast<int>(end - in));
+    memcpy(ctx->buffer + oldbs, in, (int)(end - in));
   }
   return 0;
 }
@@ -337,12 +337,12 @@ ink_code_incr_MMH_final(uint8_t *presult, MMH_CTX *ctx)
     MMH_update(ctx, ctx->buffer);
   }
   // append length (before padding)
-  unsigned int *pbuffer = reinterpret_cast<unsigned int *>(ctx->buffer);
+  unsigned int *pbuffer = (unsigned int *)ctx->buffer;
   pbuffer[1] = pbuffer[2] = pbuffer[3] = pbuffer[0] = len;
   MMH_update(ctx, ctx->buffer);
   // final phase
-  uint32_t *b = reinterpret_cast<uint32_t *>(presult);
-  uint64_t d  = ((static_cast<uint64_t>(1)) << 32) + 15;
+  uint32_t *b = (uint32_t *)presult;
+  uint64_t d  = (((uint64_t)1) << 32) + 15;
   uint32_t b0 = uint32_t(ctx->state[0] % d);
   uint32_t b1 = uint32_t(ctx->state[1] % d);
   uint32_t b2 = uint32_t(ctx->state[2] % d);

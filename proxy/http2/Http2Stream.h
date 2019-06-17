@@ -41,8 +41,6 @@ public:
   typedef ProxyTransaction super; ///< Parent type.
   Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size) : client_rwnd(initial_rwnd), _id(sid)
   {
-    http_parser_init(&http_parser);
-
     SET_HANDLER(&Http2Stream::main_event_handler);
   }
 
@@ -57,6 +55,7 @@ public:
     // FIXME: Are you sure? every "stream" needs request_header?
     _req_header.create(HTTP_TYPE_REQUEST);
     response_header.create(HTTP_TYPE_RESPONSE);
+    http_parser_init(&http_parser);
   }
 
   int main_event_handler(int event, void *edata);

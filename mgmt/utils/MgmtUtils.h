@@ -38,8 +38,6 @@
 
 #include "records/P_RecCore.h"
 
-constexpr const char SSL_SERVER_NAME_CONFIG[] = "ssl_server_name.yaml";
-
 int mgmt_readline(int fd, char *buf, int maxlen);
 int mgmt_writeline(int fd, const char *data, int nbytes);
 

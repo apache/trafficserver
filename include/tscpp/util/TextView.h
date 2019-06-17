@@ -1082,7 +1082,7 @@ TextView::rtrim(super_type const &delimiters)
   const char *spot  = this->data_end();
   const char *limit = this->data();
 
-  while (limit < spot && valid[static_cast<uint8_t>(*--spot)])
+  while (limit < spot-- && valid[static_cast<uint8_t>(*spot)])
     ;
 
   this->remove_suffix(this->data_end() - (spot + 1));
@@ -1102,7 +1102,9 @@ TextView::trim(super_type const &delimiters)
     ;
   this->remove_prefix(spot - this->data());
 
-  for (spot = this->data_end(), limit = this->data(); limit < spot && valid[static_cast<uint8_t>(*--spot)];)
+  spot  = this->data_end();
+  limit = this->data();
+  while (limit < spot-- && valid[static_cast<uint8_t>(*spot)])
     ;
   this->remove_suffix(this->data_end() - (spot + 1));
 
@@ -1131,9 +1133,9 @@ template <typename F>
 inline TextView &
 TextView::rtrim_if(F const &pred)
 {
-  const char *spot;
-  const char *limit;
-  for (spot = this->data_end(), limit = this->data(); limit < spot && pred(*--spot);)
+  const char *spot  = this->data_end();
+  const char *limit = this->data();
+  while (limit < spot-- && pred(*spot))
     ;
   this->remove_suffix(this->data_end() - (spot + 1));
   return *this;

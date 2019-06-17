@@ -21,7 +21,6 @@ AM_CXXFLAGS += -Wno-unused-variable
 AM_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
 
 libtscppapi = $(top_builddir)/src/tscpp/api/libtscppapi.la
-libtsconfig = $(top_builddir)/lib/tsconfig/libtsconfig.la
 
 if BUILD_EXAMPLE_PLUGINS
 
@@ -32,6 +31,7 @@ example_Plugins = \
 	blacklist_0.la \
 	blacklist_1.la \
 	bnull_transform.la \
+	cert_update.la \
 	request_buffer.la \
 	cache_scan.la \
 	client_context_dump.la \
@@ -102,6 +102,7 @@ basic_auth_la_SOURCES = basic_auth/basic_auth.c
 blacklist_0_la_SOURCES = blacklist_0/blacklist_0.c
 blacklist_1_la_SOURCES = blacklist_1/blacklist_1.c
 bnull_transform_la_SOURCES = bnull_transform/bnull_transform.c
+cert_update_la_SOURCES = cert_update/cert_update.cc
 request_buffer_la_SOURCES = request_buffer/request_buffer.c
 cache_scan_la_SOURCES = cache_scan/cache_scan.cc
 client_context_dump_la_SOURCES = client_context_dump/client_context_dump.cc
@@ -125,9 +126,7 @@ server_push_la_SOURCES = server_push/server_push.c
 server_transform_la_SOURCES = server_transform/server_transform.c
 ssl_preaccept_la_SOURCES = ssl_preaccept/ssl_preaccept.cc
 ssl_sni_la_SOURCES = ssl_sni/ssl_sni.cc
-ssl_sni_la_LIBADD = $(libtsconfig)
 ssl_sni_whitelist_la_SOURCES = ssl_sni_whitelist/ssl_sni_whitelist.cc
-ssl_sni_whitelist_la_LIBADD = $(libtsconfig)
 disable_http2_la_SOURCES = disable_http2/disable_http2.cc
 verify_cert_la_SOURCES = verify_cert/verify_cert.cc
 statistic_la_SOURCES = statistic/statistic.cc

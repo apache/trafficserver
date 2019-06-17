@@ -106,18 +106,18 @@ LogAccess::init()
     m_proxy_response = &(hdr->client_response);
     MIMEField *field = m_proxy_response->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     if (field) {
-      m_proxy_resp_content_type_str = const_cast<char *>(field->value_get(&m_proxy_resp_content_type_len));
+      m_proxy_resp_content_type_str = (char *)field->value_get(&m_proxy_resp_content_type_len);
 
       LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
     } else {
       // If Content-Type field is missing, check for @Content-Type
       field = m_proxy_response->field_find(HIDDEN_CONTENT_TYPE, HIDDEN_CONTENT_TYPE_LEN);
       if (field) {
-        m_proxy_resp_content_type_str = const_cast<char *>(field->value_get(&m_proxy_resp_content_type_len));
+        m_proxy_resp_content_type_str = (char *)field->value_get(&m_proxy_resp_content_type_len);
         LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
       }
     }
-    m_proxy_resp_reason_phrase_str = const_cast<char *>(m_proxy_response->reason_get(&m_proxy_resp_reason_phrase_len));
+    m_proxy_resp_reason_phrase_str = (char *)m_proxy_response->reason_get(&m_proxy_resp_reason_phrase_len);
   }
   if (hdr->server_request.valid()) {
     m_proxy_request = &(hdr->server_request);
@@ -167,7 +167,7 @@ LogAccess::marshal_process_uuid(char *buf)
   int len = round_strlen(TS_UUID_STRING_LEN + 1);
 
   if (buf) {
-    const char *str = const_cast<char *>(Machine::instance()->uuid.getString());
+    const char *str = (char *)Machine::instance()->uuid.getString();
     marshal_str(buf, str, len);
   }
   return len;
@@ -180,7 +180,7 @@ int
 LogAccess::marshal_config_int_var(char *config_var, char *buf)
 {
   if (buf) {
-    int64_t val = static_cast<int64_t>(REC_ConfigReadInteger(config_var));
+    int64_t val = (int64_t)REC_ConfigReadInteger(config_var);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -252,13 +252,13 @@ LogAccess::marshal_record(char *record, char *buf)
       //
       ink_assert(max_chars > 21);
 
-      int64_t val = static_cast<int64_t>(LOG_INTEGER == stype ? REC_readInteger(record, &found) : REC_readCounter(record, &found));
+      int64_t val = (int64_t)(LOG_INTEGER == stype ? REC_readInteger(record, &found) : REC_readCounter(record, &found));
 
       if (found) {
         out_buf = int64_to_str(ascii_buf, max_chars, val, &num_chars);
         ink_assert(out_buf);
       } else {
-        out_buf   = const_cast<char *>(record_not_found_msg);
+        out_buf   = (char *)record_not_found_msg;
         num_chars = record_not_found_chars;
       }
     } else if (LOG_FLOAT == stype) {
@@ -291,7 +291,7 @@ LogAccess::marshal_record(char *record, char *buf)
           out_buf = ascii_buf;
         }
       } else {
-        out_buf   = const_cast<char *>(record_not_found_msg);
+        out_buf   = (char *)record_not_found_msg;
         num_chars = record_not_found_chars;
       }
     } else if (LOG_STRING == stype) {
@@ -311,7 +311,7 @@ LogAccess::marshal_record(char *record, char *buf)
           num_chars = ::strlen(out_buf) + 1;
         }
       } else {
-        out_buf   = const_cast<char *>(record_not_found_msg);
+        out_buf   = (char *)record_not_found_msg;
         num_chars = record_not_found_chars;
       }
     } else {
@@ -442,7 +442,7 @@ LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFi
 {
   long int codeStrLen = 0;
 
-  switch (map->asString(code, dest, len, reinterpret_cast<size_t *>(&codeStrLen))) {
+  switch (map->asString(code, dest, len, (size_t *)&codeStrLen)) {
   case LogFieldAliasMap::INVALID_INT:
     if (msg) {
       const int bufSize = 64;
@@ -480,7 +480,7 @@ LogAccess::unmarshal_int(char **buf)
   int64_t val;
 
   // TODO: this used to do nthol, do we need to worry? TS-1156.
-  val = *(reinterpret_cast<int64_t *>(*buf));
+  val = *((int64_t *)(*buf));
   *buf += INK_MIN_ALIGN;
   return val;
 }
@@ -532,7 +532,7 @@ LogAccess::unmarshal_itoa(int64_t val, char *dest, int field_width, char leading
     *p-- = '-';
   }
 
-  return static_cast<int>(dest - p);
+  return (int)(dest - p);
 }
 
 /*-------------------------------------------------------------------------
@@ -552,7 +552,7 @@ LogAccess::unmarshal_itox(int64_t val, char *dest, int field_width, char leading
   char *p             = dest;
   static char table[] = "0123456789abcdef?";
 
-  for (int i = 0; i < static_cast<int>(sizeof(int64_t) * 2); i++) {
+  for (int i = 0; i < (int)(sizeof(int64_t) * 2); i++) {
     *p-- = table[val & 0xf];
     val >>= 4;
   }
@@ -560,7 +560,7 @@ LogAccess::unmarshal_itox(int64_t val, char *dest, int field_width, char leading
     *p-- = leading_char;
   }
 
-  return static_cast<int64_t>(dest - p);
+  return (int64_t)(dest - p);
 }
 
 /*-------------------------------------------------------------------------
@@ -640,7 +640,7 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
   ink_assert(dest != nullptr);
 
   char *val_buf = *buf;
-  int val_len   = static_cast<int>(::strlen(val_buf));
+  int val_len   = (int)::strlen(val_buf);
 
   *buf += LogAccess::strlen(val_buf); // this is how it was stored
 
@@ -675,7 +675,7 @@ LogAccess::unmarshal_ttmsf(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   int64_t val = unmarshal_int(buf);
-  double secs = static_cast<double>(val) / 1000;
+  double secs = (double)val / 1000;
   int val_len = snprintf(dest, len, "%.3f", secs);
   return val_len;
 }
@@ -689,7 +689,7 @@ LogAccess::unmarshal_int_to_date_str(char **buf, char *dest, int len)
 
   int64_t value = unmarshal_int(buf);
   char *strval  = LogUtils::timestamp_to_date_str(value);
-  int strlen    = static_cast<int>(::strlen(strval));
+  int strlen    = (int)::strlen(strval);
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -704,7 +704,7 @@ LogAccess::unmarshal_int_to_time_str(char **buf, char *dest, int len)
 
   int64_t value = unmarshal_int(buf);
   char *strval  = LogUtils::timestamp_to_time_str(value);
-  int strlen    = static_cast<int>(::strlen(strval));
+  int strlen    = (int)::strlen(strval);
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -731,7 +731,7 @@ LogAccess::unmarshal_int_to_netscape_str(char **buf, char *dest, int len)
 
   int64_t value = unmarshal_int(buf);
   char *strval  = LogUtils::timestamp_to_netscape_str(value);
-  int strlen    = static_cast<int>(::strlen(strval));
+  int strlen    = (int)::strlen(strval);
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -774,7 +774,7 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   static const char *http = "HTTP/";
-  static int http_len     = static_cast<int>(::strlen(http));
+  static int http_len     = (int)::strlen(http);
 
   char val_buf[128];
   char *p = val_buf;
@@ -1036,7 +1036,7 @@ LogAccess::unmarshal_record(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   char *val_buf = *buf;
-  int val_len   = static_cast<int>(::strlen(val_buf));
+  int val_len   = (int)::strlen(val_buf);
   *buf += MARSHAL_RECORD_LENGTH; // this is how it was stored
   if (val_len < len) {
     memcpy(dest, val_buf, val_len);
@@ -1108,7 +1108,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   Debug("log-resolve", "Marshaling data from LogAccess into buffer ...");
   context->init();
   unsigned bytes_needed = fields.marshal_len(context);
-  char *buf             = static_cast<char *>(ats_malloc(bytes_needed));
+  char *buf             = (char *)ats_malloc(bytes_needed);
   unsigned bytes_used   = fields.marshal(context, buf);
 
   ink_assert(bytes_needed == bytes_used);
@@ -1120,7 +1120,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   // we're not sure how much space it will take when it's unmarshalled.
   // So, we'll just guess.
   //
-  char *result = static_cast<char *>(ats_malloc(8192));
+  char *result = (char *)ats_malloc(8192);
   unsigned bytes_resolved =
     LogBuffer::resolve_custom_entry(&fields, printf_str, buf, result, 8191, LogUtils::timestamp(), 0, LOG_SEGMENT_VERSION);
   ink_assert(bytes_resolved < 8192);
@@ -1341,19 +1341,17 @@ LogAccess::validate_unmapped_url_path()
 
     if (m_client_req_unmapped_url_path_len >= 6) { // xxx:// - minimum schema size
       int len;
-      char *c =
-        static_cast<char *>(memchr((void *)m_client_req_unmapped_url_path_str, ':', m_client_req_unmapped_url_path_len - 1));
+      char *c = (char *)memchr((void *)m_client_req_unmapped_url_path_str, ':', m_client_req_unmapped_url_path_len - 1);
 
-      if (c && (len = static_cast<int>(c - m_client_req_unmapped_url_path_str)) <= 5) { // 5 - max schema size
+      if (c && (len = (int)(c - m_client_req_unmapped_url_path_str)) <= 5) { // 5 - max schema size
         if (len + 2 <= m_client_req_unmapped_url_canon_len && c[1] == '/' && c[2] == '/') {
           len += 3; // Skip "://"
           m_client_req_unmapped_url_host_str = &m_client_req_unmapped_url_canon_str[len];
           m_client_req_unmapped_url_host_len = m_client_req_unmapped_url_path_len - len;
           // Attempt to find first '/' in the path
-          if (m_client_req_unmapped_url_host_len > 0 &&
-              (c = static_cast<char *>(
-                 memchr((void *)m_client_req_unmapped_url_host_str, '/', m_client_req_unmapped_url_path_len))) != nullptr) {
-            m_client_req_unmapped_url_host_len = static_cast<int>(c - m_client_req_unmapped_url_host_str);
+          if (m_client_req_unmapped_url_host_len > 0 && (c = (char *)memchr((void *)m_client_req_unmapped_url_host_str, '/',
+                                                                            m_client_req_unmapped_url_path_len)) != nullptr) {
+            m_client_req_unmapped_url_host_len = (int)(c - m_client_req_unmapped_url_host_str);
             m_client_req_unmapped_url_path_str = &m_client_req_unmapped_url_host_str[m_client_req_unmapped_url_host_len];
             m_client_req_unmapped_url_path_len = m_client_req_unmapped_url_path_len - len - m_client_req_unmapped_url_host_len;
           }
@@ -1434,7 +1432,7 @@ LogAccess::marshal_client_req_http_method(char *buf)
   int plen  = INK_MIN_ALIGN;
 
   if (m_client_request) {
-    str = const_cast<char *>(m_client_request->method_get(&alen));
+    str = (char *)m_client_request->method_get(&alen);
 
     // calculate the the padded length only if the actual length
     // is not zero. We don't want the padded length to be zero
@@ -1934,7 +1932,7 @@ LogAccess::marshal_proxy_resp_status_code(char *buf)
     } else {
       status = HTTP_STATUS_NONE;
     }
-    marshal_int(buf, static_cast<int64_t>(status));
+    marshal_int(buf, (int64_t)status);
   }
   return INK_MIN_ALIGN;
 }
@@ -2003,7 +2001,7 @@ LogAccess::marshal_cache_result_code(char *buf)
 {
   if (buf) {
     SquidLogCode code = m_http_sm->t_state.squid_codes.log_code;
-    marshal_int(buf, static_cast<int64_t>(code));
+    marshal_int(buf, (int64_t)code);
   }
   return INK_MIN_ALIGN;
 }
@@ -2016,7 +2014,7 @@ LogAccess::marshal_cache_result_subcode(char *buf)
 {
   if (buf) {
     SquidSubcode code = m_http_sm->t_state.squid_codes.subcode;
-    marshal_int(buf, static_cast<int64_t>(code));
+    marshal_int(buf, (int64_t)code);
   }
   return INK_MIN_ALIGN;
 }
@@ -2029,7 +2027,7 @@ LogAccess::marshal_cache_hit_miss(char *buf)
 {
   if (buf) {
     SquidHitMissCode code = m_http_sm->t_state.squid_codes.hit_miss_code;
-    marshal_int(buf, static_cast<int64_t>(code));
+    marshal_int(buf, (int64_t)code);
   }
   return INK_MIN_ALIGN;
 }
@@ -2134,7 +2132,7 @@ LogAccess::marshal_proxy_hierarchy_route(char *buf)
 {
   if (buf) {
     SquidHierarchyCode code = m_http_sm->t_state.squid_codes.hier_code;
-    marshal_int(buf, static_cast<int64_t>(code));
+    marshal_int(buf, (int64_t)code);
   }
   return INK_MIN_ALIGN;
 }
@@ -2194,7 +2192,7 @@ LogAccess::marshal_server_resp_status_code(char *buf)
     } else {
       status = HTTP_STATUS_NONE;
     }
-    marshal_int(buf, static_cast<int64_t>(status));
+    marshal_int(buf, (int64_t)status);
   }
   return INK_MIN_ALIGN;
 }
@@ -2321,7 +2319,7 @@ LogAccess::marshal_cache_resp_status_code(char *buf)
     } else {
       status = HTTP_STATUS_NONE;
     }
-    marshal_int(buf, static_cast<int64_t>(status));
+    marshal_int(buf, (int64_t)status);
   }
   return INK_MIN_ALIGN;
 }
@@ -2486,8 +2484,8 @@ LogAccess::marshal_file_size(char *buf)
 
     if (hdr && (fld = hdr->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE))) {
       int len;
-      char *str = const_cast<char *>(fld->value_get(&len));
-      char *pos = static_cast<char *>(memchr(str, '/', len)); // Find the /
+      char *str = (char *)fld->value_get(&len);
+      char *pos = (char *)memchr(str, '/', len); // Find the /
 
       // If the size is not /* (which means unknown) use it as the file_size.
       if (pos && !memchr(pos + 1, '*', len - (pos + 1 - str))) {
@@ -2578,7 +2576,7 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
   }
 
   if (header) {
-    MIMEField *fld = header->field_find(field, static_cast<int>(::strlen(field)));
+    MIMEField *fld = header->field_find(field, (int)::strlen(field));
     if (fld) {
       valid_field = true;
 
@@ -2587,7 +2585,7 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
       //
       int running_len = 0;
       while (fld) {
-        str = const_cast<char *>(fld->value_get(&actual_len));
+        str = (char *)fld->value_get(&actual_len);
         if (buf) {
           memcpy(buf, str, actual_len);
           buf += actual_len;
@@ -2679,7 +2677,7 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
   }
 
   if (header) {
-    MIMEField *fld = header->field_find(field, static_cast<int>(::strlen(field)));
+    MIMEField *fld = header->field_find(field, (int)::strlen(field));
     if (fld) {
       valid_field = true;
 
@@ -2688,7 +2686,7 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
       //
       int running_len = 0;
       while (fld) {
-        str     = const_cast<char *>(fld->value_get(&actual_len));
+        str     = (char *)fld->value_get(&actual_len);
         new_str = LogUtils::escapify_url(&m_arena, str, actual_len, &new_len);
         if (buf) {
           memcpy(buf, new_str, new_len);

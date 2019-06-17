@@ -84,7 +84,7 @@ readIntoBuffer(const char *file_path, const char *module_name, int *read_size_pt
   // Allocate a buffer large enough to hold the entire file
   //   File size should be small and this makes it easy to
   //   do two passes on the file
-  file_buf = static_cast<char *>(ats_malloc(file_size + 1));
+  file_buf = (char *)ats_malloc(file_size + 1);
   // Null terminate the buffer so that string operations will work
   file_buf[file_size] = '\0';
 
@@ -144,7 +144,7 @@ unescapifyStr(char *buffer)
     if (*read == '%' && *(read + 1) != '\0' && *(read + 2) != '\0') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      *write    = static_cast<char>(strtol(subStr, (char **)nullptr, 16));
+      *write    = (char)strtol(subStr, (char **)nullptr, 16);
       read++;
       write++;
     } else if (*read == '+') {

@@ -70,7 +70,7 @@ public:
   virtual bool get_half_close_flag() const;
   virtual bool is_chunked_encoding_supported() const;
 
-  virtual void set_parent(ProxySession *new_parent);
+  virtual void set_proxy_ssn(ProxySession *set_proxy_ssn);
   virtual void set_h2c_upgrade_flag();
 
   virtual const char *get_protocol_string();
@@ -97,7 +97,7 @@ public:
 
   const IpAllow::ACL &get_acl() const;
 
-  ProxySession *get_parent();
+  ProxySession *get_proxy_ssn();
   Http1ServerSession *get_server_session() const;
   HttpSM *get_sm() const;
 

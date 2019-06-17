@@ -319,7 +319,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.task_threads
  proxy.config.admin.synthetic_port
  proxy.config.admin.cli_path
- proxy.config.admin.number_config_bak
  proxy.config.admin.user_id
  proxy.config.alarm.abs_path
  proxy.config.alarm.bin
@@ -415,7 +414,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.background_fill_completed_threshold
  proxy.config.http.cache.cache_responses_to_cookies
  proxy.config.http.cache.cache_urls_that_look_dynamic
- proxy.config.http.cache.enable_default_vary_headers
  proxy.config.http.cache.guaranteed_max_lifetime
  proxy.config.http.cache.guaranteed_min_lifetime
  proxy.config.http.cache.heuristic_lm_factor
@@ -438,9 +436,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.cache.range.lookup
  proxy.config.http.cache.range.write
  proxy.config.http.cache.required_headers
- proxy.config.http.cache.vary_default_images
- proxy.config.http.cache.vary_default_other
- proxy.config.http.cache.vary_default_text
  proxy.config.http.cache.when_to_revalidate
  proxy.config.http.chunking_enabled
  proxy.config.http.connect_attempts_max_retries
@@ -591,9 +586,10 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.server.cipher_suite
  proxy.config.ssl.server.honor_cipher_order
  proxy.config.ssl.server.dhparams_file
- proxy.config.ssl.SSLv2
- proxy.config.ssl.SSLv3
  proxy.config.ssl.TLSv1
+ proxy.config.ssl.TLSv1_1
+ proxy.config.ssl.TLSv1_2
+ proxy.config.ssl.TLSv1_3
  proxy.config.ssl.server.multicert.filename
  proxy.config.ssl.server.private_key.path
  proxy.config.stat_collector.interval

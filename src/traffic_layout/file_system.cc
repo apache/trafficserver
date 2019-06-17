@@ -82,7 +82,7 @@ create_directory(const std::string &dir)
   // create directory one layer by one layer
   while (true) {
     pos = s.find('/', pos1);
-    if (static_cast<size_t>(pos) == s.npos) {
+    if ((size_t)pos == s.npos) {
       break;
     }
     ret  = mkdir(s.substr(0, pos).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);

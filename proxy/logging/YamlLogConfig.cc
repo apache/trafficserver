@@ -58,6 +58,13 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
     return false;
   }
 
+  if (config["logging"]) {
+    config = config["logging"];
+  } else {
+    Error("malformed logging.yaml file; expected a toplevel 'logging' node");
+    return false;
+  }
+
   auto formats = config["formats"];
   for (auto const &node : formats) {
     auto fmt = node.as<std::unique_ptr<LogFormat>>().release();
@@ -182,7 +189,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   }
 
   auto logObject = new LogObject(fmt, Log::config->logfile_dir, filename.c_str(), file_type, header.c_str(),
-                                 static_cast<Log::RollingEnabledValues>(obj_rolling_enabled), Log::config->preproc_threads,
+                                 (Log::RollingEnabledValues)obj_rolling_enabled, Log::config->preproc_threads,
                                  obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb);
 
   // Generate LogDeletingInfo entry for later use

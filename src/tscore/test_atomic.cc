@@ -42,7 +42,7 @@ int al_done = 0;
 void *
 testalist(void *ame)
 {
-  int me = static_cast<int>((uintptr_t)ame);
+  int me = (int)(uintptr_t)ame;
   int j, k;
   for (k = 0; k < MAX_ALIST_ARRAY; k++) {
     ink_atomiclist_push(&al[k % MAX_ALIST_TEST], &al_test[me][k]);
@@ -53,7 +53,7 @@ testalist(void *ame)
       ink_atomiclist_push(&al[rand() % MAX_ALIST_TEST], x);
     }
   }
-  ink_atomic_increment(&al_done, 1);
+  ink_atomic_increment((int *)&al_done, 1);
   return nullptr;
 }
 #endif // !LONG_ATOMICLIST_TEST
@@ -147,7 +147,7 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   const char *m2 = "hello";
   char *n2;
 
-  printf("sizeof(int32_t)==%d   sizeof(void *)==%d\n", static_cast<int>(sizeof(int32_t)), static_cast<int>(sizeof(void *)));
+  printf("sizeof(int32_t)==%d   sizeof(void *)==%d\n", (int)sizeof(int32_t), (int)sizeof(void *));
 
   printf("CAS: %d == 1  then  2\n", m);
   n = ink_atomic_cas(&m, 1, 2);
@@ -167,18 +167,18 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 
   n = 100;
   printf("Atomic Inc of %d\n", n);
-  m = ink_atomic_increment(static_cast<int *>(&n), 1);
+  m = ink_atomic_increment((int *)&n, 1);
   printf("changed to: %d,  result=%d\n", n, m);
 
   printf("Atomic Fetch-and-Add 2 to pointer to '%s'\n", m2);
-  n2 = static_cast<char *>(ink_atomic_increment((void **)&m2, (void *)2));
+  n2 = (char *)ink_atomic_increment((void **)&m2, (void *)2);
   printf("changed to: %s,  result=%s\n", m2, n2);
 
   printf("Testing atomic lists\n");
   {
     int ali;
     srand(time(nullptr));
-    printf("sizeof(al_test) = %d\n", static_cast<int>(sizeof(al_test)));
+    printf("sizeof(al_test) = %d\n", (int)sizeof(al_test));
     memset(&al_test[0][0], 0, sizeof(al_test));
     for (ali = 0; ali < MAX_ALIST_TEST; ali++) {
       ink_atomiclist_init(&al[ali], "foo", 0);

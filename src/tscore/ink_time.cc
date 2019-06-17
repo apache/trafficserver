@@ -88,7 +88,7 @@ ink_time_wall_seconds()
   struct timeval s_val;
 
   gettimeofday(&s_val, nullptr);
-  return (static_cast<double>(s_val.tv_sec) + 0.000001 * s_val.tv_usec);
+  return ((double)s_val.tv_sec + 0.000001 * s_val.tv_usec);
 } /* End ink_time_wall_seconds */
 
 struct dtconv {
@@ -150,7 +150,7 @@ convert_tm(const struct tm *tp)
 
   /* what should we do? */
   if ((year < 70) || (year > 137)) {
-    return static_cast<ink_time_t> UNDEFINED_TIME;
+    return (ink_time_t)UNDEFINED_TIME;
   }
 
   mday += days[month];

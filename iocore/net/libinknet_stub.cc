@@ -22,7 +22,6 @@
  */
 
 #include "HttpSessionManager.h"
-
 void
 initialize_thread_for_http_sessions(EThread *, int)
 {

@@ -51,9 +51,9 @@ asn1_string_extract(ASN1_STRING *s)
 void
 dump_context(const char *ca_path, const char *ck_path)
 {
-  SSL_CTX *ctx = reinterpret_cast<SSL_CTX *>(TSSslClientContextFindByName(ca_path, ck_path));
+  TSSslContext ctx = TSSslClientContextFindByName(ca_path, ck_path);
   if (ctx) {
-    SSL *s = SSL_new(ctx);
+    SSL *s = SSL_new(reinterpret_cast<SSL_CTX *>(ctx));
     if (s) {
       char *data  = nullptr;
       long length = 0;
@@ -115,7 +115,7 @@ dump_context(const char *ca_path, const char *ck_path)
         }
 
         // Serial number
-        long sn = 0;
+        int64_t sn = 0;
 #if OPENSSL_VERSION_NUMBER >= 0x010100000
         ASN1_INTEGER_get_int64(&sn, serial);
 #else
@@ -138,6 +138,7 @@ dump_context(const char *ca_path, const char *ck_path)
       }
     }
     SSL_free(s);
+    TSSslContextDestroy(ctx);
   }
 }
 

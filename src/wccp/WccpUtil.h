@@ -24,6 +24,8 @@
 
 #include <vector>
 
+#include "tscore/Errata.h"
+
 namespace wccp
 {
 /// @name Message severity levels.

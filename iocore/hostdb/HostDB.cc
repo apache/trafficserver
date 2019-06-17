@@ -78,7 +78,7 @@ HostDBInfo::srvname(HostDBRoundRobin *rr) const
   if (!is_srv || !data.srv.srv_offset) {
     return nullptr;
   }
-  return reinterpret_cast<char *>(rr) + data.srv.srv_offset;
+  return (char *)rr + data.srv.srv_offset;
 }
 
 static inline bool
@@ -968,7 +968,7 @@ remove_round_robin(HostDBInfo *r, const char *hostname, IpAddr const &ip)
         } else {
           if (is_debug_tag_set("hostdb")) {
             int bufsize      = rr->good * INET6_ADDRSTRLEN;
-            char *rr_ip_list = static_cast<char *>(alloca(bufsize));
+            char *rr_ip_list = (char *)alloca(bufsize);
             char *p          = rr_ip_list;
             for (int n = 0; n < rr->good; ++n) {
               ats_ip_ntop(rr->info(n).ip(), p, bufsize);
@@ -1237,7 +1237,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       } else {
         void *ptr; // tmp for current entry.
         for (int total_records = 0;
-             total_records < static_cast<int>(hostdb_round_robin_max_count) && nullptr != (ptr = e->ent.h_addr_list[total_records]);
+             total_records < (int)hostdb_round_robin_max_count && nullptr != (ptr = e->ent.h_addr_list[total_records]);
              ++total_records) {
           if (is_addr_valid(af, ptr)) {
             if (!first_record) {
@@ -1319,7 +1319,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       ;
       if (is_srv()) {
         int skip  = 0;
-        char *pos = reinterpret_cast<char *>(rr_data) + sizeof(HostDBRoundRobin) + valid_records * sizeof(HostDBInfo);
+        char *pos = (char *)rr_data + sizeof(HostDBRoundRobin) + valid_records * sizeof(HostDBInfo);
         SRV *q[valid_records];
         ink_assert(valid_records <= (int)hostdb_round_robin_max_count);
         // sort
@@ -1353,7 +1353,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
           ink_assert((skip + t->host_len) <= e->srv_hosts.srv_hosts_length);
 
           memcpy(pos + skip, t->host, t->host_len);
-          item.data.srv.srv_offset = (pos - reinterpret_cast<char *>(rr_data)) + skip;
+          item.data.srv.srv_offset = (pos - (char *)rr_data) + skip;
 
           skip += t->host_len;
 
@@ -1715,7 +1715,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
       hostdb_last_interval = hostdb_current_interval;
       if (*hostdb_hostfile_path) {
         if (0 == stat(hostdb_hostfile_path, &info)) {
-          if (info.st_mtime > static_cast<time_t>(hostdb_hostfile_update_timestamp)) {
+          if (info.st_mtime > (time_t)hostdb_hostfile_update_timestamp) {
             update_p = true; // same file but it's changed.
           }
         } else {
@@ -1762,7 +1762,7 @@ HostDBInfo::rr()
     return nullptr;
   }
 
-  return reinterpret_cast<HostDBRoundRobin *>(reinterpret_cast<char *>(this) + this->app.rr.offset);
+  return (HostDBRoundRobin *)((char *)this + this->app.rr.offset);
 }
 
 struct ShowHostDB;
@@ -2013,7 +2013,7 @@ register_ShowHostDB(Continuation *c, HTTPHdr *h)
     s->sarg           = ats_strndup(query, query_len);
     char *gn          = nullptr;
     if (s->sarg) {
-      gn = static_cast<char *>(memchr(s->sarg, '=', strlen(s->sarg)));
+      gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     }
     if (gn) {
       ats_ip_pton(gn + 1, &s->ip); // hope that's null terminated.
@@ -2026,7 +2026,7 @@ register_ShowHostDB(Continuation *c, HTTPHdr *h)
     s->sarg           = ats_strndup(query, query_len);
     char *gn          = nullptr;
     if (s->sarg) {
-      gn = static_cast<char *>(memchr(s->sarg, '=', strlen(s->sarg)));
+      gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     }
     if (gn) {
       s->name   = gn + 1;
@@ -2123,7 +2123,7 @@ ink_hostdb_init(ts::ModuleVersion v)
   init_called = 1;
   // do one time stuff
   // create a stat block for HostDBStats
-  hostdb_rsb = RecAllocateRawStatBlock(static_cast<int>(HostDB_Stat_Count));
+  hostdb_rsb = RecAllocateRawStatBlock((int)HostDB_Stat_Count);
 
   //
   // Register stats

@@ -36,8 +36,6 @@
 
 #include <poll.h>
 
-#include <tsconfig/TsValue.h>
-
 static char const USAGE_TEXT[] = "%s\n"
                                  "--address IP address to bind.\n"
                                  "--help Print usage and exit.\n";
@@ -79,8 +77,7 @@ main(int argc, char **argv)
 
   int zret; // getopt return.
   int zidx; // option index.
-  bool fail = false;
-  //  char const* text; // Scratch pointer for config access.
+  bool fail            = false;
   char const *FAIL_MSG = "";
 
   while (-1 != (zret = getopt_long_only(argc, argv, "", OPTIONS, &zidx))) {

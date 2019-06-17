@@ -30,8 +30,8 @@ void *
 thread_alloc(Allocator &a, ProxyAllocator &l)
 {
   if (!cmd_disable_pfreelist && l.freelist) {
-    void *v    = l.freelist;
-    l.freelist = *static_cast<void **>(l.freelist);
+    void *v    = (void *)l.freelist;
+    l.freelist = *(void **)l.freelist;
     --(l.allocated);
     return v;
   }
@@ -41,12 +41,12 @@ thread_alloc(Allocator &a, ProxyAllocator &l)
 void
 thread_freeup(Allocator &a, ProxyAllocator &l)
 {
-  void *head   = l.freelist;
-  void *tail   = l.freelist;
+  void *head   = (void *)l.freelist;
+  void *tail   = (void *)l.freelist;
   size_t count = 0;
   while (l.freelist && l.allocated > thread_freelist_low_watermark) {
     tail       = l.freelist;
-    l.freelist = *static_cast<void **>(l.freelist);
+    l.freelist = *(void **)l.freelist;
     --(l.allocated);
     ++count;
   }

@@ -66,16 +66,17 @@ ts.Disk.records_config.update({
 })
 ts.Disk.logging_yaml.AddLines(
     '''
-formats:
-  # Extended Log Format.
-  - name: access
-    format: |-
+logging:
+  formats:
+    # Extended Log Format.
+    - name: access
+      format: |-
 [%<cqtn>] %<cqtx> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>
 
-logs:
-  - filename: access
-    format: access
-}
+  logs:
+    - filename: access
+      format: access
+  }
 '''.split("\n")
 )
 

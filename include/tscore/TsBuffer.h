@@ -1,9 +1,6 @@
 /** @file
     Definitions for a buffer type, to carry a reference to a chunk of memory.
 
-    @internal This is a copy of TsBuffer.h in lib/tsconfig. That should
-    eventually be replaced with this promoted file.
-
     @section license License
 
     Licensed to the Apache Software Foundation (ASF) under one
