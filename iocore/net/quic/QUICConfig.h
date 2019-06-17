@@ -48,7 +48,7 @@ public:
   const char *client_session_file() const;
   const char *client_keylog_file() const;
 
-  SSL_CTX *client_ssl_ctx() const;
+  shared_SSL_CTX client_ssl_ctx() const;
 
   // Transport Parameters
   uint32_t no_activity_timeout_in() const;
@@ -104,7 +104,7 @@ private:
   char *_client_session_file     = nullptr;
   char *_client_keylog_file      = nullptr;
 
-  SSL_CTX *_client_ssl_ctx = nullptr;
+  shared_SSL_CTX _client_ssl_ctx = nullptr;
 
   // Transport Parameters
   uint32_t _no_activity_timeout_in    = 0;
@@ -181,6 +181,6 @@ public:
   virtual SSL_CTX *init_server_ssl_ctx(std::vector<X509 *> &cert_list, const SSLMultiCertConfigParams *multi_cert_params) override;
 
 private:
-  virtual SSL_CTX *_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiCertConfigParams *multi_cert_params) override;
+  virtual SSL_CTX *_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams multi_cert_params) override;
   virtual void _set_handshake_callbacks(SSL_CTX *ssl_ctx) override;
 };

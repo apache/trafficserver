@@ -106,7 +106,7 @@ QUIC::ssl_client_keylog_cb(const SSL *ssl, const char *line)
 int
 QUIC::ssl_cert_cb(SSL *ssl, void * /*arg*/)
 {
-  SSL_CTX *ctx       = nullptr;
+  shared_SSL_CTX ctx = nullptr;
   SSLCertContext *cc = nullptr;
   QUICCertConfig::scoped_config lookup;
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
@@ -122,8 +122,8 @@ QUIC::ssl_cert_cb(SSL *ssl, void * /*arg*/)
   // already made a best effort to find the best match.
   if (likely(servername)) {
     cc = lookup->find((char *)servername);
-    if (cc && cc->ctx) {
-      ctx = cc->ctx;
+    if (cc && cc->getCtx()) {
+      ctx = cc->getCtx();
     }
   }
 
@@ -133,21 +133,25 @@ QUIC::ssl_cert_cb(SSL *ssl, void * /*arg*/)
     IpEndpoint ip            = five_tuple.destination();
     cc                       = lookup->find(ip);
 
-    if (cc && cc->ctx) {
-      ctx = cc->ctx;
+    if (cc && cc->getCtx()) {
+      ctx = cc->getCtx();
     }
   }
 
   bool found = true;
   if (ctx != nullptr) {
-    SSL_set_SSL_CTX(ssl, ctx);
+    SSL_set_SSL_CTX(ssl, ctx.get());
   } else {
     found = false;
   }
 
-  ctx = SSL_get_SSL_CTX(ssl);
+  SSL_CTX *verify_ctx = nullptr;
+  verify_ctx          = SSL_get_SSL_CTX(ssl);
+  QUICGlobalQCDebug(qc, "%s SSL_CTX %p for requested name '%s'", found ? "found" : "using", verify_ctx, servername);
 
-  QUICGlobalQCDebug(qc, "%s SSL_CTX %p for requested name '%s'", found ? "found" : "using", ctx, servername);
+  if (verify_ctx == nullptr) {
+    return 0;
+  }
 
   return 1;
 }

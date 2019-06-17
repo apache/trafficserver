@@ -346,7 +346,7 @@ private:
   void _update_local_cid(const QUICConnectionId &new_cid);
   void _rerandomize_original_cid();
 
-  QUICHandshakeProtocol *_setup_handshake_protocol(SSL_CTX *ctx);
+  QUICHandshakeProtocol *_setup_handshake_protocol(shared_SSL_CTX ctx);
 
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;
