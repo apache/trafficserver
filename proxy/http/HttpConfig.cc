@@ -1615,7 +1615,7 @@ HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &
   using RedirectEnabled::address_class_map;
 
   if (nullptr == input_string) {
-    Emergency("parse_redirect_actions: The configuration value is empty.");
+    Error("parse_redirect_actions: The configuration value is empty.");
     return nullptr;
   }
   Tokenizer configTokens(", ");
@@ -1626,7 +1626,7 @@ HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &
     Tokenizer ruleTokens(":");
     int n_mapping = ruleTokens.Initialize(rule);
     if (2 != n_mapping) {
-      Emergency("parse_redirect_actions: Individual rules must be an address class and an action separated by a colon (:)");
+      Error("parse_redirect_actions: Individual rules must be an address class and an action separated by a colon (:)");
       return nullptr;
     }
     std::string c_input(ruleTokens[0]), a_input(ruleTokens[1]);
@@ -1635,10 +1635,10 @@ HttpConfig::parse_redirect_actions(char *input_string, RedirectEnabled::Action &
     Action a = action_map.find(ruleTokens[1]) != action_map.end() ? action_map[ruleTokens[1]] : Action::INVALID;
 
     if (AddressClass::INVALID == c) {
-      Emergency("parse_redirect_actions: '%.*s' is not a valid address class", static_cast<int>(c_input.size()), c_input.data());
+      Error("parse_redirect_actions: '%.*s' is not a valid address class", static_cast<int>(c_input.size()), c_input.data());
       return nullptr;
     } else if (Action::INVALID == a) {
-      Emergency("parse_redirect_actions: '%.*s' is not a valid action", static_cast<int>(a_input.size()), a_input.data());
+      Error("parse_redirect_actions: '%.*s' is not a valid action", static_cast<int>(a_input.size()), a_input.data());
       return nullptr;
     }
     configMapping[c] = a;
