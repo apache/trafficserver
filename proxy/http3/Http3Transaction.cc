@@ -61,7 +61,7 @@ HQTransaction::HQTransaction(HQSession *session, QUICStreamIO *stream_io) : supe
   this->mutex   = new_ProxyMutex();
   this->_thread = this_ethread();
 
-  this->set_parent(session);
+  this->set_proxy_ssn(session);
 
   this->sm_reader = this->_read_vio_buf.alloc_reader();
 

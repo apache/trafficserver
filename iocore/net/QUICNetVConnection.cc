@@ -63,7 +63,7 @@ static constexpr uint32_t MINIMUM_INITIAL_PACKET_SIZE = 1200;
 static constexpr ink_hrtime WRITE_READY_INTERVAL      = HRTIME_MSECONDS(2);
 static constexpr uint32_t PACKET_PER_EVENT            = 256;
 static constexpr uint32_t MAX_CONSECUTIVE_STREAMS     = 8; ///< Interrupt sending STREAM frames to send ACK frame
-static constexpr uint32_t MIN_PKT_PAYLOAD_LEN         = 3; ///< Minimum payload length for sampling for header protection
+// static constexpr uint32_t MIN_PKT_PAYLOAD_LEN         = 3; ///< Minimum payload length for sampling for header protection
 
 static constexpr uint32_t STATE_CLOSING_MAX_SEND_PKT_NUM  = 8; ///< Max number of sending packets which contain a closing frame.
 static constexpr uint32_t STATE_CLOSING_MAX_RECV_PKT_WIND = 1 << STATE_CLOSING_MAX_SEND_PKT_NUM;
@@ -2192,12 +2192,12 @@ QUICNetVConnection::_rerandomize_original_cid()
 }
 
 QUICHandshakeProtocol *
-QUICNetVConnection::_setup_handshake_protocol(SSL_CTX *ctx)
+QUICNetVConnection::_setup_handshake_protocol(shared_SSL_CTX ctx)
 {
   // Initialize handshake protocol specific stuff
   // For QUICv1 TLS is the only option
-  QUICTLS *tls = new QUICTLS(this->_pp_key_info, ctx, this->direction(), this->options, this->_quic_config->client_session_file(),
-                             this->_quic_config->client_keylog_file());
+  QUICTLS *tls = new QUICTLS(this->_pp_key_info, ctx.get(), this->direction(), this->options,
+                             this->_quic_config->client_session_file(), this->_quic_config->client_keylog_file());
   SSL_set_ex_data(tls->ssl_handle(), QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
 
   return tls;

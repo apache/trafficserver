@@ -73,17 +73,18 @@ quic_new_ssl_ctx()
 /**
    ALPN and SNI should be set to SSL object with NETVC_OPTIONS
  **/
-static SSL_CTX *
+static shared_SSL_CTX
 quic_init_client_ssl_ctx(const QUICConfigParams *params)
 {
-  SSL_CTX *ssl_ctx = quic_new_ssl_ctx();
+  std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ssl_ctx(nullptr, &SSL_CTX_free);
+  ssl_ctx.reset(quic_new_ssl_ctx());
 
 #if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
   if (params->client_supported_groups() != nullptr) {
 #ifdef SSL_CTX_set1_groups_list
-    if (SSL_CTX_set1_groups_list(ssl_ctx, params->client_supported_groups()) != 1) {
+    if (SSL_CTX_set1_groups_list(ssl_ctx.get(), params->client_supported_groups()) != 1) {
 #else
-    if (SSL_CTX_set1_curves_list(ssl_ctx, params->client_supported_groups()) != 1) {
+    if (SSL_CTX_set1_curves_list(ssl_ctx.get(), params->client_supported_groups()) != 1) {
 #endif
       Error("SSL_CTX_set1_groups_list failed");
     }
@@ -91,13 +92,13 @@ quic_init_client_ssl_ctx(const QUICConfigParams *params)
 #endif
 
   if (params->client_session_file() != nullptr) {
-    SSL_CTX_set_session_cache_mode(ssl_ctx, SSL_SESS_CACHE_CLIENT | SSL_SESS_CACHE_NO_INTERNAL_STORE);
-    SSL_CTX_sess_set_new_cb(ssl_ctx, QUIC::ssl_client_new_session);
+    SSL_CTX_set_session_cache_mode(ssl_ctx.get(), SSL_SESS_CACHE_CLIENT | SSL_SESS_CACHE_NO_INTERNAL_STORE);
+    SSL_CTX_sess_set_new_cb(ssl_ctx.get(), QUIC::ssl_client_new_session);
   }
 
 #ifdef SSL_MODE_QUIC_HACK
   if (params->client_keylog_file() != nullptr) {
-    SSL_CTX_set_keylog_callback(ssl_ctx, QUIC::ssl_client_keylog_cb);
+    SSL_CTX_set_keylog_callback(ssl_ctx.get(), QUIC::ssl_client_keylog_cb);
   }
 #endif
 
@@ -112,7 +113,7 @@ QUICConfigParams::~QUICConfigParams()
   this->_server_supported_groups = (char *)ats_free_null(this->_server_supported_groups);
   this->_client_supported_groups = (char *)ats_free_null(this->_client_supported_groups);
 
-  SSL_CTX_free(this->_client_ssl_ctx);
+  SSL_CTX_free(this->_client_ssl_ctx.get());
 };
 
 void
@@ -360,7 +361,7 @@ QUICConfigParams::client_supported_groups() const
   return this->_client_supported_groups;
 }
 
-SSL_CTX *
+shared_SSL_CTX
 QUICConfigParams::client_ssl_ctx() const
 {
   return this->_client_ssl_ctx;
@@ -627,12 +628,12 @@ fail:
 }
 
 SSL_CTX *
-QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiCertConfigParams *multi_cert_params)
+QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams multi_cert_params)
 {
   std::vector<X509 *> cert_list;
-  SSL_CTX *ctx                   = this->init_server_ssl_ctx(cert_list, multi_cert_params);
-  ssl_ticket_key_block *keyblock = nullptr;
-  bool inserted                  = false;
+  shared_SSL_CTX ctx(this->init_server_ssl_ctx(cert_list, multi_cert_params.get()), SSL_CTX_free);
+  shared_ssl_ticket_key_block keyblock = nullptr;
+  bool inserted                        = false;
 
   if (!ctx || !multi_cert_params) {
     lookup->is_valid = false;
@@ -652,17 +653,17 @@ QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiC
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
   if (multi_cert_params->addr) {
     if (strcmp(multi_cert_params->addr, "*") == 0) {
-      if (lookup->insert(multi_cert_params->addr, SSLCertContext(ctx, multi_cert_params->opt, keyblock)) >= 0) {
+      if (lookup->insert(multi_cert_params->addr, SSLCertContext(ctx, multi_cert_params, keyblock)) >= 0) {
         inserted            = true;
         lookup->ssl_default = ctx;
-        this->_set_handshake_callbacks(ctx);
+        this->_set_handshake_callbacks(ctx.get());
       }
     } else {
       IpEndpoint ep;
 
       if (ats_ip_pton(multi_cert_params->addr, &ep) == 0) {
         QUICConfDebug("mapping '%s' to certificate %s", (const char *)multi_cert_params->addr, (const char *)certname);
-        if (lookup->insert(ep, SSLCertContext(ctx, multi_cert_params->opt, keyblock)) >= 0) {
+        if (lookup->insert(ep, SSLCertContext(ctx, multi_cert_params, keyblock)) >= 0) {
           inserted = true;
         }
       } else {
@@ -677,19 +678,19 @@ QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiC
   // refcounting or alternate way of avoiding double frees.
   QUICConfDebug("importing SNI names from %s", (const char *)certname);
   for (auto cert : cert_list) {
-    if (SSLMultiCertConfigLoader::index_certificate(lookup, SSLCertContext(ctx, multi_cert_params->opt), cert, certname)) {
+    if (SSLMultiCertConfigLoader::index_certificate(lookup, SSLCertContext(ctx, multi_cert_params), cert, certname)) {
       inserted = true;
     }
   }
 
   if (inserted) {
     if (SSLConfigParams::init_ssl_ctx_cb) {
-      SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+      SSLConfigParams::init_ssl_ctx_cb(ctx.get(), true);
     }
   }
 
   if (!inserted) {
-    SSLReleaseContext(ctx);
+    SSLReleaseContext(ctx.get());
     ctx = nullptr;
   }
 
@@ -697,7 +698,7 @@ QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const SSLMultiC
     X509_free(i);
   }
 
-  return ctx;
+  return ctx.get();
 }
 
 void
