@@ -28,8 +28,10 @@ Synopsis
 
 `#include <ts/ts.h>`
 
+.. function:: void TSError(const char * format, ...)
+.. function:: void TSFatal(const char * format, ...)
+.. function:: void TSEmergency(const char * format, ...)
 .. function:: void TSDebug(const char * tag, const char * format, ...)
-.. function:: void TSError(const char * tag, const char * format, ...)
 .. function:: int TSIsDebugTagSet(const char * tag)
 .. function:: void TSDebugSpecific(int debug_flag, const char * tag, const char * format, ...)
 .. function:: void TSHttpTxnDebugSet(TSHttpTxn txnp, int on)
@@ -48,6 +50,19 @@ Description
 :func:`TSError` is similar to ``printf`` except that instead
 of writing the output to the C standard output, it writes output
 to the Traffic Server error log.
+
+:func:`TSFatal` is used to shutdown Traffic Server in hopes that a clean
+restart will be able to fix the problem. It will also log a message to the
+Traffic Server error log just like :func:`TSError`.
+
+:func:`TSEmergency` is used to shutdown Traffic Server when restarting
+isn't sufficient to fix the problem, e.g. missing or corrupted files. It will
+also log a message to the Traffic Server error log just like :func:`TSError`.
+
+.. note::
+    Both :func:`TSFatal` and :func:`TSEmergency` can be called within
+    :func:`TSPluginInit`, such that Traffic Server can be shutdown promptly when
+    the plugin fails to initialize properly.
 
 :func:`TSDebug` is the same as :func:`TSError` except that it only
 logs the debug message if the given debug :arg:`tag` is enabled. It writes
