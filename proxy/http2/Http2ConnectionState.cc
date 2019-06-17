@@ -1132,7 +1132,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
     zombie_event = nullptr;
   }
 
-  new_stream->set_parent(ua_session);
+  new_stream->set_proxy_ssn(ua_session);
   new_stream->mutex                     = new_ProxyMutex();
   new_stream->is_first_transaction_flag = get_stream_requests() == 0;
   increment_stream_requests();
@@ -1515,7 +1515,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   http2_generate_h2_header_from_1_1(resp_header, &h2_hdr);
 
   buf_len = resp_header->length_get() * 2; // Make it double just in case
-  buf     = static_cast<uint8_t *>(ats_malloc(buf_len));
+  buf     = (uint8_t *)ats_malloc(buf_len);
   if (buf == nullptr) {
     h2_hdr.destroy();
     return;
@@ -1625,7 +1625,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 
   buf_len = h1_hdr.length_get() * 2; // Make it double just in case
   h1_hdr.destroy();
-  buf = static_cast<uint8_t *>(ats_malloc(buf_len));
+  buf = (uint8_t *)ats_malloc(buf_len);
   if (buf == nullptr) {
     h2_hdr.destroy();
     return;

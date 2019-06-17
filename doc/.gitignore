@@ -1,3 +1,4 @@
 uml/images
 ext/local-config.py
 ext/plantuml*
+Pipfile.lock

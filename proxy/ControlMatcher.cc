@@ -407,7 +407,7 @@ RegexMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
   // Should not have been allocated before
   ink_assert(array_len == -1);
 
-  re_array = static_cast<pcre **>(ats_malloc(sizeof(pcre *) * num_entries));
+  re_array = (pcre **)ats_malloc(sizeof(pcre *) * num_entries);
   memset(re_array, 0, sizeof(pcre *) * num_entries);
 
   data_array = new Data[num_entries];
@@ -808,8 +808,8 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
     if (*tmp != '#' && *tmp != '\0') {
       const char *errptr;
 
-      current = static_cast<matcher_line *>(ats_malloc(sizeof(matcher_line)));
-      errptr  = parseConfigLine(const_cast<char *>(tmp), current, config_tags);
+      current = (matcher_line *)ats_malloc(sizeof(matcher_line));
+      errptr  = parseConfigLine((char *)tmp, current, config_tags);
 
       if (errptr != nullptr) {
         if (config_tags != &socks_server_tags) {

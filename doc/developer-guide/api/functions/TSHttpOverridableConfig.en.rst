@@ -80,7 +80,6 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD`       :ts:cv:`proxy.config.http.background_fill_completed_threshold`
 :c:macro:`TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES`          :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies`
 :c:macro:`TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC`        :ts:cv:`proxy.config.http.cache.cache_urls_that_look_dynamic`
-:c:macro:`TS_CONFIG_HTTP_CACHE_ENABLE_DEFAULT_VARY_HEADER`          :ts:cv:`proxy.config.http.cache.enable_default_vary_headers`
 :c:macro:`TS_CONFIG_HTTP_CACHE_GENERATION`                          :ts:cv:`proxy.config.http.cache.generation`
 :c:macro:`TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME`             :ts:cv:`proxy.config.http.cache.guaranteed_max_lifetime`
 :c:macro:`TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME`             :ts:cv:`proxy.config.http.cache.guaranteed_min_lifetime`
@@ -105,9 +104,6 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP`                        :ts:cv:`proxy.config.http.cache.range.lookup`
 :c:macro:`TS_CONFIG_HTTP_CACHE_RANGE_WRITE`                         :ts:cv:`proxy.config.http.cache.range.write`
 :c:macro:`TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS`                    :ts:cv:`proxy.config.http.cache.required_headers`
-:c:macro:`TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_IMAGES`                 :ts:cv:`proxy.config.http.cache.vary_default_images`
-:c:macro:`TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_OTHER`                  :ts:cv:`proxy.config.http.cache.vary_default_other`
-:c:macro:`TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_TEXT`                   :ts:cv:`proxy.config.http.cache.vary_default_text`
 :c:macro:`TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE`                  :ts:cv:`proxy.config.http.cache.when_to_revalidate`
 :c:macro:`TS_CONFIG_HTTP_CHUNKING_ENABLED`                          :ts:cv:`proxy.config.http.chunking_enabled`
 :c:macro:`TS_CONFIG_HTTP_CHUNKING_SIZE`                             :ts:cv:`proxy.config.http.chunking.size`

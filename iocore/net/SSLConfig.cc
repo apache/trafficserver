@@ -119,26 +119,26 @@ SSLConfigParams::reset()
 void
 SSLConfigParams::cleanup()
 {
-  serverCertChainFilename = static_cast<char *>(ats_free_null(serverCertChainFilename));
-  serverCACertFilename    = static_cast<char *>(ats_free_null(serverCACertFilename));
-  serverCACertPath        = static_cast<char *>(ats_free_null(serverCACertPath));
-  clientCertPath          = static_cast<char *>(ats_free_null(clientCertPath));
-  clientCertPathOnly      = static_cast<char *>(ats_free_null(clientCertPathOnly));
-  clientKeyPath           = static_cast<char *>(ats_free_null(clientKeyPath));
-  clientKeyPathOnly       = static_cast<char *>(ats_free_null(clientKeyPathOnly));
-  clientCACertFilename    = static_cast<char *>(ats_free_null(clientCACertFilename));
-  clientCACertPath        = static_cast<char *>(ats_free_null(clientCACertPath));
-  configFilePath          = static_cast<char *>(ats_free_null(configFilePath));
-  serverCertPathOnly      = static_cast<char *>(ats_free_null(serverCertPathOnly));
-  serverKeyPathOnly       = static_cast<char *>(ats_free_null(serverKeyPathOnly));
-  cipherSuite             = static_cast<char *>(ats_free_null(cipherSuite));
-  client_cipherSuite      = static_cast<char *>(ats_free_null(client_cipherSuite));
-  dhparamsFile            = static_cast<char *>(ats_free_null(dhparamsFile));
+  serverCertChainFilename = (char *)ats_free_null(serverCertChainFilename);
+  serverCACertFilename    = (char *)ats_free_null(serverCACertFilename);
+  serverCACertPath        = (char *)ats_free_null(serverCACertPath);
+  clientCertPath          = (char *)ats_free_null(clientCertPath);
+  clientCertPathOnly      = (char *)ats_free_null(clientCertPathOnly);
+  clientKeyPath           = (char *)ats_free_null(clientKeyPath);
+  clientKeyPathOnly       = (char *)ats_free_null(clientKeyPathOnly);
+  clientCACertFilename    = (char *)ats_free_null(clientCACertFilename);
+  clientCACertPath        = (char *)ats_free_null(clientCACertPath);
+  configFilePath          = (char *)ats_free_null(configFilePath);
+  serverCertPathOnly      = (char *)ats_free_null(serverCertPathOnly);
+  serverKeyPathOnly       = (char *)ats_free_null(serverKeyPathOnly);
+  cipherSuite             = (char *)ats_free_null(cipherSuite);
+  client_cipherSuite      = (char *)ats_free_null(client_cipherSuite);
+  dhparamsFile            = (char *)ats_free_null(dhparamsFile);
 
-  server_tls13_cipher_suites = static_cast<char *>(ats_free_null(server_tls13_cipher_suites));
-  client_tls13_cipher_suites = static_cast<char *>(ats_free_null(client_tls13_cipher_suites));
-  server_groups_list         = static_cast<char *>(ats_free_null(server_groups_list));
-  client_groups_list         = static_cast<char *>(ats_free_null(client_groups_list));
+  server_tls13_cipher_suites = (char *)ats_free_null(server_tls13_cipher_suites);
+  client_tls13_cipher_suites = (char *)ats_free_null(client_tls13_cipher_suites);
+  server_groups_list         = (char *)ats_free_null(server_groups_list);
+  client_groups_list         = (char *)ats_free_null(client_groups_list);
 
   cleanupCTXTable();
   reset();
@@ -198,61 +198,53 @@ SSLConfigParams::initialize()
 
   dhparamsFile = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.dhparams_file"));
 
-  int options;
-  int client_ssl_options = 0;
-  REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1");
-  if (!options) {
+  int option = 0;
+
+  REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1");
+  if (!option) {
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
   }
 
-#if TS_USE_SSLV3_CLIENT
-  REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.SSLv3");
-  if (client_ssl_options)
-    ssl_client_ctx_options &= ~SSL_OP_NO_SSLv3;
-#endif
-  REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1");
-  if (!client_ssl_options) {
+  REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1");
+  if (!option) {
     ssl_client_ctx_options |= SSL_OP_NO_TLSv1;
   }
 
-// These are not available in all versions of OpenSSL (e.g. CentOS6). Also see http://s.apache.org/TS-2355.
-#ifdef SSL_OP_NO_TLSv1_1
-  REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1_1");
-  if (!options) {
+  REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_1");
+  if (!option) {
     ssl_ctx_options |= SSL_OP_NO_TLSv1_1;
   }
 
-  REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1_1");
-  if (!client_ssl_options) {
+  REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_1");
+  if (!option) {
     ssl_client_ctx_options |= SSL_OP_NO_TLSv1_1;
   }
-#endif
-#ifdef SSL_OP_NO_TLSv1_2
-  REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1_2");
-  if (!options) {
+
+  REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_2");
+  if (!option) {
     ssl_ctx_options |= SSL_OP_NO_TLSv1_2;
   }
 
-  REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1_2");
-  if (!client_ssl_options) {
+  REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_2");
+  if (!option) {
     ssl_client_ctx_options |= SSL_OP_NO_TLSv1_2;
   }
-#endif
+
 #ifdef SSL_OP_NO_TLSv1_3
-  REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1_3");
-  if (!options) {
+  REC_ReadConfigInteger(option, "proxy.config.ssl.TLSv1_3");
+  if (!option) {
     ssl_ctx_options |= SSL_OP_NO_TLSv1_3;
   }
 
-  REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1_3");
-  if (!client_ssl_options) {
+  REC_ReadConfigInteger(option, "proxy.config.ssl.client.TLSv1_3");
+  if (!option) {
     ssl_client_ctx_options |= SSL_OP_NO_TLSv1_3;
   }
 #endif
 
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
-  REC_ReadConfigInteger(options, "proxy.config.ssl.server.honor_cipher_order");
-  if (options) {
+  REC_ReadConfigInteger(option, "proxy.config.ssl.server.honor_cipher_order");
+  if (option) {
     ssl_ctx_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
   }
 #endif
@@ -312,8 +304,7 @@ SSLConfigParams::initialize()
   REC_ReadConfigInteger(ssl_session_cache_timeout, "proxy.config.ssl.session_cache.timeout");
   REC_ReadConfigInteger(ssl_session_cache_auto_clear, "proxy.config.ssl.session_cache.auto_clear");
 
-  SSLConfigParams::session_cache_max_bucket_size =
-    static_cast<size_t>(ceil(static_cast<double>(ssl_session_cache_size) / ssl_session_cache_num_buckets));
+  SSLConfigParams::session_cache_max_bucket_size = (size_t)ceil((double)ssl_session_cache_size / ssl_session_cache_num_buckets);
   SSLConfigParams::session_cache_skip_on_lock_contention = ssl_session_cache_skip_on_contention;
   SSLConfigParams::session_cache_number_buckets          = ssl_session_cache_num_buckets;
 
@@ -451,7 +442,7 @@ SSLConfigParams::initialize()
   }
 }
 
-SSL_CTX *
+shared_SSL_CTX
 SSLConfigParams::getClientSSL_CTX() const
 {
   return client_ctx;
@@ -559,9 +550,10 @@ SSLCertificateConfig::release(SSLCertLookup *lookup)
 }
 
 bool
-SSLTicketParams::LoadTicket()
+SSLTicketParams::LoadTicket(bool &nochange)
 {
   cleanup();
+  nochange = true;
 
 #if TS_HAVE_OPENSSL_SESSION_TICKETS
   ssl_ticket_key_block *keyblock = nullptr;
@@ -573,8 +565,13 @@ SSLTicketParams::LoadTicket()
   SSLTicketKeyConfig::scoped_config ticket_params;
   if (ticket_params) {
     last_load_time      = ticket_params->load_time;
-    no_default_keyblock = ticket_params->default_global_keyblock != nullptr;
+    no_default_keyblock = ticket_params->default_global_keyblock == nullptr;
   }
+
+  // elevate/allow file access to root read only files/certs
+  uint32_t elevate_setting = 0;
+  REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+  ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0); // destructor will demote for us
 
   if (REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename") == REC_ERR_OKAY &&
       ticket_key_filename != nullptr) {
@@ -585,22 +582,25 @@ SSLTicketParams::LoadTicket()
       if (sdata.st_mtime && sdata.st_mtime <= last_load_time) {
         Debug("ssl", "ticket key %s has not changed", ticket_key_filename);
         // No updates since last load
-        return false;
+        return true;
       }
     }
+    nochange = false;
     keyblock = ssl_create_ticket_keyblock(ticket_key_path);
     // Initialize if we don't have one yet
   } else if (no_default_keyblock) {
+    nochange = false;
     keyblock = ssl_create_ticket_keyblock(nullptr);
   } else {
     // No need to update.  Keep the previous ticket param
-    return false;
+    return true;
   }
   if (!keyblock) {
     Error("Could not load ticket key from %s", ticket_key_filename);
     return false;
   }
   default_global_keyblock = keyblock;
+  load_time               = time(NULL);
 
   Debug("ssl", "ticket key reloaded from %s", ticket_key_filename);
   return true;
@@ -639,9 +639,15 @@ SSLTicketKeyConfig::reconfigure()
   SSLTicketParams *ticketKey = new SSLTicketParams();
 
   if (ticketKey) {
-    if (!ticketKey->LoadTicket()) {
+    bool nochange = false;
+    if (!ticketKey->LoadTicket(nochange)) {
       delete ticketKey;
       return false;
+    }
+    // Nothing updated, leave the original configuration
+    if (nochange) {
+      delete ticketKey;
+      return true;
     }
   }
   configid = configProcessor.set(configid, ticketKey);
@@ -663,98 +669,73 @@ void
 SSLTicketParams::cleanup()
 {
   ticket_block_free(default_global_keyblock);
-  ticket_key_filename = static_cast<char *>(ats_free_null(ticket_key_filename));
+  ticket_key_filename = (char *)ats_free_null(ticket_key_filename);
 }
 
-SSL_CTX *
+shared_SSL_CTX
 SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file, const char *ca_bundle_path) const
 {
-  SSL_CTX *client_ctx = nullptr;
-  CTX_MAP *ctx_map    = nullptr;
+  shared_SSL_CTX client_ctx = nullptr;
   std::string top_level_key, ctx_key;
   ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
   ts::bwprint(ctx_key, "{}:{}", client_cert, key_file);
 
-  ink_mutex_acquire(&ctxMapLock);
-  // Do first level searching and create new CTX_MAP as second level if not exists.
-  auto top_iter = top_level_ctx_map.find(top_level_key);
-  if (top_iter != top_level_ctx_map.end()) {
-    if (top_iter->second == nullptr) {
-      top_iter->second = new CTX_MAP;
+  auto ctx_map_iter = top_level_ctx_map.find(top_level_key);
+  if (ctx_map_iter != top_level_ctx_map.end()) {
+    auto ctx_iter = ctx_map_iter->second.find(ctx_key);
+    if (ctx_iter != ctx_map_iter->second.end()) {
+      client_ctx = ctx_iter->second;
     }
-    ctx_map = top_iter->second;
-  } else {
-    ctx_map = new CTX_MAP;
-    top_level_ctx_map.insert(std::make_pair(top_level_key, ctx_map));
   }
-  // Do second level searching and return client ctx if found
-  auto iter = ctx_map->find(ctx_key);
-  if (iter != ctx_map->end()) {
-    client_ctx = iter->second;
+
+  // Create context if doesn't exists
+  if (!client_ctx) {
+    client_ctx = shared_SSL_CTX(SSLInitClientContext(this), SSLReleaseContext);
+
+    if (client_cert) {
+      // Set public and private keys
+      if (!SSL_CTX_use_certificate_chain_file(client_ctx.get(), client_cert)) {
+        SSLError("failed to load client certificate from %s", client_cert);
+        goto fail;
+      }
+      if (!key_file || key_file[0] == '\0') {
+        key_file = client_cert;
+      }
+      if (!SSL_CTX_use_PrivateKey_file(client_ctx.get(), key_file, SSL_FILETYPE_PEM)) {
+        SSLError("failed to load client private key file from %s", key_file);
+        goto fail;
+      }
+
+      if (!SSL_CTX_check_private_key(client_ctx.get())) {
+        SSLError("client private key (%s) does not match the certificate public key (%s)", key_file, client_cert);
+        goto fail;
+      }
+    }
+
+    // Set CA information for verifying peer cert
+    if (ca_bundle_file != nullptr || ca_bundle_path != nullptr) {
+      if (!SSL_CTX_load_verify_locations(client_ctx.get(), ca_bundle_file, ca_bundle_path)) {
+        SSLError("invalid client CA Certificate file (%s) or CA Certificate path (%s)", ca_bundle_file, ca_bundle_path);
+        goto fail;
+      }
+    } else if (!SSL_CTX_set_default_verify_paths(client_ctx.get())) {
+      SSLError("failed to set the default verify paths");
+      goto fail;
+    }
+
+    // Try to update the context in mapping with lock acquired. If a valid context exists, return it without changing the structure.
+    ink_mutex_acquire(&ctxMapLock);
+    auto ctx_iter = top_level_ctx_map[top_level_key].find(ctx_key);
+    if (ctx_iter == top_level_ctx_map[top_level_key].end() || ctx_iter->second == nullptr) {
+      top_level_ctx_map[top_level_key][ctx_key] = client_ctx;
+    } else {
+      client_ctx = ctx_iter->second;
+    }
     ink_mutex_release(&ctxMapLock);
-    return client_ctx;
   }
-  ink_mutex_release(&ctxMapLock);
-
-  // Not yet in the table.  Make the cert and add it to the table
-  client_ctx = SSLInitClientContext(this);
-
-  if (client_cert) {
-    // Set public and private keys
-    if (!SSL_CTX_use_certificate_chain_file(client_ctx, client_cert)) {
-      SSLError("failed to load client certificate from %s", client_cert);
-      goto fail;
-    }
-    if (!key_file || key_file[0] == '\0') {
-      key_file = client_cert;
-    }
-    if (!SSL_CTX_use_PrivateKey_file(client_ctx, key_file, SSL_FILETYPE_PEM)) {
-      SSLError("failed to load client private key file from %s", key_file);
-      goto fail;
-    }
-
-    if (!SSL_CTX_check_private_key(client_ctx)) {
-      SSLError("client private key (%s) does not match the certificate public key (%s)", key_file, client_cert);
-      goto fail;
-    }
-  }
-
-  // Set CA information for verifying peer cert
-  if (ca_bundle_file != nullptr || ca_bundle_path != nullptr) {
-    if (!SSL_CTX_load_verify_locations(client_ctx, ca_bundle_file, ca_bundle_path)) {
-      SSLError("invalid client CA Certificate file (%s) or CA Certificate path (%s)", ca_bundle_file, ca_bundle_path);
-      goto fail;
-    }
-  } else if (!SSL_CTX_set_default_verify_paths(client_ctx)) {
-    SSLError("failed to set the default verify paths");
-    goto fail;
-  }
-
-  ink_mutex_acquire(&ctxMapLock);
-  top_iter = top_level_ctx_map.find(top_level_key);
-  if (top_iter != top_level_ctx_map.end()) {
-    if (top_iter->second == nullptr) {
-      top_iter->second = new CTX_MAP;
-    }
-    ctx_map = top_iter->second;
-  } else {
-    ctx_map = new CTX_MAP;
-    top_level_ctx_map.insert(std::make_pair(top_level_key, ctx_map));
-  }
-  iter = ctx_map->find(ctx_key);
-  if (iter != ctx_map->end()) {
-    SSL_CTX_free(client_ctx);
-    client_ctx = iter->second;
-  } else {
-    ctx_map->insert(std::make_pair(ctx_key, client_ctx));
-  }
-  ink_mutex_release(&ctxMapLock);
   return client_ctx;
 
 fail:
-  if (client_ctx) {
-    SSL_CTX_free(client_ctx);
-  }
   return nullptr;
 }
 
@@ -762,17 +743,6 @@ void
 SSLConfigParams::cleanupCTXTable()
 {
   ink_mutex_acquire(&ctxMapLock);
-  CTX_MAP *ctx_map = nullptr;
-  for (auto &top_pair : top_level_ctx_map) {
-    ctx_map = top_pair.second;
-    if (ctx_map) {
-      for (auto &pair : (*ctx_map)) {
-        SSL_CTX_free(pair.second);
-      }
-      ctx_map->clear();
-      delete ctx_map;
-    }
-  }
   top_level_ctx_map.clear();
   ink_mutex_release(&ctxMapLock);
 }

@@ -22,8 +22,7 @@ Test.Summary = '''
 Same as cache-generaertaion-disjoint, but uses proxy.config.http.wait_for_cache which should delay
 the server from accepting connection till the cache is loaded
 '''
-# need Curl
-Test.SkipIf(Condition.true("This test fails at the moment as is turned off"))
+
 Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts")

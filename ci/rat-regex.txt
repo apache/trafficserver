@@ -17,8 +17,8 @@
 .*\.sed$
 .*\.dtd$
 .*\.json$
+.*\.yaml$
 .*\.md$
-.*\.tsconfig$
 .*\.default$
 .*\.default\.in$
 .*\.config$

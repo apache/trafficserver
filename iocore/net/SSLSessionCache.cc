@@ -118,7 +118,7 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
 {
   size_t len = i2d_SSL_SESSION(sess, nullptr); // make sure we're not going to need more than SSL_MAX_SESSION_SIZE bytes
   /* do not cache a session that's too big. */
-  if (len > static_cast<size_t>(SSL_MAX_SESSION_SIZE)) {
+  if (len > (size_t)SSL_MAX_SESSION_SIZE) {
     Debug("ssl.session_cache", "Unable to save SSL session because size of %zd exceeds the max of %d", len, SSL_MAX_SESSION_SIZE);
     return;
   }

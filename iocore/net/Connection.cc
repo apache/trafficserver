@@ -200,7 +200,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     l.l_onoff  = 0;
     l.l_linger = 0;
     if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) &&
-        (res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&l), sizeof(l))) < 0) {
+        (res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
       goto Lerror;
     }
   }
@@ -248,8 +248,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 
 #if defined(TCP_MAXSEG)
   if (NetProcessor::accept_mss > 0) {
-    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss), sizeof(int))) <
-        0) {
+    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *)&NetProcessor::accept_mss, sizeof(int))) < 0) {
       goto Lerror;
     }
   }

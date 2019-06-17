@@ -1,5 +1,5 @@
 '''
-Test cached responses and requests with bodies
+Test cached responses and requests with bodies using CurlHeader tester
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -19,7 +19,7 @@ Test cached responses and requests with bodies
 
 import os
 Test.Summary = '''
-Test cached responses and requests with bodies
+Test cached responses and requests with bodies using CurlHeader tester
 '''
 
 Test.ContinueOnFail = True
@@ -48,32 +48,71 @@ ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
+cache_and_req_body_miss = {
+    'Connection' : 'keep-alive',
+    'Via' : {'equal_re' : None},
+    'Server' : {'equal_re' : '.*'},
+    'X-Cache-Key' : {'equal_re' : 'http://127.0.0.1.*'},
+    'X-Cache' : 'miss',
+    'Last-Modified' : {'equal_re' : '.*'},
+    'cache-control' : 'max-age=1',
+    'Content-Length' : '3',
+    'Date' : {'equal_re' : '.*'},
+    'Age' : {'equal_re' : '.*'}
+}
+
+cache_and_req_body_hit = {
+    'Last-Modified' : {'equal_re' : '.*'},
+    'cache-control' : 'max-age=1',
+    'Content-Length' : '3',
+    'Date' : {'equal_re' : '.*'},
+    'Age' : {'equal_re' : '.*'},
+    'Connection' : 'keep-alive',
+    'Via' : {'equal_re' : '.*'},
+    'Server' : {'equal_re' : '.*'},
+    'X-Cache' : 'hit-fresh',
+    'HTTP/1.1 200 OK' : ''
+}
+
+cache_and_req_body_hit_close = {
+    'Last-Modified' : {'equal_re' : '.*'},
+    'cache-control' : 'max-age=1',
+    'Content-Length' : '3',
+    'Date' : {'equal_re' : '.*'},
+    'Age' : {'equal_re' : '.*'},
+    'Connection' : 'close',
+    'Via' : {'equal_re' : '.*'},
+    'Server' : {'equal_re' : '.*'},
+    'X-Cache' : 'hit-fresh',
+    'HTTP/1.1 200 OK' : ''
+}
+
 # Test 1 - 200 response and cache fill
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
 tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{port}/'.format(port=ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "cache_and_req_body-miss.gold"
+tr.Processes.Default.Streams.stdout = Testers.CurlHeader(cache_and_req_body_miss)
 tr.StillRunningAfter = ts
 
 # Test 2 - 200 cached response and using netcat
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "printf 'GET / HTTP/1.1\r\n''x-debug: x-cache,x-cache-key,via\r\n''Host: www.example.com\r\n''\r\n'|nc 127.0.0.1 -w 1 {port}".format(port=ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit.gold"
+tr.Processes.Default.Streams.stdout = Testers.CurlHeader(cache_and_req_body_hit)
 tr.StillRunningAfter = ts
 
 # Test 3 - 200 cached response and trying to hide a request in the body
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "printf 'GET / HTTP/1.1\r\n''x-debug: x-cache,x-cache-key,via\r\n''Host: www.example.com\r\n''Content-Length: 71\r\n''\r\n''GET /index.html?evil=zorg810 HTTP/1.1\r\n''Host: dummy-host.example.com\r\n''\r\n'|nc 127.0.0.1 -w 1 {port}".format(port=ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit.gold"
+tr.Processes.Default.Streams.stdout = Testers.CurlHeader(cache_and_req_body_hit)
 tr.StillRunningAfter = ts
 
 # Test 4 - 200 cached response and Content-Length larger than bytes sent, MUST close
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "printf 'GET / HTTP/1.1\r\n''x-debug: x-cache,x-cache-key,via\r\n''Host: dummy-host.example.com\r\n''Cache-control: max-age=300\r\n''Content-Length: 100\r\n''\r\n''GET /index.html?evil=zorg810 HTTP/1.1\r\n''Host: dummy-host.example.com\r\n''\r\n'|nc 127.0.0.1 -w 1 {port}".format(port=ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "cache_and_req_body-hit_close.gold"
+tr.Processes.Default.Streams.stdout = Testers.CurlHeader(cache_and_req_body_hit_close)
 tr.StillRunningAfter = ts

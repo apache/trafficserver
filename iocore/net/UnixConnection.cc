@@ -61,8 +61,7 @@ Connection::setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool
 
   fd = res;
 
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr), sizeof(enable_reuseaddr)) <
-             0)) {
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
     goto Lerror;
   }
 
@@ -83,12 +82,12 @@ Connection::setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool
   }
 
   // Set MultiCast TTL to specified value
-  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, reinterpret_cast<char *>(&mc_ttl), sizeof(mc_ttl)) < 0)) {
+  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char *)&mc_ttl, sizeof(mc_ttl)) < 0)) {
     goto Lerror;
   }
 
   // Set MultiCast Interface to specified value
-  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, reinterpret_cast<char *>(&mc_if), sizeof(mc_if)) < 0)) {
+  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&mc_if, sizeof(mc_if)) < 0)) {
     goto Lerror;
   }
 
@@ -96,7 +95,7 @@ Connection::setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool
   if (!mc_loopback) {
     char loop = 0;
 
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop)) < 0)) {
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loop, sizeof(loop)) < 0)) {
       goto Lerror;
     }
   }
@@ -130,8 +129,7 @@ Connection::setup_mc_receive(sockaddr const *mc_addr, sockaddr const *my_addr, b
     goto Lerror;
   }
 
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr), sizeof(enable_reuseaddr)) <
-             0)) {
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
     goto Lerror;
   }
 
@@ -153,7 +151,7 @@ Connection::setup_mc_receive(sockaddr const *mc_addr, sockaddr const *my_addr, b
     mc_request.imr_multiaddr.s_addr = ats_ip4_addr_cast(mc_addr);
     mc_request.imr_interface.s_addr = ats_ip4_addr_cast(my_addr);
 
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, reinterpret_cast<char *>(&mc_request), sizeof(mc_request)) < 0)) {
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mc_request, sizeof(mc_request)) < 0)) {
       goto Lerror;
     }
   }
@@ -408,7 +406,7 @@ Connection::apply_options(NetVCOptions const &opt)
       struct linger l;
       l.l_onoff  = 1;
       l.l_linger = 0;
-      safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&l), sizeof(l));
+      safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l));
       Debug("socket", "::open:: setsockopt() turn on SO_LINGER on socket");
     }
   }

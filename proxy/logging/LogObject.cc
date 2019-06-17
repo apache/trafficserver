@@ -179,7 +179,7 @@ LogObject::~LogObject()
   ats_free(m_alt_filename);
   delete m_format;
   delete[] m_buffer_manager;
-  delete static_cast<LogBuffer *>(FREELIST_POINTER(m_log_buffer));
+  delete (LogBuffer *)FREELIST_POINTER(m_log_buffer);
 }
 
 //-----------------------------------------------------------------------------
@@ -232,12 +232,12 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
     }
   }
 
-  int dir_len      = static_cast<int>(strlen(log_dir));
+  int dir_len      = (int)strlen(log_dir);
   int basename_len = len + ext_len + 1;          // include null terminator
   int total_len    = dir_len + 1 + basename_len; // include '/'
 
-  m_filename = static_cast<char *>(ats_malloc(total_len));
-  m_basename = static_cast<char *>(ats_malloc(basename_len));
+  m_filename = (char *)ats_malloc(total_len);
+  m_basename = (char *)ats_malloc(basename_len);
 
   memcpy(m_filename, log_dir, dir_len);
   m_filename[dir_len++] = '/';
@@ -298,7 +298,7 @@ LogObject::compute_signature(LogFormat *format, char *filename, unsigned int fla
 
   if (fl && ps && filename) {
     int buf_size = strlen(fl) + strlen(ps) + strlen(filename) + 2;
-    char *buffer = static_cast<char *>(ats_malloc(buf_size));
+    char *buffer = (char *)ats_malloc(buf_size);
 
     ink_string_concatenate_strings(buffer, fl, ps, filename,
                                    flags & LogObject::BINARY ? "B" : (flags & LogObject::WRITES_TO_PIPE ? "P" : "A"), NULL);
@@ -366,7 +366,7 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
     // Increment the version of m_log_buffer, returning the previous version.
     head_p h = increment_pointer_version(&m_log_buffer);
 
-    buffer           = static_cast<LogBuffer *>(FREELIST_POINTER(h));
+    buffer           = (LogBuffer *)FREELIST_POINTER(h);
     result_code      = buffer->checkout_write(write_offset, bytes_needed);
     bool decremented = false;
 
@@ -549,7 +549,7 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
     int64_t val;
     for (f = fl->first(); f; f = fl->next(f)) {
       // convert to host order to do computations
-      val = (f->is_time_field()) ? time_now : *(reinterpret_cast<int64_t *>(data_ptr));
+      val = (f->is_time_field()) ? time_now : *((int64_t *)data_ptr);
       f->update_aggregate(val);
       data_ptr += INK_MIN_ALIGN;
     }
@@ -615,7 +615,7 @@ void
 LogObject::_setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec, int rolling_offset_hr,
                           int rolling_size_mb)
 {
-  if (!LogRollingEnabledIsValid(static_cast<int>(rolling_enabled))) {
+  if (!LogRollingEnabledIsValid((int)rolling_enabled)) {
     m_rolling_enabled      = Log::NO_ROLLING;
     m_rolling_interval_sec = 0;
     m_rolling_offset_hr    = 0;
@@ -757,7 +757,7 @@ LogObject::_roll_files(long last_roll_time, long time_now)
 void
 LogObject::check_buffer_expiration(long time_now)
 {
-  LogBuffer *b = static_cast<LogBuffer *>(FREELIST_POINTER(m_log_buffer));
+  LogBuffer *b = (LogBuffer *)FREELIST_POINTER(m_log_buffer);
   if (b && time_now > b->expiration_time()) {
     force_new_buffer();
   }
@@ -1330,8 +1330,7 @@ REGRESSION_TEST(LogObjectManager_Transfer)(RegressionTest *t, int /* atype ATS_U
 
     mgr2.transfer_objects(mgr1);
 
-    rprintf(t, "mgr1 has %d objects, mgr2 has %d objects\n", static_cast<int>(mgr1.get_num_objects()),
-            static_cast<int>(mgr2.get_num_objects()));
+    rprintf(t, "mgr1 has %d objects, mgr2 has %d objects\n", (int)mgr1.get_num_objects(), (int)mgr2.get_num_objects());
     box.check(mgr1.get_num_objects() == 0, "Testing that manager 1 has 0 objects");
     box.check(mgr2.get_num_objects() == 4, "Testing that manager 2 has 4 objects");
 

@@ -85,9 +85,9 @@ process_arg(const AppVersionInfo *appinfo, const ArgumentDescription *argument_d
   if (argument_descriptions[i].type) {
     char type = argument_descriptions[i].type[0];
     if (type == 'F' || type == 'f') {
-      *static_cast<int *>(argument_descriptions[i].location) = type == 'F' ? 1 : 0;
+      *(int *)argument_descriptions[i].location = type == 'F' ? 1 : 0;
     } else if (type == 'T') {
-      *static_cast<int *>(argument_descriptions[i].location) = !*static_cast<int *>(argument_descriptions[i].location);
+      *(int *)argument_descriptions[i].location = !*(int *)argument_descriptions[i].location;
     } else {
       arg = *++(**argv) ? **argv : *++(*argv);
       if (!arg) {
@@ -95,20 +95,20 @@ process_arg(const AppVersionInfo *appinfo, const ArgumentDescription *argument_d
       }
       switch (type) {
       case 'I':
-        *static_cast<int *>(argument_descriptions[i].location) = atoi(arg);
+        *(int *)argument_descriptions[i].location = atoi(arg);
         break;
       case 'D':
-        *static_cast<double *>(argument_descriptions[i].location) = atof(arg);
+        *(double *)argument_descriptions[i].location = atof(arg);
         break;
       case 'L':
-        *static_cast<int64_t *>(argument_descriptions[i].location) = ink_atoi64(arg);
+        *(int64_t *)argument_descriptions[i].location = ink_atoi64(arg);
         break;
       case 'S':
         if (argument_descriptions[i].type[1] == '*') {
-          char **out = static_cast<char **>(argument_descriptions[i].location);
+          char **out = (char **)argument_descriptions[i].location;
           *out       = ats_strdup(arg);
         } else {
-          ink_strlcpy(static_cast<char *>(argument_descriptions[i].location), arg, atoi(argument_descriptions[i].type + 1));
+          ink_strlcpy((char *)argument_descriptions[i].location, arg, atoi(argument_descriptions[i].type + 1));
         }
         break;
       default:
@@ -137,19 +137,19 @@ show_argument_configuration(const ArgumentDescription *argument_descriptions, un
       case 'F':
       case 'f':
       case 'T':
-        printf(*static_cast<int *>(argument_descriptions[i].location) ? "TRUE" : "FALSE");
+        printf(*(int *)argument_descriptions[i].location ? "TRUE" : "FALSE");
         break;
       case 'I':
-        printf("%d", *static_cast<int *>(argument_descriptions[i].location));
+        printf("%d", *(int *)argument_descriptions[i].location);
         break;
       case 'D':
-        printf("%f", *static_cast<double *>(argument_descriptions[i].location));
+        printf("%f", *(double *)argument_descriptions[i].location);
         break;
       case 'L':
-        printf("%" PRId64 "", *static_cast<int64_t *>(argument_descriptions[i].location));
+        printf("%" PRId64 "", *(int64_t *)argument_descriptions[i].location);
         break;
       case 'S':
-        printf("%s", static_cast<char *>(argument_descriptions[i].location));
+        printf("%s", (char *)argument_descriptions[i].location);
         break;
       default:
         ink_fatal("bad argument description");
@@ -188,16 +188,16 @@ process_args_ex(const AppVersionInfo *appinfo, const ArgumentDescription *argume
       case 'f':
       case 'F':
       case 'I':
-        *static_cast<int *>(argument_descriptions[i].location) = atoi(env);
+        *(int *)argument_descriptions[i].location = atoi(env);
         break;
       case 'D':
-        *static_cast<double *>(argument_descriptions[i].location) = atof(env);
+        *(double *)argument_descriptions[i].location = atof(env);
         break;
       case 'L':
-        *static_cast<int64_t *>(argument_descriptions[i].location) = atoll(env);
+        *(int64_t *)argument_descriptions[i].location = atoll(env);
         break;
       case 'S':
-        ink_strlcpy(static_cast<char *>(argument_descriptions[i].location), env, atoi(argument_descriptions[i].type + 1));
+        ink_strlcpy((char *)argument_descriptions[i].location, env, atoi(argument_descriptions[i].type + 1));
         break;
       }
     }
@@ -302,14 +302,14 @@ usage(const ArgumentDescription *argument_descriptions, unsigned n_argument_desc
       fprintf(stderr, "          ");
       break;
     case 'L':
-      fprintf(stderr, " %-9" PRId64 "", *static_cast<int64_t *>(argument_descriptions[i].location));
+      fprintf(stderr, " %-9" PRId64 "", *(int64_t *)argument_descriptions[i].location);
       break;
     case 'S': {
       char *location;
       if (argument_descriptions[i].type[1] == '*') {
-        location = *static_cast<char **>(argument_descriptions[i].location);
+        location = *(char **)argument_descriptions[i].location;
       } else {
-        location = static_cast<char *>(argument_descriptions[i].location);
+        location = (char *)argument_descriptions[i].location;
       }
 
       if (location) {
@@ -324,16 +324,16 @@ usage(const ArgumentDescription *argument_descriptions, unsigned n_argument_desc
       break;
     }
     case 'D':
-      fprintf(stderr, " %-9.3f", *static_cast<double *>(argument_descriptions[i].location));
+      fprintf(stderr, " %-9.3f", *(double *)argument_descriptions[i].location);
       break;
     case 'I':
-      fprintf(stderr, " %-9d", *static_cast<int *>(argument_descriptions[i].location));
+      fprintf(stderr, " %-9d", *(int *)argument_descriptions[i].location);
       break;
     case 'T':
     case 'f':
     case 'F':
       if (argument_descriptions[i].location) {
-        fprintf(stderr, " %-9s", *static_cast<int *>(argument_descriptions[i].location) ? "true " : "false");
+        fprintf(stderr, " %-9s", *(int *)argument_descriptions[i].location ? "true " : "false");
       } else {
         fprintf(stderr, " %-9s", "false");
       }

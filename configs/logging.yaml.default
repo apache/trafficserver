@@ -11,6 +11,7 @@
 
 
 formats:
+  logging:
     # WebTrends Enhanced Log Format.
     #
     # The following is compatible with the WebTrends Enhanced Log Format.

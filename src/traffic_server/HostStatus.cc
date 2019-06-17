@@ -23,8 +23,6 @@
 #include "HostStatus.h"
 #include "ProcessManager.h"
 
-static RecRawStatBlock *host_status_rsb = nullptr;
-
 inline void
 getStatName(std::string &stat_name, const char *name)
 {
@@ -208,7 +206,6 @@ HostStatus::HostStatus()
   ink_rwlock_init(&host_status_rwlock);
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, &mgmt_host_status_up_callback);
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, &mgmt_host_status_down_callback);
-  host_status_rsb = RecAllocateRawStatBlock((int)TS_MAX_API_STATS);
 }
 
 HostStatus::~HostStatus()
@@ -344,7 +341,7 @@ HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned 
   if (result == REC_ERR_OKAY) {
     std::stringstream status_rec;
     status_rec << *host_stat;
-    RecSetRecordString(stat_name.c_str(), const_cast<char *>(status_rec.str().c_str()), REC_SOURCE_EXPLICIT, true, false);
+    RecSetRecordString(stat_name.c_str(), const_cast<char *>(status_rec.str().c_str()), REC_SOURCE_EXPLICIT, true);
     if (status == HostStatus_t::HOST_STATUS_UP) {
       Debug("host_statuses", "set status up for name: %s, status: %d, stat_name: %s", name, status, stat_name.c_str());
     } else {

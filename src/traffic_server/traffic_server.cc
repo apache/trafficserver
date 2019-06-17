@@ -125,7 +125,7 @@ static void mgmt_drain_callback(ts::MemSpan<void>);
 static void mgmt_storage_device_cmd_callback(int cmd, std::string_view const &arg);
 static void mgmt_lifecycle_msg_callback(ts::MemSpan<void>);
 static void init_ssl_ctx_callback(void *ctx, bool server);
-static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
+static void load_ssl_file_callback(const char *ssl_file);
 static void load_remap_file_callback(const char *remap_file);
 static void task_threads_started_callback();
 
@@ -263,14 +263,14 @@ public:
       ResourceTracker::dump(stderr);
 
       if (!end) {
-        end = static_cast<char *>(sbrk(0));
+        end = (char *)sbrk(0);
       }
 
       if (!snap) {
-        snap = static_cast<char *>(sbrk(0));
+        snap = (char *)sbrk(0);
       }
 
-      char *now = static_cast<char *>(sbrk(0));
+      char *now = (char *)sbrk(0);
       Note("sbrk 0x%" PRIu64 " from first %" PRIu64 " from last %" PRIu64 "\n", (uint64_t)((ptrdiff_t)now),
            (uint64_t)((ptrdiff_t)(now - end)), (uint64_t)((ptrdiff_t)(now - snap)));
       snap = now;
@@ -568,7 +568,7 @@ check_lockfile()
     fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", lockfile.c_str());
 
     if ((err == 0) && (holding_pid != -1)) {
-      fprintf(stderr, " (Lock file held by process ID %ld)\n", static_cast<long>(holding_pid));
+      fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
     } else if ((err == 0) && (holding_pid == -1)) {
       fprintf(stderr, " (Lock file exists, but can't read process ID)\n");
     } else if (reason) {
@@ -872,7 +872,7 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
     fprintf(stderr, "INFO: Successfully loaded remap.config\n\n");
   }
 
-  if (RecReadConfigFile(false) != REC_ERR_OKAY) {
+  if (RecReadConfigFile() != REC_ERR_OKAY) {
     exitStatus |= (1 << 1);
     fprintf(stderr, "ERROR: Failed to load records.config, exitStatus %d\n\n", exitStatus);
   } else {
@@ -1142,9 +1142,8 @@ adjust_sys_settings()
 
     lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(maxfiles * file_max_pct);
     if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-      fds_limit = static_cast<int>(lim.rlim_cur);
-      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, static_cast<int>(lim.rlim_cur),
-             static_cast<int>(lim.rlim_max));
+      fds_limit = (int)lim.rlim_cur;
+      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
     }
   }
 
@@ -1154,9 +1153,8 @@ adjust_sys_settings()
     if (fds_throttle > (int)(lim.rlim_cur - THROTTLE_FD_HEADROOM)) {
       lim.rlim_cur = (lim.rlim_max = (rlim_t)(fds_throttle + THROTTLE_FD_HEADROOM));
       if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-        fds_limit = static_cast<int>(lim.rlim_cur);
-        syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, static_cast<int>(lim.rlim_cur),
-               static_cast<int>(lim.rlim_max));
+        fds_limit = (int)lim.rlim_cur;
+        syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
       }
     }
   }
@@ -1356,7 +1354,7 @@ struct RegressionCont : public Continuation {
       return EVENT_CONT;
     }
 
-    char *rt = const_cast<char *>(regression_test[0] == 0 ? "" : regression_test);
+    char *rt = (char *)(regression_test[0] == 0 ? "" : regression_test);
     if (!initialized && RegressionTest::run(rt, regression_level) == REGRESSION_TEST_INPROGRESS) {
       initialized = 1;
       return EVENT_CONT;
@@ -1424,7 +1422,7 @@ adjust_num_of_net_threads(int nthreads)
   } else { /* autoconfig is enabled */
     num_of_threads_tmp = nthreads;
     REC_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
-    num_of_threads_tmp = static_cast<int>(static_cast<float>(num_of_threads_tmp) * autoconfig_scale);
+    num_of_threads_tmp = (int)((float)num_of_threads_tmp * autoconfig_scale);
 
     if (unlikely(num_of_threads_tmp > MAX_EVENT_THREADS)) {
       num_of_threads_tmp = MAX_EVENT_THREADS;
@@ -2108,15 +2106,15 @@ init_ssl_ctx_callback(void *ctx, bool server)
 }
 
 static void
-load_ssl_file_callback(const char *ssl_file, unsigned int options)
+load_ssl_file_callback(const char *ssl_file)
 {
-  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file, options);
+  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file);
 }
 
 static void
 load_remap_file_callback(const char *remap_file)
 {
-  pmgmt->signalConfigFileChild("remap.config", remap_file, CONFIG_FLAG_UNVERSIONED);
+  pmgmt->signalConfigFileChild("remap.config", remap_file);
 }
 
 static void

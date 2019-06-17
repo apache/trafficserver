@@ -63,7 +63,7 @@ net_next_connection_number()
 {
   unsigned int res = 0;
   do {
-    res = static_cast<unsigned int>(ink_atomic_increment(&net_connection_number, 1));
+    res = (unsigned int)ink_atomic_increment(&net_connection_number, 1);
   } while (!res);
   return res;
 }

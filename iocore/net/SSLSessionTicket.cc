@@ -43,7 +43,7 @@
 void
 ssl_session_ticket_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
-  ticket_block_free(static_cast<struct ssl_ticket_key_block *>(ptr));
+  ticket_block_free((struct ssl_ticket_key_block *)ptr);
 }
 
 /*
@@ -71,7 +71,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
     // Try the default
     keyblock = params->default_global_keyblock;
   } else {
-    keyblock = cc->keyblock;
+    keyblock = cc->keyblock.get();
   }
   ink_release_assert(keyblock != nullptr && keyblock->num_keys > 0);
 

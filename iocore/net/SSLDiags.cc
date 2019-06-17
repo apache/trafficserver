@@ -42,42 +42,30 @@ increment_ssl_client_error(unsigned long err)
   // (we ignore FUNCTION with the prejudice that we don't care what function
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_expired_cert_stat);
     break;
-#endif
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_revoked_cert_stat);
     break;
-#endif
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_cert_stat);
     break;
-#endif
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_cert_verify_failed_stat);
     break;
-#ifdef SSL_R_SSLV3_ALERT_BAD_CERTIFICATE
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_bad_cert_stat);
     break;
-#endif
-#ifdef SSL_R_TLSV1_ALERT_DECRYPTION_FAILED
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_decryption_failed_stat);
     break;
-#endif
   case SSL_R_WRONG_VERSION_NUMBER:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_wrong_version_stat);
     break;
-#ifdef SSL_R_TLSV1_ALERT_UNKNOWN_CA
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_ca_stat);
     break;
-#endif
   default:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_other_errors_stat);
     return false;
@@ -101,42 +89,30 @@ increment_ssl_server_error(unsigned long err)
   // (we ignore FUNCTION with the prejudice that we don't care what function
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_expired_cert_stat);
     break;
-#endif
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_revoked_cert_stat);
     break;
-#endif
-#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_cert_stat);
     break;
-#endif
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_cert_verify_failed_stat);
     break;
-#ifdef SSL_R_SSLV3_ALERT_BAD_CERTIFICATE
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_bad_cert_stat);
     break;
-#endif
-#ifdef SSL_R_TLSV1_ALERT_DECRYPTION_FAILED
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_decryption_failed_stat);
     break;
-#endif
   case SSL_R_WRONG_VERSION_NUMBER:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_wrong_version_stat);
     break;
-#ifdef SSL_R_TLSV1_ALERT_UNKNOWN_CA
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_ca_stat);
     break;
-#endif
   default:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_other_errors_stat);
     return false;
@@ -160,7 +136,7 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
     ats_ip_ntop(vc->get_remote_addr(), ip_buf, sizeof(ip_buf));
   }
 
-  es = reinterpret_cast<unsigned long>(pthread_self());
+  es = (unsigned long)pthread_self();
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
     if (debug) {
       if (unlikely(diags->on())) {
@@ -202,7 +178,7 @@ SSLErrorName(int ssl_error)
     "SSL_ERROR_NONE",    "SSL_ERROR_SSL",         "SSL_ERROR_WANT_READ",    "SSL_ERROR_WANT_WRITE", "SSL_ERROR_WANT_X509_LOOKUP",
     "SSL_ERROR_SYSCALL", "SSL_ERROR_ZERO_RETURN", "SSL_ERROR_WANT_CONNECT", "SSL_ERROR_WANT_ACCEPT"};
 
-  if (ssl_error < 0 || ssl_error >= static_cast<int>(countof(names))) {
+  if (ssl_error < 0 || ssl_error >= (int)countof(names)) {
     return "unknown SSL error";
   }
 

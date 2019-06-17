@@ -24,7 +24,7 @@
 #include <vector>
 #include <string>
 
-#include "tsconfig/Errata.h"
+#include "tscore/Errata.h"
 
 #define TSDECL(id) constexpr char TS_##id[] = #id
 TSDECL(fqdn);

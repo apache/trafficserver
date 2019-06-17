@@ -111,7 +111,7 @@ JemallocNodumpAllocator::allocate(InkFreeList *f)
 #else
     newp = ats_memalign(f->alignment, f->type_size);
     if (INK_ALIGN((uint64_t)newp, ats_pagesize()) == (uint64_t)newp) {
-      ats_madvise(static_cast<caddr_t>(newp), INK_ALIGN(f->type_size, f->alignment), f->advice);
+      ats_madvise((caddr_t)newp, INK_ALIGN(f->type_size, f->alignment), f->advice);
     }
 #endif
   } else {

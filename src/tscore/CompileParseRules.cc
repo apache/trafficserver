@@ -161,7 +161,7 @@ main()
   for (c = 0; c < 256; c++) {
     fprintf(fp, "/* %3d (%c) */\t", c, (isprint(c) ? c : '?'));
     fprintf(fp, "0x%08X%c\t\t", tparseRulesCType[c], (c != 255 ? ',' : ' '));
-    fprintf(fp, "/* [%s] */\n", uint_to_binary((tparseRulesCType[c])));
+    fprintf(fp, "/* [%s] */\n", uint_to_binary((unsigned int)(tparseRulesCType[c])));
   }
   fclose(fp);
   fp = fopen("ParseRulesCTypeToUpper", "w");

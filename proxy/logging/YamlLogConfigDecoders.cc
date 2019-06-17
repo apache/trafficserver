@@ -100,7 +100,7 @@ convert<std::unique_ptr<LogFilter>>::decode(const Node &node, std::unique_ptr<Lo
   int i;
   for (i = 0; i < LogFilter::N_ACTIONS; i++) {
     if (strcasecmp(action_str, LogFilter::ACTION_NAME[i]) == 0) {
-      act = static_cast<LogFilter::Action>(i);
+      act = (LogFilter::Action)i;
       break;
     }
   }

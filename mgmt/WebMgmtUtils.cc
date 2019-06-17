@@ -48,7 +48,7 @@ varSetFromStr(const char *varName, const char *value)
 
   memset(&data, 0, sizeof(RecData));
 
-  err = RecGetRecordDataType(const_cast<char *>(varName), &varDataType);
+  err = RecGetRecordDataType((char *)varName, &varDataType);
   if (err != REC_ERR_OKAY) {
     return found;
   }
@@ -62,14 +62,14 @@ varSetFromStr(const char *varName, const char *value)
   switch (varDataType) {
   case RECD_INT:
     if (sscanf(value, "%" PRId64 "", &data.rec_int) == 1) {
-      RecSetRecordInt(const_cast<char *>(varName), data.rec_int, REC_SOURCE_EXPLICIT);
+      RecSetRecordInt((char *)varName, data.rec_int, REC_SOURCE_EXPLICIT);
     } else {
       found = false;
     }
     break;
   case RECD_COUNTER:
     if (sscanf(value, "%" PRId64 "", &data.rec_counter) == 1) {
-      RecSetRecordCounter(const_cast<char *>(varName), data.rec_counter, REC_SOURCE_EXPLICIT);
+      RecSetRecordCounter((char *)varName, data.rec_counter, REC_SOURCE_EXPLICIT);
     } else {
       found = false;
     }
@@ -77,16 +77,16 @@ varSetFromStr(const char *varName, const char *value)
   case RECD_FLOAT:
     // coverity[secure_coding]
     if (sscanf(value, "%f", &data.rec_float) == 1) {
-      RecSetRecordFloat(const_cast<char *>(varName), data.rec_float, REC_SOURCE_EXPLICIT);
+      RecSetRecordFloat((char *)varName, data.rec_float, REC_SOURCE_EXPLICIT);
     } else {
       found = false;
     }
     break;
   case RECD_STRING:
     if (*value == '\0') {
-      RecSetRecordString(const_cast<char *>(varName), nullptr, REC_SOURCE_EXPLICIT);
+      RecSetRecordString((char *)varName, nullptr, REC_SOURCE_EXPLICIT);
     } else {
-      RecSetRecordString(const_cast<char *>(varName), const_cast<char *>(value), REC_SOURCE_EXPLICIT);
+      RecSetRecordString((char *)varName, (char *)value, REC_SOURCE_EXPLICIT);
     }
     break;
   case RECD_NULL:
@@ -114,27 +114,27 @@ varSetFloat(const char *varName, RecFloat value, bool convert)
   bool found           = true;
   int err              = REC_ERR_FAIL;
 
-  err = RecGetRecordDataType(const_cast<char *>(varName), &varDataType);
+  err = RecGetRecordDataType((char *)varName, &varDataType);
   if (err != REC_ERR_OKAY) {
     return found;
   }
 
   switch (varDataType) {
   case RECD_FLOAT:
-    RecSetRecordFloat(const_cast<char *>(varName), value, REC_SOURCE_EXPLICIT);
+    RecSetRecordFloat((char *)varName, (RecFloat)value, REC_SOURCE_EXPLICIT);
     break;
 
   case RECD_INT:
     if (convert) {
       value += 0.5; // rounding up
-      RecSetRecordInt(const_cast<char *>(varName), static_cast<RecInt>(value), REC_SOURCE_EXPLICIT);
+      RecSetRecordInt((char *)varName, (RecInt)value, REC_SOURCE_EXPLICIT);
       break;
     }
     // fallthrough
 
   case RECD_COUNTER:
     if (convert) {
-      RecSetRecordCounter(const_cast<char *>(varName), static_cast<RecCounter>(value), REC_SOURCE_EXPLICIT);
+      RecSetRecordCounter((char *)varName, (RecCounter)value, REC_SOURCE_EXPLICIT);
       break;
     }
     // fallthrough
@@ -165,26 +165,26 @@ varSetCounter(const char *varName, RecCounter value, bool convert)
   bool found           = true;
   int err              = REC_ERR_FAIL;
 
-  err = RecGetRecordDataType(const_cast<char *>(varName), &varDataType);
+  err = RecGetRecordDataType((char *)varName, &varDataType);
   if (err != REC_ERR_OKAY) {
     return found;
   }
 
   switch (varDataType) {
   case RECD_COUNTER:
-    RecSetRecordCounter(const_cast<char *>(varName), value, REC_SOURCE_EXPLICIT);
+    RecSetRecordCounter((char *)varName, (RecCounter)value, REC_SOURCE_EXPLICIT);
     break;
 
   case RECD_INT:
     if (convert) {
-      RecSetRecordInt(const_cast<char *>(varName), static_cast<RecInt>(value), REC_SOURCE_EXPLICIT);
+      RecSetRecordInt((char *)varName, (RecInt)value, REC_SOURCE_EXPLICIT);
       break;
     }
     // fallthrough
 
   case RECD_FLOAT:
     if (convert) {
-      RecSetRecordFloat(const_cast<char *>(varName), static_cast<RecFloat>(value), REC_SOURCE_EXPLICIT);
+      RecSetRecordFloat((char *)varName, (RecFloat)value, REC_SOURCE_EXPLICIT);
       break;
     }
     // fallthrough
@@ -215,26 +215,26 @@ varSetInt(const char *varName, RecInt value, bool convert)
   bool found           = true;
   int err              = REC_ERR_FAIL;
 
-  err = RecGetRecordDataType(const_cast<char *>(varName), &varDataType);
+  err = RecGetRecordDataType((char *)varName, &varDataType);
   if (err != REC_ERR_OKAY) {
     return found;
   }
 
   switch (varDataType) {
   case RECD_INT:
-    RecSetRecordInt(const_cast<char *>(varName), value, REC_SOURCE_EXPLICIT);
+    RecSetRecordInt((char *)varName, (RecInt)value, REC_SOURCE_EXPLICIT);
     break;
 
   case RECD_COUNTER:
     if (convert) {
-      RecSetRecordCounter(const_cast<char *>(varName), static_cast<RecCounter>(value), REC_SOURCE_EXPLICIT);
+      RecSetRecordCounter((char *)varName, (RecCounter)value, REC_SOURCE_EXPLICIT);
       break;
     }
     // fallthrough
 
   case RECD_FLOAT:
     if (convert) {
-      RecSetRecordFloat(const_cast<char *>(varName), static_cast<RecFloat>(value), REC_SOURCE_EXPLICIT);
+      RecSetRecordFloat((char *)varName, (RecFloat)value, REC_SOURCE_EXPLICIT);
       break;
     }
     // fallthrough
@@ -261,13 +261,13 @@ varSetData(RecDataT varType, const char *varName, RecData value)
 
   switch (varType) {
   case RECD_INT:
-    err = RecSetRecordInt(const_cast<char *>(varName), value.rec_int, REC_SOURCE_EXPLICIT);
+    err = RecSetRecordInt((char *)varName, value.rec_int, REC_SOURCE_EXPLICIT);
     break;
   case RECD_COUNTER:
-    err = RecSetRecordCounter(const_cast<char *>(varName), value.rec_counter, REC_SOURCE_EXPLICIT);
+    err = RecSetRecordCounter((char *)varName, value.rec_counter, REC_SOURCE_EXPLICIT);
     break;
   case RECD_FLOAT:
-    err = RecSetRecordFloat(const_cast<char *>(varName), value.rec_float, REC_SOURCE_EXPLICIT);
+    err = RecSetRecordFloat((char *)varName, value.rec_float, REC_SOURCE_EXPLICIT);
     break;
   default:
     Fatal("unsupport type:%d\n", varType);
@@ -306,7 +306,7 @@ varCounterFromName(const char *varName, RecCounter *value)
   bool found           = true;
   int err              = REC_ERR_FAIL;
 
-  err = RecGetRecordDataType(const_cast<char *>(varName), &varDataType);
+  err = RecGetRecordDataType((char *)varName, &varDataType);
 
   if (err == REC_ERR_FAIL) {
     return false;
@@ -315,19 +315,19 @@ varCounterFromName(const char *varName, RecCounter *value)
   switch (varDataType) {
   case RECD_INT: {
     RecInt tempInt = 0;
-    RecGetRecordInt(const_cast<char *>(varName), &tempInt);
-    *value = static_cast<RecCounter>(tempInt);
+    RecGetRecordInt((char *)varName, &tempInt);
+    *value = (RecCounter)tempInt;
     break;
   }
   case RECD_COUNTER: {
     *value = 0;
-    RecGetRecordCounter(const_cast<char *>(varName), value);
+    RecGetRecordCounter((char *)varName, value);
     break;
   }
   case RECD_FLOAT: {
     RecFloat tempFloat = 0.0;
-    RecGetRecordFloat(const_cast<char *>(varName), &tempFloat);
-    *value = static_cast<RecCounter>(tempFloat);
+    RecGetRecordFloat((char *)varName, &tempFloat);
+    *value = (RecCounter)tempFloat;
     break;
   }
   case RECD_STRING:
@@ -356,7 +356,7 @@ varFloatFromName(const char *varName, RecFloat *value)
 
   int err = REC_ERR_FAIL;
 
-  err = RecGetRecordDataType(const_cast<char *>(varName), &varDataType);
+  err = RecGetRecordDataType((char *)varName, &varDataType);
 
   if (err == REC_ERR_FAIL) {
     return false;
@@ -365,19 +365,19 @@ varFloatFromName(const char *varName, RecFloat *value)
   switch (varDataType) {
   case RECD_INT: {
     RecInt tempInt = 0;
-    RecGetRecordInt(const_cast<char *>(varName), &tempInt);
-    *value = static_cast<RecFloat>(tempInt);
+    RecGetRecordInt((char *)varName, &tempInt);
+    *value = (RecFloat)tempInt;
     break;
   }
   case RECD_COUNTER: {
     RecCounter tempCounter = 0;
-    RecGetRecordCounter(const_cast<char *>(varName), &tempCounter);
-    *value = static_cast<RecFloat>(tempCounter);
+    RecGetRecordCounter((char *)varName, &tempCounter);
+    *value = (RecFloat)tempCounter;
     break;
   }
   case RECD_FLOAT: {
     *value = 0.0;
-    RecGetRecordFloat(const_cast<char *>(varName), value);
+    RecGetRecordFloat((char *)varName, value);
     break;
   }
   case RECD_STRING:
@@ -405,7 +405,7 @@ varIntFromName(const char *varName, RecInt *value)
   bool found           = true;
   int err              = REC_ERR_FAIL;
 
-  err = RecGetRecordDataType(const_cast<char *>(varName), &varDataType);
+  err = RecGetRecordDataType((char *)varName, &varDataType);
 
   if (err != REC_ERR_OKAY) {
     return false;
@@ -414,19 +414,19 @@ varIntFromName(const char *varName, RecInt *value)
   switch (varDataType) {
   case RECD_INT: {
     *value = 0;
-    RecGetRecordInt(const_cast<char *>(varName), value);
+    RecGetRecordInt((char *)varName, value);
     break;
   }
   case RECD_COUNTER: {
     RecCounter tempCounter = 0;
-    RecGetRecordCounter(const_cast<char *>(varName), &tempCounter);
-    *value = static_cast<RecInt>(tempCounter);
+    RecGetRecordCounter((char *)varName, &tempCounter);
+    *value = (RecInt)tempCounter;
     break;
   }
   case RECD_FLOAT: {
     RecFloat tempFloat = 0.0;
-    RecGetRecordFloat(const_cast<char *>(varName), &tempFloat);
-    *value = static_cast<RecInt>(tempFloat);
+    RecGetRecordFloat((char *)varName, &tempFloat);
+    *value = (RecInt)tempFloat;
     break;
   }
   case RECD_STRING:
@@ -451,7 +451,7 @@ percentStrFromFloat(RecFloat val, char *bufVal)
 {
   int percent;
 
-  percent = static_cast<int>((val * 100.0) + 0.5);
+  percent = (int)((val * 100.0) + 0.5);
   snprintf(bufVal, 4, "%d%%", percent);
 }
 
@@ -522,7 +522,7 @@ bytesFromInt(RecInt bytes, char *bufVal)
   double unitBytes;
 
   if (bytes >= gb) {
-    unitBytes = bytes / static_cast<double>(gb);
+    unitBytes = bytes / (double)gb;
     snprintf(bufVal, 15, "%.1f GB", unitBytes);
   } else {
     // Reduce the precision of the bytes parameter
@@ -530,12 +530,12 @@ bytesFromInt(RecInt bytes, char *bufVal)
     //   has plenty of precision for a regular int
     //   and saves from 64 bit arithmetic which may
     //   be expensive on some processors
-    int bytesP = static_cast<int>(bytes);
+    int bytesP = (int)bytes;
     if (bytesP >= mb) {
-      unitBytes = bytes / static_cast<double>(mb);
+      unitBytes = bytes / (double)mb;
       snprintf(bufVal, 15, "%.1f MB", unitBytes);
     } else if (bytesP >= kb) {
-      unitBytes = bytes / static_cast<double>(kb);
+      unitBytes = bytes / (double)kb;
       snprintf(bufVal, 15, "%.1f KB", unitBytes);
     } else {
       snprintf(bufVal, 15, "%d", bytesP);
@@ -616,9 +616,9 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
   case RECD_COUNTER:
     RecGetRecordCounter(varName, &data.rec_counter);
     if (formatOption == 'b') {
-      bytesFromInt(static_cast<MgmtInt>(data.rec_counter), bufVal);
+      bytesFromInt((MgmtInt)data.rec_counter, bufVal);
     } else if (formatOption == 'm') {
-      MbytesFromInt(static_cast<MgmtInt>(data.rec_counter), bufVal);
+      MbytesFromInt((MgmtInt)data.rec_counter, bufVal);
     } else if (formatOption == 'c') {
       commaStrFromInt(data.rec_counter, bufVal);
     } else {
@@ -637,7 +637,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
     RecGetRecordString_Xmalloc(varName, &data.rec_string);
     if (data.rec_string == nullptr) {
       bufVal[0] = '\0';
-    } else if (strlen(data.rec_string) < static_cast<size_t>(bufLen - 1)) {
+    } else if (strlen(data.rec_string) < (size_t)(bufLen - 1)) {
       ink_strlcpy(bufVal, data.rec_string, bufLen);
     } else {
       ink_strlcpy(bufVal, data.rec_string, bufLen);
@@ -667,7 +667,7 @@ MgmtData::setFromName(const char *varName)
   bool found = true;
   int err;
 
-  err = RecGetRecordDataType(const_cast<char *>(varName), &this->type);
+  err = RecGetRecordDataType((char *)varName, &this->type);
 
   if (err == REC_ERR_FAIL) {
     return found;
@@ -675,16 +675,16 @@ MgmtData::setFromName(const char *varName)
 
   switch (this->type) {
   case RECD_INT:
-    RecGetRecordInt(const_cast<char *>(varName), &this->data.rec_int);
+    RecGetRecordInt((char *)varName, &this->data.rec_int);
     break;
   case RECD_COUNTER:
-    RecGetRecordCounter(const_cast<char *>(varName), &this->data.rec_counter);
+    RecGetRecordCounter((char *)varName, &this->data.rec_counter);
     break;
   case RECD_FLOAT:
-    RecGetRecordFloat(const_cast<char *>(varName), &this->data.rec_float);
+    RecGetRecordFloat((char *)varName, &this->data.rec_float);
     break;
   case RECD_STRING:
-    RecGetRecordString_Xmalloc(const_cast<char *>(varName), &this->data.rec_string);
+    RecGetRecordString_Xmalloc((char *)varName, &this->data.rec_string);
     break;
   case RECD_NULL:
   default:
@@ -779,7 +779,7 @@ varType(const char *varName)
   RecDataT data_type;
   int err;
 
-  err = RecGetRecordDataType(const_cast<char *>(varName), &data_type);
+  err = RecGetRecordDataType((char *)varName, &data_type);
 
   if (err == REC_ERR_FAIL) {
     return RECD_NULL;
@@ -834,7 +834,7 @@ substituteUnsafeChars(char *buffer)
       subStr[0] = *(++read);
       subStr[1] = *(++read);
       charVal   = strtol(subStr, (char **)nullptr, 16);
-      *write    = static_cast<char>(charVal);
+      *write    = (char)charVal;
       read++;
       write++;
       numSub++;
@@ -959,7 +959,7 @@ appendDefaultDomain(char *hostname, int bufLength)
 
   if (strchr(hostname, '.') == nullptr) {
     if (_res.defdname[0] != '\0') {
-      if (bufLength - 2 >= static_cast<int>(strlen(hostname) + strlen(_res.defdname))) {
+      if (bufLength - 2 >= (int)(strlen(hostname) + strlen(_res.defdname))) {
         ink_strlcat(hostname, ".", bufLength);
         ink_strlcat(hostname, _res.defdname, bufLength);
       } else {
@@ -983,10 +983,10 @@ recordValidityCheck(const char *varName, const char *value)
   RecCheckT check_t;
   char *pattern;
 
-  if (RecGetRecordCheckType(const_cast<char *>(varName), &check_t) != REC_ERR_OKAY) {
+  if (RecGetRecordCheckType((char *)varName, &check_t) != REC_ERR_OKAY) {
     return false;
   }
-  if (RecGetRecordCheckExpr(const_cast<char *>(varName), &pattern) != REC_ERR_OKAY) {
+  if (RecGetRecordCheckExpr((char *)varName, &pattern) != REC_ERR_OKAY) {
     return false;
   }
 
@@ -1040,7 +1040,7 @@ recordRegexCheck(const char *pattern, const char *value)
 bool
 recordRangeCheck(const char *pattern, const char *value)
 {
-  char *p = const_cast<char *>(pattern);
+  char *p = (char *)pattern;
   Tokenizer dashTok("-");
 
   if (recordRegexCheck("^[0-9]+$", value)) {
@@ -1074,8 +1074,7 @@ recordIPCheck(const char *pattern, const char *value)
 
   check = true;
   if (recordRegexCheck(range_pattern, pattern) && recordRegexCheck(ip_pattern, value)) {
-    if (dotTok1.Initialize(const_cast<char *>(pattern), COPY_TOKS) == 4 &&
-        dotTok2.Initialize(const_cast<char *>(value), COPY_TOKS) == 4) {
+    if (dotTok1.Initialize((char *)pattern, COPY_TOKS) == 4 && dotTok2.Initialize((char *)value, COPY_TOKS) == 4) {
       for (int i = 0; i < 4 && check; i++) {
         if (!recordRangeCheck(dotTok1[i], dotTok2[i])) {
           check = false;
@@ -1096,7 +1095,7 @@ recordRestartCheck(const char *varName)
 {
   RecUpdateT update_t;
 
-  if (RecGetRecordUpdateType(const_cast<char *>(varName), &update_t) != REC_ERR_OKAY) {
+  if (RecGetRecordUpdateType((char *)varName, &update_t) != REC_ERR_OKAY) {
     return false;
   }
 

@@ -66,11 +66,22 @@ server.addResponse("sessionlog.jason",
 
 
 server.addResponse("sessionlog.json", request_header2, response_header2)
+
+# request/response for test case 8
+request_header = {"headers": "GET /huge_resp_hdrs HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 6\r\n\r\n", "timestamp": "1469733493.993", "body": "200 OK"}
+server.addResponse("sessionlog.json", request_header, response_header)
+
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
 ts.Variables.ssl_port = 4443
+ts.Setup.CopyAs('rules/huge_resp_hdrs.conf', Test.RunDirectory)
+ts.Disk.remap_config.AddLine(
+    'map /huge_resp_hdrs http://127.0.0.1:{0}/huge_resp_hdrs @plugin=header_rewrite.so @pparam={1}/huge_resp_hdrs.conf '.format(server.Variables.Port, Test.RunDirectory)
+)
+
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
@@ -158,4 +169,12 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d @big_post_body https://127.0.0.1:{0}/bigpostchunked'.format( ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
+tr.StillRunningAfter = server
+
+# Test Case 8: Huge resposne header
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/huge_resp_hdrs'.format(ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/http2_8_stdout.gold"
+tr.Processes.Default.Streams.stderr = "gold/http2_8_stderr.gold"
 tr.StillRunningAfter = server

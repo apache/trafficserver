@@ -63,8 +63,8 @@ libmgmt_lm_la_SOURCES = \
 	FileManager.h \
 	LocalManager.cc \
 	LocalManager.h \
-	Rollback.cc \
-	Rollback.h \
+	ConfigManager.cc \
+	ConfigManager.h \
 	DerivativeMetrics.cc \
 	DerivativeMetrics.h \
 	WebMgmtUtils.cc \

@@ -621,7 +621,7 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
     if (length) {
       *length = url->m_len_printed_string;
     }
-    return const_cast<char *>(url->m_ptr_printed_string);
+    return (char *)url->m_ptr_printed_string;
   } else { // either not clean or never printed
     int len = url_length_get(url);
     char *buf;
@@ -652,7 +652,7 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
   int index  = 0;
   int offset = 0;
 
-  buf = arena ? arena->str_alloc(len) : static_cast<char *>(ats_malloc(len + 1));
+  buf = arena ? arena->str_alloc(len) : (char *)ats_malloc(len + 1);
 
   url_print(url, buf, len, &index, &offset);
   buf[len] = '\0';
@@ -866,7 +866,7 @@ url_to_string(URLImpl *url, Arena *arena, int *length)
   if (arena) {
     str = arena->str_alloc(len);
   } else {
-    str = static_cast<char *>(ats_malloc(len + 1));
+    str = (char *)ats_malloc(len + 1);
   }
 
   idx = 0;
@@ -946,12 +946,12 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
 {
   int copy_len;
   char *first_pct;
-  int buf_len = static_cast<int>(buf_e - buf);
-  int str_len = static_cast<int>(str_e - str);
-  int min_len = (str_len < buf_len ? str_len : buf_len);
+  int buf_len = (int)(buf_e - buf);
+  int str_len = (int)(str_e - str);
+  int min_len = (int)(str_len < buf_len ? str_len : buf_len);
 
-  first_pct = ink_memcpy_until_char(buf, const_cast<char *>(str), min_len, '%');
-  copy_len  = static_cast<int>(first_pct - str);
+  first_pct = ink_memcpy_until_char(buf, (char *)str, min_len, '%');
+  copy_len  = (int)(first_pct - str);
   str += copy_len;
   buf += copy_len;
   if (copy_len == min_len) {
@@ -1077,7 +1077,7 @@ url_unescapify(Arena *arena, const char *str, int length)
   int s;
 
   if (length == -1) {
-    length = static_cast<int>(strlen(str));
+    length = (int)strlen(str);
   }
 
   buffer = arena->str_alloc(length);
@@ -1660,9 +1660,9 @@ url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash
   // no query
 
   ink_assert(sizeof(url->m_port) == 2);
-  uint16_t port = static_cast<uint16_t>(url_canonicalize_port(url->m_url_type, url->m_port));
-  *p++          = (reinterpret_cast<char *>(&port))[0];
-  *p++          = (reinterpret_cast<char *>(&port))[1];
+  uint16_t port = (uint16_t)url_canonicalize_port(url->m_url_type, url->m_port);
+  *p++          = ((char *)&port)[0];
+  *p++          = ((char *)&port)[1];
 
   ctx.update(buffer, p - buffer);
   if (generation != -1) {

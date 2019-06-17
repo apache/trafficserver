@@ -22,15 +22,17 @@
  */
 
 #pragma once
+
 #include <netinet/in.h>
 #include <iostream>
+#include <list>
+
 #include "tscore/I_Version.h"
 #include "tscore/Scalar.h"
 #include "tscore/Regex.h"
-#include <tsconfig/Errata.h>
+#include "tscore/Errata.h"
 #include "tscpp/util/TextView.h"
 #include "tscore/ink_file.h"
-#include <list>
 #include "tscore/CryptoHash.h"
 #include "tscore/ts_file.h"
 

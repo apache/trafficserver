@@ -35,7 +35,7 @@ char *
 ink_memcpy_until_char(char *dst, char *src, unsigned int n, unsigned char c)
 {
   unsigned int i = 0;
-  for (; ((i < n) && ((static_cast<unsigned char>(src[i])) != c)); i++) {
+  for (; ((i < n) && (((unsigned char)src[i]) != c)); i++) {
     dst[i] = src[i];
   }
   return &src[i];
