@@ -349,7 +349,8 @@ public:
     OPEN_RAW_ERROR,
     PARSE_ERROR,
     TRANSACTION_COMPLETE,
-    PARENT_RETRY
+    PARENT_RETRY,
+    OUTBOUND_CONGESTION
   };
 
   enum CacheWriteStatus_t {
