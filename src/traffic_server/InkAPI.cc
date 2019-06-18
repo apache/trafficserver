@@ -5668,6 +5668,23 @@ TSHttpTxnNextHopAddrGet(TSHttpTxn txnp)
   return &sm->t_state.current.server->dst_addr.sa;
 }
 
+const char *
+TSHttpTxnNextHopNameGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+
+  /**
+   * Return zero if the server structure is not yet constructed.
+   */
+  if (sm->t_state.current.server == nullptr) {
+    return nullptr;
+  }
+
+  return sm->t_state.current.server->name;
+}
+
 TSReturnCode
 TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag)
 {
