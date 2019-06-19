@@ -23,7 +23,6 @@ Test.Summary = '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: Substitute variables"
-Test.SkipIf(Condition.true("Test is temporarily turned off, to be fixed according to an incompatible plugin API change (PR #4964)"))
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
@@ -61,7 +60,7 @@ ts.Disk.File(ts.Variables.CONFIGDIR +"/substituteconfig.txt", exists=False, id="
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/magic http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/substituteconfig.txt'
+    'map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/substituteconfig.txt'
 )
 
 tr = Test.AddTestRun("Substitute $path in the dest query")
