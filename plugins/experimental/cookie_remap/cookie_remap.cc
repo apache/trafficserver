@@ -65,58 +65,85 @@ ink_free(void *s)
 {
   return TSfree(s);
 }
-///////////////////////////////////////////////////////////////////////////////
-// Class holding one request URL's component, to simplify the code and
-// length calculations (we need all of them).
+
+// Data used during one TSRemapDoRemap() call.
 //
-struct UrlComponents {
-  UrlComponents() {}
+class ReqData
+{
+private:
+  // Class holding one request URL's component, to simplify the code and
+  // length calculations (we need all of them).
+  //
+  struct UrlComponents {
+    UrlComponents(TSHttpTxn txnp)
+    {
+      if (TSHttpTxnPristineUrlGet(txnp, &bufp, &req_url_loc) != TS_SUCCESS) {
+        bufp        = nullptr;
+        req_url_loc = nullptr;
 
-  ~UrlComponents()
-  {
-    if (url != nullptr)
-      TSfree((void *)url);
-  }
+        return;
+      }
 
-  void
-  populate(TSRemapRequestInfo *rri)
-  {
-    scheme    = TSUrlSchemeGet(rri->requestBufp, rri->requestUrl, &scheme_len);
-    host      = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &host_len);
-    tspath    = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &tspath_len);
-    query     = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &query_len);
-    matrix    = TSUrlHttpParamsGet(rri->requestBufp, rri->requestUrl, &matrix_len);
-    port      = TSUrlPortGet(rri->requestBufp, rri->requestUrl);
-    url       = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &url_len);
-    from_path = TSUrlPathGet(rri->requestBufp, rri->mapFromUrl, &from_path_len);
+      scheme    = TSUrlSchemeGet(bufp, req_url_loc, &scheme_len);
+      host      = TSUrlHostGet(bufp, req_url_loc, &host_len);
+      tspath    = TSUrlPathGet(bufp, req_url_loc, &tspath_len);
+      query     = TSUrlHttpQueryGet(bufp, req_url_loc, &query_len);
+      matrix    = TSUrlHttpParamsGet(bufp, req_url_loc, &matrix_len);
+      port      = TSUrlPortGet(bufp, req_url_loc);
+      url       = TSUrlStringGet(bufp, req_url_loc, &url_len);
+      from_path = TSUrlPathGet(bufp, req_url_loc, &from_path_len);
 
-    // based on RFC2396, matrix params are part of path segments so
-    // we will just
-    // append them to the path
-    path.assign(tspath, tspath_len);
-    if (matrix_len) {
-      path += ';';
-      path.append(matrix, matrix_len);
+      // based on RFC2396, matrix params are part of path segments so
+      // we will just
+      // append them to the path
+      path.assign(tspath, tspath_len);
+      if (matrix_len) {
+        path += ';';
+        path.append(matrix, matrix_len);
+      }
     }
-  }
 
-  const char *scheme = nullptr;
-  const char *host   = nullptr;
-  const char *tspath = nullptr;
-  std::string path{};
-  const char *query     = nullptr;
-  const char *matrix    = nullptr;
-  const char *url       = nullptr;
-  const char *from_path = nullptr;
-  int port              = 0;
+    ~UrlComponents()
+    {
+      if (url != nullptr) {
+        TSfree(const_cast<char *>(url));
+      }
+      if (bufp) {
+        if (req_url_loc) {
+          TSHandleMLocRelease(bufp, TS_NULL_MLOC, req_url_loc);
+        }
+      }
+    }
 
-  int scheme_len    = 0;
-  int host_len      = 0;
-  int tspath_len    = 0;
-  int query_len     = 0;
-  int matrix_len    = 0;
-  int url_len       = 0;
-  int from_path_len = 0;
+    const char *scheme = nullptr;
+    const char *host   = nullptr;
+    const char *tspath = nullptr;
+    std::string path{};
+    const char *query     = nullptr;
+    const char *matrix    = nullptr;
+    const char *url       = nullptr;
+    const char *from_path = nullptr;
+    int port              = 0;
+
+    int scheme_len    = 0;
+    int host_len      = 0;
+    int tspath_len    = 0;
+    int query_len     = 0;
+    int matrix_len    = 0;
+    int url_len       = 0;
+    int from_path_len = 0;
+
+  private:
+    TSMBuffer bufp;
+    TSMLoc req_url_loc;
+  };
+
+public:
+  ReqData(TSHttpTxn txn, TSRemapRequestInfo *rri_) : rri(rri_), url_comp(txn) {}
+
+  TSRemapRequestInfo *const rri;
+
+  UrlComponents url_comp;
 };
 
 void
@@ -473,7 +500,7 @@ public:
   }
 
   bool
-  process(CookieJar &jar, std::string &dest, TSHttpStatus &retstat, TSRemapRequestInfo *rri) const
+  process(CookieJar &jar, std::string &dest, TSHttpStatus &retstat, ReqData &rd) const
   {
     if (sendto == "") {
       return false; // guessing every operation must have a
@@ -573,16 +600,6 @@ public:
       // cookie_data and we are here because we need
       // to continue processing this suboperation in some way
 
-      if (!rri) { // too dangerous to continue without the
-                  // rri; hopefully that
-        // never happens
-        TSDebug(MY_NAME, "request info structure is "
-                         "empty; can't continue "
-                         "processing this subop");
-        retval &= 0;
-        break;
-      }
-
       // If the user has specified a cookie in his
       // suboperation, use the cookie
       // data for matching;
@@ -592,16 +609,13 @@ public:
       // match the cookie data instead
       const std::string &string_to_match(target == URI ? request_uri : cookie_data);
       if (target == URI) {
-        UrlComponents req_url;
-        req_url.populate(rri);
-
-        TSDebug(MY_NAME, "process req_url.path = %s", req_url.path.c_str());
-        request_uri = req_url.path;
+        TSDebug(MY_NAME, "process rd.url_comp.path = %s", rd.url_comp.path.c_str());
+        request_uri = rd.url_comp.path;
         if (request_uri.length() && request_uri[0] != '/')
           request_uri.insert(0, 1, '/');
-        if (req_url.query_len > 0) {
+        if (rd.url_comp.query_len > 0) {
           request_uri += '?';
-          request_uri += std::string(req_url.query, req_url.query_len);
+          request_uri += std::string(rd.url_comp.query, rd.url_comp.query_len);
         }
         object_name = "request uri";
       }
@@ -907,7 +921,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 //  $url, $unmatched_path, $cr_req_url, and $cr_url_encode
 // returns 0 if no substitutions, 1 otw.
 int
-cr_substitutions(std::string &obj, TSRemapRequestInfo *rri)
+cr_substitutions(std::string &obj, ReqData &rd)
 {
   int retval = 0;
 
@@ -915,10 +929,8 @@ cr_substitutions(std::string &obj, TSRemapRequestInfo *rri)
   size_t tmp_pos  = 0;
   size_t last_pos = pos;
 
-  UrlComponents req_url;
-  req_url.populate(rri);
-  TSDebug(MY_NAME, "x req_url.path: %s %zu", req_url.path.c_str(), req_url.path.length());
-  TSDebug(MY_NAME, "x req_url.url: %s %d", std::string(req_url.url, req_url.url_len).c_str(), req_url.url_len);
+  TSDebug(MY_NAME, "x rd.url_comp.path: %s %zu", rd.url_comp.path.c_str(), rd.url_comp.path.length());
+  TSDebug(MY_NAME, "x rd.url_comp.url: %s %d", std::string(rd.url_comp.url, rd.url_comp.url_len).c_str(), rd.url_comp.url_len);
 
   while (pos < obj.length()) {
     if (pos + 1 >= obj.length())
@@ -927,21 +939,21 @@ cr_substitutions(std::string &obj, TSRemapRequestInfo *rri)
     switch (obj[pos + 1]) {
     case 'p':
       if (obj.substr(pos + 1, 4) == "path") {
-        obj.replace(pos, 5, req_url.path);
-        pos += req_url.path.length();
+        obj.replace(pos, 5, rd.url_comp.path);
+        pos += rd.url_comp.path.length();
       }
       break;
     case 'u':
       if (obj.substr(pos + 1, 14) == "unmatched_path") {
         // we found $unmatched_path inside the sendto
         // url
-        std::string unmatched_path(req_url.path);
+        std::string unmatched_path(rd.url_comp.path);
         TSDebug(MY_NAME, "unmatched_path: %s", unmatched_path.c_str());
-        TSDebug(MY_NAME, "from_path: %s", req_url.from_path);
+        TSDebug(MY_NAME, "from_path: %s", rd.url_comp.from_path);
 
-        tmp_pos = unmatched_path.find(req_url.from_path, 0, req_url.from_path_len); // from patch
+        tmp_pos = unmatched_path.find(rd.url_comp.from_path, 0, rd.url_comp.from_path_len); // from patch
         if (tmp_pos != std::string::npos) {
-          unmatched_path.erase(tmp_pos, req_url.from_path_len);
+          unmatched_path.erase(tmp_pos, rd.url_comp.from_path_len);
         }
         TSDebug(MY_NAME, "unmatched_path: %s", unmatched_path.c_str());
         TSDebug(MY_NAME, "obj: %s", obj.c_str());
@@ -958,10 +970,11 @@ cr_substitutions(std::string &obj, TSRemapRequestInfo *rri)
             // we found $cr_req_url inside
             // the sendto url
             std::string request_url;
-            if (req_url.url && req_url.url_len > 0) {
-              request_url = std::string(req_url.url, req_url.url_len);
+            if (rd.url_comp.url && rd.url_comp.url_len > 0) {
+              request_url = std::string(rd.url_comp.url, rd.url_comp.url_len);
             }
-            TSDebug(MY_NAME, "req_url.url: %s %d", std::string(req_url.url, req_url.url_len).c_str(), req_url.url_len);
+            TSDebug(MY_NAME, "rd.url_comp.url: %s %d", std::string(rd.url_comp.url, rd.url_comp.url_len).c_str(),
+                    rd.url_comp.url_len);
             obj.replace(pos, 11, request_url);
             pos += request_url.length();
           }
@@ -973,7 +986,7 @@ cr_substitutions(std::string &obj, TSRemapRequestInfo *rri)
           if (obj.substr(pos + 4, 10) == "urlencode(" && (tmp_pos = obj.find(')', pos + 14)) != std::string::npos) {
             std::string str = obj.substr(pos + 14, tmp_pos - pos - 14); // the string to
                                                                         // encode
-            cr_substitutions(str, rri);                                 // expand any
+            cr_substitutions(str, rd);                                  // expand any
                                                                         // variables as
                                                                         // necessary
                                                                         // before
@@ -1006,8 +1019,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   OpsQueue *ops       = (OpsQueue *)ih;
   TSHttpStatus status = TS_HTTP_STATUS_NONE;
 
-  UrlComponents req_url;
-  req_url.populate(rri);
+  ReqData rd{txnp, rri};
 
   if (ops == (OpsQueue *)nullptr) {
     TSError("serious error with encountered while attempting to "
@@ -1018,9 +1030,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   // get any query params..we will append that to the answer (possibly)
   std::string client_req_query_params;
-  if (req_url.query_len) {
+  if (rd.url_comp.query_len) {
     client_req_query_params = "?";
-    client_req_query_params += std::string(req_url.query, req_url.query_len);
+    client_req_query_params += std::string(rd.url_comp.query, rd.url_comp.query_len);
   }
   TSDebug(MY_NAME, "Query Parameters: %s", client_req_query_params.c_str());
 
@@ -1045,8 +1057,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   for (auto &op : *ops) {
     TSDebug(MY_NAME, ">>> processing new operation");
-    if (op->process(jar, rewrite_to, status, rri)) {
-      cr_substitutions(rewrite_to, rri);
+    if (op->process(jar, rewrite_to, status, rd)) {
+      cr_substitutions(rewrite_to, rd);
 
       size_t pos = 7;                             // 7 because we want to ignore the // in
                                                   // http:// :)

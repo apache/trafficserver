@@ -23,7 +23,6 @@ Test.Summary = '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: plugin collapses consecutive slashes"
-Test.SkipIf(Condition.true("Test is temporarily turned off, to be fixed according to an incompatible plugin API change (PR #4964)"))
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
