@@ -23,7 +23,6 @@ Test.Summary = '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: Tests when matrix parameters are present"
-Test.SkipIf(Condition.true("Test is temporarily turned off, to be fixed according to an incompatible plugin API change (PR #4964)"))
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
@@ -74,16 +73,16 @@ ts.Disk.File(ts.Variables.CONFIGDIR +"/matrixconfig.txt", exists=False, id="conf
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/eighth http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/matrixconfig.txt'
+    'map http://www.example.com/eighth http://shouldnothit.com/eighth @plugin=cookie_remap.so @pparam=config/matrixconfig.txt'
 )
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/ninth http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/matrixconfig.txt'
+    'map http://www.example.com/ninth http://shouldnothit.com/ninth @plugin=cookie_remap.so @pparam=config/matrixconfig.txt'
 )
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/tenth http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/matrixconfig.txt'
+    'map http://www.example.com/tenth http://shouldnothit.com/tenth @plugin=cookie_remap.so @pparam=config/matrixconfig.txt'
 )
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/eleventh http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/matrixconfig.txt'
+    'map http://www.example.com/eleventh http://shouldnothit.com/eleventh @plugin=cookie_remap.so @pparam=config/matrixconfig.txt'
 )
 
 tr = Test.AddTestRun("path is substituted")
