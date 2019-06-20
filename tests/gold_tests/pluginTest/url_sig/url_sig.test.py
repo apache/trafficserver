@@ -25,7 +25,6 @@ Test url_sig plugin
 '''
 
 Test.ContinueOnFail = True
-Test.SkipIf(Condition.true("Test is temporarily turned off, to be fixed according to an incompatible plugin API change (PR #4964)"))
 
 # Skip if plugins not present.
 Test.SkipUnless(Condition.PluginExists('url_sig.so'))
@@ -100,7 +99,7 @@ ts.Disk.remap_config.AddLine(
 
 # Validation failure tests.
 
-LogTee = " 2>&1 | tee -a {}/url_sig_long.log".format(Test.RunDirectory)
+LogTee = " 2>&1 | grep '^<' | tee -a {}/url_sig_long.log".format(Test.RunDirectory)
 
 # Bad client / MD5 / P=101 / URL pristine / URL altered.
 #
