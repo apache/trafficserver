@@ -39,12 +39,12 @@ httpbin = Test.MakeHttpBinServer("httpbin")
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
-ts.Variables.ssl_port = 4443
+
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(httpbin.Variables.Port)
 )
@@ -91,7 +91,7 @@ test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/get'.format(ts.Variables.ssl_port)
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
-test_run.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+test_run.Processes.Default.StartBefore(Test.Processes.ts)
 test_run.Processes.Default.Streams.stdout = "gold/httpbin_0_stdout.gold"
 test_run.Processes.Default.Streams.stderr = "gold/httpbin_0_stderr.gold"
 test_run.StillRunningAfter = httpbin

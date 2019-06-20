@@ -44,11 +44,11 @@ server.addResponse("sessionlog.json",
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
-ts.Variables.ssl_port = 4443
+
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
@@ -78,7 +78,7 @@ tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/bigfil
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stdout = "gold/priority_0_stdout.gold"
 tr.Processes.Default.Streams.stderr = "gold/priority_0_stderr.gold"
 tr.StillRunningAfter = server
