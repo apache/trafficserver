@@ -20,6 +20,7 @@ from __future__ import print_function
 import os
 import socket
 from ports import get_port
+from autest.api import AddWhenFunction
 
 
 def make_id(s):
@@ -29,7 +30,7 @@ def make_id(s):
 # this forms is for the global process define
 
 
-def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
+def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enable_tls=False):
     #####################################
     # common locations
 
@@ -266,16 +267,34 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True):
         # Make two different ports to avoid this
         get_port(p, "port")
         get_port(p, "portv6")
-        p.Ready = When.PortOpen(p.Variables.port)
+
+        if enable_tls:
+            get_port(p, "ssl_port")
+        # p.Ready = When.PortOpen(p.Variables.port)
     else:
         p.Variables.port = 8080
         p.Variables.portv6 = 8080
+        p.Variables.ssl_port = 4443
+        
+    get_port(p, "manager_port")
     get_port(p, "admin_port")
+
+    if enable_tls:
+        p.Ready = When.PortsOpen([p.Variables.port, p.Variables.ssl_port])
+    else:
+        p.Ready = When.PortOpen(p.Variables.port)
 
     # set the ports
     if select_ports:
-        p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = "{0} {1}:ipv6".format(
-            p.Variables.port, p.Variables.portv6)  # your own listen port
+        port_str = "{port} {v6_port}:ipv6 ".format(port=p.Variables.port, v6_port=p.Variables.portv6)
+
+        if enable_tls:
+            port_str += "{ssl_port}:ssl".format(ssl_port=p.Variables.ssl_port)
+
+        p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
+
+    p.Env['PROXY_CONFIG_PROCESS_MANAGER_MGMT_PORT'] = str(
+        p.Variables.manager_port)
     p.Env['PROXY_CONFIG_ADMIN_SYNTHETIC_PORT'] = str(p.Variables.admin_port)
     p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT'] = str(
         p.Variables.admin_port)  # support pre ATS 6.x

@@ -59,12 +59,13 @@ Autest allows for the creation of extensions to help specialize and simplify tes
 
 This command line argument will point to your build of ATS you want to test. At this time v6.0 or newer of Trafficserver should work.
 
-### MakeATSProcess(name,command=[traffic_server],select_ports=[True])
+### MakeATSProcess(name,command=[traffic_server], select_ports=[True], enable_tls=[False])
  * name - A name for this instance of ATS
  * command - optional argument defining what process to use. Defaults to traffic_server.
- * select_ports - have the testing system auto select the ports to use for this instance of ATS
+ * select_ports - have the testing system automatically select a nonSSL port to use for this instance of ATS
+ * enable_tls - have the testing system also auto-select a SSL port to use (NOTE: This does not set up certs and other TLS-related configs.)
 
-This function will define a sandbox for an instance of trafficserver to run under. The function will return a AuTest process object that will have a number of files and variables defined to make it easier for test definition.
+This function will define a sandbox for an instance of trafficserver to run under. The function will return a AuTest process object that will have a number of files and variables define for making it easier to define a test. If both *select_ports* and *enable_tls* are toggled to **False**, then the test writer will be responsible for setting up the ports and the ready condition for an instance of ATS. 
 
 #### Environment
 The environment of the process will have a number of added environment variables to control trafficserver running the in the sandbox location correctly. This can be used to easily setup other commands that should run under same environment.

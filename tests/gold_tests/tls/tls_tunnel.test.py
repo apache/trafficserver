@@ -23,7 +23,7 @@ Test tunneling based on SNI
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=False)
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True, enable_tls=True)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=True)
 server2 = Test.MakeOriginServer("server2")
@@ -44,8 +44,6 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
-
-ts.Variables.ssl_port = 4443
 
 # Need no remap rules.  Everything should be proccessed by sni
 
@@ -70,7 +68,7 @@ ts.Disk.records_config.update({
 })
 
 # foo.com should not terminate.  Just tunnel to server_foo
-# bar.com should terminate.
+# bar.com should terminate.  Forward its tcp stream to server_bar
 # empty SNI should tunnel to server_bar
 ts.Disk.sni_yaml.AddLines([
   'sni:',
@@ -83,18 +81,18 @@ ts.Disk.sni_yaml.AddLines([
 ])
 
 tr = Test.AddTestRun("foo.com Tunnel-test")
-tr.Processes.Default.StartBefore(server_foo)
-tr.Processes.Default.StartBefore(server_bar)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
+tr.Processes.Default.StartBefore(server_foo)
+tr.Processes.Default.StartBefore(server_bar)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from foo")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from bar")
 
 tr = Test.AddTestRun("bob.bar.com Tunnel-test")
 tr.Processes.Default.Command = "curl -v --resolve 'bob.bar.com:{0}:127.0.0.1' -k  https://bob.bar.com:{0}".format(ts.Variables.ssl_port)
@@ -105,7 +103,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Acc
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from foo")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from bar")
 
 tr = Test.AddTestRun("bar.com no Tunnel-test")
 tr.Processes.Default.Command = "curl -v --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)

@@ -22,7 +22,7 @@ Test tls
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 # build test code
@@ -56,7 +56,6 @@ server.addResponse("sessionlog.json",
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
@@ -75,7 +74,7 @@ ts.Disk.records_config.update({
 })
 
 tr = Test.AddTestRun("Run-Test")
-tr.Command = './ssl-post 127.0.0.1 40 {0} 4443'.format(header_count)
+tr.Command = './ssl-post 127.0.0.1 40 {0} {1}'.format(header_count, ts.Variables.ssl_port)
 tr.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)
