@@ -26,7 +26,7 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 requestLocation = "test2"
@@ -76,7 +76,6 @@ server.addResponse("sessionlog.json", request_header, response_header)
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 ts.Setup.CopyAs('rules/huge_resp_hdrs.conf', Test.RunDirectory)
 ts.Disk.remap_config.AddLine(
     'map /huge_resp_hdrs http://127.0.0.1:{0}/huge_resp_hdrs @plugin=header_rewrite.so @pparam={1}/huge_resp_hdrs.conf '.format(server.Variables.Port, Test.RunDirectory)
@@ -118,7 +117,7 @@ tr.Processes.Default.Command = 'python3 h2client.py -p {0}'.format(ts.Variables.
 tr.Processes.Default.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stdout = "gold/remap-200.gold"
 tr.StillRunningAfter = server
 
