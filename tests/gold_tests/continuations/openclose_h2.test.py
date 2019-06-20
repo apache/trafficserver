@@ -26,7 +26,8 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False, command="traffic_manager")
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_manager")
+
 server = Test.MakeOriginServer("server")
 
 Test.testName = ""

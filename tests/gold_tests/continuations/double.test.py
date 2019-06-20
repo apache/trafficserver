@@ -25,8 +25,7 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager")
-
+ts = Test.MakeATSProcess("ts", select_ports=True, command="traffic_manager")
 server = Test.MakeOriginServer("server")
 
 Test.testName = ""
@@ -61,7 +60,7 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.StartBefore(
     server, ready=When.PortOpen(server.Variables.Port))
 # Adds a delay once the ts port is ready. This is because we cannot test the ts state.
-tr.Processes.Default.StartBefore(ts, ready=10)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
 tr.StillRunningAfter = ts

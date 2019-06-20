@@ -22,8 +22,10 @@ Test.Summary = '''
 Test tls session cache
 '''
 
-# Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+Test.SkipUnless(
+    Condition.HasOpenSSLVersion("1.1.1"))
+
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 
@@ -35,16 +37,6 @@ server.addResponse("sessionlog.json", request_header, response_header)
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
-
-ts.Variables.ssl_port = 4443
-
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
-
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
-)
 
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -71,19 +63,9 @@ def checkSession(ev) :
     err = "Failed to open {0}".format(openssl_output)
     return (retval, "Check that session ids match", err)
 
-  content = f.read()
-  match = re.findall('Session-ID: ([0-9A-F]+)', content)
-
-  if match:
-    if all(i == j for i, j in zip(match, match[1:])):
-      err = "{0} reused successfully {1} times".format(match[0], len(match))
-      retval = True
-    else:
-      err = "Session is not being reused as expected"
-  else:
-    err = "Didn't find session id"
-  return (retval, "Check that session ids match", err)
-
+ts.Disk.remap_config.AddLine(
+    'map https://example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
+)
 
 tr = Test.AddTestRun("OpenSSL s_client -reconnect")
 tr.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -reconnect'.format(ts.Variables.ssl_port)

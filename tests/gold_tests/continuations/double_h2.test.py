@@ -26,7 +26,7 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False, command="traffic_manager")
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_manager")
 server = Test.MakeOriginServer("server")
 
 Test.testName = ""
@@ -43,7 +43,6 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
 # add port and remap rule
-ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
     'map http://double_h2.test:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port)
 )
@@ -92,7 +91,7 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.StartBefore(
     server, ready=When.PortOpen(server.Variables.Port))
 # Adds a delay once the ts port is ready. This is because we cannot test the ts state.
-tr.Processes.Default.StartBefore(ts, ready=10)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
 tr.StillRunningAfter = ts
