@@ -1271,7 +1271,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       const unsigned char *proto = nullptr;
       unsigned len               = 0;
 
-      increment_ssl_version_metric(getSSLProtocol());
+      increment_ssl_version_metric(SSL_version(ssl));
 
       // If it's possible to negotiate both NPN and ALPN, then ALPN
       // is preferred since it is the server's preference.  The server
@@ -1814,32 +1814,27 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
 }
 
 void
-SSLNetVConnection::increment_ssl_version_metric(const char *version) const
+SSLNetVConnection::increment_ssl_version_metric(int version) const
 {
-  if (version) {
-    // openSSL guarantees the case of the protocol string.
-    if (version[0] == 'T' && version[1] == 'L' && version[2] == 'S' && version[3] == 'v' && version[4] == '1') {
-      if (version[5] == 0) {
-        SSL_INCREMENT_DYN_STAT(ssl_total_tlsv1);
-      } else if (version[5] == '.' && version[7] == 0) {
-        switch (version[6]) {
-        case '1':
-          SSL_INCREMENT_DYN_STAT(ssl_total_tlsv11);
-          break;
-        case '2':
-          SSL_INCREMENT_DYN_STAT(ssl_total_tlsv12);
-          break;
-        case '3':
-          SSL_INCREMENT_DYN_STAT(ssl_total_tlsv13);
-          break;
-        default:
-          break;
-        }
-      }
-    }
-  } else if (version[0] == 'S' && version[1] == 'S' && version[2] == 'L' && version[3] == 'v' && version[4] == '3' &&
-             version[5] == 0) {
+  switch (version) {
+  case SSL3_VERSION:
     SSL_INCREMENT_DYN_STAT(ssl_total_sslv3);
+    break;
+  case TLS1_VERSION:
+    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv1);
+    break;
+  case TLS1_1_VERSION:
+    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv11);
+    break;
+  case TLS1_2_VERSION:
+    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv12);
+    break;
+  case TLS1_3_VERSION:
+    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv13);
+    break;
+  default:
+    Debug("ssl", "Unrecognized SSL version %d", version);
+    break;
   }
 }
 
