@@ -380,8 +380,7 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
 static bool
 read_config_option(int argc, const char *argv[], int &raw, int &log)
 {
-  static const struct option longopts[] = {
-    {"ja3raw", no_argument, &raw, 1}, {"ja3log", no_argument, &log, 1}, {nullptr, 0, nullptr, 0}};
+  const struct option longopts[] = {{"ja3raw", no_argument, &raw, 1}, {"ja3log", no_argument, &log, 1}, {nullptr, 0, nullptr, 0}};
 
   int opt = 0;
   while ((opt = getopt_long(argc, (char *const *)argv, "", longopts, nullptr)) >= 0) {
