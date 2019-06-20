@@ -6645,7 +6645,6 @@ TSVConnFdCreate(int fd)
     return nullptr;
   }
 
-  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
   return reinterpret_cast<TSVConn>(vc);
 }
 
