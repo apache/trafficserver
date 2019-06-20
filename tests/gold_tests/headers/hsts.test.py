@@ -25,7 +25,7 @@ heck hsts header is set correctly
 Test.ContinueOnFail = True
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 #**testname is required**
@@ -38,7 +38,6 @@ server.addResponse("sessionlog.json", request_header, response_header)
 ts.addSSLfile("../remap/ssl/server.pem")
 ts.addSSLfile("../remap/ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'ssl',
@@ -60,7 +59,6 @@ ts.Disk.ssl_multicert_config.AddLine(
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Command = (
     'curl -s -D - --verbose --ipv4 --http1.1 --insecure --header "Host: {0}" https://localhost:{1}'
     .format('www.example.com', ts.Variables.ssl_port)

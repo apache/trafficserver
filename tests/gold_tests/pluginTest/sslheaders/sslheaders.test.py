@@ -34,13 +34,11 @@ request_header = {
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 # ts.addSSLfile("ssl/signer.pem")
-
-ts.Variables.ssl_port = 4443
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 0,
@@ -83,7 +81,7 @@ ts.Disk.plugin_config.AddLine(
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = (
     'curl -H "SSL-Client-ID: My Fake Client ID" --verbose --ipv4 --insecure --header "Host: bar.com"' +
     ' https://localhost:{}'.format(ts.Variables.ssl_port)

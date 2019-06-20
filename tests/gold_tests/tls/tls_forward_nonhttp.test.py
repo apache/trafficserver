@@ -22,13 +22,11 @@ Forwarding a non-HTTP protocol out of TLS
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
-
-ts.Variables.ssl_port = 4443
 
 # Need no remap rules.  Everything should be proccessed by sni
 
@@ -60,9 +58,9 @@ ts.Disk.sni_yaml.AddLines([
 
 tr = Test.AddTestRun("forward-non-http")
 tr.Setup.Copy("test-nc-s_client.sh")
-tr.Processes.Default.Command = "sh test-nc-s_client.sh 4444 4443"
+tr.Processes.Default.Command = "sh test-nc-s_client.sh 4444 {0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 testout_path = os.path.join(Test.RunDirectory, "test.out")
 tr.Disk.File(testout_path, id = "testout")

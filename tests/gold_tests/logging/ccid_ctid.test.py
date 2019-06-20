@@ -29,12 +29,11 @@ Test.SkipUnless(
 
 # Define default ATS.  "select_ports=False" needed because SSL port used.
 #
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 ts.addSSLfile("../remap/ssl/server.pem")
 ts.addSSLfile("../remap/ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
     # 'proxy.config.diags.debug.enabled': 1,
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -68,7 +67,7 @@ logging:
 
 tr = Test.AddTestRun()
 # Delay on readiness of ssl port
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
 tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" --verbose'.format(
     ts.Variables.port)

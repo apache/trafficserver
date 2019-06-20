@@ -18,13 +18,13 @@
 
 Test.Summary = "Test start up of Traffic server with configuration modification of starting port"
 
-ts1 = Test.MakeATSProcess("ts1", select_ports=False)
-ts1.Setup.ts.CopyConfig('config/records_8090.config', "records.config")
+ts = Test.MakeATSProcess("ts", select_ports=False)
+ts.Setup.ts.CopyConfig('config/records_8090.config', "records.config")
+ts.Variables.port = 8090
+ts.Ready = When.PortOpen(ts.Variables.port)
 t = Test.AddTestRun("Test traffic server started properly")
-t.StillRunningAfter = ts1
+t.Processes.Default.StartBefore(ts)
+t.Command = "curl 127.0.0.1:{port}".format(port=ts.Variables.port)
+t.ReturnCode = 0
+t.StillRunningAfter = ts
 
-p = t.Processes.Default
-p.Command = "curl 127.0.0.1:8090"
-p.ReturnCode = 0
-
-p.StartBefore(Test.Processes.ts1, ready=When.PortOpen(8090))
