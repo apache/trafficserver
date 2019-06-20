@@ -1829,9 +1829,11 @@ SSLNetVConnection::increment_ssl_version_metric(int version) const
   case TLS1_2_VERSION:
     SSL_INCREMENT_DYN_STAT(ssl_total_tlsv12);
     break;
+#ifdef TLS1_3_VERSION
   case TLS1_3_VERSION:
     SSL_INCREMENT_DYN_STAT(ssl_total_tlsv13);
     break;
+#endif
   default:
     Debug("ssl", "Unrecognized SSL version %d", version);
     break;
