@@ -238,7 +238,7 @@ QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUI
                                            QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                            bool retransmittable, bool probing, bool crypto)
 {
-  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::INITIAL);
+  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::HANDSHAKE);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
   QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::HANDSHAKE, QUICKeyPhase::HANDSHAKE, destination_cid, source_cid, pn, base_packet_number,
@@ -251,7 +251,7 @@ QUICPacketFactory::create_zero_rtt_packet(QUICConnectionId destination_cid, QUIC
                                           QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                           bool retransmittable, bool probing)
 {
-  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::INITIAL);
+  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::ZERO_RTT);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
   QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::ZERO_RTT_PROTECTED, QUICKeyPhase::ZERO_RTT, destination_cid, source_cid, pn,
@@ -263,7 +263,7 @@ QUICPacketUPtr
 QUICPacketFactory::create_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                            ats_unique_buf payload, size_t len, bool retransmittable, bool probing)
 {
-  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::INITIAL);
+  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::ONE_RTT);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
   // TODO Key phase should be picked up from QUICHandshakeProtocol, probably
   QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, connection_id, pn,

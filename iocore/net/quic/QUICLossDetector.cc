@@ -460,21 +460,21 @@ QUICLossDetector::_send_two_packets()
   case QUICPacketNumberSpace::Initial:
     this->_pinger->request(QUICEncryptionLevel::INITIAL);
     this->_pinger->request(QUICEncryptionLevel::INITIAL);
-    ink_assert(this->_pinger->count(QUICEncryptionLevel::INITIAL) > 2);
+    ink_assert(this->_pinger->count(QUICEncryptionLevel::INITIAL) >= 2);
     QUICLDDebug("[%s] send ping frame %" PRIu64, QUICDebugNames::pn_space(pn_space),
                 this->_pinger->count(QUICEncryptionLevel::INITIAL));
     break;
   case QUICPacketNumberSpace::Handshake:
     this->_pinger->request(QUICEncryptionLevel::HANDSHAKE);
     this->_pinger->request(QUICEncryptionLevel::HANDSHAKE);
-    ink_assert(this->_pinger->count(QUICEncryptionLevel::HANDSHAKE) > 2);
+    ink_assert(this->_pinger->count(QUICEncryptionLevel::HANDSHAKE) >= 2);
     QUICLDDebug("[%s] send ping frame %" PRIu64, QUICDebugNames::pn_space(pn_space),
                 this->_pinger->count(QUICEncryptionLevel::HANDSHAKE));
     break;
   case QUICPacketNumberSpace::ApplicationData:
     this->_pinger->request(QUICEncryptionLevel::ONE_RTT);
     this->_pinger->request(QUICEncryptionLevel::ONE_RTT);
-    ink_assert(this->_pinger->count(QUICEncryptionLevel::ONE_RTT) > 2);
+    ink_assert(this->_pinger->count(QUICEncryptionLevel::ONE_RTT) >= 2);
     QUICLDDebug("[%s] send ping frame %" PRIu64, QUICDebugNames::pn_space(pn_space),
                 this->_pinger->count(QUICEncryptionLevel::ONE_RTT));
     break;
