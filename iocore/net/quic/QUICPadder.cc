@@ -31,9 +31,6 @@ void
 QUICPadder::request(QUICEncryptionLevel level)
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
-  if (!this->_is_level_matched(level)) {
-    return;
-  }
   ++this->_need_to_fire[static_cast<int>(level)];
 }
 
@@ -41,10 +38,6 @@ void
 QUICPadder::cancel(QUICEncryptionLevel level)
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
-  if (!this->_is_level_matched(level)) {
-    return;
-  }
-
   this->_need_to_fire[static_cast<int>(level)] = 0;
 }
 
@@ -64,7 +57,11 @@ QUICPadder::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
   }
 
   this->_latest_seq_num = seq_num;
-  return true;
+  if (level == QUICEncryptionLevel::INITIAL) {
+    return true;
+  } else {
+    return this->_need_to_fire[static_cast<int>(level)] > 0;
+  }
 }
 
 QUICFrame *
@@ -91,7 +88,7 @@ QUICPadder::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t con
 
   if (min_size > current_packet_size) { // ignore if we don't need to pad.
     frame = QUICFrameFactory::create_padding_frame(
-      buf, 0, std::min(min_size - current_packet_size, static_cast<uint64_t>(maximum_frame_size)));
+      buf, std::min(min_size - current_packet_size, static_cast<uint64_t>(maximum_frame_size)));
   }
 
   this->_need_to_fire[static_cast<int>(level)] = 0;
