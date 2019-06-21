@@ -590,8 +590,8 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
     // Still parsing the response_header
     int bytes_used = 0;
     int state      = this->response_header.parse_resp(&http_parser, this->response_reader, &bytes_used, false);
-    // HTTPHdr::parse_resp() consumed the response_reader in above
-    write_vio.ndone += this->response_header.length_get();
+    // HTTPHdr::parse_resp() consumed the response_reader in above (consumed size is `bytes_used`)
+    write_vio.ndone += bytes_used;
 
     switch (state) {
     case PARSE_RESULT_DONE: {

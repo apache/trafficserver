@@ -23,7 +23,6 @@ Test.Summary = '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: test connector"
-Test.SkipIf(Condition.true("Test is temporarily turned off, to be fixed according to an incompatible plugin API change (PR #4964)"))
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
@@ -64,7 +63,7 @@ ts.Disk.File(ts.Variables.CONFIGDIR +"/connectorconfig.txt", exists=False, id="c
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/magic http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/connectorconfig.txt'
+    'map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/connectorconfig.txt'
 )
 
 # Positive test case that remaps because all connected operations pass

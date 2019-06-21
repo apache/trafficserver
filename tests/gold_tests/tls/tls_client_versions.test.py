@@ -30,7 +30,7 @@ Test.SkipUnless(
 )
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -40,8 +40,6 @@ server.addResponse("sessionlog.json", request_foo_header, response_foo_header)
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
-
-ts.Variables.ssl_port = 4443
 
 # Need no remap rules.  Everything should be proccessed by sni
 
@@ -76,7 +74,7 @@ ts.Disk.sni_yaml.AddLines([
 # Target foo.com for TLSv1_2.  Should fail
 tr = Test.AddTestRun("foo.com TLSv1_2")
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = "curl -v --tls-max 1.2 --tlsv1.2 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts

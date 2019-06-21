@@ -24,7 +24,7 @@ Test transactions and sessions for http1, making sure the two continuations catc
 
 Test.ContinueOnFail = True
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False, command="traffic_manager")
+ts = Test.MakeATSProcess("ts", select_ports=True, command="traffic_manager")
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
 
@@ -83,7 +83,7 @@ tr.Processes.Default.ReturnCode = Any(0,2)
 tr.Processes.Default.StartBefore(
     server, ready=When.PortOpen(server.Variables.Port))
 # Adds a delay once the ts port is ready. This is because we cannot test the ts state.
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
 tr.StillRunningAfter = ts

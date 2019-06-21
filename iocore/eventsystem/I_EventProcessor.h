@@ -331,6 +331,7 @@ public:
 
   Event *schedule(Event *e, EventType etype, bool fast_signal = false);
   EThread *assign_thread(EventType etype);
+  EThread *assign_affinity_by_type(Continuation *cont, EventType etype);
 
   EThread *all_dthreads[MAX_EVENT_THREADS];
   int n_dthreads       = 0; // No. of dedicated threads

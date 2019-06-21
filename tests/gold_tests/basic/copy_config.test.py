@@ -21,26 +21,26 @@ Test.Summary = "Test start up of Traffic server with configuration modification 
 # set up some ATS processes
 ts1 = Test.MakeATSProcess("ts1", select_ports=False)
 ts1.Setup.ts.CopyConfig('config/records_8090.config', 'records.config')
+ts1.Variables.port = 8090
+ts1.Ready = When.PortOpen(ts1.Variables.port)
 
 ts2 = Test.MakeATSProcess("ts2", select_ports=False)
 ts2.Setup.ts.CopyConfig('config/records_8091.config', 'records.config')
+ts2.Variables.port = 8091
+ts2.Ready = When.PortOpen(ts2.Variables.port)
 
 # setup a testrun
 t = Test.AddTestRun("Talk to ts1")
+t.Processes.Default.StartBefore(ts1)
+t.Processes.Default.StartBefore(ts2)
+t.Command = "curl 127.0.0.1:{port}".format(port=ts1.Variables.port)
+t.ReturnCode = 0
 t.StillRunningAfter = ts1
 t.StillRunningAfter += ts2
-p = t.Processes.Default
-p.Command = "curl 127.0.0.1:8090"
-p.ReturnCode = 0
-p.StartBefore(Test.Processes.ts1, ready=When.PortOpen(8090))
-p.StartBefore(Test.Processes.ts2, ready=When.PortOpen(8091))
 
 # setup a testrun
 t = Test.AddTestRun("Talk to ts2")
-t.StillRunningBefore = ts1
-t.StillRunningBefore += ts2
+t.Command = "curl 127.0.0.1:{port}".format(port=ts2.Variables.port)
+t.ReturnCode = 0
 t.StillRunningAfter = ts1
 t.StillRunningAfter += ts2
-p = t.Processes.Default
-p.Command = "curl 127.0.0.1:8091"
-p.ReturnCode = 0

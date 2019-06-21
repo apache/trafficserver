@@ -22,7 +22,7 @@ Test tunneling based on SNI renaming
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=True)
 server_random = Test.MakeOriginServer("server_random", ssl=True)
 
@@ -44,8 +44,6 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
-
-ts.Variables.ssl_port = 4443
 
 # Need no remap rules.  Everything should be proccessed by sni
 
@@ -86,7 +84,7 @@ tr.Processes.Default.Command = "curl --http1.1 -v -k https://127.0.0.1:{0}".form
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_bar)
 tr.Processes.Default.StartBefore(server_random)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = server_random
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
