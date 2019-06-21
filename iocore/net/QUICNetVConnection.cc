@@ -1413,7 +1413,9 @@ QUICNetVConnection::_state_common_send_packet()
         written += len;
 
         int dcil = (this->_peer_quic_connection_id == QUICConnectionId::ZERO()) ? 0 : this->_peer_quic_connection_id.length();
-        this->_ph_protector.protect(buf, len, dcil);
+        if (!this->_ph_protector.protect(buf, len, dcil)) {
+          ink_assert(!"failed to protect buffer");
+        }
 
         QUICConDebug("[TX] %s packet #%" PRIu64 " size=%zu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
                      len);
@@ -1525,20 +1527,19 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   first_block->alloc(iobuffer_size_to_index(0));
   first_block->fill(0);
 
-  if (!this->_has_ack_eliciting_packet_out) {
-    // Sent too much ack_only packet. At this moment we need to packetize a ping frame
-    // to force peer send ack frame.
-    this->_pinger->request(level);
-  }
-
   uint32_t seq_num   = this->_seq_num++;
   size_t size_added  = 0;
   bool ack_eliciting = false;
   bool crypto        = false;
-  bool has_ping      = true;
   uint8_t frame_instance_buffer[QUICFrame::MAX_INSTANCE_SIZE]; // This is for a frame instance but not serialized frame data
   QUICFrame *frame = nullptr;
   for (auto g : this->_frame_generators) {
+    // a non-ack_eliciting packet is ready, but we can not send continuous two ack_eliciting packets.
+    // so packetize ping frame here.
+    if (g == this->_pinger && !this->_has_ack_eliciting_packet_out && len > 0 && !ack_eliciting) {
+      this->_pinger->request(level);
+    }
+
     while (g->will_generate_frame(level, seq_num)) {
       // FIXME will_generate_frame should receive more parameters so we don't need extra checks
       if (g == this->_remote_flow_controller && !this->_stream_manager->will_generate_frame(level, seq_num)) {
@@ -1570,12 +1571,9 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
           }
         }
 
-        if (!ack_eliciting && frame->ack_eliciting()) {
+        if (!ack_eliciting && frame->ack_eliciting() && frame->type() != QUICFrameType::PING) {
           ack_eliciting = true;
-        }
-
-        if (frame->type() == QUICFrameType::PING) {
-          has_ping = true;
+          this->_pinger->cancel(level);
         }
 
         if (frame->type() == QUICFrameType::CRYPTO && frame->ack_eliciting()) {
@@ -1588,12 +1586,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
         break;
       }
     }
-  }
-
-  // if we don't packetize ping frame and packet is ack_eliciting
-  // we need to consume ping's count
-  if (!has_ping && ack_eliciting) {
-    this->_pinger->cancel(level);
   }
 
   // Schedule a packet
