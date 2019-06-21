@@ -57,11 +57,7 @@ QUICPadder::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
   }
 
   this->_latest_seq_num = seq_num;
-  if (level == QUICEncryptionLevel::INITIAL) {
-    return true;
-  } else {
-    return this->_need_to_fire[static_cast<int>(level)] > 0;
-  }
+  return true;
 }
 
 QUICFrame *
