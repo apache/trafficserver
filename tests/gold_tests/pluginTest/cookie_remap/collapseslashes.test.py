@@ -23,7 +23,6 @@ Test.Summary = '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: plugin collapses consecutive slashes"
-Test.SkipIf(Condition.true("Test is temporarily turned off, to be fixed according to an incompatible plugin API change (PR #4964)"))
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
@@ -55,7 +54,7 @@ ts.Disk.File(ts.Variables.CONFIGDIR +"/collapseconfig.txt", exists=False, id="co
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/magic http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/collapseconfig.txt'
+    'map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/collapseconfig.txt'
 )
 
 tr = Test.AddTestRun("collapse consecutive forward slashes")

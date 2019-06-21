@@ -696,7 +696,7 @@ ts.client_request.get_url
 
 **context:** do_remap/do_os_response or do_global_* or later
 
-**description:** This function can be used to retrieve the whole client request's url.
+**description:** This function can be used to retrieve the client request url (:func:`TSHttpTxnEffectiveUrlStringGet`).
 
 Here is an example:
 
@@ -704,6 +704,25 @@ Here is an example:
 
     function do_remap()
         local url = ts.client_request.get_url()
+        ts.debug(url)
+    end
+
+`TOP <#lua-plugin>`_
+
+ts.client_request.get_pristine_url
+----------------------------------
+**syntax:** *ts.client_request.get_pristine_url()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to retrieve the client request pristine url.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        local url = ts.client_request.get_pristine_url()
         ts.debug(url)
     end
 

@@ -22,7 +22,7 @@ Test tls server  certificate verification options. Exercise conf_remap for ca bu
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True)
 server1 = Test.MakeOriginServer("server1", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
 server2 = Test.MakeOriginServer("server2", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed2-foo.pem".format(Test.RunDirectory)})
 
@@ -47,7 +47,6 @@ ts.addSSLfile("ssl/signer.key")
 ts.addSSLfile("ssl/signer2.pem")
 ts.addSSLfile("ssl/signer2.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
     'map /case1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server1.Variables.SSL_Port, ts.Variables.SSLDir, "signer.pem")
 )
@@ -71,7 +70,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     # enable ssl port
-    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
+    'proxy.config.http.server_ports': '{0}'.format(ts.Variables.port),
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     # set global policy
     'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
@@ -91,7 +90,7 @@ tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed2-foo.pem")
 tr.Processes.Default.StartBefore(server1)
 tr.Processes.Default.StartBefore(server2)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = server1
 tr.StillRunningAfter = ts
 # Should succed.  No message

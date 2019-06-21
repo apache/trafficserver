@@ -64,6 +64,7 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
 ts.Variables.ssl_port = 4443
+ts.Ready = When.PortsReady([ts.Variables.port, ts.Variables.ssl_port])
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'lm|ssl',
@@ -100,7 +101,7 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)
 tr.Processes.Default.StartBefore(server3)
 # Delay on readyness of our ssl ports
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stderr = "gold/chunked_GET_200.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
