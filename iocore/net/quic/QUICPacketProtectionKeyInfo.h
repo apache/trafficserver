@@ -91,14 +91,6 @@ public:
 
   virtual size_t decryption_key_for_hp_len(QUICKeyPhase phase) const;
 
-  // common
-  virtual bool
-  is_one_rtt_key_available() const
-  {
-    return (this->is_encryption_key_available(QUICKeyPhase::PHASE_1) && this->is_decryption_key_available(QUICKeyPhase::PHASE_1)) ||
-           (this->is_encryption_key_available(QUICKeyPhase::PHASE_0) && this->is_decryption_key_available(QUICKeyPhase::PHASE_0));
-  }
-
 private:
   Context _ctx = Context::SERVER;
 

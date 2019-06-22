@@ -309,7 +309,7 @@ QUICLossDetector::_set_loss_detection_timer()
     return;
   }
 
-  if (this->_crypto_outstanding > 0 || (this->_context == NET_VCONNECTION_OUT && !this->_pp_key_info.is_one_rtt_key_available())) {
+  if (this->_crypto_outstanding > 0 || this->_is_client_without_one_rtt_key()) {
     // Crypto retransmission timer.
     alarm = this->_time_of_last_sent_crypto_packet + this->_rtt_measure->handshake_retransmit_timeout();
     update_timer(alarm);
@@ -353,7 +353,7 @@ QUICLossDetector::_on_loss_detection_timeout()
     QUICLDVDebug("Crypto Retranmission");
     this->_retransmit_all_unacked_crypto_data();
     this->_rtt_measure->set_crypto_count(this->_rtt_measure->crypto_count() + 1);
-  } else if (!this->_pp_key_info.is_one_rtt_key_available() && this->_context == NET_VCONNECTION_OUT) {
+  } else if (this->_is_client_without_one_rtt_key()) {
     // Client sends an anti-deadlock packet: Initial is padded
     // to earn more anti-amplification credit,
     // a Handshake packet proves address ownership.
@@ -617,6 +617,12 @@ QUICLossDetector::_decrement_outstanding_counters(std::map<QUICPacketNumber, QUI
       --this->_ack_eliciting_outstanding;
     }
   }
+}
+
+bool
+QUICLossDetector::_is_client_without_one_rtt_key() const
+{
+  return (this->_context == NET_VCONNECTION_OUT && !((this->is_encryption_key_available(QUICKeyPhase::PHASE_1) && this->is_decryption_key_available(QUICKeyPhase::PHASE_1)) || (this->is_encryption_key_available(QUICKeyPhase::PHASE_0) && this->is_decryption_key_available(QUICKeyPhase::PHASE_0)));
 }
 
 //

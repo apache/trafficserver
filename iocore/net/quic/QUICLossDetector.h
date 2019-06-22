@@ -195,6 +195,8 @@ private:
 
   void _send_packet(QUICEncryptionLevel level, bool padded = false);
 
+  bool _is_client_without_one_rtt_key() const;
+
   NetVConnectionContext_t _context = NET_VCONNECTION_UNSET;
 
   QUICConnectionInfoProvider *_info = nullptr;
