@@ -137,7 +137,7 @@ QUICLossDetector::on_packet_sent(QUICPacketInfoUPtr packet_info, bool in_flight)
   ink_hrtime now                 = packet_info->time_sent;
   size_t sent_bytes              = packet_info->sent_bytes;
 
-  QUICLDDebug("%s packet sent : %" PRIu64 " bytes: %u ack_eliciting: %d", QUICDebugNames::pn_space(packet_info->pn_space),
+  QUICLDDebug("%s packet sent : %" PRIu64 " bytes: %lu ack_eliciting: %d", QUICDebugNames::pn_space(packet_info->pn_space),
               packet_number, sent_bytes, ack_eliciting);
 
   this->_add_to_sent_packet_list(packet_number, std::move(packet_info));
@@ -622,7 +622,10 @@ QUICLossDetector::_decrement_outstanding_counters(std::map<QUICPacketNumber, QUI
 bool
 QUICLossDetector::_is_client_without_one_rtt_key() const
 {
-  return (this->_context == NET_VCONNECTION_OUT && !((this->is_encryption_key_available(QUICKeyPhase::PHASE_1) && this->is_decryption_key_available(QUICKeyPhase::PHASE_1)) || (this->is_encryption_key_available(QUICKeyPhase::PHASE_0) && this->is_decryption_key_available(QUICKeyPhase::PHASE_0)));
+  return this->_context == NET_VCONNECTION_OUT && !((this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::PHASE_1) &&
+                                                     this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::PHASE_1)) ||
+                                                    (this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::PHASE_0) &&
+                                                     this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::PHASE_0)));
 }
 
 //
