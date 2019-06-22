@@ -109,19 +109,19 @@ private:
   uint32_t _k_initial_window                  = 0;
   uint32_t _k_minimum_window                  = 0;
   float _k_loss_reduction_factor              = 0.0;
-  uint32_t _k_persistent_congestion_threshold = 0;
+  uint32_t _k_persistent_congestion_threshold = 3;
 
   // [draft-17 recovery] 7.9.2. Variables of interest
-  uint32_t _ecn_ce_counter        = 0;
-  uint32_t _bytes_in_flight       = 0;
-  uint32_t _congestion_window     = 0;
-  ink_hrtime _recovery_start_time = 0;
-  uint32_t _ssthresh              = UINT32_MAX;
+  uint32_t _ecn_ce_counter                   = 0;
+  uint32_t _bytes_in_flight                  = 0;
+  uint32_t _congestion_window                = 0;
+  ink_hrtime _congestion_recovery_start_time = 0;
+  uint32_t _ssthresh                         = UINT32_MAX;
 
   QUICConnectionInfoProvider *_info = nullptr;
   const QUICRTTProvider &_rtt_provider;
 
-  bool _in_recovery(ink_hrtime sent_time);
+  bool _in_congestion_recovery(ink_hrtime sent_time);
 };
 
 class QUICLossDetector : public Continuation, public QUICFrameHandler

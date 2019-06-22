@@ -682,7 +682,7 @@ ink_hrtime
 QUICRTTMeasure::congestion_period(uint32_t threshold) const
 {
   ink_hrtime pto = this->_smoothed_rtt + std::max(this->_rttvar * 4, this->_k_granularity);
-  return pto * (1 << (threshold - 1));
+  return pto * threshold;
 }
 
 ink_hrtime
