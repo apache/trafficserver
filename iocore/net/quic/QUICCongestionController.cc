@@ -63,9 +63,9 @@ QUICCongestionController::on_packet_sent(size_t bytes_sent)
 }
 
 bool
-QUICCongestionController::_in_recovery(ink_hrtime sent_time)
+QUICCongestionController::_in_congestion_recovery(ink_hrtime sent_time)
 {
-  return sent_time <= this->_recovery_start_time;
+  return sent_time <= this->_congestion_recovery_start_time;
 }
 
 bool
@@ -81,7 +81,7 @@ QUICCongestionController::on_packet_acked(const QUICPacketInfo &acked_packet)
   // Remove from bytes_in_flight.
   SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
   this->_bytes_in_flight -= acked_packet.sent_bytes;
-  if (this->_in_recovery(acked_packet.time_sent)) {
+  if (this->_in_congestion_recovery(acked_packet.time_sent)) {
     // Do not increase congestion window in recovery period.
     return;
   }
@@ -109,10 +109,10 @@ QUICCongestionController::on_packet_acked(const QUICPacketInfo &acked_packet)
 void
 QUICCongestionController::_congestion_event(ink_hrtime sent_time)
 {
-  // Start a new congestion event if the sent time is larger
-  // than the start time of the previous recovery epoch.
-  if (!this->_in_recovery(sent_time)) {
-    this->_recovery_start_time = Thread::get_hrtime();
+  // Start a new congestion event if packet was sent after the
+  // start of the previous congestion recovery period.
+  if (!this->_in_congestion_recovery(sent_time)) {
+    this->_congestion_recovery_start_time = Thread::get_hrtime();
     this->_congestion_window *= this->_k_loss_reduction_factor;
     this->_congestion_window = std::max(this->_congestion_window, this->_k_minimum_window);
     this->_ssthresh          = this->_congestion_window;
@@ -163,8 +163,6 @@ QUICCongestionController::on_packets_lost(const std::map<QUICPacketNumber, QUICP
     this->_bytes_in_flight -= lost_packet.second->sent_bytes;
   }
   QUICPacketInfo *largest_lost_packet = lost_packets.rbegin()->second;
-  // Start a new recovery epoch if the lost packet is larger
-  // than the end of the previous recovery epoch.
   this->_congestion_event(largest_lost_packet->time_sent);
 
   // Collapse congestion window if persistent congestion
@@ -221,10 +219,10 @@ QUICCongestionController::reset()
 {
   SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
 
-  this->_bytes_in_flight     = 0;
-  this->_congestion_window   = this->_k_initial_window;
-  this->_recovery_start_time = 0;
-  this->_ssthresh            = UINT32_MAX;
+  this->_bytes_in_flight                = 0;
+  this->_congestion_window              = this->_k_initial_window;
+  this->_congestion_recovery_start_time = 0;
+  this->_ssthresh                       = UINT32_MAX;
 }
 
 bool
