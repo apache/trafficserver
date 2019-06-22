@@ -395,7 +395,9 @@ class MockQUICLossDetector : public QUICLossDetector
 public:
   MockQUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
                        const QUICLDConfig &ld_config)
-    : QUICLossDetector(info, cc, rtt_measure, &this->_pinger, ld_config)
+    : QUICLossDetector(info, cc, this->_pp_key_info, rtt_measure, &this->_pinger, &this->_padder, ld_config,
+                       NetVConnectionContext_t::NET_VCONNECTION_UNSET),
+      _padder(NetVConnectionContext_t::NET_VCONNECTION_UNSET)
   {
   }
   void
@@ -410,6 +412,8 @@ public:
 
 private:
   QUICPinger _pinger;
+  QUICPadder _padder;
+  QUICPacketProtectionKeyInfo _pp_key_info;
 };
 
 class MockQUICApplication : public QUICApplication
