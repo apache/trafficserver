@@ -354,10 +354,10 @@ public:
     }
   }
 
-  ProxyMutex *
+  Ptr<ProxyMutex>
   lock_for_key(key_t key)
   {
-    return locks[part_num(key)].get();
+    return locks[part_num(key)];
   }
 
   int
