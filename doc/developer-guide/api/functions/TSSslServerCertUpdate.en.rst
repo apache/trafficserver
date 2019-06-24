@@ -32,9 +32,9 @@ Synopsis
 
 Description
 ===========
-:func:`TSSslServerCertUpdate` updates existing server certificates configured in :file:`ssl_multicert.config` based on the common name in :arg:`cert_path`. if :arg:`key_path` is set to nullptr, the function will use :arg:`cert_path` for both certificate and private key.
-:func:`TSSslServerCertUpdate` returns `TS_SUCCESS` only if there exists such a mapping, :arg:`cert_path` is a valid cert, and the context is updated to use that cert.
 
-Type
-====
-.. type:: TSReturnCode
+:func:`TSSslServerCertUpdate` updates existing server certificates configured in
+:file:`ssl_multicert.config` based on the common name in :arg:`cert_path`. if :arg:`key_path` is set
+to nullptr, the function will use :arg:`cert_path` for both certificate and private key.
+:func:`TSSslServerCertUpdate` returns `TS_SUCCESS` only if there exists such a mapping,
+:arg:`cert_path` is a valid cert, and the context is updated to use that cert.
