@@ -1992,6 +1992,7 @@ tsapi void TSIOBufferReaderFree(TSIOBufferReader readerp);
 tsapi TSIOBufferBlock TSIOBufferReaderStart(TSIOBufferReader readerp);
 tsapi void TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes);
 tsapi int64_t TSIOBufferReaderAvail(TSIOBufferReader readerp);
+tsapi int64_t TSIOBufferReaderCopy(TSIOBufferReader readerp, void *buf, int64_t length);
 
 tsapi struct sockaddr const *TSNetVConnLocalAddrGet(TSVConn vc);
 
