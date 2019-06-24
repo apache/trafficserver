@@ -169,6 +169,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_List.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
+  unit_tests/test_ParseRules.cc \
 	unit_tests/test_PriorityQueue.cc \
 	unit_tests/test_Ptr.cc \
 	unit_tests/test_Regex.cc \
