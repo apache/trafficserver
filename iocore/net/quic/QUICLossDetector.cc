@@ -496,7 +496,7 @@ QUICLossDetector::_send_one_or_two_packet()
   this->_send_packet(QUICEncryptionLevel::ONE_RTT);
   this->_send_packet(QUICEncryptionLevel::ONE_RTT);
   ink_assert(this->_pinger->count(QUICEncryptionLevel::ONE_RTT) >= 2);
-  QUICLDDebug("[%s] send ping frame %lu", QUICDebugNames::encryption_level(QUICEncryptionLevel::ONE_RTT),
+  QUICLDDebug("[%s] send ping frame %" PRIu64, QUICDebugNames::encryption_level(QUICEncryptionLevel::ONE_RTT),
               this->_pinger->count(QUICEncryptionLevel::ONE_RTT));
 }
 
@@ -504,7 +504,7 @@ void
 QUICLossDetector::_send_one_handshake_packets()
 {
   this->_send_packet(QUICEncryptionLevel::HANDSHAKE);
-  QUICLDDebug("[%s] send handshake packet: %lu", QUICDebugNames::encryption_level(QUICEncryptionLevel::HANDSHAKE),
+  QUICLDDebug("[%s] send handshake packet: %" PRIu64, QUICDebugNames::encryption_level(QUICEncryptionLevel::HANDSHAKE),
               this->_pinger->count(QUICEncryptionLevel::HANDSHAKE));
 }
 
@@ -512,7 +512,7 @@ void
 QUICLossDetector::_send_one_padded_packets()
 {
   this->_send_packet(QUICEncryptionLevel::INITIAL, true);
-  QUICLDDebug("[%s] send PADDING frame %lu", QUICDebugNames::encryption_level(QUICEncryptionLevel::INITIAL),
+  QUICLDDebug("[%s] send PADDING frame %" PRIu64, QUICDebugNames::encryption_level(QUICEncryptionLevel::INITIAL),
               this->_pinger->count(QUICEncryptionLevel::INITIAL));
 }
 
