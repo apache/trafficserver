@@ -161,6 +161,12 @@ ats_mallopt(int param ATS_UNUSED, int value ATS_UNUSED)
   return 0;
 }
 
+ats_unique_buf
+ats_unique_malloc(size_t size)
+{
+  return ats_unique_buf(static_cast<uint8_t *>(ats_malloc(size)));
+}
+
 int
 ats_msync(caddr_t addr, size_t len, caddr_t end, int flags)
 {
