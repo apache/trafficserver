@@ -83,6 +83,8 @@ the available tests.
 
 .. option:: -t MSECS, --poll_timeout MSECS
 
+.. option:: -m RECORDS, --maxRecords RECORDS
+
 .. option:: -h, --help
 
    Print usage information and exit.

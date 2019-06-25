@@ -1267,10 +1267,11 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);
       SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_in_stat);
     }
-
     {
       const unsigned char *proto = nullptr;
       unsigned len               = 0;
+
+      increment_ssl_version_metric(SSL_version(ssl));
 
       // If it's possible to negotiate both NPN and ALPN, then ALPN
       // is preferred since it is the server's preference.  The server
@@ -1810,6 +1811,33 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   sslHandshakeStatus = SSL_HANDSHAKE_DONE;
   SSLNetVCAttach(this->ssl, this);
   return EVENT_DONE;
+}
+
+void
+SSLNetVConnection::increment_ssl_version_metric(int version) const
+{
+  switch (version) {
+  case SSL3_VERSION:
+    SSL_INCREMENT_DYN_STAT(ssl_total_sslv3);
+    break;
+  case TLS1_VERSION:
+    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv1);
+    break;
+  case TLS1_1_VERSION:
+    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv11);
+    break;
+  case TLS1_2_VERSION:
+    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv12);
+    break;
+#ifdef TLS1_3_VERSION
+  case TLS1_3_VERSION:
+    SSL_INCREMENT_DYN_STAT(ssl_total_tlsv13);
+    break;
+#endif
+  default:
+    Debug("ssl", "Unrecognized SSL version %d", version);
+    break;
+  }
 }
 
 std::string_view

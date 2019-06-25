@@ -27,7 +27,7 @@ Test.SkipUnless(
 Test.ContinueOnFail = True
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2", ssl=True)
 server3 = Test.MakeOriginServer("server3")
@@ -63,8 +63,6 @@ server3.addResponse("sessionlog.json", request_header3, response_header3)
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Variables.ssl_port = 4443
-ts.Ready = When.PortsReady([ts.Variables.port, ts.Variables.ssl_port])
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'lm|ssl',

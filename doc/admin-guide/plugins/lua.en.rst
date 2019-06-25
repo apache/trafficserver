@@ -696,7 +696,7 @@ ts.client_request.get_url
 
 **context:** do_remap/do_os_response or do_global_* or later
 
-**description:** This function can be used to retrieve the client request url (:func:`TSHttpTxnEffectiveUrlStringGet`).
+**description:** This function can be used to retrieve the client request url (:c:func:`TSHttpTxnEffectiveUrlStringGet`).
 
 Here is an example:
 

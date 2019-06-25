@@ -28,10 +28,12 @@
  *
  *
  ***************************************************************************/
+#include <vector>
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
 #include "tscore/ParseRules.h"
+#include "RecordsConfig.h"
 #include "Alarms.h"
 #include "MgmtUtils.h"
 #include "LocalManager.h"
@@ -46,8 +48,6 @@
 #include "EventCallback.h"
 #include "tscore/I_Layout.h"
 #include "tscore/ink_cap.h"
-
-#include <vector>
 
 // global variable
 static CallbackTable *local_event_callbacks;
@@ -170,7 +170,11 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 
     // Start with the default options from records.config.
     if (RecGetRecordString_Xmalloc("proxy.config.proxy_binary_opts", &proxy_options) == REC_ERR_OKAY) {
-      snprintf(tsArgs, sizeof(tsArgs), "%s", proxy_options);
+      if (max_records_entries == (REC_INTERNAL_RECORDS + REC_MIN_API_RECORDS)) { // Default size, don't need to pass down to _server
+        snprintf(tsArgs, sizeof(tsArgs), "%s", proxy_options);
+      } else {
+        snprintf(tsArgs, sizeof(tsArgs), "%s --maxRecords %d", proxy_options, max_records_entries);
+      }
       ats_free(proxy_options);
     }
 

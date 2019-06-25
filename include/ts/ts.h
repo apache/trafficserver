@@ -261,6 +261,9 @@ tsapi char *TSfgets(TSFile filep, char *buf, size_t length);
 */
 tsapi void TSError(const char *fmt, ...) TS_PRINTFLIKE(1, 2);
 
+tsapi void TSEmergency(const char *fmt, ...) TS_PRINTFLIKE(1, 2);
+tsapi void TSFatal(const char *fmt, ...) TS_PRINTFLIKE(1, 2);
+
 /* --------------------------------------------------------------------------
    Assertions */
 tsapi void _TSReleaseAssert(const char *txt, const char *f, int l) TS_NORETURN;
