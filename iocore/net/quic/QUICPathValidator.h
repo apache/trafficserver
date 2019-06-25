@@ -27,11 +27,12 @@
 #include "QUICTypes.h"
 #include "QUICFrameHandler.h"
 #include "QUICFrameGenerator.h"
+#include "QUICConnection.h"
 
 class QUICPathValidator : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
-  QUICPathValidator() {}
+  QUICPathValidator(const QUICConnectionInfoProvider &info) : _cinfo(info) {}
   bool is_validating();
   bool is_validated();
   void validate();
@@ -46,6 +47,8 @@ public:
                             size_t current_packet_size, uint32_t seq_num) override;
 
 private:
+  const QUICConnectionInfoProvider &_cinfo;
+
   enum class ValidationState : int {
     NOT_VALIDATED,
     VALIDATING,

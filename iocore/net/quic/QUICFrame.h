@@ -614,6 +614,7 @@ public:
   virtual bool is_probing_frame() const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual int debug_msg(char *msg, size_t msg_len) const override;
 
   const uint8_t *data() const;
 
@@ -642,6 +643,7 @@ public:
   virtual bool is_probing_frame() const override;
   virtual void parse(const uint8_t *buf, size_t len) override;
   virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual int debug_msg(char *msg, size_t msg_len) const override;
 
   const uint8_t *data() const;
 

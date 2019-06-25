@@ -2209,6 +2209,14 @@ QUICPathChallengeFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   return *len;
 }
 
+int
+QUICPathChallengeFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  auto data = this->data();
+  return snprintf(msg, msg_len, "PATH_CHALLENGE size=%zu data=0x%02x%02x%02x%02x%02x%02x%02x%02x", this->size(), data[0], data[1],
+                  data[2], data[3], data[4], data[5], data[6], data[7]);
+}
+
 const uint8_t *
 QUICPathChallengeFrame::data() const
 {
@@ -2281,6 +2289,14 @@ QUICPathResponseFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   memcpy(buf + 1, this->data(), QUICPathResponseFrame::DATA_LEN);
 
   return *len;
+}
+
+int
+QUICPathResponseFrame::debug_msg(char *msg, size_t msg_len) const
+{
+  auto data = this->data();
+  return snprintf(msg, msg_len, "PATH_RESPONSE size=%zu data=0x%02x%02x%02x%02x%02x%02x%02x%02x", this->size(), data[0], data[1],
+                  data[2], data[3], data[4], data[5], data[6], data[7]);
 }
 
 const uint8_t *

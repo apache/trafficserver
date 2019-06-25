@@ -24,6 +24,8 @@
 #include <chrono>
 #include "QUICPathValidator.h"
 
+#define QUICDebug(fmt, ...) Debug("quic_path", "[%s] " fmt, this->_cinfo.cids().data(), ##__VA_ARGS__)
+
 bool
 QUICPathValidator::is_validating()
 {
@@ -80,6 +82,12 @@ QUICPathValidator::_validate_response(const QUICPathResponseFrame &frame)
       error                         = nullptr;
       break;
     }
+  }
+
+  if (error) {
+    QUICDebug("validation failed");
+  } else {
+    QUICDebug("validation succeeded");
   }
 
   return error;

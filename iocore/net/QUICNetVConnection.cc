@@ -461,7 +461,7 @@ QUICNetVConnection::start()
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
   this->_local_flow_controller  = new QUICLocalConnectionFlowController(&this->_rtt_measure, UINT64_MAX);
-  this->_path_validator         = new QUICPathValidator();
+  this->_path_validator         = new QUICPathValidator(*this);
   this->_stream_manager         = new QUICStreamManager(this, &this->_rtt_measure, this->_application_map);
 
   // Register frame generators
