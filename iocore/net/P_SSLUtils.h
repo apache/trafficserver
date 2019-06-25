@@ -92,8 +92,6 @@ ssl_error_t SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread);
 ssl_error_t SSLAccept(SSL *ssl);
 ssl_error_t SSLConnect(SSL *ssl);
 
-bool SSLParseCertificateConfiguration(const SSLConfigParams *params, SSL_CTX *ssl_ctx);
-
 // Attach a SSL NetVC back pointer to a SSL session.
 void SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc);
 
