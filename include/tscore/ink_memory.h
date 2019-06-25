@@ -141,6 +141,8 @@ char *_xstrdup(const char *str, int length, const char *path);
 
 #ifdef __cplusplus
 
+#include <memory>
+
 // this is to help with migration to a std::string issue with older code that
 // expects char* being copied. As more code moves to std::string, this can be
 // removed to avoid these extra copies.
@@ -618,4 +620,15 @@ path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)
 
   return x.release();
 }
+
+struct ats_unique_buf_deleter {
+  void
+  operator()(uint8_t *p)
+  {
+    ats_free(p);
+  }
+};
+using ats_unique_buf = std::unique_ptr<uint8_t[], ats_unique_buf_deleter>;
+ats_unique_buf ats_unique_malloc(size_t size);
+
 #endif /* __cplusplus */
