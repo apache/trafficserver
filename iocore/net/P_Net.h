@@ -116,7 +116,6 @@ extern RecRawStatBlock *net_rsb;
 #include "P_QUICPacketHandler.h"
 #include "P_QUICNet.h"
 #endif
-// #include "P_QUICCertLookup.h"
 
 static constexpr ts::ModuleVersion NET_SYSTEM_MODULE_INTERNAL_VERSION(NET_SYSTEM_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE);
 

@@ -33,6 +33,7 @@
 
 // Global
 ClassAllocator<UnixNetVConnection> netVCAllocator("netVCAllocator");
+
 //
 // Reschedule a UnixNetVConnection by moving it
 // onto or off of the ready_list
