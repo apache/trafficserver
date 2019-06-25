@@ -24,6 +24,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ParseRules.h"
+#include "RecordsConfig.h"
 #include "P_RecUtils.h"
 #include "P_RecCore.h"
 
@@ -49,8 +50,8 @@ RecRecordFree(RecRecord *r)
 RecRecord *
 RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
 {
-  if (g_num_records >= REC_MAX_RECORDS) {
-    Warning("too many stats/configs, please increase REC_MAX_RECORDS or rebuild with --with_max_api_stats=<n>");
+  if (g_num_records >= max_records_entries) {
+    Warning("too many stats/configs, please increase max_records_entries using the --maxRecords command line option");
     return nullptr;
   }
 

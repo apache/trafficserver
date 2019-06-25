@@ -46,12 +46,11 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionfile.log", request_header, response_header)
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 ts.addSSLfile("../../remap/ssl/server.pem")
 ts.addSSLfile("../../remap/ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 
 ts.Disk.records_config.update({
     # 'proxy.config.diags.debug.enabled': 1,
@@ -104,7 +103,7 @@ LogTee = " 2>&1 | grep '^<' | tee -a {}/url_sig_long.log".format(Test.RunDirecto
 # Bad client / MD5 / P=101 / URL pristine / URL altered.
 #
 tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (

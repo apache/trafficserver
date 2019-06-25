@@ -51,10 +51,10 @@ function with :func:`TSSslContextDestroy`.
 Examples
 ========
 
-The example below is excerpted from `example/client_context_dump/client_context_dump.cc` in the Traffic 
+The example below is excerpted from `example/plugins/c-api/client_context_dump/client_context_dump.cc` in the Traffic 
 Server source distribution. It demonstrates how to use :func:`TSSslClientContextsNamesGet` and 
 :func:`TSSslClientContextFindByName` to retreive all contextxs.
 
-.. literalinclude:: ../../../../example/client_context_dump/client_context_dump.cc
+.. literalinclude:: ../../../../example/plugins/c-api/client_context_dump/client_context_dump.cc
   :language: c
   :lines: 137-145

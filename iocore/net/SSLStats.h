@@ -102,6 +102,13 @@ enum SSL_Stats {
   ssl_ocsp_refreshed_cert_stat,
   ssl_ocsp_refresh_cert_failure_stat,
 
+  /* SSL/TLS versions */
+  ssl_total_sslv3,
+  ssl_total_tlsv1,
+  ssl_total_tlsv11,
+  ssl_total_tlsv12,
+  ssl_total_tlsv13,
+
   ssl_cipher_stats_start = 100,
   ssl_cipher_stats_end   = 300,
 

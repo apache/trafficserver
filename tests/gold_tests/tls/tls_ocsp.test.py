@@ -27,7 +27,7 @@ Test.SkipUnless(
 )
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # desired response form the origin server
@@ -39,9 +39,8 @@ ts.addSSLfile("ssl/server.ocsp.pem")
 ts.addSSLfile("ssl/server.ocsp.key")
 ts.addSSLfile("ssl/ocsp_response.der")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
-    'map https://example.com:4443 http://127.0.0.1:{0}'.format(server.Variables.Port)
+    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port)
 )
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -66,7 +65,7 @@ ts.Disk.records_config.update({
 
 tr = Test.AddTestRun("Check OCSP response using curl")
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Command = "curl -v --cacert {0} --cert-status -H \"host:example.com\" https://127.0.0.1:{1}".format(os.path.join(ts.Variables.SSLDir, "ca.ocsp.pem"), ts.Variables.ssl_port)

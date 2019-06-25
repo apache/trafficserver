@@ -36,7 +36,7 @@ increment a statistic from multiple plugins. Once you have a handle to the stati
 with :c:func:`TSStatIntSet`, and increment it with :c:func:`TSStatIntIncrement` or
 :c:func:`TSStatIntDecrement`.
 
-.. literalinclude:: ../../../example/statistic/statistic.cc
+.. literalinclude:: ../../../example/plugins/c-api/statistic/statistic.cc
    :language: cpp
    :lines: 32-
 
