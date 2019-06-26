@@ -110,6 +110,7 @@ check_PROGRAMS = \
   test_QUICPacket \
   test_QUICPacketHeaderProtector \
   test_QUICPacketFactory \
+  test_QUICPathValidator \
   test_QUICStream \
   test_QUICStreamManager \
   test_QUICStreamState \
@@ -229,6 +230,13 @@ test_QUICPacketFactory_LDADD = $(test_LDADD)
 test_QUICPacketFactory_SOURCES = \
   $(test_main_SOURCES) \
   ./test/test_QUICPacketFactory.cc
+
+test_QUICPathValidator_CPPFLAGS = $(test_CPPFLAGS)
+test_QUICPathValidator_LDFLAGS = @AM_LDFLAGS@
+test_QUICPathValidator_LDADD = $(test_LDADD)
+test_QUICPathValidator_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_QUICPathValidator.cc
 
 test_QUICPacketHeaderProtector_CPPFLAGS = $(test_CPPFLAGS)
 test_QUICPacketHeaderProtector_LDFLAGS = @AM_LDFLAGS@
