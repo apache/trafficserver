@@ -1644,7 +1644,8 @@ QUICNetVConnection::_recv_and_ack(const QUICPacket &packet, bool *has_non_probin
     *has_non_probing_frame = false;
   }
 
-  error = this->_frame_dispatcher->receive_frames(level, payload, size, ack_only, is_flow_controlled, has_non_probing_frame);
+  error =
+    this->_frame_dispatcher->receive_frames(level, payload, size, ack_only, is_flow_controlled, has_non_probing_frame, &packet);
   if (error != nullptr) {
     return error;
   }
