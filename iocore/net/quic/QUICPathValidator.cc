@@ -23,34 +23,77 @@
 
 #include <chrono>
 #include "QUICPathValidator.h"
+#include "QUICPacket.h"
 
 #define QUICDebug(fmt, ...) Debug("quic_path", "[%s] " fmt, this->_cinfo.cids().data(), ##__VA_ARGS__)
 
 bool
-QUICPathValidator::is_validating()
+QUICPathValidator::ValidationJob::has_more_challenges() const
+{
+  return this->_has_outgoing_challenge;
+}
+
+const uint8_t *
+QUICPathValidator::ValidationJob::get_next_challenge() const
+{
+  if (this->_has_outgoing_challenge) {
+    return this->_outgoing_challenge + ((this->_has_outgoing_challenge - 1) * 8);
+  } else {
+    return nullptr;
+  }
+}
+
+void
+QUICPathValidator::ValidationJob::consume_challenge()
+{
+  --(this->_has_outgoing_challenge);
+}
+
+bool
+QUICPathValidator::is_validating(const QUICPath &path)
+{
+  return this->_jobs.at(path).is_validating();
+}
+
+bool
+QUICPathValidator::is_validated(const QUICPath &path)
+{
+  return this->_jobs.at(path).is_validated();
+}
+
+void
+QUICPathValidator::validate(const QUICPath &path)
+{
+  if (this->_jobs.find(path) != this->_jobs.end()) {
+    // Do nothing
+  } else {
+    auto result = this->_jobs.emplace(std::piecewise_construct, std::forward_as_tuple(path), std::forward_as_tuple());
+    result.first->second.start();
+    // QUICDebug("Validating a path between %s and %s", path.local_ep(), path.remote_ep());
+  }
+}
+
+bool
+QUICPathValidator::ValidationJob::is_validating()
 {
   return this->_state == ValidationState::VALIDATING;
 }
 
 bool
-QUICPathValidator::is_validated()
+QUICPathValidator::ValidationJob::is_validated()
 {
   return this->_state == ValidationState::VALIDATED;
 }
 
 void
-QUICPathValidator::validate()
+QUICPathValidator::ValidationJob::start()
 {
-  if (this->_state == ValidationState::VALIDATING) {
-    // Do nothing
-  } else {
-    this->_state = ValidationState::VALIDATING;
-    this->_generate_challenge();
-  }
+  this->_state = ValidationState::VALIDATING;
+  this->_generate_challenge();
 }
 
 void
-QUICPathValidator::_generate_challenge()
+QUICPathValidator::ValidationJob::_generate_challenge()
 {
   size_t seed =
     std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -62,35 +105,17 @@ QUICPathValidator::_generate_challenge()
   this->_has_outgoing_challenge = 3;
 }
 
-void
-QUICPathValidator::_generate_response(const QUICPathChallengeFrame &frame)
+bool
+QUICPathValidator::ValidationJob::validate_response(const uint8_t *data)
 {
-  memcpy(this->_incoming_challenge, frame.data(), QUICPathChallengeFrame::DATA_LEN);
-  this->_has_outgoing_response = true;
-}
-
-QUICConnectionErrorUPtr
-QUICPathValidator::_validate_response(const QUICPathResponseFrame &frame)
-{
-  QUICConnectionErrorUPtr error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
-
   for (int i = 0; i < 3; ++i) {
-    if (memcmp(this->_outgoing_challenge + (QUICPathChallengeFrame::DATA_LEN * i), frame.data(),
-               QUICPathChallengeFrame::DATA_LEN) == 0) {
+    if (memcmp(this->_outgoing_challenge + (QUICPathChallengeFrame::DATA_LEN * i), data, QUICPathChallengeFrame::DATA_LEN) == 0) {
       this->_state                  = ValidationState::VALIDATED;
       this->_has_outgoing_challenge = 0;
-      error                         = nullptr;
-      break;
+      return true;
     }
   }
-
-  if (error) {
-    QUICDebug("validation failed");
-  } else {
-    QUICDebug("validation succeeded");
-  }
-
-  return error;
+  return false;
 }
 
 //
@@ -109,10 +134,21 @@ QUICPathValidator::handle_frame(QUICEncryptionLevel level, const QUICFrame &fram
 
   switch (frame.type()) {
   case QUICFrameType::PATH_CHALLENGE:
-    this->_generate_response(static_cast<const QUICPathChallengeFrame &>(frame));
+    this->_incoming_challenges.emplace(this->_incoming_challenges.begin(),
+                                       static_cast<const QUICPathChallengeFrame &>(frame).data());
     break;
   case QUICFrameType::PATH_RESPONSE:
-    error = this->_validate_response(static_cast<const QUICPathResponseFrame &>(frame));
+    if (auto item = this->_jobs.find({frame.packet()->to(), frame.packet()->from()}); item != this->_jobs.end()) {
+      if (item->second.validate_response(static_cast<const QUICPathResponseFrame &>(frame).data())) {
+        QUICDebug("validation succeeded");
+        this->_on_validation_callback(true);
+      } else {
+        QUICDebug("validation failed");
+        this->_on_validation_callback(false);
+      }
+    } else {
+      error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
+    }
     break;
   default:
     ink_assert(!"Can't happen");
@@ -135,7 +171,20 @@ QUICPathValidator::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_n
     return false;
   }
 
-  return (this->_has_outgoing_challenge || this->_has_outgoing_response);
+  // Check challenges
+  for (auto &&item : this->_jobs) {
+    auto &j = item.second;
+    if (!j.is_validating() && !j.is_validated()) {
+      j.start();
+      return true;
+    }
+    if (j.has_more_challenges()) {
+      return true;
+    }
+  }
+
+  // Check responses
+  return !this->_incoming_challenges.empty();
 }
 
 /**
@@ -151,23 +200,27 @@ QUICPathValidator::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
     return frame;
   }
 
-  if (this->_has_outgoing_response) {
-    frame = QUICFrameFactory::create_path_response_frame(buf, this->_incoming_challenge);
+  if (!this->_incoming_challenges.empty()) {
+    frame = QUICFrameFactory::create_path_response_frame(buf, this->_incoming_challenges.back());
     if (frame && frame->size() > maximum_frame_size) {
       // Cancel generating frame
       frame = nullptr;
     } else {
-      this->_has_outgoing_response = false;
+      this->_incoming_challenges.pop_back();
     }
-  } else if (this->_has_outgoing_challenge) {
-    frame = QUICFrameFactory::create_path_challenge_frame(
-      buf, this->_outgoing_challenge + (QUICPathChallengeFrame::DATA_LEN * (this->_has_outgoing_challenge - 1)));
-    if (frame && frame->size() > maximum_frame_size) {
-      // Cancel generating frame
-      frame = nullptr;
-    } else {
-      --this->_has_outgoing_challenge;
-      ink_assert(this->_has_outgoing_challenge >= 0);
+  } else {
+    for (auto &&item : this->_jobs) {
+      auto &j = item.second;
+      if (j.has_more_challenges()) {
+        frame = QUICFrameFactory::create_path_challenge_frame(buf, j.get_next_challenge());
+        if (frame && frame->size() > maximum_frame_size) {
+          // Cancel generating frame
+          frame = nullptr;
+        } else {
+          j.consume_challenge();
+        }
+        break;
+      }
     }
   }
 

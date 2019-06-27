@@ -553,6 +553,24 @@ QUICFiveTuple::protocol() const
 }
 
 //
+// QUICPath
+//
+
+QUICPath::QUICPath(IpEndpoint local_ep, IpEndpoint remote_ep) : _local_ep(local_ep), _remote_ep(remote_ep) {}
+
+const IpEndpoint &
+QUICPath::local_ep() const
+{
+  return this->_local_ep;
+}
+
+const IpEndpoint &
+QUICPath::remote_ep() const
+{
+  return this->_remote_ep;
+}
+
+//
 // QUICConnectionId
 //
 QUICConnectionId

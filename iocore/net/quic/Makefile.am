@@ -82,6 +82,7 @@ libquic_a_SOURCES = \
   QUICApplicationMap.cc \
   QUICIncomingFrameBuffer.cc \
   QUICPacketReceiveQueue.cc \
+  QUICPathManager.cc \
   QUICPathValidator.cc \
   QUICPinger.cc \
   QUICFrameGenerator.cc \

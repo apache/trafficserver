@@ -461,25 +461,56 @@ private:
 class QUICPath
 {
 public:
-  QUICPath(IpEndpoint local_ep, QUICConnectionId local_cid, IpEndpoint remote_ep, QUICConnectionId remote_cid);
+  QUICPath(IpEndpoint local_ep, IpEndpoint remote_ep);
   const IpEndpoint &local_ep() const;
   const IpEndpoint &remote_ep() const;
-  const QUICConnectionId &local_cid() const;
-  const QUICConnectionId &remote_cid() const;
-  uint32_t pmtu() const;
 
   inline bool
   operator==(const QUICPath &x) const
   {
-    return (this->_local_ep == x._local_ep) && (this->_remote_ep == x._remote_ep) && (this->_local_cid == x._local_cid) &&
-           (this->_remote_cid == x._remote_cid);
+    if (this->_local_ep.port() != 0 && this->_local_ep.port() != x._local_ep.port()) {
+      return false;
+    }
+
+    if (this->_remote_ep.port() != 0 && this->_remote_ep.port() != x._remote_ep.port()) {
+      return false;
+    }
+
+    if (!IpAddr(this->_local_ep).isAnyAddr() && !IpAddr(x._local_ep).isAnyAddr()) {
+      return this->_local_ep == x._local_ep;
+    }
+
+    if (!IpAddr(this->_remote_ep).isAnyAddr() || !IpAddr(x._remote_ep).isAnyAddr()) {
+      return this->_remote_ep == x._remote_ep;
+    }
+
+    return true;
   }
 
 private:
   IpEndpoint _local_ep;
   IpEndpoint _remote_ep;
-  QUICConnectionId _local_cid;
-  QUICConnectionId _remote_cid;
+};
+
+class QUICPathHasher
+{
+public:
+  std::size_t
+  operator()(const QUICPath &k) const
+  {
+    return k.remote_ep().port();
+  }
+};
+
+class QUICPathValidationData
+{
+public:
+  QUICPathValidationData(const uint8_t *data) { memcpy(this->_data, data, sizeof(this->_data)); }
+
+  inline operator const uint8_t *() const { return this->_data; }
+
+private:
+  uint8_t _data[8];
 };
 
 class QUICTPConfig

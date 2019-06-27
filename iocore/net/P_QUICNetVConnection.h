@@ -59,6 +59,7 @@
 #include "quic/QUICStreamManager.h"
 #include "quic/QUICAltConnectionManager.h"
 #include "quic/QUICPathValidator.h"
+#include "quic/QUICPathManager.h"
 #include "quic/QUICApplicationMap.h"
 #include "quic/QUICPacketReceiveQueue.h"
 #include "quic/QUICAddrVerifyState.h"
@@ -141,6 +142,9 @@ public:
 
   // accept new conn_id
   int acceptEvent(int event, Event *e);
+
+  // NetVConnection
+  void set_local_addr() override;
 
   // UnixNetVConnection
   void reenable(VIO *vio) override;
@@ -252,6 +256,7 @@ private:
   QUICConnectionTable *_ctable                      = nullptr;
   QUICAltConnectionManager *_alt_con_manager        = nullptr;
   QUICPathValidator *_path_validator                = nullptr;
+  QUICPathManager *_path_manager                    = nullptr;
 
   std::vector<QUICFrameGenerator *> _frame_generators;
 
@@ -276,11 +281,6 @@ private:
   void _unschedule_closed_event();
   void _close_closed_event(Event *data);
   Event *_closed_event = nullptr;
-
-  void _schedule_path_validation_timeout(ink_hrtime interval);
-  void _unschedule_path_validation_timeout();
-  void _close_path_validation_timeout(Event *data);
-  Event *_path_validation_timeout = nullptr;
 
   void _schedule_ack_manager_periodic(ink_hrtime interval);
   void _unschedule_ack_manager_periodic();
@@ -324,7 +324,7 @@ private:
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   void _handle_error(QUICConnectionErrorUPtr error);
   QUICPacketUPtr _dequeue_recv_packet(QUICPacketCreationResult &result);
-  void _validate_new_path();
+  void _validate_new_path(const QUICPath &path);
 
   int _complete_handshake_if_possible();
   void _switch_to_handshake_state();
@@ -337,7 +337,6 @@ private:
   void _start_application();
 
   void _handle_periodic_ack_event();
-  void _handle_path_validation_timeout(Event *data);
   void _handle_idle_timeout();
 
   QUICConnectionErrorUPtr _handle_frame(const QUICNewConnectionIdFrame &frame);

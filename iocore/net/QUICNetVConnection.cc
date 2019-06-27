@@ -262,7 +262,6 @@ QUICNetVConnection::~QUICNetVConnection()
   this->_unschedule_packet_write_ready();
   this->_unschedule_closing_timeout();
   this->_unschedule_closed_event();
-  this->_unschedule_path_validation_timeout();
 }
 
 // XXX This might be called on ET_UDP thread
@@ -420,6 +419,7 @@ QUICNetVConnection::start()
   ink_release_assert(this->thread != nullptr);
 
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
+  QUICPath trusted_path = {{}, {}};
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
   if (this->direction() == NET_VCONNECTION_IN) {
     QUICCertConfig::scoped_config server_cert;
@@ -433,6 +433,7 @@ QUICNetVConnection::start()
     this->_ack_frame_manager.set_max_ack_delay(this->_quic_config->max_ack_delay_in());
     this->_schedule_ack_manager_periodic(this->_quic_config->max_ack_delay_in());
   } else {
+    trusted_path = {this->local_addr, this->remote_addr};
     QUICTPConfigQCP tp_config(this->_quic_config, NET_VCONNECTION_OUT);
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::CLIENT);
     this->_ack_frame_manager.set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_out());
@@ -461,8 +462,18 @@ QUICNetVConnection::start()
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
   this->_local_flow_controller  = new QUICLocalConnectionFlowController(&this->_rtt_measure, UINT64_MAX);
-  this->_path_validator         = new QUICPathValidator(*this);
+  this->_path_validator         = new QUICPathValidator(*this, [this](bool succeeded) {
+    if (succeeded) {
+      this->_alt_con_manager->drop_cid(this->_peer_old_quic_connection_id);
+      // FIXME This is a kind of workaround for connection migration.
+      // This PING make peer to send an ACK frame so that ATS can detect packet loss.
+      // It would be better if QUICLossDetector could detect the loss in another way.
+      this->ping();
+    }
+  });
   this->_stream_manager         = new QUICStreamManager(this, &this->_rtt_measure, this->_application_map);
+  this->_path_manager           = new QUICPathManager(*this, *this->_path_validator);
+  this->_path_manager->set_trusted_path(trusted_path);
 
   // Register frame generators
   this->_frame_generators.push_back(this->_handshake_handler);      // CRYPTO
@@ -546,6 +557,13 @@ QUICNetVConnection::destroy(EThread *t)
 }
 
 void
+QUICNetVConnection::set_local_addr()
+{
+  int local_sa_size = sizeof(local_addr);
+  ATS_UNUSED_RETURN(safe_getsockname(this->_udp_con->getFd(), &local_addr.sa, &local_sa_size));
+}
+
+void
 QUICNetVConnection::reenable(VIO *vio)
 {
   return;
@@ -569,6 +587,9 @@ QUICNetVConnection::connectUp(EThread *t, int fd)
 
   // FIXME: complete do_io_xxxx instead
   this->read.enabled = 1;
+
+  this->set_local_addr();
+  this->remote_addr = con.addr;
 
   this->start();
 
@@ -812,9 +833,6 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     // Reschedule WRITE_READY
     this->_schedule_packet_write_ready(true);
     break;
-  case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
-    this->_handle_path_validation_timeout(data);
-    break;
   case EVENT_IMMEDIATE:
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
@@ -848,9 +866,6 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     // Reschedule WRITE_READY
     this->_schedule_packet_write_ready(true);
     break;
-  case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
-    this->_handle_path_validation_timeout(data);
-    break;
   case EVENT_IMMEDIATE:
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
@@ -881,9 +896,6 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     this->_close_packet_write_ready(data);
     this->_state_closing_send_packet();
     break;
-  case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
-    this->_handle_path_validation_timeout(data);
-    break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
     this->_switch_to_close_state();
@@ -912,9 +924,6 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     // This should be the only difference between this and closing_state.
     this->_close_packet_write_ready(data);
     break;
-  case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
-    this->_handle_path_validation_timeout(data);
-    break;
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
     this->_switch_to_close_state();
@@ -937,7 +946,6 @@ QUICNetVConnection::state_connection_closed(int event, Event *data)
     this->_unschedule_ack_manager_periodic();
     this->_unschedule_packet_write_ready();
     this->_unschedule_closing_timeout();
-    this->_unschedule_path_validation_timeout();
     this->_close_closed_event(data);
     this->next_inactivity_timeout_at = 0;
     this->next_activity_timeout_at   = 0;
@@ -1546,8 +1554,13 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       if (g == this->_remote_flow_controller && !this->_stream_manager->will_generate_frame(level, seq_num)) {
         break;
       }
-      if (g == this->_stream_manager && this->_path_validator->is_validating()) {
-        break;
+
+      if (g == this->_stream_manager) {
+        // Don't send DATA frames if current path is not validated
+        // FIXME will_generate_frame should receive more parameters so we don't need extra checks
+        if (auto path = this->_path_manager->get_verified_path(); !path.remote_ep().isValid()) {
+          break;
+        }
       }
 
       // Common block
@@ -1949,33 +1962,6 @@ QUICNetVConnection::_complete_handshake_if_possible()
 }
 
 void
-QUICNetVConnection::_schedule_path_validation_timeout(ink_hrtime interval)
-{
-  if (!this->_path_validation_timeout) {
-    QUICConDebug("Schedule %s event in %" PRIu64 "ms", QUICDebugNames::quic_event(QUIC_EVENT_PATH_VALIDATION_TIMEOUT),
-                 interval / HRTIME_MSECOND);
-    this->_path_validation_timeout = this->thread->schedule_in_local(this, interval, QUIC_EVENT_PATH_VALIDATION_TIMEOUT);
-  }
-}
-
-void
-QUICNetVConnection::_unschedule_path_validation_timeout()
-{
-  if (this->_path_validation_timeout) {
-    QUICConDebug("Unschedule %s event", QUICDebugNames::quic_event(QUIC_EVENT_PATH_VALIDATION_TIMEOUT));
-    this->_path_validation_timeout->cancel();
-    this->_path_validation_timeout = nullptr;
-  }
-}
-
-void
-QUICNetVConnection::_close_path_validation_timeout(Event *data)
-{
-  ink_assert(this->_path_validation_timeout == data);
-  this->_path_validation_timeout = nullptr;
-}
-
-void
 QUICNetVConnection::_start_application()
 {
   if (!this->_application_started) {
@@ -2027,6 +2013,9 @@ QUICNetVConnection::_switch_to_established_state()
                                                             this->_quic_config->instance_id(), 1, {pref_addr_buf, len});
       this->_frame_generators.push_back(this->_alt_con_manager);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
+    } else {
+      QUICPath trusted_path = {this->local_addr, this->remote_addr};
+      this->_path_manager->set_trusted_path(trusted_path);
     }
   } else {
     // Illegal state change
@@ -2098,7 +2087,6 @@ void
 QUICNetVConnection::_switch_to_close_state()
 {
   this->_unschedule_closing_timeout();
-  this->_unschedule_path_validation_timeout();
 
   if (this->_complete_handshake_if_possible() != 0) {
     QUICConDebug("Switching state without handshake completion");
@@ -2118,13 +2106,12 @@ QUICNetVConnection::_handle_idle_timeout()
 }
 
 void
-QUICNetVConnection::_validate_new_path()
+QUICNetVConnection::_validate_new_path(const QUICPath &path)
 {
-  this->_path_validator->validate();
   // Not sure how long we should wait. The spec says just "enough time".
   // Use the same time amount as the closing timeout.
   ink_hrtime rto = this->_rtt_measure.current_pto_period();
-  this->_schedule_path_validation_timeout(3 * rto);
+  this->_path_manager->open_new_path(path, 3 * rto);
 }
 
 void
@@ -2216,6 +2203,7 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
   }
 
   if (this->connection_id() == dcid) {
+    QUICConDebug("Maybe NAT rebinding");
     // On client side (NET_VCONNECTION_OUT), nothing to do any more
     if (this->netvc_context == NET_VCONNECTION_IN) {
       Connection con;
@@ -2223,9 +2211,12 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
       this->con.move(con);
       this->set_remote_addr();
       this->_udp_con = p.udp_con();
-      this->_validate_new_path();
+
+      QUICPath new_path = {p.to(), p.from()};
+      this->_validate_new_path(new_path);
     }
   } else {
+    QUICConDebug("Different CID");
     if (this->_alt_con_manager->migrate_to(dcid, this->_reset_token)) {
       // DCID of received packet is local cid
       this->_update_local_cid(dcid);
@@ -2239,7 +2230,9 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
         this->_udp_con = p.udp_con();
 
         this->_update_peer_cid(this->_alt_con_manager->migrate_to_alt_cid());
-        this->_validate_new_path();
+
+        QUICPath new_path = {this->local_addr, con.addr};
+        this->_validate_new_path(new_path);
       }
     } else {
       char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
@@ -2275,7 +2268,9 @@ QUICNetVConnection::_state_connection_established_initiate_connection_migration(
 
   this->_update_peer_cid(this->_alt_con_manager->migrate_to_alt_cid());
 
-  this->_validate_new_path();
+  auto current_path = this->_path_manager->get_verified_path();
+  QUICPath new_path = {current_path.local_ep(), current_path.remote_ep()};
+  this->_validate_new_path(new_path);
 
   return error;
 }
@@ -2295,23 +2290,6 @@ QUICNetVConnection::_handle_periodic_ack_event()
     // we have ack to send
     // FIXME: should sent depend on socket event.
     this->_schedule_packet_write_ready();
-  }
-}
-
-void
-QUICNetVConnection::_handle_path_validation_timeout(Event *data)
-{
-  this->_close_path_validation_timeout(data);
-  if (this->_path_validator->is_validated()) {
-    QUICConDebug("Path validated");
-    this->_alt_con_manager->drop_cid(this->_peer_old_quic_connection_id);
-    // FIXME This is a kind of workaround for connection migration.
-    // This PING make peer to send an ACK frame so that ATS can detect packet loss.
-    // It would be better if QUICLossDetector could detect the loss in another way.
-    this->ping();
-  } else {
-    QUICConDebug("Path validation failed");
-    this->_switch_to_close_state();
   }
 }
 
