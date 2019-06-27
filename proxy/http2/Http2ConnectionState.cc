@@ -970,8 +970,8 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
       const char *client_ip = ats_ip_ntop(ua_session->get_client_addr(), ipb, sizeof(ipb));
       if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION) {
         if (error.msg) {
-          Error("HTTP/2 connection error client_ip=%s session_id=%" PRId64 " stream_id=%u %s", client_ip,
-                ua_session->connection_id(), stream_id, error.msg);
+          Error("HTTP/2 connection error code=0x%02x client_ip=%s session_id=%" PRId64 " stream_id=%u %s",
+                static_cast<int>(error.code), client_ip, ua_session->connection_id(), stream_id, error.msg);
         }
         this->send_goaway_frame(this->latest_streamid_in, error.code);
         this->ua_session->set_half_close_local_flag(true);
@@ -983,8 +983,8 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
         // The Http2ClientSession will shutdown because connection_state.is_state_closed() will be true
       } else if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM) {
         if (error.msg) {
-          Error("HTTP/2 stream error client_ip=%s session_id=%" PRId64 " stream_id=%u %s", client_ip, ua_session->connection_id(),
-                stream_id, error.msg);
+          Error("HTTP/2 stream error code=0x%02x client_ip=%s session_id=%" PRId64 " stream_id=%u %s", static_cast<int>(error.code),
+                client_ip, ua_session->connection_id(), stream_id, error.msg);
         }
         this->send_rst_stream_frame(stream_id, error.code);
       }
