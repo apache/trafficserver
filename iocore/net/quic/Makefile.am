@@ -135,7 +135,6 @@ test_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
-  $(top_builddir)/lib/tsconfig/libtsconfig.la \
   $(top_builddir)/proxy/ParentSelectionStrategy.o \
   @HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
 
