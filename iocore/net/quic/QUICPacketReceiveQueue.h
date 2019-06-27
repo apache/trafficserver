@@ -51,4 +51,5 @@ private:
   size_t _offset          = 0;
   UDPConnection *_udp_con;
   IpEndpoint _from;
+  IpEndpoint _to;
 };

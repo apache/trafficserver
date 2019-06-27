@@ -62,14 +62,14 @@ QUICPacketFactory::create_null_packet()
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create(UDPConnection *udp_con, IpEndpoint from, ats_unique_buf buf, size_t len,
+QUICPacketFactory::create(UDPConnection *udp_con, IpEndpoint from, IpEndpoint to, ats_unique_buf buf, size_t len,
                           QUICPacketNumber base_packet_number, QUICPacketCreationResult &result)
 {
   size_t max_plain_txt_len = 2048;
   ats_unique_buf plain_txt = ats_unique_malloc(max_plain_txt_len);
   size_t plain_txt_len     = 0;
 
-  QUICPacketHeaderUPtr header = QUICPacketHeader::load(from, std::move(buf), len, base_packet_number);
+  QUICPacketHeaderUPtr header = QUICPacketHeader::load(from, to, std::move(buf), len, base_packet_number);
 
   QUICConnectionId dcid = header->destination_cid();
   QUICConnectionId scid = header->source_cid();

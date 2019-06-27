@@ -91,6 +91,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     // Create a QUIC packet
     this->_udp_con     = udp_packet->getConnection();
     this->_from        = udp_packet->from;
+    this->_to          = udp_packet->to;
     this->_payload_len = udp_packet->getPktLength();
     this->_payload     = ats_unique_malloc(this->_payload_len);
     IOBufferBlock *b   = udp_packet->getIOBlockChain();
@@ -177,7 +178,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
   }
 
   if (this->_ph_protector.unprotect(pkt.get(), pkt_len)) {
-    quic_packet = this->_packet_factory.create(this->_udp_con, this->_from, std::move(pkt), pkt_len,
+    quic_packet = this->_packet_factory.create(this->_udp_con, this->_from, this->_to, std::move(pkt), pkt_len,
                                                this->_largest_received_packet_number, result);
   } else {
     // ZERO_RTT might be rejected

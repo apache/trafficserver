@@ -55,8 +55,8 @@ using QUICPacketHeaderUPtr        = std::unique_ptr<QUICPacketHeader, QUICPacket
 class QUICPacketHeader
 {
 public:
-  QUICPacketHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
-    : _from(from), _buf(std::move(buf)), _buf_len(len), _base_packet_number(base)
+  QUICPacketHeader(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len, QUICPacketNumber base)
+    : _from(from), _to(to), _buf(std::move(buf)), _buf_len(len), _base_packet_number(base)
   {
   }
   ~QUICPacketHeader() {}
@@ -65,6 +65,7 @@ public:
   virtual bool is_crypto_packet() const;
 
   const IpEndpoint &from() const;
+  const IpEndpoint &to() const;
 
   virtual QUICPacketType type() const = 0;
 
@@ -121,7 +122,8 @@ public:
    *
    * This creates either a QUICPacketShortHeader or a QUICPacketLongHeader.
    */
-  static QUICPacketHeaderUPtr load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
+  static QUICPacketHeaderUPtr load(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len,
+                                   QUICPacketNumber base);
 
   /*
    * Build a QUICPacketHeader
@@ -185,6 +187,7 @@ protected:
   static constexpr size_t MAX_PACKET_HEADER_LEN = 256;
 
   const IpEndpoint _from = {};
+  const IpEndpoint _to   = {};
 
   // These two are used only if the instance was created with a buffer
   ats_unique_buf _buf = {nullptr};
@@ -208,7 +211,7 @@ class QUICPacketLongHeader : public QUICPacketHeader
 public:
   QUICPacketLongHeader() : QUICPacketHeader(){};
   virtual ~QUICPacketLongHeader(){};
-  QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
+  QUICPacketLongHeader(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len, QUICPacketNumber base);
   QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, const QUICConnectionId &destination_cid,
                        const QUICConnectionId &source_cid, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
                        QUICVersion version, bool crypto, ats_unique_buf buf, size_t len,
@@ -264,7 +267,7 @@ class QUICPacketShortHeader : public QUICPacketHeader
 public:
   QUICPacketShortHeader() : QUICPacketHeader(){};
   virtual ~QUICPacketShortHeader(){};
-  QUICPacketShortHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base);
+  QUICPacketShortHeader(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len, QUICPacketNumber base);
   QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
                         QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
   QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, const QUICConnectionId &connection_id,
@@ -351,6 +354,7 @@ public:
 
   UDPConnection *udp_con() const;
   const IpEndpoint &from() const;
+  const IpEndpoint &to() const;
   QUICPacketType type() const;
   QUICConnectionId destination_cid() const;
   QUICConnectionId source_cid() const;

@@ -69,6 +69,12 @@ QUICPacketHeader::from() const
   return this->_from;
 }
 
+const IpEndpoint &
+QUICPacketHeader::to() const
+{
+  return this->_to;
+}
+
 bool
 QUICPacketHeader::is_crypto_packet() const
 {
@@ -82,16 +88,16 @@ QUICPacketHeader::packet_size() const
 }
 
 QUICPacketHeaderUPtr
-QUICPacketHeader::load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
+QUICPacketHeader::load(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len, QUICPacketNumber base)
 {
   QUICPacketHeaderUPtr header = QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
   if (QUICInvariants::is_long_header(buf.get())) {
     QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
-    new (long_header) QUICPacketLongHeader(from, std::move(buf), len, base);
+    new (long_header) QUICPacketLongHeader(from, to, std::move(buf), len, base);
     header = QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
   } else {
     QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
-    new (short_header) QUICPacketShortHeader(from, std::move(buf), len, base);
+    new (short_header) QUICPacketShortHeader(from, to, std::move(buf), len, base);
     header = QUICPacketHeaderUPtr(short_header, &QUICPacketHeaderDeleter::delete_short_header);
   }
   return header;
@@ -159,8 +165,9 @@ QUICPacketHeader::clone() const
 // QUICPacketLongHeader
 //
 
-QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
-  : QUICPacketHeader(from, std::move(buf), len, base)
+QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len,
+                                           QUICPacketNumber base)
+  : QUICPacketHeader(from, to, std::move(buf), len, base)
 {
   this->_key_phase = QUICTypeUtil::key_phase(this->type());
   uint8_t *raw_buf = this->_buf.get();
@@ -590,8 +597,9 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
 // QUICPacketShortHeader
 //
 
-QUICPacketShortHeader::QUICPacketShortHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
-  : QUICPacketHeader(from, std::move(buf), len, base)
+QUICPacketShortHeader::QUICPacketShortHeader(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len,
+                                             QUICPacketNumber base)
+  : QUICPacketHeader(from, to, std::move(buf), len, base)
 {
   QUICInvariants::dcid(this->_connection_id, this->_buf.get(), len);
 
@@ -793,6 +801,12 @@ const IpEndpoint &
 QUICPacket::from() const
 {
   return this->_header->from();
+}
+
+const IpEndpoint &
+QUICPacket::to() const
+{
+  return this->_header->to();
 }
 
 UDPConnection *
