@@ -55,7 +55,6 @@ ts.Disk.records_config.update({
     'proxy.config.cache.enable_read_while_writer': 0,
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
 })
 
 ts.Disk.remap_config.AddLine(
