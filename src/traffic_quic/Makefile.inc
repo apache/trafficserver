@@ -51,7 +51,6 @@ traffic_quic_traffic_quic_LDADD = \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
 	$(top_builddir)/proxy/http3/libhttp3.a \
 	$(top_builddir)/proxy/http2/libhttp2.a \
