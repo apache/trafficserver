@@ -458,6 +458,30 @@ private:
   uint64_t _hash_code = 0;
 };
 
+class QUICPath
+{
+public:
+  QUICPath(IpEndpoint local_ep, QUICConnectionId local_cid, IpEndpoint remote_ep, QUICConnectionId remote_cid);
+  const IpEndpoint &local_ep() const;
+  const IpEndpoint &remote_ep() const;
+  const QUICConnectionId &local_cid() const;
+  const QUICConnectionId &remote_cid() const;
+  uint32_t pmtu() const;
+
+  inline bool
+  operator==(const QUICPath &x) const
+  {
+    return (this->_local_ep == x._local_ep) && (this->_remote_ep == x._remote_ep) && (this->_local_cid == x._local_cid) &&
+           (this->_remote_cid == x._remote_cid);
+  }
+
+private:
+  IpEndpoint _local_ep;
+  IpEndpoint _remote_ep;
+  QUICConnectionId _local_cid;
+  QUICConnectionId _remote_cid;
+};
+
 class QUICTPConfig
 {
 public:
