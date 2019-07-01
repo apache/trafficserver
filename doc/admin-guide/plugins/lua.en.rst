@@ -3429,7 +3429,7 @@ Here is an example:
 ::
 
     function do_remap()
-        ts.http.timeout_set(TS_LUA_TIMEOUT_DNS, 30)    -- 30 seconds
+        ts.http.timeout_set(TS_LUA_TIMEOUT_DNS, 30)    -- 30 ms
         return 0
     end
 
