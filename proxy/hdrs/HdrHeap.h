@@ -266,6 +266,8 @@ public:
   size_t required_space_for_evacuation();
   bool attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *index);
 
+  uint64_t total_used_size() const;
+
   /** Struct to prevent garbage collection on heaps.
       This bumps the reference count to the heap containing the pointer
       while the instance of this class exists. When it goes out of scope

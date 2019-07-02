@@ -111,13 +111,7 @@ public:
     _mhdr->create();
   }
 
-  ~HpackDynamicTable()
-  {
-    _headers.clear();
-    _mhdr->fields_clear();
-    _mhdr->destroy();
-    delete _mhdr;
-  }
+  ~HpackDynamicTable();
 
   const MIMEField *get_header_field(uint32_t index) const;
   void add_header_field(const MIMEField *field);
@@ -129,10 +123,14 @@ public:
   uint32_t length() const;
 
 private:
-  uint32_t _current_size;
-  uint32_t _maximum_size;
+  bool _evict_overflowed_entries();
+  void _mime_hdr_gc();
 
-  MIMEHdr *_mhdr;
+  uint32_t _current_size = 0;
+  uint32_t _maximum_size = 0;
+
+  MIMEHdr *_mhdr     = nullptr;
+  MIMEHdr *_mhdr_old = nullptr;
   std::vector<MIMEField *> _headers;
 };
 
