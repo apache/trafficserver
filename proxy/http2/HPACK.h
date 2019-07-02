@@ -133,6 +133,8 @@ public:
   uint32_t length() const;
 
 private:
+  bool _evict_overflowed_entries();
+
   uint32_t _current_size;
   uint32_t _maximum_size;
 

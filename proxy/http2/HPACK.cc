@@ -321,7 +321,7 @@ HpackIndexingTable::update_maximum_size(uint32_t new_size)
 const MIMEField *
 HpackDynamicTable::get_header_field(uint32_t index) const
 {
-  return _headers.at(index);
+  return this->_headers.at(this->_headers.size() - index - 1);
 }
 
 void
@@ -337,28 +337,18 @@ HpackDynamicTable::add_header_field(const MIMEField *field)
     // It is not an error to attempt to add an entry that is larger than
     // the maximum size; an attempt to add an entry larger than the entire
     // table causes the table to be emptied of all existing entries.
-    _headers.clear();
-    _mhdr->fields_clear();
-    _current_size = 0;
+    this->_headers.clear();
+    this->_mhdr->fields_clear();
+    this->_current_size = 0;
   } else {
-    _current_size += header_size;
-    while (_current_size > _maximum_size) {
-      int last_name_len, last_value_len;
-      MIMEField *last_field = _headers.back();
+    this->_current_size += header_size;
+    this->_evict_overflowed_entries();
 
-      last_field->name_get(&last_name_len);
-      last_field->value_get(&last_value_len);
-      _current_size -= ADDITIONAL_OCTETS + last_name_len + last_value_len;
-
-      _headers.erase(_headers.begin() + _headers.size() - 1);
-      _mhdr->field_delete(last_field, false);
-    }
-
-    MIMEField *new_field = _mhdr->field_create(name, name_len);
-    new_field->value_set(_mhdr->m_heap, _mhdr->m_mime, value, value_len);
-    _mhdr->field_attach(new_field);
+    MIMEField *new_field = this->_mhdr->field_create(name, name_len);
+    new_field->value_set(this->_mhdr->m_heap, this->_mhdr->m_mime, value, value_len);
+    this->_mhdr->field_attach(new_field);
     // XXX Because entire Vec instance is copied, Its too expensive!
-    _headers.insert(_headers.begin(), new_field);
+    this->_headers.push_back(new_field);
   }
 }
 
@@ -384,29 +374,46 @@ HpackDynamicTable::size() const
 bool
 HpackDynamicTable::update_maximum_size(uint32_t new_size)
 {
-  while (_current_size > new_size) {
-    if (_headers.size() == 0) {
-      return false;
-    }
-    int last_name_len, last_value_len;
-    MIMEField *last_field = _headers.back();
-
-    last_field->name_get(&last_name_len);
-    last_field->value_get(&last_value_len);
-    _current_size -= ADDITIONAL_OCTETS + last_name_len + last_value_len;
-
-    _headers.erase(_headers.begin() + _headers.size() - 1);
-    _mhdr->field_delete(last_field, false);
-  }
-
-  _maximum_size = new_size;
-  return true;
+  this->_maximum_size = new_size;
+  return this->_evict_overflowed_entries();
 }
 
 uint32_t
 HpackDynamicTable::length() const
 {
   return _headers.size();
+}
+
+bool
+HpackDynamicTable::_evict_overflowed_entries()
+{
+  if (this->_current_size <= this->_maximum_size) {
+    // Do nothing
+    return true;
+  }
+
+  size_t count = 0;
+  for (auto &h : this->_headers) {
+    int name_len, value_len;
+    h->name_get(&name_len);
+    h->value_get(&value_len);
+
+    this->_current_size -= ADDITIONAL_OCTETS + name_len + value_len;
+    this->_mhdr->field_delete(h, false);
+    ++count;
+
+    if (this->_current_size <= this->_maximum_size) {
+      break;
+    }
+  }
+
+  this->_headers.erase(this->_headers.begin(), this->_headers.begin() + count);
+
+  if (this->_headers.size() == 0) {
+    return false;
+  }
+
+  return true;
 }
 
 //
