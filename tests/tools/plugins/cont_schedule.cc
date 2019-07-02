@@ -36,8 +36,8 @@ static char support_email[] = "duke8253@apache.org";
 
 static int test_flag = 0;
 
-static TSEventThread test_thread = nullptr;
-static TSThread check_thread     = nullptr;
+static TSEventThread thread_1 = nullptr;
+static TSEventThread thread_2 = nullptr;
 
 static int TSContSchedule_handler_1(TSCont contp, TSEvent event, void *edata);
 static int TSContSchedule_handler_2(TSCont contp, TSEvent event, void *edata);
@@ -51,8 +51,9 @@ static int
 TSContSchedule_handler_1(TSCont contp, TSEvent event, void *edata)
 {
   TSDebug(DEBUG_TAG_HDL, "TSContSchedule handler 1 thread [%p]", TSThreadSelf());
-  if (test_thread == nullptr) {
-    test_thread = TSEventThreadSelf();
+  if (thread_1 == nullptr) {
+    // First time entering this handler, before everything else starts.
+    thread_1 = TSEventThreadSelf();
 
     TSCont contp_new = TSContCreate(TSContSchedule_handler_2, TSMutexCreate());
 
@@ -60,15 +61,20 @@ TSContSchedule_handler_1(TSCont contp, TSEvent event, void *edata)
       TSDebug(DEBUG_TAG_HDL, "[%s] could not create continuation", plugin_name);
       abort();
     } else {
+      // Set the affinity of contp_new to thread_1, and schedule it twice.
       TSDebug(DEBUG_TAG_HDL, "[%s] scheduling continuation", plugin_name);
-      TSContThreadAffinitySet(contp_new, test_thread);
+      TSContThreadAffinitySet(contp_new, thread_1);
       TSContSchedule(contp_new, 0);
       TSContSchedule(contp_new, 100);
     }
-  } else if (check_thread == nullptr) {
+  } else if (thread_2 == nullptr) {
     TSDebug(DEBUG_TAG_CHK, "fail [schedule delay not applied]");
   } else {
-    if (check_thread != TSThreadSelf()) {
+    // Second time in here, should be after the two scheduled handler_2 runs.
+    // Since handler_1 has no affinity set, we should be on a different thread now.
+    // Also, thread_2 should be the same as thread_1, since thread_1 was set as
+    // affinity for handler_2.
+    if (thread_2 != TSEventThreadSelf() && thread_2 == thread_1) {
       TSDebug(DEBUG_TAG_CHK, "pass [should not be the same thread]");
     } else {
       TSDebug(DEBUG_TAG_CHK, "fail [on the same thread]");
@@ -81,9 +87,13 @@ static int
 TSContSchedule_handler_2(TSCont contp, TSEvent event, void *edata)
 {
   TSDebug(DEBUG_TAG_HDL, "TSContSchedule handler 2 thread [%p]", TSThreadSelf());
-  if (check_thread == nullptr) {
-    check_thread = TSThreadSelf();
-  } else if (check_thread == TSThreadSelf()) {
+  if (thread_2 == nullptr) {
+    // First time in this handler, should get here after handler_1,
+    // and also record the thread id.
+    thread_2 = TSEventThreadSelf();
+  } else if (thread_2 == TSEventThreadSelf()) {
+    // Second time in here, since the affinity is set to thread_1, we should be
+    // on the same thread as last time.
     TSDebug(DEBUG_TAG_CHK, "pass [should be the same thread]");
   } else {
     TSDebug(DEBUG_TAG_CHK, "fail [not the same thread]");
@@ -94,16 +104,18 @@ TSContSchedule_handler_2(TSCont contp, TSEvent event, void *edata)
 static int
 TSContScheduleOnPool_handler_1(TSCont contp, TSEvent event, void *edata)
 {
+  // This runs on ET_NET threads.
   TSDebug(DEBUG_TAG_HDL, "TSContScheduleOnPool handler 1 thread [%p]", TSThreadSelf());
-  if (check_thread == nullptr) {
-    check_thread = TSThreadSelf();
+  if (thread_1 == nullptr) {
+    // First time here, record thread id.
+    thread_1 = TSEventThreadSelf();
   } else {
-    if (check_thread != TSThreadSelf()) {
+    // Second time here, we should be on a different thread since affinity was cleared.
+    if (thread_1 != TSEventThreadSelf()) {
       TSDebug(DEBUG_TAG_CHK, "pass [should not be the same thread]");
     } else {
       TSDebug(DEBUG_TAG_CHK, "fail [on the same thread]");
     }
-    check_thread = nullptr;
   }
   return 0;
 }
@@ -111,16 +123,20 @@ TSContScheduleOnPool_handler_1(TSCont contp, TSEvent event, void *edata)
 static int
 TSContScheduleOnPool_handler_2(TSCont contp, TSEvent event, void *edata)
 {
+  // This runs on ET_TASK threads.
   TSDebug(DEBUG_TAG_HDL, "TSContScheduleOnPool handler 2 thread [%p]", TSThreadSelf());
-  if (check_thread == nullptr) {
-    check_thread = TSThreadSelf();
+  if (thread_2 == nullptr) {
+    // First time here, record thread id.
+    thread_2 = TSEventThreadSelf();
   } else {
-    if (check_thread == TSThreadSelf()) {
+    if (thread_2 == TSEventThreadSelf()) {
+      // Second time there, we should be on the same thread even though affinity was cleared,
+      // reason being plugin is running on ET_TASK threads, and we were scheduled on ET_TASK
+      // threads as well, so the thread the plugin is on is used and set to affinity.
       TSDebug(DEBUG_TAG_CHK, "pass [should be the same thread]");
     } else {
       TSDebug(DEBUG_TAG_CHK, "fail [not the same thread]");
     }
-    check_thread = TSThreadSelf();
   }
   return 0;
 }
@@ -128,9 +144,11 @@ TSContScheduleOnPool_handler_2(TSCont contp, TSEvent event, void *edata)
 static int
 TSContScheduleOnThread_handler_1(TSCont contp, TSEvent event, void *edata)
 {
+  // Mostly same as TSContSchedule_handler_1, no need to set affinity
+  // since we are scheduling directly on to a thread.
   TSDebug(DEBUG_TAG_HDL, "TSContScheduleOnThread handler 1 thread [%p]", TSThreadSelf());
-  if (test_thread == nullptr) {
-    test_thread = TSEventThreadSelf();
+  if (thread_1 == nullptr) {
+    thread_1 = TSEventThreadSelf();
 
     TSCont contp_new = TSContCreate(TSContScheduleOnThread_handler_2, TSMutexCreate());
 
@@ -139,13 +157,13 @@ TSContScheduleOnThread_handler_1(TSCont contp, TSEvent event, void *edata)
       abort();
     } else {
       TSDebug(DEBUG_TAG_HDL, "[%s] scheduling continuation", plugin_name);
-      TSContScheduleOnThread(contp_new, 0, test_thread);
-      TSContScheduleOnThread(contp_new, 100, test_thread);
+      TSContScheduleOnThread(contp_new, 0, thread_1);
+      TSContScheduleOnThread(contp_new, 100, thread_1);
     }
-  } else if (check_thread == nullptr) {
+  } else if (thread_2 == nullptr) {
     TSDebug(DEBUG_TAG_CHK, "fail [schedule delay not applied]");
   } else {
-    if (check_thread != TSThreadSelf()) {
+    if (thread_2 != TSEventThreadSelf()) {
       TSDebug(DEBUG_TAG_CHK, "pass [should not be the same thread]");
     } else {
       TSDebug(DEBUG_TAG_CHK, "fail [on the same thread]");
@@ -158,9 +176,9 @@ static int
 TSContScheduleOnThread_handler_2(TSCont contp, TSEvent event, void *edata)
 {
   TSDebug(DEBUG_TAG_HDL, "TSContScheduleOnThread handler 2 thread [%p]", TSThreadSelf());
-  if (check_thread == nullptr) {
-    check_thread = TSThreadSelf();
-  } else if (check_thread == TSThreadSelf()) {
+  if (thread_2 == nullptr) {
+    thread_2 = TSEventThreadSelf();
+  } else if (thread_2 == TSEventThreadSelf()) {
     TSDebug(DEBUG_TAG_CHK, "pass [should be the same thread]");
   } else {
     TSDebug(DEBUG_TAG_CHK, "fail [not the same thread]");
@@ -173,7 +191,7 @@ TSContThreadAffinity_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSDebug(DEBUG_TAG_HDL, "TSContThreadAffinity handler thread [%p]", TSThreadSelf());
 
-  test_thread = TSEventThreadSelf();
+  thread_1 = TSEventThreadSelf();
 
   if (TSContThreadAffinityGet(contp) != nullptr) {
     TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is not null]");
@@ -181,7 +199,7 @@ TSContThreadAffinity_handler(TSCont contp, TSEvent event, void *edata)
     if (TSContThreadAffinityGet(contp) == nullptr) {
       TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is cleared]");
       TSContThreadAffinitySet(contp, TSEventThreadSelf());
-      if (TSContThreadAffinityGet(contp) == test_thread) {
+      if (TSContThreadAffinityGet(contp) == thread_1) {
         TSDebug(DEBUG_TAG_CHK, "pass [affinity thread is set]");
       } else {
         TSDebug(DEBUG_TAG_CHK, "fail [affinity thread is not set]");
