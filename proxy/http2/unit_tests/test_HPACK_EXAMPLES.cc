@@ -1,45 +1,40 @@
 /** @file
- *
- *  Regression Tests for HPACK
- *
- *  @section license License
- *
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+
+    Catch-based unit tests for HPACK
+
+    Some test cases are based on examples of specification.
+    - https://tools.ietf.org/html/rfc7541#appendix-C
+
+    @section license License
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
  */
+
+#include "catch.hpp"
 
 #include "HPACK.h"
 #include "HuffmanCodec.h"
-#include "tscore/TestBox.h"
 
 // Constants for regression test
-const static int DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST = 256;
-const static int BUFSIZE_FOR_REGRESSION_TEST            = 128;
-const static int MAX_TEST_FIELD_NUM                     = 8;
-const static int MAX_REQUEST_HEADER_SIZE                = 131072;
-const static int MAX_TABLE_SIZE                         = 4096;
-
-/***********************************************************************************
- *                                                                                 *
- *                       Regression test for HPACK                                 *
- *                                                                                 *
- *  Some test cases are based on examples of specification.                        *
- *  - https://tools.ietf.org/html/rfc7541#appendix-C                               *
- *                                                                                 *
- ***********************************************************************************/
+static constexpr int DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST = 256;
+static constexpr int BUFSIZE_FOR_REGRESSION_TEST            = 128;
+static constexpr int MAX_TEST_FIELD_NUM                     = 8;
+static constexpr int MAX_REQUEST_HEADER_SIZE                = 131072;
+static constexpr int MAX_TABLE_SIZE                         = 4096;
 
 // [RFC 7541] C.1. Integer Representation Examples
 const static struct {
@@ -311,16 +306,8 @@ const static struct {
     {0, (char *)"", (char *)""} // End of this test case
   }};
 
-/***********************************************************************************
- *                                                                                 *
- *                                Regression test codes                            *
- *                                                                                 *
- ***********************************************************************************/
-
-REGRESSION_TEST(HPACK_EncodeInteger)(RegressionTest *t, int, int *pstatus)
+TEST_CASE("HPACK_EncodeInteger", "[http2][hpack]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
 
   for (const auto &i : integer_test_case) {
@@ -328,16 +315,14 @@ REGRESSION_TEST(HPACK_EncodeInteger)(RegressionTest *t, int, int *pstatus)
 
     int len = encode_integer(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, i.raw_integer, i.prefix);
 
-    box.check(len == i.encoded_field_len, "encoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(len > 0 && memcmp(buf, i.encoded_field, len) == 0, "encoded value was invalid");
+    REQUIRE(len > 0);
+    REQUIRE(len == i.encoded_field_len);
+    REQUIRE(memcmp(buf, i.encoded_field, len) == 0);
   }
 }
 
-REGRESSION_TEST(HPACK_EncodeString)(RegressionTest *t, int, int *pstatus)
+TEST_CASE("HPACK_EncodeString", "[http2][hpack]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
   int len;
 
@@ -347,17 +332,14 @@ REGRESSION_TEST(HPACK_EncodeString)(RegressionTest *t, int, int *pstatus)
 
     len = encode_string(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, string_test_case[i].raw_string, string_test_case[i].raw_string_len);
 
-    box.check(len == string_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len,
-              string_test_case[i].encoded_field_len);
-    box.check(len > 0 && memcmp(buf, string_test_case[i].encoded_field, len) == 0, "encoded string was invalid");
+    REQUIRE(len > 0);
+    REQUIRE(len == string_test_case[i].encoded_field_len);
+    REQUIRE(memcmp(buf, string_test_case[i].encoded_field, len) == 0);
   }
 }
 
-REGRESSION_TEST(HPACK_EncodeIndexedHeaderField)(RegressionTest *t, int, int *pstatus)
+TEST_CASE("HPACK_EncodeIndexedHeaderField", "[http2][hpack]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
 
   for (const auto &i : indexed_test_case) {
@@ -365,16 +347,14 @@ REGRESSION_TEST(HPACK_EncodeIndexedHeaderField)(RegressionTest *t, int, int *pst
 
     int len = encode_indexed_header_field(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, i.index);
 
-    box.check(len == i.encoded_field_len, "encoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(len > 0 && memcmp(buf, i.encoded_field, len) == 0, "encoded value was invalid");
+    REQUIRE(len > 0);
+    REQUIRE(len == i.encoded_field_len);
+    REQUIRE(memcmp(buf, i.encoded_field, len) == 0);
   }
 }
 
-REGRESSION_TEST(HPACK_EncodeLiteralHeaderField)(RegressionTest *t, int, int *pstatus)
+TEST_CASE("HPACK_EncodeLiteralHeaderField", "[http2][hpack]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
   int len;
   HpackIndexingTable indexing_table(4096);
@@ -398,17 +378,14 @@ REGRESSION_TEST(HPACK_EncodeLiteralHeaderField)(RegressionTest *t, int, int *pst
                                                       literal_test_case[i].type);
     }
 
-    box.check(len == literal_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len,
-              literal_test_case[i].encoded_field_len);
-    box.check(len > 0 && memcmp(buf, literal_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+    REQUIRE(len > 0);
+    REQUIRE(len == literal_test_case[i].encoded_field_len);
+    REQUIRE(memcmp(buf, literal_test_case[i].encoded_field, len) == 0);
   }
 }
 
-REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
+TEST_CASE("HPACK_Encode", "[http2][hpack]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
   HpackIndexingTable indexing_table(4096);
   indexing_table.update_maximum_size(DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST);
@@ -434,14 +411,9 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
     uint64_t buf_len = BUFSIZE_FOR_REGRESSION_TEST;
     int64_t len      = hpack_encode_header_block(indexing_table, buf, buf_len, headers);
 
-    if (len < 0) {
-      box.check(false, "hpack_encode_header_blocks returned negative value: %" PRId64, len);
-      break;
-    }
-
-    box.check(len == encoded_field_response_test_case[i].encoded_field_len, "encoded length was %" PRId64 ", expecting %d", len,
-              encoded_field_response_test_case[i].encoded_field_len);
-    box.check(len > 0 && memcmp(buf, encoded_field_response_test_case[i].encoded_field, len) == 0, "encoded value was invalid");
+    REQUIRE(len > 0);
+    REQUIRE(len == encoded_field_response_test_case[i].encoded_field_len);
+    REQUIRE(memcmp(buf, encoded_field_response_test_case[i].encoded_field, len) == 0);
 
     // Check dynamic table
     uint32_t expected_dynamic_table_size = 0;
@@ -457,35 +429,29 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
       }
 
       HpackLookupResult lookupResult = indexing_table.lookup(expected_name, expected_name_len, expected_value, expected_value_len);
-      box.check(lookupResult.match_type == HpackMatch::EXACT && lookupResult.index_type == HpackIndex::DYNAMIC,
-                "the header field is not indexed");
+      CHECK(lookupResult.match_type == HpackMatch::EXACT);
+      CHECK(lookupResult.index_type == HpackIndex::DYNAMIC);
 
       expected_dynamic_table_size += dynamic_table_response_test_case[i][j].size;
     }
-    box.check(indexing_table.size() == expected_dynamic_table_size, "dynamic table is unexpected size: %d", indexing_table.size());
+    REQUIRE(indexing_table.size() == expected_dynamic_table_size);
   }
 }
 
-REGRESSION_TEST(HPACK_DecodeInteger)(RegressionTest *t, int, int *pstatus)
+TEST_CASE("HPACK_DecodeInteger", "[http2][hpack]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   uint32_t actual;
 
   for (const auto &i : integer_test_case) {
     int len = decode_integer(actual, i.encoded_field, i.encoded_field + i.encoded_field_len, i.prefix);
 
-    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(actual == i.raw_integer, "decoded value was %d, expected %d", actual, i.raw_integer);
+    REQUIRE(len == i.encoded_field_len);
+    REQUIRE(actual == i.raw_integer);
   }
 }
 
-REGRESSION_TEST(HPACK_DecodeString)(RegressionTest *t, int, int *pstatus)
+TEST_CASE("HPACK_DecodeString", "[http2][hpack]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   Arena arena;
   char *actual        = nullptr;
   uint32_t actual_len = 0;
@@ -495,17 +461,14 @@ REGRESSION_TEST(HPACK_DecodeString)(RegressionTest *t, int, int *pstatus)
   for (const auto &i : string_test_case) {
     int len = decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len);
 
-    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(actual_len == i.raw_string_len, "length of decoded string was %d, expecting %d", actual_len, i.raw_string_len);
-    box.check(memcmp(actual, i.raw_string, actual_len) == 0, "decoded string was invalid");
+    REQUIRE(len == i.encoded_field_len);
+    REQUIRE(actual_len == i.raw_string_len);
+    REQUIRE(memcmp(actual, i.raw_string, actual_len) == 0);
   }
 }
 
-REGRESSION_TEST(HPACK_DecodeIndexedHeaderField)(RegressionTest *t, int, int *pstatus)
+TEST_CASE("HPACK_DecodeIndexedHeaderField", "[http2][hpack]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   HpackIndexingTable indexing_table(4096);
 
   for (const auto &i : indexed_test_case) {
@@ -515,24 +478,22 @@ REGRESSION_TEST(HPACK_DecodeIndexedHeaderField)(RegressionTest *t, int, int *pst
     MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
     int len = decode_indexed_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table);
-
-    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
+    REQUIRE(len == i.encoded_field_len);
 
     int name_len;
     const char *name = header.name_get(&name_len);
-    box.check(len > 0 && memcmp(name, i.raw_name, name_len) == 0, "decoded header name was invalid");
+    REQUIRE(name_len > 0);
+    REQUIRE(memcmp(name, i.raw_name, name_len) == 0);
 
     int actual_value_len;
     const char *actual_value = header.value_get(&actual_value_len);
-    box.check(memcmp(actual_value, i.raw_value, actual_value_len) == 0, "decoded header value was invalid");
+    REQUIRE(actual_value_len > 0);
+    REQUIRE(memcmp(actual_value, i.raw_value, actual_value_len) == 0);
   }
 }
 
-REGRESSION_TEST(HPACK_DecodeLiteralHeaderField)(RegressionTest *t, int, int *pstatus)
+TEST_CASE("HPACK_DecodeLiteralHeaderField", "[http2][hpack]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   HpackIndexingTable indexing_table(4096);
 
   for (const auto &i : literal_test_case) {
@@ -542,24 +503,22 @@ REGRESSION_TEST(HPACK_DecodeLiteralHeaderField)(RegressionTest *t, int, int *pst
     MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
     int len = decode_literal_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table);
-
-    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
+    REQUIRE(len == i.encoded_field_len);
 
     int name_len;
     const char *name = header.name_get(&name_len);
-    box.check(name_len > 0 && memcmp(name, i.raw_name, name_len) == 0, "decoded header name was invalid");
+    REQUIRE(name_len > 0);
+    REQUIRE(memcmp(name, i.raw_name, name_len) == 0);
 
     int actual_value_len;
     const char *actual_value = header.value_get(&actual_value_len);
-    box.check(actual_value_len > 0 && memcmp(actual_value, i.raw_value, actual_value_len) == 0, "decoded header value was invalid");
+    REQUIRE(actual_value_len > 0);
+    REQUIRE(memcmp(actual_value, i.raw_value, actual_value_len) == 0);
   }
 }
 
-REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
+TEST_CASE("HPACK_Decode", "[http2][hpack]")
 {
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
   HpackIndexingTable indexing_table(4096);
 
   for (unsigned int i = 0; i < sizeof(encoded_field_request_test_case) / sizeof(encoded_field_request_test_case[0]); i++) {
@@ -577,20 +536,13 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
       }
 
       MIMEField *field = headers->field_find(expected_name, strlen(expected_name));
-      box.check(field != nullptr, "A MIMEField that has \"%s\" as name doesn't exist", expected_name);
+      CHECK(field != nullptr);
 
       if (field) {
         int actual_value_len;
         const char *actual_value = field->value_get(&actual_value_len);
-        box.check(strncmp(expected_value, actual_value, actual_value_len) == 0,
-                  "A MIMEField that has \"%s\" as value doesn't exist", expected_value);
+        CHECK(strncmp(expected_value, actual_value, actual_value_len) == 0);
       }
     }
   }
-}
-
-void
-forceLinkRegressionHPACK()
-{
-  // NOTE: Do Nothing
 }

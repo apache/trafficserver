@@ -105,6 +105,7 @@ proxy/http/test_proxy_http
 proxy/http2/test_Huffmancode
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_HPACK
+proxy/http2/test_HPACK_EXAMPLES
 proxy/http2/hpack-tests/results
 proxy/logging/test_LogUtils
 proxy/logging/test_LogUtils2

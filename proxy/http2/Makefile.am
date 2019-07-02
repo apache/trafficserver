@@ -52,19 +52,16 @@ libhttp2_a_SOURCES = \
 	HuffmanCodec.cc \
 	HuffmanCodec.h
 
-if BUILD_TESTS
-libhttp2_a_SOURCES += \
-	RegressionHPACK.cc
-endif
-
 check_PROGRAMS = \
 	test_Huffmancode \
 	test_Http2DependencyTree \
+	test_HPACK_EXAMPLES \
 	test_HPACK
 
 TESTS = \
 	test_Huffmancode \
 	test_Http2DependencyTree \
+	test_HPACK_EXAMPLES \
 	test_HPACK
 
 test_Huffmancode_LDADD = \
@@ -104,6 +101,32 @@ test_HPACK_SOURCES = \
 	HPACK.cc \
 	HPACK.h
 
-clang-tidy-local: $(libhttp2_a_SOURCES) $(test_Huffmancode_SOURCES) \
-		$(test_Http2DependencyTree_SOURCES) $(test_HPACK_SOURCES)
+test_HPACK_EXAMPLES_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I$(abs_top_srcdir)/tests/include
+
+test_HPACK_EXAMPLES_LDADD = \
+	$(top_builddir)/proxy/hdrs/libhdrs.a \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	@HWLOC_LIBS@
+
+test_HPACK_EXAMPLES_SOURCES = \
+	unit_tests/unit_test_main.cc \
+	unit_tests/test_HPACK_EXAMPLES.cc \
+	HuffmanCodec.cc \
+	HuffmanCodec.h \
+	HPACK.cc \
+	HPACK.h
+
+clang-tidy-local: \
+	$(libhttp2_a_SOURCES) \
+	$(test_Huffmancode_SOURCES) \
+	$(test_Http2DependencyTree_SOURCES) \
+	$(test_HPACK_SOURCES) \
+	$(test_HPACK_EXAMPLES_SOURCES) \
 	$(CXX_Clang_Tidy)

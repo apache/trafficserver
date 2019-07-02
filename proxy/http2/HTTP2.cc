@@ -820,13 +820,6 @@ Http2::init()
 
 #if TS_HAS_TESTS
 
-void forceLinkRegressionHPACK();
-void
-forceLinkRegressionHPACKCaller()
-{
-  forceLinkRegressionHPACK();
-}
-
 #include "tscore/TestBox.h"
 
 /***********************************************************************************
