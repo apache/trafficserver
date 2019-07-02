@@ -73,7 +73,7 @@ ts.Disk.sni_yaml.AddLines([
 ])
 
 # Set up plugin
-Test.PreparePlugin(Test.Variables.AtsExampleDir + '/cert_update/cert_update.cc', ts)
+Test.PreparePlugin(Test.Variables.AtsExampleDir + '/plugins/c-api/cert_update/cert_update.cc', ts)
 
 ts.Disk.plugin_config.AddLine(
     'cert_update.so'
