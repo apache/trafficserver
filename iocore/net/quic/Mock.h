@@ -463,6 +463,38 @@ public:
   }
 };
 
+class MockQUICPacket : public QUICPacket
+{
+public:
+  const IpEndpoint &
+  from() const override
+  {
+    return this->_from;
+  }
+
+  const IpEndpoint &
+  to() const override
+  {
+    return this->_to;
+  }
+
+  void
+  set_to(const IpEndpoint ep)
+  {
+    this->_to = ep;
+  }
+
+  void
+  set_from(const IpEndpoint ep)
+  {
+    this->_from = ep;
+  }
+
+private:
+  IpEndpoint _to;
+  IpEndpoint _from;
+};
+
 class MockQUICHandshakeProtocol : public QUICHandshakeProtocol
 {
 public:

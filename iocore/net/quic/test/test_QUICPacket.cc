@@ -41,7 +41,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     ats_unique_buf uinput = ats_unique_malloc(sizeof(input));
     memcpy(uinput.get(), input, sizeof(input));
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, std::move(uinput), sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {}, std::move(uinput), sizeof(input), 0);
     CHECK(header->size() == 22);
     CHECK(header->packet_size() == 30);
     CHECK(header->type() == QUICPacketType::VERSION_NEGOTIATION);
@@ -68,7 +68,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     ats_unique_buf uinput = ats_unique_malloc(sizeof(input));
     memcpy(uinput.get(), input, sizeof(input));
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, std::move(uinput), sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {}, std::move(uinput), sizeof(input), 0);
     CHECK(header->size() == sizeof(input) - 2); // Packet Length - Payload Length
     CHECK(header->packet_size() == sizeof(input));
     CHECK(header->type() == QUICPacketType::INITIAL);
@@ -97,7 +97,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
 
     const uint8_t retry_token[] = {0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0};
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, std::move(uinput), sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {}, std::move(uinput), sizeof(input), 0);
     CHECK(header->size() == sizeof(input) - 16); // Packet Length - Payload Length (Retry Token)
     CHECK(header->packet_size() == sizeof(input));
     CHECK(header->type() == QUICPacketType::RETRY);
@@ -220,7 +220,7 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
     ats_unique_buf uinput = ats_unique_malloc(sizeof(input));
     memcpy(uinput.get(), input, sizeof(input));
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, std::move(uinput), sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {}, std::move(uinput), sizeof(input), 0);
     CHECK(header->size() == 23);
     CHECK(header->packet_size() == 25);
     CHECK(header->key_phase() == QUICKeyPhase::PHASE_0);

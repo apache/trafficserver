@@ -31,8 +31,8 @@
 TEST_CASE("QUICPathValidator", "[quic]")
 {
   MockQUICConnectionInfoProvider cinfo_provider;
-  QUICPathValidator pv_c(cinfo_provider);
-  QUICPathValidator pv_s(cinfo_provider);
+  QUICPathValidator pv_c(cinfo_provider, [](bool x) {});
+  QUICPathValidator pv_s(cinfo_provider, [](bool x) {});
 
   SECTION("interests")
   {
@@ -50,42 +50,55 @@ TEST_CASE("QUICPathValidator", "[quic]")
   {
     uint8_t frame_buf[1024];
     uint32_t seq_num = 1;
+    IpEndpoint local, remote;
+    ats_ip_pton("127.0.0.1:4433", &local);
+    ats_ip_pton("127.0.0.1:12345", &remote);
+    QUICPath path = {local, remote};
 
     // Send a challenge
-    CHECK(!pv_c.is_validating());
-    CHECK(!pv_c.is_validated());
+    CHECK(!pv_c.is_validating(path));
+    CHECK(!pv_c.is_validated(path));
     REQUIRE(!pv_c.will_generate_frame(QUICEncryptionLevel::ONE_RTT, seq_num));
-    pv_c.validate();
-    CHECK(pv_c.is_validating());
-    CHECK(!pv_c.is_validated());
+    pv_c.validate(path);
+    CHECK(pv_c.is_validating(path));
+    CHECK(!pv_c.is_validated(path));
     REQUIRE(pv_c.will_generate_frame(QUICEncryptionLevel::ONE_RTT, seq_num));
     auto frame = pv_c.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 1024, 1024, 0, seq_num);
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::PATH_CHALLENGE);
-    CHECK(pv_c.is_validating());
-    CHECK(!pv_c.is_validated());
+    CHECK(pv_c.is_validating(path));
+    CHECK(!pv_c.is_validated(path));
     ++seq_num;
 
     // Receive the challenge and respond
-    CHECK(!pv_s.is_validating());
-    CHECK(!pv_s.is_validated());
+    CHECK(!pv_s.is_validating(path));
+    CHECK(!pv_s.is_validated(path));
     REQUIRE(!pv_s.will_generate_frame(QUICEncryptionLevel::ONE_RTT, seq_num));
     auto error = pv_s.handle_frame(QUICEncryptionLevel::ONE_RTT, *frame);
     REQUIRE(!error);
-    CHECK(!pv_s.is_validating());
-    CHECK(!pv_s.is_validated());
+    CHECK(!pv_s.is_validating(path));
+    CHECK(!pv_s.is_validated(path));
     REQUIRE(pv_s.will_generate_frame(QUICEncryptionLevel::ONE_RTT, seq_num));
     frame = pv_s.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 1024, 1024, 0, seq_num);
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::PATH_RESPONSE);
-    CHECK(!pv_s.is_validating());
-    CHECK(!pv_s.is_validated());
+    CHECK(!pv_s.is_validating(path));
+    CHECK(!pv_s.is_validated(path));
     ++seq_num;
 
+    uint8_t buf[1024];
+    size_t len;
+    uint8_t received_frame_buf[1024];
+    frame->store(buf, &len, 1024);
+    MockQUICPacket mock_packet;
+    auto received_frame = QUICFrameFactory::create(received_frame_buf, buf, len, &mock_packet);
+    mock_packet.set_from(remote);
+    mock_packet.set_to(local);
+
     // Receive the response
-    error = pv_c.handle_frame(QUICEncryptionLevel::ONE_RTT, *frame);
+    error = pv_c.handle_frame(QUICEncryptionLevel::ONE_RTT, *received_frame);
     REQUIRE(!error);
-    CHECK(!pv_c.is_validating());
-    CHECK(pv_c.is_validated());
+    CHECK(!pv_c.is_validating(path));
+    CHECK(pv_c.is_validated(path));
   }
 }

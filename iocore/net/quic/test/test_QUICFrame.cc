@@ -84,7 +84,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
       0x01,                   // Stream ID
       0x01, 0x02, 0x03, 0x04, // Stream Data
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::STREAM);
     CHECK(frame1->size() == 6);
     const QUICStreamFrame *stream_frame = static_cast<const QUICStreamFrame *>(frame1);
@@ -103,7 +103,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
       0x05,                         // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::STREAM);
     CHECK(frame1->size() == 8);
     const QUICStreamFrame *stream_frame = static_cast<const QUICStreamFrame *>(frame1);
@@ -123,7 +123,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
       0x05,                         // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::STREAM);
     CHECK(frame1->size() == 9);
 
@@ -144,7 +144,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
       0x05,                         // Data Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Stream Data
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::STREAM);
     CHECK(frame1->size() == 9);
 
@@ -165,7 +165,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
       0x05,                   // Data Length
       0x01, 0x02, 0x03, 0x04, // BAD Stream Data
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::STREAM);
     CHECK(frame1->valid() == false);
   }
@@ -176,7 +176,7 @@ TEST_CASE("Load STREAM Frame", "[quic]")
       0x0e, // 0b00001OLF (OLF=110)
       0x01, // Stream ID
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::STREAM);
     CHECK(frame1->valid() == false);
   }
@@ -428,7 +428,7 @@ TEST_CASE("CRYPTO Frame", "[quic]")
       0x05,                         // Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Crypto Data
     };
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::CRYPTO);
     CHECK(frame->size() == sizeof(buf));
 
@@ -444,7 +444,7 @@ TEST_CASE("CRYPTO Frame", "[quic]")
       0x06,                   // Type
       0x80, 0x01, 0x00, 0x00, // Offset
     };
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::CRYPTO);
     CHECK(frame->valid() == false);
   }
@@ -486,7 +486,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
       0x00,       // Ack Block Count
       0x00,       // Ack Block Section
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::ACK);
     CHECK(frame1->size() == 6);
     const QUICAckFrame *ack_frame1 = static_cast<const QUICAckFrame *>(frame1);
@@ -505,7 +505,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
       0x00,                   // Ack Block Count
       0x80, 0x00, 0x00, 0x01, // Ack Block Section (First ACK Block Length)
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::ACK);
     CHECK(frame1->size() == 12);
 
@@ -534,7 +534,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
       0xc9, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, // Ack Block Section (ACK Block 2 Length)
     };
 
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::ACK);
     CHECK(frame1->size() == 21);
     const QUICAckFrame *ack_frame1 = static_cast<const QUICAckFrame *>(frame1);
@@ -565,7 +565,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
       0x12, // Largest Acknowledged
     };
 
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::ACK);
     CHECK(frame1->valid() == false);
   }
@@ -583,7 +583,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
       0x85, 0x06, 0x07, 0x08, // Ack Block Section (Gap 2)
     };
 
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::ACK);
     CHECK(frame1->valid() == false);
   }
@@ -601,7 +601,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
       0x02, // ECT1
       0x03, // ECN-CE
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::ACK);
     CHECK(frame1->size() == 9);
     const QUICAckFrame *ack_frame1 = static_cast<const QUICAckFrame *>(frame1);
@@ -627,7 +627,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
       0x01, // ECT0
       0x02, // ECT1
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::ACK);
     CHECK(frame1->valid() == false);
   }
@@ -695,7 +695,7 @@ TEST_CASE("Load RESET_STREAM Frame", "[quic]")
       0x00, 0x01,                                    // Error Code
       0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::RESET_STREAM);
     CHECK(frame1->size() == 15);
     const QUICRstStreamFrame *rst_stream_frame1 = static_cast<const QUICRstStreamFrame *>(frame1);
@@ -712,7 +712,7 @@ TEST_CASE("Load RESET_STREAM Frame", "[quic]")
       0x92, 0x34, 0x56, 0x78, // Stream ID
       0x00, 0x01,             // Error Code
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::RESET_STREAM);
     CHECK(frame1->valid() == false);
   }
@@ -743,7 +743,7 @@ TEST_CASE("Load Ping Frame", "[quic]")
   uint8_t buf[] = {
     0x01, // Type
   };
-  const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+  const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
   CHECK(frame->type() == QUICFrameType::PING);
   CHECK(frame->size() == 1);
 
@@ -774,7 +774,7 @@ TEST_CASE("Load Padding Frame", "[quic]")
   uint8_t buf1[] = {
     0x00, 0x00, 0x00 // Type
   };
-  const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+  const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
   CHECK(frame1->type() == QUICFrameType::PADDING);
   CHECK(frame1->size() == 3);
   const QUICPaddingFrame *paddingFrame1 = static_cast<const QUICPaddingFrame *>(frame1);
@@ -811,7 +811,7 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
       0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
     };
 
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::CONNECTION_CLOSE);
     CHECK(frame->size() == sizeof(buf));
 
@@ -832,7 +832,7 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
       0x05,       // Reason Phrase Length
     };
 
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::CONNECTION_CLOSE);
     CHECK(frame->valid() == false);
   }
@@ -845,7 +845,7 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
       0x04,       // Frame Type
       0x00,       // Reason Phrase Length
     };
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::CONNECTION_CLOSE);
     CHECK(frame->size() == sizeof(buf));
 
@@ -905,7 +905,7 @@ TEST_CASE("Load MaxData Frame", "[quic]")
       0x10,                                          // Type
       0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Data
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::MAX_DATA);
     CHECK(frame1->size() == 9);
     const QUICMaxDataFrame *max_data_frame = static_cast<const QUICMaxDataFrame *>(frame1);
@@ -918,7 +918,7 @@ TEST_CASE("Load MaxData Frame", "[quic]")
     uint8_t buf1[] = {
       0x10, // Type
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::MAX_DATA);
     CHECK(frame1->valid() == false);
   }
@@ -951,7 +951,7 @@ TEST_CASE("Load MaxStreamData Frame", "[quic]")
       0x81, 0x02, 0x03, 0x04,                        // Stream ID
       0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Maximum Stream Data
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::MAX_STREAM_DATA);
     CHECK(frame1->size() == 13);
     const QUICMaxStreamDataFrame *maxStreamDataFrame1 = static_cast<const QUICMaxStreamDataFrame *>(frame1);
@@ -966,7 +966,7 @@ TEST_CASE("Load MaxStreamData Frame", "[quic]")
       0x11,                   // Type
       0x81, 0x02, 0x03, 0x04, // Stream ID
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::MAX_STREAM_DATA);
     CHECK(frame1->valid() == false);
   }
@@ -999,7 +999,7 @@ TEST_CASE("Load MaxStreams Frame", "[quic]")
       0x12,                   // Type
       0x81, 0x02, 0x03, 0x04, // Stream ID
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::MAX_STREAMS);
     CHECK(frame1->size() == 5);
     const QUICMaxStreamsFrame *max_streams_frame = static_cast<const QUICMaxStreamsFrame *>(frame1);
@@ -1011,7 +1011,7 @@ TEST_CASE("Load MaxStreams Frame", "[quic]")
     uint8_t buf1[] = {
       0x12, // Type
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::MAX_STREAMS);
     CHECK(frame1->valid() == false);
   }
@@ -1043,7 +1043,7 @@ TEST_CASE("Load DataBlocked Frame", "[quic]")
       0x14, // Type
       0x07, // Offset
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::DATA_BLOCKED);
     CHECK(frame1->size() == 2);
     const QUICDataBlockedFrame *blocked_stream_frame = static_cast<const QUICDataBlockedFrame *>(frame1);
@@ -1056,7 +1056,7 @@ TEST_CASE("Load DataBlocked Frame", "[quic]")
     uint8_t buf1[] = {
       0x14, // Type
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::DATA_BLOCKED);
     CHECK(frame1->valid() == false);
   }
@@ -1089,7 +1089,7 @@ TEST_CASE("Load StreamDataBlocked Frame", "[quic]")
       0x81, 0x02, 0x03, 0x04, // Stream ID
       0x07,                   // Offset
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::STREAM_DATA_BLOCKED);
     CHECK(frame1->size() == 6);
     const QUICStreamDataBlockedFrame *stream_blocked_frame = static_cast<const QUICStreamDataBlockedFrame *>(frame1);
@@ -1104,7 +1104,7 @@ TEST_CASE("Load StreamDataBlocked Frame", "[quic]")
       0x15,                   // Type
       0x81, 0x02, 0x03, 0x04, // Stream ID
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::STREAM_DATA_BLOCKED);
     CHECK(frame1->valid() == false);
   }
@@ -1137,7 +1137,7 @@ TEST_CASE("Load StreamsBlocked Frame", "[quic]")
       0x16,       // Type
       0x41, 0x02, // Stream ID
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::STREAMS_BLOCKED);
     CHECK(frame1->size() == 3);
     const QUICStreamIdBlockedFrame *stream_id_blocked_frame = static_cast<const QUICStreamIdBlockedFrame *>(frame1);
@@ -1150,7 +1150,7 @@ TEST_CASE("Load StreamsBlocked Frame", "[quic]")
     uint8_t buf1[] = {
       0x16, // Type
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::STREAMS_BLOCKED);
     CHECK(frame1->valid() == false);
   }
@@ -1186,7 +1186,7 @@ TEST_CASE("Load NewConnectionId Frame", "[quic]")
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
       0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::NEW_CONNECTION_ID);
     CHECK(frame1->size() == 28);
     const QUICNewConnectionIdFrame *new_con_id_frame = static_cast<const QUICNewConnectionIdFrame *>(frame1);
@@ -1206,7 +1206,7 @@ TEST_CASE("Load NewConnectionId Frame", "[quic]")
       0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::NEW_CONNECTION_ID);
     CHECK(frame1->valid() == false);
   }
@@ -1244,7 +1244,7 @@ TEST_CASE("Load STOP_SENDING Frame", "[quic]")
       0x92, 0x34, 0x56, 0x78, // Stream ID
       0x00, 0x01,             // Error Code
     };
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::STOP_SENDING);
     CHECK(frame->size() == 7);
 
@@ -1260,7 +1260,7 @@ TEST_CASE("Load STOP_SENDING Frame", "[quic]")
       0x05,                   // Type
       0x92, 0x34, 0x56, 0x78, // Stream ID
     };
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::STOP_SENDING);
     CHECK(frame->valid() == false);
   }
@@ -1293,7 +1293,7 @@ TEST_CASE("Load PATH_CHALLENGE Frame", "[quic]")
       0x1a,                                           // Type
       0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
     };
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::PATH_CHALLENGE);
     CHECK(frame->size() == 9);
 
@@ -1308,7 +1308,7 @@ TEST_CASE("Load PATH_CHALLENGE Frame", "[quic]")
       0x1a,                                     // Type
       0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xef, // Data
     };
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::PATH_CHALLENGE);
     CHECK(frame->valid() == false);
   }
@@ -1346,7 +1346,7 @@ TEST_CASE("Load PATH_RESPONSE Frame", "[quic]")
       0x1b,                                           // Type
       0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
     };
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::PATH_RESPONSE);
     CHECK(frame->size() == 9);
 
@@ -1361,7 +1361,7 @@ TEST_CASE("Load PATH_RESPONSE Frame", "[quic]")
       0x1b,                                     // Type
       0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, // Data
     };
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf));
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::PATH_RESPONSE);
     CHECK(frame->valid() == false);
   }
@@ -1405,7 +1405,7 @@ TEST_CASE("NEW_TOKEN Frame", "[quic]")
 
   SECTION("load")
   {
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, raw_new_token_frame, raw_new_token_frame_len);
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, raw_new_token_frame, raw_new_token_frame_len, nullptr);
     CHECK(frame->type() == QUICFrameType::NEW_TOKEN);
     CHECK(frame->size() == raw_new_token_frame_len);
 
@@ -1417,7 +1417,7 @@ TEST_CASE("NEW_TOKEN Frame", "[quic]")
 
   SECTION("bad load")
   {
-    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, raw_new_token_frame, raw_new_token_frame_len - 5);
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, raw_new_token_frame, raw_new_token_frame_len - 5, nullptr);
     CHECK(frame->type() == QUICFrameType::NEW_TOKEN);
     CHECK(frame->valid() == false);
   }
@@ -1452,7 +1452,7 @@ TEST_CASE("RETIRE_CONNECTION_ID Frame", "[quic]")
   SECTION("load")
   {
     const QUICFrame *frame =
-      QUICFrameFactory::create(frame_buf, raw_retire_connection_id_frame, raw_retire_connection_id_frame_len);
+      QUICFrameFactory::create(frame_buf, raw_retire_connection_id_frame, raw_retire_connection_id_frame_len, nullptr);
     CHECK(frame->type() == QUICFrameType::RETIRE_CONNECTION_ID);
     CHECK(frame->size() == raw_retire_connection_id_frame_len);
 
@@ -1464,7 +1464,7 @@ TEST_CASE("RETIRE_CONNECTION_ID Frame", "[quic]")
   SECTION("bad load")
   {
     const QUICFrame *frame =
-      QUICFrameFactory::create(frame_buf, raw_retire_connection_id_frame, raw_retire_connection_id_frame_len - 1);
+      QUICFrameFactory::create(frame_buf, raw_retire_connection_id_frame, raw_retire_connection_id_frame_len - 1, nullptr);
     CHECK(frame->type() == QUICFrameType::RETIRE_CONNECTION_ID);
     CHECK(frame->valid() == false);
   }
@@ -1489,7 +1489,7 @@ TEST_CASE("QUICFrameFactory Create Unknown Frame", "[quic]")
   uint8_t buf1[] = {
     0x20, // Type
   };
-  const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1));
+  const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
   CHECK(frame1 == nullptr);
 }
 
@@ -1505,13 +1505,13 @@ TEST_CASE("QUICFrameFactory Fast Create Frame", "[quic]")
     0x12,                   // Type
     0x85, 0x06, 0x07, 0x08, // Stream Data
   };
-  const QUICFrame &frame1 = factory.fast_create(buf1, sizeof(buf1));
+  const QUICFrame &frame1 = factory.fast_create(buf1, sizeof(buf1), nullptr);
   CHECK(frame1.type() == QUICFrameType::MAX_STREAMS);
 
   const QUICMaxStreamsFrame &max_streams_frame1 = static_cast<const QUICMaxStreamsFrame &>(frame1);
   CHECK(max_streams_frame1.maximum_streams() == 0x01020304);
 
-  const QUICFrame &frame2 = factory.fast_create(buf2, sizeof(buf2));
+  const QUICFrame &frame2 = factory.fast_create(buf2, sizeof(buf2), nullptr);
   CHECK(frame2.type() == QUICFrameType::MAX_STREAMS);
 
   const QUICMaxStreamsFrame &max_streams_frame2 = static_cast<const QUICMaxStreamsFrame &>(frame2);
@@ -1527,7 +1527,7 @@ TEST_CASE("QUICFrameFactory Fast Create Unknown Frame", "[quic]")
   uint8_t buf1[] = {
     0x20, // Type
   };
-  const QUICFrame &frame1 = factory.fast_create(buf1, sizeof(buf1));
+  const QUICFrame &frame1 = factory.fast_create(buf1, sizeof(buf1), nullptr);
   CHECK(frame1.type() == QUICFrameType::UNKNOWN);
 }
 

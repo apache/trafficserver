@@ -350,11 +350,11 @@ public:
   QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool ack_eliciting, bool probing,
              std::vector<QUICFrameInfo> &frames);
 
-  ~QUICPacket();
+  virtual ~QUICPacket();
 
   UDPConnection *udp_con() const;
-  const IpEndpoint &from() const;
-  const IpEndpoint &to() const;
+  virtual const IpEndpoint &from() const;
+  virtual const IpEndpoint &to() const;
   QUICPacketType type() const;
   QUICConnectionId destination_cid() const;
   QUICConnectionId source_cid() const;

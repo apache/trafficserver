@@ -52,13 +52,21 @@ QUICPathValidator::ValidationJob::consume_challenge()
 bool
 QUICPathValidator::is_validating(const QUICPath &path)
 {
-  return this->_jobs.at(path).is_validating();
+  if (auto j = this->_jobs.find(path); j != this->_jobs.end()) {
+    return j->second.is_validating();
+  } else {
+    return false;
+  }
 }
 
 bool
 QUICPathValidator::is_validated(const QUICPath &path)
 {
-  return this->_jobs.at(path).is_validated();
+  if (auto j = this->_jobs.find(path); j != this->_jobs.end()) {
+    return j->second.is_validated();
+  } else {
+    return false;
+  }
 }
 
 void
