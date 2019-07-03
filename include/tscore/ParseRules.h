@@ -825,7 +825,7 @@ ink_get_hex(char c)
   return (int)((c - 'a') + 10);
 }
 
-int64_t ink_atoi64(const char *);
+int64_t ink_atoi64(const char *, const char **end = nullptr);
 uint64_t ink_atoui64(const char *);
 int64_t ink_atoi64(const char *, int);
 

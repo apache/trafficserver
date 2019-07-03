@@ -48,7 +48,7 @@ const char parseRulesCTypeToLower[256] = {
 //   2. They all honor the SI multipliers (i.e. K, M, G and T.
 //
 int64_t
-ink_atoi64(const char *str)
+ink_atoi64(const char *str, const char **end)
 {
   int64_t num  = 0;
   int negative = 0;
@@ -79,12 +79,16 @@ ink_atoi64(const char *str)
     if (*str) {
       if (*str == 'K') {
         num = num * (1LL << 10);
+        str++;
       } else if (*str == 'M') {
         num = num * (1LL << 20);
+        str++;
       } else if (*str == 'G') {
         num = num * (1LL << 30);
+        str++;
       } else if (*str == 'T') {
         num = num * (1LL << 40);
+        str++;
       }
     }
 #endif
@@ -92,6 +96,11 @@ ink_atoi64(const char *str)
       num = -num;
     }
   }
+
+  if (end != nullptr) {
+    *end = str;
+  }
+
   return num;
 }
 
