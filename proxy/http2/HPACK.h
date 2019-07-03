@@ -26,6 +26,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Diags.h"
 #include "HTTP.h"
+#include "../hdrs/XPACK.h"
 
 #include <vector>
 
@@ -167,10 +168,6 @@ private:
 };
 
 // Low level interfaces
-int64_t encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8_t n);
-int64_t decode_integer(uint32_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n);
-int64_t encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, size_t value_len);
-int64_t decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end);
 int64_t encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index);
 int64_t encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
                                                       uint32_t index, HpackIndexingTable &indexing_table, HpackField type);
