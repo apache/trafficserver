@@ -326,7 +326,7 @@ REGRESSION_TEST(HPACK_EncodeInteger)(RegressionTest *t, int, int *pstatus)
   for (const auto &i : integer_test_case) {
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
 
-    int len = encode_integer(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, i.raw_integer, i.prefix);
+    int len = xpack_encode_integer(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, i.raw_integer, i.prefix);
 
     box.check(len == i.encoded_field_len, "encoded length was %d, expecting %d", len, i.encoded_field_len);
     box.check(len > 0 && memcmp(buf, i.encoded_field, len) == 0, "encoded value was invalid");
@@ -345,7 +345,8 @@ REGRESSION_TEST(HPACK_EncodeString)(RegressionTest *t, int, int *pstatus)
   for (unsigned int i = 2; i < sizeof(string_test_case) / sizeof(string_test_case[0]); i++) {
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
 
-    len = encode_string(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, string_test_case[i].raw_string, string_test_case[i].raw_string_len);
+    len = xpack_encode_string(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, string_test_case[i].raw_string,
+                              string_test_case[i].raw_string_len);
 
     box.check(len == string_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len,
               string_test_case[i].encoded_field_len);
@@ -471,13 +472,13 @@ REGRESSION_TEST(HPACK_DecodeInteger)(RegressionTest *t, int, int *pstatus)
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  uint32_t actual;
+  uint64_t actual;
 
   for (const auto &i : integer_test_case) {
-    int len = decode_integer(actual, i.encoded_field, i.encoded_field + i.encoded_field_len, i.prefix);
+    int len = xpack_decode_integer(actual, i.encoded_field, i.encoded_field + i.encoded_field_len, i.prefix);
 
     box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(actual == i.raw_integer, "decoded value was %d, expected %d", actual, i.raw_integer);
+    box.check(actual == i.raw_integer, "decoded value was %" PRIu64 ", expected %d", actual, i.raw_integer);
   }
 }
 
@@ -488,15 +489,16 @@ REGRESSION_TEST(HPACK_DecodeString)(RegressionTest *t, int, int *pstatus)
 
   Arena arena;
   char *actual        = nullptr;
-  uint32_t actual_len = 0;
+  uint64_t actual_len = 0;
 
   hpack_huffman_init();
 
   for (const auto &i : string_test_case) {
-    int len = decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len);
+    int len = xpack_decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len);
 
     box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(actual_len == i.raw_string_len, "length of decoded string was %d, expecting %d", actual_len, i.raw_string_len);
+    box.check(actual_len == i.raw_string_len, "length of decoded string was %" PRIu64 ", expecting %d", actual_len,
+              i.raw_string_len);
     box.check(memcmp(actual, i.raw_string, actual_len) == 0, "decoded string was invalid");
   }
 }
