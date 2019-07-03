@@ -90,8 +90,8 @@ Combohandler follows a few rules for the "Cache-Control" header:
 1) All requested documents must have "immutable" for the combo'd
    response to also have "immutable".
 
-2) [Feature gated for 8.0 release] If one or more requested documents has "private" set,
-   then the combo'd response will also have "private". If no requested documents have a
+2) If one or more requested documents has "private" set, then the combo'd
+   response will also have "private". If no requested documents have a
    publicity setting, then the default is "public".
 
 3) The "max-age" value will be set to the smallest of all the requested "max-age"

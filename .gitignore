@@ -103,6 +103,7 @@ iocore/hostdb/test_RefCountCache
 proxy/hdrs/test_mime
 proxy/hdrs/test_Huffmancode
 proxy/hdrs/test_proxy_hdrs
+proxy/hdrs/test_hdr_heap
 proxy/http/test_proxy_http
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_HPACK

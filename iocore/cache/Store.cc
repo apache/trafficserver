@@ -369,7 +369,8 @@ Store::read_config()
     const char *e;
     while (nullptr != (e = tokens.getNext())) {
       if (ParseRules::is_digit(*e)) {
-        if ((size = ink_atoi64(e)) <= 0) {
+        const char *end;
+        if ((size = ink_atoi64(e, &end)) <= 0 || *end != '\0') {
           delete sd;
           Error("storage.config failed to load");
           return Result::failure("failed to parse size '%s'", e);
