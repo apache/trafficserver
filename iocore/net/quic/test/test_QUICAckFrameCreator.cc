@@ -23,9 +23,7 @@
 
 #include "catch.hpp"
 
-#include "I_EventSystem.h"
 #include "quic/QUICAckFrameCreator.h"
-#include "Mock.h"
 
 TEST_CASE("QUICAckFrameManager", "[quic]")
 {
