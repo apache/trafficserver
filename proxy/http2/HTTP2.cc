@@ -23,7 +23,6 @@
 
 #include "HTTP2.h"
 #include "HPACK.h"
-#include "HuffmanCodec.h"
 #include "tscore/ink_assert.h"
 #include "records/P_RecCore.h"
 #include "records/P_RecProcess.h"

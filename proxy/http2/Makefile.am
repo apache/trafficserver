@@ -50,9 +50,7 @@ libhttp2_a_SOURCES = \
 	Http2Stream.cc \
 	Http2Stream.h \
 	Http2SessionAccept.cc \
-	Http2SessionAccept.h \
-	HuffmanCodec.cc \
-	HuffmanCodec.h
+	Http2SessionAccept.h
 
 if BUILD_TESTS
 libhttp2_a_SOURCES += \
@@ -60,25 +58,14 @@ libhttp2_a_SOURCES += \
 endif
 
 check_PROGRAMS = \
-	test_Huffmancode \
 	test_Http2DependencyTree \
 	test_Http2FrequencyCounter \
 	test_HPACK
 
 TESTS = \
-	test_Huffmancode \
 	test_Http2DependencyTree \
 	test_Http2FrequencyCounter \
 	test_HPACK
-
-test_Huffmancode_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la
-
-test_Huffmancode_SOURCES = \
-	test_Huffmancode.cc \
-	HuffmanCodec.cc \
-	HuffmanCodec.h
 
 test_Http2DependencyTree_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
@@ -117,8 +104,6 @@ test_HPACK_LDADD = \
 
 test_HPACK_SOURCES = \
 	test_HPACK.cc \
-	HuffmanCodec.cc \
-	HuffmanCodec.h \
 	HPACK.cc \
 	HPACK.h
 
