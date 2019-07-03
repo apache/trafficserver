@@ -27,6 +27,7 @@
 
 #include "QUICGlobals.h"
 #include "QUICConfig.h"
+#include "QUICMultiCertConfigLoader.h"
 
 //
 // Global Data

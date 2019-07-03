@@ -32,6 +32,7 @@
 #include "Log.h"
 
 #include "P_SSLNextProtocolSet.h"
+#include "QUICMultiCertConfigLoader.h"
 #include "QUICTLS.h"
 
 #include "QUICStats.h"

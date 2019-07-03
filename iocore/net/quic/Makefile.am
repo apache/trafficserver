@@ -126,7 +126,6 @@ test_CPPFLAGS = \
   -I$(abs_top_srcdir)/tests/include
 
 test_LDADD = \
-  $(top_builddir)/iocore/net/libinknet.a \
   libquic.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
@@ -137,11 +136,9 @@ test_LDADD = \
   @HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
 
 test_event_main_SOURCES = \
-  ../libinknet_stub.cc \
   ./test/event_processor_main.cc
 
 test_main_SOURCES = \
-  ../libinknet_stub.cc \
   ./test/main.cc
 
 test_QUICAckFrameCreator_CPPFLAGS = $(test_CPPFLAGS)

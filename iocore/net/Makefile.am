@@ -175,6 +175,7 @@ libinknet_a_SOURCES += \
   P_QUICNextProtocolAccept.h \
   QUICClosedConCollector.cc \
   QUICPacketHandler.cc \
+  QUICMultiCertConfigLoader.cc \
   QUICNet.cc \
   QUICNetProcessor.cc \
   QUICNetVConnection.cc \

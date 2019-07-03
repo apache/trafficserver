@@ -27,7 +27,6 @@
 
 #include "ProxyConfig.h"
 #include "P_SSLCertLookup.h"
-#include "P_SSLUtils.h"
 
 class QUICConfigParams : public ConfigInfo
 {
@@ -158,29 +157,4 @@ private:
   static int _config_id;
 };
 
-class QUICCertConfig
-{
-public:
-  static void startup();
-  static void reconfigure();
-  static SSLCertLookup *acquire();
-  static void release(SSLCertLookup *lookup);
-
-  using scoped_config = ConfigProcessor::scoped_config<QUICCertConfig, SSLCertLookup>;
-
-private:
-  static int _config_id;
-};
-
-class QUICMultiCertConfigLoader : public SSLMultiCertConfigLoader
-{
-public:
-  QUICMultiCertConfigLoader(const SSLConfigParams *p) : SSLMultiCertConfigLoader(p) {}
-
-  virtual SSL_CTX *default_server_ssl_ctx() override;
-  virtual SSL_CTX *init_server_ssl_ctx(std::vector<X509 *> &cert_list, const SSLMultiCertConfigParams *multi_cert_params) override;
-
-private:
-  virtual SSL_CTX *_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams multi_cert_params) override;
-  virtual void _set_handshake_callbacks(SSL_CTX *ssl_ctx) override;
-};
+SSL_CTX *quic_new_ssl_ctx();
