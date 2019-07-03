@@ -27,7 +27,6 @@
 #include "QUICTypes.h"
 #include "QUICFrame.h"
 #include <list>
-#include <set>
 
 class QUICConnection;
 
