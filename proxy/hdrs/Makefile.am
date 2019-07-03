@@ -43,7 +43,11 @@ libhdrs_a_SOURCES = \
 	MIME.cc \
 	MIME.h \
 	URL.cc \
-	URL.h
+	URL.h \
+	HuffmanCodec.cc \
+	HuffmanCodec.h \
+	XPACK.cc \
+	XPACK.h
 
 if BUILD_TESTS
 libhdrs_a_SOURCES += \
@@ -61,7 +65,11 @@ load_http_hdr_LDADD = -L. -lhdrs \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la
 
-check_PROGRAMS = test_mime test_proxy_hdrs test_hdr_heap
+check_PROGRAMS = \
+	test_mime \
+	test_proxy_hdrs \
+	test_hdr_heap \
+	test_Huffmancode
 
 TESTS = $(check_PROGRAMS)
 
@@ -115,6 +123,16 @@ test_hdr_heap_LDADD = -L. -lhdrs \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@HWLOC_LIBS@ \
 	@LIBCAP@
+
+test_Huffmancode_LDADD = \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
+
+test_Huffmancode_SOURCES = \
+	test_Huffmancode.cc \
+	HuffmanCodec.cc \
+	HuffmanCodec.h
+
 
 #test_UNUSED_SOURCES = \
 #  test_urlhash.cc
