@@ -68,7 +68,6 @@ test_CPPFLAGS = \
   -I$(abs_top_srcdir)/tests/include
 
 test_LDADD = \
-  libhttp3.a \
   $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
@@ -87,14 +86,17 @@ test_libhttp3_LDFLAGS = @AM_LDFLAGS@
 test_libhttp3_LDADD = $(test_LDADD)
 test_libhttp3_SOURCES = \
   ./test/main.cc \
-  ./test/test_Http3Frame.cc
+  ./test/test_Http3Frame.cc \
+  ./Http3Config.cc \
+  ./Http3Frame.cc
 
 test_qpack_CPPFLAGS = $(test_CPPFLAGS)
 test_qpack_LDFLAGS = @AM_LDFLAGS@
 test_qpack_LDADD = $(test_LDADD)
 test_qpack_SOURCES = \
   ./test/main_qpack.cc \
-  ./test/test_QPACK.cc
+  ./test/test_QPACK.cc \
+  ./QPACK.cc
 
 
 #
