@@ -112,13 +112,7 @@ public:
     _mhdr->create();
   }
 
-  ~HpackDynamicTable()
-  {
-    _headers.clear();
-    _mhdr->fields_clear();
-    _mhdr->destroy();
-    delete _mhdr;
-  }
+  ~HpackDynamicTable();
 
   // noncopyable
   HpackDynamicTable(HpackDynamicTable &) = delete;
@@ -135,11 +129,13 @@ public:
 
 private:
   bool _evict_overflowed_entries();
+  void _mime_hdr_gc();
 
-  uint32_t _current_size;
-  uint32_t _maximum_size;
+  uint32_t _current_size = 0;
+  uint32_t _maximum_size = 0;
 
-  MIMEHdr *_mhdr;
+  MIMEHdr *_mhdr     = nullptr;
+  MIMEHdr *_mhdr_old = nullptr;
   std::vector<MIMEField *> _headers;
 };
 
