@@ -69,17 +69,15 @@ test_CPPFLAGS = \
 
 test_LDADD = \
   libhttp3.a \
-  $(top_builddir)/iocore/net/libinknet.a \
   $(top_builddir)/iocore/net/quic/libquic.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/src/tscore/libtscore.la \
   $(top_builddir)/src/tscpp/util/libtscpputil.la \
-  $(top_builddir)/proxy/ParentSelectionStrategy.o \
   $(top_builddir)/proxy/http2/libhttp2.a \
-  $(top_builddir)/proxy/libproxy.a \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
   @LIBPCRE@ \
   @OPENSSL_LIBS@ \
   @HWLOC_LIBS@
@@ -89,24 +87,14 @@ test_libhttp3_LDFLAGS = @AM_LDFLAGS@
 test_libhttp3_LDADD = $(test_LDADD)
 test_libhttp3_SOURCES = \
   ./test/main.cc \
-  ./test/test_Http3Frame.cc \
-  ./test/stub.cc \
-  ../http/HttpConfig.cc \
-  ../http/HttpConnectionCount.cc \
-  ../http/ForwardedConfig.cc \
-  ../../iocore/net/libinknet_stub.cc
+  ./test/test_Http3Frame.cc
 
 test_qpack_CPPFLAGS = $(test_CPPFLAGS)
 test_qpack_LDFLAGS = @AM_LDFLAGS@
 test_qpack_LDADD = $(test_LDADD)
 test_qpack_SOURCES = \
   ./test/main_qpack.cc \
-  ./test/test_QPACK.cc \
-  ./test/stub.cc \
-  ../http/HttpConfig.cc \
-  ../http/HttpConnectionCount.cc \
-  ../http/ForwardedConfig.cc \
-  ../../iocore/net/libinknet_stub.cc
+  ./test/test_QPACK.cc
 
 
 #
