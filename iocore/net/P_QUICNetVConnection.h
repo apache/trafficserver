@@ -258,7 +258,7 @@ private:
   QUICPathValidator *_path_validator                = nullptr;
   QUICPathManager *_path_manager                    = nullptr;
 
-  std::vector<QUICFrameGenerator *> _frame_generators;
+  QUICFrameGeneratorManager _frame_generators;
 
   QUICPacketReceiveQueue _packet_recv_queue = {this->_packet_factory, this->_ph_protector};
 
@@ -358,15 +358,10 @@ private:
   uint64_t _stream_frames_sent = 0;
 
   // TODO: Source addresses verification through an address validation token
-  bool _has_ack_eliciting_packet_out = true;
-
   QUICAddrVerifyState _verfied_state;
 
   // QUICFrameGenerator
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
-
-  // seq_num in packetize_frame
-  uint32_t _seq_num = 0;
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);

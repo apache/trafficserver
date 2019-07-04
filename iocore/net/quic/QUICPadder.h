@@ -29,7 +29,7 @@
 
 #include "I_Lock.h"
 
-class QUICPadder : public QUICFrameGenerator
+class QUICPadder : public QUICFrameTailGenerator
 {
 public:
   QUICPadder(NetVConnectionContext_t context) : _mutex(new_ProxyMutex()), _context(context) {}
@@ -40,10 +40,10 @@ public:
   void set_av_token_len(uint32_t len);
 
   // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num) override;
+  bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting) override;
   // a trick, Different from other generator padder will generate multi-pad-frames.
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            size_t current_packet_size, uint32_t seq_num) override;
+                            size_t current_packet_size) override;
 
 private:
   uint32_t _minimum_quic_packet_size();

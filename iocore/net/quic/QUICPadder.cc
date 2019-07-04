@@ -49,28 +49,24 @@ QUICPadder::count(QUICEncryptionLevel level)
 }
 
 bool
-QUICPadder::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
+QUICPadder::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting)
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
-  if (seq_num == this->_latest_seq_num) {
+  // no extre padding packet
+  if (current_packet_size == 0 && this->_need_to_fire[static_cast<int>(level)] == 0) {
     return false;
   }
 
-  this->_latest_seq_num = seq_num;
+  // every packets need to be padded
   return true;
 }
 
 QUICFrame *
 QUICPadder::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                           size_t current_packet_size, uint32_t seq_num)
+                           size_t current_packet_size)
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   QUICFrame *frame = nullptr;
-
-  // no extre padding packet
-  if (current_packet_size == 0 && this->_need_to_fire[static_cast<int>(level)] == 0) {
-    return frame;
-  }
 
   uint64_t min_size = 0;
   if (level == QUICEncryptionLevel::INITIAL && this->_context == NET_VCONNECTION_OUT) {
@@ -88,7 +84,6 @@ QUICPadder::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t con
   }
 
   this->_need_to_fire[static_cast<int>(level)] = 0;
-  this->_latest_seq_num                        = seq_num;
   return frame;
 }
 
