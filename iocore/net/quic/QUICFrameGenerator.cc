@@ -23,6 +23,7 @@
 
 #include "QUICFrameGenerator.h"
 
+// QUICFrameGenerator
 void
 QUICFrameGenerator::_records_frame(QUICFrameId id, QUICFrameInformationUPtr info)
 {
@@ -57,4 +58,28 @@ QUICFrameGenerator::on_frame_lost(QUICFrameId id)
     this->_on_frame_lost(it->second);
     this->_info.erase(it);
   }
+}
+
+void
+QUICFrameGeneratorManager::add_generator(QUICFrameGenerator &generator)
+{
+  this->_vector.push_back(&generator);
+}
+
+void
+QUICFrameGeneratorManager::add_tail_generator(QUICFrameTailGenerator &generator)
+{
+  this->_tail_vector.push_back(&generator);
+}
+
+const std::vector<QUICFrameGenerator *> &
+QUICFrameGeneratorManager::generators() const
+{
+  return this->_vector;
+}
+
+const std::vector<QUICFrameTailGenerator *> &
+QUICFrameGeneratorManager::tail_generators() const
+{
+  return this->_tail_vector;
 }

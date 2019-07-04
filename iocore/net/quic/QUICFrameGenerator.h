@@ -67,3 +67,25 @@ private:
   QUICEncryptionLevel _encryption_level_filter = QUICEncryptionLevel::ONE_RTT;
   std::map<QUICFrameId, QUICFrameInformationUPtr> _info;
 };
+
+class QUICFrameTailGenerator
+{
+public:
+  virtual bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting) = 0;
+  virtual QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit,
+                                    uint16_t maximum_frame_size, size_t current_packet_size)                  = 0;
+};
+
+class QUICFrameGeneratorManager
+{
+public:
+  void add_generator(QUICFrameGenerator &generator);
+  void add_tail_generator(QUICFrameTailGenerator &generator);
+
+  const std::vector<QUICFrameGenerator *> &generators() const;
+  const std::vector<QUICFrameTailGenerator *> &tail_generators() const;
+
+private:
+  std::vector<QUICFrameGenerator *> _vector;
+  std::vector<QUICFrameTailGenerator *> _tail_vector;
+};
