@@ -166,6 +166,21 @@ static const StaticTable STATIC_TABLE[] = {{"", ""},
                                            {"via", ""},
                                            {"www-authenticate", ""}};
 
+/**
+  Threshold for total HdrHeap size which used by HPAK Dynamic Table.
+  The HdrHeap is filled by MIMEHdrImpl and MIMEFieldBlockImpl like below.
+  This threshold allow to allocate 3 HdrHeap at maximum.
+
+                     +------------------+-----------------------------+
+   HdrHeap 1 (2048): | MIMEHdrImpl(592) | MIMEFieldBlockImpl(528) x 2 |
+                     +------------------+-----------------------------+--...--+
+   HdrHeap 2 (4096): | MIMEFieldBlockImpl(528) x 7                            |
+                     +------------------------------------------------+--...--+--...--+
+   HdrHeap 3 (8192): | MIMEFieldBlockImpl(528) x 15                                   |
+                     +------------------------------------------------+--...--+--...--+
+*/
+static constexpr uint32_t HPACK_HDR_HEAP_THRESHOLD = sizeof(MIMEHdrImpl) + sizeof(MIMEFieldBlockImpl) * (2 + 7 + 15);
+
 /******************
  * Local functions
  ******************/
@@ -318,6 +333,24 @@ HpackIndexingTable::update_maximum_size(uint32_t new_size)
   return _dynamic_table->update_maximum_size(new_size);
 }
 
+//
+// HpackDynamicTable
+//
+HpackDynamicTable::~HpackDynamicTable()
+{
+  this->_headers.clear();
+
+  this->_mhdr->fields_clear();
+  this->_mhdr->destroy();
+  delete this->_mhdr;
+
+  if (this->_mhdr_old != nullptr) {
+    this->_mhdr_old->fields_clear();
+    this->_mhdr_old->destroy();
+    delete this->_mhdr_old;
+  }
+}
+
 const MIMEField *
 HpackDynamicTable::get_header_field(uint32_t index) const
 {
@@ -413,7 +446,30 @@ HpackDynamicTable::_evict_overflowed_entries()
     return false;
   }
 
+  this->_mime_hdr_gc();
+
   return true;
+}
+
+/**
+   When HdrHeap size of current MIMEHdr exceeds the threshold, allocate new MIMEHdr and HdrHeap.
+   The old MIMEHdr and HdrHeap will be freed, when all MIMEFiled are deleted by HPACK Entry Eviction.
+ */
+void
+HpackDynamicTable::_mime_hdr_gc()
+{
+  if (this->_mhdr_old == nullptr) {
+    if (this->_mhdr->m_heap->total_used_size() >= HPACK_HDR_HEAP_THRESHOLD) {
+      this->_mhdr_old = this->_mhdr;
+      this->_mhdr     = new MIMEHdr();
+      this->_mhdr->create();
+    }
+  } else {
+    if (this->_mhdr_old->fields_count() == 0) {
+      this->_mhdr_old->destroy();
+      this->_mhdr_old = nullptr;
+    }
+  }
 }
 
 int64_t
