@@ -31,7 +31,7 @@
 #include "QUICEvents.h"
 
 using namespace std::literals;
-std::string_view negotiated_application_name_sv = "h3-20"sv;
+std::string_view negotiated_application_name_sv = "h3-22"sv;
 
 class MockQUICStreamManager : public QUICStreamManager
 {
