@@ -48,6 +48,7 @@ public:
     MAX_ACK_DELAY,
     DISABLE_MIGRATION,
     PREFERRED_ADDRESS,
+    ACTIVE_CONNECTION_ID_LIMIT,
   };
 
   explicit operator bool() const { return true; }

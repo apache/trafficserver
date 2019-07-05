@@ -203,6 +203,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "INITIAL_MAX_ACK_DELAY";
   case QUICTransportParameterId::ORIGINAL_CONNECTION_ID:
     return "INITIAL_ORIGINAL_CONNECTION_ID";
+  case QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT:
+    return "ACTIVE_CONNECTION_ID_LIMIT";
   default:
     return "UNKNOWN";
   }
