@@ -1084,7 +1084,7 @@ QUICRstStreamFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 int
 QUICRstStreamFrame::debug_msg(char *msg, size_t msg_len) const
 {
-  return snprintf(msg, msg_len, "RESET_STREAM size=%zu stream_id=%" PRIu64 " code=0x%" PRIx16, this->size(), this->stream_id(),
+  return snprintf(msg, msg_len, "RESET_STREAM size=%zu stream_id=%" PRIu64 " code=0x%" PRIx64, this->size(), this->stream_id(),
                   this->error_code());
 }
 
@@ -1207,7 +1207,7 @@ QUICPaddingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 //
 // CONNECTION_CLOSE frame
 //
-QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint16_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length,
+QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint64_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length,
                                                    const char *reason_phrase, QUICFrameId id, QUICFrameGenerator *owner)
   : QUICFrame(id, owner),
     _type(0x1c),
@@ -1218,7 +1218,7 @@ QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint16_t error_code, QUICFram
 {
 }
 
-QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint16_t error_code, uint64_t reason_phrase_length, const char *reason_phrase,
+QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint64_t error_code, uint64_t reason_phrase_length, const char *reason_phrase,
                                                    QUICFrameId id, QUICFrameGenerator *owner)
   : QUICFrame(id, owner),
     _type(0x1d),

@@ -148,7 +148,7 @@ enum class QUICErrorClass {
   APPLICATION,
 };
 
-enum class QUICTransErrorCode : uint16_t {
+enum class QUICTransErrorCode : uint64_t {
   NO_ERROR = 0x00,
   INTERNAL_ERROR,
   SERVER_BUSY,
@@ -165,7 +165,7 @@ enum class QUICTransErrorCode : uint16_t {
 };
 
 // Application Protocol Error Codes defined in application
-using QUICAppErrorCode                          = uint16_t;
+using QUICAppErrorCode                          = uint64_t;
 constexpr uint16_t QUIC_APP_ERROR_CODE_STOPPING = 0;
 
 class QUICError
