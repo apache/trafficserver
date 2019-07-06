@@ -90,7 +90,7 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
 
 LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
                      const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
-                     int rolling_offset_hr, int rolling_size_mb, bool auto_created)
+                     int rolling_offset_hr, int rolling_size_mb, bool auto_created, int max_rolled, bool reopen_after_rolling)
   : m_alt_filename(nullptr),
     m_flags(0),
     m_signature(0),
@@ -99,6 +99,8 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
     m_rolling_offset_hr(rolling_offset_hr),
     m_rolling_size_mb(rolling_size_mb),
     m_last_roll_time(0),
+    m_max_rolled(max_rolled),
+    m_reopen_after_rolling(reopen_after_rolling),
     m_buffer_manager_idx(0)
 {
   ink_release_assert(format);
@@ -117,6 +119,10 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
   m_signature = compute_signature(m_format, m_basename, m_flags);
 
   m_logFile = new LogFile(m_filename, header, file_format, m_signature, Log::config->ascii_buffer_size, Log::config->max_line_size);
+
+  if (m_reopen_after_rolling) {
+    m_logFile->open_file();
+  }
 
   LogBuffer *b = new LogBuffer(this, Log::config->log_buffer_size);
   ink_assert(b);
@@ -140,14 +146,19 @@ LogObject::LogObject(LogObject &rhs)
     m_rolling_offset_hr(rhs.m_rolling_offset_hr),
     m_rolling_size_mb(rhs.m_rolling_size_mb),
     m_last_roll_time(rhs.m_last_roll_time),
+    m_max_rolled(rhs.m_max_rolled),
+    m_reopen_after_rolling(rhs.m_reopen_after_rolling),
     m_buffer_manager_idx(rhs.m_buffer_manager_idx)
-
 {
   m_format         = new LogFormat(*(rhs.m_format));
   m_buffer_manager = new LogBufferManager[m_flush_threads];
 
   if (rhs.m_logFile) {
     m_logFile = new LogFile(*(rhs.m_logFile));
+
+    if (m_reopen_after_rolling) {
+      m_logFile->open_file();
+    }
   } else {
     m_logFile = nullptr;
   }
@@ -746,7 +757,11 @@ LogObject::_roll_files(long last_roll_time, long time_now)
   if (m_logFile) {
     // no need to roll if object writes to a pipe
     if (!writes_to_pipe()) {
-      num_rolled += m_logFile->roll(last_roll_time, time_now);
+      num_rolled += m_logFile->roll(last_roll_time, time_now, m_reopen_after_rolling);
+
+      if (Log::config->auto_delete_rolled_files && m_max_rolled > 0) {
+        m_logFile->trim_rolled(m_max_rolled);
+      }
     }
   }
 
@@ -770,9 +785,9 @@ const LogFormat *TextLogObject::textfmt = MakeTextLogFormat();
 
 TextLogObject::TextLogObject(const char *name, const char *log_dir, bool timestamps, const char *header,
                              Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
-                             int rolling_offset_hr, int rolling_size_mb)
+                             int rolling_offset_hr, int rolling_size_mb, int max_rolled, bool reopen_after_rolling)
   : LogObject(TextLogObject::textfmt, log_dir, name, LOG_FILE_ASCII, header, rolling_enabled, flush_threads, rolling_interval_sec,
-              rolling_offset_hr, rolling_size_mb)
+              rolling_offset_hr, rolling_size_mb, max_rolled, reopen_after_rolling)
 {
   if (timestamps) {
     this->set_fmt_timestamps();

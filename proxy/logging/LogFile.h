@@ -58,7 +58,8 @@ public:
 
   int preproc_and_try_delete(LogBuffer *lb) override;
 
-  int roll(long interval_start, long interval_end);
+  bool trim_rolled(size_t rolling_max_count);
+  int roll(long interval_start, long interval_end, bool reopen_after_rolling = false);
 
   const char *
   get_name() const
