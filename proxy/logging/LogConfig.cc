@@ -96,6 +96,8 @@ LogConfig::setup_default_values()
   rolling_interval_sec     = 86400; // 24 hours
   rolling_offset_hr        = 0;
   rolling_size_mb          = 10;
+  rolling_max_count        = 0;
+  rolling_allow_empty      = false;
   auto_delete_rolled_files = true;
   roll_log_files_now       = false;
 
@@ -232,6 +234,11 @@ LogConfig::read_configuration_variables()
 
   val                      = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
   auto_delete_rolled_files = (val > 0);
+
+  val                 = (int)REC_ConfigReadInteger("proxy.config.log.rolling_allow_empty");
+  rolling_allow_empty = (val > 0);
+
+  rolling_max_count = (int)REC_ConfigReadInteger("proxy.config.log.rolling_max_count");
 
   // PERFORMANCE
   val = (int)REC_ConfigReadInteger("proxy.config.log.sampling_frequency");
@@ -466,6 +473,8 @@ LogConfig::display(FILE *fd)
   fprintf(fd, "   rolling_interval_sec = %d\n", rolling_interval_sec);
   fprintf(fd, "   rolling_offset_hr = %d\n", rolling_offset_hr);
   fprintf(fd, "   rolling_size_mb = %d\n", rolling_size_mb);
+  fprintf(fd, "   rolling_max_count = %d\n", rolling_max_count);
+  fprintf(fd, "   rolling_allow_empty = %d\n", rolling_allow_empty);
   fprintf(fd, "   auto_delete_rolled_files = %d\n", auto_delete_rolled_files);
   fprintf(fd, "   sampling_frequency = %d\n", sampling_frequency);
   fprintf(fd, "   file_stat_frequency = %d\n", file_stat_frequency);
@@ -559,6 +568,8 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.rolling_offset_hr",
     "proxy.config.log.rolling_size_mb",
     "proxy.config.log.auto_delete_rolled_files",
+    "proxy.config.log.rolling_max_count",
+    "proxy.config.log.rolling_allow_empty",
     "proxy.config.log.config.filename",
     "proxy.config.log.sampling_frequency",
     "proxy.config.log.file_stat_frequency",
