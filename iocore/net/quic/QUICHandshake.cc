@@ -322,13 +322,13 @@ QUICHandshake::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
 }
 
 bool
-QUICHandshake::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
+QUICHandshake::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;
   }
 
-  return this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level, seq_num);
+  return this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level, current_packet_size, ack_eliciting, seq_num);
 }
 
 QUICFrame *

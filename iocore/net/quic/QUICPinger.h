@@ -30,7 +30,7 @@
 
 #include "I_Lock.h"
 
-class QUICPinger : public QUICFrameTailGenerator
+class QUICPinger : public QUICFrameOnceGenerator
 {
 public:
   QUICPinger() : _mutex(new_ProxyMutex()) {}
@@ -39,12 +39,12 @@ public:
   void cancel(QUICEncryptionLevel level);
   uint64_t count(QUICEncryptionLevel level);
 
-  // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting) override;
-  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            size_t current_packet_size) override;
-
 private:
+  // QUICFrameGenerator
+  bool _will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting) override;
+  QUICFrame *_generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
+                             size_t current_packet_size) override;
+
   bool _ack_eliciting_packet_out = false;
 
   Ptr<ProxyMutex> _mutex;

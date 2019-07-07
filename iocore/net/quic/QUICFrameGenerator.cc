@@ -61,25 +61,24 @@ QUICFrameGenerator::on_frame_lost(QUICFrameId id)
 }
 
 void
-QUICFrameGeneratorManager::add_generator(QUICFrameGenerator &generator)
+QUICFrameGeneratorManager::add_generator(QUICFrameGenerator &generator, int weight)
 {
-  this->_vector.push_back(&generator);
+  auto it = this->_vector.begin();
+  for (; it != this->_vector.end(); ++it) {
+    if (it->first >= weight) {
+      break;
+    }
+  }
+  this->_vector.emplace(it, weight, &generator);
 }
 
-void
-QUICFrameGeneratorManager::add_tail_generator(QUICFrameTailGenerator &generator)
-{
-  this->_tail_vector.push_back(&generator);
-}
-
-const std::vector<QUICFrameGenerator *> &
+const std::vector<QUICFrameGenerator *>
 QUICFrameGeneratorManager::generators() const
 {
-  return this->_vector;
-}
+  std::vector<QUICFrameGenerator *> vector;
+  for (auto it : this->_vector) {
+    vector.emplace_back(it.second);
+  }
 
-const std::vector<QUICFrameTailGenerator *> &
-QUICFrameGeneratorManager::tail_generators() const
-{
-  return this->_tail_vector;
+  return vector;
 }

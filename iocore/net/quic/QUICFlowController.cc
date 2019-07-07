@@ -96,7 +96,7 @@ QUICFlowController::set_limit(QUICOffset limit)
 
 // For RemoteFlowController, caller of this function should also check QUICStreamManager::will_generate_frame()
 bool
-QUICFlowController::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
+QUICFlowController::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;

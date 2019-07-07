@@ -200,7 +200,7 @@ public:
   QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num) override;
+  bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
                             size_t current_packet_size, uint32_t seq_num) override;
 
@@ -356,6 +356,7 @@ private:
   bool _is_resumption_token_sent = false;
 
   uint64_t _stream_frames_sent = 0;
+  uint32_t _seq_num            = 0;
 
   // TODO: Source addresses verification through an address validation token
   QUICAddrVerifyState _verfied_state;
