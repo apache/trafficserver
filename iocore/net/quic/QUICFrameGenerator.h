@@ -97,7 +97,7 @@ protected:
                                      uint16_t maximum_frame_size, size_t current_packet_size)                  = 0;
 
 private:
-  uint32_t _seq_num = 0;
+  uint32_t _seq_num = UINT32_MAX;
 };
 
 enum QUICFrameGeneratorWeight {
