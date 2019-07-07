@@ -50,11 +50,13 @@ QUICPinger::_will_generate_frame(QUICEncryptionLevel level, size_t current_packe
     return false;
   }
 
-  if (this->_ack_eliciting_packet_out == false && !ack_eliciting) {
+  if (this->_ack_eliciting_packet_out == false && !ack_eliciting && current_packet_size > 0 &&
+      this->_need_to_fire[static_cast<int>(level)] == 0) {
     // force to send an PING Frame
     this->request(level);
   }
 
+  this->_ack_eliciting_packet_out = ack_eliciting;
   return this->_need_to_fire[static_cast<int>(level)] > 0;
 }
 

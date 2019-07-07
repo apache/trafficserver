@@ -120,7 +120,8 @@ check_PROGRAMS = \
   test_QUICTypeUtil \
   test_QUICVersionNegotiator \
   test_QUICFrameRetransmitter \
-  test_QUICAddrVerifyState
+  test_QUICAddrVerifyState \
+  test_QUICPinger
 
 TESTS = $(check_PROGRAMS)
 
@@ -305,6 +306,13 @@ test_QUICAddrVerifyState_LDADD = $(test_LDADD)
 test_QUICAddrVerifyState_SOURCES = \
   $(test_main_SOURCES) \
   ./test/test_QUICAddrVerifyState.cc
+
+test_QUICPinger_CPPFLAGS = $(test_CPPFLAGS)
+test_QUICPinger_LDFLAGS = @AM_LDFLAGS@
+test_QUICPinger_LDADD = $(test_LDADD)
+test_QUICPinger_SOURCES = \
+  $(test_main_SOURCES) \
+  ./test/test_QUICPinger.cc
 
 #
 # clang-tidy
