@@ -199,7 +199,7 @@ TEST_CASE("QUICFlowController_Remote_Connection_ZERO_Credit", "[quic]")
   CHECK(fc.current_limit() == 1024);
   CHECK(ret == 0);
 
-  CHECK(fc.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0));
+  CHECK(fc.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, true, 0));
   // if there're anything to send
   QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0, 0);
   CHECK(frame);
@@ -306,7 +306,7 @@ TEST_CASE("QUICFlowController_Remote_Stream", "[quic]")
   CHECK(ret == 0);
 
   CHECK(fc.credit() == 0);
-  CHECK(fc.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0));
+  CHECK(fc.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, true, 0));
 
   // Delay
   ret = fc.update(512);

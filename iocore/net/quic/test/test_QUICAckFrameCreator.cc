@@ -46,7 +46,7 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 0);
 
   // retry
-  CHECK(ack_manager.will_generate_frame(level, 0) == false);
+  CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 
   // Not sequential
   ack_manager.update(level, 2, 1, false);
@@ -75,7 +75,7 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   // on frame acked
   ack_manager.on_frame_acked(frame->id());
 
-  CHECK(ack_manager.will_generate_frame(level, 0) == false);
+  CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
   ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
   CHECK(ack_frame == nullptr);
 
@@ -96,7 +96,7 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   ack_manager.update(level, 14, 1, true);
   ack_manager.update(level, 15, 1, true);
   ack_manager.update(level, 16, 1, true);
-  CHECK(ack_manager.will_generate_frame(level, 0) == false);
+  CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
   ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
 
   ack_manager.update(level, 17, 1, false);
@@ -117,7 +117,7 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     ack_manager.update(level, 2, 1, false);
-    CHECK(ack_manager.will_generate_frame(level, 0) == true);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
   }
 
   SECTION("QUIC delay ack and unorder packet", "[quic]")
@@ -126,13 +126,13 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     ack_manager.update(level, 0, 1, false);
-    CHECK(ack_manager.will_generate_frame(level, 0) == false);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 
     ack_manager.update(level, 1, 1, false);
-    CHECK(ack_manager.will_generate_frame(level, 0) == false);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 
     ack_manager.update(level, 3, 1, false);
-    CHECK(ack_manager.will_generate_frame(level, 0) == true);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
   }
 
   SECTION("QUIC delay too much time", "[quic]")
@@ -142,12 +142,12 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     ack_manager.update(level, 0, 1, false);
-    CHECK(ack_manager.will_generate_frame(level, 0) == false);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 
     sleep(1);
     Thread::get_hrtime_updated();
     ack_manager.update(level, 1, 1, false);
-    CHECK(ack_manager.will_generate_frame(level, 0) == true);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
   }
 
   SECTION("QUIC intial packet", "[quic]")
@@ -156,7 +156,7 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
     QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
     ack_manager.update(level, 0, 1, false);
-    CHECK(ack_manager.will_generate_frame(level, 0) == true);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
   }
 
   SECTION("QUIC handshake packet", "[quic]")
@@ -165,7 +165,7 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
     QUICEncryptionLevel level = QUICEncryptionLevel::HANDSHAKE;
     ack_manager.update(level, 0, 1, false);
-    CHECK(ack_manager.will_generate_frame(level, 0) == true);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
   }
 
   SECTION("QUIC frame fired", "[quic]")
@@ -174,11 +174,11 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 
     ack_manager.update(level, 0, 1, false);
-    CHECK(ack_manager.will_generate_frame(level, 0) == false);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 
     sleep(1);
     Thread::get_hrtime_updated();
-    CHECK(ack_manager.will_generate_frame(level, 0) == true);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
   }
 
   SECTION("QUIC refresh frame", "[quic]")
@@ -193,14 +193,14 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
     // unorder frame should sent immediately
     ack_manager.update(level, 1, 1, false);
-    CHECK(ack_manager.will_generate_frame(level, 0) == true);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
 
     ack_manager.update(level, 2, 1, false);
 
     // Delay due to some reason, the frame is not valued any more, but still valued
     sleep(1);
     Thread::get_hrtime_updated();
-    CHECK(ack_manager.will_generate_frame(level, 0) == true);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
     ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
     frame     = static_cast<QUICAckFrame *>(ack_frame);
 
@@ -236,7 +236,7 @@ TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 1);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
 
-  CHECK(ack_manager.will_generate_frame(level, 0) == false);
+  CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 
   ack_manager.update(level, 7, 1, false);
   ack_manager.update(level, 4, 1, false);
@@ -315,7 +315,7 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
 
   ack_manager.on_frame_lost(frame->id());
-  CHECK(ack_manager.will_generate_frame(level, 0) == true);
+  CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
   ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
   frame     = static_cast<QUICAckFrame *>(ack_frame);
   CHECK(frame != nullptr);
@@ -324,9 +324,9 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 1);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
 
-  CHECK(ack_manager.will_generate_frame(level, 0) == false);
+  CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
   ack_manager.on_frame_lost(frame->id());
-  CHECK(ack_manager.will_generate_frame(level, 0) == true);
+  CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
   ack_manager.update(level, 7, 1, false);
   ack_manager.update(level, 4, 1, false);
 
@@ -338,7 +338,7 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
   CHECK(frame->ack_block_section()->first_ack_block() == 5);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
 
-  CHECK(ack_manager.will_generate_frame(level, 0) == false);
+  CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 }
 
 TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
@@ -360,7 +360,7 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
     ack_manager.update(level, 4, 1, false);
     ack_manager.update(level, 5, 1, false);
 
-    CHECK(ack_manager.will_generate_frame(level, 0) == true);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
 
     ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
     frame     = static_cast<QUICAckFrame *>(ack_frame);
@@ -372,7 +372,7 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
 
     ack_manager.update(level, 6, 1, true);
     ack_manager.update(level, 7, 1, true);
-    CHECK(ack_manager.will_generate_frame(level, 0) == false);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
   }
 
   SECTION("ONE_RTT")
@@ -392,7 +392,7 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
     ack_manager.update(level, 4, 1, false);
     ack_manager.update(level, 5, 1, false);
 
-    CHECK(ack_manager.will_generate_frame(level, 0) == true);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
 
     ack_frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
     frame     = static_cast<QUICAckFrame *>(ack_frame);
@@ -404,6 +404,6 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
 
     ack_manager.update(level, 6, 1, true);
     ack_manager.update(level, 7, 1, true);
-    CHECK(ack_manager.will_generate_frame(level, 0) == false);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
   }
 }
