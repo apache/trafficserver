@@ -58,11 +58,11 @@ TEST_CASE("QUICPathValidator", "[quic]")
     // Send a challenge
     CHECK(!pv_c.is_validating(path));
     CHECK(!pv_c.is_validated(path));
-    REQUIRE(!pv_c.will_generate_frame(QUICEncryptionLevel::ONE_RTT, seq_num));
+    REQUIRE(!pv_c.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, false, seq_num));
     pv_c.validate(path);
     CHECK(pv_c.is_validating(path));
     CHECK(!pv_c.is_validated(path));
-    REQUIRE(pv_c.will_generate_frame(QUICEncryptionLevel::ONE_RTT, seq_num));
+    REQUIRE(pv_c.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, false, seq_num));
     auto frame = pv_c.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 1024, 1024, 0, seq_num);
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::PATH_CHALLENGE);
@@ -73,12 +73,12 @@ TEST_CASE("QUICPathValidator", "[quic]")
     // Receive the challenge and respond
     CHECK(!pv_s.is_validating(path));
     CHECK(!pv_s.is_validated(path));
-    REQUIRE(!pv_s.will_generate_frame(QUICEncryptionLevel::ONE_RTT, seq_num));
+    REQUIRE(!pv_s.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, false, seq_num));
     auto error = pv_s.handle_frame(QUICEncryptionLevel::ONE_RTT, *frame);
     REQUIRE(!error);
     CHECK(!pv_s.is_validating(path));
     CHECK(!pv_s.is_validated(path));
-    REQUIRE(pv_s.will_generate_frame(QUICEncryptionLevel::ONE_RTT, seq_num));
+    REQUIRE(pv_s.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, false, seq_num));
     frame = pv_s.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 1024, 1024, 0, seq_num);
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::PATH_RESPONSE);

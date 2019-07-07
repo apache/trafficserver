@@ -683,7 +683,7 @@ class MockQUICFrameGenerator : public QUICFrameGenerator
 {
 public:
   bool
-  will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num) override
+  will_generate_frame(QUICEncryptionLevel level, size_t connection_credit, bool ack_eliciting, uint32_t seq_num) override
   {
     return true;
   }

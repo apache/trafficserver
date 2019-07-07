@@ -229,50 +229,50 @@ TEST_CASE("QUICBidiStream", "[quic]")
 
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     // This should not send a frame because of flow control
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame);
     CHECK(frame->type() == QUICFrameType::STREAM_DATA_BLOCKED);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
 
     // Update window
     stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5120));
 
     // This should send a frame
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     // Update window
     stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5632));
@@ -280,13 +280,13 @@ TEST_CASE("QUICBidiStream", "[quic]")
     // This should send a frame
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
 
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM_DATA_BLOCKED);
 
@@ -294,10 +294,10 @@ TEST_CASE("QUICBidiStream", "[quic]")
     stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 6144));
 
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
   }
 
   /*
@@ -333,9 +333,9 @@ TEST_CASE("QUICBidiStream", "[quic]")
     frame1 = static_cast<QUICStreamFrame *>(frame);
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0) == nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
     stream->on_frame_lost(frame->id());
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
 
     // Write data2
     write_buffer->write(data2, sizeof(data2));
@@ -687,50 +687,50 @@ TEST_CASE("QUIC send only stream", "[quic]")
 
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     // This should not send a frame because of flow control
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame);
     CHECK(frame->type() == QUICFrameType::STREAM_DATA_BLOCKED);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
 
     // Update window
     stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5120));
 
     // This should send a frame
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     // Update window
     stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5632));
@@ -738,13 +738,13 @@ TEST_CASE("QUIC send only stream", "[quic]")
     // This should send a frame
     write_buffer->write(data, 1024);
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
 
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM_DATA_BLOCKED);
 
@@ -752,10 +752,10 @@ TEST_CASE("QUIC send only stream", "[quic]")
     stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 6144));
 
     stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
   }
 
   /*
@@ -790,9 +790,9 @@ TEST_CASE("QUIC send only stream", "[quic]")
     frame1 = static_cast<QUICStreamFrame *>(frame);
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0) == nullptr);
-    CHECK(stream->will_generate_frame(level, 0) == false);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
     stream->on_frame_lost(frame->id());
-    CHECK(stream->will_generate_frame(level, 0) == true);
+    CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
 
     // Write data2
     write_buffer->write(data2, sizeof(data2));
