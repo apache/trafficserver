@@ -476,18 +476,23 @@ QUICNetVConnection::start()
   this->_path_manager           = new QUICPathManager(*this, *this->_path_validator);
   this->_path_manager->set_trusted_path(trusted_path);
 
-  // Register frame generators
-  this->_frame_generators.add_generator(*this->_handshake_handler);      // CRYPTO
-  this->_frame_generators.add_generator(*this->_path_validator);         // PATH_CHALLENGE, PATH_RESPOSNE
-  this->_frame_generators.add_generator(*this->_local_flow_controller);  // MAX_DATA
-  this->_frame_generators.add_generator(*this->_remote_flow_controller); // DATA_BLOCKED
-  this->_frame_generators.add_generator(*this);                          // NEW_TOKEN
-  this->_frame_generators.add_generator(*this->_stream_manager);         // STREAM, MAX_STREAM_DATA, STREAM_DATA_BLOCKED
-  this->_frame_generators.add_generator(this->_ack_frame_manager);       // ACK
+  static constexpr int QUIC_STREAM_MANAGER_WEIGHT = QUICFrameGeneratorWeight::AFTER_DATA - 1;
+  static constexpr int QUIC_PINGER_WEIGHT         = QUICFrameGeneratorWeight::LATE + 1;
+  static constexpr int QUIC_PADDER_WEIGHT         = QUICFrameGeneratorWeight::LATE + 2;
 
-  this->_frame_generators.add_tail_generator(*this->_pinger); // PING
+  // Register frame generators
+  this->_frame_generators.add_generator(*this->_handshake_handler, QUICFrameGeneratorWeight::EARLY); // CRYPTO
+  this->_frame_generators.add_generator(*this->_path_validator, QUICFrameGeneratorWeight::EARLY); // PATH_CHALLENGE, PATH_RESPOSNE
+  this->_frame_generators.add_generator(*this->_local_flow_controller, QUICFrameGeneratorWeight::BEFORE_DATA);  // MAX_DATA
+  this->_frame_generators.add_generator(*this->_remote_flow_controller, QUICFrameGeneratorWeight::BEFORE_DATA); // DATA_BLOCKED
+  this->_frame_generators.add_generator(*this, QUICFrameGeneratorWeight::BEFORE_DATA);                          // NEW_TOKEN
+  this->_frame_generators.add_generator(*this->_stream_manager,
+                                        QUIC_STREAM_MANAGER_WEIGHT); // STREAM, MAX_STREAM_DATA, STREAM_DATA_BLOCKED
+  this->_frame_generators.add_generator(this->_ack_frame_manager, QUICFrameGeneratorWeight::BEFORE_DATA); // ACK
+
+  this->_frame_generators.add_generator(*this->_pinger, QUIC_PINGER_WEIGHT); // PING
   // Warning: padder should be tail of the frame generators
-  this->_frame_generators.add_tail_generator(*this->_padder); // PADDING
+  this->_frame_generators.add_generator(*this->_padder, QUIC_PADDER_WEIGHT); // PADDING
 
   // Register frame handlers
   this->_frame_dispatcher->add_handler(this);
@@ -1147,7 +1152,7 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICPacket &pa
         new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, this->_quic_config->instance_id(),
                                      this->_quic_config->num_alt_connection_ids(), this->_quic_config->preferred_address_ipv4(),
                                      this->_quic_config->preferred_address_ipv6());
-      this->_frame_generators.add_generator(*this->_alt_con_manager);
+      this->_frame_generators.add_generator(*this->_alt_con_manager, QUICFrameGeneratorWeight::EARLY);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
     QUICTPConfigQCP tp_config(this->_quic_config, NET_VCONNECTION_IN);
@@ -1537,7 +1542,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   first_block->alloc(iobuffer_size_to_index(0));
   first_block->fill(0);
 
-  uint32_t seq_num   = 0;
+  uint32_t seq_num   = this->_seq_num++;
   size_t size_added  = 0;
   bool ack_eliciting = false;
   bool crypto        = false;
@@ -1545,9 +1550,9 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   QUICFrame *frame = nullptr;
   for (auto g : this->_frame_generators.generators()) {
     // a non-ack_eliciting packet is ready, but we can not send continuous two ack_eliciting packets.
-    while (g->will_generate_frame(level, seq_num)) {
+    while (g->will_generate_frame(level, len, ack_eliciting, seq_num)) {
       // FIXME will_generate_frame should receive more parameters so we don't need extra checks
-      if (g == this->_remote_flow_controller && !this->_stream_manager->will_generate_frame(level, seq_num)) {
+      if (g == this->_remote_flow_controller && !this->_stream_manager->will_generate_frame(level, len, ack_eliciting, seq_num)) {
         break;
       }
 
@@ -1593,21 +1598,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       } else {
         // Move to next generator
         break;
-      }
-    }
-  }
-
-  for (auto g : this->_frame_generators.tail_generators()) {
-    if (g->will_generate_frame(level, len, ack_eliciting)) {
-      // Common block
-      frame = g->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size, len);
-      if (frame) {
-        last_block = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
-        len += size_added;
-
-        if (!ack_eliciting && frame->ack_eliciting()) {
-          ack_eliciting = true;
-        }
       }
     }
   }
@@ -2020,7 +2010,7 @@ QUICNetVConnection::_switch_to_established_state()
       pref_addr_buf          = remote_tp->getAsBytes(QUICTransportParameterId::PREFERRED_ADDRESS, len);
       this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id,
                                                             this->_quic_config->instance_id(), 1, {pref_addr_buf, len});
-      this->_frame_generators.add_generator(*this->_alt_con_manager);
+      this->_frame_generators.add_generator(*this->_alt_con_manager, QUICFrameGeneratorWeight::BEFORE_DATA);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     } else {
       QUICPath trusted_path = {this->local_addr, this->remote_addr};
@@ -2268,7 +2258,7 @@ QUICNetVConnection::_state_connection_established_initiate_connection_migration(
 
   if (this->_connection_migration_initiated || remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION) ||
       !this->_alt_con_manager->is_ready_to_migrate() ||
-      this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0)) {
+      this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, true, this->_seq_num++)) {
     return error;
   }
 
@@ -2289,7 +2279,7 @@ QUICNetVConnection::_handle_periodic_ack_event()
 {
   bool need_schedule = false;
   for (int i = static_cast<int>(this->_minimum_encryption_level); i <= static_cast<int>(QUICEncryptionLevel::ONE_RTT); ++i) {
-    if (this->_ack_frame_manager.will_generate_frame(QUIC_ENCRYPTION_LEVELS[i], 0)) {
+    if (this->_ack_frame_manager.will_generate_frame(QUIC_ENCRYPTION_LEVELS[i], 0, true, this->_seq_num++)) {
       need_schedule = true;
       break;
     }
@@ -2304,7 +2294,7 @@ QUICNetVConnection::_handle_periodic_ack_event()
 
 // QUICFrameGenerator
 bool
-QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
+QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;

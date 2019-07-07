@@ -40,7 +40,7 @@ QUICPinger::cancel(QUICEncryptionLevel level)
 }
 
 bool
-QUICPinger::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting)
+QUICPinger::_will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting)
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   // PING Frame is meaningless for ack_eliciting packet. Cancel it.
@@ -62,8 +62,8 @@ QUICPinger::will_generate_frame(QUICEncryptionLevel level, size_t current_packet
  * @param connection_credit This is not used. Because PING frame is not flow-controlled
  */
 QUICFrame *
-QUICPinger::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */, uint16_t maximum_frame_size,
-                           size_t current_packet_size)
+QUICPinger::_generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */, uint16_t maximum_frame_size,
+                            size_t current_packet_size)
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   QUICFrame *frame = nullptr;

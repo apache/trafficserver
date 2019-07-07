@@ -100,7 +100,7 @@ public:
   /*
    * Returns true only if should send ack.
    */
-  bool will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num) override;
+  bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
 
   /*
    * Calls create directly.

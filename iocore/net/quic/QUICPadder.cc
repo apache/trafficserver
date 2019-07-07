@@ -49,7 +49,7 @@ QUICPadder::count(QUICEncryptionLevel level)
 }
 
 bool
-QUICPadder::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting)
+QUICPadder::_will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting)
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   // no extre padding packet
@@ -62,8 +62,8 @@ QUICPadder::will_generate_frame(QUICEncryptionLevel level, size_t current_packet
 }
 
 QUICFrame *
-QUICPadder::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                           size_t current_packet_size)
+QUICPadder::_generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
+                            size_t current_packet_size)
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   QUICFrame *frame = nullptr;

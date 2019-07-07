@@ -169,7 +169,7 @@ QUICPathValidator::handle_frame(QUICEncryptionLevel level, const QUICFrame &fram
 // QUICFrameGenerator
 //
 bool
-QUICPathValidator::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
+QUICPathValidator::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;

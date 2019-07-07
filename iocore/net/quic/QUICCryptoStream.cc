@@ -102,7 +102,7 @@ QUICCryptoStream::write(const uint8_t *buf, int64_t len)
 }
 
 bool
-QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
+QUICCryptoStream::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
   return this->_write_buffer_reader->is_read_avail_more_than(0) || !this->is_retransmited_frame_queue_empty();
 }

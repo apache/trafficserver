@@ -407,7 +407,7 @@ QUICStreamManager::set_default_application(QUICApplication *app)
 }
 
 bool
-QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
+QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;
@@ -419,7 +419,7 @@ QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_n
   }
 
   for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
-    if (s->will_generate_frame(level, seq_num)) {
+    if (s->will_generate_frame(level, current_packet_size, ack_eliciting, seq_num)) {
       return true;
     }
   }

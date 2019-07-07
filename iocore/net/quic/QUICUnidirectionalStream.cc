@@ -125,7 +125,7 @@ QUICSendStream::state_stream_closed(int event, void *data)
 }
 
 bool
-QUICSendStream::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
+QUICSendStream::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
   return !this->is_retransmited_frame_queue_empty() || this->_write_vio.get_reader()->is_read_avail_more_than(0);
 }
@@ -527,9 +527,9 @@ QUICReceiveStream::is_cancelled() const
 }
 
 bool
-QUICReceiveStream::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
+QUICReceiveStream::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
-  return this->_local_flow_controller.will_generate_frame(level, seq_num) ||
+  return this->_local_flow_controller.will_generate_frame(level, current_packet_size, ack_eliciting, seq_num) ||
          (this->_stop_sending_reason != nullptr && this->_is_stop_sending_sent == false);
 }
 

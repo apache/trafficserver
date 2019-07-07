@@ -87,7 +87,8 @@ QUICAckFrameManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uin
 }
 
 bool
-QUICAckFrameManager::will_generate_frame(QUICEncryptionLevel level, uint32_t seq_num)
+QUICAckFrameManager::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting,
+                                         uint32_t seq_num)
 {
   // No ACK frame on ZERO_RTT level
   if (!this->_is_level_matched(level) || level == QUICEncryptionLevel::ZERO_RTT) {
