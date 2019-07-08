@@ -56,7 +56,10 @@ QUICPinger::_will_generate_frame(QUICEncryptionLevel level, size_t current_packe
     this->request(level);
   }
 
-  this->_ack_eliciting_packet_out = ack_eliciting;
+  // only update `_ack_eliciting_packet_out` when we has something to send.
+  if (current_packet_size) {
+    this->_ack_eliciting_packet_out = ack_eliciting;
+  }
   return this->_need_to_fire[static_cast<int>(level)] > 0;
 }
 
