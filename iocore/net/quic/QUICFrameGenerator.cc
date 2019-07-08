@@ -63,22 +63,27 @@ QUICFrameGenerator::on_frame_lost(QUICFrameId id)
 void
 QUICFrameGeneratorManager::add_generator(QUICFrameGenerator &generator, int weight)
 {
-  auto it = this->_vector.begin();
-  for (; it != this->_vector.end(); ++it) {
+  auto it = this->_inline_vector.begin();
+  for (; it != this->_inline_vector.end(); ++it) {
     if (it->first >= weight) {
       break;
     }
   }
-  this->_vector.emplace(it, weight, &generator);
+  this->_inline_vector.emplace(it, weight, &generator);
 }
 
-const std::vector<QUICFrameGenerator *>
-QUICFrameGeneratorManager::generators() const
+const std::vector<QUICFrameGenerator *> &
+QUICFrameGeneratorManager::generators()
 {
-  std::vector<QUICFrameGenerator *> vector;
-  for (auto it : this->_vector) {
-    vector.emplace_back(it.second);
+  // Because we don't remove generators. So The size changed means new generators is coming
+  if (!this->_generators.empty() && this->_generators.size() == this->_inline_vector.size()) {
+    return this->_generators;
   }
 
-  return vector;
+  this->_generators.clear();
+  for (auto it : this->_inline_vector) {
+    this->_generators.emplace_back(it.second);
+  }
+
+  return this->_generators;
 }

@@ -111,9 +111,11 @@ class QUICFrameGeneratorManager
 {
 public:
   void add_generator(QUICFrameGenerator &generator, int weight);
-  const std::vector<QUICFrameGenerator *> generators() const;
+  const std::vector<QUICFrameGenerator *> &generators();
 
 private:
   using QUICActiveFrameGenerator = std::pair<int, QUICFrameGenerator *>;
-  std::vector<QUICActiveFrameGenerator> _vector;
+
+  std::vector<QUICFrameGenerator *> _generators;
+  std::vector<QUICActiveFrameGenerator> _inline_vector;
 };
