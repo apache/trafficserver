@@ -101,8 +101,6 @@ libinknet_a_SOURCES = \
 	P_SNIActionPerformer.h \
 	P_CompletionUtil.h \
 	P_Connection.h \
-	P_InkBulkIO.h \
-	P_LibBulkIO.h \
 	P_Net.h \
 	P_NetAccept.h \
 	P_NetVConnection.h \
