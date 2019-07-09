@@ -468,20 +468,20 @@ public:
   inline bool
   operator==(const QUICPath &x) const
   {
-    if (this->_local_ep.port() != 0 && this->_local_ep.port() != x._local_ep.port()) {
+    if ((this->_local_ep.port() != 0 && x._local_ep.port() != 0) && this->_local_ep.port() != x._local_ep.port()) {
       return false;
     }
 
-    if (this->_remote_ep.port() != 0 && this->_remote_ep.port() != x._remote_ep.port()) {
+    if ((this->_remote_ep.port() != 0 && x._remote_ep.port() != 0) && this->_remote_ep.port() != x._remote_ep.port()) {
       return false;
     }
 
-    if (!IpAddr(this->_local_ep).isAnyAddr() && !IpAddr(x._local_ep).isAnyAddr()) {
-      return this->_local_ep == x._local_ep;
+    if ((!IpAddr(this->_local_ep).isAnyAddr() && !IpAddr(x._local_ep).isAnyAddr()) && this->_local_ep != x._local_ep) {
+      return false;
     }
 
-    if (!IpAddr(this->_remote_ep).isAnyAddr() || !IpAddr(x._remote_ep).isAnyAddr()) {
-      return this->_remote_ep == x._remote_ep;
+    if ((!IpAddr(this->_remote_ep).isAnyAddr() || !IpAddr(x._remote_ep).isAnyAddr()) && this->_remote_ep != x._remote_ep) {
+      return false;
     }
 
     return true;
