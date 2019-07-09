@@ -55,7 +55,7 @@ public:
   virtual size_t size() const = 0;
   virtual bool is_probing_frame() const;
   virtual bool is_flow_controlled() const;
-  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const = 0;
+  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const;
   virtual int debug_msg(char *msg, size_t msg_len) const;
   virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet){};
@@ -95,12 +95,10 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual bool is_flow_controlled() const override;
-  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
   virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
 
-  size_t store(uint8_t *buf, size_t *len, size_t limit, bool include_length_field) const;
   QUICStreamId stream_id() const;
   QUICOffset offset() const;
   IOBufferBlock *data() const;
@@ -301,7 +299,7 @@ public:
 
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
-  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
   virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
 
@@ -372,7 +370,7 @@ public:
                            QUICFrameGenerator *owner = nullptr);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
-  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
   virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
 
@@ -588,7 +586,7 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
-  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
 
   QUICStreamId stream_id() const;
   QUICAppErrorCode error_code() const;

@@ -71,6 +71,12 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   // CONNECTION_CLOSE frame
   QUICConnectionCloseFrame connectionCloseFrame(0, 0, "", 0, nullptr);
   connectionCloseFrame.store(buf, &len, 4096);
+  ibb = connectionCloseFrame.to_io_buffer_block(sizeof(buf));
+  len = 0;
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
   quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr, nullptr);
   CHECK(connection.getTotalFrameCount() == 1);
   CHECK(streamManager.getTotalFrameCount() == 1);

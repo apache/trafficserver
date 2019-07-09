@@ -721,19 +721,23 @@ TEST_CASE("Load RESET_STREAM Frame", "[quic]")
 TEST_CASE("Store RESET_STREAM Frame", "[quic]")
 {
   uint8_t buf[65535];
-  size_t len;
+  size_t len = 0;
 
   uint8_t expected[] = {
     0x04,                                          // Type
     0x92, 0x34, 0x56, 0x78,                        // Stream ID
-    0x00, 0x01,                                    // Error Code
+    0x01,                                          // Error Code
     0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
   };
   QUICRstStreamFrame rst_stream_frame(0x12345678, 0x0001, 0x1122334455667788);
-  CHECK(rst_stream_frame.size() == 15);
+  CHECK(rst_stream_frame.size() == 14);
 
-  rst_stream_frame.store(buf, &len, 65535);
-  CHECK(len == 15);
+  Ptr<IOBufferBlock> ibb = rst_stream_frame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
+  CHECK(len == 14);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
@@ -859,11 +863,11 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
   SECTION("storing w/ reason phrase")
   {
     uint8_t buf[32];
-    size_t len;
+    size_t len = 0;
 
     uint8_t expected[] = {
       0x1c,                        // Type
-      0x00, 0x0A,                  // Error Code
+      0x0A,                        // Error Code
       0x08,                        // Frame Type
       0x05,                        // Reason Phrase Length
       0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
@@ -872,7 +876,11 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
                                                     QUICFrameType::STREAM, 5, "ABCDE");
     CHECK(connection_close_frame.size() == sizeof(expected));
 
-    connection_close_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = connection_close_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == sizeof(expected));
     CHECK(memcmp(buf, expected, len) == 0);
   }
@@ -880,17 +888,21 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
   SECTION("storing w/o reason phrase")
   {
     uint8_t buf[32];
-    size_t len;
+    size_t len = 0;
 
     uint8_t expected[] = {
-      0x1c,       // Type
-      0x00, 0x0A, // Error Code
-      0x00,       // Frame Type
-      0x00,       // Reason Phrase Length
+      0x1c, // Type
+      0x0A, // Error Code
+      0x00, // Frame Type
+      0x00, // Reason Phrase Length
     };
     QUICConnectionCloseFrame connection_close_frame(static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION),
                                                     QUICFrameType::UNKNOWN, 0, nullptr);
-    connection_close_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = connection_close_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == sizeof(expected));
     CHECK(memcmp(buf, expected, len) == 0);
   }
@@ -1269,18 +1281,22 @@ TEST_CASE("Load STOP_SENDING Frame", "[quic]")
 TEST_CASE("Store STOP_SENDING Frame", "[quic]")
 {
   uint8_t buf[65535];
-  size_t len;
+  size_t len = 0;
 
   uint8_t expected[] = {
     0x05,                   // Type
     0x92, 0x34, 0x56, 0x78, // Stream ID
-    0x00, 0x01,             // Error Code
+    0x01,                   // Error Code
   };
   QUICStopSendingFrame stop_sending_frame(0x12345678, static_cast<QUICAppErrorCode>(0x01));
-  CHECK(stop_sending_frame.size() == 7);
+  CHECK(stop_sending_frame.size() == 6);
 
-  stop_sending_frame.store(buf, &len, 65535);
-  CHECK(len == 7);
+  Ptr<IOBufferBlock> ibb = stop_sending_frame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
+  CHECK(len == 6);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 

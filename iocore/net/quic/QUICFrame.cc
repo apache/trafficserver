@@ -119,6 +119,13 @@ QUICFrame::type(const uint8_t *buf)
   }
 }
 
+size_t
+QUICFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+{
+  ink_assert(!"Call to_io_buffer_block() instead");
+  return 0;
+}
+
 Ptr<IOBufferBlock>
 QUICFrame::to_io_buffer_block(size_t limit) const
 {
@@ -276,12 +283,6 @@ QUICStreamFrame::is_flow_controlled() const
   return true;
 }
 
-size_t
-QUICStreamFrame::store(uint8_t *buf, size_t *len, size_t limit) const
-{
-  return this->store(buf, len, limit, true);
-}
-
 int
 QUICStreamFrame::debug_msg(char *msg, size_t msg_len) const
 {
@@ -346,13 +347,6 @@ QUICStreamFrame::_store_header(uint8_t *buf, size_t *len, bool include_length_fi
   }
 
   return *len;
-}
-
-size_t
-QUICStreamFrame::store(uint8_t *buf, size_t *len, size_t limit, bool include_length_field) const
-{
-  ink_assert(!"Call to_io_buffer_block() instead");
-  return 0;
 }
 
 QUICStreamId
@@ -1055,30 +1049,43 @@ QUICRstStreamFrame::size() const
     return this->_size;
   }
 
-  return 1 + QUICVariableInt::size(this->_stream_id) + sizeof(QUICAppErrorCode) + QUICVariableInt::size(this->_final_offset);
+  return 1 + QUICVariableInt::size(this->_stream_id) + QUICVariableInt::size(this->_error_code) +
+         QUICVariableInt::size(this->_final_offset);
 }
 
-size_t
-QUICRstStreamFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICRstStreamFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::RESET_STREAM);
-  ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICOffset(this->_final_offset, p, &n);
-  p += n;
+  size_t written_len = 0;
+  block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(1 + 24));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
-  *len = p - buf;
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::RESET_STREAM);
+  n += 1;
 
-  return *len;
+  // Stream ID (i)
+  QUICTypeUtil::write_QUICStreamId(this->_stream_id, block_start + n, &written_len);
+  n += written_len;
+
+  // Application Error Code (i)
+  QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, block_start + n, &written_len);
+  n += written_len;
+
+  // Final Size (i)
+  QUICTypeUtil::write_QUICOffset(this->_final_offset, block_start + n, &written_len);
+  n += written_len;
+
+  block->fill(n);
+  return block;
 }
 
 int
@@ -1312,7 +1319,7 @@ QUICConnectionCloseFrame::size() const
     return this->_size;
   }
 
-  return 1 + sizeof(QUICTransErrorCode) + QUICVariableInt::size(sizeof(QUICFrameType)) +
+  return 1 + QUICVariableInt::size(sizeof(QUICTransErrorCode)) + QUICVariableInt::size(sizeof(QUICFrameType)) +
          QUICVariableInt::size(this->_reason_phrase_length) + this->_reason_phrase_length;
 }
 
@@ -1322,42 +1329,58 @@ QUICConnectionCloseFrame::size() const
    PADDING frame in Frame Type field means frame type that triggered the error is unknown.
    When `_frame_type` is QUICFrameType::UNKNOWN, it's converted to QUICFrameType::PADDING (0x0).
  */
-size_t
-QUICConnectionCloseFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICConnectionCloseFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> first_block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return first_block;
   }
 
-  size_t n;
-  uint8_t *p = buf;
-  *p         = this->_type;
-  ++p;
+  // Create a block for Error Code(i) and Frame Type(i)
+  size_t written_len = 0;
+  first_block        = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  first_block->alloc(iobuffer_size_to_index(1 + 24));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(first_block->start());
 
-  // Error Code (16)
-  QUICTypeUtil::write_QUICTransErrorCode(this->_error_code, p, &n);
-  p += n;
+  // Type
+  block_start[0] = this->_type;
+  n += 1;
+
+  // Error Code (i)
+  QUICIntUtil::write_QUICVariableInt(this->_error_code, block_start + n, &written_len);
+  n += written_len;
 
   // Frame Type (i)
   QUICFrameType frame_type = this->_frame_type;
   if (frame_type == QUICFrameType::UNKNOWN) {
     frame_type = QUICFrameType::PADDING;
   }
-  *p = static_cast<uint8_t>(frame_type);
-  ++p;
+  QUICIntUtil::write_QUICVariableInt(static_cast<uint64_t>(frame_type), block_start + n, &written_len);
+  n += written_len;
 
   // Reason Phrase Length (i)
-  QUICIntUtil::write_QUICVariableInt(this->_reason_phrase_length, p, &n);
-  p += n;
+  QUICIntUtil::write_QUICVariableInt(this->_reason_phrase_length, block_start + n, &written_len);
+  n += written_len;
 
-  // Reason Phrase (*)
-  if (this->_reason_phrase_length > 0) {
-    memcpy(p, this->_reason_phrase, this->_reason_phrase_length);
-    p += this->_reason_phrase_length;
+  first_block->fill(n);
+
+  // Create a block for reason if necessary
+  if (this->_reason_phrase_length != 0) {
+    // Reason Phrase (*)
+    Ptr<IOBufferBlock> reason_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    reason_block->alloc(iobuffer_size_to_index(this->_reason_phrase_length));
+    memcpy(reinterpret_cast<uint8_t *>(reason_block->start()), this->_reason_phrase, this->_reason_phrase_length);
+    reason_block->fill(this->_reason_phrase_length);
+
+    // Append reason block to the first block
+    first_block->next = reason_block;
   }
 
-  *len = p - buf;
-  return *len;
+  // Return the chain
+  return first_block;
 }
 
 int
@@ -2130,27 +2153,38 @@ QUICStopSendingFrame::size() const
     return this->_size;
   }
 
-  return sizeof(QUICFrameType) + QUICVariableInt::size(this->_stream_id) + sizeof(QUICAppErrorCode);
+  return sizeof(QUICFrameType) + QUICVariableInt::size(this->_stream_id) + QUICVariableInt::size(sizeof(QUICAppErrorCode));
 }
 
-size_t
-QUICStopSendingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICStopSendingFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::STOP_SENDING);
-  ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, p, &n);
-  p += n;
+  size_t written_len = 0;
+  block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(1 + 24));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
-  *len = p - buf;
-  return *len;
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::STOP_SENDING);
+  n += 1;
+
+  // Stream ID (i)
+  QUICTypeUtil::write_QUICStreamId(this->_stream_id, block_start + n, &written_len);
+  n += written_len;
+
+  // Application Error Code (i)
+  QUICTypeUtil::write_QUICAppErrorCode(this->_error_code, block_start + n, &written_len);
+  n += written_len;
+
+  block->fill(n);
+  return block;
 }
 
 QUICAppErrorCode

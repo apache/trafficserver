@@ -252,15 +252,15 @@ QUICTypeUtil::write_QUICOffset(QUICOffset offset, uint8_t *buf, size_t *len)
 }
 
 void
-QUICTypeUtil::write_QUICTransErrorCode(uint16_t error_code, uint8_t *buf, size_t *len)
+QUICTypeUtil::write_QUICTransErrorCode(uint64_t error_code, uint8_t *buf, size_t *len)
 {
-  QUICIntUtil::write_uint_as_nbytes(static_cast<uint64_t>(error_code), 2, buf, len);
+  QUICIntUtil::write_QUICVariableInt(static_cast<uint64_t>(error_code), buf, len);
 }
 
 void
 QUICTypeUtil::write_QUICAppErrorCode(QUICAppErrorCode error_code, uint8_t *buf, size_t *len)
 {
-  QUICIntUtil::write_uint_as_nbytes(static_cast<uint64_t>(error_code), 2, buf, len);
+  QUICIntUtil::write_QUICVariableInt(static_cast<uint64_t>(error_code), buf, len);
 }
 
 void

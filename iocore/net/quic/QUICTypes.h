@@ -576,7 +576,7 @@ public:
   static void write_QUICVersion(QUICVersion version, uint8_t *buf, size_t *len);
   static void write_QUICStreamId(QUICStreamId stream_id, uint8_t *buf, size_t *len);
   static void write_QUICOffset(QUICOffset offset, uint8_t *buf, size_t *len);
-  static void write_QUICTransErrorCode(uint16_t error_code, uint8_t *buf, size_t *len);
+  static void write_QUICTransErrorCode(uint64_t error_code, uint8_t *buf, size_t *len);
   static void write_QUICAppErrorCode(QUICAppErrorCode error_code, uint8_t *buf, size_t *len);
   static void write_QUICMaxData(uint64_t max_data, uint8_t *buf, size_t *len);
 
