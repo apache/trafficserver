@@ -1212,9 +1212,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
 {
   HttpTunnelProducer *p = c->producer;
 
-  if (p && p->alive && p->read_buffer->write_avail() > 0
-
-  ) {
+  if (p && p->alive && p->read_buffer->write_avail() > 0) {
     // Only do flow control if enabled and the producer is an external
     // source.  Otherwise disable by making the backlog zero. Because
     // the backlog short cuts quit when the value is equal (or
@@ -1335,11 +1333,7 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     //    the SM since the reenabling has the side effect
     //    updating the buffer state for the VConnection
     //    that is being reenabled
-    if (p->alive && p->read_vio
-
-        && p->read_buffer->write_avail() > 0
-
-    ) {
+    if (p->alive && p->read_vio && p->read_buffer->write_avail() > 0) {
       if (p->is_throttled()) {
         this->consumer_reenable(c);
       } else {
