@@ -386,8 +386,8 @@ inline void
 UnixNetVConnection::cancel_inactivity_timeout()
 {
   Debug("socket", "Cancel inactive timeout for NetVC=%p", this);
-  inactivity_timeout_in = 0;
-  set_inactivity_timeout(0);
+  inactivity_timeout_in      = 0;
+  next_inactivity_timeout_at = 0;
 }
 
 inline void
