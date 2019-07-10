@@ -24,13 +24,11 @@ Test client_context_dump plugin
 '''
 
 # Set up ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=False)
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True, enable_tls=True)
 
 # Set up ssl files
 ts.addSSLfile("ssl/one.com.pem")
 ts.addSSLfile("ssl/two.com.pem")
-
-ts.Variables.ssl_port = 4443
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
@@ -39,8 +37,6 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.private_key.path': '{}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.cert.path': '{}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.private_key.path': '{}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': (
-        '{0} {1}:ssl'.format(ts.Variables.port, ts.Variables.ssl_port))
 })
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -66,9 +62,9 @@ t = Test.AddTestRun("Test traffic server started properly")
 t.StillRunningAfter = Test.Processes.ts
 
 p = t.Processes.Default
-p.Command = "curl http://127.0.0.1:8080"
+p.Command = "curl http://127.0.0.1:{0}".format(ts.Variables.port)
 p.ReturnCode = 0
-p.StartBefore(Test.Processes.ts, ready=When.PortOpen(8080))
+p.StartBefore(Test.Processes.ts)
 
 # Client contexts test
 tr = Test.AddTestRun()

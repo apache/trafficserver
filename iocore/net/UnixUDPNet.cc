@@ -53,8 +53,6 @@ int32_t g_udp_periodicCleanupSlots;
 int32_t g_udp_periodicFreeCancelledPkts;
 int32_t g_udp_numSendRetries;
 
-#include "P_LibBulkIO.h"
-
 //
 // Public functions
 // See header for documentation

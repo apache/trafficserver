@@ -257,9 +257,9 @@ IOBufferReader::memchr(char c, int64_t len, int64_t offset)
 }
 
 char *
-IOBufferReader::memcpy(const void *ap, int64_t len, int64_t offset)
+IOBufferReader::memcpy(void *ap, int64_t len, int64_t offset)
 {
-  char *p          = (char *)ap;
+  char *p          = static_cast<char *>(ap);
   IOBufferBlock *b = block.get();
   offset += start_offset;
 

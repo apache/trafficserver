@@ -633,12 +633,12 @@ TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64_t length)
   return b->write(buf, length);
 }
 
-// not in SDK3.0
-void
-TSIOBufferReaderCopy(TSIOBufferReader readerp, const void *buf, int64_t length)
+int64_t
+TSIOBufferReaderCopy(TSIOBufferReader readerp, void *buf, int64_t length)
 {
-  IOBufferReader *r = (IOBufferReader *)readerp;
-  r->memcpy(buf, length);
+  auto r{reinterpret_cast<IOBufferReader *>(readerp)};
+  char *limit = r->memcpy(buf, length, 0);
+  return limit - static_cast<char *>(buf);
 }
 
 void

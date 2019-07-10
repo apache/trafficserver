@@ -34,7 +34,7 @@ Synopsis
 .. function:: TSIOBufferBlock TSIOBufferReaderStart(TSIOBufferReader readerp)
 .. function:: int64_t TSIOBufferReaderAvail(TSIOBufferReader readerp)
 .. function:: bool TSIOBufferReaderIsAvailAtLeast(TSIOBufferReader, int64_t nbytes)
-.. function:: int64_t TSIOBufferReaderRead(TSIOBufferReader reader, const void * buf, int64_t length)
+.. function:: int64_t TSIOBufferReaderCopy(TSIOBufferReader reader, void * buf, int64_t length)
 .. function:: bool TSIOBufferReaderIterate(TSIOBufferReader reader, TSIOBufferBlockFunc* func, void* context)
 
 .. type:: TSIOBufferBlockFunc
@@ -53,59 +53,68 @@ the contents of the buffer. A buffer can have multiple readers and each reader c
 buffer independently. Data which for which there are no readers is discarded from the buffer. This
 has two very important consequences --
 
-* Data for which there are no readers and no writer will be discarded. In effect this means without
+*  Data for which there are no readers and no writer will be discarded. In effect this means without
    any readers only the current write buffer block will be maintained, older buffer blocks will
    disappear.
-*  Conversely keeping a reader around unused will pin the buffer data in memory. This can be useful or harmful.
+
+*  Conversely keeping a reader around unused will pin the buffer data in memory. This can be useful
+   or harmful.
 
 A buffer has a fixed amount of possible readers (currently 5) which is determined at compile
 time. Reader allocation is fast and cheap until this maximum is reached at which point it fails.
 
-:func:`TSIOBufferReaderAlloc` allocates a reader for the IO buffer :arg:`bufp`. This should only be
-      called on a newly allocated buffer. If not the location of the reader in the buffer will be
-      indeterminate. Use :func:`TSIOBufferReaderClone` to get another reader if the buffer is
-      already in use.
+:func:`TSIOBufferReaderAlloc` allocate a reader.
+   A reader for the IO buffer :arg:`bufp` is created and returned. This should only be called on a
+   newly allocated buffer. If not the location of the reader in the buffer will be indeterminate.
+   Use :func:`TSIOBufferReaderClone` to get another reader if the buffer is already in use.
 
-:func:`TSIOBufferReaderClone` allocates a reader and sets its position in the buffer to be the same as :arg:`reader`.
+:func:`TSIOBufferReaderClone` duplicate a reader.
+   A reader for :arg:`bufp` is allocated and the intial reader position is set to be the same as
+   :arg:`reader`.
 
-:func:`TSIOBufferReaderFree` de-allocates the reader. Any data referenced only by this reader is
-      discarded from the buffer.
+:func:`TSIOBufferReaderFree` de-allocate :arg:`reader`.
+   This also effectively consumes (see :func:`TSIOBufferReaderConsume`) all data for :arg:`reader`.
 
-:func:`TSIOBufferReaderConsume` advances the position of :arg:`reader` in its IO buffer by the
-      the smaller of :arg:`nbytes` and the maximum available in the buffer.
+:func:`TSIOBufferReaderConsume` consume data from :arg:`reader`.
+   This advances the position of :arg:`reader` in its IO buffer by the the smaller of :arg:`nbytes`
+   and the maximum available in the buffer. This is required to release the buffer memory - when
+   data has been consumed by all readers, it is discarded.
 
-:func:`TSIOBufferReaderStart` returns the IO buffer block containing the position of
-:arg:`reader`.
+:func:`TSIOBufferReaderStart` Get the first buffer block.
+   This returns the :type:`TSIOBufferBlock` which contains the first byte available to :arg:`reader`.
 
    .. note:: The byte at the position of :arg:`reader` is in the block but is not necessarily the first byte of the block.
 
-:func:`TSIOBufferReaderAvail` returns the number of bytes which :arg:`reader` could consume. That is
-      the number of bytes in the IO buffer starting at the current position of :arg:`reader`.
+:func:`TSIOBufferReaderAvail` returns the number of bytes available.
+   The bytes available is the amount of data that could be read from :arg:`reader`.
 
-:func:`TSIOBufferReaderIsAvailAtLeast` return ``true`` if the available number of bytes for
-      :arg:`reader` is at least :arg:`nbytes`, ``false`` if not. This can be more efficient than
-      :func:`TSIOBufferReaderAvail` because the latter must walk all the IO buffer blocks in the IO
-      buffer. This function returns as soon as the return value can be determined. In particular a
-      value of ``1`` for :arg:`nbytes` means only the first buffer block will be checked.
+:func:`TSIOBufferReaderIsAvailAtLeast` - check amount of data available.
+   This function returns :code:`true` if the available number of bytes for :arg:`reader` is at least
+   :arg:`nbytes`, :code:`false` if not. This can be much more efficient than
+   :func:`TSIOBufferReaderAvail` because the latter must walk all the IO buffer blocks in the IO
+   buffer. This function returns as soon as the return value can be determined. In particular a
+   value of ``1`` for :arg:`nbytes` means only the first buffer block will be checked making the
+   call very fast.
 
-:func:`TSIOBufferReaderRead` reads data from :arg:`reader`. This first copies data from the IO
-      buffer for :arg:`reader` to the target buffer :arg:`bufp`, starting at :arg:`reader`s
-      position, and then advances (as with :func:`TSIOBufferReaderConsume`) :arg:`reader`s
-      position past the copied data. The amount of data read in this fashion is the smaller of the
-      amount of data available in the IO buffer for :arg:`reader` and the size of the target buffer
-      (:arg:`length`).
+:func:`TSIOBufferReaderCopy` copies data from :arg:`reader` into :arg:`buff`.
+   This copies data from the IO buffer for :arg:`reader` to the target buffer :arg:`bufp`. The
+   amount of data read in this fashion is the smaller of the amount of data available in the IO
+   buffer for :arg:`reader` and the size of the target buffer (:arg:`length`). The number of bytes
+   copied is returned.
 
-:func:`TSIOBufferReaderIterate` iterates over the blocks for :arg:`reader`. For each block
-:arg:`func` is called with with the data for the block and :arg:`context`. The :arg:`context` is an
-opaque type to this function and is passed unchanged to :arg:`func`. It is intended to be used as
-context for :arg:`func`. If :arg:`func` returns ``false`` the iteration terminates. If :arg:`func`
-returns true the block is consumed. The return value for :func:`TSIOBufferReaderIterate` is the
-return value from the last call to :arg:`func`.
+:func:`TSIOBufferReaderIterate` iterate over the blocks for :arg:`reader`.
+  For each block :arg:`func` is called with with the data for the block and :arg:`context`. The
+  :arg:`context` is an opaque type to this function and is passed unchanged to :arg:`func`. It is
+  intended to be used as context for :arg:`func`. If :arg:`func` returns ``false`` the iteration
+  terminates. If :arg:`func` returns true the block is consumed. The return value for
+  :func:`TSIOBufferReaderIterate` is the return value from the last call to :arg:`func`.
 
-   .. note:: If it would be a problem for the iteration to consume the data (especially in cases where
-             ``false`` might be returned) the reader can be cloned via :func:`TSIOBufferReaderClone` to
-             keep the data in the IO buffer and available. If not needed the reader can be destroyed or
-             if needed the original reader can be destroyed and replaced by the clone.
+.. note::
+
+  If it would be a problem for the iteration to consume the data (especially in cases where
+  :code:`false` might be returned) the reader can be cloned via :func:`TSIOBufferReaderClone` to
+  keep the data in the IO buffer and available. If not needed the reader can be destroyed or
+  if needed the original reader can be destroyed and replaced by the clone.
 
 .. note:: Destroying a :type:`TSIOBuffer` will de-allocate and destroy all readers for that buffer.
 
