@@ -36,7 +36,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server", lookup_key="{%Range}{PATH}")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_manager")
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
 body = "the quick brown fox" # len 19
 
@@ -256,7 +256,6 @@ ts.Disk.records_config.update({
   'proxy.config.http.insert_age_in_response': 0,
   'proxy.config.http.insert_request_via_str': 0,
   'proxy.config.http.insert_response_via_str': 3,
-  'proxy.config.http.server_ports': '{}'.format(ts.Variables.port),
 })
 
 # Override builtin error check as these cases will fail
@@ -269,7 +268,7 @@ ts.Disk.diags_log.Content += Testers.ContainsExpression('reason="Mismatch/Bad bl
 # 0 Test - Etag mismatch test
 tr = Test.AddTestRun("Etag test")
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/etag'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold_error/etag.stdout.gold"

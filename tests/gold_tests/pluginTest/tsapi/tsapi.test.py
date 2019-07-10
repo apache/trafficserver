@@ -43,8 +43,6 @@ ts.Disk.records_config.update({
     'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': (
-        'ipv4:{0} ipv4:{1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port)),
     'proxy.config.url_remap.remap_required': 0,
     'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'http|test_tsapi',

@@ -68,7 +68,7 @@ load_http_hdr_LDADD = -L. -lhdrs \
 check_PROGRAMS = \
 	test_mime \
 	test_proxy_hdrs \
-  test_hdr_heap \
+	test_hdr_heap \
 	test_Huffmancode
 
 TESTS = $(check_PROGRAMS)
