@@ -69,7 +69,8 @@ check_PROGRAMS = \
 	test_mime \
 	test_proxy_hdrs \
 	test_hdr_heap \
-	test_Huffmancode
+	test_Huffmancode \
+	test_XPACK
 
 TESTS = $(check_PROGRAMS)
 
@@ -133,6 +134,18 @@ test_Huffmancode_SOURCES = \
 	HuffmanCodec.cc \
 	HuffmanCodec.h
 
+test_XPACK_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I$(abs_top_srcdir)/tests/include
+
+test_XPACK_LDADD = \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
+
+test_XPACK_SOURCES = \
+	unit_tests/test_XPACK.cc \
+	HuffmanCodec.cc \
+	XPACK.cc
 
 #test_UNUSED_SOURCES = \
 #  test_urlhash.cc
