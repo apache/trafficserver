@@ -98,6 +98,7 @@ iocore/hostdb/test_RefCountCache
 
 proxy/hdrs/test_mime
 proxy/hdrs/test_Huffmancode
+proxy/hdrs/test_XPACK
 proxy/http/test_ForwardedConfig
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_Http2FrequencyCounter
