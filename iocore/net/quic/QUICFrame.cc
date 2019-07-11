@@ -165,7 +165,7 @@ QUICStreamFrame::QUICStreamFrame(Ptr<IOBufferBlock> &block, QUICStreamId stream_
 
 QUICStreamFrame::QUICStreamFrame(const uint8_t *buf, size_t len, const QUICPacket *packet) : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 QUICStreamFrame::QUICStreamFrame(const QUICStreamFrame &o)
@@ -180,10 +180,11 @@ QUICStreamFrame::QUICStreamFrame(const QUICStreamFrame &o)
 }
 
 void
-QUICStreamFrame::parse(const uint8_t *buf, size_t len)
+QUICStreamFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
+  this->_packet = packet;
 
   uint8_t *pos            = const_cast<uint8_t *>(buf);
   this->_has_offset_field = (buf[0] & 0x04) != 0; // "O" of "0b00010OLF"
@@ -422,7 +423,7 @@ QUICCryptoFrame::QUICCryptoFrame(Ptr<IOBufferBlock> &block, QUICOffset offset, Q
 
 QUICCryptoFrame::QUICCryptoFrame(const uint8_t *buf, size_t len, const QUICPacket *packet) : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 QUICCryptoFrame::QUICCryptoFrame(const QUICCryptoFrame &o)
@@ -431,11 +432,12 @@ QUICCryptoFrame::QUICCryptoFrame(const QUICCryptoFrame &o)
 }
 
 void
-QUICCryptoFrame::parse(const uint8_t *buf, size_t len)
+QUICCryptoFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_offset, field_len)) {
@@ -554,16 +556,17 @@ QUICCryptoFrame::data() const
 
 QUICAckFrame::QUICAckFrame(const uint8_t *buf, size_t len, const QUICPacket *packet) : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
-QUICAckFrame::parse(const uint8_t *buf, size_t len)
+QUICAckFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
-  bool has_ecn = (buf[0] == static_cast<uint8_t>(QUICFrameType::ACK_WITH_ECN));
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
+  bool has_ecn  = (buf[0] == static_cast<uint8_t>(QUICFrameType::ACK_WITH_ECN));
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_largest_acknowledged, field_len)) {
@@ -995,15 +998,16 @@ QUICRstStreamFrame::QUICRstStreamFrame(QUICStreamId stream_id, QUICAppErrorCode 
 
 QUICRstStreamFrame::QUICRstStreamFrame(const uint8_t *buf, size_t len, const QUICPacket *packet) : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
-QUICRstStreamFrame::parse(const uint8_t *buf, size_t len)
+QUICRstStreamFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = 1 + const_cast<uint8_t *>(buf);
+  this->_packet = packet;
+  uint8_t *pos  = 1 + const_cast<uint8_t *>(buf);
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_stream_id, field_len)) {
@@ -1108,15 +1112,16 @@ QUICRstStreamFrame::final_offset() const
 
 QUICPingFrame::QUICPingFrame(const uint8_t *buf, size_t len, const QUICPacket *packet) : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
-QUICPingFrame::parse(const uint8_t *buf, size_t len)
+QUICPingFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   this->_reset();
-  this->_valid = true;
-  this->_size  = 1;
+  this->_packet = packet;
+  this->_valid  = true;
+  this->_size   = 1;
 }
 
 QUICFrameType
@@ -1148,16 +1153,17 @@ QUICPingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 //
 QUICPaddingFrame::QUICPaddingFrame(const uint8_t *buf, size_t len, const QUICPacket *packet) : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
-QUICPaddingFrame::parse(const uint8_t *buf, size_t len)
+QUICPaddingFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  this->_size  = 0;
-  this->_valid = true;
+  this->_packet = packet;
+  this->_size   = 0;
+  this->_valid  = true;
   // find out how many padding frames in this buf
   for (size_t i = 0; i < len; i++) {
     if (*(buf + i) == static_cast<uint8_t>(QUICFrameType::PADDING)) {
@@ -1225,7 +1231,7 @@ QUICConnectionCloseFrame::QUICConnectionCloseFrame(uint16_t error_code, uint64_t
 QUICConnectionCloseFrame::QUICConnectionCloseFrame(const uint8_t *buf, size_t len, const QUICPacket *packet)
   : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
@@ -1243,12 +1249,13 @@ QUICConnectionCloseFrame::_reset()
 }
 
 void
-QUICConnectionCloseFrame::parse(const uint8_t *buf, size_t len)
+QUICConnectionCloseFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  this->_type  = buf[0];
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  this->_type   = buf[0];
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   if (LEFT_SPACE(pos) < 2) {
     return;
@@ -1425,15 +1432,16 @@ QUICMaxDataFrame::_reset()
 
 QUICMaxDataFrame::QUICMaxDataFrame(const uint8_t *buf, size_t len, const QUICPacket *packet) : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
-QUICMaxDataFrame::parse(const uint8_t *buf, size_t len)
+QUICMaxDataFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = 1 + const_cast<uint8_t *>(buf);
+  this->_packet = packet;
+  uint8_t *pos  = 1 + const_cast<uint8_t *>(buf);
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_maximum_data, field_len)) {
@@ -1516,15 +1524,16 @@ QUICMaxStreamDataFrame::_reset()
 QUICMaxStreamDataFrame::QUICMaxStreamDataFrame(const uint8_t *buf, size_t len, const QUICPacket *packet)
   : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
-QUICMaxStreamDataFrame::parse(const uint8_t *buf, size_t len)
+QUICMaxStreamDataFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_stream_id, field_len)) {
@@ -1615,15 +1624,16 @@ QUICMaxStreamsFrame::_reset()
 
 QUICMaxStreamsFrame::QUICMaxStreamsFrame(const uint8_t *buf, size_t len, const QUICPacket *packet) : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
-QUICMaxStreamsFrame::parse(const uint8_t *buf, size_t len)
+QUICMaxStreamsFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_maximum_streams, field_len)) {
@@ -1679,7 +1689,7 @@ QUICMaxStreamsFrame::maximum_streams() const
 //
 QUICDataBlockedFrame::QUICDataBlockedFrame(const uint8_t *buf, size_t len, const QUICPacket *packet) : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
@@ -1694,11 +1704,12 @@ QUICDataBlockedFrame::_reset()
 }
 
 void
-QUICDataBlockedFrame::parse(const uint8_t *buf, size_t len)
+QUICDataBlockedFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_offset, field_len)) {
@@ -1763,7 +1774,7 @@ QUICDataBlockedFrame::offset() const
 QUICStreamDataBlockedFrame::QUICStreamDataBlockedFrame(const uint8_t *buf, size_t len, const QUICPacket *packet)
   : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
@@ -1779,11 +1790,12 @@ QUICStreamDataBlockedFrame::_reset()
 }
 
 void
-QUICStreamDataBlockedFrame::parse(const uint8_t *buf, size_t len)
+QUICStreamDataBlockedFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_stream_id, field_len)) {
@@ -1860,7 +1872,7 @@ QUICStreamDataBlockedFrame::offset() const
 QUICStreamIdBlockedFrame::QUICStreamIdBlockedFrame(const uint8_t *buf, size_t len, const QUICPacket *packet)
   : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
@@ -1875,11 +1887,12 @@ QUICStreamIdBlockedFrame::_reset()
 }
 
 void
-QUICStreamIdBlockedFrame::parse(const uint8_t *buf, size_t len)
+QUICStreamIdBlockedFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_stream_id, field_len)) {
@@ -1937,7 +1950,7 @@ QUICStreamIdBlockedFrame::stream_id() const
 QUICNewConnectionIdFrame::QUICNewConnectionIdFrame(const uint8_t *buf, size_t len, const QUICPacket *packet)
   : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
@@ -1953,11 +1966,12 @@ QUICNewConnectionIdFrame::_reset()
 }
 
 void
-QUICNewConnectionIdFrame::parse(const uint8_t *buf, size_t len)
+QUICNewConnectionIdFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_sequence, field_len)) {
@@ -2078,15 +2092,16 @@ QUICStopSendingFrame::_reset()
 
 QUICStopSendingFrame::QUICStopSendingFrame(const uint8_t *buf, size_t len, const QUICPacket *packet) : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
-QUICStopSendingFrame::parse(const uint8_t *buf, size_t len)
+QUICStopSendingFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_stream_id, field_len)) {
@@ -2156,7 +2171,7 @@ QUICStopSendingFrame::stream_id() const
 QUICPathChallengeFrame::QUICPathChallengeFrame(const uint8_t *buf, size_t len, const QUICPacket *packet)
   : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
@@ -2170,11 +2185,12 @@ QUICPathChallengeFrame::_reset()
 }
 
 void
-QUICPathChallengeFrame::parse(const uint8_t *buf, size_t len)
+QUICPathChallengeFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   if (LEFT_SPACE(pos) < QUICPathChallengeFrame::DATA_LEN) {
     return;
@@ -2243,7 +2259,7 @@ QUICPathChallengeFrame::data() const
 QUICPathResponseFrame::QUICPathResponseFrame(const uint8_t *buf, size_t len, const QUICPacket *packet)
   : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
@@ -2257,11 +2273,12 @@ QUICPathResponseFrame::_reset()
 }
 
 void
-QUICPathResponseFrame::parse(const uint8_t *buf, size_t len)
+QUICPathResponseFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   if (LEFT_SPACE(pos) < QUICPathChallengeFrame::DATA_LEN) {
     return;
@@ -2325,7 +2342,7 @@ QUICPathResponseFrame::data() const
 //
 QUICNewTokenFrame::QUICNewTokenFrame(const uint8_t *buf, size_t len, const QUICPacket *packet) : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
@@ -2341,11 +2358,12 @@ QUICNewTokenFrame::_reset()
 }
 
 void
-QUICNewTokenFrame::parse(const uint8_t *buf, size_t len)
+QUICNewTokenFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_token_length, field_len)) {
@@ -2422,7 +2440,7 @@ QUICNewTokenFrame::token() const
 QUICRetireConnectionIdFrame::QUICRetireConnectionIdFrame(const uint8_t *buf, size_t len, const QUICPacket *packet)
   : QUICFrame(0, nullptr, packet)
 {
-  this->parse(buf, len);
+  this->parse(buf, len, packet);
 }
 
 void
@@ -2438,11 +2456,12 @@ QUICRetireConnectionIdFrame::_reset()
 }
 
 void
-QUICRetireConnectionIdFrame::parse(const uint8_t *buf, size_t len)
+QUICRetireConnectionIdFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
   ink_assert(len >= 1);
   this->_reset();
-  uint8_t *pos = const_cast<uint8_t *>(buf) + 1;
+  this->_packet = packet;
+  uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_seq_num, field_len)) {
@@ -2523,8 +2542,9 @@ QUICUnknownFrame::store(uint8_t *buf, size_t *len, size_t limit) const
 }
 
 void
-QUICUnknownFrame::parse(const uint8_t *buf, size_t len)
+QUICUnknownFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 {
+  this->_packet = packet;
 }
 
 int
@@ -2621,7 +2641,7 @@ QUICFrameFactory::fast_create(const uint8_t *buf, size_t len, const QUICPacket *
       this->_reusable_frames[static_cast<ptrdiff_t>(QUICFrame::type(buf))] = frame;
     }
   } else {
-    frame->parse(buf, len);
+    frame->parse(buf, len, packet);
   }
 
   return *frame;
