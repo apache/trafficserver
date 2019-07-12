@@ -106,7 +106,7 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     HttpHeader header(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
 
     // set the request url back to pristine in case of plugin stacking
-    header.setUrl(data->m_urlbuffer, data->m_urlloc);
+    header.setUrl(data->m_urlbuf, data->m_urlloc);
 
     header.setKeyVal(TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, data->m_hostname, data->m_hostlen);
 
