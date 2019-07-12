@@ -242,7 +242,7 @@ curl_and_args = 'sh curlsort.sh -H "Host: www.example.com"'
 # set up whole asset fetch into cache
 ts.Disk.remap_config.AddLine(
   'map / http://127.0.0.1:{}'.format(server.Variables.Port) +
-    ' @plugin=slice.so @pparam=--test-blockbytes={}'.format(blockbytes)
+    ' @plugin=slice.so @pparam=--blockbytes-test={}'.format(blockbytes)
 )
 
 # minimal configuration
