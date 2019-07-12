@@ -76,32 +76,75 @@ read_request(TSHttpTxn txnp, Config *const config)
         return false;
       }
 
-      // need the pristine url, especially for global plugins
-      TSMBuffer urlbuf;
-      TSMLoc urlloc;
-      TSReturnCode rcode = TSHttpTxnPristineUrlGet(txnp, &urlbuf, &urlloc);
+      // is the plugin configured to use a remap host?
+      std::string const &newhost = config->m_remaphost;
+      if (newhost.empty()) {
+        TSMBuffer urlbuf;
+        TSMLoc urlloc;
+        TSReturnCode rcode = TSHttpTxnPristineUrlGet(txnp, &urlbuf, &urlloc);
 
-      if (TS_SUCCESS == rcode) {
-        TSMBuffer const newbuf = TSMBufferCreate();
-        TSMLoc newloc          = nullptr;
-        rcode                  = TSUrlClone(newbuf, urlbuf, urlloc, &newloc);
-        TSHandleMLocRelease(urlbuf, TS_NULL_MLOC, urlloc);
+        if (TS_SUCCESS == rcode) {
+          TSMBuffer const newbuf = TSMBufferCreate();
+          TSMLoc newloc          = nullptr;
+          rcode                  = TSUrlClone(newbuf, urlbuf, urlloc, &newloc);
+          TSHandleMLocRelease(urlbuf, TS_NULL_MLOC, urlloc);
 
-        if (TS_SUCCESS != rcode) {
-          ERROR_LOG("Error cloning pristine url");
-          delete data;
-          TSMBufferDestroy(newbuf);
-          return false;
+          if (TS_SUCCESS != rcode) {
+            ERROR_LOG("Error cloning pristine url");
+            TSMBufferDestroy(newbuf);
+            delete data;
+            return false;
+          }
+
+          data->m_urlbuf = newbuf;
+          data->m_urlloc = newloc;
         }
+      } else { // grab the effective url, swap out the host and zero the port
+        int len            = 0;
+        char *const effstr = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
 
-        data->m_urlbuffer = newbuf;
-        data->m_urlloc    = newloc;
+        if (nullptr != effstr) {
+          TSMBuffer const newbuf = TSMBufferCreate();
+          TSMLoc newloc          = nullptr;
+          bool okay              = false;
+
+          if (TS_SUCCESS == TSUrlCreate(newbuf, &newloc)) {
+            char const *start = effstr;
+            if (TS_PARSE_DONE == TSUrlParse(newbuf, newloc, &start, start + len)) {
+              if (TS_SUCCESS == TSUrlHostSet(newbuf, newloc, newhost.c_str(), newhost.size()) &&
+                  TS_SUCCESS == TSUrlPortSet(newbuf, newloc, 0)) {
+                okay = true;
+              }
+            }
+          }
+
+          TSfree(effstr);
+
+          if (!okay) {
+            ERROR_LOG("Error cloning effective url");
+            if (nullptr != newloc) {
+              TSHandleMLocRelease(newbuf, nullptr, newloc);
+            }
+            TSMBufferDestroy(newbuf);
+            delete data;
+            return false;
+          }
+
+          data->m_urlbuf = newbuf;
+          data->m_urlloc = newloc;
+        }
+      }
+
+      if (TSIsDebugTagSet(PLUGIN_NAME)) {
+        int len            = 0;
+        char *const urlstr = TSUrlStringGet(data->m_urlbuf, data->m_urlloc, &len);
+        DEBUG_LOG("slice url: %.*s", len, urlstr);
+        TSfree(urlstr);
       }
 
       // we'll intercept this GET and do it ourselves
       TSCont const icontp(TSContCreate(intercept_hook, TSMutexCreate()));
       TSContDataSet(icontp, (void *)data);
-      //      TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, icontp);
       TSHttpTxnIntercept(icontp, txnp);
       return true;
     } else {

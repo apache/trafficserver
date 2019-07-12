@@ -29,21 +29,22 @@
 int64_t
 Config::bytesFrom(char const *const valstr)
 {
-  char *endptr       = nullptr;
-  int64_t blockbytes = strtoll(valstr, &endptr, 10);
+  char *endptr          = nullptr;
+  int64_t blockbytes    = strtoll(valstr, &endptr, 10);
+  constexpr int64_t kib = 1024;
 
   if (nullptr != endptr && valstr < endptr) {
     size_t const dist = endptr - valstr;
     if (dist < strlen(valstr) && 0 <= blockbytes) {
       switch (tolower(*endptr)) {
       case 'g':
-        blockbytes *= (static_cast<int64_t>(1024) * static_cast<int64_t>(1024) * static_cast<int64_t>(1024));
+        blockbytes *= (kib * kib * kib);
         break;
       case 'm':
-        blockbytes *= (static_cast<int64_t>(1024) * static_cast<int64_t>(1024));
+        blockbytes *= (kib * kib);
         break;
       case 'k':
-        blockbytes *= static_cast<int64_t>(1024);
+        blockbytes *= kib;
         break;
       default:
         break;
@@ -66,7 +67,7 @@ Config::fromArgs(int const argc, char const *const argv[])
     DEBUG_LOG("args[%d] = %s", index, argv[index]);
   }
 
-  // current "best" blockbytes from configuration
+  // look for lowest priority deprecated blockbytes
   int64_t blockbytes = 0;
 
   // backwards compat: look for blockbytes
@@ -91,9 +92,10 @@ Config::fromArgs(int const argc, char const *const argv[])
   }
 
   // standard parsing
-  constexpr const struct option longopts[] = {
+  constexpr struct option longopts[] = {
     {const_cast<char *>("blockbytes"), required_argument, nullptr, 'b'},
-    {const_cast<char *>("test-blockbytes"), required_argument, nullptr, 't'},
+    {const_cast<char *>("blockbytes-test"), required_argument, nullptr, 't'},
+    {const_cast<char *>("remap-host"), required_argument, nullptr, 'r'},
     {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
     {const_cast<char *>("disable-errorlog"), no_argument, nullptr, 'd'},
     {nullptr, 0, nullptr, 0},
@@ -101,9 +103,8 @@ Config::fromArgs(int const argc, char const *const argv[])
 
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
-
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:t:p:d", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:t:r:p:d", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -120,25 +121,29 @@ Config::fromArgs(int const argc, char const *const argv[])
         ERROR_LOG("Invalid blockbytes: %s", optarg);
       }
     } break;
-    case 't':
+    case 't': {
       if (0 == blockbytes) {
         int64_t const bytesread = bytesFrom(optarg);
         if (0 < bytesread) {
-          DEBUG_LOG("Using blockbytestest %" PRId64, bytesread);
+          DEBUG_LOG("Using blockbytes-test %" PRId64, bytesread);
           blockbytes = bytesread;
         } else {
-          ERROR_LOG("Invalid blockbytestest: %s", optarg);
+          ERROR_LOG("Invalid blockbytes-test: %s", optarg);
         }
       } else {
-        DEBUG_LOG("Skipping blockbytestest in favor of blockbytes");
+        DEBUG_LOG("Skipping blockbytes-test in favor of blockbytes");
       }
+    } break;
+    case 'r':
+      m_remaphost = optarg;
+      DEBUG_LOG("Using loopback remap host override: %s", m_remaphost.c_str());
       break;
     case 'p': {
       int const secsread = atoi(optarg);
       if (0 < secsread) {
         m_paceerrsecs = std::min(secsread, 60);
       } else {
-        DEBUG_LOG("Ignoring pace-errlog argument");
+        ERROR_LOG("Ignoring pace-errlog argument");
       }
     } break;
     case 'd':
@@ -170,8 +175,6 @@ Config::fromArgs(int const argc, char const *const argv[])
 bool
 Config::canLogError()
 {
-  std::lock_guard<std::mutex> const guard(m_mutex);
-
   if (m_paceerrsecs < 0) {
     return false;
   } else if (0 == m_paceerrsecs) {
@@ -180,13 +183,18 @@ Config::canLogError()
 
 #if !defined(UNITTEST)
   TSHRTime const timenow = TShrtime();
+#endif
+
+  std::lock_guard<std::mutex> const guard(m_mutex);
+
+#if !defined(UNITTEST)
   if (timenow < m_nextlogtime) {
     return false;
   }
 
   m_nextlogtime = timenow + TS_HRTIME_SECONDS(m_paceerrsecs);
 #else
-  m_nextlogtime = 0; // thanks clang
+  m_nextlogtime = 0; // needed by clang
 #endif
 
   return true;
