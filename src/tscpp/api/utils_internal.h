@@ -17,7 +17,7 @@
  */
 
 /**
- * @file atsutils.h
+ * @file utils_internal.h
  *
  *
  * @brief internal utilities for atscppapi
@@ -25,15 +25,20 @@
 
 #pragma once
 
+#include <memory>
 #include "ts/ts.h"
 #include <string>
 #include "tscpp/api/GlobalPlugin.h"
+#include "tscpp/api/SessionPlugin.h"
 #include "tscpp/api/TransactionPlugin.h"
 #include "tscpp/api/TransformationPlugin.h"
-#include "tscpp/api/Plugin.h"
+#include "tscpp/api/GlobalPluginHooks.h"
+#include "tscpp/api/SessionPluginHooks.h"
+#include "tscpp/api/TransactionPluginHooks.h"
 #include "tscpp/api/HttpVersion.h"
 #include "tscpp/api/utils.h"
 #include "tscpp/api/AsyncHttpFetch.h"
+#include "tscpp/api/Session.h"
 #include "tscpp/api/Transaction.h"
 #include "tscpp/api/InterceptPlugin.h"
 
@@ -47,16 +52,17 @@ namespace utils
   class internal
   {
   public:
-    static TSHttpHookID convertInternalHookToTsHook(Plugin::HookType);
+    static TSHttpHookID convertInternalHookToTsHook(TransactionPluginHooks::HookType);
+    static TSHttpHookID convertInternalHookToTsHook(SessionPluginHooks::HookType);
+    static TSHttpHookID convertInternalHookToTsHook(GlobalPluginHooks::HookType);
     static TSHttpHookID convertInternalTransformationTypeToTsHook(TransformationPlugin::Type type);
-    static void invokePluginForEvent(TransactionPlugin *, TSHttpTxn, TSEvent);
-    static void invokePluginForEvent(GlobalPlugin *, TSHttpTxn, TSEvent);
-    static void invokePluginForEvent(GlobalPlugin *, TSHttpAltInfo, TSEvent);
     static HttpVersion getHttpVersion(TSMBuffer hdr_buf, TSMLoc hdr_loc);
-    static void initTransactionManagement();
+    static void initManagement();
     static std::string consumeFromTSIOBufferReader(TSIOBufferReader);
-    static std::shared_ptr<Mutex> getTransactionPluginMutex(TransactionPlugin &);
-    static Transaction &getTransaction(TSHttpTxn);
+    static Transaction *getTransaction(TSHttpTxn, bool create = true);
+    static Session *getSession(TSHttpSsn, bool create = true);
+    static std::shared_ptr<Mutex> getTransactionPluginMutex(TransactionPlugin &transaction_plugin);
+    static std::shared_ptr<Mutex> getSessionPluginMutex(SessionPlugin &session_plugin);
 
     static AsyncHttpFetchState *
     getAsyncHttpFetchState(AsyncHttpFetch &async_http_fetch)
@@ -68,6 +74,12 @@ namespace utils
     setTransactionEvent(Transaction &transaction, TSEvent event)
     {
       transaction.setEvent(event);
+    }
+
+    static void
+    setSessionEvent(Session &session, TSEvent event)
+    {
+      session.setEvent(event);
     }
 
     static void
@@ -88,6 +100,12 @@ namespace utils
       return transaction.getPlugins();
     }
 
+    static const std::list<SessionPlugin *> &
+    getSessionPlugins(const Session &session)
+    {
+      return session.getPlugins();
+    }
+
     static void
     dispatchInterceptEvent(InterceptPlugin *plugin, TSEvent event, void *edata)
     {
@@ -103,4 +121,11 @@ namespace utils
   }; /* internal */
 
 } // namespace utils
+namespace detail
+{
+  void invokeTransactionPluginEventFunc(TransactionPluginHooks *, TSEvent, void * /* continuation event data*/,
+                                        bool = false /* ignore internal */);
+  void invokeSessionPluginEventFunc(SessionPluginHooks *, TSEvent, void * /* continuation event data*/,
+                                    bool = false /* ignore internal */);
+} // namespace detail
 } // namespace atscppapi

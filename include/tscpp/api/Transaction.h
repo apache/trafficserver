@@ -21,14 +21,15 @@
 
 #pragma once
 
+#include <memory>
 #include <sys/socket.h>
 #include <cstdint>
 #include <list>
-#include <memory>
 #include "tscpp/api/Request.h"
 #include "tscpp/api/ClientRequest.h"
 #include "tscpp/api/Response.h"
 #include "tscpp/api/HttpStatus.h"
+#include "tscpp/api/Session.h"
 #include <ts/apidefs.h>
 namespace atscppapi
 {
@@ -81,11 +82,6 @@ public:
   };
 
   ~Transaction();
-
-  /**
-   * Set the @a event for the currently active hook.
-   */
-  void setEvent(TSEvent event);
 
   /**
    * Context Values are a way to share data between plugins, the key is always a string
@@ -372,10 +368,18 @@ public:
   bool configStringGet(TSOverridableConfigKey conf, std::string &value);
   bool configFind(std::string const &name, TSOverridableConfigKey *conf, TSRecordDataType *type);
 
+  // Returns true if a Session ofbject was created for this Transaction's session by a session or global plugin.
+  //
+  bool sessionObjExists() const;
+
+  // Returns the Session object for this Transaction's session that was created for this Transaction's session
+  // by a session or global plugin.  Calling this function will cause ATS to abort if sessionObjExits()
+  // returns false.
+  //
+  Session &session() const;
+
 private:
-  TransactionState *state_;          //!< The internal TransactionState object tied to the current Transaction
-  friend class TransactionPlugin;    //!< TransactionPlugin is a friend so it can call addPlugin()
-  friend class TransformationPlugin; //!< TransformationPlugin is a friend so it can call addPlugin()
+  TransactionState *state_; //!< The internal TransactionState object tied to the current Transaction
 
   /**
    * @private
@@ -383,6 +387,11 @@ private:
    * @param raw_txn a void pointer that represents a TSHttpTxn
    */
   Transaction(void *);
+
+  /**
+   * Set the @a event for the currently active hook.
+   */
+  void setEvent(TSEvent event);
 
   /**
    * Used to initialize the Request object for the Server.

@@ -17,28 +17,16 @@
  */
 
 /**
- * @file Plugin.cc
+ * @file TransactionPluginHooks.cc
  */
-#include "tscpp/api/Plugin.h"
-#include "ts/ts.h"
-const std::string atscppapi::HOOK_TYPE_STRINGS[] = {
+#include "tscpp/api/TransactionPluginHooks.h"
+
+namespace atscppapi
+{
+const std::string TransactionPluginHooks::HOOK_TYPE_STRINGS[] = {
   std::string("HOOK_READ_REQUEST_HEADERS_PRE_REMAP"), std::string("HOOK_READ_REQUEST_HEADERS_POST_REMAP"),
   std::string("HOOK_SEND_REQUEST_HEADERS"),           std::string("HOOK_READ_RESPONSE_HEADERS"),
   std::string("HOOK_SEND_RESPONSE_HEADERS"),          std::string("HOOK_OS_DNS"),
   std::string("HOOK_READ_REQUEST_HEADERS"),           std::string("HOOK_READ_CACHE_HEADERS"),
-  std::string("HOOK_CACHE_LOOKUP_COMPLETE"),          std::string("HOOK_SELECT_ALT")};
-
-bool
-atscppapi::RegisterGlobalPlugin(const char *name, const char *vendor, const char *email)
-{
-  TSPluginRegistrationInfo info;
-  info.plugin_name   = name;
-  info.vendor_name   = vendor;
-  info.support_email = email;
-
-  bool success = (TSPluginRegister(&info) == TS_SUCCESS);
-  if (!success) {
-    TSError("[Plugin.cc] Plugin registration failed");
-  }
-  return success;
+  std::string("HOOK_CACHE_LOOKUP_COMPLETE")};
 }

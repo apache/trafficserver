@@ -28,11 +28,12 @@
 namespace atscppapi
 {
 // forward declarations
-struct ResponseState;
 namespace utils
 {
   class internal;
 }
+struct ResponseState;
+class GlobalPlugin;
 
 /**
  * @brief Encapsulates a response.
@@ -67,6 +68,7 @@ private:
   void init(void *hdr_buf, void *hdr_loc);
   void reset();
   friend class Transaction;
+  friend class GlobalPlugin;
   friend class utils::internal;
 };
 } // namespace atscppapi

@@ -32,7 +32,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   RemapPlugin *remap_plugin = static_cast<RemapPlugin *>(ih);
   Url map_from_url(rri->requestBufp, rri->mapFromUrl), map_to_url(rri->requestBufp, rri->mapToUrl);
-  Transaction &transaction   = utils::internal::getTransaction(rh);
+  Transaction &transaction   = *utils::internal::getTransaction(rh);
   bool redirect              = false;
   RemapPlugin::Result result = remap_plugin->doRemap(map_from_url, map_to_url, transaction, redirect);
   rri->redirect              = redirect ? 1 : 0;
@@ -68,6 +68,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 
 RemapPlugin::RemapPlugin(void **instance_handle)
 {
-  utils::internal::initTransactionManagement();
+  utils::internal::initManagement();
   *instance_handle = static_cast<void *>(this);
 }

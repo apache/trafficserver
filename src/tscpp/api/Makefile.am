@@ -30,6 +30,7 @@ libtscppapi_la_SOURCES = \
 	ClientRequest.cc \
 	Continuation.cc \
 	GlobalPlugin.cc \
+	GlobalPluginHooks.cc \
 	GzipDeflateTransformation.cc \
 	GzipInflateTransformation.cc \
 	Headers.cc \
@@ -37,13 +38,16 @@ libtscppapi_la_SOURCES = \
 	HttpVersion.cc \
 	InterceptPlugin.cc \
 	Logger.cc \
-	Plugin.cc \
+	Session.cc \
+	SessionPlugin.cc \
+	SessionPluginHooks.cc \
 	RemapPlugin.cc \
 	Request.cc \
 	Response.cc \
 	Stat.cc \
 	Transaction.cc \
 	TransactionPlugin.cc \
+	TransactionPluginHooks.cc \
 	TransformationPlugin.cc \
 	Url.cc \
 	utils.cc \

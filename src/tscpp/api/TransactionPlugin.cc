@@ -20,7 +20,6 @@
  * @file TransactionPlugin.cc
  */
 
-#include <memory>
 #include <cstddef>
 #include <cassert>
 #include "ts/ts.h"
@@ -38,8 +37,7 @@ using atscppapi::TransactionPlugin;
 struct atscppapi::TransactionPluginState : noncopyable {
   TSCont cont_ = nullptr;
   TSHttpTxn ats_txn_handle_;
-  std::shared_ptr<Mutex> mutex_;
-  TransactionPluginState(TSHttpTxn ats_txn_handle) : ats_txn_handle_(ats_txn_handle), mutex_(new Mutex) {}
+  TransactionPluginState(TSHttpTxn ats_txn_handle) : ats_txn_handle_(ats_txn_handle) {}
 };
 
 namespace
@@ -47,10 +45,10 @@ namespace
 static int
 handleTransactionPluginEvents(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn txn             = static_cast<TSHttpTxn>(edata);
   TransactionPlugin *plugin = static_cast<TransactionPlugin *>(TSContDataGet(cont));
   LOG_DEBUG("cont=%p, event=%d, tshttptxn=%p, plugin=%p", cont, event, edata, plugin);
-  atscppapi::utils::internal::invokePluginForEvent(plugin, txn, event);
+  std::lock_guard<Mutex> lock(*utils::internal::getTransactionPluginMutex(*plugin)); // Not sure if this is needed.
+  atscppapi::detail::invokeTransactionPluginEventFunc(plugin, event, edata);
   return 0;
 }
 
@@ -65,16 +63,24 @@ TransactionPlugin::TransactionPlugin(Transaction &transaction)
   LOG_DEBUG("Creating new TransactionPlugin=%p tshttptxn=%p, cont=%p", this, state_->ats_txn_handle_, state_->cont_);
 }
 
-std::shared_ptr<Mutex>
-TransactionPlugin::getMutex()
-{
-  return state_->mutex_;
-}
-
 bool
 TransactionPlugin::isWebsocket() const
 {
   return TSHttpTxnIsWebsocket(state_->ats_txn_handle_);
+}
+
+bool
+TransactionPlugin::transactionObjExists()
+{
+  return utils::internal::getTransaction(state_->ats_txn_handle_, false) != nullptr;
+}
+
+Transaction &
+TransactionPlugin::getTransaction()
+{
+  Transaction *p = utils::internal::getTransaction(state_->ats_txn_handle_, false);
+  assert(p);
+  return *p;
 }
 
 TransactionPlugin::~TransactionPlugin()
@@ -85,10 +91,63 @@ TransactionPlugin::~TransactionPlugin()
 }
 
 void
-TransactionPlugin::registerHook(Plugin::HookType hook_type)
+TransactionPlugin::registerHook(TransactionPluginHooks::HookType hook_type)
 {
   LOG_DEBUG("TransactionPlugin=%p tshttptxn=%p registering hook_type=%d [%s]", this, state_->ats_txn_handle_, hook_type,
             HOOK_TYPE_STRINGS[hook_type].c_str());
   TSHttpHookID hook_id = atscppapi::utils::internal::convertInternalHookToTsHook(hook_type);
   TSHttpTxnHookAdd(state_->ats_txn_handle_, hook_id, state_->cont_);
 }
+
+namespace atscppapi
+{
+namespace detail
+{
+  void
+  invokeTransactionPluginEventFunc(TransactionPluginHooks *plugin, TSEvent event, void *edata, bool ignore_internal)
+  {
+    void (TransactionPluginHooks::*mfp)(Transaction &);
+    switch (event) {
+    case TS_EVENT_HTTP_PRE_REMAP:
+      mfp = &TransactionPluginHooks::handleReadRequestHeadersPreRemap;
+      break;
+    case TS_EVENT_HTTP_POST_REMAP:
+      mfp = &TransactionPluginHooks::handleReadRequestHeadersPostRemap;
+      break;
+    case TS_EVENT_HTTP_SEND_REQUEST_HDR:
+      mfp = &TransactionPluginHooks::handleSendRequestHeaders;
+      break;
+    case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+      mfp = &TransactionPluginHooks::handleReadResponseHeaders;
+      break;
+    case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+      mfp = &TransactionPluginHooks::handleSendResponseHeaders;
+      break;
+    case TS_EVENT_HTTP_OS_DNS:
+      mfp = &TransactionPluginHooks::handleOsDns;
+      break;
+    case TS_EVENT_HTTP_READ_REQUEST_HDR:
+      mfp = &TransactionPluginHooks::handleReadRequestHeaders;
+      break;
+    case TS_EVENT_HTTP_READ_CACHE_HDR:
+      mfp = &TransactionPluginHooks::handleReadCacheHeaders;
+      break;
+    case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
+      mfp = &TransactionPluginHooks::handleReadCacheLookupComplete;
+      break;
+    default:
+      assert(false); /* we should never get here */
+      break;
+    }
+
+    TSHttpTxn ats_txn_handle = static_cast<TSHttpTxn>(edata);
+    if (ignore_internal && TSHttpTxnIsInternal(ats_txn_handle)) {
+      LOG_DEBUG("Ignoring event %d on internal transaction %p for global plugin %p", event, ats_txn_handle, plugin);
+      TSHttpTxnReenable(ats_txn_handle, TS_EVENT_HTTP_CONTINUE);
+    } else {
+      (plugin->*mfp)(*utils::internal::getTransaction(ats_txn_handle));
+    }
+  }
+
+} // end namespace detail
+} // end namespace atscppapi

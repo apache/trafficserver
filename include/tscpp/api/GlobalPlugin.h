@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "tscpp/api/Plugin.h"
+#include "tscpp/api/GlobalPluginHooks.h"
 
 namespace atscppapi
 {
@@ -32,12 +32,12 @@ struct GlobalPluginState;
 /**
  * @brief The interface used when creating a GlobalPlugin.
  *
- * A GlobalPlugin is a Plugin that will fire for a given hook on all Transactions.
+ * A GlobalPlugin is a Plugin that will fire for a given hook on all Sessions (for session
+ * hooks) or all Transactions (for transaction hooks).
  * In other words, a GlobalPlugin is not tied to a specific plugin, a Transaction
  * specific plugin would be a TransactionPlugin.
  *
- * Depending on the
- * type of hook you choose to build you will implement one or more callback methods.
+ * Depending on the type of hook you choose to build you will implement one or more callback methods.
  * Here is a simple example of a GlobalPlugin:
  *
  * \code
@@ -52,37 +52,48 @@ struct GlobalPluginState;
  *  }
  * };
  * \endcode
- * @see Plugin
  */
-class GlobalPlugin : public Plugin
+class GlobalPlugin : public GlobalPluginHooks
 {
 public:
   /**
    * registerHook is the mechanism used to attach a global hook.
    *
-   * \note Whenever you register a hook you must have the appropriate callback defined in your GlobalPlugin
-   *  see HookType and Plugin for the correspond HookTypes and callback methods. If you fail to implement the
-   *  callback, a default implementation will be used that will only resume the Transaction.
+   * \note Whenever you register a hook you must have the appropriate callback defined in your GlobalPlugin.
+   *  If you fail to implement the callback, a default implementation will be used that will only resume the
+   *  Session / Transaction.
    *
    * @param HookType the type of hook you wish to register
    * @see HookType
-   * @see Plugin
+   * @see TransactionPluginHooks
+   * @see SessionPluginHooks
    */
-  void registerHook(Plugin::HookType);
+  void registerHook(TransactionPluginHooks::HookType);
+  void registerHook(SessionPluginHooks::HookType);
+  void registerHook(HookType);
+
   ~GlobalPlugin() override;
 
 protected:
   /**
    * Constructor.
    *
-   * @param ignore_internal_transactions When true, all hooks registered by this plugin are ignored
-   *                                     for internal transactions (internal transactions are created
-   *                                     when other plugins create requests). Defaults to false.
+   * @param ignore_internal When true, all hooks registered by this plugin are ignored for internal requests.
+   *        Defaults to false.
    */
-  GlobalPlugin(bool ignore_internal_transactions = false);
+  GlobalPlugin(bool ignore_internal = false);
 
 private:
   GlobalPluginState *state_; /**< Internal state tied to a GlobalPlugin */
+
+  static int handleEvents(TSCont cont, TSEvent event, void *edata);
 };
+
+bool RegisterGlobalPlugin(const char *name, const char *vendor, const char *email);
+inline bool
+RegisterGlobalPlugin(std::string const &name, std::string const &vendor, std::string const &email)
+{
+  return RegisterGlobalPlugin(name.c_str(), vendor.c_str(), email.c_str());
+}
 
 } // namespace atscppapi

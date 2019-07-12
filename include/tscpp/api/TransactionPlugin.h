@@ -23,20 +23,12 @@
 #pragma once
 
 #include <memory>
-#include <mutex>
 
-#include "tscpp/api/Plugin.h"
+#include "tscpp/api/TransactionPluginHooks.h"
 #include "tscpp/api/Transaction.h"
 
 namespace atscppapi
 {
-#if !defined(ATSCPPAPI_MUTEX_DEFINED_)
-#define ATSCPPAPI_MUTEX_DEFINED_
-
-using Mutex = std::recursive_mutex;
-
-#endif
-
 namespace utils
 {
   class internal;
@@ -83,21 +75,23 @@ struct TransactionPluginState;
  * @see Plugin
  * @see HookType
  */
-class TransactionPlugin : public Plugin
+class TransactionPlugin : public TransactionPluginHooks
 {
 public:
   /**
    * registerHook is the mechanism used to attach a transaction hook.
    *
    * \note Whenever you register a hook you must have the appropriate callback defined in your TransactionPlugin
-   *  see HookType and Plugin for the correspond HookTypes and callback methods. If you fail to implement the
-   *  callback, a default implementation will be used that will only resume the Transaction.
+   *  see HookType and TransactionPluginHooks for the correspond HookTypes and callback methods. If you fail to
+   *  implement the callback, a default implementation will be used that will only resume the Transaction.
+   *
+   * \note Put actions on Transaction close in the derived class destructor.
    *
    * @param HookType the type of hook you wish to register
    * @see HookType
-   * @see Plugin
+   * @see TransactionPluginHooks
    */
-  void registerHook(Plugin::HookType hook_type);
+  void registerHook(HookType hook_type);
   ~TransactionPlugin() override;
 
   bool isWebsocket() const;
@@ -105,14 +99,17 @@ public:
 protected:
   TransactionPlugin(Transaction &transaction);
 
-  /**
-   * This method will return a std::shared_ptr to a Mutex that can be used for AsyncProvider and AsyncReceiver operations.
-   *
-   * If another thread wanted to stop this transaction from dispatching an event it could be passed
-   * this mutex and it would be able to lock it and prevent another thread from dispatching back into this
-   * TransactionPlugin.
-   */
-  std::shared_ptr<Mutex> getMutex();
+  // Returns true if an instance of the Transaction class exists for the transaction associated with this
+  // TransactionPlugin instance.  (A Transaction instance will exist if a plugin hook has been executed
+  // where the handler function takes a reference to Transaction as its parameter).
+  //
+  bool transactionObjExists();
+
+  // Returns a reference to the instance of the Transaction class exists for the transaction associated
+  // with this TransactionPlugin instance.  Calling this function will cause ATS to abort if
+  // transactionObjExits() returns false.
+  //
+  Transaction &getTransaction();
 
 private:
   TransactionPluginState *state_; /**< The internal state for a TransactionPlugin */

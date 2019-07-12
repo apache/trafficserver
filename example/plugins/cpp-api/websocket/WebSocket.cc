@@ -48,7 +48,7 @@ TSPluginInit(int argc, const char *argv[])
 
 WebSocketInstaller::WebSocketInstaller() : GlobalPlugin(true /* ignore internal transactions */)
 {
-  GlobalPlugin::registerHook(Plugin::HOOK_READ_REQUEST_HEADERS_PRE_REMAP);
+  GlobalPlugin::registerHook(TransactionPluginHooks::HOOK_READ_REQUEST_HEADERS_PRE_REMAP);
 }
 
 void

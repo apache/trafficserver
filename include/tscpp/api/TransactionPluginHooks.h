@@ -16,14 +16,17 @@
   limitations under the License.
  */
 /**
- * @file Plugin.h
+ * @file TransactionPluginHooks.h
  *
- * @brief Contains the base interface used in creating Global and Transaction plugins.
+ * @brief Contains the base interface used in creating Global, Session  and Transaction plugins.
  * \note This interface can never be implemented directly, it should be implemented
- *   through extending GlobalPlugin, TransactionPlugin, or TransformationPlugin.
+ *   through extending GlobalPlugin, SessionPlugin, TransactionPlugin, or TransformationPlugin.
  */
 
 #pragma once
+
+#include <memory>
+#include <mutex>
 
 #include "tscpp/api/Request.h"
 #include "tscpp/api/Transaction.h"
@@ -31,22 +34,30 @@
 
 namespace atscppapi
 {
+#if !defined(ATSCPPAPI_MUTEX_DEFINED_)
+#define ATSCPPAPI_MUTEX_DEFINED_
+
+using Mutex = std::recursive_mutex;
+
+#endif
+
 /**
  * @brief The base interface used when creating a Plugin.
  *
  * \note This interface can never be implemented directly, it should be implemented
- *   through extending GlobalPlugin, TransactionPlugin, or TransformationPlugin.
+ *   through extending GlobalPlugin, SessionPlugin, TransactionPlugin, or TransformationPlugin.
  *
  * @see TransactionPlugin
+ * @see SessionPlugin
  * @see GlobalPlugin
  * @see TransformationPlugin
  */
-class Plugin : noncopyable
+class TransactionPluginHooks : noncopyable
 {
 public:
   /**
    * A enumeration of the available types of Hooks. These are used with GlobalPlugin::registerHook()
-   * and TransactionPlugin::registerHook().
+   * SessionPlugin::registerHook(), and TransactionPlugin::registerHook().
    */
   enum HookType {
     HOOK_READ_REQUEST_HEADERS_PRE_REMAP = 0, /**< This hook will be fired before remap has occurred. */
@@ -58,8 +69,10 @@ public:
     HOOK_READ_REQUEST_HEADERS,  /**< This hook will be fired after the request is read. */
     HOOK_READ_CACHE_HEADERS,    /**< This hook will be fired after the CACHE hdrs. */
     HOOK_CACHE_LOOKUP_COMPLETE, /**< This hook will be fired after cache lookup complete. */
-    HOOK_SELECT_ALT             /**< This hook will be fired after select alt. */
   };
+
+  /**< Human readable strings for each HookType, you can access them as HOOK_TYPE_STRINGS[HOOK_OS_DNS] for example. */
+  static std::string const HOOK_TYPE_STRINGS[];
 
   /**
    * This method must be implemented when you hook HOOK_READ_REQUEST_HEADERS_PRE_REMAP
@@ -147,26 +160,32 @@ public:
    */
   virtual void handleSelectAlt(const Request &clientReq, const Request &cachedReq, const Response &cachedResp){};
 
-  virtual ~Plugin(){};
+  virtual ~TransactionPluginHooks(){};
 
 protected:
   /**
    * \note This interface can never be implemented directly, it should be implemented
-   *   through extending GlobalPlugin, TransactionPlugin, or TransformationPlugin.
+   *   through extending GlobalPlugin, SessionPlugin, TransactionPlugin, or TransformationPlugin.
    *
    * @private
    */
-  Plugin(){};
+  TransactionPluginHooks(){};
+
+  /**
+   * This method will return a std::shared_ptr to a Mutex that can be used for AsyncProvider and AsyncReceiver operations.
+   *
+   * If another thread wanted to stop this transaction from dispatching an event it could be passed
+   * this mutex and it would be able to lock it and prevent another thread from dispatching back into this
+   * TransactionPlugin.
+   */
+  std::shared_ptr<Mutex>
+  getMutex()
+  {
+    return mutex_;
+  }
+
+private:
+  std::shared_ptr<Mutex> mutex_{new Mutex};
 };
-
-/**< Human readable strings for each HookType, you can access them as HOOK_TYPE_STRINGS[HOOK_OS_DNS] for example. */
-extern const std::string HOOK_TYPE_STRINGS[];
-
-bool RegisterGlobalPlugin(const char *name, const char *vendor, const char *email);
-inline bool
-RegisterGlobalPlugin(std::string const &name, std::string const &vendor, std::string const &email)
-{
-  return RegisterGlobalPlugin(name.c_str(), vendor.c_str(), email.c_str());
-}
 
 } // namespace atscppapi

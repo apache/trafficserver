@@ -35,7 +35,7 @@ namespace atscppapi
  * will become uncopyable
  *
  * \code
- * class myClass : uncopyable {
+ * class myClass : noncopyable {
  * public:
  *  int test_;
  * }

@@ -68,7 +68,7 @@ class InterceptInstaller : public GlobalPlugin
 public:
   InterceptInstaller() : GlobalPlugin(true /* ignore internal transactions */)
   {
-    GlobalPlugin::registerHook(Plugin::HOOK_READ_REQUEST_HEADERS_PRE_REMAP);
+    GlobalPlugin::registerHook(TransactionPluginHooks::HOOK_READ_REQUEST_HEADERS_PRE_REMAP);
   }
   void
   handleReadRequestHeadersPreRemap(Transaction &transaction) override
