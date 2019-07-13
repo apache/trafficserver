@@ -159,6 +159,7 @@ libraries on the machine used to build |TS|:
 - flex (for TPROXY)
 - hwloc
 - lua
+- zlib
 - curses (for traffic_top)
 - curl (for traffic_top)
 
