@@ -164,7 +164,7 @@ They may be used, optionally, to accept, reject logging or mask query param valu
 
 Filter objects are created by assigning them a ``name`` to be used later to
 refer to the filter, as well as an ``action`` (either ``accept``, ``reject`` or
-``wipe_field_value``). ``Accept``, ``reject`` or ``wipe_field_value` filters require
+``wipe_field_value``). ``Accept``, ``reject`` or ``wipe_field_value`` filters require
 a ``condition`` against which to match all events. The ``condition`` fields must
 be in the following format::
 
