@@ -41,7 +41,10 @@
 
 static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 struct NetAccept;
-std::unordered_map<int, SSLNextProtocolSet *> snpsMap;
+
+// This is a hack ... See Issue #5718.
+std::unordered_map<int, SSLNextProtocolSet *> snpDisableH2Map;
+std::unordered_map<int, SSLNextProtocolSet *> snpEnableH2Map;
 
 const NextHopProperty *
 SNIConfigParams::getPropertyConfig(const std::string &servername) const
@@ -66,8 +69,8 @@ SNIConfigParams::loadSNIConfig()
     Debug("ssl", "name: %s", item.fqdn.data());
 
     // set SNI based actions to be called in the ssl_servername_only callback
-    if (item.disable_h2) {
-      ai->actions.push_back(std::make_unique<DisableH2>());
+    if (item.control_http2.has_value()) {
+      ai->actions.push_back(std::make_unique<ControlH2>(item.control_http2.value()));
     }
     if (item.verify_client_level != 255) {
       ai->actions.push_back(std::make_unique<VerifyClient>(item.verify_client_level));
@@ -168,9 +171,14 @@ SNIConfig::cloneProtoSet()
   SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
   for (auto na : naVec) {
     if (na->snpa) {
-      auto snps = na->snpa->cloneProtoSet();
-      snps->unregisterEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, nullptr);
-      snpsMap.emplace(na->id, snps);
+      auto enable_h2  = na->snpa->cloneProtoSet();
+      auto disable_h2 = na->snpa->cloneProtoSet();
+
+      disable_h2->unregisterEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, nullptr);
+      snpDisableH2Map.emplace(na->id, disable_h2);
+
+      enable_h2->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, nullptr);
+      snpEnableH2Map.emplace(na->id, enable_h2);
     }
   }
 }

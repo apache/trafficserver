@@ -23,12 +23,13 @@
 
 #include <vector>
 #include <string>
+#include <optional>
 
 #include "tscore/Errata.h"
 
 #define TSDECL(id) constexpr char TS_##id[] = #id
 TSDECL(fqdn);
-TSDECL(disable_h2);
+TSDECL(http2);
 TSDECL(verify_client);
 TSDECL(tunnel_route);
 TSDECL(forward_route);
@@ -44,7 +45,7 @@ TSDECL(valid_tls_versions_in);
 const int start = 0;
 struct YamlSNIConfig {
   enum class Action {
-    disable_h2 = start,
+    control_http2 = start,
     verify_client,
     tunnel_route,             // blind tunnel action
     forward_route,            // decrypt data and then blind tunnel action
@@ -61,17 +62,17 @@ struct YamlSNIConfig {
 
   struct Item {
     std::string fqdn;
-    bool disable_h2             = false;
-    uint8_t verify_client_level = 255;
-    std::string tunnel_destination;
+    uint8_t verify_client_level       = 255;
     bool tunnel_decrypt               = false;
     Policy verify_server_policy       = Policy::UNSET;
     Property verify_server_properties = Property::UNSET;
+    bool protocol_unset               = true;
+    unsigned long protocol_mask       = 0;
+    std::optional<bool> control_http2; // Has no value by default, so do not initialize!
+    std::string tunnel_destination;
     std::string client_cert;
     std::string client_key;
     std::string ip_allow;
-    bool protocol_unset = true;
-    unsigned long protocol_mask;
 
     void EnableProtocol(YamlSNIConfig::TLSProtocol proto);
   };

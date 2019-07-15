@@ -94,7 +94,7 @@ TsEnumDescriptor PROPERTIES_DESCRIPTOR    = {{{"NONE", 0}, {"SIGNATURE", 0x1}, {
 TsEnumDescriptor TLS_PROTOCOLS_DESCRIPTOR = {{{"TLSv1", 0}, {"TLSv1_1", 1}, {"TLSv1_2", 2}, {"TLSv1_3", 3}}};
 
 std::set<std::string> valid_sni_config_keys = {TS_fqdn,
-                                               TS_disable_h2,
+                                               TS_http2,
                                                TS_verify_client,
                                                TS_tunnel_route,
                                                TS_forward_route,
@@ -128,8 +128,8 @@ template <> struct convert<YamlSNIConfig::Item> {
     } else {
       return false; // servername must be present
     }
-    if (node[TS_disable_h2]) {
-      item.disable_h2 = node[TS_disable_h2].as<bool>();
+    if (node[TS_http2]) {
+      item.control_http2 = node[TS_http2].as<bool>();
     }
 
     // enum

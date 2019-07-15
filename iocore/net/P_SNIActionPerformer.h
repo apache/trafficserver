@@ -36,15 +36,8 @@
 #include "tscore/ink_inet.h"
 #include <unordered_map>
 
-extern std::unordered_map<int, SSLNextProtocolSet *> snpsMap;
-
-/*// enum of all the actions
-enum AllActions {
-  TS_DISABLE_H2 = 0,
-  TS_VERIFY_CLIENT, // this applies to server side vc only
-  TS_TUNNEL_ROUTE,  // blind tunnel action
-};
-*/
+extern std::unordered_map<int, SSLNextProtocolSet *> snpDisableH2Map;
+extern std::unordered_map<int, SSLNextProtocolSet *> snpEnableH2Map;
 
 /** action for setting next hop properties should be listed in the following enum*/
 /* enum PropertyActions { TS_VERIFY_SERVER = 200, TS_CLIENT_CERT }; */
@@ -56,24 +49,33 @@ public:
   virtual ~ActionItem(){};
 };
 
-class DisableH2 : public ActionItem
+class ControlH2 : public ActionItem
 {
 public:
-  DisableH2() {}
-  ~DisableH2() override {}
+  ControlH2(bool flag) : enabled(flag) {}
+  ~ControlH2() override {}
 
   int
   SNIAction(Continuation *cont) const override
   {
-    auto ssl_vc     = dynamic_cast<SSLNetVConnection *>(cont);
-    auto accept_obj = ssl_vc ? ssl_vc->accept_object : nullptr;
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(cont);
+    NetAccept *accept_obj     = ssl_vc ? ssl_vc->accept_object : nullptr;
+
     if (accept_obj && accept_obj->snpa && ssl_vc) {
-      if (auto it = snpsMap.find(accept_obj->id); it != snpsMap.end()) {
+      // This is a bit of hack, because ALPN strings are managed via accecpt ports as well as via plugin APIs.
+      // Cloning the port defined NextProtocolSet on every request would be rather expensive, with a number
+      // of memory allocations (calling new()). See Issue #
+      auto snpMap = enabled ? &snpEnableH2Map : &snpDisableH2Map;
+
+      if (auto it = snpMap->find(accept_obj->id); it != snpMap->end()) {
         ssl_vc->registerNextProtocolSet(it->second);
       }
     }
     return SSL_TLSEXT_ERR_OK;
   }
+
+private:
+  bool enabled = false;
 };
 
 class TunnelDestination : public ActionItem
