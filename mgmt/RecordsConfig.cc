@@ -48,7 +48,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.product_name", RECD_STRING, "Traffic Server", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.proxy_name", RECD_STRING, BUILD_MACHINE, RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".+", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.proxy_name", RECD_STRING, "traffic_server", RECU_DYNAMIC, RR_REQUIRED, RECC_STR, ".+", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.bin_path", RECD_STRING, TS_BUILD_BINDIR, RECU_NULL, RR_REQUIRED, RECC_NULL, nullptr, RECA_READ_ONLY}
   ,
