@@ -228,6 +228,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   fp = debug_mode ? stdout : crashlog_open(logname);
   if (fp == nullptr) {
     Error("failed to create '%s': %s", logname, strerror(errno));
+    ats_free(logname);
     return 1;
   }
 
@@ -261,6 +262,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   crashlog_write_records(fp, target);
 
   Error("wrote crash log to %s", logname);
+
+  ats_free(logname);
 
   fflush(fp);
   fclose(fp);
