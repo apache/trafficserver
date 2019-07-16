@@ -1856,6 +1856,19 @@ LogAccess::marshal_client_security_cipher_suite(char *buf)
   return round_len;
 }
 
+int
+LogAccess::marshal_client_security_curve(char *buf)
+{
+  const char *curve = m_http_sm->client_curve;
+  int round_len     = LogAccess::strlen(curve);
+
+  if (buf) {
+    marshal_str(buf, curve, round_len);
+  }
+
+  return round_len;
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
