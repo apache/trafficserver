@@ -1885,15 +1885,6 @@ Cache Control
    used to purge the entire cache, or just a specific :file:`remap.config`
    rule.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 1
-   :reloadable:
-   :deprecated:
-
-   Enables (``1``) or disables (``0``) caching objects that have an empty
-   response body. This is particularly useful for caching 301 or 302 responses
-   with a ``Location`` header but no document body. This only works if the
-   origin response also has a ``Content-Length`` header.
-
 .. ts:cv:: CONFIG proxy.config.http.doc_in_cache_skip_dns INT 1
    :reloadable:
    :overridable:
