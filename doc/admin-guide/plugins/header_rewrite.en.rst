@@ -323,7 +323,7 @@ This condition provides access to information about the inbound (client, user ag
 The data that can be checked is ::
 
    %{INBOUND:LOCAL-ADDR}      The local (ATS) address for the connection. Equivalent to %{IP:INBOUND}.
-   %{INBOUND:LOCAL-PORT}      The local (ATS) port for the connection. Equivalent to %{INCOMING-PORT}.
+   %{INBOUND:LOCAL-PORT}      The local (ATS) port for the connection.
    %{INBOUND:REMOTE-ADDR}     The client address for the connection. Equivalent to %{IP:CLIENT}.
    %{INBOUND:REMOTE-PORT}     The client port for the connection.
    %{INBOUND:TLS}             The TLS protocol if the connection is over TLS, otherwise the empty string.
@@ -351,17 +351,6 @@ which is true when the connection is not TLS. The arguments ``H2``, ``IPV4``, an
 same way.
 
 
-INCOMING-PORT
-~~~~~~~~~~~~~
-::
-
-    cond %{INCOMING-PORT} <operand>
-
-TCP port, as a decimal integer, on which the incoming client connection was
-made.
-
-This condition is *deprecated* as of ATS v8.0.x, please use ``%{INBOUND:LOCAL-PORT}`` instead.
-
 IP
 ~~
 ::
@@ -387,8 +376,6 @@ actually as a value to an operator, e.g. ::
      set-header X-Server-IP %{IP:SERVER}
      set-header X-Outbound-IP %{IP:OUTBOUND}
 
-Finally, this new condition replaces the old %{CLIENT-IP} condition, which is
-now properly deprecated. It will be removed as of ATS v8.0.0.
 
 INTERNAL-TRANSACTION
 ~~~~~~~~~~~~~~~~~~~~
@@ -429,37 +416,6 @@ values, such as year, month etc.
     %{NOW:MIN}       Current minute (0-59}
     %{NOW:WEEKDAY}   Current weekday (0-6, 0 == Sunday)
     %{NOW:YEARDAY}   Current day of the year (0-365, 0 == Jan 1st)
-
-PATH
-~~~~
-::
-
-    cond %{PATH} <operand>
-
-The path component of the transaction. This does NOT include the leading ``/`` that
-immediately follows the hostname and terminates prior to the ``?`` signifying
-the beginning of query parameters (or the end of the URL, whichever occurs
-first).
-
-Refer to `Requests vs. Responses`_ for more information on determining the
-context in which the transaction's URL is evaluated.
-
-This condition is *deprecated* as of ATS v7.1.x, please use e.g. %{URL:PATH}
-or %{CLIENT-URL:PATH} instead.
-
-
-QUERY
-~~~~~
-::
-
-    cond %{QUERY} <operand>
-
-The query parameters, if any, of the transaction.  Refer to `Requests vs.
-Responses`_ for more information on determining the context in which the
-transaction's URL is evaluated.
-
-This condition is *deprecated* as of ATS v7.1.x, please use e.g. %{URL:QUERY}
-or %{CLIENT-URL:QUERY} instead.
 
 
 RANDOM
@@ -997,10 +953,6 @@ evaluated and will adjust using request or response entities automatically:
 - `HEADER`_
 
 - `METHOD`_
-
-- `PATH`_
-
-- `QUERY`_
 
 - `URL`_
 
