@@ -296,9 +296,6 @@ bool
 QUICPacketLongHeader::dcil(uint8_t &dcil, const uint8_t *packet, size_t packet_len)
 {
   if (QUICInvariants::dcil(dcil, packet, packet_len)) {
-    if (dcil != 0) {
-      dcil += 3;
-    }
     return true;
   } else {
     return false;
@@ -309,9 +306,6 @@ bool
 QUICPacketLongHeader::scil(uint8_t &scil, const uint8_t *packet, size_t packet_len)
 {
   if (QUICInvariants::scil(scil, packet, packet_len)) {
-    if (scil != 0) {
-      scil += 3;
-    }
     return true;
   } else {
     return false;
@@ -336,7 +330,7 @@ QUICPacketLongHeader::token_length(size_t &token_length, uint8_t *field_len, con
   QUICPacketLongHeader::dcil(dcil, packet, packet_len);
   QUICPacketLongHeader::scil(scil, packet, packet_len);
 
-  size_t offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil;
+  size_t offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + 1 + scil;
   if (offset >= packet_len) {
     return false;
   }

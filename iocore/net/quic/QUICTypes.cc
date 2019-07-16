@@ -678,7 +678,7 @@ QUICInvariants::dcil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len)
     return false;
   }
 
-  dst = buf[QUICInvariants::LH_CIL_OFFSET] >> 4;
+  dst = buf[QUICInvariants::LH_CIL_OFFSET];
 
   return true;
 }
@@ -688,11 +688,10 @@ QUICInvariants::scil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len)
 {
   ink_assert(QUICInvariants::is_long_header(buf));
 
-  if (buf_len < QUICInvariants::LH_CIL_OFFSET) {
-    return false;
-  }
+  uint8_t dcil;
+  QUICInvariants::dcil(dcil, buf, buf_len);
 
-  dst = buf[QUICInvariants::LH_CIL_OFFSET] & 0x0F;
+  dst = buf[QUICInvariants::LH_CIL_OFFSET + 1 + dcil];
 
   return true;
 }
@@ -709,13 +708,12 @@ QUICInvariants::dcid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len
       return false;
     }
 
-    if (dcil) {
-      dcid_len = dcil + QUICInvariants::CIL_BASE;
-    } else {
+    if (dcil == 0) {
       dst = QUICConnectionId::ZERO();
       return true;
     }
 
+    dcid_len    = dcil;
     dcid_offset = QUICInvariants::LH_DCID_OFFSET;
   } else {
     // remote dcil is local scil
@@ -742,34 +740,30 @@ QUICInvariants::scid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len
   }
 
   uint8_t scid_offset = QUICInvariants::LH_DCID_OFFSET;
-  uint8_t scid_len    = 0;
 
   uint8_t dcil = 0;
   if (!QUICInvariants::dcil(dcil, buf, buf_len)) {
     return false;
   }
 
-  if (dcil) {
-    scid_offset += (dcil + QUICInvariants::CIL_BASE);
-  }
+  scid_offset += dcil;
 
   uint8_t scil = 0;
   if (!QUICInvariants::scil(scil, buf, buf_len)) {
     return false;
   }
+  scid_offset += 1;
 
-  if (scil) {
-    scid_len = scil + QUICInvariants::CIL_BASE;
-  } else {
+  if (scil == 0) {
     dst = QUICConnectionId::ZERO();
     return true;
   }
 
-  if (scid_offset + scid_len > buf_len) {
+  if (scid_offset + scil > buf_len) {
     return false;
   }
 
-  dst = QUICTypeUtil::read_QUICConnectionId(buf + scid_offset, scid_len);
+  dst = QUICTypeUtil::read_QUICConnectionId(buf + scid_offset, scil);
 
   return true;
 }

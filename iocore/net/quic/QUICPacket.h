@@ -238,13 +238,7 @@ public:
 
   static bool type(QUICPacketType &type, const uint8_t *packet, size_t packet_len);
   static bool version(QUICVersion &version, const uint8_t *packet, size_t packet_len);
-  /**
-   * Unlike QUICInvariants::dcil(), this returns actual connection id length
-   */
   static bool dcil(uint8_t &dcil, const uint8_t *packet, size_t packet_len);
-  /**
-   * Unlike QUICInvariants::scil(), this returns actual connection id length
-   */
   static bool scil(uint8_t &scil, const uint8_t *packet, size_t packet_len);
   static bool token_length(size_t &token_length, uint8_t *field_len, const uint8_t *packet, size_t packet_len);
   static bool length(size_t &length, uint8_t *field_len, const uint8_t *packet, size_t packet_len);
