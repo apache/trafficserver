@@ -3308,9 +3308,9 @@ Client-Related Configuration
    Configures |TS| to verify the origin server certificate
    with the Certificate Authority (CA). This configuration takes a value of :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`
 
-   You can override this global setting on a per domain basis in the sni.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in sni.yaml.
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in :file:`sni.yaml`.
 
 :code:`DISABLED`
    Server Certificate will not be verified
@@ -3325,9 +3325,9 @@ Client-Related Configuration
 
    Configures |TS| for what the default verify callback should check during origin server verification.
 
-   You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_server_properties attribute<override-verify-server-properties>`.
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_properties attribute<override-verify-server-properties>`.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in sni.yaml.
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in .:file:`sni.yaml`
 
 :code:`NONE`
    Check nothing in the standard callback.  Rely entirely on plugins to check the certificate.
@@ -3348,7 +3348,7 @@ Client-Related Configuration
    Configures |TS| to verify the origin server certificate
    with the Certificate Authority (CA). This configuration takes a value between 0 to 2.
 
-   You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_origin_server attribute<override-verify-origin-server>`.
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_origin_server attribute<override-verify-origin-server>`.
 
    :0: Server Certificate will not be verified
    :1: Certificate will be verified and the connection will not be established if verification fail
