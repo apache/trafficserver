@@ -37,6 +37,7 @@
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/objects.h>
 
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
@@ -307,6 +308,21 @@ public:
   getSSLCipherSuite() const
   {
     return ssl ? SSL_get_cipher_name(ssl) : nullptr;
+  }
+
+  const char *
+  getSSLCurve() const
+  {
+    if (!ssl) {
+      return nullptr;
+    }
+
+    int curve_nid = SSL_get_shared_curve(ssl, 0);
+
+    if (curve_nid == NID_undef) {
+      return nullptr;
+    }
+    return OBJ_nid2sn(curve_nid);
   }
 
   bool
