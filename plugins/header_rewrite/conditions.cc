@@ -248,83 +248,6 @@ ConditionHeader::eval(const Resources &res)
   return static_cast<const MatcherType *>(_matcher)->test(s);
 }
 
-// ConditionPath
-void
-ConditionPath::initialize(Parser &p)
-{
-  Condition::initialize(p);
-  MatcherType *match = new MatcherType(_cond_op);
-
-  match->set(p.get_arg());
-  _matcher = match;
-}
-
-void
-ConditionPath::append_value(std::string &s, const Resources &res)
-{
-  TSMBuffer bufp;
-  TSMLoc url_loc;
-
-  if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url_loc) == TS_SUCCESS) {
-    int path_length;
-    const char *path = TSUrlPathGet(bufp, url_loc, &path_length);
-
-    if (path && path_length) {
-      s.append(path, path_length);
-    }
-
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
-  }
-}
-
-bool
-ConditionPath::eval(const Resources &res)
-{
-  std::string s;
-
-  append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating PATH()");
-
-  return static_cast<MatcherType *>(_matcher)->test(s);
-}
-
-// ConditionQuery
-void
-ConditionQuery::initialize(Parser &p)
-{
-  Condition::initialize(p);
-  MatcherType *match = new MatcherType(_cond_op);
-
-  match->set(p.get_arg());
-  _matcher = match;
-}
-
-void
-ConditionQuery::append_value(std::string &s, const Resources &res)
-{
-  int query_len     = 0;
-  const char *query = TSUrlHttpQueryGet(res._rri->requestBufp, res._rri->requestUrl, &query_len);
-
-  TSDebug(PLUGIN_NAME, "Appending QUERY to evaluation value: %.*s", query_len, query);
-  s.append(query, query_len);
-}
-
-bool
-ConditionQuery::eval(const Resources &res)
-{
-  if (nullptr != res._rri) {
-    std::string s;
-
-    append_value(s, res);
-    TSDebug(PLUGIN_NAME, "Evaluating QUERY()");
-
-    return static_cast<const MatcherType *>(_matcher)->test(s);
-  }
-
-  TSDebug(PLUGIN_NAME, "\tQUERY requires remap initialization! Evaluating to false!");
-  return false;
-}
-
 // ConditionUrl: request or response header. TODO: This is not finished, at all!!!
 void
 ConditionUrl::initialize(Parser &p)
@@ -650,37 +573,6 @@ ConditionIp::append_value(std::string &s, const Resources &res)
   if (ip_set) {
     s += ip;
   }
-}
-
-void
-ConditionIncomingPort::initialize(Parser &p)
-{
-  Condition::initialize(p);
-
-  MatcherType *match = new MatcherType(_cond_op);
-
-  match->set(static_cast<uint16_t>(strtoul(p.get_arg().c_str(), nullptr, 10)));
-  _matcher = match;
-}
-
-bool
-ConditionIncomingPort::eval(const Resources &res)
-{
-  uint16_t port = getPort(TSHttpTxnIncomingAddrGet(res.txnp));
-
-  TSDebug(PLUGIN_NAME, "Evaluating INCOMING-PORT()");
-  return static_cast<MatcherType *>(_matcher)->test(port);
-}
-
-void
-ConditionIncomingPort::append_value(std::string &s, const Resources &res)
-{
-  std::ostringstream oss;
-  uint16_t port = getPort(TSHttpTxnIncomingAddrGet(res.txnp));
-
-  oss << port;
-  s += oss.str();
-  TSDebug(PLUGIN_NAME, "Appending %d to evaluation value -> %s", port, s.c_str());
 }
 
 // ConditionTransactCount
