@@ -70,7 +70,6 @@ TEST_CASE("QUICFrameHandler", "[quic]")
 
   // CONNECTION_CLOSE frame
   QUICConnectionCloseFrame connectionCloseFrame(0, 0, "", 0, nullptr);
-  connectionCloseFrame.store(buf, &len, 4096);
   ibb = connectionCloseFrame.to_io_buffer_block(sizeof(buf));
   len = 0;
   for (auto b = ibb; b; b = b->next) {
