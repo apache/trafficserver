@@ -522,14 +522,21 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   QUICTypeUtil::write_QUICVersion(this->_version, buf + *len, &n);
   *len += n;
 
-  buf[*len] = this->_destination_cid == QUICConnectionId::ZERO() ? 0 : (this->_destination_cid.length() - 3) << 4;
-  buf[*len] += this->_source_cid == QUICConnectionId::ZERO() ? 0 : this->_source_cid.length() - 3;
+  // DICD Len
+  buf[*len] = this->_destination_cid.length();
   *len += 1;
 
+  // DCID
   if (this->_destination_cid != QUICConnectionId::ZERO()) {
     QUICTypeUtil::write_QUICConnectionId(this->_destination_cid, buf + *len, &n);
     *len += n;
   }
+
+  // SCID Len
+  buf[*len] = this->_source_cid.length();
+  *len += 1;
+
+  // SCID
   if (this->_source_cid != QUICConnectionId::ZERO()) {
     QUICTypeUtil::write_QUICConnectionId(this->_source_cid, buf + *len, &n);
     *len += n;

@@ -32,8 +32,9 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     const uint8_t input[] = {
       0xc0,                                           // Long header, Type: NONE
       0x00, 0x00, 0x00, 0x00,                         // Version
-      0x55,                                           // DCIL/SCIL
+      0x08,                                           // DCID Len
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x00, 0x00, 0x00, 0x08,                         // Supported Version 1
       0x00, 0x00, 0x00, 0x09,                         // Supported Version 1
@@ -42,8 +43,8 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     memcpy(uinput.get(), input, sizeof(input));
 
     QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {}, std::move(uinput), sizeof(input), 0);
-    CHECK(header->size() == 22);
-    CHECK(header->packet_size() == 30);
+    CHECK(header->size() == sizeof(input) - 8);
+    CHECK(header->packet_size() == sizeof(input));
     CHECK(header->type() == QUICPacketType::VERSION_NEGOTIATION);
     CHECK(
       (header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
@@ -57,8 +58,9 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     const uint8_t input[] = {
       0xc3,                                           // Long header, Type: INITIAL
       0x11, 0x22, 0x33, 0x44,                         // Version
-      0x55,                                           // DCIL/SCIL
+      0x08,                                           // DCID Len
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x00,                                           // Token Length (i), Token (*)
       0x02,                                           // Payload length
@@ -85,8 +87,9 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     const uint8_t input[] = {
       0xf5,                                           // Long header, Type: RETRY
       0x11, 0x22, 0x33, 0x44,                         // Version
-      0x55,                                           // DCIL/SCIL
+      0x08,                                           // DCID Len
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, // Original Destination Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Retry Token
@@ -122,8 +125,9 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     const uint8_t expected[] = {
       0xc3,                                           // Long header, Type: INITIAL
       0x11, 0x22, 0x33, 0x44,                         // Version
-      0x55,                                           // DCIL/SCIL
+      0x08,                                           // DCID Len
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x00,                                           // Token Length (i), Token (*)
       0x19,                                           // Length (Not 0x09 because it will have 16 bytes of AEAD tag)
@@ -162,8 +166,9 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     const uint8_t expected[] = {
       0xf5,                                           // Long header, Type: RETRY
       0x11, 0x22, 0x33, 0x44,                         // Version
-      0x55,                                           // DCIL/SCIL
+      0x08,                                           // DCID Len
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, // Original Destination Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Retry Token
