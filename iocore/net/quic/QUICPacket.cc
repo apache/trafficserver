@@ -179,7 +179,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, const IpEndpoi
 
   size_t offset          = LONG_HDR_OFFSET_CONNECTION_ID;
   this->_destination_cid = {raw_buf + offset, dcil};
-  offset += dcil;
+  offset += dcil + 1;
   this->_source_cid = {raw_buf + offset, scil};
   offset += scil;
 
