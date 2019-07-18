@@ -152,23 +152,14 @@ QUICPacketHeaderProtector::_calc_sample_offset(uint8_t *sample_offset, const uin
                                                int dcil) const
 {
   if (QUICInvariants::is_long_header(protected_packet)) {
-    uint8_t dcil;
-    uint8_t scil;
     size_t dummy;
     uint8_t length_len;
-    QUICPacketLongHeader::dcil(dcil, protected_packet, protected_packet_len);
-    QUICPacketLongHeader::scil(scil, protected_packet, protected_packet_len);
-    QUICPacketLongHeader::length(dummy, &length_len, protected_packet, protected_packet_len);
-    *sample_offset = QUICInvariants::LH_DCID_OFFSET + dcil + 1 + scil + length_len + 4;
-
-    QUICPacketType type;
-    QUICPacketLongHeader::type(type, protected_packet, protected_packet_len);
-    if (type == QUICPacketType::INITIAL) {
-      size_t token_len;
-      uint8_t token_length_len;
-      QUICPacketLongHeader::token_length(token_len, &token_length_len, protected_packet, protected_packet_len);
-      *sample_offset += token_len + token_length_len;
+    size_t length_offset;
+    if (!QUICPacketLongHeader::length(dummy, length_len, length_offset, protected_packet, protected_packet_len)) {
+      return false;
     }
+
+    *sample_offset = length_offset + length_len + 4;
   } else {
     *sample_offset = QUICInvariants::SH_DCID_OFFSET + dcil + 4;
   }

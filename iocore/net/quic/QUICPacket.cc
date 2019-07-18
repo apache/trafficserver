@@ -350,11 +350,18 @@ QUICPacketLongHeader::token_length(size_t &token_length, uint8_t *field_len, con
 }
 
 bool
-QUICPacketLongHeader::length(size_t &length, uint8_t *field_len, const uint8_t *packet, size_t packet_len)
+QUICPacketLongHeader::length(size_t &length, uint8_t &length_field_len, size_t &length_field_offset, const uint8_t *packet,
+                             size_t packet_len)
 {
-  uint8_t dcil, scil;
-  QUICPacketLongHeader::dcil(dcil, packet, packet_len);
-  QUICPacketLongHeader::scil(scil, packet, packet_len);
+  uint8_t dcil;
+  if (!QUICPacketLongHeader::dcil(dcil, packet, packet_len)) {
+    return false;
+  }
+
+  uint8_t scil;
+  if (!QUICPacketLongHeader::scil(scil, packet, packet_len)) {
+    return false;
+  }
 
   // Token Length (i) + Token (*) (for INITIAL packet)
   size_t token_length            = 0;
@@ -364,34 +371,51 @@ QUICPacketLongHeader::length(size_t &length, uint8_t *field_len, const uint8_t *
   }
 
   // Length (i)
-  size_t length_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil + token_length_field_len + token_length;
-  if (length_offset >= packet_len) {
+  length_field_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + 1 + scil + token_length_field_len + token_length;
+  if (length_field_offset >= packet_len) {
     return false;
   }
-  length = QUICIntUtil::read_QUICVariableInt(packet + length_offset);
-  if (field_len) {
-    *field_len = QUICVariableInt::size(packet + length_offset);
-  }
+
+  length_field_len = QUICVariableInt::size(packet + length_field_offset);
+  length           = QUICIntUtil::read_QUICVariableInt(packet + length_field_offset);
+
   return true;
 }
 
 bool
 QUICPacketLongHeader::packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len)
 {
-  QUICPacketType type;
-  QUICPacketLongHeader::type(type, packet, packet_len);
-
-  uint8_t dcil, scil;
-  size_t token_length;
-  uint8_t token_length_field_len;
   size_t length;
   uint8_t length_field_len;
-  if (!QUICPacketLongHeader::dcil(dcil, packet, packet_len) || !QUICPacketLongHeader::scil(scil, packet, packet_len) ||
-      !QUICPacketLongHeader::token_length(token_length, &token_length_field_len, packet, packet_len) ||
-      !QUICPacketLongHeader::length(length, &length_field_len, packet, packet_len)) {
+  size_t length_field_offset;
+
+  if (!QUICPacketLongHeader::length(length, length_field_len, length_field_offset, packet, packet_len)) {
     return false;
   }
-  pn_offset = 6 + dcil + scil + token_length_field_len + token_length + length_field_len;
+  pn_offset = length_field_offset + length_field_len;
+
+  if (pn_offset >= packet_len) {
+    return false;
+  }
+
+  return true;
+}
+
+bool
+QUICPacketLongHeader::packet_length(size_t &packet_len, const uint8_t *buf, size_t buf_len)
+{
+  size_t length;
+  uint8_t length_field_len;
+  size_t length_field_offset;
+
+  if (!QUICPacketLongHeader::length(length, length_field_len, length_field_offset, buf, buf_len)) {
+    return false;
+  }
+  packet_len = length + length_field_offset + length_field_len;
+
+  if (packet_len > buf_len) {
+    return false;
+  }
 
   return true;
 }
