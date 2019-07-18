@@ -3231,11 +3231,6 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
         // successful keep-alive
         close_connection = false;
       }
-      // else { the authenticated server connection (cache
-      // authenticated feature) closed during the serve-from-cache.
-      // We want the client to issue a new connection for the
-      // session based authenticated mechanism like NTLM, instead
-      // of still using the existing client connection. }
     }
     break;
   case VC_EVENT_WRITE_READY:
@@ -3910,29 +3905,6 @@ HttpSM::tunnel_handler_plugin_agent(int event, HttpTunnelConsumer *c)
     break;
   default:
     ink_release_assert(0);
-  }
-
-  return 0;
-}
-
-int
-HttpSM::state_srv_lookup(int event, void *data)
-{
-  STATE_ENTER(&HttpSM::state_srv_lookup, event);
-
-  ink_assert(t_state.req_flavor == HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE ||
-             t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY || ua_entry->vc != nullptr);
-
-  switch (event) {
-  case EVENT_SRV_LOOKUP:
-    pending_action = nullptr;
-    process_srv_info((HostDBInfo *)data);
-    break;
-  case EVENT_SRV_IP_REMOVED:
-    ink_assert(!"Unexpected SRV event from HostDB. What up, Eric?");
-    break;
-  default:
-    ink_assert(!"Unexpected event");
   }
 
   return 0;
@@ -6920,7 +6892,6 @@ HttpSM::kill_this()
 #endif
 
     SMDebug("http", "[%" PRId64 "] deallocating sm", sm_id);
-    //    authAdapter.destroyState();
     destroy();
   }
 }

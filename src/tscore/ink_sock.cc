@@ -124,25 +124,6 @@ safe_blocking(int fd)
 }
 
 int
-write_ready(int fd, int timeout_msec)
-{
-  struct pollfd p;
-  p.events = POLLOUT;
-  p.fd     = fd;
-  int r    = poll(&p, 1, timeout_msec);
-  if (r <= 0) {
-    return r;
-  }
-  if (p.revents & (POLLERR | POLLNVAL)) {
-    return -1;
-  }
-  if (p.revents & (POLLOUT | POLLHUP)) {
-    return 1;
-  }
-  return 0;
-}
-
-int
 read_ready(int fd, int timeout_msec)
 {
   struct pollfd p;

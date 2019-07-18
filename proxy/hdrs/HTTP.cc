@@ -45,11 +45,6 @@
  *                                                                     *
  ***********************************************************************/
 
-// TODO: We should enable the creation and use of these WKS. XXXX
-#if 0
-static const char *cache_control_values[SIZEOF(cache_control_names)];
-#endif
-
 const char *HTTP_METHOD_CONNECT;
 const char *HTTP_METHOD_DELETE;
 const char *HTTP_METHOD_GET;
@@ -276,13 +271,6 @@ http_init()
     HTTP_LEN_S_MAXAGE             = hdrtoken_wks_to_length(HTTP_VALUE_S_MAXAGE);
     HTTP_LEN_NEED_REVALIDATE_ONCE = hdrtoken_wks_to_length(HTTP_VALUE_NEED_REVALIDATE_ONCE);
     HTTP_LEN_100_CONTINUE         = hdrtoken_wks_to_length(HTTP_VALUE_100_CONTINUE);
-
-// TODO: We need to look into enable these CC values as WKS XXX
-#if 0
-    for (int i = 0; i < (int) SIZEOF(cache_control_values); i++) {
-      cache_control_values[i] = hdrtoken_string_to_wks(cache_control_names[i]);
-    }
-#endif
   }
 }
 

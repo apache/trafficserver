@@ -1525,12 +1525,7 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
   if (url->m_ptr_scheme) {
     TRY((normalize ? mime_mem_print_lc : mime_mem_print)(url->m_ptr_scheme, url->m_len_scheme, buf_start, buf_length,
                                                          buf_index_inout, buf_chars_to_skip_inout));
-    // [amc] Why is "file:" special cased to be wrong?
-    //    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
-    //      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    //    } else {
     TRY(mime_mem_print("://", 3, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    //    }
   }
 
   if (url->m_ptr_user) {

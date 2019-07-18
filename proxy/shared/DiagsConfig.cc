@@ -244,26 +244,6 @@ DiagsConfig::config_diags_norecords()
 #endif
 }
 
-void
-DiagsConfig::RegisterDiagConfig()
-{
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.debug.enabled", 0, RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.debug.tags", "", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.action.enabled", 0, RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.action.tags", "", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.show_location", 1, RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.diag", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.debug", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.status", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.note", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.warning", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.error", "SL", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.fatal", "SL", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.alert", "L", RECU_NULL, RECC_NULL, nullptr, REC_SOURCE_DEFAULT);
-  RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.emergency", "SL", RECU_NULL, RECC_NULL, nullptr,
-                          REC_SOURCE_DEFAULT);
-}
-
 DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const char *tags, const char *actions, bool use_records)
   : callbacks_established(false), diags_log(nullptr), diags(nullptr)
 {

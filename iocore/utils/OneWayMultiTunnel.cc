@@ -44,19 +44,6 @@ OneWayMultiTunnel::OneWayMultiTunnel() : OneWayTunnel()
   ink_zero(vioTargets);
 }
 
-OneWayMultiTunnel *
-OneWayMultiTunnel::OneWayMultiTunnel_alloc()
-{
-  return OneWayMultiTunnelAllocator.alloc();
-}
-
-void
-OneWayMultiTunnel::OneWayMultiTunnel_free(OneWayMultiTunnel *pOWT)
-{
-  pOWT->mutex = nullptr;
-  OneWayMultiTunnelAllocator.free(pOWT);
-}
-
 void
 OneWayMultiTunnel::init(VConnection *vcSource, VConnection **vcTargets, int n_vcTargets, Continuation *aCont, int size_estimate,
                         int64_t nbytes, bool asingle_buffer, /* = true */

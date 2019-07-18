@@ -337,21 +337,6 @@ HdrTest::test_url()
     }
   }
 
-#if 0
-  if (!failed) {
-    Note("URL performance test start");
-    for (int j = 0 ; j < 100000 ; ++j) {
-      for (i = 0 ; i < countof(strs) ; ++i) {
-        const char* x = strs[i];
-        url.create(NULL);
-        err = url.parse(x, strlen(x));
-        url.destroy();
-      }
-    }
-    Note("URL performance test end");
-  }
-#endif
-
   return (failures_to_status("test_url", failed));
 }
 
@@ -985,23 +970,11 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
     goto done;
   }
 
-// The APIs for copying headers uses memcpy() which can be unsafe for
-// overlapping memory areas. It's unclear to me why these tests were
-// created in the first place honestly, since nothing else does this.
-#if 0
-    /*** (4) Copying over yourself ***/
-  copy1.copy(&copy1);
-  comp_str = comp_http_hdr(&req_hdr, &copy1);
-  if (comp_str)
-    goto done;
+  // The APIs for copying headers uses memcpy() which can be unsafe for
+  // overlapping memory areas. It's unclear to me why these tests were
+  // created in the first place honestly, since nothing else does this.
 
-  copy2.copy(&copy2);
-  comp_str = comp_http_hdr(&resp_hdr, &copy2);
-  if (comp_str)
-    goto done;
-#endif
-
-  /*** (5) Gender bending copying ***/
+  /*** (4) Gender bending copying ***/
   copy1.copy(&resp_hdr);
   comp_str = comp_http_hdr(&resp_hdr, &copy1);
   if (comp_str) {

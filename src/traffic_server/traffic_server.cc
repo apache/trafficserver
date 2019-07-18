@@ -771,17 +771,6 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
 
   printf("%s\n\n", n);
 
-#if 0
-  printf("Host Database\n");
-  HostDBCache hd;
-  if (hd.start(fix) < 0) {
-    printf("\tunable to open Host Database, %s failed\n", n);
-    return CMD_OK;
-  }
-  hd.check("hostdb.config", fix);
-  hd.reset();
-#endif
-
   cacheProcessor.afterInitCallbackSet(&CB_cmd_cache_check);
   if (cacheProcessor.start_internal(PROCESSOR_CHECK) < 0) {
     printf("\nbad cache configuration, %s failed\n", n);

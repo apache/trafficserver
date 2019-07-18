@@ -851,15 +851,7 @@ LogFilterIP::toss_this_entry(LogAccess *lad)
 bool
 LogFilterIP::wipe_this_entry(LogAccess *)
 {
-#if 0
-  bool zret = WIPE_FIELD_VALUE == m_action && this->is_match(lad);
-  if (zret) {
-    // set to ADDR_ANY.
-  }
-  return zret;
-#else
   return false;
-#endif
 }
 
 /*-------------------------------------------------------------------------

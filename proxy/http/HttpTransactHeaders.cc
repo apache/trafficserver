@@ -684,14 +684,6 @@ HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_
   }
 }
 
-void
-HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr *h)
-{
-  if (likely(server_tag && server_tag_size > 0 && h)) {
-    h->set_server(server_tag, server_tag_size);
-  }
-}
-
 /// write the protocol stack to the @a via_string.
 /// If @a detailed then do the full stack, otherwise just the "top level" protocol.
 /// Returns the number of characters appended to hdr_string (no nul appended).
@@ -933,35 +925,6 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
 
   ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
   header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Name: insert_basic_realm_in_proxy_authenticate
-// Description: insert Basic realm into Proxy-Authenticate based on
-//              configuration
-//  fix for INKqa09089
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransactHeaders::insert_basic_realm_in_proxy_authenticate(const char *realm, HTTPHdr *header, bool bRevPrxy)
-{
-  char new_basic_realm[128];
-  char *basic_realm;
-
-  basic_realm = new_basic_realm;
-  basic_realm += nstrcpy(basic_realm, "Basic realm=\"");
-  basic_realm += nstrcpy(basic_realm, (char *)realm);
-  *basic_realm++ = '"';
-  *basic_realm   = 0;
-
-  MIMEField *auth;
-  if (false == bRevPrxy) {
-    auth = header->field_create(MIME_FIELD_PROXY_AUTHENTICATE, MIME_LEN_PROXY_AUTHENTICATE);
-  } else {
-    auth = header->field_create(MIME_FIELD_WWW_AUTHENTICATE, MIME_LEN_WWW_AUTHENTICATE);
-  }
-
-  header->field_value_set(auth, new_basic_realm, strlen(new_basic_realm));
-  header->field_attach(auth);
 }
 
 void

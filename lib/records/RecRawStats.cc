@@ -379,28 +379,6 @@ RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type, RecDa
   return REC_ERR_OKAY;
 }
 
-int
-RecRawStatSyncMHrTimeAvg(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id)
-{
-  RecRawStat total;
-  RecFloat r;
-
-  Debug("stats", "raw sync:mhr-timeavg for %s", name);
-  raw_stat_sync_to_global(rsb, id);
-  total.sum   = rsb->global[id]->sum;
-  total.count = rsb->global[id]->count;
-
-  if (total.count == 0) {
-    r = 0.0f;
-  } else {
-    r = (float)((double)total.sum / (double)total.count);
-    r = r / (float)(HRTIME_MSECOND);
-  }
-
-  RecDataSetFromFloat(data_type, data, r);
-  return REC_ERR_OKAY;
-}
-
 //-------------------------------------------------------------------------
 // RecSetRawStatXXX
 //-------------------------------------------------------------------------

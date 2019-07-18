@@ -78,7 +78,6 @@ loadRegionMap(StringMap &m, const String &filename)
 
   std::ifstream ifstr;
   String line;
-  unsigned lineno = 0;
 
   ifstr.open(path.c_str());
   if (!ifstr) {
@@ -92,8 +91,6 @@ loadRegionMap(StringMap &m, const String &filename)
 
   while (std::getline(ifstr, line)) {
     String::size_type pos;
-
-    ++lineno;
 
     // Allow #-prefixed comments.
     pos = line.find_first_of('#');

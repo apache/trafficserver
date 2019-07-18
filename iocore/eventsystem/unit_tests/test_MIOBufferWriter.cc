@@ -70,37 +70,6 @@ genData(int numBytes)
   return s;
 }
 
-void
-writeOnce(MIOBufferWriter &bw, std::size_t len)
-{
-  static bool toggle;
-
-  std::string s{genData(len)};
-
-  if (len == 1) {
-    bw.write(s[0]);
-
-  } else if (toggle) {
-    std::size_t cap{bw.auxBufferCapacity()};
-
-    if (cap >= len) {
-      memcpy(bw.auxBuffer(), s.data(), len);
-      bw.fill(len);
-
-    } else {
-      memcpy(bw.auxBuffer(), s.data(), cap);
-      bw.fill(cap);
-      bw.write(s.data() + cap, len - cap);
-    }
-  } else {
-    bw.write(s.data(), len);
-  }
-
-  toggle = !toggle;
-
-  REQUIRE(bw.auxBufferCapacity() <= DEFAULT_BUFFER_NUMBER);
-}
-
 class InkAssertExcept
 {
 };
@@ -109,30 +78,4 @@ TEST_CASE("MIOBufferWriter", "[MIOBW]")
 {
   MIOBuffer *theMIOBuffer = new_MIOBuffer(default_large_iobuffer_size);
   MIOBufferWriter bw(theMIOBuffer);
-
-#if 0
-  writeOnce(bw, 0);
-  writeOnce(bw, 1);
-  writeOnce(bw, 1);
-  writeOnce(bw, 1);
-  writeOnce(bw, 10);
-  writeOnce(bw, 1000);
-  writeOnce(bw, 1);
-  writeOnce(bw, 0);
-  writeOnce(bw, 1);
-  writeOnce(bw, 2000);
-  writeOnce(bw, 69);
-  writeOnce(bw, 666);
-
-  std::cout << "Pre Loop" << std::endl;
-  for (int i = 0; i < 3000; i += 13) {
-    writeOnce(bw, i);
-  }
-  std::cout << "Post Loop" << std::endl;
-
-  writeOnce(bw, 0);
-  writeOnce(bw, 1);
-
-  REQUIRE(bw.extent() == 3000);
-#endif
 }

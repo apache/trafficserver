@@ -74,7 +74,6 @@ public:
                                     const char *warn_text = nullptr, int warn_text_len = 0);
   static void insert_time_and_age_headers_in_response(ink_time_t request_sent_time, ink_time_t response_received_time,
                                                       ink_time_t now, HTTPHdr *base, HTTPHdr *outgoing);
-  static void insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr *header);
   static void insert_via_header_in_request(HttpTransact::State *s, HTTPHdr *header);
   static void insert_via_header_in_response(HttpTransact::State *s, HTTPHdr *header);
   static void insert_hsts_header_in_response(HttpTransact::State *s, HTTPHdr *header);
@@ -84,8 +83,6 @@ public:
   static bool is_request_proxy_authorized(HTTPHdr *incoming_hdr);
 
   static void normalize_accept_encoding(const OverridableHttpConfigParams *ohcp, HTTPHdr *header);
-
-  static void insert_basic_realm_in_proxy_authenticate(const char *realm, HTTPHdr *header, bool bRevPrxy);
 
   static void remove_conditional_headers(HTTPHdr *outgoing);
   static void remove_100_continue_headers(HttpTransact::State *s, HTTPHdr *outgoing);

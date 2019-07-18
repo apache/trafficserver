@@ -298,7 +298,7 @@ cb_table_unregister(CallbackTable *cb_table, const char *event_name, TSEventSign
           i = nullptr;
         }
       }
-    } // end for (int i = 0; i < NUM_EVENTS; i++) {
+    } // end for (int i = 0; i < NUM_EVENTS; i++)
   } else {
     // unregister for specific event
     int id = get_event_id(event_name);

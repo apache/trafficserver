@@ -1967,22 +1967,6 @@ REGRESSION_TEST(SDK_API_TSCache)(RegressionTest *test, int /* atype ATS_UNUSED *
   TSCacheKeyDigestSet(key, key_name, strlen(key_name));
   TSCacheKeyDigestSet(key_cmp, key_name, strlen(key_name));
 
-// TODO: This comparison makes no sense, since TSCacheKey is an opaque struct
-#if 0
-  if (memcmp(key, key_cmp, sizeof(TSCacheKey)) != 0) {
-    SDK_RPRINT(test, "TSCacheKeySetDigest", "TestCase1", TC_FAIL, "digest is wrong");
-
-    // no need to continue, return
-    *pstatus = REGRESSION_TEST_FAILED;
-    TSCacheKeyDestroy(key);
-    TSCacheKeyDestroy(key_cmp);
-    return;
-  } else {
-    SDK_RPRINT(test, "TSCacheKeySetDigest", "TestCase1", TC_PASS, "ok");
-    TSCacheKeyDestroy(key_cmp);
-  }
-#endif
-
   // prepare caching content
   // string, null-terminated.
   for (int i = 0; i < (OBJECT_SIZE - 1); i++) {
@@ -7788,11 +7772,6 @@ transformable(TSHttpTxn txnp, TransformTestData *data)
   if (TS_HTTP_STATUS_OK == TSHttpHdrStatusGet(bufp, hdr_loc)) {
     ret = 1;
   }
-  // XXX - Can't return TS_ERROR because that is a different type
-  // -bcall 7/24/07
-  //     if (resp_status == TS_ERROR) {
-  //      SDK_RPRINT(data->test,"TSHttpTxnTransform","",TC_FAIL,"[transformable]: TSHttpHdrStatusGet returns TS_ERROR");
-  //     }
 
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   return ret; /* not a 200 */

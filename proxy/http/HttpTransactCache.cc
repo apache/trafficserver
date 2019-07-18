@@ -1034,11 +1034,6 @@ match_accept_content_language(const char *c_raw, MIMEField *accept_field, bool *
       return true;
     } else if (does_language_range_match(a_range, c_raw)) {
       *q = tq;
-      // This is disabled, so removed max_a_range_length from prototype
-      //          if (*a_range_length > *max_a_range_length) {
-      //              *q = tq;
-      //              *max_a_range_length = *a_range_length;
-      //          }
       return true;
     } else {
     }

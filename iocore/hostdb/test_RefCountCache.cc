@@ -124,12 +124,6 @@ verifyCache(RefCountCache<ExampleStruct> *cache, int start, int end)
       printf("IDX of ExampleStruct%d incorrect! (%d)\n", i, tmp->idx);
       return 1; // TODO: spin over all?
     }
-
-    // check that the name is correct
-    // if (strcmp(tmp->name, name.c_str())){
-    //  printf("Name of ExampleStruct%d incorrect! %s %s\n", i, tmp->name, name.c_str());
-    //  exit(1);
-    //}
   }
   return 0;
 }

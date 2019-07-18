@@ -1735,6 +1735,7 @@ HttpTransact::OSDNSLookup(State *s)
   if (s->cdn_remap_complete) {
     TxnDebug("cdn", "This is a late DNS lookup.  We are going to the OS, "
                     "not to HandleFiltering.");
+
     ink_assert(s->cdn_saved_next_action == SM_ACTION_ORIGIN_SERVER_OPEN ||
                s->cdn_saved_next_action == SM_ACTION_ORIGIN_SERVER_RAW_OPEN);
     TxnDebug("cdn", "outgoing version -- (pre  conversion) %d", s->hdr_info.server_request.m_http->m_version);
@@ -1753,9 +1754,6 @@ HttpTransact::OSDNSLookup(State *s)
     // 'AuthHttpAdapter' should do the rev-dns if needed, not here .
     TRANSACT_RETURN(SM_ACTION_DNS_REVERSE_LOOKUP, HttpTransact::StartAccessControl);
   } else {
-    //(s->state_machine->authAdapter).StartLookup (s);
-    // TRANSACT_RETURN(SM_ACTION_AUTH_LOOKUP, NULL);
-
     if (s->force_dns) {
       StartAccessControl(s); // If skip_dns is enabled and no ip based rules in cache.config and parent.config
       // Access Control is called after DNS response
@@ -1786,62 +1784,17 @@ HttpTransact::OSDNSLookup(State *s)
 void
 HttpTransact::StartAccessControl(State *s)
 {
-  // if (s->cop_test_page  || (s->state_machine->authAdapter.disabled() == true)) {
-  // Heartbeats should always be allowed.
-  // s->content_control.access = ACCESS_ALLOW;
   HandleRequestAuthorized(s);
-  //  return;
-  // }
-  // ua_txn is NULL for scheduled updates.
-  // Don't use req_flavor to do the test because if updated
-  // urls are remapped, the req_flavor is changed to REV_PROXY.
-  // if (s->state_machine->ua_txn == NULL) {
-  // Scheduled updates should always be allowed
-  // return;
-  //}
-  // pass the access control logic to the ACC module.
-  //(s->state_machine->authAdapter).StartLookup(s);
 }
 
 void
 HttpTransact::HandleRequestAuthorized(State *s)
 {
-  //(s->state_machine->authAdapter).SetState(s);
-  //(s->state_machine->authAdapter).UserAuthorized(NULL);
-  // TRANSACT_RETURN(HTTP_API_OS_DNS, HandleFiltering);
   if (s->force_dns) {
     TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HttpTransact::DecideCacheLookup);
   } else {
     HttpTransact::DecideCacheLookup(s);
   }
-}
-
-void
-HttpTransact::HandleFiltering(State *s)
-{
-  ink_release_assert(!"Fix-Me AUTH MERGE");
-
-  if (s->method == HTTP_WKSIDX_PUSH && s->http_config_param->push_method_enabled == 0) {
-    // config file says this request is not authorized.
-    // send back error response to client.
-    TxnDebug("http_trans", "[HandleFiltering] access denied.");
-    TxnDebug("http_seq", "[HttpTransact::HandleFiltering] Access Denied.");
-
-    SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    // adding a comment so that cvs recognizes that I added a space in the text below
-    build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied");
-    // s->cache_info.action = CACHE_DO_NO_ACTION;
-    TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-  }
-
-  TxnDebug("http_seq", "[HttpTransact::HandleFiltering] Request Authorized.");
-  //////////////////////////////////////////////////////////////
-  // ok, the config file says that the request is authorized. //
-  //////////////////////////////////////////////////////////////
-
-  // request is not black listed so now decided if we ought to
-  //  lookup the cache
-  DecideCacheLookup(s);
 }
 
 void
@@ -4748,17 +4701,11 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
   // server 200 Ok for Range request
   cache_info->request_get()->field_delete(MIME_FIELD_RANGE, MIME_LEN_RANGE);
 
-  // If we're ignoring auth, then we don't want to cache WWW-Auth
-  //  headers
+  // If we're ignoring auth, then we don't want to cache WWW-Auth headers
   if (s->txn_conf->cache_ignore_auth) {
     cache_info->response_get()->field_delete(MIME_FIELD_WWW_AUTHENTICATE, MIME_LEN_WWW_AUTHENTICATE);
   }
 
-  // if (s->cache_control.cache_auth_content && s->www_auth_content != CACHE_AUTH_NONE) {
-  // decided to cache authenticated content because of cache.config
-  // add one marker to the content in cache
-  // cache_info->response_get()->value_set("@WWW-Auth", 9, "true", 4);
-  //}
   DUMP_HEADER("http_hdrs", cache_info->request_get(), s->state_machine_id, "Cached Request Hdr");
 }
 
@@ -5285,24 +5232,12 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
   if (!incoming_hdr->presence(MIME_PRESENCE_DATE)) {
     incoming_hdr->set_date(s->current.now);
   }
-  //     if (! incoming_hdr->get_reason_phrase()) {
-  //      return MISSING_REASON_PHRASE;
-  //     }
 
 #ifdef REALLY_NEED_TO_CHECK_DATE_VALIDITY
 
   if (incoming_hdr->presence(MIME_PRESENCE_DATE)) {
     time_t date_value = incoming_hdr->get_date();
     if (date_value <= 0) {
-      // following lines commented out because of performance
-      // concerns
-      //          if (s->http_config_param->errors_log_error_pages) {
-      //              const char *date_string =
-      //                    incoming_hdr->value_get(MIME_FIELD_DATE);
-      //              Log::error ("Incoming response has bogus date value: %d: %s",
-      //                          date_value, date_string ? date_string : "(null)");
-      //          }
-
       TxnDebug("http_trans", "[check_response_validity] Bogus date in response");
       return BOGUS_OR_NO_DATE_IN_RESPONSE;
     }
@@ -5434,23 +5369,6 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
   }
 
   return false;
-}
-
-void
-HttpTransact::initialize_state_variables_for_origin_server(State *s, HTTPHdr *incoming_request, bool second_time)
-{
-  if (s->server_info.name && !second_time) {
-    ink_assert(s->server_info.dst_addr.port() != 0);
-  }
-
-  int host_len;
-  const char *host    = incoming_request->host_get(&host_len);
-  s->server_info.name = s->arena.str_store(host, host_len);
-
-  if (second_time) {
-    s->dns_info.attempts    = 0;
-    s->dns_info.lookup_name = s->server_info.name;
-  }
 }
 
 void
@@ -6153,18 +6071,6 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // else no indication by cache control header
   // continue to determine cacheability
 
-  // if client contains Authorization header,
-  // only cache if response has proper Cache-Control
-  // if (s->www_auth_content == CACHE_AUTH_FRESH) {
-  // response to the HEAD request
-  //  return false;
-  //} else if (s->www_auth_content == CACHE_AUTH_TRUE ||
-  //          (s->www_auth_content == CACHE_AUTH_NONE && request->presence(MIME_PRESENCE_AUTHORIZATION))) {
-  // if (!s->cache_control.cache_auth_content || response_code != HTTP_STATUS_OK || req_method != HTTP_WKSIDX_GET)
-  //  return false;
-  //}
-  // s->www_auth_content == CACHE_AUTH_STALE silently continues
-
   if (response->presence(MIME_PRESENCE_EXPIRES)) {
     TxnDebug("http_trans", "[is_response_cacheable] YES response w/ Expires");
     return true;
@@ -6208,22 +6114,6 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
      I've moved this check to is_request_cache_lookupable().
      We should consider this matter further.  It is unclear
      how many sites actually add Cache-Control headers for Authorized content.
-
-      // if client contains Authorization header, only cache if response
-      // has proper Cache-Control flags, as in RFC2068, section 14.8.
-      if (request->field_presence(MIME_PRESENCE_AUTHORIZATION)) {
-  //         if (! (response->is_cache_control_set(HTTP_VALUE_MUST_REVALIDATE)) &&
-  //             ! (response->is_cache_control_set(HTTP_VALUE_PROXY_REVALIDATE)) &&
-  //             ! (response->is_cache_control_set(HTTP_VALUE_PUBLIC))) {
-
-              TxnDebug("http_trans", "[is_response_cacheable] request has AUTHORIZATION - not cacheable");
-              return(false);
-  //         }
-  //      else {
-  //          TxnDebug("http_trans","[is_response_cacheable] request has AUTHORIZATION, "
-  //                "but response has a cache-control that allows caching");
-  //      }
-      }
   */
 }
 
@@ -6924,7 +6814,6 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     ink_assert(s->client_info.keep_alive != HTTP_NO_KEEPALIVE);
     // This is a hack, we send the keep-alive header for both 1.0
     // and 1.1, to be "compatible" with Akamai.
-    // if (ver == HTTPVersion (1, 0)) {
     heads->value_set(c_hdr_field_str, c_hdr_field_len, "keep-alive", 10);
     // NOTE: if the version is 1.1 we don't need to do
     //  anything since keep-alive is assumed
