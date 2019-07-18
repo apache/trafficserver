@@ -1996,22 +1996,31 @@ QUICNewConnectionIdFrame::parse(const uint8_t *buf, size_t len, const QUICPacket
   this->_packet = packet;
   uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
+  // Sequence Number (i)
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_sequence, field_len)) {
     return;
   }
 
+  // Retire Prior To (i)
   if (LEFT_SPACE(pos) < 1) {
     return;
   }
-
-  size_t cid_len = *pos;
-  pos += 1;
-
-  if (LEFT_SPACE(pos) < cid_len) {
+  if (!read_varint(pos, LEFT_SPACE(pos), this->_retire_prior_to, field_len)) {
     return;
   }
 
+  // Length (8)
+  if (LEFT_SPACE(pos) < 1) {
+    return;
+  }
+  size_t cid_len = *pos;
+  pos += 1;
+
+  // CID
+  if (LEFT_SPACE(pos) < cid_len) {
+    return;
+  }
   this->_connection_id = QUICTypeUtil::read_QUICConnectionId(pos, cid_len);
   pos += cid_len;
 
@@ -2076,13 +2085,20 @@ QUICNewConnectionIdFrame::debug_msg(char *msg, size_t msg_len) const
   char cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
   this->connection_id().hex(cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
 
-  return snprintf(msg, msg_len, "NEW_CONNECTION_ID size=%zu seq=%" PRIu64 " cid=0x%s", this->size(), this->sequence(), cid_str);
+  return snprintf(msg, msg_len, "NEW_CONNECTION_ID size=%zu seq=%" PRIu64 " rpt=%" PRIu64 " cid=0x%s", this->size(),
+                  this->sequence(), this->retire_prior_to(), cid_str);
 }
 
 uint64_t
 QUICNewConnectionIdFrame::sequence() const
 {
   return this->_sequence;
+}
+
+uint64_t
+QUICNewConnectionIdFrame::retire_prior_to() const
+{
+  return this->_retire_prior_to;
 }
 
 QUICConnectionId

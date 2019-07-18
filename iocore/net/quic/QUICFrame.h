@@ -560,6 +560,7 @@ public:
   virtual int debug_msg(char *msg, size_t msg_len) const override;
 
   uint64_t sequence() const;
+  uint64_t retire_prior_to() const;
   QUICConnectionId connection_id() const;
   QUICStatelessResetToken stateless_reset_token() const;
 
@@ -567,6 +568,7 @@ private:
   virtual void _reset() override;
 
   uint64_t _sequence              = 0;
+  uint64_t _retire_prior_to       = 0;
   QUICConnectionId _connection_id = QUICConnectionId::ZERO();
   QUICStatelessResetToken _stateless_reset_token;
 };
