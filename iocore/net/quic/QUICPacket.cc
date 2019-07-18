@@ -383,7 +383,7 @@ QUICPacketLongHeader::length(size_t &length, uint8_t &length_field_len, size_t &
 }
 
 bool
-QUICPacketLongHeader::packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len)
+QUICPacketLongHeader::packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len)
 {
   size_t length;
   uint8_t length_field_len;
@@ -755,7 +755,7 @@ QUICPacketShortHeader::key_phase(QUICKeyPhase &phase, const uint8_t *packet, siz
 }
 
 bool
-QUICPacketShortHeader::packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil)
+QUICPacketShortHeader::packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil)
 {
   pn_offset = 1 + dcil;
   return true;

@@ -170,7 +170,7 @@ QUICPacketHeaderProtector::_calc_sample_offset(uint8_t *sample_offset, const uin
 bool
 QUICPacketHeaderProtector::_unprotect(uint8_t *protected_packet, size_t protected_packet_len, const uint8_t *mask) const
 {
-  uint8_t pn_offset;
+  size_t pn_offset;
 
   // Unprotect packet number
   if (QUICInvariants::is_long_header(protected_packet)) {
@@ -192,7 +192,7 @@ QUICPacketHeaderProtector::_unprotect(uint8_t *protected_packet, size_t protecte
 bool
 QUICPacketHeaderProtector::_protect(uint8_t *protected_packet, size_t protected_packet_len, const uint8_t *mask, int dcil) const
 {
-  uint8_t pn_offset;
+  size_t pn_offset;
 
   uint8_t pn_length = QUICTypeUtil::read_QUICPacketNumberLen(protected_packet);
 

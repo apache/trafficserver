@@ -63,7 +63,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x00,                                           // Token Length (i), Token (*)
-      0x02,                                           // Payload length
+      0x06,                                           // Length
       0x01, 0x23, 0x45, 0x67,                         // Packet number
       0xff, 0xff,                                     // Payload (dummy)
     };
@@ -116,6 +116,60 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     CHECK(memcmp(header->payload(), retry_token, 16) == 0);
     CHECK(header->has_version() == true);
     CHECK(header->version() == 0x11223344);
+  }
+
+  SECTION("Long Header (parse) INITIAL Packet")
+  {
+    const uint8_t buf[] = {
+      0xc3,                                           // Long header, Type: INITIAL
+      0x11, 0x22, 0x33, 0x44,                         // Version
+      0x08,                                           // DCID Len
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
+      0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+      0x00,                                           // Token Length (i), Token (*)
+      0x06,                                           // Length
+      0x01, 0x23, 0x45, 0x67,                         // Packet number
+      0xff, 0xff,                                     // Payload (dummy)
+    };
+
+    QUICPacketType type;
+    REQUIRE(QUICPacketLongHeader::type(type, buf, sizeof(buf)));
+    CHECK(type == QUICPacketType::INITIAL);
+
+    QUICVersion version;
+    REQUIRE(QUICPacketLongHeader::version(version, buf, sizeof(buf)));
+    CHECK(version == 0x11223344);
+
+    uint8_t dcil;
+    REQUIRE(QUICPacketLongHeader::dcil(dcil, buf, sizeof(buf)));
+    CHECK(dcil == 8);
+
+    uint8_t scil;
+    REQUIRE(QUICPacketLongHeader::scil(scil, buf, sizeof(buf)));
+    CHECK(dcil == 8);
+
+    size_t token_length;
+    uint8_t token_length_field_len;
+    REQUIRE(QUICPacketLongHeader::token_length(token_length, &token_length_field_len, buf, sizeof(buf)));
+    CHECK(token_length == 0);
+    CHECK(token_length_field_len == 1);
+
+    size_t length;
+    uint8_t length_field_len;
+    size_t length_field_offset;
+    REQUIRE(QUICPacketLongHeader::length(length, length_field_len, length_field_offset, buf, sizeof(buf)));
+    CHECK(length == 6);
+    CHECK(length_field_len == 1);
+    CHECK(length_field_offset == 24);
+
+    size_t pn_offset;
+    REQUIRE(QUICPacketLongHeader::packet_number_offset(pn_offset, buf, sizeof(buf)));
+    CHECK(pn_offset == 25);
+
+    size_t packet_length;
+    REQUIRE(QUICPacketLongHeader::packet_length(packet_length, buf, sizeof(buf)));
+    CHECK(packet_length == sizeof(buf));
   }
 
   SECTION("Long Header (store) INITIAL Packet")

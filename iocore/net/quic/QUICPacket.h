@@ -244,7 +244,7 @@ public:
   static bool length(size_t &length, uint8_t &length_field_len, size_t &length_field_offset, const uint8_t *packet,
                      size_t packet_len);
   static bool key_phase(QUICKeyPhase &key_phase, const uint8_t *packet, size_t packet_len);
-  static bool packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len);
+  static bool packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len);
   static bool packet_length(size_t &length, const uint8_t *buf, size_t buf_len);
 
 private:
@@ -285,7 +285,7 @@ public:
   void store(uint8_t *buf, size_t *len) const override;
 
   static bool key_phase(QUICKeyPhase &key_phase, const uint8_t *packet, size_t packet_len);
-  static bool packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil);
+  static bool packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil);
 
 private:
   int _packet_number_len;
