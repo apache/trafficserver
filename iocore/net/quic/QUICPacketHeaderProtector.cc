@@ -159,7 +159,7 @@ QUICPacketHeaderProtector::_calc_sample_offset(uint8_t *sample_offset, const uin
     QUICPacketLongHeader::dcil(dcil, protected_packet, protected_packet_len);
     QUICPacketLongHeader::scil(scil, protected_packet, protected_packet_len);
     QUICPacketLongHeader::length(dummy, &length_len, protected_packet, protected_packet_len);
-    *sample_offset = 6 + dcil + scil + length_len + 4;
+    *sample_offset = QUICInvariants::LH_DCID_OFFSET + dcil + 1 + scil + length_len + 4;
 
     QUICPacketType type;
     QUICPacketLongHeader::type(type, protected_packet, protected_packet_len);
@@ -170,7 +170,7 @@ QUICPacketHeaderProtector::_calc_sample_offset(uint8_t *sample_offset, const uin
       *sample_offset += token_len + token_length_len;
     }
   } else {
-    *sample_offset = 1 + dcil + 4;
+    *sample_offset = QUICInvariants::SH_DCID_OFFSET + dcil + 4;
   }
 
   return static_cast<size_t>(*sample_offset + 16) <= protected_packet_len;
