@@ -58,7 +58,7 @@ main(int argc, char *argv[])
     std::cout << "--- replace ---" << std::endl;
     String r;
     result = p.replace(subject, r);
-    std::cout << "replacement result:'" << r << "'" << std::endl;
+    std::cout << "replacement result:'" << result << "'" << std::endl;
 
   } else {
     std::cout << "pattern: '" << pattern << "' failed to compile" << std::endl;

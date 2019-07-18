@@ -64,12 +64,6 @@ typedef ControlMatcher<CacheControlRecord, CacheControlResult> CC_table;
 static Ptr<ProxyMutex> reconfig_mutex;
 CC_table *CacheControlTable = nullptr;
 
-void
-CC_delete_table()
-{
-  delete CacheControlTable;
-}
-
 // struct CC_FreerContinuation
 // Continuation to free old cache control lists after
 //  a timeout

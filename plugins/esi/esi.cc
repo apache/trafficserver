@@ -175,7 +175,7 @@ public:
   {
     g_stat_indices[handle] = TSStatCreate(Stats::STAT_NAMES[handle], TS_RECORDDATATYPE_INT, TS_STAT_PERSISTENT, TS_STAT_SYNC_COUNT);
   }
-  //  void increment(int handle, TSMgmtInt step = 1) {
+
   void
   increment(int handle, int step = 1)
   {

@@ -689,8 +689,6 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
     break;
 
   case SOCKS_AUTH_READ_COMPLETE:
-
-    // if (p[0] == 1) { // skip this. its not clear what this should be.
     // NEC thinks it is 5 RFC seems to indicate 1.
     switch (p[1]) {
     case 0:
@@ -702,12 +700,6 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
       Debug("Socks", "Username/Passwd authentication failed ret_code: %d", (int)p[1]);
       ret = -1;
     }
-    //}
-    // else {
-    //  Debug("Socks", "authPassEvent got wrong version %d from "
-    //        "Socks server\n", (int)p[0]);
-    //  ret = -1;
-    //}
 
     break;
 

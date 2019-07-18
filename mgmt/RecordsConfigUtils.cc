@@ -25,39 +25,6 @@
 #include "RecordsConfig.h"
 
 //-------------------------------------------------------------------------
-// RecordsConfigOverrideFromEnvironment
-//-------------------------------------------------------------------------
-
-static void
-override_record(const RecordElement *record, void *)
-{
-  if (REC_TYPE_IS_CONFIG(record->type)) {
-    const char *value;
-    RecData data = {0};
-
-    if ((value = RecConfigOverrideFromEnvironment(record->name, nullptr))) {
-      if (RecDataSetFromString(record->value_type, &data, value)) {
-        // WARNING: If we are not the record owner, RecSetRecord() doesn't set our copy
-        // of the record. It sends a set message to the local manager. This can cause
-        // "interesting" results if you are trying to override configuration values
-        // early in startup (before we have synced with the local manager).
-        RecSetRecord(record->type, record->name, record->value_type, &data, nullptr, REC_SOURCE_ENV, false);
-        RecDataZero(record->value_type, &data);
-      }
-    }
-  }
-}
-
-// We process environment variable overrides when we parse the records.config configuration file, but the
-// operator might choose to override a variable that is not present in records.config so we have to post-
-// process the full set of configuration variables as well.
-void
-RecordsConfigOverrideFromEnvironment()
-{
-  RecordsConfigIterate(override_record, nullptr);
-}
-
-//-------------------------------------------------------------------------
 // LibRecordsConfigInit
 //-------------------------------------------------------------------------
 

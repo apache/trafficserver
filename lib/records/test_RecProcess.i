@@ -187,7 +187,7 @@ Test02()
   }
 
   printf("  [RecGetRecordXXX]\n");
-  failures = 0;
+
   RecString rec_string = 0;
   const int buf_len = 1024;
   char buf[buf_len];

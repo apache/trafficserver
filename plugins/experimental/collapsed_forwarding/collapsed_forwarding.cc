@@ -172,7 +172,6 @@ on_immediate(RequestData *req, TSCont &contp)
   TSDebug(DEBUG_TAG, "continuation delayed, scheduling now..for url: %s", req->req_url.c_str());
 
   // add retry_done header to prevent looping
-  std::string value;
   TSMBuffer bufp;
   TSMLoc hdr_loc;
   if (TSHttpTxnClientRespGet(req->txnp, &bufp, &hdr_loc) != TS_SUCCESS) {

@@ -950,11 +950,6 @@ Stripe::loadMeta()
     delta = _meta_pos[A][FOOT] - _meta_pos[A][HEAD];
     // Header B should be immediately after Footer A. If at the end of the last read,
     // do another read.
-    //    if (data.size() < CacheStoreBlocks::SCALE) {
-    //      pos += round_up(N);
-    //      n = Bytes(pread(fd, stripe_buff, CacheStoreBlocks::SCALE, pos));
-    //      data.assign(stripe_buff, n);
-    //    }
     pos  = this->_start + Bytes(vol_dirlen());
     meta = static_cast<StripeMeta *>(data.data());
     if (this->validateMeta(meta)) {

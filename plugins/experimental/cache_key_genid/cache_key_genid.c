@@ -20,7 +20,7 @@
 #include <ts/ts.h>
 #include <stdio.h>
 #include <string.h>
-#include "kclangc.h"
+#include <kclangc.h>
 
 #define PLUGIN_NAME "cache-key-genid"
 

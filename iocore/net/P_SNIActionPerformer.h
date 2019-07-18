@@ -38,17 +38,6 @@
 
 extern std::unordered_map<int, SSLNextProtocolSet *> snpsMap;
 
-/*// enum of all the actions
-enum AllActions {
-  TS_DISABLE_H2 = 0,
-  TS_VERIFY_CLIENT, // this applies to server side vc only
-  TS_TUNNEL_ROUTE,  // blind tunnel action
-};
-*/
-
-/** action for setting next hop properties should be listed in the following enum*/
-/* enum PropertyActions { TS_VERIFY_SERVER = 200, TS_CLIENT_CERT }; */
-
 class ActionItem
 {
 public:

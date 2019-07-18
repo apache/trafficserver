@@ -196,17 +196,6 @@ public:
   {
     return !_rex_string || !*_rex_string;
   }
-  inline const char *
-  substitution() const
-  {
-    return _subst;
-  }
-  inline int
-  substitutions_used() const
-  {
-    return _num_subs;
-  }
-
   inline TSHttpStatus
   status_option() const
   {

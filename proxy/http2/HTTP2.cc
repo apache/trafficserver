@@ -662,13 +662,6 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
         return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
     }
-    // Check whether header field name is lower case
-    // This check should be here but it will fail because WKSs in MIMEField is old fashioned.
-    // for (uint32_t i = 0; i < len; ++i) {
-    //   if (ParseRules::is_upalpha(value[i])) {
-    //     return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-    //   }
-    // }
   }
 
   // rfc7540,sec8.1.2.2: Any message containing connection-specific header
