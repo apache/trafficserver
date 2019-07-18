@@ -185,7 +185,9 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, const IpEndpoi
 
   if (this->type() != QUICPacketType::VERSION_NEGOTIATION) {
     if (this->type() == QUICPacketType::RETRY) {
-      uint8_t odcil        = (raw_buf[0] & 0x0f) + 3;
+      uint8_t odcil = raw_buf[offset];
+      offset += 1;
+
       this->_original_dcid = {raw_buf + offset, odcil};
       offset += odcil;
     } else {
@@ -544,13 +546,15 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
 
   if (this->_type != QUICPacketType::VERSION_NEGOTIATION) {
     if (this->_type == QUICPacketType::RETRY) {
+      // ODCID Len
+      buf[*len] = this->_original_dcid.length();
+      *len += 1;
+
       // Original Destination Connection ID
       if (this->_original_dcid != QUICConnectionId::ZERO()) {
         QUICTypeUtil::write_QUICConnectionId(this->_original_dcid, buf + *len, &n);
         *len += n;
       }
-      // ODCIL
-      buf[0] |= this->_original_dcid.length() - 3;
     } else {
       if (this->_type == QUICPacketType::INITIAL) {
         // Token Length Field
