@@ -2051,8 +2051,14 @@ QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   uint8_t *p = buf;
   *p         = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
   ++p;
+  // Sequence Number (i)
   QUICIntUtil::write_QUICVariableInt(this->_sequence, p, &n);
   p += n;
+  // Retire Prior To (i)
+  // FIXME Should send a sequence number. Sending 0 for now.
+  QUICIntUtil::write_QUICVariableInt(0, p, &n);
+  p += n;
+  // Length (8)
   *p = this->_connection_id.length();
   p += 1;
   QUICTypeUtil::write_QUICConnectionId(this->_connection_id, p, &n);
