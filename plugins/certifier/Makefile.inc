@@ -14,6 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/certifier/certifier.la
+pkglib_LTLIBRARIES += certifier/certifier.la
 
-experimental_certifier_certifier_la_SOURCES = experimental/certifier/certifier.cc
+certifier_certifier_la_SOURCES = certifier/certifier.cc
