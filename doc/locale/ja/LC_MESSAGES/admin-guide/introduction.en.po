@@ -200,15 +200,6 @@ msgstr ""
 "場合 Traffic Server の内部的な API やアーキテクチャ的な制限が実装を難しくし"
 "ていることもあります。"
 
-#: ../../../admin-guide/introduction.en.rst:106
-#, fuzzy
-msgid ""
-"Load Balancing - note that there is an experimental plugin for this, :ref:"
-"`admin-plugins-balancer`."
-msgstr ""
-"ロードバランシング - このための実験的なプラクインがあることに注意してくださ"
-"い。 :ref:`balancer-plugin`"
-
 #: ../../../admin-guide/introduction.en.rst:112
 msgid "Traffic Server Components"
 msgstr "Traffic Server Components"
