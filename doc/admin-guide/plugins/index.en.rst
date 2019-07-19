@@ -144,7 +144,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    :hidden:
 
    Access Control <access_control.en>
-   Balancer <balancer.en>
    Buffer Upload <buffer_upload.en>
    Certifier <certifier.en>
    Cert Reporting Tool <cert_reporting_tool.en>
@@ -172,9 +171,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Access Control <access_control.en>`
    Access control plugin that handles various access control use-cases.
-
-:doc:`Balancer <balancer.en>`
-   Balances requests across multiple origin servers.
 
 :doc:`Buffer Upload <buffer_upload.en>`
    Buffers POST data before connecting to the Origin server.

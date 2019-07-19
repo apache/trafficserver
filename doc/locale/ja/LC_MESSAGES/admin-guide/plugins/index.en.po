@@ -179,10 +179,6 @@ msgid ""
 msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:135
-msgid ":doc:`Balancer <balancer.en>`"
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:135
 msgid "Balances requests across multiple origin servers."
 msgstr ""
 
