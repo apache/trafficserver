@@ -99,7 +99,7 @@ read_request(TSHttpTxn txnp, Config *const config)
       }
 
       // we'll intercept this GET and do it ourselves
-      TSCont const icontp(TSContCreate(intercept_hook, TSMutexCreate()));
+      TSCont const icontp(TSContCreate(intercept_hook, TSContMutexGet(reinterpret_cast<TSCont>(txnp))));
       TSContDataSet(icontp, (void *)data);
       //      TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, icontp);
       TSHttpTxnIntercept(icontp, txnp);
