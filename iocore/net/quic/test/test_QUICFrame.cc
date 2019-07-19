@@ -1188,39 +1188,46 @@ TEST_CASE("Store StreamsBlocked Frame", "[quic]")
 TEST_CASE("Load NewConnectionId Frame", "[quic]")
 {
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+
   SECTION("load")
   {
-    uint8_t buf1[] = {
+    uint8_t buf[] = {
       0x18,                                           // Type
       0x41, 0x02,                                     // Sequence
+      0x41, 0x00,                                     // Retire Prior To
       0x08,                                           // Length
       0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
       0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
-    CHECK(frame1->type() == QUICFrameType::NEW_CONNECTION_ID);
-    CHECK(frame1->size() == 28);
-    const QUICNewConnectionIdFrame *new_con_id_frame = static_cast<const QUICNewConnectionIdFrame *>(frame1);
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
+    CHECK(frame->type() == QUICFrameType::NEW_CONNECTION_ID);
+    CHECK(frame->size() == sizeof(buf));
+    CHECK(frame->valid() == true);
+
+    const QUICNewConnectionIdFrame *new_con_id_frame = static_cast<const QUICNewConnectionIdFrame *>(frame);
     CHECK(new_con_id_frame != nullptr);
     CHECK(new_con_id_frame->sequence() == 0x0102);
+    CHECK(new_con_id_frame->retire_prior_to() == 0x0100);
     CHECK((new_con_id_frame->connection_id() ==
            QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x22\x33\x44\x55\x66\x77\x88"), 8)));
-    CHECK(memcmp(new_con_id_frame->stateless_reset_token().buf(), buf1 + 12, 16) == 0);
+    CHECK(memcmp(new_con_id_frame->stateless_reset_token().buf(), buf + sizeof(buf) - QUICStatelessResetToken::LEN,
+                 QUICStatelessResetToken::LEN) == 0);
   }
 
   SECTION("Bad Load")
   {
-    uint8_t buf1[] = {
+    uint8_t buf[] = {
       0x18,                                           // Type
       0x41, 0x02,                                     // Sequence
+      0x41, 0x00,                                     // Retire Prior To
       0x08,                                           // Length
       0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Stateless Reset Token
     };
-    const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
-    CHECK(frame1->type() == QUICFrameType::NEW_CONNECTION_ID);
-    CHECK(frame1->valid() == false);
+    const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
+    CHECK(frame->type() == QUICFrameType::NEW_CONNECTION_ID);
+    CHECK(frame->valid() == false);
   }
 }
 
@@ -1231,18 +1238,20 @@ TEST_CASE("Store NewConnectionId Frame", "[quic]")
 
   uint8_t expected[] = {
     0x18,                                           // Type
-    0x41, 0x02,                                     // Sequence
+    0x41, 0x02,                                     // Sequence Number
+    0x41, 0x00,                                     // Retire Prior To
     0x08,                                           // Length
     0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // Connection ID
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Stateless Reset Token
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
   };
-  QUICNewConnectionIdFrame new_con_id_frame(0x0102, {reinterpret_cast<const uint8_t *>("\x11\x22\x33\x44\x55\x66\x77\x88"), 8},
-                                            {expected + 12});
-  CHECK(new_con_id_frame.size() == 28);
+  QUICNewConnectionIdFrame new_con_id_frame(0x0102, 0x0100,
+                                            {reinterpret_cast<const uint8_t *>("\x11\x22\x33\x44\x55\x66\x77\x88"), 8},
+                                            {expected + sizeof(expected) - QUICStatelessResetToken::LEN});
+  CHECK(new_con_id_frame.size() == sizeof(expected));
 
-  new_con_id_frame.store(buf, &len, 32);
-  CHECK(len == 28);
+  new_con_id_frame.store(buf, &len, sizeof(buf));
+  CHECK(len == sizeof(expected));
   CHECK(memcmp(buf, expected, len) == 0);
 }
 

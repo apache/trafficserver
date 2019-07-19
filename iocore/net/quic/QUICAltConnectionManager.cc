@@ -292,7 +292,8 @@ QUICAltConnectionManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level
     int count = this->_nids;
     for (int i = 0; i < count; ++i) {
       if (!this->_alt_quic_connection_ids_local[i].advertised) {
-        frame = QUICFrameFactory::create_new_connection_id_frame(buf, this->_alt_quic_connection_ids_local[i].seq_num,
+        // FIXME Should send a sequence number for retire_prior_to. Sending 0 for now.
+        frame = QUICFrameFactory::create_new_connection_id_frame(buf, this->_alt_quic_connection_ids_local[i].seq_num, 0,
                                                                  this->_alt_quic_connection_ids_local[i].id,
                                                                  this->_alt_quic_connection_ids_local[i].token);
 

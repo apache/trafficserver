@@ -1979,8 +1979,9 @@ QUICNewConnectionIdFrame::QUICNewConnectionIdFrame(const uint8_t *buf, size_t le
 void
 QUICNewConnectionIdFrame::_reset()
 {
-  this->_sequence      = 0;
-  this->_connection_id = QUICConnectionId::ZERO();
+  this->_sequence        = 0;
+  this->_retire_prior_to = 0;
+  this->_connection_id   = QUICConnectionId::ZERO();
 
   this->_owner = nullptr;
   this->_id    = 0;
@@ -2017,20 +2018,21 @@ QUICNewConnectionIdFrame::parse(const uint8_t *buf, size_t len, const QUICPacket
   size_t cid_len = *pos;
   pos += 1;
 
-  // CID
+  // Connection ID (8..160)
   if (LEFT_SPACE(pos) < cid_len) {
     return;
   }
   this->_connection_id = QUICTypeUtil::read_QUICConnectionId(pos, cid_len);
   pos += cid_len;
 
-  if (LEFT_SPACE(pos) < 16) {
+  // Stateless Reset Token (128)
+  if (LEFT_SPACE(pos) < QUICStatelessResetToken::LEN) {
     return;
   }
 
   this->_stateless_reset_token = QUICStatelessResetToken(pos);
   this->_valid                 = true;
-  this->_size                  = FRAME_SIZE(pos) + 16;
+  this->_size                  = FRAME_SIZE(pos) + QUICStatelessResetToken::LEN;
 }
 
 QUICFrameType
@@ -2046,7 +2048,8 @@ QUICNewConnectionIdFrame::size() const
     return this->_size;
   }
 
-  return sizeof(QUICFrameType) + QUICVariableInt::size(this->_sequence) + 1 + this->_connection_id.length() + 16;
+  return sizeof(QUICFrameType) + QUICVariableInt::size(this->_sequence) + QUICVariableInt::size(this->_retire_prior_to) + 1 +
+         this->_connection_id.length() + QUICStatelessResetToken::LEN;
 }
 
 size_t
@@ -2060,18 +2063,24 @@ QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   uint8_t *p = buf;
   *p         = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
   ++p;
+
   // Sequence Number (i)
   QUICIntUtil::write_QUICVariableInt(this->_sequence, p, &n);
   p += n;
+
   // Retire Prior To (i)
-  // FIXME Should send a sequence number. Sending 0 for now.
-  QUICIntUtil::write_QUICVariableInt(0, p, &n);
+  QUICIntUtil::write_QUICVariableInt(this->_retire_prior_to, p, &n);
   p += n;
+
   // Length (8)
   *p = this->_connection_id.length();
   p += 1;
+
+  // Connection ID (8..160)
   QUICTypeUtil::write_QUICConnectionId(this->_connection_id, p, &n);
   p += n;
+
+  // Stateless Reset Token (128)
   memcpy(p, this->_stateless_reset_token.buf(), QUICStatelessResetToken::LEN);
   p += QUICStatelessResetToken::LEN;
 
@@ -2850,11 +2859,11 @@ QUICFrameFactory::create_stop_sending_frame(uint8_t *buf, QUICStreamId stream_id
 }
 
 QUICNewConnectionIdFrame *
-QUICFrameFactory::create_new_connection_id_frame(uint8_t *buf, uint32_t sequence, QUICConnectionId connectoin_id,
-                                                 QUICStatelessResetToken stateless_reset_token, QUICFrameId id,
-                                                 QUICFrameGenerator *owner)
+QUICFrameFactory::create_new_connection_id_frame(uint8_t *buf, uint64_t sequence, uint64_t retire_prior_to,
+                                                 QUICConnectionId connectoin_id, QUICStatelessResetToken stateless_reset_token,
+                                                 QUICFrameId id, QUICFrameGenerator *owner)
 {
-  new (buf) QUICNewConnectionIdFrame(sequence, connectoin_id, stateless_reset_token, id, owner);
+  new (buf) QUICNewConnectionIdFrame(sequence, retire_prior_to, connectoin_id, stateless_reset_token, id, owner);
   return reinterpret_cast<QUICNewConnectionIdFrame *>(buf);
 }
 

@@ -549,9 +549,9 @@ class QUICNewConnectionIdFrame : public QUICFrame
 public:
   QUICNewConnectionIdFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
   QUICNewConnectionIdFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
-  QUICNewConnectionIdFrame(uint64_t seq, const QUICConnectionId &cid, QUICStatelessResetToken token, QUICFrameId id = 0,
-                           QUICFrameGenerator *owner = nullptr)
-    : QUICFrame(id, owner), _sequence(seq), _connection_id(cid), _stateless_reset_token(token){};
+  QUICNewConnectionIdFrame(uint64_t seq, uint64_t ret, const QUICConnectionId &cid, QUICStatelessResetToken token,
+                           QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
+    : QUICFrame(id, owner), _sequence(seq), _retire_prior_to(ret), _connection_id(cid), _stateless_reset_token(token){};
 
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
@@ -846,7 +846,8 @@ public:
   /*
    * Creates a NEW_CONNECTION_ID frame.
    */
-  static QUICNewConnectionIdFrame *create_new_connection_id_frame(uint8_t *buf, uint32_t sequence, QUICConnectionId connectoin_id,
+  static QUICNewConnectionIdFrame *create_new_connection_id_frame(uint8_t *buf, uint64_t sequence, uint64_t retire_prior_to,
+                                                                  QUICConnectionId connectoin_id,
                                                                   QUICStatelessResetToken stateless_reset_token, QUICFrameId id = 0,
                                                                   QUICFrameGenerator *owner = nullptr);
 
