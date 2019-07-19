@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/cache_range_requests/cache_range_requests.la
+pkglib_LTLIBRARIES += cache_range_requests/cache_range_requests.la
 
-experimental_cache_range_requests_cache_range_requests_la_SOURCES = \
-  experimental/cache_range_requests/cache_range_requests.cc
+cache_range_requests_cache_range_requests_la_SOURCES = \
+  cache_range_requests/cache_range_requests.cc
