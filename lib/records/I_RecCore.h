@@ -133,7 +133,7 @@ RecErrT RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock *rsb, int
 //-------------------------------------------------------------------------
 
 // WARNING!  Avoid deadlocks by calling the following set/get calls
-// with the appropiate locking conventions.  If you're calling these
+// with the appropriate locking conventions.  If you're calling these
 // functions from a configuration update callback (RecConfigUpdateCb),
 // be sure to set 'lock' to 'false' as the hash-table rwlock has
 // already been taken out for the callback.

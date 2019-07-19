@@ -104,9 +104,9 @@ RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
   // XXX: this is NOT 8 byte alignment
   // msg_ele_size = 5;
   // (msg_ele_size + 7) & ~7 == 5 !!!
-  // msg_ele_size = (msg_ele_size + 7) & ~7;       // 8 byte alignmenet
+  // msg_ele_size = (msg_ele_size + 7) & ~7;       // 8 byte alignment
 
-  msg_ele_size = INK_ALIGN_DEFAULT(msg_ele_size); // 8 byte alignmenet
+  msg_ele_size = INK_ALIGN_DEFAULT(msg_ele_size); // 8 byte alignment
   // get some space in our buffer
   while (msg->o_end - msg->o_write < msg_ele_size) {
     int realloc_size = (msg->o_end - msg->o_start) * 2;

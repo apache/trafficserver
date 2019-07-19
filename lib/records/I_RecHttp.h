@@ -152,7 +152,7 @@ const char *RecNormalizeProtoTag(const char *tag);
     their indices in this table.
 
     @internal To simplify the implementation we limit the maximum number of strings to 32. That will
-    be sufficient for the forseeable future. We can come back to this if it ever becomes a problem.
+    be sufficient for the foreseeable future. We can come back to this if it ever becomes a problem.
 
     @internal Because we have so few strings we just use a linear search. If the size gets much
     larger we should consider doing something more clever.
