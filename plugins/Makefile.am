@@ -43,6 +43,7 @@ include libloader/Makefile.inc
 if HAS_LUAJIT
 include lua/Makefile.inc
 endif
+include multiplexer/Makefile.inc
 include regex_remap/Makefile.inc
 include regex_revalidate/Makefile.inc
 include s3_auth/Makefile.inc
@@ -72,7 +73,6 @@ include experimental/memcache/Makefile.inc
 include experimental/metalink/Makefile.inc
 include experimental/money_trace/Makefile.inc
 include experimental/mp4/Makefile.inc
-include experimental/multiplexer/Makefile.inc
 include experimental/remap_purge/Makefile.inc
 include experimental/server_push_preload/Makefile.inc
 include experimental/slice/Makefile.inc
