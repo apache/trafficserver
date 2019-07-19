@@ -14,15 +14,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-experimental_multiplexer_multiplexer_la_CPPFLAGS = $(AM_CPPFLAGS) -DPLUGIN_TAG=\"multiplexer\"
+multiplexer_multiplexer_la_CPPFLAGS = $(AM_CPPFLAGS) -DPLUGIN_TAG=\"multiplexer\"
 
-pkglib_LTLIBRARIES += experimental/multiplexer/multiplexer.la
+pkglib_LTLIBRARIES += multiplexer/multiplexer.la
 
-experimental_multiplexer_multiplexer_la_SOURCES = \
-  experimental/multiplexer/ats-multiplexer.cc \
-  experimental/multiplexer/chunk-decoder.cc \
-  experimental/multiplexer/dispatch.cc \
-  experimental/multiplexer/fetcher.cc \
-  experimental/multiplexer/original-request.cc \
-  experimental/multiplexer/post.cc \
-  experimental/multiplexer/ts.cc
+multiplexer_multiplexer_la_SOURCES = \
+  multiplexer/ats-multiplexer.cc \
+  multiplexer/chunk-decoder.cc \
+  multiplexer/dispatch.cc \
+  multiplexer/fetcher.cc \
+  multiplexer/original-request.cc \
+  multiplexer/post.cc \
+  multiplexer/ts.cc
