@@ -151,9 +151,11 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
 
     size_t token_length;
     uint8_t token_length_field_len;
-    REQUIRE(QUICPacketLongHeader::token_length(token_length, &token_length_field_len, buf, sizeof(buf)));
+    size_t token_length_field_offset;
+    REQUIRE(QUICPacketLongHeader::token_length(token_length, token_length_field_len, token_length_field_offset, buf, sizeof(buf)));
     CHECK(token_length == 0);
     CHECK(token_length_field_len == 1);
+    CHECK(token_length_field_offset == 23);
 
     size_t length;
     uint8_t length_field_len;

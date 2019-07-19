@@ -240,7 +240,8 @@ public:
   static bool version(QUICVersion &version, const uint8_t *packet, size_t packet_len);
   static bool dcil(uint8_t &dcil, const uint8_t *packet, size_t packet_len);
   static bool scil(uint8_t &scil, const uint8_t *packet, size_t packet_len);
-  static bool token_length(size_t &token_length, uint8_t *field_len, const uint8_t *packet, size_t packet_len);
+  static bool token_length(size_t &token_length, uint8_t &field_len, size_t &token_length_filed_offset, const uint8_t *packet,
+                           size_t packet_len);
   static bool length(size_t &length, uint8_t &length_field_len, size_t &length_field_offset, const uint8_t *packet,
                      size_t packet_len);
   static bool key_phase(QUICKeyPhase &key_phase, const uint8_t *packet, size_t packet_len);

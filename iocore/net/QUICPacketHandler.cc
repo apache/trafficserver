@@ -30,8 +30,7 @@
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
 
-static constexpr int LONG_HDR_OFFSET_CONNECTION_ID = 6;
-static constexpr char debug_tag[]                  = "quic_sec";
+static constexpr char debug_tag[] = "quic_sec";
 
 #define QUICDebug(fmt, ...) Debug(debug_tag, fmt, ##__VA_ARGS__)
 #define QUICDebugQC(qc, fmt, ...) Debug(debug_tag, "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
@@ -381,9 +380,10 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
   }
 
   // TODO: refine packet parsers in here, QUICPacketLongHeader, and QUICPacketReceiveQueue
-  size_t token_length            = 0;
-  uint8_t token_length_field_len = 0;
-  if (!QUICPacketLongHeader::token_length(token_length, &token_length_field_len, buf, buf_len)) {
+  size_t token_length              = 0;
+  uint8_t token_length_field_len   = 0;
+  size_t token_length_field_offset = 0;
+  if (!QUICPacketLongHeader::token_length(token_length, token_length_field_len, token_length_field_offset, buf, buf_len)) {
     return -1;
   }
 
@@ -397,15 +397,12 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
 
     return -2;
   } else {
-    uint8_t dcil, scil;
-    QUICPacketLongHeader::dcil(dcil, buf, buf_len);
-    QUICPacketLongHeader::scil(scil, buf, buf_len);
-    const uint8_t *token = buf + LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil + token_length_field_len;
+    size_t token_offset = token_length_field_offset + token_length_field_len;
 
-    if (QUICAddressValidationToken::type(token) == QUICAddressValidationToken::Type::RETRY) {
-      QUICRetryToken token1(token, token_length);
-      if (token1.is_valid(from)) {
-        *original_cid = token1.original_dcid();
+    if (QUICAddressValidationToken::type(buf + token_offset) == QUICAddressValidationToken::Type::RETRY) {
+      QUICRetryToken token(buf + token_offset, token_length);
+      if (token.is_valid(from)) {
+        *original_cid = token.original_dcid();
         return 0;
       } else {
         return -3;

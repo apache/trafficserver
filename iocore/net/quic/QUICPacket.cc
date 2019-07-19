@@ -315,16 +315,16 @@ QUICPacketLongHeader::scil(uint8_t &scil, const uint8_t *packet, size_t packet_l
 }
 
 bool
-QUICPacketLongHeader::token_length(size_t &token_length, uint8_t *field_len, const uint8_t *packet, size_t packet_len)
+QUICPacketLongHeader::token_length(size_t &token_length, uint8_t &field_len, size_t &token_length_filed_offset,
+                                   const uint8_t *packet, size_t packet_len)
 {
   QUICPacketType type = QUICPacketType::UNINITIALIZED;
   QUICPacketLongHeader::type(type, packet, packet_len);
 
   if (type != QUICPacketType::INITIAL) {
     token_length = 0;
-    if (field_len) {
-      *field_len = 0;
-    }
+    field_len    = 0;
+
     return true;
   }
 
@@ -332,19 +332,13 @@ QUICPacketLongHeader::token_length(size_t &token_length, uint8_t *field_len, con
   QUICPacketLongHeader::dcil(dcil, packet, packet_len);
   QUICPacketLongHeader::scil(scil, packet, packet_len);
 
-  size_t offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + 1 + scil;
-  if (offset >= packet_len) {
+  token_length_filed_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + 1 + scil;
+  if (token_length_filed_offset >= packet_len) {
     return false;
   }
 
-  if (offset > packet_len) {
-    return false;
-  }
-
-  token_length = QUICIntUtil::read_QUICVariableInt(packet + offset);
-  if (field_len) {
-    *field_len = QUICVariableInt::size(packet + offset);
-  }
+  token_length = QUICIntUtil::read_QUICVariableInt(packet + token_length_filed_offset);
+  field_len    = QUICVariableInt::size(packet + token_length_filed_offset);
 
   return true;
 }
@@ -364,9 +358,10 @@ QUICPacketLongHeader::length(size_t &length, uint8_t &length_field_len, size_t &
   }
 
   // Token Length (i) + Token (*) (for INITIAL packet)
-  size_t token_length            = 0;
-  uint8_t token_length_field_len = 0;
-  if (!QUICPacketLongHeader::token_length(token_length, &token_length_field_len, packet, packet_len)) {
+  size_t token_length              = 0;
+  uint8_t token_length_field_len   = 0;
+  size_t token_length_field_offset = 0;
+  if (!QUICPacketLongHeader::token_length(token_length, token_length_field_len, token_length_field_offset, packet, packet_len)) {
     return false;
   }
 
