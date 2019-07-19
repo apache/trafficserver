@@ -14,15 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/prefetch/prefetch.la
-experimental_prefetch_prefetch_la_SOURCES = \
-  experimental/prefetch/plugin.cc \
-  experimental/prefetch/common.cc \
-  experimental/prefetch/configs.cc \
-  experimental/prefetch/fetch.cc \
-  experimental/prefetch/headers.cc \
-  experimental/prefetch/pattern.cc \
-  experimental/prefetch/fetch_policy.cc \
-  experimental/prefetch/fetch_policy_simple.cc \
-  experimental/prefetch/fetch_policy_lru.cc
-
+pkglib_LTLIBRARIES += prefetch/prefetch.la
+prefetch_prefetch_la_SOURCES = \
+  prefetch/plugin.cc \
+  prefetch/common.cc \
+  prefetch/configs.cc \
+  prefetch/fetch.cc \
+  prefetch/headers.cc \
+  prefetch/pattern.cc \
+  prefetch/fetch_policy.cc \
+  prefetch/fetch_policy_simple.cc \
+  prefetch/fetch_policy_lru.cc
