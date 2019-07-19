@@ -183,10 +183,6 @@ msgid "Balances requests across multiple origin servers."
 msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:138
-msgid ":doc:`Buffer Upload <buffer_upload.en>`"
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:138
 msgid "Buffers POST data before connecting to the Origin server."
 msgstr ""
 
