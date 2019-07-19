@@ -251,10 +251,6 @@ msgid "Deny or allow requests based on the source IP geo-location."
 msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:165
-msgid ":doc:`HIPES <hipes.en>`"
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:165
 msgid "Adds support for HTTP Pipes."
 msgstr ""
 

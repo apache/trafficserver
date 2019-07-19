@@ -150,7 +150,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    GeoIP ACL <geoip_acl.en>
    FQ Pacing <fq_pacing.en>
    Header Frequency <header_freq.en>
-   HIPES <hipes.en>
    Hook Trace <hook-trace.en>
    JA3 Fingerprint <ja3_fingerprint.en>
    Memcache <memcache.en>
@@ -189,9 +188,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Header Frequency <header_freq.en>`
    Count the frequency of headers.
-
-:doc:`HIPES <hipes.en>`
-   Adds support for HTTP Pipes.
 
 :doc:`JA3 Fingerprint <ja3_fingerprint.en>`
    Calculates JA3 Fingerprints for incoming SSL traffic.
