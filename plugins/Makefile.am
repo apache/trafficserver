@@ -65,7 +65,6 @@ include experimental/custom_redirect/Makefile.inc
 include experimental/fq_pacing/Makefile.inc
 include experimental/geoip_acl/Makefile.inc
 include experimental/header_freq/Makefile.inc
-include experimental/header_normalize/Makefile.inc
 include experimental/hipes/Makefile.inc
 include experimental/hook-trace/Makefile.inc
 include experimental/inliner/Makefile.inc
