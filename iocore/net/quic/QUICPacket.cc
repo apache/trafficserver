@@ -228,7 +228,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key
 {
   if (this->_type == QUICPacketType::VERSION_NEGOTIATION) {
     this->_buf_len =
-      LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() + this->_payload_length;
+      LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + 1 + this->_source_cid.length() + this->_payload_length;
   } else {
     this->buf();
   }
