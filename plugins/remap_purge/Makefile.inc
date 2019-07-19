@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/remap_purge/remap_purge.la
+pkglib_LTLIBRARIES += remap_purge/remap_purge.la
 
-experimental_remap_purge_remap_purge_la_SOURCES = \
-  experimental/remap_purge/remap_purge.c
+remap_purge_remap_purge_la_SOURCES = \
+  remap_purge/remap_purge.c

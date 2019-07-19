@@ -47,6 +47,7 @@ include multiplexer/Makefile.inc
 include prefetch/Makefile.inc
 include regex_remap/Makefile.inc
 include regex_revalidate/Makefile.inc
+include remap_purge/Makefile.inc
 include s3_auth/Makefile.inc
 include stats_over_http/Makefile.inc
 include tcpinfo/Makefile.inc
@@ -74,7 +75,6 @@ include experimental/memcache/Makefile.inc
 include experimental/metalink/Makefile.inc
 include experimental/money_trace/Makefile.inc
 include experimental/mp4/Makefile.inc
-include experimental/remap_purge/Makefile.inc
 include experimental/server_push_preload/Makefile.inc
 include experimental/slice/Makefile.inc
 include experimental/sslheaders/Makefile.inc
