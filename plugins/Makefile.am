@@ -44,6 +44,7 @@ if HAS_LUAJIT
 include lua/Makefile.inc
 endif
 include multiplexer/Makefile.inc
+include prefetch/Makefile.inc
 include regex_remap/Makefile.inc
 include regex_revalidate/Makefile.inc
 include s3_auth/Makefile.inc
@@ -83,7 +84,6 @@ include experimental/system_stats/Makefile.inc
 include experimental/traffic_dump/Makefile.inc
 include experimental/tls_bridge/Makefile.inc
 include experimental/url_sig/Makefile.inc
-include experimental/prefetch/Makefile.inc
 
 if BUILD_JA3_PLUGIN
 include experimental/ja3_fingerprint/Makefile.inc
