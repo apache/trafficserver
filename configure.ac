@@ -510,12 +510,6 @@ AC_MSG_RESULT([$enable_experimental_plugins])
 AM_CONDITIONAL([BUILD_EXPERIMENTAL_PLUGINS], [ test "x${enable_experimental_plugins}" = "xyes" ])
 
 #
-# Enable experimental/memcached_remap plugin
-#
-PKG_CHECK_MODULES([LIBMEMCACHED], [libmemcached >= 1.0], [have_libmemcached=yes], [have_libmemcached=no])
-AM_CONDITIONAL([BUILD_MEMCACHED_REMAP_PLUGIN], [test "x${have_libmemcached}" = "xyes"])
-
-#
 # Check Magick++ is available. Enable experimental/webp_transform plugin
 #
 PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++ >= 7], [
