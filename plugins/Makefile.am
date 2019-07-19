@@ -31,6 +31,7 @@ include authproxy/Makefile.inc
 include background_fetch/Makefile.inc
 include cachekey/Makefile.inc
 include cache_promote/Makefile.inc
+include cache_range_requests/Makefile.inc
 include conf_remap/Makefile.inc
 include escalate/Makefile.inc
 include esi/Makefile.inc
@@ -55,7 +56,6 @@ include experimental/access_control/Makefile.inc
 include experimental/acme/Makefile.inc
 include experimental/balancer/Makefile.inc
 include experimental/buffer_upload/Makefile.inc
-include experimental/cache_range_requests/Makefile.inc
 include experimental/certifier/Makefile.inc
 include experimental/cert_reporting_tool/Makefile.inc
 include experimental/collapsed_forwarding/Makefile.inc
