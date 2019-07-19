@@ -74,7 +74,6 @@ include experimental/mp4/Makefile.inc
 include experimental/server_push_preload/Makefile.inc
 include experimental/slice/Makefile.inc
 include experimental/sslheaders/Makefile.inc
-include experimental/stale_while_revalidate/Makefile.inc
 include experimental/stream_editor/Makefile.inc
 include experimental/system_stats/Makefile.inc
 include experimental/traffic_dump/Makefile.inc

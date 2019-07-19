@@ -317,10 +317,6 @@ msgid "Populate request headers with SSL session information."
 msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:189
-msgid ":doc:`Stale While Revalidate <stale_while_revalidate.en>`"
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:189
 msgid "Refresh content asynchronously while serving stale data."
 msgstr ""
 
