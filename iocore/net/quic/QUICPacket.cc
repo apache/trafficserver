@@ -543,36 +543,48 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   QUICTypeUtil::write_QUICVersion(this->_version, buf + *len, &n);
   *len += n;
 
-  // DICD Len
-  buf[*len] = this->_destination_cid.length();
-  *len += 1;
-
-  // DCID
+  // DICD
   if (this->_destination_cid != QUICConnectionId::ZERO()) {
+    // Len
+    buf[*len] = this->_destination_cid.length();
+    *len += 1;
+
+    // ID
     QUICTypeUtil::write_QUICConnectionId(this->_destination_cid, buf + *len, &n);
     *len += n;
+  } else {
+    buf[*len] = 0;
+    *len += 1;
   }
-
-  // SCID Len
-  buf[*len] = this->_source_cid.length();
-  *len += 1;
 
   // SCID
   if (this->_source_cid != QUICConnectionId::ZERO()) {
+    // Len
+    buf[*len] = this->_source_cid.length();
+    *len += 1;
+
+    // ID
     QUICTypeUtil::write_QUICConnectionId(this->_source_cid, buf + *len, &n);
     *len += n;
+  } else {
+    buf[*len] = 0;
+    *len += 1;
   }
 
   if (this->_type != QUICPacketType::VERSION_NEGOTIATION) {
     if (this->_type == QUICPacketType::RETRY) {
-      // ODCID Len
-      buf[*len] = this->_original_dcid.length();
-      *len += 1;
-
       // Original Destination Connection ID
       if (this->_original_dcid != QUICConnectionId::ZERO()) {
+        // Len
+        buf[*len] = this->_original_dcid.length();
+        *len += 1;
+
+        // ID
         QUICTypeUtil::write_QUICConnectionId(this->_original_dcid, buf + *len, &n);
         *len += n;
+      } else {
+        buf[*len] = 0;
+        *len += 1;
       }
     } else {
       if (this->_type == QUICPacketType::INITIAL) {
