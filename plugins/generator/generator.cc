@@ -610,7 +610,9 @@ GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
     if (status != TS_CACHE_LOOKUP_HIT_FRESH) {
       // This transaction is going to be a cache miss, so intercept it.
       VDEBUG("intercepting origin server request for txn=%p", arg.txn);
-      TSHttpTxnServerIntercept(TSContCreate(GeneratorInterceptionHook, TSMutexCreate()), arg.txn);
+      TSMutex const mutex = TSContMutexGet(reinterpret_cast<TSCont>(arg.txn));
+      TSCont const contp  = TSContCreate(GeneratorInterceptionHook, mutex);
+      TSHttpTxnServerIntercept(contp, arg.txn);
     }
 
     break;

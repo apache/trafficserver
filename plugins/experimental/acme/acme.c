@@ -253,6 +253,7 @@ acme_hook(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
 {
   TSMBuffer reqp;
   TSMLoc hdr_loc = NULL, url_loc = NULL;
+  TSMutex mutex;
   TSCont icontp;
   AcmeState *my_state;
   TSHttpTxn txnp = (TSHttpTxn)edata;
@@ -272,7 +273,8 @@ acme_hook(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
     TSSkipRemappingSet(txnp, 1); /* not strictly necessary, but speed is everything these days */
 
     /* This request is for us -- register our intercept */
-    icontp = TSContCreate(acme_intercept, TSMutexCreate());
+    mutex  = TSContMutexGet((TSCont)txnp);
+    icontp = TSContCreate(acme_intercept, mutex);
 
     my_state = make_acme_state();
     open_acme_file(my_state, path + strlen(ACME_WK_PATH), path_len - strlen(ACME_WK_PATH));

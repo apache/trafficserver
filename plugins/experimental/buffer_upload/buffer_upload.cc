@@ -820,15 +820,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 } else
     */
     //  content_length = value;
-
-    mutex = TSMutexCreate();
-    if (NOT_VALID_PTR(mutex)) {
-      TSHandleMLocRelease(req_bufp, req_loc, field_loc);
-      TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
-      LOG_ERROR("TSMutexCreate");
-      break;
-    }
-
+    mutex    = TSContMutexGet(reinterpret_cast<TSCont>(txnp));
     new_cont = TSContCreate(pvc_plugin, mutex);
     if (NOT_VALID_PTR(new_cont)) {
       TSHandleMLocRelease(req_bufp, req_loc, field_loc);

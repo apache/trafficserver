@@ -503,6 +503,7 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
 {
   TSMBuffer reqp;
   TSMLoc hdr_loc = NULL, url_loc = NULL;
+  TSMutex mutex;
   TSCont icontp;
   HCState *my_state;
   TSHttpTxn txnp   = (TSHttpTxn)edata;
@@ -532,7 +533,8 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
     TSSkipRemappingSet(txnp, 1); /* not strictly necessary, but speed is everything these days */
 
     /* This is us -- register our intercept */
-    icontp   = TSContCreate(hc_intercept, TSMutexCreate());
+    mutex    = TSContMutexGet((TSCont)txnp);
+    icontp   = TSContCreate(hc_intercept, mutex);
     my_state = (HCState *)TSmalloc(sizeof(*my_state));
     memset(my_state, 0, sizeof(*my_state));
     my_state->info = info;

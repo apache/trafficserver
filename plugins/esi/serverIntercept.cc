@@ -347,7 +347,8 @@ serverIntercept(TSCont contp, TSEvent event, void *edata)
 bool
 setupServerIntercept(TSHttpTxn txnp)
 {
-  TSCont contp = TSContCreate(serverIntercept, TSMutexCreate());
+  TSMutex const mutex = TSContMutexGet(reinterpret_cast<TSCont>(txnp));
+  TSCont const contp  = TSContCreate(serverIntercept, mutex);
   if (!contp) {
     TSError("[server_intercept][%s] Could not create intercept request", __FUNCTION__);
     return false;

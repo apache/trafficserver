@@ -64,6 +64,7 @@ static int
 ts_lua_http_intercept(lua_State *L)
 {
   TSCont contp;
+  TSMutex mutex;
   int type, n;
   ts_lua_http_ctx *http_ctx;
   ts_lua_http_intercept_ctx *ictx;
@@ -84,7 +85,8 @@ ts_lua_http_intercept(lua_State *L)
   }
 
   ictx  = ts_lua_create_http_intercept_ctx(L, http_ctx, n);
-  contp = TSContCreate(ts_lua_http_intercept_entry, TSMutexCreate());
+  mutex = TSContMutexGet((TSCont)http_ctx->txnp);
+  contp = TSContCreate(ts_lua_http_intercept_entry, mutex);
   TSContDataSet(contp, ictx);
 
   TSHttpTxnIntercept(contp, http_ctx->txnp);
@@ -97,6 +99,7 @@ static int
 ts_lua_http_server_intercept(lua_State *L)
 {
   TSCont contp;
+  TSMutex mutex;
   int type, n;
   ts_lua_http_ctx *http_ctx;
   ts_lua_http_intercept_ctx *ictx;
@@ -117,7 +120,8 @@ ts_lua_http_server_intercept(lua_State *L)
   }
 
   ictx  = ts_lua_create_http_intercept_ctx(L, http_ctx, n);
-  contp = TSContCreate(ts_lua_http_intercept_entry, TSMutexCreate());
+  mutex = TSContMutexGet((TSCont)http_ctx->txnp);
+  contp = TSContCreate(ts_lua_http_intercept_entry, mutex);
   TSContDataSet(contp, ictx);
 
   TSHttpTxnServerIntercept(contp, http_ctx->txnp);

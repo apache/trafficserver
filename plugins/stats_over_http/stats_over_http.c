@@ -264,7 +264,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   /* This is us -- register our intercept */
   TSDebug(PLUGIN_NAME, "Intercepting request");
 
-  icontp   = TSContCreate(stats_dostuff, TSMutexCreate());
+  icontp   = TSContCreate(stats_dostuff, TSContMutexGet((TSCont)txnp));
   my_state = (stats_state *)TSmalloc(sizeof(*my_state));
   memset(my_state, 0, sizeof(*my_state));
   TSContDataSet(icontp, my_state);

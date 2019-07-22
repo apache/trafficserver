@@ -450,7 +450,8 @@ handleReadRequestHeader(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
     TSMLoc url_loc;
     if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) == TS_SUCCESS) {
       if (isComboHandlerRequest(bufp, hdr_loc, url_loc)) {
-        TSCont contp = TSContCreate(handleServerEvent, TSMutexCreate());
+        TSMutex const mutex = TSContMutexGet(reinterpret_cast<TSCont>(txnp));
+        TSCont const contp  = TSContCreate(handleServerEvent, mutex);
         if (!contp) {
           LOG_ERROR("[%s] Could not create intercept request", __FUNCTION__);
           reenable_to_event = TS_EVENT_HTTP_ERROR;
