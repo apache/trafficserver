@@ -1264,15 +1264,15 @@ QUICConnectionCloseFrame::parse(const uint8_t *buf, size_t len, const QUICPacket
   this->_type   = buf[0];
   uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
-  if (LEFT_SPACE(pos) < 2) {
-    return;
-  }
-
-  this->_error_code = QUICIntUtil::read_nbytes_as_uint(pos, 2);
-  pos += 2;
-
   size_t field_len = 0;
   uint64_t field   = 0;
+
+  // Error Code (i)
+  if (LEFT_SPACE(pos) < 1) {
+    return;
+  }
+  read_varint(pos, LEFT_SPACE(pos), field, field_len);
+  this->_error_code = field;
 
   if (this->_type == 0x1c) {
     if (!read_varint(pos, LEFT_SPACE(pos), field, field_len)) {
