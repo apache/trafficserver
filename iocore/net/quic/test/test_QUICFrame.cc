@@ -692,12 +692,12 @@ TEST_CASE("Load RESET_STREAM Frame", "[quic]")
     uint8_t buf1[] = {
       0x04,                                          // Type
       0x92, 0x34, 0x56, 0x78,                        // Stream ID
-      0x00, 0x01,                                    // Error Code
+      0x01,                                          // Error Code
       0xd1, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88 // Final Offset
     };
     const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::RESET_STREAM);
-    CHECK(frame1->size() == 15);
+    CHECK(frame1->size() == 14);
     const QUICRstStreamFrame *rst_stream_frame1 = static_cast<const QUICRstStreamFrame *>(frame1);
     CHECK(rst_stream_frame1 != nullptr);
     CHECK(rst_stream_frame1->error_code() == 0x0001);
@@ -710,7 +710,7 @@ TEST_CASE("Load RESET_STREAM Frame", "[quic]")
     uint8_t buf1[] = {
       0x04,                   // Type
       0x92, 0x34, 0x56, 0x78, // Stream ID
-      0x00, 0x01,             // Error Code
+      0x01,                   // Error Code
     };
     const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::RESET_STREAM);
@@ -809,7 +809,7 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
   {
     uint8_t buf[] = {
       0x1c,                        // Type
-      0x00, 0x0A,                  // Error Code
+      0x0A,                        // Error Code
       0x00,                        // Frame Type
       0x05,                        // Reason Phrase Length
       0x41, 0x42, 0x43, 0x44, 0x45 // Reason Phrase ("ABCDE");
@@ -830,10 +830,10 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
   SECTION("Bad loading")
   {
     uint8_t buf[] = {
-      0x1c,       // Type
-      0x00, 0x0A, // Error Code
-      0x00,       // Frame Type
-      0x05,       // Reason Phrase Length
+      0x1c, // Type
+      0x0A, // Error Code
+      0x00, // Frame Type
+      0x05, // Reason Phrase Length
     };
 
     const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
@@ -844,10 +844,10 @@ TEST_CASE("ConnectionClose Frame", "[quic]")
   SECTION("loading w/o reason phrase")
   {
     uint8_t buf[] = {
-      0x1c,       // Type
-      0x00, 0x0A, // Error Code
-      0x04,       // Frame Type
-      0x00,       // Reason Phrase Length
+      0x1c, // Type
+      0x0A, // Error Code
+      0x04, // Frame Type
+      0x00, // Reason Phrase Length
     };
     const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::CONNECTION_CLOSE);
@@ -1263,16 +1263,16 @@ TEST_CASE("Load STOP_SENDING Frame", "[quic]")
     uint8_t buf[] = {
       0x05,                   // Type
       0x92, 0x34, 0x56, 0x78, // Stream ID
-      0x00, 0x01,             // Error Code
+      0x01,                   // Error Code
     };
     const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::STOP_SENDING);
-    CHECK(frame->size() == 7);
+    CHECK(frame->size() == 6);
 
     const QUICStopSendingFrame *stop_sending_frame = static_cast<const QUICStopSendingFrame *>(frame);
     CHECK(stop_sending_frame != nullptr);
     CHECK(stop_sending_frame->stream_id() == 0x12345678);
-    CHECK(stop_sending_frame->error_code() == 0x0001);
+    CHECK(stop_sending_frame->error_code() == 0x01);
   }
 
   SECTION("Bad LOAD")

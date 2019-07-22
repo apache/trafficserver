@@ -1004,17 +1004,21 @@ QUICRstStreamFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *pack
   uint8_t *pos  = 1 + const_cast<uint8_t *>(buf);
 
   size_t field_len = 0;
+
+  // Stream ID (i)
   if (!read_varint(pos, LEFT_SPACE(pos), this->_stream_id, field_len)) {
     return;
   }
 
-  if (LEFT_SPACE(pos) < 2) {
+  // Error Code (i)
+  if (LEFT_SPACE(pos) < 1) {
+    return;
+  }
+  if (!read_varint(pos, LEFT_SPACE(pos), this->_error_code, field_len)) {
     return;
   }
 
-  this->_error_code = QUICIntUtil::read_nbytes_as_uint(pos, 2);
-  pos += 2;
-
+  // Final Offset (i)
   if (!read_varint(pos, LEFT_SPACE(pos), this->_final_offset, field_len)) {
     return;
   }
@@ -1275,10 +1279,10 @@ QUICConnectionCloseFrame::parse(const uint8_t *buf, size_t len, const QUICPacket
   this->_error_code = field;
 
   if (this->_type == 0x1c) {
+    // Frame Type (i)
     if (!read_varint(pos, LEFT_SPACE(pos), field, field_len)) {
       return;
     }
-
     this->_frame_type = static_cast<QUICFrameType>(field);
 
     /**
@@ -1292,16 +1296,21 @@ QUICConnectionCloseFrame::parse(const uint8_t *buf, size_t len, const QUICPacket
     }
   }
 
+  // Reason Phrase Length (i)
+  if (LEFT_SPACE(pos) < 1) {
+    return;
+  }
   if (!read_varint(pos, LEFT_SPACE(pos), this->_reason_phrase_length, field_len)) {
     return;
   }
 
+  // Reason Phrase
   if (LEFT_SPACE(pos) < this->_reason_phrase_length) {
     return;
   }
-
-  this->_valid         = true;
   this->_reason_phrase = reinterpret_cast<const char *>(pos);
+
+  this->_valid = true;
   pos += this->_reason_phrase_length;
   this->_size = FRAME_SIZE(pos);
 }
@@ -2157,18 +2166,22 @@ QUICStopSendingFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *pa
   this->_packet = packet;
   uint8_t *pos  = const_cast<uint8_t *>(buf) + 1;
 
+  // Stream ID (i)
   size_t field_len = 0;
   if (!read_varint(pos, LEFT_SPACE(pos), this->_stream_id, field_len)) {
     return;
   }
 
-  if (LEFT_SPACE(pos) < 2) {
+  // Error Code (i)
+  if (LEFT_SPACE(pos) < 1) {
+    return;
+  }
+  if (!read_varint(pos, LEFT_SPACE(pos), this->_error_code, field_len)) {
     return;
   }
 
-  this->_error_code = static_cast<QUICAppErrorCode>(QUICIntUtil::read_nbytes_as_uint(pos, 2));
-  this->_valid      = true;
-  this->_size       = FRAME_SIZE(pos) + 2;
+  this->_valid = true;
+  this->_size  = FRAME_SIZE(pos);
 }
 
 QUICFrameType
