@@ -752,7 +752,6 @@ EventIO::stop()
   if (!this->syscall) {
     return 0;
   }
-
   if (event_loop) {
     int retval = 0;
 #if TS_USE_EPOLL

@@ -104,6 +104,12 @@ namespace file
     /// Get a copy of the path.
     std::string string() const;
 
+    /// Get relative path
+    self_type relative_path();
+
+    /// Get parent path
+    path parent_path();
+
   protected:
     std::string _path; ///< File path.
   };
@@ -120,6 +126,7 @@ namespace file
     friend self_type status(const path &, std::error_code &) noexcept;
 
     friend int file_type(const self_type &);
+    friend time_t modification_time(const file_status &fs);
     friend uintmax_t file_size(const self_type &);
     friend bool is_regular_file(const file_status &);
     friend bool is_dir(const file_status &);
@@ -141,6 +148,9 @@ namespace file
   /// Return the file type value.
   int file_type(const file_status &fs);
 
+  /// Return modification time
+  time_t modification_time(const file_status &fs);
+
   /// Check if the path is to a regular file.
   bool is_regular_file(const file_status &fs);
 
@@ -159,7 +169,28 @@ namespace file
   /// Check if file is readable.
   bool is_readable(const path &s);
 
-  /** Load the file at @a p into a @c std::string.
+  // Get directory location suitable for temporary files
+  path temp_directory_path();
+
+  // Returns current path.
+  path current_path();
+
+  // Returns return the canonicalized absolute pathname
+  path canonical(const path &p, std::error_code &ec);
+
+  // Checks if the file/directory exists
+  bool exists(const path &p);
+
+  // Create directories
+  bool create_directories(const path &p, std::error_code &ec, mode_t mode = 0775) noexcept;
+
+  // Copy files ("from" cannot be directory). @todo make it more generic
+  bool copy(const path &from, const path &to, std::error_code &ec);
+
+  // Removes files and directories recursively
+  bool remove(const path &path, std::error_code &ec);
+
+  /** Load the file at @a p into a @c std::string
    *
    * @param p Path to file
    * @return The contents of the file.
@@ -222,6 +253,28 @@ namespace file
     return *this /= std::string_view(that._path);
   }
 
+  inline path
+  path::relative_path()
+  {
+    return (this->is_absolute()) ? path(_path.substr(sizeof(preferred_separator))) : *this;
+  }
+
+  inline path
+  path::parent_path()
+  {
+    if (this->is_absolute() && _path.substr(sizeof(preferred_separator)).empty()) {
+      // No relative path
+      return *this;
+    }
+
+    const size_t last_slash_idx = _path.find_last_of(preferred_separator);
+    if (std::string::npos != last_slash_idx) {
+      return path(_path.substr(0, last_slash_idx));
+    } else {
+      return path();
+    }
+  }
+
   /** Combine two strings as file paths.
 
        @return A @c path with the combined path.
@@ -248,6 +301,18 @@ namespace file
   operator/(path &&lhs, std::string_view rhs)
   {
     return path(std::move(lhs)) /= rhs;
+  }
+
+  inline bool
+  operator==(const path &lhs, const path &rhs)
+  {
+    return lhs.string() == rhs.string();
+  }
+
+  inline bool
+  operator!=(const path &lhs, const path &rhs)
+  {
+    return lhs.string() != rhs.string();
   }
 
   /* ------------------------------------------------------------------- */

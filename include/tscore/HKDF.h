@@ -34,6 +34,7 @@ class HKDF
 {
 public:
   HKDF(const EVP_MD *digest);
+  ~HKDF();
   int extract(uint8_t *dst, size_t *dst_len, const uint8_t *salt, size_t salt_len, const uint8_t *ikm, size_t ikm_len);
   int expand(uint8_t *dst, size_t *dst_len, const uint8_t *prk, size_t prk_len, const uint8_t *info, size_t info_len,
              uint16_t length);

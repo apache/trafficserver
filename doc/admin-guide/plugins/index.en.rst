@@ -144,15 +144,12 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    :hidden:
 
    Access Control <access_control.en>
-   Balancer <balancer.en>
-   Buffer Upload <buffer_upload.en>
    Certifier <certifier.en>
    Cert Reporting Tool <cert_reporting_tool.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
    GeoIP ACL <geoip_acl.en>
    FQ Pacing <fq_pacing.en>
    Header Frequency <header_freq.en>
-   HIPES <hipes.en>
    Hook Trace <hook-trace.en>
    JA3 Fingerprint <ja3_fingerprint.en>
    Memcache <memcache.en>
@@ -173,12 +170,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Access Control <access_control.en>`
    Access control plugin that handles various access control use-cases.
 
-:doc:`Balancer <balancer.en>`
-   Balances requests across multiple origin servers.
-
-:doc:`Buffer Upload <buffer_upload.en>`
-   Buffers POST data before connecting to the Origin server.
-
 :doc:`Certifier <certifier.en>`
    Manages and/or generates certificates for incoming HTTPS requests.
 
@@ -197,9 +188,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Header Frequency <header_freq.en>`
    Count the frequency of headers.
-
-:doc:`HIPES <hipes.en>`
-   Adds support for HTTP Pipes.
 
 :doc:`JA3 Fingerprint <ja3_fingerprint.en>`
    Calculates JA3 Fingerprints for incoming SSL traffic.

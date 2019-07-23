@@ -37,10 +37,10 @@
 #include "HTTP.h"
 #include "I_EventSystem.h"
 
-constexpr size_t MAX_LOST_STR_SPACE = 1024;
+static constexpr size_t MAX_LOST_STR_SPACE        = 1024;
+static constexpr uint32_t MAX_HDR_HEAP_OBJ_LENGTH = (1 << 20) - 1; ///< m_length is 20 bit
 
 Allocator hdrHeapAllocator("hdrHeap", HdrHeap::DEFAULT_SIZE);
-
 Allocator strHeapAllocator("hdrStrHeap", HdrStrHeap::DEFAULT_SIZE);
 
 /*-------------------------------------------------------------------------
@@ -434,7 +434,8 @@ HdrHeap::required_space_for_evacuation()
   size_t ret = 0;
   HdrHeap *h = this;
   while (h) {
-    char *data = h->m_data_start;
+    char *data               = h->m_data_start;
+    HdrHeapObjImpl *prev_obj = nullptr;
 
     while (data < h->m_free_start) {
       HdrHeapObjImpl *obj = (HdrHeapObjImpl *)data;
@@ -459,6 +460,19 @@ HdrHeap::required_space_for_evacuation()
       default:
         ink_release_assert(0);
       }
+
+      // coalesce empty objects next to each other
+      if (obj->m_type == HDR_HEAP_OBJ_EMPTY) {
+        if (prev_obj != nullptr && prev_obj->m_length < (MAX_HDR_HEAP_OBJ_LENGTH - obj->m_length)) {
+          prev_obj->m_length += obj->m_length;
+          ink_release_assert(prev_obj->m_length > 0);
+        } else {
+          prev_obj = obj;
+        }
+      } else {
+        prev_obj = nullptr;
+      }
+
       data = data + obj->m_length;
     }
     h = h->m_next;

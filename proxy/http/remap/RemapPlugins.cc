@@ -19,6 +19,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 
 #include "RemapPlugins.h"
@@ -26,16 +27,14 @@
 ClassAllocator<RemapPlugins> pluginAllocator("RemapPluginsAlloc");
 
 TSRemapStatus
-RemapPlugins::run_plugin(RemapPluginInfo *plugin)
+RemapPlugins::run_plugin(RemapPluginInst *plugin)
 {
   ink_assert(_s);
 
   TSRemapStatus plugin_retcode;
   TSRemapRequestInfo rri;
-  url_mapping *map = _s->url_map.getMapping();
-  URL *map_from    = _s->url_map.getFromURL();
-  URL *map_to      = _s->url_map.getToURL();
-  void *ih         = map->get_instance(_cur);
+  URL *map_from = _s->url_map.getFromURL();
+  URL *map_to   = _s->url_map.getToURL();
 
   // This is the equivalent of TSHttpTxnClientReqGet(), which every remap plugin would
   // have to call.
@@ -51,11 +50,10 @@ RemapPlugins::run_plugin(RemapPluginInfo *plugin)
 
   // Prepare State for the future
   if (_cur == 0) {
-    _s->fp_tsremap_os_response = plugin->os_response_cb;
-    _s->remap_plugin_instance  = ih;
+    _s->os_response_plugin_inst = plugin;
   }
 
-  plugin_retcode = plugin->do_remap_cb(ih, reinterpret_cast<TSHttpTxn>(_s->state_machine), &rri);
+  plugin_retcode = plugin->doRemap(reinterpret_cast<TSHttpTxn>(_s->state_machine), &rri);
   // TODO: Deal with negative return codes here
   if (plugin_retcode < 0) {
     plugin_retcode = TSREMAP_NO_REMAP;
@@ -82,7 +80,7 @@ bool
 RemapPlugins::run_single_remap()
 {
   url_mapping *map             = _s->url_map.getMapping();
-  RemapPluginInfo *plugin      = map->get_plugin(_cur); // get the nth plugin in our list of plugins
+  RemapPluginInst *plugin      = map->get_plugin_instance(_cur); // get the nth plugin in our list of plugins
   TSRemapStatus plugin_retcode = TSREMAP_NO_REMAP;
   bool zret                    = true; // default - last iteration.
   Debug("url_rewrite", "running single remap rule id %d for the %d%s time", map->map_id, _cur,
@@ -109,7 +107,7 @@ RemapPlugins::run_single_remap()
 
     if (TSREMAP_NO_REMAP_STOP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) {
       Debug("url_rewrite", "breaking remap plugin chain since last plugin said we should stop after %d rewrites", _rewritten);
-    } else if (_cur >= map->plugin_count()) {
+    } else if (_cur >= map->plugin_instance_count()) {
       Debug("url_rewrite", "completed all remap plugins for rule id %d, changed by %d plugins", map->map_id, _rewritten);
     } else {
       Debug("url_rewrite", "completed single remap, attempting another via immediate callback");

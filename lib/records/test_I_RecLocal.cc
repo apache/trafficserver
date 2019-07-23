@@ -193,7 +193,7 @@ main(int argc, char **argv)
 
   // test
   Test01(); // Local callbacks
-  Test02(); // Local callbacks -- mulit-lock
+  Test02(); // Local callbacks -- multi-lock
   Test03(); // RecTree
 
   while (true) {

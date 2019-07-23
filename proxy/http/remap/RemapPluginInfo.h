@@ -19,14 +19,22 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 
 #pragma once
+
+#include <string>
+#include <tuple>
+
 #include "tscore/ink_platform.h"
-#include "tscpp/util/IntrusiveDList.h"
-#include "tscore/ts_file.h"
 #include "ts/apidefs.h"
 #include "ts/remap.h"
+#include "PluginDso.h"
+
+class url_mapping;
+
+extern thread_local PluginThreadContext *pluginThreadContext;
 
 static constexpr const char *const TSREMAP_FUNCNAME_INIT            = "TSRemapInit";
 static constexpr const char *const TSREMAP_FUNCNAME_CONFIG_RELOAD   = "TSRemapConfigReload";
@@ -36,14 +44,13 @@ static constexpr const char *const TSREMAP_FUNCNAME_DELETE_INSTANCE = "TSRemapDe
 static constexpr const char *const TSREMAP_FUNCNAME_DO_REMAP        = "TSRemapDoRemap";
 static constexpr const char *const TSREMAP_FUNCNAME_OS_RESPONSE     = "TSRemapOSResponse";
 
-/** Information for a remap plugin.
- *  This stores the name of the library file and the callback entry points.
+/**
+ * Holds information for a remap plugin, remap specific callback entry points for plugin init/done and instance init/done, do_remap,
+ * origin server response,
  */
-class RemapPluginInfo
+class RemapPluginInfo : public PluginDso
 {
 public:
-  using self_type = RemapPluginInfo; ///< Self reference type.
-
   /// Initialization function, called on library load.
   using Init_F = TSReturnCode(TSRemapInterface *api_info, char *errbuf, int errbuf_size);
   /// Reload function, called to inform the plugin of a configuration reload.
@@ -59,12 +66,6 @@ public:
   /// I have no idea what this is for.
   using OS_Response_F = void(void *ih, TSHttpTxn rh, int os_response_type);
 
-  self_type *_next = nullptr;
-  self_type *_prev = nullptr;
-  using Linkage    = ts::IntrusiveLinkage<self_type>;
-  using List       = ts::IntrusiveDList<Linkage>;
-
-  ts::file::path path;
   void *dl_handle                       = nullptr; /* "handle" for the dynamic library */
   Init_F *init_cb                       = nullptr;
   Reload_F *config_reload_cb            = nullptr;
@@ -74,16 +75,37 @@ public:
   Do_Remap_F *do_remap_cb               = nullptr;
   OS_Response_F *os_response_cb         = nullptr;
 
-  explicit RemapPluginInfo(ts::file::path &&library_path);
+  RemapPluginInfo(const fs::path &configPath, const fs::path &effectivePath, const fs::path &runtimePath);
   ~RemapPluginInfo();
 
-  static self_type *find_by_path(std::string_view library_path);
-  static void add_to_list(self_type *pi);
-  static void delete_list();
-  static void indicate_reload();
+  /* Overload to add / execute remap plugin specific tasks during the plugin loading */
+  virtual bool load(std::string &error);
 
-  /// Singleton list of remap plugin info instances.
-  static List g_list;
+  /* Used by the factory to invoke callbacks during plugin load, init and unload  */
+  virtual bool init(std::string &error);
+  virtual void done(void);
+
+  /* Used by the facility that handles remap plugin instances to invoke callbacks per plugin instance */
+  bool initInstance(int argc, char **argv, void **ih, std::string &error);
+  void doneInstance(void *ih);
+
+  /* Used by the other parts of the traffic server core while handling requests */
+  TSRemapStatus doRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri);
+  void osResponse(void *ih, TSHttpTxn rh, int os_response_type);
+
+  /* Used by traffic server core to indicate configuration reload */
+  virtual void indicateReload();
+
+protected:
+  /* Utility to be used only with unit testing */
+  std::string missingRequiredSymbolError(const std::string &pluginName, const char *required, const char *requiring = nullptr);
+  template <class T> T *getFunctionSymbol(const char *symbol);
+  void setPluginContext();
+  void resetPluginContext();
+
+  static constexpr const char *const _tag = "plugin_remap"; /** @brief log tag used by this class */
+
+  PluginThreadContext *_tempContext = nullptr;
 };
 
 /**

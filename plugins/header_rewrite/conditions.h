@@ -266,44 +266,6 @@ private:
   bool _client;
 };
 
-// path
-class ConditionPath : public Condition
-{
-  typedef Matchers<std::string> MatcherType;
-
-public:
-  explicit ConditionPath() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionPath"); }
-
-  // noncopyable
-  ConditionPath(const ConditionPath &) = delete;
-  void operator=(const ConditionPath &) = delete;
-
-  void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
-
-protected:
-  bool eval(const Resources &res) override;
-};
-
-// query
-class ConditionQuery : public Condition
-{
-  typedef Matchers<std::string> MatcherType;
-
-public:
-  explicit ConditionQuery() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionQuery"); }
-
-  // noncopyable
-  ConditionQuery(const ConditionQuery &) = delete;
-  void operator=(const ConditionQuery &) = delete;
-
-  void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
-
-protected:
-  bool eval(const Resources &res) override;
-};
-
 // url
 class ConditionUrl : public Condition
 {
@@ -403,24 +365,6 @@ protected:
 
 private:
   IpQualifiers _ip_qual = IP_QUAL_CLIENT;
-};
-
-class ConditionIncomingPort : public Condition
-{
-  typedef Matchers<uint16_t> MatcherType;
-
-public:
-  ConditionIncomingPort() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIncomingPort"); }
-
-  // noncopyable
-  ConditionIncomingPort(const ConditionIncomingPort &) = delete;
-  void operator=(const ConditionIncomingPort &) = delete;
-
-  void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
-
-protected:
-  bool eval(const Resources &res) override;
 };
 
 // Transact Count

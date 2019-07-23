@@ -80,11 +80,14 @@ AC_CHECK_HEADER([brotli/encode.h], [], [has_brotli=0])
 AC_CHECK_LIB([brotlienc], BrotliEncoderCreateInstance, [:], [has_brotli=0])
 
 if test "x$has_brotli" == "x0"; then
-    PKG_CHECK_EXISTS([LIBBROTLIENC],
+    PKG_CHECK_EXISTS([libbrotlienc],
     [
       PKG_CHECK_MODULES([LIBBROTLIENC], [libbrotlienc >= 0.6.0], [
-        AC_SUBST([BROTLIENC_LIB], [$LIBBROTLIENC_LIBS])
-        AC_SUBST([BROTLIENC_CFLAGS], [$LIBBROTLIENC_CFLAGS])
+        AC_CHECK_HEADERS(brotli/encode.h, [brotli_have_headers=1])
+        if test "$brotli_have_headers" != "0"; then
+            AC_SUBST([BROTLIENC_LIB], [$LIBBROTLIENC_LIBS])
+            AC_SUBST([BROTLIENC_CFLAGS], [$LIBBROTLIENC_CFLAGS])
+        fi
       ], [])
     ], [])
 else

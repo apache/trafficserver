@@ -105,12 +105,8 @@ condition_factory(const std::string &cond)
     c = new ConditionCookie();
   } else if (c_name == "HEADER") { // This condition adapts to the hook
     c = new ConditionHeader();
-  } else if (c_name == "PATH") {
-    c = new ConditionPath();
   } else if (c_name == "CLIENT-HEADER") {
     c = new ConditionHeader(true);
-  } else if (c_name == "QUERY") {
-    c = new ConditionQuery();
   } else if (c_name == "CLIENT-URL") { // This condition adapts to the hook
     c = new ConditionUrl(ConditionUrl::CLIENT);
   } else if (c_name == "URL") {
@@ -127,8 +123,6 @@ condition_factory(const std::string &cond)
     c = new ConditionInternalTxn();
   } else if (c_name == "IP") {
     c = new ConditionIp();
-  } else if (c_name == "INCOMING-PORT") {
-    c = new ConditionIncomingPort();
   } else if (c_name == "METHOD") {
     c = new ConditionMethod();
   } else if (c_name == "TXN-COUNT") {

@@ -542,8 +542,9 @@ public:
       and invoking @c URL::string_get if the host is in a header
       field and not explicitly in the URL.
    */
-  char *url_string_get(Arena *arena = nullptr, ///< Arena to use, or @c malloc if NULL.
-                       int *length  = nullptr  ///< Store string length here.
+  char *url_string_get(Arena *arena    = nullptr, ///< Arena to use, or @c malloc if NULL.
+                       int *length     = nullptr, ///< Store string length here.
+                       bool normalized = false    ///< Scheme and host normalized to lower case letters.
   );
   /** Get a string with the effective URL in it.
       This is automatically allocated if needed in the request heap.
@@ -557,11 +558,17 @@ public:
       Output is not null terminated.
       @return 0 on failure, non-zero on success.
    */
-  int url_print(char *buff,  ///< Output buffer
-                int length,  ///< Length of @a buffer
-                int *offset, ///< [in,out] ???
-                int *skip    ///< [in,out] ???
+  int url_print(char *buff,             ///< Output buffer
+                int length,             ///< Length of @a buffer
+                int *offset,            ///< [in,out] ???
+                int *skip,              ///< [in,out] ???
+                bool normalized = false ///< host/scheme normalized to lower case
   );
+
+  /** Return the length of the URL that url_print() will create.
+      @return -1 on failure, non-negative on success.
+   */
+  int url_printed_length();
 
   /** Get the URL path.
       This is a reference, not allocated.
