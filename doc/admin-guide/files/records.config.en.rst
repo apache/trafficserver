@@ -273,6 +273,31 @@ System Variables
    order of auto-deletion (if enabled). A default value of 0 means auto-deletion will try to keep
    output logs as much as possible. See :doc:`../logging/rotation.en` for guidance.
 
+.. ts:cv:: CONFIG proxy.config.output.logfile.rolling_max_count INT 0
+   :reloadable:
+
+   Specifies the maximum count of rolled output logs to keep. This value will be used by the
+   auto-deletion (if enabled) to trim the number of rolled log files every time the log is rolled.
+   A default value of 0 means auto-deletion will not try to limit the number of output logs.
+   See :doc:`../logging/rotation.en` for an use-case for this option.
+
+.. ts:cv:: CONFIG proxy.config.output.logfile.rolling_allow_empty INT 0
+   :reloadable:
+
+   While rolling default behavior is to rename, close and re-open the log file *only* when/if there is
+   something to log to the log file. This option opens a new log file right after rolling even if there
+   is nothing to log (i.e. nothing to be logged due to lack of requests to the server)
+   which may lead to 0-sized log files while rollong. See :doc:`../logging/rotation.en` for an use-case
+   for this option.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` No empty log files created and rolloed if there was nothing to log
+   ``1`` Allow empty log files to be created and  rolled even if there was nothing to log
+   ===== ======================================================================
+
+
 Thread Variables
 ----------------
 
@@ -1873,15 +1898,6 @@ Cache Control
    used to purge the entire cache, or just a specific :file:`remap.config`
    rule.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 1
-   :reloadable:
-   :deprecated:
-
-   Enables (``1``) or disables (``0``) caching objects that have an empty
-   response body. This is particularly useful for caching 301 or 302 responses
-   with a ``Location`` header but no document body. This only works if the
-   origin response also has a ``Content-Length`` header.
-
 .. ts:cv:: CONFIG proxy.config.http.doc_in_cache_skip_dns INT 1
    :reloadable:
    :overridable:
@@ -3296,9 +3312,9 @@ Client-Related Configuration
    Configures |TS| to verify the origin server certificate
    with the Certificate Authority (CA). This configuration takes a value of :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`
 
-   You can override this global setting on a per domain basis in the sni.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in sni.yaml.
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in :file:`sni.yaml`.
 
 :code:`DISABLED`
    Server Certificate will not be verified
@@ -3313,9 +3329,9 @@ Client-Related Configuration
 
    Configures |TS| for what the default verify callback should check during origin server verification.
 
-   You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_server_properties attribute<override-verify-server-properties>`.
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_properties attribute<override-verify-server-properties>`.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in sni.yaml.
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in .:file:`sni.yaml`
 
 :code:`NONE`
    Check nothing in the standard callback.  Rely entirely on plugins to check the certificate.
@@ -3336,7 +3352,7 @@ Client-Related Configuration
    Configures |TS| to verify the origin server certificate
    with the Certificate Authority (CA). This configuration takes a value between 0 to 2.
 
-   You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_origin_server attribute<override-verify-origin-server>`.
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_origin_server attribute<override-verify-origin-server>`.
 
    :0: Server Certificate will not be verified
    :1: Certificate will be verified and the connection will not be established if verification fail

@@ -21,25 +21,21 @@
  *  limitations under the License.
  */
 #include "tscore/HKDF.h"
-#include "tscore/ink_assert.h"
 #include <openssl/hkdf.h>
 
-HKDF::HKDF(const EVP_MD *digest) : _digest(digest)
-{
-  ink_assert(!"not implemented");
-}
+HKDF::HKDF(const EVP_MD *digest) : _digest(digest) {}
+HKDF::~HKDF() {}
 
 int
 HKDF::extract(uint8_t *dst, size_t *dst_len, const uint8_t *salt, size_t salt_len, const uint8_t *ikm, size_t ikm_len)
 {
-  ink_assert(!"not implemented");
-  return 0;
+  return HKDF_extract(dst, dst_len, this->_digest, ikm, ikm_len, salt, salt_len);
 }
 
 int
 HKDF::expand(uint8_t *dst, size_t *dst_len, const uint8_t *prk, size_t prk_len, const uint8_t *info, size_t info_len,
              uint16_t length)
 {
-  ink_assert(!"not implemented");
-  return 0;
+  *dst_len = length;
+  return HKDF_expand(dst, length, this->_digest, prk, prk_len, info, info_len);
 }

@@ -110,8 +110,8 @@ TsEnumDescriptor ROLLING_MODE_LUA  = {
   {{"log.roll.none", 0}, {"log.roll.time", 1}, {"log.roll.size", 2}, {"log.roll.both", 3}, {"log.roll.any", 4}}};
 
 std::set<std::string> valid_log_object_keys = {
-  "filename",          "format",          "mode",    "header",   "rolling_enabled", "rolling_interval_sec",
-  "rolling_offset_hr", "rolling_size_mb", "filters", "min_count"};
+  "filename",          "format",          "mode",    "header",    "rolling_enabled",   "rolling_interval_sec",
+  "rolling_offset_hr", "rolling_size_mb", "filters", "min_count", "rolling_max_count", "rolling_allow_empty"};
 
 LogObject *
 YamlLogConfig::decodeLogObject(const YAML::Node &node)
@@ -158,6 +158,8 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   int obj_rolling_offset_hr    = cfg->rolling_offset_hr;
   int obj_rolling_size_mb      = cfg->rolling_size_mb;
   int obj_min_count            = cfg->rolling_min_count;
+  int obj_rolling_max_count    = cfg->rolling_max_count;
+  int obj_rolling_allow_empty  = cfg->rolling_allow_empty;
 
   if (node["rolling_enabled"]) {
     auto value          = node["rolling_enabled"].as<std::string>();
@@ -184,13 +186,20 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   if (node["min_count"]) {
     obj_min_count = node["min_count"].as<int>();
   }
+  if (node["rolling_max_count"]) {
+    obj_rolling_max_count = node["rolling_max_count"].as<int>();
+  }
+  if (node["rolling_allow_empty"]) {
+    obj_rolling_allow_empty = node["rolling_allow_empty"].as<int>();
+  }
   if (!LogRollingEnabledIsValid(obj_rolling_enabled)) {
     Warning("Invalid log rolling value '%d' in log object", obj_rolling_enabled);
   }
 
-  auto logObject = new LogObject(fmt, Log::config->logfile_dir, filename.c_str(), file_type, header.c_str(),
-                                 (Log::RollingEnabledValues)obj_rolling_enabled, Log::config->preproc_threads,
-                                 obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb);
+  auto logObject = new LogObject(
+    fmt, Log::config->logfile_dir, filename.c_str(), file_type, header.c_str(), (Log::RollingEnabledValues)obj_rolling_enabled,
+    Log::config->preproc_threads, obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb, /* auto_created */ false,
+    /* rolling_max_count */ obj_rolling_max_count, /* reopen_after_rolling */ obj_rolling_allow_empty > 0);
 
   // Generate LogDeletingInfo entry for later use
   std::string ext;

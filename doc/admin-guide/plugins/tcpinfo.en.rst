@@ -94,7 +94,20 @@ The following options may be specified in :file:`plugin.config`:
   lost
   retrans
   fackets
+  all_retrans
   ==============    ==================================================
+
+  In addition, on newer Linux system, the following two fields are appended
+  in log level 2:
+  ==============    ==================================================
+  Field Name        Description
+  ==============    ==================================================
+  data_segs_in      Number of incoming data segments
+  data_segs_out     Number of outgoing data segments
+
+  Note: Features such as TSO (TCP Segment Offload) might skew the numbers
+  here. That's true as well for e.g. the retransmit metrics, i.e. anything
+  that deals with segments.
 
 --sample-rate=COUNT
   This is the number of times per 1000 requests that the data will

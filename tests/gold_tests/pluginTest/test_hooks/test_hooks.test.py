@@ -78,6 +78,13 @@ tr.Processes.Default.Command = (
 )
 tr.Processes.Default.ReturnCode = 0
 
+# The probing of the ATS port to detect when ATS is ready may be seen by ATS as a VCONN start/close, so filter out these
+# events from the log file.
+#
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = "cd " + Test.RunDirectory + " ; . " + Test.TestDirectory + "/clean.sh"
+tr.Processes.Default.ReturnCode = 0
+
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "echo check log"
 tr.Processes.Default.ReturnCode = 0

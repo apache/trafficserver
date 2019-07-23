@@ -41,37 +41,6 @@ const static int MAX_TABLE_SIZE                         = 4096;
  *                                                                                 *
  ***********************************************************************************/
 
-// [RFC 7541] C.1. Integer Representation Examples
-const static struct {
-  uint32_t raw_integer;
-  uint8_t *encoded_field;
-  int encoded_field_len;
-  int prefix;
-} integer_test_case[] = {{10, (uint8_t *)"\x0A", 1, 5}, {1337, (uint8_t *)"\x1F\x9A\x0A", 3, 5}, {42, (uint8_t *)R"(*)", 1, 8}};
-
-// Example: custom-key: custom-header
-const static struct {
-  char *raw_string;
-  uint32_t raw_string_len;
-  uint8_t *encoded_field;
-  int encoded_field_len;
-} string_test_case[] = {{(char *)"", 0,
-                         (uint8_t *)"\x0"
-                                    "",
-                         1},
-                        {(char *)"custom-key", 10,
-                         (uint8_t *)"\xA"
-                                    "custom-key",
-                         11},
-                        {(char *)"", 0,
-                         (uint8_t *)"\x80"
-                                    "",
-                         1},
-                        {(char *)"custom-key", 10,
-                         (uint8_t *)"\x88"
-                                    "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f",
-                         9}};
-
 // [RFC 7541] C.2.4. Indexed Header Field
 const static struct {
   int index;
@@ -317,43 +286,6 @@ const static struct {
  *                                                                                 *
  ***********************************************************************************/
 
-REGRESSION_TEST(HPACK_EncodeInteger)(RegressionTest *t, int, int *pstatus)
-{
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-  uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
-
-  for (const auto &i : integer_test_case) {
-    memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
-
-    int len = xpack_encode_integer(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, i.raw_integer, i.prefix);
-
-    box.check(len == i.encoded_field_len, "encoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(len > 0 && memcmp(buf, i.encoded_field, len) == 0, "encoded value was invalid");
-  }
-}
-
-REGRESSION_TEST(HPACK_EncodeString)(RegressionTest *t, int, int *pstatus)
-{
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
-  uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
-  int len;
-
-  // FIXME Current encoder support only huffman conding.
-  for (unsigned int i = 2; i < sizeof(string_test_case) / sizeof(string_test_case[0]); i++) {
-    memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
-
-    len = xpack_encode_string(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, string_test_case[i].raw_string,
-                              string_test_case[i].raw_string_len);
-
-    box.check(len == string_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len,
-              string_test_case[i].encoded_field_len);
-    box.check(len > 0 && memcmp(buf, string_test_case[i].encoded_field, len) == 0, "encoded string was invalid");
-  }
-}
-
 REGRESSION_TEST(HPACK_EncodeIndexedHeaderField)(RegressionTest *t, int, int *pstatus)
 {
   TestBox box(t, pstatus);
@@ -464,42 +396,6 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
       expected_dynamic_table_size += dynamic_table_response_test_case[i][j].size;
     }
     box.check(indexing_table.size() == expected_dynamic_table_size, "dynamic table is unexpected size: %d", indexing_table.size());
-  }
-}
-
-REGRESSION_TEST(HPACK_DecodeInteger)(RegressionTest *t, int, int *pstatus)
-{
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
-  uint64_t actual;
-
-  for (const auto &i : integer_test_case) {
-    int len = xpack_decode_integer(actual, i.encoded_field, i.encoded_field + i.encoded_field_len, i.prefix);
-
-    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(actual == i.raw_integer, "decoded value was %" PRIu64 ", expected %d", actual, i.raw_integer);
-  }
-}
-
-REGRESSION_TEST(HPACK_DecodeString)(RegressionTest *t, int, int *pstatus)
-{
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
-  Arena arena;
-  char *actual        = nullptr;
-  uint64_t actual_len = 0;
-
-  hpack_huffman_init();
-
-  for (const auto &i : string_test_case) {
-    int len = xpack_decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len);
-
-    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(actual_len == i.raw_string_len, "length of decoded string was %" PRIu64 ", expecting %d", actual_len,
-              i.raw_string_len);
-    box.check(memcmp(actual, i.raw_string, actual_len) == 0, "decoded string was invalid");
   }
 }
 

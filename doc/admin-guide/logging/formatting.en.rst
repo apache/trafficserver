@@ -577,6 +577,7 @@ SSL / Encryption
 .. _cqssr:
 .. _cqssv:
 .. _cqssc:
+.. _cqssu:
 .. _pqssl:
 
 Fields which expose the use, or lack thereof, of specific SSL and encryption
@@ -592,6 +593,8 @@ cqssr Client Request SSL session ticket reused status; indicates if the current
                      handshake.
 cqssv Client Request SSL version used to communicate with the client.
 cqssc Client Request SSL Cipher used by |TS| to communicate with the client.
+cqssu Client Request SSL Elliptic Curve used by |TS| to communicate with the
+                     client when using an ECDHE cipher.
 pqssl Proxy Request  Indicates whether the connection from |TS| to the origin
                      was over SSL or not.
 ===== ============== ==========================================================

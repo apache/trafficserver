@@ -19,6 +19,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 
 #pragma once
@@ -29,6 +30,7 @@
 #include "AclFiltering.h"
 #include "URL.h"
 #include "RemapPluginInfo.h"
+#include "PluginFactory.h"
 #include "tscore/Regex.h"
 #include "tscore/List.h"
 
@@ -79,17 +81,15 @@ class url_mapping
 public:
   ~url_mapping();
 
-  bool add_plugin(RemapPluginInfo *i, void *ih);
-  RemapPluginInfo *get_plugin(std::size_t) const;
-  void *get_instance(std::size_t) const;
+  bool add_plugin_instance(RemapPluginInst *i);
+  RemapPluginInst *get_plugin_instance(std::size_t) const;
 
   std::size_t
-  plugin_count() const
+  plugin_instance_count() const
   {
-    return _plugin_list.size();
+    return _plugin_inst_list.size();
   }
 
-  void delete_instance(unsigned int index);
   void Print();
 
   int from_path_len = 0;
@@ -122,8 +122,7 @@ public:
   };
 
 private:
-  std::vector<RemapPluginInfo *> _plugin_list;
-  std::vector<void *> _instance_data;
+  std::vector<RemapPluginInst *> _plugin_inst_list;
   int _rank = 0;
 };
 

@@ -82,7 +82,6 @@ int cache_config_read_while_writer             = 0;
 int cache_config_mutex_retry_delay             = 2;
 int cache_read_while_writer_retry_delay        = 50;
 int cache_config_read_while_writer_max_retries = 10;
-static int enable_cache_empty_http_doc         = 0;
 /// Fix up a specific known problem with the 4.2.0 release.
 /// Not used for stripes with a cache version later than 4.2.0.
 int cache_config_compatibility_4_2_0_fixup = 1;
@@ -453,16 +452,14 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
     ainfo->object_key_set(earliest_key);
     // don't know the total len yet
   }
-  if (enable_cache_empty_http_doc) {
-    MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-    if (field && !field->value_get_int64()) {
-      f.allow_empty_doc = 1;
-    } else {
-      f.allow_empty_doc = 0;
-    }
+
+  MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+  if (field && !field->value_get_int64()) {
+    f.allow_empty_doc = 1;
   } else {
     f.allow_empty_doc = 0;
   }
+
   alternate.copy_shallow(ainfo);
   ainfo->clear();
 }
@@ -3225,8 +3222,6 @@ ink_cache_init(ts::ModuleVersion v)
   if (cache_config_target_fragment_size == 0 || cache_config_target_fragment_size - sizeof(Doc) > MAX_FRAG_SIZE) {
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
   }
-
-  REC_EstablishStaticConfigInt32(enable_cache_empty_http_doc, "proxy.config.http.cache.allow_empty_doc");
 
   REC_EstablishStaticConfigInt32(cache_config_compatibility_4_2_0_fixup, "proxy.config.cache.http.compatibility.4-2-0-fixup");
 

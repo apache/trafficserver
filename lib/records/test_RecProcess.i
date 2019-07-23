@@ -477,7 +477,7 @@ struct RawStatCont:public Continuation
       printf("      stat_f by RecGetRawStatCount: %d:%d\n", check_stat_f);
     }
 
-    // Compare read value stat_g and expeced value test_raw_stat_g
+    // Compare read value stat_g and expected value test_raw_stat_g
     RecRawStat test_raw_stat_g;
     test_raw_stat_g.sum = REC_ATOMIC_READ64(&(g_rsb->global[MY_STAT_G]->sum));
     RecInt check_stat_g;

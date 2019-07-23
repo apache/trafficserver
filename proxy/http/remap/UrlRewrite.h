@@ -19,6 +19,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 
 #pragma once
@@ -28,6 +29,7 @@
 #include "UrlMappingPathIndex.h"
 #include "HttpTransact.h"
 #include "tscore/Regex.h"
+#include "PluginFactory.h"
 
 #include <memory>
 
@@ -207,6 +209,8 @@ public:
   int num_rules_redirect_permanent     = 0;
   int num_rules_redirect_temporary     = 0;
   int num_rules_forward_with_recv_port = 0;
+
+  PluginFactory pluginFactory;
 
 private:
   bool _valid = false;

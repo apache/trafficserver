@@ -76,7 +76,7 @@ enum RecPersistT {
 
 // RECP_NULL should never be used by callers of RecRegisterStat*(). You have to decide
 // whether to persist stats or not. The template goop below make sure that passing RECP_NULL
-// is a very ugle compile-time error.
+// is a very ugly compile-time error.
 
 namespace rec
 {
@@ -152,7 +152,7 @@ struct RecRawStat {
   int64_t count;
   // XXX - these will waste some space because they are only needed for the globals
   // this is a fix for bug TS-162, so I am trying to do as few code changes as
-  // possible, this should be revisted -bcall
+  // possible, this should be revisited -bcall
   int64_t last_sum;   // value from the last global sync
   int64_t last_count; // value from the last global sync
   uint32_t version;

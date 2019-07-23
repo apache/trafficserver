@@ -28,7 +28,6 @@ Test.ContinueOnFail = True
 
 # Skip if plugins not present.
 Test.SkipUnless(Condition.PluginExists('url_sig.so'))
-Test.SkipUnless(Condition.PluginExists('balancer.so'))
 
 # Set up to check the output after the tests have run.
 #
@@ -89,8 +88,7 @@ ts.Disk.remap_config.AddLine(
 # Use pristine URL, incoming URL changed.
 #
 ts.Disk.remap_config.AddLine(
-    'map http://seven.eight.nine/ http://dummy' +
-    ' @plugin=balancer.so @pparam=--policy=hash,url @pparam=127.0.0.1:{}'.format(server.Variables.Port) +
+    'map http://seven.eight.nine/ http://127.0.0.1:{}'.format(server.Variables.Port) +
     ' @plugin=url_sig.so @pparam={}/url_sig.config @pparam=PristineUrl'.format(Test.TestDirectory)
 )
 
@@ -232,17 +230,19 @@ tr.Processes.Default.Command = (
     LogTee
 )
 
+
 def sign(payload, key):
-  secret=bytes(key,'utf-8')
-  data=bytes(payload, 'utf-8')
-  md=bytes(hmac.new(secret, data, digestmod=hashlib.sha1).digest().hex(), 'utf-8')
-  return md.decode("utf-8")
+    secret = bytes(key, 'utf-8')
+    data = bytes(payload, 'utf-8')
+    md = bytes(hmac.new(secret, data, digestmod=hashlib.sha1).digest().hex(), 'utf-8')
+    return md.decode("utf-8")
+
 
 # No client / SHA1 / P=1 / URL not pristine / URL not altered.
 #
-path="foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S="
-to_sign="127.0.0.1:{}/".format(server.Variables.Port) + path
-url="http://one.two.three/" + path + sign(to_sign, "dqsgopTSM_doT6iAysasQVUKaPykyb6e")
+path = "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S="
+to_sign = "127.0.0.1:{}/".format(server.Variables.Port) + path
+url = "http://one.two.three/" + path + sign(to_sign, "dqsgopTSM_doT6iAysasQVUKaPykyb6e")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
@@ -252,9 +252,9 @@ tr.Processes.Default.Command = (
 
 # No client / SHA1 / P=1 / URL not pristine / URL not altered -- HTTPS.
 #
-path="foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S="
-to_sign="127.0.0.1:{}/".format(server.Variables.Port) + path
-url="https://127.0.0.1:{}/".format(ts.Variables.ssl_port) + path + sign(to_sign, "dqsgopTSM_doT6iAysasQVUKaPykyb6e")
+path = "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S="
+to_sign = "127.0.0.1:{}/".format(server.Variables.Port) + path
+url = "https://127.0.0.1:{}/".format(ts.Variables.ssl_port) + path + sign(to_sign, "dqsgopTSM_doT6iAysasQVUKaPykyb6e")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0

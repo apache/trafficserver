@@ -19,11 +19,8 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
- */
 
-/**
- * Remap plugins class
- **/
+ */
 
 #pragma once
 
@@ -68,7 +65,7 @@ struct RemapPlugins : public Continuation {
 
   int run_remap(int event, Event *e);
   bool run_single_remap();
-  TSRemapStatus run_plugin(RemapPluginInfo *plugin);
+  TSRemapStatus run_plugin(RemapPluginInst *plugin);
 
   Action action;
 

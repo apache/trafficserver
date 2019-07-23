@@ -3492,8 +3492,8 @@ HttpTransact::handle_response_from_server(State *s)
 
   // plugin call
   s->server_info.state = s->current.state;
-  if (s->fp_tsremap_os_response) {
-    s->fp_tsremap_os_response(s->remap_plugin_instance, reinterpret_cast<TSHttpTxn>(s->state_machine), s->current.state);
+  if (s->os_response_plugin_inst) {
+    s->os_response_plugin_inst->osResponse(reinterpret_cast<TSHttpTxn>(s->state_machine), s->current.state);
   }
 
   switch (s->current.state) {

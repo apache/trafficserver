@@ -61,7 +61,7 @@ static const std::unordered_set<uint16_t> GREASE_table = {0x0a0a, 0x1a1a, 0x2a2a
 
 struct ja3_data {
   std::string ja3_string;
-  char md5String[33];
+  char md5_string[33];
   char ip_addr[INET6_ADDRSTRLEN];
 };
 
@@ -265,6 +265,29 @@ custom_get_ja3(SSL *s)
 #error OpenSSL cannot be 1.1.0
 #endif
 
+// This function will append value to the last occurrence of field. If none exists, it will
+// create a field and append to the headers
+static void
+append_to_field(TSMBuffer bufp, TSMLoc hdr_loc, const char *field, int field_len, const char *value, int value_len)
+{
+  if (!bufp || !hdr_loc || !field || field_len <= 0)
+    return;
+
+  TSMLoc target = TSMimeHdrFieldFind(bufp, hdr_loc, field, field_len);
+  if (target == TS_NULL_MLOC) {
+    TSMimeHdrFieldCreateNamed(bufp, hdr_loc, field, field_len, &target);
+    TSMimeHdrFieldAppend(bufp, hdr_loc, target);
+  } else {
+    TSMLoc next = target;
+    while (next) {
+      target = next;
+      next   = TSMimeHdrFieldNextDup(bufp, hdr_loc, target);
+    }
+  }
+  TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, target, -1, value, value_len);
+  TSHandleMLocRelease(bufp, hdr_loc, target);
+}
+
 static int
 client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
 {
@@ -295,9 +318,9 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
     MD5((unsigned char *)data->ja3_string.c_str(), data->ja3_string.length(), digest);
 
     for (int i = 0; i < 16; i++) {
-      sprintf(&(data->md5String[i * 2]), "%02x", (unsigned int)digest[i]);
+      sprintf(&(data->md5_string[i * 2]), "%02x", (unsigned int)digest[i]);
     }
-    TSDebug(PLUGIN_NAME, "Fingerprint: %s", data->md5String);
+    TSDebug(PLUGIN_NAME, "Fingerprint: %s", data->md5_string);
     break;
   }
   case TS_EVENT_VCONN_CLOSE: {
@@ -347,28 +370,22 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
 
     // Get handle to headers
     TSMBuffer bufp;
-    TSMLoc hdr_loc, field_loc;
+    TSMLoc hdr_loc;
     TSAssert(TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &bufp, &hdr_loc));
 
     // Add JA3 md5 fingerprints
-    TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "X-JA3-Sig", 9, &field_loc);
-    TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, data->md5String, 32);
-    TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
-    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+    append_to_field(bufp, hdr_loc, "X-JA3-Sig", 9, data->md5_string, 32);
 
     // If raw string is configured, added JA3 raw string to header as well
     if (raw_flag) {
-      TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "X-JA3-Raw", 9, &field_loc);
-      TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, data->ja3_string.data(), data->ja3_string.size());
-      TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
-      TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      append_to_field(bufp, hdr_loc, "x-JA3-RAW", 9, data->ja3_string.data(), data->ja3_string.size());
     }
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
     // Write to logfile
     if (log_flag) {
       TSTextLogObjectWrite(pluginlog, "Client IP: %s\tJA3: %.*s\tMD5: %.*s", data->ip_addr,
-                           static_cast<int>(data->ja3_string.size()), data->ja3_string.data(), 32, data->md5String);
+                           static_cast<int>(data->ja3_string.size()), data->ja3_string.data(), 32, data->md5_string);
     }
   } else {
     TSDebug(PLUGIN_NAME, "req_hdr_ja3_handler(): ja3 data not set. Not SSL vconn. Abort.");

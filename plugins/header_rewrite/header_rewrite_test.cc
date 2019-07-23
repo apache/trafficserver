@@ -224,11 +224,11 @@ test_parsing()
   }
 
   {
-    ParserTest p(R"(cond %{PATH} /\/foo\/bar/ [OR])");
+    ParserTest p(R"(cond %{CLIENT-URL:PATH} /\/foo\/bar/ [OR])");
 
     CHECK_EQ(p.getTokens().size(), 4UL);
     CHECK_EQ(p.getTokens()[0], "cond");
-    CHECK_EQ(p.getTokens()[1], "%{PATH}");
+    CHECK_EQ(p.getTokens()[1], "%{CLIENT-URL:PATH}");
     CHECK_EQ(p.getTokens()[2], R"(/\/foo\/bar/)");
     CHECK_EQ(p.getTokens()[3], "[OR]");
 
@@ -422,10 +422,10 @@ test_processing()
   }
 
   {
-    ParserTest p(R"(cond %{PATH} /\.html|\.txt/)");
+    ParserTest p(R"(cond %{CLIENT-URL:PATH} /\.html|\.txt/)");
 
     CHECK_EQ(p.getTokens().size(), 3UL);
-    CHECK_EQ(p.get_op(), "PATH");
+    CHECK_EQ(p.get_op(), "CLIENT-URL:PATH");
     CHECK_EQ(p.get_arg(), R"(/\.html|\.txt/)");
     CHECK_EQ(p.is_cond(), true);
 
@@ -433,10 +433,10 @@ test_processing()
   }
 
   {
-    ParserTest p(R"(cond %{PATH} /\/foo\/bar/)");
+    ParserTest p(R"(cond %{CLIENT-URL:PATH} /\/foo\/bar/)");
 
     CHECK_EQ(p.getTokens().size(), 3UL);
-    CHECK_EQ(p.get_op(), "PATH");
+    CHECK_EQ(p.get_op(), "CLIENT-URL:PATH");
     CHECK_EQ(p.get_arg(), R"(/\/foo\/bar/)");
     CHECK_EQ(p.is_cond(), true);
 

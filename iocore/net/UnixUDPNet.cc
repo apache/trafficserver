@@ -667,21 +667,39 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
   }
 
   if (opt.ip_family == AF_INET) {
-    int enable = 1;
+    bool succeeded = false;
+    int enable     = 1;
 #ifdef IP_PKTINFO
-    safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+      succeeded = true;
+    }
 #endif
 #ifdef IP_RECVDSTADDR
-    safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable));
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+      succeeded = true;
+    }
 #endif
+    if (!succeeded) {
+      Debug("udpnet", "setsockeopt for pktinfo failed");
+      goto HardError;
+    }
   } else if (opt.ip_family == AF_INET6) {
-    int enable = 1;
+    bool succeeded = false;
+    int enable     = 1;
 #ifdef IPV6_PKTINFO
-    safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+    if ((res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+      succeeded = true;
+    }
 #endif
 #ifdef IPV6_RECVPKTINFO
-    safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+    if ((res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+      succeeded = true;
+    }
 #endif
+    if (!succeeded) {
+      Debug("udpnet", "setsockeopt for pktinfo failed");
+      goto HardError;
+    }
   }
 
   if (local_addr.port() || !is_any_address) {
@@ -740,21 +758,39 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   }
 
   if (addr->sa_family == AF_INET) {
-    int enable = 1;
+    bool succeeded = false;
+    int enable     = 1;
 #ifdef IP_PKTINFO
-    safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+      succeeded = true;
+    }
 #endif
 #ifdef IP_RECVDSTADDR
-    safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable));
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+      succeeded = true;
+    }
 #endif
+    if (!succeeded) {
+      Debug("udpnet", "setsockeopt for pktinfo failed");
+      goto Lerror;
+    }
   } else if (addr->sa_family == AF_INET6) {
-    int enable = 1;
+    bool succeeded = false;
+    int enable     = 1;
 #ifdef IPV6_PKTINFO
-    safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+    if ((res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+      succeeded = true;
+    }
 #endif
 #ifdef IPV6_RECVPKTINFO
-    safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable));
+    if ((res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+      succeeded = true;
+    }
 #endif
+    if (!succeeded) {
+      Debug("udpnet", "setsockeopt for pktinfo failed");
+      goto Lerror;
+    }
   }
 
   // If this is a class D address (i.e. multicast address), use REUSEADDR.

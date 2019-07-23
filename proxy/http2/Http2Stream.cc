@@ -768,9 +768,8 @@ void
 Http2Stream::response_initialize_data_handling(bool &is_done)
 {
   is_done           = false;
-  const char *name  = "transfer-encoding";
-  const char *value = "chunked";
-  int chunked_index = response_header.value_get_index(name, strlen(name), value, strlen(value));
+  int chunked_index = response_header.value_get_index(TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING,
+                                                      TS_HTTP_VALUE_CHUNKED, TS_HTTP_LEN_CHUNKED);
   // -1 means this value was not found for this field
   if (chunked_index >= 0) {
     Http2StreamDebug("Response is chunked");
