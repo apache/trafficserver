@@ -175,6 +175,7 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
 
   // Is there a read_vio request waiting?
   this->update_read_request(INT64_MAX, true);
+  this->_http_sm_id = this->current_reader->sm_id;
 }
 
 bool
@@ -627,6 +628,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
       // make sure to send the end of stream
       is_done |= (write_vio.ntodo() + this->response_header.length_get()) == bytes_avail;
       if (this->response_is_data_available() || is_done) {
+        this->_milestones.mark(Http2StreamMilestone::START_TX_DATA_FRAMES);
         this->send_response_body(call_update);
       }
       break;
@@ -638,6 +640,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
       break;
     }
   } else {
+    this->_milestones.mark(Http2StreamMilestone::START_TX_DATA_FRAMES);
     this->send_response_body(call_update);
   }
 
@@ -720,6 +723,8 @@ Http2Stream::destroy()
   ink_release_assert(this->closed);
   ink_release_assert(reentrancy_count == 0);
 
+  uint64_t cid = 0;
+
   // Safe to initiate SSN_CLOSE if this is the last stream
   if (parent) {
     Http2ClientSession *h2_parent = static_cast<Http2ClientSession *>(parent);
@@ -730,14 +735,39 @@ Http2Stream::destroy()
 
     // Update session's stream counts, so it accurately goes into keep-alive state
     h2_parent->connection_state.release_stream(this);
+    cid = parent->connection_id();
   }
 
   // Clean up the write VIO in case of inactivity timeout
   this->do_io_write(nullptr, 0, nullptr);
 
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
-  ink_hrtime end_time = Thread::get_hrtime();
-  HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, _thread, end_time - _start_time);
+
+  this->_milestones.mark(Http2StreamMilestone::CLOSE);
+
+  ink_hrtime total_time = this->_milestones.elapsed(Http2StreamMilestone::OPEN, Http2StreamMilestone::CLOSE);
+  HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, this->_thread, total_time);
+
+  // Slow Log
+  if (Http2::stream_slow_log_threshold != 0 && ink_hrtime_from_msec(Http2::stream_slow_log_threshold) < total_time) {
+    Error("[%" PRIu64 "] [%" PRIu32 "] [%" PRId64 "] Slow H2 Stream: "
+          "open: %" PRIu64 " "
+          "dec_hdrs: %.3f "
+          "txn: %.3f "
+          "enc_hdrs: %.3f "
+          "tx_hdrs: %.3f "
+          "tx_data: %.3f "
+          "close: %.3f",
+          cid, static_cast<uint32_t>(this->_id), this->_http_sm_id,
+          ink_hrtime_to_msec(this->_milestones[Http2StreamMilestone::OPEN]),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_DECODE_HEADERS),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TXN),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_ENCODE_HEADERS),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TX_HEADERS_FRAMES),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TX_DATA_FRAMES),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::CLOSE));
+  }
+
   _req_header.destroy();
   response_header.destroy();
 
@@ -944,6 +974,12 @@ Http2Stream::decrement_server_rwnd(size_t amount)
   } else {
     return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
   }
+}
+
+void
+Http2Stream::mark_milestone(Http2StreamMilestone type)
+{
+  this->_milestones.mark(type);
 }
 
 bool

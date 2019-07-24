@@ -385,6 +385,8 @@ public:
   static uint32_t max_ping_frames_per_minute;
   static uint32_t max_priority_frames_per_minute;
   static float min_avg_window_update;
+  static uint32_t con_slow_log_threshold;
+  static uint32_t stream_slow_log_threshold;
 
   static void init();
 };

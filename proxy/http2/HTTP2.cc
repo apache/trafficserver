@@ -740,6 +740,8 @@ uint32_t Http2::max_settings_frames_per_minute = 14;
 uint32_t Http2::max_ping_frames_per_minute     = 60;
 uint32_t Http2::max_priority_frames_per_minute = 120;
 float Http2::min_avg_window_update             = 2560.0;
+uint32_t Http2::con_slow_log_threshold         = 0;
+uint32_t Http2::stream_slow_log_threshold      = 0;
 
 void
 Http2::init()
@@ -764,6 +766,8 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(max_ping_frames_per_minute, "proxy.config.http2.max_ping_frames_per_minute");
   REC_EstablishStaticConfigInt32U(max_priority_frames_per_minute, "proxy.config.http2.max_priority_frames_per_minute");
   REC_EstablishStaticConfigFloat(min_avg_window_update, "proxy.config.http2.min_avg_window_update");
+  REC_EstablishStaticConfigInt32U(con_slow_log_threshold, "proxy.config.http2.connection.slow.log.threshold");
+  REC_EstablishStaticConfigInt32U(stream_slow_log_threshold, "proxy.config.http2.stream.slow.log.threshold");
 
   // If any settings is broken, ATS should not start
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams_in}));
