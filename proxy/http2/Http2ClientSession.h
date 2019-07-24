@@ -30,6 +30,7 @@
 #include <string_view>
 #include "tscore/ink_inet.h"
 #include "tscore/History.h"
+#include "Milestones.h"
 
 // Name                       Edata                 Description
 // HTTP2_SESSION_EVENT_INIT   Http2ClientSession *  HTTP/2 session is born
@@ -47,6 +48,12 @@
 enum class Http2SessionCod : int {
   NOT_PROVIDED,
   HIGH_ERROR_RATE,
+};
+
+enum class Http2SsnMilestone {
+  OPEN = 0,
+  CLOSE,
+  LAST_ENTRY,
 };
 
 size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
@@ -334,6 +341,7 @@ private:
   IpEndpoint cached_local_addr;
 
   History<HISTORY_DEFAULT_SIZE> _history;
+  Milestones<Http2SsnMilestone, static_cast<size_t>(Http2SsnMilestone::LAST_ENTRY)> _milestones;
 
   // For Upgrade: h2c
   Http2UpgradeContext upgrade_context;

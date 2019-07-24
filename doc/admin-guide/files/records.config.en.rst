@@ -2852,6 +2852,26 @@ Logging Configuration
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
    <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
 
+.. ts:cv:: CONFIG proxy.config.http2.connection.slow.log.threshold INT 0
+   :reloadable:
+   :units: milliseconds
+
+   If set to a non-zero value :arg:`N` then any HTTP/2 connection
+   that takes longer than :arg:`N` milliseconds from open to close will cause
+   its timing stats to be written to the :ts:cv:`debugging log file
+   <proxy.config.output.logfile>`. This is identifying data about the
+   transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
+
+.. ts:cv:: CONFIG proxy.config.http2.stream.slow.log.threshold INT 0
+   :reloadable:
+   :units: milliseconds
+
+   If set to a non-zero value :arg:`N` then any HTTP/2 stream
+   that takes longer than :arg:`N` milliseconds from open to close will cause
+   its timing stats to be written to the :ts:cv:`debugging log file
+   <proxy.config.output.logfile>`. This is identifying data about the
+   transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
+
 .. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
    :reloadable:
 

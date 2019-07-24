@@ -336,6 +336,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       empty_request = true;
     }
 
+    stream->mark_milestone(Http2StreamMilestone::START_DECODE_HEADERS);
     Http2ErrorCode result =
       stream->decode_header_blocks(*cstate.local_hpack_handle, cstate.server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
 
@@ -355,6 +356,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     // Set up the State Machine
     if (!empty_request) {
       SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
+      stream->mark_milestone(Http2StreamMilestone::START_TXN);
       stream->new_transaction();
       // Send request header to SM
       stream->send_request(cstate);
@@ -864,6 +866,7 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
     // Set up the State Machine
     SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
+    stream->mark_milestone(Http2StreamMilestone::START_TXN);
     stream->new_transaction();
     // Send request header to SM
     stream->send_request(cstate);
@@ -1520,6 +1523,8 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     h2_hdr.destroy();
     return;
   }
+
+  stream->mark_milestone(Http2StreamMilestone::START_ENCODE_HEADERS);
   Http2ErrorCode result = http2_encode_header_blocks(&h2_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
                                                      client_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
@@ -1536,6 +1541,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
       flags |= HTTP2_FLAGS_HEADERS_END_STREAM;
       stream->send_end_stream = true;
     }
+    stream->mark_milestone(Http2StreamMilestone::START_TX_HEADERS_FRAMES);
   } else {
     payload_length = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
   }
