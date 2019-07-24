@@ -29,11 +29,23 @@
 #include "../http/HttpTunnel.h" // To get ChunkedHandler
 #include "Http2DependencyTree.h"
 #include "tscore/History.h"
+#include "Milestones.h"
 
 class Http2Stream;
 class Http2ConnectionState;
 
 typedef Http2DependencyTree::Tree<Http2Stream *> DependencyTree;
+
+enum class Http2StreamMilestone {
+  OPEN = 0,
+  START_DECODE_HEADERS,
+  START_TXN,
+  START_ENCODE_HEADERS,
+  START_TX_HEADERS_FRAMES,
+  START_TX_DATA_FRAMES,
+  CLOSE,
+  LAST_ENTRY,
+};
 
 class Http2Stream : public ProxyTransaction
 {
@@ -47,10 +59,12 @@ public:
   void
   init(Http2StreamId sid, ssize_t initial_rwnd)
   {
-    _id               = sid;
-    _start_time       = Thread::get_hrtime();
-    _thread           = this_ethread();
+    this->mark_milestone(Http2StreamMilestone::OPEN);
+
+    this->_id         = sid;
+    this->_thread     = this_ethread();
     this->client_rwnd = initial_rwnd;
+
     sm_reader = request_reader = request_buffer.alloc_reader();
     // FIXME: Are you sure? every "stream" needs request_header?
     _req_header.create(HTTP_TYPE_REQUEST);
@@ -223,6 +237,8 @@ public:
   void increment_client_transactions_stat() override;
   void decrement_client_transactions_stat() override;
 
+  void mark_milestone(Http2StreamMilestone type);
+
 private:
   void response_initialize_data_handling(bool &is_done);
   void response_process_data(bool &is_done);
@@ -238,16 +254,17 @@ private:
   bool _switch_thread_if_not_on_right_thread(int event, void *edata);
 
   HTTPParser http_parser;
-  ink_hrtime _start_time = 0;
-  EThread *_thread       = nullptr;
+  EThread *_thread = nullptr;
   Http2StreamId _id;
   Http2StreamState _state = Http2StreamState::HTTP2_STREAM_STATE_IDLE;
+  int64_t _http_sm_id     = -1;
 
   HTTPHdr _req_header;
   VIO read_vio;
   VIO write_vio;
 
   History<HISTORY_DEFAULT_SIZE> _history;
+  Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
 
   bool trailing_header = false;
   bool body_done       = false;

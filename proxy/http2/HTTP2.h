@@ -378,6 +378,8 @@ public:
   static float stream_error_rate_threshold;
   static uint32_t max_settings_per_frame;
   static uint32_t max_settings_per_minute;
+  static uint32_t con_slow_log_threshold;
+  static uint32_t stream_slow_log_threshold;
 
   static void init();
 };

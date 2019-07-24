@@ -98,6 +98,16 @@ Http2ClientSession::free()
   REMEMBER(NO_EVENT, this->recursion)
   Http2SsnDebug("session free");
 
+  this->_milestones.mark(Http2SsnMilestone::CLOSE);
+  ink_hrtime total_time = this->_milestones.elapsed(Http2SsnMilestone::OPEN, Http2SsnMilestone::CLOSE);
+
+  // Slow Log
+  if (Http2::con_slow_log_threshold != 0 && ink_hrtime_from_msec(Http2::con_slow_log_threshold) < total_time) {
+    Error("[%" PRIu64 "] Slow H2 Connection: open: %" PRIu64 " close: %.3f", this->con_id,
+          ink_hrtime_to_msec(this->_milestones[Http2SsnMilestone::OPEN]),
+          this->_milestones.difference_sec(Http2SsnMilestone::OPEN, Http2SsnMilestone::CLOSE));
+  }
+
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
 
   // Update stats on how we died.  May want to eliminate this.  Was useful for
@@ -177,6 +187,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ink_assert(new_vc->mutex->thread_holding == this_ethread());
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, new_vc->mutex->thread_holding);
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, new_vc->mutex->thread_holding);
+  this->_milestones.mark(Http2SsnMilestone::OPEN);
 
   // Unique client session identifier.
   this->con_id    = ProxySession::next_connection_id();
