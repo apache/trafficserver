@@ -313,9 +313,12 @@ LogFilterString::wipe_this_entry(LogAccess *lad)
 
   static const unsigned BUFSIZE = 1024;
   char small_buf[BUFSIZE];
-  char *big_buf    = nullptr;
-  char *buf        = small_buf;
-  size_t marsh_len = m_field->marshal_len(lad); // includes null termination
+  char small_buf_upper[BUFSIZE];
+  char *big_buf       = nullptr;
+  char *big_buf_upper = nullptr;
+  char *buf           = small_buf;
+  char *buf_upper     = small_buf_upper;
+  size_t marsh_len    = m_field->marshal_len(lad); // includes null termination
 
   if (marsh_len > BUFSIZE) {
     big_buf = (char *)ats_malloc(marsh_len);
@@ -339,19 +342,25 @@ LogFilterString::wipe_this_entry(LogAccess *lad)
     // actual length, so we just use the fact that a MATCH is not possible
     // when marsh_len <= (length of the filter string)
     //
-    cond_satisfied = _checkConditionAndWipe(&strcmp, &buf, marsh_len, m_value, DATA_LENGTH_LARGER);
+    cond_satisfied = _checkConditionAndWipe(&strcmp, &buf, marsh_len, m_value, nullptr, DATA_LENGTH_LARGER);
     break;
   case CASE_INSENSITIVE_MATCH:
-    cond_satisfied = _checkConditionAndWipe(&strcasecmp, &buf, marsh_len, m_value, DATA_LENGTH_LARGER);
+    cond_satisfied = _checkConditionAndWipe(&strcasecmp, &buf, marsh_len, m_value, nullptr, DATA_LENGTH_LARGER);
     break;
   case CONTAIN:
-    cond_satisfied = _checkConditionAndWipe(&_isSubstring, &buf, marsh_len, m_value, DATA_LENGTH_LARGER);
+    cond_satisfied = _checkConditionAndWipe(&_isSubstring, &buf, marsh_len, m_value, nullptr, DATA_LENGTH_LARGER);
     break;
   case CASE_INSENSITIVE_CONTAIN:
-    for (size_t i = 0; i < marsh_len; i++) {
-      buf[i] = ParseRules::ink_toupper(buf[i]);
+    if (big_buf) {
+      big_buf_upper = (char *)ats_malloc((unsigned int)marsh_len);
+      buf_upper     = big_buf_upper;
+    } else {
+      buf = small_buf; // make clang happy
     }
-    cond_satisfied = _checkConditionAndWipe(&_isSubstring, &buf, marsh_len, m_value_uppercase, DATA_LENGTH_LARGER);
+    for (size_t i = 0; i < marsh_len; i++) {
+      buf_upper[i] = ParseRules::ink_toupper(buf[i]);
+    }
+    cond_satisfied = _checkConditionAndWipe(&_isSubstring, &buf_upper, marsh_len, m_value_uppercase, &buf, DATA_LENGTH_LARGER);
     break;
   default:
     ink_assert(!"INVALID FILTER OPERATOR");
@@ -360,6 +369,7 @@ LogFilterString::wipe_this_entry(LogAccess *lad)
   m_field->updateField(lad, buf, strlen(buf));
 
   ats_free(big_buf);
+  ats_free(big_buf_upper);
   return cond_satisfied;
 }
 
