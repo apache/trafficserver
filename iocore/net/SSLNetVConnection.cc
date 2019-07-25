@@ -233,12 +233,12 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       amount_to_read = block_write_avail;
     }
 
-    Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] b->write_avail()=%" PRId64, amount_to_read);
+    Debug("ssl", "amount_to_read=%" PRId64, amount_to_read);
     char *current_block = buf.writer()->end();
     ink_release_assert(current_block != nullptr);
     sslErr = SSLReadBuffer(sslvc->ssl, current_block, amount_to_read, nread);
 
-    Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] nread=%d", (int)nread);
+    Debug("ssl", "nread=%" PRId64, nread);
 
     switch (sslErr) {
     case SSL_ERROR_NONE:
@@ -256,24 +256,24 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     case SSL_ERROR_WANT_WRITE:
       event = SSL_WRITE_WOULD_BLOCK;
       SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
-      Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(write)");
+      Debug("ssl.error", "SSL_ERROR_WOULD_BLOCK(write)");
       break;
     case SSL_ERROR_WANT_READ:
       event = SSL_READ_WOULD_BLOCK;
       SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
-      Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read)");
+      Debug("ssl.error", "SSL_ERROR_WOULD_BLOCK(read)");
       break;
 #ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
     case SSL_ERROR_WANT_CLIENT_HELLO_CB:
       event = SSL_READ_WOULD_BLOCK;
       SSL_INCREMENT_DYN_STAT(ssl_error_want_client_hello_cb);
-      Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read/client hello cb)");
+      Debug("ssl.error", "SSL_ERROR_WOULD_BLOCK(read/client hello cb)");
       break;
 #endif
     case SSL_ERROR_WANT_X509_LOOKUP:
       event = SSL_READ_WOULD_BLOCK;
       SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
-      Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read/x509 lookup)");
+      Debug("ssl.error", "SSL_ERROR_WOULD_BLOCK(read/x509 lookup)");
       break;
     case SSL_ERROR_SYSCALL:
       SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
@@ -281,7 +281,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
         // not EOF
         event = SSL_READ_ERROR;
         ret   = errno;
-        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
+        Debug("ssl.error", "SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
       } else {
         // then EOF observed, treat it as EOS
         // Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, EOF observed violating SSL protocol");
@@ -291,7 +291,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     case SSL_ERROR_ZERO_RETURN:
       event = SSL_READ_EOS;
       SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
-      Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_ZERO_RETURN");
+      Debug("ssl.error", "SSL_ERROR_ZERO_RETURN");
       break;
     case SSL_ERROR_SSL:
     default: {
@@ -300,13 +300,13 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       ERR_error_string_n(e, buf, sizeof(buf));
       event = SSL_READ_ERROR;
       ret   = errno;
-      SSL_CLR_ERR_INCR_DYN_STAT(sslvc, ssl_error_ssl, "[SSL_NetVConnection::ssl_read_from_net]: errno=%d", errno);
+      SSL_CLR_ERR_INCR_DYN_STAT(sslvc, ssl_error_ssl, "errno=%d", errno);
     } break;
     } // switch
   }   // while
 
   if (bytes_read > 0) {
-    Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read=%" PRId64, bytes_read);
+    Debug("ssl", "bytes_read=%" PRId64, bytes_read);
 
     s->vio.ndone += bytes_read;
     sslvc->netActivity(lthread);
@@ -322,7 +322,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
   } else { // if( bytes_read > 0 )
 #if defined(_DEBUG)
     if (bytes_read == 0) {
-      Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read == 0");
+      Debug("ssl", "bytes_read == 0");
     }
 #endif
   }
@@ -379,10 +379,9 @@ SSLNetVConnection::read_raw_data()
   pp_ipmap = SSLConfigParams::proxy_protocol_ipmap;
 
   if (this->get_is_proxy_protocol()) {
-    Debug("proxyprotocol", "[SSLNetVConnection::read_raw_data] proxy protocol is enabled on this port");
+    Debug("proxyprotocol", "proxy protocol is enabled on this port");
     if (pp_ipmap->count() > 0) {
-      Debug("proxyprotocol",
-            "[SSLNetVConnection::read_raw_data] proxy protocol has a configured whitelist of trusted IPs - checking");
+      Debug("proxyprotocol", "proxy protocol has a configured whitelist of trusted IPs - checking");
 
       // At this point, using get_remote_addr() will return the ip of the
       // proxy source IP, not the Proxy Protocol client ip. Since we are
@@ -390,29 +389,26 @@ SSLNetVConnection::read_raw_data()
       // what we want now.
       void *payload = nullptr;
       if (!pp_ipmap->contains(get_remote_addr(), &payload)) {
-        Debug("proxyprotocol",
-              "[SSLNetVConnection::read_raw_data] proxy protocol src IP is NOT in the configured whitelist of trusted IPs - "
-              "closing connection");
+        Debug("proxyprotocol", "proxy protocol src IP is NOT in the configured whitelist of trusted IPs - "
+                               "closing connection");
         r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
         goto proxy_protocol_bypass;
       } else {
         char new_host[INET6_ADDRSTRLEN];
-        Debug("proxyprotocol", "[SSLNetVConnection::read_raw_data] Source IP [%s] is in the trusted whitelist for proxy protocol",
+        Debug("proxyprotocol", "Source IP [%s] is in the trusted whitelist for proxy protocol",
               ats_ip_ntop(this->get_remote_addr(), new_host, sizeof(new_host)));
       }
     } else {
-      Debug("proxyprotocol",
-            "[SSLNetVConnection::read_raw_data] proxy protocol DOES NOT have a configured whitelist of trusted IPs but "
-            "proxy protocol is enabled on this port - processing all connections");
+      Debug("proxyprotocol", "proxy protocol DOES NOT have a configured whitelist of trusted IPs but "
+                             "proxy protocol is enabled on this port - processing all connections");
     }
 
     if (ssl_has_proxy_v1(this, buffer, &r)) {
-      Debug("proxyprotocol", "[SSLNetVConnection::read_raw_data] ssl has proxy_v1 header");
+      Debug("proxyprotocol", "ssl has proxy_v1 header");
       set_remote_addr(get_proxy_protocol_src_addr());
     } else {
-      Debug("proxyprotocol",
-            "[SSLNetVConnection::read_raw_data] proxy protocol was enabled, but required header was not present in the "
-            "transaction - closing connection");
+      Debug("proxyprotocol", "proxy protocol was enabled, but required header was not present in the "
+                             "transaction - closing connection");
     }
   } // end of Proxy Protocol processing
 
@@ -511,7 +507,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   if (sslClientRenegotiationAbort == true) {
     this->read.triggered = 0;
     readSignalError(nh, (int)r);
-    Debug("ssl", "[SSLNetVConnection::net_read_io] client renegotiation setting read signal error");
+    Debug("ssl", "client renegotiation setting read signal error");
     return;
   }
 
@@ -646,7 +642,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   if (bytes > 0) {
     if (ret == SSL_READ_WOULD_BLOCK || ret == SSL_READ_READY) {
       if (readSignalAndUpdate(VC_EVENT_READ_READY) != EVENT_CONT) {
-        Debug("ssl", "ssl_read_from_net, readSignal != EVENT_CONT");
+        Debug("ssl", "readSignal != EVENT_CONT");
         return;
       }
     }
@@ -660,7 +656,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   case SSL_WRITE_WOULD_BLOCK:
   case SSL_READ_WOULD_BLOCK:
     if (lock.get_mutex() != s->vio.mutex.get()) {
-      Debug("ssl", "ssl_read_from_net, mutex switched");
+      Debug("ssl", "mutex switched");
       if (ret == SSL_READ_WOULD_BLOCK) {
         readReschedule(nh);
       } else {
@@ -672,7 +668,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     // we will need to be retriggered to read from this socket again
     read.triggered = 0;
     nh->read_ready_list.remove(this);
-    Debug("ssl", "read_from_net, read finished - would block");
+    Debug("ssl", "read finished - would block");
 #if TS_USE_PORT
     if (ret == SSL_READ_WOULD_BLOCK) {
       readReschedule(nh);
@@ -690,19 +686,19 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     readSignalDone(VC_EVENT_EOS, nh);
 
     if (bytes > 0) {
-      Debug("ssl", "read_from_net, read finished - EOS");
+      Debug("ssl", "read finished - EOS");
     } else {
-      Debug("ssl", "read_from_net, read finished - 0 useful bytes read, bytes used by SSL layer");
+      Debug("ssl", "read finished - 0 useful bytes read, bytes used by SSL layer");
     }
     break;
   case SSL_READ_COMPLETE:
     readSignalDone(VC_EVENT_READ_COMPLETE, nh);
-    Debug("ssl", "read_from_net, read finished - signal done");
+    Debug("ssl", "read finished - signal done");
     break;
   case SSL_READ_ERROR:
     this->read.triggered = 0;
     readSignalError(nh, (int)r);
-    Debug("ssl", "read_from_net, read finished - read error");
+    Debug("ssl", "read finished - read error");
     break;
   }
 }
@@ -726,8 +722,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       // reset sslTotalBytesSent upon inactivity for SSL_DEF_TLS_RECORD_MSEC_THRESHOLD
       sslTotalBytesSent = 0;
     }
-    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, now %" PRId64 ",lastwrite %" PRId64 " ,msec_since_last_write %d", now,
-          sslLastWriteTime, msec_since_last_write);
+    Debug("ssl", "now=%" PRId64 " lastwrite=%" PRId64 " msec_since_last_write=%d", now, sslLastWriteTime, msec_since_last_write);
   }
 
   if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == this->attributes) {
@@ -1416,23 +1411,23 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     return EVENT_DONE;
 
   case SSL_ERROR_WANT_WRITE:
-    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_WRITE");
+    Debug("ssl.error", "SSL_ERROR_WANT_WRITE");
     SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
     return SSL_HANDSHAKE_WANT_WRITE;
 
   case SSL_ERROR_WANT_READ:
     SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
-    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_READ");
+    Debug("ssl.error", "SSL_ERROR_WANT_READ");
     return SSL_HANDSHAKE_WANT_READ;
 #ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
   case SSL_ERROR_WANT_CLIENT_HELLO_CB:
     SSL_INCREMENT_DYN_STAT(ssl_error_want_client_hello_cb);
-    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_CLIENT_HELLO_CB");
+    Debug("ssl.error", "SSL_ERROR_WANT_CLIENT_HELLO_CB");
     break;
 #endif
   case SSL_ERROR_WANT_X509_LOOKUP:
     SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
-    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_WANT_X509_LOOKUP");
+    Debug("ssl.error", "SSL_ERROR_WANT_X509_LOOKUP");
     break;
 
   case SSL_ERROR_WANT_ACCEPT:
@@ -1443,13 +1438,13 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
   case SSL_ERROR_ZERO_RETURN:
     SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
-    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, EOS");
+    Debug("ssl.error", "EOS");
     return EVENT_ERROR;
 
   case SSL_ERROR_SYSCALL:
     err = errno;
     SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
-    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, syscall");
+    Debug("ssl.error", "syscall");
     return EVENT_ERROR;
     break;
 
@@ -1460,8 +1455,8 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     unsigned long e = ERR_peek_last_error();
     ERR_error_string_n(e, buf, sizeof(buf));
     // FIXME -- This triggers a retry on cases of cert validation errors....
-    SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
-    Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
+    SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSL_ERROR_SSL errno=%d", errno);
+    Debug("ssl.error", "SSL_ERROR_SSL");
     if (e) {
       if (this->options.sni_servername) {
         Debug("ssl.error", "SSL connection failed for '%s': %s", this->options.sni_servername.get(), buf);
@@ -1655,7 +1650,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   ink_assert(eventId == TS_EVENT_SSL_CLIENT_HELLO || eventId == TS_EVENT_SSL_CERT || eventId == TS_EVENT_SSL_SERVERNAME ||
              eventId == TS_EVENT_SSL_VERIFY_SERVER || eventId == TS_EVENT_SSL_VERIFY_CLIENT || eventId == TS_EVENT_VCONN_CLOSE ||
              eventId == TS_EVENT_VCONN_OUTBOUND_CLOSE);
-  Debug("ssl", "callHooks sslHandshakeHookState=%d eventID=%d", this->sslHandshakeHookState, eventId);
+  Debug("ssl", "sslHandshakeHookState=%d eventID=%d", this->sslHandshakeHookState, eventId);
 
   // Move state if it is appropriate
   switch (this->sslHandshakeHookState) {
@@ -1772,7 +1767,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
     return true;
   }
 
-  Debug("ssl", "callHooks iterated to curHook=%p", curHook);
+  Debug("ssl", "iterated to curHook=%p", curHook);
 
   bool reenabled = true;
 
