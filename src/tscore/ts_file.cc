@@ -156,7 +156,6 @@ namespace file
   {
     static int BUF_SIZE = 65536;
     FILE *src, *dst;
-    size_t in, out;
     char buf[BUF_SIZE];
     int bufsize = BUF_SIZE;
 
@@ -184,14 +183,15 @@ namespace file
     }
     if (nullptr == (dst = fopen(final_to.c_str(), "w"))) {
       ec = std::error_code(errno, std::system_category());
+      fclose(src);
       return false;
     }
 
     while (1) {
-      in = fread(buf, 1, bufsize, src);
+      size_t in = fread(buf, 1, bufsize, src);
       if (0 == in)
         break;
-      out = fwrite(buf, 1, in, dst);
+      size_t out = fwrite(buf, 1, in, dst);
       if (0 == out)
         break;
     }
