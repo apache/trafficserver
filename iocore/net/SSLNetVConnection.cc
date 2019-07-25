@@ -729,6 +729,8 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     return this->super::load_buffer_and_write(towrite, buf, total_written, needs);
   }
 
+  Debug("ssl", "towrite=%" PRId64, towrite);
+
   do {
     // What is remaining left in the next block?
     l                   = buf.reader()->block_read_avail();
@@ -773,8 +775,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 
     try_to_write       = l;
     num_really_written = 0;
-    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, before SSLWriteBuffer, l=%" PRId64 ", towrite=%" PRId64 ", b=%p", l,
-          towrite, current_block);
+    Debug("v_ssl", "b=%p l=%" PRId64, current_block, l);
     err = SSLWriteBuffer(ssl, current_block, l, num_really_written);
 
     // We wrote all that we thought we should
@@ -783,8 +784,8 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       buf.reader()->consume(num_really_written);
     }
 
-    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite,Number of bytes written=%" PRId64 " , total=%" PRId64 "",
-          num_really_written, total_written);
+    Debug("ssl", "try_to_write=%" PRId64 " written=%" PRId64 " total_written=%" PRId64, try_to_write, num_really_written,
+          total_written);
     NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
   } while (num_really_written == try_to_write && total_written < towrite);
 
