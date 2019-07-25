@@ -389,10 +389,13 @@ RemapRegex::compile(const char *&error, int &erroffset)
     return -1;
   }
 
-  _extra = pcre_study(_rex, 0, &error);
-  if ((_extra == nullptr) && (error != nullptr)) {
+  _extra = pcre_study(_rex, PCRE_STUDY_EXTRA_NEEDED, &error);
+  if (error != nullptr) {
     return -1;
   }
+
+  _extra->match_limit_recursion = 2047;
+  _extra->flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
 
   if (pcre_fullinfo(_rex, _extra, PCRE_INFO_CAPTURECOUNT, &ccount) != 0) {
     error = "call to pcre_fullinfo() failed";
@@ -629,6 +632,7 @@ struct RemapInstance {
   bool host          = false;
   int hits           = 0;
   int misses         = 0;
+  int failures       = 0;
   std::string filename;
 };
 
@@ -863,6 +867,7 @@ TSRemapDeleteInstance(void *ih)
     fprintf(stderr, "[%s]: Profiling information for regex_remap file `%s':\n", now, (ri->filename).c_str());
     fprintf(stderr, "[%s]:    Total hits (matches): %d\n", now, ri->hits);
     fprintf(stderr, "[%s]:    Total missed (no regex matches): %d\n", now, ri->misses);
+    fprintf(stderr, "[%s]:    Total regex internal errors: %d\n", now, ri->failures);
 
     if (ri->hits > 0) { // Avoid divide by zeros...
       int ix = 1;
@@ -970,7 +975,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   // Apply the regular expressions, in order. First one wins.
   while (re) {
     // Since we check substitutions on parse time, we don't need to reset ovector
-    if (re->match(match_buf, match_len, ovector) != -1) {
+    auto match_result = re->match(match_buf, match_len, ovector);
+    if (match_result >= 0) {
       int new_len = re->get_lengths(ovector, lengths, rri, &req_url);
 
       // Set timeouts
@@ -1061,6 +1067,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         }
         break;
       }
+    } else if (match_result != -1) {
+      ink_atomic_increment(&(ri->failures), 1);
+      TSError("[%s] Bad regular expression result %d from \"%s\" in file \"%s\".", PLUGIN_NAME, match_result, re->regex(),
+              ri->filename.c_str());
     }
 
     // Try the next regex
