@@ -785,6 +785,9 @@ public:
 
   MgmtInt body_factory_response_max_size = 8192;
 
+  MgmtInt http_request_line_max_size = 65535;
+  MgmtInt http_hdr_field_max_size    = 131070;
+
   // noncopyable
   /////////////////////////////////////
   // operator = and copy constructor //

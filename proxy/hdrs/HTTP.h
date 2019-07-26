@@ -442,7 +442,8 @@ const char *http_hdr_reason_lookup(unsigned status);
 void http_parser_init(HTTPParser *parser);
 void http_parser_clear(HTTPParser *parser);
 ParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
-                                  bool must_copy_strings, bool eof, bool strict_uri_parsing);
+                                  bool must_copy_strings, bool eof, bool strict_uri_parsing, size_t max_request_line_size,
+                                  size_t max_hdr_field_size);
 ParseResult validate_hdr_host(HTTPHdrImpl *hh);
 ParseResult validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh);
 ParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
@@ -628,10 +629,12 @@ public:
   const char *reason_get(int *length);
   void reason_set(const char *value, int length);
 
-  ParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing = false);
+  ParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing = false,
+                        size_t max_request_line_size = UINT16_MAX, size_t max_hdr_field_size = 131070);
   ParseResult parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof);
 
-  ParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing = false);
+  ParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing = false,
+                        size_t max_request_line_size = UINT16_MAX, size_t max_hdr_field_size = UINT16_MAX);
   ParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
 
 public:
@@ -1200,12 +1203,14 @@ HTTPHdr::reason_set(const char *value, int length)
   -------------------------------------------------------------------------*/
 
 inline ParseResult
-HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing)
+HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing,
+                   size_t max_request_line_size, size_t max_hdr_field_size)
 {
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
-  return http_parser_parse_req(parser, m_heap, m_http, start, end, true, eof, strict_uri_parsing);
+  return http_parser_parse_req(parser, m_heap, m_http, start, end, true, eof, strict_uri_parsing, max_request_line_size,
+                               max_hdr_field_size);
 }
 
 /*-------------------------------------------------------------------------

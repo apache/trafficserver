@@ -645,6 +645,48 @@ HdrTest::test_http_aux(const char *request, const char *response)
   return (failures_to_status("test_http_aux", (status == 0)));
 }
 
+int
+HdrTest::test_http_req_parse_error(const char *request, const char *response)
+{
+  int err;
+  HTTPHdr req_hdr, rsp_hdr;
+  HTTPParser parser;
+  const char *start;
+  const char *end;
+
+  int status = 1;
+
+  /*** (1) parse the request string into req_hdr ***/
+
+  start = request;
+  end   = start + strlen(start); // 1 character past end of string
+
+  http_parser_init(&parser);
+
+  req_hdr.create(HTTP_TYPE_REQUEST);
+  rsp_hdr.create(HTTP_TYPE_RESPONSE);
+
+  printf("======== test_http_req_parse_error parsing\n\n");
+  err = req_hdr.parse_req(&parser, &start, end, true, 1, 1);
+  if (err != PARSE_RESULT_ERROR) {
+    status = 0;
+  }
+
+  http_parser_clear(&parser);
+
+  /*** (4) print out the response ***/
+
+  printf("\n======== real response (length=%d)\n\n", (int)strlen(response));
+  printf("%s\n", response);
+
+  obj_describe(rsp_hdr.m_http, true);
+
+  req_hdr.destroy();
+  rsp_hdr.destroy();
+
+  return (failures_to_status("test_http_req_parse_error", (status == 0)));
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -1372,6 +1414,12 @@ HdrTest::test_http()
     "\r\n",
   };
 
+  static const char request_too_long[] = {
+    "GET http://www.news.com/i/am/too/long HTTP/1.1\r\n"
+    "Connection: close\r\n"
+    "\r\n",
+  };
+
   static const char request_unterminated[] = {
     "GET http://www.unterminated.com/ HTTP/1.1",
   };
@@ -1440,6 +1488,11 @@ HdrTest::test_http()
     "\r\n",
   };
 
+  static const char response_too_long_req[] = {
+    "HTTP/1.0 414 URI Too Long\r\n"
+    "\r\n",
+  };
+
   status = status & test_http_aux(request0, response0);
   status = status & test_http_aux(request09, response09);
   status = status & test_http_aux(request1, response1);
@@ -1455,6 +1508,7 @@ HdrTest::test_http()
   status = status & test_http_aux(request_blank, response_blank);
   status = status & test_http_aux(request_blank2, response_blank2);
   status = status & test_http_aux(request_blank3, response_blank3);
+  status = status & test_http_req_parse_error(request_too_long, response_too_long_req);
 
   return (failures_to_status("test_http", (status == 0)));
 }
