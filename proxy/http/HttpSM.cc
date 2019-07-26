@@ -656,8 +656,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
   // tokenize header //
   /////////////////////
 
-  ParseResult state = t_state.hdr_info.client_request.parse_req(&http_parser, ua_buffer_reader, &bytes_used, ua_entry->eos,
-                                                                t_state.http_config_param->strict_uri_parsing);
+  ParseResult state = t_state.hdr_info.client_request.parse_req(
+    &http_parser, ua_buffer_reader, &bytes_used, ua_entry->eos, t_state.http_config_param->strict_uri_parsing,
+    t_state.http_config_param->http_request_line_max_size, t_state.http_config_param->http_hdr_field_max_size);
 
   client_request_hdr_bytes += bytes_used;
 
@@ -724,6 +725,10 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
     // Disable further I/O on the client
     ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
+
+    (bytes_used > t_state.http_config_param->http_request_line_max_size) ?
+      t_state.http_return_code = HTTP_STATUS_REQUEST_URI_TOO_LONG :
+      t_state.http_return_code = HTTP_STATUS_NONE;
 
     call_transact_and_set_next_state(HttpTransact::BadRequest);
     break;

@@ -311,3 +311,10 @@ with corresponding HTTP response codes and customizable files.
    Cannot perform your request for the document ``URL`` because the
    protocol scheme is unknown.
    ``request#scheme_unsupported``
+
+``URI Too Long``
+   ``414``
+   Could not process this request because the request uri 
+   was too long ..
+   ``request#uri_len_too_long``
+
