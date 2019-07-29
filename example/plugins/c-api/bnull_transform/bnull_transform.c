@@ -81,7 +81,7 @@ static int
 handle_buffering(TSCont contp, MyData *data)
 {
   TSVIO write_vio;
-  int towrite;
+  int64_t towrite;
 
   /* Get the write VIO for the write operation that was performed on
      ourself. This VIO contains the buffer that we are to read from
@@ -117,7 +117,7 @@ handle_buffering(TSCont contp, MyData *data)
     /* The amount of data left to read needs to be truncated by
        the amount of data actually in the read buffer. */
 
-    int avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
+    int64_t avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
     if (towrite > avail) {
       towrite = avail;
     }
