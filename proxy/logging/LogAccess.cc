@@ -2796,3 +2796,52 @@ LogAccess::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, ch
   }
   return INK_MIN_ALIGN;
 }
+
+void
+LogAccess::set_http_header_field(LogField::Container container, char *field, char *buf, int len)
+{
+  HTTPHdr *header;
+
+  switch (container) {
+  case LogField::CQH:
+  case LogField::ECQH:
+    header = m_client_request;
+    break;
+
+  case LogField::PSH:
+  case LogField::EPSH:
+    header = m_proxy_response;
+    break;
+
+  case LogField::PQH:
+  case LogField::EPQH:
+    header = m_proxy_request;
+    break;
+
+  case LogField::SSH:
+  case LogField::ESSH:
+    header = m_server_response;
+    break;
+
+  case LogField::CSSH:
+  case LogField::ECSSH:
+    header = m_cache_response;
+    break;
+
+  default:
+    header = nullptr;
+    break;
+  }
+
+  if (header && buf) {
+    MIMEField *fld = header->field_find(field, (int)::strlen(field));
+    if (fld) {
+      // Loop over dups, update each of them
+      //
+      while (fld) {
+        header->value_set((const char *)field, (int)::strlen(field), buf, len);
+        fld = fld->m_next_dup;
+      }
+    }
+  }
+}

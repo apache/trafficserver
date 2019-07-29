@@ -360,7 +360,7 @@ LogFilterString::wipe_this_entry(LogAccess *lad)
     for (size_t i = 0; i < marsh_len; i++) {
       buf_upper[i] = ParseRules::ink_toupper(buf[i]);
     }
-    cond_satisfied = _checkConditionAndWipe(&_isSubstring, &buf_upper, marsh_len, m_value_uppercase, &buf, DATA_LENGTH_LARGER);
+    cond_satisfied = _checkConditionAndWipe(&_isSubstring, &buf, marsh_len, m_value_uppercase, buf_upper, DATA_LENGTH_LARGER);
     break;
   default:
     ink_assert(!"INVALID FILTER OPERATOR");
