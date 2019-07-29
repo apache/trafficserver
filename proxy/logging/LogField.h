@@ -174,6 +174,7 @@ public:
     return m_time_field;
   }
 
+  inkcoreapi void set_http_header_field(LogAccess *lad, LogField::Container container, char *field, char *buf, int len);
   void set_aggregate_op(Aggregate agg_op);
   void update_aggregate(int64_t val);
 
@@ -181,6 +182,7 @@ public:
   static Container valid_container_name(char *name);
   static Aggregate valid_aggregate_name(char *name);
   static bool fieldlist_contains_aggregates(const char *fieldlist);
+  static bool isContainerUpdateFieldSupported(Container container);
 
 private:
   char *m_name;

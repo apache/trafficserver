@@ -280,6 +280,7 @@ public:
   inkcoreapi int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
   inkcoreapi int marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
   inkcoreapi int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
+  inkcoreapi void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
   //
   // unmarshalling routines
   //

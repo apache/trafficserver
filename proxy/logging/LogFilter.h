@@ -171,7 +171,7 @@ private:
                               LengthCondition lc);
 
   inline bool _checkConditionAndWipe(OperatorFunction f, char **field_value, size_t field_value_length, char **val,
-                                     char **orig_field_value, LengthCondition lc);
+                                     const char *uppercase_field_value, LengthCondition lc);
 
   // -- member functions that are not allowed --
   LogFilterString();
@@ -388,42 +388,41 @@ LogFilterString::_checkCondition(OperatorFunction f, const char *field_value, si
 
 --------------------------------------------------------------------------*/
 static void
-wipeField(char **dest, char *field, char **orig_dest)
+wipeField(char **field, char *pattern, const char *uppercase_field)
 {
-  char *buf_dest      = *dest;
-  char *buf_orig_dest = orig_dest ? *orig_dest : *dest;
+  char *buf_dest          = *field;
+  const char *lookup_dest = uppercase_field ? uppercase_field : *field;
 
   if (buf_dest) {
-    char *query_param      = strstr(buf_dest, "?");
-    char *orig_query_param = strstr(buf_orig_dest, "?");
-
-    if (!query_param || !orig_query_param) {
+    char *query_param              = strstr(buf_dest, "?");
+    const char *lookup_query_param = strstr(lookup_dest, "?");
+    if (!query_param || !lookup_query_param) {
       return;
     }
 
-    char *p1      = strstr(query_param, field);
-    int field_pos = p1 - query_param;
-    p1            = orig_query_param + field_pos;
+    const char *p1 = strstr(lookup_query_param, pattern);
+    int field_pos  = p1 - lookup_query_param;
+    p1             = query_param + field_pos;
 
     if (p1) {
-      char tmp_text[strlen(buf_orig_dest) + 10];
+      char tmp_text[strlen(buf_dest) + 10];
       char *temp_text = tmp_text;
-      memcpy(temp_text, buf_orig_dest, (p1 - buf_orig_dest));
-      temp_text += (p1 - buf_orig_dest);
-      char *p2 = strstr(p1, "=");
+      memcpy(temp_text, buf_dest, (p1 - buf_dest));
+      temp_text += (p1 - buf_dest);
+      const char *p2 = strstr(p1, "=");
       if (p2) {
         p2++;
         memcpy(temp_text, p1, (p2 - p1));
         temp_text += (p2 - p1);
-        char *p3 = strstr(p2, "&");
+        const char *p3 = strstr(p2, "&");
         if (p3) {
           for (int i = 0; i < (p3 - p2); i++) {
             temp_text[i] = 'X';
           }
           temp_text += (p3 - p2);
-          memcpy(temp_text, p3, ((buf_orig_dest + strlen(buf_orig_dest)) - p3));
+          memcpy(temp_text, p3, ((buf_dest + strlen(buf_dest)) - p3));
         } else {
-          for (int i = 0; i < ((buf_orig_dest + strlen(buf_orig_dest)) - p2); i++) {
+          for (int i = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++) {
             temp_text[i] = 'X';
           }
         }
@@ -431,8 +430,8 @@ wipeField(char **dest, char *field, char **orig_dest)
         return;
       }
 
-      tmp_text[strlen(buf_orig_dest)] = '\0';
-      orig_dest ? strcpy(*orig_dest, tmp_text) : strcpy(*dest, tmp_text);
+      tmp_text[strlen(buf_dest)] = '\0';
+      strcpy(*field, tmp_text);
     }
   }
 }
@@ -458,7 +457,7 @@ wipeField(char **dest, char *field, char **orig_dest)
 
 inline bool
 LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, size_t field_value_length, char **val,
-                                        char **orig_field_value, LengthCondition lc)
+                                        const char *uppercase_field_value, LengthCondition lc)
 {
   bool retVal = false;
 
@@ -468,18 +467,19 @@ LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, 
 
   // make single value case a little bit faster by taking it out of loop
   //
+  const char *lookup_field_value = uppercase_field_value ? uppercase_field_value : *field_value;
   if (m_num_values == 1) {
     switch (lc) {
     case DATA_LENGTH_EQUAL:
-      retVal = (field_value_length == *m_length ? ((*f)(*field_value, *val) == 0 ? true : false) : false);
+      retVal = (field_value_length == *m_length ? ((*f)(lookup_field_value, *val) == 0 ? true : false) : false);
       if (retVal) {
-        wipeField(field_value, *val, orig_field_value);
+        wipeField(field_value, *val, uppercase_field_value);
       }
       break;
     case DATA_LENGTH_LARGER:
-      retVal = (field_value_length > *m_length ? ((*f)(*field_value, *val) == 0 ? true : false) : false);
+      retVal = (field_value_length > *m_length ? ((*f)(lookup_field_value, *val) == 0 ? true : false) : false);
       if (retVal) {
-        wipeField(field_value, *val, orig_field_value);
+        wipeField(field_value, *val, uppercase_field_value);
       }
       break;
     default:
@@ -492,18 +492,18 @@ LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, 
     case DATA_LENGTH_EQUAL:
       for (i = 0; i < m_num_values; ++i) {
         // condition is satisfied if f returns zero
-        if (field_value_length == m_length[i] && (*f)(*field_value, val[i]) == 0) {
+        if (field_value_length == m_length[i] && (*f)(lookup_field_value, val[i]) == 0) {
           retVal = true;
-          wipeField(field_value, val[i], orig_field_value);
+          wipeField(field_value, val[i], uppercase_field_value);
         }
       }
       break;
     case DATA_LENGTH_LARGER:
       for (i = 0; i < m_num_values; ++i) {
         // condition is satisfied if f returns zero
-        if (field_value_length > m_length[i] && (*f)(*field_value, val[i]) == 0) {
+        if (field_value_length > m_length[i] && (*f)(lookup_field_value, val[i]) == 0) {
           retVal = true;
-          wipeField(field_value, val[i], orig_field_value);
+          wipeField(field_value, val[i], uppercase_field_value);
         }
       }
       break;

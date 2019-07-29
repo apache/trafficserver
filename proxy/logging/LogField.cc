@@ -29,6 +29,7 @@
  ***************************************************************************/
 #include "tscore/ink_platform.h"
 
+#include "MIME.h"
 #include "LogUtils.h"
 #include "LogField.h"
 #include "LogBuffer.h"
@@ -326,7 +327,7 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
     m_milestone2(TS_MILESTONE_LAST_ENTRY),
     m_time_field(false),
     m_alias_map(nullptr),
-    m_set_func(_setfunc)
+    m_set_func(nullptr)
 {
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);
@@ -462,13 +463,39 @@ LogField::marshal_len(LogAccess *lad)
   }
 }
 
+bool
+LogField::isContainerUpdateFieldSupported(Container container)
+{
+  switch (container) {
+  case CQH:
+  case PSH:
+  case PQH:
+  case SSH:
+  case CSSH:
+  case ECQH:
+  case EPSH:
+  case EPQH:
+  case ESSH:
+  case ECSSH:
+  case SCFG:
+    return true;
+  default:
+    return false;
+  }
+}
+
 void
 LogField::updateField(LogAccess *lad, char *buf, int len)
 {
   if (m_container == NO_CONTAINER) {
     return (lad->*m_set_func)(buf, len);
+  } else {
+    if (isContainerUpdateFieldSupported(m_container)) {
+      return set_http_header_field(lad, m_container, this->m_name, buf, len);
+    } else {
+      // no set function defined for the container
+    }
   }
-  // else...// future enhancement
 }
 
 /*-------------------------------------------------------------------------
@@ -692,6 +719,12 @@ LogField::fieldlist_contains_aggregates(const char *fieldlist)
   }
 
   return false;
+}
+
+void
+LogField::set_http_header_field(LogAccess *lad, LogField::Container container, char *field, char *buf, int len)
+{
+  return lad->set_http_header_field(container, field, buf, len);
 }
 
 /*-------------------------------------------------------------------------
