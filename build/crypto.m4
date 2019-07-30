@@ -221,6 +221,37 @@ AC_DEFUN([TS_CHECK_CRYPTO_HKDF], [
   AC_SUBST(use_hkdf)
 ])
 
+AC_DEFUN([TS_CHECK_CRYPTO_TLS13], [
+  enable_tls13=yes
+  _tls13_saved_LIBS=$LIBS
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_MSG_CHECKING([whether TLS 1.3 is supported])
+  AC_LINK_IFELSE(
+  [
+    AC_LANG_PROGRAM([[
+#include <openssl/ssl.h>
+    ]],
+    [[
+#ifndef TLS1_3_VERSION
+# error no TLS1_3 support
+#endif
+#ifdef OPENSSL_NO_TLS1_3
+# error no TLS1_3 support
+#endif
+    ]])
+  ],
+  [
+    AC_MSG_RESULT([yes])
+  ],
+  [
+    AC_MSG_RESULT([no])
+    enable_tls13=no
+  ])
+  LIBS=$_tls13_saved_LIBS
+  TS_ARG_ENABLE_VAR([use], [tls13])
+  AC_SUBST(use_tls13)
+])
+
 dnl
 dnl Since OpenSSL 1.1.0
 dnl

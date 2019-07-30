@@ -39,6 +39,10 @@
 #include "http2/Http2SessionAccept.h"
 #include "HttpConnectionCount.h"
 #include "HttpProxyServerMain.h"
+#if TS_USE_QUIC == 1
+#include "P_QUICNextProtocolAccept.h"
+#include "http3/Http3SessionAccept.h"
+#endif
 
 #include <vector>
 
@@ -252,6 +256,23 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     ssl_plugin_acceptors.push(ssl);
     ssl->proxyPort   = &port;
     acceptor._accept = ssl;
+#if TS_USE_QUIC == 1
+  } else if (port.isQUIC()) {
+    QUICNextProtocolAccept *quic = new QUICNextProtocolAccept();
+
+    // HTTP/3
+    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_3)) {
+      quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_3, new Http3SessionAccept(accept_opt));
+    }
+
+    // HTTP/0.9 over QUIC (for interop only, will be removed)
+    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC)) {
+      quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, new Http3SessionAccept(accept_opt));
+    }
+
+    quic->proxyPort  = &port;
+    acceptor._accept = quic;
+#endif
   } else {
     acceptor._accept = probe;
   }
@@ -344,6 +365,12 @@ start_HttpProxyServer()
       if (nullptr == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;
       }
+#if TS_USE_QUIC == 1
+    } else if (port.isQUIC()) {
+      if (nullptr == quic_NetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
+        return;
+      }
+#endif
     } else if (!port.isPlugin()) {
       if (nullptr == netProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;

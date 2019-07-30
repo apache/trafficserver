@@ -41,6 +41,7 @@ const std::string_view IP_PROTO_TAG_IPV4("ipv4"sv);
 const std::string_view IP_PROTO_TAG_IPV6("ipv6"sv);
 const std::string_view IP_PROTO_TAG_UDP("udp"sv);
 const std::string_view IP_PROTO_TAG_TCP("tcp"sv);
+const std::string_view IP_PROTO_TAG_QUIC("quic"sv);
 const std::string_view IP_PROTO_TAG_TLS_1_0("tls/1.0"sv);
 const std::string_view IP_PROTO_TAG_TLS_1_1("tls/1.1"sv);
 const std::string_view IP_PROTO_TAG_TLS_1_2("tls/1.2"sv);
@@ -48,7 +49,9 @@ const std::string_view IP_PROTO_TAG_TLS_1_3("tls/1.3"sv);
 const std::string_view IP_PROTO_TAG_HTTP_0_9("http/0.9"sv);
 const std::string_view IP_PROTO_TAG_HTTP_1_0("http/1.0"sv);
 const std::string_view IP_PROTO_TAG_HTTP_1_1("http/1.1"sv);
-const std::string_view IP_PROTO_TAG_HTTP_2_0("h2"sv); // HTTP/2 over TLS
+const std::string_view IP_PROTO_TAG_HTTP_2_0("h2"sv);     // HTTP/2 over TLS
+const std::string_view IP_PROTO_TAG_HTTP_QUIC("hq-20"sv); // HTTP/0.9 over QUIC
+const std::string_view IP_PROTO_TAG_HTTP_3("h3-20"sv);    // HTTP/3 over QUIC
 
 const std::string_view UNIX_PROTO_TAG{"unix"sv};
 

@@ -118,9 +118,16 @@ public:
   ProxyAllocator eventAllocator;
   ProxyAllocator netVCAllocator;
   ProxyAllocator sslNetVCAllocator;
+  ProxyAllocator quicNetVCAllocator;
   ProxyAllocator http1ClientSessionAllocator;
   ProxyAllocator http2ClientSessionAllocator;
   ProxyAllocator http2StreamAllocator;
+  ProxyAllocator quicClientSessionAllocator;
+  ProxyAllocator quicHandshakeAllocator;
+  ProxyAllocator quicBidiStreamAllocator;
+  ProxyAllocator quicSendStreamAllocator;
+  ProxyAllocator quicReceiveStreamAllocator;
+  ProxyAllocator quicStreamManagerAllocator;
   ProxyAllocator httpServerSessionAllocator;
   ProxyAllocator hdrHeapAllocator;
   ProxyAllocator strHeapAllocator;

@@ -98,6 +98,11 @@ extern "C" int plock(int);
 #include "P_SSLSNI.h"
 #include "P_SSLClientUtils.h"
 
+#if TS_USE_QUIC == 1
+#include "Http3.h"
+#include "Http3Config.h"
+#endif
+
 #include "tscore/ink_cap.h"
 
 #if TS_HAS_PROFILER
@@ -1725,6 +1730,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // We want to initialize Machine as early as possible because it
   // has other dependencies. Hopefully not in prep_HttpProxyServer().
   HttpConfig::startup();
+#if TS_USE_QUIC == 1
+  Http3Config::startup();
+#endif
 
   /* Set up the machine with the outbound address if that's set,
      or the inbound address if set, otherwise let it default.
@@ -1809,6 +1817,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   netProcessor.init();
   prep_HttpProxyServer();
 
+#if TS_USE_QUIC == 1
+  // OK, pushing a spawn scheduling here
+  quic_NetProcessor.init();
+#endif
+
   // If num_accept_threads == 0, let the ET_NET threads to set the condition variable,
   // Else we set it here so when checking the condition variable later it returns immediately.
   if (num_accept_threads == 0) {
@@ -1874,6 +1887,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     // Initialize HTTP/2
     Http2::init();
+#if TS_USE_QUIC == 1
+    // Initialize HTTP/QUIC
+    Http3::init();
+#endif
 
     if (!HttpProxyPort::loadValue(http_accept_port_descriptor)) {
       HttpProxyPort::loadConfig();
@@ -1893,7 +1910,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     SSLConfigParams::init_ssl_ctx_cb  = init_ssl_ctx_callback;
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(-1, stacksize);
-
+#if TS_USE_QUIC == 1
+    quic_NetProcessor.start(-1, stacksize);
+#endif
     pmgmt->registerPluginCallbacks(global_config_cbs);
 
     cacheProcessor.afterInitCallbackSet(&CB_After_Cache_Init);

@@ -109,6 +109,13 @@ extern RecRawStatBlock *net_rsb;
 #include "P_SSLNetAccept.h"
 #include "P_SSLCertLookup.h"
 
+#if TS_USE_QUIC == 1
+#include "P_QUICNetVConnection.h"
+#include "P_QUICNetProcessor.h"
+#include "P_QUICPacketHandler.h"
+#include "P_QUICNet.h"
+#endif
+
 static constexpr ts::ModuleVersion NET_SYSTEM_MODULE_INTERNAL_VERSION(NET_SYSTEM_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE);
 
 // For very verbose iocore debugging.

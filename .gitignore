@@ -62,6 +62,7 @@ src/traffic_layout/traffic_layout
 src/traffic_logcat/traffic_logcat
 src/traffic_logstats/traffic_logstats
 src/traffic_manager/traffic_manager
+src/traffic_quic/traffic_quic
 src/traffic_server/traffic_server
 src/traffic_top/traffic_top
 src/traffic_via/traffic_via
@@ -92,6 +93,29 @@ lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
 iocore/net/test_UDPNet
+iocore/net/quic/test_QUICAckFrameCreator
+iocore/net/quic/test_QUICAddrVerifyState
+iocore/net/quic/test_QUICAltConnectionManager
+iocore/net/quic/test_QUICFlowController
+iocore/net/quic/test_QUICFrame
+iocore/net/quic/test_QUICFrameDispatcher
+iocore/net/quic/test_QUICFrameRetransmitter
+iocore/net/quic/test_QUICHandshake
+iocore/net/quic/test_QUICHandshakeProtocol
+iocore/net/quic/test_QUICIncomingFrameBuffer
+iocore/net/quic/test_QUICInvariants
+iocore/net/quic/test_QUICKeyGenerator
+iocore/net/quic/test_QUICLossDetector
+iocore/net/quic/test_QUICPacket
+iocore/net/quic/test_QUICPacketHeaderProtector
+iocore/net/quic/test_QUICPacketFactory
+iocore/net/quic/test_QUICStream
+iocore/net/quic/test_QUICStreamManager
+iocore/net/quic/test_QUICStreamState
+iocore/net/quic/test_QUICTransportParameters
+iocore/net/quic/test_QUICType
+iocore/net/quic/test_QUICTypeUtil
+iocore/net/quic/test_QUICVersionNegotiator
 iocore/aio/test_AIO
 iocore/eventsystem/test_Buffer
 iocore/eventsystem/test_Event
@@ -99,6 +123,7 @@ iocore/eventsystem/test_MIOBufferWriter
 iocore/hostdb/test_RefCountCache
 
 proxy/hdrs/test_mime
+proxy/hdrs/test_Huffmancode
 proxy/hdrs/test_proxy_hdrs
 proxy/hdrs/test_hdr_heap
 proxy/hdrs/test_Huffmancode
@@ -107,6 +132,8 @@ proxy/http/test_proxy_http
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_HPACK
 proxy/http2/hpack-tests/results
+proxy/http3/test_libhttp3
+proxy/http3/test_qpack
 proxy/logging/test_LogUtils
 proxy/logging/test_LogUtils2
 

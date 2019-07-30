@@ -19,6 +19,9 @@
 include $(top_srcdir)/build/tidy.mk
 
 SUBDIRS = hdrs shared http http2 logging
+if ENABLE_QUIC
+SUBDIRS += http3
+endif
 
 noinst_LIBRARIES = libproxy.a
 
@@ -27,6 +30,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
 	-I$(abs_srcdir)/http \
+	-I$(abs_srcdir)/http2 \
+	-I$(abs_srcdir)/http3 \
 	-I$(abs_srcdir)/logging \
 	-I$(abs_srcdir)/http/remap \
 	-I$(abs_srcdir)/hdrs \

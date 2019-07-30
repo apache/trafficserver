@@ -26,6 +26,7 @@ plugins to build large scale web applications.
       |-- eventsystem/ ...... Event Driven Engine
       |-- hostdb/ ........... Internal DNS cache
       |-- net/ .............. Network
+          |-- quic/ ......... QUIC implementation
       |-- utils/ ............ Utilities
   |-- lib/ ..................
       |-- perl/ ............. Perl libraries for e.g. mgmt access and configurations
@@ -38,6 +39,7 @@ plugins to build large scale web applications.
       |-- hdrs/ ............. Headers parsing and management
       |-- http/ ............. The actual HTTP protocol implementation
       |---http2/ ............ HTTP/2 implementation
+      |---http3/ ............ HTTP/3 implementation
       |-- logging/ .......... Flexible logging
       |-- shared/ ........... Shared files
   |-- rc/ ................... Installation programs and scripts

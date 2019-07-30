@@ -16,6 +16,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+if ENABLE_QUIC
+SUBDIRS = quic
+endif
+
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
@@ -158,6 +162,23 @@ libinknet_a_SOURCES = \
 	UnixUDPConnection.cc \
 	UnixUDPNet.cc \
 	SSLDynlock.cc
+
+if ENABLE_QUIC
+libinknet_a_SOURCES += \
+  P_QUICClosedConCollector.h \
+  P_QUICPacketHandler.h \
+  P_QUICNet.h \
+  P_QUICNetProcessor.h \
+  P_QUICNetVConnection.h \
+  P_QUICNextProtocolAccept.h \
+  QUICClosedConCollector.cc \
+  QUICPacketHandler.cc \
+  QUICMultiCertConfigLoader.cc \
+  QUICNet.cc \
+  QUICNetProcessor.cc \
+  QUICNetVConnection.cc \
+  QUICNextProtocolAccept.cc
+endif
 
 if BUILD_TESTS
 libinknet_a_SOURCES += \

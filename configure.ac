@@ -1177,6 +1177,29 @@ TS_CHECK_CRYPTO_DH_GET_2048_256
 TS_CHECK_CRYPTO_HKDF
 AM_CONDITIONAL([HAS_HKDF], [test "x$enable_hkdf" = "xyes"])
 
+# Check for TLS 1.3 support
+TS_CHECK_CRYPTO_TLS13
+
+# Check for QUIC support
+enable_quic=no
+AC_MSG_CHECKING([whether APIs for QUIC are available])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
+                                   [[
+                                     #ifdef OPENSSL_IS_BORINGSSL
+                                     SSL_QUIC_METHOD var;
+                                     #else
+                                     #ifndef SSL_MODE_QUIC_HACK
+                                     # error no hack for quic
+                                     #endif
+                                     #endif
+                                   ]])
+                  ],
+                  [AC_MSG_RESULT([yes]); enable_quic=yes],
+                  [AC_MSG_RESULT([no])])
+AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
+TS_ARG_ENABLE_VAR([use], [quic])
+AC_SUBST(use_quic)
+
 # Check for OCSP
 TS_CHECK_CRYPTO_OCSP
 
@@ -2006,6 +2029,7 @@ AC_SUBST([default_stack_size], [$with_default_stack_size])
 iocore_include_dirs="\
 -I\$(abs_top_srcdir)/iocore/eventsystem \
 -I\$(abs_top_srcdir)/iocore/net \
+-I\$(abs_top_srcdir)/iocore/net/quic \
 -I\$(abs_top_srcdir)/iocore/aio \
 -I\$(abs_top_srcdir)/iocore/hostdb \
 -I\$(abs_top_srcdir)/iocore/cache \
@@ -2058,6 +2082,7 @@ AC_CONFIG_FILES([
   iocore/eventsystem/Makefile
   iocore/hostdb/Makefile
   iocore/net/Makefile
+  iocore/net/quic/Makefile
   iocore/utils/Makefile
   lib/Makefile
   src/tscpp/api/Makefile
@@ -2078,6 +2103,7 @@ AC_CONFIG_FILES([
   proxy/http/Makefile
   proxy/http/remap/Makefile
   proxy/http2/Makefile
+  proxy/http3/Makefile
   proxy/logging/Makefile
   proxy/shared/Makefile
   rc/Makefile
