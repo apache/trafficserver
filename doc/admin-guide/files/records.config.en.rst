@@ -603,6 +603,7 @@ HTTP Engine
    proto       Value           List of supported session protocols.
    pp                          Enable Proxy Protocol.
    ssl                         SSL terminated.
+   quic                        QUIC terminated.
    tr-full                     Fully transparent (inbound and outbound)
    tr-in                       Inbound transparent.
    tr-out                      Outbound transparent.
@@ -616,7 +617,7 @@ HTTP Engine
 blind
    Accept only the ``CONNECT`` method on this port.
 
-   Not compatible with: ``tr-in``, ``ssl``.
+   Not compatible with: ``tr-in``, ``ssl`` and ``quic``.
 
 compress
    Compress the connection. Retained only by inertia, should be considered "not implemented".
@@ -630,13 +631,19 @@ ipv6
 ssl
    Require SSL termination for inbound connections. SSL :ref:`must be configured <admin-ssl-termination>` for this option to provide a functional server port.
 
-   Not compatible with: ``blind``.
+   Not compatible with: ``blind`` and ``quic``.
+
+quic
+   Require QUIC termination for inbound connections. SSL :ref:`must be configured <admin-ssl-termination>` for this option to provide a functional server port.
+   **THIS IS EXPERIMENTAL SUPPORT AND NOT READY FOR PRODUCTION USE.**
+
+   Not compatible with: ``blind`` and ``ssl``.
 
 proto
    Specify the :ref:`session level protocols <session-protocol>` supported. These should be
    separated by semi-colons. For TLS proxy ports the default value is
    all available protocols. For non-TLS proxy ports the default is HTTP
-   only.
+   only. HTTP/3 is only available on QUIC ports.
 
 pp
    Enables Proxy Protocol on the port.  If Proxy Protocol is enabled on the
@@ -715,6 +722,12 @@ mptcp
    Listen on port 9090 for TLS disabled HTTP/2 and enabled HTTP connections, accept no other session protocols.::
 
       9090:proto=http:ssl
+
+.. topic:: Example
+
+   Listen on port 4433 for QUIC connections.::
+
+      4433:quic
 
 .. ts:cv:: CONFIG proxy.config.http.connect_ports STRING 443
 
@@ -3583,6 +3596,240 @@ HTTP/2 Configuration
    Specifies how many settings in HTTP/2 SETTINGS frames |TS| accept for a minute.
    Clients exceeded this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
+
+HTTP/3 Configuration
+====================
+
+There is no configuration available yet on this release. 
+
+QUIC Configuration
+====================
+
+All configurations for QUIC are still experimental and may be changed or
+removed in the future without prior notice.
+
+.. ts:cv:: CONFIG proxy.config.quic.instance_id INT 0
+   :reloadable:
+
+   A static key used for calculating Stateless Reset Token. All instances in a
+   cluster need to share the same value.
+
+.. ts:cv:: CONFIG proxy.config.quic.connection_table.size INT 65521
+
+   A size of hash table that stores connection information.
+
+.. ts:cv:: CONFIG proxy.config.quic.proxy.config.quic.num_alt_connection_ids INT 65521
+   :reloadable:
+
+   A number of alternate Connection IDs that |TS| provides to a peer. It has to
+   be at least 8.
+
+.. ts:cv:: CONFIG proxy.config.quic.stateless_retry_enabled INT 0
+   :reloadable:
+
+   Enables Stateless Retry.
+
+.. ts:cv:: CONFIG proxy.config.quic.client.vn_exercise_enabled INT 0
+   :reloadable:
+
+   Enables version negotiation exercise on origin server connections.
+
+.. ts:cv:: CONFIG proxy.config.quic.client.cm_exercise_enabled INT 0
+   :reloadable:
+
+   Enables connection migration exercise on origin server connections.
+
+.. ts:cv:: CONFIG proxy.config.quic.server.supported_groups STRING "P-256:X25519:P-384:P-521"
+   :reloadable:
+
+   Configures the list of supported groups provided by OpenSSL which will be
+   used to determine the set of shared groups on QUIC origin server connections.
+
+.. ts:cv:: CONFIG proxy.config.quic.client.supported_groups STRING "P-256:X25519:P-384:P-521"
+   :reloadable:
+
+   Configures the list of supported groups provided by OpenSSL which will be
+   used to determine the set of shared groups on QUIC client connections.
+
+.. ts:cv:: CONFIG proxy.config.quic.client.session_file STRING ""
+   :reloadable:
+
+   Only available for :program:`traffic_quic`.
+   If specified, TLS session data will be stored to the file, and will be used
+   for resuming a session.
+
+.. ts:cv:: CONFIG proxy.config.quic.client.keylog_file STRING ""
+   :reloadable:
+
+   Only available for :program:`traffic_quic`.
+   If specified, key information will be stored to the file.
+
+.. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_in INT 30000
+   :reloadable:
+
+   This value will be advertised as ``idle_timeout`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_out INT 30000
+   :reloadable:
+
+   This value will be advertised as  ``idle_timeout`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.preferred_address_ipv4 STRING ""
+   :reloadable:
+
+   This value will be advertised as a part of ``preferred_address``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.preferred_address_ipv6 STRING ""
+   :reloadable:
+
+   This value will be advertised as a part of ``preferred_address``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_data_in INT 65536
+   :reloadable:
+
+   This value will be advertised as ``initial_max_data`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_data_out INT 65536
+   :reloadable:
+
+   This value will be advertised as ``initial_max_data`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_local_in INT 0
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_bidi_local``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_local_out INT 4096
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_bidi_local``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_remote_in INT 4096
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_bidi_remote``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_remote_out INT 0
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_bidi_remote``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_uni_in INT 4096
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_uni``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_uni_out INT 0
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_uni``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_streams_bidi_in INT 100
+   :reloadable:
+
+   This value will be advertised as ``initial_max_streams_bidi``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_streams_bidi_out INT 100
+   :reloadable:
+
+   This value will be advertised as ``initial_max_streams_bidi``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_streams_uni_in INT 100
+   :reloadable:
+
+   This value will be advertised as ``initial_max_streams_uni``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_streams_uni_out INT 100
+   :reloadable:
+
+   This value will be advertised as ``initial_max_streams_uni``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.ack_delay_exponent_in INT 3
+   :reloadable:
+
+   This value will be advertised as ``ack_delay_exponent`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.ack_delay_exponent_out INT 3
+   :reloadable:
+
+   This value will be advertised as ``ack_delay_exponent`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_ack_delay_in INT 25
+   :reloadable:
+
+   This value will be advertised as ``max_ack_delay`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_ack_delay_out INT 25
+   :reloadable:
+
+   This value will be advertised as ``max_ack_delay`` Transport Parameter.
+
+
+.. ts:cv:: CONFIG proxy.config.quic.loss_detection.packet_threshold INT 3
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.loss_detection.time_threshold FLOAT 1.25
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.loss_detection.granularity INT 1
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.loss_detection.initial_rtt INT 1
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.congestion_control.max_datagram_size INT 1200
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.congestion_control.initial_window_scale INT 10
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.congestion_control.minimum_window_scale INT 2
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.congestion_control.loss_reduction_factor FLOAT 0.5
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.congestion_control.persistent_congestion_threshold INT 2
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
 
 Plug-in Configuration
 =====================

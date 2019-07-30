@@ -27,6 +27,7 @@ traffic_server_traffic_server_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/http2 \
+	-I$(abs_top_srcdir)/proxy/http3 \
 	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/proxy/http/remap \
 	-I$(abs_top_srcdir)/proxy/hdrs \
@@ -91,4 +92,10 @@ traffic_server_traffic_server_LDADD = \
 
 if IS_DARWIN
 traffic_server_traffic_server_LDADD += $(LUAJIT_DARWIN_LDFLAGS)
+endif
+
+if ENABLE_QUIC
+traffic_server_traffic_server_LDADD += \
+  $(top_builddir)/proxy/http3/libhttp3.a \
+  $(top_builddir)/iocore/net/quic/libquic.a
 endif

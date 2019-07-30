@@ -840,6 +840,8 @@ Lerror:
   if (fd != NO_FD) {
     socketManager.close(fd);
   }
+  Debug("udpnet", "Error: %s (%d)", strerror(errno), errno);
+
   cont->handleEvent(NET_EVENT_DATAGRAM_ERROR, nullptr);
   return ACTION_IO_ERROR;
 }
@@ -990,6 +992,10 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
     n = ::sendmsg(p->conn->getFd(), &msg, 0);
     if ((n >= 0) || ((n < 0) && (errno != EAGAIN))) {
       // send succeeded or some random error happened.
+      if (n < 0) {
+        Debug("udp-send", "Error: %s (%d)", strerror(errno), errno);
+      }
+
       break;
     }
     if (errno == EAGAIN) {
@@ -1039,7 +1045,7 @@ UDPNetHandler::startNetEvent(int event, Event *e)
   (void)event;
   SET_HANDLER((UDPNetContHandler)&UDPNetHandler::mainNetEvent);
   trigger_event = e;
-  e->schedule_every(-HRTIME_MSECONDS(UDP_PERIOD));
+  e->schedule_every(-HRTIME_MSECONDS(UDP_NH_PERIOD));
   return EVENT_CONT;
 }
 

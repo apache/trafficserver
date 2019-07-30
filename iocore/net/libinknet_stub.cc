@@ -160,3 +160,10 @@ ProcessManager::signalManager(int, char const *, int)
   ink_assert(false);
   return;
 }
+
+void
+ProcessManager::signalManager(int, char const *)
+{
+  ink_assert(false);
+  return;
+}
