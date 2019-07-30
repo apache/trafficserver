@@ -234,7 +234,8 @@ initialize_thread_for_net(EThread *thread)
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
 
   thread->set_tail_handler(nh);
-  thread->ep       = (EventIO *)ats_malloc(sizeof(EventIO));
+  thread->ep = (EventIO *)ats_malloc(sizeof(EventIO));
+  new (thread->ep) EventIO();
   thread->ep->type = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
   thread->ep->start(pd, thread->evfd, nullptr, EVENTIO_READ);
