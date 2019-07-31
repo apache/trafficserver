@@ -1097,7 +1097,7 @@ TEST_CASE("Load DataBlocked Frame", "[quic]")
 TEST_CASE("Store DataBlocked Frame", "[quic]")
 {
   uint8_t buf[65535];
-  size_t len;
+  size_t len = 0;
 
   uint8_t expected[] = {
     0x14, // Type
@@ -1106,7 +1106,11 @@ TEST_CASE("Store DataBlocked Frame", "[quic]")
   QUICDataBlockedFrame blocked_stream_frame(0x07, 0, nullptr);
   CHECK(blocked_stream_frame.size() == 2);
 
-  blocked_stream_frame.store(buf, &len, 65535);
+  Ptr<IOBufferBlock> ibb = blocked_stream_frame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
   CHECK(len == 2);
   CHECK(memcmp(buf, expected, len) == 0);
 }

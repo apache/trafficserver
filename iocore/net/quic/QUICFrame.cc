@@ -1823,24 +1823,31 @@ QUICDataBlockedFrame::size() const
   return sizeof(QUICFrameType) + QUICVariableInt::size(this->offset());
 }
 
-size_t
-QUICDataBlockedFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICDataBlockedFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  size_t n;
-  uint8_t *p = buf;
+  size_t written_len = 0;
+  block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t)));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
-  *p = static_cast<uint8_t>(QUICFrameType::DATA_BLOCKED);
-  ++p;
-  QUICTypeUtil::write_QUICOffset(this->_offset, p, &n);
-  p += n;
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::DATA_BLOCKED);
+  n += 1;
 
-  *len = p - buf;
+  // Data Limit (i)
+  QUICTypeUtil::write_QUICOffset(this->_offset, block_start + n, &written_len);
+  n += written_len;
 
-  return *len;
+  block->fill(n);
+  return block;
 }
 
 QUICOffset
