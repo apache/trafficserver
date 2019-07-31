@@ -46,7 +46,7 @@ are a few simple rules to follow:
 4. When filing an _Issue_, you should of course describe the problem, as well
    as any details such as platform, versions of software etc. used.
 
-5. Make sure you set the appropriate _Milesstone_, _Labels_, _Assignees_ and
+5. Make sure you set the appropriate _Milestone_, _Labels_, _Assignees_ and
    _Reviewers_.
 
 6. If the _PR_ is a backport, or intended to be backported, please make sure to
