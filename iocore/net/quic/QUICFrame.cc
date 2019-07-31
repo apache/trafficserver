@@ -1615,23 +1615,35 @@ QUICMaxStreamDataFrame::size() const
   return sizeof(QUICFrameType) + QUICVariableInt::size(this->_maximum_stream_data) + QUICVariableInt::size(this->_stream_id);
 }
 
-size_t
-QUICMaxStreamDataFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICMaxStreamDataFrame::to_io_buffer_block(size_t limit) const
 {
-  if (limit < this->size()) {
-    return 0;
-  }
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_DATA);
-  ++p;
-  QUICTypeUtil::write_QUICStreamId(this->_stream_id, p, &n);
-  p += n;
-  QUICTypeUtil::write_QUICMaxData(this->_maximum_stream_data, p, &n);
-  p += n;
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
 
-  *len = p - buf;
-  return *len;
+  if (limit < this->size()) {
+    return block;
+  }
+
+  size_t written_len = 0;
+  block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(1 + sizeof(uint64_t) + sizeof(size_t)));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
+
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::MAX_STREAM_DATA);
+  n += 1;
+
+  // Stream ID (i)
+  QUICTypeUtil::write_QUICStreamId(this->_stream_id, block_start + n, &written_len);
+  n += written_len;
+
+  // Maximum Stream Data (i)
+  QUICTypeUtil::write_QUICMaxData(this->_maximum_stream_data, block_start + n, &written_len);
+  n += written_len;
+
+  block->fill(n);
+  return block;
 }
 
 int
