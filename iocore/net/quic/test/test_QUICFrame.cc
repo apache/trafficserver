@@ -1266,7 +1266,7 @@ TEST_CASE("Load NewConnectionId Frame", "[quic]")
 TEST_CASE("Store NewConnectionId Frame", "[quic]")
 {
   uint8_t buf[32];
-  size_t len;
+  size_t len = 0;
 
   uint8_t expected[] = {
     0x18,                                           // Type
@@ -1282,7 +1282,11 @@ TEST_CASE("Store NewConnectionId Frame", "[quic]")
                                             {expected + sizeof(expected) - QUICStatelessResetToken::LEN});
   CHECK(new_con_id_frame.size() == sizeof(expected));
 
-  new_con_id_frame.store(buf, &len, sizeof(buf));
+  Ptr<IOBufferBlock> ibb = new_con_id_frame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
   CHECK(len == sizeof(expected));
   CHECK(memcmp(buf, expected, len) == 0);
 }

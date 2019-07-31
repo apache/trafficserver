@@ -2135,40 +2135,48 @@ QUICNewConnectionIdFrame::size() const
          this->_connection_id.length() + QUICStatelessResetToken::LEN;
 }
 
-size_t
-QUICNewConnectionIdFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICNewConnectionIdFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
-  ++p;
+  size_t written_len = 0;
+  block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(1 + sizeof(uint64_t) + sizeof(uint64_t) + 1 + QUICConnectionId::MAX_LENGTH +
+                                      QUICStatelessResetToken::LEN));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
+
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID);
+  n += 1;
 
   // Sequence Number (i)
-  QUICIntUtil::write_QUICVariableInt(this->_sequence, p, &n);
-  p += n;
+  QUICIntUtil::write_QUICVariableInt(this->_sequence, block_start + n, &written_len);
+  n += written_len;
 
   // Retire Prior To (i)
-  QUICIntUtil::write_QUICVariableInt(this->_retire_prior_to, p, &n);
-  p += n;
+  QUICIntUtil::write_QUICVariableInt(this->_retire_prior_to, block_start + n, &written_len);
+  n += written_len;
 
   // Length (8)
-  *p = this->_connection_id.length();
-  p += 1;
+  *(block_start + n) = this->_connection_id.length();
+  n += 1;
 
   // Connection ID (8..160)
-  QUICTypeUtil::write_QUICConnectionId(this->_connection_id, p, &n);
-  p += n;
+  QUICTypeUtil::write_QUICConnectionId(this->_connection_id, block_start + n, &written_len);
+  n += written_len;
 
   // Stateless Reset Token (128)
-  memcpy(p, this->_stateless_reset_token.buf(), QUICStatelessResetToken::LEN);
-  p += QUICStatelessResetToken::LEN;
+  memcpy(block_start + n, this->_stateless_reset_token.buf(), QUICStatelessResetToken::LEN);
+  n += QUICStatelessResetToken::LEN;
 
-  *len = p - buf;
-  return *len;
+  block->fill(n);
+  return block;
 }
 
 int
