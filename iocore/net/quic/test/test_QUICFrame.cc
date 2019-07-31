@@ -792,13 +792,17 @@ TEST_CASE("Load Padding Frame", "[quic]")
 TEST_CASE("Store Padding Frame", "[quic]")
 {
   uint8_t buf[65535];
-  size_t len;
+  size_t len = 0;
 
   uint8_t expected[] = {
     0x00, 0x00, 0x00, // Type
   };
   QUICPaddingFrame padding_frame(3);
-  padding_frame.store(buf, &len, 65535);
+  Ptr<IOBufferBlock> ibb = padding_frame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
   CHECK(len == 3);
   CHECK(memcmp(buf, expected, len) == 0);
 }

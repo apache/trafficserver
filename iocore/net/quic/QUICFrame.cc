@@ -1213,16 +1213,25 @@ QUICPaddingFrame::is_probing_frame() const
   return true;
 }
 
-size_t
-QUICPaddingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICPaddingFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  *len = this->_size;
-  memset(buf, 0, *len);
-  return *len;
+  block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(this->_size));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
+
+  memset(block_start, 0, this->_size);
+  n = this->_size;
+
+  block->fill(n);
+  return block;
 }
 
 //
