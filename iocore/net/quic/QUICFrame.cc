@@ -2442,6 +2442,31 @@ QUICPathResponseFrame::_reset()
   this->_valid = false;
   this->_size  = 0;
 }
+Ptr<IOBufferBlock>
+QUICPathResponseFrame::to_io_buffer_block(size_t limit) const
+{
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
+  if (limit < this->size()) {
+    return block;
+  }
+
+  block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(1 + QUICPathResponseFrame::DATA_LEN));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
+
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::PATH_RESPONSE);
+  n += 1;
+
+  // Data (64)
+  memcpy(block_start + n, this->data(), QUICPathChallengeFrame::DATA_LEN);
+  n += QUICPathChallengeFrame::DATA_LEN;
+
+  block->fill(n);
+  return block;
+}
 
 void
 QUICPathResponseFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
@@ -2477,21 +2502,6 @@ bool
 QUICPathResponseFrame::is_probing_frame() const
 {
   return true;
-}
-
-size_t
-QUICPathResponseFrame::store(uint8_t *buf, size_t *len, size_t limit) const
-{
-  if (limit < this->size()) {
-    return 0;
-  }
-
-  *len = this->size();
-
-  buf[0] = static_cast<uint8_t>(QUICFrameType::PATH_RESPONSE);
-  memcpy(buf + 1, this->data(), QUICPathResponseFrame::DATA_LEN);
-
-  return *len;
 }
 
 int

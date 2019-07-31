@@ -1435,7 +1435,7 @@ TEST_CASE("Load PATH_RESPONSE Frame", "[quic]")
 TEST_CASE("Store PATH_RESPONSE Frame", "[quic]")
 {
   uint8_t buf[16];
-  size_t len;
+  size_t len = 0;
 
   uint8_t expected[] = {
     0x1b,                                           // Type
@@ -1450,7 +1450,11 @@ TEST_CASE("Store PATH_RESPONSE Frame", "[quic]")
   QUICPathResponseFrame frame(std::move(data));
   CHECK(frame.size() == 9);
 
-  frame.store(buf, &len, 16);
+  Ptr<IOBufferBlock> ibb = frame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
   CHECK(len == 9);
   CHECK(memcmp(buf, expected, len) == 0);
 }

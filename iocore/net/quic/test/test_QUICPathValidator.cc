@@ -87,9 +87,13 @@ TEST_CASE("QUICPathValidator", "[quic]")
     ++seq_num;
 
     uint8_t buf[1024];
-    size_t len;
+    size_t len = 0;
     uint8_t received_frame_buf[1024];
-    frame->store(buf, &len, 1024);
+    Ptr<IOBufferBlock> ibb = frame->to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     MockQUICPacket mock_packet;
     auto received_frame = QUICFrameFactory::create(received_frame_buf, buf, len, &mock_packet);
     mock_packet.set_from(remote);
