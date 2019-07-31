@@ -39,6 +39,9 @@ static int test_flag = 0;
 static TSEventThread thread_1 = nullptr;
 static TSEventThread thread_2 = nullptr;
 
+static TSCont contp_1 = nullptr;
+static TSCont contp_2 = nullptr;
+
 static int TSContSchedule_handler_1(TSCont contp, TSEvent event, void *edata);
 static int TSContSchedule_handler_2(TSCont contp, TSEvent event, void *edata);
 static int TSContScheduleOnPool_handler_1(TSCont contp, TSEvent event, void *edata);
@@ -55,18 +58,12 @@ TSContSchedule_handler_1(TSCont contp, TSEvent event, void *edata)
     // First time entering this handler, before everything else starts.
     thread_1 = TSEventThreadSelf();
 
-    TSCont contp_new = TSContCreate(TSContSchedule_handler_2, TSMutexCreate());
-
-    if (contp_new == nullptr) {
-      TSDebug(DEBUG_TAG_HDL, "[%s] could not create continuation", plugin_name);
-      abort();
-    } else {
-      // Set the affinity of contp_new to thread_1, and schedule it twice.
-      TSDebug(DEBUG_TAG_HDL, "[%s] scheduling continuation", plugin_name);
-      TSContThreadAffinitySet(contp_new, thread_1);
-      TSContSchedule(contp_new, 0);
-      TSContSchedule(contp_new, 100);
-    }
+    // Set the affinity of contp_2 to thread_1, and schedule it twice.
+    // Since it's on the same thread, we don't need a delay.
+    TSDebug(DEBUG_TAG_HDL, "[%s] scheduling continuation", plugin_name);
+    TSContThreadAffinitySet(contp_2, thread_1);
+    TSContSchedule(contp_2, 0);
+    TSContSchedule(contp_2, 0);
   } else if (thread_2 == nullptr) {
     TSDebug(DEBUG_TAG_CHK, "fail [schedule delay not applied]");
   } else {
@@ -99,6 +96,23 @@ TSContSchedule_handler_2(TSCont contp, TSEvent event, void *edata)
     TSDebug(DEBUG_TAG_CHK, "fail [not the same thread]");
   }
   return 0;
+}
+
+void
+TSContSchedule_test()
+{
+  contp_1 = TSContCreate(TSContSchedule_handler_1, TSMutexCreate());
+  contp_2 = TSContCreate(TSContSchedule_handler_2, TSMutexCreate());
+
+  if (contp_1 == nullptr || contp_2 == nullptr) {
+    TSDebug(DEBUG_TAG_SCHD, "[%s] could not create continuation", plugin_name);
+    abort();
+  } else {
+    TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
+    TSContScheduleOnPool(contp_1, 0, TS_THREAD_POOL_NET);
+    TSContThreadAffinityClear(contp_1);
+    TSContScheduleOnPool(contp_1, 200, TS_THREAD_POOL_NET);
+  }
 }
 
 static int
@@ -141,6 +155,28 @@ TSContScheduleOnPool_handler_2(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
+void
+TSContScheduleOnPool_test()
+{
+  contp_1 = TSContCreate(TSContScheduleOnPool_handler_1, TSMutexCreate());
+  contp_2 = TSContCreate(TSContScheduleOnPool_handler_2, TSMutexCreate());
+
+  if (contp_1 == nullptr || contp_2 == nullptr) {
+    TSDebug(DEBUG_TAG_SCHD, "[%s] could not create continuation", plugin_name);
+    abort();
+  } else {
+    TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
+
+    TSContScheduleOnPool(contp_1, 0, TS_THREAD_POOL_NET);
+    TSContThreadAffinityClear(contp_1);
+    TSContScheduleOnPool(contp_1, 100, TS_THREAD_POOL_NET);
+
+    TSContScheduleOnPool(contp_2, 200, TS_THREAD_POOL_TASK);
+    TSContThreadAffinityClear(contp_2);
+    TSContScheduleOnPool(contp_2, 300, TS_THREAD_POOL_TASK);
+  }
+}
+
 static int
 TSContScheduleOnThread_handler_1(TSCont contp, TSEvent event, void *edata)
 {
@@ -150,16 +186,9 @@ TSContScheduleOnThread_handler_1(TSCont contp, TSEvent event, void *edata)
   if (thread_1 == nullptr) {
     thread_1 = TSEventThreadSelf();
 
-    TSCont contp_new = TSContCreate(TSContScheduleOnThread_handler_2, TSMutexCreate());
-
-    if (contp_new == nullptr) {
-      TSDebug(DEBUG_TAG_HDL, "[%s] could not create continuation", plugin_name);
-      abort();
-    } else {
-      TSDebug(DEBUG_TAG_HDL, "[%s] scheduling continuation", plugin_name);
-      TSContScheduleOnThread(contp_new, 0, thread_1);
-      TSContScheduleOnThread(contp_new, 100, thread_1);
-    }
+    TSDebug(DEBUG_TAG_HDL, "[%s] scheduling continuation", plugin_name);
+    TSContScheduleOnThread(contp_2, 0, thread_1);
+    TSContScheduleOnThread(contp_2, 0, thread_1);
   } else if (thread_2 == nullptr) {
     TSDebug(DEBUG_TAG_CHK, "fail [schedule delay not applied]");
   } else {
@@ -184,6 +213,23 @@ TSContScheduleOnThread_handler_2(TSCont contp, TSEvent event, void *edata)
     TSDebug(DEBUG_TAG_CHK, "fail [not the same thread]");
   }
   return 0;
+}
+
+void
+TSContScheduleOnThread_test()
+{
+  contp_1 = TSContCreate(TSContScheduleOnThread_handler_1, TSMutexCreate());
+  contp_2 = TSContCreate(TSContScheduleOnThread_handler_2, TSMutexCreate());
+
+  if (contp_1 == nullptr || contp_2 == nullptr) {
+    TSDebug(DEBUG_TAG_SCHD, "[%s] could not create continuation", plugin_name);
+    abort();
+  } else {
+    TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
+    TSContScheduleOnPool(contp_1, 0, TS_THREAD_POOL_NET);
+    TSContThreadAffinityClear(contp_1);
+    TSContScheduleOnPool(contp_1, 200, TS_THREAD_POOL_NET);
+  }
 }
 
 static int
@@ -212,58 +258,6 @@ TSContThreadAffinity_handler(TSCont contp, TSEvent event, void *edata)
   }
 
   return 0;
-}
-
-void
-TSContSchedule_test()
-{
-  TSCont contp = TSContCreate(TSContSchedule_handler_1, TSMutexCreate());
-
-  if (contp == nullptr) {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] could not create continuation", plugin_name);
-    abort();
-  } else {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
-    TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
-    TSContThreadAffinityClear(contp);
-    TSContScheduleOnPool(contp, 200, TS_THREAD_POOL_NET);
-  }
-}
-
-void
-TSContScheduleOnPool_test()
-{
-  TSCont contp_1 = TSContCreate(TSContScheduleOnPool_handler_1, TSMutexCreate());
-  TSCont contp_2 = TSContCreate(TSContScheduleOnPool_handler_2, TSMutexCreate());
-
-  if (contp_1 == nullptr || contp_2 == nullptr) {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] could not create continuation", plugin_name);
-    abort();
-  } else {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
-    TSContScheduleOnPool(contp_1, 0, TS_THREAD_POOL_NET);
-    TSContThreadAffinityClear(contp_1);
-    TSContScheduleOnPool(contp_1, 100, TS_THREAD_POOL_NET);
-    TSContScheduleOnPool(contp_2, 200, TS_THREAD_POOL_TASK);
-    TSContThreadAffinityClear(contp_2);
-    TSContScheduleOnPool(contp_2, 300, TS_THREAD_POOL_TASK);
-  }
-}
-
-void
-TSContScheduleOnThread_test()
-{
-  TSCont contp = TSContCreate(TSContScheduleOnThread_handler_1, TSMutexCreate());
-
-  if (contp == nullptr) {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] could not create continuation", plugin_name);
-    abort();
-  } else {
-    TSDebug(DEBUG_TAG_SCHD, "[%s] scheduling continuation", plugin_name);
-    TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
-    TSContThreadAffinityClear(contp);
-    TSContScheduleOnPool(contp, 200, TS_THREAD_POOL_NET);
-  }
 }
 
 void
