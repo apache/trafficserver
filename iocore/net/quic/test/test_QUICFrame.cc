@@ -1199,7 +1199,7 @@ TEST_CASE("Load StreamsBlocked Frame", "[quic]")
 TEST_CASE("Store StreamsBlocked Frame", "[quic]")
 {
   uint8_t buf[65535];
-  size_t len;
+  size_t len = 0;
 
   uint8_t expected[] = {
     0x16,       // Type
@@ -1208,7 +1208,11 @@ TEST_CASE("Store StreamsBlocked Frame", "[quic]")
   QUICStreamIdBlockedFrame stream_id_blocked_frame(0x0102, 0, nullptr);
   CHECK(stream_id_blocked_frame.size() == 3);
 
-  stream_id_blocked_frame.store(buf, &len, 65535);
+  Ptr<IOBufferBlock> ibb = stream_id_blocked_frame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
   CHECK(len == 3);
   CHECK(memcmp(buf, expected, len) == 0);
 }
