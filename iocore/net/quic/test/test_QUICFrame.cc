@@ -758,7 +758,7 @@ TEST_CASE("Load Ping Frame", "[quic]")
 TEST_CASE("Store Ping Frame", "[quic]")
 {
   uint8_t buf[16];
-  size_t len;
+  size_t len = 0;
 
   uint8_t expected[] = {
     0x01, // Type
@@ -767,7 +767,11 @@ TEST_CASE("Store Ping Frame", "[quic]")
   QUICPingFrame frame;
   CHECK(frame.size() == 1);
 
-  frame.store(buf, &len, 16);
+  Ptr<IOBufferBlock> ibb = frame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
   CHECK(len == 1);
   CHECK(memcmp(buf, expected, len) == 0);
 }

@@ -1147,16 +1147,26 @@ QUICPingFrame::size() const
   return 1;
 }
 
-size_t
-QUICPingFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICPingFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  *len   = this->size();
-  buf[0] = static_cast<uint8_t>(QUICFrameType::PING);
-  return *len;
+  block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(this->size()));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
+
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::PING);
+  n += 1;
+
+  block->fill(n);
+  return block;
 }
 
 //
