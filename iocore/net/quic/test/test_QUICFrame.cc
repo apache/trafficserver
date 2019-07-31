@@ -943,7 +943,7 @@ TEST_CASE("Load MaxData Frame", "[quic]")
 TEST_CASE("Store MaxData Frame", "[quic]")
 {
   uint8_t buf[65535];
-  size_t len;
+  size_t len = 0;
 
   uint8_t expected[] = {
     0x10,                                          // Type
@@ -952,7 +952,11 @@ TEST_CASE("Store MaxData Frame", "[quic]")
   QUICMaxDataFrame max_data_frame(0x1122334455667788, 0, nullptr);
   CHECK(max_data_frame.size() == 9);
 
-  max_data_frame.store(buf, &len, 65535);
+  Ptr<IOBufferBlock> ibb = max_data_frame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
   CHECK(len == 9);
   CHECK(memcmp(buf, expected, len) == 0);
 }

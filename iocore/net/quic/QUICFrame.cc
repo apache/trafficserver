@@ -1510,22 +1510,31 @@ QUICMaxDataFrame::size() const
   return sizeof(QUICFrameType) + QUICVariableInt::size(this->_maximum_data);
 }
 
-size_t
-QUICMaxDataFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICMaxDataFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::MAX_DATA);
-  ++p;
-  QUICTypeUtil::write_QUICMaxData(this->_maximum_data, p, &n);
-  p += n;
+  size_t written_len = 0;
+  block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t)));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
-  *len = p - buf;
-  return *len;
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::MAX_DATA);
+  n += 1;
+
+  // Maximum Data (i)
+  QUICTypeUtil::write_QUICMaxData(this->_maximum_data, block_start + n, &written_len);
+  n += written_len;
+
+  block->fill(n);
+  return block;
 }
 
 int
