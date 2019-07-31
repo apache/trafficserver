@@ -1044,7 +1044,7 @@ TEST_CASE("Load MaxStreams Frame", "[quic]")
 TEST_CASE("Store MaxStreams Frame", "[quic]")
 {
   uint8_t buf[65535];
-  size_t len;
+  size_t len = 0;
 
   uint8_t expected[] = {
     0x12,                   // Type
@@ -1053,7 +1053,11 @@ TEST_CASE("Store MaxStreams Frame", "[quic]")
   QUICMaxStreamsFrame max_streams_frame(0x01020304, 0, nullptr);
   CHECK(max_streams_frame.size() == 5);
 
-  max_streams_frame.store(buf, &len, 65535);
+  Ptr<IOBufferBlock> ibb = max_streams_frame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
   CHECK(len == 5);
   CHECK(memcmp(buf, expected, len) == 0);
 }
