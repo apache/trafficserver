@@ -2384,19 +2384,30 @@ QUICPathChallengeFrame::is_probing_frame() const
   return true;
 }
 
-size_t
-QUICPathChallengeFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICPathChallengeFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  *len = this->size();
+  block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(1 + QUICPathChallengeFrame::DATA_LEN));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
-  buf[0] = static_cast<uint8_t>(QUICFrameType::PATH_CHALLENGE);
-  memcpy(buf + 1, this->data(), QUICPathChallengeFrame::DATA_LEN);
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::PATH_CHALLENGE);
+  n += 1;
 
-  return *len;
+  // Data (64)
+  memcpy(block_start + n, this->data(), QUICPathChallengeFrame::DATA_LEN);
+  n += QUICPathChallengeFrame::DATA_LEN;
+
+  block->fill(n);
+  return block;
 }
 
 int
