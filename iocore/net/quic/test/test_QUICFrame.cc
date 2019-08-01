@@ -1498,7 +1498,7 @@ TEST_CASE("NEW_TOKEN Frame", "[quic]")
   SECTION("store")
   {
     uint8_t buf[32];
-    size_t len;
+    size_t len = 0;
 
     ats_unique_buf token = ats_unique_malloc(raw_token_len);
     memcpy(token.get(), raw_token, raw_token_len);
@@ -1506,7 +1506,11 @@ TEST_CASE("NEW_TOKEN Frame", "[quic]")
     QUICNewTokenFrame frame(std::move(token), raw_token_len);
     CHECK(frame.size() == raw_new_token_frame_len);
 
-    frame.store(buf, &len, 16);
+    Ptr<IOBufferBlock> ibb = frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == raw_new_token_frame_len);
     CHECK(memcmp(buf, raw_new_token_frame, len) == 0);
   }

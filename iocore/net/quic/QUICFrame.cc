@@ -2593,30 +2593,35 @@ QUICNewTokenFrame::size() const
   return 1 + QUICVariableInt::size(this->_token_length) + this->token_length();
 }
 
-size_t
-QUICNewTokenFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICNewTokenFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  uint8_t *p = buf;
+  size_t written_len = 0;
+  block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(1 + 24));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
-  // Type (i)
-  *p = static_cast<uint8_t>(QUICFrameType::NEW_TOKEN);
-  ++p;
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::NEW_TOKEN);
+  n += 1;
 
   // Token Length (i)
-  size_t n;
-  QUICIntUtil::write_QUICVariableInt(this->_token_length, p, &n);
-  p += n;
+  QUICIntUtil::write_QUICVariableInt(this->_token_length, block_start + n, &written_len);
+  n += written_len;
 
   // Token (*)
-  memcpy(p, this->token(), this->token_length());
-  p += this->token_length();
+  memcpy(block_start + n, this->token(), this->token_length());
+  n += this->token_length();
 
-  *len = p - buf;
-  return *len;
+  block->fill(n);
+  return block;
 }
 
 uint64_t

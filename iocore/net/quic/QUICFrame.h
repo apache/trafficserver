@@ -677,7 +677,7 @@ public:
   }
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
-  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
 
   uint64_t token_length() const;
