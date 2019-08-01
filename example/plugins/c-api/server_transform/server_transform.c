@@ -284,7 +284,7 @@ static int
 transform_buffer_event(TSCont contp, TransformData *data, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 {
   TSVIO write_vio;
-  int towrite;
+  int64_t towrite;
 
   if (!data->input_buf) {
     data->input_buf    = TSIOBufferCreate();
@@ -313,7 +313,7 @@ transform_buffer_event(TSCont contp, TransformData *data, TSEvent event ATS_UNUS
   if (towrite > 0) {
     /* The amount of data left to read needs to be truncated by
        the amount of data actually in the read buffer. */
-    int avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
+    int64_t avail = TSIOBufferReaderAvail(TSVIOReaderGet(write_vio));
     if (towrite > avail) {
       towrite = avail;
     }

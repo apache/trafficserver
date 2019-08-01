@@ -987,6 +987,9 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.per_server.min_keep_alive");
   HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
 
+  HttpEstablishStaticConfigLongLong(c.http_request_line_max_size, "proxy.config.http.request_line_max_size");
+  HttpEstablishStaticConfigLongLong(c.http_hdr_field_max_size, "proxy.config.http.header_field_max_size");
+
   HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.local.http.parent_proxy.disable_connect_tunneling");
   HttpEstablishStaticConfigByte(c.oride.forward_connect_method, "proxy.config.http.forward_connect_method");
 
@@ -1272,6 +1275,9 @@ HttpConfig::reconfigure()
   }
   params->origin_min_keep_alive_connections     = m_master.origin_min_keep_alive_connections;
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
+
+  params->http_request_line_max_size = m_master.http_request_line_max_size;
+  params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;
 
   if (params->oride.outbound_conntrack.max > 0 &&
       params->oride.outbound_conntrack.max < params->origin_min_keep_alive_connections) {

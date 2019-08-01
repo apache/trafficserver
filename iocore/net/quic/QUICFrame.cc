@@ -2449,6 +2449,7 @@ QUICPathResponseFrame::_reset()
   this->_valid = false;
   this->_size  = 0;
 }
+
 Ptr<IOBufferBlock>
 QUICPathResponseFrame::to_io_buffer_block(size_t limit) const
 {

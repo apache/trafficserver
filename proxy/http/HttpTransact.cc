@@ -520,7 +520,22 @@ HttpTransact::BadRequest(State *s)
   TxnDebug("http_trans", "[BadRequest]"
                          "parser marked request bad");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-  build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error");
+
+  const char *body_factory_template = "request#syntax_error";
+  HTTPStatus status                 = HTTP_STATUS_BAD_REQUEST;
+  const char *reason                = "Invalid HTTP Request";
+
+  switch (s->http_return_code) {
+  case HTTP_STATUS_REQUEST_URI_TOO_LONG:
+    body_factory_template = "request#uri_len_too_long";
+    status                = s->http_return_code;
+    reason                = "URI Too Long";
+    break;
+  default:
+    break;
+  }
+
+  build_error_response(s, status, reason, body_factory_template);
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
 

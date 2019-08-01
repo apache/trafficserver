@@ -876,7 +876,8 @@ http_parser_clear(HTTPParser *parser)
 
 ParseResult
 http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
-                      bool must_copy_strings, bool eof, bool strict_uri_parsing)
+                      bool must_copy_strings, bool eof, bool strict_uri_parsing, size_t max_request_line_size,
+                      size_t max_hdr_field_size)
 {
   if (parser->m_parsing_http) {
     MIMEScanner *scanner = &parser->m_mime_parser.m_scanner;
@@ -901,8 +902,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
   start:
     hh->m_polarity = HTTP_TYPE_REQUEST;
 
-    // Make sure the line is not longer than 64K
-    if (scanner->get_buffered_line_size() >= UINT16_MAX) {
+    // Make sure the line is not longer than max_request_line_size
+    if (scanner->get_buffered_line_size() > max_request_line_size) {
       return PARSE_RESULT_ERROR;
     }
 
@@ -924,6 +925,10 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     ink_assert(parsed.size() < UINT16_MAX);
     line_start = cur = parsed.data();
     end              = parsed.data_end();
+
+    if ((unsigned)(end - line_start) > max_request_line_size) {
+      return PARSE_RESULT_ERROR;
+    }
 
     must_copy_strings = (must_copy_strings || (!line_is_real));
 
@@ -966,7 +971,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
         return PARSE_RESULT_ERROR;
       }
 
-      ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+      ParseResult ret =
+        mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, max_hdr_field_size);
       // If we're done with the main parse do some validation
       if (ret == PARSE_RESULT_DONE) {
         ret = validate_hdr_host(hh); // check HOST header
@@ -1121,7 +1127,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     end                    = real_end;
     parser->m_parsing_http = false;
 
-    ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+    ParseResult ret =
+      mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, max_hdr_field_size);
     // If we're done with the main parse do some validation
     if (ret == PARSE_RESULT_DONE) {
       ret = validate_hdr_host(hh); // check HOST header
@@ -1132,7 +1139,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     return ret;
   }
 
-  return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+  return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, max_hdr_field_size);
 }
 
 ParseResult

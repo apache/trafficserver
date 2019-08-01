@@ -540,6 +540,10 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http.global_user_agent_header", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
 
+  {RECT_CONFIG, "proxy.config.http.request_line_max_size", RECD_INT, "65535", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.header_field_max_size", RECD_INT, "131070", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   //        ############
   //        # security #
   //        ############

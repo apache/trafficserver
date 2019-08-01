@@ -2493,7 +2493,7 @@ mime_parser_clear(MIMEParser *parser)
 
 ParseResult
 mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char **real_s, const char *real_e,
-                  bool must_copy_strings, bool eof)
+                  bool must_copy_strings, bool eof, size_t max_hdr_field_size)
 {
   ParseResult err;
   bool line_is_real;
@@ -2561,8 +2561,8 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     field_value.ltrim_if(&ParseRules::is_ws);
     field_value.rtrim_if(&ParseRules::is_wslfcr);
 
-    // Make sure the name or value is not longer than 64K
-    if (field_name.size() >= UINT16_MAX || field_value.size() >= UINT16_MAX) {
+    // Make sure the name + value is not longer than configured max_hdr_field_size
+    if (field_name.size() + field_value.size() > max_hdr_field_size) {
       return PARSE_RESULT_ERROR;
     }
 

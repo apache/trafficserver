@@ -1603,6 +1603,27 @@ Here is an example:
 
 `TOP <#lua-plugin>`_
 
+ts.server_request.server_addr.get_nexthop_name
+----------------------------------------------
+**syntax:** *ts.server_request.server_addr.get_nexthop_name()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description**: This function can be used to get the host name of the next hop to the origin server.
+
+The ts.server_request.server_addr.get_nexthop_name function returns the name as a string.
+
+Here is an example:
+
+::
+
+    function do_global_send_request()
+        name = ts.server_request.server_addr.get_nexthop_name()
+        print(name)             -- test
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.server_request.server_addr.get_ip
 ------------------------------------
 **syntax:** *ts.server_request.server_addr.get_ip()*

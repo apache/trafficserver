@@ -45,7 +45,8 @@
   -------------------------------------------------------------------------*/
 
 ParseResult
-HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing)
+HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing,
+                   size_t max_request_line_size, size_t max_hdr_field_size)
 {
   const char *start;
   const char *tmp;
@@ -71,7 +72,8 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
     int heap_slot = m_heap->attach_block(r->get_current_block(), start);
 
     m_heap->lock_ronly_str_heap(heap_slot);
-    state = http_parser_parse_req(parser, m_heap, m_http, &tmp, end, false, eof, strict_uri_parsing);
+    state = http_parser_parse_req(parser, m_heap, m_http, &tmp, end, false, eof, strict_uri_parsing, max_request_line_size,
+                                  max_hdr_field_size);
     m_heap->set_ronly_str_heap_end(heap_slot, tmp);
     m_heap->unlock_ronly_str_heap(heap_slot);
 
