@@ -498,14 +498,34 @@ QUICCryptoFrame::debug_msg(char *msg, size_t msg_len) const
                   this->data_length());
 }
 
-size_t
-QUICCryptoFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICCryptoFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> header;
+
   if (limit < this->size()) {
-    return 0;
+    return header;
   }
 
-  // Frame Type
+  // Create header block
+  size_t written_len = 0;
+  header             = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  header->alloc(iobuffer_size_to_index(MAX_HEADER_SIZE));
+  this->_store_header(reinterpret_cast<uint8_t *>(header->start()), &written_len);
+  header->fill(written_len);
+
+  // Append payload block to a chain
+  ink_assert(written_len + this->data_length() <= limit);
+  header->next = this->data();
+
+  // Return the chain
+  return header;
+}
+
+size_t
+QUICCryptoFrame::_store_header(uint8_t *buf, size_t *len) const
+{
+  // Type
   buf[0] = static_cast<uint8_t>(QUICFrameType::CRYPTO);
   *len   = 1;
 
@@ -518,10 +538,6 @@ QUICCryptoFrame::store(uint8_t *buf, size_t *len, size_t limit) const
   // Length (i)
   QUICIntUtil::write_QUICVariableInt(this->data_length(), buf + *len, &n);
   *len += n;
-
-  // Crypto Data (*)
-  memcpy(buf + *len, this->data()->start(), this->data_length());
-  *len += this->data_length();
 
   return *len;
 }

@@ -451,8 +451,8 @@ TEST_CASE("CRYPTO Frame", "[quic]")
 
   SECTION("Storing")
   {
-    uint8_t buf[32] = {0};
-    size_t len;
+    uint8_t buf[32]    = {0};
+    size_t len         = 0;
     uint8_t expected[] = {
       0x06,                         // Typr
       0x80, 0x01, 0x00, 0x00,       // Offset
@@ -468,7 +468,11 @@ TEST_CASE("CRYPTO Frame", "[quic]")
     QUICCryptoFrame crypto_frame(block, 0x010000);
     CHECK(crypto_frame.size() == sizeof(expected));
 
-    crypto_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = crypto_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == sizeof(expected));
     CHECK(memcmp(buf, expected, sizeof(expected)) == 0);
   }
