@@ -2745,10 +2745,11 @@ QUICUnknownFrame::size() const
   return 0;
 }
 
-size_t
-QUICUnknownFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICUnknownFrame::to_io_buffer_block(size_t limit) const
 {
-  return 0;
+  Ptr<IOBufferBlock> block;
+  return block;
 }
 
 void

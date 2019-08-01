@@ -725,7 +725,7 @@ class QUICUnknownFrame : public QUICFrame
 {
   QUICFrameType type() const override;
   size_t size() const override;
-  size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
   int debug_msg(char *msg, size_t msg_len) const override;
 };
