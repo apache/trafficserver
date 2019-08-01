@@ -642,7 +642,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf[32] = {0};
-    size_t len;
+    size_t len      = 0;
 
     uint8_t expected[] = {
       0x02,       // Type
@@ -655,7 +655,11 @@ TEST_CASE("Store Ack Frame", "[quic]")
     QUICAckFrame ack_frame(0x12, 0x3456, 0);
     CHECK(ack_frame.size() == 6);
 
-    ack_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = ack_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == 6);
     CHECK(memcmp(buf, expected, len) == 0);
   }
@@ -663,7 +667,7 @@ TEST_CASE("Store Ack Frame", "[quic]")
   SECTION("2 Ack Block, 8 bit packet number length, 8 bit block length")
   {
     uint8_t buf[32] = {0};
-    size_t len;
+    size_t len      = 0;
 
     uint8_t expected[] = {
       0x02,                                           // Type
@@ -682,7 +686,11 @@ TEST_CASE("Store Ack Frame", "[quic]")
     section->add_ack_block({0x05060708, 0x090a0b0c0d0e0f10});
     CHECK(ack_frame.size() == 21);
 
-    ack_frame.store(buf, &len, 32);
+    Ptr<IOBufferBlock> ibb = ack_frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == 21);
     CHECK(memcmp(buf, expected, len) == 0);
   }

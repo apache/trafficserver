@@ -693,33 +693,43 @@ QUICAckFrame::size() const
   return pre_len;
 }
 
-size_t
-QUICAckFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICAckFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  uint8_t *p = buf;
-  size_t n;
-  *p = static_cast<uint8_t>(QUICFrameType::ACK);
-  ++p;
+  size_t written_len = 0;
+  block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(1 + 24));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
-  QUICIntUtil::write_QUICVariableInt(this->_largest_acknowledged, p, &n);
-  p += n;
-  QUICIntUtil::write_QUICVariableInt(this->_ack_delay, p, &n);
-  p += n;
-  QUICIntUtil::write_QUICVariableInt(this->ack_block_count(), p, &n);
-  p += n;
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::ACK);
+  n += 1;
 
-  ink_assert(limit >= static_cast<size_t>(p - buf));
-  limit -= (p - buf);
-  this->_ack_block_section->store(p, &n, limit);
-  p += n;
+  // Largest Acknowledged (i)
+  QUICIntUtil::write_QUICVariableInt(this->_largest_acknowledged, block_start + n, &written_len);
+  n += written_len;
 
-  *len = p - buf;
+  // Ack Delay (i)
+  QUICIntUtil::write_QUICVariableInt(this->_ack_delay, block_start + n, &written_len);
+  n += written_len;
 
-  return *len;
+  // Ack Range Count (i)
+  QUICIntUtil::write_QUICVariableInt(this->ack_block_count(), block_start + n, &written_len);
+  n += written_len;
+
+  block->fill(n);
+
+  // First Ack Range (i) + Ack Ranges (*)
+  block->next = this->_ack_block_section->to_io_buffer_block(limit - n);
+
+  return block;
 }
 
 int
@@ -856,29 +866,33 @@ QUICAckFrame::AckBlockSection::size() const
   return n;
 }
 
-size_t
-QUICAckFrame::AckBlockSection::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICAckFrame::AckBlockSection::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  size_t n;
-  uint8_t *p = buf;
+  size_t written_len = 0;
+  block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(limit));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
-  QUICIntUtil::write_QUICVariableInt(this->_first_ack_block, p, &n);
-  p += n;
+  QUICIntUtil::write_QUICVariableInt(this->_first_ack_block, block_start + n, &written_len);
+  n += written_len;
 
   for (auto &&block : *this) {
-    QUICIntUtil::write_QUICVariableInt(block.gap(), p, &n);
-    p += n;
-    QUICIntUtil::write_QUICVariableInt(block.length(), p, &n);
-    p += n;
+    QUICIntUtil::write_QUICVariableInt(block.gap(), block_start + n, &written_len);
+    n += written_len;
+    QUICIntUtil::write_QUICVariableInt(block.length(), block_start + n, &written_len);
+    n += written_len;
   }
 
-  *len = p - buf;
-
-  return *len;
+  block->fill(n);
+  return block;
 }
 
 uint64_t

@@ -226,7 +226,7 @@ public:
     AckBlockSection(uint64_t first_ack_block) : _first_ack_block(first_ack_block) {}
     uint8_t count() const;
     size_t size() const;
-    size_t store(uint8_t *buf, size_t *len, size_t limit) const;
+    Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const;
     uint64_t first_ack_block() const;
     void add_ack_block(const AckBlock block);
     const_iterator begin() const;
@@ -268,7 +268,7 @@ public:
   virtual ~QUICAckFrame();
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
-  virtual size_t store(uint8_t *buf, size_t *len, size_t limit) const override;
+  virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
 
