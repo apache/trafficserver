@@ -1549,12 +1549,16 @@ TEST_CASE("RETIRE_CONNECTION_ID Frame", "[quic]")
   SECTION("store")
   {
     uint8_t buf[32];
-    size_t len;
+    size_t len = 0;
 
     QUICRetireConnectionIdFrame frame(seq_num, 0, nullptr);
     CHECK(frame.size() == raw_retire_connection_id_frame_len);
 
-    frame.store(buf, &len, 16);
+    Ptr<IOBufferBlock> ibb = frame.to_io_buffer_block(sizeof(buf));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(buf + len, b->start(), b->size());
+      len += b->size();
+    }
     CHECK(len == raw_retire_connection_id_frame_len);
     CHECK(memcmp(buf, raw_retire_connection_id_frame, len) == 0);
   }

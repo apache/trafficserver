@@ -2690,23 +2690,31 @@ QUICRetireConnectionIdFrame::size() const
   return sizeof(QUICFrameType) + QUICVariableInt::size(this->_seq_num);
 }
 
-size_t
-QUICRetireConnectionIdFrame::store(uint8_t *buf, size_t *len, size_t limit) const
+Ptr<IOBufferBlock>
+QUICRetireConnectionIdFrame::to_io_buffer_block(size_t limit) const
 {
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
   if (limit < this->size()) {
-    return 0;
+    return block;
   }
 
-  size_t n;
-  uint8_t *p = buf;
-  *p         = static_cast<uint8_t>(QUICFrameType::RETIRE_CONNECTION_ID);
-  ++p;
-  QUICIntUtil::write_QUICVariableInt(this->_seq_num, p, &n);
-  p += n;
+  size_t written_len = 0;
+  block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(1 + sizeof(uint64_t)));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
-  *len = p - buf;
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::RETIRE_CONNECTION_ID);
+  n += 1;
 
-  return *len;
+  // Sequence Number (i)
+  QUICIntUtil::write_QUICVariableInt(this->_seq_num, block_start + n, &written_len);
+  n += written_len;
+
+  block->fill(n);
+  return block;
 }
 
 int
