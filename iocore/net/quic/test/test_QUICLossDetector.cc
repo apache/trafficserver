@@ -60,8 +60,13 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     QUICFrame *ping_frame = g.generate_frame(frame_buffer, QUICEncryptionLevel::HANDSHAKE, 4, UINT16_MAX, 0, 0);
 
     uint8_t raw[4];
-    size_t len;
-    CHECK(ping_frame->store(raw, &len, 10240) < 4);
+    size_t len             = 0;
+    Ptr<IOBufferBlock> ibb = ping_frame->to_io_buffer_block(sizeof(raw));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(raw + len, b->start(), b->size());
+      len += b->size();
+    }
+    CHECK(len < 4);
 
     // Send SERVER_CLEARTEXT (Handshake message)
     ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
