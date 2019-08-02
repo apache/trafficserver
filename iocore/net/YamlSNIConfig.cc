@@ -103,6 +103,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_verify_server_properties,
                                                TS_client_cert,
                                                TS_client_key,
+                                               TS_http2,
                                                TS_ip_allow
 #if TS_USE_HELLO_CB
                                                ,
@@ -129,7 +130,10 @@ template <> struct convert<YamlSNIConfig::Item> {
       return false; // servername must be present
     }
     if (node[TS_disable_h2]) {
-      item.disable_h2 = node[TS_disable_h2].as<bool>();
+      item.offer_h2 = false;
+    }
+    if (node[TS_http2]) {
+      item.offer_h2 = node[TS_http2].as<bool>();
     }
 
     // enum

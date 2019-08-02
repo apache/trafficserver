@@ -889,6 +889,11 @@ SSLNetVConnection::clear()
     SSL_free(ssl);
     ssl = nullptr;
   }
+  if (npn) {
+    ats_free(npn);
+    npn   = nullptr;
+    npnsz = 0;
+  }
 
   sslHandshakeStatus          = SSL_HANDSHAKE_ONGOING;
   sslHandshakeBeginTime       = 0;
@@ -902,7 +907,6 @@ SSLNetVConnection::clear()
   npnSet          = nullptr;
   npnEndpoint     = nullptr;
   free_handshake_buffers();
-  sslTrace = false;
 
   super::clear();
 }
@@ -1454,9 +1458,31 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 }
 
 void
-SSLNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s)
+SSLNetVConnection::disableProtocol(int idx)
 {
-  this->npnSet = s;
+  this->protoenabled.markOut(idx);
+  // Update the npn string
+  if (npnSet) {
+    npnSet->create_npn_advertisement(protoenabled, &npn, &npnsz);
+  }
+}
+
+void
+SSLNetVConnection::enableProtocol(int idx)
+{
+  this->protoenabled.markIn(idx);
+  // Update the npn string
+  if (npnSet) {
+    npnSet->create_npn_advertisement(protoenabled, &npn, &npnsz);
+  }
+}
+
+void
+SSLNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s, const SessionProtocolSet &protos)
+{
+  this->protoenabled = protos;
+  this->npnSet       = s;
+  npnSet->create_npn_advertisement(protoenabled, &npn, &npnsz);
 }
 
 // NextProtocolNegotiation TLS extension callback. The NPN extension
@@ -1468,7 +1494,10 @@ SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, 
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   ink_release_assert(netvc != nullptr);
-  if (netvc->npnSet && netvc->npnSet->advertiseProtocols(out, outlen)) {
+
+  if (netvc->npn && netvc->npnsz) {
+    *out    = netvc->npn;
+    *outlen = netvc->npnsz;
     // Successful return tells OpenSSL to advertise.
     return SSL_TLSEXT_ERR_OK;
   }
@@ -1483,14 +1512,12 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
                                         const unsigned char *in ATS_UNUSED, unsigned inlen ATS_UNUSED, void *)
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-  const unsigned char *npn = nullptr;
-  unsigned npnsz           = 0;
 
   ink_release_assert(netvc != nullptr);
-  if (netvc->npnSet && netvc->npnSet->advertiseProtocols(&npn, &npnsz)) {
+  if (netvc->npn && netvc->npnsz) {
     // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
     // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
-    if (SSL_select_next_proto((unsigned char **)out, outlen, npn, npnsz, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
+    if (SSL_select_next_proto((unsigned char **)out, outlen, netvc->npn, netvc->npnsz, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
       Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
       return SSL_TLSEXT_ERR_OK;
     }

@@ -38,8 +38,6 @@
 #include <strings.h>
 #include "YamlSNIConfig.h"
 
-#include <unordered_map>
-
 // Properties for the next hop server
 struct NextHopProperty {
   std::string name;                                                                // name of the server
@@ -99,9 +97,7 @@ public:
   NextHopProperty prop;
 };
 
-// typedef HashMap<cchar *, StringHashFns, actionVector *> SNIMap;
 typedef std::vector<actionElement> SNIList;
-// typedef HashMap<cchar *, StringHashFns, NextHopProperty *> NextHopPropertyTable;
 typedef std::vector<NextHopItem> NextHopPropertyList;
 
 struct SNIConfigParams : public ConfigInfo {
@@ -123,7 +119,6 @@ struct SNIConfig {
   static void reconfigure();
   static SNIConfigParams *acquire();
   static void release(SNIConfigParams *params);
-  static void cloneProtoSet(); // clones the protoset of all the netaccept objects created and unregisters h2
 
   typedef ConfigProcessor::scoped_config<SNIConfig, SNIConfigParams> scoped_config;
 

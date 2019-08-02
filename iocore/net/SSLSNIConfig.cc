@@ -40,8 +40,6 @@
 #include <pcre.h>
 
 static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
-struct NetAccept;
-std::unordered_map<int, SSLNextProtocolSet *> snpsMap;
 
 const NextHopProperty *
 SNIConfigParams::getPropertyConfig(const std::string &servername) const
@@ -66,8 +64,8 @@ SNIConfigParams::loadSNIConfig()
     Debug("ssl", "name: %s", item.fqdn.data());
 
     // set SNI based actions to be called in the ssl_servername_only callback
-    if (item.disable_h2) {
-      ai->actions.push_back(std::make_unique<DisableH2>());
+    if (item.offer_h2.has_value()) {
+      ai->actions.push_back(std::make_unique<ControlH2>(item.offer_h2.value()));
     }
     if (item.verify_client_level != 255) {
       ai->actions.push_back(std::make_unique<VerifyClient>(item.verify_client_level));
@@ -160,19 +158,6 @@ SNIConfig::startup()
   sniConfigUpdate = new ConfigUpdateHandler<SNIConfig>();
   sniConfigUpdate->attach("proxy.config.ssl.servername.filename");
   reconfigure();
-}
-
-void
-SNIConfig::cloneProtoSet()
-{
-  SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
-  for (auto na : naVec) {
-    if (na->snpa) {
-      auto snps = na->snpa->cloneProtoSet();
-      snps->unregisterEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, nullptr);
-      snpsMap.emplace(na->id, snps);
-    }
-  }
 }
 
 void

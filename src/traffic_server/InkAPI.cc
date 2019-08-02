@@ -7078,7 +7078,7 @@ TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 
 /* From proxy/http/HttpProxyServerMain.c: */
 extern bool ssl_register_protocol(const char *, Continuation *);
-extern bool ssl_unregister_protocol(const char *, Continuation *);
+// extern bool ssl_unregister_protocol(const char *, Continuation *);
 
 TSReturnCode
 TSNetAcceptNamedProtocol(TSCont contp, const char *protocol)
@@ -7088,7 +7088,7 @@ TSNetAcceptNamedProtocol(TSCont contp, const char *protocol)
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
   if (!ssl_register_protocol(protocol, (INKContInternal *)contp)) {
-    ssl_unregister_protocol(protocol, (INKContInternal *)contp);
+    //    ssl_unregister_protocol(protocol, (INKContInternal *)contp);
     return TS_ERROR;
   }
 
@@ -9333,6 +9333,7 @@ TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen)
   SSLTicketKeyConfig::reconfigure_data(ticketData, ticketDataLen);
 }
 
+#ifdef OLD
 void
 TSRegisterProtocolSet(TSVConn sslp, TSNextProtocolSet ps)
 {
@@ -9353,6 +9354,7 @@ TSUnregisterProtocol(TSNextProtocolSet protoset, const char *protocol)
   }
   return nullptr;
 }
+#endif
 
 TSAcceptor
 TSAcceptorGet(TSVConn sslp)
@@ -9385,6 +9387,7 @@ TSAcceptorCount()
   return naVec.size();
 }
 
+#ifdef OLD
 // clones the protoset associated with netAccept
 TSNextProtocolSet
 TSGetcloneProtoSet(TSAcceptor tna)
@@ -9393,6 +9396,7 @@ TSGetcloneProtoSet(TSAcceptor tna)
   // clone protoset
   return (na && na->snpa) ? reinterpret_cast<TSNextProtocolSet>(na->snpa->cloneProtoSet()) : nullptr;
 }
+#endif
 
 tsapi int
 TSVConnIsSsl(TSVConn sslp)

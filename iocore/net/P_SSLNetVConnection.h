@@ -42,6 +42,7 @@
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
+#include "records/I_RecHttp.h"
 
 // These are included here because older OpenSSL libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -141,7 +142,7 @@ public:
   int sslClientHandShakeEvent(int &err);
   void net_read_io(NetHandler *nh, EThread *lthread) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
-  void registerNextProtocolSet(SSLNextProtocolSet *);
+  void registerNextProtocolSet(SSLNextProtocolSet *, const SessionProtocolSet &protos);
   void do_io_close(int lerrno = -1) override;
 
   ////////////////////////////////////////////////////////////
@@ -159,6 +160,15 @@ public:
   endpoint() const
   {
     return npnEndpoint;
+  }
+
+  void disableProtocol(int idx);
+  void enableProtocol(int idx);
+
+  void
+  setEnabledProtocols(const SessionProtocolSet &protos)
+  {
+    this->protoenabled = protos;
   }
 
   bool
@@ -451,13 +461,16 @@ private:
 
   const SSLNextProtocolSet *npnSet = nullptr;
   Continuation *npnEndpoint        = nullptr;
-  SessionAccept *sessionAcceptPtr  = nullptr;
-  bool sslTrace                    = false;
-  int64_t redoWriteSize            = 0;
-  char *tunnel_host                = nullptr;
-  in_port_t tunnel_port            = 0;
-  bool tunnel_decrypt              = false;
-  X509_STORE_CTX *verify_cert      = nullptr;
+  SessionProtocolSet protoenabled;
+  // Local copies of the npn strings
+  unsigned char *npn = nullptr;
+  size_t npnsz       = 0;
+
+  int64_t redoWriteSize       = 0;
+  char *tunnel_host           = nullptr;
+  in_port_t tunnel_port       = 0;
+  bool tunnel_decrypt         = false;
+  X509_STORE_CTX *verify_cert = nullptr;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

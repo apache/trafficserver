@@ -7,7 +7,7 @@
 # YAML-based Configuration file
 #  Format :
 #  Actions available:
-#    disable_h2 - removes H2 from the protocol list advertised by ATS; parameter required = None, parameters = true or false
+#    http2 - adds or removes HTTP/2 (H2) from the protocol list advertised by ATS; parameter required = None, parameters = on or off
 #    verify_client - sets the verification flag for verifying the client certificate; parameters = one of 'NONE', 'MODERATE' or 'STRICT'
 #    verify_origin_server - sets the verification flag for verifying the server certificate; parameters = one of 'NONE', 'MODERATE' or 'STRICT'
 #    client_cert - sets the client certificate to present to the server specified in dest_host; parameters = certificate file .
@@ -19,7 +19,7 @@
 #  Example:
 # sni:
 #   - fqdn: one.com
-#     disable_h2: true
+#     http2: off
 #     verify_origin_server: STRICT
 #     client_cert: somepem.pem
 #     verify_client: MODERATE
