@@ -399,8 +399,8 @@ private:
 class QUICPreferredAddress
 {
 public:
-  constexpr static int16_t MIN_LEN = 26;
-  constexpr static int16_t MAX_LEN = 295;
+  constexpr static int16_t MIN_LEN = 41;
+  constexpr static int16_t MAX_LEN = 61;
 
   QUICPreferredAddress(IpEndpoint endpoint_ipv4, IpEndpoint endpoint_ipv6, const QUICConnectionId &cid,
                        QUICStatelessResetToken token)
