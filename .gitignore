@@ -106,6 +106,11 @@ proxy/hdrs/test_proxy_hdrs
 proxy/hdrs/test_hdr_heap
 proxy/hdrs/test_Huffmancode
 proxy/hdrs/test_XPACK
+proxy/http/remap/test_NextHopRoundRobin
+proxy/http/remap/test_NextHopStrategyFactory
+proxy/http/remap/test_PluginDso
+proxy/http/remap/test_PluginFactory
+proxy/http/remap/test_RemapPluginInfo
 proxy/http/test_proxy_http
 proxy/http/remap/test_*
 proxy/http2/test_Http2DependencyTree
