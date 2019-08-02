@@ -42,7 +42,7 @@ Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'cont
 
 # www.example.com Host
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'printf "Test TSContSchedule API" && sleep 5'
+tr.Processes.Default.Command = 'printf "Test TSContSchedule API"'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts)
 ts.Streams.All = "gold/schedule.gold"
