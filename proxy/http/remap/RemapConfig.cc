@@ -691,6 +691,14 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
           idx = i;
         }
         ret_flags |= REMAP_OPTFLG_INTERNAL;
+      } else if (!strncasecmp(argv[i], "strategy=", 9)) {
+        if ((findmode & REMAP_OPTFLG_STRATEGY) != 0) {
+          idx = i;
+        }
+        if (argptr) {
+          *argptr = &argv[i][9];
+        }
+        ret_flags |= REMAP_OPTFLG_STRATEGY;
       } else {
         Warning("ignoring invalid remap option '%s'", argv[i]);
       }
@@ -1259,6 +1267,25 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
         }
 
         freeaddrinfo(ai_records);
+      }
+    }
+
+    // check for a 'strategy' and if wire it up if one exists.
+    if ((bti->remap_optflg & REMAP_OPTFLG_STRATEGY) != 0 &&
+        (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT)) {
+      const char *strategy = strchr(bti->argv[0], static_cast<int>('='));
+      if (strategy == nullptr) {
+        errStr = "missing 'strategy' name argument, unable to add mapping rule";
+        goto MAP_ERROR;
+      } else {
+        strategy++;
+        new_mapping->strategy = bti->rewrite->strategyFactory->strategyInstance(strategy);
+        if (!new_mapping->strategy) {
+          snprintf(errStrBuf, sizeof(errStrBuf), "no strategy named '%s' is defined in the config", strategy);
+          errStr = errStrBuf;
+          goto MAP_ERROR;
+        }
+        Debug("url_rewrite_regex", "mapped the 'strategy' named %s", strategy);
       }
     }
 

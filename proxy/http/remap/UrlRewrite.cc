@@ -84,6 +84,11 @@ UrlRewrite::load()
   /* Initialize the plugin factory */
   pluginFactory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
 
+  /* Initialize the next hop strategy factory */
+  std::string sf = RecConfigReadConfigPath("proxy.config.url_remap.strategies.filename", "strategies.yaml");
+  Debug("url_rewrite_regex", "strategyFactory file: %s", sf.c_str());
+  strategyFactory = new NextHopStrategyFactory(sf.c_str());
+
   if (0 == this->BuildTable(config_file_path)) {
     _valid = true;
     if (is_debug_tag_set("url_rewrite")) {
@@ -109,6 +114,7 @@ UrlRewrite::~UrlRewrite()
 
   /* Deactivate the factory when all SM are gone for sure. */
   pluginFactory.deactivate();
+  delete strategyFactory;
 }
 
 /** Sets the reverse proxy flag. */

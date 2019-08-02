@@ -29,13 +29,22 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/proxy/http \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
 
 noinst_LIBRARIES = libhttp_remap.a
 
 libhttp_remap_a_SOURCES = \
 	AclFiltering.cc \
 	AclFiltering.h \
+	NextHopSelectionStrategy.h \
+	NextHopSelectionStrategy.cc \
+	NextHopConsistentHash.h \
+	NextHopConsistentHash.cc \
+	NextHopRoundRobin.h \
+	NextHopRoundRobin.cc \
+	NextHopStrategyFactory.h \
+	NextHopStrategyFactory.cc \
 	RemapConfig.cc \
 	RemapConfig.h \
 	RemapPluginInfo.cc \
@@ -68,7 +77,7 @@ clang-tidy-local: $(libhttp_remap_a_SOURCES)
 	$(CXX_Clang_Tidy)
 
 TESTS = $(check_PROGRAMS)
-check_PROGRAMS =  test_PluginDso test_PluginFactory test_RemapPluginInfo
+check_PROGRAMS =  test_PluginDso test_PluginFactory test_RemapPluginInfo test_NextHopStrategyFactory test_NextHopRoundRobin test_NextHopConsistentHash
 
 test_PluginDso_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DPLUGIN_DSO_TESTS
 test_PluginDso_LIBTOOLFLAGS = --preserve-dup-deps
@@ -113,6 +122,92 @@ test_RemapPluginInfo_SOURCES = \
 	PluginDso.cc \
 	RemapPluginInfo.cc
 
+test_NextHopStrategyFactory_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-D_NH_UNIT_TESTS_ \
+	-I$(abs_top_srcdir)/tests/include \
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
+
+test_NextHopStrategyFactory_LDADD = \
+  $(top_builddir)/src/tscpp/util/libtscpputil.la \
+  $(top_builddir)/src/tscore/libtscore.la \
+  $(top_builddir)/proxy/hdrs/libhdrs.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/proxy/logging/liblogging.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/iocore/utils/libinkutils.a \
+	@YAMLCPP_LIBS@ \
+	@HWLOC_LIBS@ 
+
+test_NextHopStrategyFactory_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore
+
+test_NextHopStrategyFactory_SOURCES = \
+	NextHopSelectionStrategy.cc \
+	NextHopStrategyFactory.cc \
+	NextHopRoundRobin.cc \
+	NextHopConsistentHash.cc \
+	unit-tests/test_NextHopStrategyFactory.cc \
+	unit-tests/nexthop_test_stubs.cc
+
+test_NextHopRoundRobin_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-D_NH_UNIT_TESTS_ \
+	-I$(abs_top_srcdir)/tests/include \
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
+
+test_NextHopRoundRobin_LDADD = \
+  $(top_builddir)/src/tscpp/util/libtscpputil.la \
+  $(top_builddir)/src/tscore/libtscore.la \
+  $(top_builddir)/proxy/hdrs/libhdrs.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/proxy/logging/liblogging.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/iocore/utils/libinkutils.a \
+	@YAMLCPP_LIBS@ \
+	@HWLOC_LIBS@ 
+
+test_NextHopRoundRobin_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore
+
+test_NextHopRoundRobin_SOURCES = \
+	NextHopSelectionStrategy.cc \
+	NextHopStrategyFactory.cc \
+	NextHopRoundRobin.cc \
+	NextHopConsistentHash.cc \
+	unit-tests/test_NextHopRoundRobin.cc \
+	unit-tests/nexthop_test_stubs.cc
+
+test_NextHopConsistentHash_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-D_NH_UNIT_TESTS_ \
+	-I$(abs_top_srcdir)/tests/include \
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
+
+test_NextHopConsistentHash_LDADD = \
+  $(top_builddir)/src/tscpp/util/libtscpputil.la \
+  $(top_builddir)/src/tscore/libtscore.la \
+  $(top_builddir)/proxy/hdrs/libhdrs.a \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/proxy/logging/liblogging.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/iocore/utils/libinkutils.a \
+	@YAMLCPP_LIBS@ \
+	@HWLOC_LIBS@ 
+
+test_NextHopConsistentHash_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore
+
+test_NextHopConsistentHash_SOURCES = \
+	NextHopSelectionStrategy.cc \
+	NextHopStrategyFactory.cc \
+	NextHopConsistentHash.cc \
+	NextHopRoundRobin.cc \
+	unit-tests/test_NextHopConsistentHash.cc \
+	unit-tests/nexthop_test_stubs.cc
 
 DSO_LDFLAGS = \
 	-module \
