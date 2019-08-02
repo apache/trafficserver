@@ -23,6 +23,7 @@
 
 #include <vector>
 #include <string>
+#include <optional>
 
 #include "tscore/Errata.h"
 
@@ -39,6 +40,7 @@ TSDECL(client_cert);
 TSDECL(client_key);
 TSDECL(ip_allow);
 TSDECL(valid_tls_versions_in);
+TSDECL(http2);
 #undef TSDECL
 
 const int start = 0;
@@ -50,18 +52,20 @@ struct YamlSNIConfig {
     forward_route,            // decrypt data and then blind tunnel action
     verify_server_policy,     // this applies to server side vc only
     verify_server_properties, // this applies to server side vc only
-    client_cert
+    client_cert,
+    h2 // this applies to client side only
   };
   enum class Level { NONE = 0, MODERATE, STRICT };
   enum class Policy : uint8_t { DISABLED = 0, PERMISSIVE, ENFORCED, UNSET };
   enum class Property : uint8_t { NONE = 0, SIGNATURE_MASK = 0x1, NAME_MASK = 0x2, ALL_MASK = 0x3, UNSET };
   enum class TLSProtocol : uint8_t { TLSv1 = 0, TLSv1_1, TLSv1_2, TLSv1_3, TLS_MAX = TLSv1_3 };
+  enum class Control : uint8_t { NONE = 0, ENABLE, DISABLE };
 
   YamlSNIConfig() {}
 
   struct Item {
     std::string fqdn;
-    bool disable_h2             = false;
+    std::optional<bool> offer_h2; // Has no value by default, so do not initialize!
     uint8_t verify_client_level = 255;
     std::string tunnel_destination;
     bool tunnel_decrypt               = false;

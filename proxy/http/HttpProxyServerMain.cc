@@ -95,20 +95,6 @@ ssl_register_protocol(const char *protocol, Continuation *contp)
   return true;
 }
 
-bool
-ssl_unregister_protocol(const char *protocol, Continuation *contp)
-{
-  SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
-
-  for (SSLNextProtocolAccept *ssl = ssl_plugin_acceptors.head; ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
-    // Ignore possible failure because we want to try to unregister
-    // from all SSL ports.
-    ssl->unregisterEndpoint(protocol, contp);
-  }
-
-  return true;
-}
-
 /////////////////////////////////////////////////////////////////
 //
 //  main()
@@ -236,21 +222,10 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     // the least important protocol first:
     // http/1.0, http/1.1, h2
 
-    // HTTP
-    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_1_0)) {
-      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_0, http);
-    }
-
-    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_1_1)) {
-      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_1, http);
-    }
-
-    // HTTP2
-    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0)) {
-      Http2SessionAccept *acc = new Http2SessionAccept(accept_opt);
-
-      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, acc);
-    }
+    ssl->enableProtocols(port.m_session_protocol_preference);
+    ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_0, http);
+    ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_1, http);
+    ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, new Http2SessionAccept(accept_opt));
 
     SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
     ssl_plugin_acceptors.push(ssl);

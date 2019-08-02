@@ -97,15 +97,13 @@ client_key                The file containing the client private key that corres
                           |TS| tries to use a private key in client_cert.  Otherwise,
                           :ts:cv:`proxy.config.ssl.client.private_key.filename` is used.
 
+http2                     Indicates whether the H2 protocol should be added to or removed from the 
+                          protocol negotiation list.  The valid values are :code:`on` or :code:`off`.
 
-disable_h2                :code:`true` or :code:`false`.
-
-                          If :code:`false` then HTTP/2 is removed from
-                          the valid next protocol list. It is not an error to set this to :code:`false`
-                          for proxy ports on which HTTP/2 is not enabled.
+disable_h2                Deprecated for the more general h2 setting.  Setting disable_h2
+                          to :code:`true` is the same as setting http2 to :code:`on`.
 
 tunnel_route              Destination as an FQDN and port, separated by a colon ``:``.
-
 
                           This will forward all traffic to the specified destination without first terminating
                           the incoming TLS connection.
@@ -175,7 +173,7 @@ Disable HTTP/2 for ``no-http2.example.com``.
 
    sni:
    - fqdn: no-http2.example.com
-     disable_h2: true
+     http2: off
 
 Require client certificate verification for ``example.com`` and any server name ending with ``.yahoo.com``. Therefore, client request for a server name ending with yahoo.com (e.g., def.yahoo.com, abc.yahoo.com etc.) will cause |TS| require and verify the client certificate. By contrast, |TS| will allow a client certificate to be provided for ``example.com`` and if it is, |TS| will require the certificate to be valid.
 

@@ -25,6 +25,7 @@
 
 #include "tscore/List.h"
 #include "I_Net.h"
+#include "records/I_RecHttp.h"
 
 class Continuation;
 
@@ -35,12 +36,9 @@ public:
   ~SSLNextProtocolSet();
 
   bool registerEndpoint(const char *, Continuation *);
-  bool unregisterEndpoint(const char *, Continuation *);
-  bool unregisterEndpoint(const char *proto);
-  bool advertiseProtocols(const unsigned char **out, unsigned *len) const;
-  SSLNextProtocolSet *clone() const;
 
   Continuation *findEndpoint(const unsigned char *, unsigned) const;
+  bool create_npn_advertisement(const SessionProtocolSet &enabled, unsigned char **npn, size_t *len) const;
 
   struct NextProtocolEndpoint {
     // NOTE: the protocol and endpoint are NOT copied. The caller is
@@ -60,8 +58,5 @@ public:
   SSLNextProtocolSet &operator=(const SSLNextProtocolSet &) = delete; // disabled
 
 private:
-  mutable unsigned char *npn = nullptr;
-  mutable size_t npnsz       = 0;
-
   NextProtocolEndpoint::list_type endpoints;
 };
