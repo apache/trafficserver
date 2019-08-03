@@ -171,7 +171,7 @@ void
 produce_versions(bool json)
 {
   using LBW = ts::LocalBufferWriter<128>;
-  static const std::string_view undef{"undef"};
+  [[maybe_unused]] static const std::string_view undef{"undef"};
 
   if (json) {
     printf("{\n");
