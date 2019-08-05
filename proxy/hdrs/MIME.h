@@ -348,7 +348,8 @@ MIMEScanner::get_buffered_line_size() const
 inline void
 MIMEScanner::clear()
 {
-  m_line.clear();
+  std::string empty;        // GAH! @c swap isn't defined to take r-value reference!
+  std::swap(m_line, empty); // make sure the memory is released.
   m_state = INITIAL_PARSE_STATE;
 }
 

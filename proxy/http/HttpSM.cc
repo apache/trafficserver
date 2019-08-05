@@ -281,10 +281,7 @@ HttpVCTable::cleanup_all()
     default_handler = _h;                 \
   }
 
-HttpSM::HttpSM() : Continuation(nullptr), vc_table(this)
-{
-  ink_zero(http_parser);
-}
+HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
 
 void
 HttpSM::cleanup()
@@ -334,14 +331,13 @@ HttpSM::init()
   t_state.txn_conf = &t_state.http_config_param->oride;
 
   t_state.init();
+  http_parser_init(&http_parser);
 
   // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based ACL in
   // cache control or parent.config or if the doc_in_cache_skip_dns is disabled or if http caching is disabled
   // TODO: This probably doesn't honor this as a per-transaction overridable config.
   t_state.force_dns = (ip_rule_in_CacheControlTable() || t_state.parent_params->parent_table->ipMatch ||
                        !(t_state.txn_conf->doc_in_cache_skip_dns) || !(t_state.txn_conf->cache_http));
-
-  http_parser_init(&http_parser);
 
   SET_HANDLER(&HttpSM::main_handler);
 
@@ -520,7 +516,6 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   ua_entry->vc_handler = &HttpSM::state_read_client_request_header;
   t_state.hdr_info.client_request.destroy();
   t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
-  http_parser_init(&http_parser);
 
   // Prepare raw reader which will live until we are sure this is HTTP indeed
   if (is_transparent_passthrough_allowed() || (ssl_vc && ssl_vc->decrypt_tunnel())) {
