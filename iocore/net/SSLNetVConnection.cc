@@ -255,24 +255,20 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       break;
     case SSL_ERROR_WANT_WRITE:
       event = SSL_WRITE_WOULD_BLOCK;
-      SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
       Debug("ssl.error", "SSL_ERROR_WOULD_BLOCK(write)");
       break;
     case SSL_ERROR_WANT_READ:
       event = SSL_READ_WOULD_BLOCK;
-      SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
       Debug("ssl.error", "SSL_ERROR_WOULD_BLOCK(read)");
       break;
 #ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
     case SSL_ERROR_WANT_CLIENT_HELLO_CB:
       event = SSL_READ_WOULD_BLOCK;
-      SSL_INCREMENT_DYN_STAT(ssl_error_want_client_hello_cb);
       Debug("ssl.error", "SSL_ERROR_WOULD_BLOCK(read/client hello cb)");
       break;
 #endif
     case SSL_ERROR_WANT_X509_LOOKUP:
       event = SSL_READ_WOULD_BLOCK;
-      SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
       Debug("ssl.error", "SSL_ERROR_WOULD_BLOCK(read/x509 lookup)");
       break;
     case SSL_ERROR_SYSCALL:
@@ -290,7 +286,6 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       break;
     case SSL_ERROR_ZERO_RETURN:
       event = SSL_READ_EOS;
-      SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
       Debug("ssl.error", "SSL_ERROR_ZERO_RETURN");
       break;
     case SSL_ERROR_SSL:
@@ -804,7 +799,6 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     case SSL_ERROR_WANT_READ:
       needs |= EVENTIO_READ;
       num_really_written = -EAGAIN;
-      SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
       Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_READ");
       break;
     case SSL_ERROR_WANT_WRITE:
@@ -813,16 +807,8 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 #endif
     case SSL_ERROR_WANT_X509_LOOKUP: {
       if (SSL_ERROR_WANT_WRITE == err) {
-        SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
         redoWriteSize = l;
-      } else if (SSL_ERROR_WANT_X509_LOOKUP == err) {
-        SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
       }
-#ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
-      else if (SSL_ERROR_WANT_CLIENT_HELLO_CB == err) {
-        SSL_INCREMENT_DYN_STAT(ssl_error_want_client_hello_cb);
-      }
-#endif
       needs |= EVENTIO_WRITE;
       num_really_written = -EAGAIN;
       Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_WRITE");
@@ -836,7 +822,6 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     // end of stream
     case SSL_ERROR_ZERO_RETURN:
       num_really_written = -errno;
-      SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
       Debug("ssl.error", "SSL_write-SSL_ERROR_ZERO_RETURN");
       break;
     case SSL_ERROR_SSL:
@@ -1413,21 +1398,17 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
   case SSL_ERROR_WANT_WRITE:
     Debug("ssl.error", "SSL_ERROR_WANT_WRITE");
-    SSL_INCREMENT_DYN_STAT(ssl_error_want_write);
     return SSL_HANDSHAKE_WANT_WRITE;
 
   case SSL_ERROR_WANT_READ:
-    SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
     Debug("ssl.error", "SSL_ERROR_WANT_READ");
     return SSL_HANDSHAKE_WANT_READ;
 #ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
   case SSL_ERROR_WANT_CLIENT_HELLO_CB:
-    SSL_INCREMENT_DYN_STAT(ssl_error_want_client_hello_cb);
     Debug("ssl.error", "SSL_ERROR_WANT_CLIENT_HELLO_CB");
     break;
 #endif
   case SSL_ERROR_WANT_X509_LOOKUP:
-    SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
     Debug("ssl.error", "SSL_ERROR_WANT_X509_LOOKUP");
     break;
 
@@ -1438,7 +1419,6 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     break;
 
   case SSL_ERROR_ZERO_RETURN:
-    SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
     Debug("ssl.error", "EOS");
     return EVENT_ERROR;
 
