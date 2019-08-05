@@ -6421,24 +6421,25 @@ HttpTransact::will_this_request_self_loop(State *s)
   // check if we are about to self loop //
   ////////////////////////////////////////
   if (s->dns_info.lookup_success) {
-    if (ats_ip_addr_eq(s->host_db_info.ip(), &Machine::instance()->ip.sa)) {
-      in_port_t host_port  = s->hdr_info.client_request.url_get()->port_get();
-      in_port_t local_port = s->client_info.dst_addr.host_order_port();
-      if (host_port == local_port) {
-        switch (s->dns_info.looking_up) {
-        case ORIGIN_SERVER:
-          TxnDebug("http_transact", "host ip and port same as local ip and port - bailing");
-          break;
-        case PARENT_PROXY:
-          TxnDebug("http_transact", "parent proxy ip and port same as local ip and port - bailing");
-          break;
-        default:
-          TxnDebug("http_transact", "unknown's ip and port same as local ip and port - bailing");
-          break;
-        }
-        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected");
-        return true;
+    in_port_t dst_port   = s->hdr_info.client_request.url_get()->port_get(); // going to this port.
+    in_port_t local_port = s->client_info.dst_addr.host_order_port();        // already connected proxy port.
+    // It's a loop if connecting to the same port as it already connected to the proxy and
+    // it's a proxy address or the same address it already connected to.
+    if (dst_port == local_port && (ats_ip_addr_eq(s->host_db_info.ip(), &Machine::instance()->ip.sa) ||
+                                   ats_ip_addr_eq(s->host_db_info.ip(), s->client_info.dst_addr))) {
+      switch (s->dns_info.looking_up) {
+      case ORIGIN_SERVER:
+        TxnDebug("http_transact", "host ip and port same as local ip and port - bailing");
+        break;
+      case PARENT_PROXY:
+        TxnDebug("http_transact", "parent proxy ip and port same as local ip and port - bailing");
+        break;
+      default:
+        TxnDebug("http_transact", "unknown's ip and port same as local ip and port - bailing");
+        break;
       }
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected");
+      return true;
     }
 
     // Now check for a loop using the Via string.
