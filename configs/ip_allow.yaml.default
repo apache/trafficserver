@@ -18,14 +18,14 @@
 # A rule must have either "src" or "dst" to indicate if the IP addresses apply to inbound connections
 # or outbound connections.
 #
-# The top level tag 'ip_addr_acl' identifies the rule items. Its value must be a rule item or a
+# The top level tag 'ip_allow' identifies the rule items. Its value must be a rule item or a
 # sequence of rule items.
 #
 # Rules are applied in the order listed starting from the top.
 # That means you generally want to append your rules after the ones listed here.
 #
 # Allow anything on localhost, limit destructive methods elsewhere.
-ip_addr_acl:
+ip_allow:
   - apply: in
     ip_addrs: 127.0.0.1
     action: allow

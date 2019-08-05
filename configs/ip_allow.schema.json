@@ -8,7 +8,7 @@
       "type": "string",
       "description": "Configuration format version."
     },
-    "ip_addr_acl": {
+    "ip_allow": {
       "description": "Root tag for IP address ACL configuration",
       "type": "array",
       "items": {
@@ -16,7 +16,7 @@
       }
     }
   },
-  "required": [ "ip_addr_acl" ],
+  "required": [ "ip_allow" ],
   "definitions": {
     "range": {
       "description": "A range of IP addresses in a single family.",

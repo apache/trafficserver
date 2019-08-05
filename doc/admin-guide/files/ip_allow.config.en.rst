@@ -42,7 +42,7 @@ Format
 :file:`ip_allow.yaml` is YAML format. The default configuration is::
 
    # YAML
-   ip_addr_acl:
+   ip_allow:
      - apply: in
        ip_addrs: 127.0.0.1
        action: allow
@@ -66,7 +66,7 @@ Format
          - PUSH
          - DELETE
 
-Each rule is a mapping. The YAML data must have a top level key of "ip_addr_acl" and its value must
+Each rule is a mapping. The YAML data must have a top level key of "ip_allow" and its value must
 be a mapping or a sequence of mappings, each of those being one rule.
 
 The keys in a rule are
@@ -210,7 +210,7 @@ denied.
 
 As a final example, here is the default configuration in compact form::
 
-   ip_addr_acl: [
+   ip_allow: [
      { apply: in, ip_addrs: 127.0.0.1, action: allow },
      { apply: in, ip_addrs: "::1", action: allow },
      { apply: in, ip_addrs: 0/0, action: deny, methods: [ PURGE, PUSH, DELETE ] },

@@ -89,7 +89,7 @@ public:
   static constexpr ts::TextView OPT_METHOD{"method"};
   static constexpr ts::TextView OPT_METHOD_ALL{"all"};
 
-  static constexpr ts::TextView YAML_TAG_ROOT{"ip_addr_acl"};
+  static constexpr ts::TextView YAML_TAG_ROOT{"ip_allow"};
   static constexpr ts::TextView YAML_TAG_IP_ADDRS{"ip_addrs"};
   static constexpr ts::TextView YAML_TAG_APPLY{"apply"};
   static constexpr ts::TextView YAML_VALUE_APPLY_IN{"in"};
