@@ -83,18 +83,6 @@ SSL/TLS
 .. ts:stat:: global proxy.process.ssl.ssl_error_syscall integer
    :type: counter
 
-.. ts:stat:: global proxy.process.ssl.ssl_error_want_read integer
-   :type: counter
-
-.. ts:stat:: global proxy.process.ssl.ssl_error_want_write integer
-   :type: counter
-
-.. ts:stat:: global proxy.process.ssl.ssl_error_want_x509_lookup integer
-   :type: counter
-
-.. ts:stat:: global proxy.process.ssl.ssl_error_zero_return integer
-   :type: counter
-
 .. ts:stat:: global proxy.process.ssl.ssl_session_cache_eviction integer
    :type: counter
 
