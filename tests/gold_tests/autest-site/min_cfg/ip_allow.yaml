@@ -14,7 +14,7 @@
 #  the License.
 
 # Allow anything on localhost, limit destructive methods elsewhere.
-ip_addr_acl:
+ip_allow:
   - apply: in
     ip_addrs: 127.0.0.1
     action: allow
