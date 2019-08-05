@@ -6423,7 +6423,7 @@ HttpTransact::will_this_request_self_loop(State *s)
   if (s->dns_info.lookup_success) {
     if (ats_ip_addr_eq(s->host_db_info.ip(), &Machine::instance()->ip.sa)) {
       in_port_t host_port  = s->hdr_info.client_request.url_get()->port_get();
-      in_port_t local_port = s->client_info.src_addr.host_order_port();
+      in_port_t local_port = s->client_info.dst_addr.host_order_port();
       if (host_port == local_port) {
         switch (s->dns_info.looking_up) {
         case ORIGIN_SERVER:
