@@ -57,3 +57,4 @@ duplicate bugs is encouraged, but not required.
    core-architecture/index.en
    design-documents/index.en
    layout/index.en
+   testing/index.en
