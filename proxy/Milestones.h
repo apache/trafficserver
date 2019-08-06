@@ -89,7 +89,7 @@ public:
   }
 
 private:
-  std::array<ink_hrtime, entries> _milestones = {0};
+  std::array<ink_hrtime, entries> _milestones = {{0}};
 };
 
 // For compatibility with HttpSM.h and HttpTransact.h
