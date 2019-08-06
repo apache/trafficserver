@@ -87,22 +87,6 @@ tr = Test.AddTestRun("crash test")
 creq=replay_txns[1]['client-request']
 tr.Processes.Default.Command = curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"])
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/regex_remap_smoke.gold"
-ts.Disk.diags_log.Content = Testers.ContainsExpression('ERROR: [regex_remap] Bad regular expression result -21', "Resource limit exceeded")
+tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
+ts.Disk.diags_log.Content = Testers.ContainsExpression('ERROR: .regex_remap. Bad regular expression result -21', "Resource limit exceeded")
 tr.StillRunningAfter = ts
-
-'''
-# 1 Test - Load cache (miss) for later test (path1a)
-tr = Test.AddTestRun("test hit")
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path1a'.format(ts.Variables.port)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/regex_reval-miss.gold"
-tr.StillRunningAfter = ts
-
-# 2 Test - Load cache (miss) for later test (path2a)
-tr = Test.AddTestRun("test bad URL")
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path2a'.format(ts.Variables.port)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/regex_reval-miss.gold"
-tr.StillRunningAfter = ts
-'''
