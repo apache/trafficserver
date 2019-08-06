@@ -40,13 +40,10 @@ public:
   // lifetime is at least as long as that of the acceptor.
   bool registerEndpoint(const char *protocol, Continuation *handler);
 
-  // Unregister the handler. Returns false if this protocol is not registered
-  // or if it is not registered for the specified handler.
-  bool unregisterEndpoint(const char *protocol, Continuation *handler);
+  void enableProtocols(const SessionProtocolSet &protos);
 
   SLINK(QUICNextProtocolAccept, link);
   SSLNextProtocolSet *getProtoSet();
-  SSLNextProtocolSet *cloneProtoSet();
 
   // noncopyable
   QUICNextProtocolAccept(const QUICNextProtocolAccept &) = delete;            // disabled
@@ -56,6 +53,7 @@ private:
   int mainEvent(int event, void *netvc);
 
   SSLNextProtocolSet protoset;
+  SessionProtocolSet protoenabled;
 
   friend struct QUICNextProtocolTrampoline;
 };

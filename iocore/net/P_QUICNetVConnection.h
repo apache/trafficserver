@@ -168,6 +168,15 @@ public:
   int populate_protocol(std::string_view *results, int n) const override;
   const char *protocol_contains(std::string_view tag) const override;
 
+  int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
+                           unsigned inlen) const override;
+
+  void
+  setEnabledProtocols(const SessionProtocolSet &protos)
+  {
+    this->_protoenabled = protos;
+  }
+
   // QUICNetVConnection
   void registerNextProtocolSet(SSLNextProtocolSet *s);
 
@@ -187,6 +196,7 @@ public:
   uint32_t pmtu() const override;
   NetVConnectionContext_t direction() const override;
   SSLNextProtocolSet *next_protocol_set() const override;
+  const SessionProtocolSet &get_enabled_protocols() const override;
   std::string_view negotiated_application_name() const override;
   bool is_closed() const override;
 
@@ -236,6 +246,10 @@ private:
   uint32_t _pmtu = 1280;
 
   SSLNextProtocolSet *_next_protocol_set = nullptr;
+  SessionProtocolSet _protoenabled;
+  // Local copies of the npn strings
+  unsigned char *_npn = nullptr;
+  size_t _npnsz       = 0;
 
   // TODO: use custom allocator and make them std::unique_ptr or std::shared_ptr
   // or make them just member variables.
