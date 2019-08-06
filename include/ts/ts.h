@@ -1251,13 +1251,12 @@ tsapi TSReturnCode TSSslServerCertUpdate(const char *cert_path, const char *key_
 tsapi TSSslContext TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file);
 tsapi void TSSslContextDestroy(TSSslContext ctx);
 tsapi void TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen);
-tsapi TSNextProtocolSet TSUnregisterProtocol(TSNextProtocolSet protoset, const char *protocol);
 TSAcceptor TSAcceptorGet(TSVConn sslp);
-TSNextProtocolSet TSGetcloneProtoSet(TSAcceptor tna);
 TSAcceptor TSAcceptorGetbyID(int ID);
-void TSRegisterProtocolSet(TSVConn sslp, TSNextProtocolSet ps);
 int TSAcceptorCount();
 int TSAcceptorIDGet(TSAcceptor acceptor);
+TSReturnCode TSVConnProtocolDisable(TSVConn connp, const char *protocol_name);
+TSReturnCode TSVConnProtocolEnable(TSVConn connp, const char *protocol_name);
 
 /*  Returns 1 if the sslp argument refers to a SSL connection */
 tsapi int TSVConnIsSsl(TSVConn sslp);
