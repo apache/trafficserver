@@ -274,17 +274,11 @@ int
 QUICMultiCertConfigLoader::ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen,
                                                     const unsigned char *in, unsigned inlen, void *)
 {
-  const unsigned char *npn;
-  unsigned npnsz     = 0;
   QUICConnection *qc = static_cast<QUICConnection *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_qc_index));
 
-  qc->next_protocol_set()->advertiseProtocols(&npn, &npnsz);
-  if (SSL_select_next_proto((unsigned char **)out, outlen, npn, npnsz, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
-    return SSL_TLSEXT_ERR_OK;
+  if (qc) {
+    return qc->select_next_protocol(ssl, out, outlen, in, inlen);
   }
-
-  *out    = nullptr;
-  *outlen = 0;
   return SSL_TLSEXT_ERR_NOACK;
 }
 

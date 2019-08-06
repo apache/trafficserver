@@ -7078,7 +7078,6 @@ TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
 
 /* From proxy/http/HttpProxyServerMain.c: */
 extern bool ssl_register_protocol(const char *, Continuation *);
-// extern bool ssl_unregister_protocol(const char *, Continuation *);
 
 TSReturnCode
 TSNetAcceptNamedProtocol(TSCont contp, const char *protocol)
