@@ -27,16 +27,12 @@
 
 #include <ts/ts.h>
 
-#include <unordered_map>
 #include <unordered_set>
 #include <string>
 #include <cstring>
 #include <openssl/ssl.h>
 
 #define PLUGIN_NAME "disable_http2"
-
-typedef std::unordered_map<int, TSNextProtocolSet> AcceptorMapping; // stores protocolset keyed by NetAccept ID
-AcceptorMapping AcceptorMap;
 
 // Map of domains to tweak.
 using DomainSet = std::unordered_set<std::string>;
@@ -51,36 +47,13 @@ CB_SNI(TSCont contp, TSEvent, void *cb_data)
   char const *sni          = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (sni) {
     if (Domains.find(sni) != Domains.end()) {
-      TSAcceptor na        = TSAcceptorGet(vc);
-      int nid              = TSAcceptorIDGet(na);
-      TSNextProtocolSet ps = AcceptorMap[nid]; // get our copy of the protocol set.
-      TSRegisterProtocolSet(vc, ps);           // replace default protocol set with the copy.
+      TSDebug(PLUGIN_NAME, "Disable H2 for SNI=%s", sni);
+      TSVConnProtocolDisable(vc, TS_ALPN_PROTOCOL_HTTP_2_0);
     }
   }
 
   TSVConnReenable(vc);
   return TS_SUCCESS;
-}
-
-int
-CB_NetAcceptReady(TSCont contp, TSEvent event, void *cb_data)
-{
-  switch (event) {
-  case TS_EVENT_LIFECYCLE_PORTS_READY:
-    // The accept objects are all created and ready at this point.  We
-    // can now iterate over them.
-    for (int i = 0, totalNA = TSAcceptorCount(); i < totalNA; ++i) {
-      TSAcceptor netaccept = TSAcceptorGetbyID(i);
-      // get a clone of the protoset associated with the netaccept
-      TSNextProtocolSet nps = TSGetcloneProtoSet(netaccept);
-      TSUnregisterProtocol(nps, TS_ALPN_PROTOCOL_HTTP_2_0);
-      AcceptorMap[i] = nps;
-    }
-    break;
-  default:
-    break;
-  }
-  return 0;
 }
 
 void
@@ -109,9 +82,7 @@ TSPluginInit(int argc, char const *argv[])
     Domains.emplace(std::string(argv[i], strlen(argv[i])));
   }
   // These callbacks do not modify any state so no lock is needed.
-  TSCont cb_sni    = TSContCreate(&CB_SNI, nullptr);
-  TSCont cb_netacc = TSContCreate(&CB_NetAcceptReady, nullptr);
+  TSCont cb_sni = TSContCreate(&CB_SNI, nullptr);
 
   TSHttpHookAdd(TS_SSL_SERVERNAME_HOOK, cb_sni);
-  TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_READY_HOOK, cb_netacc);
 }

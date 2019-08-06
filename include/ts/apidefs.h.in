@@ -913,7 +913,6 @@ typedef struct tsapi_bufferreader *TSIOBufferReader;
 typedef struct tsapi_hostlookupresult *TSHostLookupResult;
 typedef struct tsapi_aiocallback *TSAIOCallback;
 typedef struct tsapi_net_accept *TSAcceptor;
-typedef struct tsapi_protocol_set *TSNextProtocolSet;
 
 typedef void *(*TSThreadFunc)(void *data);
 typedef int (*TSEventFunc)(TSCont contp, TSEvent event, void *edata);

@@ -213,8 +213,6 @@ more widely. Those are described on this page.
 
 .. type:: TSAcceptor
 
-.. type:: TSNextProtocolSet
-
 .. cpp:class:: template <typename T> LINK
 
 .. cpp:class:: VersionNumber

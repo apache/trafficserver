@@ -9415,28 +9415,33 @@ TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen)
   SSLTicketKeyConfig::reconfigure_data(ticketData, ticketDataLen);
 }
 
-#ifdef OLD
-void
-TSRegisterProtocolSet(TSVConn sslp, TSNextProtocolSet ps)
+TSReturnCode
+TSVConnProtocolEnable(TSVConn connp, const char *protocol_name)
 {
-  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+  TSReturnCode retval = TS_ERROR;
+  int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
+  auto net_vc         = reinterpret_cast<UnixNetVConnection *>(connp);
+  auto ssl_vc         = dynamic_cast<SSLNetVConnection *>(net_vc);
   if (ssl_vc) {
-    ssl_vc->registerNextProtocolSet(reinterpret_cast<SSLNextProtocolSet *>(ps));
+    ssl_vc->enableProtocol(protocol_idx);
+    retval = TS_SUCCESS;
   }
+  return retval;
 }
 
-TSNextProtocolSet
-TSUnregisterProtocol(TSNextProtocolSet protoset, const char *protocol)
+TSReturnCode
+TSVConnProtocolDisable(TSVConn connp, const char *protocol_name)
 {
-  SSLNextProtocolSet *snps = reinterpret_cast<SSLNextProtocolSet *>(protoset);
-  if (snps) {
-    snps->unregisterEndpoint(protocol, nullptr);
-    return reinterpret_cast<TSNextProtocolSet>(snps);
+  TSReturnCode retval = TS_ERROR;
+  int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
+  auto net_vc         = reinterpret_cast<UnixNetVConnection *>(connp);
+  auto ssl_vc         = dynamic_cast<SSLNetVConnection *>(net_vc);
+  if (ssl_vc) {
+    ssl_vc->disableProtocol(protocol_idx);
+    retval = TS_SUCCESS;
   }
-  return nullptr;
+  return retval;
 }
-#endif
 
 TSAcceptor
 TSAcceptorGet(TSVConn sslp)
@@ -9468,17 +9473,6 @@ TSAcceptorCount()
   SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());
   return naVec.size();
 }
-
-#ifdef OLD
-// clones the protoset associated with netAccept
-TSNextProtocolSet
-TSGetcloneProtoSet(TSAcceptor tna)
-{
-  NetAccept *na = reinterpret_cast<NetAccept *>(tna);
-  // clone protoset
-  return (na && na->snpa) ? reinterpret_cast<TSNextProtocolSet>(na->snpa->cloneProtoSet()) : nullptr;
-}
-#endif
 
 tsapi int
 TSVConnIsSsl(TSVConn sslp)
