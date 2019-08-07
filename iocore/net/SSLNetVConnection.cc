@@ -25,7 +25,6 @@
 #include "tscore/EventNotify.h"
 #include "tscore/I_Layout.h"
 #include "tscore/TSSystemState.h"
-#include "records/I_RecHttp.h"
 
 #include "InkAPIInternal.h" // Added to include the ssl_hook definitions
 #include "Log.h"
@@ -34,7 +33,6 @@
 #include "HttpConfig.h"
 
 #include "P_Net.h"
-#include "P_SSLNextProtocolSet.h"
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 #include "P_SSLClientUtils.h"
@@ -42,6 +40,7 @@
 #include "BIO_fastopen.h"
 #include "SSLStats.h"
 #include "SSLInternal.h"
+#include "P_ALPNSupport.h"
 
 #include <climits>
 #include <string>
@@ -889,11 +888,7 @@ SSLNetVConnection::clear()
     SSL_free(ssl);
     ssl = nullptr;
   }
-  if (npn) {
-    ats_free(npn);
-    npn   = nullptr;
-    npnsz = 0;
-  }
+  ALPNSupport::clear();
 
   sslHandshakeStatus          = SSL_HANDSHAKE_ONGOING;
   sslHandshakeBeginTime       = 0;
@@ -904,8 +899,6 @@ SSLNetVConnection::clear()
 
   curHook         = nullptr;
   hookOpRequested = SSL_HOOK_OP_DEFAULT;
-  npnSet          = nullptr;
-  npnEndpoint     = nullptr;
   free_handshake_buffers();
 
   super::clear();
@@ -1268,17 +1261,9 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       }
 
       if (len) {
-        // If there's no NPN set, we should not have done this negotiation.
-        ink_assert(this->npnSet != nullptr);
-
-        this->npnEndpoint = this->npnSet->findEndpoint(proto, len);
-        this->npnSet      = nullptr;
-
-        if (this->npnEndpoint == nullptr) {
-          Error("failed to find registered SSL endpoint for '%.*s'", (int)len, (const char *)proto);
+        if (!this->setSelectedProtocol(proto, len)) {
           return EVENT_ERROR;
         }
-
         Debug("ssl", "client selected next protocol '%.*s'", len, proto);
       } else {
         Debug("ssl", "client did not select a next protocol");
@@ -1457,34 +1442,6 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   return EVENT_CONT;
 }
 
-void
-SSLNetVConnection::disableProtocol(int idx)
-{
-  this->protoenabled.markOut(idx);
-  // Update the npn string
-  if (npnSet) {
-    npnSet->create_npn_advertisement(protoenabled, &npn, &npnsz);
-  }
-}
-
-void
-SSLNetVConnection::enableProtocol(int idx)
-{
-  this->protoenabled.markIn(idx);
-  // Update the npn string
-  if (npnSet) {
-    npnSet->create_npn_advertisement(protoenabled, &npn, &npnsz);
-  }
-}
-
-void
-SSLNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s, const SessionProtocolSet &protos)
-{
-  this->protoenabled = protos;
-  this->npnSet       = s;
-  npnSet->create_npn_advertisement(protoenabled, &npn, &npnsz);
-}
-
 // NextProtocolNegotiation TLS extension callback. The NPN extension
 // allows the client to select a preferred protocol, so all we have
 // to do here is tell them what out protocol set is.
@@ -1495,13 +1452,10 @@ SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, 
 
   ink_release_assert(netvc != nullptr);
 
-  if (netvc->npn && netvc->npnsz) {
-    *out    = netvc->npn;
-    *outlen = netvc->npnsz;
+  if (netvc->getNPN(out, outlen)) {
     // Successful return tells OpenSSL to advertise.
     return SSL_TLSEXT_ERR_OK;
   }
-
   return SSL_TLSEXT_ERR_NOACK;
 }
 
@@ -1514,10 +1468,12 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   ink_release_assert(netvc != nullptr);
-  if (netvc->npn && netvc->npnsz) {
+  const unsigned char *npnptr = nullptr;
+  unsigned int npnsize        = 0;
+  if (netvc->getNPN(&npnptr, &npnsize)) {
     // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
     // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
-    if (SSL_select_next_proto((unsigned char **)out, outlen, netvc->npn, netvc->npnsz, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
+    if (SSL_select_next_proto((unsigned char **)out, outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
       Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
       return SSL_TLSEXT_ERR_OK;
     }

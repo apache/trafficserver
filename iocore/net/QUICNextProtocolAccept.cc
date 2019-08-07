@@ -54,8 +54,7 @@ QUICNextProtocolAccept::mainEvent(int event, void *edata)
   switch (event) {
   case NET_EVENT_ACCEPT:
     ink_release_assert(netvc != nullptr);
-    netvc->setEnabledProtocols(this->protoenabled);
-    netvc->registerNextProtocolSet(&this->protoset);
+    netvc->registerNextProtocolSet(&this->protoset, this->protoenabled);
     return EVENT_CONT;
   default:
     netvc->do_io_close();

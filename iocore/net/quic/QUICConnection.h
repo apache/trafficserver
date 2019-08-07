@@ -30,8 +30,6 @@
 class QUICApplication;
 class QUICStreamManager;
 class UDPPacket;
-class SSLNextProtocolSet;
-class SessionProtocolSet;
 
 class QUICConnectionInfoProvider
 {
@@ -43,14 +41,12 @@ public:
   virtual std::string_view cids() const                   = 0;
   virtual const QUICFiveTuple five_tuple() const          = 0;
 
-  virtual uint32_t pmtu() const                                   = 0;
-  virtual NetVConnectionContext_t direction() const               = 0;
-  virtual SSLNextProtocolSet *next_protocol_set() const           = 0;
-  virtual const SessionProtocolSet &get_enabled_protocols() const = 0;
+  virtual uint32_t pmtu() const                                = 0;
+  virtual NetVConnectionContext_t direction() const            = 0;
   virtual int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                                   unsigned inlen) const          = 0;
-  virtual bool is_closed() const                                  = 0;
-  virtual std::string_view negotiated_application_name() const    = 0;
+                                   unsigned inlen) const       = 0;
+  virtual bool is_closed() const                               = 0;
+  virtual std::string_view negotiated_application_name() const = 0;
 };
 
 class QUICConnection : public QUICFrameHandler, public QUICConnectionInfoProvider
