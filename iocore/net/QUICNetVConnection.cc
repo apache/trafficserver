@@ -193,78 +193,6 @@ private:
   NetVConnectionContext_t _ctx;
 };
 
-class QUICCCConfigQCP : public QUICCCConfig
-{
-public:
-  QUICCCConfigQCP(const QUICConfigParams *params) : _params(params) {}
-
-  uint32_t
-  max_datagram_size() const override
-  {
-    return this->_params->cc_max_datagram_size();
-  }
-
-  uint32_t
-  initial_window() const override
-  {
-    return this->_params->cc_initial_window();
-  }
-
-  uint32_t
-  minimum_window() const override
-  {
-    return this->_params->cc_minimum_window();
-  }
-
-  float
-  loss_reduction_factor() const override
-  {
-    return this->_params->cc_loss_reduction_factor();
-  }
-
-  uint32_t
-  persistent_congestion_threshold() const override
-  {
-    return this->_params->cc_persistent_congestion_threshold();
-  }
-
-private:
-  const QUICConfigParams *_params;
-};
-
-class QUICLDConfigQCP : public QUICLDConfig
-{
-public:
-  QUICLDConfigQCP(const QUICConfigParams *params) : _params(params) {}
-
-  uint32_t
-  packet_threshold() const override
-  {
-    return this->_params->ld_packet_threshold();
-  }
-
-  float
-  time_threshold() const override
-  {
-    return this->_params->ld_time_threshold();
-  }
-
-  ink_hrtime
-  granularity() const override
-  {
-    return this->_params->ld_granularity();
-  }
-
-  ink_hrtime
-  initial_rtt() const override
-  {
-    return this->_params->ld_initial_rtt();
-  }
-
-private:
-  const QUICConfigParams *_params;
-};
-
 QUICNetVConnection::QUICNetVConnection() : _packet_factory(this->_pp_key_info), _ph_protector(this->_pp_key_info) {}
 
 QUICNetVConnection::~QUICNetVConnection()
@@ -428,7 +356,7 @@ void
 QUICNetVConnection::start()
 {
   ink_release_assert(this->thread != nullptr);
-
+  this->_context = std::make_unique<QUICContextImpl>(&this->_rtt_measure, this, &this->_pp_key_info);
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   QUICPath trusted_path = {{}, {}};
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
@@ -461,14 +389,12 @@ QUICNetVConnection::start()
   this->_frame_dispatcher = new QUICFrameDispatcher(this);
 
   // Create frame handlers
-  QUICCCConfigQCP cc_config(this->_quic_config);
-  QUICLDConfigQCP ld_config(this->_quic_config);
   this->_pinger = new QUICPinger();
   this->_padder = new QUICPadder(this->netvc_context);
-  this->_rtt_measure.init(ld_config);
-  this->_congestion_controller = new QUICCongestionController(this->_rtt_measure, this, cc_config);
-  this->_loss_detector         = new QUICLossDetector(this, this->_congestion_controller, this->_pp_key_info, &this->_rtt_measure,
-                                              this->_pinger, this->_padder, ld_config, this->netvc_context);
+  this->_rtt_measure.init(this->_context->ld_config());
+  this->_congestion_controller = new QUICNewRenoCongestionController(*_context);
+  this->_loss_detector =
+    new QUICLossDetector(*_context, this->_congestion_controller, &this->_rtt_measure, this->_pinger, this->_padder);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
@@ -1409,7 +1335,7 @@ QUICNetVConnection::_state_common_send_packet()
   uint32_t packet_count = 0;
   uint32_t error        = 0;
   while (error == 0 && packet_count < PACKET_PER_EVENT) {
-    uint32_t window = this->_congestion_controller->open_window();
+    uint32_t window = this->_congestion_controller->credit();
 
     if (window == 0) {
       break;

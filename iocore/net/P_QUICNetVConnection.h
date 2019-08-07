@@ -64,6 +64,7 @@
 #include "quic/QUICPacketReceiveQueue.h"
 #include "quic/QUICAddrVerifyState.h"
 #include "quic/QUICPacketProtectionKeyInfo.h"
+#include "quic/QUICContext.h"
 
 // Size of connection ids for debug log : e.g. aaaaaaaa-bbbbbbbb\0
 static constexpr size_t MAX_CIDS_SIZE = 8 + 1 + 8 + 1;
@@ -364,6 +365,8 @@ private:
 
   // QUICFrameGenerator
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
+
+  std::unique_ptr<QUICContextImpl> _context;
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);

@@ -92,7 +92,8 @@ libquic_a_SOURCES = \
   QUICCryptoStream.cc \
   QUICUnidirectionalStream.cc \
   QUICStreamFactory.cc \
-  QUICPadder.cc
+  QUICPadder.cc \
+  QUICContext.cc
 
 #
 # Check Programs

@@ -30,8 +30,70 @@
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
 
+class MockQUICContext;
+
 using namespace std::literals;
 std::string_view negotiated_application_name_sv = "h3-22"sv;
+
+class MockQUICLDConfig : public QUICLDConfig
+{
+  uint32_t
+  packet_threshold() const
+  {
+    return 3;
+  }
+
+  float
+  time_threshold() const
+  {
+    return 1.25;
+  }
+
+  ink_hrtime
+  granularity() const
+  {
+    return HRTIME_MSECONDS(1);
+  }
+
+  ink_hrtime
+  initial_rtt() const
+  {
+    return HRTIME_MSECONDS(100);
+  }
+};
+
+class MockQUICCCConfig : public QUICCCConfig
+{
+  uint32_t
+  max_datagram_size() const
+  {
+    return 1200;
+  }
+
+  uint32_t
+  initial_window() const
+  {
+    return 10;
+  }
+
+  uint32_t
+  minimum_window() const
+  {
+    return 2;
+  }
+
+  float
+  loss_reduction_factor() const
+  {
+    return 0.5;
+  }
+
+  uint32_t
+  persistent_congestion_threshold() const
+  {
+    return 2;
+  }
+};
 
 class MockQUICStreamManager : public QUICStreamManager
 {
@@ -345,10 +407,7 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
 class MockQUICCongestionController : public QUICCongestionController
 {
 public:
-  MockQUICCongestionController(QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config)
-    : QUICCongestionController(this->_rtt_measure, info, cc_config)
-  {
-  }
+  MockQUICCongestionController() {}
   // Override
   virtual void
   on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets) override
@@ -356,6 +415,32 @@ public:
     for (auto &p : packets) {
       lost_packets.insert(p.first);
     }
+  }
+
+  virtual void
+  on_packet_sent(size_t bytes_sent) override
+  {
+  }
+  virtual void
+  on_packet_acked(const QUICPacketInfo &acked_packet) override
+  {
+  }
+  virtual void
+  process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section) override
+  {
+  }
+  virtual void
+  add_extra_credit() override
+  {
+  }
+  virtual void
+  reset() override
+  {
+  }
+  virtual uint32_t
+  credit() const override
+  {
+    return 0;
   }
 
   // for Test
@@ -388,17 +473,89 @@ public:
 private:
   int _totalFrameCount = 0;
   int _frameCount[256] = {0};
+};
 
+class MockQUICPacketProtectionKeyInfo : public QUICPacketProtectionKeyInfo
+{
+public:
+  const EVP_CIPHER *
+  get_cipher(QUICKeyPhase phase) const override
+  {
+    return EVP_aes_128_gcm();
+  }
+
+  size_t
+  get_tag_len(QUICKeyPhase phase) const override
+  {
+    return EVP_GCM_TLS_TAG_LEN;
+  }
+
+  const size_t *encryption_iv_len(QUICKeyPhase) const override
+  {
+    static size_t dummy = 12;
+    return &dummy;
+  }
+};
+
+class MockQUICContext : public QUICContext, public QUICLDContext, public QUICCCContext
+{
+public:
+  MockQUICContext()
+  {
+    _info      = std::make_unique<MockQUICConnectionInfoProvider>();
+    _key_info  = std::make_unique<MockQUICPacketProtectionKeyInfo>();
+    _ld_config = std::make_unique<MockQUICLDConfig>();
+    _cc_config = std::make_unique<MockQUICCCConfig>();
+  }
+
+  virtual QUICConnectionInfoProvider *
+  connection_info() const override
+  {
+    return _info.get();
+  }
+  virtual QUICConfig::scoped_config
+  config() const override
+  {
+    return _config;
+  }
+  virtual QUICRTTProvider *
+  rtt_provider() const override
+  {
+    return const_cast<QUICRTTMeasure *>(&_rtt_measure);
+  }
+
+  virtual QUICPacketProtectionKeyInfo *
+  key_info() const override
+  {
+    return _key_info.get();
+  }
+
+  virtual QUICLDConfig &
+  ld_config() const override
+  {
+    return *_ld_config;
+  }
+
+  virtual QUICCCConfig &
+  cc_config() const override
+  {
+    return *_cc_config;
+  }
+
+private:
+  QUICConfig::scoped_config _config;
   QUICRTTMeasure _rtt_measure;
+  std::unique_ptr<QUICConnectionInfoProvider> _info;
+  std::unique_ptr<QUICPacketProtectionKeyInfo> _key_info;
+  std::unique_ptr<QUICLDConfig> _ld_config;
+  std::unique_ptr<QUICCCConfig> _cc_config;
 };
 
 class MockQUICLossDetector : public QUICLossDetector
 {
 public:
-  MockQUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
-                       const QUICLDConfig &ld_config)
-    : QUICLossDetector(info, cc, this->_pp_key_info, rtt_measure, &this->_pinger, &this->_padder, ld_config,
-                       NetVConnectionContext_t::NET_VCONNECTION_UNSET),
+  MockQUICLossDetector(MockQUICContext &context)
+    : QUICLossDetector(context, &_cc, &_rtt_measure, &this->_pinger, &this->_padder),
       _padder(NetVConnectionContext_t::NET_VCONNECTION_UNSET)
   {
   }
@@ -415,7 +572,8 @@ public:
 private:
   QUICPinger _pinger;
   QUICPadder _padder;
-  QUICPacketProtectionKeyInfo _pp_key_info;
+  QUICRTTMeasure _rtt_measure;
+  MockQUICCongestionController _cc;
 };
 
 class MockQUICApplication : public QUICApplication
@@ -440,28 +598,6 @@ public:
     stream_io->write(data, size);
 
     eventProcessor.schedule_imm(this, ET_CALL, 12345, stream_io);
-  }
-};
-
-class MockQUICPacketProtectionKeyInfo : public QUICPacketProtectionKeyInfo
-{
-public:
-  const EVP_CIPHER *
-  get_cipher(QUICKeyPhase phase) const override
-  {
-    return EVP_aes_128_gcm();
-  }
-
-  size_t
-  get_tag_len(QUICKeyPhase phase) const override
-  {
-    return EVP_GCM_TLS_TAG_LEN;
-  }
-
-  const size_t *encryption_iv_len(QUICKeyPhase) const override
-  {
-    static size_t dummy = 12;
-    return &dummy;
   }
 };
 
@@ -707,65 +843,5 @@ private:
   _on_frame_lost(QUICFrameInformationUPtr &info) override
   {
     lost_frame_count++;
-  }
-};
-
-class MockQUICLDConfig : public QUICLDConfig
-{
-  uint32_t
-  packet_threshold() const
-  {
-    return 3;
-  }
-
-  float
-  time_threshold() const
-  {
-    return 1.25;
-  }
-
-  ink_hrtime
-  granularity() const
-  {
-    return HRTIME_MSECONDS(1);
-  }
-
-  ink_hrtime
-  initial_rtt() const
-  {
-    return HRTIME_MSECONDS(100);
-  }
-};
-
-class MockQUICCCConfig : public QUICCCConfig
-{
-  uint32_t
-  max_datagram_size() const
-  {
-    return 1200;
-  }
-
-  uint32_t
-  initial_window() const
-  {
-    return 10;
-  }
-
-  uint32_t
-  minimum_window() const
-  {
-    return 2;
-  }
-
-  float
-  loss_reduction_factor() const
-  {
-    return 0.5;
-  }
-
-  uint32_t
-  persistent_congestion_threshold() const
-  {
-    return 2;
   }
 };
