@@ -214,18 +214,6 @@ public:
     return _direction;
   }
 
-  SSLNextProtocolSet *
-  next_protocol_set() const override
-  {
-    return nullptr;
-  }
-
-  const SessionProtocolSet &
-  get_enabled_protocols() const override
-  {
-    return _protocolsenabled;
-  }
-
   void
   close(QUICConnectionErrorUPtr error) override
   {
@@ -281,7 +269,6 @@ public:
 
   QUICTransportParametersInEncryptedExtensions dummy_transport_parameters();
   NetVConnectionContext_t _direction;
-  SessionProtocolSet _protocolsenabled;
 };
 
 class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
@@ -335,17 +322,6 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
     return NET_VCONNECTION_OUT;
   }
 
-  SSLNextProtocolSet *
-  next_protocol_set() const override
-  {
-    return nullptr;
-  }
-  const SessionProtocolSet &
-  get_enabled_protocols() const override
-  {
-    return _protocolsenabled;
-  }
-
   int
   select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
                        unsigned inlen) const override
@@ -364,8 +340,6 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
   {
     return negotiated_application_name_sv;
   }
-
-  SessionProtocolSet _protocolsenabled;
 };
 
 class MockQUICCongestionController : public QUICCongestionController

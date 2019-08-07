@@ -7169,7 +7169,6 @@ TSNetAcceptNamedProtocol(TSCont contp, const char *protocol)
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
   if (!ssl_register_protocol(protocol, (INKContInternal *)contp)) {
-    //    ssl_unregister_protocol(protocol, (INKContInternal *)contp);
     return TS_ERROR;
   }
 
@@ -9420,9 +9419,9 @@ TSVConnProtocolEnable(TSVConn connp, const char *protocol_name)
   TSReturnCode retval = TS_ERROR;
   int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
   auto net_vc         = reinterpret_cast<UnixNetVConnection *>(connp);
-  auto ssl_vc         = dynamic_cast<SSLNetVConnection *>(net_vc);
-  if (ssl_vc) {
-    ssl_vc->enableProtocol(protocol_idx);
+  auto alpn_vc        = dynamic_cast<ALPNSupport *>(net_vc);
+  if (alpn_vc) {
+    alpn_vc->enableProtocol(protocol_idx);
     retval = TS_SUCCESS;
   }
   return retval;
@@ -9434,9 +9433,9 @@ TSVConnProtocolDisable(TSVConn connp, const char *protocol_name)
   TSReturnCode retval = TS_ERROR;
   int protocol_idx    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{protocol_name});
   auto net_vc         = reinterpret_cast<UnixNetVConnection *>(connp);
-  auto ssl_vc         = dynamic_cast<SSLNetVConnection *>(net_vc);
-  if (ssl_vc) {
-    ssl_vc->disableProtocol(protocol_idx);
+  auto alpn_vc        = dynamic_cast<ALPNSupport *>(net_vc);
+  if (alpn_vc) {
+    alpn_vc->disableProtocol(protocol_idx);
     retval = TS_SUCCESS;
   }
   return retval;
