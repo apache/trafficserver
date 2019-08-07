@@ -366,7 +366,9 @@ LogFilterString::wipe_this_entry(LogAccess *lad)
     ink_assert(!"INVALID FILTER OPERATOR");
   }
 
-  m_field->updateField(lad, buf, strlen(buf));
+  if (cond_satisfied) {
+    m_field->updateField(lad, buf, strlen(buf));
+  }
 
   ats_free(big_buf);
   ats_free(big_buf_upper);

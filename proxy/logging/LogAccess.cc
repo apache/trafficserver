@@ -1159,7 +1159,7 @@ LogAccess::set_client_req_url_canon(char *buf, int len)
 void
 LogAccess::set_client_req_unmapped_url_canon(char *buf, int len)
 {
-  if (buf) {
+  if (buf && m_client_req_unmapped_url_canon_str) {
     m_client_req_unmapped_url_canon_len = len;
     ink_strlcpy(m_client_req_unmapped_url_canon_str, buf, m_client_req_unmapped_url_canon_len + 1);
   }
@@ -1168,7 +1168,7 @@ LogAccess::set_client_req_unmapped_url_canon(char *buf, int len)
 void
 LogAccess::set_client_req_unmapped_url_path(char *buf, int len)
 {
-  if (buf) {
+  if (buf && m_client_req_unmapped_url_path_str) {
     m_client_req_unmapped_url_path_len = len;
     ink_strlcpy(m_client_req_unmapped_url_path_str, buf, m_client_req_unmapped_url_path_len + 1);
   }
@@ -1177,7 +1177,7 @@ LogAccess::set_client_req_unmapped_url_path(char *buf, int len)
 void
 LogAccess::set_client_req_unmapped_url_host(char *buf, int len)
 {
-  if (buf) {
+  if (buf && m_client_req_unmapped_url_host_str) {
     m_client_req_unmapped_url_host_len = len;
     ink_strlcpy(m_client_req_unmapped_url_host_str, buf, m_client_req_unmapped_url_host_len + 1);
   }
@@ -1187,7 +1187,7 @@ void
 LogAccess::set_client_req_url_path(char *buf, int len)
 {
   //?? use m_client_req_unmapped_url_path_str for now..may need to enhance later..
-  if (buf) {
+  if (buf && m_client_req_unmapped_url_path_str) {
     m_client_req_url_path_len = len;
     ink_strlcpy(m_client_req_unmapped_url_path_str, buf, m_client_req_url_path_len + 1);
   }
