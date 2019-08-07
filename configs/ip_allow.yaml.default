@@ -1,9 +1,9 @@
 # YAML
 #
-# ip_allow.config
+# ip_allow.yaml
 #
 # Documentation:
-#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/ip_allow.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/ip_allow.yaml.en.html
 #
 # Rules:
 # Each rule is a mapping, with the tags

@@ -33,7 +33,7 @@ Controlling Access
 Traffic Server can be configured to allow only certain clients to use
 the proxy cache.
 
-#. Add a line to :file:`ip_allow.config` for each IP address or
+#. Add a line to :file:`ip_allow.yaml` for each IP address or
    range of IP addresses allowed to access Traffic Server.
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration
@@ -127,7 +127,7 @@ Client/Traffic Server connections, you must do the following:
    client certificates, or if you configure certificates to be optional and the
    connecting client does not present one, then access to Traffic Server is
    managed through other Traffic Server options that have been set (such as
-   rules in :file:`ip_allow.config`). ::
+   rules in :file:`ip_allow.yaml`). ::
 
         CONFIG proxy.config.ssl.client.certification_level INT 0
 

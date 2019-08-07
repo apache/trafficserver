@@ -46,7 +46,7 @@ Process Warnings
 
 ``Connect by disallowed client <IP address>, closing``
    The specified client is not allowed to connect to Traffic Server;
-   the client IP address is not listed in the ``ip_allow.config`` file.
+   the client IP address is not listed in the ``ip_allow.yaml`` file.
 
 ``Could not rename log <filename> to <rolled filename>``
    System error when renaming log file during roll.
@@ -314,7 +314,7 @@ with corresponding HTTP response codes and customizable files.
 
 ``URI Too Long``
    ``414``
-   Could not process this request because the request uri 
+   Could not process this request because the request uri
    was too long ..
    ``request#uri_len_too_long``
 
