@@ -131,7 +131,9 @@ public:
   {
     local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
     remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
-    dependency_tree     = new DependencyTree(Http2::max_concurrent_streams_in);
+    if (Http2::stream_priority_enabled) {
+      dependency_tree = new DependencyTree(Http2::max_concurrent_streams_in);
+    }
   }
 
   void
