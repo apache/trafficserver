@@ -33,14 +33,15 @@
 #include "QUICPadder.h"
 #include "QUICPacketProtectionKeyInfo.h"
 
-#define QUICLDDebug(fmt, ...) Debug("quic_loss_detector", "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
-#define QUICLDVDebug(fmt, ...) Debug("v_quic_loss_detector", "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
+#define QUICLDDebug(fmt, ...) \
+  Debug("quic_loss_detector", "[%s] " fmt, this->_context.connection_info()->cids().data(), ##__VA_ARGS__)
+#define QUICLDVDebug(fmt, ...) \
+  Debug("v_quic_loss_detector", "[%s] " fmt, this->_context.connection_info()->cids().data(), ##__VA_ARGS__)
 
-QUICLossDetector::QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc,
-                                   QUICPacketProtectionKeyInfo &key_info, QUICRTTMeasure *rtt_measure, QUICPinger *pinger,
-                                   QUICPadder *padder, const QUICLDConfig &ld_config, NetVConnectionContext_t context)
-  : _context(context), _info(info), _rtt_measure(rtt_measure), _cc(cc), _pinger(pinger), _padder(padder), _pp_key_info(key_info)
+QUICLossDetector::QUICLossDetector(QUICLDContext &context, QUICRTTMeasure *rtt_measure, QUICPinger *pinger, QUICPadder *padder)
+  : _rtt_measure(rtt_measure), _pinger(pinger), _padder(padder), _context(context)
 {
+  auto &ld_config             = _context.ld_config();
   this->mutex                 = new_ProxyMutex();
   this->_loss_detection_mutex = new_ProxyMutex();
 
@@ -150,7 +151,7 @@ QUICLossDetector::on_packet_sent(QUICPacketInfoUPtr packet_info, bool in_flight)
     if (ack_eliciting) {
       this->_time_of_last_sent_ack_eliciting_packet = now;
     }
-    this->_cc->on_packet_sent(sent_bytes);
+    this->_context.congestion_controller()->on_packet_sent(sent_bytes);
     this->_set_loss_detection_timer();
   }
 }
@@ -230,7 +231,7 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame, QUICPacketNumb
   // if (ACK frame contains ECN information):
   //   ProcessECN(ack)
   if (ack_frame.ecn_section() != nullptr && pi != this->_sent_packets[index].end()) {
-    this->_cc->process_ecn(*pi->second, ack_frame.ecn_section());
+    this->_context.congestion_controller()->process_ecn(*pi->second, ack_frame.ecn_section());
   }
 
   // Find all newly acked packets.
@@ -260,7 +261,7 @@ QUICLossDetector::_on_packet_acked(const QUICPacketInfo &acked_packet)
               acked_packet.packet_number);
 
   if (acked_packet.in_flight) {
-    this->_cc->on_packet_acked(acked_packet);
+    this->_context.congestion_controller()->on_packet_acked(acked_packet);
   }
 
   for (const QUICFrameInfo &frame_info : acked_packet.frames) {
@@ -357,7 +358,7 @@ QUICLossDetector::_on_loss_detection_timeout()
     // Client sends an anti-deadlock packet: Initial is padded
     // to earn more anti-amplification credit,
     // a Handshake packet proves address ownership.
-    if (this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::HANDSHAKE)) {
+    if (this->_context.key_info()->is_encryption_key_available(QUICKeyPhase::HANDSHAKE)) {
       this->_send_one_handshake_packets();
     } else {
       this->_send_one_padded_packets();
@@ -440,7 +441,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumberSpace pn_space)
   // Inform the congestion controller of lost packets and
   // lets it decide whether to retransmit immediately.
   if (!lost_packets.empty()) {
-    this->_cc->on_packets_lost(lost_packets);
+    this->_context.congestion_controller()->on_packets_lost(lost_packets);
     for (auto lost_packet : lost_packets) {
       // -- ADDITIONAL CODE --
       // Not sure how we can get feedback from congestion control and when we should retransmit the lost packets but we need to send
@@ -472,7 +473,7 @@ QUICLossDetector::_retransmit_all_unacked_crypto_data()
       }
     }
 
-    this->_cc->on_packets_lost(lost_packets);
+    this->_context.congestion_controller()->on_packets_lost(lost_packets);
     for (auto packet_number : retransmitted_crypto_packets) {
       this->_remove_from_sent_packet_list(packet_number, static_cast<QUICPacketNumberSpace>(i));
     }
@@ -487,7 +488,7 @@ QUICLossDetector::_send_packet(QUICEncryptionLevel level, bool padded)
   } else {
     this->_pinger->request(level);
   }
-  this->_cc->add_extra_packets_count();
+  this->_context.congestion_controller()->add_extra_packets_count();
 }
 
 void
@@ -622,10 +623,11 @@ QUICLossDetector::_decrement_outstanding_counters(std::map<QUICPacketNumber, QUI
 bool
 QUICLossDetector::_is_client_without_one_rtt_key() const
 {
-  return this->_context == NET_VCONNECTION_OUT && !((this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::PHASE_1) &&
-                                                     this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::PHASE_1)) ||
-                                                    (this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::PHASE_0) &&
-                                                     this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::PHASE_0)));
+  return this->_context.connection_info()->direction() == NET_VCONNECTION_OUT &&
+         !((this->_context.key_info()->is_encryption_key_available(QUICKeyPhase::PHASE_1) &&
+            this->_context.key_info()->is_decryption_key_available(QUICKeyPhase::PHASE_1)) ||
+           (this->_context.key_info()->is_encryption_key_available(QUICKeyPhase::PHASE_0) &&
+            this->_context.key_info()->is_decryption_key_available(QUICKeyPhase::PHASE_0)));
 }
 
 //

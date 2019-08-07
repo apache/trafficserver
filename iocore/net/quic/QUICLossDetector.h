@@ -36,6 +36,7 @@
 #include "QUICFrame.h"
 #include "QUICFrameHandler.h"
 #include "QUICConnection.h"
+#include "QUICContext.h"
 
 class QUICPadder;
 class QUICPinger;
@@ -73,7 +74,7 @@ public:
 class QUICCongestionController
 {
 public:
-  QUICCongestionController(const QUICRTTProvider &rtt_provider, QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config);
+  QUICCongestionController(QUICCCContext &context);
   virtual ~QUICCongestionController() {}
   void on_packet_sent(size_t bytes_sent);
   void on_packet_acked(const QUICPacketInfo &acked_packet);
@@ -118,18 +119,15 @@ private:
   ink_hrtime _congestion_recovery_start_time = 0;
   uint32_t _ssthresh                         = UINT32_MAX;
 
-  QUICConnectionInfoProvider *_info = nullptr;
-  const QUICRTTProvider &_rtt_provider;
-
   bool _in_congestion_recovery(ink_hrtime sent_time);
+
+  QUICCCContext &_context;
 };
 
 class QUICLossDetector : public Continuation, public QUICFrameHandler
 {
 public:
-  QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICPacketProtectionKeyInfo &key_info,
-                   QUICRTTMeasure *rtt_measure, QUICPinger *pinger, QUICPadder *padder, const QUICLDConfig &ld_config,
-                   NetVConnectionContext_t context);
+  QUICLossDetector(QUICLDContext &context, QUICRTTMeasure *rtt_measure, QUICPinger *pinger, QUICPadder *padder);
   ~QUICLossDetector();
 
   int event_handler(int event, Event *edata);
@@ -197,15 +195,11 @@ private:
 
   bool _is_client_without_one_rtt_key() const;
 
-  NetVConnectionContext_t _context = NET_VCONNECTION_UNSET;
+  QUICRTTMeasure *_rtt_measure = nullptr;
+  QUICPinger *_pinger          = nullptr;
+  QUICPadder *_padder          = nullptr;
 
-  QUICConnectionInfoProvider *_info = nullptr;
-  QUICRTTMeasure *_rtt_measure      = nullptr;
-  QUICCongestionController *_cc     = nullptr;
-  QUICPinger *_pinger               = nullptr;
-  QUICPadder *_padder               = nullptr;
-
-  const QUICPacketProtectionKeyInfo &_pp_key_info;
+  QUICLDContext &_context;
 };
 
 class QUICRTTMeasure : public QUICRTTProvider

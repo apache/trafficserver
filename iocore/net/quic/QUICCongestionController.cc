@@ -24,24 +24,23 @@
 #include <tscore/Diags.h>
 #include <QUICLossDetector.h>
 
-#define QUICCCDebug(fmt, ...)                                                                                                      \
-  Debug("quic_cc",                                                                                                                 \
-        "[%s] "                                                                                                                    \
-        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " extra: %" PRIu32 " " fmt,                                    \
-        this->_info->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, this->_extra_packets_count, \
-        ##__VA_ARGS__)
+#define QUICCCDebug(fmt, ...)                                                                                               \
+  Debug("quic_cc",                                                                                                          \
+        "[%s] "                                                                                                             \
+        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " extra: %" PRIu32 " " fmt,                             \
+        this->_context.connection_info()->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
+        this->_extra_packets_count, ##__VA_ARGS__)
 
-#define QUICCCError(fmt, ...)                                                                                                      \
-  Error("quic_cc",                                                                                                                 \
-        "[%s] "                                                                                                                    \
-        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " extra %" PRIu32 " " fmt,                                     \
-        this->_info->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, this->_extra_packets_count, \
-        ##__VA_ARGS__)
+#define QUICCCError(fmt, ...)                                                                                               \
+  Error("quic_cc",                                                                                                          \
+        "[%s] "                                                                                                             \
+        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " extra %" PRIu32 " " fmt,                              \
+        this->_context.connection_info()->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
+        this->_extra_packets_count, ##__VA_ARGS__)
 
-QUICCongestionController::QUICCongestionController(const QUICRTTProvider &rtt_provider, QUICConnectionInfoProvider *info,
-                                                   const QUICCCConfig &cc_config)
-  : _cc_mutex(new_ProxyMutex()), _info(info), _rtt_provider(rtt_provider)
+QUICCongestionController::QUICCongestionController(QUICCCContext &context) : _cc_mutex(new_ProxyMutex()), _context(context)
 {
+  auto &cc_config                          = context.cc_config();
   this->_k_max_datagram_size               = cc_config.max_datagram_size();
   this->_k_initial_window                  = cc_config.initial_window();
   this->_k_minimum_window                  = cc_config.minimum_window();
@@ -140,7 +139,7 @@ bool
 QUICCongestionController::_in_persistent_congestion(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets,
                                                     QUICPacketInfo *largest_lost_packet)
 {
-  ink_hrtime period = this->_rtt_provider.congestion_period(this->_k_persistent_congestion_threshold);
+  ink_hrtime period = this->_context.rtt_provider()->congestion_period(this->_k_persistent_congestion_threshold);
   // Determine if all packets in the window before the
   // newest lost packet, including the edges, are marked
   // lost

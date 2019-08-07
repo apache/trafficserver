@@ -38,14 +38,10 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
 
   QUICAckFrameManager afm;
   QUICConnectionId connection_id = {reinterpret_cast<const uint8_t *>("\x01"), 1};
-  MockQUICCCConfig cc_config;
-  MockQUICLDConfig ld_config;
-  MockQUICConnectionInfoProvider info;
-  MockQUICCongestionController cc(&info, cc_config);
+  MockQUICContext context;
   QUICPinger pinger;
   QUICPadder padder(NetVConnectionContext_t::NET_VCONNECTION_IN);
-  QUICLossDetector detector(&info, &cc, pp_key_info, &rtt_measure, &pinger, &padder, ld_config,
-                            NetVConnectionContext_t::NET_VCONNECTION_IN);
+  QUICLossDetector detector(context, &rtt_measure, &pinger, &padder);
   ats_unique_buf payload = ats_unique_malloc(512);
   size_t payload_len     = 512;
   QUICPacketUPtr packet  = QUICPacketFactory::create_null_packet();
@@ -259,34 +255,29 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     detector.handle_frame(level, *frame);
 
     // Lost because of packet_threshold.
-    CHECK(cc.lost_packets.size() == 3);
+    CHECK(context.mock_congestion_controller()->lost_packets.size() == 3);
 
-    CHECK(cc.lost_packets.find(pn1) == cc.lost_packets.end());
-    CHECK(cc.lost_packets.find(pn2) != cc.lost_packets.end());
-    CHECK(cc.lost_packets.find(pn3) != cc.lost_packets.end());
-    CHECK(cc.lost_packets.find(pn4) == cc.lost_packets.end());
-    CHECK(cc.lost_packets.find(pn5) == cc.lost_packets.end());
-    CHECK(cc.lost_packets.find(pn6) != cc.lost_packets.end());
-    CHECK(cc.lost_packets.find(pn7) == cc.lost_packets.end());
-    CHECK(cc.lost_packets.find(pn8) == cc.lost_packets.end());
-    CHECK(cc.lost_packets.find(pn9) == cc.lost_packets.end());
-    CHECK(cc.lost_packets.find(pn9) == cc.lost_packets.end());
+    CHECK(context.mock_congestion_controller()->lost_packets.find(pn1) == context.mock_congestion_controller()->lost_packets.end());
+    CHECK(context.mock_congestion_controller()->lost_packets.find(pn2) != context.mock_congestion_controller()->lost_packets.end());
+    CHECK(context.mock_congestion_controller()->lost_packets.find(pn3) != context.mock_congestion_controller()->lost_packets.end());
+    CHECK(context.mock_congestion_controller()->lost_packets.find(pn4) == context.mock_congestion_controller()->lost_packets.end());
+    CHECK(context.mock_congestion_controller()->lost_packets.find(pn5) == context.mock_congestion_controller()->lost_packets.end());
+    CHECK(context.mock_congestion_controller()->lost_packets.find(pn6) != context.mock_congestion_controller()->lost_packets.end());
+    CHECK(context.mock_congestion_controller()->lost_packets.find(pn7) == context.mock_congestion_controller()->lost_packets.end());
+    CHECK(context.mock_congestion_controller()->lost_packets.find(pn8) == context.mock_congestion_controller()->lost_packets.end());
+    CHECK(context.mock_congestion_controller()->lost_packets.find(pn9) == context.mock_congestion_controller()->lost_packets.end());
+    CHECK(context.mock_congestion_controller()->lost_packets.find(pn9) == context.mock_congestion_controller()->lost_packets.end());
   }
 }
 
 TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
 {
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  MockQUICPacketProtectionKeyInfo pp_key_info;
-  MockQUICConnectionInfoProvider info;
-  MockQUICCCConfig cc_config;
-  MockQUICLDConfig ld_config;
-  MockQUICCongestionController cc(&info, cc_config);
   QUICRTTMeasure rtt_measure;
+  MockQUICContext context;
   QUICPinger pinger;
   QUICPadder padder(NetVConnectionContext_t::NET_VCONNECTION_IN);
-  QUICLossDetector detector(&info, &cc, pp_key_info, &rtt_measure, &pinger, &padder, ld_config,
-                            NetVConnectionContext_t::NET_VCONNECTION_IN);
+  QUICLossDetector detector(context, &rtt_measure, &pinger, &padder);
 
   auto t1           = Thread::get_hrtime();
   QUICAckFrame *ack = QUICFrameFactory::create_ack_frame(frame_buf, 100000000, 100, 10000000);
