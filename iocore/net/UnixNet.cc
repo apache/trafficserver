@@ -156,7 +156,7 @@ PollCont::do_poll(ink_hrtime timeout)
 #if TS_USE_EPOLL
   pollDescriptor->result =
     epoll_wait(pollDescriptor->epoll_fd, pollDescriptor->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
-  NetDebug("iocore_net_poll", "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd,
+  NetDebug("v_iocore_net_poll", "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd,
            poll_timeout, pollDescriptor->result);
 #elif TS_USE_KQUEUE
   struct timespec tv;
@@ -164,7 +164,7 @@ PollCont::do_poll(ink_hrtime timeout)
   tv.tv_nsec = 1000000 * (poll_timeout % 1000);
   pollDescriptor->result =
     kevent(pollDescriptor->kqueue_fd, nullptr, 0, pollDescriptor->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
-  NetDebug("iocore_net_poll", "[PollCont::pollEvent] kqueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd,
+  NetDebug("v_iocore_net_poll", "[PollCont::pollEvent] kqueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd,
            poll_timeout, pollDescriptor->result);
 #elif TS_USE_PORT
   int retval;
@@ -190,7 +190,7 @@ PollCont::do_poll(ink_hrtime timeout)
   } else {
     pollDescriptor->result = (int)nget;
   }
-  NetDebug("iocore_net_poll", "[PollCont::pollEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)", retval,
+  NetDebug("v_iocore_net_poll", "[PollCont::pollEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)", retval,
            retval < 0 ? strerror(errno) : "ok", pollDescriptor->port_fd, pollDescriptor->Port_Triggered_Events,
            POLL_DESCRIPTOR_SIZE, nget, poll_timeout, pollDescriptor->result);
 #else
@@ -550,7 +550,7 @@ bool
 NetHandler::manage_active_queue(bool ignore_queue_size = false)
 {
   const int total_connections_in = active_queue_size + keep_alive_queue_size;
-  Debug("net_queue",
+  Debug("v_net_queue",
         "max_connections_per_thread_in: %d max_connections_active_per_thread_in: %d total_connections_in: %d "
         "active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, max_connections_active_per_thread_in, total_connections_in, active_queue_size,
@@ -605,7 +605,7 @@ NetHandler::manage_keep_alive_queue()
   uint32_t total_connections_in = active_queue_size + keep_alive_queue_size;
   ink_hrtime now                = Thread::get_hrtime();
 
-  Debug("net_queue", "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
+  Debug("v_net_queue", "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
 
   if (!max_connections_per_thread_in || total_connections_in <= max_connections_per_thread_in) {
