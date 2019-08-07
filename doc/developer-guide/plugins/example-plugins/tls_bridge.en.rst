@@ -96,7 +96,7 @@ useful case.
 
    In this case |TS| will act as an open proxy which is unlikely to be a good idea. Therefore if
    this approach is used |TS| will need to run in a restricted environment or use access control
-   (via ``ip_allow.config`` or ``iptables``).
+   (via ``ip_allow.yaml`` or ``iptables``).
 
    If this is unsuitable then an identity remap rule can be added for the peer |TS|. If the peer
    |TS| was named "peer.ats" and it listens on port 4443, then the remap rule would be ::

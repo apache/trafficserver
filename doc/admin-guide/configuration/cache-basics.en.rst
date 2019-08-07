@@ -295,7 +295,7 @@ Configuring Traffic Server for PUSH Requests
 Before you can deliver content into your cache using HTTP ``PUSH``, you
 must configure Traffic Server to accept ``PUSH`` requests.
 
-#. Edit :file:`ip_allow.config` to allow ``PUSH`` from the appropriate addresses.
+#. Edit :file:`ip_allow.yaml` to allow ``PUSH`` from the appropriate addresses.
 
 #. Update :ts:cv:`proxy.config.http.push_method_enabled` in
    :file:`records.config`::

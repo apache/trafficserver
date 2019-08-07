@@ -161,7 +161,7 @@ produce_layout(bool json)
   print_var("storage.config", RecConfigReadConfigPath("proxy.config.cache.storage_filename"), json);
   print_var("hosting.config", RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);
   print_var("volume.config", RecConfigReadConfigPath("proxy.config.cache.volume_filename"), json);
-  print_var("ip_allow.config", RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true);
+  print_var("ip_allow.yaml", RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true);
   if (json) {
     printf("}\n");
   }
