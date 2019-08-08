@@ -35,7 +35,7 @@ Preface
 Getting Started
     Aimed at administrators and developers new to |TS| who wish to install and
     configure a |TS| instance in the least amount of time necessary, without
-    delving into the full featureset or the internals of the |TS| architecture.
+    delving into the full feature set or the internals of the |TS| architecture.
 
 Administrator's Guide
     Provides in-depth coverage of all |TS| features and configurations for use

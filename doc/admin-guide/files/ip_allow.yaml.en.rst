@@ -131,7 +131,7 @@ The following example allows access to all clients on addresses in a subnet::
 
 The following example denies access all clients on addresses in a subnet::
 
-   apppy: in
+   apply: in
    ip_addrs: 123.45.6.0-123.45.6.123
    action: deny
 
@@ -214,7 +214,7 @@ As a final example, here is the default configuration in compact form::
      { apply: in, ip_addrs: 127.0.0.1, action: allow },
      { apply: in, ip_addrs: "::1", action: allow },
      { apply: in, ip_addrs: 0/0, action: deny, methods: [ PURGE, PUSH, DELETE ] },
-     { apply: in, ip_addrs: "::/0", action: deny, methods: [ PURGE, PUSH, DELTE ] }
+     { apply: in, ip_addrs: "::/0", action: deny, methods: [ PURGE, PUSH, DELETE ] }
      ]
 
 .. note::

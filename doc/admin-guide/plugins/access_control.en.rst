@@ -329,7 +329,7 @@ Plugin configuration
    * ``--include-uri-paths-file`` (`optional`, default:empty/unused) - a file containing a list of regex expressions to be matched against URI paths. The access control is applied to paths that match.
    * ``--exclude-uri-paths-file`` (`optional`, default:empty/unused) - a file containing a list of regex expressions to be matched against URI paths. The access control is applied to paths that do not match.
 
-* Behavior modificators to support various use-cases
+* Behavior modifiers to support various use-cases
    * ``--reject-invalid-token-requests`` (`optional`, default:``false``) - reject invalid token requests instead of forwarding them to origin_.
    * ``--use-redirects`` (`optional`, default:``false``) - used to configure `use case 2`_, not implemented yet.
 

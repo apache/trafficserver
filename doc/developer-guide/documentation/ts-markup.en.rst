@@ -86,13 +86,13 @@ Data Type
 Value
     The default value of the configuration variable. It is preferable to not
     use any order of magnitude suffix, as |TS| will rewrite its configuration
-    files under varioua circumstances, and when doing so it does not maintain
+    files under various circumstances, and when doing so it does not maintain
     those suffixes.
 
 Options
 ~~~~~~~
 
-The domain for configuration variables takes serveral options.
+The domain for configuration variables takes several options.
 
 reloadable
    If marked the effect of the variable can be changed by reloading the |TS| configuration.
@@ -175,7 +175,7 @@ type
 
     :literal:`derivative`
         Statistics of this type presents values that are calculated, or derived,
-        from other staistics. They do not expose a number or state gathered
+        from other statistics. They do not expose a number or state gathered
         directly. Typical statistics of this type are representations of a
         statistic over a given period (e.g. average origin connections per
         second), ratio or percentage of a statistic as part of a set (e.g. the

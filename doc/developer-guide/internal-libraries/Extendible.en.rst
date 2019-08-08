@@ -290,7 +290,7 @@ Namespace `ext`
 
    Depends on usage of `super_type` in each class.
 
-   :tparam Derived_t: The class to analyse.
+   :tparam Derived_t: The class to analyze.
 
 .. function:: template <typename T> std::string toString(T const &t)
 

@@ -76,7 +76,7 @@ directory of the |TS| source tree)::
 
     make clean && make html
 
-This will ensure that make doesn't inadvertantly skip the regeneration of any
+This will ensure that make doesn't inadvertently skip the regeneration of any
 targets.
 
 .. note::

@@ -187,7 +187,7 @@ Retention Options
 
 |TS| enables you to control the amount of disk space that the logging directory
 can consume. This allows the system to operate smoothly within a specified
-space window for a long period of time.  After you establish a space limit,
+space window for a long period of time. After you establish a space limit,
 |TS| continues to monitor the space in the logging directory. When the free
 space dwindles to the headroom limit, it enters a low space state and takes the
 following actions:

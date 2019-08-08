@@ -23,9 +23,9 @@ Reloading Plugins
 *****************
 
 Reloading plugin allows new versions of a plugin code to be loaded and executed and old versions to be unloaded without
-restarting the traffic server process.
+restarting the |TS| process.
 
-Plugins are Dynamic Shared Objects (DSO), new versions of the plugins are currently loaded by using a traffic server
+Plugins are Dynamic Shared Objects (DSO), new versions of the plugins are currently loaded by using a |TS|
 configuration reload, i.e.::
 
   traffic_ctl config reload
@@ -40,12 +40,12 @@ Design Considerations
 1. The mechanism of the plugin reload should be transparent to the plugin developers, plugin developers should be
    concerned only with properly initializing and cleaning up after the plugin and its instances.
 
-2. With the current traffic server implementation new version plugin (re)load is only triggered by a configuration
+2. With the current |TS| implementation new version plugin (re)load is only triggered by a configuration
    (re)load hence naturally the configuration should be always coupled with the set of plugins it loaded.
 
-3. Due to its asynchronouse nature traffic server should allow running different newer and older versions of the same plugin at the same time.
+3. Due to its asynchronous nature, |TS| should allow running different newer and older versions of the same plugin at the same time.
 
-4. Old plugin versions should be unloaded after the traffic server process no longer needs them after reload.
+4. Old plugin versions should be unloaded after the |TS| process no longer needs them after reload.
 
 5. Running different versions of the configuration and plugin versions at the same time requires maintaining
    a "current active set" to be used by new transactions, new continuations, etc. and also multiple "previous inactive" sets as well.
@@ -130,7 +130,7 @@ the reference counting and when continuations are destroyed or handle events.
 TSHttpArgs
 ----------
 
-Traffic Server sessions and transactions provide a fixed array of void pointers that can be used by plugins
+|TS| sessions and transactions provide a fixed array of void pointers that can be used by plugins
 to store information. To avoid collisions between plugins a plugin should first *reserve* an index in the array.
 
 Since :c:func:`TSHttpTxnArgIndexReserve` and :c:func:`TSHttpSsnArgIndexReserve` are meant to be called during plugin
@@ -174,5 +174,5 @@ be reused by 'global' plugins in the future.
 
 
 To make sure plugins are still loaded while their code is still in use there is reference counting done around ``PluginDso``
-which inherits ``RefCountObj`` and implements ``aqcuire()`` and ``release()`` methods which are called by ``TSCreateCont``,
+which inherits ``RefCountObj`` and implements ``acquire()`` and ``release()`` methods which are called by ``TSCreateCont``,
 ``TSVConnCreate`` and ``TSDestroyCont``.

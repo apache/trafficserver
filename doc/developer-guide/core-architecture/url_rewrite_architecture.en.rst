@@ -53,7 +53,7 @@ Implementation
 
       A container for a regular expression mapping. This contains the base mapping along with the
       regular expression and a format string. The format string is annotated with the locations of
-      regular expression match group subsitutions so that if the regular expression matches, the
+      regular expression match group substitutions so that if the regular expression matches, the
       results can be efficiently assembled in to the output host name.
 
 .. figure:: /uml/images/url_rewrite.svg

@@ -69,7 +69,7 @@ time. Reader allocation is fast and cheap until this maximum is reached at which
    Use :func:`TSIOBufferReaderClone` to get another reader if the buffer is already in use.
 
 :func:`TSIOBufferReaderClone` duplicate a reader.
-   A reader for :arg:`bufp` is allocated and the intial reader position is set to be the same as
+   A reader for :arg:`bufp` is allocated and the initial reader position is set to be the same as
    :arg:`reader`.
 
 :func:`TSIOBufferReaderFree` de-allocate :arg:`reader`.
