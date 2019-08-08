@@ -15,29 +15,33 @@
 
 # Allow anything on localhost, limit destructive methods elsewhere.
 ip_allow:
-  - apply: in
-    ip_addrs: 127.0.0.1
-    action: allow
-    methods: ALL
-  - apply: out
-    ip_addrs: [ 10.0.0.0/8, 192.168.1.0/24 ]
-    action: allow
-    methods: [GET, HEAD, POST ]
-  - apply: in
-    ip_addrs: ::1
-    action: allow
-    methods: ALL
-  - apply: in
-    ip_addrs: 0/0
-    action: deny
-    methods:
-      - PURGE
-      - PUSH
-      - DELETE
-  - apply: in
-    ip_addrs: ::/0
-    action: deny
-    methods:
-      - PURGE
-      - PUSH
-      - DELETE
+
+- apply: in
+  ip_addrs:
+  - 127.0.0.0/8
+  - ::1
+  action: allow
+  methods: ALL
+
+- apply: in
+  ip_addrs:
+  - 0/0
+  - ::/0
+  action: deny
+  methods:
+  - PURGE
+  - PUSH
+  - DELETE
+
+# Restrict outbound connections to non-routables to avoid hitting actual servers.
+# Although, this has no effect without enabling it in "remap.config" which is rarely if ever done
+# in the tests.
+- apply: out
+  ip_addrs:
+  - 10.0.0.0/8
+  - 192.168.0.0/16
+  action: allow
+  methods:
+  - GET
+  - HEAD
+  - POST

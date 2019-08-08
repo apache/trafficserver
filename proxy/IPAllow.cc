@@ -259,8 +259,9 @@ IpAllow::BuildTable()
   std::error_code ec;
   std::string content{ts::file::load(config_file, ec)};
   if (ec.value() == 0) {
-    // If it's a .yaml or the root tag is present, treat as YAML.
-    if (TextView{config_file.view()}.take_suffix_at('.') == "yaml" || std::string::npos != content.find(YAML_TAG_ROOT)) {
+    // If it's a .yaml or the tokens "apply" *and* "ip_addrs" are present, treat as YAML.
+    if (TextView{config_file.view()}.take_suffix_at('.') == "yaml" ||
+        (std::string::npos != content.find(YAML_TAG_IP_ADDRS) && std::string::npos != content.find(YAML_TAG_APPLY))) {
       this->YAMLBuildTable(content);
     } else {
       this->ATSBuildTable(content);
