@@ -171,6 +171,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   // handle return of instantiated template and generate the content //
   // language and content type return values                         //
   /////////////////////////////////////////////////////////////////////
+
   if (buffer) { // got an instantiated template
     if (!plain_flag) {
       snprintf(content_language_out_buf, content_language_buf_size, "%s", lang_ptr);
@@ -267,6 +268,7 @@ HttpBodyFactory::reconfigure()
 //#endif
 {
   RecInt e;
+  RecString s = nullptr;
   bool all_found;
   int rec_err;
 
@@ -302,14 +304,20 @@ HttpBodyFactory::reconfigure()
   all_found                 = all_found && (rec_err == REC_ERR_OKAY);
   Debug("body_factory", "response_suppression_mode = %d (found = %" PRId64 ")", response_suppression_mode, e);
 
-  ats_scoped_str directory_of_template_sets(RecConfigReadConfigPath("proxy.config.body_factory.template_sets_dir", "body_factory"));
+  ats_scoped_str directory_of_template_sets;
 
-  if (access(directory_of_template_sets, R_OK) < 0) {
-    Warning("Unable to access() directory '%s': %d, %s", (const char *)directory_of_template_sets, errno, strerror(errno));
-    Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+  rec_err   = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir", &s);
+  all_found = all_found && (rec_err == REC_ERR_OKAY);
+  if (rec_err == REC_ERR_OKAY) {
+    directory_of_template_sets = Layout::get()->relative(s);
+    if (access(directory_of_template_sets, R_OK) < 0) {
+      Warning("Unable to access() directory '%s': %d, %s", (const char *)directory_of_template_sets, errno, strerror(errno));
+      Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+    }
   }
 
-  Debug("body_factory", "directory_of_template_sets = '%s'", (const char *)directory_of_template_sets);
+  Debug("body_factory", "directory_of_template_sets = '%s' (found = %s)", (const char *)directory_of_template_sets, s);
+  ats_free(s);
 
   if (!all_found) {
     Warning("config changed, but can't fetch all proxy.config.body_factory values");
