@@ -1270,7 +1270,7 @@ extern tsapi const char *const TS_PROTO_TAG_IPV6;
     the TSMLoc is obtained by a call to TSHttpTxnClientReqGet(),
 
  */
-extern tsapi const TSMLoc TS_NULL_MLOC;
+#define TS_NULL_MLOC ((TSMLoc)0)
 
 /* --------------------------------------------------------------------------
    Interface for the UUID APIs. https://www.ietf.org/rfc/rfc4122.txt. */
