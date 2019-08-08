@@ -301,8 +301,8 @@ class TrafficServerDomain(Domain):
     data_version = 2
 
     object_types = {
-        'cv': ObjType(l_('configuration variable'), 'cv'),
-        'stat': ObjType(l_('statistic'), 'stat')
+        'cv': ObjType(_('configuration variable'), 'cv'),
+        'stat': ObjType(_('statistic'), 'stat')
     }
 
     directives = {
