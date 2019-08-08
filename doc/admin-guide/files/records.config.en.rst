@@ -287,13 +287,13 @@ System Variables
    While rolling default behavior is to rename, close and re-open the log file *only* when/if there is
    something to log to the log file. This option opens a new log file right after rolling even if there
    is nothing to log (i.e. nothing to be logged due to lack of requests to the server)
-   which may lead to 0-sized log files while rollong. See :doc:`../logging/rotation.en` for an use-case
+   which may lead to 0-sized log files while rolling. See :doc:`../logging/rotation.en` for an use-case
    for this option.
 
    ===== ======================================================================
    Value Description
    ===== ======================================================================
-   ``0`` No empty log files created and rolloed if there was nothing to log
+   ``0`` No empty log files created and rolled if there was nothing to log
    ``1`` Allow empty log files to be created and  rolled even if there was nothing to log
    ===== ======================================================================
 

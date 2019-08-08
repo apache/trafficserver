@@ -38,7 +38,7 @@ Description
 These functions provide a mechanism to safely update configurations for a plugin.
 
 If a plugin stores its configuration in a data structure, updating that structure due to changes in
-the configuration file can be dangerous due to the asynchonous nature of plugin callbacks. To avoid
+the configuration file can be dangerous due to the asynchronous nature of plugin callbacks. To avoid
 that problem these functions allow a plugin to register a configuration and then later replace it
 with another instance without changing the instance in use by plugin callbacks. This works in the
 same manner as `shared pointer <https://en.wikipedia.org/wiki/Smart_pointer>`__. When a plugin needs

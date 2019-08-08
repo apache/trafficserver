@@ -151,7 +151,7 @@ Origin Server
   - ip - option to specify IP address. Defaults to ``127.0.0.1``.
   - delay - option to have MicroServer delay for set amount of seconds before returning response. Defaults to ``0``. 
   - ssl - option to enable SSL 
-  - lookup_key - option to change the unique idenitfier that MicroServer uses to identify each transaction. Defaults to ``PATH``.
+  - lookup_key - option to change the unique identifier that MicroServer uses to identify each transaction. Defaults to ``PATH``.
   - clientcert - path to cert used for SSL. Defaults to the included cert in ``tests/tools/microserver/ssl``.
   - clientkey - path to key used for SSL. Same default as above. 
 
@@ -159,7 +159,7 @@ This function returns a AuTest process object that launches the python-based Mic
 Microserver is a mock server which responds to client http requests. 
 Microserver needs to be setup for the tests that require an origin server behind ATS. 
 The server reads a JSON-formatted data file that contains request headers and the corresponding response headers. 
-Microserver responds with payload if the response header contains Content-Length or Transfer-Enconding specified.
+Microserver responds with payload if the response header contains Content-Length or Transfer-Encoding specified.
 
 - ``Test.addResponse(filename, request_header, response_header)``
 
@@ -193,7 +193,7 @@ DNS
   - filename - file containing zone information for MicroDNS to read from. Defaults to ``dns_file.json``
   - port - option for the DNS port. Autoselected if left unspecified.
   - ip - option for IP address. Defaults to ``127.0.0.1``
-  - rr - option to enable round robining IP. Defaults to ``False``
+  - rr - option to enable round robin IP. Defaults to ``False``
   - default - option to specify a default IP response when MicroDNS can't find a domain:IP pair. 
 
 - ``dns.addRecords(records, jsonFile)``

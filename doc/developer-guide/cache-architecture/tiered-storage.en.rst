@@ -110,7 +110,7 @@ This means, among other things, that if there is a tier with the object all
 other tiers that are written will get a local copy of the object, and the origin
 server will not be used. In terms of implementation, currently a cache write to
 a volume is done via the construction of an instance of :cpp:class:`CacheVC`
-which receieves the object stream. For tiered storage, the same thing is done
+which receives the object stream. For tiered storage, the same thing is done
 for each target volume.
 
 For cache volume overrides (via :file:`hosting.config`) this same process is
