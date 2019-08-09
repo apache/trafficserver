@@ -463,17 +463,19 @@ OperatorSetTimeoutOut::exec(const Resources &res) const
   switch (_type) {
   case TO_OUT_ACTIVE:
     TSDebug(PLUGIN_NAME, "OperatorSetTimeoutOut::exec(active, %d)", _timeout.get_int_value());
-    TSHttpTxnActiveTimeoutSet(res.txnp, _timeout.get_int_value());
+    TSHttpTxnConfigIntSet(res.txnp, TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT_MS, _timeout.get_int_value());
     break;
 
   case TO_OUT_INACTIVE:
     TSDebug(PLUGIN_NAME, "OperatorSetTimeoutOut::exec(inactive, %d)", _timeout.get_int_value());
-    TSHttpTxnNoActivityTimeoutSet(res.txnp, _timeout.get_int_value());
+    TSHttpTxnConfigIntSet(res.txnp, TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT_MS, _timeout.get_int_value());
     break;
 
   case TO_OUT_CONNECT:
     TSDebug(PLUGIN_NAME, "OperatorSetTimeoutOut::exec(connect, %d)", _timeout.get_int_value());
-    TSHttpTxnConnectTimeoutSet(res.txnp, _timeout.get_int_value());
+    TSHttpTxnConfigIntSet(res.txnp, TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT_MS, _timeout.get_int_value());
+    TSHttpTxnConfigIntSet(res.txnp, TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT_MS, _timeout.get_int_value());
+    TSHttpTxnConfigIntSet(res.txnp, TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT_MS, _timeout.get_int_value());
     break;
 
   case TO_OUT_DNS:

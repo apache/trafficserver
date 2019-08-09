@@ -601,14 +601,16 @@ struct OverridableHttpConfigParams {
   ///////////////////////////////////////////////////
   // connection variables. timeouts are in seconds //
   ///////////////////////////////////////////////////
-  MgmtInt keep_alive_no_activity_timeout_in   = 120;
-  MgmtInt keep_alive_no_activity_timeout_out  = 120;
-  MgmtInt transaction_no_activity_timeout_in  = 30;
-  MgmtInt transaction_no_activity_timeout_out = 30;
-  MgmtInt transaction_active_timeout_out      = 0;
-  MgmtInt transaction_active_timeout_in       = 900;
-  MgmtInt websocket_active_timeout            = 3600;
-  MgmtInt websocket_inactive_timeout          = 600;
+  MgmtInt keep_alive_no_activity_timeout_in      = 120;
+  MgmtInt keep_alive_no_activity_timeout_out     = 120;
+  MgmtInt transaction_no_activity_timeout_in     = 30;
+  MgmtInt transaction_no_activity_timeout_out    = 30;
+  MgmtInt transaction_no_activity_timeout_out_ms = 0;
+  MgmtInt transaction_active_timeout_out         = 0;
+  MgmtInt transaction_active_timeout_out_ms      = 0;
+  MgmtInt transaction_active_timeout_in          = 900;
+  MgmtInt websocket_active_timeout               = 3600;
+  MgmtInt websocket_inactive_timeout             = 600;
 
   ////////////////////////////////////
   // origin server connect attempts //

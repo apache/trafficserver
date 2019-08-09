@@ -1268,6 +1268,16 @@ HTTP Connection Timeouts
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
+.. ts:cv:: CONFIG proxy.config.http.transaction_no_activity_timeout_out_ms INT 0
+   :reloadable:
+   :overridable:
+
+   Specifies how long |TS| keeps connections to origin servers open if the transaction stalls. 
+   It controls the same value as :ts:cv:`proxy.config.http.transaction_no_activity_timeout_out`, 
+   except this value is specified in milliseconds instead of seconds.  If this value is non-zero,
+   it will control the outgoing inactivity timeout of the transaction instead of 
+   :ts:cv:`proxy.config.http.transaction_no_activity_timeout_out` which is specified in seconds.
+
 .. ts:cv:: CONFIG proxy.config.websocket.no_activity_timeout INT 600
    :reloadable:
    :overridable:
@@ -1305,6 +1315,16 @@ HTTP Connection Timeouts
    The default value of ``0`` specifies that there is no timeout.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
+.. ts:cv:: CONFIG proxy.config.http.transaction_active_timeout_out_ms INT 0
+   :reloadable:
+   :overridable:
+
+   The maximum amount of time |TS| waits for fulfillment of a connection request to an origin server. If |TS| does not
+   complete the transfer to the origin server before this timeout expires, then |TS| terminates the connection request.
+   This setting controls the same timeout as :ts:cv:`proxy.config.http.transaction_active_timeout_out`, but this 
+   setting specifies values in milliseconds instead of seconds.  If this values is non-zero it will be used instead of
+   :ts:cv:`proxy.config.http.transaction_active_timeout_out`.
 
 .. ts:cv:: CONFIG proxy.config.http.accept_no_activity_timeout INT 120
    :reloadable:

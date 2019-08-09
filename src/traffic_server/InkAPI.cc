@@ -5345,32 +5345,6 @@ TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 
 /**
  * timeout is in msec
- * overrides as proxy.config.http.transaction_active_timeout_out
- **/
-void
-TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpTransact::State *s          = &(((HttpSM *)txnp)->t_state);
-  s->api_txn_active_timeout_value = timeout;
-}
-
-/**
- * timeout is in msec
- * overrides as proxy.config.http.connect_attempts_timeout
- **/
-void
-TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpTransact::State *s           = &(((HttpSM *)txnp)->t_state);
-  s->api_txn_connect_timeout_value = timeout;
-}
-
-/**
- * timeout is in msec
  * overrides as proxy.config.dns.lookup_timeout
  **/
 void
@@ -5381,19 +5355,6 @@ TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout)
   HttpTransact::State *s = &(((HttpSM *)txnp)->t_state);
 
   s->api_txn_dns_timeout_value = timeout;
-}
-
-/**
- * timeout is in msec
- * overrides as proxy.config.http.transaction_no_activity_timeout_out
- **/
-void
-TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpTransact::State *s               = &(((HttpSM *)txnp)->t_state);
-  s->api_txn_no_activity_timeout_value = timeout;
 }
 
 TSReturnCode
@@ -8269,10 +8230,20 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret = _memberp_to_generic(&overridableHttpConfig->transaction_no_activity_timeout_in, conv);
     break;
   case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->transaction_no_activity_timeout_out, conv);
+    ret  = _memberp_to_generic(&overridableHttpConfig->transaction_no_activity_timeout_out, conv);
+    conv = &SecondsConverter;
+    break;
+  case TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT_MS:
+    ret  = _memberp_to_generic(&overridableHttpConfig->transaction_no_activity_timeout_out_ms, conv);
+    conv = &MilliSecondsConverter;
     break;
   case TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->transaction_active_timeout_out, conv);
+    ret  = _memberp_to_generic(&overridableHttpConfig->transaction_active_timeout_out, conv);
+    conv = &SecondsConverter;
+    break;
+  case TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT_MS:
+    ret  = _memberp_to_generic(&overridableHttpConfig->transaction_active_timeout_out_ms, conv);
+    conv = &MilliSecondsConverter;
     break;
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES:
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_max_retries, conv);
@@ -8779,6 +8750,7 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
    {"proxy.config.net.sock_recv_buffer_size_out", {TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT, TS_RECORDDATATYPE_INT}},
    {"proxy.config.net.sock_send_buffer_size_out", {TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.connect_attempts_timeout", {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT, TS_RECORDDATATYPE_INT}},
+   {"proxy.config.http.connect_attempts_timeout_ms", {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT_MS, TS_RECORDDATATYPE_INT}},
    {"proxy.config.websocket.no_activity_timeout", {TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.negative_caching_lifetime", {TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.default_buffer_water_mark", {TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK, TS_RECORDDATATYPE_INT}},
@@ -8813,9 +8785,12 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
    {"proxy.config.http.cache.guaranteed_max_lifetime", {TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.transaction_active_timeout_in", {TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.post_connect_attempts_timeout", {TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT, TS_RECORDDATATYPE_INT}},
+   {"proxy.config.http.post_connect_attempts_timeout_ms", {TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT_MS, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.cache.ignore_client_cc_max_age", {TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.negative_revalidating_lifetime", {TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.transaction_active_timeout_out", {TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT, TS_RECORDDATATYPE_INT}},
+   {"proxy.config.http.transaction_active_timeout_out_ms",
+    {TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT_MS, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.background_fill_active_timeout", {TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.attach_server_session_to_client", {TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.cache.cache_responses_to_cookies", {TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES, TS_RECORDDATATYPE_INT}},
@@ -8833,6 +8808,8 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
     {TS_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.transaction_no_activity_timeout_out",
     {TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT, TS_RECORDDATATYPE_INT}},
+   {"proxy.config.http.transaction_no_activity_timeout_out_ms",
+    {TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT_MS, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.background_fill_completed_threshold",
     {TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD, TS_RECORDDATATYPE_FLOAT}},
    {"proxy.config.http.parent_proxy.total_connect_attempts",
@@ -8845,6 +8822,8 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
     {TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.parent_proxy.connect_attempts_timeout",
     {TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT, TS_RECORDDATATYPE_INT}},
+   {"proxy.config.http.parent_proxy.connect_attempts_timeout_ms",
+    {TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT_MS, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.connect_attempts_max_retries_dead_server",
     {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.parent_proxy.per_parent_connect_attempts",

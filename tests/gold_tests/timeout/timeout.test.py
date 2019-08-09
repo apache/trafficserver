@@ -31,7 +31,9 @@ ts.Disk.records_config.update({
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
     'proxy.config.dns.resolv_conf': 'NULL',
     'proxy.config.url_remap.remap_required': 0,
-    'proxy.config.http.connect_attempts_timeout': 5
+    'proxy.config.http.connect_attempts_timeout': 5,
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'http'
 })
 
 tr = Test.AddTestRun("tr")

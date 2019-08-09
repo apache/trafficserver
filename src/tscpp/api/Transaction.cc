@@ -358,13 +358,15 @@ Transaction::setTimeout(Transaction::TimeoutType type, int time_ms)
     TSHttpTxnDNSTimeoutSet(state_->txn_, time_ms);
     break;
   case TIMEOUT_CONNECT:
-    TSHttpTxnConnectTimeoutSet(state_->txn_, time_ms);
+    TSHttpTxnConfigIntSet(state_->txn_, TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT_MS, time_ms);
+    TSHttpTxnConfigIntSet(state_->txn_, TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT_MS, time_ms);
+    TSHttpTxnConfigIntSet(state_->txn_, TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT_MS, time_ms);
     break;
   case TIMEOUT_NO_ACTIVITY:
-    TSHttpTxnNoActivityTimeoutSet(state_->txn_, time_ms);
+    TSHttpTxnConfigIntSet(state_->txn_, TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT_MS, time_ms);
     break;
   case TIMEOUT_ACTIVE:
-    TSHttpTxnActiveTimeoutSet(state_->txn_, time_ms);
+    TSHttpTxnConfigIntSet(state_->txn_, TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT_MS, time_ms);
     break;
   default:
     break;

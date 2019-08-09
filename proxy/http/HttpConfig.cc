@@ -279,6 +279,50 @@ http_post_connect_attempt_timeout_cb(const char *name, RecDataT dtype, RecData d
   return REC_ERR_OKAY;
 }
 
+static int
+http_no_activity_timeout_out_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  bool update_p = false;
+  auto *c       = static_cast<HttpConfigParams *>(cookie);
+  if (0 == strcasecmp(name, "proxy.config.http.transaction_no_activity_timeout_out")) {
+    if (RECD_INT == dtype) {
+      c->oride.transaction_no_activity_timeout_out = HRTIME_SECONDS(data.rec_int);
+      update_p                                     = true;
+    }
+  } else if (0 == strcasecmp(name, "proxy.config.http.transaction_no_activity_timeout_out_ms")) {
+    if (RECD_INT == dtype) {
+      c->oride.transaction_no_activity_timeout_out = HRTIME_MSECONDS(data.rec_int);
+      update_p                                     = true;
+    }
+  }
+  if (update_p) {
+    http_config_cb(name, dtype, data, cookie);
+  }
+  return REC_ERR_OKAY;
+}
+
+static int
+http_active_timeout_out_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  bool update_p = false;
+  auto *c       = static_cast<HttpConfigParams *>(cookie);
+  if (0 == strcasecmp(name, "proxy.config.http.transaction_active_timeout_out")) {
+    if (RECD_INT == dtype) {
+      c->oride.transaction_active_timeout_out = HRTIME_SECONDS(data.rec_int);
+      update_p                                = true;
+    }
+  } else if (0 == strcasecmp(name, "proxy.config.http.transaction_active_timeout_out_ms")) {
+    if (RECD_INT == dtype) {
+      c->oride.transaction_active_timeout_out = HRTIME_MSECONDS(data.rec_int);
+      update_p                                = true;
+    }
+  }
+  if (update_p) {
+    http_config_cb(name, dtype, data, cookie);
+  }
+  return REC_ERR_OKAY;
+}
+
 void
 register_stat_callbacks()
 {
@@ -1126,15 +1170,40 @@ HttpConfig::startup()
                                     "proxy.config.http.keep_alive_no_activity_timeout_in");
   HttpEstablishStaticConfigLongLong(c.oride.keep_alive_no_activity_timeout_out,
                                     "proxy.config.http.keep_alive_no_activity_timeout_out");
+
+  RecRegisterConfigUpdateCb("proxy.config.http.transaction_no_activity_timeout_out", &http_no_activity_timeout_out_cb, &c);
+  RecRegisterConfigUpdateCb("proxy.config.http.transaction_no_activity_timeout_out_ms", &http_no_activity_timeout_out_cb, &c);
+  // Do initial load - use ms if set, otherwise use base if set, otherwise just leave it default.
+  if (!http_config_var_is_default("proxy.config.http.transaction_no_activity_timeout_out_ms")) {
+    if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.transaction_no_activity_timeout_out_ms", &n)) {
+      c.oride.transaction_no_activity_timeout_out = HRTIME_MSECONDS(n);
+    }
+  } else {
+    if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.transaction_no_activity_timeout_out", &n)) {
+      c.oride.transaction_no_activity_timeout_out = HRTIME_SECONDS(n);
+    }
+  }
+
   HttpEstablishStaticConfigLongLong(c.oride.transaction_no_activity_timeout_in,
                                     "proxy.config.http.transaction_no_activity_timeout_in");
-  HttpEstablishStaticConfigLongLong(c.oride.transaction_no_activity_timeout_out,
-                                    "proxy.config.http.transaction_no_activity_timeout_out");
   HttpEstablishStaticConfigLongLong(c.oride.websocket_active_timeout, "proxy.config.websocket.active_timeout");
   HttpEstablishStaticConfigLongLong(c.oride.websocket_inactive_timeout, "proxy.config.websocket.no_activity_timeout");
 
   HttpEstablishStaticConfigLongLong(c.oride.transaction_active_timeout_in, "proxy.config.http.transaction_active_timeout_in");
-  HttpEstablishStaticConfigLongLong(c.oride.transaction_active_timeout_out, "proxy.config.http.transaction_active_timeout_out");
+
+  RecRegisterConfigUpdateCb("proxy.config.http.transaction_active_timeout_out", &http_active_timeout_out_cb, &c);
+  RecRegisterConfigUpdateCb("proxy.config.http.transaction_active_timeout_out_ms", &http_active_timeout_out_cb, &c);
+  // Do initial load - use ms if set, otherwise use base if set, otherwise just leave it default.
+  if (!http_config_var_is_default("proxy.config.http.transaction_active_timeout_out_ms")) {
+    if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.transaction_active_timeout_out_ms", &n)) {
+      c.oride.transaction_active_timeout_out = HRTIME_MSECONDS(n);
+    }
+  } else {
+    if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.transaction_active_timeout_out", &n)) {
+      c.oride.transaction_active_timeout_out = HRTIME_SECONDS(n);
+    }
+  }
+
   HttpEstablishStaticConfigLongLong(c.accept_no_activity_timeout, "proxy.config.http.accept_no_activity_timeout");
 
   HttpEstablishStaticConfigLongLong(c.oride.background_fill_active_timeout, "proxy.config.http.background_fill_active_timeout");
@@ -1153,7 +1222,7 @@ HttpConfig::startup()
     if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.connect_attempts_timeout_ms", &n)) {
       c.oride.connect_attempts_timeout = HRTIME_MSECONDS(n);
     }
-  } else if (!http_config_var_is_default("proxy.config.http.connect_attempts_timeout")) {
+  } else {
     if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.connect_attempts_timeout", &n)) {
       c.oride.connect_attempts_timeout = HRTIME_SECONDS(n);
     }
@@ -1166,7 +1235,7 @@ HttpConfig::startup()
     if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.post_connect_attempts_timeout_ms", &n)) {
       c.oride.post_connect_attempts_timeout = HRTIME_MSECONDS(n);
     }
-  } else if (!http_config_var_is_default("proxy.config.http.post_connect_attempts_timeout")) {
+  } else {
     if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.post_connect_attempts_timeout", &n)) {
       c.oride.post_connect_attempts_timeout = HRTIME_SECONDS(n);
     }
@@ -1187,7 +1256,7 @@ HttpConfig::startup()
     if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.parent_proxy.connect_attempts_timeout_ms", &n)) {
       c.oride.parent_connect_timeout = HRTIME_MSECONDS(n);
     }
-  } else if (!http_config_var_is_default("proxy.config.http.parent_proxy.connect_attempts_timeout")) {
+  } else {
     if (REC_ERR_OKAY == RecGetRecordInt("proxy.config.http.parent_proxy.connect_attempts_timeout", &n)) {
       c.oride.parent_connect_timeout = HRTIME_SECONDS(n);
     }

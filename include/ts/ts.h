@@ -1572,10 +1572,7 @@ tsapi TSReturnCode TSVConnArgIndexLookup(int arg_idx, const char **name, const c
 tsapi void TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status);
 tsapi TSHttpStatus TSHttpTxnStatusGet(TSHttpTxn txnp);
 
-tsapi void TSHttpTxnActiveTimeoutSet(TSHttpTxn txnp, int timeout);
-tsapi void TSHttpTxnConnectTimeoutSet(TSHttpTxn txnp, int timeout);
 tsapi void TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout);
-tsapi void TSHttpTxnNoActivityTimeoutSet(TSHttpTxn txnp, int timeout);
 
 tsapi TSServerState TSHttpTxnServerStateGet(TSHttpTxn txnp);
 

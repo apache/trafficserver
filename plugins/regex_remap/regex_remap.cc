@@ -976,15 +976,17 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       // Set timeouts
       if (re->active_timeout_option() > (-1)) {
         TSDebug(PLUGIN_NAME, "Setting active timeout to %d", re->active_timeout_option());
-        TSHttpTxnActiveTimeoutSet(txnp, re->active_timeout_option());
+        TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT_MS, re->active_timeout_option());
       }
       if (re->no_activity_timeout_option() > (-1)) {
         TSDebug(PLUGIN_NAME, "Setting no activity timeout to %d", re->no_activity_timeout_option());
-        TSHttpTxnNoActivityTimeoutSet(txnp, re->no_activity_timeout_option());
+        TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT_MS, re->no_activity_timeout_option());
       }
       if (re->connect_timeout_option() > (-1)) {
         TSDebug(PLUGIN_NAME, "Setting connect timeout to %d", re->connect_timeout_option());
-        TSHttpTxnConnectTimeoutSet(txnp, re->connect_timeout_option());
+        TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT_MS, re->connect_timeout_option());
+        TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT_MS, re->connect_timeout_option());
+        TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT_MS, re->connect_timeout_option());
       }
       if (re->dns_timeout_option() > (-1)) {
         TSDebug(PLUGIN_NAME, "Setting DNS timeout to %d", re->dns_timeout_option());

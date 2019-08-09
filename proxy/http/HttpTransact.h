@@ -770,10 +770,7 @@ public:
     RemapPluginInst *os_response_plugin_inst = nullptr;
     HTTPStatus http_return_code              = HTTP_STATUS_NONE;
 
-    int api_txn_active_timeout_value      = -1;
-    int api_txn_connect_timeout_value     = -1;
-    int api_txn_dns_timeout_value         = -1;
-    int api_txn_no_activity_timeout_value = -1;
+    int api_txn_dns_timeout_value = -1;
 
     // Used by INKHttpTxnCachedReqGet and INKHttpTxnCachedRespGet SDK functions
     // to copy part of HdrHeap (only the writable portion) for cached response headers
