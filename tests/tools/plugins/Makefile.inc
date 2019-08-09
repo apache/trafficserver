@@ -77,3 +77,6 @@ tools_plugins_test_tsapi_la_SOURCES = tools/plugins/test_tsapi.cc
 
 noinst_LTLIBRARIES += tools/plugins/user_args.la
 tools_plugins_user_args_la_SOURCES = tools/plugins/user_args.cc
+
+noinst_LTLIBRARIES += tools/plugins/test_msg_comp.la
+tools_plugins_test_msg_comp_la_SOURCES = tools/plugins/test_msg_comp.cc

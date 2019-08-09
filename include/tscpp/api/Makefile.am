@@ -29,6 +29,7 @@ library_include_HEADERS = \
         GzipInflateTransformation.h \
         Headers.h \
         HttpMethod.h \
+        HttpMsgComp.h \
         HttpStatus.h \
         HttpVersion.h \
         InterceptPlugin.h \

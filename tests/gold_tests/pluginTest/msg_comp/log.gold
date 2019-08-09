@@ -1,0 +1,46 @@
+Global: event=TS_EVENT_HTTP_SEND_RESPONSE_HDR
+
+Remap From URL: http://one/
+Remap To   URL: http://127.0.0.1:SERVER_PORT/
+Effective  URL: http://127.0.0.1:SERVER_PORT/argh
+
+Client Request:
+method=GET
+absUrl=http://127.0.0.1:SERVER_PORT/argh
+version=1.1
+hdrLength=125
+Connection: close
+Host: 127.0.0.1:SERVER_PORT
+X-Crap: one, two, three
+X-Crap: four
+
+Client Response:
+status=200
+reason=OK
+version=1.1
+hdrLength=131
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+Server: ATS/``
+
+Server Request:
+method=GET
+absUrl=127.0.0.1:SERVER_PORT/argh
+version=1.1
+hdrLength=245
+Host: 127.0.0.1:SERVER_PORT
+X-Crap: one, two, three
+X-Crap: alpha, beta, gamma
+Client-ip: 127.0.0.1
+X-Forwarded-For: 127.0.0.1
+Via: http/1.1 Poxy_Proxy[``
+
+Server Response:
+status=200
+reason=OK
+version=1.1
+hdrLength=75
+Connection: close
+Date: ``
