@@ -85,7 +85,6 @@ encrypt_session(const char *session_data, int32_t session_data_len, const unsign
 
   int elen;
   encrypted_buffer_size = ENCRYPT_LEN(len_all);
-  encrypted_msg_len     = encrypted_buffer_size;
   encrypted_msg         = new unsigned char[encrypted_buffer_size];
   if (1 != EVP_EncryptUpdate(context, (unsigned char *)encrypted_msg, &elen, (unsigned char *)pBuf, len_all)) {
     TSDebug(PLUGIN, "Encryption of session data failed");
