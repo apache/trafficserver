@@ -194,26 +194,10 @@ HttpVCTable::remove_entry(HttpVCTableEntry *e)
     free_MIOBuffer(e->write_buffer);
     e->write_buffer = nullptr;
   }
-  if (e->read_vio != nullptr && e->read_vio->cont == sm) {
-    // Cleanup dangling i/o
-    if (e == sm->get_ua_entry() && sm->get_ua_txn() != nullptr) {
-      e->read_vio = sm->get_ua_txn()->do_io_read(nullptr, 0, nullptr);
-    } else if (e == sm->get_server_entry() && sm->get_server_session()) {
-      e->read_vio = sm->get_server_session()->do_io_read(nullptr, 0, nullptr);
-    } else {
-      ink_release_assert(false);
-    }
-  }
-  if (e->write_vio != nullptr && e->write_vio->cont == sm) {
-    // Cleanup dangling i/o
-    if (e == sm->get_ua_entry() && sm->get_ua_txn()) {
-      e->write_vio = sm->get_ua_txn()->do_io_write(nullptr, 0, nullptr);
-    } else if (e == sm->get_server_entry() && sm->get_server_session()) {
-      e->write_vio = sm->get_server_session()->do_io_write(nullptr, 0, nullptr);
-    } else {
-      ink_release_assert(false);
-    }
-  }
+  // Cannot reach in to checkout the netvc
+  // for remaining I/O operations because the netvc
+  // may have been deleted at this point and the pointer
+  // could be stale.
   e->read_vio   = nullptr;
   e->write_vio  = nullptr;
   e->vc_handler = nullptr;
