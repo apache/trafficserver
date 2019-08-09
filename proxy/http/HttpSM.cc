@@ -5981,6 +5981,13 @@ HttpSM::setup_server_send_request()
 
   milestones[TS_MILESTONE_SERVER_BEGIN_WRITE] = Thread::get_hrtime();
   server_entry->write_vio                     = server_entry->vc->do_io_write(this, hdr_length, buf_start);
+
+  // Make sure the VC is using correct timeouts.  We may be reusing a previously used server session
+  if (t_state.api_txn_no_activity_timeout_value != -1) {
+    server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_no_activity_timeout_value));
+  } else {
+    server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
+  }
 }
 
 void
