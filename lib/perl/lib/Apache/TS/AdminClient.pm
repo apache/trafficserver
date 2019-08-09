@@ -313,7 +313,7 @@ get to this information, traffic_ctl is your tool.
 
 =head1 List of configurations
 
-The Apache Traffic Server Administration Manual will explain what these strings represent.  (http://trafficserver.apache.org/docs/)
+The Apache Traffic Server Administration Manual will explain what these strings represent.  (https://docs.trafficserver.apache.org/en/latest/)
 
  proxy.config.accept_threads
  proxy.config.task_threads
