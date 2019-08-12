@@ -33,7 +33,7 @@ Online Event Log Builder
 ========================
 
 If you need any assistance building your event log, you can try out our
-`online log builder <http://trafficserver.apache.org/logbuilder/>`_. This is a
+`online log builder <https://trafficserver.apache.org/logbuilder/>`_. This is a
 work in progress, so any comments, critique or suggestions are most welcome.
 
 Emulating Other HTTP Server Formats
