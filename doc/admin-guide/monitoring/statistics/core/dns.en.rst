@@ -40,7 +40,7 @@ DNS
    :units: milliseconds
    :ungathered:
 
-   The average time spent performaning DNS lookups per host.
+   The average time spent performing DNS lookups per host.
 
 .. ts:stat:: global proxy.process.dns.lookup_failures integer
    :type: counter
