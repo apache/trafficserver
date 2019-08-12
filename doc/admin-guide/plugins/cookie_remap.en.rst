@@ -78,7 +78,7 @@ Limitations
 ----
 
 
-* Does not support `plugin chaining <http://trafficserver.apache.org/docs/v2/admin/files.htm#remap.config>`_.
+* Does not support :ref:`remap-config-plugin-chaining`
 
 Setup
 -----

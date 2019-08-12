@@ -367,8 +367,7 @@ along with overall object properties (such as content length).
 |TS| supports `varying content <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.44>`_
 for objects. These are called :term:`alternates <alternate>`. All metadata for
 all alternates is stored in the first fragment including the set of alternates
-and the HTTP headers for them. This enables `alternate selection
-<http://trafficserver.apache.org/docs/trunk/sdk/http-hooks-and-transactions/http-alternate-selection.en.html>`_
+and the HTTP headers for them. This enables :doc:`"alternate selection" <../plugins/hooks-and-transactions/http-alternate-selection.en>`
 to be done after the *first Doc* is read from disk. An object that has more than
 one alternate will have the alternate content stored separately from the first
 fragment. For objects with only one alternate the content may or may not be in
