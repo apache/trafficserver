@@ -612,6 +612,10 @@ public:
     return _client_transaction_id;
   }
 
+  void set_server_netvc_inactivity_timeout(NetVConnection *netvc);
+  void set_server_netvc_active_timeout(NetVConnection *netvc);
+  void set_server_netvc_connect_timeout(NetVConnection *netvc);
+
 private:
   PostDataBuffers _postbuf;
   int _client_connection_id = -1, _client_transaction_id = -1;

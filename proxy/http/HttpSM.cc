@@ -281,6 +281,54 @@ HttpVCTable::cleanup_all()
     default_handler = _h;                 \
   }
 
+/*
+ * Helper functions to ensure that the parallel
+ * API set timeouts are set consistenly with the records.config settings
+ */
+void
+HttpSM::set_server_netvc_inactivity_timeout(NetVConnection *netvc)
+{
+  if (netvc) {
+    if (t_state.api_txn_no_activity_timeout_value != -1) {
+      netvc->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_no_activity_timeout_value));
+    } else {
+      netvc->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
+    }
+  }
+}
+
+void
+HttpSM::set_server_netvc_active_timeout(NetVConnection *netvc)
+{
+  if (netvc) {
+    if (t_state.api_txn_active_timeout_value != -1) {
+      netvc->set_active_timeout(HRTIME_MSECONDS(t_state.api_txn_active_timeout_value));
+    } else {
+      netvc->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_out));
+    }
+  }
+}
+
+void
+HttpSM::set_server_netvc_connect_timeout(NetVConnection *netvc)
+{
+  if (netvc) {
+    if (t_state.api_txn_connect_timeout_value != -1) {
+      netvc->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_connect_timeout_value));
+    } else {
+      int connect_timeout;
+      if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
+        connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
+      } else if (t_state.current.server == &t_state.parent_info) {
+        connect_timeout = t_state.txn_conf->parent_connect_timeout;
+      } else {
+        connect_timeout = t_state.txn_conf->connect_attempts_timeout;
+      }
+      netvc->set_inactivity_timeout(HRTIME_SECONDS(connect_timeout));
+    }
+  }
+}
+
 HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
 
 void
@@ -1114,8 +1162,8 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     t_state.current.state    = HttpTransact::CONNECTION_ALIVE;
     ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
 
-    netvc->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
-    netvc->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_out));
+    set_server_netvc_inactivity_timeout(netvc);
+    set_server_netvc_active_timeout(netvc);
     break;
 
   case VC_EVENT_ERROR:
@@ -1762,11 +1810,7 @@ HttpSM::state_http_server_open(int event, void *data)
     server_entry->vc_handler = &HttpSM::state_send_server_request_header;
 
     // Reset the timeout to the non-connect timeout
-    if (t_state.api_txn_no_activity_timeout_value != -1) {
-      server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_no_activity_timeout_value));
-    } else {
-      server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
-    }
+    set_server_netvc_inactivity_timeout(server_session->get_netvc());
     handle_http_server_open();
     return 0;
   case EVENT_INTERVAL: // Delayed call from another thread
@@ -1855,11 +1899,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   if (server_response_hdr_bytes == 0) {
     milestones[TS_MILESTONE_SERVER_FIRST_READ] = Thread::get_hrtime();
 
-    if (t_state.api_txn_no_activity_timeout_value != -1) {
-      server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_no_activity_timeout_value));
-    } else {
-      server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
-    }
+    set_server_netvc_inactivity_timeout(server_session->get_netvc());
 
     // For requests that contain a body, we can cancel the ua inactivity timeout.
     if (ua_txn && t_state.hdr_info.request_content_length) {
@@ -5678,7 +5718,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
   }
 
   ua_txn->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
-  server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
+  set_server_netvc_inactivity_timeout(server_session->get_netvc());
 
   tunnel.tunnel_run(p);
 
@@ -5909,27 +5949,8 @@ HttpSM::attach_server_session(Http1ServerSession *s)
   // Set the inactivity timeout to the connect timeout so that we
   //   we fail this server if it doesn't start sending the response
   //   header
-  MgmtInt connect_timeout;
-
-  if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
-    connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
-  } else if (t_state.current.server == &t_state.parent_info) {
-    connect_timeout = t_state.txn_conf->parent_connect_timeout;
-  } else {
-    connect_timeout = t_state.txn_conf->connect_attempts_timeout;
-  }
-
-  if (t_state.api_txn_connect_timeout_value != -1) {
-    server_session->get_netvc()->set_inactivity_timeout(HRTIME_MSECONDS(t_state.api_txn_connect_timeout_value));
-  } else {
-    server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(connect_timeout));
-  }
-
-  if (t_state.api_txn_active_timeout_value != -1) {
-    server_session->get_netvc()->set_active_timeout(HRTIME_MSECONDS(t_state.api_txn_active_timeout_value));
-  } else {
-    server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_out));
-  }
+  set_server_netvc_connect_timeout(server_session->get_netvc());
+  set_server_netvc_active_timeout(server_session->get_netvc());
 
   if (plugin_tunnel_type != HTTP_NO_PLUGIN_TUNNEL || will_be_private_ss) {
     SMDebug("http_ss", "Setting server session to private");
@@ -5941,7 +5962,7 @@ void
 HttpSM::setup_server_send_request_api()
 {
   // Make sure the VC is on the correct timeout
-  server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_out));
+  set_server_netvc_inactivity_timeout(server_session->get_netvc());
   t_state.api_next_action = HttpTransact::SM_ACTION_API_SEND_REQUEST_HDR;
   do_api_callout();
 }
