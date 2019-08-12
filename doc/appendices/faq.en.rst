@@ -116,7 +116,7 @@ Please refer to the :ref:`forward-proxy` documentation.
 How do I interpret the Via: header code?
 ----------------------------------------
 
-The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+The ``Via`` header string can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/tools/via>`_.
 
 The Via header is an optional HTTP header added by Traffic Server and other HTTP proxies. If a request goes through multiple proxies, each one appends its Via header content to the end of the existing Via header. Via header content is for general information and diagnostic use only and should not be used as a programmatic interface to Traffic Server. The header is cached by each intermediary with the object as received from its downstream node. Thus, the last node in the list to report a cache hit is the end of the transaction for that specific request. Nodes reported earlier were from a previous transaction.
 

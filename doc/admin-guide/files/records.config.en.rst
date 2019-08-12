@@ -772,7 +772,7 @@ mptcp
 
 .. note::
 
-   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.request_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -798,7 +798,7 @@ mptcp
 
 .. note::
 
-   The ``Via`` transaction code can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction code can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.response_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -3634,7 +3634,7 @@ HTTP/2 Configuration
 HTTP/3 Configuration
 ====================
 
-There is no configuration available yet on this release. 
+There is no configuration available yet on this release.
 
 QUIC Configuration
 ====================
