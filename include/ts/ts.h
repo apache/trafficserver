@@ -271,7 +271,11 @@ tsapi int _TSAssert(const char *txt, const char *f, int l);
 
 #define TSReleaseAssert(EX) ((void)((EX) ? (void)0 : _TSReleaseAssert(#EX, __FILE__, __LINE__)))
 
-#define TSAssert(EX) (void)((EX) || (_TSAssert(#EX, __FILE__, __LINE__)))
+#if DEBUG
+#define TSAssert(EX) ((void)((EX) || (_TSAssert(#EX, __FILE__, __LINE__))))
+#else
+#define TSAssert(EX) ((void)0)
+#endif
 
 /* --------------------------------------------------------------------------
    Marshal buffers */

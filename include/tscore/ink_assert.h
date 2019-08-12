@@ -46,7 +46,7 @@ inkcoreapi void _ink_assert(const char *a, const char *f, int l) TS_NORETURN;
 #if defined(DEBUG) || defined(__clang_analyzer__) || defined(__COVERITY__)
 #define ink_assert(EX) ((void)(__builtin_expect(!!(EX), 1) ? (void)0 : _ink_assert(#EX, __FILE__, __LINE__)))
 #else
-#define ink_assert(EX) (void)(EX)
+#define ink_assert(EX) (void)0
 #endif
 
 #define ink_release_assert(EX) ((void)(__builtin_expect(!!(EX), 0) ? (void)0 : _ink_assert(#EX, __FILE__, __LINE__)))
