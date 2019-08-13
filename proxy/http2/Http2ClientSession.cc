@@ -82,6 +82,11 @@ Http2ClientSession::destroy()
 void
 Http2ClientSession::free()
 {
+  if (this->_reenable_event) {
+    this->_reenable_event->cancel();
+    this->_reenable_event = nullptr;
+  }
+
   if (client_vc) {
     client_vc->do_io_close();
     client_vc = nullptr;
@@ -358,6 +363,13 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     break;
   }
 
+  case HTTP2_SESSION_EVENT_REENABLE:
+    // VIO will be reenableed in this handler
+    retval = (this->*session_handler)(VC_EVENT_READ_READY, static_cast<VIO *>(e->cookie));
+    // Clear the event after calling session_handler to not reschedule REENABLE in it
+    this->_reenable_event = nullptr;
+    break;
+
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ERROR:
@@ -522,7 +534,16 @@ Http2ClientSession::state_complete_frame_read(int event, void *edata)
   STATE_ENTER(&Http2ClientSession::state_complete_frame_read, event);
   ink_assert(event == VC_EVENT_READ_COMPLETE || event == VC_EVENT_READ_READY);
   if (this->sm_reader->read_avail() < this->current_hdr.length) {
-    vio->reenable();
+    if (this->_should_do_something_else()) {
+      if (this->_reenable_event == nullptr) {
+        vio->disable();
+        this->_reenable_event = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(1), HTTP2_SESSION_EVENT_REENABLE, vio);
+      } else {
+        vio->reenable();
+      }
+    } else {
+      vio->reenable();
+    }
     return 0;
   }
   Http2SsnDebug("completed frame read, %" PRId64 " bytes available", this->sm_reader->read_avail());
@@ -539,6 +560,7 @@ Http2ClientSession::do_complete_frame_read()
   Http2Frame frame(this->current_hdr, this->sm_reader);
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_RECV, &frame);
   this->sm_reader->consume(this->current_hdr.length);
+  ++(this->_n_frame_read);
 
   // Set the event handler if there is no more data to process a new frame
   HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
@@ -561,9 +583,18 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
       break;
     }
 
+    Http2ErrorCode err = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+    if (this->connection_state.get_stream_error_rate() > std::min(1.0, Http2::stream_error_rate_threshold * 2.0)) {
+      ip_port_text_buffer ipb;
+      const char *client_ip = ats_ip_ntop(get_client_addr(), ipb, sizeof(ipb));
+      Error("HTTP/2 session error client_ip=%s session_id=%" PRId64
+            " closing a connection, because its stream error rate (%f) is too high",
+            client_ip, connection_id(), this->connection_state.get_stream_error_rate());
+      err = Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
+    }
+
     // Return if there was an error
-    Http2ErrorCode err;
-    if (do_start_frame_read(err) < 0) {
+    if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR || do_start_frame_read(err) < 0) {
       // send an error if specified.  Otherwise, just go away
       if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
         SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
@@ -582,6 +613,14 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
       break;
     }
     do_complete_frame_read();
+
+    if (this->_should_do_something_else()) {
+      if (this->_reenable_event == nullptr) {
+        vio->disable();
+        this->_reenable_event = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(1), HTTP2_SESSION_EVENT_REENABLE, vio);
+        return 0;
+      }
+    }
   }
 
   // If the client hasn't shut us down, reenable
@@ -607,4 +646,11 @@ void
 Http2ClientSession::remember(const SourceLocation &location, int event, int reentrant)
 {
   this->_history.push_back(location, event, reentrant);
+}
+
+bool
+Http2ClientSession::_should_do_something_else()
+{
+  // Do something else every 128 incoming frames
+  return (this->_n_frame_read & 0x7F) == 0;
 }

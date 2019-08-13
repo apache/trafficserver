@@ -26,6 +26,8 @@
 #include "Http2ClientSession.h"
 #include "../http/HttpSM.h"
 
+#include <numeric>
+
 #define REMEMBER(e, r)                                    \
   {                                                       \
     this->_history.push_back(MakeSourceLocation(), e, r); \
@@ -933,6 +935,63 @@ void
 Http2Stream::decrement_client_transactions_stat()
 {
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
+}
+
+ssize_t
+Http2Stream::client_rwnd() const
+{
+  return this->_client_rwnd;
+}
+
+Http2ErrorCode
+Http2Stream::increment_client_rwnd(size_t amount)
+{
+  this->_client_rwnd += amount;
+
+  this->_recent_rwnd_increment[this->_recent_rwnd_increment_index] = amount;
+  ++this->_recent_rwnd_increment_index;
+  this->_recent_rwnd_increment_index %= this->_recent_rwnd_increment.size();
+  double sum = std::accumulate(this->_recent_rwnd_increment.begin(), this->_recent_rwnd_increment.end(), 0.0);
+  double avg = sum / this->_recent_rwnd_increment.size();
+  if (avg < Http2::min_avg_window_update) {
+    return Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
+  }
+  return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+}
+
+Http2ErrorCode
+Http2Stream::decrement_client_rwnd(size_t amount)
+{
+  this->_client_rwnd -= amount;
+  if (this->_client_rwnd < 0) {
+    return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
+  } else {
+    return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+  }
+}
+
+ssize_t
+Http2Stream::server_rwnd() const
+{
+  return this->_server_rwnd;
+}
+
+Http2ErrorCode
+Http2Stream::increment_server_rwnd(size_t amount)
+{
+  this->_server_rwnd += amount;
+  return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+}
+
+Http2ErrorCode
+Http2Stream::decrement_server_rwnd(size_t amount)
+{
+  this->_server_rwnd -= amount;
+  if (this->_server_rwnd < 0) {
+    return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
+  } else {
+    return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+  }
 }
 
 void

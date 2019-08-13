@@ -3631,6 +3631,35 @@ HTTP/2 Configuration
    Clients exceeded this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
 
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_frames_per_minute INT 14
+   :reloadable:
+
+   Specifies how many SETTINGS frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_ping_frames_per_minute INT 60
+   :reloadable:
+
+   Specifies how many number of PING frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_priority_frames_per_minute INT 120
+   :reloadable:
+
+   Specifies how many number of PRIORITY frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.min_avg_window_update FLOAT 2560.0
+   :reloadable:
+
+   Specifies the minimum average window increment |TS| allows. The average will be calculated based on the last 5 WINDOW_UPDATE frames.
+   Clients that send smaller window increments lower than this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+
 HTTP/3 Configuration
 ====================
 
