@@ -39,9 +39,7 @@ class Http2Stream : public ProxyClientTransaction
 public:
   typedef ProxyClientTransaction super; ///< Parent type.
   Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size)
-    : client_rwnd(initial_rwnd),
-      server_rwnd(Http2::initial_window_size),
-      header_blocks(NULL),
+    : header_blocks(NULL),
       header_blocks_length(0),
       request_header_length(0),
       recv_end_stream(false),
@@ -58,6 +56,8 @@ public:
       _thread(NULL),
       _id(sid),
       _state(Http2StreamState::HTTP2_STREAM_STATE_IDLE),
+      _client_rwnd(initial_rwnd),
+      _server_rwnd(Http2::initial_window_size),
       cross_thread_event(NULL),
       active_timeout(0),
       active_event(NULL),
@@ -73,10 +73,10 @@ public:
   void
   init(Http2StreamId sid, ssize_t initial_rwnd)
   {
-    _id               = sid;
-    _start_time       = Thread::get_hrtime();
-    _thread           = this_ethread();
-    this->client_rwnd = initial_rwnd;
+    _id                = sid;
+    _start_time        = Thread::get_hrtime();
+    _thread            = this_ethread();
+    this->_client_rwnd = initial_rwnd;
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT, _thread);
     sm_reader = request_reader = request_buffer.alloc_reader();
@@ -144,7 +144,7 @@ public:
   void
   update_initial_rwnd(Http2WindowSize new_size)
   {
-    client_rwnd = new_size;
+    this->_client_rwnd = new_size;
   }
 
   bool
@@ -191,7 +191,12 @@ public:
   void push_promise(URL &url, const MIMEField *accept_encoding);
 
   // Stream level window size
-  ssize_t client_rwnd, server_rwnd;
+  ssize_t client_rwnd() const;
+  Http2ErrorCode increment_client_rwnd(size_t amount);
+  Http2ErrorCode decrement_client_rwnd(size_t amount);
+  ssize_t server_rwnd() const;
+  Http2ErrorCode increment_server_rwnd(size_t amount);
+  Http2ErrorCode decrement_server_rwnd(size_t amount);
 
   uint8_t *header_blocks;
   uint32_t header_blocks_length;  // total length of header blocks (not include
@@ -306,6 +311,12 @@ private:
 
   uint64_t data_length = 0;
   uint64_t bytes_sent  = 0;
+
+  ssize_t _client_rwnd;
+  ssize_t _server_rwnd = Http2::initial_window_size;
+
+  std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
+  int _recent_rwnd_increment_index           = 0;
 
   ChunkedHandler chunked_handler;
   Event *cross_thread_event      = nullptr;

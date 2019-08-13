@@ -3383,6 +3383,13 @@ HTTP/2 Configuration
    HTTP/2 connection to avoid duplicate pushes on the same connection. If the
    maximum number is reached, new entries are not remembered.
 
+.. ts:cv:: CONFIG proxy.config.http2.stream_error_rate_threshold FLOAT 0.1
+   :reloadable:
+
+   This is the maximum stream error rate |TS| allows on an HTTP/2 connection.
+   |TS| gracefully closes connections that have stream error rates above this
+   setting by sending GOAWAY frames.
+
 .. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 7
    :reloadable:
 
@@ -3395,6 +3402,34 @@ HTTP/2 Configuration
 
    Specifies how many settings in HTTP/2 SETTINGS frames |TS| accept for a minute.
    Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_frames_per_minute INT 14
+   :reloadable:
+
+   Specifies how many SETTINGS frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_ping_frames_per_minute INT 60
+   :reloadable:
+
+   Specifies how many number of PING frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_priority_frames_per_minute INT 120
+   :reloadable:
+
+   Specifies how many number of PRIORITY frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.min_avg_window_update FLOAT 2560.0
+   :reloadable:
+
+   Specifies the minimum average window increment |TS| allows. The average will be calculated based on the last 5 WINDOW_UPDATE frames.
+   Clients that send smaller window increments lower than this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
 
 Plug-in Configuration

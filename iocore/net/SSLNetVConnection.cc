@@ -469,7 +469,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   // If it is not enabled, lower its priority.  This allows
   // a fast connection to speed match a slower connection by
   // shifting down in priority even if it could read.
-  if (!s->enabled || s->vio.op != VIO::READ) {
+  if (!s->enabled || s->vio.op != VIO::READ || s->vio.is_disabled()) {
     read_disable(nh, this);
     return;
   }
@@ -574,7 +574,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   }
 
   // If there is nothing to do or no space available, disable connection
-  if (ntodo <= 0 || !buf.writer()->write_avail()) {
+  if (ntodo <= 0 || !buf.writer()->write_avail() || s->vio.is_disabled()) {
     read_disable(nh, this);
     return;
   }
@@ -1487,6 +1487,7 @@ SSLNetVConnection::reenable(NetHandler *nh)
     }
     Debug("ssl", "iterate from reenable curHook=%p %d", curHook, sslHandshakeHookState);
   }
+
   this->readReschedule(nh);
 }
 

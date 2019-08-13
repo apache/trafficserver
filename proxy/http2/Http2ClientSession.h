@@ -40,6 +40,14 @@
 #define HTTP2_SESSION_EVENT_FINI (HTTP2_SESSION_EVENTS_START + 2)
 #define HTTP2_SESSION_EVENT_RECV (HTTP2_SESSION_EVENTS_START + 3)
 #define HTTP2_SESSION_EVENT_XMIT (HTTP2_SESSION_EVENTS_START + 4)
+#define HTTP2_SESSION_EVENT_SHUTDOWN_INIT (HTTP2_SESSION_EVENTS_START + 5)
+#define HTTP2_SESSION_EVENT_SHUTDOWN_CONT (HTTP2_SESSION_EVENTS_START + 6)
+#define HTTP2_SESSION_EVENT_REENABLE (HTTP2_SESSION_EVENTS_START + 7)
+
+enum class Http2SessionCod : int {
+  NOT_PROVIDED,
+  HIGH_ERROR_RATE,
+};
 
 size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
 
@@ -313,6 +321,8 @@ private:
   // if there are multiple frames ready on the wire
   int state_process_frame_read(int event, VIO *vio, bool inside_frame);
 
+  bool _should_do_something_else();
+
   int64_t total_write_len;
   SessionHandler session_handler;
   NetVConnection *client_vc;
@@ -333,6 +343,9 @@ private:
 
   InkHashTable *h2_pushed_urls = nullptr;
   uint32_t h2_pushed_urls_size = 0;
+
+  Event *_reenable_event = nullptr;
+  int _n_frame_read      = 0;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
