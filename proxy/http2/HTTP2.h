@@ -381,6 +381,10 @@ public:
   static float stream_error_rate_threshold;
   static uint32_t max_settings_per_frame;
   static uint32_t max_settings_per_minute;
+  static uint32_t max_settings_frames_per_minute;
+  static uint32_t max_ping_frames_per_minute;
+  static uint32_t max_priority_frames_per_minute;
+  static float min_avg_window_update;
 
   static void init();
 };
