@@ -77,11 +77,8 @@ getDebugObject(const PluginDso &plugin)
   }
 }
 
-/* A temp sandbox to play with our toys used for all fun with this test-bench */
-static fs::path tmpDir = fs::canonical(fs::temp_directory_path(), ec);
-
 /* The following are paths that are used commonly in the unit-tests */
-static fs::path sandboxDir     = tmpDir / "sandbox";
+static fs::path sandboxDir     = getTemporaryDir();
 static fs::path runtimeRootDir = sandboxDir / "runtime";
 static fs::path runtimeDir     = runtimeRootDir / tempComponent;
 static fs::path searchDir      = sandboxDir / "search";
@@ -149,6 +146,8 @@ validateSuccessfulConfigPathTest(const RemapPluginInst *pluginInst, const std::s
 
 SCENARIO("loading plugins", "[plugin][core]")
 {
+  REQUIRE_FALSE(sandboxDir.empty());
+
   fs::path effectivePath;
   fs::path runtimePath;
   std::string error;
@@ -249,6 +248,8 @@ SCENARIO("loading plugins", "[plugin][core]")
 
 SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][core]")
 {
+  REQUIRE_FALSE(sandboxDir.empty());
+
   GIVEN("multiple search dirs specified for the plugin search")
   {
     /* Create the directory structure and install plugins */
@@ -386,6 +387,8 @@ getPluginVersion(const PluginDso &plugin)
 
 SCENARIO("loading multiple version of the same plugin at the same time", "[plugin][core]")
 {
+  REQUIRE_FALSE(sandboxDir.empty());
+
   static fs::path uuid_t1 = fs::path("c71e2bab-90dc-4770-9535-c9304c3de381"); /* UUID at moment t1 */
   static fs::path uuid_t2 = fs::path("c71e2bab-90dc-4770-9535-e7304c3ee732"); /* UUID at moment t2 */
 
@@ -532,6 +535,8 @@ SCENARIO("loading multiple version of the same plugin at the same time", "[plugi
 
 SCENARIO("notifying plugins of config reload", "[plugin][core]")
 {
+  REQUIRE_FALSE(sandboxDir.empty());
+
   /* use 2 copies of the same plugin to test */
   fs::path configName1 = fs::path("plugin_testing_calls_1.so");
   fs::path configName2 = fs::path("plugin_testing_calls_2.so");

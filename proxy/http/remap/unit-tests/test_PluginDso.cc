@@ -39,11 +39,8 @@ thread_local PluginThreadContext *pluginThreadContext;
 
 std::error_code ec;
 
-/* A temp sandbox to play with our toys used for all fun with this test-bench */
-static fs::path tmpDir = fs::canonical(fs::temp_directory_path(), ec);
-
 /* The following are dirs that are used commonly in the unit-tests */
-static fs::path sandboxDir     = tmpDir / fs::path("sandbox");
+static fs::path sandboxDir     = getTemporaryDir();
 static fs::path runtimeDir     = sandboxDir / fs::path("runtime");
 static fs::path searchDir      = sandboxDir / fs::path("search");
 static fs::path pluginBuildDir = fs::current_path() / fs::path("unit-tests/.libs");
@@ -91,6 +88,8 @@ public:
  */
 SCENARIO("loading plugins", "[plugin][core]")
 {
+  REQUIRE_FALSE(sandboxDir.empty());
+
   clean();
   std::string error;
 
@@ -322,6 +321,8 @@ SCENARIO("loading plugins", "[plugin][core]")
  */
 SCENARIO("looking for symbols inside a plugin DSO", "[plugin][core]")
 {
+  REQUIRE_FALSE(sandboxDir.empty());
+
   clean();
   std::string error;
 
