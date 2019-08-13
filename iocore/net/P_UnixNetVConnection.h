@@ -379,7 +379,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
 {
   Debug("socket", "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
   active_timeout_in        = timeout_in;
-  next_activity_timeout_at = Thread::get_hrtime() + timeout_in;
+  next_activity_timeout_at = (active_timeout_in > 0) ? Thread::get_hrtime() + timeout_in : 0;
 }
 
 inline void

@@ -78,7 +78,11 @@ public:
         }
         Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
               ink_hrtime_to_sec(now), vc->next_inactivity_timeout_at, vc->inactivity_timeout_in);
-        vc->handleEvent(EVENT_IMMEDIATE, e);
+        vc->handleEvent(VC_EVENT_INACTIVITY_TIMEOUT, e);
+      } else if (vc->next_activity_timeout_at && vc->next_activity_timeout_at < now) {
+        Debug("inactivity_cop_verbose", "active vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
+              ink_hrtime_to_sec(now), vc->next_activity_timeout_at, vc->active_timeout_in);
+        vc->handleEvent(VC_EVENT_ACTIVE_TIMEOUT, e);
       }
     }
     // The cop_list is empty now.
@@ -664,8 +668,14 @@ NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event,
     // create a dummy event
     Event event;
     event.ethread = this_ethread();
-    if (vc->handleEvent(EVENT_IMMEDIATE, &event) == EVENT_DONE) {
-      ++handle_event;
+    if (vc->inactivity_timeout_in && vc->next_inactivity_timeout_at <= now) {
+      if (vc->handleEvent(VC_EVENT_INACTIVITY_TIMEOUT, &event) == EVENT_DONE) {
+        ++handle_event;
+      }
+    } else if (vc->active_timeout_in && vc->next_activity_timeout_at <= now) {
+      if (vc->handleEvent(VC_EVENT_ACTIVE_TIMEOUT, &event) == EVENT_DONE) {
+        ++handle_event;
+      }
     }
   }
 }
