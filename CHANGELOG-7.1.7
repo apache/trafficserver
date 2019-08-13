@@ -1,4 +1,5 @@
 Changes with Apache Traffic Server 7.1.7
+  #4508 - Add logic to clean up vios on HttpSM shutdown
   #4859 - cookie remap plugin
   #4882 - Initialize redir_len, compiler warnings
   #4883 - Don't allow the old body to be used when refreshing
@@ -17,3 +18,9 @@ Changes with Apache Traffic Server 7.1.7
   #5359 - Revert TS-374 to avoid deadlocks
   #5485 - Don't read frames after sending GOAWAY with an error code
   #5532 - Allow number of settings per H2 session to be configurable
+  #5788 - Throttling results in tight loop if there are no new connections
+  #5790 - ATS 7 back port patch for SM looping issue #5642
+  #5791 - This is a backport patch for ATS 7 that fixes issue #5642.
+  #5798 - Fix broken template path caused by ba42078 (PR 1468) (Cherry pick 396…
+  #5799 - Fix and reenable url_sig Au test.
+  #5820 - HTTP/2 rate limiting
