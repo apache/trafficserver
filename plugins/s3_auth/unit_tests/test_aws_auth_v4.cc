@@ -631,7 +631,7 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket List Objects, query param value alre
   MockTsInterface api;
   api._method.assign("GET");
   api._host.assign("examplebucket.s3.amazonaws.com");
-  api._path.assign("");
+  api._path.assign("PATH==");
   api._query.assign("key=TEST==");
   api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
   api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
@@ -642,18 +642,18 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket List Objects, query param value alre
     "AWS4-HMAC-SHA256 "
     "Credential=AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request,"
     "SignedHeaders=host;x-amz-content-sha256;x-amz-date,"
-    "Signature=60b410f6a0ffe09b91c2aef1f179945916b45ea215278e6b8f6cfb8d461e3706",
+    "Signature=3b195c74eaa89790c596114a9fcb8515d6a3cc78577f8941c46b09ee7f501194",
     /* Canonical Request sha256 */
-    "1035b1d75dad9e94fa99fa6edc2cf7d489f38796109a132721621977737a41cc",
+    "7b3c74369013172ce9cb3da99b5d14e358382953e7b560b4c9bf0a46e73933cb",
     /* Date and time*/
     "20130524T000000Z",
     /* String to sign */
     "AWS4-HMAC-SHA256\n"
     "20130524T000000Z\n"
     "20130524/us-east-1/s3/aws4_request\n"
-    "1035b1d75dad9e94fa99fa6edc2cf7d489f38796109a132721621977737a41cc",
+    "7b3c74369013172ce9cb3da99b5d14e358382953e7b560b4c9bf0a46e73933cb",
     /* Signature */
-    "60b410f6a0ffe09b91c2aef1f179945916b45ea215278e6b8f6cfb8d461e3706",
+    "3b195c74eaa89790c596114a9fcb8515d6a3cc78577f8941c46b09ee7f501194",
     /* Payload hash */
     "UNSIGNED-PAYLOAD",
     /* Signed Headers */
@@ -664,6 +664,7 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket List Objects, query param value alre
 
   /* Now make query param value encoded beforehand and expect the same result,
    * it should not URI encode it twice according to AWS real behavior undocumented in the specification.*/
+  api._path.assign("PATH%3D%3D");
   api._query.assign("key=TEST%3D%3D");
   ValidateBench(api, /*signePayload */ false, &now, bench, defaultIncludeHeaders, defaultExcludeHeaders);
 }
