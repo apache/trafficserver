@@ -1,5 +1,9 @@
 Changes with Apache Traffic Server 8.0.4
+  #4967 - Close a H2 connection if its stream error rate is high
   #5357 - Revert TS-374 to avoid deadlocks
   #5379 - Throttling results in tight loop if there are no new connections
   #5484 - Don't read frames after sending GOAWAY with an error code
   #5531 - Allow number of settings per H2 session to be configurable
+  #5650 - ATS 8 - Fixes state machine loops when using parent selection to select origins.
+  #5657 - Fix and reenable url_sig Au test
+  #5822 - HTTP/2 rate limiting
