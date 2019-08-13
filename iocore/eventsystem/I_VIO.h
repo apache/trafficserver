@@ -139,6 +139,9 @@ public:
   */
   inkcoreapi void reenable_re();
 
+  void disable();
+  bool is_disabled();
+
   explicit VIO(int aop);
   VIO();
 
@@ -218,6 +221,9 @@ public:
 
   */
   Ptr<ProxyMutex> mutex;
+
+private:
+  bool _disabled = false;
 };
 
 #include "I_VConnection.h"

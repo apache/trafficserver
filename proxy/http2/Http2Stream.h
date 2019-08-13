@@ -51,7 +51,7 @@ class Http2Stream : public ProxyTransaction
 {
 public:
   typedef ProxyTransaction super; ///< Parent type.
-  Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size) : client_rwnd(initial_rwnd), _id(sid)
+  Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size) : _id(sid), _client_rwnd(initial_rwnd)
   {
     SET_HANDLER(&Http2Stream::main_event_handler);
   }
@@ -61,9 +61,9 @@ public:
   {
     this->mark_milestone(Http2StreamMilestone::OPEN);
 
-    this->_id         = sid;
-    this->_thread     = this_ethread();
-    this->client_rwnd = initial_rwnd;
+    this->_id          = sid;
+    this->_thread      = this_ethread();
+    this->_client_rwnd = initial_rwnd;
 
     sm_reader = request_reader = request_buffer.alloc_reader();
     // FIXME: Are you sure? every "stream" needs request_header?
@@ -123,7 +123,7 @@ public:
   void
   update_initial_rwnd(Http2WindowSize new_size)
   {
-    client_rwnd = new_size;
+    this->_client_rwnd = new_size;
   }
 
   bool
@@ -170,8 +170,12 @@ public:
   void push_promise(URL &url, const MIMEField *accept_encoding);
 
   // Stream level window size
-  ssize_t client_rwnd;
-  ssize_t server_rwnd = Http2::initial_window_size;
+  ssize_t client_rwnd() const;
+  Http2ErrorCode increment_client_rwnd(size_t amount);
+  Http2ErrorCode decrement_client_rwnd(size_t amount);
+  ssize_t server_rwnd() const;
+  Http2ErrorCode increment_server_rwnd(size_t amount);
+  Http2ErrorCode decrement_server_rwnd(size_t amount);
 
   uint8_t *header_blocks        = nullptr;
   uint32_t header_blocks_length = 0;  // total length of header blocks (not include
@@ -295,6 +299,12 @@ private:
 
   uint64_t data_length = 0;
   uint64_t bytes_sent  = 0;
+
+  ssize_t _client_rwnd;
+  ssize_t _server_rwnd = Http2::initial_window_size;
+
+  std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
+  int _recent_rwnd_increment_index           = 0;
 
   ChunkedHandler chunked_handler;
   Event *cross_thread_event      = nullptr;
