@@ -9790,14 +9790,13 @@ TSRegisterProtocolTag(const char *tag)
 }
 
 void
-TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char * host, const int port,
-    const char * path, const char * query)
+TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *host, const int port, const char *path, const char *query)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  HttpSM *sm                     = (HttpSM *)txnp;
-  HttpTransact::State * s        = &(sm->t_state);
+  HttpSM *sm             = (HttpSM *)txnp;
+  HttpTransact::State *s = &(sm->t_state);
   sdk_assert(s->next_action == HttpTransact::SM_ACTION_CACHE_LOOKUP);
-  s->transact_return_point       = nullptr;
+  s->transact_return_point = nullptr;
 
   sm->rewind_state_machine();
 
@@ -9807,24 +9806,24 @@ TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char * host, const int port,
   TSHttpTxnClientReqGet(txnp, &buffer, &location);
   TSHttpHdrUrlGet(buffer, location, &location2);
 
-  //host
+  // host
   if (nullptr != host) {
     const int length = strlen(host);
     TSUrlHostSet(buffer, location2, host, length);
   }
 
-  //port
+  // port
   if (0 < port) {
     TSUrlPortSet(buffer, location2, port);
   }
 
-  //path
+  // path
   if (nullptr != path) {
     const int length = strlen(path);
     TSUrlPathSet(buffer, location2, path, length);
   }
 
-  //query
+  // query
   if (nullptr != query) {
     const int length = strlen(query);
     TSUrlHttpQuerySet(buffer, location2, query, length);
@@ -9833,7 +9832,6 @@ TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char * host, const int port,
   TSHandleMLocRelease(buffer, location, location2);
   TSHandleMLocRelease(buffer, TS_NULL_MLOC, location);
 }
-
 
 namespace
 {
