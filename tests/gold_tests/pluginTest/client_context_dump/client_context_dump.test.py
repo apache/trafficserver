@@ -54,8 +54,10 @@ ts.Disk.sni_yaml.AddLines([
 # Set up plugin
 Test.PreparePlugin(Test.Variables.AtsExampleDir + '/plugins/c-api/client_context_dump/client_context_dump.cc', ts)
 
-# custom log comparison
-Test.Disk.File(ts.Variables.LOGDIR + '/client_context_dump.log', exists=True, content='gold/client_context_dump.gold')
+# custom log comparison.  Verify the two certs we have loaded are dumped
+log = Test.Disk.File(ts.Variables.LOGDIR + '/client_context_dump.log', exists=True)
+log.Content = Testers.ContainsExpression('two.com.pem:, Subject: C=US,ST=Illinois,L=Champaign,OU=Two,O=Apache,emailAddress=ssl@two.com,CN=two.com. SAN: . Serial: . NotAfter: Jun 21 20:39:43 2019 GMT.', "Info on two.com.pem should dump")
+log.Content += Testers.ContainsExpression("one.com.pem:, Subject: CN=one.com,O=Apache,L=Champaign,ST=Illinois,C=US. SAN: . Serial: . NotAfter: May 22 18:17:04 2020 GMT.", "Info on one.com.pem should dump")
 
 # traffic server test
 t = Test.AddTestRun("Test traffic server started properly")
