@@ -303,12 +303,6 @@ public:
     }
   }
 
-  int64_t
-  write_buffer_size()
-  {
-    return write_buffer->max_read_avail();
-  }
-
   // Record history from Http2ConnectionState
   void remember(const SourceLocation &location, int event, int reentrant = NO_REENTRANT);
 

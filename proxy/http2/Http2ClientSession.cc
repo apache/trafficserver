@@ -175,12 +175,6 @@ Http2ClientSession::start()
   read_vio  = this->do_io_read(this, INT64_MAX, this->read_buffer);
   write_vio = this->do_io_write(this, INT64_MAX, this->sm_writer);
 
-  // 3.5 HTTP/2 Connection Preface. Upon establishment of a TCP connection and
-  // determination that HTTP/2 will be used by both peers, each endpoint MUST
-  // send a connection preface as a final confirmation ...
-  // this->write_buffer->write(HTTP2_CONNECTION_PREFACE,
-  // HTTP2_CONNECTION_PREFACE_LEN);
-
   this->connection_state.init();
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_INIT, this);
   this->handleEvent(VC_EVENT_READ_READY, read_vio);
