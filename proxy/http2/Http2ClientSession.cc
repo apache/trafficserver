@@ -165,19 +165,20 @@ Http2ClientSession::free()
 void
 Http2ClientSession::start()
 {
-  VIO *read_vio;
-
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
   SET_HANDLER(&Http2ClientSession::main_event_handler);
   HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_read_connection_preface);
 
-  read_vio  = this->do_io_read(this, INT64_MAX, this->read_buffer);
-  write_vio = this->do_io_write(this, INT64_MAX, this->sm_writer);
+  VIO *read_vio = this->do_io_read(this, INT64_MAX, this->read_buffer);
+  write_vio     = this->do_io_write(this, INT64_MAX, this->sm_writer);
 
   this->connection_state.init();
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_INIT, this);
-  this->handleEvent(VC_EVENT_READ_READY, read_vio);
+
+  if (this->sm_reader->is_read_avail_more_than(0)) {
+    this->handleEvent(VC_EVENT_READ_READY, read_vio);
+  }
 }
 
 void
