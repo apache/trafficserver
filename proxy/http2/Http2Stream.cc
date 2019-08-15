@@ -148,6 +148,9 @@ Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_ta
 void
 Http2Stream::send_request(Http2ConnectionState &cstate)
 {
+  ink_release_assert(this->current_reader != nullptr);
+  this->_http_sm_id = this->current_reader->sm_id;
+
   // Convert header to HTTP/1.1 format
   http2_convert_header_from_2_to_1_1(&_req_header);
 
@@ -174,7 +177,6 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
 
   // Is there a read_vio request waiting?
   this->update_read_request(INT64_MAX, true);
-  this->_http_sm_id = this->current_reader->sm_id;
 }
 
 bool
