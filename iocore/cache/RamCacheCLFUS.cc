@@ -169,7 +169,7 @@ RamCacheCLFUS::resize_hashtable()
   int anbuckets = bucket_sizes[ibuckets];
   DDebug("ram_cache", "resize hashtable %d", anbuckets);
   int64_t s                                        = anbuckets * sizeof(DList(RamCacheCLFUSEntry, hash_link));
-  DList(RamCacheCLFUSEntry, hash_link) *new_bucket = (DList(RamCacheCLFUSEntry, hash_link) *)ats_malloc(s);
+  DList(RamCacheCLFUSEntry, hash_link) *new_bucket = static_cast<DList(RamCacheCLFUSEntry, hash_link) *>(ats_malloc(s));
   memset(static_cast<void *>(new_bucket), 0, s);
   if (bucket) {
     for (int64_t i = 0; i < nbuckets; i++) {
@@ -185,7 +185,7 @@ RamCacheCLFUS::resize_hashtable()
   ats_free(seen);
   if (cache_config_ram_cache_use_seen_filter) {
     int size = bucket_sizes[ibuckets] * sizeof(uint16_t);
-    seen     = (uint16_t *)ats_malloc(size);
+    seen     = static_cast<uint16_t *>(ats_malloc(size));
     memset(seen, 0, size);
   }
 }
@@ -250,13 +250,13 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey
         e->hits++;
         uint32_t ram_hit_state = RAM_HIT_COMPRESS_NONE;
         if (e->flag_bits.compressed) {
-          b = (char *)ats_malloc(e->len);
+          b = static_cast<char *>(ats_malloc(e->len));
           switch (e->flag_bits.compressed) {
           default:
             goto Lfailed;
           case CACHE_COMPRESSION_FASTLZ: {
-            int l = (int)e->len;
-            if ((l != (int)fastlz_decompress(e->data->data(), e->compressed_len, b, l))) {
+            int l = static_cast<int>(e->len);
+            if ((l != fastlz_decompress(e->data->data(), e->compressed_len, b, l))) {
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_FASTLZ;
@@ -265,7 +265,8 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey
 #ifdef HAVE_ZLIB_H
           case CACHE_COMPRESSION_LIBZ: {
             uLongf l = e->len;
-            if (Z_OK != uncompress((Bytef *)b, &l, (Bytef *)e->data->data(), e->compressed_len)) {
+            if (Z_OK !=
+                uncompress(reinterpret_cast<Bytef *>(b), &l, reinterpret_cast<Bytef *>(e->data->data()), e->compressed_len)) {
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_LIBZ;
@@ -274,10 +275,10 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey
 #endif
 #ifdef HAVE_LZMA_H
           case CACHE_COMPRESSION_LIBLZMA: {
-            size_t l = (size_t)e->len, ipos = 0, opos = 0;
+            size_t l = static_cast<size_t>(e->len), ipos = 0, opos = 0;
             uint64_t memlimit = e->len * 2 + LZMA_BASE_MEMLIMIT;
-            if (LZMA_OK != lzma_stream_buffer_decode(&memlimit, 0, nullptr, (uint8_t *)e->data->data(), &ipos, e->compressed_len,
-                                                     (uint8_t *)b, &opos, l)) {
+            if (LZMA_OK != lzma_stream_buffer_decode(&memlimit, 0, nullptr, reinterpret_cast<uint8_t *>(e->data->data()), &ipos,
+                                                     e->compressed_len, reinterpret_cast<uint8_t *>(b), &opos, l)) {
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_LIBLZMA;
@@ -288,7 +289,7 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey
           IOBufferData *data = new_xmalloc_IOBufferData(b, e->len);
           data->_mem_type    = DEFAULT_ALLOC;
           if (!e->flag_bits.copy) { // don't bother if we have to copy anyway
-            int64_t delta = ((int64_t)e->compressed_len) - (int64_t)e->size;
+            int64_t delta = (static_cast<int64_t>(e->compressed_len)) - static_cast<int64_t>(e->size);
             bytes += delta;
             CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
             e->size = e->compressed_len;
@@ -435,11 +436,11 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       default:
         goto Lcontinue;
       case CACHE_COMPRESSION_FASTLZ:
-        l = (uint32_t)((double)e->len * 1.05 + 66);
+        l = static_cast<uint32_t>(static_cast<double>(e->len) * 1.05 + 66);
         break;
 #ifdef HAVE_ZLIB_H
       case CACHE_COMPRESSION_LIBZ:
-        l = (uint32_t)compressBound(e->len);
+        l = static_cast<uint32_t>(compressBound(e->len));
         break;
 #endif
 #ifdef HAVE_LZMA_H
@@ -453,7 +454,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       uint32_t elen           = e->len;
       CryptoHash key          = e->key;
       MUTEX_UNTAKE_LOCK(vol->mutex, thread);
-      b           = (char *)ats_malloc(l);
+      b           = static_cast<char *>(ats_malloc(l));
       bool failed = false;
       switch (ctype) {
       default:
@@ -469,21 +470,22 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
 #ifdef HAVE_ZLIB_H
       case CACHE_COMPRESSION_LIBZ: {
         uLongf ll = l;
-        if ((Z_OK != compress((Bytef *)b, &ll, (Bytef *)edata->data(), elen))) {
+        if ((Z_OK != compress(reinterpret_cast<Bytef *>(b), &ll, reinterpret_cast<Bytef *>(edata->data()), elen))) {
           failed = true;
         }
-        l = (int)ll;
+        l = static_cast<int>(ll);
         break;
       }
 #endif
 #ifdef HAVE_LZMA_H
       case CACHE_COMPRESSION_LIBLZMA: {
         size_t pos = 0, ll = l;
-        if (LZMA_OK != lzma_easy_buffer_encode(LZMA_PRESET_DEFAULT, LZMA_CHECK_NONE, nullptr, (uint8_t *)edata->data(), elen,
-                                               (uint8_t *)b, &pos, ll)) {
+        if (LZMA_OK != lzma_easy_buffer_encode(LZMA_PRESET_DEFAULT, LZMA_CHECK_NONE, nullptr,
+                                               reinterpret_cast<uint8_t *>(edata->data()), elen, reinterpret_cast<uint8_t *>(b),
+                                               &pos, ll)) {
           failed = true;
         }
-        l = (int)pos;
+        l = static_cast<int>(pos);
         break;
       }
 #endif
@@ -516,20 +518,20 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       }
       if (l < e->len) {
         e->flag_bits.compressed = cache_config_ram_cache_compress;
-        bb                      = (char *)ats_malloc(l);
+        bb                      = static_cast<char *>(ats_malloc(l));
         memcpy(bb, b, l);
         ats_free(b);
         e->compressed_len = l;
-        int64_t delta     = ((int64_t)l) - (int64_t)e->size;
+        int64_t delta     = (static_cast<int64_t>(l)) - static_cast<int64_t>(e->size);
         bytes += delta;
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
         e->size = l;
       } else {
         ats_free(b);
         e->flag_bits.compressed = 0;
-        bb                      = (char *)ats_malloc(e->len);
+        bb                      = static_cast<char *>(ats_malloc(e->len));
         memcpy(bb, e->data->data(), e->len);
-        int64_t delta = ((int64_t)e->len) - (int64_t)e->size;
+        int64_t delta = (static_cast<int64_t>(e->len)) - static_cast<int64_t>(e->size);
         bytes += delta;
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
         e->size = e->len;
@@ -594,14 +596,14 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       move_compressed(e);
       lru[e->flag_bits.lru].remove(e);
       lru[e->flag_bits.lru].enqueue(e);
-      int64_t delta = ((int64_t)size) - (int64_t)e->size;
+      int64_t delta = (static_cast<int64_t>(size)) - static_cast<int64_t>(e->size);
       bytes += delta;
       CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, delta);
       if (!copy) {
         e->size = size;
         e->data = data;
       } else {
-        char *b = (char *)ats_malloc(len);
+        char *b = static_cast<char *>(ats_malloc(len));
         memcpy(b, data->data(), len);
         e->data            = new_xmalloc_IOBufferData(b, len);
         e->data->_mem_type = DEFAULT_ALLOC;
@@ -711,7 +713,7 @@ Linsert:
   if (!copy) {
     e->data = data;
   } else {
-    char *b = (char *)ats_malloc(len);
+    char *b = static_cast<char *>(ats_malloc(len));
     memcpy(b, data->data(), len);
     e->data            = new_xmalloc_IOBufferData(b, len);
     e->data->_mem_type = DEFAULT_ALLOC;

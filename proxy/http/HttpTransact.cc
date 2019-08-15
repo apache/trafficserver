@@ -383,7 +383,7 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
 #endif
 
   // Can cache all regardless of cookie header - just ignore all cookie headers
-  if ((CookiesConfig)cookies_conf == COOKIES_CACHE_ALL) {
+  if (static_cast<CookiesConfig>(cookies_conf) == COOKIES_CACHE_ALL) {
     return false;
   }
 
@@ -406,13 +406,13 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
 
   // Do not cache if cookies option is COOKIES_CACHE_NONE
   // and a Cookie is detected
-  if ((CookiesConfig)cookies_conf == COOKIES_CACHE_NONE) {
+  if (static_cast<CookiesConfig>(cookies_conf) == COOKIES_CACHE_NONE) {
     return true;
   }
   // All other options depend on the Content-Type
   content_type = response->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &str_len);
 
-  if ((CookiesConfig)cookies_conf == COOKIES_CACHE_IMAGES) {
+  if (static_cast<CookiesConfig>(cookies_conf) == COOKIES_CACHE_IMAGES) {
     if (content_type && str_len >= 5 && memcmp(content_type, "image", 5) == 0) {
       // Images can be cached
       return false;
@@ -428,7 +428,7 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
     // COOKIES_CACHE_ALL_BUT_TEXT_EXT.
     // Furthermore, if there is a Set-Cookie header, then
     // Cache-Control must be set.
-    if ((CookiesConfig)cookies_conf == COOKIES_CACHE_ALL_BUT_TEXT_EXT &&
+    if (static_cast<CookiesConfig>(cookies_conf) == COOKIES_CACHE_ALL_BUT_TEXT_EXT &&
         ((!response->presence(MIME_PRESENCE_SET_COOKIE)) || response->is_cache_control_set(HTTP_VALUE_PUBLIC))) {
       return false;
     }
@@ -1034,7 +1034,7 @@ HttpTransact::ModifyRequest(State *s)
   }
   // Copy out buf to a hostname just in case its heap header memory is freed during coalescing
   // due to later HdrHeap operations
-  char *hostname = (char *)alloca(hostname_len + PORT_PADDING);
+  char *hostname = static_cast<char *>(alloca(hostname_len + PORT_PADDING));
   memcpy(hostname, buf, hostname_len);
 
   // Make clang analyzer happy. hostname is non-null iff request.is_target_in_url().
@@ -4551,7 +4551,7 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
     // If the cached response has an Age: we should update it
     // We could use calculate_document_age but my guess is it's overkill
     // Just use 'now' - 304's Date: + Age: (response's Age: if there)
-    date_value = std::max(s->current.now - date_value, (ink_time_t)0);
+    date_value = std::max(s->current.now - date_value, static_cast<ink_time_t>(0));
     if (s->hdr_info.server_response.presence(MIME_PRESENCE_AGE)) {
       time_t new_age = s->hdr_info.server_response.get_age();
 
@@ -5328,10 +5328,10 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
 
       if (s->internal_msg_buffer_size <= max_iobuffer_size) {
         s->internal_msg_buffer_fast_allocator_size = buffer_size_to_index(s->internal_msg_buffer_size);
-        s->internal_msg_buffer = (char *)ioBufAllocator[s->internal_msg_buffer_fast_allocator_size].alloc_void();
+        s->internal_msg_buffer = static_cast<char *>(ioBufAllocator[s->internal_msg_buffer_fast_allocator_size].alloc_void());
       } else {
         s->internal_msg_buffer_fast_allocator_size = -1;
-        s->internal_msg_buffer                     = (char *)ats_malloc(s->internal_msg_buffer_size);
+        s->internal_msg_buffer                     = static_cast<char *>(ats_malloc(s->internal_msg_buffer_size));
       }
 
       // clear the stupid buffer
@@ -5668,7 +5668,7 @@ HttpTransact::is_cache_response_returnable(State *s)
   }
   // If cookies in response and no TTL set, we do not cache the doc
   if ((s->cache_control.ttl_in_cache <= 0) &&
-      do_cookies_prevent_caching((int)s->txn_conf->cache_responses_to_cookies, &s->hdr_info.client_request,
+      do_cookies_prevent_caching(static_cast<int>(s->txn_conf->cache_responses_to_cookies), &s->hdr_info.client_request,
                                  s->cache_info.object_read->response_get(), s->cache_info.object_read->request_get())) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_COOKIE);
@@ -5959,7 +5959,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // Check whether the response is cachable based on its cookie
   // If there are cookies in response but a ttl is set, allow caching
   if ((s->cache_control.ttl_in_cache <= 0) &&
-      do_cookies_prevent_caching((int)s->txn_conf->cache_responses_to_cookies, request, response)) {
+      do_cookies_prevent_caching(static_cast<int>(s->txn_conf->cache_responses_to_cookies), request, response)) {
     TxnDebug("http_trans", "[is_response_cacheable] "
                            "response has uncachable cookies, response is not cachable");
     return false;
@@ -6505,7 +6505,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
         //   Otherwise, set the state's machine view  //
         //   of c-l to undefined to turn off K-A      //
         ////////////////////////////////////////////////
-        else if ((int64_t)s->cache_info.object_read->object_size_get() == cl) {
+        else if (s->cache_info.object_read->object_size_get() == cl) {
           s->hdr_info.trust_response_cl = true;
         } else {
           TxnDebug("http_trans", "Content Length header and cache object size mismatch."
@@ -6955,13 +6955,13 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
 
   if (cc_mask & (MIME_COOKED_MASK_CC_S_MAXAGE | MIME_COOKED_MASK_CC_MAX_AGE)) {
     if (cc_mask & MIME_COOKED_MASK_CC_S_MAXAGE) {
-      freshness_limit = (int)response->get_cooked_cc_s_maxage();
+      freshness_limit = static_cast<int>(response->get_cooked_cc_s_maxage());
       TxnDebug("http_match", "calculate_document_freshness_limit --- s_max_age set, freshness_limit = %d", freshness_limit);
     } else if (cc_mask & MIME_COOKED_MASK_CC_MAX_AGE) {
-      freshness_limit = (int)response->get_cooked_cc_max_age();
+      freshness_limit = static_cast<int>(response->get_cooked_cc_max_age());
       TxnDebug("http_match", "calculate_document_freshness_limit --- max_age set, freshness_limit = %d", freshness_limit);
     }
-    freshness_limit = std::min(std::max(0, freshness_limit), (int)s->txn_conf->cache_guaranteed_max_lifetime);
+    freshness_limit = std::min(std::max(0, freshness_limit), static_cast<int>(s->txn_conf->cache_guaranteed_max_lifetime));
   } else {
     date_set = last_modified_set = false;
 
@@ -6993,12 +6993,12 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
         expires_value = date_value;
         TxnDebug("http_match", "calculate_document_freshness_limit --- no expires, using date %" PRId64, (int64_t)expires_value);
       }
-      freshness_limit = (int)(expires_value - date_value);
+      freshness_limit = static_cast<int>(expires_value - date_value);
 
       TxnDebug("http_match", "calculate_document_freshness_limit --- Expires: %" PRId64 ", Date: %" PRId64 ", freshness_limit = %d",
                (int64_t)expires_value, (int64_t)date_value, freshness_limit);
 
-      freshness_limit = std::min(std::max(0, freshness_limit), (int)s->txn_conf->cache_guaranteed_max_lifetime);
+      freshness_limit = std::min(std::max(0, freshness_limit), static_cast<int>(s->txn_conf->cache_guaranteed_max_lifetime));
     } else {
       last_modified_value = 0;
       if (response->presence(MIME_PRESENCE_LAST_MODIFIED)) {
@@ -7021,7 +7021,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
         MgmtFloat f = s->txn_conf->cache_heuristic_lm_factor;
         ink_assert((f >= 0.0) && (f <= 1.0));
         ink_time_t time_since_last_modify = date_value - last_modified_value;
-        int h_freshness                   = (int)(time_since_last_modify * f);
+        int h_freshness                   = static_cast<int>(time_since_last_modify * f);
         freshness_limit                   = std::max(h_freshness, 0);
         TxnDebug("http_match",
                  "calculate_document_freshness_limit --- heuristic: date=%" PRId64 ", lm=%" PRId64
@@ -7035,7 +7035,7 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
   }
 
   // The freshness limit must always fall within the min and max guaranteed bounds.
-  min_freshness_bounds = std::max((MgmtInt)0, s->txn_conf->cache_guaranteed_min_lifetime);
+  min_freshness_bounds = std::max(static_cast<MgmtInt>(0), s->txn_conf->cache_guaranteed_min_lifetime);
   max_freshness_bounds = s->txn_conf->cache_guaranteed_max_lifetime;
 
   // Heuristic freshness can be more strict.
@@ -7131,9 +7131,9 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
   if (current_age < 0) {
     current_age = s->txn_conf->cache_guaranteed_max_lifetime;
   } else if (current_age < s->txn_conf->cache_guaranteed_max_lifetime) {
-    current_age = std::min((time_t)s->txn_conf->cache_guaranteed_max_lifetime, current_age);
+    current_age = std::min(static_cast<time_t>(s->txn_conf->cache_guaranteed_max_lifetime), current_age);
   } else {
-    current_age = std::max((time_t)s->txn_conf->cache_guaranteed_max_lifetime, current_age);
+    current_age = std::max(static_cast<time_t>(s->txn_conf->cache_guaranteed_max_lifetime), current_age);
   }
 
   TxnDebug("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %" PRId64, fresh_limit, (int64_t)current_age);
@@ -7531,7 +7531,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
     // to the default port.
     int port = url->port_get();
     if (port != url_canonicalize_port(URL_TYPE_HTTP, 0)) {
-      char *buf = (char *)alloca(host_len + 15);
+      char *buf = static_cast<char *>(alloca(host_len + 15));
       memcpy(buf, host, host_len);
       host_len += snprintf(buf + host_len, 15, ":%d", port);
       outgoing_request->value_set(MIME_FIELD_HOST, MIME_LEN_HOST, buf, host_len);
@@ -7857,7 +7857,8 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     break;
   }
 
-  const char *reason_phrase = (reason_phrase_or_null ? reason_phrase_or_null : (char *)(http_hdr_reason_lookup(status_code)));
+  const char *reason_phrase =
+    (reason_phrase_or_null ? reason_phrase_or_null : const_cast<char *>(http_hdr_reason_lookup(status_code)));
   if (unlikely(!reason_phrase)) {
     reason_phrase = "Unknown HTTP Status";
   }
@@ -7909,7 +7910,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   s->free_internal_msg_buffer();
   if (len == 0) {
     // If the file is empty, we may have a malloc(1) buffer. Release it.
-    new_msg = (char *)ats_free_null(new_msg);
+    new_msg = static_cast<char *>(ats_free_null(new_msg));
   }
   s->internal_msg_buffer                     = new_msg;
   s->internal_msg_buffer_size                = len;
@@ -7940,7 +7941,7 @@ HttpTransact::build_redirect_response(State *s)
   char *to_free = nullptr;
 
   HTTPStatus status_code = HTTP_STATUS_MOVED_TEMPORARILY;
-  char *reason_phrase    = (char *)(http_hdr_reason_lookup(status_code));
+  char *reason_phrase    = const_cast<char *>(http_hdr_reason_lookup(status_code));
 
   build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status_code, reason_phrase);
 
@@ -8087,8 +8088,9 @@ HttpTransact::histogram_request_document_size(State *s, int64_t doc_size)
 void
 HttpTransact::user_agent_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes)
 {
-  float bytes_per_hrtime = (transfer_time == 0) ? (nbytes) : ((float)nbytes / (float)(int64_t)transfer_time);
-  int bytes_per_sec      = (int)(bytes_per_hrtime * HRTIME_SECOND);
+  float bytes_per_hrtime =
+    (transfer_time == 0) ? (nbytes) : (static_cast<float>(nbytes) / static_cast<float>(static_cast<int64_t>(transfer_time)));
+  int bytes_per_sec = static_cast<int>(bytes_per_hrtime * HRTIME_SECOND);
 
   if (bytes_per_sec <= 100) {
     HTTP_INCREMENT_DYN_STAT(http_user_agent_speed_bytes_per_sec_100_stat);
@@ -8414,8 +8416,9 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
 void
 HttpTransact::origin_server_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes)
 {
-  float bytes_per_hrtime = (transfer_time == 0) ? (nbytes) : ((float)nbytes / (float)(int64_t)transfer_time);
-  int bytes_per_sec      = (int)(bytes_per_hrtime * HRTIME_SECOND);
+  float bytes_per_hrtime =
+    (transfer_time == 0) ? (nbytes) : (static_cast<float>(nbytes) / static_cast<float>(static_cast<int64_t>(transfer_time)));
+  int bytes_per_sec = static_cast<int>(bytes_per_hrtime * HRTIME_SECOND);
 
   if (bytes_per_sec <= 100) {
     HTTP_INCREMENT_DYN_STAT(http_origin_server_speed_bytes_per_sec_100_stat);
@@ -8457,7 +8460,7 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   switch (s->state_machine->background_fill) {
   case BACKGROUND_FILL_COMPLETED: {
     int64_t bg_size = origin_server_response_body_size - user_agent_response_body_size;
-    bg_size         = std::max((int64_t)0, bg_size);
+    bg_size         = std::max(static_cast<int64_t>(0), bg_size);
     HTTP_SUM_DYN_STAT(http_background_fill_bytes_completed_stat, bg_size);
     break;
   }
@@ -8674,7 +8677,7 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
   TxnDebug("http_trans", "Partial content requested, re-calculating content-length");
 
   header->status_set(HTTP_STATUS_PARTIAL_CONTENT);
-  reason_phrase = (char *)(http_hdr_reason_lookup(HTTP_STATUS_PARTIAL_CONTENT));
+  reason_phrase = const_cast<char *>(http_hdr_reason_lookup(HTTP_STATUS_PARTIAL_CONTENT));
   header->reason_set(reason_phrase, strlen(reason_phrase));
 
   // set the right Content-Type for multiple entry Range

@@ -156,7 +156,7 @@ make_pem_header(const char *pem)
   hdr = ptr = strdup(pem);
   remain    = strlen(hdr);
 
-  for (char *nl; (nl = (char *)memchr(ptr, '\n', remain)); ptr = nl) {
+  for (char *nl; (nl = static_cast<char *>(memchr(ptr, '\n', remain))); ptr = nl) {
     *nl = ' ';
     remain -= nl - ptr;
   }

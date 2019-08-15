@@ -136,7 +136,7 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
     ats_ip_ntop(vc->get_remote_addr(), ip_buf, sizeof(ip_buf));
   }
 
-  es = (unsigned long)pthread_self();
+  es = static_cast<unsigned long>(pthread_self());
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
     if (debug) {
       if (unlikely(diags->on())) {
@@ -178,7 +178,7 @@ SSLErrorName(int ssl_error)
     "SSL_ERROR_NONE",    "SSL_ERROR_SSL",         "SSL_ERROR_WANT_READ",    "SSL_ERROR_WANT_WRITE", "SSL_ERROR_WANT_X509_LOOKUP",
     "SSL_ERROR_SYSCALL", "SSL_ERROR_ZERO_RETURN", "SSL_ERROR_WANT_CONNECT", "SSL_ERROR_WANT_ACCEPT"};
 
-  if (ssl_error < 0 || ssl_error >= (int)countof(names)) {
+  if (ssl_error < 0 || ssl_error >= static_cast<int>(countof(names))) {
     return "unknown SSL error";
   }
 

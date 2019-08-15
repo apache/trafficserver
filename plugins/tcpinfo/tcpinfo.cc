@@ -192,31 +192,31 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
   TSHttpSsn ssnp = nullptr;
   TSHttpTxn txnp = nullptr;
   int random     = 0;
-  Config *config = (Config *)TSContDataGet(contp);
+  Config *config = static_cast<Config *>(TSContDataGet(contp));
 
   const char *event_name;
   switch (event) {
   case TS_EVENT_HTTP_SSN_START:
-    ssnp       = (TSHttpSsn)edata;
+    ssnp       = static_cast<TSHttpSsn>(edata);
     event_name = "ssn_start";
     break;
   case TS_EVENT_HTTP_TXN_START:
-    txnp       = (TSHttpTxn)edata;
+    txnp       = static_cast<TSHttpTxn>(edata);
     ssnp       = TSHttpTxnSsnGet(txnp);
     event_name = "txn_start";
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
-    txnp       = (TSHttpTxn)edata;
+    txnp       = static_cast<TSHttpTxn>(edata);
     ssnp       = TSHttpTxnSsnGet(txnp);
     event_name = "txn_close";
     break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
-    txnp       = (TSHttpTxn)edata;
+    txnp       = static_cast<TSHttpTxn>(edata);
     ssnp       = TSHttpTxnSsnGet(txnp);
     event_name = "send_resp_hdr";
     break;
   case TS_EVENT_HTTP_SSN_CLOSE:
-    ssnp       = (TSHttpSsn)edata;
+    ssnp       = static_cast<TSHttpSsn>(edata);
     event_name = "ssn_close";
     break;
   default:
@@ -357,7 +357,7 @@ TSPluginInit(int argc, const char *argv[])
   for (;;) {
     unsigned long lval;
 
-    switch (getopt_long(argc, (char *const *)argv, "r:f:l:h:e:H:S:M:", longopts, nullptr)) {
+    switch (getopt_long(argc, const_cast<char *const *>(argv), "r:f:l:h:e:H:S:M:", longopts, nullptr)) {
     case 'r':
       if (parse_unsigned(optarg, lval)) {
         config->sample = atoi(optarg);

@@ -59,8 +59,8 @@ struct AuthOptions {
   AuthRequestTransform transform = nullptr;
   bool force                     = false;
 
-  AuthOptions() {}
-  ~AuthOptions() {}
+  AuthOptions()  = default;
+  ~AuthOptions() = default;
 };
 
 // Global options; used when we are in global authorization mode.
@@ -627,7 +627,7 @@ AuthRequestIsTagged(TSHttpTxn txn)
 static int
 AuthProxyGlobalHook(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 {
-  TSHttpTxn txn = (TSHttpTxn)edata;
+  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
 
   AuthLogDebug("handling event=%d edata=%p", (int)event, edata);
 
@@ -684,7 +684,7 @@ AuthParseOptions(int argc, const char **argv)
   for (;;) {
     int opt;
 
-    opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
+    opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
     switch (opt) {
     case 'h':
       options->hostname = optarg;

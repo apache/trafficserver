@@ -188,7 +188,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   Debug("alarm", "[Alarms::signalAlarm] Sending Alarm: '%s'", desc);
 
   if (!desc) {
-    desc = (char *)getAlarmText(a);
+    desc = const_cast<char *>(getAlarmText(a));
   }
 
   /*
@@ -219,7 +219,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     }
   }
 
-  atmp              = (Alarm *)ats_malloc(sizeof(Alarm));
+  atmp              = static_cast<Alarm *>(ats_malloc(sizeof(Alarm)));
   atmp->type        = a;
   atmp->linger      = true;
   atmp->seen        = true;
@@ -252,7 +252,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   }
   const size_t sz = sizeof(char) * (strlen(desc) + strlen(my_ctime_str) + 4);
   ats_free(atmp->description);
-  atmp->description = (char *)ats_malloc(sz);
+  atmp->description = static_cast<char *>(ats_malloc(sz));
   snprintf(atmp->description, sz, "[%s] %s", my_ctime_str, desc);
 
   ink_mutex_release(&mutex);
@@ -345,7 +345,7 @@ Alarms::execAlarmBin(const char *desc)
   } else if (pid > 0) { /* Parent */
     int status;
     bool script_done = false;
-    time_t timeout   = (time_t)REC_readInteger("proxy.config.alarm.script_runtime", nullptr);
+    time_t timeout   = static_cast<time_t>(REC_readInteger("proxy.config.alarm.script_runtime", nullptr));
     if (!timeout) {
       timeout = 5; // default time = 5 secs
     }

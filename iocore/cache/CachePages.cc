@@ -84,7 +84,7 @@ struct ShowCache : public ShowCont {
     URL *u             = h->url_get();
 
     // process the query string
-    if (u->query_get(&query_len) && query_len < (int)sizeof(query)) {
+    if (u->query_get(&query_len) && query_len < static_cast<int>(sizeof(query))) {
       strncpy(query, u->query_get(&query_len), query_len);
       strncpy(unescapedQuery, u->query_get(&query_len), query_len);
 
@@ -97,7 +97,7 @@ struct ShowCache : public ShowCont {
 
       // remove 'C-m' s
       unsigned l, m;
-      for (l = 0, m = 0; l < (unsigned)query_len; l++) {
+      for (l = 0, m = 0; l < static_cast<unsigned>(query_len); l++) {
         if (query[l] != '\015') {
           query[m++] = query[l];
         }
@@ -110,7 +110,7 @@ struct ShowCache : public ShowCont {
       if (p) {
         while ((p = strstr(p, "\n"))) {
           nstrings++;
-          if ((size_t)(p - query) >= strlen(query) - 1) {
+          if (static_cast<size_t>(p - query) >= strlen(query) - 1) {
             break;
           } else {
             p++;
@@ -333,7 +333,7 @@ ShowCache::handleCacheEvent(int event, Event *e)
   }
   case CACHE_EVENT_OPEN_READ: {
     // get the vector
-    cache_vc                 = (CacheVC *)e;
+    cache_vc                 = reinterpret_cast<CacheVC *>(e);
     CacheHTTPInfoVector *vec = &(cache_vc->vector);
     int alt_count            = vec->count();
     if (alt_count) {
@@ -344,7 +344,7 @@ ShowCache::handleCacheEvent(int event, Event *e)
         return complete(event, e);
       }
 
-      Doc *d = (Doc *)(cache_vc->first_buf->data());
+      Doc *d = reinterpret_cast<Doc *>(cache_vc->first_buf->data());
       time_t t;
       char tmpstr[4096];
 
@@ -594,11 +594,11 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
 {
   switch (event) {
   case CACHE_EVENT_SCAN: {
-    cache_vc = (CacheVC *)e;
+    cache_vc = reinterpret_cast<CacheVC *>(e);
     return EVENT_CONT;
   }
   case CACHE_EVENT_SCAN_OBJECT: {
-    HTTPInfo *alt = (HTTPInfo *)e;
+    HTTPInfo *alt = reinterpret_cast<HTTPInfo *>(e);
     char xx[501], m[501];
     int ib = 0, xd = 0, ml = 0;
 

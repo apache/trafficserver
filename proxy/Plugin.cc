@@ -51,7 +51,7 @@ using init_func_t = void (*)(int, char **);
 DLL<PluginRegInfo> plugin_reg_list;
 PluginRegInfo *plugin_reg_current = nullptr;
 
-PluginRegInfo::PluginRegInfo() {}
+PluginRegInfo::PluginRegInfo() = default;
 
 PluginRegInfo::~PluginRegInfo()
 {
@@ -112,7 +112,7 @@ plugin_load(int argc, char *argv[], bool validateOnly)
     plugin_reg_current->plugin_path = ats_strdup(path);
     plugin_reg_current->dlh         = handle;
 
-    init = (init_func_t)dlsym(plugin_reg_current->dlh, "TSPluginInit");
+    init = static_cast<init_func_t>(dlsym(plugin_reg_current->dlh, "TSPluginInit"));
     if (!init) {
       delete plugin_reg_current;
       if (validateOnly) {
@@ -169,7 +169,7 @@ plugin_expand(char *arg)
     if (RecGetRecordString_Xmalloc(arg, &str_val) != REC_ERR_OKAY) {
       goto not_found;
     }
-    return (char *)str_val;
+    return static_cast<char *>(str_val);
     break;
   }
   case RECD_FLOAT: {
@@ -177,8 +177,8 @@ plugin_expand(char *arg)
     if (RecGetRecordFloat(arg, &float_val) != REC_ERR_OKAY) {
       goto not_found;
     }
-    str = (char *)ats_malloc(128);
-    snprintf(str, 128, "%f", (float)float_val);
+    str = static_cast<char *>(ats_malloc(128));
+    snprintf(str, 128, "%f", static_cast<float>(float_val));
     return str;
     break;
   }
@@ -187,8 +187,8 @@ plugin_expand(char *arg)
     if (RecGetRecordInt(arg, &int_val) != REC_ERR_OKAY) {
       goto not_found;
     }
-    str = (char *)ats_malloc(128);
-    snprintf(str, 128, "%ld", (long int)int_val);
+    str = static_cast<char *>(ats_malloc(128));
+    snprintf(str, 128, "%ld", static_cast<long int>(int_val));
     return str;
     break;
   }
@@ -197,8 +197,8 @@ plugin_expand(char *arg)
     if (RecGetRecordCounter(arg, &count_val) != REC_ERR_OKAY) {
       goto not_found;
     }
-    str = (char *)ats_malloc(128);
-    snprintf(str, 128, "%ld", (long int)count_val);
+    str = static_cast<char *>(ats_malloc(128));
+    snprintf(str, 128, "%ld", static_cast<long int>(count_val));
     return str;
     break;
   }

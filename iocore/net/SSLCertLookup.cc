@@ -39,6 +39,7 @@
 #include "SSLSessionTicket.h"
 
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <algorithm>
 
@@ -162,7 +163,7 @@ void
 ticket_block_free(void *ptr)
 {
   if (ptr) {
-    ssl_ticket_key_block *key_block_ptr = (ssl_ticket_key_block *)ptr;
+    ssl_ticket_key_block *key_block_ptr = static_cast<ssl_ticket_key_block *>(ptr);
     unsigned num_ticket_keys            = key_block_ptr->num_keys;
     memset(ptr, 0, sizeof(ssl_ticket_key_block) + num_ticket_keys * sizeof(ssl_ticket_key_t));
   }
@@ -175,7 +176,7 @@ ticket_block_alloc(unsigned count)
   ssl_ticket_key_block *ptr;
   size_t nbytes = sizeof(ssl_ticket_key_block) + count * sizeof(ssl_ticket_key_t);
 
-  ptr = (ssl_ticket_key_block *)ats_malloc(nbytes);
+  ptr = static_cast<ssl_ticket_key_block *>(ats_malloc(nbytes));
   memset(ptr, 0, nbytes);
   ptr->num_keys = count;
 
@@ -279,7 +280,7 @@ void
 SSLCertContext::setCtx(shared_SSL_CTX sc)
 {
   std::lock_guard<std::mutex> lock(ctx_mutex);
-  ctx = sc;
+  ctx = std::move(sc);
 }
 
 SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(nullptr), is_valid(true) {}

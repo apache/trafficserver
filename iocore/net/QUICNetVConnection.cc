@@ -270,7 +270,7 @@ QUICNetVConnection::~QUICNetVConnection()
 // Initialize QUICNetVC for out going connection (NET_VCONNECTION_OUT)
 void
 QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
-                         QUICPacketHandler *packet_handler)
+                         QUICPacketNumber *packet_handler)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::startEvent);
   this->_udp_con                     = udp_con;
@@ -294,7 +294,7 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
 // Initialize QUICNetVC for in coming connection (NET_VCONNECTION_IN)
 void
 QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
-                         UDPConnection *udp_con, QUICPacketHandler *packet_handler, QUICConnectionTable *ctable)
+                         UDPConnection *udp_con, QUICPacketNumber *packet_handler, QUICConnectionTable *ctable)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
   this->_udp_con                     = udp_con;

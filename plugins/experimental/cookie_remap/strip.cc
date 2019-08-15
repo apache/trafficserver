@@ -16,14 +16,14 @@
   limitations under the License.
 */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <sys/types.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <ctype.h>
-#include <assert.h>
-#include <inttypes.h>
+#include <cstdlib>
+#include <climits>
+#include <cctype>
+#include <cassert>
+#include <cinttypes>
 
 #include "strip.h"
 
@@ -189,8 +189,9 @@ get_stripped(const char *in, ssize_t in_len, char *out, int *out_len, unsigned i
   char *w, *out_end;      /* where we write to, write limit */
 
   /* validate params */
-  if (in == NULL || in_len < 0 || out_len == NULL || *out_len < 0 || (out == NULL && *out_len > 0) || (flags & (~allowed_flags))) {
-    if (out != NULL && out_len != NULL && *out_len > 0) {
+  if (in == nullptr || in_len < 0 || out_len == nullptr || *out_len < 0 || (out == nullptr && *out_len > 0) ||
+      (flags & (~allowed_flags))) {
+    if (out != nullptr && out_len != nullptr && *out_len > 0) {
       *out     = '\0';
       *out_len = 1;
     }

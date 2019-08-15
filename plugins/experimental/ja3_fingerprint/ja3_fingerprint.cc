@@ -270,8 +270,9 @@ custom_get_ja3(SSL *s)
 static void
 append_to_field(TSMBuffer bufp, TSMLoc hdr_loc, const char *field, int field_len, const char *value, int value_len)
 {
-  if (!bufp || !hdr_loc || !field || field_len <= 0)
+  if (!bufp || !hdr_loc || !field || field_len <= 0) {
     return;
+  }
 
   TSMLoc target = TSMimeHdrFieldFind(bufp, hdr_loc, field, field_len);
   if (target == TS_NULL_MLOC) {
@@ -318,7 +319,7 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
     MD5((unsigned char *)data->ja3_string.c_str(), data->ja3_string.length(), digest);
 
     for (int i = 0; i < 16; i++) {
-      sprintf(&(data->md5_string[i * 2]), "%02x", (unsigned int)digest[i]);
+      sprintf(&(data->md5_string[i * 2]), "%02x", static_cast<unsigned int>(digest[i]));
     }
     TSDebug(PLUGIN_NAME, "Fingerprint: %s", data->md5_string);
     break;
@@ -400,7 +401,7 @@ read_config_option(int argc, const char *argv[], int &raw, int &log)
   const struct option longopts[] = {{"ja3raw", no_argument, &raw, 1}, {"ja3log", no_argument, &log, 1}, {nullptr, 0, nullptr, 0}};
 
   int opt = 0;
-  while ((opt = getopt_long(argc, (char *const *)argv, "", longopts, nullptr)) >= 0) {
+  while ((opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopts, nullptr)) >= 0) {
     switch (opt) {
     case '?':
       TSDebug(PLUGIN_NAME, "read_config_option(): Unrecognized command arguments.");

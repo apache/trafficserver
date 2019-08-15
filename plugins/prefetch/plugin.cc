@@ -121,7 +121,8 @@ TSRemapInit(TSRemapInterface *apiInfo, char *errBuf, int erroBufSize)
  */
 
 struct PrefetchInstance {
-  PrefetchInstance(){};
+  PrefetchInstance() = default;
+  ;
 
 private:
   PrefetchInstance(PrefetchInstance const &);
@@ -565,7 +566,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
         TSHttpHdrReasonSet(bufp, hdrLoc, reason, reasonLen);
         PrefetchDebug("set response: %d %.*s '%s'", data->_status, reasonLen, reason, data->_body.c_str());
 
-        char *buf = (char *)TSmalloc(data->_body.length() + 1);
+        char *buf = static_cast<char *>(TSmalloc(data->_body.length() + 1));
         sprintf(buf, "%s", data->_body.c_str());
         TSHttpTxnErrorBodySet(txnp, buf, strlen(buf), nullptr);
 
@@ -658,7 +659,7 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errBuf, int er
 void
 TSRemapDeleteInstance(void *instance)
 {
-  PrefetchInstance *inst = (PrefetchInstance *)instance;
+  PrefetchInstance *inst = static_cast<PrefetchInstance *>(instance);
   delete inst;
 }
 
@@ -675,7 +676,7 @@ TSRemapDeleteInstance(void *instance)
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
-  PrefetchInstance *inst = (PrefetchInstance *)instance;
+  PrefetchInstance *inst = static_cast<PrefetchInstance *>(instance);
 
   if (nullptr != inst) {
     PrefetchConfig &config = inst->_config;

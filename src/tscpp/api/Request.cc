@@ -41,7 +41,7 @@ struct atscppapi::RequestState : noncopyable {
   HttpMethod method_   = HTTP_METHOD_UNKNOWN;
   HttpVersion version_ = HTTP_VERSION_UNKNOWN;
   bool destroy_buf_    = false;
-  RequestState() {}
+  RequestState()       = default;
 };
 
 Request::Request()

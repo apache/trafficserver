@@ -6325,7 +6325,7 @@ TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data)
       return TS_ERROR;
     }
 
-    intptr_t *rptr = (intptr_t *)data;
+    intptr_t *rptr = static_cast<intptr_t *>(data);
 
     if (sm->t_state.api_info.logging_enabled) {
       *rptr = (intptr_t)TS_HTTP_CNTL_ON;
@@ -6350,7 +6350,7 @@ TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data)
       return TS_ERROR;
     }
 
-    intptr_t *rptr = (intptr_t *)data;
+    intptr_t *rptr = static_cast<intptr_t *>(data);
 
     if (sm->t_state.api_info.retry_intercept_failures) {
       *rptr = (intptr_t)TS_HTTP_CNTL_ON;
@@ -6558,7 +6558,7 @@ TSHttpCurrentClientConnectionsGet()
   int64_t S;
 
   HTTP_READ_DYN_SUM(http_current_client_connections_stat, S);
-  return (int)S;
+  return static_cast<int>(S);
 }
 
 int
@@ -6567,7 +6567,7 @@ TSHttpCurrentActiveClientConnectionsGet()
   int64_t S;
 
   HTTP_READ_DYN_SUM(http_current_active_client_connections_stat, S);
-  return (int)S;
+  return static_cast<int>(S);
 }
 
 int
@@ -6580,7 +6580,7 @@ TSHttpCurrentIdleClientConnectionsGet()
   HTTP_READ_DYN_SUM(http_current_active_client_connections_stat, active);
 
   if (total >= active) {
-    return (int)(total - active);
+    return static_cast<int>(total - active);
   }
 
   return 0;
@@ -6592,7 +6592,7 @@ TSHttpCurrentCacheConnectionsGet()
   int64_t S;
 
   HTTP_READ_DYN_SUM(http_current_cache_connections_stat, S);
-  return (int)S;
+  return static_cast<int>(S);
 }
 
 int
@@ -6601,7 +6601,7 @@ TSHttpCurrentServerConnectionsGet()
   int64_t S;
 
   HTTP_READ_GLOBAL_DYN_SUM(http_current_server_connections_stat, S);
-  return (int)S;
+  return static_cast<int>(S);
 }
 
 /* HTTP alternate selection */
@@ -7693,7 +7693,7 @@ TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
   // construct a buffer
   int buffer_size = strlen(var_name) + 1 + 32 + 1 + 64 + 1;
 
-  buffer = (char *)alloca(buffer_size);
+  buffer = static_cast<char *>(alloca(buffer_size));
   snprintf(buffer, buffer_size, "%s %d %" PRId64 "", var_name, MGMT_INT, value);
 
   // tell manager to set the configuration; note that this is not
@@ -7827,7 +7827,7 @@ char *
 TSFetchRespGet(TSHttpTxn txnp, int *length)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)length) == TS_SUCCESS);
-  FetchSM *fetch_sm = (FetchSM *)txnp;
+  FetchSM *fetch_sm = reinterpret_cast<FetchSM *>(txnp);
   return fetch_sm->resp_get(length);
 }
 
@@ -7891,7 +7891,7 @@ TSFetchCreate(TSCont contp, const char *method, const char *url, const char *ver
 
   fetch_sm->ext_init((Continuation *)contp, method, url, version, client_addr, flags);
 
-  return (TSFetchSM)fetch_sm;
+  return reinterpret_cast<TSFetchSM>(fetch_sm);
 }
 
 void
@@ -7899,7 +7899,7 @@ TSFetchHeaderAdd(TSFetchSM fetch_sm, const char *name, int name_len, const char 
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
-  ((FetchSM *)fetch_sm)->ext_add_header(name, name_len, value, value_len);
+  (reinterpret_cast<FetchSM *>(fetch_sm))->ext_add_header(name, name_len, value, value_len);
 }
 
 void
@@ -7907,7 +7907,7 @@ TSFetchWriteData(TSFetchSM fetch_sm, const void *data, size_t len)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
-  ((FetchSM *)fetch_sm)->ext_write_data(data, len);
+  (reinterpret_cast<FetchSM *>(fetch_sm))->ext_write_data(data, len);
 }
 
 ssize_t
@@ -7915,7 +7915,7 @@ TSFetchReadData(TSFetchSM fetch_sm, void *buf, size_t len)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
-  return ((FetchSM *)fetch_sm)->ext_read_data((char *)buf, len);
+  return (reinterpret_cast<FetchSM *>(fetch_sm))->ext_read_data(static_cast<char *>(buf), len);
 }
 
 void
@@ -7923,7 +7923,7 @@ TSFetchLaunch(TSFetchSM fetch_sm)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
-  ((FetchSM *)fetch_sm)->ext_launch();
+  (reinterpret_cast<FetchSM *>(fetch_sm))->ext_launch();
 }
 
 void
@@ -7931,7 +7931,7 @@ TSFetchDestroy(TSFetchSM fetch_sm)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
-  ((FetchSM *)fetch_sm)->ext_destroy();
+  (reinterpret_cast<FetchSM *>(fetch_sm))->ext_destroy();
 }
 
 void
@@ -7939,7 +7939,7 @@ TSFetchUserDataSet(TSFetchSM fetch_sm, void *data)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
-  ((FetchSM *)fetch_sm)->ext_set_user_data(data);
+  (reinterpret_cast<FetchSM *>(fetch_sm))->ext_set_user_data(data);
 }
 
 void *
@@ -7947,7 +7947,7 @@ TSFetchUserDataGet(TSFetchSM fetch_sm)
 {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
-  return ((FetchSM *)fetch_sm)->ext_get_user_data();
+  return (reinterpret_cast<FetchSM *>(fetch_sm))->ext_get_user_data();
 }
 
 TSMBuffer

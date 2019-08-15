@@ -159,7 +159,7 @@ static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"s-maxage", HDRTOKEN_TYPE_CACHE_CONTROL},
   {"need-revalidate-once", HDRTOKEN_TYPE_CACHE_CONTROL},
 
-  {(char *)nullptr, (HdrTokenType)0},
+  {(char *)nullptr, static_cast<HdrTokenType>(0)},
 };
 
 static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
@@ -373,22 +373,23 @@ hdrtoken_hash_init()
   memset(hdrtoken_hash_table, 0, sizeof(hdrtoken_hash_table));
   num_collisions = 0;
 
-  for (i = 0; i < (int)SIZEOF(_hdrtoken_commonly_tokenized_strs); i++) {
+  for (i = 0; i < static_cast<int> SIZEOF(_hdrtoken_commonly_tokenized_strs); i++) {
     // convert the common string to the well-known token
     unsigned const char *wks;
-    int wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_commonly_tokenized_strs[i], (int)strlen(_hdrtoken_commonly_tokenized_strs[i]),
-                                        (const char **)&wks);
+    int wks_idx =
+      hdrtoken_tokenize_dfa(_hdrtoken_commonly_tokenized_strs[i], static_cast<int>(strlen(_hdrtoken_commonly_tokenized_strs[i])),
+                            reinterpret_cast<const char **>(&wks));
     ink_release_assert(wks_idx >= 0);
 
     uint32_t hash = hdrtoken_hash(wks, hdrtoken_str_lengths[wks_idx]);
     uint32_t slot = hash_to_slot(hash);
 
     if (hdrtoken_hash_table[slot].wks) {
-      printf("ERROR: hdrtoken_hash_table[%u] collision: '%s' replacing '%s'\n", slot, (const char *)wks,
+      printf("ERROR: hdrtoken_hash_table[%u] collision: '%s' replacing '%s'\n", slot, reinterpret_cast<const char *>(wks),
              hdrtoken_hash_table[slot].wks);
       ++num_collisions;
     }
-    hdrtoken_hash_table[slot].wks  = (const char *)wks;
+    hdrtoken_hash_table[slot].wks  = reinterpret_cast<const char *>(wks);
     hdrtoken_hash_table[slot].hash = hash;
   }
 
@@ -426,7 +427,7 @@ hdrtoken_init()
     inited = 1;
 
     hdrtoken_strs_dfa = new DFA;
-    hdrtoken_strs_dfa->compile(_hdrtoken_strs, SIZEOF(_hdrtoken_strs), (REFlags)(RE_CASE_INSENSITIVE));
+    hdrtoken_strs_dfa->compile(_hdrtoken_strs, SIZEOF(_hdrtoken_strs), (RE_CASE_INSENSITIVE));
 
     // all the tokenized hdrtoken strings are placed in a special heap,
     // and each string is prepended with a HdrTokenHeapPrefix ---
@@ -436,19 +437,19 @@ hdrtoken_init()
     // other info from the prefix.
 
     int heap_size = 0;
-    for (i = 0; i < (int)SIZEOF(_hdrtoken_strs); i++) {
-      hdrtoken_str_lengths[i]   = (int)strlen(_hdrtoken_strs[i]);
+    for (i = 0; i < static_cast<int> SIZEOF(_hdrtoken_strs); i++) {
+      hdrtoken_str_lengths[i]   = static_cast<int>(strlen(_hdrtoken_strs[i]));
       int sstr_len              = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
       int packed_prefix_str_len = sizeof(HdrTokenHeapPrefix) + sstr_len;
       heap_size += packed_prefix_str_len;
     }
 
-    _hdrtoken_strs_heap_f = (const char *)ats_malloc(heap_size);
+    _hdrtoken_strs_heap_f = static_cast<const char *>(ats_malloc(heap_size));
     _hdrtoken_strs_heap_l = _hdrtoken_strs_heap_f + heap_size - 1;
 
-    char *heap_ptr = (char *)_hdrtoken_strs_heap_f;
+    char *heap_ptr = const_cast<char *>(_hdrtoken_strs_heap_f);
 
-    for (i = 0; i < (int)SIZEOF(_hdrtoken_strs); i++) {
+    for (i = 0; i < static_cast<int> SIZEOF(_hdrtoken_strs); i++) {
       HdrTokenHeapPrefix prefix;
 
       memset(&prefix, 0, sizeof(HdrTokenHeapPrefix));
@@ -463,12 +464,13 @@ hdrtoken_init()
 
       int sstr_len = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
 
-      *(HdrTokenHeapPrefix *)heap_ptr = prefix; // set string prefix
-      heap_ptr += sizeof(HdrTokenHeapPrefix);   // advance heap ptr past index
-      hdrtoken_strs[i] = heap_ptr;              // record string pointer
+      *reinterpret_cast<HdrTokenHeapPrefix *>(heap_ptr) = prefix; // set string prefix
+      heap_ptr += sizeof(HdrTokenHeapPrefix);                     // advance heap ptr past index
+      hdrtoken_strs[i] = heap_ptr;                                // record string pointer
       // coverity[secure_coding]
-      ink_strlcpy((char *)hdrtoken_strs[i], _hdrtoken_strs[i], heap_size - sizeof(HdrTokenHeapPrefix)); // copy string into heap
-      heap_ptr += sstr_len; // advance heap ptr past string
+      ink_strlcpy(const_cast<char *>(hdrtoken_strs[i]), _hdrtoken_strs[i],
+                  heap_size - sizeof(HdrTokenHeapPrefix)); // copy string into heap
+      heap_ptr += sstr_len;                                // advance heap ptr past string
       heap_size -= sstr_len;
     }
 
@@ -477,8 +479,8 @@ hdrtoken_init()
       int wks_idx;
       HdrTokenHeapPrefix *prefix;
 
-      wks_idx =
-        hdrtoken_tokenize_dfa(_hdrtoken_strs_type_initializers[i].name, (int)strlen(_hdrtoken_strs_type_initializers[i].name));
+      wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_strs_type_initializers[i].name,
+                                      static_cast<int>(strlen(_hdrtoken_strs_type_initializers[i].name)));
 
       ink_assert((wks_idx >= 0) && (wks_idx < (int)SIZEOF(hdrtoken_strs)));
       // coverity[negative_returns]
@@ -491,8 +493,8 @@ hdrtoken_init()
       int wks_idx;
       HdrTokenHeapPrefix *prefix;
 
-      wks_idx =
-        hdrtoken_tokenize_dfa(_hdrtoken_strs_field_initializers[i].name, (int)strlen(_hdrtoken_strs_field_initializers[i].name));
+      wks_idx = hdrtoken_tokenize_dfa(_hdrtoken_strs_field_initializers[i].name,
+                                      static_cast<int>(strlen(_hdrtoken_strs_field_initializers[i].name)));
 
       ink_assert((wks_idx >= 0) && (wks_idx < (int)SIZEOF(hdrtoken_strs)));
       prefix                  = hdrtoken_index_to_prefix(wks_idx);
@@ -501,7 +503,7 @@ hdrtoken_init()
       prefix->wks_info.mask   = _hdrtoken_strs_field_initializers[i].mask;
     }
 
-    for (i = 0; i < (int)SIZEOF(_hdrtoken_strs); i++) {
+    for (i = 0; i < static_cast<int> SIZEOF(_hdrtoken_strs); i++) {
       HdrTokenHeapPrefix *prefix  = hdrtoken_index_to_prefix(i);
       prefix->wks_info.name       = hdrtoken_strs[i];
       hdrtoken_str_token_types[i] = prefix->wks_token_type;  // parallel array for speed
@@ -558,7 +560,7 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
     return wks_idx;
   }
 
-  uint32_t hash = hdrtoken_hash((const unsigned char *)string, (unsigned int)string_len);
+  uint32_t hash = hdrtoken_hash(reinterpret_cast<const unsigned char *>(string), static_cast<unsigned int>(string_len));
   uint32_t slot = hash_to_slot(hash);
 
   bucket = &(hdrtoken_hash_table[slot]);
@@ -581,7 +583,7 @@ const char *
 hdrtoken_string_to_wks(const char *string)
 {
   const char *wks = nullptr;
-  hdrtoken_tokenize(string, (int)strlen(string), &wks);
+  hdrtoken_tokenize(string, static_cast<int>(strlen(string)), &wks);
   return wks;
 }
 

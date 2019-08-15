@@ -29,8 +29,8 @@ CacheDisk::incrErrors(const AIOCallback *io)
   if (0 == this->num_errors) {
     /* This it the first read/write error on this span since ATS started.
      * Move the newly failing span from "online" to "failing" bucket. */
-    RecIncrGlobalRawStat(cache_rsb, (int)(cache_span_online_stat), -1);
-    RecIncrGlobalRawStat(cache_rsb, (int)(cache_span_failing_stat), 1);
+    RecIncrGlobalRawStat(cache_rsb, static_cast<int>(cache_span_online_stat), -1);
+    RecIncrGlobalRawStat(cache_rsb, static_cast<int>(cache_span_failing_stat), 1);
   }
   this->num_errors++;
 
@@ -40,11 +40,11 @@ CacheDisk::incrErrors(const AIOCallback *io)
   switch (io->aiocb.aio_lio_opcode) {
   case LIO_READ:
     opname = "READ";
-    RecIncrGlobalRawStat(cache_rsb, (int)(cache_span_errors_read_stat), 1);
+    RecIncrGlobalRawStat(cache_rsb, static_cast<int>(cache_span_errors_read_stat), 1);
     break;
   case LIO_WRITE:
     opname = "WRITE";
-    RecIncrGlobalRawStat(cache_rsb, (int)(cache_span_errors_write_stat), 1);
+    RecIncrGlobalRawStat(cache_rsb, static_cast<int>(cache_span_errors_write_stat), 1);
     break;
   default:
     break;
@@ -76,12 +76,12 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
     start = skip + header_len;
   }
 
-  disk_vols         = (DiskVol **)ats_calloc((l / MIN_VOL_SIZE + 1), sizeof(DiskVol *));
+  disk_vols         = static_cast<DiskVol **>(ats_calloc((l / MIN_VOL_SIZE + 1), sizeof(DiskVol *)));
   header_len        = ROUND_TO_STORE_BLOCK(header_len);
   start             = skip + header_len;
   num_usable_blocks = (off_t(len * STORE_BLOCK_SIZE) - (start - askip)) >> STORE_BLOCK_SHIFT;
 
-  header = (DiskHeader *)ats_memalign(ats_pagesize(), header_len);
+  header = static_cast<DiskHeader *>(ats_memalign(ats_pagesize(), header_len));
   memset(header, 0, header_len);
 
   // traffic server was asked to clear the cache, i.e., auto clear cache flag is set
@@ -100,7 +100,7 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
   //
   SET_HANDLER(&CacheDisk::openStart);
   io.aiocb.aio_offset = skip;
-  io.aiocb.aio_buf    = (char *)header;
+  io.aiocb.aio_buf    = reinterpret_cast<char *>(header);
   io.aiocb.aio_nbytes = header_len;
   io.thread           = AIO_CALLBACK_THREAD_ANY;
   ink_aio_read(&io);
@@ -111,7 +111,7 @@ CacheDisk::~CacheDisk()
 {
   if (path) {
     ats_free(path);
-    for (int i = 0; i < (int)header->num_volumes; i++) {
+    for (int i = 0; i < static_cast<int>(header->num_volumes); i++) {
       DiskVolBlockQueue *q = nullptr;
       while (disk_vols[i] && (q = (disk_vols[i]->dpb_queue.pop()))) {
         delete q;
@@ -147,7 +147,7 @@ CacheDisk::clearDone(int event, void * /* data ATS_UNUSED */)
 {
   ink_assert(event == AIO_EVENT_DONE);
 
-  if ((size_t)io.aiocb.aio_nbytes != (size_t)io.aio_result) {
+  if (io.aiocb.aio_nbytes != static_cast<size_t>(io.aio_result)) {
     Warning("Could not clear disk header for disk %s: declaring disk bad", path);
     incrErrors(&io);
     SET_DISK_BAD(this);
@@ -163,7 +163,7 @@ CacheDisk::openStart(int event, void * /* data ATS_UNUSED */)
 {
   ink_assert(event == AIO_EVENT_DONE);
 
-  if ((size_t)io.aiocb.aio_nbytes != (size_t)io.aio_result) {
+  if (io.aiocb.aio_nbytes != static_cast<size_t>(io.aio_result)) {
     Warning("could not read disk header for disk %s: declaring disk bad", path);
     incrErrors(&io);
     SET_DISK_BAD(this);
@@ -233,7 +233,7 @@ CacheDisk::syncDone(int event, void * /* data ATS_UNUSED */)
 {
   ink_assert(event == AIO_EVENT_DONE);
 
-  if ((size_t)io.aiocb.aio_nbytes != (size_t)io.aio_result) {
+  if (io.aiocb.aio_nbytes != static_cast<size_t>(io.aio_result)) {
     Warning("Error writing disk header for disk %s:disk bad", path);
     incrErrors(&io);
     SET_DISK_BAD(this);
@@ -265,7 +265,7 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   //  ink_assert(!(size_in_blocks % blocks_per_vol));
   DiskVolBlock *p = nullptr;
   for (; q; q = q->link.next) {
-    if ((off_t)q->b->len >= size_in_blocks) {
+    if (static_cast<off_t>(q->b->len) >= size_in_blocks) {
       p            = q->b;
       q->new_block = 1;
       break;
@@ -293,12 +293,12 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   free_blocks->size -= p->len;
 
   size_t new_size = p->len - size_in_blocks;
-  if (new_size >= (size_t)blocks_per_vol) {
+  if (new_size >= static_cast<size_t>(blocks_per_vol)) {
     /* create a new volume */
     DiskVolBlock *dpb = &header->vol_info[header->num_diskvol_blks];
     *dpb              = *p;
     dpb->len -= size_in_blocks;
-    dpb->offset += ((off_t)size_in_blocks * STORE_BLOCK_SIZE);
+    dpb->offset += (size_in_blocks * STORE_BLOCK_SIZE);
 
     DiskVolBlockQueue *new_q = new DiskVolBlockQueue();
     new_q->b                 = dpb;

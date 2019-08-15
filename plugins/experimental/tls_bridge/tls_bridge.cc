@@ -153,8 +153,9 @@ BridgeConfig::load_config(int argc, const char *argv[])
           while (!src.empty()) {
             TextView line{src.take_prefix_at('\n').trim_if(&isspace)};
             ++line_no;
-            if (line.empty() || '#' == *line)
+            if (line.empty() || '#' == *line) {
               continue; // empty or comment, ignore.
+            }
 
             // Pick apart the line into the regular expression and destination service.
             TextView service{line};

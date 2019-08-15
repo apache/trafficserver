@@ -44,7 +44,7 @@ RecMessageAlloc(RecMessageT msg_type, int initial_size)
 {
   RecMessage *msg;
 
-  msg = (RecMessage *)ats_malloc(sizeof(RecMessageHdr) + initial_size);
+  msg = static_cast<RecMessage *>(ats_malloc(sizeof(RecMessageHdr) + initial_size));
   memset(msg, 0, sizeof(RecMessageHdr) + initial_size);
   msg->msg_type = msg_type;
   msg->o_start  = sizeof(RecMessageHdr);
@@ -110,22 +110,22 @@ RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
   // get some space in our buffer
   while (msg->o_end - msg->o_write < msg_ele_size) {
     int realloc_size = (msg->o_end - msg->o_start) * 2;
-    msg              = (RecMessage *)ats_realloc(msg, sizeof(RecMessageHdr) + realloc_size);
+    msg              = static_cast<RecMessage *>(ats_realloc(msg, sizeof(RecMessageHdr) + realloc_size));
     msg->o_end       = msg->o_start + realloc_size;
   }
-  ele_hdr = (RecMessageEleHdr *)((char *)msg + msg->o_write);
+  ele_hdr = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + msg->o_write);
   // The following memset() is pretty CPU intensive, replacing it with something
   // like the below would reduce CPU usage a fair amount. /leif.
   // *((char*)msg + msg->o_write) = 0;
-  memset((char *)msg + msg->o_write, 0, msg->o_end - msg->o_write);
+  memset(reinterpret_cast<char *>(msg) + msg->o_write, 0, msg->o_end - msg->o_write);
   msg->o_write += msg_ele_size;
 
   // store the record
   ele_hdr->magic  = REC_MESSAGE_ELE_MAGIC;
   ele_hdr->o_next = msg->o_write;
-  p               = (char *)ele_hdr + sizeof(RecMessageEleHdr);
+  p               = reinterpret_cast<char *>(ele_hdr) + sizeof(RecMessageEleHdr);
   memcpy(p, record, sizeof(RecRecord));
-  r = (RecRecord *)p;
+  r = reinterpret_cast<RecRecord *>(p);
   p += sizeof(RecRecord);
   if (rec_name_len != -1) {
     ink_assert((msg->o_end - ((uintptr_t)p - (uintptr_t)msg)) >= (uintptr_t)rec_name_len);
@@ -163,7 +163,7 @@ RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
 int
 RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
 {
-  itr->ele_hdr = (RecMessageEleHdr *)((char *)msg + msg->o_start);
+  itr->ele_hdr = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + msg->o_start);
   itr->next    = 1;
 
   return RecMessageUnmarshalNext(msg, nullptr, record);
@@ -183,13 +183,13 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
     if (msg->entries == 0) {
       return REC_ERR_FAIL;
     } else {
-      eh = (RecMessageEleHdr *)((char *)msg + msg->o_start);
+      eh = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + msg->o_start);
     }
   } else {
     if (itr->next >= msg->entries) {
       return REC_ERR_FAIL;
     }
-    itr->ele_hdr = (RecMessageEleHdr *)((char *)(msg) + itr->ele_hdr->o_next);
+    itr->ele_hdr = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + itr->ele_hdr->o_next);
     itr->next += 1;
     eh = itr->ele_hdr;
   }
@@ -202,21 +202,21 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
     return REC_ERR_FAIL;
   }
 
-  r = (RecRecord *)((char *)eh + sizeof(RecMessageEleHdr));
+  r = reinterpret_cast<RecRecord *>(reinterpret_cast<char *>(eh) + sizeof(RecMessageEleHdr));
 
   if (r->name) {
-    r->name = (char *)r + (intptr_t)(r->name);
+    r->name = reinterpret_cast<char *>(r) + (intptr_t)(r->name);
   }
   if (r->data_type == RECD_STRING) {
     if (r->data.rec_string) {
-      r->data.rec_string = (char *)r + (intptr_t)(r->data.rec_string);
+      r->data.rec_string = reinterpret_cast<char *>(r) + (intptr_t)(r->data.rec_string);
     }
     if (r->data_default.rec_string) {
-      r->data_default.rec_string = (char *)r + (intptr_t)(r->data_default.rec_string);
+      r->data_default.rec_string = reinterpret_cast<char *>(r) + (intptr_t)(r->data_default.rec_string);
     }
   }
   if (REC_TYPE_IS_CONFIG(r->rec_type) && (r->config_meta.check_expr)) {
-    r->config_meta.check_expr = (char *)r + (intptr_t)(r->config_meta.check_expr);
+    r->config_meta.check_expr = reinterpret_cast<char *>(r) + (intptr_t)(r->config_meta.check_expr);
   }
 
   *record = r;
@@ -266,12 +266,13 @@ RecMessageReadFromDisk(const char *fpath)
   if ((h_file = RecFileOpenR(fpath)) == REC_HANDLE_INVALID) {
     goto Lerror;
   }
-  if (RecFileRead(h_file, (char *)(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL) {
+  if (RecFileRead(h_file, reinterpret_cast<char *>(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL) {
     goto Lerror;
   }
-  msg = (RecMessage *)ats_malloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr));
+  msg = static_cast<RecMessage *>(ats_malloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr)));
   memcpy(msg, &msg_hdr, sizeof(RecMessageHdr));
-  if (RecSnapFileRead(h_file, (char *)(msg) + msg_hdr.o_start, msg_hdr.o_end - msg_hdr.o_start, &bytes_read) == REC_ERR_FAIL) {
+  if (RecSnapFileRead(h_file, reinterpret_cast<char *>(msg) + msg_hdr.o_start, msg_hdr.o_end - msg_hdr.o_start, &bytes_read) ==
+      REC_ERR_FAIL) {
     goto Lerror;
   }
 
@@ -307,7 +308,7 @@ RecMessageWriteToDisk(RecMessage *msg, const char *fpath)
 
   msg_size = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
   if ((h_file = RecFileOpenW(fpath)) != REC_HANDLE_INVALID) {
-    if (RecSnapFileWrite(h_file, (char *)msg, msg_size, &bytes_written) == REC_ERR_FAIL) {
+    if (RecSnapFileWrite(h_file, reinterpret_cast<char *>(msg), msg_size, &bytes_written) == REC_ERR_FAIL) {
       RecFileClose(h_file);
       return REC_ERR_FAIL;
     }

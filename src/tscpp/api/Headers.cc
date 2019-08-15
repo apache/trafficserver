@@ -101,11 +101,11 @@ HeaderFieldName::operator!=(const std::string &field_name)
  * @private
  */
 struct HeaderFieldValueIteratorState : noncopyable {
-  TSMBuffer hdr_buf_ = nullptr;
-  TSMLoc hdr_loc_    = nullptr;
-  TSMLoc field_loc_  = nullptr;
-  int index_         = 0;
-  HeaderFieldValueIteratorState() {}
+  TSMBuffer hdr_buf_              = nullptr;
+  TSMLoc hdr_loc_                 = nullptr;
+  TSMLoc field_loc_               = nullptr;
+  int index_                      = 0;
+  HeaderFieldValueIteratorState() = default;
   void
   reset(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc field_loc, int index)
   {
@@ -200,7 +200,7 @@ struct HeaderFieldIteratorState {
   }
 };
 
-HeaderField::~HeaderField() {}
+HeaderField::~HeaderField() = default;
 
 HeaderField::size_type
 HeaderField::size() const
@@ -293,7 +293,7 @@ HeaderField::clear()
 }
 
 bool
-HeaderField::erase(header_field_value_iterator it)
+HeaderField::erase(const header_field_value_iterator &it)
 {
   return (TSMimeHdrFieldValueDelete(it.state_->hdr_buf_, it.state_->hdr_loc_, it.state_->field_loc_, it.state_->index_) ==
           TS_SUCCESS);
@@ -561,7 +561,7 @@ Headers::clear()
 }
 
 bool
-Headers::erase(header_field_iterator it)
+Headers::erase(const header_field_iterator &it)
 {
   return (TSMimeHdrFieldDestroy(it.state_->mloc_container_->hdr_buf_, it.state_->mloc_container_->hdr_loc_,
                                 it.state_->mloc_container_->field_loc_) == TS_SUCCESS);
