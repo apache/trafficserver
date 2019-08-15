@@ -401,37 +401,54 @@ wipeField(char **field, char *pattern, const char *uppercase_field)
     }
 
     const char *p1 = strstr(lookup_query_param, pattern);
-    int field_pos  = p1 - lookup_query_param;
-    p1             = query_param + field_pos;
-
-    if (p1) {
-      char tmp_text[strlen(buf_dest) + 10];
-      char *temp_text = tmp_text;
-      memcpy(temp_text, buf_dest, (p1 - buf_dest));
-      temp_text += (p1 - buf_dest);
-      const char *p2 = strstr(p1, "=");
-      if (p2) {
-        p2++;
-        memcpy(temp_text, p1, (p2 - p1));
-        temp_text += (p2 - p1);
-        const char *p3 = strstr(p2, "&");
-        if (p3) {
-          for (int i = 0; i < (p3 - p2); i++) {
-            temp_text[i] = 'X';
-          }
-          temp_text += (p3 - p2);
-          memcpy(temp_text, p3, ((buf_dest + strlen(buf_dest)) - p3));
-        } else {
-          for (int i = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++) {
-            temp_text[i] = 'X';
-          }
+    if (!p1) {
+      return;
+    } else {
+      while(p1) {
+        //wipe pattern in param name, need search again if find pattern in param value
+        const char *p10 = strstr(p1, "=");
+        if (!p10) {
+          //no "=" after p1, means p1 is not in the param name, and no more param after it
+          return;
         }
-      } else {
+        const char *p11 = strstr(p1, "&");
+        if (p11 && p10 > p11) {
+          //"=" is after "&" followd by p1, means p1 is not in the param name 
+          p1 = strstr(p11, pattern);
+          continue;
+        }
+
+        int field_pos  = p1 - lookup_query_param;
+        p1             = query_param + field_pos;
+
+        char tmp_text[strlen(buf_dest) + 10];
+        char *temp_text = tmp_text;
+        memcpy(temp_text, buf_dest, (p1 - buf_dest));
+        temp_text += (p1 - buf_dest);
+        const char *p2 = strstr(p1, "=");
+        if (p2) {
+          p2++;
+          memcpy(temp_text, p1, (p2 - p1));
+          temp_text += (p2 - p1);
+          const char *p3 = strstr(p2, "&");
+          if (p3) {
+            for (int i     = 0; i < (p3 - p2); i++)
+              temp_text[i] = 'X';
+            temp_text += (p3 - p2);
+            memcpy(temp_text, p3, ((buf_dest + strlen(buf_dest)) - p3));
+          } else {
+            for (int i     = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++) {
+              temp_text[i] = 'X';
+            }
+          }
+        } else {
+          return;
+        }
+
+        tmp_text[strlen(buf_dest)] = '\0';
+        strcpy(*field, tmp_text);
         return;
       }
-
-      tmp_text[strlen(buf_dest)] = '\0';
-      strcpy(*field, tmp_text);
     }
   }
 }
