@@ -306,7 +306,7 @@ public:
    * @param an iterator which points to a single HeaderField value.
    * @return true if the header value was successfully erased.
    */
-  bool erase(iterator it);
+  bool erase(const iterator &it);
 
   /**
    * Append a value or a separated list of values to this HeaderField
@@ -473,7 +473,7 @@ public:
    * @param an iterator pointing to a header field.
    * @return true if the header field pointed to by the iterator was erased.
    */
-  bool erase(iterator it);
+  bool erase(const iterator &it);
 
   /**
    * Erase all headers whose name matches key (this is a case insensitive match).

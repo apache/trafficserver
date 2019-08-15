@@ -60,7 +60,7 @@ public:
   {
     // This doesn't have to be perfect, since this is just chance sampling.
     // coverity[dont_call]
-    srand48((long)time(nullptr));
+    srand48(static_cast<long>(time(nullptr)));
   }
 
   void
@@ -92,7 +92,8 @@ public:
     return true;
   }
 
-  virtual ~PromotionPolicy(){};
+  virtual ~PromotionPolicy() = default;
+  ;
 
   virtual bool
   parseOption(int opt, char *optarg)
@@ -182,7 +183,7 @@ struct LRUHashHasher {
   size_t
   operator()(const LRUHash *s) const
   {
-    return *((size_t *)s->_hash) ^ *((size_t *)(s->_hash + 9));
+    return *(reinterpret_cast<size_t *>(s->_hash)) ^ *((size_t *)(s->_hash + 9));
   }
 };
 
@@ -233,7 +234,7 @@ public:
 
     // This doesn't have to be perfect, since this is just chance sampling.
     // coverity[dont_call]
-    srand48((long)time(nullptr) ^ (long)getpid() ^ (long)getppid());
+    srand48(static_cast<long>(time(nullptr)) ^ static_cast<long>(getpid()) ^ static_cast<long>(getppid()));
 
     return true;
   }
@@ -349,7 +350,7 @@ private:
 class PromotionConfig
 {
 public:
-  PromotionConfig() {}
+  PromotionConfig() = default;
   ~PromotionConfig() { delete _policy; }
   PromotionPolicy *
   getPolicy() const
@@ -449,7 +450,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
 
   // Should not happen
   default:
-    TSDebug(PLUGIN_NAME, "Unhandled event %d", (int)event);
+    TSDebug(PLUGIN_NAME, "Unhandled event %d", static_cast<int>(event));
     break;
   }
 

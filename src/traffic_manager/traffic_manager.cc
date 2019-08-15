@@ -217,7 +217,7 @@ check_lockfile()
   } else {
     char *reason = strerror(-err);
     if (err == 0) {
-      fprintf(stderr, "FATAL: Lockfile '%s' says server already running as PID %ld\n", lockfile, (long)holding_pid);
+      fprintf(stderr, "FATAL: Lockfile '%s' says server already running as PID %ld\n", lockfile, static_cast<long>(holding_pid));
       mgmt_log("FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, holding_pid);
     } else {
       fprintf(stderr, "FATAL: Can't open server lockfile '%s' (%s)\n", lockfile, (reason ? reason : "Unknown Reason"));
@@ -237,7 +237,7 @@ check_lockfile()
     fprintf(stderr, "FATAL: Can't acquire manager lockfile '%s'", lockfile);
     mgmt_log("FATAL: Can't acquire manager lockfile '%s'", lockfile);
     if (err == 0) {
-      fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
+      fprintf(stderr, " (Lock file held by process ID %ld)\n", static_cast<long>(holding_pid));
       mgmt_log(" (Lock file held by process ID %d)\n", holding_pid);
     } else if (reason) {
       fprintf(stderr, " (%s)\n", reason);
@@ -393,8 +393,9 @@ set_process_limits(RecInt fds_throttle)
 
     lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(maxfiles * file_max_pct);
     if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-      fds_limit = (int)lim.rlim_cur;
-      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+      fds_limit = static_cast<int>(lim.rlim_cur);
+      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, static_cast<int>(lim.rlim_cur),
+             static_cast<int>(lim.rlim_max));
     }
   }
 
@@ -402,8 +403,9 @@ set_process_limits(RecInt fds_throttle)
     if (fds_throttle > (int)(lim.rlim_cur + FD_THROTTLE_HEADROOM)) {
       lim.rlim_cur = (lim.rlim_max = (rlim_t)fds_throttle);
       if (!setrlimit(RLIMIT_NOFILE, &lim) && !getrlimit(RLIMIT_NOFILE, &lim)) {
-        fds_limit = (int)lim.rlim_cur;
-        syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+        fds_limit = static_cast<int>(lim.rlim_cur);
+        syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, static_cast<int>(lim.rlim_cur),
+               static_cast<int>(lim.rlim_max));
       }
     }
   }
@@ -1002,9 +1004,9 @@ restoreCapabilities()
       cap_set_flag(cap_set, CAP_EFFECTIVE, 1, cap_list + i, CAP_CLEAR);
     }
   }
-  for (int i = 0; i < CAP_COUNT; i++) {
+  for (int i : cap_list) {
     cap_flag_value_t val;
-    if (cap_get_flag(cap_set, cap_list[i], CAP_EFFECTIVE, &val) < 0) {
+    if (cap_get_flag(cap_set, i, CAP_EFFECTIVE, &val) < 0) {
     } else {
       Warning("CAP_EFFECTIVE offiset %d is %s", i, val == CAP_SET ? "set" : "unset");
     }

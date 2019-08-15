@@ -374,7 +374,7 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
     STATE_ENTER(&HttpSM::state_add_to_list, event);
     ink_assert(event == EVENT_NONE || event == EVENT_INTERVAL);
 
-    int bucket = ((unsigned int)sm_id % HTTP_LIST_BUCKETS);
+    int bucket = (static_cast<unsigned int>(sm_id) % HTTP_LIST_BUCKETS);
 
     MUTEX_TRY_LOCK(lock, HttpSMList[bucket].mutex, mutex->thread_holding);
     // the client_vc`s timeout events can be triggered, so we should not
@@ -402,7 +402,7 @@ HttpSM::state_remove_from_list(int event, void * /* data ATS_UNUSED */)
     STATE_ENTER(&HttpSM::state_remove_from_list, event);
     ink_assert(event == EVENT_NONE || event == EVENT_INTERVAL);
 
-    int bucket = ((unsigned int)sm_id % HTTP_LIST_BUCKETS);
+    int bucket = (static_cast<unsigned int>(sm_id) % HTTP_LIST_BUCKETS);
 
     MUTEX_TRY_LOCK(lock, HttpSMList[bucket].mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
@@ -815,7 +815,7 @@ HttpSM::wait_for_full_body()
 
   // content length is undefined, use default buffer size
   if (t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
-    alloc_index = (int)t_state.txn_conf->default_buffer_size_index;
+    alloc_index = static_cast<int>(t_state.txn_conf->default_buffer_size_index);
     if (alloc_index < MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index > MAX_BUFFER_SIZE_INDEX) {
       alloc_index = DEFAULT_REQUEST_BUFFER_SIZE_INDEX;
     }
@@ -1103,7 +1103,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 
     // Record the VC in our table
     server_entry     = vc_table.new_entry();
-    server_entry->vc = netvc = (NetVConnection *)data;
+    server_entry->vc = netvc = static_cast<NetVConnection *>(data);
     server_entry->vc_type    = HTTP_RAW_SERVER_VC;
     t_state.current.state    = HttpTransact::CONNECTION_ALIVE;
     ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
@@ -1143,7 +1143,7 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
 
   switch (event) {
   case TRANSFORM_READ_READY:
-    size = *((int64_t *)data);
+    size = *(static_cast<int64_t *>(data));
     if (size != INT64_MAX && size >= 0) {
       // We got a content length so update our internal
       //   data as well as fix up the request header
@@ -1179,7 +1179,7 @@ int
 HttpSM::state_response_wait_for_transform_read(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_response_wait_for_transform_read, event);
-  int64_t size = *((int64_t *)data);
+  int64_t size = *(static_cast<int64_t *>(data));
 
   switch (event) {
   case TRANSFORM_READ_READY:
@@ -1822,7 +1822,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   ink_assert(t_state.current.state == HttpTransact::STATE_UNDEFINED);
 
   int bytes_used = 0;
-  VIO *vio       = (VIO *)data;
+  VIO *vio       = static_cast<VIO *>(data);
 
   switch (event) {
   case VC_EVENT_EOS:
@@ -2085,7 +2085,7 @@ HttpSM::process_srv_info(HostDBInfo *r)
     HostDBInfo *srv      = nullptr;
     if (rr) {
       srv = rr->select_best_srv(t_state.dns_info.srv_hostname, &mutex->thread_holding->generator, ink_local_time(),
-                                (int)t_state.txn_conf->down_server_timeout);
+                                static_cast<int>(t_state.txn_conf->down_server_timeout));
     }
     if (!srv) {
       t_state.dns_info.srv_lookup_success = false;
@@ -2155,7 +2155,7 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
             }
           }
 
-          if (last_failure != 0 && (uint32_t)(now - t_state.txn_conf->down_server_timeout) < last_failure) {
+          if (last_failure != 0 && static_cast<uint32_t>(now - t_state.txn_conf->down_server_timeout) < last_failure) {
             HostDBApplicationInfo app;
             app.allotment.application1 = 0;
             app.allotment.application2 = 0;
@@ -2192,7 +2192,7 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
 
   if (is_debug_tag_set("http_timeout")) {
     if (t_state.api_txn_dns_timeout_value != -1) {
-      int foo = (int)(milestones.difference_msec(TS_MILESTONE_DNS_LOOKUP_BEGIN, TS_MILESTONE_DNS_LOOKUP_END));
+      int foo = static_cast<int>(milestones.difference_msec(TS_MILESTONE_DNS_LOOKUP_BEGIN, TS_MILESTONE_DNS_LOOKUP_END));
       SMDebug("http_timeout", "DNS took: %d msec", foo);
     }
   }
@@ -2217,12 +2217,12 @@ HttpSM::state_hostdb_lookup(int event, void *data)
   switch (event) {
   case EVENT_HOST_DB_LOOKUP:
     pending_action = nullptr;
-    process_hostdb_info((HostDBInfo *)data);
+    process_hostdb_info(static_cast<HostDBInfo *>(data));
     call_transact_and_set_next_state(nullptr);
     break;
   case EVENT_SRV_LOOKUP: {
     pending_action = nullptr;
-    process_srv_info((HostDBInfo *)data);
+    process_srv_info(static_cast<HostDBInfo *>(data));
 
     char *host_name = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
     HostDBProcessor::Options opt;
@@ -2265,7 +2265,7 @@ HttpSM::state_hostdb_reverse_lookup(int event, void *data)
   case EVENT_HOST_DB_LOOKUP:
     pending_action = nullptr;
     if (data) {
-      t_state.request_data.hostname_str = ((HostDBInfo *)data)->hostname();
+      t_state.request_data.hostname_str = (static_cast<HostDBInfo *>(data))->hostname();
     } else {
       SMDebug("http", "[%" PRId64 "] reverse DNS lookup failed for '%s'", sm_id, t_state.dns_info.lookup_name);
     }
@@ -2290,7 +2290,7 @@ HttpSM::state_mark_os_down(int event, void *data)
   HostDBInfo *mark_down = nullptr;
 
   if (event == EVENT_HOST_DB_LOOKUP && data) {
-    HostDBInfo *r = (HostDBInfo *)data;
+    HostDBInfo *r = static_cast<HostDBInfo *>(data);
 
     if (r->round_robin) {
       // Look for the entry we need mark down in the round robin
@@ -2329,7 +2329,7 @@ HttpSM::state_handle_stat_page(int event, void *data)
     pending_action = nullptr;
 
     if (data) {
-      StatPageData *spd = (StatPageData *)data;
+      StatPageData *spd = static_cast<StatPageData *>(data);
 
       t_state.internal_msg_buffer = spd->data;
       if (spd->type) {
@@ -2554,7 +2554,7 @@ HttpSM::main_handler(int event, void *data)
     //  do with a VIO to save a few cycles
 
     if (event < VC_EVENT_EVENTS_START + 100) {
-      vc_entry = vc_table.find_entry((VIO *)data);
+      vc_entry = vc_table.find_entry(static_cast<VIO *>(data));
     }
   }
 
@@ -3127,7 +3127,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer *c)
 
     if (ua_cl > 0) {
       int64_t ua_body_done = c->bytes_written - client_response_hdr_bytes;
-      float pDone          = (float)ua_body_done / ua_cl;
+      float pDone          = static_cast<float>(ua_body_done) / ua_cl;
 
       // If we got a good content length.  Check to make sure that we haven't already
       //  done more the content length since that would indicate the content-length
@@ -4206,7 +4206,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
   t_state.range_in_cache = true;
 
   for (; value; value = csv.get_next(&value_len)) {
-    if (!(tmp = (const char *)memchr(value, '-', value_len))) {
+    if (!(tmp = static_cast<const char *>(memchr(value, '-', value_len)))) {
       t_state.range_setup = HttpTransact::RANGE_NONE;
       goto Lfaild;
     }
@@ -4321,7 +4321,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
       HTTPInfo::FragOffset *frag_offset_tbl = t_state.cache_info.object_read->get_frag_table();
       int frag_offset_cnt                   = t_state.cache_info.object_read->get_frag_offset_count();
 
-      if (!frag_offset_tbl || !frag_offset_cnt || (frag_offset_tbl[frag_offset_cnt - 1] < (uint64_t)end)) {
+      if (!frag_offset_tbl || !frag_offset_cnt || (frag_offset_tbl[frag_offset_cnt - 1] < static_cast<uint64_t>(end))) {
         Debug("http_range", "request range in cache, end %" PRId64 ", frg_offset_cnt %d" PRId64, end, frag_offset_cnt);
         t_state.range_in_cache = false;
       }
@@ -4486,9 +4486,9 @@ HttpSM::do_cache_lookup_and_read()
   HttpCacheKey key;
   Cache::generate_key(&key, c_url, t_state.txn_conf->cache_generation_number);
 
-  Action *cache_action_handle =
-    cache_sm.open_read(&key, c_url, &t_state.hdr_info.client_request, t_state.txn_conf,
-                       (time_t)((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for));
+  Action *cache_action_handle = cache_sm.open_read(
+    &key, c_url, &t_state.hdr_info.client_request, t_state.txn_conf,
+    static_cast<time_t>((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for));
   //
   // pin_in_cache value is an open_write parameter.
   // It is passed in open_read to allow the cluster to
@@ -4602,9 +4602,10 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   HttpCacheKey key;
   Cache::generate_key(&key, s_url, t_state.txn_conf->cache_generation_number);
 
-  Action *cache_action_handle = c_sm->open_write(
-    &key, s_url, &t_state.hdr_info.client_request, object_read_info,
-    (time_t)((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for), retry, allow_multiple);
+  Action *cache_action_handle =
+    c_sm->open_write(&key, s_url, &t_state.hdr_info.client_request, object_read_info,
+                     static_cast<time_t>((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for),
+                     retry, allow_multiple);
 
   if (cache_action_handle != ACTION_RESULT_DONE) {
     ink_assert(!pending_action);
@@ -5085,7 +5086,7 @@ HttpSM::do_api_callout_internal()
     }
     break;
   default:
-    cur_hook_id = (TSHttpHookID)-1;
+    cur_hook_id = static_cast<TSHttpHookID>(-1);
     ink_assert(!"not reached");
   }
 
@@ -5393,7 +5394,7 @@ HttpSM::handle_http_server_open()
 void
 HttpSM::handle_server_setup_error(int event, void *data)
 {
-  VIO *vio = (VIO *)data;
+  VIO *vio = static_cast<VIO *>(data);
   ink_assert(vio != nullptr);
 
   STATE_ENTER(&HttpSM::handle_server_setup_error, event);
@@ -5602,7 +5603,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     int64_t alloc_index;
     // content length is undefined, use default buffer size
     if (t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
-      alloc_index = (int)t_state.txn_conf->default_buffer_size_index;
+      alloc_index = static_cast<int>(t_state.txn_conf->default_buffer_size_index);
       if (alloc_index < MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index > MAX_BUFFER_SIZE_INDEX) {
         alloc_index = DEFAULT_REQUEST_BUFFER_SIZE_INDEX;
       }
@@ -6038,7 +6039,7 @@ HttpSM::setup_cache_read_transfer()
   buf->append_block(HTTP_HEADER_BUFFER_SIZE_INDEX);
 #endif
 
-  buf->water_mark = (int)t_state.txn_conf->default_buffer_water_mark;
+  buf->water_mark = static_cast<int>(t_state.txn_conf->default_buffer_water_mark);
 
   IOBufferReader *buf_start = buf->alloc_reader();
 
@@ -6289,7 +6290,7 @@ HttpSM::find_http_resp_buffer_size(int64_t content_length)
   if (content_length == HTTP_UNDEFINED_CL) {
     // Try use our configured default size.  Otherwise pick
     //   the default size
-    alloc_index = (int)t_state.txn_conf->default_buffer_size_index;
+    alloc_index = static_cast<int>(t_state.txn_conf->default_buffer_size_index);
     if (alloc_index < MIN_CONFIG_BUFFER_SIZE_INDEX || alloc_index > DEFAULT_MAX_BUFFER_SIZE) {
       alloc_index = DEFAULT_RESPONSE_BUFFER_SIZE_INDEX;
     }
@@ -6398,7 +6399,7 @@ HttpSM::setup_transfer_from_transform()
 
   // TODO change this call to new_empty_MIOBuffer()
   MIOBuffer *buf            = new_MIOBuffer(alloc_index);
-  buf->water_mark           = (int)t_state.txn_conf->default_buffer_water_mark;
+  buf->water_mark           = static_cast<int>(t_state.txn_conf->default_buffer_water_mark);
   IOBufferReader *buf_start = buf->alloc_reader();
 
   HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
@@ -6502,7 +6503,7 @@ HttpSM::setup_server_transfer()
   MIOBuffer *buf = new_empty_MIOBuffer(alloc_index);
   buf->append_block(HTTP_HEADER_BUFFER_SIZE_INDEX);
 #endif
-  buf->water_mark           = (int)t_state.txn_conf->default_buffer_water_mark;
+  buf->water_mark           = static_cast<int>(t_state.txn_conf->default_buffer_water_mark);
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // we need to know if we are going to chunk the response or not
@@ -7068,7 +7069,7 @@ HttpSM::dump_state_hdr(HTTPHdr *h, const char *s)
   // Dump the client request if available
   if (h->valid()) {
     int l         = h->length_get();
-    char *hdr_buf = (char *)ats_malloc(l + 1);
+    char *hdr_buf = static_cast<char *>(ats_malloc(l + 1));
     int index     = 0;
     int offset    = 0;
 
@@ -7621,8 +7622,9 @@ HttpSM::do_redirect()
         HTTP_INCREMENT_DYN_STAT(http_total_x_redirect_stat);
       } else {
         // get the location header and setup the redirect
-        int redir_len   = 0;
-        char *redir_url = (char *)t_state.hdr_info.client_response.value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redir_len);
+        int redir_len = 0;
+        char *redir_url =
+          const_cast<char *>(t_state.hdr_info.client_response.value_get(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, &redir_len));
         redirect_request(redir_url, redir_len);
       }
 
@@ -7655,7 +7657,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
     char *tmpOrigHost;
 
     origPort    = t_state.hdr_info.server_request.port_get();
-    tmpOrigHost = (char *)t_state.hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &origHost_len);
+    tmpOrigHost = const_cast<char *>(t_state.hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &origHost_len));
 
     if (tmpOrigHost) {
       memcpy(origHost, tmpOrigHost, origHost_len);
@@ -7664,7 +7666,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
       valid_origHost = false;
     }
 
-    char *tmpOrigMethod = (char *)t_state.hdr_info.server_request.method_get(&origMethod_len);
+    char *tmpOrigMethod = const_cast<char *>(t_state.hdr_info.server_request.method_get(&origMethod_len));
     if (tmpOrigMethod) {
       memcpy(origMethod, tmpOrigMethod, std::min(origMethod_len, static_cast<int>(sizeof(origMethod))));
     } else {

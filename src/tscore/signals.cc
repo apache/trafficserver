@@ -40,13 +40,13 @@ signal_check_handler(int signal, signal_handler_t handler)
   void *sigact;
 
   ink_release_assert(sigaction(signal, nullptr, &oact) == 0);
-  if (handler == (signal_handler_t)SIG_DFL || handler == (signal_handler_t)SIG_IGN) {
-    sigact = (void *)oact.sa_handler;
+  if (handler == reinterpret_cast<signal_handler_t> SIG_DFL || handler == reinterpret_cast<signal_handler_t> SIG_IGN) {
+    sigact = reinterpret_cast<void *>(oact.sa_handler);
   } else {
-    sigact = (void *)oact.sa_sigaction;
+    sigact = reinterpret_cast<void *>(oact.sa_sigaction);
   }
 
-  if (sigact != (void *)handler) {
+  if (sigact != reinterpret_cast<void *>(handler)) {
     Warning("handler for signal %d was %p, not %p as expected", signal, sigact, handler);
     return false;
   }
@@ -63,7 +63,7 @@ signal_check_handler(int signal, signal_handler_t handler)
 void
 check_signals(signal_handler_t handler)
 {
-  signal_check_handler(SIGPIPE, (signal_handler_t)SIG_IGN);
+  signal_check_handler(SIGPIPE, reinterpret_cast<signal_handler_t> SIG_IGN);
   signal_check_handler(SIGQUIT, handler);
   signal_check_handler(SIGHUP, handler);
   signal_check_handler(SIGTERM, handler);
@@ -105,7 +105,7 @@ signal_reset_default(int signo)
 static void *
 check_signal_thread(void *ptr)
 {
-  signal_handler_t handler = (signal_handler_t)ptr;
+  signal_handler_t handler = static_cast<signal_handler_t>(ptr);
   for (;;) {
     check_signals(handler);
     sleep(2);
@@ -116,7 +116,7 @@ check_signal_thread(void *ptr)
 void
 signal_start_check_thread(signal_handler_t handler)
 {
-  ink_thread_create(nullptr, check_signal_thread, (void *)handler, 0, 0, nullptr);
+  ink_thread_create(nullptr, check_signal_thread, reinterpret_cast<void *>(handler), 0, 0, nullptr);
 }
 
 bool

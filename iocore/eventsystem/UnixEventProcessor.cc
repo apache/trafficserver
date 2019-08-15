@@ -37,7 +37,7 @@ class EventProcessor eventProcessor;
 
 class ThreadAffinityInitializer : public Continuation
 {
-  typedef ThreadAffinityInitializer self;
+  using self = ThreadAffinityInitializer;
 
 public:
   /// Default construct.

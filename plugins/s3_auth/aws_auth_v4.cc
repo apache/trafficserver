@@ -95,7 +95,7 @@ uriEncode(const String &in, bool isObjectName)
       result << "/";
     } else {
       /* Letters in the hexadecimal value must be upper-case, for example "%1A". */
-      result << "%" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << (int)i;
+      result << "%" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(i);
     }
   }
 
@@ -260,9 +260,9 @@ getPayloadSha256(bool signPayload)
   }
 
   unsigned char payloadHash[SHA256_DIGEST_LENGTH];
-  SHA256((const unsigned char *)"", 0, payloadHash); /* empty content */
+  SHA256(reinterpret_cast<const unsigned char *>(""), 0, payloadHash); /* empty content */
 
-  return base16Encode((char *)payloadHash, SHA256_DIGEST_LENGTH);
+  return base16Encode(reinterpret_cast<char *>(payloadHash), SHA256_DIGEST_LENGTH);
 }
 
 /**
@@ -416,7 +416,7 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
 #ifdef AWS_AUTH_V4_DETAILED_DEBUG_OUTPUT
   std::cout << "</CanonicalRequest>" << std::endl;
 #endif
-  return base16Encode((char *)canonicalRequestSha256Hash, SHA256_DIGEST_LENGTH);
+  return base16Encode(reinterpret_cast<char *>(canonicalRequestSha256Hash), SHA256_DIGEST_LENGTH);
 }
 
 /**
@@ -663,10 +663,10 @@ getSignature(const char *awsSecret, size_t awsSecretLen, const char *awsRegion, 
       HMAC(EVP_sha256(), dateKey, dateKeyLen, (unsigned char *)awsRegion, awsRegionLen, dateRegionKey, &dateRegionKeyLen) &&
       HMAC(EVP_sha256(), dateRegionKey, dateRegionKeyLen, (unsigned char *)awsService, awsServiceLen, dateRegionServiceKey,
            &dateRegionServiceKeyLen) &&
-      HMAC(EVP_sha256(), dateRegionServiceKey, dateRegionServiceKeyLen, (unsigned char *)"aws4_request", 12, signingKey,
-           &signingKeyLen) &&
-      HMAC(EVP_sha256(), signingKey, signingKeyLen, (unsigned char *)stringToSign, stringToSignLen, (unsigned char *)signature,
-           &len)) {
+      HMAC(EVP_sha256(), dateRegionServiceKey, dateRegionServiceKeyLen, reinterpret_cast<unsigned char *>("aws4_request"), 12,
+           signingKey, &signingKeyLen) &&
+      HMAC(EVP_sha256(), signingKey, signingKeyLen, (unsigned char *)stringToSign, stringToSignLen,
+           reinterpret_cast<unsigned char *>(signature), &len)) {
     return len;
   }
 

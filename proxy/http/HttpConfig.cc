@@ -131,7 +131,7 @@ HttpConfigCont::HttpConfigCont() : Continuation(new_ProxyMutex())
 int
 HttpConfigCont::handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
-  if (ink_atomic_increment((int *)&http_config_changes, -1) == 1) {
+  if (ink_atomic_increment(&http_config_changes, -1) == 1) {
     HttpConfig::reconfigure();
   }
   return 0;
@@ -141,7 +141,7 @@ static int
 http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
                void * /* cookie ATS_UNUSED */)
 {
-  ink_atomic_increment((int *)&http_config_changes, 1);
+  ink_atomic_increment(&http_config_changes, 1);
 
   INK_MEMORY_BARRIER;
 
@@ -962,7 +962,7 @@ void
 HttpConfig::startup()
 {
   extern void SSLConfigInit(IpMap * map);
-  http_rsb = RecAllocateRawStatBlock((int)http_stat_count);
+  http_rsb = RecAllocateRawStatBlock(static_cast<int>(http_stat_count));
   register_stat_callbacks();
 
   HttpConfigParams &c = m_master;
@@ -973,7 +973,7 @@ HttpConfig::startup()
   c.proxy_hostname_len = -1;
 
   if (c.proxy_hostname == nullptr) {
-    c.proxy_hostname    = (char *)ats_malloc(sizeof(char));
+    c.proxy_hostname    = static_cast<char *>(ats_malloc(sizeof(char)));
     c.proxy_hostname[0] = '\0';
   }
 

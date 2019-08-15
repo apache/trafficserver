@@ -119,7 +119,7 @@ template <> struct convert<YamlSNIConfig::Item> {
   {
     for (auto &&item : node) {
       if (std::none_of(valid_sni_config_keys.begin(), valid_sni_config_keys.end(),
-                       [&item](std::string s) { return s == item.first.as<std::string>(); })) {
+                       [&item](const std::string &s) { return s == item.first.as<std::string>(); })) {
         throw YAML::ParserException(item.Mark(), "unsupported key " + item.first.as<std::string>());
       }
     }

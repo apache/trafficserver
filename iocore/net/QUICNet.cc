@@ -47,25 +47,25 @@ QUICPollEvent::free()
   quicPollEventAllocator.free(this);
 }
 
-QUICPollCont::QUICPollCont(Ptr<ProxyMutex> &m) : Continuation(m.get()), net_handler(nullptr)
+PollCont::QUICPollCont(Ptr<ProxyMutex> &m) : Continuation(m.get()), net_handler(nullptr)
 {
   SET_HANDLER(&QUICPollCont::pollEvent);
 }
 
-QUICPollCont::QUICPollCont(Ptr<ProxyMutex> &m, NetHandler *nh) : Continuation(m.get()), net_handler(nh)
+PollCont::QUICPollCont(Ptr<ProxyMutex> &m, NetHandler *nh) : Continuation(m.get()), net_handler(nh)
 {
   SET_HANDLER(&QUICPollCont::pollEvent);
 }
 
-QUICPollCont::~QUICPollCont() {}
+PollCont::~PollCont() {}
 
 void
-QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
+PollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
   UDPPacketInternal *p = e->packet;
   // FIXME: VC is nullptr ?
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);
-  uint8_t *buf           = (uint8_t *)p->getIOBlockChain()->buf();
+  uint8_t *buf           = reinterpret_cast<uint8_t *>(p->getIOBlockChain()->buf());
 
   QUICPacketType ptype;
   QUICPacketLongHeader::type(ptype, buf, 1);
@@ -100,7 +100,7 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
 }
 
 void
-QUICPollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
+PollCont::_process_short_header_packet(QUICPollEvent *e, NetHandler *nh)
 {
   UDPPacketInternal *p   = e->packet;
   QUICNetVConnection *vc = static_cast<QUICNetVConnection *>(e->con);

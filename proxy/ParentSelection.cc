@@ -419,9 +419,9 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
   HostStatus &hs = HostStatus::instance();
   // Allocate the parents array
   if (isPrimary) {
-    this->parents = (pRecord *)ats_malloc(sizeof(pRecord) * numTok);
+    this->parents = static_cast<pRecord *>(ats_malloc(sizeof(pRecord) * numTok));
   } else {
-    this->secondary_parents = (pRecord *)ats_malloc(sizeof(pRecord) * numTok);
+    this->secondary_parents = static_cast<pRecord *>(ats_malloc(sizeof(pRecord) * numTok));
   }
 
   // Loop through the set of parents specified
@@ -430,7 +430,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
     current = pTok[i];
 
     // Find the parent port
-    tmp = (char *)strchr(current, ':');
+    tmp = const_cast<char *>(strchr(current, ':'));
 
     if (tmp == nullptr) {
       errPtr = "No parent port specified";
@@ -444,7 +444,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
     }
 
     // See if there is an optional parent weight
-    tmp2 = (char *)strchr(current, '|');
+    tmp2 = const_cast<char *>(strchr(current, '|'));
 
     if (tmp2) {
       if (sscanf(tmp2 + 1, "%f", &weight) != 1) {
@@ -453,7 +453,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       }
     }
 
-    tmp3 = (char *)strchr(current, '&');
+    tmp3 = const_cast<char *>(strchr(current, '&'));
 
     // Make sure that is no garbage beyond the parent
     //  port or weight
@@ -571,7 +571,7 @@ ParentRecord::DefaultInit(char *val)
   errPtr                = ProcessParents(val, true);
 
   if (errPtr != nullptr) {
-    errBuf = (char *)ats_malloc(1024);
+    errBuf = static_cast<char *>(ats_malloc(1024));
     snprintf(errBuf, 1024, "%s %s for default parent proxy", modulePrefix, errPtr);
     SignalError(errBuf, alarmAlready);
     ats_free(errBuf);
@@ -1805,7 +1805,7 @@ br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip)
 {
   h->hdr = new HTTPHdr();
   h->hdr->create(HTTP_TYPE_REQUEST);
-  h->hostname_str = (char *)ats_strdup(os_hostname);
+  h->hostname_str = ats_strdup(os_hostname);
   h->xact_start   = time(nullptr);
   ink_zero(h->src_ip);
   ink_zero(h->dest_ip);

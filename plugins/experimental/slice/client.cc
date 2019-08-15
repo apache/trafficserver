@@ -56,7 +56,7 @@ requestBlock(TSCont contp, Data *const data)
   }
 
   // create virtual connection back into ATS
-  TSVConn const upvc = TSHttpConnect((sockaddr *)&data->m_client_ip);
+  TSVConn const upvc = TSHttpConnect(reinterpret_cast<sockaddr *>(&data->m_client_ip));
 
   // set up connection with the HttpConnect server, maybe clear old one
   data->m_upstream.setupConnection(upvc);

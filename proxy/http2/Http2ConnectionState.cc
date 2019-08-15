@@ -1557,7 +1557,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   http2_generate_h2_header_from_1_1(resp_header, &h2_hdr);
 
   buf_len = resp_header->length_get() * 2; // Make it double just in case
-  buf     = (uint8_t *)ats_malloc(buf_len);
+  buf     = static_cast<uint8_t *>(ats_malloc(buf_len));
   if (buf == nullptr) {
     h2_hdr.destroy();
     return;
@@ -1670,7 +1670,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 
   buf_len = h1_hdr.length_get() * 2; // Make it double just in case
   h1_hdr.destroy();
-  buf = (uint8_t *)ats_malloc(buf_len);
+  buf = static_cast<uint8_t *>(ats_malloc(buf_len));
   if (buf == nullptr) {
     h2_hdr.destroy();
     return;

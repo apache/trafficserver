@@ -66,7 +66,7 @@ RecFileImport_Xmalloc(const char *file, char **file_buf, int *file_size)
     *file_size = 0;
     if ((h_file = RecFileOpenR(file)) != REC_HANDLE_INVALID) {
       *file_size = RecFileGetSize(h_file);
-      *file_buf  = (char *)ats_malloc(*file_size + 1);
+      *file_buf  = static_cast<char *>(ats_malloc(*file_size + 1));
       if (RecFileRead(h_file, *file_buf, *file_size, &bytes_read) != REC_ERR_FAIL && bytes_read == *file_size) {
         (*file_buf)[*file_size] = '\0';
         err                     = REC_ERR_OKAY;
@@ -163,7 +163,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
   }
   // clear our g_rec_config_contents_xxx structures
   while (!queue_is_empty(g_rec_config_contents_llq)) {
-    cfe = (RecConfigFileEntry *)dequeue(g_rec_config_contents_llq);
+    cfe = static_cast<RecConfigFileEntry *>(dequeue(g_rec_config_contents_llq));
     ats_free(cfe->entry);
     ats_free(cfe);
   }
@@ -257,7 +257,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
     handler(rec_type, data_type, name_str, value_str, value_str == data_str ? REC_SOURCE_EXPLICIT : REC_SOURCE_ENV);
 
     // update our g_rec_config_contents_xxx
-    cfe             = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
+    cfe             = static_cast<RecConfigFileEntry *>(ats_malloc(sizeof(RecConfigFileEntry)));
     cfe->entry_type = RECE_RECORD;
     cfe->entry      = ats_strdup(name_str);
     enqueue(g_rec_config_contents_llq, (void *)cfe);
@@ -267,7 +267,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
   L_next_line:
     // store this line into g_rec_config_contents_llq so that we can
     // write it out later
-    cfe             = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
+    cfe             = static_cast<RecConfigFileEntry *>(ats_malloc(sizeof(RecConfigFileEntry)));
     cfe->entry_type = RECE_COMMENT;
     cfe->entry      = ats_strdup(line);
     enqueue(g_rec_config_contents_llq, (void *)cfe);

@@ -41,7 +41,7 @@ public:
   char *
   name()
   {
-    return (char *)this + this->name_offset;
+    return reinterpret_cast<char *>(this) + this->name_offset;
   }
 
   static ExampleStruct *
@@ -92,7 +92,7 @@ fillCache(RefCountCache<ExampleStruct> *cache, int start, int end)
 
   for (int i = start; i < end; i++) {
     ExampleStruct *tmp = ExampleStruct::alloc(allocSize);
-    cache->put((uint64_t)i, tmp);
+    cache->put(static_cast<uint64_t>(i), tmp);
 
     tmp->idx         = i;
     tmp->name_offset = sizeof(ExampleStruct);
@@ -149,17 +149,17 @@ testRefcounting()
   ExampleStruct *tmp = ExampleStruct::alloc();
   ret |= tmp->refcount() != 0;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
-  cache->put((uint64_t)1, tmp);
+  cache->put(static_cast<uint64_t>(1), tmp);
   ret |= tmp->refcount() != 1;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
   tmp->idx = 1;
 
   // Grab a pointer to item 1
-  Ptr<ExampleStruct> ccitem = cache->get((uint64_t)1);
+  Ptr<ExampleStruct> ccitem = cache->get(static_cast<uint64_t>(1));
   ret |= tmp->refcount() != 2;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
 
-  Ptr<ExampleStruct> tmpAfter = cache->get((uint64_t)1);
+  Ptr<ExampleStruct> tmpAfter = cache->get(static_cast<uint64_t>(1));
   ret |= tmp->refcount() != 3;
   printf("ret=%d ref=%d\n", ret, tmp->refcount());
 
@@ -246,17 +246,17 @@ test()
   // Verify that we can alloc() with no extra space
   printf("Alloc item idx 1\n");
   ExampleStruct *tmp = ExampleStruct::alloc();
-  cache->put((uint64_t)1, tmp);
+  cache->put(static_cast<uint64_t>(1), tmp);
   tmp->idx = 1;
 
-  Ptr<ExampleStruct> tmpAfter = cache->get((uint64_t)1);
+  Ptr<ExampleStruct> tmpAfter = cache->get(static_cast<uint64_t>(1));
   printf("Item after (ret=%d) %d %d\n", ret, 1, tmpAfter->idx);
   // Verify every item in the cache
   ret |= verifyCache(cache, 0, numTestEntries);
   printf("verified entire cache ret=%d\n", ret);
 
   // Grab a pointer to item 1
-  Ptr<ExampleStruct> ccitem = cache->get((uint64_t)1);
+  Ptr<ExampleStruct> ccitem = cache->get(static_cast<uint64_t>(1));
   ccitem->idx               = 1;
   // Delete a single item
   cache->erase(1);

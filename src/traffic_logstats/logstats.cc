@@ -336,7 +336,7 @@ struct hash_fnv32 {
   }
 };
 
-typedef std::list<UrlStats> LruStack;
+using LruStack = int;
 typedef std::unordered_map<const char *, OriginStats *, hash_fnv32, eqstr> OriginStorage;
 typedef std::unordered_set<const char *, hash_fnv32, eqstr> OriginSet;
 typedef std::unordered_map<const char *, LruStack::iterator, hash_fnv32, eqstr> LruHash;
@@ -1197,7 +1197,7 @@ find_or_create_stats(const char *key)
   if (origin_set->empty() || (origin_set->find(key) != origin_set->end())) {
     o_iter = origins.find(key);
     if (origins.end() == o_iter) {
-      o_stats = (OriginStats *)ats_malloc(sizeof(OriginStats));
+      o_stats = static_cast<OriginStats *>(ats_malloc(sizeof(OriginStats)));
       memset(o_stats, 0, sizeof(OriginStats));
       init_elapsed(o_stats);
       o_server = ats_strdup(key);
@@ -1895,7 +1895,7 @@ inline void
 format_int(int64_t num)
 {
   if (num > 0) {
-    int64_t mult = (int64_t)pow((double)10, (int)(log10((double)num) / 3) * 3);
+    int64_t mult = static_cast<int64_t>(pow(static_cast<double>(10), static_cast<int>(log10(static_cast<double>(num)) / 3) * 3));
     int64_t div;
     std::stringstream ss;
 
@@ -1963,7 +1963,7 @@ format_line(const char *desc, const StatsCounter &stat, const StatsCounter &tota
 {
   static char metrics[] = "KKMGTP";
   static char buf[64];
-  int ix = (stat.bytes > 1024 ? (int)(log10((double)stat.bytes) / LOG10_1024) : 1);
+  int ix = (stat.bytes > 1024 ? static_cast<int>(log10(static_cast<double>(stat.bytes)) / LOG10_1024) : 1);
 
   if (json) {
     std::cout << "    " << '"' << desc << "\" : "
@@ -1986,13 +1986,13 @@ format_line(const char *desc, const StatsCounter &stat, const StatsCounter &tota
     std::cout << std::right << std::setw(15);
     format_int(stat.count);
 
-    snprintf(buf, sizeof(buf), "%10.2f%%", ((double)stat.count / total.count * 100));
+    snprintf(buf, sizeof(buf), "%10.2f%%", (static_cast<double>(stat.count) / total.count * 100));
     std::cout << std::right << buf;
 
-    snprintf(buf, sizeof(buf), "%10.2f%cB", stat.bytes / pow((double)1024, ix), metrics[ix]);
+    snprintf(buf, sizeof(buf), "%10.2f%cB", stat.bytes / pow(static_cast<double>(1024), ix), metrics[ix]);
     std::cout << std::right << buf;
 
-    snprintf(buf, sizeof(buf), "%10.2f%%", ((double)stat.bytes / total.bytes * 100));
+    snprintf(buf, sizeof(buf), "%10.2f%%", (static_cast<double>(stat.bytes) / total.bytes * 100));
     std::cout << std::right << buf << std::endl;
   }
 }
@@ -2554,8 +2554,8 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     // Use more portable & standard fcntl() over flock()
     lck.l_type   = F_WRLCK;
     lck.l_whence = 0; /* offset l_start from beginning of file*/
-    lck.l_start  = (off_t)0;
-    lck.l_len    = (off_t)0; /* till end of file*/
+    lck.l_start  = static_cast<off_t>(0);
+    lck.l_len    = static_cast<off_t>(0); /* till end of file*/
     cnt          = 10;
     while (((res = fcntl(state_fd, F_SETLK, &lck)) < 0) && --cnt) {
       switch (errno) {
