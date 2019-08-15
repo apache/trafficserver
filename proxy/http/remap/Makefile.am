@@ -81,7 +81,7 @@ test_PluginFactory_SOURCES = \
 	RemapPluginInfo.cc
 
 test_RemapPluginInfo_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DPLUGIN_DSO_TESTS
-	EXTRA_test_RemapPluginInfo_DEPENDENCIES = \
+EXTRA_test_RemapPluginInfo_DEPENDENCIES = \
 	unit-tests/plugin_missing_init.la \
 	unit-tests/plugin_missing_doremap.la \
 	unit-tests/plugin_missing_deleteinstance.la \

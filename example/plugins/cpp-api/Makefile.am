@@ -106,4 +106,3 @@ intercept_la_LIBADD = $(libtscppapi)
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
-	$(CC_Clang_Tidy)
