@@ -40,7 +40,7 @@ signal_check_handler(int signal, signal_handler_t handler)
   void *sigact;
 
   ink_release_assert(sigaction(signal, nullptr, &oact) == 0);
-  if (handler == reinterpret_cast<signal_handler_t> SIG_DFL || handler == reinterpret_cast<signal_handler_t> SIG_IGN) {
+  if (handler == reinterpret_cast<signal_handler_t>(SIG_DFL) || handler == reinterpret_cast<signal_handler_t>(SIG_IGN)) {
     sigact = reinterpret_cast<void *>(oact.sa_handler);
   } else {
     sigact = reinterpret_cast<void *>(oact.sa_sigaction);
@@ -63,7 +63,7 @@ signal_check_handler(int signal, signal_handler_t handler)
 void
 check_signals(signal_handler_t handler)
 {
-  signal_check_handler(SIGPIPE, reinterpret_cast<signal_handler_t> SIG_IGN);
+  signal_check_handler(SIGPIPE, reinterpret_cast<signal_handler_t>(SIG_IGN));
   signal_check_handler(SIGQUIT, handler);
   signal_check_handler(SIGHUP, handler);
   signal_check_handler(SIGTERM, handler);
@@ -105,7 +105,7 @@ signal_reset_default(int signo)
 static void *
 check_signal_thread(void *ptr)
 {
-  signal_handler_t handler = static_cast<signal_handler_t>(ptr);
+  signal_handler_t handler = reinterpret_cast<signal_handler_t>(ptr);
   for (;;) {
     check_signals(handler);
     sleep(2);

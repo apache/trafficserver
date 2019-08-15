@@ -1207,7 +1207,7 @@ Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char
   struct timeval tp = ink_gettimeofday();
 
   Log::error("[%9d.%03d] Trace {0x%" PRIx64 "} %s %s:%d: ", static_cast<int>(tp.tv_sec), static_cast<int>(tp.tv_usec / 1000),
-             static_cast<uint64_t>(ink_thread_self()), in ? "RECV" : "SEND", ip, peer_port);
+             reinterpret_cast<uint64_t>(ink_thread_self()), in ? "RECV" : "SEND", ip, peer_port);
   Log::va_error(format_string, ap);
   Log::error("[End Trace]\n");
 }

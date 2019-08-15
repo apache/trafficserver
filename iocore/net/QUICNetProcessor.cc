@@ -33,28 +33,28 @@
 // Global Data
 //
 
-UDPNetProcessor quic_NetProcessor;
+QUICNetProcessor quic_NetProcessor;
 
-UDPNetProcessor::UDPNetProcessor() {}
+QUICNetProcessor::QUICNetProcessor() {}
 
-UDPNetProcessor::~UDPNetProcessor()
+QUICNetProcessor::~QUICNetProcessor()
 {
   // TODO: clear all values before destory the table.
   delete this->_ctable;
 }
 
 void
-UDPNetProcessor::init()
+QUICNetProcessor::init()
 {
   // first we allocate a QUICPollCont.
   this->quicPollCont_offset = eventProcessor.allocate(sizeof(QUICPollCont));
 
   // schedule event
-  eventProcessor.schedule_spawn(&initialize_thread_for_net, ET_NET);
+  eventProcessor.schedule_spawn(&initialize_thread_for_quic_net, ET_NET);
 }
 
 int
-UDPNetProcessor::start(int, size_t stacksize)
+QUICNetProcessor::start(int, size_t stacksize)
 {
   QUIC::init();
   // This initialization order matters ...
@@ -71,7 +71,7 @@ UDPNetProcessor::start(int, size_t stacksize)
 }
 
 NetAccept *
-UDPNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
+QUICNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 {
   if (this->_ctable == nullptr) {
     QUICConfig::scoped_config params;
@@ -81,15 +81,15 @@ UDPNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 }
 
 NetVConnection *
-UDPNetProcessor::allocate_vc(EThread *t)
+QUICNetProcessor::allocate_vc(EThread *t)
 {
   QUICNetVConnection *vc;
 
   if (t) {
-    vc = THREAD_ALLOC(netVCAllocator, t);
+    vc = THREAD_ALLOC(quicNetVCAllocator, t);
     new (vc) QUICNetVConnection();
   } else {
-    if (likely(vc = netVCAllocator.alloc())) {
+    if (likely(vc = quicNetVCAllocator.alloc())) {
       new (vc) QUICNetVConnection();
       vc->from_accept_thread = true;
     }
@@ -100,7 +100,7 @@ UDPNetProcessor::allocate_vc(EThread *t)
 }
 
 Action *
-UDPNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, NetVCOptions *opt)
+QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, NetVCOptions *opt)
 {
   Debug("quic_ps", "connect to server");
   EThread *t = cont->mutex->thread_holding;

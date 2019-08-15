@@ -705,7 +705,7 @@ event_callback_thread(void *arg)
 
   // execute the callback function
   while (!queue_is_empty(func_q)) {
-    cb = static_cast<TSEventSignalFunc>(dequeue(func_q));
+    cb = reinterpret_cast<TSEventSignalFunc>(dequeue(func_q));
     (*cb)(event_notice->name, event_notice->description, event_notice->priority, nullptr);
   }
 

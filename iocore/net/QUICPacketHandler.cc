@@ -122,7 +122,7 @@ QUICPacketHandler::_send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IO
 //
 // QUICPacketHandlerIn
 //
-QUICPacketHandler::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, QUICConnectionTable &ctable)
+QUICPacketHandlerIn::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, QUICConnectionTable &ctable)
   : NetAccept(opt), QUICPacketHandler(), _ctable(ctable)
 {
   this->mutex = new_ProxyMutex();
@@ -130,16 +130,16 @@ QUICPacketHandler::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, Q
   QUICConfig::scoped_config params;
 }
 
-QUICPacketHandler::~QUICPacketHandlerIn() {}
+QUICPacketHandlerIn::~QUICPacketHandlerIn() {}
 
 NetProcessor *
-QUICPacketHandler::getNetProcessor() const
+QUICPacketHandlerIn::getNetProcessor() const
 {
   return &quic_NetProcessor;
 }
 
 NetAccept *
-QUICPacketHandler::clone() const
+QUICPacketHandlerIn::clone() const
 {
   NetAccept *na;
   na  = new QUICPacketHandlerIn(opt, this->_ctable);
@@ -148,7 +148,7 @@ QUICPacketHandler::clone() const
 }
 
 int
-QUICPacketHandler::acceptEvent(int event, void *data)
+QUICPacketHandlerIn::acceptEvent(int event, void *data)
 {
   // NetVConnection *netvc;
   ink_release_assert(event == NET_EVENT_DATAGRAM_OPEN || event == NET_EVENT_DATAGRAM_READ_READY ||
@@ -184,19 +184,19 @@ QUICPacketHandler::acceptEvent(int event, void *data)
 }
 
 void
-QUICPacketHandler::init_accept(EThread *t = nullptr)
+QUICPacketHandlerIn::init_accept(EThread *t = nullptr)
 {
   SET_HANDLER(&QUICPacketHandlerIn::acceptEvent);
 }
 
 Continuation *
-QUICPacketHandler::_get_continuation()
+QUICPacketHandlerIn::_get_continuation()
 {
   return static_cast<NetAccept *>(this);
 }
 
 void
-QUICPacketHandler::_recv_packet(int event, UDPPacket *udp_packet)
+QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
 {
   // Assumption: udp_packet has only one IOBufferBlock
   IOBufferBlock *block = udp_packet->getIOBlockChain();
@@ -370,8 +370,8 @@ QUICPacketHandler::send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_pa
 }
 
 int
-QUICPacketHandler::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPConnection *connection, IpEndpoint from,
-                                    QUICConnectionId dcid, QUICConnectionId scid, QUICConnectionId *original_cid)
+QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPConnection *connection, IpEndpoint from,
+                                      QUICConnectionId dcid, QUICConnectionId scid, QUICConnectionId *original_cid)
 {
   QUICPacketType type = QUICPacketType::UNINITIALIZED;
   QUICPacketLongHeader::type(type, buf, buf_len);
@@ -422,19 +422,19 @@ QUICPacketHandler::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPCon
 //
 // QUICPacketHandlerOut
 //
-QUICPacketHandler::QUICPacketHandlerOut() : Continuation(new_ProxyMutex()), QUICPacketHandler()
+QUICPacketHandlerOut::QUICPacketHandlerOut() : Continuation(new_ProxyMutex()), QUICPacketHandler()
 {
   SET_HANDLER(&QUICPacketHandlerOut::event_handler);
 }
 
 void
-QUICPacketHandler::init(QUICNetVConnection *vc)
+QUICPacketHandlerOut::init(QUICNetVConnection *vc)
 {
   this->_vc = vc;
 }
 
 int
-QUICPacketHandler::event_handler(int event, Event *data)
+QUICPacketHandlerOut::event_handler(int event, Event *data)
 {
   switch (event) {
   case NET_EVENT_DATAGRAM_OPEN: {
