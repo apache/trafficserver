@@ -383,7 +383,7 @@ LogFilterString::_checkCondition(OperatorFunction f, const char *field_value, si
 }
 
 static const char *
-findPtternFromParamName(const char *lookup_query_param, const char *pattern)
+findPatternFromParamName(const char *lookup_query_param, const char *pattern)
 {
   const char *p1 = strstr(lookup_query_param, pattern);
   while (p1) {
@@ -424,7 +424,7 @@ wipeField(char **field, char *pattern, const char *uppercase_field)
       return;
     }
 
-    const char *p1 = findPtternFromParamName(lookup_query_param, pattern);
+    const char *p1 = findPatternFromParamName(lookup_query_param, pattern);
     if (p1) {
       int field_pos = p1 - lookup_query_param;
       p1            = query_param + field_pos;
