@@ -388,13 +388,13 @@ findPatternFromParamName(const char *lookup_query_param, const char *pattern)
   const char *p1 = strstr(lookup_query_param, pattern);
   while (p1) {
     // wipe pattern in param name, need search again if find pattern in param value
-    const char *p10 = strstr(p1, "=");
+    const char *p10 = strchr(p1, '=');
     if (!p10) {
       // no "=" after p1, means p1 is not in the param name, and no more param after it
       p1 = nullptr;
       break;
     }
-    const char *p11 = strstr(p1, "&");
+    const char *p11 = strchr(p1, '&');
     if (p11 && p10 > p11) {
       //"=" is after "&" followd by p1, means p1 is not in the param name
       p1 = strstr(p11, pattern);
@@ -404,6 +404,37 @@ findPatternFromParamName(const char *lookup_query_param, const char *pattern)
     break;
   }
   return p1;
+}
+
+static void
+updatePatternForFieldValue(char **field, const char *p1, int field_pos, char *buf_dest)
+{
+  char tmp_text[strlen(buf_dest) + 10];
+  char *temp_text = tmp_text;
+  memcpy(temp_text, buf_dest, (p1 - buf_dest));
+  temp_text += (p1 - buf_dest);
+  const char *p2 = strchr(p1, '=');
+  if (p2) {
+    p2++;
+    memcpy(temp_text, p1, (p2 - p1));
+    temp_text += (p2 - p1);
+    const char *p3 = strchr(p2, '&');
+    if (p3) {
+      for (int i = 0; i < (p3 - p2); i++)
+        temp_text[i] = 'X';
+      temp_text += (p3 - p2);
+      memcpy(temp_text, p3, ((buf_dest + strlen(buf_dest)) - p3));
+    } else {
+      for (int i = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++) {
+        temp_text[i] = 'X';
+      }
+    }
+  } else {
+    return;
+  }
+
+  tmp_text[strlen(buf_dest)] = '\0';
+  strcpy(*field, tmp_text);
 }
 
 /*---------------------------------------------------------------------------
@@ -418,8 +449,8 @@ wipeField(char **field, char *pattern, const char *uppercase_field)
   const char *lookup_dest = uppercase_field ? uppercase_field : *field;
 
   if (buf_dest) {
-    char *query_param              = strstr(buf_dest, "?");
-    const char *lookup_query_param = strstr(lookup_dest, "?");
+    char *query_param              = strchr(buf_dest, '?');
+    const char *lookup_query_param = strchr(lookup_dest, '?');
     if (!query_param || !lookup_query_param) {
       return;
     }
@@ -428,33 +459,7 @@ wipeField(char **field, char *pattern, const char *uppercase_field)
     if (p1) {
       int field_pos = p1 - lookup_query_param;
       p1            = query_param + field_pos;
-
-      char tmp_text[strlen(buf_dest) + 10];
-      char *temp_text = tmp_text;
-      memcpy(temp_text, buf_dest, (p1 - buf_dest));
-      temp_text += (p1 - buf_dest);
-      const char *p2 = strstr(p1, "=");
-      if (p2) {
-        p2++;
-        memcpy(temp_text, p1, (p2 - p1));
-        temp_text += (p2 - p1);
-        const char *p3 = strstr(p2, "&");
-        if (p3) {
-          for (int i = 0; i < (p3 - p2); i++)
-            temp_text[i] = 'X';
-          temp_text += (p3 - p2);
-          memcpy(temp_text, p3, ((buf_dest + strlen(buf_dest)) - p3));
-        } else {
-          for (int i = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++) {
-            temp_text[i] = 'X';
-          }
-        }
-      } else {
-        return;
-      }
-
-      tmp_text[strlen(buf_dest)] = '\0';
-      strcpy(*field, tmp_text);
+      updatePatternForFieldValue(field, p1, field_pos, buf_dest);
     }
   }
 }
