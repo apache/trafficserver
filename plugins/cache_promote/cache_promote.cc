@@ -183,7 +183,7 @@ struct LRUHashHasher {
   size_t
   operator()(const LRUHash *s) const
   {
-    return *(reinterpret_cast<size_t *>(s->_hash)) ^ *((size_t *)(s->_hash + 9));
+    return *(reinterpret_cast<const size_t *>(s->_hash)) ^ *(reinterpret_cast<const size_t *>(s->_hash + 9));
   }
 };
 

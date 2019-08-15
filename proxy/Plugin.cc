@@ -112,7 +112,7 @@ plugin_load(int argc, char *argv[], bool validateOnly)
     plugin_reg_current->plugin_path = ats_strdup(path);
     plugin_reg_current->dlh         = handle;
 
-    init = static_cast<init_func_t>(dlsym(plugin_reg_current->dlh, "TSPluginInit"));
+    init = reinterpret_cast<init_func_t>(dlsym(plugin_reg_current->dlh, "TSPluginInit"));
     if (!init) {
       delete plugin_reg_current;
       if (validateOnly) {

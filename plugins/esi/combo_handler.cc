@@ -87,8 +87,7 @@ struct ClientRequest {
   StringList file_urls;
   bool gzip_accepted = false;
   string defaultBucket; // default Bucket will be set to HOST header
-  ClientRequest() : defaultBucket("l") = default;
-  ;
+  ClientRequest() : defaultBucket("l"){};
 };
 
 struct InterceptData {
@@ -101,7 +100,6 @@ struct InterceptData {
     TSIOBufferReader reader = nullptr;
 
     IoHandle() = default;
-    ;
 
     ~IoHandle()
     {

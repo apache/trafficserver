@@ -663,7 +663,7 @@ getSignature(const char *awsSecret, size_t awsSecretLen, const char *awsRegion, 
       HMAC(EVP_sha256(), dateKey, dateKeyLen, (unsigned char *)awsRegion, awsRegionLen, dateRegionKey, &dateRegionKeyLen) &&
       HMAC(EVP_sha256(), dateRegionKey, dateRegionKeyLen, (unsigned char *)awsService, awsServiceLen, dateRegionServiceKey,
            &dateRegionServiceKeyLen) &&
-      HMAC(EVP_sha256(), dateRegionServiceKey, dateRegionServiceKeyLen, reinterpret_cast<unsigned char *>("aws4_request"), 12,
+      HMAC(EVP_sha256(), dateRegionServiceKey, dateRegionServiceKeyLen, reinterpret_cast<const unsigned char *>("aws4_request"), 12,
            signingKey, &signingKeyLen) &&
       HMAC(EVP_sha256(), signingKey, signingKeyLen, (unsigned char *)stringToSign, stringToSignLen,
            reinterpret_cast<unsigned char *>(signature), &len)) {
