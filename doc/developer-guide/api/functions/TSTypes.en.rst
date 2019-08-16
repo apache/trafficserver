@@ -143,7 +143,47 @@ more widely. Those are described on this page.
 
 .. type:: TSRemapInterface
 
+   Data passed to a remap plugin via :func:`TSRemapInit`.
+
+   .. member:: unsigned long size
+
+      The size of the structure in bytes, including this member.
+
+   .. member:: unsigned long tsremap_version
+
+      The API version of the C API. The lower 16 bits are the minor version, and the upper bits
+      the major version.
+
 .. type:: TSRemapRequestInfo
+
+   Data passed to a remap plugin during the invocation of a remap rule.
+
+   .. member:: TSMBuffer requestBufp
+
+      The client request. All of the other :type:`TSMLoc` values use this as the base buffer.
+
+   .. member:: TSMLoc requestHdrp
+
+      The client request.
+
+   .. member:: TSMLoc mapFromUrl
+
+      The match URL in the remap rule.
+
+   .. member:: TSMLoc mapToUrl
+
+      The target URL in the remap rule.
+
+   .. member:: TSMLoc requestUrl
+
+      The current request URL. The remap rule and plugins listed earlier in the remap rule can modify this
+      from the client request URL. Remap plugins are expected to modify this value to perform the
+      remapping of the request. Note this is the same :code:`TSMLoc` as would be obtained by
+      calling :func:`TSHttpTxnClientReqGet`.
+
+   .. member:: int redirect
+
+      Flag for using the remapped URL as an explicit redirection. This can be set by the remap plugin.
 
 .. type:: TSSslX509
 
