@@ -1507,8 +1507,9 @@ Origin Server Connect Attempts
    Throttle alerts per upstream server group to be no more often than this many seconds. Summary
    data is provided per alert to allow log scrubbing to generate accurate data.
 
-.. ts:cv:: CONFIG proxy.config.http.per_server.min_keep_alive_connections INT 0
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.min INT 0
    :reloadable:
+   :overridable:
 
    Set a target for the minimum number of active connections to an upstream server group. When an
    outbound connection is in keep alive state and the inactivity timer expires, if there are fewer

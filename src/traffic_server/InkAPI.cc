@@ -8532,6 +8532,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret  = &overridableHttpConfig->outbound_conntrack.max;
     conv = &OutboundConnTrack::MAX_CONV;
     break;
+  case TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS:
+    ret  = &overridableHttpConfig->outbound_conntrack.min;
+    conv = &OutboundConnTrack::MIN_CONV;
+    break;
   case TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH:
     ret  = &overridableHttpConfig->outbound_conntrack.match;
     conv = &OutboundConnTrack::MATCH_CONV;
@@ -8825,6 +8829,7 @@ static const std::unordered_map<std::string_view, std::tuple<const TSOverridable
    {"proxy.config.http.default_buffer_water_mark", {TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.cache.heuristic_lm_factor", {TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR, TS_RECORDDATATYPE_FLOAT}},
    {OutboundConnTrack::CONFIG_VAR_MAX, {TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX, TS_RECORDDATATYPE_INT}},
+   {OutboundConnTrack::CONFIG_VAR_MIN, {TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.anonymize_remove_client_ip", {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.cache.open_read_retry_time", {TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME, TS_RECORDDATATYPE_INT}},
    {"proxy.config.http.down_server.abort_threshold", {TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD, TS_RECORDDATATYPE_INT}},
