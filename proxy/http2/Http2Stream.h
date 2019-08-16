@@ -243,6 +243,8 @@ public:
 
   void mark_milestone(Http2StreamMilestone type);
 
+  void signal_more_data_needed();
+
 private:
   void response_initialize_data_handling(bool &is_done);
   void response_process_data(bool &is_done);

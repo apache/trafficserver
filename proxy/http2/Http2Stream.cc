@@ -832,6 +832,14 @@ Http2Stream::response_process_data(bool &done)
   }
 }
 
+void
+Http2Stream::signal_more_data_needed()
+{
+  if (this->write_vio.ntodo() > 0 && this->write_vio.get_writer()->write_avail() > 0) {
+    write_vio.cont->handleEvent(VC_EVENT_WRITE_READY, &write_vio);
+  }
+}
+
 bool
 Http2Stream::response_is_data_available() const
 {

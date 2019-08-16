@@ -1471,6 +1471,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
   if (!stream->is_body_done() && payload_length == 0) {
     Http2StreamDebug(this->ua_session, stream->get_id(), "No payload");
+    stream->signal_more_data_needed(); // Tell cacheVC to send more data
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
