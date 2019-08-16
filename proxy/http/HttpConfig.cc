@@ -984,7 +984,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
   HttpEstablishStaticConfigLongLong(c.max_websocket_connections, "proxy.config.http.websocket.max_number_of_connections");
-  HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.per_server.min_keep_alive");
   HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
 
   HttpEstablishStaticConfigLongLong(c.http_request_line_max_size, "proxy.config.http.request_line_max_size");
@@ -1268,22 +1267,21 @@ HttpConfig::reconfigure()
   params->oride.outbound_conntrack  = m_master.oride.outbound_conntrack;
   // If queuing for outbound connection tracking is enabled without enabling max connections, it is meaningless, so we'll warn
   if (params->outbound_conntrack.queue_size > 0 &&
-      !(params->oride.outbound_conntrack.max > 0 || params->origin_min_keep_alive_connections)) {
-    Warning("'%s' is set, but neither '%s' nor 'per_server.min_keep_alive_connections' are "
+      !(params->oride.outbound_conntrack.max > 0 || params->oride.outbound_conntrack.min > 0)) {
+    Warning("'%s' is set, but neither '%s' nor '%s' are "
             "set, please correct your records.config",
-            OutboundConnTrack::CONFIG_VAR_QUEUE_SIZE.data(), OutboundConnTrack::CONFIG_VAR_MAX.data());
+            OutboundConnTrack::CONFIG_VAR_QUEUE_SIZE.data(), OutboundConnTrack::CONFIG_VAR_MAX.data(),
+            OutboundConnTrack::CONFIG_VAR_MIN.data());
   }
-  params->origin_min_keep_alive_connections     = m_master.origin_min_keep_alive_connections;
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
 
   params->http_request_line_max_size = m_master.http_request_line_max_size;
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;
 
-  if (params->oride.outbound_conntrack.max > 0 &&
-      params->oride.outbound_conntrack.max < params->origin_min_keep_alive_connections) {
-    Warning("'%s' < origin_min_keep_alive_connections, setting min=max , please correct your records.config",
+  if (params->oride.outbound_conntrack.max > 0 && params->oride.outbound_conntrack.max < params->oride.outbound_conntrack.min) {
+    Warning("'%s' < per_server.min_keep_alive_connections, setting min=max , please correct your records.config",
             OutboundConnTrack::CONFIG_VAR_MAX.data());
-    params->origin_min_keep_alive_connections = params->oride.outbound_conntrack.max;
+    params->oride.outbound_conntrack.min = params->oride.outbound_conntrack.max;
   }
 
   params->oride.insert_request_via_string   = m_master.oride.insert_request_via_string;
@@ -1324,6 +1322,7 @@ HttpConfig::reconfigure()
   }
 
   params->oride.server_session_sharing_match = m_master.oride.server_session_sharing_match;
+  params->oride.server_min_keep_alive_conns  = m_master.oride.server_min_keep_alive_conns;
   params->server_session_sharing_pool        = m_master.server_session_sharing_pool;
   params->oride.keep_alive_post_out          = m_master.oride.keep_alive_post_out;
 
