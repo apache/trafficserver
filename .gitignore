@@ -130,6 +130,7 @@ proxy/hdrs/test_Huffmancode
 proxy/hdrs/test_XPACK
 proxy/http/test_proxy_http
 proxy/http2/test_Http2DependencyTree
+proxy/http2/test_Http2FrequencyCounter
 proxy/http2/test_HPACK
 proxy/http2/hpack-tests/results
 proxy/http3/test_libhttp3
