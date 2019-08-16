@@ -37,3 +37,16 @@ PrintToStdErr(const char *fmt, ...)
   vfprintf(stderr, fmt, args);
   va_end(args);
 }
+
+fs::path
+getTemporaryDir()
+{
+  std::error_code ec;
+  fs::path tmpDir = fs::canonical(fs::temp_directory_path(), ec);
+  tmpDir /= "sandbox_XXXXXX";
+
+  char dirNameTemplate[tmpDir.string().length() + 1];
+  sprintf(dirNameTemplate, "%s", tmpDir.c_str());
+
+  return fs::path(mkdtemp(dirNameTemplate));
+}

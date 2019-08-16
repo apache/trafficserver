@@ -151,6 +151,22 @@ isUriEncoded(const String &in, bool isObjectName)
   return false;
 }
 
+String
+canonicalEncode(const String &in, bool isObjectName)
+{
+  String canonical;
+  if (!isUriEncoded(in, isObjectName)) {
+    /* Not URI-encoded */
+    canonical = uriEncode(in, isObjectName);
+  } else {
+    /* URI-encoded, then don't encode since AWS does not encode which is not mentioned in the spec,
+     * asked AWS, still waiting for confirmation */
+    canonical = in;
+  }
+
+  return canonical;
+}
+
 /**
  * @brief trim the white-space character from the beginning and the end of the string ("in-place", just moving pointers around)
  *
@@ -287,7 +303,7 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
   str = api.getPath(&length);
   String path("/");
   path.append(str, length);
-  String canonicalUri = uriEncode(path, /* isObjectName */ true);
+  String canonicalUri = canonicalEncode(path, /* isObjectName */ true);
   sha256Update(&canonicalRequestSha256Ctx, canonicalUri);
   sha256Update(&canonicalRequestSha256Ctx, "\n");
 
@@ -306,18 +322,9 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
     String param(token.substr(0, pos == String::npos ? token.size() : pos));
     String value(pos == String::npos ? "" : token.substr(pos + 1, token.size()));
 
-    String encodedParam = uriEncode(param, /* isObjectName */ false);
-
+    String encodedParam = canonicalEncode(param, /* isObjectName */ false);
     paramNames.insert(encodedParam);
-
-    if (!isUriEncoded(value, /* isObjectName */ false)) {
-      /* Not URI-encoded */
-      paramsMap[encodedParam] = uriEncode(value, /* isObjectName */ false);
-    } else {
-      /* URI-encoded, then don't encode since AWS does not encode which is not mentioned in the spec,
-       * asked AWS, still waiting for confirmation */
-      paramsMap[encodedParam] = value;
-    }
+    paramsMap[encodedParam] = canonicalEncode(value, /* isObjectName */ false);
   }
 
   String queryStr;

@@ -182,22 +182,8 @@ Log::trace_out(sockaddr const *, unsigned short, char const *, ...)
 
 #include "InkAPIInternal.h"
 
-int
-APIHook::invoke(int, void *)
-{
-  ink_assert(false);
-  return 0;
-}
-
 APIHook *
 APIHook::next() const
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-APIHook *
-APIHooks::get() const
 {
   ink_assert(false);
   return nullptr;
@@ -215,10 +201,30 @@ APIHooks::append(INKContInternal *)
   ink_abort("do not call stub");
 }
 
-void
-APIHooks::prepend(INKContInternal *)
+int
+APIHook::invoke(int, void *) const
 {
-  ink_abort("do not call stub");
+  ink_assert(false);
+  return 0;
+}
+
+APIHook *
+APIHooks::head() const
+{
+  return nullptr;
+}
+
+HttpHookState::HttpHookState() {}
+
+void
+HttpHookState::init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn, HttpAPIHooks const *txn)
+{
+}
+
+APIHook const *
+HttpHookState::getNext()
+{
+  return nullptr;
 }
 
 void

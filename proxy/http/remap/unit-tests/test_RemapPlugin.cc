@@ -40,16 +40,8 @@ thread_local PluginThreadContext *pluginThreadContext;
 static void *INSTANCE_HANDLER = (void *)789;
 std::error_code ec;
 
-/* Some plugin context pointers used for unit testing */
-// static const PluginThreadContext *PLUGIN_INIT_CONTEXT_CUR    = (PluginThreadContext *)1;
-// static const PluginThreadContext *PLUGIN_INIT_CONTEXT_NEW_V1 = (PluginThreadContext *)2;
-// static const PluginThreadContext *PLUGIN_INIT_CONTEXT_NEW_V2 = (PluginThreadContext *)3;
-
-/* A temp sandbox to play with our toys used for all fun with this test-bench */
-static fs::path tmpDir = fs::canonical(fs::temp_directory_path(), ec);
-
 /* The following are paths that are used commonly in the unit-tests */
-static fs::path sandboxDir     = tmpDir / "sandbox";
+static fs::path sandboxDir     = getTemporaryDir();
 static fs::path runtimeDir     = sandboxDir / "runtime";
 static fs::path searchDir      = sandboxDir / "search";
 static fs::path pluginBuildDir = fs::current_path() / "unit-tests/.libs";
@@ -128,6 +120,8 @@ cleanupSandBox(RemapPluginInfo *plugin)
 
 SCENARIO("loading remap plugins", "[plugin][core]")
 {
+  REQUIRE_FALSE(sandboxDir.empty());
+
   std::string error;
   PluginDebugObject *debugObject = nullptr;
 
@@ -244,6 +238,8 @@ checkCallTest(bool shouldHaveFailed, bool result, const std::string &error, std:
 
 SCENARIO("invoking plugin init", "[plugin][core]")
 {
+  REQUIRE_FALSE(sandboxDir.empty());
+
   std::string error;
   PluginDebugObject *debugObject = nullptr;
 
@@ -290,6 +286,8 @@ SCENARIO("invoking plugin init", "[plugin][core]")
 
 SCENARIO("invoking plugin instance init", "[plugin][core]")
 {
+  REQUIRE_FALSE(sandboxDir.empty());
+
   std::string error;
   PluginDebugObject *debugObject = nullptr;
   void *ih                       = nullptr; // Instance handler pointer.
@@ -361,6 +359,8 @@ SCENARIO("invoking plugin instance init", "[plugin][core]")
 
 SCENARIO("unloading the plugin", "[plugin][core]")
 {
+  REQUIRE_FALSE(sandboxDir.empty());
+
   std::string error;
   PluginDebugObject *debugObject = nullptr;
 
@@ -409,6 +409,8 @@ SCENARIO("unloading the plugin", "[plugin][core]")
 
 SCENARIO("config reload", "[plugin][core]")
 {
+  REQUIRE_FALSE(sandboxDir.empty());
+
   std::string error;
   PluginDebugObject *debugObject = nullptr;
 
