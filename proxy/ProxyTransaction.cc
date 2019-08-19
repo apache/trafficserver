@@ -256,7 +256,7 @@ ProxyTransaction::get_proxy_ssn()
 void
 ProxyTransaction::set_proxy_ssn(ProxySession *new_proxy_ssn)
 {
-  proxy_ssn = new_parent;
+  proxy_ssn = new_proxy_ssn;
 }
 
 void

@@ -160,22 +160,22 @@ private:
 class Http2ClientSession : public ProxySession
 {
 public:
-  typedef ProxySession super; ///< Parent type.
-  typedef int (Http2ClientSession::*SessionHandler)(int, void *);
+  using super          = ProxySession; ///< Parent type.
+  using SessionHandler = int (Http2ClientSession::*)(int, void *);
 
   Http2ClientSession();
 
+  /////////////////////
+  // Methods
+
   // Implement ProxySession interface.
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
   void start() override;
+  void release(ProxyTransaction *trans) override;
   void destroy() override;
   void free() override;
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
 
-  bool
-  ready_to_free() const
-  {
-    return kill_me;
-  }
+  void write_reenable();
 
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
@@ -183,125 +183,31 @@ public:
                    bool owner = false) override;
   void do_io_close(int lerrno = -1) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
 
-  NetVConnection *
-  get_netvc() const override
-  {
-    return client_vc;
-  }
-
-  sockaddr const *
-  get_client_addr() override
-  {
-    return client_vc ? client_vc->get_remote_addr() : &cached_client_addr.sa;
-  }
-
-  sockaddr const *
-  get_local_addr() override
-  {
-    return client_vc ? client_vc->get_local_addr() : &cached_local_addr.sa;
-  }
-
-  void
-  write_reenable()
-  {
-    write_vio->reenable();
-  }
-
-  void set_upgrade_context(HTTPHdr *h);
-
-  const Http2UpgradeContext &
-  get_upgrade_context() const
-  {
-    return upgrade_context;
-  }
-
-  int
-  get_transact_count() const override
-  {
-    return connection_state.get_stream_requests();
-  }
-
-  void
-  release(ProxyTransaction *trans) override
-  {
-  }
-
-  Http2ConnectionState connection_state;
-  void
-  set_dying_event(int event)
-  {
-    dying_event = event;
-  }
-
-  int
-  get_dying_event() const
-  {
-    return dying_event;
-  }
-
-  bool
-  is_recursing() const
-  {
-    return recursion > 0;
-  }
-
-  const char *
-  get_protocol_string() const override
-  {
-    return "http/2";
-  }
-
-  int
-  populate_protocol(std::string_view *result, int size) const override
-  {
-    int retval = 0;
-    if (size > retval) {
-      result[retval++] = IP_PROTO_TAG_HTTP_2_0;
-      if (size > retval) {
-        retval += super::populate_protocol(result + retval, size - retval);
-      }
-    }
-    return retval;
-  }
-
-  const char *
-  protocol_contains(std::string_view prefix) const override
-  {
-    const char *retval = nullptr;
-
-    if (prefix.size() <= IP_PROTO_TAG_HTTP_2_0.size() && strncmp(IP_PROTO_TAG_HTTP_2_0.data(), prefix.data(), prefix.size()) == 0) {
-      retval = IP_PROTO_TAG_HTTP_2_0.data();
-    } else {
-      retval = super::protocol_contains(prefix);
-    }
-    return retval;
-  }
-
+  ////////////////////
+  // Accessors
+  bool ready_to_free() const;
+  NetVConnection *get_netvc() const override;
+  sockaddr const *get_client_addr() override;
+  sockaddr const *get_local_addr() override;
+  int get_transact_count() const override;
+  const char *get_protocol_string() const override;
+  int populate_protocol(std::string_view *result, int size) const override;
+  const char *protocol_contains(std::string_view prefix) const override;
   void increment_current_active_client_connections_stat() override;
   void decrement_current_active_client_connections_stat() override;
 
+  void set_upgrade_context(HTTPHdr *h);
+  const Http2UpgradeContext &get_upgrade_context() const;
+  Http2ConnectionState connection_state;
+  void set_dying_event(int event);
+  int get_dying_event() const;
+  bool is_recursing() const;
   void set_half_close_local_flag(bool flag);
-  bool
-  get_half_close_local_flag() const
-  {
-    return half_close_local;
-  }
-
-  bool
-  is_url_pushed(const char *url, int url_len)
-  {
-    return h2_pushed_urls.find(url) != h2_pushed_urls.end();
-  }
-
-  void
-  add_url_to_pushed_table(const char *url, int url_len)
-  {
-    if (h2_pushed_urls.size() < Http2::push_diary_size) {
-      h2_pushed_urls.emplace(url);
-    }
-  }
+  bool get_half_close_local_flag() const;
+  bool is_url_pushed(const char *url, int url_len);
+  void add_url_to_pushed_table(const char *url, int url_len);
+  int64_t write_buffer_size();
 
   // Record history from Http2ConnectionState
   void remember(const SourceLocation &location, int event, int reentrant = NO_REENTRANT);

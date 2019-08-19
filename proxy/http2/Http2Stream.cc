@@ -707,20 +707,6 @@ Http2Stream::send_response_body(bool call_update)
 }
 
 void
-Http2Stream::reenable(VIO *vio)
-{
-  if (this->proxy_ssn) {
-    if (vio->op == VIO::WRITE) {
-      SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-      update_write_request(vio->get_reader(), INT64_MAX, true);
-    } else if (vio->op == VIO::READ) {
-      SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-      update_read_request(INT64_MAX, true);
-    }
-  }
-}
-
-void
 Http2Stream::destroy()
 {
   REMEMBER(NO_EVENT, this->reentrancy_count);
