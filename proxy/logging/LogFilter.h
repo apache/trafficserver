@@ -382,50 +382,59 @@ LogFilterString::_checkCondition(OperatorFunction f, const char *field_value, si
   return retVal;
 }
 
+/*---------------------------------------------------------------------------
+ * find pattern from the query param
+ * 1) if pattern is not in the query param, return nullptr
+ * 2) if get the pattern in one param's value, seach again until it's in one param name, or nullptr if can't find it from param name
+---------------------------------------------------------------------------*/
 static const char *
 findPatternFromParamName(const char *lookup_query_param, const char *pattern)
 {
-  const char *p1 = strstr(lookup_query_param, pattern);
-  while (p1) {
+  const char *pattern_in_query_param = strstr(lookup_query_param, pattern);
+  while (pattern_in_query_param) {
     // wipe pattern in param name, need search again if find pattern in param value
-    const char *p10 = strchr(p1, '=');
-    if (!p10) {
-      // no "=" after p1, means p1 is not in the param name, and no more param after it
-      p1 = nullptr;
+    const char *param_value_str = strchr(pattern_in_query_param, '=');
+    if (!param_value_str) {
+      // no "=" after pattern_in_query_param, means pattern_in_query_param is not in the param name, and no more param after it
+      pattern_in_query_param = nullptr;
       break;
     }
-    const char *p11 = strchr(p1, '&');
-    if (p11 && p10 > p11) {
-      //"=" is after "&" followd by p1, means p1 is not in the param name
-      p1 = strstr(p11, pattern);
+    const char *param_name_str = strchr(pattern_in_query_param, '&');
+    if (param_name_str && param_value_str > param_name_str) {
+      //"=" is after "&" followd by pattern_in_query_param, means pattern_in_query_param is not in the param name
+      pattern_in_query_param = strstr(param_name_str, pattern);
       continue;
     }
-    // ensure p1 is in the param name now
+    // ensure pattern_in_query_param is in the param name now
     break;
   }
-  return p1;
+  return pattern_in_query_param;
 }
 
+/*---------------------------------------------------------------------------
+ * replace param value whose name contains pattern with same count 'X' of original value str length
+---------------------------------------------------------------------------*/
 static void
-updatePatternForFieldValue(char **field, const char *p1, int field_pos, char *buf_dest)
+updatePatternForFieldValue(char **field, const char *pattern_str, int field_pos, char *buf_dest)
 {
-  char tmp_text[strlen(buf_dest) + 10];
-  char *temp_text = tmp_text;
-  memcpy(temp_text, buf_dest, (p1 - buf_dest));
-  temp_text += (p1 - buf_dest);
-  const char *p2 = strchr(p1, '=');
-  if (p2) {
-    p2++;
-    memcpy(temp_text, p1, (p2 - p1));
-    temp_text += (p2 - p1);
-    const char *p3 = strchr(p2, '&');
-    if (p3) {
-      for (int i = 0; i < (p3 - p2); i++)
+  int buf_dest_len = strlen(buf_dest);
+  char buf_dest_to_field[buf_dest_len + 1];
+  char *temp_text = buf_dest_to_field;
+  memcpy(temp_text, buf_dest, (pattern_str - buf_dest));
+  temp_text += (pattern_str - buf_dest);
+  const char *value_str = strchr(pattern_str, '=');
+  if (value_str) {
+    value_str++;
+    memcpy(temp_text, pattern_str, (value_str - pattern_str));
+    temp_text += (value_str - pattern_str);
+    const char *next_param_str = strchr(value_str, '&');
+    if (next_param_str) {
+      for (int i = 0; i < (next_param_str - value_str); i++)
         temp_text[i] = 'X';
-      temp_text += (p3 - p2);
-      memcpy(temp_text, p3, ((buf_dest + strlen(buf_dest)) - p3));
+      temp_text += (next_param_str - value_str);
+      memcpy(temp_text, next_param_str, ((buf_dest + buf_dest_len) - next_param_str));
     } else {
-      for (int i = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++) {
+      for (int i = 0; i < ((buf_dest + buf_dest_len) - value_str); i++) {
         temp_text[i] = 'X';
       }
     }
@@ -433,8 +442,8 @@ updatePatternForFieldValue(char **field, const char *p1, int field_pos, char *bu
     return;
   }
 
-  tmp_text[strlen(buf_dest)] = '\0';
-  strcpy(*field, tmp_text);
+  buf_dest_to_field[buf_dest_len] = '\0';
+  strcpy(*field, buf_dest_to_field);
 }
 
 /*---------------------------------------------------------------------------
@@ -455,11 +464,11 @@ wipeField(char **field, char *pattern, const char *uppercase_field)
       return;
     }
 
-    const char *p1 = findPatternFromParamName(lookup_query_param, pattern);
-    if (p1) {
-      int field_pos = p1 - lookup_query_param;
-      p1            = query_param + field_pos;
-      updatePatternForFieldValue(field, p1, field_pos, buf_dest);
+    const char *pattern_in_param_name = findPatternFromParamName(lookup_query_param, pattern);
+    if (pattern_in_param_name) {
+      int field_pos         = pattern_in_param_name - lookup_query_param;
+      pattern_in_param_name = query_param + field_pos;
+      updatePatternForFieldValue(field, pattern_in_param_name, field_pos, buf_dest);
     }
   }
 }
