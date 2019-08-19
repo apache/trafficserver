@@ -6295,14 +6295,8 @@ HttpSM::find_http_resp_buffer_size(int64_t content_length)
       alloc_index = DEFAULT_RESPONSE_BUFFER_SIZE_INDEX;
     }
   } else {
-    int64_t buf_size;
-
-#ifdef WRITE_AND_TRANSFER
-    buf_size = HTTP_HEADER_BUFFER_SIZE + content_length - index_to_buffer_size(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
-#else
-    buf_size = index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX) + content_length;
-#endif
-    alloc_index = buffer_size_to_index(buf_size);
+    int64_t buf_size = index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX) + content_length;
+    alloc_index      = buffer_size_to_index(buf_size);
   }
 
   return alloc_index;
@@ -6337,18 +6331,8 @@ HttpSM::server_transfer_init(MIOBuffer *buf, int hdr_size)
     nbytes  = t_state.hdr_info.response_content_length + hdr_size;
   }
 
-  // Next order of business if copy the remaining data from the
-  //  header buffer into new buffer.
-
-  int64_t server_response_pre_read_bytes =
-#ifdef WRITE_AND_TRANSFER
-    /* relinquish the space in server_buffer and let
-       the tunnel use the trailing space
-     */
-    buf->write_and_transfer_left_over_space(server_buffer_reader, to_copy);
-#else
-    buf->write(server_buffer_reader, to_copy);
-#endif
+  // Next order of business if copy the remaining data from the header buffer into new buffer.
+  int64_t server_response_pre_read_bytes = buf->write(server_buffer_reader, to_copy);
   server_buffer_reader->consume(server_response_pre_read_bytes);
 
   //  If we know the length & copied the entire body

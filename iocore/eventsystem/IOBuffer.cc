@@ -108,31 +108,6 @@ MIOBuffer::write(const void *abuf, int64_t alen)
   return alen;
 }
 
-#ifdef WRITE_AND_TRANSFER
-/*
- * Same functionality as write but for the one small difference.
- * The space available in the last block is taken from the original
- * and this space becomes available to the copy.
- *
- */
-int64_t
-MIOBuffer::write_and_transfer_left_over_space(IOBufferReader *r, int64_t alen, int64_t offset)
-{
-  int64_t rval = write(r, alen, offset);
-  // reset the end markers of the original so that it cannot
-  // make use of the space in the current block
-  if (r->mbuf->_writer)
-    r->mbuf->_writer->_buf_end = r->mbuf->_writer->_end;
-  // reset the end marker of the clone so that it can make
-  // use of the space in the current block
-  if (_writer) {
-    _writer->_buf_end = _writer->data->data() + _writer->block_size();
-  }
-  return rval;
-}
-
-#endif
-
 int64_t
 MIOBuffer::write(IOBufferReader *r, int64_t len, int64_t offset)
 {
