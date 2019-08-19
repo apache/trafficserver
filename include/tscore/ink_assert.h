@@ -22,7 +22,8 @@
  */
 
 /***************************************************************************
-Assertions
+NOTE:  Direct use of these definitions is deprecated.  Use macros defined in
+<tscore/ts_assert.h> instead.
 
 ***************************************************************************/
 #pragma once
