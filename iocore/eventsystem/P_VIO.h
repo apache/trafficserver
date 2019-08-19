@@ -104,6 +104,7 @@ VIO::set_continuation(Continuation *acont)
 TS_INLINE void
 VIO::reenable()
 {
+  this->_disabled = false;
   if (vc_server) {
     vc_server->reenable(this);
   }
@@ -117,7 +118,20 @@ VIO::reenable()
 TS_INLINE void
 VIO::reenable_re()
 {
+  this->_disabled = false;
   if (vc_server) {
     vc_server->reenable_re(this);
   }
+}
+
+TS_INLINE void
+VIO::disable()
+{
+  this->_disabled = true;
+}
+
+TS_INLINE bool
+VIO::is_disabled()
+{
+  return this->_disabled;
 }

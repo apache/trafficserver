@@ -101,9 +101,7 @@ public:
   virtual const char *get_protocol_string() const = 0;
   virtual bool is_transparent_passthrough_allowed() const;
 
-  virtual void ssn_hook_append(TSHttpHookID id, INKContInternal *cont);
-
-  virtual void ssn_hook_prepend(TSHttpHookID id, INKContInternal *cont);
+  virtual void hook_add(TSHttpHookID id, INKContInternal *cont);
 
   virtual bool is_chunked_encoding_supported() const;
 
@@ -146,8 +144,8 @@ public:
   TSHttpHookID get_hookid() const;
   bool has_hooks() const;
 
-  APIHook *ssn_hook_get(TSHttpHookID id) const;
-
+  APIHook *hook_get(TSHttpHookID id) const;
+  HttpAPIHooks const *feature_hooks() const;
   ////////////////////
   // Members
 
@@ -163,6 +161,9 @@ public:
   ink_hrtime ssn_last_txn_time = 0;
 
 protected:
+  // Hook dispatching state
+  HttpHookState hook_state;
+
   // XXX Consider using a bitwise flags variable for the following flags, so
   // that we can make the best use of internal alignment padding.
 
@@ -177,9 +178,7 @@ private:
   void handle_api_return(int event);
   int state_api_callout(int event, void *edata);
 
-  APIHookScope api_scope  = API_HOOK_SCOPE_NONE;
-  TSHttpHookID api_hookid = TS_HTTP_READ_REQUEST_HDR_HOOK;
-  APIHook *api_current    = nullptr;
+  APIHook const *cur_hook = nullptr;
   HttpAPIHooks api_hooks;
   void *user_args[TS_HTTP_MAX_USER_ARG];
 

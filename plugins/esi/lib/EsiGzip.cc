@@ -78,15 +78,6 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
     cdata[2] = Z_DEFLATED;
     cdata[9] = OS_TYPE;
 
-    //_zstrm.zalloc = Z_NULL;
-    //_zstrm.zfree = Z_NULL;
-    //_zstrm.opaque = Z_NULL;
-    // if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS,
-    //               ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
-    //  _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
-    //  return false;
-    //}
-
     _crc = crc32(0, Z_NULL, 0);
   }
 

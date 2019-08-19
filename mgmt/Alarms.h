@@ -84,7 +84,6 @@ public:
   void resetSeenFlag(char *ip);
   void clearUnSeen(char *ip);
 
-  void checkSystemNAlert();
   void execAlarmBin(const char *desc);
 
   const char *getAlarmText(alarm_t id);

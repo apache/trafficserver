@@ -21,7 +21,8 @@
 #include <cstdio>
 #include <unistd.h>
 
-#include "mysql/mysql.h"
+#include <mysql/mysql.h>
+
 #include "lib/iniparser.h"
 #include "default.h"
 

@@ -54,7 +54,7 @@ QUICNextProtocolAccept::mainEvent(int event, void *edata)
   switch (event) {
   case NET_EVENT_ACCEPT:
     ink_release_assert(netvc != nullptr);
-    netvc->registerNextProtocolSet(&this->protoset);
+    netvc->registerNextProtocolSet(&this->protoset, this->protoenabled);
     return EVENT_CONT;
   default:
     netvc->do_io_close();
@@ -75,10 +75,10 @@ QUICNextProtocolAccept::registerEndpoint(const char *protocol, Continuation *han
   return this->protoset.registerEndpoint(protocol, handler);
 }
 
-bool
-QUICNextProtocolAccept::unregisterEndpoint(const char *protocol, Continuation *handler)
+void
+QUICNextProtocolAccept::enableProtocols(const SessionProtocolSet &protos)
 {
-  return this->protoset.unregisterEndpoint(protocol, handler);
+  this->protoenabled = protos;
 }
 
 QUICNextProtocolAccept::QUICNextProtocolAccept() : SessionAccept(nullptr)
@@ -90,12 +90,6 @@ SSLNextProtocolSet *
 QUICNextProtocolAccept::getProtoSet()
 {
   return &this->protoset;
-}
-
-SSLNextProtocolSet *
-QUICNextProtocolAccept::cloneProtoSet()
-{
-  return this->protoset.clone();
 }
 
 QUICNextProtocolAccept::~QUICNextProtocolAccept() {}

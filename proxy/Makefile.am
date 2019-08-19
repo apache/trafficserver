@@ -37,6 +37,7 @@ AM_CPPFLAGS += \
 	-I$(abs_srcdir)/hdrs \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/lib/yamlcpp/include \
 	$(TS_INCLUDES)
 
 noinst_HEADERS = \

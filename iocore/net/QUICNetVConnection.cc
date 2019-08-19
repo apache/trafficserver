@@ -525,6 +525,7 @@ QUICNetVConnection::free(EThread *t)
 
     super::clear();
   */
+  ALPNSupport::clear();
   this->_packet_handler->close_connection(this);
 }
 
@@ -1033,22 +1034,32 @@ QUICNetVConnection::protocol_contains(std::string_view prefix) const
   return retval;
 }
 
-void
-QUICNetVConnection::registerNextProtocolSet(SSLNextProtocolSet *s)
+// ALPN TLS extension callback. Given the client's set of offered
+// protocols, we have to select a protocol to use for this session.
+int
+QUICNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
+                                         unsigned inlen) const
 {
-  this->_next_protocol_set = s;
+  const unsigned char *npnptr = nullptr;
+  unsigned int npnsize        = 0;
+  if (this->getNPN(&npnptr, &npnsize)) {
+    // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
+    // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
+    if (SSL_select_next_proto((unsigned char **)out, outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
+      Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
+      return SSL_TLSEXT_ERR_OK;
+    }
+  }
+
+  *out    = nullptr;
+  *outlen = 0;
+  return SSL_TLSEXT_ERR_NOACK;
 }
 
 bool
 QUICNetVConnection::is_closed() const
 {
   return this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closed);
-}
-
-SSLNextProtocolSet *
-QUICNetVConnection::next_protocol_set() const
-{
-  return this->_next_protocol_set;
 }
 
 QUICPacketNumber
@@ -1975,11 +1986,10 @@ QUICNetVConnection::_start_application()
     }
 
     if (netvc_context == NET_VCONNECTION_IN) {
-      Continuation *endpoint = this->_next_protocol_set->findEndpoint(app_name, app_name_len);
-      if (endpoint == nullptr) {
+      if (!this->setSelectedProtocol(app_name, app_name_len)) {
         this->_handle_error(std::make_unique<QUICConnectionError>(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR));
       } else {
-        endpoint->handleEvent(NET_EVENT_ACCEPT, this);
+        this->endpoint()->handleEvent(NET_EVENT_ACCEPT, this);
       }
     } else {
       this->action_.continuation->handleEvent(NET_EVENT_OPEN, this);

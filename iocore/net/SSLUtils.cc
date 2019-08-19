@@ -490,11 +490,13 @@ ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
     netvc->serverName = "";
   }
 
-  // Rerun the actions in case a plugin changed the server name
+#if !TS_USE_HELLO_CB
+  // Only call the SNI actions here if not already performed in the HELLO_CB
   int ret = PerformAction(netvc, netvc->serverName);
   if (ret != SSL_TLSEXT_ERR_OK) {
     return SSL_TLSEXT_ERR_ALERT_FATAL;
   }
+#endif
   if (netvc->has_tunnel_destination() && !netvc->decrypt_tunnel()) {
     netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
   }

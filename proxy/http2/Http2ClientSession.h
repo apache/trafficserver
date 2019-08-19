@@ -30,6 +30,7 @@
 #include <string_view>
 #include "tscore/ink_inet.h"
 #include "tscore/History.h"
+#include "Milestones.h"
 
 // Name                       Edata                 Description
 // HTTP2_SESSION_EVENT_INIT   Http2ClientSession *  HTTP/2 session is born
@@ -43,10 +44,17 @@
 #define HTTP2_SESSION_EVENT_XMIT (HTTP2_SESSION_EVENTS_START + 4)
 #define HTTP2_SESSION_EVENT_SHUTDOWN_INIT (HTTP2_SESSION_EVENTS_START + 5)
 #define HTTP2_SESSION_EVENT_SHUTDOWN_CONT (HTTP2_SESSION_EVENTS_START + 6)
+#define HTTP2_SESSION_EVENT_REENABLE (HTTP2_SESSION_EVENTS_START + 7)
 
 enum class Http2SessionCod : int {
   NOT_PROVIDED,
   HIGH_ERROR_RATE,
+};
+
+enum class Http2SsnMilestone {
+  OPEN = 0,
+  CLOSE,
+  LAST_ENTRY,
 };
 
 size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
@@ -295,12 +303,6 @@ public:
     }
   }
 
-  int64_t
-  write_buffer_size()
-  {
-    return write_buffer->max_read_avail();
-  }
-
   // Record history from Http2ConnectionState
   void remember(const SourceLocation &location, int event, int reentrant = NO_REENTRANT);
 
@@ -321,6 +323,8 @@ private:
   // if there are multiple frames ready on the wire
   int state_process_frame_read(int event, VIO *vio, bool inside_frame);
 
+  bool _should_do_something_else();
+
   int64_t total_write_len        = 0;
   SessionHandler session_handler = nullptr;
   NetVConnection *client_vc      = nullptr;
@@ -334,6 +338,7 @@ private:
   IpEndpoint cached_local_addr;
 
   History<HISTORY_DEFAULT_SIZE> _history;
+  Milestones<Http2SsnMilestone, static_cast<size_t>(Http2SsnMilestone::LAST_ENTRY)> _milestones;
 
   // For Upgrade: h2c
   Http2UpgradeContext upgrade_context;
@@ -346,6 +351,9 @@ private:
   int recursion                  = 0;
 
   std::unordered_set<std::string> h2_pushed_urls;
+
+  Event *_reenable_event = nullptr;
+  int _n_frame_read      = 0;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;

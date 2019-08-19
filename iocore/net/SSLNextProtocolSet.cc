@@ -25,6 +25,7 @@
 #include "ts/apidefs.h"
 #include "tscore/ink_platform.h"
 #include "P_SSLNextProtocolSet.h"
+#include "tscpp/util/TextView.h"
 
 // For currently defined protocol strings, see
 // http://technotes.googlecode.com/git/nextprotoneg.html. The OpenSSL
@@ -42,8 +43,8 @@ append_protocol(const char *proto, unsigned char *buf)
   return buf + sz;
 }
 
-static bool
-create_npn_advertisement(const SSLNextProtocolSet::NextProtocolEndpoint::list_type &endpoints, unsigned char **npn, size_t *len)
+bool
+SSLNextProtocolSet::create_npn_advertisement(const SessionProtocolSet &enabled, unsigned char **npn, size_t *len) const
 {
   const SSLNextProtocolSet::NextProtocolEndpoint *ep;
   unsigned char *advertised;
@@ -65,8 +66,10 @@ create_npn_advertisement(const SSLNextProtocolSet::NextProtocolEndpoint::list_ty
   }
 
   for (ep = endpoints.head; ep != nullptr; ep = endpoints.next(ep)) {
-    Debug("ssl", "advertising protocol %s, %p", ep->protocol, ep->endpoint);
-    advertised = append_protocol(ep->protocol, advertised);
+    if (enabled.contains(globalSessionProtocolNameRegistry.toIndex(ts::TextView{ep->protocol, strlen(ep->protocol)}))) {
+      Debug("ssl", "advertising protocol %s, %p", ep->protocol, ep->endpoint);
+      advertised = append_protocol(ep->protocol, advertised);
+    }
   }
 
   return true;
@@ -75,31 +78,6 @@ fail:
   ats_free(*npn);
   *npn = nullptr;
   *len = 0;
-  return false;
-}
-
-// copies the protocols but not the endpoints
-
-SSLNextProtocolSet *
-SSLNextProtocolSet::clone() const
-{
-  const SSLNextProtocolSet::NextProtocolEndpoint *ep;
-  SSLNextProtocolSet *newProtoSet = new SSLNextProtocolSet();
-  for (ep = this->endpoints.head; ep != nullptr; ep = this->endpoints.next(ep)) {
-    newProtoSet->registerEndpoint(ep->protocol, ep->endpoint);
-  }
-  return newProtoSet;
-}
-
-bool
-SSLNextProtocolSet::advertiseProtocols(const unsigned char **out, unsigned *len) const
-{
-  if (npn && npnsz) {
-    *out = npn;
-    *len = npnsz;
-    return true;
-  }
-
   return false;
 }
 
@@ -115,31 +93,7 @@ SSLNextProtocolSet::registerEndpoint(const char *proto, Continuation *ep)
 
   if (!findEndpoint((const unsigned char *)proto, len)) {
     this->endpoints.push(new NextProtocolEndpoint(proto, ep));
-
-    if (npn) {
-      ats_free(npn);
-      npn   = nullptr;
-      npnsz = 0;
-    }
-    create_npn_advertisement(this->endpoints, &npn, &npnsz);
-
     return true;
-  }
-
-  return false;
-}
-
-bool
-SSLNextProtocolSet::unregisterEndpoint(const char *proto, Continuation *ep)
-{
-  for (NextProtocolEndpoint *e = this->endpoints.head; e; e = this->endpoints.next(e)) {
-    if (strcmp(proto, e->protocol) == 0 && (ep == nullptr || e->endpoint == ep)) {
-      // Protocol must be registered only once; no need to remove
-      // any more entries.
-      this->endpoints.remove(e);
-      create_npn_advertisement(this->endpoints, &npn, &npnsz);
-      return true;
-    }
   }
 
   return false;
@@ -161,8 +115,6 @@ SSLNextProtocolSet::SSLNextProtocolSet() {}
 
 SSLNextProtocolSet::~SSLNextProtocolSet()
 {
-  ats_free(this->npn);
-
   for (NextProtocolEndpoint *ep; (ep = this->endpoints.pop());) {
     delete ep;
   }

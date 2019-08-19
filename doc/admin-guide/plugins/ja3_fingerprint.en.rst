@@ -32,11 +32,11 @@ for creating SSL/TLS client fingerprints by concatenating values in the `TLS Cli
 <https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__ and hashing the result using `MD5
 <https://www.openssl.org/docs/man1.1.0/man3/MD5_Init.html>`__ to produce a 32 character fingerprint.
 A particular instance of malware tends to use the same encryption code/client, which makes it an
-effective way to detect malicious clients even when superficial details are modifed. More info about
+effective way to detect malicious clients even when superficial details are modified. More info about
 JA3 is available `here <https://github.com/salesforce/ja3>`__.
 
 The calculated JA3 fingerprints are then appended to upstream request in the field ``X-JA3-Sig``
-(to be processed at upstream). If multiple dups exist for the field name, it will append to the last 
+(to be processed at upstream). If multiple duplicates exist for the field name, it will append to the last 
 occurrence; if none exists, it will add such a field to the headers. The signatures can also be logged locally.
 
 Plugin Configuration

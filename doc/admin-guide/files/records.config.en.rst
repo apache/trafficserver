@@ -287,13 +287,13 @@ System Variables
    While rolling default behavior is to rename, close and re-open the log file *only* when/if there is
    something to log to the log file. This option opens a new log file right after rolling even if there
    is nothing to log (i.e. nothing to be logged due to lack of requests to the server)
-   which may lead to 0-sized log files while rollong. See :doc:`../logging/rotation.en` for an use-case
+   which may lead to 0-sized log files while rolling. See :doc:`../logging/rotation.en` for an use-case
    for this option.
 
    ===== ======================================================================
    Value Description
    ===== ======================================================================
-   ``0`` No empty log files created and rolloed if there was nothing to log
+   ``0`` No empty log files created and rolled if there was nothing to log
    ``1`` Allow empty log files to be created and  rolled even if there was nothing to log
    ===== ======================================================================
 
@@ -772,7 +772,7 @@ mptcp
 
 .. note::
 
-   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.request_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -798,7 +798,7 @@ mptcp
 
 .. note::
 
-   The ``Via`` transaction code can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction code can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.response_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -1801,7 +1801,7 @@ Security
    .. important::
 
        If you enable this option, then you must also specify
-       a filtering rule in the ip_allow.config file to allow only certain
+       a filtering rule in the ip_allow.yaml file to allow only certain
        machines to push content into the cache.
 
 .. ts:cv:: CONFIG proxy.config.http.max_post_size INT 0
@@ -2852,6 +2852,26 @@ Logging Configuration
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
    <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
 
+.. ts:cv:: CONFIG proxy.config.http2.connection.slow.log.threshold INT 0
+   :reloadable:
+   :units: milliseconds
+
+   If set to a non-zero value :arg:`N` then any HTTP/2 connection
+   that takes longer than :arg:`N` milliseconds from open to close will cause
+   its timing stats to be written to the :ts:cv:`debugging log file
+   <proxy.config.output.logfile>`. This is identifying data about the
+   transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
+
+.. ts:cv:: CONFIG proxy.config.http2.stream.slow.log.threshold INT 0
+   :reloadable:
+   :units: milliseconds
+
+   If set to a non-zero value :arg:`N` then any HTTP/2 stream
+   that takes longer than :arg:`N` milliseconds from open to close will cause
+   its timing stats to be written to the :ts:cv:`debugging log file
+   <proxy.config.output.logfile>`. This is identifying data about the
+   transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
+
 .. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
    :reloadable:
 
@@ -3611,10 +3631,39 @@ HTTP/2 Configuration
    Clients exceeded this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
 
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_frames_per_minute INT 14
+   :reloadable:
+
+   Specifies how many SETTINGS frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_ping_frames_per_minute INT 60
+   :reloadable:
+
+   Specifies how many number of PING frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_priority_frames_per_minute INT 120
+   :reloadable:
+
+   Specifies how many number of PRIORITY frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.min_avg_window_update FLOAT 2560.0
+   :reloadable:
+
+   Specifies the minimum average window increment |TS| allows. The average will be calculated based on the last 5 WINDOW_UPDATE frames.
+   Clients that send smaller window increments lower than this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+
 HTTP/3 Configuration
 ====================
 
-There is no configuration available yet on this release. 
+There is no configuration available yet on this release.
 
 QUIC Configuration
 ====================

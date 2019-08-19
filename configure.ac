@@ -35,7 +35,7 @@
 m4_define([TS_VERSION_S],[9.0.0])
 m4_define([TS_VERSION_N],[9000000])
 
-AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
+AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver], [https://trafficserver.apache.org])
 AC_PREREQ([2.59])
 AC_CONFIG_AUX_DIR([build/_aux])
 AC_CONFIG_SRCDIR([src/traffic_server/traffic_server.cc])

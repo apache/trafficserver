@@ -771,17 +771,6 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
 
   printf("%s\n\n", n);
 
-#if 0
-  printf("Host Database\n");
-  HostDBCache hd;
-  if (hd.start(fix) < 0) {
-    printf("\tunable to open Host Database, %s failed\n", n);
-    return CMD_OK;
-  }
-  hd.check("hostdb.config", fix);
-  hd.reset();
-#endif
-
   cacheProcessor.afterInitCallbackSet(&CB_cmd_cache_check);
   if (cacheProcessor.start_internal(PROCESSOR_CHECK) < 0) {
     printf("\nbad cache configuration, %s failed\n", n);
@@ -1969,7 +1958,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
       }
     }
-    SNIConfig::cloneProtoSet();
     // Plugins can register their own configuration names so now after they've done that
     // check for unexpected names. This is very late because remap plugins must be allowed to
     // fire up as well.

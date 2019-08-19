@@ -188,7 +188,6 @@ LocalManager::processRunning()
 LocalManager::LocalManager(bool proxy_on, bool listen) : BaseManager(), run_proxy(proxy_on), listen_for_proxy(listen)
 {
   bool found;
-  std::string rundir(RecConfigReadRuntimeDir());
   std::string bindir(RecConfigReadBinDir());
   std::string sysconfdir(RecConfigReadConfigDir());
 

@@ -184,12 +184,6 @@ struct ShowNet : public ShowCont {
     return EVENT_CONT;
   }
   int
-  showSingleConnection(int event, Event *e)
-  {
-    CHECK_SHOW(begin("Net Connection"));
-    return complete(event, e);
-  }
-  int
   showHostnames(int event, Event *e)
   {
     CHECK_SHOW(begin("Net Connections to/from Host"));

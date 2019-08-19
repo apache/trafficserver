@@ -214,12 +214,6 @@ public:
     return _direction;
   }
 
-  SSLNextProtocolSet *
-  next_protocol_set() const override
-  {
-    return nullptr;
-  }
-
   void
   close(QUICConnectionErrorUPtr error) override
   {
@@ -257,6 +251,13 @@ public:
   negotiated_application_name() const override
   {
     return negotiated_application_name_sv;
+  }
+
+  int
+  select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
+                       unsigned inlen) const override
+  {
+    return SSL_TLSEXT_ERR_OK;
   }
 
   int _transmit_count   = 0;
@@ -321,10 +322,11 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
     return NET_VCONNECTION_OUT;
   }
 
-  SSLNextProtocolSet *
-  next_protocol_set() const override
+  int
+  select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
+                       unsigned inlen) const override
   {
-    return nullptr;
+    return SSL_TLSEXT_ERR_OK;
   }
 
   bool

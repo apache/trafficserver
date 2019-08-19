@@ -39,7 +39,7 @@ Introduction
 ------------
 
 A brief section in which the plugin's core functionality is explained in a
-quickly digestable paragraph or two. For the sake of brevity, this section
+quickly digestible paragraph or two. For the sake of brevity, this section
 should omit discussion of configuration details in favor of providing a more
 10,000 foot view of the plugin features.
 

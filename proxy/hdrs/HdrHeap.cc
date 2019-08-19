@@ -814,7 +814,7 @@ Failed:
   return -1;
 }
 
-// bool HdrHeap::check_marshalled(char* buf, int buf_length) {
+// bool HdrHeap::check_marshalled(char* buf, int buf_length)
 //
 //   Takes in marshalled buffer and verifies whether stuff appears
 //     to be sane.  Returns true is sane.  Returns false if corrupt
@@ -855,7 +855,7 @@ HdrHeap::check_marshalled(uint32_t buf_length)
 
 // int HdrHeap::unmarshal(int buf_length, int obj_type,
 //                       HdrHeapObjImpl** found_obj,
-//                       RefCountObj* block_ref) {
+//                       RefCountObj* block_ref)
 //
 //   Takes a marshalled representation and swizzles offsets
 //     so they become live pointers and make the heap usable.

@@ -42,6 +42,7 @@
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
+#include "P_ALPNSupport.h"
 
 // These are included here because older OpenSSL libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -67,8 +68,6 @@
 #define SSL_DEF_TLS_RECORD_BYTE_THRESHOLD 1000000
 #define SSL_DEF_TLS_RECORD_MSEC_THRESHOLD 1000
 
-class SSLNextProtocolSet;
-class SSLNextProtocolAccept;
 struct SSLCertLookup;
 
 typedef enum {
@@ -87,7 +86,7 @@ enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHA
 //  A VConnection for a network socket.
 //
 //////////////////////////////////////////////////////////////////
-class SSLNetVConnection : public UnixNetVConnection
+class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
 
@@ -141,7 +140,6 @@ public:
   int sslClientHandShakeEvent(int &err);
   void net_read_io(NetHandler *nh, EThread *lthread) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
-  void registerNextProtocolSet(SSLNextProtocolSet *);
   void do_io_close(int lerrno = -1) override;
 
   ////////////////////////////////////////////////////////////
@@ -154,12 +152,6 @@ public:
   static int advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned *outlen, void *);
   static int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
                                   unsigned inlen, void *);
-
-  Continuation *
-  endpoint() const
-  {
-    return npnEndpoint;
-  }
 
   bool
   getSSLClientRenegotiationAbort() const
@@ -449,15 +441,11 @@ private:
     HANDSHAKE_HOOKS_DONE
   } sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
 
-  const SSLNextProtocolSet *npnSet = nullptr;
-  Continuation *npnEndpoint        = nullptr;
-  SessionAccept *sessionAcceptPtr  = nullptr;
-  bool sslTrace                    = false;
-  int64_t redoWriteSize            = 0;
-  char *tunnel_host                = nullptr;
-  in_port_t tunnel_port            = 0;
-  bool tunnel_decrypt              = false;
-  X509_STORE_CTX *verify_cert      = nullptr;
+  int64_t redoWriteSize       = 0;
+  char *tunnel_host           = nullptr;
+  in_port_t tunnel_port       = 0;
+  bool tunnel_decrypt         = false;
+  X509_STORE_CTX *verify_cert = nullptr;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

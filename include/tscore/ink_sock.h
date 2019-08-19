@@ -50,7 +50,6 @@ int safe_clr_fl(int fd, int arg);
 int safe_blocking(int fd);
 int safe_nonblocking(int fd);
 
-int write_ready(int fd, int timeout_msec = 0);
 int read_ready(int fd, int timeout_msec = 0);
 
 char fd_read_char(int fd);

@@ -117,32 +117,6 @@ UrlRewrite::SetReverseFlag(int flag)
   }
 }
 
-/**
-  Allocaites via new, and adds a mapping like this map /ink/rh
-  http://{backdoor}/ink/rh
-
-  These {backdoor} things are then rewritten in a request-hdr hook.  (In the
-  future it might make sense to move the rewriting into HttpSM directly.)
-
-*/
-url_mapping *
-UrlRewrite::SetupBackdoorMapping()
-{
-  const char from_url[] = "/ink/rh";
-  const char to_url[]   = "http://{backdoor}/ink/rh";
-
-  url_mapping *mapping = new url_mapping;
-
-  mapping->fromURL.create(nullptr);
-  mapping->fromURL.parse(from_url, sizeof(from_url) - 1);
-  mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
-
-  mapping->toURL.create(nullptr);
-  mapping->toURL.parse(to_url, sizeof(to_url) - 1);
-
-  return mapping;
-}
-
 /** Deallocated a hash table and all the url_mappings in it. */
 void
 UrlRewrite::_destroyTable(std::unique_ptr<URLTable> &h_table)

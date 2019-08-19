@@ -16,6 +16,14 @@
 
 .PHONY: help dirhtml singlehtml epub latex man changes linkcheck doxygen
 
+# You can set these variables from the command line.
+PAPER         = letter
+BUILDDIR      = docbuild
+
+if BUILD_DOCS
+
+SUBDIRS = uml
+
 if BUILD_MANPAGES
 
 man1_MANS = $(TS_MAN1_MANPAGES)
@@ -28,25 +36,9 @@ $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS): man
 # Hook the 'all' target so that the man pages get generated in the "all" target, prior
 # to "make install". If we leave it to "make install" time, then the man pages are likely
 # to me generated as root.
-if BUILD_DOCS
-SUBDIRS = uml
 all-am: $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man8_MANS)
-endif
 
-endif
-
-clean-local:
-	-rm -rf $(BUILDDIR)/* _build/html/* xml
-
-doxygen: Doxyfile
-	$(DOXYGEN)
-
-# Makefile for Sphinx documentation
-#
-
-# You can set these variables from the command line.
-PAPER         = letter
-BUILDDIR      = docbuild
+endif # BUILD_MANPAGES
 
 # [amc] LaTex apparently doesn't work as of Sphinx 1.6.1
 # see https://media.readthedocs.org/pdf/sphinx/1.6.3/sphinx.pdf
@@ -63,18 +55,6 @@ SBUILD = PAPEROPT_a4="$(PAPEROPT_a4)" PAPEROPT_letter="$(PAPEROPT_letter)" PAPER
 	$(srcdir)/sbuild "$(SPHINXBUILD)" \
 	-c $(srcdir) \
 	$(ALLSPHINXOPTS)
-
-help:
-	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  html       to make standalone HTML files"
-	@echo "  dirhtml    to make HTML files named index.html in directories"
-	@echo "  singlehtml to make a single large HTML file"
-	@echo "  epub       to make an epub"
-	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
-	@echo "  latexpdf   to make LaTeX files and run them through pdflatex"
-	@echo "  man        to make manual pages"
-	@echo "  changes    to make an overview of all changed/added/deprecated items"
-	@echo "  linkcheck  to check all external links for integrity"
 
 html-local:
 	$(SBUILD) -d $(BUILDDIR)/doctrees -b html $(srcdir) $(BUILDDIR)/html
@@ -111,3 +91,50 @@ changes:
 
 linkcheck:
 	@echo FIXME
+
+else # NOT BUILD_DOCS
+
+html-local:
+	@echo "Documentation not enabled. See configure --enable-docs."
+
+dirhtml:
+	@echo "Documentation not enabled. See configure --enable-docs."
+
+singlehtml:
+	@echo "Documentation not enabled. See configure --enable-docs."
+
+epub:
+	@echo "Documentation not enabled. See configure --enable-docs."
+
+latex:
+	@echo "Documentation not enabled. See configure --enable-docs."
+
+man:
+	@echo "Documentation not enabled. See configure --enable-docs."
+
+changes:
+	@echo "Documentation not enabled. See configure --enable-docs."
+
+linkcheck:
+	@echo "Documentation not enabled. See configure --enable-docs."
+
+endif # BUILD_DOCS
+
+clean-local:
+	-rm -rf $(BUILDDIR)/* _build/html/* xml
+
+doxygen: Doxyfile
+	$(DOXYGEN)
+
+help:
+	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "  html       to make standalone HTML files"
+	@echo "  dirhtml    to make HTML files named index.html in directories"
+	@echo "  singlehtml to make a single large HTML file"
+	@echo "  epub       to make an epub"
+	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  latexpdf   to make LaTeX files and run them through pdflatex"
+	@echo "  man        to make manual pages"
+	@echo "  changes    to make an overview of all changed/added/deprecated items"
+	@echo "  linkcheck  to check all external links for integrity"
+

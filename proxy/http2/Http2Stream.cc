@@ -26,6 +26,8 @@
 #include "Http2ClientSession.h"
 #include "../http/HttpSM.h"
 
+#include <numeric>
+
 #define REMEMBER(e, r)                                    \
   {                                                       \
     this->_history.push_back(MakeSourceLocation(), e, r); \
@@ -146,6 +148,9 @@ Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_ta
 void
 Http2Stream::send_request(Http2ConnectionState &cstate)
 {
+  ink_release_assert(this->current_reader != nullptr);
+  this->_http_sm_id = this->current_reader->sm_id;
+
   // Convert header to HTTP/1.1 format
   http2_convert_header_from_2_to_1_1(&_req_header);
 
@@ -627,7 +632,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
         if (is_done) {
           this->mark_body_done();
         }
-
+        this->_milestones.mark(Http2StreamMilestone::START_TX_DATA_FRAMES);
         this->send_response_body(call_update);
       }
       break;
@@ -642,7 +647,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
     if (write_vio.ntodo() == bytes_avail || is_done) {
       this->mark_body_done();
     }
-
+    this->_milestones.mark(Http2StreamMilestone::START_TX_DATA_FRAMES);
     this->send_response_body(call_update);
   }
 
@@ -725,6 +730,8 @@ Http2Stream::destroy()
   ink_release_assert(this->closed);
   ink_release_assert(reentrancy_count == 0);
 
+  uint64_t cid = 0;
+
   // Safe to initiate SSN_CLOSE if this is the last stream
   if (proxy_ssn) {
     Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(proxy_ssn);
@@ -735,13 +742,38 @@ Http2Stream::destroy()
 
     // Update session's stream counts, so it accurately goes into keep-alive state
     h2_proxy_ssn->connection_state.release_stream(this);
+
+    cid = proxy_ssn->connection_id();
   }
 
   // Clean up the write VIO in case of inactivity timeout
   this->do_io_write(nullptr, 0, nullptr);
 
-  ink_hrtime end_time = Thread::get_hrtime();
-  HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, _thread, end_time - _start_time);
+  this->_milestones.mark(Http2StreamMilestone::CLOSE);
+
+  ink_hrtime total_time = this->_milestones.elapsed(Http2StreamMilestone::OPEN, Http2StreamMilestone::CLOSE);
+  HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, this->_thread, total_time);
+
+  // Slow Log
+  if (Http2::stream_slow_log_threshold != 0 && ink_hrtime_from_msec(Http2::stream_slow_log_threshold) < total_time) {
+    Error("[%" PRIu64 "] [%" PRIu32 "] [%" PRId64 "] Slow H2 Stream: "
+          "open: %" PRIu64 " "
+          "dec_hdrs: %.3f "
+          "txn: %.3f "
+          "enc_hdrs: %.3f "
+          "tx_hdrs: %.3f "
+          "tx_data: %.3f "
+          "close: %.3f",
+          cid, static_cast<uint32_t>(this->_id), this->_http_sm_id,
+          ink_hrtime_to_msec(this->_milestones[Http2StreamMilestone::OPEN]),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_DECODE_HEADERS),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TXN),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_ENCODE_HEADERS),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TX_HEADERS_FRAMES),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TX_DATA_FRAMES),
+          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::CLOSE));
+  }
+
   _req_header.destroy();
   response_header.destroy();
 
@@ -905,6 +937,69 @@ void
 Http2Stream::decrement_client_transactions_stat()
 {
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
+}
+
+ssize_t
+Http2Stream::client_rwnd() const
+{
+  return this->_client_rwnd;
+}
+
+Http2ErrorCode
+Http2Stream::increment_client_rwnd(size_t amount)
+{
+  this->_client_rwnd += amount;
+
+  this->_recent_rwnd_increment[this->_recent_rwnd_increment_index] = amount;
+  ++this->_recent_rwnd_increment_index;
+  this->_recent_rwnd_increment_index %= this->_recent_rwnd_increment.size();
+  double sum = std::accumulate(this->_recent_rwnd_increment.begin(), this->_recent_rwnd_increment.end(), 0.0);
+  double avg = sum / this->_recent_rwnd_increment.size();
+  if (avg < Http2::min_avg_window_update) {
+    return Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
+  }
+  return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+}
+
+Http2ErrorCode
+Http2Stream::decrement_client_rwnd(size_t amount)
+{
+  this->_client_rwnd -= amount;
+  if (this->_client_rwnd < 0) {
+    return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
+  } else {
+    return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+  }
+}
+
+ssize_t
+Http2Stream::server_rwnd() const
+{
+  return this->_server_rwnd;
+}
+
+Http2ErrorCode
+Http2Stream::increment_server_rwnd(size_t amount)
+{
+  this->_server_rwnd += amount;
+  return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+}
+
+Http2ErrorCode
+Http2Stream::decrement_server_rwnd(size_t amount)
+{
+  this->_server_rwnd -= amount;
+  if (this->_server_rwnd < 0) {
+    return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
+  } else {
+    return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+  }
+}
+
+void
+Http2Stream::mark_milestone(Http2StreamMilestone type)
+{
+  this->_milestones.mark(type);
 }
 
 bool

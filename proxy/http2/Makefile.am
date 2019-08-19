@@ -45,6 +45,8 @@ libhttp2_a_SOURCES = \
 	Http2DebugNames.cc \
 	Http2DebugNames.h \
 	Http2DependencyTree.h \
+	Http2FrequencyCounter.h \
+	Http2FrequencyCounter.cc \
 	Http2Stream.cc \
 	Http2Stream.h \
 	Http2SessionAccept.cc \
@@ -57,10 +59,12 @@ endif
 
 check_PROGRAMS = \
 	test_Http2DependencyTree \
+	test_Http2FrequencyCounter \
 	test_HPACK
 
 TESTS = \
 	test_Http2DependencyTree \
+	test_Http2FrequencyCounter \
 	test_HPACK
 
 test_Http2DependencyTree_LDADD = \
@@ -73,6 +77,19 @@ test_Http2DependencyTree_CPPFLAGS = $(AM_CPPFLAGS)\
 test_Http2DependencyTree_SOURCES = \
 	unit_tests/test_Http2DependencyTree.cc \
 	Http2DependencyTree.h
+
+test_Http2FrequencyCounter_LDADD = \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la
+
+test_Http2FrequencyCounter_CPPFLAGS = $(AM_CPPFLAGS)\
+	-I$(abs_top_srcdir)/tests/include
+
+test_Http2FrequencyCounter_SOURCES = \
+	unit_tests/test_Http2FrequencyCounter.cc \
+	Http2FrequencyCounter.cc \
+	Http2FequencyCounter.h
 
 test_HPACK_LDADD = \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \

@@ -57,22 +57,6 @@ struct OneWayMultiTunnel : public OneWayTunnel {
   // Public Interface
   //
 
-  // Use these to construct/destruct OneWayMultiTunnel objects
-
-  /**
-    Allocates a OneWayMultiTunnel object.
-
-    @return new OneWayTunnel object.
-
-  */
-  static OneWayMultiTunnel *OneWayMultiTunnel_alloc();
-
-  /**
-    Deallocates a OneWayTunnel object.
-
-  */
-  static void OneWayMultiTunnel_free(OneWayMultiTunnel *);
-
   OneWayMultiTunnel();
 
   // Use One of the following init functions to start the tunnel.

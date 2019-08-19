@@ -416,7 +416,7 @@ Acl Filters
 ===========
 
 Acl filters can be created to control access of specific remap lines. The markup
-is very similar to that of :file:`ip_allow.config`, with slight changes to
+is very similar to that of :file:`ip_allow.yaml`, with slight changes to
 accommodate remap markup
 
 Examples

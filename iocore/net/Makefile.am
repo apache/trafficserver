@@ -86,6 +86,7 @@ test_UDPNet_SOURCES = \
 	test_I_UDPNet.cc
 
 libinknet_a_SOURCES = \
+        ALPNSupport.cc \
 	BIO_fastopen.cc \
 	BIO_fastopen.h \
 	Connection.cc \
@@ -102,6 +103,7 @@ libinknet_a_SOURCES = \
 	YamlSNIConfig.cc \
 	Net.cc \
 	NetVConnection.cc \
+        P_ALPNSupport.h \
 	P_SNIActionPerformer.h \
 	P_CompletionUtil.h \
 	P_Connection.h \

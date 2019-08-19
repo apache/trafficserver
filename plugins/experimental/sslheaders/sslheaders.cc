@@ -338,8 +338,3 @@ SslHdrInstance::~SslHdrInstance()
 {
   TSContDestroy(cont);
 }
-
-void
-SslHdrInstance::register_hooks()
-{
-}

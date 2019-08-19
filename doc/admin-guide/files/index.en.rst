@@ -27,7 +27,7 @@ Configuration Files
 
    cache.config.en
    hosting.config.en
-   ip_allow.config.en
+   ip_allow.yaml.en
    logging.yaml.en
    parent.config.en
    plugin.config.en
@@ -47,7 +47,7 @@ Configuration Files
    Allows |TS| administrators to assign cache volumes to specific origin
    servers or domains.
 
-:doc:`ip_allow.config.en`
+:doc:`ip_allow.yaml.en`
    Controls access to the |TS| cache based on source IP addresses and networks
    including limiting individual HTTP methods.
 
