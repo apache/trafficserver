@@ -2453,7 +2453,14 @@ DNS
    :reloadable:
    :overridable:
 
-   Indicates whether to use SRV records for origin server lookup.
+   Enables (``1``) or disables (``0``) the use of SRV records for origin server
+   lookup. |TS| will use weights found in the SRV record as a weighted round
+   robin in origin selection. Note that |TS| will lookup
+   ``_$scheme._$internet_protocol.$origin_name``. For instance, if the origin is
+   set to ``https://my.example.com``, |TS| would lookup ``_https._tcp.my.example.com``.
+   Also note that the port returned in the SRV record MUST match the port being
+   used for the origin (e.g. if the origin scheme is http and a default port, there
+   should be a SRV record with port 80).
 
 .. ts:cv:: CONFIG proxy.config.dns.dedicated_thread INT 0
 
