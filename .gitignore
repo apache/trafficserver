@@ -91,8 +91,8 @@ lib/perl/lib/Apache/TS.pm
 iocore/net/test_certlookup
 iocore/net/test_UDPNet
 iocore/aio/test_AIO
-iocore/eventsystem/test_Buffer
-iocore/eventsystem/test_Event
+iocore/eventsystem/test_IOBuffer
+iocore/eventsystem/test_EventSystem
 iocore/eventsystem/test_MIOBufferWriter
 iocore/hostdb/test_RefCountCache
 

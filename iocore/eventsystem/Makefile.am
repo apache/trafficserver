@@ -69,7 +69,8 @@ libinkevent_a_SOURCES = \
 	UnixEvent.cc \
 	UnixEventProcessor.cc
 
-check_PROGRAMS = test_Buffer test_Event \
+check_PROGRAMS = test_IOBuffer \
+	test_EventSystem \
 	test_MIOBufferWriter
 
 test_LD_FLAGS = \
@@ -85,6 +86,7 @@ test_CPP_FLAGS = \
 	-I$(abs_top_srcdir)/proxy/logging \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/tests/include \
 	@OPENSSL_INCLUDES@
 
 test_LD_ADD = \
@@ -92,37 +94,23 @@ test_LD_ADD = \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@LIBTCL@ @HWLOC_LIBS@
 
-test_Buffer_SOURCES = \
-	test_Buffer.cc
+test_EventSystem_SOURCES = unit_tests/test_EventSystem.cc
+test_EventSystem_CPPFLAGS = $(test_CPP_FLAGS)
+test_EventSystem_LDFLAGS = $(test_LD_FLAGS)
+test_EventSystem_LDADD = $(test_LD_ADD)
 
-#test_UNUSED_SOURCES = \
-#  test_I_Buffer.cc \
-#  test_P_Buffer.cc
-
-test_Event_SOURCES = \
-	test_Event.cc
-
-#test_UNUSED_SOURCES = \
-#  test_I_Event.cc \
-#  test_P_Event.cc
-
-test_Buffer_CPPFLAGS = $(test_CPP_FLAGS)
-test_Event_CPPFLAGS = $(test_CPP_FLAGS)
-
-test_Buffer_LDFLAGS = $(test_LD_FLAGS)
-test_Event_LDFLAGS = $(test_LD_FLAGS)
-
-test_Buffer_LDADD = $(test_LD_ADD)
-test_Event_LDADD = $(test_LD_ADD)
-
+test_IOBuffer_SOURCES = unit_tests/test_IOBuffer.cc
+test_IOBuffer_CPPFLAGS = $(test_CPP_FLAGS)
+test_IOBuffer_LDFLAGS = $(test_LD_FLAGS)
+test_IOBuffer_LDADD = $(test_LD_ADD)
 
 test_MIOBufferWriter_SOURCES = unit_tests/test_MIOBufferWriter.cc
-
-test_MIOBufferWriter_CPPFLAGS = $(test_CPP_FLAGS) -I$(abs_top_srcdir)/tests/include
+test_MIOBufferWriter_CPPFLAGS = $(test_CPP_FLAGS)
 test_MIOBufferWriter_LDFLAGS = $(test_LD_FLAGS)
 test_MIOBufferWriter_LDADD = $(test_LD_ADD)
 
