@@ -117,8 +117,8 @@ iocore/net/quic/test_QUICType
 iocore/net/quic/test_QUICTypeUtil
 iocore/net/quic/test_QUICVersionNegotiator
 iocore/aio/test_AIO
-iocore/eventsystem/test_Buffer
-iocore/eventsystem/test_Event
+iocore/eventsystem/test_IOBuffer
+iocore/eventsystem/test_EventSystem
 iocore/eventsystem/test_MIOBufferWriter
 iocore/hostdb/test_RefCountCache
 
