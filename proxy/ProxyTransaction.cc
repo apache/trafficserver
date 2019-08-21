@@ -128,7 +128,7 @@ ProxyTransaction::is_first_transaction() const
 bool
 ProxyTransaction::is_transparent_passthrough_allowed()
 {
-  return proxy_ssn ? proxy_ssn->is_transparent_passthrough_allowed() : false;
+  return upstream_outbound_options.f_transparent_passthrough;
 }
 
 bool
@@ -215,43 +215,48 @@ ProxyTransaction::get_acl() const
 in_port_t
 ProxyTransaction::get_outbound_port() const
 {
-  return outbound_port;
-}
-IpAddr
-ProxyTransaction::get_outbound_ip4() const
-{
-  return outbound_ip4;
-}
-IpAddr
-ProxyTransaction::get_outbound_ip6() const
-{
-  return outbound_ip6;
+  return upstream_outbound_options.outbound_port;
 }
 void
 ProxyTransaction::set_outbound_port(in_port_t port)
 {
-  outbound_port = port;
+  upstream_outbound_options.outbound_port = port;
 }
+
+IpAddr
+ProxyTransaction::get_outbound_ip4() const
+{
+  return upstream_outbound_options.outbound_ip4;
+}
+
+IpAddr
+ProxyTransaction::get_outbound_ip6() const
+{
+  return upstream_outbound_options.outbound_ip6;
+}
+
 void
 ProxyTransaction::set_outbound_ip(const IpAddr &new_addr)
 {
   if (new_addr.isIp4()) {
-    outbound_ip4 = new_addr;
+    upstream_outbound_options.outbound_ip4 = new_addr;
   } else if (new_addr.isIp6()) {
-    outbound_ip6 = new_addr;
+    upstream_outbound_options.outbound_ip6 = new_addr;
   } else {
-    outbound_ip4.invalidate();
-    outbound_ip6.invalidate();
+    upstream_outbound_options.outbound_ip4.invalidate();
+    upstream_outbound_options.outbound_ip6.invalidate();
   }
 }
 bool
 ProxyTransaction::is_outbound_transparent() const
 {
-  return false;
+  return upstream_outbound_options.f_outbound_transparent;
 }
+
 void
 ProxyTransaction::set_outbound_transparent(bool flag)
 {
+  upstream_outbound_options.f_outbound_transparent = flag;
 }
 
 ProxySession *
