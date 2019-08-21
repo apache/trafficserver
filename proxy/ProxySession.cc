@@ -222,13 +222,6 @@ ProxySession::is_draining() const
   return TSSystemState::is_draining();
 }
 
-// Override if your session protocol allows this.
-bool
-ProxySession::is_transparent_passthrough_allowed() const
-{
-  return false;
-}
-
 bool
 ProxySession::is_chunked_encoding_supported() const
 {
@@ -245,24 +238,6 @@ bool
 ProxySession::get_half_close_flag() const
 {
   return false;
-}
-
-in_port_t
-ProxySession::get_outbound_port() const
-{
-  return outbound_port;
-}
-
-IpAddr
-ProxySession::get_outbound_ip4() const
-{
-  return outbound_ip4;
-}
-
-IpAddr
-ProxySession::get_outbound_ip6() const
-{
-  return outbound_ip6;
 }
 
 int64_t

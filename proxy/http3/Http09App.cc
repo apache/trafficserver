@@ -43,9 +43,7 @@ Http09App::Http09App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, 
   // TODO: avoid const cast
   this->_ssn->host_res_style =
     ats_host_res_from(client_vc->get_remote_addr()->sa_family, const_cast<HostResPreference *>(options.host_res_preference));
-  this->_ssn->outbound_ip4  = options.outbound_ip4;
-  this->_ssn->outbound_ip6  = options.outbound_ip6;
-  this->_ssn->outbound_port = options.outbound_port;
+  this->_ssn->accept_options = &options;
   this->_ssn->new_connection(client_vc, nullptr, nullptr);
 
   this->_qc->stream_manager()->set_default_application(this);
