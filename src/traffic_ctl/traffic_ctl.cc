@@ -235,7 +235,7 @@ main(int argc, const char **argv)
   // server commands
   server_command.add_command("backtrace", "Show a full stack trace of the traffic_server process",
                              [&]() { engine.server_backtrace(); });
-  server_command.add_command("restart", "Restart Traffic Server", [&]() { engine.server_backtrace(); })
+  server_command.add_command("restart", "Restart Traffic Server", [&]() { engine.server_restart(); })
     .add_example_usage("traffic_ctl server restart [OPTIONS]")
     .add_option("--drain", "", "Wait for client connections to drain before restarting")
     .add_option("--manager", "", "Restart traffic_manager as well as traffic_server");
