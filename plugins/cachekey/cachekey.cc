@@ -188,6 +188,51 @@ getUri(TSMBuffer buf, TSMLoc url)
   return uri;
 }
 
+static String
+getCanonicalUrl(TSMBuffer buf, TSMLoc url, bool canonicalPrefix, bool provideDefaultKey)
+{
+  String canonicalUrl;
+
+  String scheme;
+  int schemeLen;
+  const char *schemePtr = TSUrlSchemeGet(buf, url, &schemeLen);
+  if (nullptr != schemePtr && 0 != schemeLen) {
+    scheme.assign(schemePtr, schemeLen);
+  } else {
+    CacheKeyError("failed to get scheme");
+    return canonicalUrl;
+  }
+
+  String host;
+  int hostLen;
+  const char *hostPtr = TSUrlHostGet(buf, url, &hostLen);
+  if (nullptr != hostPtr && 0 != hostLen) {
+    host.assign(hostPtr, hostLen);
+  } else {
+    CacheKeyError("failed to get host");
+    return canonicalUrl;
+  }
+
+  String port;
+  int portInt = TSUrlPortGet(buf, url);
+  ::append(port, portInt);
+
+  if (canonicalPrefix) {
+    /* return the same for both regex input or default key, results in 'scheme://host:port' */
+    canonicalUrl.assign(scheme).append("://").append(host).append(":").append(port);
+  } else {
+    if (provideDefaultKey) {
+      /* return the key default - results in '/host/port' */
+      canonicalUrl.assign("/").append(host).append("/").append(port);
+    } else {
+      /* return regex input string - results in 'host:port' (use-case kept for compatibility reasons) */
+      canonicalUrl.assign(host).append(":").append(port);
+    }
+  }
+
+  return canonicalUrl;
+}
+
 /**
  * @brief Constructor setting up the cache key prefix, initializing request info.
  * @param txn transaction handle.
@@ -289,6 +334,16 @@ CacheKey::append(const String &s)
   ::appendEncoded(_key, s.data(), s.size());
 }
 
+void
+CacheKey::append(const String &s, bool useSeparator)
+{
+  if (useSeparator) {
+    append(s);
+  } else {
+    _key.append(s);
+  }
+}
+
 /**
  * @brief Append null-terminated C-style string to the key.
  * @param s null-terminated C-style string.
@@ -319,42 +374,31 @@ CacheKey::append(const char *s, unsigned n)
  * @param prefix if not empty string will append the static prefix to the cache key.
  * @param prefixCapture if not empty will append regex capture/replacement from the host:port.
  * @param prefixCaptureUri if not empty will append regex capture/replacement from the whole URI.
+ * @param canonicalPrefix false - use 'host:port' as starting point of all transformations, true - use 'scheme://host:port'
  * @note if both prefix and pattern are not empty prefix will be added first, followed by the results from pattern.
  */
 void
-CacheKey::appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &prefixCaptureUri)
+CacheKey::appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &prefixCaptureUri, bool canonicalPrefix)
 {
-  // "true" would mean that the plugin config meant to override the default prefix (host:port).
+  // "true" would mean that the plugin config meant to override the default prefix, "false" means use default.
   bool customPrefix = false;
-  String host;
-  int port = 0;
+
+  /* For all the following operations if a canonical prefix is required then appned to the key with no separator
+   * to leave the door open for potential valid host name formed in the final resulting cache key. */
 
   if (!prefix.empty()) {
     customPrefix = true;
-    append(prefix);
+    append(prefix, /* useSeparator */ !canonicalPrefix);
     CacheKeyDebug("added static prefix, key: '%s'", _key.c_str());
   }
-
-  int hostLen;
-  const char *hostPtr = TSUrlHostGet(_buf, _url, &hostLen);
-  if (nullptr != hostPtr && 0 != hostLen) {
-    host.assign(hostPtr, hostLen);
-  } else {
-    CacheKeyError("failed to get host");
-  }
-  port = TSUrlPortGet(_buf, _url);
 
   if (!prefixCapture.empty()) {
     customPrefix = true;
 
-    String hostAndPort;
-    hostAndPort.append(host).append(":");
-    ::append(hostAndPort, port);
-
     StringVector captures;
-    if (prefixCapture.process(hostAndPort, captures)) {
+    if (prefixCapture.process(getCanonicalUrl(_buf, _url, canonicalPrefix, /* provideDefaultKey */ false), captures)) {
       for (auto &capture : captures) {
-        append(capture);
+        append(capture, /* useSeparator */ !canonicalPrefix);
       }
       CacheKeyDebug("added host:port capture prefix, key: '%s'", _key.c_str());
     }
@@ -368,7 +412,7 @@ CacheKey::appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &pr
       StringVector captures;
       if (prefixCaptureUri.process(uri, captures)) {
         for (auto &capture : captures) {
-          append(capture);
+          append(capture, /* useSeparator */ !canonicalPrefix);
         }
         CacheKeyDebug("added URI capture prefix, key: '%s'", _key.c_str());
       }
@@ -376,8 +420,8 @@ CacheKey::appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &pr
   }
 
   if (!customPrefix) {
-    append(host);
-    append(port);
+    /* nothing was customized => default prefix */
+    append(getCanonicalUrl(_buf, _url, canonicalPrefix, /* provideDefaultKey */ true), /* useSeparator */ false);
     CacheKeyDebug("added default prefix, key: '%s'", _key.c_str());
   }
 }

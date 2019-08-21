@@ -43,7 +43,7 @@ setCacheKey(TSHttpTxn txn, Configs *config, TSRemapRequestInfo *rri = nullptr)
 
   /* Append custom prefix or the host:port */
   if (!config->prefixToBeRemoved()) {
-    cachekey.appendPrefix(config->_prefix, config->_prefixCapture, config->_prefixCaptureUri);
+    cachekey.appendPrefix(config->_prefix, config->_prefixCapture, config->_prefixCaptureUri, config->canonicalPrefix());
   }
   /* Classify User-Agent and append the class name to the cache key if matched. */
   cachekey.appendUaClass(config->_classifier);
