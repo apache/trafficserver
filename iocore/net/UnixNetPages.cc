@@ -217,7 +217,7 @@ register_ShowNet(Continuation *c, HTTPHdr *h)
     s->sarg           = ats_strndup(query, query_len);
     char *gn          = nullptr;
     if (s->sarg) {
-      gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
+      gn = static_cast<char *>(memchr(s->sarg, '=', strlen(s->sarg)));
     }
     if (gn) {
       ats_ip_pton(gn + 1, &s->addr);
@@ -229,7 +229,7 @@ register_ShowNet(Continuation *c, HTTPHdr *h)
     s->sarg           = ats_strndup(query, query_len);
     char *gn          = nullptr;
     if (s->sarg) {
-      gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
+      gn = static_cast<char *>(memchr(s->sarg, '=', strlen(s->sarg)));
     }
     if (gn) {
       ats_ip_port_cast(&s->addr.sa) = htons(atoi(gn + 1));

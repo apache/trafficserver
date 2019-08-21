@@ -75,8 +75,9 @@ CookieJar::parse(const string &arg, const char *sepstr, bool val_check, bool mai
   char *cp;
   char *key;
 
-  if ((arg_copy = strdup(arg.c_str())) == nullptr)
+  if ((arg_copy = strdup(arg.c_str())) == nullptr) {
     return -1;
+  }
 
   cp           = arg_copy;
   char empty[] = "";
@@ -106,8 +107,9 @@ CookieJar::parse(const string &arg, const char *sepstr, bool val_check, bool mai
         /* verify that the value is valid according to our configured
          * option and possibly strip out invalid characters. */
 
-        if (val_check && verify_value(addme, val_len) != 0)
+        if (val_check && verify_value(addme, val_len) != 0) {
           continue;
+        }
       } else {
         // Empty cookie case eg: "L="
         addme = empty;
@@ -121,13 +123,15 @@ CookieJar::parse(const string &arg, const char *sepstr, bool val_check, bool mai
      * cookie names only so we'll use the val_check variables
      * to know what we're processing */
 
-    if (val_check && verify_name(key) != 0)
+    if (val_check && verify_name(key) != 0) {
       continue;
+    }
 
-    if (mainElement)
+    if (mainElement) {
       addElement(key, addme);
-    else
+    } else {
       addSubElement(key, addme);
+    }
   }
 
   free(arg_copy);
@@ -162,8 +166,9 @@ CookieJar::verify_value(char *val, int val_len)
 
   if (val_len > static_cast<int>(sizeof(data_buf) - 1)) {
     buf_len = val_len + 1;
-    if ((data_ptr = static_cast<char *>(malloc(buf_len))) == nullptr)
+    if ((data_ptr = static_cast<char *>(malloc(buf_len))) == nullptr) {
       return -1;
+    }
 
     buf = data_ptr;
   } else {
@@ -172,8 +177,9 @@ CookieJar::verify_value(char *val, int val_len)
   }
 
   if (get_stripped(val, val_len, buf, &buf_len, 0) != STRIP_RESULT_OK) {
-    if (data_ptr)
+    if (data_ptr) {
       free(data_ptr);
+    }
     return -1;
   }
 
@@ -182,14 +188,16 @@ CookieJar::verify_value(char *val, int val_len)
    * with a bigger buffer than what we started with */
 
   if (buf_len > val_len + 1) {
-    if (data_ptr)
+    if (data_ptr) {
       free(data_ptr);
+    }
     return -1;
   }
 
   memcpy(val, buf, buf_len);
-  if (data_ptr)
+  if (data_ptr) {
     free(data_ptr);
+  }
 
   return 0;
 }
@@ -203,8 +211,9 @@ CookieJar::verify_name(char *name)
     /* if we get any invalid characters then return failure
      * in order to skip this cookie completely */
 
-    if (rfc_cookie_name_table[(int)*p] == 0)
+    if (rfc_cookie_name_table[static_cast<int>(*p)] == 0) {
       return -1;
+    }
   }
 
   return 0;
@@ -223,8 +232,9 @@ CookieJar::get_full(const string &cookie_name, string &val)
 bool
 CookieJar::get_part(const string &cookie_name, const string &part_name, string &val)
 {
-  if (m_jar.empty())
+  if (m_jar.empty()) {
     return false;
+  }
 
   if (m_jar.find(cookie_name) == m_jar.end()) {
     /* full cookie not found */
@@ -239,8 +249,9 @@ CookieJar::get_part(const string &cookie_name, const string &part_name, string &
      * we'll be passing 0/false for the val_check argument */
 
     m_currentVal = &fe;
-    if (parse(fe.m_val, "&", false, false) != 0)
+    if (parse(fe.m_val, "&", false, false) != 0) {
       return false;
+    }
 
     fe.parts_inited = true;
     m_currentVal    = nullptr;

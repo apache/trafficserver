@@ -167,8 +167,8 @@ BaseLogFile::roll(long interval_start, long interval_end)
 
   // Now that we have our timestamp values, convert them to the proper
   // timestamp formats and create the rolled file name.
-  timestamp_to_str((long)start, start_time_ext, sizeof(start_time_ext));
-  timestamp_to_str((long)end, end_time_ext, sizeof(start_time_ext));
+  timestamp_to_str(static_cast<long>(start), start_time_ext, sizeof(start_time_ext));
+  timestamp_to_str(static_cast<long>(end), end_time_ext, sizeof(start_time_ext));
   snprintf(roll_name, LOGFILE_ROLL_MAXPATHLEN, "%s%s%s.%s-%s%s", m_name.get(), (m_hostname.get() ? LOGFILE_SEPARATOR_STRING : ""),
            (m_hostname.get() ? m_hostname.get() : ""), start_time_ext, end_time_ext, LOGFILE_ROLLED_EXTENSION);
 
@@ -236,8 +236,8 @@ BaseLogFile::roll()
 bool
 BaseLogFile::rolled_logfile(char *path)
 {
-  const int target_len = (int)strlen(LOGFILE_ROLLED_EXTENSION);
-  int len              = (int)strlen(path);
+  const int target_len = static_cast<int>(strlen(LOGFILE_ROLLED_EXTENSION));
+  int len              = static_cast<int>(strlen(path));
   if (len > target_len) {
     char *str = &path[len - target_len];
     if (!strcmp(str, LOGFILE_ROLLED_EXTENSION)) {
@@ -302,9 +302,9 @@ BaseLogFile::open_file(int perm)
     // The log file does not exist, so we create a new MetaInfo object
     //  which will save itself to disk right away (in the constructor)
     if (m_has_signature) {
-      m_meta_info = new BaseMetaInfo(m_name.get(), (long)time(nullptr), m_signature);
+      m_meta_info = new BaseMetaInfo(m_name.get(), static_cast<long>(time(nullptr)), m_signature);
     } else {
-      m_meta_info = new BaseMetaInfo(m_name.get(), (long)time(nullptr));
+      m_meta_info = new BaseMetaInfo(m_name.get(), static_cast<long>(time(nullptr)));
     }
   }
 
@@ -450,7 +450,7 @@ BaseMetaInfo::_build_name(const char *filename)
 
   // 7 = 1 (dot at beginning) + 5 (".meta") + 1 (null terminating)
   //
-  _filename = (char *)ats_malloc(l + 7);
+  _filename = static_cast<char *>(ats_malloc(l + 7));
 
   if (i < 0) {
     ink_string_concatenate_strings(_filename, ".", filename, ".meta", nullptr);
@@ -481,7 +481,7 @@ BaseMetaInfo::_read_from_file()
         if (strcmp(t, "creation_time") == 0) {
           t = tok.getNext();
           if (t) {
-            _creation_time = (time_t)ink_atoi64(t);
+            _creation_time = static_cast<time_t>(ink_atoi64(t));
             _flags |= VALID_CREATION_TIME;
           }
         } else if (strcmp(t, "object_signature") == 0) {
@@ -521,7 +521,7 @@ BaseMetaInfo::_write_to_file()
   int n;
   if (_flags & VALID_CREATION_TIME) {
     log_log_trace("Writing creation time to %s\n", _filename);
-    n = snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", (unsigned long)_creation_time);
+    n = snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", static_cast<unsigned long>(_creation_time));
     // TODO modify this runtime check so that it is not an assertion
     ink_release_assert(n <= BUF_SIZE);
     if (write(fd, _buffer, n) == -1) {

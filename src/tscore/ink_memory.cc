@@ -271,7 +271,7 @@ _xstrdup(const char *str, int length, const char * /* path ATS_UNUSED */)
       length = strlen(str);
     }
 
-    newstr = (char *)ats_malloc(length + 1);
+    newstr = static_cast<char *>(ats_malloc(length + 1));
     // If this is a zero length string just null terminate and return.
     if (unlikely(length == 0)) {
       *newstr = '\0';

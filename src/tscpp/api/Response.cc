@@ -35,7 +35,7 @@ struct ResponseState : noncopyable {
   TSMBuffer hdr_buf_ = nullptr;
   TSMLoc hdr_loc_    = nullptr;
   Headers headers_;
-  ResponseState() {}
+  ResponseState() = default;
 };
 } // namespace atscppapi
 

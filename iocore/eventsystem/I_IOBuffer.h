@@ -52,9 +52,6 @@ class MIOBuffer;
 class IOBufferReader;
 class VIO;
 
-// Removing this optimization since this is breaking WMT over HTTP
-//#define WRITE_AND_TRANSFER
-
 inkcoreapi extern int64_t max_iobuffer_size;
 extern int64_t default_small_iobuffer_size;
 extern int64_t default_large_iobuffer_size; // matched to size of OS buffers
@@ -986,16 +983,6 @@ public:
 
   */
   inkcoreapi int64_t write(const void *rbuf, int64_t nbytes);
-
-#ifdef WRITE_AND_TRANSFER
-  /**
-    Same functionality as write but for the one small difference. The
-    space available in the last block is taken from the original and
-    this space becomes available to the copy.
-
-  */
-  inkcoreapi int64_t write_and_transfer_left_over_space(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
-#endif
 
   /**
     Add by data from IOBufferReader r to the this buffer by reference. If

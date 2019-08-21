@@ -455,6 +455,7 @@ struct OverridableHttpConfigParams {
   MgmtByte keep_alive_enabled_out = 1;
   MgmtByte keep_alive_post_out    = 1; // share server sessions for post
 
+  MgmtInt server_min_keep_alive_conns   = 0;
   MgmtByte server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
   //  MgmtByte share_server_sessions;
   MgmtByte auth_server_session_private        = 1;
@@ -705,9 +706,8 @@ public:
   IpAddr proxy_protocol_ip4, proxy_protocol_ip6;
   IpMap config_proxy_protocol_ipmap;
 
-  MgmtInt server_max_connections            = 0;
-  MgmtInt origin_min_keep_alive_connections = 0; // TODO: This one really ought to be overridable, but difficult right now.
-  MgmtInt max_websocket_connections         = -1;
+  MgmtInt server_max_connections    = 0;
+  MgmtInt max_websocket_connections = -1;
 
   char *proxy_request_via_string    = nullptr;
   char *proxy_response_via_string   = nullptr;

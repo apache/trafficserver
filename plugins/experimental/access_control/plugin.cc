@@ -139,7 +139,7 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errBuf, int er
 void
 TSRemapDeleteInstance(void *instance)
 {
-  AccessControlConfig *config = (AccessControlConfig *)instance;
+  AccessControlConfig *config = static_cast<AccessControlConfig *>(instance);
   delete config;
 }
 
@@ -399,7 +399,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
               /* Don't set any cookie, fail the request here returning appropriate status code and body.*/
               TSHttpTxnStatusSet(txnp, config->_invalidOriginResponse);
               static const char *body = "Unexpected Response From the Origin Server\n";
-              char *buf               = (char *)TSmalloc(strlen(body) + 1);
+              char *buf               = static_cast<char *>(TSmalloc(strlen(body) + 1));
               sprintf(buf, "%s", body);
               TSHttpTxnErrorBodySet(txnp, buf, strlen(buf), nullptr);
 
@@ -570,7 +570,7 @@ TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   TSRemapStatus remapStatus   = TSREMAP_NO_REMAP;
-  AccessControlConfig *config = (AccessControlConfig *)instance;
+  AccessControlConfig *config = static_cast<AccessControlConfig *>(instance);
 
   if (nullptr != config) {
     /* Plugin is designed to be used only with TLS, check the scheme */

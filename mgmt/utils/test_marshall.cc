@@ -46,7 +46,7 @@
     }                                                                                                                \
   } while (0)
 
-const MgmtMarshallType inval[] = {(MgmtMarshallType)1568};
+const MgmtMarshallType inval[] = {static_cast<MgmtMarshallType>(1568)};
 
 const MgmtMarshallType ifields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_LONG};
 
@@ -88,7 +88,7 @@ message_connect_channel(RegressionTest *t, int listenfd, int clientfd, int serve
   fcntl(clientfd, F_SETFL, O_NONBLOCK);
   fcntl(listenfd, F_SETFL, O_NONBLOCK);
 
-  connect(clientfd, (const struct sockaddr *)&in, sizeof(in));
+  connect(clientfd, reinterpret_cast<const struct sockaddr *>(&in), sizeof(in));
 
   while (need_accept) {
     serverfd = accept(listenfd, nullptr, nullptr);

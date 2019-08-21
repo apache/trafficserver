@@ -840,7 +840,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     // Reschedule WRITE_READY
     this->_schedule_packet_write_ready(true);
     break;
-  case EVENT_IMMEDIATE:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
     break;
@@ -873,7 +873,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     // Reschedule WRITE_READY
     this->_schedule_packet_write_ready(true);
     break;
-  case EVENT_IMMEDIATE:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
     break;

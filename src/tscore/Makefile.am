@@ -125,7 +125,6 @@ else
 HKDF_impl = HKDF_openssl.cc
 endif
 libtscore_la_SOURCES += \
-  HKDF.h \
   $(HKDF_impl)
 endif
 

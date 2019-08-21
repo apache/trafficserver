@@ -115,7 +115,7 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 static int
 link_int(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  RecInt *rec_int = (RecInt *)cookie;
+  RecInt *rec_int = static_cast<RecInt *>(cookie);
   ink_atomic_swap(rec_int, data.rec_int);
   return REC_ERR_OKAY;
 }
@@ -123,28 +123,28 @@ link_int(const char * /* name */, RecDataT /* data_type */, RecData data, void *
 static int
 link_int32(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  *((int32_t *)cookie) = (int32_t)data.rec_int;
+  *(static_cast<int32_t *>(cookie)) = static_cast<int32_t>(data.rec_int);
   return REC_ERR_OKAY;
 }
 
 static int
 link_uint32(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  *((uint32_t *)cookie) = (uint32_t)data.rec_int;
+  *(static_cast<uint32_t *>(cookie)) = static_cast<uint32_t>(data.rec_int);
   return REC_ERR_OKAY;
 }
 
 static int
 link_float(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  *((RecFloat *)cookie) = data.rec_float;
+  *(static_cast<RecFloat *>(cookie)) = data.rec_float;
   return REC_ERR_OKAY;
 }
 
 static int
 link_counter(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  RecCounter *rec_counter = (RecCounter *)cookie;
+  RecCounter *rec_counter = static_cast<RecCounter *>(cookie);
   ink_atomic_swap(rec_counter, data.rec_counter);
   return REC_ERR_OKAY;
 }
@@ -154,7 +154,7 @@ link_counter(const char * /* name */, RecDataT /* data_type */, RecData data, vo
 static int
 link_byte(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  RecByte *rec_byte = (RecByte *)cookie;
+  RecByte *rec_byte = static_cast<RecByte *>(cookie);
   RecByte byte      = static_cast<RecByte>(data.rec_int);
 
   ink_atomic_swap(rec_byte, byte);
@@ -175,8 +175,8 @@ link_string_alloc(const char * /* name */, RecDataT /* data_type */, RecData dat
   }
 
   // set new string for DEFAULT_xxx_str tp point to
-  RecString _temp2       = *((RecString *)cookie);
-  *((RecString *)cookie) = _new_value;
+  RecString _temp2                    = *(static_cast<RecString *>(cookie));
+  *(static_cast<RecString *>(cookie)) = _new_value;
   // free previous string DEFAULT_xxx_str points to
   ats_free(_temp2);
 
@@ -202,7 +202,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   g_num_records = 0;
 
   // initialize record array for our internal stats (this can be reallocated later)
-  g_records = (RecRecord *)ats_malloc(max_records_entries * sizeof(RecRecord));
+  g_records = static_cast<RecRecord *>(ats_malloc(max_records_entries * sizeof(RecRecord)));
 
   // initialize record rwlock
   ink_rwlock_init(&g_records_rwlock);
@@ -220,7 +220,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
     g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE REC_SHADOW_EXT));
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-      ats_free((char *)g_rec_config_fpath);
+      ats_free(const_cast<char *>(g_rec_config_fpath));
       g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE));
       if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
         RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
@@ -330,7 +330,7 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
          }
        */
 
-      RecConfigUpdateCbList *new_callback = (RecConfigUpdateCbList *)ats_malloc(sizeof(RecConfigUpdateCbList));
+      RecConfigUpdateCbList *new_callback = static_cast<RecConfigUpdateCbList *>(ats_malloc(sizeof(RecConfigUpdateCbList)));
       memset(new_callback, 0, sizeof(RecConfigUpdateCbList));
       new_callback->update_cb     = update_cb;
       new_callback->update_cookie = cookie;
@@ -740,7 +740,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
 
-    *buf = (char *)ats_malloc(sizeof(char) * 1024);
+    *buf = static_cast<char *>(ats_malloc(sizeof(char) * 1024));
     memset(*buf, 0, 1024);
     err = REC_ERR_OKAY;
 
@@ -1070,7 +1070,7 @@ char *
 REC_ConfigReadString(const char *name)
 {
   char *t = nullptr;
-  RecGetRecordString_Xmalloc(name, (RecString *)&t);
+  RecGetRecordString_Xmalloc(name, static_cast<RecString *>(&t));
   return t;
 }
 
@@ -1078,7 +1078,7 @@ RecFloat
 REC_ConfigReadFloat(const char *name)
 {
   RecFloat t = 0;
-  RecGetRecordFloat(name, (RecFloat *)&t);
+  RecGetRecordFloat(name, &t);
   return t;
 }
 
@@ -1086,7 +1086,7 @@ RecCounter
 REC_ConfigReadCounter(const char *name)
 {
   RecCounter t = 0;
-  RecGetRecordCounter(name, (RecCounter *)&t);
+  RecGetRecordCounter(name, &t);
   return t;
 }
 

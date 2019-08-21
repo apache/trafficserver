@@ -277,8 +277,9 @@ CharIndex::~CharIndex()
 {
   // clean up the illegal key table.
   if (illegalKey) {
-    for (auto spot = illegalKey->begin(), limit = illegalKey->end(); spot != limit; delete &*(spot++))
+    for (auto spot = illegalKey->begin(), limit = illegalKey->end(); spot != limit; delete &*(spot++)) {
       ; // empty
+    }
   }
 }
 

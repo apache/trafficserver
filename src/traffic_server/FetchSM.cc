@@ -673,7 +673,7 @@ FetchSM::ext_read_data(char *buf, size_t len)
     memcpy(&buf[already], start, need);
     already += need;
 
-    if (already >= (int64_t)len) {
+    if (already >= static_cast<int64_t>(len)) {
       break;
     }
 

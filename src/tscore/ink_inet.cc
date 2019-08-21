@@ -392,7 +392,7 @@ ats_ip_port_hash(sockaddr const *addr)
     CryptoContext hash_context;
     hash_context.update(const_cast<uint8_t *>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE);
     in_port_t port = ats_ip_port_cast(addr);
-    hash_context.update((uint8_t *)(&port), sizeof(port));
+    hash_context.update(reinterpret_cast<uint8_t *>(&port), sizeof(port));
     hash_context.finalize(hash);
     return hash.u64[0];
   } else {
@@ -912,10 +912,12 @@ bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
       w.print("*Not IP address [{}]*", addr->sa_family);
       break;
     }
-    if (bracket_p)
+    if (bracket_p) {
       w.write(']');
-    if (port_p)
+    }
+    if (port_p) {
       w.write(':');
+    }
   }
   if (port_p) {
     if (local_numeric_fill_p) {
@@ -929,8 +931,9 @@ bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
   }
   if (family_p) {
     local_spec._min = 0;
-    if (addr_p || port_p)
+    if (addr_p || port_p) {
       w.write(' ');
+    }
     if (spec.has_numeric_type()) {
       bwformat(w, local_spec, static_cast<uintmax_t>(addr->sa_family));
     } else {

@@ -37,6 +37,10 @@ const MgmtConverter OutboundConnTrack::MAX_CONV(
   [](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<decltype(TxnConfig::max) *>(data)); },
   [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::max) *>(data) = static_cast<decltype(TxnConfig::max)>(i); });
 
+const MgmtConverter OutboundConnTrack::MIN_CONV(
+  [](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<decltype(TxnConfig::min) *>(data)); },
+  [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::min) *>(data) = static_cast<decltype(TxnConfig::min)>(i); });
+
 // Do integer and string conversions.
 const MgmtConverter OutboundConnTrack::MATCH_CONV{
   [](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<decltype(TxnConfig::match) *>(data)); },
@@ -72,6 +76,17 @@ static_assert(OutboundConnTrack::Group::Clock::period::den >= 1000);
 // Configuration callback functions.
 namespace
 {
+int
+Config_Update_Conntrack_Min(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  auto config = static_cast<OutboundConnTrack::TxnConfig *>(cookie);
+
+  if (RECD_INT == dtype) {
+    config->min = data.rec_int;
+  }
+  return REC_ERR_OKAY;
+}
+
 int
 Config_Update_Conntrack_Max(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
@@ -154,6 +169,7 @@ OutboundConnTrack::config_init(GlobalConfig *global, TxnConfig *txn)
   _global_config = global; // remember this for later retrieval.
                            // Per transaction lookup must be done at call time because it changes.
 
+  RecRegisterConfigUpdateCb(CONFIG_VAR_MIN.data(), &Config_Update_Conntrack_Min, txn);
   RecRegisterConfigUpdateCb(CONFIG_VAR_MAX.data(), &Config_Update_Conntrack_Max, txn);
   RecRegisterConfigUpdateCb(CONFIG_VAR_MATCH.data(), &Config_Update_Conntrack_Match, txn);
   RecRegisterConfigUpdateCb(CONFIG_VAR_QUEUE_SIZE.data(), &Config_Update_Conntrack_Queue_Size, global);
@@ -161,6 +177,7 @@ OutboundConnTrack::config_init(GlobalConfig *global, TxnConfig *txn)
   RecRegisterConfigUpdateCb(CONFIG_VAR_ALERT_DELAY.data(), &Config_Update_Conntrack_Alert_Delay, global);
 
   // Load 'em up by firing off the config update callback.
+  RecLookupRecord(CONFIG_VAR_MIN.data(), &Load_Config_Var, nullptr, true);
   RecLookupRecord(CONFIG_VAR_MAX.data(), &Load_Config_Var, nullptr, true);
   RecLookupRecord(CONFIG_VAR_MATCH.data(), &Load_Config_Var, nullptr, true);
   RecLookupRecord(CONFIG_VAR_QUEUE_SIZE.data(), &Load_Config_Var, nullptr, true);
@@ -180,7 +197,7 @@ OutboundConnTrack::obtain(TxnConfig const &txn_cnf, std::string_view fqdn, IpEnd
   if (loc != _imp._table.end()) {
     zret._g = loc;
   } else {
-    zret._g = new Group(key, fqdn);
+    zret._g = new Group(key, fqdn, txn_cnf.min);
     _imp._table.insert(zret._g);
   }
   return zret;

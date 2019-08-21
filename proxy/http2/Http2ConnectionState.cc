@@ -875,8 +875,10 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   uint32_t header_blocks_offset = stream->header_blocks_length;
   stream->header_blocks_length += payload_length;
 
-  stream->header_blocks = static_cast<uint8_t *>(ats_realloc(stream->header_blocks, stream->header_blocks_length));
-  frame.reader()->memcpy(stream->header_blocks + header_blocks_offset, payload_length);
+  if (stream->header_blocks_length > 0) {
+    stream->header_blocks = static_cast<uint8_t *>(ats_realloc(stream->header_blocks, stream->header_blocks_length));
+    frame.reader()->memcpy(stream->header_blocks + header_blocks_offset, payload_length);
+  }
 
   if (frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
     // NOTE: If there are END_HEADERS flag, decode stored Header Blocks.
@@ -1557,7 +1559,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   http2_generate_h2_header_from_1_1(resp_header, &h2_hdr);
 
   buf_len = resp_header->length_get() * 2; // Make it double just in case
-  buf     = (uint8_t *)ats_malloc(buf_len);
+  buf     = static_cast<uint8_t *>(ats_malloc(buf_len));
   if (buf == nullptr) {
     h2_hdr.destroy();
     return;
@@ -1670,7 +1672,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 
   buf_len = h1_hdr.length_get() * 2; // Make it double just in case
   h1_hdr.destroy();
-  buf = (uint8_t *)ats_malloc(buf_len);
+  buf = static_cast<uint8_t *>(ats_malloc(buf_len));
   if (buf == nullptr) {
     h2_hdr.destroy();
     return;

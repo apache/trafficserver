@@ -170,7 +170,7 @@ InjectCacheHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     // If the cache lookup hasn't happened yes, TSHttpTxnCacheLookupStatusGet will fail.
     TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, "none", 4) == TS_SUCCESS);
   } else {
-    const char *msg = (status < 0 || status >= (int)countof(names)) ? "unknown" : names[status];
+    const char *msg = (status < 0 || status >= static_cast<int>(countof(names))) ? "unknown" : names[status];
 
     TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, msg, -1) == TS_SUCCESS);
   }
@@ -240,8 +240,8 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     // state machine the request doesn't traverse.
     TSHttpTxnMilestoneGet(txn, milestones[i].mstype, &time);
     if (time > 0) {
-      double elapsed = (double)(time - epoch) / 1000000000.0;
-      int len        = (int)snprintf(hdrval, sizeof(hdrval), "%s=%1.9lf", milestones[i].msname, elapsed);
+      double elapsed = static_cast<double>(time - epoch) / 1000000000.0;
+      int len        = snprintf(hdrval, sizeof(hdrval), "%s=%1.9lf", milestones[i].msname, elapsed);
 
       TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, hdrval, len) == TS_SUCCESS);
     }
@@ -328,7 +328,7 @@ InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 static int
 XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
-  TSHttpTxn txn = (TSHttpTxn)edata;
+  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
   TSMBuffer buffer;
   TSMLoc hdr;
 
@@ -441,7 +441,7 @@ isFwdFieldValue(std::string_view value, intmax_t &fwdCnt)
 static int
 XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
-  TSHttpTxn txn      = (TSHttpTxn)edata;
+  TSHttpTxn txn      = static_cast<TSHttpTxn>(edata);
   uintptr_t xheaders = 0;
   intmax_t fwdCnt    = 0;
   TSMLoc field, next;
@@ -511,7 +511,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
 
         // create a self-cleanup on close
         auto cleanupBodyBuilder = [](TSCont /* contp */, TSEvent event, void *edata) -> int {
-          TSHttpTxn txn     = (TSHttpTxn)edata;
+          TSHttpTxn txn     = static_cast<TSHttpTxn>(edata);
           BodyBuilder *data = static_cast<BodyBuilder *>(TSHttpTxnArgGet(txn, BodyBuilderArgIndex));
           delete data;
           return TS_EVENT_NONE;
@@ -615,7 +615,7 @@ TSPluginInit(int argc, const char *argv[])
 
   // Parse the arguments
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
+    int opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
 
     switch (opt) {
     case 'h':

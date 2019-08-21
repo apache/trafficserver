@@ -42,7 +42,7 @@ string2int(const StringView &s)
 {
   time_t t = 0;
   try {
-    t = (time_t)std::stoi(String(s));
+    t = static_cast<time_t>(std::stoi(String(s)));
   } catch (...) {
     /* Failed to convert return impossible value */
     return 0;

@@ -351,7 +351,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
   lastlen = 0;
   len     = 128 * sizeof(struct ifreq); // initial buffer size guess
   for (;;) {
-    ifbuf = (char *)ats_malloc(len);
+    ifbuf = static_cast<char *>(ats_malloc(len));
     memset(ifbuf, 0, len); // prevent UMRs
     ifc.ifc_len = len;
     ifc.ifc_buf = ifbuf;
@@ -371,11 +371,11 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
 
   found = false;
   // Loop through the list of interfaces
-  ifend = (struct ifreq *)(ifc.ifc_buf + ifc.ifc_len);
+  ifend = reinterpret_cast<struct ifreq *>(ifc.ifc_buf + ifc.ifc_len);
   for (ifr = ifc.ifc_req; ifr < ifend;) {
     if (ifr->ifr_addr.sa_family == AF_INET && strcmp(ifr->ifr_name, intrName) == 0) {
       // Get the address of the interface
-      if (ioctl(fakeSocket, SIOCGIFADDR, (char *)ifr) < 0) {
+      if (ioctl(fakeSocket, SIOCGIFADDR, reinterpret_cast<char *>(ifr)) < 0) {
         mgmt_log("[getAddrForIntr] Unable obtain address for network interface %s\n", intrName);
       } else {
         // Only look at the address if it an internet address
@@ -396,7 +396,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
 #if defined(freebsd) || defined(darwin)
     ifr = (struct ifreq *)((char *)&ifr->ifr_addr + ifr->ifr_addr.sa_len);
 #else
-    ifr = (struct ifreq *)(((char *)ifr) + sizeof(*ifr));
+    ifr = reinterpret_cast<struct ifreq *>((reinterpret_cast<char *>(ifr)) + sizeof(*ifr));
 #endif
   }
   ats_free(ifbuf);
@@ -418,7 +418,7 @@ mgmt_sortipaddrs(int num, struct in_addr **list)
 
   min   = (list[0])->s_addr;
   entry = list[0];
-  while (i < num && (tmp = (struct in_addr *)list[i]) != nullptr) {
+  while (i < num && (tmp = list[i]) != nullptr) {
     i++;
     if (min > tmp->s_addr) {
       min   = tmp->s_addr;

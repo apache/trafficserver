@@ -52,7 +52,7 @@ debug_certificate(const char *msg, X509_NAME *name)
     long len;
     char *ptr;
     len = BIO_get_mem_data(bio, &ptr);
-    TSDebug(PLUGIN_NAME, "%s %.*s", msg, (int)len, ptr);
+    TSDebug(PLUGIN_NAME, "%s %.*s", msg, static_cast<int>(len), ptr);
   }
 
   BIO_free(bio);

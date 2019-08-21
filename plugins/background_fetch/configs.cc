@@ -40,7 +40,7 @@ BgFetchConfig::parseOptions(int argc, const char *argv[])
                                           {nullptr, no_argument, nullptr, '\0'}};
 
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "lc", longopt, nullptr);
+    int opt = getopt_long(argc, const_cast<char *const *>(argv), "lc", longopt, nullptr);
 
     if (opt == -1) {
       break;
@@ -190,7 +190,7 @@ BgFetchConfig::bgFetchAllowed(TSHttpTxn txnp) const
   // We could do this recursively, but following the linked list is probably more efficient.
   for (const BgFetchRule *r = _rules; nullptr != r; r = r->_next) {
     if (r->check_field_configured(txnp)) {
-      TSDebug(PLUGIN_NAME, "found field match %s, exclude %d", r->_field, (int)r->_exclude);
+      TSDebug(PLUGIN_NAME, "found field match %s, exclude %d", r->_field, static_cast<int>(r->_exclude));
       allow_bg_fetch = !r->_exclude;
       break;
     }
