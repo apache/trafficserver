@@ -83,19 +83,6 @@ public:
 
   bool allow_half_open() const override;
 
-  void set_proxy_ssn(ProxySession *new_proxy_ssn) override;
-
-  bool
-  is_outbound_transparent() const override
-  {
-    return outbound_transparent;
-  }
-  void
-  set_outbound_transparent(bool flag) override
-  {
-    outbound_transparent = flag;
-  }
-
   // Pass on the timeouts to the netvc
   void
   set_active_timeout(ink_hrtime timeout_in) override
