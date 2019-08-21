@@ -70,20 +70,29 @@ Cache key structure and related plugin parameters
 
 ::
 
-  Optional components      | ┌─────────────────┬──────────────────┬──────────────────────┐
+  Optional components      | ┌─────────────────┬────────────── ───┬──────────────────────┐
   (included in this order) | │ --static-prefix | --capture-prefix │ --capture-prefix-uri │
                            | ├─────────────────┴──────────────────┴──────────────────────┤
-  Default values if no     | │ /host/port                                                |
+  Default values if no     | │ /host/port or scheme://host:port (see the table below)    |
   optional components      | └───────────────────────────────────────────────────────────┘
   configured               |
 
+  ┌────────────────────┬─────────────────────────┬──────────────────────┐
+  │ --canonical-prefix |  default value if no    │ input used for       │
+  │                    |  prefix parameters used │ --capture-prefix     │
+  ├────────────────────┴─────────────────────────┴──────────────────────┤
+  │ fasle              | /host/port              | host:port            |
+  ├────────────────────┴─────────────────────────┴──────────────────────┤
+  │ true               | scheme://host:port      | scheme://host:port   |
+  └──────────────────────────────────────────────┴──────────────────────┘
+
+
 * ``--static-prefix=<value>`` (default: empty string) - if specified and not an empty string the ``<value>`` will be added to the cache key.
-* ``--capture-prefix=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured from ``host:port`` based on the ``<capture_definition>`` and are added to the cache key.
+* ``--capture-prefix=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured based on the value of ``--canonical-prefix`` parameter (see the table above) and ``<capture_definition>`` and are added to the cache key.
 * ``--capture-prefix-uri=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured from the entire URI based on the ``<capture_definition>`` and are added to the cache key.
 * If any of the "Prefix" related plugin parameters are used together in the plugin configuration they are added to the cache key in the order shown in the diagram.
-* ``--remove-prefix=<true|false|yes|no|0|1`` (default: false) - if specified the prefix elements (host, port) are not processed nor appended to the cachekey. All prefix related plugin parameters are ignored if this parameter is ``true``, ``yes`` or ``1``.
-
-
+* ``--remove-prefix=true|false|yes|no|0|1`` (default: false) - if specified the prefix elements (host, port) are not processed nor appended to the cachekey. All prefix related plugin parameters are ignored if this parameter is ``true``, ``yes`` or ``1``.
+* ``--canonical-prefix=true|false|yes|no|0|1`` (default: false) - impacts the input of regex operation when ``--capture-prefix`` is used and the default value if no prefix parameters are used (see the table above).
 
 "User-Agent" section
 ^^^^^^^^^^^^^^^^^^^^

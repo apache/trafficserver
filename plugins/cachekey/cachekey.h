@@ -55,9 +55,10 @@ public:
 
   void append(unsigned number);
   void append(const String &);
+  void append(const String &s, bool useSeparator);
   void append(const char *s);
   void append(const char *n, unsigned s);
-  void appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &prefixCaptureUri);
+  void appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &prefixCaptureUri, bool canonicalPrefix);
   void appendPath(Pattern &pathCapture, Pattern &pathCaptureUri);
   void appendHeaders(const ConfigHeaders &config);
   void appendQuery(const ConfigQuery &config);
