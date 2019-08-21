@@ -156,12 +156,6 @@ public:
     return "http";
   }
 
-  bool
-  is_transparent_passthrough_allowed() const override
-  {
-    return f_transparent_passthrough;
-  }
-
   void increment_current_active_client_connections_stat() override;
   void decrement_current_active_client_connections_stat() override;
 
@@ -206,8 +200,6 @@ public:
 
   /// Set outbound connection to transparent.
   bool f_outbound_transparent = false;
-  /// Transparently pass-through non-HTTP traffic.
-  bool f_transparent_passthrough = false;
 
   Http1Transaction trans;
 };

@@ -111,6 +111,10 @@ public:
   void set_rx_error_code(ProxyError e);
   void set_tx_error_code(ProxyError e);
 
+  /// Variables
+  //
+  HttpSessionAccept::Options upstream_outbound_options; // overwritable copy of options
+
 protected:
   ProxySession *proxy_ssn   = nullptr;
   HttpSM *current_reader    = nullptr;
@@ -118,12 +122,7 @@ protected:
 
   /// DNS resolution preferences.
   HostResStyle host_res_style = HOST_RES_NONE;
-  /// Local outbound address control.
-  in_port_t outbound_port{0};
-  IpAddr outbound_ip4;
-  IpAddr outbound_ip6;
-
-  bool restart_immediate = false;
+  bool restart_immediate      = false;
 
 private:
 };
