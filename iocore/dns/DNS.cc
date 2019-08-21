@@ -626,7 +626,7 @@ static inline int
 _ink_res_mkquery(ink_res_state res, char *qname, int qtype, unsigned char *buffer, bool over_tcp = false)
 {
   int offset = over_tcp ? tcp_data_length_offset : 0;
-  int r      = ink_res_mkquery(res, QUERY, qname, C_IN, qtype, nullptr, 0, nullptr, buffer + offset, MAX_DNS_PACKET_LEN);
+  int r      = ink_res_mkquery(res, QUERY, qname, C_IN, qtype, nullptr, 0, nullptr, buffer + offset, MAX_DNS_REQUEST_LEN - offset);
   if (over_tcp) {
     NS_PUT16(r, buffer);
   }
@@ -658,7 +658,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
   }
   bool over_tcp = dns_conn_mode == DNS_CONN_MODE::TCP_ONLY;
   int con_fd    = over_tcp ? tcpcon[ndx].fd : udpcon[ndx].fd;
-  unsigned char buffer[MAX_DNS_PACKET_LEN];
+  unsigned char buffer[MAX_DNS_REQUEST_LEN];
   Debug("dns", "trying to resolve '%s' from DNS connection, ndx %d", try_server_names[try_servers], ndx);
   int r       = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer, over_tcp);
   try_servers = (try_servers + 1) % countof(try_server_names);
@@ -679,7 +679,7 @@ DNSHandler::try_primary_named(bool reopen)
     open_cons(nullptr, true, 0);
   }
   if ((t - last_primary_retry) > DNS_PRIMARY_RETRY_PERIOD) {
-    unsigned char buffer[MAX_DNS_PACKET_LEN];
+    unsigned char buffer[MAX_DNS_REQUEST_LEN];
     bool over_tcp      = dns_conn_mode == DNS_CONN_MODE::TCP_ONLY;
     int con_fd         = over_tcp ? tcpcon[0].fd : udpcon[0].fd;
     last_primary_retry = t;
@@ -853,7 +853,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
             goto Lerror;
           }
           dnsc->tcp_data.total_length = ntohs(dnsc->tcp_data.total_length);
-          if (res != sizeof(dnsc->tcp_data.total_length) || dnsc->tcp_data.total_length > MAX_DNS_PACKET_LEN) {
+          if (res != sizeof(dnsc->tcp_data.total_length)) {
             goto Lerror;
           }
         }
@@ -881,7 +881,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         hostent_cache = dnsBufAllocator.alloc();
       }
 
-      res = socketManager.recvfrom(dnsc->fd, hostent_cache->buf, MAX_DNS_PACKET_LEN, 0, &from_ip.sa, &from_length);
+      res = socketManager.recvfrom(dnsc->fd, hostent_cache->buf, MAX_DNS_RESPONSE_LEN, 0, &from_ip.sa, &from_length);
       Debug("dns", "DNSHandler::recv_dns res = [%d]", res);
       if (res == -EAGAIN) {
         break;
@@ -1121,7 +1121,7 @@ static bool
 write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
 {
   ProxyMutex *mutex = h->mutex.get();
-  unsigned char buffer[MAX_DNS_PACKET_LEN];
+  unsigned char buffer[MAX_DNS_REQUEST_LEN];
   int offset     = over_tcp ? tcp_data_length_offset : 0;
   HEADER *header = reinterpret_cast<HEADER *>(buffer + offset);
   int r          = 0;
