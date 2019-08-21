@@ -397,6 +397,8 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
     {const_cast<char *>("separator"), optional_argument, nullptr, 's'},
     {const_cast<char *>("uri-type"), optional_argument, nullptr, 't'},
     {const_cast<char *>("capture-header"), optional_argument, nullptr, 'u'},
+    {const_cast<char *>("canonical-prefix"), optional_argument, nullptr, 'v'},
+    /* reserve 'z' for 'config' files */
     {nullptr, 0, nullptr, 0},
   };
 
@@ -504,6 +506,9 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
     case 'u': /* capture-header */
       _headers.addCapture(optarg);
       break;
+    case 'v': /* canonical-prefix */
+      _canonicalPrefix = isTrue(optarg);
+      break;
     }
   }
 
@@ -533,6 +538,12 @@ bool
 Configs::pathToBeRemoved()
 {
   return _pathToBeRemoved;
+}
+
+bool
+Configs::canonicalPrefix()
+{
+  return _canonicalPrefix;
 }
 
 void
