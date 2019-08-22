@@ -45,8 +45,8 @@ public:
     return 0;
   }
 
-  virtual void
-  handle_cache_event(int event, CacheTestBase *base)
+  void
+  handle_cache_event(int event, CacheTestBase *base) override
   {
     switch (event) {
     case CACHE_EVENT_OPEN_READ:
@@ -113,8 +113,8 @@ public:
     return 0;
   }
 
-  virtual void
-  handle_cache_event(int event, CacheTestBase *base)
+  void
+  handle_cache_event(int event, CacheTestBase *base) override
   {
     switch (event) {
     case CACHE_EVENT_OPEN_WRITE:

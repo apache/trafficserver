@@ -88,7 +88,7 @@ TSListDestroy(TSList l)
     return;
   }
 
-  delete_queue((LLQ *)l);
+  delete_queue(static_cast<LLQ *>(l));
   return;
 }
 
@@ -102,7 +102,7 @@ TSListEnqueue(TSList l, void *data)
     return TS_ERR_PARAMS;
   }
 
-  ret = enqueue((LLQ *)l, data); /* returns TRUE=1 or FALSE=0 */
+  ret = enqueue(static_cast<LLQ *>(l), data); /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
     return TS_ERR_FAIL;
   } else {
@@ -114,11 +114,11 @@ tsapi void *
 TSListDequeue(TSList l)
 {
   ink_assert(l);
-  if (!l || queue_is_empty((LLQ *)l)) {
+  if (!l || queue_is_empty(static_cast<LLQ *>(l))) {
     return nullptr;
   }
 
-  return dequeue((LLQ *)l);
+  return dequeue(static_cast<LLQ *>(l));
 }
 
 tsapi bool
@@ -129,7 +129,7 @@ TSListIsEmpty(TSList l)
     return true; // list doesn't exist, so it's empty
   }
 
-  return queue_is_empty((LLQ *)l);
+  return queue_is_empty(static_cast<LLQ *>(l));
 }
 
 tsapi int
@@ -140,7 +140,7 @@ TSListLen(TSList l)
     return -1;
   }
 
-  return queue_len((LLQ *)l);
+  return queue_len(static_cast<LLQ *>(l));
 }
 
 tsapi bool
@@ -152,13 +152,13 @@ TSListIsValid(TSList l)
     return false;
   }
 
-  len = queue_len((LLQ *)l);
+  len = queue_len(static_cast<LLQ *>(l));
   for (i = 0; i < len; i++) {
-    void *ele = (void *)dequeue((LLQ *)l);
+    void *ele = dequeue(static_cast<LLQ *>(l));
     if (!ele) {
       return false;
     }
-    enqueue((LLQ *)l, ele);
+    enqueue(static_cast<LLQ *>(l), ele);
   }
   return true;
 }
@@ -179,12 +179,12 @@ TSStringListDestroy(TSStringList strl)
   }
 
   /* dequeue each element and free it */
-  while (!queue_is_empty((LLQ *)strl)) {
-    char *str = (char *)dequeue((LLQ *)strl);
+  while (!queue_is_empty(static_cast<LLQ *>(strl))) {
+    char *str = static_cast<char *>(dequeue(static_cast<LLQ *>(strl)));
     ats_free(str);
   }
 
-  delete_queue((LLQ *)strl);
+  delete_queue(static_cast<LLQ *>(strl));
 }
 
 tsapi TSMgmtError
@@ -197,7 +197,7 @@ TSStringListEnqueue(TSStringList strl, char *str)
     return TS_ERR_PARAMS;
   }
 
-  ret = enqueue((LLQ *)strl, str); /* returns TRUE=1 or FALSE=0 */
+  ret = enqueue(static_cast<LLQ *>(strl), str); /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
     return TS_ERR_FAIL;
   } else {
@@ -209,11 +209,11 @@ tsapi char *
 TSStringListDequeue(TSStringList strl)
 {
   ink_assert(strl);
-  if (!strl || queue_is_empty((LLQ *)strl)) {
+  if (!strl || queue_is_empty(static_cast<LLQ *>(strl))) {
     return nullptr;
   }
 
-  return (char *)dequeue((LLQ *)strl);
+  return static_cast<char *>(dequeue(static_cast<LLQ *>(strl)));
 }
 
 tsapi bool
@@ -224,7 +224,7 @@ TSStringListIsEmpty(TSStringList strl)
     return true;
   }
 
-  return queue_is_empty((LLQ *)strl);
+  return queue_is_empty(static_cast<LLQ *>(strl));
 }
 
 tsapi int
@@ -235,7 +235,7 @@ TSStringListLen(TSStringList strl)
     return -1;
   }
 
-  return queue_len((LLQ *)strl);
+  return queue_len(static_cast<LLQ *>(strl));
 }
 
 // returns false if any element is NULL string
@@ -248,13 +248,13 @@ TSStringListIsValid(TSStringList strl)
     return false;
   }
 
-  len = queue_len((LLQ *)strl);
+  len = queue_len(static_cast<LLQ *>(strl));
   for (i = 0; i < len; i++) {
-    char *str = (char *)dequeue((LLQ *)strl);
+    char *str = static_cast<char *>(dequeue(static_cast<LLQ *>(strl)));
     if (!str) {
       return false;
     }
-    enqueue((LLQ *)strl, str);
+    enqueue(static_cast<LLQ *>(strl), str);
   }
   return true;
 }
@@ -275,12 +275,12 @@ TSIntListDestroy(TSIntList intl)
   }
 
   /* dequeue each element and free it */
-  while (!queue_is_empty((LLQ *)intl)) {
-    int *iPtr = (int *)dequeue((LLQ *)intl);
+  while (!queue_is_empty(static_cast<LLQ *>(intl))) {
+    int *iPtr = static_cast<int *>(dequeue(static_cast<LLQ *>(intl)));
     ats_free(iPtr);
   }
 
-  delete_queue((LLQ *)intl);
+  delete_queue(static_cast<LLQ *>(intl));
   return;
 }
 
@@ -294,7 +294,7 @@ TSIntListEnqueue(TSIntList intl, int *elem)
     return TS_ERR_PARAMS;
   }
 
-  ret = enqueue((LLQ *)intl, elem); /* returns TRUE=1 or FALSE=0 */
+  ret = enqueue(static_cast<LLQ *>(intl), elem); /* returns TRUE=1 or FALSE=0 */
   if (ret == 0) {
     return TS_ERR_FAIL;
   } else {
@@ -306,11 +306,11 @@ tsapi int *
 TSIntListDequeue(TSIntList intl)
 {
   ink_assert(intl);
-  if (!intl || queue_is_empty((LLQ *)intl)) {
+  if (!intl || queue_is_empty(static_cast<LLQ *>(intl))) {
     return nullptr;
   }
 
-  return (int *)dequeue((LLQ *)intl);
+  return static_cast<int *>(dequeue(static_cast<LLQ *>(intl)));
 }
 
 tsapi bool
@@ -321,7 +321,7 @@ TSIntListIsEmpty(TSIntList intl)
     return true;
   }
 
-  return queue_is_empty((LLQ *)intl);
+  return queue_is_empty(static_cast<LLQ *>(intl));
 }
 
 tsapi int
@@ -332,7 +332,7 @@ TSIntListLen(TSIntList intl)
     return -1;
   }
 
-  return queue_len((LLQ *)intl);
+  return queue_len(static_cast<LLQ *>(intl));
 }
 
 tsapi bool
@@ -342,15 +342,15 @@ TSIntListIsValid(TSIntList intl, int min, int max)
     return false;
   }
 
-  for (unsigned long i = 0; i < queue_len((LLQ *)intl); i++) {
-    int *item = (int *)dequeue((LLQ *)intl);
+  for (unsigned long i = 0; i < queue_len(static_cast<LLQ *>(intl)); i++) {
+    int *item = static_cast<int *>(dequeue(static_cast<LLQ *>(intl)));
     if (*item < min) {
       return false;
     }
     if (*item > max) {
       return false;
     }
-    enqueue((LLQ *)intl, item);
+    enqueue(static_cast<LLQ *>(intl), item);
   }
   return true;
 }
@@ -359,7 +359,7 @@ TSIntListIsValid(TSIntList intl, int min, int max)
 tsapi TSMgmtEvent *
 TSEventCreate(void)
 {
-  TSMgmtEvent *event = (TSMgmtEvent *)ats_malloc(sizeof(TSMgmtEvent));
+  TSMgmtEvent *event = static_cast<TSMgmtEvent *>(ats_malloc(sizeof(TSMgmtEvent)));
 
   event->id          = -1;
   event->name        = nullptr;
@@ -383,7 +383,7 @@ TSEventDestroy(TSMgmtEvent *event)
 tsapi TSRecordEle *
 TSRecordEleCreate(void)
 {
-  TSRecordEle *ele = (TSRecordEle *)ats_malloc(sizeof(TSRecordEle));
+  TSRecordEle *ele = static_cast<TSRecordEle *>(ats_malloc(sizeof(TSRecordEle)));
 
   ele->rec_name = nullptr;
   ele->rec_type = TS_REC_UNDEFINED;
@@ -535,9 +535,9 @@ TSRecordGetMlt(TSStringList rec_names, TSList rec_vals)
     return TS_ERR_PARAMS;
   }
 
-  num_recs = queue_len((LLQ *)rec_names);
+  num_recs = queue_len(static_cast<LLQ *>(rec_names));
   for (i = 0; i < num_recs; i++) {
-    char *rec_name = (char *)dequeue((LLQ *)rec_names); // remove name from list
+    char *rec_name = static_cast<char *>(dequeue(static_cast<LLQ *>(rec_names))); // remove name from list
     if (!rec_name) {
       return TS_ERR_PARAMS; // NULL is invalid record name
     }
@@ -545,20 +545,20 @@ TSRecordGetMlt(TSStringList rec_names, TSList rec_vals)
     TSRecordEle *ele = TSRecordEleCreate();
 
     ret = MgmtRecordGet(rec_name, ele);
-    enqueue((LLQ *)rec_names, rec_name); // return name to list
+    enqueue(static_cast<LLQ *>(rec_names), rec_name); // return name to list
 
     if (ret != TS_ERR_OKAY) { // RecordGet failed
       // need to free all the ele's allocated by MgmtRecordGet so far
       TSRecordEleDestroy(ele);
       for (j = 0; j < i; j++) {
-        ele = (TSRecordEle *)dequeue((LLQ *)rec_vals);
+        ele = static_cast<TSRecordEle *>(dequeue(static_cast<LLQ *>(rec_vals)));
         if (ele) {
           TSRecordEleDestroy(ele);
         }
       }
       return ret;
     }
-    enqueue((LLQ *)rec_vals, ele); // all is good; add ele to end of list
+    enqueue(static_cast<LLQ *>(rec_vals), ele); // all is good; add ele to end of list
   }
 
   return TS_ERR_OKAY;
@@ -631,10 +631,10 @@ TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need)
     return TS_ERR_PARAMS;
   }
 
-  num_recs = queue_len((LLQ *)rec_list);
+  num_recs = queue_len(static_cast<LLQ *>(rec_list));
 
   for (i = 0; i < num_recs; i++) {
-    TSRecordEle *ele = (TSRecordEle *)dequeue((LLQ *)rec_list);
+    TSRecordEle *ele = static_cast<TSRecordEle *>(dequeue(static_cast<LLQ *>(rec_list)));
     if (ele) {
       switch (ele->rec_type) {
       case TS_REC_INT:
@@ -664,7 +664,7 @@ TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need)
         top_action_req = *action_need;
       }
     }
-    enqueue((LLQ *)rec_list, ele);
+    enqueue(static_cast<LLQ *>(rec_list), ele);
   }
 
   // set the action_need to be the most sever action needed of all the "set" calls
@@ -987,12 +987,12 @@ TSReadFromUrlEx(const char *url, char **header, int *headerSize, char **body, in
 
   /* sending the HTTP request via the established socket */
   snprintf(request, BUFSIZE, "http://%s:%d/%s", httpHost, httpPort, httpPath);
-  if ((status = sendHTTPRequest(hFD, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((status = sendHTTPRequest(hFD, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(buffer, 0, bufsize); /* empty the buffer */
-  if ((status = readHTTPResponse(hFD, buffer, bufsize, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((status = readHTTPResponse(hFD, buffer, bufsize, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -1037,12 +1037,12 @@ TSLookupFromCacheUrl(TSString url, TSString *info)
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/lookup_url?url=%s", url);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = sendHTTPRequest(fd, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -1079,12 +1079,12 @@ TSLookupFromCacheUrlRegex(TSString url_regex, TSString *list)
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/lookup_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = sendHTTPRequest(fd, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -1120,12 +1120,12 @@ TSDeleteFromCacheUrl(TSString url, TSString *info)
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/delete_url?url=%s", url);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = sendHTTPRequest(fd, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -1162,12 +1162,12 @@ TSDeleteFromCacheUrlRegex(TSString url_regex, TSString *list)
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/delete_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = sendHTTPRequest(fd, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -1203,12 +1203,12 @@ TSInvalidateFromCacheUrlRegex(TSString url_regex, TSString *list)
     goto END;
   }
   snprintf(request, BUFSIZE, "http://{cache}/invalidate_regex?url=%s", url_regex);
-  if ((err = sendHTTPRequest(fd, request, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = sendHTTPRequest(fd, request, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
   memset(response, 0, URL_BUFSIZE);
-  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, (uint64_t)timeout)) != TS_ERR_OKAY) {
+  if ((err = readHTTPResponse(fd, response, URL_BUFSIZE, static_cast<uint64_t>(timeout))) != TS_ERR_OKAY) {
     goto END;
   }
 
@@ -1243,7 +1243,7 @@ TSEventResolve(const char *event_name)
 tsapi TSMgmtError
 TSActiveEventGetMlt(TSList active_events)
 {
-  return ActiveEventGetMlt((LLQ *)active_events);
+  return ActiveEventGetMlt(static_cast<LLQ *>(active_events));
 }
 
 tsapi TSMgmtError
@@ -1267,7 +1267,7 @@ TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func)
 TSConfigRecordDescription *
 TSConfigRecordDescriptionCreate(void)
 {
-  TSConfigRecordDescription *val = (TSConfigRecordDescription *)ats_malloc(sizeof(TSConfigRecordDescription));
+  TSConfigRecordDescription *val = static_cast<TSConfigRecordDescription *>(ats_malloc(sizeof(TSConfigRecordDescription)));
 
   ink_zero(*val);
   val->rec_type = TS_REC_UNDEFINED;

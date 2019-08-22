@@ -45,12 +45,12 @@ HttpPagesHandler::HttpPagesHandler(Continuation *cont, HTTPHdr *header)
   int length;
 
   url     = header->url_get();
-  request = (char *)url->path_get(&length);
+  request = const_cast<char *>(url->path_get(&length));
   request = arena.str_store(request, length);
 
   if (strncmp(request, "sm_details", sizeof("sm_details")) == 0) {
     arena.str_free(request);
-    request = (char *)url->query_get(&length);
+    request = const_cast<char *>(url->query_get(&length));
     request = arena.str_store(request, length);
     SET_HANDLER(&HttpPagesHandler::handle_smdetails);
 
@@ -67,7 +67,7 @@ HttpPagesHandler::extract_id(const char *query)
   char *p;
   int64_t id;
 
-  p = (char *)strstr(query, "id=");
+  p = const_cast<char *>(strstr(query, "id="));
   if (!p) {
     return -1;
   }
@@ -220,11 +220,11 @@ HttpPagesHandler::dump_history(HttpSM *sm)
     resp_end_column();
 
     resp_begin_column();
-    resp_add("%u", (unsigned int)sm->history[i].event);
+    resp_add("%u", static_cast<unsigned int>(sm->history[i].event));
     resp_end_column();
 
     resp_begin_column();
-    resp_add("%d", (int)sm->history[i].reentrancy);
+    resp_add("%d", static_cast<int>(sm->history[i].reentrancy));
     resp_end_column();
 
     resp_end_row();

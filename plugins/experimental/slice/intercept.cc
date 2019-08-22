@@ -40,7 +40,7 @@ intercept_hook(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_NET_ACCEPT: {
     // set up reader from client
-    TSVConn const downvc = (TSVConn)edata;
+    TSVConn const downvc = static_cast<TSVConn>(edata);
     data->m_dnstream.setupConnection(downvc);
     data->m_dnstream.setupVioRead(contp);
   } break;

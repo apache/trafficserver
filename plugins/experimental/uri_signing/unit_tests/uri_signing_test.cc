@@ -58,7 +58,7 @@ normalize_uri_helper(const char *uri, const char *expected_normal)
   size_t uri_ct = strlen(uri);
   int buff_size = uri_ct + 2;
   int err;
-  char *uri_normal = (char *)malloc(buff_size);
+  char *uri_normal = static_cast<char *>(malloc(buff_size));
   memset(uri_normal, 0, buff_size);
 
   err = normalize_uri(uri, uri_ct, uri_normal, buff_size);
@@ -105,7 +105,7 @@ jws_parsing_helper(const char *uri, const char *paramName, const char *expected_
   size_t uri_ct   = strlen(uri);
   size_t strip_ct = 0;
 
-  char *uri_strip = (char *)malloc(uri_ct + 1);
+  char *uri_strip = static_cast<char *>(malloc(uri_ct + 1));
   memset(uri_strip, 0, uri_ct + 1);
 
   cjose_jws_t *jws = get_jws_from_uri(uri, uri_ct, paramName, uri_strip, uri_ct, &strip_ct);

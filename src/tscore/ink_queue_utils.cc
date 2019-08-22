@@ -75,6 +75,6 @@ ink_queue_load_64(void *dst, void *src)
   (*(head_p *)dst).s.version = src_version;
   (*(head_p *)dst).s.pointer = src_pointer;
 #else
-  *(void **)dst = *(void **)src;
+  *static_cast<void **>(dst) = *static_cast<void **>(src);
 #endif
 }

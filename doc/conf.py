@@ -57,7 +57,9 @@ extensions = [
 ]
 
 # Contains values that are dependent on configure.ac.
-execfile('ext/local-config.py')
+LOCAL_CONFIG = 'ext/local-config.py'
+with open(LOCAL_CONFIG) as f :
+    exec(compile(f.read(), LOCAL_CONFIG, 'exec'))
 
 if version_info >= (1, 4):
     extensions.append('sphinx.ext.imgmath')
@@ -114,7 +116,7 @@ gettext_compact = False
 # Generate .mo files just in time
 if os.environ.get('READTHEDOCS') == 'True':
     import polib
-    print "Generating .mo files",
+    print("Generating .mo files"),
     for locale_dir in locale_dirs:
         for path, dummy, filenames in os.walk(locale_dir):
             for filename in filenames:
@@ -124,7 +126,7 @@ if os.environ.get('READTHEDOCS') == 'True':
                     mo_file = base + ".mo"
                     po = polib.pofile(po_file)
                     po.save_as_mofile(fpath=mo_file)
-    print "done"
+    print("done")
 else:
     # On RedHat-based distributions, install the python-sphinx_rtd_theme package
     # to get an end result tht looks more like readthedoc.org.
@@ -213,7 +215,7 @@ class Inliner(states.Inliner):
                                        punctuation_chars.closers))
 
         issue = re.compile(
-            ur'''
+            r'''
       {start_string_prefix}
       TS-\d+
       {end_string_suffix}'''.format(
@@ -344,9 +346,9 @@ latex_elements = {
     #'preamble': '',
 }
 
-if tags.has('latex_a4'):
+if 'latex_a4' in tags:
     latex_elements['papersize'] = 'a4paper'
-elif tags.has('latex_paper'):
+elif 'latex_paper' in tags:
     latex_elements['papersiize'] = 'letterpaper'
 
 # Grouping the document tree into LaTeX files. List of tuples

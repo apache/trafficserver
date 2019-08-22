@@ -248,7 +248,7 @@ INKVConnInternal::retry(unsigned int delay)
 {
 }
 
-INKContInternal::INKContInternal(TSEventFunc funcp, TSMutex mutexp) : DummyVConnection((ProxyMutex *)mutexp) {}
+INKContInternal::INKContInternal(TSEventFunc funcp, TSMutex mutexp) : DummyVConnection(reinterpret_cast<ProxyMutex *>(mutexp)) {}
 
 INKContInternal::INKContInternal() : DummyVConnection(nullptr) {}
 

@@ -811,7 +811,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
     this->_handle_path_validation_timeout(data);
     break;
-  case EVENT_IMMEDIATE:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
     break;
@@ -847,7 +847,7 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
   case QUIC_EVENT_PATH_VALIDATION_TIMEOUT:
     this->_handle_path_validation_timeout(data);
     break;
-  case EVENT_IMMEDIATE:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
     break;

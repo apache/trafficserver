@@ -454,7 +454,7 @@ QueryParameterToArguments(CharVector &v)
 }
 
 struct ImageTransform : TransformationPlugin {
-  ~ImageTransform() override {}
+  ~ImageTransform() override = default;
 
   ImageTransform(Transaction &t, CharVector &&a, CharPointerVector &&m, ThreadPool &p)
     : TransformationPlugin(t, TransformationPlugin::RESPONSE_TRANSFORMATION),

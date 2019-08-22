@@ -205,8 +205,8 @@ LayoutEngine::create_runroot()
       return;
     }
   }
-  std::string original_root = Layout::get()->prefix;
-  std::string ts_runroot    = path;
+  std::string original_root     = Layout::get()->prefix;
+  const std::string &ts_runroot = path;
   // check for existing runroot to use rather than create new one
   if (!force_flag && exists(Layout::relative_to(ts_runroot, "runroot.yaml"))) {
     std::cout << "Using existing runroot...\n"

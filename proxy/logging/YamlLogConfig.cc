@@ -119,7 +119,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
 {
   for (auto const &item : node) {
     if (std::none_of(valid_log_object_keys.begin(), valid_log_object_keys.end(),
-                     [&item](std::string s) { return s == item.first.as<std::string>(); })) {
+                     [&item](const std::string &s) { return s == item.first.as<std::string>(); })) {
       throw YAML::ParserException(item.Mark(), "log: unsupported key '" + item.first.as<std::string>() + "'");
     }
   }
@@ -207,10 +207,11 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
     }
   }
 
-  auto logObject = new LogObject(
-    fmt, Log::config->logfile_dir, filename.c_str(), file_type, header.c_str(), (Log::RollingEnabledValues)obj_rolling_enabled,
-    Log::config->preproc_threads, obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb, /* auto_created */ false,
-    /* rolling_max_count */ obj_rolling_max_count, /* reopen_after_rolling */ obj_rolling_allow_empty > 0, pipe_buffer_size);
+  auto logObject = new LogObject(fmt, Log::config->logfile_dir, filename.c_str(), file_type, header.c_str(),
+                                 static_cast<Log::RollingEnabledValues>(obj_rolling_enabled), Log::config->preproc_threads,
+                                 obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb, /* auto_created */ false,
+                                 /* rolling_max_count */ obj_rolling_max_count,
+                                 /* reopen_after_rolling */ obj_rolling_allow_empty > 0, pipe_buffer_size););
 
   // Generate LogDeletingInfo entry for later use
   std::string ext;

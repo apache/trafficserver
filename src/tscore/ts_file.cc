@@ -75,7 +75,7 @@ namespace file
   current_path()
   {
     char cwd[PATH_MAX];
-    if (::getcwd(cwd, sizeof(cwd)) != NULL) {
+    if (::getcwd(cwd, sizeof(cwd)) != nullptr) {
       return path(cwd);
     }
     return path();
@@ -187,13 +187,15 @@ namespace file
       return false;
     }
 
-    while (1) {
+    while (true) {
       size_t in = fread(buf, 1, bufsize, src);
-      if (0 == in)
+      if (0 == in) {
         break;
+      }
       size_t out = fwrite(buf, 1, in, dst);
-      if (0 == out)
+      if (0 == out) {
         break;
+      }
     }
 
     fclose(src);

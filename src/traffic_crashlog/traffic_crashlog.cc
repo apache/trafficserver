@@ -93,7 +93,7 @@ max_passwd_size()
 #if defined(_SC_GETPW_R_SIZE_MAX)
   long val = sysconf(_SC_GETPW_R_SIZE_MAX);
   if (val > 0) {
-    return (unsigned)val;
+    return static_cast<unsigned>(val);
   }
 #endif
 
@@ -203,7 +203,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 
   ink_zero(target);
-  target.pid       = (pid_t)target_pid;
+  target.pid       = static_cast<pid_t>(target_pid);
   target.timestamp = timestamp();
 
   if (host_triplet && strncmp(host_triplet, "x86_64-unknown-linux", sizeof("x86_64-unknown-linux") - 1) == 0) {
@@ -211,13 +211,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     target.flags |= CRASHLOG_HAVE_THREADINFO;
 
     nbytes = read(STDIN_FILENO, &target.siginfo, sizeof(target.siginfo));
-    if (nbytes < (ssize_t)sizeof(target.siginfo)) {
+    if (nbytes < static_cast<ssize_t>(sizeof(target.siginfo))) {
       Warning("received %zd of %zu expected signal info bytes", nbytes, sizeof(target.siginfo));
       target.flags &= ~CRASHLOG_HAVE_THREADINFO;
     }
 
     nbytes = read(STDIN_FILENO, &target.ucontext, sizeof(target.ucontext));
-    if (nbytes < (ssize_t)sizeof(target.ucontext)) {
+    if (nbytes < static_cast<ssize_t>(sizeof(target.ucontext))) {
       Warning("received %zd of %zu expected thread context bytes", nbytes, sizeof(target.ucontext));
       target.flags &= ~CRASHLOG_HAVE_THREADINFO;
     }

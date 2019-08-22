@@ -308,7 +308,7 @@ QUICMultiCertConfigLoader::ssl_cert_cb(SSL *ssl, void * /*arg*/)
   // don't find a name-based match at this point, we *do not* want to mess with the context because we've
   // already made a best effort to find the best match.
   if (likely(servername)) {
-    cc = lookup->find((char *)servername);
+    cc = lookup->find(const_cast<char *>(servername));
     if (cc && cc->getCtx()) {
       ctx = cc->getCtx();
     }

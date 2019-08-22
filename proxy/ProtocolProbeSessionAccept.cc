@@ -170,7 +170,7 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     ink_assert(data);
 
     VIO *vio;
-    NetVConnection *netvc          = (NetVConnection *)data;
+    NetVConnection *netvc          = static_cast<NetVConnection *>(data);
     ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, nullptr, nullptr);
 
     // XXX we need to apply accept inactivity timeout here ...
@@ -187,7 +187,7 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     return EVENT_CONT;
   }
 
-  ink_abort("Protocol probe received a fatal error: errno = %d", -((int)(intptr_t)data));
+  ink_abort("Protocol probe received a fatal error: errno = %d", -(static_cast<int>((intptr_t)data)));
   return EVENT_CONT;
 }
 
