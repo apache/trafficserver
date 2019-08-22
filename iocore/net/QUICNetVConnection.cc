@@ -704,7 +704,7 @@ QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 void
 QUICNetVConnection::ping()
 {
-  this->_pinger->request(QUICEncryptionLevel::ONE_RTT);
+  this->_pinger->request();
 }
 
 void

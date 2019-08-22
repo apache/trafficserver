@@ -35,9 +35,9 @@ class QUICPinger : public QUICFrameOnceGenerator
 public:
   QUICPinger() : _mutex(new_ProxyMutex()) {}
 
-  void request(QUICEncryptionLevel level);
-  void cancel(QUICEncryptionLevel level);
-  uint64_t count(QUICEncryptionLevel level);
+  void request();
+  void cancel();
+  uint64_t count();
 
 private:
   // QUICFrameGenerator
@@ -48,6 +48,5 @@ private:
   bool _ack_eliciting_packet_out = false;
 
   Ptr<ProxyMutex> _mutex;
-  // Initial, 0/1-RTT, and Handshake
-  uint64_t _need_to_fire[4] = {0};
+  uint64_t _need_to_fire = 0;
 };
