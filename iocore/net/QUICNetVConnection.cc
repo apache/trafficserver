@@ -1579,6 +1579,17 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       frame =
         g->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size, len, seq_num);
       if (frame) {
+        // Some frame types must not be sent on Initial and Handshake packets
+        switch (auto t = frame->type(); level) {
+        case QUICEncryptionLevel::INITIAL:
+        case QUICEncryptionLevel::HANDSHAKE:
+          ink_assert(t == QUICFrameType::CRYPTO || t == QUICFrameType::ACK || t == QUICFrameType::PADDING ||
+                     t == QUICFrameType::CONNECTION_CLOSE);
+          break;
+        default:
+          break;
+        }
+
         ++frame_count;
         probing |= frame->is_probing_frame();
         if (frame->is_flow_controlled()) {
