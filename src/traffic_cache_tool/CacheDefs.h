@@ -453,7 +453,7 @@ struct Span {
   /// This is broken and needs to be cleaned up.
   void clearPermanently();
 
-  ts::Rv<Stripe *> allocStripe(int vol_idx, CacheStripeBlocks len);
+  ts::Rv<Stripe *> allocStripe(int vol_idx, const CacheStripeBlocks &len);
   Errata updateHeader(); ///< Update serialized header and write to disk.
 
   ts::file::path _path;     ///< File system location of span.
@@ -494,7 +494,7 @@ struct Stripe {
   };
 
   /// Construct from span header data.
-  Stripe(Span *span, Bytes start, CacheStoreBlocks len);
+  Stripe(Span *span, const Bytes &start, const CacheStoreBlocks &len);
 
   /// Is stripe unallocated?
   bool isFree() const;

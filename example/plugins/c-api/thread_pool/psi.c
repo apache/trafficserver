@@ -422,7 +422,7 @@ _basename(const char *filename)
   char *cptr;
   const char *ptr = filename;
 
-  while ((cptr = strchr(ptr, (int)'/')) != NULL) {
+  while ((cptr = strchr(ptr, '/')) != NULL) {
     ptr = cptr + 1;
   }
   return ptr;

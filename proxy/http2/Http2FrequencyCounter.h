@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Http2FrequencyCounter
 
   @section license License
 
@@ -21,5 +21,18 @@
   limitations under the License.
  */
 
-#include "P_EventSystem.h"
-#include "test_Event.i"
+#pragma once
+
+#include <cstdint>
+#include "I_EventSystem.h"
+
+class Http2FrequencyCounter
+{
+public:
+  void increment(uint16_t amount = 1);
+  uint32_t get_count();
+
+protected:
+  uint16_t _count[2]      = {0};
+  ink_hrtime _last_update = 0;
+};

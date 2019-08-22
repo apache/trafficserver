@@ -106,7 +106,7 @@ URLparser::getPort(std::string &fullURL, int &port_ptr, int &port_len)
   }
   if (u_pos != -1) {
     fullURL.insert(u_pos, ":@");
-    TextView url(fullURL.data(), (int)fullURL.size());
+    TextView url(fullURL.data(), static_cast<int>(fullURL.size()));
 
     url += 9;
 
@@ -216,7 +216,7 @@ Stripe::Chunk::clear()
   _chain.clear();
 }
 
-Stripe::Stripe(Span *span, Bytes start, CacheStoreBlocks len) : _span(span), _start(start), _len(len)
+Stripe::Stripe(Span *span, const Bytes &start, const CacheStoreBlocks &len) : _span(span), _start(start), _len(len)
 {
   ts::bwprint(hashText, "{} {}:{}", span->_path.view(), _start.count(), _len.count());
   CryptoContext().hash_immediate(hash_id, hashText.data(), static_cast<int>(hashText.size()));
@@ -248,12 +248,12 @@ Stripe::InitializeMeta()
   }
   if (!freelist) // freelist is not allocated yet
   {
-    freelist = (uint16_t *)malloc(_segments * sizeof(uint16_t)); // segments has already been calculated
+    freelist = static_cast<uint16_t *>(malloc(_segments * sizeof(uint16_t))); // segments has already been calculated
   }
   if (!dir) // for new spans, this will likely be nullptr as we don't need to read the stripe meta from disk
   {
-    char *raw_dir = (char *)ats_memalign(ats_pagesize(), this->vol_dirlen());
-    dir           = (CacheDirEntry *)(raw_dir + this->vol_headerlen());
+    char *raw_dir = static_cast<char *>(ats_memalign(ats_pagesize(), this->vol_dirlen()));
+    dir           = reinterpret_cast<CacheDirEntry *>(raw_dir + this->vol_headerlen());
   }
   init_dir();
   return zret;
@@ -309,7 +309,7 @@ Stripe::updateHeaderFooter()
     return zret;
   }
 
-  char *meta_t = (char *)ats_memalign(ats_pagesize(), dir_size);
+  char *meta_t = static_cast<char *>(ats_memalign(ats_pagesize(), dir_size));
   // copy headers
   for (auto i : {A, B}) {
     // copy header
@@ -455,7 +455,7 @@ Stripe::dir_probe(CryptoHash *key, CacheDirEntry *result, CacheDirEntry **last_c
     do {
       if (dir_compare_tag(e, key)) {
         if (dir_valid(e)) {
-          stripe_buff2 = (char *)ats_memalign(ats_pagesize(), dir_approx_size(e));
+          stripe_buff2 = static_cast<char *>(ats_memalign(ats_pagesize(), dir_approx_size(e)));
           std::cout << "dir_probe hit: found seg: " << segment << " bucket: " << bucket << " offset: " << dir_offset(e)
                     << "size: " << dir_approx_size(e) << std::endl;
           break;
@@ -476,8 +476,9 @@ Stripe::dir_probe(CryptoHash *key, CacheDirEntry *result, CacheDirEntry **last_c
     Bytes offset = stripe_offset(e);
     int64_t size = dir_approx_size(e);
     ssize_t n    = pread(fd, stripe_buff2, size, offset);
-    if (n < size)
+    if (n < size) {
       std::cout << "Failed to read content from the Stripe:" << strerror(errno) << std::endl;
+    }
 
     doc = reinterpret_cast<Doc *>(stripe_buff2);
     std::string hdr(doc->hdr(), doc->hlen);
@@ -622,8 +623,8 @@ Stripe::loadDir()
 {
   Errata zret;
   int64_t dirlen = this->vol_dirlen();
-  char *raw_dir  = (char *)ats_memalign(ats_pagesize(), dirlen);
-  dir            = (CacheDirEntry *)(raw_dir + this->vol_headerlen());
+  char *raw_dir  = static_cast<char *>(ats_memalign(ats_pagesize(), dirlen));
+  dir            = reinterpret_cast<CacheDirEntry *>(raw_dir + this->vol_headerlen());
   // read directory
   ssize_t n = pread(this->_span->_fd, raw_dir, dirlen, this->_start);
   if (n < dirlen) {
@@ -985,7 +986,7 @@ Stripe::loadMeta()
   data.assign(stripe_buff2, n);
   meta = static_cast<StripeMeta *>(data.data());
   // copy freelist
-  freelist = (uint16_t *)malloc(_segments * sizeof(uint16_t));
+  freelist = static_cast<uint16_t *>(malloc(_segments * sizeof(uint16_t)));
   for (int i = 0; i < _segments; i++) {
     freelist[i] = meta->freelist[i];
   }

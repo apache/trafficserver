@@ -44,7 +44,7 @@ Config::Config()
   m_lastmtime     = 0;
 }
 
-Config::~Config() {}
+Config::~Config() = default;
 
 bool
 Config::loadConfig(const std::string &filename)

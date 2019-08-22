@@ -147,7 +147,7 @@ ink_net_init(ts::ModuleVersion version)
   if (!init_called) {
     // do one time stuff
     // create a stat block for NetStats
-    net_rsb = RecAllocateRawStatBlock((int)Net_Stat_Count);
+    net_rsb = RecAllocateRawStatBlock(static_cast<int>(Net_Stat_Count));
     configure_net();
     register_net_stats();
   }

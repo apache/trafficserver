@@ -55,7 +55,7 @@ copy_from_buffer_reader(void *dst, IOBufferReader *reader, unsigned nbytes)
   char *end;
 
   end = reader->memcpy(dst, nbytes, 0 /* offset */);
-  return end - (char *)dst;
+  return end - static_cast<char *>(dst);
 }
 
 static int
@@ -65,7 +65,7 @@ send_connection_event(Continuation *cont, int event, void *edata)
   return cont->handleEvent(event, edata);
 }
 
-Http2ClientSession::Http2ClientSession() {}
+Http2ClientSession::Http2ClientSession() = default;
 
 void
 Http2ClientSession::destroy()
@@ -425,12 +425,12 @@ Http2ClientSession::main_event_handler(int event, void *edata)
 int
 Http2ClientSession::state_read_connection_preface(int event, void *edata)
 {
-  VIO *vio = (VIO *)edata;
+  VIO *vio = static_cast<VIO *>(edata);
 
   STATE_ENTER(&Http2ClientSession::state_read_connection_preface, event);
   ink_assert(event == VC_EVENT_READ_COMPLETE || event == VC_EVENT_READ_READY);
 
-  if (this->sm_reader->read_avail() >= (int64_t)HTTP2_CONNECTION_PREFACE_LEN) {
+  if (this->sm_reader->read_avail() >= static_cast<int64_t>(HTTP2_CONNECTION_PREFACE_LEN)) {
     char buf[HTTP2_CONNECTION_PREFACE_LEN];
     unsigned nbytes;
 
@@ -470,7 +470,7 @@ Http2ClientSession::state_read_connection_preface(int event, void *edata)
 int
 Http2ClientSession::state_start_frame_read(int event, void *edata)
 {
-  VIO *vio = (VIO *)edata;
+  VIO *vio = static_cast<VIO *>(edata);
 
   STATE_ENTER(&Http2ClientSession::state_start_frame_read, event);
   ink_assert(event == VC_EVENT_READ_COMPLETE || event == VC_EVENT_READ_READY);
@@ -525,7 +525,7 @@ Http2ClientSession::do_start_frame_read(Http2ErrorCode &ret_error)
 int
 Http2ClientSession::state_complete_frame_read(int event, void *edata)
 {
-  VIO *vio = (VIO *)edata;
+  VIO *vio = static_cast<VIO *>(edata);
   STATE_ENTER(&Http2ClientSession::state_complete_frame_read, event);
   ink_assert(event == VC_EVENT_READ_COMPLETE || event == VC_EVENT_READ_READY);
   if (this->sm_reader->read_avail() < this->current_hdr.length) {
@@ -570,7 +570,7 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
     do_complete_frame_read();
   }
 
-  while (this->sm_reader->read_avail() >= (int64_t)HTTP2_FRAME_HEADER_LEN) {
+  while (this->sm_reader->read_avail() >= static_cast<int64_t>(HTTP2_FRAME_HEADER_LEN)) {
     // Cancel reading if there was an error or connection is closed
     if (connection_state.tx_error_code.code != static_cast<uint32_t>(Http2ErrorCode::HTTP2_ERROR_NO_ERROR) ||
         connection_state.is_state_closed()) {

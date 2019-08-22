@@ -78,7 +78,11 @@ public:
         }
         Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
               ink_hrtime_to_sec(now), vc->next_inactivity_timeout_at, vc->inactivity_timeout_in);
-        vc->handleEvent(EVENT_IMMEDIATE, e);
+        vc->handleEvent(VC_EVENT_INACTIVITY_TIMEOUT, e);
+      } else if (vc->next_activity_timeout_at && vc->next_activity_timeout_at < now) {
+        Debug("inactivity_cop_verbose", "active vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
+              ink_hrtime_to_sec(now), vc->next_activity_timeout_at, vc->active_timeout_in);
+        vc->handleEvent(VC_EVENT_ACTIVE_TIMEOUT, e);
       }
     }
     // The cop_list is empty now.
@@ -217,8 +221,8 @@ initialize_thread_for_net(EThread *thread)
 {
   NetHandler *nh = get_NetHandler(thread);
 
-  new ((ink_dummy_for_new *)nh) NetHandler();
-  new ((ink_dummy_for_new *)get_PollCont(thread)) PollCont(thread->mutex, nh);
+  new (reinterpret_cast<ink_dummy_for_new *>(nh)) NetHandler();
+  new (reinterpret_cast<ink_dummy_for_new *>(get_PollCont(thread))) PollCont(thread->mutex, nh);
   nh->mutex  = new_ProxyMutex();
   nh->thread = thread;
 
@@ -234,7 +238,7 @@ initialize_thread_for_net(EThread *thread)
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
 
   thread->set_tail_handler(nh);
-  thread->ep = (EventIO *)ats_malloc(sizeof(EventIO));
+  thread->ep = static_cast<EventIO *>(ats_malloc(sizeof(EventIO)));
   new (thread->ep) EventIO();
   thread->ep->type = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
@@ -481,7 +485,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
   PollDescriptor *pd     = get_PollDescriptor(this->thread);
   UnixNetVConnection *vc = nullptr;
   for (int x = 0; x < pd->result; x++) {
-    epd = (EventIO *)get_ev_data(pd, x);
+    epd = static_cast<EventIO *> get_ev_data(pd, x);
     if (epd->type == EVENTIO_READWRITE_VC) {
       vc = epd->data.vc;
       // Remove triggered NetVC from cop_list because it won't be timeout before next InactivityCop runs.
@@ -664,8 +668,14 @@ NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event,
     // create a dummy event
     Event event;
     event.ethread = this_ethread();
-    if (vc->handleEvent(EVENT_IMMEDIATE, &event) == EVENT_DONE) {
-      ++handle_event;
+    if (vc->inactivity_timeout_in && vc->next_inactivity_timeout_at <= now) {
+      if (vc->handleEvent(VC_EVENT_INACTIVITY_TIMEOUT, &event) == EVENT_DONE) {
+        ++handle_event;
+      }
+    } else if (vc->active_timeout_in && vc->next_activity_timeout_at <= now) {
+      if (vc->handleEvent(VC_EVENT_ACTIVE_TIMEOUT, &event) == EVENT_DONE) {
+        ++handle_event;
+      }
     }
   }
 }

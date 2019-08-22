@@ -86,7 +86,7 @@ encrypt_session(const char *session_data, int32_t session_data_len, const unsign
   int elen;
   encrypted_buffer_size = ENCRYPT_LEN(len_all);
   encrypted_msg         = new unsigned char[encrypted_buffer_size];
-  if (1 != EVP_EncryptUpdate(context, (unsigned char *)encrypted_msg, &elen, (unsigned char *)pBuf, len_all)) {
+  if (1 != EVP_EncryptUpdate(context, encrypted_msg, &elen, reinterpret_cast<unsigned char *>(pBuf), len_all)) {
     TSDebug(PLUGIN, "Encryption of session data failed");
     ret = -1;
     goto Cleanup;
@@ -101,14 +101,16 @@ encrypt_session(const char *session_data, int32_t session_data_len, const unsign
 
   TSDebug(PLUGIN, "Encrypted buffer of size %d to buffer of size %d\n", session_data_len, encrypted_msg_len);
 
-  encrypted_data.assign((char *)encrypted_msg, encrypted_msg_len);
+  encrypted_data.assign(reinterpret_cast<char *>(encrypted_msg), encrypted_msg_len);
 
 Cleanup:
 
-  if (pBuf)
+  if (pBuf) {
     delete[] pBuf;
-  if (encrypted_msg)
+  }
+  if (encrypted_msg) {
     delete[] encrypted_msg;
+  }
   if (context) {
     EVP_CIPHER_CTX_free(context);
   }
@@ -151,10 +153,11 @@ decrypt_session(const std::string &encrypted_data, const unsigned char *key, int
   }
 
   decrypted_buffer_size = DECRYPT_LEN(encrypted_data.length());
-  decrypted_msg         = (unsigned char *)new char[decrypted_buffer_size + 1];
+  decrypted_msg         = reinterpret_cast<unsigned char *>(new char[decrypted_buffer_size + 1]);
   decrypted_msg_len     = decrypted_buffer_size + 1;
-  if (decrypted_msg == nullptr)
+  if (decrypted_msg == nullptr) {
     TSError("decrypted_msg allocate failure");
+  }
   if (1 != EVP_DecryptUpdate(context, decrypted_msg, &decrypted_msg_len, (unsigned char *)encrypted_data.c_str(),
                              encrypted_data.length())) {
     TSDebug(PLUGIN, "Decryption of encrypted session data failed");
@@ -162,13 +165,13 @@ decrypt_session(const std::string &encrypted_data, const unsigned char *key, int
   }
 
   // Retrieve ssl_session
-  ssl_sess_ptr = (unsigned char *)decrypted_msg;
+  ssl_sess_ptr = decrypted_msg;
 
   // Skip the expiration time.  Just a place holder to interact with the old version
   ssl_sess_ptr += sizeof(int64_t);
 
   // Length
-  ret = *(int32_t *)ssl_sess_ptr;
+  ret = *reinterpret_cast<int32_t *>(ssl_sess_ptr);
   ssl_sess_ptr += sizeof(int32_t);
   TSDebug(PLUGIN, "Decrypted buffer of size %d from buffer of size %d\n", ret, session_data_len);
   // If there is less data than the maxiumum buffer size, reduce accordingly
@@ -179,8 +182,9 @@ decrypt_session(const std::string &encrypted_data, const unsigned char *key, int
 
 Cleanup:
 
-  if (decrypted_msg)
+  if (decrypted_msg) {
     delete[] decrypted_msg;
+  }
 
   if (context) {
     EVP_CIPHER_CTX_free(context);
@@ -194,8 +198,8 @@ decode_id(const std::string &encoded_id, char *decoded_data, int &decoded_data_l
 {
   size_t decode_len = 0;
   memset(decoded_data, 0, decoded_data_len);
-  if (TSBase64Decode((const char *)encoded_id.c_str(), encoded_id.length(), (unsigned char *)decoded_data, decoded_data_len,
-                     &decode_len) != 0) {
+  if (TSBase64Decode(static_cast<const char *>(encoded_id.c_str()), encoded_id.length(),
+                     reinterpret_cast<unsigned char *>(decoded_data), decoded_data_len, &decode_len) != 0) {
     TSError("Base 64 decoding failed.");
     return -1;
   }
@@ -209,16 +213,18 @@ encode_id(const char *id, int idlen, std::string &encoded_data)
   char *encoded = new char[ENCODED_LEN(idlen)];
   memset(encoded, 0, ENCODED_LEN(idlen));
   size_t encoded_len = 0;
-  if (TSBase64Encode((const char *)id, idlen, encoded, ENCODED_LEN(idlen), &encoded_len) != 0) {
+  if (TSBase64Encode(id, idlen, encoded, ENCODED_LEN(idlen), &encoded_len) != 0) {
     TSError("Base 64 encoding failed.");
-    if (encoded)
+    if (encoded) {
       delete[] encoded;
+    }
     return -1;
   }
 
   encoded_data.assign(encoded);
-  if (encoded)
+  if (encoded) {
     delete[] encoded;
+  }
 
   return 0;
 }

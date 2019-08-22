@@ -119,7 +119,7 @@ ParentSelectionStrategy::markParentUp(ParentResult *result)
   pRec = parents + result->last_parent;
   ink_atomic_swap(&pRec->available, true);
 
-  ink_atomic_swap(&pRec->failedAt, (time_t)0);
+  ink_atomic_swap(&pRec->failedAt, static_cast<time_t>(0));
   int old_count = ink_atomic_swap(&pRec->failCount, 0);
 
   if (old_count > 0) {

@@ -177,7 +177,7 @@ struct GeneratorRequest {
   };
 
   GeneratorRequest() : maxage(60 * 60 * 24) {}
-  ~GeneratorRequest() {}
+  ~GeneratorRequest() = default;
 };
 
 // Destroy a generator request, including the per-txn continuation.
@@ -526,7 +526,7 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata)
     if (cdata.grq->nbytes) {
       int64_t nbytes;
 
-      if (cdata.grq->nbytes >= (ssize_t)sizeof(GeneratorData)) {
+      if (cdata.grq->nbytes >= static_cast<ssize_t>(sizeof(GeneratorData))) {
         nbytes = sizeof(GeneratorData);
       } else {
         nbytes = cdata.grq->nbytes % sizeof(GeneratorData);

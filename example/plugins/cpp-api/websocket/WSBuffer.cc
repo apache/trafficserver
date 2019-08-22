@@ -189,7 +189,7 @@ WSBuffer::ws_digest(std::string const &key)
   char digest_buf[WS_DIGEST_MAX];
   size_t digest_len = 0;
 
-  if (TSBase64Encode((char *)hash_buf, hash_len, digest_buf, WS_DIGEST_MAX, &digest_len) != TS_SUCCESS) {
+  if (TSBase64Encode(reinterpret_cast<char *>(hash_buf), hash_len, digest_buf, WS_DIGEST_MAX, &digest_len) != TS_SUCCESS) {
     return "base64encode-failed";
   }
 
@@ -244,9 +244,9 @@ WSBuffer::get_closing_code(std::string const &message, std::string *desc)
 {
   uint16_t code = 0;
   if (message.size() >= 2) {
-    code = (unsigned char)message[0];
+    code = static_cast<unsigned char>(message[0]);
     code <<= 8;
-    code += (unsigned char)message[1];
+    code += static_cast<unsigned char>(message[1]);
     if (desc) {
       *desc = message.substr(2);
     }

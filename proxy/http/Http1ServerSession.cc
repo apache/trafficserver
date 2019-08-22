@@ -69,7 +69,7 @@ Http1ServerSession::new_connection(NetVConnection *new_vc)
   mutex = new_vc->mutex;
 
   // Unique client session identifier.
-  con_id = ink_atomic_increment((int64_t *)(&next_ss_id), 1);
+  con_id = ink_atomic_increment((&next_ss_id), 1);
 
   magic = HTTP_SS_MAGIC_ALIVE;
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, 1); // Update the true global stat
@@ -125,8 +125,9 @@ Http1ServerSession::do_io_close(int alerrno)
     this->server_trans_stat--;
   }
 
-  if (debug_p)
+  if (debug_p) {
     w.print("[{}] session close: nevtc {:x}", con_id, server_vc);
+  }
 
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
   HTTP_SUM_DYN_STAT(http_transactions_per_server_con, transact_count);

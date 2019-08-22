@@ -165,11 +165,11 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       return TS_ERROR;
     }
     if (strncmp(line, "key", 3) == 0) {
-      if (strncmp((char *)(line + 3), "0", 1) == 0) {
+      if (strncmp((line + 3), "0", 1) == 0) {
         keynum = 0;
       } else {
         TSDebug(PLUGIN_NAME, ">>> %s <<<", line + 3);
-        keynum = atoi((char *)(line + 3));
+        keynum = atoi((line + 3));
         if (keynum == 0) {
           keynum = -1; // Not a Number
         }

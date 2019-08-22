@@ -348,7 +348,7 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
   case ESSH:
   case ECSSH:
   case SCFG:
-    m_unmarshal_func = (UnmarshalFunc) & (LogAccess::unmarshal_str);
+    m_unmarshal_func = reinterpret_cast<UnmarshalFunc>(&(LogAccess::unmarshal_str));
     break;
 
   case ICFG:
@@ -595,9 +595,9 @@ unsigned
 LogField::unmarshal(char **buf, char *dest, int len)
 {
   if (!m_alias_map) {
-    if (m_unmarshal_func == (UnmarshalFunc)LogAccess::unmarshal_str ||
-        m_unmarshal_func == (UnmarshalFunc)LogAccess::unmarshal_http_text) {
-      UnmarshalFuncWithSlice func = (UnmarshalFuncWithSlice)m_unmarshal_func;
+    if (m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_str) ||
+        m_unmarshal_func == reinterpret_cast<UnmarshalFunc>(LogAccess::unmarshal_http_text)) {
+      UnmarshalFuncWithSlice func = reinterpret_cast<UnmarshalFuncWithSlice>(m_unmarshal_func);
       return (*func)(buf, dest, len, &m_slice);
     }
     return (*m_unmarshal_func)(buf, dest, len);
@@ -685,7 +685,7 @@ LogField::valid_container_name(char *name)
 {
   for (unsigned i = 1; i < countof(container_names); i++) {
     if (strcmp(name, container_names[i]) == 0) {
-      return (LogField::Container)i;
+      return static_cast<LogField::Container>(i);
     }
   }
 
@@ -697,7 +697,7 @@ LogField::valid_aggregate_name(char *name)
 {
   for (unsigned i = 1; i < countof(aggregate_names); i++) {
     if (strcmp(name, aggregate_names[i]) == 0) {
-      return (LogField::Aggregate)i;
+      return static_cast<LogField::Aggregate>(i);
     }
   }
 
@@ -734,7 +734,7 @@ LogField::set_http_header_field(LogAccess *lad, LogField::Container container, c
   heap with "new" and that each element is on at most ONE list.  To enforce
   this, items are copied by default, using the copy ctor.
   -------------------------------------------------------------------------*/
-LogFieldList::LogFieldList() {}
+LogFieldList::LogFieldList() = default;
 
 LogFieldList::~LogFieldList()
 {

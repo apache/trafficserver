@@ -146,7 +146,7 @@ int64_t
 Range::firstBlockFor(int64_t const blocksize) const
 {
   if (0 < blocksize && isValid()) {
-    return std::max((int64_t)0, m_beg / blocksize);
+    return std::max(static_cast<int64_t>(0), m_beg / blocksize);
   } else {
     return -1;
   }

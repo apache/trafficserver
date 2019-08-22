@@ -61,7 +61,7 @@ init_ssl_params(const std::string &conf)
   if (ssl_param.key_update_interval > STEK_MAX_LIFETIME) {
     ssl_param.key_update_interval = STEK_MAX_LIFETIME;
     TSDebug(PLUGIN, "KeyUpdateInterval too high, resetting session ticket key rotation to %d seconds",
-            (int)ssl_param.key_update_interval);
+            ssl_param.key_update_interval);
   }
 
   TSDebug(PLUGIN, "init_ssl_params: I %s been configured to initially be stek_master",
@@ -83,7 +83,7 @@ init_ssl_params(const std::string &conf)
   return 0;
 }
 
-ssl_session_param::ssl_session_param() {}
+ssl_session_param::ssl_session_param() = default;
 
 ssl_session_param::~ssl_session_param()
 {

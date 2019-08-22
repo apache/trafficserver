@@ -37,13 +37,13 @@ Config::bytesFrom(char const *const valstr)
     if (dist < strlen(valstr) && 0 <= blockbytes) {
       switch (tolower(*endptr)) {
       case 'g':
-        blockbytes *= ((int64_t)1024 * (int64_t)1024 * (int64_t)1024);
+        blockbytes *= (static_cast<int64_t>(1024) * static_cast<int64_t>(1024) * static_cast<int64_t>(1024));
         break;
       case 'm':
-        blockbytes *= ((int64_t)1024 * (int64_t)1024);
+        blockbytes *= (static_cast<int64_t>(1024) * static_cast<int64_t>(1024));
         break;
       case 'k':
-        blockbytes *= (int64_t)1024;
+        blockbytes *= static_cast<int64_t>(1024);
         break;
       default:
         break;
@@ -100,7 +100,7 @@ Config::fromArgs(int const argc, char const *const argv[])
   };
 
   // getopt assumes args start at '1' so this hack is needed
-  char *const *argvp = ((char *const *)argv - 1);
+  char *const *argvp = (const_cast<char *const *>(argv) - 1);
 
   for (;;) {
     int const opt = getopt_long(argc + 1, argvp, "b:t:p:d", longopts, nullptr);

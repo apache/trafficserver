@@ -175,7 +175,7 @@ state_start(TSCont contp, TSEvent event ATS_UNUSED, void *data ATS_UNUSED)
      INT64_MAX, so that we will always get TS_EVENT_VCONN_READ_READY
      event, but never TS_EVENT_VCONN_READ_COMPLETE event. */
   set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_interface_with_client);
-  txn_sm->q_client_read_vio = TSVConnRead(txn_sm->q_client_vc, (TSCont)contp, txn_sm->q_client_request_buffer, INT64_MAX);
+  txn_sm->q_client_read_vio = TSVConnRead(txn_sm->q_client_vc, contp, txn_sm->q_client_request_buffer, INT64_MAX);
 
   return TS_SUCCESS;
 }
@@ -239,7 +239,7 @@ state_read_request_from_client(TSCont contp, TSEvent event, TSVIO vio ATS_UNUSED
 
         /* Start to do cache lookup */
         TSDebug(PLUGIN_NAME, "Key material: file name is %s*****", txn_sm->q_file_name);
-        txn_sm->q_key = (TSCacheKey)CacheKeyCreate(txn_sm->q_file_name);
+        txn_sm->q_key = CacheKeyCreate(txn_sm->q_file_name);
 
         set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_handle_cache_lookup);
         txn_sm->q_pending_action = TSCacheRead(contp, txn_sm->q_key);
@@ -908,8 +908,7 @@ send_response_to_client(TSCont contp)
   TSDebug(PLUGIN_NAME, " . resp_len is %d", response_len);
 
   set_handler(txn_sm->q_current_handler, (TxnSMHandler)&state_interface_with_client);
-  txn_sm->q_client_write_vio =
-    TSVConnWrite(txn_sm->q_client_vc, (TSCont)contp, txn_sm->q_client_response_buffer_reader, response_len);
+  txn_sm->q_client_write_vio = TSVConnWrite(txn_sm->q_client_vc, contp, txn_sm->q_client_response_buffer_reader, response_len);
   return TS_SUCCESS;
 }
 

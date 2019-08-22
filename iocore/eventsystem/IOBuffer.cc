@@ -47,7 +47,7 @@ void
 init_buffer_allocators(int iobuffer_advice)
 {
   for (int i = 0; i < DEFAULT_BUFFER_SIZES; i++) {
-    int64_t s = DEFAULT_BUFFER_BASE_SIZE * (((int64_t)1) << i);
+    int64_t s = DEFAULT_BUFFER_BASE_SIZE * ((static_cast<int64_t>(1)) << i);
     int64_t a = DEFAULT_BUFFER_ALIGNMENT;
     int n     = i <= default_large_iobuffer_size ? DEFAULT_BUFFER_NUMBER : DEFAULT_HUGE_BUFFER_NUMBER;
     if (s < a) {
@@ -83,7 +83,7 @@ MIOBuffer::remove_append(IOBufferReader *r)
 int64_t
 MIOBuffer::write(const void *abuf, int64_t alen)
 {
-  const char *buf = (const char *)abuf;
+  const char *buf = static_cast<const char *>(abuf);
   int64_t len     = alen;
   while (len) {
     if (!_writer) {
@@ -107,31 +107,6 @@ MIOBuffer::write(const void *abuf, int64_t alen)
   }
   return alen;
 }
-
-#ifdef WRITE_AND_TRANSFER
-/*
- * Same functionality as write but for the one small difference.
- * The space available in the last block is taken from the original
- * and this space becomes available to the copy.
- *
- */
-int64_t
-MIOBuffer::write_and_transfer_left_over_space(IOBufferReader *r, int64_t alen, int64_t offset)
-{
-  int64_t rval = write(r, alen, offset);
-  // reset the end markers of the original so that it cannot
-  // make use of the space in the current block
-  if (r->mbuf->_writer)
-    r->mbuf->_writer->_buf_end = r->mbuf->_writer->_end;
-  // reset the end marker of the clone so that it can make
-  // use of the space in the current block
-  if (_writer) {
-    _writer->_buf_end = _writer->data->data() + _writer->block_size();
-  }
-  return rval;
-}
-
-#endif
 
 int64_t
 MIOBuffer::write(IOBufferReader *r, int64_t len, int64_t offset)
@@ -186,7 +161,7 @@ MIOBuffer::puts(char *s, int64_t len)
       return -1;
     }
     if (!*pb || *pb == '\n') {
-      int64_t n = (int64_t)(pb - s);
+      int64_t n = static_cast<int64_t>(pb - s);
       memcpy(end(), s, n + 1); // Up to and including '\n'
       end()[n + 1] = 0;
       fill(n + 1);
@@ -201,7 +176,7 @@ MIOBuffer::puts(char *s, int64_t len)
 int64_t
 IOBufferReader::read(void *ab, int64_t len)
 {
-  char *b       = (char *)ab;
+  char *b       = static_cast<char *>(ab);
   int64_t n     = len;
   int64_t l     = block_read_avail();
   int64_t bytes = 0;
@@ -243,9 +218,9 @@ IOBufferReader::memchr(char c, int64_t len, int64_t offset)
       bytes = len;
     }
     char *s = b->start() + offset;
-    char *p = (char *)::memchr(s, c, bytes);
+    char *p = static_cast<char *>(::memchr(s, c, bytes));
     if (p) {
-      return (int64_t)(o - start_offset + p - s);
+      return static_cast<int64_t>(o - start_offset + p - s);
     }
     o += bytes;
     len -= bytes;
@@ -304,8 +279,9 @@ IOBufferChain::write(IOBufferBlock *blocks, int64_t length, int64_t offset)
         block_bytes -= offset; // bytes really available to use.
         offset = 0;
       }
-      if (block_bytes > n)
+      if (block_bytes > n) {
         bb->_end -= (block_bytes - n);
+      }
       // Attach the cloned block since its data will be kept.
       this->append(bb);
       n -= bytes;
@@ -324,8 +300,9 @@ IOBufferChain::write(IOBufferData *data, int64_t length, int64_t offset)
   int64_t zret     = 0;
   IOBufferBlock *b = new_IOBufferBlock();
 
-  if (length < 0)
+  if (length < 0) {
     length = 0;
+  }
 
   b->set(data, length, offset);
   this->append(b);

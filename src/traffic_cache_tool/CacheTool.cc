@@ -125,8 +125,8 @@ struct VolumeConfig {
   };
 
   std::vector<Data> _volumes;
-  typedef std::vector<Data>::iterator iterator;
-  typedef std::vector<Data>::const_iterator const_iterator;
+  using iterator       = std::vector<Data>::iterator;
+  using const_iterator = std::vector<Data>::const_iterator;
 
   iterator
   begin()
@@ -151,7 +151,7 @@ struct VolumeConfig {
   }
 #endif
   //  Errata validatePercentAllocation();
-  void convertToAbsolute(ts::CacheStripeBlocks total_span_size);
+  void convertToAbsolute(const ts::CacheStripeBlocks &total_span_size);
 };
 
 #if 0
@@ -169,7 +169,7 @@ VolumeConfig::validatePercentAllocation()
 #endif
 
 void
-VolumeConfig::convertToAbsolute(ts::CacheStripeBlocks n)
+VolumeConfig::convertToAbsolute(const ts::CacheStripeBlocks &n)
 {
   for (auto &vol : _volumes) {
     if (vol._percent) {
@@ -185,10 +185,10 @@ struct Cache {
 
   Errata loadSpan(ts::file::path const &path);
   Errata loadSpanConfig(ts::file::path const &path);
-  Errata loadSpanDirect(ts::file::path const &path, int vol_idx = -1, Bytes size = Bytes(-1));
+  Errata loadSpanDirect(ts::file::path const &path, int vol_idx = -1, const Bytes &size = Bytes(-1));
   Errata loadURLs(ts::file::path const &path);
 
-  Errata allocStripe(Span *span, int vol_idx, CacheStripeBlocks len);
+  Errata allocStripe(Span *span, int vol_idx, const CacheStripeBlocks &len);
 
   /// Change the @a span to have a single, unused stripe occupying the entire @a span.
   //  void clearSpan(Span *span);
@@ -211,7 +211,7 @@ struct Cache {
 };
 
 Errata
-Cache::allocStripe(Span *span, int vol_idx, CacheStripeBlocks len)
+Cache::allocStripe(Span *span, int vol_idx, const CacheStripeBlocks &len)
 {
   auto rv = span->allocStripe(vol_idx, len);
   std::cout << span->_path.string() << ":" << vol_idx << std::endl;
@@ -251,7 +251,7 @@ class VolumeAllocator
     int64_t _deficit;                  ///< fractional deficit
     int64_t _shares;                   ///< relative amount of free space to allocate
 
-    V(VolumeConfig::Data const &config, CacheStripeBlocks size, int64_t deficit = 0, int64_t shares = 0)
+    V(VolumeConfig::Data const &config, const CacheStripeBlocks &size, int64_t deficit = 0, int64_t shares = 0)
       : _config(config), _size(size), _deficit(deficit), _shares(shares)
     {
     }
@@ -263,7 +263,7 @@ class VolumeAllocator
     }
   };
 
-  typedef std::vector<V> AV;
+  using AV = std::vector<V>;
   AV _av; ///< Working vector of volume data.
 
   Cache _cache;       ///< Current state.
@@ -283,7 +283,7 @@ protected:
   Errata allocateFor(Span &span);
 };
 
-VolumeAllocator::VolumeAllocator() {}
+VolumeAllocator::VolumeAllocator() = default;
 
 Errata
 VolumeAllocator::load(ts::file::path const &spanFile, ts::file::path const &volumeFile)
@@ -470,7 +470,7 @@ Cache::loadSpan(ts::file::path const &path)
 }
 
 Errata
-Cache::loadSpanDirect(ts::file::path const &path, int vol_idx, Bytes size)
+Cache::loadSpanDirect(ts::file::path const &path, int vol_idx, const Bytes &size)
 {
   Errata zret;
   std::unique_ptr<Span> span(new Span(path));
@@ -772,7 +772,7 @@ Span::loadDevice()
 }
 
 ts::Rv<Stripe *>
-Span::allocStripe(int vol_idx, CacheStripeBlocks len)
+Span::allocStripe(int vol_idx, const CacheStripeBlocks &len)
 {
   for (auto spot = _stripes.begin(), limit = _stripes.end(); spot != limit; ++spot) {
     Stripe *stripe = *spot;
@@ -941,11 +941,11 @@ Cache::build_stripe_hash_table()
 {
   int num_stripes = globalVec_stripe.size();
   CacheStoreBlocks total;
-  unsigned int *forvol         = (unsigned int *)ats_malloc(sizeof(unsigned int) * num_stripes);
-  unsigned int *gotvol         = (unsigned int *)ats_malloc(sizeof(unsigned int) * num_stripes);
-  unsigned int *rnd            = (unsigned int *)ats_malloc(sizeof(unsigned int) * num_stripes);
-  unsigned short *ttable       = (unsigned short *)ats_malloc(sizeof(unsigned short) * VOL_HASH_TABLE_SIZE);
-  unsigned int *rtable_entries = (unsigned int *)ats_malloc(sizeof(unsigned int) * num_stripes);
+  unsigned int *forvol         = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
+  unsigned int *gotvol         = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
+  unsigned int *rnd            = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
+  unsigned short *ttable       = static_cast<unsigned short *>(ats_malloc(sizeof(unsigned short) * VOL_HASH_TABLE_SIZE));
+  unsigned int *rtable_entries = static_cast<unsigned int *>(ats_malloc(sizeof(unsigned int) * num_stripes));
   unsigned int rtable_size     = 0;
   int i                        = 0;
   uint64_t used                = 0;
@@ -957,7 +957,7 @@ Cache::build_stripe_hash_table()
     rtable_size += rtable_entries[i];
     uint64_t x = elt->hash_id.fold();
     // seed random number generator
-    rnd[i] = (unsigned int)x;
+    rnd[i] = static_cast<unsigned int>(x);
     total += elt->_len;
     i++;
   }
@@ -981,10 +981,10 @@ Cache::build_stripe_hash_table()
   }
 
   // generate random numbers proportional to allocation
-  rtable_pair *rtable = (rtable_pair *)ats_malloc(sizeof(rtable_pair) * rtable_size);
+  rtable_pair *rtable = static_cast<rtable_pair *>(ats_malloc(sizeof(rtable_pair) * rtable_size));
   int rindex          = 0;
   for (int i = 0; i < num_stripes; i++) {
-    for (int j = 0; j < (int)rtable_entries[i]; j++) {
+    for (int j = 0; j < static_cast<int>(rtable_entries[i]); j++) {
       rtable[rindex].rval = next_rand(&rnd[i]);
       rtable[rindex].idx  = i;
       rindex++;
@@ -999,7 +999,7 @@ Cache::build_stripe_hash_table()
   i = 0; // index moving through the random numbers
   for (int j = 0; j < VOL_HASH_TABLE_SIZE; j++) {
     pos = width / 2 + j * width; // position to select closest to
-    while (pos > rtable[i].rval && i < (int)rtable_size - 1) {
+    while (pos > rtable[i].rval && i < static_cast<int>(rtable_size) - 1) {
       i++;
     }
     ttable[j] = rtable[i].idx;
@@ -1199,8 +1199,8 @@ Find_Stripe(ts::file::path const &input_file_path)
       ctx.finalize(hashT);
       Stripe *stripe_ = cache.key_to_stripe(&hashT, host->url.data(), host->url.size());
       w.print("{}", hashT);
-      printf("hash of %.*s is %.*s: Stripe  %s \n", (int)host->url.size(), host->url.data(), static_cast<int>(w.size()), w.data(),
-             stripe_->hashText.data());
+      printf("hash of %.*s is %.*s: Stripe  %s \n", static_cast<int>(host->url.size()), host->url.data(),
+             static_cast<int>(w.size()), w.data(), stripe_->hashText.data());
     }
   }
 }
@@ -1315,8 +1315,8 @@ Get_Response(ts::file::path const &input_file_path)
       ctx.finalize(hashT);
       Stripe *stripe_ = cache.key_to_stripe(&hashT, host->url.data(), host->url.size());
       w.print("{}", hashT);
-      printf("hash of %.*s is %.*s: Stripe  %s \n", (int)host->url.size(), host->url.data(), static_cast<int>(w.size()), w.data(),
-             stripe_->hashText.data());
+      printf("hash of %.*s is %.*s: Stripe  %s \n", static_cast<int>(host->url.size()), host->url.data(),
+             static_cast<int>(w.size()), w.data(), stripe_->hashText.data());
       CacheDirEntry *dir_result = nullptr;
       stripe_->loadMeta();
       stripe_->loadDir();
@@ -1354,8 +1354,9 @@ Scan_Cache(ts::file::path const &regex_path)
     for (auto sp : cache._spans) {
       threadPool.emplace_back(scan_span, sp, regex_path);
     }
-    for (auto &th : threadPool)
+    for (auto &th : threadPool) {
       th.join();
+    }
   }
 }
 

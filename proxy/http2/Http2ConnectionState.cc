@@ -875,8 +875,10 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   uint32_t header_blocks_offset = stream->header_blocks_length;
   stream->header_blocks_length += payload_length;
 
-  stream->header_blocks = static_cast<uint8_t *>(ats_realloc(stream->header_blocks, stream->header_blocks_length));
-  frame.reader()->memcpy(stream->header_blocks + header_blocks_offset, payload_length);
+  if (stream->header_blocks_length > 0) {
+    stream->header_blocks = static_cast<uint8_t *>(ats_realloc(stream->header_blocks, stream->header_blocks_length));
+    frame.reader()->memcpy(stream->header_blocks + header_blocks_offset, payload_length);
+  }
 
   if (frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
     // NOTE: If there are END_HEADERS flag, decode stored Header Blocks.
@@ -1557,7 +1559,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   http2_generate_h2_header_from_1_1(resp_header, &h2_hdr);
 
   buf_len = resp_header->length_get() * 2; // Make it double just in case
-  buf     = (uint8_t *)ats_malloc(buf_len);
+  buf     = static_cast<uint8_t *>(ats_malloc(buf_len));
   if (buf == nullptr) {
     h2_hdr.destroy();
     return;
@@ -1670,7 +1672,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 
   buf_len = h1_hdr.length_get() * 2; // Make it double just in case
   h1_hdr.destroy();
-  buf = (uint8_t *)ats_malloc(buf_len);
+  buf = static_cast<uint8_t *>(ats_malloc(buf_len));
   if (buf == nullptr) {
     h2_hdr.destroy();
     return;
@@ -1901,89 +1903,49 @@ Http2ConnectionState::send_window_update_frame(Http2StreamId id, uint32_t size)
 void
 Http2ConnectionState::increment_received_settings_count(uint32_t count)
 {
-  ink_hrtime hrtime_sec = Thread::get_hrtime() / HRTIME_SECOND;
-  uint8_t counter_index = ((hrtime_sec % 60) >= 30);
-
-  if ((hrtime_sec - 60) > this->settings_count_last_update) {
-    this->settings_count[0] = 0;
-    this->settings_count[1] = 0;
-  } else if (counter_index != ((this->settings_count_last_update % 60) >= 30)) {
-    this->settings_count[counter_index] = 0;
-  }
-  this->settings_count[counter_index] += count;
-  this->settings_count_last_update = hrtime_sec;
+  this->_received_settings_counter.increment(count);
 }
 
 uint32_t
 Http2ConnectionState::get_received_settings_count()
 {
-  return this->settings_count[0] + this->settings_count[1];
+  return this->_received_settings_counter.get_count();
 }
 
 void
 Http2ConnectionState::increment_received_settings_frame_count()
 {
-  ink_hrtime hrtime_sec = Thread::get_hrtime() / HRTIME_SECOND;
-  uint8_t counter_index = ((hrtime_sec % 60) >= 30);
-
-  if ((hrtime_sec - 60) > this->settings_frame_count_last_update) {
-    this->settings_frame_count[0] = 0;
-    this->settings_frame_count[1] = 0;
-  } else if (counter_index != ((this->settings_frame_count_last_update % 60) >= 30)) {
-    this->settings_frame_count[counter_index] = 0;
-  }
-  ++this->settings_frame_count[counter_index];
-  this->settings_frame_count_last_update = hrtime_sec;
+  this->_received_settings_frame_counter.increment();
 }
 
 uint32_t
 Http2ConnectionState::get_received_settings_frame_count()
 {
-  return this->settings_frame_count[0] + this->settings_frame_count[1];
+  return this->_received_settings_frame_counter.get_count();
 }
 
 void
 Http2ConnectionState::increment_received_ping_frame_count()
 {
-  ink_hrtime hrtime_sec = Thread::get_hrtime() / HRTIME_SECOND;
-  uint8_t counter_index = ((hrtime_sec % 60) >= 30);
-
-  if ((hrtime_sec - 60) > this->ping_frame_count_last_update) {
-    this->ping_frame_count[0] = 0;
-    this->ping_frame_count[1] = 0;
-  } else if (counter_index != ((this->ping_frame_count_last_update % 60) >= 30)) {
-    this->ping_frame_count[counter_index] = 0;
-  }
-  ++this->ping_frame_count[counter_index];
-  this->ping_frame_count_last_update = hrtime_sec;
+  this->_received_ping_frame_counter.increment();
 }
 
 uint32_t
 Http2ConnectionState::get_received_ping_frame_count()
 {
-  return this->ping_frame_count[0] + this->ping_frame_count[1];
+  return this->_received_ping_frame_counter.get_count();
 }
 
 void
 Http2ConnectionState::increment_received_priority_frame_count()
 {
-  ink_hrtime hrtime_sec = Thread::get_hrtime() / HRTIME_SECOND;
-  uint8_t counter_index = ((hrtime_sec % 60) >= 30);
-
-  if ((hrtime_sec - 60) > this->priority_frame_count_last_update) {
-    this->priority_frame_count[0] = 0;
-    this->priority_frame_count[1] = 0;
-  } else if (counter_index != ((this->priority_frame_count_last_update % 60) >= 30)) {
-    this->priority_frame_count[counter_index] = 0;
-  }
-  ++this->priority_frame_count[counter_index];
-  this->priority_frame_count_last_update = hrtime_sec;
+  this->_received_priority_frame_counter.increment();
 }
 
 uint32_t
 Http2ConnectionState::get_received_priority_frame_count()
 {
-  return this->priority_frame_count[0] + this->priority_frame_count[1];
+  return this->_received_priority_frame_counter.get_count();
 }
 
 // Return min_concurrent_streams_in when current client streams number is larger than max_active_streams_in.

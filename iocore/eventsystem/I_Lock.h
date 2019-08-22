@@ -353,17 +353,19 @@ public:
     Ptr<ProxyMutex> &am, EThread *t)
     : m(am), locked_p(true)
   {
-    Mutex_lock(
+    if (am) {
+      Mutex_lock(
 #ifdef DEBUG
-      location, ahandler,
+        location, ahandler,
 #endif // DEBUG
-      m, t);
+        m, t);
+    }
   }
 
   void
   release()
   {
-    if (locked_p) {
+    if (locked_p && m) {
       Mutex_unlock(m, m->thread_holding);
     }
     locked_p = false;

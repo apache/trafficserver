@@ -713,7 +713,8 @@ transformData(TSCont contp)
   if (process_input_complete) {
     TSDebug(cont_data->debug_tag, "[%s] Completed reading input", __FUNCTION__);
     if (cont_data->input_type == DATA_TYPE_PACKED_ESI) {
-      TSDebug(DEBUG_TAG, "[%s] Going to use packed node list of size %d", __FUNCTION__, (int)cont_data->packed_node_list.size());
+      TSDebug(DEBUG_TAG, "[%s] Going to use packed node list of size %d", __FUNCTION__,
+              static_cast<int>(cont_data->packed_node_list.size()));
       if (cont_data->esi_proc->usePackedNodeList(cont_data->packed_node_list) == EsiProcessor::UNPACK_FAILURE) {
         removeCacheKey(cont_data->txnp);
 
@@ -777,7 +778,7 @@ transformData(TSCont contp)
             out_data     = "";
           } else {
             TSDebug(cont_data->debug_tag, "[%s] Compressed document from size %d to %d bytes", __FUNCTION__, out_data_len,
-                    (int)cdata.size());
+                    static_cast<int>(cdata.size()));
             out_data_len = cdata.size();
             out_data     = cdata.data();
           }
@@ -824,7 +825,7 @@ transformData(TSCont contp)
 
     if (retval == EsiProcessor::SUCCESS) {
       TSDebug(cont_data->debug_tag, "[%s] ESI processor output document of size %d starting with [%.10s]", __FUNCTION__,
-              (int)out_data.size(), (out_data.size() ? out_data.data() : "(null)"));
+              static_cast<int>(out_data.size()), (out_data.size() ? out_data.data() : "(null)"));
     } else {
       TSError("[esi][%s] ESI processor failed to process document; will return empty document", __FUNCTION__);
       out_data.assign("");
@@ -841,8 +842,8 @@ transformData(TSCont contp)
         if (!cont_data->esi_gzip->stream_encode(out_data, cdata)) {
           TSError("[esi][%s] Error while gzipping content", __FUNCTION__);
         } else {
-          TSDebug(cont_data->debug_tag, "[%s] Compressed document from size %d to %d bytes", __FUNCTION__, (int)out_data.size(),
-                  (int)cdata.size());
+          TSDebug(cont_data->debug_tag, "[%s] Compressed document from size %d to %d bytes", __FUNCTION__,
+                  static_cast<int>(out_data.size()), static_cast<int>(cdata.size()));
         }
       }
 
@@ -1002,8 +1003,8 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
     }
   }
 
-  TSDebug(cont_data->debug_tag, "[%s] transformHandler, event: %d, curr_state: %d", __FUNCTION__, (int)event,
-          (int)cont_data->curr_state);
+  TSDebug(cont_data->debug_tag, "[%s] transformHandler, event: %d, curr_state: %d", __FUNCTION__, static_cast<int>(event),
+          static_cast<int>(cont_data->curr_state));
 
   shutdown = (cont_data->xform_closed && (cont_data->curr_state == ContData::PROCESSING_COMPLETE));
   if (shutdown) {
@@ -1496,11 +1497,11 @@ pthread_key_t threadKey = 0;
 static int
 globalHookHandler(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp                 = (TSHttpTxn)edata;
+  TSHttpTxn txnp                 = static_cast<TSHttpTxn>(edata);
   bool intercept_header          = false;
   bool head_only                 = false;
   bool intercept_req             = isInterceptRequest(txnp);
-  struct OptionInfo *pOptionInfo = (struct OptionInfo *)TSContDataGet(contp);
+  struct OptionInfo *pOptionInfo = static_cast<struct OptionInfo *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -1602,7 +1603,7 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
     };
 
     int longindex = 0;
-    while ((c = getopt_long(argc, (char *const *)argv, "npzbf:", longopts, &longindex)) != -1) {
+    while ((c = getopt_long(argc, const_cast<char *const *>(argv), "npzbf:", longopts, &longindex)) != -1) {
       switch (c) {
       case 'n':
         pOptionInfo->packed_node_support = true;
@@ -1665,9 +1666,9 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  struct OptionInfo *pOptionInfo = (struct OptionInfo *)TSmalloc(sizeof(struct OptionInfo));
+  struct OptionInfo *pOptionInfo = static_cast<struct OptionInfo *>(TSmalloc(sizeof(struct OptionInfo)));
   if (pOptionInfo == nullptr) {
-    TSError("[esi][%s] malloc %d bytes fail", __FUNCTION__, (int)sizeof(struct OptionInfo));
+    TSError("[esi][%s] malloc %d bytes fail", __FUNCTION__, static_cast<int>(sizeof(struct OptionInfo)));
     return;
   }
   if (esiPluginInit(argc, argv, pOptionInfo) != 0) {
@@ -1731,10 +1732,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   }
   new_argv[index] = nullptr;
 
-  struct OptionInfo *pOptionInfo = (struct OptionInfo *)TSmalloc(sizeof(struct OptionInfo));
+  struct OptionInfo *pOptionInfo = static_cast<struct OptionInfo *>(TSmalloc(sizeof(struct OptionInfo)));
   if (pOptionInfo == nullptr) {
-    snprintf(errbuf, errbuf_size, "malloc %d bytes fail", (int)sizeof(struct OptionInfo));
-    TSError("[esi][%s] malloc %d bytes fail", __FUNCTION__, (int)sizeof(struct OptionInfo));
+    snprintf(errbuf, errbuf_size, "malloc %d bytes fail", static_cast<int>(sizeof(struct OptionInfo)));
+    TSError("[esi][%s] malloc %d bytes fail", __FUNCTION__, static_cast<int>(sizeof(struct OptionInfo)));
     return TS_ERROR;
   }
   if (esiPluginInit(index, new_argv, pOptionInfo) != 0) {

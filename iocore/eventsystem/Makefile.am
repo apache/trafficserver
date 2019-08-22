@@ -99,16 +99,8 @@ test_LD_ADD = \
 test_Buffer_SOURCES = \
 	test_Buffer.cc
 
-#test_UNUSED_SOURCES = \
-#  test_I_Buffer.cc \
-#  test_P_Buffer.cc
-
 test_Event_SOURCES = \
 	test_Event.cc
-
-#test_UNUSED_SOURCES = \
-#  test_I_Event.cc \
-#  test_P_Event.cc
 
 test_Buffer_CPPFLAGS = $(test_CPP_FLAGS)
 test_Event_CPPFLAGS = $(test_CPP_FLAGS)

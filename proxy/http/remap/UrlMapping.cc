@@ -59,8 +59,8 @@ url_mapping::~url_mapping()
   redirect_tag_str *rc;
   acl_filter_rule *afr;
 
-  tag                 = (char *)ats_free_null(tag);
-  filter_redirect_url = (char *)ats_free_null(filter_redirect_url);
+  tag                 = static_cast<char *>(ats_free_null(tag));
+  filter_redirect_url = static_cast<char *>(ats_free_null(filter_redirect_url));
 
   while ((r = referer_list) != nullptr) {
     referer_list = r->next;
@@ -88,8 +88,8 @@ url_mapping::Print()
 {
   char from_url_buf[131072], to_url_buf[131072];
 
-  fromURL.string_get_buf(from_url_buf, (int)sizeof(from_url_buf));
-  toURL.string_get_buf(to_url_buf, (int)sizeof(to_url_buf));
+  fromURL.string_get_buf(from_url_buf, static_cast<int>(sizeof(from_url_buf)));
+  toURL.string_get_buf(to_url_buf, static_cast<int>(sizeof(to_url_buf)));
   printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %zu plugins]\n", from_url_buf, unique ? "(unique)" : "",
          to_url_buf, homePageRedirect ? "(R)" : "", tag ? tag : "", _plugin_inst_list.size() > 0 ? "are" : "not",
          _plugin_inst_list.size());
@@ -110,7 +110,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
       char type = 0;
       for (type = 's'; *c; c++) {
         if (c[0] == '%') {
-          char tmp_type = (char)tolower((int)c[1]);
+          char tmp_type = static_cast<char>(tolower(static_cast<int>(c[1])));
           if (tmp_type == 'r' || tmp_type == 'f' || tmp_type == 't' || tmp_type == 'o') {
             if (url == c) {
               type = tmp_type;

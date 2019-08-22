@@ -111,13 +111,13 @@ STEK_GetGoodRandom(char *buffer, int size, int needGoodEntropy)
   /* /dev/random blocks until good entropy and can take up to 2 seconds per byte on idle machines */
   /* /dev/urandom does not have entropy check, and is very quick.
    * Caller decides quality needed */
-  randFileName = (char *)((needGoodEntropy) ? /* Good & slow */ "/dev/random" : /*Fast*/ "/dev/urandom");
+  randFileName = const_cast<char *>((needGoodEntropy) ? /* Good & slow */ "/dev/random" : /*Fast*/ "/dev/urandom");
 
   if (nullptr == (fp = fopen(randFileName, "r"))) {
     // printf("Can't open %s",randFileName);
     return 0; /* failure */
   }
-  numread = (int)fread(buffer, 1, size, fp);
+  numread = static_cast<int>(fread(buffer, 1, size, fp));
   fclose(fp);
 
   return ((numread == size) ? 1 /* success*/ : 0 /*failure*/);
@@ -136,9 +136,9 @@ STEK_CreateNew(struct ssl_ticket_key_t *returnSTEK, int globalkey, int entropyEn
 
   /* We create key in local buff to minimize lock time on global,
    * because entropy ensuring can take a very long time e.g. 2 seconds per byte of entropy*/
-  if ((!STEK_GetGoodRandom((char *)&(newKey.aes_key), SSL_KEY_LEN, (entropyEnsured) ? 1 : 0)) ||
-      (!STEK_GetGoodRandom((char *)&(newKey.hmac_secret), SSL_KEY_LEN, (entropyEnsured) ? 1 : 0)) ||
-      (!STEK_GetGoodRandom((char *)&(newKey.key_name), SSL_KEY_LEN, 0))) {
+  if ((!STEK_GetGoodRandom(reinterpret_cast<char *>(&(newKey.aes_key)), SSL_KEY_LEN, (entropyEnsured) ? 1 : 0)) ||
+      (!STEK_GetGoodRandom(reinterpret_cast<char *>(&(newKey.hmac_secret)), SSL_KEY_LEN, (entropyEnsured) ? 1 : 0)) ||
+      (!STEK_GetGoodRandom(reinterpret_cast<char *>(&(newKey.key_name)), SSL_KEY_LEN, 0))) {
     return 0; /* couldn't generate new STEK */
   }
 
@@ -172,8 +172,8 @@ STEK_encrypt(struct ssl_ticket_key_t *stek, const char *key, int key_length, cha
   int stek_enc_len = 0;
 
   // generate key and iv
-  int generated_key_len = EVP_BytesToKey(EVP_aes_256_cbc(), EVP_md5(), (const unsigned char *)salt, (const unsigned char *)key,
-                                         key_length, 1, gen_key, iv);
+  int generated_key_len = EVP_BytesToKey(EVP_aes_256_cbc(), EVP_md5(), (const unsigned char *)salt,
+                                         reinterpret_cast<const unsigned char *>(key), key_length, 1, gen_key, iv);
   if (generated_key_len <= 0) {
     TSDebug(PLUGIN, "Key setup for encryption of session ticket failed");
     goto cleanup;
@@ -184,12 +184,13 @@ STEK_encrypt(struct ssl_ticket_key_t *stek, const char *key, int key_length, cha
     goto cleanup;
   }
 
-  if (1 != EVP_EncryptUpdate(context, (unsigned char *)retEncrypted, &stek_enc_len, (const unsigned char *)stek, stek_len)) {
+  if (1 != EVP_EncryptUpdate(context, reinterpret_cast<unsigned char *>(retEncrypted), &stek_enc_len,
+                             reinterpret_cast<const unsigned char *>(stek), stek_len)) {
     TSDebug(PLUGIN, "Encryption of session ticket failed");
     goto cleanup;
   }
   *retLength = stek_enc_len;
-  if (1 != EVP_EncryptFinal_ex(context, (unsigned char *)retEncrypted + stek_enc_len, &stek_enc_len)) {
+  if (1 != EVP_EncryptFinal_ex(context, reinterpret_cast<unsigned char *>(retEncrypted) + stek_enc_len, &stek_enc_len)) {
     TSDebug(PLUGIN, "Final encryption of session ticket failed");
     goto cleanup;
   }
@@ -204,8 +205,9 @@ cleanup:
 static int
 STEK_decrypt(const std::string &encrypted_data, const char *key, int key_length, struct ssl_ticket_key_t *retSTEK)
 {
-  if (!retSTEK)
+  if (!retSTEK) {
     return 0;
+  }
 
   EVP_CIPHER_CTX *context = EVP_CIPHER_CTX_new();
   unsigned char iv[EVP_MAX_IV_LENGTH];
@@ -219,8 +221,8 @@ STEK_decrypt(const std::string &encrypted_data, const char *key, int key_length,
   TSDebug(PLUGIN, "STEK_decrypt(): requested to decrypt %d bytes", static_cast<int>(encrypted_data.length()));
 
   // generate key and iv
-  int generated_key_len = EVP_BytesToKey(EVP_aes_256_cbc(), EVP_md5(), (const unsigned char *)salt, (const unsigned char *)key,
-                                         key_length, 1, gen_key, iv);
+  int generated_key_len = EVP_BytesToKey(EVP_aes_256_cbc(), EVP_md5(), (const unsigned char *)salt,
+                                         reinterpret_cast<const unsigned char *>(key), key_length, 1, gen_key, iv);
   if (generated_key_len <= 0) {
     TSDebug(PLUGIN, "Key setup for decryption of session ticket failed");
     goto cleanup;
