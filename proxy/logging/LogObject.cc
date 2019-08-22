@@ -90,7 +90,8 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
 
 LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
                      const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
-                     int rolling_offset_hr, int rolling_size_mb, bool auto_created, int max_rolled, bool reopen_after_rolling)
+                     int rolling_offset_hr, int rolling_size_mb, bool auto_created, int max_rolled, bool reopen_after_rolling,
+                     int pipe_buffer_size)
   : m_alt_filename(nullptr),
     m_flags(0),
     m_signature(0),
@@ -101,7 +102,8 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
     m_last_roll_time(0),
     m_max_rolled(max_rolled),
     m_reopen_after_rolling(reopen_after_rolling),
-    m_buffer_manager_idx(0)
+    m_buffer_manager_idx(0),
+    m_pipe_buffer_size(pipe_buffer_size)
 {
   ink_release_assert(format);
   m_format         = new LogFormat(*format);
@@ -118,7 +120,8 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
   // compute_signature is a static function
   m_signature = compute_signature(m_format, m_basename, m_flags);
 
-  m_logFile = new LogFile(m_filename, header, file_format, m_signature, Log::config->ascii_buffer_size, Log::config->max_line_size);
+  m_logFile = new LogFile(m_filename, header, file_format, m_signature, Log::config->ascii_buffer_size, Log::config->max_line_size,
+                          m_pipe_buffer_size);
 
   if (m_reopen_after_rolling) {
     m_logFile->open_file();
@@ -148,7 +151,8 @@ LogObject::LogObject(LogObject &rhs)
     m_last_roll_time(rhs.m_last_roll_time),
     m_max_rolled(rhs.m_max_rolled),
     m_reopen_after_rolling(rhs.m_reopen_after_rolling),
-    m_buffer_manager_idx(rhs.m_buffer_manager_idx)
+    m_buffer_manager_idx(rhs.m_buffer_manager_idx),
+    m_pipe_buffer_size(rhs.m_pipe_buffer_size)
 {
   m_format         = new LogFormat(*(rhs.m_format));
   m_buffer_manager = new LogBufferManager[m_flush_threads];

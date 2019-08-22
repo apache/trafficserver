@@ -43,7 +43,7 @@ class LogFile : public LogBufferSink, public RefCountObj
 {
 public:
   LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size = 4 * 9216,
-          size_t max_line_size = 9216);
+          size_t max_line_size = 9216, int pipe_buffer_size = 0);
   LogFile(const LogFile &);
   ~LogFile() override;
 
@@ -120,6 +120,7 @@ public:
   uint64_t m_signature;       // signature of log object stored
   size_t m_ascii_buffer_size; // size of ascii buffer
   size_t m_max_line_size;     // size of longest log line (record)
+  int m_pipe_buffer_size;     // this is the size of the pipe buffer set by fcntl
   int m_fd;                   // this could back m_log or a pipe, depending on the situation
 
 public:
