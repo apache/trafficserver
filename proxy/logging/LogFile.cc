@@ -63,12 +63,13 @@
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size,
-                 size_t max_line_size)
+                 size_t max_line_size, int pipe_buffer_size)
   : m_file_format(format),
     m_name(ats_strdup(name)),
     m_header(ats_strdup(header)),
     m_signature(signature),
-    m_max_line_size(max_line_size)
+    m_max_line_size(max_line_size),
+    m_pipe_buffer_size(pipe_buffer_size)
 {
   if (m_file_format != LOG_FILE_PIPE) {
     m_log = new BaseLogFile(name, m_signature);
@@ -97,6 +98,7 @@ LogFile::LogFile(const LogFile &copy)
     m_signature(copy.m_signature),
     m_ascii_buffer_size(copy.m_ascii_buffer_size),
     m_max_line_size(copy.m_max_line_size),
+    m_pipe_buffer_size(copy.m_pipe_buffer_size),
     m_fd(copy.m_fd)
 {
   ink_release_assert(m_ascii_buffer_size >= m_max_line_size);
@@ -184,6 +186,28 @@ LogFile::open_file()
     if (m_fd < 0) {
       Debug("log-file", "no readers for pipe %s", m_name);
       return LOG_FILE_NO_PIPE_READERS;
+    }
+
+    // adjust pipe size if necessary
+    if (m_pipe_buffer_size) {
+      long pipe_size = (long)fcntl(m_fd, F_GETPIPE_SZ);
+      if (pipe_size == -1) {
+        Error("get pipe size failed for pipe %s", m_name);
+      } else {
+        Debug("log-file", "Default pipe size for pipe %s = %ld", m_name, pipe_size);
+      }
+
+      int ret = fcntl(m_fd, F_SETPIPE_SZ, m_pipe_buffer_size);
+      if (ret == -1) {
+        Error("set pipe size failed for pipe %s", m_name);
+      }
+
+      pipe_size = (long)fcntl(m_fd, F_GETPIPE_SZ);
+      if (pipe_size == -1) {
+        Error("get pipe size failed for pipe %s", m_name);
+      } else {
+        Debug("log-file", "NEW pipe size for pipe %s = %ld", m_name, pipe_size);
+      }
     }
   } else {
     if (m_log) {
