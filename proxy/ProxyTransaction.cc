@@ -193,18 +193,6 @@ ProxyTransaction::clear_session_active()
   }
 }
 
-/// DNS resolution preferences.
-HostResStyle
-ProxyTransaction::get_host_res_style() const
-{
-  return host_res_style;
-}
-void
-ProxyTransaction::set_host_res_style(HostResStyle style)
-{
-  host_res_style = style;
-}
-
 const IpAllow::ACL &
 ProxyTransaction::get_acl() const
 {
@@ -268,8 +256,7 @@ ProxyTransaction::get_proxy_ssn()
 void
 ProxyTransaction::set_proxy_ssn(ProxySession *new_proxy_ssn)
 {
-  proxy_ssn      = new_proxy_ssn;
-  host_res_style = proxy_ssn->host_res_style;
+  proxy_ssn = new_proxy_ssn;
 }
 
 void
