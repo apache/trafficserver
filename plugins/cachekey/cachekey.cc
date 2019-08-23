@@ -240,8 +240,8 @@ getCanonicalUrl(TSMBuffer buf, TSMLoc url, bool canonicalPrefix, bool provideDef
  * @param uriType type of the URI used to create the cachekey ("remap" or "pristine")
  * @param rri remap request info
  */
-CacheKey::CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType uriType, TSRemapRequestInfo *rri)
-  : _txn(txn), _separator(std::move(separator)), _uriType(uriType)
+CacheKey::CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType uriType, CacheKeyKeyType keyType, TSRemapRequestInfo *rri)
+  : _txn(txn), _separator(std::move(separator)), _uriType(uriType), _keyType(keyType)
 {
   _key.reserve(512);
 
@@ -250,8 +250,9 @@ CacheKey::CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType uriType, TSR
   /* Get the URI and header to base the cachekey on.
    * @TODO it might make sense to add more supported URI types */
 
+  CacheKeyDebug("setting %s from a %s plugin", getCacheKeyKeyTypeName(_keyType), _remap ? "remap" : "global");
+
   if (_remap) {
-    CacheKeyDebug("setting cache key from a remap plugin");
     if (PRISTINE == _uriType) {
       if (TS_SUCCESS != TSHttpTxnPristineUrlGet(_txn, &_buf, &_url)) {
         /* Failing here is unlikely. No action seems the only reasonable thing to do from within this plug-in */
@@ -266,7 +267,6 @@ CacheKey::CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType uriType, TSR
     }
     _hdrs = rri->requestHdrp;
   } else {
-    CacheKeyDebug("setting cache key from a global plugin");
     if (TS_SUCCESS != TSHttpTxnClientReqGet(_txn, &_buf, &_hdrs)) {
       /* Failing here is unlikely. No action seems the only reasonable thing to do from within this plug-in */
       CacheKeyError("failed to get client request handle");
@@ -745,24 +745,67 @@ CacheKey::appendUaClass(Classifier &classifier)
 bool
 CacheKey::finalize() const
 {
-  bool res = true;
-  CacheKeyDebug("finalizing cache key '%s' from a %s plugin", _key.c_str(), (_remap ? "remap" : "global"));
-  if (TS_SUCCESS != TSCacheUrlSet(_txn, &(_key[0]), _key.size())) {
-    int len;
-    char *url = TSHttpTxnEffectiveUrlStringGet(_txn, &len);
-    if (nullptr != url) {
+  bool res = false;
+  String msg;
+
+  CacheKeyDebug("finalizing %s '%s' from a %s plugin", getCacheKeyKeyTypeName(_keyType), _key.c_str(),
+                (_remap ? "remap" : "global"));
+  switch (_keyType) {
+  case CACHE_KEY: {
+    if (TS_SUCCESS == TSCacheUrlSet(_txn, &(_key[0]), _key.size())) {
+      /* Set cache key succesfully */
+      msg.assign("set cache key to ").append(_key);
+      res = true;
+    } else {
       if (_remap) {
         /* Remap instance. Always runs first by design (before TS_HTTP_POST_REMAP_HOOK) */
-        CacheKeyError("failed to set cache key for url %.*s", len, url);
+        msg.assign("failed to set cache key");
       } else {
         /* Global instance. We would fail and get here if a per-remap instance has already set the cache key
          * (currently TSCacheUrlSet() can be called only once successfully). Don't error, just debug.
          * @todo avoid the consecutive attempts and error only on unexpected failures. */
-        CacheKeyDebug("failed to set cache key for url %.*s", len, url);
+        msg.assign("failed to set cache key");
       }
+    }
+  } break;
+  case PARENT_SELECTION_URL: {
+    /* parent selection */
+    const char *start = _key.c_str();
+    const char *end   = _key.c_str() + _key.length();
+    TSMLoc new_url_loc;
+    if (TS_SUCCESS == TSUrlCreate(_buf, &new_url_loc)) {
+      if (TS_PARSE_DONE == TSUrlParse(_buf, new_url_loc, &start, end)) {
+        if (TS_SUCCESS == TSHttpTxnParentSelectionUrlSet(_txn, _buf, new_url_loc)) {
+          msg.assign("set parent selection URL to ").append(_key);
+          res = true;
+        } else {
+          msg.assign("failed to set parent selection URL");
+        }
+      } else {
+        msg.assign("failed to parse parent selection URL");
+      }
+      TSHandleMLocRelease(_buf, TS_NULL_MLOC, new_url_loc);
+    } else {
+      msg.assign("failed to create parent selection URL");
+    }
+  } break;
+  default: {
+    msg.assign("unknown target URI type");
+  } break;
+  }
+
+  /* Report status - debug level in case of success, error in case of failure.
+   * Since getting effective URI is expensive add it only in case of failure */
+  if (res) {
+    CacheKeyDebug("%.*s", static_cast<int>(msg.length()), msg.c_str());
+  } else {
+    int len;
+    char *url = TSHttpTxnEffectiveUrlStringGet(_txn, &len);
+    if (nullptr != url) {
+      msg.append(" for url ").append(url, len);
       TSfree(url);
     }
-    res = false;
+    CacheKeyError("%.*s", static_cast<int>(msg.length()), msg.c_str());
   }
   return res;
 }

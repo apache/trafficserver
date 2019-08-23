@@ -50,7 +50,8 @@
 class CacheKey
 {
 public:
-  CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType urlType, TSRemapRequestInfo *rri = nullptr);
+  CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType urlType, CacheKeyKeyType targetUrlType,
+           TSRemapRequestInfo *rri = nullptr);
   ~CacheKey();
 
   void append(unsigned number);
@@ -86,7 +87,8 @@ private:
   bool _valid = false; /**< @brief shows if the constructor discovered the input correctly */
   bool _remap = false; /**< @brief shows if the input URI was from remap info */
 
-  String _key;              /**< @brief cache key */
-  String _separator;        /**< @brief a separator used to separate the cache key elements extracted from the URI */
-  CacheKeyUriType _uriType; /**< @brief the URI type used as a cachekey base: pristine, remap, etc. */
+  String _key;                          /**< @brief cache key */
+  String _separator;                    /**< @brief a separator used to separate the cache key elements extracted from the URI */
+  CacheKeyUriType _uriType = REMAP;     /**< @brief the URI type used as a cachekey base: pristine, remap, etc. */
+  CacheKeyKeyType _keyType = CACHE_KEY; /**< @brief the target URI type: cache key, parent selection, etc. */
 };

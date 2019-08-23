@@ -396,8 +396,9 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
     {const_cast<char *>("remove-path"), optional_argument, nullptr, 'r'},
     {const_cast<char *>("separator"), optional_argument, nullptr, 's'},
     {const_cast<char *>("uri-type"), optional_argument, nullptr, 't'},
-    {const_cast<char *>("capture-header"), optional_argument, nullptr, 'u'},
-    {const_cast<char *>("canonical-prefix"), optional_argument, nullptr, 'v'},
+    {const_cast<char *>("key-type"), optional_argument, nullptr, 'u'},
+    {const_cast<char *>("capture-header"), optional_argument, nullptr, 'v'},
+    {const_cast<char *>("canonical-prefix"), optional_argument, nullptr, 'w'},
     /* reserve 'z' for 'config' files */
     {nullptr, 0, nullptr, 0},
   };
@@ -503,10 +504,13 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
     case 't': /* uri-type */
       setUriType(optarg);
       break;
-    case 'u': /* capture-header */
+    case 'u': /* key-type */
+      setKeyType(optarg);
+      break;
+    case 'v': /* capture-header */
       _headers.addCapture(optarg);
       break;
-    case 'v': /* canonical-prefix */
+    case 'w': /* canonical-prefix */
       _canonicalPrefix = isTrue(optarg);
       break;
     }
@@ -578,8 +582,58 @@ Configs::setUriType(const char *arg)
   }
 }
 
+void
+Configs::setKeyType(const char *arg)
+{
+  if (nullptr != arg) {
+    if (9 == strlen(arg) && 0 == strncasecmp(arg, "cache_key", 9)) {
+      _keyType = CacheKeyKeyType::CACHE_KEY;
+      CacheKeyDebug("setting cache key");
+    } else if (20 == strlen(arg) && 0 == strncasecmp(arg, "parent_selection_url", 20)) {
+      _keyType = CacheKeyKeyType::PARENT_SELECTION_URL;
+      CacheKeyDebug("setting parent selection URL");
+    } else {
+      CacheKeyError("unrecognized key type '%s', using default 'cache_key'", arg);
+    }
+  } else {
+    CacheKeyError("found an empty key type, using default 'cache_key'");
+  }
+}
+
 CacheKeyUriType
 Configs::getUriType()
 {
   return _uriType;
+}
+
+CacheKeyKeyType
+Configs::getKeyType()
+{
+  return _keyType;
+}
+
+const char *
+getCacheKeyUriTypeName(CacheKeyUriType type)
+{
+  switch (type) {
+  case REMAP:
+    return "remap";
+  case PRISTINE:
+    return "pristine";
+  default:
+    return "unknown";
+  }
+}
+
+const char *
+getCacheKeyKeyTypeName(CacheKeyKeyType type)
+{
+  switch (type) {
+  case CACHE_KEY:
+    return "cache key";
+  case PARENT_SELECTION_URL:
+    return "parent selection url";
+  default:
+    return "unknown";
+  }
 }
