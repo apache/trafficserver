@@ -606,7 +606,7 @@ static void
 poll_set(int sock, poll_cb read_cb, poll_cb write_cb = nullptr)
 {
   if (verbose) {
-    printf("adding poll %d\n", sock);
+    printf("adding poll %d %s %s\n", sock, read_cb ? "READ" : "-", write_cb ? "WRITE" : "-");
   }
   fd[sock].fd       = sock;
   fd[sock].read_cb  = read_cb;
@@ -1770,7 +1770,7 @@ open_server(unsigned short int port, accept_fn_t accept_fn)
   }
 
   if (verbose) {
-    printf("opening server on %d port %d\n", sock, name.sin_port);
+    printf("opening server on %d port %d\n", sock, port);
   }
 
   poll_init_set(sock, accept_fn);
@@ -1806,7 +1806,7 @@ poll_loop()
     if (ip >= POLL_GROUP_SIZE || i == last_fd) {
       int n = poll(pfd, ip, POLL_TIMEOUT);
       if (n > 0) {
-        for (int j = 0; j < n; j++) {
+        for (int j = 0; j < ip; j++) {
           if (pfd[j].revents & (POLLIN | POLLERR | POLLHUP | POLLNVAL)) {
             if (verbose) {
               printf("poll read %d %X\n", pfd[j].fd, pfd[j].revents);
