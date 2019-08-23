@@ -39,7 +39,7 @@ static void
 setCacheKey(TSHttpTxn txn, Configs *config, TSRemapRequestInfo *rri = nullptr)
 {
   /* Initial cache key facility from the requested URL. */
-  CacheKey cachekey(txn, config->getSeparator(), config->getUriType(), rri);
+  CacheKey cachekey(txn, config->getSeparator(), config->getUriType(), config->getKeyType(), rri);
 
   /* Append custom prefix or the host:port */
   if (!config->prefixToBeRemoved()) {
