@@ -468,12 +468,23 @@ DNSHandler::open_cons(sockaddr const *target, bool failed, int icon)
   Open (and close) connections as necessary and also assures that the
   epoll fd struct is properly updated.
 
+  target == nullptr :
+      open connection to DNSHandler::ip.
+      generally, the icon should be 0 if target == nullptr.
+
+  target != nullptr and icon == 0 :
+      open connection to target, and the target is assigned to DNSHandler::ip.
+
+  target != nullptr and icon > 0 :
+      open connection to target.
 */
 void
 DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tcp)
 {
   ip_port_text_buffer ip_text;
   PollDescriptor *pd = get_PollDescriptor(dnsProcessor.thread);
+
+  ink_assert(target != &ip.sa);
 
   if (!icon && target) {
     ats_ip_copy(&ip, target);
@@ -549,6 +560,12 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
     dns_handler_initialized = 1;
     SET_HANDLER(&DNSHandler::mainEvent);
     if (dns_ns_rr) {
+      /* Round Robin mode:
+       *   Establish a connection to each DNS server to make it a connection pool.
+       *   For each DNS Request, a connection is picked up from the pool by round robin method.
+       *
+       *   The first DNS server is assigned to DNSHandler::ip within open_con() function.
+       */
       int max_nscount = m_res->nscount;
       if (max_nscount > MAX_NAMED) {
         max_nscount = MAX_NAMED;
@@ -565,6 +582,18 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
       }
       dns_ns_rr_init_down = 0;
     } else {
+      /* Primary - Secondary mode:
+       *   Establish a connection to the Primary DNS server.
+       *   It always send DNS requests to the Primary DNS server.
+       *   If the Primary DNS server dies,
+       *     - it will attempt to send DNS requests to the secondary DNS server until the Primary DNS server is back.
+       *     - and keep to detect the health of the Primary DNS server.
+       *   If DNSHandler::recv_dns() got a valid DNS response from the Primary DNS server,
+       *     - it means that the Primary DNS server returns.
+       *     - it send all DNS requests to the Primary DNS server.
+       *
+       *   The first DNS server is the Primary DNS server, and it is assigned to DNSHandler::ip within validate_ip() function.
+       */
       open_cons(nullptr); // use current target address.
       n_con = 1;
     }
@@ -587,8 +616,8 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
   this->validate_ip();
 
   SET_HANDLER(&DNSHandler::mainEvent);
-  open_cons(&ip.sa, false, n_con);
-  ++n_con; // TODO should n_con be zeroed?
+  open_cons(nullptr, false, 0);
+  n_con = 1;
 
   return EVENT_CONT;
 }
@@ -647,7 +676,7 @@ DNSHandler::try_primary_named(bool reopen)
   if (reopen && ((t - last_primary_reopen) > DNS_PRIMARY_REOPEN_PERIOD)) {
     Debug("dns", "try_primary_named: reopening primary DNS connection");
     last_primary_reopen = t;
-    open_cons(&ip.sa, true, 0);
+    open_cons(nullptr, true, 0);
   }
   if ((t - last_primary_retry) > DNS_PRIMARY_RETRY_PERIOD) {
     unsigned char buffer[MAX_DNS_PACKET_LEN];
