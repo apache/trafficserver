@@ -424,12 +424,10 @@ Http1ClientSession::release(ProxyTransaction *trans)
   bool more_to_read = this->sm_reader->is_read_avail_more_than(0);
   if (more_to_read) {
     trans->destroy();
-    trans->set_restart_immediate(true);
     HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", con_id);
     new_transaction();
   } else {
     HttpSsnDebug("[%" PRId64 "] initiating io for next header", con_id);
-    trans->set_restart_immediate(false);
     read_state = HCS_KEEP_ALIVE;
     SET_HANDLER(&Http1ClientSession::state_keep_alive);
     ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
