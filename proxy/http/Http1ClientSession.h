@@ -112,8 +112,8 @@ private:
   bool half_close           = false;
   bool conn_decrease        = false;
 
-  MIOBuffer *read_buffer    = nullptr;
-  IOBufferReader *sm_reader = nullptr;
+  MIOBuffer *read_buffer  = nullptr;
+  IOBufferReader *_reader = nullptr;
 
   C_Read_State read_state = HCS_INIT;
 

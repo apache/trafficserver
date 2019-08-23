@@ -32,51 +32,51 @@ ProxyTransaction::ProxyTransaction() : VConnection(nullptr) {}
 void
 ProxyTransaction::new_transaction()
 {
-  ink_assert(current_reader == nullptr);
+  ink_assert(_sm == nullptr);
 
   // Defensive programming, make sure nothing persists across
   // connection re-use
 
-  ink_release_assert(proxy_ssn != nullptr);
-  current_reader = HttpSM::allocate();
-  current_reader->init();
-  HttpTxnDebug("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", proxy_ssn->connection_id(),
-               proxy_ssn->get_transact_count(), current_reader->sm_id);
+  ink_release_assert(_proxy_ssn != nullptr);
+  _sm = HttpSM::allocate();
+  _sm->init();
+  HttpTxnDebug("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", _proxy_ssn->connection_id(),
+               _proxy_ssn->get_transact_count(), _sm->sm_id);
 
   PluginIdentity *pi = dynamic_cast<PluginIdentity *>(this->get_netvc());
   if (pi) {
-    current_reader->plugin_tag = pi->getPluginTag();
-    current_reader->plugin_id  = pi->getPluginId();
+    _sm->plugin_tag = pi->getPluginTag();
+    _sm->plugin_id  = pi->getPluginId();
   }
 
   this->increment_client_transactions_stat();
-  current_reader->attach_client_session(this, sm_reader);
+  _sm->attach_client_session(this, _reader);
 }
 
 void
 ProxyTransaction::release(IOBufferReader *r)
 {
-  HttpTxnDebug("[%" PRId64 "] session released by sm [%" PRId64 "]", proxy_ssn ? proxy_ssn->connection_id() : 0,
-               current_reader ? current_reader->sm_id : 0);
+  HttpTxnDebug("[%" PRId64 "] session released by sm [%" PRId64 "]", _proxy_ssn ? _proxy_ssn->connection_id() : 0,
+               _sm ? _sm->sm_id : 0);
 
   this->decrement_client_transactions_stat();
 
   // Pass along the release to the session
-  if (proxy_ssn) {
-    proxy_ssn->release(this);
+  if (_proxy_ssn) {
+    _proxy_ssn->release(this);
   }
 }
 
 void
 ProxyTransaction::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
 {
-  proxy_ssn->attach_server_session(ssession, transaction_done);
+  _proxy_ssn->attach_server_session(ssession, transaction_done);
 }
 
 void
 ProxyTransaction::destroy()
 {
-  current_reader = nullptr;
+  _sm = nullptr;
   this->mutex.clear();
 }
 
@@ -100,29 +100,29 @@ ProxyTransaction::adjust_thread(Continuation *cont, int event, void *data)
 void
 ProxyTransaction::set_rx_error_code(ProxyError e)
 {
-  if (this->current_reader) {
-    this->current_reader->t_state.client_info.rx_error_code = e;
+  if (this->_sm) {
+    this->_sm->t_state.client_info.rx_error_code = e;
   }
 }
 
 void
 ProxyTransaction::set_tx_error_code(ProxyError e)
 {
-  if (this->current_reader) {
-    this->current_reader->t_state.client_info.tx_error_code = e;
+  if (this->_sm) {
+    this->_sm->t_state.client_info.tx_error_code = e;
   }
 }
 
 NetVConnection *
 ProxyTransaction::get_netvc() const
 {
-  return (proxy_ssn) ? proxy_ssn->get_netvc() : nullptr;
+  return (_proxy_ssn) ? _proxy_ssn->get_netvc() : nullptr;
 }
 
 bool
 ProxyTransaction::is_first_transaction() const
 {
-  return proxy_ssn->get_transact_count() == 1;
+  return _proxy_ssn->get_transact_count() == 1;
 }
 // Ask your session if this is allowed
 bool
@@ -134,21 +134,21 @@ ProxyTransaction::is_transparent_passthrough_allowed()
 bool
 ProxyTransaction::is_chunked_encoding_supported() const
 {
-  return proxy_ssn ? proxy_ssn->is_chunked_encoding_supported() : false;
+  return _proxy_ssn ? _proxy_ssn->is_chunked_encoding_supported() : false;
 }
 
 void
 ProxyTransaction::set_half_close_flag(bool flag)
 {
-  if (proxy_ssn) {
-    proxy_ssn->set_half_close_flag(flag);
+  if (_proxy_ssn) {
+    _proxy_ssn->set_half_close_flag(flag);
   }
 }
 
 bool
 ProxyTransaction::get_half_close_flag() const
 {
-  return proxy_ssn ? proxy_ssn->get_half_close_flag() : false;
+  return _proxy_ssn ? _proxy_ssn->get_half_close_flag() : false;
 }
 
 // What are the debug and hooks_enabled used for?  How are they set?
@@ -156,47 +156,47 @@ ProxyTransaction::get_half_close_flag() const
 bool
 ProxyTransaction::debug() const
 {
-  return proxy_ssn ? proxy_ssn->debug() : false;
+  return _proxy_ssn ? _proxy_ssn->debug() : false;
 }
 
 APIHook *
 ProxyTransaction::hook_get(TSHttpHookID id) const
 {
-  return proxy_ssn ? proxy_ssn->hook_get(id) : nullptr;
+  return _proxy_ssn ? _proxy_ssn->hook_get(id) : nullptr;
 }
 
 HttpAPIHooks const *
 ProxyTransaction::feature_hooks() const
 {
-  return proxy_ssn ? proxy_ssn->feature_hooks() : nullptr;
+  return _proxy_ssn ? _proxy_ssn->feature_hooks() : nullptr;
 }
 
 bool
 ProxyTransaction::has_hooks() const
 {
-  return proxy_ssn->has_hooks();
+  return _proxy_ssn->has_hooks();
 }
 
 void
 ProxyTransaction::set_session_active()
 {
-  if (proxy_ssn) {
-    proxy_ssn->set_session_active();
+  if (_proxy_ssn) {
+    _proxy_ssn->set_session_active();
   }
 }
 
 void
 ProxyTransaction::clear_session_active()
 {
-  if (proxy_ssn) {
-    proxy_ssn->clear_session_active();
+  if (_proxy_ssn) {
+    _proxy_ssn->clear_session_active();
   }
 }
 
 const IpAllow::ACL &
 ProxyTransaction::get_acl() const
 {
-  return proxy_ssn ? proxy_ssn->acl : IpAllow::DENY_ALL_ACL;
+  return _proxy_ssn ? _proxy_ssn->acl : IpAllow::DENY_ALL_ACL;
 }
 
 // outbound values Set via the server port definition.  Really only used for Http1 at the moment
@@ -250,13 +250,13 @@ ProxyTransaction::set_outbound_transparent(bool flag)
 ProxySession *
 ProxyTransaction::get_proxy_ssn()
 {
-  return proxy_ssn;
+  return _proxy_ssn;
 }
 
 void
 ProxyTransaction::set_proxy_ssn(ProxySession *new_proxy_ssn)
 {
-  proxy_ssn = new_proxy_ssn;
+  _proxy_ssn = new_proxy_ssn;
 }
 
 void
@@ -267,29 +267,29 @@ ProxyTransaction::set_h2c_upgrade_flag()
 Http1ServerSession *
 ProxyTransaction::get_server_session() const
 {
-  return proxy_ssn ? proxy_ssn->get_server_session() : nullptr;
+  return _proxy_ssn ? _proxy_ssn->get_server_session() : nullptr;
 }
 
 HttpSM *
 ProxyTransaction::get_sm() const
 {
-  return current_reader;
+  return _sm;
 }
 
 const char *
 ProxyTransaction::get_protocol_string()
 {
-  return proxy_ssn ? proxy_ssn->get_protocol_string() : nullptr;
+  return _proxy_ssn ? _proxy_ssn->get_protocol_string() : nullptr;
 }
 
 int
 ProxyTransaction::populate_protocol(std::string_view *result, int size) const
 {
-  return proxy_ssn ? proxy_ssn->populate_protocol(result, size) : 0;
+  return _proxy_ssn ? _proxy_ssn->populate_protocol(result, size) : 0;
 }
 
 const char *
 ProxyTransaction::protocol_contains(std::string_view tag_prefix) const
 {
-  return proxy_ssn ? proxy_ssn->protocol_contains(tag_prefix) : nullptr;
+  return _proxy_ssn ? _proxy_ssn->protocol_contains(tag_prefix) : nullptr;
 }

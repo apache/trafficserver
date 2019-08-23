@@ -80,7 +80,7 @@ When the Http1Transaction object is instantiated via :code:`ProxyTransaction::ne
 new HttpSM object, initializes it, and calls :code:`HttpSM::attach_client_session()` to associate the
 Http1Transaction object with the new HttpSM.
 
-The ProxyTransaction object refers to the HttpSM via the current_reader member variable.  The HttpSM object
+The ProxyTransaction object refers to the HttpSM via the _sm member variable.  The HttpSM object
 refers to ProxyTransaction via the ua_session member variable (session in the member name is
 historical because the HttpSM used to refer directly to the ClientSession object).
 

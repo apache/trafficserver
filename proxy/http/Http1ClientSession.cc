@@ -186,8 +186,8 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   client_vc->set_tcp_congestion_control(CLIENT_SIDE);
 
   read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
-  sm_reader   = reader ? reader : read_buffer->alloc_reader();
-  trans.set_reader(sm_reader);
+  _reader     = reader ? reader : read_buffer->alloc_reader();
+  trans.set_reader(_reader);
 
   // INKqa11186: Use a local pointer to the mutex as
   // when we return from do_api_callout, the ClientSession may
@@ -272,7 +272,7 @@ Http1ClientSession::do_io_close(int alerrno)
     // [bug 2610799] Drain any data read.
     // If the buffer is full and the client writes again, we will not receive a
     // READ_READY event.
-    sm_reader->consume(sm_reader->read_avail());
+    _reader->consume(_reader->read_avail());
   } else {
     read_state = HCS_CLOSED;
     HttpSsnDebug("[%" PRId64 "] session closed", con_id);
@@ -312,7 +312,7 @@ Http1ClientSession::state_wait_for_close(int event, void *data)
     break;
   case VC_EVENT_READ_READY:
     // Drain any data read
-    sm_reader->consume(sm_reader->read_avail());
+    _reader->consume(_reader->read_avail());
     break;
 
   default:
@@ -421,7 +421,7 @@ Http1ClientSession::release(ProxyTransaction *trans)
   //  buffer.  If there is, spin up a new state
   //  machine to process it.  Otherwise, issue an
   //  IO to wait for new data
-  bool more_to_read = this->sm_reader->is_read_avail_more_than(0);
+  bool more_to_read = this->_reader->is_read_avail_more_than(0);
   if (more_to_read) {
     trans->destroy();
     HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", con_id);
