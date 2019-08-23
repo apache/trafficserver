@@ -40,13 +40,9 @@ static constexpr char debug_tag_v[] = "v_http3";
 Http3App::Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options)
   : QUICApplication(client_vc)
 {
-  this->_ssn      = new Http3Session(client_vc);
-  this->_ssn->acl = std::move(session_acl);
-  // TODO: avoid const cast
-  this->_ssn->host_res_style =
-    ats_host_res_from(client_vc->get_remote_addr()->sa_family, const_cast<HostResPreference *>(options.host_res_preference));
+  this->_ssn                 = new Http3Session(client_vc);
+  this->_ssn->acl            = std::move(session_acl);
   this->_ssn->accept_options = &options;
-
   this->_ssn->new_connection(client_vc, nullptr, nullptr);
 
   this->_qc->stream_manager()->set_default_application(this);
