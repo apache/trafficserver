@@ -102,9 +102,6 @@ public:
   Http1ServerSession *get_server_session() const;
   HttpSM *get_sm() const;
 
-  void set_restart_immediate(bool val);
-  bool get_restart_immediate() const;
-
   // This function must return a non-negative number that is different for two in-progress transactions with the same proxy_ssn
   // session.
   //
@@ -119,8 +116,6 @@ protected:
   ProxySession *proxy_ssn   = nullptr;
   HttpSM *current_reader    = nullptr;
   IOBufferReader *sm_reader = nullptr;
-
-  bool restart_immediate = false;
 
 private:
 };
