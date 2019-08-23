@@ -494,6 +494,12 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
     debug_on = true;
   }
 
+  ink_assert(ua_txn->get_proxy_ssn());
+  ink_assert(ua_txn->get_proxy_ssn()->accept_options);
+  // default the upstream IP style host resolution from inbound
+  t_state.dns_info.host_res_style =
+    ats_host_res_from(netvc->get_local_addr()->sa_family, ua_txn->get_proxy_ssn()->accept_options->host_res_preference);
+
   start_sub_sm();
 
   // Allocate a user agent entry in the state machine's
@@ -2230,7 +2236,7 @@ HttpSM::state_hostdb_lookup(int event, void *data)
     opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
                                                                                  HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
     opt.timeout        = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
-    opt.host_res_style = ua_txn->get_host_res_style();
+    opt.host_res_style = t_state.dns_info.host_res_style;
 
     Action *dns_lookup_action_handle =
       hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
@@ -4011,7 +4017,7 @@ HttpSM::do_hostdb_lookup()
       opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
                                                                                    HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
       opt.timeout        = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
-      opt.host_res_style = ua_txn->get_host_res_style();
+      opt.host_res_style = t_state.dns_info.host_res_style;
 
       Action *dns_lookup_action_handle =
         hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
@@ -4046,7 +4052,7 @@ HttpSM::do_hostdb_lookup()
     opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
                                                                                  HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
     opt.timeout        = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
-    opt.host_res_style = ua_txn->get_host_res_style();
+    opt.host_res_style = t_state.dns_info.host_res_style;
 
     Action *dns_lookup_action_handle = hostDBProcessor.getbyname_imm(this, (cb_process_result_pfn)&HttpSM::process_hostdb_info,
                                                                      t_state.dns_info.lookup_name, 0, opt);

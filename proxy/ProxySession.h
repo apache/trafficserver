@@ -150,8 +150,6 @@ public:
 
   HttpSessionAccept::Options const *accept_options; ///< connection info // L7R TODO: set in constructor
 
-  HostResStyle host_res_style = HOST_RES_NONE; ///< DNS resolution preferences.
-
   ink_hrtime ssn_start_time    = 0;
   ink_hrtime ssn_last_txn_time = 0;
 

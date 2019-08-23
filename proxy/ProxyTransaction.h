@@ -120,9 +120,7 @@ protected:
   HttpSM *current_reader    = nullptr;
   IOBufferReader *sm_reader = nullptr;
 
-  /// DNS resolution preferences.
-  HostResStyle host_res_style = HOST_RES_NONE;
-  bool restart_immediate      = false;
+  bool restart_immediate = false;
 
 private:
 };
