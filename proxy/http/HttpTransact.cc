@@ -3704,7 +3704,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
     ink_assert(s->cache_info.object_read != nullptr);
     ink_assert(s->cache_info.action == CACHE_DO_UPDATE || s->cache_info.action == CACHE_DO_SERVE);
     ink_assert(s->internal_msg_buffer == nullptr);
-
+    s->source = SOURCE_CACHE;
     TxnDebug("http_trans", "[hscno] serving stale doc to client");
     build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   } else {
