@@ -239,7 +239,7 @@ private:
   SessionHandler session_handler = nullptr;
   NetVConnection *client_vc      = nullptr;
   MIOBuffer *read_buffer         = nullptr;
-  IOBufferReader *sm_reader      = nullptr;
+  IOBufferReader *_reader        = nullptr;
   MIOBuffer *write_buffer        = nullptr;
   IOBufferReader *sm_writer      = nullptr;
   Http2FrameHeader current_hdr   = {0, 0, 0, 0};
