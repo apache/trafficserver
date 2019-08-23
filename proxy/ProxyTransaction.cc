@@ -282,17 +282,6 @@ ProxyTransaction::get_protocol_string()
   return proxy_ssn ? proxy_ssn->get_protocol_string() : nullptr;
 }
 
-void
-ProxyTransaction::set_restart_immediate(bool val)
-{
-  restart_immediate = true;
-}
-bool
-ProxyTransaction::get_restart_immediate() const
-{
-  return restart_immediate;
-}
-
 int
 ProxyTransaction::populate_protocol(std::string_view *result, int size) const
 {
