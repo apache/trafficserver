@@ -113,9 +113,9 @@ public:
   HttpSessionAccept::Options upstream_outbound_options; // overwritable copy of options
 
 protected:
-  ProxySession *proxy_ssn   = nullptr;
-  HttpSM *current_reader    = nullptr;
-  IOBufferReader *sm_reader = nullptr;
+  ProxySession *_proxy_ssn = nullptr;
+  HttpSM *_sm              = nullptr;
+  IOBufferReader *_reader  = nullptr;
 
 private:
 };

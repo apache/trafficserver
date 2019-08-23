@@ -87,9 +87,9 @@ UpTest::make_requests()
     test_req.parse_req(&http_parser, &req, req + strlen(req), false);
     http_parser_clear(&http_parser);
 
-    HttpUpdateSM *current_reader = HttpUpdateSM::allocate();
-    current_reader->init();
-    Action *a = current_reader->start_scheduled_update(this, test_req);
+    HttpUpdateSM *_sm = HttpUpdateSM::allocate();
+    _sm->init();
+    Action *a = _sm->start_scheduled_update(this, test_req);
     (void)a;
 
     active_req++;
