@@ -1142,6 +1142,13 @@ write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
   int con_fd                      = over_tcp ? h->tcpcon[h->name_server].fd : h->udpcon[h->name_server].fd;
   Debug("dns", "send query (qtype=%d) for %s to fd %d", e->qtype, e->qname, con_fd);
 
+  char DUMP_BUFFER[10240] = {0};
+  char *p                 = DUMP_BUFFER;
+  for (int i = 0; i < r; i++) {
+    p += sprintf(p, "%x", buffer[i]);
+  }
+  Debug("dns", "send dns request: %s", DUMP_BUFFER);
+
   int s = socketManager.send(con_fd, buffer, r, 0);
   if (s != r) {
     Debug("dns", "send() failed: qname = %s, %d != %d, nameserver= %d", e->qname, s, r, h->name_server);
