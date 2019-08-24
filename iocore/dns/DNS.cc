@@ -1145,7 +1145,7 @@ write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
   char DUMP_BUFFER[10240] = {0};
   char *p                 = DUMP_BUFFER;
   for (int i = 0; i < r; i++) {
-    p += sprintf(p, "%x", buffer[i]);
+    p += sprintf(p, "0x%x ", buffer[i]);
   }
   Debug("dns", "send dns request: %s", DUMP_BUFFER);
 
