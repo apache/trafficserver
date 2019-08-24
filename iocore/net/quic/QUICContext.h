@@ -35,21 +35,23 @@ class QUICNetVConnection;
 class QUICContext
 {
 public:
+  virtual ~QUICContext(){};
   virtual QUICConfig::scoped_config config() const = 0;
 };
 
 class QUICLDContext
 {
 public:
-  virtual QUICConnectionInfoProvider *connection_info() const     = 0;
-  virtual QUICLDConfig &ld_config() const                         = 0;
-  virtual QUICPacketProtectionKeyInfo *key_info() const           = 0;
-  virtual QUICCongestionController *congestion_controller() const = 0;
+  virtual ~QUICLDContext() {}
+  virtual QUICConnectionInfoProvider *connection_info() const = 0;
+  virtual QUICLDConfig &ld_config() const                     = 0;
+  virtual QUICPacketProtectionKeyInfo *key_info() const       = 0;
 };
 
 class QUICCCContext
 {
 public:
+  virtual ~QUICCCContext() {}
   virtual QUICConnectionInfoProvider *connection_info() const = 0;
   virtual QUICCCConfig &cc_config() const                     = 0;
   virtual QUICRTTProvider *rtt_provider() const               = 0;
@@ -57,29 +59,24 @@ public:
 
 class QUICContextImpl : public QUICContext, public QUICCCContext, public QUICLDContext
 {
-  friend class QUICNetVConnection;
-
 public:
-  QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfo *key_info,
-                  QUICCongestionController *cc);
+  QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfo *key_info);
 
   virtual QUICConnectionInfoProvider *connection_info() const override;
   virtual QUICConfig::scoped_config config() const override;
   virtual QUICRTTProvider *rtt_provider() const override;
 
   // TODO should be more abstract
-  virtual QUICCongestionController *congestion_controller() const override;
   virtual QUICPacketProtectionKeyInfo *key_info() const override;
 
-  virtual QUICLDConfig &ld_config() const;
-  virtual QUICCCConfig &cc_config() const;
+  virtual QUICLDConfig &ld_config() const override;
+  virtual QUICCCConfig &cc_config() const override;
 
 private:
   QUICConfig::scoped_config _config;
-  QUICCongestionController *_congestion_controller = nullptr;
-  QUICPacketProtectionKeyInfo *_key_info           = nullptr;
-  QUICConnectionInfoProvider *_connection_info     = nullptr;
-  QUICRTTProvider *_rtt_provider                   = nullptr;
+  QUICPacketProtectionKeyInfo *_key_info       = nullptr;
+  QUICConnectionInfoProvider *_connection_info = nullptr;
+  QUICRTTProvider *_rtt_provider               = nullptr;
 
   std::unique_ptr<QUICLDConfig> _ld_config = nullptr;
   std::unique_ptr<QUICCCConfig> _cc_config = nullptr;

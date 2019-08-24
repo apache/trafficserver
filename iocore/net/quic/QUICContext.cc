@@ -98,10 +98,8 @@ private:
   const QUICConfigParams *_params;
 };
 
-QUICContextImpl::QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfo *key_info,
-                                 QUICCongestionController *cc)
-  : _congestion_controller(cc),
-    _key_info(key_info),
+QUICContextImpl::QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfo *key_info)
+  : _key_info(key_info),
     _connection_info(info),
     _rtt_provider(rtt),
     _ld_config(std::make_unique<QUICLDConfigQCP>(_config)),
@@ -119,12 +117,6 @@ QUICConfig::scoped_config
 QUICContextImpl::config() const
 {
   return _config;
-}
-
-QUICCongestionController *
-QUICContextImpl::congestion_controller() const
-{
-  return _congestion_controller;
 }
 
 QUICPacketProtectionKeyInfo *

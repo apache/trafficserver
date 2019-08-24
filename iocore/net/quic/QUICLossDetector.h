@@ -37,27 +37,12 @@
 #include "QUICFrameHandler.h"
 #include "QUICConnection.h"
 #include "QUICContext.h"
+#include "QUICCongestionController.h"
 
 class QUICPadder;
 class QUICPinger;
 class QUICLossDetector;
 class QUICRTTMeasure;
-
-struct QUICPacketInfo {
-  // 6.3.1.  Sent Packet Fields
-  QUICPacketNumber packet_number;
-  ink_hrtime time_sent;
-  bool ack_eliciting;
-  bool is_crypto_packet;
-  bool in_flight;
-  size_t sent_bytes;
-
-  // addition
-  QUICPacketType type;
-  std::vector<QUICFrameInfo> frames;
-  QUICPacketNumberSpace pn_space;
-  // end
-};
 
 using QUICPacketInfoUPtr = std::unique_ptr<QUICPacketInfo>;
 
@@ -71,19 +56,18 @@ public:
   virtual ink_hrtime congestion_period(uint32_t threshold) const = 0;
 };
 
-class QUICCongestionController
+class QUICNewRenoCongestionController : public QUICCongestionController
 {
 public:
-  QUICCongestionController(QUICCCContext &context);
-  virtual ~QUICCongestionController() {}
-  void on_packet_sent(size_t bytes_sent);
-  void on_packet_acked(const QUICPacketInfo &acked_packet);
-  virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets);
-  void on_retransmission_timeout_verified();
-  void process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section);
+  QUICNewRenoCongestionController(QUICCCContext &context);
+  virtual ~QUICNewRenoCongestionController() {}
+  void on_packet_sent(size_t bytes_sent) override;
+  void on_packet_acked(const QUICPacketInfo &acked_packet) override;
+  virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets) override;
+  void process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section) override;
   bool check_credit() const;
-  uint32_t open_window() const;
-  void reset();
+  uint32_t credit() const override;
+  void reset() override;
   bool is_app_limited();
 
   // Debug
@@ -91,7 +75,7 @@ public:
   uint32_t congestion_window() const;
   uint32_t current_ssthresh() const;
 
-  void add_extra_packets_count();
+  void add_extra_credit() override;
 
 private:
   Ptr<ProxyMutex> _cc_mutex;
@@ -127,7 +111,8 @@ private:
 class QUICLossDetector : public Continuation, public QUICFrameHandler
 {
 public:
-  QUICLossDetector(QUICLDContext &context, QUICRTTMeasure *rtt_measure, QUICPinger *pinger, QUICPadder *padder);
+  QUICLossDetector(QUICLDContext &context, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, QUICPinger *pinger,
+                   QUICPadder *padder);
   ~QUICLossDetector();
 
   int event_handler(int event, Event *edata);
@@ -195,9 +180,10 @@ private:
 
   bool _is_client_without_one_rtt_key() const;
 
-  QUICRTTMeasure *_rtt_measure = nullptr;
-  QUICPinger *_pinger          = nullptr;
-  QUICPadder *_padder          = nullptr;
+  QUICRTTMeasure *_rtt_measure  = nullptr;
+  QUICPinger *_pinger           = nullptr;
+  QUICPadder *_padder           = nullptr;
+  QUICCongestionController *_cc = nullptr;
 
   QUICLDContext &_context;
 };

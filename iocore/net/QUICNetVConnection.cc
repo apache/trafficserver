@@ -346,7 +346,7 @@ void
 QUICNetVConnection::start()
 {
   ink_release_assert(this->thread != nullptr);
-  this->_context = std::make_unique<QUICContextImpl>(&this->_rtt_measure, this, &this->_pp_key_info, nullptr);
+  this->_context = std::make_unique<QUICContextImpl>(&this->_rtt_measure, this, &this->_pp_key_info);
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   QUICPath trusted_path = {{}, {}};
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
@@ -382,9 +382,9 @@ QUICNetVConnection::start()
   this->_pinger = new QUICPinger();
   this->_padder = new QUICPadder(this->netvc_context);
   this->_rtt_measure.init(this->_context->ld_config());
-  this->_congestion_controller           = new QUICCongestionController(*_context);
-  this->_context->_congestion_controller = this->_congestion_controller; // hijack cc into context
-  this->_loss_detector                   = new QUICLossDetector(*_context, &this->_rtt_measure, this->_pinger, this->_padder);
+  this->_congestion_controller = new QUICNewRenoCongestionController(*_context);
+  this->_loss_detector =
+    new QUICLossDetector(*_context, this->_congestion_controller, &this->_rtt_measure, this->_pinger, this->_padder);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
@@ -1302,7 +1302,7 @@ QUICNetVConnection::_state_common_send_packet()
   uint32_t packet_count = 0;
   uint32_t error        = 0;
   while (error == 0 && packet_count < PACKET_PER_EVENT) {
-    uint32_t window = this->_congestion_controller->open_window();
+    uint32_t window = this->_congestion_controller->credit();
 
     if (window == 0) {
       break;

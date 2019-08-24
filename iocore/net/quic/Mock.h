@@ -405,7 +405,7 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
 class MockQUICCongestionController : public QUICCongestionController
 {
 public:
-  MockQUICCongestionController(QUICCCContext &context) : QUICCongestionController(context) {}
+  MockQUICCongestionController() {}
   // Override
   virtual void
   on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets) override
@@ -413,6 +413,37 @@ public:
     for (auto &p : packets) {
       lost_packets.insert(p.first);
     }
+  }
+
+  virtual void
+  on_packet_sent(size_t bytes_sent)
+  {
+    ink_assert(0);
+  }
+  virtual void
+  on_packet_acked(const QUICPacketInfo &acked_packet) override
+  {
+    ink_assert(0);
+  }
+  virtual void
+  process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section) override
+  {
+    ink_assert(0);
+  }
+  virtual void
+  add_extra_credit() override
+  {
+    ink_assert(0);
+  }
+  virtual void
+  reset() override
+  {
+    ink_assert(0);
+  }
+  virtual uint32_t
+  credit() const override
+  {
+    ink_assert(0);
   }
 
   // for Test
@@ -478,7 +509,6 @@ public:
     _key_info  = std::make_unique<MockQUICPacketProtectionKeyInfo>();
     _ld_config = std::make_unique<MockQUICLDConfig>();
     _cc_config = std::make_unique<MockQUICCCConfig>();
-    _cc        = std::make_unique<MockQUICCongestionController>(*this);
   }
 
   virtual QUICConnectionInfoProvider *
@@ -497,22 +527,10 @@ public:
     return const_cast<QUICRTTMeasure *>(&_rtt_measure);
   }
 
-  // TODO should be more abstract
-  virtual QUICCongestionController *
-  congestion_controller() const override
-  {
-    return _cc.get();
-  }
   virtual QUICPacketProtectionKeyInfo *
   key_info() const override
   {
     return _key_info.get();
-  }
-
-  MockQUICCongestionController *
-  mock_congestion_controller() const
-  {
-    return static_cast<MockQUICCongestionController *>(_cc.get());
   }
 
   virtual QUICLDConfig &
@@ -532,7 +550,6 @@ private:
   QUICRTTMeasure _rtt_measure;
   std::unique_ptr<QUICConnectionInfoProvider> _info;
   std::unique_ptr<QUICPacketProtectionKeyInfo> _key_info;
-  std::unique_ptr<QUICCongestionController> _cc;
   std::unique_ptr<QUICLDConfig> _ld_config;
   std::unique_ptr<QUICCCConfig> _cc_config;
 };
@@ -541,7 +558,7 @@ class MockQUICLossDetector : public QUICLossDetector
 {
 public:
   MockQUICLossDetector(MockQUICContext &context)
-    : QUICLossDetector(context, &_rtt_measure, &this->_pinger, &this->_padder),
+    : QUICLossDetector(context, &_cc, &_rtt_measure, &this->_pinger, &this->_padder),
       _padder(NetVConnectionContext_t::NET_VCONNECTION_UNSET)
   {
   }
@@ -559,6 +576,7 @@ private:
   QUICPinger _pinger;
   QUICPadder _padder;
   QUICRTTMeasure _rtt_measure;
+  MockQUICCongestionController _cc;
 };
 
 class MockQUICApplication : public QUICApplication

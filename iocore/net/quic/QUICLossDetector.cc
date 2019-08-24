@@ -38,8 +38,9 @@
 #define QUICLDVDebug(fmt, ...) \
   Debug("v_quic_loss_detector", "[%s] " fmt, this->_context.connection_info()->cids().data(), ##__VA_ARGS__)
 
-QUICLossDetector::QUICLossDetector(QUICLDContext &context, QUICRTTMeasure *rtt_measure, QUICPinger *pinger, QUICPadder *padder)
-  : _rtt_measure(rtt_measure), _pinger(pinger), _padder(padder), _context(context)
+QUICLossDetector::QUICLossDetector(QUICLDContext &context, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
+                                   QUICPinger *pinger, QUICPadder *padder)
+  : _rtt_measure(rtt_measure), _pinger(pinger), _padder(padder), _cc(cc), _context(context)
 {
   auto &ld_config             = _context.ld_config();
   this->mutex                 = new_ProxyMutex();
@@ -151,7 +152,7 @@ QUICLossDetector::on_packet_sent(QUICPacketInfoUPtr packet_info, bool in_flight)
     if (ack_eliciting) {
       this->_time_of_last_sent_ack_eliciting_packet = now;
     }
-    this->_context.congestion_controller()->on_packet_sent(sent_bytes);
+    this->_cc->on_packet_sent(sent_bytes);
     this->_set_loss_detection_timer();
   }
 }
@@ -231,7 +232,7 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame, QUICPacketNumb
   // if (ACK frame contains ECN information):
   //   ProcessECN(ack)
   if (ack_frame.ecn_section() != nullptr && pi != this->_sent_packets[index].end()) {
-    this->_context.congestion_controller()->process_ecn(*pi->second, ack_frame.ecn_section());
+    this->_cc->process_ecn(*pi->second, ack_frame.ecn_section());
   }
 
   // Find all newly acked packets.
@@ -261,7 +262,7 @@ QUICLossDetector::_on_packet_acked(const QUICPacketInfo &acked_packet)
               acked_packet.packet_number);
 
   if (acked_packet.in_flight) {
-    this->_context.congestion_controller()->on_packet_acked(acked_packet);
+    this->_cc->on_packet_acked(acked_packet);
   }
 
   for (const QUICFrameInfo &frame_info : acked_packet.frames) {
@@ -441,7 +442,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumberSpace pn_space)
   // Inform the congestion controller of lost packets and
   // lets it decide whether to retransmit immediately.
   if (!lost_packets.empty()) {
-    this->_context.congestion_controller()->on_packets_lost(lost_packets);
+    this->_cc->on_packets_lost(lost_packets);
     for (auto lost_packet : lost_packets) {
       // -- ADDITIONAL CODE --
       // Not sure how we can get feedback from congestion control and when we should retransmit the lost packets but we need to send
@@ -473,7 +474,7 @@ QUICLossDetector::_retransmit_all_unacked_crypto_data()
       }
     }
 
-    this->_context.congestion_controller()->on_packets_lost(lost_packets);
+    this->_cc->on_packets_lost(lost_packets);
     for (auto packet_number : retransmitted_crypto_packets) {
       this->_remove_from_sent_packet_list(packet_number, static_cast<QUICPacketNumberSpace>(i));
     }
@@ -488,7 +489,7 @@ QUICLossDetector::_send_packet(QUICEncryptionLevel level, bool padded)
   } else {
     this->_pinger->request(level);
   }
-  this->_context.congestion_controller()->add_extra_packets_count();
+  this->_cc->add_extra_credit();
 }
 
 void
