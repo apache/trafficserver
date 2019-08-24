@@ -30,7 +30,6 @@ Test.SkipUnless(
     Condition.HasATSFeature('TS_HAS_BROTLI')
 )
 
-
 server = Test.MakeOriginServer("server", options={'--load': '{}/compress_observer.py'.format(Test.TestDirectory)})
 
 def repeat(str, count):
@@ -62,71 +61,103 @@ for i in range(3):
     }
     server.addResponse("sessionfile.log", request_header, response_header)
 
-def curl(ts, name, idx, encodingList):
+def curl(ts, idx, encodingList):
     return (
         "curl --verbose --proxy http://127.0.0.1:{}".format(ts.Variables.port) +
-        " --header 'X-Ats-Compress-Test: {}/{}/{}'".format(name, idx, encodingList) +
+        " --header 'X-Ats-Compress-Test: {}/{}'".format(idx, encodingList) +
         " --header 'Accept-Encoding: {0}' 'http://ae-{1}/obj{1}'".format(encodingList, idx) +
         " >> {0}/compress_long.log 2>&1 ; printf '\n\n' >> {0}/compress_long.log".format(Test.RunDirectory)
     )
 
-def oneTs(name, AeHdr1='gzip, deflate, sdch, br'):
-    global waitForServer
-
-    waitForTs = True
-
-    ts = Test.MakeATSProcess(name)
-
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 0,
-        'proxy.config.diags.debug.tags': 'http|compress|cache',
-        'proxy.config.http.normalize_ae': 0,
-    })
-
-    ts.Disk.remap_config.AddLine(
-        'map http://ae-0/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
-        ' @plugin=compress.so @pparam={}/compress.config'.format(Test.TestDirectory)
-    )
-    ts.Disk.remap_config.AddLine(
-        'map http://ae-1/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1' +
-        ' @plugin=compress.so @pparam={}/compress.config'.format(Test.TestDirectory)
-    )
-    ts.Disk.remap_config.AddLine(
-        'map http://ae-2/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2' +
-        ' @plugin=compress.so @pparam={}/compress2.config'.format(Test.TestDirectory)
-    )
-
-    for i in range(3):
-
-        tr = Test.AddTestRun()
-        if (waitForTs):
-            tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
-        waitForTs = False
-        if (waitForServer):
-            tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-        waitForServer = False
-        tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Command = curl(ts, name, i, AeHdr1)
-
-        tr = Test.AddTestRun()
-        tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Command = curl(ts, name, i, "gzip")
-
-        tr = Test.AddTestRun()
-        tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Command = curl(ts, name, i, "br")
-
-        tr = Test.AddTestRun()
-        tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Command = curl(ts, name, i, "deflate")
-
 waitForServer = True
 
-oneTs("ts")
-oneTs("ts2", "gzip")
-oneTs("ts3", "deflate")
+waitForTs = True
+
+ts = Test.MakeATSProcess("ts")
+
+ts.Disk.records_config.update({
+    'proxy.config.http.cache.http': 0,
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'compress',
+    'proxy.config.http.normalize_ae': 0,
+})
+
+ts.Disk.remap_config.AddLine(
+    'map http://ae-0/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
+    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.TestDirectory)
+)
+ts.Disk.remap_config.AddLine(
+    'map http://ae-1/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
+    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1' +
+    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.TestDirectory)
+)
+ts.Disk.remap_config.AddLine(
+    'map http://ae-2/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
+    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2' +
+    ' @plugin=compress.so @pparam={}/compress2.config'.format(Test.TestDirectory)
+)
+
+for i in range(3):
+
+    tr = Test.AddTestRun()
+    if (waitForTs):
+        tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+    waitForTs = False
+    if (waitForServer):
+        tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
+    waitForServer = False
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Command = curl(ts, i, 'gzip, deflate, sdch, br')
+
+    tr = Test.AddTestRun()
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Command = curl(ts, i, "gzip")
+
+    tr = Test.AddTestRun()
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Command = curl(ts, i, "br")
+
+    tr = Test.AddTestRun()
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Command = curl(ts, i, "deflate")
+
+# Test Aceept-Encoding normalization.
+
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = curl(ts, 0, "gzip;q=0.666")
+
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = curl(ts, 0, "gzip;q=0.666x")
+
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = curl(ts, 0, "gzip;q=#0.666")
+
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = curl(ts, 0, "gzip; Q = 0.666")
+
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = curl(ts, 0, "gzip;q=0.0")
+
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = curl(ts, 0, "gzip;q=-0.1")
+
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = curl(ts, 0, "aaa, gzip;q=0.666, bbb")
+
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = curl(ts, 0, " br ; q=0.666, bbb")
+
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = curl(ts, 0, "aaa, gzip;q=0.666 , ")
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
@@ -136,9 +167,7 @@ tr.Processes.Default.Command = (
 f = tr.Disk.File("compress_short.log")
 f.Content = "compress.gold"
 
-# Have to comment this out, because caching does not seem to be consistent, which is disturbing.
-#
-# tr = Test.AddTestRun()
-# tr.Processes.Default.Command = "echo"
-# f = tr.Disk.File("compress_userver.log")
-# f.Content = "compress_userver.gold"
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = "echo"
+f = tr.Disk.File("compress_userver.log")
+f.Content = "compress_userver.gold"

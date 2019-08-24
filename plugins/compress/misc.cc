@@ -23,6 +23,7 @@
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
+#include "tscpp/util/TextView.h"
 
 #include "misc.h"
 #include <cstring>
@@ -41,40 +42,69 @@ gzip_free(voidpf /* opaque ATS_UNUSED */, voidpf address)
   TSfree(address);
 }
 
+namespace
+{
+// Strips parameters from value.  Returns cleared TextView if a q=f parameter present, where f is less than or equal to
+// zero.
+//
+void
+strip_ae_value(ts::TextView &value)
+{
+  ts::TextView compression{value.take_prefix_at(';')};
+  compression.trim(" \t");
+  while (value) {
+    ts::TextView param{value.take_prefix_at(';')};
+    ts::TextView name{param.take_prefix_at('=')};
+    name.trim(" \t");
+    if (strcasecmp("q", name) == 0) {
+      // If q value is valid and is zero, suppress compression types.
+      param.trim(" \t");
+      if (param) {
+        ts::TextView whole{param.take_prefix_at('.')};
+        whole.ltrim(" \t");
+        if ("0" == whole) {
+          param.trim('0');
+          if (!param) {
+            // Suppress compression type.
+            compression.clear();
+            break;
+          }
+        }
+      }
+    }
+  }
+  value = compression;
+}
+} // end anonymous namespace
+
 void
 normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc)
 {
   TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
-  int deflate  = 0;
-  int gzip     = 0;
-  int br       = 0;
+  bool deflate = false;
+  bool gzip    = false;
+  bool br      = false;
   // remove the accept encoding field(s),
   // while finding out if gzip or deflate is supported.
   while (field) {
-    TSMLoc tmp;
-
-    if (!deflate && !gzip) {
-      int value_count = TSMimeHdrFieldValuesCount(reqp, hdr_loc, field);
-
-      while (value_count > 0) {
-        int val_len = 0;
-        const char *val;
-
-        --value_count;
-        val = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, value_count, &val_len);
-
-        if (val_len == static_cast<int>(strlen("br"))) {
-          br = !strncmp(val, "br", val_len);
-        }
-        if (val_len == static_cast<int>(strlen("gzip"))) {
-          gzip = !strncmp(val, "gzip", val_len);
-        } else if (val_len == static_cast<int>(strlen("deflate"))) {
-          deflate = !strncmp(val, "deflate", val_len);
+    int val_len;
+    const char *values_ = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, -1, &val_len);
+    if (values_ && val_len) {
+      ts::TextView values(values_, val_len);
+      while (values) {
+        ts::TextView next{values.take_prefix_at(',')};
+        strip_ae_value(next);
+        if (strcasecmp("gzip", next) == 0) {
+          gzip = true;
+        } else if (strcasecmp("br", next) == 0) {
+          br = true;
+        } else if (strcasecmp("deflate", next) == 0) {
+          deflate = true;
         }
       }
     }
 
-    tmp = TSMimeHdrFieldNextDup(reqp, hdr_loc, field);
+    TSMLoc tmp = TSMimeHdrFieldNextDup(reqp, hdr_loc, field);
     TSMimeHdrFieldDestroy(reqp, hdr_loc, field); // catch retval?
     TSHandleMLocRelease(reqp, hdr_loc, field);
     field = tmp;
