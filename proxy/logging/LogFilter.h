@@ -385,14 +385,15 @@ LogFilterString::_checkCondition(OperatorFunction f, const char *field_value, si
 /*---------------------------------------------------------------------------
  * find pattern from the query param
  * 1) if pattern is not in the query param, return nullptr
- * 2) if get the pattern in one param's value, seach again until it's in one param name, or nullptr if can't find it from param name
+ * 2) if got the pattern in one param's value, search again until it's in one param name, or nullptr if can't find it from param
+name
 ---------------------------------------------------------------------------*/
 static const char *
 findPatternFromParamName(const char *lookup_query_param, const char *pattern)
 {
   const char *pattern_in_query_param = strstr(lookup_query_param, pattern);
   while (pattern_in_query_param) {
-    // wipe pattern in param name, need search again if find pattern in param value
+    // wipe pattern in param name, need to search again if find pattern in param value
     const char *param_value_str = strchr(pattern_in_query_param, '=');
     if (!param_value_str) {
       // no "=" after pattern_in_query_param, means pattern_in_query_param is not in the param name, and no more param after it
@@ -429,8 +430,9 @@ updatePatternForFieldValue(char **field, const char *pattern_str, int field_pos,
     temp_text += (value_str - pattern_str);
     const char *next_param_str = strchr(value_str, '&');
     if (next_param_str) {
-      for (int i = 0; i < (next_param_str - value_str); i++)
+      for (int i = 0; i < (next_param_str - value_str); i++) {
         temp_text[i] = 'X';
+      }
       temp_text += (next_param_str - value_str);
       memcpy(temp_text, next_param_str, ((buf_dest + buf_dest_len) - next_param_str));
     } else {
@@ -465,10 +467,18 @@ wipeField(char **field, char *pattern, const char *uppercase_field)
     }
 
     const char *pattern_in_param_name = findPatternFromParamName(lookup_query_param, pattern);
-    if (pattern_in_param_name) {
+    while (pattern_in_param_name) {
       int field_pos         = pattern_in_param_name - lookup_query_param;
       pattern_in_param_name = query_param + field_pos;
       updatePatternForFieldValue(field, pattern_in_param_name, field_pos, buf_dest);
+
+      // search new param again
+      const char *new_param = strchr(lookup_query_param + field_pos, '&');
+      if (new_param && (new_param + 1)) {
+        pattern_in_param_name = findPatternFromParamName(new_param + 1, pattern);
+      } else {
+        break;
+      }
     }
   }
 }
