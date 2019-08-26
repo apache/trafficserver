@@ -1333,10 +1333,23 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
 
     if (total_client_streams_count == 0) {
       if (fini_received) {
-        // We were shutting down, go ahead and terminate the session
-        // this is a member of Http2ConnectionState and will be freed
-        // when ua_session is destroyed
-        ua_session->destroy();
+        if (ua_session->is_active()) {
+          // ensure that the session is still active
+          // could happen that a FINI received when a TXN
+          // is stalled by a plugin on purpose
+          // the VC_EOS/VC_ERROR that the session cleanup to the
+          // TXN are also not processed until the plugin finally
+          // reenables the txn which will cause the destroy/free etc
+          // to be called a second time (use-after-free)
+
+          // We were shutting down, go ahead and terminate the session
+          // this is a member of Http2ConnectionState and will be freed
+          // when ua_session is destroyed
+          ua_session->destroy();
+        } else {
+          ua_session = nullptr;
+          schedule_zombie_event();
+        }
 
         // Can't do this because we just destroyed right here ^,
         // or we can use a local variable to do it.
