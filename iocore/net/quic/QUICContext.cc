@@ -29,6 +29,7 @@
 class QUICCCConfigQCP : public QUICCCConfig
 {
 public:
+  virtual ~QUICCCConfigQCP() {}
   QUICCCConfigQCP(const QUICConfigParams *params) : _params(params) {}
 
   uint32_t
@@ -68,6 +69,7 @@ private:
 class QUICLDConfigQCP : public QUICLDConfig
 {
 public:
+  virtual ~QUICLDConfigQCP() {}
   QUICLDConfigQCP(const QUICConfigParams *params) : _params(params) {}
 
   uint32_t
