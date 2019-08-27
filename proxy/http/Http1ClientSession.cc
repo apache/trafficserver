@@ -514,3 +514,86 @@ Http1ClientSession::decrement_current_active_client_connections_stat()
 {
   HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
 }
+
+void
+Http1ClientSession::start()
+{
+  // Troll for data to get a new transaction
+  this->release(&trans);
+}
+
+bool
+Http1ClientSession::allow_half_open() const
+{
+  // Only allow half open connections if the not over TLS
+  return (client_vc && dynamic_cast<SSLNetVConnection *>(client_vc) == nullptr);
+}
+
+void
+Http1ClientSession::set_half_close_flag(bool flag)
+{
+  half_close = flag;
+}
+
+bool
+Http1ClientSession::get_half_close_flag() const
+{
+  return half_close;
+}
+
+bool
+Http1ClientSession::is_chunked_encoding_supported() const
+{
+  return true;
+}
+
+NetVConnection *
+Http1ClientSession::get_netvc() const
+{
+  return client_vc;
+}
+
+int
+Http1ClientSession::get_transact_count() const
+{
+  return transact_count;
+}
+
+bool
+Http1ClientSession::is_outbound_transparent() const
+{
+  return f_outbound_transparent;
+}
+
+Http1ServerSession *
+Http1ClientSession::get_server_session() const
+{
+  return bound_ss;
+}
+
+void
+Http1ClientSession::set_active_timeout(ink_hrtime timeout_in)
+{
+  if (client_vc)
+    client_vc->set_active_timeout(timeout_in);
+}
+
+void
+Http1ClientSession::set_inactivity_timeout(ink_hrtime timeout_in)
+{
+  if (client_vc)
+    client_vc->set_inactivity_timeout(timeout_in);
+}
+
+void
+Http1ClientSession::cancel_inactivity_timeout()
+{
+  if (client_vc)
+    client_vc->cancel_inactivity_timeout();
+}
+
+const char *
+Http1ClientSession::get_protocol_string() const
+{
+  return "http";
+}
