@@ -46,12 +46,23 @@ Http1Transaction::release(IOBufferReader *r)
   }
 }
 
+void Http1Transaction::destroy() // todo make ~Http1Transaction()
+{
+  current_reader = nullptr;
+}
+
 void
 Http1Transaction::transaction_done()
 {
   if (proxy_ssn) {
     static_cast<Http1ClientSession *>(proxy_ssn)->release_transaction();
   }
+}
+
+void
+Http1Transaction::reenable(VIO *vio)
+{
+  proxy_ssn->reenable(vio);
 }
 
 bool
@@ -75,4 +86,64 @@ void
 Http1Transaction::decrement_client_transactions_stat()
 {
   HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
+}
+
+// Implement VConnection interface.
+VIO *
+Http1Transaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+{
+  return proxy_ssn->do_io_read(c, nbytes, buf);
+}
+VIO *
+Http1Transaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+{
+  return proxy_ssn->do_io_write(c, nbytes, buf, owner);
+}
+
+void
+Http1Transaction::do_io_close(int lerrno)
+{
+  proxy_ssn->do_io_close(lerrno);
+  // this->destroy(); Parent owns this data structure.  No need for separate destroy.
+}
+
+void
+Http1Transaction::do_io_shutdown(ShutdownHowTo_t howto)
+{
+  proxy_ssn->do_io_shutdown(howto);
+}
+
+void
+Http1Transaction::set_reader(IOBufferReader *reader)
+{
+  sm_reader = reader;
+}
+
+void
+Http1Transaction::set_active_timeout(ink_hrtime timeout_in)
+{
+  if (proxy_ssn)
+    proxy_ssn->set_active_timeout(timeout_in);
+}
+void
+Http1Transaction::set_inactivity_timeout(ink_hrtime timeout_in)
+{
+  if (proxy_ssn)
+    proxy_ssn->set_inactivity_timeout(timeout_in);
+}
+void
+Http1Transaction::cancel_inactivity_timeout()
+{
+  if (proxy_ssn)
+    proxy_ssn->cancel_inactivity_timeout();
+}
+//
+int
+Http1Transaction::get_transaction_id() const
+{
+  // For HTTP/1 there is only one on-going transaction at a time per session/connection.  Therefore, the transaction count can be
+  // presumed not to increase during the lifetime of a transaction, thus this function will return a consistent unique transaction
+  // identifier.
+  //
+  return proxy_ssn->get_transact_count();
 }
