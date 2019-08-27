@@ -1,13 +1,13 @@
 # Custom log configuration
 #
 # Documentation on logging:
-#    https://docs.trafficserver.apache.org/en/8.0.x/admin-guide/logging/index.en.html
+#    https://docs.trafficserver.apache.org/en/9.0.x/admin-guide/logging/index.en.html
 #
 # Documentation on logging.yaml file format:
-#    https://docs.trafficserver.apache.org/en/8.0.x/admin-guide/files/logging.yaml.en.html
+#    https://docs.trafficserver.apache.org/en/9.0.x/admin-guide/files/logging.yaml.en.html
 #
 # Example log configurations:
-#    https://docs.trafficserver.apache.org/en/8.0.x/admin-guide/logging/examples.en.html
+#    https://docs.trafficserver.apache.org/en/9.0.x/admin-guide/logging/examples.en.html
 
 
 logging:
