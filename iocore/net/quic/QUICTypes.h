@@ -532,6 +532,7 @@ public:
 class QUICLDConfig
 {
 public:
+  virtual ~QUICLDConfig() {}
   virtual uint32_t packet_threshold() const = 0;
   virtual float time_threshold() const      = 0;
   virtual ink_hrtime granularity() const    = 0;
@@ -541,6 +542,7 @@ public:
 class QUICCCConfig
 {
 public:
+  virtual ~QUICCCConfig() {}
   virtual uint32_t max_datagram_size() const               = 0;
   virtual uint32_t initial_window() const                  = 0;
   virtual uint32_t minimum_window() const                  = 0;

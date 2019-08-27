@@ -416,34 +416,29 @@ public:
   }
 
   virtual void
-  on_packet_sent(size_t bytes_sent)
+  on_packet_sent(size_t bytes_sent) override
   {
-    ink_assert(0);
   }
   virtual void
   on_packet_acked(const QUICPacketInfo &acked_packet) override
   {
-    ink_assert(0);
   }
   virtual void
   process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section) override
   {
-    ink_assert(0);
   }
   virtual void
   add_extra_credit() override
   {
-    ink_assert(0);
   }
   virtual void
   reset() override
   {
-    ink_assert(0);
   }
   virtual uint32_t
   credit() const override
   {
-    ink_assert(0);
+    return 0;
   }
 
   // for Test

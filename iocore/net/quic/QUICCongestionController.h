@@ -42,6 +42,7 @@ struct QUICPacketInfo {
 class QUICCongestionController
 {
 public:
+  virtual ~QUICCongestionController() {}
   virtual void on_packet_sent(size_t bytes_sent)                                                                    = 0;
   virtual void on_packet_acked(const QUICPacketInfo &acked_packet)                                                  = 0;
   virtual void process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section) = 0;

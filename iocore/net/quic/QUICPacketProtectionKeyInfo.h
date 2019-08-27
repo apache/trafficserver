@@ -31,6 +31,8 @@ class QUICPacketProtectionKeyInfo
 public:
   enum class Context { SERVER, CLIENT };
 
+  virtual ~QUICPacketProtectionKeyInfo() {}
+
   // FIXME This should be passed to the constructor but NetVC cannot pass it because it has set_context too.
   void set_context(Context ctx);
 
