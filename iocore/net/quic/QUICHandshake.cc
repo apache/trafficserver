@@ -382,6 +382,9 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
     pref_addr->store(pref_addr_buf, len);
     tp->set(QUICTransportParameterId::PREFERRED_ADDRESS, pref_addr_buf, len);
   }
+  if (tp_config.active_cid_limit() != 0) {
+    tp->set(QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT, tp_config.active_cid_limit());
+  }
 
   // MAYs (server)
   tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
@@ -421,6 +424,9 @@ QUICHandshake::_load_local_client_transport_parameters(const QUICTPConfig &tp_co
     tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, tp_config.initial_max_stream_data_uni());
   }
   tp->set(QUICTransportParameterId::ACK_DELAY_EXPONENT, tp_config.ack_delay_exponent());
+  if (tp_config.active_cid_limit() != 0) {
+    tp->set(QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT, tp_config.active_cid_limit());
+  }
 
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(std::unique_ptr<QUICTransportParameters>(tp));

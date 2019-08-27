@@ -178,6 +178,16 @@ public:
     }
   }
 
+  uint8_t
+  active_cid_limit() const override
+  {
+    if (this->_ctx == NET_VCONNECTION_IN) {
+      return this->_params->active_cid_limit_in();
+    } else {
+      return this->_params->active_cid_limit_out();
+    }
+  }
+
 private:
   const QUICConfigParams *_params;
   NetVConnectionContext_t _ctx;
@@ -1161,7 +1171,7 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICPacket &pa
     if (!this->_alt_con_manager) {
       this->_alt_con_manager =
         new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, this->_quic_config->instance_id(),
-                                     this->_quic_config->num_alt_connection_ids(), this->_quic_config->preferred_address_ipv4(),
+                                     this->_quic_config->active_cid_limit_in(), this->_quic_config->preferred_address_ipv4(),
                                      this->_quic_config->preferred_address_ipv6());
       this->_frame_generators.add_generator(*this->_alt_con_manager, QUICFrameGeneratorWeight::EARLY);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
@@ -1178,6 +1188,14 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICPacket &pa
       }
     }
   } else {
+    if (!this->_alt_con_manager) {
+      this->_alt_con_manager =
+        new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, this->_quic_config->instance_id(),
+                                     this->_quic_config->active_cid_limit_out());
+      this->_frame_generators.add_generator(*this->_alt_con_manager, QUICFrameGeneratorWeight::BEFORE_DATA);
+      this->_frame_dispatcher->add_handler(this->_alt_con_manager);
+    }
+
     // on client side, _handshake_handler is already started. Just process packet like _state_handshake_process_handshake_packet()
     error = this->_recv_and_ack(packet);
   }
@@ -2024,15 +2042,19 @@ QUICNetVConnection::_switch_to_established_state()
 
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
+    std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
+
+    uint64_t active_cid_limit = remote_tp->getAsUInt(QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT);
+    if (active_cid_limit) {
+      this->_alt_con_manager->set_remote_active_cid_limit(active_cid_limit);
+    }
+
     if (this->direction() == NET_VCONNECTION_OUT) {
-      std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
-      const uint8_t *pref_addr_buf;
       uint16_t len;
-      pref_addr_buf          = remote_tp->getAsBytes(QUICTransportParameterId::PREFERRED_ADDRESS, len);
-      this->_alt_con_manager = new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id,
-                                                            this->_quic_config->instance_id(), 1, {pref_addr_buf, len});
-      this->_frame_generators.add_generator(*this->_alt_con_manager, QUICFrameGeneratorWeight::BEFORE_DATA);
-      this->_frame_dispatcher->add_handler(this->_alt_con_manager);
+      const uint8_t *pref_addr_buf = remote_tp->getAsBytes(QUICTransportParameterId::PREFERRED_ADDRESS, len);
+      if (pref_addr_buf) {
+        this->_alt_con_manager->set_remote_preferred_address({pref_addr_buf, len});
+      }
     } else {
       QUICPath trusted_path = {this->local_addr, this->remote_addr};
       this->_path_manager->set_trusted_path(trusted_path);

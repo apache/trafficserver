@@ -35,16 +35,8 @@ class QUICConnectionTable;
 class QUICAltConnectionManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
-  /**
-   * Constructor for clients
-   */
   QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, const QUICConnectionId &peer_initial_cid,
-                           uint32_t instance_id, uint8_t num_alt_con, const QUICPreferredAddress &preferred_address);
-  /**
-   * Constructor for servers
-   */
-  QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, const QUICConnectionId &peer_initial_cid,
-                           uint32_t instance_id, uint8_t num_alt_con, const IpEndpoint *preferred_endpoint_ipv4 = nullptr,
+                           uint32_t instance_id, uint8_t active_cid_limit, const IpEndpoint *preferred_endpoint_ipv4 = nullptr,
                            const IpEndpoint *preferred_endpoint_ipv6 = nullptr);
   ~QUICAltConnectionManager();
 
@@ -67,6 +59,9 @@ public:
   bool migrate_to(const QUICConnectionId &cid, QUICStatelessResetToken &new_reset_token);
 
   void drop_cid(const QUICConnectionId &cid);
+
+  void set_remote_preferred_address(const QUICPreferredAddress &preferred_address);
+  void set_remote_active_cid_limit(uint8_t active_cid_limit);
 
   /**
    * Invalidate all CIDs prepared
@@ -100,18 +95,18 @@ private:
 
   QUICConnection *_qc = nullptr;
   QUICConnectionTable &_ctable;
-  AltConnectionInfo *_alt_quic_connection_ids_local;
+  AltConnectionInfo _alt_quic_connection_ids_local[8]; // 8 is perhaps enough
   std::vector<AltConnectionInfo> _alt_quic_connection_ids_remote;
   std::queue<uint64_t> _retired_seq_nums;
-  uint32_t _instance_id                    = 0;
-  uint8_t _nids                            = 1;
-  uint64_t _alt_quic_connection_id_seq_num = 0;
-  bool _need_advertise                     = false;
-  QUICPreferredAddress *_preferred_address = nullptr;
+  uint32_t _instance_id                          = 0;
+  uint8_t _local_active_cid_limit                = 0;
+  uint8_t _remote_active_cid_limit               = 0;
+  uint64_t _alt_quic_connection_id_seq_num       = 0;
+  bool _need_advertise                           = false;
+  QUICPreferredAddress *_local_preferred_address = nullptr;
 
   AltConnectionInfo _generate_next_alt_con_info();
-  void _init_alt_connection_ids(const IpEndpoint *preferred_endpoint_ipv4 = nullptr,
-                                const IpEndpoint *preferred_endpoint_ipv6 = nullptr);
+  void _init_alt_connection_ids();
   bool _update_alt_connection_id(uint64_t chosen_seq_num);
 
   void _records_new_connection_id_frame(QUICEncryptionLevel level, const QUICNewConnectionIdFrame &frame);

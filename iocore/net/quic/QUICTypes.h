@@ -527,6 +527,7 @@ public:
   virtual uint64_t initial_max_streams_uni() const             = 0;
   virtual uint8_t ack_delay_exponent() const                   = 0;
   virtual uint8_t max_ack_delay() const                        = 0;
+  virtual uint8_t active_cid_limit() const                     = 0;
 };
 
 class QUICLDConfig
