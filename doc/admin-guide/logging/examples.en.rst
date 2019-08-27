@@ -299,6 +299,26 @@ for them to a UNIX pipe that the alerting software can constantly read from.
      - canaryfilter
      filename: alerting_canaries
 
+Configuring ASCII Pipe Buffer Size
+==================================
+
+This example mirrors the one above but also sets a ```pipe_buffer_size``` of
+1024 * 1024 for the pipe. This can be set on a per-pipe basis but is not 
+available on FreeBSD dists of ATS. If this field is not set, the pipe buffer
+will default to the OS default size.
+
+.. code:: yaml
+
+   logs:
+   - mode: pipe
+     format: canaryformat
+     filters:
+     - canaryfilter
+     filename: alerting_canaries
+     pipe_buffer_size: 1048576
+
+
+
 Summarizing Origin Responses by Hour
 ====================================
 
