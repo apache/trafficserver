@@ -974,26 +974,97 @@ fi
 
 # Flags for ASAN
 if test "x${enable_asan}" = "xyes"; then
-  if test "x${enable_tsan}" = "xyes"; then
+  if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
     AC_ERROR([Cannot have ASAN and TSAN options at the same time, pick one])
   fi
   TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
   TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
+elif test "x${enable_asan}" = "xstatic"; then
+  if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
+    AC_ERROR([Cannot have ASAN and TSAN options at the same time, pick one])
+  fi
+  asan_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -fno-omit-frame-pointer -fsanitize=address -static-libasan"
+  AC_LANG_PUSH(C++)
+  AC_MSG_CHECKING([static ASAN library is available])
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([#include <stdlib.h>], [])],
+    [AC_MSG_RESULT([yes])],
+    [
+      AC_MSG_RESULT([no])
+      AC_ERROR([Cannot find static ASAN library.])
+    ]
+  )
+  AC_LANG_POP
+  CXXFLAGS="$asan_CXXFLAGS"
+  TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=address -static-libasan])
+  TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address -static-libasan])
 fi
 
 # Flags for LSAN stand-alone mode
 if test "x${enable_lsan}" = "xyes"; then
-  if test "x${enable_asan}" = "xyes"; then
+  if test "x${enable_asan}" = "xyes" -o "x${enable_asan}" = "xstatic"; then
     AC_ERROR([ASAN already specified, --enable-lsan is meant only for lsan stand-alone mode])
+  fi
+  if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
+    AC_ERROR([Cannot have LSAN and TSAN options at the same time, pick one])
   fi
   TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
   TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
+elif test "x${enable_lsan}" = "xstatic"; then
+  if test "x${enable_asan}" = "xyes" -o "x${enable_asan}" = "xstatic"; then
+    AC_ERROR([ASAN already specified, --enable-lsan is meant only for lsan stand-alone mode])
+  fi
+  if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
+    AC_ERROR([Cannot have LSAN and TSAN options at the same time, pick one])
+  fi
+  AC_CHECK_LIB(lsan, _init, [lsan_have_libs=yes], [lsan_have_libs=no])
+  if test "x${lsan_have_libs}" == "xno"; then
+    AC_ERROR([Cannot find LSAN static library])
+  fi
+  lsan_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -fno-omit-frame-pointer -fsanitize=leak -static-liblsan"
+  AC_LANG_PUSH(C++)
+  AC_MSG_CHECKING([static LSAN library is available])
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([#include <stdlib.h>], [])],
+    [AC_MSG_RESULT([yes])],
+    [
+      AC_MSG_RESULT([no])
+      AC_ERROR([Cannot find static LSAN library.])
+    ]
+  )
+  AC_LANG_POP
+  CXXFLAGS="$lsan_CXXFLAGS"
+  TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=leak -static-liblsan])
+  TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=leak -static-liblsan])
 fi
 
 # Flags for TSAN
 if test "x${enable_tsan}" = "xyes"; then
   TS_ADDTO(AM_CFLAGS, [-fsanitize=thread])
   TS_ADDTO(AM_CXXFLAGS, [-fsanitize=thread])
+elif test "x${enable_tsan}" = "xstatic"; then
+  AC_CHECK_LIB(tsan, _init, [tsan_have_libs=yes], [tsan_have_libs=no])
+  if test "x${tsan_have_libs}" == "xno"; then
+    AC_ERROR([Cannot find TSAN static library])
+  fi
+  tsan_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -fsanitize=thread -static-libtsan"
+  AC_LANG_PUSH(C++)
+  AC_MSG_CHECKING([static TSAN library is available])
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([#include <stdlib.h>], [])],
+    [AC_MSG_RESULT([yes])],
+    [
+      AC_MSG_RESULT([no])
+      AC_ERROR([Cannot find static TSAN library.])
+    ]
+  )
+  AC_LANG_POP
+  CXXFLAGS="$tsan_CXXFLAGS"
+  TS_ADDTO(AM_CFLAGS, [-fsanitize=thread -static-libtsan])
+  TS_ADDTO(AM_CXXFLAGS, [-fsanitize=thread -static-libtsan])
 fi
 
 # Checks for pointer size.
