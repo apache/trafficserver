@@ -42,7 +42,7 @@ ${ATS_MAKE} -i install
 source /opt/rh/rh-nodejs10/enable
 
 # Setup and start ATS with the required remap rule
-echo "map http://127.0.0.1:8080 http://192.168.3.13:8000" >> $REMAP
+echo "map http://127.0.0.1:8080 http://192.168.3.1:8000" >> $REMAP
 
 ${PREFIX}/bin/trafficserver start
 
