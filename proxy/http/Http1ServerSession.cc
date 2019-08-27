@@ -203,3 +203,43 @@ Http1ServerSession::release()
     ink_assert(r == HSM_DONE);
   }
 }
+
+IOBufferReader *
+Http1ServerSession::get_reader()
+{
+  return buf_reader;
+};
+
+NetVConnection *
+Http1ServerSession::get_netvc() const
+{
+  return server_vc;
+};
+
+void
+Http1ServerSession::set_netvc(NetVConnection *new_vc)
+{
+  server_vc = new_vc;
+}
+
+// Keys for matching hostnames
+IpEndpoint const &
+Http1ServerSession::get_server_ip() const
+{
+  ink_release_assert(server_vc != nullptr);
+  return server_vc->get_remote_endpoint();
+}
+
+int
+Http1ServerSession::populate_protocol(std::string_view *result, int size) const
+{
+  auto vc = this->get_netvc();
+  return vc ? vc->populate_protocol(result, size) : 0;
+}
+
+const char *
+Http1ServerSession::protocol_contains(std::string_view tag_prefix) const
+{
+  auto vc = this->get_netvc();
+  return vc ? vc->protocol_contains(tag_prefix) : nullptr;
+}

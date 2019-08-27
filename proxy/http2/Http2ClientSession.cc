@@ -649,3 +649,125 @@ Http2ClientSession::_should_do_something_else()
   // Do something else every 128 incoming frames
   return (this->_n_frame_read & 0x7F) == 0;
 }
+
+bool
+Http2ClientSession::ready_to_free() const
+{
+  return kill_me;
+}
+
+NetVConnection *
+Http2ClientSession::get_netvc() const
+{
+  return client_vc;
+}
+
+sockaddr const *
+Http2ClientSession::get_client_addr()
+{
+  return client_vc ? client_vc->get_remote_addr() : &cached_client_addr.sa;
+}
+
+sockaddr const *
+Http2ClientSession::get_local_addr()
+{
+  return client_vc ? client_vc->get_local_addr() : &cached_local_addr.sa;
+}
+void
+Http2ClientSession::write_reenable()
+{
+  write_vio->reenable();
+}
+
+const Http2UpgradeContext &
+Http2ClientSession::get_upgrade_context() const
+{
+  return upgrade_context;
+}
+
+int
+Http2ClientSession::get_transact_count() const
+{
+  return connection_state.get_stream_requests();
+}
+
+void
+Http2ClientSession::release(ProxyTransaction *trans)
+{
+}
+
+void
+Http2ClientSession::set_dying_event(int event)
+{
+  dying_event = event;
+}
+
+int
+Http2ClientSession::get_dying_event() const
+{
+  return dying_event;
+}
+
+bool
+Http2ClientSession::is_recursing() const
+{
+  return recursion > 0;
+}
+
+const char *
+Http2ClientSession::get_protocol_string() const
+{
+  return "http/2";
+}
+
+int
+Http2ClientSession::populate_protocol(std::string_view *result, int size) const
+{
+  int retval = 0;
+  if (size > retval) {
+    result[retval++] = IP_PROTO_TAG_HTTP_2_0;
+    if (size > retval) {
+      retval += super::populate_protocol(result + retval, size - retval);
+    }
+  }
+  return retval;
+}
+
+const char *
+Http2ClientSession::protocol_contains(std::string_view prefix) const
+{
+  const char *retval = nullptr;
+
+  if (prefix.size() <= IP_PROTO_TAG_HTTP_2_0.size() && strncmp(IP_PROTO_TAG_HTTP_2_0.data(), prefix.data(), prefix.size()) == 0) {
+    retval = IP_PROTO_TAG_HTTP_2_0.data();
+  } else {
+    retval = super::protocol_contains(prefix);
+  }
+  return retval;
+}
+
+bool
+Http2ClientSession::get_half_close_local_flag() const
+{
+  return half_close_local;
+}
+
+bool
+Http2ClientSession::is_url_pushed(const char *url, int url_len)
+{
+  return h2_pushed_urls.find(url) != h2_pushed_urls.end();
+}
+
+void
+Http2ClientSession::add_url_to_pushed_table(const char *url, int url_len)
+{
+  if (h2_pushed_urls.size() < Http2::push_diary_size) {
+    h2_pushed_urls.emplace(url);
+  }
+}
+
+int64_t
+Http2ClientSession::write_buffer_size()
+{
+  return write_buffer->max_read_avail();
+}
