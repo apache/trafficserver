@@ -109,6 +109,9 @@ pipe, only full records are dropped.
 Output to named pipes is always, as the mode's name implies, in ASCII format.
 There is no option for logging binary format log data to a named pipe.
 
+For ASCII pipes there exists an option to set the ``pipe_buffer_size`` in
+the YAML config.
+
 .. _admin-logging-ascii-v-binary:
 
 Deciding Between ASCII or Binary Output
