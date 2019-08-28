@@ -1,0 +1,765 @@
+Changes with Apache Traffic Server 9.0.0
+  #3676 - IOBufferChain: initial version
+  #3693 - register stats in traffic_server if running in standalone mode
+  #3724 - Unify include paths for headers between core, internal plugins, and external plugins.
+  #3768 - Autest: Test revalidating cached objects
+  #3777 - Bump version on master to v9.0.0
+  #3819 - Upstream max conn upgrade
+  #3851 - For atscppapi::AsyncTimer, pass the thread pool for execution to the constructor, …
+  #3900 - ts/Extendible and AcidPtr classes
+  #3901 - MemArena: Add make method to construct objects in the arena.
+  #3907 - IntrusiveDList: Refreshed for C++ eleventy, added const_iterator.
+  #3913 - Doc: fix build error in traffic_layout documentation.
+  #3921 - Bug fix in microServer's threading and reorganized some code
+  #3925 - Enforce sphinx>=1.7.5 when building docs
+  #3930 - Remove proxy.config.config_dir from records.config
+  #3941 - Fix RecConfigReadPluginDir and clean up RecCore
+  #3942 - Doc: Fix build error in Lua plugin documentation.
+  #3943 - Handle response parsing case where EOF happens before any data arrives.
+  #3945 - Doc: Tweak to fix doc issues in IntrusiveDList documentation.
+  #3951 - Fixed broken sphinx version check on MacOS
+  #3955 - IntrusiveHashMap: Refresh TSHashTable for C++ eleventy.
+  #3957 - Add generic "guard" class (PostScript) for exception and early function return safety.
+  #3958 - PROXY Protocol transformed to Forwarded HTTP header
+  #3963 - TextView: More unit tests about separators and tokens.
+  #3964 - Fixes spelling
+  #3965 - Testing: Convert test_History.cc to Catch
+  #3966 - Add BWF support for SourceLocation.
+  #3967 - BufferWriter: Add print overloads to FixedBufferWriter
+  #3968 - Test: Convert test_Regex.cc to Catch.
+  #3982 - Minor update on README's directory structure
+  #3992 - TextView: More unit tests.
+  #3993 - Test: Convert test_Ptr.cc to Catch.
+  #4003 - Fix another crash on shutdown
+  #4008 - Add support for 'fwd' value to X-Debug header, and move to later hook any deletion of X-Debug header from client request.
+  #4020 - Add logic to clean up vios on HttpSM shutdown
+  #4029 - Replace TSHashTable in server session management with IntrusiveHashMap
+  #4033 - Removes remnants of dprintf support
+  #4039 - Enable ECDH explicitly only if OpenSSL version is v1.0.2 or lower
+  #4042 - Fixed url_sig error when storing base64ed params in penultimate segment.
+  #4044 - Adjust tests to work with more versions of curl.
+  #4046 - Collapses LogAccess and LogAccessHttp into LogAccess
+  #4047 - Improve log entry for http connect result errors
+  #4049 - Removes carriage returns from MT_hashtable.h
+  #4050 - Optimize: make NetAccept::init_accept_loop has the logic similar to NetAccept::init_accept_per_thread
+  #4051 - Doc: Document TSContCall
+  #4063 - BWF: Add "FirstOf" for better handling of printing alternates for null strings.
+  #4064 - Runroot: Update test to support different layout
+  #4067 - Bug fix for timeout test
+  #4075 - General code cleanup
+  #4077 - Skip timeout test
+  #4089 - reenable timeout and change microServer timeout logic
+  #4095 - Optimize: Assign nh->mutex to new NetVC first and switch to new mutex within UnixNetVC::acceptEvent
+  #4098 - adding a Mutex to the continuation
+  #4100 - Doc: Update comments in InkAPI.cc in the header and for member converters.
+  #4107 - Fixes MacOS linker issue with release build
+  #4113 - Disables openclose_h2 test.
+  #4115 - TextView: Add overload for strcasecmp for string_view & TextView.
+  #4125 - ssl_session_reuse plugin
+  #4127 - Allows to run Spinx builds on portions of the docs
+  #4129 - Update IPAllow infrastructure.
+  #4132 - Completes documentation regarding redirects
+  #4133 - Disables the double test for inconsistent execution
+  #4140 - Meta: Add conditional compilation case meta structures.
+  #4145 - Adds configurable behavior on redirect to loopback
+  #4146 - Cleanup: remove unused and unimplemented functions from ink_string.h
+  #4148 - Cleanup: Remove #define INT_TO_BOOL, use local lambda instead.
+  #4149 - Clang-format: Redo clang-format error that slipped through.
+  #4163 - Doc: Remove deprecated configs from examples of traffic_ctl
+  #4168 - YAML: Convert ip_allow.config
+  #4175 - TextView: Better support for std::string assignment.
+  #4176 - TextView: Add support for use as "Source" in STL containers.
+  #4177 - IntrusiveDList: Add ptr_ref_cast to make inheritance easier
+  #4184 - Update to changelog generation tool to not require milestone to be closed
+  #4186 - clang-format: Another one that slipped through.
+  #4187 - Plugins: Cleanup up dependencies on core headers - sslheaders
+  #4190 - Plugins: Cleanup up dependencies on core headers - authproxy
+  #4192 - Add exit code checks in clang-format.sh
+  #4193 - G++ 8.1.1: Fix complaint about lack of storage definitiona for class static constant
+  #4194 - Remove ssl_cert_loader.  Certifier is more complete version.
+  #4198 - Cleanup, and adds support for new luajit option
+  #4206 - ts_file: Simple sketch of std::filesystem for internal use.
+  #4220 - IntrusiveHashMap: Inserts preserve order for equal keys, as with std::multimap
+  #4221 - IntrusiveHashMap: Fix for find false positive in some cases.
+  #4226 - HttpSessionManager: Fix potential infinite loop problem.
+  #4234 - Corrects path to test file in docs
+  #4240 - Inherited Extendible
+  #4249 - Test: Convert test_PriorityQueue.cc to Catch
+  #4257 - Update base version of AuTest to 1.6.0
+  #4259 - Corrects typo in argument name
+  #4260 - Removes logging of secrets
+  #4261 - Adds a few missing packages needed by autest
+  #4265 - CMakeLists.txt: Change to be generic and not need updates so often.
+  #4268 - Test: Convert test_X509HostnameValidator.cc to Catch
+  #4280 - Fix clang format problems
+  #4284 - Fixed ts_file test for out of tree builds
+  #4285 - Change atscppapi::TransformationPlugin to use atscppapi::Continuation instead of TSCont.
+  #4289 - Do not follow redirects after cache hit
+  #4290 - Remove unnecessary line in src/Makefile.am
+  #4300 - Expand the post chunked tests.
+  #4301 - Fix doc building warnings for recent plugin docs
+  #4305 - Generally random code cleanup
+  #4306 - Convert traffic_cache_tool to use ArgParser
+  #4309 - Orders k-v pairs to avoid making too many files
+  #4310 - Add warning of body_factory templates are not loaded due to missing dot file
+  #4324 - Adds Robots exclusion file
+  #4331 - Make build failures also mark the CA builds as failed
+  #4332 - Fixes build issues related to Clang Analyzer only
+  #4334 - Converts ink_autoconf.h to #pragma once
+  #4337 - Fix Segmentation fault in ShowCache::handleCacheEvent #4328
+  #4341 - clang-format
+  #4346 - TCL: remove tcl depencency from HostLookUp and refresh for C++11
+  #4349 - Prevent segment violation in TSContDestroy() when it is called during destruction of statically-allocated objects
+  #4350 - Fix for ASAN buffer overrun for IpMap::contains in HttpTransact::OSDNSLookup
+  #4351 - Add some feeble amount of encapsulation to the Thread class.
+  #4356 - slice plugin, intercept handler that uses cache_range_request
+  #4357 - TCL: Remove TCL dependency from iocore
+  #4360 - Fix mysql_remap plugin build with MySQL 8
+  #4363 - CMake: Add lib/records, unit_tests.
+  #4366 - Docs: Remove the EXTERNAL_TYPES logic
+  #4368 - s3_auth_v4: update default region map
+  #4374 - TCL: remove TCL dependency from RecHttp
+  #4384 - Fix gzip(compress) plugin not linked correctly with zlib
+  #4387 - Replace the overridable lookup with an unordered_map
+  #4397 - Remove deprecated HTTP/2 metrics
+  #4398 - Removes the old expander feature of header_rewrite
+  #4402 - Convert traffic_cache_tool to use ts_file
+  #4406 - ts_file: Add 'view' method to get a view of the path.
+  #4411 - Split current client transactions metrics into HTTP/1.1 and HTTP/2
+  #4412 - Cachekey plugin doc minor typos fixed.
+  #4414 - Cleaning up TLS server verify options
+  #4422 - TCL: Rmove TCL dependency from HostStatus
+  #4424 - YAML: LibSWOC IntrusiveDList update.
+  #4426 - YAML: Move ts_meta to external C++ library.
+  #4427 - Add vconn reenable event
+  #4430 - TCL: Rmove TCL dependency from UrlRewrite
+  #4431 - TCL: All ink_hash_table in proxy converted to use STL
+  #4433 - YAML: LibSWOC upgrade for TextView.
+  #4434 - YAML: move MemSpan to external C++ library.
+  #4437 - Adds the log tag cqint for internal requests
+  #4448 - YAML: TextView upgrade revisited.
+  #4449 - YAML: Inline BufferWriter formatting functions.
+  #4450 - Improve BufferWriter logic in HttpTransactHeaders.cc
+  #4453 - TCL: Code relocation in HttpCompact and HttpBodyFactory for TCL removal
+  #4454 - CacheTool: Cleanup TS_INLINE.
+  #4457 - Clean up client certificate specification and add tests
+  #4459 - Move the test-only plugins test_hooks and test_cppapi to tests/tools/plugins.
+  #4473 - Cleanup: Replace DynArray with STL vector
+  #4474 - clang-format
+  #4478 - Do not attempt clang-analyzer builds on 7.1.x branch
+  #4486 - Reload records client certs
+  #4487 - Cleanup: replace multiple HashMap with STL unordered_map
+  #4496 - Log deletion rewrite
+  #4497 - Fix chained server cert verify
+  #4500 - Augment cryptic diag message when log line fails to print
+  #4501 - Refresh mgmt signal logic to remove possible memory issues.
+  #4502 - Fix for #4413 - avoid ASAN crash on use after free for file name.
+  #4512 - Use references for indexes of range-based for loops when this avoids expensive copies.
+  #4513 - Adding cdnicrit claim support for uri signing service
+  #4522 - Rewrite TunnelHashMap in modern standard
+  #4524 - Convert ctx_store in SSLCertLookUp to use STL vector
+  #4526 - Atomic: Convert ProxyConfig to use std::atomic.
+  #4527 - Remove FAQ entry claiming that Traffic Server does not support expect-100
+  #4531 - Rewrite url after running all remap plugins
+  #4532 - Remove explicit free of ref-counted object.
+  #4536 - Minor C++ cleanup for background_fetch
+  #4540 - URI signing support for JWS to be passed as path parameter
+  #4542 - TCL: Replace RawHashTable with STL and refactor HttpBodyFactory
+  #4544 - Updated Dockerfile with some additional dependencies
+  #4545 - Fix tunnel_route action in ssl_server_name and various test fixes for Fedora 28 and 29
+  #4546 - Test: fix failed clang link for test_proxy_http.
+  #4551 - Fix TLS hooks diagram and other docs cleanup
+  #4553 - hostdb: Replace the last TSHashTable with IntrusiveHashMap.
+  #4555 - Test: fix test_Ptr.cc to deal with clang not liking "p1 = p1".
+  #4564 - Fix duplicate keys in python dict
+  #4566 - Include additional names of events for debug output.
+  #4567 - Cleanup: Update Version support to be actual C++ code.
+  #4570 - MIME: Add string_view based overload for value_get.
+  #4573 - access_control: reduced some log errs to debug
+  #4576 -  Add Session and SSL hooks to test_hooks Au test.
+  #4579 - traffic_ctl: Refactor and convert traffic_ctl to use ArgParser
+  #4580 - Make double_h2 reliably wait for stats to be ready
+  #4585 - Runroot: make runroot_handler support both ink_args and ArgParser
+  #4591 - An example of our preferred indentation style
+  #4596 - Add TS_EVENT_AIO_DONE, remove TS_AIO_EVENT_DONE
+  #4602 - New ScheduleOn APIs
+  #4603 - Add cdniip and cdnistd claims to uri signing
+  #4604 - Repurpose sub claim and add cdniuc support for URI signing
+  #4606 - TLS Bridge: Fix remap for UA connection, tweak docs for remap support.
+  #4609 - BWF: Change timestamp global name to be consistent with logging timestamps
+  #4613 - Runroot: Update verify command and refactor
+  #4616 - [WEBP] Transform images when a client accepts image/webp.
+  #4618 - Add case were origin returns 404 to x_remap gold test.
+  #4627 - Add test and fix regression with disable_h2 option
+  #4629 - Use LoopTailHandler in UDPNetHandler to support signalActivity
+  #4630 - Generalize the wild-card fqdn's for user_agent attributes in ssl_server_name
+  #4641 - Issue #4637: Clean up / unify hex conversions.
+  #4642 - Issue #4637 - Clean up / unify hex conversions
+  #4643 - Docs: Fix proxy.config.net.connections_throttle text.
+  #4645 - Cleanup: Remove Map.h including HashMap, Vec and TSHashTable
+  #4646 - TCL: Remove TCL from our code base
+  #4657 - TLS Bridge: Fix error where connect failure lead to a silent timeout.
+  #4660 - Runroot: Add a new doc on runroot for programs
+  #4662 - Adds a reasonable rip-grep config file
+  #4663 - Add back in the option to conf_remap the verify_server settings.
+  #4666 - Allow empty fqdn in ssl_server_name for unset SNI case.
+  #4667 - Add forward_route in ssl_server_name
+  #4668 - Compare servers script for comparing responses from new and old versions of ATS
+  #4669 - Cleanup: This is just a stylistic cleanup of PR 4531.
+  #4673 - Avoid the auto-reschedule with dispatchEvent
+  #4674 - Cleanup: change RemapPlugins::run_single_remap to return bool.
+  #4675 - TLS Bridge: Add "--file" option to configuration.
+  #4677 - Remove the ssl wire trace feature.
+  #4680 - Change serverName member back to const char * to avoid crash.
+  #4690 - Remove unnecessary TSHandleMLocRelease
+  #4692 - BWF: Clean up diags log entry header construction.
+  #4696 - Updates the CI build scripts, adds a new build for HTTP cache-tests
+  #4698 - Fixes some cache-tests, and make check shouldn't run on build fail
+  #4703 - Correct the statements within ink_assert and ink_release_assert
+  #4704 - task threads ready lifecycle hook
+  #4705 - Eliminate remaining hack around copy CTORs
+  #4706 - Correction to documentation for TSHttpHookAdd().
+  #4707 - Remove the APIHooks::invoke() function.
+  #4712 - Make client cert overridable
+  #4715 - Optimize: Avoid meaningless lock operations
+  #4718 - BWF: Fix handling of null char * - avoid string_view constructor.
+  #4719 - Add config reload to tls_tunnel test.
+  #4720 - Fix disable freelist options
+  #4721 - Optimize: Do not signal EThreads which are not blocked on cond_timedwait
+  #4722 - Add control for how outbound SNI is selected.
+  #4723 - Fix documentation on client certificates in ssl_server_name
+  #4724 - Add shutdown lifecycle hook
+  #4727 - Remove unused Http2Stream destructor
+  #4730 - Moved AtomicBit into its own file.
+  #4734 - Event num ordering
+  #4738 - Fix typo in HdrHeap
+  #4746 - Optimize: tighten the logic of the PluginVC::process_read/write_side()
+  #4747 - Slight clarification to documentation of TLS User Agent Hooks.
+  #4748 - Tries to enforce .git installation of pre-commit
+  #4749 -  Add more information about event data to 'hook add' API function documentation.
+  #4750 - Fix spelling errors reported by lintian
+  #4760 - Updated STATUS with all known releases
+  #4764 - Adds logging around various config file loads
+  #4765 - Cleanup: Make _next_round_robin uint64_t
+  #4767 - Fixes the hook install conditional, Makefile.am is finicky...
+  #4777 - Add unit tests for the URI signing plugin
+  #4779 - TLS Bridge: Fix regex compile issue with loading configurations from file.
+  #4782 - TLS Bridge: Cleanup, fix TSError for more consistency.
+  #4784 - Remove TSHttpTxnRedirectRequest appears experimental and unused.
+  #4785 - Bug in traffic_ctl, formatting output for config changes
+  #4791 - Adds some missing packages to the Dockerfile
+  #4796 - Autest test extension modification using opensourced testing tools
+  #4798 - Regex: Clean up constructors.
+  #4802 - JWT validation uses a token-stripped URI
+  #4803 - i4637: A tiny bit of cleanup.
+  #4804 - Regex: update to use string_view.
+  #4805 - JA3 fingerprint and documentation
+  #4806 - Add Log fields that dump all MIME headers in a message.
+  #4809 - Set "Language" of po files under doc/locale/ja/
+  #4814 - Add normalization the URI before cdniuc validation in URI Signing
+  #4815 - Add valid_tls_protocols_in to allow for per-domain protocols.
+  #4816 - Fix potential unterminated string in logging in state machine.
+  #4817 - Fix a content issue and a couple format issues.
+  #4818 - Add log method overload for string_view to LogObject
+  #4819 - Add clang-format build target to CMake editor file.
+  #4827 - MIME: Update MIMEField::name_get and MIMEField::value_get to return string_view
+  #4828 - Removes proxy.config.http.parse.allow_non_http
+  #4829 - Improves on the ripgrep .rc file
+  #4831 - Create an autest for the regex_revalidate plugin
+  #4832 - TextView: add overflow checking to svto_radix.
+  #4833 - Add test cases to exercise the verify.server* defaults.
+  #4834 - Change src/tscpp/api/TransformationPlugin.cc to avoid error for -Werror=subobject-linkage .
+  #4835 - TLS Bridge: Fix possible race condition.
+  #4836 - Correctly deal with the ssl.client.sni_policy if not set via conf_remap
+  #4837 - Fix potential instability in cacheIMSRange
+  #4840 - resolve stack-use-after-scope in YamlLogConfig.cc
+  #4841 - Do not call dns_result repeatedly for a valid dns result.
+  #4844 - doc for option -F
+  #4846 - Fix initialization style.
+  #4847 - Increase the per test case timeout from 5 to 10 seconds
+  #4849 - Allow client_cert and client_key to be specified by relative path
+  #4850 - Cleans up memcached_remap plugin README and code
+  #4851 - Add IOBufferReader::block_read_view method.
+  #4855 - Turns off HostDB disk sync by default
+  #4856 - Changes the return codes to be RecErrT
+  #4858 - Removes the echo from installing pre-commit
+  #4862 - Updates uri_signing docs to reflect new RFC changes
+  #4866 - Remove start_HttpProxyServerBackDoor.
+  #4869 - Cleanup: remove lib/cppapi from clang-format, it's been moved.
+  #4870 - Cleanup: Remove "hooks_on" and associated machinery.
+  #4874 - Avoid ats_malloc in unmarshal
+  #4878 - Fix a segfault on mac, because of new ScheduleOn APIs
+  #4879 - Clean up StrHeapDesc constructor.
+  #4880 - Remove class StrTest, which is not used.
+  #4886 - Avoid reschedule HostDBContinuation::iterateEvent if there are no more buckets
+  #4888 - Adjust tests to make them more resilient for different curl versions.
+  #4889 - Add tsapi Au test.  Initially just testing TSHttpTxnEffectiveUrlStringGet() function.
+  #4895 - URI Signing Strips token from upstream if configured and string buffers are dynamically allocated
+  #4897 - Uri signing regex as POSIX ERE
+  #4901 - Update overridable config conversion logic.
+  #4903 - Adjust connection timeout for TLS
+  #4909 - Update plugin API type conversions to support enums automatically.
+  #4910 - Doc: Update HdrHeap documentation for serialization, string inheritance.
+  #4914 - DFA: Update DFA to use string_view.
+  #4916 - Optimize: Keep cont->mutex locked, during probe the bucket by hash object within HostDBProcessor::getby
+  #4917 - Update HdrUtils to be C++17.
+  #4919 - Shutdown hook should grab the lock if there is one
+  #4923 - Makes the master triggers works with the 9.x Jenkins Tab name
+  #4924 - lua plugin: add support for relative path scripts; moves inline script to switch
+  #4926 - Make mutex lock routines deal with null mutex and general clean up.
+  #4927 - Cleanup: Convert HTTPHdr::length_get to real method.
+  #4928 - Pull Age out of the gold test
+  #4931 - For tls tests look at logs until config has been reloaded
+  #4933 - Plugin Traffic Dump: new feature for setting limit on disk usage. 
+  #4935 - Use the appropriate length field for uintmax_t
+  #4938 - Fix client_hello_cb to correctly check for sufficient server_name data
+  #4940 - ats_scoped_str: c++17 cleanup.
+  #4941 - Add a case to the tls_client_cert2 to exercise one file with cert and key
+  #4942 - Load client key event if only the certificate file is specified.
+  #4948 - MIMEScanner: Make MIMEScanner a class, not a POD with free functions.
+  #4952 - Cleanup: Tweak for loops to be more consistently C++17 in style.
+  #4953 - Scalar: add generic rounding.
+  #4954 - Hdrheap more modernization
+  #4955 - Marks the YAML exceptions, which gives line number / pos info
+  #4956 - Fix a ssl handshake crash during shutdown
+  #4957 - Remove error-prone mirror enum in code handling TS API SSL hooks.
+  #4960 - Add doc for using relative path to configuration directory for lua sc…
+  #4961 - Optimize: rewrite getbyname_imm and getSRVbyname_imm as wrappers for getby
+  #4962 - Remove unnecessary storing of redirect_url in redirect_info
+  #4964 - Rewrite URL before all remap plugins run
+  #4965 - HdrHeap: Remove pointless code and misleading comment.
+  #4966 - Some tidying up of the global namespace.
+  #4972 - Fix tls_client_verify curl command missing certificate
+  #4973 - Adjust tls_client_versions to be more resilient for different curl versions
+  #4974 - Fix tls_check_cert_selection test
+  #4975 - URL: remove undefined function declaration.
+  #4976 - Fix tls_forward_nonhttp test requirement
+  #4979 - Ignore config.cache file
+  #4982 - Documentation fix to lua plugin
+  #4986 - Added TS_SSL_CLIENT_HELLO_HOOK and docs
+  #4988 - Implement nbf claim in Uri Signing Plugin
+  #5000 - Add Perltidy configuration and build target
+  #5007 - Build fix: Fix build issue for -O3 on CI.
+  #5008 - Build: Fix array bounds error under -O3.
+  #5014 - ink_inet: Fix family string printing, add IpAddr::isAnyAddr.
+  #5015 - RecHttp.cc unit tests.
+  #5018 - RecHttp: Convert protocol session pool to use views and MemArena.
+  #5021 - Frees up disk_vols when volume creation failed
+  #5029 - Removing Lazy Buf Alloc from H1 Server session
+  #5030 - IpMap: Add move constructor.
+  #5032 - Cleanup loading certs from ssl_multicert.config
+  #5033 - Cleanup: use string_view for ssl_multicert.config field tags
+  #5034 - Implement aud claim in Uri Signing Plugin
+  #5035 - Overload ProcessManager::signalManager for string_view
+  #5038 - Cleanup: remove duplicated SSL_CTX_set_tlsext_status_cb calls for OCSP Stapling
+  #5039 - Add BufferWriter formatting support to IpMap
+  #5041 - Cleanup: Set SSL_OP_NO_TICKET in SSLInitServerContext()
+  #5044 - Fixed memory leaking introduced by 4873
+  #5046 - Cleanup: Separate SSLStats and SSLDiags from SSLUtils
+  #5050 - Set thread affinity using type info
+  #5051 - Restructured SSL client context mapping to 2-level
+  #5053 - Fixed compiler error with std::string_view
+  #5054 - Cleanup: Separate TLS SessionTicket from SSLUtils
+  #5058 - Fixed use after free when running regression under ASAN
+  #5059 - Add Assertion when fragment_size is large than MAX_FRAG_SIZE
+  #5060 - IP support: Make IpAddr constexpr constructible, define min/max addresses in IpMap
+  #5065 - RemapPluginInfo Refresh.
+  #5068 - HdrHeap default size unit test fix.
+  #5069 - url_sig: fixed unit-test for remapped url.
+  #5070 - Ignore test_librecords
+  #5074 - Move minimum OpenSSL version to 1.0.2
+  #5075 - Fixed the compatibility with previous cache verison
+  #5077 - Unify plugins hook dispatch
+  #5078 - Fix directives for checking TS_USE_TLS_OCSP
+  #5079 - Fix directives for checking TS_HAS_TESTS
+  #5082 - Add support for the lua and numeric log roll values
+  #5086 - Remove extra args to bwprint in SSLConfigParams::getCTX()
+  #5088 - MIME: Fix line_is_real false positive.
+  #5089 - Slight adjust to the thread affinity logic
+  #5091 - Override delete in Extendible
+  #5112 - uri_signing build helpers
+  #5113 - Fix #5094: Fix use after free in test_IntrusiveHashMap.cc
+  #5114 - Fix #5093: new/delete mismatch in test_IntrusivePtr.cc
+  #5115 - Remove OS dependency in test_BufferWriterFormat.cc
+  #5120 - Ensure queued HostDB requests get rescheduled back to the original thread
+  #5122 - fix crash in CacheVC::openReadFromWriter
+  #5123 - Fix SessionProtocolNameRegistry lookup
+  #5126 - -H "xdebug: probe" injects trace of headers into response body
+  #5128 - Change url_mapping::toUrl to url_mapping::toURL
+  #5129 - Fixed memory leaks in test_IntrusiveHashMap
+  #5131 - Do not run clang-format for @default_stack_size@
+  #5132 - Fix for() loop, correctly calculate the value of seg_in_use within Vol::dir_check()
+  #5136 - Fixes some places where refactoring was not complete
+  #5138 - Run clang-format against the same files on both make clang-foramt and git pre-hook
+  #5139 - Add virtual destructor to SSLMultiCertConfigLoader.
+  #5140 - cdniuc is not a manditory claim
+  #5141 - Need to pop messages from queue
+  #5142 - UrlRewrite: separate constructor and configuration loading for testability
+  #5144 - Fix AcidPtr test
+  #5150 - Augment wildcard_match to allow underscore in domain name
+  #5151 - Updates to the STATUS file
+  #5152 - Test acid ptr persistence
+  #5153 - Separate P_SSLUtil and P_SSLClientUtils includes
+  #5157 - Set the block's m_water_level in Arena:free even if the block is not the last block
+  #5167 - Fix Makefile.am to run clang-tidy
+  #5172 - Run clang-tidy one by one
+  #5174 - Adds Cache test suits
+  #5176 - Adds a new log tag for the MPTCP state of a connection
+  #5180 - Regex name checks on ssl_server_name should be anchored.
+  #5181 - Ignore check programs
+  #5182 - Ran clang-tidy
+  #5183 - Do not run clang-tidy on lib/yamlcpp/
+  #5184 - traffic_via.pl: Fixed bugs, added tests, and make the output match more like traffic_via
+  #5185 - The response header of CONNECT should not have content-length or chun…
+  #5186 - Ran clang-tidy with modernize-use-default-member-init
+  #5187 - Use pthread_cancel to terminate plugin threads
+  #5192 - Exclude library headers from clang-tidy
+  #5193 - Suppress false positive of clang-tidy on macOS
+  #5194 - Check return value
+  #5199 - autest for slice plugin
+  #5201 - Replace EThread::has_event_loop with EThread::tt == REGULAR
+  #5204 - Moved unit test suppression file and updated it
+  #5205 - Adding a note into storage.config admin doc about cache invalidation …
+  #5208 - Adds a little wrapper script to build inside vscode
+  #5211 - Check return value of open
+  #5212 - Cache:ttl-in-cache should always override never-cache
+  #5214 - Ran CPP check on a few files while prodding around
+  #5215 - Fix compile problems with PR-5211 (hiredis autoconf)
+  #5216 - Fix the hiredis autoconf for the default case
+  #5219 - url_sig debug fix for when url is missing the signature query string
+  #5222 - Fix mysql-remap compilation error
+  #5228 - Implement prefetched OCSP stapling responses
+  #5239 - Adds basic version feature for traffic_layout info
+  #5240 - Setting the correct directory for test_Cache
+  #5241 - Changed how current age is determined to age out documents
+  #5247 - Fixed cache test, using updated shutdown
+  #5252 - Make host status persistent across restarts
+  #5255 - Remove unused variable in cache test
+  #5258 - Adds cache alternate update tests
+  #5259 - Fixed cache RWW test crash
+  #5261 - Fixed pthread mutex init issue with cache test
+  #5262 - JA3 fingerprint: Corrected usage of OpenSSL API for ec and ecpf list retrieval. 
+  #5264 - Fix reason tag of traffic_ctl host
+  #5265 - Fix IntrusiveHashMap active bucket list corruption issue during expansion.
+  #5266 - Ignore unsupported HTTP/2 settings parameters
+  #5267 - Slice errorlog
+  #5268 - fix If-None-Match and If-Modified-Since priority problem
+  #5269 - Cleanup: Use internal linkage for functions which are only needed in SSLUtils.cc
+  #5274 - Fix HostDBReverseTest sa_family initialization.
+  #5275 - Fix false collapsing of reverse DNS requests.
+  #5277 - Tries to use linux specific tcpinfo fields
+  #5278 - Fixes the Brotli build issues
+  #5281 - Change Au test condition for minimal OpenSSL version to use traffic_layout info --versions
+  #5282 - Plugin reload
+  #5286 - Update README.md
+  #5289 - Don't read frames after sending GOAWAY with an error code
+  #5290 - MIMEScanner: Only clear scanner line buffer if at MIME_PARSE_BEFORE state
+  #5292 - Fix a build error in xdebug on macos
+  #5297 - Doc: fix proxy.config.cache.ram_cache.algorithm description
+  #5301 - Slice Plugin: add options for disabling or pacing detailed block stitch error logging.
+  #5302 - Correct config name for proxy.config.dns.connection_mode
+  #5305 - Throttling results in tight loop if there are no new connections
+  #5306 - Removes priorities for AIOs, thanks oknet
+  #5307 - correctly handle return value 0 from recv()
+  #5308 - cppcheck: Changed from C casting to C++ casting
+  #5309 - Removes non-existent include dir reference
+  #5310 - Cppcheck fix for iocore/dns
+  #5311 - cppcheck: change to C++ style pointer casting
+  #5312 - cppcheck: Minimize variable scopes and use different names to not shadow others
+  #5313 - cppcheck: Reduce the scope of the variable 'out_buf'
+  #5314 - cppcheck fixes for iocore/hostdb
+  #5315 - cppcheck: Fixed various issues with SSL files
+  #5316 - cppcheck: Removed problematic move operators for FixedBufferWriter.
+  #5317 - cppcheck: Fix various issues of Http2DependencyTree
+  #5318 - cppcheck: Fixes various issues under proxy/http/remap
+  #5320 - Added user defined conversion operator in ConstBuffer for string_view.
+  #5321 - cppcheck: Use initialization list instead of assigning in constructor body
+  #5322 - cppcheck: fixes issues found for tests in proxy/http
+  #5323 - cppcheck: fixes issues found for plugins/compress
+  #5324 - cppcheck: Change to C++ style pointer casting
+  #5325 - cppcheck: fix issue found in BufferWriterFormat.cc
+  #5326 - cppcheck: fixes issue found in proxy/IPAllow.cc
+  #5327 - cppcheck: Fixes issue found in DiagsConfig.cc
+  #5328 - cppcheck: fixes issues found for plugins/authproxy
+  #5329 - Fixes clang-analyzer error dereferencing nullptr in parent
+  #5330 - cppcheck: Fix various issues of Http2ConnectionState
+  #5331 - Off by 1 error in memcpy of redirect url
+  #5333 - cppcheck: Reduces variable scope for files in  mgmt/...
+  #5334 - cppcheck: fixes issues in ink_uuid.h
+  #5335 - cppcheck: Change to C++ style pointer casting in Thread.cc
+  #5336 - cppcheck: Fixes issues found in async_http_fetch_streaming
+  #5337 - cppcheck: Reduce the scope of the variable 'netvc'
+  #5338 - cppcheck: fixes issues found in proxy/logging
+  #5339 - cppcheck: fixes issues found for plugins/background_fetch
+  #5340 - cppcheck: fixes issues found in example/thread_pool
+  #5344 - cppcheck: Remove an unused private function
+  #5345 - cppcheck: minimize variable scopes
+  #5346 - cppcheck: fixes issues found in example/protocol
+  #5347 - cppcheck: fixes issues fround in example/remap
+  #5348 - Don't assign if this and other are the same object
+  #5349 - cppcheck: Fix issues in P_UDPx.h
+  #5351 - cppcheck: fixes issues in example/
+  #5353 - Remove log collation
+  #5354 - Password can not be nullptr here, so don't check
+  #5355 - Revert TS-374 to avoid deadlocks
+  #5362 -  fix 3939 collision
+  #5365 - cppcheck:  fix comparison issues found in plugins
+  #5366 - Adds assert, albeit not needed, makes CA happy
+  #5368 - Don't use the object after tests finishes and object is deleted
+  #5370 - Fixed clang-analyzer issues in cookie_remap
+  #5373 - Clang Analyzer: Fix IpMap.cc false positives.
+  #5374 - cppcheck: Fix various issues in proxy/http2/
+  #5375 - cppcheck: Fix issues found in I_IOBuffer.h
+  #5376 - cppcheck: Fix various issues found in iocore/eventsystem
+  #5380 - Fixes spelling in src
+  #5381 - fixes spelling in include
+  #5382 - Fixes spelling in iocore
+  #5383 - Remove commented out includes
+  #5384 - Removes unreferenced, unused bits of code
+  #5387 - Fixes typos in various documentation files
+  #5388 - De-tabifies REVIEWERS
+  #5390 - Fixes logging after collation removal
+  #5392 - ssl_session_resuse:  operator for redis endpoint compare functor must be const
+  #5396 - Rewrite the assert statement to avoid Socks Proxy triggering the assertions
+  #5398 - Load the Socks configuration after the host state persistence data is loaded
+  #5399 - Removes code related to removed configuration
+  #5400 - Fixes spelling in mgmt
+  #5401 - Fixes spelling in miscellaneous files
+  #5402 - Spelling fixes in plugins
+  #5403 - Fixes the number of traversal events
+  #5404 - Tries to make builds on older clang happy
+  #5411 - Update README.md
+  #5413 - TS C++ API:  add member function TSSslConnection InterceptPlugin::getSslConnection()
+  #5414 - Add API and fix logic for TS_SSL_VERIFY_*_HOOK.
+  #5415 - MemSpan: Update to templated style, fix gcc9 compile error.
+  #5416 - Move setsockopt from UnixNetProcessor to Server::setup_fd_for_listen
+  #5417 - Change HostStatus to use only one stat per host.  
+  #5420 - Adds update header only test case
+  #5421 - Check nullptr before call netvc->do_io_close in SSLNextProtocolAccept::mainEvent
+  #5423 - This fixes parsing where the [ ] section gets merged into values
+  #5424 - Fix ContFlags for gcc 9.
+  #5425 - Updates the VSCode include dirs
+  #5427 - gcc9 - fix class Connection.
+  #5428 - gcc9 - fix CryptoHash.h
+  #5431 - New APIs: Server/ClientCertUpdate
+  #5433 - gcc9 - Fix Errata.h, NumericType.h.
+  #5434 - gcc9 - Fix I_Store.h
+  #5435 - gcc9 - fix HTTPVersion.
+  #5436 - Additional places to propagate the per-client-ip debug tags.
+  #5438 - Add wait_for_cache to make all_headers test more resilient
+  #5439 - Removes unused TSConfig usage in ssl_sni example
+  #5440 - Removes unused TSConfig usage in ssl_sni_whitelist example
+  #5441 - Improve test resilience by waiting for TS ports to be ready.
+  #5442 - Removes unused TSConfig usage in verify_cert example
+  #5443 - Address intermittent failures of all_headers Au test (see Issue # 5437).
+  #5445 - Rewrite SocksProxy based on states
+  #5446 - Fixes use-after-free in PVCTestDriver::start_tests
+  #5447 - Fixed nullptr check in cookie remap
+  #5448 - Fixed syntax issue with clang
+  #5451 - Fix FREELIST macros for AArch64
+  #5452 - Clang Analyzer: Fix IpMap.cc false positives. #2
+  #5455 - Convert ssl_preaccept plugin to use command-line arguments
+  #5456 - Fixes spelling in doc
+  #5458 - Updates the Docker image with latest dependencies
+  #5460 - Fixed clang-analyzer issue calling schedule_imm with the continuation possibly being a nullptr
+  #5462 - gcc9: fixed issue with always printing a null char*
+  #5463 - clang-analyzer: Fixed err value being uninitialized
+  #5464 - clang-analyzer: Fix API test logic and fixed clang-analyzer issue
+  #5465 - Separate out common header compression logic to hdrs directory
+  #5466 - Set HTTP version on server side header conversion
+  #5467 - Add be32toh and htobe32 for macOS
+  #5470 - Changes traffic_wccp to use YAML as configuration format
+  #5472 - gcc9: Added default assignment operator
+  #5475 - Cleanup alarms and signals
+  #5477 - Removes proxy.config.http.server_tcp_init_cwnd
+  #5478 - Fixes some cache-tests build issues
+  #5480 - Add HKDF wrapper
+  #5482 - Document proxy.config.ssl.server.honor_cipher_order
+  #5489 - gcc9: set default value for printing debug message
+  #5490 - clang-analyzer: Fix uninitialized variable in make_to_lower_case.
+  #5492 - clang-analyzer: fix bogus use after free with Ptr in LogFieldInt constructor.
+  #5495 - Correct the clear range when cache restart
+  #5497 - gcc9: sprintf and strncat fixes in plugins
+  #5500 - Added Docker support for Fedora 29 and Fedora 30
+  #5502 - This is already documented in the proper traffic_ctl page
+  #5507 - AcidPtr: Tweaks tests to be a bit more robust.
+  #5508 - Grab lock before invoke
+  #5509 - clang analzyer - fix false positive in Vol::handle_recover_from_data.
+  #5510 - TextView: clean up on strcasecmp, strcmp, and memcmp.
+  #5516 - Make code compilable with BoringSSL
+  #5518 - Adds a missing dependency, bump autest version
+  #5520 - Cleanup of autest prog checks, and indentation
+  #5521 - Check for OpenSSSL v1.1.1, for now, for this test
+  #5524 - clang analyzer: Fix false positive "use after free" in IpMap.cc
+  #5525 - clang analyzer: suppress nullptr derefence report in mime_hdr_sanity_check
+  #5526 - Remove f_callback_on_accept
+  #5528 - Allow number of settings per H2 session to be configurable
+  #5529 - clang analyzer: Suppress nullptr dereference error in SSLNetVConnection::update_rbio
+  #5530 - Removes disable_configuration_modification, making it always on
+  #5533 - Move logging config under toplevel YAML tag 'logging'
+  #5536 - More fixes and cleanup of CI scripts
+  #5537 - Fixed an ownership issue in autest
+  #5543 - Added loop detection via code and squid logging code
+  #5544 - Add an ignore_self_detect flag to parent.config so that the local cache host may be a member of a peering cache group.
+  #5547 - Make sure autest has all minimal config files
+  #5551 - Fix test to not break on custom layouts
+  #5552 - Add options to sort to reduce os differences in all_headers test
+  #5554 - Updates Dockerfile, and adds a comment to autest bootstrap
+  #5555 - Ran clang-tidy with google-readability-casting
+  #5556 - Minor wording changes in ssl_server_name.yaml docs
+  #5557 - Removes empty config load warning for YAML-based configuration files
+  #5558 - Removed headers that don't exist in the dir to fix clang-tidy
+  #5559 - Move sni config (formerly ssl_server_name) under toplevel YAML tag 'sni'
+  #5560 - Added pipenv config script for AuTest
+  #5561 - Check DH_get_2048_256() should inclue <openssl/dh.h>
+  #5565 - Add cstdio in TextBuffer for vsnprintf
+  #5568 - Proxy txn cleanup
+  #5569 - New API: TSSslClientContextsNamesGet and TSSslClientContextFindByName
+  #5570 - Clean up: Remove proxy.config.http.parent_proxy_routing_enable variable
+  #5571 - Removes the abort() from header_rewrite, and try to deal with errors
+  #5574 - Fix ParentSelection regression/unit tests.
+  #5575 - Fix order a little bit, based on F30 availability
+  #5579 - JA3 plugin: Fix ja3 hooks for openssl 1.0.2
+  #5582 - Preserve ticket key data specified by TSSslTicketKeyUpdate.
+  #5585 - Do not change stream state from HALF_CLOSED_REMOTE with CONTINUATION frame
+  #5586 - Ignore Pipfile.lock file
+  #5588 - Update UDPNet for QUIC
+  #5589 - Adds support for set-destination SCHEME/URL to take string expansions
+  #5591 - Replace ProxyTransaction::get_parent()/set_parent() with get_proxy_ssn()/set_proxy_ssn()
+  #5592 - Fix a type mismatch in client_context_dump plugin
+  #5597 - Added CurlHeader tester to test curl output
+  #5598 - Use type info to assign an affinity thread
+  #5599 - Renames ssl_server_name.yaml to sni.yaml
+  #5600 - Use IPPROTO_TCP instead of SOL_TCP for macOS compatibility
+  #5603 - Eliminates most of the Rollback code, and things interacting with it
+  #5605 - Fix crash in MIMEScanner::append with std::string.
+  #5606 - Turns off TLS v1.0 and TLS v1.1 by default
+  #5607 - slice/HttpHeader memleak fix TSMLoc release call
+  #5608 - Removes the remaining code and configurations for SSL3
+  #5609 - Added cert_reporting_tool plugin based off example/client_context_dump
+  #5610 - Removes the explicit Vary configurations and code
+  #5613 - Doc: Add documentation for HTTP/2 statistics
+  #5614 - Add Pipfile for building docs
+  #5615 - Separate stubs for libinknet from test_I_UDPNet.cc
+  #5616 - Updates README to reflect current source tree layout
+  #5617 - Moves Errata to tscore, removes everything else from tsconfig
+  #5623 - This RSB is no longer used at all, so remove
+  #5625 - Re-enable the disjoint-wait-for-cache Au test
+  #5627 - Elevate privs to load TLS Session Ticket Key file
+  #5628 - Allows for resizing librecords via command line option
+  #5631 - Removes checks for curl that snuck back into the tests
+  #5632 - Fix up remaining references to ssl_server_name.yaml
+  #5633 - HTTP/2: increment write_vio.ndone by consumed size
+  #5634 - HTTP/2: cancel reading buffer when ATS received GOAWAY
+  #5636 - HTTP/2: ignore unknown settings
+  #5637 - TextView: Fix bug in rtrim_if when entire view is cleared.
+  #5639 - update example directory structure and add examples for lua plugin
+  #5640 - Add reference to ts.client_request.get_pristine_url() in lua plugin
+  #5643 - Cleanup debug log in mime_hdr_describe
+  #5645 - Fix default logging.yaml with new format.
+  #5647 - Replaces Emergency() with Error() when parsing these records.config values
+  #5648 - Add metrics to track SSLv3 and TLS versions
+  #5649 - TS API - Adds the TSHttpTxnNextHopNameGet() function.
+  #5651 - TS autest extension can now auto select both ssl and nonssl port
+  #5653 - cookie_remap plugin Au test case changes for compatibility with PR 4964.
+  #5654 - Fix the number of net_connections_currently_open_stat error increase
+  #5656 - Reenable redirect_actions Au test as it is working now.
+  #5658 - New API: TSEmergency and TSFatal
+  #5659 - Fix options processing for ja3_fingerprint plugin
+  #5660 - Auto port selection for more autests
+  #5664 - Update MT_Hashtable interface to use smart pointer
+  #5666 - Program to test if multiple URLs can be cached and generates a report on the cache headers
+  #5667 - Combohandler: Set response as private if one of the origin responses is private
+  #5668 - TSIOBufferReaderCopy: copy data from a reader to a fixed buffer.
+  #5669 - Added end pointer to ink_atoi64 and used when parsing cache size
+  #5670 - Convert HdrHeap regression test into unit test using Catch
+  #5673 - Add ats_unique_buf
+  #5674 - This fixes state machine looping when using upstream connection throttling with parent selection
+  #5676 - Log H2 errors with the codes
+  #5678 - More Autest ports cleanup
+  #5680 - HTTP/2 - tweak for better field name handling.
+  #5683 - Cleanup example directory
+  #5685 - Fix typo in lua plugin documentation
+  #5686 - Reverse internal order of HPACK Dynamic Table Entries
+  #5690 - Fix race condition in test
+  #5697 - Coalesce empty objects in HdrHeap
+  #5698 - Remove unused LibBulkIO
+  #5699 - Remove unused header file ink_inout.h
+  #5700 - Options to roll empty logs and log trimming
+  #5701 - fix If-Match and If-Unmodified-Since priority problem
+  #5703 - Fix indents in HttpTunnel.cc made by unifdef LAZY_BUF_ALLOC
+  #5704 - Add dest addr information to incoming UDPPacket objects
+  #5705 - Make TSVConnInacitivityTimeoutCancel work as expected.
+  #5706 - Add optional normalization of scheme and host to lower case letters in effective URLs.
+  #5707 - JA3: append to the last dub if X-JA3-Sig/X-JA3-RAW exist 
+  #5710 - Convert regression tests for XPACK into Catch based unit tests
+  #5711 - Fix client transaction stats
+  #5714 - Add a required library to "Getting Started" docs
+  #5715 - Sets macOS luajit linker flags only when luajit detected
+  #5716 - Fixes memory leak in traffic_crashlog
+  #5717 - Change default proxy name to be "traffic_server", not the build machine.
+  #5721 - Fixes autodetect of brotli
+  #5722 - In test_hooks Au test case, add work-around for flakeyness of VCONN start/close events.
+  #5723 - Update docs to document wipe_field_action that we use in production
+  #5724 - Enable logging of the Elliptic Curve used to communicate with the client
+  #5728 - Remove header_rewrite conditions deprecated in previous versions
+  #5730 - Cleanup and link references to sni.yaml
+  #5731 - Use un-deprecated records for SSL server verification
+  #5732 - Remove proxy.config.http.cache.allow_empty_doc
+  #5733 - Fix typos in log.gold file for tsapi Au test case in merged PR 5706.
+  #5736 - Adds voluspa - a configuration generator
+  #5738 - Plugins ready for Promotion (as discussed)
+  #5739 - Removes the various plugins as agreed upon in Beijing
+  #5740 - Fixes spelling in lib/records
+  #5745 - Cleanup debug logs around SSLWriteBuffer
+  #5746 - Remove unnecesary function name on debug logs in SSLNetVConnection
+  #5747 - Add slow logs for HTTP/2 Connection & Stream
+  #5748 - cppcheck: fixed uninitialized variable and scoping in healthchecks
+  #5749 - cppcheck: fixed leak and scoping in ts::file::copy
+  #5750 - Preserve the raw log fields when wiping using case insensitive contains and update container log fields
+  #5751 - Add soft limit for HTTP Request URI and Header field length.
+  #5752 - fixed datatype in example plugin
+  #5753 - Add QUIC draft-20 support
+  #5755 - Initialize EventIO
+  #5756 - Minor typo in CONTRIBUTING.md
+  #5762 - Limit resources used by regex_remap to prevent crashes on stack overflow
+  #5765 - Avoid a clang warning when all the defines are set
+  #5766 - Record HttpSM Id on new transaction
+  #5767 - Issue 3654 addr based loop detection
+  #5769 - Simplify h2 enable disable
+  #5770 - IPAllow: change top level key to "ip_allow".
+  #5771 - Fixes linker changes for luajit on macOS
+  #5772 - Remove ssl_error stats that aren't really errors.
+  #5773 - Documentation for Autest in Sphinx
+  #5778 - Issue 5604 - fix memory leaks for http parser.
+  #5779 - doc: TSL used instead of TLS in Japanese docs
+  #5780 - Fixed std::array initialization for older compilers
+  #5785 - Allocate DependencyTree only if HTTP/2 stream priority is enabled
+  #5786 - Mark debug logs of polling as verbose
+  #5789 - Add protection against null pointer access
+  #5792 - Rename remaining references to ip_allow.config to ip_allow.yaml
+  #5797 - Remove double call of the SNI action on TLS accept.
+  #5800 - Doc: fix manpage error which causes Makefile problem.
+  #5803 - Make TS_NULL_MLOC a valid C compile-time constant.
+  #5806 - More doc spelling fixes
+  #5808 - Remove unused assignment to satisfy clang-analyzer
+  #5813 - Fixes broken links to documentation
+  #5815 - Updates links to trafficserver.apache.org to https
+  #5817 - Fixes various issues found in docs
+  #5819 - make check race condition fix
+  #5821 - HTTP/2 rate limiting
+  #5823 - Avoid AWS auth v4 path/query param double encoding
+  #5824 - Reactivate active timeout enforcement
+  #5825 - Cleanup: Remove unused function & old comments
+  #5826 - Cleanup: Signal READ_READY event only if the buffer is readable
+  #5827 - compress plugin: document undocumented options
+  #5828 - Make client_context_dump test resilient to dump order changes
+  #5830 - Make proxy.config.http.per_server.min_keep_alive_connections overridable
+  #5831 - Fix QUIC build
+  #5833 - Fix H2 internal counters
+  #5834 - Ran clang-tidy before 9.0.x branching
+  #5839 - Fix inactivity timeout on QUIC
+  #5841 - Cleanup: unifdef WRITE_AND_TRANSFER
+  #5844 - Explain how SRV origin selection works
+  #5847 - Cleanup: Remove unused empty files
+  #5856 - Fixes 'traffic_ctl server restart' to restart
