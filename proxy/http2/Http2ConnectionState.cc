@@ -421,6 +421,7 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   cstate.increment_received_priority_frame_count();
   // Close this conection if its priority frame count received exceeds a limit
   if (cstate.get_received_priority_frame_count() > Http2::max_priority_frames_per_minute) {
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id,
                      "Observed too frequent priority changes: %u priority changes within a last minute",
                      cstate.get_received_priority_frame_count());
@@ -537,6 +538,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   cstate.increment_received_settings_frame_count();
   // Close this conection if its SETTINGS frame count exceeds a limit
   if (cstate.get_received_settings_frame_count() > Http2::max_settings_frames_per_minute) {
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent SETTINGS frames: %u frames within a last minute",
                      cstate.get_received_settings_frame_count());
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
@@ -575,6 +577,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   uint32_t n_settings = 0;
   while (nbytes < frame.header().length) {
     if (n_settings >= Http2::max_settings_per_frame) {
+      HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED, this_ethread());
       Http2StreamDebug(cstate.ua_session, stream_id, "Observed too many settings in a frame");
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                         "recv settings too many settings in a frame");
@@ -615,6 +618,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   cstate.increment_received_settings_count(n_settings);
   // Close this conection if its settings count received exceeds a limit
   if (cstate.get_received_settings_count() > Http2::max_settings_per_minute) {
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent setting changes: %u settings within a last minute",
                      cstate.get_received_settings_count());
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
@@ -668,6 +672,7 @@ rcv_ping_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   cstate.increment_received_ping_frame_count();
   // Close this conection if its ping count received exceeds a limit
   if (cstate.get_received_ping_frame_count() > Http2::max_ping_frames_per_minute) {
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent PING frames: %u PING frames within a last minute",
                      cstate.get_received_ping_frame_count());
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
@@ -1998,6 +2003,7 @@ Http2ConnectionState::increment_client_rwnd(size_t amount)
   double sum = std::accumulate(this->_recent_rwnd_increment.begin(), this->_recent_rwnd_increment.end(), 0.0);
   double avg = sum / this->_recent_rwnd_increment.size();
   if (avg < Http2::min_avg_window_update) {
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE, this_ethread());
     return Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
   }
   return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;

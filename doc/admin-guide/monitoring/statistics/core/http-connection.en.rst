@@ -204,3 +204,45 @@ HTTP/2
 
    Represents the total number of closed HTTP/2 connections with high
    error rate which is configured by :ts:cv:`proxy.config.http2.stream_error_rate_threshold`.
+
+.. ts:stat:: global proxy.process.http2.max_settings_per_frame_exceeded integer
+   :type: counter
+
+   Represents the total number of closed HTTP/2 connections for exceeding the
+   maximum allowed number of settings per frame limit which is configured by
+   :ts:cv:`proxy.config.http2.max_settings_per_frame`.
+
+.. ts:stat:: global proxy.process.http2.max_settings_per_minute_exceeded integer
+   :type: counter
+
+   Represents the total number of closed HTTP/2 connections for exceeding the
+   maximum allowed number of settings per minute limit which is configured by
+   :ts:cv:`proxy.config.http2.max_settings_per_minute`.
+
+.. ts:stat:: global proxy.process.http2.max_settings_frames_per_minute_exceeded integer
+   :type: counter
+
+   Represents the total number of closed HTTP/2 connections for exceeding the
+   maximum allowed number of settings frames per minute limit which is configured by
+   :ts:cv:`proxy.config.http2.max_settings_frames_per_minute`.
+
+.. ts:stat:: global proxy.process.http2.max_ping_frames_per_minute_exceeded integer
+   :type: counter
+
+   Represents the total number of closed HTTP/2 connections for exceeding the
+   maximum allowed number of ping frames per minute limit which is configured by
+   :ts:cv:`proxy.config.http2.max_ping_frames_per_minute`.
+
+.. ts:stat:: global proxy.process.http2.max_priority_frames_per_minute_exceeded integer
+   :type: counter
+
+   Represents the total number of closed HTTP/2 connections for exceeding the
+   maximum allowed number of priority frames per minute limit which is configured by
+   :ts:cv:`proxy.config.http2.max_priority_frames_per_minute`.
+
+.. ts:stat:: global proxy.process.http2.insufficient_avg_window_update integer
+   :type: counter
+
+   Represents the total number of closed HTTP/2 connections for not reaching the
+   minimum average window increment limit which is configured by
+   :ts:cv:`proxy.config.http2.min_avg_window_update`.

@@ -62,6 +62,15 @@ static const char *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME             = "pro
 static const char *const HTTP2_STAT_SESSION_DIE_EOS_NAME                  = "proxy.process.http2.session_die_eos";
 static const char *const HTTP2_STAT_SESSION_DIE_ERROR_NAME                = "proxy.process.http2.session_die_error";
 static const char *const HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE_NAME      = "proxy.process.http2.session_die_high_error_rate";
+static const char *const HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED_NAME  = "proxy.process.http2.max_settings_per_frame_exceeded";
+static const char *const HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED_NAME = "proxy.process.http2.max_settings_per_minute_exceeded";
+static const char *const HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED_NAME =
+  "proxy.process.http2.max_settings_frames_per_minute_exceeded";
+static const char *const HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED_NAME =
+  "proxy.process.http2.max_ping_frames_per_minute_exceeded";
+static const char *const HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME =
+  "proxy.process.http2.max_priority_frames_per_minute_exceeded";
+static const char *const HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME = "proxy.process.http2.insufficient_avg_window_update";
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -820,6 +829,18 @@ Http2::init()
                      static_cast<int>(HTTP2_STAT_SESSION_DIE_ERROR), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE), RecRawStatSyncSum);
 }
 
 #if TS_HAS_TESTS
