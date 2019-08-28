@@ -417,20 +417,21 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                       "PRIORITY frame depends on itself");
   }
 
+  if (!Http2::stream_priority_enabled) {
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+  }
+
   // Update PRIORITY frame count per minute
   cstate.increment_received_priority_frame_count();
   // Close this conection if its priority frame count received exceeds a limit
-  if (cstate.get_received_priority_frame_count() > Http2::max_priority_frames_per_minute) {
+  if (Http2::max_priority_frames_per_minute != 0 &&
+      cstate.get_received_priority_frame_count() > Http2::max_priority_frames_per_minute) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id,
                      "Observed too frequent priority changes: %u priority changes within a last minute",
                      cstate.get_received_priority_frame_count());
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                       "recv priority too frequent priority changes");
-  }
-
-  if (!Http2::stream_priority_enabled) {
-    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   }
 
   Http2StreamDebug(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",

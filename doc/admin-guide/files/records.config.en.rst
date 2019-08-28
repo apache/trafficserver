@@ -3658,7 +3658,9 @@ HTTP/2 Configuration
 
    Specifies how many number of PRIORITY frames |TS| receives for a minute at maximum.
    Clients exceeded this limit will be immediately disconnected with an error
-   code of ENHANCE_YOUR_CALM.
+   code of ENHANCE_YOUR_CALM. If this is set to 0, the limit logic is disabled.
+   This limit only will be enforced if :ts:cv:`proxy.config.http2.stream_priority_enabled`
+   is set to 1.
 
 .. ts:cv:: CONFIG proxy.config.http2.min_avg_window_update FLOAT 2560.0
    :reloadable:
