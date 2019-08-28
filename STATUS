@@ -6,6 +6,7 @@ The current version of this file can be found at:
   * https://github.com/apache/trafficserver/blob/master/STATUS
 
 Release history:
+    8.0.6           : Release on XXX YYY, 2019
     8.0.5           : Release on Aug 20th, 2019
     8.0.4           : Release on Aug 13th, 2019
     8.0.3           : Release on Mar 21st, 2019
@@ -13,6 +14,7 @@ Release history:
     8.0.1           : Release on Nov 29th, 2018
     8.0.0           : Release on Sep 25th, 2018
 
+    7.1.8           : Release on Aug 20th, 2019
     7.1.7           : Release on Aug 13th, 2019
     7.1.6           : Released on Jan 29th, 2019
     7.1.5           : Released on Nov 24th, 2018
