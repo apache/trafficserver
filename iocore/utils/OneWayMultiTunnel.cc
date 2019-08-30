@@ -83,7 +83,7 @@ OneWayMultiTunnel::init(VConnection *vcSource, VConnection **vcTargets, int n_vc
   }
   topOutBuffer.writer_for(buf2);
 
-  buf1->water_mark = water_mark;
+  buf1->set_water_mark(water_mark);
 
   vioSource = vcSource->do_io_read(this, nbytes, buf1);
 

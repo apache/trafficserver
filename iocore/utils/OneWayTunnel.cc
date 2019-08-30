@@ -142,7 +142,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
     buf2 = new_MIOBuffer(size_index);
   }
 
-  buf1->water_mark = water_mark;
+  buf1->set_water_mark(water_mark);
 
   SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
   vioSource = vcSource->do_io_read(this, nbytes, buf1);

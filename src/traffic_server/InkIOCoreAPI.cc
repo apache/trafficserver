@@ -758,7 +758,7 @@ TSIOBufferWaterMarkGet(TSIOBuffer bufp)
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
 
   MIOBuffer *b = (MIOBuffer *)bufp;
-  return b->water_mark;
+  return b->get_water_mark();
 }
 
 void
@@ -767,8 +767,8 @@ TSIOBufferWaterMarkSet(TSIOBuffer bufp, int64_t water_mark)
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
   sdk_assert(water_mark >= 0);
 
-  MIOBuffer *b  = (MIOBuffer *)bufp;
-  b->water_mark = water_mark;
+  MIOBuffer *b = (MIOBuffer *)bufp;
+  b->set_water_mark(water_mark);
 }
 
 TSIOBufferReader

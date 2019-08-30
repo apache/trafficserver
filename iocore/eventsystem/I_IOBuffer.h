@@ -1144,6 +1144,22 @@ public:
   void set_size_index(int64_t size);
 
   /**
+    Accessor methods for the water_mark member, so we can
+    enforce constrains on the water_mark compared to the size of the block
+  */
+  int64_t
+  get_water_mark()
+  {
+    return this->water_mark;
+  }
+  void
+  clear_water_mark()
+  {
+    this->water_mark = 0;
+  }
+  void set_water_mark(int64_t new_water_mark);
+
+  /**
     Allocates a new IOBuffer reader and sets it's its 'accessor' field
     to point to 'anAccessor'.
 
@@ -1268,6 +1284,7 @@ public:
 
   int64_t size_index;
 
+private:
   /**
     Determines when to stop writing or reading. The watermark is the
     level to which the producer (filler) is required to fill the buffer
@@ -1278,6 +1295,7 @@ public:
   */
   int64_t water_mark;
 
+public:
   Ptr<IOBufferBlock> _writer;
   IOBufferReader readers[MAX_MIOBUFFER_READERS];
 

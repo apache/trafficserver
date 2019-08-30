@@ -71,10 +71,10 @@ ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action)
 
   switch (action) {
   case ACTION_DOCHUNK:
-    dechunked_reader                   = buffer_in->mbuf->clone_reader(buffer_in);
-    dechunked_reader->mbuf->water_mark = min_block_transfer_bytes;
-    chunked_buffer                     = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
-    chunked_size                       = 0;
+    dechunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
+    dechunked_reader->mbuf->set_water_mark(min_block_transfer_bytes);
+    chunked_buffer = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
+    chunked_size   = 0;
     break;
   case ACTION_DECHUNK:
     chunked_reader   = buffer_in->mbuf->clone_reader(buffer_in);

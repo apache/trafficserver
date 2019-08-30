@@ -6052,7 +6052,7 @@ HttpSM::setup_cache_read_transfer()
   buf->append_block(HTTP_HEADER_BUFFER_SIZE_INDEX);
 #endif
 
-  buf->water_mark = static_cast<int>(t_state.txn_conf->default_buffer_water_mark);
+  buf->set_water_mark(static_cast<int>(t_state.txn_conf->default_buffer_water_mark));
 
   IOBufferReader *buf_start = buf->alloc_reader();
 
@@ -6395,8 +6395,8 @@ HttpSM::setup_transfer_from_transform()
   int64_t alloc_index = find_server_buffer_size();
 
   // TODO change this call to new_empty_MIOBuffer()
-  MIOBuffer *buf            = new_MIOBuffer(alloc_index);
-  buf->water_mark           = static_cast<int>(t_state.txn_conf->default_buffer_water_mark);
+  MIOBuffer *buf = new_MIOBuffer(alloc_index);
+  buf->set_water_mark(static_cast<int>(t_state.txn_conf->default_buffer_water_mark));
   IOBufferReader *buf_start = buf->alloc_reader();
 
   HttpTunnelConsumer *c = tunnel.get_consumer(transform_info.vc);
@@ -6500,7 +6500,7 @@ HttpSM::setup_server_transfer()
   MIOBuffer *buf = new_empty_MIOBuffer(alloc_index);
   buf->append_block(HTTP_HEADER_BUFFER_SIZE_INDEX);
 #endif
-  buf->water_mark           = static_cast<int>(t_state.txn_conf->default_buffer_water_mark);
+  buf->set_water_mark(static_cast<int>(t_state.txn_conf->default_buffer_water_mark));
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // we need to know if we are going to chunk the response or not

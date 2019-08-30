@@ -566,7 +566,7 @@ IOBufferReader::low_water()
 TS_INLINE bool
 IOBufferReader::high_water()
 {
-  return read_avail() >= mbuf->water_mark;
+  return read_avail() >= mbuf->get_water_mark();
 }
 
 TS_INLINE bool
@@ -791,6 +791,13 @@ MIOBuffer::~MIOBuffer()
   dealloc_all_readers();
 }
 
+TS_INLINE void
+MIOBuffer::set_water_mark(int64_t new_water_mark)
+{
+  // ink_release_assert(new_water_mark < index_to_buffer_size(this->size_index));
+  this->water_mark = new_water_mark;
+}
+
 TS_INLINE MIOBuffer *
 new_MIOBuffer_internal(
 #ifdef TRACK_BUFFER_USER
@@ -803,7 +810,7 @@ new_MIOBuffer_internal(
   b->_location = location;
 #endif
   b->alloc(size_index);
-  b->water_mark = 0;
+  b->clear_water_mark();
   return b;
 }
 
@@ -824,7 +831,7 @@ new_empty_MIOBuffer_internal(
 {
   MIOBuffer *b  = THREAD_ALLOC(ioAllocator, this_thread());
   b->size_index = size_index;
-  b->water_mark = 0;
+  b->clear_water_mark();
 #ifdef TRACK_BUFFER_USER
   b->_location = location;
 #endif
@@ -941,6 +948,8 @@ MIOBuffer::append_block_internal(IOBufferBlock *b)
     init_readers();
   } else {
     ink_assert(!_writer->next || !_writer->next->read_avail());
+    // Should never be skipping over an empty block
+    ink_release_assert(!_writer || _writer->_end != _writer->_start);
     _writer->next = b;
     while (b->read_avail()) {
       _writer = b;

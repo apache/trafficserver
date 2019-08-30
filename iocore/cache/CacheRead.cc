@@ -726,7 +726,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   if (ntodo <= 0) {
     return EVENT_CONT;
   }
-  if (vio.buffer.writer()->max_read_avail() > vio.buffer.writer()->water_mark && vio.ndone) { // initiate read of first block
+  if (vio.buffer.writer()->max_read_avail() > vio.buffer.writer()->get_water_mark() && vio.ndone) { // initiate read of first block
     return EVENT_CONT;
   }
   if ((bytes <= 0) && vio.ntodo() >= 0) {

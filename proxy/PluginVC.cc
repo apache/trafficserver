@@ -631,7 +631,7 @@ PluginVC::process_read_side(bool other_side_call)
   //
   MIOBuffer *output_buffer = read_state.vio.get_writer();
 
-  int64_t water_mark = output_buffer->water_mark;
+  int64_t water_mark = output_buffer->get_water_mark();
   water_mark         = std::max(water_mark, static_cast<int64_t>(PVC_DEFAULT_MAX_BYTES));
   int64_t buf_space  = water_mark - output_buffer->max_read_avail();
   if (buf_space <= 0) {

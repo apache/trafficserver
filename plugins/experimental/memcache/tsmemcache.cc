@@ -140,14 +140,14 @@ MCAccept::main_event(int event, void *data)
 void
 MC::new_connection(NetVConnection *netvc, EThread *thread)
 {
-  nvc              = netvc;
-  mutex            = new_ProxyMutex();
-  rbuf             = new_MIOBuffer(MAX_IOBUFFER_SIZE);
-  rbuf->water_mark = TSMEMCACHE_TMP_CMD_BUFFER_SIZE;
-  reader           = rbuf->alloc_reader();
-  wbuf             = new_empty_MIOBuffer();
-  cbuf             = 0;
-  writer           = wbuf->alloc_reader();
+  nvc   = netvc;
+  mutex = new_ProxyMutex();
+  rbuf  = new_MIOBuffer(MAX_IOBUFFER_SIZE);
+  rbuf->set_water_mark(TSMEMCACHE_TMP_CMD_BUFFER_SIZE);
+  reader = rbuf->alloc_reader();
+  wbuf   = new_empty_MIOBuffer();
+  cbuf   = 0;
+  writer = wbuf->alloc_reader();
   SCOPED_MUTEX_LOCK(lock, mutex, thread);
   rvio         = nvc->do_io_read(this, INT64_MAX, rbuf);
   wvio         = nvc->do_io_write(this, 0, writer);

@@ -73,7 +73,7 @@ public:
     //
     // So we should set the water_mark of resp_buffer with a large value,
     // INT64_MAX would be reasonable.
-    resp_buffer->water_mark = INT64_MAX;
+    resp_buffer->set_water_mark(INT64_MAX);
   }
 
   int fetch_handler(int event, void *data);
