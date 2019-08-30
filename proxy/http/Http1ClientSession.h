@@ -107,7 +107,7 @@ private:
   };
 
   NetVConnection *client_vc = nullptr;
-  int magic                 = HTTP_SS_MAGIC_DEAD;
+  int magic                 = HTTP_MAGIC_DEAD;
   int transact_count        = 0;
   bool half_close           = false;
   bool conn_decrease        = false;

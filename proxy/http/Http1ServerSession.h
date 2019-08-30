@@ -36,6 +36,7 @@
 
 #include "HttpConnectionCount.h"
 #include "HttpProxyAPIEnums.h"
+#include "ProxySession.h"
 
 class HttpSM;
 class MIOBuffer;
@@ -48,18 +49,13 @@ enum HSS_State {
   HSS_KA_SHARED,
 };
 
-enum {
-  HTTP_SS_MAGIC_ALIVE = 0x0123FEED,
-  HTTP_SS_MAGIC_DEAD  = 0xDEADFEED,
-};
-
-class Http1ServerSession : public VConnection
+class Http1ServerSession : public ProxySession
 {
   using self_type  = Http1ServerSession;
-  using super_type = VConnection;
+  using super_type = ProxySession;
 
 public:
-  Http1ServerSession() : super_type(nullptr) {}
+  Http1ServerSession() : super_type() {}
   Http1ServerSession(self_type const &) = delete;
   self_type &operator=(self_type const &) = delete;
 
@@ -67,8 +63,9 @@ public:
   // Methods
   void new_connection(NetVConnection *new_vc);
   void release();
-  void destroy();
+  void destroy() override;
 
+  ////////////////////
   // VConnection Methods
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
   VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
@@ -77,15 +74,64 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
 
   void reenable(VIO *vio) override;
+  void
+  new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override
+  {
+    // TODO: refactor this
+    ink_assert(0);
+  }
+  void
+  start() override
+  {
+    // TODO: refactor this
+    ink_assert(0);
+  }
+  void
+  attach_server_session(Http1ServerSession *ssession, bool transaction_done = true) override
+  {
+    // TODO: refactor this
+    ink_assert(0);
+  }
+  void
+  release(ProxyTransaction *trans) override
+  {
+    // TODO: refactor this
+    ink_assert(0);
+  }
 
+  void
+  increment_current_active_client_connections_stat() override
+  {
+    // TODO: refactor this
+    ink_assert(0);
+  }
+  void
+  decrement_current_active_client_connections_stat() override
+  {
+    // TODO: refactor this
+    ink_assert(0);
+  }
+
+  ////////////////////
+  // Virtual Accessors
+  int
+  get_transact_count() const override
+  {
+    // TODO: refactor this
+    return transact_count;
+  }
+  const char *get_protocol_string() const override;
+
+  ////////////////////
+  // Accessors
+  NetVConnection *get_netvc() const override;
+  const char *protocol_contains(std::string_view tag_prefix) const override;
+  int populate_protocol(std::string_view *result, int size) const override;
   void enable_outbound_connection_tracking(OutboundConnTrack::Group *group);
   IOBufferReader *get_reader();
   void attach_hostname(const char *hostname);
-  NetVConnection *get_netvc() const;
   void set_netvc(NetVConnection *new_vc);
   IpEndpoint const &get_server_ip() const;
-  int populate_protocol(std::string_view *result, int size) const;
-  const char *protocol_contains(std::string_view tag_prefix) const;
 
   ////////////////////
   // Variables
@@ -156,7 +202,7 @@ public:
 
 private:
   NetVConnection *server_vc = nullptr;
-  int magic                 = HTTP_SS_MAGIC_DEAD;
+  int magic                 = HTTP_MAGIC_DEAD;
 
   IOBufferReader *buf_reader = nullptr;
 };

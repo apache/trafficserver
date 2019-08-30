@@ -35,6 +35,7 @@
 #include "HdrUtils.h"
 #include "HttpCompat.h"
 #include "HttpSM.h"
+#include "Http1ServerSession.h"
 
 #include "I_Machine.h"
 
@@ -883,7 +884,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   // Should suffice - if we're adding a response VIA, the connection is HTTP and only 1.0 and 1.1 are supported outbound.
   proto_buf[n_proto++] = HTTP_MINOR(header->version_get().m_version) == 0 ? IP_PROTO_TAG_HTTP_1_0 : IP_PROTO_TAG_HTTP_1_1;
 
-  auto ss = s->state_machine->get_server_session();
+  Http1ServerSession *ss = s->state_machine->get_server_session();
   if (ss) {
     n_proto += ss->populate_protocol(proto_buf.data() + n_proto, proto_buf.size() - n_proto);
   }
