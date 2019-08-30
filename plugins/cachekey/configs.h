@@ -226,10 +226,10 @@ private:
    */
   bool loadClassifiers(const String &args, bool blacklist = true);
 
-  bool _prefixToBeRemoved  = false;     /**< @brief instructs the prefix (i.e. host:port) not to added to the cache key */
-  bool _pathToBeRemoved    = false;     /**< @brief instructs the path not to added to the cache key */
-  bool _canonicalPrefix    = false;     /**< @brief keep the URI scheme and authority element used as input to transforming into key */
-  String _separator        = "/";       /**< @brief a separator used to separate the cache key elements extracted from the URI */
-  CacheKeyUriType _uriType = REMAP;     /**< @brief shows which URI the cache key will be based on */
+  bool _prefixToBeRemoved  = false; /**< @brief instructs the prefix (i.e. host:port) not to added to the cache key */
+  bool _pathToBeRemoved    = false; /**< @brief instructs the path not to added to the cache key */
+  bool _canonicalPrefix    = false; /**< @brief keep the URI scheme and authority element used as input to transforming into key */
+  String _separator        = "/";   /**< @brief a separator used to separate the cache key elements extracted from the URI */
+  CacheKeyUriType _uriType = REMAP; /**< @brief shows which URI the cache key will be based on */
   CacheKeyKeyType _keyType = CACHE_KEY; /**< @brief target URI to be modified, cache key or paren selection */
 };

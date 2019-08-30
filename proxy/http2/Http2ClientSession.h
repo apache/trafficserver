@@ -80,8 +80,15 @@ struct Http2UpgradeContext {
 class Http2Frame
 {
 public:
+  // Input frame constructor
   Http2Frame(const Http2FrameHeader &h, IOBufferReader *r) : hdr(h), ioreader(r) {}
+  // Output frame contstructor
   Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags) : hdr({0, (uint8_t)type, flags, streamid}) {}
+  // Output frame constructor
+  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags, IOBufferReader *r)
+    : hdr({0, (uint8_t)type, flags, streamid}), output_reader(r)
+  {
+  }
 
   IOBufferReader *
   reader() const
@@ -99,52 +106,67 @@ public:
   void
   alloc(int index)
   {
-    this->ioblock = new_IOBufferBlock();
-    this->ioblock->alloc(index);
+    this->output_block = new_IOBufferBlock();
+    this->output_block->alloc(index);
   }
 
   // Return the writeable buffer space for frame payload
   IOVec
   write()
   {
-    return make_iovec(this->ioblock->end(), this->ioblock->write_avail());
+    return make_iovec(this->output_block->end(), this->output_block->write_avail());
   }
 
   // Once the frame has been serialized, update the payload length of frame header.
   void
   finalize(size_t nbytes)
   {
-    if (this->ioblock) {
-      ink_assert((int64_t)nbytes <= this->ioblock->write_avail());
-      this->ioblock->fill(nbytes);
+    if (this->output_block) {
+      ink_assert((int64_t)nbytes <= this->output_block->write_avail());
+      this->output_block->fill(nbytes);
 
-      this->hdr.length = this->ioblock->size();
+      this->hdr.length = this->output_block->size();
     }
   }
 
   void
-  xmit(MIOBuffer *iobuffer)
+  xmit(MIOBuffer *out_iobuffer)
   {
     // Write frame header
     uint8_t buf[HTTP2_FRAME_HEADER_LEN];
     http2_write_frame_header(hdr, make_iovec(buf));
-    iobuffer->write(buf, sizeof(buf));
+    out_iobuffer->write(buf, sizeof(buf));
 
     // Write frame payload
     // It could be empty (e.g. SETTINGS frame with ACK flag)
-    if (ioblock && ioblock->read_avail() > 0) {
-      iobuffer->append_block(this->ioblock.get());
+    if (output_reader) {
+      if (hdr.length > 0) {
+        out_iobuffer->write(output_reader, hdr.length);
+        output_reader->consume(hdr.length);
+      }
+    } else {
+      // Write frame payload
+      // It could be empty (e.g. SETTINGS frame with ACK flag)
+      if (output_block && output_block->read_avail() > 0) {
+        out_iobuffer->append_block(this->output_block.get());
+      }
     }
   }
 
   int64_t
   size()
   {
-    if (ioblock) {
-      return HTTP2_FRAME_HEADER_LEN + ioblock->size();
+    if (output_block) {
+      return HTTP2_FRAME_HEADER_LEN + output_block->size();
     } else {
-      return HTTP2_FRAME_HEADER_LEN;
+      return HTTP2_FRAME_HEADER_LEN + hdr.length;
     }
+  }
+
+  void
+  set_payload_size(size_t length)
+  {
+    hdr.length = length;
   }
 
   // noncopyable
@@ -152,8 +174,11 @@ public:
   Http2Frame &operator=(const Http2Frame &) = delete;
 
 private:
-  Http2FrameHeader hdr;       // frame header
-  Ptr<IOBufferBlock> ioblock; // frame payload
+  Http2FrameHeader hdr;            // frame header
+  Ptr<IOBufferBlock> output_block; // frame payload
+  // Reader to put data into output frame
+  IOBufferReader *output_reader = nullptr;
+  // Reader for input frame
   IOBufferReader *ioreader = nullptr;
 };
 
