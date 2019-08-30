@@ -65,11 +65,8 @@ extern int64_t default_large_iobuffer_size; // matched to size of OS buffers
 
 enum AllocType {
   NO_ALLOC,
-  FAST_ALLOCATED,
-  XMALLOCED,
   MEMALIGNED,
   DEFAULT_ALLOC,
-  CONSTANT,
 };
 
 #define DEFAULT_BUFFER_NUMBER 128
@@ -147,23 +144,11 @@ void init_buffer_allocators(int iobuffer_advice);
       <td></td>
     </tr>
     <tr>
-      <td>FAST_ALLOCATED</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>XMALLOCED</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>MEMALIGNED</td>
       <td></td>
     </tr>
     <tr>
       <td>DEFAULT_ALLOC</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>CONSTANT</td>
       <td></td>
     </tr>
   </table>
@@ -477,8 +462,6 @@ public:
   void realloc_set_internal(void *b, int64_t buf_size, int64_t asize_index);
   void realloc(void *b, int64_t buf_size);
   void realloc(int64_t i);
-  void realloc_xmalloc(void *b, int64_t buf_size);
-  void realloc_xmalloc(int64_t buf_size);
 
   /**
     Frees the IOBufferBlock object and its underlying memory.
@@ -845,6 +828,10 @@ public:
   void add_block();
 
   /**
+    Deprecated
+
+    TODO: remove this function. Because ats_xmalloc() doesn't exist anymore.
+
     Adds by reference len bytes of data pointed to by b to the end
     of the buffer.  b MUST be a pointer to the beginning of  block
     allocated from the ats_xmalloc() routine. The data will be deallocated
@@ -1073,9 +1060,7 @@ public:
   void dealloc_all_readers();
 
   void set(void *b, int64_t len);
-  void set_xmalloced(void *b, int64_t len);
   void alloc(int64_t i = default_large_iobuffer_size);
-  void alloc_xmalloc(int64_t buf_size);
   void append_block_internal(IOBufferBlock *b);
   int64_t puts(char *buf, int64_t len);
 
@@ -1157,16 +1142,6 @@ public:
   realloc(void *b, int64_t buf_size)
   {
     _writer->realloc(b, buf_size);
-  }
-  void
-  realloc_xmalloc(void *b, int64_t buf_size)
-  {
-    _writer->realloc_xmalloc(b, buf_size);
-  }
-  void
-  realloc_xmalloc(int64_t buf_size)
-  {
-    _writer->realloc_xmalloc(buf_size);
   }
 
   int64_t size_index;
@@ -1364,12 +1339,6 @@ extern IOBufferData *new_xmalloc_IOBufferData_internal(
 #endif
   void *b, int64_t size);
 
-extern IOBufferData *new_constant_IOBufferData_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *locaction,
-#endif
-  void *b, int64_t size);
-
 #ifdef TRACK_BUFFER_USER
 class IOBufferData_tracker
 {
@@ -1385,14 +1354,13 @@ public:
 };
 #endif
 
+// TODO: remove new_xmalloc_IOBufferData. Because ats_xmalloc() doesn't exist anymore.
 #ifdef TRACK_BUFFER_USER
 #define new_IOBufferData IOBufferData_tracker(RES_PATH("memory/IOBuffer/"))
 #define new_xmalloc_IOBufferData(b, size) new_xmalloc_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), (b), (size))
-#define new_constant_IOBufferData(b, size) new_constant_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), (b), (size))
 #else
 #define new_IOBufferData new_IOBufferData_internal
 #define new_xmalloc_IOBufferData new_xmalloc_IOBufferData_internal
-#define new_constant_IOBufferData new_constant_IOBufferData_internal
 #endif
 
 extern int64_t iobuffer_size_to_index(int64_t size, int64_t max = max_iobuffer_size);
