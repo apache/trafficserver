@@ -1439,7 +1439,7 @@ Http2SendDataFrameResult
 Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_length)
 {
   const ssize_t window_size         = std::min(this->client_rwnd(), stream->client_rwnd());
-  const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
+  const size_t buf_len              = client_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE);
   const size_t write_available_size = std::min(buf_len, static_cast<size_t>(window_size));
   payload_length                    = 0;
 
