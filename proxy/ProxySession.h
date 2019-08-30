@@ -29,7 +29,6 @@
 #include <string_view>
 #include "P_Net.h"
 #include "InkAPIInternal.h"
-#include "http/Http1ServerSession.h"
 #include "http/HttpSessionAccept.h"
 #include "IPAllow.h"
 
@@ -39,6 +38,12 @@
 #define SsnDebug(ssn, tag, ...) SpecificDebug((ssn)->debug(), tag, __VA_ARGS__)
 
 class ProxyTransaction;
+class Http1ServerSession; // TODO: refactor
+
+enum {
+  HTTP_MAGIC_ALIVE = 0x0123FEED,
+  HTTP_MAGIC_DEAD  = 0xDEADFEED,
+};
 
 enum class ProxyErrorClass {
   NONE,
@@ -86,7 +91,7 @@ public:
   // Virtual Methods
   virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) = 0;
   virtual void start()                                                                          = 0;
-  virtual void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true);
+  virtual void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true); // TODO: refactor
 
   virtual void release(ProxyTransaction *trans) = 0;
 
@@ -108,7 +113,7 @@ public:
   virtual void set_half_close_flag(bool flag);
   virtual bool get_half_close_flag() const;
 
-  virtual Http1ServerSession *get_server_session() const;
+  virtual Http1ServerSession *get_server_session() const; // TODO: refactor
 
   // Replicate NetVConnection API
   virtual sockaddr const *get_client_addr();

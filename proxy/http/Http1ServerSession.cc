@@ -45,7 +45,7 @@ Http1ServerSession::destroy()
   ink_release_assert(server_vc == nullptr);
   ink_assert(read_buffer);
   ink_assert(server_trans_stat == 0);
-  magic = HTTP_SS_MAGIC_DEAD;
+  magic = HTTP_MAGIC_DEAD;
   if (read_buffer) {
     free_MIOBuffer(read_buffer);
     read_buffer = nullptr;
@@ -71,7 +71,7 @@ Http1ServerSession::new_connection(NetVConnection *new_vc)
   // Unique client session identifier.
   con_id = ink_atomic_increment((&next_ss_id), 1);
 
-  magic = HTTP_SS_MAGIC_ALIVE;
+  magic = HTTP_MAGIC_ALIVE;
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, 1); // Update the true global stat
   HTTP_INCREMENT_DYN_STAT(http_total_server_connections_stat);
 
@@ -243,3 +243,9 @@ Http1ServerSession::protocol_contains(std::string_view tag_prefix) const
   auto vc = this->get_netvc();
   return vc ? vc->protocol_contains(tag_prefix) : nullptr;
 }
+
+const char *
+Http1ServerSession::get_protocol_string() const
+{
+  return "http";
+};
