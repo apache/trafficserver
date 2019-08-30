@@ -628,7 +628,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   // [RFC 7540] 6.5. Once all values have been applied, the recipient MUST
   // immediately emit a SETTINGS frame with the ACK flag set.
-  Http2Frame ackFrame(HTTP2_FRAME_TYPE_SETTINGS, 0, HTTP2_FLAGS_SETTINGS_ACK);
+  Http2Frame ackFrame(HTTP2_FRAME_TYPE_SETTINGS, 0, HTTP2_FLAGS_SETTINGS_ACK, buffer_size_index[HTTP2_FRAME_TYPE_WINDOW_UPDATE]);
   cstate.ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &ackFrame);
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -1449,8 +1449,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   const size_t write_available_size = std::min(buf_len, static_cast<size_t>(window_size));
   payload_length                    = 0;
 
-  uint8_t flags = 0x00;
-  uint8_t payload_buffer[buf_len];
+  uint8_t flags       = 0x00;
   IOBufferReader *_sm = stream->response_get_data_reader();
 
   SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
@@ -1460,44 +1459,49 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     return Http2SendDataFrameResult::ERROR;
   }
 
-  // Select appropriate payload length
-  if (_sm->is_read_avail_more_than(0)) {
+  // Are we at the end?
+  // If we return here, we never send the END_STREAM in the case of a early terminating OS.
+  // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
+  if (!stream->is_body_done() && !_sm->is_read_avail_more_than(0)) {
+    Http2StreamDebug(this->ua_session, stream->get_id(), "No payload");
+    return Http2SendDataFrameResult::NO_PAYLOAD;
+  } else if (_sm->is_read_avail_more_than(0)) {
     // We only need to check for window size when there is a payload
     if (window_size <= 0) {
       Http2StreamDebug(this->ua_session, stream->get_id(), "No window");
       return Http2SendDataFrameResult::NO_WINDOW;
     }
-    // Copy into the payload buffer. Seems like we should be able to skip this copy step
-    payload_length = write_available_size;
-    payload_length = _sm->read(payload_buffer, static_cast<int64_t>(write_available_size));
-  } else {
-    payload_length = 0;
   }
 
-  // Are we at the end?
-  // If we return here, we never send the END_STREAM in the case of a early terminating OS.
-  // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
-  if (!stream->is_body_done() && payload_length == 0) {
-    Http2StreamDebug(this->ua_session, stream->get_id(), "No payload");
-    return Http2SendDataFrameResult::NO_PAYLOAD;
-  }
-
-  if (stream->is_body_done() && !_sm->is_read_avail_more_than(0)) {
+  if (stream->is_body_done() && !_sm->is_read_avail_more_than(write_available_size)) {
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
+  }
+
+  Http2Frame data(HTTP2_FRAME_TYPE_DATA, stream->get_id(), flags, BUFFER_SIZE_INDEX_16K);
+
+  IOVec iovec    = data.write();
+  payload_length = std::min(static_cast<size_t>(_sm->read_avail()), write_available_size);
+
+  // If the amount we have allocated is just a bit less than the data available,
+  // leave the rest of the data on the table
+  size_t write_len = std::min(payload_length, iovec.iov_len - HTTP2_FRAME_HEADER_LEN);
+  if ((payload_length - write_len) < 1024) {
+    payload_length = write_len;
+  }
+
+  _sm->read(iovec.iov_base, write_len);
+  data.finalize(write_len);
+  data.set_payload_size(payload_length);
+  if (write_len < payload_length) {
+    data.add_reader(_sm);
   }
 
   // Update window size
   this->decrement_client_rwnd(payload_length);
   stream->decrement_client_rwnd(payload_length);
 
-  // Create frame
   Http2StreamDebug(ua_session, stream->get_id(), "Send a DATA frame - client window con: %5zd stream: %5zd payload: %5zd",
                    _client_rwnd, stream->client_rwnd(), payload_length);
-
-  Http2Frame data(HTTP2_FRAME_TYPE_DATA, stream->get_id(), flags);
-  data.alloc(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
-  http2_write_data(payload_buffer, payload_length, data.write());
-  data.finalize(payload_length);
 
   stream->update_sent_count(payload_length);
 
@@ -1592,8 +1596,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   } else {
     payload_length = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
   }
-  Http2Frame headers(HTTP2_FRAME_TYPE_HEADERS, stream->get_id(), flags);
-  headers.alloc(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
+  Http2Frame headers(HTTP2_FRAME_TYPE_HEADERS, stream->get_id(), flags, buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
   http2_write_headers(buf, payload_length, headers.write());
   headers.finalize(payload_length);
 
@@ -1624,8 +1627,8 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     if (sent + payload_length == header_blocks_size) {
       flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
     }
-    Http2Frame continuation_frame(HTTP2_FRAME_TYPE_CONTINUATION, stream->get_id(), flags);
-    continuation_frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]);
+    Http2Frame continuation_frame(HTTP2_FRAME_TYPE_CONTINUATION, stream->get_id(), flags,
+                                  buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]);
     http2_write_headers(buf + sent, payload_length, continuation_frame.write());
     continuation_frame.finalize(payload_length);
     stream->change_state(continuation_frame.header().type, continuation_frame.header().flags);
@@ -1701,8 +1704,8 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
     payload_length =
       BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_PUSH_PROMISE]) - sizeof(push_promise.promised_streamid);
   }
-  Http2Frame push_promise_frame(HTTP2_FRAME_TYPE_PUSH_PROMISE, stream->get_id(), flags);
-  push_promise_frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_PUSH_PROMISE]);
+  Http2Frame push_promise_frame(HTTP2_FRAME_TYPE_PUSH_PROMISE, stream->get_id(), flags,
+                                buffer_size_index[HTTP2_FRAME_TYPE_PUSH_PROMISE]);
   Http2StreamId id               = this->get_latest_stream_id_out() + 2;
   push_promise.promised_streamid = id;
   http2_write_push_promise(push_promise, buf, payload_length, push_promise_frame.write());
@@ -1721,8 +1724,8 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
     if (sent + payload_length == header_blocks_size) {
       flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
     }
-    Http2Frame continuation_frame(HTTP2_FRAME_TYPE_CONTINUATION, stream->get_id(), flags);
-    continuation_frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]);
+    Http2Frame continuation_frame(HTTP2_FRAME_TYPE_CONTINUATION, stream->get_id(), flags,
+                                  buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]);
     http2_write_headers(buf + sent, payload_length, continuation_frame.write());
     continuation_frame.finalize(payload_length);
     // xmit event
@@ -1771,9 +1774,7 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
     ++stream_error_count;
   }
 
-  Http2Frame rst_stream(HTTP2_FRAME_TYPE_RST_STREAM, id, 0);
-
-  rst_stream.alloc(buffer_size_index[HTTP2_FRAME_TYPE_RST_STREAM]);
+  Http2Frame rst_stream(HTTP2_FRAME_TYPE_RST_STREAM, id, 0, buffer_size_index[HTTP2_FRAME_TYPE_RST_STREAM]);
   http2_write_rst_stream(static_cast<uint32_t>(ec), rst_stream.write());
   rst_stream.finalize(HTTP2_RST_STREAM_LEN);
 
@@ -1804,8 +1805,7 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
 
   Http2StreamDebug(ua_session, stream_id, "Send SETTINGS frame");
 
-  Http2Frame settings(HTTP2_FRAME_TYPE_SETTINGS, stream_id, 0);
-  settings.alloc(buffer_size_index[HTTP2_FRAME_TYPE_SETTINGS]);
+  Http2Frame settings(HTTP2_FRAME_TYPE_SETTINGS, stream_id, 0, buffer_size_index[HTTP2_FRAME_TYPE_SETTINGS]);
 
   IOVec iov                = settings.write();
   uint32_t settings_length = 0;
@@ -1849,9 +1849,7 @@ Http2ConnectionState::send_ping_frame(Http2StreamId id, uint8_t flag, const uint
 {
   Http2StreamDebug(ua_session, id, "Send PING frame");
 
-  Http2Frame ping(HTTP2_FRAME_TYPE_PING, id, flag);
-
-  ping.alloc(buffer_size_index[HTTP2_FRAME_TYPE_PING]);
+  Http2Frame ping(HTTP2_FRAME_TYPE_PING, id, flag, buffer_size_index[HTTP2_FRAME_TYPE_PING]);
   http2_write_ping(opaque_data, ping.write());
   ping.finalize(HTTP2_PING_LEN);
 
@@ -1873,13 +1871,12 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CONNECTION_ERRORS_COUNT, this_ethread());
   }
 
-  Http2Frame frame(HTTP2_FRAME_TYPE_GOAWAY, 0, 0);
+  Http2Frame frame(HTTP2_FRAME_TYPE_GOAWAY, 0, 0, buffer_size_index[HTTP2_FRAME_TYPE_GOAWAY]);
   Http2Goaway goaway;
 
   goaway.last_streamid = id;
   goaway.error_code    = ec;
 
-  frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_GOAWAY]);
   http2_write_goaway(goaway, frame.write());
   frame.finalize(HTTP2_GOAWAY_LEN);
 
@@ -1896,8 +1893,7 @@ Http2ConnectionState::send_window_update_frame(Http2StreamId id, uint32_t size)
   Http2StreamDebug(ua_session, id, "Send WINDOW_UPDATE frame");
 
   // Create WINDOW_UPDATE frame
-  Http2Frame window_update(HTTP2_FRAME_TYPE_WINDOW_UPDATE, id, 0x0);
-  window_update.alloc(buffer_size_index[HTTP2_FRAME_TYPE_WINDOW_UPDATE]);
+  Http2Frame window_update(HTTP2_FRAME_TYPE_WINDOW_UPDATE, id, 0x0, buffer_size_index[HTTP2_FRAME_TYPE_WINDOW_UPDATE]);
   http2_write_window_update(static_cast<uint32_t>(size), window_update.write());
   window_update.finalize(sizeof(uint32_t));
 

@@ -80,8 +80,14 @@ struct Http2UpgradeContext {
 class Http2Frame
 {
 public:
+  // Input frame constructor
   Http2Frame(const Http2FrameHeader &h, IOBufferReader *r) : hdr(h), ioreader(r) {}
-  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags) : hdr({0, (uint8_t)type, flags, streamid}) {}
+  // Output frame contstructor
+  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags, int index) : hdr({0, (uint8_t)type, flags, streamid})
+  {
+    alloc(index);
+  }
+  ~Http2Frame() {}
 
   IOBufferReader *
   reader() const
@@ -101,6 +107,7 @@ public:
   {
     this->ioblock = new_IOBufferBlock();
     this->ioblock->alloc(index);
+    this->ioblock->fill(HTTP2_FRAME_HEADER_LEN);
   }
 
   // Return the writeable buffer space for frame payload
@@ -110,41 +117,53 @@ public:
     return make_iovec(this->ioblock->end(), this->ioblock->write_avail());
   }
 
-  // Once the frame has been serialized, update the payload length of frame header.
   void
   finalize(size_t nbytes)
   {
+    this->set_payload_size(nbytes);
     if (this->ioblock) {
-      ink_assert((int64_t)nbytes <= this->ioblock->write_avail());
       this->ioblock->fill(nbytes);
-
-      this->hdr.length = this->ioblock->size();
     }
   }
 
   void
-  xmit(MIOBuffer *iobuffer)
+  xmit(MIOBuffer *out_iobuffer)
   {
-    // Write frame header
-    uint8_t buf[HTTP2_FRAME_HEADER_LEN];
-    http2_write_frame_header(hdr, make_iovec(buf));
-    iobuffer->write(buf, sizeof(buf));
+    // Write frame header to the frame_buffer
+    http2_write_frame_header(hdr, make_iovec(this->ioblock->start(), HTTP2_FRAME_HEADER_LEN));
 
-    // Write frame payload
-    // It could be empty (e.g. SETTINGS frame with ACK flag)
-    if (ioblock && ioblock->read_avail() > 0) {
-      iobuffer->append_block(this->ioblock.get());
+    // Write the whole block to the output buffer
+    if (ioblock) {
+      int block_size = ioblock->read_avail();
+      if (block_size > 0) {
+        out_iobuffer->append_block(this->ioblock.get());
+
+        // payload should already have been written unless it doesn't all
+        // fit in the single block
+        if (out_reader) {
+          out_iobuffer->write(out_reader, hdr.length + HTTP2_FRAME_HEADER_LEN - block_size);
+          out_reader->consume(hdr.length + HTTP2_FRAME_HEADER_LEN - block_size);
+        }
+      }
     }
   }
 
   int64_t
   size()
   {
-    if (ioblock) {
-      return HTTP2_FRAME_HEADER_LEN + ioblock->size();
-    } else {
-      return HTTP2_FRAME_HEADER_LEN;
-    }
+    return HTTP2_FRAME_HEADER_LEN + hdr.length;
+  }
+
+  void
+  set_payload_size(size_t length)
+  {
+    hdr.length = length;
+  }
+
+  void
+  add_reader(IOBufferReader *reader)
+  {
+    out_reader = reader;
   }
 
   // noncopyable
@@ -154,7 +173,8 @@ public:
 private:
   Http2FrameHeader hdr;       // frame header
   Ptr<IOBufferBlock> ioblock; // frame payload
-  IOBufferReader *ioreader = nullptr;
+  IOBufferReader *out_reader = nullptr;
+  IOBufferReader *ioreader   = nullptr;
 };
 
 class Http2ClientSession : public ProxySession
