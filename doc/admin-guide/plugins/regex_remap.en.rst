@@ -109,7 +109,7 @@ on the right hand side during evaluation ::
 
     $0     - The entire matched string
     $1-9   - Regular expression groups ($1 first group etc.)
-    $h     - The original host header from the request
+    $h     - The host as used in the "to" portion of the remap rule. For a long time it was the original host header from the request.
     $f     - The host as used in the "from" portion of the remap rule
     $t     - The host as used in the "to" portion of the remap rule
     $p     - The original port number
