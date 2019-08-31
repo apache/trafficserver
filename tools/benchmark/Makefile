@@ -47,3 +47,6 @@ http2:
 	sleep 5
 	sudo perf report -sdso,symbol --stdio  -w10,20,40,20 | head -40 | tail -37 > perf-report.log
 	cat h2load.log dstat.log perf-stat.log perf-report.log > http2_benchmark.log
+
+clean:
+	rm -f *.log perf.data*
