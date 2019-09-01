@@ -1,9 +1,12 @@
-test: http https http2
+test:
+	$(MAKE) http
+	$(MAKE) https
+	$(MAKE) http2
 
 # Step 1 - setup the test
 setup:
 	sudo /usr/local/bin/trafficserver stop
-	sudo rm -f /usr/local/var/log/trafficserver/squid.blog
+	sudo rm -f /usr/local/var/log/trafficserver/squid.blog*
 	sudo /usr/local/bin/trafficserver start
 	rm -f *.log perf.data*
 
