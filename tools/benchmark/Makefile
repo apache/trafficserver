@@ -45,13 +45,13 @@ log_stop:
 
 # Step 6 - make a report
 report:
-	echo '*http2load*' > report
+	echo '**http2load**' > report
 	cat h2load.log >> report
-	echo -e "\n*dstat*" >> report
+	echo -e "\n**dstat**" >> report
 	cat dstat.log >> report
-	echo '*perf stat*' >> report
+	echo '**perf stat**' >> report
 	cat perf-stat.log >> report
-	echo '*perf report*' >> report
+	echo '**perf report**' >> report
 	cat perf-report.log >> report
 
 # Define the tests and generate the report
