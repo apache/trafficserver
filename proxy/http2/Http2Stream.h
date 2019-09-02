@@ -24,9 +24,8 @@
 #pragma once
 
 #include "HTTP2.h"
-#include "../ProxyClientTransaction.h"
+#include "ProxyClientTransaction.h"
 #include "Http2DebugNames.h"
-#include "../http/HttpTunnel.h" // To get ChunkedHandler
 #include "Http2DependencyTree.h"
 #include "tscore/History.h"
 #include "Milestones.h"
@@ -104,7 +103,6 @@ public:
 
   bool is_client_state_writeable() const;
   bool is_closed() const;
-  bool response_is_chunked() const;
   IOBufferReader *response_get_data_reader() const;
 
   void mark_milestone(Http2StreamMilestone type);
@@ -142,8 +140,6 @@ public:
   Http2DependencyTree::Node *priority_node = nullptr;
 
 private:
-  void response_initialize_data_handling(bool &is_done);
-  void response_process_data(bool &is_done);
   bool response_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
   void send_response_body(bool call_update);
@@ -169,7 +165,6 @@ private:
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
 
   bool trailing_header = false;
-  bool chunked         = false;
 
   // A brief disucssion of similar flags and state variables:  _state, closed, terminate_stream
   //
@@ -203,7 +198,6 @@ private:
   std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
   int _recent_rwnd_increment_index           = 0;
 
-  ChunkedHandler chunked_handler;
   Event *cross_thread_event      = nullptr;
   Event *buffer_full_write_event = nullptr;
 
@@ -299,12 +293,6 @@ Http2Stream::ignore_keep_alive()
   // If we return true here, Connection header will always be "close".
   // It should be handled as the same as HTTP/1.1
   return false;
-}
-
-inline bool
-Http2Stream::response_is_chunked() const
-{
-  return chunked;
 }
 
 inline bool
