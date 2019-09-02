@@ -6730,11 +6730,10 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     // to the client to keep the connection alive.
     // Insert a Transfer-Encoding header in the response if necessary.
 
-    // check that the client is HTTP 1.1 and the conf allows chunking or the client
-    // protocol unchunks before returning to the user agent (i.e. is http/2)
-    if (s->client_info.http_version == HTTPVersion(1, 1) &&
-        (s->txn_conf->chunking_enabled == 1 ||
-         (s->state_machine->plugin_tag && (!strncmp(s->state_machine->plugin_tag, "http/2", 6)))) &&
+    // check that the client protocol is HTTP/1.1 and the conf allows chunking or
+    // the client protocol doesn't support chunked transfer coding (i.e. HTTP/1.0, HTTP/2, and HTTP/3)
+    if (s->state_machine->ua_txn && s->state_machine->ua_txn->is_chunked_encoding_supported() &&
+        s->client_info.http_version == HTTPVersion(1, 1) && s->txn_conf->chunking_enabled == 1 &&
         // if we're not sending a body, don't set a chunked header regardless of server response
         !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
         // we do not need chunked encoding for internal error messages
@@ -6767,10 +6766,12 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
 
     // Close the connection if client_info is not keep-alive.
     // Otherwise, if we cannot trust the content length, we will close the connection
-    // unless we are going to use chunked encoding or the client issued
-    // a PUSH request
+    // unless we are going to use chunked encoding on HTTP/1.1 or the client issued a PUSH request
     if (s->client_info.keep_alive != HTTP_KEEPALIVE) {
       ka_action = KA_DISABLED;
+    } else if (s->state_machine->client_protocol && (IP_PROTO_TAG_HTTP_3.compare(s->state_machine->client_protocol) == 0 ||
+                                                     strncmp(s->state_machine->client_protocol, "http/2", 6) == 0)) {
+      ka_action = KA_CONNECTION;
     } else if (s->hdr_info.trust_response_cl == false &&
                !(s->client_info.receive_chunked_response == true ||
                  (s->method == HTTP_WKSIDX_PUSH && s->client_info.keep_alive == HTTP_KEEPALIVE))) {
