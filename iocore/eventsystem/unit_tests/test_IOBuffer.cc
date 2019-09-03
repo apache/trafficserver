@@ -173,6 +173,168 @@ TEST_CASE("MIOBuffer", "[iocore]")
 
     free_MIOBuffer(miob);
   }
+
+  SECTION("write_avail")
+  {
+    MIOBuffer *miob        = new_MIOBuffer();
+    IOBufferReader *miob_r = miob->alloc_reader();
+    uint8_t buf[8192];
+    memset(buf, 0xAA, sizeof(buf));
+
+    // initial state
+    CHECK(miob->block_size() == 4096);
+    CHECK(miob->current_write_avail() == 4096);
+    CHECK(miob->write_avail() == 4096);
+
+    SECTION("water_mark == 0 (default)")
+    {
+      REQUIRE(miob->water_mark == 0);
+
+      // fill half of the current buffer
+      miob->write(buf, 2048);
+      CHECK(miob->max_read_avail() == 2048);
+      CHECK(miob->current_write_avail() == 2048);
+      CHECK(miob->high_water() == true);
+      CHECK(miob->current_low_water() == false);
+      CHECK(miob->write_avail() == 2048); ///< should have no side effect
+
+      // fill all of the current buffer
+      miob->write(buf, 2048);
+      CHECK(miob->max_read_avail() == 4096);
+      CHECK(miob->current_write_avail() == 0);
+      CHECK(miob->high_water() == true);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 0); ///< should have no side effect
+
+      // consume half of the data
+      miob_r->consume(2048);
+      CHECK(miob->max_read_avail() == 2048);
+      CHECK(miob->current_write_avail() == 0);
+      CHECK(miob->high_water() == true);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 0); ///< should have no side effect
+
+      // consume all of the data
+      miob_r->consume(2048);
+      CHECK(miob->max_read_avail() == 0);
+      CHECK(miob->current_write_avail() == 0);
+      CHECK(miob->high_water() == false);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 4096); ///< should have a side effect: add a new block
+
+      CHECK(miob->max_read_avail() == 0);
+      CHECK(miob->current_write_avail() == 4096);
+      CHECK(miob->high_water() == false);
+      CHECK(miob->current_low_water() == false);
+      CHECK(miob->write_avail() == 4096); ///< should have no side effect
+    }
+
+    SECTION("water_mark == half of block size")
+    {
+      miob->water_mark = 2048;
+      REQUIRE(miob->water_mark * 2 == miob->block_size());
+
+      // fill half of the current buffer
+      miob->write(buf, 2048);
+      CHECK(miob->max_read_avail() == 2048);
+      CHECK(miob->current_write_avail() == 2048);
+      CHECK(miob->high_water() == false);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 6144); ///< should have a side effect: add a new block
+
+      CHECK(miob->max_read_avail() == 2048);
+      CHECK(miob->current_write_avail() == 6144);
+      CHECK(miob->high_water() == false);
+      CHECK(miob->current_low_water() == false);
+      CHECK(miob->write_avail() == 6144); ///< should have no side effect
+
+      // fill all of the current buffer
+      miob->write(buf, 6144);
+      CHECK(miob->max_read_avail() == 8192);
+      CHECK(miob->current_write_avail() == 0);
+      CHECK(miob->high_water() == true);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 0); ///< should have no side effect
+
+      // consume half of the data
+      miob_r->consume(4096);
+      CHECK(miob->max_read_avail() == 4096);
+      CHECK(miob->current_write_avail() == 0);
+      CHECK(miob->high_water() == true);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 0); ///< should have no side effect
+
+      // consume all of the data
+      miob_r->consume(4096);
+      CHECK(miob->max_read_avail() == 0);
+      CHECK(miob->current_write_avail() == 0);
+      CHECK(miob->high_water() == false);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 4096); ///< should have a side effect: add a new block
+
+      CHECK(miob->max_read_avail() == 0);
+      CHECK(miob->current_write_avail() == 4096);
+      CHECK(miob->high_water() == false);
+      CHECK(miob->current_low_water() == false);
+      CHECK(miob->write_avail() == 4096); ///< should have no side effect
+    }
+
+    SECTION("water_mark == block_size()")
+    {
+      miob->water_mark = 4096;
+      REQUIRE(miob->water_mark == miob->block_size());
+
+      // fill half of the current buffer
+      miob->write(buf, 2048);
+      CHECK(miob->max_read_avail() == 2048);
+      CHECK(miob->current_write_avail() == 2048);
+      CHECK(miob->high_water() == false);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 6144); ///< should have a side effect: add a new block
+
+      CHECK(miob->max_read_avail() == 2048);
+      CHECK(miob->current_write_avail() == 6144);
+      CHECK(miob->high_water() == false);
+      CHECK(miob->current_low_water() == false);
+      CHECK(miob->write_avail() == 6144); ///< should have no side effect
+
+      // fill all of the current buffer
+      miob->write(buf, 6144);
+      CHECK(miob->max_read_avail() == 8192);
+      CHECK(miob->current_write_avail() == 0);
+      CHECK(miob->high_water() == true);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 0); ///< should have no side effect
+
+      // consume half of the data
+      miob_r->consume(4096);
+      CHECK(miob->max_read_avail() == 4096);
+      CHECK(miob->current_write_avail() == 0);
+      CHECK(miob->high_water() == false);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 4096); ///< should have a side effect: add a new block
+      IOBufferBlock *tail = miob->_writer->next.get();
+      CHECK(tail != nullptr);
+
+      CHECK(miob->max_read_avail() == 4096);
+      CHECK(miob->current_write_avail() == 4096);
+      CHECK(miob->high_water() == false);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 4096);       ///< should have no side effect
+      CHECK(tail == miob->_writer->next.get()); ///< the tail block should not be changed
+
+      // consume all of the data
+      miob_r->consume(4096);
+      CHECK(miob->max_read_avail() == 0);
+      CHECK(miob->current_write_avail() == 4096);
+      CHECK(miob->high_water() == false);
+      CHECK(miob->current_low_water() == true);
+      CHECK(miob->write_avail() == 4096);       ///< should have no side effect
+      CHECK(tail == miob->_writer->next.get()); ///< the tail block should not be changed
+    }
+
+    free_MIOBuffer(miob);
+  }
 }
 
 struct EventProcessorListener : Catch::TestEventListenerBase {
