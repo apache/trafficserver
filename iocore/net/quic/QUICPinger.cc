@@ -77,7 +77,7 @@ QUICPinger::_generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /*
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   QUICFrame *frame = nullptr;
 
-  if (level != QUICEncryptionLevel::ONE_RTT && this->_need_to_fire > 0 && maximum_frame_size > 0) {
+  if (level == QUICEncryptionLevel::ONE_RTT && this->_need_to_fire > 0 && maximum_frame_size > 0) {
     // don't care ping frame lost or acked
     frame = QUICFrameFactory::create_ping_frame(buf, 0, nullptr);
     --this->_need_to_fire;
