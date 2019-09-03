@@ -961,7 +961,9 @@ MIOBuffer::append_block(int64_t asize_index)
 TS_INLINE void
 MIOBuffer::add_block()
 {
-  append_block(size_index);
+  if (this->_writer == nullptr || this->_writer->next == nullptr) {
+    append_block(size_index);
+  }
 }
 
 TS_INLINE void

@@ -933,9 +933,8 @@ public:
   void append_block(int64_t asize_index);
 
   /**
-    Adds new block to the end of block list using the block size for
-    the buffer specified when the buffer was allocated.
-
+    Adds a new block to the end of the block list. Note that this does nothing when the next block of the current writer exists.
+    The block size is the same as specified size when the buffer was allocated.
   */
   void add_block();
 
