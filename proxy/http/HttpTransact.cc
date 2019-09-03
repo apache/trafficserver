@@ -3515,7 +3515,7 @@ HttpTransact::handle_response_from_server(State *s)
         // Force host resolution to have the same family as the client.
         // Because this is a transparent connection, we can't switch address
         // families - that is locked in by the client source address.
-        s->state_machine->ua_txn->set_host_res_style(ats_host_res_match(&s->current.server->dst_addr.sa));
+        s->dns_info.host_res_style = ats_host_res_match(&s->current.server->dst_addr.sa);
         return CallOSDNSLookup(s);
       } else if ((s->dns_info.srv_lookup_success || s->host_db_info.is_rr_elt()) &&
                  (s->txn_conf->connect_attempts_rr_retries > 0) &&
@@ -3704,7 +3704,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
     ink_assert(s->cache_info.object_read != nullptr);
     ink_assert(s->cache_info.action == CACHE_DO_UPDATE || s->cache_info.action == CACHE_DO_SERVE);
     ink_assert(s->internal_msg_buffer == nullptr);
-
+    s->source = SOURCE_CACHE;
     TxnDebug("http_trans", "[hscno] serving stale doc to client");
     build_response_from_cache(s, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   } else {

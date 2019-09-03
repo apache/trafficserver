@@ -468,12 +468,23 @@ DNSHandler::open_cons(sockaddr const *target, bool failed, int icon)
   Open (and close) connections as necessary and also assures that the
   epoll fd struct is properly updated.
 
+  target == nullptr :
+      open connection to DNSHandler::ip.
+      generally, the icon should be 0 if target == nullptr.
+
+  target != nullptr and icon == 0 :
+      open connection to target, and the target is assigned to DNSHandler::ip.
+
+  target != nullptr and icon > 0 :
+      open connection to target.
 */
 void
 DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tcp)
 {
   ip_port_text_buffer ip_text;
   PollDescriptor *pd = get_PollDescriptor(dnsProcessor.thread);
+
+  ink_assert(target != &ip.sa);
 
   if (!icon && target) {
     ats_ip_copy(&ip, target);
@@ -549,6 +560,12 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
     dns_handler_initialized = 1;
     SET_HANDLER(&DNSHandler::mainEvent);
     if (dns_ns_rr) {
+      /* Round Robin mode:
+       *   Establish a connection to each DNS server to make it a connection pool.
+       *   For each DNS Request, a connection is picked up from the pool by round robin method.
+       *
+       *   The first DNS server is assigned to DNSHandler::ip within open_con() function.
+       */
       int max_nscount = m_res->nscount;
       if (max_nscount > MAX_NAMED) {
         max_nscount = MAX_NAMED;
@@ -565,6 +582,18 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
       }
       dns_ns_rr_init_down = 0;
     } else {
+      /* Primary - Secondary mode:
+       *   Establish a connection to the Primary DNS server.
+       *   It always send DNS requests to the Primary DNS server.
+       *   If the Primary DNS server dies,
+       *     - it will attempt to send DNS requests to the secondary DNS server until the Primary DNS server is back.
+       *     - and keep to detect the health of the Primary DNS server.
+       *   If DNSHandler::recv_dns() got a valid DNS response from the Primary DNS server,
+       *     - it means that the Primary DNS server returns.
+       *     - it send all DNS requests to the Primary DNS server.
+       *
+       *   The first DNS server is the Primary DNS server, and it is assigned to DNSHandler::ip within validate_ip() function.
+       */
       open_cons(nullptr); // use current target address.
       n_con = 1;
     }
@@ -587,8 +616,8 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
   this->validate_ip();
 
   SET_HANDLER(&DNSHandler::mainEvent);
-  open_cons(&ip.sa, false, n_con);
-  ++n_con; // TODO should n_con be zeroed?
+  open_cons(nullptr, false, 0);
+  n_con = 1;
 
   return EVENT_CONT;
 }
@@ -597,7 +626,7 @@ static inline int
 _ink_res_mkquery(ink_res_state res, char *qname, int qtype, unsigned char *buffer, bool over_tcp = false)
 {
   int offset = over_tcp ? tcp_data_length_offset : 0;
-  int r      = ink_res_mkquery(res, QUERY, qname, C_IN, qtype, nullptr, 0, nullptr, buffer + offset, MAX_DNS_PACKET_LEN);
+  int r      = ink_res_mkquery(res, QUERY, qname, C_IN, qtype, nullptr, 0, nullptr, buffer + offset, MAX_DNS_REQUEST_LEN - offset);
   if (over_tcp) {
     NS_PUT16(r, buffer);
   }
@@ -629,7 +658,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
   }
   bool over_tcp = dns_conn_mode == DNS_CONN_MODE::TCP_ONLY;
   int con_fd    = over_tcp ? tcpcon[ndx].fd : udpcon[ndx].fd;
-  unsigned char buffer[MAX_DNS_PACKET_LEN];
+  unsigned char buffer[MAX_DNS_REQUEST_LEN];
   Debug("dns", "trying to resolve '%s' from DNS connection, ndx %d", try_server_names[try_servers], ndx);
   int r       = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer, over_tcp);
   try_servers = (try_servers + 1) % countof(try_server_names);
@@ -647,10 +676,10 @@ DNSHandler::try_primary_named(bool reopen)
   if (reopen && ((t - last_primary_reopen) > DNS_PRIMARY_REOPEN_PERIOD)) {
     Debug("dns", "try_primary_named: reopening primary DNS connection");
     last_primary_reopen = t;
-    open_cons(&ip.sa, true, 0);
+    open_cons(nullptr, true, 0);
   }
   if ((t - last_primary_retry) > DNS_PRIMARY_RETRY_PERIOD) {
-    unsigned char buffer[MAX_DNS_PACKET_LEN];
+    unsigned char buffer[MAX_DNS_REQUEST_LEN];
     bool over_tcp      = dns_conn_mode == DNS_CONN_MODE::TCP_ONLY;
     int con_fd         = over_tcp ? tcpcon[0].fd : udpcon[0].fd;
     last_primary_retry = t;
@@ -824,7 +853,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
             goto Lerror;
           }
           dnsc->tcp_data.total_length = ntohs(dnsc->tcp_data.total_length);
-          if (res != sizeof(dnsc->tcp_data.total_length) || dnsc->tcp_data.total_length > MAX_DNS_PACKET_LEN) {
+          if (res != sizeof(dnsc->tcp_data.total_length)) {
             goto Lerror;
           }
         }
@@ -852,7 +881,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         hostent_cache = dnsBufAllocator.alloc();
       }
 
-      res = socketManager.recvfrom(dnsc->fd, hostent_cache->buf, MAX_DNS_PACKET_LEN, 0, &from_ip.sa, &from_length);
+      res = socketManager.recvfrom(dnsc->fd, hostent_cache->buf, MAX_DNS_RESPONSE_LEN, 0, &from_ip.sa, &from_length);
       Debug("dns", "DNSHandler::recv_dns res = [%d]", res);
       if (res == -EAGAIN) {
         break;
@@ -1092,7 +1121,7 @@ static bool
 write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
 {
   ProxyMutex *mutex = h->mutex.get();
-  unsigned char buffer[MAX_DNS_PACKET_LEN];
+  unsigned char buffer[MAX_DNS_REQUEST_LEN];
   int offset     = over_tcp ? tcp_data_length_offset : 0;
   HEADER *header = reinterpret_cast<HEADER *>(buffer + offset);
   int r          = 0;

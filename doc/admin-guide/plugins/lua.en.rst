@@ -959,6 +959,86 @@ server request, and we should return TS_LUA_REMAP_DID_REMAP(_STOP) in do_remap.
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.client_request.get_ssl_reused
+-----------------------------------------------
+**syntax:** *ts.client_request.get_ssl_reused()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to know if the SSL session has been reused (1) or not (0)
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        ssl_reused = ts.client_request.get_ssl_reused()
+        ts.debug(ssl_reused)             -- 0
+    end
+
+
+`TOP <#lua-plugin>`_
+
+ts.client_request.get_ssl_protocol
+-----------------------------------------------
+**syntax:** *ts.client_request.get_ssl_protocol()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to get the SSL protocol used to communicate with the client
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        ssl_protocol = ts.client_request.get_ssl_protocol()
+        ts.debug(ssl_protocol)             -- TLSv1.2
+    end
+
+
+`TOP <#lua-plugin>`_
+
+ts.client_request.get_ssl_cipher
+-----------------------------------------------
+**syntax:** *ts.client_request.get_ssl_cipher()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to get the SSL cipher used to communicate with the client
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        ssl_cipher = ts.client_request.get_ssl_cipher()
+        ts.debug(ssl_cipher)             -- ECDHE-ECDSA-AES256-GCM-SHA384
+    end
+
+
+`TOP <#lua-plugin>`_
+
+ts.client_request.get_ssl_curve
+-----------------------------------------------
+**syntax:** *ts.client_request.get_ssl_curve()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description**: This function can be used to get the SSL Elliptic curve used to communicate with the client
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        ssl_curve = ts.client_request.get_ssl_curve()
+        ts.debug(ssl_curve)             -- X25519
+    end
+
+
+`TOP <#lua-plugin>`_
+
 ts.http.set_cache_url
 ---------------------
 **syntax:** *ts.http.set_cache_url(KEY_URL)*

@@ -184,7 +184,7 @@ struct EVPKey {
   EVPKey() : key(EVP_PKEY_new()) { assert(nullptr != key); }
 
   bool
-  assign(const char *const k) const
+  assign(char *k) const
   {
     assert(nullptr != k);
     const int rc = EVP_PKEY_assign_RSA(key, k);
@@ -196,7 +196,7 @@ struct EVPKey {
   bool
   assign(T &t)
   {
-    return assign(reinterpret_cast<const char *>(t));
+    return assign(reinterpret_cast<char *>(t));
   }
 };
 

@@ -182,8 +182,8 @@ enum HostResStyle {
 extern const char *const HOST_RES_STYLE_STRING[];
 
 /// Calculate the effective resolution preferences.
-extern HostResStyle ats_host_res_from(int family,            ///< Connection family
-                                      HostResPreferenceOrder ///< Preference ordering.
+extern HostResStyle ats_host_res_from(int family,                    ///< Connection family
+                                      HostResPreferenceOrder const & ///< Preference ordering.
 );
 /// Calculate the host resolution style to force a family match to @a addr.
 extern HostResStyle ats_host_res_match(sockaddr const *addr);

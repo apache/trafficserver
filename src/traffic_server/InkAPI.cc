@@ -5725,7 +5725,7 @@ TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, const struct sockaddr *addr)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = (HttpSM *)txnp;
 
-  sm->ua_txn->set_outbound_port(ats_ip_port_host_order(addr));
+  sm->ua_txn->upstream_outbound_options.outbound_port = ats_ip_port_host_order(addr);
   sm->ua_txn->set_outbound_ip(IpAddr(addr));
   return TS_SUCCESS;
 }
@@ -6485,6 +6485,42 @@ TSHttpTxnClientRespBodyBytesGet(TSHttpTxn txnp)
 
   HttpSM *sm = (HttpSM *)txnp;
   return sm->client_response_body_bytes;
+}
+
+int
+TSVConnIsSslReused(TSVConn sslp)
+{
+  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+
+  return ssl_vc ? ssl_vc->getSSLSessionCacheHit() : 0;
+}
+
+const char *
+TSVConnSslCipherGet(TSVConn sslp)
+{
+  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+
+  return ssl_vc ? ssl_vc->getSSLCipherSuite() : nullptr;
+}
+
+const char *
+TSVConnSslProtocolGet(TSVConn sslp)
+{
+  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+
+  return ssl_vc ? ssl_vc->getSSLProtocol() : nullptr;
+}
+
+const char *
+TSVConnSslCurveGet(TSVConn sslp)
+{
+  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+
+  return ssl_vc ? ssl_vc->getSSLCurve() : nullptr;
 }
 
 int

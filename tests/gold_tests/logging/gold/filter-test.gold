@@ -1,0 +1,5 @@
+http://test-1/test-1?name=value&email=XXXXXXXXXXXXX
+http://test-2/test-2?email=XXXXXXXXXXXXX&name=password
+http://test-3/test-3?trivial=password&name1=val1&email=XXXXXXXXXXXXX
+http://test-4/test-4?trivial=password&email=&name=handle&session_redirect=XXXXXXXXXXXX
+http://test-5/test-5?trivial=password&email=XXXXXXXXXXXXX&email=XXXXXXXXXXXXX&session_redirect=XXXXXXXXXXXX&email=XXXXXXXXXXXXX&name=value

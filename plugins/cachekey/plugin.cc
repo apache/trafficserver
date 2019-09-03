@@ -39,11 +39,11 @@ static void
 setCacheKey(TSHttpTxn txn, Configs *config, TSRemapRequestInfo *rri = nullptr)
 {
   /* Initial cache key facility from the requested URL. */
-  CacheKey cachekey(txn, config->getSeparator(), config->getUriType(), rri);
+  CacheKey cachekey(txn, config->getSeparator(), config->getUriType(), config->getKeyType(), rri);
 
   /* Append custom prefix or the host:port */
   if (!config->prefixToBeRemoved()) {
-    cachekey.appendPrefix(config->_prefix, config->_prefixCapture, config->_prefixCaptureUri);
+    cachekey.appendPrefix(config->_prefix, config->_prefixCapture, config->_prefixCaptureUri, config->canonicalPrefix());
   }
   /* Classify User-Agent and append the class name to the cache key if matched. */
   cachekey.appendUaClass(config->_classifier);

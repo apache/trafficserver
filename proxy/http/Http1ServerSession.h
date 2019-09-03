@@ -63,55 +63,32 @@ public:
   Http1ServerSession(self_type const &) = delete;
   self_type &operator=(self_type const &) = delete;
 
-  void destroy();
+  ////////////////////
+  // Methods
   void new_connection(NetVConnection *new_vc);
+  void release();
+  void destroy();
 
-  /** Enable tracking the number of outbound session.
-   *
-   * @param group The connection tracking group.
-   *
-   * The @a group must have already incremented the connection count. It will be cleaned up when the
-   * session terminates.
-   */
-  void enable_outbound_connection_tracking(OutboundConnTrack::Group *group);
-
-  IOBufferReader *
-  get_reader()
-  {
-    return buf_reader;
-  };
-
+  // VConnection Methods
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
-
   VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
                    bool owner = false) override;
-
   void do_io_close(int lerrno = -1) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
 
   void reenable(VIO *vio) override;
 
-  void release();
+  void enable_outbound_connection_tracking(OutboundConnTrack::Group *group);
+  IOBufferReader *get_reader();
   void attach_hostname(const char *hostname);
-  NetVConnection *
-  get_netvc() const
-  {
-    return server_vc;
-  };
-  void
-  set_netvc(NetVConnection *new_vc)
-  {
-    server_vc = new_vc;
-  }
+  NetVConnection *get_netvc() const;
+  void set_netvc(NetVConnection *new_vc);
+  IpEndpoint const &get_server_ip() const;
+  int populate_protocol(std::string_view *result, int size) const;
+  const char *protocol_contains(std::string_view tag_prefix) const;
 
-  // Keys for matching hostnames
-  IpEndpoint const &
-  get_server_ip() const
-  {
-    ink_release_assert(server_vc != nullptr);
-    return server_vc->get_remote_endpoint();
-  }
-
+  ////////////////////
+  // Variables
   CryptoHash hostname_hash;
 
   int64_t con_id     = 0;
@@ -136,7 +113,6 @@ public:
   // Copy of the owning SM's server session sharing settings
   TSServerSessionSharingMatchType sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
   TSServerSessionSharingPoolType sharing_pool   = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
-  //  int share_session;
 
   /// Hash map descriptor class for IP map.
   struct IPLinkage {
@@ -177,20 +153,6 @@ public:
   //   not change the buffer for I/O without issuing a
   //   an asynchronous cancel on NT
   MIOBuffer *read_buffer = nullptr;
-
-  virtual int
-  populate_protocol(std::string_view *result, int size) const
-  {
-    auto vc = this->get_netvc();
-    return vc ? vc->populate_protocol(result, size) : 0;
-  }
-
-  virtual const char *
-  protocol_contains(std::string_view tag_prefix) const
-  {
-    auto vc = this->get_netvc();
-    return vc ? vc->protocol_contains(tag_prefix) : nullptr;
-  }
 
 private:
   NetVConnection *server_vc = nullptr;

@@ -510,7 +510,7 @@ ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
 }
 
 HostResStyle
-ats_host_res_from(int family, HostResPreferenceOrder order)
+ats_host_res_from(int family, HostResPreferenceOrder const &order)
 {
   bool v4 = false, v6 = false;
   HostResPreference client = AF_INET6 == family ? HOST_RES_PREFER_IPV6 : HOST_RES_PREFER_IPV4;

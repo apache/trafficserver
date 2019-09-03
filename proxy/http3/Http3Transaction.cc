@@ -33,14 +33,14 @@
 #include "HttpSM.h"
 #include "HTTP2.h"
 
-#define Http3TransDebug(fmt, ...)                                                                                           \
-  Debug("http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                           \
-        static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->proxy_ssn->get_netvc()))->cids().data(), \
+#define Http3TransDebug(fmt, ...)                                                                                            \
+  Debug("http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                            \
+        static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->_proxy_ssn->get_netvc()))->cids().data(), \
         this->get_transaction_id(), ##__VA_ARGS__)
 
-#define Http3TransVDebug(fmt, ...)                                                                                          \
-  Debug("v_http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                         \
-        static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->proxy_ssn->get_netvc()))->cids().data(), \
+#define Http3TransVDebug(fmt, ...)                                                                                           \
+  Debug("v_http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                          \
+        static_cast<QUICConnection *>(reinterpret_cast<QUICNetVConnection *>(this->_proxy_ssn->get_netvc()))->cids().data(), \
         this->get_transaction_id(), ##__VA_ARGS__)
 
 // static void
@@ -63,7 +63,7 @@ HQTransaction::HQTransaction(HQSession *session, QUICStreamIO *stream_io) : supe
 
   this->set_proxy_ssn(session);
 
-  this->sm_reader = this->_read_vio_buf.alloc_reader();
+  this->_reader = this->_read_vio_buf.alloc_reader();
 
   HTTPType http_type = HTTP_TYPE_UNKNOWN;
   if (this->direction() == NET_VCONNECTION_OUT) {
@@ -83,24 +83,24 @@ HQTransaction::~HQTransaction()
 void
 HQTransaction::set_active_timeout(ink_hrtime timeout_in)
 {
-  if (this->proxy_ssn) {
-    this->proxy_ssn->set_active_timeout(timeout_in);
+  if (this->_proxy_ssn) {
+    this->_proxy_ssn->set_active_timeout(timeout_in);
   }
 }
 
 void
 HQTransaction::set_inactivity_timeout(ink_hrtime timeout_in)
 {
-  if (this->proxy_ssn) {
-    this->proxy_ssn->set_inactivity_timeout(timeout_in);
+  if (this->_proxy_ssn) {
+    this->_proxy_ssn->set_inactivity_timeout(timeout_in);
   }
 }
 
 void
 HQTransaction::cancel_inactivity_timeout()
 {
-  if (this->proxy_ssn) {
-    this->proxy_ssn->cancel_inactivity_timeout();
+  if (this->_proxy_ssn) {
+    this->_proxy_ssn->cancel_inactivity_timeout();
   }
 }
 
@@ -109,7 +109,7 @@ HQTransaction::release(IOBufferReader *r)
 {
   super::release(r);
   this->do_io_close();
-  this->current_reader = nullptr;
+  this->_sm = nullptr;
 }
 
 bool
@@ -185,7 +185,7 @@ HQTransaction::do_io_close(int lerrno)
   this->_write_vio.op     = VIO::NONE;
   this->_write_vio.cont   = nullptr;
 
-  this->proxy_ssn->do_io_close(lerrno);
+  this->_proxy_ssn->do_io_close(lerrno);
 }
 
 void
@@ -217,7 +217,7 @@ HQTransaction::reenable(VIO *vio)
 void
 HQTransaction::destroy()
 {
-  current_reader = nullptr;
+  _sm = nullptr;
 }
 
 void
@@ -248,7 +248,7 @@ HQTransaction::decrement_client_transactions_stat()
 NetVConnectionContext_t
 HQTransaction::direction() const
 {
-  return this->proxy_ssn->get_netvc()->get_context();
+  return this->_proxy_ssn->get_netvc()->get_context();
 }
 
 /**
@@ -318,7 +318,7 @@ HQTransaction::_signal_write_event()
 //
 Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamIO *stream_io) : super(session, stream_io)
 {
-  static_cast<HQSession *>(this->proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
+  static_cast<HQSession *>(this->_proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
 
   this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_io->stream_id());
   this->_data_framer   = new Http3DataFramer(this, &this->_write_vio);
@@ -597,7 +597,7 @@ Http3Transaction::_on_qpack_decode_complete()
 //
 Http09Transaction::Http09Transaction(Http09Session *session, QUICStreamIO *stream_io) : super(session, stream_io)
 {
-  static_cast<HQSession *>(this->proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
+  static_cast<HQSession *>(this->_proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
 
   SET_HANDLER(&Http09Transaction::state_stream_open);
 }
