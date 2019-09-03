@@ -5888,6 +5888,17 @@ HttpSM::attach_server_session(Http1ServerSession *s)
   hsm_release_assert(s->state == HSS_ACTIVE);
   server_session        = s;
   server_transact_count = server_session->transact_count++;
+
+  // update the dst_addr when using an existing session
+  // for e.g using Host based session pools may ignore the DNS IP
+  if (!ats_ip_addr_eq(&t_state.current.server->dst_addr, &server_session->get_server_ip())) {
+    ip_port_text_buffer ipb1, ipb2;
+    Debug("http_ss", "updating ip when attaching server session from %s to %s",
+          ats_ip_ntop(&t_state.current.server->dst_addr.sa, ipb1, sizeof(ipb1)),
+          ats_ip_ntop(&server_session->get_server_ip(), ipb2, sizeof(ipb2)));
+    ats_ip_copy(&t_state.current.server->dst_addr, &server_session->get_server_ip());
+  }
+
   // Propagate the per client IP debugging
   if (ua_txn) {
     s->get_netvc()->control_flags.set_flags(get_cont_flags().get_flags());
