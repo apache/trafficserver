@@ -47,7 +47,7 @@ public:
   ~RemapPluginInst();
 
   /* Used by the PluginFactory */
-  bool init(int argc, char **argv, std::string &error);
+  static RemapPluginInst *init(RemapPluginInfo *plugin, int argc, char **argv, std::string &error);
   void done();
 
   /* Used by the traffic server core while processing requests */
@@ -100,7 +100,9 @@ public:
   virtual const char *getUuid();
   void clean(std::string &error);
 
-  void indicateReload();
+  void deactivate();
+  void indicatePreReload();
+  void indicatePostReload(TSReturnCode reloadStatus);
 
 protected:
   PluginDso *findByEffectivePath(const fs::path &path);

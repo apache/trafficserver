@@ -554,7 +554,7 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
 
   GIVEN("simple configuration with 1 plugin and 1 factory")
   {
-    WHEN("indicating config reload")
+    WHEN("(1) signal pre-new-config-load, (2) signal post-new-config-load, (3) old-config deactivate")
     {
       /* Simulate configuration without plugins - an unused factory */
       setupConfigPathTest(configName1, buildPath, uuid_t1, effectivePath1, runtimePath1, 1556825556);
@@ -566,17 +566,43 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
 
       /* Prapare the debug object */
       PluginDebugObject *debugObject = getDebugObject(plugin1->_plugin);
-      debugObject->clear();
 
-      THEN("expect 'done' methods to be called for plugin and the instance but not the 'reload config' methods")
+      THEN("expect pre-, post- and done/delete_instance to be called accordingly ")
       {
-        /* Simulate reloading the config */
-        factory1->indicateReload();
+        /* Signal before loading the config */
+        debugObject->clear();
 
-        /* was "done" method called? */
-        CHECK(1 == debugObject->doneCalled);
+        factory1->indicatePreReload();
+        CHECK(0 == debugObject->deleteInstanceCalled);
+        CHECK(0 == debugObject->doneCalled);
+        CHECK(1 == debugObject->preReloadConfigCalled);
+
+        /* ... parse the new remap config ... */
+
+        /* Assume (re)load was done OK and test */
+        debugObject->clear();
+        factory1->indicatePostReload(TS_SUCCESS);
+        CHECK(0 == debugObject->deleteInstanceCalled);
+        CHECK(0 == debugObject->doneCalled);
+        CHECK(1 == debugObject->postReloadConfigCalled);
+        CHECK(true == debugObject->postReloadConfigSuccess);
+
+        /* Assume (re)load failed and test */
+        debugObject->clear();
+        factory1->indicatePostReload(TS_ERROR);
+        CHECK(0 == debugObject->deleteInstanceCalled);
+        CHECK(0 == debugObject->doneCalled);
+        CHECK(1 == debugObject->postReloadConfigCalled);
+        CHECK(false == debugObject->postReloadConfigSuccess);
+
+        /* ... swap the new and the old config ... */
+
+        /* Signal de-activation of the old config */
+        debugObject->clear();
+        factory1->deactivate();
         CHECK(1 == debugObject->deleteInstanceCalled);
-        CHECK(0 == debugObject->reloadConfigCalled);
+        CHECK(1 == debugObject->doneCalled);
+        CHECK(0 == debugObject->preReloadConfigCalled);
       }
 
       teardownConfigPathTest(factory1);
@@ -585,7 +611,7 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
 
   GIVEN("configuration with 2 plugins loaded by 1 factory")
   {
-    WHEN("indicating config reload")
+    WHEN("(1) signal pre-new-config-load, (2) signal post-new-config-load, (3) old-config deactivate")
     {
       /* Simulate configuration without plugins - an unused factory */
       setupConfigPathTest(configName1, buildPath, uuid_t1, effectivePath1, runtimePath1, 1556825556);
@@ -601,21 +627,60 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
       /* Prapare the debug objects */
       PluginDebugObject *debugObject1 = getDebugObject(plugin1->_plugin);
       PluginDebugObject *debugObject2 = getDebugObject(plugin2->_plugin);
-      debugObject1->clear();
-      debugObject2->clear();
 
-      THEN("expect 'done' methods to be called but not the 'reload config' methods")
+      THEN("expect pre-, post- and done/delete_instance to be called accordingly")
       {
-        /* Simulate reloading the config */
-        factory1->indicateReload();
+        /* Signal before loading the config */
+        debugObject1->clear();
+        debugObject2->clear();
+        factory1->indicatePreReload();
+        CHECK(0 == debugObject1->deleteInstanceCalled);
+        CHECK(0 == debugObject1->doneCalled);
+        CHECK(1 == debugObject1->preReloadConfigCalled);
+        CHECK(0 == debugObject2->doneCalled);
+        CHECK(0 == debugObject2->deleteInstanceCalled);
+        CHECK(1 == debugObject2->preReloadConfigCalled);
 
-        /* Was "done" method called? */
-        CHECK(1 == debugObject1->doneCalled);
+        /* ... parse the new remap config ... */
+
+        /* Assume (re)load was done OK */
+        debugObject1->clear();
+        debugObject2->clear();
+        factory1->indicatePostReload(TS_SUCCESS);
+        CHECK(0 == debugObject1->deleteInstanceCalled);
+        CHECK(0 == debugObject1->doneCalled);
+        CHECK(1 == debugObject1->postReloadConfigCalled);
+        CHECK(true == debugObject1->postReloadConfigSuccess);
+        CHECK(0 == debugObject2->deleteInstanceCalled);
+        CHECK(0 == debugObject2->doneCalled);
+        CHECK(1 == debugObject2->postReloadConfigCalled);
+        CHECK(true == debugObject2->postReloadConfigSuccess);
+
+        /* Assume (re)load failed */
+        debugObject1->clear();
+        debugObject2->clear();
+        factory1->indicatePostReload(TS_ERROR);
+        CHECK(0 == debugObject1->deleteInstanceCalled);
+        CHECK(0 == debugObject1->doneCalled);
+        CHECK(1 == debugObject1->postReloadConfigCalled);
+        CHECK(false == debugObject1->postReloadConfigSuccess);
+        CHECK(0 == debugObject2->deleteInstanceCalled);
+        CHECK(0 == debugObject2->doneCalled);
+        CHECK(1 == debugObject2->postReloadConfigCalled);
+        CHECK(false == debugObject2->postReloadConfigSuccess);
+
+        /* ... swap the new and the old config ... */
+
+        /* Signal de-activation of the old config */
+        debugObject1->clear();
+        debugObject2->clear();
+        factory1->deactivate();
         CHECK(1 == debugObject1->deleteInstanceCalled);
-        CHECK(0 == debugObject1->reloadConfigCalled);
-        CHECK(1 == debugObject2->doneCalled);
+        CHECK(1 == debugObject1->doneCalled);
+        CHECK(0 == debugObject1->preReloadConfigCalled);
         CHECK(1 == debugObject2->deleteInstanceCalled);
-        CHECK(0 == debugObject2->reloadConfigCalled);
+        CHECK(1 == debugObject2->doneCalled);
+        CHECK(0 == debugObject2->preReloadConfigCalled);
       }
 
       teardownConfigPathTest(factory1);
@@ -624,7 +689,7 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
 
   GIVEN("configuration with 1 plugin loaded by 2 separate factories")
   {
-    WHEN("indicating config reload")
+    WHEN("indicating de-activation of the factories")
     {
       /* Simulate configuration without plugins - an unused factory */
       setupConfigPathTest(configName1, buildPath, uuid_t1, effectivePath1, runtimePath1, 1556825556);
@@ -633,25 +698,25 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
       RemapPluginInst *plugin1        = factory1->getRemapPlugin(configName1, 0, nullptr, error);
       RemapPluginInst *plugin2        = factory2->getRemapPlugin(configName1, 0, nullptr, error);
 
-      /* Prapare the debug objects */
+      /* Prepare the debug objects */
       PluginDebugObject *debugObject1 = getDebugObject(plugin1->_plugin);
       PluginDebugObject *debugObject2 = getDebugObject(plugin2->_plugin);
 
-      THEN("expect instance 'done' to be always called, but plugin 'done' called only after destroying one factory")
+      THEN("expect instance 'done' to be always called, but plugin 'done' called only after destroying both factories")
       {
         debugObject2->clear();
-        factory2->indicateReload();
+        factory2->deactivate();
         CHECK(0 == debugObject2->doneCalled);
         CHECK(1 == debugObject2->deleteInstanceCalled);
-        CHECK(1 == debugObject2->reloadConfigCalled);
+        CHECK(0 == debugObject2->preReloadConfigCalled);
 
         delete factory2;
 
         debugObject1->clear();
-        factory1->indicateReload();
+        factory1->deactivate();
         CHECK(1 == debugObject1->doneCalled);
         CHECK(1 == debugObject1->deleteInstanceCalled);
-        CHECK(0 == debugObject1->reloadConfigCalled);
+        CHECK(0 == debugObject1->preReloadConfigCalled);
 
         delete factory1;
       }

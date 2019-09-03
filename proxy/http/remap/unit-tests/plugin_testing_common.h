@@ -51,17 +51,19 @@ public:
   void
   clear()
   {
-    contextInit          = nullptr;
-    contextInitInstance  = nullptr;
-    doRemapCalled        = 0;
-    initCalled           = 0;
-    doneCalled           = 0;
-    initInstanceCalled   = 0;
-    deleteInstanceCalled = 0;
-    reloadConfigCalled   = 0;
-    ih                   = nullptr;
-    argc                 = 0;
-    argv                 = nullptr;
+    contextInit             = nullptr;
+    contextInitInstance     = nullptr;
+    doRemapCalled           = 0;
+    initCalled              = 0;
+    doneCalled              = 0;
+    initInstanceCalled      = 0;
+    deleteInstanceCalled    = 0;
+    preReloadConfigCalled   = 0;
+    postReloadConfigCalled  = 0;
+    postReloadConfigSuccess = 0;
+    ih                      = nullptr;
+    argc                    = 0;
+    argv                    = nullptr;
   }
 
   /* Input fields used to set the test behavior of the plugin call-backs */
@@ -76,7 +78,9 @@ public:
   int doneCalled                                 = 0;       /* mark if done was called */
   int initInstanceCalled                         = 0;       /* mark if instance init was called */
   int deleteInstanceCalled                       = 0;       /* mark if delete instance was called */
-  int reloadConfigCalled                         = 0;       /* mark if reload config was called */
+  int preReloadConfigCalled                      = 0;       /* mark if pre-reload config was called */
+  int postReloadConfigCalled                     = 0;       /* mark if post-reload config was called */
+  bool postReloadConfigSuccess                   = 0;       /* mark if plugin reload status is passed correctly */
   void *ih                                       = nullptr; /* instance handler */
   int argc                                       = 0;       /* number of plugin instance parameters received by the plugin */
   char **argv                                    = nullptr; /* plugin instance parameters received by the plugin */
