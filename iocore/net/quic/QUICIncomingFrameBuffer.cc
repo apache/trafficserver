@@ -113,7 +113,11 @@ QUICIncomingStreamFrameBuffer::insert(const QUICFrame *frame)
     this->_recv_offset = offset + len;
     this->_recv_buffer.push(stream_frame);
   } else {
-    this->_out_of_order_queue.insert(std::make_pair(offset, stream_frame));
+    auto result = this->_out_of_order_queue.insert(std::make_pair(offset, stream_frame));
+    if (!result.second) {
+      // Duplicate frame doesn't need to be inserted
+      delete stream_frame;
+    }
   }
 
   return nullptr;
@@ -242,7 +246,11 @@ QUICIncomingCryptoFrameBuffer::insert(const QUICFrame *frame)
     this->_recv_offset = offset + len;
     this->_recv_buffer.push(crypto_frame);
   } else {
-    this->_out_of_order_queue.insert(std::make_pair(offset, crypto_frame));
+    auto result = this->_out_of_order_queue.insert(std::make_pair(offset, crypto_frame));
+    if (!result.second) {
+      // Duplicate frame doesn't need to be inserted
+      delete crypto_frame;
+    }
   }
 
   return nullptr;

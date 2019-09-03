@@ -158,14 +158,19 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
 
   auto frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 0);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 1024);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 2048);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 3072);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 4096);
+  delete frame;
   CHECK(buffer.empty());
 
   buffer.clear();
@@ -179,14 +184,19 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
 
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 0);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 1024);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 2048);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 3072);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 4096);
+  delete frame;
   CHECK(buffer.empty());
 
   delete stream;
@@ -228,12 +238,16 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
 
   auto frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 0);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 1024);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 2048);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame == nullptr);
+  delete frame;
   CHECK(buffer.empty());
 
   buffer.clear();
@@ -251,10 +265,13 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
 
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 0);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 1024);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame->offset() == 2048);
+  delete frame;
   frame = static_cast<const QUICStreamFrame *>(buffer.pop());
   CHECK(frame == nullptr);
   CHECK(buffer.empty());

@@ -106,6 +106,9 @@ TEST_CASE("QUICPacketHeaderProtector")
     CHECK(memcmp(original, tmp, sizeof(original)) != 0);
     REQUIRE(client_ph_protector.unprotect(tmp, sizeof(tmp)));
     CHECK(memcmp(original, tmp, sizeof(original)) == 0);
+
+    delete client;
+    delete server;
   }
 
   SECTION("Short header", "[quic]")
@@ -212,5 +215,15 @@ TEST_CASE("QUICPacketHeaderProtector")
     CHECK(memcmp(original, tmp, sizeof(original)) != 0);
     REQUIRE(client_ph_protector.unprotect(tmp, sizeof(tmp)));
     CHECK(memcmp(original, tmp, sizeof(original)) == 0);
+
+    delete client;
+    delete server;
   }
+
+  SSL_CTX_free(client_ssl_ctx);
+  SSL_CTX_free(server_ssl_ctx);
+  BIO_free(crt_bio);
+  BIO_free(key_bio);
+  X509_free(x509);
+  EVP_PKEY_free(pkey);
 }

@@ -44,6 +44,7 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 1);
   CHECK(frame->ack_block_section()->first_ack_block() == 0);
+  ack_frame->~QUICFrame();
 
   // retry
   CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
@@ -59,6 +60,7 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   CHECK(frame->ack_block_count() == 0);
   CHECK(frame->largest_acknowledged() == 5);
   CHECK(frame->ack_block_section()->first_ack_block() == 4);
+  ack_frame->~QUICFrame();
 
   // Loss
   ack_manager.update(level, 6, 1, false);
@@ -71,6 +73,7 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   CHECK(frame->largest_acknowledged() == 10);
   CHECK(frame->ack_block_section()->first_ack_block() == 0);
   CHECK(frame->ack_block_section()->begin()->gap() == 1);
+  ack_frame->~QUICFrame();
 
   // on frame acked
   ack_manager.on_frame_acked(frame->id());
@@ -89,6 +92,7 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   CHECK(frame->largest_acknowledged() == 13);
   CHECK(frame->ack_block_section()->first_ack_block() == 2);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
+  ack_frame->~QUICFrame();
 
   ack_manager.on_frame_acked(frame->id());
 
@@ -107,6 +111,7 @@ TEST_CASE("QUICAckFrameManager", "[quic]")
   CHECK(frame->largest_acknowledged() == 17);
   CHECK(frame->ack_block_section()->first_ack_block() == 3);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
+  ack_frame->~QUICFrame();
 }
 
 TEST_CASE("QUICAckFrameManager should send", "[quic]")
@@ -208,6 +213,7 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     CHECK(frame->largest_acknowledged() == 2);
     CHECK(frame->ack_block_section()->first_ack_block() == 1);
     CHECK(frame->ack_block_section()->begin()->gap() == 0);
+    ack_frame->~QUICFrame();
   }
 }
 
@@ -235,6 +241,7 @@ TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
   CHECK(frame->largest_acknowledged() == 9);
   CHECK(frame->ack_block_section()->first_ack_block() == 1);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
+  ack_frame->~QUICFrame();
 
   CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 
@@ -247,6 +254,7 @@ TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
   CHECK(frame->largest_acknowledged() == 9);
   CHECK(frame->ack_block_section()->first_ack_block() == 5);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
+  ack_frame->~QUICFrame();
 }
 
 TEST_CASE("QUICAckFrameManager_QUICAckFrameCreator", "[quic]")
@@ -313,6 +321,7 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
   CHECK(frame->largest_acknowledged() == 9);
   CHECK(frame->ack_block_section()->first_ack_block() == 1);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
+  ack_frame->~QUICFrame();
 
   ack_manager.on_frame_lost(frame->id());
   CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
@@ -323,6 +332,7 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
   CHECK(frame->largest_acknowledged() == 9);
   CHECK(frame->ack_block_section()->first_ack_block() == 1);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
+  ack_frame->~QUICFrame();
 
   CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
   ack_manager.on_frame_lost(frame->id());
@@ -337,6 +347,7 @@ TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
   CHECK(frame->largest_acknowledged() == 9);
   CHECK(frame->ack_block_section()->first_ack_block() == 5);
   CHECK(frame->ack_block_section()->begin()->gap() == 0);
+  ack_frame->~QUICFrame();
 
   CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 }
@@ -369,6 +380,7 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
     CHECK(frame->largest_acknowledged() == 5);
     CHECK(frame->ack_block_section()->first_ack_block() == 4);
     CHECK(frame->ack_block_section()->begin()->gap() == 0);
+    ack_frame->~QUICFrame();
 
     ack_manager.update(level, 6, 1, true);
     ack_manager.update(level, 7, 1, true);
@@ -401,6 +413,7 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
     CHECK(frame->largest_acknowledged() == 5);
     CHECK(frame->ack_block_section()->first_ack_block() == 4);
     CHECK(frame->ack_block_section()->begin()->gap() == 0);
+    ack_frame->~QUICFrame();
 
     ack_manager.update(level, 6, 1, true);
     ack_manager.update(level, 7, 1, true);

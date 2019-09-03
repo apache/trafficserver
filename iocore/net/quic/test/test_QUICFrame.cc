@@ -498,6 +498,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     CHECK(ack_frame1->ack_block_count() == 0);
     CHECK(ack_frame1->largest_acknowledged() == 0x12);
     CHECK(ack_frame1->ack_delay() == 0x3456);
+    frame1->~QUICFrame();
   }
 
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length")
@@ -522,6 +523,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
 
     const QUICAckFrame::AckBlockSection *section = ack_frame1->ack_block_section();
     CHECK(section->first_ack_block() == 0x01);
+    frame1->~QUICFrame();
   }
 
   SECTION("2 Ack Block, 8 bit packet number length, 8 bit block length")
@@ -560,6 +562,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     CHECK(ite->length() == 0x090a0b0c0d0e0f10);
     ++ite;
     CHECK(ite == section->end());
+    frame1->~QUICFrame();
   }
 
   SECTION("load bad frame")
@@ -572,6 +575,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::ACK);
     CHECK(frame1->valid() == false);
+    frame1->~QUICFrame();
   }
 
   SECTION("load bad block")
@@ -590,6 +594,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::ACK);
     CHECK(frame1->valid() == false);
+    frame1->~QUICFrame();
   }
 
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length with ECN section")
@@ -617,6 +622,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     CHECK(ack_frame1->ecn_section()->ect0_count() == 1);
     CHECK(ack_frame1->ecn_section()->ect1_count() == 2);
     CHECK(ack_frame1->ecn_section()->ecn_ce_count() == 3);
+    frame1->~QUICFrame();
   }
 
   SECTION("0 Ack Block, 8 bit packet number length, 8 bit block length with ECN section")
@@ -634,6 +640,7 @@ TEST_CASE("Load Ack Frame 1", "[quic]")
     const QUICFrame *frame1 = QUICFrameFactory::create(frame_buf, buf1, sizeof(buf1), nullptr);
     CHECK(frame1->type() == QUICFrameType::ACK);
     CHECK(frame1->valid() == false);
+    frame1->~QUICFrame();
   }
 }
 
@@ -1373,6 +1380,7 @@ TEST_CASE("Load PATH_CHALLENGE Frame", "[quic]")
     const QUICPathChallengeFrame *path_challenge_frame = static_cast<const QUICPathChallengeFrame *>(frame);
     CHECK(path_challenge_frame != nullptr);
     CHECK(memcmp(path_challenge_frame->data(), "\x01\x23\x45\x67\x89\xab\xcd\xef", QUICPathChallengeFrame::DATA_LEN) == 0);
+    frame->~QUICFrame();
   }
 
   SECTION("Load")
@@ -1384,6 +1392,7 @@ TEST_CASE("Load PATH_CHALLENGE Frame", "[quic]")
     const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::PATH_CHALLENGE);
     CHECK(frame->valid() == false);
+    frame->~QUICFrame();
   }
 }
 
@@ -1430,6 +1439,7 @@ TEST_CASE("Load PATH_RESPONSE Frame", "[quic]")
     const QUICPathResponseFrame *path_response_frame = static_cast<const QUICPathResponseFrame *>(frame);
     CHECK(path_response_frame != nullptr);
     CHECK(memcmp(path_response_frame->data(), "\x01\x23\x45\x67\x89\xab\xcd\xef", QUICPathResponseFrame::DATA_LEN) == 0);
+    frame->~QUICFrame();
   }
 
   SECTION("Load")
@@ -1441,6 +1451,7 @@ TEST_CASE("Load PATH_RESPONSE Frame", "[quic]")
     const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
     CHECK(frame->type() == QUICFrameType::PATH_RESPONSE);
     CHECK(frame->valid() == false);
+    frame->~QUICFrame();
   }
 }
 
@@ -1494,6 +1505,7 @@ TEST_CASE("NEW_TOKEN Frame", "[quic]")
     CHECK(new_token_frame != nullptr);
     CHECK(new_token_frame->token_length() == raw_token_len);
     CHECK(memcmp(new_token_frame->token(), raw_token, raw_token_len) == 0);
+    frame->~QUICFrame();
   }
 
   SECTION("bad load")
@@ -1501,6 +1513,7 @@ TEST_CASE("NEW_TOKEN Frame", "[quic]")
     const QUICFrame *frame = QUICFrameFactory::create(frame_buf, raw_new_token_frame, raw_new_token_frame_len - 5, nullptr);
     CHECK(frame->type() == QUICFrameType::NEW_TOKEN);
     CHECK(frame->valid() == false);
+    frame->~QUICFrame();
   }
 
   SECTION("store")

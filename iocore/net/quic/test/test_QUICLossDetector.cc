@@ -271,6 +271,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     CHECK(cc.lost_packets.find(pn8) == cc.lost_packets.end());
     CHECK(cc.lost_packets.find(pn9) == cc.lost_packets.end());
     CHECK(cc.lost_packets.find(pn9) == cc.lost_packets.end());
+    x->~QUICFrame();
   }
 }
 
@@ -294,4 +295,5 @@ TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
   detector.handle_frame(QUICEncryptionLevel::INITIAL, *ack);
   auto t2 = Thread::get_hrtime();
   CHECK(t2 - t1 < HRTIME_MSECONDS(100));
+  ack->~QUICAckFrame();
 }
