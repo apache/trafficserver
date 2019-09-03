@@ -52,7 +52,9 @@ RemapPluginInfo::getFunctionSymbol(const char *symbol)
 {
   std::string error; /* ignore the error, return nullptr if symbol not defined */
   void *address = nullptr;
-  getSymbol(symbol, address, error);
+  if (getSymbol(symbol, address, error)) {
+    Debug(_tag, "plugin '%s' found symbol '%s'", _configPath.c_str(), symbol);
+  }
   return reinterpret_cast<T *>(address);
 }
 
@@ -81,13 +83,14 @@ RemapPluginInfo::load(std::string &error)
     return false;
   }
 
-  init_cb            = getFunctionSymbol<Init_F>(TSREMAP_FUNCNAME_INIT);
-  config_reload_cb   = getFunctionSymbol<Reload_F>(TSREMAP_FUNCNAME_CONFIG_RELOAD);
-  done_cb            = getFunctionSymbol<Done_F>(TSREMAP_FUNCNAME_DONE);
-  new_instance_cb    = getFunctionSymbol<New_Instance_F>(TSREMAP_FUNCNAME_NEW_INSTANCE);
-  delete_instance_cb = getFunctionSymbol<Delete_Instance_F>(TSREMAP_FUNCNAME_DELETE_INSTANCE);
-  do_remap_cb        = getFunctionSymbol<Do_Remap_F>(TSREMAP_FUNCNAME_DO_REMAP);
-  os_response_cb     = getFunctionSymbol<OS_Response_F>(TSREMAP_FUNCNAME_OS_RESPONSE);
+  init_cb               = getFunctionSymbol<Init_F>(TSREMAP_FUNCNAME_INIT);
+  pre_config_reload_cb  = getFunctionSymbol<PreReload_F>(TSREMAP_FUNCNAME_PRE_CONFIG_RELOAD);
+  post_config_reload_cb = getFunctionSymbol<PostReload_F>(TSREMAP_FUNCNAME_POST_CONFIG_RELOAD);
+  done_cb               = getFunctionSymbol<Done_F>(TSREMAP_FUNCNAME_DONE);
+  new_instance_cb       = getFunctionSymbol<New_Instance_F>(TSREMAP_FUNCNAME_NEW_INSTANCE);
+  delete_instance_cb    = getFunctionSymbol<Delete_Instance_F>(TSREMAP_FUNCNAME_DELETE_INSTANCE);
+  do_remap_cb           = getFunctionSymbol<Do_Remap_F>(TSREMAP_FUNCNAME_DO_REMAP);
+  os_response_cb        = getFunctionSymbol<OS_Response_F>(TSREMAP_FUNCNAME_OS_RESPONSE);
 
   /* Validate if the callback TSREMAP functions are specified correctly in the plugin. */
   bool valid = true;
@@ -243,12 +246,24 @@ RemapPluginInfo::osResponse(void *ih, TSHttpTxn rh, int os_response_type)
 RemapPluginInfo::~RemapPluginInfo() {}
 
 void
-RemapPluginInfo::indicateReload()
+RemapPluginInfo::indicatePreReload()
 {
   setPluginContext();
 
-  if (config_reload_cb) {
-    config_reload_cb();
+  if (pre_config_reload_cb) {
+    pre_config_reload_cb();
+  }
+
+  resetPluginContext();
+}
+
+void
+RemapPluginInfo::indicatePostReload(TSReturnCode reloadStatus)
+{
+  setPluginContext();
+
+  if (post_config_reload_cb) {
+    post_config_reload_cb(reloadStatus);
   }
 
   resetPluginContext();

@@ -1320,9 +1320,16 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
 {
   BUILD_TABLE_INFO bti;
 
-  // If this happens to be a config reload, the list of loaded remap plugins is non-empty, and we
-  // can signal all these plugins that a reload has begun.
-  rewrite->pluginFactory.indicateReload();
+  /* If this happens to be a config reload, the list of loaded remap plugins is non-empty, and we
+   * can signal all these plugins that a reload has begun. */
+  rewrite->pluginFactory.indicatePreReload();
+
   bti.rewrite = rewrite;
-  return remap_parse_config_bti(path, &bti);
+  bool status = remap_parse_config_bti(path, &bti);
+
+  /* Now after we parsed the configuration and (re)loaded plugins and plugin instances
+   * accordingly notify all plugins that we are done */
+  rewrite->pluginFactory.indicatePostReload(status ? TS_SUCCESS : TS_ERROR);
+
+  return status;
 }

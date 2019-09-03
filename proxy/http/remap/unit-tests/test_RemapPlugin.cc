@@ -426,9 +426,14 @@ SCENARIO("config reload", "[plugin][core]")
     {
       debugObject->clear();
 
-      plugin->indicateReload();
+      plugin->indicatePreReload();
+      plugin->indicatePostReload(TS_SUCCESS);
 
-      THEN("expect it to run") { CHECK(1 == debugObject->reloadConfigCalled); }
+      THEN("expect it to run")
+      {
+        CHECK(1 == debugObject->preReloadConfigCalled);
+        CHECK(1 == debugObject->postReloadConfigCalled);
+      }
       cleanupSandBox(plugin);
     }
   }
