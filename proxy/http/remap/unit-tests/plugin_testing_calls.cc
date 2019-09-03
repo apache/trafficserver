@@ -103,9 +103,16 @@ TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type)
 }
 
 void
-TSRemapConfigReload(void)
+TSRemapPreConfigReload(void)
 {
-  debugObject.reloadConfigCalled++;
+  debugObject.preReloadConfigCalled++;
+}
+
+void
+TSRemapPostConfigReload(TSReturnCode reloadStatus)
+{
+  debugObject.postReloadConfigCalled++;
+  debugObject.postReloadConfigSuccess = (TS_SUCCESS == reloadStatus);
 }
 
 /* The folowing functions are meant for unit testing */

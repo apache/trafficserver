@@ -151,7 +151,7 @@ reloadUrlRewrite()
     ink_assert(oldTable != nullptr);
 
     // Release the old one
-    oldTable->pluginFactory.indicateReload();
+    oldTable->pluginFactory.deactivate();
     oldTable->release();
 
     Debug("url_rewrite", "%s", msg);
