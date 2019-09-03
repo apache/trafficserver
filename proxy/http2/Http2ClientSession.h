@@ -212,6 +212,8 @@ public:
   // Record history from Http2ConnectionState
   void remember(const SourceLocation &location, int event, int reentrant = NO_REENTRANT);
 
+  int64_t write_avail();
+
   // noncopyable
   Http2ClientSession(Http2ClientSession &) = delete;
   Http2ClientSession &operator=(const Http2ClientSession &) = delete;
@@ -219,6 +221,12 @@ public:
   ///////////////////
   // Variables
   Http2ConnectionState connection_state;
+
+  IOBufferReader *
+  get_write_reader()
+  {
+    return sm_writer;
+  }
 
 private:
   int main_event_handler(int, void *);

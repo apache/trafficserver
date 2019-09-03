@@ -102,6 +102,16 @@ public:
   Http1ServerSession *get_server_session() const;
   HttpSM *get_sm() const;
 
+  /** Compute the backlog.  This is the amount of data ready to read
+      for each element of the chain.  If @a limit is non-negative then
+      the method will return as soon as the computed backlog is at
+      least that large. This provides for more efficient checking if
+      the caller is interested only in whether the backlog is at least
+      @a limit. The default is to accurately compute the backlog.
+  */
+  virtual uint64_t backlog(uint64_t limit = UINT64_MAX ///< Maximum value of interest
+                           ) = 0;
+
   // This function must return a non-negative number that is different for two in-progress transactions with the same proxy_ssn
   // session.
   //

@@ -58,9 +58,12 @@ public:
 
   void set_reader(IOBufferReader *reader);
 
+  uint64_t backlog(uint64_t limit = UINT64_MAX) override;
+
   ////////////////////
   // Variables
 
 protected:
   bool outbound_transparent{false};
+  VIO *write_vio = nullptr;
 };

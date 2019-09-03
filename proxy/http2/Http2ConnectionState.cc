@@ -43,6 +43,9 @@
 #define Http2StreamDebug(ua_session, stream_id, fmt, ...) \
   SsnDebug(ua_session, "http2_con", "[%" PRId64 "] [%u] " fmt, ua_session->connection_id(), stream_id, ##__VA_ARGS__);
 
+#define Http2StreamOutputDebug(ua_session, stream_id, fmt, ...) \
+  SsnDebug(ua_session, "http2_output", "[%" PRId64 "] [%u] " fmt, ua_session->connection_id(), stream_id, ##__VA_ARGS__);
+
 using http2_frame_dispatch = Http2Error (*)(Http2ConnectionState &, const Http2Frame &);
 
 static const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] = {
@@ -1529,10 +1532,19 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
     return;
   }
 
+  int count                       = 0;
   size_t len                      = 0;
+  size_t stream_buffer_read_avail = 0;
+  if (is_debug_tag_set("http2_output")) {
+    IOBufferReader *data_reader = stream->response_get_data_reader();
+    if (data_reader) {
+      stream_buffer_read_avail = data_reader->read_avail();
+    }
+  }
   Http2SendDataFrameResult result = Http2SendDataFrameResult::NO_ERROR;
   while (result == Http2SendDataFrameResult::NO_ERROR) {
     result = send_a_data_frame(stream, len);
+    count++;
 
     if (result == Http2SendDataFrameResult::DONE) {
       // Delete a stream immediately
@@ -1541,7 +1553,13 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
       // See 'closed' state written at [RFC 7540] 5.1.
       Http2StreamDebug(this->ua_session, stream->get_id(), "Shutdown stream");
       this->delete_stream(stream);
+      count++;
     }
+  }
+  if (is_debug_tag_set("http2_output")) {
+    Http2StreamOutputDebug(ua_session, stream->get_id(),
+                           "Wrote %d frames. %" PRId64 " bytes in stream buffer and %" PRId64 " bytes in session buffer", count - 1,
+                           stream_buffer_read_avail, ua_session->get_write_reader()->read_avail());
   }
 
   return;

@@ -74,7 +74,7 @@ public:
   void terminate_if_possible();
   void update_read_request(int64_t read_len, bool send_update, bool check_eos = false);
   void update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
-  void signal_write_event(bool call_update);
+  bool signal_write_event(bool call_update);
   void restart_sending();
   void push_promise(URL &url, const MIMEField *accept_encoding);
 
@@ -121,6 +121,7 @@ public:
   void update_initial_rwnd(Http2WindowSize new_size);
   bool has_trailing_header() const;
   void set_request_headers(HTTPHdr &h2_headers);
+  uint64_t backlog(uint64_t limit = UINT64_MAX) override;
 
   //////////////////
   // Variables

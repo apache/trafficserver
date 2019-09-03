@@ -563,6 +563,7 @@ HttpTunnelProducer::is_throttled() const
 inline void
 HttpTunnelProducer::throttle()
 {
+  this->read_vio->disable();
   if (!this->is_throttled()) {
     this->set_throttle_src(this);
   }

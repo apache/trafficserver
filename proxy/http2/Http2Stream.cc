@@ -687,15 +687,11 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
   return;
 }
 
-void
+bool
 Http2Stream::signal_write_event(bool call_update)
 {
   if (this->write_vio.cont == nullptr || this->write_vio.op == VIO::NONE) {
-    return;
-  }
-
-  if (this->write_vio.get_writer()->write_avail() == 0) {
-    return;
+    return false;
   }
 
   int send_event = this->write_vio.ntodo() == 0 ? VC_EVENT_WRITE_COMPLETE : VC_EVENT_WRITE_READY;
@@ -709,6 +705,7 @@ Http2Stream::signal_write_event(bool call_update)
     // Called from do_io_write. Might still be setting up state. Send an event to let the dust settle
     write_event = send_tracked_event(write_event, send_event, &write_vio);
   }
+  return send_event == VC_EVENT_WRITE_READY;
 }
 
 void
@@ -732,8 +729,10 @@ Http2Stream::send_response_body(bool call_update)
     // when write_vio is consumed
   } else {
     SCOPED_MUTEX_LOCK(lock, _proxy_ssn->connection_state.mutex, this_ethread());
-    _proxy_ssn->connection_state.send_data_frames(this);
-    this->signal_write_event(call_update);
+    if (this->signal_write_event(call_update)) {
+      // Kick off the IO again only if the write signal was a WRITE_READY
+      _proxy_ssn->connection_state.send_data_frames(this);
+    }
     // XXX The call to signal_write_event can destroy/free the Http2Stream.
     // Don't modify the Http2Stream after calling this method.
   }
@@ -1161,4 +1160,11 @@ bool
 Http2Stream::is_first_transaction() const
 {
   return is_first_transaction_flag;
+}
+
+uint64_t
+Http2Stream::backlog(uint64_t limit)
+{
+  return this->response_reader->read_avail() +
+         dynamic_cast<Http2ClientSession *>(this->get_proxy_ssn())->get_write_reader()->read_avail();
 }

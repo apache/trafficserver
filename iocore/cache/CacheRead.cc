@@ -748,7 +748,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
     // we have to keep reading until we give the user all the
     // bytes it wanted or we hit the watermark.
-    if (vio.ntodo() > 0 && !vio.buffer.writer()->high_water()) {
+    if (vio.ntodo() > 0 && !vio.buffer.writer()->high_water() && !vio.is_disabled()) {
       goto Lread;
     }
     return EVENT_CONT;

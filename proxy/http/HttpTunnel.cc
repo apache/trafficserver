@@ -388,6 +388,8 @@ HttpTunnelProducer::backlog(uint64_t limit)
       uint64_t n = 0;
       if (HT_TRANSFORM == c->vc_type) {
         n += static_cast<TransformVCChain *>(c->vc)->backlog(limit);
+      } else if (HT_HTTP_CLIENT == c->vc_type) {
+        n += static_cast<ProxyTransaction *>(c->vc)->backlog(limit);
       } else {
         IOBufferReader *r = c->write_vio->get_reader();
         if (r) {
@@ -1212,7 +1214,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
 {
   HttpTunnelProducer *p = c->producer;
 
-  if (p && p->alive && p->read_buffer->write_avail() > 0) {
+  if (p && p->alive) {
     // Only do flow control if enabled and the producer is an external
     // source.  Otherwise disable by making the backlog zero. Because
     // the backlog short cuts quit when the value is equal (or
@@ -1222,8 +1224,8 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
     HttpTunnelProducer *srcp = p->flow_control_source;
 
     if (backlog >= flow_state.high_water) {
-      if (is_debug_tag_set("http_tunnel")) {
-        Debug("http_tunnel", "Throttle   %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
+      if (is_debug_tag_set("http_tunnel_throttle")) {
+        Debug("http_tunnel_throttle", "Throttle   %p %" PRId64 " / %" PRId64, p, backlog, flow_state.high_water);
       }
       p->throttle(); // p becomes srcp for future calls to this method
     } else {
@@ -1237,8 +1239,8 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
           backlog = srcp->backlog(flow_state.low_water);
         }
         if (backlog < flow_state.low_water) {
-          if (is_debug_tag_set("http_tunnel")) {
-            Debug("http_tunnel", "Unthrottle %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
+          if (is_debug_tag_set("http_tunnel_throttle")) {
+            Debug("http_tunnel_throttle", "Unthrottle %p %" PRId64 " / %" PRId64, p, backlog, flow_state.low_water);
           }
           srcp->unthrottle();
           if (srcp->read_vio) {

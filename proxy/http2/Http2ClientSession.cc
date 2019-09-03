@@ -369,17 +369,20 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
+    Http2SsnDebug("%s (%d)", get_vc_event_name(event), event);
+
     this->set_dying_event(event);
     this->do_io_close();
     retval = 0;
     break;
 
   case VC_EVENT_WRITE_READY:
-    retval = 0;
-    break;
-
   case VC_EVENT_WRITE_COMPLETE:
-    // Seems as this is being closed already
+    Http2SsnDebug("%s (%d)", get_vc_event_name(event), event);
+
+    this->connection_state.restart_streams();
+    this->write_vio->reenable();
+
     retval = 0;
     break;
 
@@ -770,4 +773,10 @@ int64_t
 Http2ClientSession::write_buffer_size()
 {
   return write_buffer->max_read_avail();
+}
+
+int64_t
+Http2ClientSession::write_avail()
+{
+  return this->write_buffer->write_avail();
 }

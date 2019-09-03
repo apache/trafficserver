@@ -97,7 +97,8 @@ Http1Transaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 VIO *
 Http1Transaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
-  return _proxy_ssn->do_io_write(c, nbytes, buf, owner);
+  write_vio = _proxy_ssn->do_io_write(c, nbytes, buf, owner);
+  return write_vio;
 }
 
 void
@@ -146,4 +147,17 @@ Http1Transaction::get_transaction_id() const
   // identifier.
   //
   return _proxy_ssn->get_transact_count();
+}
+
+uint64_t
+Http1Transaction::backlog(uint64_t limit)
+{
+  uint64_t retval = 0;
+  if (write_vio) {
+    IOBufferReader *r = this->write_vio->get_reader();
+    if (r) {
+      retval = static_cast<uint64_t>(r->read_avail());
+    }
+  }
+  return retval;
 }
