@@ -1168,6 +1168,10 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICPacket &pa
 
   // Start handshake
   if (this->netvc_context == NET_VCONNECTION_IN) {
+    this->local_addr.sa  = packet.to().sa;
+    this->remote_addr.sa = packet.from().sa;
+    this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
+
     if (!this->_alt_con_manager) {
       this->_alt_con_manager =
         new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, this->_quic_config->instance_id(),

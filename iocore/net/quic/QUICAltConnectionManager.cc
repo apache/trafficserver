@@ -40,7 +40,8 @@ QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConne
   // Sequence number of the initial CID is 0
   this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});
 
-  if (preferred_endpoint_ipv4 || preferred_endpoint_ipv6) {
+  if ((preferred_endpoint_ipv4 && !ats_ip_addr_port_eq(*preferred_endpoint_ipv4, qc->five_tuple().source())) ||
+      (preferred_endpoint_ipv6 && !ats_ip_addr_port_eq(*preferred_endpoint_ipv6, qc->five_tuple().source()))) {
     this->_alt_quic_connection_ids_local[0] = this->_generate_next_alt_con_info();
     // This alt cid will be advertised via Transport Parameter, so no need to advertise it via NCID frame
     this->_alt_quic_connection_ids_local[0].advertised = true;
