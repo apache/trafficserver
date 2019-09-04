@@ -267,3 +267,54 @@ private:
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
+
+///////////////////////////////////////////////
+// INLINE
+
+inline const Http2UpgradeContext &
+Http2ClientSession::get_upgrade_context() const
+{
+  return upgrade_context;
+}
+
+inline bool
+Http2ClientSession::ready_to_free() const
+{
+  return kill_me;
+}
+
+inline void
+Http2ClientSession::set_dying_event(int event)
+{
+  dying_event = event;
+}
+
+inline int
+Http2ClientSession::get_dying_event() const
+{
+  return dying_event;
+}
+
+inline bool
+Http2ClientSession::is_recursing() const
+{
+  return recursion > 0;
+}
+
+inline bool
+Http2ClientSession::get_half_close_local_flag() const
+{
+  return half_close_local;
+}
+
+inline bool
+Http2ClientSession::is_url_pushed(const char *url, int url_len)
+{
+  return h2_pushed_urls.find(url) != h2_pushed_urls.end();
+}
+
+inline int64_t
+Http2ClientSession::write_buffer_size()
+{
+  return write_buffer->max_read_avail();
+}

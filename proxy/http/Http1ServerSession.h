@@ -209,7 +209,8 @@ private:
 
 extern ClassAllocator<Http1ServerSession> httpServerSessionAllocator;
 
-// --- Implementation ---
+////////////////////////////////////////////
+// INLINE
 
 inline void
 Http1ServerSession::attach_hostname(const char *hostname)
@@ -218,6 +219,15 @@ Http1ServerSession::attach_hostname(const char *hostname)
     CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
   }
 }
+
+inline IOBufferReader *
+Http1ServerSession::get_reader()
+{
+  return buf_reader;
+};
+
+//
+// LINKAGE
 
 inline Http1ServerSession *&
 Http1ServerSession::IPLinkage::next_ptr(self_type *ssn)

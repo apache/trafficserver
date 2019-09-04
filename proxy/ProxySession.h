@@ -186,3 +186,89 @@ private:
   // aborts.
   bool m_active = false;
 };
+
+///////////////////
+// INLINE
+
+static inline int64_t next_cs_id = 0;
+
+inline int64_t
+ProxySession::next_connection_id()
+{
+  return ink_atomic_increment(&next_cs_id, 1);
+}
+
+inline void *
+ProxySession::get_user_arg(unsigned ix) const
+{
+  ink_assert(ix < countof(user_args));
+  return this->user_args[ix];
+}
+
+inline void
+ProxySession::set_user_arg(unsigned ix, void *arg)
+{
+  ink_assert(ix < countof(user_args));
+  user_args[ix] = arg;
+}
+
+inline void
+ProxySession::set_debug(bool flag)
+{
+  debug_on = flag;
+}
+
+// Return whether debugging is enabled for this session.
+inline bool
+ProxySession::debug() const
+{
+  return this->debug_on;
+}
+
+inline bool
+ProxySession::is_active() const
+{
+  return m_active;
+}
+
+inline bool
+ProxySession::is_draining() const
+{
+  return TSSystemState::is_draining();
+}
+
+inline bool
+ProxySession::is_client_closed() const
+{
+  return get_netvc() == nullptr;
+}
+
+inline TSHttpHookID
+ProxySession::get_hookid() const
+{
+  return hook_state.id();
+}
+
+inline void
+ProxySession::hook_add(TSHttpHookID id, INKContInternal *cont)
+{
+  this->api_hooks.append(id, cont);
+}
+
+inline APIHook *
+ProxySession::hook_get(TSHttpHookID id) const
+{
+  return this->api_hooks.get(id);
+}
+
+inline HttpAPIHooks const *
+ProxySession::feature_hooks() const
+{
+  return &api_hooks;
+}
+
+inline bool
+ProxySession::has_hooks() const
+{
+  return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
+}
