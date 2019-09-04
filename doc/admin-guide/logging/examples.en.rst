@@ -303,8 +303,8 @@ Configuring ASCII Pipe Buffer Size
 ==================================
 
 This example mirrors the one above but also sets a ```pipe_buffer_size``` of
-1024 * 1024 for the pipe. This can be set on a per-pipe basis but is not 
-available on FreeBSD dists of ATS. If this field is not set, the pipe buffer
+1024 * 1024 for the pipe. This can be set on a per-pipe basis but is only
+available on Linux (later than 2.6.35). If this field is not set, the pipe buffer
 will default to the OS default size.
 
 .. code:: yaml

@@ -188,9 +188,7 @@ LogFile::open_file()
       return LOG_FILE_NO_PIPE_READERS;
     }
 
-#ifdef __FreeBSD__
-    // we don't do this for FreeBSD
-#else
+#ifdef F_GETPIPE_SZ
     // adjust pipe size if necessary
     if (m_pipe_buffer_size) {
       long pipe_size = (long)fcntl(m_fd, F_GETPIPE_SZ);
@@ -212,7 +210,7 @@ LogFile::open_file()
         Debug("log-file", "NEW pipe size for pipe %s = %ld", m_name, pipe_size);
       }
     }
-#endif
+#endif // F_GETPIPE_SZ
   } else {
     if (m_log) {
       int status = m_log->open_file(Log::config->logfile_perm);
