@@ -64,3 +64,12 @@ public:
 protected:
   bool outbound_transparent{false};
 };
+
+//////////////////////////////////
+// INLINE
+
+inline void
+Http1Transaction::set_reader(IOBufferReader *reader)
+{
+  _reader = reader;
+}
