@@ -79,6 +79,7 @@ include experimental/metalink/Makefile.inc
 include experimental/money_trace/Makefile.inc
 include experimental/mp4/Makefile.inc
 include experimental/remap_stats/Makefile.inc
+include experimental/redo_cache_lookup/Makefile.inc
 include experimental/slice/Makefile.inc
 include experimental/sslheaders/Makefile.inc
 include experimental/statichit/Makefile.inc
