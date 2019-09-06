@@ -327,7 +327,9 @@ Origin Connection Timeouts
 Origin server connection timeouts are configured with :ts:cv:`proxy.config.http.connect_attempts_timeout`,
 which is applied both to the initial connection as well as any retries attempted,
 should an attempt timeout. The timeout applies from the moment |TS| begins the
-connection attempt until the origin returns the first byte.
+connection attempt until the origin fully establishes a connection (the connection is ready to write).
+After the connection is established the value of
+:ts:cv:`proxy.config.http.transaction_no_activity_timeout_out` is used to established timeouts on the data over the connection.
 
 In the case where you wish to have a different (generally longer) timeout for
 ``POST`` and ``PUT`` connections to an origin server, you may also adjust
