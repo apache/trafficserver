@@ -1528,8 +1528,8 @@ Origin Server Connect Attempts
    :reloadable:
    :overridable:
 
-   The timeout value (in seconds) for time to first byte for an origin server
-   connection.
+   The timeout value (in seconds) for time to set up a connection to the origin. After the connection is established the value of
+   ``proxy.config.http.transaction_no_activity_timeout_out`` is used to established timeouts on the data over the connection.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
