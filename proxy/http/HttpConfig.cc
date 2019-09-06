@@ -137,7 +137,7 @@ HttpConfigCont::handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNU
   return 0;
 }
 
-static int
+int
 http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
                void * /* cookie ATS_UNUSED */)
 {
