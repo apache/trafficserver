@@ -95,7 +95,8 @@ public:
 
   LogObject(const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format, const char *header,
             Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec = 0, int rolling_offset_hr = 0,
-            int rolling_size_mb = 0, bool auto_created = false, int rolling_max_count = 0, bool reopen_after_rolling = false);
+            int rolling_size_mb = 0, bool auto_created = false, int rolling_max_count = 0, bool reopen_after_rolling = false,
+            int pipe_buffer_size = 0);
   LogObject(LogObject &);
   ~LogObject() override;
 
@@ -284,6 +285,8 @@ private:
   head_p m_log_buffer; // current work buffer
   unsigned m_buffer_manager_idx;
   LogBufferManager *m_buffer_manager;
+
+  int m_pipe_buffer_size;
 
   void generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format);
   void _setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec, int rolling_offset_hr,
