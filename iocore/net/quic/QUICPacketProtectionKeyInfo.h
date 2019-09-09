@@ -29,8 +29,31 @@
 class QUICPacketProtectionKeyInfoProvider
 {
 public:
+  virtual ~QUICPacketProtectionKeyInfoProvider() {}
+  // Payload Protection (common)
+  virtual const EVP_CIPHER *get_cipher(QUICKeyPhase phase) const = 0;
+  virtual size_t get_tag_len(QUICKeyPhase phase) const           = 0;
+
+  // Payload Protection (encryption)
   virtual bool is_encryption_key_available(QUICKeyPhase phase) const = 0;
+  virtual const uint8_t *encryption_key(QUICKeyPhase phase) const    = 0;
+  virtual size_t encryption_key_len(QUICKeyPhase phase) const        = 0;
+  virtual const uint8_t *encryption_iv(QUICKeyPhase phase) const     = 0;
+  virtual const size_t *encryption_iv_len(QUICKeyPhase phase) const  = 0;
+
+  // Payload Protection (decryption)
   virtual bool is_decryption_key_available(QUICKeyPhase phase) const = 0;
+  virtual const uint8_t *decryption_key(QUICKeyPhase phase) const    = 0;
+  virtual size_t decryption_key_len(QUICKeyPhase phase) const        = 0;
+  virtual const uint8_t *decryption_iv(QUICKeyPhase phase) const     = 0;
+  virtual const size_t *decryption_iv_len(QUICKeyPhase phase) const  = 0;
+
+  // Header Protection
+  virtual const EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const  = 0;
+  virtual const uint8_t *encryption_key_for_hp(QUICKeyPhase phase) const = 0;
+  virtual size_t encryption_key_for_hp_len(QUICKeyPhase phase) const     = 0;
+  virtual const uint8_t *decryption_key_for_hp(QUICKeyPhase phase) const = 0;
+  virtual size_t decryption_key_for_hp_len(QUICKeyPhase phase) const     = 0;
 };
 
 class QUICPacketProtectionKeyInfo : public QUICPacketProtectionKeyInfoProvider
@@ -47,58 +70,58 @@ public:
 
   // Payload Protection (common)
 
-  virtual const EVP_CIPHER *get_cipher(QUICKeyPhase phase) const;
-  virtual size_t get_tag_len(QUICKeyPhase phase) const;
+  virtual const EVP_CIPHER *get_cipher(QUICKeyPhase phase) const override;
+  virtual size_t get_tag_len(QUICKeyPhase phase) const override;
   virtual void set_cipher_initial(const EVP_CIPHER *cipher);
   virtual void set_cipher(const EVP_CIPHER *cipher, size_t tag_len);
 
   // Payload Protection (encryption)
 
-  virtual bool is_encryption_key_available(QUICKeyPhase phase) const;
+  virtual bool is_encryption_key_available(QUICKeyPhase phase) const override;
   virtual void set_encryption_key_available(QUICKeyPhase phase);
 
-  virtual const uint8_t *encryption_key(QUICKeyPhase phase) const;
+  virtual const uint8_t *encryption_key(QUICKeyPhase phase) const override;
   virtual uint8_t *encryption_key(QUICKeyPhase phase);
 
-  virtual size_t encryption_key_len(QUICKeyPhase phase) const;
+  virtual size_t encryption_key_len(QUICKeyPhase phase) const override;
 
-  virtual const uint8_t *encryption_iv(QUICKeyPhase phase) const;
+  virtual const uint8_t *encryption_iv(QUICKeyPhase phase) const override;
   virtual uint8_t *encryption_iv(QUICKeyPhase phase);
 
-  virtual const size_t *encryption_iv_len(QUICKeyPhase phase) const;
+  virtual const size_t *encryption_iv_len(QUICKeyPhase phase) const override;
   virtual size_t *encryption_iv_len(QUICKeyPhase phase);
 
   // Payload Protection (decryption)
 
-  virtual bool is_decryption_key_available(QUICKeyPhase phase) const;
+  virtual bool is_decryption_key_available(QUICKeyPhase phase) const override;
   virtual void set_decryption_key_available(QUICKeyPhase phase);
 
-  virtual const uint8_t *decryption_key(QUICKeyPhase phase) const;
+  virtual const uint8_t *decryption_key(QUICKeyPhase phase) const override;
   virtual uint8_t *decryption_key(QUICKeyPhase phase);
 
-  virtual size_t decryption_key_len(QUICKeyPhase phase) const;
+  virtual size_t decryption_key_len(QUICKeyPhase phase) const override;
 
-  virtual const uint8_t *decryption_iv(QUICKeyPhase phase) const;
+  virtual const uint8_t *decryption_iv(QUICKeyPhase phase) const override;
   virtual uint8_t *decryption_iv(QUICKeyPhase phase);
 
-  virtual const size_t *decryption_iv_len(QUICKeyPhase phase) const;
+  virtual const size_t *decryption_iv_len(QUICKeyPhase phase) const override;
   virtual size_t *decryption_iv_len(QUICKeyPhase phase);
 
   // Header Protection
 
-  virtual const EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const;
+  virtual const EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const override;
   virtual void set_cipher_for_hp_initial(const EVP_CIPHER *cipher);
   virtual void set_cipher_for_hp(const EVP_CIPHER *cipher);
 
-  virtual const uint8_t *encryption_key_for_hp(QUICKeyPhase phase) const;
+  virtual const uint8_t *encryption_key_for_hp(QUICKeyPhase phase) const override;
   virtual uint8_t *encryption_key_for_hp(QUICKeyPhase phase);
 
-  virtual size_t encryption_key_for_hp_len(QUICKeyPhase phase) const;
+  virtual size_t encryption_key_for_hp_len(QUICKeyPhase phase) const override;
 
-  virtual const uint8_t *decryption_key_for_hp(QUICKeyPhase phase) const;
+  virtual const uint8_t *decryption_key_for_hp(QUICKeyPhase phase) const override;
   virtual uint8_t *decryption_key_for_hp(QUICKeyPhase phase);
 
-  virtual size_t decryption_key_for_hp_len(QUICKeyPhase phase) const;
+  virtual size_t decryption_key_for_hp_len(QUICKeyPhase phase) const override;
 
 private:
   Context _ctx = Context::SERVER;
