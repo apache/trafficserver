@@ -28,7 +28,7 @@
 
 class QUICRTTProvider;
 class QUICCongestionController;
-class QUICPacketProtectionKeyInfo;
+class QUICPacketProtectionKeyInfoProvider;
 
 class QUICNetVConnection;
 
@@ -43,9 +43,9 @@ class QUICLDContext
 {
 public:
   virtual ~QUICLDContext() {}
-  virtual QUICConnectionInfoProvider *connection_info() const = 0;
-  virtual QUICLDConfig &ld_config() const                     = 0;
-  virtual QUICPacketProtectionKeyInfo *key_info() const       = 0;
+  virtual QUICConnectionInfoProvider *connection_info() const   = 0;
+  virtual QUICLDConfig &ld_config() const                       = 0;
+  virtual QUICPacketProtectionKeyInfoProvider *key_info() const = 0;
 };
 
 class QUICCCContext
@@ -60,23 +60,23 @@ public:
 class QUICContextImpl : public QUICContext, public QUICCCContext, public QUICLDContext
 {
 public:
-  QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfo *key_info);
+  QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info);
 
   virtual QUICConnectionInfoProvider *connection_info() const override;
   virtual QUICConfig::scoped_config config() const override;
   virtual QUICRTTProvider *rtt_provider() const override;
 
   // TODO should be more abstract
-  virtual QUICPacketProtectionKeyInfo *key_info() const override;
+  virtual QUICPacketProtectionKeyInfoProvider *key_info() const override;
 
   virtual QUICLDConfig &ld_config() const override;
   virtual QUICCCConfig &cc_config() const override;
 
 private:
   QUICConfig::scoped_config _config;
-  QUICPacketProtectionKeyInfo *_key_info       = nullptr;
-  QUICConnectionInfoProvider *_connection_info = nullptr;
-  QUICRTTProvider *_rtt_provider               = nullptr;
+  QUICPacketProtectionKeyInfoProvider *_key_info = nullptr;
+  QUICConnectionInfoProvider *_connection_info   = nullptr;
+  QUICRTTProvider *_rtt_provider                 = nullptr;
 
   std::unique_ptr<QUICLDConfig> _ld_config = nullptr;
   std::unique_ptr<QUICCCConfig> _cc_config = nullptr;
