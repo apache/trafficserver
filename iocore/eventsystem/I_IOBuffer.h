@@ -1184,13 +1184,13 @@ public:
 */
 struct MIOBufferAccessor {
   IOBufferReader *
-  reader()
+  reader() const
   {
     return entry;
   }
 
   MIOBuffer *
-  writer()
+  writer() const
   {
     return mbuf;
   }
