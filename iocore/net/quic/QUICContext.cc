@@ -100,7 +100,8 @@ private:
   const QUICConfigParams *_params;
 };
 
-QUICContextImpl::QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfo *key_info)
+QUICContextImpl::QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info,
+                                 QUICPacketProtectionKeyInfoProvider *key_info)
   : _key_info(key_info),
     _connection_info(info),
     _rtt_provider(rtt),
@@ -121,7 +122,7 @@ QUICContextImpl::config() const
   return _config;
 }
 
-QUICPacketProtectionKeyInfo *
+QUICPacketProtectionKeyInfoProvider *
 QUICContextImpl::key_info() const
 {
   return _key_info;

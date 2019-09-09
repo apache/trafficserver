@@ -26,7 +26,14 @@
 #include "QUICTypes.h"
 #include "QUICKeyGenerator.h"
 
-class QUICPacketProtectionKeyInfo
+class QUICPacketProtectionKeyInfoProvider
+{
+public:
+  virtual bool is_encryption_key_available(QUICKeyPhase phase) const = 0;
+  virtual bool is_decryption_key_available(QUICKeyPhase phase) const = 0;
+};
+
+class QUICPacketProtectionKeyInfo : public QUICPacketProtectionKeyInfoProvider
 {
 public:
   enum class Context { SERVER, CLIENT };
