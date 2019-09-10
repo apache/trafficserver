@@ -121,22 +121,20 @@ QUICDebugNames::error_code(uint16_t code)
     return "INTERNAL_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::FLOW_CONTROL_ERROR):
     return "FLOW_CONTROL_ERROR";
-  case static_cast<uint16_t>(QUICTransErrorCode::STREAM_ID_ERROR):
-    return "STREAM_ID_ERROR";
+  case static_cast<uint16_t>(QUICTransErrorCode::STREAM_LIMIT_ERROR):
+    return "STREAM_LIMIT_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::STREAM_STATE_ERROR):
     return "STREAM_STATE_ERROR";
-  case static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR):
-    return "FINAL_OFFSET_ERROR";
+  case static_cast<uint16_t>(QUICTransErrorCode::FINAL_SIZE_ERROR):
+    return "FINAL_SIZE_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::FRAME_ENCODING_ERROR):
     return "FRAME_ENCODING_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR):
     return "TRANSPORT_PARAMETER_ERROR";
-  case static_cast<uint16_t>(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR):
-    return "VERSION_NEGOTIATION_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION):
     return "PROTOCOL_VIOLATION";
-  case static_cast<uint16_t>(QUICTransErrorCode::INVALID_MIGRATION):
-    return "INVALID_MIGRATION";
+  case static_cast<uint16_t>(QUICTransErrorCode::CRYPTO_BUFFER_EXCEEDED):
+    return "CRYPTO_BUFFER_EXCEEDED";
   default:
     if (0x0100 <= code && code <= 0x01FF) {
       return "CRYPTO_ERROR";

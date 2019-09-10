@@ -90,7 +90,7 @@ QUICStreamManager::create_stream(QUICStreamId stream_id)
   QUICConnectionErrorUPtr error    = nullptr;
   QUICStreamVConnection *stream_vc = this->_find_or_create_stream_vc(stream_id);
   if (!stream_vc) {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 
   QUICApplication *application = this->_app_map->get(stream_id);
@@ -174,7 +174,7 @@ QUICStreamManager::_handle_frame(const QUICMaxStreamDataFrame &frame)
   if (stream) {
     return stream->recv(frame);
   } else {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 }
 
@@ -185,7 +185,7 @@ QUICStreamManager::_handle_frame(const QUICStreamDataBlockedFrame &frame)
   if (stream) {
     return stream->recv(frame);
   } else {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 }
 
@@ -194,7 +194,7 @@ QUICStreamManager::_handle_frame(const QUICStreamFrame &frame)
 {
   QUICStreamVConnection *stream = this->_find_or_create_stream_vc(frame.stream_id());
   if (!stream) {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 
   QUICApplication *application = this->_app_map->get(frame.stream_id());
@@ -213,7 +213,7 @@ QUICStreamManager::_handle_frame(const QUICRstStreamFrame &frame)
   if (stream) {
     return stream->recv(frame);
   } else {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 }
 
@@ -224,7 +224,7 @@ QUICStreamManager::_handle_frame(const QUICStopSendingFrame &frame)
   if (stream) {
     return stream->recv(frame);
   } else {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 }
 

@@ -71,7 +71,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     buffer.insert(new QUICStreamFrame(*stream1_frame_2_r));
     err = buffer.insert(new QUICStreamFrame(*stream1_frame_3_r));
     CHECK(err->cls == QUICErrorClass::TRANSPORT);
-    CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
+    CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_SIZE_ERROR));
 
     buffer.clear();
 
@@ -82,7 +82,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     buffer2.insert(new QUICStreamFrame(*stream1_frame_1_r));
     err = buffer2.insert(new QUICStreamFrame(*stream1_frame_2_r));
     CHECK(err->cls == QUICErrorClass::TRANSPORT);
-    CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
+    CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_SIZE_ERROR));
 
     buffer2.clear();
 
@@ -91,7 +91,7 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
     buffer3.insert(new QUICStreamFrame(*stream1_frame_4_r));
     err = buffer3.insert(new QUICStreamFrame(*stream1_frame_3_r));
     CHECK(err->cls == QUICErrorClass::TRANSPORT);
-    CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR));
+    CHECK(err->code == static_cast<uint16_t>(QUICTransErrorCode::FINAL_SIZE_ERROR));
 
     buffer3.clear();
   }

@@ -166,7 +166,7 @@ QUICHandshake::negotiate_version(const QUICPacket &vn, QUICPacketFactory *packet
     packet_factory->set_version(version);
   } else {
     QUICHSDebug("Version negotiation failed");
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
   }
 
   return nullptr;

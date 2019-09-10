@@ -1947,7 +1947,7 @@ QUICNetVConnection::_start_application()
 
     if (netvc_context == NET_VCONNECTION_IN) {
       if (!this->setSelectedProtocol(app_name, app_name_len)) {
-        this->_handle_error(std::make_unique<QUICConnectionError>(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR));
+        this->_handle_error(std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION));
       } else {
         this->endpoint()->handleEvent(NET_EVENT_ACCEPT, this);
       }
