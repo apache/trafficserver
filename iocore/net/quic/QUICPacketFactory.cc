@@ -274,19 +274,20 @@ QUICPacketFactory::create_protected_packet(QUICConnectionId connection_id, QUICP
 QUICPacketUPtr
 QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessResetToken stateless_reset_token)
 {
+  constexpr uint8_t MIN_UNPREDICTABLE_FIELD_LEN = 5;
   std::random_device rnd;
 
   uint8_t random_packet_number = static_cast<uint8_t>(rnd() & 0xFF);
-  size_t payload_len           = static_cast<uint8_t>((rnd() & 0xFF) | 16); // Mimimum length has to be 16
-  ats_unique_buf payload       = ats_unique_malloc(payload_len + 16);
-  uint8_t *naked_payload       = payload.get();
+  size_t payload_len     = static_cast<uint8_t>((rnd() & 0xFF) | (MIN_UNPREDICTABLE_FIELD_LEN + QUICStatelessResetToken::LEN));
+  ats_unique_buf payload = ats_unique_malloc(payload_len);
+  uint8_t *naked_payload = payload.get();
 
   // Generate random octets
   for (int i = payload_len - 1; i >= 0; --i) {
     naked_payload[i] = static_cast<uint8_t>(rnd() & 0xFF);
   }
   // Copy stateless reset token into payload
-  memcpy(naked_payload + payload_len - 16, stateless_reset_token.buf(), 16);
+  memcpy(naked_payload + payload_len - QUICStatelessResetToken::LEN, stateless_reset_token.buf(), QUICStatelessResetToken::LEN);
 
   // KeyPhase won't be used
   QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::STATELESS_RESET, QUICKeyPhase::INITIAL, connection_id,
