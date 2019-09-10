@@ -18,59 +18,61 @@
 
 import os
 Test.Summary = '''
-Test a basic remap of a http connection
+Test a basic remap of a http/2 connection
 '''
 # need Curl
 Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )
 Test.ContinueOnFail = True
-# Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+
+# ----
+# Setup Origin Server
+# ----
 server = Test.MakeOriginServer("server")
 
-requestLocation = "test2"
-reHost = "www.example.com"
+# For Test Case 1 & 5 - /
+server.addResponse("sessionlog.json",
+                   {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""})
 
-testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-# desired response form the origin server
-response_header = {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
-request_header2 = {
-    "headers": "GET /{0} HTTP/1.1\r\nHost: {1}\r\n\r\n".format(requestLocation, reHost), "timestamp": "1469733493.993", "body": ""}
-# desired response form the origin server
-response_header2 = {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n",
-                    "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionlog.json", request_header, response_header)
-
+# For Test Case 2 - /bigfile
 # Add info for the large H2 download test
 server.addResponse("sessionlog.json",
                    {"headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
                    {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 191414\r\n\r\n", "timestamp": "1469733493.993", "body": ""})
 
+# For Test Case 3 - /test2
+server.addResponse("sessionlog.json",
+                   {"headers": "GET /test2 HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""})
+
+# For Test Case 6 - /postchunked
 post_body = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
 server.addResponse("sessionlog.jason",
-                   {"headers": "POST /postchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                    "timestamp": "1469733493.993",
-                     "body": post_body},
+                   {"headers": "POST /postchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": post_body},
                    {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
 
+# For Test Case 7 - /bigpostchunked
 # Make a post body that will be split across at least two frames
 big_post_body = "0123456789" * 131070
 server.addResponse("sessionlog.jason",
-                   {"headers": "POST /bigpostchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                    "timestamp": "1469733493.993",
-                     "body": big_post_body},
+                   {"headers": "POST /bigpostchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": big_post_body},
                    {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
 
+big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")
+big_post_body_file.write(big_post_body)
+big_post_body_file.close()
 
-server.addResponse("sessionlog.json", request_header2, response_header2)
+# For Test Case 8 - /huge_resp_hdrs
+server.addResponse("sessionlog.json",
+                   {"headers": "GET /huge_resp_hdrs HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 6\r\n\r\n", "timestamp": "1469733493.993", "body": "200 OK"})
 
-# request/response for test case 8
-request_header = {"headers": "GET /huge_resp_hdrs HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 6\r\n\r\n", "timestamp": "1469733493.993", "body": "200 OK"}
-server.addResponse("sessionlog.json", request_header, response_header)
+# ----
+# Setup ATS
+# ----
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
@@ -100,14 +102,14 @@ ts.Disk.records_config.update({
     'proxy.config.http2.max_concurrent_streams_in': 65535,
 })
 
-big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")
-big_post_body_file.write(big_post_body)
-big_post_body_file.close()
-
 ts.Setup.CopyAs('h2client.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2bigclient.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2chunked.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2active_timeout.py', Test.RunDirectory)
+
+# ----
+# Test Cases
+# ----
 
 # Test Case 1:  basic H2 interaction
 tr = Test.AddTestRun()
@@ -128,7 +130,7 @@ tr.StillRunningAfter = server
 
 # Test Case 3: Chunked content
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'python3 h2chunked.py -p {0}  -u /{1}'.format(ts.Variables.ssl_port, requestLocation)
+tr.Processes.Default.Command = 'python3 h2chunked.py -p {0}  -u /test2'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/chunked.gold"
 tr.StillRunningAfter = server
@@ -143,7 +145,7 @@ tr.StillRunningAfter = server
 # tr.Processes.Default.Streams.stdout = "gold/replay.gold"
 # tr.StillRunningAfter = server
 
-# Test Case 5:h2_active_timeout
+# Test Case 5: h2_active_timeout
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'python3 h2active_timeout.py -p {0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
@@ -154,7 +156,7 @@ tr.StillRunningAfter = server
 # While HTTP/2 does not support Tranfer-encoding we pass that into curl to encourage it to not set the content length
 # on the post body
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format( post_body, ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format(post_body, ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
@@ -163,7 +165,7 @@ tr.StillRunningAfter = server
 # While HTTP/2 does not support Tranfer-encoding we pass that into curl to encourage it to not set the content length
 # on the post body
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d @big_post_body https://127.0.0.1:{0}/bigpostchunked'.format( ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d @big_post_body https://127.0.0.1:{0}/bigpostchunked'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
