@@ -309,12 +309,20 @@ public:
       return nullptr;
     }
 
+#ifndef OPENSSL_IS_BORINGSSL
     int curve_nid = SSL_get_shared_curve(ssl, 0);
 
     if (curve_nid == NID_undef) {
       return nullptr;
     }
     return OBJ_nid2sn(curve_nid);
+#else
+    if (uint16_t curve_id = SSL_get_curve_id(ssl); curve_id != 0) {
+      return SSL_get_curve_name(curve_id);
+    } else {
+      return nullptr;
+    }
+#endif
   }
 
   bool
