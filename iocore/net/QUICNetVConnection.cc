@@ -2230,7 +2230,7 @@ QUICNetVConnection::_state_connection_established_initiate_connection_migration(
 
   std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
 
-  if (this->_connection_migration_initiated || remote_tp->contains(QUICTransportParameterId::DISABLE_MIGRATION) ||
+  if (this->_connection_migration_initiated || remote_tp->contains(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION) ||
       !this->_alt_con_manager->is_ready_to_migrate() ||
       this->_alt_con_manager->will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, true, this->_seq_num++)) {
     return error;

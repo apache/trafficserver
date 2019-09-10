@@ -193,8 +193,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "ACK_DELAY_EXPONENT";
   case QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI:
     return "INITIAL_MAX_STREAMS_UNI";
-  case QUICTransportParameterId::DISABLE_MIGRATION:
-    return "DISABLE_MIGRATION";
+  case QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION:
+    return "DISABLE_ACTIVE_MIGRATION";
   case QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE:
     return "INITIAL_MAX_STREAM_DATA_BIDI_REMOTE";
   case QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI:
