@@ -420,8 +420,8 @@ public:
   void store(uint8_t *buf, uint16_t &len) const;
 
 private:
-  IpEndpoint _endpoint_ipv4;
-  IpEndpoint _endpoint_ipv6;
+  IpEndpoint _endpoint_ipv4 = {};
+  IpEndpoint _endpoint_ipv6 = {};
   QUICConnectionId _cid;
   QUICStatelessResetToken _token;
   bool _valid = false;
