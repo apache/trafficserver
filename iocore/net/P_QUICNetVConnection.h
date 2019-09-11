@@ -66,6 +66,7 @@
 #include "quic/QUICPacketProtectionKeyInfo.h"
 #include "quic/QUICContext.h"
 #include "quic/QUICTokenCreator.h"
+#include "quic/QUICEventDriver.h"
 
 // Size of connection ids for debug log : e.g. aaaaaaaa-bbbbbbbb\0
 static constexpr size_t MAX_CIDS_SIZE = 8 + 1 + 8 + 1;
@@ -131,7 +132,12 @@ class SSLNextProtocolSet;
  *    WRITE:
  *      Do nothing
  **/
-class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, public RefCountObj, public ALPNSupport
+class QUICNetVConnection : public UnixNetVConnection,
+                           public QUICConnection,
+                           public QUICFrameGenerator,
+                           public RefCountObj,
+                           public ALPNSupport,
+                           public QUICEventDriver
 {
   using super = UnixNetVConnection; ///< Parent type.
 
@@ -141,6 +147,11 @@ public:
   void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *);
   void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid, UDPConnection *,
             QUICPacketHandler *, QUICConnectionTable *ctable);
+
+  // QUICEventDriver
+  void set_write_event_pending(bool pend = true) override;
+  bool is_event_pending() const;
+  void reenable_write();
 
   // accept new conn_id
   int acceptEvent(int event, Event *e);
@@ -351,6 +362,8 @@ private:
 
   uint64_t _stream_frames_sent = 0;
   uint32_t _seq_num            = 0;
+
+  bool _write_event_pending = false;
 
   // TODO: Source addresses verification through an address validation token
   QUICAddrVerifyState _verfied_state;
