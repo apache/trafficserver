@@ -29,8 +29,6 @@
 static constexpr char tag[]                     = "quic_stream_manager";
 static constexpr QUICStreamId QUIC_STREAM_TYPES = 4;
 
-ClassAllocator<QUICStreamManager> quicStreamManagerAllocator("quicStreamManagerAllocator");
-
 QUICStreamManager::QUICStreamManager(QUICConnectionInfoProvider *info, QUICRTTProvider *rtt_provider, QUICApplicationMap *app_map)
   : _stream_factory(rtt_provider, info), _info(info), _app_map(app_map)
 {
