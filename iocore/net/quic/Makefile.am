@@ -93,7 +93,8 @@ libquic_a_SOURCES = \
   QUICUnidirectionalStream.cc \
   QUICStreamFactory.cc \
   QUICPadder.cc \
-  QUICContext.cc
+  QUICContext.cc \
+  QUICTokenCreator.cc
 
 #
 # Check Programs
