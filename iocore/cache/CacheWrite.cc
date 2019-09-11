@@ -105,7 +105,9 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
          called iff the update is a header only update so the fragment
          data should remain valid.
       */
-      if (alternate_index >= 0) {
+      // If we are not in header only updating case. Don't copy fragments.
+      if (alternate_index >= 0 &&
+          ((total_len == 0 && alternate.get_frag_offset_count() == 0) && !(f.allow_empty_doc && this->vio.nbytes == 0))) {
         alternate.copy_frag_offsets_from(write_vector->get(alternate_index));
       }
       alternate_index = write_vector->insert(&alternate, alternate_index);
