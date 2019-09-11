@@ -65,6 +65,7 @@
 #include "quic/QUICAddrVerifyState.h"
 #include "quic/QUICPacketProtectionKeyInfo.h"
 #include "quic/QUICContext.h"
+#include "quic/QUICTokenCreator.h"
 
 // Size of connection ids for debug log : e.g. aaaaaaaa-bbbbbbbb\0
 static constexpr size_t MAX_CIDS_SIZE = 8 + 1 + 8 + 1;
@@ -130,11 +131,7 @@ class SSLNextProtocolSet;
  *    WRITE:
  *      Do nothing
  **/
-class QUICNetVConnection : public UnixNetVConnection,
-                           public QUICConnection,
-                           public QUICFrameGenerator,
-                           public RefCountObj,
-                           public ALPNSupport
+class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, public RefCountObj, public ALPNSupport
 {
   using super = UnixNetVConnection; ///< Parent type.
 
@@ -203,11 +200,6 @@ public:
   std::vector<QUICFrameType> interests() override;
   QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
-  // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
-  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            size_t current_packet_size, uint32_t seq_num) override;
-
   int in_closed_queue = 0;
 
   bool shouldDestroy();
@@ -259,6 +251,7 @@ private:
   QUICAltConnectionManager *_alt_con_manager        = nullptr;
   QUICPathValidator *_path_validator                = nullptr;
   QUICPathManager *_path_manager                    = nullptr;
+  QUICTokenCreator *_token_creator                  = nullptr;
 
   QUICFrameGeneratorManager _frame_generators;
 
@@ -353,18 +346,14 @@ private:
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;
 
-  ats_unique_buf _av_token       = {nullptr};
-  size_t _av_token_len           = 0;
-  bool _is_resumption_token_sent = false;
+  ats_unique_buf _av_token = {nullptr};
+  size_t _av_token_len     = 0;
 
   uint64_t _stream_frames_sent = 0;
   uint32_t _seq_num            = 0;
 
   // TODO: Source addresses verification through an address validation token
   QUICAddrVerifyState _verfied_state;
-
-  // QUICFrameGenerator
-  void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 
   std::unique_ptr<QUICContextImpl> _context;
 };

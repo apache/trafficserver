@@ -36,7 +36,8 @@ class QUICContext
 {
 public:
   virtual ~QUICContext(){};
-  virtual QUICConfig::scoped_config config() const = 0;
+  virtual QUICConnectionInfoProvider *connection_info() const = 0;
+  virtual QUICConfig::scoped_config config() const            = 0;
 };
 
 class QUICLDContext

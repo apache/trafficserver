@@ -411,6 +411,7 @@ QUICNetVConnection::start()
   this->_stream_manager         = new QUICStreamManager(this, &this->_rtt_measure, this->_application_map);
   this->_path_manager           = new QUICPathManager(*this, *this->_path_validator);
   this->_path_manager->set_trusted_path(trusted_path);
+  this->_token_creator = new QUICTokenCreator(this->_context.get());
 
   static constexpr int QUIC_STREAM_MANAGER_WEIGHT = QUICFrameGeneratorWeight::AFTER_DATA - 1;
   static constexpr int QUIC_PINGER_WEIGHT         = QUICFrameGeneratorWeight::LATE + 1;
@@ -421,7 +422,7 @@ QUICNetVConnection::start()
   this->_frame_generators.add_generator(*this->_path_validator, QUICFrameGeneratorWeight::EARLY); // PATH_CHALLENGE, PATH_RESPOSNE
   this->_frame_generators.add_generator(*this->_local_flow_controller, QUICFrameGeneratorWeight::BEFORE_DATA);  // MAX_DATA
   this->_frame_generators.add_generator(*this->_remote_flow_controller, QUICFrameGeneratorWeight::BEFORE_DATA); // DATA_BLOCKED
-  this->_frame_generators.add_generator(*this, QUICFrameGeneratorWeight::BEFORE_DATA);                          // NEW_TOKEN
+  this->_frame_generators.add_generator(*this->_token_creator, QUICFrameGeneratorWeight::BEFORE_DATA);          // NEW_TOKEN
   this->_frame_generators.add_generator(*this->_stream_manager,
                                         QUIC_STREAM_MANAGER_WEIGHT); // STREAM, MAX_STREAM_DATA, STREAM_DATA_BLOCKED
   this->_frame_generators.add_generator(this->_ack_frame_manager, QUICFrameGeneratorWeight::BEFORE_DATA); // ACK
@@ -2263,52 +2264,4 @@ QUICNetVConnection::_handle_periodic_ack_event()
     // FIXME: should sent depend on socket event.
     this->_schedule_packet_write_ready();
   }
-}
-
-// QUICFrameGenerator
-bool
-QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
-{
-  if (!this->_is_level_matched(level)) {
-    return false;
-  }
-
-  return !this->_is_resumption_token_sent;
-}
-
-QUICFrame *
-QUICNetVConnection::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                                   size_t current_packet_size, uint32_t seq_num)
-{
-  QUICFrame *frame = nullptr;
-
-  if (!this->_is_level_matched(level)) {
-    return frame;
-  }
-
-  if (this->_is_resumption_token_sent) {
-    return frame;
-  }
-
-  if (this->direction() == NET_VCONNECTION_IN) {
-    // TODO Make expiration period configurable
-    QUICResumptionToken token(this->get_remote_endpoint(), this->connection_id(), Thread::get_hrtime() + HRTIME_HOURS(24));
-    frame = QUICFrameFactory::create_new_token_frame(buf, token, this->_issue_frame_id(), this);
-    if (frame) {
-      if (frame->size() < maximum_frame_size) {
-        this->_is_resumption_token_sent = true;
-      } else {
-        // Cancel generating frame
-        frame = nullptr;
-      }
-    }
-  }
-
-  return frame;
-}
-
-void
-QUICNetVConnection::_on_frame_lost(QUICFrameInformationUPtr &info)
-{
-  this->_is_resumption_token_sent = false;
 }
