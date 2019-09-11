@@ -140,6 +140,9 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
 
   PRINT_BUCKET("insertSession before")
   if (queue.size >= static_cast<int>(SSLConfigParams::session_cache_max_bucket_size)) {
+    if (ssl_rsb) {
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_eviction);
+    }
     removeOldestSession();
   }
 
