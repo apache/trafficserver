@@ -874,6 +874,11 @@ SSLNetVConnection::do_io_close(int lerrno)
         // Send the close-notify
         int ret = SSL_shutdown(ssl);
         Debug("ssl-shutdown", "SSL_shutdown %s", (ret) ? "success" : "failed");
+      } else {
+        // Request a quiet shutdown to OpenSSL
+        SSL_set_quiet_shutdown(ssl, 1);
+        SSL_set_shutdown(ssl, SSL_RECEIVED_SHUTDOWN | SSL_SENT_SHUTDOWN);
+        Debug("ssl-shutdown", "Enable quiet shutdown");
       }
     }
   }
