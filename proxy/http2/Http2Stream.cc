@@ -99,14 +99,20 @@ Http2Stream::main_event_handler(int event, void *edata)
       if (lock.is_locked()) {
         read_vio.cont->handleEvent(event, &read_vio);
       } else {
-        this_ethread()->schedule_imm(read_vio.cont, event, &read_vio);
+        if (this->_read_vio_event) {
+          this->_read_vio_event->cancel();
+        }
+        this->_read_vio_event = this_ethread()->schedule_imm(read_vio.cont, event, &read_vio);
       }
     } else if (_sm && write_vio.ntodo() > 0) {
       MUTEX_TRY_LOCK(lock, write_vio.mutex, this_ethread());
       if (lock.is_locked()) {
         write_vio.cont->handleEvent(event, &write_vio);
       } else {
-        this_ethread()->schedule_imm(write_vio.cont, event, &write_vio);
+        if (this->_write_vio_event) {
+          this->_write_vio_event->cancel();
+        }
+        this->_write_vio_event = this_ethread()->schedule_imm(write_vio.cont, event, &write_vio);
       }
     }
     break;
@@ -119,7 +125,10 @@ Http2Stream::main_event_handler(int event, void *edata)
         if (lock.is_locked()) {
           write_vio.cont->handleEvent(event, &write_vio);
         } else {
-          this_ethread()->schedule_imm(write_vio.cont, event, &write_vio);
+          if (this->_write_vio_event) {
+            this->_write_vio_event->cancel();
+          }
+          this->_write_vio_event = this_ethread()->schedule_imm(write_vio.cont, event, &write_vio);
         }
       }
     } else {
@@ -135,7 +144,10 @@ Http2Stream::main_event_handler(int event, void *edata)
         if (lock.is_locked()) {
           read_vio.cont->handleEvent(event, &read_vio);
         } else {
-          this_ethread()->schedule_imm(read_vio.cont, event, &read_vio);
+          if (this->_read_vio_event) {
+            this->_read_vio_event->cancel();
+          }
+          this->_read_vio_event = this_ethread()->schedule_imm(read_vio.cont, event, &read_vio);
         }
       }
     } else {
@@ -936,6 +948,16 @@ Http2Stream::clear_io_events()
   if (buffer_full_write_event) {
     buffer_full_write_event->cancel();
     buffer_full_write_event = nullptr;
+  }
+
+  if (this->_read_vio_event) {
+    this->_read_vio_event->cancel();
+    this->_read_vio_event = nullptr;
+  }
+
+  if (this->_write_vio_event) {
+    this->_write_vio_event->cancel();
+    this->_write_vio_event = nullptr;
   }
 }
 
