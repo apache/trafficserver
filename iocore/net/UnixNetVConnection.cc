@@ -1344,7 +1344,7 @@ UnixNetVConnection::apply_options()
   con.apply_options(options);
 }
 
-TS_INLINE void
+void
 UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
 {
   Debug("socket", "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);

@@ -88,7 +88,7 @@ extern UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when = 0, 
    @param len # of bytes to reference from block
  */
 
-TS_INLINE UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when = 0, IOBufferBlock *block = nullptr, int len = 0);
+inline UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when = 0, IOBufferBlock *block = nullptr, int len = 0);
 /**
    Create a new packet to be sent over UDPConnection.  Packet has no
    destination or data.

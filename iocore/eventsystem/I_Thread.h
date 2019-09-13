@@ -180,13 +180,13 @@ protected:
 
 extern Thread *this_thread();
 
-TS_INLINE ink_hrtime
+inline ink_hrtime
 Thread::get_hrtime()
 {
   return cur_time;
 }
 
-TS_INLINE ink_hrtime
+inline ink_hrtime
 Thread::get_hrtime_updated()
 {
   return cur_time = ink_get_hrtime_internal();

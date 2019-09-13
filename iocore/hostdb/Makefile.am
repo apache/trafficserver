@@ -35,7 +35,6 @@ libinkhostdb_a_SOURCES = \
 	HostDB.cc \
 	I_HostDB.h \
 	I_HostDBProcessor.h \
-	Inline.cc \
 	P_HostDB.h \
 	P_HostDBProcessor.h \
 	P_RefCountCache.h \

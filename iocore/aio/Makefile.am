@@ -30,7 +30,6 @@ check_PROGRAMS = test_AIO
 libinkaio_a_SOURCES = \
 	AIO.cc \
 	I_AIO.h \
-	Inline.cc \
 	P_AIO.h
 
 test_AIO_LDFLAGS = \

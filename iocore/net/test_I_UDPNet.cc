@@ -34,6 +34,9 @@
 #include "I_UDPPacket.h"
 #include "I_UDPConnection.h"
 
+#include "P_Net.h"
+#include "P_UDPPacket.h"
+
 #include "diags.i"
 
 static const char payload[] = "hello";

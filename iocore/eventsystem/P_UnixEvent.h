@@ -23,7 +23,7 @@
 
 #pragma once
 
-TS_INLINE Event *
+inline Event *
 Event::init(Continuation *c, ink_hrtime atimeout_at, ink_hrtime aperiod)
 {
   continuation = c;
@@ -34,14 +34,14 @@ Event::init(Continuation *c, ink_hrtime atimeout_at, ink_hrtime aperiod)
   return this;
 }
 
-TS_INLINE void
+inline void
 Event::free()
 {
   mutex = nullptr;
   eventAllocator.free(this);
 }
 
-TS_INLINE
-Event::Event() : in_the_prot_queue(false), in_the_priority_queue(false), immediate(false), globally_allocated(true), in_heap(false)
+inline Event::Event()
+  : in_the_prot_queue(false), in_the_priority_queue(false), immediate(false), globally_allocated(true), in_heap(false)
 {
 }

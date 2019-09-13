@@ -310,8 +310,7 @@ struct DNSServer {
   }
 };
 
-TS_INLINE
-DNSHandler::DNSHandler()
+inline DNSHandler::DNSHandler()
   : Continuation(nullptr),
 
     generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this))

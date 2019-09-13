@@ -69,7 +69,3 @@
 #define TS_NONNULL(...)
 #endif
 #endif
-
-#if !defined(TS_INLINE)
-#define TS_INLINE inline
-#endif

@@ -31,8 +31,7 @@
 
 #include "I_EventSystem.h"
 
-TS_INLINE
-ProtectedQueue::ProtectedQueue()
+inline ProtectedQueue::ProtectedQueue()
 {
   Event e;
   ink_mutex_init(&lock);
@@ -40,7 +39,7 @@ ProtectedQueue::ProtectedQueue()
   ink_cond_init(&might_have_data);
 }
 
-TS_INLINE void
+inline void
 ProtectedQueue::signal()
 {
   // Need to get the lock before you can signal the thread
@@ -49,7 +48,7 @@ ProtectedQueue::signal()
   ink_mutex_release(&lock);
 }
 
-TS_INLINE int
+inline int
 ProtectedQueue::try_signal()
 {
   // Need to get the lock before you can signal the thread
@@ -63,7 +62,7 @@ ProtectedQueue::try_signal()
 }
 
 // Called from the same thread (don't need to signal)
-TS_INLINE void
+inline void
 ProtectedQueue::enqueue_local(Event *e)
 {
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
@@ -71,7 +70,7 @@ ProtectedQueue::enqueue_local(Event *e)
   localQueue.enqueue(e);
 }
 
-TS_INLINE void
+inline void
 ProtectedQueue::remove(Event *e)
 {
   ink_assert(e->in_the_prot_queue);
@@ -81,7 +80,7 @@ ProtectedQueue::remove(Event *e)
   e->in_the_prot_queue = 0;
 }
 
-TS_INLINE Event *
+inline Event *
 ProtectedQueue::dequeue_local()
 {
   Event *e = localQueue.dequeue();

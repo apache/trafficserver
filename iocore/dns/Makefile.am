@@ -36,7 +36,6 @@ libinkdns_a_SOURCES = \
 	I_DNSProcessor.h \
 	I_SplitDNS.h \
 	I_SplitDNSProcessor.h \
-	Inline.cc \
 	P_DNS.h \
 	P_DNSConnection.h \
 	P_DNSProcessor.h \

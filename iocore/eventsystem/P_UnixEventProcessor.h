@@ -28,7 +28,7 @@
 
 const int LOAD_BALANCE_INTERVAL = 1;
 
-TS_INLINE off_t
+inline off_t
 EventProcessor::allocate(int size)
 {
   static off_t start = INK_ALIGN(offsetof(EThread, thread_private), 16);
@@ -46,7 +46,7 @@ EventProcessor::allocate(int size)
   return (off_t)(old + start);
 }
 
-TS_INLINE EThread *
+inline EThread *
 EventProcessor::assign_thread(EventType etype)
 {
   int next;
@@ -68,7 +68,7 @@ EventProcessor::assign_thread(EventType etype)
 // the type is different.
 //
 // Only assign new affinity when there is currently none.
-TS_INLINE EThread *
+inline EThread *
 EventProcessor::assign_affinity_by_type(Continuation *cont, EventType etype)
 {
   EThread *ethread = cont->mutex->thread_holding;
@@ -86,7 +86,7 @@ EventProcessor::assign_affinity_by_type(Continuation *cont, EventType etype)
   return ethread;
 }
 
-TS_INLINE Event *
+inline Event *
 EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
 {
   ink_assert(etype < MAX_EVENT_TYPES);
@@ -116,7 +116,7 @@ EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
   return e;
 }
 
-TS_INLINE Event *
+inline Event *
 EventProcessor::schedule_imm_signal(Continuation *cont, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
@@ -130,7 +130,7 @@ EventProcessor::schedule_imm_signal(Continuation *cont, EventType et, int callba
   return schedule(e->init(cont, 0, 0), et, true);
 }
 
-TS_INLINE Event *
+inline Event *
 EventProcessor::schedule_imm(Continuation *cont, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
@@ -144,7 +144,7 @@ EventProcessor::schedule_imm(Continuation *cont, EventType et, int callback_even
   return schedule(e->init(cont, 0, 0), et);
 }
 
-TS_INLINE Event *
+inline Event *
 EventProcessor::schedule_at(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
@@ -156,7 +156,7 @@ EventProcessor::schedule_at(Continuation *cont, ink_hrtime t, EventType et, int 
   return schedule(e->init(cont, t, 0), et);
 }
 
-TS_INLINE Event *
+inline Event *
 EventProcessor::schedule_in(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
@@ -167,7 +167,7 @@ EventProcessor::schedule_in(Continuation *cont, ink_hrtime t, EventType et, int 
   return schedule(e->init(cont, Thread::get_hrtime() + t, 0), et);
 }
 
-TS_INLINE Event *
+inline Event *
 EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();

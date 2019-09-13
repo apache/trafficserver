@@ -82,7 +82,7 @@ int loadSocksAuthInfo(int fd, socks_conf_struct *socks_stuff);
 // Right now just use a generic fn ptr and hide casting in an inline fn.
 typedef int (*SocksAuthHandler)(int event, unsigned char *buf, void (**h_ptr)(void));
 
-TS_INLINE int
+inline int
 invokeSocksAuthHandler(SocksAuthHandler &h, int arg1, unsigned char *arg2)
 {
   return (h)(arg1, arg2, (void (**)(void))(&h));
@@ -143,7 +143,7 @@ typedef int (SocksEntry::*SocksEntryHandler)(int, void *);
 
 extern ClassAllocator<SocksEntry> socksAllocator;
 
-TS_INLINE void
+inline void
 SocksAddrType::reset()
 {
   if (type != SOCKS_ATYPE_IPV4 && addr.buf) {

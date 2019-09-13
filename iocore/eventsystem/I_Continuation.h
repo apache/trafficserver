@@ -182,7 +182,7 @@ public:
     @return State machine and processor specific return code.
 
   */
-  TS_INLINE int
+  inline int
   handleEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr)
   {
     // If there is a lock, we must be holding it on entry

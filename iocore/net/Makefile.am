@@ -97,7 +97,6 @@ libinknet_a_SOURCES = \
 	I_UDPConnection.h \
 	I_UDPNet.h \
 	I_UDPPacket.h \
-	Inline.cc \
 	I_SessionAccept.h \
 	YamlSNIConfig.h \
 	YamlSNIConfig.cc \

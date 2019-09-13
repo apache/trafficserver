@@ -56,7 +56,7 @@ public:
   EThread **netthreads;
 };
 
-TS_INLINE Action *
+inline Action *
 NetProcessor::connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opts)
 {
   return static_cast<UnixNetProcessor *>(this)->connect_re_internal(cont, addr, opts);

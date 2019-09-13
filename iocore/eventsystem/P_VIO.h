@@ -24,49 +24,47 @@
 #pragma once
 #include "I_VIO.h"
 
-TS_INLINE
-VIO::VIO(int aop) : op(aop), buffer(), mutex(nullptr) {}
+inline VIO::VIO(int aop) : op(aop), buffer(), mutex(nullptr) {}
 
-TS_INLINE
-VIO::VIO() : buffer(), mutex(nullptr) {}
+inline VIO::VIO() : buffer(), mutex(nullptr) {}
 
-TS_INLINE Continuation *
+inline Continuation *
 VIO::get_continuation() const
 {
   return cont;
 }
 
-TS_INLINE void
+inline void
 VIO::set_writer(MIOBuffer *writer)
 {
   buffer.writer_for(writer);
 }
 
-TS_INLINE void
+inline void
 VIO::set_reader(IOBufferReader *reader)
 {
   buffer.reader_for(reader);
 }
 
-TS_INLINE MIOBuffer *
+inline MIOBuffer *
 VIO::get_writer() const
 {
   return buffer.writer();
 }
 
-TS_INLINE IOBufferReader *
+inline IOBufferReader *
 VIO::get_reader() const
 {
   return (buffer.reader());
 }
 
-TS_INLINE int64_t
+inline int64_t
 VIO::ntodo() const
 {
   return nbytes - ndone;
 }
 
-TS_INLINE void
+inline void
 VIO::done()
 {
   if (buffer.reader()) {
@@ -76,7 +74,7 @@ VIO::done()
   }
 }
 
-TS_INLINE void
+inline void
 VIO::set_continuation(Continuation *acont)
 {
   if (vc_server) {
@@ -92,7 +90,7 @@ VIO::set_continuation(Continuation *acont)
   return;
 }
 
-TS_INLINE void
+inline void
 VIO::reenable()
 {
   this->_disabled = false;
@@ -101,7 +99,7 @@ VIO::reenable()
   }
 }
 
-TS_INLINE void
+inline void
 VIO::reenable_re()
 {
   this->_disabled = false;
@@ -110,13 +108,13 @@ VIO::reenable_re()
   }
 }
 
-TS_INLINE void
+inline void
 VIO::disable()
 {
   this->_disabled = true;
 }
 
-TS_INLINE bool
+inline bool
 VIO::is_disabled() const
 {
   return this->_disabled;

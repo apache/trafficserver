@@ -338,110 +338,110 @@ extern unsigned short *vol_hash_table;
 
 // inline Functions
 
-TS_INLINE int
+inline int
 Vol::headerlen()
 {
   return ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter) + sizeof(uint16_t) * (this->segments - 1));
 }
 
-TS_INLINE Dir *
+inline Dir *
 Vol::dir_segment(int s)
 {
   return (Dir *)(((char *)this->dir) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
 }
 
-TS_INLINE size_t
+inline size_t
 Vol::dirlen()
 {
   return this->headerlen() + ROUND_TO_STORE_BLOCK(((size_t)this->buckets) * DIR_DEPTH * this->segments * SIZEOF_DIR) +
          ROUND_TO_STORE_BLOCK(sizeof(VolHeaderFooter));
 }
 
-TS_INLINE int
+inline int
 Vol::direntries()
 {
   return this->buckets * DIR_DEPTH * this->segments;
 }
 
-TS_INLINE int
+inline int
 Vol::vol_out_of_phase_valid(Dir *e)
 {
   return (dir_offset(e) - 1 >= ((this->header->agg_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
-TS_INLINE int
+inline int
 Vol::vol_out_of_phase_agg_valid(Dir *e)
 {
   return (dir_offset(e) - 1 >= ((this->header->agg_pos - this->start + AGG_SIZE) / CACHE_BLOCK_SIZE));
 }
 
-TS_INLINE int
+inline int
 Vol::vol_out_of_phase_write_valid(Dir *e)
 {
   return (dir_offset(e) - 1 >= ((this->header->write_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
-TS_INLINE int
+inline int
 Vol::vol_in_phase_valid(Dir *e)
 {
   return (dir_offset(e) - 1 < ((this->header->write_pos + this->agg_buf_pos - this->start) / CACHE_BLOCK_SIZE));
 }
 
-TS_INLINE off_t
+inline off_t
 Vol::vol_offset(Dir *e)
 {
   return this->start + (off_t)dir_offset(e) * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 
-TS_INLINE off_t
+inline off_t
 Vol::offset_to_vol_offset(off_t pos)
 {
   return ((pos - this->start + CACHE_BLOCK_SIZE) / CACHE_BLOCK_SIZE);
 }
 
-TS_INLINE off_t
+inline off_t
 Vol::vol_offset_to_offset(off_t pos)
 {
   return this->start + pos * CACHE_BLOCK_SIZE - CACHE_BLOCK_SIZE;
 }
 
-TS_INLINE int
+inline int
 Vol::vol_in_phase_agg_buf_valid(Dir *e)
 {
   return (this->vol_offset(e) >= this->header->write_pos && this->vol_offset(e) < (this->header->write_pos + this->agg_buf_pos));
 }
 // length of the partition not including the offset of location 0.
-TS_INLINE off_t
+inline off_t
 Vol::vol_relative_length(off_t start_offset)
 {
   return (this->len + this->skip) - start_offset;
 }
 
-TS_INLINE uint32_t
+inline uint32_t
 Doc::prefix_len()
 {
   return sizeof(Doc) + hlen;
 }
 
-TS_INLINE uint32_t
+inline uint32_t
 Doc::data_len()
 {
   return len - sizeof(Doc) - hlen;
 }
 
-TS_INLINE int
+inline int
 Doc::single_fragment()
 {
   return data_len() == total_len;
 }
 
-TS_INLINE char *
+inline char *
 Doc::hdr()
 {
   return reinterpret_cast<char *>(this) + sizeof(Doc);
 }
 
-TS_INLINE char *
+inline char *
 Doc::data()
 {
   return this->hdr() + hlen;
@@ -452,7 +452,7 @@ int vol_init(Vol *d, char *s, off_t blocks, off_t skip, bool clear);
 
 // inline Functions
 
-TS_INLINE EvacuationBlock *
+inline EvacuationBlock *
 evacuation_block_exists(Dir *dir, Vol *p)
 {
   EvacuationBlock *b = p->evacuate[dir_evac_bucket(dir)].head;
@@ -462,7 +462,7 @@ evacuation_block_exists(Dir *dir, Vol *p)
   return nullptr;
 }
 
-TS_INLINE void
+inline void
 Vol::cancel_trigger()
 {
   if (trigger) {
@@ -471,7 +471,7 @@ Vol::cancel_trigger()
   }
 }
 
-TS_INLINE EvacuationBlock *
+inline EvacuationBlock *
 new_EvacuationBlock(EThread *t)
 {
   EvacuationBlock *b      = THREAD_ALLOC(evacuationBlockAllocator, t);
@@ -482,7 +482,7 @@ new_EvacuationBlock(EThread *t)
   return b;
 }
 
-TS_INLINE void
+inline void
 free_EvacuationBlock(EvacuationBlock *b, EThread *t)
 {
   EvacuationKey *e = b->evac_frags.link.next;
@@ -494,13 +494,13 @@ free_EvacuationBlock(EvacuationBlock *b, EThread *t)
   THREAD_FREE(b, evacuationBlockAllocator, t);
 }
 
-TS_INLINE OpenDirEntry *
+inline OpenDirEntry *
 Vol::open_read(const CryptoHash *key)
 {
   return open_dir.open_read(key);
 }
 
-TS_INLINE int
+inline int
 Vol::within_hit_evacuate_window(Dir *xdir)
 {
   off_t oft       = dir_offset(xdir) - 1;
@@ -512,7 +512,7 @@ Vol::within_hit_evacuate_window(Dir *xdir)
     return -delta > (data_blocks - hit_evacuate_window) && -delta < data_blocks;
 }
 
-TS_INLINE uint32_t
+inline uint32_t
 Vol::round_to_approx_size(uint32_t l)
 {
   uint32_t ll = round_to_approx_dir_size(l);

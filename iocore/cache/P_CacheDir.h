@@ -303,13 +303,13 @@ extern Dir empty_dir;
 
 #define dir_in_seg(_s, _i) ((Dir *)(((char *)(_s)) + (SIZEOF_DIR * (_i))))
 
-TS_INLINE bool
+inline bool
 dir_compare_tag(const Dir *e, const CacheKey *key)
 {
   return (dir_tag(e) == DIR_MASK_TAG(key->slice32(2)));
 }
 
-TS_INLINE Dir *
+inline Dir *
 dir_from_offset(int64_t i, Dir *seg)
 {
 #if DIR_DEPTH < 5
@@ -322,13 +322,13 @@ dir_from_offset(int64_t i, Dir *seg)
   return dir_in_seg(seg, i);
 #endif
 }
-TS_INLINE Dir *
+inline Dir *
 next_dir(Dir *d, Dir *seg)
 {
   int i = dir_next(d);
   return dir_from_offset(i, seg);
 }
-TS_INLINE int64_t
+inline int64_t
 dir_to_offset(const Dir *d, const Dir *seg)
 {
 #if DIR_DEPTH < 5
@@ -339,12 +339,12 @@ dir_to_offset(const Dir *d, const Dir *seg)
   return i;
 #endif
 }
-TS_INLINE Dir *
+inline Dir *
 dir_bucket(int64_t b, Dir *seg)
 {
   return dir_in_seg(seg, b * DIR_DEPTH);
 }
-TS_INLINE Dir *
+inline Dir *
 dir_bucket_row(Dir *b, int64_t i)
 {
   return dir_in_seg(b, i);

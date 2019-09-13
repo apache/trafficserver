@@ -101,8 +101,8 @@ test_proxy_http_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
 	$(top_builddir)/proxy/logging/liblogging.a \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	$(top_builddir)/mgmt/libmgmt_p.la \

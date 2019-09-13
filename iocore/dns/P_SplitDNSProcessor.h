@@ -110,7 +110,7 @@ struct SplitDNS : public ConfigInfo {
 /* --------------------------------------------------------------
    SplitDNSConfig::isSplitDNSEnabled()
    -------------------------------------------------------------- */
-TS_INLINE bool
+inline bool
 SplitDNSConfig::isSplitDNSEnabled()
 {
   return (gsplit_dns_enabled ? true : false);
@@ -143,13 +143,12 @@ public:
 /* --------------------------------------------------------------
    DNSRequestData::get_string()
    -------------------------------------------------------------- */
-TS_INLINE
-DNSRequestData::DNSRequestData() {}
+inline DNSRequestData::DNSRequestData() {}
 
 /* --------------------------------------------------------------
    DNSRequestData::get_string()
    -------------------------------------------------------------- */
-TS_INLINE char *
+inline char *
 DNSRequestData::get_string()
 {
   return ats_strdup((char *)m_pHost);
@@ -158,7 +157,7 @@ DNSRequestData::get_string()
 /* --------------------------------------------------------------
    DNSRequestData::get_host()
    -------------------------------------------------------------- */
-TS_INLINE const char *
+inline const char *
 DNSRequestData::get_host()
 {
   return m_pHost;
@@ -167,7 +166,7 @@ DNSRequestData::get_host()
 /* --------------------------------------------------------------
    DNSRequestData::get_ip()
    -------------------------------------------------------------- */
-TS_INLINE sockaddr const *
+inline sockaddr const *
 DNSRequestData::get_ip()
 {
   return nullptr;
@@ -176,7 +175,7 @@ DNSRequestData::get_ip()
 /* --------------------------------------------------------------
    DNSRequestData::get_client_ip()
    -------------------------------------------------------------- */
-TS_INLINE sockaddr const *
+inline sockaddr const *
 DNSRequestData::get_client_ip()
 {
   return nullptr;
@@ -210,13 +209,12 @@ public:
 /* --------------------------------------------------------------
    SplitDNSRecord::SplitDNSRecord()
    -------------------------------------------------------------- */
-TS_INLINE
-SplitDNSRecord::SplitDNSRecord() {}
+inline SplitDNSRecord::SplitDNSRecord() {}
 
 /* --------------------------------------------------------------
    SplitDNSRecord::~SplitDNSRecord()
    -------------------------------------------------------------- */
-TS_INLINE SplitDNSRecord::~SplitDNSRecord() {}
+inline SplitDNSRecord::~SplitDNSRecord() {}
 
 /* ------------------
    Helper Functions

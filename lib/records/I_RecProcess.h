@@ -110,7 +110,6 @@ int64_t *RecGetGlobalRawStatCountPtr(RecRawStatBlock *rsb, int id);
 // RecIncrRawStatXXX
 //-------------------------------------------------------------------------
 // inlined functions that are used very frequently.
-// FIXME: move it to Inline.cc
 inline RecRawStat *
 raw_stat_get_tlp(RecRawStatBlock *rsb, int id, EThread *ethread)
 {

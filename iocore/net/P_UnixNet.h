@@ -380,7 +380,7 @@ enum ThrottleType {
   CONNECT,
 };
 
-TS_INLINE int
+inline int
 net_connections_to_throttle(ThrottleType t)
 {
   double headroom = t == ACCEPT ? NET_THROTTLE_ACCEPT_HEADROOM : NET_THROTTLE_CONNECT_HEADROOM;
@@ -394,7 +394,7 @@ net_connections_to_throttle(ThrottleType t)
   return (int)(currently_open * headroom);
 }
 
-TS_INLINE void
+inline void
 check_shedding_warning()
 {
   ink_hrtime t = Thread::get_hrtime();
@@ -404,7 +404,7 @@ check_shedding_warning()
   }
 }
 
-TS_INLINE bool
+inline bool
 check_net_throttle(ThrottleType t)
 {
   int connections = net_connections_to_throttle(t);
@@ -415,7 +415,7 @@ check_net_throttle(ThrottleType t)
   return false;
 }
 
-TS_INLINE void
+inline void
 check_throttle_warning(ThrottleType type)
 {
   ink_hrtime t = Thread::get_hrtime();
@@ -428,7 +428,7 @@ check_throttle_warning(ThrottleType type)
   }
 }
 
-TS_INLINE int
+inline int
 change_net_connections_throttle(const char *token, RecDataT data_type, RecData value, void *data)
 {
   (void)token;
@@ -451,7 +451,7 @@ change_net_connections_throttle(const char *token, RecDataT data_type, RecData v
 // 1  - transient
 // 0  - report as warning
 // -1 - fatal
-TS_INLINE int
+inline int
 accept_error_seriousness(int res)
 {
   switch (res) {
@@ -489,7 +489,7 @@ accept_error_seriousness(int res)
   }
 }
 
-TS_INLINE void
+inline void
 check_transient_accept_error(int res)
 {
   ink_hrtime t = Thread::get_hrtime();
@@ -530,31 +530,31 @@ write_disable(NetHandler *nh, UnixNetVConnection *vc)
   vc->ep.modify(-EVENTIO_WRITE);
 }
 
-TS_INLINE int
+inline int
 EventIO::start(EventLoop l, DNSConnection *vc, int events)
 {
   type = EVENTIO_DNS_CONNECTION;
   return start(l, vc->fd, (Continuation *)vc, events);
 }
-TS_INLINE int
+inline int
 EventIO::start(EventLoop l, NetAccept *vc, int events)
 {
   type = EVENTIO_NETACCEPT;
   return start(l, vc->server.fd, (Continuation *)vc, events);
 }
-TS_INLINE int
+inline int
 EventIO::start(EventLoop l, UnixNetVConnection *vc, int events)
 {
   type = EVENTIO_READWRITE_VC;
   return start(l, vc->con.fd, (Continuation *)vc, events);
 }
-TS_INLINE int
+inline int
 EventIO::start(EventLoop l, UnixUDPConnection *vc, int events)
 {
   type = EVENTIO_UDP_CONNECTION;
   return start(l, vc->fd, (Continuation *)vc, events);
 }
-TS_INLINE int
+inline int
 EventIO::close()
 {
   if (!this->syscall) {
@@ -579,7 +579,7 @@ EventIO::close()
   return -1;
 }
 
-TS_INLINE int
+inline int
 EventIO::start(EventLoop l, int afd, Continuation *c, int e)
 {
   if (!this->syscall) {
@@ -618,7 +618,7 @@ EventIO::start(EventLoop l, int afd, Continuation *c, int e)
 #endif
 }
 
-TS_INLINE int
+inline int
 EventIO::modify(int e)
 {
   if (!this->syscall) {
@@ -701,7 +701,7 @@ EventIO::modify(int e)
 #endif
 }
 
-TS_INLINE int
+inline int
 EventIO::refresh(int e)
 {
   if (!this->syscall) {
@@ -746,7 +746,7 @@ EventIO::refresh(int e)
 #endif
 }
 
-TS_INLINE int
+inline int
 EventIO::stop()
 {
   if (!this->syscall) {
@@ -771,7 +771,7 @@ EventIO::stop()
   return 0;
 }
 
-TS_INLINE int
+inline int
 NetHandler::startIO(UnixNetVConnection *netvc)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
@@ -795,7 +795,7 @@ NetHandler::startIO(UnixNetVConnection *netvc)
   return res;
 }
 
-TS_INLINE void
+inline void
 NetHandler::stopIO(UnixNetVConnection *netvc)
 {
   ink_release_assert(netvc->nh == this);
@@ -816,7 +816,7 @@ NetHandler::stopIO(UnixNetVConnection *netvc)
   netvc->nh = nullptr;
 }
 
-TS_INLINE void
+inline void
 NetHandler::startCop(UnixNetVConnection *netvc)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
@@ -826,7 +826,7 @@ NetHandler::startCop(UnixNetVConnection *netvc)
   open_list.enqueue(netvc);
 }
 
-TS_INLINE void
+inline void
 NetHandler::stopCop(UnixNetVConnection *netvc)
 {
   ink_release_assert(netvc->nh == this);

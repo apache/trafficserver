@@ -36,13 +36,13 @@
 // Common Interface impl                     //
 ///////////////////////////////////////////////
 
-TS_INLINE void
+inline void
 Thread::set_specific()
 {
   ink_thread_setspecific(Thread::thread_data_key, this);
 }
 
-TS_INLINE Thread *
+inline Thread *
 this_thread()
 {
   return static_cast<Thread *>(ink_thread_getspecific(Thread::thread_data_key));

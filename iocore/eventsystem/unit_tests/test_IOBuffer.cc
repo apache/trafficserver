@@ -27,6 +27,9 @@
 #include "tscore/I_Layout.h"
 
 #include "I_EventSystem.h"
+#include "I_IOBuffer.h"
+#include "P_IOBuffer.h"
+
 #include "RecordsConfig.h"
 
 #include "diags.i"

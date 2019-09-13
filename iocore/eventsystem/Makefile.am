@@ -45,7 +45,6 @@ libinkevent_a_SOURCES = \
 	I_Thread.h \
 	I_VConnection.h \
 	I_VIO.h \
-	Inline.cc \
 	Lock.cc \
 	PQ-List.cc \
 	P_EventSystem.h \

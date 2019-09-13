@@ -51,7 +51,7 @@ public: // Needed by WinNT compiler (compiler bug)
 //    1. Make sure to schedule a delete on an ET_TASK thread
 //    2. Delay the delete (this should be used sparingly)
 template <class C>
-TS_INLINE void
+inline void
 new_Deleter(C *ap, ink_hrtime t)
 {
   if (t > 0) {
@@ -77,7 +77,7 @@ public: // Needed by WinNT compiler (compiler bug)
 };
 
 template <class C>
-TS_INLINE void
+inline void
 new_FreeCaller(C *ap, ink_hrtime t)
 {
   eventProcessor.schedule_in(new FreeCallContinuation<C>(ap), t, ET_TASK);
@@ -105,7 +105,7 @@ struct FreerContinuation : public Continuation {
   }
 };
 
-TS_INLINE void
+inline void
 new_Freer(void *ap, ink_hrtime t)
 {
   eventProcessor.schedule_in(new FreerContinuation(ap), t, ET_TASK);
@@ -130,7 +130,7 @@ template <class C> struct DereferContinuation : public Continuation {
 };
 
 template <class C>
-TS_INLINE void
+inline void
 new_Derefer(C *ap, ink_hrtime t)
 {
   eventProcessor.schedule_in(new DereferContinuation<C>(ap), t, ET_TASK);

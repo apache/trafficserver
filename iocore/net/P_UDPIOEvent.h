@@ -99,7 +99,7 @@ private:
 };
 
 extern ClassAllocator<UDPIOEvent> UDPIOEventAllocator;
-TS_INLINE void
+inline void
 UDPIOEvent::free(UDPIOEvent *e)
 {
   e->b     = nullptr;

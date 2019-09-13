@@ -38,7 +38,7 @@
 
 static constexpr ts::ModuleVersion AIO_MODULE_INTERNAL_VERSION{AIO_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE};
 
-TS_INLINE int
+inline int
 AIOCallback::ok()
 {
   return (off_t)aiocb.aio_nbytes == (off_t)aio_result;
@@ -57,7 +57,7 @@ struct AIOCallbackInternal : public AIOCallback {
   }
 };
 
-TS_INLINE int
+inline int
 AIOVec::mainEvent(int /* event */, Event *)
 {
   ++completed;
@@ -104,7 +104,7 @@ struct AIO_Reqs {
 
 #endif // AIO_MODE == AIO_MODE_NATIVE
 
-TS_INLINE int
+inline int
 AIOCallbackInternal::io_complete(int event, void *data)
 {
   (void)event;
