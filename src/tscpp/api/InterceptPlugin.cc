@@ -190,7 +190,7 @@ InterceptPlugin::getSslConnection()
     return nullptr;
   }
 
-  return TSVConnSSLConnectionGet(state_->net_vc_);
+  return TSVConnSslConnectionGet(state_->net_vc_);
 }
 
 bool

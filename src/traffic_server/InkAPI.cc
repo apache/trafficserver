@@ -9162,7 +9162,7 @@ TSVConnTunnel(TSVConn sslp)
 }
 
 TSSslConnection
-TSVConnSSLConnectionGet(TSVConn sslp)
+TSVConnSslConnectionGet(TSVConn sslp)
 {
   TSSslConnection ssl       = nullptr;
   NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
