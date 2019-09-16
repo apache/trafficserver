@@ -534,7 +534,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
     TSDebug(PLUGIN_NAME, "\tClearing the queue size %lu", localQ.size());
     TSVConn ssl_vc = reinterpret_cast<TSVConn>(localQ.front());
     localQ.pop();
-    TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
+    TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     SSL_set_SSL_CTX(ssl, ref_ctx);
     TSVConnReenable(ssl_vc);
@@ -549,7 +549,7 @@ static int
 cert_retriever(TSCont contp, TSEvent event, void *edata)
 {
   TSVConn ssl_vc         = reinterpret_cast<TSVConn>(edata);
-  TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
+  TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
   SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSL_CTX *ref_ctx       = nullptr;
