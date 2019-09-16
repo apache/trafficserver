@@ -36,7 +36,7 @@ SslHdrExpandRequestHook(TSCont cont, TSEvent event, void *edata)
   txn                 = static_cast<TSHttpTxn>(edata);
   hdr                 = static_cast<const SslHdrInstance *>(TSContDataGet(cont));
   TSVConn vconn       = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txn));
-  TSSslConnection ssl = TSVConnSSLConnectionGet(vconn);
+  TSSslConnection ssl = TSVConnSslConnectionGet(vconn);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
