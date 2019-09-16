@@ -1233,7 +1233,7 @@ tsapi void TSVConnReenableEx(TSVConn sslvcp, TSEvent event);
 /*  Set the connection to go into blind tunnel mode */
 tsapi TSReturnCode TSVConnTunnel(TSVConn sslp);
 /*  Return the SSL object associated with the connection */
-tsapi TSSslConnection TSVConnSSLConnectionGet(TSVConn sslp);
+tsapi TSSslConnection TSVConnSslConnectionGet(TSVConn sslp);
 /* Return the intermediate X509StoreCTX object that references the certificate being validated */
 tsapi TSSslVerifyCTX TSVConnSslVerifyCTXGet(TSVConn sslp);
 /*  Fetch a SSL context from the global lookup table */
