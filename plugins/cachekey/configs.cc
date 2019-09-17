@@ -529,6 +529,10 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
 bool
 Configs::finalize()
 {
+  if (_keyTypes.empty()) {
+    CacheKeyDebug("setting cache key");
+    _keyTypes = {CACHE_KEY};
+  }
   return _query.finalize() && _headers.finalize() && _cookies.finalize();
 }
 
@@ -586,14 +590,19 @@ void
 Configs::setKeyType(const char *arg)
 {
   if (nullptr != arg) {
-    if (9 == strlen(arg) && 0 == strncasecmp(arg, "cache_key", 9)) {
-      _keyType = CacheKeyKeyType::CACHE_KEY;
-      CacheKeyDebug("setting cache key");
-    } else if (20 == strlen(arg) && 0 == strncasecmp(arg, "parent_selection_url", 20)) {
-      _keyType = CacheKeyKeyType::PARENT_SELECTION_URL;
-      CacheKeyDebug("setting parent selection URL");
-    } else {
-      CacheKeyError("unrecognized key type '%s', using default 'cache_key'", arg);
+    StringVector types;
+    ::commaSeparateString<StringVector>(types, arg);
+
+    for (auto type : types) {
+      if (9 == type.length() && 0 == strncasecmp(type.c_str(), "cache_key", 9)) {
+        _keyTypes.insert(CacheKeyKeyType::CACHE_KEY);
+        CacheKeyDebug("setting cache key");
+      } else if (20 == type.length() && 0 == strncasecmp(type.c_str(), "parent_selection_url", 20)) {
+        _keyTypes.insert(CacheKeyKeyType::PARENT_SELECTION_URL);
+        CacheKeyDebug("setting parent selection URL");
+      } else {
+        CacheKeyError("unrecognized key type '%s', using default 'cache_key'", arg);
+      }
     }
   } else {
     CacheKeyError("found an empty key type, using default 'cache_key'");
@@ -606,10 +615,10 @@ Configs::getUriType()
   return _uriType;
 }
 
-CacheKeyKeyType
+CacheKeyKeyTypeSet &
 Configs::getKeyType()
 {
-  return _keyType;
+  return _keyTypes;
 }
 
 const char *

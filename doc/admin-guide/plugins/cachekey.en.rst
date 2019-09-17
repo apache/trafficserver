@@ -53,11 +53,11 @@ Key type
 
 The plugin manipulates the `cache key` by default. If `parent selection URL` manipulation is needed the following option can be used:
 
-* ``--key-type=[cache_key|parent_selection_url]`` (default: ``cache_key``)
+* ``--key-type=<list of target types>``  (default: ``cache_key``) - list of ``cache_key`` or ``parent_selection_url``, if multiple ``--key-type`` options are specified then all values are combined together.
 
-One instance of this plugin can used either for `cache key` or `parent selection URL` manupulation but never both.
-If `simultaneous cache key and parent selection URL manipulation`_ is needed two separate instances of the plugin
-have to be loaded for each key type.
+An instance of this plugin can be used for applying manipulations to `cache key`, `parent selection URL` or both depending on the need. See `simultaneous cache key and parent selection URL manipulation`_
+for examples of how to apply the **same** set of manupulations to both targets with a single plugin instance or applying **diferent** sets of manipulations to each target using separate plugin instances.
+
 
 Cache key structure and related plugin parameters
 =================================================
@@ -664,3 +664,20 @@ For this purpose two separate instances are loaded for that remap rule:
 
 In the example above the first instance of the plugin sets the prefix to the parent selection URI and
 the second instance of the plugin sets the prefix to the cache key.
+
+The **same** string manipulations can be applied to both cache key and parent selection url more concisely without chaining cachekey plugin instances by specifying multiple target types `--key-type`.
+
+Instead of::
+
+    @plugin=cachekey.so \
+        @pparam=--key-type=parent_selection_url \
+        @pparam=--remove-all-params=true
+    @plugin=cachekey.so \
+        @pparam=--key-type=cache_key \
+        @pparam=--remove-all-params=true
+
+one could write::
+
+    @plugin=cachekey.so \
+        @pparam=--key-type=parent_selection_url,cache_key \
+        @pparam=--remove-all-params=true
