@@ -41,6 +41,8 @@ enum CacheKeyKeyType {
 const char *getCacheKeyUriTypeName(CacheKeyUriType type);
 const char *getCacheKeyKeyTypeName(CacheKeyKeyType type);
 
+typedef std::set<CacheKeyKeyType> CacheKeyKeyTypeSet;
+
 /**
  * @brief Plug-in configuration elements (query / headers / cookies).
  *
@@ -203,7 +205,7 @@ public:
   /**
    * @brief get target URI type.
    */
-  CacheKeyKeyType getKeyType();
+  CacheKeyKeyTypeSet &getKeyType();
 
   /* Make the following members public to avoid unnecessary accessors */
   ConfigQuery _query;        /**< @brief query parameter related configuration */
@@ -231,5 +233,5 @@ private:
   bool _canonicalPrefix    = false; /**< @brief keep the URI scheme and authority element used as input to transforming into key */
   String _separator        = "/";   /**< @brief a separator used to separate the cache key elements extracted from the URI */
   CacheKeyUriType _uriType = REMAP; /**< @brief shows which URI the cache key will be based on */
-  CacheKeyKeyType _keyType = CACHE_KEY; /**< @brief target URI to be modified, cache key or paren selection */
+  CacheKeyKeyTypeSet _keyTypes;     /**< @brief target URI to be modified, cache key or paren selection */
 };
