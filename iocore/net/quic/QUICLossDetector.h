@@ -59,7 +59,7 @@ public:
 class QUICNewRenoCongestionController : public QUICCongestionController
 {
 public:
-  QUICNewRenoCongestionController(QUICCCContext &context);
+  QUICNewRenoCongestionController(QUICContext &context);
   virtual ~QUICNewRenoCongestionController() {}
   void on_packet_sent(size_t bytes_sent) override;
   void on_packet_acked(const QUICPacketInfo &acked_packet) override;
@@ -105,13 +105,13 @@ private:
 
   bool _in_congestion_recovery(ink_hrtime sent_time);
 
-  QUICCCContext &_context;
+  QUICContext &_context;
 };
 
 class QUICLossDetector : public Continuation, public QUICFrameHandler
 {
 public:
-  QUICLossDetector(QUICLDContext &context, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, QUICPinger *pinger,
+  QUICLossDetector(QUICContext &context, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, QUICPinger *pinger,
                    QUICPadder *padder);
   ~QUICLossDetector();
 
@@ -185,7 +185,7 @@ private:
   QUICPadder *_padder           = nullptr;
   QUICCongestionController *_cc = nullptr;
 
-  QUICLDContext &_context;
+  QUICContext &_context;
 };
 
 class QUICRTTMeasure : public QUICRTTProvider

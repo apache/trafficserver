@@ -29,6 +29,7 @@
 class QUICRTTProvider;
 class QUICCongestionController;
 class QUICPacketProtectionKeyInfoProvider;
+class QUICEventDriver;
 
 class QUICNetVConnection;
 
@@ -36,32 +37,20 @@ class QUICContext
 {
 public:
   virtual ~QUICContext(){};
-  virtual QUICConnectionInfoProvider *connection_info() const = 0;
-  virtual QUICConfig::scoped_config config() const            = 0;
-};
-
-class QUICLDContext
-{
-public:
-  virtual ~QUICLDContext() {}
   virtual QUICConnectionInfoProvider *connection_info() const   = 0;
+  virtual QUICConfig::scoped_config config() const              = 0;
   virtual QUICLDConfig &ld_config() const                       = 0;
+  virtual QUICCCConfig &cc_config() const                       = 0;
   virtual QUICPacketProtectionKeyInfoProvider *key_info() const = 0;
+  virtual QUICRTTProvider *rtt_provider() const                 = 0;
+  virtual QUICEventDriver *event_driver() const                 = 0;
 };
 
-class QUICCCContext
+class QUICContextImpl : public QUICContext
 {
 public:
-  virtual ~QUICCCContext() {}
-  virtual QUICConnectionInfoProvider *connection_info() const = 0;
-  virtual QUICCCConfig &cc_config() const                     = 0;
-  virtual QUICRTTProvider *rtt_provider() const               = 0;
-};
-
-class QUICContextImpl : public QUICContext, public QUICCCContext, public QUICLDContext
-{
-public:
-  QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info);
+  QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
+                  QUICEventDriver *event_driver);
 
   virtual QUICConnectionInfoProvider *connection_info() const override;
   virtual QUICConfig::scoped_config config() const override;
@@ -72,12 +61,14 @@ public:
 
   virtual QUICLDConfig &ld_config() const override;
   virtual QUICCCConfig &cc_config() const override;
+  virtual QUICEventDriver *event_driver() const override;
 
 private:
   QUICConfig::scoped_config _config;
   QUICPacketProtectionKeyInfoProvider *_key_info = nullptr;
   QUICConnectionInfoProvider *_connection_info   = nullptr;
   QUICRTTProvider *_rtt_provider                 = nullptr;
+  QUICEventDriver *_event_driver                 = nullptr;
 
   std::unique_ptr<QUICLDConfig> _ld_config = nullptr;
   std::unique_ptr<QUICCCConfig> _cc_config = nullptr;

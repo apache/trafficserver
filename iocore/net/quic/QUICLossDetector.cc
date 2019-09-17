@@ -38,7 +38,7 @@
 #define QUICLDVDebug(fmt, ...) \
   Debug("v_quic_loss_detector", "[%s] " fmt, this->_context.connection_info()->cids().data(), ##__VA_ARGS__)
 
-QUICLossDetector::QUICLossDetector(QUICLDContext &context, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
+QUICLossDetector::QUICLossDetector(QUICContext &context, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
                                    QUICPinger *pinger, QUICPadder *padder)
   : _rtt_measure(rtt_measure), _pinger(pinger), _padder(padder), _cc(cc), _context(context)
 {

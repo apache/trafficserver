@@ -134,7 +134,6 @@ class SSLNextProtocolSet;
  **/
 class QUICNetVConnection : public UnixNetVConnection,
                            public QUICConnection,
-                           public QUICFrameGenerator,
                            public RefCountObj,
                            public ALPNSupport,
                            public QUICEventDriver

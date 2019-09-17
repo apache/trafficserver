@@ -25,6 +25,7 @@
 #include "QUICConnection.h"
 #include "QUICLossDetector.h"
 #include "QUICPacketProtectionKeyInfo.h"
+#include "QUICEventDriver.h"
 
 class QUICCCConfigQCP : public QUICCCConfig
 {
@@ -101,10 +102,11 @@ private:
 };
 
 QUICContextImpl::QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info,
-                                 QUICPacketProtectionKeyInfoProvider *key_info)
+                                 QUICPacketProtectionKeyInfoProvider *key_info, QUICEventDriver *event_driver)
   : _key_info(key_info),
     _connection_info(info),
     _rtt_provider(rtt),
+    _event_driver(event_driver),
     _ld_config(std::make_unique<QUICLDConfigQCP>(_config)),
     _cc_config(std::make_unique<QUICCCConfigQCP>(_config))
 {
@@ -144,4 +146,10 @@ QUICCCConfig &
 QUICContextImpl::cc_config() const
 {
   return *_cc_config;
+}
+
+QUICEventDriver *
+QUICContextImpl::event_driver() const
+{
+  return _event_driver;
 }

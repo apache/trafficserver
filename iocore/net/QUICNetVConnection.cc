@@ -356,7 +356,7 @@ void
 QUICNetVConnection::start()
 {
   ink_release_assert(this->thread != nullptr);
-  this->_context = std::make_unique<QUICContextImpl>(&this->_rtt_measure, this, &this->_pp_key_info);
+  this->_context = std::make_unique<QUICContextImpl>(&this->_rtt_measure, this, &this->_pp_key_info, this);
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   QUICPath trusted_path = {{}, {}};
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
@@ -2264,54 +2264,6 @@ QUICNetVConnection::_handle_periodic_ack_event()
     // FIXME: should sent depend on socket event.
     this->_schedule_packet_write_ready();
   }
-}
-
-// QUICFrameGenerator
-bool
-QUICNetVConnection::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
-{
-  if (!this->_is_level_matched(level)) {
-    return false;
-  }
-
-  return !this->_is_resumption_token_sent;
-}
-
-QUICFrame *
-QUICNetVConnection::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                                   size_t current_packet_size, uint32_t seq_num)
-{
-  QUICFrame *frame = nullptr;
-
-  if (!this->_is_level_matched(level)) {
-    return frame;
-  }
-
-  if (this->_is_resumption_token_sent) {
-    return frame;
-  }
-
-  if (this->direction() == NET_VCONNECTION_IN) {
-    // TODO Make expiration period configurable
-    QUICResumptionToken token(this->get_remote_endpoint(), this->connection_id(), Thread::get_hrtime() + HRTIME_HOURS(24));
-    frame = QUICFrameFactory::create_new_token_frame(buf, token, this->_issue_frame_id(), this);
-    if (frame) {
-      if (frame->size() < maximum_frame_size) {
-        this->_is_resumption_token_sent = true;
-      } else {
-        // Cancel generating frame
-        frame = nullptr;
-      }
-    }
-  }
-
-  return frame;
-}
-
-void
-QUICNetVConnection::_on_frame_lost(QUICFrameInformationUPtr &info)
-{
-  this->_is_resumption_token_sent = false;
 }
 
 void
