@@ -25,10 +25,13 @@
 
 #include "QUICFrame.h"
 #include "QUICFrameRetransmitter.h"
+#include "QUICContext.h"
 
 class QUICFrameGenerator
 {
 public:
+  // FIXME: This should be refrence but freelist requires the empty constructor.
+  QUICFrameGenerator(QUICContext *context) : _context(context) {}
   virtual ~QUICFrameGenerator(){};
   virtual bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) = 0;
 
@@ -62,6 +65,8 @@ protected:
   virtual bool _is_level_matched(QUICEncryptionLevel level);
   void _records_frame(QUICFrameId id, QUICFrameInformationUPtr info);
 
+  QUICContext *_context;
+
 private:
   QUICFrameId _latest_frame_Id                 = 0;
   QUICEncryptionLevel _encryption_level_filter = QUICEncryptionLevel::ONE_RTT;
@@ -72,6 +77,7 @@ private:
 class QUICFrameOnceGenerator : public QUICFrameGenerator
 {
 public:
+  QUICFrameOnceGenerator(QUICContext *context) : QUICFrameGenerator(context) {}
   bool
   will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override
   {

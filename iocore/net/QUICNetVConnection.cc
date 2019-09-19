@@ -364,42 +364,43 @@ QUICNetVConnection::start()
     QUICCertConfig::scoped_config server_cert;
 
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::SERVER);
-    this->_ack_frame_manager.set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_in());
+    this->_ack_frame_manager->set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_in());
     this->_reset_token = QUICStatelessResetToken(this->_quic_connection_id, this->_quic_config->instance_id());
     this->_hs_protocol = this->_setup_handshake_protocol(server_cert->ssl_default);
     this->_handshake_handler =
-      new QUICHandshake(this, this->_hs_protocol, this->_reset_token, this->_quic_config->stateless_retry());
-    this->_ack_frame_manager.set_max_ack_delay(this->_quic_config->max_ack_delay_in());
+      new QUICHandshake(this->_context.get(), this, this->_hs_protocol, this->_reset_token, this->_quic_config->stateless_retry());
+    this->_ack_frame_manager->set_max_ack_delay(this->_quic_config->max_ack_delay_in());
     this->_schedule_ack_manager_periodic(this->_quic_config->max_ack_delay_in());
   } else {
     trusted_path = {this->local_addr, this->remote_addr};
     QUICTPConfigQCP tp_config(this->_quic_config, NET_VCONNECTION_OUT);
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::CLIENT);
-    this->_ack_frame_manager.set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_out());
+    this->_ack_frame_manager->set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_out());
     this->_hs_protocol       = this->_setup_handshake_protocol(this->_quic_config->client_ssl_ctx());
-    this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol);
+    this->_handshake_handler = new QUICHandshake(this->_context.get(), this, this->_hs_protocol);
     this->_handshake_handler->start(tp_config, &this->_packet_factory, this->_quic_config->vn_exercise_enabled());
     this->_handshake_handler->do_handshake();
-    this->_ack_frame_manager.set_max_ack_delay(this->_quic_config->max_ack_delay_out());
+    this->_ack_frame_manager->set_max_ack_delay(this->_quic_config->max_ack_delay_out());
     this->_schedule_ack_manager_periodic(this->_quic_config->max_ack_delay_out());
   }
 
   this->_application_map = new QUICApplicationMap();
 
-  this->_frame_dispatcher = new QUICFrameDispatcher(this);
+  this->_frame_dispatcher  = new QUICFrameDispatcher(this);
+  this->_ack_frame_manager = new QUICAckFrameManager(this->_context.get());
 
   // Create frame handlers
-  this->_pinger = new QUICPinger();
-  this->_padder = new QUICPadder(this->netvc_context);
+  this->_pinger = new QUICPinger(this->_context.get());
+  this->_padder = new QUICPadder(this->_context.get());
   this->_rtt_measure.init(this->_context->ld_config());
   this->_congestion_controller = new QUICNewRenoCongestionController(*_context);
   this->_loss_detector =
     new QUICLossDetector(*_context, this->_congestion_controller, &this->_rtt_measure, this->_pinger, this->_padder);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
 
-  this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
-  this->_local_flow_controller  = new QUICLocalConnectionFlowController(&this->_rtt_measure, UINT64_MAX);
-  this->_path_validator         = new QUICPathValidator(*this, [this](bool succeeded) {
+  this->_remote_flow_controller = new QUICRemoteConnectionFlowController(this->_context.get(), UINT64_MAX);
+  this->_local_flow_controller  = new QUICLocalConnectionFlowController(this->_context.get(), UINT64_MAX);
+  this->_path_validator         = new QUICPathValidator(this->_context.get(), [this](bool succeeded) {
     if (succeeded) {
       this->_alt_con_manager->drop_cid(this->_peer_old_quic_connection_id);
       // FIXME This is a kind of workaround for connection migration.
@@ -408,7 +409,7 @@ QUICNetVConnection::start()
       this->ping();
     }
   });
-  this->_stream_manager         = new QUICStreamManager(this, &this->_rtt_measure, this->_application_map);
+  this->_stream_manager         = new QUICStreamManager(this->_context.get(), this->_application_map);
   this->_path_manager           = new QUICPathManager(*this, *this->_path_validator);
   this->_path_manager->set_trusted_path(trusted_path);
   this->_token_creator = new QUICTokenCreator(this->_context.get());
@@ -425,7 +426,7 @@ QUICNetVConnection::start()
   this->_frame_generators.add_generator(*this->_token_creator, QUICFrameGeneratorWeight::BEFORE_DATA);          // NEW_TOKEN
   this->_frame_generators.add_generator(*this->_stream_manager,
                                         QUIC_STREAM_MANAGER_WEIGHT); // STREAM, MAX_STREAM_DATA, STREAM_DATA_BLOCKED
-  this->_frame_generators.add_generator(this->_ack_frame_manager, QUICFrameGeneratorWeight::BEFORE_DATA); // ACK
+  this->_frame_generators.add_generator(*this->_ack_frame_manager, QUICFrameGeneratorWeight::BEFORE_DATA); // ACK
 
   this->_frame_generators.add_generator(*this->_pinger, QUIC_PINGER_WEIGHT); // PING
   // Warning: padder should be tail of the frame generators
@@ -1101,9 +1102,9 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICPacket &pa
 
     if (!this->_alt_con_manager) {
       this->_alt_con_manager =
-        new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, this->_quic_config->instance_id(),
-                                     this->_quic_config->active_cid_limit_in(), this->_quic_config->preferred_address_ipv4(),
-                                     this->_quic_config->preferred_address_ipv6());
+        new QUICAltConnectionManager(this->_context.get(), this, *this->_ctable, this->_peer_quic_connection_id,
+                                     this->_quic_config->instance_id(), this->_quic_config->active_cid_limit_in(),
+                                     this->_quic_config->preferred_address_ipv4(), this->_quic_config->preferred_address_ipv6());
       this->_frame_generators.add_generator(*this->_alt_con_manager, QUICFrameGeneratorWeight::EARLY);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
@@ -1121,8 +1122,8 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICPacket &pa
   } else {
     if (!this->_alt_con_manager) {
       this->_alt_con_manager =
-        new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, this->_quic_config->instance_id(),
-                                     this->_quic_config->active_cid_limit_out());
+        new QUICAltConnectionManager(this->_context.get(), this, *this->_ctable, this->_peer_quic_connection_id,
+                                     this->_quic_config->instance_id(), this->_quic_config->active_cid_limit_out());
       this->_frame_generators.add_generator(*this->_alt_con_manager, QUICFrameGeneratorWeight::BEFORE_DATA);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
@@ -1647,7 +1648,7 @@ QUICNetVConnection::_recv_and_ack(const QUICPacket &packet, bool *has_non_probin
                 this->_local_flow_controller->current_limit());
   }
 
-  this->_ack_frame_manager.update(level, packet_num, size, ack_only);
+  this->_ack_frame_manager->update(level, packet_num, size, ack_only);
 
   return error;
 }
@@ -2253,7 +2254,7 @@ QUICNetVConnection::_handle_periodic_ack_event()
 {
   bool need_schedule = false;
   for (int i = static_cast<int>(this->_minimum_encryption_level); i <= static_cast<int>(QUICEncryptionLevel::ONE_RTT); ++i) {
-    if (this->_ack_frame_manager.will_generate_frame(QUIC_ENCRYPTION_LEVELS[i], 0, true, this->_seq_num++)) {
+    if (this->_ack_frame_manager->will_generate_frame(QUIC_ENCRYPTION_LEVELS[i], 0, true, this->_seq_num++)) {
       need_schedule = true;
       break;
     }

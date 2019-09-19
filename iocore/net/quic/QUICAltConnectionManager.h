@@ -35,8 +35,9 @@ class QUICConnectionTable;
 class QUICAltConnectionManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
-  QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, const QUICConnectionId &peer_initial_cid,
-                           uint32_t instance_id, uint8_t active_cid_limit, const IpEndpoint *preferred_endpoint_ipv4 = nullptr,
+  QUICAltConnectionManager(QUICContext *context, QUICConnection *qc, QUICConnectionTable &ctable,
+                           const QUICConnectionId &peer_initial_cid, uint32_t instance_id, uint8_t active_cid_limit,
+                           const IpEndpoint *preferred_endpoint_ipv4 = nullptr,
                            const IpEndpoint *preferred_endpoint_ipv6 = nullptr);
   ~QUICAltConnectionManager();
 

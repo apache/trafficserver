@@ -32,7 +32,7 @@
 class QUICPadder : public QUICFrameOnceGenerator
 {
 public:
-  QUICPadder(NetVConnectionContext_t context) : _mutex(new_ProxyMutex()), _context(context) {}
+  QUICPadder(QUICContext *context) : QUICFrameOnceGenerator(context), _mutex(new_ProxyMutex()) {}
 
   void request(QUICEncryptionLevel level);
   void cancel(QUICEncryptionLevel level);

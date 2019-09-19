@@ -209,7 +209,7 @@ QUICLocalFlowController::_on_frame_lost(QUICFrameInformationUPtr &info)
 bool
 QUICLocalFlowController::_need_to_forward_limit()
 {
-  QUICOffset threshold = this->_analyzer.expect_recv_bytes(2 * this->_rtt_provider->smoothed_rtt());
+  QUICOffset threshold = this->_analyzer.expect_recv_bytes(2 * this->_context->rtt_provider()->smoothed_rtt());
   if (this->_offset + threshold >= this->_limit) {
     return true;
   }

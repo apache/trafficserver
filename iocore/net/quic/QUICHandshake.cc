@@ -83,10 +83,15 @@ static constexpr int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 // TODO: fix size
 static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp) : QUICHandshake(qc, hsp, {}, false) {}
+QUICHandshake::QUICHandshake(QUICContext *context, QUICConnection *qc, QUICHandshakeProtocol *hsp)
+  : QUICHandshake(context, qc, hsp, {}, false)
+{
+}
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp, QUICStatelessResetToken token, bool stateless_retry)
-  : _qc(qc),
+QUICHandshake::QUICHandshake(QUICContext *context, QUICConnection *qc, QUICHandshakeProtocol *hsp, QUICStatelessResetToken token,
+                             bool stateless_retry)
+  : QUICFrameGenerator(context),
+    _qc(qc),
     _hs_protocol(hsp),
     _version_negotiator(new QUICVersionNegotiator()),
     _reset_token(token),

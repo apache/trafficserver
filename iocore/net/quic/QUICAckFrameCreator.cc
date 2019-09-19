@@ -26,7 +26,7 @@
 #include "QUICConfig.h"
 #include <algorithm>
 
-QUICAckFrameManager::QUICAckFrameManager()
+QUICAckFrameManager::QUICAckFrameManager(QUICContext *context) : QUICFrameGenerator(context)
 {
   for (auto i = 0; i < kPacketNumberSpace; i++) {
     this->_ack_creator[i] = std::make_unique<QUICAckFrameCreator>(static_cast<QUICPacketNumberSpace>(i), this);

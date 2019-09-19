@@ -83,7 +83,7 @@ public:
 
   static constexpr int MAXIMUM_PACKET_COUNT = 256;
 
-  QUICAckFrameManager();
+  QUICAckFrameManager(QUICContext *context);
   ~QUICAckFrameManager();
 
   void set_ack_delay_exponent(uint8_t ack_delay_exponent);

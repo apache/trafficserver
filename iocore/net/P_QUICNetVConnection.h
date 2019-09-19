@@ -238,7 +238,6 @@ private:
   QUICPacketHandler *_packet_handler = nullptr;
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;
-  QUICAckFrameManager _ack_frame_manager;
   QUICPacketHeaderProtector _ph_protector;
   QUICRTTMeasure _rtt_measure;
   QUICApplicationMap *_application_map = nullptr;
@@ -262,6 +261,7 @@ private:
   QUICPathValidator *_path_validator                = nullptr;
   QUICPathManager *_path_manager                    = nullptr;
   QUICTokenCreator *_token_creator                  = nullptr;
+  QUICAckFrameManager *_ack_frame_manager           = nullptr;
 
   QUICFrameGeneratorManager _frame_generators;
 

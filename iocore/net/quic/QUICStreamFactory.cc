@@ -34,22 +34,22 @@ QUICStreamVConnection *
 QUICStreamFactory::create(QUICStreamId sid, uint64_t local_max_stream_data, uint64_t remote_max_stream_data)
 {
   QUICStreamVConnection *stream = nullptr;
-  switch (QUICTypeUtil::detect_stream_direction(sid, this->_info->direction())) {
+  switch (QUICTypeUtil::detect_stream_direction(sid, this->_context->connection_info()->direction())) {
   case QUICStreamDirection::BIDIRECTIONAL:
     // TODO Free the stream somewhere
     stream = THREAD_ALLOC(quicBidiStreamAllocator, this_ethread());
-    new (stream) QUICBidirectionalStream(this->_rtt_provider, this->_info, sid, local_max_stream_data, remote_max_stream_data);
+    new (stream) QUICBidirectionalStream(this->_context, sid, local_max_stream_data, remote_max_stream_data);
     break;
   case QUICStreamDirection::SEND:
     // TODO Free the stream somewhere
     stream = THREAD_ALLOC(quicSendStreamAllocator, this_ethread());
-    new (stream) QUICSendStream(this->_info, sid, remote_max_stream_data);
+    new (stream) QUICSendStream(this->_context, sid, remote_max_stream_data);
     break;
   case QUICStreamDirection::RECEIVE:
     // server side
     // TODO Free the stream somewhere
     stream = THREAD_ALLOC(quicReceiveStreamAllocator, this_ethread());
-    new (stream) QUICReceiveStream(this->_rtt_provider, this->_info, sid, local_max_stream_data);
+    new (stream) QUICReceiveStream(this->_context, sid, local_max_stream_data);
     break;
   default:
     ink_assert(false);

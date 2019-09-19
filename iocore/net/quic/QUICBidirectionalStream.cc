@@ -26,11 +26,11 @@
 //
 // QUICBidirectionalStream
 //
-QUICBidirectionalStream::QUICBidirectionalStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
-                                                 uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
-  : QUICStreamVConnection(cinfo, sid),
-    _remote_flow_controller(send_max_stream_data, _id),
-    _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
+QUICBidirectionalStream::QUICBidirectionalStream(QUICContext *context, QUICStreamId sid, uint64_t recv_max_stream_data,
+                                                 uint64_t send_max_stream_data)
+  : QUICStreamVConnection(context, sid),
+    _remote_flow_controller(context, send_max_stream_data, _id),
+    _local_flow_controller(context, recv_max_stream_data, _id),
     _flow_control_buffer_size(recv_max_stream_data),
     _state(nullptr, &this->_progress_vio, this, nullptr)
 {

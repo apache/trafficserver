@@ -28,7 +28,7 @@
 class QUICTokenCreator final : public QUICFrameGenerator
 {
 public:
-  QUICTokenCreator(QUICContext *context) : _context(context) {}
+  QUICTokenCreator(QUICContext *context) : QUICFrameGenerator(context) {}
 
   bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
@@ -38,5 +38,4 @@ private:
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 
   bool _is_resumption_token_sent = false;
-  QUICContext *_context          = nullptr;
 };

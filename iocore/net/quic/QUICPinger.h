@@ -33,7 +33,7 @@
 class QUICPinger : public QUICFrameOnceGenerator
 {
 public:
-  QUICPinger() : _mutex(new_ProxyMutex()) {}
+  QUICPinger(QUICContext *context) : QUICFrameOnceGenerator(context), _mutex(new_ProxyMutex()) {}
 
   void request();
   void cancel();

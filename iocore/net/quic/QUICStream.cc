@@ -27,7 +27,7 @@
 
 constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
 
-QUICStream::QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid) : _connection_info(cinfo), _id(sid) {}
+QUICStream::QUICStream(QUICContext *context, QUICStreamId sid) : QUICFrameGenerator(context), _id(sid) {}
 
 QUICStream::~QUICStream() {}
 
@@ -40,13 +40,13 @@ QUICStream::id() const
 QUICStreamDirection
 QUICStream::direction() const
 {
-  return QUICTypeUtil::detect_stream_direction(this->_id, this->_connection_info->direction());
+  return QUICTypeUtil::detect_stream_direction(this->_id, this->_context->connection_info()->direction());
 }
 
 const QUICConnectionInfoProvider *
 QUICStream::connection_info() const
 {
-  return this->_connection_info;
+  return this->_context->connection_info();
 }
 
 bool

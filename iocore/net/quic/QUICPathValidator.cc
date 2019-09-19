@@ -25,7 +25,7 @@
 #include "QUICPathValidator.h"
 #include "QUICPacket.h"
 
-#define QUICDebug(fmt, ...) Debug("quic_path", "[%s] " fmt, this->_cinfo.cids().data(), ##__VA_ARGS__)
+#define QUICDebug(fmt, ...) Debug("quic_path", "[%s] " fmt, this->_context->connection_info()->cids().data(), ##__VA_ARGS__)
 
 bool
 QUICPathValidator::ValidationJob::has_more_challenges() const

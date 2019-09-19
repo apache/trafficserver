@@ -31,11 +31,15 @@ static constexpr char V_DEBUG_TAG[] = "v_quic_alt_con";
 
 #define QUICACMVDebug(fmt, ...) Debug(V_DEBUG_TAG, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
-QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
+QUICAltConnectionManager::QUICAltConnectionManager(QUICContext *context, QUICConnection *qc, QUICConnectionTable &ctable,
                                                    const QUICConnectionId &peer_initial_cid, uint32_t instance_id,
                                                    uint8_t local_active_cid_limit, const IpEndpoint *preferred_endpoint_ipv4,
                                                    const IpEndpoint *preferred_endpoint_ipv6)
-  : _qc(qc), _ctable(ctable), _instance_id(instance_id), _local_active_cid_limit(local_active_cid_limit)
+  : QUICFrameGenerator(context),
+    _qc(qc),
+    _ctable(ctable),
+    _instance_id(instance_id),
+    _local_active_cid_limit(local_active_cid_limit)
 {
   // Sequence number of the initial CID is 0
   this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});

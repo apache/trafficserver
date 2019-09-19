@@ -26,8 +26,10 @@
 //
 // QUICSendStream
 //
-QUICSendStream::QUICSendStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid, uint64_t send_max_stream_data)
-  : QUICStreamVConnection(cinfo, sid), _remote_flow_controller(send_max_stream_data, _id), _state(nullptr, &this->_progress_vio)
+QUICSendStream::QUICSendStream(QUICContext *context, QUICStreamId sid, uint64_t send_max_stream_data)
+  : QUICStreamVConnection(context, sid),
+    _remote_flow_controller(context, send_max_stream_data, _id),
+    _state(nullptr, &this->_progress_vio)
 {
   SET_HANDLER(&QUICSendStream::state_stream_open);
 
@@ -400,10 +402,9 @@ QUICSendStream::largest_offset_sent() const
 //
 // QUICReceiveStream
 //
-QUICReceiveStream::QUICReceiveStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
-                                     uint64_t recv_max_stream_data)
-  : QUICStreamVConnection(cinfo, sid),
-    _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
+QUICReceiveStream::QUICReceiveStream(QUICContext *context, QUICStreamId sid, uint64_t recv_max_stream_data)
+  : QUICStreamVConnection(context, sid),
+    _local_flow_controller(context, recv_max_stream_data, _id),
     _flow_control_buffer_size(recv_max_stream_data),
     _state(this, nullptr)
 {

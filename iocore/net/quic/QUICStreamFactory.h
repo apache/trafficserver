@@ -31,7 +31,7 @@ class QUICStreamVConnection;
 class QUICStreamFactory
 {
 public:
-  QUICStreamFactory(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *info) : _rtt_provider(rtt_provider), _info(info) {}
+  QUICStreamFactory(QUICContext *context) : _context(context) {}
   ~QUICStreamFactory() {}
 
   // create a bidistream, send only stream or receive only stream
@@ -41,6 +41,5 @@ public:
   void delete_stream(QUICStreamVConnection *stream);
 
 private:
-  QUICRTTProvider *_rtt_provider    = nullptr;
-  QUICConnectionInfoProvider *_info = nullptr;
+  QUICContext *_context = nullptr;
 };

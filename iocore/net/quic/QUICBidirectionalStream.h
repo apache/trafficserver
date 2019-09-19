@@ -28,11 +28,10 @@
 class QUICBidirectionalStream : public QUICStreamVConnection, public QUICTransferProgressProvider
 {
 public:
-  QUICBidirectionalStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
-                          uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
+  QUICBidirectionalStream(QUICContext *context, QUICStreamId sid, uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
   QUICBidirectionalStream()
     : QUICStreamVConnection(),
-      _remote_flow_controller(0, 0),
+      _remote_flow_controller(nullptr, 0, 0),
       _local_flow_controller(nullptr, 0, 0),
       _state(nullptr, nullptr, nullptr, nullptr)
   {

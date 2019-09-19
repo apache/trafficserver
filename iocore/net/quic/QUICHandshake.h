@@ -41,9 +41,10 @@ class QUICHandshake : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
   // Constructor for client side
-  QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp);
+  QUICHandshake(QUICContext *context, QUICConnection *qc, QUICHandshakeProtocol *hsp);
   // Constructor for server side
-  QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp, QUICStatelessResetToken token, bool stateless_retry);
+  QUICHandshake(QUICContext *context, QUICConnection *qc, QUICHandshakeProtocol *hsp, QUICStatelessResetToken token,
+                bool stateless_retry);
   ~QUICHandshake();
 
   // QUICFrameHandler

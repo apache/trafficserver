@@ -65,7 +65,7 @@ public:
                             size_t current_packet_size, uint32_t seq_num) override;
 
 protected:
-  QUICFlowController(uint64_t initial_limit) : _limit(initial_limit) {}
+  QUICFlowController(QUICContext *context, uint64_t initial_limit) : QUICFrameGenerator(context), _limit(initial_limit) {}
   virtual QUICFrame *_create_frame(uint8_t *buf) = 0;
 
   QUICOffset _offset        = 0; //< Largest sent/received offset
@@ -76,7 +76,7 @@ protected:
 class QUICRemoteFlowController : public QUICFlowController
 {
 public:
-  QUICRemoteFlowController(uint64_t initial_limit) : QUICFlowController(initial_limit) {}
+  QUICRemoteFlowController(QUICContext *context, uint64_t initial_limit) : QUICFlowController(context, initial_limit) {}
   int update(QUICOffset offset) override;
   void forward_limit(QUICOffset new_limit) override;
 
@@ -88,10 +88,7 @@ private:
 class QUICLocalFlowController : public QUICFlowController
 {
 public:
-  QUICLocalFlowController(QUICRTTProvider *rtt_provider, uint64_t initial_limit)
-    : QUICFlowController(initial_limit), _rtt_provider(rtt_provider)
-  {
-  }
+  QUICLocalFlowController(QUICContext *context, uint64_t initial_limit) : QUICFlowController(context, initial_limit) {}
   QUICOffset current_limit() const override;
 
   /**
@@ -106,21 +103,22 @@ private:
   bool _need_to_forward_limit();
 
   QUICRateAnalyzer _analyzer;
-  QUICRTTProvider *_rtt_provider = nullptr;
 };
 
 class QUICRemoteConnectionFlowController : public QUICRemoteFlowController
 {
 public:
-  QUICRemoteConnectionFlowController(uint64_t initial_limit) : QUICRemoteFlowController(initial_limit) {}
+  QUICRemoteConnectionFlowController(QUICContext *context, uint64_t initial_limit)
+    : QUICRemoteFlowController(context, initial_limit)
+  {
+  }
   QUICFrame *_create_frame(uint8_t *buf) override;
 };
 
 class QUICLocalConnectionFlowController : public QUICLocalFlowController
 {
 public:
-  QUICLocalConnectionFlowController(QUICRTTProvider *rtt_provider, uint64_t initial_limit)
-    : QUICLocalFlowController(rtt_provider, initial_limit)
+  QUICLocalConnectionFlowController(QUICContext *context, uint64_t initial_limit) : QUICLocalFlowController(context, initial_limit)
   {
   }
   QUICFrame *_create_frame(uint8_t *buf) override;
@@ -129,8 +127,8 @@ public:
 class QUICRemoteStreamFlowController : public QUICRemoteFlowController
 {
 public:
-  QUICRemoteStreamFlowController(uint64_t initial_limit, QUICStreamId stream_id)
-    : QUICRemoteFlowController(initial_limit), _stream_id(stream_id)
+  QUICRemoteStreamFlowController(QUICContext *context, uint64_t initial_limit, QUICStreamId stream_id)
+    : QUICRemoteFlowController(context, initial_limit), _stream_id(stream_id)
   {
   }
   QUICFrame *_create_frame(uint8_t *buf) override;
@@ -142,8 +140,8 @@ private:
 class QUICLocalStreamFlowController : public QUICLocalFlowController
 {
 public:
-  QUICLocalStreamFlowController(QUICRTTProvider *rtt_provider, uint64_t initial_limit, QUICStreamId stream_id)
-    : QUICLocalFlowController(rtt_provider, initial_limit), _stream_id(stream_id)
+  QUICLocalStreamFlowController(QUICContext *context, uint64_t initial_limit, QUICStreamId stream_id)
+    : QUICLocalFlowController(context, initial_limit), _stream_id(stream_id)
   {
   }
   QUICFrame *_create_frame(uint8_t *buf) override;

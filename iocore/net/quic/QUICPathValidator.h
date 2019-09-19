@@ -33,8 +33,8 @@
 class QUICPathValidator : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
-  QUICPathValidator(const QUICConnectionInfoProvider &info, std::function<void(bool)> callback)
-    : _cinfo(info), _on_validation_callback(callback)
+  QUICPathValidator(QUICContext *context, std::function<void(bool)> callback)
+    : QUICFrameGenerator(context), _on_validation_callback(callback)
   {
   }
   bool is_validating(const QUICPath &path);
@@ -78,7 +78,6 @@ private:
     void _generate_challenge();
   };
 
-  const QUICConnectionInfoProvider &_cinfo;
   std::unordered_map<QUICPath, ValidationJob, QUICPathHasher> _jobs;
 
   std::function<void(bool)> _on_validation_callback;

@@ -44,8 +44,8 @@
 class QUICStream : public QUICFrameGenerator, public QUICFrameRetransmitter
 {
 public:
-  QUICStream() {}
-  QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid);
+  QUICStream() : QUICFrameGenerator(nullptr) {}
+  QUICStream(QUICContext *context, QUICStreamId sid);
   virtual ~QUICStream();
 
   QUICStreamId id() const;
@@ -77,10 +77,9 @@ public:
   LINK(QUICStream, link);
 
 protected:
-  QUICConnectionInfoProvider *_connection_info = nullptr;
-  QUICStreamId _id                             = 0;
-  QUICOffset _send_offset                      = 0;
-  QUICOffset _reordered_bytes                  = 0;
+  QUICStreamId _id            = 0;
+  QUICOffset _send_offset     = 0;
+  QUICOffset _reordered_bytes = 0;
 
   void _records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame);
   void _records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame);
@@ -92,12 +91,12 @@ protected:
 class QUICStreamVConnection : public VConnection, public QUICStream
 {
 public:
-  QUICStreamVConnection(QUICConnectionInfoProvider *cinfo, QUICStreamId sid) : VConnection(nullptr), QUICStream(cinfo, sid)
+  QUICStreamVConnection(QUICContext *context, QUICStreamId sid) : VConnection(nullptr), QUICStream(context, sid)
   {
     mutex = new_ProxyMutex();
   }
 
-  QUICStreamVConnection() : VConnection(nullptr) {}
+  QUICStreamVConnection() : VConnection(nullptr), QUICStream() {}
   virtual ~QUICStreamVConnection();
 
   LINK(QUICStreamVConnection, link);
@@ -119,16 +118,16 @@ protected:
   Event *_write_event = nullptr;
 };
 
-#define QUICStreamDebug(fmt, ...)                                                                        \
-  Debug("quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+#define QUICStreamDebug(fmt, ...)                                                                                   \
+  Debug("quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_context->connection_info()->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
 
-#define QUICVStreamDebug(fmt, ...)                                                                         \
-  Debug("v_quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+#define QUICVStreamDebug(fmt, ...)                                                                                    \
+  Debug("v_quic_stream", "[%s] [%" PRIu64 "] [%s] " fmt, this->_context->connection_info()->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
 
-#define QUICStreamFCDebug(fmt, ...)                                                                         \
-  Debug("quic_flow_ctrl", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+#define QUICStreamFCDebug(fmt, ...)                                                                                    \
+  Debug("quic_flow_ctrl", "[%s] [%" PRIu64 "] [%s] " fmt, this->_context->connection_info()->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
 
 extern const uint32_t MAX_STREAM_FRAME_OVERHEAD;
