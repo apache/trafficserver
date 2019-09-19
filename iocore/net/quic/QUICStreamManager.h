@@ -37,7 +37,6 @@ class QUICTransportParameters;
 class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
-  QUICStreamManager() : _stream_factory(nullptr, nullptr){};
   QUICStreamManager(QUICConnectionInfoProvider *info, QUICRTTProvider *rtt_provider, QUICApplicationMap *app_map);
 
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
