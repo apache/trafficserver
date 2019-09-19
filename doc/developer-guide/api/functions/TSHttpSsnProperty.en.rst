@@ -16,10 +16,10 @@
 
 .. default-domain:: c
 
-TSHttpSsnIdGet
+Session Properties
 *******************
 
-Returns the unique identifier for client session.
+Retrieve session properties.
 
 Synopsis
 ========
@@ -27,16 +27,26 @@ Synopsis
 `#include <ts/ts.h>`
 
 .. function:: int64_t TSHttpSsnIdGet(TSHttpSsn ssnp)
+.. function:: int TSHttpSsnTransactionCount(TSHttpSsn ssnp)
+.. function:: TSHRTime TSHttpSsnStartTime(TSHttpSsn ssnp)
+.. function:: TSReturnCode TSHttpSsnClientFdGet(TSHttpTxn txnp, int *fdp)
 
 Description
 ===========
 
-:func:`TSHttpSsnIdGet` returns the unique identifier for this client session.
+:func:`TSHttpSsnIdGet` returns the unique identifier for the session. This is unique across all
+sessions of the same type. E.g., for all inbound (client) sessions, or all outbound (upstream)
+sessions.
 
-Return Values
-=============
+:func:`TSHttpSsnTransactionCount` returns the number of transactions that have been started on this
+session.
 
-Returns a :type:`int64_t` as the unique ID
+:func:`TSHttpSsnStartTime` returns the time at which the session started, using the same clock as
+the milestones (see :func:`TSHttpTxnMilestoneGet`).
+
+:func:`TSHttpSsnClientFdGet` retrieves the underlying file descriptor for the session and places it
+in :arg:`fdp`. It returns :macro:`TS_SUCCESS` if :arg:`fdp` was updated with a valid file descriptor,
+:macro:`TS_ERROR` if not.
 
 See also
 ========

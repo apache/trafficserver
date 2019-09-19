@@ -4851,6 +4851,15 @@ TSHttpSsnTransactionCount(TSHttpSsn ssnp)
   return cs->get_transact_count();
 }
 
+TSHRTime
+TSHttpSsnStartTime(TSHttpSsn ssnp)
+{
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+
+  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  return cs->ssn_start_time;
+}
+
 TSVConn
 TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
 {

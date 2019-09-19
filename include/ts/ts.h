@@ -1218,6 +1218,7 @@ tsapi void TSHttpHookAdd(TSHttpHookID id, TSCont contp);
 tsapi void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp);
 tsapi void TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event);
 tsapi int TSHttpSsnTransactionCount(TSHttpSsn ssnp);
+tsapi TSHRTime TSHttpSsnStartTime(TSHttpSsn ssnp);
 /* get TSVConn from session */
 tsapi TSVConn TSHttpSsnClientVConnGet(TSHttpSsn ssnp);
 tsapi TSVConn TSHttpSsnServerVConnGet(TSHttpSsn ssnp);
