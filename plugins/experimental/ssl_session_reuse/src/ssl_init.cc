@@ -24,12 +24,13 @@
 
 #include <string>
 #include <cstring>
-#include "ssl_utils.h"
-#include "Config.h"
-#include "common.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+
+#include "ssl_utils.h"
+#include "Config.h"
+#include "common.h"
 
 ssl_session_param ssl_param; // <- global containing all operational info
 std::string conf_file;
@@ -60,26 +61,27 @@ init_ssl_params(const std::string &conf)
 
   if (ssl_param.key_update_interval > STEK_MAX_LIFETIME) {
     ssl_param.key_update_interval = STEK_MAX_LIFETIME;
-    TSDebug(PLUGIN, "KeyUpdateInterval too high, resetting session ticket key rotation to %d seconds",
+    TSDebug(PLUGIN, "KeyUpdateInterval too high, resetting session ticket key rotation to %d seconds.",
             ssl_param.key_update_interval);
   }
 
-  TSDebug(PLUGIN, "init_ssl_params: I %s been configured to initially be stek_master",
+  TSDebug(PLUGIN, "init_ssl_params: I %s been configured to initially be stek_master.",
           ((ssl_param.stek_master) ? "HAVE" : "HAVE NOT"));
-  TSDebug(PLUGIN, "init_ssl_params: Rotation interval (ssl_param.key_update_interval)set to %d\n", ssl_param.key_update_interval);
+  TSDebug(PLUGIN, "init_ssl_params: Rotation interval (ssl_param.key_update_interval) set to %d", ssl_param.key_update_interval);
   TSDebug(PLUGIN, "init_ssl_params: cluster_name set to %s", ssl_param.cluster_name.c_str());
-
-  int ret = STEK_init_keys();
-  if (ret < 0) {
-    TSError("init keys failure. %s", conf.c_str());
-    return -1;
-  }
 
   ssl_param.pub = new RedisPublisher(conf);
   if ((!ssl_param.pub) || (!ssl_param.pub->is_good())) {
     TSError("Construct RedisPublisher error.");
     return -1;
   }
+
+  int ret = STEK_init_keys();
+  if (ret < 0) {
+    TSError("STEK_init_keys failure: %s", conf.c_str());
+    return -1;
+  }
+
   return 0;
 }
 
@@ -93,12 +95,13 @@ ssl_session_param::~ssl_session_param()
 }
 
 /*
- Read the redis auth key from file ssl_param.redis_auth_key_file in retKeyBuff
-
+  Read the redis auth key from file ssl_param.redis_auth_key_file in retKeyBuff
+  Return length of key read.
  */
 int
 get_redis_auth_key(char *retKeyBuff, int buffSize)
 {
+  int retval = 0;
   // Get the Key
   if (ssl_param.redis_auth_key_file.length()) {
     int fd = open(ssl_param.redis_auth_key_file.c_str(), O_RDONLY);
@@ -112,12 +115,13 @@ get_redis_auth_key(char *retKeyBuff, int buffSize)
       while (read_len > 1 && key_data[read_len - 1] == '\n') {
         --read_len;
       }
+      memset(retKeyBuff, 0, buffSize);
       strncpy(retKeyBuff, key_data.c_str(), read_len);
+      retval = key_data.length();
     }
   } else {
-    TSError("can not get redis auth key");
-    return 0; /* error */
+    TSError("Can not get redis auth key.");
   }
 
-  return 1; /* ok */
+  return retval;
 }

@@ -22,15 +22,15 @@
 
  */
 
-#include <unistd.h>
 #include <cstring>
 #include <mutex>
+#include <cassert>
+#include <unistd.h>
 #include <sys/time.h>
-#include <ts/ts.h>
 #include <openssl/rand.h>
+#include <ts/ts.h>
 
 #include "ssl_utils.h"
-#include <cassert>
 #include "redis_auth.h"
 #include "stek.h"
 #include "common.h"
@@ -157,103 +157,59 @@ STEK_CreateNew(struct ssl_ticket_key_t *returnSTEK, int globalkey, int entropyEn
 }
 
 static int
-STEK_encrypt(struct ssl_ticket_key_t *stek, const char *key, int key_length, char *retEncrypted, int *retLength)
+STEK_encrypt(struct ssl_ticket_key_t *stek, const char *key, int key_length, char *ret_encrypted, int *ret_len)
 {
-  EVP_CIPHER_CTX *context = EVP_CIPHER_CTX_new();
-  unsigned char iv[EVP_MAX_IV_LENGTH];
-  unsigned char gen_key[EVP_MAX_KEY_LENGTH];
-  int retval = 0;
-
-  /* Encrypted stek will be placed in caller allocated retEncrypted buffer */
-  /* NOTE: retLength must initially contain the size of the retEncrypted buffer */
+  /* Encrypted stek will be placed in caller allocated ret_encrypted buffer */
+  /* NOTE: ret_len must initially contain the size of the ret_encrypted buffer */
   /* return 1 on success, 0 on failure  */
+  int stek_len          = sizeof(struct ssl_ticket_key_t);
+  size_t encrypted_size = *ret_len;
+  size_t encrypted_len  = 0;
 
-  int stek_len     = sizeof(struct ssl_ticket_key_t);
-  int stek_enc_len = 0;
-
-  // generate key and iv
-  int generated_key_len = EVP_BytesToKey(EVP_aes_256_cbc(), EVP_md5(), (const unsigned char *)salt,
-                                         reinterpret_cast<const unsigned char *>(key), key_length, 1, gen_key, iv);
-  if (generated_key_len <= 0) {
-    TSDebug(PLUGIN, "Key setup for encryption of session ticket failed");
-    goto cleanup;
+  if (encrypt_encode64(reinterpret_cast<const unsigned char *>(key), key_length, reinterpret_cast<unsigned char *>(stek), stek_len,
+                       ret_encrypted, encrypted_size, &encrypted_len) == 0) {
+    *ret_len = encrypted_len;
+    return 1; // success
+  } else {
+    TSDebug(PLUGIN, "STEK encryption failed.");
+    return 0;
   }
-
-  if (1 != EVP_EncryptInit_ex(context, EVP_aes_256_cbc(), nullptr, (const unsigned char *)gen_key, iv)) {
-    TSDebug(PLUGIN, "Encryption init of session ticket failed");
-    goto cleanup;
-  }
-
-  if (1 != EVP_EncryptUpdate(context, reinterpret_cast<unsigned char *>(retEncrypted), &stek_enc_len,
-                             reinterpret_cast<const unsigned char *>(stek), stek_len)) {
-    TSDebug(PLUGIN, "Encryption of session ticket failed");
-    goto cleanup;
-  }
-  *retLength = stek_enc_len;
-  if (1 != EVP_EncryptFinal_ex(context, reinterpret_cast<unsigned char *>(retEncrypted) + stek_enc_len, &stek_enc_len)) {
-    TSDebug(PLUGIN, "Final encryption of session ticket failed");
-    goto cleanup;
-  }
-  *retLength += stek_enc_len;
-
-  retval = 1;
-cleanup:
-  EVP_CIPHER_CTX_free(context);
-  return retval; // success
 }
 
 static int
-STEK_decrypt(const std::string &encrypted_data, const char *key, int key_length, struct ssl_ticket_key_t *retSTEK)
+STEK_decrypt(const std::string &encrypted_data, const char *key, int key_length, struct ssl_ticket_key_t *ret_STEK)
 {
-  if (!retSTEK) {
+  if (!ret_STEK) {
     return 0;
   }
 
-  EVP_CIPHER_CTX *context = EVP_CIPHER_CTX_new();
-  unsigned char iv[EVP_MAX_IV_LENGTH];
-  unsigned char gen_key[EVP_MAX_KEY_LENGTH];
-  unsigned char decryptBuff[4 * sizeof(struct ssl_ticket_key_t)] = {
-    0,
-  };
-  int decryptLength = sizeof(decryptBuff);
-  int retval        = 0;
+  TSDebug(PLUGIN, "STEK_decrypt: requested to decrypt %lu bytes", encrypted_data.length());
 
-  TSDebug(PLUGIN, "STEK_decrypt(): requested to decrypt %d bytes", static_cast<int>(encrypted_data.length()));
+  int ret                  = 0;
+  size_t decrypted_size    = DECODED_LEN(encrypted_data.length()) + EVP_MAX_BLOCK_LENGTH * 2;
+  size_t decrypted_len     = 0;
+  unsigned char *decrypted = new unsigned char[decrypted_size];
 
-  // generate key and iv
-  int generated_key_len = EVP_BytesToKey(EVP_aes_256_cbc(), EVP_md5(), (const unsigned char *)salt,
-                                         reinterpret_cast<const unsigned char *>(key), key_length, 1, gen_key, iv);
-  if (generated_key_len <= 0) {
-    TSDebug(PLUGIN, "Key setup for decryption of session ticket failed");
-    goto cleanup;
+  std::memset(decrypted, 0, decrypted_size);
+  decrypt_decode64(reinterpret_cast<const unsigned char *>(key), key_length, encrypted_data.c_str(), encrypted_data.length(),
+                   decrypted, decrypted_size, &decrypted_len);
+
+  if (sizeof(struct ssl_ticket_key_t) != decrypted_len) {
+    TSError("STEK data length mismatch, got %lu, should be %lu", decrypted_len, sizeof(struct ssl_ticket_key_t));
+    goto Cleanup;
   }
 
-  if (1 != EVP_DecryptInit_ex(context, EVP_aes_256_cbc(), nullptr, (const unsigned char *)gen_key, iv)) {
-    TSDebug(PLUGIN, "Encryption of session data failed");
-    goto cleanup;
+  memcpy(ret_STEK, decrypted, sizeof(struct ssl_ticket_key_t));
+  memset(decrypted, 0, decrypted_size); // warm fuzzies
+  ret = 1;
+
+Cleanup:
+
+  if (decrypted) {
+    delete[] decrypted;
   }
 
-  if (1 !=
-      EVP_DecryptUpdate(context, decryptBuff, &decryptLength, (unsigned char *)encrypted_data.c_str(), encrypted_data.length())) {
-    TSDebug(PLUGIN, "Decryption of encrypted ticket key failed");
-    goto cleanup;
-  }
-
-  if (sizeof(struct ssl_ticket_key_t) != decryptLength) {
-    TSError("STEK received is unexpected size length=%d not %d", decryptLength, static_cast<int>(sizeof(struct ssl_ticket_key_t)));
-    goto cleanup;
-  }
-
-  memcpy(retSTEK, decryptBuff, sizeof(struct ssl_ticket_key_t));
-  memset(decryptBuff, 0, sizeof(decryptBuff)); // warm fuzzies
-  retval = 1;
-
-cleanup:
-  if (context) {
-    EVP_CIPHER_CTX_free(context);
-  }
-
-  return retval; /* ok, length of data in retSTEK will be sizeof(struct ssl_ticket_key_t) */
+  return ret; /* ok, length of data in ret_STEK will be sizeof(struct ssl_ticket_key_t) */
 }
 
 int
@@ -272,7 +228,7 @@ STEK_Send_To_Network(struct ssl_ticket_key_t *stekToSend)
   // encrypt the STEK before sending
   encryptedDataLength = sizeof(encryptedData);
   if (!STEK_encrypt(stekToSend, get_key_ptr(), get_key_length(), encryptedData, &encryptedDataLength)) {
-    TSError("Can't encrypt STEK.  Not sending");
+    TSError("STEK_encrypt failed, not sending.");
     return 0; // failure
   }
 
@@ -307,7 +263,7 @@ STEK_Update_Setter_Thread(void *arg)
   }
 
   stek_master_setter_running = 1;
-  TSDebug(PLUGIN, "Will now act as the STEK rotator for pod");
+  TSDebug(PLUGIN, "Will now act as the STEK rotator for POD.");
 
   while (true) {
     // Create new STEK, set it for me, and then send it to the POD.
@@ -316,7 +272,7 @@ STEK_Update_Setter_Thread(void *arg)
       // perhaps publishig isn't up yet.
       startProblem++;     // count how many times we have this problem.
       sleepInterval = 60; // short sleep for error retry
-      TSError("Could not create/send new STEK for key rotation...try again in %d seconds", sleepInterval);
+      TSError("Could not create/send new STEK for key rotation... Try again in %d seconds.", sleepInterval);
     } else {
       //  Everything good. will sleep for normal rotation time period and then repeat
       startProblem = 0;
@@ -343,7 +299,7 @@ STEK_Update_Setter_Thread(void *arg)
   } // while(forever)
 
 done_master_setter:
-  TSDebug(PLUGIN, "Yielding STEK-Master rotation responsibility to another node in POD");
+  TSDebug(PLUGIN, "Yielding STEK-Master rotation responsibility to another node in POD.");
   memset(&newKey, 0, sizeof(struct ssl_ticket_key_t));
   stek_master_setter_running = 0;
   return nullptr;
@@ -387,7 +343,7 @@ STEK_Update_Checker_Thread(void *arg)
    * that something is up with our STEK master, and nominate a new STEK master.
    */
 
-  TSDebug(PLUGIN, "Starting Update Checker Thread");
+  TSDebug(PLUGIN, "Starting STEK_Update_Checker_Thread.");
 
   lastChangeTime = lastWarningTime = time(&currentTime); // init to current to supress a startup warning.
 
@@ -396,7 +352,7 @@ STEK_Update_Checker_Thread(void *arg)
       // Launch a request for the master to resend you the ticket key
       std::string redis_channel = ssl_param.cluster_name + "." + STEK_ID_RESEND;
       ssl_param.pub->publish(redis_channel, ""); // send it
-      TSDebug(PLUGIN, "Request for ticket");
+      TSDebug(PLUGIN, "Request for ticket.");
     }
     time(&currentTime);
     time_t sleepUntil;
@@ -427,13 +383,13 @@ STEK_Update_Checker_Thread(void *arg)
 
       /* Time to nominate a new stek master for pod key rotation... */
       if (!stek_master_setter_running) {
-        TSDebug(PLUGIN, "Will nominate a new STEK-master thread now for pod key rotation");
+        TSDebug(PLUGIN, "Will nominate a new STEK-master thread now for pod key rotation.");
         TSThreadCreate(STEK_Update_Setter_Thread, nullptr);
       }
     }
-
   } // while(forever)
 
+  return nullptr;
 } // STEK_Update_Checker_Thread()
 
 int
@@ -441,15 +397,16 @@ STEK_init_keys()
 {
   ssl_ticket_key_t initKey;
 
-  if (!get_redis_auth_key(channel_key, MAX_REDIS_KEYSIZE)) {
-    TSError("STEK_init_keys: could not get redis authentication key");
+  channel_key_length = get_redis_auth_key(channel_key, MAX_REDIS_KEYSIZE);
+  if (channel_key_length <= 0) {
+    TSError("STEK_init_keys: Could not get redis authentication key.");
     return -1;
   }
 
   //  Initialize starter Session Ticket Encryption Key
   //  Will sync up with master later
   if (!STEK_CreateNew(&initKey, 0, 0 /*fast start*/)) {
-    TSError("Cant init STEK");
+    TSError("Cant init STEK.");
     return -1;
   }
   memcpy(&ssl_param.ticket_keys[0], &initKey, sizeof(struct ssl_ticket_key_t));

@@ -25,6 +25,7 @@
 
 #include <string>
 #include <set>
+
 #include "redis_endpoint.h"
 
 typedef struct message {

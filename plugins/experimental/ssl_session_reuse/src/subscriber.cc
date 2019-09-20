@@ -22,13 +22,13 @@
 
  */
 
+#include <cstring>
 #include <unistd.h>
-#include <ts/ts.h>
 #include <openssl/ssl.h>
 #include <hiredis/hiredis.h>
-#include <cstring>
-#include "common.h"
+#include <ts/ts.h>
 
+#include "common.h"
 #include "subscriber.h"
 #include "Config.h"
 #include "redis_auth.h"
@@ -67,7 +67,7 @@ RedisSubscriber::RedisSubscriber(const std::string &conf)
   char redis_auth_key[MAX_REDIS_KEYSIZE];
   if (!(get_redis_auth_key(redis_auth_key, MAX_REDIS_KEYSIZE))) {
     err = true;
-    TSError("RedisPublisher::RedisPublisher.Cannot get redis AUTH password.");
+    TSError("RedisPublisher::RedisPublisher: Cannot get redis AUTH password.");
     redis_passwd.clear();
   } else {
     redis_passwd = redis_auth_key;
@@ -76,7 +76,7 @@ RedisSubscriber::RedisSubscriber(const std::string &conf)
 
   m_channel_prefix = m_channel.substr(0, m_channel.find('*'));
 
-  TSDebug(PLUGIN, "RedisSubscriber::RedisSubscriber.SubscriberChannel= %s SubscriberChannelPrefix= %s", m_channel.c_str(),
+  TSDebug(PLUGIN, "RedisSubscriber::RedisSubscriber: SubscriberChannel: %s SubscriberChannelPrefix: %s", m_channel.c_str(),
           m_channel_prefix.c_str());
 
   addto_endpoint_vector(m_redisEndpoints, redisEndpointsStr);
@@ -103,7 +103,7 @@ RedisSubscriber::get_endpoint_index()
 ::redisContext *
 RedisSubscriber::setup_connection(int index)
 {
-  TSDebug(PLUGIN, "RedisSubscriber::setup_connection.called for host= %s and port= %d", m_redisEndpoints[index].m_hostname.c_str(),
+  TSDebug(PLUGIN, "RedisSubscriber::setup_connection: Called for host: %s port: %d", m_redisEndpoints[index].m_hostname.c_str(),
           m_redisEndpoints[index].m_port);
 
   ::redisContext *my_context(nullptr);
@@ -115,31 +115,31 @@ RedisSubscriber::setup_connection(int index)
     my_context =
       ::redisConnectWithTimeout(m_redisEndpoints[index].m_hostname.c_str(), m_redisEndpoints[index].m_port, timeout_connect);
     if (!my_context) {
-      TSError("RedisSubscriber::setup_connection.connect to host: %s and port: %d failed",
-              m_redisEndpoints[index].m_hostname.c_str(), m_redisEndpoints[index].m_port);
+      TSError("RedisSubscriber::setup_connection: Connect to host: %s port: %d failed.", m_redisEndpoints[index].m_hostname.c_str(),
+              m_redisEndpoints[index].m_port);
     } else if (my_context->err) {
-      TSError("RedisSubscriber::setup_connection.connect to host: %s and port: %d  failed.",
-              m_redisEndpoints[index].m_hostname.c_str(), m_redisEndpoints[index].m_port);
+      TSError("RedisSubscriber::setup_connection: Connect to host: %s port: %d failed.", m_redisEndpoints[index].m_hostname.c_str(),
+              m_redisEndpoints[index].m_port);
     } else {
-      TSDebug(PLUGIN, "RedisSubscriber::setup_connection: successfully connected to the redis host: %s on port: %d",
+      TSDebug(PLUGIN, "RedisSubscriber::setup_connection: Successfully connected to the redis host: %s port: %d",
               m_redisEndpoints[index].m_hostname.c_str(), m_redisEndpoints[index].m_port);
 
       redisReply *reply = static_cast<redisReply *>(redisCommand(my_context, "AUTH %s", redis_passwd.c_str()));
 
       if (reply == nullptr) {
-        TSError("RedisSubscriber::setup_connection Cannot AUTH redis server, no reply.");
+        TSError("RedisSubscriber::setup_connection: Cannot AUTH redis server, no reply.");
       } else if (reply->type == REDIS_REPLY_ERROR) {
-        TSError("RedisSubscriber::setup_connection Cannot AUTH redis server, error reply.");
+        TSError("RedisSubscriber::setup_connection: Cannot AUTH redis server, error reply.");
         freeReplyObject(reply);
       } else {
-        TSDebug(PLUGIN, "RedisSubscriber::setup_connection. Successfully AUTH redis server.");
+        TSDebug(PLUGIN, "RedisSubscriber::setup_connection: Successfully AUTH redis server.");
         freeReplyObject(reply);
       }
 
       break;
     }
 
-    TSError("RedisSubscriber::setup_connection.will wait for: %d microseconds and try again.", m_redisRetryDelay);
+    TSError("RedisSubscriber::setup_connection: Will wait for: %d microseconds and try again.", m_redisRetryDelay);
 
     ::usleep(m_redisRetryDelay);
   }
@@ -150,7 +150,7 @@ RedisSubscriber::setup_connection(int index)
 void
 RedisSubscriber::run()
 {
-  TSDebug(PLUGIN, "RedisSubscriber::runMaster.called");
+  TSDebug(PLUGIN, "RedisSubscriber::runMaster: Called.");
   int my_endpoint_index = get_endpoint_index();
   ::redisContext *my_context(setup_connection(my_endpoint_index));
   ::redisReply *current_reply(nullptr);
@@ -161,16 +161,16 @@ RedisSubscriber::run()
       my_context = setup_connection(my_endpoint_index);
     }
 
-    TSDebug(PLUGIN, "RedisSubscriber::runMaster.Issuing command: \"PSUBSCRIBE %s\"", m_channel.c_str());
+    TSDebug(PLUGIN, "RedisSubscriber::runMaster: Issuing command: PSUBSCRIBE %s", m_channel.c_str());
     current_reply = static_cast<redisReply *>(::redisCommand(my_context, "PSUBSCRIBE %s", m_channel.c_str()));
 
     if (!current_reply || (REDIS_REPLY_ERROR == current_reply->type)) {
-      TSError("RedisSubscriber::runMaster.subscribe to redis server on channel: %s failed.", m_channel.c_str());
+      TSError("RedisSubscriber::runMaster: Subscribe to redis server on channel: %s failed.", m_channel.c_str());
       ::usleep(1000 * 1000);
       continue;
     } else {
-      TSDebug(PLUGIN, "RedisSubscriber::runMaster.Successfully subscribed to channel: \"%s\"", m_channel.c_str());
-      TSDebug(PLUGIN, "RedisSubscriber::runMaster.Waiting for messages to appear on the channel!");
+      TSDebug(PLUGIN, "RedisSubscriber::runMaster: Successfully subscribed to channel: %s", m_channel.c_str());
+      TSDebug(PLUGIN, "RedisSubscriber::runMaster: Waiting for messages to appear on the channel!");
       ::freeReplyObject(current_reply);
     }
 
@@ -179,7 +179,7 @@ RedisSubscriber::run()
       // Process Message
       std::string channel(current_reply->element[2]->str, current_reply->element[2]->len);
       std::string data(current_reply->element[3]->str, current_reply->element[3]->len);
-      TSDebug(PLUGIN, "Redis request channel=%s message=%s", channel.c_str(), data.c_str());
+      TSDebug(PLUGIN, "RedisSubscriber::runMaster: Redis request channel: %s message: %s", channel.c_str(), hex_str(data).c_str());
 
       std::string key = "";
       // Strip the channel name to get the key
@@ -193,28 +193,29 @@ RedisSubscriber::run()
         // Requesting last ticket to be resent
       } else if (strncmp(key.c_str(), STEK_ID_RESEND, strlen(STEK_ID_RESEND)) == 0) {
         if (isSTEKMaster()) {
-          TSDebug(PLUGIN, "RedisSubscriber Resend ticket");
+          TSDebug(PLUGIN, "RedisSubscriber::runMaster: Resend ticket.");
           STEK_Send_To_Network(ssl_param.ticket_keys);
         }
       } else { // Otherwise this is a new session.  Let ATS core know about it
         char session_id[SSL_MAX_SSL_SESSION_ID_LENGTH * 2];
         int session_id_len = sizeof(session_id);
         if (decode_id(key, session_id, session_id_len) == 0) { // Decrypt the data
-          TSDebug(PLUGIN, "Add session encoded_id=%s decoded_id=%.*s %d", key.c_str(), session_id_len, session_id, session_id_len);
+          TSDebug(PLUGIN, "RedisSubscriber::runMaster: Add session encoded_id: %s decoded_id: %.*s %d", key.c_str(), session_id_len,
+                  hex_str(std::string(session_id, session_id_len)).c_str(), session_id_len);
           add_session(session_id, session_id_len, data);
         } else {
-          TSDebug(PLUGIN, "failed to decode key=%s", key.c_str());
+          TSDebug(PLUGIN, "RedisSubscriber::runMaster: Failed to decode key: %s", key.c_str());
         }
       }
 
       ::freeReplyObject(current_reply);
 
-      TSDebug(PLUGIN, "RedisSubscriber::runMaster.Got message: %s on channel: %s", data.c_str(), channel.c_str());
+      TSDebug(PLUGIN, "RedisSubscriber::runMaster: Got message: %s channel: %s", hex_str(data).c_str(), channel.c_str());
     }
   }
 }
 
 RedisSubscriber::~RedisSubscriber()
 {
-  TSDebug(PLUGIN, "RedisSubscriber::~RedisSubscriber.called for endpoint");
+  TSDebug(PLUGIN, "RedisSubscriber::~RedisSubscriber: Called for endpoint.");
 }
