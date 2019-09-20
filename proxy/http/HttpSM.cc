@@ -325,6 +325,9 @@ HttpSM::init()
 
   SET_HANDLER(&HttpSM::main_handler);
 
+  // Remember where this SM is running so it gets returned correctly
+  this->setThreadAffinity(this_ethread());
+
 #ifdef USE_HTTP_DEBUG_LISTS
   ink_mutex_acquire(&debug_sm_list_mutex);
   debug_sm_list.push(this);
