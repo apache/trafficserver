@@ -23,9 +23,10 @@
  */
 #pragma once
 
-#include "connection.h"
 #include <set>
 #include <mutex>
+
+#include "connection.h"
 
 /**
  * @brief Manages a pool of connections to a single Redis server

@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <string>
+
 #include "message.h"
 #include "globals.h"
 #include "redis_endpoint.h"

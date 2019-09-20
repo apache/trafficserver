@@ -30,6 +30,7 @@
 #include <memory>
 #include <semaphore.h>
 #include <hiredis/hiredis.h>
+
 #include "message.h"
 #include "globals.h"
 #include "redis_endpoint.h"

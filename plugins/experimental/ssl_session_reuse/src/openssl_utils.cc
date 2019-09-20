@@ -22,16 +22,15 @@
 
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <cstring>
-#include <pthread.h>
 #include <cerrno>
 #include <cmath>
-#include <openssl/rand.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <openssl/rand.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <ts/ts.h>
@@ -48,28 +47,28 @@ ssl_new_session(TSSslSessionID &sid)
   std::string encoded_id;
   int ret = encode_id(sid.bytes, sid.len, encoded_id);
   if (ret < 0) {
-    TSError("encoded id failed.");
+    TSError("Encoded id failed.");
     return 0;
   }
 
   int session_ret_len = SSL_SESSION_MAX_DER;
   char session_data[SSL_SESSION_MAX_DER];
   if (!TSSslSessionGetBuffer(&sid, session_data, &session_ret_len)) {
-    TSError("session data is too large. %d", session_ret_len);
+    TSError("Session data is too large: %d", session_ret_len);
     return 0;
   }
 
   std::string encrypted_data;
   ret = encrypt_session(session_data, session_ret_len, (unsigned char *)get_key_ptr(), get_key_length(), encrypted_data);
   if (ret < 0) {
-    TSError("encrypt_session failed.");
+    TSError("Encrypt_session failed.");
     return 0;
   }
 
   std::string redis_channel = ssl_param.cluster_name + "." + encoded_id;
   ssl_param.pub->publish(redis_channel, encrypted_data);
 
-  TSDebug(PLUGIN, "create new session id: %s  encoded: \"%s\" channel: %s", encoded_id.c_str(), encrypted_data.c_str(),
+  TSDebug(PLUGIN, "Create new session id: %s encoded: %s channel: %s", encoded_id.c_str(), encrypted_data.c_str(),
           redis_channel.c_str());
 
   return 0;
@@ -88,7 +87,7 @@ ssl_del_session(TSSslSessionID &sid)
 
   int ret = encode_id(sid.bytes, sid.len, encoded_id);
   if (!ret) {
-    TSDebug(PLUGIN, "session is deleted. id: \"%s\"", encoded_id.c_str());
+    TSDebug(PLUGIN, "Session is deleted. id: %s", encoded_id.c_str());
   }
 
   return 0;
@@ -97,6 +96,7 @@ ssl_del_session(TSSslSessionID &sid)
 int
 SSL_session_callback(TSCont contp, TSEvent event, void *edata)
 {
+  TSDebug(PLUGIN, "SSL_session_callback event: %d", event);
   TSSslSessionID *sessionid = reinterpret_cast<TSSslSessionID *>(edata);
 
   switch (event) {
