@@ -6087,20 +6087,20 @@ TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
   // created using the ATS EThread API, eth will be NULL, and the
   // continuation needs to be called back on a REGULAR thread.
   //
-  // If this function is being executed on a thread created by the API
-  // which is DEDICATED, the continuation needs to be called back on a
-  // REGULAR thread.
-  if (eth == nullptr || eth->tt != REGULAR || !eth->is_event_type(ET_NET)) {
-    eventProcessor.schedule_imm(new TSHttpSMCallback(sm, event), ET_NET);
-  } else {
+  // If we are not coming from the thread associated with the state machine,
+  // reschedule.  Also reschedule if we cannot get the state machine lock.
+  if (eth != nullptr && sm->getThreadAffinity() == eth) {
     MUTEX_TRY_LOCK(trylock, sm->mutex, eth);
-    if (!trylock.is_locked()) {
-      eventProcessor.schedule_imm(new TSHttpSMCallback(sm, event), ET_NET);
-    } else {
+    if (trylock.is_locked()) {
       ink_assert(eth->is_event_type(ET_NET));
       sm->state_api_callback((int)event, nullptr);
+      return;
     }
   }
+  // Couldn't call the handler directly, schedule to the original SM thread
+  TSHttpSMCallback *cb = new TSHttpSMCallback(sm, event);
+  cb->setThreadAffinity(sm->getThreadAffinity());
+  eventProcessor.schedule_imm(cb, ET_NET);
 }
 
 TSReturnCode TSHttpArgIndexNameLookup(UserArg::Type type, const char *name, int *arg_idx, const char **description);
