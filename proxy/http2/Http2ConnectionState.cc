@@ -1186,7 +1186,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   new_stream->mutex                     = new_ProxyMutex();
   new_stream->is_first_transaction_flag = get_stream_requests() == 0;
   increment_stream_requests();
-  ua_session->get_netvc()->add_to_active_queue();
+  ua_session->add_to_active_queue();
 
   return new_stream;
 }
@@ -1264,10 +1264,7 @@ Http2ConnectionState::cleanup_streams()
   if (!is_state_closed()) {
     SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
 
-    UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
-    if (vc && vc->active_timeout_in == 0) {
-      vc->add_to_keep_alive_queue();
-    }
+    ua_session->add_to_keep_alive_queue();
   }
 }
 
@@ -1353,11 +1350,8 @@ Http2ConnectionState::release_stream(Http2Stream *stream)
         // If the number of clients is 0, HTTP2_SESSION_EVENT_FINI is not received or sent, and ua_session is active,
         // then mark the connection as inactive
         ua_session->clear_session_active();
-        UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
-        if (vc && vc->active_timeout_in == 0) {
-          // With heavy traffic, ua_session could be destroyed. Do not touch ua_session after this.
-          vc->add_to_keep_alive_queue();
-        }
+        // With heavy traffic, ua_session could be destroyed. Do not touch ua_session after this.
+        ua_session->add_to_keep_alive_queue();
       } else {
         schedule_zombie_event();
       }

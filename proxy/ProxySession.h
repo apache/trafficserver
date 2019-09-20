@@ -143,6 +143,12 @@ public:
 
   APIHook *hook_get(TSHttpHookID id) const;
   HttpAPIHooks const *feature_hooks() const;
+
+  // Wrappers to grab appropriate locks and put
+  // the assocated netvc on the appropriate queue
+  void add_to_active_queue();
+  void add_to_keep_alive_queue();
+
   ////////////////////
   // Members
 

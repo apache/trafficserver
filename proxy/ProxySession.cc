@@ -334,3 +334,37 @@ ProxySession::has_hooks() const
 {
   return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
 }
+
+void
+ProxySession::add_to_active_queue()
+{
+  UnixNetVConnection *vc = dynamic_cast<UnixNetVConnection *>(this->get_netvc());
+  if (vc) { // If it isn't a netvc, no active_queue to manage
+    if (mutex->thread_holding == this_ethread()) {
+      // Should be safe to blocking grab the nh mutex, probably already have it
+      // but will not in the direct schedule case
+      SCOPED_MUTEX_LOCK(lock, vc->nh->mutex, this_ethread());
+      vc->add_to_active_queue();
+    } else {
+      ink_release_assert(!"BUG: Trying to add vc to active_queue from non-owning thread");
+    }
+  }
+}
+
+void
+ProxySession::add_to_keep_alive_queue()
+{
+  UnixNetVConnection *vc = dynamic_cast<UnixNetVConnection *>(this->get_netvc());
+  if (vc) { // If it isn't a netvc, no keep_alive_queue to manage
+    if (vc->active_timeout_in == 0) {
+      if (vc && mutex->thread_holding == this_ethread()) {
+        // Should be safe to blocking grab the nh mutex, probably already have it
+        // but will not in the direct schedule case
+        SCOPED_MUTEX_LOCK(lock, vc->nh->mutex, this_ethread());
+        vc->add_to_keep_alive_queue();
+      } else {
+        ink_release_assert(!"BUG: Trying to add vc to keep_alive_queue from non-owning thread");
+      }
+    }
+  }
+}

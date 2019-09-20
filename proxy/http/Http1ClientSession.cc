@@ -435,7 +435,7 @@ Http1ClientSession::release(ProxyTransaction *trans)
 
     if (client_vc) {
       client_vc->cancel_active_timeout();
-      client_vc->add_to_keep_alive_queue();
+      this->add_to_keep_alive_queue();
     }
     trans->destroy();
   }
@@ -459,7 +459,7 @@ Http1ClientSession::new_transaction()
   trans.set_proxy_ssn(this);
   transact_count++;
 
-  client_vc->add_to_active_queue();
+  this->add_to_active_queue();
   trans.new_transaction();
 }
 
