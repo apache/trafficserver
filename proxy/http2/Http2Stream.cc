@@ -949,3 +949,19 @@ Http2Stream::_switch_thread_if_not_on_right_thread(int event, void *edata)
   }
   return true;
 }
+
+int
+Http2Stream::get_transaction_priority_weight() const
+{
+  return priority_node ? priority_node->weight : 0;
+}
+
+int
+Http2Stream::get_transaction_priority_dependence() const
+{
+  if (!priority_node) {
+    return -1;
+  } else {
+    return priority_node->parent ? priority_node->parent->id : 0;
+  }
+}

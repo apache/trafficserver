@@ -115,3 +115,15 @@ ProxyClientTransaction::set_tx_error_code(ProxyError e)
     this->current_reader->t_state.client_info.tx_error_code = e;
   }
 }
+
+int
+ProxyClientTransaction::get_transaction_priority_weight() const
+{
+  return 0;
+}
+
+int
+ProxyClientTransaction::get_transaction_priority_dependence() const
+{
+  return 0;
+}
