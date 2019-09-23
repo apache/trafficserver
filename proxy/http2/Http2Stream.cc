@@ -1063,3 +1063,19 @@ Http2Stream::mark_body_done()
     this->write_vio.nbytes = response_header.length_get() + chunked_handler.dechunked_size;
   }
 }
+
+int
+Http2Stream::get_transaction_priority_weight() const
+{
+  return priority_node ? priority_node->weight : 0;
+}
+
+int
+Http2Stream::get_transaction_priority_dependence() const
+{
+  if (!priority_node) {
+    return -1;
+  } else {
+    return priority_node->parent ? priority_node->parent->id : 0;
+  }
+}
