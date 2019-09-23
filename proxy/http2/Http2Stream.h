@@ -94,6 +94,8 @@ public:
   bool allow_half_open() const override;
   bool is_first_transaction() const override;
   int get_transaction_id() const override;
+  int get_transaction_priority_weight() const override;
+  int get_transaction_priority_dependence() const override;
   bool ignore_keep_alive() override;
 
   void clear_inactive_timer();
