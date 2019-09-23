@@ -97,6 +97,8 @@ public:
   void increment_client_transactions_stat() override;
   void decrement_client_transactions_stat() override;
   int get_transaction_id() const override;
+  int get_transaction_priority_weight() const override;
+  int get_transaction_priority_dependence() const override;
 
   void clear_inactive_timer();
   void clear_active_timer();

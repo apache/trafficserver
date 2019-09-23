@@ -440,7 +440,9 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   // It seems to be possible that the ua_txn pointer will go stale before log entries for this HTTP transaction are
   // generated.  Therefore, collect information that may be needed for logging from the ua_txn object at this point.
   //
-  _client_transaction_id = ua_txn->get_transaction_id();
+  _client_transaction_id                  = ua_txn->get_transaction_id();
+  _client_transaction_priority_weight     = ua_txn->get_transaction_priority_weight();
+  _client_transaction_priority_dependence = ua_txn->get_transaction_priority_dependence();
   {
     auto p = ua_txn->get_proxy_ssn();
 
