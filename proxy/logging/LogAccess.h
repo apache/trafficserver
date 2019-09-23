@@ -239,15 +239,17 @@ public:
 
   // other fields
   //
-  inkcoreapi int marshal_transfer_time_ms(char *);           // INT
-  inkcoreapi int marshal_transfer_time_s(char *);            // INT
-  inkcoreapi int marshal_file_size(char *);                  // INT
-  inkcoreapi int marshal_plugin_identity_id(char *);         // INT
-  inkcoreapi int marshal_plugin_identity_tag(char *);        // STR
-  inkcoreapi int marshal_process_uuid(char *);               // STR
-  inkcoreapi int marshal_client_http_connection_id(char *);  // INT
-  inkcoreapi int marshal_client_http_transaction_id(char *); // INT
-  inkcoreapi int marshal_cache_lookup_url_canon(char *);     // STR
+  inkcoreapi int marshal_transfer_time_ms(char *);                            // INT
+  inkcoreapi int marshal_transfer_time_s(char *);                             // INT
+  inkcoreapi int marshal_file_size(char *);                                   // INT
+  inkcoreapi int marshal_plugin_identity_id(char *);                          // INT
+  inkcoreapi int marshal_plugin_identity_tag(char *);                         // STR
+  inkcoreapi int marshal_process_uuid(char *);                                // STR
+  inkcoreapi int marshal_client_http_connection_id(char *);                   // INT
+  inkcoreapi int marshal_client_http_transaction_id(char *);                  // INT
+  inkcoreapi int marshal_client_http_transaction_priority_weight(char *);     // INT
+  inkcoreapi int marshal_client_http_transaction_priority_dependence(char *); // INT
+  inkcoreapi int marshal_cache_lookup_url_canon(char *);                      // STR
 
   // named fields from within a http header
   //

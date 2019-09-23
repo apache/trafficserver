@@ -184,6 +184,8 @@ Connections and Transactions
 .. _sstc:
 .. _ccid:
 .. _ctid:
+.. _ctpw:
+.. _ctpd:
 
 The following log fields are used to list various details of connections and
 transactions between |TS| proxies and origin servers.
@@ -203,6 +205,10 @@ ctid  Client Request Client Transaction ID, a non-negative number for a transact
                      which is different for all currently-active transactions on the
                      same client connection.  For client HTTP/2 transactions, this
                      value is the stream ID for the transaction.
+ctpw  Client Request Client Transaction Priority Weight, the priority weight for the 
+                     underlying HTTP/2 protocol.
+ctpd  Client Request Client Transaction Priority Dependence, the transaction ID that 
+                     the current transaction depends on for HTTP/2 priority logic.
 ===== ============== ==================================================================
 
 .. _admin-logging-fields-content-type:
