@@ -2556,6 +2556,38 @@ LogAccess::marshal_client_http_transaction_id(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_http_transaction_priority_weight(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      id = m_http_sm->client_transaction_priority_weight();
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_client_http_transaction_priority_dependence(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      id = m_http_sm->client_transaction_priority_dependence();
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_http_header_field(LogField::Container container, char *field, char *buf)
 {
   char *str        = nullptr;
