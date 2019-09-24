@@ -3349,7 +3349,7 @@ SSL Termination
 Client-Related Configuration
 ----------------------------
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING DISABLED
+.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING PERMISSIVE
    :reloadable:
    :overridable:
 
