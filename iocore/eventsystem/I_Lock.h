@@ -26,6 +26,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Diags.h"
 #include "I_Thread.h"
+#include "I_ThreadAffinity.h"
 
 #define MAX_LOCK_TIME HRTIME_MSECONDS(200)
 #define THREAD_MUTEX_THREAD_HOLDING (-1024 * 1024)
@@ -143,7 +144,7 @@ inkcoreapi extern void lock_taken(const SourceLocation &, const char *handler);
   allow you to lock/unlock the underlying mutex object.
 
 */
-class ProxyMutex : public RefCountObj
+class ProxyMutex : public RefCountObj, public ThreadAffinity
 {
 public:
   /**
@@ -247,6 +248,9 @@ Mutex_trylock(
   ink_assert(t != nullptr);
   ink_assert(t == reinterpret_cast<EThread *>(this_thread()));
   if (m->thread_holding != t) {
+    if (m->getThreadAffinity() != nullptr) {
+      ink_release_assert(t == m->getThreadAffinity());
+    }
     if (!ink_mutex_try_acquire(&m->the_mutex)) {
 #ifdef DEBUG
       lock_waiting(m->srcloc, m->handler);
@@ -290,6 +294,9 @@ Mutex_lock(
 {
   ink_assert(t != nullptr);
   if (m->thread_holding != t) {
+    if (m->getThreadAffinity() != nullptr) {
+      ink_release_assert(t == m->getThreadAffinity());
+    }
     ink_mutex_acquire(&m->the_mutex);
     m->thread_holding = t;
     ink_assert(m->thread_holding);

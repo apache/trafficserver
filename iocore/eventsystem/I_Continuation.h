@@ -39,6 +39,7 @@
 #include "tscore/List.h"
 #include "I_Lock.h"
 #include "tscore/ContFlags.h"
+#include "I_ThreadAffinity.h"
 
 class Continuation;
 class ContinuationQueue;
@@ -94,7 +95,7 @@ public:
 
 */
 
-class Continuation : private force_VFPT_to_top
+class Continuation : private force_VFPT_to_top, public ThreadAffinity
 {
 public:
   /**
@@ -144,30 +145,6 @@ public:
     needs to be thread local while this continuation is running
   */
   ContFlags control_flags;
-
-  EThread *thread_affinity = nullptr;
-
-  bool
-  setThreadAffinity(EThread *ethread)
-  {
-    if (ethread != nullptr) {
-      thread_affinity = ethread;
-      return true;
-    }
-    return false;
-  }
-
-  EThread *
-  getThreadAffinity()
-  {
-    return thread_affinity;
-  }
-
-  void
-  clearThreadAffinity()
-  {
-    thread_affinity = nullptr;
-  }
 
   /**
     Receives the event code and data for an Event.

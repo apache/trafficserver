@@ -225,6 +225,7 @@ initialize_thread_for_net(EThread *thread)
   new (reinterpret_cast<ink_dummy_for_new *>(get_PollCont(thread))) PollCont(thread->mutex, nh);
   nh->mutex  = new_ProxyMutex();
   nh->thread = thread;
+  nh->mutex->setThreadAffinity(thread);
 
   PollCont *pc       = get_PollCont(thread);
   PollDescriptor *pd = pc->pollDescriptor;
