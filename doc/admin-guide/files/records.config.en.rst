@@ -1307,6 +1307,8 @@ HTTP Redirection
    This setting determines the maximum number of times Trafficserver does a redirect follow location on receiving a 3XX Redirect response
    for a given client request.
 
+   .. note:: In previous versions proxy.config.http.redirection_enabled had to be set to 1 before this setting was evaluated.  Now setting :ts:cv:`proxy.config.http.number_of_redirections` to a value greater than zero is sufficient to cause |TS| to follow redirects.
+
 .. ts:cv:: CONFIG proxy.config.http.redirect_host_no_port INT 1
 
    This setting enables Trafficserver to not include the port in the Host header in the redirect follow request for default/standard ports
