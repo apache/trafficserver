@@ -7739,6 +7739,9 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   t_state.server_info.clear();
   t_state.parent_info.clear();
 
+  // Must reset whether the InkAPI has set the destination address
+  t_state.api_server_addr_set = false;
+
   if (t_state.txn_conf->cache_http) {
     t_state.cache_info.object_read = nullptr;
   }
