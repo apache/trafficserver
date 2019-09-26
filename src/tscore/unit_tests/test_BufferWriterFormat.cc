@@ -29,7 +29,10 @@
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
 #include "tscpp/util/MemSpan.h"
+#include "tscore/ink_config.h"
+#if TS_ENABLE_FIPS == 0
 #include "tscore/INK_MD5.h"
+#endif
 #include "tscore/CryptoHash.h"
 
 using namespace std::literals;
@@ -252,6 +255,7 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   bw20.print("012345|{:^10s}|6789abc", true);
   REQUIRE(bw20.view() == "012345|   true   |67");
 
+#if TS_ENABLE_FIPS == 0
   INK_MD5 md5;
   bw.reduce(0);
   bw.print("{}", md5);
@@ -260,6 +264,7 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   bw.reduce(0);
   bw.print("{}", md5);
   REQUIRE(bw.view() == "e99a18c428cb38d5f260853678922e03");
+#endif
 
   bw.reset().print("Char '{}'", 'a');
   REQUIRE(bw.view() == "Char 'a'");
@@ -594,12 +599,14 @@ TEST_CASE("bwstring std formats", "[libts][bwprint]")
   w.reset().print("{} bytes {} digits {}", sizeof(double), std::numeric_limits<double>::digits10, ts::bwf::Hex_Dump(2.718281828));
   REQUIRE(w.view() == "8 bytes 15 digits 9b91048b0abf0540");
 
+#if TS_ENABLE_FIPS == 0
   INK_MD5 md5;
   w.reset().print("{}", ts::bwf::Hex_Dump(md5));
   REQUIRE(w.view() == "00000000000000000000000000000000");
   CryptoContext().hash_immediate(md5, s2.data(), s2.size());
   w.reset().print("{}", ts::bwf::Hex_Dump(md5));
   REQUIRE(w.view() == "f240ccd7a95c7ec66d6c111e2925b23e");
+#endif
 }
 
 // Normally there's no point in running the performance tests, but it's worth keeping the code
