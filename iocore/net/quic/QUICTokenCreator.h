@@ -35,7 +35,7 @@ public:
                             size_t current_packet_size, uint32_t seq_num) override;
 
 private:
-  void _on_frame_lost(QUICFrameInformationUPtr &info);
+  void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 
   bool _is_resumption_token_sent = false;
   QUICContext *_context          = nullptr;

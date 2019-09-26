@@ -98,7 +98,8 @@ class MockQUICCCConfig : public QUICCCConfig
 class MockQUICStreamManager : public QUICStreamManager
 {
 public:
-  MockQUICStreamManager() : QUICStreamManager() {}
+  MockQUICStreamManager() : QUICStreamManager(nullptr, nullptr, nullptr) {}
+
   // Override
   virtual QUICConnectionErrorUPtr
   handle_frame(QUICEncryptionLevel level, const QUICFrame &f) override
