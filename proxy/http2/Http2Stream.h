@@ -74,7 +74,10 @@ public:
   void terminate_if_possible();
   void update_read_request(int64_t read_len, bool send_update, bool check_eos = false);
   void update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
+
+  void signal_read_event(int event);
   void signal_write_event(bool call_update);
+
   void restart_sending();
   void push_promise(URL &url, const MIMEField *accept_encoding);
 
@@ -123,6 +126,7 @@ public:
   void update_initial_rwnd(Http2WindowSize new_size);
   bool has_trailing_header() const;
   void set_request_headers(HTTPHdr &h2_headers);
+  MIOBuffer *read_vio_writer() const;
 
   //////////////////
   // Variables
@@ -141,8 +145,6 @@ public:
 
   HTTPHdr response_header;
   IOBufferReader *response_reader          = nullptr;
-  IOBufferReader *request_reader           = nullptr;
-  MIOBuffer request_buffer                 = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
   Http2DependencyTree::Node *priority_node = nullptr;
 
 private:
@@ -166,6 +168,8 @@ private:
   int64_t _http_sm_id     = -1;
 
   HTTPHdr _req_header;
+  MIOBuffer _request_buffer = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+  int64_t read_vio_nbytes;
   VIO read_vio;
   VIO write_vio;
 
@@ -329,4 +333,10 @@ inline bool
 Http2Stream::is_first_transaction() const
 {
   return is_first_transaction_flag;
+}
+
+inline MIOBuffer *
+Http2Stream::read_vio_writer() const
+{
+  return this->read_vio.get_writer();
 }
