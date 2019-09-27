@@ -142,6 +142,7 @@ public:
   {
     if (shutdown_cont_event) {
       shutdown_cont_event->cancel();
+      shutdown_cont_event = nullptr;
     }
     cleanup_streams();
 
