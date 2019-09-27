@@ -688,8 +688,10 @@ QUICInvariants::scil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len)
 {
   ink_assert(QUICInvariants::is_long_header(buf));
 
-  uint8_t dcil;
-  QUICInvariants::dcil(dcil, buf, buf_len);
+  uint8_t dcil = 0;
+  if (!QUICInvariants::dcil(dcil, buf, buf_len)) {
+    return false;
+  }
 
   dst = buf[QUICInvariants::LH_CIL_OFFSET + 1 + dcil];
 
