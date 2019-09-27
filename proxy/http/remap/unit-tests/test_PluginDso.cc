@@ -73,7 +73,7 @@ public:
   {
   }
   virtual void
-  indicatePostReload(TSReturnCode reloadStatus)
+  indicatePostReload(TSRemapReloadStatus reloadStatus)
   {
   }
   virtual bool
