@@ -9551,7 +9551,7 @@ TSSslSessionGet(const TSSslSessionID *session_id)
 {
   SSL_SESSION *session = nullptr;
   if (session_id && session_cache) {
-    session_cache->getSession(reinterpret_cast<const SSLSessionID &>(*session_id), &session);
+    session_cache->getSession(reinterpret_cast<const SSLSessionID &>(*session_id), &session, nullptr);
   }
   return reinterpret_cast<TSSslSession>(session);
 }
@@ -9568,7 +9568,7 @@ TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_p
 }
 
 TSReturnCode
-TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session)
+TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn)
 {
   // Don't insert if there is no session id or the cache is not yet set up
   if (session_id && session_cache) {
@@ -9579,7 +9579,8 @@ TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session)
       Debug("ssl.session_cache.insert", "TSSslSessionInsert: Inserting session '%s' ", buf);
     }
     SSL_SESSION *session = reinterpret_cast<SSL_SESSION *>(add_session);
-    session_cache->insertSession(reinterpret_cast<const SSLSessionID &>(*session_id), session);
+    SSL *ssl             = reinterpret_cast<SSL *>(ssl_conn);
+    session_cache->insertSession(reinterpret_cast<const SSLSessionID &>(*session_id), session, ssl);
     // insertSession returns void, assume all went well
     return TS_SUCCESS;
   } else {

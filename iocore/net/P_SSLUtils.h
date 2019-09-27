@@ -39,6 +39,15 @@ class SSLNetVConnection;
 
 typedef int ssl_error_t;
 
+#ifndef OPENSSL_IS_BORING
+typedef int ssl_curve_id;
+#else
+typedef uint16_t ssl_curve_id;
+#endif
+
+// Return the SSL Curve ID associated to the specified SSL connection
+ssl_curve_id SSLGetCurveNID(SSL *ssl);
+
 /**
     @brief Load SSL certificates from ssl_multicert.config and setup SSLCertLookup for SSLCertificateConfig
  */
