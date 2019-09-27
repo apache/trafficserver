@@ -102,7 +102,7 @@ public:
 
   void deactivate();
   void indicatePreReload();
-  void indicatePostReload(TSReturnCode reloadStatus);
+  void indicatePostReload(bool reloadSuccessful);
 
 protected:
   PluginDso *findByEffectivePath(const fs::path &path);

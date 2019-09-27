@@ -75,6 +75,16 @@ typedef enum {
   TSREMAP_ERROR = -1 /* Some error, that should generate an error page */
 } TSRemapStatus;
 
+/* Status code passed to the plugin by TSRemapPostConfigReload() signaling
+ * (1) if the configuration reload was successful and
+ * (2) if (1) is successful show if the plugin was part of the new configuration */
+typedef enum {
+  TSREMAP_CONFIG_RELOAD_FAILURE             = 0, /* notify the plugin that configuration parsing failed */
+  TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED = 1, /* configuration parsing succeeded and plugin was used by the new configuration */
+  TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED =
+    2 /* configuration parsing succeeded but plugin was NOT used by the new configuration */
+} TSRemapReloadStatus;
+
 /* ----------------------------------------------------------------------------------
    These are the entry points a plugin can implement. Note that TSRemapInit() and
    TSRemapDoRemap() are both required.
@@ -108,7 +118,7 @@ tsapi void TSRemapPreConfigReload(void);
                           TS_ERROR - (re)load failed.
    Return: none
 */
-tsapi void TSRemapPostConfigReload(TSReturnCode reloadStatus);
+tsapi void TSRemapPostConfigReload(TSRemapReloadStatus reloadStatus);
 
 /* Remap new request
    Mandatory interface function.
