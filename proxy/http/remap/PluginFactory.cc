@@ -22,6 +22,8 @@
 
  */
 
+#include <unordered_map>
+
 #include "RemapPluginInfo.h"
 #include "PluginFactory.h"
 #ifdef PLUGIN_DSO_TESTS
@@ -274,13 +276,25 @@ PluginFactory::indicatePreReload()
  * @brief Tell all plugins (that so wish) that remap.config is done reloading
  */
 void
-PluginFactory::indicatePostReload(TSReturnCode reloadStatus)
+PluginFactory::indicatePostReload(bool reloadSuccessful)
 {
   Debug(_tag, "indicated config is done reloading by factory '%s' to %zu plugin%s", getUuid(), _list.count(),
         _list.count() != 1 ? "s" : "");
 
-  for (auto it = _list.begin(); _list.end() != it; it++) {
-    it->indicatePostReload(reloadStatus);
+  /* Find out which plugins (DSO) are actually instantiated by this factory */
+  std::unordered_map<PluginDso *, int> pluginUsed;
+  for (auto &inst : _instList) {
+    pluginUsed[&(inst._plugin)]++;
+  }
+
+  for (auto &plugin : _list) {
+    TSRemapReloadStatus status = TSREMAP_CONFIG_RELOAD_FAILURE;
+    if (reloadSuccessful) {
+      /* reload succeeded but was the plugin instantiated by this factory? */
+      status = (pluginUsed.end() == pluginUsed.find(&plugin) ? TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED :
+                                                               TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED);
+    }
+    plugin.indicatePostReload(status);
   }
 }
 

@@ -1329,7 +1329,7 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
 
   /* Now after we parsed the configuration and (re)loaded plugins and plugin instances
    * accordingly notify all plugins that we are done */
-  rewrite->pluginFactory.indicatePostReload(status ? TS_SUCCESS : TS_ERROR);
+  rewrite->pluginFactory.indicatePostReload(status);
 
   return status;
 }
