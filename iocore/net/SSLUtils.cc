@@ -200,9 +200,11 @@ ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
     hook = hook->m_link.next;
   }
 
-  SSL_SESSION *session = nullptr;
-  if (session_cache->getSession(sid, &session)) {
+  SSL_SESSION *session             = nullptr;
+  ssl_session_cache_exdata *exdata = nullptr;
+  if (session_cache->getSession(sid, &session, &exdata)) {
     ink_assert(session);
+    ink_assert(exdata);
 
     // Double check the timeout
     if (ssl_session_timed_out(session)) {
@@ -217,6 +219,7 @@ ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
       SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
       SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
       netvc->setSSLSessionCacheHit(true);
+      netvc->setSSLCurveNID(exdata->curve);
     }
   } else {
     SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
@@ -229,6 +232,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 {
   unsigned int len        = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
+
   SSLSessionID sid(id, len);
 
   if (diags->tag_activated("ssl.session_cache")) {
@@ -239,7 +243,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
   }
 
   SSL_INCREMENT_DYN_STAT(ssl_session_cache_new_session);
-  session_cache->insertSession(sid, sess);
+  session_cache->insertSession(sid, sess, ssl);
 
   // Call hook after new session is created
   APIHook *hook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
@@ -1974,4 +1978,14 @@ SSLMultiCertConfigLoader::clear_pw_references(SSL_CTX *ssl_ctx)
 {
   SSL_CTX_set_default_passwd_cb(ssl_ctx, nullptr);
   SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, nullptr);
+}
+
+ssl_curve_id
+SSLGetCurveNID(SSL *ssl)
+{
+#ifndef OPENSSL_IS_BORINGSSL
+  return SSL_get_shared_curve(ssl, 0);
+#else
+  return SSL_get_curve_id(ssl);
+#endif
 }
