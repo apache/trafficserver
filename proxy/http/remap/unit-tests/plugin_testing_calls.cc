@@ -109,10 +109,10 @@ TSRemapPreConfigReload(void)
 }
 
 void
-TSRemapPostConfigReload(TSReturnCode reloadStatus)
+TSRemapPostConfigReload(TSRemapReloadStatus reloadStatus)
 {
   debugObject.postReloadConfigCalled++;
-  debugObject.postReloadConfigSuccess = (TS_SUCCESS == reloadStatus);
+  debugObject.postReloadConfigStatus = reloadStatus;
 }
 
 /* The folowing functions are meant for unit testing */
