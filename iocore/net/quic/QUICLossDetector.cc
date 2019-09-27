@@ -34,15 +34,15 @@
 #include "QUICPacketProtectionKeyInfo.h"
 
 #define QUICLDDebug(fmt, ...) \
-  Debug("quic_loss_detector", "[%s] " fmt, this->_context.connection_info()->cids().data(), ##__VA_ARGS__)
+  Debug("quic_loss_detector", "[%s] " fmt, this->_context->connection_info()->cids().data(), ##__VA_ARGS__)
 #define QUICLDVDebug(fmt, ...) \
-  Debug("v_quic_loss_detector", "[%s] " fmt, this->_context.connection_info()->cids().data(), ##__VA_ARGS__)
+  Debug("v_quic_loss_detector", "[%s] " fmt, this->_context->connection_info()->cids().data(), ##__VA_ARGS__)
 
-QUICLossDetector::QUICLossDetector(QUICContext &context, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
+QUICLossDetector::QUICLossDetector(QUICContext *context, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
                                    QUICPinger *pinger, QUICPadder *padder)
   : _rtt_measure(rtt_measure), _pinger(pinger), _padder(padder), _cc(cc), _context(context)
 {
-  auto &ld_config             = _context.ld_config();
+  auto &ld_config             = _context->ld_config();
   this->mutex                 = new_ProxyMutex();
   this->_loss_detection_mutex = new_ProxyMutex();
 
@@ -359,7 +359,7 @@ QUICLossDetector::_on_loss_detection_timeout()
     // Client sends an anti-deadlock packet: Initial is padded
     // to earn more anti-amplification credit,
     // a Handshake packet proves address ownership.
-    if (this->_context.key_info()->is_encryption_key_available(QUICKeyPhase::HANDSHAKE)) {
+    if (this->_context->key_info()->is_encryption_key_available(QUICKeyPhase::HANDSHAKE)) {
       this->_send_one_handshake_packets();
     } else {
       this->_send_one_padded_packets();
@@ -622,11 +622,11 @@ QUICLossDetector::_decrement_outstanding_counters(std::map<QUICPacketNumber, QUI
 bool
 QUICLossDetector::_is_client_without_one_rtt_key() const
 {
-  return this->_context.connection_info()->direction() == NET_VCONNECTION_OUT &&
-         !((this->_context.key_info()->is_encryption_key_available(QUICKeyPhase::PHASE_1) &&
-            this->_context.key_info()->is_decryption_key_available(QUICKeyPhase::PHASE_1)) ||
-           (this->_context.key_info()->is_encryption_key_available(QUICKeyPhase::PHASE_0) &&
-            this->_context.key_info()->is_decryption_key_available(QUICKeyPhase::PHASE_0)));
+  return this->_context->connection_info()->direction() == NET_VCONNECTION_OUT &&
+         !((this->_context->key_info()->is_encryption_key_available(QUICKeyPhase::PHASE_1) &&
+            this->_context->key_info()->is_decryption_key_available(QUICKeyPhase::PHASE_1)) ||
+           (this->_context->key_info()->is_encryption_key_available(QUICKeyPhase::PHASE_0) &&
+            this->_context->key_info()->is_decryption_key_available(QUICKeyPhase::PHASE_0)));
 }
 
 //

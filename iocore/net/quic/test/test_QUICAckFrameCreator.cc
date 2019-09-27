@@ -24,10 +24,12 @@
 #include "catch.hpp"
 
 #include "quic/QUICAckFrameCreator.h"
+#include "Mock.h"
 
 TEST_CASE("QUICAckFrameManager", "[quic]")
 {
-  QUICAckFrameManager ack_manager;
+  MockQUICContext context;
+  QUICAckFrameManager ack_manager(&context);
   QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
 
@@ -118,7 +120,8 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 {
   SECTION("QUIC unorder packet", "[quic]")
   {
-    QUICAckFrameManager ack_manager;
+    MockQUICContext context;
+    QUICAckFrameManager ack_manager(&context);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     ack_manager.update(level, 2, 1, false);
@@ -127,7 +130,8 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
   SECTION("QUIC delay ack and unorder packet", "[quic]")
   {
-    QUICAckFrameManager ack_manager;
+    MockQUICContext context;
+    QUICAckFrameManager ack_manager(&context);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     ack_manager.update(level, 0, 1, false);
@@ -143,7 +147,8 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
   SECTION("QUIC delay too much time", "[quic]")
   {
     Thread::get_hrtime_updated();
-    QUICAckFrameManager ack_manager;
+    MockQUICContext context;
+    QUICAckFrameManager ack_manager(&context);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     ack_manager.update(level, 0, 1, false);
@@ -157,7 +162,8 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
   SECTION("QUIC intial packet", "[quic]")
   {
-    QUICAckFrameManager ack_manager;
+    MockQUICContext context;
+    QUICAckFrameManager ack_manager(&context);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
     ack_manager.update(level, 0, 1, false);
@@ -166,7 +172,8 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
   SECTION("QUIC handshake packet", "[quic]")
   {
-    QUICAckFrameManager ack_manager;
+    MockQUICContext context;
+    QUICAckFrameManager ack_manager(&context);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::HANDSHAKE;
     ack_manager.update(level, 0, 1, false);
@@ -175,7 +182,8 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
   SECTION("QUIC frame fired", "[quic]")
   {
-    QUICAckFrameManager ack_manager;
+    MockQUICContext context;
+    QUICAckFrameManager ack_manager(&context);
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 
     ack_manager.update(level, 0, 1, false);
@@ -188,7 +196,8 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
   SECTION("QUIC refresh frame", "[quic]")
   {
-    QUICAckFrameManager ack_manager;
+    MockQUICContext context;
+    QUICAckFrameManager ack_manager(&context);
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
@@ -219,7 +228,8 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
 
 TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
 {
-  QUICAckFrameManager ack_manager;
+  MockQUICContext context;
+  QUICAckFrameManager ack_manager(&context);
   QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
 
   // Initial state
@@ -259,7 +269,8 @@ TEST_CASE("QUICAckFrameManager_loss_recover", "[quic]")
 
 TEST_CASE("QUICAckFrameManager_QUICAckFrameCreator", "[quic]")
 {
-  QUICAckFrameManager ack_manager;
+  MockQUICContext context;
+  QUICAckFrameManager ack_manager(&context);
   QUICAckFrameManager::QUICAckFrameCreator packet_numbers(QUICPacketNumberSpace::Initial, &ack_manager);
 
   CHECK(packet_numbers.size() == 0);
@@ -299,7 +310,8 @@ TEST_CASE("QUICAckFrameManager_QUICAckFrameCreator", "[quic]")
 
 TEST_CASE("QUICAckFrameManager lost_frame", "[quic]")
 {
-  QUICAckFrameManager ack_manager;
+  MockQUICContext context;
+  QUICAckFrameManager ack_manager(&context);
   QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
 
@@ -356,7 +368,8 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
 {
   SECTION("INITIAL")
   {
-    QUICAckFrameManager ack_manager;
+    MockQUICContext context;
+    QUICAckFrameManager ack_manager(&context);
     QUICEncryptionLevel level = QUICEncryptionLevel::INITIAL;
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
 
@@ -389,7 +402,8 @@ TEST_CASE("QUICAckFrameManager ack only packet", "[quic]")
 
   SECTION("ONE_RTT")
   {
-    QUICAckFrameManager ack_manager;
+    MockQUICContext context;
+    QUICAckFrameManager ack_manager(&context);
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
 

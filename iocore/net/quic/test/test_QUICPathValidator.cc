@@ -28,11 +28,11 @@
 #include "stdio.h"
 #include "stdlib.h"
 
+MockQUICContext context;
 TEST_CASE("QUICPathValidator", "[quic]")
 {
-  MockQUICConnectionInfoProvider cinfo_provider;
-  QUICPathValidator pv_c(cinfo_provider, [](bool x) {});
-  QUICPathValidator pv_s(cinfo_provider, [](bool x) {});
+  QUICPathValidator pv_c(&context, [](bool x) {});
+  QUICPathValidator pv_s(&context, [](bool x) {});
 
   SECTION("interests")
   {

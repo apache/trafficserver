@@ -25,11 +25,11 @@
 
 #include "QUICConnection.h"
 #include "QUICConfig.h"
+#include "QUICEventDriver.h"
 
 class QUICRTTProvider;
 class QUICCongestionController;
 class QUICPacketProtectionKeyInfoProvider;
-class QUICEventDriver;
 
 class QUICNetVConnection;
 

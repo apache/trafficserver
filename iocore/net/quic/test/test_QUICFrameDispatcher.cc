@@ -38,8 +38,8 @@ TEST_CASE("QUICFrameHandler", "[quic]")
 
   MockQUICContext context;
 
-  MockQUICConnection connection;
-  MockQUICStreamManager streamManager = {&connection};
+  MockQUICConnection connection(&context);
+  MockQUICStreamManager streamManager(&context);
   MockQUICConnectionInfoProvider info;
   MockQUICLossDetector lossDetector(context);
 

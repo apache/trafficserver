@@ -71,8 +71,8 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
 {
   int ret = 0;
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  MockRTTProvider rp(DEFAULT_RTT);
-  QUICLocalConnectionFlowController fc(&rp, 1024);
+  MockQUICContext context;
+  QUICLocalConnectionFlowController fc(&context, 1024);
 
   // Check initial state
   CHECK(fc.current_offset() == 0);
@@ -130,7 +130,8 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
 {
   int ret = 0;
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  QUICRemoteConnectionFlowController fc(1024);
+  MockQUICContext context;
+  QUICRemoteConnectionFlowController fc(&context, 1024);
 
   // Check initial state
   CHECK(fc.current_offset() == 0);
@@ -187,7 +188,8 @@ TEST_CASE("QUICFlowController_Remote_Connection_ZERO_Credit", "[quic]")
 {
   int ret = 0;
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  QUICRemoteConnectionFlowController fc(1024);
+  MockQUICContext context;
+  QUICRemoteConnectionFlowController fc(&context, 1024);
 
   // Check initial state
   CHECK(fc.current_offset() == 0);
@@ -220,8 +222,8 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
 {
   int ret = 0;
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  MockRTTProvider rp(DEFAULT_RTT);
-  QUICLocalStreamFlowController fc(&rp, 1024, 0);
+  MockQUICContext context;
+  QUICLocalStreamFlowController fc(&context, 1024, 0);
 
   // Check initial state
   CHECK(fc.current_offset() == 0);
@@ -278,7 +280,8 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
 TEST_CASE("QUICFlowController_Remote_Stream", "[quic]")
 {
   int ret = 0;
-  QUICRemoteStreamFlowController fc(1024, 0);
+  MockQUICContext context;
+  QUICRemoteStreamFlowController fc(&context, 1024, 0);
 
   // Check initial state
   CHECK(fc.current_offset() == 0);
@@ -339,7 +342,8 @@ TEST_CASE("Frame retransmission", "[quic]")
   {
     int ret = 0;
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-    QUICRemoteConnectionFlowController fc(1024);
+    MockQUICContext context;
+    QUICRemoteConnectionFlowController fc(&context, 1024);
 
     // Check initial state
     auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
@@ -380,7 +384,8 @@ TEST_CASE("Frame retransmission", "[quic]")
   {
     int ret = 0;
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-    QUICRemoteStreamFlowController fc(1024, 0);
+    MockQUICContext context;
+    QUICRemoteStreamFlowController fc(&context, 1024, 0);
 
     // Check initial state
     auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
@@ -420,8 +425,8 @@ TEST_CASE("Frame retransmission", "[quic]")
   SECTION("MAX_DATA frame")
   {
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-    MockRTTProvider rp(DEFAULT_RTT);
-    QUICLocalConnectionFlowController fc(&rp, 1024);
+    MockQUICContext context;
+    QUICLocalConnectionFlowController fc(&context, 1024);
 
     // Check initial state
     auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
@@ -456,8 +461,8 @@ TEST_CASE("Frame retransmission", "[quic]")
   SECTION("MAX_STREAM_DATA frame")
   {
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-    MockRTTProvider rp(DEFAULT_RTT);
-    QUICLocalStreamFlowController fc(&rp, 1024, 0);
+    MockQUICContext context;
+    QUICLocalStreamFlowController fc(&context, 1024, 0);
 
     // Check initial state
     auto frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);

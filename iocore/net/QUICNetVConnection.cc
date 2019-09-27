@@ -393,9 +393,9 @@ QUICNetVConnection::start()
   this->_pinger = new QUICPinger(this->_context.get());
   this->_padder = new QUICPadder(this->_context.get());
   this->_rtt_measure.init(this->_context->ld_config());
-  this->_congestion_controller = new QUICNewRenoCongestionController(*_context);
+  this->_congestion_controller = new QUICNewRenoCongestionController(_context.get());
   this->_loss_detector =
-    new QUICLossDetector(*_context, this->_congestion_controller, &this->_rtt_measure, this->_pinger, this->_padder);
+    new QUICLossDetector(_context.get(), this->_congestion_controller, &this->_rtt_measure, this->_pinger, this->_padder);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(this->_context.get(), UINT64_MAX);

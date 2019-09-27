@@ -36,13 +36,13 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   QUICPacketFactory pf(pp_key_info);
   QUICRTTMeasure rtt_measure;
 
-  QUICAckFrameManager afm;
   QUICConnectionId connection_id = {reinterpret_cast<const uint8_t *>("\x01"), 1};
   MockQUICContext context;
-  QUICPinger pinger;
-  QUICPadder padder(NetVConnectionContext_t::NET_VCONNECTION_IN);
+  QUICAckFrameManager afm(&context);
+  QUICPinger pinger(&context);
+  QUICPadder padder(&context);
   MockQUICCongestionController cc;
-  QUICLossDetector detector(context, &cc, &rtt_measure, &pinger, &padder);
+  QUICLossDetector detector(&context, &cc, &rtt_measure, &pinger, &padder);
   ats_unique_buf payload = ats_unique_malloc(512);
   size_t payload_len     = 512;
   QUICPacketUPtr packet  = QUICPacketFactory::create_null_packet();
@@ -50,7 +50,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
 
   SECTION("Handshake")
   {
-    MockQUICFrameGenerator g;
+    MockQUICFrameGenerator g(&context);
     // Check initial state
     uint8_t frame_buffer[1024] = {0};
     CHECK(g.lost_frame_count == 0);
@@ -277,10 +277,10 @@ TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   QUICRTTMeasure rtt_measure;
   MockQUICContext context;
-  QUICPinger pinger;
-  QUICPadder padder(NetVConnectionContext_t::NET_VCONNECTION_IN);
+  QUICPinger pinger(&context);
+  QUICPadder padder(&context);
   MockQUICCongestionController cc;
-  QUICLossDetector detector(context, &cc, &rtt_measure, &pinger, &padder);
+  QUICLossDetector detector(&context, &cc, &rtt_measure, &pinger, &padder);
 
   auto t1           = Thread::get_hrtime();
   QUICAckFrame *ack = QUICFrameFactory::create_ack_frame(frame_buf, 100000000, 100, 10000000);

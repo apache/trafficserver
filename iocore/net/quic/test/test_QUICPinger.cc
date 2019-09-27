@@ -24,15 +24,18 @@
 #include "catch.hpp"
 
 #include "QUICPinger.h"
+#include "Mock.h"
 
 static constexpr QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 static uint8_t frame[1024]                 = {0};
+
+MockQUICContext context;
 
 TEST_CASE("QUICPinger", "[quic]")
 {
   SECTION("request and cancel")
   {
-    QUICPinger pinger;
+    QUICPinger pinger(&context);
     pinger.request();
     REQUIRE(pinger.count() == 1);
     pinger.request();
@@ -45,7 +48,7 @@ TEST_CASE("QUICPinger", "[quic]")
 
   SECTION("generate PING Frame twice")
   {
-    QUICPinger pinger;
+    QUICPinger pinger(&context);
     pinger.request();
     REQUIRE(pinger.count() == 1);
     pinger.request();
@@ -58,7 +61,7 @@ TEST_CASE("QUICPinger", "[quic]")
 
   SECTION("don't generate frame when packet is ack_elicting")
   {
-    QUICPinger pinger;
+    QUICPinger pinger(&context);
     pinger.request();
     REQUIRE(pinger.count() == 1);
     pinger.request();
@@ -71,7 +74,7 @@ TEST_CASE("QUICPinger", "[quic]")
 
   SECTION("generating PING Frame for next continuos un-ack-eliciting packets")
   {
-    QUICPinger pinger;
+    QUICPinger pinger(&context);
     REQUIRE(pinger.will_generate_frame(level, UINT64_MAX, false, 0) == true);
     REQUIRE(pinger.count() == 1);
     REQUIRE(pinger.will_generate_frame(level, UINT64_MAX, true, 1) == false);
@@ -84,7 +87,7 @@ TEST_CASE("QUICPinger", "[quic]")
 
   SECTION("don't send PING Frame for empty packet")
   {
-    QUICPinger pinger;
+    QUICPinger pinger(&context);
     REQUIRE(pinger.will_generate_frame(level, 0, false, 0) == false);
     REQUIRE(pinger.count() == 0);
     REQUIRE(pinger.will_generate_frame(level, UINT64_MAX, false, 1) == true);
