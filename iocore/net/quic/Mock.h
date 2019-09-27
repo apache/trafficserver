@@ -95,10 +95,81 @@ class MockQUICCCConfig : public QUICCCConfig
   }
 };
 
+class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
+{
+  QUICConnectionId
+  connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
+  QUICConnectionId
+  peer_connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
+  QUICConnectionId
+  original_connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
+  QUICConnectionId
+  first_connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
+  const QUICFiveTuple
+  five_tuple() const override
+  {
+    return QUICFiveTuple();
+  }
+
+  std::string_view
+  cids() const override
+  {
+    using namespace std::literals;
+    return std::string_view("00000000-00000000"sv);
+  }
+
+  uint32_t
+  pmtu() const override
+  {
+    return 1280;
+  }
+
+  NetVConnectionContext_t
+  direction() const override
+  {
+    return NET_VCONNECTION_OUT;
+  }
+
+  int
+  select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
+                       unsigned inlen) const override
+  {
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+  bool
+  is_closed() const override
+  {
+    return false;
+  }
+
+  std::string_view
+  negotiated_application_name() const override
+  {
+    return negotiated_application_name_sv;
+  }
+};
+
 class MockQUICStreamManager : public QUICStreamManager
 {
 public:
-  MockQUICStreamManager() : QUICStreamManager(nullptr, nullptr, nullptr) {}
+  MockQUICStreamManager(QUICConnectionInfoProvider *info) : QUICStreamManager(info, nullptr, nullptr) {}
 
   // Override
   virtual QUICConnectionErrorUPtr
@@ -326,83 +397,12 @@ public:
   int _transmit_count   = 0;
   int _retransmit_count = 0;
   Ptr<ProxyMutex> _mutex;
-  int _totalFrameCount = 0;
-  int _frameCount[256] = {0};
-  MockQUICStreamManager _stream_manager;
+  int _totalFrameCount                  = 0;
+  int _frameCount[256]                  = {0};
+  MockQUICStreamManager _stream_manager = {this};
 
   QUICTransportParametersInEncryptedExtensions dummy_transport_parameters();
   NetVConnectionContext_t _direction;
-};
-
-class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
-{
-  QUICConnectionId
-  connection_id() const override
-  {
-    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
-  }
-
-  QUICConnectionId
-  peer_connection_id() const override
-  {
-    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
-  }
-
-  QUICConnectionId
-  original_connection_id() const override
-  {
-    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
-  }
-
-  QUICConnectionId
-  first_connection_id() const override
-  {
-    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
-  }
-
-  const QUICFiveTuple
-  five_tuple() const override
-  {
-    return QUICFiveTuple();
-  }
-
-  std::string_view
-  cids() const override
-  {
-    using namespace std::literals;
-    return std::string_view("00000000-00000000"sv);
-  }
-
-  uint32_t
-  pmtu() const override
-  {
-    return 1280;
-  }
-
-  NetVConnectionContext_t
-  direction() const override
-  {
-    return NET_VCONNECTION_OUT;
-  }
-
-  int
-  select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                       unsigned inlen) const override
-  {
-    return SSL_TLSEXT_ERR_OK;
-  }
-
-  bool
-  is_closed() const override
-  {
-    return false;
-  }
-
-  std::string_view
-  negotiated_application_name() const override
-  {
-    return negotiated_application_name_sv;
-  }
 };
 
 class MockQUICCongestionController : public QUICCongestionController
