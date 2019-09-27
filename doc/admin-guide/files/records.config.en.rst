@@ -1332,6 +1332,8 @@ HTTP Redirection
 
    .. note:: When :ts:cv:`proxy.config.http.number_of_redirections` is set to a positive value and |TS| has previously cached a 3XX Redirect response, the cached response will continue to be refreshed and returned until the response is no longer in the cache.
 
+   .. note:: In previous versions proxy.config.http.redirection_enabled had to be set to 1 before this setting was evaluated.  Now setting :ts:cv:`proxy.config.http.number_of_redirections` to a value greater than zero is sufficient to cause |TS| to follow redirects.
+
 .. ts:cv:: CONFIG proxy.config.http.redirect_host_no_port INT 1
    :reloadable:
 
@@ -1528,8 +1530,8 @@ Origin Server Connect Attempts
    :reloadable:
    :overridable:
 
-   The timeout value (in seconds) for time to first byte for an origin server
-   connection.
+   The timeout value (in seconds) for time to set up a connection to the origin. After the connection is established the value of
+   ``proxy.config.http.transaction_no_activity_timeout_out`` is used to established timeouts on the data over the connection.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 

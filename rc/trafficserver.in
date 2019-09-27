@@ -331,7 +331,7 @@ case "$1" in
             echo "Starting ${TS_PACKAGE_NAME}"
             name="$TM_NAME"
             command="/usr/sbin/daemon"
-            command_args="$TM_DAEMON $TM_DAEMON_ARGS"
+            command_args="-o $STDOUTLOG $TM_DAEMON $TM_DAEMON_ARGS"
             pidfile="$TM_PIDFILE"
             run_rc_command "$1"
         else

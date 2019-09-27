@@ -1511,6 +1511,11 @@ plugins required to work with sni_routing.
     case HTTP_API_DEFERED_SERVER_ERROR:
       api_next = API_RETURN_DEFERED_SERVER_ERROR;
       break;
+    case HTTP_API_REWIND_STATE_MACHINE:
+      SMDebug("http", "REWIND");
+      callout_state = HTTP_API_NO_CALLOUT;
+      set_next_state();
+      return 0;
     default:
       ink_release_assert(0);
     }
@@ -8025,6 +8030,12 @@ HttpSM::find_proto_string(HTTPVersion version) const
     return IP_PROTO_TAG_HTTP_0_9;
   }
   return {};
+}
+
+void
+HttpSM::rewind_state_machine()
+{
+  callout_state = HTTP_API_REWIND_STATE_MACHINE;
 }
 
 // YTS Team, yamsat Plugin

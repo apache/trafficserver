@@ -9789,6 +9789,26 @@ TSRegisterProtocolTag(const char *tag)
   return nullptr;
 }
 
+TSReturnCode
+TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm             = reinterpret_cast<HttpSM *>(txnp);
+  HttpTransact::State *s = &(sm->t_state);
+  sdk_assert(s->next_action == HttpTransact::SM_ACTION_CACHE_LOOKUP);
+
+  // Because of where this is in the state machine, the storage for the cache_info URL must
+  // have already been initialized and @a lookup_url must be valid.
+  auto result = s->cache_info.lookup_url->parse(url, length < 0 ? strlen(url) : length);
+  if (PARSE_RESULT_DONE == result) {
+    s->transact_return_point = nullptr;
+    sm->rewind_state_machine();
+    return TS_SUCCESS;
+  }
+  return TS_ERROR;
+}
+
 namespace
 {
 // Function that contains the common logic for TSRemapFrom/ToUrlGet().

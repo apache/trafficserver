@@ -30,7 +30,8 @@ Synopsis
 `#include <ts/remap.h>`
 
 .. function:: TSReturnCode TSRemapInit(TSRemapInterface * api_info, char * errbuff, int errbuff_size)
-.. function:: void TSRemapConfigReload(void)
+.. function:: void TSRemapPreConfigReload(void)
+.. function:: void TSRemapPostConfigReload(TSReturnCode reloadStatus)
 .. function:: void TSRemapDone(void)
 .. function:: TSRemapStatus TSRemapDoRemap(void * ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
 .. function:: TSReturnCode TSRemapNewInstance(int argc, char * argv[], void ** ih, char * errbuff, int errbuff_size)
@@ -65,9 +66,14 @@ any data or continuations associated with that instance.
 entry point. In this function, the remap plugin may examine and modify
 the HTTP transaction.
 
-:func:`TSRemapConfigReload` is called once for every remap plugin immediately after a new
-configuration is successfully loaded and immediately before the new remap configuration becomes
-active. This is an optional entry point, which takes no arguments and has no return value.
+:func:`TSRemapPreConfigReload` is called *before* the parsing of a new remap configuration starts
+to notify plugins of the coming configuration reload. It is called on all already loaded plugins,
+invoked by current and all previous still used configurations. This is an optional entry point.
+
+:func:`TSRemapPostConfigReload` is called to indicate the end of the the new remap configuration
+load. It is called on the newly and previously loaded plugins, invoked by the new, current and
+previous still used configurations. It also indicates if the configuration reload was successful
+by passing :macro:`TS_SUCCESS` or :macro:`TS_ERROR`. This is an optional entry point.
 
 Generally speaking, calls to these functions are mutually exclusive. The exception
 is for functions which take an HTTP transaction as a parameter. Calls to these

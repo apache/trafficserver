@@ -80,11 +80,45 @@ multiple times for the rule, once for each invocation. Only the value store in :
 available when the rule is actually matched. In particular the plugin arguments will not be
 available.
 
-Calls to :func:`TSRemapNewInstance` are serialized.
+Calls to :func:`TSRemapNewInstance` are serialized. All calls to :func:`TSRemapNewInstance`
+for a given configuration will be called and completed before any calls to :func:`TSRemapDoRemap`.
 
 If there is an error then the callback should return :macro:`TS_ERROR` and fill in the
 :arg:`errbuff` with a C-string describing the error. Otherwise the function must return
 :macro:`TS_SUCCESS`.
+
+
+Configuration reload notifications
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:func:`TSRemapPreConfigReload` is called *before* the parsing of a new remap configuration starts
+to notify plugins of the coming configuration reload. It is called on all already loaded plugins,
+invoked by current and all previous still used configurations. This is an optional entry point.
+
+:func:`TSRemapPostConfigReload` is called to indicate the end of the the new remap configuration
+load. It is called on the newly and previously loaded plugins, invoked by the new, current and
+previous still used configurations. It also indicates if the configuration reload was successful
+by passing :macro:`TS_SUCCESS` or :macro:`TS_ERROR`. This is an optional entry point.
+
+These calls are called per *plugin*, not per invocation of the plugin in :file:`remap.config`
+and only will be called if the plugin was called at least once with :func:`TSRemapNewInstance`
+for any configuration and at least one configuration using it is still loaded.
+
+:func:`TSRemapPreConfigReload` will be called serially for all loaded plugins
+before any call to :func:`TSRemapNewInstance` during parsing of the new configuration.
+
+:func:`TSRemapPostConfigReload` will be called serially for all plugins after
+all calls to :func:`TSRemapNewInstance` during parsing of the new configuration.
+
+The intention of these callbacks can be demonstrated with the following use-case.
+A plugin could use :func:`TSRemapPreConfigReload` as a signal to drop (or allocate) temporary
+per plugin data structures. These structures can be created (or updated) as needed
+when a plugin invocation instance is loaded (:func:`TSRemapNewInstance` is called).
+Then it could be used in subsequent invocation instances loading. After the configuration
+reload is done :func:`TSRemapPostConfigReload` could be used to confirm
+the data structures update if :macro:`TS_SUCCESS` is passed or recover / clean-up
+after a failed reload attempt if :macro:`TS_ERROR` is passed.
+
 
 Runtime
 =======
@@ -104,8 +138,13 @@ Calls to :func:`TSRemapDoRemap` are not serialized, they can be concurrent, even
 invocation instance. However, the callbacks for a single rule for a single transaction are
 serialized in the order the plugins are invoked in the rule.
 
-All calls to :func:`TSRemapNewInstance` for a given configuration will be called and completed
-before any calls to :func:`TSRemapDoRemap`.
+No calls to :func:`TSRemapDoRemap` will occur before :func:`TSRemapPostConfigReload` for
+all plugin instances invoked by the new configuration.
+
+The old configurations, if any, are still active during the calls to :func:`TSRemapPreConfigReload`
+and :func:`TSRemapPreConfigReload` and therefore calls to :func:`TSRemapDoRemap` may occur
+concurrently with those functions.
+
 
 Cleanup
 =======
@@ -114,35 +153,9 @@ When a new :file:`remap.config` is loaded successfully, the prior configuration 
 each call to :func:`TSRemapNewInstance` a corresponding call to :func:`TSRemapDeleteInstance` is
 called. The only argument is the invocation instance handle, originally provided by the plugin to
 :func:`TSRemapNewInstance`. This is expected to suffice for the plugin to clean up any rule specific
-data.
-
-As part of the old configuration cleanup :func:`TSRemapConfigReload` is called on the plugins in the
-old configuration before any calls to :func:`TSRemapDeleteInstance`. This is an optional entry
-point.
-
-.. note::
-
-   This is called per *plugin*, not per invocation of the plugin in :file:`remap.config`, and only
-   called if the plugin was called at least once with :func:`TSRemapNewInstance` for that
-   configuration.
-
-.. note::
-
-   There is no explicit indication or connection between the call to :func:`TSRemapConfigReload` and
-   the "old" (existing) configuration. It is guaranteeed that :func:`TSRemapConfigReload` will be
-   called on all the plugins before any :func:`TSRemapDeleteInstance` and these calls will be
-   serial. Similarly, :func:`TSRemapConfigReload` will be called serially after all calls to
-   :func:`TSRemapNewInstance` for a given configuration.
-
-.. note::
-
-   The old configuration, if any, is still active during the call to :func:`TSRemapConfigReload` and
-   therefore calls to :func:`TSRemapDoRemap` may occur concurrently with that function.
-
-The intention of :func:`TSRemapConfigReload` is to provide for temporary data structures used only
-during configuration loading. These can be created as needed when an invocation instance is loaded
-and used in subsequent invocation instance loading, then cleaned up in :func:`TSRemapConfigReload`.
+data. Calls to :func:`TSRemapDeleteInstance` will be serial for all plugin invocations in a
+remap configuration.
 
 If no rule uses a plugin, it may be unloaded. In that case :func:`TSRemapDone` is called. This is
-an optional entry point, a plugin is not required to provide it. It is called once per plugin, not
-per plugin invocation.
+an optional entry point, a plugin is not required to provide it. It corresponds to :func:`TSRemapInit`.
+It is called once per plugin, not per plugin invocation.
