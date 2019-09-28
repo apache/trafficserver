@@ -19,7 +19,7 @@
 .. default-domain:: c
 
 TSHttpTxnRedoCacheLookup
-*******************
+************************
 
 Synopsis
 ========

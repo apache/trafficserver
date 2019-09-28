@@ -15,25 +15,13 @@
    specific language governing permissions and limitations
    under the License.
 
-.. include:: common.defs
+.. include:: ../common.defs
 
-.. _manual-toc:
-
-Apache Traffic Server Manual
-****************************
+Release Notes
+*************
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
 
-  preface/index.en
-  getting-started/index.en
-  release-notes/index.en
-  admin-guide/index.en
-  developer-guide/index.en
-  appendices/index.en
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`
+  whats-new.en
+  upgrading.en
