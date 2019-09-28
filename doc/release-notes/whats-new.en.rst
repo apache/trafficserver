@@ -15,25 +15,27 @@
    specific language governing permissions and limitations
    under the License.
 
-.. include:: common.defs
+.. include:: ../common.defs
 
-.. _manual-toc:
+.. _whats_new:
 
-Apache Traffic Server Manual
-****************************
+What's New in ATS v10.x
+=======================
+
+This version of ATS includes over <x> commits, from <y> pull requests. A total of <z> contributors
+have participated in this development cycle.
 
 .. toctree::
-  :maxdepth: 2
+   :maxdepth: 1
 
-  preface/index.en
-  getting-started/index.en
-  release-notes/index.en
-  admin-guide/index.en
-  developer-guide/index.en
-  appendices/index.en
+New Features
+------------
 
-Indices and tables
-==================
+New or modifed Configurations
+-----------------------------
 
-* :ref:`genindex`
-* :ref:`search`
+Logging and Metrics
+-------------------
+
+Plugins
+-------
