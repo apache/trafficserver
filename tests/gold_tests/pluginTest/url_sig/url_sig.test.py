@@ -251,10 +251,12 @@ tr.Processes.Default.Command = (
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (
-    "curl --verbose --http1.1 --insecure --header 'Host: one.two.three' 'https://127.0.0.1:{}/".format(ts.Variables.ssl_port) +
+    "curl --verbose --insecure --header 'Host: one.two.three' 'https://127.0.0.1:{}/".format(ts.Variables.ssl_port) +
     "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S=acae22b0e1ba6ea6fbb5d26018dbf152558e98cb'" +
     LogTee + " ; grep -F -e '< HTTP' -e Authorization {0}/url_sig_long.log > {0}/url_sig_short.log ".format(ts.RunDirectory)
 )
+tr.Processes.Default.TimeOut = 5
+tr.TimeOut = 5
 
 # Overriding the built in ERROR check since we expect some ERROR messages
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Some tests are failure tests")
