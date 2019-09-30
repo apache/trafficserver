@@ -19,7 +19,7 @@
 
 .. _upgrading:
 
-Upgrading to ATS v10.x
+Upgrading to ATS v9.x
 ======================
 
 .. toctree::

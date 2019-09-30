@@ -19,7 +19,7 @@
 
 .. _whats_new:
 
-What's New in ATS v10.x
+What's New in ATS v9.x
 =======================
 
 This version of ATS includes over <x> commits, from <y> pull requests. A total of <z> contributors
