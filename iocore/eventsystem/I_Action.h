@@ -83,6 +83,11 @@
   access an action once the operation that returned the Action has
   completed or it has cancelled the Action.
 
+  Action pointer sanity checks must also check whether the lowest
+  bit of the pointer is 1. If it is 1, then the value must not be
+  treated as a pointer, and should be used as one of the values
+  defined below (e.g. ACTION_RESULT_DONE).
+
 */
 class Action
 {
