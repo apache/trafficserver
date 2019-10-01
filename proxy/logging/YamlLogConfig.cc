@@ -120,7 +120,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   for (auto const &item : node) {
     if (std::none_of(valid_log_object_keys.begin(), valid_log_object_keys.end(),
                      [&item](const std::string &s) { return s == item.first.as<std::string>(); })) {
-      throw YAML::ParserException(item.Mark(), "log: unsupported key '" + item.first.as<std::string>() + "'");
+      throw YAML::ParserException(item.first.Mark(), "log: unsupported key '" + item.first.as<std::string>() + "'");
     }
   }
 
