@@ -36,10 +36,10 @@ namespace YAML
 bool
 convert<std::unique_ptr<LogFormat>>::decode(const Node &node, std::unique_ptr<LogFormat> &logFormat)
 {
-  for (auto &&item : node) {
+  for (const auto &item : node) {
     if (std::none_of(valid_log_format_keys.begin(), valid_log_format_keys.end(),
                      [&item](const std::string &s) { return s == item.first.as<std::string>(); })) {
-      throw YAML::ParserException(node.Mark(), "format: unsupported key '" + item.first.as<std::string>() + "'");
+      throw YAML::ParserException(item.first.Mark(), "format: unsupported key '" + item.first.as<std::string>() + "'");
     }
   }
 
