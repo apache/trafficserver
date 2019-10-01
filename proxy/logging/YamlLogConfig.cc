@@ -54,14 +54,14 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
   }
 
   if (!config.IsMap()) {
-    Error("malformed logging.yaml file; expected a map");
+    Error("malformed %s file; expected a map", cfgFilename);
     return false;
   }
 
   if (config["logging"]) {
     config = config["logging"];
   } else {
-    Error("malformed logging.yaml file; expected a toplevel 'logging' node");
+    Error("malformed %s file; expected a toplevel 'logging' node", cfgFilename);
     return false;
   }
 
