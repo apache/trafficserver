@@ -1039,7 +1039,7 @@ public:
   void value_append(const char *name, int name_length, const char *value, int value_length, bool prepend_comma = false,
                     const char separator = ',');
 
-  void field_value_set(MIMEField *field, const char *value, int value_length);
+  void field_value_set(MIMEField *field, const char *value, int value_length, bool reuse_heaps = false);
   void field_value_set_int(MIMEField *field, int32_t value);
   void field_value_set_uint(MIMEField *field, uint32_t value);
   void field_value_set_int64(MIMEField *field, int64_t value);
@@ -1095,6 +1095,12 @@ public:
   // No gratuitous copies & refcounts!
   MIMEHdr(const MIMEHdr &m) = delete;
   MIMEHdr &operator=(const MIMEHdr &m) = delete;
+
+private:
+  // Interface to replace (overwrite) field value without
+  // changing the heap as long as the new value is not longer
+  // than the current value
+  bool field_value_replace(MIMEField *field, const char *value, int value_length);
 };
 
 /*-------------------------------------------------------------------------
@@ -1400,10 +1406,23 @@ MIMEHdr::value_get_comma_list(const char *name, int name_length, StrList *list) 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline void
-MIMEHdr::field_value_set(MIMEField *field, const char *value, int value_length)
+inline bool
+MIMEHdr::field_value_replace(MIMEField *field, const char *value, int value_length)
 {
-  field->value_set(m_heap, m_mime, value, value_length);
+  if (field->m_len_value >= value_length) {
+    memcpy((char *)field->m_ptr_value, value, value_length);
+    field->m_len_value = value_length;
+    return true;
+  }
+  return false;
+}
+
+inline void
+MIMEHdr::field_value_set(MIMEField *field, const char *value, int value_length, bool reuse_heaps)
+{
+  if (!reuse_heaps || !field_value_replace(field, value, value_length)) {
+    field->value_set(m_heap, m_mime, value, value_length);
+  }
 }
 
 inline void
