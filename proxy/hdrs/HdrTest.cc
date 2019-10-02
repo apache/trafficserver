@@ -495,6 +495,33 @@ HdrTest::test_mime()
 
   obj_describe((HdrHeapObjImpl *)(hdr.m_mime), true);
 
+  const char *field_name = "Test_heap_reuse";
+
+  MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+  ink_release_assert(f->m_ptr_value == nullptr);
+
+  hdr.field_attach(f);
+  ink_release_assert(f->m_ptr_value == nullptr);
+
+  const char *test_value = "mytest";
+
+  printf("Testing Heap Reuse..\n");
+  hdr.field_value_set(f, "orig_value", strlen("orig_value"));
+  const char *m_ptr_value_orig = f->m_ptr_value;
+  hdr.field_value_set(f, test_value, strlen(test_value), true);
+  ink_release_assert(f->m_ptr_value != test_value);       // should be copied
+  ink_release_assert(f->m_ptr_value == m_ptr_value_orig); // heap doesn't change
+  ink_release_assert(f->m_len_value == strlen(test_value));
+  ink_release_assert(memcmp(f->m_ptr_value, test_value, f->m_len_value) == 0);
+
+  m_ptr_value_orig           = f->m_ptr_value;
+  const char *new_test_value = "myTest";
+  hdr.field_value_set(f, new_test_value, strlen(new_test_value), false);
+  ink_release_assert(f->m_ptr_value != new_test_value);   // should be copied
+  ink_release_assert(f->m_ptr_value != m_ptr_value_orig); // new heap
+  ink_release_assert(f->m_len_value == strlen(new_test_value));
+  ink_release_assert(memcmp(f->m_ptr_value, new_test_value, f->m_len_value) == 0);
+
   hdr.fields_clear();
 
   hdr.destroy();
