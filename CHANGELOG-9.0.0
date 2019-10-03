@@ -186,6 +186,7 @@ Changes with Apache Traffic Server 9.0.0
   #4603 - Add cdniip and cdnistd claims to uri signing
   #4604 - Repurpose sub claim and add cdniuc support for URI signing
   #4606 - TLS Bridge: Fix remap for UA connection, tweak docs for remap support.
+  #4607 - adding TSHttpTxnRedoCacheLookup
   #4609 - BWF: Change timestamp global name to be consistent with logging timestamps
   #4613 - Runroot: Update verify command and refactor
   #4616 - [WEBP] Transform images when a client accepts image/webp.
@@ -458,7 +459,6 @@ Changes with Apache Traffic Server 9.0.0
   #5297 - Doc: fix proxy.config.cache.ram_cache.algorithm description
   #5301 - Slice Plugin: add options for disabling or pacing detailed block stitch error logging.
   #5302 - Correct config name for proxy.config.dns.connection_mode
-  #5305 - Throttling results in tight loop if there are no new connections
   #5306 - Removes priorities for AIOs, thanks oknet
   #5307 - correctly handle return value 0 from recv()
   #5308 - cppcheck: Changed from C casting to C++ casting
@@ -702,6 +702,7 @@ Changes with Apache Traffic Server 9.0.0
   #5722 - In test_hooks Au test case, add work-around for flakeyness of VCONN start/close events.
   #5723 - Update docs to document wipe_field_action that we use in production
   #5724 - Enable logging of the Elliptic Curve used to communicate with the client
+  #5726 - Expose client request SSL stats via API & Lua plugin
   #5728 - Remove header_rewrite conditions deprecated in previous versions
   #5730 - Cleanup and link references to sni.yaml
   #5731 - Use un-deprecated records for SSL server verification
@@ -743,6 +744,8 @@ Changes with Apache Traffic Server 9.0.0
   #5803 - Make TS_NULL_MLOC a valid C compile-time constant.
   #5806 - More doc spelling fixes
   #5808 - Remove unused assignment to satisfy clang-analyzer
+  #5809 - Address possible use after free issue in HttpVCTable::remove_entry
+  #5811 - Fix no_activity timeout for server session reuse.
   #5813 - Fixes broken links to documentation
   #5815 - Updates links to trafficserver.apache.org to https
   #5817 - Fixes various issues found in docs
@@ -762,4 +765,34 @@ Changes with Apache Traffic Server 9.0.0
   #5841 - Cleanup: unifdef WRITE_AND_TRANSFER
   #5844 - Explain how SRV origin selection works
   #5847 - Cleanup: Remove unused empty files
+  #5848 - Convert check programs in iocore/eventsystem/ into Catch based unit tests
+  #5853 - correct the size of DNS buffers
   #5856 - Fixes 'traffic_ctl server restart' to restart
+  #5865 - cachekey: added --canonical-prefix parameter
+  #5867 - PR#5867: Explain how to use open_con().
+  #5868 - Update HttpTransact.cc
+  #5870 - Fix bad limit in poll loop.  jtest -c1 now works again.
+  #5872 - cachekey: added --key-type to allow parent selection URL to be modified
+  #5883 - Add unit tests for MIOBuffer:write()
+  #5885 - Add the ability to static link ASAN, TSAN and LSAN
+  #5887 - Fixed const issue with magick plugin
+  #5888 - Allow disabling HTTP/2 priority frames limit
+  #5889 - Provide stats for the recently introduced HTTP/2 rate limits
+  #5893 - Cleanup: Remove unused AllocType and unused functions
+  #5902 - Ran clang-format
+  #5903 - Reduce unnecesary IOBufferBlock allocation
+  #5905 - Update Server IP in Transaction when attaching a session from the pool
+  #5915 - Update documentation for connect_attempts_timeout.
+  #5920 - Cleanup: VIO
+  #5921 - Cleanup AuTest for HTTP/2
+  #5922 - Make code buildable with BoringSSL
+  #5926 - Fix AuTest for HTTP/2 using httpbin
+  #5930 - Track SSL session cache evictions performed due to full bucket
+  #5934 - Track scheduled events to (read|write)_vio.cont from Http2Stream
+  #5935 - Perform a SSL quiet shutdown when close-notify is not sent
+  #5939 - Remove hard coded filename in error message
+  #5955 - Fix debug output for global_user_agent_header.
+  #5959 - Clear api set bit to avoid crash in following redirect.
+  #5961 - Clarify docs on the change from redirect_enabled.
+  #5962 - Removed hardcoded sni.yaml configuration filename in logs
+  #5977 - YAML config:  output erroneous keyword and line number
