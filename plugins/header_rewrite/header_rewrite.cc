@@ -236,7 +236,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
         }
       }
     } catch (std::runtime_error &e) {
-      TSError("[%s] header_rewrite configuration exception: %s", PLUGIN_NAME, e.what());
+      TSError("[%s] header_rewrite configuration exception: %s in file: %s", PLUGIN_NAME, e.what(), fname.c_str());
       delete rule;
       return false;
     }
