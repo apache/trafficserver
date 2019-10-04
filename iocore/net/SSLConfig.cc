@@ -530,9 +530,9 @@ SSLCertificateConfig::reconfigure()
   }
 
   if (retStatus) {
-    Note("ssl_multicert.config finished loading");
+    Note("%s finished loading", params->configFilePath);
   } else {
-    Error("ssl_multicert.config failed to load");
+    Error("%s failed to load", params->configFilePath);
   }
 
   return retStatus;
