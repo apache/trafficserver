@@ -768,11 +768,13 @@ Changes with Apache Traffic Server 9.0.0
   #5848 - Convert check programs in iocore/eventsystem/ into Catch based unit tests
   #5853 - correct the size of DNS buffers
   #5856 - Fixes 'traffic_ctl server restart' to restart
+  #5857 - Check for nullptr when locking
   #5865 - cachekey: added --canonical-prefix parameter
   #5867 - PR#5867: Explain how to use open_con().
   #5868 - Update HttpTransact.cc
   #5870 - Fix bad limit in poll loop.  jtest -c1 now works again.
   #5872 - cachekey: added --key-type to allow parent selection URL to be modified
+  #5879 - Weak mutex locking macros
   #5883 - Add unit tests for MIOBuffer:write()
   #5885 - Add the ability to static link ASAN, TSAN and LSAN
   #5887 - Fixed const issue with magick plugin
