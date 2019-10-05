@@ -1556,7 +1556,7 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
     }
 
     if (action.continuation && r) {
-      reply_to_cont(action.continuation, r.get());
+      reply_to_cont(action.continuation, r.get(), is_srv());
     }
 
     // If it succeeds or it was a remote probe, we are done
