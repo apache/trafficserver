@@ -794,6 +794,7 @@ Changes with Apache Traffic Server 9.0.0
   #5935 - Perform a SSL quiet shutdown when close-notify is not sent
   #5939 - Remove hard coded filename in error message
   #5955 - Fix debug output for global_user_agent_header.
+  #5956 - Turn on certificate verification, in permissive mode for now
   #5959 - Clear api set bit to avoid crash in following redirect.
   #5961 - Clarify docs on the change from redirect_enabled.
   #5962 - Removed hardcoded sni.yaml configuration filename in logs
