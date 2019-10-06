@@ -323,7 +323,7 @@ AC_DEFUN([TS_LAYOUT], [
     eval "val=\"\$$var\""
     case $val in
       *+)
-        val=`echo $val | sed -e 's;\+$;;'`
+        val=`echo $val | sed -e 's;[\+]$;;'`
         eval "$var=\"\$val\""
         autosuffix=yes
         ;;
@@ -350,7 +350,7 @@ AC_DEFUN([TS_LAYOUT], [
     eval "val=\"\$$var\""
     case $val in
       *+)
-        val=`echo $val | sed -e 's;\+$;;'`
+        val=`echo $val | sed -e 's;[\+]$;;'`
         eval "$var=\"\$val\""
         autosuffix=yes
         ;;
