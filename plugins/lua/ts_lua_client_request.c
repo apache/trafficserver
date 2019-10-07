@@ -1045,7 +1045,8 @@ ts_lua_client_request_get_ssl_curve(lua_State *L)
   client_conn = TSHttpSsnClientVConnGet(ssnp);
 
   if (TSVConnIsSsl(client_conn)) {
-    ssl_curve = TSVConnSslCurveGet(client_conn);
+    const char *curve = TSVConnSslCurveGet(client_conn);
+    ssl_curve         = curve ? curve : "-";
   }
 
   lua_pushstring(L, ssl_curve);
