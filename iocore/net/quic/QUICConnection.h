@@ -34,6 +34,7 @@ class UDPPacket;
 class QUICConnectionInfoProvider
 {
 public:
+  virtual ~QUICConnectionInfoProvider() {}
   virtual QUICConnectionId peer_connection_id() const     = 0;
   virtual QUICConnectionId original_connection_id() const = 0;
   virtual QUICConnectionId first_connection_id() const    = 0;

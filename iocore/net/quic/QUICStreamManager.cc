@@ -29,8 +29,6 @@
 static constexpr char tag[]                     = "quic_stream_manager";
 static constexpr QUICStreamId QUIC_STREAM_TYPES = 4;
 
-ClassAllocator<QUICStreamManager> quicStreamManagerAllocator("quicStreamManagerAllocator");
-
 QUICStreamManager::QUICStreamManager(QUICConnectionInfoProvider *info, QUICRTTProvider *rtt_provider, QUICApplicationMap *app_map)
   : _stream_factory(rtt_provider, info), _info(info), _app_map(app_map)
 {
@@ -92,7 +90,7 @@ QUICStreamManager::create_stream(QUICStreamId stream_id)
   QUICConnectionErrorUPtr error    = nullptr;
   QUICStreamVConnection *stream_vc = this->_find_or_create_stream_vc(stream_id);
   if (!stream_vc) {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 
   QUICApplication *application = this->_app_map->get(stream_id);
@@ -176,7 +174,7 @@ QUICStreamManager::_handle_frame(const QUICMaxStreamDataFrame &frame)
   if (stream) {
     return stream->recv(frame);
   } else {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 }
 
@@ -187,7 +185,7 @@ QUICStreamManager::_handle_frame(const QUICStreamDataBlockedFrame &frame)
   if (stream) {
     return stream->recv(frame);
   } else {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 }
 
@@ -196,7 +194,7 @@ QUICStreamManager::_handle_frame(const QUICStreamFrame &frame)
 {
   QUICStreamVConnection *stream = this->_find_or_create_stream_vc(frame.stream_id());
   if (!stream) {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 
   QUICApplication *application = this->_app_map->get(frame.stream_id());
@@ -215,7 +213,7 @@ QUICStreamManager::_handle_frame(const QUICRstStreamFrame &frame)
   if (stream) {
     return stream->recv(frame);
   } else {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 }
 
@@ -226,7 +224,7 @@ QUICStreamManager::_handle_frame(const QUICStopSendingFrame &frame)
   if (stream) {
     return stream->recv(frame);
   } else {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_ID_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 }
 
@@ -407,7 +405,7 @@ QUICStreamManager::set_default_application(QUICApplication *app)
 }
 
 bool
-QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;
@@ -419,7 +417,7 @@ QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, ink_hrtime tim
   }
 
   for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
-    if (s->will_generate_frame(level, timestamp)) {
+    if (s->will_generate_frame(level, current_packet_size, ack_eliciting, seq_num)) {
       return true;
     }
   }
@@ -429,7 +427,7 @@ QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, ink_hrtime tim
 
 QUICFrame *
 QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                                  ink_hrtime timestamp)
+                                  size_t current_packet_size, uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
 
@@ -444,7 +442,7 @@ QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
 
   // FIXME We should pick a stream based on priority
   for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
-    frame = s->generate_frame(buf, level, connection_credit, maximum_frame_size, timestamp);
+    frame = s->generate_frame(buf, level, connection_credit, maximum_frame_size, current_packet_size, seq_num);
     if (frame) {
       break;
     }

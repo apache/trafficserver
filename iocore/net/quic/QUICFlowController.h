@@ -60,9 +60,9 @@ public:
   virtual void set_limit(QUICOffset limit);
 
   // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
+  bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            ink_hrtime timestamp) override;
+                            size_t current_packet_size, uint32_t seq_num) override;
 
 protected:
   QUICFlowController(uint64_t initial_limit) : _limit(initial_limit) {}

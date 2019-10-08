@@ -32,8 +32,9 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     const uint8_t input[] = {
       0xc0,                                           // Long header, Type: NONE
       0x00, 0x00, 0x00, 0x00,                         // Version
-      0x55,                                           // DCIL/SCIL
+      0x08,                                           // DCID Len
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x00, 0x00, 0x00, 0x08,                         // Supported Version 1
       0x00, 0x00, 0x00, 0x09,                         // Supported Version 1
@@ -41,9 +42,9 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     ats_unique_buf uinput = ats_unique_malloc(sizeof(input));
     memcpy(uinput.get(), input, sizeof(input));
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, std::move(uinput), sizeof(input), 0);
-    CHECK(header->size() == 22);
-    CHECK(header->packet_size() == 30);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {}, std::move(uinput), sizeof(input), 0);
+    CHECK(header->size() == sizeof(input) - 8);
+    CHECK(header->packet_size() == sizeof(input));
     CHECK(header->type() == QUICPacketType::VERSION_NEGOTIATION);
     CHECK(
       (header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
@@ -57,18 +58,19 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     const uint8_t input[] = {
       0xc3,                                           // Long header, Type: INITIAL
       0x11, 0x22, 0x33, 0x44,                         // Version
-      0x55,                                           // DCIL/SCIL
+      0x08,                                           // DCID Len
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x00,                                           // Token Length (i), Token (*)
-      0x02,                                           // Payload length
+      0x06,                                           // Length
       0x01, 0x23, 0x45, 0x67,                         // Packet number
       0xff, 0xff,                                     // Payload (dummy)
     };
     ats_unique_buf uinput = ats_unique_malloc(sizeof(input));
     memcpy(uinput.get(), input, sizeof(input));
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, std::move(uinput), sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {}, std::move(uinput), sizeof(input), 0);
     CHECK(header->size() == sizeof(input) - 2); // Packet Length - Payload Length
     CHECK(header->packet_size() == sizeof(input));
     CHECK(header->type() == QUICPacketType::INITIAL);
@@ -85,9 +87,11 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     const uint8_t input[] = {
       0xf5,                                           // Long header, Type: RETRY
       0x11, 0x22, 0x33, 0x44,                         // Version
-      0x55,                                           // DCIL/SCIL
+      0x08,                                           // DCID Len
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+      0x08,                                           // ODCID Len
       0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, // Original Destination Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Retry Token
       0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
@@ -97,7 +101,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
 
     const uint8_t retry_token[] = {0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0};
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, std::move(uinput), sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {}, std::move(uinput), sizeof(input), 0);
     CHECK(header->size() == sizeof(input) - 16); // Packet Length - Payload Length (Retry Token)
     CHECK(header->packet_size() == sizeof(input));
     CHECK(header->type() == QUICPacketType::RETRY);
@@ -114,6 +118,62 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     CHECK(header->version() == 0x11223344);
   }
 
+  SECTION("Long Header (parse) INITIAL Packet")
+  {
+    const uint8_t buf[] = {
+      0xc3,                                           // Long header, Type: INITIAL
+      0x11, 0x22, 0x33, 0x44,                         // Version
+      0x08,                                           // DCID Len
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
+      0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+      0x00,                                           // Token Length (i), Token (*)
+      0x06,                                           // Length
+      0x01, 0x23, 0x45, 0x67,                         // Packet number
+      0xff, 0xff,                                     // Payload (dummy)
+    };
+
+    QUICPacketType type;
+    REQUIRE(QUICPacketLongHeader::type(type, buf, sizeof(buf)));
+    CHECK(type == QUICPacketType::INITIAL);
+
+    QUICVersion version;
+    REQUIRE(QUICPacketLongHeader::version(version, buf, sizeof(buf)));
+    CHECK(version == 0x11223344);
+
+    uint8_t dcil;
+    REQUIRE(QUICPacketLongHeader::dcil(dcil, buf, sizeof(buf)));
+    CHECK(dcil == 8);
+
+    uint8_t scil;
+    REQUIRE(QUICPacketLongHeader::scil(scil, buf, sizeof(buf)));
+    CHECK(dcil == 8);
+
+    size_t token_length;
+    uint8_t token_length_field_len;
+    size_t token_length_field_offset;
+    REQUIRE(QUICPacketLongHeader::token_length(token_length, token_length_field_len, token_length_field_offset, buf, sizeof(buf)));
+    CHECK(token_length == 0);
+    CHECK(token_length_field_len == 1);
+    CHECK(token_length_field_offset == 23);
+
+    size_t length;
+    uint8_t length_field_len;
+    size_t length_field_offset;
+    REQUIRE(QUICPacketLongHeader::length(length, length_field_len, length_field_offset, buf, sizeof(buf)));
+    CHECK(length == 6);
+    CHECK(length_field_len == 1);
+    CHECK(length_field_offset == 24);
+
+    size_t pn_offset;
+    REQUIRE(QUICPacketLongHeader::packet_number_offset(pn_offset, buf, sizeof(buf)));
+    CHECK(pn_offset == 25);
+
+    size_t packet_length;
+    REQUIRE(QUICPacketLongHeader::packet_length(packet_length, buf, sizeof(buf)));
+    CHECK(packet_length == sizeof(buf));
+  }
+
   SECTION("Long Header (store) INITIAL Packet")
   {
     uint8_t buf[64] = {0};
@@ -122,8 +182,9 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     const uint8_t expected[] = {
       0xc3,                                           // Long header, Type: INITIAL
       0x11, 0x22, 0x33, 0x44,                         // Version
-      0x55,                                           // DCIL/SCIL
+      0x08,                                           // DCID Len
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x00,                                           // Token Length (i), Token (*)
       0x19,                                           // Length (Not 0x09 because it will have 16 bytes of AEAD tag)
@@ -160,11 +221,13 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     size_t len      = 0;
 
     const uint8_t expected[] = {
-      0xf5,                                           // Long header, Type: RETRY
+      0xf0,                                           // Long header, Type: RETRY
       0x11, 0x22, 0x33, 0x44,                         // Version
-      0x55,                                           // DCIL/SCIL
+      0x08,                                           // DCID Len
       0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+      0x08,                                           // ODCID Len
       0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, // Original Destination Connection ID
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Retry Token
       0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
@@ -220,7 +283,7 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
     ats_unique_buf uinput = ats_unique_malloc(sizeof(input));
     memcpy(uinput.get(), input, sizeof(input));
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, std::move(uinput), sizeof(input), 0);
+    QUICPacketHeaderUPtr header = QUICPacketHeader::load({}, {}, std::move(uinput), sizeof(input), 0);
     CHECK(header->size() == 23);
     CHECK(header->packet_size() == 25);
     CHECK(header->key_phase() == QUICKeyPhase::PHASE_0);

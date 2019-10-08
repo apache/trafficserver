@@ -125,14 +125,14 @@ QUICSendStream::state_stream_closed(int event, void *data)
 }
 
 bool
-QUICSendStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICSendStream::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
   return !this->is_retransmited_frame_queue_empty() || this->_write_vio.get_reader()->is_read_avail_more_than(0);
 }
 
 QUICFrame *
 QUICSendStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                               ink_hrtime timestamp)
+                               size_t current_packet_size, uint32_t seq_num)
 {
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
@@ -183,7 +183,8 @@ QUICSendStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t
     uint64_t stream_credit = this->_remote_flow_controller.credit();
     if (stream_credit == 0) {
       // STREAM_DATA_BLOCKED
-      frame = this->_remote_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, timestamp);
+      frame =
+        this->_remote_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, current_packet_size, seq_num);
       return frame;
     }
 
@@ -526,15 +527,15 @@ QUICReceiveStream::is_cancelled() const
 }
 
 bool
-QUICReceiveStream::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICReceiveStream::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
-  return this->_local_flow_controller.will_generate_frame(level, timestamp) ||
+  return this->_local_flow_controller.will_generate_frame(level, current_packet_size, ack_eliciting, seq_num) ||
          (this->_stop_sending_reason != nullptr && this->_is_stop_sending_sent == false);
 }
 
 QUICFrame *
 QUICReceiveStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                                  ink_hrtime timestamp)
+                                  size_t current_packet_size, uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
   // STOP_SENDING
@@ -548,7 +549,7 @@ QUICReceiveStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
   }
 
   // MAX_STREAM_DATA
-  frame = this->_local_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, timestamp);
+  frame = this->_local_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, current_packet_size, seq_num);
   return frame;
 }
 

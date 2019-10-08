@@ -121,22 +121,20 @@ QUICDebugNames::error_code(uint16_t code)
     return "INTERNAL_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::FLOW_CONTROL_ERROR):
     return "FLOW_CONTROL_ERROR";
-  case static_cast<uint16_t>(QUICTransErrorCode::STREAM_ID_ERROR):
-    return "STREAM_ID_ERROR";
+  case static_cast<uint16_t>(QUICTransErrorCode::STREAM_LIMIT_ERROR):
+    return "STREAM_LIMIT_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::STREAM_STATE_ERROR):
     return "STREAM_STATE_ERROR";
-  case static_cast<uint16_t>(QUICTransErrorCode::FINAL_OFFSET_ERROR):
-    return "FINAL_OFFSET_ERROR";
+  case static_cast<uint16_t>(QUICTransErrorCode::FINAL_SIZE_ERROR):
+    return "FINAL_SIZE_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::FRAME_ENCODING_ERROR):
     return "FRAME_ENCODING_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR):
     return "TRANSPORT_PARAMETER_ERROR";
-  case static_cast<uint16_t>(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR):
-    return "VERSION_NEGOTIATION_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION):
     return "PROTOCOL_VIOLATION";
-  case static_cast<uint16_t>(QUICTransErrorCode::INVALID_MIGRATION):
-    return "INVALID_MIGRATION";
+  case static_cast<uint16_t>(QUICTransErrorCode::CRYPTO_BUFFER_EXCEEDED):
+    return "CRYPTO_BUFFER_EXCEEDED";
   default:
     if (0x0100 <= code && code <= 0x01FF) {
       return "CRYPTO_ERROR";
@@ -193,8 +191,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "ACK_DELAY_EXPONENT";
   case QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI:
     return "INITIAL_MAX_STREAMS_UNI";
-  case QUICTransportParameterId::DISABLE_MIGRATION:
-    return "DISABLE_MIGRATION";
+  case QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION:
+    return "DISABLE_ACTIVE_MIGRATION";
   case QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE:
     return "INITIAL_MAX_STREAM_DATA_BIDI_REMOTE";
   case QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI:
@@ -203,6 +201,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "INITIAL_MAX_ACK_DELAY";
   case QUICTransportParameterId::ORIGINAL_CONNECTION_ID:
     return "INITIAL_ORIGINAL_CONNECTION_ID";
+  case QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT:
+    return "ACTIVE_CONNECTION_ID_LIMIT";
   default:
     return "UNKNOWN";
   }

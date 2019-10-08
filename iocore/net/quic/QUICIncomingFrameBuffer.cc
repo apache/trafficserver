@@ -113,7 +113,11 @@ QUICIncomingStreamFrameBuffer::insert(const QUICFrame *frame)
     this->_recv_offset = offset + len;
     this->_recv_buffer.push(stream_frame);
   } else {
-    this->_out_of_order_queue.insert(std::make_pair(offset, stream_frame));
+    auto result = this->_out_of_order_queue.insert(std::make_pair(offset, stream_frame));
+    if (!result.second) {
+      // Duplicate frame doesn't need to be inserted
+      delete stream_frame;
+    }
   }
 
   return nullptr;
@@ -134,30 +138,30 @@ QUICIncomingStreamFrameBuffer::_check_and_set_fin_flag(QUICOffset offset, size_t
   // stream with fin flag {11.3. Stream Final Offset}
   // Once a final offset for a stream is known, it cannot change.
   // If a RESET_STREAM or STREAM frame causes the final offset to change for a stream,
-  // an endpoint SHOULD respond with a FINAL_OFFSET_ERROR error (see Section 12).
+  // an endpoint SHOULD respond with a FINAL_SIZE_ERROR error (see Section 12).
   // A receiver SHOULD treat receipt of data at or beyond the final offset as a
-  // FINAL_OFFSET_ERROR error, even after a stream is closed.
+  // FINAL_SIZE_ERROR error, even after a stream is closed.
 
   // {11.3. Stream Final Offset}
   // A receiver SHOULD treat receipt of data at or beyond the final offset as a
-  // FINAL_OFFSET_ERROR error, even after a stream is closed.
+  // FINAL_SIZE_ERROR error, even after a stream is closed.
   if (fin_flag) {
     if (this->_fin_offset != UINT64_MAX) {
       if (this->_fin_offset == offset + len) {
         // dup fin frame
         return nullptr;
       }
-      return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FINAL_OFFSET_ERROR);
+      return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FINAL_SIZE_ERROR);
     }
 
     this->_fin_offset = offset + len;
 
     if (this->_max_offset > this->_fin_offset) {
-      return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FINAL_OFFSET_ERROR);
+      return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FINAL_SIZE_ERROR);
     }
 
   } else if (this->_fin_offset != UINT64_MAX && this->_fin_offset <= offset) {
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FINAL_OFFSET_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FINAL_SIZE_ERROR);
   }
   this->_max_offset = std::max(offset + len, this->_max_offset);
 
@@ -242,7 +246,11 @@ QUICIncomingCryptoFrameBuffer::insert(const QUICFrame *frame)
     this->_recv_offset = offset + len;
     this->_recv_buffer.push(crypto_frame);
   } else {
-    this->_out_of_order_queue.insert(std::make_pair(offset, crypto_frame));
+    auto result = this->_out_of_order_queue.insert(std::make_pair(offset, crypto_frame));
+    if (!result.second) {
+      // Duplicate frame doesn't need to be inserted
+      delete crypto_frame;
+    }
   }
 
   return nullptr;

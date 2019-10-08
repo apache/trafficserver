@@ -62,14 +62,14 @@ QUICPacketFactory::create_null_packet()
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create(UDPConnection *udp_con, IpEndpoint from, ats_unique_buf buf, size_t len,
+QUICPacketFactory::create(UDPConnection *udp_con, IpEndpoint from, IpEndpoint to, ats_unique_buf buf, size_t len,
                           QUICPacketNumber base_packet_number, QUICPacketCreationResult &result)
 {
   size_t max_plain_txt_len = 2048;
   ats_unique_buf plain_txt = ats_unique_malloc(max_plain_txt_len);
   size_t plain_txt_len     = 0;
 
-  QUICPacketHeaderUPtr header = QUICPacketHeader::load(from, std::move(buf), len, base_packet_number);
+  QUICPacketHeaderUPtr header = QUICPacketHeader::load(from, to, std::move(buf), len, base_packet_number);
 
   QUICConnectionId dcid = header->destination_cid();
   QUICConnectionId scid = header->source_cid();
@@ -238,7 +238,7 @@ QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUI
                                            QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                            bool retransmittable, bool probing, bool crypto)
 {
-  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::INITIAL);
+  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::HANDSHAKE);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
   QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::HANDSHAKE, QUICKeyPhase::HANDSHAKE, destination_cid, source_cid, pn, base_packet_number,
@@ -251,7 +251,7 @@ QUICPacketFactory::create_zero_rtt_packet(QUICConnectionId destination_cid, QUIC
                                           QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
                                           bool retransmittable, bool probing)
 {
-  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::INITIAL);
+  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::ZERO_RTT);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
   QUICPacketHeaderUPtr header =
     QUICPacketHeader::build(QUICPacketType::ZERO_RTT_PROTECTED, QUICKeyPhase::ZERO_RTT, destination_cid, source_cid, pn,
@@ -263,7 +263,7 @@ QUICPacketUPtr
 QUICPacketFactory::create_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
                                            ats_unique_buf payload, size_t len, bool retransmittable, bool probing)
 {
-  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::INITIAL);
+  QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::ONE_RTT);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
   // TODO Key phase should be picked up from QUICHandshakeProtocol, probably
   QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, connection_id, pn,
@@ -274,19 +274,20 @@ QUICPacketFactory::create_protected_packet(QUICConnectionId connection_id, QUICP
 QUICPacketUPtr
 QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessResetToken stateless_reset_token)
 {
+  constexpr uint8_t MIN_UNPREDICTABLE_FIELD_LEN = 5;
   std::random_device rnd;
 
   uint8_t random_packet_number = static_cast<uint8_t>(rnd() & 0xFF);
-  size_t payload_len           = static_cast<uint8_t>((rnd() & 0xFF) | 16); // Mimimum length has to be 16
-  ats_unique_buf payload       = ats_unique_malloc(payload_len + 16);
-  uint8_t *naked_payload       = payload.get();
+  size_t payload_len     = static_cast<uint8_t>((rnd() & 0xFF) | (MIN_UNPREDICTABLE_FIELD_LEN + QUICStatelessResetToken::LEN));
+  ats_unique_buf payload = ats_unique_malloc(payload_len);
+  uint8_t *naked_payload = payload.get();
 
   // Generate random octets
   for (int i = payload_len - 1; i >= 0; --i) {
     naked_payload[i] = static_cast<uint8_t>(rnd() & 0xFF);
   }
   // Copy stateless reset token into payload
-  memcpy(naked_payload + payload_len - 16, stateless_reset_token.buf(), 16);
+  memcpy(naked_payload + payload_len - QUICStatelessResetToken::LEN, stateless_reset_token.buf(), QUICStatelessResetToken::LEN);
 
   // KeyPhase won't be used
   QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::STATELESS_RESET, QUICKeyPhase::INITIAL, connection_id,

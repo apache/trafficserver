@@ -24,26 +24,31 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 #include "QUICTypes.h"
 #include "QUICFrameHandler.h"
 #include "QUICFrameGenerator.h"
+#include "QUICConnection.h"
 
 class QUICPathValidator : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
-  QUICPathValidator() {}
-  bool is_validating();
-  bool is_validated();
-  void validate();
+  QUICPathValidator(const QUICConnectionInfoProvider &info, std::function<void(bool)> callback)
+    : _cinfo(info), _on_validation_callback(callback)
+  {
+  }
+  bool is_validating(const QUICPath &path);
+  bool is_validated(const QUICPath &path);
+  void validate(const QUICPath &path);
 
   // QUICFrameHandler
   std::vector<QUICFrameType> interests() override;
   QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
   // QUICFrameGeneratro
-  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
+  bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            ink_hrtime timestamp) override;
+                            size_t current_packet_size, uint32_t seq_num) override;
 
 private:
   enum class ValidationState : int {
@@ -51,14 +56,33 @@ private:
     VALIDATING,
     VALIDATED,
   };
-  ValidationState _state      = ValidationState::NOT_VALIDATED;
-  int _has_outgoing_challenge = 0;
-  bool _has_outgoing_response = false;
-  ink_hrtime _last_sent_at    = 0;
-  uint8_t _incoming_challenge[QUICPathChallengeFrame::DATA_LEN];
-  uint8_t _outgoing_challenge[QUICPathChallengeFrame::DATA_LEN * 3];
 
-  void _generate_challenge();
-  void _generate_response(const QUICPathChallengeFrame &frame);
-  QUICConnectionErrorUPtr _validate_response(const QUICPathResponseFrame &frame);
+  class ValidationJob
+  {
+  public:
+    ValidationJob(){};
+    ~ValidationJob(){};
+    bool is_validating();
+    bool is_validated();
+    void start();
+    bool validate_response(const uint8_t *data);
+    bool has_more_challenges() const;
+    const uint8_t *get_next_challenge() const;
+    void consume_challenge();
+
+  private:
+    ValidationState _state = ValidationState::NOT_VALIDATED;
+    uint8_t _outgoing_challenge[QUICPathChallengeFrame::DATA_LEN * 3];
+    int _has_outgoing_challenge = 0;
+
+    void _generate_challenge();
+  };
+
+  const QUICConnectionInfoProvider &_cinfo;
+  std::unordered_map<QUICPath, ValidationJob, QUICPathHasher> _jobs;
+
+  std::function<void(bool)> _on_validation_callback;
+
+  uint32_t _latest_seq_num = 0;
+  std::vector<QUICPathValidationData> _incoming_challenges;
 };
