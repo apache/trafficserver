@@ -69,6 +69,12 @@ QUICPacketHeader::from() const
   return this->_from;
 }
 
+const IpEndpoint &
+QUICPacketHeader::to() const
+{
+  return this->_to;
+}
+
 bool
 QUICPacketHeader::is_crypto_packet() const
 {
@@ -82,16 +88,16 @@ QUICPacketHeader::packet_size() const
 }
 
 QUICPacketHeaderUPtr
-QUICPacketHeader::load(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
+QUICPacketHeader::load(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len, QUICPacketNumber base)
 {
   QUICPacketHeaderUPtr header = QUICPacketHeaderUPtr(nullptr, &QUICPacketHeaderDeleter::delete_null_header);
   if (QUICInvariants::is_long_header(buf.get())) {
     QUICPacketLongHeader *long_header = quicPacketLongHeaderAllocator.alloc();
-    new (long_header) QUICPacketLongHeader(from, std::move(buf), len, base);
+    new (long_header) QUICPacketLongHeader(from, to, std::move(buf), len, base);
     header = QUICPacketHeaderUPtr(long_header, &QUICPacketHeaderDeleter::delete_long_header);
   } else {
     QUICPacketShortHeader *short_header = quicPacketShortHeaderAllocator.alloc();
-    new (short_header) QUICPacketShortHeader(from, std::move(buf), len, base);
+    new (short_header) QUICPacketShortHeader(from, to, std::move(buf), len, base);
     header = QUICPacketHeaderUPtr(short_header, &QUICPacketHeaderDeleter::delete_short_header);
   }
   return header;
@@ -159,8 +165,9 @@ QUICPacketHeader::clone() const
 // QUICPacketLongHeader
 //
 
-QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
-  : QUICPacketHeader(from, std::move(buf), len, base)
+QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len,
+                                           QUICPacketNumber base)
+  : QUICPacketHeader(from, to, std::move(buf), len, base)
 {
   this->_key_phase = QUICTypeUtil::key_phase(this->type());
   uint8_t *raw_buf = this->_buf.get();
@@ -172,13 +179,15 @@ QUICPacketLongHeader::QUICPacketLongHeader(const IpEndpoint from, ats_unique_buf
 
   size_t offset          = LONG_HDR_OFFSET_CONNECTION_ID;
   this->_destination_cid = {raw_buf + offset, dcil};
-  offset += dcil;
+  offset += dcil + 1;
   this->_source_cid = {raw_buf + offset, scil};
   offset += scil;
 
   if (this->type() != QUICPacketType::VERSION_NEGOTIATION) {
     if (this->type() == QUICPacketType::RETRY) {
-      uint8_t odcil        = (raw_buf[0] & 0x0f) + 3;
+      uint8_t odcil = raw_buf[offset];
+      offset += 1;
+
       this->_original_dcid = {raw_buf + offset, odcil};
       offset += odcil;
     } else {
@@ -219,7 +228,7 @@ QUICPacketLongHeader::QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key
 {
   if (this->_type == QUICPacketType::VERSION_NEGOTIATION) {
     this->_buf_len =
-      LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + this->_source_cid.length() + this->_payload_length;
+      LONG_HDR_OFFSET_CONNECTION_ID + this->_destination_cid.length() + 1 + this->_source_cid.length() + this->_payload_length;
   } else {
     this->buf();
   }
@@ -289,9 +298,6 @@ bool
 QUICPacketLongHeader::dcil(uint8_t &dcil, const uint8_t *packet, size_t packet_len)
 {
   if (QUICInvariants::dcil(dcil, packet, packet_len)) {
-    if (dcil != 0) {
-      dcil += 3;
-    }
     return true;
   } else {
     return false;
@@ -302,9 +308,6 @@ bool
 QUICPacketLongHeader::scil(uint8_t &scil, const uint8_t *packet, size_t packet_len)
 {
   if (QUICInvariants::scil(scil, packet, packet_len)) {
-    if (scil != 0) {
-      scil += 3;
-    }
     return true;
   } else {
     return false;
@@ -312,16 +315,16 @@ QUICPacketLongHeader::scil(uint8_t &scil, const uint8_t *packet, size_t packet_l
 }
 
 bool
-QUICPacketLongHeader::token_length(size_t &token_length, uint8_t *field_len, const uint8_t *packet, size_t packet_len)
+QUICPacketLongHeader::token_length(size_t &token_length, uint8_t &field_len, size_t &token_length_filed_offset,
+                                   const uint8_t *packet, size_t packet_len)
 {
   QUICPacketType type = QUICPacketType::UNINITIALIZED;
   QUICPacketLongHeader::type(type, packet, packet_len);
 
   if (type != QUICPacketType::INITIAL) {
     token_length = 0;
-    if (field_len) {
-      *field_len = 0;
-    }
+    field_len    = 0;
+
     return true;
   }
 
@@ -329,66 +332,85 @@ QUICPacketLongHeader::token_length(size_t &token_length, uint8_t *field_len, con
   QUICPacketLongHeader::dcil(dcil, packet, packet_len);
   QUICPacketLongHeader::scil(scil, packet, packet_len);
 
-  size_t offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil;
-  if (offset >= packet_len) {
+  token_length_filed_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + 1 + scil;
+  if (token_length_filed_offset >= packet_len) {
     return false;
   }
 
-  if (offset > packet_len) {
-    return false;
-  }
-
-  token_length = QUICIntUtil::read_QUICVariableInt(packet + offset);
-  if (field_len) {
-    *field_len = QUICVariableInt::size(packet + offset);
-  }
+  token_length = QUICIntUtil::read_QUICVariableInt(packet + token_length_filed_offset);
+  field_len    = QUICVariableInt::size(packet + token_length_filed_offset);
 
   return true;
 }
 
 bool
-QUICPacketLongHeader::length(size_t &length, uint8_t *field_len, const uint8_t *packet, size_t packet_len)
+QUICPacketLongHeader::length(size_t &length, uint8_t &length_field_len, size_t &length_field_offset, const uint8_t *packet,
+                             size_t packet_len)
 {
-  uint8_t dcil, scil;
-  QUICPacketLongHeader::dcil(dcil, packet, packet_len);
-  QUICPacketLongHeader::scil(scil, packet, packet_len);
+  uint8_t dcil;
+  if (!QUICPacketLongHeader::dcil(dcil, packet, packet_len)) {
+    return false;
+  }
+
+  uint8_t scil;
+  if (!QUICPacketLongHeader::scil(scil, packet, packet_len)) {
+    return false;
+  }
 
   // Token Length (i) + Token (*) (for INITIAL packet)
-  size_t token_length            = 0;
-  uint8_t token_length_field_len = 0;
-  if (!QUICPacketLongHeader::token_length(token_length, &token_length_field_len, packet, packet_len)) {
+  size_t token_length              = 0;
+  uint8_t token_length_field_len   = 0;
+  size_t token_length_field_offset = 0;
+  if (!QUICPacketLongHeader::token_length(token_length, token_length_field_len, token_length_field_offset, packet, packet_len)) {
     return false;
   }
 
   // Length (i)
-  size_t length_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + scil + token_length_field_len + token_length;
-  if (length_offset >= packet_len) {
+  length_field_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + 1 + scil + token_length_field_len + token_length;
+  if (length_field_offset >= packet_len) {
     return false;
   }
-  length = QUICIntUtil::read_QUICVariableInt(packet + length_offset);
-  if (field_len) {
-    *field_len = QUICVariableInt::size(packet + length_offset);
-  }
+
+  length_field_len = QUICVariableInt::size(packet + length_field_offset);
+  length           = QUICIntUtil::read_QUICVariableInt(packet + length_field_offset);
+
   return true;
 }
 
 bool
-QUICPacketLongHeader::packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len)
+QUICPacketLongHeader::packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len)
 {
-  QUICPacketType type;
-  QUICPacketLongHeader::type(type, packet, packet_len);
-
-  uint8_t dcil, scil;
-  size_t token_length;
-  uint8_t token_length_field_len;
   size_t length;
   uint8_t length_field_len;
-  if (!QUICPacketLongHeader::dcil(dcil, packet, packet_len) || !QUICPacketLongHeader::scil(scil, packet, packet_len) ||
-      !QUICPacketLongHeader::token_length(token_length, &token_length_field_len, packet, packet_len) ||
-      !QUICPacketLongHeader::length(length, &length_field_len, packet, packet_len)) {
+  size_t length_field_offset;
+
+  if (!QUICPacketLongHeader::length(length, length_field_len, length_field_offset, packet, packet_len)) {
     return false;
   }
-  pn_offset = 6 + dcil + scil + token_length_field_len + token_length + length_field_len;
+  pn_offset = length_field_offset + length_field_len;
+
+  if (pn_offset >= packet_len) {
+    return false;
+  }
+
+  return true;
+}
+
+bool
+QUICPacketLongHeader::packet_length(size_t &packet_len, const uint8_t *buf, size_t buf_len)
+{
+  size_t length;
+  uint8_t length_field_len;
+  size_t length_field_offset;
+
+  if (!QUICPacketLongHeader::length(length, length_field_len, length_field_offset, buf, buf_len)) {
+    return false;
+  }
+  packet_len = length + length_field_offset + length_field_len;
+
+  if (packet_len > buf_len) {
+    return false;
+  }
 
   return true;
 }
@@ -521,28 +543,49 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
   QUICTypeUtil::write_QUICVersion(this->_version, buf + *len, &n);
   *len += n;
 
-  buf[*len] = this->_destination_cid == QUICConnectionId::ZERO() ? 0 : (this->_destination_cid.length() - 3) << 4;
-  buf[*len] += this->_source_cid == QUICConnectionId::ZERO() ? 0 : this->_source_cid.length() - 3;
-  *len += 1;
-
+  // DICD
   if (this->_destination_cid != QUICConnectionId::ZERO()) {
+    // Len
+    buf[*len] = this->_destination_cid.length();
+    *len += 1;
+
+    // ID
     QUICTypeUtil::write_QUICConnectionId(this->_destination_cid, buf + *len, &n);
     *len += n;
+  } else {
+    buf[*len] = 0;
+    *len += 1;
   }
+
+  // SCID
   if (this->_source_cid != QUICConnectionId::ZERO()) {
+    // Len
+    buf[*len] = this->_source_cid.length();
+    *len += 1;
+
+    // ID
     QUICTypeUtil::write_QUICConnectionId(this->_source_cid, buf + *len, &n);
     *len += n;
+  } else {
+    buf[*len] = 0;
+    *len += 1;
   }
 
   if (this->_type != QUICPacketType::VERSION_NEGOTIATION) {
     if (this->_type == QUICPacketType::RETRY) {
       // Original Destination Connection ID
       if (this->_original_dcid != QUICConnectionId::ZERO()) {
+        // Len
+        buf[*len] = this->_original_dcid.length();
+        *len += 1;
+
+        // ID
         QUICTypeUtil::write_QUICConnectionId(this->_original_dcid, buf + *len, &n);
         *len += n;
+      } else {
+        buf[*len] = 0;
+        *len += 1;
       }
-      // ODCIL
-      buf[0] |= this->_original_dcid.length() - 3;
     } else {
       if (this->_type == QUICPacketType::INITIAL) {
         // Token Length Field
@@ -590,8 +633,9 @@ QUICPacketLongHeader::store(uint8_t *buf, size_t *len) const
 // QUICPacketShortHeader
 //
 
-QUICPacketShortHeader::QUICPacketShortHeader(const IpEndpoint from, ats_unique_buf buf, size_t len, QUICPacketNumber base)
-  : QUICPacketHeader(from, std::move(buf), len, base)
+QUICPacketShortHeader::QUICPacketShortHeader(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len,
+                                             QUICPacketNumber base)
+  : QUICPacketHeader(from, to, std::move(buf), len, base)
 {
   QUICInvariants::dcid(this->_connection_id, this->_buf.get(), len);
 
@@ -718,7 +762,7 @@ QUICPacketShortHeader::key_phase(QUICKeyPhase &phase, const uint8_t *packet, siz
 }
 
 bool
-QUICPacketShortHeader::packet_number_offset(uint8_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil)
+QUICPacketShortHeader::packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil)
 {
   pn_offset = 1 + dcil;
   return true;
@@ -793,6 +837,12 @@ const IpEndpoint &
 QUICPacket::from() const
 {
   return this->_header->from();
+}
+
+const IpEndpoint &
+QUICPacket::to() const
+{
+  return this->_header->to();
 }
 
 UDPConnection *

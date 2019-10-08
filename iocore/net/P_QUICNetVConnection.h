@@ -54,14 +54,18 @@
 #include "quic/QUICHandshakeProtocol.h"
 #include "quic/QUICAckFrameCreator.h"
 #include "quic/QUICPinger.h"
+#include "quic/QUICPadder.h"
 #include "quic/QUICLossDetector.h"
 #include "quic/QUICStreamManager.h"
 #include "quic/QUICAltConnectionManager.h"
 #include "quic/QUICPathValidator.h"
+#include "quic/QUICPathManager.h"
 #include "quic/QUICApplicationMap.h"
 #include "quic/QUICPacketReceiveQueue.h"
 #include "quic/QUICAddrVerifyState.h"
 #include "quic/QUICPacketProtectionKeyInfo.h"
+#include "quic/QUICContext.h"
+#include "quic/QUICTokenCreator.h"
 
 // Size of connection ids for debug log : e.g. aaaaaaaa-bbbbbbbb\0
 static constexpr size_t MAX_CIDS_SIZE = 8 + 1 + 8 + 1;
@@ -127,11 +131,7 @@ class SSLNextProtocolSet;
  *    WRITE:
  *      Do nothing
  **/
-class QUICNetVConnection : public UnixNetVConnection,
-                           public QUICConnection,
-                           public QUICFrameGenerator,
-                           public RefCountObj,
-                           public ALPNSupport
+class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, public RefCountObj, public ALPNSupport
 {
   using super = UnixNetVConnection; ///< Parent type.
 
@@ -144,6 +144,9 @@ public:
 
   // accept new conn_id
   int acceptEvent(int event, Event *e);
+
+  // NetVConnection
+  void set_local_addr() override;
 
   // UnixNetVConnection
   void reenable(VIO *vio) override;
@@ -197,11 +200,6 @@ public:
   std::vector<QUICFrameType> interests() override;
   QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
 
-  // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
-  QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            ink_hrtime timestamp) override;
-
   int in_closed_queue = 0;
 
   bool shouldDestroy();
@@ -231,7 +229,6 @@ private:
   QUICPacketFactory _packet_factory;
   QUICFrameFactory _frame_factory;
   QUICAckFrameManager _ack_frame_manager;
-  QUICPinger _pinger;
   QUICPacketHeaderProtector _ph_protector;
   QUICRTTMeasure _rtt_measure;
   QUICApplicationMap *_application_map = nullptr;
@@ -240,6 +237,8 @@ private:
 
   // TODO: use custom allocator and make them std::unique_ptr or std::shared_ptr
   // or make them just member variables.
+  QUICPinger *_pinger                               = nullptr;
+  QUICPadder *_padder                               = nullptr;
   QUICHandshake *_handshake_handler                 = nullptr;
   QUICHandshakeProtocol *_hs_protocol               = nullptr;
   QUICLossDetector *_loss_detector                  = nullptr;
@@ -251,8 +250,10 @@ private:
   QUICConnectionTable *_ctable                      = nullptr;
   QUICAltConnectionManager *_alt_con_manager        = nullptr;
   QUICPathValidator *_path_validator                = nullptr;
+  QUICPathManager *_path_manager                    = nullptr;
+  QUICTokenCreator *_token_creator                  = nullptr;
 
-  std::vector<QUICFrameGenerator *> _frame_generators;
+  QUICFrameGeneratorManager _frame_generators;
 
   QUICPacketReceiveQueue _packet_recv_queue = {this->_packet_factory, this->_ph_protector};
 
@@ -276,11 +277,6 @@ private:
   void _close_closed_event(Event *data);
   Event *_closed_event = nullptr;
 
-  void _schedule_path_validation_timeout(ink_hrtime interval);
-  void _unschedule_path_validation_timeout();
-  void _close_path_validation_timeout(Event *data);
-  Event *_path_validation_timeout = nullptr;
-
   void _schedule_ack_manager_periodic(ink_hrtime interval);
   void _unschedule_ack_manager_periodic();
   Event *_ack_manager_periodic = nullptr;
@@ -296,7 +292,6 @@ private:
                                   std::vector<QUICFrameInfo> &frames);
   QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size, std::vector<QUICFrameInfo> &frames);
   void _packetize_closing_frame();
-  Ptr<IOBufferBlock> _generate_padding_frame(size_t frame_size);
   QUICPacketUPtr _build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block, bool retransmittable, bool probing,
                                bool crypto);
 
@@ -324,7 +319,7 @@ private:
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   void _handle_error(QUICConnectionErrorUPtr error);
   QUICPacketUPtr _dequeue_recv_packet(QUICPacketCreationResult &result);
-  void _validate_new_path();
+  void _validate_new_path(const QUICPath &path);
 
   int _complete_handshake_if_possible();
   void _switch_to_handshake_state();
@@ -337,7 +332,6 @@ private:
   void _start_application();
 
   void _handle_periodic_ack_event();
-  void _handle_path_validation_timeout(Event *data);
   void _handle_idle_timeout();
 
   QUICConnectionErrorUPtr _handle_frame(const QUICNewConnectionIdFrame &frame);
@@ -352,19 +346,16 @@ private:
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   QUICStatelessResetToken _reset_token;
 
-  ats_unique_buf _av_token       = {nullptr};
-  size_t _av_token_len           = 0;
-  bool _is_resumption_token_sent = false;
+  ats_unique_buf _av_token = {nullptr};
+  size_t _av_token_len     = 0;
 
   uint64_t _stream_frames_sent = 0;
+  uint32_t _seq_num            = 0;
 
   // TODO: Source addresses verification through an address validation token
-  bool _has_ack_eliciting_packet_out = true;
-
   QUICAddrVerifyState _verfied_state;
 
-  // QUICFrameGenerator
-  void _on_frame_lost(QUICFrameInformationUPtr &info) override;
+  std::unique_ptr<QUICContextImpl> _context;
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);

@@ -37,9 +37,9 @@ public:
   int state_stream_closed(int event, void *data);
 
   // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
+  bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            ink_hrtime timestamp) override;
+                            size_t current_packet_size, uint32_t seq_num) override;
 
   virtual QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame) override;
@@ -86,9 +86,9 @@ public:
   int state_stream_closed(int event, void *data);
 
   // QUICFrameGenerator
-  bool will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp) override;
+  bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                            ink_hrtime timestamp) override;
+                            size_t current_packet_size, uint32_t seq_num) override;
 
   virtual QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICStreamDataBlockedFrame &frame) override;

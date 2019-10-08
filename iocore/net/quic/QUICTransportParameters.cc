@@ -183,7 +183,7 @@ QUICTransportParameters::_validate_parameters() const
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI)) != this->_parameters.end()) {
   }
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::DISABLE_MIGRATION)) != this->_parameters.end()) {
+  if ((ite = this->_parameters.find(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION)) != this->_parameters.end()) {
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_ACK_DELAY)) != this->_parameters.end()) {
@@ -290,11 +290,12 @@ QUICTransportParameters::_print() const
       uint64_t int_value;
       size_t int_value_len;
       QUICVariableInt::decode(int_value, int_value_len, p.second->data(), p.second->len());
-      Debug(tag, "%s: 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first), int_value, int_value);
+      Debug(tag, "%s (%" PRIu32 "): 0x%" PRIx64 " (%" PRIu64 ")", QUICDebugNames::transport_parameter_id(p.first),
+            static_cast<uint16_t>(p.first), int_value, int_value);
     } else if (p.second->len() <= 24) {
       char hex_str[65];
       to_hex_str(hex_str, sizeof(hex_str), p.second->data(), p.second->len());
-      Debug(tag, "%s: %s", QUICDebugNames::transport_parameter_id(p.first), hex_str);
+      Debug(tag, "%s (%" PRIu32 "): %s", QUICDebugNames::transport_parameter_id(p.first), static_cast<uint16_t>(p.first), hex_str);
     } else if (QUICTransportParameterId::PREFERRED_ADDRESS == p.first) {
       QUICPreferredAddress pref_addr(p.second->data(), p.second->len());
       char cid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
