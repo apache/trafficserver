@@ -108,7 +108,7 @@ ProxySession::state_api_callout(int event, void *data)
     if (nullptr != cur_hook) {
       APIHook const *hook = cur_hook;
 
-      MUTEX_TRY_LOCK(lock, hook->m_cont->mutex, mutex->thread_holding);
+      WEAK_MUTEX_TRY_LOCK(lock, hook->m_cont->mutex, mutex->thread_holding);
 
       // Have a mutex but didn't get the lock, reschedule
       if (!lock.is_locked()) {

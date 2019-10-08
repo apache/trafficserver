@@ -994,7 +994,7 @@ HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event *e)
   if (cont) {
     proxy_mutex = cont->mutex;
   }
-  MUTEX_TRY_LOCK(lock, proxy_mutex, e->ethread);
+  WEAK_MUTEX_TRY_LOCK(lock, proxy_mutex, e->ethread);
   if (!lock.is_locked()) {
     e->schedule_in(HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;
@@ -1556,7 +1556,7 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
     }
 
     if (action.continuation && r) {
-      reply_to_cont(action.continuation, r.get());
+      reply_to_cont(action.continuation, r.get(), is_srv());
     }
 
     // If it succeeds or it was a remote probe, we are done

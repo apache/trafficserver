@@ -194,26 +194,10 @@ HttpVCTable::remove_entry(HttpVCTableEntry *e)
     free_MIOBuffer(e->write_buffer);
     e->write_buffer = nullptr;
   }
-  if (e->read_vio != nullptr && e->read_vio->cont == sm) {
-    // Cleanup dangling i/o
-    if (e == sm->get_ua_entry() && sm->get_ua_txn() != nullptr) {
-      e->read_vio = sm->get_ua_txn()->do_io_read(nullptr, 0, nullptr);
-    } else if (e == sm->get_server_entry() && sm->get_server_session()) {
-      e->read_vio = sm->get_server_session()->do_io_read(nullptr, 0, nullptr);
-    } else {
-      ink_release_assert(false);
-    }
-  }
-  if (e->write_vio != nullptr && e->write_vio->cont == sm) {
-    // Cleanup dangling i/o
-    if (e == sm->get_ua_entry() && sm->get_ua_txn()) {
-      e->write_vio = sm->get_ua_txn()->do_io_write(nullptr, 0, nullptr);
-    } else if (e == sm->get_server_entry() && sm->get_server_session()) {
-      e->write_vio = sm->get_server_session()->do_io_write(nullptr, 0, nullptr);
-    } else {
-      ink_release_assert(false);
-    }
-  }
+  // Cannot reach in to checkout the netvc
+  // for remaining I/O operations because the netvc
+  // may have been deleted at this point and the pointer
+  // could be stale.
   e->read_vio   = nullptr;
   e->write_vio  = nullptr;
   e->vc_handler = nullptr;
@@ -1463,7 +1447,7 @@ plugins required to work with sni_routing.
         callout_state = HTTP_API_IN_CALLOUT;
       }
 
-      MUTEX_TRY_LOCK(lock, cur_hook->m_cont->mutex, mutex->thread_holding);
+      WEAK_MUTEX_TRY_LOCK(lock, cur_hook->m_cont->mutex, mutex->thread_holding);
 
       // Have a mutex but didn't get the lock, reschedule
       if (!lock.is_locked()) {
@@ -7781,6 +7765,9 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   t_state.force_dns               = false;
   t_state.server_info.clear();
   t_state.parent_info.clear();
+
+  // Must reset whether the InkAPI has set the destination address
+  t_state.api_server_addr_set = false;
 
   if (t_state.txn_conf->cache_http) {
     t_state.cache_info.object_read = nullptr;

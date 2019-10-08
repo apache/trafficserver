@@ -48,13 +48,20 @@
   @param _t The current EThread executing your code.
 
 */
+
+// A weak version of the SCOPED_MUTEX_LOCK macro, allows the mutex to be a nullptr.
 #ifdef DEBUG
-#define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(MakeSourceLocation(), nullptr, _m, _t)
-#else
-#define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(_m, _t)
+#define WEAK_SCOPED_MUTEX_LOCK(_l, _m, _t) WeakMutexLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t);
+#else // DEBUG
+#define WEAK_SCOPED_MUTEX_LOCK(_l, _m, _t) WeakMutexLock _l(_m, _t);
 #endif // DEBUG
 
 #ifdef DEBUG
+#define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t)
+#else // DEBUG
+#define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(_m, _t)
+#endif // DEBUG
+
 /**
   Attempts to acquire the lock to the ProxyMutex.
 
@@ -68,8 +75,15 @@
   @param _t The current EThread executing your code.
 
 */
-#define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t)
 
+#ifdef DEBUG
+#define WEAK_MUTEX_TRY_LOCK(_l, _m, _t) WeakMutexTryLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t);
+#else // DEBUG
+#define WEAK_MUTEX_TRY_LOCK(_l, _m, _t) WeakMutexTryLock _l(_m, _t);
+#endif // DEBUG
+
+#ifdef DEBUG
+#define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t)
 #else // DEBUG
 #define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(_m, _t)
 #endif // DEBUG
@@ -337,6 +351,41 @@ Mutex_unlock(Ptr<ProxyMutex> &m, EThread *t)
   }
 }
 
+class WeakMutexLock
+{
+private:
+  Ptr<ProxyMutex> m;
+  bool locked_p;
+
+public:
+  WeakMutexLock(
+#ifdef DEBUG
+    const SourceLocation &location, const char *ahandler,
+#endif // DEBUG
+    Ptr<ProxyMutex> &am, EThread *t)
+    : m(am), locked_p(true)
+  {
+    if (m.get()) {
+      Mutex_lock(
+#ifdef DEBUG
+        location, ahandler,
+#endif // DEBUG
+        m, t);
+    }
+  }
+
+  void
+  release()
+  {
+    if (locked_p && m.get()) {
+      Mutex_unlock(m, m->thread_holding);
+    }
+    locked_p = false;
+  }
+
+  ~WeakMutexLock() { this->release(); }
+};
+
 /** Scoped lock class for ProxyMutex
  */
 class MutexLock
@@ -353,25 +402,91 @@ public:
     Ptr<ProxyMutex> &am, EThread *t)
     : m(am), locked_p(true)
   {
-    if (am) {
-      Mutex_lock(
+    Mutex_lock(
 #ifdef DEBUG
-        location, ahandler,
+      location, ahandler,
 #endif // DEBUG
-        m, t);
-    }
+      m, t);
   }
 
   void
   release()
   {
-    if (locked_p && m) {
+    if (locked_p) {
       Mutex_unlock(m, m->thread_holding);
     }
     locked_p = false;
   }
 
   ~MutexLock() { this->release(); }
+};
+
+/** Scoped try lock class for ProxyMutex
+ */
+class WeakMutexTryLock
+{
+private:
+  Ptr<ProxyMutex> m;
+  bool lock_acquired;
+
+public:
+  WeakMutexTryLock(
+#ifdef DEBUG
+    const SourceLocation &location, const char *ahandler,
+#endif // DEBUG
+    Ptr<ProxyMutex> &am, EThread *t)
+    : m(am)
+  {
+    if (m.get()) {
+      lock_acquired = Mutex_trylock(
+#ifdef DEBUG
+        location, ahandler,
+#endif // DEBUG
+        m, t);
+    } else {
+      lock_acquired = true;
+    }
+  }
+
+  ~WeakMutexTryLock()
+  {
+    if (lock_acquired && m.get()) {
+      Mutex_unlock(m, m->thread_holding);
+    }
+    lock_acquired = false;
+  }
+
+  /** Spin till lock is acquired
+   */
+  void
+  acquire(EThread *t)
+  {
+    lock_acquired = true;
+    if (m.get()) {
+      MUTEX_TAKE_LOCK(m, t);
+    }
+  }
+
+  void
+  release()
+  {
+    if (lock_acquired && m.get()) {
+      Mutex_unlock(m, m->thread_holding);
+    }
+    lock_acquired = false;
+  }
+
+  bool
+  is_locked() const
+  {
+    return lock_acquired;
+  }
+
+  const ProxyMutex *
+  get_mutex() const
+  {
+    return m.get();
+  }
 };
 
 /** Scoped try lock class for ProxyMutex
@@ -390,20 +505,16 @@ public:
     Ptr<ProxyMutex> &am, EThread *t)
     : m(am)
   {
-    if (am) {
-      lock_acquired = Mutex_trylock(
+    lock_acquired = Mutex_trylock(
 #ifdef DEBUG
-        location, ahandler,
+      location, ahandler,
 #endif // DEBUG
-        m, t);
-    } else {
-      lock_acquired = true;
-    }
+      m, t);
   }
 
   ~MutexTryLock()
   {
-    if (lock_acquired && m.get()) {
+    if (lock_acquired) {
       Mutex_unlock(m, m->thread_holding);
     }
   }
@@ -413,16 +524,14 @@ public:
   void
   acquire(EThread *t)
   {
+    MUTEX_TAKE_LOCK(m, t);
     lock_acquired = true;
-    if (m.get()) {
-      MUTEX_TAKE_LOCK(m, t);
-    }
   }
 
   void
   release()
   {
-    if (lock_acquired && m.get()) {
+    if (lock_acquired) {
       Mutex_unlock(m, m->thread_holding);
     }
     lock_acquired = false;

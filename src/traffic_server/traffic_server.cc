@@ -230,7 +230,7 @@ struct AutoStopCont : public Continuation {
 
     APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
     while (hook) {
-      SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
+      WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
       hook->invoke(TS_EVENT_LIFECYCLE_SHUTDOWN, nullptr);
       hook = hook->next();
     }
@@ -2113,7 +2113,7 @@ task_threads_started_callback()
 {
   APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_TASK_THREADS_READY_HOOK);
   while (hook) {
-    SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
+    WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
     hook->invoke(TS_EVENT_LIFECYCLE_TASK_THREADS_READY, nullptr);
     hook = hook->next();
   }

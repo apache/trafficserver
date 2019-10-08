@@ -2841,7 +2841,10 @@ LogAccess::set_http_header_field(LogField::Container container, char *field, cha
       // Loop over dups, update each of them
       //
       while (fld) {
-        header->value_set((const char *)field, static_cast<int>(::strlen(field)), buf, len);
+        // make sure to reuse header heaps as otherwise
+        // coalesce logic in header heap may free up
+        // memory pointed to by cquuc or other log fields
+        header->field_value_set(fld, buf, len, true);
         fld = fld->m_next_dup;
       }
     }
