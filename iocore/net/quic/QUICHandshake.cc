@@ -166,7 +166,7 @@ QUICHandshake::negotiate_version(const QUICPacket &vn, QUICPacketFactory *packet
     packet_factory->set_version(version);
   } else {
     QUICHSDebug("Version negotiation failed");
-    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::VERSION_NEGOTIATION_ERROR);
+    return std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
   }
 
   return nullptr;
@@ -322,24 +322,24 @@ QUICHandshake::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
 }
 
 bool
-QUICHandshake::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICHandshake::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;
   }
 
-  return this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level, timestamp);
+  return this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level, current_packet_size, ack_eliciting, seq_num);
 }
 
 QUICFrame *
 QUICHandshake::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                              ink_hrtime timestamp)
+                              size_t current_packet_size, uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
 
   if (this->_is_level_matched(level)) {
-    frame =
-      this->_crypto_streams[static_cast<int>(level)].generate_frame(buf, level, connection_credit, maximum_frame_size, timestamp);
+    frame = this->_crypto_streams[static_cast<int>(level)].generate_frame(buf, level, connection_credit, maximum_frame_size,
+                                                                          current_packet_size, seq_num);
   }
 
   return frame;
@@ -382,6 +382,9 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
     pref_addr->store(pref_addr_buf, len);
     tp->set(QUICTransportParameterId::PREFERRED_ADDRESS, pref_addr_buf, len);
   }
+  if (tp_config.active_cid_limit() != 0) {
+    tp->set(QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT, tp_config.active_cid_limit());
+  }
 
   // MAYs (server)
   tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
@@ -421,6 +424,9 @@ QUICHandshake::_load_local_client_transport_parameters(const QUICTPConfig &tp_co
     tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, tp_config.initial_max_stream_data_uni());
   }
   tp->set(QUICTransportParameterId::ACK_DELAY_EXPONENT, tp_config.ack_delay_exponent());
+  if (tp_config.active_cid_limit() != 0) {
+    tp->set(QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT, tp_config.active_cid_limit());
+  }
 
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(std::unique_ptr<QUICTransportParameters>(tp));

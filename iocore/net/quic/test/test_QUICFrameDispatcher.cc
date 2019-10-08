@@ -36,14 +36,12 @@ TEST_CASE("QUICFrameHandler", "[quic]")
 
   QUICStreamFrame streamFrame(block, 0x03, 0);
 
-  MockQUICLDConfig ld_config;
-  MockQUICCCConfig cc_config;
+  MockQUICContext context;
+
   MockQUICConnection connection;
-  MockQUICStreamManager streamManager;
+  MockQUICStreamManager streamManager = {&connection};
   MockQUICConnectionInfoProvider info;
-  MockQUICCongestionController cc(&info, cc_config);
-  QUICRTTMeasure rtt_measure;
-  MockQUICLossDetector lossDetector(&info, &cc, &rtt_measure, ld_config);
+  MockQUICLossDetector lossDetector(context);
 
   QUICFrameDispatcher quicFrameDispatcher(&info);
   quicFrameDispatcher.add_handler(&connection);
@@ -64,14 +62,19 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   }
   bool should_send_ack;
   bool is_flow_controlled;
-  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr);
+  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr, nullptr);
   CHECK(connection.getTotalFrameCount() == 0);
   CHECK(streamManager.getTotalFrameCount() == 1);
 
   // CONNECTION_CLOSE frame
   QUICConnectionCloseFrame connectionCloseFrame(0, 0, "", 0, nullptr);
-  connectionCloseFrame.store(buf, &len, 4096);
-  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr);
+  ibb = connectionCloseFrame.to_io_buffer_block(sizeof(buf));
+  len = 0;
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
+  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr, nullptr);
   CHECK(connection.getTotalFrameCount() == 1);
   CHECK(streamManager.getTotalFrameCount() == 1);
 }

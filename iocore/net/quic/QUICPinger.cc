@@ -24,54 +24,72 @@
 #include "QUICPinger.h"
 
 void
-QUICPinger::request(QUICEncryptionLevel level)
+QUICPinger::request()
 {
-  if (!this->_is_level_matched(level)) {
-    return;
-  }
-  ++this->_need_to_fire[static_cast<int>(level)];
+  SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
+  ++this->_need_to_fire;
 }
 
 void
-QUICPinger::cancel(QUICEncryptionLevel level)
+QUICPinger::cancel()
 {
-  if (!this->_is_level_matched(level)) {
-    return;
-  }
-
-  if (this->_need_to_fire[static_cast<int>(level)] > 0) {
-    --this->_need_to_fire[static_cast<int>(level)];
+  SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
+  if (this->_need_to_fire > 0) {
+    --this->_need_to_fire;
   }
 }
 
 bool
-QUICPinger::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICPinger::_will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting)
 {
-  if (!this->_is_level_matched(level)) {
+  SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
+
+  if (level != QUICEncryptionLevel::ONE_RTT) {
     return false;
   }
 
-  return this->_need_to_fire[static_cast<int>(QUICTypeUtil::pn_space(level))] > 0;
+  // PING Frame is meaningless for ack_eliciting packet. Cancel it.
+  if (ack_eliciting) {
+    this->_ack_eliciting_packet_out = true;
+    this->cancel();
+    return false;
+  }
+
+  if (this->_ack_eliciting_packet_out == false && !ack_eliciting && current_packet_size > 0 && this->_need_to_fire == 0) {
+    // force to send an PING Frame
+    this->request();
+  }
+
+  // only update `_ack_eliciting_packet_out` when we has something to send.
+  if (current_packet_size) {
+    this->_ack_eliciting_packet_out = ack_eliciting;
+  }
+  return this->_need_to_fire > 0;
 }
 
 /**
  * @param connection_credit This is not used. Because PING frame is not flow-controlled
  */
 QUICFrame *
-QUICPinger::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */, uint16_t maximum_frame_size,
-                           ink_hrtime timestamp)
+QUICPinger::_generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */, uint16_t maximum_frame_size,
+                            size_t current_packet_size)
 {
+  SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   QUICFrame *frame = nullptr;
 
-  if (!this->_is_level_matched(level)) {
-    return frame;
-  }
-
-  if (this->_need_to_fire[static_cast<int>(level)] > 0 && maximum_frame_size > 0) {
+  if (level == QUICEncryptionLevel::ONE_RTT && this->_need_to_fire > 0 && maximum_frame_size > 0) {
     // don't care ping frame lost or acked
-    frame                                        = QUICFrameFactory::create_ping_frame(buf, 0, nullptr);
-    this->_need_to_fire[static_cast<int>(level)] = 0;
+    frame = QUICFrameFactory::create_ping_frame(buf, 0, nullptr);
+    --this->_need_to_fire;
+    this->_ack_eliciting_packet_out = true;
   }
 
   return frame;
+}
+
+uint64_t
+QUICPinger::count()
+{
+  SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
+  return this->_need_to_fire;
 }

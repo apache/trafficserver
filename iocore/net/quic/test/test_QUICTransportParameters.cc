@@ -167,7 +167,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
     CHECK(len == 16);
     CHECK(memcmp(data, buf + 12, 16) == 0);
 
-    CHECK(!params_in_ee.contains(QUICTransportParameterId::DISABLE_MIGRATION));
+    CHECK(!params_in_ee.contains(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION));
   }
 
   SECTION("OK case - zero length value")
@@ -205,7 +205,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
     CHECK(len == 2);
     CHECK(memcmp(data, "\x51\x23", 2) == 0);
 
-    CHECK(params_in_ee.contains(QUICTransportParameterId::DISABLE_MIGRATION));
+    CHECK(params_in_ee.contains(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION));
   }
 
   SECTION("Duplicate parameters")
@@ -281,7 +281,7 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
 
     uint16_t max_packet_size = 0x1bcd;
     params_in_ee.set(QUICTransportParameterId::MAX_PACKET_SIZE, max_packet_size);
-    params_in_ee.set(QUICTransportParameterId::DISABLE_MIGRATION, nullptr, 0);
+    params_in_ee.set(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION, nullptr, 0);
 
     params_in_ee.add_version(0x01020304);
     params_in_ee.add_version(0x05060708);

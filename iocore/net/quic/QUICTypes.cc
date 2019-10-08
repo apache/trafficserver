@@ -252,15 +252,15 @@ QUICTypeUtil::write_QUICOffset(QUICOffset offset, uint8_t *buf, size_t *len)
 }
 
 void
-QUICTypeUtil::write_QUICTransErrorCode(uint16_t error_code, uint8_t *buf, size_t *len)
+QUICTypeUtil::write_QUICTransErrorCode(uint64_t error_code, uint8_t *buf, size_t *len)
 {
-  QUICIntUtil::write_uint_as_nbytes(static_cast<uint64_t>(error_code), 2, buf, len);
+  QUICIntUtil::write_QUICVariableInt(static_cast<uint64_t>(error_code), buf, len);
 }
 
 void
 QUICTypeUtil::write_QUICAppErrorCode(QUICAppErrorCode error_code, uint8_t *buf, size_t *len)
 {
-  QUICIntUtil::write_uint_as_nbytes(static_cast<uint64_t>(error_code), 2, buf, len);
+  QUICIntUtil::write_QUICVariableInt(static_cast<uint64_t>(error_code), buf, len);
 }
 
 void
@@ -553,6 +553,24 @@ QUICFiveTuple::protocol() const
 }
 
 //
+// QUICPath
+//
+
+QUICPath::QUICPath(IpEndpoint local_ep, IpEndpoint remote_ep) : _local_ep(local_ep), _remote_ep(remote_ep) {}
+
+const IpEndpoint &
+QUICPath::local_ep() const
+{
+  return this->_local_ep;
+}
+
+const IpEndpoint &
+QUICPath::remote_ep() const
+{
+  return this->_remote_ep;
+}
+
+//
 // QUICConnectionId
 //
 QUICConnectionId
@@ -660,7 +678,7 @@ QUICInvariants::dcil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len)
     return false;
   }
 
-  dst = buf[QUICInvariants::LH_CIL_OFFSET] >> 4;
+  dst = buf[QUICInvariants::LH_CIL_OFFSET];
 
   return true;
 }
@@ -670,11 +688,12 @@ QUICInvariants::scil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len)
 {
   ink_assert(QUICInvariants::is_long_header(buf));
 
-  if (buf_len < QUICInvariants::LH_CIL_OFFSET) {
+  uint8_t dcil = 0;
+  if (!QUICInvariants::dcil(dcil, buf, buf_len)) {
     return false;
   }
 
-  dst = buf[QUICInvariants::LH_CIL_OFFSET] & 0x0F;
+  dst = buf[QUICInvariants::LH_CIL_OFFSET + 1 + dcil];
 
   return true;
 }
@@ -691,13 +710,12 @@ QUICInvariants::dcid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len
       return false;
     }
 
-    if (dcil) {
-      dcid_len = dcil + QUICInvariants::CIL_BASE;
-    } else {
+    if (dcil == 0) {
       dst = QUICConnectionId::ZERO();
       return true;
     }
 
+    dcid_len    = dcil;
     dcid_offset = QUICInvariants::LH_DCID_OFFSET;
   } else {
     // remote dcil is local scil
@@ -724,34 +742,30 @@ QUICInvariants::scid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len
   }
 
   uint8_t scid_offset = QUICInvariants::LH_DCID_OFFSET;
-  uint8_t scid_len    = 0;
 
   uint8_t dcil = 0;
   if (!QUICInvariants::dcil(dcil, buf, buf_len)) {
     return false;
   }
 
-  if (dcil) {
-    scid_offset += (dcil + QUICInvariants::CIL_BASE);
-  }
+  scid_offset += dcil;
 
   uint8_t scil = 0;
   if (!QUICInvariants::scil(scil, buf, buf_len)) {
     return false;
   }
+  scid_offset += 1;
 
-  if (scil) {
-    scid_len = scil + QUICInvariants::CIL_BASE;
-  } else {
+  if (scil == 0) {
     dst = QUICConnectionId::ZERO();
     return true;
   }
 
-  if (scid_offset + scid_len > buf_len) {
+  if (scid_offset + scil > buf_len) {
     return false;
   }
 
-  dst = QUICTypeUtil::read_QUICConnectionId(buf + scid_offset, scid_len);
+  dst = QUICTypeUtil::read_QUICConnectionId(buf + scid_offset, scil);
 
   return true;
 }

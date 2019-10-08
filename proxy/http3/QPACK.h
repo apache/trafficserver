@@ -151,12 +151,12 @@ private:
   {
   public:
     DecodeRequest(uint16_t largest_reference, EThread *thread, Continuation *continuation, uint64_t stream_id,
-                  const uint8_t *header_blcok, size_t header_block_len, HTTPHdr &hdr)
+                  const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr)
       : _largest_reference(largest_reference),
         _thread(thread),
         _continuation(continuation),
         _stream_id(stream_id),
-        _header_block(header_blcok),
+        _header_block(header_block),
         _header_block_len(header_block_len),
         _hdr(hdr)
     {
