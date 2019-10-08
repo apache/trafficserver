@@ -32,6 +32,8 @@ QUICPadder::request(QUICEncryptionLevel level)
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   ++this->_need_to_fire[static_cast<int>(level)];
+  // trigger event to send extra padding frame
+  this->_context->event_driver()->reenable(this);
 }
 
 void
@@ -69,7 +71,7 @@ QUICPadder::_generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t co
   QUICFrame *frame = nullptr;
 
   uint64_t min_size = 0;
-  if (level == QUICEncryptionLevel::INITIAL && this->_context == NET_VCONNECTION_OUT) {
+  if (level == QUICEncryptionLevel::INITIAL && this->_context->connection_info()->direction() == NET_VCONNECTION_OUT) {
     min_size = this->_minimum_quic_packet_size();
     if (this->_av_token_len && min_size > (QUICVariableInt::size(this->_av_token_len) + this->_av_token_len)) {
       min_size -= (QUICVariableInt::size(this->_av_token_len) + this->_av_token_len);
@@ -91,7 +93,7 @@ uint32_t
 QUICPadder::_minimum_quic_packet_size()
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
-  if (this->_context == NET_VCONNECTION_OUT) {
+  if (this->_context->connection_info()->direction() == NET_VCONNECTION_OUT) {
     // FIXME Only the first packet need to be 1200 bytes at least
     return MINIMUM_INITIAL_PACKET_SIZE;
   } else {

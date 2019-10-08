@@ -72,6 +72,7 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
   int ret = 0;
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   MockQUICContext context;
+  MockQUICEventDriver *driver = dynamic_cast<MockQUICEventDriver *>(context.event_driver());
   QUICLocalConnectionFlowController fc(&context, 1024);
 
   // Check initial state
@@ -116,6 +117,7 @@ TEST_CASE("QUICFlowController_Local_Connection", "[quic]")
   fc.forward_limit(2048);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 2048);
+  CHECK(driver->in(&fc));
   QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0, 0);
   CHECK(frame);
   CHECK(frame->type() == QUICFrameType::MAX_DATA);
@@ -131,6 +133,7 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
   int ret = 0;
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   MockQUICContext context;
+  MockQUICEventDriver *driver = dynamic_cast<MockQUICEventDriver *>(context.event_driver());
   QUICRemoteConnectionFlowController fc(&context, 1024);
 
   // Check initial state
@@ -169,6 +172,7 @@ TEST_CASE("QUICFlowController_Remote_Connection", "[quic]")
   CHECK(fc.current_offset() == 1000);
   CHECK(fc.current_limit() == 1024);
   CHECK(ret != 0);
+  CHECK(driver->in(&fc));
   QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0, 0);
   CHECK(frame);
   CHECK(frame->type() == QUICFrameType::DATA_BLOCKED);
@@ -189,6 +193,7 @@ TEST_CASE("QUICFlowController_Remote_Connection_ZERO_Credit", "[quic]")
   int ret = 0;
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   MockQUICContext context;
+  MockQUICEventDriver *driver = dynamic_cast<MockQUICEventDriver *>(context.event_driver());
   QUICRemoteConnectionFlowController fc(&context, 1024);
 
   // Check initial state
@@ -201,6 +206,7 @@ TEST_CASE("QUICFlowController_Remote_Connection_ZERO_Credit", "[quic]")
   CHECK(fc.current_limit() == 1024);
   CHECK(ret == 0);
 
+  CHECK(driver->in(&fc));
   CHECK(fc.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, true, 0));
   // if there're anything to send
   QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0, 0);
@@ -223,6 +229,7 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
   int ret = 0;
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
   MockQUICContext context;
+  MockQUICEventDriver *driver = dynamic_cast<MockQUICEventDriver *>(context.event_driver());
   QUICLocalStreamFlowController fc(&context, 1024, 0);
 
   // Check initial state
@@ -267,6 +274,7 @@ TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
   fc.forward_limit(2048);
   CHECK(fc.current_offset() == 1024);
   CHECK(fc.current_limit() == 2048);
+  CHECK(driver->in(&fc));
   QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0, 0);
   CHECK(frame);
   CHECK(frame->type() == QUICFrameType::MAX_STREAM_DATA);
@@ -281,6 +289,7 @@ TEST_CASE("QUICFlowController_Remote_Stream", "[quic]")
 {
   int ret = 0;
   MockQUICContext context;
+  MockQUICEventDriver *driver = dynamic_cast<MockQUICEventDriver *>(context.event_driver());
   QUICRemoteStreamFlowController fc(&context, 1024, 0);
 
   // Check initial state
@@ -309,6 +318,7 @@ TEST_CASE("QUICFlowController_Remote_Stream", "[quic]")
   CHECK(ret == 0);
 
   CHECK(fc.credit() == 0);
+  CHECK(driver->in(&fc));
   CHECK(fc.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, true, 0));
 
   // Delay
@@ -343,6 +353,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     int ret = 0;
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
     MockQUICContext context;
+    MockQUICEventDriver *driver = dynamic_cast<MockQUICEventDriver *>(context.event_driver());
     QUICRemoteConnectionFlowController fc(&context, 1024);
 
     // Check initial state
@@ -351,6 +362,7 @@ TEST_CASE("Frame retransmission", "[quic]")
 
     ret = fc.update(1024);
     CHECK(ret == 0);
+    CHECK(driver->in(&fc));
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICDataBlockedFrame *>(frame)->offset() == 1024);
@@ -362,6 +374,7 @@ TEST_CASE("Frame retransmission", "[quic]")
 
     // Retransmit
     fc.on_frame_lost(id);
+    CHECK(driver->in(&fc));
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICDataBlockedFrame *>(frame)->offset() == 1024);
@@ -374,7 +387,8 @@ TEST_CASE("Frame retransmission", "[quic]")
     CHECK(!frame);
 
     // This should not be retransmition
-    ret   = fc.update(2048);
+    ret = fc.update(2048);
+    CHECK(driver->in(&fc));
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICDataBlockedFrame *>(frame)->offset() == 2048);
@@ -385,6 +399,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     int ret = 0;
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
     MockQUICContext context;
+    MockQUICEventDriver *driver = dynamic_cast<MockQUICEventDriver *>(context.event_driver());
     QUICRemoteStreamFlowController fc(&context, 1024, 0);
 
     // Check initial state
@@ -394,6 +409,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     ret = fc.update(1024);
     CHECK(ret == 0);
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
+    CHECK(driver->in(&fc));
     REQUIRE(frame);
     CHECK(static_cast<QUICStreamDataBlockedFrame *>(frame)->offset() == 1024);
     QUICFrameId id = frame->id();
@@ -404,6 +420,7 @@ TEST_CASE("Frame retransmission", "[quic]")
 
     // Retransmit
     fc.on_frame_lost(id);
+    CHECK(driver->in(&fc));
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
     CHECK(static_cast<QUICStreamDataBlockedFrame *>(frame)->offset() == 1024);
@@ -418,6 +435,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     // This should not be retransmition
     ret   = fc.update(2048);
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
+    CHECK(driver->in(&fc));
     REQUIRE(frame);
     CHECK(static_cast<QUICStreamDataBlockedFrame *>(frame)->offset() == 2048);
   }
@@ -426,6 +444,7 @@ TEST_CASE("Frame retransmission", "[quic]")
   {
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
     MockQUICContext context;
+    MockQUICEventDriver *driver = dynamic_cast<MockQUICEventDriver *>(context.event_driver());
     QUICLocalConnectionFlowController fc(&context, 1024);
 
     // Check initial state
@@ -436,6 +455,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     fc.forward_limit(1024);
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
+    CHECK(driver->in(&fc));
     CHECK(static_cast<QUICMaxDataFrame *>(frame)->maximum_data() == 1024);
     QUICFrameId id = frame->id();
 
@@ -446,6 +466,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     // Retransmit
     fc.on_frame_lost(id);
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
+    CHECK(driver->in(&fc));
     REQUIRE(frame);
     CHECK(static_cast<QUICMaxDataFrame *>(frame)->maximum_data() == 1024);
 
@@ -454,6 +475,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     fc.forward_limit(2048);
     fc.update(2048);
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
+    CHECK(driver->in(&fc));
     REQUIRE(frame);
     CHECK(static_cast<QUICMaxDataFrame *>(frame)->maximum_data() == 2048);
   }
@@ -462,6 +484,7 @@ TEST_CASE("Frame retransmission", "[quic]")
   {
     uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
     MockQUICContext context;
+    MockQUICEventDriver *driver = dynamic_cast<MockQUICEventDriver *>(context.event_driver());
     QUICLocalStreamFlowController fc(&context, 1024, 0);
 
     // Check initial state
@@ -472,6 +495,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     fc.forward_limit(1024);
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
+    CHECK(driver->in(&fc));
     CHECK(static_cast<QUICMaxStreamDataFrame *>(frame)->maximum_stream_data() == 1024);
     QUICFrameId id = frame->id();
 
@@ -483,6 +507,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     fc.on_frame_lost(id);
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
+    CHECK(driver->in(&fc));
     CHECK(static_cast<QUICMaxStreamDataFrame *>(frame)->maximum_stream_data() == 1024);
 
     // Send new one if it was updated
@@ -490,6 +515,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     fc.forward_limit(2048);
     fc.update(2048);
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
+    CHECK(driver->in(&fc));
     REQUIRE(frame);
     CHECK(static_cast<QUICMaxStreamDataFrame *>(frame)->maximum_stream_data() == 2048);
   }

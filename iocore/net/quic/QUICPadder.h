@@ -52,6 +52,5 @@ private:
 
   uint32_t _av_token_len = 0;
   // Initial, 0/1-RTT, and Handshake
-  uint64_t _need_to_fire[4]        = {0};
-  NetVConnectionContext_t _context = NET_VCONNECTION_OUT;
+  uint64_t _need_to_fire[4] = {0};
 };

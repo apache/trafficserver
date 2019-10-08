@@ -149,6 +149,7 @@ QUICRemoteFlowController::update(QUICOffset offset)
   if (offset >= this->_limit) {
     this->_should_create_frame = true;
     this->_blocked             = true;
+    this->_context->event_driver()->reenable(this);
   }
 
   return ret;
@@ -160,6 +161,7 @@ QUICRemoteFlowController::_on_frame_lost(QUICFrameInformationUPtr &info)
   ink_assert(info->type == QUICFrameType::DATA_BLOCKED || info->type == QUICFrameType::STREAM_DATA_BLOCKED);
   if (this->_offset == *reinterpret_cast<QUICOffset *>(info->data)) {
     this->_should_create_frame = true;
+    this->_context->event_driver()->reenable(this);
   }
 }
 
@@ -179,6 +181,7 @@ QUICLocalFlowController::forward_limit(QUICOffset new_limit)
   if (this->_need_to_forward_limit()) {
     QUICFlowController::forward_limit(new_limit);
     this->_should_create_frame = true;
+    this->_context->event_driver()->reenable(this);
   }
 }
 
@@ -203,6 +206,7 @@ QUICLocalFlowController::_on_frame_lost(QUICFrameInformationUPtr &info)
   ink_assert(info->type == QUICFrameType::MAX_DATA || info->type == QUICFrameType::MAX_STREAM_DATA);
   if (this->_limit == *reinterpret_cast<QUICOffset *>(info->data)) {
     this->_should_create_frame = true;
+    this->_context->event_driver()->reenable(this);
   }
 }
 

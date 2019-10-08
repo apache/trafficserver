@@ -98,6 +98,7 @@ QUICCryptoStream::read(uint8_t *buf, int64_t len)
 int64_t
 QUICCryptoStream::write(const uint8_t *buf, int64_t len)
 {
+  this->_context->event_driver()->reenable(this);
   return this->_write_buffer->write(buf, len);
 }
 
@@ -163,5 +164,6 @@ void
 QUICCryptoStream::_on_frame_lost(QUICFrameInformationUPtr &info)
 {
   ink_assert(info->type == QUICFrameType::CRYPTO);
+  this->_context->event_driver()->reenable(this);
   this->save_frame_info(std::move(info));
 }
