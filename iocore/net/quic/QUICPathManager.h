@@ -23,30 +23,31 @@
 
 #pragma once
 
-#include <vector>
 #include "QUICTypes.h"
-#include "QUICFrameHandler.h"
-#include "QUICFrameGenerator.h"
 
-#include "I_Lock.h"
+class QUICConnectionInfoProvider;
+class QUICPathValidator;
 
-class QUICPinger : public QUICFrameOnceGenerator
+class QUICPathManager
 {
 public:
-  QUICPinger() : _mutex(new_ProxyMutex()) {}
+  QUICPathManager(const QUICConnectionInfoProvider &info, QUICPathValidator &path_validator)
+    : _cinfo(info), _path_validator(path_validator)
+  {
+  }
 
-  void request();
-  void cancel();
-  uint64_t count();
+  const QUICPath &get_current_path();
+  const QUICPath &get_verified_path();
+  void open_new_path(const QUICPath &path, ink_hrtime timeout_in);
+  void set_trusted_path(const QUICPath &path);
 
 private:
-  // QUICFrameGenerator
-  bool _will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting) override;
-  QUICFrame *_generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
-                             size_t current_packet_size) override;
+  const QUICConnectionInfoProvider &_cinfo;
+  QUICPathValidator &_path_validator;
 
-  bool _ack_eliciting_packet_out = false;
+  ink_hrtime _verify_timeout_at = 0;
+  QUICPath _current_path        = {{}, {}};
+  QUICPath _previous_path       = {{}, {}};
 
-  Ptr<ProxyMutex> _mutex;
-  uint64_t _need_to_fire = 0;
+  void _check_verify_timeout();
 };

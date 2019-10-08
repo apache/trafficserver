@@ -96,7 +96,7 @@ QUICFlowController::set_limit(QUICOffset limit)
 
 // For RemoteFlowController, caller of this function should also check QUICStreamManager::will_generate_frame()
 bool
-QUICFlowController::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICFlowController::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;
@@ -110,7 +110,7 @@ QUICFlowController::will_generate_frame(QUICEncryptionLevel level, ink_hrtime ti
  */
 QUICFrame *
 QUICFlowController::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
-                                   uint16_t maximum_frame_size, ink_hrtime timestamp)
+                                   uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
 

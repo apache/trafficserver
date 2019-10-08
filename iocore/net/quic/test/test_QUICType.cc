@@ -30,6 +30,74 @@
 
 TEST_CASE("QUICType", "[quic]")
 {
+  SECTION("QUICPath")
+  {
+    IpEndpoint local_a, local_b, remote_a, remote_b;
+    QUICPath path_a = {{}, {}}, path_b = {{}, {}};
+
+    // The same addresses and ports -> TRUE
+    ats_ip_pton("192.168.0.1:4433", &local_a);
+    ats_ip_pton("192.168.1.1:12345", &remote_a);
+    ats_ip_pton("192.168.0.1:4433", &local_b);
+    ats_ip_pton("192.168.1.1:12345", &remote_b);
+    path_a = {local_a, remote_a};
+    path_b = {local_b, remote_b};
+    CHECK(path_a == path_b);
+    CHECK(path_b == path_a);
+    path_a = {remote_a, local_a};
+    path_b = {remote_b, local_b};
+    CHECK(path_a == path_b);
+    CHECK(path_b == path_a);
+
+    // Different ports -> FALSE
+    ats_ip_pton("192.168.0.1:4433", &local_a);
+    ats_ip_pton("192.168.1.1:12345", &remote_a);
+    ats_ip_pton("192.168.0.1:4433", &local_b);
+    ats_ip_pton("192.168.1.1:54321", &remote_b);
+    path_a = {local_a, remote_a};
+    path_b = {local_b, remote_b};
+    CHECK(!(path_a == path_b));
+    CHECK(!(path_b == path_a));
+    path_a = {remote_a, local_a};
+    path_b = {remote_b, local_b};
+    CHECK(!(path_a == path_b));
+    CHECK(!(path_b == path_a));
+
+    // Different addresses but the same ports -> FALSE
+    ats_ip_pton("192.168.0.1:4433", &local_a);
+    ats_ip_pton("192.168.1.1:12345", &remote_a);
+    ats_ip_pton("192.168.0.1:4433", &local_b);
+    ats_ip_pton("192.168.2.1:12345", &remote_b);
+    path_a = {local_a, remote_a};
+    path_b = {local_b, remote_b};
+    CHECK(!(path_a == path_b));
+    CHECK(!(path_b == path_a));
+    path_a = {remote_a, local_a};
+    path_b = {remote_b, local_b};
+    CHECK(!(path_a == path_b));
+    CHECK(!(path_b == path_a));
+
+    // Server local address is any -> TRUE
+    ats_ip_pton("0.0.0.0:4433", &local_a);
+    ats_ip_pton("192.168.1.1:12345", &remote_a);
+    ats_ip_pton("192.168.0.1:4433", &local_b);
+    ats_ip_pton("192.168.1.1:12345", &remote_b);
+    path_a = {local_a, remote_a};
+    path_b = {local_b, remote_b};
+    CHECK(path_a == path_b);
+    CHECK(path_b == path_a);
+
+    // Client local address and port are any -> TRUE
+    ats_ip_pton("0.0.0.0:0", &local_a);
+    ats_ip_pton("192.168.1.1:12345", &remote_a);
+    ats_ip_pton("192.168.0.1:4433", &local_b);
+    ats_ip_pton("192.168.1.1:12345", &remote_b);
+    path_a = {local_a, remote_a};
+    path_b = {local_b, remote_b};
+    CHECK(path_a == path_b);
+    CHECK(path_b == path_a);
+  }
+
   SECTION("QUICRetryToken")
   {
     IpEndpoint ep;

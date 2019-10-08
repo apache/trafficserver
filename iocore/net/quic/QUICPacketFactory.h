@@ -52,7 +52,7 @@ public:
 
   QUICPacketFactory(const QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info), _pp_protector(pp_key_info) {}
 
-  QUICPacketUPtr create(UDPConnection *udp_con, IpEndpoint from, ats_unique_buf buf, size_t len,
+  QUICPacketUPtr create(UDPConnection *udp_con, IpEndpoint from, IpEndpoint to, ats_unique_buf buf, size_t len,
                         QUICPacketNumber base_packet_number, QUICPacketCreationResult &result);
   QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len, bool ack_eliciting,

@@ -50,10 +50,11 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   uint8_t expected[] = {
     0xa7,                                           // Long header, Type: NONE
     0x00, 0x00, 0x00, 0x00,                         // Version
-    0x55,                                           // DCIL/SCIL
+    0x08,                                           // DCID Len
     0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Destination Connection ID
+    0x08,                                           // SCID Len
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Source Connection ID
-    0xff, 0x00, 0x00, 0x14,                         // Supported Version
+    0xff, 0x00, 0x00, 0x17,                         // Supported Version
     0x1a, 0x2a, 0x3a, 0x4a,                         // Excercise Version
   };
   uint8_t buf[1024] = {0};

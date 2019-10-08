@@ -51,7 +51,7 @@ static constexpr uint8_t kPacketNumberSpace = 3;
 // Note: Fix QUIC_ALPN_PROTO_LIST in QUICConfig.cc
 // Note: Change ExtensionType (QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID) if it's changed
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
-  0xff000014,
+  0xff000017,
 };
 constexpr QUICVersion QUIC_EXERCISE_VERSION = 0x1a2a3a4a;
 
@@ -75,9 +75,10 @@ constexpr QUICEncryptionLevel QUIC_ENCRYPTION_LEVELS[] = {
 
 // introduce by draft-19 kPacketNumberSpace
 enum class QUICPacketNumberSpace {
-  Initial,
-  Handshake,
-  ApplicationData,
+  None            = -1,
+  Initial         = 0,
+  Handshake       = 1,
+  ApplicationData = 2,
 };
 
 // Devide to QUICPacketType and QUICPacketLongHeaderType ?
@@ -147,24 +148,23 @@ enum class QUICErrorClass {
   APPLICATION,
 };
 
-enum class QUICTransErrorCode : uint16_t {
+enum class QUICTransErrorCode : uint64_t {
   NO_ERROR = 0x00,
   INTERNAL_ERROR,
   SERVER_BUSY,
   FLOW_CONTROL_ERROR,
-  STREAM_ID_ERROR,
+  STREAM_LIMIT_ERROR,
   STREAM_STATE_ERROR,
-  FINAL_OFFSET_ERROR,
+  FINAL_SIZE_ERROR,
   FRAME_ENCODING_ERROR,
   TRANSPORT_PARAMETER_ERROR,
-  VERSION_NEGOTIATION_ERROR,
-  PROTOCOL_VIOLATION,
-  INVALID_MIGRATION = 0x0C,
-  CRYPTO_ERROR      = 0x0100, // 0x100 - 0x1FF
+  PROTOCOL_VIOLATION     = 0x0A,
+  CRYPTO_BUFFER_EXCEEDED = 0x0D,
+  CRYPTO_ERROR           = 0x0100, // 0x100 - 0x1FF
 };
 
 // Application Protocol Error Codes defined in application
-using QUICAppErrorCode                          = uint16_t;
+using QUICAppErrorCode                          = uint64_t;
 constexpr uint16_t QUIC_APP_ERROR_CODE_STOPPING = 0;
 
 class QUICError
@@ -225,7 +225,7 @@ public:
   static uint8_t SCID_LEN;
 
   static const int MIN_LENGTH_FOR_INITIAL = 8;
-  static const int MAX_LENGTH             = 18;
+  static const int MAX_LENGTH             = 20;
   static const size_t MAX_HEX_STR_LENGTH  = MAX_LENGTH * 2 + 1;
   static QUICConnectionId ZERO();
   QUICConnectionId();
@@ -398,8 +398,8 @@ private:
 class QUICPreferredAddress
 {
 public:
-  constexpr static int16_t MIN_LEN = 26;
-  constexpr static int16_t MAX_LEN = 295;
+  constexpr static int16_t MIN_LEN = 41;
+  constexpr static int16_t MAX_LEN = 61;
 
   QUICPreferredAddress(IpEndpoint endpoint_ipv4, IpEndpoint endpoint_ipv6, const QUICConnectionId &cid,
                        QUICStatelessResetToken token)
@@ -419,8 +419,8 @@ public:
   void store(uint8_t *buf, uint16_t &len) const;
 
 private:
-  IpEndpoint _endpoint_ipv4;
-  IpEndpoint _endpoint_ipv6;
+  IpEndpoint _endpoint_ipv4 = {};
+  IpEndpoint _endpoint_ipv6 = {};
   QUICConnectionId _cid;
   QUICStatelessResetToken _token;
   bool _valid = false;
@@ -457,6 +457,61 @@ private:
   uint64_t _hash_code = 0;
 };
 
+class QUICPath
+{
+public:
+  QUICPath(IpEndpoint local_ep, IpEndpoint remote_ep);
+  const IpEndpoint &local_ep() const;
+  const IpEndpoint &remote_ep() const;
+
+  inline bool
+  operator==(const QUICPath &x) const
+  {
+    if ((this->_local_ep.port() != 0 && x._local_ep.port() != 0) && this->_local_ep.port() != x._local_ep.port()) {
+      return false;
+    }
+
+    if ((this->_remote_ep.port() != 0 && x._remote_ep.port() != 0) && this->_remote_ep.port() != x._remote_ep.port()) {
+      return false;
+    }
+
+    if ((!IpAddr(this->_local_ep).isAnyAddr() && !IpAddr(x._local_ep).isAnyAddr()) && this->_local_ep != x._local_ep) {
+      return false;
+    }
+
+    if ((!IpAddr(this->_remote_ep).isAnyAddr() || !IpAddr(x._remote_ep).isAnyAddr()) && this->_remote_ep != x._remote_ep) {
+      return false;
+    }
+
+    return true;
+  }
+
+private:
+  IpEndpoint _local_ep;
+  IpEndpoint _remote_ep;
+};
+
+class QUICPathHasher
+{
+public:
+  std::size_t
+  operator()(const QUICPath &k) const
+  {
+    return k.remote_ep().port();
+  }
+};
+
+class QUICPathValidationData
+{
+public:
+  QUICPathValidationData(const uint8_t *data) { memcpy(this->_data, data, sizeof(this->_data)); }
+
+  inline operator const uint8_t *() const { return this->_data; }
+
+private:
+  uint8_t _data[8];
+};
+
 class QUICTPConfig
 {
 public:
@@ -471,11 +526,13 @@ public:
   virtual uint64_t initial_max_streams_uni() const             = 0;
   virtual uint8_t ack_delay_exponent() const                   = 0;
   virtual uint8_t max_ack_delay() const                        = 0;
+  virtual uint8_t active_cid_limit() const                     = 0;
 };
 
 class QUICLDConfig
 {
 public:
+  virtual ~QUICLDConfig() {}
   virtual uint32_t packet_threshold() const = 0;
   virtual float time_threshold() const      = 0;
   virtual ink_hrtime granularity() const    = 0;
@@ -485,6 +542,7 @@ public:
 class QUICCCConfig
 {
 public:
+  virtual ~QUICCCConfig() {}
   virtual uint32_t max_datagram_size() const               = 0;
   virtual uint32_t initial_window() const                  = 0;
   virtual uint32_t minimum_window() const                  = 0;
@@ -520,7 +578,7 @@ public:
   static void write_QUICVersion(QUICVersion version, uint8_t *buf, size_t *len);
   static void write_QUICStreamId(QUICStreamId stream_id, uint8_t *buf, size_t *len);
   static void write_QUICOffset(QUICOffset offset, uint8_t *buf, size_t *len);
-  static void write_QUICTransErrorCode(uint16_t error_code, uint8_t *buf, size_t *len);
+  static void write_QUICTransErrorCode(uint64_t error_code, uint8_t *buf, size_t *len);
   static void write_QUICAppErrorCode(QUICAppErrorCode error_code, uint8_t *buf, size_t *len);
   static void write_QUICMaxData(uint64_t max_data, uint8_t *buf, size_t *len);
 
@@ -533,18 +591,11 @@ public:
   static bool is_long_header(const uint8_t *buf);
   static bool is_version_negotiation(QUICVersion v);
   static bool version(QUICVersion &dst, const uint8_t *buf, uint64_t buf_len);
-  /**
-   * This function returns the raw value. You'll need to add 3 to the returned value to get the actual connection id length.
-   */
   static bool dcil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len);
-  /**
-   * This function returns the raw value. You'll need to add 3 to the returned value to get the actual connection id length.
-   */
   static bool scil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len);
   static bool dcid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len);
   static bool scid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len);
 
-  static const size_t CIL_BASE          = 3;
   static const size_t LH_VERSION_OFFSET = 1;
   static const size_t LH_CIL_OFFSET     = 5;
   static const size_t LH_DCID_OFFSET    = 6;

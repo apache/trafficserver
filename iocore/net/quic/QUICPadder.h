@@ -23,30 +23,35 @@
 
 #pragma once
 
-#include <vector>
 #include "QUICTypes.h"
 #include "QUICFrameHandler.h"
 #include "QUICFrameGenerator.h"
 
 #include "I_Lock.h"
 
-class QUICPinger : public QUICFrameOnceGenerator
+class QUICPadder : public QUICFrameOnceGenerator
 {
 public:
-  QUICPinger() : _mutex(new_ProxyMutex()) {}
+  QUICPadder(NetVConnectionContext_t context) : _mutex(new_ProxyMutex()), _context(context) {}
 
-  void request();
-  void cancel();
-  uint64_t count();
+  void request(QUICEncryptionLevel level);
+  void cancel(QUICEncryptionLevel level);
+  uint64_t count(QUICEncryptionLevel level);
+  void set_av_token_len(uint32_t len);
 
 private:
+  uint32_t _minimum_quic_packet_size();
+
   // QUICFrameGenerator
   bool _will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting) override;
   QUICFrame *_generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
                              size_t current_packet_size) override;
 
-  bool _ack_eliciting_packet_out = false;
-
   Ptr<ProxyMutex> _mutex;
-  uint64_t _need_to_fire = 0;
+  std::random_device _rnd;
+
+  uint32_t _av_token_len = 0;
+  // Initial, 0/1-RTT, and Handshake
+  uint64_t _need_to_fire[4]        = {0};
+  NetVConnectionContext_t _context = NET_VCONNECTION_OUT;
 };

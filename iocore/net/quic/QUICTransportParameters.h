@@ -46,8 +46,9 @@ public:
     INITIAL_MAX_STREAMS_UNI,
     ACK_DELAY_EXPONENT,
     MAX_ACK_DELAY,
-    DISABLE_MIGRATION,
+    DISABLE_ACTIVE_MIGRATION,
     PREFERRED_ADDRESS,
+    ACTIVE_CONNECTION_ID_LIMIT,
   };
 
   explicit operator bool() const { return true; }
