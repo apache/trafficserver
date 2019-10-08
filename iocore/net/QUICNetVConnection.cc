@@ -1511,7 +1511,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   bool crypto        = false;
   uint8_t frame_instance_buffer[QUICFrame::MAX_INSTANCE_SIZE]; // This is for a frame instance but not serialized frame data
   QUICFrame *frame = nullptr;
-  for (auto g : this->_frame_generators.generators()) {
+  for (auto g = this->_event_driver->front(); g != nullptr;) {
     // a non-ack_eliciting packet is ready, but we can not send continuous two ack_eliciting packets.
     while (g->will_generate_frame(level, len, ack_eliciting, seq_num)) {
       // FIXME will_generate_frame should receive more parameters so we don't need extra checks
@@ -1574,6 +1574,12 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
         break;
       }
     }
+
+    if (g->will_generate_frame(level, UINT32_MAX, true, seq_num)) {
+      break;
+    }
+
+    this->_event_driver->dequeue();
   }
 
   // Schedule a packet

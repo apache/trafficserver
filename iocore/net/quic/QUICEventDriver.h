@@ -1,6 +1,7 @@
 #pragma once
 
 #include "P_EventSystem.h"
+#include "QUICEvents.h"
 
 #include <list>
 
@@ -24,7 +25,7 @@ public:
   {
     this->_generators.push_back(generator);
     if (this->_event == nullptr) {
-      this->_event = this_ethread()->schedule_imm(this);
+      this->_event = this_ethread()->schedule_imm(this, QUIC_EVENT_PACKET_WRITE_READY);
     }
   }
 
@@ -34,17 +35,6 @@ public:
     ink_assert(this->_event == data);
     this->_event = nullptr;
     this->_parent.handleEvent(event, data);
-  }
-
-  std::list<QUICFrameGenerator *>::iterator
-  begin()
-  {
-    return this->_generators.begin();
-  }
-  std::list<QUICFrameGenerator *>::iterator
-  end()
-  {
-    return this->_generators.end();
   }
 
   QUICFrameGenerator *
@@ -57,6 +47,12 @@ public:
     auto generator = this->_generators.front();
     this->_generators.pop_front();
     return generator;
+  }
+
+  void
+  push_front(QUICFrameGenerator *g)
+  {
+    this->_generators.push_front(g);
   }
 
   QUICFrameGenerator *

@@ -30,6 +30,7 @@ static constexpr QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 static uint8_t frame[1024]                 = {0};
 
 MockQUICContext context;
+MockQUICEventDriver *driver = dynamic_cast<MockQUICEventDriver *>(context.event_driver());
 
 TEST_CASE("QUICPinger", "[quic]")
 {
@@ -38,7 +39,9 @@ TEST_CASE("QUICPinger", "[quic]")
     QUICPinger pinger(&context);
     pinger.request();
     REQUIRE(pinger.count() == 1);
+    CHECK(driver->in(&pinger));
     pinger.request();
+    CHECK(driver->in(&pinger));
     REQUIRE(pinger.count() == 2);
     pinger.cancel();
     REQUIRE(pinger.count() == 1);
@@ -50,9 +53,11 @@ TEST_CASE("QUICPinger", "[quic]")
   {
     QUICPinger pinger(&context);
     pinger.request();
+    CHECK(driver->in(&pinger));
     REQUIRE(pinger.count() == 1);
     pinger.request();
     REQUIRE(pinger.count() == 2);
+    CHECK(driver->in(&pinger));
     REQUIRE(pinger.will_generate_frame(level, UINT64_MAX, false, 0) == true);
     REQUIRE(pinger.count() == 2);
     REQUIRE(pinger.will_generate_frame(level, UINT64_MAX, false, 0) == false);
@@ -63,8 +68,10 @@ TEST_CASE("QUICPinger", "[quic]")
   {
     QUICPinger pinger(&context);
     pinger.request();
+    CHECK(driver->in(&pinger));
     REQUIRE(pinger.count() == 1);
     pinger.request();
+    CHECK(driver->in(&pinger));
     REQUIRE(pinger.count() == 2);
     REQUIRE(pinger.will_generate_frame(level, UINT64_MAX, true, 0) == false);
     REQUIRE(pinger.count() == 1);

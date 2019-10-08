@@ -293,32 +293,26 @@ class MockQUICEventDriver final : public QUICEventDriver
 {
 public:
   void
-  reenable_write() override
+  reenable(QUICFrameGenerator *g)
   {
-    write_enable = true;
+    this->_generators.push_back(g);
   }
 
   bool
-  is_event_pending() const override
+  in(QUICFrameGenerator *g)
   {
-    return write_event_pending;
+    for (auto a : this->_generators) {
+      if (a == g) {
+        this->_generators.remove(a);
+        return true;
+      }
+    }
+
+    return false;
   }
 
-  void
-  set_write_event_pending(bool pend = true) override
-  {
-    write_event_pending = pend;
-  }
-
-  void
-  reset()
-  {
-    write_event_pending = false;
-    write_enable        = false;
-  }
-
-  bool write_event_pending = false;
-  bool write_enable        = false;
+private:
+  std::list<QUICFrameGenerator *> _generators;
 };
 
 class MockQUICContext final : public QUICContext

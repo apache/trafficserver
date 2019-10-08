@@ -28,6 +28,7 @@ QUICPinger::request()
 {
   SCOPED_MUTEX_LOCK(lock, this->_mutex, this_ethread());
   ++this->_need_to_fire;
+  this->_context->event_driver()->reenable(this);
 }
 
 void
