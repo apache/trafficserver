@@ -356,7 +356,9 @@ void
 QUICNetVConnection::start()
 {
   ink_release_assert(this->thread != nullptr);
-  this->_context = std::make_unique<QUICContextImpl>(&this->_rtt_measure, this, &this->_pp_key_info, this);
+
+  this->_event_driver = std::make_unique<QUICEventDriverImpl>(*this);
+  this->_context = std::make_unique<QUICContextImpl>(&this->_rtt_measure, this, &this->_pp_key_info, this->_event_driver.get());
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   QUICPath trusted_path = {{}, {}};
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
@@ -2265,22 +2267,4 @@ QUICNetVConnection::_handle_periodic_ack_event()
     // FIXME: should sent depend on socket event.
     this->_schedule_packet_write_ready();
   }
-}
-
-void
-QUICNetVConnection::set_write_event_pending(bool pend)
-{
-  this->_write_event_pending = pend;
-}
-
-bool
-QUICNetVConnection::is_event_pending() const
-{
-  return this->_write_event_pending;
-}
-
-void
-QUICNetVConnection::reenable_write()
-{
-  this->_schedule_packet_write_ready();
 }
