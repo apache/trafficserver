@@ -408,10 +408,10 @@ QUICNetVConnection::start()
       this->ping();
     }
   });
-  this->_stream_manager         = new QUICStreamManager(this, &this->_rtt_measure, this->_application_map);
   this->_path_manager           = new QUICPathManager(*this, *this->_path_validator);
   this->_path_manager->set_trusted_path(trusted_path);
-  this->_token_creator = new QUICTokenCreator(this->_context.get());
+  this->_stream_manager = new QUICStreamManager(this, &this->_rtt_measure, this->_path_manager, this->_application_map);
+  this->_token_creator  = new QUICTokenCreator(this->_context.get());
 
   static constexpr int QUIC_STREAM_MANAGER_WEIGHT = QUICFrameGeneratorWeight::AFTER_DATA - 1;
   static constexpr int QUIC_PINGER_WEIGHT         = QUICFrameGeneratorWeight::LATE + 1;
@@ -1514,14 +1514,6 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
       // FIXME will_generate_frame should receive more parameters so we don't need extra checks
       if (g == this->_remote_flow_controller && !this->_stream_manager->will_generate_frame(level, len, ack_eliciting, seq_num)) {
         break;
-      }
-
-      if (g == this->_stream_manager) {
-        // Don't send DATA frames if current path is not validated
-        // FIXME will_generate_frame should receive more parameters so we don't need extra checks
-        if (auto path = this->_path_manager->get_verified_path(); !path.remote_ep().isValid()) {
-          break;
-        }
       }
 
       // Common block
