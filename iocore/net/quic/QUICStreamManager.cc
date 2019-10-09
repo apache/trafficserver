@@ -29,8 +29,9 @@
 static constexpr char tag[]                     = "quic_stream_manager";
 static constexpr QUICStreamId QUIC_STREAM_TYPES = 4;
 
-QUICStreamManager::QUICStreamManager(QUICConnectionInfoProvider *info, QUICRTTProvider *rtt_provider, QUICApplicationMap *app_map)
-  : _stream_factory(rtt_provider, info), _info(info), _app_map(app_map)
+QUICStreamManager::QUICStreamManager(QUICConnectionInfoProvider *info, QUICRTTProvider *rtt_provider, QUICPathManager *path_manager,
+                                     QUICApplicationMap *app_map)
+  : _stream_factory(rtt_provider, info), _path_manager(path_manager), _info(info), _app_map(app_map)
 {
   if (this->_info->direction() == NET_VCONNECTION_OUT) {
     this->_next_stream_id_bidi = static_cast<uint32_t>(QUICStreamType::CLIENT_BIDI);
@@ -413,6 +414,11 @@ QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, size_t current
 
   // workaround fix until support 0-RTT on client
   if (level == QUICEncryptionLevel::ZERO_RTT) {
+    return false;
+  }
+
+  // Don't send DATA frames if current path is not validated
+  if (!this->_path_manager->get_verified_path().remote_ep().isValid()) {
     return false;
   }
 

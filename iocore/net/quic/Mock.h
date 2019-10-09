@@ -169,7 +169,7 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
 class MockQUICStreamManager : public QUICStreamManager
 {
 public:
-  MockQUICStreamManager(QUICConnectionInfoProvider *info) : QUICStreamManager(info, nullptr, nullptr) {}
+  MockQUICStreamManager(QUICConnectionInfoProvider *info) : QUICStreamManager(info, nullptr, nullptr, nullptr) {}
 
   // Override
   virtual QUICConnectionErrorUPtr
