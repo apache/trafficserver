@@ -420,9 +420,9 @@ Http2Stream::terminate_if_possible()
   if (terminate_stream && reentrancy_count == 0) {
     REMEMBER(NO_EVENT, this->reentrancy_count);
 
-    Http2ClientSession *h2_parent = static_cast<Http2ClientSession *>(_proxy_ssn);
-    SCOPED_MUTEX_LOCK(lock, h2_parent->connection_state.mutex, this_ethread());
-    h2_parent->connection_state.delete_stream(this);
+    Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
+    SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+    h2_proxy_ssn->connection_state.delete_stream(this);
     destroy();
   }
 }
@@ -585,7 +585,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
   }
   ink_release_assert(this->_thread == this_ethread());
 
-  Http2ClientSession *_proxy_ssn = static_cast<Http2ClientSession *>(this->get_proxy_ssn());
+  Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
 
   SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
 
@@ -641,17 +641,17 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
         int len;
         const char *value = field->value_get(&len);
         if (memcmp(HTTP_VALUE_CLOSE, value, HTTP_LEN_CLOSE) == 0) {
-          SCOPED_MUTEX_LOCK(lock, _proxy_ssn->connection_state.mutex, this_ethread());
-          if (_proxy_ssn->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
-            _proxy_ssn->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+          SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+          if (h2_proxy_ssn->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
+            h2_proxy_ssn->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
           }
         }
       }
 
       {
-        SCOPED_MUTEX_LOCK(lock, _proxy_ssn->connection_state.mutex, this_ethread());
+        SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
         // Send the response header back
-        _proxy_ssn->connection_state.send_headers_frame(this);
+        h2_proxy_ssn->connection_state.send_headers_frame(this);
       }
 
       // See if the response is chunked.  Set up the dechunking logic if it is
@@ -714,25 +714,25 @@ Http2Stream::signal_write_event(bool call_update)
 void
 Http2Stream::push_promise(URL &url, const MIMEField *accept_encoding)
 {
-  Http2ClientSession *_proxy_ssn = static_cast<Http2ClientSession *>(this->get_proxy_ssn());
-  SCOPED_MUTEX_LOCK(lock, _proxy_ssn->connection_state.mutex, this_ethread());
-  _proxy_ssn->connection_state.send_push_promise_frame(this, url, accept_encoding);
+  Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
+  SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+  h2_proxy_ssn->connection_state.send_push_promise_frame(this, url, accept_encoding);
 }
 
 void
 Http2Stream::send_response_body(bool call_update)
 {
-  Http2ClientSession *_proxy_ssn = static_cast<Http2ClientSession *>(this->get_proxy_ssn());
-  inactive_timeout_at            = Thread::get_hrtime() + inactive_timeout;
+  Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
+  inactive_timeout_at              = Thread::get_hrtime() + inactive_timeout;
 
   if (Http2::stream_priority_enabled) {
-    SCOPED_MUTEX_LOCK(lock, _proxy_ssn->connection_state.mutex, this_ethread());
-    _proxy_ssn->connection_state.schedule_stream(this);
+    SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+    h2_proxy_ssn->connection_state.schedule_stream(this);
     // signal_write_event() will be called from `Http2ConnectionState::send_data_frames_depends_on_priority()`
     // when write_vio is consumed
   } else {
-    SCOPED_MUTEX_LOCK(lock, _proxy_ssn->connection_state.mutex, this_ethread());
-    _proxy_ssn->connection_state.send_data_frames(this);
+    SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+    h2_proxy_ssn->connection_state.send_data_frames(this);
     this->signal_write_event(call_update);
     // XXX The call to signal_write_event can destroy/free the Http2Stream.
     // Don't modify the Http2Stream after calling this method.
