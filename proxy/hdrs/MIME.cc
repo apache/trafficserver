@@ -485,6 +485,8 @@ mime_hdr_set_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
     return;
   }
 
+  ink_assert(mh);
+
   mime_hdr_presence_set(mh, field->m_wks_idx);
 
   slot_id = hdrtoken_index_to_slotid(field->m_wks_idx);
@@ -1570,6 +1572,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
 void
 mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
 {
+  ink_assert(mh);
   MIMEField *next_dup = field->m_next_dup;
 
   // If this field is already detached, there's nothing to do. There must
