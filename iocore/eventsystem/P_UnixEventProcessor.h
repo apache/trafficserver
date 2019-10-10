@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <tscore/TSSystemState.h>
+
 #include "tscore/ink_align.h"
 #include "I_EventProcessor.h"
 
@@ -90,6 +92,10 @@ TS_INLINE Event *
 EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
 {
   ink_assert(etype < MAX_EVENT_TYPES);
+
+  if (TSSystemState::is_event_system_shut_down()) {
+    return nullptr;
+  }
 
   EThread *ethread = e->continuation->getThreadAffinity();
   if (ethread != nullptr && ethread->is_event_type(etype)) {
