@@ -44,6 +44,7 @@
 #include "IPAllow.h"
 #include "tscore/I_Layout.h"
 #include "tscore/bwf_std_format.h"
+#include "ts/sdt.h"
 
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>
@@ -1764,6 +1765,8 @@ HttpSM::state_http_server_open(int event, void *data)
     pending_action = nullptr;
 
     session->new_connection(vc);
+
+    ATS_PROBE1(new_origin_server_connection, t_state.current.server->name);
 
     session->state = HSS_ACTIVE;
     ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());

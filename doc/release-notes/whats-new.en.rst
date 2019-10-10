@@ -30,6 +30,7 @@ have participated in this development cycle.
 
 New Features
 ------------
+- Add support for dtrace style markers (SDT) and include a few markers at locations of interest to users of SystemTap, dtrace, and gdb. See :ref:`developer-debug-builds`.
 
 New or modifed Configurations
 -----------------------------

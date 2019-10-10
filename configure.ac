@@ -2070,6 +2070,25 @@ AC_CHECK_TYPE([struct tcp_info],
   ]]
 )
 
+AC_MSG_CHECKING([whether to include systemtap tracing support])
+AC_ARG_ENABLE([systemtap],
+              [AS_HELP_STRING([--enable-systemtap],
+                              [Enable inclusion of systemtap trace support])],
+              [ENABLE_SYSTEMTAP="${enableval}"], [ENABLE_SYSTEMTAP='no'])
+AM_CONDITIONAL([ENABLE_SYSTEMTAP], [test x$ENABLE_SYSTEMTAP = xyes])
+AC_MSG_RESULT(${ENABLE_SYSTEMTAP})
+
+if test "x${ENABLE_SYSTEMTAP}" = xyes; then
+  AC_CHECK_PROGS(DTRACE, dtrace)
+  if test -z "$DTRACE"; then
+    AC_MSG_ERROR([dtrace not found])
+  fi
+  AC_CHECK_HEADER([sys/sdt.h], [SDT_H_FOUND='yes'],
+                  [SDT_H_FOUND='no';
+                     AC_MSG_ERROR([systemtap support needs sys/sdt.h header])])
+  AC_DEFINE([HAVE_SYSTEMTAP], [1], [Define to 1 if using probes.])
+fi
+
 # See if we can build the remap_stats plugin
 AS_IF([test "x$enable_experimental_plugins" = "xyes"],
   [
