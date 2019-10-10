@@ -223,8 +223,6 @@ tsapi TSReturnCode TSHttpTxnUpdateCachedObject(TSHttpTxn txnp);
  ****************************************************************************/
 tsapi int TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp);
 
-tsapi void TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
-
 /* ip addr parsing */
 tsapi TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sockaddr *addr);
 
