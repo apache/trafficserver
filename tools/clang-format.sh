@@ -77,10 +77,16 @@ EOF
       echo "or alternatively, undefine the FORMAT environment variable"
       exit 1
   else
+      tmpfile=/tmp/clang-format$$
       for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in); do
-    echo $file
-    ${FORMAT} -i $file
+          echo $file
+          ${FORMAT} $file >| $tmpfile
+          if ! cmp --silent $file $tmpfile
+          then
+              \mv $tmpfile $file
+          fi
       done
+      \rm -f $tmpfile
   fi
 }
 
