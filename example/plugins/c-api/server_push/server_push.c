@@ -36,7 +36,6 @@
 #include <ctype.h>
 
 #include "ts/ts.h"
-#include "ts/experimental.h"
 #include "tscore/ink_defs.h"
 
 const char *PLUGIN_NAME = "server_push";
