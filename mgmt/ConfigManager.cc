@@ -95,12 +95,12 @@ ConfigManager::statFile(struct stat *buf)
   return statResult;
 }
 
-// bool ConfigManager::checkForUserUpdate()
+// bool ConfigManager::checkForUserUpdate(RollBackCheckType how)
 //
 //  Called to check if the file has been changed  by the user.
 //  Timestamps are compared to see if a change occurred
 bool
-ConfigManager::checkForUserUpdate()
+ConfigManager::checkForUserUpdate(RollBackCheckType how)
 {
   struct stat fileInfo;
   bool result;
@@ -113,10 +113,11 @@ ConfigManager::checkForUserUpdate()
   }
 
   if (fileLastModified < TS_ARCHIVE_STAT_MTIME(fileInfo)) {
-    fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
-    configFiles->fileChanged(fileName, configName);
-    mgmt_log("User has changed config file %s\n", fileName);
-
+    if (how == ROLLBACK_CHECK_AND_UPDATE) {
+      fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
+      configFiles->fileChanged(fileName, configName);
+      mgmt_log("User has changed config file %s\n", fileName);
+    }
     result = true;
   } else {
     result = false;
