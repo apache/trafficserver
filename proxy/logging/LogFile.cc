@@ -170,14 +170,25 @@ LogFile::open_file()
   bool file_exists = LogFile::exists(m_name);
 
   if (m_file_format == LOG_FILE_PIPE) {
-    // setup pipe
-    if (mkfifo(m_name, S_IRUSR | S_IWUSR | S_IRGRP) < 0) {
-      if (errno != EEXIST) {
-        Error("Could not create named pipe %s for logging: %s", m_name, strerror(errno));
-        return LOG_FILE_COULD_NOT_CREATE_PIPE;
+    bool pipe_exists = false;
+    // reuse existing pipe if available
+    struct stat stat_p;
+    stat(m_name, &stat_p);
+    if (S_ISREG(stat_p.st_mode) && S_ISFIFO(stat_p.st_mode)) {
+      pipe_exists = true; // pipe exists try to reuse
+      Debug("log-file", "Reusing existing pipe %s for logging", m_name);
+    }
+
+    // setup pipe if not there
+    if (!pipe_exists) {
+      if (mkfifo(m_name, S_IRUSR | S_IWUSR | S_IRGRP) < 0) {
+        if (errno != EEXIST) {
+          Error("Could not create named pipe %s for logging: %s", m_name, strerror(errno));
+          return LOG_FILE_COULD_NOT_CREATE_PIPE;
+        }
+      } else {
+        Debug("log-file", "Created named pipe %s for logging", m_name);
       }
-    } else {
-      Debug("log-file", "Created named pipe %s for logging", m_name);
     }
 
     // now open the pipe

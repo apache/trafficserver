@@ -966,7 +966,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
         // roll old filename so the new object can use the filename
         // it requested (previously we used to rename the NEW file
         // but now we roll the OLD file), or if the log object writes
-        // to a pipe, just remove the file if it was open as a pipe
+        // to a pipe, just don't roll
 
         bool roll_file = true;
 
@@ -988,7 +988,6 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
             roll_file = false;
           } else {
             if (S_ISFIFO(s.st_mode)) {
-              unlink(filename);
               roll_file = false;
             }
           }
