@@ -176,7 +176,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
       Debug("http_cache",
             "state cache openwrite, cachesm, got open_write_failed, wfail is read retry, set retries to max to schedule");
       open_read_tries  = 0;
-      open_write_tries = master_sm->t_state.txn_conf->max_cache_open_write_retries;
+      open_write_tries = master_sm->t_state.txn_conf->max_cache_open_write_retries + 1;
     }
     if (open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries) {
       // Retry open write;
