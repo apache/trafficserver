@@ -92,6 +92,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   ProxyMutex *mutex  = this_ethread()->mutex.get();
   int accept_threads = opt.accept_threads; // might be changed.
   IpEndpoint accept_ip;                    // local binding address.
+  int listen_per_thread = 0;
 
   NetAccept *na = createNetAccept(opt);
   na->id        = ink_atomic_increment(&net_accept_number, 1);
@@ -100,6 +101,10 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   // Fill in accept thread from configuration if necessary.
   if (opt.accept_threads < 0) {
     REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
+  }
+  REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
+  if (accept_threads > 0 && listen_per_thread > 0) {
+    Fatal("Please disable accept_threads or exec_threads.listen");
   }
 
   NET_INCREMENT_DYN_STAT(net_accepts_currently_open_stat);
@@ -137,7 +142,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   na->action_->server = &na->server;
 
   if (opt.frequent_accept) { // true
-    if (accept_threads > 0) {
+    if (accept_threads > 0 && listen_per_thread == 0) {
       na->init_accept_loop();
     } else {
       na->init_accept_per_thread();

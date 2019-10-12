@@ -38,6 +38,9 @@
 #define EVENTIO_ASYNC_SIGNAL 5
 
 #if TS_USE_EPOLL
+#ifndef EPOLLEXCLUSIVE
+#define EPOLLEXCLUSIVE 0
+#endif
 #ifdef USE_EDGE_TRIGGER_EPOLL
 #define USE_EDGE_TRIGGER 1
 #define EVENTIO_READ (EPOLLIN | EPOLLET)
@@ -592,7 +595,7 @@ EventIO::start(EventLoop l, int afd, Continuation *c, int e)
 #if TS_USE_EPOLL
   struct epoll_event ev;
   memset(&ev, 0, sizeof(ev));
-  ev.events   = e;
+  ev.events   = e | EPOLLEXCLUSIVE;
   ev.data.ptr = this;
 #ifndef USE_EDGE_TRIGGER
   events = e;
