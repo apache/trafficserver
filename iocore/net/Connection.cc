@@ -136,7 +136,8 @@ add_http_filter(int fd ATS_UNUSED)
 int
 Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 {
-  int res = 0;
+  int res               = 0;
+  int listen_per_thread = 0;
 
   ink_assert(fd != NO_FD);
 
@@ -211,6 +212,17 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 
   if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
+  }
+  REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
+  if (listen_per_thread == 1) {
+    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, SOCKOPT_ON, sizeof(int))) < 0) {
+      goto Lerror;
+    }
+#ifdef SO_REUSEPORT_LB
+    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT_LB, SOCKOPT_ON, sizeof(int))) < 0) {
+      goto Lerror;
+    }
+#endif
   }
 
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) &&

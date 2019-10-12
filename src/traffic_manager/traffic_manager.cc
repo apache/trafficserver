@@ -557,6 +557,11 @@ main(int argc, const char **argv)
   }
 
   RecGetRecordInt("proxy.config.net.connections_throttle", &fds_throttle);
+  RecInt listen_per_thread = 0;
+  RecGetRecordInt("proxy.config.exec_thread.listen", &listen_per_thread);
+  if (listen_per_thread > 0) { // Turn off listening. Traffic server is going to listen on all the threads.
+    listen_off = true;
+  }
 
   set_process_limits(fds_throttle); // as root
 
