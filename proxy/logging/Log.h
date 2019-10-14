@@ -110,6 +110,10 @@ public:
 class Log
 {
 public:
+  // Prevent creation of any instances of this class.
+  //
+  Log() = delete;
+
   enum ReturnCodeFlags {
     LOG_OK = 1,
     SKIP   = 2,
@@ -153,21 +157,21 @@ public:
   static void init(int configFlags = 0);
   static void init_fields();
 
-  inkcoreapi static bool
+  static bool
   transaction_logging_enabled()
   {
     return (logging_mode == LOG_MODE_FULL || logging_mode == LOG_MODE_TRANSACTIONS);
   }
 
-  inkcoreapi static bool
+  static bool
   error_logging_enabled()
   {
     return (logging_mode == LOG_MODE_FULL || logging_mode == LOG_MODE_ERRORS);
   }
 
-  inkcoreapi static int access(LogAccess *lad);
-  inkcoreapi static int va_error(const char *format, va_list ap);
-  inkcoreapi static int error(const char *format, ...) TS_PRINTFLIKE(1, 2);
+  static int access(LogAccess *lad);
+  static int va_error(const char *format, va_list ap);
+  static int error(const char *format, ...) TS_PRINTFLIKE(1, 2);
 
   /////////////////////////////////////////////////////////////////////////
   // 'Wire tracing' enabled by source ip or by percentage of connections //
@@ -177,7 +181,7 @@ public:
   static void trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char *format_string, va_list ap);
 
   // public data members
-  inkcoreapi static LogObject *error_log;
+  static LogObject *error_log;
   static LogConfig *config;
   static LogFieldList global_field_list;
   static std::unordered_map<std::string, LogField *> field_symbol_hash;
@@ -199,14 +203,7 @@ public:
   static int handle_logging_mode_change(const char *name, RecDataT data_type, RecData data, void *cookie);
   static int handle_periodic_tasks_int_change(const char *name, RecDataT data_type, RecData data, void *cookie);
 
-  Log(); // shut up stupid DEC C++ compiler
-
   friend void RegressionTest_LogObjectManager_Transfer(RegressionTest *, int, int *);
-
-  // noncopyable
-  // -- member functions that are not allowed --
-  Log(const Log &rhs) = delete;
-  Log &operator=(const Log &rhs) = delete;
 
 private:
   static void periodic_tasks(long time_now);
