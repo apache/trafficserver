@@ -100,6 +100,13 @@ namespace file
     return path();
   }
 
+  path
+  filename(const path &p)
+  {
+    const size_t last_slash_idx = p.string().find_last_of(p.preferred_separator);
+    return p.string().substr(last_slash_idx + 1);
+  }
+
   bool
   exists(const path &p)
   {
@@ -170,9 +177,8 @@ namespace file
     path final_to;
     file_status s = status(to, err);
     if (!(err && ENOENT == err.value()) && is_dir(s)) {
-      const size_t last_slash_idx = from.string().find_last_of(from.preferred_separator);
-      std::string filename        = from.string().substr(last_slash_idx + 1);
-      final_to                    = to / filename;
+      const auto file = filename(from);
+      final_to        = to / file;
     } else {
       final_to = to;
     }

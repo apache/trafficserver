@@ -83,11 +83,11 @@ public:
   ~RemapPluginInfo();
 
   /* Overload to add / execute remap plugin specific tasks during the plugin loading */
-  virtual bool load(std::string &error);
+  bool load(std::string &error) override;
 
   /* Used by the factory to invoke callbacks during plugin load, init and unload  */
-  virtual bool init(std::string &error);
-  virtual void done(void);
+  bool init(std::string &error) override;
+  void done(void) override;
 
   /* Used by the facility that handles remap plugin instances to invoke callbacks per plugin instance */
   bool initInstance(int argc, char **argv, void **ih, std::string &error);
@@ -98,8 +98,8 @@ public:
   void osResponse(void *ih, TSHttpTxn rh, int os_response_type);
 
   /* Used by traffic server core to indicate configuration reload */
-  virtual void indicatePreReload();
-  virtual void indicatePostReload(TSRemapReloadStatus reloadStatus);
+  void indicatePreReload() override;
+  void indicatePostReload(TSRemapReloadStatus reloadStatus) override;
 
 protected:
   /* Utility to be used only with unit testing */
