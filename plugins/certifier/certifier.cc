@@ -101,7 +101,7 @@ private:
     SslData *prev = nullptr;
     SslData *next = nullptr;
 
-    SslData() {}
+    SslData() = default;
     ~SslData() { TSDebug(PLUGIN_NAME, "Deleting ssl data for [%s]", commonName.c_str()); }
   };
 
@@ -377,7 +377,7 @@ mkcrt(X509_REQ *req, int serial)
   }
   /// Set certificate time
   X509_gmtime_adj(X509_get_notBefore(cert.get()), 0);
-  X509_gmtime_adj(X509_get_notAfter(cert.get()), (long)3650 * 24 * 3600);
+  X509_gmtime_adj(X509_get_notAfter(cert.get()), static_cast<long>(3650) * 24 * 3600);
 
   /// Get a handle to csr subject name
   subj = X509_REQ_get_subject_name(req);
@@ -604,7 +604,7 @@ TSPluginInit(int argc, const char *argv[])
   int opt = 0;
 
   while (opt >= 0) {
-    opt = getopt_long(argc, (char *const *)argv, "c:k:r:m:s:", longopts, nullptr);
+    opt = getopt_long(argc, const_cast<char *const *>(argv), "c:k:r:m:s:", longopts, nullptr);
     switch (opt) {
     case 'c': {
       cert = optarg;

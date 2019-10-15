@@ -88,13 +88,27 @@ typedef enum {
 */
 tsapi TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size);
 
-/* This gets called every time remap.config is reloaded. This is complementary
-   to TSRemapInit() which gets called when the plugin is first loaded. You can
-   not fail, or cause reload to stop here, it's merely a notification.
+/* This gets called every time before remap.config is reloaded. This is complementary
+   to TSRemapInit() which gets called when the plugin is first loaded.
+   It is guaranteed to be called before TSRemapInit() and TSRemapNewInstance().
+   It cannot fail, or cause reload to stop here, it's merely a notification.
    Optional function.
+   Params: none
    Return: none
 */
-tsapi void TSRemapConfigReload(void);
+tsapi void TSRemapPreConfigReload(void);
+
+/* This gets called every time afterremap.config is reloaded. This is complementary
+   to TSRemapInit() which gets called when the plugin is first loaded.
+   It is guaranteed to be called after TSRemapInit() and TSRemapNewInstance().
+   It cannot fail, or cause reload to stop here, it's merely a notification that
+   the (re)load is done and provide a status of its success or failure..
+   Optional function.
+   Params: reloadStatus - TS_SUCCESS - (re)load was successful,
+                          TS_ERROR - (re)load failed.
+   Return: none
+*/
+tsapi void TSRemapPostConfigReload(TSReturnCode reloadStatus);
 
 /* Remap new request
    Mandatory interface function.

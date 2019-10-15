@@ -31,9 +31,10 @@ from docutils.parsers import rst
 from docutils.parsers.rst import directives
 from sphinx.domains import Domain, ObjType, std
 from sphinx.roles import XRefRole
-from sphinx.locale import l_, _
+from sphinx.locale import  _
 import sphinx
 
+import os
 import subprocess
 import re
 
@@ -301,8 +302,8 @@ class TrafficServerDomain(Domain):
     data_version = 2
 
     object_types = {
-        'cv': ObjType(l_('configuration variable'), 'cv'),
-        'stat': ObjType(l_('statistic'), 'stat')
+        'cv': ObjType(_('configuration variable'), 'cv'),
+        'stat': ObjType(_('statistic'), 'stat')
     }
 
     directives = {
@@ -374,13 +375,18 @@ class TrafficServerDomain(Domain):
 
 
 # get the branch this documentation is building for in X.X.x form
-with open('../configure.ac', 'r') as f:
+REPO_ROOT = os.path.join(os.path.dirname(os.path.dirname(
+        os.environ['DOCUTILSCONFIG'])))
+CONFIGURE_AC = os.path.join(REPO_ROOT, 'configure.ac')
+with open(CONFIGURE_AC, 'r') as f:
     contents = f.read()
     match = re.compile(r'm4_define\(\[TS_VERSION_S],\[(.*?)]\)').search(contents)
     autoconf_version = '.'.join(match.group(1).split('.', 2)[:2] + ['x'])
 
 # get the current branch the local repository is on
-git_branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+REPO_GIT_DIR = os.path.join(REPO_ROOT, ".git")
+git_branch = subprocess.check_output(['git', '--git-dir', REPO_GIT_DIR,
+                                      'rev-parse', '--abbrev-ref', 'HEAD'])
 
 
 def make_github_link(name, rawtext, text, lineno, inliner, options={}, content=[]):

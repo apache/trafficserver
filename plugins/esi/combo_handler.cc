@@ -99,7 +99,7 @@ struct InterceptData {
     TSIOBuffer buffer       = nullptr;
     TSIOBufferReader reader = nullptr;
 
-    IoHandle(){};
+    IoHandle() = default;
 
     ~IoHandle()
     {

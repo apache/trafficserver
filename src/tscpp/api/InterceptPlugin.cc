@@ -48,7 +48,8 @@ struct InterceptPlugin::State {
     TSVIO vio_               = nullptr;
     TSIOBuffer buffer_       = nullptr;
     TSIOBufferReader reader_ = nullptr;
-    IoHandle(){};
+    IoHandle()               = default;
+    ;
     ~IoHandle()
     {
       if (reader_) {

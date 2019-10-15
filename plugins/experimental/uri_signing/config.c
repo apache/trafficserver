@@ -299,7 +299,7 @@ read_config(const char *path)
     size_t jwks_ct     = json_array_size(key_ary);
     cjose_jwk_t **jwks = (*jwkis++ = malloc((jwks_ct + 1) * sizeof *jwks));
     PluginDebug("Created table with size %d", cfg->issuers->size);
-    if (!hsearch_r(((ENTRY){(char *)*issuer, jwks}), ENTER, &(ENTRY *){0}, cfg->issuers)) {
+    if (!hsearch_r(((ENTRY){*issuer, jwks}), ENTER, &(ENTRY *){0}, cfg->issuers)) {
       PluginDebug("Failed to store keys for issuer %s", *issuer);
     } else {
       PluginDebug("Stored keys for %s at %16p", *issuer, jwks);

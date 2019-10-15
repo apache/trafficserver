@@ -35,28 +35,34 @@
 RemapPluginInst::RemapPluginInst(RemapPluginInfo &plugin) : _plugin(plugin)
 {
   _plugin.acquire();
-  _plugin.incInstanceCount();
 }
 
 RemapPluginInst::~RemapPluginInst()
 {
-  _plugin.decInstanceCount();
   _plugin.release();
 }
 
-bool
-RemapPluginInst::init(int argc, char **argv, std::string &error)
+RemapPluginInst *
+RemapPluginInst::init(RemapPluginInfo *plugin, int argc, char **argv, std::string &error)
 {
-  bool result = false;
-  result      = _plugin.initInstance(argc, argv, &_instance, error);
-
-  return result;
+  RemapPluginInst *inst = new RemapPluginInst(*plugin);
+  if (plugin->initInstance(argc, argv, &(inst->_instance), error)) {
+    plugin->incInstanceCount();
+    return inst;
+  }
+  delete inst;
+  return nullptr;
 }
 
 void
 RemapPluginInst::done()
 {
+  _plugin.decInstanceCount();
   _plugin.doneInstance(_instance);
+
+  if (0 == _plugin.instanceCount()) {
+    _plugin.done();
+  }
 }
 
 TSRemapStatus
@@ -163,9 +169,10 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
         _list.append(plugin);
 
         if (plugin->init(error)) {
-          inst = new RemapPluginInst(*plugin);
-          inst->init(argc, argv, error);
-          _instList.append(inst);
+          inst = RemapPluginInst::init(plugin, argc, argv, error);
+          if (nullptr != inst) {
+            _instList.append(inst);
+          }
         }
 
         if (_preventiveCleaning) {
@@ -177,9 +184,10 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
     }
   } else {
     Debug(_tag, "plugin '%s' has already been loaded", configPath.c_str());
-    inst = new RemapPluginInst(*plugin);
-    inst->init(argc, argv, error);
-    _instList.append(inst);
+    inst = RemapPluginInst::init(plugin, argc, argv, error);
+    if (nullptr != inst) {
+      _instList.append(inst);
+    }
   }
 
   return inst;
@@ -236,25 +244,44 @@ PluginFactory::findByEffectivePath(const fs::path &path)
 }
 
 /**
- * @brief Tell all plugins (that so wish) that remap.config is being reloaded
+ * @brief Tell all plugins instantiated by this factory that the configuration
+ * they are using is no longer the active one.
  *
  * This method would be useful only in case configs are reloaded independently from
  * factory/plugins instantiation and initialization.
  */
 void
-PluginFactory::indicateReload()
+PluginFactory::deactivate()
 {
-  Debug(_tag, "indicated config reload to factory '%s'", getUuid());
+  Debug(_tag, "deactivate configuration used by factory '%s'", getUuid());
 
   _instList.apply([](RemapPluginInst &pluginInst) -> void { pluginInst.done(); });
+}
 
-  _list.apply([](PluginDso &plugin) -> void {
-    if (1 == plugin.instanceCount()) {
-      plugin.done();
-    } else {
-      plugin.indicateReload();
-    }
-  });
+/**
+ * @brief Tell all plugins (that so wish) that remap.config is going to be reloaded
+ */
+void
+PluginFactory::indicatePreReload()
+{
+  Debug(_tag, "indicated config is going to be reloaded by factory '%s' to %zu plugin%s", getUuid(), _list.count(),
+        _list.count() != 1 ? "s" : "");
+
+  _list.apply([](PluginDso &plugin) -> void { plugin.indicatePreReload(); });
+}
+
+/**
+ * @brief Tell all plugins (that so wish) that remap.config is done reloading
+ */
+void
+PluginFactory::indicatePostReload(TSReturnCode reloadStatus)
+{
+  Debug(_tag, "indicated config is done reloading by factory '%s' to %zu plugin%s", getUuid(), _list.count(),
+        _list.count() != 1 ? "s" : "");
+
+  for (auto it = _list.begin(); _list.end() != it; it++) {
+    it->indicatePostReload(reloadStatus);
+  }
 }
 
 void

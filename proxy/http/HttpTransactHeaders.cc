@@ -146,7 +146,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
     alloced_buffer = nullptr;
     value_buffer   = inline_buffer;
   } else {
-    alloced_buffer = (char *)ats_malloc(bytes);
+    alloced_buffer = static_cast<char *>(ats_malloc(bytes));
     value_buffer   = alloced_buffer;
   }
 
@@ -423,7 +423,7 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time, ink_time_t 
   ink_assert(now_value >= response_time);
 
   if (date_value > 0) {
-    apparent_age = std::max((time_t)0, (response_time - date_value));
+    apparent_age = std::max(static_cast<time_t>(0), (response_time - date_value));
   }
   if (age_value < 0) {
     current_age = -1; // Overflow from Age: header
@@ -661,7 +661,7 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
     warn_text_len = 0; // Make sure it's really zero
   }
 
-  char *warning_text = (char *)alloca(bufsize);
+  char *warning_text = static_cast<char *>(alloca(bufsize));
 
   len =
     snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
@@ -966,7 +966,8 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(OverridableHttpConf
   if (http_txn_conf->global_user_agent_header) {
     MIMEField *ua_field;
 
-    Debug("http_trans", "Adding User-Agent: %s", http_txn_conf->global_user_agent_header);
+    Debug("http_trans", "Adding User-Agent: %.*s", static_cast<int>(http_txn_conf->global_user_agent_header_size),
+          http_txn_conf->global_user_agent_header);
     if ((ua_field = header->field_find(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) == nullptr) {
       if (likely((ua_field = header->field_create(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) != nullptr)) {
         header->field_attach(ua_field);

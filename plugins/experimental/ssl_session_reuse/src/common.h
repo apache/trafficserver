@@ -23,6 +23,61 @@
  */
 #pragma once
 
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <string>
+#include <cstring>
+#include <mutex>
+#include <deque>
+#include <cmath>
+
 #define PLUGIN "ssl_session_reuse"
 
+// Base 64 encoding takes 4*(ceil(n/3)) bytes
+#define ENCODED_LEN(len) (((int)ceil(1.34 * (len) + 5)) + 1)
+#define DECODED_LEN(len) (((int)ceil(0.75 * (len))) + 1)
+// 3DES encryption will take at most 8 extra bytes.  Plus we base 64 encode the result
+#define ENCRYPT_LEN(len) ((int)ceil(1.34 * ((len) + 8) + 5) + 1)
+#define DECRYPT_LEN(len) ((int)ceil(1.34 * ((len) + 8) + 5) + 1)
+
+class PluginThreads
+{
+public:
+  void
+  store(const pthread_t &th)
+  {
+    std::lock_guard<std::mutex> lock(threads_mutex);
+    threads_queue.push_back(th);
+  }
+
+  void
+  terminate()
+  {
+    std::lock_guard<std::mutex> lock(threads_mutex);
+    for (pthread_t th : threads_queue) {
+      ::pthread_cancel(th);
+    }
+    while (!threads_queue.empty()) {
+      pthread_t th = threads_queue.front();
+      ::pthread_join(th, nullptr);
+      threads_queue.pop_front();
+    }
+  }
+
+private:
+  std::deque<pthread_t> threads_queue;
+  std::mutex threads_mutex;
+};
+
+std::string hex_str(std::string str);
+
+int encrypt_encode64(const unsigned char *key, int key_length, const unsigned char *in_data, int in_data_len, char *out_data,
+                     size_t out_data_size, size_t *out_data_len);
+
+int decrypt_decode64(const unsigned char *key, int key_length, const char *in_data, int in_data_len, unsigned char *out_data,
+                     size_t out_data_size, size_t *out_data_len);
+
 extern const unsigned char salt[];
+
+extern PluginThreads plugin_threads;

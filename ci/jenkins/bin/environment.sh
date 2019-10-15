@@ -111,7 +111,7 @@ echo "CXX: $CXX"
 $CXX -v
 
 # Figure out parallelism for regular builds / bots
-ATS_MAKE_FLAGS="-j4"
+ATS_MAKE_FLAGS="-j6"
 
 # Restore verbose shell output
 set -x

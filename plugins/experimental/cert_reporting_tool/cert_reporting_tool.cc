@@ -16,7 +16,7 @@
   limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <cstring>
 #include <string>
 #include <string_view>
@@ -115,7 +115,7 @@ dump_context(const char *ca_path, const char *ck_path)
 
         // Serial number
         int64_t sn = 0;
-#if OPENSSL_VERSION_NUMBER >= 0x010100000
+#if !defined(OPENSSL_IS_BORINGSSL) && (OPENSSL_VERSION_NUMBER >= 0x010100000)
         ASN1_INTEGER_get_int64(&sn, serial);
 #else
         sn = ASN1_INTEGER_get(serial);

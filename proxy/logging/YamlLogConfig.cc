@@ -54,14 +54,14 @@ YamlLogConfig::loadLogConfig(const char *cfgFilename)
   }
 
   if (!config.IsMap()) {
-    Error("malformed logging.yaml file; expected a map");
+    Error("malformed %s file; expected a map", cfgFilename);
     return false;
   }
 
   if (config["logging"]) {
     config = config["logging"];
   } else {
-    Error("malformed logging.yaml file; expected a toplevel 'logging' node");
+    Error("malformed %s file; expected a toplevel 'logging' node", cfgFilename);
     return false;
   }
 
@@ -111,15 +111,16 @@ TsEnumDescriptor ROLLING_MODE_LUA  = {
 
 std::set<std::string> valid_log_object_keys = {
   "filename",          "format",          "mode",    "header",    "rolling_enabled",   "rolling_interval_sec",
-  "rolling_offset_hr", "rolling_size_mb", "filters", "min_count", "rolling_max_count", "rolling_allow_empty"};
+  "rolling_offset_hr", "rolling_size_mb", "filters", "min_count", "rolling_max_count", "rolling_allow_empty",
+  "pipe_buffer_size"};
 
 LogObject *
 YamlLogConfig::decodeLogObject(const YAML::Node &node)
 {
   for (auto const &item : node) {
     if (std::none_of(valid_log_object_keys.begin(), valid_log_object_keys.end(),
-                     [&item](std::string s) { return s == item.first.as<std::string>(); })) {
-      throw YAML::ParserException(item.Mark(), "log: unsupported key '" + item.first.as<std::string>() + "'");
+                     [&item](const std::string &s) { return s == item.first.as<std::string>(); })) {
+      throw YAML::ParserException(item.first.Mark(), "log: unsupported key '" + item.first.as<std::string>() + "'");
     }
   }
 
@@ -196,10 +197,21 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
     Warning("Invalid log rolling value '%d' in log object", obj_rolling_enabled);
   }
 
-  auto logObject = new LogObject(
-    fmt, Log::config->logfile_dir, filename.c_str(), file_type, header.c_str(), (Log::RollingEnabledValues)obj_rolling_enabled,
-    Log::config->preproc_threads, obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb, /* auto_created */ false,
-    /* rolling_max_count */ obj_rolling_max_count, /* reopen_after_rolling */ obj_rolling_allow_empty > 0);
+  // get buffer for pipe
+  int pipe_buffer_size = 0;
+  if (node["pipe_buffer_size"]) {
+    if (file_type != LOG_FILE_PIPE) {
+      Warning("Pipe buffer size field should only be set for log.pipe object.");
+    } else {
+      pipe_buffer_size = node["pipe_buffer_size"].as<int>();
+    }
+  }
+
+  auto logObject = new LogObject(fmt, Log::config->logfile_dir, filename.c_str(), file_type, header.c_str(),
+                                 static_cast<Log::RollingEnabledValues>(obj_rolling_enabled), Log::config->preproc_threads,
+                                 obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb, /* auto_created */ false,
+                                 /* rolling_max_count */ obj_rolling_max_count,
+                                 /* reopen_after_rolling */ obj_rolling_allow_empty > 0, pipe_buffer_size);
 
   // Generate LogDeletingInfo entry for later use
   std::string ext;

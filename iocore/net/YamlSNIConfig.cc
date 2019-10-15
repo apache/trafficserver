@@ -43,7 +43,7 @@ YamlSNIConfig::loader(const char *cfgFilename)
     }
 
     if (!config["sni"]) {
-      return ts::Errata::Message(1, 1, "malformed ssl_server_name.yaml file; expected a toplevel 'sni' node");
+      return ts::Errata::Message(1, 1, "expected a toplevel 'sni' node");
     }
 
     config = config["sni"];
@@ -117,10 +117,10 @@ template <> struct convert<YamlSNIConfig::Item> {
   static bool
   decode(const Node &node, YamlSNIConfig::Item &item)
   {
-    for (auto &&item : node) {
+    for (const auto &elem : node) {
       if (std::none_of(valid_sni_config_keys.begin(), valid_sni_config_keys.end(),
-                       [&item](std::string s) { return s == item.first.as<std::string>(); })) {
-        throw YAML::ParserException(item.Mark(), "unsupported key " + item.first.as<std::string>());
+                       [&elem](const std::string &s) { return s == elem.first.as<std::string>(); })) {
+        throw YAML::ParserException(elem.first.Mark(), "unsupported key " + elem.first.as<std::string>());
       }
     }
 

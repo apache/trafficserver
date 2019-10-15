@@ -77,7 +77,7 @@ public:
     setOutputComplete();
   }
 
-  ~ImageTransform() override {}
+  ~ImageTransform() override = default;
 
 private:
   std::stringstream _img;

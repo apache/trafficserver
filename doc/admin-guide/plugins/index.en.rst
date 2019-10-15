@@ -77,8 +77,8 @@ Plugins that are considered stable are installed by default in |TS| releases.
 :doc:`Background Fetch <background_fetch.en>`
    Proactively fetch content from Origin in a way that it will fill the object into cache.
 
-:doc:`Cache Key Manipulation <cachekey.en>`
-   Allows some common cache key manipulations based on various HTTP request elements.
+:doc:`Cache Key and Parent Selection URL Manipulation <cachekey.en>`
+   Allows some common cache key or parent selection URL manipulations based on various HTTP request elements.
 
 :doc:`Cache Promotion Policies <cache_promote.en>`
    Allows for control over which assets should be written to cache, or not.

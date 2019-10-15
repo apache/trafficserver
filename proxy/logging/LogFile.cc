@@ -63,12 +63,13 @@
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size,
-                 size_t max_line_size)
+                 size_t max_line_size, int pipe_buffer_size)
   : m_file_format(format),
     m_name(ats_strdup(name)),
     m_header(ats_strdup(header)),
     m_signature(signature),
-    m_max_line_size(max_line_size)
+    m_max_line_size(max_line_size),
+    m_pipe_buffer_size(pipe_buffer_size)
 {
   if (m_file_format != LOG_FILE_PIPE) {
     m_log = new BaseLogFile(name, m_signature);
@@ -97,6 +98,7 @@ LogFile::LogFile(const LogFile &copy)
     m_signature(copy.m_signature),
     m_ascii_buffer_size(copy.m_ascii_buffer_size),
     m_max_line_size(copy.m_max_line_size),
+    m_pipe_buffer_size(copy.m_pipe_buffer_size),
     m_fd(copy.m_fd)
 {
   ink_release_assert(m_ascii_buffer_size >= m_max_line_size);
@@ -185,6 +187,30 @@ LogFile::open_file()
       Debug("log-file", "no readers for pipe %s", m_name);
       return LOG_FILE_NO_PIPE_READERS;
     }
+
+#ifdef F_GETPIPE_SZ
+    // adjust pipe size if necessary
+    if (m_pipe_buffer_size) {
+      long pipe_size = (long)fcntl(m_fd, F_GETPIPE_SZ);
+      if (pipe_size == -1) {
+        Error("get pipe size failed for pipe %s", m_name);
+      } else {
+        Debug("log-file", "Default pipe size for pipe %s = %ld", m_name, pipe_size);
+      }
+
+      int ret = fcntl(m_fd, F_SETPIPE_SZ, m_pipe_buffer_size);
+      if (ret == -1) {
+        Error("set pipe size failed for pipe %s", m_name);
+      }
+
+      pipe_size = (long)fcntl(m_fd, F_GETPIPE_SZ);
+      if (pipe_size == -1) {
+        Error("get pipe size failed for pipe %s", m_name);
+      } else {
+        Debug("log-file", "NEW pipe size for pipe %s = %ld", m_name, pipe_size);
+      }
+    }
+#endif // F_GETPIPE_SZ
   } else {
     if (m_log) {
       int status = m_log->open_file(Log::config->logfile_perm);
@@ -299,7 +325,7 @@ LogFile::trim_rolled(size_t rolling_max_count)
   ::closedir(ld);
 
   bool result = true;
-  std::sort(rolled.begin(), rolled.end(), [](const RolledFile a, const RolledFile b) { return a._mtime > b._mtime; });
+  std::sort(rolled.begin(), rolled.end(), [](const RolledFile &a, const RolledFile &b) { return a._mtime > b._mtime; });
   if (rolling_max_count < rolled.size()) {
     for (auto it = rolled.begin() + rolling_max_count; it != rolled.end(); it++) {
       const RolledFile &file = *it;
@@ -459,7 +485,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
-    format_type = (LogFormatType)buffer_header->format_type;
+    format_type = static_cast<LogFormatType>(buffer_header->format_type);
 
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str    = buffer_header->fmt_printf();
@@ -526,7 +552,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
-    format_type   = (LogFormatType)buffer_header->format_type;
+    format_type   = static_cast<LogFormatType>(buffer_header->format_type);
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str    = buffer_header->fmt_printf();
     break;
@@ -543,9 +569,9 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
     fmt_buf_bytes   = 0;
 
     if (m_file_format == LOG_FILE_PIPE) {
-      ascii_buffer = (char *)ats_malloc(m_max_line_size);
+      ascii_buffer = static_cast<char *>(ats_malloc(m_max_line_size));
     } else {
-      ascii_buffer = (char *)ats_malloc(m_ascii_buffer_size);
+      ascii_buffer = static_cast<char *>(ats_malloc(m_ascii_buffer_size));
     }
 
     // fill the buffer with as many records as possible
@@ -636,7 +662,7 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 #else
     wvec[0].iov_base = (void *)data;
 #endif
-    wvec[0].iov_len = (size_t)len;
+    wvec[0].iov_len = static_cast<size_t>(len);
 
     if (data[len - 1] != '\n') {
 #if defined(solaris)
@@ -644,11 +670,11 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 #else
       wvec[1].iov_base = (void *)"\n";
 #endif
-      wvec[1].iov_len = (size_t)1;
+      wvec[1].iov_len = static_cast<size_t>(1);
       vcnt++;
     }
 
-    if ((bytes_this_write = (int)::writev(fd, (const struct iovec *)wvec, vcnt)) < 0) {
+    if ((bytes_this_write = static_cast<int>(::writev(fd, (const struct iovec *)wvec, vcnt))) < 0) {
       Warning("An error was encountered in writing to %s: %s.", ((path) ? path : "logfile"), strerror(errno));
     } else {
       total_bytes = bytes_this_write;

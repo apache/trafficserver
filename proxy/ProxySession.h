@@ -30,6 +30,7 @@
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "http/Http1ServerSession.h"
+#include "http/HttpSessionAccept.h"
 #include "IPAllow.h"
 
 // Emit a debug message conditional on whether this particular client session
@@ -99,7 +100,6 @@ public:
   virtual NetVConnection *get_netvc() const       = 0;
   virtual int get_transact_count() const          = 0;
   virtual const char *get_protocol_string() const = 0;
-  virtual bool is_transparent_passthrough_allowed() const;
 
   virtual void hook_add(TSHttpHookID id, INKContInternal *cont);
 
@@ -108,9 +108,6 @@ public:
   virtual void set_half_close_flag(bool flag);
   virtual bool get_half_close_flag() const;
 
-  virtual in_port_t get_outbound_port() const;
-  virtual IpAddr get_outbound_ip4() const;
-  virtual IpAddr get_outbound_ip6() const;
   virtual Http1ServerSession *get_server_session() const;
 
   // Replicate NetVConnection API
@@ -151,11 +148,7 @@ public:
 
   IpAllow::ACL acl; ///< IpAllow based method ACL.
 
-  IpAddr outbound_ip4;        ///< Local address for outbound connection.
-  IpAddr outbound_ip6;        ///< Local address for outbound connection.
-  in_port_t outbound_port{0}; ///< Local port for outbound connection.
-
-  HostResStyle host_res_style = HOST_RES_NONE; ///< DNS resolution preferences.
+  HttpSessionAccept::Options const *accept_options; ///< connection info // L7R TODO: set in constructor
 
   ink_hrtime ssn_start_time    = 0;
   ink_hrtime ssn_last_txn_time = 0;
@@ -188,3 +181,89 @@ private:
   // aborts.
   bool m_active = false;
 };
+
+///////////////////
+// INLINE
+
+static inline int64_t next_cs_id = 0;
+
+inline int64_t
+ProxySession::next_connection_id()
+{
+  return ink_atomic_increment(&next_cs_id, 1);
+}
+
+inline void *
+ProxySession::get_user_arg(unsigned ix) const
+{
+  ink_assert(ix < countof(user_args));
+  return this->user_args[ix];
+}
+
+inline void
+ProxySession::set_user_arg(unsigned ix, void *arg)
+{
+  ink_assert(ix < countof(user_args));
+  user_args[ix] = arg;
+}
+
+inline void
+ProxySession::set_debug(bool flag)
+{
+  debug_on = flag;
+}
+
+// Return whether debugging is enabled for this session.
+inline bool
+ProxySession::debug() const
+{
+  return this->debug_on;
+}
+
+inline bool
+ProxySession::is_active() const
+{
+  return m_active;
+}
+
+inline bool
+ProxySession::is_draining() const
+{
+  return TSSystemState::is_draining();
+}
+
+inline bool
+ProxySession::is_client_closed() const
+{
+  return get_netvc() == nullptr;
+}
+
+inline TSHttpHookID
+ProxySession::get_hookid() const
+{
+  return hook_state.id();
+}
+
+inline void
+ProxySession::hook_add(TSHttpHookID id, INKContInternal *cont)
+{
+  this->api_hooks.append(id, cont);
+}
+
+inline APIHook *
+ProxySession::hook_get(TSHttpHookID id) const
+{
+  return this->api_hooks.get(id);
+}
+
+inline HttpAPIHooks const *
+ProxySession::feature_hooks() const
+{
+  return &api_hooks;
+}
+
+inline bool
+ProxySession::has_hooks() const
+{
+  return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
+}

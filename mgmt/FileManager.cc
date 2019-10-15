@@ -177,7 +177,7 @@ FileManager::rereadConfig()
     rb = it.second;
     // ToDo: rb->isVersions() was always true before, because numberBackups was always >= 1. So ROLLBACK_CHECK_ONLY could not
     // happen at all...
-    if (rb->checkForUserUpdate()) {
+    if (rb->checkForUserUpdate(ROLLBACK_CHECK_AND_UPDATE)) {
       changedFiles.push_back(rb);
       if (rb->isChildManaged()) {
         if (std::find(parentFileNeedChange.begin(), parentFileNeedChange.end(), rb->getParentConfig()) ==
@@ -220,7 +220,7 @@ FileManager::rereadConfig()
   // INKqa11910
   // need to first check that enable_customizations is enabled
   bool found;
-  int enabled = (int)REC_readInteger("proxy.config.body_factory.enable_customizations", &found);
+  int enabled = static_cast<int>(REC_readInteger("proxy.config.body_factory.enable_customizations", &found));
 
   if (found && enabled) {
     fileChanged("proxy.config.body_factory.template_sets_dir", "proxy.config.body_factory.template_sets_dir");
@@ -237,7 +237,7 @@ FileManager::isConfigStale()
   ink_mutex_acquire(&accessLock);
   for (auto &&it : bindings) {
     rb = it.second;
-    if (rb->checkForUserUpdate()) {
+    if (rb->checkForUserUpdate(ROLLBACK_CHECK_ONLY)) {
       stale = true;
       break;
     }

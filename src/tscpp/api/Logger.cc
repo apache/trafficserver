@@ -52,8 +52,10 @@ struct atscppapi::LoggerState : noncopyable {
 
   LoggerState()
 
-    {};
-  ~LoggerState(){};
+    = default;
+  ;
+  ~LoggerState() = default;
+  ;
 };
 
 namespace

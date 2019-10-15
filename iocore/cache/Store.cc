@@ -120,7 +120,7 @@ Store::free(Store &s)
 void
 Store::sort()
 {
-  Span **vec = (Span **)alloca(sizeof(Span *) * n_disks);
+  Span **vec = static_cast<Span **>(alloca(sizeof(Span *) * n_disks));
   memset(vec, 0, sizeof(Span *) * n_disks);
   for (unsigned i = 0; i < n_disks; i++) {
     vec[i]  = disk[i];
@@ -225,7 +225,7 @@ Span::path(char *filename, int64_t *aoffset, char *buf, int buflen)
   ink_assert(!aoffset);
   Span *ds = this;
 
-  if ((strlen(ds->pathname) + strlen(filename) + 2) > (size_t)buflen) {
+  if ((strlen(ds->pathname) + strlen(filename) + 2) > static_cast<size_t>(buflen)) {
     return -1;
   }
   if (!ds->file_pathname) {
@@ -453,7 +453,7 @@ Store::write_config_data(int fd) const
   for (unsigned i = 0; i < n_disks; i++) {
     for (Span *sd = disk[i]; sd; sd = sd->link.next) {
       char buf[PATH_NAME_MAX + 64];
-      snprintf(buf, sizeof(buf), "%s %" PRId64 "\n", sd->pathname.get(), (int64_t)sd->blocks * (int64_t)STORE_BLOCK_SIZE);
+      snprintf(buf, sizeof(buf), "%s %" PRId64 "\n", sd->pathname.get(), sd->blocks * static_cast<int64_t>(STORE_BLOCK_SIZE));
       if (ink_file_fd_writestring(fd, buf) == -1) {
         return (-1);
       }
@@ -538,7 +538,7 @@ Span::init(const char *path, int64_t size)
     break;
 
   case S_IFDIR:
-    if ((int64_t)(vbuf.f_frsize * vbuf.f_bavail) < size) {
+    if (static_cast<int64_t>(vbuf.f_frsize * vbuf.f_bavail) < size) {
       Warning("not enough free space for cache %s '%s'", span_file_typename(sbuf.st_mode), path);
       // Just warn for now; let the cache open fail later.
     }
@@ -557,7 +557,7 @@ Span::init(const char *path, int64_t size)
   case S_IFREG:
     if (size > 0 && sbuf.st_size < size) {
       int64_t needed = size - sbuf.st_size;
-      if ((int64_t)(vbuf.f_frsize * vbuf.f_bavail) < needed) {
+      if (static_cast<int64_t>(vbuf.f_frsize * vbuf.f_bavail) < needed) {
         Warning("not enough free space for cache %s '%s'", span_file_typename(sbuf.st_mode), path);
         // Just warn for now; let the cache open fail later.
       }
@@ -588,7 +588,7 @@ Span::init(const char *path, int64_t size)
   }
 
   // A directory span means we will end up with a file, otherwise, we get what we asked for.
-  this->set_mmapable(ink_file_is_mmappable(S_ISDIR(sbuf.st_mode) ? (mode_t)S_IFREG : sbuf.st_mode));
+  this->set_mmapable(ink_file_is_mmappable(S_ISDIR(sbuf.st_mode) ? static_cast<mode_t>(S_IFREG) : sbuf.st_mode));
   this->pathname = ats_strdup(path);
 
   Debug("cache_init", "initialized span '%s'", this->pathname.get());
@@ -782,7 +782,7 @@ Span::write(int fd) const
     return (-1);
   }
 
-  snprintf(buf, sizeof(buf), "%d\n", (int)is_mmapable());
+  snprintf(buf, sizeof(buf), "%d\n", static_cast<int>(is_mmapable()));
   if (ink_file_fd_writestring(fd, buf) == -1) {
     return (-1);
   }
@@ -908,7 +908,7 @@ Store::read(int fd, char *aname)
     return (-1);
   }
 
-  disk = (Span **)ats_malloc(sizeof(Span *) * n_disks);
+  disk = static_cast<Span **>(ats_malloc(sizeof(Span *) * n_disks));
   if (!disk) {
     return -1;
   }
@@ -965,7 +965,7 @@ void
 Store::dup(Store &s)
 {
   s.n_disks = n_disks;
-  s.disk    = (Span **)ats_malloc(sizeof(Span *) * n_disks);
+  s.disk    = static_cast<Span **>(ats_malloc(sizeof(Span *) * n_disks));
   for (unsigned i = 0; i < n_disks; i++) {
     s.disk[i] = disk[i]->dup();
   }

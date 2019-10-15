@@ -36,13 +36,14 @@ class url_mapping;
 
 extern thread_local PluginThreadContext *pluginThreadContext;
 
-static constexpr const char *const TSREMAP_FUNCNAME_INIT            = "TSRemapInit";
-static constexpr const char *const TSREMAP_FUNCNAME_CONFIG_RELOAD   = "TSRemapConfigReload";
-static constexpr const char *const TSREMAP_FUNCNAME_DONE            = "TSRemapDone";
-static constexpr const char *const TSREMAP_FUNCNAME_NEW_INSTANCE    = "TSRemapNewInstance";
-static constexpr const char *const TSREMAP_FUNCNAME_DELETE_INSTANCE = "TSRemapDeleteInstance";
-static constexpr const char *const TSREMAP_FUNCNAME_DO_REMAP        = "TSRemapDoRemap";
-static constexpr const char *const TSREMAP_FUNCNAME_OS_RESPONSE     = "TSRemapOSResponse";
+static constexpr const char *const TSREMAP_FUNCNAME_INIT               = "TSRemapInit";
+static constexpr const char *const TSREMAP_FUNCNAME_PRE_CONFIG_RELOAD  = "TSRemapPreConfigReload";
+static constexpr const char *const TSREMAP_FUNCNAME_POST_CONFIG_RELOAD = "TSRemapPostConfigReload";
+static constexpr const char *const TSREMAP_FUNCNAME_DONE               = "TSRemapDone";
+static constexpr const char *const TSREMAP_FUNCNAME_NEW_INSTANCE       = "TSRemapNewInstance";
+static constexpr const char *const TSREMAP_FUNCNAME_DELETE_INSTANCE    = "TSRemapDeleteInstance";
+static constexpr const char *const TSREMAP_FUNCNAME_DO_REMAP           = "TSRemapDoRemap";
+static constexpr const char *const TSREMAP_FUNCNAME_OS_RESPONSE        = "TSRemapOSResponse";
 
 /**
  * Holds information for a remap plugin, remap specific callback entry points for plugin init/done and instance init/done, do_remap,
@@ -53,8 +54,10 @@ class RemapPluginInfo : public PluginDso
 public:
   /// Initialization function, called on library load.
   using Init_F = TSReturnCode(TSRemapInterface *api_info, char *errbuf, int errbuf_size);
-  /// Reload function, called to inform the plugin of a configuration reload.
-  using Reload_F = void();
+  /// Reload function, called to inform the plugin that configuration is going to be reloaded.
+  using PreReload_F = void();
+  /// Reload function, called to inform the plugin that configuration is done reloading.
+  using PostReload_F = void(TSReturnCode);
   /// Called when remapping for a transaction has finished.
   using Done_F = void();
   /// Create an rule instance.
@@ -68,7 +71,8 @@ public:
 
   void *dl_handle                       = nullptr; /* "handle" for the dynamic library */
   Init_F *init_cb                       = nullptr;
-  Reload_F *config_reload_cb            = nullptr;
+  PreReload_F *pre_config_reload_cb     = nullptr;
+  PostReload_F *post_config_reload_cb   = nullptr;
   Done_F *done_cb                       = nullptr;
   New_Instance_F *new_instance_cb       = nullptr;
   Delete_Instance_F *delete_instance_cb = nullptr;
@@ -94,7 +98,8 @@ public:
   void osResponse(void *ih, TSHttpTxn rh, int os_response_type);
 
   /* Used by traffic server core to indicate configuration reload */
-  virtual void indicateReload();
+  virtual void indicatePreReload();
+  virtual void indicatePostReload(TSReturnCode reloadStatus);
 
 protected:
   /* Utility to be used only with unit testing */

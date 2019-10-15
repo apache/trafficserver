@@ -66,7 +66,7 @@ CacheHostMatcher::Print()
 void
 CacheHostMatcher::PrintFunc(void *opaque_data)
 {
-  CacheHostRecord *d = (CacheHostRecord *)opaque_data;
+  CacheHostRecord *d = static_cast<CacheHostRecord *>(opaque_data);
   d->Print();
 }
 
@@ -109,7 +109,7 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result)
   if (rlen == 0) {
     return;
   }
-  char *data = (char *)ats_malloc(rlen + 1);
+  char *data = static_cast<char *>(ats_malloc(rlen + 1));
   memcpy(data, rdata, rlen);
   *(data + rlen) = '\0';
   HostLookupState s;
@@ -118,7 +118,7 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result)
 
   while (r == true) {
     ink_assert(opaque_ptr != nullptr);
-    data_ptr = (CacheHostRecord *)opaque_ptr;
+    data_ptr = static_cast<CacheHostRecord *>(opaque_ptr);
     data_ptr->UpdateMatch(result, data);
 
     r = host_lookup->MatchNext(&s, &opaque_ptr);
@@ -229,7 +229,7 @@ int
 CacheHostTable::config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */,
                                 RecData /* data ATS_UNUSED */, void *cookie)
 {
-  CacheHostTable **ppt = (CacheHostTable **)cookie;
+  CacheHostTable **ppt = static_cast<CacheHostTable **>(cookie);
   eventProcessor.schedule_imm(new CacheHostTableConfig(ppt));
   return 0;
 }
@@ -281,8 +281,8 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     }
 
     if (*tmp != '#' && *tmp != '\0') {
-      current = (matcher_line *)ats_malloc(sizeof(matcher_line));
-      errPtr  = parseConfigLine((char *)tmp, current, &config_tags);
+      current = static_cast<matcher_line *>(ats_malloc(sizeof(matcher_line)));
+      errPtr  = parseConfigLine(const_cast<char *>(tmp), current, &config_tags);
 
       if (errPtr != nullptr) {
         RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s", matcher_name, config_file_path,
@@ -420,7 +420,7 @@ CacheHostRecord::Init(CacheType typ)
 
   num_vols = 0;
   type     = typ;
-  cp       = (CacheVol **)ats_malloc(cp_list_len * sizeof(CacheVol *));
+  cp       = static_cast<CacheVol **>(ats_malloc(cp_list_len * sizeof(CacheVol *)));
   memset(cp, 0, cp_list_len * sizeof(CacheVol *));
   num_cachevols    = 0;
   CacheVol *cachep = cp_list.head;
@@ -436,7 +436,7 @@ CacheHostRecord::Init(CacheType typ)
     RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "error: No volumes found for Cache Type %d", type);
     return -1;
   }
-  vols        = (Vol **)ats_malloc(num_vols * sizeof(Vol *));
+  vols        = static_cast<Vol **>(ats_malloc(num_vols * sizeof(Vol *)));
   int counter = 0;
   for (i = 0; i < num_cachevols; i++) {
     CacheVol *cachep1 = cp[i];
@@ -505,7 +505,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
       }
       s = val;
       num_cachevols++;
-      cp = (CacheVol **)ats_malloc(num_cachevols * sizeof(CacheVol *));
+      cp = static_cast<CacheVol **>(ats_malloc(num_cachevols * sizeof(CacheVol *)));
       memset(cp, 0, num_cachevols * sizeof(CacheVol *));
       num_cachevols = 0;
       while (true) {
@@ -562,7 +562,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
   if (!num_vols) {
     return -1;
   }
-  vols        = (Vol **)ats_malloc(num_vols * sizeof(Vol *));
+  vols        = static_cast<Vol **>(ats_malloc(num_vols * sizeof(Vol *)));
   int counter = 0;
   for (i = 0; i < num_cachevols; i++) {
     CacheVol *cachep = cp[i];
@@ -662,7 +662,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
         break;
       }
 
-      end = (char *)tmp;
+      end = const_cast<char *>(tmp);
       while (*end && !isspace(*end)) {
         end++;
       }
@@ -675,7 +675,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       }
       char *eq_sign;
 
-      eq_sign = (char *)strchr(tmp, '=');
+      eq_sign = const_cast<char *>(strchr(tmp, '='));
       if (!eq_sign) {
         err = "Unexpected end of line";
         break;
@@ -1033,10 +1033,10 @@ execute_and_verify(RegressionTest *t)
     CacheDisk *d = gdisks[i];
     if (is_debug_tag_set("cache_hosting")) {
       Debug("cache_hosting", "Disk: %d: Vol Blocks: %u: Free space: %" PRIu64, i, d->header->num_diskvol_blks, d->free_space);
-      for (int j = 0; j < (int)d->header->num_volumes; j++) {
+      for (int j = 0; j < static_cast<int>(d->header->num_volumes); j++) {
         Debug("cache_hosting", "\tVol: %d Size: %" PRIu64, d->disk_vols[j]->vol_number, d->disk_vols[j]->size);
       }
-      for (int j = 0; j < (int)d->header->num_diskvol_blks; j++) {
+      for (int j = 0; j < static_cast<int>(d->header->num_diskvol_blks); j++) {
         Debug("cache_hosting", "\tBlock No: %d Size: %" PRIu64 " Free: %u", d->header->vol_info[j].number,
               d->header->vol_info[j].len, d->header->vol_info[j].free);
       }

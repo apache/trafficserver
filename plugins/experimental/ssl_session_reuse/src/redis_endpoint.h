@@ -25,6 +25,7 @@
 
 #include <string>
 #include <vector>
+
 #include "globals.h"
 
 typedef struct redis_endpoint {

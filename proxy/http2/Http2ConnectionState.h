@@ -28,6 +28,7 @@
 #include "HPACK.h"
 #include "Http2Stream.h"
 #include "Http2DependencyTree.h"
+#include "Http2FrequencyCounter.h"
 
 class Http2ClientSession;
 
@@ -358,18 +359,10 @@ private:
   std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
   int _recent_rwnd_increment_index           = 0;
 
-  // Counter for settings received within last 60 seconds
-  // Each item holds a count for 30 seconds.
-  uint16_t settings_count[2]            = {0};
-  ink_hrtime settings_count_last_update = 0;
-  // Counters for frames received within last 60 seconds
-  // Each item in an array holds a count for 30 seconds.
-  uint16_t settings_frame_count[2]            = {0};
-  ink_hrtime settings_frame_count_last_update = 0;
-  uint16_t ping_frame_count[2]                = {0};
-  ink_hrtime ping_frame_count_last_update     = 0;
-  uint16_t priority_frame_count[2]            = {0};
-  ink_hrtime priority_frame_count_last_update = 0;
+  Http2FrequencyCounter _received_settings_counter;
+  Http2FrequencyCounter _received_settings_frame_counter;
+  Http2FrequencyCounter _received_ping_frame_counter;
+  Http2FrequencyCounter _received_priority_frame_counter;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS

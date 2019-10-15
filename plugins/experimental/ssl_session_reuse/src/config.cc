@@ -22,17 +22,17 @@
 
  */
 
-#include <ts/ts.h>
-#include <ts/apidefs.h>
 #include <cstring>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "tscpp/util/TextView.h"
+#include <ts/ts.h>
+#include <ts/apidefs.h>
 
 #include "Config.h"
 #include "common.h"
+#include "tscpp/util/TextView.h"
 
 Config::Config()
 {
@@ -44,7 +44,7 @@ Config::Config()
   m_lastmtime     = 0;
 }
 
-Config::~Config() {}
+Config::~Config() = default;
 
 bool
 Config::loadConfig(const std::string &filename)

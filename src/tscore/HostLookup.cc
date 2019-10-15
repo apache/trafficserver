@@ -277,8 +277,9 @@ CharIndex::~CharIndex()
 {
   // clean up the illegal key table.
   if (illegalKey) {
-    for (auto spot = illegalKey->begin(), limit = illegalKey->end(); spot != limit; delete &*(spot++))
+    for (auto spot = illegalKey->begin(), limit = illegalKey->end(); spot != limit; delete &*(spot++)) {
       ; // empty
+    }
   }
 }
 
@@ -784,15 +785,15 @@ HostLookup::TableInsert(string_view match_data, int index, bool domain_record)
   //         leaf node to make sure we have a match
   if (domain_record == false) {
     if (match.empty()) {
-      leaf_array[index].type = HostLeaf::HOST_PARTIAL;
-    } else {
       leaf_array[index].type = HostLeaf::HOST_COMPLETE;
+    } else {
+      leaf_array[index].type = HostLeaf::HOST_PARTIAL;
     }
   } else {
     if (match.empty()) {
-      leaf_array[index].type = HostLeaf::DOMAIN_PARTIAL;
-    } else {
       leaf_array[index].type = HostLeaf::DOMAIN_COMPLETE;
+    } else {
+      leaf_array[index].type = HostLeaf::DOMAIN_PARTIAL;
     }
   }
 

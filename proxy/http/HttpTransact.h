@@ -629,7 +629,8 @@ public:
       OS_ADDR_USE_CLIENT   ///< Use client target addr, no fallback.
     };
 
-    OS_Addr os_addr_style = OS_Addr::OS_ADDR_TRY_DEFAULT;
+    OS_Addr os_addr_style       = OS_Addr::OS_ADDR_TRY_DEFAULT;
+    HostResStyle host_res_style = HOST_RES_IPV4;
 
     bool lookup_success         = false;
     char *lookup_name           = nullptr;
@@ -638,6 +639,7 @@ public:
     bool srv_lookup_success     = false;
     short srv_port              = 0;
     HostDBApplicationInfo srv_app;
+
     /*** Set to true by default.  If use_client_target_address is set
      * to 1, this value will be set to false if the client address is
      * not in the DNS pool */

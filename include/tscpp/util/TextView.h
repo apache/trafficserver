@@ -1075,6 +1075,12 @@ TextView::ltrim(const char *delimiters)
 }
 
 inline TextView &
+TextView::rtrim(const char *delimiters)
+{
+  return this->rtrim(std::string_view(delimiters));
+}
+
+inline TextView &
 TextView::rtrim(super_type const &delimiters)
 {
   std::bitset<256> valid;

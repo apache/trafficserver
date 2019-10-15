@@ -500,7 +500,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   // If the key renegotiation failed it's over, just signal the error and finish.
   if (sslClientRenegotiationAbort == true) {
     this->read.triggered = 0;
-    readSignalError(nh, (int)r);
+    readSignalError(nh, static_cast<int>(r));
     Debug("ssl", "client renegotiation setting read signal error");
     return;
   }
@@ -569,7 +569,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
       ink_assert(this->handShakeReader != nullptr);
       if (SSLConfigParams::ssl_handshake_timeout_in > 0) {
-        double handshake_time = ((double)(Thread::get_hrtime() - sslHandshakeBeginTime) / 1000000000);
+        double handshake_time = (static_cast<double>(Thread::get_hrtime() - sslHandshakeBeginTime) / 1000000000);
         Debug("ssl", "ssl handshake for vc %p, took %.3f seconds, configured handshake_timer: %d", this, handshake_time,
               SSLConfigParams::ssl_handshake_timeout_in);
         if (handshake_time > SSLConfigParams::ssl_handshake_timeout_in) {
@@ -691,7 +691,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     break;
   case SSL_READ_ERROR:
     this->read.triggered = 0;
-    readSignalError(nh, (int)r);
+    readSignalError(nh, static_cast<int>(r));
     Debug("ssl", "read finished - read error");
     break;
   }
@@ -874,6 +874,11 @@ SSLNetVConnection::do_io_close(int lerrno)
         // Send the close-notify
         int ret = SSL_shutdown(ssl);
         Debug("ssl-shutdown", "SSL_shutdown %s", (ret) ? "success" : "failed");
+      } else {
+        // Request a quiet shutdown to OpenSSL
+        SSL_set_quiet_shutdown(ssl, 1);
+        SSL_set_shutdown(ssl, SSL_RECEIVED_SHUTDOWN | SSL_SENT_SHUTDOWN);
+        Debug("ssl-shutdown", "Enable quiet shutdown");
       }
     }
   }
@@ -1250,6 +1255,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       unsigned len               = 0;
 
       increment_ssl_version_metric(SSL_version(ssl));
+      fetch_ssl_curve();
 
       // If it's possible to negotiate both NPN and ALPN, then ALPN
       // is preferred since it is the server's preference.  The server
@@ -1473,7 +1479,7 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
   if (netvc->getNPN(&npnptr, &npnsize)) {
     // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
     // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
-    if (SSL_select_next_proto((unsigned char **)out, outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
+    if (SSL_select_next_proto(const_cast<unsigned char **>(out), outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
       Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
       return SSL_TLSEXT_ERR_OK;
     }
@@ -1747,6 +1753,7 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   }
 
   if (curHook != nullptr) {
+    WEAK_SCOPED_MUTEX_LOCK(lock, curHook->m_cont->mutex, this_ethread());
     curHook->invoke(eventId, this);
     reenabled =
       (this->sslHandshakeHookState != HANDSHAKE_HOOKS_CERT_INVOKE && this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE_INVOKE &&
@@ -1765,7 +1772,7 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
     return retval;
   }
   // Add in the SSL data
-  this->ssl = (SSL *)arg;
+  this->ssl = static_cast<SSL *>(arg);
   // Maybe bring over the stats?
 
   sslHandshakeStatus = SSL_HANDSHAKE_DONE;
@@ -1797,6 +1804,14 @@ SSLNetVConnection::increment_ssl_version_metric(int version) const
   default:
     Debug("ssl", "Unrecognized SSL version %d", version);
     break;
+  }
+}
+
+void
+SSLNetVConnection::fetch_ssl_curve()
+{
+  if (!getSSLSessionCacheHit()) {
+    setSSLCurveNID(SSLGetCurveNID(ssl));
   }
 }
 

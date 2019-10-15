@@ -69,7 +69,7 @@ handle_response(TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
             redirect_url_str = TSMimeHdrFieldValueStringGet(resp_bufp, resp_loc, redirect_url_loc, -1, &redirect_url_length);
             if (redirect_url_str) {
               if (redirect_url_length > 0) {
-                char *url = (char *)TSmalloc(redirect_url_length + 1);
+                char *url = static_cast<char *>(TSmalloc(redirect_url_length + 1));
 
                 TSstrlcpy(url, redirect_url_str, redirect_url_length + 1);
                 TSHttpTxnRedirectUrlSet(txnp, url, redirect_url_length);
@@ -92,7 +92,7 @@ plugin_main_handler(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_HTTP_READ_RESPONSE_HDR: {
-    TSHttpTxn txnp = (TSHttpTxn)edata;
+    TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
     TSDebug("[custom_redirect1]", "MAIN_HANDLER::TS_HTTP_READ_RESPONSE_HDR_HOOK");
     handle_response(txnp, contp);
     break;

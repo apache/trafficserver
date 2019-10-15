@@ -43,6 +43,7 @@
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
 #include "P_ALPNSupport.h"
+#include "P_SSLUtils.h"
 
 // These are included here because older OpenSSL libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -302,19 +303,36 @@ public:
     return ssl ? SSL_get_cipher_name(ssl) : nullptr;
   }
 
+  void
+  setSSLCurveNID(ssl_curve_id curve_nid)
+  {
+    sslCurveNID = curve_nid;
+  }
+
+  ssl_curve_id
+  getSSLCurveNID() const
+  {
+    return sslCurveNID;
+  }
+
   const char *
   getSSLCurve() const
   {
     if (!ssl) {
       return nullptr;
     }
-
-    int curve_nid = SSL_get_shared_curve(ssl, 0);
-
-    if (curve_nid == NID_undef) {
+    ssl_curve_id curve = getSSLCurveNID();
+#ifndef OPENSSL_IS_BORINGSSL
+    if (curve == NID_undef) {
       return nullptr;
     }
-    return OBJ_nid2sn(curve_nid);
+    return OBJ_nid2sn(curve);
+#else
+    if (curve == 0) {
+      return nullptr;
+    }
+    return SSL_get_curve_name(curve);
+#endif
   }
 
   bool
@@ -410,6 +428,7 @@ private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
   bool update_rbio(bool move_to_socket);
   void increment_ssl_version_metric(int version) const;
+  void fetch_ssl_curve();
 
   enum SSLHandshakeStatus sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
   bool sslClientRenegotiationAbort           = false;
@@ -418,6 +437,7 @@ private:
   IOBufferReader *handShakeHolder            = nullptr;
   IOBufferReader *handShakeReader            = nullptr;
   int handShakeBioStored                     = 0;
+  int sslCurveNID                            = NID_undef;
 
   bool transparentPassThrough = false;
 

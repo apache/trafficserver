@@ -60,7 +60,7 @@ SSLSessionCache::getSessionBuffer(const SSLSessionID &sid, char *buffer, int &le
 }
 
 bool
-SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
+SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess, ssl_session_cache_exdata **data) const
 {
   uint64_t hash            = sid.hash();
   uint64_t target_bucket   = hash % nbuckets;
@@ -73,7 +73,7 @@ SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
           target_bucket, bucket, buf, hash);
   }
 
-  return bucket->getSession(sid, sess);
+  return bucket->getSession(sid, sess, data);
 }
 
 void
@@ -97,7 +97,7 @@ SSLSessionCache::removeSession(const SSLSessionID &sid)
 }
 
 void
-SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess)
+SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess, SSL *ssl)
 {
   uint64_t hash            = sid.hash();
   uint64_t target_bucket   = hash % nbuckets;
@@ -110,15 +110,15 @@ SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess)
           target_bucket, bucket, buf, hash);
   }
 
-  bucket->insertSession(sid, sess);
+  bucket->insertSession(sid, sess, ssl);
 }
 
 void
-SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
+SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *ssl)
 {
   size_t len = i2d_SSL_SESSION(sess, nullptr); // make sure we're not going to need more than SSL_MAX_SESSION_SIZE bytes
   /* do not cache a session that's too big. */
-  if (len > (size_t)SSL_MAX_SESSION_SIZE) {
+  if (len > static_cast<size_t>(SSL_MAX_SESSION_SIZE)) {
     Debug("ssl.session_cache", "Unable to save SSL session because size of %zd exceeds the max of %d", len, SSL_MAX_SESSION_SIZE);
     return;
   }
@@ -142,6 +142,9 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
 
   PRINT_BUCKET("insertSession before")
   if (queue.size >= static_cast<int>(SSLConfigParams::session_cache_max_bucket_size)) {
+    if (ssl_rsb) {
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_eviction);
+    }
     removeOldestSession();
   }
 
@@ -155,12 +158,19 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
   }
 
   Ptr<IOBufferData> buf;
-  buf = new_IOBufferData(buffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  Ptr<IOBufferData> buf_exdata;
+  size_t len_exdata = sizeof(ssl_session_cache_exdata);
+  buf               = new_IOBufferData(buffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
   ink_release_assert(static_cast<size_t>(buf->block_size()) >= len);
   unsigned char *loc = reinterpret_cast<unsigned char *>(buf->data());
   i2d_SSL_SESSION(sess, &loc);
+  buf_exdata = new_IOBufferData(buffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  ink_release_assert(static_cast<size_t>(buf_exdata->block_size()) >= len_exdata);
+  ssl_session_cache_exdata *exdata = reinterpret_cast<ssl_session_cache_exdata *>(buf_exdata->data());
+  // This could be moved to a function in charge of populating exdata
+  exdata->curve = SSLGetCurveNID(ssl);
 
-  ats_scoped_obj<SSLSession> ssl_session(new SSLSession(id, buf, len));
+  ats_scoped_obj<SSLSession> ssl_session(new SSLSession(id, buf, len, buf_exdata));
 
   /* do the actual insert */
   queue.enqueue(ssl_session.release());
@@ -204,7 +214,7 @@ SSLSessionBucket::getSessionBuffer(const SSLSessionID &id, char *buffer, int &le
 }
 
 bool
-SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess)
+SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess, ssl_session_cache_exdata **data)
 {
   char buf[id.len * 2 + 1];
   buf[0] = '\0'; // just to be safe.
@@ -234,6 +244,10 @@ SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess)
     if (node->session_id == id) {
       const unsigned char *loc = reinterpret_cast<const unsigned char *>(node->asn1_data->data());
       *sess                    = d2i_SSL_SESSION(nullptr, &loc, node->len_asn1_data);
+      if (data != nullptr) {
+        ssl_session_cache_exdata *exdata = reinterpret_cast<ssl_session_cache_exdata *>(node->extra_data->data());
+        *data                            = exdata;
+      }
 
       return true;
     }

@@ -32,7 +32,7 @@
 voidpf
 gzip_alloc(voidpf /* opaque ATS_UNUSED */, uInt items, uInt size)
 {
-  return (voidpf)TSmalloc(items * size);
+  return static_cast<voidpf>(TSmalloc(items * size));
 }
 
 void
@@ -63,12 +63,12 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
         --value_count;
         val = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, value_count, &val_len);
 
-        if (val_len == (int)strlen("br")) {
+        if (val_len == static_cast<int>(strlen("br"))) {
           br = !strncmp(val, "br", val_len);
         }
-        if (val_len == (int)strlen("gzip")) {
+        if (val_len == static_cast<int>(strlen("gzip"))) {
           gzip = !strncmp(val, "gzip", val_len);
-        } else if (val_len == (int)strlen("deflate")) {
+        } else if (val_len == static_cast<int>(strlen("deflate"))) {
           deflate = !strncmp(val, "deflate", val_len);
         }
       }
@@ -139,7 +139,7 @@ init_hidden_header_name()
     fatal("failed to get server name");
   } else {
     int hidden_header_name_len                 = strlen("x-accept-encoding-") + strlen(result);
-    hidden_header_name                         = (char *)TSmalloc(hidden_header_name_len + 1);
+    hidden_header_name                         = static_cast<char *>(TSmalloc(hidden_header_name_len + 1));
     hidden_header_name[hidden_header_name_len] = 0;
     sprintf(hidden_header_name, "x-accept-encoding-%s", result);
   }

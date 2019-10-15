@@ -91,7 +91,7 @@ Lockfile::Open(pid_t *holding_pid)
     *t = '\0';
 
     // coverity[secure_coding]
-    if (sscanf(buf, "%d\n", (int *)&val) != 1) {
+    if (sscanf(buf, "%d\n", static_cast<int *>(&val)) != 1) {
       *holding_pid = 0;
     } else {
       *holding_pid = val;
@@ -154,13 +154,13 @@ Lockfile::Get(pid_t *holding_pid)
     return (-errno);
   }
   // Write our process id to the Lockfile.
-  snprintf(buf, sizeof(buf), "%d\n", (int)getpid());
+  snprintf(buf, sizeof(buf), "%d\n", static_cast<int>(getpid()));
 
   do {
     err = write(fd, buf, strlen(buf));
   } while ((err < 0) && (errno == EINTR));
 
-  if (err != (int)strlen(buf)) {
+  if (err != static_cast<int>(strlen(buf))) {
     close(fd);
     return (-errno);
   }

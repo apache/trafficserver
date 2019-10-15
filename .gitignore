@@ -117,8 +117,8 @@ iocore/net/quic/test_QUICType
 iocore/net/quic/test_QUICTypeUtil
 iocore/net/quic/test_QUICVersionNegotiator
 iocore/aio/test_AIO
-iocore/eventsystem/test_Buffer
-iocore/eventsystem/test_Event
+iocore/eventsystem/test_IOBuffer
+iocore/eventsystem/test_EventSystem
 iocore/eventsystem/test_MIOBufferWriter
 iocore/hostdb/test_RefCountCache
 
@@ -130,6 +130,7 @@ proxy/hdrs/test_Huffmancode
 proxy/hdrs/test_XPACK
 proxy/http/test_proxy_http
 proxy/http2/test_Http2DependencyTree
+proxy/http2/test_Http2FrequencyCounter
 proxy/http2/test_HPACK
 proxy/http2/hpack-tests/results
 proxy/http3/test_libhttp3

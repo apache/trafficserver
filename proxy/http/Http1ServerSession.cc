@@ -69,7 +69,7 @@ Http1ServerSession::new_connection(NetVConnection *new_vc)
   mutex = new_vc->mutex;
 
   // Unique client session identifier.
-  con_id = ink_atomic_increment((int64_t *)(&next_ss_id), 1);
+  con_id = ink_atomic_increment((&next_ss_id), 1);
 
   magic = HTTP_SS_MAGIC_ALIVE;
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, 1); // Update the true global stat
@@ -125,8 +125,9 @@ Http1ServerSession::do_io_close(int alerrno)
     this->server_trans_stat--;
   }
 
-  if (debug_p)
+  if (debug_p) {
     w.print("[{}] session close: nevtc {:x}", con_id, server_vc);
+  }
 
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
   HTTP_SUM_DYN_STAT(http_transactions_per_server_con, transact_count);
@@ -201,4 +202,38 @@ Http1ServerSession::release()
     // (Note: should never get HSM_NOT_FOUND here)
     ink_assert(r == HSM_DONE);
   }
+}
+
+NetVConnection *
+Http1ServerSession::get_netvc() const
+{
+  return server_vc;
+};
+
+void
+Http1ServerSession::set_netvc(NetVConnection *new_vc)
+{
+  server_vc = new_vc;
+}
+
+// Keys for matching hostnames
+IpEndpoint const &
+Http1ServerSession::get_server_ip() const
+{
+  ink_release_assert(server_vc != nullptr);
+  return server_vc->get_remote_endpoint();
+}
+
+int
+Http1ServerSession::populate_protocol(std::string_view *result, int size) const
+{
+  auto vc = this->get_netvc();
+  return vc ? vc->populate_protocol(result, size) : 0;
+}
+
+const char *
+Http1ServerSession::protocol_contains(std::string_view tag_prefix) const
+{
+  auto vc = this->get_netvc();
+  return vc ? vc->protocol_contains(tag_prefix) : nullptr;
 }

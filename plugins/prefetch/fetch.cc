@@ -509,7 +509,7 @@ BgFetch::init(TSMBuffer reqBuffer, TSMLoc reqHdrLoc, TSHttpTxn txnp, const char 
   /* Now set or remove the prefetch API header */
   const String &header = _config.getApiHeader();
   if (_config.isFront()) {
-    if (setHeader(_mbuf, _headerLoc, header.c_str(), (int)header.length(), path, pathLen)) {
+    if (setHeader(_mbuf, _headerLoc, header.c_str(), static_cast<int>(header.length()), path, pathLen)) {
       PrefetchDebug("set header '%.*s: %.*s'", (int)header.length(), header.c_str(), (int)fetchPathLen, fetchPath);
     }
   } else {
@@ -629,7 +629,7 @@ BgFetch::logAndMetricUpdate(TSEvent event) const
 
   if (TSIsDebugTagSet(PLUGIN_NAME "_log")) {
     TSHRTime now   = TShrtime();
-    double elapsed = (double)(now - _startTime) / 1000000.0;
+    double elapsed = static_cast<double>(now - _startTime) / 1000000.0;
 
     PrefetchDebug("ns=%s bytes=%" PRId64 " time=%1.3lf status=%s url=%s key=%s", _config.getNameSpace().c_str(), _bytes, elapsed,
                   status, _url.c_str(), _cachekey.c_str());
@@ -659,7 +659,7 @@ BgFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     // Debug info for this particular bg fetch (put all debug in here please)
     if (TSIsDebugTagSet(PLUGIN_NAME)) {
       char buf[INET6_ADDRSTRLEN];
-      const sockaddr *sockaddress = (const sockaddr *)&fetch->client_ip;
+      const sockaddr *sockaddress = reinterpret_cast<const sockaddr *>(&fetch->client_ip);
 
       switch (sockaddress->sa_family) {
       case AF_INET:
@@ -680,7 +680,7 @@ BgFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
     // Setup the NetVC for background fetch
     TSAssert(nullptr == fetch->vc);
-    if ((fetch->vc = TSHttpConnect((sockaddr *)&fetch->client_ip)) != nullptr) {
+    if ((fetch->vc = TSHttpConnect(reinterpret_cast<sockaddr *>(&fetch->client_ip))) != nullptr) {
       TSHttpHdrPrint(fetch->_mbuf, fetch->_headerLoc, fetch->req_io_buf);
       // We never send a body with the request. ToDo: Do we ever need to support that ?
       TSIOBufferWrite(fetch->req_io_buf, "\r\n", 2);

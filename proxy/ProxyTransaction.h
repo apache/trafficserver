@@ -73,14 +73,11 @@ public:
   virtual void set_proxy_ssn(ProxySession *set_proxy_ssn);
   virtual void set_h2c_upgrade_flag();
 
-  virtual const char *get_protocol_string();
-
-  virtual int populate_protocol(std::string_view *result, int size) const;
-
-  virtual const char *protocol_contains(std::string_view tag_prefix) const;
-
   /// Non-Virtual Methods
   //
+  const char *get_protocol_string();
+  int populate_protocol(std::string_view *result, int size) const;
+  const char *protocol_contains(std::string_view tag_prefix) const;
 
   /// Non-Virtual Accessors
   //
@@ -102,28 +99,115 @@ public:
   Http1ServerSession *get_server_session() const;
   HttpSM *get_sm() const;
 
-  void set_restart_immediate(bool val);
-  bool get_restart_immediate() const;
-
   // This function must return a non-negative number that is different for two in-progress transactions with the same proxy_ssn
   // session.
   //
   void set_rx_error_code(ProxyError e);
   void set_tx_error_code(ProxyError e);
 
+  /// Variables
+  //
+  HttpSessionAccept::Options upstream_outbound_options; // overwritable copy of options
+
 protected:
-  ProxySession *proxy_ssn   = nullptr;
-  HttpSM *current_reader    = nullptr;
-  IOBufferReader *sm_reader = nullptr;
-
-  /// DNS resolution preferences.
-  HostResStyle host_res_style = HOST_RES_NONE;
-  /// Local outbound address control.
-  in_port_t outbound_port{0};
-  IpAddr outbound_ip4;
-  IpAddr outbound_ip6;
-
-  bool restart_immediate = false;
+  ProxySession *_proxy_ssn = nullptr;
+  HttpSM *_sm              = nullptr;
+  IOBufferReader *_reader  = nullptr;
 
 private:
 };
+
+////////////////////////////////////////////////////////////
+// INLINE
+
+inline bool
+ProxyTransaction::is_transparent_passthrough_allowed()
+{
+  return upstream_outbound_options.f_transparent_passthrough;
+}
+inline bool
+ProxyTransaction::is_chunked_encoding_supported() const
+{
+  return _proxy_ssn ? _proxy_ssn->is_chunked_encoding_supported() : false;
+}
+inline void
+ProxyTransaction::set_half_close_flag(bool flag)
+{
+  if (_proxy_ssn) {
+    _proxy_ssn->set_half_close_flag(flag);
+  }
+}
+
+inline bool
+ProxyTransaction::get_half_close_flag() const
+{
+  return _proxy_ssn ? _proxy_ssn->get_half_close_flag() : false;
+}
+
+// What are the debug and hooks_enabled used for?  How are they set?
+// Just calling through to proxy session for now
+inline bool
+ProxyTransaction::debug() const
+{
+  return _proxy_ssn ? _proxy_ssn->debug() : false;
+}
+
+inline APIHook *
+ProxyTransaction::hook_get(TSHttpHookID id) const
+{
+  return _proxy_ssn ? _proxy_ssn->hook_get(id) : nullptr;
+}
+
+inline HttpAPIHooks const *
+ProxyTransaction::feature_hooks() const
+{
+  return _proxy_ssn ? _proxy_ssn->feature_hooks() : nullptr;
+}
+
+inline bool
+ProxyTransaction::has_hooks() const
+{
+  return _proxy_ssn->has_hooks();
+}
+
+inline ProxySession *
+ProxyTransaction::get_proxy_ssn()
+{
+  return _proxy_ssn;
+}
+
+inline void
+ProxyTransaction::set_proxy_ssn(ProxySession *new_proxy_ssn)
+{
+  _proxy_ssn = new_proxy_ssn;
+}
+
+inline Http1ServerSession *
+ProxyTransaction::get_server_session() const
+{
+  return _proxy_ssn ? _proxy_ssn->get_server_session() : nullptr;
+}
+
+inline HttpSM *
+ProxyTransaction::get_sm() const
+{
+  return _sm;
+}
+
+inline const char *
+ProxyTransaction::get_protocol_string()
+{
+  return _proxy_ssn ? _proxy_ssn->get_protocol_string() : nullptr;
+}
+
+inline int
+ProxyTransaction::populate_protocol(std::string_view *result, int size) const
+{
+  return _proxy_ssn ? _proxy_ssn->populate_protocol(result, size) : 0;
+}
+
+inline const char *
+ProxyTransaction::protocol_contains(std::string_view tag_prefix) const
+{
+  return _proxy_ssn ? _proxy_ssn->protocol_contains(tag_prefix) : nullptr;
+}

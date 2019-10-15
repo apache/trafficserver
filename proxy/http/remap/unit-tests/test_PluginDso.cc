@@ -69,7 +69,11 @@ public:
   }
 
   virtual void
-  indicateReload()
+  indicatePreReload()
+  {
+  }
+  virtual void
+  indicatePostReload(TSReturnCode reloadStatus)
   {
   }
   virtual bool

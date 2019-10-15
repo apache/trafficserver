@@ -51,7 +51,7 @@ I18NSPHINXOPTS  = $(SPHINXOPTS)
 # The PAPER setting variables requires recursive make variable expansion, which automake
 # detects as non-portable. We bounce this through a shell script and do the expansion there.
 SBUILD = PAPEROPT_a4="$(PAPEROPT_a4)" PAPEROPT_letter="$(PAPEROPT_letter)" PAPER="$(PAPER)" \
-	PLANTUML_JAR="$(shell ext/plantuml_fetch.sh | tail -1)" \
+	PLANTUML_JAR="$(shell $(srcdir)/ext/plantuml_fetch.sh | tail -1)" \
 	$(srcdir)/sbuild "$(SPHINXBUILD)" \
 	-c $(srcdir) \
 	$(ALLSPHINXOPTS)

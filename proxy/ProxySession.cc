@@ -25,8 +25,6 @@
 #include "HttpDebugNames.h"
 #include "ProxySession.h"
 
-static int64_t next_cs_id = 0;
-
 ProxySession::ProxySession() : VConnection(nullptr)
 {
   ink_zero(this->user_args);
@@ -48,12 +46,6 @@ ProxySession::clear_session_active()
     m_active = false;
     this->decrement_current_active_client_connections_stat();
   }
-}
-
-int64_t
-ProxySession::next_connection_id()
-{
-  return ink_atomic_increment(&next_cs_id, 1);
 }
 
 static const TSEvent eventmap[TS_HTTP_LAST_HOOK + 1] = {
@@ -108,7 +100,7 @@ ProxySession::state_api_callout(int event, void *data)
     if (nullptr != cur_hook) {
       APIHook const *hook = cur_hook;
 
-      MUTEX_TRY_LOCK(lock, hook->m_cont->mutex, mutex->thread_holding);
+      WEAK_MUTEX_TRY_LOCK(lock, hook->m_cont->mutex, mutex->thread_holding);
 
       // Have a mutex but didn't get the lock, reschedule
       if (!lock.is_locked()) {
@@ -182,53 +174,6 @@ ProxySession::handle_api_return(int event)
   }
 }
 
-void *
-
-ProxySession::get_user_arg(unsigned ix) const
-{
-  ink_assert(ix < countof(user_args));
-  return this->user_args[ix];
-}
-
-void
-ProxySession::set_user_arg(unsigned ix, void *arg)
-{
-  ink_assert(ix < countof(user_args));
-  user_args[ix] = arg;
-}
-
-void
-ProxySession::set_debug(bool flag)
-{
-  debug_on = flag;
-}
-
-// Return whether debugging is enabled for this session.
-bool
-ProxySession::debug() const
-{
-  return this->debug_on;
-}
-
-bool
-ProxySession::is_active() const
-{
-  return m_active;
-}
-
-bool
-ProxySession::is_draining() const
-{
-  return TSSystemState::is_draining();
-}
-
-// Override if your session protocol allows this.
-bool
-ProxySession::is_transparent_passthrough_allowed() const
-{
-  return false;
-}
-
 bool
 ProxySession::is_chunked_encoding_supported() const
 {
@@ -245,24 +190,6 @@ bool
 ProxySession::get_half_close_flag() const
 {
   return false;
-}
-
-in_port_t
-ProxySession::get_outbound_port() const
-{
-  return outbound_port;
-}
-
-IpAddr
-ProxySession::get_outbound_ip4() const
-{
-  return outbound_ip4;
-}
-
-IpAddr
-ProxySession::get_outbound_ip6() const
-{
-  return outbound_ip6;
 }
 
 int64_t
@@ -282,12 +209,6 @@ ProxySession::get_server_session() const
   return nullptr;
 }
 
-TSHttpHookID
-ProxySession::get_hookid() const
-{
-  return hook_state.id();
-}
-
 void
 ProxySession::set_active_timeout(ink_hrtime timeout_in)
 {
@@ -301,12 +222,6 @@ ProxySession::set_inactivity_timeout(ink_hrtime timeout_in)
 void
 ProxySession::cancel_inactivity_timeout()
 {
-}
-
-bool
-ProxySession::is_client_closed() const
-{
-  return get_netvc() == nullptr;
 }
 
 int
@@ -334,28 +249,4 @@ ProxySession::get_local_addr()
 {
   NetVConnection *netvc = get_netvc();
   return netvc ? netvc->get_local_addr() : nullptr;
-}
-
-void
-ProxySession::hook_add(TSHttpHookID id, INKContInternal *cont)
-{
-  this->api_hooks.append(id, cont);
-}
-
-APIHook *
-ProxySession::hook_get(TSHttpHookID id) const
-{
-  return this->api_hooks.get(id);
-}
-
-HttpAPIHooks const *
-ProxySession::feature_hooks() const
-{
-  return &api_hooks;
-}
-
-bool
-ProxySession::has_hooks() const
-{
-  return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
 }
