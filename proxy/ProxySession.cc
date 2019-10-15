@@ -24,6 +24,7 @@
 #include "HttpConfig.h"
 #include "HttpDebugNames.h"
 #include "ProxySession.h"
+#include "P_SSLNetVConnection.h"
 
 ProxySession::ProxySession() : VConnection(nullptr)
 {
@@ -79,6 +80,7 @@ ProxySession::free()
   this->api_hooks.clear();
   this->mutex.clear();
   this->acl.clear();
+  this->_ssl.reset();
 }
 
 int
@@ -244,9 +246,20 @@ ProxySession::get_client_addr()
   NetVConnection *netvc = get_netvc();
   return netvc ? netvc->get_remote_addr() : nullptr;
 }
+
 sockaddr const *
 ProxySession::get_local_addr()
 {
   NetVConnection *netvc = get_netvc();
   return netvc ? netvc->get_local_addr() : nullptr;
+}
+
+void
+ProxySession::_handle_if_ssl(NetVConnection *new_vc)
+{
+  auto ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
+  if (ssl_vc) {
+    _ssl = std::make_unique<SSLProxySession>();
+    _ssl.get()->init(*ssl_vc);
+  }
 }

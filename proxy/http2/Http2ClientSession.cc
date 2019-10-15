@@ -216,6 +216,8 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->write_buffer = new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
   this->sm_writer    = this->write_buffer->alloc_reader();
 
+  this->_handle_if_ssl(new_vc);
+
   do_api_callout(TS_HTTP_SSN_START_HOOK);
 }
 

@@ -195,6 +195,8 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   _reader     = reader ? reader : read_buffer->alloc_reader();
   trans.set_reader(_reader);
 
+  _handle_if_ssl(new_vc);
+
   // INKqa11186: Use a local pointer to the mutex as
   // when we return from do_api_callout, the ClientSession may
   // have already been deallocated.

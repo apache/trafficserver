@@ -36,6 +36,8 @@
 #include "tscore/ink_platform.h"
 #include "ts/apidefs.h"
 #include <string_view>
+#include <cstring>
+#include <memory>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -480,6 +482,7 @@ private:
   bool tunnel_decrypt         = false;
   X509_STORE_CTX *verify_cert = nullptr;
 
+  // Null-terminated string, or nullptr if there is no SNI server name.
   std::unique_ptr<char[]> _serverName;
 };
 
