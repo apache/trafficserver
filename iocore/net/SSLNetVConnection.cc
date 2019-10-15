@@ -923,6 +923,8 @@ SSLNetVConnection::free(EThread *t)
 
   ats_free(tunnel_host);
 
+  _serverName.reset();
+
   clear();
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
   ink_assert(con.fd == NO_FD);

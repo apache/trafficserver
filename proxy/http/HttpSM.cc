@@ -627,7 +627,8 @@ HttpSM::setup_blind_tunnel_port()
           t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
         }
       } else {
-        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->serverName, strlen(ssl_vc->serverName));
+        std::string_view serverName = ssl_vc->getServerName();
+        t_state.hdr_info.client_request.url_get()->host_set(serverName.data(), serverName.length());
         t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
       }
     }
@@ -1439,7 +1440,8 @@ plugins required to work with sni_routing.
           t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
         }
       } else if (ssl_vc) {
-        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->serverName, strlen(ssl_vc->serverName));
+        std::string_view serverName = ssl_vc->getServerName();
+        t_state.hdr_info.client_request.url_get()->host_set(serverName.data(), serverName.length());
         t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
       }
     }

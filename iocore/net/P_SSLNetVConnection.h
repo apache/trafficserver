@@ -34,6 +34,8 @@
 #include "tscore/ink_platform.h"
 #include "ts/apidefs.h"
 #include <string_view>
+#include <cstring>
+#include <memory>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -393,11 +395,23 @@ public:
   ink_hrtime sslHandshakeEndTime   = 0;
   ink_hrtime sslLastWriteTime      = 0;
   int64_t sslTotalBytesSent        = 0;
-  // The serverName is either a pointer to the name fetched from the
-  // SSL object or the empty string.  Therefore, we do not allocate
-  // extra memory for this value.  If plugins in the future can set the
-  // serverName value, this strategy will have to change.
-  const char *serverName = nullptr;
+
+  char const *
+  getServerName() const
+  {
+    return _serverName.get() ? _serverName.get() : "";
+  }
+
+  void
+  setServerName(char const *name)
+  {
+    if (name && *name) {
+      int length = std::strlen(name) + 1;
+      char *n    = new char[length];
+      std::memcpy(n, name, length);
+      _serverName = std::unique_ptr<char[]>(n);
+    }
+  }
 
   /// Set by asynchronous hooks to request a specific operation.
   SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
@@ -466,6 +480,9 @@ private:
   in_port_t tunnel_port       = 0;
   bool tunnel_decrypt         = false;
   X509_STORE_CTX *verify_cert = nullptr;
+
+  // Null-terminated string, of nullptr if there is no SNI server name.
+  std::unique_ptr<char[]> _serverName;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
