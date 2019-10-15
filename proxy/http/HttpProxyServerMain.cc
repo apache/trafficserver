@@ -237,11 +237,11 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
 
     quic->enableProtocols(port.m_session_protocol_preference);
 
-    // HTTP/3
-    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_3, new Http3SessionAccept(accept_opt));
-
     // HTTP/0.9 over QUIC (for interop only, will be removed)
     quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, new Http3SessionAccept(accept_opt));
+
+    // HTTP/3
+    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_3, new Http3SessionAccept(accept_opt));
 
     quic->proxyPort  = &port;
     acceptor._accept = quic;
