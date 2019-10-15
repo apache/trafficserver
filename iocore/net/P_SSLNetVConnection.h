@@ -34,6 +34,8 @@
 #include "tscore/ink_platform.h"
 #include "ts/apidefs.h"
 #include <string_view>
+#include <string>
+#include <memory>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -393,11 +395,33 @@ public:
   ink_hrtime sslHandshakeEndTime   = 0;
   ink_hrtime sslLastWriteTime      = 0;
   int64_t sslTotalBytesSent        = 0;
-  // The serverName is either a pointer to the name fetched from the
-  // SSL object or the empty string.  Therefore, we do not allocate
-  // extra memory for this value.  If plugins in the future can set the
-  // serverName value, this strategy will have to change.
-  const char *serverName = nullptr;
+
+  // The server name is the empty string if there is none.
+  char const *
+  getServerName() const
+  {
+    return _serverName ? _serverName.get()->c_str() : "";
+  }
+
+  std::string_view
+  getServerNameAsStringView() const
+  {
+    return _serverName ? std::string_view(*_serverName.get()) : std::string_view("");
+  }
+
+  void
+  setServerName(char const *name)
+  {
+    if (name && *name) {
+      _serverName = std::make_shared<std::string>(name);
+    }
+  }
+
+  std::shared_ptr<std::string>
+  shareServerName() const
+  {
+    return _serverName;
+  }
 
   /// Set by asynchronous hooks to request a specific operation.
   SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
@@ -466,6 +490,8 @@ private:
   in_port_t tunnel_port       = 0;
   bool tunnel_decrypt         = false;
   X509_STORE_CTX *verify_cert = nullptr;
+
+  std::shared_ptr<std::string> _serverName;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

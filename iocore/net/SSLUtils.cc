@@ -422,8 +422,8 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
       }
     }
   }
-  netvc->serverName = servername ? servername : "";
-  int ret           = PerformAction(netvc, netvc->serverName);
+  netvc->setServerName(servername);
+  int ret = PerformAction(netvc, netvc->getServerName());
   if (ret != SSL_TLSEXT_ERR_OK) {
     return SSL_CLIENT_HELLO_ERROR;
   }
@@ -489,14 +489,11 @@ ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
 
-  netvc->serverName = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  if (nullptr == netvc->serverName) {
-    netvc->serverName = "";
-  }
+  netvc->setServerName(SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name));
 
 #if !TS_USE_HELLO_CB
   // Only call the SNI actions here if not already performed in the HELLO_CB
-  int ret = PerformAction(netvc, netvc->serverName);
+  int ret = PerformAction(netvc, netvc->getServerName());
   if (ret != SSL_TLSEXT_ERR_OK) {
     return SSL_TLSEXT_ERR_ALERT_FATAL;
   }

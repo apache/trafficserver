@@ -1266,6 +1266,26 @@ LogAccess::marshal_cache_lookup_url_canon(char *buf)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_client_sni_server_name(char *buf)
+{
+  // NOTE:  For this string_view, data() must always be nul-terminated, but the nul character must not be included in
+  // the length.
+  //
+  std::string_view sn = "";
+
+  if (m_http_sm && m_http_sm->client_sni_server_name()) {
+    sn = std::string_view(m_http_sm->client_sni_server_name());
+  }
+  int len = round_strlen(sn.length() + 1);
+  if (buf) {
+    marshal_str(buf, sn.data(), len);
+  }
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
 
 int
 LogAccess::marshal_client_host_port(char *buf)

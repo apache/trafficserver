@@ -32,6 +32,8 @@
 #pragma once
 
 #include <string_view>
+#include <string>
+#include <memory>
 #include <optional>
 
 #include "tscore/ink_platform.h"
@@ -625,6 +627,13 @@ public:
     return _client_transaction_priority_dependence;
   }
 
+  // Returns null pointer if no SNI server name, otherwise pointer to null-terminated string.
+  char const *
+  client_sni_server_name() const
+  {
+    return _client_sni_server_name ? _client_sni_server_name.get()->c_str() : nullptr;
+  }
+
   void set_server_netvc_inactivity_timeout(NetVConnection *netvc);
   void set_server_netvc_active_timeout(NetVConnection *netvc);
   void set_server_netvc_connect_timeout(NetVConnection *netvc);
@@ -634,6 +643,7 @@ private:
   PostDataBuffers _postbuf;
   int _client_connection_id = -1, _client_transaction_id = -1;
   int _client_transaction_priority_weight = -1, _client_transaction_priority_dependence = -1;
+  std::shared_ptr<std::string> _client_sni_server_name;
 };
 
 // Function to get the cache_sm object - YTS Team, yamsat

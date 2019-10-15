@@ -332,6 +332,7 @@ HttpSM::cleanup()
   tunnel.mutex.clear();
   cache_sm.mutex.clear();
   transform_cache_sm.mutex.clear();
+  _client_sni_server_name.reset();
   magic    = HTTP_SM_MAGIC_DEAD;
   debug_on = false;
 }
@@ -522,6 +523,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
       milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = ssl_vc->sslHandshakeBeginTime;
       milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = ssl_vc->sslHandshakeEndTime;
     }
+    _client_sni_server_name = ssl_vc->shareServerName();
   }
   const char *protocol_str = client_vc->get_protocol_string();
   client_protocol          = protocol_str ? protocol_str : "-";
@@ -627,7 +629,8 @@ HttpSM::setup_blind_tunnel_port()
           t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
         }
       } else {
-        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->serverName, strlen(ssl_vc->serverName));
+        std::string_view serverName = ssl_vc->getServerNameAsStringView();
+        t_state.hdr_info.client_request.url_get()->host_set(serverName.data(), serverName.length());
         t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
       }
     }
@@ -1439,7 +1442,8 @@ plugins required to work with sni_routing.
           t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
         }
       } else if (ssl_vc) {
-        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->serverName, strlen(ssl_vc->serverName));
+        std::string_view serverName = ssl_vc->getServerNameAsStringView();
+        t_state.hdr_info.client_request.url_get()->host_set(serverName.data(), serverName.length());
         t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
       }
     }
