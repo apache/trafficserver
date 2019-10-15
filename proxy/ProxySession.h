@@ -27,11 +27,13 @@
 #include "tscore/ink_resolver.h"
 #include "tscore/TSSystemState.h"
 #include <string_view>
+#include <memory>
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "http/Http1ServerSession.h"
 #include "http/HttpSessionAccept.h"
 #include "IPAllow.h"
+#include "private/SSLProxySession.h"
 
 // Emit a debug message conditional on whether this particular client session
 // has debugging enabled. This should only be called from within a client session
@@ -143,6 +145,10 @@ public:
 
   APIHook *hook_get(TSHttpHookID id) const;
   HttpAPIHooks const *feature_hooks() const;
+
+  // Returns null pointer if session does not use a TLS connection.
+  SSLProxySession const *ssl() const;
+
   ////////////////////
   // Members
 
@@ -167,6 +173,10 @@ protected:
   int64_t con_id        = 0;
   Event *schedule_event = nullptr;
 
+  // This function should be called in all overrides of new_connection() where
+  // the new_vc may be an SSLNetVConnection object.
+  void _handle_if_ssl(NetVConnection *new_vc);
+
 private:
   void handle_api_return(int event);
   int state_api_callout(int event, void *edata);
@@ -180,6 +190,8 @@ private:
   // be active until the transaction goes through or the client
   // aborts.
   bool m_active = false;
+
+  std::unique_ptr<SSLProxySession> _ssl;
 };
 
 ///////////////////
@@ -266,4 +278,10 @@ inline bool
 ProxySession::has_hooks() const
 {
   return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
+}
+
+inline SSLProxySession const *
+ProxySession::ssl() const
+{
+  return _ssl.get();
 }
