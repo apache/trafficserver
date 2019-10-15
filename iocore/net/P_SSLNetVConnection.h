@@ -399,6 +399,12 @@ public:
   // serverName value, this strategy will have to change.
   const char *serverName = nullptr;
 
+  char const *
+  getServerName() const
+  {
+    return serverName;
+  }
+
   /// Set by asynchronous hooks to request a specific operation.
   SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
 

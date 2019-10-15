@@ -521,6 +521,13 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
       milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = ssl_vc->sslHandshakeBeginTime;
       milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = ssl_vc->sslHandshakeEndTime;
     }
+    char const *sniServerName = ssl_vc->getServerName();
+    if (sniServerName && *sniServerName) {
+      int sz  = std::strlen(sniServerName) + 1;
+      char *p = t_state.arena.str_alloc(sz);
+      std::memcpy(p, sniServerName, sz);
+      _client_sni_server_name = p;
+    }
   }
   const char *protocol_str = client_vc->get_protocol_string();
   client_protocol          = protocol_str ? protocol_str : "-";

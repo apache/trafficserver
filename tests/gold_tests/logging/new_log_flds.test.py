@@ -20,7 +20,7 @@ import os
 import subprocess
 
 Test.Summary = '''
-Test new ccid and ctid log fields
+Test new log fields
 '''
 # need Curl
 Test.SkipUnless(
@@ -48,6 +48,10 @@ ts.Disk.remap_config.AddLine(
     'map https://127.0.0.1:{0} https://httpbin.org/ip'.format(ts.Variables.ssl_port)
 )
 
+ts.Disk.remap_config.AddLine(
+    'map https://reallyreallyreallyreallylong.com https://httpbin.org/ip'.format(ts.Variables.ssl_port)
+)
+
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
@@ -57,9 +61,9 @@ ts.Disk.logging_yaml.AddLines(
 logging:
   formats:
     - name: custom
-      format: "%<ccid> %<ctid>"
+      format: "%<ccid> %<ctid> %<cssn>"
   logs:
-    - filename: test_ccid_ctid
+    - filename: test_new_log_flds
       format: custom
 '''.split("\n")
 )
@@ -83,8 +87,17 @@ tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" "http://127.0.0.1:{0
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "https://127.0.0.1:{0}" "https://127.0.0.1:{0}" --http2 --insecure --verbose'.format(
-    ts.Variables.ssl_port)
+tr.Processes.Default.Command = (
+    'curl "https://127.0.0.1:{0}" "https://127.0.0.1:{0}" --http2 --insecure --verbose'.format(
+        ts.Variables.ssl_port)
+)
+tr.Processes.Default.ReturnCode = 0
+
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = (
+    'curl "https://reallyreallyreallyreallylong.com:{0}" --http2 --insecure --verbose' +
+    ' --resolve reallyreallyreallyreallylong.com:{0}:127.0.0.1'
+).format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
 # Delay to allow TS to flush report to disk, then validate generated log.
@@ -92,6 +105,6 @@ tr.Processes.Default.ReturnCode = 0
 tr = Test.AddTestRun()
 tr.DelayStart = 10
 tr.Processes.Default.Command = 'python {0} < {1}'.format(
-    os.path.join(Test.TestDirectory, 'ccid_ctid_observer.py'),
-    os.path.join(ts.Variables.LOGDIR, 'test_ccid_ctid.log'))
+    os.path.join(Test.TestDirectory, 'new_log_flds_observer.py'),
+    os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log'))
 tr.Processes.Default.ReturnCode = 0
