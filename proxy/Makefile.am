@@ -18,6 +18,8 @@
 
 include $(top_srcdir)/build/tidy.mk
 
+include private/Makefile.inc
+
 SUBDIRS = hdrs shared http http2 logging
 if ENABLE_QUIC
 SUBDIRS += http3
@@ -44,6 +46,7 @@ noinst_HEADERS = \
 	Show.h
 
 libproxy_a_SOURCES = \
+	$(PRIVATE_SOURCES_) \
 	CacheControl.cc \
 	CacheControl.h \
 	ControlBase.cc \
