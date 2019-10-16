@@ -3970,15 +3970,6 @@ Plug-in Configuration
 
    Specifies the location of |TS| plugins.
 
-.. ts:cv:: CONFIG proxy.config.remap.num_remap_threads INT 0
-
-   When this variable is set to ``0``, plugin remap callbacks are
-   executed in line on network threads. If remap processing takes
-   significant time, this can be cause additional request latency.
-   Setting this variable to causes remap processing to take place
-   on a dedicated thread pool, freeing the network threads to service
-   additional requests.
-
 SOCKS Processor
 ===============
 
