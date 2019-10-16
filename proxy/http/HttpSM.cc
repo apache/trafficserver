@@ -3477,12 +3477,10 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     //   server and close the ua
     p->handler_state = HTTP_SM_POST_UA_FAIL;
     set_ua_abort(HttpTransact::ABORTED, event);
-
+    p->vc->do_io_write(nullptr, 0, nullptr);
+    p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
     tunnel.chain_abort_all(p);
     server_session = nullptr;
-    p->read_vio    = nullptr;
-    p->vc->do_io_close(EHTTP_ERROR);
-
     // the in_tunnel status on both the ua & and
     //   it's consumer must already be set to true.  Previously
     //   we were setting it again to true but incorrectly in
