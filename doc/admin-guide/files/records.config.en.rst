@@ -2311,6 +2311,11 @@ Dynamic Content & Content Negotiation
          :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
          origin server.
    ``4`` Return a ``502`` error on either a cache miss or on a revalidation.
+   ``5`` Retry Cache Read on a Cache Write Lock failure. This option together
+         with `proxy.config.cache.enable_read_while_writer` configuration
+         allows to collapse concurrent requests without a need for any plugin.
+         Make sure to configure Read While Writer feature correctly following
+         the docs in Cache Basics section.
    ===== ======================================================================
 
 Customizable User Response Pages
