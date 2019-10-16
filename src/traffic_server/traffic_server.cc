@@ -1981,17 +1981,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // This means any spawn scheduling must be done before this point.
   eventProcessor.start(num_of_net_threads, stacksize);
 
-  int num_remap_threads = 0;
-  REC_ReadConfigInteger(num_remap_threads, "proxy.config.remap.num_remap_threads");
-  if (num_remap_threads < 1) {
-    num_remap_threads = 0;
-  }
-
-  if (num_remap_threads > 0) {
-    Note("using the new remap processor system with %d threads", num_remap_threads);
-    remapProcessor.setUseSeparateThread();
-  }
-
   eventProcessor.schedule_every(new SignalContinuation, HRTIME_MSECOND * 500, ET_CALL);
   eventProcessor.schedule_every(new DiagsLogContinuation, HRTIME_SECOND, ET_TASK);
   eventProcessor.schedule_every(new MemoryLimit, HRTIME_SECOND * 10, ET_TASK);
@@ -2024,7 +2013,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       }
     }
   } else {
-    remapProcessor.start(num_remap_threads, stacksize);
     RecProcessStart();
     initCacheControl();
     IpAllow::startup();
