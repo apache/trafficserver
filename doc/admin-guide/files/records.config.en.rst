@@ -1091,11 +1091,10 @@ mptcp
 .. ts:cv:: CONFIG proxy.config.http.request_buffer_enabled INT 0
    :overridable:
 
-   This is a configuration value that is overridable but not configurable. This is most likely an
-   implementation error.
-
    This enables buffering the content for incoming ``POST`` requests. If enabled no outbound
    connection is made until the entire ``POST`` request has been buffered.
+   If enabled, `proxy.config.http.post_copy_size` needs to be set to the maximum of the post body
+   size allowed, otherwise, the post would fail.
 
 .. ts:cv:: CONFIG proxy.config.http.request_line_max_size INT 65535
 

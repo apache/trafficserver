@@ -1118,7 +1118,7 @@ HttpTransact::HandleRequest(State *s)
 {
   TxnDebug("http_trans", "START HttpTransact::HandleRequest");
 
-  if (!s->state_machine->is_waiting_for_full_body) {
+  if (!s->state_machine->is_waiting_for_full_body && !s->state_machine->is_using_post_buffer) {
     ink_assert(!s->hdr_info.server_request.valid());
 
     HTTP_INCREMENT_DYN_STAT(http_incoming_requests_stat);
