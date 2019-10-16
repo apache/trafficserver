@@ -82,9 +82,6 @@ int cache_config_read_while_writer             = 0;
 int cache_config_mutex_retry_delay             = 2;
 int cache_read_while_writer_retry_delay        = 50;
 int cache_config_read_while_writer_max_retries = 10;
-/// Fix up a specific known problem with the 4.2.0 release.
-/// Not used for stripes with a cache version later than 4.2.0.
-int cache_config_compatibility_4_2_0_fixup = 1;
 
 // Globals
 
@@ -3226,8 +3223,6 @@ ink_cache_init(ts::ModuleVersion v)
   if (cache_config_target_fragment_size == 0 || cache_config_target_fragment_size - sizeof(Doc) > MAX_FRAG_SIZE) {
     cache_config_target_fragment_size = DEFAULT_TARGET_FRAGMENT_SIZE;
   }
-
-  REC_EstablishStaticConfigInt32(cache_config_compatibility_4_2_0_fixup, "proxy.config.cache.http.compatibility.4-2-0-fixup");
 
   REC_EstablishStaticConfigInt32(cache_config_max_disk_errors, "proxy.config.cache.max_disk_errors");
   Debug("cache_init", "proxy.config.cache.max_disk_errors = %d", cache_config_max_disk_errors);
