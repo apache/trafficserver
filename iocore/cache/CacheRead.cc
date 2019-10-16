@@ -25,8 +25,6 @@
 
 #include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object.
 
-extern int cache_config_compatibility_4_2_0_fixup;
-
 Action *
 Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
 {
