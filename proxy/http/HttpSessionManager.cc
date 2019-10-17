@@ -123,7 +123,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
     // FreeBSD/clang++ bug workaround: explicit cast to super type to make overload work. Not needed on Fedora27 nor gcc.
     // Not fixed on FreeBSD as of llvm 6.0.1.
     std::tie(first, last) = static_cast<const decltype(m_ip_pool)::range::super_type &>(m_ip_pool.equal_range(addr));
-    // The range is all that is needed in the match IP case, otherwise need to scan for matching fqdn.
+    // The range is all that is needed in the match IP case, therefore scan on if not matching on IP addr.
     // Note the port is matched as part of the address key so it doesn't need to be checked again.
     if (TS_SERVER_SESSION_SHARING_MATCH_IP != match_style) {
       while (last != first) {
@@ -133,7 +133,11 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
           break;
         }
       }
+    } else if (first != last) { // for IP addr matching, success if range is not empty.
+      --last;                   // Back up to last element
+      zret = HSM_DONE;          // Mark success.
     }
+
     if (zret == HSM_DONE) {
       to_return = last;
       m_ip_pool.erase(last);
