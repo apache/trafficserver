@@ -26,6 +26,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Diags.h"
 #include "HTTP.h"
+#include "../hdrs/XPACK.h"
 
 #include <vector>
 
@@ -55,10 +56,10 @@ enum class HpackMatch {
 
 // Result of looking for a header field in IndexingTable
 struct HpackLookupResult {
-  HpackLookupResult() : index(0), index_type(HpackIndex::NONE), match_type(HpackMatch::NONE) {}
-  int index;
-  HpackIndex index_type;
-  HpackMatch match_type;
+  HpackLookupResult() {}
+  int index             = 0;
+  HpackIndex index_type = HpackIndex::NONE;
+  HpackMatch match_type = HpackMatch::NONE;
 };
 
 class MIMEFieldWrapper
@@ -105,7 +106,7 @@ private:
 class HpackDynamicTable
 {
 public:
-  HpackDynamicTable(uint32_t size) : _current_size(0), _maximum_size(size)
+  explicit HpackDynamicTable(uint32_t size) : _current_size(0), _maximum_size(size)
   {
     _mhdr = new MIMEHdr();
     _mhdr->create();
@@ -119,6 +120,10 @@ public:
     delete _mhdr;
   }
 
+  // noncopyable
+  HpackDynamicTable(HpackDynamicTable &) = delete;
+  HpackDynamicTable &operator=(const HpackDynamicTable &) = delete;
+
   const MIMEField *get_header_field(uint32_t index) const;
   void add_header_field(const MIMEField *field);
 
@@ -129,6 +134,8 @@ public:
   uint32_t length() const;
 
 private:
+  bool _evict_overflowed_entries();
+
   uint32_t _current_size;
   uint32_t _maximum_size;
 
@@ -140,8 +147,13 @@ private:
 class HpackIndexingTable
 {
 public:
-  HpackIndexingTable(uint32_t size) { _dynamic_table = new HpackDynamicTable(size); }
+  explicit HpackIndexingTable(uint32_t size) { _dynamic_table = new HpackDynamicTable(size); }
   ~HpackIndexingTable() { delete _dynamic_table; }
+
+  // noncopyable
+  HpackIndexingTable(HpackIndexingTable &) = delete;
+  HpackIndexingTable &operator=(const HpackIndexingTable &) = delete;
+
   HpackLookupResult lookup(const MIMEFieldWrapper &field) const;
   HpackLookupResult lookup(const char *name, int name_len, const char *value, int value_len) const;
   int get_header_field(uint32_t index, MIMEFieldWrapper &header_field) const;
@@ -156,10 +168,6 @@ private:
 };
 
 // Low level interfaces
-int64_t encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8_t n);
-int64_t decode_integer(uint32_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n);
-int64_t encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, size_t value_len);
-int64_t decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end);
 int64_t encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index);
 int64_t encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
                                                       uint32_t index, HpackIndexingTable &indexing_table, HpackField type);

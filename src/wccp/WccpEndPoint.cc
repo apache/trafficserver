@@ -136,14 +136,14 @@ Impl::close()
 }
 
 void
-Impl::useMD5Security(ts::ConstBuffer const &key)
+Impl::useMD5Security(std::string_view const key)
 {
   m_use_security_opt = true;
   m_security_opt     = SECURITY_MD5;
   m_use_security_key = true;
   memset(m_security_key, 0, SecurityComp::KEY_SIZE);
   // Great. Have to cast or we get a link error.
-  memcpy(m_security_key, key._ptr, std::min(key._size, static_cast<size_t>(SecurityComp::KEY_SIZE)));
+  memcpy(m_security_key, key.data(), std::min(key.size(), static_cast<size_t>(SecurityComp::KEY_SIZE)));
 }
 
 SecurityOption
@@ -721,7 +721,7 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
 
   logf(LVL_DEBUG, "Received WCCP2_I_SEE_YOU for group %d.", group.m_svc.getSvcId());
 
-  // Prefered address for router.
+  // Preferred address for router.
   uint32_t router_addr = msg.m_router_id.idElt().getAddr();
   // Where we sent our packet.
   uint32_t to_addr = msg.m_router_id.getToAddr();
@@ -1132,7 +1132,7 @@ EndPoint::open(uint32_t addr)
 }
 
 void
-EndPoint::useMD5Security(ts::ConstBuffer const &key)
+EndPoint::useMD5Security(std::string_view const key)
 {
   this->instance()->useMD5Security(key);
 }

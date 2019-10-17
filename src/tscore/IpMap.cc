@@ -368,21 +368,24 @@ namespace detail
     // Work through the rest of the nodes of interest.
     // Invariant: n->_min >= min
 
-    // Careful here -- because max_plus1 might wrap we need to use it only
-    // if we can certain it didn't. This is done by ordering the range
-    // tests so that when max_plus1 is used when we know there exists a
-    // larger value than max.
+    // Careful here -- because max_plus1 might wrap we need to use it only if we can be certain it
+    // didn't. This is done by ordering the range tests so that when max_plus1 is used when we know
+    // there exists a larger value than max.
     Metric max_plus1 = max;
     N::inc(max_plus1);
+
     /* Notes:
-       - max (and thence max_plus1) never change during the loop.
-       - we must have either x != 0 or adjust min but not both.
+       - max (and thence also max_plus1) never change during the loop.
+       - we must have either x != 0 or adjust min but not both for each loop iteration.
     */
     while (n) {
       if (n->_data == payload) {
         if (x) {
-          if (n->_max <= max) {
-            // next range is covered, so we can remove and continue.
+          if (n->_max <= max) { // next range is covered, so we can remove and continue.
+#if defined(__clang_analyzer__)
+            x->_next = n->_next; // done in @c remove, but CA doesn't realize that.
+                                 // It's insufficient to assert(x->_next != n) after the remove.
+#endif
             this->remove(n);
             n = next(x);
           } else if (n->_min <= max_plus1) {
@@ -642,10 +645,14 @@ namespace detail
   void
   IpMapBase<N>::insert_before(N *spot, N *n)
   {
-    N *c = left(spot);
-    if (!c) {
+    if (left(spot) == nullptr) {
       spot->setChild(n, N::LEFT);
     } else {
+// If there's a left child, there's a previous node, therefore spot->_prev is valid.
+// Clang analyzer doesn't realize this so it generates a false positive.
+#if defined(__clang_analyzer__)
+      ink_assert(spot->_prev != nullptr);
+#endif
       spot->_prev->setChild(n, N::RIGHT);
     }
 
@@ -842,7 +849,7 @@ namespace detail
     {
       return this->setMin(min + 1);
     }
-    /** Decremement the maximum value in place.
+    /** decrement the maximum value in place.
         @return This object.
     */
     self_type &
@@ -921,7 +928,7 @@ namespace detail
     /** Construct from the argument type.
      *
      * @param min Minimum value in the range.
-     * @param max Maximum value in the range (inclusvie).
+     * @param max Maximum value in the range (inclusive).
      * @param data Data to attach to the range.
      */
 
@@ -936,7 +943,7 @@ namespace detail
     /** Construct from the underlying @c Metric type @a min to @a max
      *
      * @param min Minimum value in the range.
-     * @param max Maximum value in the range (inclusvie).
+     * @param max Maximum value in the range (inclusive).
      * @param data Data to attach to the range.
      */
     Ip6Node(Metric const &min, Metric const &max, void *data) : Node(data), Ip6Span(min, max) {}
@@ -1028,7 +1035,7 @@ namespace detail
       inc(_min);
       return *this;
     }
-    /** Decremement the maximum value in place.
+    /** Decrement the maximum value in place.
         @return This object.
     */
     self_type &
@@ -1037,7 +1044,7 @@ namespace detail
       dec(_max);
       return *this;
     }
-    /** Increment the mininimum value in place.
+    /** Increment the minimum value in place.
         @return This object.
     */
     self_type &

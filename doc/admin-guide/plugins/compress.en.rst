@@ -108,6 +108,23 @@ Provides a wildcard to match against content types, determining which are to be
 considered compressible. This defaults to ``text/*``. Takes one Content-Type
 per line.
 
+compressible-status-code
+------------------------
+
+A comma separated list of response status codes for which to enable
+compression. Defaults to 200, 206, 304.
+
+minimum-content-length
+----------------------
+
+Minimum Content-Length value sent by the origin server to consider the response
+compressible. Due to the overhead and latency of compression and decompression,
+it only makes sense to compress files above a certain size threshold.
+Compressing files below 150 bytes can actually make them larger. This setting
+only applies if the response explicitly sends Content-Length. Regardless of
+this setting, responses with ``Content-Length: 0`` are considered not
+compressible.
+
 allow
 --------
 
@@ -115,7 +132,7 @@ Provides a wildcard pattern which will be applied to request URLs. Any which
 match the pattern will be considered compressible, and only deflated versions
 of the objects will be cached and returned to clients. This may be useful for
 objects which already have their own compression built-in, to avoid the expense
-of multiple rounds of compression for trivial gains. If the regex is preceeded by
+of multiple rounds of compression for trivial gains. If the regex is preceded by
 ``!`` (for example ``allow !*/nothere/*``), it disables the plugin from those machine URLs.
 
 enabled
@@ -167,6 +184,8 @@ might create a configuration with the following options::
    remove-accept-encoding false
    compressible-content-type text/*
    compressible-content-type application/json
+   compressible-status-code 200, 206
+   minimum-content-length 860
    flush false
 
    # Now set a configuration for www.example.com

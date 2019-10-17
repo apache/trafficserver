@@ -58,7 +58,7 @@ f()
 
   oss << tv;
 
-  ALWAYS_ASSERT(ts::memcmp(ts::TextView(oss.str()), tv) == 0)
+  ALWAYS_ASSERT(memcmp(ts::TextView(oss.str()), tv) == 0)
 }
 
 TEST(f)

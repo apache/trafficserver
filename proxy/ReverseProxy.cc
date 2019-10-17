@@ -43,7 +43,8 @@
 
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
-UrlRewrite *rewrite_table = nullptr;
+UrlRewrite *rewrite_table                             = nullptr;
+thread_local PluginThreadContext *pluginThreadContext = nullptr;
 
 // Tokens for the Callback function
 #define FILE_CHANGED 0
@@ -150,6 +151,7 @@ reloadUrlRewrite()
     ink_assert(oldTable != nullptr);
 
     // Release the old one
+    oldTable->pluginFactory.deactivate();
     oldTable->release();
 
     Debug("url_rewrite", "%s", msg);
@@ -168,7 +170,7 @@ reloadUrlRewrite()
 int
 url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
 {
-  int my_token = (int)(long)cookie;
+  int my_token = static_cast<int>((long)cookie);
 
   switch (my_token) {
   case REVERSE_CHANGED:

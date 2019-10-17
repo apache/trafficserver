@@ -1,13 +1,15 @@
 
 # Getting Started
 
-This directory contains different tests for Apache Trafficserver. It is recommended that all test move to this common area under the correct location based on the type of test being added.
+This directory contains different tests for Apache Trafficserver. It is recommended that all tests move to this common area under the correct location based on the type of test being added.
 
 ## Layout
 The current layout is:
 
 **gold_tests/** - contains all the TSQA v4 based tests that run on the Reusable Gold Testing System (AuTest)
+
 **tools/** - contains programs used to help with testing.
+
 **include/** - contains headers used for unit testing.
 
 ## Scripts
@@ -15,36 +17,55 @@ The current layout is:
 To help with easy running of the tests, there is autest.sh and bootstrap.py.
 
 ### autest.sh
-This file is a simple wrapper that will call the Reusable Gold Testing System (Autest) program in a python virtualenv. If the virtualenv is not setup, the script will try to install it on the system. That will set up the Autest on most systems in a Python virtual environment. The wrapper add some basic options to the command to point to the location of the tests. Use --help for more details on options for running Autest.
+This file is a simple wrapper that will call the Reusable Gold Testing System (Autest) program in a pipenv. If the pipenv is not setup, the script will prompt user the missing components. That will set up the Autest on most systems in a Python virtual environment. The wrapper adds some basic options to the command to point to the location of the tests. Use --help for more details on options for running Autest.
 
-### bootstrap.py
-This script will try to install python35 or better on the system, and the needed python packages for running the tests.
+### test-env-check.sh
+This script will check for the necessary packages needed to create a pipenv that can run Autest. If any package is missing, the script will alert the user. If all packages are available, it install a virtual environment using the provided Pipfile.
+
+### Pipfile
+This file is used to setup a virtual environment using pipenv. It contains information including the packages needed for Autest. 
+A set of commands for pipenv:
+ * **pipenv install**: create virtual environment from the Pipfile. 
+ * **pipenv shell**: launch a shell with the environment running(type "exit" to leave the shell).
+ * **pipenv run cmd**: run command in the virtual environment without entering a shell, where cmd is the shell command to run.
+ * **pipenv --rm**: remove the environment.
+
+# Basic setup
+
+AuTest can be run using the script file autest.sh listed above. Run the file from the tests/ directory followed by --ats-bin and the bin name. (ie ~/ats/bin) This will run the wrapper for the tests.  
+
+To run autest manually, the recommended way is to follow these steps:
+1. **pipenv install**: create the virtual environment(only needed once).
+2. **pipenv shell**: enter a shell in the virtual environment(type "exit" to leave the shell).
+3. **cd gold_tests**: enter the directory containing the test files.
+4. **autest --ats-bin user_ats_bin**: run autest where user_ats_bin is the bin directory in the user's ats directory.
 
 # Advanced setup
 
-AuTest and the relevant tools can be install manually instead of using the wrapper script. The advange of this is that it is often easier to debug issues with the testing system, or the tests. There are two ways this can be done.
-1. run the bootstrap script then source the path with a "source ./env-test/bin/activate" command. At this point autest command should run without the wrapper script
-2. The other way is to make sure you install python 3.5 or better on your system. From there install these python packages ( ie pip install ):
+AuTest and the relevant tools can be install manually instead of using the wrapper script. By doing this, it is often easier to debug issues with the testing system, or the tests. There are two ways this can be done.
+1. Run the bootstrap script then source the path with a "source ./env-test/bin/activate" command. At this point autest command should run without the wrapper script
+2. Make sure you install python 3.5 or better on your system. From there install these python packages ( ie pip install ):
   - hyper
   - git+https://bitbucket.org/autestsuite/reusable-gold-testing-system.git
   - [traffic-replay](https://bitbucket.org/autestsuite/trafficreplay/src/master/) (This will automatically install [MicroDNS](https://bitbucket.org/autestsuite/microdns/src/master/), [MicroServer](https://bitbucket.org/autestsuite/microserver/src/master/), [TrafficReplayLibrary](https://bitbucket.org/autestsuite/trafficreplaylibrary/src/master/), and dnslib as part of the dependencies.)
 
-# Writting tests for AuTest
-When writting for the AuTest system please refer to the current documenation on the [online wiki](https://bitbucket.org/dragon512/reusable-gold-testing-system/wiki/Home) for general use of the system.
+# Writing tests for AuTest
+When writing for the AuTest system please refer to the current [Online Documentation](https://autestsuite.bitbucket.io/) for general use of the system. To use CurlHeader tester for testing output of curl, please refer to [CurlHeader README](gold_tests/autest-site/readme.md)
 
-## Documenation of AuTest extension for ATS.
+## Documentation of AuTest extension for ATS.
 Autest allows for the creation of extensions to help specialize and simplify test writing for a given application domain. Minus API addition the extension code will check that python 3.5 or better is used. There is also a new command line argumented added specifically for Trafficserver:
 
 --ats-bin < path to bin directory >
 
 This command line argument will point to your build of ATS you want to test. At this time v6.0 or newer of Trafficserver should work.
 
-### MakeATSProcess(name,command=[traffic_server],select_ports=[True])
+### MakeATSProcess(name,command=[traffic_server], select_ports=[True], enable_tls=[False])
  * name - A name for this instance of ATS
  * command - optional argument defining what process to use. Defaults to traffic_server.
- * select_ports - have the testing system auto select the ports to use for this instance of ATS
+ * select_ports - have the testing system automatically select a nonSSL port to use for this instance of ATS
+ * enable_tls - have the testing system also auto-select a SSL port to use (NOTE: This does not set up certs and other TLS-related configs.)
 
-This function will define a sandbox for an instance of trafficserver to run under. The function will return a AuTest process object that will have a number of files and variables defined to make it easier for test definition.
+This function will define a sandbox for an instance of trafficserver to run under. The function will return a AuTest process object that will have a number of files and variables define for making it easier to define a test. If both *select_ports* and *enable_tls* are toggled to **False**, then the test writer will be responsible for setting up the ports and the ready condition for an instance of ATS. 
 
 #### Environment
 The environment of the process will have a number of added environment variables to control trafficserver running the in the sandbox location correctly. This can be used to easily setup other commands that should run under same environment.
@@ -66,8 +87,7 @@ tr.Processes.Default.Env=ts.Env
 These are the current variables that are defined dynamically for Trafficserver
 
 port - the ipv4 port to listen on
-portv6 - the ipv4 port to listen on
-manager_port - the manager port used. This is set even is select_port is False
+portv6 - the ipv6 port to listen on
 admin_port - the admin port used. This is set even is select_port is False
 
 #### File objects

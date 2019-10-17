@@ -21,12 +21,7 @@ import os
 Test.Summary = '''
 Test cached responses and requests with bodies
 '''
-
-# Needs Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "curl needs to be installed on system for this test to work"),
-    Condition.HasProgram("nc", "nc needs to be installed on system for this test to work")
-)
+ 
 Test.ContinueOnFail = True
 
 # Define default ATS
@@ -103,5 +98,3 @@ tr.Processes.Default.Command = "printf 'GET /no_cache_control HTTP/1.1\r\n''Cach
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/cache_no_cache.gold"
 tr.StillRunningAfter = ts
-
-

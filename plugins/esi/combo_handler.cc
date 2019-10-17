@@ -45,7 +45,6 @@ using namespace std;
 using namespace EsiLib;
 
 #define DEBUG_TAG "combo_handler"
-#define FEAT_GATE_8_0
 
 // Because STL vs. C library leads to ugly casting, fix it once.
 inline int
@@ -83,12 +82,12 @@ static string COMBO_HANDLER_PATH{DEFAULT_COMBO_HANDLER_PATH};
 using StringList = list<string>;
 
 struct ClientRequest {
-  TSHttpStatus status;
-  const sockaddr *client_addr;
+  TSHttpStatus status         = TS_HTTP_STATUS_OK;
+  const sockaddr *client_addr = nullptr;
   StringList file_urls;
-  bool gzip_accepted;
+  bool gzip_accepted = false;
   string defaultBucket; // default Bucket will be set to HOST header
-  ClientRequest() : status(TS_HTTP_STATUS_OK), client_addr(nullptr), gzip_accepted(false), defaultBucket("l"){};
+  ClientRequest() : defaultBucket("l"){};
 };
 
 struct InterceptData {
@@ -96,11 +95,11 @@ struct InterceptData {
   TSCont contp;
 
   struct IoHandle {
-    TSVIO vio;
-    TSIOBuffer buffer;
-    TSIOBufferReader reader;
+    TSVIO vio               = nullptr;
+    TSIOBuffer buffer       = nullptr;
+    TSIOBufferReader reader = nullptr;
 
-    IoHandle() : vio(nullptr), buffer(nullptr), reader(nullptr){};
+    IoHandle() = default;
 
     ~IoHandle()
     {
@@ -282,18 +281,14 @@ CacheControlHeader::generate() const
   const char *publicity;
   const char *immutable;
 
-// TODO This feature gate should be removed for the 8.0 release. Previously, all combo_cache
-// documents were public. However, that's a bug. If any requested document is private the combo_cache
-// document should private as well.
-#ifndef FEAT_GATE_8_0
+  // Previously, all combo_cache documents were public. However, that's a bug. If any requested document is private the combo_cache
+  // document should private as well.
   if (_publicity == Publicity::PUBLIC || _publicity == Publicity::DEFAULT) {
     publicity = TS_HTTP_VALUE_PUBLIC;
   } else {
     publicity = TS_HTTP_VALUE_PRIVATE;
   }
-#else
-  publicity = TS_HTTP_VALUE_PUBLIC;
-#endif
+
   immutable = (_immutable ? ", " HTTP_IMMUTABLE : "");
   max_age   = (_max_age == numeric_limits<unsigned int>::max() ? 315360000 : _max_age); // default is 10 years
 

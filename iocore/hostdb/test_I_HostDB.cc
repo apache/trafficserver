@@ -30,6 +30,7 @@ class HostDBTest : Continuation
 {
 };
 
+int
 main()
 {
   init_diags("net_test", nullptr);

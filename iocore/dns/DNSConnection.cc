@@ -49,7 +49,7 @@ DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
 //
 
 DNSConnection::DNSConnection()
-  : fd(NO_FD), num(0), generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this)), handler(nullptr)
+  : fd(NO_FD), generator(static_cast<uint32_t>(static_cast<uintptr_t>(time(nullptr)) ^ (uintptr_t)this))
 {
   memset(&ip, 0, sizeof(ip));
 }
@@ -81,7 +81,7 @@ DNSConnection::trigger()
 
   // Since the periodic check is removed, we need to call
   // this when it's triggered by EVENTIO_DNS_CONNECTION.
-  // The handler should be pionting to DNSHandler::mainEvent.
+  // The handler should be pointing to DNSHandler::mainEvent.
   // We can schedule an immediate event or call the handler
   // directly, and since both arguments are not being used
   // passing in 0 and nullptr will do the job.

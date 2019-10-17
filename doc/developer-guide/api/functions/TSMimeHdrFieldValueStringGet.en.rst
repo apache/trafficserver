@@ -103,7 +103,7 @@ This examples show how to retrieve and copy a specific header. ::
       return len;
     }
 
-See Slso
+See Also
 ========
 
 :manpage:`TSAPI(3ts)`,

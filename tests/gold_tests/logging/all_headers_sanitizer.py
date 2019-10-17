@@ -21,19 +21,19 @@ import sys
 import re
 
 rexl = []
-rexl.append((re.compile(r"\{\{Date\}\:\{[^}]*\}\}"), "__DATE__"))
-rexl.append((re.compile(r"\{\{Expires\}\:\{[^}]*\}\}"), "__EXPIRES__"))
-rexl.append((re.compile(r"\{\{Last-Modified\}\:\{[^}]*\}\}"), "__LAST_MODIFIED__"))
-rexl.append((re.compile(r"\{\{Server\}\:\{ATS/[0-9.]*\}\}"), "__ATS_SERVER__"))
-rexl.append((re.compile(r"\{\{Server\}\:\{ECS [^}]*\}\}"), "__ECS_SERVER__"))
-rexl.append((re.compile(r"\{\{Via\}\:\{[^}]*\}\}"), "__VIA__"))
-rexl.append((re.compile(r"\{\{Server\}\:\{ApacheTrafficServer/[0-9.]*\}\}"), "__ATS2_SERVER__"))
-rexl.append((re.compile(r"\{\{Age\}\:\{[0-9]*\}\}"), "__AGE__"))
+rexl.append((re.compile(r"\{\{Date\}\:\{[^}]*\}\}"), "({__DATE__}}"))
+rexl.append((re.compile(r"\{\{Expires\}\:\{[^}]*\}\}"), "({__EXPIRES__}}"))
+rexl.append((re.compile(r"\{\{Last-Modified\}\:\{[^}]*\}\}"), "({__LAST_MODIFIED__}}"))
+rexl.append((re.compile(r"\{\{Server\}\:\{ATS/[0-9.]*\}\}"), "({__ATS_SERVER__}}"))
+rexl.append((re.compile(r"\{\{Server\}\:\{ECS [^}]*\}\}"), "({__ECS_SERVER__}}"))
+rexl.append((re.compile(r"\{\{Via\}\:\{[^}]*\}\}"), "({__VIA__}}"))
+rexl.append((re.compile(r"\{\{Server\}\:\{ApacheTrafficServer/[0-9.]*\}\}"), "({__ATS2_SERVER__}}"))
+rexl.append((re.compile(r"\{\{Age\}\:\{[0-9]*\}\}"), "({__AGE__}}"))
 rexl.append((re.compile(r"\:" + sys.argv[1]), "__TS_PORT__")) # 1st and only argument is TS client port
 
 # Handle inconsistencies which I think are caused by different revisions of the standard Python http.server.HTTPServer class.
 
-rexl.append((re.compile(r'\{"359670651[^"]*"\}'), '{"359670651__WEIRD__"}'))
+rexl.append((re.compile(r'\{"359670651[^"]*"\}'), '{"{359670651__WEIRD__}"}'))
 rexl.append((re.compile(r'\{\{Accept-Ranges\}:\{bytes\}\}'), ''))
 
 for line in sys.stdin:

@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import hashlib
+import hmac
 import os
 import subprocess
 Test.Summary = '''
@@ -23,11 +25,9 @@ Test url_sig plugin
 '''
 
 Test.ContinueOnFail = True
-Test.SkipIf(Condition.true("Test is temporarily turned off, to be fixed according to an incompatible plugin API change (PR #4964)"))
 
 # Skip if plugins not present.
 Test.SkipUnless(Condition.PluginExists('url_sig.so'))
-Test.SkipUnless(Condition.PluginExists('balancer.so'))
 
 # Set up to check the output after the tests have run.
 #
@@ -45,12 +45,11 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionfile.log", request_header, response_header)
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 ts.addSSLfile("../../remap/ssl/server.pem")
 ts.addSSLfile("../../remap/ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 
 ts.Disk.records_config.update({
     # 'proxy.config.diags.debug.enabled': 1,
@@ -59,8 +58,6 @@ ts.Disk.records_config.update({
     'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': (
-        'ipv4:{0} ipv4:{1}:proto=http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port))
 })
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -91,19 +88,18 @@ ts.Disk.remap_config.AddLine(
 # Use pristine URL, incoming URL changed.
 #
 ts.Disk.remap_config.AddLine(
-    'map http://seven.eight.nine/ http://dummy' +
-    ' @plugin=balancer.so @pparam=--policy=hash,url @pparam=127.0.0.1:{}'.format(server.Variables.Port) +
+    'map http://seven.eight.nine/ http://127.0.0.1:{}'.format(server.Variables.Port) +
     ' @plugin=url_sig.so @pparam={}/url_sig.config @pparam=PristineUrl'.format(Test.TestDirectory)
 )
 
 # Validation failure tests.
 
-LogTee = " 2>&1 | tee -a {}/url_sig_long.log".format(Test.RunDirectory)
+LogTee = " 2>&1 | grep '^<' | tee -a {}/url_sig_long.log".format(Test.RunDirectory)
 
 # Bad client / MD5 / P=101 / URL pristine / URL altered.
 #
 tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (
@@ -194,16 +190,6 @@ tr.Processes.Default.Command = (
 
 # Success tests.
 
-# No client / SHA1 / P=1 / URL not pristine / URL not altered.
-#
-tr = Test.AddTestRun()
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Command = (
-    "curl --verbose --proxy http://127.0.0.1:{} 'http://one.two.three/".format(ts.Variables.port) +
-    "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S=acae22b0e1ba6ea6fbb5d26018dbf152558e98cb'" +
-    LogTee
-)
-
 # With client / SHA1 / P=1 / URL pristine / URL not altered.
 #
 tr = Test.AddTestRun()
@@ -244,13 +230,36 @@ tr.Processes.Default.Command = (
     LogTee
 )
 
-# No client / SHA1 / P=1 / URL not pristine / URL not altered -- HTTPS.
+
+def sign(payload, key):
+    secret = bytes(key, 'utf-8')
+    data = bytes(payload, 'utf-8')
+    md = bytes(hmac.new(secret, data, digestmod=hashlib.sha1).digest().hex(), 'utf-8')
+    return md.decode("utf-8")
+
+
+# No client / SHA1 / P=1 / URL not pristine / URL not altered.
 #
+path = "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S="
+to_sign = "127.0.0.1:{}/".format(server.Variables.Port) + path
+url = "http://one.two.three/" + path + sign(to_sign, "dqsgopTSM_doT6iAysasQVUKaPykyb6e")
+
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (
-    "curl --verbose --http1.1 --insecure --header 'Host: one.two.three' 'https://127.0.0.1:{}/".format(ts.Variables.ssl_port) +
-    "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S=acae22b0e1ba6ea6fbb5d26018dbf152558e98cb'" +
+    "curl --verbose --proxy http://127.0.0.1:{} '{}'".format(ts.Variables.port, url) + LogTee
+)
+
+# No client / SHA1 / P=1 / URL not pristine / URL not altered -- HTTPS.
+#
+path = "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S="
+to_sign = "127.0.0.1:{}/".format(server.Variables.Port) + path
+url = "https://127.0.0.1:{}/".format(ts.Variables.ssl_port) + path + sign(to_sign, "dqsgopTSM_doT6iAysasQVUKaPykyb6e")
+
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = (
+    "curl --verbose --http1.1 --insecure --header 'Host: one.two.three' '{}'".format(url) +
     LogTee + " ; grep -F -e '< HTTP' -e Authorization {0}/url_sig_long.log > {0}/url_sig_short.log ".format(ts.RunDirectory)
 )
 

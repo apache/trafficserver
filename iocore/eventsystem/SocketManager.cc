@@ -66,10 +66,8 @@ accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags)
 int
 SocketManager::accept4(int s, struct sockaddr *addr, socklen_t *addrlen, int flags)
 {
-  int fd;
-
   do {
-    fd = ::accept4(s, addr, addrlen, flags);
+    int fd = ::accept4(s, addr, addrlen, flags);
     if (likely(fd >= 0)) {
       return fd;
     }

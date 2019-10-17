@@ -122,7 +122,7 @@ static void *
 ink_thread_trampoline(void *data)
 {
   void *retval;
-  INKThreadInternal *ithread = (INKThreadInternal *)data;
+  INKThreadInternal *ithread = static_cast<INKThreadInternal *>(data);
 
   ithread->set_specific();
   retval = ithread->func(ithread->data);
@@ -158,7 +158,7 @@ TSThreadCreate(TSThreadFunc func, void *data)
     return (TSThread) nullptr;
   }
 
-  return (TSThread)thread;
+  return reinterpret_cast<TSThread>(thread);
 }
 
 // Wait for a thread to complete. When a thread calls TSThreadCreate,
@@ -171,7 +171,7 @@ void
 TSThreadWait(TSThread thread)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
-  INKThreadInternal *ithread = (INKThreadInternal *)thread;
+  INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
 
   ink_mutex_acquire(&ithread->completion.lock);
 
@@ -205,7 +205,7 @@ TSThreadDestroy(TSThread thread)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
 
-  INKThreadInternal *ithread = (INKThreadInternal *)thread;
+  INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
 
   // The thread must be destroyed by the same thread that created
   // it because that thread is holding the thread mutex.
@@ -633,12 +633,12 @@ TSIOBufferWrite(TSIOBuffer bufp, const void *buf, int64_t length)
   return b->write(buf, length);
 }
 
-// not in SDK3.0
-void
-TSIOBufferReaderCopy(TSIOBufferReader readerp, const void *buf, int64_t length)
+int64_t
+TSIOBufferReaderCopy(TSIOBufferReader readerp, void *buf, int64_t length)
 {
-  IOBufferReader *r = (IOBufferReader *)readerp;
-  r->memcpy(buf, length);
+  auto r{reinterpret_cast<IOBufferReader *>(readerp)};
+  char *limit = r->memcpy(buf, length, 0);
+  return limit - static_cast<char *>(buf);
 }
 
 void

@@ -181,7 +181,7 @@ ts_lua_server_response_header_get(lua_State *L)
         next_field_loc = TSMimeHdrFieldNextDup(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, field_loc);
         lua_pushlstring(L, val, val_len);
         count++;
-        // multiple headers with the same name must be semantically the same as one value which is comma seperated
+        // multiple headers with the same name must be semantically the same as one value which is comma separated
         if (next_field_loc != TS_NULL_MLOC) {
           lua_pushlstring(L, ",", 1);
           count++;
@@ -299,6 +299,7 @@ ts_lua_server_response_set_status(lua_State *L)
 
   TS_LUA_CHECK_SERVER_RESPONSE_HDR(http_ctx);
 
+  // NOLINTNEXTLINE
   status = luaL_checkint(L, 1);
 
   reason = TSHttpHdrReasonLookup(status);

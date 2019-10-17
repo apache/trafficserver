@@ -38,12 +38,10 @@
 #include "LogFilter.h"
 #include "LogFormat.h"
 #include "LogFile.h"
-#include "LogHost.h"
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "LogBuffer.h"
 #include "LogUtils.h"
-#include "LogSock.h"
 #include "Log.h"
 
 // logcat-specific command-line flags
@@ -310,8 +308,9 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
         // If we don't plan on following the log file, we should let the kernel know
         // that we plan on reading the entire file so the kernel can do
         // some fancy optimizations.
-        if (!follow_flag)
+        if (!follow_flag) {
           posix_fadvise(in_fd, 0, 0, POSIX_FADV_WILLNEED);
+        }
 
         // We're always reading the file sequentially so this will always help
         posix_fadvise(in_fd, 0, 0, POSIX_FADV_SEQUENTIAL);

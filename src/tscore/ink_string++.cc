@@ -69,18 +69,18 @@ StrList::_new_cell(const char *s, int len_not_counting_nul)
   if (cells_allocated < STRLIST_BASE_CELLS) {
     cell = &(base_cells[cells_allocated]);
   } else {
-    p = (char *)alloc(sizeof(Str) + 7);
+    p = static_cast<char *>(alloc(sizeof(Str) + 7));
     if (p == nullptr) {
       return (nullptr); // FIX: scale heap
     }
     p    = (char *)((((uintptr_t)p) + 7) & ~7); // round up to multiple of 8
-    cell = (Str *)p;
+    cell = reinterpret_cast<Str *>(p);
   }
   ++cells_allocated;
 
   // are we supposed to copy the string?
   if (copy_when_adding_string) {
-    char *buf = (char *)alloc(l + 1);
+    char *buf = static_cast<char *>(alloc(l + 1));
     if (buf == nullptr) {
       return (nullptr); // FIX: need to grow heap!
     }
@@ -162,7 +162,7 @@ StrListOverflow::alloc(int size, StrListOverflow **new_heap_ptr)
     return next->alloc(size, new_heap_ptr);
   }
 
-  char *start = ((char *)this) + overflow_head_hdr_size;
+  char *start = (reinterpret_cast<char *>(this)) + overflow_head_hdr_size;
   char *rval  = start + heap_used;
   heap_used += size;
   ink_assert(heap_used <= heap_size);
@@ -177,10 +177,10 @@ StrListOverflow::create_heap(int user_size)
   //  matter since we are talking about strings but since this is a
   //  last minute emergency bug fix, I'm not take any changes.  If
   //  allocations are not of aligned values then subsequents allocations
-  //  aren't aligned, again mirroring the previous implemnetation
+  //  aren't aligned, again mirroring the previous implementation
   int total_size = overflow_head_hdr_size + user_size;
 
-  StrListOverflow *o = (StrListOverflow *)ats_malloc(total_size);
+  StrListOverflow *o = static_cast<StrListOverflow *>(ats_malloc(total_size));
   o->init();
   o->heap_size = user_size;
 

@@ -64,10 +64,7 @@ public:
         @c NET_EVENT_ACCEPT_SUCCEED
         or @c NET_EVENT_ACCEPT_FAILED on success and failure resp.
     */
-    bool f_callback_on_open;
-    /** Accept only on the loopback address.
-        Default: @c false.
-     */
+
     bool localhost_only;
     /// Are frequent accepts expected?
     /// Default: @c false.
@@ -80,6 +77,9 @@ public:
     /// Socket transmit buffer size.
     /// 0 => OS default.
     int send_bufsize;
+    /// defer accpet for @c sockopt.
+    /// 0 => OS default.
+    int defer_accept;
     /// Socket options for @c sockopt.
     /// 0 => do not set options.
     uint32_t sockopt_flags;
@@ -96,6 +96,12 @@ public:
         transparent.
     */
     bool f_inbound_transparent;
+
+    /** MPTCP enabled on listener.
+        @internal For logging and metrics purposes to know whether the
+        listener enabled MPTCP or not.
+    */
+    bool f_mptcp;
 
     /// Proxy Protocol enabled
     bool f_proxy_protocol;
@@ -184,6 +190,8 @@ public:
   */
   virtual void init() = 0;
 
+  virtual void init_socks() = 0;
+
   inkcoreapi virtual NetVConnection *allocate_vc(EThread *) = 0;
 
   /** Private constructor. */
@@ -234,7 +242,7 @@ private:
   object.
 
   @code
-    netProcesors.accept(my_cont, ...);
+    netProcessor.accept(my_cont, ...);
     netProcessor.connect_re(my_cont, ...);
   @endcode
 
@@ -249,3 +257,4 @@ extern inkcoreapi NetProcessor &netProcessor;
 
 */
 extern inkcoreapi NetProcessor &sslNetProcessor;
+extern inkcoreapi NetProcessor &quicNetProcessor;

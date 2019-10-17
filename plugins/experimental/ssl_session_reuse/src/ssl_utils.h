@@ -23,13 +23,15 @@
  */
 #pragma once
 
-#include <openssl/ssl.h>
 #include <string>
+#include <iostream>
+#include <iomanip>
+#include <atomic>
+#include <openssl/ssl.h>
 #include <ts/ts.h>
 
 #include "publisher.h"
 #include "subscriber.h"
-
 #include "stek.h"
 
 struct ssl_session_param {
@@ -38,7 +40,7 @@ struct ssl_session_param {
   int stek_master;                 // bool - Am I the STEK setter/rotator for POD?
   ssl_ticket_key_t ticket_keys[2]; // current and past STEK
   std::string redis_auth_key_file;
-  RedisPublisher *pub;
+  RedisPublisher *pub = nullptr;
   RedisSubscriber *sub;
 
   ssl_session_param();

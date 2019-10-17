@@ -23,13 +23,11 @@ Test transactions and sessions over http2, making sure they open and close in th
 '''
 
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl needs to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2')
 )
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False, command="traffic_manager")
-ts.Variables.ssl_port = 4443
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_manager")
 
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
@@ -57,7 +55,6 @@ ts.Disk.records_config.update({
     'proxy.config.cache.enable_read_while_writer': 0,
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
 })
 
 ts.Disk.remap_config.AddLine(
@@ -98,7 +95,7 @@ tr.StillRunningAfter = ts
 # Parking this as a ready tester on a meaningless process
 # To stall the test runs that check for the stats until the
 # stats have propagated and are ready to read.
-def make_done_stat_ready(tsenv): 
+def make_done_stat_ready(tsenv):
   def done_stat_ready(process, hasRunFor, **kw):
     retval = subprocess.run("traffic_ctl metric get ssntxnorder_verify.test.done > done  2> /dev/null", shell=True, env=tsenv)
     if retval.returncode == 0:
@@ -106,7 +103,7 @@ def make_done_stat_ready(tsenv):
     return retval.returncode == 0
 
   return done_stat_ready
-  
+
 # number of sessions/transactions opened and closed are equal
 tr = Test.AddTestRun("Check Ssn order errors")
 server2.StartupTimeout = 60

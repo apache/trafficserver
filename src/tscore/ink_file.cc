@@ -129,7 +129,7 @@ ink_file_fd_writestring(int fd, const char *buf)
 {
   int len, i = 0;
 
-  if (buf && (len = strlen(buf)) > 0 && (i = (int)write(fd, buf, (size_t)len) != len)) {
+  if (buf && (len = strlen(buf)) > 0 && (i = static_cast<int>(write(fd, buf, static_cast<size_t>(len))) != len)) {
     i = -1;
   }
 
@@ -174,7 +174,7 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
   } else {
     // If INK_FILEPATH_NOTABSOLUTE is specified, the caller
     // requires a relative result.  If the rootpath is
-    // ommitted, we do not retrieve the working path,
+    // omitted, we do not retrieve the working path,
     // if rootpath was supplied as absolute then fail.
     //
     if (flags & INK_FILEPATH_NOTABSOLUTE) {
@@ -199,7 +199,7 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
   maxlen  = rootlen + strlen(addpath) + 4; // 4 for slashes at start, after
                                            // root, and at end, plus trailing
                                            // null
-  if (maxlen > (size_t)pathsz) {
+  if (maxlen > static_cast<size_t>(pathsz)) {
     return E2BIG; // APR_ENAMETOOLONG;
   }
   if (addpath[0] == '/') {
@@ -360,9 +360,9 @@ ink_filepath_make(char *path, int pathsz, const char *rootpath, const char *addp
   }
   rootlen = strlen(rootpath);
   maxlen  = strlen(addpath) + 2;
-  if (maxlen > (size_t)pathsz) {
+  if (maxlen > static_cast<size_t>(pathsz)) {
     *path = '\0';
-    return (int)maxlen;
+    return static_cast<int>(maxlen);
   }
   ink_strlcpy(path, rootpath, pathsz);
   path += rootlen;
@@ -490,7 +490,7 @@ ink_file_get_geometry(int fd ATS_UNUSED, ink_device_geometry &geometry)
 #if defined(BLKALIGNOFF)
   // BLKALIGNOFF gets the number of bytes needed to align the I/Os to the block device with
   // and underlying block devices. This might be non-zero when you are using a logical volume
-  // backed by JBOD or RAID device(s). BLKALIGNOFF was addeed in 2.6.32, so it's not present in
+  // backed by JBOD or RAID device(s). BLKALIGNOFF was added in 2.6.32, so it's not present in
   // RHEL 5.
   if (ioctl(fd, BLKALIGNOFF, &arg.u32) == 0) {
     geometry.alignsz = arg.u32;
@@ -531,7 +531,7 @@ ink_fileperm_parse(const char *perms)
 {
   if (perms && strlen(perms) == 9) {
     int re  = 0;
-    char *c = (char *)perms;
+    char *c = const_cast<char *>(perms);
     if (*c == 'r') {
       re |= S_IRUSR;
     }

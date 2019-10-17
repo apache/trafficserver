@@ -50,6 +50,7 @@ extern const std::string_view IP_PROTO_TAG_IPV4;
 extern const std::string_view IP_PROTO_TAG_IPV6;
 extern const std::string_view IP_PROTO_TAG_UDP;
 extern const std::string_view IP_PROTO_TAG_TCP;
+extern const std::string_view IP_PROTO_TAG_QUIC;
 extern const std::string_view IP_PROTO_TAG_TLS_1_0;
 extern const std::string_view IP_PROTO_TAG_TLS_1_1;
 extern const std::string_view IP_PROTO_TAG_TLS_1_2;
@@ -58,6 +59,8 @@ extern const std::string_view IP_PROTO_TAG_HTTP_0_9;
 extern const std::string_view IP_PROTO_TAG_HTTP_1_0;
 extern const std::string_view IP_PROTO_TAG_HTTP_1_1;
 extern const std::string_view IP_PROTO_TAG_HTTP_2_0;
+extern const std::string_view IP_PROTO_TAG_HTTP_QUIC;
+extern const std::string_view IP_PROTO_TAG_HTTP_3;
 
 struct IpAddr; // forward declare.
 
@@ -117,7 +120,7 @@ union IpEndpoint {
   in_port_t &port();
   /// Port in network order.
   in_port_t port() const;
-  /// Port in host horder.
+  /// Port in host order.
   in_port_t host_order_port() const;
 
   operator sockaddr *() { return &sa; }
@@ -1149,7 +1152,7 @@ struct IpAddr {
   typedef IpAddr self; ///< Self reference type.
 
   /// Default construct (invalid address).
-  IpAddr() : _family(AF_UNSPEC) {}
+  IpAddr() {}
 
   /** Construct from IPv4 address.
    *
@@ -1284,7 +1287,7 @@ struct IpAddr {
   /// Test for any addr
   bool isAnyAddr() const;
 
-  uint16_t _family; ///< Protocol family.
+  uint16_t _family = AF_UNSPEC; ///< Protocol family.
   /// Address data.
   union Addr {
     in_addr_t _ip4;                                                    ///< IPv4 address storage.

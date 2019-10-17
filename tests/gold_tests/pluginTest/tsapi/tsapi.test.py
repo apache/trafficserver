@@ -33,20 +33,16 @@ request_header = {
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "112233" }
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
-
-ts.Variables.ssl_port = 4443
 
 ts.Disk.records_config.update({
     'proxy.config.http.cache.http': 0,  # Make sure each request is forwarded to the origin server.
     'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': (
-        'ipv4:{0} ipv4:{1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port)),
     'proxy.config.url_remap.remap_required': 0,
     'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'http|test_tsapi',
@@ -72,14 +68,14 @@ tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Po
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
 #
 tr.Processes.Default.Command = (
-    'curl --verbose --ipv4 --header "Host: myhost.test:{0}" http://localhost:{1}/'.format(server.Variables.Port, ts.Variables.port)
+    'curl --verbose --ipv4 --header "Host: mYhOsT.teSt:{0}" hTtP://loCalhOst:{1}/'.format(server.Variables.Port, ts.Variables.port)
 )
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http2 --insecure --header ' +
-    '"Host: myhost.test:{0}" https://localhost:{1}/'.format(server.Variables.Port, ts.Variables.ssl_port)
+    '"Host: myhost.test:{0}" HttPs://LocalHost:{1}/'.format(server.Variables.Port, ts.Variables.ssl_port)
 )
 tr.Processes.Default.ReturnCode = 0
 

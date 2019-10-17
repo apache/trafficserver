@@ -64,22 +64,7 @@ transfer_data(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
   out_buf.writer()->fill(n);
 }
 
-OneWayTunnel::OneWayTunnel()
-  : Continuation(nullptr),
-    vioSource(nullptr),
-    vioTarget(nullptr),
-    cont(nullptr),
-    manipulate_fn(nullptr),
-    n_connections(0),
-    lerrno(0),
-    single_buffer(false),
-    close_source(false),
-    close_target(false),
-    tunnel_till_done(false),
-    tunnel_peer(nullptr),
-    free_vcs(true)
-{
-}
+OneWayTunnel::OneWayTunnel() : Continuation(nullptr) {}
 
 OneWayTunnel *
 OneWayTunnel::OneWayTunnel_alloc()
@@ -241,7 +226,7 @@ OneWayTunnel::transform(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
 int
 OneWayTunnel::startEvent(int event, void *data)
 {
-  VIO *vio   = (VIO *)data;
+  VIO *vio   = static_cast<VIO *>(data);
   int ret    = VC_EVENT_DONE;
   int result = 0;
 
@@ -306,7 +291,7 @@ OneWayTunnel::startEvent(int event, void *data)
 
   case VC_EVENT_ERROR:
   Lerror:
-    lerrno = ((VIO *)data)->vc_server->lerrno;
+    lerrno = (static_cast<VIO *>(data))->vc_server->lerrno;
     // fallthrough
 
   case VC_EVENT_INACTIVITY_TIMEOUT:

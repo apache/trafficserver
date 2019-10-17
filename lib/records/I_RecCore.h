@@ -43,11 +43,10 @@ int RecSetDiags(Diags *diags);
 //-------------------------------------------------------------------------
 // Config File Parsing
 //-------------------------------------------------------------------------
-typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const char *name, const char *value, RecSourceT source,
-                                       bool inc_version);
+typedef void (*RecConfigEntryCallback)(RecT rec_type, RecDataT data_type, const char *name, const char *value, RecSourceT source);
 
 void RecConfigFileInit();
-int RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_version);
+int RecConfigFileParse(const char *path, RecConfigEntryCallback handler);
 
 // Return a copy of the system's configuration directory.
 std::string RecConfigReadConfigDir();
@@ -134,19 +133,17 @@ RecErrT RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock *rsb, int
 //-------------------------------------------------------------------------
 
 // WARNING!  Avoid deadlocks by calling the following set/get calls
-// with the appropiate locking conventions.  If you're calling these
+// with the appropriate locking conventions.  If you're calling these
 // functions from a configuration update callback (RecConfigUpdateCb),
 // be sure to set 'lock' to 'false' as the hash-table rwlock has
 // already been taken out for the callback.
 
 // RecSetRecordConvert -> WebMgmtUtils.cc::varSetFromStr()
-RecErrT RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock = true,
-                            bool inc_version = true);
-RecErrT RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock = true, bool inc_version = true);
-RecErrT RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock = true, bool inc_version = true);
-RecErrT RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock = true,
-                           bool inc_version = true);
-RecErrT RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock = true, bool inc_version = true);
+RecErrT RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock = true);
+RecErrT RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock = true);
+RecErrT RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock = true);
+RecErrT RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock = true);
+RecErrT RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock = true);
 
 RecErrT RecGetRecordInt(const char *name, RecInt *rec_int, bool lock = true);
 RecErrT RecGetRecordFloat(const char *name, RecFloat *rec_float, bool lock = true);
@@ -307,5 +304,5 @@ RecErrT RecSetSyncRequired(char *name, bool lock = true);
 //------------------------------------------------------------------------
 // Manager Callback
 //------------------------------------------------------------------------
-using RecManagerCb = std::function<void(ts::MemSpan)>;
+using RecManagerCb = std::function<void(ts::MemSpan<void>)>;
 int RecRegisterManagerCb(int _signal, RecManagerCb const &_fn);

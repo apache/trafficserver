@@ -28,44 +28,48 @@
 #include <sstream>
 
 int
-ts::memcmp(TextView const &lhs, TextView const &rhs)
+memcmp(std::string_view const &lhs, std::string_view const &rhs)
 {
-  int zret;
-  size_t n;
+  int zret = 0;
+  size_t n = rhs.size();
 
   // Seems a bit ugly but size comparisons must be done anyway to get the memcmp args.
   if (lhs.size() < rhs.size()) {
-    zret = 1, n = lhs.size();
-  } else {
-    n    = rhs.size();
-    zret = rhs.size() < lhs.size() ? -1 : 0;
+    zret = 1;
+    n    = lhs.size();
+  } else if (lhs.size() > rhs.size()) {
+    zret = -1;
+  } else if (lhs.data() == rhs.data()) { // same memory, obviously equal.
+    return 0;
   }
 
   int r = ::memcmp(lhs.data(), rhs.data(), n);
-  if (0 != r) { // If we got a not-equal, override the size based result.
-    zret = r;
-  }
-
-  return zret;
+  return r ? r : zret;
 }
 
 int
 strcasecmp(const std::string_view &lhs, const std::string_view &rhs)
 {
-  size_t len = std::min(lhs.size(), rhs.size());
-  int zret   = strncasecmp(lhs.data(), rhs.data(), len);
-  if (0 == zret) {
-    if (lhs.size() < rhs.size()) {
-      zret = -1;
-    } else if (lhs.size() > rhs.size()) {
-      zret = 1;
-    }
+  int zret = 0;
+  size_t n = rhs.size();
+
+  // Seems a bit ugly but size comparisons must be done anyway to get the @c strncasecmp args.
+  if (lhs.size() < rhs.size()) {
+    zret = 1;
+    n    = lhs.size();
+  } else if (lhs.size() > rhs.size()) {
+    zret = -1;
+  } else if (lhs.data() == rhs.data()) { // the same memory, obviously equal.
+    return 0;
   }
-  return zret;
+
+  int r = ::strncasecmp(lhs.data(), rhs.data(), n);
+
+  return r ? r : zret;
 }
 
 const int8_t ts::svtoi_convert[256] = {
-  /* [can't do this nicely because clang format won't allow exdented comments]
+  /* [can't do this nicely because clang format won't allow extended comments]
    0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
   */
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 00
@@ -153,7 +157,7 @@ ts::svtoi(TextView src, TextView *out, int base)
   return zret;
 }
 
-// Do the template instantions.
+// Do the template instantiations.
 template std::ostream &ts::TextView::stream_write(std::ostream &, const ts::TextView &) const;
 
 namespace std

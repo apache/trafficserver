@@ -49,7 +49,7 @@
 #define MGMT_EVENT_PLUGIN_CONFIG_UPDATE 10006
 #define MGMT_EVENT_ROLL_LOG_FILES 10008
 #define MGMT_EVENT_LIBRECORDS 10009
-#define MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION 10010
+// 10010 is unused
 // cache storage operations - each is a distinct event.
 // this is done because the code paths share nothing but boilerplate logic
 // so it's easier to do this than to try to encode an opcode and yet another
@@ -70,34 +70,28 @@
 
 // Signal flows: traffic server -> traffic manager
 #define MGMT_SIGNAL_PID 0
-#define MGMT_SIGNAL_MACHINE_UP 1 /* Data is ip addr */
-#define MGMT_SIGNAL_MACHINE_DOWN 2
-#define MGMT_SIGNAL_CONFIG_ERROR 3 /* Data is descriptive string */
+
+#define MGMT_SIGNAL_PROXY_PROCESS_DIED 1
+#define MGMT_SIGNAL_PROXY_PROCESS_BORN 2
+#define MGMT_SIGNAL_CONFIG_ERROR 3
 #define MGMT_SIGNAL_SYSTEM_ERROR 4
-#define MGMT_SIGNAL_LOG_SPACE_CRISIS 5
-#define MGMT_SIGNAL_CONFIG_FILE_READ 6
-#define MGMT_SIGNAL_CACHE_ERROR 7
-#define MGMT_SIGNAL_CACHE_WARNING 8
-#define MGMT_SIGNAL_LOGGING_ERROR 9
-#define MGMT_SIGNAL_LOGGING_WARNING 10
-// Currently unused: 11
-// Currently unused: 12
-// Currently unused: 13
-#define MGMT_SIGNAL_PLUGIN_SET_CONFIG 14
-#define MGMT_SIGNAL_LOG_FILES_ROLLED 15
-#define MGMT_SIGNAL_LIBRECORDS 16
+#define MGMT_SIGNAL_CACHE_ERROR 5
+#define MGMT_SIGNAL_CACHE_WARNING 6
+#define MGMT_SIGNAL_LOGGING_ERROR 7
+#define MGMT_SIGNAL_LOGGING_WARNING 8
+#define MGMT_SIGNAL_PLUGIN_SET_CONFIG 9
 
-#define MGMT_SIGNAL_CONFIG_FILE_CHILD 22
-
-#define MGMT_SIGNAL_SAC_SERVER_DOWN 400
+// This are additional on top of the ones defined in Alarms.h. Que?
+#define MGMT_SIGNAL_LIBRECORDS 10
+#define MGMT_SIGNAL_CONFIG_FILE_CHILD 11
 
 struct MgmtMessageHdr {
   int msg_id;
   int data_len;
-  ts::MemSpan
+  ts::MemSpan<void>
   payload()
   {
-    return {reinterpret_cast<char *>(this) + sizeof(*this), data_len};
+    return {this + 1, static_cast<size_t>(data_len)};
   }
 };
 
@@ -136,7 +130,7 @@ public:
   MgmtMessageHdr *dequeue();
 
 protected:
-  void executeMgmtCallback(int msg_id, ts::MemSpan span);
+  void executeMgmtCallback(int msg_id, ts::MemSpan<void> span);
 
   /// The mapping from an event type to a list of callbacks to invoke.
   std::unordered_map<int, MgmtCallbackList> mgmt_callback_table;

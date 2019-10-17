@@ -21,13 +21,8 @@ Test.Summary = '''
 Test tunneling and forwarding based on SNI
 '''
 
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
-
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=False)
 server_random = Test.MakeOriginServer("server_random", ssl=False)
@@ -52,9 +47,7 @@ ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
 
-ts.Variables.ssl_port = 4443
-
-# Need no remap rules.  Everything should be proccessed by ssl_server_name
+# Need no remap rules.  Everything should be proccessed by sni
 
 # Make sure the TS server certs are different from the origin certs
 ts.Disk.ssl_multicert_config.AddLine(
@@ -66,8 +59,6 @@ ts.Disk.ssl_multicert_config.AddLine(
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    # enable ssl port
-    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.http.connect_ports': '{0} {1} {2} {3}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port, server_bar.Variables.Port, server_random.Variables.Port),
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -78,7 +69,8 @@ ts.Disk.records_config.update({
 
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
+  "sni:",
   "- fqdn: 'foo.com'",
   "  tunnel_route: 'localhost:{0}'".format(server_foo.Variables.SSL_Port),
   "- fqdn: 'bar.com'",
@@ -93,7 +85,7 @@ tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(server_bar)
 tr.Processes.Default.StartBefore(server_random)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
@@ -122,4 +114,3 @@ tr3.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Ac
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "Should TLS terminate on Traffic Server")
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("ok random", "Body is expected")
-

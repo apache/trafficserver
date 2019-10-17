@@ -99,12 +99,11 @@ char *
 LogUtils::timestamp_to_netscape_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
-  static char gmtstr[16];
   static long last_timestamp = 0;
-  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -134,6 +133,8 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
       offset = zone / -60;
       sign   = '+';
     }
+
+    static char gmtstr[16];
     int glen = snprintf(gmtstr, 16, "%c%.2d%.2d", sign, offset / 60, offset % 60);
 
     strftime(timebuf, 64 - glen, "%d/%b/%Y:%H:%M:%S ", tms);
@@ -155,10 +156,10 @@ LogUtils::timestamp_to_date_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
   static long last_timestamp = 0;
-  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -187,10 +188,10 @@ LogUtils::timestamp_to_time_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
   static long last_timestamp = 0;
-  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -221,13 +222,13 @@ void
 LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, const char *msg, ...)
 {
   char msg_buf[LOG_MAX_FORMATTED_LINE];
-  va_list ap;
 
   ink_assert(alarm_type >= 0 && alarm_type < LogUtils::LOG_ALARM_N_TYPES);
 
   if (msg == nullptr) {
     snprintf(msg_buf, sizeof(msg_buf), "No Message");
   } else {
+    va_list ap;
     va_start(ap, msg);
     vsnprintf(msg_buf, LOG_MAX_FORMATTED_LINE, msg, ap);
     va_end(ap);
@@ -373,7 +374,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
   if (dst) {
     new_url = dst;
   } else {
-    new_url = (char *)arena->str_alloc(out_len + 1);
+    new_url = arena->str_alloc(out_len + 1);
   }
 
   char *from = url;
@@ -444,7 +445,7 @@ LogUtils::remove_content_type_attributes(char *type_str, int *type_len)
   }
   // Look for a semicolon and cut out everything after that
   //
-  char *p = (char *)memchr(type_str, ';', *type_len);
+  char *p = static_cast<char *>(memchr(type_str, ';', *type_len));
   if (p) {
     *type_len = p - type_str;
   }
@@ -570,7 +571,7 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
     if (e < 0) {
       ret_val = -1;
     } else {
-      if (limit_data.rlim_cur != (rlim_t)RLIM_INFINITY) {
+      if (limit_data.rlim_cur != static_cast<rlim_t> RLIM_INFINITY) {
         if (has_size_limit) {
           *has_size_limit = true;
         }
@@ -590,7 +591,7 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
 
 namespace
 {
-// Get a string out of a MIMEField using one of its member funcitions, and put it into a buffer writer, terminated with a nul.
+// Get a string out of a MIMEField using one of its member functions, and put it into a buffer writer, terminated with a nul.
 //
 void
 marshalStr(ts::FixedBufferWriter &bw, const MIMEField &mf, const char *(MIMEField::*get_func)(int *length) const)

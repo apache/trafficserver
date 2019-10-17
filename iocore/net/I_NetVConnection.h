@@ -21,8 +21,10 @@
   limitations under the License.
 
  */
-
 #pragma once
+
+#include <string_view>
+#include <optional>
 
 #include "tscore/ink_inet.h"
 #include "I_Action.h"
@@ -32,7 +34,6 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 #include "ts/apidefs.h"
-#include <string_view>
 #include "YamlSNIConfig.h"
 #include "tscpp/util/TextView.h"
 #include "tscore/IpMap.h"
@@ -179,6 +180,10 @@ struct NetVCOptions {
 
   EventType etype;
 
+  /** ALPN protocol-lists. The format is OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
+      https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
+   */
+  std::string_view alpn_protos;
   /** Server name to use for SNI data on an outbound connection.
    */
   ats_scoped_str sni_servername;
@@ -224,6 +229,7 @@ struct NetVCOptions {
 
   NetVCOptions() { reset(); }
   ~NetVCOptions() {}
+
   /** Set the SNI server name.
       A local copy is made of @a name.
   */
@@ -240,6 +246,7 @@ struct NetVCOptions {
     }
     return *this;
   }
+
   self &
   set_ssl_servername(const char *name)
   {
@@ -257,13 +264,13 @@ struct NetVCOptions {
     if (&that != this) {
       /*
        * It is odd but necessary to null the scoped string pointer here
-       * and then explicitly call release on them in the string assignements
+       * and then explicitly call release on them in the string assignments
        * below.
        * We a memcpy from that to this.  This will put that's string pointers into
        * this's memory.  Therefore we must first explicitly null out
        * this's original version of the string.  The release after the
        * memcpy removes the extra reference to that's copy of the string
-       * Removing the release will eventualy cause a double free crash
+       * Removing the release will eventually cause a double free crash
        */
       sni_servername = nullptr; // release any current name.
       ssl_servername = nullptr;
@@ -357,7 +364,7 @@ public:
       </tr>
       <tr>
         <td>c->handleEvent(VC_EVENT_ERROR, vio)</td>
-        <td>signified that error occured during write.</td>
+        <td>signified that error occurred during write.</td>
       </tr>
     </table>
 
@@ -367,7 +374,7 @@ public:
     when it is destroyed.
 
     @param c continuation to be called back after (partial) write
-    @param nbytes no of bytes to write, if unknown msut be set to INT64_MAX
+    @param nbytes no of bytes to write, if unknown must be set to INT64_MAX
     @param buf source of data
     @param owner
     @return vio pointer
@@ -377,11 +384,11 @@ public:
 
   /**
     Closes the vconnection. A state machine MUST call do_io_close()
-    when it has finished with a VConenction. do_io_close() indicates
+    when it has finished with a VConnection. do_io_close() indicates
     that the VConnection can be deallocated. After a close has been
     called, the VConnection and underlying processor must NOT send
     any more events related to this VConnection to the state machine.
-    Likeswise, state machine must not access the VConnectuion or
+    Likewise, state machine must not access the VConnection or
     any returned VIOs after calling close. lerrno indicates whether
     a close is a normal close or an abort. The difference between
     a normal close and an abort depends on the underlying type of
@@ -400,7 +407,7 @@ public:
     IO_SHUTDOWN_READWRITE. Once a side of a VConnection is shutdown,
     no further I/O can be done on that side of the connections and
     the underlying processor MUST NOT send any further events
-    (INCLUDING TIMOUT EVENTS) to the state machine. The state machine
+    (INCLUDING TIMEOUT EVENTS) to the state machine. The state machine
     MUST NOT use any VIOs from a shutdown side of a connection.
     Even if both sides of a connection are shutdown, the state
     machine MUST still call do_io_close() when it wishes the
@@ -437,7 +444,7 @@ public:
 
   ////////////////////////////////////////////////////////////
   // Set the timeouts associated with this connection.      //
-  // active_timeout is for the total elasped time of        //
+  // active_timeout is for the total elapsed time of        //
   // the connection.                                        //
   // inactivity_timeout is the elapsed time from the time   //
   // a read or a write was scheduled during which the       //
@@ -460,7 +467,7 @@ public:
     that it does not keep any connections open for a really long
     time.
 
-    Timeout symantics:
+    Timeout semantics:
 
     Should a timeout occur, the state machine for the read side of
     the NetVConnection is signaled first assuming that a read has
@@ -612,8 +619,8 @@ public:
   // is enabled by SocksProxy
   SocksAddrType socks_addr;
 
-  unsigned int attributes;
-  EThread *thread;
+  unsigned int attributes = 0;
+  EThread *thread         = nullptr;
 
   /// PRIVATE: The public interface is VIO::reenable()
   void reenable(VIO *vio) override = 0;
@@ -634,9 +641,6 @@ public:
 
   virtual SOCKET get_socket() = 0;
 
-  /** Set the TCP initial congestion window */
-  virtual int set_tcp_init_cwnd(int init_cwnd) = 0;
-
   /** Set the TCP congestion control algorithm */
   virtual int set_tcp_congestion_control(int side) = 0;
 
@@ -648,6 +652,9 @@ public:
 
   /** Set remote sock addr struct. */
   virtual void set_remote_addr(const sockaddr *) = 0;
+
+  /** Set the MPTCP state for this connection */
+  virtual void set_mptcp_state() = 0;
 
   // for InkAPI
   bool
@@ -668,6 +675,14 @@ public:
   {
     return is_transparent;
   }
+
+  /// Get the MPTCP state of the VC.
+  std::optional<bool>
+  get_mptcp_state() const
+  {
+    return mptcp_state;
+  }
+
   /// Set the transparency state.
   void
   set_is_transparent(bool state = true)
@@ -815,31 +830,24 @@ protected:
   IpEndpoint local_addr;
   IpEndpoint remote_addr;
 
-  bool got_local_addr;
-  bool got_remote_addr;
+  bool got_local_addr  = false;
+  bool got_remote_addr = false;
 
-  bool is_internal_request;
+  bool is_internal_request = false;
   /// Set if this connection is transparent.
-  bool is_transparent;
+  bool is_transparent = false;
   /// Set if proxy protocol is enabled
-  bool is_proxy_protocol;
+  bool is_proxy_protocol = false;
+  /// This is essentially a tri-state, we leave it undefined to mean no MPTCP support
+  std::optional<bool> mptcp_state;
   /// Set if the next write IO that empties the write buffer should generate an event.
-  int write_buffer_empty_event;
+  int write_buffer_empty_event = 0;
   /// NetVConnection Context.
-  NetVConnectionContext_t netvc_context;
+  NetVConnectionContext_t netvc_context = NET_VCONNECTION_UNSET;
 };
 
-inline NetVConnection::NetVConnection()
-  : AnnotatedVConnection(nullptr),
-    attributes(0),
-    thread(nullptr),
-    got_local_addr(false),
-    got_remote_addr(false),
-    is_internal_request(false),
-    is_transparent(false),
-    is_proxy_protocol(false),
-    write_buffer_empty_event(0),
-    netvc_context(NET_VCONNECTION_UNSET)
+inline NetVConnection::NetVConnection() : AnnotatedVConnection(nullptr)
+
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);

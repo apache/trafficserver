@@ -258,29 +258,18 @@ struct OpenDir : public Continuation {
 };
 
 struct CacheSync : public Continuation {
-  int vol_idx;
-  char *buf;
-  size_t buflen;
-  bool buf_huge;
-  off_t writepos;
+  int vol_idx    = 0;
+  char *buf      = nullptr;
+  size_t buflen  = 0;
+  bool buf_huge  = false;
+  off_t writepos = 0;
   AIOCallbackInternal io;
-  Event *trigger;
-  ink_hrtime start_time;
+  Event *trigger        = nullptr;
+  ink_hrtime start_time = 0;
   int mainEvent(int event, Event *e);
   void aio_write(int fd, char *b, int n, off_t o);
 
-  CacheSync()
-    : Continuation(new_ProxyMutex()),
-      vol_idx(0),
-      buf(nullptr),
-      buflen(0),
-      buf_huge(false),
-      writepos(0),
-      trigger(nullptr),
-      start_time(0)
-  {
-    SET_HANDLER(&CacheSync::mainEvent);
-  }
+  CacheSync() : Continuation(new_ProxyMutex()) { SET_HANDLER(&CacheSync::mainEvent); }
 };
 
 // Global Functions
@@ -310,7 +299,7 @@ void sync_cache_dir_on_shutdown();
 
 extern Dir empty_dir;
 
-// Inline Funtions
+// Inline Functions
 
 #define dir_in_seg(_s, _i) ((Dir *)(((char *)(_s)) + (SIZEOF_DIR * (_i))))
 

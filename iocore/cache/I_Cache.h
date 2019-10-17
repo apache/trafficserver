@@ -62,9 +62,8 @@ typedef HTTPInfo CacheHTTPInfo;
 struct CacheProcessor : public Processor {
   CacheProcessor()
     : min_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
-      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
-      cb_after_init(nullptr),
-      wait_for_cache(0)
+      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION)
+
   {
   }
 
@@ -159,8 +158,8 @@ struct CacheProcessor : public Processor {
   ts::VersionNumber min_stripe_version;
   ts::VersionNumber max_stripe_version;
 
-  CALLBACK_FUNC cb_after_init;
-  int wait_for_cache;
+  CALLBACK_FUNC cb_after_init = nullptr;
+  int wait_for_cache          = 0;
 };
 
 inline void
@@ -190,12 +189,10 @@ struct CacheVConnection : public VConnection {
   virtual void set_http_info(CacheHTTPInfo *info)  = 0;
   virtual void get_http_info(CacheHTTPInfo **info) = 0;
 
-  virtual bool is_ram_cache_hit() const           = 0;
-  virtual bool set_disk_io_priority(int priority) = 0;
-  virtual int get_disk_io_priority()              = 0;
-  virtual bool set_pin_in_cache(time_t t)         = 0;
-  virtual time_t get_pin_in_cache()               = 0;
-  virtual int64_t get_object_size()               = 0;
+  virtual bool is_ram_cache_hit() const   = 0;
+  virtual bool set_pin_in_cache(time_t t) = 0;
+  virtual time_t get_pin_in_cache()       = 0;
+  virtual int64_t get_object_size()       = 0;
   virtual bool
   is_compressed_in_ram() const
   {

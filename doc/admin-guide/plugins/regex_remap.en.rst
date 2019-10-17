@@ -109,7 +109,7 @@ on the right hand side during evaluation ::
 
     $0     - The entire matched string
     $1-9   - Regular expression groups ($1 first group etc.)
-    $h     - The original host header from the request
+    $h     - The host as used in the "to" portion of the remap rule. For a long time it was the original host header from the request.
     $f     - The host as used in the "from" portion of the remap rule
     $t     - The host as used in the "to" portion of the remap rule
     $p     - The original port number
@@ -143,7 +143,7 @@ remap.config. The following options are available ::
 
 This can be useful to force a particular response for some URLs, e.g. ::
 
-    ^/(ogre.*)/bad      http://www.examle.com/  @status=404
+    ^/(ogre.*)/bad      http://www.example.com/  @status=404
 
 Or, to force a 302 redirect ::
 

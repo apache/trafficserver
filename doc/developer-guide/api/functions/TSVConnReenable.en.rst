@@ -62,7 +62,7 @@ Synopsis
 Description
 ===========
 
-An extended verion of TSVConnEnable that allows the plugin to return a status to
+An extended version of TSVConnEnable that allows the plugin to return a status to
 the core logic.  If all goes well this is TS_EVENT_CONTINUE.  However, if
 the plugin wants to stop the processing it can set the event to TS_EVENT_ERROR.
 

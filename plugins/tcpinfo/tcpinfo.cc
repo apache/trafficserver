@@ -21,13 +21,20 @@
   limitations under the License.
  */
 
+#include "tscore/ink_config.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
 #include <ts/ts.h>
 #include <unistd.h>
 #include <netinet/in.h>
+// This is a bit of a hack, to get the more linux specific tcp_info struct ...
+#if HAVE_STRUCT_LINUX_TCP_INFO
+#include <linux/tcp.h>
+#elif HAVE_NETINET_IN_H
 #include <netinet/tcp.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <getopt.h>
@@ -38,7 +45,6 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 
-#include "tscore/ink_defs.h"
 #include "tscore/ParseRules.h"
 
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
@@ -53,11 +59,14 @@
 
 // Log format headers. These are emitted once at the start of a log file. Note that we
 // carefully order the fields so the field ordering is compatible. This lets you change
-// the verbosity without breaking a perser that is moderately robust.
-static const char *tcpi_headers[] = {
-  "timestamp event client server rtt",
-  "timestamp event client server rtt rttvar last_sent last_recv "
-  "snd_ssthresh rcv_ssthresh unacked sacked lost retrans fackets all_retrans",
+// the verbosity without breaking a parser that is moderately robust.
+static const char *tcpi_headers[] = {"timestamp event client server rtt",
+                                     "timestamp event client server rtt rttvar last_sent last_recv snd_cwnd "
+                                     "snd_ssthresh rcv_ssthresh unacked sacked lost retrans fackets all_retrans"
+// Additional information from linux's linux/tcp.h appended here
+#if HAVE_STRUCT_LINUX_TCP_INFO
+                                     " data_segs_in data_segs_out"
+#endif
 };
 
 struct Config {
@@ -137,11 +146,20 @@ log_tcp_info(Config *config, const char *event_name, TSHttpSsn ssnp)
 
   if (config->log_level == 2) {
 #if !defined(freebsd) || defined(__GLIBC__)
+#if HAVE_STRUCT_LINUX_TCP_INFO
+    ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str,
+                               server_str, info.tcpi_rtt, info.tcpi_rttvar, info.tcpi_last_data_sent, info.tcpi_last_data_recv,
+                               info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh, info.tcpi_rcv_ssthresh, info.tcpi_unacked,
+                               info.tcpi_sacked, info.tcpi_lost, info.tcpi_retrans, info.tcpi_fackets, info.tcpi_total_retrans,
+                               info.tcpi_data_segs_in, info.tcpi_data_segs_out);
+#else
     ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str, server_str,
                                info.tcpi_rtt, info.tcpi_rttvar, info.tcpi_last_data_sent, info.tcpi_last_data_recv,
                                info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh, info.tcpi_rcv_ssthresh, info.tcpi_unacked,
                                info.tcpi_sacked, info.tcpi_lost, info.tcpi_retrans, info.tcpi_fackets, info.tcpi_total_retrans);
+#endif
 #else
+    // E.g. FreeBSD and macOS
     ret = TSTextLogObjectWrite(config->log, "%s %s %s %u %u %u %u %u %u %u %u %u %u %u %u %u", event_name, client_str, server_str,
                                info.tcpi_rtt, info.tcpi_rttvar, info.__tcpi_last_data_sent, info.tcpi_last_data_recv,
                                info.tcpi_snd_cwnd, info.tcpi_snd_ssthresh, info.__tcpi_rcv_ssthresh, info.__tcpi_unacked,
@@ -174,31 +192,31 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
   TSHttpSsn ssnp = nullptr;
   TSHttpTxn txnp = nullptr;
   int random     = 0;
-  Config *config = (Config *)TSContDataGet(contp);
+  Config *config = static_cast<Config *>(TSContDataGet(contp));
 
   const char *event_name;
   switch (event) {
   case TS_EVENT_HTTP_SSN_START:
-    ssnp       = (TSHttpSsn)edata;
+    ssnp       = static_cast<TSHttpSsn>(edata);
     event_name = "ssn_start";
     break;
   case TS_EVENT_HTTP_TXN_START:
-    txnp       = (TSHttpTxn)edata;
+    txnp       = static_cast<TSHttpTxn>(edata);
     ssnp       = TSHttpTxnSsnGet(txnp);
     event_name = "txn_start";
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
-    txnp       = (TSHttpTxn)edata;
+    txnp       = static_cast<TSHttpTxn>(edata);
     ssnp       = TSHttpTxnSsnGet(txnp);
     event_name = "txn_close";
     break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
-    txnp       = (TSHttpTxn)edata;
+    txnp       = static_cast<TSHttpTxn>(edata);
     ssnp       = TSHttpTxnSsnGet(txnp);
     event_name = "send_resp_hdr";
     break;
   case TS_EVENT_HTTP_SSN_CLOSE:
-    ssnp       = (TSHttpSsn)edata;
+    ssnp       = static_cast<TSHttpSsn>(edata);
     event_name = "ssn_close";
     break;
   default:
@@ -254,7 +272,7 @@ parse_unsigned(const char *str, unsigned long &lval)
   }
 
   if (end && *end != '\0') {
-    // Not all charaters consumed.
+    // Not all characters consumed.
     return false;
   }
 
@@ -339,7 +357,7 @@ TSPluginInit(int argc, const char *argv[])
   for (;;) {
     unsigned long lval;
 
-    switch (getopt_long(argc, (char *const *)argv, "r:f:l:h:e:H:S:M:", longopts, nullptr)) {
+    switch (getopt_long(argc, const_cast<char *const *>(argv), "r:f:l:h:e:H:S:M:", longopts, nullptr)) {
     case 'r':
       if (parse_unsigned(optarg, lval)) {
         config->sample = atoi(optarg);

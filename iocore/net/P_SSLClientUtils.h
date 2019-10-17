@@ -35,5 +35,7 @@
 
 // Create and initialize a SSL client context.
 SSL_CTX *SSLInitClientContext(const struct SSLConfigParams *param);
+SSL_CTX *SSLCreateClientContext(const struct SSLConfigParams *params, const char *ca_bundle_file, const char *ca_bundle_path,
+                                const char *cert_path, const char *key_path);
 
 int verify_callback(int preverify_ok, X509_STORE_CTX *ctx);

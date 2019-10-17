@@ -46,7 +46,7 @@ size. This is when makes it possible to pass sub strings around without having t
 allocation additional memory. This comes at the cost of keeping track of the actual owner of the
 string memory and making sure the :class:`TextView` does not outlive the memory owner, just as with
 a normal pointer type. Internal for |TS| any place that passes a :code:`char *` and a size is an
-excellent candidate for using a :class:`TextView` as it is more convinient and no more risky than
+excellent candidate for using a :class:`TextView` as it is more convenient and no more risky than
 the existing arguments.
 
 In deciding between :code:`std::string_view` and :class:`TextView` remember that these easily and

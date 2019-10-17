@@ -24,11 +24,18 @@
 
 #include "wccp/Wccp.h"
 #include "WccpUtil.h"
-#include "tscore/TsBuffer.h"
+#include "ts/apidefs.h"
+#include "tscore/Errata.h"
 // Needed for template use of byte ordering functions.
 #include <netinet/in.h>
 #include <memory.h>
 #include <map>
+#include <string_view>
+
+namespace YAML
+{
+class Node;
+};
 
 namespace wccp
 {
@@ -179,7 +186,7 @@ struct RouterId {
   );
 
   uint32_t m_addr;    ///< Identifying router IP address.
-  uint32_t m_recv_id; ///< Recieve ID (sequence #).
+  uint32_t m_recv_id; ///< Receive ID (sequence #).
 };
 
 /** Sect 5.7.1: Router Identity Element.
@@ -485,7 +492,7 @@ public:
   ValueElt &operator[](int idx ///< Index of target element.
   );
   //@}
-  /// Calcuate the size of an element with @a n values.
+  /// Calculate the size of an element with @a n values.
   static size_t calcSize(uint32_t n ///< Number of values.
   );
   /// Get the size (length) of this element.
@@ -1029,7 +1036,7 @@ public:
   static void setDefaultOption(Option opt ///< Type of security.
   );
 
-  /// Set messsage local security key.
+  /// Set message local security key.
   self &setKey(const char *key ///< Shared key.
   );
 
@@ -1066,7 +1073,7 @@ public:
   struct raw_t : public super::raw_t, public ServiceGroup {
   };
 
-  ServiceComp(); ///< Default constructor, no member intialization.
+  ServiceComp(); ///< Default constructor, no member initialization.
 
   /// @name Accessors
   //@{
@@ -1635,7 +1642,7 @@ public:
     RouterAssignListElt m_routers; ///< Routers.
   };
 
-  /// Force virtual desctructor.
+  /// Force virtual destructor.
   virtual ~AltAssignComp() {}
   /// @name Accessors
   //@{
@@ -1690,7 +1697,7 @@ public:
   uint32_t getCacheCount() const;
   //@}
 
-  /// Force virtual desctructor.
+  /// Force virtual destructor.
   virtual ~AltHashAssignComp() {}
   /// Fill out the component from an @c Assignment.
   virtual self &fill(MsgBuffer &buffer,               ///< Target storage.
@@ -1723,7 +1730,7 @@ public:
   typedef AltMaskAssignComp self; ///< Self reference type.
   typedef AltAssignComp super;    ///< Parent type.
 
-  /// Force virtual desctructor.
+  /// Force virtual destructor.
   virtual ~AltMaskAssignComp() {}
   /// Fill out the component from an @c Assignment.
   virtual self &fill(MsgBuffer &buffer,               ///< Target storage.
@@ -1774,7 +1781,7 @@ public:
   //@}
 
   /// Write basic serialization data.
-  /// Elements must be filled in seperately and after invoking this method.
+  /// Elements must be filled in separately and after invoking this method.
   self &fill(MsgBuffer &buffer, ///< Component storage.
              cmd_t cmd,         ///< Command type.
              uint32_t data      ///< Command data.
@@ -1860,7 +1867,7 @@ public:
              uint32_t routerAddr, ///< Router identifying address.
              uint32_t toAddr,     ///< Destination address.
              uint32_t cacheAddr,  ///< Cache identifying address.
-             uint32_t recvId      ///< Recieve ID.
+             uint32_t recvId      ///< Receive ID.
   );
 
   /// Validate an existing structure.
@@ -2020,7 +2027,7 @@ public:
   size_t getCount() const;
 
   /// Validate security option.
-  /// @note This presumes a sublcass has already successfully parsed.
+  /// @note This presumes a subclass has already successfully parsed.
   bool validateSecurity() const;
 
   // Common starting components for all messages.
@@ -2072,7 +2079,7 @@ public:
   typedef ISeeYouMsg self; ///< Self reference type.
 
   /// Fill out message structure.
-  /// Router ID and view data must be filled in seperately.
+  /// Router ID and view data must be filled in separately.
   void fill(detail::router::GroupData const &group, ///< Service groupc context.
             SecurityOption sec_opt,                 ///< Security option.
             detail::Assignment &assign,             ///< Cache assignment data.
@@ -2205,14 +2212,14 @@ public:
   );
 
   /// Use MD5 security.
-  void useMD5Security(ts::ConstBuffer const &key ///< Shared key.
+  void useMD5Security(std::string_view const key ///< Shared key.
   );
 
   /// Perform all scheduled housekeeping functions.
   /// @return 0 for success, -errno on error.
   virtual int housekeeping() = 0;
 
-  /// Recieve and process a message.
+  /// Receive and process a message.
   /// @return 0 for success, -ERRNO on system error.
   virtual ts::Rv<int> handleMessage();
 
@@ -2373,7 +2380,7 @@ namespace detail
 
       GroupData(); ///< Default constructor.
 
-      void setProcName(const ts::ConstBuffer &name);
+      void setProcName(const std::string_view name);
       const char *getProcName();
 
       /// Find a router by IP @a addr.
@@ -2381,7 +2388,7 @@ namespace detail
       RouterBag::iterator findRouter(uint32_t addr ///< IP address of cache.
       );
 
-      /// Set an intial router for a service group.
+      /// Set an initial router for a service group.
       self &seedRouter(uint32_t addr ///< IP address for router.
       );
       /// Remove a seed router.
@@ -2430,7 +2437,7 @@ namespace detail
       return m_proc_name;
     }
     inline void
-    GroupData::setProcName(const ts::ConstBuffer &name)
+    GroupData::setProcName(const std::string_view name)
     {
       m_proc_name = ats_strndup(name.data(), name.size());
     }
@@ -2466,7 +2473,7 @@ public:
                                         ServiceGroup::Result *result = 0 ///< [out] Result for service creation.
   );
 
-  /** Set an intial router for a service group.
+  /** Set an initial router for a service group.
       This is needed to bootstrap the protocol.
       If the router is already seeded, this call is silently ignored.
   */
@@ -2525,7 +2532,11 @@ protected:
   typedef std::map<uint8_t, GroupData> GroupMap;
   /// Active service groups.
   GroupMap m_groups;
+
+private:
+  ts::Errata loader(const YAML::Node &node);
 };
+
 // ------------------------------------------------------
 namespace detail
 {
@@ -2888,33 +2899,11 @@ CacheIdElt::setMask(bool state)
   return *this;
 }
 
-#if 0
-inline uint16_t CacheIdElt::getWeight() const { return ntohs(m_weight); }
-inline CacheIdElt&
-CacheIdElt::setWeight(uint16_t w) {
-  m_weight = htons(w);
-  return *this;
-}
-inline uint16_t CacheIdElt::getStatus() const { return ntohs(m_status); }
-inline CacheIdElt&
-CacheIdElt::setStatus(uint16_t s) {
-  m_status = htons(s);
-  return *this;
-}
-#endif
-
 inline CacheIdElt::Tail *
 CacheHashIdElt::getTailPtr()
 {
   return &m_tail;
 }
-
-#if 0
-inline bool
-CacheHashIdElt::getBucket(int idx) const {
-  return 0 != (m_buckets[idx>>3] & (1<<(idx & 7)));
-}
-#endif
 
 inline uint32_t
 CacheMaskIdElt::getCount() const
@@ -3176,41 +3165,6 @@ CacheIdComp::setUnassigned(bool state)
   this->cacheId().setUnassigned(state);
   return *this;
 }
-#if 0
-inline uint16_t
-CacheIdComp::getWeight() const {
-  return this->idElt().getWeight();
-}
-inline CacheIdComp&
-CacheIdComp::setWeight(uint16_t w) {
-  this->idElt().setWeight(w);
-  return *this;
-}
-inline uint16_t
-CacheIdComp::getStatus() const {
-  return this->idElt().getStatus();
-}
-inline CacheIdComp&
-CacheIdComp::setStatus(uint16_t s) {
-  this->idElt().setStatus(s);
-  return *this;
-}
-inline bool
-CacheIdComp::getBucket(int idx) const {
-  return this->idElt().getBucket(idx);
-}
-inline CacheIdComp&
-CacheIdComp::setBucket(int idx, bool state) {
-  this->idElt().setBucket(idx, state);
-  return *this;
-}
-inline CacheIdComp&
-CacheIdComp::setBuckets(bool state) {
-  this->idElt().setBuckets(state);
-  return *this;
-}
-inline size_t CacheIdComp::calcSize() { return sizeof(raw_t); }
-#endif
 
 inline bool
 detail::Assignment::isActive() const

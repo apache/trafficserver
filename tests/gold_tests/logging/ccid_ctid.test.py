@@ -24,25 +24,20 @@ Test new ccid and ctid log fields
 '''
 # need Curl
 Test.SkipUnless(
-    Condition.HasProgram(
-        "curl", "Curl need to be installed on system for this test to work"),
-    # Condition.IsPlatform("linux"), Don't see the need for this.
     Condition.HasCurlFeature('http2')
 )
 
 # Define default ATS.  "select_ports=False" needed because SSL port used.
 #
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 ts.addSSLfile("../remap/ssl/server.pem")
 ts.addSSLfile("../remap/ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
     # 'proxy.config.diags.debug.enabled': 1,
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': 'ipv4:{0} ipv4:{1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port)
 })
 
 ts.Disk.remap_config.AddLine(
@@ -59,18 +54,19 @@ ts.Disk.ssl_multicert_config.AddLine(
 
 ts.Disk.logging_yaml.AddLines(
     '''
-formats:
-  - name: custom
-    format: "%<ccid> %<ctid>"
-logs:
-  - filename: test_ccid_ctid
-    format: custom
+logging:
+  formats:
+    - name: custom
+      format: "%<ccid> %<ctid>"
+  logs:
+    - filename: test_ccid_ctid
+      format: custom
 '''.split("\n")
 )
 
 tr = Test.AddTestRun()
 # Delay on readiness of ssl port
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
 tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" --verbose'.format(
     ts.Variables.port)

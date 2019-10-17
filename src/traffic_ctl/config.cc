@@ -63,7 +63,7 @@ rec_typeof(int rec_type)
     return "FLOAT";
   case TS_REC_STRING:
     return "STRING";
-  case TS_REC_UNDEFINED: /* fallthru */
+  case TS_REC_UNDEFINED: /* fallthrough */
   default:
     return "UNDEFINED";
   }
@@ -98,7 +98,7 @@ rec_accessof(int rec_access)
     return "no access";
   case RECA_READ_ONLY:
     return "read only";
-  case RECA_NULL: /* fallthru */
+  case RECA_NULL: /* fallthrough */
   default:
     return "default";
   }
@@ -115,7 +115,7 @@ rec_updateof(int rec_updatetype)
     return "static, restart traffic_server";
   case RECU_RESTART_TM:
     return "static, restart traffic_manager";
-  case RECU_NULL: /* fallthru */
+  case RECU_NULL: /* fallthrough */
   default:
     return "none";
   }
@@ -132,7 +132,7 @@ rec_checkof(int rec_checktype)
     return "integer with a specified range";
   case RECC_IP:
     return "IP address";
-  case RECC_NULL: /* fallthru */
+  case RECC_NULL: /* fallthrough */
   default:
     return "none";
   }

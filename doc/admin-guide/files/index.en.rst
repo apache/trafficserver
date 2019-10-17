@@ -27,7 +27,7 @@ Configuration Files
 
    cache.config.en
    hosting.config.en
-   ip_allow.config.en
+   ip_allow.yaml.en
    logging.yaml.en
    parent.config.en
    plugin.config.en
@@ -35,7 +35,7 @@ Configuration Files
    remap.config.en
    splitdns.config.en
    ssl_multicert.config.en
-   ssl_server_name.yaml.en
+   sni.yaml.en
    storage.config.en
    volume.config.en
 
@@ -47,7 +47,7 @@ Configuration Files
    Allows |TS| administrators to assign cache volumes to specific origin
    servers or domains.
 
-:doc:`ip_allow.config.en`
+:doc:`ip_allow.yaml.en`
    Controls access to the |TS| cache based on source IP addresses and networks
    including limiting individual HTTP methods.
 
@@ -74,7 +74,7 @@ Configuration Files
    Configures |TS| to use different server certificates for SSL termination
    when listening on multiple addresses or when clients employ SNI.
 
-:doc:`ssl_server_name.yaml.en`
+:doc:`sni.yaml.en`
    Configures SNI based Layer 4 routing.
 
 :doc:`storage.config.en`

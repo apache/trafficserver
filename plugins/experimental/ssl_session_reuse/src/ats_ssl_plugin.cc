@@ -23,12 +23,24 @@
  */
 
 #include <cstdio>
+#include <openssl/ssl.h>
 #include <ts/ts.h>
 #include <ts/apidefs.h>
-#include <openssl/ssl.h>
 
+#include "common.h"
 #include "ssl_utils.h"
-int SSL_session_callback(TSCont contp, TSEvent event, void *edata);
+
+PluginThreads plugin_threads;
+
+static int
+shutdown_handler(TSCont contp, TSEvent event, void *edata)
+{
+  if (event == TS_EVENT_LIFECYCLE_SHUTDOWN) {
+    plugin_threads.terminate();
+  }
+  return 0;
+}
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
@@ -36,7 +48,9 @@ TSPluginInit(int argc, const char *argv[])
 
   info.plugin_name   = (char *)("ats_session_reuse");
   info.vendor_name   = (char *)("ats");
-  info.support_email = (char *)("ats-devel@oath.com");
+  info.support_email = (char *)("ats-devel@verizonmedia.com");
+
+  TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, TSContCreate(shutdown_handler, nullptr));
 
 #if (TS_VERSION_NUMBER >= 7000000)
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -48,10 +62,11 @@ TSPluginInit(int argc, const char *argv[])
   }
 #endif
   if (argc < 2) {
-    TSError("Must specify config file");
+    TSError("Must specify config file.");
   } else if (!init_ssl_params(argv[1])) {
     init_subscriber();
     TSCont cont = TSContCreate(SSL_session_callback, nullptr);
+    TSDebug(PLUGIN, "TSPluginInit adding TS_SSL_SESSION_HOOK.");
     TSHttpHookAdd(TS_SSL_SESSION_HOOK, cont);
   } else {
     TSError("init_ssl_params failed.");

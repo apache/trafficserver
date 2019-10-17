@@ -34,3 +34,4 @@ struct _cjose_jwk_int **find_keys(struct config *cfg, const char *issuer);
 struct _cjose_jwk_int *find_key_by_kid(struct config *cfg, const char *issuer, const char *kid);
 bool uri_matches_auth_directive(struct config *cfg, const char *uri, size_t uri_ct);
 const char *config_get_id(struct config *cfg);
+bool config_strip_token(struct config *cfg);

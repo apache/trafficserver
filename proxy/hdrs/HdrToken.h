@@ -137,11 +137,12 @@ hdrtoken_is_valid_wks_idx(int wks_idx)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// ToDo: This, and dependencies / users should probably be const HdrTokenHeapPrefix * IMO.
 inline HdrTokenHeapPrefix *
 hdrtoken_wks_to_prefix(const char *wks)
 {
   ink_assert(hdrtoken_is_wks(wks));
-  return ((HdrTokenHeapPrefix *)(wks - sizeof(HdrTokenHeapPrefix)));
+  return reinterpret_cast<HdrTokenHeapPrefix *>(const_cast<char *>(wks) - sizeof(HdrTokenHeapPrefix));
 }
 
 /*-------------------------------------------------------------------------
@@ -298,7 +299,7 @@ hdrtoken_wks_to_flags(const char *wks)
 ////////////////////////////////////////////////////////////////////////////
 
 // Windows insists on doing everything it's own completely
-//   inmcompatible way, including integer constant subscripts.
+//   incompatible way, including integer constant subscripts.
 //   It's too easy to match a subscript to a type since everything
 //   won't break if the type is a different size.  Oh no, we
 //   need to define the number of bits in our constants to make

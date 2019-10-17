@@ -76,7 +76,7 @@ extern "C" int plock(int);
 #include "ProxyConfig.h"
 #include "HttpProxyServerMain.h"
 #include "HttpBodyFactory.h"
-#include "ProxyClientSession.h"
+#include "ProxySession.h"
 #include "logging/Log.h"
 #include "CacheControl.h"
 #include "IPAllow.h"
@@ -98,6 +98,11 @@ extern "C" int plock(int);
 #include "P_SSLSNI.h"
 #include "P_SSLClientUtils.h"
 
+#if TS_USE_QUIC == 1
+#include "Http3.h"
+#include "Http3Config.h"
+#endif
+
 #include "tscore/ink_cap.h"
 
 #if TS_HAS_PROFILER
@@ -115,12 +120,12 @@ extern "C" int plock(int);
 
 static const long MAX_LOGIN = ink_login_name_max();
 
-static void mgmt_restart_shutdown_callback(ts::MemSpan);
-static void mgmt_drain_callback(ts::MemSpan);
+static void mgmt_restart_shutdown_callback(ts::MemSpan<void>);
+static void mgmt_drain_callback(ts::MemSpan<void>);
 static void mgmt_storage_device_cmd_callback(int cmd, std::string_view const &arg);
-static void mgmt_lifecycle_msg_callback(ts::MemSpan);
+static void mgmt_lifecycle_msg_callback(ts::MemSpan<void>);
 static void init_ssl_ctx_callback(void *ctx, bool server);
-static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
+static void load_ssl_file_callback(const char *ssl_file);
 static void load_remap_file_callback(const char *remap_file);
 static void task_threads_started_callback();
 
@@ -163,19 +168,12 @@ HttpBodyFactory *body_factory              = nullptr;
 static int accept_mss           = 0;
 static int poll_timeout         = -1; // No value set.
 static int cmd_disable_freelist = 0;
-
 static bool signal_received[NSIG];
 
 // 1: delay listen, wait for cache.
 // 0: Do not delay, start listen ASAP.
 // -1: cache is already initialized, don't delay.
 static int delay_listen_for_cache_p;
-
-// Keeps track if the server is in draining state, follows the proxy.node.config.draining metric
-bool ts_is_draining = false;
-
-// Flag to stop ssl handshakes during shutdown.
-extern bool stop_ssl_handshake;
 
 AppVersionInfo appVersionInfo; // Build info for this application
 
@@ -188,6 +186,8 @@ static ArgumentDescription argument_descriptions[] = {
   {"disable_freelist", 'f', "Disable the freelist memory allocator", "T", &cmd_disable_freelist, "PROXY_DPRINTF_LEVEL", nullptr},
   {"disable_pfreelist", 'F', "Disable the freelist memory allocator in ProxyAllocator", "T", &cmd_disable_pfreelist,
    "PROXY_DPRINTF_LEVEL", nullptr},
+  {"maxRecords", 'm', "Max number of librecords metrics and configurations (default & minimum: 1600)", "I", &max_records_entries,
+   "PROXY_MAX_RECORDS", nullptr},
 
 #if TS_HAS_TESTS
   {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", nullptr},
@@ -226,17 +226,17 @@ struct AutoStopCont : public Continuation {
   int
   mainEvent(int /* event */, Event * /* e */)
   {
-    stop_ssl_handshake = true;
+    TSSystemState::stop_ssl_handshaking();
 
     APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_SHUTDOWN_HOOK);
     while (hook) {
-      SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
+      WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
       hook->invoke(TS_EVENT_LIFECYCLE_SHUTDOWN, nullptr);
       hook = hook->next();
     }
 
     pmgmt->stop();
-    shutdown_event_system = true;
+    TSSystemState::shut_down_event_system();
     delete this;
     return EVENT_CONT;
   }
@@ -264,14 +264,14 @@ public:
       ResourceTracker::dump(stderr);
 
       if (!end) {
-        end = (char *)sbrk(0);
+        end = static_cast<char *>(sbrk(0));
       }
 
       if (!snap) {
-        snap = (char *)sbrk(0);
+        snap = static_cast<char *>(sbrk(0));
       }
 
-      char *now = (char *)sbrk(0);
+      char *now = static_cast<char *>(sbrk(0));
       Note("sbrk 0x%" PRIu64 " from first %" PRIu64 " from last %" PRIu64 "\n", (uint64_t)((ptrdiff_t)now),
            (uint64_t)((ptrdiff_t)(now - end)), (uint64_t)((ptrdiff_t)(now - snap)));
       snap = now;
@@ -294,7 +294,7 @@ public:
       RecInt timeout = 0;
       if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) == REC_ERR_OKAY && timeout) {
         RecSetRecordInt("proxy.node.config.draining", 1, REC_SOURCE_DEFAULT);
-        ts_is_draining = true;
+        TSSystemState::drain(true);
         if (!remote_management_flag) {
           // Close listening sockets here only if TS is running standalone
           RecInt close_sockets = 0;
@@ -399,7 +399,7 @@ public:
 class MemoryLimit : public Continuation
 {
 public:
-  MemoryLimit() : Continuation(new_ProxyMutex()), _memory_limit(0)
+  MemoryLimit() : Continuation(new_ProxyMutex())
   {
     memset(&_usage, 0, sizeof(_usage));
     SET_HANDLER(&MemoryLimit::periodic);
@@ -449,7 +449,7 @@ public:
   }
 
 private:
-  int64_t _memory_limit;
+  int64_t _memory_limit = 0;
   struct rusage _usage;
 };
 
@@ -569,7 +569,7 @@ check_lockfile()
     fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", lockfile.c_str());
 
     if ((err == 0) && (holding_pid != -1)) {
-      fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
+      fprintf(stderr, " (Lock file held by process ID %ld)\n", static_cast<long>(holding_pid));
     } else if ((err == 0) && (holding_pid == -1)) {
       fprintf(stderr, " (Lock file exists, but can't read process ID)\n");
     } else if (reason) {
@@ -646,7 +646,7 @@ initialize_process_manager()
                         RECP_NON_PERSISTENT);
 }
 
-#define CMD_ERROR -2      // serious error, exit maintaince mode
+#define CMD_ERROR -2      // serious error, exit maintenance mode
 #define CMD_FAILED -1     // error, but recoverable
 #define CMD_OK 0          // ok, or minor (user) error
 #define CMD_HELP 1        // ok, print help
@@ -771,17 +771,6 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
 
   printf("%s\n\n", n);
 
-#if 0
-  printf("Host Database\n");
-  HostDBCache hd;
-  if (hd.start(fix) < 0) {
-    printf("\tunable to open Host Database, %s failed\n", n);
-    return CMD_OK;
-  }
-  hd.check("hostdb.config", fix);
-  hd.reset();
-#endif
-
   cacheProcessor.afterInitCallbackSet(&CB_cmd_cache_check);
   if (cacheProcessor.start_internal(PROCESSOR_CHECK) < 0) {
     printf("\nbad cache configuration, %s failed\n", n);
@@ -873,7 +862,7 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
     fprintf(stderr, "INFO: Successfully loaded remap.config\n\n");
   }
 
-  if (RecReadConfigFile(false) != REC_ERR_OKAY) {
+  if (RecReadConfigFile() != REC_ERR_OKAY) {
     exitStatus |= (1 << 1);
     fprintf(stderr, "ERROR: Failed to load records.config, exitStatus %d\n\n", exitStatus);
   } else {
@@ -1143,8 +1132,9 @@ adjust_sys_settings()
 
     lim.rlim_cur = lim.rlim_max = static_cast<rlim_t>(maxfiles * file_max_pct);
     if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-      fds_limit = (int)lim.rlim_cur;
-      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+      fds_limit = static_cast<int>(lim.rlim_cur);
+      syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, static_cast<int>(lim.rlim_cur),
+             static_cast<int>(lim.rlim_max));
     }
   }
 
@@ -1154,8 +1144,9 @@ adjust_sys_settings()
     if (fds_throttle > (int)(lim.rlim_cur - THROTTLE_FD_HEADROOM)) {
       lim.rlim_cur = (lim.rlim_max = (rlim_t)(fds_throttle + THROTTLE_FD_HEADROOM));
       if (setrlimit(RLIMIT_NOFILE, &lim) == 0 && getrlimit(RLIMIT_NOFILE, &lim) == 0) {
-        fds_limit = (int)lim.rlim_cur;
-        syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, (int)lim.rlim_cur, (int)lim.rlim_max);
+        fds_limit = static_cast<int>(lim.rlim_cur);
+        syslog(LOG_NOTICE, "NOTE: RLIMIT_NOFILE(%d):cur(%d),max(%d)", RLIMIT_NOFILE, static_cast<int>(lim.rlim_cur),
+               static_cast<int>(lim.rlim_max));
       }
     }
   }
@@ -1173,18 +1164,18 @@ struct ShowStats : public Continuation {
 #ifdef ENABLE_TIME_TRACE
   FILE *fp;
 #endif
-  int cycle;
-  int64_t last_cc;
-  int64_t last_rb;
-  int64_t last_w;
-  int64_t last_r;
-  int64_t last_wb;
-  int64_t last_nrb;
-  int64_t last_nw;
-  int64_t last_nr;
-  int64_t last_nwb;
-  int64_t last_p;
-  int64_t last_o;
+  int cycle        = 0;
+  int64_t last_cc  = 0;
+  int64_t last_rb  = 0;
+  int64_t last_w   = 0;
+  int64_t last_r   = 0;
+  int64_t last_wb  = 0;
+  int64_t last_nrb = 0;
+  int64_t last_nw  = 0;
+  int64_t last_nr  = 0;
+  int64_t last_nwb = 0;
+  int64_t last_p   = 0;
+  int64_t last_o   = 0;
   int
   mainEvent(int event, Event *e)
   {
@@ -1284,20 +1275,8 @@ struct ShowStats : public Continuation {
 #endif
     return EVENT_CONT;
   }
-  ShowStats()
-    : Continuation(nullptr),
-      cycle(0),
-      last_cc(0),
-      last_rb(0),
-      last_w(0),
-      last_r(0),
-      last_wb(0),
-      last_nrb(0),
-      last_nw(0),
-      last_nr(0),
-      last_nwb(0),
-      last_p(0),
-      last_o(0)
+  ShowStats() : Continuation(nullptr)
+
   {
     SET_HANDLER(&ShowStats::mainEvent);
 #ifdef ENABLE_TIME_TRACE
@@ -1352,9 +1331,9 @@ init_http_header()
 
 #if TS_HAS_TESTS
 struct RegressionCont : public Continuation {
-  int initialized;
-  int waits;
-  int started;
+  int initialized = 0;
+  int waits       = 0;
+  int started     = 0;
 
   int
   mainEvent(int event, Event *e)
@@ -1367,7 +1346,7 @@ struct RegressionCont : public Continuation {
       return EVENT_CONT;
     }
 
-    char *rt = (char *)(regression_test[0] == 0 ? "" : regression_test);
+    char *rt = const_cast<char *>(regression_test[0] == 0 ? "" : regression_test);
     if (!initialized && RegressionTest::run(rt, regression_level) == REGRESSION_TEST_INPROGRESS) {
       initialized = 1;
       return EVENT_CONT;
@@ -1377,16 +1356,13 @@ struct RegressionCont : public Continuation {
       return EVENT_CONT;
     }
 
-    shutdown_event_system = true;
+    TSSystemState::shut_down_event_system();
     fprintf(stderr, "REGRESSION_TEST DONE: %s\n", regression_status_string(res));
     ::exit(res == REGRESSION_TEST_PASSED ? 0 : 1);
     return EVENT_CONT;
   }
 
-  RegressionCont() : Continuation(new_ProxyMutex()), initialized(0), waits(0), started(0)
-  {
-    SET_HANDLER(&RegressionCont::mainEvent);
-  }
+  RegressionCont() : Continuation(new_ProxyMutex()) { SET_HANDLER(&RegressionCont::mainEvent); }
 };
 
 static void
@@ -1438,7 +1414,7 @@ adjust_num_of_net_threads(int nthreads)
   } else { /* autoconfig is enabled */
     num_of_threads_tmp = nthreads;
     REC_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
-    num_of_threads_tmp = (int)((float)num_of_threads_tmp * autoconfig_scale);
+    num_of_threads_tmp = static_cast<int>(static_cast<float>(num_of_threads_tmp) * autoconfig_scale);
 
     if (unlikely(num_of_threads_tmp > MAX_EVENT_THREADS)) {
       num_of_threads_tmp = MAX_EVENT_THREADS;
@@ -1745,6 +1721,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // We want to initialize Machine as early as possible because it
   // has other dependencies. Hopefully not in prep_HttpProxyServer().
   HttpConfig::startup();
+#if TS_USE_QUIC == 1
+  Http3Config::startup();
+#endif
 
   /* Set up the machine with the outbound address if that's set,
      or the inbound address if set, otherwise let it default.
@@ -1829,6 +1808,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   netProcessor.init();
   prep_HttpProxyServer();
 
+#if TS_USE_QUIC == 1
+  // OK, pushing a spawn scheduling here
+  quic_NetProcessor.init();
+#endif
+
   // If num_accept_threads == 0, let the ET_NET threads to set the condition variable,
   // Else we set it here so when checking the condition variable later it returns immediately.
   if (num_accept_threads == 0) {
@@ -1885,14 +1869,19 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     RecProcessStart();
     initCacheControl();
     IpAllow::startup();
+    HostStatus::instance().loadHostStatusFromStats();
+    netProcessor.init_socks();
     ParentConfig::startup();
-    HostStatus::instance();
 #ifdef SPLIT_DNS
     SplitDNSConfig::startup();
 #endif
 
     // Initialize HTTP/2
     Http2::init();
+#if TS_USE_QUIC == 1
+    // Initialize HTTP/QUIC
+    Http3::init();
+#endif
 
     if (!HttpProxyPort::loadValue(http_accept_port_descriptor)) {
       HttpProxyPort::loadConfig();
@@ -1912,7 +1901,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     SSLConfigParams::init_ssl_ctx_cb  = init_ssl_ctx_callback;
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(-1, stacksize);
-
+#if TS_USE_QUIC == 1
+    quic_NetProcessor.start(-1, stacksize);
+#endif
     pmgmt->registerPluginCallbacks(global_config_cbs);
 
     cacheProcessor.afterInitCallbackSet(&CB_After_Cache_Init);
@@ -1969,7 +1960,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
       }
     }
-    SNIConfig::cloneProtoSet();
     // Plugins can register their own configuration names so now after they've done that
     // check for unexpected names. This is very late because remap plugins must be allowed to
     // fire up as well.
@@ -1991,8 +1981,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Callback for various storage commands. These all go to the same function so we
     // pass the event code along so it can do the right thing. We cast that to <int> first
     // just to be safe because the value is a #define, not a typed value.
-    pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, [](ts::MemSpan span) -> void {
-      mgmt_storage_device_cmd_callback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, std::string_view{span});
+    pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, [](ts::MemSpan<void> span) -> void {
+      mgmt_storage_device_cmd_callback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, span.view());
     });
     pmgmt->registerMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, &mgmt_lifecycle_msg_callback);
 
@@ -2017,7 +2007,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 #endif
 
-  while (!shutdown_event_system) {
+  while (!TSSystemState::is_event_system_shut_down()) {
     sleep(1);
   }
 
@@ -2039,17 +2029,18 @@ REGRESSION_TEST(Hdrs)(RegressionTest *t, int atype, int *pstatus)
 }
 #endif
 
-static void mgmt_restart_shutdown_callback(ts::MemSpan)
+static void
+mgmt_restart_shutdown_callback(ts::MemSpan<void>)
 {
   sync_cache_dir_on_shutdown();
 }
 
 static void
-mgmt_drain_callback(ts::MemSpan span)
+mgmt_drain_callback(ts::MemSpan<void> span)
 {
-  char *arg      = static_cast<char *>(span.data());
-  ts_is_draining = (span.size() == 2 && arg[0] == '1');
-  RecSetRecordInt("proxy.node.config.draining", ts_is_draining ? 1 : 0, REC_SOURCE_DEFAULT);
+  char *arg = span.rebind<char>().data();
+  TSSystemState::drain(span.size() == 2 && arg[0] == '1');
+  RecSetRecordInt("proxy.node.config.draining", TSSystemState::is_draining() ? 1 : 0, REC_SOURCE_DEFAULT);
 }
 
 static void
@@ -2069,7 +2060,7 @@ mgmt_storage_device_cmd_callback(int cmd, std::string_view const &arg)
 }
 
 static void
-mgmt_lifecycle_msg_callback(ts::MemSpan span)
+mgmt_lifecycle_msg_callback(ts::MemSpan<void> span)
 {
   APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_MSG_HOOK);
   TSPluginMsg msg;
@@ -2106,15 +2097,15 @@ init_ssl_ctx_callback(void *ctx, bool server)
 }
 
 static void
-load_ssl_file_callback(const char *ssl_file, unsigned int options)
+load_ssl_file_callback(const char *ssl_file)
 {
-  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file, options);
+  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file);
 }
 
 static void
 load_remap_file_callback(const char *remap_file)
 {
-  pmgmt->signalConfigFileChild("remap.config", remap_file, CONFIG_FLAG_UNVERSIONED);
+  pmgmt->signalConfigFileChild("remap.config", remap_file);
 }
 
 static void
@@ -2122,6 +2113,7 @@ task_threads_started_callback()
 {
   APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_TASK_THREADS_READY_HOOK);
   while (hook) {
+    WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
     hook->invoke(TS_EVENT_LIFECYCLE_TASK_THREADS_READY, nullptr);
     hook = hook->next();
   }

@@ -218,13 +218,6 @@ msgstr ""
 msgid "1,099,511,627,776 bytes (1024\\ :sup:`4`)"
 msgstr ""
 
-#: ../../../admin-guide/files/records.config.en.rst:91
-msgid ""
-"Unless :ts:cv:`proxy.config.disable_configuration_modification` is enabled, "
-"|TS| writes configurations back to disk periodically. When doing so, the "
-"unit prefixes are not preserved."
-msgstr ""
-
 #: ../../../admin-guide/files/records.config.en.rst:95
 msgid ""
 "Floating point variables (``FLOAT``) must be expressed as a regular decimal "
@@ -1096,10 +1089,6 @@ msgstr ""
 msgid "The value of :ts:cv:`proxy.config.admin.user_id`."
 msgstr ""
 
-#: ../../../admin-guide/files/records.config.en.rst:627
-msgid "The value of :ts:cv:`proxy.config.alarm_email`."
-msgstr ""
-
 #: ../../../admin-guide/files/records.config.en.rst:632
 msgid ""
 "The absolute path to the directory containing the alarm script. If this is "
@@ -1503,7 +1492,7 @@ msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:764
 msgid ""
-"Listen on port 9090 for TSL enabled HTTP/2 or HTTP connections, accept no "
+"Listen on port 9090 for TLS enabled HTTP/2 or HTTP connections, accept no "
 "other session protocols.::"
 msgstr ""
 
@@ -1766,13 +1755,6 @@ msgid ""
 "If :ts:cv:`proxy.config.http.use_client_target_addr` is set to ``1``, then "
 "options ``2`` and ``3`` for this configuration variable cause the proxy to "
 "use the client HTTP version for upstream requests."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:955
-msgid ""
-"Configures the size, in packets, of the initial TCP congestion window on "
-"sockets used by the HTTP engine. This option may only be used on operating "
-"systems which support the ``TCP_INIT_CWND`` option on TCP sockets."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:961
@@ -3554,7 +3536,7 @@ msgid "The DNS servers."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:2295
-msgid "Indicates whether to use SRV records for orgin server lookup."
+msgid "Indicates whether to use SRV records for origin server lookup."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:2299

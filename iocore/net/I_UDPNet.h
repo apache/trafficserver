@@ -46,7 +46,7 @@ class UDPNetProcessor : public Processor
 public:
   int start(int n_upd_threads, size_t stacksize) override = 0;
 
-  // this function was interanal intially.. this is required for public and
+  // this function was internal initially.. this is required for public and
   // interface probably should change.
   bool CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions &opt);
 
@@ -69,7 +69,7 @@ public:
      @param recv_bufsize (optional) Socket buffer size for sending.
      Limits how much can be queued by OS before we read it.
      @return Action* Always returns ACTION_RESULT_DONE if socket was
-     created successfuly, or ACTION_IO_ERROR if not.
+     created successfully, or ACTION_IO_ERROR if not.
   */
   inkcoreapi Action *UDPBind(Continuation *c, sockaddr const *addr, int send_bufsize = 0, int recv_bufsize = 0);
 

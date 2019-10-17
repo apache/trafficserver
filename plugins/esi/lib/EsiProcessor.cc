@@ -29,7 +29,7 @@
 using std::string;
 using namespace EsiLib;
 extern pthread_key_t threadKey;
-// this needs to be a fixed address as only the address is used for comparision
+// this needs to be a fixed address as only the address is used for comparison
 const char *EsiProcessor::INCLUDE_DATA_ID_ATTR = reinterpret_cast<const char *>(0xbeadface);
 
 #define FAILURE_INFO_TAG "plugin_esi_failureInfo"
@@ -699,7 +699,7 @@ EsiProcessor::_handleHtmlComment(const DocNodeList::iterator &curr_node)
   _debugLog(_debug_tag, "[%s] parsed %d inner nodes from html comment node", __FUNCTION__, inner_nodes.size());
   DocNodeList::iterator next_node = curr_node;
   ++next_node;
-  _node_list.splice(next_node, inner_nodes); // insert after curr node for preprocessing
+  _node_list.splice(next_node, inner_nodes); // insert after curr node for pre-processing
   return true;
 }
 
@@ -733,9 +733,9 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
       break;
     case DocNode::TYPE_HTML_COMMENT:
       /**
-       * the html comment <!--esi innertext--> is a container.
+       * the html comment <!--esi inner text--> is a container.
        * the esi processor will remove the starting tag "<!--esi" and the
-       * closure tag "-->", then keep the innertext (the content within it).
+       * closure tag "-->", then keep the inner text (the content within it).
        *
        * we should call _handleHtmlComment when the node list is parsed
        * from the content,

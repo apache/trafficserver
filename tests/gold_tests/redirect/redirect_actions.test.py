@@ -25,7 +25,6 @@ Test.Summary = '''
 Test redirection behavior to invalid addresses
 '''
 
-Test.SkipIf(Condition.true('autest sometimes does not capture output on the last test case of a scenario'))
 Test.ContinueOnFail = False
 
 Test.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir,'tcp_client.py'))

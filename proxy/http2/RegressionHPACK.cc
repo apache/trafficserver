@@ -41,138 +41,107 @@ const static int MAX_TABLE_SIZE                         = 4096;
  *                                                                                 *
  ***********************************************************************************/
 
-// [RFC 7541] C.1. Integer Representation Examples
-const static struct {
-  uint32_t raw_integer;
-  uint8_t *encoded_field;
-  int encoded_field_len;
-  int prefix;
-} integer_test_case[] = {{10, (uint8_t *)"\x0A", 1, 5}, {1337, (uint8_t *)"\x1F\x9A\x0A", 3, 5}, {42, (uint8_t *)R"(*)", 1, 8}};
-
-// Example: custom-key: custom-header
-const static struct {
-  char *raw_string;
-  uint32_t raw_string_len;
-  uint8_t *encoded_field;
-  int encoded_field_len;
-} string_test_case[] = {{(char *)"", 0,
-                         (uint8_t *)"\x0"
-                                    "",
-                         1},
-                        {(char *)"custom-key", 10,
-                         (uint8_t *)"\xA"
-                                    "custom-key",
-                         11},
-                        {(char *)"", 0,
-                         (uint8_t *)"\x80"
-                                    "",
-                         1},
-                        {(char *)"custom-key", 10,
-                         (uint8_t *)"\x88"
-                                    "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f",
-                         9}};
-
 // [RFC 7541] C.2.4. Indexed Header Field
 const static struct {
   int index;
-  char *raw_name;
-  char *raw_value;
-  uint8_t *encoded_field;
+  const char *raw_name;
+  const char *raw_value;
+  const uint8_t *encoded_field;
   int encoded_field_len;
-} indexed_test_case[] = {{2, (char *)":method", (char *)"GET", (uint8_t *)"\x82", 1}};
+} indexed_test_case[] = {{2, (char *)":method", (char *)"GET", reinterpret_cast<const uint8_t *>("\x82"), 1}};
 
 // [RFC 7541] C.2. Header Field Representation Examples
 const static struct {
-  char *raw_name;
-  char *raw_value;
+  const char *raw_name;
+  const char *raw_value;
   int index;
   HpackField type;
-  uint8_t *encoded_field;
+  const uint8_t *encoded_field;
   int encoded_field_len;
 } literal_test_case[] = {{(char *)"custom-key", (char *)"custom-header", 0, HpackField::INDEXED_LITERAL,
-                          (uint8_t *)"\x40\x0a"
-                                     "custom-key\x0d"
-                                     "custom-header",
+                          reinterpret_cast<const uint8_t *>("\x40\x0a"
+                                                            "custom-key\x0d"
+                                                            "custom-header"),
                           26},
                          {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NOINDEX_LITERAL,
-                          (uint8_t *)"\x00\x0a"
-                                     "custom-key\x0d"
-                                     "custom-header",
+                          reinterpret_cast<const uint8_t *>("\x00\x0a"
+                                                            "custom-key\x0d"
+                                                            "custom-header"),
                           26},
                          {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NEVERINDEX_LITERAL,
-                          (uint8_t *)"\x10\x0a"
-                                     "custom-key\x0d"
-                                     "custom-header",
+                          reinterpret_cast<const uint8_t *>("\x10\x0a"
+                                                            "custom-key\x0d"
+                                                            "custom-header"),
                           26},
                          {(char *)":path", (char *)"/sample/path", 4, HpackField::INDEXED_LITERAL,
-                          (uint8_t *)"\x44\x0c"
-                                     "/sample/path",
+                          reinterpret_cast<const uint8_t *>("\x44\x0c"
+                                                            "/sample/path"),
                           14},
                          {(char *)":path", (char *)"/sample/path", 4, HpackField::NOINDEX_LITERAL,
-                          (uint8_t *)"\x04\x0c"
-                                     "/sample/path",
+                          reinterpret_cast<const uint8_t *>("\x04\x0c"
+                                                            "/sample/path"),
                           14},
                          {(char *)":path", (char *)"/sample/path", 4, HpackField::NEVERINDEX_LITERAL,
-                          (uint8_t *)"\x14\x0c"
-                                     "/sample/path",
+                          reinterpret_cast<const uint8_t *>("\x14\x0c"
+                                                            "/sample/path"),
                           14},
                          {(char *)"password", (char *)"secret", 0, HpackField::INDEXED_LITERAL,
-                          (uint8_t *)"\x40\x08"
-                                     "password\x06"
-                                     "secret",
+                          reinterpret_cast<const uint8_t *>("\x40\x08"
+                                                            "password\x06"
+                                                            "secret"),
                           17},
                          {(char *)"password", (char *)"secret", 0, HpackField::NOINDEX_LITERAL,
-                          (uint8_t *)"\x00\x08"
-                                     "password\x06"
-                                     "secret",
+                          reinterpret_cast<const uint8_t *>("\x00\x08"
+                                                            "password\x06"
+                                                            "secret"),
                           17},
                          {(char *)"password", (char *)"secret", 0, HpackField::NEVERINDEX_LITERAL,
-                          (uint8_t *)"\x10\x08"
-                                     "password\x06"
-                                     "secret",
+                          reinterpret_cast<const uint8_t *>("\x10\x08"
+                                                            "password\x06"
+                                                            "secret"),
                           17},
                          // with Huffman Coding
                          {(char *)"custom-key", (char *)"custom-header", 0, HpackField::INDEXED_LITERAL,
-                          (uint8_t *)"\x40"
-                                     "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
-                                     "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+                          reinterpret_cast<const uint8_t *>("\x40"
+                                                            "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+                                                            "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9"),
                           20},
                          {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NOINDEX_LITERAL,
-                          (uint8_t *)"\x00"
-                                     "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
-                                     "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+                          reinterpret_cast<const uint8_t *>("\x00"
+                                                            "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+                                                            "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9"),
                           20},
                          {(char *)"custom-key", (char *)"custom-header", 0, HpackField::NEVERINDEX_LITERAL,
-                          (uint8_t *)"\x10"
-                                     "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
-                                     "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+                          reinterpret_cast<const uint8_t *>("\x10"
+                                                            "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+                                                            "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9"),
                           20},
                          {(char *)":path", (char *)"/sample/path", 4, HpackField::INDEXED_LITERAL,
-                          (uint8_t *)"\x44"
-                                     "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+                          reinterpret_cast<const uint8_t *>("\x44"
+                                                            "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff"),
                           11},
                          {(char *)":path", (char *)"/sample/path", 4, HpackField::NOINDEX_LITERAL,
-                          (uint8_t *)"\x04"
-                                     "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+                          reinterpret_cast<const uint8_t *>("\x04"
+                                                            "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff"),
                           11},
                          {(char *)":path", (char *)"/sample/path", 4, HpackField::NEVERINDEX_LITERAL,
-                          (uint8_t *)"\x14"
-                                     "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+                          reinterpret_cast<const uint8_t *>("\x14"
+                                                            "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff"),
                           11},
                          {(char *)"password", (char *)"secret", 0, HpackField::INDEXED_LITERAL,
-                          (uint8_t *)"\x40"
-                                     "\x86\xac\x68\x47\x83\xd9\x27"
-                                     "\x84\x41\x49\x61\x53",
+                          reinterpret_cast<const uint8_t *>("\x40"
+                                                            "\x86\xac\x68\x47\x83\xd9\x27"
+                                                            "\x84\x41\x49\x61\x53"),
                           13},
                          {(char *)"password", (char *)"secret", 0, HpackField::NOINDEX_LITERAL,
-                          (uint8_t *)"\x00"
-                                     "\x86\xac\x68\x47\x83\xd9\x27"
-                                     "\x84\x41\x49\x61\x53",
+                          reinterpret_cast<const uint8_t *>("\x00"
+                                                            "\x86\xac\x68\x47\x83\xd9\x27"
+                                                            "\x84\x41\x49\x61\x53"),
                           13},
                          {(char *)"password", (char *)"secret", 0, HpackField::NEVERINDEX_LITERAL,
-                          (uint8_t *)"\x10"
-                                     "\x86\xac\x68\x47\x83\xd9\x27"
-                                     "\x84\x41\x49\x61\x53",
+                          reinterpret_cast<const uint8_t *>("\x10"
+                                                            "\x86\xac\x68\x47\x83\xd9\x27"
+                                                            "\x84\x41\x49\x61\x53"),
                           13}};
 
 // [RFC 7541] C.3. Request Examples without Huffman Coding - C.3.1. First Request
@@ -195,33 +164,33 @@ const static struct {
                                                          {(char *)"", (char *)""} // End of this test case
                                                        }};
 const static struct {
-  uint8_t *encoded_field;
+  const uint8_t *encoded_field;
   int encoded_field_len;
-} encoded_field_request_test_case[] = {{(uint8_t *)"\x40"
-                                                   "\x7:method"
-                                                   "\x3GET"
-                                                   "\x40"
-                                                   "\x7:scheme"
-                                                   "\x4http"
-                                                   "\x40"
-                                                   "\x5:path"
-                                                   "\x1/"
-                                                   "\x40"
-                                                   "\xa:authority"
-                                                   "\xfwww.example.com",
+} encoded_field_request_test_case[] = {{reinterpret_cast<const uint8_t *>("\x40"
+                                                                          "\x7:method"
+                                                                          "\x3GET"
+                                                                          "\x40"
+                                                                          "\x7:scheme"
+                                                                          "\x4http"
+                                                                          "\x40"
+                                                                          "\x5:path"
+                                                                          "\x1/"
+                                                                          "\x40"
+                                                                          "\xa:authority"
+                                                                          "\xfwww.example.com"),
                                         64},
-                                       {(uint8_t *)"\x40"
-                                                   "\x85\xb9\x49\x53\x39\xe4"
-                                                   "\x83\xc5\x83\x7f"
-                                                   "\x40"
-                                                   "\x85\xb8\x82\x4e\x5a\x4b"
-                                                   "\x83\x9d\x29\xaf"
-                                                   "\x40"
-                                                   "\x84\xb9\x58\xd3\x3f"
-                                                   "\x81\x63"
-                                                   "\x40"
-                                                   "\x88\xb8\x3b\x53\x39\xec\x32\x7d\x7f"
-                                                   "\x8c\xf1\xe3\xc2\xe5\xf2\x3a\x6b\xa0\xab\x90\xf4\xff",
+                                       {reinterpret_cast<const uint8_t *>("\x40"
+                                                                          "\x85\xb9\x49\x53\x39\xe4"
+                                                                          "\x83\xc5\x83\x7f"
+                                                                          "\x40"
+                                                                          "\x85\xb8\x82\x4e\x5a\x4b"
+                                                                          "\x83\x9d\x29\xaf"
+                                                                          "\x40"
+                                                                          "\x84\xb9\x58\xd3\x3f"
+                                                                          "\x81\x63"
+                                                                          "\x40"
+                                                                          "\x88\xb8\x3b\x53\x39\xec\x32\x7d\x7f"
+                                                                          "\x8c\xf1\xe3\xc2\xe5\xf2\x3a\x6b\xa0\xab\x90\xf4\xff"),
                                         53}};
 
 // [RFC 7541] C.6. Response Examples with Huffman Coding
@@ -253,38 +222,39 @@ const static struct {
     {(char *)"", (char *)""} // End of this test case
   }};
 const static struct {
-  uint8_t *encoded_field;
+  const uint8_t *encoded_field;
   int encoded_field_len;
-} encoded_field_response_test_case[] = {{(uint8_t *)"\x48\x82"
-                                                    "\x64\x02"
-                                                    "\x58\x85"
-                                                    "\xae\xc3\x77\x1a\x4b"
-                                                    "\x61\x96"
-                                                    "\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66"
-                                                    "\xe0\x82\xa6\x2d\x1b\xff"
-                                                    "\x6e\x91"
-                                                    "\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43"
-                                                    "\xd3",
-                                         54},
-                                        {(uint8_t *)"\x48\x83"
-                                                    "\x64\x0e\xff"
-                                                    "\xc1"
-                                                    "\xc0"
-                                                    "\xbf",
-                                         8},
-                                        {(uint8_t *)"\x88"
-                                                    "\xc1"
-                                                    "\x61\x96"
-                                                    "\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66"
-                                                    "\xe0\x84\xa6\x2d\x1b\xff"
-                                                    "\xc0"
-                                                    "\x5a\x83"
-                                                    "\x9b\xd9\xab"
-                                                    "\x77\xad"
-                                                    "\x94\xe7\x82\x1d\xd7\xf2\xe6\xc7\xb3\x35\xdf\xdf\xcd\x5b\x39\x60"
-                                                    "\xd5\xaf\x27\x08\x7f\x36\x72\xc1\xab\x27\x0f\xb5\x29\x1f\x95\x87"
-                                                    "\x31\x60\x65\xc0\x03\xed\x4e\xe5\xb1\x06\x3d\x50\x07",
-                                         79}};
+} encoded_field_response_test_case[] = {
+  {reinterpret_cast<const uint8_t *>("\x48\x82"
+                                     "\x64\x02"
+                                     "\x58\x85"
+                                     "\xae\xc3\x77\x1a\x4b"
+                                     "\x61\x96"
+                                     "\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66"
+                                     "\xe0\x82\xa6\x2d\x1b\xff"
+                                     "\x6e\x91"
+                                     "\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43"
+                                     "\xd3"),
+   54},
+  {reinterpret_cast<const uint8_t *>("\x48\x83"
+                                     "\x64\x0e\xff"
+                                     "\xc1"
+                                     "\xc0"
+                                     "\xbf"),
+   8},
+  {reinterpret_cast<const uint8_t *>("\x88"
+                                     "\xc1"
+                                     "\x61\x96"
+                                     "\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66"
+                                     "\xe0\x84\xa6\x2d\x1b\xff"
+                                     "\xc0"
+                                     "\x5a\x83"
+                                     "\x9b\xd9\xab"
+                                     "\x77\xad"
+                                     "\x94\xe7\x82\x1d\xd7\xf2\xe6\xc7\xb3\x35\xdf\xdf\xcd\x5b\x39\x60"
+                                     "\xd5\xaf\x27\x08\x7f\x36\x72\xc1\xab\x27\x0f\xb5\x29\x1f\x95\x87"
+                                     "\x31\x60\x65\xc0\x03\xed\x4e\xe5\xb1\x06\x3d\x50\x07"),
+   79}};
 const static struct {
   uint32_t size;
   char *name;
@@ -316,42 +286,6 @@ const static struct {
  *                                Regression test codes                            *
  *                                                                                 *
  ***********************************************************************************/
-
-REGRESSION_TEST(HPACK_EncodeInteger)(RegressionTest *t, int, int *pstatus)
-{
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-  uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
-
-  for (const auto &i : integer_test_case) {
-    memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
-
-    int len = encode_integer(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, i.raw_integer, i.prefix);
-
-    box.check(len == i.encoded_field_len, "encoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(len > 0 && memcmp(buf, i.encoded_field, len) == 0, "encoded value was invalid");
-  }
-}
-
-REGRESSION_TEST(HPACK_EncodeString)(RegressionTest *t, int, int *pstatus)
-{
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
-  uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
-  int len;
-
-  // FIXME Current encoder support only huffman conding.
-  for (unsigned int i = 2; i < sizeof(string_test_case) / sizeof(string_test_case[0]); i++) {
-    memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
-
-    len = encode_string(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, string_test_case[i].raw_string, string_test_case[i].raw_string_len);
-
-    box.check(len == string_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len,
-              string_test_case[i].encoded_field_len);
-    box.check(len > 0 && memcmp(buf, string_test_case[i].encoded_field, len) == 0, "encoded string was invalid");
-  }
-}
 
 REGRESSION_TEST(HPACK_EncodeIndexedHeaderField)(RegressionTest *t, int, int *pstatus)
 {
@@ -463,41 +397,6 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
       expected_dynamic_table_size += dynamic_table_response_test_case[i][j].size;
     }
     box.check(indexing_table.size() == expected_dynamic_table_size, "dynamic table is unexpected size: %d", indexing_table.size());
-  }
-}
-
-REGRESSION_TEST(HPACK_DecodeInteger)(RegressionTest *t, int, int *pstatus)
-{
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
-  uint32_t actual;
-
-  for (const auto &i : integer_test_case) {
-    int len = decode_integer(actual, i.encoded_field, i.encoded_field + i.encoded_field_len, i.prefix);
-
-    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(actual == i.raw_integer, "decoded value was %d, expected %d", actual, i.raw_integer);
-  }
-}
-
-REGRESSION_TEST(HPACK_DecodeString)(RegressionTest *t, int, int *pstatus)
-{
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
-  Arena arena;
-  char *actual        = nullptr;
-  uint32_t actual_len = 0;
-
-  hpack_huffman_init();
-
-  for (const auto &i : string_test_case) {
-    int len = decode_string(arena, &actual, actual_len, i.encoded_field, i.encoded_field + i.encoded_field_len);
-
-    box.check(len == i.encoded_field_len, "decoded length was %d, expecting %d", len, i.encoded_field_len);
-    box.check(actual_len == i.raw_string_len, "length of decoded string was %d, expecting %d", actual_len, i.raw_string_len);
-    box.check(memcmp(actual, i.raw_string, actual_len) == 0, "decoded string was invalid");
   }
 }
 

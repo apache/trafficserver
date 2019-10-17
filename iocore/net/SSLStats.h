@@ -85,13 +85,8 @@ enum SSL_Stats {
   ssl_session_cache_new_session,
 
   /* error stats */
-  ssl_error_want_write,
-  ssl_error_want_read,
-  ssl_error_want_client_hello_cb,
-  ssl_error_want_x509_lookup,
   ssl_error_syscall,
   ssl_error_read_eos,
-  ssl_error_zero_return,
   ssl_error_ssl,
   ssl_sni_name_set_failure,
   ssl_total_success_handshake_count_out_stat,
@@ -101,6 +96,13 @@ enum SSL_Stats {
   ssl_ocsp_unknown_cert_stat,
   ssl_ocsp_refreshed_cert_stat,
   ssl_ocsp_refresh_cert_failure_stat,
+
+  /* SSL/TLS versions */
+  ssl_total_sslv3,
+  ssl_total_tlsv1,
+  ssl_total_tlsv11,
+  ssl_total_tlsv12,
+  ssl_total_tlsv13,
 
   ssl_cipher_stats_start = 100,
   ssl_cipher_stats_end   = 300,

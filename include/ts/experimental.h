@@ -192,12 +192,33 @@ tsapi TSReturnCode TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSM
 
 /****************************************************************************
  *  TSHttpTxnCacheLookupCountGet
- *  Return: TS_SUCESS/TS_ERROR
+ *  Return: TS_SUCCESS/TS_ERROR
  ****************************************************************************/
 tsapi TSReturnCode TSHttpTxnCacheLookupCountGet(TSHttpTxn txnp, int *lookup_count);
 tsapi TSReturnCode TSHttpTxnServerRespIgnore(TSHttpTxn txnp);
 tsapi TSReturnCode TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event);
 tsapi TSReturnCode TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close);
+
+/** Do another cache lookup with a different cache key.
+ *
+ * @param txnp Transaction.
+ * @param url URL to use for cache key.
+ * @param length Length of the string in @a url
+ *
+ * @return @c TS_SUCCESS on success, @c TS_ERROR if the @a txnp is invalid or the @a url is
+ * not a valid URL.
+ *
+ * If @a length is negative, @c strlen will be used to determine the length of @a url.
+ *
+ * @a url must be syntactically a URL, but otherwise it is just a string and does not need to
+ * be retrievable.
+ *
+ * This can only be called in a @c TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK callback. To set the cache
+ * key for the first lookup, use @c TSCacheUrlSet.
+ *
+ * @see TSCacheUrlSet
+ */
+tsapi TSReturnCode TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length);
 
 /****************************************************************************
  *  ??
@@ -390,7 +411,7 @@ tsapi void TSFetchWriteData(TSFetchSM fetch_sm, const void *data, size_t len);
 tsapi ssize_t TSFetchReadData(TSFetchSM fetch_sm, void *buf, size_t len);
 
 /*
- * Lanuch FetchSM to do http request, before calling this API,
+ * Launch FetchSM to do http request, before calling this API,
  * you should append http request header into fetch sm through
  * TSFetchWriteData() API
  *

@@ -37,6 +37,7 @@ Plugin Development
    io/index.en
    http-headers/index.en
    http-transformations/index.en
+   remap-plugins.en
    new-protocol-plugins.en
    plugin-interfaces.en
    adding-statistics.en

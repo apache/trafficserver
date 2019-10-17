@@ -31,8 +31,8 @@
  ****************************************************************************/
 
 #include "HttpSessionManager.h"
-#include "../ProxyClientSession.h"
-#include "HttpServerSession.h"
+#include "../ProxySession.h"
+#include "Http1ServerSession.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
 
@@ -57,13 +57,13 @@ ServerSessionPool::purge()
 {
   // @c do_io_close can free the instance which clears the intrusive links and breaks the iterator.
   // Therefore @c do_io_close is called on a post-incremented iterator.
-  m_ip_pool.apply([](HttpServerSession *ssn) -> void { ssn->do_io_close(); });
+  m_ip_pool.apply([](Http1ServerSession *ssn) -> void { ssn->do_io_close(); });
   m_ip_pool.clear();
   m_fqdn_pool.clear();
 }
 
 bool
-ServerSessionPool::match(HttpServerSession *ss, sockaddr const *addr, CryptoHash const &hostname_hash,
+ServerSessionPool::match(Http1ServerSession *ss, sockaddr const *addr, CryptoHash const &hostname_hash,
                          TSServerSessionSharingMatchType match_style)
 {
   return TS_SERVER_SESSION_SHARING_MATCH_NONE !=
@@ -93,7 +93,7 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
 
 HSMresult_t
 ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostname_hash,
-                                  TSServerSessionSharingMatchType match_style, HttpSM *sm, HttpServerSession *&to_return)
+                                  TSServerSessionSharingMatchType match_style, HttpSM *sm, Http1ServerSession *&to_return)
 {
   HSMresult_t zret = HSM_NOT_FOUND;
   to_return        = nullptr;
@@ -144,7 +144,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
 }
 
 void
-ServerSessionPool::releaseSession(HttpServerSession *ss)
+ServerSessionPool::releaseSession(Http1ServerSession *ss)
 {
   ss->state = HSS_KA_SHARED;
   // Now we need to issue a read on the connection to detect
@@ -176,7 +176,7 @@ int
 ServerSessionPool::eventHandler(int event, void *data)
 {
   NetVConnection *net_vc = nullptr;
-  HttpServerSession *s   = nullptr;
+  Http1ServerSession *s  = nullptr;
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -207,7 +207,8 @@ ServerSessionPool::eventHandler(int event, void *data)
       // origin, then reset the timeouts on our end and do not close the connection
       if ((event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ACTIVE_TIMEOUT) && s->state == HSS_KA_SHARED &&
           s->conn_track_group) {
-        bool connection_count_below_min = s->conn_track_group->_count <= http_config_params->origin_min_keep_alive_connections;
+        Debug("http_ss", "s->conn_track_group->min_keep_alive_conns : %d", s->conn_track_group->min_keep_alive_conns);
+        bool connection_count_below_min = s->conn_track_group->_count <= s->conn_track_group->min_keep_alive_conns;
 
         if (connection_count_below_min) {
           Debug("http_ss",
@@ -275,9 +276,9 @@ HttpSessionManager::purge_keepalives()
 
 HSMresult_t
 HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockaddr const *ip, const char *hostname,
-                                    ProxyClientTransaction *ua_txn, HttpSM *sm)
+                                    ProxyTransaction *ua_txn, HttpSM *sm)
 {
-  HttpServerSession *to_return = nullptr;
+  Http1ServerSession *to_return = nullptr;
   TSServerSessionSharingMatchType match_style =
     static_cast<TSServerSessionSharingMatchType>(sm->t_state.txn_conf->server_session_sharing_match);
   CryptoHash hostname_hash;
@@ -339,17 +340,21 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
           UnixNetVConnection *server_vc = dynamic_cast<UnixNetVConnection *>(to_return->get_netvc());
           if (server_vc) {
             UnixNetVConnection *new_vc = server_vc->migrateToCurrentThread(sm, ethread);
-            if (new_vc->thread != ethread) {
-              // Failed to migrate, put it back to global session pool
-              m_g_pool->releaseSession(to_return);
-              to_return = nullptr;
-              retval    = HSM_NOT_FOUND;
-            } else if (new_vc != server_vc) {
-              // The VC migrated, keep things from timing out on us
-              new_vc->set_inactivity_timeout(new_vc->get_inactivity_timeout());
-              to_return->set_netvc(new_vc);
+            // The VC moved, free up the original one
+            if (new_vc != server_vc) {
+              ink_assert(new_vc == nullptr || new_vc->nh != nullptr);
+              if (!new_vc) {
+                // Close out to_return, we were't able to get a connection
+                to_return->do_io_close();
+                to_return = nullptr;
+                retval    = HSM_NOT_FOUND;
+              } else {
+                // Keep things from timing out on us
+                new_vc->set_inactivity_timeout(new_vc->get_inactivity_timeout());
+                to_return->set_netvc(new_vc);
+              }
             } else {
-              // The VC moved, keep things from timing out on us
+              // Keep things from timing out on us
               server_vc->set_inactivity_timeout(server_vc->get_inactivity_timeout());
             }
           }
@@ -371,7 +376,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
 }
 
 HSMresult_t
-HttpSessionManager::release_session(HttpServerSession *to_release)
+HttpSessionManager::release_session(Http1ServerSession *to_release)
 {
   EThread *ethread = this_ethread();
   ServerSessionPool *pool =

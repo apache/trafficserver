@@ -75,22 +75,6 @@ Machine::instance()
   return nullptr;
 }
 
-#include "LogCollationAccept.h"
-LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()), m_port(port) {}
-LogCollationAccept::~LogCollationAccept() {}
-
-#include "LogCollationClientSM.h"
-LogCollationClientSM::LogCollationClientSM(LogHost *log_host) : Continuation(new_ProxyMutex()), m_log_host(log_host) {}
-
-LogCollationClientSM::~LogCollationClientSM() {}
-
-int
-LogCollationClientSM::send(LogBuffer * /* log_buffer ATS_UNUSED */)
-{
-  ink_release_assert(false);
-  return 0;
-}
-
 NetAccept *
 UnixNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 {
@@ -100,6 +84,12 @@ UnixNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
 
 void
 UnixNetProcessor::init()
+{
+  ink_release_assert(false);
+}
+
+void
+UnixNetProcessor::init_socks()
 {
   ink_release_assert(false);
 }
@@ -117,7 +107,6 @@ NetProcessor::AcceptOptions::reset()
   accept_threads        = 0;
   ip_family             = AF_INET;
   etype                 = ET_NET;
-  f_callback_on_open    = false;
   recv_bufsize          = 0;
   send_bufsize          = 0;
   sockopt_flags         = 0;

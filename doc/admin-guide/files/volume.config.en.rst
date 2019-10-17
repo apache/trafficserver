@@ -52,6 +52,11 @@ do not allocate all the disk space in the cache, then the extra disk
 space is not used. You can use the extra space later to create new
 volumes without deleting and clearing the existing volumes.
 
+.. important::
+
+   Changing this file to add, remove or modify volumes effectively invalidates
+   the cache.
+
 Examples
 ========
 

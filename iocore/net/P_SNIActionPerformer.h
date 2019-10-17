@@ -31,24 +31,9 @@
 #pragma once
 
 #include "I_EventSystem.h"
-//#include"P_UnixNetProcessor.h"
 #include <vector>
 #include "P_SSLNextProtocolAccept.h"
 #include "tscore/ink_inet.h"
-#include <unordered_map>
-
-extern std::unordered_map<int, SSLNextProtocolSet *> snpsMap;
-
-/*// enum of all the actions
-enum AllActions {
-  TS_DISABLE_H2 = 0,
-  TS_VERIFY_CLIENT, // this applies to server side vc only
-  TS_TUNNEL_ROUTE,  // blind tunnel action
-};
-*/
-
-/** action for setting next hop properties should be listed in the following enum*/
-/* enum PropertyActions { TS_VERIFY_SERVER = 200, TS_CLIENT_CERT }; */
 
 class ActionItem
 {
@@ -57,24 +42,28 @@ public:
   virtual ~ActionItem(){};
 };
 
-class DisableH2 : public ActionItem
+class ControlH2 : public ActionItem
 {
 public:
-  DisableH2() {}
-  ~DisableH2() override {}
+  ControlH2(bool turn_on) : enable_h2(turn_on) {}
+  ~ControlH2() override {}
 
   int
   SNIAction(Continuation *cont) const override
   {
-    auto ssl_vc     = dynamic_cast<SSLNetVConnection *>(cont);
-    auto accept_obj = ssl_vc ? ssl_vc->accept_object : nullptr;
-    if (accept_obj && accept_obj->snpa && ssl_vc) {
-      if (auto it = snpsMap.find(accept_obj->id); it != snpsMap.end()) {
-        ssl_vc->registerNextProtocolSet(it->second);
+    auto ssl_vc = dynamic_cast<SSLNetVConnection *>(cont);
+    if (ssl_vc) {
+      if (!enable_h2) {
+        ssl_vc->disableProtocol(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
+      } else {
+        ssl_vc->enableProtocol(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
       }
     }
     return SSL_TLSEXT_ERR_OK;
   }
+
+private:
+  bool enable_h2 = false;
 };
 
 class TunnelDestination : public ActionItem
@@ -117,7 +106,7 @@ public:
 
 class TLSValidProtocols : public ActionItem
 {
-  bool unset;
+  bool unset = true;
   unsigned long protocol_mask;
 
 public:
@@ -126,7 +115,7 @@ public:
 #else
   static const unsigned long max_mask = SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2;
 #endif
-  TLSValidProtocols() : unset(true), protocol_mask(max_mask) {}
+  TLSValidProtocols() : protocol_mask(max_mask) {}
   TLSValidProtocols(unsigned long protocols) : unset(false), protocol_mask(protocols) {}
   int
   SNIAction(Continuation *cont) const override
@@ -189,11 +178,4 @@ public:
       return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
   }
-};
-
-class SNIActionPerformer
-{
-public:
-  SNIActionPerformer() = default;
-  static int PerformAction(Continuation *cont, const char *servername);
 };

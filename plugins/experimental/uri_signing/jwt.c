@@ -20,7 +20,6 @@
 #include "jwt.h"
 #include "match.h"
 #include "normalize.h"
-#include "ts/ts.h"
 #include <jansson.h>
 #include <cjose/cjose.h>
 #include <math.h>
@@ -206,13 +205,13 @@ jwt_check_uri(const char *cdniuc, const char *uri)
   int uri_ct  = strlen(uri);
   int buff_ct = uri_ct + 2;
   int err;
-  char normal_uri[buff_ct];
-
+  char *normal_uri = (char *)TSmalloc(buff_ct);
   memset(normal_uri, 0, buff_ct);
+
   err = normalize_uri(uri, uri_ct, normal_uri, buff_ct);
 
   if (err) {
-    return false;
+    goto fail_jwt;
   }
 
   const char *kind = cdniuc, *container = cdniuc;
@@ -220,27 +219,35 @@ jwt_check_uri(const char *cdniuc, const char *uri)
     ++container;
   }
   if (!*container) {
-    return false;
+    goto fail_jwt;
   }
   ++container;
 
   size_t len = container - kind;
+  bool status;
   PluginDebug("Comparing with match kind \"%.*s\" on \"%s\" to normalized URI \"%s\"", (int)len - 1, kind, container, normal_uri);
   switch (len) {
   case sizeof CONT_URI_HASH_STR:
     if (!strncmp(CONT_URI_HASH_STR, kind, len - 1)) {
-      return match_hash(container, normal_uri);
+      status = match_hash(container, normal_uri);
+      TSfree(normal_uri);
+      return status;
     }
     PluginDebug("Expected kind %s, but did not find it in \"%.*s\"", CONT_URI_HASH_STR, (int)len - 1, kind);
     break;
   case sizeof CONT_URI_REGEX_STR:
     if (!strncmp(CONT_URI_REGEX_STR, kind, len - 1)) {
-      return match_regex(container, normal_uri);
+      status = match_regex(container, normal_uri);
+      TSfree(normal_uri);
+      return status;
     }
     PluginDebug("Expected kind %s, but did not find it in \"%.*s\"", CONT_URI_REGEX_STR, (int)len - 1, kind);
     break;
   }
   PluginDebug("Unknown match kind \"%.*s\"", (int)len - 1, kind);
+
+fail_jwt:
+  TSfree(normal_uri);
   return false;
 }
 

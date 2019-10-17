@@ -61,7 +61,7 @@ EchoServer::start()
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   addr.sin_port        = 0;
 
-  udpNet.UDPBind(static_cast<Continuation *>(this), reinterpret_cast<sockaddr const *>(&addr), 1024000, 1024000);
+  udpNet.UDPBind(static_cast<Continuation *>(this), reinterpret_cast<sockaddr const *>(&addr), 1048576, 1048576);
 
   return true;
 }
@@ -161,15 +161,15 @@ udp_client(char *buf)
   tv.tv_sec  = 20;
   tv.tv_usec = 0;
 
-  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv));
-  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
+  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<char *>(&tv), sizeof(tv));
+  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char *>(&tv), sizeof(tv));
 
   sockaddr_in addr;
   addr.sin_family      = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   addr.sin_port        = htons(port);
 
-  ssize_t n = sendto(sock, payload, sizeof(payload), 0, (struct sockaddr *)&addr, sizeof(addr));
+  ssize_t n = sendto(sock, payload, sizeof(payload), 0, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr));
   if (n < 0) {
     std::cout << "Couldn't send udp packet" << std::endl;
     close(sock);
@@ -231,146 +231,4 @@ main(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   RegressionTest::run("UDPNet", REGRESSION_TEST_QUICK);
   return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
-}
-
-//
-// stub
-//
-void
-initialize_thread_for_http_sessions(EThread *, int)
-{
-  ink_assert(false);
-}
-
-#include "P_UnixNet.h"
-#include "P_DNSConnection.h"
-int
-DNSConnection::close()
-{
-  ink_assert(false);
-  return 0;
-}
-
-void
-DNSConnection::trigger()
-{
-  ink_assert(false);
-}
-
-#include "StatPages.h"
-void
-StatPagesManager::register_http(char const *, Action *(*)(Continuation *, HTTPHdr *))
-{
-  ink_assert(false);
-}
-
-#include "ParentSelection.h"
-void
-SocksServerConfig::startup()
-{
-  ink_assert(false);
-}
-
-int SocksServerConfig::m_id = 0;
-
-void
-ParentConfigParams::findParent(HttpRequestData *, ParentResult *, unsigned int, unsigned int)
-{
-  ink_assert(false);
-}
-
-void
-ParentConfigParams::nextParent(HttpRequestData *, ParentResult *, unsigned int, unsigned int)
-{
-  ink_assert(false);
-}
-
-#include "Log.h"
-void
-Log::trace_in(sockaddr const *, unsigned short, char const *, ...)
-{
-  ink_assert(false);
-}
-
-void
-Log::trace_out(sockaddr const *, unsigned short, char const *, ...)
-{
-  ink_assert(false);
-}
-
-#include "InkAPIInternal.h"
-int
-APIHook::invoke(int, void *)
-{
-  ink_assert(false);
-  return 0;
-}
-
-APIHook *
-APIHook::next() const
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-APIHook *
-APIHooks::get() const
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-void
-ConfigUpdateCbTable::invoke(const char * /* name ATS_UNUSED */)
-{
-  ink_release_assert(false);
-}
-
-#include "ControlMatcher.h"
-char *
-HttpRequestData::get_string()
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-const char *
-HttpRequestData::get_host()
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-sockaddr const *
-HttpRequestData::get_ip()
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-sockaddr const *
-HttpRequestData::get_client_ip()
-{
-  ink_assert(false);
-  return nullptr;
-}
-
-SslAPIHooks *ssl_hooks = nullptr;
-StatPagesManager statPagesManager;
-
-#include "ProcessManager.h"
-inkcoreapi ProcessManager *pmgmt = nullptr;
-
-int
-BaseManager::registerMgmtCallback(int, MgmtCallback const &)
-{
-  ink_assert(false);
-  return 0;
-}
-
-void
-ProcessManager::signalManager(int, char const *, int)
-{
-  ink_assert(false);
-  return;
 }

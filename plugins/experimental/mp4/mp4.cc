@@ -155,8 +155,8 @@ mp4_handler(TSCont contp, TSEvent event, void *edata)
   TSHttpTxn txnp;
   Mp4Context *mc;
 
-  txnp = (TSHttpTxn)edata;
-  mc   = (Mp4Context *)TSContDataGet(contp);
+  txnp = static_cast<TSHttpTxn>(edata);
+  mc   = static_cast<Mp4Context *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
@@ -292,7 +292,7 @@ static int
 mp4_transform_entry(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   TSVIO input_vio;
-  Mp4Context *mc = (Mp4Context *)TSContDataGet(contp);
+  Mp4Context *mc = static_cast<Mp4Context *>(TSContDataGet(contp));
 
   if (TSVConnClosedGet(contp)) {
     TSContDestroy(contp);
@@ -493,7 +493,7 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
   last = p + param_len;
 
   for (; p < last; p++) {
-    p = (char *)memmem(p, last - p, key, key_len);
+    p = static_cast<char *>(memmem(p, last - p, key, key_len));
 
     if (p == nullptr) {
       return nullptr;
@@ -510,7 +510,7 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
 
       *val_len = p - val;
 
-      return (char *)val;
+      return const_cast<char *>(val);
     }
   }
 

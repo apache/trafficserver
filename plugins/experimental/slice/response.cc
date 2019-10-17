@@ -68,9 +68,8 @@ string502()
     bodystr.append("</body>\n");
     bodystr.append("</html>\n");
 
-    static int const CLEN = 1024;
-    char clenstr[CLEN];
-    int const clen = snprintf(clenstr, CLEN, "%lu", bodystr.size());
+    char clenstr[1024];
+    int const clen = snprintf(clenstr, sizeof(clenstr), "%lu", bodystr.size());
 
     msg.append("HTTP/1.1 502 Bad Gateway\r\n");
     msg.append("Content-Length: ");
@@ -96,9 +95,7 @@ form416HeaderAndBody(HttpHeader &header, int64_t const contentlen, std::string c
   header.setReason(reason, strlen(reason));
 
   char bufstr[256];
-  int buflen = snprintf
-    //    (bufstr, 255, "%" PRId64, bodystr.size());
-    (bufstr, 255, "%lu", bodystr.size());
+  int buflen = snprintf(bufstr, sizeof(bufstr), "%lu", bodystr.size());
   header.setKeyVal(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, bufstr, buflen);
 
   static char const *const ctypestr = "text/html";

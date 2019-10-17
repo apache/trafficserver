@@ -28,6 +28,7 @@
 #include "HPACK.h"
 #include "Http2Stream.h"
 #include "Http2DependencyTree.h"
+#include "Http2FrequencyCounter.h"
 
 class Http2ClientSession;
 
@@ -85,7 +86,7 @@ public:
     if (0 < id && id < HTTP2_SETTINGS_MAX) {
       return this->settings[indexof(id)] = value;
     } else {
-      ink_assert(!"Bad Settings Identifier");
+      // Do nothing - 6.5.2 Unsupported parameters MUST be ignored
     }
 
     return 0;
@@ -131,7 +132,9 @@ public:
   {
     local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
     remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
-    dependency_tree     = new DependencyTree(Http2::max_concurrent_streams_in);
+    if (Http2::stream_priority_enabled) {
+      dependency_tree = new DependencyTree(Http2::max_concurrent_streams_in);
+    }
   }
 
   void
@@ -238,10 +241,6 @@ public:
     return shutdown_reason;
   }
 
-  // Connection level window size
-  ssize_t client_rwnd = HTTP2_INITIAL_WINDOW_SIZE;
-  ssize_t server_rwnd = Http2::initial_window_size;
-
   // HTTP/2 frame sender
   void schedule_stream(Http2Stream *stream);
   void send_data_frames_depends_on_priority();
@@ -311,6 +310,22 @@ public:
     }
   }
 
+  void increment_received_settings_count(uint32_t count);
+  uint32_t get_received_settings_count();
+  void increment_received_settings_frame_count();
+  uint32_t get_received_settings_frame_count();
+  void increment_received_ping_frame_count();
+  uint32_t get_received_ping_frame_count();
+  void increment_received_priority_frame_count();
+  uint32_t get_received_priority_frame_count();
+
+  ssize_t client_rwnd() const;
+  Http2ErrorCode increment_client_rwnd(size_t amount);
+  Http2ErrorCode decrement_client_rwnd(size_t amount);
+  ssize_t server_rwnd() const;
+  Http2ErrorCode increment_server_rwnd(size_t amount);
+  Http2ErrorCode decrement_server_rwnd(size_t amount);
+
 private:
   unsigned _adjust_concurrent_stream();
 
@@ -328,7 +343,7 @@ private:
   // Counter for current active streams which is started by client
   std::atomic<uint32_t> client_streams_in_count = 0;
 
-  // Counter for current acive streams which is started by server
+  // Counter for current active streams which is started by server
   std::atomic<uint32_t> client_streams_out_count = 0;
 
   // Counter for current active streams and streams in the process of shutting down
@@ -336,6 +351,18 @@ private:
 
   // Counter for stream errors ATS sent
   uint32_t stream_error_count = 0;
+
+  // Connection level window size
+  ssize_t _client_rwnd = HTTP2_INITIAL_WINDOW_SIZE;
+  ssize_t _server_rwnd = Http2::initial_window_size;
+
+  std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
+  int _recent_rwnd_increment_index           = 0;
+
+  Http2FrequencyCounter _received_settings_counter;
+  Http2FrequencyCounter _received_settings_frame_counter;
+  Http2FrequencyCounter _received_ping_frame_counter;
+  Http2FrequencyCounter _received_priority_frame_counter;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS

@@ -107,7 +107,7 @@ send_and_parse_list(OpType op, LLQ *list)
   }
 
   if (err != TS_ERR_OKAY) {
-    ret = (TSMgmtError)err;
+    ret = static_cast<TSMgmtError>(err);
     goto done;
   }
 
@@ -176,10 +176,10 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action
   }
 
   if (err != TS_ERR_OKAY) {
-    return (TSMgmtError)err;
+    return static_cast<TSMgmtError>(err);
   }
 
-  *action_need = (TSActionNeedT)action;
+  *action_need = static_cast<TSActionNeedT>(action);
   return TS_ERR_OKAY;
 }
 
@@ -263,7 +263,7 @@ Terminate()
 
   // cancel the listening socket thread
   // it's important to call this before setting paths to NULL because the
-  // socket_test_thread actually will try to reconnect() and this funntion
+  // socket_test_thread actually will try to reconnect() and this function
   // will seg fault if the socket paths are NULL while it is connecting;
   // the thread will be cancelled at a cancellation point in the
   // socket_test_thread, eg. sleep
@@ -321,7 +321,7 @@ ProxyStateGet()
     return TS_PROXY_UNDEFINED;
   }
 
-  return (TSProxyStateT)state;
+  return static_cast<TSProxyStateT>(state);
 }
 
 TSMgmtError
@@ -363,7 +363,7 @@ ServerBacktrace(unsigned options, char **trace)
   }
 
   if (err != TS_ERR_OKAY) {
-    ret = (TSMgmtError)err;
+    ret = static_cast<TSMgmtError>(err);
     goto fail;
   }
 
@@ -484,7 +484,7 @@ StorageDeviceCmdOffline(const char *dev)
 }
 
 /*-------------------------------------------------------------------------
- * LIfecycle Alert
+ * Lifecycle Alert
  *-------------------------------------------------------------------------
  * Send alert to plugins
  */
@@ -512,15 +512,15 @@ mgmt_record_convert_value(TSRecordT rec_type, const MgmtMarshallData &data, TSRe
     switch (rec_type) {
     case TS_REC_INT:
       ink_assert(data.len == sizeof(TSInt));
-      value.int_val = *(TSInt *)data.ptr;
+      value.int_val = *static_cast<TSInt *>(data.ptr);
       break;
     case TS_REC_COUNTER:
       ink_assert(data.len == sizeof(TSCounter));
-      value.counter_val = *(TSCounter *)data.ptr;
+      value.counter_val = *static_cast<TSCounter *>(data.ptr);
       break;
     case TS_REC_FLOAT:
       ink_assert(data.len == sizeof(TSFloat));
-      value.float_val = *(TSFloat *)data.ptr;
+      value.float_val = *static_cast<TSFloat *>(data.ptr);
       break;
     case TS_REC_STRING:
       ink_assert(data.len == strlen((char *)data.ptr) + 1);
@@ -559,12 +559,12 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
   }
 
   if (err != TS_ERR_OKAY) {
-    ret = (TSMgmtError)err;
+    ret = static_cast<TSMgmtError>(err);
     goto done;
   }
 
-  rec_ele->rec_class = (TSInt)rclass;
-  rec_ele->rec_type  = (TSRecordT)type;
+  rec_ele->rec_class = static_cast<TSInt>(rclass);
+  rec_ele->rec_type  = static_cast<TSRecordT>(type);
   rec_ele->rec_name  = ats_strdup(name);
   mgmt_record_convert_value(rec_ele->rec_type, value, rec_ele->valueT);
 
@@ -612,14 +612,14 @@ mgmt_record_describe_reply(TSConfigRecordDescription *val)
   }
 
   if (err != TS_ERR_OKAY) {
-    ret = (TSMgmtError)err;
+    ret = static_cast<TSMgmtError>(err);
     goto done;
   }
 
   // Everything is cool, populate the description ...
   val->rec_name       = ats_strdup(name);
   val->rec_checkexpr  = ats_strdup(expr);
-  val->rec_type       = (TSRecordT)rtype;
+  val->rec_type       = static_cast<TSRecordT>(rtype);
   val->rec_class      = rclass;
   val->rec_version    = version;
   val->rec_rsb        = rsb;
@@ -700,14 +700,14 @@ MgmtConfigRecordDescribeMatching(const char *rec_name, unsigned options, TSList 
       break;
     }
 
-    enqueue((LLQ *)rec_vals, val);
+    enqueue(static_cast<LLQ *>(rec_vals), val);
   }
 
   return TS_ERR_OKAY;
 
 fail:
-  while (!queue_is_empty((LLQ *)rec_vals)) {
-    TSConfigRecordDescription *val = (TSConfigRecordDescription *)dequeue((LLQ *)rec_vals);
+  while (!queue_is_empty(static_cast<LLQ *>(rec_vals))) {
+    TSConfigRecordDescription *val = static_cast<TSConfigRecordDescription *>(dequeue(static_cast<LLQ *>(rec_vals)));
     TSConfigRecordDescriptionDestroy(val);
   }
 
@@ -765,14 +765,14 @@ MgmtRecordGetMatching(const char *regex, TSList rec_vals)
       break;
     }
 
-    enqueue((LLQ *)rec_vals, rec_ele);
+    enqueue(static_cast<LLQ *>(rec_vals), rec_ele);
   }
 
   return TS_ERR_OKAY;
 
 fail:
-  while (!queue_is_empty((LLQ *)rec_vals)) {
-    rec_ele = (TSRecordEle *)dequeue((LLQ *)rec_vals);
+  while (!queue_is_empty(static_cast<LLQ *>(rec_vals))) {
+    rec_ele = static_cast<TSRecordEle *>(dequeue(static_cast<LLQ *>(rec_vals)));
     TSRecordEleDestroy(rec_ele);
   }
 
@@ -949,7 +949,7 @@ EventIsActive(const char *event_name, bool *is_current)
   }
 
   *is_current = (bval != 0);
-  return (TSMgmtError)err;
+  return static_cast<TSMgmtError>(err);
 }
 
 /*-------------------------------------------------------------------------

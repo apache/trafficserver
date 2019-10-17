@@ -29,14 +29,14 @@ struct PluginRegInfo {
   PluginRegInfo();
   ~PluginRegInfo();
 
-  bool plugin_registered;
-  char *plugin_path;
+  bool plugin_registered = false;
+  char *plugin_path      = nullptr;
 
-  char *plugin_name;
-  char *vendor_name;
-  char *support_email;
+  char *plugin_name   = nullptr;
+  char *vendor_name   = nullptr;
+  char *support_email = nullptr;
 
-  void *dlh;
+  void *dlh = nullptr;
 
   LINK(PluginRegInfo, link);
 };

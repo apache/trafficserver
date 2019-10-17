@@ -70,15 +70,16 @@ ink_free(void *s)
 // length calculations (we need all of them).
 //
 struct UrlComponents {
-  UrlComponents() {}
+  UrlComponents() = default;
 
   ~UrlComponents()
   {
     if (handle_valid == true)
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, urlp);
 
-    if (url != nullptr)
+    if (url != nullptr) {
       TSfree((void *)url);
+    }
   }
 
   bool
@@ -174,8 +175,9 @@ dec_to_hex(type _num, char *hdigits)
   const char *hlookup = "0123456789ABCDEF"; // lookup table stores the hex digits into their
   // corresponding index.
 
-  if (_num < 0)
+  if (_num < 0) {
     _num *= -1; // and make _num positive to clear(zero) the sign bit
+  }
 
   char mask = 0x000f; // mask will clear(zero) out all the bits except lowest 4
   // which represent a single hex digit
@@ -208,15 +210,11 @@ public:
   subop()
     : cookie(""),
       operation(""),
-      op_type(UNKNOWN),
-      target(UNKNOWN_TARGET),
+
       str_match(""),
-      regex(nullptr),
-      regex_extra(nullptr),
-      regex_ccount(0),
-      bucket(""),
-      how_many(0),
-      out_of(0)
+
+      bucket("")
+
   {
     TSDebug(MY_NAME, "subop constructor called");
   }
@@ -224,11 +222,13 @@ public:
   ~subop()
   {
     TSDebug(MY_NAME, "subop destructor called");
-    if (regex)
+    if (regex) {
       pcre_free(regex);
+    }
 
-    if (regex_extra)
+    if (regex_extra) {
       pcre_free(regex_extra);
+    }
   }
 
   bool
@@ -292,10 +292,11 @@ public:
   void
   setTarget(const std::string &s)
   {
-    if (s == "uri")
+    if (s == "uri") {
       target = URI;
-    else
+    } else {
       target = COOKIE;
+    }
   }
 
   void
@@ -353,8 +354,9 @@ public:
       return false;
     }
 
-    if (pcre_fullinfo(regex, regex_extra, PCRE_INFO_CAPTURECOUNT, &regex_ccount) != 0)
+    if (pcre_fullinfo(regex, regex_extra, PCRE_INFO_CAPTURECOUNT, &regex_ccount) != 0) {
       return false;
+    }
 
     return true;
   }
@@ -406,22 +408,22 @@ public:
 private:
   std::string cookie;
   std::string operation;
-  enum operation_type op_type;
-  enum target_type target;
+  enum operation_type op_type = UNKNOWN;
+  enum target_type target     = UNKNOWN_TARGET;
 
   std::string str_match;
 
-  pcre *regex;
-  pcre_extra *regex_extra;
+  pcre *regex             = nullptr;
+  pcre_extra *regex_extra = nullptr;
   std::string regex_string;
-  int regex_ccount;
+  int regex_ccount = 0;
 
   std::string bucket;
-  unsigned int how_many;
-  unsigned int out_of;
+  unsigned int how_many = 0;
+  unsigned int out_of   = 0;
 };
 
-typedef std::vector<const subop *> SubOpQueue;
+using SubOpQueue = std::vector<const subop *>;
 
 //----------------------------------------------------------------------------
 class op
@@ -464,10 +466,11 @@ public:
   void
   setStatus(const std::string &s)
   {
-    if (else_sendto.size() > 0)
+    if (else_sendto.size() > 0) {
       else_status = static_cast<TSHttpStatus>(atoi(s.c_str()));
-    else
+    } else {
       status = static_cast<TSHttpStatus>(atoi(s.c_str()));
+    }
   }
 
   void
@@ -486,8 +489,9 @@ public:
     for (auto subop : subops) {
       subop->printSubOp();
     }
-    if (else_sendto.size() > 0)
+    if (else_sendto.size() > 0) {
       TSDebug(MY_NAME, "else: %s", else_sendto.c_str());
+    }
   }
 
   bool
@@ -583,8 +587,9 @@ public:
         } // handled EXISTS / NOTEXISTS subops
 
         TSDebug(MY_NAME, "processing cookie data: \"%s\"", cookie_data.c_str());
-      } else
+      } else {
         target = URI;
+      }
 
       // INVARIANT: we now have the data from the cookie (if
       // any) inside
@@ -617,8 +622,9 @@ public:
 
         TSDebug(MY_NAME, "process req_url.path = %s", req_url.path.c_str());
         request_uri = req_url.path;
-        if (request_uri.length() && request_uri[0] != '/')
+        if (request_uri.length() && request_uri[0] != '/') {
           request_uri.insert(0, 1, '/');
+        }
         if (req_url.query_len > 0) {
           request_uri += '?';
           request_uri += std::string(req_url.query, req_url.query_len);
@@ -740,9 +746,10 @@ public:
     }
 
     if (retval == 1) {
-      if (dest.size() == 0) // Unless already set by one of
-                            // the operators (e.g. regex)
+      if (dest.size() == 0) { // Unless already set by one of
+                              // the operators (e.g. regex)
         dest = sendto;
+      }
       if (status > 0) {
         retstat = status;
       }
@@ -768,7 +775,7 @@ private:
 };
 
 typedef std::pair<std::string, std::string> StringPair;
-typedef std::vector<StringPair> OpMap;
+using OpMap = std::vector<StringPair>;
 
 //----------------------------------------------------------------------------
 static bool
@@ -841,7 +848,7 @@ error:
   return false;
 }
 
-typedef std::vector<const op *> OpsQueue;
+using OpsQueue = std::vector<const op *>;
 
 //----------------------------------------------------------------------------
 // init
@@ -911,7 +918,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       }
     }
 
-    TSDebug(MY_NAME, "# of ops: %d", (int)ops->size());
+    TSDebug(MY_NAME, "# of ops: %d", static_cast<int>(ops->size()));
     *ih = static_cast<void *>(ops.release());
   } catch (const YAML::Exception &e) {
     TSError("YAML::Exception %s when parsing YAML config file %s for cookie_remap", e.what(), filename.c_str());
@@ -922,7 +929,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 }
 
 //----------------------------------------------------------------------------
-// called whenever we need to perform substiturions on a string; used to replace
+// called whenever we need to perform substitutions on a string; used to replace
 // things like
 //  $url, $unmatched_path, $cr_req_url, and $cr_url_encode
 // returns 0 if no substitutions, 1 otw.
@@ -944,8 +951,9 @@ cr_substitutions(std::string &obj, TSRemapRequestInfo *rri, TSHttpTxn txn)
   TSDebug(MY_NAME, "x req_url.url: %s %d", std::string(req_url.url, req_url.url_len).c_str(), req_url.url_len);
 
   while (pos < obj.length()) {
-    if (pos + 1 >= obj.length())
+    if (pos + 1 >= obj.length()) {
       break; // trailing ?
+    }
 
     switch (obj[pos + 1]) {
     case 'p':
@@ -974,7 +982,7 @@ cr_substitutions(std::string &obj, TSRemapRequestInfo *rri, TSHttpTxn txn)
       }
       break;
     case 'c':
-      if (obj.substr(pos + 1, 3) == "cr_")
+      if (obj.substr(pos + 1, 3) == "cr_") {
         switch (obj[pos + 4]) {
         case 'r':
           if (obj.substr(pos + 4, 7) == "req_url") {
@@ -1009,10 +1017,12 @@ cr_substitutions(std::string &obj, TSRemapRequestInfo *rri, TSHttpTxn txn)
           }
           break;
         }
+      }
       break;
     }
-    if (last_pos == pos)
+    if (last_pos == pos) {
       pos++; // don't search the same place again and again
+    }
     last_pos = pos;
     pos      = obj.find('$', pos);
   }
@@ -1026,7 +1036,7 @@ cr_substitutions(std::string &obj, TSRemapRequestInfo *rri, TSHttpTxn txn)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
-  OpsQueue *ops       = (OpsQueue *)ih;
+  OpsQueue *ops       = static_cast<OpsQueue *>(ih);
   TSHttpStatus status = TS_HTTP_STATUS_NONE;
 
   UrlComponents req_url;
@@ -1078,8 +1088,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       size_t tmp_pos = rewrite_to.find('?', pos); // we don't want to alter the query string
       do {
         pos = rewrite_to.find("//", pos);
-        if (pos < tmp_pos)
+        if (pos < tmp_pos) {
           rewrite_to.erase(pos, 1); // remove one '/'
+        }
       } while (pos <= rewrite_to.length() && pos < tmp_pos);
 
       // Add Query Parameters if not already present
@@ -1159,7 +1170,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 void
 TSRemapDeleteInstance(void *ih)
 {
-  OpsQueue *ops = (OpsQueue *)ih;
+  OpsQueue *ops = static_cast<OpsQueue *>(ih);
 
   TSDebug(MY_NAME, "deleting loaded operations");
   for (auto &op : *ops) {

@@ -78,7 +78,11 @@ public:
         }
         Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
               ink_hrtime_to_sec(now), vc->next_inactivity_timeout_at, vc->inactivity_timeout_in);
-        vc->handleEvent(EVENT_IMMEDIATE, e);
+        vc->handleEvent(VC_EVENT_INACTIVITY_TIMEOUT, e);
+      } else if (vc->next_activity_timeout_at && vc->next_activity_timeout_at < now) {
+        Debug("inactivity_cop_verbose", "active vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
+              ink_hrtime_to_sec(now), vc->next_activity_timeout_at, vc->active_timeout_in);
+        vc->handleEvent(VC_EVENT_ACTIVE_TIMEOUT, e);
       }
     }
     // The cop_list is empty now.
@@ -152,11 +156,11 @@ PollCont::do_poll(ink_hrtime timeout)
       poll_timeout = net_config_poll_timeout;
     }
   }
-// wait for fd's to tigger, or don't wait if timeout is 0
+// wait for fd's to trigger, or don't wait if timeout is 0
 #if TS_USE_EPOLL
   pollDescriptor->result =
     epoll_wait(pollDescriptor->epoll_fd, pollDescriptor->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
-  NetDebug("iocore_net_poll", "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd,
+  NetDebug("v_iocore_net_poll", "[PollCont::pollEvent] epoll_fd: %d, timeout: %d, results: %d", pollDescriptor->epoll_fd,
            poll_timeout, pollDescriptor->result);
 #elif TS_USE_KQUEUE
   struct timespec tv;
@@ -164,7 +168,7 @@ PollCont::do_poll(ink_hrtime timeout)
   tv.tv_nsec = 1000000 * (poll_timeout % 1000);
   pollDescriptor->result =
     kevent(pollDescriptor->kqueue_fd, nullptr, 0, pollDescriptor->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
-  NetDebug("iocore_net_poll", "[PollCont::pollEvent] kqueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd,
+  NetDebug("v_iocore_net_poll", "[PollCont::pollEvent] kqueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd,
            poll_timeout, pollDescriptor->result);
 #elif TS_USE_PORT
   int retval;
@@ -190,7 +194,7 @@ PollCont::do_poll(ink_hrtime timeout)
   } else {
     pollDescriptor->result = (int)nget;
   }
-  NetDebug("iocore_net_poll", "[PollCont::pollEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)", retval,
+  NetDebug("v_iocore_net_poll", "[PollCont::pollEvent] %d[%s]=port_getn(%d,%p,%d,%d,%d),results(%d)", retval,
            retval < 0 ? strerror(errno) : "ok", pollDescriptor->port_fd, pollDescriptor->Port_Triggered_Events,
            POLL_DESCRIPTOR_SIZE, nget, poll_timeout, pollDescriptor->result);
 #else
@@ -217,8 +221,8 @@ initialize_thread_for_net(EThread *thread)
 {
   NetHandler *nh = get_NetHandler(thread);
 
-  new ((ink_dummy_for_new *)nh) NetHandler();
-  new ((ink_dummy_for_new *)get_PollCont(thread)) PollCont(thread->mutex, nh);
+  new (reinterpret_cast<ink_dummy_for_new *>(nh)) NetHandler();
+  new (reinterpret_cast<ink_dummy_for_new *>(get_PollCont(thread))) PollCont(thread->mutex, nh);
   nh->mutex  = new_ProxyMutex();
   nh->thread = thread;
 
@@ -234,7 +238,8 @@ initialize_thread_for_net(EThread *thread)
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
 
   thread->set_tail_handler(nh);
-  thread->ep       = (EventIO *)ats_malloc(sizeof(EventIO));
+  thread->ep = static_cast<EventIO *>(ats_malloc(sizeof(EventIO)));
+  new (thread->ep) EventIO();
   thread->ep->type = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
   thread->ep->start(pd, thread->evfd, nullptr, EVENTIO_READ);
@@ -480,7 +485,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
   PollDescriptor *pd     = get_PollDescriptor(this->thread);
   UnixNetVConnection *vc = nullptr;
   for (int x = 0; x < pd->result; x++) {
-    epd = (EventIO *)get_ev_data(pd, x);
+    epd = static_cast<EventIO *> get_ev_data(pd, x);
     if (epd->type == EVENTIO_READWRITE_VC) {
       vc = epd->data.vc;
       // Remove triggered NetVC from cop_list because it won't be timeout before next InactivityCop runs.
@@ -549,7 +554,7 @@ bool
 NetHandler::manage_active_queue(bool ignore_queue_size = false)
 {
   const int total_connections_in = active_queue_size + keep_alive_queue_size;
-  Debug("net_queue",
+  Debug("v_net_queue",
         "max_connections_per_thread_in: %d max_connections_active_per_thread_in: %d total_connections_in: %d "
         "active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, max_connections_active_per_thread_in, total_connections_in, active_queue_size,
@@ -604,7 +609,7 @@ NetHandler::manage_keep_alive_queue()
   uint32_t total_connections_in = active_queue_size + keep_alive_queue_size;
   ink_hrtime now                = Thread::get_hrtime();
 
-  Debug("net_queue", "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
+  Debug("v_net_queue", "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
 
   if (!max_connections_per_thread_in || total_connections_in <= max_connections_per_thread_in) {
@@ -663,8 +668,14 @@ NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event,
     // create a dummy event
     Event event;
     event.ethread = this_ethread();
-    if (vc->handleEvent(EVENT_IMMEDIATE, &event) == EVENT_DONE) {
-      ++handle_event;
+    if (vc->inactivity_timeout_in && vc->next_inactivity_timeout_at <= now) {
+      if (vc->handleEvent(VC_EVENT_INACTIVITY_TIMEOUT, &event) == EVENT_DONE) {
+        ++handle_event;
+      }
+    } else if (vc->active_timeout_in && vc->next_activity_timeout_at <= now) {
+      if (vc->handleEvent(VC_EVENT_ACTIVE_TIMEOUT, &event) == EVENT_DONE) {
+        ++handle_event;
+      }
     }
   }
 }

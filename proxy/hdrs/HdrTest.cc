@@ -121,11 +121,12 @@ HdrTest::test_parse_date()
   bri_box("test_parse_date");
 
   for (i = 0; dates[i].fast; i++) {
-    fast_t = mime_parse_date(dates[i].fast, dates[i].fast + (int)strlen(dates[i].fast));
-    slow_t = mime_parse_date(dates[i].slow, dates[i].slow + (int)strlen(dates[i].slow));
+    fast_t = mime_parse_date(dates[i].fast, dates[i].fast + static_cast<int>(strlen(dates[i].fast)));
+    slow_t = mime_parse_date(dates[i].slow, dates[i].slow + static_cast<int>(strlen(dates[i].slow)));
     // compare with strptime here!
     if (fast_t != slow_t) {
-      printf("FAILED: date %lu (%s) != %lu (%s)\n", (unsigned long)fast_t, dates[i].fast, (unsigned long)slow_t, dates[i].slow);
+      printf("FAILED: date %lu (%s) != %lu (%s)\n", static_cast<unsigned long>(fast_t), dates[i].fast,
+             static_cast<unsigned long>(slow_t), dates[i].slow);
       ++failures;
     }
   }
@@ -158,11 +159,11 @@ HdrTest::test_format_date()
   int failures              = 0;
 
   // shift into GMT timezone for cftime conversions
-  putenv((char *)envstr);
+  putenv(const_cast<char *>(envstr));
   tzset();
 
   for (i = 0; dates[i]; i++) {
-    t = mime_parse_date(dates[i], dates[i] + (int)strlen(dates[i]));
+    t = mime_parse_date(dates[i], dates[i] + static_cast<int>(strlen(dates[i])));
 
     cftime_replacement(buffer, sizeof(buffer), "%a, %d %b %Y %T %Z", &t);
     if (memcmp(dates[i], buffer, 29) != 0) {
@@ -184,13 +185,13 @@ HdrTest::test_format_date()
   // (2) test a few times per day from 1/1/1970 to past 2010
 
   // coverity[dont_call]
-  for (t = 0; t < 40 * 366 * (24 * 60 * 60); t += (int)(drand48() * (24 * 60 * 60))) {
+  for (t = 0; t < 40 * 366 * (24 * 60 * 60); t += static_cast<int>(drand48() * (24 * 60 * 60))) {
     cftime_replacement(buffer, sizeof(buffer), "%a, %d %b %Y %T %Z", &t);
-    t2 = mime_parse_date(buffer, buffer + (int)strlen(buffer));
+    t2 = mime_parse_date(buffer, buffer + static_cast<int>(strlen(buffer)));
     if (t2 != t) {
       printf("FAILED: parsed time_t doesn't match original time_t\n");
-      printf("  input time_t:  %d (%s)\n", (int)t, buffer);
-      printf("  parsed time_t: %d\n", (int)t2);
+      printf("  input time_t:  %d (%s)\n", static_cast<int>(t), buffer);
+      printf("  parsed time_t: %d\n", static_cast<int>(t2));
       ++failures;
     }
     mime_format_date(buffer2, t);
@@ -200,11 +201,11 @@ HdrTest::test_format_date()
       printf("  formatted date: %s\n", buffer2);
       ++failures;
     }
-    t3 = mime_parse_date(buffer2, buffer2 + (int)strlen(buffer2));
+    t3 = mime_parse_date(buffer2, buffer2 + static_cast<int>(strlen(buffer2)));
     if (t != t3) {
       printf("FAILED: parsed time_t doesn't match original time_t\n");
-      printf("  input time_t:  %d (%s)\n", (int)t, buffer2);
-      printf("  parsed time_t: %d\n", (int)t3);
+      printf("  input time_t:  %d (%s)\n", static_cast<int>(t), buffer2);
+      printf("  parsed time_t: %d\n", static_cast<int>(t3));
       ++failures;
     }
 
@@ -279,7 +280,7 @@ HdrTest::test_url()
 
   failed = 0;
   for (unsigned i = 0; i < countof(strs); i++) {
-    old_length = (int)strlen(strs[i]);
+    old_length = static_cast<int>(strlen(strs[i]));
     start      = strs[i];
     end        = start + old_length;
 
@@ -336,21 +337,6 @@ HdrTest::test_url()
       break;
     }
   }
-
-#if 0
-  if (!failed) {
-    Note("URL performance test start");
-    for (int j = 0 ; j < 100000 ; ++j) {
-      for (i = 0 ; i < countof(strs) ; ++i) {
-        const char* x = strs[i];
-        url.create(NULL);
-        err = url.parse(x, strlen(x));
-        url.destroy();
-      }
-    }
-    Note("URL performance test end");
-  }
-#endif
 
   return (failures_to_status("test_url", failed));
 }
@@ -462,7 +448,7 @@ HdrTest::test_mime()
   hdr.set_date(t1);
   t2 = hdr.get_date();
   if (t1 != t2) {
-    printf("FAILED: set_date(%" PRId64 ") ... get_date = %" PRId64 "\n\n", (int64_t)t1, (int64_t)t2);
+    printf("FAILED: set_date(%" PRId64 ") ... get_date = %" PRId64 "\n\n", static_cast<int64_t>(t1), static_cast<int64_t>(t2));
     return (failures_to_status("test_mime", 1));
   }
 
@@ -508,6 +494,33 @@ HdrTest::test_mime()
   printf("\n");
 
   obj_describe((HdrHeapObjImpl *)(hdr.m_mime), true);
+
+  const char *field_name = "Test_heap_reuse";
+
+  MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
+  ink_release_assert(f->m_ptr_value == nullptr);
+
+  hdr.field_attach(f);
+  ink_release_assert(f->m_ptr_value == nullptr);
+
+  const char *test_value = "mytest";
+
+  printf("Testing Heap Reuse..\n");
+  hdr.field_value_set(f, "orig_value", strlen("orig_value"));
+  const char *m_ptr_value_orig = f->m_ptr_value;
+  hdr.field_value_set(f, test_value, strlen(test_value), true);
+  ink_release_assert(f->m_ptr_value != test_value);       // should be copied
+  ink_release_assert(f->m_ptr_value == m_ptr_value_orig); // heap doesn't change
+  ink_release_assert(f->m_len_value == strlen(test_value));
+  ink_release_assert(memcmp(f->m_ptr_value, test_value, f->m_len_value) == 0);
+
+  m_ptr_value_orig           = f->m_ptr_value;
+  const char *new_test_value = "myTest";
+  hdr.field_value_set(f, new_test_value, strlen(new_test_value), false);
+  ink_release_assert(f->m_ptr_value != new_test_value);   // should be copied
+  ink_release_assert(f->m_ptr_value != m_ptr_value_orig); // new heap
+  ink_release_assert(f->m_len_value == strlen(new_test_value));
+  ink_release_assert(memcmp(f->m_ptr_value, new_test_value, f->m_len_value) == 0);
 
   hdr.fields_clear();
 
@@ -564,7 +577,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
 
   /*** (2) print out the request ***/
 
-  printf("======== real request (length=%d)\n\n", (int)strlen(request));
+  printf("======== real request (length=%d)\n\n", static_cast<int>(strlen(request)));
   printf("%s\n", request);
 
   printf("\n[");
@@ -600,7 +613,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
 
   /*** (4) print out the response ***/
 
-  printf("\n======== real response (length=%d)\n\n", (int)strlen(response));
+  printf("\n======== real response (length=%d)\n\n", static_cast<int>(strlen(response)));
   printf("%s\n", response);
 
   printf("\n[");
@@ -643,6 +656,48 @@ HdrTest::test_http_aux(const char *request, const char *response)
   rsp_hdr.destroy();
 
   return (failures_to_status("test_http_aux", (status == 0)));
+}
+
+int
+HdrTest::test_http_req_parse_error(const char *request, const char *response)
+{
+  int err;
+  HTTPHdr req_hdr, rsp_hdr;
+  HTTPParser parser;
+  const char *start;
+  const char *end;
+
+  int status = 1;
+
+  /*** (1) parse the request string into req_hdr ***/
+
+  start = request;
+  end   = start + strlen(start); // 1 character past end of string
+
+  http_parser_init(&parser);
+
+  req_hdr.create(HTTP_TYPE_REQUEST);
+  rsp_hdr.create(HTTP_TYPE_RESPONSE);
+
+  printf("======== test_http_req_parse_error parsing\n\n");
+  err = req_hdr.parse_req(&parser, &start, end, true, true, 1);
+  if (err != PARSE_RESULT_ERROR) {
+    status = 0;
+  }
+
+  http_parser_clear(&parser);
+
+  /*** (4) print out the response ***/
+
+  printf("\n======== real response (length=%d)\n\n", static_cast<int>(strlen(response)));
+  printf("%s\n", response);
+
+  obj_describe(rsp_hdr.m_http, true);
+
+  req_hdr.destroy();
+  rsp_hdr.destroy();
+
+  return (failures_to_status("test_http_req_parse_error", (status == 0)));
 }
 
 /*-------------------------------------------------------------------------
@@ -838,8 +893,8 @@ comp_http_hdr(HTTPHdr *h1, HTTPHdr *h2)
     return "length mismatch";
   }
 
-  h1_pbuf = (char *)ats_malloc(h1_len + 1);
-  h2_pbuf = (char *)ats_malloc(h2_len + 1);
+  h1_pbuf = static_cast<char *>(ats_malloc(h1_len + 1));
+  h2_pbuf = static_cast<char *>(ats_malloc(h2_len + 1));
 
   p_index = p_dumpoffset = 0;
   rval                   = h1->print(h1_pbuf, h1_len, &p_index, &p_dumpoffset);
@@ -943,23 +998,11 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
     goto done;
   }
 
-// The APIs for copying headers uses memcpy() which can be unsafe for
-// overlapping memory areas. It's unclear to me why these tests were
-// created in the first place honestly, since nothing else does this.
-#if 0
-    /*** (4) Copying over yourself ***/
-  copy1.copy(&copy1);
-  comp_str = comp_http_hdr(&req_hdr, &copy1);
-  if (comp_str)
-    goto done;
+  // The APIs for copying headers uses memcpy() which can be unsafe for
+  // overlapping memory areas. It's unclear to me why these tests were
+  // created in the first place honestly, since nothing else does this.
 
-  copy2.copy(&copy2);
-  comp_str = comp_http_hdr(&resp_hdr, &copy2);
-  if (comp_str)
-    goto done;
-#endif
-
-  /*** (5) Gender bending copying ***/
+  /*** (4) Gender bending copying ***/
   copy1.copy(&resp_hdr);
   comp_str = comp_http_hdr(&resp_hdr, &copy1);
   if (comp_str) {
@@ -980,8 +1023,8 @@ done:
 
   if (comp_str) {
     printf("FAILED: (test #%d) copy & compare: %s\n", testnum, comp_str);
-    printf("REQ:\n[%.*s]\n", (int)strlen(request), request);
-    printf("RESP  :\n[%.*s]\n", (int)strlen(response), response);
+    printf("REQ:\n[%.*s]\n", static_cast<int>(strlen(request)), request);
+    printf("RESP  :\n[%.*s]\n", static_cast<int>(strlen(response)), response);
     return (0);
   } else {
     return (1);
@@ -1094,7 +1137,7 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
   int cpy_bufsize = sizeof(cpy_buf);
   int cpy_bufindex, cpy_dumpoffset, cpy_ret;
 
-  char *marshal_buf   = (char *)ats_malloc(2048);
+  char *marshal_buf   = static_cast<char *>(ats_malloc(2048));
   int marshal_bufsize = sizeof(cpy_buf);
 
   /*** (1) parse the request string into hdr ***/
@@ -1147,12 +1190,12 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
     return (0);
   }
 
-  if (((size_t)prt_bufindex != strlen(request_tgt)) || ((size_t)cpy_bufindex != strlen(request_tgt))) {
+  if ((static_cast<size_t>(prt_bufindex) != strlen(request_tgt)) || (static_cast<size_t>(cpy_bufindex) != strlen(request_tgt))) {
     printf("FAILED: (test #%d) print req output size mismatch --- tgt=%d, prt_bufsize=%d, cpy_bufsize=%d\n", testnum,
-           (int)strlen(request_tgt), prt_bufindex, cpy_bufindex);
+           static_cast<int>(strlen(request_tgt)), prt_bufindex, cpy_bufindex);
 
-    printf("ORIGINAL:\n[%.*s]\n", (int)strlen(request), request);
-    printf("TARGET  :\n[%.*s]\n", (int)strlen(request_tgt), request_tgt);
+    printf("ORIGINAL:\n[%.*s]\n", static_cast<int>(strlen(request)), request);
+    printf("TARGET  :\n[%.*s]\n", static_cast<int>(strlen(request_tgt)), request_tgt);
     printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
     return (0);
@@ -1161,8 +1204,8 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
   if ((strncasecmp(request_tgt, prt_buf, strlen(request_tgt)) != 0) ||
       (strncasecmp(request_tgt, cpy_buf, strlen(request_tgt)) != 0)) {
     printf("FAILED: (test #%d) print req output mismatch\n", testnum);
-    printf("ORIGINAL:\n[%.*s]\n", (int)strlen(request), request);
-    printf("TARGET  :\n[%.*s]\n", (int)strlen(request_tgt), request_tgt);
+    printf("ORIGINAL:\n[%.*s]\n", static_cast<int>(strlen(request)), request);
+    printf("TARGET  :\n[%.*s]\n", static_cast<int>(strlen(request_tgt)), request_tgt);
     printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
     return (0);
@@ -1210,11 +1253,11 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
     return (0);
   }
 
-  if (((size_t)prt_bufindex != strlen(response_tgt)) || ((size_t)cpy_bufindex != strlen(response_tgt))) {
+  if ((static_cast<size_t>(prt_bufindex) != strlen(response_tgt)) || (static_cast<size_t>(cpy_bufindex) != strlen(response_tgt))) {
     printf("FAILED: (test #%d) print rsp output size mismatch --- tgt=%d, prt_bufsize=%d, cpy_bufsize=%d\n", testnum,
-           (int)strlen(response_tgt), prt_bufindex, cpy_bufindex);
-    printf("ORIGINAL:\n[%.*s]\n", (int)strlen(response), response);
-    printf("TARGET  :\n[%.*s]\n", (int)strlen(response_tgt), response_tgt);
+           static_cast<int>(strlen(response_tgt)), prt_bufindex, cpy_bufindex);
+    printf("ORIGINAL:\n[%.*s]\n", static_cast<int>(strlen(response)), response);
+    printf("TARGET  :\n[%.*s]\n", static_cast<int>(strlen(response_tgt)), response_tgt);
     printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
     return (0);
@@ -1223,8 +1266,8 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
   if ((strncasecmp(response_tgt, prt_buf, strlen(response_tgt)) != 0) ||
       (strncasecmp(response_tgt, cpy_buf, strlen(response_tgt)) != 0)) {
     printf("FAILED: (test #%d) print rsp output mismatch\n", testnum);
-    printf("ORIGINAL:\n[%.*s]\n", (int)strlen(response), response);
-    printf("TARGET  :\n[%.*s]\n", (int)strlen(response_tgt), response_tgt);
+    printf("ORIGINAL:\n[%.*s]\n", static_cast<int>(strlen(response)), response);
+    printf("TARGET  :\n[%.*s]\n", static_cast<int>(strlen(response_tgt)), response_tgt);
     printf("PRT_BUFF:\n[%.*s]\n", prt_bufindex, prt_buf);
     printf("CPY_BUFF:\n[%.*s]\n", cpy_bufindex, cpy_buf);
     return (0);
@@ -1372,6 +1415,12 @@ HdrTest::test_http()
     "\r\n",
   };
 
+  static const char request_too_long[] = {
+    "GET http://www.news.com/i/am/too/long HTTP/1.1\r\n"
+    "Connection: close\r\n"
+    "\r\n",
+  };
+
   static const char request_unterminated[] = {
     "GET http://www.unterminated.com/ HTTP/1.1",
   };
@@ -1440,6 +1489,11 @@ HdrTest::test_http()
     "\r\n",
   };
 
+  static const char response_too_long_req[] = {
+    "HTTP/1.0 414 URI Too Long\r\n"
+    "\r\n",
+  };
+
   status = status & test_http_aux(request0, response0);
   status = status & test_http_aux(request09, response09);
   status = status & test_http_aux(request1, response1);
@@ -1455,6 +1509,7 @@ HdrTest::test_http()
   status = status & test_http_aux(request_blank, response_blank);
   status = status & test_http_aux(request_blank2, response_blank2);
   status = status & test_http_aux(request_blank3, response_blank3);
+  status = status & test_http_req_parse_error(request_too_long, response_too_long_req);
 
   return (failures_to_status("test_http", (status == 0)));
 }
@@ -1504,22 +1559,22 @@ HdrTest::test_http_mutation()
   for (i = 1; i <= 100; i++) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
     snprintf(field_value, sizeof(field_value), "%d %d %d %d %d", i, i, i, i, i);
-    resp_hdr.value_set(field_name, (int)strlen(field_name), field_value, (int)strlen(field_value));
+    resp_hdr.value_set(field_name, static_cast<int>(strlen(field_name)), field_value, static_cast<int>(strlen(field_value)));
   }
 
   /**** (3) delete all the even numbered fields *****/
   for (i = 2; i <= 100; i += 2) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
-    resp_hdr.field_delete(field_name, (int)strlen(field_name));
+    resp_hdr.field_delete(field_name, static_cast<int>(strlen(field_name)));
   }
 
   /***** (4) add in secondary fields for all multiples of 3 ***/
   for (i = 3; i <= 100; i += 3) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
-    MIMEField *f = resp_hdr.field_create(field_name, (int)strlen(field_name));
+    MIMEField *f = resp_hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
     resp_hdr.field_attach(f);
     snprintf(field_value, sizeof(field_value), "d %d %d %d %d %d", i, i, i, i, i);
-    f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, field_value, (int)strlen(field_value));
+    f->value_set(resp_hdr.m_heap, resp_hdr.m_mime, field_value, static_cast<int>(strlen(field_value)));
   }
 
   /***** (5) append all fields with multiples of 5 ***/
@@ -1527,13 +1582,14 @@ HdrTest::test_http_mutation()
     snprintf(field_name, sizeof(field_name), "Test%d", i);
     snprintf(field_value, sizeof(field_value), "a %d", i);
 
-    resp_hdr.value_append(field_name, (int)strlen(field_name), field_value, (int)strlen(field_value), true);
+    resp_hdr.value_append(field_name, static_cast<int>(strlen(field_name)), field_value, static_cast<int>(strlen(field_value)),
+                          true);
   }
 
   /**** (6) delete all multiples of nine *****/
   for (i = 9; i <= 100; i += 9) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
-    resp_hdr.field_delete(field_name, (int)strlen(field_name));
+    resp_hdr.field_delete(field_name, static_cast<int>(strlen(field_name)));
   }
 
   printf("\n======== mutated response ==========\n\n");
@@ -1553,7 +1609,7 @@ int
 HdrTest::test_arena_aux(Arena *arena, int len)
 {
   char *str      = arena->str_alloc(len);
-  int verify_len = (int)arena->str_length(str);
+  int verify_len = static_cast<int>(arena->str_length(str));
 
   if (len != verify_len) {
     printf("FAILED: requested %d, got %d bytes\n", len, verify_len);
@@ -1664,9 +1720,10 @@ HdrTest::test_accept_language_match()
 
   for (i = 0; test_cases[i].accept_language; i++) {
     StrList acpt_lang_list(false);
-    HttpCompat::parse_comma_list(&acpt_lang_list, test_cases[i].accept_language, (int)strlen(test_cases[i].accept_language));
+    HttpCompat::parse_comma_list(&acpt_lang_list, test_cases[i].accept_language,
+                                 static_cast<int>(strlen(test_cases[i].accept_language)));
 
-    Q = HttpCompat::match_accept_language(test_cases[i].content_language, (int)strlen(test_cases[i].content_language),
+    Q = HttpCompat::match_accept_language(test_cases[i].content_language, static_cast<int>(strlen(test_cases[i].content_language)),
                                           &acpt_lang_list, &L, &I);
 
     if ((Q != test_cases[i].Q) || (L != test_cases[i].L) || (I != test_cases[i].I)) {
@@ -1730,10 +1787,11 @@ HdrTest::test_accept_charset_match()
 
   for (i = 0; test_cases[i].accept_charset; i++) {
     StrList acpt_lang_list(false);
-    HttpCompat::parse_comma_list(&acpt_lang_list, test_cases[i].accept_charset, (int)strlen(test_cases[i].accept_charset));
+    HttpCompat::parse_comma_list(&acpt_lang_list, test_cases[i].accept_charset,
+                                 static_cast<int>(strlen(test_cases[i].accept_charset)));
 
-    Q = HttpCompat::match_accept_charset(test_cases[i].content_charset, (int)strlen(test_cases[i].content_charset), &acpt_lang_list,
-                                         &I);
+    Q = HttpCompat::match_accept_charset(test_cases[i].content_charset, static_cast<int>(strlen(test_cases[i].content_charset)),
+                                         &acpt_lang_list, &I);
 
     if ((Q != test_cases[i].Q) || (I != test_cases[i].I)) {
       printf("FAILED: (#%d) got { Q = %.3f; I = %d; }, expected { Q = %.3f; I = %d; }, from matching\n  '%s' against '%s'\n", i, Q,
@@ -1798,7 +1856,7 @@ HdrTest::test_comma_vals()
   for (i = 0; i < ntests; i++) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
 
-    MIMEField *f = hdr.field_create(field_name, (int)strlen(field_name));
+    MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
     ink_release_assert(f->m_ptr_value == nullptr);
 
     hdr.field_attach(f);
@@ -1897,7 +1955,7 @@ HdrTest::test_set_comma_vals()
   for (i = 0; i < ntests; i++) {
     snprintf(field_name, sizeof(field_name), "Test%d", i);
 
-    MIMEField *f = hdr.field_create(field_name, (int)strlen(field_name));
+    MIMEField *f = hdr.field_create(field_name, static_cast<int>(strlen(field_name)));
     hdr.field_value_set(f, tests[i].old_raw, strlen(tests[i].old_raw));
     mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, f, tests[i].idx, tests[i].slice, strlen(tests[i].slice));
     ink_release_assert(f->m_ptr_value != nullptr);
@@ -1905,8 +1963,8 @@ HdrTest::test_set_comma_vals()
     if ((f->m_len_value != strlen(tests[i].new_raw)) || (memcmp(f->m_ptr_value, tests[i].new_raw, f->m_len_value) != 0)) {
       ++failures;
       printf("FAILED:  test #%d (setting idx %d of '%s' to '%s') expected '%s' len %d, got '%.*s' len %d\n", i + 1, tests[i].idx,
-             tests[i].old_raw, tests[i].slice, tests[i].new_raw, (int)strlen(tests[i].new_raw), f->m_len_value, f->m_ptr_value,
-             f->m_len_value);
+             tests[i].old_raw, tests[i].slice, tests[i].new_raw, static_cast<int>(strlen(tests[i].new_raw)), f->m_len_value,
+             f->m_ptr_value, f->m_len_value);
     }
   }
 
@@ -2025,7 +2083,7 @@ HdrTest::test_parse_comma_list()
         if (cell != nullptr) {
           ++failures;
           printf("FAILED: test #%d (string '%s', idx %d) expected NULL piece, got [offset %d len %d]\n", i + 1, tests[i].value, j,
-                 offset, (int)cell->len);
+                 offset, static_cast<int>(cell->len));
         }
       } else // should have a piece
       {
@@ -2033,10 +2091,10 @@ HdrTest::test_parse_comma_list()
           ++failures;
           printf("FAILED: test #%d (string '%s', idx %d) expected [offset %d len %d], got NULL piece\n", i + 1, tests[i].value, j,
                  tests[i].pieces[j].offset, tests[i].pieces[j].len);
-        } else if ((offset != tests[i].pieces[j].offset) || (cell->len != (size_t)tests[i].pieces[j].len)) {
+        } else if ((offset != tests[i].pieces[j].offset) || (cell->len != static_cast<size_t>(tests[i].pieces[j].len))) {
           ++failures;
           printf("FAILED: test #%d (string '%s', idx %d) expected [offset %d len %d], got [offset %d len %d]\n", i + 1,
-                 tests[i].value, j, tests[i].pieces[j].offset, tests[i].pieces[j].len, offset, (int)cell->len);
+                 tests[i].value, j, tests[i].pieces[j].offset, tests[i].pieces[j].len, offset, static_cast<int>(cell->len));
         }
       }
     }
@@ -2053,7 +2111,7 @@ HdrTest::bri_box(const char *s)
 {
   int i, len;
 
-  len = (int)strlen(s);
+  len = static_cast<int>(strlen(s));
   printf("\n+-");
   for (i = 0; i < len; i++) {
     putchar('-');

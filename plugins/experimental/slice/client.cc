@@ -34,11 +34,11 @@ shutdown(TSCont const contp, Data *const data)
 bool
 requestBlock(TSCont contp, Data *const data)
 {
-  int64_t const blockbeg = (data->m_blockbytes_config * data->m_blocknum);
-  Range blockbe(blockbeg, blockbeg + data->m_blockbytes_config);
+  int64_t const blockbeg = (data->m_config->m_blockbytes * data->m_blocknum);
+  Range blockbe(blockbeg, blockbeg + data->m_config->m_blockbytes);
 
   char rangestr[1024];
-  int rangelen      = 1023;
+  int rangelen      = sizeof(rangestr);
   bool const rpstat = blockbe.toStringClosed(rangestr, &rangelen);
   TSAssert(rpstat);
 
@@ -56,7 +56,7 @@ requestBlock(TSCont contp, Data *const data)
   }
 
   // create virtual connection back into ATS
-  TSVConn const upvc = TSHttpConnect((sockaddr *)&data->m_client_ip);
+  TSVConn const upvc = TSHttpConnect(reinterpret_cast<sockaddr *>(&data->m_client_ip));
 
   // set up connection with the HttpConnect server, maybe clear old one
   data->m_upstream.setupConnection(upvc);
@@ -64,6 +64,11 @@ requestBlock(TSCont contp, Data *const data)
 
   TSHttpHdrPrint(header.m_buffer, header.m_lochdr, data->m_upstream.m_write.m_iobuf);
   TSVIOReenable(data->m_upstream.m_write.m_vio);
+
+  /*
+          std::string const headerstr(header.toString());
+          DEBUG_LOG("Headers\n%s", headerstr.c_str());
+  */
 
   // get ready for data back from the server
   data->m_upstream.setupVioRead(contp);
@@ -109,7 +114,7 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     Range rangebe;
 
     char rangestr[1024];
-    int rangelen        = 1024;
+    int rangelen        = sizeof(rangestr);
     bool const hasRange = header.valueForKey(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rangestr, &rangelen,
                                              0); // <-- first range only
     if (hasRange) {
@@ -126,11 +131,11 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
         data->m_statustype = TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE;
 
         // First block will give Content-Length
-        rangebe = Range(0, data->m_blockbytes_config);
+        rangebe = Range(0, data->m_config->m_blockbytes);
       }
     } else {
       DEBUG_LOG("Full content request");
-      static char const *const valstr = "full content request";
+      static char const *const valstr = "-";
       static size_t const vallen      = strlen(valstr);
       header.setKeyVal(SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO), valstr, vallen);
       data->m_statustype = TS_HTTP_STATUS_OK;
@@ -138,7 +143,7 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     }
 
     // set to the first block in range
-    data->m_blocknum  = rangebe.firstBlockFor(data->m_blockbytes_config);
+    data->m_blocknum  = rangebe.firstBlockFor(data->m_config->m_blockbytes);
     data->m_req_range = rangebe;
 
     // remove ATS keys to avoid 404 loop

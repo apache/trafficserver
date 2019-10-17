@@ -94,7 +94,20 @@ The following options may be specified in :file:`plugin.config`:
   lost
   retrans
   fackets
+  all_retrans
   ==============    ==================================================
+
+  In addition, on newer Linux system, the following two fields are appended
+  in log level 2:
+  ==============    ==================================================
+  Field Name        Description
+  ==============    ==================================================
+  data_segs_in      Number of incoming data segments
+  data_segs_out     Number of outgoing data segments
+
+  Note: Features such as TSO (TCP Segment Offload) might skew the numbers
+  here. That's true as well for e.g. the retransmit metrics, i.e. anything
+  that deals with segments.
 
 --sample-rate=COUNT
   This is the number of times per 1000 requests that the data will
@@ -110,10 +123,10 @@ The following options may be specified in :file:`plugin.config`:
   :ts:cv:`proxy.config.output.logfile.rolling_enabled` setting in :file:`records.config`
   for the ``tcpinfo`` plugin.  The setting may range from ``0`` to ``3``.
   ``0`` disables logfile rolling.  ``1`` is the ``default`` and enables logfile
-  rolling at specfic intervals set by ``--rolling-interval-sec`` discussed
+  rolling at specific intervals set by ``--rolling-interval-sec`` discussed
   below.  ``2`` enables logfile rolling by logfile size, see
   ``--rolling-size-mb`` below.  Finally a value of ``3`` enables logfile rolling
-  at specfic intervals or size, whichever occurs first using the interval or size
+  at specific intervals or size, whichever occurs first using the interval or size
   settings discussed below.
 
 --rolling-offset-hr=VALUE

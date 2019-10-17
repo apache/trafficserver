@@ -132,7 +132,7 @@ public:
 
   /**
    * Sets the error body page but this method does not advance the state machine to the error state.
-   * To do that you must explicitally call error().
+   * To do that you must explicitly call error().
    *
    * @param content the error page content.
    */
@@ -141,7 +141,7 @@ public:
   /**
    * Sets the error body page with mimetype.
    * This method does not advance the state machine to the error state.
-   * To do that you must explicitally call error().
+   * To do that you must explicitly call error().
    *
    * @param content the error page content.
    * @param mimetype the error page's content-type.
@@ -340,7 +340,7 @@ public:
   size_t getServerResponseBodySize();
 
   /**
-   * Get the nubmber of bytes for the response headers as returned by the server
+   * Get the number of bytes for the response headers as returned by the server
    *
    * @return server response header size */
   size_t getServerResponseHeaderSize();

@@ -78,6 +78,7 @@ if ENV['ATS_BIN'] is not None:
                 host.WriteError("tsxs is broken. Aborting tests", show_stack=False)
     host.WriteVerbose(['ats'], "Traffic server build flags:\n", pprint.pformat(out))
     Variables.update(out)
+Variables.AtsExampleDir = os.path.join(AutestSitePath, '../../../example')
 Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '../../tools')
 
 # modify delay times as we always have to kill Trafficserver

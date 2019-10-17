@@ -19,6 +19,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 
 #include "UrlRewrite.h"
@@ -79,6 +80,9 @@ UrlRewrite::load()
 
   REC_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
 
+  /* Initialize the plugin factory */
+  pluginFactory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
+
   if (0 == this->BuildTable(config_file_path)) {
     _valid = true;
     if (is_debug_tag_set("url_rewrite")) {
@@ -111,32 +115,6 @@ UrlRewrite::SetReverseFlag(int flag)
   if (is_debug_tag_set("url_rewrite")) {
     Print();
   }
-}
-
-/**
-  Allocaites via new, and adds a mapping like this map /ink/rh
-  http://{backdoor}/ink/rh
-
-  These {backdoor} things are then rewritten in a request-hdr hook.  (In the
-  future it might make sense to move the rewriting into HttpSM directly.)
-
-*/
-url_mapping *
-UrlRewrite::SetupBackdoorMapping()
-{
-  const char from_url[] = "/ink/rh";
-  const char to_url[]   = "http://{backdoor}/ink/rh";
-
-  url_mapping *mapping = new url_mapping;
-
-  mapping->fromURL.create(nullptr);
-  mapping->fromURL.parse(from_url, sizeof(from_url) - 1);
-  mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
-
-  mapping->toURL.create(nullptr);
-  mapping->toURL.parse(to_url, sizeof(to_url) - 1);
-
-  return mapping;
 }
 
 /** Deallocated a hash table and all the url_mappings in it. */
@@ -502,7 +480,7 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
       host_hdr_len = 0;
     }
 
-    const char *tmp = (const char *)memchr(host_hdr, ':', host_hdr_len);
+    const char *tmp = static_cast<const char *>(memchr(host_hdr, ':', host_hdr_len));
 
     if (tmp == nullptr) {
       host_len = host_hdr_len;

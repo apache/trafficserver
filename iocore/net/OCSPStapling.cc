@@ -22,6 +22,7 @@
 #include "P_OCSPStapling.h"
 #if TS_USE_TLS_OCSP
 
+#include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/ocsp.h>
 #include "P_Net.h"
@@ -29,7 +30,7 @@
 #include "P_SSLUtils.h"
 #include "SSLStats.h"
 
-// Maxiumum OCSP stapling response size.
+// Maximum OCSP stapling response size.
 // This should be the response for a single certificate and will typically include the responder certificate chain,
 // so 10K should be more than enough.
 #define MAX_STAPLING_DER 10240
@@ -43,6 +44,7 @@ struct certinfo {
   ink_mutex stapling_mutex;
   unsigned char resp_der[MAX_STAPLING_DER];
   unsigned int resp_derlen;
+  bool is_prefetched;
   bool is_expire;
   time_t expire_time;
 };
@@ -56,7 +58,7 @@ using certinfo_map = std::map<X509 *, certinfo *>;
 void
 certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
-  certinfo_map *map = (certinfo_map *)ptr;
+  certinfo_map *map = static_cast<certinfo_map *>(ptr);
 
   if (!map) {
     return;
@@ -141,11 +143,44 @@ end:
   return issuer;
 }
 
+static bool
+stapling_cache_response(OCSP_RESPONSE *rsp, certinfo *cinf)
+{
+  unsigned char resp_der[MAX_STAPLING_DER];
+  unsigned char *p;
+  unsigned int resp_derlen;
+
+  p           = resp_der;
+  resp_derlen = i2d_OCSP_RESPONSE(rsp, &p);
+
+  if (resp_derlen == 0) {
+    Error("stapling_cache_response: cannot decode OCSP response for %s", cinf->certname);
+    return false;
+  }
+
+  if (resp_derlen > MAX_STAPLING_DER) {
+    Error("stapling_cache_response: OCSP response too big (%u bytes) for %s", resp_derlen, cinf->certname);
+    return false;
+  }
+
+  ink_mutex_acquire(&cinf->stapling_mutex);
+  memcpy(cinf->resp_der, resp_der, resp_derlen);
+  cinf->resp_derlen = resp_derlen;
+  cinf->is_expire   = false;
+  cinf->expire_time = time(nullptr) + SSLConfigParams::ssl_ocsp_cache_timeout;
+  ink_mutex_release(&cinf->stapling_mutex);
+
+  Debug("ssl_ocsp", "stapling_cache_response: success to cache response");
+  return true;
+}
+
 bool
-ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
+ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const char *rsp_file)
 {
   scoped_X509 issuer;
   STACK_OF(OPENSSL_STRING) *aia = nullptr;
+  BIO *rsp_bio                  = nullptr;
+  OCSP_RESPONSE *rsp            = nullptr;
 
   if (!cert) {
     Error("null cert passed in for %s", certname);
@@ -174,8 +209,33 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
   cinf->certname    = ats_strdup(certname);
   cinf->resp_derlen = 0;
   ink_mutex_init(&cinf->stapling_mutex);
-  cinf->is_expire   = true;
-  cinf->expire_time = 0;
+  cinf->is_prefetched = rsp_file ? true : false;
+  cinf->is_expire     = true;
+  cinf->expire_time   = 0;
+
+  if (cinf->is_prefetched) {
+    Debug("ssl_ocsp", "using OCSP prefetched response file %s", rsp_file);
+    rsp_bio = BIO_new_file(rsp_file, "r");
+    if (rsp_bio) {
+      rsp = d2i_OCSP_RESPONSE_bio(rsp_bio, nullptr);
+    }
+
+    if (!rsp_bio || !rsp) {
+      Note("cannot get prefetched response for %s from %s", certname, rsp_file);
+      goto err;
+    }
+
+    if (!stapling_cache_response(rsp, cinf)) {
+      Error("stapling_refresh_response: can not cache response");
+      goto err;
+    } else {
+      Debug("ssl_ocsp", "stapling_refresh_response: successful refresh OCSP response");
+      OCSP_RESPONSE_free(rsp);
+      rsp = nullptr;
+      BIO_free(rsp_bio);
+      rsp_bio = nullptr;
+    }
+  }
 
   issuer = stapling_get_issuer(ctx, cert);
   if (issuer == nullptr) {
@@ -222,6 +282,14 @@ err:
   if (map) {
     delete map;
   }
+
+  if (rsp) {
+    OCSP_RESPONSE_free(rsp);
+  }
+  if (rsp_bio) {
+    BIO_free(rsp_bio);
+  }
+
   return false;
 }
 
@@ -237,37 +305,6 @@ stapling_get_cert_info(SSL_CTX *ctx)
   }
 
   return nullptr;
-}
-
-static bool
-stapling_cache_response(OCSP_RESPONSE *rsp, certinfo *cinf)
-{
-  unsigned char resp_der[MAX_STAPLING_DER];
-  unsigned char *p;
-  unsigned int resp_derlen;
-
-  p           = resp_der;
-  resp_derlen = i2d_OCSP_RESPONSE(rsp, &p);
-
-  if (resp_derlen == 0) {
-    Error("stapling_cache_response: cannot decode OCSP response for %s", cinf->certname);
-    return false;
-  }
-
-  if (resp_derlen > MAX_STAPLING_DER) {
-    Error("stapling_cache_response: OCSP response too big (%u bytes) for %s", resp_derlen, cinf->certname);
-    return false;
-  }
-
-  ink_mutex_acquire(&cinf->stapling_mutex);
-  memcpy(cinf->resp_der, resp_der, resp_derlen);
-  cinf->resp_derlen = resp_derlen;
-  cinf->is_expire   = false;
-  cinf->expire_time = time(nullptr) + SSLConfigParams::ssl_ocsp_cache_timeout;
-  ink_mutex_release(&cinf->stapling_mutex);
-
-  Debug("ssl_ocsp", "stapling_cache_response: success to cache response");
-  return true;
 }
 
 static int
@@ -442,7 +479,7 @@ done:
 void
 ocsp_update()
 {
-  SSL_CTX *ctx;
+  shared_SSL_CTX ctx;
   OCSP_RESPONSE *resp = nullptr;
   time_t current_time;
 
@@ -451,27 +488,29 @@ ocsp_update()
 
   for (unsigned i = 0; i < ctxCount; i++) {
     SSLCertContext *cc = certLookup->get(i);
-    if (cc && cc->ctx) {
-      ctx               = cc->ctx;
-      certinfo *cinf    = nullptr;
-      certinfo_map *map = stapling_get_cert_info(ctx);
-      if (map) {
-        // Walk over all certs associated with this CTX
-        for (certinfo_map::iterator iter = map->begin(); iter != map->end(); ++iter) {
-          cinf = iter->second;
-          ink_mutex_acquire(&cinf->stapling_mutex);
-          current_time = time(nullptr);
-          if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
-            ink_mutex_release(&cinf->stapling_mutex);
-            if (stapling_refresh_response(cinf, &resp)) {
-              Debug("Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-              SSL_INCREMENT_DYN_STAT(ssl_ocsp_refreshed_cert_stat);
+    if (cc) {
+      ctx = cc->getCtx();
+      if (ctx) {
+        certinfo *cinf    = nullptr;
+        certinfo_map *map = stapling_get_cert_info(ctx.get());
+        if (map) {
+          // Walk over all certs associated with this CTX
+          for (auto &iter : *map) {
+            cinf = iter.second;
+            ink_mutex_acquire(&cinf->stapling_mutex);
+            current_time = time(nullptr);
+            if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
+              ink_mutex_release(&cinf->stapling_mutex);
+              if (stapling_refresh_response(cinf, &resp)) {
+                Debug("Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
+                SSL_INCREMENT_DYN_STAT(ssl_ocsp_refreshed_cert_stat);
+              } else {
+                Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
+                SSL_INCREMENT_DYN_STAT(ssl_ocsp_refresh_cert_failure_stat);
+              }
             } else {
-              Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
-              SSL_INCREMENT_DYN_STAT(ssl_ocsp_refresh_cert_failure_stat);
+              ink_mutex_release(&cinf->stapling_mutex);
             }
-          } else {
-            ink_mutex_release(&cinf->stapling_mutex);
           }
         }
       }
@@ -506,12 +545,12 @@ ssl_callback_ocsp_stapling(SSL *ssl)
 
   ink_mutex_acquire(&cinf->stapling_mutex);
   time_t current_time = time(nullptr);
-  if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
+  if ((cinf->resp_derlen == 0 || cinf->is_expire) || (cinf->expire_time < current_time && !cinf->is_prefetched)) {
     ink_mutex_release(&cinf->stapling_mutex);
     Debug("ssl_ocsp", "ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
     return SSL_TLSEXT_ERR_NOACK;
   } else {
-    unsigned char *p = (unsigned char *)OPENSSL_malloc(cinf->resp_derlen);
+    unsigned char *p = static_cast<unsigned char *>(OPENSSL_malloc(cinf->resp_derlen));
     unsigned int len = cinf->resp_derlen;
     memcpy(p, cinf->resp_der, cinf->resp_derlen);
     ink_mutex_release(&cinf->stapling_mutex);

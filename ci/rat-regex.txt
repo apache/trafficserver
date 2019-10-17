@@ -17,11 +17,12 @@
 .*\.sed$
 .*\.dtd$
 .*\.json$
+.*\.yaml$
 .*\.md$
-.*\.tsconfig$
 .*\.default$
 .*\.default\.in$
 .*\.config$
+.*\.yaml$
 .*\.gold$
 ^\.gitignore$
 ^\.gitmodules$
@@ -47,7 +48,6 @@ README.*$
 ^hashtable\.cc$
 ^logstats\.summary$
 ^test_AIO.sample$
-^stale_while_revalidate.conf$
 ^stats\.memo$
 port\.h
 ^diags.log^
@@ -67,3 +67,4 @@ port\.h
 ^catch[.]hpp$
 ^configuru.hpp$
 ^yamlcpp$
+^tests/gold_tests/autest-site/min_cfg$

@@ -30,7 +30,7 @@
 
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
-#include "tsconfig/Errata.h"
+#include "tscore/Errata.h"
 #include "P_SNIActionPerformer.h"
 
 ts::Errata
@@ -39,10 +39,14 @@ YamlSNIConfig::loader(const char *cfgFilename)
   try {
     YAML::Node config = YAML::LoadFile(cfgFilename);
     if (config.IsNull()) {
-      Warning("%s is empty", cfgFilename);
       return ts::Errata();
     }
 
+    if (!config["sni"]) {
+      return ts::Errata::Message(1, 1, "expected a toplevel 'sni' node");
+    }
+
+    config = config["sni"];
     if (!config.IsSequence()) {
       return ts::Errata::Message(1, 1, "expected sequence");
     }
@@ -99,6 +103,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_verify_server_properties,
                                                TS_client_cert,
                                                TS_client_key,
+                                               TS_http2,
                                                TS_ip_allow
 #if TS_USE_HELLO_CB
                                                ,
@@ -112,10 +117,10 @@ template <> struct convert<YamlSNIConfig::Item> {
   static bool
   decode(const Node &node, YamlSNIConfig::Item &item)
   {
-    for (auto &&item : node) {
+    for (const auto &elem : node) {
       if (std::none_of(valid_sni_config_keys.begin(), valid_sni_config_keys.end(),
-                       [&item](std::string s) { return s == item.first.as<std::string>(); })) {
-        throw YAML::ParserException(item.Mark(), "unsupported key " + item.first.as<std::string>());
+                       [&elem](const std::string &s) { return s == elem.first.as<std::string>(); })) {
+        throw YAML::ParserException(elem.first.Mark(), "unsupported key " + elem.first.as<std::string>());
       }
     }
 
@@ -125,7 +130,10 @@ template <> struct convert<YamlSNIConfig::Item> {
       return false; // servername must be present
     }
     if (node[TS_disable_h2]) {
-      item.disable_h2 = node[TS_disable_h2].as<bool>();
+      item.offer_h2 = false;
+    }
+    if (node[TS_http2]) {
+      item.offer_h2 = node[TS_http2].as<bool>();
     }
 
     // enum
@@ -147,7 +155,7 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     // remove before 9.0.0 release
-    // backwards compatibiity
+    // backwards compatibility
     if (node[TS_verify_origin_server]) {
       auto value                    = node[TS_verify_origin_server].as<std::string>();
       YamlSNIConfig::Level level    = static_cast<YamlSNIConfig::Level>(LEVEL_DESCRIPTOR.get(value));

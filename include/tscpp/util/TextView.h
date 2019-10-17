@@ -33,37 +33,61 @@
 #include <string>
 #include <string_view>
 
-/// Compare the strings in two views.
-/// Return based on the first different character. If one argument is a prefix of the other, the prefix
-/// is considered the "smaller" value. The values are compared ignoring case.
-/// @note This works for @c ts::TextView because it is a subclass of @c std::string_view.
-/// @return
-/// - -1 if @a lhs char is less than @a rhs char.
-/// -  1 if @a lhs char is greater than @a rhs char.
-/// -  0 if the views contain identical strings.
+/** Compare views with ordering, ignoring case.
+ *
+ * @param lhs input view
+ * @param rhs input view
+ * @return The ordered comparison value.
+ *
+ * - -1 if @a lhs is less than @a rhs
+ * -  1 if @a lhs is greater than @a rhs
+ * -  0 if the views have identical content.
+ *
+ * If one view is the prefix of the other, the shorter view is less (first in the ordering).
+ */
 int strcasecmp(const std::string_view &lhs, const std::string_view &rhs);
+
+/** Compare views with ordering.
+ *
+ * @param lhs input view
+ * @param rhs input view
+ * @return The ordered comparison value.
+ *
+ * - -1 if @a lhs is less than @a rhs
+ * -  1 if @a lhs is greater than @a rhs
+ * -  0 if the views have identical content.
+ *
+ * If one view is the prefix of the other, the shorter view is less (first in the ordering).
+ *
+ * @note For string views, there is no difference between @c strcmp and @c memcmp.
+ * @see strcmp
+ */
+int memcmp(const std::string_view &lhs, const std::string_view &rhs);
+
+/** Compare views with ordering.
+ *
+ * @param lhs input view
+ * @param rhs input view
+ * @return The ordered comparison value.
+ *
+ * - -1 if @a lhs is less than @a rhs
+ * -  1 if @a lhs is greater than @a rhs
+ * -  0 if the views have identical content.
+ *
+ * If one view is the prefix of the other, the shorter view is less (first in the ordering).
+ *
+ * @note For string views, there is no difference between @c strcmp and @c memcmp.
+ * @see memcmp
+ */
+inline int
+strcmp(const std::string_view &lhs, const std::string_view &rhs)
+{
+  return memcmp(lhs, rhs);
+}
 
 namespace ts
 {
 class TextView;
-/// Compare the memory in two views.
-/// Return based on the first different byte. If one argument is a prefix of the other, the prefix
-/// is considered the "smaller" value.
-/// @return
-/// - -1 if @a lhs byte is less than @a rhs byte.
-/// -  1 if @a lhs byte is greater than @a rhs byte.
-/// -  0 if the views contain identical memory.
-int memcmp(TextView const &lhs, TextView const &rhs);
-using ::memcmp; // Make this an overload, not an override.
-/// Compare the strings in two views.
-/// Return based on the first different character. If one argument is a prefix of the other, the prefix
-/// is considered the "smaller" value.
-/// @return
-/// - -1 if @a lhs char is less than @a rhs char.
-/// -  1 if @a lhs char is greater than @a rhs char.
-/// -  0 if the views contain identical strings.
-int strcmp(TextView const &lhs, TextView const &rhs);
-using ::strcmp; // Make this an overload, not an override.
 
 /** A read only view of contiguous piece of memory.
 
@@ -99,7 +123,7 @@ public:
 
   /** Construct explicitly with a pointer and size.
       If @a n is negative it is treated as 0.
-      @internal Overload for convience, otherwise get "narrow conversion" errors.
+      @internal Overload for convenience, otherwise get "narrow conversion" errors.
    */
   constexpr TextView(const char *ptr, ///< Pointer to buffer.
                      int n            ///< Size of buffer.
@@ -116,7 +140,7 @@ public:
 
       Construct directly from an array of characters. All elements of the array are
       included in the view unless the last element is nul, in which case it is elided.
-      If this is inapropriate then a constructor with an explicit size should be used.
+      If this is inappropriate then a constructor with an explicit size should be used.
 
       @code
         TextView a("A literal string");
@@ -291,10 +315,10 @@ public:
   /// Overload to provide better return type.
   self_type &remove_prefix(size_t n);
 
-  /// Remove the prefix delimited by the first occurence of @a c.
+  /// Remove the prefix delimited by the first occurrence of @a c.
   self_type &remove_prefix_at(char c);
 
-  /// Remove the prefix delimited by the first occurence of a character for which @a pred is @c true.
+  /// Remove the prefix delimited by the first occurrence of a character for which @a pred is @c true.
   template <typename F> self_type &remove_prefix_if(F const &pred);
 
   /** Split a prefix from the view on the character at offset @a n.
@@ -391,10 +415,10 @@ public:
   /// Overload to provide better return type.
   self_type &remove_suffix(size_t n);
 
-  /// Remove a suffix, delimited by the last occurence of @c c.
+  /// Remove a suffix, delimited by the last occurrence of @c c.
   self_type &remove_suffix_at(char c);
 
-  /// Remove a suffix, delimited by the last occurence of a character for which @a pred is @c true.
+  /// Remove a suffix, delimited by the last occurrence of a character for which @a pred is @c true.
   template <typename F> self_type &remove_suffix_if(F const &f);
 
   /** Split the view to get a suffix of size @a n.
@@ -1051,6 +1075,12 @@ TextView::ltrim(const char *delimiters)
 }
 
 inline TextView &
+TextView::rtrim(const char *delimiters)
+{
+  return this->rtrim(std::string_view(delimiters));
+}
+
+inline TextView &
 TextView::rtrim(super_type const &delimiters)
 {
   std::bitset<256> valid;
@@ -1058,7 +1088,7 @@ TextView::rtrim(super_type const &delimiters)
   const char *spot  = this->data_end();
   const char *limit = this->data();
 
-  while (limit < spot && valid[static_cast<uint8_t>(*--spot)])
+  while (limit < spot-- && valid[static_cast<uint8_t>(*spot)])
     ;
 
   this->remove_suffix(this->data_end() - (spot + 1));
@@ -1078,7 +1108,9 @@ TextView::trim(super_type const &delimiters)
     ;
   this->remove_prefix(spot - this->data());
 
-  for (spot = this->data_end(), limit = this->data(); limit < spot && valid[static_cast<uint8_t>(*--spot)];)
+  spot  = this->data_end();
+  limit = this->data();
+  while (limit < spot-- && valid[static_cast<uint8_t>(*spot)])
     ;
   this->remove_suffix(this->data_end() - (spot + 1));
 
@@ -1107,9 +1139,9 @@ template <typename F>
 inline TextView &
 TextView::rtrim_if(F const &pred)
 {
-  const char *spot;
-  const char *limit;
-  for (spot = this->data_end(), limit = this->data(); limit < spot && pred(*--spot);)
+  const char *spot  = this->data_end();
+  const char *limit = this->data();
+  while (limit < spot-- && pred(*spot))
     ;
   this->remove_suffix(this->data_end() - (spot + 1));
   return *this;
@@ -1132,12 +1164,6 @@ inline bool
 TextView::isNoCasePrefixOf(super_type const &that) const
 {
   return this->size() <= that.size() && 0 == strncasecmp(this->data(), that.data(), this->size());
-}
-
-inline int
-strcmp(TextView const &lhs, TextView const &rhs)
-{
-  return memcmp(lhs, rhs);
 }
 
 template <typename Stream>

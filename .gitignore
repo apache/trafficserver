@@ -62,6 +62,7 @@ src/traffic_layout/traffic_layout
 src/traffic_logcat/traffic_logcat
 src/traffic_logstats/traffic_logstats
 src/traffic_manager/traffic_manager
+src/traffic_quic/traffic_quic
 src/traffic_server/traffic_server
 src/traffic_top/traffic_top
 src/traffic_via/traffic_via
@@ -92,19 +93,26 @@ lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
 iocore/net/test_UDPNet
+iocore/net/quic/test_QUIC*
 iocore/aio/test_AIO
-iocore/eventsystem/test_Buffer
-iocore/eventsystem/test_Event
+iocore/eventsystem/test_IOBuffer
+iocore/eventsystem/test_EventSystem
 iocore/eventsystem/test_MIOBufferWriter
 iocore/hostdb/test_RefCountCache
 
 proxy/hdrs/test_mime
+proxy/hdrs/test_Huffmancode
 proxy/hdrs/test_proxy_hdrs
+proxy/hdrs/test_hdr_heap
+proxy/hdrs/test_Huffmancode
+proxy/hdrs/test_XPACK
 proxy/http/test_proxy_http
-proxy/http2/test_Huffmancode
 proxy/http2/test_Http2DependencyTree
+proxy/http2/test_Http2FrequencyCounter
 proxy/http2/test_HPACK
 proxy/http2/hpack-tests/results
+proxy/http3/test_libhttp3
+proxy/http3/test_qpack
 proxy/logging/test_LogUtils
 proxy/logging/test_LogUtils2
 
@@ -164,10 +172,6 @@ GTAGS
 ETAGS
 CTAGS
 
-lib/tsconfig/TsConfigGrammar.hpp
-lib/tsconfig/TsConfigSyntax.c
-lib/tsconfig/test-tsconfig
-
 tools/http_load/http_load
 tools/jtest/jtest
 tools/trafficserver.pc
@@ -178,3 +182,7 @@ RELEASE
 
 # autest
 tests/env-test/
+tests/Pipfile.lock
+
+iocore/cache/test_*
+iocore/cache/test/var/trafficserver/cache.db

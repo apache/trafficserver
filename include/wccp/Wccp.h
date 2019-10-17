@@ -22,9 +22,10 @@
 
 #pragma once
 
-#include "tscore/TsBuffer.h"
-#include <tsconfig/Errata.h>
 #include <memory.h>
+
+#include "tscore/TsBuffer.h"
+#include "tscore/Errata.h"
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
 // Nasty, defining this with no prefix. The value is still available
@@ -33,6 +34,8 @@
 
 // INADDR_ANY
 #include <netinet/in.h>
+
+#include <string_view>
 
 /// WCCP Support.
 namespace wccp
@@ -246,16 +249,13 @@ public:
   int getSocket() const;
 
   /// Use MD5 based security with @a key.
-  void useMD5Security(char const *key ///< Shared hash key.
-  );
-  /// Use MD5 based security with @a key.
-  void useMD5Security(ts::ConstBuffer const &key ///< Shared hash key.
+  void useMD5Security(std::string_view const key ///< Shared hash key.
   );
 
   /// Perform house keeping, including sending outbound messages.
   int housekeeping();
 
-  /// Recieve and process a message on the socket.
+  /// Receive and process a message on the socket.
   /// @return 0 for success, -ERRNO on system error.
   ts::Rv<int> handleMessage();
 
@@ -372,8 +372,8 @@ public:
 
 private:
   Service(Cache const &cache, detail::cache::GroupData &group);
-  Cache m_cache;                     ///< Parent cache.
-  detail::cache::GroupData *m_group; ///< Service Group data.
+  Cache m_cache;                               ///< Parent cache.
+  detail::cache::GroupData *m_group = nullptr; ///< Service Group data.
   friend class Cache;
 };
 
@@ -499,15 +499,10 @@ ServiceGroup::clearPorts()
   return *this;
 }
 
-inline Cache::Service::Service() : m_group(nullptr) {}
+inline Cache::Service::Service() {}
 
 inline Cache::Service::Service(Cache const &cache, detail::cache::GroupData &group) : m_cache(cache), m_group(&group) {}
 
-inline void
-EndPoint::useMD5Security(char const *key)
-{
-  this->useMD5Security(ts::ConstBuffer(key, strlen(key)));
-}
 // ------------------------------------------------------
 
 } // namespace wccp

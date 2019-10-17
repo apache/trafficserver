@@ -29,7 +29,7 @@
   might wish to ensure that an entire line will come in before consuming
   the data.  In such a case, the water_mark should be set to the largest
   possible size of the string. (appropriate error handling should take
-  care of exessively long strings).
+  care of excessively long strings).
 
   In all other cases, especially when all data will be consumed, the
   water_mark should be set to 0 (the default).
@@ -52,24 +52,14 @@ class MIOBuffer;
 class IOBufferReader;
 class VIO;
 
-// Removing this optimization since this is breaking WMT over HTTP
-//#define WRITE_AND_TRANSFER
-
 inkcoreapi extern int64_t max_iobuffer_size;
 extern int64_t default_small_iobuffer_size;
 extern int64_t default_large_iobuffer_size; // matched to size of OS buffers
 
-#if !defined(TRACK_BUFFER_USER)
-#define TRACK_BUFFER_USER 1
-#endif
-
 enum AllocType {
   NO_ALLOC,
-  FAST_ALLOCATED,
-  XMALLOCED,
   MEMALIGNED,
   DEFAULT_ALLOC,
-  CONSTANT,
 };
 
 #define DEFAULT_BUFFER_NUMBER 128
@@ -147,23 +137,11 @@ void init_buffer_allocators(int iobuffer_advice);
       <td></td>
     </tr>
     <tr>
-      <td>FAST_ALLOCATED</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>XMALLOCED</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>MEMALIGNED</td>
       <td></td>
     </tr>
     <tr>
       <td>DEFAULT_ALLOC</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>CONSTANT</td>
       <td></td>
     </tr>
   </table>
@@ -239,7 +217,7 @@ public:
     alloc or dealloc methods.
 
   */
-  AllocType _mem_type;
+  AllocType _mem_type = NO_ALLOC;
 
   /**
     Points to the allocated memory. This member stores the address of
@@ -247,27 +225,16 @@ public:
     instead use the alloc or dealloc methods.
 
   */
-  char *_data;
+  char *_data = nullptr;
 
-#ifdef TRACK_BUFFER_USER
-  const char *_location;
-#endif
+  const char *_location = nullptr;
 
   /**
     Constructor. Initializes state for a IOBufferData object. Do not use
     this method. Use one of the functions with the 'new_' prefix instead.
 
   */
-  IOBufferData()
-    : _size_index(BUFFER_SIZE_NOT_ALLOCATED),
-      _mem_type(NO_ALLOC),
-      _data(nullptr)
-#ifdef TRACK_BUFFER_USER
-      ,
-      _location(nullptr)
-#endif
-  {
-  }
+  IOBufferData() : _size_index(BUFFER_SIZE_NOT_ALLOCATED) {}
 
   // noncopyable, declaration only
   IOBufferData(const IOBufferData &) = delete;
@@ -427,7 +394,7 @@ public:
     Create a copy of the IOBufferBlock. Creates and returns a copy of this
     IOBufferBlock that references the same data that this IOBufferBlock
     (it does not allocate an another buffer). The cloned block will not
-    have a writable space since the original IOBufferBlock mantains the
+    have a writable space since the original IOBufferBlock maintains the
     ownership for writing data to the block.
 
     @return copy of this IOBufferBlock.
@@ -477,8 +444,6 @@ public:
   void realloc_set_internal(void *b, int64_t buf_size, int64_t asize_index);
   void realloc(void *b, int64_t buf_size);
   void realloc(int64_t i);
-  void realloc_xmalloc(void *b, int64_t buf_size);
-  void realloc_xmalloc(int64_t buf_size);
 
   /**
     Frees the IOBufferBlock object and its underlying memory.
@@ -489,13 +454,11 @@ public:
   */
   void free() override;
 
-  char *_start;
-  char *_end;
-  char *_buf_end;
+  char *_start   = nullptr;
+  char *_end     = nullptr;
+  char *_buf_end = nullptr;
 
-#ifdef TRACK_BUFFER_USER
-  const char *_location;
-#endif
+  const char *_location = nullptr;
 
   /**
     The underlying reference to the allocated memory. A reference to a
@@ -594,6 +557,7 @@ public:
     const_iterator() = default; ///< Default constructor.
 
     /// Copy constructor.
+    // cppcheck-suppress noExplicitConstructor; copy constructor
     const_iterator(self_type const &that);
 
     /// Assignment.
@@ -724,7 +688,7 @@ public:
 
   /**
     Clears all fields in this IOBuffeReader, rendering it unusable. Drops
-    the reference to the IOBufferBlock list, the accesor, MIOBuffer and
+    the reference to the IOBufferBlock list, the accessor, MIOBuffer and
     resets this reader's state. You have to set those fields in order
     to use this object again.
 
@@ -829,7 +793,7 @@ public:
     @param offset number of the bytes to skip over before beginning
       the operation.
     @return -1 if c is not found, otherwise position of the first
-      ocurrence.
+      occurrence.
 
   */
   inkcoreapi int64_t memchr(char c, int64_t len = INT64_MAX, int64_t offset = 0);
@@ -867,7 +831,7 @@ public:
       parameter buf is set to this value also.
 
   */
-  inkcoreapi char *memcpy(const void *buf, int64_t len = INT64_MAX, int64_t offset = 0);
+  inkcoreapi char *memcpy(void *buf, int64_t len = INT64_MAX, int64_t offset = 0);
 
   /**
     Subscript operator. Returns a reference to the character at the
@@ -893,14 +857,14 @@ public:
     return mbuf;
   }
 
-  MIOBufferAccessor *accessor; // pointer back to the accessor
+  MIOBufferAccessor *accessor = nullptr; // pointer back to the accessor
 
   /**
     Back pointer to this object's MIOBuffer. A pointer back to the
     MIOBuffer this reader is allocated from.
 
   */
-  MIOBuffer *mbuf;
+  MIOBuffer *mbuf = nullptr;
   Ptr<IOBufferBlock> block;
 
   /**
@@ -909,10 +873,10 @@ public:
     of the available data.
 
   */
-  int64_t start_offset;
-  int64_t size_limit;
+  int64_t start_offset = 0;
+  int64_t size_limit   = INT64_MAX;
 
-  IOBufferReader() : accessor(nullptr), mbuf(nullptr), start_offset(0), size_limit(INT64_MAX) {}
+  IOBufferReader() {}
 };
 
 /**
@@ -961,13 +925,16 @@ public:
   void append_block(int64_t asize_index);
 
   /**
-    Adds new block to the end of block list using the block size for
-    the buffer specified when the buffer was allocated.
-
+    Adds a new block to the end of the block list. Note that this does nothing when the next block of the current writer exists.
+    The block size is the same as specified size when the buffer was allocated.
   */
   void add_block();
 
   /**
+    Deprecated
+
+    TODO: remove this function. Because ats_xmalloc() doesn't exist anymore.
+
     Adds by reference len bytes of data pointed to by b to the end
     of the buffer.  b MUST be a pointer to the beginning of  block
     allocated from the ats_xmalloc() routine. The data will be deallocated
@@ -994,16 +961,6 @@ public:
 
   */
   inkcoreapi int64_t write(const void *rbuf, int64_t nbytes);
-
-#ifdef WRITE_AND_TRANSFER
-  /**
-    Same functionality as write but for the one small difference. The
-    space available in the last block is taken from the original and
-    this space becomes available to the copy.
-
-  */
-  inkcoreapi int64_t write_and_transfer_left_over_space(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
-#endif
 
   /**
     Add by data from IOBufferReader r to the this buffer by reference. If
@@ -1091,7 +1048,7 @@ public:
 
   /**
     Returns the amount of space of available for writing on the first
-    writable block on the block chain (the one that would be reutrned
+    writable block on the block chain (the one that would be returned
     by first_write_block()).
 
   */
@@ -1207,9 +1164,7 @@ public:
   void dealloc_all_readers();
 
   void set(void *b, int64_t len);
-  void set_xmalloced(void *b, int64_t len);
   void alloc(int64_t i = default_large_iobuffer_size);
-  void alloc_xmalloc(int64_t buf_size);
   void append_block_internal(IOBufferBlock *b);
   int64_t write(IOBufferBlock const *b, int64_t len, int64_t offset);
   int64_t puts(char *buf, int64_t len);
@@ -1276,16 +1231,6 @@ public:
   {
     _writer->realloc(b, buf_size);
   }
-  void
-  realloc_xmalloc(void *b, int64_t buf_size)
-  {
-    _writer->realloc_xmalloc(b, buf_size);
-  }
-  void
-  realloc_xmalloc(int64_t buf_size)
-  {
-    _writer->realloc_xmalloc(buf_size);
-  }
 
   int64_t size_index;
 
@@ -1302,11 +1247,10 @@ public:
   Ptr<IOBufferBlock> _writer;
   IOBufferReader readers[MAX_MIOBUFFER_READERS];
 
-#ifdef TRACK_BUFFER_USER
-  const char *_location;
-#endif
+  const char *_location = nullptr;
 
   MIOBuffer(void *b, int64_t bufsize, int64_t aWater_mark);
+  // cppcheck-suppress noExplicitConstructor; allow implicit conversion
   MIOBuffer(int64_t default_size_index);
   MIOBuffer();
   ~MIOBuffer();
@@ -1318,13 +1262,13 @@ public:
 */
 struct MIOBufferAccessor {
   IOBufferReader *
-  reader()
+  reader() const
   {
     return entry;
   }
 
   MIOBuffer *
-  writer()
+  writer() const
   {
     return mbuf;
   }
@@ -1352,20 +1296,12 @@ struct MIOBufferAccessor {
     entry = nullptr;
   }
 
-  MIOBufferAccessor()
-    :
-#ifdef DEBUG
-      name(nullptr),
-#endif
-      mbuf(nullptr),
-      entry(nullptr)
-  {
-  }
+  MIOBufferAccessor() {}
 
   ~MIOBufferAccessor();
 
 #ifdef DEBUG
-  const char *name;
+  const char *name = nullptr;
 #endif
 
   // noncopyable
@@ -1373,82 +1309,56 @@ struct MIOBufferAccessor {
   MIOBufferAccessor &operator=(const MIOBufferAccessor &) = delete;
 
 private:
-  MIOBuffer *mbuf;
-  IOBufferReader *entry;
+  MIOBuffer *mbuf       = nullptr;
+  IOBufferReader *entry = nullptr;
 };
 
-extern MIOBuffer *new_MIOBuffer_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *loc,
-#endif
-  int64_t size_index = default_large_iobuffer_size);
+extern MIOBuffer *new_MIOBuffer_internal(const char *loc, int64_t size_index = default_large_iobuffer_size);
 
-#ifdef TRACK_BUFFER_USER
 class MIOBuffer_tracker
 {
   const char *loc;
 
 public:
-  MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
+  explicit MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
   MIOBuffer *
   operator()(int64_t size_index = default_large_iobuffer_size)
   {
     return new_MIOBuffer_internal(loc, size_index);
   }
 };
-#endif
 
-extern MIOBuffer *new_empty_MIOBuffer_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *loc,
-#endif
-  int64_t size_index = default_large_iobuffer_size);
+extern MIOBuffer *new_empty_MIOBuffer_internal(const char *loc, int64_t size_index = default_large_iobuffer_size);
 
-#ifdef TRACK_BUFFER_USER
 class Empty_MIOBuffer_tracker
 {
   const char *loc;
 
 public:
-  Empty_MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
+  explicit Empty_MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
   MIOBuffer *
   operator()(int64_t size_index = default_large_iobuffer_size)
   {
     return new_empty_MIOBuffer_internal(loc, size_index);
   }
 };
-#endif
 
 /// MIOBuffer allocator/deallocator
-#ifdef TRACK_BUFFER_USER
 #define new_MIOBuffer MIOBuffer_tracker(RES_PATH("memory/IOBuffer/"))
 #define new_empty_MIOBuffer Empty_MIOBuffer_tracker(RES_PATH("memory/IOBuffer/"))
-#else
-#define new_MIOBuffer new_MIOBuffer_internal
-#define new_empty_MIOBuffer new_empty_MIOBuffer_internal
-#endif
 extern void free_MIOBuffer(MIOBuffer *mio);
 //////////////////////////////////////////////////////////////////////
 
-extern IOBufferBlock *new_IOBufferBlock_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *loc
-#endif
-);
+extern IOBufferBlock *new_IOBufferBlock_internal(const char *loc);
 
-extern IOBufferBlock *new_IOBufferBlock_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *loc,
-#endif
-  IOBufferData *d, int64_t len = 0, int64_t offset = 0);
+extern IOBufferBlock *new_IOBufferBlock_internal(const char *loc, IOBufferData *d, int64_t len = 0, int64_t offset = 0);
 
-#ifdef TRACK_BUFFER_USER
 class IOBufferBlock_tracker
 {
   const char *loc;
 
 public:
-  IOBufferBlock_tracker(const char *_loc) : loc(_loc) {}
+  explicit IOBufferBlock_tracker(const char *_loc) : loc(_loc) {}
   IOBufferBlock *
   operator()()
   {
@@ -1460,58 +1370,32 @@ public:
     return new_IOBufferBlock_internal(loc, d.get(), len, offset);
   }
 };
-#endif
 
 /// IOBufferBlock allocator
-#ifdef TRACK_BUFFER_USER
 #define new_IOBufferBlock IOBufferBlock_tracker(RES_PATH("memory/IOBuffer/"))
-#else
-#define new_IOBufferBlock new_IOBufferBlock_internal
-#endif
 ////////////////////////////////////////////////////////////
 
-extern IOBufferData *new_IOBufferData_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *location,
-#endif
-  int64_t size_index = default_large_iobuffer_size, AllocType type = DEFAULT_ALLOC);
+extern IOBufferData *new_IOBufferData_internal(const char *location, int64_t size_index = default_large_iobuffer_size,
+                                               AllocType type = DEFAULT_ALLOC);
 
-extern IOBufferData *new_xmalloc_IOBufferData_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *location,
-#endif
-  void *b, int64_t size);
+extern IOBufferData *new_xmalloc_IOBufferData_internal(const char *location, void *b, int64_t size);
 
-extern IOBufferData *new_constant_IOBufferData_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *locaction,
-#endif
-  void *b, int64_t size);
-
-#ifdef TRACK_BUFFER_USER
 class IOBufferData_tracker
 {
   const char *loc;
 
 public:
-  IOBufferData_tracker(const char *_loc) : loc(_loc) {}
+  explicit IOBufferData_tracker(const char *_loc) : loc(_loc) {}
   IOBufferData *
   operator()(int64_t size_index = default_large_iobuffer_size, AllocType type = DEFAULT_ALLOC)
   {
     return new_IOBufferData_internal(loc, size_index, type);
   }
 };
-#endif
 
-#ifdef TRACK_BUFFER_USER
+// TODO: remove new_xmalloc_IOBufferData. Because ats_xmalloc() doesn't exist anymore.
 #define new_IOBufferData IOBufferData_tracker(RES_PATH("memory/IOBuffer/"))
 #define new_xmalloc_IOBufferData(b, size) new_xmalloc_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), (b), (size))
-#define new_constant_IOBufferData(b, size) new_constant_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), (b), (size))
-#else
-#define new_IOBufferData new_IOBufferData_internal
-#define new_xmalloc_IOBufferData new_xmalloc_IOBufferData_internal
-#define new_constant_IOBufferData new_constant_IOBufferData_internal
-#endif
 
 extern int64_t iobuffer_size_to_index(int64_t size, int64_t max = max_iobuffer_size);
 extern int64_t index_to_buffer_size(int64_t idx);

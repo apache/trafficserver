@@ -18,7 +18,6 @@
 
 #include "cookie.h"
 #include "common.h"
-#include <ts/ts.h>
 #include <string.h>
 
 const char *

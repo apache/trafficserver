@@ -313,18 +313,15 @@ get to this information, traffic_ctl is your tool.
 
 =head1 List of configurations
 
-The Apache Traffic Server Administration Manual will explain what these strings represent.  (http://trafficserver.apache.org/docs/)
+The Apache Traffic Server Administration Manual will explain what these strings represent.  (https://docs.trafficserver.apache.org/en/latest/)
 
  proxy.config.accept_threads
  proxy.config.task_threads
- proxy.config.admin.admin_user
  proxy.config.admin.synthetic_port
  proxy.config.admin.cli_path
- proxy.config.admin.number_config_bak
  proxy.config.admin.user_id
  proxy.config.alarm.abs_path
  proxy.config.alarm.bin
- proxy.config.alarm_email
  proxy.config.alarm.script_runtime
  proxy.config.bandwidth_mgmt.filename
  proxy.config.bin_path
@@ -417,7 +414,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.background_fill_completed_threshold
  proxy.config.http.cache.cache_responses_to_cookies
  proxy.config.http.cache.cache_urls_that_look_dynamic
- proxy.config.http.cache.enable_default_vary_headers
  proxy.config.http.cache.guaranteed_max_lifetime
  proxy.config.http.cache.guaranteed_min_lifetime
  proxy.config.http.cache.heuristic_lm_factor
@@ -440,9 +436,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.cache.range.lookup
  proxy.config.http.cache.range.write
  proxy.config.http.cache.required_headers
- proxy.config.http.cache.vary_default_images
- proxy.config.http.cache.vary_default_other
- proxy.config.http.cache.vary_default_text
  proxy.config.http.cache.when_to_revalidate
  proxy.config.http.chunking_enabled
  proxy.config.http.connect_attempts_max_retries
@@ -487,7 +480,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.parent_proxy.file
  proxy.config.http.parent_proxy.per_parent_connect_attempts
  proxy.config.http.parent_proxy.retry_time
- proxy.config.http.parent_proxy_routing_enable
  proxy.config.http.parent_proxy.total_connect_attempts
  proxy.config.http.post_connect_attempts_timeout
  proxy.config.http.post_copy_size
@@ -520,12 +512,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.local_state_dir
  proxy.config.log.ascii_buffer_size
  proxy.config.log.auto_delete_rolled_files
- proxy.config.log.collation_host
- proxy.config.log.collation_host_tagged
- proxy.config.log.collation_max_send_buffers
- proxy.config.log.collation_port
- proxy.config.log.collation_retry_sec
- proxy.config.log.collation_secret
  proxy.config.log.file_stat_frequency
  proxy.config.log.hostname
  proxy.config.log.log_buffer_size
@@ -535,7 +521,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.max_line_size
  proxy.config.log.max_secs_per_buffer
  proxy.config.log.max_space_mb_for_logs
- proxy.config.log.max_space_mb_for_orphan_logs
  proxy.config.log.max_space_mb_headroom
  proxy.config.log.overspill_report_count
  proxy.config.log.rolling_enabled
@@ -601,9 +586,10 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.server.cipher_suite
  proxy.config.ssl.server.honor_cipher_order
  proxy.config.ssl.server.dhparams_file
- proxy.config.ssl.SSLv2
- proxy.config.ssl.SSLv3
  proxy.config.ssl.TLSv1
+ proxy.config.ssl.TLSv1_1
+ proxy.config.ssl.TLSv1_2
+ proxy.config.ssl.TLSv1_3
  proxy.config.ssl.server.multicert.filename
  proxy.config.ssl.server.private_key.path
  proxy.config.stat_collector.interval

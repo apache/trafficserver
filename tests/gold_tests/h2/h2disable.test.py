@@ -23,12 +23,11 @@ Test disabling H2 on a per domain basis
 
 # need Curl
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2')
 )
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 request_header = {"headers": "GET / HTTP/1.1\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -39,7 +38,6 @@ server.addResponse("sessionlog.json", request_header, response_header)
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
@@ -54,24 +52,24 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'http|ssl',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    # enable ssl port with http2
-    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
-    'proxy.config.url_remap.pristine_host_hdr': 1
+    'proxy.config.url_remap.pristine_host_hdr': 1,
+    'proxy.config.accept_threads': 1
 })
 
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
+  'sni:',
   '- fqdn: bar.com',
-  '  disable_h2: true',
+  '  http2: off',
   '- fqdn: bob.*.com',
-  '  disable_h2: true',
+  '  http2: off',
 ])
 
 tr = Test.AddTestRun("Negotiate-h2")
 tr.Processes.Default.Command = "curl -v -k --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.TimeOut = 5
@@ -98,5 +96,3 @@ tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("Using HTTP2", "Curl should not negotiate HTTP2")
 tr2.TimeOut = 5
-
-

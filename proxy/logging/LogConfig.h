@@ -77,7 +77,6 @@ enum {
 extern RecRawStatBlock *log_rsb;
 
 struct dirent;
-struct LogCollationAccept;
 
 /*-------------------------------------------------------------------------
   LogDeleteCandidate, LogDeletingInfo&Descriptor
@@ -189,12 +188,6 @@ public:
   bool space_to_write(int64_t bytes_to_write) const;
 
   bool
-  am_collation_host() const
-  {
-    return collation_mode == Log::COLLATION_HOST;
-  }
-
-  bool
   space_is_short() const
   {
     return !space_to_write(max_space_mb_headroom * LOG_MEGABYTE);
@@ -211,12 +204,12 @@ public:
   void read_configuration_variables();
 
   // CVR This is the mgmt callback function, hence all the strange arguments
-  static void reconfigure_mgmt_variables(ts::MemSpan);
+  static void reconfigure_mgmt_variables(ts::MemSpan<void>);
 
   int
   get_max_space_mb() const
   {
-    return (use_orphan_log_space_value ? max_space_mb_for_orphan_logs : max_space_mb_for_logs);
+    return max_space_mb_for_logs;
   }
 
   void
@@ -232,10 +225,10 @@ public:
   }
 
 public:
-  bool initialized;
-  bool reconfiguration_needed;
-  bool logging_space_exhausted;
-  int64_t m_space_used;
+  bool initialized             = false;
+  bool reconfiguration_needed  = false;
+  bool logging_space_exhausted = false;
+  int64_t m_space_used         = 0;
   int64_t m_partition_space_left;
   bool roll_log_files_now; // signal that files must be rolled
 
@@ -247,20 +240,18 @@ public:
   int log_buffer_size;
   int max_secs_per_buffer;
   int max_space_mb_for_logs;
-  int max_space_mb_for_orphan_logs;
   int max_space_mb_headroom;
   int logfile_perm;
-  int collation_mode;
-  int collation_port;
-  bool collation_host_tagged;
-  int collation_preproc_threads;
-  int collation_retry_sec;
-  int collation_max_send_buffers;
+
+  int preproc_threads;
+
   Log::RollingEnabledValues rolling_enabled;
   int rolling_interval_sec;
   int rolling_offset_hr;
   int rolling_size_mb;
   int rolling_min_count;
+  int rolling_max_count;
+  bool rolling_allow_empty;
   bool auto_delete_rolled_files;
 
   IntrusiveHashMap<LogDeletingInfoDescriptor> deleting_info;
@@ -274,28 +265,18 @@ public:
 
   char *hostname;
   char *logfile_dir;
-  char *collation_host;
-  char *collation_secret;
 
 private:
   bool evaluate_config();
 
   void setup_default_values();
-  void setup_collation(LogConfig *prev_config);
 
 private:
-  // if true, use max_space_mb_for_orphan_logs to determine the amount
-  // of space that logging can use, otherwise use max_space_mb_for_logs
-  //
-  bool use_orphan_log_space_value;
-
-  LogCollationAccept *m_log_collation_accept;
-
-  bool m_disk_full;
-  bool m_disk_low;
-  bool m_partition_full;
-  bool m_partition_low;
-  bool m_log_directory_inaccessible;
+  bool m_disk_full                  = false;
+  bool m_disk_low                   = false;
+  bool m_partition_full             = false;
+  bool m_partition_low              = false;
+  bool m_log_directory_inaccessible = false;
 
   // noncopyable
   // -- member functions not allowed --

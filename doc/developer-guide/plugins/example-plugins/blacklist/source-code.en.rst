@@ -43,5 +43,5 @@ This plugin illustrates:
 
 -  How to use the plugin configuration management interface
 
-.. literalinclude:: ../../../../../example/blacklist_1/blacklist_1.c
+.. literalinclude:: ../../../../../example/plugins/c-api/blacklist_1/blacklist_1.c
    :language: c

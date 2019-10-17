@@ -21,10 +21,6 @@ Test.Summary = '''
 
 '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: test connector"
 
@@ -67,20 +63,20 @@ ts.Disk.File(ts.Variables.CONFIGDIR +"/subcookie.txt", exists=False, id="config1
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/magic http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/subcookie.txt'
+    'map http://www.example.com http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/subcookie.txt'
 )
 
 # Positive test case that remaps because all connected operations pass
 tr = Test.AddTestRun("cookie value matches")
 # Unlike in other places I am using a single line string because the & seems to
 # be interpreted by the autest framework or the shell (tried escaping with \)
-tr.Processes.Default.Command = 'curl --proxy 127.0.0.1:{0} "http://www.example.com/magic" -H"Cookie: fpbeta=a=1&b=2&c=3" -H "Proxy-Connection: keep-alive" --verbose '.format(ts.Variables.port)
+tr.Processes.Default.Command = 'curl --proxy 127.0.0.1:{0} "http://www.example.com" -H"Cookie: fpbeta=a=1&b=2&c=3" -H "Proxy-Connection: keep-alive" --verbose '.format(ts.Variables.port)
 #tr.Processes.Default.Command = '''
-#curl 
-#--proxy 127.0.0.1:{0} 
-#"http://www.example.com/magic" 
-#-H\"Cookie: fpbeta=a=1&b=2&c=3\" 
-#-H "Proxy-Connection: keep-alive" 
+#curl
+#--proxy 127.0.0.1:{0}
+#"http://www.example.com"
+#-H\"Cookie: fpbeta=a=1&b=2&c=3\"
+#-H "Proxy-Connection: keep-alive"
 #--verbose
 #'''.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
@@ -93,7 +89,7 @@ server.Streams.All = "gold/matchcookie.gold"
 
 # Negative test case that doesn't remap because not all subops pass
 tr = Test.AddTestRun("cookie value doesn't match")
-tr.Processes.Default.Command = 'curl --proxy 127.0.0.1:{0} "http://www.example.com/magic" -H"Cookie: fpbeta=a=1&b=2&c=4" -H "Proxy-Connection: keep-alive" --verbose '.format(ts.Variables.port)
+tr.Processes.Default.Command = 'curl --proxy 127.0.0.1:{0} "http://www.example.com" -H"Cookie: fpbeta=a=1&b=2&c=4" -H "Proxy-Connection: keep-alive" --verbose '.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server2, ready=When.PortOpen(server2.Variables.Port))
 tr.StillRunningAfter = ts

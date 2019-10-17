@@ -295,7 +295,7 @@ Configuring Traffic Server for PUSH Requests
 Before you can deliver content into your cache using HTTP ``PUSH``, you
 must configure Traffic Server to accept ``PUSH`` requests.
 
-#. Edit :file:`ip_allow.config` to allow ``PUSH`` from the appropriate addresses.
+#. Edit :file:`ip_allow.yaml` to allow ``PUSH`` from the appropriate addresses.
 
 #. Update :ts:cv:`proxy.config.http.push_method_enabled` in
    :file:`records.config`::
@@ -592,31 +592,8 @@ whether a server delivers content for different languages, targets
 different browsers with different presentation styles, or provides
 different document formats (HTML, XML). Different versions of the same
 object are termed *alternates* and are cached by Traffic Server based
-on ``Vary`` response headers. You can specify additional request and
-response headers for specific ``Content-Type`` values that Traffic Server
-will identify as alternates for caching. You can also limit the number
-of alternate versions of an object allowed in the cache.
-
-Configuring How Traffic Server Caches Alternates
-------------------------------------------------
-
-To configure how Traffic Server caches alternates:
-
-#. Edit the following variables in :file:`records.config`:
-
-   -  :ts:cv:`proxy.config.http.cache.enable_default_vary_headers`
-   -  :ts:cv:`proxy.config.http.cache.vary_default_text`
-   -  :ts:cv:`proxy.config.http.cache.vary_default_images`
-   -  :ts:cv:`proxy.config.http.cache.vary_default_other`
-
-#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
-
-.. note::
-
-   If you specify ``Cookie`` as the header field on which to vary
-   in the above variables, make sure that the variable
-   :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies`
-   is set appropriately.
+on ``Vary`` response headers. You can also limit the number of
+alternate versions of an object allowed in the cache.
 
 Limiting the Number of Alternates for an Object
 -----------------------------------------------
@@ -816,4 +793,3 @@ In addition to the open read retry settings TS supports a new setting
 reduce multiple concurrent requests hitting the origin for the same object by
 either returning a stale copy, in case of hit-stale or an error in case of cache
 miss for all but one of the requests.
-

@@ -135,11 +135,13 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
     // force the SSLNetVConnection to complete the SSL handshake. Don't tell
     // the endpoint that there is an accept to handle until the read completes
     // and we know which protocol was negotiated.
-    netvc->registerNextProtocolSet(&this->protoset);
+    netvc->registerNextProtocolSet(&this->protoset, this->protoenabled);
     netvc->do_io_read(new SSLNextProtocolTrampoline(this, netvc->mutex), 0, this->buffer);
     return EVENT_CONT;
   default:
-    netvc->do_io_close();
+    if (netvc) {
+      netvc->do_io_close();
+    }
     return EVENT_DONE;
   }
 }
@@ -157,10 +159,10 @@ SSLNextProtocolAccept::registerEndpoint(const char *protocol, Continuation *hand
   return this->protoset.registerEndpoint(protocol, handler);
 }
 
-bool
-SSLNextProtocolAccept::unregisterEndpoint(const char *protocol, Continuation *handler)
+void
+SSLNextProtocolAccept::enableProtocols(const SessionProtocolSet &protos)
 {
-  return this->protoset.unregisterEndpoint(protocol, handler);
+  this->protoenabled = protos;
 }
 
 SSLNextProtocolAccept::SSLNextProtocolAccept(Continuation *ep, bool transparent_passthrough)
@@ -173,12 +175,6 @@ SSLNextProtocolSet *
 SSLNextProtocolAccept::getProtoSet()
 {
   return &this->protoset;
-}
-
-SSLNextProtocolSet *
-SSLNextProtocolAccept::cloneProtoSet()
-{
-  return this->protoset.clone();
 }
 
 SSLNextProtocolAccept::~SSLNextProtocolAccept()

@@ -25,17 +25,12 @@
 #pragma once
 #define I_VIO_h
 
-#include "tscore/ink_platform.h"
-#include "I_EventSystem.h"
 #if !defined(I_IOBuffer_h)
 #error "include I_IOBuffer.h"
----include I_IOBuffer.h
 #endif
-#include "tscore/ink_apidefs.h"
-   class Continuation;
+
+class Continuation;
 class VConnection;
-class IOVConnection;
-class MIOBuffer;
 class ProxyMutex;
 
 /**
@@ -73,9 +68,12 @@ class ProxyMutex;
 class VIO
 {
 public:
+  explicit VIO(int aop);
+  VIO();
   ~VIO() {}
+
   /** Interface for the VConnection that owns this handle. */
-  Continuation *get_continuation();
+  Continuation *get_continuation() const;
   void set_continuation(Continuation *cont);
 
   /**
@@ -95,15 +93,15 @@ public:
     @return The number of bytes to be processed by the operation.
 
   */
-  int64_t ntodo();
+  int64_t ntodo() const;
 
   /////////////////////
   // buffer settings //
   /////////////////////
   void set_writer(MIOBuffer *writer);
   void set_reader(IOBufferReader *reader);
-  MIOBuffer *get_writer();
-  IOBufferReader *get_reader();
+  MIOBuffer *get_writer() const;
+  IOBufferReader *get_reader() const;
 
   /**
     Reenable the IO operation.
@@ -139,8 +137,8 @@ public:
   */
   inkcoreapi void reenable_re();
 
-  VIO(int aop);
-  VIO();
+  void disable();
+  bool is_disabled() const;
 
   enum {
     NONE = 0,
@@ -157,7 +155,6 @@ public:
     STAT,
   };
 
-public:
   /**
     Continuation to callback.
 
@@ -165,7 +162,7 @@ public:
     call with events for this operation.
 
   */
-  Continuation *cont;
+  Continuation *cont = nullptr;
 
   /**
     Number of bytes to be done for this operation.
@@ -173,7 +170,7 @@ public:
     The total number of bytes this operation must complete.
 
   */
-  int64_t nbytes;
+  int64_t nbytes = 0;
 
   /**
     Number of bytes already completed.
@@ -183,7 +180,7 @@ public:
     the lock.
 
   */
-  int64_t ndone;
+  int64_t ndone = 0;
 
   /**
     Type of operation.
@@ -191,7 +188,7 @@ public:
     The type of operation that this VIO represents.
 
   */
-  int op;
+  int op = VIO::NONE;
 
   /**
     Provides access to the reader or writer for this operation.
@@ -207,7 +204,7 @@ public:
     functions.
 
   */
-  VConnection *vc_server;
+  VConnection *vc_server = nullptr;
 
   /**
     Reference to the state machine's mutex.
@@ -218,6 +215,7 @@ public:
 
   */
   Ptr<ProxyMutex> mutex;
-};
 
-#include "I_VConnection.h"
+private:
+  bool _disabled = false;
+};

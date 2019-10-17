@@ -18,7 +18,7 @@
 
 /**
  * @file aws_auth_v4_ts.h
- * @brief TS API adaptor and header iterator using the TS API which are swapped with mocks during testing.
+ * @brief TS API adapter and header iterator using the TS API which are swapped with mocks during testing.
  * @see aws_auth_v4.h
  */
 
@@ -28,7 +28,7 @@
 class HeaderIterator
 {
 public:
-  HeaderIterator() : _bufp(nullptr), _hdrs(TS_NULL_MLOC), _field(TS_NULL_MLOC) {}
+  HeaderIterator() : _hdrs(TS_NULL_MLOC), _field(TS_NULL_MLOC) {}
   HeaderIterator(TSMBuffer bufp, TSMLoc hdrs, TSMLoc field) : _bufp(bufp), _hdrs(hdrs), _field(field) {}
   HeaderIterator(const HeaderIterator &it)
   {
@@ -81,7 +81,7 @@ public:
   {
     return TSMimeHdrFieldValueStringGet(_bufp, _hdrs, _field, -1, len);
   }
-  TSMBuffer _bufp;
+  TSMBuffer _bufp = nullptr;
   TSMLoc _hdrs;
   TSMLoc _field;
 };

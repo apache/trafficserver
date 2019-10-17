@@ -22,16 +22,16 @@
 Transformations
 ***************
 
-Vconnection Implementor's View
+Vconnection Implementer's View
 ==============================
 
-A VConnection implementor writes only transformations. All other
+A VConnection implementer writes only transformations. All other
 VConnections (net VConnections and cache VConnections) are implemented
 in iocore. As mentioned earlier, a given vconnection can have a maximum
 of one read operation and one write operation being performed on it. The
 vconnection user gets information about the operation being performed by
 examining the VIO returned by a call to :c:func:`TSVConnRead` or
-:c:func:`TSVConnWrite`. The implementor, in turn, gets a handle on the VIO
+:c:func:`TSVConnWrite`. The implementer, in turn, gets a handle on the VIO
 operation by examining the VIO returned by :c:func:`TSVConnReadVIOGet` or
 :c:func:`TSVConnWriteVIOGet` (recall that every vconnection created through
 the Traffic Server API has an associated read VIO and write VIO, even if

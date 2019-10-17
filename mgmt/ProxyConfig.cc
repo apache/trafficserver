@@ -32,21 +32,21 @@ ConfigProcessor configProcessor;
 void *
 config_int_cb(void *data, void *value)
 {
-  *(int *)data = *(int64_t *)value;
+  *static_cast<int *>(data) = *static_cast<int64_t *>(value);
   return nullptr;
 }
 
 void *
 config_float_cb(void *data, void *value)
 {
-  *(float *)data = *(float *)value;
+  *static_cast<float *>(data) = *static_cast<float *>(value);
   return nullptr;
 }
 
 void *
 config_long_long_cb(void *data, void *value)
 {
-  *(int64_t *)data = *(int64_t *)value;
+  *static_cast<int64_t *>(data) = *static_cast<int64_t *>(value);
   return nullptr;
 }
 
@@ -66,22 +66,21 @@ config_long_long_cb(void *data, void *value)
 void *
 config_string_alloc_cb(void *data, void *value)
 {
-  char *_ss        = (char *)value;
+  char *_ss        = static_cast<char *>(value);
   char *_new_value = nullptr;
 
-//#define DEBUG_CONFIG_STRING_UPDATE
 #if defined(DEBUG_CONFIG_STRING_UPDATE)
   printf("config callback [new, old] = [%s : %s]\n", (_ss) ? (_ss) : (""), (*(char **)data) ? (*(char **)data) : (""));
 #endif
-  int len = -1;
+
   if (_ss) {
-    len        = strlen(_ss);
-    _new_value = (char *)ats_malloc(len + 1);
+    int len    = strlen(_ss);
+    _new_value = static_cast<char *>(ats_malloc(len + 1));
     memcpy(_new_value, _ss, len + 1);
   }
 
-  char *_temp2   = *(char **)data;
-  *(char **)data = _new_value;
+  char *_temp2                = *static_cast<char **>(data);
+  *static_cast<char **>(data) = _new_value;
 
   // free old data
   if (_temp2 != nullptr) {
@@ -146,7 +145,7 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
 
   if (old_info) {
     // The ConfigInfoReleaser now takes our refcount, but
-    // someother thread might also have one ...
+    // some other thread might also have one ...
     ink_assert(old_info->refcount() > 0);
     eventProcessor.schedule_in(new ConfigInfoReleaser(id, old_info), HRTIME_SECONDS(timeout_secs));
   }
@@ -188,7 +187,7 @@ ConfigProcessor::release(unsigned int id, ConfigInfo *info)
 
   idx = id - 1;
 
-  if (info->refcount_dec() == 0) {
+  if (info && info->refcount_dec() == 0) {
     // When we release, we should already have replaced this object in the index.
     Debug("config", "Release config %d 0x%" PRId64, id, (int64_t)info);
     ink_release_assert(info != this->infos[idx]);

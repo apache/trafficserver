@@ -118,7 +118,7 @@ public:
   {
   }
 
-  LogAccess(HttpSM *sm);
+  explicit LogAccess(HttpSM *sm);
 
   inkcoreapi ~LogAccess() {}
   inkcoreapi void init();
@@ -150,8 +150,10 @@ public:
   inkcoreapi int marshal_client_req_is_ssl(char *);             // INT
   inkcoreapi int marshal_client_req_ssl_reused(char *);         // INT
   inkcoreapi int marshal_client_req_is_internal(char *);        // INT
+  inkcoreapi int marshal_client_req_mptcp_state(char *);        // INT
   inkcoreapi int marshal_client_security_protocol(char *);      // STR
   inkcoreapi int marshal_client_security_cipher_suite(char *);  // STR
+  inkcoreapi int marshal_client_security_curve(char *);         // STR
   inkcoreapi int marshal_client_finish_status_code(char *);     // INT
   inkcoreapi int marshal_client_req_id(char *);                 // INT
   inkcoreapi int marshal_client_req_uuid(char *);               // STR
@@ -278,6 +280,7 @@ public:
   inkcoreapi int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
   inkcoreapi int marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
   inkcoreapi int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
+  inkcoreapi void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
   //
   // unmarshalling routines
   //

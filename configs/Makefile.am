@@ -29,7 +29,7 @@ nodist_sysconf_DATA = \
 dist_sysconf_DATA =	\
 	cache.config.default \
 	hosting.config.default \
-	ip_allow.config.default \
+	ip_allow.yaml.default \
 	logging.yaml.default \
 	parent.config.default \
 	plugin.config.default \
@@ -37,7 +37,7 @@ dist_sysconf_DATA =	\
 	socks.config.default \
 	splitdns.config.default \
 	ssl_multicert.config.default \
-	ssl_server_name.yaml.default \
+	sni.yaml.default \
 	volume.config.default
 
 install-exec-hook:

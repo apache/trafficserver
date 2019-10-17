@@ -57,7 +57,7 @@ NetVCOptions::toString(addr_bind_style s)
   return ANY_ADDR == s ? "any" : INTF_ADDR == s ? "interface" : "foreign";
 }
 
-Connection::Connection() : fd(NO_FD), is_bound(false), is_connected(false), sock_type(0)
+Connection::Connection() : fd(NO_FD)
 {
   memset(&addr, 0, sizeof(addr));
 }
@@ -140,7 +140,8 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 
   ink_assert(fd != NO_FD);
 
-  if (http_accept_filter) {
+  if (opt.etype == ET_NET && opt.defer_accept > 0) {
+    http_accept_filter = true;
     add_http_filter(fd);
   }
 
@@ -199,7 +200,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     l.l_onoff  = 0;
     l.l_linger = 0;
     if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) &&
-        (res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
+        (res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&l), sizeof(l))) < 0) {
       goto Lerror;
     }
   }
@@ -247,9 +248,20 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 
 #if defined(TCP_MAXSEG)
   if (NetProcessor::accept_mss > 0) {
-    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *)&NetProcessor::accept_mss, sizeof(int))) < 0) {
+    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss), sizeof(int))) <
+        0) {
       goto Lerror;
     }
+  }
+#endif
+
+#ifdef TCP_DEFER_ACCEPT
+  // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
+  // data on the socket ready to be read
+  if (opt.defer_accept > 0 && (res = setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int))) < 0) {
+    // FIXME: should we go to the error
+    // goto error;
+    Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
   }
 #endif
 

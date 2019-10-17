@@ -336,7 +336,7 @@ struct hash_fnv32 {
   }
 };
 
-typedef std::list<UrlStats> LruStack;
+using LruStack = std::list<UrlStats>;
 typedef std::unordered_map<const char *, OriginStats *, hash_fnv32, eqstr> OriginStorage;
 typedef std::unordered_set<const char *, hash_fnv32, eqstr> OriginSet;
 typedef std::unordered_map<const char *, LruStack::iterator, hash_fnv32, eqstr> LruHash;
@@ -599,39 +599,25 @@ struct CommandLineArgs {
   char log_file[1024];
   char origin_file[1024];
   char origin_list[MAX_ORIG_STRING];
-  int max_origins;
+  int max_origins = 0;
   char state_tag[1024];
-  int64_t min_hits;
-  int max_age;
+  int64_t min_hits = 0;
+  int max_age      = 0;
   int line_len;
-  int incremental;     // Do an incremental run
-  int tail;            // Tail the log file
-  int summary;         // Summary only
-  int json;            // JSON output
-  int cgi;             // CGI output (typically with json)
-  int urls;            // Produce JSON output of URL stats, arg is LRU size
-  int show_urls;       // Max URLs to show
-  int as_object;       // Show the URL stats as a single JSON object (not array)
-  int concise;         // Eliminate metrics that can be inferred by other values
-  int report_per_user; // A flag to aggregate and report stats per user instead of per host if 'true' (default 'false')
-  int no_format_check; // A flag to skip the log format check if any of the fields is not a standard squid log format field.
+  int incremental     = 0; // Do an incremental run
+  int tail            = 0; // Tail the log file
+  int summary         = 0; // Summary only
+  int json            = 0; // JSON output
+  int cgi             = 0; // CGI output (typically with json)
+  int urls            = 0; // Produce JSON output of URL stats, arg is LRU size
+  int show_urls       = 0; // Max URLs to show
+  int as_object       = 0; // Show the URL stats as a single JSON object (not array)
+  int concise         = 0; // Eliminate metrics that can be inferred by other values
+  int report_per_user = 0; // A flag to aggregate and report stats per user instead of per host if 'true' (default 'false')
+  int no_format_check = 0; // A flag to skip the log format check if any of the fields is not a standard squid log format field.
 
-  CommandLineArgs()
-    : max_origins(0),
-      min_hits(0),
-      max_age(0),
-      line_len(DEFAULT_LINE_LEN),
-      incremental(0),
-      tail(0),
-      summary(0),
-      json(0),
-      cgi(0),
-      urls(0),
-      show_urls(0),
-      as_object(0),
-      concise(0),
-      report_per_user(0),
-      no_format_check(0)
+  CommandLineArgs() : line_len(DEFAULT_LINE_LEN)
+
   {
     log_file[0]    = '\0';
     origin_file[0] = '\0';
@@ -648,7 +634,7 @@ static ArgumentDescription argument_descriptions[] = {
   {"log_file", 'f', "Specific logfile to parse", "S1023", cl.log_file, nullptr, nullptr},
   {"origin_list", 'o', "Only show stats for listed Origins", "S4095", cl.origin_list, nullptr, nullptr},
   {"origin_file", 'O', "File listing Origins to show", "S1023", cl.origin_file, nullptr, nullptr},
-  {"max_orgins", 'M', "Max number of Origins to show", "I", &cl.max_origins, nullptr, nullptr},
+  {"max_origins", 'M', "Max number of Origins to show", "I", &cl.max_origins, nullptr, nullptr},
   {"urls", 'u', "Produce JSON stats for URLs, argument is LRU size", "I", &cl.urls, nullptr, nullptr},
   {"show_urls", 'U', "Only show max this number of URLs", "I", &cl.show_urls, nullptr, nullptr},
   {"as_object", 'A', "Produce URL stats as a JSON object instead of array", "T", &cl.as_object, nullptr, nullptr},
@@ -731,10 +717,10 @@ enum ExitLevel {
 };
 
 struct ExitStatus {
-  ExitLevel level;
+  ExitLevel level = EXIT_OK;
   char notice[1024];
 
-  ExitStatus() : level(EXIT_OK) { memset(notice, 0, sizeof(notice)); }
+  ExitStatus() { memset(notice, 0, sizeof(notice)); }
   void
   set(ExitLevel l, const char *n = nullptr)
   {
@@ -1121,7 +1107,7 @@ update_codes(OriginStats *stat, int code, int size)
 inline void
 update_methods(OriginStats *stat, int method, int size)
 {
-  // We're so loppsided on GETs, so makes most sense to test 'out of order'.
+  // We're so lopsided on GETs, so makes most sense to test 'out of order'.
   switch (method) {
   case METHOD_GET:
     update_counter(stat->methods.get, size);
@@ -1211,7 +1197,7 @@ find_or_create_stats(const char *key)
   if (origin_set->empty() || (origin_set->find(key) != origin_set->end())) {
     o_iter = origins.find(key);
     if (origins.end() == o_iter) {
-      o_stats = (OriginStats *)ats_malloc(sizeof(OriginStats));
+      o_stats = static_cast<OriginStats *>(ats_malloc(sizeof(OriginStats)));
       memset(o_stats, 0, sizeof(OriginStats));
       init_elapsed(o_stats);
       o_server = ats_strdup(key);
@@ -1909,7 +1895,7 @@ inline void
 format_int(int64_t num)
 {
   if (num > 0) {
-    int64_t mult = (int64_t)pow((double)10, (int)(log10((double)num) / 3) * 3);
+    int64_t mult = static_cast<int64_t>(pow(static_cast<double>(10), static_cast<int>(log10(static_cast<double>(num)) / 3) * 3));
     int64_t div;
     std::stringstream ss;
 
@@ -1977,7 +1963,7 @@ format_line(const char *desc, const StatsCounter &stat, const StatsCounter &tota
 {
   static char metrics[] = "KKMGTP";
   static char buf[64];
-  int ix = (stat.bytes > 1024 ? (int)(log10((double)stat.bytes) / LOG10_1024) : 1);
+  int ix = (stat.bytes > 1024 ? static_cast<int>(log10(static_cast<double>(stat.bytes)) / LOG10_1024) : 1);
 
   if (json) {
     std::cout << "    " << '"' << desc << "\" : "
@@ -2000,13 +1986,13 @@ format_line(const char *desc, const StatsCounter &stat, const StatsCounter &tota
     std::cout << std::right << std::setw(15);
     format_int(stat.count);
 
-    snprintf(buf, sizeof(buf), "%10.2f%%", ((double)stat.count / total.count * 100));
+    snprintf(buf, sizeof(buf), "%10.2f%%", (static_cast<double>(stat.count) / total.count * 100));
     std::cout << std::right << buf;
 
-    snprintf(buf, sizeof(buf), "%10.2f%cB", stat.bytes / pow((double)1024, ix), metrics[ix]);
+    snprintf(buf, sizeof(buf), "%10.2f%cB", stat.bytes / pow(static_cast<double>(1024), ix), metrics[ix]);
     std::cout << std::right << buf;
 
-    snprintf(buf, sizeof(buf), "%10.2f%%", ((double)stat.bytes / total.bytes * 100));
+    snprintf(buf, sizeof(buf), "%10.2f%%", (static_cast<double>(stat.bytes) / total.bytes * 100));
     std::cout << std::right << buf << std::endl;
   }
 }
@@ -2181,7 +2167,7 @@ print_detail_stats(const OriginStats *stat, bool json, bool concise)
   if (!json) {
     std::cout << std::endl << std::endl;
 
-    // Protocol familes
+    // Protocol families
     format_detail_header("Protocols");
   }
 
@@ -2568,8 +2554,8 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     // Use more portable & standard fcntl() over flock()
     lck.l_type   = F_WRLCK;
     lck.l_whence = 0; /* offset l_start from beginning of file*/
-    lck.l_start  = (off_t)0;
-    lck.l_len    = (off_t)0; /* till end of file*/
+    lck.l_start  = static_cast<off_t>(0);
+    lck.l_len    = static_cast<off_t>(0); /* till end of file*/
     cnt          = 10;
     while (((res = fcntl(state_fd, F_SETLK, &lck)) < 0) && --cnt) {
       switch (errno) {

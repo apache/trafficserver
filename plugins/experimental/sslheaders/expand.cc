@@ -40,7 +40,7 @@ x509_expand_certificate(X509 *x509, BIO *bio)
 
   // The PEM format has newlines in it. mod_ssl replaces those with spaces.
   remain = BIO_get_mem_data(bio, &ptr);
-  for (char *nl; (nl = (char *)memchr(ptr, '\n', remain)); ptr = nl) {
+  for (char *nl; (nl = static_cast<char *>(memchr(ptr, '\n', remain))); ptr = nl) {
     *nl = ' ';
     remain -= nl - ptr;
   }
@@ -87,7 +87,7 @@ x509_expand_signature(X509 *x509, BIO *bio)
   // uppercase hex to match the serial number formatting.
 
   for (; ptr < end; ++ptr) {
-    BIO_printf(bio, "%02X", (unsigned char)(*ptr));
+    BIO_printf(bio, "%02X", static_cast<unsigned char>(*ptr));
   }
 }
 

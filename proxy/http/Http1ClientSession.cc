@@ -32,10 +32,10 @@
 
 #include "tscore/ink_resolver.h"
 #include "Http1ClientSession.h"
-#include "Http1ClientTransaction.h"
+#include "Http1Transaction.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
-#include "HttpServerSession.h"
+#include "Http1ServerSession.h"
 #include "Plugin.h"
 
 #define HttpSsnDebug(fmt, ...) SsnDebug(this, "http_cs", fmt, __VA_ARGS__)
@@ -62,24 +62,7 @@ ink_mutex debug_cs_list_mutex;
 
 ClassAllocator<Http1ClientSession> http1ClientSessionAllocator("http1ClientSessionAllocator");
 
-Http1ClientSession::Http1ClientSession()
-  : client_vc(nullptr),
-    magic(HTTP_CS_MAGIC_DEAD),
-    transact_count(0),
-    tcp_init_cwnd_set(false),
-    half_close(false),
-    conn_decrease(false),
-    read_buffer(nullptr),
-    sm_reader(nullptr),
-    read_state(HCS_INIT),
-    ka_vio(nullptr),
-    slave_ka_vio(nullptr),
-    bound_ss(nullptr),
-    released_transactions(0),
-    f_outbound_transparent(false),
-    f_transparent_passthrough(false)
-{
-}
+Http1ClientSession::Http1ClientSession() {}
 
 void
 Http1ClientSession::destroy()
@@ -160,7 +143,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ink_assert(lock.is_locked());
 
   // Unique client session identifier.
-  con_id = ProxyClientSession::next_connection_id();
+  con_id = ProxySession::next_connection_id();
 
   schedule_event = nullptr;
 
@@ -203,8 +186,8 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   client_vc->set_tcp_congestion_control(CLIENT_SIDE);
 
   read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
-  sm_reader   = reader ? reader : read_buffer->alloc_reader();
-  trans.set_reader(sm_reader);
+  _reader     = reader ? reader : read_buffer->alloc_reader();
+  trans.set_reader(_reader);
 
   // INKqa11186: Use a local pointer to the mutex as
   // when we return from do_api_callout, the ClientSession may
@@ -226,33 +209,10 @@ Http1ClientSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 VIO *
 Http1ClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
-  /* conditionally set the tcp initial congestion window
-     before our first write. */
-  HttpSsnDebug("tcp_init_cwnd_set %d", (int)tcp_init_cwnd_set);
-  if (!tcp_init_cwnd_set) {
-    tcp_init_cwnd_set = true;
-    set_tcp_init_cwnd();
-  }
   if (client_vc) {
     return client_vc->do_io_write(c, nbytes, buf, owner);
   } else {
     return nullptr;
-  }
-}
-
-void
-Http1ClientSession::set_tcp_init_cwnd()
-{
-  if (!trans.get_sm()) {
-    return;
-  }
-  int desired_tcp_init_cwnd = trans.get_sm()->t_state.txn_conf->server_tcp_init_cwnd;
-  HttpSsnDebug("desired TCP congestion window is %d", desired_tcp_init_cwnd);
-  if (desired_tcp_init_cwnd == 0) {
-    return;
-  }
-  if (get_netvc()->set_tcp_init_cwnd(desired_tcp_init_cwnd) != 0) {
-    HttpSsnDebug("set_tcp_init_cwnd(%d) failed", desired_tcp_init_cwnd);
   }
 }
 
@@ -293,7 +253,7 @@ Http1ClientSession::do_io_close(int alerrno)
 
     if (client_vc) {
       // We want the client to know that that we're finished
-      //  writing.  The write shutdown accomplishes this.  Unfortuantely,
+      //  writing.  The write shutdown accomplishes this.  Unfortunately,
       //  the IO Core semantics don't stop us from getting events
       //  on the write side of the connection like timeouts so we
       //  need to zero out the write of the continuation with
@@ -312,7 +272,7 @@ Http1ClientSession::do_io_close(int alerrno)
     // [bug 2610799] Drain any data read.
     // If the buffer is full and the client writes again, we will not receive a
     // READ_READY event.
-    sm_reader->consume(sm_reader->read_avail());
+    _reader->consume(_reader->read_avail());
   } else {
     read_state = HCS_CLOSED;
     HttpSsnDebug("[%" PRId64 "] session closed", con_id);
@@ -352,7 +312,7 @@ Http1ClientSession::state_wait_for_close(int event, void *data)
     break;
   case VC_EVENT_READ_READY:
     // Drain any data read
-    sm_reader->consume(sm_reader->read_avail());
+    _reader->consume(_reader->read_avail());
     break;
 
   default:
@@ -448,9 +408,9 @@ Http1ClientSession::reenable(VIO *vio)
   client_vc->reenable(vio);
 }
 
-// Called from the Http1ClientTransaction::release
+// Called from the Http1Transaction::release
 void
-Http1ClientSession::release(ProxyClientTransaction *trans)
+Http1ClientSession::release(ProxyTransaction *trans)
 {
   ink_assert(read_state == HCS_ACTIVE_READER || read_state == HCS_INIT);
 
@@ -461,15 +421,13 @@ Http1ClientSession::release(ProxyClientTransaction *trans)
   //  buffer.  If there is, spin up a new state
   //  machine to process it.  Otherwise, issue an
   //  IO to wait for new data
-  bool more_to_read = this->sm_reader->is_read_avail_more_than(0);
+  bool more_to_read = this->_reader->is_read_avail_more_than(0);
   if (more_to_read) {
     trans->destroy();
-    trans->set_restart_immediate(true);
     HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", con_id);
     new_transaction();
   } else {
     HttpSsnDebug("[%" PRId64 "] initiating io for next header", con_id);
-    trans->set_restart_immediate(false);
     read_state = HCS_KEEP_ALIVE;
     SET_HANDLER(&Http1ClientSession::state_keep_alive);
     ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
@@ -498,7 +456,7 @@ Http1ClientSession::new_transaction()
 
   read_state = HCS_ACTIVE_READER;
 
-  trans.set_parent(this);
+  trans.set_proxy_ssn(this);
   transact_count++;
 
   client_vc->add_to_active_queue();
@@ -506,7 +464,7 @@ Http1ClientSession::new_transaction()
 }
 
 void
-Http1ClientSession::attach_server_session(HttpServerSession *ssession, bool transaction_done)
+Http1ClientSession::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
 {
   if (ssession) {
     ink_assert(bound_ss == nullptr);
@@ -555,4 +513,87 @@ void
 Http1ClientSession::decrement_current_active_client_connections_stat()
 {
   HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
+}
+
+void
+Http1ClientSession::start()
+{
+  // Troll for data to get a new transaction
+  this->release(&trans);
+}
+
+bool
+Http1ClientSession::allow_half_open() const
+{
+  // Only allow half open connections if the not over TLS
+  return (client_vc && dynamic_cast<SSLNetVConnection *>(client_vc) == nullptr);
+}
+
+void
+Http1ClientSession::set_half_close_flag(bool flag)
+{
+  half_close = flag;
+}
+
+bool
+Http1ClientSession::get_half_close_flag() const
+{
+  return half_close;
+}
+
+bool
+Http1ClientSession::is_chunked_encoding_supported() const
+{
+  return true;
+}
+
+NetVConnection *
+Http1ClientSession::get_netvc() const
+{
+  return client_vc;
+}
+
+int
+Http1ClientSession::get_transact_count() const
+{
+  return transact_count;
+}
+
+bool
+Http1ClientSession::is_outbound_transparent() const
+{
+  return f_outbound_transparent;
+}
+
+Http1ServerSession *
+Http1ClientSession::get_server_session() const
+{
+  return bound_ss;
+}
+
+void
+Http1ClientSession::set_active_timeout(ink_hrtime timeout_in)
+{
+  if (client_vc)
+    client_vc->set_active_timeout(timeout_in);
+}
+
+void
+Http1ClientSession::set_inactivity_timeout(ink_hrtime timeout_in)
+{
+  if (client_vc)
+    client_vc->set_inactivity_timeout(timeout_in);
+}
+
+void
+Http1ClientSession::cancel_inactivity_timeout()
+{
+  if (client_vc)
+    client_vc->cancel_inactivity_timeout();
+}
+
+const char *
+Http1ClientSession::get_protocol_string() const
+{
+  return "http";
 }

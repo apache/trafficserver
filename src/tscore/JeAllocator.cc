@@ -92,7 +92,7 @@ JemallocNodumpAllocator::extend_and_setup_arena()
 }
 
 /**
- * This will retain the orignal functionality if
+ * This will retain the original functionality if
  * !defined(JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED)
  */
 void *
@@ -111,7 +111,7 @@ JemallocNodumpAllocator::allocate(InkFreeList *f)
 #else
     newp = ats_memalign(f->alignment, f->type_size);
     if (INK_ALIGN((uint64_t)newp, ats_pagesize()) == (uint64_t)newp) {
-      ats_madvise((caddr_t)newp, INK_ALIGN(f->type_size, f->alignment), f->advice);
+      ats_madvise(static_cast<caddr_t>(newp), INK_ALIGN(f->type_size, f->alignment), f->advice);
     }
 #endif
   } else {
@@ -121,7 +121,7 @@ JemallocNodumpAllocator::allocate(InkFreeList *f)
 }
 
 /**
- * This will retain the orignal functionality if
+ * This will retain the original functionality if
  * !defined(JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED)
  */
 void

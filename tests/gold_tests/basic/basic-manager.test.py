@@ -20,14 +20,12 @@ Test.Summary = '''
 Test that Trafficserver starts with default configurations.
 '''
 
-Test.SkipUnless(Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"))
-
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=False)
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
 t = Test.AddTestRun("Test traffic server started properly")
 t.StillRunningAfter = Test.Processes.ts
 
 p = t.Processes.Default
-p.Command = "curl http://127.0.0.1:8080"
+p.Command = "curl http://127.0.0.1:{0}".format(ts.Variables.port)
 p.ReturnCode = 0
-p.StartBefore(Test.Processes.ts, ready=When.PortOpen(8080))
+p.StartBefore(Test.Processes.ts)

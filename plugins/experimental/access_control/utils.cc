@@ -27,6 +27,7 @@
 #include <openssl/bio.h>    /* BIO I/O abstraction */
 #include <openssl/buffer.h> /* buf_mem_st */
 #include <openssl/err.h>    /* ERR_get_error() and ERR_error_string_n() */
+#include <openssl/crypto.h>
 
 #include "common.h"
 #include "utils.h"
@@ -77,7 +78,7 @@ hexEncode(const char *in, size_t inLen, char *out, size_t outLen)
   char *dst          = out;
   char *dstEnd       = out + outLen;
 
-  while (src < srcEnd && dst < dstEnd && 2 == sprintf(dst, "%02x", (unsigned char)*src)) {
+  while (src < srcEnd && dst < dstEnd && 2 == sprintf(dst, "%02x", static_cast<unsigned char>(*src))) {
     dst += 2;
     src++;
   }
@@ -93,12 +94,15 @@ hexEncode(const char *in, size_t inLen, char *out, size_t outLen)
 static unsigned char
 hex2uchar(char c)
 {
-  if (c >= '0' && c <= '9')
+  if (c >= '0' && c <= '9') {
     return c - '0';
-  if (c >= 'a' && c <= 'f')
+  }
+  if (c >= 'a' && c <= 'f') {
     return c - 'a' + 10;
-  if (c >= 'A' && c <= 'F')
+  }
+  if (c >= 'A' && c <= 'F') {
     return c - 'A' + 10;
+  }
   return 255;
 }
 
@@ -140,14 +144,14 @@ urlEncode(const char *in, size_t inLen, char *out, size_t outLen)
 {
   const char *src = in;
   char *dst       = out;
-  while ((size_t)(src - in) < inLen && (size_t)(dst - out) < outLen) {
+  while (static_cast<size_t>(src - in) < inLen && static_cast<size_t>(dst - out) < outLen) {
     if (isalnum(*src) || *src == '-' || *src == '_' || *src == '.' || *src == '~') {
       *dst++ = *src;
     } else if (*src == ' ') {
       *dst++ = '+';
     } else {
       *dst++ = '%';
-      sprintf(dst, "%02x", (unsigned char)*src);
+      sprintf(dst, "%02x", static_cast<unsigned char>(*src));
       dst += 2;
     }
     src++;
@@ -169,11 +173,11 @@ urlDecode(const char *in, size_t inLen, char *out, size_t outLen)
 {
   const char *src = in;
   char *dst       = out;
-  while ((size_t)(src - in) < inLen && (size_t)(dst - out) < outLen) {
+  while (static_cast<size_t>(src - in) < inLen && static_cast<size_t>(dst - out) < outLen) {
     if (*src == '%') {
       if (src[1] && src[2]) {
         int u  = hex2uchar(*(src + 1)) << 4 | hex2uchar(*(src + 2));
-        *dst++ = (char)u;
+        *dst++ = static_cast<char>(u);
         src += 2;
       }
     } else if (*src == '+') {
@@ -253,7 +257,11 @@ cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen,
   if (!(ctx = EVP_MD_CTX_create())) {
     AccessControlError("failed to create EVP message digest context: %s", cryptoErrStr(buffer, sizeof(buffer)));
   } else {
-    if (!(pkey = EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, nullptr, (const unsigned char *)key, keyLen))) {
+#ifndef OPENSSL_IS_BORINGSSL
+    if (!(pkey = EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, nullptr, reinterpret_cast<const unsigned char *>(key), keyLen))) {
+#else
+    if (false) {
+#endif
       AccessControlError("failed to create EVP private key. %s", cryptoErrStr(buffer, sizeof(buffer)));
       EVP_MD_CTX_destroy(ctx);
     } else {
@@ -273,7 +281,7 @@ cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen,
           break;
         }
 
-        if (1 != EVP_DigestSignFinal(ctx, (unsigned char *)out, &len)) {
+        if (1 != EVP_DigestSignFinal(ctx, reinterpret_cast<unsigned char *>(out), &len)) {
           AccessControlError("failed to finalize the signing hash. %s", cryptoErrStr(buffer, sizeof(buffer)));
         }
 

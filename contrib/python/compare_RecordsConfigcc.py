@@ -32,7 +32,6 @@ ignore_keys = {
     "proxy.config.ssl.server.cert.path": 1,
     "proxy.config.admin.user_id": 1,
     "proxy.config.ssl.client.cert.path": 1,
-    "proxy.config.alarm_email": 1,
     "proxy.config.log.logfile_dir": 1,
     "proxy.config.ssl.CA.cert.path": 1,
     "proxy.config.ssl.client.CA.cert.path": 1,
@@ -65,7 +64,7 @@ with open("%s/proxy/config/records.config.default.in" % src_dir) as fh:
         if m:
             rc_in[m.group(1)] = (m.group(2), m.group(3))
 
-# Process records.comfig documentation.
+# Process records.config documentation.
 # eg. .. ts:cv:: CONFIG proxy.config.proxy_binary STRING traffic_server
 with open("%s/doc/admin-guide/files/records.config.en.rst" % src_dir) as fh:
     doc_re = re.compile(r'ts:cv:: CONFIG (\S+)\s+(\S+)\s+(\S+)')

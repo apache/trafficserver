@@ -159,14 +159,14 @@ given one.
 Filters
 -------
 
-Two different type of filters are available: ``accept`` and ``reject``.  They
-may be used, optionally, to accept or reject logging for matching events.
+Trafficserver supports different type of filters : ``accept``, ``reject`` and ``wipe_field_value``.
+They may be used, optionally, to accept, reject logging or mask query param values for matching events.
 
 Filter objects are created by assigning them a ``name`` to be used later to
-refer to the filter, as well as an ``action`` (either ``accept`` or
-``reject``). ``Accept`` and ``reject`` filters require a ``condition`` against
-which to match all events. The ``condition`` fields must be in the following
-format::
+refer to the filter, as well as an ``action`` (either ``accept``, ``reject`` or
+``wipe_field_value``). ``Accept``, ``reject`` or ``wipe_field_value`` filters require
+a ``condition`` against which to match all events. The ``condition`` fields must
+be in the following format::
 
     <field> <operator> <value>
 
@@ -288,13 +288,6 @@ rolling_min_count      number      Specifies the minimum number of rolled logs t
 filters                array of    The optional list of filter objects which
                        filters     restrict the individual events logged. The array
                                    may only contain one accept filter.
-collation_hosts        array of    If present, one or more strings specifying the
-                       strings     log collation hosts to which logs should be
-                                   delivered, each in the form of "<ip>:<port>".
-                                   :ref:`admin-logging-collation` for more
-                                   information. NOTE: This is a deprecated feature,
-                                   which will be removed in ATS v9.0.0. See the
-                                   logging documentation (above) for more details.
 ====================== =========== =================================================
 
 Enabling log rolling may be done globally in :file:`records.config`, or on a

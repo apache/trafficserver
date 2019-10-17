@@ -156,7 +156,7 @@ HostMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
   bool r;
 
   // Check to see if there is any work to do before makeing
-  //   the stirng copy
+  //   the string copy
   if (num_el <= 0) {
     return;
   }
@@ -407,7 +407,7 @@ RegexMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
   // Should not have been allocated before
   ink_assert(array_len == -1);
 
-  re_array = (pcre **)ats_malloc(sizeof(pcre *) * num_entries);
+  re_array = static_cast<pcre **>(ats_malloc(sizeof(pcre *) * num_entries));
   memset(re_array, 0, sizeof(pcre *) * num_entries);
 
   data_array = new Data[num_entries];
@@ -763,7 +763,7 @@ ControlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result
   }
 }
 
-// int ControlMatcher::BuildTable() {
+// int ControlMatcher::BuildTable()
 //
 //    Reads the cache.config file and build the records array
 //      from it
@@ -808,8 +808,8 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
     if (*tmp != '#' && *tmp != '\0') {
       const char *errptr;
 
-      current = (matcher_line *)ats_malloc(sizeof(matcher_line));
-      errptr  = parseConfigLine((char *)tmp, current, config_tags);
+      current = static_cast<matcher_line *>(ats_malloc(sizeof(matcher_line)));
+      errptr  = parseConfigLine(const_cast<char *>(tmp), current, config_tags);
 
       if (errptr != nullptr) {
         if (config_tags != &socks_server_tags) {
@@ -969,7 +969,7 @@ ControlMatcher<Data, MatchResult>::BuildTable()
  *         when this file changes.
  *
  *         Also, does not give error messages about template
- *           compliation problems.  Requires the -verbose=template
+ *           compilation problems.  Requires the -verbose=template
  *           flage to error messages
  *
  *  g++: Requires instantiation to occur in the same file as the

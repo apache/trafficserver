@@ -23,8 +23,6 @@ Test.Summary = '''
 Tests that HEAD requests return proper responses when origin fails
 '''
 
-Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
-
 ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server")
 

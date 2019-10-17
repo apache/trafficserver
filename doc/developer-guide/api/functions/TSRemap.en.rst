@@ -29,11 +29,12 @@ Synopsis
 `#include <ts/ts.h>`
 `#include <ts/remap.h>`
 
-.. function:: TSReturnCode TSRemapInit(TSRemapInterface * api_info, char * errbuf, int errbuf_size)
-.. function:: void TSRemapConfigReload(void)
+.. function:: TSReturnCode TSRemapInit(TSRemapInterface * api_info, char * errbuff, int errbuff_size)
+.. function:: void TSRemapPreConfigReload(void)
+.. function:: void TSRemapPostConfigReload(TSReturnCode reloadStatus)
 .. function:: void TSRemapDone(void)
 .. function:: TSRemapStatus TSRemapDoRemap(void * ih, TSHttpTxn rh, TSRemapRequestInfo * rri)
-.. function:: TSReturnCode TSRemapNewInstance(int argc, char * argv[], void ** ih, char * errbuf, int errbuf_size)
+.. function:: TSReturnCode TSRemapNewInstance(int argc, char * argv[], void ** ih, char * errbuff, int errbuff_size)
 .. function:: void TSRemapDeleteInstance(void * )
 .. function:: void TSRemapOSResponse(void * ih, TSHttpTxn rh, int os_response_type)
 
@@ -50,8 +51,8 @@ route the transaction through your plugin. Multiple remap plugins can be
 specified for a single remap rule, resulting in a remap plugin chain
 where each plugin is given an opportunity to examine the HTTP transaction.
 
-:func:`TSRemapInit` is a required entry point. This function will be called
-once when Traffic Server loads the plugin. If the optional :func:`TSRemapDone`
+:func:`TSRemapInit` is a required entry point. This function will be called once when Traffic Server
+loads the plugin. If the optional :func:`TSRemapDone`
 entry point is available, Traffic Server will call then when unloading
 the remap plugin.
 
@@ -65,14 +66,21 @@ any data or continuations associated with that instance.
 entry point. In this function, the remap plugin may examine and modify
 the HTTP transaction.
 
-:func:`TSRemapConfigReload` is called once for every remap plugin just before the
-remap configuration file (:file:`remap.config`) is reloaded. This is an optional
-entry point, which takes no arguments and has no return value.
+:func:`TSRemapPreConfigReload` is called *before* the parsing of a new remap configuration starts
+to notify plugins of the coming configuration reload. It is called on all already loaded plugins,
+invoked by current and all previous still used configurations. This is an optional entry point.
+
+:func:`TSRemapPostConfigReload` is called to indicate the end of the the new remap configuration
+load. It is called on the newly and previously loaded plugins, invoked by the new, current and
+previous still used configurations. It also indicates if the configuration reload was successful
+by passing :macro:`TS_SUCCESS` or :macro:`TS_ERROR`. This is an optional entry point.
 
 Generally speaking, calls to these functions are mutually exclusive. The exception
 is for functions which take an HTTP transaction as a parameter. Calls to these
 transaction-specific functions for different transactions are not necessarily mutually exclusive
 of each other.
+
+For further information, see :ref:`developer-plugins-remap`.
 
 Types
 =====

@@ -21,13 +21,8 @@ Test.Summary = '''
 Test tls server certificate verification without a pristine host header
 '''
 
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
-
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
 server = Test.MakeOriginServer("server", ssl=True)
 dns = Test.MakeDNServer("dns")
@@ -48,7 +43,6 @@ ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
     'map https://bar.com:{0}/ https://foo.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
@@ -63,8 +57,6 @@ ts.Disk.ssl_multicert_config.AddLine(
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    # enable ssl port
-    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     # set global policy
     'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
@@ -91,7 +83,7 @@ tr.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(dns)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")

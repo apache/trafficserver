@@ -22,15 +22,17 @@
  */
 
 #pragma once
+
 #include <netinet/in.h>
 #include <iostream>
+#include <list>
+
 #include "tscore/I_Version.h"
 #include "tscore/Scalar.h"
 #include "tscore/Regex.h"
-#include <tsconfig/Errata.h>
+#include "tscore/Errata.h"
 #include "tscpp/util/TextView.h"
 #include "tscore/ink_file.h"
-#include <list>
 #include "tscore/CryptoHash.h"
 #include "tscore/ts_file.h"
 
@@ -451,7 +453,7 @@ struct Span {
   /// This is broken and needs to be cleaned up.
   void clearPermanently();
 
-  ts::Rv<Stripe *> allocStripe(int vol_idx, CacheStripeBlocks len);
+  ts::Rv<Stripe *> allocStripe(int vol_idx, const CacheStripeBlocks &len);
   Errata updateHeader(); ///< Update serialized header and write to disk.
 
   ts::file::path _path;     ///< File system location of span.
@@ -467,7 +469,7 @@ struct Span {
   /// Local copy of serialized header data stored on in the span.
   std::unique_ptr<ts::SpanHeader> _header;
   /// Live information about stripes.
-  /// Seeded from @a _header and potentially agumented with direct probing.
+  /// Seeded from @a _header and potentially augmented with direct probing.
   std::list<Stripe *> _stripes;
 };
 /* --------------------------------------------------------------------------------------- */
@@ -482,17 +484,17 @@ struct Stripe {
     Bytes _skip;  ///< # of bytes not valid at the start of the first block.
     Bytes _clip;  ///< # of bytes not valid at the end of the last block.
 
-    typedef std::vector<MemSpan> Chain;
+    typedef std::vector<MemSpan<void>> Chain;
     Chain _chain; ///< Chain of blocks.
 
     ~Chunk();
 
-    void append(MemSpan m);
+    void append(MemSpan<void> m);
     void clear();
   };
 
   /// Construct from span header data.
-  Stripe(Span *span, Bytes start, CacheStoreBlocks len);
+  Stripe(Span *span, const Bytes &start, const CacheStoreBlocks &len);
 
   /// Is stripe unallocated?
   bool isFree() const;
@@ -505,7 +507,7 @@ struct Stripe {
 
       @return @c true if @a mem has valid data, @c false otherwise.
   */
-  bool probeMeta(MemSpan &mem, StripeMeta const *meta = nullptr);
+  bool probeMeta(MemSpan<void> &mem, StripeMeta const *meta = nullptr);
 
   /// Check a buffer for being valid stripe metadata.
   /// @return @c true if valid, @c false otherwise.

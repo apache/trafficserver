@@ -50,11 +50,12 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   // No enforcing, go away
-  if (netvc && netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
-    return true;       // Tell them that all is well
-  } else if (!netvc) { // No netvc, very bad.  Go away.  Things are not good.
+  if (netvc == nullptr) {
+    // No netvc, very bad.  Go away.  Things are not good.
     Warning("Netvc gone by in verify_callback");
     return false;
+  } else if (netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
+    return true; // Tell them that all is well
   }
 
   depth = X509_STORE_CTX_get_error_depth(ctx);
@@ -116,7 +117,9 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
     }
   }
   // If the previous configured checks passed, give the hook a try
+  netvc->set_verify_cert(ctx);
   netvc->callHooks(TS_EVENT_SSL_VERIFY_SERVER);
+  netvc->set_verify_cert(nullptr);
   if (netvc->getSSLHandShakeComplete()) { // hook moved the handshake state to terminal
     unsigned char *sni_name;
     char buff[INET6_ADDRSTRLEN];
@@ -169,9 +172,13 @@ SSLInitClientContext(const SSLConfigParams *params)
   }
 #endif
 
-#ifdef SSL_CTX_set1_groups_list
+#if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
   if (params->client_groups_list != nullptr) {
+#ifdef SSL_CTX_set1_groups_list
     if (!SSL_CTX_set1_groups_list(client_ctx, params->client_groups_list)) {
+#else
+    if (!SSL_CTX_set1_curves_list(client_ctx, params->client_groups_list)) {
+#endif
       SSLError("invalid groups list for client in records.config");
       goto fail;
     }
@@ -189,4 +196,51 @@ SSLInitClientContext(const SSLConfigParams *params)
 fail:
   SSLReleaseContext(client_ctx);
   ::exit(1);
+}
+
+SSL_CTX *
+SSLCreateClientContext(const struct SSLConfigParams *params, const char *ca_bundle_path, const char *ca_bundle_file,
+                       const char *cert_path, const char *key_path)
+{
+  std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ctx(nullptr, &SSL_CTX_free);
+
+  if (nullptr == params || nullptr == cert_path) {
+    return nullptr;
+  }
+
+  ctx.reset(SSLInitClientContext(params));
+
+  if (!ctx) {
+    return nullptr;
+  }
+
+  if (!SSL_CTX_use_certificate_chain_file(ctx.get(), cert_path)) {
+    SSLError("SSLCreateClientContext(): failed to load client certificate.");
+    return nullptr;
+  }
+
+  if (!key_path || key_path[0] == '\0') {
+    key_path = cert_path;
+  }
+
+  if (!SSL_CTX_use_PrivateKey_file(ctx.get(), key_path, SSL_FILETYPE_PEM)) {
+    SSLError("SSLCreateClientContext(): failed to load client private key.");
+    return nullptr;
+  }
+
+  if (!SSL_CTX_check_private_key(ctx.get())) {
+    SSLError("SSLCreateClientContext(): client private key does not match client certificate.");
+    return nullptr;
+  }
+
+  if (ca_bundle_file || ca_bundle_path) {
+    if (!SSL_CTX_load_verify_locations(ctx.get(), ca_bundle_file, ca_bundle_path)) {
+      SSLError("SSLCreateClientContext(): Invalid client CA cert file/CA path.");
+      return nullptr;
+    }
+  } else if (!SSL_CTX_set_default_verify_paths(ctx.get())) {
+    SSLError("SSLCreateClientContext(): failed to set the default verify paths.");
+    return nullptr;
+  }
+  return ctx.release();
 }

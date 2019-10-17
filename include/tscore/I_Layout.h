@@ -65,7 +65,7 @@ struct Layout {
 
   /**
    Return file path relative to dir
-   Store the path to buf. The buf should be large eough to store
+   Store the path to buf. The buf should be large enough to store
    Example usage: Layout::relative_to(default_layout()->sysconfdir, "foo.bar");
   */
   static void relative_to(char *buf, size_t bufsz, std::string_view dir, std::string_view file);

@@ -22,16 +22,17 @@
 
  */
 
-#include <ts/ts.h>
 #include <cstring>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "tscpp/util/TextView.h"
+#include <ts/ts.h>
+#include <ts/apidefs.h>
 
 #include "Config.h"
 #include "common.h"
+#include "tscpp/util/TextView.h"
 
 Config::Config()
 {
@@ -43,7 +44,7 @@ Config::Config()
   m_lastmtime     = 0;
 }
 
-Config::~Config() {}
+Config::~Config() = default;
 
 bool
 Config::loadConfig(const std::string &filename)
@@ -56,13 +57,16 @@ Config::loadConfig(const std::string &filename)
 
   m_filename = filename;
 
-  int fd = (this->m_filename.length() > 0 ? open(m_filename.c_str(), O_RDONLY) : 0);
+  int fd = (this->m_filename.length() > 0 ? open(m_filename.c_str(), O_RDONLY) : ts::NO_FD);
   struct stat info;
-  if (0 == fstat(fd, &info)) {
+  if (fd > 0 && 0 == fstat(fd, &info)) {
     size_t n = info.st_size;
     std::string config_data;
     config_data.resize(n);
-    read(fd, const_cast<char *>(config_data.data()), n);
+    if (read(fd, const_cast<char *>(config_data.data()), n) != static_cast<int>(n)) {
+      close(fd);
+      return success;
+    }
 
     ts::TextView content(config_data);
     while (content) {
@@ -77,10 +81,13 @@ Config::loadConfig(const std::string &filename)
         m_config[std::string(field.data(), field.size())] = std::string(line.data(), line.size());
       }
     }
+
+    close(fd);
+
+    m_noConfig      = false;
+    success         = true;
+    m_alreadyLoaded = true;
   }
-  m_noConfig      = false;
-  success         = true;
-  m_alreadyLoaded = true;
 
   return success;
 }

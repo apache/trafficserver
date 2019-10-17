@@ -22,13 +22,8 @@ Test.Summary = '''
 Test tunneling based on SNI
 '''
 
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
-
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=False)
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True, enable_tls=True)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=True)
 server2 = Test.MakeOriginServer("server2")
@@ -50,9 +45,7 @@ ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
 
-ts.Variables.ssl_port = 4443
-
-# Need no remap rules.  Everything should be proccessed by ssl_server_name
+# Need no remap rules.  Everything should be proccessed by sni
 
 # Make sure the TS server certs are different from the origin certs
 ts.Disk.ssl_multicert_config.AddLine(
@@ -64,8 +57,6 @@ ts.Disk.ssl_multicert_config.AddLine(
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    # enable ssl port
-    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.http.connect_ports': '{0} {1} {2}'.format(ts.Variables.ssl_port,server_foo.Variables.SSL_Port,server_bar.Variables.SSL_Port),
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -75,9 +66,10 @@ ts.Disk.records_config.update({
 })
 
 # foo.com should not terminate.  Just tunnel to server_foo
-# bar.com should terminate.
+# bar.com should terminate.  Forward its tcp stream to server_bar
 # empty SNI should tunnel to server_bar
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
+  'sni:',
   '- fqdn: foo.com',
   "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
   "- fqdn: bob.*.com",
@@ -87,18 +79,18 @@ ts.Disk.ssl_server_name_yaml.AddLines([
 ])
 
 tr = Test.AddTestRun("foo.com Tunnel-test")
-tr.Processes.Default.StartBefore(server_foo)
-tr.Processes.Default.StartBefore(server_bar)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
+tr.Processes.Default.StartBefore(server_foo)
+tr.Processes.Default.StartBefore(server_bar)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from foo")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from bar")
 
 tr = Test.AddTestRun("bob.bar.com Tunnel-test")
 tr.Processes.Default.Command = "curl -v --resolve 'bob.bar.com:{0}:127.0.0.1' -k  https://bob.bar.com:{0}".format(ts.Variables.ssl_port)
@@ -109,7 +101,7 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Acc
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from foo")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from bar")
 
 tr = Test.AddTestRun("bar.com no Tunnel-test")
 tr.Processes.Default.Command = "curl -v --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
@@ -129,15 +121,16 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK"
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
 
-# Update ssl_server_name file and reload
+# Update sni file and reload
 tr = Test.AddTestRun("Update config files")
 # Update the SNI config
-snipath = ts.Disk.ssl_server_name_yaml.AbsPath
+snipath = ts.Disk.sni_yaml.AbsPath
 recordspath = ts.Disk.records_config.AbsPath
-tr.Disk.File(snipath, id = "ssl_server_name_yaml", typename="ats:config"),
-tr.Disk.ssl_server_name_yaml.AddLines([
+tr.Disk.File(snipath, id = "sni_yaml", typename="ats:config"),
+tr.Disk.sni_yaml.AddLines([
+  'sni:',
   '- fqdn: bar.com',
-  "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port),
+  '  tunnel_route: localhost:{0}'.format(server_bar.Variables.SSL_Port),
 ])
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server_foo
@@ -156,11 +149,11 @@ trreload.Processes.Default.Env = ts.Env
 trreload.Processes.Default.ReturnCode = 0
 
 # Parking this as a ready tester on a meaningless process
-# Stall the test runs until the ssl_server_name reload has completed
-# At that point the new ssl_server_name settings are ready to go
-def ssl_server_name_reload_done(tsenv):
+# Stall the test runs until the sni reload has completed
+# At that point the new sni settings are ready to go
+def sni_reload_done(tsenv):
   def done_reload(process, hasRunFor, **kw):
-    cmd = "grep 'ssl_server_name.yaml finished loading' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
+    cmd = "grep 'sni.yaml finished loading' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
     retval = subprocess.run(cmd, shell=True, env=tsenv)
     if retval.returncode == 0:
       cmd ="if [ -f {0}/test.out -a \"`cat {0}/test.out`\" = \"2\" ] ; then true; else false; fi".format(Test.RunDirectory)
@@ -172,8 +165,8 @@ def ssl_server_name_reload_done(tsenv):
 # Should termimate on traffic_server (not tunnel)
 tr = Test.AddTestRun("foo.com no Tunnel-test")
 tr.StillRunningAfter = ts
-# Wait for the reload to complete by running the ssl_server_name_reload_done test
-tr.Processes.Default.StartBefore(server2, ready=ssl_server_name_reload_done(ts.Env))
+# Wait for the reload to complete by running the sni_reload_done test
+tr.Processes.Default.StartBefore(server2, ready=sni_reload_done(ts.Env))
 tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")
@@ -188,4 +181,3 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connec
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
-

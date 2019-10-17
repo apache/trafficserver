@@ -69,7 +69,7 @@ CryptoContext::CryptoContext()
   @brief Converts a hash to a null-terminated string
 
   Externalizes an hash as a null-terminated string into the first argument.
-  Does so without intenal procedure calls.
+  Does so without internal procedure calls.
   Side Effects: none.
   Reentrancy:     n/a.
   Thread Safety:  safe.
@@ -114,8 +114,9 @@ ts::BufferWriter &
 bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, ats::CryptoHash const &hash)
 {
   ts::BWFSpec local_spec{spec};
-  if ('X' != local_spec._type)
+  if ('X' != local_spec._type) {
     local_spec._type = 'x';
+  }
   return bwformat(w, local_spec, std::string_view(reinterpret_cast<const char *>(hash.u8), CRYPTO_HASH_SIZE));
 }
 } // namespace ats

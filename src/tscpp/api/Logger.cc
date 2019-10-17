@@ -42,23 +42,20 @@ using atscppapi::Logger;
  */
 struct atscppapi::LoggerState : noncopyable {
   std::string filename_;
-  bool add_timestamp_;
-  bool rename_file_;
-  Logger::LogLevel level_;
-  bool rolling_enabled_;
-  int rolling_interval_seconds_;
-  TSTextLogObject text_log_obj_;
-  bool initialized_;
+  bool add_timestamp_           = false;
+  bool rename_file_             = false;
+  Logger::LogLevel level_       = Logger::LOG_LEVEL_NO_LOG;
+  bool rolling_enabled_         = false;
+  int rolling_interval_seconds_ = -1;
+  TSTextLogObject text_log_obj_ = nullptr;
+  bool initialized_             = false;
 
   LoggerState()
-    : add_timestamp_(false),
-      rename_file_(false),
-      level_(Logger::LOG_LEVEL_NO_LOG),
-      rolling_enabled_(false),
-      rolling_interval_seconds_(-1),
-      text_log_obj_(nullptr),
-      initialized_(false){};
-  ~LoggerState(){};
+
+    = default;
+  ;
+  ~LoggerState() = default;
+  ;
 };
 
 namespace

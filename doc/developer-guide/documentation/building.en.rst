@@ -60,6 +60,13 @@ PIP installs
       Internation support, which is needed if a non-English version is built. Currently a Japanese
       (``JA``) version is available.
 
+   These should be also installed using `pipenv
+   <https://docs.pipenv.org/>`__ and :ts:git:`doc/Pipfile`. To setup the environment, run below commands from within the :ts:git:`doc/` directory of the |TS| source tree::
+
+      pipenv install
+      pipenv shell
+
+
 With a configured source tree, building the documentation requires only the
 invocation ``make html`` from within ``doc/``. For repeated builds while working
 on the documentation doing ``make html`` again is sufficient. After fixing all warnings / errors,
@@ -69,7 +76,7 @@ directory of the |TS| source tree)::
 
     make clean && make html
 
-This will ensure that make doesn't inadvertantly skip the regeneration of any
+This will ensure that make doesn't inadvertently skip the regeneration of any
 targets.
 
 .. note::

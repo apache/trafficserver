@@ -95,6 +95,11 @@ EThread::schedule(Event *e, bool fast_signal)
     e->mutex = e->continuation->mutex = e->ethread->mutex;
   }
   ink_assert(e->mutex.get());
+
+  // Make sure client IP debugging works consistently
+  // The continuation that gets scheduled later is not always the
+  // client VC, it can be HttpCacheSM etc. so save the flags
+  e->continuation->control_flags.set_flags(get_cont_flags().get_flags());
   EventQueueExternal.enqueue(e, fast_signal);
   return e;
 }
@@ -153,6 +158,11 @@ EThread::schedule_local(Event *e)
     ink_assert(e->ethread == this);
   }
   e->globally_allocated = false;
+
+  // Make sure client IP debugging works consistently
+  // The continuation that gets scheduled later is not always the
+  // client VC, it can be HttpCacheSM etc. so save the flags
+  e->continuation->control_flags.set_flags(get_cont_flags().get_flags());
   EventQueueExternal.enqueue_local(e);
   return e;
 }
@@ -183,7 +193,7 @@ TS_INLINE EThread *
 this_event_thread()
 {
   EThread *ethread = this_ethread();
-  if (ethread != nullptr && ethread->has_event_loop) {
+  if (ethread != nullptr && ethread->tt == REGULAR) {
     return ethread;
   } else {
     return nullptr;

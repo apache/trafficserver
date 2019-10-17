@@ -39,7 +39,7 @@
 #include "RemapPluginInfo.h"
 #include "UrlMapping.h"
 #include "records/I_RecHttp.h"
-#include "ProxyClientSession.h"
+#include "ProxySession.h"
 
 #define HTTP_RELEASE_ASSERT(X) ink_release_assert(X)
 
@@ -149,6 +149,7 @@ enum ViaString_t {
   VIA_ERROR_TIMEOUT           = 'T',
   VIA_ERROR_CACHE_READ        = 'R',
   VIA_ERROR_MOVED_TEMPORARILY = 'M',
+  VIA_ERROR_LOOP_DETECTED     = 'L',
   //
   // Now the detailed stuff
   //
@@ -164,7 +165,6 @@ enum ViaString_t {
   // cache type
   VIA_DETAIL_CACHE_DESCRIPTOR_STRING = 'c',
   VIA_DETAIL_CACHE                   = 'C',
-  VIA_DETAIL_CLUSTER                 = 'L',
   VIA_DETAIL_PARENT                  = 'P',
   VIA_DETAIL_SERVER                  = 'S',
   // result of cache lookup
@@ -629,7 +629,8 @@ public:
       OS_ADDR_USE_CLIENT   ///< Use client target addr, no fallback.
     };
 
-    OS_Addr os_addr_style = OS_Addr::OS_ADDR_TRY_DEFAULT;
+    OS_Addr os_addr_style       = OS_Addr::OS_ADDR_TRY_DEFAULT;
+    HostResStyle host_res_style = HOST_RES_IPV4;
 
     bool lookup_success         = false;
     char *lookup_name           = nullptr;
@@ -638,6 +639,7 @@ public:
     bool srv_lookup_success     = false;
     short srv_port              = 0;
     HostDBApplicationInfo srv_app;
+
     /*** Set to true by default.  If use_client_target_address is set
      * to 1, this value will be set to false if the client address is
      * not in the DNS pool */
@@ -766,10 +768,9 @@ public:
     CacheAuth_t www_auth_content = CACHE_AUTH_NONE;
 
     // INK API/Remap API plugin interface
-    void *remap_plugin_instance = nullptr;
     void *user_args[TS_HTTP_MAX_USER_ARG];
-    RemapPluginInfo::OS_Response_F *fp_tsremap_os_response = nullptr;
-    HTTPStatus http_return_code                            = HTTP_STATUS_NONE;
+    RemapPluginInst *os_response_plugin_inst = nullptr;
+    HTTPStatus http_return_code              = HTTP_STATUS_NONE;
 
     int api_txn_active_timeout_value      = -1;
     int api_txn_connect_timeout_value     = -1;
@@ -940,7 +941,6 @@ public:
   static void Forbidden(State *s);
   static void PostActiveTimeoutResponse(State *s);
   static void PostInactiveTimeoutResponse(State *s);
-  static void HandleFiltering(State *s);
   static void DecideCacheLookup(State *s);
   static void LookupSkipOpenServer(State *s);
 
@@ -1011,7 +1011,6 @@ public:
   static bool handle_internal_request(State *s, HTTPHdr *incoming_hdr);
   static bool handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr);
   static void bootstrap_state_variables_from_request(State *s, HTTPHdr *incoming_request);
-  static void initialize_state_variables_for_origin_server(State *s, HTTPHdr *incoming_request, bool second_time);
   static void initialize_state_variables_from_request(State *s, HTTPHdr *obsolete_incoming_request);
   static void initialize_state_variables_from_response(State *s, HTTPHdr *incoming_response);
   static bool is_server_negative_cached(State *s);

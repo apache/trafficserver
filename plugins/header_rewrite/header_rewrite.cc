@@ -17,6 +17,7 @@
 */
 #include <fstream>
 #include <string>
+#include <stdexcept>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
@@ -184,8 +185,10 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
       continue;
     }
 
-    Parser p(line); // Tokenize and parse this line
-    if (p.empty()) {
+    Parser p;
+
+    // Tokenize and parse this line
+    if (!p.parse_line(line) || p.empty()) {
       continue;
     }
 
@@ -220,16 +223,22 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook)
       }
     }
 
-    if (p.is_cond()) {
-      if (!rule->add_condition(p, filename.c_str(), lineno)) {
-        delete rule;
-        return false;
+    // This is pretty ugly, but it turns out, some conditions / operators can fail (regexes), which didn't use to be the case.
+    // Long term, maybe we need to percolate all this up through add_condition() / add_operator() rather than this big ugly try.
+    try {
+      if (p.is_cond()) {
+        if (!rule->add_condition(p, filename.c_str(), lineno)) {
+          throw std::runtime_error("add_condition() failed");
+        }
+      } else {
+        if (!rule->add_operator(p, filename.c_str(), lineno)) {
+          throw std::runtime_error("add_operator() failed");
+        }
       }
-    } else {
-      if (!rule->add_operator(p, filename.c_str(), lineno)) {
-        delete rule;
-        return false;
-      }
+    } catch (std::runtime_error &e) {
+      TSError("[%s] header_rewrite configuration exception: %s in file: %s", PLUGIN_NAME, e.what(), fname.c_str());
+      delete rule;
+      return false;
     }
   }
 
@@ -343,7 +352,7 @@ TSPluginInit(int argc, const char *argv[])
 
     for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
       if (conf->rule(i)) {
-        TSDebug(PLUGIN_NAME, "Adding global ruleset to hook=%s", TSHttpHookNameLookup((TSHttpHookID)i));
+        TSDebug(PLUGIN_NAME, "Adding global ruleset to hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
         TSHttpHookAdd(static_cast<TSHttpHookID>(i), contp);
       }
     }
@@ -409,7 +418,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   if (TSIsDebugTagSet(PLUGIN_NAME)) {
     for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
       if (conf->rule(i)) {
-        TSDebug(PLUGIN_NAME, "Adding remap ruleset to hook=%s", TSHttpHookNameLookup((TSHttpHookID)i));
+        TSDebug(PLUGIN_NAME, "Adding remap ruleset to hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
       }
     }
   }
@@ -444,7 +453,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
     if (conf->rule(i)) {
       TSHttpTxnHookAdd(rh, static_cast<TSHttpHookID>(i), conf->continuation());
-      TSDebug(PLUGIN_NAME, "Added remapped TXN hook=%s", TSHttpHookNameLookup((TSHttpHookID)i));
+      TSDebug(PLUGIN_NAME, "Added remapped TXN hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
     }
   }
 

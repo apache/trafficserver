@@ -33,6 +33,16 @@ enum CacheKeyUriType {
   PRISTINE,
 };
 
+enum CacheKeyKeyType {
+  CACHE_KEY,
+  PARENT_SELECTION_URL,
+};
+
+const char *getCacheKeyUriTypeName(CacheKeyUriType type);
+const char *getCacheKeyKeyTypeName(CacheKeyKeyType type);
+
+typedef std::set<CacheKeyKeyType> CacheKeyKeyTypeSet;
+
 /**
  * @brief Plug-in configuration elements (query / headers / cookies).
  *
@@ -41,7 +51,7 @@ enum CacheKeyUriType {
 class ConfigElements
 {
 public:
-  ConfigElements() : _sort(false), _remove(false), _skip(false) {}
+  ConfigElements() {}
   virtual ~ConfigElements();
   void setExclude(const char *arg);
   void setInclude(const char *arg);
@@ -82,9 +92,9 @@ protected:
   MultiPattern _includePatterns;
   MultiPattern _excludePatterns;
 
-  bool _sort;
-  bool _remove;
-  bool _skip;
+  bool _sort   = false;
+  bool _remove = false;
+  bool _skip   = false;
 
   std::map<String, MultiPattern *> _captures;
 };
@@ -148,7 +158,7 @@ public:
   /**
    * @brief provides means for post-processing of the plugin parameters to finalize the configuration or to "cache" some of the
    * decisions for later use.
-   * @return true if succesful, false if failure.
+   * @return true if successful, false if failure.
    */
   bool finalize();
 
@@ -161,6 +171,11 @@ public:
    * @brief Tells the caller if the path is to be removed (not processed at all).
    */
   bool pathToBeRemoved();
+
+  /**
+   * @brief keep URI scheme and authority elements.
+   */
+  bool canonicalPrefix();
 
   /**
    * @brief set the cache key elements separator string.
@@ -178,9 +193,19 @@ public:
   void setUriType(const char *arg);
 
   /**
+   * @brief sets the target URI Type.
+   */
+  void setKeyType(const char *arg);
+
+  /**
    * @brief get URI type.
    */
   CacheKeyUriType getUriType();
+
+  /**
+   * @brief get target URI type.
+   */
+  CacheKeyKeyTypeSet &getKeyType();
 
   /* Make the following members public to avoid unnecessary accessors */
   ConfigQuery _query;        /**< @brief query parameter related configuration */
@@ -205,6 +230,8 @@ private:
 
   bool _prefixToBeRemoved  = false; /**< @brief instructs the prefix (i.e. host:port) not to added to the cache key */
   bool _pathToBeRemoved    = false; /**< @brief instructs the path not to added to the cache key */
+  bool _canonicalPrefix    = false; /**< @brief keep the URI scheme and authority element used as input to transforming into key */
   String _separator        = "/";   /**< @brief a separator used to separate the cache key elements extracted from the URI */
   CacheKeyUriType _uriType = REMAP; /**< @brief shows which URI the cache key will be based on */
+  CacheKeyKeyTypeSet _keyTypes;     /**< @brief target URI to be modified, cache key or paren selection */
 };

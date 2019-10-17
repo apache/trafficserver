@@ -84,6 +84,12 @@ enum {
   HTTP2_STAT_SESSION_DIE_EOS,
   HTTP2_STAT_SESSION_DIE_ERROR,
   HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE,
+  HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED,
+  HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED,
+  HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED,
+  HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED,
+  HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED,
+  HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE,
 
   HTTP2_N_STATS // Terminal counter, NOT A STAT INDEX.
 };
@@ -239,7 +245,7 @@ struct Http2FrameHeader {
 // [RFC 7540] 5.4. Error Handling
 struct Http2Error {
   Http2Error(const Http2ErrorClass error_class = Http2ErrorClass::HTTP2_ERROR_CLASS_NONE,
-             const Http2ErrorCode error_code = Http2ErrorCode::HTTP2_ERROR_NO_ERROR, const char *err_msg = nullptr)
+             const Http2ErrorCode error_code = Http2ErrorCode::HTTP2_ERROR_NO_ERROR, const char *err_msg = "")
   {
     cls  = error_class;
     code = error_code;
@@ -259,28 +265,25 @@ struct Http2SettingsParameter {
 
 // [RFC 7540] 6.3 PRIORITY Format
 struct Http2Priority {
-  Http2Priority()
-    : exclusive_flag(false), weight(HTTP2_PRIORITY_DEFAULT_WEIGHT), stream_dependency(HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY)
-  {
-  }
+  Http2Priority() : weight(HTTP2_PRIORITY_DEFAULT_WEIGHT), stream_dependency(HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY) {}
 
-  bool exclusive_flag;
+  bool exclusive_flag = false;
   uint8_t weight;
   uint32_t stream_dependency;
 };
 
 // [RFC 7540] 6.2 HEADERS Format
 struct Http2HeadersParameter {
-  Http2HeadersParameter() : pad_length(0) {}
-  uint8_t pad_length;
+  Http2HeadersParameter() {}
+  uint8_t pad_length = 0;
   Http2Priority priority;
 };
 
 // [RFC 7540] 6.8 GOAWAY Format
 struct Http2Goaway {
-  Http2Goaway() : last_streamid(0), error_code(Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {}
-  Http2StreamId last_streamid;
-  Http2ErrorCode error_code;
+  Http2Goaway() {}
+  Http2StreamId last_streamid = 0;
+  Http2ErrorCode error_code   = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 
   // NOTE: we don't (de)serialize the variable length debug data at this layer
   // because there's
@@ -296,9 +299,9 @@ struct Http2RstStream {
 
 // [RFC 7540] 6.6 PUSH_PROMISE Format
 struct Http2PushPromise {
-  Http2PushPromise() : pad_length(0), promised_streamid(0) {}
-  uint8_t pad_length;
-  Http2StreamId promised_streamid;
+  Http2PushPromise() {}
+  uint8_t pad_length              = 0;
+  Http2StreamId promised_streamid = 0;
 };
 
 static inline bool
@@ -379,6 +382,14 @@ public:
   static uint32_t push_diary_size;
   static uint32_t zombie_timeout_in;
   static float stream_error_rate_threshold;
+  static uint32_t max_settings_per_frame;
+  static uint32_t max_settings_per_minute;
+  static uint32_t max_settings_frames_per_minute;
+  static uint32_t max_ping_frames_per_minute;
+  static uint32_t max_priority_frames_per_minute;
+  static float min_avg_window_update;
+  static uint32_t con_slow_log_threshold;
+  static uint32_t stream_slow_log_threshold;
 
   static void init();
 };

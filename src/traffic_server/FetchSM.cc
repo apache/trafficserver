@@ -376,7 +376,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
   info            = (char *)ats_malloc(sizeof(char) * (read_avail + 1));
   client_response = info;
 
-  // To maintain backwards compatability we don't allow chunking when it's not streaming.
+  // To maintain backwards compatibility we don't allow chunking when it's not streaming.
   if (!(fetch_flags & TS_FETCH_FLAGS_STREAM) || !check_chunked()) {
     /* Read the data out of the reader */
     while (read_avail > 0) {
@@ -673,7 +673,7 @@ FetchSM::ext_read_data(char *buf, size_t len)
     memcpy(&buf[already], start, need);
     already += need;
 
-    if (already >= (int64_t)len) {
+    if (already >= static_cast<int64_t>(len)) {
       break;
     }
 

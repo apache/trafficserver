@@ -204,7 +204,7 @@ Diags::~Diags()
 //
 //      This routine outputs to all of the output targets enabled for this
 //      debugging level in config.outputs[diags_level].  Many higher level
-//      diagnosting printing routines are built upon print_va, including:
+//      diagnostics printing routines are built upon print_va, including:
 //
 //              void print(...)
 //              void log_va(...)
@@ -453,8 +453,8 @@ Diags::dump(FILE *fp) const
   fprintf(fp, "  action default tags: '%s'\n", (base_action_tags ? base_action_tags : "NULL"));
   fprintf(fp, "  outputs:\n");
   for (i = 0; i < DiagsLevel_Count; i++) {
-    fprintf(fp, "    %10s [stdout=%d, stderr=%d, syslog=%d, diagslog=%d]\n", level_name((DiagsLevel)i), config.outputs[i].to_stdout,
-            config.outputs[i].to_stderr, config.outputs[i].to_syslog, config.outputs[i].to_diagslog);
+    fprintf(fp, "    %10s [stdout=%d, stderr=%d, syslog=%d, diagslog=%d]\n", level_name(static_cast<DiagsLevel>(i)),
+            config.outputs[i].to_stdout, config.outputs[i].to_stderr, config.outputs[i].to_syslog, config.outputs[i].to_diagslog);
   }
 }
 

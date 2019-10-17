@@ -32,7 +32,7 @@ using namespace EsiLib;
 EsiGzip::EsiGzip(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
   : ComponentBase(debug_tag, debug_func, error_func), _downstream_length(0), _total_data_length(0)
 {
-  // Zlib _zstrm varibles are initialized when they are required in runDeflateLoop
+  // Zlib _zstrm variables are initialized when they are required in runDeflateLoop
   // coverity[uninit_member]
   // coverity[uninit_ctor]
 }
@@ -77,15 +77,6 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
     cdata[1] = MAGIC_BYTE_2;
     cdata[2] = Z_DEFLATED;
     cdata[9] = OS_TYPE;
-
-    //_zstrm.zalloc = Z_NULL;
-    //_zstrm.zfree = Z_NULL;
-    //_zstrm.opaque = Z_NULL;
-    // if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS,
-    //               ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
-    //  _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
-    //  return false;
-    //}
 
     _crc = crc32(0, Z_NULL, 0);
   }

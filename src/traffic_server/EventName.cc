@@ -26,7 +26,6 @@
 #include <cstring>
 
 #include "P_EventSystem.h"
-// #include "I_Disk.h" unused
 #include "I_Cache.h"
 #include "I_Net.h"
 #include "I_HostDB.h"
@@ -126,8 +125,6 @@ event_int_to_string(int event, int blen, char *buffer)
     return "MGMT_EVENT_BOUNCE";
   case MGMT_EVENT_CONFIG_FILE_UPDATE:
     return "MGMT_EVENT_CONFIG_FILE_UPDATE";
-  case MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION:
-    return "MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION";
   case MGMT_EVENT_CLEAR_STATS:
     return "MGMT_EVENT_CLEAR_STATS";
   case MGMT_EVENT_HOST_STATUS_UP:

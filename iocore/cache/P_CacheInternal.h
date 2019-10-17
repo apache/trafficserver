@@ -388,8 +388,6 @@ struct CacheVC : public CacheVConnection {
   bool is_pread_capable() override;
   bool set_pin_in_cache(time_t time_pin) override;
   time_t get_pin_in_cache() override;
-  bool set_disk_io_priority(int priority) override;
-  int get_disk_io_priority() override;
 
 // offsets from the base stat
 #define CACHE_STAT_ACTIVE 0
@@ -425,7 +423,7 @@ struct CacheVC : public CacheVConnection {
 
   OpenDirEntry *od;
   AIOCallbackInternal io;
-  int alternate_index; // preferred position in vector
+  int alternate_index = CACHE_ALT_INDEX_DEFAULT; // preferred position in vector
   LINK(CacheVC, opendir_link);
 #ifdef CACHE_STAT_PAGES
   LINK(CacheVC, stat_link);
@@ -435,7 +433,7 @@ struct CacheVC : public CacheVConnection {
   // Start Region C
   // These variables are memset to 0 when the structure is freed.
   // The size of this region is size_to_init which is initialized
-  // in the CacheVC constuctor. It assumes that vio is the start
+  // in the CacheVC constructor. It assumes that vio is the start
   // of this region.
   // NOTE: NOTE: NOTE: If vio is NOT the start, then CHANGE the
   // size_to_init initialization
@@ -580,14 +578,13 @@ free_CacheVC(CacheVC *cont)
   ink_assert(!cont->is_io_in_progress());
   ink_assert(!cont->od);
   /* calling cont->io.action = nullptr causes compile problem on 2.6 solaris
-     release build....wierd??? For now, null out continuation and mutex
+     release build....weird??? For now, null out continuation and mutex
      of the action separately */
   cont->io.action.continuation = nullptr;
   cont->io.action.mutex        = nullptr;
   cont->io.mutex.clear();
-  cont->io.aio_result        = 0;
-  cont->io.aiocb.aio_nbytes  = 0;
-  cont->io.aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
+  cont->io.aio_result       = 0;
+  cont->io.aiocb.aio_nbytes = 0;
   cont->request.reset();
   cont->vector.clear();
   cont->vio.buffer.clear();
@@ -971,14 +968,14 @@ struct Vol;
 class CacheHostTable;
 
 struct Cache {
-  int cache_read_done;
-  int total_good_nvol;
-  int total_nvol;
-  int ready;
-  int64_t cache_size; // in store block size
-  CacheHostTable *hosttable;
-  int total_initialized_vol;
-  CacheType scheme;
+  int cache_read_done       = 0;
+  int total_good_nvol       = 0;
+  int total_nvol            = 0;
+  int ready                 = CACHE_INITIALIZING;
+  int64_t cache_size        = 0; // in store block size
+  CacheHostTable *hosttable = nullptr;
+  int total_initialized_vol = 0;
+  CacheType scheme          = CACHE_NONE_TYPE;
 
   int open(bool reconfigure, bool fix);
   int close();
@@ -1009,17 +1006,7 @@ struct Cache {
 
   Vol *key_to_vol(const CacheKey *key, const char *hostname, int host_len);
 
-  Cache()
-    : cache_read_done(0),
-      total_good_nvol(0),
-      total_nvol(0),
-      ready(CACHE_INITIALIZING),
-      cache_size(0), // in store block size
-      hosttable(nullptr),
-      total_initialized_vol(0),
-      scheme(CACHE_NONE_TYPE)
-  {
-  }
+  Cache() {}
 };
 
 extern Cache *theCache;

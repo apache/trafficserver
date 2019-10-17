@@ -68,8 +68,8 @@ statAdd(const char *name, TSRecordDataType record_type, TSMutex create_mutex)
 
   TSMutexLock(create_mutex);
 
-  if (TS_ERROR == TSStatFindName((const char *)name, &stat_id)) {
-    stat_id = TSStatCreate((const char *)name, record_type, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+  if (TS_ERROR == TSStatFindName(name, &stat_id)) {
+    stat_id = TSStatCreate(name, record_type, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     if (stat_id == TS_ERROR) {
       TSDebug(DEBUG_TAG, "Error creating stat_name: %s", name);
     } else {
@@ -135,7 +135,7 @@ setNetStat(TSMutex stat_creation_mutex, const char *interface, const char *entry
   // Generate the ATS stats name
   snprintf(&stat_name[0], sizeof(stat_name), "%s%s.%s", NET_STATS, interface, entry);
 
-  // Determine if this is a toplevel netdev stat, or one from stastistics.
+  // Determine if this is a toplevel netdev stat, or one from statistics.
   if (subdir == NULL) {
     snprintf(&sysfs_name[0], sizeof(sysfs_name), "%s/%s/%s", NET_STATS_DIR, interface, entry);
   } else {

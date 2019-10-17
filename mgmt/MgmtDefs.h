@@ -51,12 +51,12 @@ enum MgmtType {
 /// Management callback signature.
 /// The memory span is the message payload for the callback.
 /// This can be a lambda, which should be used if additional context information is needed.
-using MgmtCallback = std::function<void(ts::MemSpan)>;
+using MgmtCallback = std::function<void(ts::MemSpan<void>)>;
 
 //-------------------------------------------------------------------------
 // API conversion functions.
 //-------------------------------------------------------------------------
-/** Conversion functions to and from an aribrary type and Management types.
+/** Conversion functions to and from an arbitrary type and Management types.
  *
  * A type that wants to support conversion in the TS API should create a static instance of this
  * class and fill in the appropriate members. The TS API set/get functions can then check for a

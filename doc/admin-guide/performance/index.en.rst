@@ -111,7 +111,7 @@ megabytes of RAM cache for every gigabyte of disk cache storage, though this
 setting can be adjusted manually in :file:`records.config` using the setting
 :ts:cv:`proxy.config.cache.ram_cache.size`. |TS| will, under the default
 configuration, adjust this automatically if your system does not have enough
-physical memory to accomodate the aforementioned target.
+physical memory to accommodate the aforementioned target.
 
 Aside from the cost of physical memory, and necessary supporting hardware to
 make use of large amounts of RAM, there is little downside to increasing the
@@ -234,7 +234,7 @@ your cache, leaving the default at a minute or two, but enforce a much stricter
 timeout on a set of very small, incredibly heavily accessed objects for which
 you can construct a ``map`` rule with the goal of reducing the chances that a
 few bad actors (misconfigured or misbehaving clients) may generate too much
-connection pressure on your cache. The tradeoff may be that some perfectly
+connection pressure on your cache. The trade off may be that some perfectly
 innocent, but slow clients may have their connections terminated early. As with
 all performance tuning efforts, your needs are likely to vary from others' and
 should be carefully considered and closely monitored.
@@ -276,7 +276,7 @@ When :ref:`background fills <admin-config-read-while-writer>` are enabled,
 time after which |TS| will abort the fill attempt and close the origin
 server connection that was being used. Setting this to zero disables the
 timeout, but modifying the value and enforcing a timeout may help in
-situtations where your origin servers stall connections without closing.
+situations where your origin servers stall connections without closing.
 
 ::
 
@@ -327,7 +327,9 @@ Origin Connection Timeouts
 Origin server connection timeouts are configured with :ts:cv:`proxy.config.http.connect_attempts_timeout`,
 which is applied both to the initial connection as well as any retries attempted,
 should an attempt timeout. The timeout applies from the moment |TS| begins the
-connection attempt until the origin returns the first byte.
+connection attempt until the origin fully establishes a connection (the connection is ready to write).
+After the connection is established the value of
+:ts:cv:`proxy.config.http.transaction_no_activity_timeout_out` is used to established timeouts on the data over the connection.
 
 In the case where you wish to have a different (generally longer) timeout for
 ``POST`` and ``PUT`` connections to an origin server, you may also adjust
@@ -433,7 +435,7 @@ globally, especially if your cache contains objects of varying sizes and deals
 with clients which may support a range of speeds (and therefore take less or
 more time to complete normal, healthy data exchanges). However, there may be
 configurations in which small objects need to be exchanged in very short
-periods and you wish your |TS| cache to enforce these time resrictions by
+periods and you wish your |TS| cache to enforce these time restrictions by
 closing connections which exceed them.
 
 The variables :ts:cv:`proxy.config.http.transaction_no_activity_timeout_in` and
@@ -487,8 +489,8 @@ Network Tuning
 
 :ts:cv:`proxy.config.net.connections_throttle`
 
-Error responses from origins are conistent and costly
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Error responses from origins are consistent and costly
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If error responses are costly for your origin server to generate, you may elect
 to have |TS| cache these responses for a period of time. The default behavior is
@@ -521,7 +523,6 @@ Logging Configuration
 
    binary vs. ascii output
    multiple log formats (netscape+squid+custom vs. just custom)
-   overhead to log collation
    using direct writes vs. syslog target
 
 Plugin Tuning
@@ -536,6 +537,6 @@ shortcuts to identifying problem areas, or realizing easier performance gains.
 
 .. TODO::
 
-   - origins not sending proper expiration headers (can fix at the origin (preferable) or use proxy.config.http.cache.heuristic_(min|max)_lifetime as hacky bandaids)
+   - origins not sending proper expiration headers (can fix at the origin (preferable) or use proxy.config.http.cache.heuristic_(min|max)_lifetime as hacky band-aids)
    - cookies and http_auth prevent caching
    - avoid thundering herd with read-while-writer (link to section in http-proxy-caching)

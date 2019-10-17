@@ -45,7 +45,7 @@
     Debug("http_cache", "[%" PRId64 "] [%s, %s]", master_sm->sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
   }
 
-HttpCacheAction::HttpCacheAction() : sm(nullptr) {}
+HttpCacheAction::HttpCacheAction() {}
 
 void
 HttpCacheAction::cancel(Continuation *c)
@@ -61,25 +61,9 @@ HttpCacheAction::cancel(Continuation *c)
 
 HttpCacheSM::HttpCacheSM()
   : Continuation(nullptr),
-    cache_read_vc(nullptr),
-    cache_write_vc(nullptr),
-    read_locked(false),
-    write_locked(false),
-    readwhilewrite_inprogress(false),
-    master_sm(nullptr),
-    pending_action(nullptr),
-    captive_action(),
-    open_read_cb(false),
-    open_write_cb(false),
-    open_read_tries(0),
-    read_request_hdr(nullptr),
-    http_params(nullptr),
-    read_pin_in_cache(0),
-    retry_write(true),
-    open_write_tries(0),
-    lookup_url(nullptr),
-    lookup_max_recursive(0),
-    current_lookup_level(0)
+
+    captive_action()
+
 {
 }
 
@@ -126,7 +110,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
       close_read();
     }
     open_read_cb  = true;
-    cache_read_vc = (CacheVConnection *)data;
+    cache_read_vc = static_cast<CacheVConnection *>(data);
     master_sm->handleEvent(event, data);
     break;
 
@@ -181,7 +165,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
   case CACHE_EVENT_OPEN_WRITE:
     HTTP_INCREMENT_DYN_STAT(http_current_cache_connections_stat);
     ink_assert(cache_write_vc == nullptr);
-    cache_write_vc = (CacheVConnection *)data;
+    cache_write_vc = static_cast<CacheVConnection *>(data);
     open_write_cb  = true;
     master_sm->handleEvent(event, data);
     break;
@@ -212,10 +196,10 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
           "retrying cache open write...",
           master_sm->sm_id, open_write_tries);
 
-    open_write(
-      &cache_key, lookup_url, read_request_hdr, master_sm->t_state.cache_info.object_read,
-      (time_t)((master_sm->t_state.cache_control.pin_in_cache_for < 0) ? 0 : master_sm->t_state.cache_control.pin_in_cache_for),
-      retry_write, false);
+    open_write(&cache_key, lookup_url, read_request_hdr, master_sm->t_state.cache_info.object_read,
+               static_cast<time_t>(
+                 (master_sm->t_state.cache_control.pin_in_cache_for < 0) ? 0 : master_sm->t_state.cache_control.pin_in_cache_for),
+               retry_write, false);
     break;
 
   default:
@@ -285,7 +269,7 @@ HttpCacheSM::open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, Overrida
   current_lookup_level++;
   open_read_cb = false;
   act_return   = do_cache_open_read(cache_key);
-  // the following logic is based on the assumption that the secnod
+  // the following logic is based on the assumption that the second
   // lookup won't happen if the HttpSM hasn't been called back for the
   // first lookup
   if (current_lookup_level == lookup_max_recursive) {

@@ -77,7 +77,7 @@ OperatorSetStatus::initialize(Parser &p)
 
   _status.set_value(p.get_arg());
 
-  if (nullptr == (_reason = TSHttpHdrReasonLookup((TSHttpStatus)_status.get_int_value()))) {
+  if (nullptr == (_reason = TSHttpHdrReasonLookup(static_cast<TSHttpStatus>(_status.get_int_value())))) {
     TSError("[%s] unknown status %d", PLUGIN_NAME, _status.get_int_value());
     _reason_len = 0;
   } else {
@@ -106,14 +106,14 @@ OperatorSetStatus::exec(const Resources &res) const
   case TS_HTTP_READ_RESPONSE_HDR_HOOK:
   case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
     if (res.bufp && res.hdr_loc) {
-      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, (TSHttpStatus)_status.get_int_value());
+      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()));
       if (_reason && _reason_len > 0) {
         TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
       }
     }
     break;
   default:
-    TSHttpTxnStatusSet(res.txnp, (TSHttpStatus)_status.get_int_value());
+    TSHttpTxnStatusSet(res.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
     break;
   }
 
@@ -239,26 +239,28 @@ OperatorSetDestination::exec(const Resources &res) const
       }
       break;
     case URL_QUAL_URL:
-      if (_value.empty()) {
+      _value.append_value(value, res);
+      if (value.empty()) {
         TSDebug(PLUGIN_NAME, "Would set destination URL to an empty value, skipping");
       } else {
-        const char *start = _value.get_value().c_str();
-        const char *end   = _value.get_value().size() + start;
+        const char *start = value.c_str();
+        const char *end   = start + value.size();
         TSMLoc new_url_loc;
         if (TSUrlCreate(bufp, &new_url_loc) == TS_SUCCESS && TSUrlParse(bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
             TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS) {
-          TSDebug(PLUGIN_NAME, "Set destination URL to %s", _value.get_value().c_str());
+          TSDebug(PLUGIN_NAME, "Set destination URL to %s", value.c_str());
         } else {
-          TSDebug(PLUGIN_NAME, "Failed to set URL %s", _value.get_value().c_str());
+          TSDebug(PLUGIN_NAME, "Failed to set URL %s", value.c_str());
         }
       }
       break;
     case URL_QUAL_SCHEME:
-      if (_value.empty()) {
+      _value.append_value(value, res);
+      if (value.empty()) {
         TSDebug(PLUGIN_NAME, "Would set destination SCHEME to an empty value, skipping");
       } else {
-        TSUrlSchemeSet(bufp, url_m_loc, _value.get_value().c_str(), _value.get_value().length());
-        TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with SCHEME: %s", _value.get_value().c_str());
+        TSUrlSchemeSet(bufp, url_m_loc, value.c_str(), value.length());
+        TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with SCHEME: %s", value.c_str());
       }
       break;
     default:
@@ -406,12 +408,12 @@ OperatorSetRedirect::exec(const Resources &res) const
       // Set new location.
       TSUrlParse(bufp, url_loc, &start, end);
       // Set the new status.
-      TSHttpTxnStatusSet(res.txnp, (TSHttpStatus)_status.get_int_value());
+      TSHttpTxnStatusSet(res.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
       const_cast<Resources &>(res).changed_url = true;
       res._rri->redirect                       = 1;
     } else {
       // Set the new status code and reason.
-      TSHttpStatus status = (TSHttpStatus)_status.get_int_value();
+      TSHttpStatus status = static_cast<TSHttpStatus>(_status.get_int_value());
       switch (get_hook()) {
       case TS_HTTP_PRE_REMAP_HOOK: {
         TSHttpTxnStatusSet(res.txnp, status);

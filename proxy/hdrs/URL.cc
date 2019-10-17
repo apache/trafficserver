@@ -611,7 +611,7 @@ url_clear_string_ref(URLImpl *url)
 }
 
 char *
-url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
+url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length, bool normalized)
 {
   if (!url) {
     return nullptr;
@@ -621,7 +621,7 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
     if (length) {
       *length = url->m_len_printed_string;
     }
-    return (char *)url->m_ptr_printed_string;
+    return const_cast<char *>(url->m_ptr_printed_string);
   } else { // either not clean or never printed
     int len = url_length_get(url);
     char *buf;
@@ -630,7 +630,7 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
 
     /* stuff alloc'd here gets gc'd on HdrHeap::destroy() */
     buf = heap->allocate_str(len + 1);
-    url_print(url, buf, len, &index, &offset);
+    url_print(url, buf, len, &index, &offset, normalized);
     buf[len] = '\0';
 
     if (length) {
@@ -644,7 +644,7 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
 }
 
 char *
-url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
+url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap, bool normalized)
 {
   int len = url_length_get(url);
   char *buf;
@@ -652,9 +652,9 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
   int index  = 0;
   int offset = 0;
 
-  buf = arena ? arena->str_alloc(len) : (char *)ats_malloc(len + 1);
+  buf = arena ? arena->str_alloc(len) : static_cast<char *>(ats_malloc(len + 1));
 
-  url_print(url, buf, len, &index, &offset);
+  url_print(url, buf, len, &index, &offset, normalized);
   buf[len] = '\0';
 
   /* see string_get_ref() */
@@ -866,7 +866,7 @@ url_to_string(URLImpl *url, Arena *arena, int *length)
   if (arena) {
     str = arena->str_alloc(len);
   } else {
-    str = (char *)ats_malloc(len + 1);
+    str = static_cast<char *>(ats_malloc(len + 1));
   }
 
   idx = 0;
@@ -946,12 +946,12 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
 {
   int copy_len;
   char *first_pct;
-  int buf_len = (int)(buf_e - buf);
-  int str_len = (int)(str_e - str);
-  int min_len = (int)(str_len < buf_len ? str_len : buf_len);
+  int buf_len = static_cast<int>(buf_e - buf);
+  int str_len = static_cast<int>(str_e - str);
+  int min_len = (str_len < buf_len ? str_len : buf_len);
 
-  first_pct = ink_memcpy_until_char(buf, (char *)str, min_len, '%');
-  copy_len  = (int)(first_pct - str);
+  first_pct = ink_memcpy_until_char(buf, const_cast<char *>(str), min_len, '%');
+  copy_len  = static_cast<int>(first_pct - str);
   str += copy_len;
   buf += copy_len;
   if (copy_len == min_len) {
@@ -1077,7 +1077,7 @@ url_unescapify(Arena *arena, const char *str, int length)
   int s;
 
   if (length == -1) {
-    length = (int)strlen(str);
+    length = static_cast<int>(strlen(str));
   }
 
   buffer = arena->str_alloc(length);
@@ -1516,20 +1516,16 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
  ***********************************************************************/
 
 int
-url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout, bool normalize)
 {
 #define TRY(x) \
   if (!x)      \
   return 0
 
   if (url->m_ptr_scheme) {
-    TRY(mime_mem_print(url->m_ptr_scheme, url->m_len_scheme, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    // [amc] Why is "file:" special cased to be wrong?
-    //    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
-    //      TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    //    } else {
+    TRY((normalize ? mime_mem_print_lc : mime_mem_print)(url->m_ptr_scheme, url->m_len_scheme, buf_start, buf_length,
+                                                         buf_index_inout, buf_chars_to_skip_inout));
     TRY(mime_mem_print("://", 3, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    //    }
   }
 
   if (url->m_ptr_user) {
@@ -1550,7 +1546,8 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     if (bracket_p) {
       TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
-    TRY(mime_mem_print(url->m_ptr_host, url->m_len_host, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    TRY((normalize ? mime_mem_print_lc : mime_mem_print)(url->m_ptr_host, url->m_len_host, buf_start, buf_length, buf_index_inout,
+                                                         buf_chars_to_skip_inout));
     if (bracket_p) {
       TRY(mime_mem_print("]", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
@@ -1660,9 +1657,9 @@ url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash
   // no query
 
   ink_assert(sizeof(url->m_port) == 2);
-  uint16_t port = (uint16_t)url_canonicalize_port(url->m_url_type, url->m_port);
-  *p++          = ((char *)&port)[0];
-  *p++          = ((char *)&port)[1];
+  uint16_t port = static_cast<uint16_t>(url_canonicalize_port(url->m_url_type, url->m_port));
+  *p++          = (reinterpret_cast<char *>(&port))[0];
+  *p++          = (reinterpret_cast<char *>(&port))[1];
 
   ctx.update(buffer, p - buffer);
   if (generation != -1) {

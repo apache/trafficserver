@@ -23,7 +23,6 @@
 
 #include "HTTP2.h"
 #include "HPACK.h"
-#include "HuffmanCodec.h"
 #include "tscore/ink_assert.h"
 #include "records/P_RecCore.h"
 #include "records/P_RecProcess.h"
@@ -63,6 +62,15 @@ static const char *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME             = "pro
 static const char *const HTTP2_STAT_SESSION_DIE_EOS_NAME                  = "proxy.process.http2.session_die_eos";
 static const char *const HTTP2_STAT_SESSION_DIE_ERROR_NAME                = "proxy.process.http2.session_die_error";
 static const char *const HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE_NAME      = "proxy.process.http2.session_die_high_error_rate";
+static const char *const HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED_NAME  = "proxy.process.http2.max_settings_per_frame_exceeded";
+static const char *const HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED_NAME = "proxy.process.http2.max_settings_per_minute_exceeded";
+static const char *const HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED_NAME =
+  "proxy.process.http2.max_settings_frames_per_minute_exceeded";
+static const char *const HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED_NAME =
+  "proxy.process.http2.max_ping_frames_per_minute_exceeded";
+static const char *const HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME =
+  "proxy.process.http2.max_priority_frames_per_minute_exceeded";
+static const char *const HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME = "proxy.process.http2.insufficient_avg_window_update";
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -89,6 +97,7 @@ write_and_advance(byte_pointer &dst, uint32_t src)
 {
   byte_addressable_value<uint32_t> pval;
 
+  // cppcheck-suppress unreadVariable ; it's an union and be read as pval.bytes
   pval.value = htonl(src);
   memcpy(dst.u8, pval.bytes, sizeof(pval.bytes));
   dst.u8 += sizeof(pval.bytes);
@@ -99,6 +108,7 @@ write_and_advance(byte_pointer &dst, uint16_t src)
 {
   byte_addressable_value<uint16_t> pval;
 
+  // cppcheck-suppress unreadVariable ; it's an union and be read as pval.bytes
   pval.value = htons(src);
   memcpy(dst.u8, pval.bytes, sizeof(pval.bytes));
   dst.u8 += sizeof(pval.bytes);
@@ -153,7 +163,8 @@ http2_settings_parameter_is_valid(const Http2SettingsParameter &param)
   };
 
   if (param.id == 0 || param.id >= HTTP2_SETTINGS_MAX) {
-    return false;
+    // Do nothing - 6.5.2 Unsupported parameters MUST be ignored
+    return true;
   }
 
   if (param.value > settings_max[param.id]) {
@@ -218,6 +229,7 @@ http2_write_frame_header(const Http2FrameHeader &hdr, IOVec iov)
   }
 
   byte_addressable_value<uint32_t> length;
+  // cppcheck-suppress unreadVariable ; it's an union and be read as pval.bytes
   length.value = htonl(hdr.length);
   // MSB length.bytes[0] is unused.
   write_and_advance(ptr, length.bytes[1]);
@@ -417,8 +429,8 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
   ink_assert(http_hdr_type_get(headers->m_http) != HTTP_TYPE_UNKNOWN);
 
   if (http_hdr_type_get(headers->m_http) == HTTP_TYPE_REQUEST) {
-    const char *scheme, *authority, *path, *method;
-    int scheme_len, authority_len, path_len, method_len;
+    const char *scheme, *authority, *path;
+    int scheme_len, authority_len, path_len;
 
     // Get values of :scheme, :authority and :path to assemble requested URL
     if ((field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME)) != nullptr && field->value_is_valid()) {
@@ -454,7 +466,8 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 
     // Get value of :method
     if ((field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD)) != nullptr && field->value_is_valid()) {
-      method = field->value_get(&method_len);
+      int method_len;
+      const char *method = field->value_get(&method_len);
 
       int method_wks_idx = hdrtoken_tokenize(method, method_len);
       http_hdr_method_set(headers->m_heap, headers->m_http, method, method_wks_idx, method_len, false);
@@ -478,11 +491,14 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     headers->field_delete(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
     headers->field_delete(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
   } else {
-    int status_len;
-    const char *status;
+    // Set HTTP Version 1.1
+    int32_t version = HTTP_VERSION(1, 1);
+    http_hdr_version_set(headers->m_http, version);
 
+    // Set status from :status
     if ((field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS)) != nullptr) {
-      status = field->value_get(&status_len);
+      int status_len;
+      const char *status = field->value_get(&status_len);
       headers->status_set(http_parse_status(status, status + status_len));
     } else {
       return PARSE_RESULT_ERROR;
@@ -494,8 +510,8 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 
   // Check validity of all names and values
   MIMEFieldIter iter;
-  for (const MIMEField *field = headers->iter_get_first(&iter); field != nullptr; field = headers->iter_get_next(&iter)) {
-    if (!field->name_is_valid() || !field->value_is_valid()) {
+  for (auto *mf = headers->iter_get_first(&iter); mf != nullptr; mf = headers->iter_get_next(&iter)) {
+    if (!mf->name_is_valid() || !mf->value_is_valid()) {
       return PARSE_RESULT_ERROR;
     }
   }
@@ -522,11 +538,14 @@ http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers)
     int value_len;
 
     // Add ':authority' header field
+    // TODO: remove host/Host header
+    // [RFC 7540] 8.1.2.3. Clients that generate HTTP/2 requests directly SHOULD use the ":authority" pseudo-header field instead of
+    // the Host header field.
     field = h2_headers->field_create(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
     value = headers->host_get(&value_len);
     if (headers->is_port_in_header()) {
       int port            = headers->port_get();
-      char *host_and_port = (char *)ats_malloc(value_len + 8);
+      char *host_and_port = static_cast<char *>(ats_malloc(value_len + 8));
       value_len           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value, port);
       field->value_set(h2_headers->m_heap, h2_headers->m_mime, host_and_port, value_len);
       ats_free(host_and_port);
@@ -544,7 +563,7 @@ http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers)
     // Add ':path' header field
     field      = h2_headers->field_create(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
     value      = headers->path_get(&value_len);
-    char *path = (char *)ats_malloc(value_len + 1);
+    char *path = static_cast<char *>(ats_malloc(value_len + 1));
     path[0]    = '/';
     memcpy(path + 1, value, value_len);
     field->value_set(h2_headers->m_heap, h2_headers->m_mime, path, value_len + 1);
@@ -652,13 +671,6 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
         return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
     }
-    // Check whether header field name is lower case
-    // This check should be here but it will fail because WKSs in MIMEField is old fashioned.
-    // for (uint32_t i = 0; i < len; ++i) {
-    //   if (ParseRules::is_upalpha(value[i])) {
-    //     return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
-    //   }
-    // }
   }
 
   // rfc7540,sec8.1.2.2: Any message containing connection-specific header
@@ -718,21 +730,29 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 }
 
 // Initialize this subsystem with librecords configs (for now)
-uint32_t Http2::max_concurrent_streams_in  = 100;
-uint32_t Http2::min_concurrent_streams_in  = 10;
-uint32_t Http2::max_active_streams_in      = 0;
-bool Http2::throttling                     = false;
-uint32_t Http2::stream_priority_enabled    = 0;
-uint32_t Http2::initial_window_size        = 1048576;
-uint32_t Http2::max_frame_size             = 16384;
-uint32_t Http2::header_table_size          = 4096;
-uint32_t Http2::max_header_list_size       = 4294967295;
-uint32_t Http2::accept_no_activity_timeout = 120;
-uint32_t Http2::no_activity_timeout_in     = 120;
-uint32_t Http2::active_timeout_in          = 0;
-uint32_t Http2::push_diary_size            = 256;
-uint32_t Http2::zombie_timeout_in          = 0;
-float Http2::stream_error_rate_threshold   = 0.1;
+uint32_t Http2::max_concurrent_streams_in      = 100;
+uint32_t Http2::min_concurrent_streams_in      = 10;
+uint32_t Http2::max_active_streams_in          = 0;
+bool Http2::throttling                         = false;
+uint32_t Http2::stream_priority_enabled        = 0;
+uint32_t Http2::initial_window_size            = 1048576;
+uint32_t Http2::max_frame_size                 = 16384;
+uint32_t Http2::header_table_size              = 4096;
+uint32_t Http2::max_header_list_size           = 4294967295;
+uint32_t Http2::accept_no_activity_timeout     = 120;
+uint32_t Http2::no_activity_timeout_in         = 120;
+uint32_t Http2::active_timeout_in              = 0;
+uint32_t Http2::push_diary_size                = 256;
+uint32_t Http2::zombie_timeout_in              = 0;
+float Http2::stream_error_rate_threshold       = 0.1;
+uint32_t Http2::max_settings_per_frame         = 7;
+uint32_t Http2::max_settings_per_minute        = 14;
+uint32_t Http2::max_settings_frames_per_minute = 14;
+uint32_t Http2::max_ping_frames_per_minute     = 60;
+uint32_t Http2::max_priority_frames_per_minute = 120;
+float Http2::min_avg_window_update             = 2560.0;
+uint32_t Http2::con_slow_log_threshold         = 0;
+uint32_t Http2::stream_slow_log_threshold      = 0;
 
 void
 Http2::init()
@@ -751,6 +771,14 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(push_diary_size, "proxy.config.http2.push_diary_size");
   REC_EstablishStaticConfigInt32U(zombie_timeout_in, "proxy.config.http2.zombie_debug_timeout_in");
   REC_EstablishStaticConfigFloat(stream_error_rate_threshold, "proxy.config.http2.stream_error_rate_threshold");
+  REC_EstablishStaticConfigInt32U(max_settings_per_frame, "proxy.config.http2.max_settings_per_frame");
+  REC_EstablishStaticConfigInt32U(max_settings_per_minute, "proxy.config.http2.max_settings_per_minute");
+  REC_EstablishStaticConfigInt32U(max_settings_frames_per_minute, "proxy.config.http2.max_settings_frames_per_minute");
+  REC_EstablishStaticConfigInt32U(max_ping_frames_per_minute, "proxy.config.http2.max_ping_frames_per_minute");
+  REC_EstablishStaticConfigInt32U(max_priority_frames_per_minute, "proxy.config.http2.max_priority_frames_per_minute");
+  REC_EstablishStaticConfigFloat(min_avg_window_update, "proxy.config.http2.min_avg_window_update");
+  REC_EstablishStaticConfigInt32U(con_slow_log_threshold, "proxy.config.http2.connection.slow.log.threshold");
+  REC_EstablishStaticConfigInt32U(stream_slow_log_threshold, "proxy.config.http2.stream.slow.log.threshold");
 
   // If any settings is broken, ATS should not start
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams_in}));
@@ -801,6 +829,18 @@ Http2::init()
                      static_cast<int>(HTTP2_STAT_SESSION_DIE_ERROR), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_SESSION_DIE_HIGH_ERROR_RATE), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE), RecRawStatSyncSum);
 }
 
 #if TS_HAS_TESTS

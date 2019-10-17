@@ -20,21 +20,27 @@
 
 #include "slice.h"
 
-#include <string>
+#include <mutex>
 
 // Data Structures and Classes
 struct Config {
-  static int64_t const blockbytesmin     = 1024 * 256;       // 256KB
-  static int64_t const blockbytesmax     = 1024 * 1024 * 32; // 32MB
-  static int64_t const blockbytesdefault = 1024 * 1024;      // 1MB
-
-  static constexpr char const *const blockbytesstr = "blockbytes";
-  static constexpr char const *const bytesoverstr  = "bytesover";
+  static constexpr int64_t const blockbytesmin     = 1024 * 256;       // 256KB
+  static constexpr int64_t const blockbytesmax     = 1024 * 1024 * 32; // 32MB
+  static constexpr int64_t const blockbytesdefault = 1024 * 1024;      // 1MB
 
   int64_t m_blockbytes{blockbytesdefault};
+  int m_paceerrsecs{0}; // -1 disable logging, 0 no pacing, max 60s
 
-  // Last one wins
-  bool fromArgs(int const argc, char const *const argv[], char *const errbuf, int const errbuf_size);
+  // Convert optarg to bytes
+  static int64_t bytesFrom(char const *const valstr);
 
-  static int64_t bytesFrom(std::string const &valstr);
+  // Parse from args, ast one wins
+  bool fromArgs(int const argc, char const *const argv[]);
+
+  // Check if the error should can be logged, if sucessful may update m_nexttime
+  bool canLogError();
+
+private:
+  TSHRTime m_nextlogtime{0}; // next time to log in ns
+  std::mutex m_mutex;
 };

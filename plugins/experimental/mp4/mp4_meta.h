@@ -166,7 +166,7 @@ typedef struct {
   u_char reverved3[2];
   u_char matrix[36];
   u_char width[4];
-  u_char heigth[4];
+  u_char height[4];
 } mp4_tkhd_atom;
 
 typedef struct {
@@ -186,7 +186,7 @@ typedef struct {
   u_char reverved3[2];
   u_char matrix[36];
   u_char width[4];
-  u_char heigth[4];
+  u_char height[4];
 } mp4_tkhd64_atom;
 
 typedef struct {
@@ -310,7 +310,7 @@ typedef struct {
 class BufferHandle
 {
 public:
-  BufferHandle() : buffer(nullptr), reader(nullptr){};
+  BufferHandle(){};
 
   ~BufferHandle()
   {
@@ -326,64 +326,41 @@ public:
   }
 
 public:
-  TSIOBuffer buffer;
-  TSIOBufferReader reader;
+  TSIOBuffer buffer       = nullptr;
+  TSIOBufferReader reader = nullptr;
 };
 
 class Mp4Trak
 {
 public:
-  Mp4Trak()
-    : timescale(0),
-      duration(0),
-      time_to_sample_entries(0),
-      sample_to_chunk_entries(0),
-      sync_samples_entries(0),
-      composition_offset_entries(0),
-      sample_sizes_entries(0),
-      chunks(0),
-      start_sample(0),
-      start_chunk(0),
-      chunk_samples(0),
-      chunk_samples_size(0),
-      start_offset(0),
-      tkhd_size(0),
-      mdhd_size(0),
-      hdlr_size(0),
-      vmhd_size(0),
-      smhd_size(0),
-      dinf_size(0),
-      size(0)
-  {
-    memset(&stsc_chunk_entry, 0, sizeof(mp4_stsc_entry));
-  }
+  Mp4Trak() { memset(&stsc_chunk_entry, 0, sizeof(mp4_stsc_entry)); }
 
   ~Mp4Trak() {}
 
 public:
-  uint32_t timescale;
-  int64_t duration;
+  uint32_t timescale = 0;
+  int64_t duration   = 0;
 
-  uint32_t time_to_sample_entries;     // stsc
-  uint32_t sample_to_chunk_entries;    // stsc
-  uint32_t sync_samples_entries;       // stss
-  uint32_t composition_offset_entries; // ctts
-  uint32_t sample_sizes_entries;       // stsz
-  uint32_t chunks;                     // stco, co64
+  uint32_t time_to_sample_entries     = 0; // stsc
+  uint32_t sample_to_chunk_entries    = 0; // stsc
+  uint32_t sync_samples_entries       = 0; // stss
+  uint32_t composition_offset_entries = 0; // ctts
+  uint32_t sample_sizes_entries       = 0; // stsz
+  uint32_t chunks                     = 0; // stco, co64
 
-  uint32_t start_sample;
-  uint32_t start_chunk;
-  uint32_t chunk_samples;
-  uint64_t chunk_samples_size;
-  off_t start_offset;
+  uint32_t start_sample       = 0;
+  uint32_t start_chunk        = 0;
+  uint32_t chunk_samples      = 0;
+  uint64_t chunk_samples_size = 0;
+  off_t start_offset          = 0;
 
-  size_t tkhd_size;
-  size_t mdhd_size;
-  size_t hdlr_size;
-  size_t vmhd_size;
-  size_t smhd_size;
-  size_t dinf_size;
-  size_t size;
+  size_t tkhd_size = 0;
+  size_t mdhd_size = 0;
+  size_t hdlr_size = 0;
+  size_t vmhd_size = 0;
+  size_t smhd_size = 0;
+  size_t dinf_size = 0;
+  size_t size      = 0;
 
   BufferHandle atoms[MP4_LAST_ATOM + 1];
 
@@ -394,22 +371,7 @@ class Mp4Meta
 {
 public:
   Mp4Meta()
-    : start(0),
-      cl(0),
-      content_length(0),
-      meta_atom_size(0),
-      meta_avail(0),
-      wait_next(0),
-      need_size(0),
-      rs(0),
-      rate(0),
-      ftyp_size(0),
-      moov_size(0),
-      start_pos(0),
-      timescale(0),
-      trak_num(0),
-      passed(0),
-      meta_complete(false)
+
   {
     memset(trak_vec, 0, sizeof(trak_vec));
     meta_buffer = TSIOBufferCreate();
@@ -494,17 +456,17 @@ public:
   void mp4_update_mdhd_duration(Mp4Trak *trak);
 
 public:
-  int64_t start;          // requested start time, measured in milliseconds.
-  int64_t cl;             // the total size of the mp4 file
-  int64_t content_length; // the size of the new mp4 file
-  int64_t meta_atom_size;
+  int64_t start          = 0; // requested start time, measured in milliseconds.
+  int64_t cl             = 0; // the total size of the mp4 file
+  int64_t content_length = 0; // the size of the new mp4 file
+  int64_t meta_atom_size = 0;
 
   TSIOBuffer meta_buffer; // meta data to be parsed
   TSIOBufferReader meta_reader;
 
-  int64_t meta_avail;
-  int64_t wait_next;
-  int64_t need_size;
+  int64_t meta_avail = 0;
+  int64_t wait_next  = 0;
+  int64_t need_size  = 0;
 
   BufferHandle meta_atom;
   BufferHandle ftyp_atom;
@@ -516,16 +478,16 @@ public:
 
   Mp4Trak *trak_vec[MP4_MAX_TRAK_NUM];
 
-  double rs;
-  double rate;
+  double rs   = 0;
+  double rate = 0;
 
-  int64_t ftyp_size;
-  int64_t moov_size;
-  int64_t start_pos; // start position of the new mp4 file
-  uint32_t timescale;
-  uint32_t trak_num;
-  int64_t passed;
+  int64_t ftyp_size  = 0;
+  int64_t moov_size  = 0;
+  int64_t start_pos  = 0; // start position of the new mp4 file
+  uint32_t timescale = 0;
+  uint32_t trak_num  = 0;
+  int64_t passed     = 0;
 
   u_char mdat_atom_header[16];
-  bool meta_complete;
+  bool meta_complete = false;
 };

@@ -33,7 +33,7 @@ Online Event Log Builder
 ========================
 
 If you need any assistance building your event log, you can try out our
-`online log builder <http://trafficserver.apache.org/logbuilder/>`_. This is a
+`online log builder <https://trafficserver.apache.org/logbuilder/>`_. This is a
 work in progress, so any comments, critique or suggestions are most welcome.
 
 Emulating Other HTTP Server Formats
@@ -299,6 +299,26 @@ for them to a UNIX pipe that the alerting software can constantly read from.
      - canaryfilter
      filename: alerting_canaries
 
+Configuring ASCII Pipe Buffer Size
+==================================
+
+This example mirrors the one above but also sets a ```pipe_buffer_size``` of
+1024 * 1024 for the pipe. This can be set on a per-pipe basis but is only
+available on Linux (later than 2.6.35). If this field is not set, the pipe buffer
+will default to the OS default size.
+
+.. code:: yaml
+
+   logs:
+   - mode: pipe
+     format: canaryformat
+     filters:
+     - canaryfilter
+     filename: alerting_canaries
+     pipe_buffer_size: 1048576
+
+
+
 Summarizing Origin Responses by Hour
 ====================================
 
@@ -310,18 +330,19 @@ the request to clients during that hour.
 
 .. code:: yaml
 
-   formats:
-   - name: originrepformat
-     format: '%<FIRST(cqtq)> %<COUNT(*)> %<AVERAGE(ttms)>'
-     interval: 3600
+   logging:
+     formats:
+     - name: originrepformat
+       format: '%<FIRST(cqtq)> %<COUNT(*)> %<AVERAGE(ttms)>'
+       interval: 3600
 
-   filters:
-   - name: originfilter
-     reject: crc CONTAINS "HIT"
-
-   logs:
-   - mode: ascii
-     format: originrepformat
      filters:
-     - originfilter
-     filename: origin_access_summary
+     - name: originfilter
+       reject: crc CONTAINS "HIT"
+
+     logs:
+     - mode: ascii
+       format: originrepformat
+       filters:
+       - originfilter
+       filename: origin_access_summary

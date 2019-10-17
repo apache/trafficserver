@@ -42,6 +42,9 @@ typedef struct {
   TSMutex stat_creation_mutex;
 } config_t;
 
+// From "core".... sigh, but we need it for now at least.
+extern int max_records_entries;
+
 static void
 stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex create_mutex)
 {
@@ -51,13 +54,15 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
   static __thread bool hash_init = false;
 
   if (unlikely(!hash_init)) {
-    hcreate_r(TS_MAX_API_STATS << 1, &stat_cache);
+    // NOLINTNEXTLINE
+    hcreate_r(max_records_entries << 1, &stat_cache); // This is weird, but oh well.
     hash_init = true;
     TSDebug(DEBUG_TAG, "stat cache hash init");
   }
 
   search.key  = name;
   search.data = 0;
+  // NOLINTNEXTLINE
   hsearch_r(search, FIND, &result, &stat_cache);
 
   if (unlikely(result == NULL)) {
@@ -78,6 +83,7 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
     if (stat_id >= 0) {
       search.key  = TSstrdup(name);
       search.data = (void *)((intptr_t)stat_id);
+      // NOLINTNEXTLINE
       hsearch_r(search, ENTER, &result, &stat_cache);
       TSDebug(DEBUG_TAG, "Cached stat_name: %s stat_id: %d", name, stat_id);
     }

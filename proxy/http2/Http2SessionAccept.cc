@@ -31,7 +31,7 @@ Http2SessionAccept::Http2SessionAccept(const HttpSessionAccept::Options &_o) : S
   SET_HANDLER(&Http2SessionAccept::mainEvent);
 }
 
-Http2SessionAccept::~Http2SessionAccept() {}
+Http2SessionAccept::~Http2SessionAccept() = default;
 
 bool
 Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
@@ -55,10 +55,7 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
 
   Http2ClientSession *new_session = THREAD_ALLOC_INIT(http2ClientSessionAllocator, this_ethread());
   new_session->acl                = std::move(session_acl);
-  new_session->host_res_style     = ats_host_res_from(client_ip->sa_family, options.host_res_preference);
-  new_session->outbound_ip4       = options.outbound_ip4;
-  new_session->outbound_ip6       = options.outbound_ip6;
-  new_session->outbound_port      = options.outbound_port;
+  new_session->accept_options     = &options;
   new_session->new_connection(netvc, iobuf, reader);
 
   return true;
@@ -67,12 +64,11 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
 int
 Http2SessionAccept::mainEvent(int event, void *data)
 {
-  NetVConnection *netvc;
   ink_release_assert(event == NET_EVENT_ACCEPT || event == EVENT_ERROR);
   ink_release_assert((event == NET_EVENT_ACCEPT) ? (data != nullptr) : (1));
 
   if (event == NET_EVENT_ACCEPT) {
-    netvc = static_cast<NetVConnection *>(data);
+    NetVConnection *netvc = static_cast<NetVConnection *>(data);
     if (!this->accept(netvc, nullptr, nullptr)) {
       netvc->do_io_close();
     }
@@ -85,6 +81,6 @@ Http2SessionAccept::mainEvent(int event, void *data)
     HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_pre_accept_hangups_stat, 0);
   }
 
-  ink_abort("HTTP/2 accept received fatal error: errno = %d", -((int)(intptr_t)data));
+  ink_abort("HTTP/2 accept received fatal error: errno = %d", -(static_cast<int>((intptr_t)data)));
   return EVENT_CONT;
 }

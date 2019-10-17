@@ -98,7 +98,7 @@ initialize_process_manager()
 {
   mgmt_use_syslog();
 
-  // Temporary Hack to Enable Communuication with LocalManager
+  // Temporary Hack to Enable Communication with LocalManager
   if (getenv("PROXY_REMOTE_MGMT")) {
     remote_management_flag = true;
   }

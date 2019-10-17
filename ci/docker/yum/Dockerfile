@@ -21,10 +21,10 @@
 #  limitations under the License.
 
 ################################################################################
-# These can (should?) be overriden from the command line with ----build-arg, e.g.
+# These can (should?) be overridden from the command line with ----build-arg, e.g.
 #    docker build --build-arg OS_VERSION=7 --build-arg OS_TYPE=centos
 #
-ARG OS_VERSION=28
+ARG OS_VERSION=30
 ARG OS_TYPE=fedora
 
 # This does currently not work, e.g. this I'd expect to make it conditional:
@@ -51,11 +51,12 @@ RUN yum -y update; \
     git rpm-build distcc-server file wget openssl hwloc; \
     # Devel packages that ATS needs
     yum -y install openssl-devel expat-devel pcre-devel libcap-devel hwloc-devel libunwind-devel \
-    xz-devel libcurl-devel ncurses-devel jemalloc-devel GeoIP-devel kyotocabinet-devel luajit-devel \
-    brotli-devel ImageMagick-devel ImageMagick-c++-devel \
+    xz-devel libcurl-devel ncurses-devel jemalloc-devel GeoIP-devel luajit-devel brotli-devel \
+    ImageMagick-devel ImageMagick-c++-devel hiredis-devel \
     perl-ExtUtils-MakeMaker perl-Digest-SHA perl-URI; \
     # This is for autest stuff
-    yum -y install python3 python3-virtualenv python-virtualenv httpd-tools procps-ng nmap-ncat; \
+    yum -y install python3 httpd-tools procps-ng nmap-ncat pipenv \
+    python3-virtualenv python3-gunicorn python3-requests python3-httpbin; \
     # Optional: This is for the OpenSSH server, and Jenkins account + access (comment out if not needed)
     yum -y install java openssh-server && ssh-keygen -A; rm -f /run/nologin; \
     groupadd  -g 665 jenkins && \

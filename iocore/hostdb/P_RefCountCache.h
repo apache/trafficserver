@@ -77,11 +77,11 @@ public:
   Ptr<RefCountObj> item;
   RefCountCacheHashEntry *_next{nullptr};
   RefCountCacheHashEntry *_prev{nullptr};
-  PriorityQueueEntry<RefCountCacheHashEntry *> *expiry_entry;
+  PriorityQueueEntry<RefCountCacheHashEntry *> *expiry_entry = nullptr;
   RefCountCacheItemMeta meta;
 
   // Need a no-argument constructor to use the classAllocator
-  RefCountCacheHashEntry() : item(Ptr<RefCountObj>()), expiry_entry(nullptr), meta(0, 0) {}
+  RefCountCacheHashEntry() : item(Ptr<RefCountObj>()), meta(0, 0) {}
   void
   set(RefCountObj *i, uint64_t key, unsigned int size, int expire_time)
   {
@@ -290,9 +290,9 @@ RefCountCachePartition<C>::clear()
   // Hence, this monstrosity.
   auto it = this->item_map.begin();
   while (it != this->item_map.end()) {
-    auto cur = it;
+    auto cur = it++;
 
-    it = this->item_map.erase(it);
+    this->item_map.erase(cur);
     this->dealloc_entry(cur);
   }
 }
@@ -368,7 +368,7 @@ RefCountCachePartition<C>::get_map()
 class RefCountCacheHeader
 {
 public:
-  unsigned int magic;
+  unsigned int magic = REFCOUNTCACHE_MAGIC_NUMBER;
   ts::VersionNumber version{REFCOUNTCACHE_VERSION};
   ts::VersionNumber object_version; // version passed in of whatever it is we are caching
 

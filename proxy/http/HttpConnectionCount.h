@@ -43,7 +43,7 @@
 #include "Show.h"
 
 /**
- * Singleton class to keep track of the number of outbound connnections.
+ * Singleton class to keep track of the number of outbound connections.
  *
  * Outbound connections are divided in to equivalence classes (called "groups" here) based on the
  * session matching setting. Tracking data is stored for each group.
@@ -71,6 +71,7 @@ public:
   /// Per transaction configuration values.
   struct TxnConfig {
     int max{0};                ///< Maximum concurrent connections.
+    int min{0};                ///< Minimum keepalive connections.
     MatchType match{MATCH_IP}; ///< Match type.
   };
 
@@ -85,6 +86,7 @@ public:
   // Unfortunately these are not used in RecordsConfig.cc so that must be made consistent by hand.
   // Note: These need to be @c constexpr or there are static initialization ordering risks.
   static constexpr std::string_view CONFIG_VAR_MAX{"proxy.config.http.per_server.connection.max"_sv};
+  static constexpr std::string_view CONFIG_VAR_MIN{"proxy.config.http.per_server.connection.min"_sv};
   static constexpr std::string_view CONFIG_VAR_MATCH{"proxy.config.http.per_server.connection.match"_sv};
   static constexpr std::string_view CONFIG_VAR_QUEUE_SIZE{"proxy.config.http.per_server.connection.queue_size"_sv};
   static constexpr std::string_view CONFIG_VAR_QUEUE_DELAY{"proxy.config.http.per_server.connection.queue_delay"_sv};
@@ -109,11 +111,12 @@ public:
       MatchType const &_match_type; ///< Type of matching.
     };
 
-    IpEndpoint _addr;      ///< Remote IP address.
-    CryptoHash _hash;      ///< Hash of the FQDN.
-    MatchType _match_type; ///< Type of matching.
-    std::string _fqdn;     ///< Expanded FQDN, set if matching on FQDN.
-    Key _key;              ///< Pre-assembled key which references the following members.
+    IpEndpoint _addr;         ///< Remote IP address.
+    CryptoHash _hash;         ///< Hash of the FQDN.
+    MatchType _match_type;    ///< Type of matching.
+    std::string _fqdn;        ///< Expanded FQDN, set if matching on FQDN.
+    int min_keep_alive_conns; /// < Min keep alive conns on this server group
+    Key _key;                 ///< Pre-assembled key which references the following members.
 
     // Counting data.
     std::atomic<int> _count{0};         ///< Number of outbound connections.
@@ -132,7 +135,7 @@ public:
      * @param key A populated @c Key structure - values are copied to the @c Group.
      * @param fqdn The full FQDN.
      */
-    Group(Key const &key, std::string_view fqdn);
+    Group(Key const &key, std::string_view fqdn, int min_keep_alive);
     /// Key equality checker.
     static bool equal(Key const &lhs, Key const &rhs);
     /// Hashing function.
@@ -227,7 +230,7 @@ public:
    */
   static void config_init(GlobalConfig *global, TxnConfig *txn);
 
-  /// Tag used for debugging otuput.
+  /// Tag used for debugging output.
   static constexpr char const *const DEBUG_TAG{"conn_track"};
 
   /** Convert a string to a match type.
@@ -247,6 +250,7 @@ public:
   static void Warning_Bad_Match_Type(std::string_view tag);
 
   // Converters for overridable values for use in the TS API.
+  static const MgmtConverter MIN_CONV;
   static const MgmtConverter MAX_CONV;
   static const MgmtConverter MATCH_CONV;
 
@@ -286,8 +290,8 @@ OutboundConnTrack::instance()
   return _imp;
 }
 
-inline OutboundConnTrack::Group::Group(Key const &key, std::string_view fqdn)
-  : _hash(key._hash), _match_type(key._match_type), _key{_addr, _hash, _match_type}
+inline OutboundConnTrack::Group::Group(Key const &key, std::string_view fqdn, int min_keep_alive)
+  : _hash(key._hash), _match_type(key._match_type), min_keep_alive_conns(min_keep_alive), _key{_addr, _hash, _match_type}
 {
   // store the host name if relevant.
   if (MATCH_HOST == _match_type || MATCH_BOTH == _match_type) {

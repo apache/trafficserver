@@ -54,9 +54,13 @@ Value::set_value(const std::string &val)
         std::string cond_token = token.substr(2, token.size() - 3);
 
         if ((tcond_val = condition_factory(cond_token))) {
-          Parser parser(_value);
+          Parser parser;
 
-          tcond_val->initialize(parser);
+          if (parser.parse_line(_value)) {
+            tcond_val->initialize(parser);
+          } else {
+            // TODO: should we produce error here?
+          }
         }
       } else {
         tcond_val = new ConditionStringLiteral(token);

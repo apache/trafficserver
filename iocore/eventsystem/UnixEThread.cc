@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include <tscore/TSSystemState.h>
+
 //////////////////////////////////////////////////////////////////////
 //
 // The EThread Class
@@ -45,8 +47,6 @@ char const *const EThread::STAT_NAME[] = {"proxy.process.eventloop.count",      
 
 int const EThread::SAMPLE_COUNT[N_EVENT_TIMESCALES] = {10, 100, 1000};
 
-bool shutdown_event_system = false;
-
 int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
 
 EThread::EThread()
@@ -56,7 +56,7 @@ EThread::EThread()
 
 EThread::EThread(ThreadType att, int anid) : id(anid), tt(att)
 {
-  ethreads_to_be_signalled = (EThread **)ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *));
+  ethreads_to_be_signalled = static_cast<EThread **>(ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *)));
   memset(ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));
   memset(thread_private, 0, PER_THREAD_DATA);
 #if HAVE_EVENTFD
@@ -128,7 +128,11 @@ EThread::process_event(Event *e, int calling_code)
       return;
     }
     Continuation *c_temp = e->continuation;
-    // Make sure that the contination is locked before calling the handler
+    // Make sure that the continuation is locked before calling the handler
+
+    // Restore the client IP debugging flags
+    set_cont_flags(e->continuation->control_flags);
+
     e->continuation->handleEvent(calling_code, e);
     ink_assert(!e->in_the_priority_queue);
     ink_assert(c_temp == e->continuation);
@@ -193,24 +197,23 @@ EThread::execute_regular()
 {
   Event *e;
   Que(Event, link) NegativeQueue;
-  ink_hrtime next_time = 0;
-  ink_hrtime delta     = 0;    // time spent in the event loop
+  ink_hrtime next_time;
+  ink_hrtime delta;            // time spent in the event loop
   ink_hrtime loop_start_time;  // Time the loop started.
   ink_hrtime loop_finish_time; // Time at the end of the loop.
 
   // Track this so we can update on boundary crossing.
   EventMetrics *prev_metric = this->prev(metrics + (ink_get_hrtime_internal() / HRTIME_SECOND) % N_EVENT_METRICS);
 
-  int nq_count = 0;
-  int ev_count = 0;
+  int nq_count;
+  int ev_count;
 
   // A statically initialized instance we can use as a prototype for initializing other instances.
   static EventMetrics METRIC_INIT;
 
   // give priority to immediate events
-  has_event_loop = true;
   for (;;) {
-    if (unlikely(shutdown_event_system == true)) {
+    if (TSSystemState::is_event_system_shut_down()) {
       return;
     }
 

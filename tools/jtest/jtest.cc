@@ -92,7 +92,7 @@
 #define MAX_BUFSIZE (65536 + 4096)
 
 //
-// Contants
+// Constants
 //
 #define MAXFDS 65536
 #define HEADER_DONE -1
@@ -294,7 +294,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"alternates", 'N', "Number of Alternates", "I", &alternates, "JTEST_ALTERNATES", nullptr},
   {"client_rate", 'e', "Clients Per Sec", "I", &client_rate, "JTEST_CLIENT_RATE", nullptr},
   {"abort_retry_speed", 'o', "Abort/Retry Speed", "I", &abort_retry_speed, "JTEST_ABORT_RETRY_SPEED", nullptr},
-  {"abort_retry_bytes", ' ', "Abort/Retry Threshhold (bytes)", "I", &abort_retry_bytes, "JTEST_ABORT_RETRY_THRESHHOLD_BYTES",
+  {"abort_retry_bytes", ' ', "Abort/Retry Threshold (bytes)", "I", &abort_retry_bytes, "JTEST_ABORT_RETRY_THRESHHOLD_BYTES",
    nullptr},
   {"abort_retry_secs", ' ', "Abort/Retry Threshhold (secs)", "I", &abort_retry_secs, "JTEST_ABORT_RETRY_THRESHHOLD_SECS", nullptr},
   {"reload_rate", 'W', "Reload Rate", "D", &reload_rate, "JTEST_RELOAD_RATE", nullptr},
@@ -606,7 +606,7 @@ static void
 poll_set(int sock, poll_cb read_cb, poll_cb write_cb = nullptr)
 {
   if (verbose) {
-    printf("adding poll %d\n", sock);
+    printf("adding poll %d %s %s\n", sock, read_cb ? "READ" : "-", write_cb ? "WRITE" : "-");
   }
   fd[sock].fd       = sock;
   fd[sock].read_cb  = read_cb;
@@ -1770,7 +1770,7 @@ open_server(unsigned short int port, accept_fn_t accept_fn)
   }
 
   if (verbose) {
-    printf("opening server on %d port %d\n", sock, name.sin_port);
+    printf("opening server on %d port %d\n", sock, port);
   }
 
   poll_init_set(sock, accept_fn);
@@ -2523,7 +2523,7 @@ read_response(int sock)
       }
       if (check_content && !cl) {
         if (verbose || verbose_errors) {
-          printf("missiing Content-Length '%s'\n", fd[sock].base_url);
+          printf("missing Content-Length '%s'\n", fd[sock].base_url);
         }
         return read_response_error(sock);
       }
@@ -4280,7 +4280,7 @@ ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_u
     } else {
       use_base_host = 1;
 
-      /* step 4 - if emb_path preceeded by slash, skip to 7 */
+      /* step 4 - if emb_path preceded by slash, skip to 7 */
 
       if (emb.leading_slash != 1) {
         /* step 5 */

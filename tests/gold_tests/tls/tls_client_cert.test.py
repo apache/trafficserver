@@ -25,9 +25,7 @@ Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.
 '''
 
-Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
-
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=False)
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 # --clientverify: "" empty string because microserver does store_true for argparse, but options is a dictionary
@@ -65,13 +63,11 @@ ts.addSSLfile("ssl/signed-bar.pem")
 ts.addSSLfile("ssl/signed2-bar.pem")
 ts.addSSLfile("ssl/signed-bar.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'ssl_verify_test',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': '{0}'.format(ts.Variables.port),
     'proxy.config.ssl.client.verify.server':  0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -93,17 +89,19 @@ ts.Disk.remap_config.AddLine(
     'map /case2 https://127.0.0.1:{0}/'.format(server2.Variables.SSL_Port)
 )
 
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
+    'sni:')
+ts.Disk.sni_yaml.AddLine(
     '- fqdn: bar.com')
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
     '  client_cert: {0}/signed2-bar.pem'.format(ts.Variables.SSLDir))
-ts.Disk.ssl_server_name_yaml.AddLine(
+ts.Disk.sni_yaml.AddLine(
     '  client_key: {0}/signed-bar.key'.format(ts.Variables.SSLDir))
 
 
 # Should succeed
 tr = Test.AddTestRun("Connect with first client cert to first server")
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)
 tr.StillRunningAfter = ts
@@ -142,21 +140,22 @@ trbarfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could N
 
 tr2 = Test.AddTestRun("Update config files")
 # Update the SNI config
-snipath = ts.Disk.ssl_server_name_yaml.AbsPath
+snipath = ts.Disk.sni_yaml.AbsPath
 recordspath = ts.Disk.records_config.AbsPath
-tr2.Disk.File(snipath, id = "ssl_server_name_yaml", typename="ats:config"),
-tr2.Disk.ssl_server_name_yaml.AddLine(
+tr2.Disk.File(snipath, id = "sni_yaml", typename="ats:config"),
+tr2.Disk.sni_yaml.AddLine(
+    'sni:')
+tr2.Disk.sni_yaml.AddLine(
     '- fqdn: bar.com')
-tr2.Disk.ssl_server_name_yaml.AddLine(
+tr2.Disk.sni_yaml.AddLine(
     '  client_cert: {0}/signed-bar.pem'.format(ts.Variables.SSLDir))
-tr2.Disk.ssl_server_name_yaml.AddLine(
+tr2.Disk.sni_yaml.AddLine(
     '  client_key: {0}/signed-bar.key'.format(ts.Variables.SSLDir))
 # recreate the records.config with the cert filename changed
 tr2.Disk.File(recordspath, id = "records_config", typename="ats:config:records"),
 tr2.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': '{0}'.format(ts.Variables.port),
     'proxy.config.ssl.client.verify.server':  0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -174,11 +173,11 @@ tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
 
 # Parking this as a ready tester on a meaningless process
-# Stall the test runs until the ssl_server_name reload has completed
-# At that point the new ssl_server_name settings are ready to go
-def ssl_server_name_reload_done(tsenv):
+# Stall the test runs until the sni reload has completed
+# At that point the new sni settings are ready to go
+def sni_reload_done(tsenv):
   def done_reload(process, hasRunFor, **kw):
-    cmd = "grep 'ssl_server_name.yaml finished loading' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
+    cmd = "grep 'sni.yaml finished loading' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
     retval = subprocess.run(cmd, shell=True, env=tsenv)
     if retval.returncode == 0:
       cmd ="if [ -f {0}/test.out -a \"`cat {0}/test.out`\" = \"2\" ] ; then true; else false; fi".format(Test.RunDirectory)
@@ -200,7 +199,7 @@ tr2reload.Processes.Default.ReturnCode = 0
 #Should succeed
 tr3bar = Test.AddTestRun("Make request with other bar cert to first server")
 # Wait for the reload to complete
-tr3bar.Processes.Default.StartBefore(server3, ready=ssl_server_name_reload_done(ts.Env))
+tr3bar.Processes.Default.StartBefore(server3, ready=sni_reload_done(ts.Env))
 tr3bar.StillRunningAfter = ts
 tr3bar.StillRunningAfter = server
 tr3bar.StillRunningAfter = server2
@@ -296,4 +295,3 @@ tr4fail.StillRunningAfter = server2
 tr4fail.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
 tr4fail.Processes.Default.ReturnCode = 0
 tr4fail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-

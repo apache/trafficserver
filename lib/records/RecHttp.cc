@@ -38,39 +38,46 @@ SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
    These are also used for NPN setup.
 */
 
-const char *const TS_ALPN_PROTOCOL_HTTP_0_9 = IP_PROTO_TAG_HTTP_0_9.data();
-const char *const TS_ALPN_PROTOCOL_HTTP_1_0 = IP_PROTO_TAG_HTTP_1_0.data();
-const char *const TS_ALPN_PROTOCOL_HTTP_1_1 = IP_PROTO_TAG_HTTP_1_1.data();
-const char *const TS_ALPN_PROTOCOL_HTTP_2_0 = IP_PROTO_TAG_HTTP_2_0.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_0_9  = IP_PROTO_TAG_HTTP_0_9.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_1_0  = IP_PROTO_TAG_HTTP_1_0.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_1_1  = IP_PROTO_TAG_HTTP_1_1.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_2_0  = IP_PROTO_TAG_HTTP_2_0.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_3    = IP_PROTO_TAG_HTTP_3.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_QUIC = IP_PROTO_TAG_HTTP_QUIC.data();
 
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP  = "http";
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
 
-const char *const TS_PROTO_TAG_HTTP_1_0 = TS_ALPN_PROTOCOL_HTTP_1_0;
-const char *const TS_PROTO_TAG_HTTP_1_1 = TS_ALPN_PROTOCOL_HTTP_1_1;
-const char *const TS_PROTO_TAG_HTTP_2_0 = TS_ALPN_PROTOCOL_HTTP_2_0;
-const char *const TS_PROTO_TAG_TLS_1_3  = IP_PROTO_TAG_TLS_1_3.data();
-const char *const TS_PROTO_TAG_TLS_1_2  = IP_PROTO_TAG_TLS_1_2.data();
-const char *const TS_PROTO_TAG_TLS_1_1  = IP_PROTO_TAG_TLS_1_1.data();
-const char *const TS_PROTO_TAG_TLS_1_0  = IP_PROTO_TAG_TLS_1_0.data();
-const char *const TS_PROTO_TAG_TCP      = IP_PROTO_TAG_TCP.data();
-const char *const TS_PROTO_TAG_UDP      = IP_PROTO_TAG_UDP.data();
-const char *const TS_PROTO_TAG_IPV4     = IP_PROTO_TAG_IPV4.data();
-const char *const TS_PROTO_TAG_IPV6     = IP_PROTO_TAG_IPV6.data();
+const char *const TS_PROTO_TAG_HTTP_1_0  = TS_ALPN_PROTOCOL_HTTP_1_0;
+const char *const TS_PROTO_TAG_HTTP_1_1  = TS_ALPN_PROTOCOL_HTTP_1_1;
+const char *const TS_PROTO_TAG_HTTP_2_0  = TS_ALPN_PROTOCOL_HTTP_2_0;
+const char *const TS_PROTO_TAG_HTTP_3    = TS_ALPN_PROTOCOL_HTTP_3;
+const char *const TS_PROTO_TAG_HTTP_QUIC = TS_ALPN_PROTOCOL_HTTP_QUIC;
+const char *const TS_PROTO_TAG_TLS_1_3   = IP_PROTO_TAG_TLS_1_3.data();
+const char *const TS_PROTO_TAG_TLS_1_2   = IP_PROTO_TAG_TLS_1_2.data();
+const char *const TS_PROTO_TAG_TLS_1_1   = IP_PROTO_TAG_TLS_1_1.data();
+const char *const TS_PROTO_TAG_TLS_1_0   = IP_PROTO_TAG_TLS_1_0.data();
+const char *const TS_PROTO_TAG_TCP       = IP_PROTO_TAG_TCP.data();
+const char *const TS_PROTO_TAG_UDP       = IP_PROTO_TAG_UDP.data();
+const char *const TS_PROTO_TAG_IPV4      = IP_PROTO_TAG_IPV4.data();
+const char *const TS_PROTO_TAG_IPV6      = IP_PROTO_TAG_IPV6.data();
 
 std::unordered_set<std::string_view> TSProtoTags;
 
 // Precomputed indices for ease of use.
-int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1 = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0 = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9  = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0  = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1  = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0  = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_3    = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC = SessionProtocolNameRegistry::INVALID;
 
 // Predefined protocol sets for ease of use.
 SessionProtocolSet HTTP_PROTOCOL_SET;
 SessionProtocolSet HTTP2_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
+SessionProtocolSet DEFAULT_QUIC_SESSION_PROTOCOL_SET;
 
 static bool
 mptcp_supported()
@@ -174,6 +181,7 @@ const char *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
 const char *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
 const char *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
 const char *const HttpProxyPort::OPT_MPTCP                   = "mptcp";
+const char *const HttpProxyPort::OPT_QUIC                    = "quic";
 
 // File local constants.
 namespace
@@ -197,16 +205,8 @@ HttpProxyPort::Group GLOBAL_DATA;
 } // namespace
 HttpProxyPort::Group &HttpProxyPort::m_global = GLOBAL_DATA;
 
-HttpProxyPort::HttpProxyPort()
-  : m_fd(ts::NO_FD),
-    m_type(TRANSPORT_DEFAULT),
-    m_port(0),
-    m_family(AF_INET),
-    m_proxy_protocol(false),
-    m_inbound_transparent_p(false),
-    m_outbound_transparent_p(false),
-    m_transparent_passthrough(false),
-    m_mptcp(false)
+HttpProxyPort::HttpProxyPort() : m_fd(ts::NO_FD)
+
 {
   memcpy(m_host_res_preference, host_res_default_preference_order, sizeof(m_host_res_preference));
 }
@@ -215,6 +215,18 @@ bool
 HttpProxyPort::hasSSL(Group const &ports)
 {
   return std::any_of(ports.begin(), ports.end(), [](HttpProxyPort const &port) { return port.isSSL(); });
+}
+
+bool
+HttpProxyPort::hasQUIC(Group const &ports)
+{
+  bool zret = false;
+  for (int i = 0, n = ports.size(); i < n && !zret; ++i) {
+    if (ports[i].isQUIC()) {
+      zret = true;
+    }
+  }
+  return zret;
 }
 
 const HttpProxyPort *
@@ -383,6 +395,8 @@ HttpProxyPort::processOptions(const char *opts)
       af_set_p = true;
     } else if (0 == strcasecmp(OPT_SSL, item)) {
       m_type = TRANSPORT_SSL;
+    } else if (0 == strcasecmp(OPT_QUIC, item)) {
+      m_type = TRANSPORT_QUIC;
     } else if (0 == strcasecmp(OPT_PLUGIN, item)) {
       m_type = TRANSPORT_PLUGIN;
     } else if (0 == strcasecmp(OPT_PROXY_PROTO, item)) {
@@ -464,7 +478,13 @@ HttpProxyPort::processOptions(const char *opts)
 
   // Set the default session protocols.
   if (!sp_set_p) {
-    m_session_protocol_preference = this->isSSL() ? DEFAULT_TLS_SESSION_PROTOCOL_SET : DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
+    if (this->isSSL()) {
+      m_session_protocol_preference = DEFAULT_TLS_SESSION_PROTOCOL_SET;
+    } else if (this->isQUIC()) {
+      m_session_protocol_preference = DEFAULT_QUIC_SESSION_PROTOCOL_SET;
+    } else {
+      m_session_protocol_preference = DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
+    }
   }
 
   return zret;
@@ -578,6 +598,8 @@ HttpProxyPort::print(char *out, size_t n)
     zret += snprintf(out + zret, n - zret, ":%s", OPT_BLIND_TUNNEL);
   } else if (TRANSPORT_SSL == m_type) {
     zret += snprintf(out + zret, n - zret, ":%s", OPT_SSL);
+  } else if (TRANSPORT_QUIC == m_type) {
+    zret += snprintf(out + zret, n - zret, ":%s", OPT_QUIC);
   } else if (TRANSPORT_PLUGIN == m_type) {
     zret += snprintf(out + zret, n - zret, ":%s", OPT_PLUGIN);
   } else if (TRANSPORT_COMPRESSED == m_type) {
@@ -625,6 +647,8 @@ HttpProxyPort::print(char *out, size_t n)
     sp_set.markOut(DEFAULT_NON_TLS_SESSION_PROTOCOL_SET);
   } else if (sp_set == DEFAULT_TLS_SESSION_PROTOCOL_SET && this->isSSL()) {
     sp_set.markOut(DEFAULT_TLS_SESSION_PROTOCOL_SET);
+  } else if (sp_set == DEFAULT_QUIC_SESSION_PROTOCOL_SET && this->isQUIC()) {
+    sp_set.markOut(DEFAULT_QUIC_SESSION_PROTOCOL_SET);
   }
 
   // pull out groups.
@@ -679,10 +703,12 @@ void
 ts_session_protocol_well_known_name_indices_init()
 {
   // register all the well known protocols and get the indices set.
-  TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_0_9});
-  TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_1_0});
-  TS_ALPN_PROTOCOL_INDEX_HTTP_1_1 = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_1_1});
-  TS_ALPN_PROTOCOL_INDEX_HTTP_2_0 = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_2_0});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_0_9  = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_0_9});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_1_0  = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_1_0});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_1_1  = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_1_1});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_2_0  = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_2_0});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_3    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_3});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_QUIC});
 
   // Now do the predefined protocol sets.
   HTTP_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_0_9);
@@ -691,12 +717,19 @@ ts_session_protocol_well_known_name_indices_init()
   HTTP2_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
 
   DEFAULT_TLS_SESSION_PROTOCOL_SET.markAllIn();
+  DEFAULT_TLS_SESSION_PROTOCOL_SET.markOut(TS_ALPN_PROTOCOL_INDEX_HTTP_3);
+  DEFAULT_TLS_SESSION_PROTOCOL_SET.markOut(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC);
+
+  DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_3);
+  DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC);
 
   DEFAULT_NON_TLS_SESSION_PROTOCOL_SET = HTTP_PROTOCOL_SET;
 
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_1_0);
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_1_1);
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_2_0);
+  TSProtoTags.insert(TS_PROTO_TAG_HTTP_3);
+  TSProtoTags.insert(TS_PROTO_TAG_HTTP_QUIC);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_3);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_2);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_1);
@@ -721,7 +754,7 @@ SessionProtocolNameRegistry::toIndex(ts::TextView name)
   if (INVALID == zret) {
     if (m_n < MAX) {
       // Localize the name by copying it in to the arena.
-      auto text = m_arena.alloc(name.size() + 1);
+      auto text = m_arena.alloc(name.size() + 1).rebind<char>();
       memcpy(text.data(), name.data(), name.size());
       text.end()[-1] = '\0';
       m_names[m_n]   = text.view();

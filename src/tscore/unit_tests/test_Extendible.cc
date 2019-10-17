@@ -1,6 +1,6 @@
 /** @file
   Test file for Extendible
-  @section license License
+  @INFO license License
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -18,25 +18,209 @@
 
 #include "catch.hpp"
 
-#include "tscore/Extendible.h"
 #include <iostream>
 #include <string>
-#include <vector>
+#include <array>
 #include <ctime>
 #include <thread>
+
 #include "tscore/ink_atomic.h"
+#include "tscore/Extendible.h"
 
 using namespace std;
-using namespace MT;
+using namespace ext;
+
+//////////////////////////////////////////////////////
+// AtomicBit Tests
+TEST_CASE("AtomicBit Atomic test")
+{
+  // test the atomicity and isolation of operations
+  uint32_t bit_storage = 0;
+
+  auto job_set   = [&bit_storage](int idx) { AtomicBit{(uint8_t *)&bit_storage + (idx / 8), (uint8_t)(1 << (idx % 8))} = 1; };
+  auto job_clear = [&bit_storage](int idx) { AtomicBit{(uint8_t *)&bit_storage + (idx / 8), (uint8_t)(1 << (idx % 8))} = 0; };
+
+  std::thread jobs[32];
+
+  // set all bits in parallel
+  for (int i = 0; i < 32; i++) {
+    jobs[i] = std::thread(job_set, i);
+  }
+  for (int i = 0; i < 32; i++) {
+    jobs[i].join();
+  }
+  REQUIRE(bit_storage == 0xffffffff);
+
+  // clear all bits in parallel
+  for (int i = 0; i < 32; i++) {
+    jobs[i] = std::thread(job_clear, i);
+  }
+  for (int i = 0; i < 32; i++) {
+    jobs[i].join();
+  }
+  REQUIRE(bit_storage == 0);
+}
+
+//////////////////////////////////////////////////////
+// Extendible Inheritance Tests
+
+struct A : public Extendible<A> {
+  uint16_t a = {1};
+};
+
+ext::FieldId<A, std::atomic<uint16_t>> ext_a_1;
+
+class B : public A
+{
+public:
+  using super_type = A;
+  uint16_t b       = {2};
+};
+
+class C : public B, public Extendible<C>
+{
+public:
+  using super_type = B;
+  uint16_t c       = {3};
+
+  // operator[]
+  template <typename F> decltype(auto) operator[](F field) const { return ext::get(*this, field); }
+  template <typename F> decltype(auto) operator[](F field) { return ext::set(*this, field); }
+};
+
+ext::FieldId<C, std::atomic<uint16_t>> ext_c_1;
+
+uintptr_t
+memDelta(void *p, void *q)
+{
+  return uintptr_t(q) - uintptr_t(p);
+}
+TEST_CASE("Extendible Memory Allocations", "")
+{
+  ext::details::areFieldsFinalized() = false;
+  fieldAdd(ext_a_1, "ext_a_1");
+  fieldAdd(ext_c_1, "ext_c_1");
+  ext::details::areFieldsFinalized() = true;
+
+  size_t w = sizeof(uint16_t);
+  CHECK(ext::sizeOf<A>() == w * 3);
+  CHECK(ext::sizeOf<B>() == w * 4);
+  CHECK(ext::sizeOf<C>() == w * 7);
+
+  C &x = *(ext::alloc<C>());
+  //    0   1   2   3   4   5   6
+  //[ EA*,  a,  b,EC*,  c, EA, EC]
+  //
+  uint16_t *mem = (uint16_t *)&x;
+  CHECK(memDelta(&x, &x.a) == w * 1);
+  CHECK(memDelta(&x, &x.b) == w * 2);
+  CHECK(memDelta(&x, &x.c) == w * 4);
+  CHECK(mem[0] == w * (5 - 0));
+  CHECK(mem[1] == 1);
+  CHECK(mem[2] == 2);
+  CHECK(mem[3] == w * (6 - 3));
+  CHECK(mem[4] == 3);
+  CHECK(mem[5] == 0);
+  CHECK(mem[6] == 0);
+
+  std::string format = "\n                            1A | EXT  |     2b |##________##__"
+                       "\n                            1A | BASE |     2b |__##__________"
+                       "\n                            1B | BASE |     2b |____##________"
+                       "\n                            1C | EXT  |     2b |______##____##"
+                       "\n                            1C | BASE |     2b |________##____";
+  CHECK(ext::viewFormat(x) == format);
+
+  printf("\n");
+  delete &x;
+}
+
+TEST_CASE("Extendible Pointer Math", "")
+{
+  C &x = *(ext::alloc<C>());
+
+  CHECK(x.a == 1);
+  CHECK(x.b == 2);
+  CHECK(x.c == 3);
+
+  ext::set(x, ext_a_1) = 4;
+  CHECK(ext::get(x, ext_a_1) == 4);
+  x[ext_c_1] = 5;
+  CHECK(ext::get(x, ext_c_1) == 5);
+
+  CHECK(x.a == 1);
+  CHECK(x.b == 2);
+  CHECK(x.c == 3);
+  CHECK(ext::get(x, ext_a_1) == 4);
+  CHECK(ext::get(x, ext_c_1) == 5);
+
+  std::string format = "\n                            1A | EXT  |     2b |##________##__"
+                       "\n                            1A | BASE |     2b |__##__________"
+                       "\n                            1B | BASE |     2b |____##________"
+                       "\n                            1C | EXT  |     2b |______##____##"
+                       "\n                            1C | BASE |     2b |________##____";
+  CHECK(ext::viewFormat(x) == format);
+
+  ext::FieldId<A, bool> a_bit;
+  ext::FieldId<A, int> a_int;
+  static_assert(std::is_same<decltype(ext::get(x, a_bit)), bool>::value);
+  static_assert(std::is_same<decltype(ext::get(x, a_int)), int const &>::value);
+  delete &x;
+}
 
 // Extendible is abstract and must be derived in a CRTP
 struct Derived : Extendible<Derived> {
   string m_str;
+
+  // operator[] for shorthand
+  template <typename F> decltype(auto) operator[](F field) const { return ext::get(*this, field); }
+  template <typename F> decltype(auto) operator[](F field) { return ext::set(*this, field); }
+
+  static const string
+  testFormat()
+  {
+    const size_t intenal_size = sizeof(Derived) - sizeof(ext::Extendible<Derived>::short_ptr_t);
+    std::stringstream format;
+    format << "\n                      7Derived | EXT  |     1b |##" << string(intenal_size, '_') << "#"
+           << "\n                      7Derived | BASE | " << setw(5) << intenal_size << "b |__" << string(intenal_size, '#')
+           << "_";
+    return format.str();
+  }
 };
+
+///////////////////////////////////////
+// C API for Derived
+//
+void *
+DerivedExtalloc()
+{
+  return ext::alloc<Derived>();
+}
+void
+DerivedExtFree(void *ptr)
+{
+  delete (Derived *)ptr;
+}
+
+ExtFieldContext
+DerivedExtfieldAdd(char const *field_name, int size, void (*construct_fn)(void *), void (*destruct_fn)(void *))
+{
+  // hack to avoid having to repeat this in testing.
+  ext::details::areFieldsFinalized() = false;
+  auto r                             = fieldAdd<Derived>(field_name, size, construct_fn, destruct_fn);
+  ext::details::areFieldsFinalized() = true;
+  return r;
+}
+ExtFieldContext
+DerivedExtfieldFind(char const *field_name)
+{
+  return fieldFind<Derived>(field_name);
+}
+
+///////////////////////////////////////
 
 // something to store more complex than an int
 struct testField {
-  uint8_t arr[5];
+  std::array<uint8_t, 5> arr;
   static int alive;
   testField()
   {
@@ -57,18 +241,31 @@ struct testField {
 };
 int testField::alive = 0;
 
+namespace ext
+{
+template <>
+void
+serializeField(ostream &os, testField const &t)
+{
+  serializeField(os, t.arr);
+}
+} // namespace ext
+
 TEST_CASE("Extendible", "")
 {
-  typename Derived::BitFieldId bit_a, bit_b, bit_c;
-  typename Derived::FieldId<ATOMIC, int> int_a, int_b, int_c;
+  printf("\nsizeof(string) = %lu", sizeof(std::string));
+  printf("\nsizeof(Derived) = %lu", sizeof(Derived));
+
+  ext::FieldId<Derived, bool> bit_a, bit_b, bit_c;
+  ext::FieldId<Derived, std::atomic<int>> int_a, int_b, int_c;
   Derived *ptr;
 
   // test cases:
   //[constructor] [operator] [type] [access] [capacity] [modifier] [operation] [compare] [find]
-  // I don't use INFOS because this modifies static variables many times, is not thread safe.
+  // I don't use SECTIONS because this modifies static variables many times, is not thread safe.
   INFO("Extendible()")
   {
-    ptr = new Derived();
+    ptr = ext::alloc<Derived>();
     REQUIRE(ptr != nullptr);
   }
 
@@ -80,223 +277,174 @@ TEST_CASE("Extendible", "")
 
   INFO("Schema Reset")
   {
-    ptr = new Derived();
+    ptr = ext::alloc<Derived>();
+    REQUIRE(Derived::schema.no_instances() == false);
     REQUIRE(Derived::schema.reset() == false);
     delete ptr;
+    REQUIRE(Derived::schema.no_instances() == true);
+    ext::details::areFieldsFinalized() = false;
     REQUIRE(Derived::schema.reset() == true);
+    ext::details::areFieldsFinalized() = true;
   }
 
   INFO("shared_ptr")
   {
-    shared_ptr<Derived> sptr(new Derived());
+    shared_ptr<Derived> sptr(ext::alloc<Derived>());
+    REQUIRE(Derived::schema.no_instances() == false);
     REQUIRE(sptr);
   }
+  REQUIRE(Derived::schema.no_instances() == true);
 
   INFO("add a bit field")
   {
     //
-    REQUIRE(Derived::schema.addField(bit_a, "bit_a"));
+    ext::details::areFieldsFinalized() = false;
+    REQUIRE(fieldAdd(bit_a, "bit_a"));
+    ext::details::areFieldsFinalized() = true;
   }
 
-  INFO("test bit field")
+  INFO("Extendible delete ptr");
   {
-    shared_ptr<Derived> sptr(new Derived());
-    auto &ref = *sptr;
-    ref.writeBit(bit_a, 1);
-    CHECK(ref[bit_a] == 1);
+    for (int i = 0; i < 10; i++) {
+      ptr = ext::alloc<Derived>();
+      REQUIRE(ptr != nullptr);
+      INFO(__LINE__);
+      REQUIRE(Derived::schema.no_instances() == false);
+      delete ptr;
+      INFO(__LINE__);
+      ptr = nullptr;
+      REQUIRE(Derived::schema.no_instances() == true);
+    }
+  }
+
+  INFO("test bit field");
+  {
+    shared_ptr<Derived> sptr{ext::alloc<Derived>()};
+    Derived &ref = *sptr;
+
+    CHECK(ext::viewFormat(ref) == Derived::testFormat());
+
+    AtomicBit bitref = ext::set(ref, bit_a);
+    bitref           = 1;
+    CHECK(bitref == true);
+    bitref = true;
+    CHECK(bitref == true);
+    CHECK(ext::set(ref, bit_a) == true);
+    CHECK(ext::get(ref, bit_a) == true);
   }
 
   INFO("test bit packing")
   {
+    struct size_test {
+      string s;
+      uint16_t i;
+    };
+
     REQUIRE(Derived::schema.reset() == true);
-    CHECK(Derived::schema.size() == sizeof(std::string));
+    CHECK(sizeof(Extendible<Derived>) == sizeof(uint16_t));
+    CHECK(sizeof(size_test) == ROUNDUP(sizeof(std::string) + sizeof(uint16_t), alignof(std::string)));
+    CHECK(sizeof(Derived) == sizeof(size_test));
+    CHECK(ext::sizeOf<Derived>() == sizeof(Derived));
 
-    REQUIRE(Derived::schema.addField(bit_a, "bit_a"));
-    CHECK(Derived::schema.size() == sizeof(std::string) + 1);
-    REQUIRE(Derived::schema.addField(bit_b, "bit_b"));
-    CHECK(Derived::schema.size() == sizeof(std::string) + 1);
-    REQUIRE(Derived::schema.addField(bit_c, "bit_c"));
-    CHECK(Derived::schema.size() == sizeof(std::string) + 1);
+    ext::details::areFieldsFinalized() = false;
+    REQUIRE(fieldAdd(bit_a, "bit_a"));
+    size_t expected_size = sizeof(Derived) + 1;
+    CHECK(ext::sizeOf<Derived>() == expected_size);
+    REQUIRE(fieldAdd(bit_b, "bit_b"));
+    CHECK(ext::sizeOf<Derived>() == expected_size);
+    REQUIRE(fieldAdd(bit_c, "bit_c"));
+    CHECK(ext::sizeOf<Derived>() == expected_size);
+    ext::details::areFieldsFinalized() = true;
 
-    shared_ptr<Derived> sptr(new Derived());
+    shared_ptr<Derived> sptr(ext::alloc<Derived>());
     Derived &ref = *sptr;
-    ref.writeBit(bit_a, true);
-    ref.writeBit(bit_b, false);
-    ref.writeBit(bit_c, true);
-    CHECK(ref[bit_a] == true);
-    CHECK(ref[bit_b] == false);
-    CHECK(ref[bit_c] == true);
+    CHECK(ext::viewFormat(ref) == Derived::testFormat());
+    using Catch::Matchers::Contains;
+    REQUIRE_THAT(ext::toString(ref), Contains("bit_a: 0"));
+    REQUIRE_THAT(ext::toString(ref), Contains("bit_b: 0"));
+    REQUIRE_THAT(ext::toString(ref), Contains("bit_c: 0"));
+
+    ext::set(ref, bit_a) = 1;
+    ext::set(ref, bit_b) = 0;
+    ext::set(ref, bit_c) = 1;
+    CHECK(ext::get(ref, bit_a) == true);
+    CHECK(ext::get(ref, bit_b) == false);
+    CHECK(ext::get(ref, bit_c) == true);
+    REQUIRE_THAT(ext::toString(ref), Contains("bit_a: 1"));
+    REQUIRE_THAT(ext::toString(ref), Contains("bit_b: 0"));
+    REQUIRE_THAT(ext::toString(ref), Contains("bit_c: 1"));
   }
 
   INFO("store int field")
   {
-    REQUIRE(Derived::schema.addField(int_a, "int_a"));
-    REQUIRE(Derived::schema.addField(int_b, "int_b"));
-    REQUIRE(Derived::schema.size() == sizeof(std::string) + 1 + sizeof(std::atomic_int) * 2);
+    ext::details::areFieldsFinalized() = false;
+    REQUIRE(fieldAdd(int_a, "int_a"));
+    REQUIRE(fieldAdd(int_b, "int_b"));
+    ext::details::areFieldsFinalized() = true;
 
-    shared_ptr<Derived> sptr(new Derived());
+    size_t expected_size = sizeof(Derived) + 1 + sizeof(std::atomic_int) * 2;
+    CHECK(ext::sizeOf<Derived>() == expected_size);
+
+    shared_ptr<Derived> sptr(ext::alloc<Derived>());
     Derived &ref = *sptr;
-    CHECK(ref.get(int_a) == 0);
-    CHECK(ref.get(int_b) == 0);
-    ++ref.get(int_a);
-    ref.get(int_b) = 42;
-    ref.m_str      = "Hello";
-    CHECK(ref.get(int_a) == 1);
-    CHECK(ref.get(int_b) == 42);
+    CHECK(ext::get(ref, int_a) == 0);
+    CHECK(ext::get(ref, int_b) == 0);
+    ++ext::set(ref, int_a);
+    ext::set(ref, int_b) = 42;
+    ref.m_str            = "Hello";
+    CHECK(ext::get(ref, int_a) == 1);
+    CHECK(ext::get(ref, int_b) == 42);
     CHECK(ref.m_str == "Hello");
-  }
-
-  INFO("C API add int field")
-  {
-    FieldId_C cf_a = Derived::schema.addField_C("cf_a", 4, nullptr, nullptr);
-    CHECK(Derived::schema.size() == sizeof(std::string) + 1 + sizeof(std::atomic_int) * 2 + 4);
-    CHECK(Derived::schema.find_C("cf_a") == cf_a);
-  }
-
-  INFO("C API alloc instance")
-  {
-    shared_ptr<Derived> sptr(new Derived());
-    CHECK(sptr.get() != nullptr);
-  }
-
-  INFO("C API test int field")
-  {
-    shared_ptr<Derived> sptr(new Derived());
-    Derived &ref   = *sptr;
-    FieldId_C cf_a = Derived::schema.find_C("cf_a");
-    uint8_t *data8 = (uint8_t *)ref.get(cf_a);
-    CHECK(data8[0] == 0);
-    ink_atomic_increment(data8, 1);
-    *(data8 + 1) = 5;
-    *(data8 + 2) = 7;
-
-    ref.m_str = "Hello";
-
-    uint32_t *data32 = (uint32_t *)ref.get(cf_a);
-    CHECK(*data32 == 0x00070501);
-    CHECK(ref.m_str == "Hello");
-  }
-
-  Derived::FieldId<ACIDPTR, testField> tf_a;
-  INFO("ACIDPTR add field")
-  {
-    REQUIRE(Derived::schema.addField(tf_a, "tf_a"));
-    CHECK(Derived::schema.size() == sizeof(std::string) + 1 + sizeof(std::atomic_int) * 2 + 4 + sizeof(std::shared_ptr<testField>));
-    REQUIRE(Derived::schema.find<ACIDPTR, testField>("tf_a").isValid());
-  }
-
-  INFO("ACIDPTR test")
-  {
-    shared_ptr<Derived> sptr(new Derived());
-    Derived &ref = *sptr;
-    // ref.m_str    = "Hello";
-    auto tf_a = Derived::schema.find<ACIDPTR, testField>("tf_a");
-    {
-      std::shared_ptr<const testField> tf_a_sptr = ref.get(tf_a);
-      const testField &dv                        = *tf_a_sptr;
-      CHECK(dv.arr[0] == 1);
-      CHECK(dv.arr[1] == 2);
-      CHECK(dv.arr[2] == 4);
-      CHECK(dv.arr[3] == 8);
-      CHECK(dv.arr[4] == 16);
-    }
-    CHECK(testField::alive == 1);
-  }
-
-  INFO("ACIDPTR destroyed")
-  {
-    //
-    CHECK(testField::alive == 0);
-  }
-
-  INFO("AcidPtr AcidCommitPtr malloc ptr int");
-  {
-    void *mem            = malloc(sizeof(AcidPtr<int>));
-    AcidPtr<int> &reader = *(new (mem) AcidPtr<int>);
-    {
-      auto writer = reader.startCommit();
-      CHECK(*writer == 0);
-      *writer = 1;
-      CHECK(*writer == 1);
-      CHECK(*reader.getPtr().get() == 0);
-      // end of scope writer, commit to reader
-    }
-    CHECK(*reader.getPtr().get() == 1);
-    reader.~AcidPtr<int>();
-    free(mem);
-  }
-  INFO("AcidPtr AcidCommitPtr casting");
-  {
-    void *mem                  = malloc(sizeof(AcidPtr<testField>));
-    AcidPtr<testField> &reader = *(new (mem) AcidPtr<testField>);
-    {
-      auto writer = reader.startCommit();
-      CHECK(writer->arr[0] == 1);
-      CHECK(reader.getPtr()->arr[0] == 1);
-      writer->arr[0] = 99;
-      CHECK(writer->arr[0] == 99);
-      CHECK(reader.getPtr()->arr[0] == 1);
-    }
-    CHECK(reader.getPtr()->arr[0] == 99);
-    reader.~AcidPtr<testField>();
-    free(mem);
-  }
-  INFO("ACIDPTR block-free reader")
-  {
-    auto tf_a = Derived::schema.find<ACIDPTR, testField>("tf_a");
-    REQUIRE(tf_a.isValid());
-    Derived &d = *(new Derived());
-    CHECK(d.get(tf_a)->arr[0] == 1);
-    { // write 0
-      AcidCommitPtr<testField> w = d.writeAcidPtr(tf_a);
-      REQUIRE(w != nullptr);
-      REQUIRE(w.get() != nullptr);
-      w->arr[0] = 0;
-    }
-    // read 0
-    CHECK(d.get(tf_a)->arr[0] == 0);
-    // write 1 and read 0
-    {
-      AcidCommitPtr<testField> tf_a_wtr = d.writeAcidPtr(tf_a);
-      tf_a_wtr->arr[0]                  = 1;
-      CHECK(d.get(tf_a)->arr[0] == 0);
-      // [end of scope] write is committed
-    }
-    // read 1
-    CHECK(d.get(tf_a)->arr[0] == 1);
-    delete &d;
-  }
-
-  INFO("STATIC")
-  {
-    typename Derived::FieldId<STATIC, int> tf_d;
-    Derived::schema.addField(tf_d, "tf_d");
-    REQUIRE(tf_d.isValid());
-    Derived &d         = *(new Derived());
-    d.init(tf_d)       = 5;
-    areStaticsFrozen() = true;
-
-    CHECK(d.get(tf_d) == 5);
-
-    // this asserts when areStaticsFrozen() = true
-    // CHECK(d.init(tf_d) == 5);
-    delete &d;
-  }
-
-  INFO("DIRECT")
-  {
-    typename Derived::FieldId<DIRECT, int> tf_e;
-    Derived::schema.addField(tf_e, "tf_e");
-    REQUIRE(tf_e.isValid());
-    Derived &d  = *(new Derived());
-    d.get(tf_e) = 5;
-
-    CHECK(d.get(tf_e) == 5);
-
-    // this asserts when areStaticsFrozen() = true
-    // CHECK(d.init(tf_e) == 5);
-    delete &d;
   }
 
   INFO("Extendible Test Complete")
 }
+
+TEST_CASE("Extendible C API")
+{
+  ext::details::areFieldsFinalized() = false;
+  Derived::schema.reset();
+  CHECK(Derived::schema.no_instances() == true);
+  ext::details::areFieldsFinalized() = true;
+
+  INFO("C API alloc instance")
+  {
+    void *d = DerivedExtalloc();
+
+    CHECK(d != nullptr);
+    CHECK(Derived::schema.no_instances() == false);
+
+    DerivedExtFree(d);
+
+    CHECK(Derived::schema.no_instances() == true);
+  }
+
+  INFO("C API add int field")
+  {
+    ExtFieldContext cf_a = DerivedExtfieldAdd("cf_a", 4, nullptr, nullptr);
+
+    size_t expected_size = sizeof(Derived) + 4;
+    CHECK(ext::sizeOf<Derived>() == expected_size);
+    CHECK(DerivedExtfieldFind("cf_a") == cf_a);
+  }
+  INFO("C API test int field")
+  {
+    void *d = DerivedExtalloc();
+    REQUIRE(d != nullptr);
+
+    ExtFieldContext cf_a = DerivedExtfieldFind("cf_a");
+    uint8_t *data8       = (uint8_t *)ExtFieldPtr(d, cf_a);
+
+    CHECK(data8[0] == 0);
+    ink_atomic_increment(&data8[0], 1);
+    data8[1] = 5;
+    data8[2] = 7;
+
+    uint32_t *data32 = (uint32_t *)ExtFieldPtr(d, cf_a);
+    CHECK(*data32 == 0x00070501);
+    DerivedExtFree(d);
+  }
+  INFO("Extendible C API Test Complete")
+}
+
+//*/

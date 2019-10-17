@@ -172,7 +172,6 @@ on_immediate(RequestData *req, TSCont &contp)
   TSDebug(DEBUG_TAG, "continuation delayed, scheduling now..for url: %s", req->req_url.c_str());
 
   // add retry_done header to prevent looping
-  std::string value;
   TSMBuffer bufp;
   TSMLoc hdr_loc;
   if (TSHttpTxnClientRespGet(req->txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
@@ -312,9 +311,9 @@ process_args(int argc, const char **argv)
   // basic argv processing..
   for (int i = 1; i < argc; ++i) {
     if (strncmp(argv[i], "--delay=", 8) == 0) {
-      OPEN_WRITE_FAIL_REQ_DELAY_TIMEOUT = atoi((char *)(argv[i] + 8));
+      OPEN_WRITE_FAIL_REQ_DELAY_TIMEOUT = atoi(const_cast<char *>(argv[i] + 8));
     } else if (strncmp(argv[i], "--retries=", 10) == 0) {
-      OPEN_WRITE_FAIL_MAX_REQ_DELAY_RETRIES = atoi((char *)(argv[i] + 10));
+      OPEN_WRITE_FAIL_MAX_REQ_DELAY_RETRIES = atoi(const_cast<char *>(argv[i] + 10));
     }
   }
 }
@@ -327,7 +326,7 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name   = (char *)DEBUG_TAG;
+  info.plugin_name   = const_cast<char *>(DEBUG_TAG);
   info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 

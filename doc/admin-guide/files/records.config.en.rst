@@ -76,12 +76,6 @@ Prefix Description  Equivalent in Bytes
 ``T``  Terabytes    1,099,511,627,776 bytes (1024\ :sup:`4`)
 ====== ============ ===========================================================
 
-.. important::
-
-   Unless :ts:cv:`proxy.config.disable_configuration_modification` is enabled,
-   |TS| writes configurations back to disk periodically. When doing so, the
-   unit prefixes are not preserved.
-
 Floating point variables (``FLOAT``) must be expressed as a regular decimal
 number. Unit prefixes are not supported, nor are alternate notations (scientific,
 exponent, etc.).
@@ -264,7 +258,7 @@ System Variables
    :reloadable:
    :units: seconds
 
-   Specifies how often the output log is rolled, in seconds. The timer starts on |TS| bootup.
+   Specifies how often the output log is rolled, in seconds. The timer starts on |TS| startup.
 
 .. ts:cv:: CONFIG proxy.config.output.logfile.rolling_size_mb INT 100
    :reloadable:
@@ -278,6 +272,31 @@ System Variables
    Specifies the minimum count of rolled output logs to keep. This value will be used to decide the
    order of auto-deletion (if enabled). A default value of 0 means auto-deletion will try to keep
    output logs as much as possible. See :doc:`../logging/rotation.en` for guidance.
+
+.. ts:cv:: CONFIG proxy.config.output.logfile.rolling_max_count INT 0
+   :reloadable:
+
+   Specifies the maximum count of rolled output logs to keep. This value will be used by the
+   auto-deletion (if enabled) to trim the number of rolled log files every time the log is rolled.
+   A default value of 0 means auto-deletion will not try to limit the number of output logs.
+   See :doc:`../logging/rotation.en` for an use-case for this option.
+
+.. ts:cv:: CONFIG proxy.config.output.logfile.rolling_allow_empty INT 0
+   :reloadable:
+
+   While rolling default behavior is to rename, close and re-open the log file *only* when/if there is
+   something to log to the log file. This option opens a new log file right after rolling even if there
+   is nothing to log (i.e. nothing to be logged due to lack of requests to the server)
+   which may lead to 0-sized log files while rolling. See :doc:`../logging/rotation.en` for an use-case
+   for this option.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` No empty log files created and rolled if there was nothing to log
+   ``1`` Allow empty log files to be created and  rolled even if there was nothing to log
+   ===== ======================================================================
+
 
 Thread Variables
 ----------------
@@ -502,10 +521,6 @@ Network
 Local Manager
 =============
 
-.. ts:cv:: CONFIG proxy.config.admin.number_config_bak INT 3
-
-   The maximum number of copies of rolled configuration files to keep.
-
 .. ts:cv:: CONFIG proxy.config.admin.user_id STRING nobody
 
    Designates the non-privileged account to run the :program:`traffic_server`
@@ -540,32 +555,8 @@ Local Manager
    This setting is not reloadable, since it is must be applied when
    program:`traffic_manager` initializes.
 
-.. ts:cv:: CONFIG proxy.config.disable_configuration_modification INT 0
-   :reloadable:
-
-   This setting prevents |TS| from rewriting the :file:`records.config`
-   configuration file. Dynamic configuration changes can still be made using
-   :program:`traffic_ctl config set`, but these changes will not be persisted
-   on service restarts or when :option:`traffic_ctl config reload` is run.
-
 Alarm Configuration
 ===================
-
-.. ts:cv:: CONFIG proxy.config.alarm_email STRING
-   :reloadable:
-
-   The address to which the alarm script should send email.
-
-.. ts:cv:: CONFIG proxy.config.alarm.bin STRING example_alarm_bin.sh
-   :reloadable:
-
-   Name of the script file that can execute certain actions when
-   an alarm is signaled. The script is invoked with up to 4 arguments:
-
-   - The alarm message.
-   - The value of :ts:cv:`proxy.config.product_name`.
-   - The value of :ts:cv:`proxy.config.admin.user_id`.
-   - The value of :ts:cv:`proxy.config.alarm_email`.
 
 .. ts:cv:: CONFIG proxy.config.alarm.abs_path STRING NULL
    :reloadable:
@@ -612,6 +603,7 @@ HTTP Engine
    proto       Value           List of supported session protocols.
    pp                          Enable Proxy Protocol.
    ssl                         SSL terminated.
+   quic                        QUIC terminated.
    tr-full                     Fully transparent (inbound and outbound)
    tr-in                       Inbound transparent.
    tr-out                      Outbound transparent.
@@ -625,7 +617,7 @@ HTTP Engine
 blind
    Accept only the ``CONNECT`` method on this port.
 
-   Not compatible with: ``tr-in``, ``ssl``.
+   Not compatible with: ``tr-in``, ``ssl`` and ``quic``.
 
 compress
    Compress the connection. Retained only by inertia, should be considered "not implemented".
@@ -639,13 +631,19 @@ ipv6
 ssl
    Require SSL termination for inbound connections. SSL :ref:`must be configured <admin-ssl-termination>` for this option to provide a functional server port.
 
-   Not compatible with: ``blind``.
+   Not compatible with: ``blind`` and ``quic``.
+
+quic
+   Require QUIC termination for inbound connections. SSL :ref:`must be configured <admin-ssl-termination>` for this option to provide a functional server port.
+   **THIS IS EXPERIMENTAL SUPPORT AND NOT READY FOR PRODUCTION USE.**
+
+   Not compatible with: ``blind`` and ``ssl``.
 
 proto
    Specify the :ref:`session level protocols <session-protocol>` supported. These should be
    separated by semi-colons. For TLS proxy ports the default value is
    all available protocols. For non-TLS proxy ports the default is HTTP
-   only.
+   only. HTTP/3 is only available on QUIC ports.
 
 pp
    Enables Proxy Protocol on the port.  If Proxy Protocol is enabled on the
@@ -725,6 +723,12 @@ mptcp
 
       9090:proto=http:ssl
 
+.. topic:: Example
+
+   Listen on port 4433 for QUIC connections.::
+
+      4433:quic
+
 .. ts:cv:: CONFIG proxy.config.http.connect_ports STRING 443
 
    The range of origin server ports that can be used for tunneling via ``CONNECT``.
@@ -768,7 +772,7 @@ mptcp
 
 .. note::
 
-   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.request_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -794,7 +798,7 @@ mptcp
 
 .. note::
 
-   The ``Via`` transaction acode can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction code can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/tools/via>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.response_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -875,12 +879,6 @@ mptcp
          origin server has previously returned HTTP/1.1.
    ===== ======================================================================
 
-.. note::
-
-   If HTTP/1.1 is used, then |TS| can use keep-alive connections to origin servers.
-
-   If HTTP/1.0 is used, then |TS| can use keep-alive connections to origin servers.
-
 .. ts:cv:: CONFIG proxy.config.http.chunking.size INT 4096
    :overridable:
 
@@ -912,13 +910,6 @@ mptcp
    If :ts:cv:`proxy.config.http.use_client_target_addr` is set to ``1``, then
    options ``2`` and ``3`` for this configuration variable cause the proxy
    to use the client HTTP version for upstream requests.
-
-.. ts:cv:: CONFIG proxy.config.http.server_tcp_init_cwnd INT 0
-   :overridable:
-
-   Configures the size, in packets, of the initial TCP congestion window on
-   sockets used by the HTTP engine. This option may only be used on operating
-   systems which support the ``TCP_INIT_CWND`` option on TCP sockets.
 
 .. ts:cv:: CONFIG proxy.config.http.auth_server_session_private INT 1
    :overridable:
@@ -1100,11 +1091,24 @@ mptcp
 .. ts:cv:: CONFIG proxy.config.http.request_buffer_enabled INT 0
    :overridable:
 
-   This is a configuration value that is overridable but not configurable. This is most likely an
-   implementation error.
-
    This enables buffering the content for incoming ``POST`` requests. If enabled no outbound
    connection is made until the entire ``POST`` request has been buffered.
+   If enabled, `proxy.config.http.post_copy_size` needs to be set to the maximum of the post body
+   size allowed, otherwise, the post would fail.
+
+.. ts:cv:: CONFIG proxy.config.http.request_line_max_size INT 65535
+
+   Controls the maximum size, in bytes, of an HTTP Request Line in requests. Requests
+   with a request line exceeding this size will be treated as invalid and
+   rejected by the proxy. Note that the HTTP request line typically includes HTTP method,
+   request target and HTTP version string except when the request is made using absolute
+   URI in which case the request line may also include the request scheme and domain name.
+
+.. ts:cv:: CONFIG proxy.config.http.header_field_max_size INT 131070
+
+   Controls the maximum size, in bytes, of an HTTP header field in requests. Headers
+   in a request with the sum of their name and value that exceed this size will cause the
+   entire request to be treated as invalid and rejected by the proxy.
 
 .. ts:cv:: CONFIG proxy.config.http.request_header_max_size INT 131072
 
@@ -1140,11 +1144,6 @@ mptcp
 
 Parent Proxy Configuration
 ==========================
-
-.. ts:cv:: CONFIG proxy.config.http.parent_proxy_routing_enable INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) the parent caching option. Refer to :ref:`admin-hierarchical-caching`.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.retry_time INT 300
    :reloadable:
@@ -1332,6 +1331,8 @@ HTTP Redirection
 
    .. note:: When :ts:cv:`proxy.config.http.number_of_redirections` is set to a positive value and |TS| has previously cached a 3XX Redirect response, the cached response will continue to be refreshed and returned until the response is no longer in the cache.
 
+   .. note:: In previous versions proxy.config.http.redirection_enabled had to be set to 1 before this setting was evaluated.  Now setting :ts:cv:`proxy.config.http.number_of_redirections` to a value greater than zero is sufficient to cause |TS| to follow redirects.
+
 .. ts:cv:: CONFIG proxy.config.http.redirect_host_no_port INT 1
    :reloadable:
 
@@ -1507,8 +1508,9 @@ Origin Server Connect Attempts
    Throttle alerts per upstream server group to be no more often than this many seconds. Summary
    data is provided per alert to allow log scrubbing to generate accurate data.
 
-.. ts:cv:: CONFIG proxy.config.http.per_server.min_keep_alive_connections INT 0
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.min INT 0
    :reloadable:
+   :overridable:
 
    Set a target for the minimum number of active connections to an upstream server group. When an
    outbound connection is in keep alive state and the inactivity timer expires, if there are fewer
@@ -1527,8 +1529,8 @@ Origin Server Connect Attempts
    :reloadable:
    :overridable:
 
-   The timeout value (in seconds) for time to first byte for an origin server
-   connection.
+   The timeout value (in seconds) for time to set up a connection to the origin. After the connection is established the value of
+   ``proxy.config.http.transaction_no_activity_timeout_out`` is used to established timeouts on the data over the connection.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
@@ -1768,7 +1770,7 @@ Proxy User Variables
        information.
        See :ts:cv:`proxy.config.http.server_ports` for information on how to enable Proxy Protocol on a port.
 
-   See :ref:`proxy-protocol` for more discussion on how |TS| tranforms the `Forwarded: header`.
+   See :ref:`proxy-protocol` for more discussion on how |TS| transforms the `Forwarded: header`.
 
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae INT 1
    :reloadable:
@@ -1801,7 +1803,7 @@ Security
    .. important::
 
        If you enable this option, then you must also specify
-       a filtering rule in the ip_allow.config file to allow only certain
+       a filtering rule in the ip_allow.yaml file to allow only certain
        machines to push content into the cache.
 
 .. ts:cv:: CONFIG proxy.config.http.max_post_size INT 0
@@ -1908,18 +1910,9 @@ Cache Control
    option is combined with the cache key at cache lookup time.
    Changing this value has the effect of an instantaneous, zero-cost
    cache purge since it will cause all subsequent cache keys to
-   change. Since this is an overrideable configuration, it can be
+   change. Since this is an overridable configuration, it can be
    used to purge the entire cache, or just a specific :file:`remap.config`
    rule.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 1
-   :reloadable:
-   :deprecated:
-
-   Enables (``1``) or disables (``0``) caching objects that have an empty
-   response body. This is particularly useful for caching 301 or 302 responses
-   with a ``Location`` header but no document body. This only works if the
-   origin response also has a ``Content-Length`` header.
 
 .. ts:cv:: CONFIG proxy.config.http.doc_in_cache_skip_dns INT 1
    :reloadable:
@@ -1992,12 +1985,6 @@ Cache Control
    Enables (``1``) or disables (``0``) caching of URLs that look dynamic, i.e.: URLs that end in ``.asp`` or contain a question
    mark (``?``), a semicolon (``;``), or ``cgi``. For a full list, please refer to
    `HttpTransact::url_looks_dynamic </link/to/doxygen>`_
-
-.. ts:cv:: CONFIG proxy.config.http.cache.enable_default_vary_headers INT 0
-   :reloadable:
-   :overridable:
-
-   Enables (``1``) or disables (``0``) caching of alternate versions of HTTP objects that do not contain the ``Vary`` header.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.when_to_revalidate INT 0
    :reloadable:
@@ -2150,7 +2137,7 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_percent INT 0
 
    The size of the region (as a percentage of the total content storage in a :term:`cache stripe`) in front of the
-   :term:`write cursor` that constitutes a recent access hit for evacutating the accessed object.
+   :term:`write cursor` that constitutes a recent access hit for evacuating the accessed object.
 
    When an object is accessed it can be marked for evacuation, that is to be copied over the write cursor and
    thereby preserved from being overwritten. This is done if it is no more than a specific number of bytes in front of
@@ -2203,10 +2190,10 @@ RAM Cache
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 1
 
-   Two distinct RAM caches are supported, the default (0) being the **CLFUS**
-   (*Clocked Least Frequently Used by Size*). As an alternative, a simpler
-   **LRU** (*Least Recently Used*) cache is also available, by changing this
-   configuration to 1.
+   Two distinct RAM caches are supported, the default (1) being the simpler
+   **LRU** (*Least Recently Used*) cache. As an alternative, the **CLFUS**
+   (*Clocked Least Frequently Used by Size*) is also available, by changing this
+   configuration to 0.
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.use_seen_filter INT 1
 
@@ -2284,27 +2271,6 @@ Heuristic Expiration
 Dynamic Content & Content Negotiation
 =====================================
 
-.. ts:cv:: CONFIG proxy.config.http.cache.vary_default_text STRING NULL
-   :reloadable:
-   :overridable:
-
-   The header on which |TS| varies for text documents.
-
-For example: if you specify ``User-agent``, then |TS| caches
-all the different user-agent versions of documents it encounters.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.vary_default_images STRING NULL
-   :reloadable:
-   :overridable:
-
-   The header on which |TS| varies for images.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.vary_default_other STRING NULL
-   :reloadable:
-   :overridable:
-
-   The header on which |TS| varies for anything other than text and images.
-
 .. ts:cv:: CONFIG proxy.config.http.cache.open_read_retry_time INT 10
    :reloadable:
    :overridable:
@@ -2379,7 +2345,7 @@ Customizable User Response Pages
     :overridable:
 
     A prefix for the file name to use to find an error template file. If set (not the empty string)
-    this value and an underscore are predended to the file name to find in the template sets
+    this value and an underscore are prepended to the file name to find in the template sets
     directory. See :ref:`body-factory`.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_max_size INT 8192
@@ -2412,7 +2378,7 @@ Customizable User Response Pages
    ``3`` Enable all http UI endpoints.
    ===== ======================================================================
 
-   To enable any enpoint there needs to be an entry in :file:`remap.config` which
+   To enable any endpoint there needs to be an entry in :file:`remap.config` which
    specifically enables it. Such a line would look like: ::
 
         map / http://{cache}
@@ -2488,7 +2454,14 @@ DNS
    :reloadable:
    :overridable:
 
-   Indicates whether to use SRV records for origin server lookup.
+   Enables (``1``) or disables (``0``) the use of SRV records for origin server
+   lookup. |TS| will use weights found in the SRV record as a weighted round
+   robin in origin selection. Note that |TS| will lookup
+   ``_$scheme._$internet_protocol.$origin_name``. For instance, if the origin is
+   set to ``https://my.example.com``, |TS| would lookup ``_https._tcp.my.example.com``.
+   Also note that the port returned in the SRV record MUST match the port being
+   used for the origin (e.g. if the origin scheme is http and a default port, there
+   should be a SRV record with port 80).
 
 .. ts:cv:: CONFIG proxy.config.dns.dedicated_thread INT 0
 
@@ -2577,7 +2550,7 @@ HostDB
          value become a minimum TTL.
    ===== ======================================================================
 
-.. ts:cv:: CONFIG proxy.config.hostdb.timeout INT 1440
+.. ts:cv:: CONFIG proxy.config.hostdb.timeout INT 86400
    :units: seconds
    :reloadable:
 
@@ -2712,7 +2685,7 @@ HostDB
 
     Set the interval (in seconds) in which to re-query DNS regardless of TTL status.
 
-.. ts:cv:: CONFIG proxy.config.hostdb.filename STRING "host.db"
+.. ts:cv:: CONFIG proxy.config.hostdb.filename STRING host.db
 
    The filename to persist hostdb to on disk.
 
@@ -2721,7 +2694,7 @@ HostDB
    Set the frequency (in seconds) to sync hostdb to disk. If set to zero (default as of v9.0.0), we won't
    sync to disk ever.
 
-   Note: hostdb is syncd to disk on a per-partition basis (of which there are 64).
+   Note: hostdb is synced to disk on a per-partition basis (of which there are 64).
    This means that the minimum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
 
 Logging Configuration
@@ -2765,32 +2738,14 @@ Logging Configuration
 .. note::
 
    All files in the logging directory contribute to the space used,
-   even if they are not log files. In collation client mode, if
-   there is no local disk logging, or
-   :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs` is set
-   to a higher value than :ts:cv:`proxy.config.log.max_space_mb_for_logs`,
-   |TS| will take :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs`
-   for maximum allowed log space.
-
-.. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_orphan_logs INT 25
-   :units: megabytes
-   :reloadable:
-
-   The amount of space allocated to the logging directory (in MB) if this node is acting as a collation client.
-
-.. note::
-
-   When max_space_mb_for_orphan_logs is take as the maximum allowed log space in the logging system, the same rule apply
-   to proxy.config.log.max_space_mb_for_logs also apply to proxy.config.log.max_space_mb_for_orphan_logs, ie: All files
-   in the logging directory contribute to the space used, even if they are not log files. you may need to consider this
-   when you enable full remote logging, and bump to the same size as proxy.config.log.max_space_mb_for_logs.
+   even if they are not log files.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_headroom INT 1000
    :units: megabytes
    :reloadable:
 
    The tolerance for the log space limit (in megabytes). If the variable :ts:cv:`proxy.config.log.auto_delete_rolled_files` is set to ``1``
-   (enabled), then autodeletion of log files is triggered when the amount of free space available in the logging directory is less than
+   (enabled), then auto-deletion of log files is triggered when the amount of free space available in the logging directory is less than
    the value specified here.
 
 .. ts:cv:: CONFIG proxy.config.log.hostname STRING localhost
@@ -2825,85 +2780,6 @@ Logging Configuration
    means that a umask setting of ``002`` will not allow write permission for
    others, even if specified in the configuration file. Permissions for
    existing log files are not changed when the configuration is modified.
-
-.. ts:cv:: LOCAL proxy.local.log.collation_mode INT 0
-   :reloadable:
-   :deprecated:
-
-   Set the log collation mode.
-
-   ===== ======================================================================
-   Value Effect
-   ===== ======================================================================
-   ``0`` Log collation is disabled.
-   ``1`` This host is a log collation server.
-   ``2`` This host is a collation client and sends entries using standard
-         formats to the collation server.
-   ``3`` This host is a collation client and sends entries using the
-         traditional custom formats to the collation server.
-   ``4`` This host is a collation client and sends entries that use both the
-         standard and traditional custom formats to the collation server.
-   ===== ======================================================================
-
-   For information on sending custom formats to the collation server,
-   refer to :ref:`admin-logging-collating-custom-formats` and
-   :file:`logging.yaml`.
-
-.. note::
-
-   Log collation is a *deprecated* feature as of ATS v8.0.0, and  will be
-   removed in ATS v9.0.0. Our recommendation is to use one of the many existing
-   log collection tools, such as Kafka, LogStash, FileBeat, Fluentd or even
-   syslog / syslog-ng.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_host STRING NULL
-   :deprecated:
-
-   The hostname of the log collation server.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_port INT 8085
-   :reloadable:
-   :deprecated:
-
-   The port used for communication between the collation server and client.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_secret STRING foobar
-   :reloadable:
-   :deprecated:
-
-   The password used to validate logging data and prevent the exchange of unauthorized information when a collation server is being used.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_host_tagged INT 0
-   :reloadable:
-   :deprecated:
-
-   When enabled (``1``), configures |TS| to include the hostname of the collation client that generated the log entry in each entry.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_retry_sec INT 5
-   :reloadable:
-   :deprecated:
-
-   The number of seconds between collation server connection retries.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_host_timeout INT 86390
-   :deprecated:
-
-   The number of seconds before inactivity time-out events for the host side.
-   This setting over-rides the default set with proxy.config.net.default_inactivity_timeout
-   for log collation connections.
-
-   The default is set for 10s less on the host side to help prevent any possible race
-   conditions. If the host disconnects first, the client will see the disconnect
-   before its own time-out and re-connect automatically. If the client does not see
-   the disconnect, i.e., connection is "locked-up" for some reason, it will disconnect
-   when it reaches its own time-out and then re-connect automatically.
-
-.. ts:cv:: CONFIG proxy.config.log.collation_client_timeout INT 86400
-   :deprecated:
-
-   The number of seconds before inactivity time-out events for the client side.
-   This setting over-rides the default set with proxy.config.net.default_inactivity_timeout
-   for log collation connections.
 
 .. ts:cv:: CONFIG proxy.config.log.rolling_enabled INT 1
    :reloadable:
@@ -2985,6 +2861,26 @@ Logging Configuration
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
    <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
 
+.. ts:cv:: CONFIG proxy.config.http2.connection.slow.log.threshold INT 0
+   :reloadable:
+   :units: milliseconds
+
+   If set to a non-zero value :arg:`N` then any HTTP/2 connection
+   that takes longer than :arg:`N` milliseconds from open to close will cause
+   its timing stats to be written to the :ts:cv:`debugging log file
+   <proxy.config.output.logfile>`. This is identifying data about the
+   transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
+
+.. ts:cv:: CONFIG proxy.config.http2.stream.slow.log.threshold INT 0
+   :reloadable:
+   :units: milliseconds
+
+   If set to a non-zero value :arg:`N` then any HTTP/2 stream
+   that takes longer than :arg:`N` milliseconds from open to close will cause
+   its timing stats to be written to the :ts:cv:`debugging log file
+   <proxy.config.output.logfile>`. This is identifying data about the
+   transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
+
 .. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
    :reloadable:
 
@@ -3005,7 +2901,7 @@ Diagnostic Logging Configuration
 .. ts:cv:: CONFIG proxy.config.diags.output.alert STRING L
 .. ts:cv:: CONFIG proxy.config.diags.output.emergency STRING SL
 
-   The diagnosic output configuration variables control where Traffic
+   The diagnostic output configuration variables control where Traffic
    Server should log diagnostic output. Messages at each diagnostic level
    can be directed to any combination of diagnostic destinations.
    Valid diagnostic message destinations are:
@@ -3105,7 +3001,7 @@ Diagnostic Logging Configuration
    :reloadable:
    :units: seconds
 
-   Specifies how often the diagnostics log is rolled, in seconds. The timer starts on |TS| bootup.
+   Specifies how often the diagnostics log is rolled, in seconds. The timer starts on |TS| startup.
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_size_mb INT 100
    :reloadable:
@@ -3169,14 +3065,15 @@ SSL Termination
    formatting cipher_suite string, see
    `OpenSSL Ciphers <https://www.openssl.org/docs/manmaster/man1/ciphers.html>`_.
 
-   The current default, included in the ``records.config.default`` example
-   configuration is:
+   The current default is:
 
-   ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA
+   ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-CCM:ECDHE-ECDSA-AES128-CCM:ECDHE-ECDSA-AES256-CCM8:ECDHE-ECDSA-AES128-CCM8:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-CCM8:DHE-RSA-AES128-CCM8:DHE-RSA-AES256-CCM:DHE-RSA-AES128-CCM:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-CCM8:AES128-CCM8:AES256-CCM:AES128-CCM:AES256-SHA256:AES128-SHA2
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cipher_suite STRING <See notes under proxy.config.ssl.server.cipher_suite.>
 
-   Configures the cipher_suite which |TS| will use for SSL connections to origin or next hop.
+   Configures the cipher_suite which |TS| will use for SSL connections to origin or next hop.  This currently defaults to:
+
+   ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-CCM8:ECDHE-ECDSA-AES256-CCM:DHE-RSA-AES256-CCM8:DHE-RSA-AES256-CCM:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-ARIA256-GCM-SHA384:ECDHE-ARIA256-GCM-SHA384:DHE-DSS-ARIA256-GCM-SHA384:DHE-RSA-ARIA256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:ECDHE-ECDSA-CAMELLIA256-SHA384:ECDHE-RSA-CAMELLIA256-SHA384:DHE-RSA-CAMELLIA256-SHA256:DHE-DSS-CAMELLIA256-SHA256:RSA-PSK-AES256-GCM-SHA384:RSA-PSK-CHACHA20-POLY1305:RSA-PSK-ARIA256-GCM-SHA384:AES256-GCM-SHA384:AES256-CCM8:AES256-CCM:ARIA256-GCM-SHA384:AES256-SHA256:CAMELLIA256-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:DHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-CCM8:ECDHE-ECDSA-AES128-CCM:DHE-RSA-AES128-CCM8:DHE-RSA-AES128-CCM:ECDHE-ECDSA-ARIA128-GCM-SHA256:ECDHE-ARIA128-GCM-SHA256:DHE-DSS-ARIA128-GCM-SHA256:DHE-RSA-ARIA128-GCM-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:ECDHE-ECDSA-CAMELLIA128-SHA256:ECDHE-RSA-CAMELLIA128-SHA256:DHE-RSA-CAMELLIA128-SHA256:DHE-DSS-CAMELLIA128-SHA256:RSA-PSK-AES128-GCM-SHA256:RSA-PSK-ARIA128-GCM-SHA256:AES128-GCM-SHA256:AES128-CCM8:AES128-CCM:ARIA128-GCM-SHA256:AES128-SHA256:CAMELLIA128-SHA256
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.TLSv1_3.cipher_suites STRING <See notes>
 
@@ -3185,17 +3082,26 @@ SSL Termination
    connections. For the list of algorithms and instructions, see
    The ``-ciphersuites`` section of `OpenSSL Ciphers <https://www.openssl.org/docs/manmaster/man1/ciphers.html>`_.
 
-   The current default value with OpenSSL is:
+   The current default value is:
 
-   TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256
+   TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256
 
    This configuration works with OpenSSL v1.1.1 and above.
+
+.. ts:cv:: CONFIG proxy.config.ssl.server.honor_cipher_order INT 1
+
+   By default (``1``) |TS| will use the server's cipher suites preferences instead of the client preferences.
+   By disabling it (``0``) |TS| will use client's cipher suites preferences.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3.cipher_suites STRING <See notes under proxy.config.ssl.server.tls.cipher_suites>
 
    Configures the cipher_suites which |TS| will use for TLSv1.3
    connections to origin or next hop. This configuration works
    with OpenSSL v1.1.1 and above.
+
+   The current default is:
+
+   TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.groups_list STRING <See notes>
 
@@ -3209,7 +3115,7 @@ SSL Termination
 
    X25519:P-256:X448:P-521:P-384
 
-   This configuration works with OpenSSL v1.1.1 and above.
+   This configuration works with OpenSSL v1.0.2 and above.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.groups_list STRING <See notes under proxy.config.ssl.server.groups_list.>
 
@@ -3219,13 +3125,13 @@ SSL Termination
    group NIDs or names, for example "P-521:P-384:P-256". For
    instructions, see "Groups" section of `TLS1.3 - OpenSSLWiki <https://wiki.openssl.org/index.php/TLS1.3#Groups>`_.
 
-   This configuration works with OpenSSL v1.1.1 and above.
+   This configuration works with OpenSSL v1.0.2 and above.
 
-.. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 0
 
-   Enables (``1``) or disables (``0``) TLSv1.
+   Enables (``1``) or disables (``0``) TLSv1.0.
 
-.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 0
 
    Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
 
@@ -3317,7 +3223,7 @@ SSL Termination
    The filename of the certificate authority that client certificates
    will be verified against.
 
-.. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING ssl_ticket.key
+.. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING NULL
 
    The filename of the default and global ticket key for SSL sessions. The location is relative to the
    :ts:cv:`proxy.config.ssl.server.cert.path` directory. One way to generate this would be to run
@@ -3325,9 +3231,9 @@ SSL Termination
    note that OpenSSL session tickets are sensitive to the version of the ca-certificates. Once the
    file is changed with new tickets, use :option:`traffic_ctl config reload` to begin using them.
 
-.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING ssl_server_name.yaml
+.. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING sni.yaml
 
-   The filename of the :file:`ssl_server_name.yaml` configuration file.
+   The filename of the :file:`sni.yaml` configuration file.
    If relative, it is relative to the configuration directory.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
@@ -3447,16 +3353,16 @@ SSL Termination
 Client-Related Configuration
 ----------------------------
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING DISABLED
+.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING PERMISSIVE
    :reloadable:
    :overridable:
 
    Configures |TS| to verify the origin server certificate
    with the Certificate Authority (CA). This configuration takes a value of :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`
 
-   You can override this global setting on a per domain basis in the ssl_server_name.yaml file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_policy attribute<override-verify-server-policy>`.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in ssl_server_name.yaml.
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in :file:`sni.yaml`.
 
 :code:`DISABLED`
    Server Certificate will not be verified
@@ -3471,9 +3377,9 @@ Client-Related Configuration
 
    Configures |TS| for what the default verify callback should check during origin server verification.
 
-   You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_server_properties attribute<override-verify-server-properties>`.
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_server_properties attribute<override-verify-server-properties>`.
 
-   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in ssl_server_name.yaml.
+   You can also override via the conf_remap plugin. Those changes will take precedence over the changes in .:file:`sni.yaml`
 
 :code:`NONE`
    Check nothing in the standard callback.  Rely entirely on plugins to check the certificate.
@@ -3494,7 +3400,7 @@ Client-Related Configuration
    Configures |TS| to verify the origin server certificate
    with the Certificate Authority (CA). This configuration takes a value between 0 to 2.
 
-   You can override this global setting on a per domain basis in the ssl_servername.yaml file using the :ref:`verify_origin_server attribute<override-verify-origin-server>`.
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_origin_server attribute<override-verify-origin-server>`.
 
    :0: Server Certificate will not be verified
    :1: Certificate will be verified and the connection will not be established if verification fail
@@ -3547,15 +3453,11 @@ Client-Related Configuration
    `host` which means the host header field value is used for the SNI.  If `remap` is specified, the
    remapped origin name is used for the SNI value.
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.SSLv3 INT 0
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 0
 
-   Enables (``1``) or disables (``0``) SSLv3 in the ATS client context. Disabled by default
+   Enables (``1``) or disables (``0``) TLSv1.0 in the ATS client context. If not specified, enabled by default
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 1
-
-   Enables (``1``) or disables (``0``) TLSv1 in the ATS client context. If not specified, enabled by default
-
-.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_1 INT 1
+.. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_1 INT 0
 
    Enables (``1``) or disables (``0``) TLSv1_1 in the ATS client context. If not specified, enabled by default
 
@@ -3613,6 +3515,14 @@ OCSP Stapling Configuration
 
    Update period (in seconds) for stapling caches.
 
+.. ts:cv:: CONFIG proxy.config.ssl.ocsp.response.path STRING NULL
+
+   The directory path of the prefetched OCSP stapling responses. Change this
+   variable only if you intend to use and administratively maintain
+   prefetched OCSP stapling responses. All stapling responses listed in
+   :file:`ssl_multicert.config` will be loaded relative to this
+   path.
+
 HTTP/2 Configuration
 ====================
 
@@ -3660,7 +3570,7 @@ HTTP/2 Configuration
    The maximum size of the header compression table used to decode header
    blocks.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 4294967295
+.. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 131072
    :reloadable:
 
    This advisory setting informs a peer of the maximum size of header list
@@ -3721,6 +3631,285 @@ HTTP/2 Configuration
    |TS| gracefully closes connections that have stream error rates above this
    setting by sending GOAWAY frames.
 
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 7
+   :reloadable:
+
+   Specifies how many settings in an HTTP/2 SETTINGS frame |TS| accepts.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_minute INT 14
+   :reloadable:
+
+   Specifies how many settings in HTTP/2 SETTINGS frames |TS| accept for a minute.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_frames_per_minute INT 14
+   :reloadable:
+
+   Specifies how many SETTINGS frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_ping_frames_per_minute INT 60
+   :reloadable:
+
+   Specifies how many number of PING frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_priority_frames_per_minute INT 120
+   :reloadable:
+
+   Specifies how many number of PRIORITY frames |TS| receives for a minute at maximum.
+   Clients exceeded this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM. If this is set to 0, the limit logic is disabled.
+   This limit only will be enforced if :ts:cv:`proxy.config.http2.stream_priority_enabled`
+   is set to 1.
+
+.. ts:cv:: CONFIG proxy.config.http2.min_avg_window_update FLOAT 2560.0
+   :reloadable:
+
+   Specifies the minimum average window increment |TS| allows. The average will be calculated based on the last 5 WINDOW_UPDATE frames.
+   Clients that send smaller window increments lower than this limit will be immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM.
+
+
+HTTP/3 Configuration
+====================
+
+There is no configuration available yet on this release.
+
+QUIC Configuration
+====================
+
+All configurations for QUIC are still experimental and may be changed or
+removed in the future without prior notice.
+
+.. ts:cv:: CONFIG proxy.config.quic.instance_id INT 0
+   :reloadable:
+
+   A static key used for calculating Stateless Reset Token. All instances in a
+   cluster need to share the same value.
+
+.. ts:cv:: CONFIG proxy.config.quic.connection_table.size INT 65521
+
+   A size of hash table that stores connection information.
+
+.. ts:cv:: CONFIG proxy.config.quic.proxy.config.quic.num_alt_connection_ids INT 65521
+   :reloadable:
+
+   A number of alternate Connection IDs that |TS| provides to a peer. It has to
+   be at least 8.
+
+.. ts:cv:: CONFIG proxy.config.quic.stateless_retry_enabled INT 0
+   :reloadable:
+
+   Enables Stateless Retry.
+
+.. ts:cv:: CONFIG proxy.config.quic.client.vn_exercise_enabled INT 0
+   :reloadable:
+
+   Enables version negotiation exercise on origin server connections.
+
+.. ts:cv:: CONFIG proxy.config.quic.client.cm_exercise_enabled INT 0
+   :reloadable:
+
+   Enables connection migration exercise on origin server connections.
+
+.. ts:cv:: CONFIG proxy.config.quic.server.supported_groups STRING "P-256:X25519:P-384:P-521"
+   :reloadable:
+
+   Configures the list of supported groups provided by OpenSSL which will be
+   used to determine the set of shared groups on QUIC origin server connections.
+
+.. ts:cv:: CONFIG proxy.config.quic.client.supported_groups STRING "P-256:X25519:P-384:P-521"
+   :reloadable:
+
+   Configures the list of supported groups provided by OpenSSL which will be
+   used to determine the set of shared groups on QUIC client connections.
+
+.. ts:cv:: CONFIG proxy.config.quic.client.session_file STRING ""
+   :reloadable:
+
+   Only available for :program:`traffic_quic`.
+   If specified, TLS session data will be stored to the file, and will be used
+   for resuming a session.
+
+.. ts:cv:: CONFIG proxy.config.quic.client.keylog_file STRING ""
+   :reloadable:
+
+   Only available for :program:`traffic_quic`.
+   If specified, key information will be stored to the file.
+
+.. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_in INT 30000
+   :reloadable:
+
+   This value will be advertised as ``idle_timeout`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.no_activity_timeout_out INT 30000
+   :reloadable:
+
+   This value will be advertised as  ``idle_timeout`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.preferred_address_ipv4 STRING ""
+   :reloadable:
+
+   This value will be advertised as a part of ``preferred_address``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.preferred_address_ipv6 STRING ""
+   :reloadable:
+
+   This value will be advertised as a part of ``preferred_address``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_data_in INT 65536
+   :reloadable:
+
+   This value will be advertised as ``initial_max_data`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_data_out INT 65536
+   :reloadable:
+
+   This value will be advertised as ``initial_max_data`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_local_in INT 0
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_bidi_local``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_local_out INT 4096
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_bidi_local``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_remote_in INT 4096
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_bidi_remote``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_remote_out INT 0
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_bidi_remote``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_uni_in INT 4096
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_uni``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_uni_out INT 0
+   :reloadable:
+
+   This value will be advertised as ``initial_max_stream_data_uni``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_streams_bidi_in INT 100
+   :reloadable:
+
+   This value will be advertised as ``initial_max_streams_bidi``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_streams_bidi_out INT 100
+   :reloadable:
+
+   This value will be advertised as ``initial_max_streams_bidi``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_streams_uni_in INT 100
+   :reloadable:
+
+   This value will be advertised as ``initial_max_streams_uni``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_streams_uni_out INT 100
+   :reloadable:
+
+   This value will be advertised as ``initial_max_streams_uni``
+   Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.ack_delay_exponent_in INT 3
+   :reloadable:
+
+   This value will be advertised as ``ack_delay_exponent`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.ack_delay_exponent_out INT 3
+   :reloadable:
+
+   This value will be advertised as ``ack_delay_exponent`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_ack_delay_in INT 25
+   :reloadable:
+
+   This value will be advertised as ``max_ack_delay`` Transport Parameter.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_ack_delay_out INT 25
+   :reloadable:
+
+   This value will be advertised as ``max_ack_delay`` Transport Parameter.
+
+
+.. ts:cv:: CONFIG proxy.config.quic.loss_detection.packet_threshold INT 3
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.loss_detection.time_threshold FLOAT 1.25
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.loss_detection.granularity INT 1
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.loss_detection.initial_rtt INT 1
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.congestion_control.max_datagram_size INT 1200
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.congestion_control.initial_window_scale INT 10
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.congestion_control.minimum_window_scale INT 2
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.congestion_control.loss_reduction_factor FLOAT 0.5
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
+.. ts:cv:: CONFIG proxy.config.quic.congestion_control.persistent_congestion_threshold INT 2
+   :reloadable:
+
+   This is just for debugging. Do not change it from the default value unless
+   you really understand what this is.
+
 Plug-in Configuration
 =====================
 
@@ -3750,7 +3939,7 @@ SOCKS Processor
 
 .. ts:cv::  CONFIG proxy.config.socks.socks_config_file STRING socks.config
 
-   The socks_onfig file allows you to specify ranges of IP addresses
+   The socks.config file allows you to specify ranges of IP addresses
    that will not be relayed to the SOCKS server. It can also be used
    to configure AUTH information for SOCKSv5 servers.
 
@@ -3949,7 +4138,7 @@ Sockets
 
    Changing this configuration can reduce CPU usage on an idle system, since
    periodic tasks gets processed at these intervals. On busy servers, this
-   overhead is diminished, since polled events triggers morefrequently.
+   overhead is diminished, since polled events triggers more frequently.
    However, increasing the setting can also introduce additional latency for
    certain operations, and timed events. It's recommended not to touch this
    setting unless your CPU usage is unacceptable at idle workload. Some

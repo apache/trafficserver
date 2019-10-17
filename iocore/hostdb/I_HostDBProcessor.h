@@ -51,7 +51,7 @@ struct HostDBContinuation;
 // IP address.
 //
 // Since host information is relatively small, we can afford to have
-// a reasonable size memory cache, and use a (relatively) sparce
+// a reasonable size memory cache, and use a (relatively) sparse
 // disk representation to decrease # of seeks.
 //
 extern int hostdb_enable;
@@ -84,7 +84,7 @@ makeHostHash(const char *string)
 //
 // This structure contains the host information required by
 // the application.  Except for the initial fields it
-// is treated as opacque by the database.
+// is treated as opaque by the database.
 //
 
 union HostDBApplicationInfo {
@@ -349,13 +349,13 @@ struct HostDBInfo : public RefCountObj {
 
 struct HostDBRoundRobin {
   /** Total number (to compute space used). */
-  short rrcount;
+  short rrcount = 0;
 
   /** Number which have not failed a connect. */
-  short good;
+  short good = 0;
 
-  unsigned short current;
-  ink_time_t timed_rr_ctime;
+  unsigned short current    = 0;
+  ink_time_t timed_rr_ctime = 0;
 
   // This is the equivalent of a variable length array, we can't use a VLA because
   // HostDBInfo is a non-POD type-- so this is the best we can do.
@@ -389,19 +389,19 @@ struct HostDBRoundRobin {
   HostDBInfo *select_next(sockaddr const *addr);
   HostDBInfo *select_best_http(sockaddr const *client_ip, ink_time_t now, int32_t fail_window);
   HostDBInfo *select_best_srv(char *target, InkRand *rand, ink_time_t now, int32_t fail_window);
-  HostDBRoundRobin() : rrcount(0), good(0), current(0), timed_rr_ctime(0) {}
+  HostDBRoundRobin() {}
 };
 
 struct HostDBCache;
 struct HostDBHash;
 
-// Prototype for inline completion functionf or
+// Prototype for inline completion function or
 //  getbyname_imm()
 typedef void (Continuation::*cb_process_result_pfn)(HostDBInfo *r);
 
 Action *iterate(Continuation *cont);
 
-/** The Host Databse access interface. */
+/** The Host Database access interface. */
 struct HostDBProcessor : public Processor {
   friend struct HostDBSync;
   // Public Interface
@@ -424,13 +424,13 @@ struct HostDBProcessor : public Processor {
 
   /// Optional parameters for getby...
   struct Options {
-    typedef Options self;        ///< Self reference type.
-    int port;                    ///< Target service port (default 0 -> don't care)
-    int flags;                   ///< Processing flags (default HOSTDB_DO_NOT_FORCE_DNS)
-    int timeout;                 ///< Timeout value (default 0 -> default timeout)
-    HostResStyle host_res_style; ///< How to query host (default HOST_RES_IPV4)
+    typedef Options self;                                  ///< Self reference type.
+    int port                    = 0;                       ///< Target service port (default 0 -> don't care)
+    int flags                   = HOSTDB_DO_NOT_FORCE_DNS; ///< Processing flags (default HOSTDB_DO_NOT_FORCE_DNS)
+    int timeout                 = 0;                       ///< Timeout value (default 0 -> default timeout)
+    HostResStyle host_res_style = HOST_RES_IPV4;           ///< How to query host (default HOST_RES_IPV4)
 
-    Options() : port(0), flags(HOSTDB_DO_NOT_FORCE_DNS), timeout(0), host_res_style(HOST_RES_IPV4) {}
+    Options() {}
     /// Set the flags.
     self &
     setFlags(int f)

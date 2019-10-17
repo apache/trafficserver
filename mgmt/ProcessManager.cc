@@ -25,6 +25,7 @@
 #include "ProcessManager.h"
 
 #include "tscore/ink_apidefs.h"
+#include "tscore/TSSystemState.h"
 #include "MgmtSocket.h"
 #include "tscore/I_Layout.h"
 
@@ -58,7 +59,7 @@ read_management_message(int sockfd, MgmtMessageHdr **msg)
   }
 
   size_t msg_size          = sizeof(MgmtMessageHdr) + hdr.data_len;
-  MgmtMessageHdr *full_msg = (MgmtMessageHdr *)ats_malloc(msg_size);
+  MgmtMessageHdr *full_msg = static_cast<MgmtMessageHdr *>(ats_malloc(msg_size));
 
   memcpy(full_msg, &hdr, sizeof(MgmtMessageHdr));
   char *data_raw = reinterpret_cast<char *>(full_msg) + sizeof(MgmtMessageHdr);
@@ -122,7 +123,7 @@ ProcessManager::stop()
   poll_thread = ink_thread_null();
 
   while (!queue_is_empty(mgmt_signal_queue)) {
-    char *sig = (char *)::dequeue(mgmt_signal_queue);
+    char *sig = static_cast<char *>(::dequeue(mgmt_signal_queue));
     ats_free(sig);
   }
 
@@ -166,13 +167,13 @@ ProcessManager::processManagerThread(void *arg)
 
     if (pmgmt->require_lm) {
       ret = pmgmt->pollLMConnection();
-      if (ret < 0 && pmgmt->running && !shutdown_event_system) {
+      if (ret < 0 && pmgmt->running && !TSSystemState::is_event_system_shut_down()) {
         Alert("exiting with read error from process manager: %s", strerror(-ret));
       }
     }
 
     ret = pmgmt->processSignalQueue();
-    if (ret < 0 && pmgmt->running && !shutdown_event_system) {
+    if (ret < 0 && pmgmt->running && !TSSystemState::is_event_system_shut_down()) {
       Alert("exiting with write error from process manager: %s", strerror(-ret));
     }
   }
@@ -215,17 +216,15 @@ ProcessManager::reconfigure()
 }
 
 void
-ProcessManager::signalConfigFileChild(const char *parent, const char *child, unsigned int options)
+ProcessManager::signalConfigFileChild(const char *parent, const char *child)
 {
-  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
+  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING};
 
-  MgmtMarshallInt mgmtopt = options;
-
-  size_t len   = mgmt_message_length(fields, countof(fields), &parent, &child, &mgmtopt);
+  size_t len   = mgmt_message_length(fields, countof(fields), &parent, &child);
   void *buffer = ats_malloc(len);
 
-  mgmt_message_marshall(buffer, len, fields, countof(fields), &parent, &child, &mgmtopt);
-  signalManager(MGMT_SIGNAL_CONFIG_FILE_CHILD, (const char *)buffer, len);
+  mgmt_message_marshall(buffer, len, fields, countof(fields), &parent, &child);
+  signalManager(MGMT_SIGNAL_CONFIG_FILE_CHILD, static_cast<const char *>(buffer), len);
 
   ats_free(buffer);
 }
@@ -241,10 +240,10 @@ ProcessManager::signalManager(int msg_id, const char *data_raw, int data_len)
 {
   MgmtMessageHdr *mh;
 
-  mh           = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
+  mh           = static_cast<MgmtMessageHdr *>(ats_malloc(sizeof(MgmtMessageHdr) + data_len));
   mh->msg_id   = msg_id;
   mh->data_len = data_len;
-  memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
+  memcpy(reinterpret_cast<char *>(mh) + sizeof(MgmtMessageHdr), data_raw, data_len);
   this->signalManager(mh);
 }
 
@@ -271,10 +270,10 @@ ProcessManager::signalManager(MgmtMessageHdr *mh)
 
 #if HAVE_EVENTFD
   // we don't care about the actual value of wakeup_fd, so just keep adding 1. just need to
-  // wakeup the fd. also, note that wakeup_fd was initalized to non-blocking so we can
+  // wakeup the fd. also, note that wakeup_fd was initialized to non-blocking so we can
   // directly write to it without any timeout checking.
   //
-  // don't tigger if MGMT_EVENT_LIBRECORD because they happen all the time
+  // don't trigger if MGMT_EVENT_LIBRECORD because they happen all the time
   // and don't require a quick response. for MGMT_EVENT_LIBRECORD, rely on timeouts so
   // traffic_server can spend more time doing other things/
   uint64_t one = 1;
@@ -288,12 +287,12 @@ int
 ProcessManager::processSignalQueue()
 {
   while (!queue_is_empty(mgmt_signal_queue)) {
-    MgmtMessageHdr *mh = (MgmtMessageHdr *)::dequeue(mgmt_signal_queue);
+    MgmtMessageHdr *mh = static_cast<MgmtMessageHdr *>(::dequeue(mgmt_signal_queue));
 
     Debug("pmgmt", "signaling local manager with message ID %d", mh->msg_id);
 
     if (require_lm) {
-      int ret = mgmt_write_pipe(local_manager_sockfd, (char *)mh, sizeof(MgmtMessageHdr) + mh->data_len);
+      int ret = mgmt_write_pipe(local_manager_sockfd, reinterpret_cast<char *>(mh), sizeof(MgmtMessageHdr) + mh->data_len);
       ats_free(mh);
 
       if (ret < 0) {
@@ -323,7 +322,7 @@ ProcessManager::initLMConnection()
   }
 
   /* Setup Connection to LocalManager */
-  memset((char *)&serv_addr, 0, sizeof(serv_addr));
+  memset(reinterpret_cast<char *>(&serv_addr), 0, sizeof(serv_addr));
   serv_addr.sun_family = AF_UNIX;
 
   ink_strlcpy(serv_addr.sun_path, sockpath.c_str(), sizeof(serv_addr.sun_path));
@@ -341,7 +340,7 @@ ProcessManager::initLMConnection()
     Fatal("unable to set close-on-exec flag: %s", strerror(errno));
   }
 
-  if ((connect(local_manager_sockfd, (struct sockaddr *)&serv_addr, servlen)) < 0) {
+  if ((connect(local_manager_sockfd, reinterpret_cast<struct sockaddr *>(&serv_addr), servlen)) < 0) {
     Fatal("failed to connect management socket '%s': %s", sockpath.c_str(), strerror(errno));
   }
 
@@ -353,13 +352,13 @@ ProcessManager::initLMConnection()
 #endif
 
   data_len          = sizeof(pid_t);
-  mh_full           = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + data_len);
+  mh_full           = static_cast<MgmtMessageHdr *>(alloca(sizeof(MgmtMessageHdr) + data_len));
   mh_full->msg_id   = MGMT_SIGNAL_PID;
   mh_full->data_len = data_len;
 
-  memcpy((char *)mh_full + sizeof(MgmtMessageHdr), &(pid), data_len);
+  memcpy(reinterpret_cast<char *>(mh_full) + sizeof(MgmtMessageHdr), &(pid), data_len);
 
-  if (mgmt_write_pipe(local_manager_sockfd, (char *)mh_full, sizeof(MgmtMessageHdr) + data_len) <= 0) {
+  if (mgmt_write_pipe(local_manager_sockfd, reinterpret_cast<char *>(mh_full), sizeof(MgmtMessageHdr) + data_len) <= 0) {
     Fatal("error writing message: %s", strerror(errno));
   }
 }
@@ -463,13 +462,13 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
   case MGMT_EVENT_ROLL_LOG_FILES:
     executeMgmtCallback(MGMT_EVENT_ROLL_LOG_FILES, {});
     break;
-  case MGMT_EVENT_PLUGIN_CONFIG_UPDATE:
-    if (!payload.empty() && payload.at<char>(0) != '\0' && this->cbtable) {
-      this->cbtable->invoke(static_cast<char const *>(payload.data()));
+  case MGMT_EVENT_PLUGIN_CONFIG_UPDATE: {
+    auto msg{payload.rebind<char>()};
+    if (!msg.empty() && msg[0] != '\0' && this->cbtable) {
+      this->cbtable->invoke(msg.data());
     }
-    break;
+  } break;
   case MGMT_EVENT_CONFIG_FILE_UPDATE:
-  case MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION:
     /*
       librecords -- we don't do anything in here because we are traffic_server
       and we are not the owner of proxy.config.* variables.

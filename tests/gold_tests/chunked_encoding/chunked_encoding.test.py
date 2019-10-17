@@ -20,15 +20,14 @@ import os
 Test.Summary = '''
 Test a basic remap of a http connection
 '''
-# need Curl
+# need Curl with HTTP/2
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2')
 )
 Test.ContinueOnFail = True
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2", ssl=True)
 server3 = Test.MakeOriginServer("server3")
@@ -64,14 +63,11 @@ server3.addResponse("sessionlog.json", request_header3, response_header3)
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'lm|ssl',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    # enable ssl port
-    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.ssl.client.verify.server':  0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
 })
@@ -101,7 +97,7 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)
 tr.Processes.Default.StartBefore(server3)
 # Delay on readyness of our ssl ports
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stderr = "gold/chunked_GET_200.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

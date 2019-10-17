@@ -82,7 +82,7 @@ create_directory(const std::string &dir)
   // create directory one layer by one layer
   while (true) {
     pos = s.find('/', pos1);
-    if ((size_t)pos == s.npos) {
+    if (static_cast<size_t>(pos) == s.npos) {
       break;
     }
     ret  = mkdir(s.substr(0, pos).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -247,7 +247,7 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
     // if the file already exist, overwrite it
     if (exists(dst_path)) {
       if (remove(dst_path.c_str())) {
-        ink_error("overwrite file falied during copy");
+        ink_error("overwrite file failed during copy");
       }
     }
     // hardlink bin executable
@@ -271,7 +271,7 @@ ts_copy_function(const char *src_path, const struct stat *sb, int flag)
     std::ofstream dst(dst_path, std::ios::binary);
     dst << src.rdbuf();
     if (chmod(dst_path.c_str(), sb->st_mode) == -1) {
-      ink_warning("failed chomd the destination path: %s", strerror(errno));
+      ink_warning("failed chmod the destination path: %s", strerror(errno));
     }
   }
   return 0;

@@ -16,6 +16,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+if ENABLE_QUIC
+SUBDIRS = quic
+endif
+
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
@@ -75,13 +79,14 @@ test_UDPNet_LDADD = \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/proxy/ParentSelectionStrategy.o \
-	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
 
 test_UDPNet_SOURCES = \
+	libinknet_stub.cc \
 	test_I_UDPNet.cc
 
 libinknet_a_SOURCES = \
+        ALPNSupport.cc \
 	BIO_fastopen.cc \
 	BIO_fastopen.h \
 	Connection.cc \
@@ -98,11 +103,10 @@ libinknet_a_SOURCES = \
 	YamlSNIConfig.cc \
 	Net.cc \
 	NetVConnection.cc \
+        P_ALPNSupport.h \
 	P_SNIActionPerformer.h \
 	P_CompletionUtil.h \
 	P_Connection.h \
-	P_InkBulkIO.h \
-	P_LibBulkIO.h \
 	P_Net.h \
 	P_NetAccept.h \
 	P_NetVConnection.h \
@@ -161,14 +165,28 @@ libinknet_a_SOURCES = \
 	UnixUDPNet.cc \
 	SSLDynlock.cc
 
+if ENABLE_QUIC
+libinknet_a_SOURCES += \
+  P_QUICClosedConCollector.h \
+  P_QUICPacketHandler.h \
+  P_QUICNet.h \
+  P_QUICNetProcessor.h \
+  P_QUICNetVConnection.h \
+  P_QUICNextProtocolAccept.h \
+  QUICClosedConCollector.cc \
+  QUICPacketHandler.cc \
+  QUICMultiCertConfigLoader.cc \
+  QUICNet.cc \
+  QUICNetProcessor.cc \
+  QUICNetVConnection.cc \
+  QUICNextProtocolAccept.cc
+endif
+
 if BUILD_TESTS
 libinknet_a_SOURCES += \
 	NetVCTest.cc \
 	P_NetVCTest.h
 endif
-
-libinknet_a_LIBADD = \
-	$(top_builddir)/lib/tsconfig/libtsconfig.la
 
 include $(top_srcdir)/build/tidy.mk
 

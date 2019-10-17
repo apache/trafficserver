@@ -58,8 +58,6 @@ more widely. Those are described on this page.
 
 .. type:: TSConfig
 
-.. type:: TSConfigDestroyFunc
-
 .. type:: TSCont
 
    An opaque type that represents a Traffic Server :term:`continuation`.
@@ -82,7 +80,7 @@ more widely. Those are described on this page.
 
 .. type:: TSHttpSsn
 
-   An opaque type that represents a Traffic SeUuirver :term:`session`.
+   An opaque type that represents a Traffic Server :term:`session`.
 
 .. type:: TSHttpTxn
 
@@ -126,7 +124,7 @@ more widely. Those are described on this page.
 .. type:: TSMLoc
 
    This is a memory location relative to a :term:`header heap` represented by a :c:type:`TSMBuffer` and
-   must always be used in conjuction with that :c:type:`TSMBuffer` instance. It identifies a specific
+   must always be used in conjunction with that :c:type:`TSMBuffer` instance. It identifies a specific
    object in the :c:type:`TSMBuffer`. This indirection is needed so that the :c:type:`TSMBuffer`
    can reallocate space as needed. Therefore a raw address obtained from a :c:type:`TSMLoc` should
    be considered volatile that may become invalid across any API call.
@@ -145,7 +143,47 @@ more widely. Those are described on this page.
 
 .. type:: TSRemapInterface
 
+   Data passed to a remap plugin via :func:`TSRemapInit`.
+
+   .. member:: unsigned long size
+
+      The size of the structure in bytes, including this member.
+
+   .. member:: unsigned long tsremap_version
+
+      The API version of the C API. The lower 16 bits are the minor version, and the upper bits
+      the major version.
+
 .. type:: TSRemapRequestInfo
+
+   Data passed to a remap plugin during the invocation of a remap rule.
+
+   .. member:: TSMBuffer requestBufp
+
+      The client request. All of the other :type:`TSMLoc` values use this as the base buffer.
+
+   .. member:: TSMLoc requestHdrp
+
+      The client request.
+
+   .. member:: TSMLoc mapFromUrl
+
+      The match URL in the remap rule.
+
+   .. member:: TSMLoc mapToUrl
+
+      The target URL in the remap rule.
+
+   .. member:: TSMLoc requestUrl
+
+      The current request URL. The remap rule and plugins listed earlier in the remap rule can modify this
+      from the client request URL. Remap plugins are expected to modify this value to perform the
+      remapping of the request. Note this is the same :code:`TSMLoc` as would be obtained by
+      calling :func:`TSHttpTxnClientReqGet`.
+
+   .. member:: int redirect
+
+      Flag for using the remapped URL as an explicit redirection. This can be set by the remap plugin.
 
 .. type:: TSSslX509
 
@@ -209,13 +247,11 @@ more widely. Those are described on this page.
 
 .. cpp:class:: template<typename T> DLL
 
-    An anchor for a double linked instrusive list of instance of :arg:`T`.
+    An anchor for a double linked intrusive list of instance of :arg:`T`.
 
 .. cpp:class:: template<typename T> Queue
 
 .. type:: TSAcceptor
-
-.. type:: TSNextProtocolSet
 
 .. cpp:class:: template <typename T> LINK
 

@@ -37,10 +37,13 @@
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/objects.h>
 
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
+#include "P_ALPNSupport.h"
+#include "P_SSLUtils.h"
 
 // These are included here because older OpenSSL libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -66,8 +69,6 @@
 #define SSL_DEF_TLS_RECORD_BYTE_THRESHOLD 1000000
 #define SSL_DEF_TLS_RECORD_MSEC_THRESHOLD 1000
 
-class SSLNextProtocolSet;
-class SSLNextProtocolAccept;
 struct SSLCertLookup;
 
 typedef enum {
@@ -86,7 +87,7 @@ enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHA
 //  A VConnection for a network socket.
 //
 //////////////////////////////////////////////////////////////////
-class SSLNetVConnection : public UnixNetVConnection
+class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
 
@@ -140,7 +141,6 @@ public:
   int sslClientHandShakeEvent(int &err);
   void net_read_io(NetHandler *nh, EThread *lthread) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
-  void registerNextProtocolSet(SSLNextProtocolSet *);
   void do_io_close(int lerrno = -1) override;
 
   ////////////////////////////////////////////////////////////
@@ -153,12 +153,6 @@ public:
   static int advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned *outlen, void *);
   static int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
                                   unsigned inlen, void *);
-
-  Continuation *
-  endpoint() const
-  {
-    return npnEndpoint;
-  }
 
   bool
   getSSLClientRenegotiationAbort() const
@@ -309,6 +303,38 @@ public:
     return ssl ? SSL_get_cipher_name(ssl) : nullptr;
   }
 
+  void
+  setSSLCurveNID(ssl_curve_id curve_nid)
+  {
+    sslCurveNID = curve_nid;
+  }
+
+  ssl_curve_id
+  getSSLCurveNID() const
+  {
+    return sslCurveNID;
+  }
+
+  const char *
+  getSSLCurve() const
+  {
+    if (!ssl) {
+      return nullptr;
+    }
+    ssl_curve_id curve = getSSLCurveNID();
+#ifndef OPENSSL_IS_BORINGSSL
+    if (curve == NID_undef) {
+      return nullptr;
+    }
+    return OBJ_nid2sn(curve);
+#else
+    if (curve == 0) {
+      return nullptr;
+    }
+    return SSL_get_curve_name(curve);
+#endif
+  }
+
   bool
   has_tunnel_destination() const
   {
@@ -383,9 +409,26 @@ public:
   bool protocol_mask_set = false;
   unsigned long protocol_mask;
 
+  // Only applies during the VERIFY certificate hooks (client and server side)
+  // Means to give the plugin access to the data structure passed in during the underlying
+  // openssl callback so the plugin can make more detailed decisions about the
+  // validity of the certificate in their cases
+  X509_STORE_CTX *
+  get_verify_cert()
+  {
+    return verify_cert;
+  }
+  void
+  set_verify_cert(X509_STORE_CTX *ctx)
+  {
+    verify_cert = ctx;
+  }
+
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
   bool update_rbio(bool move_to_socket);
+  void increment_ssl_version_metric(int version) const;
+  void fetch_ssl_curve();
 
   enum SSLHandshakeStatus sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
   bool sslClientRenegotiationAbort           = false;
@@ -394,6 +437,7 @@ private:
   IOBufferReader *handShakeHolder            = nullptr;
   IOBufferReader *handShakeReader            = nullptr;
   int handShakeBioStored                     = 0;
+  int sslCurveNID                            = NID_undef;
 
   bool transparentPassThrough = false;
 
@@ -417,14 +461,11 @@ private:
     HANDSHAKE_HOOKS_DONE
   } sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
 
-  const SSLNextProtocolSet *npnSet = nullptr;
-  Continuation *npnEndpoint        = nullptr;
-  SessionAccept *sessionAcceptPtr  = nullptr;
-  bool sslTrace                    = false;
-  int64_t redoWriteSize            = 0;
-  char *tunnel_host                = nullptr;
-  in_port_t tunnel_port            = 0;
-  bool tunnel_decrypt              = false;
+  int64_t redoWriteSize       = 0;
+  char *tunnel_host           = nullptr;
+  in_port_t tunnel_port       = 0;
+  bool tunnel_decrypt         = false;
+  X509_STORE_CTX *verify_cert = nullptr;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

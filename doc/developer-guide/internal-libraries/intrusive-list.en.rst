@@ -20,7 +20,7 @@
 IntrusiveDList
 **************
 
-:class:`IntrusiveDList` is a class that provides a double linked list using pointers embeded in the
+:class:`IntrusiveDList` is a class that provides a double linked list using pointers embedded in the
 object. :class:`IntrusiveDList` also acts as a queue. No memory management is done - objects can be
 added to and removed from the list but the allocation and deallocation of the objects must be
 handled outside the class. This class supports an STL compliant bidirectional iteration. The

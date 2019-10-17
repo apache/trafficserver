@@ -33,7 +33,6 @@ Test a basic regex_revalidate
 # A rule's expiry can't be changed after the fact!
 
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.PluginExists('regex_revalidate.so'),
     Condition.PluginExists('xdebug.so')
 )
@@ -43,7 +42,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_manager")
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
 #**testname is required**
 #testName = "regex_reval"
@@ -138,7 +137,7 @@ path1_rule = 'path1 {}\n'.format(int(time.time()) + 600)
 
 # Define first revistion for when trafficserver starts
 ts.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    "# Empty\n"    
+    "# Empty\n"
 ])
 
 ts.Disk.remap_config.AddLine(
@@ -154,13 +153,12 @@ ts.Disk.records_config.update({
     'proxy.config.http.wait_for_cache': 1,
     'proxy.config.http.insert_age_in_response': 0,
     'proxy.config.http.response_via_str': 3,
-    'proxy.config.http.server_ports': '{}'.format(ts.Variables.port),
 })
 
 # 0 Test - Load cache (miss) (path1)
 tr = Test.AddTestRun("Cache miss path1")
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_reval-miss.gold"

@@ -26,7 +26,7 @@
    HttpPages.h
 
    Description:
-       Data structurs and stat page generators for http info
+       Data structures and stat page generators for http info
 
 
  ****************************************************************************/

@@ -31,41 +31,36 @@
 
 #pragma once
 
-//#include "libts.h"
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "HTTP.h"
 #include "HttpConfig.h"
 #include "IPAllow.h"
-#include "ProxyClientSession.h"
-#include "Http1ClientTransaction.h"
+#include "ProxySession.h"
+#include "Http1Transaction.h"
 
 #ifdef USE_HTTP_DEBUG_LISTS
 extern ink_mutex debug_cs_list_mutex;
 #endif
 
 class HttpSM;
-class HttpServerSession;
+class Http1ServerSession;
 
-class Http1ClientSession : public ProxyClientSession
+class Http1ClientSession : public ProxySession
 {
 public:
-  typedef ProxyClientSession super; ///< Parent type.
+  typedef ProxySession super; ///< Parent type.
   Http1ClientSession();
 
-  // Implement ProxyClientSession interface.
+  // Implement ProxySession interface.
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
+  void start() override;
+  void release(ProxyTransaction *trans) override; // Indicate we are done with a transaction
+  void release_transaction();
   void destroy() override;
   void free() override;
-  void release_transaction();
 
-  void
-  start() override
-  {
-    // Troll for data to get a new transaction
-    this->release(&trans);
-  }
-
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
+  void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true) override;
 
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
@@ -76,92 +71,20 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
-  bool
-  allow_half_open()
-  {
-    // Only allow half open connections if the not over TLS
-    return (client_vc && dynamic_cast<SSLNetVConnection *>(client_vc) == nullptr);
-  }
+  // Accessor Methods
+  bool allow_half_open() const;
+  void set_half_close_flag(bool flag) override;
+  bool get_half_close_flag() const override;
+  bool is_chunked_encoding_supported() const override;
+  NetVConnection *get_netvc() const override;
+  int get_transact_count() const override;
+  virtual bool is_outbound_transparent() const;
 
-  void
-  set_half_close_flag(bool flag) override
-  {
-    half_close = flag;
-  }
-
-  bool
-  get_half_close_flag() const override
-  {
-    return half_close;
-  }
-
-  bool
-  is_chunked_encoding_supported() const override
-  {
-    return true;
-  }
-
-  NetVConnection *
-  get_netvc() const override
-  {
-    return client_vc;
-  }
-
-  int
-  get_transact_count() const override
-  {
-    return transact_count;
-  }
-
-  virtual bool
-  is_outbound_transparent() const
-  {
-    return f_outbound_transparent;
-  }
-
-  // Indicate we are done with a transaction
-  void release(ProxyClientTransaction *trans) override;
-
-  void attach_server_session(HttpServerSession *ssession, bool transaction_done = true) override;
-
-  HttpServerSession *
-  get_server_session() const override
-  {
-    return bound_ss;
-  }
-
-  void
-  set_active_timeout(ink_hrtime timeout_in) override
-  {
-    if (client_vc)
-      client_vc->set_active_timeout(timeout_in);
-  }
-
-  void
-  set_inactivity_timeout(ink_hrtime timeout_in) override
-  {
-    if (client_vc)
-      client_vc->set_inactivity_timeout(timeout_in);
-  }
-
-  void
-  cancel_inactivity_timeout() override
-  {
-    if (client_vc)
-      client_vc->cancel_inactivity_timeout();
-  }
-
-  const char *
-  get_protocol_string() const override
-  {
-    return "http";
-  }
-
-  bool
-  is_transparent_passthrough_allowed() const override
-  {
-    return f_transparent_passthrough;
-  }
+  Http1ServerSession *get_server_session() const override;
+  void set_active_timeout(ink_hrtime timeout_in) override;
+  void set_inactivity_timeout(ink_hrtime timeout_in) override;
+  void cancel_inactivity_timeout() override;
+  const char *get_protocol_string() const override;
 
   void increment_current_active_client_connections_stat() override;
   void decrement_current_active_client_connections_stat() override;
@@ -174,7 +97,6 @@ private:
   int state_keep_alive(int event, void *data);
   int state_slave_keep_alive(int event, void *data);
   int state_wait_for_close(int event, void *data);
-  void set_tcp_init_cwnd();
 
   enum C_Read_State {
     HCS_INIT,
@@ -184,35 +106,32 @@ private:
     HCS_CLOSED,
   };
 
-  NetVConnection *client_vc;
-  int magic;
-  int transact_count;
-  bool tcp_init_cwnd_set;
-  bool half_close;
-  bool conn_decrease;
+  NetVConnection *client_vc = nullptr;
+  int magic                 = HTTP_SS_MAGIC_DEAD;
+  int transact_count        = 0;
+  bool half_close           = false;
+  bool conn_decrease        = false;
 
-  MIOBuffer *read_buffer;
-  IOBufferReader *sm_reader;
+  MIOBuffer *read_buffer  = nullptr;
+  IOBufferReader *_reader = nullptr;
 
-  C_Read_State read_state;
+  C_Read_State read_state = HCS_INIT;
 
-  VIO *ka_vio;
-  VIO *slave_ka_vio;
+  VIO *ka_vio       = nullptr;
+  VIO *slave_ka_vio = nullptr;
 
-  HttpServerSession *bound_ss;
+  Http1ServerSession *bound_ss = nullptr;
 
-  int released_transactions;
+  int released_transactions = 0;
 
 public:
   // Link<Http1ClientSession> debug_link;
   LINK(Http1ClientSession, debug_link);
 
   /// Set outbound connection to transparent.
-  bool f_outbound_transparent;
-  /// Transparently pass-through non-HTTP traffic.
-  bool f_transparent_passthrough;
+  bool f_outbound_transparent = false;
 
-  Http1ClientTransaction trans;
+  Http1Transaction trans;
 };
 
 extern ClassAllocator<Http1ClientSession> http1ClientSessionAllocator;

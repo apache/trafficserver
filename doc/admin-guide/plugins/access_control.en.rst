@@ -112,7 +112,7 @@ Let us say CDN_'s domain name is ``example-cdn.com`` and origin_'s domain name i
           alt config:use_redirect=//true//
             CDN -> Origin : HEAD https://example.com/path/object
             activate Origin
-          else config:use_returect=//false//
+          else config:use_redirect=//false//
             CDN -> Origin : GET https://example.com/path/object
             deactivate CDN
           end
@@ -193,7 +193,7 @@ This use case is similar to `use case 1`_ but makes sure all (cacheable) request
 
 **<14>** When the origin_ responds with a valid access token in ``TokenRespHdr`` the CDN_ sets the ``TokenCookie`` by using a ``302 Redirect`` response with a ``Location`` header containing the URI of original UA_ request.
 
-In this way the after the initial failure the UA_ request is repeated with a valid access token and can be safely cached in the CDN_ cache (if the object is catchable)
+In this way the after the initial failure the UA_ request is repeated with a valid access token and can be safely cached in the CDN_ cache (if the object is cacheable)
 
 The support of this use case is still not implemented.
 
@@ -321,7 +321,7 @@ Plugin configuration
 * Extract information into a request header
    * ``--extract-subject-to-header=<header_name>`` (`optional`, default:empty/unused) - extract the access token `subject` claim into a request header with ``<header_name>`` for debugging purposes and logging or to be able to modify the cache key by using :ref:`admin-plugins-cachekey` plugin.
    * ``--extract-tokenid-to-header=<header_name>`` (`optional`, default:empty/unused) - extract the access token `token id` claim into a request header with ``<header_name>`` for debugging purposes and logging
-   * ``--extract-status-to-header=<header_name>`` (`optional`, default:empty/unused) - extract the access token validation statusa request header with ``<header_name>`` for debugging purposes and logging
+   * ``--extract-status-to-header=<header_name>`` (`optional`, default:empty/unused) - extract the access token validation status request header with ``<header_name>`` for debugging purposes and logging
 
 
 * Plugin setup related
@@ -329,7 +329,7 @@ Plugin configuration
    * ``--include-uri-paths-file`` (`optional`, default:empty/unused) - a file containing a list of regex expressions to be matched against URI paths. The access control is applied to paths that match.
    * ``--exclude-uri-paths-file`` (`optional`, default:empty/unused) - a file containing a list of regex expressions to be matched against URI paths. The access control is applied to paths that do not match.
 
-* Behavior modificators to support various use-cases
+* Behavior modifiers to support various use-cases
    * ``--reject-invalid-token-requests`` (`optional`, default:``false``) - reject invalid token requests instead of forwarding them to origin_.
    * ``--use-redirects`` (`optional`, default:``false``) - used to configure `use case 2`_, not implemented yet.
 

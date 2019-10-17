@@ -53,7 +53,7 @@ find_etag(const char *raw_tag_field, int raw_tag_field_len, int *length)
   if ((etag_start < etag_end) && (*etag_start == '"')) {
     ++etag_start;
     --etag_length;
-    quote = (const char *)memchr(etag_start, '"', etag_length);
+    quote = static_cast<const char *>(memchr(etag_start, '"', etag_length));
     if (quote) {
       etag_length = quote - etag_start;
     }
@@ -94,7 +94,7 @@ do_strings_match_strongly(const char *raw_tag_field, int raw_tag_field_len, cons
 
     n = 0;
 
-    if (((int)(tag->len - n) == etag_length) && (strncmp(etag_start, tag->str + n, etag_length) == 0)) {
+    if ((static_cast<int>(tag->len - n) == etag_length) && (strncmp(etag_start, tag->str + n, etag_length) == 0)) {
       return true;
     }
   }
@@ -212,7 +212,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
           current_age = CacheHighAgeWatermark;
         }
       } else {
-        current_age = (time_t)0;
+        current_age = static_cast<time_t>(0);
       }
 
       if (is_debug_tag_set("http_alts")) {
@@ -289,7 +289,7 @@ HttpTransactCache::calculate_quality_of_match(OverridableHttpConfigParams *http_
 {
   // For PURGE requests, any alternate is good really.
   if (client_request->method_get_wksidx() == HTTP_WKSIDX_PURGE) {
-    return (float)1.0;
+    return static_cast<float>(1.0);
   }
 
   // Now calculate a quality based on all sorts of logic
@@ -630,13 +630,13 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
     ca_raw = cached_accept_field->value_get(&ca_raw_len);
     if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
       Debug("http_alternate", "Exact match for ACCEPT CHARSET");
-      return (float)1.001; // slightly higher weight to this guy
+      return static_cast<float>(1.001); // slightly higher weight to this guy
     }
   }
   // return match if either ac or ct is missing
   // this check is different from accept-encoding
   if (accept_field == nullptr || content_field == nullptr) {
-    return (float)1.0;
+    return static_cast<float>(1.0);
   }
   // get the charset of this content-type //
   c_raw = content_field->value_get(&c_raw_len);
@@ -657,7 +657,7 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw, a_raw_len);
 
     if (a_param_list.head) {
-      a_charset     = (char *)a_param_list.head->str;
+      a_charset     = const_cast<char *>(a_param_list.head->str);
       a_charset_len = a_param_list.head->len;
     } else {
       continue;
@@ -760,7 +760,7 @@ HttpTransactCache::match_content_encoding(MIMEField *accept_field, const char *e
     a_raw = a_value->str;
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw);
     if (a_param_list.head) {
-      a_encoding = (char *)a_param_list.head->str;
+      a_encoding = const_cast<char *>(a_param_list.head->str);
     } else {
       continue;
     }
@@ -798,7 +798,7 @@ match_accept_content_encoding(const char *c_raw, MIMEField *accept_field, bool *
     // break Accept-Encoding piece into semi-colon separated parts //
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw);
     if (a_param_list.head) {
-      a_encoding = (char *)a_param_list.head->str;
+      a_encoding = const_cast<char *>(a_param_list.head->str);
     } else {
       continue;
     }
@@ -842,13 +842,13 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
     ca_raw = cached_accept_field->value_get(&ca_raw_len);
     if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
       Debug("http_alternate", "Exact match for ACCEPT ENCODING");
-      return (float)1.001; // slightly higher weight to this guy
+      return static_cast<float>(1.001); // slightly higher weight to this guy
     }
   }
   // return match if both ae and ce are missing
   // this check is different from accept charset
   if (accept_field == nullptr && content_field == nullptr) {
-    return (float)1.0;
+    return static_cast<float>(1.0);
   }
   // if no Content-Encoding, treat as "identity" //
   if (!content_field) {
@@ -880,7 +880,7 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
   //   The 1.1 spec says servers MAY assume that clients will accept   //
   //   any encoding if no header is sent.  Unforntunately, this does   //
   //   not work 1.0 clients & is particularly thorny when the proxy    //
-  //   created the enconding as the result of a transform.  Http 1.1   //
+  //   created the encoding as the result of a transform.  Http 1.1   //
   //   purists would say that if proxy encodes something it's really   //
   //   a transfer-encoding and not a content-encoding but again this   //
   //   causes problems with 1.0 clients                                //
@@ -888,12 +888,12 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
   if (!accept_field) {
     if (is_identity_encoding) {
       if (!cached_accept_field) {
-        return ((float)1.0);
+        return (static_cast<float>(1.0));
       } else {
-        return ((float)0.001);
+        return (static_cast<float>(0.001));
       }
     } else {
-      return ((float)-1.0);
+      return (static_cast<float>(-1.0));
     }
   }
 
@@ -1015,14 +1015,14 @@ match_accept_content_language(const char *c_raw, MIMEField *accept_field, bool *
     float tq = HttpCompat::find_Q_param_in_strlist(&a_param_list);
 
     /////////////////////////////////////////////////////////////////////
-    // This algorithm is a bit wierd --- the resulting Q factor is     //
+    // This algorithm is a bit weird --- the resulting Q factor is     //
     // the Q value corresponding to the LONGEST range field that       //
     // matched, or if none matched, then the Q value of any asterisk.  //
     // Also, if the lang value is "", meaning that no Content-Language //
     // was specified, this document matches all accept headers.        //
     /////////////////////////////////////////////////////////////////////
     if (a_param_list.head) {
-      a_range         = (char *)a_param_list.head->str;
+      a_range         = const_cast<char *>(a_param_list.head->str);
       *a_range_length = a_param_list.head->len;
     } else {
       continue;
@@ -1034,11 +1034,6 @@ match_accept_content_language(const char *c_raw, MIMEField *accept_field, bool *
       return true;
     } else if (does_language_range_match(a_range, c_raw)) {
       *q = tq;
-      // This is disabled, so removed max_a_range_length from prototype
-      //          if (*a_range_length > *max_a_range_length) {
-      //              *q = tq;
-      //              *max_a_range_length = *a_range_length;
-      //          }
       return true;
     } else {
     }
@@ -1048,7 +1043,7 @@ match_accept_content_language(const char *c_raw, MIMEField *accept_field, bool *
 }
 
 // FIX: This code is icky, and i suspect wrong in places, particularly
-//      beacuse parts of match_accept_content_language are commented out.
+//      because parts of match_accept_content_language are commented out.
 //      It looks like lots of hacks were done.  The code should probably
 //      be updated to use the code in HttpCompat::match_accept_language.
 
@@ -1073,7 +1068,7 @@ HttpTransactCache::calculate_quality_of_accept_language_match(MIMEField *accept_
     ca_raw = cached_accept_field->value_get(&ca_raw_len);
     if (a_raw && ca_raw && a_raw_len == ca_raw_len && !strncmp(a_raw, ca_raw, a_raw_len)) {
       Debug("http_alternate", "Exact match for ACCEPT LANGUAGE");
-      return (float)1.001; // slightly higher weight to this guy
+      return static_cast<float>(1.001); // slightly higher weight to this guy
     }
   }
 
@@ -1138,115 +1133,77 @@ HttpTransactCache::CalcVariability(OverridableHttpConfigParams *http_config_para
   ink_assert(obj_origin_server_response != nullptr);
 
   Variability_t variability = VARIABILITY_NONE;
-  if (http_config_params->cache_enable_default_vary_headers || obj_origin_server_response->presence(MIME_PRESENCE_VARY)) {
-    ///////////////////////////////////////////////////////////////////////
-    // If the origin server sent a Vary header in the response, use that //
-    // Vary, otherwise use the default. Ivry adds: However if the origin //
-    // server was a non-compliant 1.1 and did not send a Vary header,    //
-    // treat as 1.0 with no Vary header.                                 //
-    ///////////////////////////////////////////////////////////////////////
+  if (obj_origin_server_response->presence(MIME_PRESENCE_VARY)) {
     StrList vary_list;
-    int num_vary_values = obj_origin_server_response->value_get_comma_list(MIME_FIELD_VARY, MIME_LEN_VARY, &vary_list);
 
-    if (num_vary_values <= 0) { // no vary hdr, so use defaults if enabled
-      const char *vary_values = nullptr;
-      const char *content_type;
-      int content_type_len;
-      char type[32], subtype[32];
-
-      content_type = obj_origin_server_response->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &content_type_len);
-
-      if (content_type) {
-        HttpCompat::parse_mime_type_with_len(content_type, content_type_len, type, subtype, sizeof(type), sizeof(subtype));
-      } else {
-        type[0]    = '\0';
-        subtype[0] = '\0';
+    if (obj_origin_server_response->value_get_comma_list(MIME_FIELD_VARY, MIME_LEN_VARY, &vary_list) > 0) {
+      if (is_debug_tag_set("http_match") && vary_list.head) {
+        Debug("http_match", "Vary list of %d elements", vary_list.count);
+        vary_list.dump(stderr);
       }
 
-      Debug("http_match", "      type = '%s', subtype = '%s'", type, subtype);
-
-      if (http_config_params->cache_enable_default_vary_headers) {
-        if (strcasecmp(type, "text") == 0) {
-          Debug("http_match", "      Using default text vary headers");
-          vary_values = http_config_params->cache_vary_default_text;
-        } else if (strcasecmp(type, "image") == 0) {
-          Debug("http_match", "      Using default image vary headers");
-          vary_values = http_config_params->cache_vary_default_images;
-        } else {
-          Debug("http_match", "      Using default other vary headers");
-          vary_values = http_config_params->cache_vary_default_other;
+      // for each field that varies, see if current & original hdrs match //
+      for (Str *field = vary_list.head; field != nullptr; field = field->next) {
+        if (field->len == 0) {
+          continue;
         }
-      }
-      // convert the comma-sep string from the config var into a list
-      HttpCompat::parse_comma_list(&vary_list, (vary_values ? vary_values : ""));
-    }
 
-    if (is_debug_tag_set("http_match") && (vary_list.head)) {
-      Debug("http_match", "Vary list of %d elements", vary_list.count);
-      vary_list.dump(stderr);
-    }
+        /////////////////////////////////////////////////////////////
+        // If the field name is unhandled, we should probably do a //
+        // string comparison on the values of this extension field //
+        // but currently we just treat it equivalent to a '*'.     //
+        /////////////////////////////////////////////////////////////
 
-    // for each field that varies, see if current & original hdrs match //
-    for (Str *field = vary_list.head; field != nullptr; field = field->next) {
-      if (field->len == 0) {
-        continue;
-      }
+        Debug("http_match", "Vary: %s", field->str);
+        if (((field->str[0] == '*') && (field->str[1] == NUL))) {
+          Debug("http_match", "Wildcard variability --- object not served from cache");
+          variability = VARIABILITY_ALL;
+          break;
+        }
+        ////////////////////////////////////////////////////////////////////////////////////////
+        // Special case: if 'proxy.config.http.global_user_agent_header' set                  //
+        // we should ignore Vary: User-Agent.                                                 //
+        ////////////////////////////////////////////////////////////////////////////////////////
+        if (http_config_params->global_user_agent_header && !strcasecmp(const_cast<char *>(field->str), "User-Agent")) {
+          continue;
+        }
 
-      /////////////////////////////////////////////////////////////
-      // If the field name is unhandled, we should probably do a //
-      // string comparison on the values of this extension field //
-      // but currently we just treat it equivalent to a '*'.     //
-      /////////////////////////////////////////////////////////////
+        // Disable Vary mismatch checking for Accept-Encoding.  This is only safe to
+        // set if you are promising to fix any Accept-Encoding/Content-Encoding mismatches.
+        if (http_config_params->ignore_accept_encoding_mismatch && !strcasecmp(const_cast<char *>(field->str), "Accept-Encoding")) {
+          continue;
+        }
 
-      Debug("http_match", "Vary: %s", field->str);
-      if (((field->str[0] == '*') && (field->str[1] == NUL))) {
-        Debug("http_match", "Wildcard variability --- object not served from cache");
-        variability = VARIABILITY_ALL;
-        break;
-      }
-      ////////////////////////////////////////////////////////////////////////////////////////
-      // Special case: if 'proxy.config.http.global_user_agent_header' set                  //
-      // we should ignore Vary: User-Agent.                                                 //
-      ////////////////////////////////////////////////////////////////////////////////////////
-      if (http_config_params->global_user_agent_header && !strcasecmp((char *)field->str, "User-Agent")) {
-        continue;
-      }
+        ///////////////////////////////////////////////////////////////////
+        // Take the current vary field and look up the headers in        //
+        // the current client, and the original client.  The cached      //
+        // object varies unless BOTH the current client and the original //
+        // client contain the header, and the header values are equal.   //
+        // We relax this to allow a match if NEITHER have the header.    //
+        //                                                               //
+        // While header "equality" appears to be header-specific, the    //
+        // RFC2068 spec implies that matching only needs to account for  //
+        // differences in whitespace and support for multiple headers    //
+        // with the same name.  Case is presumably also insignificant.   //
+        // Other variations (such as q=1 vs. a field with no q factor)   //
+        // mean that the values DO NOT match.                            //
+        ///////////////////////////////////////////////////////////////////
 
-      // Disable Vary mismatch checking for Accept-Encoding.  This is only safe to
-      // set if you are promising to fix any Accept-Encoding/Content-Encoding mismatches.
-      if (http_config_params->ignore_accept_encoding_mismatch && !strcasecmp((char *)field->str, "Accept-Encoding")) {
-        continue;
-      }
+        ink_assert(strlen(field->str) == field->len);
 
-      ///////////////////////////////////////////////////////////////////
-      // Take the current vary field and look up the headers in        //
-      // the current client, and the original client.  The cached      //
-      // object varies unless BOTH the current client and the original //
-      // client contain the header, and the header values are equal.   //
-      // We relax this to allow a match if NEITHER have the header.    //
-      //                                                               //
-      // While header "equality" appears to be header-specific, the    //
-      // RFC2068 spec implies that matching only needs to account for  //
-      // differences in whitespace and support for multiple headers    //
-      // with the same name.  Case is presumably also insignificant.   //
-      // Other variations (such as q=1 vs. a field with no q factor)   //
-      // mean that the values DO NOT match.                            //
-      ///////////////////////////////////////////////////////////////////
+        char *field_name_str = const_cast<char *>(hdrtoken_string_to_wks(field->str, field->len));
+        if (field_name_str == nullptr) {
+          field_name_str = const_cast<char *>(field->str);
+        }
 
-      ink_assert(strlen(field->str) == field->len);
+        MIMEField *cached_hdr_field  = obj_client_request->field_find(field_name_str, field->len);
+        MIMEField *current_hdr_field = client_request->field_find(field_name_str, field->len);
 
-      char *field_name_str = (char *)hdrtoken_string_to_wks(field->str, field->len);
-      if (field_name_str == nullptr) {
-        field_name_str = (char *)field->str;
-      }
-
-      MIMEField *cached_hdr_field  = obj_client_request->field_find(field_name_str, field->len);
-      MIMEField *current_hdr_field = client_request->field_find(field_name_str, field->len);
-
-      // Header values match? //
-      if (!HttpCompat::do_header_values_rfc2068_14_43_match(cached_hdr_field, current_hdr_field)) {
-        variability = VARIABILITY_SOME;
-        break;
+        // Header values match? //
+        if (!HttpCompat::do_vary_header_values_match(cached_hdr_field, current_hdr_field)) {
+          variability = VARIABILITY_SOME;
+          break;
+        }
       }
     }
   }
@@ -1288,6 +1245,32 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
     return response->status_get();
   }
 
+  // If-None-Match: may match weakly //
+  if (request->presence(MIME_PRESENCE_IF_NONE_MATCH)) {
+    int raw_etags_len, comma_sep_tag_list_len;
+    const char *raw_etags          = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
+    const char *comma_sep_tag_list = nullptr;
+
+    if (raw_etags) {
+      comma_sep_tag_list = request->value_get(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, &comma_sep_tag_list_len);
+      if (!comma_sep_tag_list) {
+        comma_sep_tag_list     = "";
+        comma_sep_tag_list_len = 0;
+      }
+
+      ////////////////////////////////////////////////////////////////////////
+      // If we have an etag and a if-none-match, we are talking to someone  //
+      // who is doing a 1.1 revalidate. Since this is a GET request with no //
+      // sub-ranges, we can do a weak validation.                           //
+      ////////////////////////////////////////////////////////////////////////
+      if (do_strings_match_weakly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
+        return HTTP_STATUS_NOT_MODIFIED;
+      } else {
+        return response->status_get();
+      }
+    }
+  }
+
   // If-Modified-Since //
   if (request->presence(MIME_PRESENCE_IF_MODIFIED_SINCE)) {
     if (response->presence(MIME_PRESENCE_LAST_MODIFIED)) {
@@ -1316,62 +1299,12 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
       response_code = HTTP_STATUS_NOT_MODIFIED;
     }
-
-    // we cannot return NOT_MODIFIED yet, need to check If-none-match
-    if (!request->presence(MIME_PRESENCE_IF_NONE_MATCH)) {
-      return response_code;
-    }
-  }
-
-  // If-None-Match: may match weakly //
-  if (request->presence(MIME_PRESENCE_IF_NONE_MATCH)) {
-    int raw_etags_len, comma_sep_tag_list_len;
-    const char *raw_etags          = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
-    const char *comma_sep_tag_list = nullptr;
-
-    if (raw_etags) {
-      comma_sep_tag_list = request->value_get(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, &comma_sep_tag_list_len);
-      if (!comma_sep_tag_list) {
-        comma_sep_tag_list     = "";
-        comma_sep_tag_list_len = 0;
-      }
-
-      ////////////////////////////////////////////////////////////////////////
-      // If we have an etag and a if-none-match, we are talking to someone  //
-      // who is doing a 1.1 revalidate. Since this is a GET request with no //
-      // sub-ranges, we can do a weak validation.                           //
-      ////////////////////////////////////////////////////////////////////////
-      if (do_strings_match_weakly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
-        // the response already failed If-modified-since (if one exists)
-        return HTTP_STATUS_NOT_MODIFIED;
-      } else {
-        return response->status_get();
-      }
-    }
   }
 
   // There is no If-none-match, and If-modified-since failed,
   // so return NOT_MODIFIED
   if (response_code != HTTP_STATUS_NONE) {
     return response_code;
-  }
-
-  // return PRECONDITIONAL_FAILED if either If-unmodified-since
-  // or If-match fails
-  // BUT, return the original response code only if both pass
-
-  // If-Unmodified-Since //
-  if (request->presence(MIME_PRESENCE_IF_UNMODIFIED_SINCE)) {
-    // lm_value is zero if Last-modified not exists
-    ink_time_t lm_value = response->get_last_modified();
-
-    // Condition fails if Last-modified not exists
-    if ((request->get_if_unmodified_since() < lm_value) || (lm_value == 0)) {
-      return HTTP_STATUS_PRECONDITION_FAILED;
-    } else {
-      // we cannot return yet, need to check If-match
-      response_code = response->status_get();
-    }
   }
 
   // If-Match: must match strongly //
@@ -1395,13 +1328,25 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
     }
 
     if (do_strings_match_strongly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
-      // at the point, the response passed both If-unmodified-since
-      // and If-match, so we can return the original response code
       return response->status_get();
     } else {
       return HTTP_STATUS_PRECONDITION_FAILED;
     }
   }
+
+  // If-Unmodified-Since //
+  if (request->presence(MIME_PRESENCE_IF_UNMODIFIED_SINCE)) {
+    // lm_value is zero if Last-modified not exists
+    ink_time_t lm_value = response->get_last_modified();
+
+    // Condition fails if Last-modified not exists
+    if ((request->get_if_unmodified_since() < lm_value) || (lm_value == 0)) {
+      return HTTP_STATUS_PRECONDITION_FAILED;
+    } else {
+      response_code = response->status_get();
+    }
+  }
+
   // There is no If-match, and If-unmodified-since passed,
   // so return the original response code
   if (response_code != HTTP_STATUS_NONE) {

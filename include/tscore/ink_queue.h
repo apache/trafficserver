@@ -137,10 +137,29 @@ union head_p {
   (_x).s.pointer = _p;                           \
   (_x).s.version = _v
 #elif defined(__x86_64__) || defined(__ia64__) || defined(__powerpc64__) || defined(__aarch64__) || defined(__mips64)
+/* Layout of FREELIST_POINTER
+ *
+ *  0 ~ 47 bits : 48 bits, Virtual Address (47 bits for AMD64 and 48 bits for AArch64)
+ * 48 ~ 62 bits : 15 bits, Freelist Version
+ *      63 bits :  1 bits, The type of Virtual Address (0 = user space, 1 = kernel space)
+ */
+/* Detect which shift is implemented by the simple expression ((~0 >> 1) < 0):
+ *
+ * If the shift is `logical’ the highest order bit of the left side of the comparison is 0 so the result is positive.
+ * If the shift is `arithmetic’ the highest order bit of the left side is 1 so the result is negative.
+ */
+#if ((~0 >> 1) < 0)
+/* the shift is `arithmetic' */
 #define FREELIST_POINTER(_x) \
-  ((void *)(((((intptr_t)(_x).data) << 16) >> 16) | (((~((((intptr_t)(_x).data) << 16 >> 63) - 1)) >> 48) << 48))) // sign extend
-#define FREELIST_VERSION(_x) (((intptr_t)(_x).data) >> 48)
-#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x0000FFFFFFFFFFFFULL) | (((_v)&0xFFFFULL) << 48))
+  ((void *)((((intptr_t)(_x).data) & 0x0000FFFFFFFFFFFFLL) | ((((intptr_t)(_x).data) >> 63) << 48))) // sign extend
+#else
+/* the shift is `logical' */
+#define FREELIST_POINTER(_x) \
+  ((void *)((((intptr_t)(_x).data) & 0x0000FFFFFFFFFFFFLL) | (((~((((intptr_t)(_x).data) >> 63) - 1)) >> 48) << 48)))
+#endif
+
+#define FREELIST_VERSION(_x) ((((intptr_t)(_x).data) & 0x7FFF000000000000LL) >> 48)
+#define SET_FREELIST_POINTER_VERSION(_x, _p, _v) (_x).data = ((((intptr_t)(_p)) & 0x8000FFFFFFFFFFFFLL) | (((_v)&0x7FFFLL) << 48))
 #else
 #error "unsupported processor"
 #endif

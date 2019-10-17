@@ -342,7 +342,7 @@ RecErrT
 RecRegisterConfigString(RecT rec_type, const char *name, const char *data_default_tmp, RecUpdateT update_type, RecCheckT check_type,
                         const char *check_regex, RecSourceT source, RecAccessT access_type)
 {
-  RecString data_default = (RecString)data_default_tmp;
+  RecString data_default = const_cast<RecString>(data_default_tmp);
   ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_string, RECD_STRING);
 }
@@ -359,8 +359,7 @@ RecRegisterConfigCounter(RecT rec_type, const char *name, RecCounter data_defaul
 // RecSetRecordXXX
 //-------------------------------------------------------------------------
 RecErrT
-RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, RecSourceT source, bool lock,
-             bool inc_version)
+RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *data_raw, RecSourceT source, bool lock)
 {
   RecErrT err = REC_ERR_OKAY;
   RecRecord *r1;
@@ -389,10 +388,6 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
 
         if (rec_updated_p) {
           r1->sync_required = REC_SYNC_REQUIRED;
-          if (inc_version) {
-            r1->sync_required |= REC_INC_CONFIG_VERSION;
-          }
-
           if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
             r1->config_meta.update_required = REC_UPDATE_REQUIRED;
           }
@@ -457,43 +452,43 @@ Ldone:
 }
 
 RecErrT
-RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock, bool inc_version)
+RecSetRecordConvert(const char *name, const RecString rec_string, RecSourceT source, bool lock)
 {
   RecData data;
   data.rec_string = rec_string;
-  return RecSetRecord(RECT_NULL, name, RECD_NULL, &data, nullptr, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_NULL, &data, nullptr, source, lock);
 }
 
 RecErrT
-RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock, bool inc_version)
+RecSetRecordInt(const char *name, RecInt rec_int, RecSourceT source, bool lock)
 {
   RecData data;
   data.rec_int = rec_int;
-  return RecSetRecord(RECT_NULL, name, RECD_INT, &data, nullptr, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_INT, &data, nullptr, source, lock);
 }
 
 RecErrT
-RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock, bool inc_version)
+RecSetRecordFloat(const char *name, RecFloat rec_float, RecSourceT source, bool lock)
 {
   RecData data;
   data.rec_float = rec_float;
-  return RecSetRecord(RECT_NULL, name, RECD_FLOAT, &data, nullptr, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_FLOAT, &data, nullptr, source, lock);
 }
 
 RecErrT
-RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock, bool inc_version)
+RecSetRecordString(const char *name, const RecString rec_string, RecSourceT source, bool lock)
 {
   RecData data;
   data.rec_string = rec_string;
-  return RecSetRecord(RECT_NULL, name, RECD_STRING, &data, nullptr, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_STRING, &data, nullptr, source, lock);
 }
 
 RecErrT
-RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock, bool inc_version)
+RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source, bool lock)
 {
   RecData data;
   data.rec_counter = rec_counter;
-  return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, nullptr, source, lock, inc_version);
+  return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, nullptr, source, lock);
 }
 
 // check the version of the snap file to remove records.snap or not
@@ -620,13 +615,13 @@ RecSyncStatsFile()
 
 // Consume a parsed record, pushing it into the records hash table.
 static void
-RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char *name, const char *value, RecSourceT source, bool inc_version)
+RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char *name, const char *value, RecSourceT source)
 {
   RecData data;
 
   memset(&data, 0, sizeof(RecData));
   RecDataSetFromString(data_type, &data, value);
-  RecSetRecord(rec_type, name, data_type, &data, nullptr, source, false, inc_version);
+  RecSetRecord(rec_type, name, data_type, &data, nullptr, source, false);
   RecDataZero(data_type, &data);
 }
 
@@ -634,7 +629,7 @@ RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char *name, const
 // RecReadConfigFile
 //-------------------------------------------------------------------------
 RecErrT
-RecReadConfigFile(bool inc_version)
+RecReadConfigFile()
 {
   RecDebug(DL_Note, "Reading '%s'", g_rec_config_fpath);
 
@@ -642,148 +637,12 @@ RecReadConfigFile(bool inc_version)
   ink_rwlock_wrlock(&g_records_rwlock);
 
   // Parse the actual file and hash the values.
-  RecConfigFileParse(g_rec_config_fpath, RecConsumeConfigEntry, inc_version);
+  RecConfigFileParse(g_rec_config_fpath, RecConsumeConfigEntry);
 
   // release our hash table
   ink_rwlock_unlock(&g_records_rwlock);
 
   return REC_ERR_OKAY;
-}
-
-//-------------------------------------------------------------------------
-// RecSyncConfigFile
-//-------------------------------------------------------------------------
-RecErrT
-RecSyncConfigToTB(TextBuffer *tb, bool *inc_version)
-{
-  RecErrT err = REC_ERR_FAIL;
-
-  if (inc_version != nullptr) {
-    *inc_version = false;
-  }
-
-  /*
-   * g_mode_type should be initialized by
-   * RecLocalInit() or RecProcessInit() earlier.
-   */
-  ink_assert(g_mode_type != RECM_NULL);
-
-  if (g_mode_type == RECM_SERVER || g_mode_type == RECM_STAND_ALONE) {
-    RecRecord *r;
-    int i, num_records;
-    RecConfigFileEntry *cfe;
-    bool sync_to_disk;
-
-    ink_mutex_acquire(&g_rec_config_lock);
-
-    num_records  = g_num_records;
-    sync_to_disk = false;
-    for (i = 0; i < num_records; i++) {
-      r = &(g_records[i]);
-      rec_mutex_acquire(&(r->lock));
-      if (REC_TYPE_IS_CONFIG(r->rec_type)) {
-        if (r->sync_required & REC_DISK_SYNC_REQUIRED) {
-          if (g_rec_config_contents_ht.find(r->name) == g_rec_config_contents_ht.end()) {
-            cfe             = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
-            cfe->entry_type = RECE_RECORD;
-            cfe->entry      = ats_strdup(r->name);
-            enqueue(g_rec_config_contents_llq, (void *)cfe);
-            g_rec_config_contents_ht.emplace(r->name);
-          }
-          r->sync_required = r->sync_required & ~REC_DISK_SYNC_REQUIRED;
-          sync_to_disk     = true;
-          if (r->sync_required & REC_INC_CONFIG_VERSION) {
-            r->sync_required = r->sync_required & ~REC_INC_CONFIG_VERSION;
-            if (r->rec_type != RECT_LOCAL && inc_version != nullptr) {
-              *inc_version = true;
-            }
-          }
-        }
-      }
-      rec_mutex_release(&(r->lock));
-    }
-
-    if (sync_to_disk) {
-      char b[1024];
-
-      // okay, we're going to write into our TextBuffer
-      err = REC_ERR_OKAY;
-      tb->reUse();
-
-      ink_rwlock_rdlock(&g_records_rwlock);
-
-      LLQrec *llq_rec = g_rec_config_contents_llq->head;
-      while (llq_rec != nullptr) {
-        cfe = (RecConfigFileEntry *)llq_rec->data;
-        if (cfe->entry_type == RECE_COMMENT) {
-          tb->copyFrom(cfe->entry, strlen(cfe->entry));
-          tb->copyFrom("\n", 1);
-        } else {
-          if (auto it = g_records_ht.find(cfe->entry); it != g_records_ht.end()) {
-            r = it->second;
-            rec_mutex_acquire(&(r->lock));
-            // rec_type
-            switch (r->rec_type) {
-            case RECT_CONFIG:
-              tb->copyFrom("CONFIG ", 7);
-              break;
-            case RECT_PROCESS:
-              tb->copyFrom("PROCESS ", 8);
-              break;
-            case RECT_NODE:
-              tb->copyFrom("NODE ", 5);
-              break;
-            case RECT_LOCAL:
-              tb->copyFrom("LOCAL ", 6);
-              break;
-            default:
-              ink_assert(!"Unexpected RecT type");
-              break;
-            }
-            // name
-            tb->copyFrom(cfe->entry, strlen(cfe->entry));
-            tb->copyFrom(" ", 1);
-            // data_type and value
-            switch (r->data_type) {
-            case RECD_INT:
-              tb->copyFrom("INT ", 4);
-              snprintf(b, 1023, "%" PRId64 "", r->data.rec_int);
-              tb->copyFrom(b, strlen(b));
-              break;
-            case RECD_FLOAT:
-              tb->copyFrom("FLOAT ", 6);
-              snprintf(b, 1023, "%f", r->data.rec_float);
-              tb->copyFrom(b, strlen(b));
-              break;
-            case RECD_STRING:
-              tb->copyFrom("STRING ", 7);
-              if (r->data.rec_string) {
-                tb->copyFrom(r->data.rec_string, strlen(r->data.rec_string));
-              } else {
-                tb->copyFrom("NULL", strlen("NULL"));
-              }
-              break;
-            case RECD_COUNTER:
-              tb->copyFrom("COUNTER ", 8);
-              snprintf(b, 1023, "%" PRId64 "", r->data.rec_counter);
-              tb->copyFrom(b, strlen(b));
-              break;
-            default:
-              ink_assert(!"Unexpected RecD type");
-              break;
-            }
-            tb->copyFrom("\n", 1);
-            rec_mutex_release(&(r->lock));
-          }
-        }
-        llq_rec = llq_rec->next;
-      }
-      ink_rwlock_unlock(&g_records_rwlock);
-    }
-    ink_mutex_release(&g_rec_config_lock);
-  }
-
-  return err;
 }
 
 //-------------------------------------------------------------------------
@@ -952,80 +811,4 @@ RecSetSyncRequired(char *name, bool lock)
   }
 
   return err;
-}
-
-RecErrT
-RecWriteConfigFile(TextBuffer *tb)
-{
-#define TMP_FILENAME_EXT_STR ".tmp"
-#define TMP_FILENAME_EXT_LEN (sizeof(TMP_FILENAME_EXT_STR) - 1)
-
-  int nbytes;
-  int filename_len;
-  int tmp_filename_len;
-  RecErrT result;
-  char buff[1024];
-  char *tmp_filename;
-
-  filename_len     = strlen(g_rec_config_fpath);
-  tmp_filename_len = filename_len + TMP_FILENAME_EXT_LEN;
-  if (tmp_filename_len < (int)sizeof(buff)) {
-    tmp_filename = buff;
-  } else {
-    tmp_filename = (char *)ats_malloc(tmp_filename_len + 1);
-  }
-  sprintf(tmp_filename, "%s%s", g_rec_config_fpath, TMP_FILENAME_EXT_STR);
-
-  RecDebug(DL_Note, "Writing '%s'", g_rec_config_fpath);
-
-  RecHandle h_file = RecFileOpenW(tmp_filename);
-  do {
-    if (h_file == REC_HANDLE_INVALID) {
-      RecLog(DL_Warning, "open file: %s to write fail, errno: %d, error info: %s", tmp_filename, errno, strerror(errno));
-      result = REC_ERR_FAIL;
-      break;
-    }
-
-    if (RecFileWrite(h_file, tb->bufPtr(), tb->spaceUsed(), &nbytes) != REC_ERR_OKAY) {
-      RecLog(DL_Warning, "write to file: %s fail, errno: %d, error info: %s", tmp_filename, errno, strerror(errno));
-      result = REC_ERR_FAIL;
-      break;
-    }
-
-    if (nbytes != (int)tb->spaceUsed()) {
-      RecLog(DL_Warning, "write to file: %s fail, disk maybe full", tmp_filename);
-      result = REC_ERR_FAIL;
-      break;
-    }
-
-    if (RecFileSync(h_file) != REC_ERR_OKAY) {
-      RecLog(DL_Warning, "fsync file: %s fail, errno: %d, error info: %s", tmp_filename, errno, strerror(errno));
-      result = REC_ERR_FAIL;
-      break;
-    }
-    if (RecFileClose(h_file) != REC_ERR_OKAY) {
-      RecLog(DL_Warning, "close file: %s fail, errno: %d, error info: %s", tmp_filename, errno, strerror(errno));
-      result = REC_ERR_FAIL;
-      break;
-    }
-    h_file = REC_HANDLE_INVALID;
-
-    if (rename(tmp_filename, g_rec_config_fpath) != 0) {
-      RecLog(DL_Warning, "rename file %s to %s fail, errno: %d, error info: %s", tmp_filename, g_rec_config_fpath, errno,
-             strerror(errno));
-      result = REC_ERR_FAIL;
-      break;
-    }
-
-    result = REC_ERR_OKAY;
-  } while (false);
-
-  if (h_file != REC_HANDLE_INVALID) {
-    RecFileClose(h_file);
-  }
-  if (tmp_filename != buff) {
-    ats_free(tmp_filename);
-  }
-
-  return result;
 }

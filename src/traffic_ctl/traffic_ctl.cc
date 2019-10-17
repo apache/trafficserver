@@ -211,10 +211,10 @@ main(int argc, const char **argv)
   host_command.add_command("down", "Set down one or more host(s)", "", MORE_THAN_ONE_ARG_N, [&]() { engine.status_down(); })
     .add_example_usage("traffic_ctl host down HOST [OPTIONS]")
     .add_option("--time", "-I", "number of seconds that a host is marked down", "", 1)
-    .add_option("--reason", "", "reason for marking the host down, one of 'manual|active|local");
+    .add_option("--reason", "", "reason for marking the host down, one of 'manual|active|local", "", 1);
   host_command.add_command("up", "Set up one or more host(s)", "", MORE_THAN_ONE_ARG_N, [&]() { engine.status_up(); })
     .add_example_usage("traffic_ctl host up METRIC value")
-    .add_option("--reason", "", "reason for marking the host up, one of 'manual|active|local");
+    .add_option("--reason", "", "reason for marking the host up, one of 'manual|active|local", "", 1);
 
   // metric commands
   metric_command.add_command("get", "Get one or more metric values", "", MORE_THAN_ONE_ARG_N, [&]() { engine.metric_get(); })
@@ -235,7 +235,7 @@ main(int argc, const char **argv)
   // server commands
   server_command.add_command("backtrace", "Show a full stack trace of the traffic_server process",
                              [&]() { engine.server_backtrace(); });
-  server_command.add_command("restart", "Restart Traffic Server", [&]() { engine.server_backtrace(); })
+  server_command.add_command("restart", "Restart Traffic Server", [&]() { engine.server_restart(); })
     .add_example_usage("traffic_ctl server restart [OPTIONS]")
     .add_option("--drain", "", "Wait for client connections to drain before restarting")
     .add_option("--manager", "", "Restart traffic_manager as well as traffic_server");

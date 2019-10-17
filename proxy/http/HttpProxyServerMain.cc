@@ -39,6 +39,10 @@
 #include "http2/Http2SessionAccept.h"
 #include "HttpConnectionCount.h"
 #include "HttpProxyServerMain.h"
+#if TS_USE_QUIC == 1
+#include "P_QUICNextProtocolAccept.h"
+#include "http3/Http3SessionAccept.h"
+#endif
 
 #include <vector>
 
@@ -91,20 +95,6 @@ ssl_register_protocol(const char *protocol, Continuation *contp)
   return true;
 }
 
-bool
-ssl_unregister_protocol(const char *protocol, Continuation *contp)
-{
-  SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
-
-  for (SSLNextProtocolAccept *ssl = ssl_plugin_acceptors.head; ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
-    // Ignore possible failure because we want to try to unregister
-    // from all SSL ports.
-    ssl->unregisterEndpoint(protocol, contp);
-  }
-
-  return true;
-}
-
 /////////////////////////////////////////////////////////////////
 //
 //  main()
@@ -119,12 +109,12 @@ ssl_unregister_protocol(const char *protocol, Continuation *contp)
 */
 struct HttpProxyAcceptor {
   /// Accept continuation.
-  Continuation *_accept;
+  Continuation *_accept = nullptr;
   /// Options for @c NetProcessor.
   NetProcessor::AcceptOptions _net_opt;
 
   /// Default constructor.
-  HttpProxyAcceptor() : _accept(nullptr) {}
+  HttpProxyAcceptor() {}
 };
 
 /** Global acceptors.
@@ -151,6 +141,7 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
   REC_ReadConfigInteger(net.recv_bufsize, "proxy.config.net.sock_recv_buffer_size_in");
   REC_ReadConfigInteger(net.send_bufsize, "proxy.config.net.sock_send_buffer_size_in");
   REC_ReadConfigInteger(net.sockopt_flags, "proxy.config.net.sock_option_flag_in");
+  REC_ReadConfigInteger(net.defer_accept, "proxy.config.net.defer_accept");
 
 #ifdef TCP_FASTOPEN
   REC_ReadConfigInteger(net.tfo_queue_length, "proxy.config.net.sock_option_tfo_queue_size_in");
@@ -158,6 +149,7 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
 
   if (port) {
     net.f_inbound_transparent = port->m_inbound_transparent_p;
+    net.f_mptcp               = port->m_mptcp;
     net.ip_family             = port->m_family;
     net.local_port            = port->m_port;
     net.f_proxy_protocol      = port->m_proxy_protocol;
@@ -230,26 +222,30 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     // the least important protocol first:
     // http/1.0, http/1.1, h2
 
-    // HTTP
-    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_1_0)) {
-      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_0, http);
-    }
-
-    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_1_1)) {
-      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_1, http);
-    }
-
-    // HTTP2
-    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0)) {
-      Http2SessionAccept *acc = new Http2SessionAccept(accept_opt);
-
-      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, acc);
-    }
+    ssl->enableProtocols(port.m_session_protocol_preference);
+    ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_0, http);
+    ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_1, http);
+    ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, new Http2SessionAccept(accept_opt));
 
     SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
     ssl_plugin_acceptors.push(ssl);
     ssl->proxyPort   = &port;
     acceptor._accept = ssl;
+#if TS_USE_QUIC == 1
+  } else if (port.isQUIC()) {
+    QUICNextProtocolAccept *quic = new QUICNextProtocolAccept();
+
+    quic->enableProtocols(port.m_session_protocol_preference);
+
+    // HTTP/3
+    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_3, new Http3SessionAccept(accept_opt));
+
+    // HTTP/0.9 over QUIC (for interop only, will be removed)
+    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, new Http3SessionAccept(accept_opt));
+
+    quic->proxyPort  = &port;
+    acceptor._accept = quic;
+#endif
   } else {
     acceptor._accept = probe;
   }
@@ -342,6 +338,12 @@ start_HttpProxyServer()
       if (nullptr == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;
       }
+#if TS_USE_QUIC == 1
+    } else if (port.isQUIC()) {
+      if (nullptr == quic_NetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
+        return;
+      }
+#endif
     } else if (!port.isPlugin()) {
       if (nullptr == netProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;

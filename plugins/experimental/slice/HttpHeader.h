@@ -71,6 +71,16 @@ struct HttpHeader {
     return getCharPtr(TSHttpHdrMethodGet, len);
   }
 
+  // request method version
+  int
+  version() const
+  {
+    return TSHttpHdrVersionGet(m_buffer, m_lochdr);
+  }
+
+  // Returns string representation of the url. Caller gets ownership!
+  char *urlString(int *const urllen) const;
+
   // host
   char const *
   hostname(int *const len) const
@@ -95,7 +105,7 @@ struct HttpHeader {
   bool valueForKey(char const *const keystr, int const keylen,
                    char *const valstr,  // <-- return string value
                    int *const vallen,   // <-- pass in capacity, returns len of string
-                   int const index = -1 // sets all values
+                   int const index = -1 // retrieves all values
                    ) const;
 
   /**

@@ -67,8 +67,7 @@ the following information:
 
 -  The original log file's name (such as ``access.log``).
 
--  The hostname of the |TS| node that generated the log file (useful in |TS|
-   log collation configurations).
+-  The hostname of the |TS| node that generated the log file.
 
 -  Two timestamps separated by a hyphen (``-``). The first timestamp is
    a *lower bound* for the timestamp of the first record in the log
@@ -188,7 +187,7 @@ Retention Options
 
 |TS| enables you to control the amount of disk space that the logging directory
 can consume. This allows the system to operate smoothly within a specified
-space window for a long period of time.  After you establish a space limit,
+space window for a long period of time. After you establish a space limit,
 |TS| continues to monitor the space in the logging directory. When the free
 space dwindles to the headroom limit, it enters a low space state and takes the
 following actions:
@@ -245,4 +244,28 @@ To set log management options, follow the steps below:
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
+
+
+Retaining Logs For No More Than a Specified Period
+--------------------------------------------------
+
+If for security reasons logs need to be purged to make sure no log entry remains on the box
+for more then a specified period of time, we could achieve this by setting the rolling interval,
+the maximum number of rolled log files, and forcing |TS| to roll even when there is no traffic.
+
+Let us say we wanted the oldest log entry to be kept on the box to be no older than 2-hour old.
+
+Set :ts:cv:`proxy.config.output.logfile.rolling_interval_sec` (yaml: `rolling_interval_sec`) to 3600 (1h)
+which will lead to rolling every 1h.
+
+Set :ts:cv:`proxy.config.output.logfile.rolling_max_count` (yaml: `rolling_max_count`) to 1
+which will lead to keeping only one rolled log file at any moment (rolled will be trimmed on every roll).
+
+Set :ts:cv:`proxy.config.output.logfile.rolling_allow_empty` (yaml: `rolling_allow_empty`) to 1 (default: 0)
+which will allow logs to be open and rolled even if there was nothing to be logged during the previous period
+(i.e. no requests to |TS|).
+
+The above will ensure logs are rolled every 1h hour, only 1 rolled log file to be kept
+(rest will be trimmed/removed) and logs will be rolling ("moving") even if nothing is logged
+(i.e. no traffic to |TS|).
 

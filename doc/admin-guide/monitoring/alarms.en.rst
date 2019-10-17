@@ -26,19 +26,6 @@ Traffic Manager Alarms
 allocated to event logs could be full or |TS| may not be able to write to a
 configuration file.
 
-Email Alarms
-============
-
-To configure |TS| to send an email to a specific address whenever an alarm
-occurs, follow the steps below:
-
-#. Set :ts:cv:`proxy.config.alarm_email` in :file:`records.config` to the email
-   address you want to receive alarm notifications. ::
-
-        CONFIG proxy.config.alarm_email STRING "alerts@example.com"
-
-#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
-
 Using a Script File for Alarms
 ------------------------------
 
@@ -47,27 +34,3 @@ However, you can write a script file to execute certain actions when an
 alarm is signaled. Traffic Server provides a sample script file named
 ``example_alarm_bin.sh`` in the ``bin`` directory which can serve as the
 basis for your custom alarm scripts.
-
-Viewing Statistics from Traffic Control
-=======================================
-
-You can use :program:`traffic_ctl` to view statistics
-about Traffic Server performance and web traffic. In addition to viewing
-statistics, you can also configure, stop, and restart the Traffic Server
-system. For additional information, refer to :ref:`configure-using-traffic-ctl`
-and :program:`traffic_ctl`. You can view specific information about a
-Traffic Server node by specifying the variable that corresponds to the
-statistic you want to see.
-
-To view a statistic, enter the following command:::
-
-        traffic_ctl metric get VARIABLE
-
-where ``variable`` is the variable representing the information you
-want to view. For a list of variables you can specify, refer to :ref:`traffic_ctl metrics <traffic-ctl-metric>`.
-
-For example, the following command displays the total number of completed
-HTTP requests:::
-
-     traffic_ctl metric get proxy.process.http.completed_requests
-

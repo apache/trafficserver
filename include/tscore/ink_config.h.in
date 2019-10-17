@@ -72,10 +72,11 @@
 #define TS_USE_HELLO_CB @use_hello_cb@
 #define TS_USE_SET_RBIO @use_set_rbio@
 #define TS_USE_GET_DH_2048_256 @use_dh_get_2048_256@
+#define TS_USE_TLS13 @use_tls13@
+#define TS_USE_QUIC @use_quic@
 #define TS_USE_TLS_SET_CIPHERSUITES @use_tls_set_ciphersuites@
 #define TS_USE_LINUX_NATIVE_AIO @use_linux_native_aio@
 #define TS_USE_REMOTE_UNWINDING @use_remote_unwinding@
-#define TS_USE_SSLV3_CLIENT @use_sslv3_client@
 #define TS_USE_TLS_OCSP @use_tls_ocsp@
 
 #define TS_HAS_SO_PEERCRED @has_so_peercred@
@@ -92,8 +93,6 @@
 #define TS_MAX_NUMBER_EVENT_THREADS @max_event_threads@
 
 #define TS_MAX_HOST_NAME_LEN @max_host_name_len@
-
-#define TS_MAX_API_STATS @max_api_stats@
 
 #define SPLIT_DNS 1
 
@@ -117,6 +116,8 @@
 #define TS_BUILD_MANDIR "@rel_mandir@"
 #define TS_BUILD_CACHEDIR "@rel_cachedir@"
 #define TS_BUILD_INFODIR "@rel_infodir@"
+
+#define TS_ABS_TOP_SRCDIR "@abs_top_srcdir@"
 
 #define TS_BUILD_CANONICAL_HOST "@host@"
 

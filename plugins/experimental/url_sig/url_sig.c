@@ -23,9 +23,9 @@
     _a < _b ? _a : _b;      \
   })
 
-#include "tscore/ink_defs.h"
 #include "url_sig.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -165,11 +165,11 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       return TS_ERROR;
     }
     if (strncmp(line, "key", 3) == 0) {
-      if (strncmp((char *)(line + 3), "0", 1) == 0) {
+      if (strncmp(line + 3, "0", 1) == 0) {
         keynum = 0;
       } else {
         TSDebug(PLUGIN_NAME, ">>> %s <<<", line + 3);
-        keynum = atoi((char *)(line + 3));
+        keynum = atoi(line + 3);
         if (keynum == 0) {
           keynum = -1; // Not a Number
         }
@@ -349,13 +349,17 @@ fixedBufferWrite(char **dest_end, int *dest_len, const char *src, int src_len)
 }
 
 static char *
-urlParse(char *url, char *anchor, char *new_path_seg, int new_path_seg_len, char *signed_seg, unsigned int signed_seg_len)
+urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_path_seg_len, char *signed_seg,
+         unsigned int signed_seg_len)
 {
   char *segment[MAX_SEGMENTS];
+  char url[8192]                     = {'\0'};
   unsigned char decoded_string[2048] = {'\0'};
   char new_url[8192]; /* new_url is not null_terminated */
   char *p = NULL, *sig_anchor = NULL, *saveptr = NULL;
   int i = 0, numtoks = 0, decoded_len = 0, sig_anchor_seg = 0;
+
+  strncat(url, url_in, sizeof(url) - strlen(url) - 1);
 
   char *new_url_end    = new_url;
   int new_url_len_left = sizeof(new_url);
@@ -373,7 +377,7 @@ urlParse(char *url, char *anchor, char *new_path_seg, int new_path_seg_len, char
     TSError("insufficient space to copy schema into new_path_seg buffer.");
     return NULL;
   }
-  TSDebug(PLUGIN_NAME, "%s:%d - new_url: %*s\n", __FILE__, __LINE__, (int)(new_url_end - new_url), new_url);
+  TSDebug(PLUGIN_NAME, "%s:%d - new_url: %.*s\n", __FILE__, __LINE__, (int)(new_url_end - new_url), new_url);
 
   // parse the url.
   if ((p = strtok_r(skip, "/", &saveptr)) != NULL) {
@@ -433,13 +437,13 @@ urlParse(char *url, char *anchor, char *new_path_seg, int new_path_seg_len, char
     if (strlen(sig_anchor) < signed_seg_len) {
       memcpy(signed_seg, sig_anchor, strlen(sig_anchor));
     } else {
-      TSError("insuficient space to copy into new_path_seg buffer.");
+      TSError("insufficient space to copy into new_path_seg buffer.");
     }
   } else { // no signature anchor string was found, assum it is in the last path segment.
     if (strlen(segment[numtoks - 2]) < signed_seg_len) {
       memcpy(signed_seg, segment[numtoks - 2], strlen(segment[numtoks - 2]));
     } else {
-      TSError("insuficient space to copy into new_path_seg buffer.");
+      TSError("insufficient space to copy into new_path_seg buffer.");
       return NULL;
     }
   }
@@ -538,7 +542,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   char sig_string[2 * MAX_SIG_SIZE + 1];
 
   if (current_url_len >= MAX_REQ_LEN - 1) {
-    err_log(url, "URL string too long");
+    err_log(current_url, "Request Url string too long");
     goto deny;
   }
 
@@ -555,14 +559,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       err_log(url, "Pristine URL string too long.");
       goto deny;
     }
-
   } else {
     url_len = current_url_len;
   }
 
   TSDebug(PLUGIN_NAME, "%s", url);
-
-  const char *query = strchr(url, '?');
 
   if (cfg->regex) {
     const int offset = 0, options = 0;
@@ -580,19 +581,30 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     }
   }
 
+  const char *query = strchr(url, '?');
+
   // check for path params.
   if (query == NULL || strstr(query, "E=") == NULL) {
-    if ((url = urlParse(url, cfg->sig_anchor, new_path, 8192, path_params, 8192)) == NULL) {
-      err_log(url, "Has no signing query string or signing path parameters.");
+    char *const parsed = urlParse(url, cfg->sig_anchor, new_path, 8192, path_params, 8192);
+    if (parsed == NULL) {
+      err_log(url, "Unable to parse/decode new url path parameters");
       goto deny;
     }
+
     has_path_params = true;
-    query           = strstr(url, ";");
+    query           = strstr(parsed, ";");
 
     if (query == NULL) {
       err_log(url, "Has no signing query string or signing path parameters.");
+      TSfree(parsed);
       goto deny;
     }
+
+    if (url != current_url) {
+      TSfree(url);
+    }
+
+    url = parsed;
   }
 
   /* first, parse the query string */

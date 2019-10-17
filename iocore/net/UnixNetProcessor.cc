@@ -24,6 +24,7 @@
 #include "P_Net.h"
 #include "tscore/InkErrno.h"
 #include "tscore/ink_sock.h"
+#include "tscore/TSSystemState.h"
 #include "P_SSLNextProtocolAccept.h"
 
 // For Stat Pages
@@ -40,7 +41,6 @@ NetProcessor::AcceptOptions::reset()
   accept_threads        = -1;
   ip_family             = AF_INET;
   etype                 = ET_NET;
-  f_callback_on_open    = false;
   localhost_only        = false;
   frequent_accept       = true;
   backdoor              = false;
@@ -51,6 +51,7 @@ NetProcessor::AcceptOptions::reset()
   packet_tos            = 0;
   tfo_queue_length      = 0;
   f_inbound_transparent = false;
+  f_mptcp               = false;
   f_proxy_protocol      = false;
   return *this;
 }
@@ -62,7 +63,7 @@ net_next_connection_number()
 {
   unsigned int res = 0;
   do {
-    res = (unsigned int)ink_atomic_increment(&net_connection_number, 1);
+    res = static_cast<unsigned int>(ink_atomic_increment(&net_connection_number, 1));
   } while (!res);
   return res;
 }
@@ -127,13 +128,6 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     Debug("http_tproxy", "Marked accept server %p on port %d for proxy protocol", na, opt.local_port);
   }
 
-  int should_filter_int         = 0;
-  na->server.http_accept_filter = false;
-  REC_ReadConfigInteger(should_filter_int, "proxy.config.net.defer_accept");
-  if (should_filter_int > 0 && opt.etype == ET_NET) {
-    na->server.http_accept_filter = true;
-  }
-
   SessionAccept *sa = dynamic_cast<SessionAccept *>(cont);
   na->proxyPort     = sa ? sa->proxyPort : nullptr;
   na->snpa          = dynamic_cast<SSLNextProtocolAccept *>(cont);
@@ -141,10 +135,6 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   na->action_         = new NetAcceptAction();
   *na->action_        = cont;
   na->action_->server = &na->server;
-
-  if (na->opt.f_callback_on_open) {
-    na->mutex = cont->mutex;
-  }
 
   if (opt.frequent_accept) { // true
     if (accept_threads > 0) {
@@ -171,25 +161,6 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     naVec.push_back(na);
   }
 
-#ifdef TCP_DEFER_ACCEPT
-  // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
-  // data on the socket ready to be read
-  if (should_filter_int > 0) {
-    setsockopt(na->server.fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &should_filter_int, sizeof(int));
-  }
-#endif
-
-#ifdef TCP_INIT_CWND
-  int tcp_init_cwnd = 0;
-  REC_ReadConfigInteger(tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
-  if (tcp_init_cwnd > 0) {
-    Debug("net", "Setting initial congestion window to %d", tcp_init_cwnd);
-    if (setsockopt(na->server.fd, IPPROTO_TCP, TCP_INIT_CWND, &tcp_init_cwnd, sizeof(int)) != 0) {
-      Error("Cannot set initial congestion window to %d", tcp_init_cwnd);
-    }
-  }
-#endif
-
   return na->action_.get();
 }
 
@@ -204,10 +175,10 @@ NetProcessor::stop_accept()
 Action *
 UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *opt)
 {
-  if (unlikely(shutdown_event_system == true)) {
+  if (TSSystemState::is_event_system_shut_down()) {
     return ACTION_RESULT_NONE;
   }
-  EThread *t             = cont->mutex->thread_holding;
+  EThread *t             = eventProcessor.assign_affinity_by_type(cont, opt->etype);
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
 
   if (opt) {
@@ -261,27 +232,22 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
     vc->action_ = cont;
   }
 
-  if (t->is_event_type(opt->etype)) {
-    MUTEX_TRY_LOCK(lock, cont->mutex, t);
-    if (lock.is_locked()) {
-      MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
-      if (lock2.is_locked()) {
-        int ret;
-        ret = vc->connectUp(t, NO_FD);
-        if ((using_socks) && (ret == CONNECT_SUCCESS)) {
-          return &socksEntry->action_;
-        } else {
-          return ACTION_RESULT_DONE;
-        }
+  MUTEX_TRY_LOCK(lock, cont->mutex, t);
+  if (lock.is_locked()) {
+    MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
+    if (lock2.is_locked()) {
+      int ret;
+      ret = vc->connectUp(t, NO_FD);
+      if ((using_socks) && (ret == CONNECT_SUCCESS)) {
+        return &socksEntry->action_;
+      } else {
+        return ACTION_RESULT_DONE;
       }
     }
   }
-  // Try to stay on the current thread if it is the right type
-  if (t->is_event_type(opt->etype)) {
-    t->schedule_imm(vc);
-  } else { // Otherwise, pass along to another thread of the right type
-    eventProcessor.schedule_imm(vc, opt->etype);
-  }
+
+  t->schedule_imm(vc);
+
   if (using_socks) {
     return &socksEntry->action_;
   } else {
@@ -320,7 +286,18 @@ UnixNetProcessor::init()
   d.rec_int = 0;
   change_net_connections_throttle(nullptr, RECD_INT, d, nullptr);
 
-  // Socks
+  /*
+   * Stat pages
+   */
+  extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
+  if (etype == ET_NET) {
+    statPagesManager.register_http("net", register_ShowNet);
+  }
+}
+
+void
+UnixNetProcessor::init_socks()
+{
   if (!netProcessor.socks_conf_stuff) {
     socks_conf_stuff = new socks_conf_struct;
     loadSocksConfiguration(socks_conf_stuff);
@@ -332,14 +309,6 @@ UnixNetProcessor::init()
       // this is sslNetprocessor
       socks_conf_stuff = netProcessor.socks_conf_stuff;
     }
-  }
-
-  /*
-   * Stat pages
-   */
-  extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
-  if (etype == ET_NET) {
-    statPagesManager.register_http("net", register_ShowNet);
   }
 }
 

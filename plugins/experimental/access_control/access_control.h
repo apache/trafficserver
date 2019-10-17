@@ -79,7 +79,7 @@ struct KvpAccessTokenConfig {
   StringView messageDigestName = "md";
 
   String pairDelimiter = "&";
-  String kvDeliiter    = "=";
+  String kvDelimiter   = "=";
 };
 
 /**

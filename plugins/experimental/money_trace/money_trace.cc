@@ -33,7 +33,7 @@ static struct txndata *
 allocTransactionData()
 {
   LOG_DEBUG("allocating transaction state data.");
-  struct txndata *txn_data           = (struct txndata *)TSmalloc(sizeof(struct txndata));
+  struct txndata *txn_data           = static_cast<struct txndata *>(TSmalloc(sizeof(struct txndata)));
   txn_data->client_request_mt_header = nullptr;
   txn_data->new_span_mt_header       = nullptr;
   return txn_data;
@@ -79,7 +79,7 @@ mt_cache_lookup_check(TSCont contp, TSHttpTxn txnp, struct txndata *txn_data)
     switch (cache_result) {
     case TS_CACHE_LOOKUP_MISS:
     case TS_CACHE_LOOKUP_SKIPPED:
-      new_mt_header = (char *)generator.moneyTraceHdr(txn_data->client_request_mt_header);
+      new_mt_header = const_cast<char *>(generator.moneyTraceHdr(txn_data->client_request_mt_header));
       if (new_mt_header != nullptr) {
         LOG_DEBUG("cache miss, built a new money trace header: %s.", new_mt_header);
         txn_data->new_span_mt_header = new_mt_header;
@@ -273,7 +273,7 @@ static int
 transaction_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp           = static_cast<TSHttpTxn>(edata);
-  struct txndata *txn_data = (struct txndata *)TSContDataGet(contp);
+  struct txndata *txn_data = static_cast<struct txndata *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
@@ -289,7 +289,7 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
     mt_send_client_response(txnp, txn_data);
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
-    LOG_DEBUG("handling transacation close.");
+    LOG_DEBUG("handling transaction close.");
     freeTransactionData(txn_data);
     TSContDestroy(contp);
     break;

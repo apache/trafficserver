@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#pragma once
+
 #define PLUGIN_NAME "uri_signing"
 
 #ifdef URI_SIGNING_UNIT_TEST
@@ -24,6 +26,8 @@
 
 #define PluginDebug(fmt, ...) PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", PLUGIN_NAME, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define PluginError(fmt, ...) PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", PLUGIN_NAME, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define TSmalloc(x) malloc(x)
+#define TSfree(p) free(p)
 void PrintToStdErr(const char *fmt, ...);
 
 #else

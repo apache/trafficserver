@@ -21,10 +21,6 @@ Test.Summary = '''
 
 '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work")
-)
 Test.ContinueOnFail = True
 Test.testName = "cookie_remap: test connector"
 
@@ -67,18 +63,18 @@ ts.Disk.File(ts.Variables.CONFIGDIR +"/connectorconfig.txt", exists=False, id="c
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/magic http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/connectorconfig.txt'
+    'map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam=config/connectorconfig.txt'
 )
 
 # Positive test case that remaps because all connected operations pass
 tr = Test.AddTestRun("cookie value matches")
 tr.Processes.Default.Command = '''
-curl 
---proxy 127.0.0.1:{0} 
-"http://www.example.com/magic" 
--H"Cookie: fpbeta=abcd icecream=donteat" 
--H "Proxy-Connection: keep-alive" 
---verbose
+curl \
+--proxy 127.0.0.1:{0} \
+"http://www.example.com/magic" \
+-H"Cookie: fpbeta=abcd icecream=donteat" \
+-H "Proxy-Connection: keep-alive" \
+--verbose \
 '''.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
@@ -91,12 +87,12 @@ server.Streams.All = "gold/matchcookie.gold"
 # Negative test case that doesn't remap because not all subops pass
 tr = Test.AddTestRun("cookie value doesn't match")
 tr.Processes.Default.Command = '''
-curl 
---proxy 127.0.0.1:{0} 
-"http://www.example.com/magic" 
--H"Cookie: fpbeta=somethingelse" 
--H "Proxy-Connection: keep-alive" 
---verbose
+curl \
+--proxy 127.0.0.1:{0} \
+"http://www.example.com/magic" \
+-H"Cookie: fpbeta=somethingelse" \
+-H "Proxy-Connection: keep-alive" \
+--verbose \
 '''.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server2, ready=When.PortOpen(server2.Variables.Port))

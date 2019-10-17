@@ -52,7 +52,7 @@ ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _roun
   }
 }
 
-ParentRoundRobin::~ParentRoundRobin() {}
+ParentRoundRobin::~ParentRoundRobin() = default;
 
 void
 ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
@@ -63,7 +63,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
   bool parentUp          = false;
   bool parentRetry       = false;
   HostStatus &pStatus    = HostStatus::instance();
-  HostStatus_t host_stat = HostStatus_t::HOST_STATUS_INIT;
+  HostStatus_t host_stat = HostStatus_t::HOST_STATUS_UP;
 
   HttpRequestData *request_info = static_cast<HttpRequestData *>(rdata);
 
@@ -99,7 +99,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
         }
         break;
       case P_STRICT_ROUND_ROBIN:
-        cur_index = ink_atomic_increment((int32_t *)&result->rec->rr_next, 1);
+        cur_index = ink_atomic_increment(reinterpret_cast<int32_t *>(&result->rec->rr_next), 1);
         cur_index = result->start_parent = cur_index % num_parents;
         break;
       case P_NO_ROUND_ROBIN:
@@ -117,7 +117,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
     latched_parent = cur_index = (result->last_parent + 1) % num_parents;
 
     // Check to see if we have wrapped around
-    if ((unsigned int)cur_index == result->start_parent) {
+    if (static_cast<unsigned int>(cur_index) == result->start_parent) {
       // We've wrapped around so bypass if we can
       if (result->rec->go_direct == true) {
         // Could not find a parent
@@ -136,7 +136,15 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
   // Loop through the array of parent seeing if any are up or
   //   should be retried
   do {
-    host_stat = pStatus.getHostStatus(parents[cur_index].hostname);
+    HostStatRec *hst = pStatus.getHostStatus(parents[cur_index].hostname);
+    host_stat        = (hst) ? hst->status : HostStatus_t::HOST_STATUS_UP;
+    // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
+    // ignore the down status and mark it as avaialble
+    if (result->rec->ignore_self_detect && (hst && hst->status == HOST_STATUS_DOWN)) {
+      if (hst->reasons == Reason::SELF_DETECT) {
+        host_stat = HOST_STATUS_UP;
+      }
+    }
     Debug("parent_select", "cur_index: %d, result->start_parent: %d", cur_index, result->start_parent);
     // DNS ParentOnly inhibits bypassing the parent so always return that t
     if ((parents[cur_index].failedAt == 0) || (parents[cur_index].failCount < static_cast<int>(fail_threshold))) {
@@ -173,7 +181,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       return;
     }
     latched_parent = cur_index = (cur_index + 1) % num_parents;
-  } while ((unsigned int)cur_index != result->start_parent);
+  } while (static_cast<unsigned int>(cur_index) != result->start_parent);
 
   if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
     result->result = PARENT_DIRECT;

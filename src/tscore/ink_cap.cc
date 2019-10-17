@@ -108,7 +108,7 @@ max_passwd_size()
 #if defined(_SC_GETPW_R_SIZE_MAX)
   long val = sysconf(_SC_GETPW_R_SIZE_MAX);
   if (val > 0) {
-    return (unsigned)val;
+    return static_cast<unsigned>(val);
   }
 #endif
 
@@ -225,7 +225,7 @@ ImpersonateUser(const char *user, ImpersonationLevel level)
 
   if (*user == '#') {
     // Numeric user notation.
-    uid_t uid = (uid_t)atoi(&user[1]);
+    uid_t uid = static_cast<uid_t>(atoi(&user[1]));
     if (getpwuid_r(uid, &pbuf, buf, sizeof(buf), &pwd) != 0) {
       Fatal("missing password database entry for UID %ld: %s", (long)uid, strerror(errno));
     }
@@ -486,8 +486,7 @@ ElevateAccess::releasePrivilege()
 #endif
 
 ElevateAccess::ElevateAccess(unsigned lvl)
-  : elevated(false),
-    saved_uid(geteuid()),
+  : saved_uid(geteuid()),
     level(lvl)
 #if TS_USE_POSIX_CAP
     ,

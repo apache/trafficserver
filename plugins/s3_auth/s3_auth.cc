@@ -41,7 +41,7 @@
 #include <ts/remap.h>
 #include "tscore/ink_config.h"
 
-// Special snowflake here, only availbale when building inside the ATS source tree.
+// Special snowflake here, only available when building inside the ATS source tree.
 #include "tscore/ink_atomic.h"
 #include "aws_auth_v4.h"
 
@@ -78,7 +78,6 @@ loadRegionMap(StringMap &m, const String &filename)
 
   std::ifstream ifstr;
   String line;
-  unsigned lineno = 0;
 
   ifstr.open(path.c_str());
   if (!ifstr) {
@@ -92,8 +91,6 @@ loadRegionMap(StringMap &m, const String &filename)
 
   while (std::getline(ifstr, line)) {
     String::size_type pos;
-
-    ++lineno;
 
     // Allow #-prefixed comments.
     pos = line.find_first_of('#');
@@ -137,7 +134,7 @@ loadRegionMap(StringMap &m, const String &filename)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Cache for the secrets file, to avoid reading / loding them repeatedly on
+// Cache for the secrets file, to avoid reading / loading them repeatedly on
 // a reload of remap.config. This gets cached for 60s (not configurable).
 //
 class S3Config;
@@ -463,7 +460,7 @@ S3Config::parse_config(const std::string &config_fname)
         continue;
       }
 
-      // Skip trailig white spaces
+      // Skip trailing white spaces
       pos2 = pos1;
       pos1 = pos2 + strlen(pos2) - 1;
       while ((pos1 > pos2) && isspace(*pos1)) {
@@ -647,15 +644,15 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
   return ret;
 }
 
-// dst poinsts to starting offset of dst buffer
+// dst points to starting offset of dst buffer
 // dst_len remaining space in buffer
 static size_t
 str_concat(char *dst, size_t dst_len, const char *src, size_t src_len)
 {
-  size_t to_copy = (src_len < dst_len) ? src_len : dst_len;
+  size_t to_copy = std::min(dst_len, src_len);
 
   if (to_copy > 0) {
-    (void)strncat(dst, src, to_copy);
+    strncat(dst, src, to_copy);
   }
 
   return to_copy;
@@ -845,22 +842,22 @@ S3Request::authorizeV2(S3Config *s3)
 #endif
   HMAC_Init_ex(ctx, s3->secret(), s3->secret_len(), EVP_sha1(), nullptr);
   HMAC_Update(ctx, (unsigned char *)method, method_len);
-  HMAC_Update(ctx, (unsigned char *)"\n", 1);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
   HMAC_Update(ctx, (unsigned char *)con_md5, con_md5_len);
-  HMAC_Update(ctx, (unsigned char *)"\n", 1);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
   HMAC_Update(ctx, (unsigned char *)con_type, con_type_len);
-  HMAC_Update(ctx, (unsigned char *)"\n", 1);
-  HMAC_Update(ctx, (unsigned char *)date, date_len);
-  HMAC_Update(ctx, (unsigned char *)"\n/", 2);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
+  HMAC_Update(ctx, reinterpret_cast<unsigned char *>(date), date_len);
+  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n/"), 2);
 
   if (host && host_endp) {
     HMAC_Update(ctx, (unsigned char *)host, host_endp - host);
-    HMAC_Update(ctx, (unsigned char *)"/", 1);
+    HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("/"), 1);
   }
 
   HMAC_Update(ctx, (unsigned char *)path, path_len);
   if (param) {
-    HMAC_Update(ctx, (unsigned char *)";", 1); // TSUrlHttpParamsGet() does not include ';'
+    HMAC_Update(ctx, reinterpret_cast<const unsigned char *>(";"), 1); // TSUrlHttpParamsGet() does not include ';'
     HMAC_Update(ctx, (unsigned char *)param, param_len);
   }
 
@@ -872,7 +869,7 @@ S3Request::authorizeV2(S3Config *s3)
 #endif
 
   // Do the Base64 encoding and set the Authorization header.
-  if (TS_SUCCESS == TSBase64Encode((const char *)hmac, hmac_len, hmac_b64, sizeof(hmac_b64) - 1, &hmac_b64_len)) {
+  if (TS_SUCCESS == TSBase64Encode(reinterpret_cast<const char *>(hmac), hmac_len, hmac_b64, sizeof(hmac_b64) - 1, &hmac_b64_len)) {
     char auth[256]; // This is way bigger than any string we can think of.
     int auth_len = snprintf(auth, sizeof(auth), "AWS %s:%.*s", s3->keyid(), static_cast<int>(hmac_b64_len), hmac_b64);
 
@@ -1060,7 +1057,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 
   if (s3) {
     TSAssert(s3->valid());
-    s3->acquire(); // Increasement ref-count
+    s3->acquire(); // Increase ref-count
     // Now schedule the continuation to update the URL when going to origin.
     // Note that in most cases, this is a No-Op, assuming you have reasonable
     // cache hit ratio. However, the scheduling is next to free (very cheap).

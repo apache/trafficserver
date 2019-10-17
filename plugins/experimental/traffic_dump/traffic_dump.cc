@@ -129,8 +129,9 @@ min_write(const char *buf, int64_t &prevIdx, int64_t &idx, std::ostream &jsonfil
 int
 esc_json_out(const char *buf, int64_t len, std::ostream &jsonfile)
 {
-  if (buf == nullptr)
+  if (buf == nullptr) {
     return 0;
+  }
   int64_t idx, prevIdx = 0;
   for (idx = 0; idx < len; idx++) {
     char c = *(buf + idx);
@@ -169,7 +170,7 @@ esc_json_out(const char *buf, int64_t len, std::ostream &jsonfile)
     default: {
       if ('\x00' <= c && c <= '\x1f') {
         min_write(buf, prevIdx, idx, jsonfile);
-        jsonfile << "\\u" << std::hex << std::setw(4) << std::setfill('0') << (int)c;
+        jsonfile << "\\u" << std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(c);
       }
       break;
     }
@@ -561,7 +562,7 @@ TSPluginInit(int argc, const char *argv[])
                                            {nullptr, no_argument, nullptr, 0}};
   int opt                               = 0;
   while (opt >= 0) {
-    opt = getopt_long(argc, (char *const *)argv, "l:", longopts, nullptr);
+    opt = getopt_long(argc, const_cast<char *const *>(argv), "l:", longopts, nullptr);
     switch (opt) {
     case 'l': {
       log_path = ts::file::path{optarg};

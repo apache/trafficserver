@@ -58,14 +58,14 @@ static TSMgmtError handle_event_message(EventClientT *client, void *req, size_t 
 EventClientT *
 new_event_client()
 {
-  EventClientT *ele = (EventClientT *)ats_malloc(sizeof(EventClientT));
+  EventClientT *ele = static_cast<EventClientT *>(ats_malloc(sizeof(EventClientT)));
 
   // now set the alarms registered section
   for (bool &i : ele->events_registered) {
     i = false;
   }
 
-  ele->adr = (struct sockaddr *)ats_malloc(sizeof(struct sockaddr));
+  ele->adr = static_cast<struct sockaddr *>(ats_malloc(sizeof(struct sockaddr)));
   return ele;
 }
 
@@ -177,11 +177,8 @@ delete_event_queue(LLQ *q)
     return;
   }
 
-  // now for every element, dequeue and free
-  TSMgmtEvent *ele;
-
   while (!queue_is_empty(q)) {
-    ele = (TSMgmtEvent *)dequeue(q);
+    TSMgmtEvent *ele = static_cast<TSMgmtEvent *>(dequeue(q));
     ats_free(ele);
   }
 
@@ -240,7 +237,7 @@ event_callback_main(void *arg)
   int *socket_fd;
   int con_socket_fd; // main socket for listening to new connections
 
-  socket_fd     = (int *)arg;
+  socket_fd     = static_cast<int *>(arg);
   con_socket_fd = *socket_fd; // the socket for event callbacks
 
   Debug("event", "[event_callback_main] listen on socket = %d", con_socket_fd);
@@ -257,7 +254,6 @@ event_callback_main(void *arg)
 
   fd_set selectFDs;           // for select call
   EventClientT *client_entry; // an entry of fd to alarms mapping
-  int fds_ready;              // return value for select go here
   struct timeval timeout;
 
   while (true) {
@@ -280,7 +276,7 @@ event_callback_main(void *arg)
     }
 
     // select call - timeout is set so we can check events at regular intervals
-    fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)nullptr, (fd_set *)nullptr, &timeout);
+    int fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)nullptr, (fd_set *)nullptr, &timeout);
 
     // check return
     if (fds_ready > 0) {
@@ -354,9 +350,9 @@ event_callback_main(void *arg)
     }
     // iterate through each event in mgmt_events
     while (!queue_is_empty(mgmt_events)) {
-      ink_mutex_acquire(&mgmt_events_lock);        // acquire lock
-      event = (TSMgmtEvent *)dequeue(mgmt_events); // get what we want
-      ink_mutex_release(&mgmt_events_lock);        // release lock
+      ink_mutex_acquire(&mgmt_events_lock);                     // acquire lock
+      event = static_cast<TSMgmtEvent *>(dequeue(mgmt_events)); // get what we want
+      ink_mutex_release(&mgmt_events_lock);                     // release lock
 
       if (!event) {
         continue;
@@ -548,6 +544,6 @@ handle_event_message(EventClientT *client, void *req, size_t reqlen)
   return handlers[static_cast<unsigned>(optype)](client, req, reqlen);
 
 fail:
-  mgmt_elog(0, "%s: missing handler for type %d event message\n", __func__, (int)optype);
+  mgmt_elog(0, "%s: missing handler for type %d event message\n", __func__, static_cast<int>(optype));
   return TS_ERR_PARAMS;
 }

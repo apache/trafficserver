@@ -77,7 +77,7 @@ public:
   bool CheckModifiers(HttpRequestData *request_data);
   bool CheckForMatch(HttpRequestData *request_data, int last_number);
   void Print();
-  int line_num;
+  int line_num = 0;
   Modifier *findModOfType(Modifier::Type t) const;
 
 protected:
@@ -97,7 +97,7 @@ private:
   void clear();
 };
 
-inline ControlBase::ControlBase() : line_num(0) {}
+inline ControlBase::ControlBase() {}
 
 inline bool
 ControlBase::CheckForMatch(HttpRequestData *request_data, int last_number)

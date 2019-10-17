@@ -101,7 +101,7 @@ becomes::
            "format string", args...));
 
 By hiding the length tracking and checking, the result is a simple linear sequence of output chunks,
-making the logic much eaier to follow.
+making the logic much easier to follow.
 
 Usage
 +++++
@@ -134,7 +134,7 @@ needs to be specified and therefore can simply be a constant without the overhea
 to maintain consistency. The choice between :class:`LocalBufferWriter` and :class:`FixedBufferWriter`
 comes down to the owner of the buffer - the former has its own buffer while the latter operates on
 a buffer owned by some other object. Therefore if the buffer is declared locally, use
-:class:`LocalBufferWriter` and if the buffer is recevied from an external source (such as via a
+:class:`LocalBufferWriter` and if the buffer is received from an external source (such as via a
 function parameter) use :class:`FixedBufferWriter`.
 
 Writing
@@ -273,7 +273,7 @@ Formatted Output
 ++++++++++++++++
 
 The base :class:`BufferWriter` was made to provide memory safety for formatted output. Support for
-formmatted output was made to provide *type* safety. The implementation deduces the types of the
+formatted output was made to provide *type* safety. The implementation deduces the types of the
 arguments to be formatted and handles them in a type specific and safe way.
 
 The formatting style is of the "prefix" or "printf" style - the format is specified first and then
@@ -314,7 +314,7 @@ As a result of these benefits there has been other work on similar projects, to 
 :code:`printf` a better mechanism. Unfortunately most of these are rather project specific and don't
 suit the use case in |TS|. The two best options, `Boost.Format
 <https://www.boost.org/doc/libs/1_64_0/libs/format/>`__ and `fmt <https://github.com/fmtlib/fmt>`__,
-while good, are also not quite close enough to outweight the benefits of a version specifically
+while good, are also not quite close enough to outweigh the benefits of a version specifically
 tuned for |TS|. ``Boost.Format`` is not acceptable because of the Boost footprint. ``fmt`` has the
 problem of depending on C++ stream operators and therefore not having the required level of
 performance or memory characteristics. Its main benefit, of reusing stream operators, doesn't apply
@@ -488,8 +488,8 @@ Some examples, comparing :code:`snprintf` and :func:`BufferWriter::print`. ::
 Enumerations become easier. Note in this case argument indices are used in order to print both a
 name and a value for the enumeration. A key benefit here is the lack of need for a developer to know
 the specific free function or method needed to do the name lookup. In this case,
-:code:`HttpDebugNuames::get_server_state_name`. Rather than every developer having to memorize the
-assocation between the type and the name lookup function, or grub through the code hoping for an
+:code:`HttpDebugNames::get_server_state_name`. Rather than every developer having to memorize the
+association between the type and the name lookup function, or grub through the code hoping for an
 example, the compiler is told once and henceforth does the lookup. The internal implementation of
 this is :ref:`here <bwf-http-debug-name-example>` ::
 
@@ -550,7 +550,7 @@ would look like this::
    BufferWriter& ts::bwformat(BufferWriter& w, BWFSpec const& spec, V const& v)
 
 :arg:`w` is the output and :arg:`spec` the parsed specifier, including the extension (if any). The
-calling framework will handle basic alignment as per :arg:`spec` therfore the overload does not need
+calling framework will handle basic alignment as per :arg:`spec` therefore the overload does not need
 to unless the alignment requirements are more detailed (e.g. integer alignment operations) or
 performance is critical. In the latter case the formatter should make sure to use at least the
 minimum width in order to disable any additional alignment operation.
@@ -812,10 +812,10 @@ These are the existing format classes in header file ``bfw_std_format.h``. All a
       As previous except the epoch is the current epoch at the time the constructor is invoked.
       Therefore if the current time is to be printed the default constructor can be used.
 
-   When used the format specification can take an extention of "local" which formats the time as
+   When used the format specification can take an extension of "local" which formats the time as
    local time. Otherwise it is GMT. ``w.print("{}", Date("%H:%M"));`` will print the hour and minute
    as GMT values. ``w.print("{::local}", Date("%H:%M"));`` will When used the format specification
-   can take an extention of "local" which formats the time as local time. Otherwise it is GMT.
+   can take an extension of "local" which formats the time as local time. Otherwise it is GMT.
    ``w.print("{}", Date("%H:%M"));`` will print the hour and minute as GMT values.
    ``w.print("{::local}", Date("%H:%M"));`` will print the hour and minute in the local time zone.
    ``w.print("{::gmt}"), ...);`` will output in GMT if additional explicitness is desired.
@@ -885,7 +885,7 @@ For example, to have the same output as the normal diagnostic messages with a ti
    bw.print("{timestamp} {ts-thread} Counter is {}", counter);
 
 Note that even though no argument is provided the global names do not count as part of the argument
-indexing, therefore the preceeding example could be written as::
+indexing, therefore the preceding example could be written as::
 
    bw.print("{timestamp} {ts-thread} Counter is {0}", counter);
 
@@ -962,7 +962,7 @@ Reference
    .. function:: BufferWriter & fill(size_t n)
 
       Increase the output size by :arg:`n` without changing the buffer contents. This is used in
-      conjuction with :func:`BufferWriter::auxBuffer` after writing output to the buffer returned by
+      conjunction with :func:`BufferWriter::auxBuffer` after writing output to the buffer returned by
       that method. If this method is not called then such output will not be counted by
       :func:`BufferWriter::size` and will be overwritten by subsequent output.
 

@@ -36,7 +36,7 @@ extern FileManager *configFiles;
  ****************************************************************************/
 
 void
-testcall(char *foo, char * /*configName */, bool /* incVersion */)
+testcall(char *foo, char * /*configName */)
 {
   Debug("lm", "Received Callback that %s has changed", foo);
 }
@@ -46,15 +46,16 @@ registerFile(const char *configName, const char *defaultName)
 {
   bool found        = false;
   const char *fname = REC_readString(configName, &found);
-  if (!found)
+  if (!found) {
     fname = defaultName;
+  }
   configFiles->addFile(fname, configName, false);
 }
 
 //
 // initializeRegistry()
 //
-// Code to initialze of registry of objects that represent
+// Code to initialize of registry of objects that represent
 //   Web Editable configuration files
 //
 // thread-safe: NO!  - Should only be executed once from the main
@@ -76,7 +77,7 @@ initializeRegistry()
   registerFile("proxy.config.socks.socks_config_file", "socks.config");
   registerFile("records.config", "records.config");
   registerFile("proxy.config.cache.control.filename", "cache.config");
-  registerFile("proxy.config.cache.ip_allow.filename", "ip_allow.config");
+  registerFile("proxy.config.cache.ip_allow.filename", "ip_allow.yaml");
   registerFile("proxy.config.http.parent_proxy.file", "parent.config");
   registerFile("proxy.config.url_remap.filename", "remap.config");
   registerFile("", "volume.config");
@@ -84,7 +85,7 @@ initializeRegistry()
   registerFile("", "plugin.config");
   registerFile("proxy.config.dns.splitdns.filename", "splitdns.config");
   registerFile("proxy.config.ssl.server.multicert.filename", "ssl_multicert.config");
-  registerFile("proxy.config.ssl.servername.filename", SSL_SERVER_NAME_CONFIG);
+  registerFile("proxy.config.ssl.servername.filename", "sni.config");
 
   configFiles->registerCallback(testcall);
 }

@@ -33,7 +33,7 @@ Controlling Access
 Traffic Server can be configured to allow only certain clients to use
 the proxy cache.
 
-#. Add a line to :file:`ip_allow.config` for each IP address or
+#. Add a line to :file:`ip_allow.yaml` for each IP address or
    range of IP addresses allowed to access Traffic Server.
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration
@@ -127,7 +127,7 @@ Client/Traffic Server connections, you must do the following:
    client certificates, or if you configure certificates to be optional and the
    connecting client does not present one, then access to Traffic Server is
    managed through other Traffic Server options that have been set (such as
-   rules in :file:`ip_allow.config`). ::
+   rules in :file:`ip_allow.yaml`). ::
 
         CONFIG proxy.config.ssl.client.certification_level INT 0
 
@@ -138,7 +138,7 @@ Client/Traffic Server connections, you must do the following:
    ===== =======================================================================
    ``0`` Client certificates not required.
    ``1`` Client certificates optional. If present, will be used to validate.
-   ``2`` Client certficates required, and must validate based on configured CAs.
+   ``2`` Client certificates required, and must validate based on configured CAs.
    ===== =======================================================================
 
 #. *Optional*: Configure the use of Certification Authorities (CAs). CAs add
@@ -146,7 +146,7 @@ Client/Traffic Server connections, you must do the following:
    The list of acceptable CA signers is configured with
    :ts:cv:`proxy.config.ssl.CA.cert.path` in :file:`records.config`. ::
 
-        CONFIG proxy.config.ssl.CA.cert.path STRING "/opt/CA/certs/private-ca.pem"
+        CONFIG proxy.config.ssl.CA.cert.path STRING /opt/CA/certs/private-ca.pem
 
 #. Run the command :option:`traffic_ctl server restart` to restart Traffic Server.
 
@@ -208,16 +208,16 @@ and origin server connections, you must do the following:
    :file:`records.config` in the setting :ts:cv:`proxy.config.ssl.client.cert.path`
    and :ts:cv:`proxy.config.ssl.client.cert.filename`. ::
 
-        CONFIG proxy.config.ssl.client.cert.path STRING "/opt/ts/etc/ssl/certs/"
-        CONFIG proxy.config.ssl.client.cert.filename STRING "client.pem"
+        CONFIG proxy.config.ssl.client.cert.path STRING /opt/ts/etc/ssl/certs/
+        CONFIG proxy.config.ssl.client.cert.filename STRING client.pem
 
    You must also provide the paths to the private key for this certificate,
    unless the key is contained within the same file as the certificate, using
    :ts:cv:`proxy.config.ssl.client.private_key.path` and
    :ts:cv:`proxy.config.ssl.client.private_key.filename`. ::
 
-        CONFIG proxy.config.ssl.client.private_key.path STRING "/opt/ts/etc/ssl/keys/"
-        CONFIG proxy.config.ssl.client.private_key.filename STRING "client.pem"
+        CONFIG proxy.config.ssl.client.private_key.path STRING /opt/ts/etc/ssl/keys/
+        CONFIG proxy.config.ssl.client.private_key.filename STRING client.pem
 
 #. Enable or disable, per your security policy, server SSL certificate
    verification using :ts:cv:`proxy.config.ssl.client.verify.server.policy` in
@@ -230,8 +230,8 @@ and origin server connections, you must do the following:
    :ts:cv:`proxy.config.ssl.client.CA.cert.path` and
    :ts:cv:`proxy.config.ssl.client.CA.cert.filename`. ::
 
-        CONFIG proxy.config.ssl.client.CA.cert.path STRING "/opt/ts/etc/ssl/certs/"
-        CONFIG proxy.config.ssl.client.CA.cert.filename STRING "CAs.pem"
+        CONFIG proxy.config.ssl.client.CA.cert.path STRING /opt/ts/etc/ssl/certs/
+        CONFIG proxy.config.ssl.client.CA.cert.filename STRING CAs.pem
 
 #. Run the command :option:`traffic_ctl server restart` to restart Traffic Server.
 
@@ -274,12 +274,20 @@ revocation status of all configured SSL certificates, and present them to the
 client when the client requests the status.  Traffic Server will automatically
 query the OCSP responder specified in the SSL certificate to gather the latest
 revocation status.  Traffic Server will then cache the results for each
-configured certifcate.  The location of the OCSP responder is taken from the
+configured certificate.  The location of the OCSP responder is taken from the
 Authority Information Access field of the signed certificate. For example::
 
     Authority Information Access:
                 OCSP - URI:http://ocsp.digicert.com
                 CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2SecureServerCA.crt
+
+Traffic Server can also use prefetched OCSP stapling responses if ssl_ocsp_name parameter
+is used in :file:`ssl_multicert.config`. Take into account that when using prefetched
+OCSP stapling responses traffic server will not refresh them and it should be done
+externally. This can be done using openssl::
+
+    $ openssl ocsp -issuer ca.crt -cert cert.crt -host ocsp.digicert.com:80 \
+    -header "Host=ocsp.digicert.com" -respout /var/cache/ocsp/cert.ocsp
 
 Support for OCSP Stapling can be tested using the -status option of the OpenSSL client::
 
@@ -301,6 +309,7 @@ in :file:`records.config` file:
 * :ts:cv:`proxy.config.ssl.ocsp.cache_timeout`
 * :ts:cv:`proxy.config.ssl.ocsp.request_timeout`
 * :ts:cv:`proxy.config.ssl.ocsp.update_period`
+* :ts:cv:`proxy.config.ssl.ocsp.response.path`
 
 .. _admin-split-dns:
 

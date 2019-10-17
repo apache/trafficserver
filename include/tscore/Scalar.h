@@ -117,7 +117,6 @@ namespace detail
   // Unit value, to be rounded up.
   template <typename C> struct scalar_unit_round_up_t {
     C _n;
-    //    template <typename I> constexpr operator scalar_unit_round_up_t<I>() { return {static_cast<I>(_n)}; }
     template <intmax_t N, typename I>
     constexpr I
     scale() const
@@ -224,7 +223,7 @@ public:
   static_assert(N > 0, "The scaling factor (1st template argument) must be a positive integer");
   static_assert(std::is_integral<C>::value, "The counter type (2nd template argument) must be an integral type");
 
-  constexpr Scalar(); ///< Default contructor.
+  constexpr Scalar(); ///< Default constructor.
   ///< Construct to have @a n scaled units.
   explicit constexpr Scalar(Counter n);
   /// Copy constructor.
@@ -872,7 +871,7 @@ template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
 operator/(Scalar<N, C, T> lhs, I n)
 {
-  static_assert(std::is_integral<I>::value, "Scalar divsion only support integral types.");
+  static_assert(std::is_integral<I>::value, "Scalar division only support integral types.");
   return Scalar<N, C, T>(lhs) /= n;
 }
 

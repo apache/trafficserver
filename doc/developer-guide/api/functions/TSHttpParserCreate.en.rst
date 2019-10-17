@@ -68,7 +68,7 @@ may be used again.
 :func:`TSHttpParserDestroy` destroys the TSHttpParser object pointed
 to by :arg:`parser`. The :arg:`parser` pointer must not be NULL.
 
-Return Salues
+Return Values
 =============
 
 :func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp` both return

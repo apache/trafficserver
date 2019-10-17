@@ -142,7 +142,7 @@ public:
 
   ////////////////////////////////////////////////////////////
   // Set the timeouts associated with this connection.      //
-  // active_timeout is for the total elasped time of        //
+  // active_timeout is for the total elapsed time of        //
   // the connection.                                        //
   // inactivity_timeout is the elapsed time from the time   //
   // a read or a write was scheduled during which the       //
@@ -152,15 +152,15 @@ public:
   // called when handing an  event from this NetVConnection,//
   // or the NetVConnection creation callback.               //
   ////////////////////////////////////////////////////////////
-  void set_active_timeout(ink_hrtime timeout_in) override;
-  void set_inactivity_timeout(ink_hrtime timeout_in) override;
-  void cancel_active_timeout() override;
-  void cancel_inactivity_timeout() override;
+  virtual void set_active_timeout(ink_hrtime timeout_in) override;
+  virtual void set_inactivity_timeout(ink_hrtime timeout_in) override;
+  virtual void cancel_active_timeout() override;
+  virtual void cancel_inactivity_timeout() override;
   void set_action(Continuation *c) override;
   const Action *get_action() const;
-  void add_to_keep_alive_queue() override;
-  void remove_from_keep_alive_queue() override;
-  bool add_to_active_queue() override;
+  virtual void add_to_keep_alive_queue() override;
+  virtual void remove_from_keep_alive_queue() override;
+  virtual bool add_to_active_queue() override;
   virtual void remove_from_active_queue();
 
   // The public interface is VIO::reenable()
@@ -232,7 +232,7 @@ public:
   UnixNetVConnection *migrateToCurrentThread(Continuation *c, EThread *t);
 
   Action action_;
-  int closed;
+  int closed = 0;
   NetState read;
   NetState write;
 
@@ -244,14 +244,14 @@ public:
   LINK(UnixNetVConnection, keep_alive_queue_link);
   LINK(UnixNetVConnection, active_queue_link);
 
-  ink_hrtime inactivity_timeout_in;
-  ink_hrtime active_timeout_in;
-  ink_hrtime next_inactivity_timeout_at;
-  ink_hrtime next_activity_timeout_at;
+  ink_hrtime inactivity_timeout_in      = 0;
+  ink_hrtime active_timeout_in          = 0;
+  ink_hrtime next_inactivity_timeout_at = 0;
+  ink_hrtime next_activity_timeout_at   = 0;
 
   EventIO ep;
-  NetHandler *nh;
-  unsigned int id;
+  NetHandler *nh  = nullptr;
+  unsigned int id = 0;
 
   union {
     unsigned int flags;
@@ -264,11 +264,11 @@ public:
   };
 
   Connection con;
-  int recursion;
-  ink_hrtime submit_time;
-  OOB_callback *oob_ptr;
-  bool from_accept_thread;
-  NetAccept *accept_object;
+  int recursion            = 0;
+  ink_hrtime submit_time   = 0;
+  OOB_callback *oob_ptr    = nullptr;
+  bool from_accept_thread  = false;
+  NetAccept *accept_object = nullptr;
 
   // es - origin_trace associated connections
   bool origin_trace;
@@ -291,10 +291,10 @@ public:
   ink_hrtime get_inactivity_timeout() override;
   ink_hrtime get_active_timeout() override;
 
-  void set_local_addr() override;
-  void set_remote_addr() override;
+  virtual void set_local_addr() override;
+  void set_mptcp_state() override;
+  virtual void set_remote_addr() override;
   void set_remote_addr(const sockaddr *) override;
-  int set_tcp_init_cwnd(int init_cwnd) override;
   int set_tcp_congestion_control(int side) override;
   void apply_options() override;
 
@@ -347,6 +347,21 @@ UnixNetVConnection::set_local_addr()
   ATS_UNUSED_RETURN(safe_getsockname(con.fd, &local_addr.sa, &local_sa_size));
 }
 
+// Update the internal VC state variable for MPTCP
+inline void
+UnixNetVConnection::set_mptcp_state()
+{
+  int mptcp_enabled      = -1;
+  int mptcp_enabled_size = sizeof(mptcp_enabled);
+
+  if (0 == safe_getsockopt(con.fd, IPPROTO_TCP, MPTCP_ENABLED, (char *)&mptcp_enabled, &mptcp_enabled_size)) {
+    Debug("socket_mptcp", "MPTCP socket state: %d", mptcp_enabled);
+    mptcp_state = mptcp_enabled > 0 ? true : false;
+  } else {
+    Debug("socket_mptcp", "MPTCP failed getsockopt(): %s", strerror(errno));
+  }
+}
+
 inline ink_hrtime
 UnixNetVConnection::get_active_timeout()
 {
@@ -364,15 +379,15 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
 {
   Debug("socket", "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
   active_timeout_in        = timeout_in;
-  next_activity_timeout_at = Thread::get_hrtime() + timeout_in;
+  next_activity_timeout_at = (active_timeout_in > 0) ? Thread::get_hrtime() + timeout_in : 0;
 }
 
 inline void
 UnixNetVConnection::cancel_inactivity_timeout()
 {
   Debug("socket", "Cancel inactive timeout for NetVC=%p", this);
-  inactivity_timeout_in = 0;
-  set_inactivity_timeout(0);
+  inactivity_timeout_in      = 0;
+  next_inactivity_timeout_at = 0;
 }
 
 inline void
@@ -381,21 +396,6 @@ UnixNetVConnection::cancel_active_timeout()
   Debug("socket", "Cancel active timeout for NetVC=%p", this);
   active_timeout_in        = 0;
   next_activity_timeout_at = 0;
-}
-
-inline int
-UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
-{
-#ifdef TCP_INIT_CWND
-  int rv;
-  uint32_t val = init_cwnd;
-  rv           = setsockopt(con.fd, IPPROTO_TCP, TCP_INIT_CWND, &val, sizeof(val));
-  Debug("socket", "Setting TCP initial congestion window (%d) -> %d", init_cwnd, rv);
-  return rv;
-#else
-  Debug("socket", "Setting TCP initial congestion window %d -> unsupported", init_cwnd);
-  return -1;
-#endif
 }
 
 inline UnixNetVConnection::~UnixNetVConnection() {}
@@ -422,3 +422,4 @@ UnixNetVConnection::get_action() const
 
 void write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
 void write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread);
+void net_activity(UnixNetVConnection *vc, EThread *thread);

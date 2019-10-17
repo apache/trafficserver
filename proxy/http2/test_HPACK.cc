@@ -67,10 +67,9 @@ int
 unpack(string &packed, uint8_t *unpacked)
 {
   int n = packed.length() / 2;
-  int u, l;
   for (int i = 0; i < n; ++i) {
-    u           = packed[i * 2];
-    l           = packed[i * 2 + 1];
+    int u       = packed[i * 2];
+    int l       = packed[i * 2 + 1];
     unpacked[i] = (((u >= 'a') ? u - 'a' + 10 : u - '0') << 4) + ((l >= 'a') ? l - 'a' + 10 : l - '0');
   }
   return n;
@@ -129,21 +128,21 @@ print_difference(const char *a_str, const int a_str_len, const char *b_str, cons
 int
 compare_header_fields(HTTPHdr *a, HTTPHdr *b)
 {
-  const char *a_str, *b_str;
-  int a_str_len, b_str_len;
+  // compare fields count
+  if (a->fields_count() != b->fields_count()) {
+    return -1;
+  }
+
   MIMEFieldIter a_iter, b_iter;
 
   const MIMEField *a_field = a->iter_get_first(&a_iter);
   const MIMEField *b_field = b->iter_get_first(&b_iter);
 
-  // compare fields count
-  if (a->fields_count() != b->fields_count()) {
-    return -1;
-  }
-  for (; a_field != nullptr; a_field = a->iter_get_next(&a_iter), b_field = b->iter_get_next(&b_iter)) {
+  while (a_field != nullptr && b_field != nullptr) {
+    int a_str_len, b_str_len;
     // compare header name
-    a_str = a_field->name_get(&a_str_len);
-    b_str = b_field->name_get(&b_str_len);
+    const char *a_str = a_field->name_get(&a_str_len);
+    const char *b_str = b_field->name_get(&b_str_len);
     if (a_str_len != b_str_len) {
       if (memcmp(a_str, b_str, a_str_len) != 0) {
         print_difference(a_str, a_str_len, b_str, b_str_len);
@@ -159,6 +158,9 @@ compare_header_fields(HTTPHdr *a, HTTPHdr *b)
         return -1;
       }
     }
+
+    a_field = a->iter_get_next(&a_iter);
+    b_field = b->iter_get_next(&b_iter);
   }
 
   return 0;

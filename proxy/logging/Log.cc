@@ -33,6 +33,7 @@
 
  ***************************************************************************/
 #include "tscore/ink_platform.h"
+#include "tscore/TSSystemState.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
 #include "I_Machine.h"
@@ -43,13 +44,11 @@
 #include "LogFilter.h"
 #include "LogFormat.h"
 #include "LogFile.h"
-#include "LogHost.h"
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "LogBuffer.h"
 #include "LogUtils.h"
 #include "Log.h"
-#include "LogSock.h"
 #include "tscore/SimpleTokenizer.h"
 
 #include "tscore/ink_apidefs.h"
@@ -68,14 +67,8 @@ EventNotify *Log::preproc_notify;
 EventNotify *Log::flush_notify;
 InkAtomicList *Log::flush_data_list;
 
-// Collate thread stuff
-EventNotify Log::collate_notify;
-ink_thread Log::collate_thread;
-int Log::collation_accept_file_descriptor;
-int Log::collation_preproc_threads;
-int Log::collation_port;
-
 // Log private objects
+int Log::preproc_threads;
 int Log::init_status                  = 0;
 int Log::config_flags                 = 0;
 bool Log::logging_mode_changed        = false;
@@ -210,7 +203,7 @@ Log::periodic_tasks(long time_now)
     Debug("log-config", "Performing reconfiguration, init status = %d", init_status);
 
     if (logging_mode_changed) {
-      int val = (int)REC_ConfigReadInteger("proxy.config.log.logging_enabled");
+      int val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.logging_enabled"));
 
       if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
         logging_mode = LOG_MODE_FULL;
@@ -218,7 +211,7 @@ Log::periodic_tasks(long time_now)
                 "value setting it to %d",
                 logging_mode);
       } else {
-        logging_mode = (LoggingMode)val;
+        logging_mode = static_cast<LoggingMode>(val);
       }
       logging_mode_changed = false;
     }
@@ -226,7 +219,7 @@ Log::periodic_tasks(long time_now)
     // so that log objects are flushed
     //
     change_configuration();
-  } else if (logging_mode > LOG_MODE_NONE || config->collation_mode == Log::COLLATION_HOST || config->has_api_objects()) {
+  } else if (logging_mode > LOG_MODE_NONE || config->has_api_objects()) {
     Debug("log-periodic", "Performing periodic tasks");
     Debug("log-periodic", "Periodic task interval = %d", periodic_tasks_interval);
 
@@ -277,7 +270,10 @@ struct LoggingPreprocContinuation : public Continuation {
     return 0;
   }
 
-  LoggingPreprocContinuation(int idx) : Continuation(nullptr), m_idx(idx) { SET_HANDLER(&LoggingPreprocContinuation::mainEvent); }
+  explicit LoggingPreprocContinuation(int idx) : Continuation(nullptr), m_idx(idx)
+  {
+    SET_HANDLER(&LoggingPreprocContinuation::mainEvent);
+  }
 };
 
 struct LoggingFlushContinuation : public Continuation {
@@ -290,18 +286,10 @@ struct LoggingFlushContinuation : public Continuation {
     return 0;
   }
 
-  LoggingFlushContinuation(int idx) : Continuation(nullptr), m_idx(idx) { SET_HANDLER(&LoggingFlushContinuation::mainEvent); }
-};
-
-struct LoggingCollateContinuation : public Continuation {
-  int
-  mainEvent(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
+  explicit LoggingFlushContinuation(int idx) : Continuation(nullptr), m_idx(idx)
   {
-    Log::collate_thread_main(nullptr);
-    return 0;
+    SET_HANDLER(&LoggingFlushContinuation::mainEvent);
   }
-
-  LoggingCollateContinuation() : Continuation(nullptr) { SET_HANDLER(&LoggingCollateContinuation::mainEvent); }
 };
 
 /*-------------------------------------------------------------------------
@@ -357,7 +345,7 @@ Log::init_fields()
   field_symbol_hash.emplace("hiih", field);
   // interface ip end
   field = new LogField("client_auth_user_name", "caun", LogField::STRING, &LogAccess::marshal_client_auth_user_name,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("caun", field);
 
@@ -402,48 +390,50 @@ Log::init_fields()
   field_symbol_hash.emplace("cqtt", field);
 
   field = new LogField("client_req_text", "cqtx", LogField::STRING, &LogAccess::marshal_client_req_text,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_http_text);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_http_text));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqtx", field);
 
   field = new LogField("client_req_http_method", "cqhm", LogField::STRING, &LogAccess::marshal_client_req_http_method,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqhm", field);
 
   field = new LogField("client_req_url", "cqu", LogField::STRING, &LogAccess::marshal_client_req_url,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_url);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_url);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqu", field);
 
   field = new LogField("client_req_url_canonical", "cquc", LogField::STRING, &LogAccess::marshal_client_req_url_canon,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_url_canon);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_url_canon);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cquc", field);
 
-  field =
-    new LogField("client_req_unmapped_url_canonical", "cquuc", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_canon,
-                 (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_unmapped_url_canon);
+  field = new LogField(
+    "client_req_unmapped_url_canonical", "cquuc", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_canon,
+    reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_unmapped_url_canon);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cquuc", field);
 
   field = new LogField("client_req_unmapped_url_path", "cquup", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_path,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_unmapped_url_path);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str),
+                       &LogAccess::set_client_req_unmapped_url_path);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cquup", field);
 
   field = new LogField("client_req_unmapped_url_host", "cquuh", LogField::STRING, &LogAccess::marshal_client_req_unmapped_url_host,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_unmapped_url_host);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str),
+                       &LogAccess::set_client_req_unmapped_url_host);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cquuh", field);
 
   field = new LogField("client_req_url_scheme", "cqus", LogField::STRING, &LogAccess::marshal_client_req_url_scheme,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqus", field);
 
   field = new LogField("client_req_url_path", "cqup", LogField::STRING, &LogAccess::marshal_client_req_url_path,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str, &LogAccess::set_client_req_url_path);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str), &LogAccess::set_client_req_url_path);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqup", field);
 
@@ -453,7 +443,7 @@ Log::init_fields()
   field_symbol_hash.emplace("cqhv", field);
 
   field = new LogField("client_req_protocol_version", "cqpv", LogField::dINT, &LogAccess::marshal_client_req_protocol_version,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqpv", field);
 
@@ -468,12 +458,12 @@ Log::init_fields()
   field_symbol_hash.emplace("cqql", field);
 
   field = new LogField("cache_lookup_url_canonical", "cluc", LogField::STRING, &LogAccess::marshal_cache_lookup_url_canon,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cluc", field);
 
   field = new LogField("process_uuid", "puuid", LogField::STRING, &LogAccess::marshal_process_uuid,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("puuid", field);
 
@@ -502,15 +492,25 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqint", field);
 
+  field = new LogField("client_req_mptcp", "cqmpt", LogField::sINT, &LogAccess::marshal_client_req_mptcp_state,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqmpt", field);
+
   field = new LogField("client_sec_protocol", "cqssv", LogField::STRING, &LogAccess::marshal_client_security_protocol,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssv", field);
 
   field = new LogField("client_cipher_suite", "cqssc", LogField::STRING, &LogAccess::marshal_client_security_cipher_suite,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssc", field);
+
+  field = new LogField("client_curve", "cqssu", LogField::STRING, &LogAccess::marshal_client_security_curve,
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqssu", field);
 
   Ptr<LogFieldAliasTable> finish_status_map = make_ptr(new LogFieldAliasTable);
   finish_status_map->init(N_LOG_FINISH_CODE_TYPES, LOG_FINISH_FIN, "FIN", LOG_FINISH_INTR, "INTR", LOG_FINISH_TIMEOUT, "TIMEOUT");
@@ -526,17 +526,17 @@ Log::init_fields()
   field_symbol_hash.emplace("crid", field);
 
   field = new LogField("client_req_uuid", "cruuid", LogField::STRING, &LogAccess::marshal_client_req_uuid,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cruuid", field);
 
   field = new LogField("client_rx_error_code", "crec", LogField::STRING, &LogAccess::marshal_client_rx_error_code,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("crec", field);
 
   field = new LogField("client_tx_error_code", "ctec", LogField::STRING, &LogAccess::marshal_client_tx_error_code,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ctec", field);
 
@@ -547,12 +547,12 @@ Log::init_fields()
 
   // proxy -> client fields
   field = new LogField("proxy_resp_content_type", "psct", LogField::STRING, &LogAccess::marshal_proxy_resp_content_type,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("psct", field);
 
   field = new LogField("proxy_resp_reason_phrase", "prrp", LogField::STRING, &LogAccess::marshal_proxy_resp_reason_phrase,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("prrp", field);
 
@@ -588,7 +588,7 @@ Log::init_fields()
 
   Ptr<LogFieldAliasTable> cache_code_map = make_ptr(new LogFieldAliasTable);
   cache_code_map->init(
-    51, SQUID_LOG_EMPTY, "UNDEFINED", SQUID_LOG_TCP_HIT, "TCP_HIT", SQUID_LOG_TCP_DISK_HIT, "TCP_DISK_HIT", SQUID_LOG_TCP_MEM_HIT,
+    52, SQUID_LOG_EMPTY, "UNDEFINED", SQUID_LOG_TCP_HIT, "TCP_HIT", SQUID_LOG_TCP_DISK_HIT, "TCP_DISK_HIT", SQUID_LOG_TCP_MEM_HIT,
     "TCP_MEM_HIT", SQUID_LOG_TCP_MISS, "TCP_MISS", SQUID_LOG_TCP_EXPIRED_MISS, "TCP_EXPIRED_MISS", SQUID_LOG_TCP_REFRESH_HIT,
     "TCP_REFRESH_HIT", SQUID_LOG_TCP_REF_FAIL_HIT, "TCP_REFRESH_FAIL_HIT", SQUID_LOG_TCP_REFRESH_MISS, "TCP_REFRESH_MISS",
     SQUID_LOG_TCP_CLIENT_REFRESH, "TCP_CLIENT_REFRESH_MISS", SQUID_LOG_TCP_IMS_HIT, "TCP_IMS_HIT", SQUID_LOG_TCP_IMS_MISS,
@@ -606,8 +606,8 @@ Log::init_fields()
     SQUID_LOG_ERR_DNS_FAIL, "ERR_DNS_FAIL", SQUID_LOG_ERR_NOT_IMPLEMENTED, "ERR_NOT_IMPLEMENTED", SQUID_LOG_ERR_CANNOT_FETCH,
     "ERR_CANNOT_FETCH", SQUID_LOG_ERR_NO_RELAY, "ERR_NO_RELAY", SQUID_LOG_ERR_DISK_IO, "ERR_DISK_IO",
     SQUID_LOG_ERR_ZERO_SIZE_OBJECT, "ERR_ZERO_SIZE_OBJECT", SQUID_LOG_ERR_PROXY_DENIED, "ERR_PROXY_DENIED",
-    SQUID_LOG_ERR_WEBFETCH_DETECTED, "ERR_WEBFETCH_DETECTED", SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1", SQUID_LOG_ERR_UNKNOWN,
-    "ERR_UNKNOWN");
+    SQUID_LOG_ERR_WEBFETCH_DETECTED, "ERR_WEBFETCH_DETECTED", SQUID_LOG_ERR_FUTURE_1, "ERR_FUTURE_1", SQUID_LOG_ERR_LOOP_DETECTED,
+    "ERR_LOOP_DETECTED", SQUID_LOG_ERR_UNKNOWN, "ERR_UNKNOWN");
 
   Ptr<LogFieldAliasTable> cache_subcode_map = make_ptr(new LogFieldAliasTable);
   cache_subcode_map->init(2, SQUID_SUBCODE_EMPTY, "NONE", SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED, "NUM_REDIRECTIONS_EXCEEDED");
@@ -707,7 +707,7 @@ Log::init_fields()
   field_symbol_hash.emplace("phr", field);
 
   field = new LogField("proxy_host_name", "phn", LogField::STRING, &LogAccess::marshal_proxy_host_name,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("phn", field);
 
@@ -737,7 +737,7 @@ Log::init_fields()
   field_symbol_hash.emplace("shi", field);
 
   field = new LogField("server_host_name", "shn", LogField::STRING, &LogAccess::marshal_server_host_name,
-                       (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("shn", field);
 
@@ -914,7 +914,7 @@ Log::handle_periodic_tasks_int_change(const char * /* name ATS_UNUSED */, RecDat
     Error("new periodic tasks interval = %d is invalid, falling back to default = %d", (int)data.rec_int,
           PERIODIC_TASKS_INTERVAL_FALLBACK);
   } else {
-    periodic_tasks_interval = (uint32_t)data.rec_int;
+    periodic_tasks_interval = static_cast<uint32_t>(data.rec_int);
     Debug("log-periodic", "periodic task interval changed to %u", periodic_tasks_interval);
   }
   return REC_ERR_OKAY;
@@ -923,8 +923,7 @@ Log::handle_periodic_tasks_int_change(const char * /* name ATS_UNUSED */, RecDat
 void
 Log::init(int flags)
 {
-  collation_preproc_threads        = 1;
-  collation_accept_file_descriptor = NO_FD;
+  preproc_threads = 1;
 
   // store the configuration flags
   //
@@ -941,37 +940,32 @@ Log::init(int flags)
   if (config_flags & LOGCAT) {
     logging_mode = LOG_MODE_NONE;
   } else {
-    log_rsb = RecAllocateRawStatBlock((int)log_stat_count);
+    log_rsb = RecAllocateRawStatBlock(static_cast<int>(log_stat_count));
     LogConfig::register_stat_callbacks();
 
     config->read_configuration_variables();
-    collation_port            = config->collation_port;
-    collation_preproc_threads = config->collation_preproc_threads;
+    preproc_threads = config->preproc_threads;
 
-    if (config_flags & STANDALONE_COLLATOR) {
-      logging_mode = LOG_MODE_TRANSACTIONS;
+    int val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.logging_enabled"));
+    if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
+      logging_mode = LOG_MODE_FULL;
+      Warning("proxy.config.log.logging_enabled has an invalid "
+              "value, setting it to %d",
+              logging_mode);
     } else {
-      int val = (int)REC_ConfigReadInteger("proxy.config.log.logging_enabled");
-      if (val < LOG_MODE_NONE || val > LOG_MODE_FULL) {
-        logging_mode = LOG_MODE_FULL;
-        Warning("proxy.config.log.logging_enabled has an invalid "
-                "value, setting it to %d",
-                logging_mode);
-      } else {
-        logging_mode = (LoggingMode)val;
-      }
-      // periodic task interval are set on a per instance basis
-      MgmtInt pti = REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
-      if (pti <= 0) {
-        Error("proxy.config.log.periodic_tasks_interval = %" PRId64 " is invalid", pti);
-        Note("falling back to default periodic tasks interval = %d", PERIODIC_TASKS_INTERVAL_FALLBACK);
-        periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
-      } else {
-        periodic_tasks_interval = static_cast<uint32_t>(pti);
-      }
-
-      REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, nullptr);
+      logging_mode = static_cast<LoggingMode>(val);
     }
+    // periodic task interval are set on a per instance basis
+    MgmtInt pti = REC_ConfigReadInteger("proxy.config.log.periodic_tasks_interval");
+    if (pti <= 0) {
+      Error("proxy.config.log.periodic_tasks_interval = %" PRId64 " is invalid", pti);
+      Note("falling back to default periodic tasks interval = %d", PERIODIC_TASKS_INTERVAL_FALLBACK);
+      periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
+    } else {
+      periodic_tasks_interval = static_cast<uint32_t>(pti);
+    }
+
+    REC_RegisterConfigUpdateFunc("proxy.config.log.periodic_tasks_interval", &Log::handle_periodic_tasks_int_change, nullptr);
   }
 
   // if remote management is enabled, do all necessary initialization to
@@ -979,8 +973,6 @@ Log::init(int flags)
   //
   if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
     REC_RegisterConfigUpdateFunc("proxy.config.log.logging_enabled", &Log::handle_logging_mode_change, nullptr);
-
-    REC_RegisterConfigUpdateFunc("proxy.local.log.collation_mode", &Log::handle_logging_mode_change, nullptr);
 
     // Clear any stat values that need to be reset on startup
     //
@@ -991,9 +983,6 @@ Log::init(int flags)
   init_fields();
   if (!(config_flags & LOGCAT)) {
     Debug("log-config", "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
-    if (config_flags & STANDALONE_COLLATOR) {
-      config->collation_mode = Log::COLLATION_HOST;
-    }
     config->init();
     init_when_enabled();
   }
@@ -1006,26 +995,24 @@ Log::init_when_enabled()
   ink_release_assert(config->initialized == true);
 
   if (!(init_status & FULLY_INITIALIZED)) {
-    if (!(config_flags & STANDALONE_COLLATOR)) {
-      // register callbacks
-      //
-      if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
-        LogConfig::register_config_callbacks();
-      }
-
-      LogConfig::register_mgmt_callbacks();
+    // register callbacks
+    //
+    if (!(config_flags & NO_REMOTE_MANAGEMENT)) {
+      LogConfig::register_config_callbacks();
     }
+
+    LogConfig::register_mgmt_callbacks();
     // setup global scrap object
     //
     global_scrap_format = MakeTextLogFormat();
     global_scrap_object =
       new LogObject(global_scrap_format, Log::config->logfile_dir, "scrapfile.log", LOG_FILE_BINARY, nullptr,
-                    Log::config->rolling_enabled, Log::config->collation_preproc_threads, Log::config->rolling_interval_sec,
+                    Log::config->rolling_enabled, Log::config->preproc_threads, Log::config->rolling_interval_sec,
                     Log::config->rolling_offset_hr, Log::config->rolling_size_mb);
 
-    // create the flush thread and the collation thread
+    // create the flush thread
     create_threads();
-    eventProcessor.schedule_every(new PeriodicWakeup(collation_preproc_threads, 1), HRTIME_SECOND, ET_CALL);
+    eventProcessor.schedule_every(new PeriodicWakeup(preproc_threads, 1), HRTIME_SECOND, ET_CALL);
 
     init_status |= FULLY_INITIALIZED;
   }
@@ -1040,7 +1027,7 @@ void
 Log::create_threads()
 {
   char desc[64];
-  preproc_notify = new EventNotify[collation_preproc_threads];
+  preproc_notify = new EventNotify[preproc_threads];
 
   size_t stacksize;
   REC_ReadConfigInteger(stacksize, "proxy.config.thread.default.stacksize");
@@ -1049,7 +1036,7 @@ Log::create_threads()
   //
   // no need for the conditional var since it will be relying on
   // on the event system.
-  for (int i = 0; i < collation_preproc_threads; i++) {
+  for (int i = 0; i < preproc_threads; i++) {
     Continuation *preproc_cont = new LoggingPreprocContinuation(i);
     sprintf(desc, "[LOG_PREPROC %d]", i);
     eventProcessor.spawn_thread(preproc_cont, desc, stacksize);
@@ -1219,8 +1206,8 @@ Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char
 
   struct timeval tp = ink_gettimeofday();
 
-  Log::error("[%9d.%03d] Trace {0x%" PRIx64 "} %s %s:%d: ", (int)tp.tv_sec, (int)(tp.tv_usec / 1000), (uint64_t)ink_thread_self(),
-             in ? "RECV" : "SEND", ip, peer_port);
+  Log::error("[%9d.%03d] Trace {0x%" PRIx64 "} %s %s:%d: ", static_cast<int>(tp.tv_sec), static_cast<int>(tp.tv_usec / 1000),
+             reinterpret_cast<uint64_t>(ink_thread_self()), in ? "RECV" : "SEND", ip, peer_port);
   Log::va_error(format_string, ap);
   Log::error("[End Trace]\n");
 }
@@ -1236,21 +1223,20 @@ Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char
 void *
 Log::preproc_thread_main(void *args)
 {
-  int idx = *(int *)args;
+  int idx = *static_cast<int *>(args);
 
   Debug("log-preproc", "log preproc thread is alive ...");
 
   Log::preproc_notify[idx].lock();
 
   while (true) {
-    if (unlikely(shutdown_event_system == true)) {
+    if (TSSystemState::is_event_system_shut_down()) {
       return nullptr;
     }
-    size_t buffers_preproced = 0;
-    LogConfig *current       = (LogConfig *)configProcessor.get(log_configid);
+    LogConfig *current = static_cast<LogConfig *>(configProcessor.get(log_configid));
 
     if (likely(current)) {
-      buffers_preproced = current->log_object_manager.preproc_buffers(idx);
+      size_t buffers_preproced = current->log_object_manager.preproc_buffers(idx);
 
       // config->increment_space_used(bytes_to_disk);
       // TODO: the bytes_to_disk should be set to Log
@@ -1286,10 +1272,10 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
   Log::flush_notify->lock();
 
   while (true) {
-    if (unlikely(shutdown_event_system == true)) {
+    if (TSSystemState::is_event_system_shut_down()) {
       return nullptr;
     }
-    fdata = (LogFlushData *)ink_atomiclist_popall(flush_data_list);
+    fdata = static_cast<LogFlushData *>(ink_atomiclist_popall(flush_data_list));
 
     // invert the list
     //
@@ -1306,14 +1292,14 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       LogFile *logfile  = fdata->m_logfile.get();
 
       if (logfile->m_file_format == LOG_FILE_BINARY) {
-        logbuffer                      = (LogBuffer *)fdata->m_data;
+        logbuffer                      = static_cast<LogBuffer *>(fdata->m_data);
         LogBufferHeader *buffer_header = logbuffer->header();
 
-        buf         = (char *)buffer_header;
+        buf         = reinterpret_cast<char *>(buffer_header);
         total_bytes = buffer_header->byte_count;
 
       } else if (logfile->m_file_format == LOG_FILE_ASCII || logfile->m_file_format == LOG_FILE_PIPE) {
-        buf         = (char *)fdata->m_data;
+        buf         = static_cast<char *>(fdata->m_data);
         total_bytes = fdata->m_len;
 
       } else {
@@ -1388,167 +1374,4 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
   /* NOTREACHED */
   Log::flush_notify->unlock();
   return nullptr;
-}
-
-/*-------------------------------------------------------------------------
-  Log::collate_thread_main
-
-  This function defines the functionality of the log collation thread,
-  whose purpose is to collate log buffers from other nodes.
-  -------------------------------------------------------------------------*/
-
-void *
-Log::collate_thread_main(void * /* args ATS_UNUSED */)
-{
-  LogSock *sock;
-  LogBufferHeader *header;
-  LogFormat *format;
-  LogObject *obj;
-  int bytes_read;
-  int sock_id;
-  int new_client;
-
-  Debug("log-thread", "Log collation thread is alive ...");
-
-  Log::collate_notify.lock();
-
-  while (true) {
-    ink_assert(Log::config != nullptr);
-
-    // wait on the collation condition variable until we're sure that
-    // we're a collation host.  The while loop guards against spurious
-    // wake-ups.
-    //
-    while (!Log::config->am_collation_host()) {
-      Log::collate_notify.wait();
-    }
-
-    // Ok, at this point we know we're a log collation host, so get to
-    // work.  We still need to keep checking whether we're a collation
-    // host to account for a reconfiguration.
-    //
-    Debug("log-sock", "collation thread starting, creating LogSock");
-    sock = new LogSock(LogSock::LS_CONST_MAX_CONNS);
-    ink_assert(sock != nullptr);
-
-    if (sock->listen(Log::config->collation_port) != 0) {
-      LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, "Collation server error; could not listen on port %d",
-                              Log::config->collation_port);
-      Warning("Collation server error; could not listen on port %d", Log::config->collation_port);
-      delete sock;
-      //
-      // go to sleep ...
-      //
-      Log::collate_notify.wait();
-      continue;
-    }
-
-    while (true) {
-      if (!Log::config->am_collation_host()) {
-        break;
-      }
-
-      if (sock->pending_connect(0)) {
-        Debug("log-sock", "pending connection ...");
-        if ((new_client = sock->accept()) < 0) {
-          Debug("log-sock", "error accepting new collation client");
-        } else {
-          Debug("log-sock", "connection %d accepted", new_client);
-          if (!sock->authorized_client(new_client, Log::config->collation_secret)) {
-            Warning("Unauthorized client connecting to "
-                    "log collation port; connection refused.");
-            sock->close(new_client);
-          }
-        }
-      }
-
-      sock->check_connections();
-
-      if (!sock->pending_message_any(&sock_id, 0)) {
-        continue;
-      }
-
-      Debug("log-sock", "pending message ...");
-      header = (LogBufferHeader *)sock->read_alloc(sock_id, &bytes_read);
-      if (!header) {
-        Debug("log-sock", "Error reading LogBuffer from collation client");
-        continue;
-      }
-
-      if (header->version != LOG_SEGMENT_VERSION) {
-        Note("Invalid LogBuffer received; invalid version - buffer = %u, current = %u", header->version, LOG_SEGMENT_VERSION);
-        delete[] header;
-        continue;
-      }
-
-      Debug("log-sock", "message accepted, size = %d", bytes_read);
-
-      obj = match_logobject(header);
-      if (!obj) {
-        Note("LogObject not found with fieldlist id; "
-             "writing LogBuffer to scrap file");
-        obj = global_scrap_object;
-      }
-
-      format = obj->m_format;
-      Debug("log-sock", "Using format '%s'", format->name());
-
-      delete[] header;
-    }
-
-    Debug("log", "no longer collation host, deleting LogSock");
-    delete sock;
-  }
-
-  /* NOTREACHED */
-  Log::collate_notify.unlock();
-  return nullptr;
-}
-
-/*-------------------------------------------------------------------------
-  Log::match_logobject
-
-  This routine matches the given buffer with the local list of LogObjects.
-  If a match cannot be found, then we'll try to construct a local LogObject
-  using the information provided in the header.  If all else fails, we
-  return NULL.
-  -------------------------------------------------------------------------*/
-
-LogObject *
-Log::match_logobject(LogBufferHeader *header)
-{
-  if (!header) {
-    return nullptr;
-  }
-
-  LogObject *obj;
-  obj = Log::config->log_object_manager.get_object_with_signature(header->log_object_signature);
-
-  if (!obj) {
-    // object does not exist yet, create it
-    //
-    LogFormat fmt("__collation_format__", header->fmt_fieldlist(), header->fmt_printf());
-
-    if (fmt.valid()) {
-      LogFileFormat file_format = header->log_object_flags & LogObject::BINARY ?
-                                    LOG_FILE_BINARY :
-                                    (header->log_object_flags & LogObject::WRITES_TO_PIPE ? LOG_FILE_PIPE : LOG_FILE_ASCII);
-
-      obj = new LogObject(&fmt, Log::config->logfile_dir, header->log_filename(), file_format, nullptr,
-                          (Log::RollingEnabledValues)Log::config->rolling_enabled, Log::config->collation_preproc_threads,
-                          Log::config->rolling_interval_sec, Log::config->rolling_offset_hr, Log::config->rolling_size_mb, true);
-
-      obj->set_remote_flag();
-
-      if (Log::config->log_object_manager.manage_object(obj)) {
-        // object manager can't solve filename conflicts
-        // delete the object and return NULL
-        //
-        delete obj;
-        obj = nullptr;
-      }
-    }
-  }
-
-  return obj;
 }

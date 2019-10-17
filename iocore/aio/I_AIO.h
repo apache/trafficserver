@@ -72,7 +72,6 @@ struct ink_aiocb {
   size_t aio_nbytes = 0;       /* length of transfer */
   off_t aio_offset  = 0;       /* file offset */
 
-  int aio_reqprio    = 0; /* request priority offset */
   int aio_lio_opcode = 0; /* listio operation */
   int aio_state      = 0; /* state flag for List I/O */
   int aio__pad[1];        /* extension padding */
@@ -85,9 +84,6 @@ bool ink_aio_thread_num_set(int thread_num);
 // AIOCallback::thread special values
 #define AIO_CALLBACK_THREAD_ANY ((EThread *)0) // any regular event thread
 #define AIO_CALLBACK_THREAD_AIO ((EThread *)-1)
-
-#define AIO_LOWEST_PRIORITY 0
-#define AIO_DEFAULT_PRIORITY AIO_LOWEST_PRIORITY
 
 struct AIOCallback : public Continuation {
   // set before calling aio_read/aio_write

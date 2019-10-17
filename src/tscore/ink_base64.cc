@@ -97,11 +97,11 @@ ats_base64_encode(const unsigned char *inBuffer, size_t inBufferSize, char *outB
 bool
 ats_base64_encode(const char *inBuffer, size_t inBufferSize, char *outBuffer, size_t outBufSize, size_t *length)
 {
-  return ats_base64_encode((const unsigned char *)inBuffer, inBufferSize, outBuffer, outBufSize, length);
+  return ats_base64_encode(reinterpret_cast<const unsigned char *>(inBuffer), inBufferSize, outBuffer, outBufSize, length);
 }
 
 /*-------------------------------------------------------------------------
-  This is a reentrant, and malloc free implemetnation of ats_base64_decode.
+  This is a reentrant, and malloc free implementation of ats_base64_decode.
   -------------------------------------------------------------------------*/
 #ifdef DECODE
 #undef DECODE
@@ -136,14 +136,14 @@ ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outB
 
   // Ignore any trailing ='s or other undecodable characters.
   // TODO: Perhaps that ought to be an error instead?
-  while (printableToSixBit[(uint8_t)inBuffer[inBytes]] <= MAX_PRINT_VAL) {
+  while (printableToSixBit[static_cast<uint8_t>(inBuffer[inBytes])] <= MAX_PRINT_VAL) {
     ++inBytes;
   }
 
   for (size_t i = 0; i < inBytes; i += 4) {
-    buf[0] = (unsigned char)(DECODE(inBuffer[0]) << 2 | DECODE(inBuffer[1]) >> 4);
-    buf[1] = (unsigned char)(DECODE(inBuffer[1]) << 4 | DECODE(inBuffer[2]) >> 2);
-    buf[2] = (unsigned char)(DECODE(inBuffer[2]) << 6 | DECODE(inBuffer[3]));
+    buf[0] = static_cast<unsigned char>(DECODE(inBuffer[0]) << 2 | DECODE(inBuffer[1]) >> 4);
+    buf[1] = static_cast<unsigned char>(DECODE(inBuffer[1]) << 4 | DECODE(inBuffer[2]) >> 2);
+    buf[2] = static_cast<unsigned char>(DECODE(inBuffer[2]) << 6 | DECODE(inBuffer[3]));
 
     buf += 3;
     inBuffer += 4;

@@ -24,9 +24,7 @@ Test.Summary = '''
 Test various options for requiring certificate from client for mutual authentication TLS
 '''
 
-Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
-
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 server = Test.MakeOriginServer("server")
@@ -42,11 +40,9 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': '{0}:ssl'.format(ts.Variables.ssl_port),
     'proxy.config.ssl.client.verify.server':  0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.url_remap.pristine_host_hdr' : 1,
@@ -66,7 +62,8 @@ ts.Disk.remap_config.AddLine(
 )
 
 # Scenario 1:  Default no client cert required.  cert required for bar.com
-ts.Disk.ssl_server_name_yaml.AddLines([
+ts.Disk.sni_yaml.AddLines([
+    'sni:',
     '- fqdn: bob.bar.com',
     '  verify_client: NONE',
     '- fqdn: bob.*.com',
@@ -77,7 +74,7 @@ ts.Disk.ssl_server_name_yaml.AddLines([
 
 # to foo.com w/o client cert.  Should fail
 tr = Test.AddTestRun("Connect to foo.com without cert")
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(server)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -174,5 +171,3 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./server.pem --key ./server.key --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/case1".format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 35
-
-

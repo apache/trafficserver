@@ -22,12 +22,15 @@
  */
 
 #include <algorithm>
+#include <deque>
 #include <records/P_RecDefs.h>
 #include "HttpConnectionCount.h"
 #include "tscore/bwf_std_format.h"
 #include "tscore/BufferWriter.h"
 
 using namespace std::literals;
+
+extern int http_config_cb(const char *, RecDataT, RecData, void *);
 
 OutboundConnTrack::Imp OutboundConnTrack::_imp;
 
@@ -36,6 +39,10 @@ OutboundConnTrack::GlobalConfig *OutboundConnTrack::_global_config{nullptr};
 const MgmtConverter OutboundConnTrack::MAX_CONV(
   [](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<decltype(TxnConfig::max) *>(data)); },
   [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::max) *>(data) = static_cast<decltype(TxnConfig::max)>(i); });
+
+const MgmtConverter OutboundConnTrack::MIN_CONV(
+  [](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<decltype(TxnConfig::min) *>(data)); },
+  [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::min) *>(data) = static_cast<decltype(TxnConfig::min)>(i); });
 
 // Do integer and string conversions.
 const MgmtConverter OutboundConnTrack::MATCH_CONV{
@@ -72,40 +79,55 @@ static_assert(OutboundConnTrack::Group::Clock::period::den >= 1000);
 // Configuration callback functions.
 namespace
 {
-int
+bool
+Config_Update_Conntrack_Min(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  auto config = static_cast<OutboundConnTrack::TxnConfig *>(cookie);
+
+  if (RECD_INT == dtype) {
+    config->min = data.rec_int;
+    return true;
+  }
+  return false;
+}
+
+bool
 Config_Update_Conntrack_Max(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::TxnConfig *>(cookie);
 
   if (RECD_INT == dtype) {
     config->max = data.rec_int;
+    return true;
   }
-  return REC_ERR_OKAY;
+  return false;
 }
 
-int
+bool
 Config_Update_Conntrack_Queue_Size(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::GlobalConfig *>(cookie);
 
   if (RECD_INT == dtype) {
     config->queue_size = data.rec_int;
+    return true;
   }
-  return REC_ERR_OKAY;
+  return false;
 }
 
-int
+bool
 Config_Update_Conntrack_Queue_Delay(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::GlobalConfig *>(cookie);
 
   if (RECD_INT == dtype && data.rec_int > 0) {
     config->queue_delay = std::chrono::milliseconds(data.rec_int);
+    return true;
   }
-  return REC_ERR_OKAY;
+  return false;
 }
 
-int
+bool
 Config_Update_Conntrack_Match(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::TxnConfig *>(cookie);
@@ -115,35 +137,70 @@ Config_Update_Conntrack_Match(const char *name, RecDataT dtype, RecData data, vo
     std::string_view tag{data.rec_string};
     if (OutboundConnTrack::lookup_match_type(tag, match_type)) {
       config->match = match_type;
+      return true;
     } else {
       OutboundConnTrack::Warning_Bad_Match_Type(tag);
     }
   } else {
     Warning("Invalid type for '%s' - must be 'INT'", OutboundConnTrack::CONFIG_VAR_MATCH.data());
   }
-  return REC_ERR_OKAY;
+  return false;
 }
 
-int
+bool
 Config_Update_Conntrack_Alert_Delay(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::GlobalConfig *>(cookie);
 
   if (RECD_INT == dtype && data.rec_int >= 0) {
     config->alert_delay = std::chrono::seconds(data.rec_int);
+    return true;
   }
-  return REC_ERR_OKAY;
+  return false;
 }
 
-// Do the initial load of a configuration var by grabbing the raw value from the records data
-// and calling the update callback. This must be a function because that's how the records
-// interface works. Everything needed is already in the record @a r.
+/** Function to do enable configuration variables.
+ *
+ * @param name Configuration var name.
+ * @param cb Callback to do the actual update of the master record.
+ * @param cookie Extra data for @a cb
+ *
+ * This sets up a librecords callback that invokes @a cb and checks the return value. That should
+ * be @c true if the master record was updated, @c false if not. Based on that, the run time copy
+ * update is triggered or not. This then invokes the callback directly, to do the initial load
+ * of the configuration variable in to the master record.
+ */
 void
-Load_Config_Var(RecRecord const *r, void *)
+Enable_Config_Var(ts::TextView const &name, bool (*cb)(const char *, RecDataT, RecData, void *), void *cookie)
 {
-  for (auto cb = r->config_meta.update_cb_list; nullptr != cb; cb = cb->next) {
-    cb->update_cb(r->name, r->data_type, r->data, cb->update_cookie);
-  }
+  // Must use this indirection because the API requires a pure function, therefore no values can
+  // be bound in the lambda. Instead this is needed to pass in the data for both the lambda and
+  // the actual callback.
+  using Context = std::tuple<decltype(cb), void *>;
+
+  // To deal with process termination cleanup, store the context instances in a deque where
+  // tail insertion doesn't invalidate pointers.
+  static std::deque<Context> storage;
+
+  Context &ctx = storage.emplace_back(cb, cookie);
+  // Register the call back.
+  RecRegisterConfigUpdateCb(name.data(),
+                            [](const char *name, RecDataT dtype, RecData data, void *ctx) -> int {
+                              auto &&[cb, cookie] = *static_cast<Context *>(ctx);
+                              if ((*cb)(name, dtype, data, cookie)) {
+                                http_config_cb(name, dtype, data, cookie); // signal runtime config update.
+                              }
+                              return REC_ERR_OKAY;
+                            },
+                            &ctx);
+
+  // Use the record to do the initial data load.
+  RecLookupRecord(name.data(),
+                  [](RecRecord const *r, void *ctx) -> void {
+                    auto &&[cb, cookie] = *static_cast<Context *>(ctx);
+                    (*cb)(r->name, r->data_type, r->data, cookie);
+                  },
+                  &ctx);
 }
 
 } // namespace
@@ -154,18 +211,12 @@ OutboundConnTrack::config_init(GlobalConfig *global, TxnConfig *txn)
   _global_config = global; // remember this for later retrieval.
                            // Per transaction lookup must be done at call time because it changes.
 
-  RecRegisterConfigUpdateCb(CONFIG_VAR_MAX.data(), &Config_Update_Conntrack_Max, txn);
-  RecRegisterConfigUpdateCb(CONFIG_VAR_MATCH.data(), &Config_Update_Conntrack_Match, txn);
-  RecRegisterConfigUpdateCb(CONFIG_VAR_QUEUE_SIZE.data(), &Config_Update_Conntrack_Queue_Size, global);
-  RecRegisterConfigUpdateCb(CONFIG_VAR_QUEUE_DELAY.data(), &Config_Update_Conntrack_Queue_Delay, global);
-  RecRegisterConfigUpdateCb(CONFIG_VAR_ALERT_DELAY.data(), &Config_Update_Conntrack_Alert_Delay, global);
-
-  // Load 'em up by firing off the config update callback.
-  RecLookupRecord(CONFIG_VAR_MAX.data(), &Load_Config_Var, nullptr, true);
-  RecLookupRecord(CONFIG_VAR_MATCH.data(), &Load_Config_Var, nullptr, true);
-  RecLookupRecord(CONFIG_VAR_QUEUE_SIZE.data(), &Load_Config_Var, nullptr, true);
-  RecLookupRecord(CONFIG_VAR_QUEUE_DELAY.data(), &Load_Config_Var, nullptr, true);
-  RecLookupRecord(CONFIG_VAR_ALERT_DELAY.data(), &Load_Config_Var, nullptr, true);
+  Enable_Config_Var(CONFIG_VAR_MIN, &Config_Update_Conntrack_Min, txn);
+  Enable_Config_Var(CONFIG_VAR_MAX, &Config_Update_Conntrack_Max, txn);
+  Enable_Config_Var(CONFIG_VAR_MATCH, &Config_Update_Conntrack_Match, txn);
+  Enable_Config_Var(CONFIG_VAR_QUEUE_SIZE, &Config_Update_Conntrack_Queue_Size, global);
+  Enable_Config_Var(CONFIG_VAR_QUEUE_DELAY, &Config_Update_Conntrack_Queue_Delay, global);
+  Enable_Config_Var(CONFIG_VAR_ALERT_DELAY, &Config_Update_Conntrack_Alert_Delay, global);
 }
 
 OutboundConnTrack::TxnState
@@ -180,7 +231,7 @@ OutboundConnTrack::obtain(TxnConfig const &txn_cnf, std::string_view fqdn, IpEnd
   if (loc != _imp._table.end()) {
     zret._g = loc;
   } else {
-    zret._g = new Group(key, fqdn);
+    zret._g = new Group(key, fqdn, txn_cnf.min);
     _imp._table.insert(zret._g);
   }
   return zret;

@@ -46,7 +46,7 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, c
   if (string == nullptr) {
     return;
   }
-  HttpCompat::parse_tok_list(list, trim_quotes, string, (int)strlen(string), sep);
+  HttpCompat::parse_tok_list(list, trim_quotes, string, static_cast<int>(strlen(string)), sep);
 }
 
 void
@@ -152,7 +152,7 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
     // after the last char in the string.                              //
     /////////////////////////////////////////////////////////////////////
 
-    byte_length = (int)(e - s);
+    byte_length = static_cast<int>(e - s);
     ink_assert(byte_length >= 0);
 
     ///////////////////////////////////////////
@@ -407,7 +407,7 @@ HttpCompat::parse_mime_type_with_len(const char *mime_string, int mime_string_le
 
 //////////////////////////////////////////////////////////////////////////////
 //
-//      bool HttpCompat::do_header_values_match(MIMEField *hv1, MIMEField *hv2)
+//      bool HttpCompat::do_vary_header_values_match(MIMEField *hv1, MIMEField *hv2)
 //
 //      This routine takes two HTTP header fields and determines
 //      if their values "match", as in section 14.43 of RFC2068:
@@ -430,7 +430,7 @@ HttpCompat::parse_mime_type_with_len(const char *mime_string, int mime_string_le
 //
 //////////////////////////////////////////////////////////////////////////////
 bool
-HttpCompat::do_header_values_rfc2068_14_43_match(MIMEField *hdr1, MIMEField *hdr2)
+HttpCompat::do_vary_header_values_match(MIMEField *hdr1, MIMEField *hdr2)
 {
   // If both headers are missing, the headers match.
   if (!hdr1 && !hdr2) {
@@ -573,20 +573,20 @@ HttpCompat::match_accept_language(const char *lang_str, int lang_len, StrList *a
     // now rip the Accept-Language tag into head and Q parts //
     ///////////////////////////////////////////////////////////
     StrList a_param_list(false);
-    HttpCompat::parse_semicolon_list(&a_param_list, a_value->str, (int)a_value->len);
+    HttpCompat::parse_semicolon_list(&a_param_list, a_value->str, static_cast<int>(a_value->len));
     if (!a_param_list.head) {
       continue;
     }
 
     /////////////////////////////////////////////////////////////////////
-    // This algorithm is a bit wierd --- the resulting Q factor is     //
+    // This algorithm is a bit weird --- the resulting Q factor is     //
     // the Q value corresponding to the LONGEST range field that       //
     // matched, or if none matched, then the Q value of any asterisk.  //
     // Also, if the lang value is "", meaning that no Content-Language //
     // was specified, this document matches all accept headers.        //
     /////////////////////////////////////////////////////////////////////
     const char *atag_str = a_param_list.head->str;
-    int atag_len         = (int)a_param_list.head->len;
+    int atag_len         = static_cast<int>(a_param_list.head->len);
 
     float tq = HttpCompat::find_Q_param_in_strlist(&a_param_list);
 
@@ -688,7 +688,7 @@ HttpCompat::match_accept_charset(const char *charset_str, int charset_len, StrLi
     // now rip the Accept-Charset tag into head and Q parts //
     //////////////////////////////////////////////////////////
     StrList a_param_list(false);
-    HttpCompat::parse_semicolon_list(&a_param_list, a_value->str, (int)a_value->len);
+    HttpCompat::parse_semicolon_list(&a_param_list, a_value->str, static_cast<int>(a_value->len));
     if (!a_param_list.head) {
       continue;
     }
@@ -697,7 +697,7 @@ HttpCompat::match_accept_charset(const char *charset_str, int charset_len, StrLi
     // see if the Accept-Charset tag matches the current charset //
     ///////////////////////////////////////////////////////////////
     const char *atag_str = a_param_list.head->str;
-    int atag_len         = (int)a_param_list.head->len;
+    int atag_len         = static_cast<int>(a_param_list.head->len);
     float tq             = HttpCompat::find_Q_param_in_strlist(&a_param_list);
 
     if ((atag_len == 1) && (atag_str[0] == '*')) // wildcard

@@ -50,7 +50,7 @@ static const std::vector<DerivativeSum> sum_metrics = {
    RECD_INT,
    {"proxy.process.http.origin_server_response_document_total_size",
     "proxy.process.http.origin_server_response_header_total_size"}},
-  // Total byates of client request and response (total traffic to and from clients)
+  // Total bytes of client request and response (total traffic to and from clients)
   {"proxy.process.user_agent_total_bytes",
    RECD_INT,
    {"proxy.process.http.user_agent_total_request_bytes", "proxy.process.http.user_agent_total_response_bytes"}},
@@ -69,7 +69,7 @@ static const std::vector<DerivativeSum> sum_metrics = {
    RECD_COUNTER,
    {"proxy.process.http.cache_miss_cold", "proxy.process.http.cache_miss_changed", "proxy.process.http.cache_miss_client_no_cache",
     "proxy.process.http.cache_miss_ims", "proxy.process.http.cache_miss_client_not_cacheable"}},
-  // Total requests, both hits and misses (this is slightly superflous, but assures correct percentage calculations)
+  // Total requests, both hits and misses (this is slightly superfluous, but assures correct percentage calculations)
   {"proxy.process.cache_total_requests", RECD_COUNTER, {"proxy.process.cache_total_hits", "proxy.process.cache_total_misses"}},
   // Total cache requests bytes which are cache hits
   {"proxy.process.cache_total_hits_bytes",

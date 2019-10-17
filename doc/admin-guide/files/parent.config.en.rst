@@ -144,7 +144,7 @@ The following list shows the possible actions and their allowed values.
     If ``round_robin`` is set to ``consistent_hash``, you may add a ``unique hash string``
     following the ``weight`` for each parent.  The ``hash string`` must start with ``&``
     and is used to build both the primary and secondary rings using the ``hash string``
-    for each parent insted of the parents ``hostname`` or ``ip address``. This can be
+    for each parent instead of the parents ``hostname`` or ``ip address``. This can be
     useful so that two different hosts may be used to cache the same requests.  Example::
 
         parent="p1.x.com:80|1.0&abcdef, p2.x.com:80|1.0&xyzl, p3.x.com:80|1.0&ldffg" round_robin=consistent_hash
@@ -285,6 +285,17 @@ The following list shows the possible actions and their allowed values.
     -  ``ignore`` - Do not consider the query string when finding a parent. This
        is especially useful when using the ``consistent_hash`` selection strategy,
        and a random query string would prevent a consistent parent selection.
+
+.. _parent-config-format-ignore_self_detect:
+
+``ignore_self_detect``
+    One of the following values:
+
+  -  ``true`` - Ignore the marked down status of a host, typically the local host,
+      when the reason code is Reason::SELF_DETECT and use the host as if it were
+      marked up.
+
+  -  ``false`` - The default.  Do not ignore the host status.
 
 Examples
 ========

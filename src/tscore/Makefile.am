@@ -21,7 +21,7 @@ include $(top_srcdir)/build/tidy.mk
 noinst_PROGRAMS = mkdfa CompileParseRules
 check_PROGRAMS = test_atomic test_freelist test_geometry test_X509HostnameValidator test_tscore
 
-TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
+TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(abs_top_srcdir)/ci/asan_leak_suppression/unit_tests.txt
 
 TESTS = $(check_PROGRAMS)
 
@@ -30,7 +30,6 @@ lib_LTLIBRARIES = libtscore.la
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
-	-I$(abs_top_srcdir)/include/records \
 	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
@@ -57,7 +56,9 @@ libtscore_la_SOURCES = \
 	ContFlags.cc \
 	CryptoHash.cc \
 	Diags.cc \
+	Errata.cc \
 	EventNotify.cc \
+	Extendible.cc \
 	fastlz.c \
 	Hash.cc \
 	HashFNV.cc \
@@ -117,6 +118,16 @@ libtscore_la_SOURCES = \
 	Version.cc \
 	X509HostnameValidator.cc
 
+if HAS_HKDF
+if OPENSSL_IS_BORINGSSL
+HKDF_impl = HKDF_boringssl.cc
+else
+HKDF_impl = HKDF_openssl.cc
+endif
+libtscore_la_SOURCES += \
+  $(HKDF_impl)
+endif
+
 BufferWriterFormat.o : AM_CPPFLAGS += -Wno-char-subscripts
 
 #test_UNUSED_SOURCES = \
@@ -150,7 +161,7 @@ test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
 test_tscore_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a
+test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a @OPENSSL_LIBS@
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_AcidPtr.cc \
@@ -168,12 +179,18 @@ test_tscore_SOURCES = \
 	unit_tests/test_List.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
+  unit_tests/test_ParseRules.cc \
 	unit_tests/test_PriorityQueue.cc \
 	unit_tests/test_Ptr.cc \
 	unit_tests/test_Regex.cc \
 	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
 	unit_tests/test_ts_file.cc
+
+if HAS_HKDF
+test_tscore_SOURCES += \
+	unit_tests/test_HKDF.cc
+endif
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 

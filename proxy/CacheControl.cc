@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  CacheControl.cc - Implementation to Cache Control systtem
+ *  CacheControl.cc - Implementation to Cache Control system
  *
  *
  ****************************************************************************/
@@ -63,12 +63,6 @@ typedef ControlMatcher<CacheControlRecord, CacheControlResult> CC_table;
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
 CC_table *CacheControlTable = nullptr;
-
-void
-CC_delete_table()
-{
-  delete CacheControlTable;
-}
 
 // struct CC_FreerContinuation
 // Continuation to free old cache control lists after
@@ -372,9 +366,12 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
     break;
   case CC_NEVER_CACHE:
     if (this->CheckForMatch(h_rdata, result->never_line) == true) {
-      result->never_cache = true;
-      result->never_line  = this->line_num;
-      match               = true;
+      // ttl-in-cache overrides never-cache
+      if (result->ttl_line == -1) {
+        result->never_cache = true;
+        result->never_line  = this->line_num;
+        match               = true;
+      }
     }
     break;
   case CC_STANDARD_CACHE:

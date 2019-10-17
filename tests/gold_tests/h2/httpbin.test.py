@@ -26,7 +26,6 @@ Test HTTP/2 with httpbin origin server
 '''
 # Require HTTP/2 enabled Curl
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2'),
     Condition.HasProgram("shasum", "shasum need to be installed on system for this test to work"),
 )
@@ -40,12 +39,12 @@ httpbin = Test.MakeHttpBinServer("httpbin")
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
-ts.Variables.ssl_port = 4443
+
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(httpbin.Variables.Port)
 )
@@ -53,7 +52,6 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 ts.Disk.records_config.update({
-    'proxy.config.http.server_ports': '{0} {1}:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.http.insert_request_via_str': 1,
     'proxy.config.http.insert_response_via_str': 1,
     'proxy.config.http.cache.http': 0,
@@ -66,17 +64,15 @@ ts.Disk.records_config.update({
 
 })
 ts.Disk.logging_yaml.AddLines(
-    '''
-formats:
-  # Extended Log Format.
-  - name: access
-    format: |-
-[%<cqtn>] %<cqtx> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>
+'''
+logging:
+  formats:
+    - name: access
+      format: '[%<cqtn>] %<cqtx> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>'
 
-logs:
-  - filename: access
-    format: access
-}
+  logs:
+    - filename: access
+      format: access
 '''.split("\n")
 )
 
@@ -88,10 +84,11 @@ Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'access.log'), exists=True, con
 
 # Test Case 0: Basic request and resposne
 test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/get'.format(ts.Variables.ssl_port)
+# TODO: when httpbin 0.8.0 or later is released, remove below json pretty print hack
+test_run.Processes.Default.Command = "curl -vs -k --http2 https://127.0.0.1:{0}/get | python -c 'import sys,json; print(json.dumps(json.load(sys.stdin), indent=2))".format(ts.Variables.ssl_port)
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
-test_run.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+test_run.Processes.Default.StartBefore(Test.Processes.ts)
 test_run.Processes.Default.Streams.stdout = "gold/httpbin_0_stdout.gold"
 test_run.Processes.Default.Streams.stderr = "gold/httpbin_0_stderr.gold"
 test_run.StillRunningAfter = httpbin

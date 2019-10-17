@@ -48,6 +48,10 @@ partitions. :arg:`volume` and arg:`seed` are optional.
 
    If the :arg:`id` option is used every use must have a unique value for :arg:`string`.
 
+.. note::
+
+   Any change to this files can (and almost always will) invalidate the existing cache in its entirety.
+
 You can use any partition of any size. For best performance:
 
 -  Use raw disk partitions.
@@ -135,7 +139,7 @@ Linux Example
     modern Linux supports `alternative symlinked names for disk devices
     <https://wiki.archlinux.org/index.php/persistent_block_device_naming#by-id_and_by-path>`_ in the ``/dev/disk``
     directory structure. As noted for the :ref:`assignment-table` the path used for the disk can effect
-    the cache if it changes. This can be ameloriated in some cases by using one of the alternate paths
+    the cache if it changes. This can be ameliorated in some cases by using one of the alternate paths
     in via ``/dev/disk``. Note that if the ``by-id`` or ``by-path`` style is used, replacing a failed drive will cause
     that path to change because the new drive will have a different physical ID or path. The original hash string can
     be kept by adding :arg:`id` or :arg:`path` with the original path to the storage line.

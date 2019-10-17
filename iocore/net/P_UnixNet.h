@@ -82,6 +82,7 @@ struct EventIO {
   int events = 0;
 #endif
   EventLoop event_loop = nullptr;
+  bool syscall         = true;
   int type             = 0;
   union {
     Continuation *c;
@@ -343,7 +344,7 @@ public:
   /**
     Release a netvc and free it.
 
-    @param netvc UnixNetVConnection to be deattached.
+    @param netvc UnixNetVConnection to be detached.
    */
   void free_netvc(UnixNetVConnection *netvc);
 
@@ -353,7 +354,7 @@ private:
   void _close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time,
                  int &total_idle_count);
 
-  /// Static method used as the callbackf for runtime configuration updates.
+  /// Static method used as the callback for runtime configuration updates.
   static int update_nethandler_config(const char *name, RecDataT, RecData data, void *);
 };
 
@@ -556,6 +557,10 @@ EventIO::start(EventLoop l, UnixUDPConnection *vc, int events)
 TS_INLINE int
 EventIO::close()
 {
+  if (!this->syscall) {
+    return 0;
+  }
+
   stop();
   switch (type) {
   default:
@@ -577,6 +582,10 @@ EventIO::close()
 TS_INLINE int
 EventIO::start(EventLoop l, int afd, Continuation *c, int e)
 {
+  if (!this->syscall) {
+    return 0;
+  }
+
   data.c     = c;
   fd         = afd;
   event_loop = l;
@@ -612,6 +621,10 @@ EventIO::start(EventLoop l, int afd, Continuation *c, int e)
 TS_INLINE int
 EventIO::modify(int e)
 {
+  if (!this->syscall) {
+    return 0;
+  }
+
   ink_assert(event_loop);
 #if TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER)
   struct epoll_event ev;
@@ -691,6 +704,10 @@ EventIO::modify(int e)
 TS_INLINE int
 EventIO::refresh(int e)
 {
+  if (!this->syscall) {
+    return 0;
+  }
+
   ink_assert(event_loop);
 #if TS_USE_KQUEUE && defined(USE_EDGE_TRIGGER)
   e = e & events;
@@ -732,6 +749,9 @@ EventIO::refresh(int e)
 TS_INLINE int
 EventIO::stop()
 {
+  if (!this->syscall) {
+    return 0;
+  }
   if (event_loop) {
     int retval = 0;
 #if TS_USE_EPOLL

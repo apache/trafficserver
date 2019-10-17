@@ -26,7 +26,6 @@ Test a basic remap of a http connection with Stream Priority Feature
 '''
 # need Curl
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2'),
     Condition.HasProgram("shasum", "shasum need to be installed on system for this test to work"),
 )
@@ -45,11 +44,11 @@ server.addResponse("sessionlog.json",
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
-ts.Variables.ssl_port = 4443
+
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
@@ -57,7 +56,6 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 ts.Disk.records_config.update({
-    'proxy.config.http.server_ports': '{0} {1}:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.http.cache.http': 0,
     'proxy.config.http2.stream_priority_enabled': 1,
     'proxy.config.http2.no_activity_timeout_in': 3,
@@ -79,7 +77,7 @@ tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/bigfil
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stdout = "gold/priority_0_stdout.gold"
 tr.Processes.Default.Streams.stderr = "gold/priority_0_stderr.gold"
 tr.StillRunningAfter = server

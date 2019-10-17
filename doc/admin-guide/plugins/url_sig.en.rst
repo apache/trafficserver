@@ -186,7 +186,7 @@ Key Index
 
 Parts
     Configures which components of the URL to use for signature verification.
-    The value of this parameter is a string of ones and zeroes, each enabling
+    The value of this parameter is a string of ones and zeros, each enabling
     or disabling the use of a URL part for signatures. The URL scheme (e.g.
     ``http://``) is never part of the signature. The first number of this
     parameter's value indicates whether to include the FQDN, and all remaining

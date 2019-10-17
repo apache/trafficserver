@@ -47,7 +47,7 @@ CB_server_verify(TSCont cont, TSEvent event, void *edata)
 
   // Is this a good name or not?
   TSEvent reenable_event = TS_EVENT_CONTINUE;
-  TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
+  TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
   SSL *ssl               = (SSL *)sslobj;
   const char *sni_name   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (sni_name) {

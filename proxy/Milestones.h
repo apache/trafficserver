@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Milestones
 
   @section license License
 
@@ -23,22 +23,32 @@
 
 #pragma once
 
+#include "ts/apidefs.h"
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_hrtime.h"
-#include "ts/apidefs.h"
-#include "tscore/ink_hrtime.h"
 
-/////////////////////////////////////////////////////////////
-//
-// class TransactionMilestones
-//
-/////////////////////////////////////////////////////////////
-class TransactionMilestones
+#include "I_EventSystem.h"
+
+template <class T, size_t entries> class Milestones
 {
 public:
-  TransactionMilestones() { ink_zero(milestones); }
-  ink_hrtime &operator[](TSMilestonesType ms) { return milestones[ms]; }
-  ink_hrtime operator[](TSMilestonesType ms) const { return milestones[ms]; }
+  ink_hrtime &operator[](T ms) { return this->_milestones[static_cast<size_t>(ms)]; }
+  ink_hrtime operator[](T ms) const { return this->_milestones[static_cast<size_t>(ms)]; }
+
+  /**
+   * Mark given milestone with timestamp if it's not marked yet
+   * @param ms The milestone to mark
+   * @return N/A
+   */
+  void
+  mark(T ms)
+  {
+    if (this->_milestones[static_cast<size_t>(ms)] == 0) {
+      this->_milestones[static_cast<size_t>(ms)] = Thread::get_hrtime();
+    }
+  }
+
   /**
    * Takes two milestones and returns the difference.
    * @param start The start time
@@ -46,12 +56,12 @@ public:
    * @return The difference time in milliseconds
    */
   int64_t
-  difference_msec(TSMilestonesType ms_start, TSMilestonesType ms_end) const
+  difference_msec(T ms_start, T ms_end) const
   {
-    if (milestones[ms_end] == 0) {
+    if (this->_milestones[static_cast<size_t>(ms_end)] == 0) {
       return -1;
     }
-    return ink_hrtime_to_msec(milestones[ms_end] - milestones[ms_start]);
+    return ink_hrtime_to_msec(this->_milestones[static_cast<size_t>(ms_end)] - this->_milestones[static_cast<size_t>(ms_start)]);
   }
 
   /**
@@ -61,17 +71,26 @@ public:
    * @return A double that is the difference time in seconds
    */
   double
-  difference_sec(TSMilestonesType ms_start, TSMilestonesType ms_end) const
+  difference_sec(T ms_start, T ms_end) const
   {
-    return (double)difference_msec(ms_start, ms_end) / 1000.0;
+    return static_cast<double>(difference_msec(ms_start, ms_end) / 1000.0);
   }
 
+  /**
+   * Takes two milestones and returns the difference.
+   * @param start The start time
+   * @param end The end time
+   * @return The difference time in high-resolution time
+   */
   ink_hrtime
-  elapsed(TSMilestonesType ms_start, TSMilestonesType ms_end) const
+  elapsed(T ms_start, T ms_end) const
   {
-    return milestones[ms_end] - milestones[ms_start];
+    return this->_milestones[static_cast<size_t>(ms_end)] - this->_milestones[static_cast<size_t>(ms_start)];
   }
 
 private:
-  ink_hrtime milestones[TS_MILESTONE_LAST_ENTRY];
+  std::array<ink_hrtime, entries> _milestones = {{0}};
 };
+
+// For compatibility with HttpSM.h and HttpTransact.h
+using TransactionMilestones = Milestones<TSMilestonesType, TS_MILESTONE_LAST_ENTRY>;

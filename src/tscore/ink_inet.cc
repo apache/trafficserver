@@ -41,6 +41,7 @@ const std::string_view IP_PROTO_TAG_IPV4("ipv4"sv);
 const std::string_view IP_PROTO_TAG_IPV6("ipv6"sv);
 const std::string_view IP_PROTO_TAG_UDP("udp"sv);
 const std::string_view IP_PROTO_TAG_TCP("tcp"sv);
+const std::string_view IP_PROTO_TAG_QUIC("quic"sv);
 const std::string_view IP_PROTO_TAG_TLS_1_0("tls/1.0"sv);
 const std::string_view IP_PROTO_TAG_TLS_1_1("tls/1.1"sv);
 const std::string_view IP_PROTO_TAG_TLS_1_2("tls/1.2"sv);
@@ -48,7 +49,9 @@ const std::string_view IP_PROTO_TAG_TLS_1_3("tls/1.3"sv);
 const std::string_view IP_PROTO_TAG_HTTP_0_9("http/0.9"sv);
 const std::string_view IP_PROTO_TAG_HTTP_1_0("http/1.0"sv);
 const std::string_view IP_PROTO_TAG_HTTP_1_1("http/1.1"sv);
-const std::string_view IP_PROTO_TAG_HTTP_2_0("h2"sv); // HTTP/2 over TLS
+const std::string_view IP_PROTO_TAG_HTTP_2_0("h2"sv);     // HTTP/2 over TLS
+const std::string_view IP_PROTO_TAG_HTTP_QUIC("hq-23"sv); // HTTP/0.9 over QUIC
+const std::string_view IP_PROTO_TAG_HTTP_3("h3-23"sv);    // HTTP/3 over QUIC
 
 const std::string_view UNIX_PROTO_TAG{"unix"sv};
 
@@ -389,7 +392,7 @@ ats_ip_port_hash(sockaddr const *addr)
     CryptoContext hash_context;
     hash_context.update(const_cast<uint8_t *>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE);
     in_port_t port = ats_ip_port_cast(addr);
-    hash_context.update((uint8_t *)(&port), sizeof(port));
+    hash_context.update(reinterpret_cast<uint8_t *>(&port), sizeof(port));
     hash_context.finalize(hash);
     return hash.u64[0];
   } else {
@@ -909,10 +912,12 @@ bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
       w.print("*Not IP address [{}]*", addr->sa_family);
       break;
     }
-    if (bracket_p)
+    if (bracket_p) {
       w.write(']');
-    if (port_p)
+    }
+    if (port_p) {
       w.write(':');
+    }
   }
   if (port_p) {
     if (local_numeric_fill_p) {
@@ -926,8 +931,9 @@ bwformat(BufferWriter &w, BWFSpec const &spec, sockaddr const *addr)
   }
   if (family_p) {
     local_spec._min = 0;
-    if (addr_p || port_p)
+    if (addr_p || port_p) {
       w.write(' ');
+    }
     if (spec.has_numeric_type()) {
       bwformat(w, local_spec, static_cast<uintmax_t>(addr->sa_family));
     } else {

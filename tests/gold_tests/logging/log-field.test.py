@@ -21,10 +21,8 @@ import os
 Test.Summary = '''
 Test log fields.
 '''
-# need Curl
+# Only on Linux (why??)
 Test.SkipUnless(
-    Condition.HasProgram(
-        "curl", "Curl need to be installed on system for this test to work"),
     Condition.IsPlatform("linux")
 )
 
@@ -57,13 +55,13 @@ ts.Disk.remap_config.AddLine(
 
 ts.Disk.logging_yaml.AddLines(
     '''
-formats:
-  - name: custom
-    format: '%<{Content-Type}essh>'
-
-logs:
-  - filename: field-test
-    format: custom
+logging:
+  formats:
+    - name: custom
+      format: '%<{Content-Type}essh>'
+  logs:
+    - filename: field-test
+      format: custom
 '''.split("\n")
 )
 

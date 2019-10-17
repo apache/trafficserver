@@ -47,11 +47,14 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
     const unsigned ctxCount = certLookup->count();
     for (size_t i = 0; i < ctxCount; i++) {
       SSLCertContext *cc = certLookup->get(i);
-      if (cc && cc->ctx) {
-        sessions += SSL_CTX_sess_accept_good(cc->ctx);
-        hits += SSL_CTX_sess_hits(cc->ctx);
-        misses += SSL_CTX_sess_misses(cc->ctx);
-        timeouts += SSL_CTX_sess_timeouts(cc->ctx);
+      if (cc) {
+        shared_SSL_CTX ctx = cc->getCtx();
+        if (ctx) {
+          sessions += SSL_CTX_sess_accept_good(ctx.get());
+          hits += SSL_CTX_sess_hits(ctx.get());
+          misses += SSL_CTX_sess_misses(ctx.get());
+          timeouts += SSL_CTX_sess_timeouts(ctx.get());
+        }
       }
     }
   }
@@ -72,7 +75,7 @@ SSLInitializeStatistics()
   STACK_OF(SSL_CIPHER) * ciphers;
 
   // Allocate SSL statistics block.
-  ssl_rsb = RecAllocateRawStatBlock((int)Ssl_Stat_Count);
+  ssl_rsb = RecAllocateRawStatBlock(static_cast<int>(Ssl_Stat_Count));
   ink_assert(ssl_rsb != nullptr);
 
   // SSL client errors.
@@ -175,18 +178,10 @@ SSLInitializeStatistics()
                      (int)ssl_total_dyn_redo_tls_record_count, RecRawStatSyncCount);
 
   /* error stats */
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_write", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_error_want_write, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_read", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_error_want_read, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_x509_lookup", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_error_want_x509_lookup, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_syscall", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_error_syscall, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_read_eos", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_error_read_eos, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_zero_return", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)ssl_error_zero_return, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_ssl", RECD_COUNTER, RECP_PERSISTENT, (int)ssl_error_ssl,
                      RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_sni_name_set_failure", RECD_COUNTER, RECP_PERSISTENT,
@@ -201,6 +196,18 @@ SSLInitializeStatistics()
                      (int)ssl_ocsp_refreshed_cert_stat, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_refresh_cert_failure", RECD_INT, RECP_PERSISTENT,
                      (int)ssl_ocsp_refresh_cert_failure_stat, RecRawStatSyncCount);
+
+  /* SSL Version stats */
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_sslv3", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_sslv3, RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_tlsv1", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_tlsv1, RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_tlsv11", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_tlsv11, RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_tlsv12", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_tlsv12, RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_tlsv13", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_tlsv13, RecRawStatSyncCount);
 
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
@@ -227,7 +234,7 @@ SSLInitializeStatistics()
 
     // If not already registered ...
     if (cipherName && cipher_map.find(cipherName) == cipher_map.end()) {
-      cipher_map.emplace(cipherName, (intptr_t)(ssl_cipher_stats_start + index));
+      cipher_map.emplace(cipherName, static_cast<intptr_t>(ssl_cipher_stats_start + index));
       // Register as non-persistent since the order/index is dependent upon configuration.
       RecRegisterRawStat(ssl_rsb, RECT_PROCESS, statName.c_str(), RECD_INT, RECP_NON_PERSISTENT,
                          (int)ssl_cipher_stats_start + index, RecRawStatSyncSum);

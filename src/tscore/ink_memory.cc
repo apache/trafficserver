@@ -33,7 +33,7 @@
 
 #include <cassert>
 #if defined(linux)
-// XXX: SHouldn't that be part of CPPFLAGS?
+// XXX: Shouldn't that be part of CPPFLAGS?
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
 #endif
@@ -161,6 +161,12 @@ ats_mallopt(int param ATS_UNUSED, int value ATS_UNUSED)
   return 0;
 }
 
+ats_unique_buf
+ats_unique_malloc(size_t size)
+{
+  return ats_unique_buf(static_cast<uint8_t *>(ats_malloc(size)));
+}
+
 int
 ats_msync(caddr_t addr, size_t len, caddr_t end, int flags)
 {
@@ -168,7 +174,7 @@ ats_msync(caddr_t addr, size_t len, caddr_t end, int flags)
 
   // align start back to page boundary
   caddr_t a = (caddr_t)(((uintptr_t)addr) & ~(pagesize - 1));
-  // align length to page boundry covering region
+  // align length to page boundary covering region
   size_t l = (len + (addr - a) + (pagesize - 1)) & ~(pagesize - 1);
   if ((a + l) > end) {
     l = end - a; // strict limit
@@ -265,13 +271,13 @@ _xstrdup(const char *str, int length, const char * /* path ATS_UNUSED */)
       length = strlen(str);
     }
 
-    newstr = (char *)ats_malloc(length + 1);
+    newstr = static_cast<char *>(ats_malloc(length + 1));
     // If this is a zero length string just null terminate and return.
     if (unlikely(length == 0)) {
       *newstr = '\0';
     } else {
       strncpy(newstr, str, length); // we cannot do length + 1 because the string isn't
-      newstr[length] = '\0';        // guaranteeed to be null terminated!
+      newstr[length] = '\0';        // guaranteed to be null terminated!
     }
     return newstr;
   }

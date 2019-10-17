@@ -20,7 +20,8 @@ set +x
 
 INSTALL="${WORKSPACE}/${BUILD_NUMBER}/install"
 URL="https://ci.trafficserver.apache.org/autest"
-AUSB="ausb-${ghprbPullId}.${BUILD_NUMBER}"
+JOB_ID=${ghprbPullId:-${ATS_BRANCH:-master}}
+AUSB="ausb-${JOB_ID}.${BUILD_NUMBER}"
 SANDBOX="/var/tmp/${AUSB}"
 
 # Optional settings
@@ -28,10 +29,17 @@ CCACHE=""
 WERROR=""
 DEBUG=""
 WCCP=""
+LUAJIT=""
+QUIC=""
+CURL=""
+
 [ "1" == "$enable_ccache" ] && CCACHE="--enable-ccache"
 [ "1" == "$enable_werror" ] && WERROR="--enable-werror"
 [ "1" == "$enable_debug" ] && DEBUG="--enable-debug"
 [ "1" == "$enable_wccp" ] && WCCP="--enable-wccp"
+[ "1" == "$enable_luajit" ] && LUAJIT="--enable-luajit"
+[ "1" == "$enable_quic" ] && QUIC="--with-openssl=/opt/openssl-quic"
+[ "1" == "$disable_curl" ] && CURL="--disable-curl"
 
 mkdir -p ${INSTALL}
 cd src
@@ -43,6 +51,9 @@ echo "CCACHE: $CCACHE"
 echo "WERROR: $WERROR"
 echo "DEBUG: $DEBUG"
 echo "WCCP: $WCCP"
+echo "LUAJIT: $LUAJIT"
+echo "QUIC: $QUIC"
+echo "CURL: $CURL"
 
 # Restore verbose shell output
 set -x
@@ -55,8 +66,11 @@ autoreconf -if
     --enable-example-plugins \
     ${CCACHE} \
     ${WCCP} \
+    ${LUAJIT} \
+    ${QUIC} \
     ${WERROR} \
-    ${DEBUG}
+    ${DEBUG} \
+    ${CURL}
 
 # Build and run regressions
 ${ATS_MAKE} -j4 && ${ATS_MAKE} install

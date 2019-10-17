@@ -146,7 +146,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
     alloced_buffer = nullptr;
     value_buffer   = inline_buffer;
   } else {
-    alloced_buffer = (char *)ats_malloc(bytes);
+    alloced_buffer = static_cast<char *>(ats_malloc(bytes));
     value_buffer   = alloced_buffer;
   }
 
@@ -217,7 +217,7 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
   //         we'll have problems with the TE being forwarded to the server
   //         and us caching the transfer encoded documents and then
   //         serving it to a client that can not handle it
-  //      2) Transfer enconding is copied.  If the transfer encoding
+  //      2) Transfer encoding is copied.  If the transfer encoding
   //         is changed for example by dechunking, the transfer encoding
   //         should be modified when when the decision is made to dechunk it
 
@@ -423,7 +423,7 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time, ink_time_t 
   ink_assert(now_value >= response_time);
 
   if (date_value > 0) {
-    apparent_age = std::max((time_t)0, (response_time - date_value));
+    apparent_age = std::max(static_cast<time_t>(0), (response_time - date_value));
   }
   if (age_value < 0) {
     current_age = -1; // Overflow from Age: header
@@ -631,11 +631,13 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     log_code  = SQUID_LOG_TCP_SWAPFAIL;
     hier_code = SQUID_HIER_NONE;
     break;
+  case VIA_ERROR_LOOP_DETECTED:
+    log_code  = SQUID_LOG_ERR_LOOP_DETECTED;
+    hier_code = SQUID_HIER_NONE;
+    break;
   default:
     break;
   }
-
-  Debug("http_trans", "[Squid code generation] Hit/Miss: %c, Log: %c, Hier: %c", hit_miss_code, log_code, hier_code);
 
   squid_codes->log_code      = log_code;
   squid_codes->hier_code     = hier_code;
@@ -659,7 +661,7 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
     warn_text_len = 0; // Make sure it's really zero
   }
 
-  char *warning_text = (char *)alloca(bufsize);
+  char *warning_text = static_cast<char *>(alloca(bufsize));
 
   len =
     snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
@@ -679,14 +681,6 @@ HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_
   //      See INKqa09852.
   if (date <= 0) {
     outgoing->set_date(now);
-  }
-}
-
-void
-HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr *h)
-{
-  if (likely(server_tag && server_tag_size > 0 && h)) {
-    h->set_server(server_tag, server_tag_size);
   }
 }
 
@@ -933,35 +927,6 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Name: insert_basic_realm_in_proxy_authenticate
-// Description: insert Basic realm into Proxy-Authenticate based on
-//              configuration
-//  fix for INKqa09089
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransactHeaders::insert_basic_realm_in_proxy_authenticate(const char *realm, HTTPHdr *header, bool bRevPrxy)
-{
-  char new_basic_realm[128];
-  char *basic_realm;
-
-  basic_realm = new_basic_realm;
-  basic_realm += nstrcpy(basic_realm, "Basic realm=\"");
-  basic_realm += nstrcpy(basic_realm, (char *)realm);
-  *basic_realm++ = '"';
-  *basic_realm   = 0;
-
-  MIMEField *auth;
-  if (false == bRevPrxy) {
-    auth = header->field_create(MIME_FIELD_PROXY_AUTHENTICATE, MIME_LEN_PROXY_AUTHENTICATE);
-  } else {
-    auth = header->field_create(MIME_FIELD_WWW_AUTHENTICATE, MIME_LEN_WWW_AUTHENTICATE);
-  }
-
-  header->field_value_set(auth, new_basic_realm, strlen(new_basic_realm));
-  header->field_attach(auth);
-}
-
 void
 HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 {
@@ -1001,7 +966,8 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(OverridableHttpConf
   if (http_txn_conf->global_user_agent_header) {
     MIMEField *ua_field;
 
-    Debug("http_trans", "Adding User-Agent: %s", http_txn_conf->global_user_agent_header);
+    Debug("http_trans", "Adding User-Agent: %.*s", static_cast<int>(http_txn_conf->global_user_agent_header_size),
+          http_txn_conf->global_user_agent_header);
     if ((ua_field = header->field_find(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) == nullptr) {
       if (likely((ua_field = header->field_create(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) != nullptr)) {
         header->field_attach(ua_field);

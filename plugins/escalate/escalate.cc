@@ -51,7 +51,7 @@ struct EscalationState {
 
   typedef std::map<unsigned, RetryInfo> StatusMapType;
 
-  EscalationState() : use_pristine(false)
+  EscalationState()
   {
     cont = TSContCreate(EscalateResponse, nullptr);
     TSContDataSet(cont, this);
@@ -60,7 +60,7 @@ struct EscalationState {
   ~EscalationState() { TSContDestroy(cont); }
   TSCont cont;
   StatusMapType status_map;
-  bool use_pristine;
+  bool use_pristine = false;
 };
 
 // Little helper function, to update the Host portion of a URL, and stringify the result.
@@ -84,7 +84,7 @@ MakeEscalateUrl(TSMBuffer mbuf, TSMLoc url, const char *host, size_t host_len, i
 static int
 EscalateResponse(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn txn       = (TSHttpTxn)edata;
+  TSHttpTxn txn       = static_cast<TSHttpTxn>(edata);
   EscalationState *es = static_cast<EscalationState *>(TSContDataGet(cont));
   EscalationState::StatusMapType::const_iterator entry;
   TSMBuffer mbuf;
@@ -111,12 +111,12 @@ EscalateResponse(TSCont cont, TSEvent event, void *edata)
   TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdrp); // Don't need this any more
 
   // See if we have an escalation retry config for this response code
-  entry = es->status_map.find((unsigned)status);
+  entry = es->status_map.find(static_cast<unsigned>(status));
   if (entry == es->status_map.end()) {
     goto no_action;
   }
 
-  TSDebug(PLUGIN_NAME, "Found an entry for HTTP status %u", (unsigned)status);
+  TSDebug(PLUGIN_NAME, "Found an entry for HTTP status %u", static_cast<unsigned>(status));
   if (EscalationState::RETRY_URL == entry->second.type) {
     url_str = TSstrdup(entry->second.target.c_str());
     url_len = entry->second.target.size();
@@ -195,7 +195,7 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
         unsigned status = strtol(token, nullptr, 10);
 
         if (status < 100 || status > 599) {
-          snprintf(errbuf, errbuf_size, "invalid status code: %.*s", (int)std::distance(argv[i], sep), argv[i]);
+          snprintf(errbuf, errbuf_size, "invalid status code: %.*s", static_cast<int>(std::distance(argv[i], sep)), argv[i]);
           goto fail;
         }
 

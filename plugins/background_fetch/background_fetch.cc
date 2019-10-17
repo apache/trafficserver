@@ -220,7 +220,7 @@ private:
 // This needs the txnp temporarily, so it can copy the pristine request
 // URL. The txnp is not used once initialize() returns.
 //
-// Upon succesful completion, the struct should be ready to start a
+// Upon successful completion, the struct should be ready to start a
 // background fetch.
 bool
 BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
@@ -370,7 +370,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     // Debug info for this particular bg fetch (put all debug in here please)
     if (TSIsDebugTagSet(PLUGIN_NAME)) {
       char buf[INET6_ADDRSTRLEN];
-      const sockaddr *sockaddress = (const sockaddr *)&data->client_ip;
+      const sockaddr *sockaddress = reinterpret_cast<const sockaddr *>(&data->client_ip);
 
       switch (sockaddress->sa_family) {
       case AF_INET:
@@ -391,7 +391,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
     // Setup the NetVC for background fetch
     TSAssert(nullptr == data->vc);
-    if ((data->vc = TSHttpConnectWithPluginId((sockaddr *)&data->client_ip, PLUGIN_NAME, 0)) != nullptr) {
+    if ((data->vc = TSHttpConnectWithPluginId(reinterpret_cast<sockaddr *>(&data->client_ip), PLUGIN_NAME, 0)) != nullptr) {
       TSHttpHdrPrint(data->mbuf, data->hdr_loc, data->req_io_buf);
       // We never send a body with the request. ToDo: Do we ever need to support that ?
       TSIOBufferWrite(data->req_io_buf, "\r\n", 2);
@@ -678,7 +678,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &req_hdrs)) {
     TSMLoc field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
 
-    if (!field_loc) { // Less common case, but also allow If-Range header to triger, but only if Range not present
+    if (!field_loc) { // Less common case, but also allow If-Range header to trigger, but only if Range not present
       field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_IF_RANGE, TS_MIME_LEN_IF_RANGE);
     }
 

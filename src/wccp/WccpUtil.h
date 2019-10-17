@@ -24,6 +24,8 @@
 
 #include <vector>
 
+#include "tscore/Errata.h"
+
 namespace wccp
 {
 /// @name Message severity levels.
@@ -81,7 +83,7 @@ ts::Errata &logf(ts::Errata &err,       ///< Target errata.
 ts::Errata log(ts::Errata::Code code, ///< Severity level.
                char const *text       ///< Message text.
 );
-/// Return an Errata populated with a printf styleformatted string.
+/// Return an Errata populated with a printf style formatted string.
 /// Use message ID 0.
 /// @return @a err.
 ts::Errata logf(ts::Errata::Code code, ///< Severity level.

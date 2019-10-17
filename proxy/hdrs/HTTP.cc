@@ -45,11 +45,6 @@
  *                                                                     *
  ***********************************************************************/
 
-// TODO: We should enable the creation and use of these WKS. XXXX
-#if 0
-static const char *cache_control_values[SIZEOF(cache_control_names)];
-#endif
-
 const char *HTTP_METHOD_CONNECT;
 const char *HTTP_METHOD_DELETE;
 const char *HTTP_METHOD_GET;
@@ -276,13 +271,6 @@ http_init()
     HTTP_LEN_S_MAXAGE             = hdrtoken_wks_to_length(HTTP_VALUE_S_MAXAGE);
     HTTP_LEN_NEED_REVALIDATE_ONCE = hdrtoken_wks_to_length(HTTP_VALUE_NEED_REVALIDATE_ONCE);
     HTTP_LEN_100_CONTINUE         = hdrtoken_wks_to_length(HTTP_VALUE_100_CONTINUE);
-
-// TODO: We need to look into enable these CC values as WKS XXX
-#if 0
-    for (int i = 0; i < (int) SIZEOF(cache_control_values); i++) {
-      cache_control_values[i] = hdrtoken_string_to_wks(cache_control_names[i]);
-    }
-#endif
   }
 }
 
@@ -700,7 +688,7 @@ http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
       heap->deallocate_obj(hh->u.req.m_url_impl);
     }
     // Clone into new heap if the URL was allocated against a different heap
-    if ((char *)url < heap->m_data_start || (char *)url >= heap->m_free_start) {
+    if (reinterpret_cast<char *>(url) < heap->m_data_start || reinterpret_cast<char *>(url) >= heap->m_free_start) {
       hh->u.req.m_url_impl = static_cast<URLImpl *>(heap->allocate_obj(url->m_length, url->m_type));
       memcpy(hh->u.req.m_url_impl, url, url->m_length);
       // Make sure there is a read_write heap
@@ -876,7 +864,8 @@ http_parser_clear(HTTPParser *parser)
 
 ParseResult
 http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
-                      bool must_copy_strings, bool eof, bool strict_uri_parsing)
+                      bool must_copy_strings, bool eof, bool strict_uri_parsing, size_t max_request_line_size,
+                      size_t max_hdr_field_size)
 {
   if (parser->m_parsing_http) {
     MIMEScanner *scanner = &parser->m_mime_parser.m_scanner;
@@ -901,8 +890,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
   start:
     hh->m_polarity = HTTP_TYPE_REQUEST;
 
-    // Make sure the line is not longer than 64K
-    if (scanner->get_buffered_line_size() >= UINT16_MAX) {
+    // Make sure the line is not longer than max_request_line_size
+    if (scanner->get_buffered_line_size() > max_request_line_size) {
       return PARSE_RESULT_ERROR;
     }
 
@@ -924,6 +913,10 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     ink_assert(parsed.size() < UINT16_MAX);
     line_start = cur = parsed.data();
     end              = parsed.data_end();
+
+    if (static_cast<unsigned>(end - line_start) > max_request_line_size) {
+      return PARSE_RESULT_ERROR;
+    }
 
     must_copy_strings = (must_copy_strings || (!line_is_real));
 
@@ -966,7 +959,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
         return PARSE_RESULT_ERROR;
       }
 
-      ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+      ParseResult ret =
+        mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, max_hdr_field_size);
       // If we're done with the main parse do some validation
       if (ret == PARSE_RESULT_DONE) {
         ret = validate_hdr_host(hh); // check HOST header
@@ -1093,8 +1087,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     ink_assert(url_start);
     ink_assert(url_end);
 
-    int method_wks_idx = hdrtoken_tokenize(method_start, (int)(method_end - method_start));
-    http_hdr_method_set(heap, hh, method_start, method_wks_idx, (int)(method_end - method_start), must_copy_strings);
+    int method_wks_idx = hdrtoken_tokenize(method_start, static_cast<int>(method_end - method_start));
+    http_hdr_method_set(heap, hh, method_start, method_wks_idx, static_cast<int>(method_end - method_start), must_copy_strings);
 
     ink_assert(hh->u.req.m_url_impl != nullptr);
 
@@ -1121,7 +1115,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     end                    = real_end;
     parser->m_parsing_http = false;
 
-    ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+    ParseResult ret =
+      mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, max_hdr_field_size);
     // If we're done with the main parse do some validation
     if (ret == PARSE_RESULT_DONE) {
       ret = validate_hdr_host(hh); // check HOST header
@@ -1132,7 +1127,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     return ret;
   }
 
-  return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+  return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, max_hdr_field_size);
 }
 
 ParseResult
@@ -1286,11 +1281,11 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
       }
 
       int32_t version   = HTTP_VERSION(cur[5] - '0', cur[7] - '0');
-      HTTPStatus status = (HTTPStatus)((cur[9] - '0') * 100 + (cur[10] - '0') * 10 + (cur[11] - '0'));
+      HTTPStatus status = static_cast<HTTPStatus>((cur[9] - '0') * 100 + (cur[10] - '0') * 10 + (cur[11] - '0'));
 
       http_hdr_version_set(hh, version);
       http_hdr_status_set(hh, status);
-      http_hdr_reason_set(heap, hh, reason_start, (int)(reason_end - reason_start), must_copy_strings);
+      http_hdr_reason_set(heap, hh, reason_start, static_cast<int>(reason_end - reason_start), must_copy_strings);
 
       end                    = real_end;
       parser->m_parsing_http = false;
@@ -1403,7 +1398,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     }
 
     if (reason_start && reason_end) {
-      http_hdr_reason_set(heap, hh, reason_start, (int)(reason_end - reason_start), must_copy_strings);
+      http_hdr_reason_set(heap, hh, reason_start, static_cast<int>(reason_end - reason_start), must_copy_strings);
     }
 
     end                    = real_end;
@@ -1429,7 +1424,7 @@ http_parse_status(const char *start, const char *end)
     status = (status * 10) + (*start++ - '0');
   }
 
-  return (HTTPStatus)status;
+  return static_cast<HTTPStatus>(status);
 }
 
 /*-------------------------------------------------------------------------
@@ -1483,7 +1478,7 @@ http_str_store(Arena *arena, const char *str, int length)
   if (idx < 0) {
     return arena->str_store(str, length);
   } else {
-    return (char *)wks;
+    return const_cast<char *>(wks);
   }
 }
 
@@ -1542,7 +1537,7 @@ http_parse_qvalue(const char *&buf, int &len)
 
           f = 10;
           while (len > 0 && *buf && ParseRules::is_digit(*buf)) {
-            n += (*buf++ - '0') / (double)f;
+            n += (*buf++ - '0') / static_cast<double>(f);
             f *= 10;
             len -= 1;
           }
@@ -1592,8 +1587,8 @@ http_parse_te(const char *buf, int len, Arena *arena)
     len -= 1;
   }
 
-  val           = (HTTPValTE *)arena->alloc(sizeof(HTTPValTE));
-  val->encoding = http_str_store(arena, s, (int)(buf - s));
+  val           = static_cast<HTTPValTE *>(arena->alloc(sizeof(HTTPValTE)));
+  val->encoding = http_str_store(arena, s, static_cast<int>(buf - s));
   val->qvalue   = http_parse_qvalue(buf, len);
 
   return val;
@@ -1747,7 +1742,7 @@ class UrlPrintHack
 };
 
 char *
-HTTPHdr::url_string_get(Arena *arena, int *length)
+HTTPHdr::url_string_get(Arena *arena, int *length, bool normalized)
 {
   char *zret = nullptr;
   UrlPrintHack hack(this);
@@ -1757,13 +1752,14 @@ HTTPHdr::url_string_get(Arena *arena, int *length)
     // even uglier but it's less so than duplicating this entire method to
     // change that one thing.
 
-    zret = (arena == USE_HDR_HEAP_MAGIC) ? m_url_cached.string_get_ref(length) : m_url_cached.string_get(arena, length);
+    zret = (arena == USE_HDR_HEAP_MAGIC) ? m_url_cached.string_get_ref(length, normalized) :
+                                           m_url_cached.string_get(arena, length, normalized);
   }
   return zret;
 }
 
 int
-HTTPHdr::url_print(char *buff, int length, int *offset, int *skip)
+HTTPHdr::url_print(char *buff, int length, int *offset, int *skip, bool normalized)
 {
   ink_release_assert(offset);
   ink_release_assert(skip);
@@ -1771,7 +1767,18 @@ HTTPHdr::url_print(char *buff, int length, int *offset, int *skip)
   int zret = 0;
   UrlPrintHack hack(this);
   if (hack.is_valid()) {
-    zret = m_url_cached.print(buff, length, offset, skip);
+    zret = m_url_cached.print(buff, length, offset, skip, normalized);
+  }
+  return zret;
+}
+
+int
+HTTPHdr::url_printed_length()
+{
+  int zret = -1;
+  UrlPrintHack hack(this);
+  if (hack.is_valid()) {
+    zret = m_url_cached.length_get();
   }
   return zret;
 }
@@ -1785,9 +1792,9 @@ HTTPHdr::url_print(char *buff, int length, int *offset, int *skip)
 int
 HTTPHdr::unmarshal(char *buf, int len, RefCountObj *block_ref)
 {
-  m_heap = (HdrHeap *)buf;
+  m_heap = reinterpret_cast<HdrHeap *>(buf);
 
-  int res = m_heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&m_http, block_ref);
+  int res = m_heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&m_http), block_ref);
 
   if (res > 0) {
     m_mime = m_http->m_fields_impl;
@@ -1873,19 +1880,8 @@ ClassAllocator<HTTPCacheAlt> httpCacheAltAllocator("httpCacheAltAllocator");
   -------------------------------------------------------------------------*/
 int constexpr HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS;
 
-HTTPCacheAlt::HTTPCacheAlt()
-  : m_magic(CACHE_ALT_MAGIC_ALIVE),
-    m_writeable(1),
-    m_unmarshal_len(-1),
-    m_id(-1),
-    m_rid(-1),
-    m_request_hdr(),
-    m_response_hdr(),
-    m_request_sent_time(0),
-    m_response_received_time(0),
-    m_frag_offset_count(0),
-    m_frag_offsets(nullptr),
-    m_ext_buffer(nullptr)
+HTTPCacheAlt::HTTPCacheAlt() : m_request_hdr(), m_response_hdr()
+
 {
   memset(&m_object_key[0], 0, CRYPTO_HASH_SIZE);
   m_object_size[0] = 0;
@@ -2009,7 +2005,7 @@ HTTPInfo::marshal(char *buf, int len)
 {
   int tmp;
   int used                  = 0;
-  HTTPCacheAlt *marshal_alt = (HTTPCacheAlt *)buf;
+  HTTPCacheAlt *marshal_alt = reinterpret_cast<HTTPCacheAlt *>(buf);
   // non-zero only if the offsets are external. Otherwise they get
   // marshalled along with the alt struct.
   ink_assert(m_alt->m_magic == CACHE_ALT_MAGIC_ALIVE);
@@ -2043,7 +2039,7 @@ HTTPInfo::marshal(char *buf, int len)
   //    marshalling in to
   if (m_alt->m_request_hdr.valid()) {
     tmp                               = m_alt->m_request_hdr.m_heap->marshal(buf, len - used);
-    marshal_alt->m_request_hdr.m_heap = (HdrHeap *)(intptr_t)used;
+    marshal_alt->m_request_hdr.m_heap = (HdrHeap *)static_cast<intptr_t>(used);
     ink_assert(((intptr_t)marshal_alt->m_request_hdr.m_heap) < len);
     buf += tmp;
     used += tmp;
@@ -2053,7 +2049,7 @@ HTTPInfo::marshal(char *buf, int len)
 
   if (m_alt->m_response_hdr.valid()) {
     tmp                                = m_alt->m_response_hdr.m_heap->marshal(buf, len - used);
-    marshal_alt->m_response_hdr.m_heap = (HdrHeap *)(intptr_t)used;
+    marshal_alt->m_response_hdr.m_heap = (HdrHeap *)static_cast<intptr_t>(used);
     ink_assert(((intptr_t)marshal_alt->m_response_hdr.m_heap) < len);
     used += tmp;
   } else {
@@ -2072,7 +2068,7 @@ HTTPInfo::marshal(char *buf, int len)
 int
 HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
 {
-  HTTPCacheAlt *alt = (HTTPCacheAlt *)buf;
+  HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
   int orig_len      = len;
 
   if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
@@ -2101,11 +2097,11 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     alt->m_frag_offsets = nullptr; // should really already be zero.
   }
 
-  HdrHeap *heap   = (HdrHeap *)(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
+  HdrHeap *heap   = reinterpret_cast<HdrHeap *>(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
   HTTPHdrImpl *hh = nullptr;
   int tmp;
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
+    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::request unmarshal failed");
       return -1;
@@ -2117,9 +2113,9 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     alt->m_request_hdr.m_url_cached.m_heap = heap;
   }
 
-  heap = (HdrHeap *)(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
+  heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
+    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::response unmarshal failed");
       return -1;
@@ -2139,7 +2135,7 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
 int
 HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
 {
-  HTTPCacheAlt *alt = (HTTPCacheAlt *)buf;
+  HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
   int orig_len      = len;
 
   if (alt->m_magic == CACHE_ALT_MAGIC_ALIVE) {
@@ -2182,11 +2178,11 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
     alt->m_frag_offsets = nullptr; // should really already be zero.
   }
 
-  HdrHeap *heap   = (HdrHeap *)(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
+  HdrHeap *heap   = reinterpret_cast<HdrHeap *>(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
   HTTPHdrImpl *hh = nullptr;
   int tmp;
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
+    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::request unmarshal failed");
       return -1;
@@ -2198,9 +2194,9 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
     alt->m_request_hdr.m_url_cached.m_heap = heap;
   }
 
-  heap = (HdrHeap *)(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
+  heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
   if (heap != nullptr) {
-    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, (HdrHeapObjImpl **)&hh, block_ref);
+    tmp = heap->unmarshal(len, HDR_HEAP_OBJ_HTTP_HEADER, reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       ink_assert(!"HTTPInfo::response unmarshal failed");
       return -1;
@@ -2224,7 +2220,7 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
 bool
 HTTPInfo::check_marshalled(char *buf, int len)
 {
-  HTTPCacheAlt *alt = (HTTPCacheAlt *)buf;
+  HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
 
   if (alt->m_magic != CACHE_ALT_MAGIC_MARSHALED) {
     return false;
@@ -2246,7 +2242,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
     return false;
   }
 
-  HdrHeap *heap = (HdrHeap *)(buf + (intptr_t)alt->m_request_hdr.m_heap);
+  HdrHeap *heap = reinterpret_cast<HdrHeap *>(buf + (intptr_t)alt->m_request_hdr.m_heap);
   if (heap->check_marshalled(len) == false) {
     return false;
   }
@@ -2259,7 +2255,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
     return false;
   }
 
-  heap = (HdrHeap *)(buf + (intptr_t)alt->m_response_hdr.m_heap);
+  heap = reinterpret_cast<HdrHeap *>(buf + (intptr_t)alt->m_response_hdr.m_heap);
   if (heap->check_marshalled(len) == false) {
     return false;
   }
@@ -2305,7 +2301,7 @@ HTTPInfo::get_handle(char *buf, int len)
 {
   // All the offsets have already swizzled to pointers.  All we
   //  need to do is set m_alt and make sure things are sane
-  HTTPCacheAlt *a = (HTTPCacheAlt *)buf;
+  HTTPCacheAlt *a = reinterpret_cast<HTTPCacheAlt *>(buf);
 
   if (a->m_magic == CACHE_ALT_MAGIC_ALIVE) {
     m_alt = a;

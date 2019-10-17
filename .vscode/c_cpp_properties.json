@@ -1,20 +1,17 @@
 {
-    "configurations": [
-        {
+    "configurations": [{
             "name": "Mac",
             "includePath": [
                 "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1",
-                "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include",
+                "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.1/include",
                 "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include",
                 "/usr/local/include",
                 "/usr/local/opt/openssl@1.1/include",
                 "/usr/local/opt/openssl/include",
-                "/usr/include",
                 "${workspaceFolder}",
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/iocore/aio",
                 "${workspaceFolder}/iocore/cache",
-                "${workspaceFolder}/iocore/cluster",
                 "${workspaceFolder}/iocore/dns",
                 "${workspaceFolder}/iocore/eventsystem",
                 "${workspaceFolder}/iocore/hostdb",
@@ -28,8 +25,6 @@
                 "${workspaceFolder}/mgmt/api/include",
                 "${workspaceFolder}/mgmt/utils",
                 "${workspaceFolder}/proxy",
-                "${workspaceFolder}/proxy/api",
-                "${workspaceFolder}/proxy/api/ts",
                 "${workspaceFolder}/proxy/hdrs",
                 "${workspaceFolder}/proxy/http",
                 "${workspaceFolder}/proxy/http/remap",
@@ -44,9 +39,8 @@
                     "${workspaceFolder}",
                     "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1",
                     "/usr/local/include",
-                    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include",
-                    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include",
-                    "/usr/include"
+                    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.1/include",
+                    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -68,7 +62,6 @@
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/iocore/aio",
                 "${workspaceFolder}/iocore/cache",
-                "${workspaceFolder}/iocore/cluster",
                 "${workspaceFolder}/iocore/dns",
                 "${workspaceFolder}/iocore/eventsystem",
                 "${workspaceFolder}/iocore/hostdb",
@@ -82,8 +75,6 @@
                 "${workspaceFolder}/mgmt/api/include",
                 "${workspaceFolder}/mgmt/utils",
                 "${workspaceFolder}/proxy",
-                "${workspaceFolder}/proxy/api",
-                "${workspaceFolder}/proxy/api/ts",
                 "${workspaceFolder}/proxy/hdrs",
                 "${workspaceFolder}/proxy/http",
                 "${workspaceFolder}/proxy/http/remap",
@@ -111,7 +102,6 @@
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/iocore/aio",
                 "${workspaceFolder}/iocore/cache",
-                "${workspaceFolder}/iocore/cluster",
                 "${workspaceFolder}/iocore/dns",
                 "${workspaceFolder}/iocore/eventsystem",
                 "${workspaceFolder}/iocore/hostdb",
@@ -125,8 +115,6 @@
                 "${workspaceFolder}/mgmt/api/include",
                 "${workspaceFolder}/mgmt/utils",
                 "${workspaceFolder}/proxy",
-                "${workspaceFolder}/proxy/api",
-                "${workspaceFolder}/proxy/api/ts",
                 "${workspaceFolder}/proxy/hdrs",
                 "${workspaceFolder}/proxy/http",
                 "${workspaceFolder}/proxy/http/remap",

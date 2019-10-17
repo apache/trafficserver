@@ -28,6 +28,8 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <cctype>
+#include <algorithm>
 #include "MIME.h"
 #include "HdrHeap.h"
 #include "HdrToken.h"
@@ -483,6 +485,8 @@ mime_hdr_set_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
     return;
   }
 
+  ink_assert(mh);
+
   mime_hdr_presence_set(mh, field->m_wks_idx);
 
   slot_id = hdrtoken_index_to_slotid(field->m_wks_idx);
@@ -558,6 +562,8 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
   MIMEField *field, *next_dup;
   uint32_t slot_index, index;
   uint64_t masksum;
+
+  ink_assert(mh != nullptr);
 
   masksum     = 0;
   slot_index  = 0;
@@ -977,12 +983,12 @@ mime_init_date_format_table()
   int m = 0, d = 0, y = 0;
 
   time(&now_secs);
-  now_days   = (int)(now_secs / (60 * 60 * 24));
+  now_days   = static_cast<int>(now_secs / (60 * 60 * 24));
   first_days = now_days - 366;
   last_days  = now_days + 366;
   num_days   = last_days - first_days + 1;
 
-  _days_to_mdy_fast_lookup_table           = (MDY *)ats_malloc(num_days * sizeof(MDY));
+  _days_to_mdy_fast_lookup_table           = static_cast<MDY *>(ats_malloc(num_days * sizeof(MDY)));
   _days_to_mdy_fast_lookup_table_first_day = first_days;
   _days_to_mdy_fast_lookup_table_last_day  = last_days;
 
@@ -1114,8 +1120,8 @@ mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHea
   ink_assert(((char *)&(s_mh->m_first_fblock.m_field_slots[MIME_FIELD_BLOCK_SLOTS]) - (char *)s_mh) == sizeof(struct MIMEHdrImpl));
 
   int top             = s_mh->m_first_fblock.m_freetop;
-  char *end           = (char *)&(s_mh->m_first_fblock.m_field_slots[top]);
-  int bytes_below_top = end - (char *)s_mh;
+  char *end           = reinterpret_cast<char *>(&(s_mh->m_first_fblock.m_field_slots[top]));
+  int bytes_below_top = end - reinterpret_cast<char *>(s_mh);
 
   // copies useful part of enclosed first block too
   memcpy(d_mh, s_mh, bytes_below_top);
@@ -1566,6 +1572,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
 void
 mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
 {
+  ink_assert(mh);
   MIMEField *next_dup = field->m_next_dup;
 
   // If this field is already detached, there's nothing to do. There must
@@ -1635,20 +1642,8 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
 {
   if (delete_all_dups) {
     while (field) {
-      // NOTE: we pass zero to field_detach for detach_all_dups
-      //       since this loop will already detach each dup
       MIMEField *next = field->m_next_dup;
-
-      heap->free_string(field->m_ptr_name, field->m_len_name);
-      heap->free_string(field->m_ptr_value, field->m_len_value);
-
-      MIME_HDR_SANITY_CHECK(mh);
-      mime_hdr_field_detach(mh, field, false);
-
-      MIME_HDR_SANITY_CHECK(mh);
-      mime_field_destroy(mh, field);
-
-      MIME_HDR_SANITY_CHECK(mh);
+      mime_hdr_field_delete(heap, mh, field, false);
       field = next;
     }
   } else {
@@ -1660,6 +1655,32 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
 
     MIME_HDR_SANITY_CHECK(mh);
     mime_field_destroy(mh, field);
+
+    MIMEFieldBlockImpl *prev_block = nullptr;
+    bool can_destroy_block         = true;
+    for (auto fblock = &(mh->m_first_fblock); fblock != nullptr; fblock = fblock->m_next) {
+      if (prev_block != nullptr) {
+        if (fblock->m_freetop == MIME_FIELD_BLOCK_SLOTS && fblock->contains(field)) {
+          // Check if fields in all slots are deleted
+          for (int i = 0; i < MIME_FIELD_BLOCK_SLOTS; ++i) {
+            if (fblock->m_field_slots[i].m_readiness != MIME_FIELD_SLOT_READINESS_DELETED) {
+              can_destroy_block = false;
+              break;
+            }
+          }
+          // Destroy a block and maintain the chain
+          if (can_destroy_block) {
+            prev_block->m_next = fblock->m_next;
+            _mime_field_block_destroy(heap, fblock);
+            if (prev_block->m_next == nullptr) {
+              mh->m_fblock_list_tail = prev_block;
+            }
+          }
+          break;
+        }
+      }
+      prev_block = fblock;
+    }
   }
 
   MIME_HDR_SANITY_CHECK(mh);
@@ -1756,7 +1777,7 @@ MIMEField::value_get_index(const char *value, int length) const
 
   // if field doesn't support commas and there is just one instance, just compare the value
   if (!this->supports_commas() && !this->has_dups()) {
-    if (this->m_len_value == (uint32_t)length && strncasecmp(value, this->m_ptr_value, length) == 0) {
+    if (this->m_len_value == static_cast<uint32_t>(length) && strncasecmp(value, this->m_ptr_value, length) == 0) {
       retval = 0;
     }
   } else {
@@ -1833,7 +1854,7 @@ mime_field_value_get_comma_val(const MIMEField *field, int *length, int idx)
     mime_field_value_get_comma_list(field, &list);
     str = list.get_idx(idx);
     if (str != nullptr) {
-      *length = (int)(str->len);
+      *length = static_cast<int>(str->len);
       return str->str;
     } else {
       *length = 0;
@@ -2071,7 +2092,7 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   if (extended_len <= sizeof(temp_buf)) {
     temp_ptr = temp_buf;
   } else {
-    temp_ptr = (char *)ats_malloc(extended_len);
+    temp_ptr = static_cast<char *>(ats_malloc(extended_len));
   }
 
   // (7) construct new extended token
@@ -2334,6 +2355,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
   while (PARSE_RESULT_CONT == zret && !text.empty()) {
     switch (m_state) {
     case MIME_PARSE_BEFORE: // waiting to find a field.
+      m_line.resize(0);     // any caller should already be done with the buffer
       if (ParseRules::is_cr(*text)) {
         ++text;
         if (!text.empty() && ParseRules::is_lf(*text)) {
@@ -2445,8 +2467,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
   output_shares_input = true;
   if (PARSE_RESULT_CONT != zret) {
     if (!m_line.empty()) {
-      output = m_line;
-      m_line.resize(0); // depending resize(0) not deallocating internal string memory.
+      output              = m_line; // cleared when called with state MIME_PARSE_BEFORE
       output_shares_input = false;
     } else {
       output = parsed_text;
@@ -2489,7 +2510,7 @@ mime_parser_clear(MIMEParser *parser)
 
 ParseResult
 mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char **real_s, const char *real_e,
-                  bool must_copy_strings, bool eof)
+                  bool must_copy_strings, bool eof, size_t max_hdr_field_size)
 {
   ParseResult err;
   bool line_is_real;
@@ -2557,8 +2578,8 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     field_value.ltrim_if(&ParseRules::is_ws);
     field_value.rtrim_if(&ParseRules::is_wslfcr);
 
-    // Make sure the name or value is not longer than 64K
-    if (field_name.size() >= UINT16_MAX || field_value.size() >= UINT16_MAX) {
+    // Make sure the name + value is not longer than configured max_hdr_field_size
+    if (field_name.size() + field_value.size() > max_hdr_field_size) {
       return PARSE_RESULT_ERROR;
     }
 
@@ -2597,7 +2618,7 @@ mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
   MIMEFieldBlockImpl *fblock;
   MIMEHdrImpl *obj = (MIMEHdrImpl *)raw;
 
-  Debug("http", "\n\t[PBITS: 0x%08X%08X, SLACC: 0x%04X%04X%04X%04X, HEADBLK: %p, TAILBLK: %p]",
+  Debug("http", "\t[PBITS: 0x%08X%08X, SLACC: 0x%04X%04X%04X%04X, HEADBLK: %p, TAILBLK: %p]",
         (uint32_t)((obj->m_presence_bits >> 32) & (TOK_64_CONST(0xFFFFFFFF))),
         (uint32_t)((obj->m_presence_bits >> 0) & (TOK_64_CONST(0xFFFFFFFF))), obj->m_slot_accelerators[0],
         obj->m_slot_accelerators[1], obj->m_slot_accelerators[2], obj->m_slot_accelerators[3], &(obj->m_first_fblock),
@@ -2703,11 +2724,12 @@ mime_hdr_print(HdrHeap * /* heap ATS_UNUSED */, MIMEHdrImpl *mh, char *buf_start
   return 1;
 }
 
-int
-mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+namespace
 {
-  int copy_l;
-
+int
+mime_mem_print_(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout,
+                int (*char_transform)(int char_in))
+{
   if (buf_start == nullptr) { // this case should only be used by test_header
     ink_release_assert(buf_index_inout == nullptr);
     ink_release_assert(buf_chars_to_skip_inout == nullptr);
@@ -2717,7 +2739,6 @@ mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, in
     return 1;
   }
 
-  ink_assert(buf_start != nullptr);
   ink_assert(src_d != nullptr);
 
   if (*buf_chars_to_skip_inout > 0) {
@@ -2731,12 +2752,33 @@ mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, in
     }
   }
 
-  copy_l = std::min(buf_length - *buf_index_inout, src_l);
+  int copy_l = std::min(buf_length - *buf_index_inout, src_l);
   if (copy_l > 0) {
-    memcpy(buf_start + *buf_index_inout, src_d, copy_l);
+    buf_start += *buf_index_inout;
+    std::transform(src_d, src_d + copy_l, buf_start, char_transform);
     *buf_index_inout += copy_l;
   }
   return (src_l == copy_l);
+}
+
+int
+to_same_char(int ch)
+{
+  return ch;
+}
+
+} // end anonymous namespace
+
+int
+mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+{
+  return mime_mem_print_(src_d, src_l, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout, to_same_char);
+}
+
+int
+mime_mem_print_lc(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+{
+  return mime_mem_print_(src_d, src_l, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout, std::tolower);
 }
 
 int
@@ -2951,15 +2993,15 @@ mime_format_date(char *buffer, time_t value)
 
   buf = buffer;
 
-  sec = (int)(value % 60);
+  sec = static_cast<int>(value % 60);
   value /= 60;
-  min = (int)(value % 60);
+  min = static_cast<int>(value % 60);
   value /= 60;
-  hour = (int)(value % 24);
+  hour = static_cast<int>(value % 24);
   value /= 24;
 
   /* Jan 1, 1970 was a Thursday */
-  wday = (int)((4 + value) % 7);
+  wday = static_cast<int>((4 + value) % 7);
 
 /* value is days since Jan 1, 1970 */
 #if MIME_FORMAT_DATE_USE_LOOKUP_TABLE
@@ -3061,12 +3103,18 @@ mime_parse_int(const char *buf, const char *end)
     return 0;
   }
 
-  if (is_digit(*buf)) // fast case
-  {
+  if (is_digit(*buf)) { // fast case
     num = *buf++ - '0';
     while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) + (*buf++ - '0');
+      if (num != INT_MAX) {
+        int new_num = (num * 10) + (*buf++ - '0');
+
+        num = (new_num < num ? INT_MAX : new_num); // Check for overflow
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
     }
+
     return num;
   } else {
     num      = 0;
@@ -3083,7 +3131,13 @@ mime_parse_int(const char *buf, const char *end)
     // NOTE: we first compute the value as negative then correct the
     // sign back to positive. This enables us to correctly parse MININT.
     while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) - (*buf++ - '0');
+      if (num != INT_MIN) {
+        int new_num = (num * 10) - (*buf++ - '0');
+
+        num = (new_num > num ? INT_MIN : new_num); // Check for overflow, so to speak, see above re: negative
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
     }
 
     if (!negative) {
@@ -3328,7 +3382,7 @@ mime_parse_date(const char *buf, const char *end)
   int mday;
 
   if (!buf) {
-    return (time_t)0;
+    return static_cast<time_t>(0);
   }
 
   while ((buf != end) && is_ws(*buf)) {
@@ -3337,24 +3391,24 @@ mime_parse_date(const char *buf, const char *end)
 
   if ((buf != end) && is_digit(*buf)) { // NNTP date
     if (!mime_parse_mday(buf, end, &tp.tm_mday)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
     if (!mime_parse_month(buf, end, &tp.tm_mon)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
     if (!mime_parse_year(buf, end, &tp.tm_year)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
     if (!mime_parse_time(buf, end, &tp.tm_hour, &tp.tm_min, &tp.tm_sec)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
   } else if (end && (end - buf >= 29) && (buf[3] == ',')) {
     if (!mime_parse_rfc822_date_fastcase(buf, end - buf, &tp)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
   } else {
     if (!mime_parse_day(buf, end, &tp.tm_wday)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
 
     while ((buf != end) && is_ws(*buf)) {
@@ -3364,31 +3418,31 @@ mime_parse_date(const char *buf, const char *end)
     if ((buf != end) && ((*buf == ',') || is_digit(*buf))) {
       // RFC 822 or RFC 850 time format
       if (!mime_parse_mday(buf, end, &tp.tm_mday)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_month(buf, end, &tp.tm_mon)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_year(buf, end, &tp.tm_year)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_time(buf, end, &tp.tm_hour, &tp.tm_min, &tp.tm_sec)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
-      // ignore timezone specifier...should always be GMT anways
+      // ignore timezone specifier...should always be GMT anyways
     } else {
       // ANSI C's asctime format
       if (!mime_parse_month(buf, end, &tp.tm_mon)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_mday(buf, end, &tp.tm_mday)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_time(buf, end, &tp.tm_hour, &tp.tm_min, &tp.tm_sec)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_year(buf, end, &tp.tm_year)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
     }
   }
@@ -3399,10 +3453,10 @@ mime_parse_date(const char *buf, const char *end)
 
   // what should we do?
   if (year > 137) {
-    return (time_t)INT_MAX;
+    return static_cast<time_t>(INT_MAX);
   }
   if (year < 70) {
-    return (time_t)0;
+    return static_cast<time_t>(0);
   }
 
   mday += days[month];
@@ -3418,7 +3472,7 @@ mime_parse_date(const char *buf, const char *end)
   return t;
 }
 
-int
+bool
 mime_parse_day(const char *&buf, const char *end, int *day)
 {
   const char *e;
@@ -3434,14 +3488,14 @@ mime_parse_day(const char *&buf, const char *end, int *day)
 
   *day = day_names_dfa->match({buf, size_t(e - buf)});
   if (*day < 0) {
-    return 0;
+    return false;
   } else {
     buf = e;
-    return 1;
+    return true;
   }
 }
 
-int
+bool
 mime_parse_month(const char *&buf, const char *end, int *month)
 {
   const char *e;
@@ -3457,20 +3511,20 @@ mime_parse_month(const char *&buf, const char *end, int *month)
 
   *month = month_names_dfa->match({buf, size_t(e - buf)});
   if (*month < 0) {
-    return 0;
+    return false;
   } else {
     buf = e;
-    return 1;
+    return true;
   }
 }
 
-int
+bool
 mime_parse_mday(const char *&buf, const char *end, int *mday)
 {
   return mime_parse_integer(buf, end, mday);
 }
 
-int
+bool
 mime_parse_year(const char *&buf, const char *end, int *year)
 {
   int val;
@@ -3480,7 +3534,7 @@ mime_parse_year(const char *&buf, const char *end, int *year)
   }
 
   if ((buf == end) || (*buf == '\0')) {
-    return 0;
+    return false;
   }
 
   val = 0;
@@ -3497,59 +3551,88 @@ mime_parse_year(const char *&buf, const char *end, int *year)
 
   *year = val;
 
-  return 1;
+  return true;
 }
 
-int
+bool
 mime_parse_time(const char *&buf, const char *end, int *hour, int *min, int *sec)
 {
   if (!mime_parse_integer(buf, end, hour)) {
-    return 0;
+    return false;
   }
   if (!mime_parse_integer(buf, end, min)) {
-    return 0;
+    return false;
   }
   if (!mime_parse_integer(buf, end, sec)) {
-    return 0;
+    return false;
   }
-  return 1;
+  return true;
 }
 
-// TODO: Do we really need mime_parse_int() and mime_parse_integer() ? I know
-// they have slightly different prototypes, but still...
-int
+// This behaves slightly different than mime_parse_int(), int that we actually
+// return a "bool" for success / failure on "reasonable" parsing. This kinda
+// dumb, because we have two interfaces, where one does not move along the
+// buf pointer, but this one does (and the ones using this function do).
+bool
 mime_parse_integer(const char *&buf, const char *end, int *integer)
 {
-  int val;
-  bool negative;
-
-  negative = false;
-
   while ((buf != end) && *buf && !is_digit(*buf) && (*buf != '-')) {
     buf += 1;
   }
 
   if ((buf == end) || (*buf == '\0')) {
-    return 0;
+    return false;
   }
 
-  if (*buf == '-') {
-    negative = true;
-    buf += 1;
-  }
+  int32_t num;
+  bool negative;
 
-  val = 0;
-  while ((buf != end) && is_digit(*buf)) {
-    val = (val * 10) + (*buf++ - '0');
-  }
+  // This code is copied verbatim from mime_parse_int ... Sigh. Maybe amc is right, and
+  // we really need to clean this up. But, as such, we should redo all these interfaces,
+  // and that's a big undertaking (and we'd want to move these strings all to string_view's).
+  if (is_digit(*buf)) { // fast case
+    num = *buf++ - '0';
+    while ((buf != end) && is_digit(*buf)) {
+      if (num != INT_MAX) {
+        int new_num = (num * 10) + (*buf++ - '0');
 
-  if (negative) {
-    *integer = -val;
+        num = (new_num < num ? INT_MAX : new_num); // Check for overflow
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
+    }
   } else {
-    *integer = val;
+    num      = 0;
+    negative = false;
+
+    while ((buf != end) && ParseRules::is_space(*buf)) {
+      buf += 1;
+    }
+
+    if ((buf != end) && (*buf == '-')) {
+      negative = true;
+      buf += 1;
+    }
+    // NOTE: we first compute the value as negative then correct the
+    // sign back to positive. This enables us to correctly parse MININT.
+    while ((buf != end) && is_digit(*buf)) {
+      if (num != INT_MIN) {
+        int new_num = (num * 10) - (*buf++ - '0');
+
+        num = (new_num > num ? INT_MIN : new_num); // Check for overflow, so to speak, see above re: negative
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
+    }
+
+    if (!negative) {
+      num = -num;
+    }
   }
 
-  return 1;
+  *integer = num;
+
+  return true;
 }
 
 /***********************************************************************

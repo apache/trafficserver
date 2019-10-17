@@ -47,7 +47,7 @@ static constexpr size_t HDR_PTR_ALIGNMENT_MASK = HDR_PTR_SIZE - 1L;
 using HdrHeapMarshalBlocks                     = ts::Scalar<HDR_PTR_SIZE>;
 
 // A many of the operations regarding read-only str
-//  heaps are hand unrolled in the code.  Chaning
+//  heaps are hand unrolled in the code.  Changing
 //  this value requires a full pass through HdrBuf.cc
 //  to fix the unrolled operations
 static constexpr unsigned HDR_BUF_RONLY_HEAPS = 3;
@@ -203,7 +203,7 @@ public:
   void set_ronly_str_heap_end(int slot, const char *end);
 
   // Lock read only str heaps so that can't be moved around
-  //  by a heap consolidation.  Does NOT lock for Multi-Threaed
+  //  by a heap consolidation.  Does NOT lock for Multi-Threaded
   //  access!
   void
   lock_ronly_str_heap(unsigned i)
@@ -341,10 +341,10 @@ HdrHeap::unmarshal_size() const
 
 //
 struct MarshalXlate {
-  char const *start;
-  char const *end;
-  char const *offset;
-  MarshalXlate() : start(nullptr), end(nullptr), offset(nullptr) {}
+  char const *start  = nullptr;
+  char const *end    = nullptr;
+  char const *offset = nullptr;
+  MarshalXlate() {}
 };
 
 struct HeapCheck {
@@ -458,7 +458,7 @@ struct HeapCheck {
 //
 struct HdrHeapSDKHandle {
 public:
-  HdrHeapSDKHandle() : m_heap(nullptr) {}
+  HdrHeapSDKHandle() {}
   ~HdrHeapSDKHandle() { clear(); }
   // clear() only deallocates chained SDK return values
   //   The underlying MBuffer is left untouched
@@ -471,7 +471,7 @@ public:
   void set(const HdrHeapSDKHandle *from);
   const char *make_sdk_string(const char *raw_str, int raw_str_len);
 
-  HdrHeap *m_heap;
+  HdrHeap *m_heap = nullptr;
 
   // In order to prevent gratitous refcounting,
   //  automatic C++ copies are disabled!

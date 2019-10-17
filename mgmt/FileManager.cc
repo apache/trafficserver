@@ -24,7 +24,7 @@
 #include "FileManager.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
-#include "Rollback.h"
+#include "ConfigManager.h"
 #include "WebMgmtUtils.h"
 
 #include <vector>
@@ -82,9 +82,9 @@ FileManager::registerCallback(FileCallbackFunc func)
 }
 
 // void FileManager::addFile(char* fileName, const configFileInfo* file_info,
-//  Rollback* parentRollback)
+//  ConfigManager* parentConfig)
 //
-//  for the baseFile, creates a Rollback object for it
+//  for the baseFile, creates a ConfigManager object for it
 //
 //  if file_info is not null, a WebFileEdit object is also created for
 //    the file
@@ -92,36 +92,34 @@ FileManager::registerCallback(FileCallbackFunc func)
 //  Pointers to the new objects are stored in the bindings hashtable
 //
 void
-FileManager::addFile(const char *fileName, const char *configName, bool root_access_needed, Rollback *parentRollback,
-                     unsigned flags)
+FileManager::addFile(const char *fileName, const char *configName, bool root_access_needed, ConfigManager *parentConfig)
 {
   ink_mutex_acquire(&accessLock);
-  addFileHelper(fileName, configName, root_access_needed, parentRollback, flags);
+  addFileHelper(fileName, configName, root_access_needed, parentConfig);
   ink_mutex_release(&accessLock);
 }
 
 // caller must hold the lock
 void
-FileManager::addFileHelper(const char *fileName, const char *configName, bool root_access_needed, Rollback *parentRollback,
-                           unsigned flags)
+FileManager::addFileHelper(const char *fileName, const char *configName, bool root_access_needed, ConfigManager *parentConfig)
 {
   ink_assert(fileName != nullptr);
 
-  Rollback *rb    = new Rollback(fileName, configName, root_access_needed, parentRollback, flags);
-  rb->configFiles = this;
+  ConfigManager *rb = new ConfigManager(fileName, configName, root_access_needed, parentConfig);
+  rb->configFiles   = this;
 
   bindings.emplace(rb->getFileName(), rb);
 }
 
-// bool FileManager::getRollbackObj(char* fileName, Rollback** rbPtr)
+// bool FileManager::getConfigManagerObj(char* fileName, ConfigManager** rbPtr)
 //
-//  Sets rbPtr to the rollback object associated
+//  Sets rbPtr to the ConfigManager object associated
 //    with the passed in fileName.
 //
-//  If there is no binding, falseis returned
+//  If there is no binding, false is returned
 //
 bool
-FileManager::getRollbackObj(const char *fileName, Rollback **rbPtr)
+FileManager::getConfigObj(const char *fileName, ConfigManager **rbPtr)
 {
   ink_mutex_acquire(&accessLock);
   auto it    = bindings.find(fileName);
@@ -134,12 +132,12 @@ FileManager::getRollbackObj(const char *fileName, Rollback **rbPtr)
 
 // bool FileManager::fileChanged(const char* fileName)
 //
-//  Called by the Rollback class whenever a a config has changed
+//  Called by the ConfigManager class whenever a config has changed
 //     Initiates callbacks
 //
 //
 void
-FileManager::fileChanged(const char *fileName, const char *configName, bool incVersion)
+FileManager::fileChanged(const char *fileName, const char *configName)
 {
   callbackListable *cb;
   char *filenameCopy, *confignameCopy;
@@ -148,10 +146,10 @@ FileManager::fileChanged(const char *fileName, const char *configName, bool incV
 
   for (cb = cblist.head; cb != nullptr; cb = cb->link.next) {
     // Dup the string for each callback to be
-    //  defensive incase it modified when it is not supposed to be
+    //  defensive in case it's modified when it's not supposed to be
     confignameCopy = ats_strdup(configName);
     filenameCopy   = ats_strdup(fileName);
-    (*cb->func)(filenameCopy, confignameCopy, incVersion);
+    (*cb->func)(filenameCopy, confignameCopy);
     ats_free(filenameCopy);
     ats_free(confignameCopy);
   }
@@ -160,8 +158,8 @@ FileManager::fileChanged(const char *fileName, const char *configName, bool incV
 
 // void FileManger::rereadConfig()
 //
-//   Interates through the list of managed files and
-//     calls Rollback::checkForUserUpdate on them
+//   Iterates through the list of managed files and
+//     calls ConfigManager::checkForUserUpdate on them
 //
 //   although it is tempting, DO NOT CALL FROM SIGNAL HANDLERS
 //      This function is not Async-Signal Safe.  It
@@ -169,35 +167,37 @@ FileManager::fileChanged(const char *fileName, const char *configName, bool incV
 void
 FileManager::rereadConfig()
 {
-  Rollback *rb;
+  ConfigManager *rb;
 
-  std::vector<Rollback *> changedFiles;
-  std::vector<Rollback *> parentFileNeedChange;
+  std::vector<ConfigManager *> changedFiles;
+  std::vector<ConfigManager *> parentFileNeedChange;
   size_t n;
   ink_mutex_acquire(&accessLock);
   for (auto &&it : bindings) {
     rb = it.second;
-    if (rb->checkForUserUpdate(rb->isVersioned() ? ROLLBACK_CHECK_AND_UPDATE : ROLLBACK_CHECK_ONLY)) {
+    // ToDo: rb->isVersions() was always true before, because numberBackups was always >= 1. So ROLLBACK_CHECK_ONLY could not
+    // happen at all...
+    if (rb->checkForUserUpdate(ROLLBACK_CHECK_AND_UPDATE)) {
       changedFiles.push_back(rb);
-      if (rb->isChildRollback()) {
-        if (std::find(parentFileNeedChange.begin(), parentFileNeedChange.end(), rb->getParentRollback()) ==
+      if (rb->isChildManaged()) {
+        if (std::find(parentFileNeedChange.begin(), parentFileNeedChange.end(), rb->getParentConfig()) ==
             parentFileNeedChange.end()) {
-          parentFileNeedChange.push_back(rb->getParentRollback());
+          parentFileNeedChange.push_back(rb->getParentConfig());
         }
       }
     }
   }
 
-  std::vector<Rollback *> childFileNeedDelete;
+  std::vector<ConfigManager *> childFileNeedDelete;
   n = changedFiles.size();
   for (size_t i = 0; i < n; i++) {
-    if (changedFiles[i]->isChildRollback()) {
+    if (changedFiles[i]->isChildManaged()) {
       continue;
     }
     // for each parent file, if it is changed, then delete all its children
     for (auto &&it : bindings) {
       rb = it.second;
-      if (rb->getParentRollback() == changedFiles[i]) {
+      if (rb->getParentConfig() == changedFiles[i]) {
         if (std::find(childFileNeedDelete.begin(), childFileNeedDelete.end(), rb) == childFileNeedDelete.end()) {
           childFileNeedDelete.push_back(rb);
         }
@@ -214,23 +214,24 @@ FileManager::rereadConfig()
   n = parentFileNeedChange.size();
   for (size_t i = 0; i < n; i++) {
     if (std::find(changedFiles.begin(), changedFiles.end(), parentFileNeedChange[i]) == changedFiles.end()) {
-      fileChanged(parentFileNeedChange[i]->getFileName(), parentFileNeedChange[i]->getConfigName(), true);
+      fileChanged(parentFileNeedChange[i]->getFileName(), parentFileNeedChange[i]->getConfigName());
     }
   }
   // INKqa11910
   // need to first check that enable_customizations is enabled
   bool found;
-  int enabled = (int)REC_readInteger("proxy.config.body_factory.enable_customizations", &found);
+  int enabled = static_cast<int>(REC_readInteger("proxy.config.body_factory.enable_customizations", &found));
+
   if (found && enabled) {
-    fileChanged("proxy.config.body_factory.template_sets_dir", "proxy.config.body_factory.template_sets_dir", true);
+    fileChanged("proxy.config.body_factory.template_sets_dir", "proxy.config.body_factory.template_sets_dir");
   }
-  fileChanged("proxy.config.ssl.server.ticket_key.filename", "proxy.config.ssl.server.ticket_key.filename", true);
+  fileChanged("proxy.config.ssl.server.ticket_key.filename", "proxy.config.ssl.server.ticket_key.filename");
 }
 
 bool
 FileManager::isConfigStale()
 {
-  Rollback *rb;
+  ConfigManager *rb;
   bool stale = false;
 
   ink_mutex_acquire(&accessLock);
@@ -248,15 +249,15 @@ FileManager::isConfigStale()
 
 // void configFileChild(const char *parent, const char *child)
 //
-// Add child to the bindings with parentRollback
+// Add child to the bindings with parentConfig
 void
-FileManager::configFileChild(const char *parent, const char *child, unsigned flags)
+FileManager::configFileChild(const char *parent, const char *child)
 {
-  Rollback *parentRollback = nullptr;
+  ConfigManager *parentConfig = nullptr;
   ink_mutex_acquire(&accessLock);
   if (auto it = bindings.find(parent); it != bindings.end()) {
-    parentRollback = it->second;
-    addFileHelper(child, "", parentRollback->rootAccessNeeded(), parentRollback, flags);
+    parentConfig = it->second;
+    addFileHelper(child, "", parentConfig->rootAccessNeeded(), parentConfig);
   }
   ink_mutex_release(&accessLock);
 }

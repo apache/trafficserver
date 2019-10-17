@@ -11,38 +11,35 @@ plugins to build large scale web applications.
   |-- ci/ ................... Quality assurance and other CI tools and configs
   |-- configs/ .............. Configurations
   |-- contrib/ .............. Various contributed auxiliary pieces
-  |-- doc/ .................. Documentations for Traffic Server
+  |-- doc/ .................. Documentation for Traffic Server
       |-- admin-guide/ ...... Admin guide documentations
       |-- appendices/ ....... Appendices of Traffic Server
-      |-- developer-guide/ .. Documentaions for developers
+      |-- developer-guide/ .. Documentation for developers
       |-- dot/ .............. Graphviz source files for docs pictures
       |-- static/ ........... Static resources
-      |-- uml/ .............. Documentations in UML
+      |-- uml/ .............. Documentation in UML
   |-- example/ .............. Example plugins
   |-- iocore/ ...............
       |-- aio/ .............. Asynchronous I/O core
       |-- cache/ ............ Disk and RAM cache
-      |-- eventsystem/ ...... Event Driven Engine
       |-- dns/ .............. DNS (asynchronous)
+      |-- eventsystem/ ...... Event Driven Engine
       |-- hostdb/ ........... Internal DNS cache
       |-- net/ .............. Network
+          |-- quic/ ......... QUIC implementation
       |-- utils/ ............ Utilities
   |-- lib/ ..................
-      |-- cppapi/ ........... C++ api wrapper for plugin developers
       |-- perl/ ............. Perl libraries for e.g. mgmt access and configurations
       |-- records/ .......... Library for config files
-      |-- ts/ ............... Base / core library
-      |-- tsconfig/.......... New config parser and library (experimental)
-      |-- wccp/ ............. WCCP implementation
       |-- yamlcpp/ .......... Library for YAML of C++
   |-- mgmt/ ................. Management server and tools
   |-- plugins/ .............. Stable core plugins
       |-- experimental/ ..... Experimental core plugins
   |-- proxy/ ................ HTTP proxy logic
-      |-- api/ .............. Plugin API includes
       |-- hdrs/ ............. Headers parsing and management
       |-- http/ ............. The actual HTTP protocol implementation
       |---http2/ ............ HTTP/2 implementation
+      |---http3/ ............ HTTP/3 implementation
       |-- logging/ .......... Flexible logging
       |-- shared/ ........... Shared files
   |-- rc/ ................... Installation programs and scripts
@@ -58,6 +55,9 @@ plugins to build large scale web applications.
       |-- traffic_top/ ...... Top like tool for viewing Traffic Server statistics
       |-- traffic_via/ ...... Tool for decoding the Traffic Server Via header codes
       |-- traffic_wccp/ ..... Program speaking the client side of the WCCP
+      |-- tscore/ ........... Base / core library
+      |-- tscpp/ ............ C++ api wrapper for plugin developers
+      |-- wccp/ ............. WCCP implementation
   |-- tests/ ................ Different tests for Traffic Server
   |-- tools/ ................ Directory of various tools
   |-- INSTALL ............... Build and installation guide
@@ -152,7 +152,7 @@ plugins to build large scale web applications.
 You can download the latest source code from the official Apache Traffic
 Server site:
 
-       http://trafficserver.apache.org/downloads
+       https://trafficserver.apache.org/downloads
 
 (or via the URL shortener: http://s.apache.org/uG). Once downloaded,
 follow the instructions:
@@ -246,5 +246,5 @@ the installation with
 7. ADDITIONAL INFO
 
   Web page: https://trafficserver.apache.org/
-  Wiki: http://cwiki.apache.org/confluence/display/TS/
+  Wiki: https://cwiki.apache.org/confluence/display/TS/
   User mailing list: users@trafficserver.apache.org

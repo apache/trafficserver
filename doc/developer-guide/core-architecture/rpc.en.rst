@@ -57,19 +57,19 @@ Runtime Structure
    [traffic_manager] <-r-> [traffic_server] : Local RPC
    [traffic_server] <-r-> [plugin] : Hook
 
-|TManager| opens a unix domain socket to recieve commands from remote clients. |TManager| also has a unix domain socket connection with |TServer| to communicate.
+|TManager| opens a unix domain socket to receive commands from remote clients. |TManager| also has a unix domain socket connection with |TServer| to communicate.
 
 ===============
 Message Passing
 ===============
 
-Sequence diagram for a command sent from |TCtl| to when it is recieved by a plugin.
+Sequence diagram for a command sent from |TCtl| to when it is received by a plugin.
 
 .. figure:: ../../uml/images/RPC-sequence-diagram.svg
 
 .. note::
 
-    Currently a fire and forget model. traffic_manager sends out an asynchoronous signal without any acknowledgement. It then proceeds to send a response itself.
+    Currently a fire and forget model. traffic_manager sends out an asynchronous  signal without any acknowledgment. It then proceeds to send a response itself.
 
 =======================
 Remote RPC vs Local RPC
@@ -92,7 +92,7 @@ Serialization Mechanism
     - **MGMT_MARSHALL_STRING** : 4 bytes to indicate the string size in bytes, followed by the entire string and NULL terminator.
     - **MGMT_MARSHALL_DATA** : 4 byt es to indicate data size in bytes, followed by the entire data object.
 
-When data is actually sent over a connection it must first be seralized. This is the general serialization mechanism for RPC communcation.
+When data is actually sent over a connection it must first be serialized. This is the general serialization mechanism for RPC communication.
 
 Generally, for remote clients sending messages to |TServer|, the message is serialized using remote RPC APIs. The serialized message is sent to |TManager| and |TManager| then simply relays the message to |TServer|. |TServer| eventually unserializes the message.
 
@@ -103,7 +103,7 @@ Marshalling:
 
    .. function:: ssize_t mgmt_message_marshall(void *buf, size_t remain, const MgmtMarshallType *fields, unsigned count, ...)
 
-      Variable argument wrapper for ``mgmt_message_marshall_v``. Allows for different datatypes to be marshalled together as long as a field is specified for each data object. Arguments should be references to objects to be marshalled.
+      Variable argument wrapper for ``mgmt_message_marshall_v``. Allows for different data types to be marshalled together as long as a field is specified for each data object. Arguments should be references to objects to be marshalled.
 
    .. function:: ssize_t mgmt_message_marshall_v(void *buf, size_t remain, const MgmtMarshallType *fields, unsigned count, va_list ap)
 
@@ -114,7 +114,7 @@ Unmarshalling:
 
    .. function:: ssize_t mgmt_message_parse(const void *buf, size_t len, const MgmtMarshallType *fields, unsigned count, ...)
 
-      Variable argument wrapper for ``mgmt_message_parse_v``. Reference to data object to store unmarshalled message needed for variable arguements.
+      Variable argument wrapper for ``mgmt_message_parse_v``. Reference to data object to store unmarshalled message needed for variable arguments.
 
    .. function:: ssize_t mgmt_message_parse_v(const void *buf, size_t len, const MgmtMarshallType *fields, unsigned count, va_list ap)
 
@@ -124,7 +124,7 @@ Unmarshalling:
 Local Serialization
 ===================
 
-A RPC message is sent as a :class:`MgmtMessageHdr` followed by the serialized data in bytes. Serialization is very simple as the inteface for communication between |TManager| and |TServer| only allows for :class:`MgmtMessageHdr`, which is a fixed size, and raw data in the form of :code:`char*` to be sent. A header specifies a :arg:`msg_id` and the :arg:`data_len`. On a read, the header is *always* first read. Based on the length of the data payload, the correct number of bytes is then read from the socket. On a write, the header is first populated and sent on the socket, followed by the raw data.
+A RPC message is sent as a :class:`MgmtMessageHdr` followed by the serialized data in bytes. Serialization is very simple as the interface for communication between |TManager| and |TServer| only allows for :class:`MgmtMessageHdr`, which is a fixed size, and raw data in the form of :code:`char*` to be sent. A header specifies a :arg:`msg_id` and the :arg:`data_len`. On a read, the header is *always* first read. Based on the length of the data payload, the correct number of bytes is then read from the socket. On a write, the header is first populated and sent on the socket, followed by the raw data.
 
 .. class:: MgmtMessageHdr
 
@@ -168,7 +168,7 @@ RPC API for remote clients
 
 :ts:git:`NetworkMessage.cc` provides a set of APIs for remote clients to communicate with |TManager|.
 
-|TManager| will then send a response with the return value. The return value only indicates if the request was successfully propogated to |TServer|. Thus, there is no way currently for |TServer| to send information back to remote clients.
+|TManager| will then send a response with the return value. The return value only indicates if the request was successfully propagated to |TServer|. Thus, there is no way currently for |TServer| to send information back to remote clients.
 
 .. function:: TSMgmtError send_mgmt_request(const mgmt_message_sender &snd, OpType optype, ...)
 .. function:: TSMgmtError send_mgmt_request(int fd, OpType optype, ...)
@@ -234,7 +234,7 @@ RPC API for |TServer| and |TManager|
 .. figure:: ../../uml/images/RPC-states.svg
    :align: center
 
-|LM| and |PM| follow similar workflows. A manager will poll the socket for any messages. If it is able to read a message, it will handle it based on the :arg:`msg_id` from the :class:`MgmtMessageHdr` and select a callback to run asynchoronously. The async callback will add a response, if any, to an outgoing event queue within the class. A manager will continue to poll and read on the socket as long as there are messages avaliable. Two things can stop a manager from polling.
+|LM| and |PM| follow similar workflows. A manager will poll the socket for any messages. If it is able to read a message, it will handle it based on the :arg:`msg_id` from the :class:`MgmtMessageHdr` and select a callback to run asynchoronously. The async callback will add a response, if any, to an outgoing event queue within the class. A manager will continue to poll and read on the socket as long as there are messages available. Two things can stop a manager from polling.
 
 1. there are no longer any messages on the socket for a *timeout* time period.
 

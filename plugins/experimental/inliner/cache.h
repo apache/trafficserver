@@ -79,7 +79,7 @@ namespace cache
         self->t_.miss();
         break;
       default:
-        assert(false); // UNRECHEABLE.
+        assert(false); // UNREACHABLE.
         break;
       }
       delete self;

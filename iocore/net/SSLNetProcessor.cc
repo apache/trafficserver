@@ -35,7 +35,6 @@
 
 SSLNetProcessor ssl_NetProcessor;
 NetProcessor &sslNetProcessor = ssl_NetProcessor;
-SNIActionPerformer sni_action_performer;
 
 #if TS_USE_TLS_OCSP
 struct OCSPContinuation : public Continuation {

@@ -184,12 +184,6 @@ struct ShowNet : public ShowCont {
     return EVENT_CONT;
   }
   int
-  showSingleConnection(int event, Event *e)
-  {
-    CHECK_SHOW(begin("Net Connection"));
-    return complete(event, e);
-  }
-  int
   showHostnames(int event, Event *e)
   {
     CHECK_SHOW(begin("Net Connections to/from Host"));
@@ -223,7 +217,7 @@ register_ShowNet(Continuation *c, HTTPHdr *h)
     s->sarg           = ats_strndup(query, query_len);
     char *gn          = nullptr;
     if (s->sarg) {
-      gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
+      gn = static_cast<char *>(memchr(s->sarg, '=', strlen(s->sarg)));
     }
     if (gn) {
       ats_ip_pton(gn + 1, &s->addr);
@@ -235,7 +229,7 @@ register_ShowNet(Continuation *c, HTTPHdr *h)
     s->sarg           = ats_strndup(query, query_len);
     char *gn          = nullptr;
     if (s->sarg) {
-      gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
+      gn = static_cast<char *>(memchr(s->sarg, '=', strlen(s->sarg)));
     }
     if (gn) {
       ats_ip_port_cast(&s->addr.sa) = htons(atoi(gn + 1));

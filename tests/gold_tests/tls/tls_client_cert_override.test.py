@@ -24,9 +24,7 @@ Test.Summary = '''
 Test conf_remp to specify different client certificates to offer to the origin
 '''
 
-Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
-
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=False)
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 server = Test.MakeOriginServer("server", ssl=True, options = { "--clientCA": cafile, "--clientverify": ""}, clientcert="{0}/signed-foo.pem".format(Test.RunDirectory), clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
@@ -62,11 +60,9 @@ ts.addSSLfile("ssl/signed-bar.pem")
 ts.addSSLfile("ssl/signed2-bar.pem")
 ts.addSSLfile("ssl/signed-bar.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': '{0}'.format(ts.Variables.port),
     'proxy.config.ssl.client.verify.server':  0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -96,7 +92,7 @@ ts.Disk.remap_config.AddLine(
 
 # Should succeed
 tr = Test.AddTestRun("Connect with correct client cert to first server")
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)
 tr.StillRunningAfter = ts
@@ -132,5 +128,3 @@ trbarfail.StillRunningAfter = server2
 trbarfail.Processes.Default.Command = 'curl -H host:bar.com  http://127.0.0.1:{0}/badcase2'.format(ts.Variables.port)
 trbarfail.Processes.Default.ReturnCode = 0
 trbarfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-
-

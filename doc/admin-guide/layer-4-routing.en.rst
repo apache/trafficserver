@@ -31,7 +31,7 @@ data read on one connection to the other and vice versa.
 .. figure:: ../uml/images/l4-basic-sequence.svg
    :align: center
 
-In this way it acts similary to `nc <https://linux.die.net/man/1/nc>`__.
+In this way it acts similarly to `nc <https://linux.die.net/man/1/nc>`__.
 
 The primary differences between different types of layer 4 routing is the mechanism by which |TS|
 creates the outbound connection. This is described in detail in the type specific documentation.
@@ -51,7 +51,7 @@ SNI Routing
 Currently the only directly supported layer 4 routing (as of version 8.0) is SNI based routing. This
 imposes the requirement on the traffic that the inbound connection must be TLS.
 
-SNI routing is configured by :file:`ssl_server_name.yaml`.
+SNI routing is configured by :file:`sni.yaml`.
 
 If SNI Routing is enabled the initial "`CLIENT HELLO
 <https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__" data of an inbound TLS connection is
@@ -96,11 +96,12 @@ service-1.example.com      app-server-29:443
 service-2.example.com      app-server-56:4443
 ========================== =====================================
 
-The :file:`ssl_server_name.yaml` contents would be
+The :file:`sni.yaml` contents would be
 
 .. code:: yaml
 
 
+   sni:
    - tunnel_route: app-server-29:443
      fqdn: service-1.example.com
 
@@ -125,5 +126,5 @@ In this case the proxy request is available in the :c:macro:`TS_HTTP_TXN_START_H
 cannot be done using remap because for a ``CONNECT`` there is no remap phase. Note that for a
 tunneled connection like this, the only transaction hooks that will be triggered are
 :c:macro:`TS_HTTP_TXN_START_HOOK` and :c:macro:`TS_HTTP_TXN_CLOSE_HOOK`. In addition, because |TS|
-does not terminate (and thefore does not decrypt) the connection, it cannot be cached or served from
+does not terminate (and therefore does not decrypt) the connection, it cannot be cached or served from
 cache.

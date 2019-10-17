@@ -298,7 +298,7 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
   TSContDataSet(contp, fi);
 
   fi->contp = contp;
-  fi->fch   = TSFetchCreate(contp, method, url, "HTTP/1.1", (struct sockaddr *)&clientaddr, flags);
+  fi->fch   = TSFetchCreate(contp, method, url, "HTTP/1.1", &clientaddr, flags);
 
   /* header */
   cl = ht = ua = 0;

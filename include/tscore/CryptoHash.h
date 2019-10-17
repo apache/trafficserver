@@ -28,10 +28,8 @@
 /// Apache Traffic Server commons.
 
 #if TS_ENABLE_FIPS == 1
-// #include "tscore/SHA256.h"
 #define CRYPTO_HASH_SIZE (256 / 8)
 #else
-// #include "tscore/ink_code.h"
 #define CRYPTO_HASH_SIZE (128 / 8)
 #endif
 #define CRYPTO_HEX_SIZE ((CRYPTO_HASH_SIZE * 2) + 1)
@@ -47,6 +45,8 @@ union CryptoHash {
 
   /// Default constructor - init to zero.
   CryptoHash() { memset(this, 0, sizeof(*this)); }
+  /// Copy constructor.
+  CryptoHash(CryptoHash const &that) = default;
 
   /// Assignment - bitwise copy.
   CryptoHash &
@@ -126,7 +126,7 @@ public:
 
   /// Convenience - compute final @a hash for @a data.
   /// @note This is just as fast as the previous style, as a new context must be initialized
-  /// everytime this is done.
+  /// every time this is done.
   bool hash_immediate(CryptoHash &hash, void const *data, int length);
 };
 
