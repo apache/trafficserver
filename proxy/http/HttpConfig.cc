@@ -149,6 +149,40 @@ http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
   return 0;
 }
 
+void
+Enable_Config_Var(std::string_view const &name, bool (*cb)(const char *, RecDataT, RecData, void *), void *cookie)
+{
+  // Must use this indirection because the API requires a pure function, therefore no values can
+  // be bound in the lambda. Instead this is needed to pass in the data for both the lambda and
+  // the actual callback.
+  using Context = std::tuple<decltype(cb), void *>;
+
+  // To deal with process termination cleanup, store the context instances in a deque where
+  // tail insertion doesn't invalidate pointers. These persist until process shutdown.
+  static std::deque<Context> storage;
+
+  Context &ctx = storage.emplace_back(cb, cookie);
+  // Register the call back - this handles external updates.
+  RecRegisterConfigUpdateCb(name.data(),
+                            [](const char *name, RecDataT dtype, RecData data, void *ctx) -> int {
+                              auto &&[cb, cookie] = *static_cast<Context *>(ctx);
+                              if ((*cb)(name, dtype, data, cookie)) {
+                                http_config_cb(name, dtype, data, cookie); // signal runtime config update.
+                              }
+                              return REC_ERR_OKAY;
+                            },
+                            &ctx);
+
+  // Use the record to do the initial data load.
+  // Look it up and call the updater @a cb on that data.
+  RecLookupRecord(name.data(),
+                  [](RecRecord const *r, void *ctx) -> void {
+                    auto &&[cb, cookie] = *static_cast<Context *>(ctx);
+                    (*cb)(r->name, r->data_type, r->data, cookie);
+                  },
+                  &ctx);
+}
+
 // [amc] Not sure which is uglier, this switch or having a micro-function for each var.
 // Oh, how I long for when we can use C++eleventy lambdas without compiler problems!
 // I think for 5.0 when the BC stuff is yanked, we should probably revert this to independent callbacks.
