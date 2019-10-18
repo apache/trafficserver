@@ -133,6 +133,9 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
           break;
         }
       }
+    } else if (last != first) {
+      --last;
+      zret = HSM_DONE;
     }
     if (zret == HSM_DONE) {
       to_return = last;
