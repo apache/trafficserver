@@ -46,9 +46,6 @@ class SlowPostAttack:
             'map / http://127.0.0.1:{0}'.format(self._server.Variables.Port)
         )
         # This plugin can enable request buffer for POST.
-        self._ts.Disk.plugin_config.AddLine(
-            'request_buffer.so'
-        )
         Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'request_buffer.c'), self._ts)
         self._ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 1,
