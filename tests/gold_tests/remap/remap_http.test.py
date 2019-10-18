@@ -29,13 +29,17 @@ server2 = Test.MakeOriginServer("server2",lookup_key="{%Host}{PATH}")
 dns = Test.MakeDNServer("dns")
 
 Test.testName = ""
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                  "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                   "timestamp": "1469733493.993", "body": ""}
 
-request_header2 = {"headers": "GET /test HTTP/1.1\r\nHost: www.testexample.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header2 = {"headers": "GET /test HTTP/1.1\r\nHost: www.testexample.com\r\n\r\n",
+                   "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
-response_header2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                    "timestamp": "1469733493.993", "body": ""}
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
