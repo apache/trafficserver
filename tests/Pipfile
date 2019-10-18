@@ -30,6 +30,7 @@ dnslib = "*"
 requests = "*"
 gunicorn = "*"
 httpbin = "*"
+microserver = ">=1.0.4"
 
 [requires]
 python_version = "3"
