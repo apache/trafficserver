@@ -251,8 +251,8 @@ class TSStat(std.Target):
         fl.append(self.make_field('Collection', stat_group))
         if ('type' in self.options):
             fl.append(self.make_field('Type', self.options['type']))
-        if ('unit' in self.options):
-            fl.append(self.make_field('Units', self.options['unit']))
+        if ('units' in self.options):
+            fl.append(self.make_field('Units', self.options['units']))
         fl.append(self.make_field('Datatype', stat_type))
         if ('introduced' in self.options and len(self.options['introduced']) > 0):
             fl.append(self.make_field('Introduced', self.options['introduced']))
