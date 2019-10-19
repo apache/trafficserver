@@ -325,7 +325,7 @@ common fields:
 
    formats:
    - name: minimalfmt
-     format: '%<chi> : %<cqu> : %<pssc>'
+     format: '%<chi> , %<cqu> , %<pssc>'
 
 The following is an example of a format that uses aggregate operators to
 produce a summary log:
@@ -334,7 +334,7 @@ produce a summary log:
 
    formats:
    - name: summaryfmt
-     format: '%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>'
+     format: '%<LAST(cqts)>:%<COUNT(*)>:%<SUM(psql)>'
      interval: 10
 
 The following is an example of a filter that will cause only REFRESH_HIT events
