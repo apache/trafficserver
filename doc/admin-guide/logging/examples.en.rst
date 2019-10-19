@@ -247,7 +247,7 @@ to clients:
 
    formats:
    - name: mysummary
-     format: '%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>'
+     format: '%<LAST(cqts)>:%<COUNT(*)>:%<SUM(psql)>'
      interval: 10
 
 Dual Output to Compact Binary Logs and ASCII Pipes
