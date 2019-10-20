@@ -252,6 +252,59 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   s = "file.cc.org";
   s.remove_prefix('!');
   REQUIRE(s.empty());
+
+  // From MIMEHdr::get_host_port_values
+  auto f_host = [](TextView b, TextView &host, TextView &port) -> void {
+    if ('[' == *b) {
+      auto idx = b.find(']');
+      if (idx <= b.size() && b[idx + 1] == ':') {
+        host = b.take_prefix_at(idx + 1);
+        port = b;
+      } else {
+        host = b;
+      }
+    } else {
+      auto x = b.split_prefix_at(':');
+      if (x) {
+        host = x;
+        port = b;
+      } else {
+        host = b;
+      }
+    }
+  };
+
+  TextView host, port;
+
+  s = "host";
+  f_host(s, host, port);
+  REQUIRE(host == "host");
+  REQUIRE(port.empty());
+
+  s = "host:";
+  f_host(s, host, port);
+  REQUIRE(host == "host");
+  REQUIRE(port.empty());
+
+  s = "[host]";
+  f_host(s, host, port);
+  REQUIRE(host == "[host]");
+  REQUIRE(port.empty());
+
+  s = "host:port";
+  f_host(s, host, port);
+  REQUIRE(host == "host");
+  REQUIRE(port == "port");
+
+  s = "[host]:port";
+  f_host(s, host, port);
+  REQUIRE(host == "[host]");
+  REQUIRE(port == "port");
+
+  s = "[host]:";
+  f_host(s, host, port);
+  REQUIRE(host == "[host]");
+  REQUIRE(port.empty());
 };
 
 TEST_CASE("TextView Formatting", "[libts][TextView]")
