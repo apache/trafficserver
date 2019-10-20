@@ -2273,24 +2273,22 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
   }
 
   if (field) {
-    ts::ConstBuffer b(field->m_ptr_value, field->m_len_value);
-    ts::ConstBuffer host, port;
+    ts::TextView b{field->m_ptr_value, static_cast<size_t>(field->m_len_value)};
+    ts::TextView host, port;
 
     if (b) {
-      const char *x;
-
       if ('[' == *b) {
-        x = static_cast<const char *>(memchr(b._ptr, ']', b._size));
-        if (x && b.contains(x + 1) && ':' == x[1]) {
-          host = b.splitOn(x + 1);
+        auto idx = b.find(']');
+        if (idx <= b.size() && b[idx + 1] == ':') {
+          host = b.take_prefix_at(idx + 1);
           port = b;
         } else {
           host = b;
         }
       } else {
-        x = static_cast<const char *>(memchr(b._ptr, ':', b._size));
+        auto x = b.split_prefix_at(':');
         if (x) {
-          host = b.splitOn(x);
+          host = x;
           port = b;
         } else {
           host = b;
@@ -2299,18 +2297,18 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
 
       if (host) {
         if (host_ptr) {
-          *host_ptr = host._ptr;
+          *host_ptr = host.data();
         }
         if (host_len) {
-          *host_len = static_cast<int>(host._size);
+          *host_len = static_cast<int>(host.size());
         }
       }
       if (port) {
         if (port_ptr) {
-          *port_ptr = port._ptr;
+          *port_ptr = port.data();
         }
         if (port_len) {
-          *port_len = static_cast<int>(port._size);
+          *port_len = static_cast<int>(port.size());
         }
       }
     } else {
