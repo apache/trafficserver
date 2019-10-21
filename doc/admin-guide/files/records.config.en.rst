@@ -335,7 +335,7 @@ Thread Variables
    ``0``                 ``1``                  All worker threads listen on the same port using SO_REUSEPORT. Each thread has its own listen fd and new connections are accepted on all the threads.
    ==================== ====================== =====================
 
-   By default, `proxy.config.accept_threads` is set to 1 and `proxy.config.exec_thread.listen` is set to 0. 
+   By default, `proxy.config.accept_threads` is set to 1 and `proxy.config.exec_thread.listen` is set to 0.
 .. ts:cv:: CONFIG proxy.config.thread.default.stacksize INT 1048576
 
    Default thread stack size, in bytes, for all threads (default is 1 MB).
@@ -2452,7 +2452,8 @@ DNS
 
    Allows one to specify which ``resolv.conf`` file to use for finding resolvers. While the format of this file must be the same as the
    standard ``resolv.conf`` file, this option allows an administrator to manage the set of resolvers in an external configuration file,
-   without affecting how the rest of the operating system uses DNS.
+   without affecting how the rest of the operating system uses DNS. Note that this setting works in conjunction with
+   :ts:cv:`proxy.config.dns.nameservers`, with its settings appended to the ``resolv.conf`` contents.
 
 .. ts:cv:: CONFIG proxy.config.dns.round_robin_nameservers INT 1
    :reloadable:
