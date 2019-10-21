@@ -5046,6 +5046,17 @@ HttpSM::do_http_server_open(bool raw)
     if (t_state.txn_conf->ssl_client_sni_policy != nullptr && !strcmp(t_state.txn_conf->ssl_client_sni_policy, "remap")) {
       len = strlen(t_state.server_info.name);
       opt.set_sni_servername(t_state.server_info.name, len);
+    } else if (t_state.txn_conf->ssl_client_sni_policy != nullptr &&
+               !strcmp(t_state.txn_conf->ssl_client_sni_policy, "verify_with_name_source")) {
+      // the same with "remap" policy to set sni_servername
+      len = strlen(t_state.server_info.name);
+      opt.set_sni_servername(t_state.server_info.name, len);
+
+      // also set sni_hostname with pristine URL in this policy
+      const char *host = t_state.hdr_info.server_request.host_get(&len);
+      if (host && len > 0) {
+        opt.set_sni_hostname(host, len);
+      }
     } else { // Do the default of host header for SNI
       const char *host = t_state.hdr_info.server_request.host_get(&len);
       if (host && len > 0) {
