@@ -2438,7 +2438,8 @@ DNS
 
    Allows one to specify which ``resolv.conf`` file to use for finding resolvers. While the format of this file must be the same as the
    standard ``resolv.conf`` file, this option allows an administrator to manage the set of resolvers in an external configuration file,
-   without affecting how the rest of the operating system uses DNS.
+   without affecting how the rest of the operating system uses DNS. Note that this setting works in conjunction with
+   :ts:cv:`proxy.config.dns.nameservers`, with its settings appended to the ``resolv.conf`` contents.
 
 .. ts:cv:: CONFIG proxy.config.dns.round_robin_nameservers INT 1
    :reloadable:
@@ -2448,7 +2449,10 @@ DNS
 .. ts:cv:: CONFIG proxy.config.dns.nameservers STRING NULL
    :reloadable:
 
-   The DNS servers.
+   The DNS servers. Note that this does not overide :ts:cv:`proxy.config.dns.resolv_conf`.
+   That is, the contents of the file listed in :ts:cv:`proxy.config.dns.resolv_conf` will
+   be appended to the list of nameservers specified here. To prevent this, a bogus file
+   can be listed there.
 
 .. ts:cv:: CONFIG proxy.config.srv_enabled INT 0
    :reloadable:
