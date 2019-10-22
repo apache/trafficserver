@@ -815,6 +815,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   bool result = true;
   if (nullptr == pi) {
     snprintf(errbuf, errbufsize, "%s", error.c_str());
+    result = false;
   } else {
     mp->add_plugin_instance(pi);
   }

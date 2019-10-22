@@ -28,10 +28,14 @@
  */
 
 #include "PluginDso.h"
+#include "P_Freer.h"
+#include "P_EventSystem.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"
 #else
 #include "tscore/Diags.h"
+#define PluginDebug Debug
+#define PluginError Error
 #endif
 
 PluginDso::PluginDso(const fs::path &configPath, const fs::path &effectivePath, const fs::path &runtimePath)
@@ -58,14 +62,14 @@ PluginDso::load(std::string &error)
     return false;
   }
 
-  Debug(_tag, "plugin '%s' started loading DSO", _configPath.c_str());
+  PluginDebug(_tag, "plugin '%s' started loading DSO", _configPath.c_str());
 
   /* Find plugin DSO looking through the search dirs */
   if (_effectivePath.empty()) {
     error.append("empty effective path");
     result = false;
   } else {
-    Debug(_tag, "plugin '%s' effective path: %s", _configPath.c_str(), _effectivePath.c_str());
+    PluginDebug(_tag, "plugin '%s' effective path: %s", _configPath.c_str(), _effectivePath.c_str());
 
     /* Copy the installed plugin DSO to a runtime directory */
     std::error_code ec;
@@ -75,13 +79,13 @@ PluginDso::load(std::string &error)
       error.assign(temp_error);
       result = false;
     } else {
-      Debug(_tag, "plugin '%s' runtime path: %s", _configPath.c_str(), _runtimePath.c_str());
+      PluginDebug(_tag, "plugin '%s' runtime path: %s", _configPath.c_str(), _runtimePath.c_str());
 
       /* Save the time for later checking if DSO got modified in consecutive DSO reloads */
       std::error_code ec;
       fs::file_status fs = fs::status(_effectivePath, ec);
       _mtime             = fs::modification_time(fs);
-      Debug(_tag, "plugin '%s' mоdification time %ld", _configPath.c_str(), _mtime);
+      PluginDebug(_tag, "plugin '%s' mоdification time %ld", _configPath.c_str(), _mtime);
 
       /* Now attemt to load the plugin DSO */
       if ((_dlh = dlopen(_runtimePath.c_str(), RTLD_NOW)) == nullptr) {
@@ -96,7 +100,7 @@ PluginDso::load(std::string &error)
         clean(error);
         result = false;
 
-        Error("plugin '%s' failed to load: %s", _configPath.c_str(), error.c_str());
+        PluginError("plugin '%s' failed to load: %s", _configPath.c_str(), error.c_str());
       }
     }
 
@@ -105,7 +109,7 @@ PluginDso::load(std::string &error)
       clean(error);
     }
   }
-  Debug(_tag, "plugin '%s' finished loading DSO", _configPath.c_str());
+  PluginDebug(_tag, "plugin '%s' finished loading DSO", _configPath.c_str());
 
   return result;
 }
@@ -229,17 +233,16 @@ void
 PluginDso::acquire()
 {
   this->refcount_inc();
-  Debug(_tag, "plugin DSO acquire (ref-count:%d, dso-addr:%p)", this->refcount(), this);
+  PluginDebug(_tag, "plugin DSO acquire (ref-count:%d, dso-addr:%p)", this->refcount(), this);
 }
 
 void
 PluginDso::release()
 {
-  Debug(_tag, "plugin DSO release (ref-count:%d, dso-addr:%p)", this->refcount() - 1, this);
+  PluginDebug(_tag, "plugin DSO release (ref-count:%d, dso-addr:%p)", this->refcount() - 1, this);
   if (0 == this->refcount_dec()) {
-    Debug(_tag, "unloading plugin DSO '%s' (dso-addr:%p)", _configPath.c_str(), this);
-    _list.erase(this);
-    delete this;
+    PluginDebug(_tag, "unloading plugin DSO '%s' (dso-addr:%p)", _configPath.c_str(), this);
+    _plugins->remove(this);
   }
 }
 
@@ -247,14 +250,14 @@ void
 PluginDso::incInstanceCount()
 {
   _instanceCount.refcount_inc();
-  Debug(_tag, "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
+  PluginDebug(_tag, "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
 }
 
 void
 PluginDso::decInstanceCount()
 {
   _instanceCount.refcount_dec();
-  Debug(_tag, "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
+  PluginDebug(_tag, "instance count (inst-count:%d, dso-addr:%p)", _instanceCount.refcount(), this);
 }
 
 int
@@ -263,4 +266,69 @@ PluginDso::instanceCount()
   return _instanceCount.refcount();
 }
 
-PluginDso::PluginList PluginDso::_list;
+void
+PluginDso::LoadedPlugins::add(PluginDso *plugin)
+{
+  SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
+
+  _list.append(plugin);
+}
+
+void
+PluginDso::LoadedPlugins::remove(PluginDso *plugin)
+{
+  SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
+
+  _list.erase(plugin);
+  this_ethread()->schedule_imm(new DeleterContinuation<PluginDso>(plugin));
+}
+
+PluginDso *
+PluginDso::LoadedPlugins::findByEffectivePath(const fs::path &path)
+{
+  struct stat sb;
+  time_t mtime = 0;
+  if (0 == stat(path.c_str(), &sb)) {
+    mtime = sb.st_mtime;
+  }
+
+  SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
+
+  auto spot = std::find_if(_list.begin(), _list.end(), [&](PluginDso const &plugin) -> bool {
+    return (0 == path.string().compare(plugin.effectivePath().string()) && (mtime == plugin.modTime()));
+  });
+  return spot == _list.end() ? nullptr : static_cast<PluginDso *>(spot);
+}
+
+void
+PluginDso::LoadedPlugins::indicatePreReload(const char *factoryId)
+{
+  SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
+
+  PluginDebug(_tag, "indicated config is going to be reloaded by factory '%s' to %zu plugin%s", factoryId, _list.count(),
+              _list.count() != 1 ? "s" : "");
+
+  _list.apply([](PluginDso &plugin) -> void { plugin.indicatePreReload(); });
+}
+
+void
+PluginDso::LoadedPlugins::indicatePostReload(bool reloadSuccessful, const std::unordered_map<PluginDso *, int> &pluginUsed,
+                                             const char *factoryId)
+{
+  SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
+
+  PluginDebug(_tag, "indicated config is done reloading by factory '%s' to %zu plugin%s", factoryId, _list.count(),
+              _list.count() != 1 ? "s" : "");
+
+  for (auto &plugin : _list) {
+    TSRemapReloadStatus status = TSREMAP_CONFIG_RELOAD_FAILURE;
+    if (reloadSuccessful) {
+      /* reload succeeded but was the plugin instantiated by this factory? */
+      status = (pluginUsed.end() == pluginUsed.find(&plugin) ? TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED :
+                                                               TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED);
+    }
+    plugin.indicatePostReload(status);
+  }
+}
+
+Ptr<PluginDso::LoadedPlugins> PluginDso::_plugins;
