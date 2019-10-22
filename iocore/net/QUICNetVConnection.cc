@@ -356,7 +356,18 @@ void
 QUICNetVConnection::start()
 {
   ink_release_assert(this->thread != nullptr);
-  this->_context = std::make_unique<QUICContextImpl>(&this->_rtt_measure, this, &this->_pp_key_info);
+  this->_path_validator = new QUICPathValidator(*this, [this](bool succeeded) {
+    if (succeeded) {
+      this->_alt_con_manager->drop_cid(this->_peer_old_quic_connection_id);
+      // FIXME This is a kind of workaround for connection migration.
+      // This PING make peer to send an ACK frame so that ATS can detect packet loss.
+      // It would be better if QUICLossDetector could detect the loss in another way.
+      this->ping();
+    }
+  });
+  this->_path_manager   = new QUICPathManagerImpl(*this, *this->_path_validator);
+
+  this->_context = std::make_unique<QUICContextImpl>(&this->_rtt_measure, this, &this->_pp_key_info, this->_path_manager);
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   QUICPath trusted_path = {{}, {}};
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
@@ -383,6 +394,7 @@ QUICNetVConnection::start()
     this->_ack_frame_manager.set_max_ack_delay(this->_quic_config->max_ack_delay_out());
     this->_schedule_ack_manager_periodic(this->_quic_config->max_ack_delay_out());
   }
+  this->_path_manager->set_trusted_path(trusted_path);
 
   this->_application_map = new QUICApplicationMap();
 
@@ -399,19 +411,8 @@ QUICNetVConnection::start()
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
   this->_local_flow_controller  = new QUICLocalConnectionFlowController(&this->_rtt_measure, UINT64_MAX);
-  this->_path_validator         = new QUICPathValidator(*this, [this](bool succeeded) {
-    if (succeeded) {
-      this->_alt_con_manager->drop_cid(this->_peer_old_quic_connection_id);
-      // FIXME This is a kind of workaround for connection migration.
-      // This PING make peer to send an ACK frame so that ATS can detect packet loss.
-      // It would be better if QUICLossDetector could detect the loss in another way.
-      this->ping();
-    }
-  });
-  this->_path_manager           = new QUICPathManager(*this, *this->_path_validator);
-  this->_path_manager->set_trusted_path(trusted_path);
-  this->_stream_manager = new QUICStreamManager(this, &this->_rtt_measure, this->_path_manager, this->_application_map);
-  this->_token_creator  = new QUICTokenCreator(this->_context.get());
+  this->_stream_manager         = new QUICStreamManager(this->_context.get(), this->_application_map);
+  this->_token_creator          = new QUICTokenCreator(this->_context.get());
 
   static constexpr int QUIC_STREAM_MANAGER_WEIGHT = QUICFrameGeneratorWeight::AFTER_DATA - 1;
   static constexpr int QUIC_PINGER_WEIGHT         = QUICFrameGeneratorWeight::LATE + 1;
