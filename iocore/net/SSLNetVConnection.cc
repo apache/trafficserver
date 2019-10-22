@@ -1078,11 +1078,12 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 
       SSL_set_verify(this->ssl, SSL_VERIFY_PEER, verify_callback);
 
-      if (this->options.sni_servername) {
-        if (SSL_set_tlsext_host_name(this->ssl, this->options.sni_servername)) {
-          Debug("ssl", "using SNI name '%s' for client handshake", this->options.sni_servername.get());
+      ats_scoped_str &tlsext_host_name = this->options.sni_hostname ? this->options.sni_hostname : this->options.sni_servername;
+      if (tlsext_host_name) {
+        if (SSL_set_tlsext_host_name(this->ssl, tlsext_host_name)) {
+          Debug("ssl", "using SNI name '%s' for client handshake", tlsext_host_name.get());
         } else {
-          Debug("ssl.error", "failed to set SNI name '%s' for client handshake", this->options.sni_servername.get());
+          Debug("ssl.error", "failed to set SNI name '%s' for client handshake", tlsext_host_name.get());
           SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
         }
       }

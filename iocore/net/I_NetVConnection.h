@@ -192,6 +192,10 @@ struct NetVCOptions {
    */
   ats_scoped_str ssl_servername;
 
+  /** Server host name from client's request to use for SNI data on an outbound connection.
+   */
+  ats_scoped_str sni_hostname;
+
   /**
    * Client certificate to use in response to OS's certificate request
    */
@@ -259,6 +263,20 @@ struct NetVCOptions {
   }
 
   self &
+  set_sni_hostname(const char *name, size_t len)
+  {
+    IpEndpoint ip;
+
+    // Literal IPv4 and IPv6 addresses are not permitted in "HostName".(rfc6066#section-3)
+    if (name && len && ats_ip_pton(std::string_view(name, len), &ip) != 0) {
+      sni_hostname = ats_strndup(name, len);
+    } else {
+      sni_hostname = nullptr;
+    }
+    return *this;
+  }
+
+  self &
   operator=(self const &that)
   {
     if (&that != this) {
@@ -274,6 +292,7 @@ struct NetVCOptions {
        */
       sni_servername = nullptr; // release any current name.
       ssl_servername = nullptr;
+      sni_hostname   = nullptr;
       memcpy(static_cast<void *>(this), &that, sizeof(self));
       if (that.sni_servername) {
         sni_servername.release(); // otherwise we'll free the source string.
@@ -282,6 +301,10 @@ struct NetVCOptions {
       if (that.ssl_servername) {
         ssl_servername.release(); // otherwise we'll free the source string.
         this->ssl_servername = ats_strdup(that.ssl_servername);
+      }
+      if (that.sni_hostname) {
+        sni_hostname.release(); // otherwise we'll free the source string.
+        this->sni_hostname = ats_strdup(that.sni_hostname);
       }
     }
     return *this;
