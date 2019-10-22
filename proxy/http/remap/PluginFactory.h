@@ -85,8 +85,7 @@ public:
  */
 class PluginFactory
 {
-  using PluginInstList         = ts::IntrusiveDList<RemapPluginInst::Linkage>;
-  PluginDso::PluginList &_list = PluginDso::_list;
+  using PluginInstList = ts::IntrusiveDList<RemapPluginInst::Linkage>;
 
 public:
   PluginFactory();
