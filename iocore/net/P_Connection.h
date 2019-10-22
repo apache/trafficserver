@@ -132,6 +132,7 @@ struct Connection {
 
   virtual ~Connection();
   Connection();
+  Connection(Connection const &) = delete;
 
   /// Default options.
   static NetVCOptions const DEFAULT_OPTIONS;
@@ -140,11 +141,6 @@ struct Connection {
    * Move control of the socket from the argument object orig to the current object.
    */
   void move(Connection &);
-
-private:
-  // Don't want copy constructors to avoid having the deconstructor on
-  // temporarly copies close the file descriptor too soon. Use move instead
-  Connection(Connection const &);
 
 protected:
   void _cleanup();

@@ -396,7 +396,6 @@ add_executable(ats
         src/wccp/WccpMsg.cc
         src/wccp/WccpStatic.cc
         src/wccp/WccpUtil.h
-        lib/ink_autoconf.h
         mgmt/api/include/mgmtapi.h
         mgmt/api/APITestCliRemote.cc
         mgmt/api/CoreAPI.cc
@@ -814,7 +813,6 @@ add_executable(ats
         proxy/http2/HuffmanCodec.h
         proxy/http2/RegressionHPACK.cc
         proxy/http2/test_HPACK.cc
-        proxy/http2/test_Http2DependencyTree.cc
         proxy/http2/test_Huffmancode.cc
         proxy/logging/Log.cc
         proxy/logging/Log.h
@@ -893,7 +891,6 @@ add_executable(ats
         proxy/Show.h
         proxy/StatPages.cc
         proxy/StatPages.h
-        proxy/TimeTrace.h
         proxy/Transform.cc
         proxy/Transform.h
         proxy/TransformInternal.h
@@ -916,8 +913,6 @@ add_library(libtscore SHARED
         include/tscore/Arena.h
         src/tscore/BaseLogFile.cc
         include/tscore/BaseLogFile.h
-        src/tscore/Bitops.cc
-        include/tscore/Bitops.h
         include/tscore/bwf_std_format.h
         include/tscore/BufferWriter.h
         include/tscore/BufferWriterForward.h
@@ -1065,17 +1060,13 @@ add_library(libtscore SHARED
         include/tscore/SimpleTokenizer.h
         src/tscore/SourceLocation.cc
         include/tscore/SourceLocation.h
-        src/tscore/test_arena.cc
         src/tscore/test_atomic.cc
         src/tscore/test_freelist.cc
         src/tscore/test_geometry.cc
         src/tscore/test_History.cc
-        src/tscore/test_List.cc
-        src/tscore/test_Map.cc
         src/tscore/test_PriorityQueue.cc
         src/tscore/test_Ptr.cc
         src/tscore/test_Regex.cc
-        src/tscore/test_Vec.cc
         src/tscore/test_X509HostnameValidator.cc
         include/tscore/TestBox.h
         src/tscore/TestHttpHeader.cc
@@ -1190,7 +1181,6 @@ add_library(plugin_escalate SHARED
 
 # CacheTool
 add_executable(traffic_cache_tool
-	src/traffic_cache_tool/CacheStore.h
 	src/traffic_cache_tool/CacheDefs.h
 	src/traffic_cache_tool/CacheDefs.cc
 	src/traffic_cache_tool/CacheTool.cc

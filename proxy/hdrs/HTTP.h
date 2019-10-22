@@ -468,14 +468,15 @@ HTTPValTE *http_parse_te(const char *buf, int len, Arena *arena);
 class HTTPVersion
 {
 public:
-  HTTPVersion();
-  explicit HTTPVersion(int32_t version);
-  HTTPVersion(int ver_major, int ver_minor);
+  constexpr HTTPVersion() = default;
+  explicit constexpr HTTPVersion(int32_t version);
+  constexpr HTTPVersion(int ver_major, int ver_minor);
+  constexpr HTTPVersion(HTTPVersion const &that) = default;
 
   void set(HTTPVersion ver);
   void set(int ver_major, int ver_minor);
 
-  HTTPVersion &operator=(const HTTPVersion &hv);
+  constexpr HTTPVersion &operator=(const HTTPVersion &hv);
   int operator==(const HTTPVersion &hv) const;
   int operator!=(const HTTPVersion &hv) const;
   int operator>(const HTTPVersion &hv) const;
@@ -484,7 +485,7 @@ public:
   int operator<=(const HTTPVersion &hv) const;
 
 public:
-  int32_t m_version;
+  int32_t m_version = HTTP_VERSION(1, 0);
 };
 
 class IOBufferReader;
@@ -661,17 +662,12 @@ private:
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion() : m_version(HTTP_VERSION(1, 0)) {}
+inline constexpr HTTPVersion::HTTPVersion(int32_t version) : m_version(version) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion(int32_t version) : m_version(version) {}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline HTTPVersion::HTTPVersion(int ver_major, int ver_minor) : m_version(HTTP_VERSION(ver_major, ver_minor)) {}
+inline constexpr HTTPVersion::HTTPVersion(int ver_major, int ver_minor) : m_version(HTTP_VERSION(ver_major, ver_minor)) {}
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -694,7 +690,7 @@ HTTPVersion::set(int ver_major, int ver_minor)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion &
+inline constexpr HTTPVersion &
 HTTPVersion::operator=(const HTTPVersion &hv)
 {
   m_version = hv.m_version;

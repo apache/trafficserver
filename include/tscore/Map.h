@@ -1150,6 +1150,7 @@ public:
   MapElem(K const &akey, C const &avalue) : key(akey), value(avalue) {}
   MapElem(MapElem const &e) : key(e.key), value(e.value) {}
   MapElem() : key(), value() {}
+  MapElem &operator=(MapElem const &that) = default;
 };
 
 template <class K, class C, class A = DefaultAlloc> class Map : public Vec<MapElem<K, C>, A>
