@@ -456,6 +456,7 @@ Changes with Apache Traffic Server 9.0.0
   #5289 - Don't read frames after sending GOAWAY with an error code
   #5290 - MIMEScanner: Only clear scanner line buffer if at MIME_PARSE_BEFORE state
   #5292 - Fix a build error in xdebug on macos
+  #5293 - Destroy MIMEFieldBlockImpl that doesn't have fields in use
   #5297 - Doc: fix proxy.config.cache.ram_cache.algorithm description
   #5301 - Slice Plugin: add options for disabling or pacing detailed block stitch error logging.
   #5302 - Correct config name for proxy.config.dns.connection_mode
@@ -732,6 +733,7 @@ Changes with Apache Traffic Server 9.0.0
   #5771 - Fixes linker changes for luajit on macOS
   #5772 - Remove ssl_error stats that aren't really errors.
   #5773 - Documentation for Autest in Sphinx
+  #5774 - Updating the default cipher-suite lists for the 9.x release.
   #5778 - Issue 5604 - fix memory leaks for http parser.
   #5779 - doc: TSL used instead of TLS in Japanese docs
   #5780 - Fixed std::array initialization for older compilers
@@ -757,6 +759,7 @@ Changes with Apache Traffic Server 9.0.0
   #5826 - Cleanup: Signal READ_READY event only if the buffer is readable
   #5827 - compress plugin: document undocumented options
   #5828 - Make client_context_dump test resilient to dump order changes
+  #5829 - fix bugs from log filter feature
   #5830 - Make proxy.config.http.per_server.min_keep_alive_connections overridable
   #5831 - Fix QUIC build
   #5833 - Fix H2 internal counters
@@ -766,25 +769,35 @@ Changes with Apache Traffic Server 9.0.0
   #5844 - Explain how SRV origin selection works
   #5847 - Cleanup: Remove unused empty files
   #5848 - Convert check programs in iocore/eventsystem/ into Catch based unit tests
+  #5852 - Replaced ProxyTxn::outbound vars with accept::options
   #5853 - correct the size of DNS buffers
   #5856 - Fixes 'traffic_ctl server restart' to restart
   #5857 - Check for nullptr when locking
+  #5863 - pipe buffer size for log.pipe should be configurable
+  #5864 - ProxyTxn refactor: moved host_res_style to t_state.dns_info
   #5865 - cachekey: added --canonical-prefix parameter
   #5867 - PR#5867: Explain how to use open_con().
   #5868 - Update HttpTransact.cc
+  #5869 - ProxyTxn: removed restart_immediate
   #5870 - Fix bad limit in poll loop.  jtest -c1 now works again.
   #5872 - cachekey: added --key-type to allow parent selection URL to be modified
   #5879 - Weak mutex locking macros
+  #5880 - ProxyTxn Refactor move code to cc
   #5883 - Add unit tests for MIOBuffer:write()
   #5885 - Add the ability to static link ASAN, TSAN and LSAN
   #5887 - Fixed const issue with magick plugin
   #5888 - Allow disabling HTTP/2 priority frames limit
   #5889 - Provide stats for the recently introduced HTTP/2 rate limits
+  #5892 - ProxySsn renaming member vars
   #5893 - Cleanup: Remove unused AllocType and unused functions
   #5902 - Ran clang-format
   #5903 - Reduce unnecesary IOBufferBlock allocation
   #5905 - Update Server IP in Transaction when attaching a session from the pool
+  #5906 - Cleanup: unifdef TRACK_BUFFER_USER
+  #5907 - Fix macOS build
+  #5908 - ProxySession cleanup: moving inline functions to .h
   #5915 - Update documentation for connect_attempts_timeout.
+  #5919 - Rearrange config reload notifications
   #5920 - Cleanup: VIO
   #5921 - Cleanup AuTest for HTTP/2
   #5922 - Make code buildable with BoringSSL
@@ -792,10 +805,28 @@ Changes with Apache Traffic Server 9.0.0
   #5930 - Track SSL session cache evictions performed due to full bucket
   #5934 - Track scheduled events to (read|write)_vio.cont from Http2Stream
   #5935 - Perform a SSL quiet shutdown when close-notify is not sent
+  #5937 - Update TSVConnSslConnectionGet name to match other TSVConnSsl* APIs
   #5939 - Remove hard coded filename in error message
+  #5945 - cachekey: allow multiple values for `--key-type`
+  #5949 - Fix TSHttpTxnReenable to schedule back to original SM thread
+  #5953 - Log H2 priority information
   #5955 - Fix debug output for global_user_agent_header.
   #5956 - Turn on certificate verification, in permissive mode for now
   #5959 - Clear api set bit to avoid crash in following redirect.
   #5961 - Clarify docs on the change from redirect_enabled.
   #5962 - Removed hardcoded sni.yaml configuration filename in logs
+  #5964 - Fix a build issue on enabling FIPS
+  #5969 - Change the ready checks for ats to use the actual ats port
+  #5970 - "Plugin (un)used" post reload notification
   #5977 - YAML config:  output erroneous keyword and line number
+  #5978 - Removed hardcoded logging.yaml filename in logs
+  #5979 - Revert "Optimize: If failed on migrateToCurrentThread, put the server…
+  #5980 - Fix use-after-free problem related to logging headers
+  #5985 - Add filename to error message in header_rewrite
+  #5986 - Remove hard-coded ssl_multicert.config log reference
+  #5992 - Cache SSL EC explicitly
+  #6000 - Add QUIC draft-23 support
+  #6003 - Cleanup: do not re-define _proxy_ssn variable in local
+  #6008 - Do not schedule stuff during shutdown
+  #6016 - Fix host type in host matcher.
+  #6024 - Make proxy.config.http.request_buffer_enabled configurable and bug fix
