@@ -95,6 +95,35 @@ class MockQUICCCConfig : public QUICCCConfig
   }
 };
 
+class MockQUICPathManager : public QUICPathManager
+{
+public:
+  virtual ~MockQUICPathManager() {}
+  virtual const QUICPath &
+  get_current_path()
+  {
+    return _path;
+  }
+  virtual const QUICPath &
+  get_verified_path()
+  {
+    return _path;
+  }
+  virtual void
+  open_new_path(const QUICPath &path, ink_hrtime timeout_in)
+  {
+    return;
+  }
+  virtual void
+  set_trusted_path(const QUICPath &path)
+  {
+    return;
+  }
+
+private:
+  QUICPath _path = {{}, {}};
+};
+
 class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
 {
   QUICConnectionId
@@ -169,7 +198,7 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
 class MockQUICStreamManager : public QUICStreamManager
 {
 public:
-  MockQUICStreamManager(QUICConnectionInfoProvider *info) : QUICStreamManager(info, nullptr, nullptr, nullptr) {}
+  MockQUICStreamManager(QUICStreamManagerContext *context) : QUICStreamManager(context, nullptr) {}
 
   // Override
   virtual QUICConnectionErrorUPtr
@@ -362,7 +391,7 @@ public:
   QUICStreamManager *
   stream_manager() override
   {
-    return &_stream_manager;
+    return nullptr;
   }
 
   bool
@@ -397,9 +426,8 @@ public:
   int _transmit_count   = 0;
   int _retransmit_count = 0;
   Ptr<ProxyMutex> _mutex;
-  int _totalFrameCount                  = 0;
-  int _frameCount[256]                  = {0};
-  MockQUICStreamManager _stream_manager = {this};
+  int _totalFrameCount = 0;
+  int _frameCount[256] = {0};
 
   QUICTransportParametersInEncryptedExtensions dummy_transport_parameters();
   NetVConnectionContext_t _direction;
@@ -498,15 +526,16 @@ public:
   }
 };
 
-class MockQUICContext : public QUICContext, public QUICLDContext, public QUICCCContext
+class MockQUICContext : public QUICContext, public QUICLDContext, public QUICCCContext, public QUICStreamManagerContext
 {
 public:
   MockQUICContext()
   {
-    _info      = std::make_unique<MockQUICConnectionInfoProvider>();
-    _key_info  = std::make_unique<MockQUICPacketProtectionKeyInfo>();
-    _ld_config = std::make_unique<MockQUICLDConfig>();
-    _cc_config = std::make_unique<MockQUICCCConfig>();
+    _info         = std::make_unique<MockQUICConnectionInfoProvider>();
+    _key_info     = std::make_unique<MockQUICPacketProtectionKeyInfo>();
+    _path_manager = std::make_unique<MockQUICPathManager>();
+    _ld_config    = std::make_unique<MockQUICLDConfig>();
+    _cc_config    = std::make_unique<MockQUICCCConfig>();
   }
 
   virtual QUICConnectionInfoProvider *
@@ -543,6 +572,12 @@ public:
     return *_cc_config;
   }
 
+  virtual QUICPathManager *
+  path_manager() const override
+  {
+    return _path_manager.get();
+  }
+
 private:
   QUICConfig::scoped_config _config;
   QUICRTTMeasure _rtt_measure;
@@ -550,6 +585,7 @@ private:
   std::unique_ptr<QUICPacketProtectionKeyInfo> _key_info;
   std::unique_ptr<QUICLDConfig> _ld_config;
   std::unique_ptr<QUICCCConfig> _cc_config;
+  std::unique_ptr<MockQUICPathManager> _path_manager;
 };
 
 class MockQUICLossDetector : public QUICLossDetector

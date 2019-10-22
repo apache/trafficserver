@@ -29,6 +29,7 @@
 class QUICRTTProvider;
 class QUICCongestionController;
 class QUICPacketProtectionKeyInfoProvider;
+class QUICPathManager;
 
 class QUICNetVConnection;
 
@@ -58,10 +59,20 @@ public:
   virtual QUICRTTProvider *rtt_provider() const               = 0;
 };
 
-class QUICContextImpl : public QUICContext, public QUICCCContext, public QUICLDContext
+class QUICStreamManagerContext
 {
 public:
-  QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info);
+  virtual ~QUICStreamManagerContext() {}
+  virtual QUICConnectionInfoProvider *connection_info() const = 0;
+  virtual QUICRTTProvider *rtt_provider() const               = 0;
+  virtual QUICPathManager *path_manager() const               = 0;
+};
+
+class QUICContextImpl : public QUICContext, public QUICCCContext, public QUICLDContext, public QUICStreamManagerContext
+{
+public:
+  QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
+                  QUICPathManager *path_manager);
 
   virtual QUICConnectionInfoProvider *connection_info() const override;
   virtual QUICConfig::scoped_config config() const override;
@@ -73,11 +84,14 @@ public:
   virtual QUICLDConfig &ld_config() const override;
   virtual QUICCCConfig &cc_config() const override;
 
+  virtual QUICPathManager *path_manager() const override;
+
 private:
   QUICConfig::scoped_config _config;
   QUICPacketProtectionKeyInfoProvider *_key_info = nullptr;
   QUICConnectionInfoProvider *_connection_info   = nullptr;
   QUICRTTProvider *_rtt_provider                 = nullptr;
+  QUICPathManager *_path_manager                 = nullptr;
 
   std::unique_ptr<QUICLDConfig> _ld_config = nullptr;
   std::unique_ptr<QUICCCConfig> _cc_config = nullptr;

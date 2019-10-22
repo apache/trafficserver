@@ -101,10 +101,11 @@ private:
 };
 
 QUICContextImpl::QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info,
-                                 QUICPacketProtectionKeyInfoProvider *key_info)
+                                 QUICPacketProtectionKeyInfoProvider *key_info, QUICPathManager *path_manager)
   : _key_info(key_info),
     _connection_info(info),
     _rtt_provider(rtt),
+    _path_manager(path_manager),
     _ld_config(std::make_unique<QUICLDConfigQCP>(_config)),
     _cc_config(std::make_unique<QUICCCConfigQCP>(_config))
 {
@@ -144,4 +145,10 @@ QUICCCConfig &
 QUICContextImpl::cc_config() const
 {
   return *_cc_config;
+}
+
+QUICPathManager *
+QUICContextImpl::path_manager() const
+{
+  return _path_manager;
 }
