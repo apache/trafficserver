@@ -3308,8 +3308,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     // only external POSTs should be subject to this logic; ruling out internal POSTs here
     bool is_eligible_post_request = ((t_state.method == HTTP_WKSIDX_POST) && !is_internal);
 
-    if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && c->producer->vc_type != HT_STATIC &&
-        event == VC_EVENT_WRITE_COMPLETE) {
+    if (is_eligible_post_request && c->producer->vc_type != HT_STATIC && event == VC_EVENT_WRITE_COMPLETE) {
       ua_txn->set_half_close_flag(true);
     }
 
@@ -3618,7 +3617,6 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
       if (ua_producer->vc_type == HT_STATIC && event != VC_EVENT_ERROR && event != VC_EVENT_EOS) {
         ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
         // ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
-        t_state.client_info.pipeline_possible = false;
       } else {
         if (ua_producer->vc_type == HT_STATIC && t_state.redirect_info.redirect_in_process) {
           post_failed = true;
@@ -3628,7 +3626,6 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
       ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
       // we should not shutdown read side of the client here to prevent sending a reset
       // ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
-      t_state.client_info.pipeline_possible = false;
     } // end of added logic
 
     // We want to shutdown the tunnel here and see if there

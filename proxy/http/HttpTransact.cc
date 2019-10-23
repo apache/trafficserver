@@ -5442,10 +5442,6 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->client_info.keep_alive = incoming_request->keep_alive_get();
   }
 
-  if (s->client_info.keep_alive == HTTP_KEEPALIVE && s->client_info.http_version == HTTPVersion(1, 1)) {
-    s->client_info.pipeline_possible = true;
-  }
-
   if (!s->server_info.name || s->redirect_info.redirect_in_process) {
     s->server_info.name = s->arena.str_store(host_name, host_len);
   }
