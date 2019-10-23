@@ -2896,7 +2896,6 @@ HttpTransact::handle_cache_write_lock(State *s)
       }
 
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-      return;
     default:
       s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
       remove_ims                 = true;
@@ -2904,14 +2903,25 @@ HttpTransact::handle_cache_write_lock(State *s)
     }
     break;
   case CACHE_WL_READ_RETRY:
-    //  Write failed but retried and got a vector to read
-    //  We need to clean up our state so that transact does
-    //  not assert later on.  Then handle the open read hit
-    //
     s->request_sent_time      = UNDEFINED_TIME;
     s->response_received_time = UNDEFINED_TIME;
     s->cache_info.action      = CACHE_DO_LOOKUP;
-    remove_ims                = true;
+    if (!s->cache_info.object_read) {
+      //  Write failed and read retry triggered
+      //  Clean up server_request and re-initiate
+      //  Cache Lookup
+      ink_assert(s->cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY);
+      s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
+      StateMachineAction_t next;
+      next           = SM_ACTION_CACHE_LOOKUP;
+      s->next_action = next;
+      s->hdr_info.server_request.destroy();
+      TRANSACT_RETURN(next, nullptr);
+    }
+    //  Write failed but retried and got a vector to read
+    //  We need to clean up our state so that transact does
+    //  not assert later on.  Then handle the open read hit
+    remove_ims = true;
     SET_VIA_STRING(VIA_DETAIL_CACHE_TYPE, VIA_DETAIL_CACHE);
     break;
   case CACHE_WL_INIT:
