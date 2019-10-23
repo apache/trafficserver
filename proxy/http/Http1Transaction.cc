@@ -68,10 +68,11 @@ Http1Transaction::reenable(VIO *vio)
 bool
 Http1Transaction::allow_half_open() const
 {
-  bool config_allows_it = (_sm) ? _sm->t_state.txn_conf->allow_half_open > 0 : true;
+  bool config_allows_it            = (_sm) ? _sm->t_state.txn_conf->allow_half_open > 0 : false;
+  bool config_allows_tls_half_open = (_sm) ? _sm->t_state.txn_conf->allow_half_open > 1 : false;
   if (config_allows_it) {
     // Check with the session to make sure the underlying transport allows the half open scenario
-    return static_cast<Http1ClientSession *>(_proxy_ssn)->allow_half_open();
+    return static_cast<Http1ClientSession *>(_proxy_ssn)->allow_half_open(config_allows_tls_half_open);
   }
   return false;
 }

@@ -72,7 +72,7 @@ public:
   void reenable(VIO *vio) override;
 
   // Accessor Methods
-  bool allow_half_open() const;
+  bool allow_half_open(bool half_open_tls) const;
   void set_half_close_flag(bool flag) override;
   bool get_half_close_flag() const override;
   bool is_chunked_encoding_supported() const override;

@@ -523,10 +523,14 @@ Http1ClientSession::start()
 }
 
 bool
-Http1ClientSession::allow_half_open() const
+Http1ClientSession::allow_half_open(bool allow_half_open_tls) const
 {
-  // Only allow half open connections if the not over TLS
-  return (client_vc && dynamic_cast<SSLNetVConnection *>(client_vc) == nullptr);
+  if (allow_half_open_tls) {
+    return true;
+  } else {
+    // Only allow half open connections if the not over TLS
+    return (client_vc && dynamic_cast<SSLNetVConnection *>(client_vc) == nullptr);
+  }
 }
 
 void

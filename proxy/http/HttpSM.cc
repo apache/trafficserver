@@ -3250,6 +3250,9 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
         close_connection = false;
       }
     }
+    // Transaction is done. Clear the half open flag so the client
+    // connection can close the next time it is asked
+    ua_txn->set_half_close_flag(false);
     break;
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_READ_READY:
@@ -3292,12 +3295,16 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
   if (close_connection) {
     // If the client could be pipelining or is doing a POST, we need to
     //   set the ua_txn into half close mode
+    // For POST, this needs to be done in case the POST resulted in an error.
+    // Must set the half_open here so the POST clean up occurs as described
+    // in TS-3778.  I would think in a success case, the half_open flag is unneeded
+    // since the transaction has completed.
 
     // only external POSTs should be subject to this logic; ruling out internal POSTs here
     bool is_eligible_post_request = ((t_state.method == HTTP_WKSIDX_POST) && !is_internal);
 
-    if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && c->producer->vc_type != HT_STATIC &&
-        event == VC_EVENT_WRITE_COMPLETE) {
+    if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && ua_txn->allow_half_open() &&
+        c->producer->vc_type != HT_STATIC && event == VC_EVENT_WRITE_COMPLETE) {
       ua_txn->set_half_close_flag(true);
     }
 

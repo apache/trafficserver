@@ -4202,8 +4202,12 @@ Sockets
    :reloadable:
    :overridable:
 
-   Turn on or off support for connection half open for client side. Default is on, so
-   after client sends FIN, the connection is still there.
+   Controls whether ATS will continue to send data over a connection when the client side
+   closes (operating in a half open state).  The client would have to be be written to 
+   expect this to process the extra data.  A value of 0 disables the half open connection from 
+   consideration. A value of 1 cause |TS| to send data after receiving a FIN on non TLS connections.
+   A value of 2 will cause |TS| to also send data over TLS connections after the client sends a
+   FIN.
 
 .. ts:cv:: CONFIG proxy.config.http.wait_for_cache INT 0
 
