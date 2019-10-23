@@ -3568,7 +3568,15 @@ HTTP/2 Configuration
    :reloadable:
 
    The maximum size of the header compression table used to decode header
-   blocks.
+   blocks. This value will be advertised as SETTINGS_HEADER_TABLE_SIZE.
+
+.. ts:cv:: CONFIG proxy.config.http2.header_table_size_limit INT 65536
+   :reloadable:
+
+   The maximum size of the header compression table ATS actually use when ATS
+   encodes headers. Setting 0 means ATS doesn't insert headers into HPACK
+   Dynamic Table, however, headers still can be encoded as indexable
+   representations. The upper limit is 65536.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_header_list_size INT 131072
    :reloadable:

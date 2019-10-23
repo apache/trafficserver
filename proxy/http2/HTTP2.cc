@@ -42,8 +42,8 @@ const unsigned HTTP2_LEN_AUTHORITY = countof(":authority") - 1;
 const unsigned HTTP2_LEN_PATH      = countof(":path") - 1;
 const unsigned HTTP2_LEN_STATUS    = countof(":status") - 1;
 
-static size_t HTTP2_LEN_STATUS_VALUE_STR    = 3;
-static const int HTTP2_MAX_TABLE_SIZE_LIMIT = 64 * 1024;
+static size_t HTTP2_LEN_STATUS_VALUE_STR         = 3;
+static const uint32_t HTTP2_MAX_TABLE_SIZE_LIMIT = 64 * 1024;
 
 // Statistics
 RecRawStatBlock *http2_rsb;
@@ -606,8 +606,9 @@ Http2ErrorCode
 http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t *len_written, HpackHandle &handle,
                            int32_t maximum_table_size)
 {
-  // Limit the maximum table size to 64kB, which is the size advertised by major clients
-  maximum_table_size = std::min(maximum_table_size, HTTP2_MAX_TABLE_SIZE_LIMIT);
+  // Limit the maximum table size to the configured value or 64kB at maximum, which is the size advertised by major clients
+  maximum_table_size =
+    std::min(maximum_table_size, static_cast<int32_t>(std::min(Http2::header_table_size_limit, HTTP2_MAX_TABLE_SIZE_LIMIT)));
   // Set maximum table size only if it is different from current maximum size
   if (maximum_table_size == hpack_get_maximum_table_size(handle)) {
     maximum_table_size = -1;
@@ -753,6 +754,7 @@ uint32_t Http2::max_priority_frames_per_minute = 120;
 float Http2::min_avg_window_update             = 2560.0;
 uint32_t Http2::con_slow_log_threshold         = 0;
 uint32_t Http2::stream_slow_log_threshold      = 0;
+uint32_t Http2::header_table_size_limit        = 65536;
 
 void
 Http2::init()
@@ -779,6 +781,7 @@ Http2::init()
   REC_EstablishStaticConfigFloat(min_avg_window_update, "proxy.config.http2.min_avg_window_update");
   REC_EstablishStaticConfigInt32U(con_slow_log_threshold, "proxy.config.http2.connection.slow.log.threshold");
   REC_EstablishStaticConfigInt32U(stream_slow_log_threshold, "proxy.config.http2.stream.slow.log.threshold");
+  REC_EstablishStaticConfigInt32U(header_table_size_limit, "proxy.config.http2.header_table_size_limit");
 
   // If any settings is broken, ATS should not start
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams_in}));
