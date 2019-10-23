@@ -175,7 +175,8 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(&HttpCacheSM::state_cache_open_write, event);
   ink_assert(captive_action.cancelled == 0);
-  pending_action = nullptr;
+  pending_action                = nullptr;
+  bool read_retry_on_write_fail = false;
 
   switch (event) {
   case CACHE_EVENT_OPEN_WRITE:
@@ -187,9 +188,26 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     break;
 
   case CACHE_EVENT_OPEN_WRITE_FAILED:
-    if (open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries) {
+    if (master_sm->t_state.txn_conf->cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY) {
+      // fall back to open_read_tries
+      // Note that when CACHE_WL_FAIL_ACTION_READ_RETRY is configured, max_cache_open_write_retries
+      // is automatically ignored. Make sure to not disable max_cache_open_read_retries
+      // with CACHE_WL_FAIL_ACTION_READ_RETRY as this results in proxy'ing to origin
+      // without write retries in both a cache miss or a cache refresh scenario.
+      if (open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries) {
+        Debug("http_cache", "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. read retry triggered",
+              master_sm->sm_id, open_write_tries);
+        open_read_tries          = 0;
+        read_retry_on_write_fail = true;
+        // make sure it doesn't loop indefinitely
+        open_write_tries = master_sm->t_state.txn_conf->max_cache_open_write_retries + 1;
+      }
+    }
+    if (read_retry_on_write_fail || open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries) {
       // Retry open write;
       open_write_cb = false;
+      // reset captive_action since HttpSM cancelled it
+      captive_action.cancelled = 0;
       do_schedule_in();
     } else {
       // The cache is hosed or full or something.
@@ -204,18 +222,27 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     break;
 
   case EVENT_INTERVAL:
-    // Retry the cache open write if the number retries is less
-    // than or equal to the max number of open write retries
-    ink_assert(open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries);
-    Debug("http_cache",
-          "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
-          "retrying cache open write...",
-          master_sm->sm_id, open_write_tries);
+    if (master_sm->t_state.txn_conf->cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY) {
+      Debug("http_cache",
+            "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
+            "falling back to read retry...",
+            master_sm->sm_id, open_write_tries);
+      open_read_cb = false;
+      master_sm->handleEvent(CACHE_EVENT_OPEN_READ, data);
+    } else {
+      Debug("http_cache",
+            "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
+            "retrying cache open write...",
+            master_sm->sm_id, open_write_tries);
 
-    open_write(
-      &cache_key, lookup_url, read_request_hdr, master_sm->t_state.cache_info.object_read,
-      (time_t)((master_sm->t_state.cache_control.pin_in_cache_for < 0) ? 0 : master_sm->t_state.cache_control.pin_in_cache_for),
-      retry_write, false);
+      // Retry the cache open write if the number retries is less
+      // than or equal to the max number of open write retries
+      ink_assert(open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries);
+      open_write(&cache_key, lookup_url, read_request_hdr, master_sm->t_state.cache_info.object_read,
+                 static_cast<time_t>(
+                   (master_sm->t_state.cache_control.pin_in_cache_for < 0) ? 0 : master_sm->t_state.cache_control.pin_in_cache_for),
+                 retry_write, false);
+    }
     break;
 
   default:

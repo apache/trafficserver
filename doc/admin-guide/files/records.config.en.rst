@@ -2185,6 +2185,9 @@ all the different user-agent versions of documents it encounters.
 
     The number of times to attempt a cache open write upon failure to get a write lock.
 
+    This config is ignored when :ts:cv:`proxy.config.http.cache.open_write_fail_action` is
+    set to ``5``.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
    :reloadable:
    :overridable:
@@ -2207,6 +2210,12 @@ all the different user-agent versions of documents it encounters.
          :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
          origin server.
    ``4`` Return a ``502`` error on either a cache miss or on a revalidation.
+   ``5`` Retry Cache Read on a Cache Write Lock failure. This option together
+         with `proxy.config.cache.enable_read_while_writer` configuration
+         allows to collapse concurrent requests without a need for any plugin.
+         Make sure to configure Read While Writer feature correctly following
+         the docs in Cache Basics section. Note that this option may result in
+         CACHE_LOOKUP_COMPLETE HOOK being called back more than once.
    ===== ======================================================================
 
 Customizable User Response Pages
