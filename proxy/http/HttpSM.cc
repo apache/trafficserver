@@ -2414,6 +2414,15 @@ HttpSM::state_cache_open_write(int event, void *data)
   // INTENTIONAL FALL THROUGH
   // Allow for stale object to be served
   case CACHE_EVENT_OPEN_READ:
+    if (!t_state.cache_info.object_read) {
+      t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
+      // Note that CACHE_LOOKUP_COMPLETE may be invoked more than once
+      // if CACHE_WL_FAIL_ACTION_READ_RETRY is configured
+      ink_assert(t_state.cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY);
+      t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;
+      t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_READ_RETRY;
+      break;
+    }
     // The write vector was locked and the cache_sm retried
     // and got the read vector again.
     cache_sm.cache_read_vc->get_http_info(&t_state.cache_info.object_read);
