@@ -187,11 +187,8 @@ QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_numb
     this->_should_send = true;
   }
 
-  // every 2 full-packet should send a ack frame like tcp
-  this->_size_unsend += size;
-  // FIXME: this size should be fixed with PMTU
-  if (this->_size_unsend > 2 * 1480) {
-    this->_size_unsend = 0;
+  // every 2 ack-eliciting packet should send a ack frame
+  if (!ack_only && ++this->_ack_eliciting_count % 2 == 0) {
     this->_should_send = true;
   }
 
@@ -224,7 +221,7 @@ QUICAckFrameManager::QUICAckFrameCreator::clear()
   this->_largest_ack_number          = 0;
   this->_largest_ack_received_time   = 0;
   this->_latest_packet_received_time = 0;
-  this->_size_unsend                 = 0;
+  this->_ack_eliciting_count         = 0;
   this->_should_send                 = false;
   this->_available                   = false;
 }
