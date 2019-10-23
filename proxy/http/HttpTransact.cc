@@ -1332,7 +1332,6 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   s->server_info.http_version.set(1, 0);
   s->server_info.keep_alive                  = HTTP_NO_KEEPALIVE;
   s->host_db_info.app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_10;
-  s->host_db_info.app.http_data.pipeline_max = 1;
   s->server_info.dst_addr.setToAnyAddr(AF_INET);                                 // must set an address or we can't set the port.
   s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // this is the info that matters.
 
