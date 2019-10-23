@@ -541,7 +541,6 @@ public:
     // The following variable is true if the client expects to
     // received a chunked response.
     bool receive_chunked_response = false;
-    bool pipeline_possible        = false;
     bool proxy_connect_hdr        = false;
     /// @c errno from the most recent attempt to connect.
     /// zero means no failure (not attempted, succeeded).
