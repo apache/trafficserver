@@ -240,6 +240,11 @@ ProcessManager::signalManager(int msg_id, const char *data_str)
 void
 ProcessManager::signalManager(int msg_id, const char *data_raw, int data_len)
 {
+  if (!this->running) {
+    Warning("MgmtMessageHdr is ignored. Because ProcessManager is not running");
+    return;
+  }
+
   MgmtMessageHdr *mh;
 
   mh           = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
