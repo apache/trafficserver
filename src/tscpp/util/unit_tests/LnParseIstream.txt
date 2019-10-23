@@ -1,0 +1,14 @@
+# comment
+
+  # comment
+# The next line has tab-blank-tab
+	 	
+1 2.0   3 text
+#
+###
+ ###
+4 5.0 6 TEXT 	 
+7 8.0
+4 "A	 	quoted string" "A quoted string with an embedded quote here "" and at the end """ TEXT 	 
+
+

@@ -29,7 +29,8 @@ AM_CPPFLAGS += -I$(abs_top_srcdir)/include
 libtscpputil_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
 
 libtscpputil_la_SOURCES = \
-	TextView.cc
+  LnParseIstream.cc \
+  TextView.cc
 
 test_tscpputil_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
@@ -38,6 +39,7 @@ test_tscpputil_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
 test_tscpputil_LDADD = libtscpputil.la
 test_tscpputil_SOURCES = \
 	unit_tests/unit_test_main.cc \
+	unit_tests/test_LnParseIstream.cc \
 	unit_tests/test_MemSpan.cc \
 	unit_tests/test_PostScript.cc \
 	unit_tests/test_TextView.cc \
