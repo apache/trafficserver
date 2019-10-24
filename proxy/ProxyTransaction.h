@@ -50,9 +50,11 @@ public:
   virtual void set_inactivity_timeout(ink_hrtime timeout_in) = 0;
   virtual void cancel_inactivity_timeout()                   = 0;
   virtual int get_transaction_id() const                     = 0;
-  virtual bool allow_half_open() const                       = 0;
-  virtual void increment_client_transactions_stat()          = 0;
-  virtual void decrement_client_transactions_stat()          = 0;
+  virtual int get_transaction_priority_weight() const;
+  virtual int get_transaction_priority_dependence() const;
+  virtual bool allow_half_open() const              = 0;
+  virtual void increment_client_transactions_stat() = 0;
+  virtual void decrement_client_transactions_stat() = 0;
 
   virtual NetVConnection *get_netvc() const;
   virtual bool is_first_transaction() const;
@@ -73,14 +75,11 @@ public:
   virtual void set_proxy_ssn(ProxySession *set_proxy_ssn);
   virtual void set_h2c_upgrade_flag();
 
-  virtual const char *get_protocol_string();
-
-  virtual int populate_protocol(std::string_view *result, int size) const;
-
-  virtual const char *protocol_contains(std::string_view tag_prefix) const;
-
   /// Non-Virtual Methods
   //
+  const char *get_protocol_string();
+  int populate_protocol(std::string_view *result, int size) const;
+  const char *protocol_contains(std::string_view tag_prefix) const;
 
   /// Non-Virtual Accessors
   //
@@ -119,3 +118,98 @@ protected:
 
 private:
 };
+
+////////////////////////////////////////////////////////////
+// INLINE
+
+inline bool
+ProxyTransaction::is_transparent_passthrough_allowed()
+{
+  return upstream_outbound_options.f_transparent_passthrough;
+}
+inline bool
+ProxyTransaction::is_chunked_encoding_supported() const
+{
+  return _proxy_ssn ? _proxy_ssn->is_chunked_encoding_supported() : false;
+}
+inline void
+ProxyTransaction::set_half_close_flag(bool flag)
+{
+  if (_proxy_ssn) {
+    _proxy_ssn->set_half_close_flag(flag);
+  }
+}
+
+inline bool
+ProxyTransaction::get_half_close_flag() const
+{
+  return _proxy_ssn ? _proxy_ssn->get_half_close_flag() : false;
+}
+
+// What are the debug and hooks_enabled used for?  How are they set?
+// Just calling through to proxy session for now
+inline bool
+ProxyTransaction::debug() const
+{
+  return _proxy_ssn ? _proxy_ssn->debug() : false;
+}
+
+inline APIHook *
+ProxyTransaction::hook_get(TSHttpHookID id) const
+{
+  return _proxy_ssn ? _proxy_ssn->hook_get(id) : nullptr;
+}
+
+inline HttpAPIHooks const *
+ProxyTransaction::feature_hooks() const
+{
+  return _proxy_ssn ? _proxy_ssn->feature_hooks() : nullptr;
+}
+
+inline bool
+ProxyTransaction::has_hooks() const
+{
+  return _proxy_ssn->has_hooks();
+}
+
+inline ProxySession *
+ProxyTransaction::get_proxy_ssn()
+{
+  return _proxy_ssn;
+}
+
+inline void
+ProxyTransaction::set_proxy_ssn(ProxySession *new_proxy_ssn)
+{
+  _proxy_ssn = new_proxy_ssn;
+}
+
+inline Http1ServerSession *
+ProxyTransaction::get_server_session() const
+{
+  return _proxy_ssn ? _proxy_ssn->get_server_session() : nullptr;
+}
+
+inline HttpSM *
+ProxyTransaction::get_sm() const
+{
+  return _sm;
+}
+
+inline const char *
+ProxyTransaction::get_protocol_string()
+{
+  return _proxy_ssn ? _proxy_ssn->get_protocol_string() : nullptr;
+}
+
+inline int
+ProxyTransaction::populate_protocol(std::string_view *result, int size) const
+{
+  return _proxy_ssn ? _proxy_ssn->populate_protocol(result, size) : 0;
+}
+
+inline const char *
+ProxyTransaction::protocol_contains(std::string_view tag_prefix) const
+{
+  return _proxy_ssn ? _proxy_ssn->protocol_contains(tag_prefix) : nullptr;
+}

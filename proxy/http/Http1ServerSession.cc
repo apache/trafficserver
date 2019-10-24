@@ -204,12 +204,6 @@ Http1ServerSession::release()
   }
 }
 
-IOBufferReader *
-Http1ServerSession::get_reader()
-{
-  return buf_reader;
-};
-
 NetVConnection *
 Http1ServerSession::get_netvc() const
 {

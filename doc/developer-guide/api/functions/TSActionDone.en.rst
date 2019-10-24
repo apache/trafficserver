@@ -31,3 +31,6 @@ Synopsis
 
 Description
 ===========
+
+This is used to check if the action is done. Returns 1 if the action is done,
+returns 0 otherwise.

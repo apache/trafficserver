@@ -36,20 +36,20 @@ case "$hiredis_base_dir" in
 *":"*)
   hidredis_include="`echo $hiredis_base_dir |sed -e 's/:.*$//'`"
   hiredis_ldflags="`echo $hiredis_base_dir |sed -e 's/^.*://'`"
-  AC_MSG_CHECKING(checking for hiredis includes in $hiredis_include libs in $hiredis_ldflags )
+  AC_MSG_CHECKING(for hiredis includes in $hiredis_include libs in $hiredis_ldflags )
   ;;
 *)
   hiredis_include="$hiredis_base_dir/include"
   hiredis_ldflags="$hiredis_base_dir/lib"
-  AC_MSG_CHECKING(checking for hiredis includes in $hiredis_base_dir)
+  AC_MSG_CHECKING(for hiredis includes in $hiredis_base_dir)
   ;;
 esac
 
 if test -d $hiredis_include && test -d $hiredis_ldflags && test -f $hiredis_include/hiredis/hiredis.h; then
-  AC_MSG_RESULT([ok])
+  AC_MSG_RESULT([yes])
 else
   has_hiredis=0
-  AC_MSG_RESULT([not found])
+  AC_MSG_RESULT([no])
 fi
 
 if test "$has_hiredis" != "0"; then
@@ -77,5 +77,3 @@ if test "$has_hiredis" != "0"; then
   fi
 fi
 ])
-
-

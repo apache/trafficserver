@@ -247,7 +247,7 @@ to clients:
 
    formats:
    - name: mysummary
-     format: '%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>'
+     format: '%<LAST(cqts)>:%<COUNT(*)>:%<SUM(psql)>'
      interval: 10
 
 Dual Output to Compact Binary Logs and ASCII Pipes
@@ -293,7 +293,7 @@ for them to a UNIX pipe that the alerting software can constantly read from.
      accept: cqup MATCH "/nightmare/scenario/dont/touch"
 
    logs:
-   - mode: pipe
+   - mode: ascii_pipe
      format: canaryformat
      filters:
      - canaryfilter
@@ -310,7 +310,7 @@ will default to the OS default size.
 .. code:: yaml
 
    logs:
-   - mode: pipe
+   - mode: ascii_pipe
      format: canaryformat
      filters:
      - canaryfilter

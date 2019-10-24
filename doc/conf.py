@@ -35,7 +35,6 @@ from sphinx import version_info
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('ext'))
 sys.path.insert(0, os.path.abspath('.'))
 
@@ -57,7 +56,7 @@ extensions = [
 ]
 
 # Contains values that are dependent on configure.ac.
-LOCAL_CONFIG = 'ext/local-config.py'
+LOCAL_CONFIG = os.path.join(os.environ['PWD'], "ext", "local-config.py")
 with open(LOCAL_CONFIG) as f :
     exec(compile(f.read(), LOCAL_CONFIG, 'exec'))
 

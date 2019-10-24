@@ -97,6 +97,8 @@ public:
   void increment_client_transactions_stat() override;
   void decrement_client_transactions_stat() override;
   int get_transaction_id() const override;
+  int get_transaction_priority_weight() const override;
+  int get_transaction_priority_dependence() const override;
 
   void clear_inactive_timer();
   void clear_active_timer();
@@ -225,3 +227,106 @@ private:
 };
 
 extern ClassAllocator<Http2Stream> http2StreamAllocator;
+
+////////////////////////////////////////////////////
+// INLINE
+
+inline void
+Http2Stream::mark_milestone(Http2StreamMilestone type)
+{
+  this->_milestones.mark(type);
+}
+
+inline bool
+Http2Stream::is_body_done() const
+{
+  return body_done;
+}
+
+inline void
+Http2Stream::update_sent_count(unsigned num_bytes)
+{
+  bytes_sent += num_bytes;
+  this->write_vio.ndone += num_bytes;
+}
+
+inline Http2StreamId
+Http2Stream::get_id() const
+{
+  return _id;
+}
+
+inline int
+Http2Stream::get_transaction_id() const
+{
+  return _id;
+}
+
+inline Http2StreamState
+Http2Stream::get_state() const
+{
+  return _state;
+}
+
+inline void
+Http2Stream::update_initial_rwnd(Http2WindowSize new_size)
+{
+  this->_client_rwnd = new_size;
+}
+
+inline bool
+Http2Stream::has_trailing_header() const
+{
+  return trailing_header;
+}
+
+inline void
+Http2Stream::set_request_headers(HTTPHdr &h2_headers)
+{
+  _req_header.copy(&h2_headers);
+}
+
+inline // Check entire DATA payload length if content-length: header is exist
+  void
+  Http2Stream::increment_data_length(uint64_t length)
+{
+  data_length += length;
+}
+
+inline bool
+Http2Stream::payload_length_is_valid() const
+{
+  uint32_t content_length = _req_header.get_content_length();
+  return content_length == 0 || content_length == data_length;
+}
+
+inline bool
+Http2Stream::response_is_chunked() const
+{
+  return chunked;
+}
+
+inline bool
+Http2Stream::allow_half_open() const
+{
+  return false;
+}
+
+inline bool
+Http2Stream::is_client_state_writeable() const
+{
+  return _state == Http2StreamState::HTTP2_STREAM_STATE_OPEN || _state == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE ||
+         _state == Http2StreamState::HTTP2_STREAM_STATE_RESERVED_LOCAL;
+}
+
+inline bool
+Http2Stream::is_closed() const
+{
+  return closed;
+}
+
+inline bool
+Http2Stream::is_first_transaction() const
+{
+  return is_first_transaction_flag;
+}

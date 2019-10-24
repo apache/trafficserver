@@ -373,6 +373,9 @@ HttpSM::init()
 
   SET_HANDLER(&HttpSM::main_handler);
 
+  // Remember where this SM is running so it gets returned correctly
+  this->setThreadAffinity(this_ethread());
+
 #ifdef USE_HTTP_DEBUG_LISTS
   ink_mutex_acquire(&debug_sm_list_mutex);
   debug_sm_list.push(this);
@@ -485,7 +488,9 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   // It seems to be possible that the ua_txn pointer will go stale before log entries for this HTTP transaction are
   // generated.  Therefore, collect information that may be needed for logging from the ua_txn object at this point.
   //
-  _client_transaction_id = ua_txn->get_transaction_id();
+  _client_transaction_id                  = ua_txn->get_transaction_id();
+  _client_transaction_priority_weight     = ua_txn->get_transaction_priority_weight();
+  _client_transaction_priority_dependence = ua_txn->get_transaction_priority_dependence();
   {
     auto p = ua_txn->get_proxy_ssn();
 
@@ -2451,6 +2456,15 @@ HttpSM::state_cache_open_write(int event, void *data)
   // INTENTIONAL FALL THROUGH
   // Allow for stale object to be served
   case CACHE_EVENT_OPEN_READ:
+    if (!t_state.cache_info.object_read) {
+      t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
+      // Note that CACHE_LOOKUP_COMPLETE may be invoked more than once
+      // if CACHE_WL_FAIL_ACTION_READ_RETRY is configured
+      ink_assert(t_state.cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY);
+      t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;
+      t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_READ_RETRY;
+      break;
+    }
     // The write vector was locked and the cache_sm retried
     // and got the read vector again.
     cache_sm.cache_read_vc->get_http_info(&t_state.cache_info.object_read);
@@ -3474,12 +3488,10 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     //   server and close the ua
     p->handler_state = HTTP_SM_POST_UA_FAIL;
     set_ua_abort(HttpTransact::ABORTED, event);
-
+    p->vc->do_io_write(nullptr, 0, nullptr);
+    p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
     tunnel.chain_abort_all(p);
     server_session = nullptr;
-    p->read_vio    = nullptr;
-    p->vc->do_io_close(EHTTP_ERROR);
-
     // the in_tunnel status on both the ua & and
     //   it's consumer must already be set to true.  Previously
     //   we were setting it again to true but incorrectly in

@@ -258,7 +258,7 @@ RemapPluginInfo::indicatePreReload()
 }
 
 void
-RemapPluginInfo::indicatePostReload(TSReturnCode reloadStatus)
+RemapPluginInfo::indicatePostReload(TSRemapReloadStatus reloadStatus)
 {
   setPluginContext();
 

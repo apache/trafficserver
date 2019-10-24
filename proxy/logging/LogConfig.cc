@@ -809,14 +809,14 @@ LogConfig::evaluate_config()
     return false;
   }
 
-  Note("logging.yaml loading ...");
+  Note("%s loading ...", path.get());
   YamlLogConfig y(this);
 
   bool zret = y.parse(path.get());
   if (zret) {
-    Note("logging.yaml finished loading");
+    Note("%s finished loading", path.get());
   } else {
-    Note("logging.yaml failed to load");
+    Note("%s failed to load", path.get());
   }
 
   return zret;

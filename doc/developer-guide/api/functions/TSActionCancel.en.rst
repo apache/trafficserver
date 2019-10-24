@@ -30,3 +30,9 @@ Synopsis
 
 Description
 ===========
+
+Cancels the action.
+
+.. note::
+    The argument :arg:`actionp` must be checked prior to calling this function,
+    since the function assumes :arg:`actionp` is a valid action pointer.

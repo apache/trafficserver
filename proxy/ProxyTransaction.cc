@@ -124,58 +124,6 @@ ProxyTransaction::is_first_transaction() const
 {
   return _proxy_ssn->get_transact_count() == 1;
 }
-// Ask your session if this is allowed
-bool
-ProxyTransaction::is_transparent_passthrough_allowed()
-{
-  return upstream_outbound_options.f_transparent_passthrough;
-}
-
-bool
-ProxyTransaction::is_chunked_encoding_supported() const
-{
-  return _proxy_ssn ? _proxy_ssn->is_chunked_encoding_supported() : false;
-}
-
-void
-ProxyTransaction::set_half_close_flag(bool flag)
-{
-  if (_proxy_ssn) {
-    _proxy_ssn->set_half_close_flag(flag);
-  }
-}
-
-bool
-ProxyTransaction::get_half_close_flag() const
-{
-  return _proxy_ssn ? _proxy_ssn->get_half_close_flag() : false;
-}
-
-// What are the debug and hooks_enabled used for?  How are they set?
-// Just calling through to proxy session for now
-bool
-ProxyTransaction::debug() const
-{
-  return _proxy_ssn ? _proxy_ssn->debug() : false;
-}
-
-APIHook *
-ProxyTransaction::hook_get(TSHttpHookID id) const
-{
-  return _proxy_ssn ? _proxy_ssn->hook_get(id) : nullptr;
-}
-
-HttpAPIHooks const *
-ProxyTransaction::feature_hooks() const
-{
-  return _proxy_ssn ? _proxy_ssn->feature_hooks() : nullptr;
-}
-
-bool
-ProxyTransaction::has_hooks() const
-{
-  return _proxy_ssn->has_hooks();
-}
 
 void
 ProxyTransaction::set_session_active()
@@ -247,49 +195,19 @@ ProxyTransaction::set_outbound_transparent(bool flag)
   upstream_outbound_options.f_outbound_transparent = flag;
 }
 
-ProxySession *
-ProxyTransaction::get_proxy_ssn()
-{
-  return _proxy_ssn;
-}
-
-void
-ProxyTransaction::set_proxy_ssn(ProxySession *new_proxy_ssn)
-{
-  _proxy_ssn = new_proxy_ssn;
-}
-
 void
 ProxyTransaction::set_h2c_upgrade_flag()
 {
 }
 
-Http1ServerSession *
-ProxyTransaction::get_server_session() const
+int
+ProxyTransaction::get_transaction_priority_weight() const
 {
-  return _proxy_ssn ? _proxy_ssn->get_server_session() : nullptr;
-}
-
-HttpSM *
-ProxyTransaction::get_sm() const
-{
-  return _sm;
-}
-
-const char *
-ProxyTransaction::get_protocol_string()
-{
-  return _proxy_ssn ? _proxy_ssn->get_protocol_string() : nullptr;
+  return 0;
 }
 
 int
-ProxyTransaction::populate_protocol(std::string_view *result, int size) const
+ProxyTransaction::get_transaction_priority_dependence() const
 {
-  return _proxy_ssn ? _proxy_ssn->populate_protocol(result, size) : 0;
-}
-
-const char *
-ProxyTransaction::protocol_contains(std::string_view tag_prefix) const
-{
-  return _proxy_ssn ? _proxy_ssn->protocol_contains(tag_prefix) : nullptr;
+  return 0;
 }

@@ -62,7 +62,7 @@ int
 CB_clientcert(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
   TSVConn ssl_vc         = reinterpret_cast<TSVConn>(edata);
-  TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
+  TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
   SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
   X509 *cert             = SSL_get_peer_certificate(ssl);
   TSDebug(PLUGIN_NAME, "plugin verify_cert verifying client certificate");

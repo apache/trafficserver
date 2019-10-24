@@ -57,7 +57,7 @@ public:
   /// Reload function, called to inform the plugin that configuration is going to be reloaded.
   using PreReload_F = void();
   /// Reload function, called to inform the plugin that configuration is done reloading.
-  using PostReload_F = void(TSReturnCode);
+  using PostReload_F = void(TSRemapReloadStatus);
   /// Called when remapping for a transaction has finished.
   using Done_F = void();
   /// Create an rule instance.
@@ -99,7 +99,7 @@ public:
 
   /* Used by traffic server core to indicate configuration reload */
   virtual void indicatePreReload();
-  virtual void indicatePostReload(TSReturnCode reloadStatus);
+  virtual void indicatePostReload(TSRemapReloadStatus reloadStatus);
 
 protected:
   /* Utility to be used only with unit testing */

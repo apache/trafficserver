@@ -1,0 +1,33 @@
+{
+	"iss": "Example Issuer",
+	"token_lifetime": 90,
+	"aud": "Caching Software",
+    "cdnistt": true,
+    "cdniets": 30,
+	"keys": [
+		{
+			"alg": "HS256",
+			"kid": 0,
+			"kty": "oct",
+			"k": "SECRET1"
+		},
+		{
+			"alg": "HS256",
+			"kid": 1,
+			"kty": "oct",
+			"k": "SECRET2"
+		},
+		{
+			"alg": "HS256",
+			"kid": 2,
+			"kty": "oct",
+			"k": "SECRET3"
+		},
+		{
+			"alg": "HS256",
+			"kid": 3,
+			"kty": "oct",
+			"k": "SECRET4"
+		}
+	]
+}

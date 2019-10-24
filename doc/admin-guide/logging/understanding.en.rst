@@ -151,7 +151,7 @@ aforementioned aggregate functions and the specification of an interval, as so:
 
    formats:
    - name: mysummary
-     format: '%<operator(field)> : %<operator(field)>'
+     format: '%<operator(field)> , %<operator(field)>'
      interval: n
 
 The interval itself is given with *n* as the number of seconds for each period

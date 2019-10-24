@@ -422,17 +422,50 @@ SCENARIO("config reload", "[plugin][core]")
     bool result = loadPlugin(plugin, error, debugObject);
     CHECK(true == result);
 
-    WHEN("'config reload' is called")
+    WHEN("'config reload' failed")
     {
       debugObject->clear();
 
       plugin->indicatePreReload();
-      plugin->indicatePostReload(TS_SUCCESS);
+      plugin->indicatePostReload(TSREMAP_CONFIG_RELOAD_FAILURE);
 
       THEN("expect it to run")
       {
         CHECK(1 == debugObject->preReloadConfigCalled);
         CHECK(1 == debugObject->postReloadConfigCalled);
+        CHECK(TSREMAP_CONFIG_RELOAD_FAILURE == debugObject->postReloadConfigStatus);
+      }
+      cleanupSandBox(plugin);
+    }
+
+    WHEN("'config reload' is successful and the plugin is part of the new configuration")
+    {
+      debugObject->clear();
+
+      plugin->indicatePreReload();
+      plugin->indicatePostReload(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED);
+
+      THEN("expect it to run")
+      {
+        CHECK(1 == debugObject->preReloadConfigCalled);
+        CHECK(1 == debugObject->postReloadConfigCalled);
+        CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED == debugObject->postReloadConfigStatus);
+      }
+      cleanupSandBox(plugin);
+    }
+
+    WHEN("'config reload' is successful and the plugin is part of the new configuration")
+    {
+      debugObject->clear();
+
+      plugin->indicatePreReload();
+      plugin->indicatePostReload(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED);
+
+      THEN("expect it to run")
+      {
+        CHECK(1 == debugObject->preReloadConfigCalled);
+        CHECK(1 == debugObject->postReloadConfigCalled);
+        CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED == debugObject->postReloadConfigStatus);
       }
       cleanupSandBox(plugin);
     }
