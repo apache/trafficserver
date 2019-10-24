@@ -400,7 +400,7 @@ main(int argc, const char **argv)
   version.setup(PACKAGE_NAME, "traffic_top", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   const ArgumentDescription argument_descriptions[] = {
-    {"sleep", 's', "Enable debugging output", "I", &sleep_time, nullptr, nullptr},
+    {"sleep", 's', "Sets the delay between updates (in seconds)", "I", &sleep_time, nullptr, nullptr},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION(),
     RUNROOT_ARGUMENT_DESCRIPTION(),
