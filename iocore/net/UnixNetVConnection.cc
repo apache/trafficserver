@@ -1176,7 +1176,6 @@ UnixNetVConnection::populate(Connection &con_in, Continuation *c, void *arg)
   }
 
   if (h->startIO(this) < 0) {
-    con_in.move(this->con);
     Debug("iocore_net", "populate : Failed to add to epoll list");
     return EVENT_ERROR;
   }
@@ -1370,71 +1369,44 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
     return this;
   }
 
-  // Lock the NetHandler first in order to put the new NetVC into NetHandler and InactivityCop.
-  // It is safe and no performance issue to get the mutex lock for a NetHandler of current ethread.
-  SCOPED_MUTEX_LOCK(lock, client_nh->mutex, t);
+  Connection hold_con;
+  hold_con.move(this->con);
+  SSLNetVConnection *sslvc = dynamic_cast<SSLNetVConnection *>(this);
 
-  // Try to get the mutex lock for NetHandler of this NetVC
-  MUTEX_TRY_LOCK(lock_src, this->nh->mutex, t);
-  if (lock_src.is_locked()) {
-    // Detach this NetVC from original NetHandler & InactivityCop.
-    this->nh->stopCop(this);
-    this->nh->stopIO(this);
-    // Put this NetVC into current NetHandler & InactivityCop.
-    this->thread = t;
-    client_nh->startIO(this);
-    client_nh->startCop(this);
-    // Move this NetVC to current EThread Successfully.
-    return this;
+  SSL *save_ssl = (sslvc) ? sslvc->ssl : nullptr;
+  if (save_ssl) {
+    SSLNetVCDetach(sslvc->ssl);
+    sslvc->ssl = nullptr;
   }
 
-  // Failed to get the mutex lock for original NetHandler.
-  // Try to migrate it by create a new NetVC and then move con.fd and ssl ctx.
-  SSLNetVConnection *sslvc = dynamic_cast<SSLNetVConnection *>(this);
-  SSL *save_ssl            = (sslvc) ? sslvc->ssl : nullptr;
-
-  UnixNetVConnection *ret_vc = nullptr;
+  // Do_io_close will signal the VC to be freed on the original thread
+  // Since we moved the con context, the fd will not be closed
+  // Go ahead and remove the fd from the original thread's epoll structure, so it is not
+  // processed on two threads simultaneously
+  this->ep.stop();
+  this->do_io_close();
 
   // Create new VC:
   if (save_ssl) {
     SSLNetVConnection *sslvc = static_cast<SSLNetVConnection *>(sslNetProcessor.allocate_vc(t));
-    if (sslvc->populate(this->con, cont, save_ssl) != EVENT_DONE) {
-      sslvc->free(t);
-      sslvc  = nullptr;
-      ret_vc = this;
+    if (sslvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
+      sslvc->do_io_close();
+      sslvc = nullptr;
     } else {
       sslvc->set_context(get_context());
-      ret_vc = dynamic_cast<UnixNetVConnection *>(sslvc);
     }
+    return sslvc;
+    // Update the SSL fields
   } else {
     UnixNetVConnection *netvc = static_cast<UnixNetVConnection *>(netProcessor.allocate_vc(t));
-    if (netvc->populate(this->con, cont, save_ssl) != EVENT_DONE) {
-      netvc->free(t);
-      netvc  = nullptr;
-      ret_vc = this;
+    if (netvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
+      netvc->do_io_close();
+      netvc = nullptr;
     } else {
       netvc->set_context(get_context());
-      ret_vc = netvc;
     }
+    return netvc;
   }
-
-  // clear con.fd and ssl ctx from this NetVC since a new NetVC is created.
-  if (ret_vc != this) {
-    if (save_ssl) {
-      SSLNetVCDetach(sslvc->ssl);
-      sslvc->ssl = nullptr;
-    }
-    ink_assert(this->con.fd == NO_FD);
-
-    // Do_io_close will signal the VC to be freed on the original thread
-    // Since we moved the con context, the fd will not be closed
-    // Go ahead and remove the fd from the original thread's epoll structure, so it is not
-    // processed on two threads simultaneously
-    this->ep.stop();
-    this->do_io_close();
-  }
-
-  return ret_vc;
 }
 
 void

@@ -649,7 +649,7 @@ TS_ADDTO(AM_CFLAGS, [-std=gnu99])
 ac_save_CXX="$CXX"
 CXX="$CXX -std=c++17"
 AC_LANG_PUSH(C++)
-AC_MSG_CHECKING([checking whether $CXX supports -std=c++17])
+AC_MSG_CHECKING([whether $CXX supports -std=c++17])
 AC_COMPILE_IFELSE([
     AC_LANG_PROGRAM([
 #if __cplusplus < 201703L
@@ -813,7 +813,7 @@ AX_PROG_PERL_MODULES([ExtUtils::MakeMaker], AM_CONDITIONAL([BUILD_PERL_LIB], [tr
 )
 
 # Check for GNU-style -On optimization flags
-AC_MSG_CHECKING([checking whether to auto-set compiler optimization flags])
+AC_MSG_CHECKING([whether to auto-set compiler optimization flags])
 has_optimizer_flags=`echo "$CFLAGS $CXXFLAGS" | ${AWK} '$0 !~ /-O.?/{print "no"}'`
 AS_IF([test "x${has_optimizer_flags}" = "xno"],
         [

@@ -114,12 +114,6 @@ Http1Transaction::do_io_shutdown(ShutdownHowTo_t howto)
 }
 
 void
-Http1Transaction::set_reader(IOBufferReader *reader)
-{
-  _reader = reader;
-}
-
-void
 Http1Transaction::set_active_timeout(ink_hrtime timeout_in)
 {
   if (_proxy_ssn)

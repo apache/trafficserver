@@ -72,8 +72,10 @@ invoked by current and all previous still used configurations. This is an option
 
 :func:`TSRemapPostConfigReload` is called to indicate the end of the the new remap configuration
 load. It is called on the newly and previously loaded plugins, invoked by the new, current and
-previous still used configurations. It also indicates if the configuration reload was successful
-by passing :macro:`TS_SUCCESS` or :macro:`TS_ERROR`. This is an optional entry point.
+previous still used configurations. It also indicates wheather the configuration reload was successful
+by passing :macro:`TSREMAP_CONFIG_RELOAD_FAILURE` in case of failure and to notify the plugins if they
+are going to be part of the new configuration by passing :macro:`TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED`
+or :macro:`TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED`. This is an optional entry point.
 
 Generally speaking, calls to these functions are mutually exclusive. The exception
 is for functions which take an HTTP transaction as a parameter. Calls to these
@@ -110,6 +112,20 @@ Types
 
         The remapping attempt in general failed and the transaction should fail with an
         error return to the user agent.
+
+.. type:: TSRemapReloadStatus
+
+    .. macro:: TSREMAP_CONFIG_RELOAD_FAILURE
+
+        Notify the plugin that configuration parsing failed.
+
+    .. macro:: TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED
+
+        Configuration parsing succeeded and plugin was used by the new configuration.
+
+    .. macro:: TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED
+
+        Configuration parsing succeeded but plugin was NOT used by the new configuration.
 
 Return Values
 =============

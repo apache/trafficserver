@@ -34,6 +34,7 @@
 #include <ctime>
 
 #include "ts/apidefs.h"
+#include "ts/remap.h"
 #include "tscore/ts_file.h"
 namespace fs = ts::file;
 
@@ -75,10 +76,10 @@ public:
   using PluginList = ts::IntrusiveDList<PluginDso::Linkage>;
 
   /* Methods to be called when processing a list of plugins, to be overloaded by the remap or the global plugins correspondingly */
-  virtual void indicatePreReload()                           = 0;
-  virtual void indicatePostReload(TSReturnCode reloadStatus) = 0;
-  virtual bool init(std::string &error)                      = 0;
-  virtual void done()                                        = 0;
+  virtual void indicatePreReload()                                  = 0;
+  virtual void indicatePostReload(TSRemapReloadStatus reloadStatus) = 0;
+  virtual bool init(std::string &error)                             = 0;
+  virtual void done()                                               = 0;
 
   void acquire();
   void release();

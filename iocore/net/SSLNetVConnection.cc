@@ -1255,6 +1255,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       unsigned len               = 0;
 
       increment_ssl_version_metric(SSL_version(ssl));
+      fetch_ssl_curve();
 
       // If it's possible to negotiate both NPN and ALPN, then ALPN
       // is preferred since it is the server's preference.  The server
@@ -1803,6 +1804,14 @@ SSLNetVConnection::increment_ssl_version_metric(int version) const
   default:
     Debug("ssl", "Unrecognized SSL version %d", version);
     break;
+  }
+}
+
+void
+SSLNetVConnection::fetch_ssl_curve()
+{
+  if (!getSSLSessionCacheHit()) {
+    setSSLCurveNID(SSLGetCurveNID(ssl));
   }
 }
 

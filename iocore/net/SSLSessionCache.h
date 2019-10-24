@@ -32,6 +32,10 @@
 
 #define SSL_MAX_SESSION_SIZE 256
 
+struct ssl_session_cache_exdata {
+  ssl_curve_id curve;
+};
+
 struct SSLSessionID : public TSSslSessionID {
   SSLSessionID(const unsigned char *s, size_t l)
   {
@@ -115,9 +119,10 @@ public:
   SSLSessionID session_id;
   Ptr<IOBufferData> asn1_data; /* this is the ASN1 representation of the SSL_CTX */
   size_t len_asn1_data;
+  Ptr<IOBufferData> extra_data;
 
-  SSLSession(const SSLSessionID &id, const Ptr<IOBufferData> &ssl_asn1_data, size_t len_asn1)
-    : session_id(id), asn1_data(ssl_asn1_data), len_asn1_data(len_asn1)
+  SSLSession(const SSLSessionID &id, const Ptr<IOBufferData> &ssl_asn1_data, size_t len_asn1, Ptr<IOBufferData> &exdata)
+    : session_id(id), asn1_data(ssl_asn1_data), len_asn1_data(len_asn1), extra_data(exdata)
   {
   }
 
@@ -129,8 +134,8 @@ class SSLSessionBucket
 public:
   SSLSessionBucket();
   ~SSLSessionBucket();
-  void insertSession(const SSLSessionID &, SSL_SESSION *ctx);
-  bool getSession(const SSLSessionID &, SSL_SESSION **ctx);
+  void insertSession(const SSLSessionID &, SSL_SESSION *ctx, SSL *ssl);
+  bool getSession(const SSLSessionID &, SSL_SESSION **ctx, ssl_session_cache_exdata **data);
   int getSessionBuffer(const SSLSessionID &, char *buffer, int &len);
   void removeSession(const SSLSessionID &);
 
@@ -146,9 +151,9 @@ private:
 class SSLSessionCache
 {
 public:
-  bool getSession(const SSLSessionID &sid, SSL_SESSION **sess) const;
+  bool getSession(const SSLSessionID &sid, SSL_SESSION **sess, ssl_session_cache_exdata **data) const;
   int getSessionBuffer(const SSLSessionID &sid, char *buffer, int &len) const;
-  void insertSession(const SSLSessionID &sid, SSL_SESSION *sess);
+  void insertSession(const SSLSessionID &sid, SSL_SESSION *sess, SSL *ssl);
   void removeSession(const SSLSessionID &sid);
   SSLSessionCache();
   ~SSLSessionCache();

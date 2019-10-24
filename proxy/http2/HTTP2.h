@@ -390,6 +390,7 @@ public:
   static float min_avg_window_update;
   static uint32_t con_slow_log_threshold;
   static uint32_t stream_slow_log_threshold;
+  static uint32_t header_table_size_limit;
 
   static void init();
 };

@@ -977,7 +977,7 @@ Here is an example:
     end
 
 
-`TOP <#lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.client_request.get_ssl_protocol
 -----------------------------------------------
@@ -997,7 +997,7 @@ Here is an example:
     end
 
 
-`TOP <#lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.client_request.get_ssl_cipher
 -----------------------------------------------
@@ -1017,7 +1017,7 @@ Here is an example:
     end
 
 
-`TOP <#lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.client_request.get_ssl_curve
 -----------------------------------------------
@@ -1037,7 +1037,7 @@ Here is an example:
     end
 
 
-`TOP <#lua-plugin>`_
+:ref:`TOP <admin-plugins-ts-lua>`
 
 ts.http.set_cache_url
 ---------------------

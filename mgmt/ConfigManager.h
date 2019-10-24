@@ -31,6 +31,11 @@ class TextBuffer;
 
 class ExpandingArray;
 
+enum RollBackCheckType {
+  ROLLBACK_CHECK_AND_UPDATE,
+  ROLLBACK_CHECK_ONLY,
+};
+
 //
 //  class ConfigManager
 //
@@ -66,7 +71,7 @@ public:
   };
 
   // Check if a file has changed, automatically holds the lock. Used by FileManager.
-  bool checkForUserUpdate();
+  bool checkForUserUpdate(RollBackCheckType);
 
   // These are getters, for FileManager to get info about a particular configuration.
   const char *

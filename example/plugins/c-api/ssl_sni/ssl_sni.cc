@@ -49,7 +49,7 @@ int
 CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
   TSVConn ssl_vc         = reinterpret_cast<TSVConn>(edata);
-  TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
+  TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
   SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (servername != nullptr) {

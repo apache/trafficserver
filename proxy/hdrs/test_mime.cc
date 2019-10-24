@@ -52,6 +52,71 @@ REGRESSION_TEST(MIME)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatu
   hdr.destroy();
 }
 
+REGRESSION_TEST(MIME_GET_HOST_PORT_VALUES)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  MIMEHdr hdr;
+  hdr.create(NULL);
+
+  const char *header_value;
+  const char *host;
+  int host_len;
+  const char *port;
+  int port_len;
+
+  header_value = "host";
+  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
+  box.check(host_len == 4, "host length doesn't match");
+  box.check(strncmp(host, "host", host_len) == 0, "host string doesn't match");
+  box.check(port_len == 0, "port length doesn't match");
+  box.check(port == nullptr, "port string doesn't match");
+
+  header_value = "host:";
+  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
+  box.check(host_len == 4, "host length doesn't match");
+  box.check(strncmp(host, "host", host_len) == 0, "host string doesn't match");
+  box.check(port_len == 0, "port length doesn't match");
+  box.check(port == nullptr, "port string doesn't match");
+
+  header_value = "[host]";
+  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
+  box.check(host_len == 6, "host length doesn't match");
+  box.check(strncmp(host, "[host]", host_len) == 0, "host string doesn't match");
+  box.check(port_len == 0, "port length doesn't match");
+  box.check(port == nullptr, "port string doesn't match");
+
+  header_value = "host:port";
+  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
+  box.check(host_len == 4, "host length doesn't match");
+  box.check(strncmp(host, "host", host_len) == 0, "host string doesn't match");
+  box.check(port_len == 4, "port length doesn't match");
+  box.check(strncmp(port, "port", port_len) == 0, "port string doesn't match");
+
+  header_value = "[host]:port";
+  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
+  box.check(host_len == 6, "host length doesn't match");
+  box.check(strncmp(host, "[host]", host_len) == 0, "host string doesn't match");
+  box.check(port_len == 4, "port length doesn't match");
+  box.check(strncmp(port, "port", port_len) == 0, "port string doesn't match");
+
+  header_value = "[host]:";
+  hdr.value_set("Host", 4, header_value, strlen(header_value));
+  hdr.get_host_port_values(&host, &host_len, &port, &port_len);
+  box.check(host_len == 6, "host length doesn't match");
+  box.check(strncmp(host, "[host]", host_len) == 0, "host string doesn't match");
+  box.check(port_len == 0, "port length doesn't match");
+  box.check(port == nullptr, "port string doesn't match");
+
+  hdr.destroy();
+}
+
 REGRESSION_TEST(MIME_PARSERS)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   const char *end;

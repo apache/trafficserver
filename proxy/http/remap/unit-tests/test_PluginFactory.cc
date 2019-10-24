@@ -556,7 +556,7 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
   {
     WHEN("(1) signal pre-new-config-load, (2) signal post-new-config-load, (3) old-config deactivate")
     {
-      /* Simulate configuration without plugins - an unused factory */
+      /* Simulate configuration with 1 factory and 1 plugin */
       setupConfigPathTest(configName1, buildPath, uuid_t1, effectivePath1, runtimePath1, 1556825556);
       PluginFactoryUnitTest *factory1 = getFactory(uuid_t1);
       RemapPluginInst *plugin1        = factory1->getRemapPlugin(configName1, 0, nullptr, error);
@@ -581,19 +581,19 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
 
         /* Assume (re)load was done OK and test */
         debugObject->clear();
-        factory1->indicatePostReload(TS_SUCCESS);
+        factory1->indicatePostReload(/* reload succeeded */ true);
         CHECK(0 == debugObject->deleteInstanceCalled);
         CHECK(0 == debugObject->doneCalled);
         CHECK(1 == debugObject->postReloadConfigCalled);
-        CHECK(true == debugObject->postReloadConfigSuccess);
+        CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED == debugObject->postReloadConfigStatus);
 
         /* Assume (re)load failed and test */
         debugObject->clear();
-        factory1->indicatePostReload(TS_ERROR);
+        factory1->indicatePostReload(/* reload succeeded */ false);
         CHECK(0 == debugObject->deleteInstanceCalled);
         CHECK(0 == debugObject->doneCalled);
         CHECK(1 == debugObject->postReloadConfigCalled);
-        CHECK(false == debugObject->postReloadConfigSuccess);
+        CHECK(TSREMAP_CONFIG_RELOAD_FAILURE == debugObject->postReloadConfigStatus);
 
         /* ... swap the new and the old config ... */
 
@@ -613,7 +613,7 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
   {
     WHEN("(1) signal pre-new-config-load, (2) signal post-new-config-load, (3) old-config deactivate")
     {
-      /* Simulate configuration without plugins - an unused factory */
+      /* Simulate configuration with 1 factories and 2 plugin */
       setupConfigPathTest(configName1, buildPath, uuid_t1, effectivePath1, runtimePath1, 1556825556);
       setupConfigPathTest(configName2, buildPath, uuid_t1, effectivePath2, runtimePath2, 1556825556, /* append */ true);
       PluginFactoryUnitTest *factory1 = getFactory(uuid_t1);
@@ -646,28 +646,28 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
         /* Assume (re)load was done OK */
         debugObject1->clear();
         debugObject2->clear();
-        factory1->indicatePostReload(TS_SUCCESS);
+        factory1->indicatePostReload(/* reload succeeded */ true);
         CHECK(0 == debugObject1->deleteInstanceCalled);
         CHECK(0 == debugObject1->doneCalled);
         CHECK(1 == debugObject1->postReloadConfigCalled);
-        CHECK(true == debugObject1->postReloadConfigSuccess);
+        CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED == debugObject1->postReloadConfigStatus);
         CHECK(0 == debugObject2->deleteInstanceCalled);
         CHECK(0 == debugObject2->doneCalled);
         CHECK(1 == debugObject2->postReloadConfigCalled);
-        CHECK(true == debugObject2->postReloadConfigSuccess);
+        CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED == debugObject2->postReloadConfigStatus);
 
         /* Assume (re)load failed */
         debugObject1->clear();
         debugObject2->clear();
-        factory1->indicatePostReload(TS_ERROR);
+        factory1->indicatePostReload(/* reload succeeded */ false);
         CHECK(0 == debugObject1->deleteInstanceCalled);
         CHECK(0 == debugObject1->doneCalled);
         CHECK(1 == debugObject1->postReloadConfigCalled);
-        CHECK(false == debugObject1->postReloadConfigSuccess);
+        CHECK(TSREMAP_CONFIG_RELOAD_FAILURE == debugObject1->postReloadConfigStatus);
         CHECK(0 == debugObject2->deleteInstanceCalled);
         CHECK(0 == debugObject2->doneCalled);
         CHECK(1 == debugObject2->postReloadConfigCalled);
-        CHECK(false == debugObject2->postReloadConfigSuccess);
+        CHECK(TSREMAP_CONFIG_RELOAD_FAILURE == debugObject2->postReloadConfigStatus);
 
         /* ... swap the new and the old config ... */
 
@@ -691,7 +691,7 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
   {
     WHEN("indicating de-activation of the factories")
     {
-      /* Simulate configuration without plugins - an unused factory */
+      /* Simulate configuration with 2 factories and 1 plugin */
       setupConfigPathTest(configName1, buildPath, uuid_t1, effectivePath1, runtimePath1, 1556825556);
       PluginFactoryUnitTest *factory1 = getFactory(uuid_t1);
       PluginFactoryUnitTest *factory2 = getFactory(uuid_t2);
@@ -719,6 +719,65 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
         CHECK(0 == debugObject1->preReloadConfigCalled);
 
         delete factory1;
+      }
+
+      clean();
+    }
+  }
+
+  GIVEN("configuration with 2 plugin loaded by 2 factories")
+  {
+    WHEN("2 plugins are loaded by the 1st factory and only one of them loaded by the 2nd factory")
+    {
+      /* Simulate configuration with 2 factories and 2 different plugins */
+      setupConfigPathTest(configName1, buildPath, uuid_t1, effectivePath1, runtimePath1, 1556825556, /* append */ false);
+      setupConfigPathTest(configName2, buildPath, uuid_t1, effectivePath2, runtimePath2, 1556825556, /* append */ true);
+      PluginFactoryUnitTest *factory1 = getFactory(uuid_t1);
+      PluginFactoryUnitTest *factory2 = getFactory(uuid_t2);
+
+      /* 2 plugins loaded by the 1st factory */
+      RemapPluginInst *pluginInst1 = factory1->getRemapPlugin(configName1, 0, nullptr, error);
+      RemapPluginInst *pluginInst2 = factory1->getRemapPlugin(configName2, 0, nullptr, error);
+
+      /* only 1 plugin loaded by the 2st factory */
+      RemapPluginInst *pluginInst3 = factory2->getRemapPlugin(configName1, 0, nullptr, error);
+
+      /* pluginInst1 and pluginInst3 should be using the same plugin DSO named configName1
+       * pluginInst2 should be using plugin DSO named configName 2*/
+      CHECK_FALSE(nullptr == pluginInst1);
+      CHECK_FALSE(nullptr == pluginInst2);
+      CHECK_FALSE(nullptr == pluginInst3);
+      CHECK(&pluginInst1->_plugin == &pluginInst3->_plugin);
+
+      /* Get test objects for the 2 plugins used by the 3 instances from the 2 factories */
+      PluginDebugObject *debugObject1 = getDebugObject(pluginInst1->_plugin);
+      PluginDebugObject *debugObject2 = getDebugObject(pluginInst2->_plugin);
+
+      THEN(
+        "expect the plugin that is not loaded by the second factory to receive 'plugin unused' notification from the 2nd factory")
+      {
+        /* Factory 1: reload was OK and both plugins were part of the configuration that used/instantiated that factory */
+        debugObject1->clear();
+        debugObject2->clear();
+
+        factory1->indicatePostReload(/* reload succeeded */ true);
+        CHECK(1 == debugObject1->postReloadConfigCalled);
+        CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED == debugObject1->postReloadConfigStatus);
+        CHECK(1 == debugObject2->postReloadConfigCalled);
+        CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED == debugObject2->postReloadConfigStatus);
+
+        /* Factory 2: (re)load was OK and only 1 plugin was part of the configuration that used/instantiated that factory */
+        debugObject1->clear();
+        debugObject2->clear();
+
+        factory2->indicatePostReload(/* reload succeeded */ true);
+        CHECK(1 == debugObject1->postReloadConfigCalled);
+        CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED == debugObject1->postReloadConfigStatus);
+        CHECK(1 == debugObject2->postReloadConfigCalled);
+        CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED == debugObject2->postReloadConfigStatus);
+
+        delete factory1;
+        delete factory2;
       }
 
       clean();
