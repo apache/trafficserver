@@ -670,7 +670,7 @@ CacheProcessor::start_internal(int flags)
         }
 
         // It's actually common that the hardware I/O size is larger than the store block size as
-        // storage systems increasingly want larger I/Os. For example, on OS X, the filesystem block
+        // storage systems increasingly want larger I/Os. For example, on macOS, the filesystem block
         // size is always reported as 1MB.
         if (sd->hw_sector_size <= 0 || sector_size > STORE_BLOCK_SIZE) {
           Note("resetting hardware sector size from %d to %d", sector_size, STORE_BLOCK_SIZE);
