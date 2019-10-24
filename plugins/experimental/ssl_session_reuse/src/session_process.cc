@@ -191,7 +191,7 @@ add_session(char *session_id, int session_id_len, const std::string &encrypted_s
   if (sid.len > sizeof(sid.bytes)) {
     sid.len = sizeof(sid.bytes);
   }
-  TSSslSessionInsert(&sid, reinterpret_cast<TSSslSession>(sess));
+  TSSslSessionInsert(&sid, reinterpret_cast<TSSslSession>(sess), nullptr);
   // Free the sesison object created by d2i_SSL_SESSION
   // We should make an API that just takes the ASN buffer
   SSL_SESSION_free(sess);

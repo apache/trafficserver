@@ -1262,7 +1262,7 @@ TSReturnCode TSVConnProtocolEnable(TSVConn connp, const char *protocol_name);
 tsapi int TSVConnIsSsl(TSVConn sslp);
 tsapi TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
 tsapi int TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
-tsapi TSReturnCode TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session);
+tsapi TSReturnCode TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn);
 tsapi TSReturnCode TSSslSessionRemove(const TSSslSessionID *session_id);
 
 /* --------------------------------------------------------------------------
