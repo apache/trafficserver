@@ -409,12 +409,11 @@ public:
   bool protocol_mask_set = false;
   unsigned long protocol_mask;
 
-#if TS_HAS_TLS_EARLY_DATA
+  // early data related stuff
   bool early_data_finish            = false;
   MIOBuffer *early_data_buf         = nullptr;
   IOBufferReader *early_data_reader = nullptr;
-  bool read_from_early_data         = false;
-#endif
+  int64_t read_from_early_data      = 0;
 
   // Only applies during the VERIFY certificate hooks (client and server side)
   // Means to give the plugin access to the data structure passed in during the underlying

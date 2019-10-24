@@ -124,6 +124,8 @@ private:
 
   int released_transactions = 0;
 
+  int64_t read_from_early_data = 0;
+
 public:
   // Link<Http1ClientSession> debug_link;
   LINK(Http1ClientSession, debug_link);

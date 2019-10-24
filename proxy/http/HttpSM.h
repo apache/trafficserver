@@ -214,7 +214,7 @@ public:
   HttpVCTableEntry *get_ua_entry();     // Added to get the ua_entry pointer  - YTS-TEAM
   HttpVCTableEntry *get_server_entry(); // Added to get the server_entry pointer
 
-  void init();
+  void init(bool from_early_data = false);
 
   void attach_client_session(ProxyTransaction *client_vc_arg, IOBufferReader *buffer_reader);
 
@@ -634,6 +634,7 @@ private:
   PostDataBuffers _postbuf;
   int _client_connection_id = -1, _client_transaction_id = -1;
   int _client_transaction_priority_weight = -1, _client_transaction_priority_dependence = -1;
+  bool _from_early_data = false;
 };
 
 // Function to get the cache_sm object - YTS Team, yamsat

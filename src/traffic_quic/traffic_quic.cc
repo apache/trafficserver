@@ -312,7 +312,7 @@ HttpSM::attach_client_session(ProxyTransaction *, IOBufferReader *)
 }
 
 void
-HttpSM::init()
+HttpSM::init(bool from_early_data)
 {
   ink_abort("do not call stub");
 }

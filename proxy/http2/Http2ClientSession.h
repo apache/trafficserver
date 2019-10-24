@@ -80,8 +80,11 @@ struct Http2UpgradeContext {
 class Http2Frame
 {
 public:
-  Http2Frame(const Http2FrameHeader &h, IOBufferReader *r) : hdr(h), ioreader(r) {}
-  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags) : hdr({0, (uint8_t)type, flags, streamid}) {}
+  Http2Frame(const Http2FrameHeader &h, IOBufferReader *r, bool e = false) : hdr(h), ioreader(r), from_early_data(e) {}
+  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags, bool e = false)
+    : hdr({0, (uint8_t)type, flags, streamid}), from_early_data(e)
+  {
+  }
 
   IOBufferReader *
   reader() const
@@ -147,6 +150,12 @@ public:
     }
   }
 
+  bool
+  is_from_early_data() const
+  {
+    return this->from_early_data;
+  }
+
   // noncopyable
   Http2Frame(Http2Frame &) = delete;
   Http2Frame &operator=(const Http2Frame &) = delete;
@@ -155,6 +164,7 @@ private:
   Http2FrameHeader hdr;       // frame header
   Ptr<IOBufferBlock> ioblock; // frame payload
   IOBufferReader *ioreader = nullptr;
+  bool from_early_data     = false;
 };
 
 class Http2ClientSession : public ProxySession
@@ -264,6 +274,9 @@ private:
 
   Event *_reenable_event = nullptr;
   int _n_frame_read      = 0;
+
+  int64_t read_from_early_data   = 0;
+  bool cur_frame_from_early_data = false;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;

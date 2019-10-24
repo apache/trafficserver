@@ -7606,7 +7606,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   }
 
   if (base_request->is_early_data()) {
-    outgoing_request->value_set_int("Early Data", 10, 1);
+    outgoing_request->value_set_int(MIME_FIELD_EARLY_DATA, MIME_LEN_EARLY_DATA, 1);
   }
 
   s->request_sent_time = ink_local_time();

@@ -37,7 +37,7 @@ public:
 
   /// Virtual Methods
   //
-  virtual void new_transaction();
+  virtual void new_transaction(bool from_early_data = false);
   virtual void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true);
   Action *adjust_thread(Continuation *cont, int event, void *data);
   virtual void release(IOBufferReader *r);

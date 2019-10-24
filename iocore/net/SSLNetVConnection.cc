@@ -956,7 +956,6 @@ SSLNetVConnection::free(EThread *t)
 
   ats_free(tunnel_host);
 
-#if TS_HAS_TLS_EARLY_DATA
   if (early_data_reader != nullptr) {
     early_data_reader->dealloc();
   }
@@ -967,7 +966,6 @@ SSLNetVConnection::free(EThread *t)
 
   early_data_reader = nullptr;
   early_data_buf    = nullptr;
-#endif
 
   clear();
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);

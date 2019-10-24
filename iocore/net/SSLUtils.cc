@@ -1751,7 +1751,6 @@ SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread)
   ERR_clear_error();
 
 #if TS_HAS_TLS_EARLY_DATA
-  Debug("ssl_early_data", "SSL version = %s", SSL_get_version(ssl));
   if (SSL_version(ssl) >= TLS1_3_VERSION) {
     SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
@@ -1762,8 +1761,7 @@ SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread)
 
     if (early_data_len > 0) {
       Debug("ssl_early_data", "Reading from early data buffer.");
-      netvc->early_data_reader->read(buf, nbytes < early_data_len ? nbytes : early_data_len);
-      netvc->read_from_early_data = true;
+      netvc->read_from_early_data += netvc->early_data_reader->read(buf, nbytes < early_data_len ? nbytes : early_data_len);
 
       if (nbytes < early_data_len) {
         nread = nbytes;
@@ -1787,7 +1785,7 @@ SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread)
         Debug("ssl_early_data", "Error reading early data: %s", ERR_error_string(ERR_get_error(), nullptr));
       } else {
         if ((nread = read_bytes) > 0) {
-          netvc->read_from_early_data = true;
+          netvc->read_from_early_data += read_bytes;
           SSL_INCREMENT_DYN_STAT(ssl_early_data_received_count);
           if (is_debug_tag_set("ssl_early_data_show_received")) {
             std::string early_data_str(reinterpret_cast<char *>(buf), nread);
@@ -1847,7 +1845,7 @@ SSLAccept(SSL *ssl)
       ret = SSL_read_early_data(ssl, block->buf(), index_to_buffer_size(BUFFER_SIZE_INDEX_16K), &nread);
 
       if (ret == SSL_READ_EARLY_DATA_ERROR) {
-        Debug("ssl_early_data", "SSL_READ_EARLY_DATA_ERROR, SSL version = %s", SSL_get_version(ssl));
+        Debug("ssl_early_data", "SSL_READ_EARLY_DATA_ERROR");
         break;
       } else {
         if (nread > 0) {

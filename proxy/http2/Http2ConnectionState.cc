@@ -358,7 +358,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     if (!empty_request) {
       SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
       stream->mark_milestone(Http2StreamMilestone::START_TXN);
-      stream->new_transaction();
+      stream->new_transaction(frame.is_from_early_data());
       // Send request header to SM
       stream->send_request(cstate);
     }
@@ -914,7 +914,9 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     // Set up the State Machine
     SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
     stream->mark_milestone(Http2StreamMilestone::START_TXN);
-    stream->new_transaction();
+    // This should be fine, need to verify whether we need to replace this with the
+    // "from_early_data" flag from the associated HEADERS frame.
+    stream->new_transaction(frame.is_from_early_data());
     // Send request header to SM
     stream->send_request(cstate);
   } else {
@@ -1006,6 +1008,25 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     //   Implementations MUST discard frames that have unknown or unsupported types.
     if (frame->header().type >= HTTP2_FRAME_TYPE_MAX) {
       Http2StreamDebug(ua_session, stream_id, "Discard a frame which has unknown type, type=%x", frame->header().type);
+      break;
+    }
+
+    // We need to be careful here, certain frame types are not safe over 0-rtt, tentative for now.
+    // DATA:          NO
+    // HEADERS:       YES (safe http methods only, can only be checked after parsing the payload).
+    // PRIORITY:      YES
+    // RST_STREAM:    NO
+    // SETTINGS:      YES
+    // PUSH_PROMISE:  NO
+    // PING:          YES
+    // GOAWAY:        NO
+    // WINDOW_UPDATE: YES
+    // CONTINUATION:  YES (safe http methods only, same as HEADERS frame).
+    if (frame->is_from_early_data() &&
+        (frame->header().type == HTTP2_FRAME_TYPE_DATA || frame->header().type == HTTP2_FRAME_TYPE_RST_STREAM ||
+         frame->header().type == HTTP2_FRAME_TYPE_PUSH_PROMISE || frame->header().type == HTTP2_FRAME_TYPE_GOAWAY)) {
+      Http2StreamDebug(ua_session, stream_id, "Discard a frame which is received from early data and has type=%x",
+                       frame->header().type);
       break;
     }
 

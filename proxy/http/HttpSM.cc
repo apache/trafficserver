@@ -343,9 +343,11 @@ HttpSM::destroy()
 }
 
 void
-HttpSM::init()
+HttpSM::init(bool from_early_data)
 {
   milestones[TS_MILESTONE_SM_START] = Thread::get_hrtime();
+
+  _from_early_data = from_early_data;
 
   magic = HTTP_SM_MAGIC_ALIVE;
 
@@ -756,27 +758,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
     milestones[TS_MILESTONE_UA_READ_HEADER_DONE] = Thread::get_hrtime();
   }
 
-#if TS_HAS_TLS_EARLY_DATA
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-  if (ssl_vc != nullptr && ssl_vc->read_from_early_data) {
-    ssl_vc->read_from_early_data = false;
-    // Only allow early data for safe methods defined in RFC7231 Section 4.2.1.
-    // https://tools.ietf.org/html/rfc7231#section-4.2.1
-    if (!HttpTransactHeaders::is_method_safe(t_state.hdr_info.client_request.method_get_wksidx())) {
-      SMDebug("http", "client request was from early data but is NOT safe");
-      call_transact_and_set_next_state(HttpTransact::TooEarly);
-      return 0;
-    } else if (!SSLConfigParams::server_allow_early_data_params &&
-               (t_state.hdr_info.client_request.m_http->u.req.m_url_impl->m_len_params > 0 ||
-                t_state.hdr_info.client_request.m_http->u.req.m_url_impl->m_len_query > 0)) {
-      SMDebug("http", "client request was from early data but HAS parameters");
-      call_transact_and_set_next_state(HttpTransact::TooEarly);
-      return 0;
-    }
-    t_state.hdr_info.client_request.mark_early_data();
-  }
-#endif // TS_HAS_TLS_EARLY_DATA
-
   switch (state) {
   case PARSE_RESULT_ERROR:
     SMDebug("http", "[%" PRId64 "] error parsing client request header", sm_id);
@@ -817,6 +798,24 @@ HttpSM::state_read_client_request_header(int event, void *data)
     }
   case PARSE_RESULT_DONE:
     SMDebug("http", "[%" PRId64 "] done parsing client request header", sm_id);
+
+    if (_from_early_data) {
+      // Only allow early data for safe methods defined in RFC7231 Section 4.2.1.
+      // https://tools.ietf.org/html/rfc7231#section-4.2.1
+      SMDebug("ssl_early_data", "%d", t_state.hdr_info.client_request.method_get_wksidx());
+      if (!HttpTransactHeaders::is_method_safe(t_state.hdr_info.client_request.method_get_wksidx())) {
+        SMDebug("http", "client request was from early data but is NOT safe");
+        call_transact_and_set_next_state(HttpTransact::TooEarly);
+        return 0;
+      } else if (!SSLConfigParams::server_allow_early_data_params &&
+                 (t_state.hdr_info.client_request.m_http->u.req.m_url_impl->m_len_params > 0 ||
+                  t_state.hdr_info.client_request.m_http->u.req.m_url_impl->m_len_query > 0)) {
+        SMDebug("http", "client request was from early data but HAS parameters");
+        call_transact_and_set_next_state(HttpTransact::TooEarly);
+        return 0;
+      }
+      t_state.hdr_info.client_request.mark_early_data();
+    }
 
     ua_txn->set_session_active();
 
