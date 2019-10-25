@@ -118,6 +118,12 @@ LogFile::LogFile(const LogFile &copy)
 LogFile::~LogFile()
 {
   Debug("log-file", "entering LogFile destructor, this=%p", this);
+
+  // close_file() checks whether a file is open before attempting to close, so
+  // this is safe to call even if a file had not been opened. Further, calling
+  // close_file() here ensures that we do not leak file descriptors.
+  close_file();
+
   delete m_log;
   ats_free(m_header);
   ats_free(m_name);
