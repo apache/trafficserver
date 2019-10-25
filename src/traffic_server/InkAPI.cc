@@ -1426,16 +1426,21 @@ HttpHookState::is_enabled()
 void
 HttpHookState::Scope::init(HttpAPIHooks const *feature_hooks, TSHttpHookID id)
 {
-  APIHooks const *hooks = (*feature_hooks)[id];
+  _hooks = (*feature_hooks)[id];
 
   _p = nullptr;
-  _c = hooks->head();
+  _c = _hooks->head();
 }
 
 APIHook const *
 HttpHookState::Scope::candidate()
 {
   /// Simply returns _c hook for now. Later will do priority checking here
+
+  // Check to see if a hook has been added since this was initialized empty
+  if (nullptr == _c && nullptr == _p && _hooks != nullptr) {
+    _c = _hooks->head();
+  }
   return _c;
 }
 
