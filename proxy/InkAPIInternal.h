@@ -357,8 +357,9 @@ public:
 protected:
   /// Track the state of one scope of hooks.
   struct Scope {
-    APIHook const *_c; ///< Current hook (candidate for invocation).
-    APIHook const *_p; ///< Previous hook (already invoked).
+    APIHook const *_c;      ///< Current hook (candidate for invocation).
+    APIHook const *_p;      ///< Previous hook (already invoked).
+    APIHooks const *_hooks; ///< Reference to the real hook list
 
     /// Initialize the scope.
     void init(HttpAPIHooks const *scope, TSHttpHookID id);
