@@ -42,6 +42,12 @@ Cache
 The cache in this releases of ATS is compatible with previous versions of ATS. You would not expect
 to lose your cache, or have to reinitialize the cache when upgrading.
 
+However, due to changes in how remap plugins are processed, your cache key *might* change. In versions
+to v9.0.0, the first plugin in a remap rule would get the pristine URL, and subsequent plugins would
+get the remapped URL. As of v9.0.0, **all** plugins now receive the remapped URL. If you are using
+a plugin that modifies the cache key, e.g. :ref:`admin-plugins-cachekey`, if it was evaluated first
+in a remap rule, the behavior (input) changes, and therefore, cache keys can change!
+
 Configuration changes
 ---------------------
 The following incompatible changes to the configurations have been made in this version of ATS.
