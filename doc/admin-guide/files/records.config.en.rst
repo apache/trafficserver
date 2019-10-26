@@ -327,15 +327,15 @@ Thread Variables
    The number of accept threads. If disabled (``0``), then accepts will be done
    in each of the worker threads.
 
-   ==============  ==================   ===================
-   accept_threads  exec_thread.listen   Effect
-   ==============  ==================   ===================
-   ``0``                 ``0``          All worker threads accept new connections and share listen fd.
-   ``1``                 ``0``          New conections are accepted on a dedicated accept thread and distributed to worker threads in round robin fashion.
-   ``0``                 ``1``          All worker threads listen on the same port using SO_REUSEPORT.
-                                        Each thread has its own listen and new connections are accepted on all the threads.
+   ==================== ====================== =====================
+     accept_threads      exec_thread.listen         Effect
+   ==================== ====================== =====================
+   ``0``                 ``0``                  All worker threads accept new connections and share listen fd.
+   ``1``                 ``0``                  New conections are accepted on a dedicated accept thread and distributed to worker threads in round robin fashion.
+   ``0``                 ``1``                  All worker threads listen on the same port using SO_REUSEPORT. Each thread has its own listen fd and new connections are accepted on all the threads.
+   ==================== ====================== =====================
 
-  By default, `proxy.config.accept_threads` is set to 1 and `proxy.config.exec_thread.listen` is set to 0. 
+   By default, `proxy.config.accept_threads` is set to 1 and `proxy.config.exec_thread.listen` is set to 0. 
 .. ts:cv:: CONFIG proxy.config.thread.default.stacksize INT 1048576
 
    Default thread stack size, in bytes, for all threads (default is 1 MB).
