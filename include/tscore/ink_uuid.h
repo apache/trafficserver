@@ -36,6 +36,8 @@ public:
   ATSUuid() : _version(TS_UUID_UNDEFINED) {}
   ATSUuid &operator=(const ATSUuid other);
 
+  ATSUuid(ATSUuid const &that) = default;
+
   // Initialize the UUID from a string
   bool parseString(const char *str);
 
