@@ -53,6 +53,8 @@ public:
   /// Default constructor (empty buffer).
   constexpr MemSpan();
 
+  constexpr MemSpan(self_type const &that) = default;
+
   /** Construct explicitly with a pointer and size.
    */
   constexpr MemSpan(void *ptr,  ///< Pointer to buffer.
