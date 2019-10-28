@@ -107,6 +107,7 @@ proxy/hdrs/test_hdr_heap
 proxy/hdrs/test_Huffmancode
 proxy/hdrs/test_XPACK
 proxy/http/test_proxy_http
+proxy/http/remap/test_*
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_Http2FrequencyCounter
 proxy/http2/test_HPACK
