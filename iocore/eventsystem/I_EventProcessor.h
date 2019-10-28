@@ -325,6 +325,8 @@ public:
   */
   int n_ethreads = 0;
 
+  bool has_tg_started(int etype);
+
   /*------------------------------------------------------*\
   | Unix & non NT Interface                                |
   \*------------------------------------------------------*/
@@ -410,3 +412,5 @@ private:
 };
 
 extern inkcoreapi class EventProcessor eventProcessor;
+
+void thread_started(EThread *);
