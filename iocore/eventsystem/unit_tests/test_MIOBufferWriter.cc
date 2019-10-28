@@ -189,12 +189,26 @@ TEST_CASE("MIOBufferWriter", "[MIOBW]")
 
   REQUIRE(bw.extent() == ((iobbIdx * BlockSize) + blockUsed));
 
-// These test are disabled by default because they consistently fail on FreeBSD only, and may fail on Linux flavors
-// when Leif or Alan's lumbago is hurting.
-#if 0
-  REQUIRE_THROWS_AS(bw.fill(bw.auxBufferCapacity() + 1), InkAssertExcept);
-  REQUIRE_THROWS_AS(bw.data(), InkAssertExcept);
-#endif
+  // The "worked" variable is used here because there are apparent bugs in catch.hpp macros testing exceptions,
+  // and catch.hpp checks/requires inside of a try/catch statement seem to also not work properly.
+
+  bool worked = false;
+  try {
+    bw.fill(bw.auxBufferCapacity() + 1);
+
+  } catch (InkAssertExcept) {
+    worked = true;
+  }
+  REQUIRE(worked);
+
+  worked = false;
+  try {
+    bw.data();
+
+  } catch (InkAssertExcept) {
+    worked = true;
+  }
+  REQUIRE(worked);
 }
 
 void
