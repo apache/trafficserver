@@ -96,13 +96,6 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
   QUICFrame *stream_blocked_frame = QUICFrameFactory::create_stream_data_blocked_frame(stream_blocked_frame_buf, 0x10, 0);
   sm.handle_frame(level, *stream_blocked_frame);
   CHECK(sm.stream_count() == 5);
-
-  // Set local maximum stream id
-  sm.set_max_streams_bidi(5);
-  uint8_t stream_blocked_frame_x_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  QUICFrame *stream_blocked_frame_x = QUICFrameFactory::create_stream_data_blocked_frame(stream_blocked_frame_x_buf, 0x18, 0);
-  sm.handle_frame(level, *stream_blocked_frame_x);
-  CHECK(sm.stream_count() == 5);
 }
 
 TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
@@ -259,4 +252,127 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
 
   // Wait for event processing
   sleep(2);
+}
+
+TEST_CASE("QUICStreamManager_max_streams", "[quic]")
+{
+  QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
+  QUICApplicationMap app_map;
+  MockQUICConnection connection;
+  MockQUICApplication mock_app(&connection);
+  app_map.set_default(&mock_app);
+  QUICStreamManager sm(&context, &app_map);
+
+  uint8_t local_tp_buf[] = {
+    0x00, 0x0A, // size of parameters
+    0x00, 0x08, // parameter id - initial_max_streams_bidi
+    0x00, 0x01, // length of value
+    0x03,       // value
+    0x00, 0x09, // parameter id - initial_max_streams_uni
+    0x00, 0x01, // length of value
+    0x03,       // value
+  };
+  std::shared_ptr<QUICTransportParameters> local_tp =
+    std::make_shared<QUICTransportParametersInEncryptedExtensions>(local_tp_buf, sizeof(local_tp_buf));
+
+  uint8_t remote_tp_buf[] = {
+    0x00, 0x0A, // size of parameters
+    0x00, 0x08, // parameter id - initial_max_streams_bidi
+    0x00, 0x01, // length of value
+    0x03,       // value
+    0x00, 0x09, // parameter id - initial_max_streams_uni
+    0x00, 0x01, // length of value
+    0x03,       // value
+  };
+  std::shared_ptr<QUICTransportParameters> remote_tp =
+    std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf));
+
+  sm.init_flow_control_params(local_tp, remote_tp);
+
+  SECTION("local")
+  {
+    // RESET_STREAM frames create new streams
+
+    // Bidirectional
+    uint8_t rst_stream_frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+    QUICFrame *rst_stream_frame =
+      QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 1, static_cast<QUICAppErrorCode>(0x01), 0);
+    sm.handle_frame(level, *rst_stream_frame);
+    REQUIRE(sm.stream_count() == 1);
+
+    rst_stream_frame = QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 5, static_cast<QUICAppErrorCode>(0x01), 0);
+    sm.handle_frame(level, *rst_stream_frame);
+    REQUIRE(sm.stream_count() == 2);
+
+    rst_stream_frame = QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 9, static_cast<QUICAppErrorCode>(0x01), 0);
+    sm.handle_frame(level, *rst_stream_frame);
+    REQUIRE(sm.stream_count() == 3);
+
+    rst_stream_frame = QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 13, static_cast<QUICAppErrorCode>(0x01), 0);
+    sm.handle_frame(level, *rst_stream_frame);
+    REQUIRE(sm.stream_count() == 3);
+
+    // Unidirectional
+    rst_stream_frame = QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 3, static_cast<QUICAppErrorCode>(0x01), 0);
+    sm.handle_frame(level, *rst_stream_frame);
+    REQUIRE(sm.stream_count() == 4);
+
+    rst_stream_frame = QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 7, static_cast<QUICAppErrorCode>(0x01), 0);
+    sm.handle_frame(level, *rst_stream_frame);
+    REQUIRE(sm.stream_count() == 5);
+
+    rst_stream_frame = QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 11, static_cast<QUICAppErrorCode>(0x01), 0);
+    sm.handle_frame(level, *rst_stream_frame);
+    REQUIRE(sm.stream_count() == 6);
+
+    rst_stream_frame = QUICFrameFactory::create_rst_stream_frame(rst_stream_frame_buf, 15, static_cast<QUICAppErrorCode>(0x01), 0);
+    sm.handle_frame(level, *rst_stream_frame);
+    REQUIRE(sm.stream_count() == 6);
+  }
+
+  SECTION("remote")
+  {
+    // Bidirection
+    QUICConnectionErrorUPtr error;
+    QUICStreamId id;
+
+    error = sm.create_bidi_stream(id);
+    REQUIRE(!error);
+    REQUIRE(id == 0);
+    REQUIRE(sm.stream_count() == 1);
+
+    error = sm.create_bidi_stream(id);
+    REQUIRE(!error);
+    REQUIRE(id == 4);
+    REQUIRE(sm.stream_count() == 2);
+
+    error = sm.create_bidi_stream(id);
+    REQUIRE(!error);
+    REQUIRE(id == 8);
+    REQUIRE(sm.stream_count() == 3);
+
+    error = sm.create_bidi_stream(id);
+    REQUIRE(error);
+    REQUIRE(sm.stream_count() == 3);
+
+    // Unidirection
+    error = sm.create_uni_stream(id);
+    REQUIRE(!error);
+    REQUIRE(id == 2);
+    REQUIRE(sm.stream_count() == 4);
+
+    error = sm.create_uni_stream(id);
+    REQUIRE(!error);
+    REQUIRE(id == 6);
+    REQUIRE(sm.stream_count() == 5);
+
+    error = sm.create_uni_stream(id);
+    REQUIRE(!error);
+    REQUIRE(id == 10);
+    REQUIRE(sm.stream_count() == 6);
+
+    error = sm.create_uni_stream(id);
+    REQUIRE(error);
+    REQUIRE(sm.stream_count() == 6);
+  }
 }

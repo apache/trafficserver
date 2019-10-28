@@ -99,4 +99,6 @@ private:
     QUICEncryptionLevel::ZERO_RTT,
     QUICEncryptionLevel::ONE_RTT,
   };
+
+  uint64_t _stream_id_to_nth_stream(QUICStreamId stream_id);
 };
