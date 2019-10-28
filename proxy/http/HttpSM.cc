@@ -3308,7 +3308,8 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     // only external POSTs should be subject to this logic; ruling out internal POSTs here
     bool is_eligible_post_request = ((t_state.method == HTTP_WKSIDX_POST) && !is_internal);
 
-    if (is_eligible_post_request && c->producer->vc_type != HT_STATIC && event == VC_EVENT_WRITE_COMPLETE) {
+    if (is_eligible_post_request && ua_txn->allow_half_open() && c->producer->vc_type != HT_STATIC &&
+        event == VC_EVENT_WRITE_COMPLETE) {
       ua_txn->set_half_close_flag(true);
     }
 
