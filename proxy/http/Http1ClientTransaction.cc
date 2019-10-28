@@ -71,10 +71,5 @@ Http1ClientTransaction::transaction_done()
 bool
 Http1ClientTransaction::allow_half_open() const
 {
-  bool config_allows_it = (current_reader) ? current_reader->t_state.txn_conf->allow_half_open > 0 : true;
-  if (config_allows_it) {
-    // Check with the session to make sure the underlying transport allows the half open scenario
-    return static_cast<Http1ClientSession *>(parent)->allow_half_open();
-  }
-  return false;
+  return current_reader ? current_reader->t_state.txn_conf->allow_half_open > 0 : true;
 }
