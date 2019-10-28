@@ -272,7 +272,12 @@ Http3ClientApp::start()
   this->_resp_buf                 = new_MIOBuffer();
   IOBufferReader *resp_buf_reader = _resp_buf->alloc_reader();
 
-  this->_resp_handler = new RespHandler(this->_config, resp_buf_reader);
+  this->_resp_handler = new RespHandler(this->_config, resp_buf_reader, [&](void) {
+    if (this->_config->close) {
+      // Connection Close Exercise
+      this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
+    }
+  });
 
   super::start();
   this->_do_http_request();
@@ -322,8 +327,8 @@ Http3ClientApp::_do_http_request()
 //
 // Response Handler
 //
-RespHandler::RespHandler(const QUICClientConfig *config, IOBufferReader *reader)
-  : Continuation(new_ProxyMutex()), _config(config), _reader(reader)
+RespHandler::RespHandler(const QUICClientConfig *config, IOBufferReader *reader, std::function<void()> on_complete)
+  : Continuation(new_ProxyMutex()), _config(config), _reader(reader), _on_complete(on_complete)
 {
   if (this->_config->output[0] != 0x0) {
     this->_filename = this->_config->output;
@@ -370,6 +375,10 @@ RespHandler::main_event_handler(int event, Event *data)
     if (this->_filename) {
       f_stream.close();
       std::cout.rdbuf(default_stream);
+    }
+
+    if (event == VC_EVENT_READ_COMPLETE) {
+      this->_on_complete();
     }
 
     break;

@@ -47,7 +47,7 @@ struct QUICClientConfig {
 class RespHandler : public Continuation
 {
 public:
-  RespHandler(const QUICClientConfig *config, IOBufferReader *reader);
+  RespHandler(const QUICClientConfig *config, IOBufferReader *reader, std::function<void()> on_complete);
   int main_event_handler(int event, Event *data);
   void set_read_vio(VIO *vio);
 
@@ -56,6 +56,7 @@ private:
   const char *_filename           = nullptr;
   IOBufferReader *_reader         = nullptr;
   VIO *_read_vio                  = nullptr;
+  std::function<void()> _on_complete;
 };
 
 class QUICClient : public Continuation
