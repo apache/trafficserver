@@ -280,7 +280,7 @@ HQTransaction::_signal_read_event()
   if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
     return;
   }
-  int event = this->_read_vio.ntodo() ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
+  int event = this->_read_vio.nbytes == INT64_MAX ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
 
   MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
   if (lock.is_locked()) {
@@ -364,17 +364,20 @@ Http3Transaction::state_stream_open(int event, void *edata)
 
   switch (event) {
   case VC_EVENT_READ_READY:
-  case VC_EVENT_READ_COMPLETE: {
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
-    int64_t len = this->_process_read_vio();
     // if no progress, don't need to signal
-    if (len > 0) {
+    if (this->_process_read_vio() > 0) {
       this->_signal_read_event();
     }
     this->_stream_io->read_reenable();
-
     break;
-  }
+  case VC_EVENT_READ_COMPLETE:
+    Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+    this->_process_read_vio();
+    this->_data_handler->finalize();
+    this->_signal_read_event();
+    this->_stream_io->read_reenable();
+    break;
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE: {
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);

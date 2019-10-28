@@ -42,6 +42,13 @@ Http3StreamDataVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame)
 
   MIOBuffer *writer = this->_sink_vio->get_writer();
   writer->write(dframe->payload(), dframe->payload_length());
+  this->_total_data_length += dframe->payload_length();
 
   return Http3ErrorUPtr(new Http3NoError());
+}
+
+void
+Http3StreamDataVIOAdaptor::finalize()
+{
+  this->_sink_vio->nbytes = this->_total_data_length;
 }
