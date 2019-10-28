@@ -1593,13 +1593,15 @@ QUICNetVConnection::_packetize_closing_frame()
   size_t size_added       = 0;
   uint64_t max_frame_size = static_cast<uint64_t>(max_size);
   std::vector<QUICFrameInfo> frames;
-  Ptr<IOBufferBlock> parent_block;
-  parent_block = nullptr;
-  parent_block = this->_store_frame(parent_block, size_added, max_frame_size, *frame, frames);
+  Ptr<IOBufferBlock> first_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  Ptr<IOBufferBlock> last_block  = first_block;
+  first_block->alloc(iobuffer_size_to_index(0));
+  first_block->fill(0);
+  last_block = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
 
   QUICEncryptionLevel level = this->_hs_protocol->current_encryption_level();
   ink_assert(level != QUICEncryptionLevel::ZERO_RTT);
-  this->_the_final_packet = this->_build_packet(level, parent_block, true, false, false);
+  this->_the_final_packet = this->_build_packet(level, first_block, true, false, false);
 }
 
 QUICConnectionErrorUPtr
