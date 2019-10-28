@@ -1813,10 +1813,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   quic_NetProcessor.init();
 #endif
 
-  // If num_accept_threads == 0, let the ET_NET threads to set the condition variable,
+  // If num_accept_threads == 0, let the ET_NET threads set the condition variable,
   // Else we set it here so when checking the condition variable later it returns immediately.
-  if (num_accept_threads == 0) {
-    eventProcessor.schedule_spawn(&init_HttpProxyServer, ET_NET);
+  if (num_accept_threads == 0 || command_flag) {
+    eventProcessor.thread_group[ET_NET]._afterStartCallback = init_HttpProxyServer;
   } else {
     std::unique_lock<std::mutex> lock(proxyServerMutex);
     et_net_threads_ready = true;
@@ -1858,6 +1858,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     int cmd_ret = cmd_mode();
 
     if (cmd_ret != CMD_IN_PROGRESS) {
+      // Check the condition variable.
+      {
+        std::unique_lock<std::mutex> lock(proxyServerMutex);
+        proxyServerCheck.wait(lock, [] { return et_net_threads_ready; });
+      }
+
       if (cmd_ret >= 0) {
         ::exit(0); // everything is OK
       } else {
