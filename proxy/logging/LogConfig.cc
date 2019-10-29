@@ -617,12 +617,17 @@ LogConfig::update_space_used()
         // then check if the candidate belongs to any given log type
         //
         ts::TextView type_name(entry->d_name, strlen(entry->d_name));
+        // A rolled log will look something like:
+        // squid.log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old
+        //
+        // The following logic cuts things back to original unrolled file which
+        // is the key into the deleting_info map (squid.log in the above example).
         auto suffix = type_name;
-        type_name.remove_suffix(suffix.remove_prefix(suffix.find('.') + 1).remove_prefix(suffix.find('.')).size());
+        type_name.remove_suffix(suffix.remove_prefix(suffix.find('.') + 1).remove_prefix(suffix.find('_')).size());
         auto iter = deleting_info.find(type_name);
         if (iter == deleting_info.end()) {
           // We won't delete the log if its name doesn't match any give type.
-          break;
+          continue;
         }
 
         auto &candidates = iter->candidates;
