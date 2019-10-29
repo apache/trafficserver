@@ -2099,8 +2099,6 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"],
         AC_CHECK_FUNCS([hcreate_r hsearch_r])
       ])
   ])
-AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
-  [ test "x$enable_experimental_plugins" = "xyes" -a "x$ac_cv_header_search_h" = "xyes" -a "x$ac_cv_type_struct_hsearch_data" = "xyes" -a "x$ac_cv_func_hcreate_r" = "xyes" -a "x$ac_cv_func_hsearch_r" = "xyes" ])
 
 AC_ARG_WITH([default-stack-size],
   [AS_HELP_STRING([--with-default-stack-size],[specify the default stack size in bytes [default=1048576]])],
