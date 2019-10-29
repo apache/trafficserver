@@ -55,3 +55,10 @@ The following incompatible changes to the configurations have been made in this 
 
 Plugins
 -------
+The following plugins have changes that might require you to change configurations.
+
+header_rewrite
+~~~~~~~~~~~~~~
+
+* The `%{PATH}` directive is now removed, and instead you want to use `%{CLIENT-URL:PATH}`. This was
+done to unify the behavior of these operators, rather than having this one-off directive.
