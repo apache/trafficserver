@@ -822,7 +822,9 @@ Part     Description
 HOST     Full hostname.
 
 PATH     URL substring beginning with (but not including) the first ``/`` after
-         the hostname up to, but not including, the query string.
+         the hostname up to, but not including, the query string. **Note**: previous
+         versions of ATS had a `%{PATH}` directive, this will no longer work. Instead,
+         you want to use `%{CLIENT-URL:PATH}`.
 
 PORT     Port number.
 
