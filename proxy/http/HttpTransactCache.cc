@@ -1381,13 +1381,13 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
         return HTTP_STATUS_RANGE_NOT_SATISFIABLE;
       }
     }
-    // this a Date, similar to If-Unmodified-Since
+    // this a Date, similar to If-Unmodified-Since but must be an exact match
     else {
       // lm_value is zero if Last-modified not exists
       ink_time_t lm_value = response->get_last_modified();
 
       // condition fails if Last-modified not exists
-      if ((request->get_if_range_date() < lm_value) || (lm_value == 0)) {
+      if ((request->get_if_range_date() != lm_value) || (lm_value == 0)) {
         return HTTP_STATUS_RANGE_NOT_SATISFIABLE;
       } else {
         return response->status_get();
