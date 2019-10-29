@@ -48,10 +48,13 @@ get the remapped URL. As of v9.0.0, **all** plugins now receive the remapped URL
 a plugin that modifies the cache key, e.g. :ref:`admin-plugins-cachekey`, if it was evaluated first
 in a remap rule, the behavior (input) changes, and therefore, cache keys can change!
 
+The old `v23` cache is no longer supported, which means caches created with ATS v2.x will no longer be
+possible to load with ATS v9.0.0 or later. We feel that this is an unlikely scenario, but if you do
+run into this, clearing the cache is required.
+
 Configuration changes
 ---------------------
 The following incompatible changes to the configurations have been made in this version of ATS.
-
 
 Plugins
 -------
@@ -62,3 +65,10 @@ header_rewrite
 
 * The `%{PATH}` directive is now removed, and instead you want to use `%{CLIENT-URL:PATH}`. This was
 done to unify the behavior of these operators, rather than having this one-off directive.
+
+Platform specific
+-----------------
+
+Solaris is no longer a supported platform, but the code is still there. However, it's unlikely to work,
+and unless someone takes on ownership of this Platform, it will be removed from the source in ATS v10.0.0.
+For more details, see issue #5553.
