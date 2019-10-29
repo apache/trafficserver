@@ -2535,6 +2535,15 @@ tsapi TSReturnCode TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
  */
 tsapi TSIOBufferReader TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp);
 
+/**
+ * Initiate an HTTP/2 Server Push preload request.
+ * Use this api to register a URL that you want to preload with HTTP/2 Server Push.
+ *
+ * @param url the URL string to preload.
+ * @param url_len the length of the URL string.
+ */
+tsapi TSReturnCode TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

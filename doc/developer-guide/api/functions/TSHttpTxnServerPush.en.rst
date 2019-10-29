@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/experimental.h>
 
-.. function:: void TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
+.. function:: TSReturnCode TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 
 Description
 ===========
@@ -40,11 +40,8 @@ is not disabled by the client. You can call this API without checking whether
 Server Push is available on the transaction and it does nothing if Server Push
 is not available.
 
-
-Notes
-=====
-
-This API may be changed in the future version since it is experimental.
+This API returns an error if the URL to push is not valid, the client has Server Push disabled,
+or there is an error creating the H/2 PUSH_PROMISE frame.
 
 See Also
 ========
