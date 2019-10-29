@@ -65,6 +65,7 @@ libtscore_la_SOURCES = \
 	HashMD5.cc \
 	HashSip.cc \
 	HostLookup.cc \
+	MemBlkLife.cc \
 	hugepages.cc \
 	ink_args.cc \
 	ink_assert.cc \

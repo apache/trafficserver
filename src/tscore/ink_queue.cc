@@ -52,6 +52,7 @@
 #include "tscore/hugepages.h"
 #include "tscore/Diags.h"
 #include "tscore/JeAllocator.h"
+#include <tscore/MemBlkLife.h>
 
 #define DEBUG_TAG "freelist"
 
@@ -186,6 +187,8 @@ ink_freelist_new(InkFreeList *f)
 
   if (likely(ptr = freelist_global_ops->fl_new(f))) {
     ink_atomic_increment(reinterpret_cast<int *>(&f->used), 1);
+
+    ts::MemBlkLife().start(ptr, f->type_size);
   }
 
   return ptr;
@@ -273,6 +276,8 @@ void
 ink_freelist_free(InkFreeList *f, void *item)
 {
   if (likely(item != nullptr)) {
+    ts::MemBlkLife().end(item);
+
     ink_assert(f->used != 0);
     freelist_global_ops->fl_free(f, item);
     ink_atomic_decrement(reinterpret_cast<int *>(&f->used), 1);
@@ -330,6 +335,13 @@ void
 ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
 {
   ink_assert(f->used >= num_item);
+
+  {
+    void *item = head;
+    for (size_t i = 0; i < num_item && item; ++i, item = *static_cast<void **>(item)) {
+      ts::MemBlkLife().end(item);
+    }
+  }
 
   freelist_global_ops->fl_bulkfree(f, head, tail, num_item);
   ink_atomic_decrement(reinterpret_cast<int *>(&f->used), num_item);
