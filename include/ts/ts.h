@@ -2542,7 +2542,7 @@ tsapi TSIOBufferReader TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp);
  * @param url the URL string to preload.
  * @param url_len the length of the URL string.
  */
-tsapi void TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
+tsapi TSReturnCode TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
 
 #ifdef __cplusplus
 }
