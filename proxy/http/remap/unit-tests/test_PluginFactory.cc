@@ -190,7 +190,11 @@ SCENARIO("loading plugins", "[plugin][core]")
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
       RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error);
 
-      THEN("expect it to successfully load") { validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath); }
+      THEN("expect it to successfully load")
+      {
+        validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath);
+        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath));
+      }
 
       teardownConfigPathTest(factory);
     }
@@ -204,7 +208,11 @@ SCENARIO("loading plugins", "[plugin][core]")
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
       RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error);
 
-      THEN("expect it to successfully load") { validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath); }
+      THEN("expect it to successfully load")
+      {
+        validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath);
+        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath));
+      }
 
       teardownConfigPathTest(factory);
     }
@@ -218,7 +226,11 @@ SCENARIO("loading plugins", "[plugin][core]")
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
       RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error);
 
-      THEN("expect it to successfully load") { validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath); }
+      THEN("expect it to successfully load")
+      {
+        validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath);
+        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath));
+      }
 
       teardownConfigPathTest(factory);
     }
@@ -263,6 +275,40 @@ SCENARIO("loading plugins", "[plugin][core]")
         expectedError.append("failed to find plugin '").append(absoluteNonexistingPath.string()).append("'");
         CHECK(nullptr == plugin);
         CHECK(expectedError == error);
+      }
+
+      teardownConfigPathTest(factory);
+    }
+
+    WHEN("plugin initialization fails")
+    {
+      fs::path configPath = fs::path("plugin_init_fail.so");
+      fs::path buildPath  = pluginBuildDir / configPath;
+      setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
+      PluginFactoryUnitTest *factory = getFactory(tempComponent);
+      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error);
+
+      THEN("expect it to unload the plugin dso")
+      {
+        CHECK(nullptr == plugin);
+        CHECK(nullptr == PluginDso::loadedPlugins()->findByEffectivePath(effectivePath));
+      }
+
+      teardownConfigPathTest(factory);
+    }
+
+    WHEN("instance initialization fails")
+    {
+      fs::path configPath = fs::path("plugin_instinit_fail.so");
+      fs::path buildPath  = pluginBuildDir / configPath;
+      setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
+      PluginFactoryUnitTest *factory = getFactory(tempComponent);
+      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error);
+
+      THEN("expect it to unload the plugin dso")
+      {
+        CHECK(nullptr == plugin);
+        CHECK(nullptr == PluginDso::loadedPlugins()->findByEffectivePath(effectivePath));
       }
 
       teardownConfigPathTest(factory);
