@@ -21,12 +21,17 @@ use warnings;
 
 use WWW::Curl::Easy;
 use JSON;
+use Getopt::Std;
 
-my $owner     = shift;
-my $repo      = shift;
-my $milestone = shift;
-my $auth      = shift;
 my $url       = "https://api.github.com";
+
+sub usage() {
+  print "USAGE: changelog.pl -o owner -r repo -m milestone [-a auth] [-v]\n";
+  print "\t-v verbose\n\n";
+  print "Example:\n";
+  print "\tchangelog.pl -o apache -r trafficserver -m 8.0.6 -a auth_token\n";
+  exit(1);
+}
 
 sub rate_fail
 {
@@ -34,19 +39,15 @@ sub rate_fail
     exit 2;
 }
 
-sub milestone_lookup
+sub milestone_lookup($$$$$)
 {
-    my $curl            = shift;
-    my $url             = shift;
-    my $owner           = shift;
-    my $repo            = shift;
-    my $milestone_title = shift;
-    my $endpoint        = "/repos/$owner/$repo/milestones";
+    my($curl, $url, $owner, $repo, $milestone_title) = @_;
 
+    my $endpoint = "/repos/$owner/$repo/milestones";
     my $resp_body;
 
     $curl->setopt(CURLOPT_WRITEDATA, \$resp_body);
-    $curl->setopt(CURLOPT_URL,       $url . $endpoint);
+    $curl->setopt(CURLOPT_URL, $url . $endpoint);
 
     my $retcode = $curl->perform();
     if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 200) {
@@ -63,19 +64,15 @@ sub milestone_lookup
     undef;
 }
 
-sub is_merged
+sub is_merged($$$$$)
 {
-    my $curl     = shift;
-    my $url      = shift;
-    my $owner    = shift;
-    my $repo     = shift;
-    my $issue_id = shift;
-    my $endpoint = "/repos/$owner/$repo/pulls/$issue_id/merge";
+    my($curl, $url, $owner, $repo, $issue_id) = @_;
 
+    my $endpoint = "/repos/$owner/$repo/pulls/$issue_id/merge";
     my $resp_body;
 
     $curl->setopt(CURLOPT_WRITEDATA, \$resp_body);
-    $curl->setopt(CURLOPT_URL,       $url . $endpoint);
+    $curl->setopt(CURLOPT_URL, $url . $endpoint);
 
     my $retcode = $curl->perform();
     if ($retcode == 0 && $curl->getinfo(CURLINFO_HTTP_CODE) == 204) {
@@ -87,14 +84,10 @@ sub is_merged
     undef;
 }
 
-sub issue_search
+sub issue_search($$$$$$)
 {
-    my $curl         = shift;
-    my $url          = shift;
-    my $owner        = shift;
-    my $repo         = shift;
-    my $milestone_id = shift;
-    my $page         = shift;
+    my($curl, $url, $owner, $repo, $milestone_id, $page) = @_;
+
     my $endpoint     = "/repos/$owner/$repo/issues";
 
     my $params = "milestone=$milestone_id&state=closed&page=$page";
@@ -114,56 +107,68 @@ sub issue_search
     undef;
 }
 
-my $curl = WWW::Curl::Easy->new;
+{
+    # get the command line arguments
+    my %opts;
+    getopts("o:r:m:a:v", \%opts);
+    usage() if (! defined $opts{o} || ! defined $opts{r} || ! defined $opts{m});
+    my $owner     = $opts{o};
+    my $repo      = $opts{r};
+    my $milestone = $opts{m};
+    my $auth      = $opts{a};
+    my $verbose   = 0;
+    $verbose = 1 if (defined $opts{v});
 
-#$curl->setopt(CURLOPT_VERBOSE, 1);
-$curl->setopt(CURLOPT_HTTPHEADER, ['Accept: application/vnd.github.v3+json', 'User-Agent: Awesome-Octocat-App']);
+    my $curl = WWW::Curl::Easy->new;
+    $curl->setopt(CURLOPT_VERBOSE, 1) if $verbose;
+    $curl->setopt(CURLOPT_HTTPHEADER, ['Accept: application/vnd.github.v3+json', 'User-Agent: Awesome-Octocat-App']);
 
-if (defined($auth)) {
-    $curl->setopt(CURLOPT_USERPWD, $auth);
-}
-
-my $milestone_id = milestone_lookup($curl, $url, $owner, $repo, $milestone);
-
-if (!defined($milestone_id)) {
-    print STDERR "Milestone not found!\n";
-    exit 1;
-}
-
-my $issues;
-my $changelog;
-my $page = 1;
-
-print STDERR "Looking for issues from Milestone $milestone\n";
-
-do {
-    print STDERR "Page $page\n";
-    $issues = issue_search($curl, $url, $owner, $repo, $milestone_id, $page);
-    foreach my $issue (@{$issues}) {
-        if (defined($issue)) {
-            print STDERR "Issue #" . $issue->{number} . " - " . $issue->{title} . " ";
-
-            if (!exists($issue->{pull_request})) {
-                print STDERR "not a PR.\n";
-                next;
-            }
-
-            if (!is_merged($curl, $url, $owner, $repo, $issue->{number})) {
-                print STDERR "not merged.\n";
-                next;
-            }
-
-            print STDERR "added.\n";
-            push @{$changelog}, {number => $issue->{number}, title => $issue->{title}};
-        }
+    if (defined($auth)) {
+        $curl->setopt(CURLOPT_USERPWD, $auth);
     }
-    $page++;
-} while (scalar @{$issues});
 
-if (defined($changelog)) {
-    print "Changes with Apache Traffic Server $milestone\n";
+    my $milestone_id = milestone_lookup($curl, $url, $owner, $repo, $milestone);
 
-    foreach my $issue (sort {$a->{number} <=> $b->{number}} @{$changelog}) {
-        print "  #$issue->{number} - $issue->{title}\n";
+    if (!defined($milestone_id)) {
+        print STDERR "Milestone not found: $milestone\n";
+        exit 1;
+    }
+
+    my $issues;
+    my $changelog;
+    my $page = 1;
+
+    print STDERR "Looking for issues from Milestone $milestone\n";
+
+    do {
+        print STDERR "Page $page\n";
+        $issues = issue_search($curl, $url, $owner, $repo, $milestone_id, $page);
+        foreach my $issue (@{$issues}) {
+            if (defined($issue)) {
+                print STDERR "Issue #" . $issue->{number} . " - " . $issue->{title} . " ";
+
+                if (!exists($issue->{pull_request})) {
+                    print STDERR "not a PR.\n";
+                    next;
+                }
+
+                if (!is_merged($curl, $url, $owner, $repo, $issue->{number})) {
+                    print STDERR "not merged.\n";
+                    next;
+                }
+
+                print STDERR "added.\n";
+                push @{$changelog}, {number => $issue->{number}, title => $issue->{title}};
+            }
+        }
+        $page++;
+    } while (scalar @{$issues});
+
+    if (defined($changelog)) {
+        print "Changes with Apache Traffic Server $milestone\n";
+
+        foreach my $issue (sort {$a->{number} <=> $b->{number}} @{$changelog}) {
+            print "  #$issue->{number} - $issue->{title}\n";
+        }
     }
 }
