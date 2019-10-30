@@ -22,7 +22,7 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-autest = "==1.7.3"
+autest = "==1.7.4"
 traffic-replay = "*" # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
 hyper = "*"
 dnslib = "*"
