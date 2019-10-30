@@ -1,4 +1,6 @@
 Changes with Apache Traffic Server 8.0.6
+  #4590 - Print thread name instead of thread id
+  #4840 - resolve stack-use-after-scope in YamlLogConfig.cc
   #5078 - Fix directives for checking TS_USE_TLS_OCSP
   #5105 - tscore/ink_hrtime: add missing cstdint import
   #5316 - cppcheck: Removed problematic move operators for FixedBufferWriter.
@@ -9,9 +11,12 @@ Changes with Apache Traffic Server 8.0.6
   #5434 - gcc9 - Fix I_Store.h
   #5435 - gcc9 - fix HTTPVersion.
   #5516 - Make code compilable with BoringSSL
+  #5823 - Avoid AWS auth v4 path/query param double encoding
+  #5833 - Fix H2 internal counters
   #5887 - Fixed const issue with magick plugin
   #5899 - Substitution string has changed
   #5911 - Enable stdout logging on FreeBSD
+  #5930 - Track SSL session cache evictions performed due to full bucket
   #5989 - Concurrent SRV requests failure
   #6047 - Change the ready checks for ats to use the actual ats port and not th…
   #6088 - Local 8.0.x change for gcc9 - Map.h, MemSpan.h, ink_uuid.h
