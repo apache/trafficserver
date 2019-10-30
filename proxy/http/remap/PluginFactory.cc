@@ -171,13 +171,15 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
     plugin = new RemapPluginInfo(configPath, effectivePath, runtimePath);
     if (nullptr != plugin) {
       if (plugin->load(error)) {
-        PluginDso::loadedPlugins()->add(plugin);
-
         if (plugin->init(error)) {
+          PluginDso::loadedPlugins()->add(plugin);
           inst = RemapPluginInst::init(plugin, argc, argv, error);
           if (nullptr != inst) {
             _instList.append(inst);
           }
+        } else {
+          plugin->unload(error);
+          delete plugin;
         }
 
         if (_preventiveCleaning) {

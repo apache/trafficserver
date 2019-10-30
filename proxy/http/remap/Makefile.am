@@ -82,7 +82,10 @@ test_PluginDso_SOURCES = \
 
 test_PluginFactory_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DPLUGIN_DSO_TESTS
 test_PluginFactory_LIBTOOLFLAGS = --preserve-dup-deps
-EXTRA_test_PluginFactory_DEPENDENCIES = unit-tests/plugin_v1.la
+EXTRA_test_PluginFactory_DEPENDENCIES = \
+	unit-tests/plugin_v1.la \
+	unit-tests/plugin_init_fail.la
+	unit-tests/plugin_instinit_fail.la
 test_PluginFactory_LDADD = $(COMMON_PLUGINDSO_LDADDS)
 test_PluginFactory_LDFLAGS = $(AM_LDFLAGS)
 test_PluginFactory_SOURCES = \
@@ -121,6 +124,8 @@ DSO_LDFLAGS = \
 pkglib_LTLIBRARIES = \
 	unit-tests/plugin_v1.la \
 	unit-tests/plugin_v2.la \
+	unit-tests/plugin_init_fail.la \
+	unit-tests/plugin_instinit_fail.la \
 	unit-tests/plugin_required_cb.la \
 	unit-tests/plugin_missing_deleteinstance.la \
 	unit-tests/plugin_missing_doremap.la \
@@ -133,6 +138,12 @@ unit_tests_plugin_v1_la_CPPFLAGS = -DPLUGINDSOVER=1 $(AM_CPPFLAGS)
 unit_tests_plugin_v2_la_SOURCES = unit-tests/plugin_misc_cb.cc
 unit_tests_plugin_v2_la_LDFLAGS = $(DSO_LDFLAGS)
 unit_tests_plugin_v2_la_CPPFLAGS = -DPLUGINDSOVER=2 $(AM_CPPFLAGS)
+unit_tests_plugin_init_fail_la_SOURCES = unit-tests/plugin_init_fail.cc
+unit_tests_plugin_init_fail_la_LDFLAGS = $(DSO_LDFLAGS)
+unit_tests_plugin_init_fail_la_CPPFLAGS = $(AM_CPPFLAGS)
+unit_tests_plugin_instinit_fail_la_SOURCES = unit-tests/plugin_instinit_fail.cc
+unit_tests_plugin_instinit_fail_la_LDFLAGS = $(DSO_LDFLAGS)
+unit_tests_plugin_instinit_fail_la_CPPFLAGS = $(AM_CPPFLAGS)
 unit_tests_plugin_required_cb_la_SOURCES = unit-tests/plugin_required_cb.cc
 unit_tests_plugin_required_cb_la_LDFLAGS = $(DSO_LDFLAGS)
 unit_tests_plugin_required_cb_la_CPPFLAGS = -DPLUGINDSOVER=1 $(AM_CPPFLAGS)
