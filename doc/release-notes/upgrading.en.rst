@@ -25,6 +25,42 @@ Upgrading to ATS v9.x
 .. toctree::
    :maxdepth: 1
 
+YAML
+----
+
+We are moving configurations over to YAML, and thus far, the following configurations are now fully
+migrated over to YAML:
+
+* :file:`logging.yaml` (*was* `logging.config` or `logging.lua`)
+* :file:`ip_allow.yaml` (*was* `ip_allow.config`)
+
+In addition, a new file for TLS handhsake negotiation configuration is added:
+
+* :file:`sni.yaml` (this was for a while named ssl_server_name.config in Github)
+
+New records.config settings
+----------------------------
+
+These are the changes that are most likely to cause problems during an upgrade. Take special care
+making sure you have updated your configurations accordingly.
+
+Connection management
+~~~~~~~~~~~~~~~~~~~~~
+The old settings for origin connection management included the following settings:
+
+* `proxy.config.http.origin_max_connections`
+* `proxy.config.http.origin_max_connections_queue`
+* `proxy.config.http.origin_min_keep_alive_connections`
+
+These are all gone, and replaced with the following set of configurations:
+
+* :ts:cv:`proxy.config.http.per_server.connection.max` (overridable)
+* :ts:cv:`proxy.config.http.per_server.connection.match` (overridable)
+* :ts:cv:`proxy.config.http.per_server.connection.alert_delay`
+* :ts:cv:`proxy.config.http.per_server.connection.queue_size`
+* :ts:cv:`proxy.config.http.per_server.connection.queue_delay`
+* :ts:cv:`proxy.config.http.per_server.connection.min`
+
 Deprecated or Removed Features
 ------------------------------
 The following features, configurations and plugins are either removed or deprecated in this
@@ -52,10 +88,6 @@ The old `v23` cache is no longer supported, which means caches created with ATS 
 possible to load with ATS v9.0.0 or later. We feel that this is an unlikely scenario, but if you do
 run into this, clearing the cache is required.
 
-Configuration changes
----------------------
-The following incompatible changes to the configurations have been made in this version of ATS.
-
 Plugins
 -------
 The following plugins have changes that might require you to change configurations.
@@ -64,7 +96,7 @@ header_rewrite
 ~~~~~~~~~~~~~~
 
 * The `%{PATH}` directive is now removed, and instead you want to use `%{CLIENT-URL:PATH}`. This was
-done to unify the behavior of these operators, rather than having this one-off directive.
+  done to unify the behavior of these operators, rather than having this one-off directive.
 
 Platform specific
 -----------------

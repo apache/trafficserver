@@ -31,8 +31,28 @@ have participated in this development cycle.
 New Features
 ------------
 
-New or modifed Configurations
------------------------------
+Incompatible records.config settings
+------------------------------------
+
+These are the changes that are most likely to cause problems during an upgrade. Take special care
+making sure you have updated your configurations accordingly.
+
+Connection management
+~~~~~~~~~~~~~~~~~~~~~
+The old settings for origin connection management included the following settings:
+
+* `proxy.config.http.origin_max_connections`
+* `proxy.config.http.origin_max_connections_queue`
+* `proxy.config.http.origin_min_keep_alive_connections`
+
+These are all gone, and replaced with the following set of configurations:
+
+* :ts:cv:`proxy.config.http.per_server.connection.max` (overridable)
+* :ts:cv:`proxy.config.http.per_server.connection.match` (overridable)
+* :ts:cv:`proxy.config.http.per_server.connection.alert_delay`
+* :ts:cv:`proxy.config.http.per_server.connection.queue_size`
+* :ts:cv:`proxy.config.http.per_server.connection.queue_delay`
+* :ts:cv:`proxy.config.http.per_server.connection.min`
 
 Logging and Metrics
 -------------------
