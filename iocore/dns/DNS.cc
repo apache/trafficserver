@@ -1437,7 +1437,7 @@ DNSEntry::post(DNSHandler *h, HostEnt *ent)
   } else {
     mutex = action.mutex;
     SET_HANDLER(&DNSEntry::postOneEvent);
-    submit_thread->schedule_imm_signal(this);
+    submit_thread->schedule_imm(this);
   }
   return 0;
 }

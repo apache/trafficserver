@@ -360,7 +360,7 @@ NetAccept::do_blocking_accept(EThread *t)
     NetHandler *h   = get_NetHandler(localt);
     // Assign NetHandler->mutex to NetVC
     vc->mutex = h->mutex;
-    localt->schedule_imm_signal(vc);
+    localt->schedule_imm(vc);
   } while (loop);
 
   return 1;
