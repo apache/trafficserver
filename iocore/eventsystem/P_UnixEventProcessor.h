@@ -89,7 +89,7 @@ EventProcessor::assign_affinity_by_type(Continuation *cont, EventType etype)
 }
 
 TS_INLINE Event *
-EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
+EventProcessor::schedule(Event *e, EventType etype)
 {
   ink_assert(etype < MAX_EVENT_TYPES);
 
@@ -118,22 +118,8 @@ EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
   } else {
     e->mutex = e->continuation->mutex = e->ethread->mutex;
   }
-  e->ethread->EventQueueExternal.enqueue(e, fast_signal);
+  e->ethread->EventQueueExternal.enqueue(e);
   return e;
-}
-
-TS_INLINE Event *
-EventProcessor::schedule_imm_signal(Continuation *cont, EventType et, int callback_event, void *cookie)
-{
-  Event *e = eventAllocator.alloc();
-
-  ink_assert(et < MAX_EVENT_TYPES);
-#ifdef ENABLE_TIME_TRACE
-  e->start_time = Thread::get_hrtime();
-#endif
-  e->callback_event = callback_event;
-  e->cookie         = cookie;
-  return schedule(e->init(cont, 0, 0), et, true);
 }
 
 TS_INLINE Event *
