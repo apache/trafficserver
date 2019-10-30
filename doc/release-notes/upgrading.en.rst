@@ -25,6 +25,14 @@ Upgrading to ATS v9.x
 .. toctree::
    :maxdepth: 1
 
+Remapping
+---------
+
+One of the biggest changes in ATS v9.0.0 is that URL rewrites, as specified in a :file:`remap.config`
+rule, now always happens **before** all plugins are executed. This can have significant impact on
+behavior, since plugins might now see a different URL than they did in prior versions. In particular,
+plugins modifying the cache key could have serious problems (see the  section below for details).
+
 YAML
 ----
 
@@ -61,6 +69,13 @@ These are all gone, and replaced with the following set of configurations:
 * :ts:cv:`proxy.config.http.per_server.connection.queue_delay`
 * :ts:cv:`proxy.config.http.per_server.connection.min`
 
+Removed records.config settings
+-------------------------------
+
+The following settings are simply gone, and have no purpose:
+
+* `proxy.config.config_dir` (see PROXY_CONFIG_CONFIG_DIR environment variable)
+
 Deprecated or Removed Features
 ------------------------------
 The following features, configurations and plugins are either removed or deprecated in this
@@ -70,8 +85,16 @@ removed in the next major release of ATS.
 
 API Changes
 -----------
-The following APIs have changed, either in semanatics, interfaces, or both.
+Our APIs are guaranteed to be compatible within major versions, but we do make changes
+for each new major release.
 
+Removed APIs
+~~~~~~~~~~~~
+* `TSHttpTxnRedirectRequest()`
+
+Renamed or modified APIs
+~~~~~~~~~~~~~~~~~~~~~~~~
+* `TSVConnSSLConnectionGet` is renamed to be :c:func:`TSVConnSslConnectionGet`.
 
 Cache
 -----
@@ -94,13 +117,11 @@ The following plugins have changes that might require you to change configuratio
 
 header_rewrite
 ~~~~~~~~~~~~~~
-
 * The `%{PATH}` directive is now removed, and instead you want to use `%{CLIENT-URL:PATH}`. This was
   done to unify the behavior of these operators, rather than having this one-off directive.
 
 Platform specific
 -----------------
-
 Solaris is no longer a supported platform, but the code is still there. However, it's unlikely to work,
 and unless someone takes on ownership of this Platform, it will be removed from the source in ATS v10.0.0.
 For more details, see issue #5553.

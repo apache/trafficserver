@@ -21,7 +21,6 @@
 
 What's New in ATS v9.x
 =======================
-
 This version of ATS includes over <x> commits, from <y> pull requests. A total of <z> contributors
 have participated in this development cycle.
 
@@ -31,9 +30,19 @@ have participated in this development cycle.
 New Features
 ------------
 
+This version of ATS has a number of new features (details below), but we're particularly excited about
+the following features:
+
+* Experimental QUIC support (draft 23).
+* TLS v1.3 0RTT support.
+
+PROXY protocol
+~~~~~~~~~~~~~~
+ATS now supports the `PROXY https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt`_ protocol,
+on the inbound side. The incoming PROXY data gets transformed into the `Forwarded` header.
+
 Incompatible records.config settings
 ------------------------------------
-
 These are the changes that are most likely to cause problems during an upgrade. Take special care
 making sure you have updated your configurations accordingly.
 
@@ -59,3 +68,8 @@ Logging and Metrics
 
 Plugins
 -------
+
+xdebug
+~~~~~~
+
+* A new directive, `fwd=<n>` to control the number of hops the header is forwarded for.
