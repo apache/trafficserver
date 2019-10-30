@@ -475,9 +475,9 @@ aio_thread_main(void *arg)
         SCOPED_MUTEX_LOCK(lock, op->mutex, thr_info->mutex->thread_holding);
         op->handleEvent(EVENT_NONE, nullptr);
       } else if (op->thread == AIO_CALLBACK_THREAD_ANY) {
-        eventProcessor.schedule_imm_signal(op);
+        eventProcessor.schedule_imm(op);
       } else {
-        op->thread->schedule_imm_signal(op);
+        op->thread->schedule_imm(op);
       }
       ink_mutex_acquire(&my_aio_req->aio_mutex);
     } while (true);

@@ -44,7 +44,7 @@
 extern ClassAllocator<Event> eventAllocator;
 
 void
-ProtectedQueue::enqueue(Event *e, bool fast_signal)
+ProtectedQueue::enqueue(Event *e)
 {
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
   EThread *e_ethread   = e->ethread;
@@ -59,25 +59,6 @@ ProtectedQueue::enqueue(Event *e, bool fast_signal)
       e_ethread->tail_cb->signalActivity();
     }
   }
-}
-
-void
-flush_signals(EThread *thr)
-{
-  ink_assert(this_ethread() == thr);
-  int n = thr->n_ethreads_to_be_signalled;
-  if (n > eventProcessor.n_ethreads) {
-    n = eventProcessor.n_ethreads; // MAX
-  }
-  int i;
-
-  for (i = 0; i < n; i++) {
-    if (thr->ethreads_to_be_signalled[i]) {
-      thr->ethreads_to_be_signalled[i]->tail_cb->signalActivity();
-      thr->ethreads_to_be_signalled[i] = nullptr;
-    }
-  }
-  thr->n_ethreads_to_be_signalled = 0;
 }
 
 void

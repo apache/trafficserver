@@ -126,7 +126,6 @@ public:
 
   */
   Event *schedule_imm(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = nullptr);
-  Event *schedule_imm_signal(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -300,7 +299,7 @@ public:
   EThread &operator=(const EThread &) = delete;
   ~EThread() override;
 
-  Event *schedule(Event *e, bool fast_signal = false);
+  Event *schedule(Event *e);
 
   /** Block of memory to allocate thread specific data e.g. stat system arrays. */
   char thread_private[PER_THREAD_DATA];
@@ -313,9 +312,6 @@ public:
 
   ProtectedQueue EventQueueExternal;
   PriorityEventQueue EventQueue;
-
-  EThread **ethreads_to_be_signalled = nullptr;
-  int n_ethreads_to_be_signalled     = 0;
 
   static constexpr int NO_ETHREAD_ID = -1;
   int id                             = NO_ETHREAD_ID;
