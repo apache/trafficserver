@@ -50,6 +50,9 @@ should be placed in :arg:`errbuff`, taking note of the maximum size of the buffe
 :arg:`errbuff_size`. The message is checked if the function returns a value other than
 :macro:`TS_SUCCESS`.
 
+If :func:`TSRemapInit` returns :macro:`TS_ERROR` then the remap configuration loading
+is aborted immediatelly.
+
 This function should perform any plugin global initialization, such as setting up static data
 tables. It only be called immediately after the dynamic library is loaded from disk.
 
@@ -87,6 +90,9 @@ completed before any calls to :func:`TSRemapDoRemap`.
 If there is an error then the callback should return :macro:`TS_ERROR` and fill in the
 :arg:`errbuff` with a C-string describing the error. Otherwise the function must return
 :macro:`TS_SUCCESS`.
+
+If :func:`TSRemapNewInstance` returns :macro:`TS_ERROR` then the remap configuration loading
+is aborted immediatelly.
 
 
 Configuration reload notifications
