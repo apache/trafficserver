@@ -28,7 +28,7 @@
 #include "HTTP.h"
 #include "../hdrs/XPACK.h"
 
-#include <vector>
+#include <deque>
 
 // It means that any header field can be compressed/decompressed by ATS
 const static int HPACK_ERROR_COMPRESSION_ERROR   = -1;
@@ -136,7 +136,7 @@ private:
 
   MIMEHdr *_mhdr     = nullptr;
   MIMEHdr *_mhdr_old = nullptr;
-  std::vector<MIMEField *> _headers;
+  std::deque<MIMEField *> _headers;
 };
 
 // [RFC 7541] 2.3. Indexing Table
