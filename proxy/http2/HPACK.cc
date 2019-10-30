@@ -354,7 +354,7 @@ HpackDynamicTable::~HpackDynamicTable()
 const MIMEField *
 HpackDynamicTable::get_header_field(uint32_t index) const
 {
-  return this->_headers.at(this->_headers.size() - index - 1);
+  return this->_headers.at(index);
 }
 
 void
@@ -380,8 +380,7 @@ HpackDynamicTable::add_header_field(const MIMEField *field)
     MIMEField *new_field = this->_mhdr->field_create(name, name_len);
     new_field->value_set(this->_mhdr->m_heap, this->_mhdr->m_mime, value, value_len);
     this->_mhdr->field_attach(new_field);
-    // XXX Because entire Vec instance is copied, Its too expensive!
-    this->_headers.push_back(new_field);
+    this->_headers.push_front(new_field);
   }
 }
 
@@ -414,7 +413,7 @@ HpackDynamicTable::update_maximum_size(uint32_t new_size)
 uint32_t
 HpackDynamicTable::length() const
 {
-  return _headers.size();
+  return this->_headers.size();
 }
 
 bool
@@ -425,22 +424,19 @@ HpackDynamicTable::_evict_overflowed_entries()
     return true;
   }
 
-  size_t count = 0;
-  for (auto &h : this->_headers) {
+  for (auto h = this->_headers.rbegin(); h != this->_headers.rend(); ++h) {
     int name_len, value_len;
-    h->name_get(&name_len);
-    h->value_get(&value_len);
+    (*h)->name_get(&name_len);
+    (*h)->value_get(&value_len);
 
     this->_current_size -= ADDITIONAL_OCTETS + name_len + value_len;
-    this->_mhdr->field_delete(h, false);
-    ++count;
+    this->_mhdr->field_delete(*h, false);
+    this->_headers.pop_back();
 
     if (this->_current_size <= this->_maximum_size) {
       break;
     }
   }
-
-  this->_headers.erase(this->_headers.begin(), this->_headers.begin() + count);
 
   if (this->_headers.size() == 0) {
     return false;
