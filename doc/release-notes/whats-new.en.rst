@@ -38,7 +38,7 @@ the following features:
 
 PROXY protocol
 ~~~~~~~~~~~~~~
-ATS now supports the `PROXY https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt`_ protocol,
+ATS now supports the `PROXY <https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt>`_ protocol,
 on the inbound side. The incoming PROXY data gets transformed into the `Forwarded` header.
 
 Incompatible records.config settings
