@@ -23,7 +23,7 @@ Test tls session cache
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True)
+ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server")
 
 
