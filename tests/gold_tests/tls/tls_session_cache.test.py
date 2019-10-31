@@ -23,7 +23,7 @@ Test tls session cache
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", select_ports=True)
 server = Test.MakeOriginServer("server")
 
 
@@ -35,6 +35,8 @@ server.addResponse("sessionlog.json", request_header, response_header)
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
+
+ts.Variables.ssl_port = 4443
 
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
