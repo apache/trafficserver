@@ -59,6 +59,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.session_cache.timeout': 0,
     'proxy.config.ssl.session_cache.auto_clear': 1,
     'proxy.config.ssl.server.session_ticket.enable': 0,
+    'proxy.config.http.server_ports': '{0}:proto=http2;http:ssl'.format(ts.Variables.ssl_port),
 })
 
 # Check that Session-ID is the same on every connection
@@ -89,7 +90,7 @@ tr.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 1
 tr.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts)
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 openssl_output = tr.Processes.Default.Streams.stdout.AbsPath
 tr.Processes.Default.Streams.All.Content = Testers.Lambda(checkSession)
 tr.StillRunningAfter = server
