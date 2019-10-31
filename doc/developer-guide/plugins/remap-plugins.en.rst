@@ -27,7 +27,9 @@ invoked when the rule is matched. For example, a rule such as
 
    map http://example.one/ http://example.two/ @plugin=example.so @pparam=first_arg @pparm=second_arg
 
-will, if matched, cause the plugin "example.so" to be called with parameters "first_arg" and "second_arg".
+will, if matched, cause the plugin "example.so" to be called with parameters `http://example.one/`,
+`http://example.two/`, "first_arg" and "second_arg". Please keep in mind that "from" URL and "to" URL
+will be converted to their canonical view.
 
 A key difference between global and remap plugins is reconfiguration and reloading. If
 :file:`remap.config` is reloaded, then all remap plugins are reconfigured based on the new version
