@@ -861,6 +861,14 @@ HttpTransact::StartRemapRequest(State *s)
   }
 
   TxnDebug("http_trans", "END HttpTransact::StartRemapRequest");
+
+  TxnDebug("http_trans", "Checking if transaction wants to upgrade");
+  if (handle_upgrade_request(s)) {
+    // everything should be handled by the upgrade handler.
+    TxnDebug("http_trans", "Transaction will be upgraded by the appropriate upgrade handler.");
+    return;
+  }
+
   TRANSACT_RETURN(SM_ACTION_API_PRE_REMAP, HttpTransact::PerformRemap);
 }
 
@@ -1052,6 +1060,9 @@ done:
 bool
 HttpTransact::handle_upgrade_request(State *s)
 {
+  HTTPHdr &request = s->hdr_info.client_request;
+  s->method        = request.method_get_wksidx();
+
   // Quickest way to determine that this is defintely not an upgrade.
   /* RFC 6455 The method of the request MUST be GET, and the HTTP version MUST
         be at least 1.1. */
@@ -1164,7 +1175,7 @@ HttpTransact::handle_websocket_upgrade_pre_remap(State *s)
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
   }
 
-  TRANSACT_RETURN(SM_ACTION_API_READ_REQUEST_HDR, HttpTransact::StartRemapRequest);
+  TRANSACT_RETURN(SM_ACTION_API_PRE_REMAP, HttpTransact::PerformRemap);
 }
 
 void
@@ -1209,7 +1220,7 @@ HttpTransact::ModifyRequest(State *s)
   bootstrap_state_variables_from_request(s, &request);
 
   ////////////////////////////////////////////////
-  // If there is no scheme default to http      //
+  // If there is no scheme, default to http      //
   ////////////////////////////////////////////////
   URL *url = request.url_get();
 
@@ -1278,13 +1289,6 @@ HttpTransact::ModifyRequest(State *s)
   }
 
   TxnDebug("http_trans", "END HttpTransact::ModifyRequest");
-  TxnDebug("http_trans", "Checking if transaction wants to upgrade");
-
-  if (handle_upgrade_request(s)) {
-    // everything should be handled by the upgrade handler.
-    TxnDebug("http_trans", "Transaction will be upgraded by the appropriate upgrade handler.");
-    return;
-  }
 
   TRANSACT_RETURN(SM_ACTION_API_READ_REQUEST_HDR, HttpTransact::StartRemapRequest);
 }
