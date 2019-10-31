@@ -56,7 +56,7 @@ The plugin manipulates the `cache key` by default. If `parent selection URL` man
 * ``--key-type=<list of target types>``  (default: ``cache_key``) - list of ``cache_key`` or ``parent_selection_url``, if multiple ``--key-type`` options are specified then all values are combined together.
 
 An instance of this plugin can be used for applying manipulations to `cache key`, `parent selection URL` or both depending on the need. See `simultaneous cache key and parent selection URL manipulation`_
-for examples of how to apply the **same** set of manupulations to both targets with a single plugin instance or applying **diferent** sets of manipulations to each target using separate plugin instances.
+for examples of how to apply the **same** set of manipulations to both targets with a single plugin instance or applying **different** sets of manipulations to each target using separate plugin instances.
 
 
 Cache key structure and related plugin parameters
