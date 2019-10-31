@@ -28,6 +28,7 @@
 #include "StatPages.h"
 
 #include "tscore/I_Layout.h"
+#include "tscore/Filenames.h"
 
 #include "HttpTransactCache.h"
 #include "HttpSM.h"
@@ -3247,7 +3248,7 @@ ink_cache_init(ts::ModuleVersion v)
 
   Result result = theCacheStore.read_config();
   if (result.failed()) {
-    Fatal("Failed to read cache storage configuration: %s", result.message());
+    Fatal("Failed to read cache configuration %s: %s", STORAGE_CONF_FILENAME, result.message());
   }
 }
 

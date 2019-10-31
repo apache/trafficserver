@@ -23,6 +23,7 @@
 
 #include <openssl/crypto.h>
 #include "tscore/I_Layout.h"
+#include "tscore/Filenames.h"
 #include "tscore/BufferWriter.h"
 #include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
@@ -158,7 +159,7 @@ produce_layout(bool json)
   print_var("remap.config", RecConfigReadConfigPath("proxy.config.url_remap.filename"), json);
   print_var("plugin.config", RecConfigReadConfigPath(nullptr, "plugin.config"), json);
   print_var("ssl_multicert.config", RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"), json);
-  print_var("storage.config", RecConfigReadConfigPath("proxy.config.cache.storage_filename"), json);
+  print_var(STORAGE_CONF_FILENAME, RecConfigReadConfigPath(nullptr, STORAGE_CONF_FILENAME), json);
   print_var("hosting.config", RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);
   print_var("volume.config", RecConfigReadConfigPath("proxy.config.cache.volume_filename"), json);
   print_var("ip_allow.yaml", RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true);
