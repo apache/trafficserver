@@ -211,7 +211,7 @@ struct CharIndexBlock {
 //                             -----------         ------------
 //                           0 |    |    |         |    |     |
 //                           . |    |    |         |    |     |
-//    CharIndexBlock           . |    |    |         |    |     |
+//    CharIndexBlock         . |    |    |         |    |     |
 //    ----------             . |    |    |         |    |     |
 //  0 |   |    |             . |    |    |   |-->23| ptr|  0  |  (ptr is to the
 //  . |   |    |   |-------->25| 0  |   -----|     |    |     |   hostBranch for

@@ -331,7 +331,7 @@ Thread Variables
      accept_threads      exec_thread.listen         Effect
    ==================== ====================== =====================
    ``0``                 ``0``                  All worker threads accept new connections and share listen fd.
-   ``1``                 ``0``                  New conections are accepted on a dedicated accept thread and distributed to worker threads in round robin fashion.
+   ``1``                 ``0``                  New connections are accepted on a dedicated accept thread and distributed to worker threads in round robin fashion.
    ``0``                 ``1``                  All worker threads listen on the same port using SO_REUSEPORT. Each thread has its own listen fd and new connections are accepted on all the threads.
    ==================== ====================== =====================
 
@@ -2472,7 +2472,7 @@ DNS
 .. ts:cv:: CONFIG proxy.config.dns.nameservers STRING NULL
    :reloadable:
 
-   The DNS servers. Note that this does not overide :ts:cv:`proxy.config.dns.resolv_conf`.
+   The DNS servers. Note that this does not override :ts:cv:`proxy.config.dns.resolv_conf`.
    That is, the contents of the file listed in :ts:cv:`proxy.config.dns.resolv_conf` will
    be appended to the list of nameservers specified here. To prevent this, a bogus file
    can be listed there.
