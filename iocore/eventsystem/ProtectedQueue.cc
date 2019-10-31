@@ -91,7 +91,7 @@ ProtectedQueue::wait(ink_hrtime timeout)
    *   - And then the Event Thread goes to sleep and waits for the wakeup signal of `EThread::might_have_data`,
    *   - The `EThread::lock` will be locked again when the Event Thread wakes up.
    */
-  if (INK_ATOMICLIST_EMPTY(al)) {
+  if (INK_ATOMICLIST_EMPTY(al) && localQueue.empty()) {
     timespec ts = ink_hrtime_to_timespec(timeout);
     ink_cond_timedwait(&might_have_data, &lock, &ts);
   }
