@@ -22,6 +22,7 @@
  */
 
 #include "tscore/ink_platform.h"
+#include "tscore/Filenames.h"
 #include "MgmtUtils.h"
 #include "tscore/Diags.h"
 #include "FileManager.h"
@@ -73,7 +74,7 @@ initializeRegistry()
   }
 
   registerFile("proxy.config.log.config.filename", "logging.yaml");
-  registerFile("", "storage.config");
+  registerFile("", STORAGE_CONF_FILENAME);
   registerFile("proxy.config.socks.socks_config_file", "socks.config");
   registerFile("records.config", "records.config");
   registerFile("proxy.config.cache.control.filename", "cache.config");

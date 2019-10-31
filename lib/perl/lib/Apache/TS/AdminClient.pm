@@ -349,7 +349,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.cache.ram_cache_cutoff
  proxy.config.cache.ram_cache.size
  proxy.config.cache.select_alternate
- proxy.config.cache.storage_filename
  proxy.config.cache.threads_per_disk
  proxy.config.cache.mutex_retry_delay
  proxy.config.cop.core_signal
