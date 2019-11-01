@@ -742,7 +742,7 @@ ParentRecord::Init(matcher_line *line_info)
     unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
   }
 
-  if (this->parents == nullptr && go_direct == false) {
+  if (this->parents == nullptr || go_direct == false) {
     return Result::failure("%s No parent specified in parent.config at line %d", modulePrefix, line_num);
   }
   // Process any modifiers to the directive, if they exist
