@@ -176,6 +176,26 @@ MIOBuffer::puts(char *s, int64_t len)
   return 0;
 }
 
+bool
+MIOBuffer::is_max_read_avail_more_than(int64_t size)
+{
+  bool no_reader = true;
+  for (auto &reader : this->readers) {
+    if (reader.allocated()) {
+      if (reader.is_read_avail_more_than(size)) {
+        return true;
+      }
+      no_reader = false;
+    }
+  }
+
+  if (no_reader && this->_writer) {
+    return (this->_writer->read_avail() > size);
+  }
+
+  return false;
+}
+
 //
 // IOBufferReader
 //
