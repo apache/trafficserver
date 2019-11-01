@@ -1108,6 +1108,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
   // Go do the preaccept hooks
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_PRE) {
+    SSL_INCREMENT_DYN_STAT(ssl_total_attempts_handshake_count_in_stat);
     if (!curHook) {
       Debug("ssl", "Initialize preaccept curHook from NULL");
       curHook = ssl_hooks->get(TSSslHookInternalID(TS_VCONN_START_HOOK));
@@ -1353,6 +1354,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
   // Go do the preaccept hooks
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_OUTBOUND_PRE) {
+    SSL_INCREMENT_DYN_STAT(ssl_total_attempts_handshake_count_out_stat);
     if (!curHook) {
       Debug("ssl", "Initialize outbound connect curHook from NULL");
       curHook = ssl_hooks->get(TSSslHookInternalID(TS_VCONN_OUTBOUND_START_HOOK));
