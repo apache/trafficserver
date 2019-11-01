@@ -121,7 +121,6 @@ enum {
   http_cache_deletes_stat,
 
   http_tunnels_stat,
-  http_throttled_proxy_only_stat,
 
   // document size stats
   http_user_agent_request_header_total_size_stat,
