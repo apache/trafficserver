@@ -70,9 +70,9 @@ class SessionMatchTest:
 
     def _runTraffic(self):
         self._tr.Processes.Default.Command = (
-                'curl -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.1:{port}/one &&'
-                'curl -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.1:{port}/two &&'
-                'curl -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.1:{port}/three'.format(
+                'curl -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{port}/one &&'
+                'curl -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{port}/two &&'
+                'curl -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{port}/three'.format(
                     port = self._ts.Variables.port))
         self._tr.Processes.Default.ReturnCode = 0
         self._tr.Processes.Default.StartBefore(self._server)
