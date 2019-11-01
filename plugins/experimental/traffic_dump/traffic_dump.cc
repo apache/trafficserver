@@ -602,7 +602,7 @@ TSPluginInit(int argc, const char *argv[])
     TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, ssncont);
     TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, ssncont);
     TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, ssncont);
-    TSDebug(PLUGIN_NAME, "Initialized with sample pool size %" PRId64 " bytes and disk limit %" PRId64 "bytes",
+    TSDebug(PLUGIN_NAME, "Initialized with sample pool size %" PRId64 " bytes and disk limit %" PRId64 " bytes",
             sample_pool_size.load(), max_disk_usage.load());
   }
 
