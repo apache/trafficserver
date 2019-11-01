@@ -1191,7 +1191,8 @@ compare_ushort(void const *a, void const *b)
 // Check
 //
 
-int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
+int
+Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
 {
   static int const SEGMENT_HISTOGRAM_WIDTH = 16;
   int hist[SEGMENT_HISTOGRAM_WIDTH + 1]    = {0};
