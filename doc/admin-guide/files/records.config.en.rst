@@ -319,7 +319,7 @@ Thread Variables
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.listen INT 0
 
-   If enabled (``1``) all the exex_threads listen for incoming connections. `proxy.config.accept_threads`
+   If enabled (``1``) all the exec_threads listen for incoming connections. `proxy.config.accept_threads`
    should be disabled to enable this variable.
 
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
@@ -335,7 +335,7 @@ Thread Variables
    ``0``                 ``1``                  All worker threads listen on the same port using SO_REUSEPORT. Each thread has its own listen fd and new connections are accepted on all the threads.
    ==================== ====================== =====================
 
-   By default, `proxy.config.accept_threads` is set to 1 and `proxy.config.exec_thread.listen` is set to 0. 
+   By default, `proxy.config.accept_threads` is set to 1 and `proxy.config.exec_thread.listen` is set to 0.
 .. ts:cv:: CONFIG proxy.config.thread.default.stacksize INT 1048576
 
    Default thread stack size, in bytes, for all threads (default is 1 MB).
@@ -3478,21 +3478,21 @@ Client-Related Configuration
 
    Indicate how the SNI value for the TLS connection to the origin is selected.  By default it is
    `host` which means the host header field value is used for the SNI.  If `remap` is specified, the
-   remapped origin name is used for the SNI value.  If `verify_with_name_source` is specified, the 
-   SNI will be the host header value and the name to check in the server certificate will be the 
+   remapped origin name is used for the SNI value.  If `verify_with_name_source` is specified, the
+   SNI will be the host header value and the name to check in the server certificate will be the
    remap header value.
-   We have two names that could be used in the transaction host header and the SNI value to the 
-   origin. These could be the host header from the client or the remap host name. Unless you have 
+   We have two names that could be used in the transaction host header and the SNI value to the
+   origin. These could be the host header from the client or the remap host name. Unless you have
    pristine host header enabled, these are likely the same values.
    If sni_policy = host, both the sni and the host header to origin will be the same.
-   If sni_policy = remap, the sni value with be the remap host name and the host header will be the 
+   If sni_policy = remap, the sni value with be the remap host name and the host header will be the
    host header from the client.
-   In addition, We may want to set the SNI and host headers the same (makes some common web servers 
-   happy), but the certificate served by the origin may have a name that corresponds to the remap 
-   name. So instead of using the SNI name for the name check, we may want to use the remap name. 
-   So if sni_policy = verify_with_name_source, the sni will be the host header value and the name to 
+   In addition, We may want to set the SNI and host headers the same (makes some common web servers
+   happy), but the certificate served by the origin may have a name that corresponds to the remap
+   name. So instead of using the SNI name for the name check, we may want to use the remap name.
+   So if sni_policy = verify_with_name_source, the sni will be the host header value and the name to
    check in the server certificate will be the remap header value.
-   
+
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 0
 
