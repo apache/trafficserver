@@ -529,9 +529,7 @@ namespace bw_fmt
   /// @a TUPLE.  Due to language limitations it cannot be done directly. The formatters can be
   /// accessed via standard array access in contrast to templated tuple access. The actual array is
   /// static and therefore at run time the only operation is loading the address of the array.
-  template <typename TUPLE, size_t... N>
-  ArgFormatterSignature<TUPLE> *
-  Get_Arg_Formatter_Array(std::index_sequence<N...>)
+  template <typename TUPLE, size_t... N> ArgFormatterSignature<TUPLE> *Get_Arg_Formatter_Array(std::index_sequence<N...>)
   {
     static ArgFormatterSignature<TUPLE> fa[sizeof...(N)] = {&bw_fmt::Arg_Formatter<TUPLE, N>...};
     return fa;

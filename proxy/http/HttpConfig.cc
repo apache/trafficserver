@@ -163,24 +163,26 @@ Enable_Config_Var(std::string_view const &name, bool (*cb)(const char *, RecData
 
   Context &ctx = storage.emplace_back(cb, cookie);
   // Register the call back - this handles external updates.
-  RecRegisterConfigUpdateCb(name.data(),
-                            [](const char *name, RecDataT dtype, RecData data, void *ctx) -> int {
-                              auto &&[cb, cookie] = *static_cast<Context *>(ctx);
-                              if ((*cb)(name, dtype, data, cookie)) {
-                                http_config_cb(name, dtype, data, cookie); // signal runtime config update.
-                              }
-                              return REC_ERR_OKAY;
-                            },
-                            &ctx);
+  RecRegisterConfigUpdateCb(
+    name.data(),
+    [](const char *name, RecDataT dtype, RecData data, void *ctx) -> int {
+      auto &&[cb, cookie] = *static_cast<Context *>(ctx);
+      if ((*cb)(name, dtype, data, cookie)) {
+        http_config_cb(name, dtype, data, cookie); // signal runtime config update.
+      }
+      return REC_ERR_OKAY;
+    },
+    &ctx);
 
   // Use the record to do the initial data load.
   // Look it up and call the updater @a cb on that data.
-  RecLookupRecord(name.data(),
-                  [](RecRecord const *r, void *ctx) -> void {
-                    auto &&[cb, cookie] = *static_cast<Context *>(ctx);
-                    (*cb)(r->name, r->data_type, r->data, cookie);
-                  },
-                  &ctx);
+  RecLookupRecord(
+    name.data(),
+    [](RecRecord const *r, void *ctx) -> void {
+      auto &&[cb, cookie] = *static_cast<Context *>(ctx);
+      (*cb)(r->name, r->data_type, r->data, cookie);
+    },
+    &ctx);
 }
 
 // [amc] Not sure which is uglier, this switch or having a micro-function for each var.

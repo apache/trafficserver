@@ -104,7 +104,8 @@ EventNotify::wait()
 #endif
 }
 
-int EventNotify::timedwait(int timeout) // milliseconds
+int
+EventNotify::timedwait(int timeout) // milliseconds
 {
 #ifdef HAVE_EVENTFD
   ssize_t nr, nr_fd = 0;

@@ -560,10 +560,7 @@ public:
       _padder(NetVConnectionContext_t::NET_VCONNECTION_UNSET)
   {
   }
-  void
-  rcv_frame(std::shared_ptr<const QUICFrame>)
-  {
-  }
+  void rcv_frame(std::shared_ptr<const QUICFrame>) {}
 
   void
   on_packet_sent(QUICPacketUPtr packet)

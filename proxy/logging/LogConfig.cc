@@ -98,8 +98,7 @@ LogConfig::setup_default_values()
   max_line_size     = 9216; // size of pipe buffer for SunOS 5.6
 }
 
-void
-LogConfig::reconfigure_mgmt_variables(ts::MemSpan<void>)
+void LogConfig::reconfigure_mgmt_variables(ts::MemSpan<void>)
 {
   Note("received log reconfiguration event, rolling now");
   Log::config->roll_log_files_now = true;

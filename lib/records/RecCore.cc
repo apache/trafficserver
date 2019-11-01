@@ -1286,11 +1286,12 @@ RecSignalWarning(int sig, const char *fmt, ...)
 void
 RecConfigWarnIfUnregistered()
 {
-  RecDumpRecords(RECT_CONFIG,
-                 [](RecT, void *, int registered_p, const char *name, int, RecData *) -> void {
-                   if (!registered_p) {
-                     Warning("Unrecognized configuration value '%s'", name);
-                   }
-                 },
-                 nullptr);
+  RecDumpRecords(
+    RECT_CONFIG,
+    [](RecT, void *, int registered_p, const char *name, int, RecData *) -> void {
+      if (!registered_p) {
+        Warning("Unrecognized configuration value '%s'", name);
+      }
+    },
+    nullptr);
 }

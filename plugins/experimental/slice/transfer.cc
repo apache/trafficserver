@@ -18,7 +18,8 @@
 
 #include "transfer.h"
 
-int64_t transfer_content_bytes(Data *const data) // , char const * const fstr)
+int64_t
+transfer_content_bytes(Data *const data) // , char const * const fstr)
 {
   int64_t consumed(0);
 
