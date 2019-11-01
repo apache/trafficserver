@@ -1817,11 +1817,6 @@ HttpTransact::DecideCacheLookup(State *s)
     }
   }
 
-  if (service_transaction_in_proxy_only_mode(s)) {
-    s->cache_info.action = CACHE_DO_NO_ACTION;
-    s->current.mode      = TUNNELLING_PROXY;
-    HTTP_INCREMENT_DYN_STAT(http_throttled_proxy_only_stat);
-  }
   // at this point the request is ready to continue down the
   // traffic server path.
 
@@ -6323,28 +6318,6 @@ HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
     s->current.state = BAD_INCOMING_RESPONSE;
     return false;
   }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Name       : service_transaction_in_proxy_only_mode
-// Description: uses some metric to force this transaction to be proxy-only
-//
-// Details    :
-//
-// Some metric may be employed to force the traffic server to enter
-// a proxy-only mode temporarily. This function is called to determine
-// if the current transaction should be proxy-only. The function is
-// called from initialize_state_variables_from_request and is used to
-// set s->current.mode to TUNNELLING_PROXY and just for safety to set
-// s->cache_info.action to CACHE_DO_NO_ACTION.
-//
-// Currently the function is just a placeholder and always returns false.
-//
-///////////////////////////////////////////////////////////////////////////////
-bool
-HttpTransact::service_transaction_in_proxy_only_mode(State * /* s ATS_UNUSED */)
-{
-  return false;
 }
 
 void

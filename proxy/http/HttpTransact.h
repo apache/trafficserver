@@ -997,7 +997,6 @@ public:
   static bool get_ka_info_from_config(State *s, ConnectionAttributes *server_info);
   static void get_ka_info_from_host_db(State *s, ConnectionAttributes *server_info, ConnectionAttributes *client_info,
                                        HostDBInfo *host_db_info);
-  static bool service_transaction_in_proxy_only_mode(State *s);
   static void setup_plugin_request_intercept(State *s);
   static void add_client_ip_to_outgoing_request(State *s, HTTPHdr *request);
   static RequestError_t check_request_validity(State *s, HTTPHdr *incoming_hdr);
