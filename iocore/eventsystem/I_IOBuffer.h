@@ -1094,7 +1094,7 @@ public:
   bool
   high_water()
   {
-    return max_read_avail() > water_mark;
+    return is_max_read_avail_more_than(this->water_mark);
   }
 
   /**
@@ -1176,7 +1176,24 @@ public:
   {
     return !_writer;
   }
+
+  /**
+    Get the maximum amount of available data across all of the readers.
+    If there're no allocated reader, return available data size of current writer.
+
+    This calls IOBufferReader::read_avail() and it could be expensive when it has a ton of IOBufferBlock.
+    The `is_max_read_avail(int64_t size)` is preferred if possible.
+
+    @return maximum amount of available data
+   */
   int64_t max_read_avail();
+
+  /**
+    Check if there is more than @a size bytes available to read.
+
+    @return @c true if more than @a size byte are available.
+  */
+  bool is_max_read_avail_more_than(int64_t size);
 
   int max_block_count();
   void check_add_block();
