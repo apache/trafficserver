@@ -155,7 +155,7 @@ produce_layout(bool json)
   print_var("PLUGINDIR", RecConfigReadPluginDir(), json);
   print_var("INCLUDEDIR", Layout::get()->includedir, json);
 
-  print_var("records.config", RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE), json);
+  print_var(RECORDS_CONF_FILENAME, RecConfigReadConfigPath(nullptr, RECORDS_CONF_FILENAME), json);
   print_var("remap.config", RecConfigReadConfigPath("proxy.config.url_remap.filename"), json);
   print_var("plugin.config", RecConfigReadConfigPath(nullptr, "plugin.config"), json);
   print_var("ssl_multicert.config", RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"), json);

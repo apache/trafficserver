@@ -25,10 +25,6 @@
 
 #include "I_RecDefs.h"
 
-#define REC_CONFIG_FILE "records.config"
-#define REC_SHADOW_EXT ".shadow"
-#define REC_RAW_STATS_FILE "records.snap"
-
 #define REC_MESSAGE_ELE_MAGIC 0xF00DF00D
 
 // We need at least this many internal record entries for our configurations and metrics. Any

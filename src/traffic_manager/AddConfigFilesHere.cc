@@ -76,7 +76,7 @@ initializeRegistry()
   registerFile("proxy.config.log.config.filename", "logging.yaml");
   registerFile("", STORAGE_CONF_FILENAME);
   registerFile("proxy.config.socks.socks_config_file", "socks.config");
-  registerFile("records.config", "records.config");
+  registerFile(RECORDS_CONF_FILENAME, RECORDS_CONF_FILENAME);
   registerFile("proxy.config.cache.control.filename", "cache.config");
   registerFile("proxy.config.cache.ip_allow.filename", "ip_allow.yaml");
   registerFile("proxy.config.http.parent_proxy.file", "parent.config");

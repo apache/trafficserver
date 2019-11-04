@@ -22,3 +22,8 @@
 ///////////////////////////////////////////////////////////////////
 // Configuration file names
 const char *STORAGE_CONF_FILENAME = "storage.config";
+const char *RECORDS_CONF_FILENAME = "records.config";
+
+///////////////////////////////////////////////////////////////////
+// Various other file names
+const char *RECORDS_STATS_FILE = "records.snap";
