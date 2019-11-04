@@ -28,6 +28,7 @@
 #include "tscore/ink_args.h"
 #include "tscore/ink_syslog.h"
 #include "tscore/runroot.h"
+#include "tscore/Filenames.h"
 
 #include "WebMgmtUtils.h"
 #include "MgmtUtils.h"
@@ -90,7 +91,7 @@ static char bind_stderr[512]  = "";
 static const char *mgmt_path  = nullptr;
 
 // By default, set the current directory as base
-static const char *recs_conf = "records.config";
+static const char *recs_conf = RECORDS_CONF_FILENAME;
 
 static int fds_limit;
 

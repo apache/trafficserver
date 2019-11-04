@@ -24,3 +24,8 @@
 ///////////////////////////////////////////////////////////////////
 // Configuration file names
 extern const char *STORAGE_CONF_FILENAME;
+extern const char *RECORDS_CONF_FILENAME;
+
+///////////////////////////////////////////////////////////////////
+// Various other file names
+extern const char *RECORDS_STATS_FILE;
