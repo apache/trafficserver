@@ -24,7 +24,9 @@ TSHttpHdrHostGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: const char* TSHttpHdrHostGet(TSMBuffer bufp, TSMLoc offset, int * length)
 

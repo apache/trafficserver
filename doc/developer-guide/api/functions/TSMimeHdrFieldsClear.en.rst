@@ -24,7 +24,9 @@ TSMimeHdrFieldsClear
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSMimeHdrFieldsClear(TSMBuffer bufp, TSMLoc offset)
 

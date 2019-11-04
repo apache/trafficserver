@@ -24,7 +24,9 @@ TSContDataSet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSContDataSet(TSCont contp, void * data)
 

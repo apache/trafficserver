@@ -25,7 +25,9 @@ Traffic Server marshall buffer API.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSMBuffer TSMBufferCreate(void)
 .. function:: TSReturnCode TSMBufferDestroy(TSMBuffer bufp)

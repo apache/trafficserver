@@ -24,7 +24,9 @@ TSTransformCreate
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSVConn TSTransformCreate(TSEventFunc event_funcp, TSHttpTxn txnp)
 

@@ -24,7 +24,9 @@ TSHttpTxnServerPush
 Synopsis
 ========
 
-`#include <ts/experimental.h>`
+.. code-block:: cpp
+
+    #include <ts/experimental.h>
 
 .. function:: void TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 
