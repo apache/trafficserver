@@ -23,7 +23,9 @@ TSSslClientContext
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSSslClientContextsNamesGet(int n, const char **result, int *actual)
 

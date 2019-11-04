@@ -24,7 +24,9 @@ TSIOBufferBlockReadStart
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: const char * TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64_t * avail)
 

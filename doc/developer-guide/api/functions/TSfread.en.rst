@@ -24,7 +24,9 @@ TSfread
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: ssize_t TSfread(TSFile filep, void * buf, size_t length)
 

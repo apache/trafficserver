@@ -24,7 +24,9 @@ TSContScheduleOnThread
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSAction TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread)
 

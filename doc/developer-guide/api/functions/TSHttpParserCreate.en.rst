@@ -27,7 +27,9 @@ Parse HTTP headers from memory buffers.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSHttpParser TSHttpParserCreate(void)
 .. function:: void TSHttpParserClear(TSHttpParser parser)

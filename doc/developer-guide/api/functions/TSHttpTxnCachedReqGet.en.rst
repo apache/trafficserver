@@ -24,7 +24,9 @@ TSHttpTxnCachedReqGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset)
 

@@ -28,8 +28,10 @@ TSAPI Types
 Synopsis
 ========
 
-`#include <ts/ts.h>`
-`#include <ts/remap.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
+    #include <ts/remap.h>
 
 Description
 ===========

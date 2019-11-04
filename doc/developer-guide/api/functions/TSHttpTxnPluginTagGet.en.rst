@@ -24,7 +24,9 @@ Fetch the tag of the plugin that created this transaction.
 
 Synopsis
 ========
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: const char * TSHttpTxnPluginTagGet(TSHttpTxn txnp)
 

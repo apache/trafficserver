@@ -25,7 +25,9 @@ TextView
 Synopsis
 ========
 
-:code:`#include <ts/TextView.h>`
+.. code-block:: cpp
+
+    #include <ts/TextView.h>`
 
 .. class:: TextView
 

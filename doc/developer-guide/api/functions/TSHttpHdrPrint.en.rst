@@ -24,7 +24,9 @@ TSHttpHdrPrint
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSHttpHdrPrint(TSMBuffer bufp, TSMLoc offset, TSIOBuffer iobufp)
 

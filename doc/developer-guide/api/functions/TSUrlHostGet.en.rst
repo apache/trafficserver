@@ -27,7 +27,9 @@ Traffic Server URL component retrieval API.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: const char * TSUrlHostGet(TSMBuffer bufp, TSMLoc offset, int * length)
 .. function:: const char * TSUrlSchemeGet(TSMBuffer bufp, TSMLoc offset, int * length)

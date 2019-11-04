@@ -24,7 +24,9 @@ TSVConnShutdown
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSVConnShutdown(TSVConn connp, int read, int write)
 

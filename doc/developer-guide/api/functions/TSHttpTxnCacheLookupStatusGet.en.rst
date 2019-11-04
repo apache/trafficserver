@@ -24,7 +24,9 @@ TSHttpTxnCacheLookupStatusGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int * lookup_status)
 

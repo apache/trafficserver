@@ -24,7 +24,9 @@ TSMimeParserCreate
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSMimeParser TSMimeParserCreate(void)
 

@@ -26,8 +26,10 @@ Traffic Server remap plugin entry points.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
-`#include <ts/remap.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
+    #include <ts/remap.h>
 
 .. function:: TSReturnCode TSRemapInit(TSRemapInterface * api_info, char * errbuff, int errbuff_size)
 .. function:: void TSRemapPreConfigReload(void)
