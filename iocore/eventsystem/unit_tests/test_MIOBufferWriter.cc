@@ -189,12 +189,8 @@ TEST_CASE("MIOBufferWriter", "[MIOBW]")
 
   REQUIRE(bw.extent() == ((iobbIdx * BlockSize) + blockUsed));
 
-// These test are disabled by default because they consistently fail on FreeBSD only, and may fail on Linux flavors
-// when Leif or Alan's lumbago is hurting.
-#if 0
   REQUIRE_THROWS_AS(bw.fill(bw.auxBufferCapacity() + 1), InkAssertExcept);
   REQUIRE_THROWS_AS(bw.data(), InkAssertExcept);
-#endif
 }
 
 void
