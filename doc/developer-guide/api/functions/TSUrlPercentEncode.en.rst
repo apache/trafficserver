@@ -27,7 +27,9 @@ Traffic Server URL percent encoding API.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSUrlPercentEncode(TSMBuffer bufp, TSMLoc offset, char * dst, size_t dst_size, size_t * length, const unsigned char * map)
 .. function:: TSReturnCode TSStringPercentEncode(const char * str, int str_len, char * dst, size_t dst_size, size_t * length, const unsigned char * map)

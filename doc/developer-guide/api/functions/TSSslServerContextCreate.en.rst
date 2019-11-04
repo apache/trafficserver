@@ -26,7 +26,9 @@ Traffic Server TLS server context creation.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSSslContext TSSslServerContextCreate(TSSslX509 *cert, char *certname)
 .. function:: void TSSslContextDestroy(TSSslContext ctx)

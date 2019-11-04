@@ -25,7 +25,9 @@ TSVConnArgs
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSVConnArgIndexReserve(const char * name, const char * description, int * arg_idx)
 .. function:: TSReturnCode TSVConnArgIndexNameLookup(const char * name, int * arg_idx, const char ** description)

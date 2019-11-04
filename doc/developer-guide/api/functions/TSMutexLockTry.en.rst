@@ -24,7 +24,9 @@ TSMutexLockTry
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSMutexLockTry(TSMutex mutexp)
 

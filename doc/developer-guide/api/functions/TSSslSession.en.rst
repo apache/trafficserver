@@ -24,7 +24,9 @@ TSSslSession
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSSslSession TSSslSessionGet(const TSSslSessionID * sessionid)
 .. function:: int TSSslSessionGetBuffer(const TSSslSessionID * sessionid, char * buffer, int * len_ptr)

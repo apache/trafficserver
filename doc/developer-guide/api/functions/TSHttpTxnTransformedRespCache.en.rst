@@ -24,7 +24,9 @@ TSHttpTxnTransformedRespCache
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSHttpTxnTransformedRespCache(TSHttpTxn txnp, int on)
 

@@ -21,7 +21,9 @@ TSHttpSsnClientFdGet
 Synopsis
 --------
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. c:function:: TSReturnCode TSHttpSsnClientFdGet(TSHttpTxn txnp, int *fdp)
 

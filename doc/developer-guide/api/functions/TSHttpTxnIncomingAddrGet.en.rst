@@ -24,7 +24,9 @@ Get the incoming proxy address on which a client's connection is accepted.
 Synopsis
 --------
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. c:function:: sockaddr const* TSHttpTxnIncomingAddrGet(TSHttpTxn txnp)
 

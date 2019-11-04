@@ -23,7 +23,9 @@ TSHttpArgs
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpTxnArgIndexReserve(const char * name, const char * description, int * arg_idx)
 .. function:: TSReturnCode TSHttpTxnArgIndexNameLookup(const char * name, int * arg__idx, const char ** description)

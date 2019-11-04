@@ -24,7 +24,9 @@ TSActionDone
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: int TSActionDone(TSAction actionp)
 
