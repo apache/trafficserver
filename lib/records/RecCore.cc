@@ -24,6 +24,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
+#include "tscore/Filenames.h"
 
 #include "RecordsConfig.h"
 #include "P_RecFile.h"
@@ -218,14 +219,10 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
     ink_mutex_init(&g_rec_config_lock);
 
-    g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE REC_SHADOW_EXT));
+    g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, RECORDS_CONF_FILENAME));
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-      ats_free(const_cast<char *>(g_rec_config_fpath));
-      g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE));
-      if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-        RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
-        file_exists = false;
-      }
+      RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", RECORDS_CONF_FILENAME);
+      file_exists = false;
     }
 
     if (file_exists) {
@@ -1260,7 +1257,7 @@ std::string
 RecConfigReadPersistentStatsPath()
 {
   std::string rundir(RecConfigReadRuntimeDir());
-  return Layout::relative_to(rundir, REC_RAW_STATS_FILE);
+  return Layout::relative_to(rundir, RECORDS_STATS_FILE);
 }
 
 void
