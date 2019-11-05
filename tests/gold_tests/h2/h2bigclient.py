@@ -43,7 +43,6 @@ def makerequest(port):
     # Fetch the object twice so we know at least one time comes from cache
     # Exploring timing options
     sites = ['/bigfile', '/bigfile']
-    responses = []
     request_ids = []
     for site in sites:
         request_id = conn.request('GET', url=site)
