@@ -32,8 +32,6 @@
 #include <sys/time.h>
 #include "mgmtapi.h"
 
-using namespace std;
-
 struct LookupItem {
   LookupItem(const char *s, const char *n, const int t) : pretty(s), name(n), numerator(""), denominator(""), type(t) {}
   LookupItem(const char *s, const char *n, const char *d, const int t) : pretty(s), name(n), numerator(n), denominator(d), type(t)
@@ -49,7 +47,7 @@ extern size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream);
 #if HAS_CURL
 extern char curl_error[CURL_ERROR_SIZE];
 #endif
-extern string response;
+extern std::string response;
 
 namespace constant
 {
@@ -62,6 +60,9 @@ const char end[]       = "\",\n";
 //----------------------------------------------------------------------------
 class Stats
 {
+  using string                            = std::string;
+  template <class Key, class T> using map = std::map<Key, T>;
+
 public:
   Stats(const string &url) : _url(url)
   {
@@ -524,6 +525,12 @@ public:
   }
 
 private:
+  std::pair<std::string, LookupItem>
+  make_pair(std::string s, LookupItem i)
+  {
+    return std::make_pair(s, i);
+  }
+
   map<string, string> *_stats;
   map<string, string> *_old_stats;
   map<string, LookupItem> lookup_table;
