@@ -108,10 +108,28 @@ SSL/TLS
    The total amount of time spent performing SSL/TLS handshakes for new sessions
    since statistics collection began.
 
-.. ts:stat:: global proxy.process.ssl.total_success_handshake_count integer
+.. ts:stat:: global proxy.process.ssl.total_attempts_handshake_count_in integer
    :type: counter
 
-   The total number of SSL/TLS handshakes successfully performed since
+   The total number of inbound SSL/TLS handshake attempts received since
+   statistics collection began.
+
+.. ts:stat:: global proxy.process.ssl.total_success_handshake_count_in integer
+   :type: counter
+
+   The total number of inbound SSL/TLS handshakes successfully performed since
+   statistics collection began.
+
+.. ts:stat:: global proxy.process.ssl.total_attempts_handshake_count_out integer
+   :type: counter
+
+   The total number of outbound SSL/TLS handshake attempts made since
+   statistics collection began.
+
+.. ts:stat:: global proxy.process.ssl.total_success_handshake_count_out integer
+   :type: counter
+
+   The total number of outbound SSL/TLS handshakes successfully performed since
    statistics collection began.
 
 .. ts:stat:: global proxy.process.ssl.total_ticket_keys_renewed integer
