@@ -40,7 +40,6 @@ def makerequest(port):
     conn = HTTPConnection('localhost:{0}'.format(port), secure=True)
 
     sites = {'/'}
-    responses = []
     request_ids = []
     for site in sites:
         request_id = conn.request('GET', url=site)
