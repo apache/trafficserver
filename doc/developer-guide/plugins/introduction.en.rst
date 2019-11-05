@@ -90,7 +90,7 @@ Below are some guidelines for creating a plugin:
    These examples are discussed in the following chapters.
 
 #. Determine where your plugin needs to hook on to Traffic Server's HTTP
-   processing (view the :ref:`http-txn-state-diagram`.
+   processing (view the :ref:`http-txn-state-diagram`).
 
 #. Read :ref:`developer-plugins-header-based-examples` to learn the basics of
    writing plugins: creating continuations and setting up hooks. If you
@@ -101,7 +101,7 @@ Below are some guidelines for creating a plugin:
    then read about the details of those APIs in this manual's reference
    chapters.
 
-#. Compile and load your plugin (see :ref:`developer-plugins-getting-started`.
+#. Compile and load your plugin (see :ref:`developer-plugins-getting-started`).
 
 #. Depending on your plugin's functionality, you might start testing it
    by issuing requests by hand and checking for the desired behavior in
