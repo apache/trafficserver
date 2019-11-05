@@ -28,8 +28,6 @@
 #include <vector>
 #include <cmath>
 
-using namespace std;
-
 CacheTestSM::CacheTestSM(RegressionTest *t, const char *name)
   : RegressionSM(t),
     start_memcpy_on_clone(0),
@@ -546,7 +544,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   bool pass = true;
   CacheKey key;
   Vol *vol = theCache->key_to_vol(&key, "example.com", sizeof("example.com") - 1);
-  vector<Ptr<IOBufferData>> data;
+  std::vector<Ptr<IOBufferData>> data;
 
   cache->init(cache_size, vol);
 
