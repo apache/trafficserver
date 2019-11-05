@@ -1,8 +1,11 @@
 Changes with Apache Traffic Server 8.0.6
+  #4042 - Fixed url_sig error when storing base64ed params in penultimate segment.
+  #4117 - Add transform TSIOBuffer watermark APIs.
   #4590 - Print thread name instead of thread id
   #4840 - resolve stack-use-after-scope in YamlLogConfig.cc
   #5078 - Fix directives for checking TS_USE_TLS_OCSP
   #5105 - tscore/ink_hrtime: add missing cstdint import
+  #5241 - Changed how current age is determined to age out documents
   #5316 - cppcheck: Removed problematic move operators for FixedBufferWriter.
   #5331 - Off by 1 error in memcpy of redirect url
   #5424 - Fix ContFlags for gcc 9.
@@ -21,4 +24,6 @@ Changes with Apache Traffic Server 8.0.6
   #5935 - Perform a SSL quiet shutdown when close-notify is not sent
   #5989 - Concurrent SRV requests failure
   #6047 - Change the ready checks for ats to use the actual ats port and not th…
+  #6068 - Fixes help message for traffic_top's sleep switch
   #6088 - Local 8.0.x change for gcc9 - Map.h, MemSpan.h, ink_uuid.h
+  #6113 - Patch to fix autest issues
