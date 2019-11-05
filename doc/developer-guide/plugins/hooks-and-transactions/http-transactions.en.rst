@@ -28,7 +28,7 @@ transactions.
 
 As described in the section on HTTP sessions, an **HTTP transaction** is
 an object defined for the lifetime of a single request from a client and
-the corresponding response from Traffic Server. The **``TSHttpTxn``**
+the corresponding response from Traffic Server. The ``TSHttpTxn``
 structure is the main handle given to a plugin for manipulating a
 transaction's internal state. Additionally, an HTTP transaction has a
 reference back to the HTTP session that created it.
