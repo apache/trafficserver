@@ -642,7 +642,7 @@ GeneratorInitialize()
 }
 
 void
-TSPluginInit(int /* argc */, const char * /* argv */ [])
+TSPluginInit(int /* argc */, const char * /* argv */[])
 {
   TSPluginRegistrationInfo info;
 
@@ -676,8 +676,7 @@ TSRemapDoRemap(void * /* ih */, TSHttpTxn txn, TSRemapRequestInfo * /* rri ATS_U
 }
 
 TSReturnCode
-TSRemapNewInstance(int /* argc */, char * /* argv */ [], void **ih, char * /* errbuf ATS_UNUSED */,
-                   int /* errbuf_size ATS_UNUSED */)
+TSRemapNewInstance(int /* argc */, char * /* argv */[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   *ih = nullptr;
   return TS_SUCCESS;

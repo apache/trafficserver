@@ -2029,8 +2029,7 @@ REGRESSION_TEST(Hdrs)(RegressionTest *t, int atype, int *pstatus)
 }
 #endif
 
-static void
-mgmt_restart_shutdown_callback(ts::MemSpan<void>)
+static void mgmt_restart_shutdown_callback(ts::MemSpan<void>)
 {
   sync_cache_dir_on_shutdown();
 }

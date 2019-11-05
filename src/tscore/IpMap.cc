@@ -180,7 +180,7 @@ namespace detail
     */
     bool contains(ArgType target,      ///< Search target value.
                   void **ptr = nullptr ///< Client data return.
-                  ) const;
+    ) const;
 
     /** Remove all addresses in the map.
 
