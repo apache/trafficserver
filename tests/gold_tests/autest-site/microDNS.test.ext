@@ -18,14 +18,12 @@
 
 import json
 import os
-import sys
 
 import trlib.ipconstants as IPConstants
 from ports import get_port
 
+
 # AddRecord registers a list of ip address against hostname
-
-
 def AddRecord(hostname, list_ip_addr):
 
     record = dict()

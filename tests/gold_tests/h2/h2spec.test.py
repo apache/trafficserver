@@ -17,11 +17,6 @@ Test HTTP/2 with h2spec
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
-# ----
-# Setup Test
-# ----
 Test.Summary = '''
 Test HTTP/2 with httpspec
 '''

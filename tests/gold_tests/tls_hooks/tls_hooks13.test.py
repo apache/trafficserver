@@ -18,7 +18,6 @@ Test one outbound start and two outbound close
 #  limitations under the License.
 
 import os
-import re
 
 Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.

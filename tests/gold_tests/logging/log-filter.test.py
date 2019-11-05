@@ -18,7 +18,7 @@
 
 import os
 
-Test.Summary = ''' 
+Test.Summary = '''
 Test log filter.
 '''
 # Only on Linux (why??)
@@ -31,7 +31,7 @@ ts = Test.MakeATSProcess("ts")
 # Microserver
 server = Test.MakeOriginServer("server")
 
-request_header = {'timestamp': 100, "headers": "GET /test-1 HTTP/1.1\r\nHost: test-1\r\n\r\n", "body": ""} 
+request_header = {'timestamp': 100, "headers": "GET /test-1 HTTP/1.1\r\nHost: test-1\r\n\r\n", "body": ""}
 response_header = {'timestamp': 100,
                    "headers": "HTTP/1.1 200 OK\r\nTest: 1\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n", "body": "Test 1"}
 server.addResponse("sessionlog.json", request_header, response_header)
@@ -62,7 +62,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 ts.Disk.logging_yaml.AddLines(
-    ''' 
+    '''
 logging:
   filters:
     - name: queryparamescaper_cquuc
@@ -74,7 +74,7 @@ logging:
   logs:
     - filename: filter-test
       format: custom
-      filters: 
+      filters:
       - queryparamescaper_cquuc
 '''.split("\n")
 )
@@ -121,4 +121,3 @@ tr = Test.AddTestRun()
 tr.DelayStart = 10
 tr.Processes.Default.Command = 'echo "Delay for log flush"'
 tr.Processes.Default.ReturnCode = 0
-

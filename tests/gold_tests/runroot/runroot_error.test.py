@@ -17,8 +17,6 @@
 #  limitations under the License.
 
 import os
-import sys
-import time
 
 Test.Summary = '''
 Test for expected error and failure of runroot from traffic_layout.
