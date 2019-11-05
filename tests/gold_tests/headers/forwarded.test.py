@@ -18,7 +18,6 @@ Test the Forwarded header and related configuration..
 #  limitations under the License.
 
 import os
-import subprocess
 
 Test.Summary = '''
 Test FORWARDED header.

@@ -32,7 +32,7 @@ ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=False)
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'test',
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.http.cache.http': 0, 
+    'proxy.config.http.cache.http': 0,
     'proxy.config.url_remap.remap_required': 0,
 })
 

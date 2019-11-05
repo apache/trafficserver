@@ -19,7 +19,6 @@ Those are then checked against a gold file to verify the protocol stack based ou
 #  limitations under the License.
 
 import os
-import subprocess
 
 Test.Summary = '''
 Check VIA header for protocol stack data.
