@@ -28,8 +28,6 @@
 #include <cmath>
 #include <cstdlib>
 
-using namespace std;
-
 CacheTestSM::CacheTestSM(RegressionTest *t, const char *name) : RegressionSM(t), cache_test_name(name)
 {
   SET_HANDLER(&CacheTestSM::event_handler);
@@ -550,7 +548,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   bool pass = true;
   CacheKey key;
   Vol *vol = theCache->key_to_vol(&key, "example.com", sizeof("example.com") - 1);
-  vector<Ptr<IOBufferData>> data;
+  std::vector<Ptr<IOBufferData>> data;
 
   cache->init(cache_size, vol);
 
