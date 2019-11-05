@@ -17,9 +17,7 @@ Test offering client cert to origin
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 import subprocess
-import re
 
 Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.

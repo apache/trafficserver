@@ -18,9 +18,7 @@
 
 from __future__ import print_function
 import os
-import socket
 from ports import get_port
-from autest.api import AddWhenFunction
 
 
 def make_id(s):
@@ -275,7 +273,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
         p.Variables.port = 8080
         p.Variables.portv6 = 8080
         p.Variables.ssl_port = 4443
-        
+
     get_port(p, "manager_port")
     get_port(p, "admin_port")
 
@@ -303,7 +301,6 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
         p.ReturnCode = 2
     else:
         p.ReturnCode = 0
-
 
     return p
 

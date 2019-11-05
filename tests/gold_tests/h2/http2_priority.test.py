@@ -16,14 +16,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
-# ----
-# Setup Test
-# ----
 Test.Summary = '''
 Test a basic remap of a http connection with Stream Priority Feature
 '''
+
 # need Curl
 Test.SkipUnless(
     Condition.HasCurlFeature('http2'),

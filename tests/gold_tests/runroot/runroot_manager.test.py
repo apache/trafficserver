@@ -17,8 +17,6 @@
 #  limitations under the License.
 
 import os
-import sys
-import time
 
 Test.Summary = '''
 Test for using of runroot of traffic_manager.
