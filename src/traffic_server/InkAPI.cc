@@ -7447,7 +7447,7 @@ TSIsDebugTagSet(const char *t)
 void
 TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
 {
-  if (is_debug_tag_set(tag) || (debug_flag && diags->on())) {
+  if ((debug_flag && diags->on()) || is_debug_tag_set(tag)) {
     va_list ap;
 
     va_start(ap, format_str);
