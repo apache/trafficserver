@@ -4009,6 +4009,10 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           s->cache_info.action = CACHE_DO_DELETE;
           s->next_action       = SM_ACTION_SERVER_READ;
         } else {
+          if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+            s->state_machine->do_range_setup_if_necessary();
+            // Check client request range header if we cached a stealed content with cacheable=false
+          }
           s->cache_info.action = CACHE_DO_SERVE_AND_DELETE;
           s->next_action       = SM_ACTION_SERVE_FROM_CACHE;
         }
