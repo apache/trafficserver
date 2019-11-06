@@ -19,7 +19,11 @@
 include $(top_srcdir)/build/tidy.mk
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_atomic test_freelist test_geometry test_X509HostnameValidator test_tscore
+check_PROGRAMS = test_geometry test_X509HostnameValidator test_tscore
+
+if EXPENSIVE_TESTS
+check_PROGRAMS += test_atomic test_freelist
+endif
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(abs_top_srcdir)/ci/asan_leak_suppression/unit_tests.txt
 
