@@ -75,6 +75,25 @@ Removed records.config settings
 The following settings are simply gone, and have no purpose:
 
 * `proxy.config.config_dir` (see PROXY_CONFIG_CONFIG_DIR environment variable)
+* `proxy.config.cache.storage_filename` (see next section as well)
+
+Deprecated records.config settings
+----------------------------------
+The following configurations still exist, and functions, but are considered
+deprecated and will be removed in a future release. We **strongly** encourage
+you to avoid using any of these:
+
+  * :ts:cv:`proxy.config.http.parent_proxy.file`
+  * :ts:cv:`proxy.config.socks.socks_config_file`
+  * :ts:cv:`proxy.config.cache.control.filename`
+  * :ts:cv:`proxy.config.cache.ip_allow.filename`
+  * :ts:cv:`proxy.config.cache.hosting_filename`
+  * :ts:cv:`proxy.config.cache.volume_filename`
+  * :ts:cv:`proxy.config.dns.splitdns.filename`
+  * :ts:cv:`proxy.config.log.config.filename`
+  * :ts:cv:`proxy.config.url_remap.filename`
+  * :ts:cv:`proxy.config.ssl.server.multicert.filename`
+  * :ts:cv:`proxy.config.ssl.servername.filename`
 
 Deprecated or Removed Features
 ------------------------------
