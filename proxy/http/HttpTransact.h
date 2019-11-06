@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
 #include "P_HostDB.h"
 #include "P_Net.h"
@@ -808,8 +809,16 @@ public:
     int64_t range_output_cl  = 0;
     RangeRecord *ranges      = nullptr;
 
-    OverridableHttpConfigParams *txn_conf = nullptr;
-    OverridableHttpConfigParams my_txn_conf; // Storage for plugins, to avoid malloc
+    OverridableHttpConfigParams const *txn_conf = nullptr;
+    OverridableHttpConfigParams &
+    my_txn_conf() // Storage for plugins, to avoid malloc
+    {
+      auto p = reinterpret_cast<OverridableHttpConfigParams *>(_my_txn_conf);
+
+      ink_assert(p == txn_conf);
+
+      return *p;
+    }
 
     bool transparent_passthrough = false;
     bool range_in_cache          = false;
@@ -888,10 +897,9 @@ public:
     void
     setup_per_txn_configs()
     {
-      if (txn_conf != &my_txn_conf) {
-        // Make sure we copy it first.
-        memcpy(&my_txn_conf, &http_config_param->oride, sizeof(my_txn_conf));
-        txn_conf = &my_txn_conf;
+      if (txn_conf != reinterpret_cast<OverridableHttpConfigParams *>(_my_txn_conf)) {
+        txn_conf = reinterpret_cast<OverridableHttpConfigParams *>(_my_txn_conf);
+        memcpy(_my_txn_conf, &http_config_param->oride, sizeof(_my_txn_conf));
       }
     }
 
@@ -910,6 +918,10 @@ public:
     }
 
     NetVConnection::ProxyProtocol pp_info;
+
+  private:
+    // Make this a raw byte array, so it will be accessed through the my_txn_conf() member function.
+    alignas(OverridableHttpConfigParams) char _my_txn_conf[sizeof(OverridableHttpConfigParams)];
 
   }; // End of State struct.
 
