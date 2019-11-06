@@ -2121,7 +2121,7 @@ HttpSM::process_srv_info(HostDBInfo *r)
   if (!r || !r->is_srv || !r->round_robin) {
     t_state.dns_info.srv_hostname[0]    = '\0';
     t_state.dns_info.srv_lookup_success = false;
-    t_state.txn_conf->srv_enabled       = false;
+    t_state.my_txn_conf().srv_enabled   = false;
     SMDebug("dns_srv", "No SRV records were available, continuing to lookup %s", t_state.dns_info.lookup_name);
   } else {
     HostDBRoundRobin *rr = r->rr();
@@ -2133,7 +2133,7 @@ HttpSM::process_srv_info(HostDBInfo *r)
     if (!srv) {
       t_state.dns_info.srv_lookup_success = false;
       t_state.dns_info.srv_hostname[0]    = '\0';
-      t_state.txn_conf->srv_enabled       = false;
+      t_state.my_txn_conf().srv_enabled   = false;
       SMDebug("dns_srv", "SRV records empty for %s", t_state.dns_info.lookup_name);
     } else {
       t_state.dns_info.srv_lookup_success = true;
@@ -4674,7 +4674,7 @@ HttpSM::send_origin_throttled_response()
 }
 
 static void
-set_tls_options(NetVCOptions &opt, OverridableHttpConfigParams *txn_conf)
+set_tls_options(NetVCOptions &opt, const OverridableHttpConfigParams *txn_conf)
 {
   char *verify_server = nullptr;
   if (txn_conf->ssl_client_verify_server_policy == nullptr) {

@@ -72,7 +72,7 @@ struct MgmtConverter {
    * This is passed a @c void* which is a pointer to the member in the configuration instance.
    * This function must return a @c MgmtInt converted from that value.
    */
-  MgmtInt (*load_int)(void *) = nullptr;
+  MgmtInt (*load_int)(const void *) = nullptr;
 
   /** Store a @c MgmtInt into a native type.
    *
@@ -86,7 +86,7 @@ struct MgmtConverter {
    * This is passed a @c void* which is a pointer to the member in the configuration instance.
    * This function must return a @c MgmtFloat converted from that value.
    */
-  MgmtFloat (*load_float)(void *) = nullptr;
+  MgmtFloat (*load_float)(const void *) = nullptr;
 
   /** Store a @c MgmtFloat into a native type.
    *
@@ -100,7 +100,7 @@ struct MgmtConverter {
    * This is passed a @c void* which is a pointer to the member in the configuration instance.
    * This function must return a @c string_view which contains the text for the member.
    */
-  std::string_view (*load_string)(void *) = nullptr;
+  std::string_view (*load_string)(const void *) = nullptr;
 
   /** Store a view in a native type.
    *
@@ -110,30 +110,33 @@ struct MgmtConverter {
   void (*store_string)(void *, std::string_view) = nullptr;
 
   // Convenience constructors because generally only one pair is valid.
-  MgmtConverter(MgmtInt (*load)(void *), void (*store)(void *, MgmtInt));
-  MgmtConverter(MgmtFloat (*load)(void *), void (*store)(void *, MgmtFloat));
-  MgmtConverter(std::string_view (*load)(void *), void (*store)(void *, std::string_view));
+  MgmtConverter(MgmtInt (*load)(const void *), void (*store)(void *, MgmtInt));
+  MgmtConverter(MgmtFloat (*load)(const void *), void (*store)(void *, MgmtFloat));
+  MgmtConverter(std::string_view (*load)(const void *), void (*store)(void *, std::string_view));
 
-  MgmtConverter(MgmtInt (*_load_int)(void *), void (*_store_int)(void *, MgmtInt), MgmtFloat (*_load_float)(void *),
-                void (*_store_float)(void *, MgmtFloat), std::string_view (*_load_string)(void *),
+  MgmtConverter(MgmtInt (*_load_int)(const void *), void (*_store_int)(void *, MgmtInt), MgmtFloat (*_load_float)(const void *),
+                void (*_store_float)(void *, MgmtFloat), std::string_view (*_load_string)(const void *),
                 void (*_store_string)(void *, std::string_view));
 };
 
-inline MgmtConverter::MgmtConverter(MgmtInt (*load)(void *), void (*store)(void *, MgmtInt)) : load_int(load), store_int(store) {}
+inline MgmtConverter::MgmtConverter(MgmtInt (*load)(const void *), void (*store)(void *, MgmtInt))
+  : load_int(load), store_int(store)
+{
+}
 
-inline MgmtConverter::MgmtConverter(MgmtFloat (*load)(void *), void (*store)(void *, MgmtFloat))
+inline MgmtConverter::MgmtConverter(MgmtFloat (*load)(const void *), void (*store)(void *, MgmtFloat))
   : load_float(load), store_float(store)
 {
 }
 
-inline MgmtConverter::MgmtConverter(std::string_view (*load)(void *), void (*store)(void *, std::string_view))
+inline MgmtConverter::MgmtConverter(std::string_view (*load)(const void *), void (*store)(void *, std::string_view))
   : load_string(load), store_string(store)
 {
 }
 
-inline MgmtConverter::MgmtConverter(MgmtInt (*_load_int)(void *), void (*_store_int)(void *, MgmtInt),
-                                    MgmtFloat (*_load_float)(void *), void (*_store_float)(void *, MgmtFloat),
-                                    std::string_view (*_load_string)(void *), void (*_store_string)(void *, std::string_view))
+inline MgmtConverter::MgmtConverter(MgmtInt (*_load_int)(const void *), void (*_store_int)(void *, MgmtInt),
+                                    MgmtFloat (*_load_float)(const void *), void (*_store_float)(void *, MgmtFloat),
+                                    std::string_view (*_load_string)(const void *), void (*_store_string)(void *, std::string_view))
   : load_int(_load_int),
     store_int(_store_int),
     load_float(_load_float),

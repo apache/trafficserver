@@ -7806,11 +7806,11 @@ TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
     sm->enable_redirection = true;
     // Make sure we allow for at least one redirection.
     if (sm->t_state.txn_conf->number_of_redirections <= 0) {
-      sm->t_state.txn_conf->number_of_redirections = 1;
+      sm->t_state.my_txn_conf().number_of_redirections = 1;
     }
   } else {
-    sm->enable_redirection                       = false;
-    sm->t_state.txn_conf->number_of_redirections = 0;
+    sm->enable_redirection                           = false;
+    sm->t_state.my_txn_conf().number_of_redirections = 0;
   }
 
   return TS_SUCCESS;
@@ -7839,7 +7839,7 @@ TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
   // Make sure we allow for at least one redirection.
   if (sm->t_state.txn_conf->number_of_redirections <= 0) {
     sm->t_state.setup_per_txn_configs();
-    sm->t_state.txn_conf->number_of_redirections = 1;
+    sm->t_state.my_txn_conf().number_of_redirections = 1;
   }
 }
 
@@ -8200,7 +8200,7 @@ _memberp_to_generic(T *ptr, MgmtConverter const *&conv)
 inline void *
 _memberp_to_generic(MgmtInt *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter converter([](void *data) -> MgmtInt { return *static_cast<MgmtInt *>(data); },
+  static const MgmtConverter converter([](const void *data) -> MgmtInt { return *static_cast<const MgmtInt *>(data); },
                                        [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; });
 
   conv = &converter;
@@ -8211,7 +8211,7 @@ _memberp_to_generic(MgmtInt *ptr, MgmtConverter const *&conv)
 inline void *
 _memberp_to_generic(MgmtByte *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter converter{[](void *data) -> MgmtInt { return *static_cast<MgmtByte *>(data); },
+  static const MgmtConverter converter{[](const void *data) -> MgmtInt { return *static_cast<const MgmtByte *>(data); },
                                        [](void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; }};
 
   conv = &converter;
@@ -8222,7 +8222,7 @@ _memberp_to_generic(MgmtByte *ptr, MgmtConverter const *&conv)
 inline void *
 _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter converter{[](void *data) -> MgmtFloat { return *static_cast<MgmtFloat *>(data); },
+  static const MgmtConverter converter{[](const void *data) -> MgmtFloat { return *static_cast<const MgmtFloat *>(data); },
                                        [](void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; }};
 
   conv = &converter;
@@ -8235,8 +8235,9 @@ template <typename E>
 inline auto
 _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std::enable_if<std::is_enum<E>::value, void *>::type
 {
-  static const MgmtConverter converter{[](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<E *>(data)); },
-                                       [](void *data, MgmtInt i) -> void { *static_cast<E *>(data) = static_cast<E>(i); }};
+  static const MgmtConverter converter{
+    [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const E *>(data)); },
+    [](void *data, MgmtInt i) -> void { *static_cast<E *>(data) = static_cast<E>(i); }};
 
   conv = &converter;
   return ptr;
@@ -8601,6 +8602,13 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   return ret;
 }
 
+// 2nd little helper function to find the struct member for getting.
+static const void *
+_conf_to_memberp(TSOverridableConfigKey conf, const OverridableHttpConfigParams *overridableHttpConfig, MgmtConverter const *&conv)
+{
+  return _conf_to_memberp(conf, const_cast<OverridableHttpConfigParams *>(overridableHttpConfig), conv);
+}
+
 /* APIs to manipulate the overridable configuration options.
  */
 TSReturnCode
@@ -8613,7 +8621,7 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 
   s->t_state.setup_per_txn_configs();
 
-  void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
+  void *dest = _conf_to_memberp(conf, &(s->t_state.my_txn_conf()), conv);
 
   if (!dest || !conv->store_int) {
     return TS_ERROR;
@@ -8632,7 +8640,7 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
 
   HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
   MgmtConverter const *conv;
-  void *src = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
+  const void *src = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
 
   if (!src || !conv->load_int) {
     return TS_ERROR;
@@ -8653,7 +8661,7 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 
   s->t_state.setup_per_txn_configs();
 
-  void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
+  void *dest = _conf_to_memberp(conf, &(s->t_state.my_txn_conf()), conv);
 
   if (!dest || !conv->store_float) {
     return TS_ERROR;
@@ -8671,7 +8679,7 @@ TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
   sdk_assert(sdk_sanity_check_null_ptr(static_cast<void *>(value)) == TS_SUCCESS);
 
   MgmtConverter const *conv;
-  void *src = _conf_to_memberp(conf, reinterpret_cast<HttpSM *>(txnp)->t_state.txn_conf, conv);
+  const void *src = _conf_to_memberp(conf, reinterpret_cast<HttpSM *>(txnp)->t_state.txn_conf, conv);
 
   if (!src || !conv->load_float) {
     return TS_ERROR;
@@ -8697,29 +8705,29 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   switch (conf) {
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
     if (value && length > 0) {
-      s->t_state.txn_conf->proxy_response_server_string     = const_cast<char *>(value); // The "core" likes non-const char*
-      s->t_state.txn_conf->proxy_response_server_string_len = length;
+      s->t_state.my_txn_conf().proxy_response_server_string     = const_cast<char *>(value); // The "core" likes non-const char*
+      s->t_state.my_txn_conf().proxy_response_server_string_len = length;
     } else {
-      s->t_state.txn_conf->proxy_response_server_string     = nullptr;
-      s->t_state.txn_conf->proxy_response_server_string_len = 0;
+      s->t_state.my_txn_conf().proxy_response_server_string     = nullptr;
+      s->t_state.my_txn_conf().proxy_response_server_string_len = 0;
     }
     break;
   case TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER:
     if (value && length > 0) {
-      s->t_state.txn_conf->global_user_agent_header      = const_cast<char *>(value); // The "core" likes non-const char*
-      s->t_state.txn_conf->global_user_agent_header_size = length;
+      s->t_state.my_txn_conf().global_user_agent_header      = const_cast<char *>(value); // The "core" likes non-const char*
+      s->t_state.my_txn_conf().global_user_agent_header_size = length;
     } else {
-      s->t_state.txn_conf->global_user_agent_header      = nullptr;
-      s->t_state.txn_conf->global_user_agent_header_size = 0;
+      s->t_state.my_txn_conf().global_user_agent_header      = nullptr;
+      s->t_state.my_txn_conf().global_user_agent_header_size = 0;
     }
     break;
   case TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE:
     if (value && length > 0) {
-      s->t_state.txn_conf->body_factory_template_base     = const_cast<char *>(value);
-      s->t_state.txn_conf->body_factory_template_base_len = length;
+      s->t_state.my_txn_conf().body_factory_template_base     = const_cast<char *>(value);
+      s->t_state.my_txn_conf().body_factory_template_base_len = length;
     } else {
-      s->t_state.txn_conf->body_factory_template_base     = nullptr;
-      s->t_state.txn_conf->body_factory_template_base_len = 0;
+      s->t_state.my_txn_conf().body_factory_template_base     = nullptr;
+      s->t_state.my_txn_conf().body_factory_template_base_len = 0;
     }
     break;
   case TS_CONFIG_HTTP_INSERT_FORWARDED:
@@ -8727,7 +8735,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       ts::LocalBufferWriter<1024> error;
       HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(value, length), error);
       if (!error.size()) {
-        s->t_state.txn_conf->insert_forwarded = bs;
+        s->t_state.my_txn_conf().insert_forwarded = bs;
       } else {
         Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
       }
@@ -8735,32 +8743,32 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_verify_server_policy = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_verify_server_policy = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_verify_server_properties = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_verify_server_properties = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_SNI_POLICY:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_sni_policy = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_sni_policy = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_CERT_FILENAME:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_cert_filename = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_cert_filename = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_private_key_filename = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_private_key_filename = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_ca_cert_filename = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_ca_cert_filename = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CERT_FILEPATH:
@@ -8768,7 +8776,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   default: {
     MgmtConverter const *conv;
-    void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
+    void *dest = _conf_to_memberp(conf, &(s->t_state.my_txn_conf()), conv);
     if (dest != nullptr && conv != nullptr && conv->store_string) {
       conv->store_string(dest, std::string_view(value, length));
     } else {
@@ -8805,7 +8813,7 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   default: {
     MgmtConverter const *conv;
-    void *src = _conf_to_memberp(conf, sm->t_state.txn_conf, conv);
+    const void *src = _conf_to_memberp(conf, sm->t_state.txn_conf, conv);
     if (src != nullptr && conv != nullptr && conv->load_string) {
       auto sv = conv->load_string(src);
       *value  = sv.data();
