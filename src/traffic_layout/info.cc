@@ -156,13 +156,13 @@ produce_layout(bool json)
   print_var("INCLUDEDIR", Layout::get()->includedir, json);
 
   print_var(RECORDS_CONF_FILENAME, RecConfigReadConfigPath(nullptr, RECORDS_CONF_FILENAME), json);
-  print_var("remap.config", RecConfigReadConfigPath("proxy.config.url_remap.filename"), json);
-  print_var("plugin.config", RecConfigReadConfigPath(nullptr, "plugin.config"), json);
-  print_var("ssl_multicert.config", RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"), json);
+  print_var(REMAP_CONF_FILENAME, RecConfigReadConfigPath("proxy.config.url_remap.filename"), json);
+  print_var(PLUGIN_CONF_FILENAME, RecConfigReadConfigPath(nullptr, PLUGIN_CONF_FILENAME), json);
+  print_var(MULTICERT_CONF_FILENAME, RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"), json);
   print_var(STORAGE_CONF_FILENAME, RecConfigReadConfigPath(nullptr, STORAGE_CONF_FILENAME), json);
-  print_var("hosting.config", RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);
-  print_var("volume.config", RecConfigReadConfigPath("proxy.config.cache.volume_filename"), json);
-  print_var("ip_allow.yaml", RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true);
+  print_var(HOSTING_CONF_FILENAME, RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);
+  print_var(VOLUME_CONF_FILENAME, RecConfigReadConfigPath("proxy.config.cache.volume_filename"), json);
+  print_var(IPALLOW_CONF_FILENAME, RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true);
   if (json) {
     printf("}\n");
   }

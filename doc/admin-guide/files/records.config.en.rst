@@ -3061,6 +3061,7 @@ URL Remap Rules
 ===============
 
 .. ts:cv:: CONFIG proxy.config.url_remap.filename STRING remap.config
+   :deprecated:
 
    Sets the name of the :file:`remap.config` file.
 

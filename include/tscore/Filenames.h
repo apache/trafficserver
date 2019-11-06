@@ -25,6 +25,19 @@
 // Configuration file names
 extern const char *STORAGE_CONF_FILENAME;
 extern const char *RECORDS_CONF_FILENAME;
+extern const char *VOLUME_CONF_FILENAME;
+extern const char *PLUGIN_CONF_FILENAME;
+
+extern const char *LOGGING_CONF_FILENAME;
+extern const char *CACHE_CONF_FILENAME;
+extern const char *IPALLOW_CONF_FILENAME;
+extern const char *HOSTING_CONF_FILENAME;
+extern const char *SOCKS_CONF_FILENAME;
+extern const char *PARENT_CONF_FILENAME;
+extern const char *REMAP_CONF_FILENAME;
+extern const char *MULTICERT_CONF_FILENAME;
+extern const char *SPLITDNS_CONF_FILENAME;
+extern const char *SNI_CONF_FILENAME;
 
 ///////////////////////////////////////////////////////////////////
 // Various other file names

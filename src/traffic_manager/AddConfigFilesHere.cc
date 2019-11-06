@@ -73,20 +73,20 @@ initializeRegistry()
     ink_assert(!"Configuration Object Registry Initialized More than Once");
   }
 
-  registerFile("proxy.config.log.config.filename", "logging.yaml");
+  registerFile("proxy.config.log.config.filename", LOGGING_CONF_FILENAME);
   registerFile("", STORAGE_CONF_FILENAME);
-  registerFile("proxy.config.socks.socks_config_file", "socks.config");
+  registerFile("proxy.config.socks.socks_config_file", SOCKS_CONF_FILENAME);
   registerFile(RECORDS_CONF_FILENAME, RECORDS_CONF_FILENAME);
-  registerFile("proxy.config.cache.control.filename", "cache.config");
-  registerFile("proxy.config.cache.ip_allow.filename", "ip_allow.yaml");
-  registerFile("proxy.config.http.parent_proxy.file", "parent.config");
-  registerFile("proxy.config.url_remap.filename", "remap.config");
-  registerFile("", "volume.config");
-  registerFile("proxy.config.cache.hosting_filename", "hosting.config");
-  registerFile("", "plugin.config");
-  registerFile("proxy.config.dns.splitdns.filename", "splitdns.config");
-  registerFile("proxy.config.ssl.server.multicert.filename", "ssl_multicert.config");
-  registerFile("proxy.config.ssl.servername.filename", "sni.config");
+  registerFile("proxy.config.cache.control.filename", CACHE_CONF_FILENAME);
+  registerFile("proxy.config.cache.ip_allow.filename", IPALLOW_CONF_FILENAME);
+  registerFile("proxy.config.http.parent_proxy.file", PARENT_CONF_FILENAME);
+  registerFile("proxy.config.url_remap.filename", REMAP_CONF_FILENAME);
+  registerFile("", VOLUME_CONF_FILENAME);
+  registerFile("proxy.config.cache.hosting_filename", HOSTING_CONF_FILENAME);
+  registerFile("", PLUGIN_CONF_FILENAME);
+  registerFile("proxy.config.dns.splitdns.filename", SPLITDNS_CONF_FILENAME);
+  registerFile("proxy.config.ssl.server.multicert.filename", MULTICERT_CONF_FILENAME);
+  registerFile("proxy.config.ssl.servername.filename", SNI_CONF_FILENAME);
 
   configFiles->registerCallback(testcall);
 }

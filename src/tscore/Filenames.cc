@@ -23,6 +23,20 @@
 // Configuration file names
 const char *STORAGE_CONF_FILENAME = "storage.config";
 const char *RECORDS_CONF_FILENAME = "records.config";
+const char *VOLUME_CONF_FILENAME  = "volume.config";
+const char *PLUGIN_CONF_FILENAME  = "plugin.config";
+
+// These still need to have their corrensponding records.config settings remove
+const char *LOGGING_CONF_FILENAME   = "logging.yaml";
+const char *CACHE_CONF_FILENAME     = "cache.config";
+const char *IPALLOW_CONF_FILENAME   = "ip_allow.yaml";
+const char *HOSTING_CONF_FILENAME   = "hosting.config";
+const char *SOCKS_CONF_FILENAME     = "socks.config";
+const char *PARENT_CONF_FILENAME    = "parent.config";
+const char *REMAP_CONF_FILENAME     = "remap.config";
+const char *MULTICERT_CONF_FILENAME = "ssl_multicert.config";
+const char *SPLITDNS_CONF_FILENAME  = "splitdns.config";
+const char *SNI_CONF_FILENAME       = "sni.yaml";
 
 ///////////////////////////////////////////////////////////////////
 // Various other file names

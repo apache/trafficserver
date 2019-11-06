@@ -38,6 +38,7 @@
 #include "tscore/ink_syslog.h"
 #include "tscore/hugepages.h"
 #include "tscore/runroot.h"
+#include "tscore/Filenames.h"
 
 #include "ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
 
@@ -857,23 +858,23 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
 
   if (!urlRewriteVerify()) {
     exitStatus |= (1 << 0);
-    fprintf(stderr, "ERROR: Failed to load remap.config, exitStatus %d\n\n", exitStatus);
+    fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", REMAP_CONF_FILENAME, exitStatus);
   } else {
-    fprintf(stderr, "INFO: Successfully loaded remap.config\n\n");
+    fprintf(stderr, "INFO: Successfully loaded %s\n\n", REMAP_CONF_FILENAME);
   }
 
   if (RecReadConfigFile() != REC_ERR_OKAY) {
     exitStatus |= (1 << 1);
-    fprintf(stderr, "ERROR: Failed to load records.config, exitStatus %d\n\n", exitStatus);
+    fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", RECORDS_CONF_FILENAME, exitStatus);
   } else {
-    fprintf(stderr, "INFO: Successfully loaded records.config\n\n");
+    fprintf(stderr, "INFO: Successfully loaded %s\n\n", RECORDS_CONF_FILENAME);
   }
 
   if (!plugin_init(true)) {
     exitStatus |= (1 << 2);
-    fprintf(stderr, "ERROR: Failed to load plugin.config, exitStatus %d\n\n", exitStatus);
+    fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", PLUGIN_CONF_FILENAME, exitStatus);
   } else {
-    fprintf(stderr, "INFO: Successfully loaded plugin.config\n\n");
+    fprintf(stderr, "INFO: Successfully loaded %s\n\n", PLUGIN_CONF_FILENAME);
   }
 
   SSLInitializeLibrary();
@@ -1304,7 +1305,7 @@ syslog_log_configure()
 
     ats_free(facility_str);
     if (facility < 0) {
-      syslog(LOG_WARNING, "Bad syslog facility in records.config. Keeping syslog at LOG_DAEMON");
+      syslog(LOG_WARNING, "Bad syslog facility in %s. Keeping syslog at LOG_DAEMON", RECORDS_CONF_FILENAME);
     } else {
       Debug("server", "Setting syslog facility to %d", facility);
       closelog();
@@ -1474,7 +1475,8 @@ change_uid_gid(const char *user)
               "\tand then rebuild the server.\n"
               "\tIt is strongly suggested that you instead modify the\n"
               "\tproxy.config.admin.user_id directive in your\n"
-              "\trecords.config file to list a non-root user.\n");
+              "\t%s file to list a non-root user.\n",
+              RECORDS_CONF_FILENAME);
   }
 #endif
 }
@@ -2098,13 +2100,13 @@ init_ssl_ctx_callback(void *ctx, bool server)
 static void
 load_ssl_file_callback(const char *ssl_file)
 {
-  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file);
+  pmgmt->signalConfigFileChild(MULTICERT_CONF_FILENAME, ssl_file);
 }
 
 static void
 load_remap_file_callback(const char *remap_file)
 {
-  pmgmt->signalConfigFileChild("remap.config", remap_file);
+  pmgmt->signalConfigFileChild(REMAP_CONF_FILENAME, remap_file);
 }
 
 static void

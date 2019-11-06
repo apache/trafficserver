@@ -752,7 +752,7 @@ LocalManager::processEventQueue()
       // records.config
       if (!(strcmp(payload.begin(), RECORDS_CONF_FILENAME))) {
         if (RecReadConfigFile() != REC_ERR_OKAY) {
-          mgmt_elog(errno, "[fileUpdated] Config update failed for records.config\n");
+          mgmt_elog(errno, "[fileUpdated] Config update failed for %s\n", RECORDS_CONF_FILENAME);
         } else {
           RecConfigWarnIfUnregistered();
         }

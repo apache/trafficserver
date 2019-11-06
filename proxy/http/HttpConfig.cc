@@ -22,6 +22,7 @@
  */
 
 #include "tscore/ink_config.h"
+#include "tscore/Filenames.h"
 #include <cctype>
 #include <cstring>
 #include "HttpConfig.h"
@@ -1302,9 +1303,9 @@ HttpConfig::reconfigure()
   if (params->outbound_conntrack.queue_size > 0 &&
       !(params->oride.outbound_conntrack.max > 0 || params->oride.outbound_conntrack.min > 0)) {
     Warning("'%s' is set, but neither '%s' nor '%s' are "
-            "set, please correct your records.config",
+            "set, please correct your %s",
             OutboundConnTrack::CONFIG_VAR_QUEUE_SIZE.data(), OutboundConnTrack::CONFIG_VAR_MAX.data(),
-            OutboundConnTrack::CONFIG_VAR_MIN.data());
+            OutboundConnTrack::CONFIG_VAR_MIN.data(), RECORDS_CONF_FILENAME);
   }
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
 
@@ -1312,8 +1313,8 @@ HttpConfig::reconfigure()
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;
 
   if (params->oride.outbound_conntrack.max > 0 && params->oride.outbound_conntrack.max < params->oride.outbound_conntrack.min) {
-    Warning("'%s' < per_server.min_keep_alive_connections, setting min=max , please correct your records.config",
-            OutboundConnTrack::CONFIG_VAR_MAX.data());
+    Warning("'%s' < per_server.min_keep_alive_connections, setting min=max , please correct your %s",
+            OutboundConnTrack::CONFIG_VAR_MAX.data(), RECORDS_CONF_FILENAME);
     params->oride.outbound_conntrack.min = params->oride.outbound_conntrack.max;
   }
 

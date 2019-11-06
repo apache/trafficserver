@@ -34,6 +34,7 @@
 #include "tscore/ink_file.h"
 
 #include "tscore/List.h"
+#include "tscore/Filenames.h"
 
 #include "Log.h"
 #include "LogField.h"
@@ -806,7 +807,7 @@ LogConfig::update_space_used()
 bool
 LogConfig::evaluate_config()
 {
-  ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", "logging.yaml"));
+  ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", LOGGING_CONF_FILENAME));
   struct stat sbuf;
   if (stat(path.get(), &sbuf) == -1 && errno == ENOENT) {
     Warning("logging configuration '%s' doesn't exist", path.get());
