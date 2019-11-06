@@ -22,7 +22,7 @@ prime_https:
 # Step 3 - start logging performance data
 log_start:
 	dstat 10 >& dstat.log &
-	sudo perf record &
+	sudo perf record sleep 120 &
 	sudo perf stat >& perf-stat.log &
 
 # Step 4 - run the benchmark
