@@ -7093,7 +7093,11 @@ namespace Catch {
 #  include <stdbool.h>
 #  include <sys/types.h>
 #  include <unistd.h>
+#if defined(darwin) || defined(freebsd)
+#ifdef HAVE_SYS_SYSCTL_H
 #  include <sys/sysctl.h>
+#endif
+#endif
 #  include <cstddef>
 #  include <ostream>
 
