@@ -164,7 +164,7 @@ is_empty(char *s)
 */
 int
 HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPHdr *client_request,
-                                        OverridableHttpConfigParams *http_config_params)
+                                        const OverridableHttpConfigParams *http_config_params)
 {
   time_t current_age, best_age = CacheHighAgeWatermark;
   time_t t_now         = 0;
@@ -284,7 +284,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
 
 */
 float
-HttpTransactCache::calculate_quality_of_match(OverridableHttpConfigParams *http_config_param, HTTPHdr *client_request,
+HttpTransactCache::calculate_quality_of_match(const OverridableHttpConfigParams *http_config_param, HTTPHdr *client_request,
                                               HTTPHdr *obj_client_request, HTTPHdr *obj_origin_server_response)
 {
   // For PURGE requests, any alternate is good really.
@@ -1124,7 +1124,7 @@ language_wildcard:
 
 */
 Variability_t
-HttpTransactCache::CalcVariability(OverridableHttpConfigParams *http_config_params, HTTPHdr *client_request,
+HttpTransactCache::CalcVariability(const OverridableHttpConfigParams *http_config_params, HTTPHdr *client_request,
                                    HTTPHdr *obj_client_request, HTTPHdr *obj_origin_server_response)
 {
   ink_assert(http_config_params != nullptr);

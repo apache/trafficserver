@@ -156,7 +156,7 @@ reloadCacheControl()
 }
 
 void
-getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableHttpConfigParams *h_txn_conf, char *tag)
+getCacheControl(CacheControlResult *result, HttpRequestData *rdata, const OverridableHttpConfigParams *h_txn_conf, char *tag)
 {
   rdata->tag = tag;
   CacheControlTable->Match(rdata, result);

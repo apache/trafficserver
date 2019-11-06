@@ -280,7 +280,8 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
 }
 
 Action *
-HttpCacheSM::open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, OverridableHttpConfigParams *params, time_t pin_in_cache)
+HttpCacheSM::open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, const OverridableHttpConfigParams *params,
+                       time_t pin_in_cache)
 {
   Action *act_return;
 
