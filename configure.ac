@@ -284,6 +284,20 @@ TS_ARG_ENABLE_VAR([has], [tests])
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
+# Build expensive unit tests ?
+#
+
+AC_MSG_CHECKING([whether to enable expensive unit tests])
+AC_ARG_ENABLE([expensive-tests],
+  [AS_HELP_STRING([--enable-expensive-tests],[turn on expensive unit tests])],
+  [],
+  [enable_expensive_tests=no]
+)
+AC_MSG_RESULT([$enable_expensive_tests])
+TS_ARG_ENABLE_VAR([has], [expensive_tests])
+AM_CONDITIONAL([EXPENSIVE_TESTS], [test 0 -ne $has_expensive_tests])
+
+#
 # Build documentation?
 #
 
