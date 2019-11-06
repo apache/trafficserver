@@ -35,7 +35,9 @@
 #if defined(freebsd)
 #include <sys/types.h>
 #include <sys/param.h>
+#ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
+#endif
 #endif
 #include <string.h>
 #include <sys/time.h>
