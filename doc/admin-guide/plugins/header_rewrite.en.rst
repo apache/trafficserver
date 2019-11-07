@@ -791,7 +791,7 @@ Header Values
 
 Setting a header with a value can take the following formats:
 
-- Any `condition <Conditions>`_ which extracts a value from the request.
+- Any `condition <Conditions_>`_ which extracts a value from the request.
 
 - ``$N``, where 0 <= N <= 9, from matching groups in a regular expression.
 
