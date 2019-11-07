@@ -45,7 +45,7 @@ SystemTap and DTrace support
 ****************************
 
 Traffic Server can be instrumented with **SystemTap** on Linux systems, or
-**DTrace** on *BSDs and macOS. In order to use such tools, Traffic Server needs
+**DTrace** on \*BSDs and macOS. In order to use such tools, Traffic Server needs
 to be built with ``-g``, or the debug symbols need to be installed. On Debian
 systems, install the ``trafficserver-dbgsym`` package to install the debug
 symbols.
