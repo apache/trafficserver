@@ -37,7 +37,7 @@ bench_http2:
 
 # Step 5 - stop loggging performance data
 log_stop:
-	killall python3
+	kill `ps axuw | grep dsta[t] | awk '{print $2}'`
 	sudo killall -s SIGINT perf
 	sudo killall -s SIGINT perf
 	sleep 5
