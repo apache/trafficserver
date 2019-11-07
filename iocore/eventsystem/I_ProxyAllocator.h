@@ -30,6 +30,9 @@
 *****************************************************************************/
 #pragma once
 
+#include <new>
+#include <utility>
+
 #include "tscore/ink_platform.h"
 
 class EThread;
@@ -45,32 +48,27 @@ struct ProxyAllocator {
   ProxyAllocator() {}
 };
 
-template <class C>
+template <class C, typename... Args>
 inline C *
-thread_alloc(ClassAllocator<C> &a, ProxyAllocator &l)
+thread_alloc(ClassAllocator<C> &a, ProxyAllocator &l, Args &&... args)
 {
   if (!cmd_disable_pfreelist && l.freelist) {
-    C *v       = (C *)l.freelist;
-    l.freelist = *(C **)l.freelist;
+    void *v    = l.freelist;
+    l.freelist = *reinterpret_cast<void **>(l.freelist);
     --(l.allocated);
-    *(void **)v = *(void **)&a.proto.typeObject;
-    return v;
+    ::new (v) C(std::forward<Args>(args)...);
+    return static_cast<C *>(v);
   }
-  return a.alloc();
+  return a.alloc(std::forward<Args>(args)...);
 }
 
-template <class C>
+// Redundant it seems.
+//
+template <class C, typename... Args>
 inline C *
-thread_alloc_init(ClassAllocator<C> &a, ProxyAllocator &l)
+thread_alloc_init(ClassAllocator<C> &a, ProxyAllocator &l, Args &&... args)
 {
-  if (!cmd_disable_pfreelist && l.freelist) {
-    C *v       = (C *)l.freelist;
-    l.freelist = *(C **)l.freelist;
-    --(l.allocated);
-    memcpy((void *)v, (void *)&a.proto.typeObject, sizeof(C));
-    return v;
-  }
-  return a.alloc();
+  return thread_alloc<C, Args...>(a, l, std::forward<Args>(args)...);
 }
 
 template <class C>
