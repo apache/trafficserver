@@ -65,11 +65,11 @@ init_reverse_proxy()
   reconfig_mutex = new_ProxyMutex();
   rewrite_table  = new UrlRewrite();
 
-  Note("%s loading ...", REMAP_CONF_FILENAME);
+  Note("%s loading ...", ts::filename::REMAP);
   if (!rewrite_table->load()) {
-    Fatal("%s failed to load", REMAP_CONF_FILENAME);
+    Fatal("%s failed to load", ts::filename::REMAP);
   }
-  Note("%s finished loading", REMAP_CONF_FILENAME);
+  Note("%s finished loading", ts::filename::REMAP);
 
   REC_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.proxy_name", url_rewrite_CB, (void *)TSNAME_CHANGED);
@@ -137,8 +137,8 @@ reloadUrlRewrite()
 {
   UrlRewrite *newTable, *oldTable;
 
-  Note("%s loading ...", REMAP_CONF_FILENAME);
-  Debug("url_rewrite", "%s updated, reloading...", REMAP_CONF_FILENAME);
+  Note("%s loading ...", ts::filename::REMAP);
+  Debug("url_rewrite", "%s updated, reloading...", ts::filename::REMAP);
   newTable = new UrlRewrite();
   if (newTable->load()) {
     static const char *msg = "%s finished loading";
@@ -155,15 +155,15 @@ reloadUrlRewrite()
     oldTable->pluginFactory.deactivate();
     oldTable->release();
 
-    Debug("url_rewrite", msg, REMAP_CONF_FILENAME);
+    Debug("url_rewrite", msg, ts::filename::REMAP);
     Note("%s", msg);
     return true;
   } else {
     static const char *msg = "%s failed to load";
 
     delete newTable;
-    Debug("url_rewrite", msg, REMAP_CONF_FILENAME);
-    Error(msg, REMAP_CONF_FILENAME);
+    Debug("url_rewrite", msg, ts::filename::REMAP);
+    Error(msg, ts::filename::REMAP);
     return false;
   }
 }

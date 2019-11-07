@@ -6063,7 +6063,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     // Cache-Control headers to prevent caching
     if (s->cache_control.ttl_in_cache > 0) {
       TxnDebug("http_trans", "[is_response_cacheable] Cache-control header directives in response overridden by ttl in %s",
-               CACHE_CONF_FILENAME);
+               ts::filename::CACHE);
     } else {
       TxnDebug("http_trans", "[is_response_cacheable] NO by response cache control");
       return false;

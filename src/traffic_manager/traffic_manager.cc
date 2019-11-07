@@ -91,7 +91,7 @@ static char bind_stderr[512]  = "";
 static const char *mgmt_path  = nullptr;
 
 // By default, set the current directory as base
-static const char *recs_conf = RECORDS_CONF_FILENAME;
+static const char *recs_conf = ts::filename::RECORDS;
 
 static int fds_limit;
 

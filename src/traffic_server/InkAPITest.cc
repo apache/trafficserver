@@ -2026,7 +2026,7 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
     return;
   }
   // Add "etc/trafficserver" to point to config directory
-  ink_filepath_make(input_file_full_path, sizeof(input_file_full_path), TSConfigDirGet(), PLUGIN_CONF_FILENAME);
+  ink_filepath_make(input_file_full_path, sizeof(input_file_full_path), TSConfigDirGet(), ts::filename::PLUGIN);
 
   // open existing file for reading
   if (!(source_read_file = TSfopen(input_file_full_path, "r"))) {
@@ -2040,7 +2040,7 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
   }
 
   // Create unique tmp _file_name_, do not use any TS file_name
-  snprintf(write_file_name, PATH_NAME_MAX, "/tmp/%sXXXXXX", PLUGIN_CONF_FILENAME);
+  snprintf(write_file_name, PATH_NAME_MAX, "/tmp/%sXXXXXX", ts::filename::PLUGIN);
   int write_file_fd; // this file will be reopened below
   if ((write_file_fd = mkstemp(write_file_name)) <= 0) {
     SDK_RPRINT(test, "mkstemp", "std func", TC_FAIL, "can't create file for writing");

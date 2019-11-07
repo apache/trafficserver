@@ -56,10 +56,10 @@ UrlRewrite::load()
 {
   ats_scoped_str config_file_path;
 
-  config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", REMAP_CONF_FILENAME);
+  config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", ts::filename::REMAP);
   if (!config_file_path) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to find proxy.config.url_remap.filename");
-    Warning("%s Unable to locate %s. No remappings in effect", modulePrefix, REMAP_CONF_FILENAME);
+    Warning("%s Unable to locate %s. No remappings in effect", modulePrefix, ts::filename::REMAP);
     return false;
   }
 

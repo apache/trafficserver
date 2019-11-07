@@ -131,7 +131,7 @@ SplitDNSConfig::reconfigure()
     return;
   }
 
-  Note("%s loading ...", SPLITDNS_CONF_FILENAME);
+  Note("%s loading ...", ts::filename::SPLITDNS);
 
   SplitDNS *params = new SplitDNS;
 
@@ -139,7 +139,7 @@ SplitDNSConfig::reconfigure()
   params->m_DNSSrvrTable    = new DNS_table("proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags);
 
   if (nullptr == params->m_DNSSrvrTable || (0 == params->m_DNSSrvrTable->getEntryCount())) {
-    Error("%s failed to load", SPLITDNS_CONF_FILENAME);
+    Error("%s failed to load", ts::filename::SPLITDNS);
     Warning("No NAMEDs provided! Disabling SplitDNS");
     gsplit_dns_enabled = 0;
     delete params;
@@ -160,7 +160,7 @@ SplitDNSConfig::reconfigure()
     SplitDNSConfig::print();
   }
 
-  Note("%s finished loading", SPLITDNS_CONF_FILENAME);
+  Note("%s finished loading", ts::filename::SPLITDNS);
 }
 
 /* --------------------------------------------------------------
@@ -477,7 +477,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
   }
 
   if (!ats_is_ip(&m_servers.x_server_ip[0].sa)) {
-    return Result::failure("%s No server specified in %s at line %d", modulePrefix, SPLITDNS_CONF_FILENAME, line_num);
+    return Result::failure("%s No server specified in %s at line %d", modulePrefix, ts::filename::SPLITDNS, line_num);
   }
 
   DNSHandler *dnsH  = new DNSHandler;
@@ -506,7 +506,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
   if (line_info->num_el > 0) {
     const char *tmp = ProcessModifiers(line_info);
     if (tmp != nullptr) {
-      return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, SPLITDNS_CONF_FILENAME);
+      return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::SPLITDNS);
     }
   }
 

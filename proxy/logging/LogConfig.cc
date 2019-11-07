@@ -807,7 +807,7 @@ LogConfig::update_space_used()
 bool
 LogConfig::evaluate_config()
 {
-  ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", LOGGING_CONF_FILENAME));
+  ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", ts::filename::LOGGING));
   struct stat sbuf;
   if (stat(path.get(), &sbuf) == -1 && errno == ENOENT) {
     Warning("logging configuration '%s' doesn't exist", path.get());

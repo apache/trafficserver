@@ -129,7 +129,7 @@ QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, c
 #if TS_USE_TLS_SET_CIPHERSUITES
   if (params->server_tls13_cipher_suites != nullptr) {
     if (!SSL_CTX_set_ciphersuites(ctx, params->server_tls13_cipher_suites)) {
-      Error("invalid tls server cipher suites in %s", RECORDS_CONF_FILENAME);
+      Error("invalid tls server cipher suites in %s", ts::filename::RECORDS);
       goto fail;
     }
   }
@@ -142,7 +142,7 @@ QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, c
 #else
     if (!SSL_CTX_set1_curves_list(ctx, params->server_groups_list)) {
 #endif
-      Error("invalid groups list for server in %s", RECORDS_CONF_FILENAME);
+      Error("invalid groups list for server in %s", ts::filename::RECORDS);
       goto fail;
     }
   }

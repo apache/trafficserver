@@ -1305,7 +1305,7 @@ HttpConfig::reconfigure()
     Warning("'%s' is set, but neither '%s' nor '%s' are "
             "set, please correct your %s",
             OutboundConnTrack::CONFIG_VAR_QUEUE_SIZE.data(), OutboundConnTrack::CONFIG_VAR_MAX.data(),
-            OutboundConnTrack::CONFIG_VAR_MIN.data(), RECORDS_CONF_FILENAME);
+            OutboundConnTrack::CONFIG_VAR_MIN.data(), ts::filename::RECORDS);
   }
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
 
@@ -1314,7 +1314,7 @@ HttpConfig::reconfigure()
 
   if (params->oride.outbound_conntrack.max > 0 && params->oride.outbound_conntrack.max < params->oride.outbound_conntrack.min) {
     Warning("'%s' < per_server.min_keep_alive_connections, setting min=max , please correct your %s",
-            OutboundConnTrack::CONFIG_VAR_MAX.data(), RECORDS_CONF_FILENAME);
+            OutboundConnTrack::CONFIG_VAR_MAX.data(), ts::filename::RECORDS);
     params->oride.outbound_conntrack.min = params->oride.outbound_conntrack.max;
   }
 

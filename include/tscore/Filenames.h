@@ -21,24 +21,30 @@
 
 #pragma once
 
-///////////////////////////////////////////////////////////////////
-// Configuration file names
-extern const char *STORAGE_CONF_FILENAME;
-extern const char *RECORDS_CONF_FILENAME;
-extern const char *VOLUME_CONF_FILENAME;
-extern const char *PLUGIN_CONF_FILENAME;
+namespace ts
+{
+namespace filename
+{
+  constexpr const char *const STORAGE = "storage.config";
+  constexpr const char *const RECORDS = "records.config";
+  constexpr const char *const VOLUME  = "volume.config";
+  constexpr const char *const PLUGIN  = "plugin.config";
 
-extern const char *LOGGING_CONF_FILENAME;
-extern const char *CACHE_CONF_FILENAME;
-extern const char *IPALLOW_CONF_FILENAME;
-extern const char *HOSTING_CONF_FILENAME;
-extern const char *SOCKS_CONF_FILENAME;
-extern const char *PARENT_CONF_FILENAME;
-extern const char *REMAP_CONF_FILENAME;
-extern const char *MULTICERT_CONF_FILENAME;
-extern const char *SPLITDNS_CONF_FILENAME;
-extern const char *SNI_CONF_FILENAME;
+  // These still need to have their corrensponding records.config settings remove
+  constexpr const char *const LOGGING       = "logging.yaml";
+  constexpr const char *const CACHE         = "cache.config";
+  constexpr const char *const IP_ALLOW      = "ip_allow.yaml";
+  constexpr const char *const HOSTING       = "hosting.config";
+  constexpr const char *const SOCKS         = "socks.config";
+  constexpr const char *const PARENT        = "parent.config";
+  constexpr const char *const REMAP         = "remap.config";
+  constexpr const char *const SSL_MULTICERT = "ssl_multicert.config";
+  constexpr const char *const SPLITDNS      = "splitdns.config";
+  constexpr const char *const SNI           = "sni.yaml";
 
-///////////////////////////////////////////////////////////////////
-// Various other file names
-extern const char *RECORDS_STATS_FILE;
+  ///////////////////////////////////////////////////////////////////
+  // Various other file names
+  constexpr const char *const RECORDS_STATS = "records.snap";
+
+} // namespace filename
+} // namespace ts

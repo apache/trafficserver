@@ -80,8 +80,8 @@ TEST_CASE("relative to test", "[relative_to]")
 
   // relative to (4 parameters)
   char config_file[PATH_NAME_MAX];
-  Layout::relative_to(config_file, sizeof(config_file), Layout::get()->sysconfdir, RECORDS_CONF_FILENAME);
-  std::string a = Layout::relative_to(Layout::get()->sysconfdir, RECORDS_CONF_FILENAME);
+  Layout::relative_to(config_file, sizeof(config_file), Layout::get()->sysconfdir, ts::filename::RECORDS);
+  std::string a = Layout::relative_to(Layout::get()->sysconfdir, ts::filename::RECORDS);
   std::string b = config_file;
   REQUIRE(a == b);
 }

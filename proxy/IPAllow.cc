@@ -137,14 +137,14 @@ IpAllow::reconfigure()
 {
   self_type *new_table;
 
-  Note("%s loading ...", IPALLOW_CONF_FILENAME);
+  Note("%s loading ...", ts::filename::IP_ALLOW);
 
   new_table = new self_type("proxy.config.cache.ip_allow.filename");
   new_table->BuildTable();
 
   configid = configProcessor.set(configid, new_table);
 
-  Note("%s finished loading", IPALLOW_CONF_FILENAME);
+  Note("%s finished loading", ts::filename::IP_ALLOW);
 }
 
 IpAllow *

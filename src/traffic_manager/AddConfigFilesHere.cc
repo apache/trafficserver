@@ -73,20 +73,20 @@ initializeRegistry()
     ink_assert(!"Configuration Object Registry Initialized More than Once");
   }
 
-  registerFile("proxy.config.log.config.filename", LOGGING_CONF_FILENAME);
-  registerFile("", STORAGE_CONF_FILENAME);
-  registerFile("proxy.config.socks.socks_config_file", SOCKS_CONF_FILENAME);
-  registerFile(RECORDS_CONF_FILENAME, RECORDS_CONF_FILENAME);
-  registerFile("proxy.config.cache.control.filename", CACHE_CONF_FILENAME);
-  registerFile("proxy.config.cache.ip_allow.filename", IPALLOW_CONF_FILENAME);
-  registerFile("proxy.config.http.parent_proxy.file", PARENT_CONF_FILENAME);
-  registerFile("proxy.config.url_remap.filename", REMAP_CONF_FILENAME);
-  registerFile("", VOLUME_CONF_FILENAME);
-  registerFile("proxy.config.cache.hosting_filename", HOSTING_CONF_FILENAME);
-  registerFile("", PLUGIN_CONF_FILENAME);
-  registerFile("proxy.config.dns.splitdns.filename", SPLITDNS_CONF_FILENAME);
-  registerFile("proxy.config.ssl.server.multicert.filename", MULTICERT_CONF_FILENAME);
-  registerFile("proxy.config.ssl.servername.filename", SNI_CONF_FILENAME);
+  registerFile("proxy.config.log.config.filename", ts::filename::LOGGING);
+  registerFile("", ts::filename::STORAGE);
+  registerFile("proxy.config.socks.socks_config_file", ts::filename::SOCKS);
+  registerFile(ts::filename::RECORDS, ts::filename::RECORDS);
+  registerFile("proxy.config.cache.control.filename", ts::filename::CACHE);
+  registerFile("proxy.config.cache.ip_allow.filename", ts::filename::IP_ALLOW);
+  registerFile("proxy.config.http.parent_proxy.file", ts::filename::PARENT);
+  registerFile("proxy.config.url_remap.filename", ts::filename::REMAP);
+  registerFile("", ts::filename::VOLUME);
+  registerFile("proxy.config.cache.hosting_filename", ts::filename::HOSTING);
+  registerFile("", ts::filename::PLUGIN);
+  registerFile("proxy.config.dns.splitdns.filename", ts::filename::SPLITDNS);
+  registerFile("proxy.config.ssl.server.multicert.filename", ts::filename::SSL_MULTICERT);
+  registerFile("proxy.config.ssl.servername.filename", ts::filename::SNI);
 
   configFiles->registerCallback(testcall);
 }

@@ -750,9 +750,9 @@ LocalManager::processEventQueue()
     // check if we have a local file update
     if (mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE) {
       // records.config
-      if (!(strcmp(payload.begin(), RECORDS_CONF_FILENAME))) {
+      if (!(strcmp(payload.begin(), ts::filename::RECORDS))) {
         if (RecReadConfigFile() != REC_ERR_OKAY) {
-          mgmt_elog(errno, "[fileUpdated] Config update failed for %s\n", RECORDS_CONF_FILENAME);
+          mgmt_elog(errno, "[fileUpdated] Config update failed for %s\n", ts::filename::RECORDS);
         } else {
           RecConfigWarnIfUnregistered();
         }

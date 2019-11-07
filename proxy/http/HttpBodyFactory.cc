@@ -335,7 +335,7 @@ HttpBodyFactory::HttpBodyFactory()
   for (i = 0; config_record_names[i] != nullptr; i++) {
     status = REC_RegisterConfigUpdateFunc(config_record_names[i], config_callback, (void *)this);
     if (status != REC_ERR_OKAY) {
-      Warning("couldn't register variable '%s', is %s up to date?", config_record_names[i], RECORDS_CONF_FILENAME);
+      Warning("couldn't register variable '%s', is %s up to date?", config_record_names[i], ts::filename::RECORDS);
     }
     no_registrations_failed = no_registrations_failed && (status == REC_ERR_OKAY);
   }

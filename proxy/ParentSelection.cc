@@ -265,7 +265,7 @@ ParentConfig::startup()
 void
 ParentConfig::reconfigure()
 {
-  Note("%s loading ...", PARENT_CONF_FILENAME);
+  Note("%s loading ...", ts::filename::PARENT);
 
   ParentConfigParams *params = nullptr;
 
@@ -281,7 +281,7 @@ ParentConfig::reconfigure()
     ParentConfig::print();
   }
 
-  Note("%s finished loading", PARENT_CONF_FILENAME);
+  Note("%s finished loading", ts::filename::PARENT);
 }
 
 // void ParentConfig::print
@@ -744,14 +744,14 @@ ParentRecord::Init(matcher_line *line_info)
   }
 
   if (this->parents == nullptr && go_direct == false) {
-    return Result::failure("%s No parent specified in %s at line %d", modulePrefix, PARENT_CONF_FILENAME, line_num);
+    return Result::failure("%s No parent specified in %s at line %d", modulePrefix, ts::filename::PARENT, line_num);
   }
   // Process any modifiers to the directive, if they exist
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
 
     if (tmp != nullptr) {
-      return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, PARENT_CONF_FILENAME);
+      return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::PARENT);
     }
     // record SCHEME modifier if present.
     // NULL if not present
@@ -896,7 +896,7 @@ setup_socks_servers(ParentRecord *rec_arr, int len)
 void
 SocksServerConfig::reconfigure()
 {
-  Note("%s loading ...", SOCKS_CONF_FILENAME);
+  Note("%s loading ...", ts::filename::SOCKS);
 
   char *default_val = nullptr;
   int retry_time    = 30;
@@ -936,7 +936,7 @@ SocksServerConfig::reconfigure()
     SocksServerConfig::print();
   }
 
-  Note("%s finished loading", SOCKS_CONF_FILENAME);
+  Note("%s finished loading", ts::filename::SOCKS);
 }
 
 void
