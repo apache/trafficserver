@@ -683,12 +683,12 @@ Http2Stream::signal_write_event(bool call_update)
   }
 }
 
-bool
+void
 Http2Stream::push_promise(URL &url, const MIMEField *accept_encoding)
 {
   Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
   SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
-  return h2_proxy_ssn->connection_state.send_push_promise_frame(this, url, accept_encoding);
+  h2_proxy_ssn->connection_state.send_push_promise_frame(this, url, accept_encoding);
 }
 
 void

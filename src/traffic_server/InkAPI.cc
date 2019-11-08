@@ -8026,7 +8026,7 @@ TSHttpTxnIsInternal(TSHttpTxn txnp)
   return TSHttpSsnIsInternal(TSHttpTxnSsnGet(txnp));
 }
 
-TSReturnCode
+void
 TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
@@ -8035,37 +8035,26 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   url_obj.create(nullptr);
   if (url_obj.parse(url, url_len) == PARSE_RESULT_ERROR) {
     url_obj.destroy();
-    return TS_ERROR;
+    return;
   }
 
   HttpSM *sm          = reinterpret_cast<HttpSM *>(txnp);
   Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
-  if (stream == nullptr) {
-    url_obj.destroy();
-    return TS_ERROR;
+  if (stream) {
+    Http2ClientSession *ua_session = static_cast<Http2ClientSession *>(stream->get_proxy_ssn());
+    SCOPED_MUTEX_LOCK(lock, ua_session->mutex, this_ethread());
+    if (!ua_session->connection_state.is_state_closed() && !ua_session->is_url_pushed(url, url_len)) {
+      HTTPHdr *hptr = &(sm->t_state.hdr_info.client_request);
+      TSMLoc obj    = reinterpret_cast<TSMLoc>(hptr->m_http);
+
+      MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
+      MIMEField *f    = mime_hdr_field_find(mh, MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
+      stream->push_promise(url_obj, f);
+
+      ua_session->add_url_to_pushed_table(url, url_len);
+    }
   }
-
-  Http2ClientSession *ua_session = static_cast<Http2ClientSession *>(stream->get_proxy_ssn());
-  SCOPED_MUTEX_LOCK(lock, ua_session->mutex, this_ethread());
-  if (ua_session->connection_state.is_state_closed() || ua_session->is_url_pushed(url, url_len)) {
-    url_obj.destroy();
-    return TS_ERROR;
-  }
-
-  HTTPHdr *hptr = &(sm->t_state.hdr_info.client_request);
-  TSMLoc obj    = reinterpret_cast<TSMLoc>(hptr->m_http);
-
-  MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
-  MIMEField *f    = mime_hdr_field_find(mh, MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
-  if (!stream->push_promise(url_obj, f)) {
-    url_obj.destroy();
-    return TS_ERROR;
-  }
-
-  ua_session->add_url_to_pushed_table(url, url_len);
-
   url_obj.destroy();
-  return TS_SUCCESS;
 }
 
 TSReturnCode
