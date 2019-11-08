@@ -7093,6 +7093,10 @@ namespace Catch {
 #  include <stdbool.h>
 #  include <sys/types.h>
 #  include <unistd.h>
+
+// ink_autoconf.h is required to use HAVE_SYS_SYSCTL_H
+#include "ink_autoconf.h"
+
 #if defined(darwin) || defined(freebsd)
 #ifdef HAVE_SYS_SYSCTL_H
 #  include <sys/sysctl.h>
@@ -13051,4 +13055,3 @@ using Catch::Detail::Approx;
 // end catch_reenable_warnings.h
 // end catch.hpp
 #endif // TWOBLUECUBES_SINGLE_INCLUDE_CATCH_HPP_INCLUDED
-
