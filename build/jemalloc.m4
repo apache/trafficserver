@@ -68,7 +68,18 @@ if test "$enable_jemalloc" != "no"; then
     AC_CHECK_HEADERS(jemalloc/jemalloc.h, [jemalloc_have_headers=1])
   fi
   if test "$jemalloc_have_headers" != "0"; then
-    jemalloch=1
+    AC_RUN_IFELSE([
+      AC_LANG_PROGRAM(
+        [#include <jemalloc/jemalloc.h>],
+        [
+          #if (JEMALLOC_VERSION_MAJOR == 0)
+          exit(1);
+          #endif
+        ]
+      )],
+      [jemalloch=1],
+      [AC_MSG_ERROR(jemalloc has bogus version)]
+    )
   else
     CPPFLAGS=$saved_cppflags
     LDFLAGS=$saved_ldflags
