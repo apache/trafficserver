@@ -97,50 +97,61 @@ you to avoid using any of these:
 
 Deprecated or Removed Features
 ------------------------------
-The following features, configurations and plugins are either removed or deprecated in this
-version of ATS. Deprecated features should be avoided, with the expectation that they will be
-removed in the next major release of ATS.
+The following features, configurations and plugins are either removed
+or deprecated in this version of ATS. Deprecated features should be
+avoided, with the expectation that they will be removed in the next major
+release of ATS.
 
 
 API Changes
 -----------
-Our APIs are guaranteed to be compatible within major versions, but we do make changes
-for each new major release.
+Our APIs are guaranteed to be compatible within major versions, but we do
+make changes for each new major release.
 
 Removed APIs
 ~~~~~~~~~~~~
-* `TSHttpTxnRedirectRequest()`
+* ``TSHttpTxnRedirectRequest()``
 
 Renamed or modified APIs
 ~~~~~~~~~~~~~~~~~~~~~~~~
-* `TSVConnSSLConnectionGet` is renamed to be :c:func:`TSVConnSslConnectionGet`.
+* ``TSVConnSSLConnectionGet()`` is renamed to be :c:func:`TSVConnSslConnectionGet`.
+
+* ``TSHttpTxnServerPush()`` now returns a :type:`TSReturnCode`.
+
 
 Cache
 -----
-The cache in this releases of ATS is compatible with previous versions of ATS. You would not expect
-to lose your cache, or have to reinitialize the cache when upgrading.
+The cache in this releases of ATS is compatible with previous versions of ATS.
+You would not expect to lose your cache, or have to reinitialize the cache when
+upgrading.
 
-However, due to changes in how remap plugins are processed, your cache key *might* change. In versions
-to v9.0.0, the first plugin in a remap rule would get the pristine URL, and subsequent plugins would
-get the remapped URL. As of v9.0.0, **all** plugins now receive the remapped URL. If you are using
-a plugin that modifies the cache key, e.g. :ref:`admin-plugins-cachekey`, if it was evaluated first
-in a remap rule, the behavior (input) changes, and therefore, cache keys can change!
+However, due to changes in how remap plugins are processed, your cache key
+*might* change. In versions to v9.0.0, the first plugin in a remap rule would
+get the pristine URL, and subsequent plugins would get the remapped URL. As of
+v9.0.0, **all** plugins now receive the remapped URL. If you are using a
+plugin that modifies the cache key, e.g. :ref:`admin-plugins-cachekey`, if it
+was evaluated first in a remap rule, the behavior (input) changes, and
+therefore, cache keys can change!
 
-The old `v23` cache is no longer supported, which means caches created with ATS v2.x will no longer be
-possible to load with ATS v9.0.0 or later. We feel that this is an unlikely scenario, but if you do
-run into this, clearing the cache is required.
+The old ``v23`` cache is no longer supported, which means caches created with ATS
+v2.x will no longer be possible to load with ATS v9.0.0 or later. We feel that
+this is an unlikely scenario, but if you do run into this, clearing the cache
+is required.
 
 Plugins
 -------
-The following plugins have changes that might require you to change configurations.
+The following plugins have changes that might require you to change
+configurations.
 
 header_rewrite
 ~~~~~~~~~~~~~~
-* The `%{PATH}` directive is now removed, and instead you want to use `%{CLIENT-URL:PATH}`. This was
-  done to unify the behavior of these operators, rather than having this one-off directive.
+* The `%{PATH}` directive is now removed, and instead you want to use
+  `%{CLIENT-URL:PATH}`. This was  done to unify the behavior of these
+  operators, rather than having this one-off directive.
 
 Platform specific
 -----------------
-Solaris is no longer a supported platform, but the code is still there. However, it's unlikely to work,
-and unless someone takes on ownership of this Platform, it will be removed from the source in ATS v10.0.0.
-For more details, see issue #5553.
+Solaris is no longer a supported platform, but the code is still there.
+However, it's unlikely to work, and unless someone takes on ownership of this
+Platform, it will be removed from the source in ATS v10.0.0. For more details,
+see issue #5553.
