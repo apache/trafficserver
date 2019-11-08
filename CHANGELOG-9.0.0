@@ -599,6 +599,7 @@ Changes with Apache Traffic Server 9.0.0
   #5632 - Fix up remaining references to ssl_server_name.yaml
   #5633 - HTTP/2: increment write_vio.ndone by consumed size
   #5634 - HTTP/2: cancel reading buffer when ATS received GOAWAY
+  #5635 - Add AUTest using h2spec
   #5636 - HTTP/2: ignore unknown settings
   #5637 - TextView: Fix bug in rtrim_if when entire view is cleared.
   #5639 - update example directory structure and add examples for lua plugin
@@ -722,6 +723,7 @@ Changes with Apache Traffic Server 9.0.0
   #5889 - Provide stats for the recently introduced HTTP/2 rate limits
   #5892 - ProxySsn renaming member vars
   #5893 - Cleanup: Remove unused AllocType and unused functions
+  #5901 - Dechunk chunked contents on HttpTunnel if client protocol is HTTP/2 or HTTP/3
   #5902 - Ran clang-format
   #5903 - Reduce unnecesary IOBufferBlock allocation
   #5905 - Update Server IP in Transaction when attaching a session from the pool
@@ -767,8 +769,10 @@ Changes with Apache Traffic Server 9.0.0
   #6066 - Fixing session sharing with IP matching.
   #6070 - Updated API header and ssl_session_reuse for new TSSslSessionInsert changes
   #6071 - Premature DSO unload with "suicidal" continuations
+  #6074 - Allow txn handler to be set from ssn on same hook
   #6076 - Issue 4635: Address pipe reuse after configuration reload issues
   #6078 - Cleanup: Ignore checkprograms of remap
+  #6085 - Only decrement log_stat_log_files_open_stat when the file is closed.
   #6089 - Make If-Range date compare to be exact match
   #6094 - Issue #4294: Handle return value of SSL_write() properly
   #6095 - For remap_stats, removes configure time dependency on search.h
@@ -778,10 +782,17 @@ Changes with Apache Traffic Server 9.0.0
   #6116 - Updated to clang-format v9.0.0
   #6120 - Fix null pointer dereference reported by clang-analyzer
   #6125 - Add Metrics to track SSL Handshake attempts
+  #6126 - Fix the thread ready check
   #6129 - Adding an autest for traffic_dump.
   #6131 - Remove never implemented HttpTransact::service_transaction_in_proxy_only_mode
+  #6132 - Normalize loopback usage in session_match autest
   #6134 - Removes the records.config.shadow alternative config file
+  #6138 - tests: Adds autest for WebSocket mappings
+  #6139 - tests: fixes various python code issues found by pyflakes
   #6140 - Remove using namespace std
   #6141 - Update docs for SSL Handshake stats
   #6145 - Remove including sys/sysctl.h for Linux
+  #6147 - Reverse debug specific check.
   #6148 - Disable the most expensive "make check" tests by default
+  #6156 - Fix building Catch on macOS
+  #6159 - Detect bogus jemalloc version
