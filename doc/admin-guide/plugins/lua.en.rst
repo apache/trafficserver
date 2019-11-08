@@ -1903,6 +1903,48 @@ ts.server_request.set_url_scheme
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.server_request.get_method
+----------------------------
+**syntax:** *ts.server_request.get_method()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description:** This function can be used to retrieve the current server request's method name. String like "GET" or "POST" is returned.
+
+Here is an example:
+
+::
+
+    function send_request()
+        local method = ts.server_request.get_method()
+        ts.debug(method)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request)
+        return 0
+    end
+
+Then ``HEAD /`` will yield the output:
+
+``HEAD``
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.server_request.set_method
+----------------------------
+**syntax:** *ts.server_request.set_method()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description:** This function can be used to override the current server request's method with METHOD_NAME.
+
+::
+
+    ts.server_request.set_method('HEAD')
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.server_response.get_status
 -----------------------------
 **syntax:** *status = ts.server_response.get_status()*
