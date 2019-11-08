@@ -27,13 +27,9 @@
 #include <atomic>
 #include <cstddef>
 
-#include "tscore/List.h"
 #include "I_IOBuffer.h"
 
 #include "QUICTypes.h"
-#include "QUICHandshakeProtocol.h"
-#include "QUICPacketHeaderProtector.h"
-#include "QUICFrame.h"
 
 #define QUIC_FIELD_OFFSET_CONNECTION_ID 1
 #define QUIC_FIELD_OFFSET_PACKET_NUMBER 4
@@ -103,15 +99,6 @@ public:
    */
   virtual QUICKeyPhase key_phase() const = 0;
 
-  /*
-   * Stores serialized header
-   *
-   * The serialized data doesn't contain a payload part even if it was created with a buffer that contains payload data.
-   */
-  virtual void store(uint8_t *buf, size_t *len) const = 0;
-
-  QUICPacketHeaderUPtr clone() const;
-
   virtual bool has_version() const = 0;
   virtual bool is_valid() const    = 0;
 
@@ -124,52 +111,6 @@ public:
    */
   static QUICPacketHeaderUPtr load(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len,
                                    QUICPacketNumber base);
-
-  /*
-   * Build a QUICPacketHeader
-   *
-   * This creates a QUICPacketLongHeader.
-   */
-  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid,
-                                    QUICConnectionId source_cid, QUICPacketNumber packet_number,
-                                    QUICPacketNumber base_packet_number, QUICVersion version, bool crypto, ats_unique_buf payload,
-                                    size_t len);
-
-  /*
-   * Build a QUICPacketHeader
-   *
-   * This creates a QUICPacketLongHeader for INITIAL packet
-   */
-  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId destination_cid,
-                                    QUICConnectionId source_cid, QUICPacketNumber packet_number,
-                                    QUICPacketNumber base_packet_number, QUICVersion version, bool crypto, ats_unique_buf payload,
-                                    size_t len, ats_unique_buf token, size_t token_len);
-
-  /*
-   * Build a QUICPacketHeader
-   *
-   * This creates a QUICPacketLongHeader for RETRY packet
-   */
-  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICVersion version,
-                                    QUICConnectionId destination_cid, QUICConnectionId source_cid, QUICConnectionId original_dcid,
-                                    ats_unique_buf retry_token, size_t retry_token_len);
-
-  /*
-   * Build a QUICPacketHeader
-   *
-   * This creates a QUICPacketShortHeader that contains a ConnectionID.
-   */
-  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
-                                    QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len);
-
-  /*
-   * Build a QUICPacketHeader
-   *
-   * This creates a QUICPacketShortHeader that doesn't contain a ConnectionID (Stateless Reset Packet).
-   */
-  static QUICPacketHeaderUPtr build(QUICPacketType type, QUICKeyPhase key_phase, QUICConnectionId connection_id,
-                                    QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, ats_unique_buf payload,
-                                    size_t len);
 
 protected:
   QUICPacketHeader(){};
@@ -212,13 +153,6 @@ public:
   QUICPacketLongHeader() : QUICPacketHeader(){};
   virtual ~QUICPacketLongHeader(){};
   QUICPacketLongHeader(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len, QUICPacketNumber base);
-  QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, const QUICConnectionId &destination_cid,
-                       const QUICConnectionId &source_cid, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
-                       QUICVersion version, bool crypto, ats_unique_buf buf, size_t len,
-                       ats_unique_buf token = ats_unique_buf(nullptr), size_t token_len = 0);
-  QUICPacketLongHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICVersion version, const QUICConnectionId &destination_cid,
-                       const QUICConnectionId &source_cid, const QUICConnectionId &original_dcid, ats_unique_buf retry_token,
-                       size_t retry_token_len);
 
   QUICPacketType type() const override;
   QUICConnectionId destination_cid() const override;
@@ -234,7 +168,6 @@ public:
   size_t token_len() const;
   QUICKeyPhase key_phase() const override;
   uint16_t size() const override;
-  void store(uint8_t *buf, size_t *len) const override;
 
   static bool type(QUICPacketType &type, const uint8_t *packet, size_t packet_len);
   static bool version(QUICVersion &version, const uint8_t *packet, size_t packet_len);
@@ -265,10 +198,6 @@ public:
   QUICPacketShortHeader() : QUICPacketHeader(){};
   virtual ~QUICPacketShortHeader(){};
   QUICPacketShortHeader(const IpEndpoint from, const IpEndpoint to, ats_unique_buf buf, size_t len, QUICPacketNumber base);
-  QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, QUICPacketNumber packet_number,
-                        QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
-  QUICPacketShortHeader(QUICPacketType type, QUICKeyPhase key_phase, const QUICConnectionId &connection_id,
-                        QUICPacketNumber packet_number, QUICPacketNumber base_packet_number, ats_unique_buf buf, size_t len);
   QUICPacketType type() const override;
   QUICConnectionId destination_cid() const override;
   QUICConnectionId
@@ -283,7 +212,6 @@ public:
   const uint8_t *payload() const override;
   QUICKeyPhase key_phase() const override;
   uint16_t size() const override;
-  void store(uint8_t *buf, size_t *len) const override;
 
   static bool key_phase(QUICKeyPhase &key_phase, const uint8_t *packet, size_t packet_len);
   static bool packet_number_offset(size_t &pn_offset, const uint8_t *packet, size_t packet_len, int dcil);
@@ -335,40 +263,40 @@ public:
    */
   QUICPacket(UDPConnection *udp_con, QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len);
 
-  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, std::vector<QUICFrameInfo> &frames);
-
-  /*
-   * Creates a QUICPacket with a QUICPacketHeader, a buffer that contains payload and a flag that indicates whether the packet is
-   * ack_eliciting
-   *
-   * This will be used for sending packets. Therefore, it is expected that payload is already encrypted.
-   * However, QUICPacket class itself doesn't care about whether the payload is protected (encrypted) or not.
-   */
-  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool ack_eliciting, bool probing);
-
-  QUICPacket(QUICPacketHeaderUPtr header, ats_unique_buf payload, size_t payload_len, bool ack_eliciting, bool probing,
-             std::vector<QUICFrameInfo> &frames);
+  QUICPacket(bool ack_eliciting, bool probing);
 
   virtual ~QUICPacket();
 
   UDPConnection *udp_con() const;
   virtual const IpEndpoint &from() const;
   virtual const IpEndpoint &to() const;
-  QUICPacketType type() const;
+  virtual QUICPacketType type() const;
   QUICConnectionId destination_cid() const;
   QUICConnectionId source_cid() const;
-  QUICPacketNumber packet_number() const;
+  virtual QUICPacketNumber packet_number() const;
   QUICVersion version() const;
   const QUICPacketHeader &header() const;
   const uint8_t *payload() const;
   bool is_ack_eliciting() const;
-  bool is_crypto_packet() const;
+  virtual bool is_crypto_packet() const;
   bool is_probing_packet() const;
+
+  // TODO These two should be pure virtual
+  virtual Ptr<IOBufferBlock>
+  header_block() const
+  {
+    return Ptr<IOBufferBlock>();
+  };
+  virtual Ptr<IOBufferBlock>
+  payload_block() const
+  {
+    return Ptr<IOBufferBlock>();
+  };
 
   /*
    * Size of whole QUIC packet (header + payload + integrity check)
    */
-  uint16_t size() const;
+  virtual uint16_t size() const;
 
   /*
    * Size of header
@@ -381,15 +309,13 @@ public:
   uint16_t payload_length() const;
 
   void store(uint8_t *buf, size_t *len) const;
-  QUICKeyPhase key_phase() const;
+  virtual QUICKeyPhase key_phase() const;
 
   /***** STATIC MEMBERS *****/
 
   static uint8_t calc_packet_number_len(QUICPacketNumber num, QUICPacketNumber base);
   static bool encode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len);
   static bool decode_packet_number(QUICPacketNumber &dst, QUICPacketNumber src, size_t len, QUICPacketNumber largest_acked);
-
-  LINK(QUICPacket, link);
 
 private:
   UDPConnection *_udp_con      = nullptr;
@@ -406,7 +332,6 @@ using QUICPacketUPtr        = std::unique_ptr<QUICPacket, QUICPacketDeleterFunc>
 class QUICPacketDeleter
 {
 public:
-  // TODO Probably these methods should call destructor
   static void
   delete_null_packet(QUICPacket *packet)
   {
@@ -425,4 +350,165 @@ public:
   {
     packet->~QUICPacket();
   }
+
+  static void
+  delete_packet_new(QUICPacket *packet)
+  {
+    delete packet;
+  }
+};
+
+class QUICLongHeaderPacket : public QUICPacket
+{
+public:
+  QUICLongHeaderPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, bool ack_eliciting, bool probing,
+                       bool crypto);
+
+  uint16_t size() const override;
+
+  bool is_crypto_packet() const override;
+
+protected:
+  size_t _write_common_header(uint8_t *buf) const;
+
+  Ptr<IOBufferBlock> _payload_block;
+  size_t _payload_length;
+
+private:
+  QUICVersion _version;
+  QUICConnectionId _dcid;
+  QUICConnectionId _scid;
+
+  bool _is_crypto_packet;
+};
+
+class QUICShortHeaderPacket : public QUICPacket
+{
+public:
+  QUICShortHeaderPacket(QUICConnectionId dcid, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
+                        QUICKeyPhase key_phase, bool ack_eliciting, bool probing);
+
+  QUICPacketType type() const override;
+  QUICKeyPhase key_phase() const override;
+  QUICPacketNumber packet_number() const override;
+  uint16_t size() const override;
+  bool is_crypto_packet() const override;
+
+  Ptr<IOBufferBlock> header_block() const override;
+  Ptr<IOBufferBlock> payload_block() const override;
+  void attach_payload(Ptr<IOBufferBlock> payload, bool unprotected);
+
+private:
+  QUICConnectionId _dcid;
+  QUICPacketNumber _packet_number;
+  QUICKeyPhase _key_phase;
+  int _packet_number_len;
+
+  Ptr<IOBufferBlock> _payload_block;
+  size_t _payload_length;
+};
+
+class QUICStatelessResetPacket : public QUICPacket
+{
+public:
+  QUICStatelessResetPacket(QUICStatelessResetToken token);
+
+  QUICPacketType type() const override;
+
+  Ptr<IOBufferBlock> header_block() const override;
+  Ptr<IOBufferBlock> payload_block() const override;
+
+private:
+  QUICStatelessResetToken _token;
+};
+
+class QUICVersionNegotiationPacket : public QUICLongHeaderPacket
+{
+public:
+  QUICVersionNegotiationPacket(QUICConnectionId dcid, QUICConnectionId scid, const QUICVersion versions[], int nversions);
+
+  QUICPacketType type() const override;
+
+  Ptr<IOBufferBlock> header_block() const override;
+  Ptr<IOBufferBlock> payload_block() const override;
+
+private:
+  const QUICVersion *_versions;
+  int _nversions;
+};
+
+class QUICInitialPacket : public QUICLongHeaderPacket
+{
+public:
+  QUICInitialPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, size_t token_len, ats_unique_buf token,
+                    size_t length, QUICPacketNumber packet_number, bool ack_eliciting, bool probing, bool crypto);
+
+  QUICPacketType type() const override;
+  QUICKeyPhase key_phase() const override;
+
+  Ptr<IOBufferBlock> header_block() const override;
+  Ptr<IOBufferBlock> payload_block() const override;
+  void attach_payload(Ptr<IOBufferBlock> payload, bool unprotected);
+
+  QUICPacketNumber packet_number() const override;
+
+private:
+  size_t _token_len     = 0;
+  ats_unique_buf _token = ats_unique_buf(nullptr);
+  QUICPacketNumber _packet_number;
+};
+
+class QUICZeroRttPacket : public QUICLongHeaderPacket
+{
+public:
+  QUICZeroRttPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, size_t length,
+                    QUICPacketNumber packet_number, bool ack_eliciting, bool probing);
+
+  QUICPacketType type() const override;
+  QUICKeyPhase key_phase() const override;
+
+  Ptr<IOBufferBlock> header_block() const override;
+  Ptr<IOBufferBlock> payload_block() const override;
+  void attach_payload(Ptr<IOBufferBlock> payload, bool unprotected);
+
+  QUICPacketNumber packet_number() const override;
+
+private:
+  QUICPacketNumber _packet_number;
+};
+
+class QUICHandshakePacket : public QUICLongHeaderPacket
+{
+public:
+  QUICHandshakePacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, size_t length,
+                      QUICPacketNumber packet_number, bool ack_eliciting, bool probing, bool crypto);
+
+  QUICPacketType type() const override;
+  QUICKeyPhase key_phase() const override;
+
+  Ptr<IOBufferBlock> header_block() const override;
+  Ptr<IOBufferBlock> payload_block() const override;
+  void attach_payload(Ptr<IOBufferBlock> payload, bool unprotected);
+
+  QUICPacketNumber packet_number() const override;
+
+private:
+  QUICPacketNumber _packet_number;
+};
+
+class QUICRetryPacket : public QUICLongHeaderPacket
+{
+public:
+  QUICRetryPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, QUICConnectionId ocid, QUICRetryToken &token);
+
+  QUICPacketType type() const override;
+  Ptr<IOBufferBlock> header_block() const override;
+  Ptr<IOBufferBlock> payload_block() const override;
+
+  QUICConnectionId original_dcid() const;
+
+private:
+  QUICConnectionId _ocid;
+  QUICRetryToken _token;
+>>>>>>> d3d5256e1... Use individual classes for sending packets
 };

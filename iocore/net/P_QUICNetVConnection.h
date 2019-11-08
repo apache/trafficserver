@@ -62,6 +62,7 @@
 #include "quic/QUICPathManager.h"
 #include "quic/QUICApplicationMap.h"
 #include "quic/QUICPacketReceiveQueue.h"
+#include "quic/QUICPacketHeaderProtector.h"
 #include "quic/QUICAddrVerifyState.h"
 #include "quic/QUICPacketProtectionKeyInfo.h"
 #include "quic/QUICContext.h"

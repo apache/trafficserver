@@ -29,6 +29,7 @@
 #include "QUICPacket.h"
 
 class QUICPacketFactory;
+class QUICPacketHeaderProtector;
 
 class QUICPacketReceiveQueue
 {

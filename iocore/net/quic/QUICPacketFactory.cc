@@ -182,161 +182,118 @@ QUICPacketFactory::create(uint8_t *packet_buf, UDPConnection *udp_con, IpEndpoin
 QUICPacketUPtr
 QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid)
 {
-  size_t len = sizeof(QUICVersion) * (countof(QUIC_SUPPORTED_VERSIONS) + 1);
-  ats_unique_buf versions(reinterpret_cast<uint8_t *>(ats_malloc(len)));
-  uint8_t *p = versions.get();
-
-  size_t n;
-  for (auto v : QUIC_SUPPORTED_VERSIONS) {
-    QUICTypeUtil::write_QUICVersion(v, p, &n);
-    p += n;
-  }
-
-  // [draft-18] 6.3. Using Reserved Versions
-  // To help ensure this, a server SHOULD include a reserved version (see Section 15) while generating a
-  // Version Negotiation packet.
-  QUICTypeUtil::write_QUICVersion(QUIC_EXERCISE_VERSION, p, &n);
-  p += n;
-
-  ink_assert(len == static_cast<size_t>(p - versions.get()));
-  // VN packet dosen't have packet number field and version field is always 0x00000000
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::VERSION_NEGOTIATION, QUICKeyPhase::INITIAL, dcid, scid,
-                                                        0x00, 0x00, 0x00, false, std::move(versions), len);
-
-  return QUICPacketFactory::_create_unprotected_packet(std::move(header));
+  return QUICPacketUPtr(new QUICVersionNegotiationPacket(dcid, scid, QUIC_SUPPORTED_VERSIONS, countof(QUIC_SUPPORTED_VERSIONS)),
+                        &QUICPacketDeleter::delete_packet_new);
 }
 
 QUICPacketUPtr
 QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                         QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                         bool retransmittable, bool probing, bool crypto, ats_unique_buf token, size_t token_len)
+                                         QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
+                                         bool ack_eliciting, bool probing, bool crypto, ats_unique_buf token, size_t token_len)
 {
   QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::INITIAL);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::INITIAL, QUICKeyPhase::INITIAL, destination_cid, source_cid, pn, base_packet_number,
-                            this->_version, crypto, std::move(payload), len, std::move(token), token_len);
-  return this->_create_encrypted_packet(std::move(header), retransmittable, probing);
+
+  QUICInitialPacket *packet = new QUICInitialPacket(this->_version, destination_cid, source_cid, token_len, std::move(token),
+                                                    length, pn, ack_eliciting, probing, crypto);
+
+  packet->attach_payload(payload, true); // Attach a cleartext payload with extra headers
+  Ptr<IOBufferBlock> protected_payload =
+    this->_pp_protector.protect(packet->header_block(), packet->payload_block(), packet->packet_number(), packet->key_phase());
+  if (protected_payload != nullptr) {
+    packet->attach_payload(protected_payload, false); // Replace its payload with the protected payload
+  } else {
+    QUICDebug(destination_cid, source_cid, "Failed to encrypt a packet");
+    packet = nullptr;
+  }
+
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet_new);
 }
 
 QUICPacketUPtr
 QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICConnectionId original_dcid, QUICRetryToken &token)
 {
-  ats_unique_buf payload = ats_unique_malloc(token.length());
-  memcpy(payload.get(), token.buf(), token.length());
-
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::RETRY, QUICKeyPhase::INITIAL, QUIC_SUPPORTED_VERSIONS[0], destination_cid, source_cid,
-                            original_dcid, std::move(payload), token.length());
-  return QUICPacketFactory::_create_unprotected_packet(std::move(header));
+  return QUICPacketUPtr(new QUICRetryPacket(QUIC_SUPPORTED_VERSIONS[0], destination_cid, source_cid, original_dcid, token),
+                        &QUICPacketDeleter::delete_packet_new);
 }
 
 QUICPacketUPtr
 QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                           QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                           bool retransmittable, bool probing, bool crypto)
+                                           QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
+                                           bool ack_eliciting, bool probing, bool crypto)
 {
   QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::HANDSHAKE);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::HANDSHAKE, QUICKeyPhase::HANDSHAKE, destination_cid, source_cid, pn, base_packet_number,
-                            this->_version, crypto, std::move(payload), len);
-  return this->_create_encrypted_packet(std::move(header), retransmittable, probing);
+
+  QUICHandshakePacket *packet =
+    new QUICHandshakePacket(this->_version, destination_cid, source_cid, length, pn, ack_eliciting, probing, crypto);
+
+  packet->attach_payload(payload, true); // Attach a cleartext payload with extra headers
+  Ptr<IOBufferBlock> protected_payload =
+    this->_pp_protector.protect(packet->header_block(), packet->payload_block(), packet->packet_number(), packet->key_phase());
+  if (protected_payload != nullptr) {
+    packet->attach_payload(protected_payload, false); // Replace its payload with the protected payload
+  } else {
+    QUICDebug(destination_cid, source_cid, "Failed to encrypt a packet");
+    packet = nullptr;
+  }
+
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet_new);
 }
 
 QUICPacketUPtr
 QUICPacketFactory::create_zero_rtt_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                          QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
-                                          bool retransmittable, bool probing)
+                                          QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
+                                          bool ack_eliciting, bool probing)
 {
   QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::ZERO_RTT);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
-  QUICPacketHeaderUPtr header =
-    QUICPacketHeader::build(QUICPacketType::ZERO_RTT_PROTECTED, QUICKeyPhase::ZERO_RTT, destination_cid, source_cid, pn,
-                            base_packet_number, this->_version, false, std::move(payload), len);
-  return this->_create_encrypted_packet(std::move(header), retransmittable, probing);
+
+  QUICZeroRttPacket *packet =
+    new QUICZeroRttPacket(this->_version, destination_cid, source_cid, length, pn, ack_eliciting, probing);
+
+  packet->attach_payload(payload, true); // Attach a cleartext payload with extra headers
+  Ptr<IOBufferBlock> protected_payload =
+    this->_pp_protector.protect(packet->header_block(), packet->payload_block(), packet->packet_number(), packet->key_phase());
+  if (protected_payload != nullptr) {
+    packet->attach_payload(protected_payload, false); // Replace its payload with the protected payload
+  } else {
+    QUICDebug(destination_cid, source_cid, "Failed to encrypt a packet");
+    packet = nullptr;
+  }
+
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet_new);
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
-                                           ats_unique_buf payload, size_t len, bool retransmittable, bool probing)
+QUICPacketFactory::create_short_header_packet(QUICConnectionId destination_cid, QUICPacketNumber base_packet_number,
+                                              Ptr<IOBufferBlock> payload, size_t length, bool ack_eliciting, bool probing)
 {
   QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::ONE_RTT);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
+
   // TODO Key phase should be picked up from QUICHandshakeProtocol, probably
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, connection_id, pn,
-                                                        base_packet_number, std::move(payload), len);
-  return this->_create_encrypted_packet(std::move(header), retransmittable, probing);
+  QUICShortHeaderPacket *packet =
+    new QUICShortHeaderPacket(destination_cid, pn, base_packet_number, QUICKeyPhase::PHASE_0, ack_eliciting, probing);
+
+  packet->attach_payload(payload, true); // Attach a cleartext payload with extra headers
+  Ptr<IOBufferBlock> protected_payload =
+    this->_pp_protector.protect(packet->header_block(), packet->payload_block(), packet->packet_number(), packet->key_phase());
+  if (protected_payload != nullptr) {
+    packet->attach_payload(protected_payload, false); // Replace its payload with the protected payload
+  } else {
+    QUICDebug(destination_cid, QUICConnectionId::ZERO(), "Failed to encrypt a packet");
+    packet = nullptr;
+  }
+
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet_new);
 }
 
 QUICPacketUPtr
 QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessResetToken stateless_reset_token)
 {
-  constexpr uint8_t MIN_UNPREDICTABLE_FIELD_LEN = 5;
-  std::random_device rnd;
-
-  uint8_t random_packet_number = static_cast<uint8_t>(rnd() & 0xFF);
-  size_t payload_len     = static_cast<uint8_t>((rnd() & 0xFF) | (MIN_UNPREDICTABLE_FIELD_LEN + QUICStatelessResetToken::LEN));
-  ats_unique_buf payload = ats_unique_malloc(payload_len);
-  uint8_t *naked_payload = payload.get();
-
-  // Generate random octets
-  for (int i = payload_len - 1; i >= 0; --i) {
-    naked_payload[i] = static_cast<uint8_t>(rnd() & 0xFF);
-  }
-  // Copy stateless reset token into payload
-  memcpy(naked_payload + payload_len - QUICStatelessResetToken::LEN, stateless_reset_token.buf(), QUICStatelessResetToken::LEN);
-
-  // KeyPhase won't be used
-  QUICPacketHeaderUPtr header = QUICPacketHeader::build(QUICPacketType::STATELESS_RESET, QUICKeyPhase::INITIAL, connection_id,
-                                                        random_packet_number, 0, std::move(payload), payload_len);
-  return QUICPacketFactory::_create_unprotected_packet(std::move(header));
-}
-
-QUICPacketUPtr
-QUICPacketFactory::_create_unprotected_packet(QUICPacketHeaderUPtr header)
-{
-  ats_unique_buf cleartext = ats_unique_malloc(2048);
-  size_t cleartext_len     = header->payload_size();
-
-  memcpy(cleartext.get(), header->payload(), cleartext_len);
-  QUICPacket *packet = quicPacketAllocator.alloc();
-  new (packet) QUICPacket(std::move(header), std::move(cleartext), cleartext_len, false, false);
-
-  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
-}
-
-QUICPacketUPtr
-QUICPacketFactory::_create_encrypted_packet(QUICPacketHeaderUPtr header, bool retransmittable, bool probing)
-{
-  QUICConnectionId dcid = header->destination_cid();
-  QUICConnectionId scid = header->source_cid();
-  QUICVDebug(dcid, scid, "Encrypting %s packet #%" PRIu64 " using %s", QUICDebugNames::packet_type(header->type()),
-             header->packet_number(), QUICDebugNames::key_phase(header->key_phase()));
-
-  QUICPacket *packet = nullptr;
-
-  Ptr<IOBufferBlock> payload_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  payload_ibb->set_internal(reinterpret_cast<void *>(const_cast<uint8_t *>(header->payload())), header->payload_size(),
-                            BUFFER_SIZE_NOT_ALLOCATED);
-
-  Ptr<IOBufferBlock> header_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  header_ibb->set_internal(reinterpret_cast<void *>(const_cast<uint8_t *>(header->buf())), header->size(),
-                           BUFFER_SIZE_NOT_ALLOCATED);
-
-  Ptr<IOBufferBlock> protected_payload =
-    this->_pp_protector.protect(header_ibb, payload_ibb, header->packet_number(), header->key_phase());
-  if (protected_payload != nullptr) {
-    ats_unique_buf cipher_txt = ats_unique_malloc(protected_payload->size());
-    memcpy(cipher_txt.get(), protected_payload->buf(), protected_payload->size());
-    packet = quicPacketAllocator.alloc();
-    new (packet) QUICPacket(std::move(header), std::move(cipher_txt), protected_payload->size(), retransmittable, probing);
-  } else {
-    QUICDebug(dcid, scid, "Failed to encrypt a packet");
-  }
-
-  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet);
+  return QUICPacketUPtr(new QUICStatelessResetPacket(stateless_reset_token), &QUICPacketDeleter::delete_packet_new);
 }
 
 void

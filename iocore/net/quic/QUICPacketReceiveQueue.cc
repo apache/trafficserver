@@ -22,6 +22,7 @@
  */
 
 #include "QUICPacketReceiveQueue.h"
+#include "QUICPacketHeaderProtector.h"
 #include "QUICPacketFactory.h"
 
 #include "QUICIntUtil.h"
