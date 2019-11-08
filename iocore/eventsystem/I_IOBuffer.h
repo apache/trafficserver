@@ -441,9 +441,6 @@ public:
   */
   void set(IOBufferData *d, int64_t len = 0, int64_t offset = 0);
   void set_internal(void *b, int64_t len, int64_t asize_index);
-  void realloc_set_internal(void *b, int64_t buf_size, int64_t asize_index);
-  void realloc(void *b, int64_t buf_size);
-  void realloc(int64_t i);
 
   /**
     Frees the IOBufferBlock object and its underlying memory.
@@ -1000,8 +997,6 @@ public:
   */
   int64_t write(IOBufferChain const *chain, int64_t len = INT64_MAX, int64_t offset = 0);
 
-  int64_t remove_append(IOBufferReader *);
-
   /**
     Returns a pointer to the first writable block on the block chain.
     Returns nullptr if there are not currently any writable blocks on the
@@ -1077,16 +1072,6 @@ public:
   int64_t block_size();
 
   /**
-    Returns the default data block size for this buffer.
-
-  */
-  int64_t
-  total_size()
-  {
-    return block_size();
-  }
-
-  /**
     Returns true if amount of the data outstanding on the buffer exceeds
     the watermark.
 
@@ -1119,7 +1104,6 @@ public:
   {
     return current_write_avail() <= water_mark;
   }
-  void set_size_index(int64_t size);
 
   /**
     Allocates a new IOBuffer reader and sets it's its 'accessor' field
@@ -1167,15 +1151,8 @@ public:
   void alloc(int64_t i = default_large_iobuffer_size);
   void append_block_internal(IOBufferBlock *b);
   int64_t write(IOBufferBlock const *b, int64_t len, int64_t offset);
-  int64_t puts(char *buf, int64_t len);
 
   // internal interface
-
-  bool
-  empty()
-  {
-    return !_writer;
-  }
 
   /**
     Get the maximum amount of available data across all of the readers.
@@ -1238,17 +1215,6 @@ public:
     water_mark = 0;
   }
 
-  void
-  realloc(int64_t i)
-  {
-    _writer->realloc(i);
-  }
-  void
-  realloc(void *b, int64_t buf_size)
-  {
-    _writer->realloc(b, buf_size);
-  }
-
   int64_t size_index;
 
   /**
@@ -1294,12 +1260,6 @@ struct MIOBufferAccessor {
   block_size() const
   {
     return mbuf->block_size();
-  }
-
-  int64_t
-  total_size() const
-  {
-    return block_size();
   }
 
   void reader_for(IOBufferReader *abuf);

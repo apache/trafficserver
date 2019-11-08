@@ -63,26 +63,6 @@ init_buffer_allocators(int iobuffer_advice)
 // MIOBuffer
 //
 int64_t
-MIOBuffer::remove_append(IOBufferReader *r)
-{
-  int64_t l = 0;
-  while (r->block) {
-    Ptr<IOBufferBlock> b = r->block;
-    r->block             = r->block->next;
-    b->_start += r->start_offset;
-    if (b->start() >= b->end()) {
-      r->start_offset = -r->start_offset;
-      continue;
-    }
-    r->start_offset = 0;
-    l += b->read_avail();
-    append_block(b.get());
-  }
-  r->mbuf->_writer = nullptr;
-  return l;
-}
-
-int64_t
 MIOBuffer::write(const void *abuf, int64_t alen)
 {
   const char *buf = static_cast<const char *>(abuf);
@@ -151,28 +131,6 @@ MIOBuffer::write(IOBufferBlock const *b, int64_t alen, int64_t offset)
   }
 
   return alen - len;
-}
-
-int64_t
-MIOBuffer::puts(char *s, int64_t len)
-{
-  char *pc = end();
-  char *pb = s;
-  while (pc < buf_end()) {
-    if (len-- <= 0) {
-      return -1;
-    }
-    if (!*pb || *pb == '\n') {
-      int64_t n = static_cast<int64_t>(pb - s);
-      memcpy(end(), s, n + 1); // Up to and including '\n'
-      end()[n + 1] = 0;
-      fill(n + 1);
-      return n + 1;
-    }
-    pc++;
-    pb++;
-  }
-  return 0;
 }
 
 bool
