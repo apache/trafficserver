@@ -114,9 +114,9 @@ Removed APIs
 
 Renamed or modified APIs
 ~~~~~~~~~~~~~~~~~~~~~~~~
-* ``TSVConnSSLConnectionGet()`` is renamed to be :c:func:`TSVConnSslConnectionGet`.
+* ``TSVConnSSLConnectionGet()`` is renamed to be :c:func:`TSVConnSslConnectionGet`
 
-* ``TSHttpTxnServerPush()`` now returns a :type:`TSReturnCode`.
+* ``TSHttpTxnServerPush()`` now returns a :type:`TSReturnCode`
 
 
 Cache

@@ -86,4 +86,4 @@ code, to be consistent with other similar APIs. The new prototype is:
 
 .. code-block:: c
 
-    TSReturnCode TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
+    .. c:function:: TSReturnCode TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
