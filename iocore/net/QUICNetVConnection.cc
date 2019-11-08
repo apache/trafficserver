@@ -1469,11 +1469,9 @@ QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_a
 {
   Ptr<IOBufferBlock> new_block = frame.to_io_buffer_block(max_frame_size);
 
-  size_added             = 0;
-  Ptr<IOBufferBlock> tmp = new_block;
-  while (tmp) {
+  size_added = 0;
+  for (Ptr<IOBufferBlock> tmp = new_block; tmp; tmp = tmp->next) {
     size_added += tmp->size();
-    tmp = tmp->next;
   }
 
   if (parent_block == nullptr) {
@@ -1675,15 +1673,9 @@ QUICNetVConnection::_build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> 
   QUICPacketType type   = QUICTypeUtil::packet_type(level);
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
 
-  // FIXME Pass parent_block to create_x_packet
-  // No need to make a unique buf here
-  ats_unique_buf buf = ats_unique_malloc(2048);
-  uint8_t *raw_buf   = buf.get();
-  size_t len         = 0;
-  while (parent_block) {
-    memcpy(raw_buf + len, parent_block->start(), parent_block->size());
-    len += parent_block->size();
-    parent_block = parent_block->next;
+  size_t len = 0;
+  for (Ptr<IOBufferBlock> tmp = parent_block; tmp; tmp = tmp->next) {
+    len += tmp->size();
   }
 
   switch (type) {
@@ -1704,26 +1696,26 @@ QUICNetVConnection::_build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> 
     }
 
     packet = this->_packet_factory.create_initial_packet(
-      dcid, this->_quic_connection_id, this->_largest_acked_packet_number(QUICEncryptionLevel::INITIAL), std::move(buf), len,
+      dcid, this->_quic_connection_id, this->_largest_acked_packet_number(QUICEncryptionLevel::INITIAL), parent_block, len,
       ack_eliciting, probing, crypto, std::move(token), token_len);
     break;
   }
   case QUICPacketType::HANDSHAKE: {
     packet = this->_packet_factory.create_handshake_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
                                                            this->_largest_acked_packet_number(QUICEncryptionLevel::HANDSHAKE),
-                                                           std::move(buf), len, ack_eliciting, probing, crypto);
+                                                           parent_block, len, ack_eliciting, probing, crypto);
     break;
   }
   case QUICPacketType::ZERO_RTT_PROTECTED: {
     packet = this->_packet_factory.create_zero_rtt_packet(this->_original_quic_connection_id, this->_quic_connection_id,
                                                           this->_largest_acked_packet_number(QUICEncryptionLevel::ZERO_RTT),
-                                                          std::move(buf), len, ack_eliciting, probing);
+                                                          parent_block, len, ack_eliciting, probing);
     break;
   }
   case QUICPacketType::PROTECTED: {
-    packet = this->_packet_factory.create_protected_packet(this->_peer_quic_connection_id,
-                                                           this->_largest_acked_packet_number(QUICEncryptionLevel::ONE_RTT),
-                                                           std::move(buf), len, ack_eliciting, probing);
+    packet = this->_packet_factory.create_short_header_packet(this->_peer_quic_connection_id,
+                                                              this->_largest_acked_packet_number(QUICEncryptionLevel::ONE_RTT),
+                                                              parent_block, len, ack_eliciting, probing);
     break;
   }
   default:

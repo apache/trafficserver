@@ -27,6 +27,7 @@
 
 #include "QUICEvents.h"
 #include "QUICGlobals.h"
+#include "QUICHandshakeProtocol.h"
 #include "QUICPacketFactory.h"
 #include "QUICVersionNegotiator.h"
 #include "QUICConfig.h"

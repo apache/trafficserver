@@ -35,6 +35,7 @@
  */
 class QUICVersionNegotiator;
 class QUICPacketFactory;
+class QUICHandshakeProtocol;
 class SSLNextProtocolSet;
 
 class QUICHandshake : public QUICFrameHandler, public QUICFrameGenerator

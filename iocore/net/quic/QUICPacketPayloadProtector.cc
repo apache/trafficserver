@@ -46,12 +46,16 @@ QUICPacketPayloadProtector::protect(const Ptr<IOBufferBlock> unprotected_header,
 
   const EVP_CIPHER *cipher = this->_pp_key_info.get_cipher(phase);
 
-  protected_payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  protected_payload->alloc(iobuffer_size_to_index(unprotected_payload->size() + tag_len));
+  protected_payload              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  size_t unprotected_payload_len = 0;
+  for (Ptr<IOBufferBlock> tmp = unprotected_payload; tmp; tmp = tmp->next) {
+    unprotected_payload_len += tmp->size();
+  }
+  protected_payload->alloc(iobuffer_size_to_index(unprotected_payload_len + tag_len));
 
   size_t written_len = 0;
   if (!this->_protect(reinterpret_cast<uint8_t *>(protected_payload->start()), written_len, protected_payload->write_avail(),
-                      unprotected_payload, pkt_num, reinterpret_cast<uint8_t *>(unprotected_header->buf()),
+                      unprotected_payload, pkt_num, reinterpret_cast<uint8_t *>(unprotected_header->start()),
                       unprotected_header->size(), key, iv, iv_len, cipher, tag_len)) {
     Debug(tag, "Failed to encrypt a packet #%" PRIu64 " with keys for %s", pkt_num, QUICDebugNames::key_phase(phase));
     protected_payload = nullptr;
@@ -84,9 +88,9 @@ QUICPacketPayloadProtector::unprotect(const Ptr<IOBufferBlock> unprotected_heade
 
   size_t written_len = 0;
   if (!this->_unprotect(reinterpret_cast<uint8_t *>(unprotected_payload->start()), written_len, unprotected_payload->write_avail(),
-                        reinterpret_cast<uint8_t *>(protected_payload->buf()), protected_payload->size(), pkt_num,
-                        reinterpret_cast<uint8_t *>(unprotected_header->buf()), unprotected_header->size(), key, iv, iv_len, cipher,
-                        tag_len)) {
+                        reinterpret_cast<uint8_t *>(protected_payload->start()), protected_payload->size(), pkt_num,
+                        reinterpret_cast<uint8_t *>(unprotected_header->start()), unprotected_header->size(), key, iv, iv_len,
+                        cipher, tag_len)) {
     Debug(tag, "Failed to decrypt a packet #%" PRIu64, pkt_num);
     unprotected_payload = nullptr;
   } else {
