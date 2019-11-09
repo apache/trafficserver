@@ -25,26 +25,26 @@ namespace ts
 {
 namespace filename
 {
-  constexpr const char *const STORAGE = "storage.config";
-  constexpr const char *const RECORDS = "records.config";
-  constexpr const char *const VOLUME  = "volume.config";
-  constexpr const char *const PLUGIN  = "plugin.config";
+  constexpr const char *STORAGE = "storage.config";
+  constexpr const char *RECORDS = "records.config";
+  constexpr const char *VOLUME  = "volume.config";
+  constexpr const char *PLUGIN  = "plugin.config";
 
   // These still need to have their corrensponding records.config settings remove
-  constexpr const char *const LOGGING       = "logging.yaml";
-  constexpr const char *const CACHE         = "cache.config";
-  constexpr const char *const IP_ALLOW      = "ip_allow.yaml";
-  constexpr const char *const HOSTING       = "hosting.config";
-  constexpr const char *const SOCKS         = "socks.config";
-  constexpr const char *const PARENT        = "parent.config";
-  constexpr const char *const REMAP         = "remap.config";
-  constexpr const char *const SSL_MULTICERT = "ssl_multicert.config";
-  constexpr const char *const SPLITDNS      = "splitdns.config";
-  constexpr const char *const SNI           = "sni.yaml";
+  constexpr const char *LOGGING       = "logging.yaml";
+  constexpr const char *CACHE         = "cache.config";
+  constexpr const char *IP_ALLOW      = "ip_allow.yaml";
+  constexpr const char *HOSTING       = "hosting.config";
+  constexpr const char *SOCKS         = "socks.config";
+  constexpr const char *PARENT        = "parent.config";
+  constexpr const char *REMAP         = "remap.config";
+  constexpr const char *SSL_MULTICERT = "ssl_multicert.config";
+  constexpr const char *SPLITDNS      = "splitdns.config";
+  constexpr const char *SNI           = "sni.yaml";
 
   ///////////////////////////////////////////////////////////////////
   // Various other file names
-  constexpr const char *const RECORDS_STATS = "records.snap";
+  constexpr const char *RECORDS_STATS = "records.snap";
 
 } // namespace filename
 } // namespace ts
