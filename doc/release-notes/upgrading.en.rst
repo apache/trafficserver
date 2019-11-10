@@ -83,17 +83,17 @@ The following configurations still exist, and functions, but are considered
 deprecated and will be removed in a future release. We **strongly** encourage
 you to avoid using any of these:
 
-  * :ts:cv:`proxy.config.http.parent_proxy.file`
   * :ts:cv:`proxy.config.socks.socks_config_file`
-  * :ts:cv:`proxy.config.cache.control.filename`
-  * :ts:cv:`proxy.config.cache.ip_allow.filename`
-  * :ts:cv:`proxy.config.cache.hosting_filename`
-  * :ts:cv:`proxy.config.cache.volume_filename`
-  * :ts:cv:`proxy.config.dns.splitdns.filename`
   * :ts:cv:`proxy.config.log.config.filename`
   * :ts:cv:`proxy.config.url_remap.filename`
   * :ts:cv:`proxy.config.ssl.server.multicert.filename`
   * :ts:cv:`proxy.config.ssl.servername.filename`
+  * ``proxy.config.http.parent_proxy.file``
+  * ``proxy.config.cache.control.filename``
+  * ``proxy.config.cache.ip_allow.filename``
+  * ``proxy.config.cache.hosting_filename``
+  * ``proxy.config.cache.volume_filename``
+  * ``proxy.config.dns.splitdns.filename``
 
 Deprecated or Removed Features
 ------------------------------
