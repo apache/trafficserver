@@ -33,6 +33,7 @@
 #include "HttpDebugNames.h"
 #include <ctime>
 #include "tscore/ParseRules.h"
+#include "tscore/Filenames.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "logging/Log.h"
@@ -6065,8 +6066,8 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     // If a ttl is set, allow caching even if response contains
     // Cache-Control headers to prevent caching
     if (s->cache_control.ttl_in_cache > 0) {
-      TxnDebug("http_trans",
-               "[is_response_cacheable] Cache-control header directives in response overridden by ttl in cache.config");
+      TxnDebug("http_trans", "[is_response_cacheable] Cache-control header directives in response overridden by ttl in %s",
+               ts::filename::CACHE);
     } else {
       TxnDebug("http_trans", "[is_response_cacheable] NO by response cache control");
       return false;

@@ -64,7 +64,6 @@ libtscore_la_SOURCES = \
 	EventNotify.cc \
 	Extendible.cc \
 	fastlz.c \
-	Filenames.cc \
 	Hash.cc \
 	HashFNV.cc \
 	HashMD5.cc \

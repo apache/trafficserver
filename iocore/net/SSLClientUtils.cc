@@ -22,6 +22,7 @@
 #include "tscore/ink_config.h"
 #include "records/I_RecHttp.h"
 #include "tscore/ink_platform.h"
+#include "tscore/Filenames.h"
 #include "tscore/X509HostnameValidator.h"
 
 #include "P_Net.h"
@@ -158,7 +159,7 @@ SSLInitClientContext(const SSLConfigParams *params)
   SSL_CTX_set_options(client_ctx, params->ssl_client_ctx_options);
   if (params->client_cipherSuite != nullptr) {
     if (!SSL_CTX_set_cipher_list(client_ctx, params->client_cipherSuite)) {
-      SSLError("invalid client cipher suite in records.config");
+      SSLError("invalid client cipher suite in %s", ts::filename::RECORDS);
       goto fail;
     }
   }
@@ -166,7 +167,7 @@ SSLInitClientContext(const SSLConfigParams *params)
 #if TS_USE_TLS_SET_CIPHERSUITES
   if (params->client_tls13_cipher_suites != nullptr) {
     if (!SSL_CTX_set_ciphersuites(client_ctx, params->client_tls13_cipher_suites)) {
-      SSLError("invalid tls client cipher suites in records.config");
+      SSLError("invalid tls client cipher suites in %s", ts::filename::RECORDS);
       goto fail;
     }
   }
@@ -179,7 +180,7 @@ SSLInitClientContext(const SSLConfigParams *params)
 #else
     if (!SSL_CTX_set1_curves_list(client_ctx, params->client_groups_list)) {
 #endif
-      SSLError("invalid groups list for client in records.config");
+      SSLError("invalid groups list for client in %s", ts::filename::RECORDS);
       goto fail;
     }
   }

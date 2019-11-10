@@ -325,13 +325,13 @@ Store::read_config()
   Span *sd = nullptr, *cur = nullptr;
   Span *ns;
   ats_scoped_fd fd;
-  ats_scoped_str storage_path(RecConfigReadConfigPath(nullptr, STORAGE_CONF_FILENAME));
+  ats_scoped_str storage_path(RecConfigReadConfigPath(nullptr, ts::filename::STORAGE));
 
-  Note("%s loading ...", STORAGE_CONF_FILENAME);
+  Note("%s loading ...", ts::filename::STORAGE);
   Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
   fd = ::open(storage_path, O_RDONLY);
   if (fd < 0) {
-    Error("%s failed to load", STORAGE_CONF_FILENAME);
+    Error("%s failed to load", ts::filename::STORAGE);
     return Result::failure("open %s: %s", (const char *)storage_path, strerror(errno));
   }
 
@@ -372,7 +372,7 @@ Store::read_config()
         const char *end;
         if ((size = ink_atoi64(e, &end)) <= 0 || *end != '\0') {
           delete sd;
-          Error("%s failed to load", STORAGE_CONF_FILENAME);
+          Error("%s failed to load", ts::filename::STORAGE);
           return Result::failure("failed to parse size '%s'", e);
         }
       } else if (0 == strncasecmp(HASH_BASE_STRING_KEY, e, sizeof(HASH_BASE_STRING_KEY) - 1)) {
@@ -390,7 +390,7 @@ Store::read_config()
         }
         if (!*e || !ParseRules::is_digit(*e) || 0 >= (volume_num = ink_atoi(e))) {
           delete sd;
-          Error("%s failed to load", STORAGE_CONF_FILENAME);
+          Error("%s failed to load", ts::filename::STORAGE);
           return Result::failure("failed to parse volume number '%s'", e);
         }
       }
@@ -442,7 +442,7 @@ Store::read_config()
   sd = nullptr; // these are all used.
   sort();
 
-  Note("%s finished loading", STORAGE_CONF_FILENAME);
+  Note("%s finished loading", ts::filename::STORAGE);
 
   return Result::ok();
 }

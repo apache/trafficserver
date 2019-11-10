@@ -31,6 +31,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sprintf.h"
 #include "tscore/ink_file.h"
+#include "tscore/Filenames.h"
 #include "HttpBodyFactory.h"
 #include <unistd.h>
 #include <dirent.h>
@@ -334,7 +335,7 @@ HttpBodyFactory::HttpBodyFactory()
   for (i = 0; config_record_names[i] != nullptr; i++) {
     status = REC_RegisterConfigUpdateFunc(config_record_names[i], config_callback, (void *)this);
     if (status != REC_ERR_OKAY) {
-      Warning("couldn't register variable '%s', is records.config up to date?", config_record_names[i]);
+      Warning("couldn't register variable '%s', is %s up to date?", config_record_names[i], ts::filename::RECORDS);
     }
     no_registrations_failed = no_registrations_failed && (status == REC_ERR_OKAY);
   }

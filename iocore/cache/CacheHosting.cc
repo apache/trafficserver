@@ -26,6 +26,7 @@
 #include "tscore/HostLookup.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/Regression.h"
+#include "tscore/Filenames.h"
 
 extern int gndisks;
 
@@ -244,7 +245,7 @@ int fstat_wrapper(int fd, struct stat *s);
 int
 CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_buf)
 {
-  Note("hosting.config loading ...");
+  Note("%s loading ...", ts::filename::HOSTING);
 
   // Table build locals
   Tokenizer bufTok("\n");
@@ -325,7 +326,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     if (gen_host_rec.Init(type)) {
       Warning("Problems encountered while initializing the Generic Volume");
     }
-    Note("hosting.config finished loading");
+    Note("%s finished loading", ts::filename::HOSTING);
     return 0;
   }
 
@@ -374,7 +375,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     current = current->next;
     ats_free(last);
 
-    Note("hosting.config finished loading");
+    Note("%s finished loading", ts::filename::HOSTING);
   }
 
   if (!generic_rec_initd) {
@@ -596,11 +597,11 @@ ConfigVolumes::read_config_file()
   config_path = RecConfigReadConfigPath("proxy.config.cache.volume_filename");
   ink_release_assert(config_path);
 
-  Note("volume.config loading ...");
+  Note("%s loading ...", ts::filename::VOLUME);
 
   file_buf = readIntoBuffer(config_path, "[CacheVolition]", nullptr);
   if (file_buf == nullptr) {
-    Error("volume.config failed to load");
+    Error("%s failed to load", ts::filename::VOLUME);
     Warning("Cannot read the config file: %s", (const char *)config_path);
     return;
   }
