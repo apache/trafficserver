@@ -2901,6 +2901,7 @@ Logging Configuration
 
 .. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
    :reloadable:
+   :deprecated:
 
    This configuration value specifies the path to the
    :file:`logging.yaml` configuration file. If this is a relative
@@ -3052,6 +3053,7 @@ URL Remap Rules
 ===============
 
 .. ts:cv:: CONFIG proxy.config.url_remap.filename STRING remap.config
+   :deprecated:
 
    Sets the name of the :file:`remap.config` file.
 
@@ -3182,6 +3184,7 @@ SSL Termination
 
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
+   :deprecated:
 
    The location of the :file:`ssl_multicert.config` file, relative
    to the |TS| configuration directory. In the following
@@ -3250,6 +3253,7 @@ SSL Termination
    file is changed with new tickets, use :option:`traffic_ctl config reload` to begin using them.
 
 .. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING sni.yaml
+   :deprecated:
 
    The filename of the :file:`sni.yaml` configuration file.
    If relative, it is relative to the configuration directory.
@@ -3956,6 +3960,7 @@ SOCKS Processor
    Specifies the SOCKS version (``4``) or (``5``)
 
 .. ts:cv::  CONFIG proxy.config.socks.socks_config_file STRING socks.config
+   :deprecated:
 
    The socks.config file allows you to specify ranges of IP addresses
    that will not be relayed to the SOCKS server. It can also be used

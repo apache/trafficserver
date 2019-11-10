@@ -30,6 +30,7 @@
 #include "InkAPIInternal.h"
 #include "Plugin.h"
 #include "tscore/ink_cap.h"
+#include "tscore/Filenames.h"
 
 #define MAX_PLUGIN_ARGS 64
 
@@ -208,7 +209,7 @@ plugin_expand(char *arg)
   }
 
 not_found:
-  Warning("plugin.config: unable to find parameter %s", arg);
+  Warning("%s: unable to find parameter %s", ts::filename::PLUGIN, arg);
   return nullptr;
 }
 
@@ -231,11 +232,11 @@ plugin_init(bool validateOnly)
     INIT_ONCE  = false;
   }
 
-  Note("plugin.config loading ...");
-  path = RecConfigReadConfigPath(nullptr, "plugin.config");
+  Note("%s loading ...", ts::filename::PLUGIN);
+  path = RecConfigReadConfigPath(nullptr, ts::filename::PLUGIN);
   fd   = open(path, O_RDONLY);
   if (fd < 0) {
-    Warning("plugin.config failed to load: %d, %s", errno, strerror(errno));
+    Warning("%s failed to load: %d, %s", ts::filename::PLUGIN, errno, strerror(errno));
     return false;
   }
 
@@ -311,9 +312,9 @@ plugin_init(bool validateOnly)
 
   close(fd);
   if (retVal) {
-    Note("plugin.config finished loading");
+    Note("%s finished loading", ts::filename::PLUGIN);
   } else {
-    Error("plugin.config failed to load");
+    Error("%s failed to load", ts::filename::PLUGIN);
   }
   return retVal;
 }

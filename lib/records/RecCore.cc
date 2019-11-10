@@ -219,9 +219,9 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
     ink_mutex_init(&g_rec_config_lock);
 
-    g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, RECORDS_CONF_FILENAME));
+    g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, ts::filename::RECORDS));
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-      RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", RECORDS_CONF_FILENAME);
+      RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", ts::filename::RECORDS);
       file_exists = false;
     }
 
@@ -1257,7 +1257,7 @@ std::string
 RecConfigReadPersistentStatsPath()
 {
   std::string rundir(RecConfigReadRuntimeDir());
-  return Layout::relative_to(rundir, RECORDS_STATS_FILE);
+  return Layout::relative_to(rundir, ts::filename::RECORDS_STATS);
 }
 
 void

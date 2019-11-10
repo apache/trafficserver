@@ -27,6 +27,7 @@
 #include "ReverseProxy.h"
 #include "RemapConfig.h"
 #include "tscore/I_Layout.h"
+#include "tscore/Filenames.h"
 #include "HttpSM.h"
 
 #define modulePrefix "[ReverseProxy]"
@@ -55,10 +56,10 @@ UrlRewrite::load()
 {
   ats_scoped_str config_file_path;
 
-  config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", "remap.config");
+  config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", ts::filename::REMAP);
   if (!config_file_path) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to find proxy.config.url_remap.filename");
-    Warning("%s Unable to locate remap.config. No remappings in effect", modulePrefix);
+    Warning("%s Unable to locate %s. No remappings in effect", modulePrefix, ts::filename::REMAP);
     return false;
   }
 

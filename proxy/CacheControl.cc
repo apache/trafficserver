@@ -31,6 +31,7 @@
 #include <sys/types.h>
 
 #include "tscore/ink_config.h"
+#include "tscore/Filenames.h"
 #include "CacheControl.h"
 #include "ControlMatcher.h"
 #include "Main.h"
@@ -143,16 +144,16 @@ initCacheControl()
 void
 reloadCacheControl()
 {
-  Note("cache.config loading ...");
+  Note("%s loading ...", ts::filename::CACHE);
 
   CC_table *newTable;
 
-  Debug("cache_control", "cache.config updated, reloading");
+  Debug("cache_control", "%s updated, reloading", ts::filename::CACHE);
   eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CACHE);
   newTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
   ink_atomic_swap(&CacheControlTable, newTable);
 
-  Note("cache.config finished loading");
+  Note("%s finished loading", ts::filename::CACHE);
 }
 
 void
@@ -297,7 +298,7 @@ CacheControlRecord::Init(matcher_line *line_info)
         directive = CC_IGNORE_SERVER_NO_CACHE;
         d_found   = true;
       } else {
-        return Result::failure("%s Invalid action at line %d in cache.config", modulePrefix, line_num);
+        return Result::failure("%s Invalid action at line %d in %s", modulePrefix, line_num, ts::filename::CACHE);
       }
     } else {
       if (strcasecmp(label, "revalidate") == 0) {
@@ -317,7 +318,7 @@ CacheControlRecord::Init(matcher_line *line_info)
           this->time_arg = time_in;
 
         } else {
-          return Result::failure("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
+          return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::CACHE);
         }
       }
     }
@@ -331,14 +332,14 @@ CacheControlRecord::Init(matcher_line *line_info)
   }
 
   if (d_found == false) {
-    return Result::failure("%s No directive in cache.config at line %d", modulePrefix, line_num);
+    return Result::failure("%s No directive in %s at line %d", modulePrefix, ts::filename::CACHE, line_num);
   }
   // Process any modifiers to the directive, if they exist
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
 
     if (tmp != nullptr) {
-      return Result::failure("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
+      return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::CACHE);
     }
   }
 
