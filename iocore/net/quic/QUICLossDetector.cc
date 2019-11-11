@@ -487,7 +487,7 @@ QUICLossDetector::_send_packet(QUICEncryptionLevel level, bool padded)
   if (padded) {
     this->_padder->request(level);
   } else {
-    this->_pinger->request();
+    this->_pinger->request(level);
   }
   this->_cc->add_extra_credit();
 }
@@ -497,23 +497,25 @@ QUICLossDetector::_send_one_or_two_packet()
 {
   this->_send_packet(QUICEncryptionLevel::ONE_RTT);
   this->_send_packet(QUICEncryptionLevel::ONE_RTT);
-  ink_assert(this->_pinger->count() >= 2);
+  ink_assert(this->_pinger->count(QUICEncryptionLevel::ONE_RTT) >= 2);
   QUICLDDebug("[%s] send ping frame %" PRIu64, QUICDebugNames::encryption_level(QUICEncryptionLevel::ONE_RTT),
-              this->_pinger->count());
+              this->_pinger->count(QUICEncryptionLevel::ONE_RTT));
 }
 
 void
 QUICLossDetector::_send_one_handshake_packets()
 {
   this->_send_packet(QUICEncryptionLevel::HANDSHAKE);
-  QUICLDDebug("[%s] send handshake packet", QUICDebugNames::encryption_level(QUICEncryptionLevel::HANDSHAKE));
+  QUICLDDebug("[%s] send handshake packet: ping count=%" PRIu64, QUICDebugNames::encryption_level(QUICEncryptionLevel::HANDSHAKE),
+              this->_pinger->count(QUICEncryptionLevel::HANDSHAKE));
 }
 
 void
 QUICLossDetector::_send_one_padded_packets()
 {
   this->_send_packet(QUICEncryptionLevel::INITIAL, true);
-  QUICLDDebug("[%s] send PADDING frame", QUICDebugNames::encryption_level(QUICEncryptionLevel::INITIAL));
+  QUICLDDebug("[%s] send PADDING frame: ping count=%" PRIu64, QUICDebugNames::encryption_level(QUICEncryptionLevel::INITIAL),
+              this->_pinger->count(QUICEncryptionLevel::INITIAL));
 }
 
 // ===== Functions below are helper functions =====

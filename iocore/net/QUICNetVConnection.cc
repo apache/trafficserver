@@ -642,7 +642,7 @@ QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 void
 QUICNetVConnection::ping()
 {
-  this->_pinger->request();
+  this->_pinger->request(QUICEncryptionLevel::ONE_RTT);
 }
 
 void
@@ -1520,7 +1520,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
         case QUICEncryptionLevel::INITIAL:
         case QUICEncryptionLevel::HANDSHAKE:
           ink_assert(t == QUICFrameType::CRYPTO || t == QUICFrameType::ACK || t == QUICFrameType::PADDING ||
-                     t == QUICFrameType::CONNECTION_CLOSE);
+                     t == QUICFrameType::CONNECTION_CLOSE || t == QUICFrameType::PING);
           break;
         default:
           break;
