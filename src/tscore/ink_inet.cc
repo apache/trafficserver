@@ -50,8 +50,8 @@ const std::string_view IP_PROTO_TAG_HTTP_0_9("http/0.9"sv);
 const std::string_view IP_PROTO_TAG_HTTP_1_0("http/1.0"sv);
 const std::string_view IP_PROTO_TAG_HTTP_1_1("http/1.1"sv);
 const std::string_view IP_PROTO_TAG_HTTP_2_0("h2"sv);     // HTTP/2 over TLS
-const std::string_view IP_PROTO_TAG_HTTP_QUIC("hq-23"sv); // HTTP/0.9 over QUIC
-const std::string_view IP_PROTO_TAG_HTTP_3("h3-23"sv);    // HTTP/3 over QUIC
+const std::string_view IP_PROTO_TAG_HTTP_QUIC("hq-24"sv); // HTTP/0.9 over QUIC
+const std::string_view IP_PROTO_TAG_HTTP_3("h3-24"sv);    // HTTP/3 over QUIC
 
 const std::string_view UNIX_PROTO_TAG{"unix"sv};
 
