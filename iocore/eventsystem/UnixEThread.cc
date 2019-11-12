@@ -139,11 +139,7 @@ EThread::process_event(Event *e, int calling_code)
         if (e->period < 0) {
           e->timeout_at = e->period;
         } else {
-          this->get_hrtime_updated();
-          e->timeout_at = cur_time + e->period;
-          if (e->timeout_at < cur_time) {
-            e->timeout_at = cur_time;
-          }
+          e->timeout_at = Thread::get_hrtime_updated() + e->period;
         }
         EventQueueExternal.enqueue_local(e);
       }
@@ -235,7 +231,7 @@ EThread::execute_regular()
     do {
       done_one = false;
       // execute all the eligible internal events
-      EventQueue.check_ready(cur_time, this);
+      EventQueue.check_ready(loop_start_time, this);
       while ((e = EventQueue.dequeue_ready(cur_time))) {
         ink_assert(e);
         ink_assert(e->timeout_at > 0);
@@ -276,7 +272,7 @@ EThread::execute_regular()
     tail_cb->waitForActivity(sleep_time);
 
     // loop cleanup
-    loop_finish_time = this->get_hrtime_updated();
+    loop_finish_time = Thread::get_hrtime_updated();
     delta            = loop_finish_time - loop_start_time;
 
     // This can happen due to time of day adjustments (which apparently happen quite frequently). I
