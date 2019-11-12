@@ -17,7 +17,7 @@ template <typename Key, typename Enable = void>
 struct get_idx {
   static node* get(const std::vector<node*>& /* sequence */,
                    const Key& /* key */, shared_memory_holder /* pMemory */) {
-    return 0;
+    return nullptr;
   }
 };
 
@@ -27,12 +27,12 @@ struct get_idx<Key,
                                        !std::is_same<Key, bool>::value>::type> {
   static node* get(const std::vector<node*>& sequence, const Key& key,
                    shared_memory_holder /* pMemory */) {
-    return key < sequence.size() ? sequence[key] : 0;
+    return key < sequence.size() ? sequence[key] : nullptr;
   }
 
   static node* get(std::vector<node*>& sequence, const Key& key,
                    shared_memory_holder pMemory) {
-   if (key > sequence.size() || (key > 0 && !sequence[key-1]->is_defined()))
+    if (key > sequence.size() || (key > 0 && !sequence[key - 1]->is_defined()))
       return 0;
     if (key == sequence.size())
       sequence.push_back(&pMemory->create_node());
@@ -46,13 +46,44 @@ struct get_idx<Key, typename std::enable_if<std::is_signed<Key>::value>::type> {
                    shared_memory_holder pMemory) {
     return key >= 0 ? get_idx<std::size_t>::get(
                           sequence, static_cast<std::size_t>(key), pMemory)
-                    : 0;
+                    : nullptr;
   }
   static node* get(std::vector<node*>& sequence, const Key& key,
                    shared_memory_holder pMemory) {
     return key >= 0 ? get_idx<std::size_t>::get(
                           sequence, static_cast<std::size_t>(key), pMemory)
-                    : 0;
+                    : nullptr;
+  }
+};
+
+template <typename Key, typename Enable = void>
+struct remove_idx {
+  static bool remove(std::vector<node*>&, const Key&) { return false; }
+};
+
+template <typename Key>
+struct remove_idx<
+    Key, typename std::enable_if<std::is_unsigned<Key>::value &&
+                                 !std::is_same<Key, bool>::value>::type> {
+
+  static bool remove(std::vector<node*>& sequence, const Key& key) {
+    if (key >= sequence.size()) {
+      return false;
+    } else {
+      sequence.erase(sequence.begin() + key);
+      return true;
+    }
+  }
+};
+
+template <typename Key>
+struct remove_idx<Key,
+                  typename std::enable_if<std::is_signed<Key>::value>::type> {
+
+  static bool remove(std::vector<node*>& sequence, const Key& key) {
+    return key >= 0 ? remove_idx<std::size_t>::remove(
+                          sequence, static_cast<std::size_t>(key))
+                    : false;
   }
 };
 
@@ -78,13 +109,13 @@ inline node* node_data::get(const Key& key,
       break;
     case NodeType::Undefined:
     case NodeType::Null:
-      return NULL;
+      return nullptr;
     case NodeType::Sequence:
       if (node* pNode = get_idx<Key>::get(m_sequence, key, pMemory))
         return pNode;
-      return NULL;
+      return nullptr;
     case NodeType::Scalar:
-      throw BadSubscript();
+      throw BadSubscript(key);
   }
 
   for (node_map::const_iterator it = m_map.begin(); it != m_map.end(); ++it) {
@@ -93,7 +124,7 @@ inline node* node_data::get(const Key& key,
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 template <typename Key>
@@ -112,7 +143,7 @@ inline node& node_data::get(const Key& key, shared_memory_holder pMemory) {
       convert_to_map(pMemory);
       break;
     case NodeType::Scalar:
-      throw BadSubscript();
+      throw BadSubscript(key);
   }
 
   for (node_map::const_iterator it = m_map.begin(); it != m_map.end(); ++it) {
@@ -129,21 +160,23 @@ inline node& node_data::get(const Key& key, shared_memory_holder pMemory) {
 
 template <typename Key>
 inline bool node_data::remove(const Key& key, shared_memory_holder pMemory) {
-  if (m_type != NodeType::Map)
-    return false;
+  if (m_type == NodeType::Sequence) {
+    return remove_idx<Key>::remove(m_sequence, key);
+  } else if (m_type == NodeType::Map) {
+    kv_pairs::iterator it = m_undefinedPairs.begin();
+    while (it != m_undefinedPairs.end()) {
+      kv_pairs::iterator jt = std::next(it);
+      if (it->first->equals(key, pMemory)) {
+        m_undefinedPairs.erase(it);
+      }
+      it = jt;
+    }
 
-  for (kv_pairs::iterator it = m_undefinedPairs.begin();
-       it != m_undefinedPairs.end();) {
-    kv_pairs::iterator jt = std::next(it);
-    if (it->first->equals(key, pMemory))
-      m_undefinedPairs.erase(it);
-    it = jt;
-  }
-
-  for (node_map::iterator it = m_map.begin(); it != m_map.end(); ++it) {
-    if (it->first->equals(key, pMemory)) {
-      m_map.erase(it);
-      return true;
+    for (node_map::iterator iter = m_map.begin(); iter != m_map.end(); ++iter) {
+      if (iter->first->equals(key, pMemory)) {
+        m_map.erase(iter);
+        return true;
+      }
     }
   }
 
