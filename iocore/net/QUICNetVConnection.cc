@@ -1205,16 +1205,10 @@ QUICNetVConnection::_state_connection_established_process_protected_packet(const
     return error;
   }
 
-  // Migrate connection if required
-  // FIXME Connection migration will be initiated when a peer sent non-probing frames.
-  // We need to two or more paths because we need to respond to probing packets on a new path and also need to send other frames
-  // on the old path until they initiate migration.
-  // if (packet.destination_cid() == this->_quic_connection_id && has_non_probing_frame) {
+  // Migrate connection if needed
   if (this->_alt_con_manager != nullptr) {
-    if (packet.destination_cid() != this->_quic_connection_id || !ats_ip_addr_port_eq(packet.from(), this->remote_addr)) {
-      if (!has_non_probing_frame) {
-        QUICConDebug("FIXME: Connection migration has been initiated without non-probing frames");
-      }
+    if (has_non_probing_frame &&
+        (packet.destination_cid() != this->_quic_connection_id || !ats_ip_addr_port_eq(packet.from(), this->remote_addr))) {
       error = this->_state_connection_established_migrate_connection(packet);
       if (error != nullptr) {
         return error;
