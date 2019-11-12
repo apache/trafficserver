@@ -880,7 +880,7 @@ one forces the beginning of a new ruleset.
      node[shape=record];
 
      Client[height=4, label="{ Client|{<p1>|<p2>} }"];
-     ATS[height=4, fontsize=10,label="{ {{<clientside0>Global:\nREAD_REQUEST_PRE_REMAP_HOOK|<clientside01>Global:\nREAD_REQUEST_HDR_HOOK\nRemap rule:\nREMAP_PSEUDO_HOOK}|<clientside1>SEND_RESPONSE_HDR_HOOK}|ATS |{<originside0>SEND_REQUEST_HDR_HOOK|<originside1>READ_RESPONSE_HDR_HOOK} }",xlabel="ATS"];
+     ATS[height=4, fontsize=10,label="{ {{<clientside0>Global:\nREAD_REQUEST_HDR_HOOK\nREAD_REQUEST_PRE_REMAP_HOOK|<clientside01>Remap rule:\nREMAP_PSEUDO_HOOK}|<clientside1>SEND_RESPONSE_HDR_HOOK}|ATS |{<originside0>SEND_REQUEST_HDR_HOOK|<originside1>READ_RESPONSE_HDR_HOOK} }",xlabel="ATS"];
      Origin[height=4, label="{ {<request>|<response>}|Origin }"];
 
      Client:p1 -> ATS:clientside0 [ label = "Request" ];
