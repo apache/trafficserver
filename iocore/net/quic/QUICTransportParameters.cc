@@ -309,7 +309,8 @@ QUICTransportParameters::_print() const
       Debug(tag, "%s: Endpoint(IPv4)=%s, Endpoint(IPv6)=%s, CID=%s, Token=%s", QUICDebugNames::transport_parameter_id(p.first),
             ep_ipv4_hex_str, ep_ipv6_hex_str, cid_hex_str, token_hex_str);
     } else {
-      Debug(tag, "%s: (long data)", QUICDebugNames::transport_parameter_id(p.first));
+      Debug(tag, "%s (%" PRIu32 "): (%u byte data)", QUICDebugNames::transport_parameter_id(p.first),
+            static_cast<uint16_t>(p.first), p.second->len());
     }
   }
 }

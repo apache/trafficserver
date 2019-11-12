@@ -1115,7 +1115,7 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICPacket &pa
     if (this->_handshake_handler->is_version_negotiated()) {
       error = this->_recv_and_ack(packet);
 
-      if (error == nullptr && !this->_handshake_handler->has_remote_tp()) {
+      if (error == nullptr && this->_handshake_handler->is_completed() && !this->_handshake_handler->has_remote_tp()) {
         error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR);
       }
     }
