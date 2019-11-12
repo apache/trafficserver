@@ -45,6 +45,9 @@
 using namespace std::literals;
 static constexpr std::string_view QUIC_DEBUG_TAG = "quic_net"sv;
 
+static constexpr uint16_t QUANTUM_TEST_ID         = 3127;
+static constexpr uint8_t QUANTUM_TEST_VALUE[1200] = {'Q'};
+
 #define QUICConDebug(fmt, ...) Debug(QUIC_DEBUG_TAG.data(), "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
 #define QUICConVDebug(fmt, ...) Debug("v_quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
@@ -188,9 +191,23 @@ public:
     }
   }
 
+  std::unordered_map<uint16_t, std::pair<const uint8_t *, uint16_t>>
+  additional_tp() const override
+  {
+    return this->_additional_tp;
+  }
+
+  void
+  add_tp(uint16_t id, const uint8_t *value, uint16_t length)
+  {
+    this->_additional_tp.emplace(std::piecewise_construct, std::forward_as_tuple(id), std::forward_as_tuple(value, length));
+  }
+
 private:
   const QUICConfigParams *_params;
   NetVConnectionContext_t _ctx;
+
+  std::unordered_map<uint16_t, std::pair<const uint8_t *, uint16_t>> _additional_tp;
 };
 
 QUICNetVConnection::QUICNetVConnection() : _packet_factory(this->_pp_key_info), _ph_protector(this->_pp_key_info) {}
@@ -385,6 +402,9 @@ QUICNetVConnection::start()
   } else {
     trusted_path = {this->local_addr, this->remote_addr};
     QUICTPConfigQCP tp_config(this->_quic_config, NET_VCONNECTION_OUT);
+    if (this->_quic_config->quantum_readiness_test_enabled_out()) {
+      tp_config.add_tp(QUANTUM_TEST_ID, QUANTUM_TEST_VALUE, sizeof(QUANTUM_TEST_VALUE));
+    }
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::CLIENT);
     this->_ack_frame_manager.set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_out());
     this->_hs_protocol       = this->_setup_handshake_protocol(this->_quic_config->client_ssl_ctx());
@@ -1109,6 +1129,9 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICPacket &pa
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
     QUICTPConfigQCP tp_config(this->_quic_config, NET_VCONNECTION_IN);
+    if (this->_quic_config->quantum_readiness_test_enabled_in()) {
+      tp_config.add_tp(QUANTUM_TEST_ID, QUANTUM_TEST_VALUE, sizeof(QUANTUM_TEST_VALUE));
+    }
     error = this->_handshake_handler->start(tp_config, packet, &this->_packet_factory, this->_alt_con_manager->preferred_address());
 
     // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.

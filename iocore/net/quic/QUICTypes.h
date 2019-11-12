@@ -24,6 +24,7 @@
 #pragma once
 
 #include <cstring>
+#include <unordered_map>
 #include "tscore/ink_endian.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/Ptr.h"
@@ -515,18 +516,19 @@ private:
 class QUICTPConfig
 {
 public:
-  virtual uint32_t no_activity_timeout() const                 = 0;
-  virtual const IpEndpoint *preferred_address_ipv4() const     = 0;
-  virtual const IpEndpoint *preferred_address_ipv6() const     = 0;
-  virtual uint32_t initial_max_data() const                    = 0;
-  virtual uint32_t initial_max_stream_data_bidi_local() const  = 0;
-  virtual uint32_t initial_max_stream_data_bidi_remote() const = 0;
-  virtual uint32_t initial_max_stream_data_uni() const         = 0;
-  virtual uint64_t initial_max_streams_bidi() const            = 0;
-  virtual uint64_t initial_max_streams_uni() const             = 0;
-  virtual uint8_t ack_delay_exponent() const                   = 0;
-  virtual uint8_t max_ack_delay() const                        = 0;
-  virtual uint8_t active_cid_limit() const                     = 0;
+  virtual uint32_t no_activity_timeout() const                                                     = 0;
+  virtual const IpEndpoint *preferred_address_ipv4() const                                         = 0;
+  virtual const IpEndpoint *preferred_address_ipv6() const                                         = 0;
+  virtual uint32_t initial_max_data() const                                                        = 0;
+  virtual uint32_t initial_max_stream_data_bidi_local() const                                      = 0;
+  virtual uint32_t initial_max_stream_data_bidi_remote() const                                     = 0;
+  virtual uint32_t initial_max_stream_data_uni() const                                             = 0;
+  virtual uint64_t initial_max_streams_bidi() const                                                = 0;
+  virtual uint64_t initial_max_streams_uni() const                                                 = 0;
+  virtual uint8_t ack_delay_exponent() const                                                       = 0;
+  virtual uint8_t max_ack_delay() const                                                            = 0;
+  virtual uint8_t active_cid_limit() const                                                         = 0;
+  virtual std::unordered_map<uint16_t, std::pair<const uint8_t *, uint16_t>> additional_tp() const = 0;
 };
 
 class QUICLDConfig

@@ -392,6 +392,11 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
 
   tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
 
+  // Additional parameters
+  for (auto &&param : tp_config.additional_tp()) {
+    tp->set(param.first, param.second.first, param.second.second);
+  }
+
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(this->_local_transport_parameters);
 }
@@ -426,6 +431,11 @@ QUICHandshake::_load_local_client_transport_parameters(const QUICTPConfig &tp_co
   tp->set(QUICTransportParameterId::ACK_DELAY_EXPONENT, tp_config.ack_delay_exponent());
   if (tp_config.active_cid_limit() != 0) {
     tp->set(QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT, tp_config.active_cid_limit());
+  }
+
+  // Additional parameters
+  for (auto &&param : tp_config.additional_tp()) {
+    tp->set(param.first, param.second.first, param.second.second);
   }
 
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);

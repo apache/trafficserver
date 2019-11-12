@@ -40,6 +40,8 @@ public:
   uint32_t stateless_retry() const;
   uint32_t vn_exercise_enabled() const;
   uint32_t cm_exercise_enabled() const;
+  uint32_t quantum_readiness_test_enabled_in() const;
+  uint32_t quantum_readiness_test_enabled_out() const;
 
   const char *server_supported_groups() const;
   const char *client_supported_groups() const;
@@ -93,10 +95,12 @@ private:
   // TODO: make configurable
   static const uint8_t _scid_len = 18; //< Length of Source Connection ID
 
-  uint32_t _instance_id         = 0;
-  uint32_t _stateless_retry     = 0;
-  uint32_t _vn_exercise_enabled = 0;
-  uint32_t _cm_exercise_enabled = 0;
+  uint32_t _instance_id                        = 0;
+  uint32_t _stateless_retry                    = 0;
+  uint32_t _vn_exercise_enabled                = 0;
+  uint32_t _cm_exercise_enabled                = 0;
+  uint32_t _quantum_readiness_test_enabled_in  = 0;
+  uint32_t _quantum_readiness_test_enabled_out = 0;
 
   char *_server_supported_groups = nullptr;
   char *_client_supported_groups = nullptr;

@@ -120,6 +120,10 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_stateless_retry, "proxy.config.quic.server.stateless_retry_enabled");
   REC_EstablishStaticConfigInt32U(this->_vn_exercise_enabled, "proxy.config.quic.client.vn_exercise_enabled");
   REC_EstablishStaticConfigInt32U(this->_cm_exercise_enabled, "proxy.config.quic.client.cm_exercise_enabled");
+  REC_EstablishStaticConfigInt32U(this->_quantum_readiness_test_enabled_out,
+                                  "proxy.config.quic.client.quantum_readiness_test_enabled");
+  REC_EstablishStaticConfigInt32U(this->_quantum_readiness_test_enabled_in,
+                                  "proxy.config.quic.server.quantum_readiness_test_enabled");
 
   REC_ReadConfigStringAlloc(this->_server_supported_groups, "proxy.config.quic.server.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_supported_groups, "proxy.config.quic.client.supported_groups");
@@ -242,6 +246,18 @@ uint32_t
 QUICConfigParams::cm_exercise_enabled() const
 {
   return this->_cm_exercise_enabled;
+}
+
+uint32_t
+QUICConfigParams::quantum_readiness_test_enabled_in() const
+{
+  return this->_quantum_readiness_test_enabled_in;
+}
+
+uint32_t
+QUICConfigParams::quantum_readiness_test_enabled_out() const
+{
+  return this->_quantum_readiness_test_enabled_out;
 }
 
 uint32_t
