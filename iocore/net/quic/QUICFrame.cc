@@ -63,7 +63,7 @@ QUICFrame::ack_eliciting() const
 {
   auto type = this->type();
 
-  return type != QUICFrameType::PADDING && type != QUICFrameType::ACK;
+  return type != QUICFrameType::PADDING && type != QUICFrameType::ACK && type != QUICFrameType::CONNECTION_CLOSE;
 }
 
 const QUICPacket *
