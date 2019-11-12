@@ -15,6 +15,7 @@ Changes with Apache Traffic Server 8.0.6
   #5434 - gcc9 - Fix I_Store.h
   #5435 - gcc9 - fix HTTPVersion.
   #5462 - gcc9: fixed issue with always printing a null char*
+  #5489 - gcc9: set default value for printing debug message
   #5497 - gcc9: sprintf and strncat fixes in plugins
   #5516 - Make code compilable with BoringSSL
   #5823 - Avoid AWS auth v4 path/query param double encoding
@@ -29,3 +30,5 @@ Changes with Apache Traffic Server 8.0.6
   #6068 - Fixes help message for traffic_top's sleep switch
   #6088 - Local 8.0.x change for gcc9 - Map.h, MemSpan.h, ink_uuid.h
   #6113 - Patch to fix autest issues
+  #6145 - Remove including sys/sysctl.h for Linux
+  #6158 - Fixed build issues with hwloc 2.x API changes
