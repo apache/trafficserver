@@ -873,10 +873,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       }
 
       for (YAML::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
-        const YAML::Node &first  = it2->first;
-        const YAML::Node &second = it2->second;
+        const YAML::Node first  = it2->first;
+        const YAML::Node second = it2->second;
 
-        if (second.Type() != YAML::NodeType::Scalar) {
+        if (second.IsScalar() == false) {
           const string reason = "All op nodes must be of type scalar";
           TSError("Invalid YAML Configuration format for cookie_remap: %s, reason: %s", filename.c_str(), reason.c_str());
           return TS_ERROR;
