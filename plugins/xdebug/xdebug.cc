@@ -50,6 +50,7 @@ enum {
   XHEADER_X_DUMP_HEADERS   = 1u << 7,
   XHEADER_X_REMAP          = 1u << 8,
   XHEADER_X_PROBE_HEADERS  = 1u << 9,
+  XHEADER_X_PSELECT_KEY    = 1u << 10,
 };
 
 static int XArgIndex              = 0;
@@ -325,6 +326,53 @@ InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   }
 }
 
+static void
+InjectParentSelectionKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
+{
+  TSMLoc url = TS_NULL_MLOC;
+  TSMLoc dst = TS_NULL_MLOC;
+
+  struct {
+    char *ptr;
+    int len;
+  } strval = {nullptr, 0};
+
+  TSDebug("xdebug", "attempting to inject X-ParentSelection-Key header");
+
+  if (TSUrlCreate(buffer, &url) != TS_SUCCESS) {
+    goto done;
+  }
+
+  if (TSHttpTxnParentSelectionUrlGet(txn, buffer, url) != TS_SUCCESS) {
+    goto done;
+  }
+
+  strval.ptr = TSUrlStringGet(buffer, url, &strval.len);
+  if (strval.ptr == nullptr || strval.len == 0) {
+    goto done;
+  }
+
+  // Create a new response header field.
+  dst = FindOrMakeHdrField(buffer, hdr, "X-ParentSelection-Key", lengthof("X-ParentSelection-Key"));
+  if (dst == TS_NULL_MLOC) {
+    goto done;
+  }
+
+  // Now copy the parent selection lookup URL into the response header.
+  TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, strval.ptr, strval.len) == TS_SUCCESS);
+
+done:
+  if (dst != TS_NULL_MLOC) {
+    TSHandleMLocRelease(buffer, hdr, dst);
+  }
+
+  if (url != TS_NULL_MLOC) {
+    TSHandleMLocRelease(buffer, TS_NULL_MLOC, url);
+  }
+
+  TSfree(strval.ptr);
+}
+
 static int
 XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
@@ -382,6 +430,10 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
     }
     data->hdr_ready = true;
     writePostBody(data);
+  }
+
+  if (xheaders & XHEADER_X_PSELECT_KEY) {
+    InjectParentSelectionKeyHeader(txn, buffer, hdr);
   }
 
 done:
@@ -524,6 +576,9 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
         TSHttpTxnServerRespNoStoreSet(txn, 1);
         TSHttpTxnTransformedRespCache(txn, 0);
         TSHttpTxnUntransformedRespCache(txn, 0);
+
+      } else if (header_field_eq("x-parentselection-key", value, vsize)) {
+        xheaders |= XHEADER_X_PSELECT_KEY;
 
       } else if (isFwdFieldValue(std::string_view(value, vsize), fwdCnt)) {
         if (fwdCnt > 0) {
