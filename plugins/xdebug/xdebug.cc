@@ -35,13 +35,15 @@ static struct {
 } xDebugHeader = {nullptr, 0};
 
 enum {
-  XHEADER_X_CACHE_KEY      = 0x0004u,
-  XHEADER_X_MILESTONES     = 0x0008u,
-  XHEADER_X_CACHE          = 0x0010u,
-  XHEADER_X_GENERATION     = 0x0020u,
-  XHEADER_X_TRANSACTION_ID = 0x0040u,
-  XHEADER_X_DUMP_HEADERS   = 0x0080u,
-  XHEADER_X_REMAP          = 0x0100u,
+  XHEADER_X_CACHE_KEY      = 1u << 2,
+  XHEADER_X_MILESTONES     = 1u << 3,
+  XHEADER_X_CACHE          = 1u << 4,
+  XHEADER_X_GENERATION     = 1u << 5,
+  XHEADER_X_TRANSACTION_ID = 1u << 6,
+  XHEADER_X_DUMP_HEADERS   = 1u << 7,
+  XHEADER_X_REMAP          = 1u << 8,
+  XHEADER_X_PROBE_HEADERS  = 1u << 9,
+  XHEADER_X_PSELECT_KEY    = 1u << 10,
 };
 
 static int XArgIndex             = 0;
@@ -357,6 +359,53 @@ log_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, const char *msg_type)
   TSDebug(DEBUG_TAG_LOG_HEADERS, "%s", ss.str().c_str());
 }
 
+static void
+InjectParentSelectionKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
+{
+  TSMLoc url = TS_NULL_MLOC;
+  TSMLoc dst = TS_NULL_MLOC;
+
+  struct {
+    char *ptr;
+    int len;
+  } strval = {nullptr, 0};
+
+  TSDebug("xdebug", "attempting to inject X-ParentSelection-Key header");
+
+  if (TSUrlCreate(buffer, &url) != TS_SUCCESS) {
+    goto done;
+  }
+
+  if (TSHttpTxnParentSelectionUrlGet(txn, buffer, url) != TS_SUCCESS) {
+    goto done;
+  }
+
+  strval.ptr = TSUrlStringGet(buffer, url, &strval.len);
+  if (strval.ptr == nullptr || strval.len == 0) {
+    goto done;
+  }
+
+  // Create a new response header field.
+  dst = FindOrMakeHdrField(buffer, hdr, "X-ParentSelection-Key", lengthof("X-ParentSelection-Key"));
+  if (dst == TS_NULL_MLOC) {
+    goto done;
+  }
+
+  // Now copy the parent selection lookup URL into the response header.
+  TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, strval.ptr, strval.len) == TS_SUCCESS);
+
+done:
+  if (dst != TS_NULL_MLOC) {
+    TSHandleMLocRelease(buffer, hdr, dst);
+  }
+
+  if (url != TS_NULL_MLOC) {
+    TSHandleMLocRelease(buffer, TS_NULL_MLOC, url);
+  }
+
+  TSfree(strval.ptr);
+}
+
 static int
 XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
@@ -402,6 +451,10 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 
   if (xheaders & XHEADER_X_REMAP) {
     InjectRemapHeader(txn, buffer, hdr);
+  }
+
+  if (xheaders & XHEADER_X_PSELECT_KEY) {
+    InjectParentSelectionKeyHeader(txn, buffer, hdr);
   }
 
 done:
@@ -486,21 +539,22 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
           TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
           return TS_EVENT_NONE;
         };
-        TSHttpTxnHookAdd(txn, TS_HTTP_SEND_REQUEST_HDR_HOOK, TSContCreate(send_req_dump, nullptr));
 
         // dump on server response
-        auto read_resp_dump = [](TSCont /* contp */, TSEvent event, void *edata) -> int {
-          TSHttpTxn txn = (TSHttpTxn)edata;
-          TSMBuffer buffer;
-          TSMLoc hdr;
-          if (TSHttpTxnServerRespGet(txn, &buffer, &hdr) == TS_SUCCESS) {
-            log_headers(txn, buffer, hdr, "ServerResponse");
-          }
-          TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
-          return TS_EVENT_NONE;
-        };
-        TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(read_resp_dump, nullptr));
+				auto read_resp_dump = [](TSCont /* contp */, TSEvent event, void *edata) -> int {
+				TSHttpTxn txn = (TSHttpTxn)edata;
+				TSMBuffer buffer;
+				TSMLoc hdr;
+				if (TSHttpTxnServerRespGet(txn, &buffer, &hdr) == TS_SUCCESS) {
+				log_headers(txn, buffer, hdr, "ServerResponse");
+				}
+				TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+				return TS_EVENT_NONE;
+				};
+				TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(read_resp_dump, nullptr));
 
+      } else if (header_field_eq("x-parentselection-key", value, vsize)) {
+        xheaders |= XHEADER_X_PSELECT_KEY;
       } else {
         TSDebug("xdebug", "ignoring unrecognized debug tag '%.*s'", vsize, value);
       }
