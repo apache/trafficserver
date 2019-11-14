@@ -319,7 +319,7 @@ Thread Variables
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.listen INT 0
 
-   If enabled (``1``) all the exex_threads listen for incoming connections. `proxy.config.accept_threads`
+   If enabled (``1``) all the exec_threads listen for incoming connections. `proxy.config.accept_threads`
    should be disabled to enable this variable.
 
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
