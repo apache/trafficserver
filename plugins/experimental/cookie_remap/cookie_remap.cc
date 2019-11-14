@@ -178,7 +178,6 @@ void
 urlencode(std::string &str)
 {
   size_t pos = 0;
-  std::string replacement;
   for (; pos < str.length(); pos++) {
     if (!isalnum(str[pos])) {
       char dec[2];
@@ -765,8 +764,6 @@ using OpMap = std::vector<StringPair>;
 static bool
 build_op(op &o, OpMap const &q)
 {
-  StringPair m;
-
   subop *sub = new subop();
 
   // loop through the array of key->value pairs

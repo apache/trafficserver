@@ -82,14 +82,13 @@ CookieJar::parse(const string &arg, const char *sepstr, bool val_check, bool mai
   cp           = arg_copy;
   char empty[] = "";
   for (key = strsep(&cp, sepstr); key != nullptr; key = strsep(&cp, sepstr)) {
-    int val_len;
     char *val   = strchr(key, '=');
     char *addme = nullptr;
 
     if (val) {
       /* split key and value */
-      *val++  = '\0';
-      val_len = strlen(val);
+      *val++      = '\0';
+      int val_len = strlen(val);
       if (val_len > 0) {
         /* if we have DQUOTES around our value then drop them */
 
