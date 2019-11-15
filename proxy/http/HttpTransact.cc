@@ -7962,24 +7962,6 @@ HttpTransact::build_redirect_response(State *s)
   s->arena.str_free(to_free);
 }
 
-void
-HttpTransact::build_upgrade_response(State *s)
-{
-  TxnDebug("http_upgrade", "[HttpTransact::build_upgrade_response]");
-
-  // 101 Switching Protocols
-  HTTPStatus status_code    = HTTP_STATUS_SWITCHING_PROTOCOL;
-  const char *reason_phrase = http_hdr_reason_lookup(status_code);
-  build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status_code, reason_phrase);
-
-  //////////////////////////
-  // set upgrade headers  //
-  //////////////////////////
-  HTTPHdr *h = &s->hdr_info.client_response;
-  h->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "Upgrade", strlen("Upgrade"));
-  h->value_set(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE, MIME_UPGRADE_H2C_TOKEN, strlen(MIME_UPGRADE_H2C_TOKEN));
-}
-
 const char *
 HttpTransact::get_error_string(int erno)
 {
