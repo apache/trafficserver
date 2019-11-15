@@ -478,6 +478,41 @@ LogUtils::seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_
   return ((tr >= sidl ? (tr - sidl) % rolling_interval : (86400 - (sidl - tr)) % rolling_interval));
 }
 
+ts::TextView
+LogUtils::get_unrolled_filename(ts::TextView rolled_filename)
+{
+  auto unrolled_name = rolled_filename;
+
+  // A rolled log will look something like:
+  //   squid.log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old
+  auto suffix = rolled_filename;
+
+  suffix.remove_prefix_at('.');
+  // Using the above squid.log example, suffix now looks like:
+  //   log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.ol
+
+  if (suffix.find('_') != std::string::npos) {
+    suffix.remove_prefix_at('_');
+    // suffix now looks like:
+    //   some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.ol
+  } else if (suffix.find('.') != std::string::npos) {
+    // There was no underscore in the file after the first '.'.
+    // Some logs have the following format (without the hostname):
+    // diags.log.20191114.21h43m16s-20191114.21h43m17s.old
+
+    suffix.remove_prefix_at('.');
+    // Using the diags.log from our above example, suffix now looks like:
+    //   log.20191114.21h43m16s-20191114.21h43m17s.old
+  } else {
+    // If there isn't a '.' or an '_' after the first '.', then this
+    // doesn't look like a rolled file.
+    return rolled_filename;
+  }
+
+  // ' + 1' to remove the '_' or second '.':
+  return unrolled_name.remove_suffix(suffix.size() + 1);
+}
+
 // Checks if the file pointed to by full_filename either is a regular
 // file or a pipe and has write permission, or, if the file does not
 // exist, if the path prefix of full_filename names a directory that
