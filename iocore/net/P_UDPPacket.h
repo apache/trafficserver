@@ -38,8 +38,6 @@ public:
   UDPPacketInternal();
   ~UDPPacketInternal() override;
 
-  void append_block_internal(IOBufferBlock *block);
-
   void free() override;
 
   SLINK(UDPPacketInternal, alink); // atomic link
@@ -164,47 +162,6 @@ UDPPacket::getConnection()
 }
 
 TS_INLINE UDPPacket *
-new_UDPPacket(struct sockaddr const *to, ink_hrtime when, char *buf, int len)
-{
-  UDPPacketInternal *p = udpPacketAllocator.alloc();
-
-  p->in_the_priority_queue = 0;
-  p->in_heap               = 0;
-  p->delivery_time         = when;
-  ats_ip_copy(&p->to, to);
-
-  if (buf) {
-    IOBufferBlock *body = new_IOBufferBlock();
-    body->alloc(iobuffer_size_to_index(len));
-    memcpy(body->end(), buf, len);
-    body->fill(len);
-    p->append_block(body);
-  }
-
-  return p;
-}
-
-TS_INLINE UDPPacket *
-new_UDPPacket(struct sockaddr const *to, ink_hrtime when, IOBufferBlock *buf, int len)
-{
-  (void)len;
-  UDPPacketInternal *p = udpPacketAllocator.alloc();
-
-  p->in_the_priority_queue = 0;
-  p->in_heap               = 0;
-  p->delivery_time         = when;
-  ats_ip_copy(&p->to, to);
-
-  while (buf) {
-    IOBufferBlock *body = buf->clone();
-    p->append_block(body);
-    buf = buf->next.get();
-  }
-
-  return p;
-}
-
-TS_INLINE UDPPacket *
 new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf)
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();
@@ -215,32 +172,6 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &bu
   if (to)
     ats_ip_copy(&p->to, to);
   p->chain = buf;
-  return p;
-}
-
-TS_INLINE UDPPacket *
-new_UDPPacket(ink_hrtime when, Ptr<IOBufferBlock> buf)
-{
-  return new_UDPPacket(nullptr, when, buf);
-}
-
-TS_INLINE UDPPacket *
-new_incoming_UDPPacket(struct sockaddr *from, struct sockaddr *to, char *buf, int len)
-{
-  UDPPacketInternal *p = udpPacketAllocator.alloc();
-
-  p->in_the_priority_queue = 0;
-  p->in_heap               = 0;
-  p->delivery_time         = 0;
-  ats_ip_copy(&p->from, from);
-  ats_ip_copy(&p->to, to);
-
-  IOBufferBlock *body = new_IOBufferBlock();
-  body->alloc(iobuffer_size_to_index(len));
-  memcpy(body->end(), buf, len);
-  body->fill(len);
-  p->append_block(body);
-
   return p;
 }
 
