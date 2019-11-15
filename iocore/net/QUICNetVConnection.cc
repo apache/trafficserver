@@ -1370,6 +1370,8 @@ QUICNetVConnection::_state_common_send_packet()
 
     uint32_t written = 0;
     for (int i = static_cast<int>(this->_minimum_encryption_level); i <= static_cast<int>(QUICEncryptionLevel::ONE_RTT); ++i) {
+      uint8_t packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
+
       auto level = QUIC_ENCRYPTION_LEVELS[i];
       if (level == QUICEncryptionLevel::ONE_RTT && !this->_handshake_handler->is_completed()) {
         continue;
@@ -1381,7 +1383,7 @@ QUICNetVConnection::_state_common_send_packet()
       }
 
       QUICPacketInfoUPtr packet_info = std::make_unique<QUICPacketInfo>();
-      QUICPacketUPtr packet          = this->_packetize_frames(level, max_packet_size, packet_info->frames);
+      QUICPacketUPtr packet          = this->_packetize_frames(packet_buf, level, max_packet_size, packet_info->frames);
 
       if (packet) {
         packet_info->packet_number    = packet->packet_number();
@@ -1500,7 +1502,8 @@ QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_a
 }
 
 QUICPacketUPtr
-QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size, std::vector<QUICFrameInfo> &frames)
+QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel level, uint64_t max_packet_size,
+                                      std::vector<QUICFrameInfo> &frames)
 {
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
   if (max_packet_size <= MAX_PACKET_OVERHEAD) {
@@ -1588,7 +1591,7 @@ QUICNetVConnection::_packetize_frames(QUICEncryptionLevel level, uint64_t max_pa
   // Schedule a packet
   if (len != 0) {
     // Packet is retransmittable if it's not ack only packet
-    packet = this->_build_packet(level, first_block, ack_eliciting, probing, crypto);
+    packet = this->_build_packet(packet_buf, level, first_block, ack_eliciting, probing, crypto);
   }
 
   return packet;
@@ -1620,7 +1623,7 @@ QUICNetVConnection::_packetize_closing_frame()
 
   QUICEncryptionLevel level = this->_hs_protocol->current_encryption_level();
   ink_assert(level != QUICEncryptionLevel::ZERO_RTT);
-  this->_the_final_packet = this->_build_packet(level, first_block, true, false, false);
+  this->_the_final_packet = this->_build_packet(this->_final_packet_buf, level, first_block, true, false, false);
 }
 
 QUICConnectionErrorUPtr
@@ -1667,8 +1670,8 @@ QUICNetVConnection::_recv_and_ack(const QUICPacket &packet, bool *has_non_probin
 }
 
 QUICPacketUPtr
-QUICNetVConnection::_build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block, bool ack_eliciting, bool probing,
-                                  bool crypto)
+QUICNetVConnection::_build_packet(uint8_t *packet_buf, QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block,
+                                  bool ack_eliciting, bool probing, bool crypto)
 {
   QUICPacketType type   = QUICTypeUtil::packet_type(level);
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
@@ -1696,24 +1699,24 @@ QUICNetVConnection::_build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> 
     }
 
     packet = this->_packet_factory.create_initial_packet(
-      dcid, this->_quic_connection_id, this->_largest_acked_packet_number(QUICEncryptionLevel::INITIAL), parent_block, len,
-      ack_eliciting, probing, crypto, std::move(token), token_len);
+      packet_buf, dcid, this->_quic_connection_id, this->_largest_acked_packet_number(QUICEncryptionLevel::INITIAL), parent_block,
+      len, ack_eliciting, probing, crypto, std::move(token), token_len);
     break;
   }
   case QUICPacketType::HANDSHAKE: {
-    packet = this->_packet_factory.create_handshake_packet(this->_peer_quic_connection_id, this->_quic_connection_id,
+    packet = this->_packet_factory.create_handshake_packet(packet_buf, this->_peer_quic_connection_id, this->_quic_connection_id,
                                                            this->_largest_acked_packet_number(QUICEncryptionLevel::HANDSHAKE),
                                                            parent_block, len, ack_eliciting, probing, crypto);
     break;
   }
   case QUICPacketType::ZERO_RTT_PROTECTED: {
-    packet = this->_packet_factory.create_zero_rtt_packet(this->_original_quic_connection_id, this->_quic_connection_id,
+    packet = this->_packet_factory.create_zero_rtt_packet(packet_buf, this->_original_quic_connection_id, this->_quic_connection_id,
                                                           this->_largest_acked_packet_number(QUICEncryptionLevel::ZERO_RTT),
                                                           parent_block, len, ack_eliciting, probing);
     break;
   }
   case QUICPacketType::PROTECTED: {
-    packet = this->_packet_factory.create_short_header_packet(this->_peer_quic_connection_id,
+    packet = this->_packet_factory.create_short_header_packet(packet_buf, this->_peer_quic_connection_id,
                                                               this->_largest_acked_packet_number(QUICEncryptionLevel::ONE_RTT),
                                                               parent_block, len, ack_eliciting, probing);
     break;

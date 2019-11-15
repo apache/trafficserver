@@ -41,7 +41,6 @@ class QUICPacket;
 class QUICPacketLongHeader;
 class QUICPacketShortHeader;
 
-extern ClassAllocator<QUICPacket> quicPacketAllocator;
 extern ClassAllocator<QUICPacketLongHeader> quicPacketLongHeaderAllocator;
 extern ClassAllocator<QUICPacketShortHeader> quicPacketShortHeaderAllocator;
 
@@ -339,13 +338,6 @@ public:
   }
 
   static void
-  delete_packet(QUICPacket *packet)
-  {
-    packet->~QUICPacket();
-    quicPacketAllocator.free(packet);
-  }
-
-  static void
   delete_dont_free(QUICPacket *packet)
   {
     packet->~QUICPacket();
@@ -510,5 +502,4 @@ public:
 private:
   QUICConnectionId _ocid;
   QUICRetryToken _token;
->>>>>>> d3d5256e1... Use individual classes for sending packets
 };

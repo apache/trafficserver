@@ -54,18 +54,19 @@ public:
 
   QUICPacketUPtr create(uint8_t *packet_buf, UDPConnection *udp_con, IpEndpoint from, IpEndpoint to, ats_unique_buf buf, size_t len,
                         QUICPacketNumber base_packet_number, QUICPacketCreationResult &result);
-  QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+  QUICPacketUPtr create_initial_packet(uint8_t *packet_buf, QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                        QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
                                        bool ack_eliciting, bool probing, bool crypto,
                                        ats_unique_buf token = ats_unique_buf(nullptr), size_t token_len = 0);
-  QUICPacketUPtr create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+  QUICPacketUPtr create_handshake_packet(uint8_t *packet_buf, QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
                                          bool ack_eliciting, bool probing, bool crypto);
-  QUICPacketUPtr create_zero_rtt_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+  QUICPacketUPtr create_zero_rtt_packet(uint8_t *packet_buf, QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                         QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
                                         bool ack_eliciting, bool probing);
-  QUICPacketUPtr create_short_header_packet(QUICConnectionId destination_cid, QUICPacketNumber base_packet_number,
-                                            Ptr<IOBufferBlock> payload, size_t length, bool ack_eliciting, bool probing);
+  QUICPacketUPtr create_short_header_packet(uint8_t *packet_buf, QUICConnectionId destination_cid,
+                                            QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
+                                            bool ack_eliciting, bool probing);
   void set_version(QUICVersion negotiated_version);
 
   bool is_ready_to_create_protected_packet();

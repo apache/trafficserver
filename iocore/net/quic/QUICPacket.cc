@@ -36,7 +36,6 @@ static constexpr uint64_t aead_tag_len = 16;
 #define QUICDebug(dcid, scid, fmt, ...) \
   Debug(tag.data(), "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__);
 
-ClassAllocator<QUICPacket> quicPacketAllocator("quicPacketAllocator");
 ClassAllocator<QUICPacketLongHeader> quicPacketLongHeaderAllocator("quicPacketLongHeaderAllocator");
 ClassAllocator<QUICPacketShortHeader> quicPacketShortHeaderAllocator("quicPacketShortHeaderAllocator");
 
