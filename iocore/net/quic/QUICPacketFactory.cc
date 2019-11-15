@@ -187,15 +187,15 @@ QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUIC
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+QUICPacketFactory::create_initial_packet(uint8_t *packet_buf, QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                          QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
                                          bool ack_eliciting, bool probing, bool crypto, ats_unique_buf token, size_t token_len)
 {
   QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::INITIAL);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
 
-  QUICInitialPacket *packet = new QUICInitialPacket(this->_version, destination_cid, source_cid, token_len, std::move(token),
-                                                    length, pn, ack_eliciting, probing, crypto);
+  QUICInitialPacket *packet = new (packet_buf) QUICInitialPacket(this->_version, destination_cid, source_cid, token_len,
+                                                                 std::move(token), length, pn, ack_eliciting, probing, crypto);
 
   packet->attach_payload(payload, true); // Attach a cleartext payload with extra headers
   Ptr<IOBufferBlock> protected_payload =
@@ -207,7 +207,7 @@ QUICPacketFactory::create_initial_packet(QUICConnectionId destination_cid, QUICC
     packet = nullptr;
   }
 
-  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet_new);
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_dont_free);
 }
 
 QUICPacketUPtr
@@ -219,7 +219,7 @@ QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICCon
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+QUICPacketFactory::create_handshake_packet(uint8_t *packet_buf, QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                            QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
                                            bool ack_eliciting, bool probing, bool crypto)
 {
@@ -227,7 +227,7 @@ QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUI
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
 
   QUICHandshakePacket *packet =
-    new QUICHandshakePacket(this->_version, destination_cid, source_cid, length, pn, ack_eliciting, probing, crypto);
+    new (packet_buf) QUICHandshakePacket(this->_version, destination_cid, source_cid, length, pn, ack_eliciting, probing, crypto);
 
   packet->attach_payload(payload, true); // Attach a cleartext payload with extra headers
   Ptr<IOBufferBlock> protected_payload =
@@ -239,11 +239,11 @@ QUICPacketFactory::create_handshake_packet(QUICConnectionId destination_cid, QUI
     packet = nullptr;
   }
 
-  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet_new);
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_dont_free);
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_zero_rtt_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
+QUICPacketFactory::create_zero_rtt_packet(uint8_t *packet_buf, QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                           QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
                                           bool ack_eliciting, bool probing)
 {
@@ -251,7 +251,7 @@ QUICPacketFactory::create_zero_rtt_packet(QUICConnectionId destination_cid, QUIC
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
 
   QUICZeroRttPacket *packet =
-    new QUICZeroRttPacket(this->_version, destination_cid, source_cid, length, pn, ack_eliciting, probing);
+    new (packet_buf) QUICZeroRttPacket(this->_version, destination_cid, source_cid, length, pn, ack_eliciting, probing);
 
   packet->attach_payload(payload, true); // Attach a cleartext payload with extra headers
   Ptr<IOBufferBlock> protected_payload =
@@ -263,19 +263,20 @@ QUICPacketFactory::create_zero_rtt_packet(QUICConnectionId destination_cid, QUIC
     packet = nullptr;
   }
 
-  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet_new);
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_dont_free);
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_short_header_packet(QUICConnectionId destination_cid, QUICPacketNumber base_packet_number,
-                                              Ptr<IOBufferBlock> payload, size_t length, bool ack_eliciting, bool probing)
+QUICPacketFactory::create_short_header_packet(uint8_t *packet_buf, QUICConnectionId destination_cid,
+                                              QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
+                                              bool ack_eliciting, bool probing)
 {
   QUICPacketNumberSpace index = QUICTypeUtil::pn_space(QUICEncryptionLevel::ONE_RTT);
   QUICPacketNumber pn         = this->_packet_number_generator[static_cast<int>(index)].next();
 
   // TODO Key phase should be picked up from QUICHandshakeProtocol, probably
   QUICShortHeaderPacket *packet =
-    new QUICShortHeaderPacket(destination_cid, pn, base_packet_number, QUICKeyPhase::PHASE_0, ack_eliciting, probing);
+    new (packet_buf) QUICShortHeaderPacket(destination_cid, pn, base_packet_number, QUICKeyPhase::PHASE_0, ack_eliciting, probing);
 
   packet->attach_payload(payload, true); // Attach a cleartext payload with extra headers
   Ptr<IOBufferBlock> protected_payload =
@@ -287,7 +288,7 @@ QUICPacketFactory::create_short_header_packet(QUICConnectionId destination_cid, 
     packet = nullptr;
   }
 
-  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_packet_new);
+  return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_dont_free);
 }
 
 QUICPacketUPtr
