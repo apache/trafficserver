@@ -500,7 +500,7 @@ epub_copyright = u'2013, dev@trafficserver.apache.org'
 
 # Allow duplicate toc entries.
 #epub_tocdup = True
-mathjax_path = 'https://docs.trafficserver.apache.org/__RTD/MathJax.js'
+#mathjax_path = 'https://docs.trafficserver.apache.org/__RTD/MathJax.js'
 
 # Enabling marking bit fields as 'bitfield_N`.
 # Currently parameterized fields don't work. When they do, we should change to
