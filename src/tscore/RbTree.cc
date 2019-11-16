@@ -301,7 +301,7 @@ namespace detail
             parent    = n->_parent;
             d         = NONE; // Cancel any leaf node logic
           } else {
-            if (wfc->_color == BLACK) {
+            if (wfc == BLACK) {
               w->getChild(near)->_color = BLACK;
               w->_color                 = RED;
               w->rotate(far);
