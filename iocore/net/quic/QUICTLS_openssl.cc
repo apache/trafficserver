@@ -500,11 +500,13 @@ QUICTLS::_handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
 
   if (this->_netvc_context == NET_VCONNECTION_IN) {
     if (!this->_early_data_processed) {
-      if (this->_read_early_data() != 1) {
+      if (auto ret = this->_read_early_data(); ret == 0) {
+        this->_early_data_processed = true;
+      } else if (ret < 0) {
         out->error_code = static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION);
         return 0;
       } else {
-        this->_early_data_processed = true;
+        // Early data is not arrived yet -- can be multiple initial packets
       }
     }
 
@@ -663,9 +665,16 @@ QUICTLS::_read_early_data()
 
   // Early data within the TLS connection MUST NOT be used. As it is for other TLS application data, a server MUST treat receiving
   // early data on the TLS connection as a connection error of type PROTOCOL_VIOLATION.
-  SSL_read_early_data(this->_ssl, early_data, sizeof(early_data), &early_data_len);
+  int ret = SSL_read_early_data(this->_ssl, early_data, sizeof(early_data), &early_data_len);
   // error or reading empty data return 1, otherwise return 0.
-  return early_data_len != 0 ? 0 : 1;
+  if (early_data_len != 0) {
+    return -1;
+  }
+  if (ret == SSL_READ_EARLY_DATA_FINISH) {
+    return 0;
+  } else {
+    return 1;
+  }
 }
 
 int
