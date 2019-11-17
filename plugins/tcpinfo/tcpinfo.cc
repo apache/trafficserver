@@ -54,7 +54,6 @@
 #define TCPI_HOOK_SSN_START 0x01u
 #define TCPI_HOOK_TXN_START 0x02u
 #define TCPI_HOOK_SEND_RESPONSE 0x04u
-#define TCPI_HOOK_SSN_CLOSE 0x08u
 #define TCPI_HOOK_TXN_CLOSE 0x10u
 
 // Log format headers. These are emitted once at the start of a log file. Note that we
@@ -215,10 +214,6 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
     ssnp       = TSHttpTxnSsnGet(txnp);
     event_name = "send_resp_hdr";
     break;
-  case TS_EVENT_HTTP_SSN_CLOSE:
-    ssnp       = static_cast<TSHttpSsn>(edata);
-    event_name = "ssn_close";
-    break;
   default:
     return 0;
   }
@@ -291,8 +286,11 @@ parse_hook_list(const char *hook_list)
   const struct hookmask {
     const char *name;
     unsigned mask;
-  } hooks[] = {{"ssn_start", TCPI_HOOK_SSN_START}, {"txn_start", TCPI_HOOK_TXN_START}, {"send_resp_hdr", TCPI_HOOK_SEND_RESPONSE},
-               {"ssn_close", TCPI_HOOK_SSN_CLOSE}, {"txn_close", TCPI_HOOK_TXN_CLOSE}, {nullptr, 0u}};
+  } hooks[] = {{"ssn_start", TCPI_HOOK_SSN_START},
+               {"txn_start", TCPI_HOOK_TXN_START},
+               {"send_resp_hdr", TCPI_HOOK_SEND_RESPONSE},
+               {"txn_close", TCPI_HOOK_TXN_CLOSE},
+               {nullptr, 0u}};
 
   str = TSstrdup(hook_list);
 
@@ -459,11 +457,6 @@ init:
   if (hooks & TCPI_HOOK_SEND_RESPONSE) {
     TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
     TSDebug("tcpinfo", "added hook to the sending of the headers");
-  }
-
-  if (hooks & TCPI_HOOK_SSN_CLOSE) {
-    TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, cont);
-    TSDebug("tcpinfo", "added hook to the close of the TCP connection");
   }
 
   if (hooks & TCPI_HOOK_TXN_CLOSE) {
