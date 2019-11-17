@@ -1940,8 +1940,43 @@ ts.server_request.set_method
 **description:** This function can be used to override the current server request's method with METHOD_NAME.
 
 ::
-
     ts.server_request.set_method('HEAD')
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.server_request_get_version
+------------------------------
+**syntax:** *ver = ts.server_request.get_version()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later.
+
+**description:** Return the http version string of the server request.
+
+Current possible values are 1.0, 1.1, and 0.9.
+::
+    function send_request()
+        local version = ts.server_request.get_version()
+        ts.debug(version)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request)
+        return 0
+    end
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.server_request.set_version
+------------------------------
+**syntax:** *ts.server_request.set_version(VERSION_STR)*
+
+**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point
+
+**description:** Set the http version of the server request with the VERSION_STR
+
+::
+
+    ts.server_request.set_version('1.0')
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
