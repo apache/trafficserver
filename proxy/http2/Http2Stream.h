@@ -120,6 +120,7 @@ public:
   void update_initial_rwnd(Http2WindowSize new_size);
   bool has_trailing_header() const;
   void set_request_headers(HTTPHdr &h2_headers);
+  int get_method_wksidx();
 
   //////////////////
   // Variables
@@ -315,4 +316,10 @@ inline bool
 Http2Stream::is_first_transaction() const
 {
   return is_first_transaction_flag;
+}
+
+inline int
+Http2Stream::get_method_wksidx()
+{
+  return _req_header.method_get_wksidx();
 }

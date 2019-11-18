@@ -1584,7 +1584,9 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   if (header_blocks_size <= static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]))) {
     payload_length = header_blocks_size;
     flags |= HTTP2_FLAGS_HEADERS_END_HEADERS;
-    if (h2_hdr.presence(MIME_PRESENCE_CONTENT_LENGTH) && h2_hdr.get_content_length() == 0) {
+
+    if (is_response_body_precluded(resp_header->status_get(), stream->get_method_wksidx()) ||
+        (h2_hdr.presence(MIME_PRESENCE_CONTENT_LENGTH) && h2_hdr.get_content_length() == 0)) {
       flags |= HTTP2_FLAGS_HEADERS_END_STREAM;
       stream->send_end_stream = true;
     }
