@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -61,7 +61,7 @@ def compare_settings(old, new):
             # Skip predefined values
             continue
         if old[key] != new[key]:
-            print "%s %s -> %s" % (key, old[key], new[key])
+            print("%s %s -> %s" % (key, old[key], new[key]))
 
 
 if __name__ == '__main__':
