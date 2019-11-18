@@ -6,13 +6,13 @@ X_DEBUG MISSING
 -
 X_DEBUG MISSING
 -
-X-Remap, fwd
+X-Remap, fwd, Probe
 -
 X_DEBUG MISSING
 -
-X-Remap, fwd=0
+X-Remap, fwd=0, Probe
 -
-X-Remap, fwd=999998
+PROBE, X-Remap, fwd=999998
 -
 X_DEBUG MISSING
 -

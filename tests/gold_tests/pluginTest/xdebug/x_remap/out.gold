@@ -1,6 +1,6 @@
 HTTP/1.1 502 Cannot find server.
 Date: ``
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 Cache-Control: no-store
 Content-Type: text/html
@@ -30,10 +30,58 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://one/, to=http://127.0.0.1:SERVER_PORT/
 
+``
+
+<!---ATS-XDebug
+<Host><Name>``
+<RequestHeaders>
+<Client>
+Host: 127.0.0.1:SERVER_PORT
+Connection: close
+Accept-Encoding: identity
+
+
+</Client>
+<Server>
+Host: 127.0.0.1:SERVER_PORT
+Accept-Encoding: identity
+Client-ip: 127.0.0.1
+X-Forwarded-For: 127.0.0.1
+Via: http/1.1 ``
+
+
+</Server>
+</RequestHeaders>
+</Host>
+ATS-XDebug---!>
+
+<!---ATS-XDebug
+<Host><Name>``
+<ResponseHeaders>
+<Server>
+Connection: close
+Date: ``
+
+
+</Server>
+<Client>
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+Server: ATS/``
+X-Remap: from=http://one/, to=http://127.0.0.1:SERVER_PORT/
+
+
+</Client>
+</ResponseHeaders>
+</Host>
+ATS-XDebug---!>
+
 0
 
 ======
@@ -41,10 +89,58 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
+``
+
+<!---ATS-XDebug
+<Host><Name>``
+<RequestHeaders>
+<Client>
+Host: 127.0.0.1:SERVER_PORT
+Connection: close
+Accept-Encoding: identity
+
+
+</Client>
+<Server>
+Host: 127.0.0.1:SERVER_PORT
+Accept-Encoding: identity
+Client-ip: 127.0.0.1
+X-Forwarded-For: 127.0.0.1
+Via: http/1.1 ``
+
+
+</Server>
+</RequestHeaders>
+</Host>
+ATS-XDebug---!>
+
+<!---ATS-XDebug
+<Host><Name>``
+<ResponseHeaders>
+<Server>
+Connection: close
+Date: ``
+
+
+</Server>
+<Client>
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+Server: ATS/``
+X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+
+</Client>
+</ResponseHeaders>
+</Host>
+ATS-XDebug---!>
+
 0
 
 ======
@@ -52,9 +148,57 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/
+
+``
+
+<!---ATS-XDebug
+<Host><Name>``
+<RequestHeaders>
+<Client>
+Host: 127.0.0.1:SERVER_PORT
+Connection: close
+Accept-Encoding: identity
+
+
+</Client>
+<Server>
+Host: 127.0.0.1:SERVER_PORT
+Accept-Encoding: identity
+Client-ip: 127.0.0.1
+X-Forwarded-For: 127.0.0.1
+Via: http/1.1 ``
+
+
+</Server>
+</RequestHeaders>
+</Host>
+ATS-XDebug---!>
+
+<!---ATS-XDebug
+<Host><Name>``
+<ResponseHeaders>
+<Server>
+Connection: close
+Date: ``
+
+
+</Server>
+<Client>
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+Server: ATS/``
+X-Remap: from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/
+
+
+</Client>
+</ResponseHeaders>
+</Host>
+ATS-XDebug---!>
 
 0
 
@@ -64,8 +208,57 @@ Server: ATS/``
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+``
+
+<!---ATS-XDebug
+<Host><Name>``
+<RequestHeaders>
+<Client>
+Host: 127.0.0.1:SERVER_PORT
+Connection: close
+Accept-Encoding: identity
+
+
+</Client>
+<Server>
+Host: 127.0.0.1:SERVER_PORT
+Accept-Encoding: identity
+Client-ip: 127.0.0.1
+X-Forwarded-For: 127.0.0.1
+Via: http/1.1 ``
+
+
+</Server>
+</RequestHeaders>
+</Host>
+ATS-XDebug---!>
+
+<!---ATS-XDebug
+<Host><Name>``
+<ResponseHeaders>
+<Server>
+Server: MicroServer
+Connection: close
+Date: ``
+
+
+</Server>
+<Client>
+Server: ATS/``
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+
+</Client>
+</ResponseHeaders>
+</Host>
+ATS-XDebug---!>
 
 0
 
@@ -74,9 +267,59 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+``
+
+<!---ATS-XDebug
+<Host><Name>``
+<RequestHeaders>
+<Client>
+Host: 127.0.0.1:SERVER_PORT
+X-Debug: X-Remap, fwd, Probe
+Connection: close
+Accept-Encoding: identity
+
+
+</Client>
+<Server>
+Host: 127.0.0.1:SERVER_PORT
+X-Debug: X-Remap, fwd, Probe
+Accept-Encoding: identity
+Client-ip: 127.0.0.1
+X-Forwarded-For: 127.0.0.1
+Via: http/1.1 ``
+
+
+</Server>
+</RequestHeaders>
+</Host>
+ATS-XDebug---!>
+
+<!---ATS-XDebug
+<Host><Name>``
+<ResponseHeaders>
+<Server>
+Connection: close
+Date: ``
+
+
+</Server>
+<Client>
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+Server: ATS/``
+X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+
+</Client>
+</ResponseHeaders>
+</Host>
+ATS-XDebug---!>
 
 0
 
@@ -85,9 +328,57 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+``
+
+<!---ATS-XDebug
+<Host><Name>``
+<RequestHeaders>
+<Client>
+Host: 127.0.0.1:SERVER_PORT
+Connection: close
+Accept-Encoding: identity
+
+
+</Client>
+<Server>
+Host: 127.0.0.1:SERVER_PORT
+Accept-Encoding: identity
+Client-ip: 127.0.0.1
+X-Forwarded-For: 127.0.0.1
+Via: http/1.1 ``
+
+
+</Server>
+</RequestHeaders>
+</Host>
+ATS-XDebug---!>
+
+<!---ATS-XDebug
+<Host><Name>``
+<ResponseHeaders>
+<Server>
+Connection: close
+Date: ``
+
+
+</Server>
+<Client>
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+Server: ATS/``
+X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+
+</Client>
+</ResponseHeaders>
+</Host>
+ATS-XDebug---!>
 
 0
 
@@ -96,9 +387,59 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+``
+
+<!---ATS-XDebug
+<Host><Name>``
+<RequestHeaders>
+<Client>
+Host: 127.0.0.1:SERVER_PORT
+X-Debug: X-Remap, fwd=0, Probe
+Connection: close
+Accept-Encoding: identity
+
+
+</Client>
+<Server>
+Host: 127.0.0.1:SERVER_PORT
+X-Debug: X-Remap, fwd=0, Probe
+Accept-Encoding: identity
+Client-ip: 127.0.0.1
+X-Forwarded-For: 127.0.0.1
+Via: http/1.1 ``
+
+
+</Server>
+</RequestHeaders>
+</Host>
+ATS-XDebug---!>
+
+<!---ATS-XDebug
+<Host><Name>``
+<ResponseHeaders>
+<Server>
+Connection: close
+Date: ``
+
+
+</Server>
+<Client>
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+Server: ATS/``
+X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+
+</Client>
+</ResponseHeaders>
+</Host>
+ATS-XDebug---!>
 
 0
 
@@ -107,9 +448,59 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+``
+
+<!---ATS-XDebug
+<Host><Name>``
+<RequestHeaders>
+<Client>
+Host: 127.0.0.1:SERVER_PORT
+X-Debug: PROBE, X-Remap, fwd=999998
+Connection: close
+Accept-Encoding: identity
+
+
+</Client>
+<Server>
+Host: 127.0.0.1:SERVER_PORT
+X-Debug: PROBE, X-Remap, fwd=999998
+Accept-Encoding: identity
+Client-ip: 127.0.0.1
+X-Forwarded-For: 127.0.0.1
+Via: http/1.1 ``
+
+
+</Server>
+</RequestHeaders>
+</Host>
+ATS-XDebug---!>
+
+<!---ATS-XDebug
+<Host><Name>``
+<ResponseHeaders>
+<Server>
+Connection: close
+Date: ``
+
+
+</Server>
+<Client>
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+Server: ATS/``
+X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+
+</Client>
+</ResponseHeaders>
+</Host>
+ATS-XDebug---!>
 
 0
 
@@ -118,9 +509,57 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+``
+
+<!---ATS-XDebug
+<Host><Name>``
+<RequestHeaders>
+<Client>
+Host: 127.0.0.1:SERVER_PORT
+Connection: close
+Accept-Encoding: identity
+
+
+</Client>
+<Server>
+Host: 127.0.0.1:SERVER_PORT
+Accept-Encoding: identity
+Client-ip: 127.0.0.1
+X-Forwarded-For: 127.0.0.1
+Via: http/1.1 ``
+
+
+</Server>
+</RequestHeaders>
+</Host>
+ATS-XDebug---!>
+
+<!---ATS-XDebug
+<Host><Name>``
+<ResponseHeaders>
+<Server>
+Connection: close
+Date: ``
+
+
+</Server>
+<Client>
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+Server: ATS/``
+X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
+
+
+</Client>
+</ResponseHeaders>
+</Host>
+ATS-XDebug---!>
 
 0
 
