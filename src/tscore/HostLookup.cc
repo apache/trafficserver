@@ -277,8 +277,8 @@ CharIndex::~CharIndex()
 {
   // clean up the illegal key table.
   if (illegalKey) {
-    for (auto spot = illegalKey->begin(), limit = illegalKey->end(); spot != limit; delete &*(spot++)) {
-      ; // empty
+    for (auto &item : *illegalKey) {
+      delete item.second;
     }
   }
 }
@@ -428,9 +428,14 @@ CharIndex::iterator::advance() -> self_type &
       break;
     } else if (state.block->array[state.index].block != nullptr) {
       // There is a lower level block to iterate over, store our current state and descend
-      q[cur_level++] = state;
-      state.block    = state.block->array[state.index].block.get();
-      state.index    = 0;
+      if (static_cast<int>(q.size()) <= cur_level) {
+        q.push_back(state);
+      } else {
+        q[cur_level] = state;
+      }
+      cur_level++;
+      state.block = state.block->array[state.index].block.get();
+      state.index = 0;
     } else {
       ++state.index;
     }
@@ -556,8 +561,9 @@ HostBranch::~HostBranch()
     break;
   case HOST_HASH: {
     HostTable *ht = next_level._table;
-    for (auto spot = ht->begin(), limit = ht->end(); spot != limit; delete &*(spot++)) {
-    } // empty
+    for (auto &item : *ht) {
+      delete item.second;
+    }
     delete ht;
   } break;
   case HOST_INDEX: {
