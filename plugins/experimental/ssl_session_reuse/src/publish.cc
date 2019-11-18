@@ -117,8 +117,8 @@ RedisPublisher::is_good()
 ::redisContext *
 RedisPublisher::setup_connection(const RedisEndpoint &re)
 {
-  ::pthread_t my_id = ::pthread_self();
-  TSDebug(PLUGIN, "RedisPublisher::setup_connection: Called by threadId: %lx", my_id);
+  auto my_id = (unsigned long long)::pthread_self();
+  TSDebug(PLUGIN, "RedisPublisher::setup_connection: Called by threadId: %llx", my_id);
 
   RedisContextPtr my_context;
   struct ::timeval timeout;
@@ -128,14 +128,14 @@ RedisPublisher::setup_connection(const RedisEndpoint &re)
   for (int i = 0; i < static_cast<int>(m_redisConnectTries); ++i) {
     my_context.reset(::redisConnectWithTimeout(re.m_hostname.c_str(), re.m_port, timeout));
     if (!my_context) {
-      TSError("RedisPublisher::setup_connection: Connect to host: %s port: %d fail count: %d threadId: %lx", re.m_hostname.c_str(),
+      TSError("RedisPublisher::setup_connection: Connect to host: %s port: %d fail count: %d threadId: %llx", re.m_hostname.c_str(),
               re.m_port, i + 1, my_id);
     } else if (my_context->err) {
-      TSError("RedisPublisher::setup_connection: Connect to host: %s port: %d fail count: %d threadId: %lx", re.m_hostname.c_str(),
+      TSError("RedisPublisher::setup_connection: Connect to host: %s port: %d fail count: %d threadId: %llx", re.m_hostname.c_str(),
               re.m_port, i + 1, my_id);
       my_context.reset(nullptr);
     } else {
-      TSDebug(PLUGIN, "RedisPublisher::setup_connection: threadId: %lx Successfully connected to the redis instance.", my_id);
+      TSDebug(PLUGIN, "RedisPublisher::setup_connection: threadId: %llx Successfully connected to the redis instance.", my_id);
 
       redisReply *reply = static_cast<redisReply *>(redisCommand(my_context.get(), "AUTH %s", redis_passwd.c_str()));
 
@@ -163,8 +163,8 @@ RedisPublisher::setup_connection(const RedisEndpoint &re)
 ::redisReply *
 RedisPublisher::send_publish(RedisContextPtr &ctx, const RedisEndpoint &re, const Message &msg)
 {
-  ::pthread_t my_id = ::pthread_self();
-  TSDebug(PLUGIN, "RedisPublisher::send_publish: Called by threadId: %lx", my_id);
+  auto my_id = (unsigned long long)::pthread_self();
+  TSDebug(PLUGIN, "RedisPublisher::send_publish: Called by threadId: %llx", my_id);
 
   ::redisReply *current_reply(nullptr);
 
@@ -173,7 +173,7 @@ RedisPublisher::send_publish(RedisContextPtr &ctx, const RedisEndpoint &re, cons
       ctx.reset(setup_connection(re));
 
       if (!ctx) {
-        TSError("RedisPublisher::send_publish: Unable to setup a connection to the redis server: %s:%d threadId: %lx try: %d",
+        TSError("RedisPublisher::send_publish: Unable to setup a connection to the redis server: %s:%d threadId: %llx try: %d",
                 re.m_hostname.c_str(), re.m_port, my_id, (i + 1));
         continue;
       }
@@ -181,12 +181,12 @@ RedisPublisher::send_publish(RedisContextPtr &ctx, const RedisEndpoint &re, cons
 
     current_reply = static_cast<redisReply *>(::redisCommand(ctx.get(), "PUBLISH %s %s", msg.channel.c_str(), msg.data.c_str()));
     if (!current_reply) {
-      TSError("RedisPublisher::send_publish: Unable to get a reply from the server for publish. threadId: %lx try: %d", my_id,
+      TSError("RedisPublisher::send_publish: Unable to get a reply from the server for publish. threadId: %llx try: %d", my_id,
               (i + 1));
       ctx.reset(nullptr); // Clean up previous attempt
 
     } else if (REDIS_REPLY_ERROR == current_reply->type) {
-      TSError("RedisPublisher::send_publish: Server responded with error for publish. threadId: %lx try: %d", my_id, i + 1);
+      TSError("RedisPublisher::send_publish: Server responded with error for publish. threadId: %llx try: %d", my_id, i + 1);
       clear_reply(current_reply);
       current_reply = nullptr;
       ctx.reset(nullptr); // Clean up previous attempt
@@ -219,7 +219,7 @@ RedisPublisher::runWorker()
   }
   m_endpointIndexMutex.unlock();
 
-  ::pthread_t my_id = ::pthread_self();
+  auto my_id = (unsigned long long)::pthread_self();
   RedisContextPtr my_context;
   ::redisReply *current_reply(nullptr);
 
@@ -249,7 +249,7 @@ RedisPublisher::runWorker()
     ::sem_wait(&m_workerSem);
 
     if (current_message.cleanup) {
-      TSDebug(PLUGIN, "RedisPublisher::runWorker: threadId: %lx received the cleanup message. Exiting!", my_id);
+      TSDebug(PLUGIN, "RedisPublisher::runWorker: threadId: %llx received the cleanup message. Exiting!", my_id);
       break;
     }
     current_reply = send_publish(my_context, my_endpoint, current_message);
@@ -322,7 +322,8 @@ RedisPublisher::~RedisPublisher()
 std::string
 RedisPublisher::get_session(const std::string &channel)
 {
-  TSDebug(PLUGIN, "RedisPublisher::get_session: Called by threadId: %lx", ::pthread_self());
+  auto my_id = (unsigned long long)::pthread_self();
+  TSDebug(PLUGIN, "RedisPublisher::get_session: Called by threadId: %llx", my_id);
   std::string ret;
   uint32_t index    = get_hash_index(channel);
   redisReply *reply = nullptr;
@@ -354,7 +355,8 @@ RedisPublisher::get_session(const std::string &channel)
 redisReply *
 RedisPublisher::set_session(const Message &msg)
 {
-  TSDebug(PLUGIN, "RedisPublisher::set_session: Called by threadId: %lx", ::pthread_self());
+  auto my_id = (unsigned long long)::pthread_self();
+  TSDebug(PLUGIN, "RedisPublisher::set_session: Called by threadId: %llx", my_id);
   uint32_t index    = get_hash_index(msg.channel);
   redisReply *reply = nullptr;
   for (uint32_t i = 0; i < m_redisEndpoints.size(); i++) {
