@@ -36,10 +36,8 @@ TEST_CASE("TextView Constructor", "[libts][TextView]")
 {
   static std::string base = "Evil Dave Rulez!";
   TextView tv(base);
-  TextView a{"Evil Dave Rulez"};
   TextView b{base.data(), base.size()};
   TextView c{std::string_view(base)};
-  constexpr TextView d{"Grigor!"sv};
 }
 
 TEST_CASE("TextView Operations", "[libts][TextView]")
@@ -111,6 +109,8 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   left         = tv3;
   right        = left.split_suffix_at(";:,");
   TextView pre{tv3}, post{pre.split_suffix_at(7)};
+
+  REQUIRE(post.size() == 7);
   REQUIRE(right.size() == 7);
   REQUIRE(left.size() == 7);
   REQUIRE(left == "abcdefg");
