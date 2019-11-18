@@ -101,9 +101,9 @@ Config::setLastConfigChange()
   memset(&s, 0, sizeof(s));
   stat(m_filename.c_str(), &s);
 
-  m_lastmtime = s.st_mtim.tv_sec;
+  m_lastmtime = s.st_mtime;
 
-  if (s.st_mtim.tv_sec > oldLastmtime) {
+  if (s.st_mtime > oldLastmtime) {
     return true;
   }
   return false;
