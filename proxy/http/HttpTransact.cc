@@ -5223,11 +5223,6 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
   if (incoming_hdr->type_get() != HTTP_TYPE_RESPONSE) {
     return NOT_A_RESPONSE_HEADER;
   }
-  // If the response is 0.9 then there is no status
-  //   code or date
-  if (did_forward_server_send_0_9_response(s) == true) {
-    return NO_RESPONSE_HEADER_ERROR;
-  }
 
   HTTPStatus incoming_status = incoming_hdr->status_get();
   if (!incoming_status) {
@@ -5257,16 +5252,6 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
 #endif
 
   return NO_RESPONSE_HEADER_ERROR;
-}
-
-bool
-HttpTransact::did_forward_server_send_0_9_response(State *s)
-{
-  if (s->hdr_info.server_response.version_get() == HTTPVersion(0, 9)) {
-    s->current.server->http_version.set(0, 9);
-    return true;
-  }
-  return false;
 }
 
 bool
