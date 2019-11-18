@@ -26,7 +26,7 @@
 #include "tscore/ink_memory.h"
 #include "tscore/Regex.h"
 
-#ifdef PCRE_CONFIG_JIT
+#if defined(PCRE_CONFIG_JIT) && !defined(darwin) // issue with macOS Catalina and pcre 8.43
 struct RegexThreadKey {
   RegexThreadKey() { ink_thread_key_create(&this->key, (void (*)(void *)) & pcre_jit_stack_free); }
   ink_thread_key key;
@@ -74,13 +74,13 @@ Regex::compile(const char *pattern, const unsigned flags)
     return false;
   }
 
-#ifdef PCRE_CONFIG_JIT
+#if defined(PCRE_CONFIG_JIT) && !defined(darwin) // issue with macOS Catalina and pcre 8.43
   study_opts |= PCRE_STUDY_JIT_COMPILE;
 #endif
 
   regex_extra = pcre_study(regex, study_opts, &error);
 
-#ifdef PCRE_CONFIG_JIT
+#if defined(PCRE_CONFIG_JIT) && !defined(darwin) // issue with macOS Catalina and pcre 8.43
   if (regex_extra) {
     pcre_assign_jit_stack(regex_extra, &get_jit_stack, nullptr);
   }
@@ -125,7 +125,7 @@ Regex::exec(const char *str, int length, int *ovector, int ovecsize)
 Regex::~Regex()
 {
   if (regex_extra) {
-#ifdef PCRE_CONFIG_JIT
+#if defined(PCRE_CONFIG_JIT) && !defined(darwin) // issue with macOS Catalina and pcre 8.43
     pcre_free_study(regex_extra);
 #else
     pcre_free(regex_extra);
