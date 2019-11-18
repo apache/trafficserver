@@ -738,6 +738,7 @@ case $host_os in
 esac
 
 TS_ADDTO(AM_CPPFLAGS, [-D$host_os_def])
+AM_CONDITIONAL([OS_LINUX], [test "x$host_os_def" = "xlinux"])
 
 dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
 ifdef([AM_PROG_AR],
