@@ -6865,6 +6865,23 @@ HttpSM::kill_this()
       update_stats();
     }
 
+    //////////////
+    // Log Data //
+    //////////////
+    SMDebug("http_seq", "[HttpSM::update_stats] Logging transaction");
+    if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
+      LogAccess accessor(this);
+
+      int ret = Log::access(&accessor);
+
+      if (ret & Log::FULL) {
+        SMDebug("http", "[update_stats] Logging system indicates FULL.");
+      }
+      if (ret & Log::FAIL) {
+        Log::error("failed to log transaction for at least one log object");
+      }
+    }
+
     if (ua_txn) {
       ua_txn->transaction_done();
     }
@@ -6882,23 +6899,6 @@ HttpSM::kill_this()
     ink_release_assert(tunnel.is_tunnel_active() == false);
 
     HTTP_SM_SET_DEFAULT_HANDLER(nullptr);
-
-    //////////////
-    // Log Data //
-    //////////////
-    SMDebug("http_seq", "[HttpSM::update_stats] Logging transaction");
-    if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
-      LogAccess accessor(this);
-
-      int ret = Log::access(&accessor);
-
-      if (ret & Log::FULL) {
-        SMDebug("http", "[update_stats] Logging system indicates FULL.");
-      }
-      if (ret & Log::FAIL) {
-        Log::error("failed to log transaction for at least one log object");
-      }
-    }
 
     if (redirect_url != nullptr) {
       ats_free((void *)redirect_url);
