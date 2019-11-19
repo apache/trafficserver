@@ -166,8 +166,15 @@ QUICAltConnectionManager::_register_remote_connection_id(const QUICNewConnection
     error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received zero-length cid",
                                                   QUICFrameType::NEW_CONNECTION_ID);
   } else {
-    int unused = std::count_if(this->_alt_quic_connection_ids_remote.begin(), this->_alt_quic_connection_ids_remote.end(),
-                               [](AltConnectionInfo info) { return info.used == false && info.seq_num != 1; });
+    int unused = 0;
+    for (auto &&x : this->_alt_quic_connection_ids_remote) {
+      if (x.seq_num == frame.sequence()) {
+        return error;
+      }
+      if (x.used == false && x.seq_num != 1) {
+        ++unused;
+      }
+    }
     if (unused > this->_local_active_cid_limit) {
       error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received too many alt CIDs",
                                                     QUICFrameType::NEW_CONNECTION_ID);
