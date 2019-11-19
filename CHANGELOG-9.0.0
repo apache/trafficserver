@@ -480,6 +480,7 @@ Changes with Apache Traffic Server 9.0.0
   #5382 - Fixes spelling in iocore
   #5383 - Remove commented out includes
   #5384 - Removes unreferenced, unused bits of code
+  #5386 - Remove Cache v23 support
   #5387 - Fixes typos in various documentation files
   #5388 - De-tabifies REVIEWERS
   #5390 - Fixes logging after collation removal
@@ -600,7 +601,6 @@ Changes with Apache Traffic Server 9.0.0
   #5633 - HTTP/2: increment write_vio.ndone by consumed size
   #5634 - HTTP/2: cancel reading buffer when ATS received GOAWAY
   #5635 - Add AUTest using h2spec
-  #5636 - HTTP/2: ignore unknown settings
   #5637 - TextView: Fix bug in rtrim_if when entire view is cleared.
   #5639 - update example directory structure and add examples for lua plugin
   #5643 - Cleanup debug log in mime_hdr_describe
@@ -649,6 +649,7 @@ Changes with Apache Traffic Server 9.0.0
   #5722 - In test_hooks Au test case, add work-around for flakeyness of VCONN start/close events.
   #5724 - Enable logging of the Elliptic Curve used to communicate with the client
   #5726 - Expose client request SSL stats via API & Lua plugin
+  #5727 - Add effective url options to slice plugin.
   #5728 - Remove header_rewrite conditions deprecated in previous versions
   #5731 - Use un-deprecated records for SSL server verification
   #5732 - Remove proxy.config.http.cache.allow_empty_doc
@@ -740,6 +741,7 @@ Changes with Apache Traffic Server 9.0.0
   #5939 - Remove hard coded filename in error message
   #5945 - cachekey: allow multiple values for `--key-type`
   #5949 - Fix TSHttpTxnReenable to schedule back to original SM thread
+  #5951 - Add Base64 encoding/decoding to encryption/decryption.
   #5953 - Log H2 priority information
   #5955 - Fix debug output for global_user_agent_header.
   #5956 - Turn on certificate verification, in permissive mode for now
@@ -761,6 +763,7 @@ Changes with Apache Traffic Server 9.0.0
   #6006 - Rewrote remap_stats plugin to use C++
   #6008 - Do not schedule stuff during shutdown
   #6011 - clang-analyzer: Add a null check
+  #6013 - Add basic SystemTap markers support
   #6016 - Fix host type in host matcher.
   #6024 - Make proxy.config.http.request_buffer_enabled configurable and bug fix
   #6031 - listen on all the net threads
@@ -791,8 +794,26 @@ Changes with Apache Traffic Server 9.0.0
   #6139 - tests: fixes various python code issues found by pyflakes
   #6140 - Remove using namespace std
   #6141 - Update docs for SSL Handshake stats
-  #6145 - Remove including sys/sysctl.h for Linux
+  #6144 - Cleans up some of the filenames mess
   #6147 - Reverse debug specific check.
   #6148 - Disable the most expensive "make check" tests by default
+  #6154 - tslua: Exposes set/get method for server request objects
   #6156 - Fix building Catch on macOS
   #6159 - Detect bogus jemalloc version
+  #6160 - Fixes misc. spelling and whitespace
+  #6163 - Update yaml-cpp to 0.6.3
+  #6167 - Fixed gcc7 issue with yaml-cpp 0.6.3
+  #6169 - Fixes cppcheck issues for cookie_remap plugin
+  #6170 - Add test to catch regressions in sni and override configs
+  #6173 - Remove HttpTransact::build_upgrade_response
+  #6174 - Remove useless UDP function
+  #6175 - Removes the ssn_close hook, it can never work
+  #6180 - RBTree - fix potential nullptr dereference
+  #6181 - remap_stats: Fix BufferWriter usage error.
+  #6182 - tslua: Exposes set/get version for server request objects
+  #6185 - Upgrade Catch.hpp to v2.11
+  #6186 - Fix compile warnings in Catch checks for TextView
+  #6187 - Replaces Python -> Python3 in a few utilities
+  #6189 - Fixed issue with macOS Catalina and pcre 8.43 enabling pcre-jit
+  #6190 - Fix ssl_session_reuse to compile on macOS and FreeBSD
+  #6191 - Limit this check to Linux, where ldd always works
