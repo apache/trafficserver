@@ -112,7 +112,7 @@ public:
 
   void increment_data_length(uint64_t length);
   bool payload_length_is_valid() const;
-  bool is_body_done() const;
+  bool is_write_vio_done() const;
   void update_sent_count(unsigned num_bytes);
   Http2StreamId get_id() const;
   Http2StreamState get_state() const;
@@ -230,7 +230,7 @@ Http2Stream::mark_milestone(Http2StreamMilestone type)
 }
 
 inline bool
-Http2Stream::is_body_done() const
+Http2Stream::is_write_vio_done() const
 {
   return this->write_vio.ntodo() == 0;
 }

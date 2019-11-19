@@ -1,0 +1,10 @@
+``
+> GET /status/204 HTTP/2
+> Host: ``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/2 204``
+< server: ATS/``
+< date: ``
+``
