@@ -1952,8 +1952,8 @@ ts.server_request_get_version
 
 **description:** Return the http version string of the server request.
 
-Current possible values are 1.0, 1.1, and 0.9.
-::
+Current possible values are 1.0, 1.1, and 0.9. ::
+
     function send_request()
         local version = ts.server_request.get_version()
         ts.debug(version)

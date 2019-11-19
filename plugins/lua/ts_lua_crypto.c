@@ -316,8 +316,8 @@ ts_lua_unescape_uri(lua_State *L)
     return 1;
   }
 
-  /* the unescaped string can only be smaller */
-  dlen = len;
+  /* the unescaped string can not be larger, but need to account for terminating null. */
+  dlen = len + 1;
   dst  = lua_newuserdata(L, dlen);
 
   if (TS_SUCCESS == TSStringPercentDecode((const char *)src, len, (char *)dst, dlen, &length)) {
