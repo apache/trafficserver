@@ -41,3 +41,22 @@ Debugging Tips:
 -  Use assertions in your plugin (:c:func:`TSAssert` and :c:func:`TSReleaseAssert`).
 
 
+SystemTap and DTrace support
+****************************
+
+Traffic Server can be instrumented with **SystemTap** on Linux systems, or
+**DTrace** on \*BSDs and macOS. In order to use such tools, Traffic Server needs
+to be built with ``-g``, or the debug symbols need to be installed. On Debian
+systems, install the ``trafficserver-dbgsym`` package to install the debug
+symbols.
+
+In addition to the normal probe points that can be used with SystemTap and
+DTrace, such as function calls and specific statements, Traffic Server does
+provide SDT markers at various interesting code paths.
+
+Pass the ``--enable-systemtap`` flag to ``./configure`` in order to build
+Traffic Server with dtrace style markers (SDT). On Traffic Server builds with
+SDT markers enabled, you can list the available markers with ``stap -L
+'process("/path/to/traffic_server").mark("*")``.
+
+See the `SystemTap documentation <https://sourceware.org/systemtap/wiki/AddingUserSpaceProbingToApps>`_ and the `DTrace guide <http://dtrace.org/guide/chp-sdt.html>`_ for more information.

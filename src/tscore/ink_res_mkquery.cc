@@ -88,14 +88,15 @@
  * Form all types of queries.
  * Returns the size of the result or -1.
  */
-int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of query  */
-                    const char *dname,                         /*!< domain name  */
-                    int _class, int type,                      /*!< _class and type of query  */
-                    const u_char *data,                        /*!< resource record data  */
-                    int datalen,                               /*!< length of data  */
-                    const u_char * /* newrr_in  ATS_UNUSED */, /*!< new rr for modify or append  */
-                    u_char *buf,                               /*!< buffer to put query  */
-                    int buflen)                                /*!< size of buffer  */
+int
+ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of query  */
+                const char *dname,                         /*!< domain name  */
+                int _class, int type,                      /*!< _class and type of query  */
+                const u_char *data,                        /*!< resource record data  */
+                int datalen,                               /*!< length of data  */
+                const u_char * /* newrr_in  ATS_UNUSED */, /*!< new rr for modify or append  */
+                u_char *buf,                               /*!< buffer to put query  */
+                int buflen)                                /*!< size of buffer  */
 {
   HEADER *hp;
   u_char *cp, *ep;

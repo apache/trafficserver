@@ -211,7 +211,7 @@ struct CharIndexBlock {
 //                             -----------         ------------
 //                           0 |    |    |         |    |     |
 //                           . |    |    |         |    |     |
-//    CharIndexBlock           . |    |    |         |    |     |
+//    CharIndexBlock         . |    |    |         |    |     |
 //    ----------             . |    |    |         |    |     |
 //  0 |   |    |             . |    |    |   |-->23| ptr|  0  |  (ptr is to the
 //  . |   |    |   |-------->25| 0  |   -----|     |    |     |   hostBranch for
@@ -785,15 +785,15 @@ HostLookup::TableInsert(string_view match_data, int index, bool domain_record)
   //         leaf node to make sure we have a match
   if (domain_record == false) {
     if (match.empty()) {
-      leaf_array[index].type = HostLeaf::HOST_PARTIAL;
-    } else {
       leaf_array[index].type = HostLeaf::HOST_COMPLETE;
+    } else {
+      leaf_array[index].type = HostLeaf::HOST_PARTIAL;
     }
   } else {
     if (match.empty()) {
-      leaf_array[index].type = HostLeaf::DOMAIN_PARTIAL;
-    } else {
       leaf_array[index].type = HostLeaf::DOMAIN_COMPLETE;
+    } else {
+      leaf_array[index].type = HostLeaf::DOMAIN_PARTIAL;
     }
   }
 

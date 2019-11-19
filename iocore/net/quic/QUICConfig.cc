@@ -117,7 +117,6 @@ QUICConfigParams::initialize()
 {
   REC_EstablishStaticConfigInt32U(this->_instance_id, "proxy.config.quic.instance_id");
   REC_EstablishStaticConfigInt32(this->_connection_table_size, "proxy.config.quic.connection_table.size");
-  REC_EstablishStaticConfigInt32U(this->_num_alt_connection_ids, "proxy.config.quic.num_alt_connection_ids");
   REC_EstablishStaticConfigInt32U(this->_stateless_retry, "proxy.config.quic.server.stateless_retry_enabled");
   REC_EstablishStaticConfigInt32U(this->_vn_exercise_enabled, "proxy.config.quic.client.vn_exercise_enabled");
   REC_EstablishStaticConfigInt32U(this->_cm_exercise_enabled, "proxy.config.quic.client.cm_exercise_enabled");
@@ -158,6 +157,8 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_ack_delay_exponent_out, "proxy.config.quic.ack_delay_exponent_out");
   REC_EstablishStaticConfigInt32U(this->_max_ack_delay_in, "proxy.config.quic.max_ack_delay_in");
   REC_EstablishStaticConfigInt32U(this->_max_ack_delay_out, "proxy.config.quic.max_ack_delay_out");
+  REC_EstablishStaticConfigInt32U(this->_active_cid_limit_in, "proxy.config.quic.active_cid_limit_in");
+  REC_EstablishStaticConfigInt32U(this->_active_cid_limit_out, "proxy.config.quic.active_cid_limit_out");
 
   // Loss Detection
   REC_EstablishStaticConfigInt32U(this->_ld_packet_threshold, "proxy.config.quic.loss_detection.packet_threshold");
@@ -223,12 +224,6 @@ int
 QUICConfigParams::connection_table_size()
 {
   return _connection_table_size;
-}
-
-uint32_t
-QUICConfigParams::num_alt_connection_ids() const
-{
-  return this->_num_alt_connection_ids;
 }
 
 uint32_t
@@ -343,6 +338,18 @@ uint8_t
 QUICConfigParams::max_ack_delay_out() const
 {
   return this->_max_ack_delay_out;
+}
+
+uint8_t
+QUICConfigParams::active_cid_limit_in() const
+{
+  return this->_active_cid_limit_in;
+}
+
+uint8_t
+QUICConfigParams::active_cid_limit_out() const
+{
+  return this->_active_cid_limit_out;
 }
 
 const char *

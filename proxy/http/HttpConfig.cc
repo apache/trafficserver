@@ -22,6 +22,7 @@
  */
 
 #include "tscore/ink_config.h"
+#include "tscore/Filenames.h"
 #include <cctype>
 #include <cstring>
 #include "HttpConfig.h"
@@ -137,7 +138,7 @@ HttpConfigCont::handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNU
   return 0;
 }
 
-static int
+int
 http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
                void * /* cookie ATS_UNUSED */)
 {
@@ -147,6 +148,42 @@ http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
 
   eventProcessor.schedule_in(http_config_cont, HRTIME_SECONDS(1), ET_CALL);
   return 0;
+}
+
+void
+Enable_Config_Var(std::string_view const &name, bool (*cb)(const char *, RecDataT, RecData, void *), void *cookie)
+{
+  // Must use this indirection because the API requires a pure function, therefore no values can
+  // be bound in the lambda. Instead this is needed to pass in the data for both the lambda and
+  // the actual callback.
+  using Context = std::tuple<decltype(cb), void *>;
+
+  // To deal with process termination cleanup, store the context instances in a deque where
+  // tail insertion doesn't invalidate pointers. These persist until process shutdown.
+  static std::deque<Context> storage;
+
+  Context &ctx = storage.emplace_back(cb, cookie);
+  // Register the call back - this handles external updates.
+  RecRegisterConfigUpdateCb(
+    name.data(),
+    [](const char *name, RecDataT dtype, RecData data, void *ctx) -> int {
+      auto &&[cb, cookie] = *static_cast<Context *>(ctx);
+      if ((*cb)(name, dtype, data, cookie)) {
+        http_config_cb(name, dtype, data, cookie); // signal runtime config update.
+      }
+      return REC_ERR_OKAY;
+    },
+    &ctx);
+
+  // Use the record to do the initial data load.
+  // Look it up and call the updater @a cb on that data.
+  RecLookupRecord(
+    name.data(),
+    [](RecRecord const *r, void *ctx) -> void {
+      auto &&[cb, cookie] = *static_cast<Context *>(ctx);
+      (*cb)(r->name, r->data_type, r->data, cookie);
+    },
+    &ctx);
 }
 
 // [amc] Not sure which is uglier, this switch or having a micro-function for each var.
@@ -355,9 +392,6 @@ register_stat_callbacks()
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.tunnels", RECD_COUNTER, RECP_PERSISTENT, (int)http_tunnels_stat,
                      RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.throttled_proxy_only", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)http_throttled_proxy_only_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.parent_proxy_transaction_time", RECD_INT, RECP_PERSISTENT,
                      (int)http_parent_proxy_transaction_time_stat, RecRawStatSyncSum);
@@ -1269,9 +1303,9 @@ HttpConfig::reconfigure()
   if (params->outbound_conntrack.queue_size > 0 &&
       !(params->oride.outbound_conntrack.max > 0 || params->oride.outbound_conntrack.min > 0)) {
     Warning("'%s' is set, but neither '%s' nor '%s' are "
-            "set, please correct your records.config",
+            "set, please correct your %s",
             OutboundConnTrack::CONFIG_VAR_QUEUE_SIZE.data(), OutboundConnTrack::CONFIG_VAR_MAX.data(),
-            OutboundConnTrack::CONFIG_VAR_MIN.data());
+            OutboundConnTrack::CONFIG_VAR_MIN.data(), ts::filename::RECORDS);
   }
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
 
@@ -1279,8 +1313,8 @@ HttpConfig::reconfigure()
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;
 
   if (params->oride.outbound_conntrack.max > 0 && params->oride.outbound_conntrack.max < params->oride.outbound_conntrack.min) {
-    Warning("'%s' < per_server.min_keep_alive_connections, setting min=max , please correct your records.config",
-            OutboundConnTrack::CONFIG_VAR_MAX.data());
+    Warning("'%s' < per_server.min_keep_alive_connections, setting min=max , please correct your %s",
+            OutboundConnTrack::CONFIG_VAR_MAX.data(), ts::filename::RECORDS);
     params->oride.outbound_conntrack.min = params->oride.outbound_conntrack.max;
   }
 

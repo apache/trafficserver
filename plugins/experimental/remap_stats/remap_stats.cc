@@ -21,57 +21,42 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/ink_defs.h"
+#include "tscore/BufferWriter.h"
 
 #include "ts/ts.h"
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <stdio.h>
-#include <getopt.h>
-#include <search.h>
+
+#include <string>
+#include <string_view>
+#include <unordered_map>
 
 #define PLUGIN_NAME "remap_stats"
 #define DEBUG_TAG PLUGIN_NAME
 
 #define MAX_STAT_LENGTH (1 << 8)
 
-typedef struct {
+struct config_t {
   bool post_remap_host;
   int txn_slot;
   TSStatPersistence persist_type;
   TSMutex stat_creation_mutex;
-} config_t;
+};
 
 // From "core".... sigh, but we need it for now at least.
 extern int max_records_entries;
 
 static void
-stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex create_mutex)
+stat_add(const char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex create_mutex)
 {
   int stat_id = -1;
-  ENTRY search, *result = NULL;
-  static __thread struct hsearch_data stat_cache;
-  static __thread bool hash_init = false;
+  static thread_local std::unordered_map<std::string, int> hash;
 
-  if (unlikely(!hash_init)) {
-    // NOLINTNEXTLINE
-    hcreate_r(max_records_entries << 1, &stat_cache); // This is weird, but oh well.
-    hash_init = true;
-    TSDebug(DEBUG_TAG, "stat cache hash init");
-  }
-
-  search.key  = name;
-  search.data = 0;
-  // NOLINTNEXTLINE
-  hsearch_r(search, FIND, &result, &stat_cache);
-
-  if (unlikely(result == NULL)) {
+  if (unlikely(hash.find(name) == hash.cend())) {
     // This is an unlikely path because we most likely have the stat cached
     // so this mutex won't be much overhead and it fixes a race condition
     // in the RecCore. Hopefully this can be removed in the future.
     TSMutexLock(create_mutex);
-    if (TS_ERROR == TSStatFindName((const char *)name, &stat_id)) {
-      stat_id = TSStatCreate((const char *)name, TS_RECORDDATATYPE_INT, persist_type, TS_STAT_SYNC_SUM);
+    if (TS_ERROR == TSStatFindName(name, &stat_id)) {
+      stat_id = TSStatCreate(name, TS_RECORDDATATYPE_INT, persist_type, TS_STAT_SYNC_SUM);
       if (stat_id == TS_ERROR) {
         TSDebug(DEBUG_TAG, "Error creating stat_name: %s", name);
       } else {
@@ -81,14 +66,11 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
     TSMutexUnlock(create_mutex);
 
     if (stat_id >= 0) {
-      search.key  = TSstrdup(name);
-      search.data = (void *)((intptr_t)stat_id);
-      // NOLINTNEXTLINE
-      hsearch_r(search, ENTER, &result, &stat_cache);
+      hash.emplace(name, stat_id);
       TSDebug(DEBUG_TAG, "Cached stat_name: %s stat_id: %d", name, stat_id);
     }
   } else {
-    stat_id = (int)((intptr_t)result->data);
+    stat_id = hash.at(name);
   }
 
   if (likely(stat_id >= 0)) {
@@ -130,7 +112,7 @@ handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
   config_t *config;
   void *txnd;
 
-  config = (config_t *)TSContDataGet(cont);
+  config = static_cast<config_t *>(TSContDataGet(cont));
   txnd   = (void *)get_effective_host(txn); // low bit left 0 because we do not know that remap succeeded yet
   TSHttpTxnArgSet(txn, config->txn_slot, txnd);
 
@@ -142,11 +124,11 @@ handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 static int
 handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
-  TSHttpTxn txn = (TSHttpTxn)edata;
+  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
   config_t *config;
   void *txnd = (void *)0x01; // low bit 1 because we are post remap and thus success
 
-  config = (config_t *)TSContDataGet(cont);
+  config = static_cast<config_t *>(TSContDataGet(cont));
 
   if (config->post_remap_host) {
     TSHttpTxnArgSet(txn, config->txn_slot, txnd);
@@ -160,29 +142,35 @@ handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
   return 0;
 }
 
-#define CREATE_STAT_NAME(s, h, b) snprintf(s, MAX_STAT_LENGTH, "plugin.%s.%s.%s", PLUGIN_NAME, h, b)
+static void
+create_stat_name(ts::FixedBufferWriter &stat_name, std::string_view h, std::string_view b)
+{
+  stat_name.reset().clip(1);
+  stat_name.print("plugin.{}.{}.{}", PLUGIN_NAME, h, b);
+  stat_name.extend(1).write('\0');
+}
 
 static int
 handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
-  TSHttpTxn txn = (TSHttpTxn)edata;
+  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
   config_t *config;
   void *txnd;
   int status_code = 0;
   TSMBuffer buf;
   TSMLoc hdr_loc;
   uint64_t out_bytes, in_bytes;
-  char *remap, *hostname;
-  char *unknown = "unknown";
-  char stat_name[MAX_STAT_LENGTH];
+  std::string_view remap, hostname;
+  std::string_view unknown("unknown");
+  ts::LocalBufferWriter<MAX_STAT_LENGTH> stat_name;
 
-  config = (config_t *)TSContDataGet(cont);
+  config = static_cast<config_t *>(TSContDataGet(cont));
   txnd   = TSHttpTxnArgGet(txn, config->txn_slot);
 
-  hostname = (char *)((uintptr_t)txnd & (~((uintptr_t)0x01))); // Get hostname
+  hostname = std::string_view(reinterpret_cast<char *>(reinterpret_cast<uintptr_t>(txnd) & ~0x01)); // Get hostname
 
   if (txnd) {
-    if ((uintptr_t)txnd & 0x01) // remap succeeded?
+    if (reinterpret_cast<uintptr_t>(txnd) & 0x01) // remap succeeded?
     {
       if (!config->post_remap_host) {
         remap = hostname;
@@ -190,51 +178,45 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
         remap = get_effective_host(txn);
       }
 
-      if (!remap) {
+      if (remap.empty()) {
         remap = unknown;
       }
 
       in_bytes = TSHttpTxnClientReqHdrBytesGet(txn);
       in_bytes += TSHttpTxnClientReqBodyBytesGet(txn);
 
-      CREATE_STAT_NAME(stat_name, remap, "in_bytes");
-      stat_add(stat_name, (TSMgmtInt)in_bytes, config->persist_type, config->stat_creation_mutex);
+      create_stat_name(stat_name, remap, "in_bytes");
+      stat_add(stat_name.data(), static_cast<TSMgmtInt>(in_bytes), config->persist_type, config->stat_creation_mutex);
 
       out_bytes = TSHttpTxnClientRespHdrBytesGet(txn);
       out_bytes += TSHttpTxnClientRespBodyBytesGet(txn);
 
-      CREATE_STAT_NAME(stat_name, remap, "out_bytes");
-      stat_add(stat_name, (TSMgmtInt)out_bytes, config->persist_type, config->stat_creation_mutex);
+      create_stat_name(stat_name, remap, "out_bytes");
+      stat_add(stat_name.data(), static_cast<TSMgmtInt>(out_bytes), config->persist_type, config->stat_creation_mutex);
 
       if (TSHttpTxnClientRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS) {
-        status_code = (int)TSHttpHdrStatusGet(buf, hdr_loc);
+        status_code = static_cast<int>(TSHttpHdrStatusGet(buf, hdr_loc));
         TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
 
         if (status_code < 200) {
-          CREATE_STAT_NAME(stat_name, remap, "status_other");
+          create_stat_name(stat_name, remap, "status_other");
         } else if (status_code <= 299) {
-          CREATE_STAT_NAME(stat_name, remap, "status_2xx");
+          create_stat_name(stat_name, remap, "status_2xx");
         } else if (status_code <= 399) {
-          CREATE_STAT_NAME(stat_name, remap, "status_3xx");
+          create_stat_name(stat_name, remap, "status_3xx");
         } else if (status_code <= 499) {
-          CREATE_STAT_NAME(stat_name, remap, "status_4xx");
+          create_stat_name(stat_name, remap, "status_4xx");
         } else if (status_code <= 599) {
-          CREATE_STAT_NAME(stat_name, remap, "status_5xx");
+          create_stat_name(stat_name, remap, "status_5xx");
         } else {
-          CREATE_STAT_NAME(stat_name, remap, "status_other");
+          create_stat_name(stat_name, remap, "status_other");
         }
 
-        stat_add(stat_name, 1, config->persist_type, config->stat_creation_mutex);
+        stat_add(stat_name.data(), 1, config->persist_type, config->stat_creation_mutex);
       } else {
-        CREATE_STAT_NAME(stat_name, remap, "status_unknown");
-        stat_add(stat_name, 1, config->persist_type, config->stat_creation_mutex);
+        create_stat_name(stat_name, remap, "status_unknown");
+        stat_add(stat_name.data(), 1, config->persist_type, config->stat_creation_mutex);
       }
-
-      if (remap != unknown) {
-        TSfree(remap);
-      }
-    } else if (hostname) {
-      TSfree(hostname);
     }
   }
 
@@ -248,7 +230,6 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
   TSCont pre_remap_cont, post_remap_cont, global_cont;
-  config_t *config;
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";
@@ -262,28 +243,21 @@ TSPluginInit(int argc, const char *argv[])
     TSDebug(DEBUG_TAG, "Plugin registration succeeded");
   }
 
-  config                      = TSmalloc(sizeof(config_t));
+  auto config                 = new config_t;
   config->post_remap_host     = false;
   config->persist_type        = TS_STAT_NON_PERSISTENT;
   config->stat_creation_mutex = TSMutexCreate();
 
   if (argc > 1) {
-    int c;
-    static const struct option longopts[] = {
-      {"post-remap-host", no_argument, NULL, 'P'}, {"persistent", no_argument, NULL, 'p'}, {NULL, 0, NULL, 0}};
-
-    while ((c = getopt_long(argc, (char *const *)argv, "Pp", longopts, NULL)) != -1) {
-      switch (c) {
-      case 'P':
+    // Argument parser
+    for (auto i = 0; i < argc; i++) {
+      const std::string arg(argv[i]);
+      if (arg == "-P" || arg == "--post-remap-host") {
         config->post_remap_host = true;
         TSDebug(DEBUG_TAG, "Using post remap hostname");
-        break;
-      case 'p':
+      } else if (arg == "-p" || arg == "--persistent") {
         config->persist_type = TS_STAT_PERSISTENT;
         TSDebug(DEBUG_TAG, "Using persistent stats");
-        break;
-      default:
-        break;
       }
     }
   }
@@ -292,16 +266,16 @@ TSPluginInit(int argc, const char *argv[])
 
   if (!config->post_remap_host) {
     pre_remap_cont = TSContCreate(handle_read_req_hdr, NULL);
-    TSContDataSet(pre_remap_cont, (void *)config);
+    TSContDataSet(pre_remap_cont, static_cast<void *>(config));
     TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, pre_remap_cont);
   }
 
   post_remap_cont = TSContCreate(handle_post_remap, NULL);
-  TSContDataSet(post_remap_cont, (void *)config);
+  TSContDataSet(post_remap_cont, static_cast<void *>(config));
   TSHttpHookAdd(TS_HTTP_POST_REMAP_HOOK, post_remap_cont);
 
   global_cont = TSContCreate(handle_txn_close, NULL);
-  TSContDataSet(global_cont, (void *)config);
+  TSContDataSet(global_cont, static_cast<void *>(config));
   TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, global_cont);
 
   TSDebug(DEBUG_TAG, "Init complete");

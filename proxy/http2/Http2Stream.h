@@ -24,9 +24,8 @@
 #pragma once
 
 #include "HTTP2.h"
-#include "../ProxyTransaction.h"
+#include "ProxyTransaction.h"
 #include "Http2DebugNames.h"
-#include "../http/HttpTunnel.h" // To get ChunkedHandler
 #include "Http2DependencyTree.h"
 #include "tscore/History.h"
 #include "Milestones.h"
@@ -76,7 +75,7 @@ public:
   void update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
   void signal_write_event(bool call_update);
   void restart_sending();
-  void push_promise(URL &url, const MIMEField *accept_encoding);
+  bool push_promise(URL &url, const MIMEField *accept_encoding);
 
   // Stream level window size
   ssize_t client_rwnd() const;
@@ -97,6 +96,8 @@ public:
   void increment_client_transactions_stat() override;
   void decrement_client_transactions_stat() override;
   int get_transaction_id() const override;
+  int get_transaction_priority_weight() const override;
+  int get_transaction_priority_dependence() const override;
 
   void clear_inactive_timer();
   void clear_active_timer();
@@ -105,7 +106,6 @@ public:
 
   bool is_client_state_writeable() const;
   bool is_closed() const;
-  bool response_is_chunked() const;
   IOBufferReader *response_get_data_reader() const;
 
   void mark_milestone(Http2StreamMilestone type);
@@ -113,7 +113,6 @@ public:
   void increment_data_length(uint64_t length);
   bool payload_length_is_valid() const;
   bool is_body_done() const;
-  void mark_body_done();
   void update_sent_count(unsigned num_bytes);
   Http2StreamId get_id() const;
   Http2StreamState get_state() const;
@@ -144,8 +143,6 @@ public:
   Http2DependencyTree::Node *priority_node = nullptr;
 
 private:
-  void response_initialize_data_handling(bool &is_done);
-  void response_process_data(bool &is_done);
   bool response_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
   void send_response_body(bool call_update);
@@ -171,8 +168,6 @@ private:
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
 
   bool trailing_header = false;
-  bool body_done       = false;
-  bool chunked         = false;
 
   // A brief discussion of similar flags and state variables:  _state, closed, terminate_stream
   //
@@ -206,7 +201,6 @@ private:
   std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
   int _recent_rwnd_increment_index           = 0;
 
-  ChunkedHandler chunked_handler;
   Event *cross_thread_event      = nullptr;
   Event *buffer_full_write_event = nullptr;
 
@@ -238,7 +232,7 @@ Http2Stream::mark_milestone(Http2StreamMilestone type)
 inline bool
 Http2Stream::is_body_done() const
 {
-  return body_done;
+  return this->write_vio.ntodo() == 0;
 }
 
 inline void
@@ -296,12 +290,6 @@ Http2Stream::payload_length_is_valid() const
 {
   uint32_t content_length = _req_header.get_content_length();
   return content_length == 0 || content_length == data_length;
-}
-
-inline bool
-Http2Stream::response_is_chunked() const
-{
-  return chunked;
 }
 
 inline bool

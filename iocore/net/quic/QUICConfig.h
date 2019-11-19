@@ -37,7 +37,6 @@ public:
   void initialize();
 
   uint32_t instance_id() const;
-  uint32_t num_alt_connection_ids() const;
   uint32_t stateless_retry() const;
   uint32_t vn_exercise_enabled() const;
   uint32_t cm_exercise_enabled() const;
@@ -70,6 +69,8 @@ public:
   uint8_t ack_delay_exponent_out() const;
   uint8_t max_ack_delay_in() const;
   uint8_t max_ack_delay_out() const;
+  uint8_t active_cid_limit_in() const;
+  uint8_t active_cid_limit_out() const;
 
   // Loss Detection
   uint32_t ld_packet_threshold() const;
@@ -92,11 +93,10 @@ private:
   // TODO: make configurable
   static const uint8_t _scid_len = 18; //< Length of Source Connection ID
 
-  uint32_t _instance_id            = 0;
-  uint32_t _num_alt_connection_ids = 0;
-  uint32_t _stateless_retry        = 0;
-  uint32_t _vn_exercise_enabled    = 0;
-  uint32_t _cm_exercise_enabled    = 0;
+  uint32_t _instance_id         = 0;
+  uint32_t _stateless_retry     = 0;
+  uint32_t _vn_exercise_enabled = 0;
+  uint32_t _cm_exercise_enabled = 0;
 
   char *_server_supported_groups = nullptr;
   char *_client_supported_groups = nullptr;
@@ -128,19 +128,21 @@ private:
   uint32_t _ack_delay_exponent_out                  = 0;
   uint32_t _max_ack_delay_in                        = 0;
   uint32_t _max_ack_delay_out                       = 0;
+  uint32_t _active_cid_limit_in                     = 0;
+  uint32_t _active_cid_limit_out                    = 0;
 
   // [draft-17 recovery] 6.4.1.  Constants of interest
   uint32_t _ld_packet_threshold = 3;
   float _ld_time_threshold      = 1.25;
   ink_hrtime _ld_granularity    = HRTIME_MSECONDS(1);
-  ink_hrtime _ld_initial_rtt    = HRTIME_MSECONDS(100);
+  ink_hrtime _ld_initial_rtt    = HRTIME_MSECONDS(500);
 
   // [draft-11 recovery] 4.7.1.  Constants of interest
   uint32_t _cc_max_datagram_size               = 1200;
   uint32_t _cc_initial_window_scale            = 10; // Actual initial window size is this value multiplied by the _cc_default_mss
   uint32_t _cc_minimum_window_scale            = 2;  // Actual minimum window size is this value multiplied by the _cc_default_mss
   float _cc_loss_reduction_factor              = 0.5;
-  uint32_t _cc_persistent_congestion_threshold = 2;
+  uint32_t _cc_persistent_congestion_threshold = 3;
 };
 
 class QUICConfig

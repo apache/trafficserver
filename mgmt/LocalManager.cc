@@ -38,6 +38,7 @@
 #include "tscpp/util/TextView.h"
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
+#include "tscore/Filenames.h"
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -749,9 +750,9 @@ LocalManager::processEventQueue()
     // check if we have a local file update
     if (mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE) {
       // records.config
-      if (!(strcmp(payload.begin(), REC_CONFIG_FILE))) {
+      if (!(strcmp(payload.begin(), ts::filename::RECORDS))) {
         if (RecReadConfigFile() != REC_ERR_OKAY) {
-          mgmt_elog(errno, "[fileUpdated] Config update failed for records.config\n");
+          mgmt_elog(errno, "[fileUpdated] Config update failed for %s\n", ts::filename::RECORDS);
         } else {
           RecConfigWarnIfUnregistered();
         }

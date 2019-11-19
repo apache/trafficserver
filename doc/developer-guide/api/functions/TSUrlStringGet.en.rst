@@ -27,7 +27,9 @@ Traffic Server URL string representations API.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: char * TSUrlStringGet(TSMBuffer bufp, TSMLoc offset, int * length)
 .. function:: char * TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txn, int * length)

@@ -485,6 +485,8 @@ mime_hdr_set_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
     return;
   }
 
+  ink_assert(mh);
+
   mime_hdr_presence_set(mh, field->m_wks_idx);
 
   slot_id = hdrtoken_index_to_slotid(field->m_wks_idx);
@@ -1570,6 +1572,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
 void
 mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
 {
+  ink_assert(mh);
   MIMEField *next_dup = field->m_next_dup;
 
   // If this field is already detached, there's nothing to do. There must
@@ -1639,20 +1642,8 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
 {
   if (delete_all_dups) {
     while (field) {
-      // NOTE: we pass zero to field_detach for detach_all_dups
-      //       since this loop will already detach each dup
       MIMEField *next = field->m_next_dup;
-
-      heap->free_string(field->m_ptr_name, field->m_len_name);
-      heap->free_string(field->m_ptr_value, field->m_len_value);
-
-      MIME_HDR_SANITY_CHECK(mh);
-      mime_hdr_field_detach(mh, field, false);
-
-      MIME_HDR_SANITY_CHECK(mh);
-      mime_field_destroy(mh, field);
-
-      MIME_HDR_SANITY_CHECK(mh);
+      mime_hdr_field_delete(heap, mh, field, false);
       field = next;
     }
   } else {
@@ -1664,6 +1655,32 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
 
     MIME_HDR_SANITY_CHECK(mh);
     mime_field_destroy(mh, field);
+
+    MIMEFieldBlockImpl *prev_block = nullptr;
+    bool can_destroy_block         = true;
+    for (auto fblock = &(mh->m_first_fblock); fblock != nullptr; fblock = fblock->m_next) {
+      if (prev_block != nullptr) {
+        if (fblock->m_freetop == MIME_FIELD_BLOCK_SLOTS && fblock->contains(field)) {
+          // Check if fields in all slots are deleted
+          for (int i = 0; i < MIME_FIELD_BLOCK_SLOTS; ++i) {
+            if (fblock->m_field_slots[i].m_readiness != MIME_FIELD_SLOT_READINESS_DELETED) {
+              can_destroy_block = false;
+              break;
+            }
+          }
+          // Destroy a block and maintain the chain
+          if (can_destroy_block) {
+            prev_block->m_next = fblock->m_next;
+            _mime_field_block_destroy(heap, fblock);
+            if (prev_block->m_next == nullptr) {
+              mh->m_fblock_list_tail = prev_block;
+            }
+          }
+          break;
+        }
+      }
+      prev_block = fblock;
+    }
   }
 
   MIME_HDR_SANITY_CHECK(mh);
@@ -2256,24 +2273,22 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
   }
 
   if (field) {
-    ts::ConstBuffer b(field->m_ptr_value, field->m_len_value);
-    ts::ConstBuffer host, port;
+    ts::TextView b{field->m_ptr_value, static_cast<size_t>(field->m_len_value)};
+    ts::TextView host, port;
 
     if (b) {
-      const char *x;
-
       if ('[' == *b) {
-        x = static_cast<const char *>(memchr(b._ptr, ']', b._size));
-        if (x && b.contains(x + 1) && ':' == x[1]) {
-          host = b.splitOn(x + 1);
+        auto idx = b.find(']');
+        if (idx <= b.size() && b[idx + 1] == ':') {
+          host = b.take_prefix_at(idx + 1);
           port = b;
         } else {
           host = b;
         }
       } else {
-        x = static_cast<const char *>(memchr(b._ptr, ':', b._size));
+        auto x = b.split_prefix_at(':');
         if (x) {
-          host = b.splitOn(x);
+          host = x;
           port = b;
         } else {
           host = b;
@@ -2282,18 +2297,18 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
 
       if (host) {
         if (host_ptr) {
-          *host_ptr = host._ptr;
+          *host_ptr = host.data();
         }
         if (host_len) {
-          *host_len = static_cast<int>(host._size);
+          *host_len = static_cast<int>(host.size());
         }
       }
       if (port) {
         if (port_ptr) {
-          *port_ptr = port._ptr;
+          *port_ptr = port.data();
         }
         if (port_len) {
-          *port_len = static_cast<int>(port._size);
+          *port_len = static_cast<int>(port.size());
         }
       }
     } else {

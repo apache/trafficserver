@@ -25,7 +25,10 @@ Traffic Server IO buffer reader API.
 
 Synopsis
 ========
-`#include <ts/ts.h>`
+
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSIOBufferReader TSIOBufferReaderAlloc(TSIOBuffer bufp)
 .. function:: TSIOBufferReader TSIOBufferReaderClone(TSIOBufferReader readerp)

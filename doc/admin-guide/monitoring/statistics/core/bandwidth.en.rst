@@ -22,7 +22,6 @@
 Bandwidth and Transfer
 **********************
 
-.. ts:stat:: global proxy.process.http.throttled_proxy_only integer
 .. ts:stat:: global proxy.process.http.user_agent_request_document_total_size integer
    :type: counter
    :units: bytes

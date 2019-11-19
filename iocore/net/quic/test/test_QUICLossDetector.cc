@@ -38,11 +38,11 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
 
   QUICAckFrameManager afm;
   QUICConnectionId connection_id = {reinterpret_cast<const uint8_t *>("\x01"), 1};
-  MockQUICCCConfig cc_config;
-  MockQUICLDConfig ld_config;
-  MockQUICConnectionInfoProvider info;
-  MockQUICCongestionController cc(&info, cc_config);
-  QUICLossDetector detector(&info, &cc, &rtt_measure, ld_config);
+  MockQUICContext context;
+  QUICPinger pinger;
+  QUICPadder padder(NetVConnectionContext_t::NET_VCONNECTION_IN);
+  MockQUICCongestionController cc;
+  QUICLossDetector detector(context, &cc, &rtt_measure, &pinger, &padder);
   ats_unique_buf payload = ats_unique_malloc(512);
   size_t payload_len     = 512;
   QUICPacketUPtr packet  = QUICPacketFactory::create_null_packet();
@@ -54,11 +54,16 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     // Check initial state
     uint8_t frame_buffer[1024] = {0};
     CHECK(g.lost_frame_count == 0);
-    QUICFrame *ping_frame = g.generate_frame(frame_buffer, QUICEncryptionLevel::HANDSHAKE, 4, UINT16_MAX, 0);
+    QUICFrame *ping_frame = g.generate_frame(frame_buffer, QUICEncryptionLevel::HANDSHAKE, 4, UINT16_MAX, 0, 0);
 
     uint8_t raw[4];
-    size_t len;
-    CHECK(ping_frame->store(raw, &len, 10240) < 4);
+    size_t len             = 0;
+    Ptr<IOBufferBlock> ibb = ping_frame->to_io_buffer_block(sizeof(raw));
+    for (auto b = ibb; b; b = b->next) {
+      memcpy(raw + len, b->start(), b->size());
+      len += b->size();
+    }
+    CHECK(len < 4);
 
     // Send SERVER_CLEARTEXT (Handshake message)
     ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
@@ -245,7 +250,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     afm.update(level, pn9, payload_len, false);
     afm.update(level, pn10, payload_len, false);
     uint8_t buf[QUICFrame::MAX_INSTANCE_SIZE];
-    QUICFrame *x = afm.generate_frame(buf, level, 2048, 2048, 0);
+    QUICFrame *x = afm.generate_frame(buf, level, 2048, 2048, 0, 0);
     frame        = static_cast<QUICAckFrame *>(x);
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
     detector.handle_frame(level, *frame);
@@ -263,18 +268,19 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     CHECK(cc.lost_packets.find(pn8) == cc.lost_packets.end());
     CHECK(cc.lost_packets.find(pn9) == cc.lost_packets.end());
     CHECK(cc.lost_packets.find(pn9) == cc.lost_packets.end());
+    x->~QUICFrame();
   }
 }
 
 TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
 {
   uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
-  MockQUICConnectionInfoProvider info;
-  MockQUICCCConfig cc_config;
-  MockQUICLDConfig ld_config;
-  MockQUICCongestionController cc(&info, cc_config);
   QUICRTTMeasure rtt_measure;
-  QUICLossDetector detector(&info, &cc, &rtt_measure, ld_config);
+  MockQUICContext context;
+  QUICPinger pinger;
+  QUICPadder padder(NetVConnectionContext_t::NET_VCONNECTION_IN);
+  MockQUICCongestionController cc;
+  QUICLossDetector detector(context, &cc, &rtt_measure, &pinger, &padder);
 
   auto t1           = Thread::get_hrtime();
   QUICAckFrame *ack = QUICFrameFactory::create_ack_frame(frame_buf, 100000000, 100, 10000000);
@@ -282,4 +288,5 @@ TEST_CASE("QUICLossDetector_HugeGap", "[quic]")
   detector.handle_frame(QUICEncryptionLevel::INITIAL, *ack);
   auto t2 = Thread::get_hrtime();
   CHECK(t2 - t1 < HRTIME_MSECONDS(100));
+  ack->~QUICAckFrame();
 }

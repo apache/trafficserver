@@ -36,25 +36,13 @@
 #include "QUICFrame.h"
 #include "QUICFrameHandler.h"
 #include "QUICConnection.h"
+#include "QUICContext.h"
+#include "QUICCongestionController.h"
 
+class QUICPadder;
+class QUICPinger;
 class QUICLossDetector;
 class QUICRTTMeasure;
-
-struct QUICPacketInfo {
-  // 6.3.1.  Sent Packet Fields
-  QUICPacketNumber packet_number;
-  ink_hrtime time_sent;
-  bool ack_eliciting;
-  bool is_crypto_packet;
-  bool in_flight;
-  size_t sent_bytes;
-
-  // addition
-  QUICPacketType type;
-  std::vector<QUICFrameInfo> frames;
-  QUICPacketNumberSpace pn_space;
-  // end
-};
 
 using QUICPacketInfoUPtr = std::unique_ptr<QUICPacketInfo>;
 
@@ -68,25 +56,26 @@ public:
   virtual ink_hrtime congestion_period(uint32_t threshold) const = 0;
 };
 
-class QUICCongestionController
+class QUICNewRenoCongestionController : public QUICCongestionController
 {
 public:
-  QUICCongestionController(const QUICRTTProvider &rtt_provider, QUICConnectionInfoProvider *info, const QUICCCConfig &cc_config);
-  virtual ~QUICCongestionController() {}
-  void on_packet_sent(size_t bytes_sent);
-  void on_packet_acked(const QUICPacketInfo &acked_packet);
-  virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets);
-  void on_retransmission_timeout_verified();
-  void process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section);
+  QUICNewRenoCongestionController(QUICCCContext &context);
+  virtual ~QUICNewRenoCongestionController() {}
+  void on_packet_sent(size_t bytes_sent) override;
+  void on_packet_acked(const QUICPacketInfo &acked_packet) override;
+  virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets) override;
+  void process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section) override;
   bool check_credit() const;
-  uint32_t open_window() const;
-  void reset();
+  uint32_t credit() const override;
+  void reset() override;
   bool is_app_limited();
 
   // Debug
   uint32_t bytes_in_flight() const;
   uint32_t congestion_window() const;
   uint32_t current_ssthresh() const;
+
+  void add_extra_credit() override;
 
 private:
   Ptr<ProxyMutex> _cc_mutex;
@@ -97,32 +86,33 @@ private:
   bool _in_window_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets, QUICPacketInfo *largest_lost_packet,
                        ink_hrtime period) const;
 
+  uint32_t _extra_packets_count = 0;
+
   // [draft-17 recovery] 7.9.1. Constants of interest
   // Values will be loaded from records.config via QUICConfig at constructor
   uint32_t _k_max_datagram_size               = 0;
   uint32_t _k_initial_window                  = 0;
   uint32_t _k_minimum_window                  = 0;
   float _k_loss_reduction_factor              = 0.0;
-  uint32_t _k_persistent_congestion_threshold = 0;
+  uint32_t _k_persistent_congestion_threshold = 3;
 
   // [draft-17 recovery] 7.9.2. Variables of interest
-  uint32_t _ecn_ce_counter        = 0;
-  uint32_t _bytes_in_flight       = 0;
-  uint32_t _congestion_window     = 0;
-  ink_hrtime _recovery_start_time = 0;
-  uint32_t _ssthresh              = UINT32_MAX;
+  uint32_t _ecn_ce_counter                   = 0;
+  uint32_t _bytes_in_flight                  = 0;
+  uint32_t _congestion_window                = 0;
+  ink_hrtime _congestion_recovery_start_time = 0;
+  uint32_t _ssthresh                         = UINT32_MAX;
 
-  QUICConnectionInfoProvider *_info = nullptr;
-  const QUICRTTProvider &_rtt_provider;
+  bool _in_congestion_recovery(ink_hrtime sent_time);
 
-  bool _in_recovery(ink_hrtime sent_time);
+  QUICCCContext &_context;
 };
 
 class QUICLossDetector : public Continuation, public QUICFrameHandler
 {
 public:
-  QUICLossDetector(QUICConnectionInfoProvider *info, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
-                   const QUICLDConfig &ld_config);
+  QUICLossDetector(QUICLDContext &context, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure, QUICPinger *pinger,
+                   QUICPadder *padder);
   ~QUICLossDetector();
 
   int event_handler(int event, Event *edata);
@@ -178,15 +168,24 @@ private:
 
   ink_hrtime _get_earliest_loss_time(QUICPacketNumberSpace &pn_space);
 
-  std::set<QUICAckFrame::PacketNumberRange> _determine_newly_acked_packets(const QUICAckFrame &ack_frame);
+  std::vector<QUICPacketInfo *> _determine_newly_acked_packets(const QUICAckFrame &ack_frame, int pn_space);
+  bool _include_ack_eliciting(const std::vector<QUICPacketInfo *> &acked_packets, int index) const;
 
   void _retransmit_all_unacked_crypto_data();
-  void _send_one_packet();
-  void _send_two_packets();
+  void _send_one_or_two_packet();
+  void _send_one_handshake_packets();
+  void _send_one_padded_packets();
 
-  QUICConnectionInfoProvider *_info = nullptr;
-  QUICRTTMeasure *_rtt_measure      = nullptr;
-  QUICCongestionController *_cc     = nullptr;
+  void _send_packet(QUICEncryptionLevel level, bool padded = false);
+
+  bool _is_client_without_one_rtt_key() const;
+
+  QUICRTTMeasure *_rtt_measure  = nullptr;
+  QUICPinger *_pinger           = nullptr;
+  QUICPadder *_padder           = nullptr;
+  QUICCongestionController *_cc = nullptr;
+
+  QUICLDContext &_context;
 };
 
 class QUICRTTMeasure : public QUICRTTProvider
@@ -219,11 +218,14 @@ public:
   void update_rtt(ink_hrtime latest_rtt, ink_hrtime ack_delay);
   void reset();
 
+  ink_hrtime k_granularity() const;
+
 private:
   // related to rtt calculate
-  uint32_t _crypto_count    = 0;
-  uint32_t _pto_count       = 0;
-  ink_hrtime _max_ack_delay = 0;
+  uint32_t _crypto_count = 0;
+  uint32_t _pto_count    = 0;
+  // FIXME should be set by transport parameters
+  ink_hrtime _max_ack_delay = HRTIME_MSECONDS(25);
 
   // rtt vars
   ink_hrtime _latest_rtt   = 0;
@@ -233,5 +235,5 @@ private:
 
   // config
   ink_hrtime _k_granularity = 0;
-  ink_hrtime _k_initial_rtt = 0;
+  ink_hrtime _k_initial_rtt = HRTIME_MSECONDS(500);
 };

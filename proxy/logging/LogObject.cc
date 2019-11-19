@@ -961,24 +961,20 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
         LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename);
         retVal = CANNOT_SOLVE_FILENAME_CONFLICTS;
       } else {
-        // either the meta file could not be read, or the new object's
-        // signature and the metafile signature do not match ==>
-        // roll old filename so the new object can use the filename
+        // Either the meta file could not be read, or the new object's
+        // signature and the metafile signature do not match.
+        // Roll the old filename so the new object can use the filename
         // it requested (previously we used to rename the NEW file
-        // but now we roll the OLD file), or if the log object writes
-        // to a pipe, just remove the file if it was open as a pipe
+        // but now we roll the OLD file). However, if the log object writes to
+        // a pipe don't roll because rolling is not applicable to pipes.
 
         bool roll_file = true;
 
         if (log_object->writes_to_pipe()) {
-          // determine if existing file is a pipe, and remove it if
-          // that is the case so the right metadata for the new pipe
-          // is created later
-          //
+          // Verify whether the existing file is a pipe. If it is,
+          // disable the roll_file flag so we don't attempt rolling.
           struct stat s;
           if (stat(filename, &s) < 0) {
-            // an error happened while trying to get file info
-            //
             const char *msg = "Cannot stat log file %s: %s";
             char *se        = strerror(errno);
 
@@ -988,7 +984,6 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
             roll_file = false;
           } else {
             if (S_ISFIFO(s.st_mode)) {
-              unlink(filename);
               roll_file = false;
             }
           }

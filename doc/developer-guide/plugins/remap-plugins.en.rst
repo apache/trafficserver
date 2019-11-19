@@ -27,7 +27,9 @@ invoked when the rule is matched. For example, a rule such as
 
    map http://example.one/ http://example.two/ @plugin=example.so @pparam=first_arg @pparm=second_arg
 
-will, if matched, cause the plugin "example.so" to be called with parameters "first_arg" and "second_arg".
+will, if matched, cause the plugin "example.so" to be called with parameters `http://example.one/`,
+`http://example.two/`, "first_arg" and "second_arg". Please keep in mind that "from" URL and "to" URL
+will be converted to their canonical view.
 
 A key difference between global and remap plugins is reconfiguration and reloading. If
 :file:`remap.config` is reloaded, then all remap plugins are reconfigured based on the new version
@@ -49,6 +51,9 @@ will fail. If there is an error during the invocation of this function a C strin
 should be placed in :arg:`errbuff`, taking note of the maximum size of the buffer passed in
 :arg:`errbuff_size`. The message is checked if the function returns a value other than
 :macro:`TS_SUCCESS`.
+
+If :func:`TSRemapInit` returns :macro:`TS_ERROR` then the remap configuration loading
+is aborted immediately.
 
 This function should perform any plugin global initialization, such as setting up static data
 tables. It only be called immediately after the dynamic library is loaded from disk.
@@ -80,16 +85,30 @@ multiple times for the rule, once for each invocation. Only the value store in :
 available when the rule is actually matched. In particular the plugin arguments will not be
 available.
 
-Calls to :func:`TSRemapNewInstance` are serialized. All calls to :func:`TSRemapNewInstance`
-for a given configuration will be called and completed before any calls to :func:`TSRemapDoRemap`.
+Calls to :func:`TSRemapNewInstance` are guaranteed to be serialized. All calls to
+:func:`TSRemapNewInstance` for a given new configuration are guaranteed to be called and
+completed before any calls to :func:`TSRemapDoRemap`.
 
 If there is an error then the callback should return :macro:`TS_ERROR` and fill in the
 :arg:`errbuff` with a C-string describing the error. Otherwise the function must return
 :macro:`TS_SUCCESS`.
 
+If :func:`TSRemapNewInstance` returns :macro:`TS_ERROR` then the remap configuration loading
+is aborted immediately.
+
 
 Configuration reload notifications
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Most of the plugins is assumed to use per-plugin-instance data-structures when reloading their
+configs and only a few of them that wish to optimize performance or deal with the complexities
+of using a per-plugin DSO "global" data-structures would use plugin configuration reload
+notifications like :func:`TSRemapPreConfigReload` and :func:`TSRemapPostConfigReload`.
+
+Instead of trying to foresee the needs or the expectations of each use-case, a more "open-ended"
+and straight-forward design was chosen for the configuration reload notifications.
+The notifications are broadcast to all loaded plugins at the moments before and after 
+the reload attempt, regardless of whether a plugin is part of the new configuration or not.
 
 :func:`TSRemapPreConfigReload` is called *before* the parsing of a new remap configuration starts
 to notify plugins of the coming configuration reload. It is called on all already loaded plugins,
@@ -97,12 +116,14 @@ invoked by current and all previous still used configurations. This is an option
 
 :func:`TSRemapPostConfigReload` is called to indicate the end of the the new remap configuration
 load. It is called on the newly and previously loaded plugins, invoked by the new, current and
-previous still used configurations. It also indicates if the configuration reload was successful
-by passing :macro:`TS_SUCCESS` or :macro:`TS_ERROR`. This is an optional entry point.
+previous still used configurations. It also indicates whether the configuration reload was successful
+by passing :macro:`TSREMAP_CONFIG_RELOAD_FAILURE` in case of failure and to notify the plugins if they
+are going to be part of the new configuration by passing :macro:`TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED`
+or :macro:`TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED`. This is an optional entry point.
 
 These calls are called per *plugin*, not per invocation of the plugin in :file:`remap.config`
-and only will be called if the plugin was called at least once with :func:`TSRemapNewInstance`
-for any configuration and at least one configuration using it is still loaded.
+and only will be called if the plugin was instantiated by at least one configuration loaded
+after the traffic server started and at least one configuration using it is still loaded.
 
 :func:`TSRemapPreConfigReload` will be called serially for all loaded plugins
 before any call to :func:`TSRemapNewInstance` during parsing of the new configuration.
@@ -115,9 +136,10 @@ A plugin could use :func:`TSRemapPreConfigReload` as a signal to drop (or alloca
 per plugin data structures. These structures can be created (or updated) as needed
 when a plugin invocation instance is loaded (:func:`TSRemapNewInstance` is called).
 Then it could be used in subsequent invocation instances loading. After the configuration
-reload is done :func:`TSRemapPostConfigReload` could be used to confirm
-the data structures update if :macro:`TS_SUCCESS` is passed or recover / clean-up
-after a failed reload attempt if :macro:`TS_ERROR` is passed.
+reload is done :func:`TSRemapPostConfigReload` could be used to confirm the data
+structures update if reload was successful, recover / clean-up after a failed
+reload attempt, or if so wishes to ignore the notification if plugin is not part
+of the new configuration..
 
 
 Runtime

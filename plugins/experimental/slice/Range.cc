@@ -121,7 +121,7 @@ Range::fromStringClosed(char const *const rangestr)
 bool
 Range::toStringClosed(char *const bufstr,
                       int *const buflen // returns actual bytes used
-                      ) const
+) const
 {
   if (!isValid()) {
     if (0 < *buflen) {

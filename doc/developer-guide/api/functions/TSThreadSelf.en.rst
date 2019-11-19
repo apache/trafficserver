@@ -24,7 +24,9 @@ TSThreadSelf
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSThread TSThreadSelf(void)
 

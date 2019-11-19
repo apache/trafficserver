@@ -58,6 +58,7 @@ TEST_CASE("QUICPreferredAddress", "[quic]")
     CHECK(memcmp(pref_addr->endpoint_ipv6().sin6.sin6_addr.s6_addr, ipv6_addr.s6_addr, 16) == 0);
     CHECK(pref_addr->cid() == cid55);
     CHECK(memcmp(pref_addr->token().buf(), buf + 26, 16) == 0);
+    delete pref_addr;
   }
 
   SECTION("store")
@@ -85,6 +86,7 @@ TEST_CASE("QUICPreferredAddress", "[quic]")
     pref_addr->store(actual, len);
     CHECK(sizeof(buf) == len);
     CHECK(memcmp(buf, actual, sizeof(buf)) == 0);
+    delete pref_addr;
   }
 
   SECTION("unavailable")
@@ -93,5 +95,6 @@ TEST_CASE("QUICPreferredAddress", "[quic]")
     CHECK(!pref_addr->is_available());
     CHECK(!pref_addr->has_ipv4());
     CHECK(!pref_addr->has_ipv6());
+    delete pref_addr;
   }
 }

@@ -251,6 +251,7 @@ public:
     CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE               = 0x02,
     CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_STALE_ON_REVALIDATE = 0x03,
     CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE       = 0x04,
+    CACHE_WL_FAIL_ACTION_READ_RETRY                        = 0x05,
     TOTAL_CACHE_WL_FAIL_ACTION_TYPES
   };
 
@@ -541,7 +542,6 @@ public:
     // The following variable is true if the client expects to
     // received a chunked response.
     bool receive_chunked_response = false;
-    bool pipeline_possible        = false;
     bool proxy_connect_hdr        = false;
     /// @c errno from the most recent attempt to connect.
     /// zero means no failure (not attempted, succeeded).
@@ -997,13 +997,11 @@ public:
   static bool get_ka_info_from_config(State *s, ConnectionAttributes *server_info);
   static void get_ka_info_from_host_db(State *s, ConnectionAttributes *server_info, ConnectionAttributes *client_info,
                                        HostDBInfo *host_db_info);
-  static bool service_transaction_in_proxy_only_mode(State *s);
   static void setup_plugin_request_intercept(State *s);
   static void add_client_ip_to_outgoing_request(State *s, HTTPHdr *request);
   static RequestError_t check_request_validity(State *s, HTTPHdr *incoming_hdr);
   static ResponseError_t check_response_validity(State *s, HTTPHdr *incoming_hdr);
   static bool delete_all_document_alternates_and_return(State *s, bool cache_hit);
-  static bool did_forward_server_send_0_9_response(State *s);
   static bool does_client_request_permit_cached_response(const OverridableHttpConfigParams *p, CacheControlResult *c, HTTPHdr *h,
                                                          char *via_string);
   static bool does_client_request_permit_dns_caching(CacheControlResult *c, HTTPHdr *h);
@@ -1058,7 +1056,6 @@ public:
   static void build_error_response(State *s, HTTPStatus status_code, const char *reason_phrase_or_null,
                                    const char *error_body_type);
   static void build_redirect_response(State *s);
-  static void build_upgrade_response(State *s);
   static const char *get_error_string(int erno);
 
   // the stat functions

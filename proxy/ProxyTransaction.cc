@@ -199,3 +199,15 @@ void
 ProxyTransaction::set_h2c_upgrade_flag()
 {
 }
+
+int
+ProxyTransaction::get_transaction_priority_weight() const
+{
+  return 0;
+}
+
+int
+ProxyTransaction::get_transaction_priority_dependence() const
+{
+  return 0;
+}

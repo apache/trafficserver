@@ -405,7 +405,8 @@ QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, Net
 
     SSL_set_alpn_protos(this->_ssl, reinterpret_cast<const unsigned char *>(netvc_options.alpn_protos.data()),
                         netvc_options.alpn_protos.size());
-    SSL_set_tlsext_host_name(this->_ssl, netvc_options.sni_servername.get());
+    const ats_scoped_str &tlsext_host_name = netvc_options.sni_hostname ? netvc_options.sni_hostname : netvc_options.sni_servername;
+    SSL_set_tlsext_host_name(this->_ssl, tlsext_host_name.get());
   } else {
     SSL_set_accept_state(this->_ssl);
   }

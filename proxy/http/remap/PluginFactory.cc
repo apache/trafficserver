@@ -22,13 +22,18 @@
 
  */
 
+#include <unordered_map>
+
 #include "RemapPluginInfo.h"
 #include "PluginFactory.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"
 #else
 #include "tscore/Diags.h"
+#define PluginDebug Debug
+#define PluginError Error
 #endif
+#include "P_EventSystem.h"
 
 #include <algorithm> /* std::swap */
 
@@ -89,7 +94,7 @@ PluginFactory::PluginFactory()
     }
   }
 
-  Debug(_tag, "created plugin factory %s", getUuid());
+  PluginDebug(_tag, "created plugin factory %s", getUuid());
 }
 
 PluginFactory::~PluginFactory()
@@ -99,7 +104,7 @@ PluginFactory::~PluginFactory()
 
   fs::remove(_runtimeDir, _ec);
 
-  Debug(_tag, "destroyed plugin factory %s", getUuid());
+  PluginDebug(_tag, "destroyed plugin factory %s", getUuid());
   delete _uuid;
 }
 
@@ -107,7 +112,7 @@ PluginFactory &
 PluginFactory::addSearchDir(const fs::path &searchDir)
 {
   _searchDirs.push_back(searchDir);
-  Debug(_tag, "added plugin search dir %s", searchDir.c_str());
+  PluginDebug(_tag, "added plugin search dir %s", searchDir.c_str());
   return *this;
 }
 
@@ -115,7 +120,7 @@ PluginFactory &
 PluginFactory::setRuntimeDir(const fs::path &runtimeDir)
 {
   _runtimeDir = runtimeDir / fs::path(getUuid());
-  Debug(_tag, "set plugin runtime dir %s", runtimeDir.c_str());
+  PluginDebug(_tag, "set plugin runtime dir %s", runtimeDir.c_str());
   return *this;
 }
 
@@ -151,7 +156,7 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
 
   if (nullptr == plugin) {
     /* The plugin requested have not been loaded yet. */
-    Debug(_tag, "plugin '%s' has not been loaded yet, loading as remap plugin", configPath.c_str());
+    PluginDebug(_tag, "plugin '%s' has not been loaded yet, loading as remap plugin", configPath.c_str());
 
     fs::path runtimePath;
     runtimePath /= _runtimeDir;
@@ -166,13 +171,15 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
     plugin = new RemapPluginInfo(configPath, effectivePath, runtimePath);
     if (nullptr != plugin) {
       if (plugin->load(error)) {
-        _list.append(plugin);
-
         if (plugin->init(error)) {
+          PluginDso::loadedPlugins()->add(plugin);
           inst = RemapPluginInst::init(plugin, argc, argv, error);
           if (nullptr != inst) {
             _instList.append(inst);
           }
+        } else {
+          plugin->unload(error);
+          delete plugin;
         }
 
         if (_preventiveCleaning) {
@@ -183,7 +190,7 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
       }
     }
   } else {
-    Debug(_tag, "plugin '%s' has already been loaded", configPath.c_str());
+    PluginDebug(_tag, "plugin '%s' has already been loaded", configPath.c_str());
     inst = RemapPluginInst::init(plugin, argc, argv, error);
     if (nullptr != inst) {
       _instList.append(inst);
@@ -232,15 +239,7 @@ PluginFactory::getEffectivePath(const fs::path &configPath)
 PluginDso *
 PluginFactory::findByEffectivePath(const fs::path &path)
 {
-  struct stat sb;
-  time_t mtime = 0;
-  if (0 == stat(path.c_str(), &sb)) {
-    mtime = sb.st_mtime;
-  }
-  auto spot = std::find_if(_list.begin(), _list.end(), [&](PluginDso const &plugin) -> bool {
-    return (0 == path.string().compare(plugin.effectivePath().string()) && (mtime == plugin.modTime()));
-  });
-  return spot == _list.end() ? nullptr : static_cast<PluginDso *>(spot);
+  return PluginDso::loadedPlugins()->findByEffectivePath(path);
 }
 
 /**
@@ -253,7 +252,7 @@ PluginFactory::findByEffectivePath(const fs::path &path)
 void
 PluginFactory::deactivate()
 {
-  Debug(_tag, "deactivate configuration used by factory '%s'", getUuid());
+  PluginDebug(_tag, "deactivate configuration used by factory '%s'", getUuid());
 
   _instList.apply([](RemapPluginInst &pluginInst) -> void { pluginInst.done(); });
 }
@@ -264,24 +263,22 @@ PluginFactory::deactivate()
 void
 PluginFactory::indicatePreReload()
 {
-  Debug(_tag, "indicated config is going to be reloaded by factory '%s' to %zu plugin%s", getUuid(), _list.count(),
-        _list.count() != 1 ? "s" : "");
-
-  _list.apply([](PluginDso &plugin) -> void { plugin.indicatePreReload(); });
+  PluginDso::loadedPlugins()->indicatePreReload(getUuid());
 }
 
 /**
  * @brief Tell all plugins (that so wish) that remap.config is done reloading
  */
 void
-PluginFactory::indicatePostReload(TSReturnCode reloadStatus)
+PluginFactory::indicatePostReload(bool reloadSuccessful)
 {
-  Debug(_tag, "indicated config is done reloading by factory '%s' to %zu plugin%s", getUuid(), _list.count(),
-        _list.count() != 1 ? "s" : "");
-
-  for (auto it = _list.begin(); _list.end() != it; it++) {
-    it->indicatePostReload(reloadStatus);
+  /* Find out which plugins (DSO) are actually instantiated by this factory */
+  std::unordered_map<PluginDso *, int> pluginUsed;
+  for (auto &inst : _instList) {
+    pluginUsed[&(inst._plugin)]++;
   }
+
+  PluginDso::loadedPlugins()->indicatePostReload(reloadSuccessful, pluginUsed, getUuid());
 }
 
 void

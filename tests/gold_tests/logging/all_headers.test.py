@@ -17,7 +17,6 @@
 #  limitations under the License.
 
 import os
-import subprocess
 
 Test.Summary = '''
 Test new "all headers" log fields

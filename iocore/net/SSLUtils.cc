@@ -27,6 +27,7 @@
 #include "tscore/I_Layout.h"
 #include "tscore/ink_cap.h"
 #include "tscore/ink_mutex.h"
+#include "tscore/Filenames.h"
 #include "records/I_RecHttp.h"
 
 #include "P_Net.h"
@@ -200,9 +201,11 @@ ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
     hook = hook->m_link.next;
   }
 
-  SSL_SESSION *session = nullptr;
-  if (session_cache->getSession(sid, &session)) {
+  SSL_SESSION *session             = nullptr;
+  ssl_session_cache_exdata *exdata = nullptr;
+  if (session_cache->getSession(sid, &session, &exdata)) {
     ink_assert(session);
+    ink_assert(exdata);
 
     // Double check the timeout
     if (ssl_session_timed_out(session)) {
@@ -217,6 +220,7 @@ ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
       SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
       SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
       netvc->setSSLSessionCacheHit(true);
+      netvc->setSSLCurveNID(exdata->curve);
     }
   } else {
     SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
@@ -229,6 +233,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 {
   unsigned int len        = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
+
   SSLSessionID sid(id, len);
 
   if (diags->tag_activated("ssl.session_cache")) {
@@ -239,7 +244,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
   }
 
   SSL_INCREMENT_DYN_STAT(ssl_session_cache_new_session);
-  session_cache->insertSession(sid, sess);
+  session_cache->insertSession(sid, sess, ssl);
 
   // Call hook after new session is created
   APIHook *hook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
@@ -958,7 +963,7 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const std::str
       SSLConfigParams::load_ssl_file_cb(completeServerKeyPath);
     }
   } else {
-    SSLError("empty SSL private key path in records.config");
+    SSLError("empty SSL private key path in %s", ts::filename::RECORDS);
     return false;
   }
 
@@ -1324,7 +1329,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, co
     } else {
       // disable client cert support
       server_verify_client = SSL_VERIFY_NONE;
-      Error("illegal client certification level %d in records.config", server_verify_client);
+      Error("illegal client certification level %d in %s", server_verify_client, ts::filename::RECORDS);
     }
     SSL_CTX_set_verify(ctx, server_verify_client, ssl_verify_client_callback);
     SSL_CTX_set_verify_depth(ctx, params->verify_depth); // might want to make configurable at some point.
@@ -1336,7 +1341,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, co
 
   if (params->cipherSuite != nullptr) {
     if (!SSL_CTX_set_cipher_list(ctx, params->cipherSuite)) {
-      SSLError("invalid cipher suite in records.config");
+      SSLError("invalid cipher suite in %s", ts::filename::RECORDS);
       goto fail;
     }
   }
@@ -1344,7 +1349,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, co
 #if TS_USE_TLS_SET_CIPHERSUITES
   if (params->server_tls13_cipher_suites != nullptr) {
     if (!SSL_CTX_set_ciphersuites(ctx, params->server_tls13_cipher_suites)) {
-      SSLError("invalid tls server cipher suites in records.config");
+      SSLError("invalid tls server cipher suites in %s", ts::filename::RECORDS);
       goto fail;
     }
   }
@@ -1357,7 +1362,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, co
 #else
     if (!SSL_CTX_set1_curves_list(ctx, params->server_groups_list)) {
 #endif
-      SSLError("invalid groups list for server in records.config");
+      SSLError("invalid groups list for server in %s", ts::filename::RECORDS);
       goto fail;
     }
   }
@@ -1586,7 +1591,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
 
   const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
 
-  Note("ssl_multicert.config loading ...");
+  Note("%s loading ...", ts::filename::SSL_MULTICERT);
 
   if (params->configFilePath) {
     file_buf = readIntoBuffer(params->configFilePath, __func__, nullptr);
@@ -1974,4 +1979,14 @@ SSLMultiCertConfigLoader::clear_pw_references(SSL_CTX *ssl_ctx)
 {
   SSL_CTX_set_default_passwd_cb(ssl_ctx, nullptr);
   SSL_CTX_set_default_passwd_cb_userdata(ssl_ctx, nullptr);
+}
+
+ssl_curve_id
+SSLGetCurveNID(SSL *ssl)
+{
+#ifndef OPENSSL_IS_BORINGSSL
+  return SSL_get_shared_curve(ssl, 0);
+#else
+  return SSL_get_curve_id(ssl);
+#endif
 }

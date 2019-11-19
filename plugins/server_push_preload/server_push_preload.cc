@@ -26,9 +26,9 @@
 #include <set>
 #include <sstream>
 #include <ts/ts.h>
-#include <ts/experimental.h>
 #include "tscpp/api/GlobalPlugin.h"
-#include "tscpp/api/utils.h"
+#include "tscpp/api/RemapPlugin.h"
+#include "tscpp/api/TransactionPlugin.h"
 
 #define PLUGIN_NAME "server_push_preload"
 #define PRELOAD_PARAM "rel=preload"
@@ -41,16 +41,16 @@ static regex linkRegexp("<([^>]+)>;(.+)");
 
 namespace
 {
-GlobalPlugin *plugin;
-}
+GlobalPlugin *globalPlugin;
+RemapPlugin *remapPlugin;
+} // namespace
 
-class LinkServerPushPlugin : public GlobalPlugin
+class ServerPushTransaction : public TransactionPlugin
 {
 public:
-  LinkServerPushPlugin()
+  explicit ServerPushTransaction(Transaction &transaction) : TransactionPlugin(transaction)
   {
-    TSDebug(PLUGIN_NAME, "registering transaction hooks");
-    LinkServerPushPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
+    TransactionPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
   }
 
   void
@@ -134,6 +134,32 @@ public:
   }
 };
 
+class ServerPushRemap : public RemapPlugin
+{
+public:
+  explicit ServerPushRemap(void **instance_handle) : RemapPlugin(instance_handle) {}
+
+  Result
+  doRemap(const Url &map_from_url, const Url &map_to_url, Transaction &transaction, bool &redirect) override
+  {
+    transaction.addPlugin(new ServerPushTransaction(transaction));
+    return RESULT_DID_REMAP;
+  }
+};
+
+class ServerPushGlobal : public GlobalPlugin
+{
+public:
+  ServerPushGlobal() { GlobalPlugin::registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
+
+  void
+  handleReadRequestHeadersPreRemap(Transaction &transaction) override
+  {
+    transaction.addPlugin(new ServerPushTransaction(transaction));
+    transaction.resume();
+  }
+};
+
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
@@ -141,5 +167,14 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
   if (!RegisterGlobalPlugin("ServerPushPreloadPlugin", PLUGIN_NAME, "dev@trafficserver.apache.org")) {
     return;
   }
-  plugin = new LinkServerPushPlugin();
+  globalPlugin = new ServerPushGlobal();
+}
+
+TSReturnCode
+TSRemapNewInstance(int argc ATSCPPAPI_UNUSED, char *argv[] ATSCPPAPI_UNUSED, void **instance_handle, char *errbuf ATSCPPAPI_UNUSED,
+                   int errbuf_size ATSCPPAPI_UNUSED)
+{
+  TSDebug(PLUGIN_NAME, "New Instance");
+  remapPlugin = new ServerPushRemap(instance_handle);
+  return TS_SUCCESS;
 }

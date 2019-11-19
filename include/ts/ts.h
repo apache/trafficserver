@@ -1233,7 +1233,7 @@ tsapi void TSVConnReenableEx(TSVConn sslvcp, TSEvent event);
 /*  Set the connection to go into blind tunnel mode */
 tsapi TSReturnCode TSVConnTunnel(TSVConn sslp);
 /*  Return the SSL object associated with the connection */
-tsapi TSSslConnection TSVConnSSLConnectionGet(TSVConn sslp);
+tsapi TSSslConnection TSVConnSslConnectionGet(TSVConn sslp);
 /* Return the intermediate X509StoreCTX object that references the certificate being validated */
 tsapi TSSslVerifyCTX TSVConnSslVerifyCTXGet(TSVConn sslp);
 /*  Fetch a SSL context from the global lookup table */
@@ -1262,7 +1262,7 @@ TSReturnCode TSVConnProtocolEnable(TSVConn connp, const char *protocol_name);
 tsapi int TSVConnIsSsl(TSVConn sslp);
 tsapi TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
 tsapi int TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
-tsapi TSReturnCode TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session);
+tsapi TSReturnCode TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn);
 tsapi TSReturnCode TSSslSessionRemove(const TSSslSessionID *session_id);
 
 /* --------------------------------------------------------------------------
@@ -2534,6 +2534,15 @@ tsapi TSReturnCode TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
  * Get a TSIOBufferReader to read the buffered body. The return value needs to be freed.
  */
 tsapi TSIOBufferReader TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp);
+
+/**
+ * Initiate an HTTP/2 Server Push preload request.
+ * Use this api to register a URL that you want to preload with HTTP/2 Server Push.
+ *
+ * @param url the URL string to preload.
+ * @param url_len the length of the URL string.
+ */
+tsapi TSReturnCode TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
 
 #ifdef __cplusplus
 }

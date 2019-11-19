@@ -472,7 +472,7 @@ StateAuthProxySendResponse(AuthRequestContext *auth, void * /* edata ATS_UNUSED 
 
   // We must not whack the content length for HEAD responses, since the
   // client already knows that there is no body. Forcing content length to
-  // zero breaks hdiutil(1) on Mac OS X.
+  // zero breaks hdiutil(1) on macOS
   if (TS_HTTP_METHOD_HEAD != auth->method) {
     HttpSetMimeHeader(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
   }

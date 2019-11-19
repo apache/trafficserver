@@ -306,7 +306,7 @@ public:
   */
   bool contains(sockaddr const *target, ///< Search target (network order).
                 void **ptr = nullptr    ///< Client data return.
-                ) const;
+  ) const;
 
   /** Test for membership.
 
@@ -318,7 +318,7 @@ public:
   */
   bool contains(in_addr_t target,    ///< Search target (network order).
                 void **ptr = nullptr ///< Client data return.
-                ) const;
+  ) const;
 
   /** Test for membership.
 
@@ -330,7 +330,7 @@ public:
   */
   bool contains(IpEndpoint const *target, ///< Search target (network order).
                 void **ptr = nullptr      ///< Client data return.
-                ) const;
+  ) const;
 
   /** Test for membership.
 
@@ -342,7 +342,7 @@ public:
   */
   bool contains(IpAddr const &target, ///< Search target (network order).
                 void **ptr = nullptr  ///< Client data return.
-                ) const;
+  ) const;
 
   /** Remove all addresses from the map.
 

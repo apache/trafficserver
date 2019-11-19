@@ -21,6 +21,9 @@
   limitations under the License.
  */
 
+#include "algorithm"
+#include "tscore/ink_assert.h"
+#include "tscore/ink_defs.h"
 #include "QUICAltConnectionManager.h"
 #include "QUICConnectionTable.h"
 
@@ -30,43 +33,47 @@ static constexpr char V_DEBUG_TAG[] = "v_quic_alt_con";
 
 QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
                                                    const QUICConnectionId &peer_initial_cid, uint32_t instance_id,
-                                                   uint8_t num_alt_con, const QUICPreferredAddress &preferred_address)
-  : _qc(qc), _ctable(ctable), _instance_id(instance_id), _nids(num_alt_con)
-{
-  // Sequence number of the initial CID is 0
-  this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});
-
-  // Sequence number of the preferred address is 1 if available
-  if (preferred_address.is_available()) {
-    this->_alt_quic_connection_ids_remote.push_back({1, preferred_address.cid(), preferred_address.token(), {false}});
-  }
-
-  this->_alt_quic_connection_ids_local = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
-}
-
-QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
-                                                   const QUICConnectionId &peer_initial_cid, uint32_t instance_id,
-                                                   uint8_t num_alt_con, const IpEndpoint *preferred_endpoint_ipv4,
+                                                   uint8_t local_active_cid_limit, const IpEndpoint *preferred_endpoint_ipv4,
                                                    const IpEndpoint *preferred_endpoint_ipv6)
-  : _qc(qc), _ctable(ctable), _instance_id(instance_id), _nids(num_alt_con)
+  : _qc(qc), _ctable(ctable), _instance_id(instance_id), _local_active_cid_limit(local_active_cid_limit)
 {
   // Sequence number of the initial CID is 0
   this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});
 
-  this->_alt_quic_connection_ids_local = static_cast<AltConnectionInfo *>(ats_malloc(sizeof(AltConnectionInfo) * this->_nids));
-  this->_init_alt_connection_ids(preferred_endpoint_ipv4, preferred_endpoint_ipv6);
+  if ((preferred_endpoint_ipv4 && !ats_ip_addr_port_eq(*preferred_endpoint_ipv4, qc->five_tuple().source())) ||
+      (preferred_endpoint_ipv6 && !ats_ip_addr_port_eq(*preferred_endpoint_ipv6, qc->five_tuple().source()))) {
+    this->_alt_quic_connection_ids_local[0] = this->_generate_next_alt_con_info();
+    // This alt cid will be advertised via Transport Parameter, so no need to advertise it via NCID frame
+    this->_alt_quic_connection_ids_local[0].advertised = true;
+
+    IpEndpoint empty_endpoint_ipv4;
+    IpEndpoint empty_endpoint_ipv6;
+    empty_endpoint_ipv4.sa.sa_family = AF_UNSPEC;
+    empty_endpoint_ipv6.sa.sa_family = AF_UNSPEC;
+    if (preferred_endpoint_ipv4 == nullptr) {
+      preferred_endpoint_ipv4 = &empty_endpoint_ipv4;
+    }
+    if (preferred_endpoint_ipv6 == nullptr) {
+      preferred_endpoint_ipv6 = &empty_endpoint_ipv6;
+    }
+
+    // FIXME Check nullptr dereference
+    this->_local_preferred_address =
+      new QUICPreferredAddress(*preferred_endpoint_ipv4, *preferred_endpoint_ipv6, this->_alt_quic_connection_ids_local[0].id,
+                               this->_alt_quic_connection_ids_local[0].token);
+  }
 }
 
 QUICAltConnectionManager::~QUICAltConnectionManager()
 {
   ats_free(this->_alt_quic_connection_ids_local);
-  delete this->_preferred_address;
+  delete this->_local_preferred_address;
 }
 
 const QUICPreferredAddress *
 QUICAltConnectionManager::preferred_address() const
 {
-  return this->_preferred_address;
+  return this->_local_preferred_address;
 }
 
 std::vector<QUICFrameType>
@@ -118,32 +125,9 @@ QUICAltConnectionManager::_generate_next_alt_con_info()
 }
 
 void
-QUICAltConnectionManager::_init_alt_connection_ids(const IpEndpoint *preferred_endpoint_ipv4,
-                                                   const IpEndpoint *preferred_endpoint_ipv6)
+QUICAltConnectionManager::_init_alt_connection_ids()
 {
-  if (preferred_endpoint_ipv4 || preferred_endpoint_ipv6) {
-    this->_alt_quic_connection_ids_local[0] = this->_generate_next_alt_con_info();
-    // This alt cid will be advertised via Transport Parameter
-    this->_alt_quic_connection_ids_local[0].advertised = true;
-
-    IpEndpoint empty_endpoint_ipv4;
-    IpEndpoint empty_endpoint_ipv6;
-    empty_endpoint_ipv4.sa.sa_family = AF_UNSPEC;
-    empty_endpoint_ipv6.sa.sa_family = AF_UNSPEC;
-    if (preferred_endpoint_ipv4 == nullptr) {
-      preferred_endpoint_ipv4 = &empty_endpoint_ipv4;
-    }
-    if (preferred_endpoint_ipv6 == nullptr) {
-      preferred_endpoint_ipv6 = &empty_endpoint_ipv6;
-    }
-
-    // FIXME Check nullptr dereference
-    this->_preferred_address =
-      new QUICPreferredAddress(*preferred_endpoint_ipv4, *preferred_endpoint_ipv6, this->_alt_quic_connection_ids_local[0].id,
-                               this->_alt_quic_connection_ids_local[0].token);
-  }
-
-  for (int i = (preferred_endpoint_ipv4 || preferred_endpoint_ipv6 ? 1 : 0); i < this->_nids; ++i) {
+  for (int i = 0; i < this->_remote_active_cid_limit; ++i) {
     this->_alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
   }
   this->_need_advertise = true;
@@ -152,17 +136,22 @@ QUICAltConnectionManager::_init_alt_connection_ids(const IpEndpoint *preferred_e
 bool
 QUICAltConnectionManager::_update_alt_connection_id(uint64_t chosen_seq_num)
 {
-  for (int i = 0; i < this->_nids; ++i) {
-    if (_alt_quic_connection_ids_local[i].seq_num == chosen_seq_num) {
-      _alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
-      this->_need_advertise             = true;
-      return true;
-    }
-  }
-
   // Seq 0 is special so it's not in the array
   if (chosen_seq_num == 0) {
     return true;
+  }
+
+  // Seq 1 is for Preferred Address
+  if (chosen_seq_num == 1) {
+    return true;
+  }
+
+  for (int i = 0; i < this->_remote_active_cid_limit; ++i) {
+    if (this->_alt_quic_connection_ids_local[i].seq_num == chosen_seq_num) {
+      this->_alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
+      this->_need_advertise                   = true;
+      return true;
+    }
   }
 
   return false;
@@ -177,8 +166,15 @@ QUICAltConnectionManager::_register_remote_connection_id(const QUICNewConnection
     error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received zero-length cid",
                                                   QUICFrameType::NEW_CONNECTION_ID);
   } else {
-    this->_alt_quic_connection_ids_remote.push_back(
-      {frame.sequence(), frame.connection_id(), frame.stateless_reset_token(), {false}});
+    int unused = std::count_if(this->_alt_quic_connection_ids_remote.begin(), this->_alt_quic_connection_ids_remote.end(),
+                               [](AltConnectionInfo info) { return info.used == false && info.seq_num != 1; });
+    if (unused > this->_local_active_cid_limit) {
+      error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received too many alt CIDs",
+                                                    QUICFrameType::NEW_CONNECTION_ID);
+    } else {
+      this->_alt_quic_connection_ids_remote.push_back(
+        {frame.sequence(), frame.connection_id(), frame.stateless_reset_token(), {false}});
+    }
   }
 
   return error;
@@ -214,10 +210,6 @@ QUICAltConnectionManager::is_ready_to_migrate() const
 QUICConnectionId
 QUICAltConnectionManager::migrate_to_alt_cid()
 {
-  if (this->_qc->direction() == NET_VCONNECTION_OUT) {
-    this->_init_alt_connection_ids();
-  }
-
   for (auto &info : this->_alt_quic_connection_ids_remote) {
     if (info.used) {
       continue;
@@ -233,7 +225,14 @@ QUICAltConnectionManager::migrate_to_alt_cid()
 bool
 QUICAltConnectionManager::migrate_to(const QUICConnectionId &cid, QUICStatelessResetToken &new_reset_token)
 {
-  for (unsigned int i = 0; i < this->_nids; ++i) {
+  if (this->_local_preferred_address) {
+    if (cid == this->_local_preferred_address->cid()) {
+      new_reset_token = this->_local_preferred_address->token();
+      return true;
+    }
+  }
+
+  for (int i = 0; i < this->_remote_active_cid_limit; ++i) {
     AltConnectionInfo &info = this->_alt_quic_connection_ids_local[i];
     if (info.id == cid) {
       // Migrate connection
@@ -260,13 +259,33 @@ QUICAltConnectionManager::drop_cid(const QUICConnectionId &cid)
 void
 QUICAltConnectionManager::invalidate_alt_connections()
 {
-  for (unsigned int i = 0; i < this->_nids; ++i) {
+  int n = this->_remote_active_cid_limit + ((this->_local_preferred_address == nullptr) ? 1 : 0);
+
+  for (int i = 0; i < n; ++i) {
     this->_ctable.erase(this->_alt_quic_connection_ids_local[i].id, this->_qc);
   }
 }
 
+void
+QUICAltConnectionManager::set_remote_preferred_address(const QUICPreferredAddress &preferred_address)
+{
+  ink_assert(preferred_address.is_available());
+
+  // Sequence number of the preferred address is 1 if available
+  this->_alt_quic_connection_ids_remote.push_back({1, preferred_address.cid(), preferred_address.token(), {false}});
+}
+
+void
+QUICAltConnectionManager::set_remote_active_cid_limit(uint8_t active_cid_limit)
+{
+  this->_remote_active_cid_limit =
+    std::min(static_cast<unsigned int>(active_cid_limit), countof(this->_alt_quic_connection_ids_local));
+  this->_init_alt_connection_ids();
+}
+
 bool
-QUICAltConnectionManager::will_generate_frame(QUICEncryptionLevel level, ink_hrtime timestamp)
+QUICAltConnectionManager::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting,
+                                              uint32_t seq_num)
 {
   if (!this->_is_level_matched(level)) {
     return false;
@@ -280,7 +299,7 @@ QUICAltConnectionManager::will_generate_frame(QUICEncryptionLevel level, ink_hrt
  */
 QUICFrame *
 QUICAltConnectionManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t /* connection_credit */,
-                                         uint16_t maximum_frame_size, ink_hrtime timestamp)
+                                         uint16_t maximum_frame_size, size_t current_packet_size, uint32_t seq_num)
 {
   QUICFrame *frame = nullptr;
   if (!this->_is_level_matched(level)) {
@@ -288,10 +307,10 @@ QUICAltConnectionManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level
   }
 
   if (this->_need_advertise) {
-    int count = this->_nids;
-    for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < this->_remote_active_cid_limit; ++i) {
       if (!this->_alt_quic_connection_ids_local[i].advertised) {
-        frame = QUICFrameFactory::create_new_connection_id_frame(buf, this->_alt_quic_connection_ids_local[i].seq_num,
+        // FIXME Should send a sequence number for retire_prior_to. Sending 0 for now.
+        frame = QUICFrameFactory::create_new_connection_id_frame(buf, this->_alt_quic_connection_ids_local[i].seq_num, 0,
                                                                  this->_alt_quic_connection_ids_local[i].id,
                                                                  this->_alt_quic_connection_ids_local[i].token);
 
@@ -310,12 +329,11 @@ QUICAltConnectionManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level
   }
 
   if (!this->_retired_seq_nums.empty()) {
-    if (auto s = this->_retired_seq_nums.front()) {
-      frame = QUICFrameFactory::create_retire_connection_id_frame(buf, s);
-      this->_records_retire_connection_id_frame(level, static_cast<const QUICRetireConnectionIdFrame &>(*frame));
-      this->_retired_seq_nums.pop();
-      return frame;
-    }
+    auto s = this->_retired_seq_nums.front();
+    frame  = QUICFrameFactory::create_retire_connection_id_frame(buf, s);
+    this->_records_retire_connection_id_frame(level, static_cast<const QUICRetireConnectionIdFrame &>(*frame));
+    this->_retired_seq_nums.pop();
+    return frame;
   }
 
   return frame;
@@ -351,7 +369,7 @@ QUICAltConnectionManager::_on_frame_lost(QUICFrameInformationUPtr &info)
   switch (info->type) {
   case QUICFrameType::NEW_CONNECTION_ID: {
     AltConnectionInfo *frame_info = reinterpret_cast<AltConnectionInfo *>(info->data);
-    for (int i = 0; i < this->_nids; ++i) {
+    for (int i = 0; i < this->_remote_active_cid_limit; ++i) {
       if (this->_alt_quic_connection_ids_local[i].seq_num == frame_info->seq_num) {
         ink_assert(this->_alt_quic_connection_ids_local[i].advertised);
         this->_alt_quic_connection_ids_local[i].advertised = false;

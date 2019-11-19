@@ -29,15 +29,18 @@
 
 #pragma once
 
+#include <unordered_map>
 #include <dlfcn.h>
 #include <vector>
 #include <ctime>
 
 #include "ts/apidefs.h"
+#include "ts/remap.h"
 #include "tscore/ts_file.h"
 namespace fs = ts::file;
 
 #include "tscore/Ptr.h"
+#include "I_EventSystem.h"
 #include "tscpp/util/IntrusiveDList.h"
 
 class PluginThreadContext : public RefCountObj
@@ -75,10 +78,10 @@ public:
   using PluginList = ts::IntrusiveDList<PluginDso::Linkage>;
 
   /* Methods to be called when processing a list of plugins, to be overloaded by the remap or the global plugins correspondingly */
-  virtual void indicatePreReload()                           = 0;
-  virtual void indicatePostReload(TSReturnCode reloadStatus) = 0;
-  virtual bool init(std::string &error)                      = 0;
-  virtual void done()                                        = 0;
+  virtual void indicatePreReload()                                  = 0;
+  virtual void indicatePostReload(TSRemapReloadStatus reloadStatus) = 0;
+  virtual bool init(std::string &error)                             = 0;
+  virtual void done()                                               = 0;
 
   void acquire();
   void release();
@@ -86,6 +89,30 @@ public:
   void incInstanceCount();
   void decInstanceCount();
   int instanceCount();
+
+  class LoadedPlugins : public RefCountObj
+  {
+  public:
+    LoadedPlugins() : _mutex(new_ProxyMutex()) {}
+    void add(PluginDso *plugin);
+    void remove(PluginDso *plugin);
+    PluginDso *findByEffectivePath(const fs::path &path);
+    void indicatePreReload(const char *factoryId);
+    void indicatePostReload(bool reloadSuccessful, const std::unordered_map<PluginDso *, int> &pluginUsed, const char *factoryId);
+
+  private:
+    PluginList _list;       /** @brief plugin list */
+    Ptr<ProxyMutex> _mutex; /** @brief mutex used when updating the plugin list from multiple threads */
+  };
+
+  static const Ptr<LoadedPlugins> &
+  loadedPlugins()
+  {
+    if (!_plugins) {
+      _plugins = new LoadedPlugins();
+    }
+    return _plugins;
+  }
 
 protected:
   void clean(std::string &error);
@@ -101,6 +128,7 @@ protected:
   time_t _mtime                           = 0;            /* @brief modification time of the DSO's file, used for checking */
   bool _preventiveCleaning                = true;
 
-  static PluginList _list; /** @brief a global list of plugins, usually maintained by a plugin factory or plugin instance itself */
+  static Ptr<LoadedPlugins>
+    _plugins; /** @brief a global list of plugins, usually maintained by a plugin factory or plugin instance itself */
   RefCountObj _instanceCount; /** @brief used for properly calling "done" and "indicate config reload" methods by the factory */
 };

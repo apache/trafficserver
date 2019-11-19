@@ -33,10 +33,10 @@ Plugin Configuration
 ====================
 .. program:: traffic_dump.so
 
-* ``Traffic Dump`` is a global plugin and is configured via :file:`plugin.config`.
+``Traffic Dump`` is a global plugin and is configured via :file:`plugin.config`.
    .. option:: --logdir <path_to_dump>
 
-   (`required`) - specifies the directory for writing all dump files. If path is relative, it is relative to the Traffic Server directory. The plugin will use first three characters of client ip to create subdirs in an attempt to spread dumps evenly and avoid too many files in a single directory.
+   (`required`) - specifies the directory for writing all dump files. If path is relative, it is relative to the Traffic Server directory. The plugin will use first three characters of the client's IP to create subdirs in an attempt to spread dumps evenly and avoid too many files in a single directory.
 
    .. option:: --sample <N>
 
@@ -44,20 +44,21 @@ Plugin Configuration
 
    .. option:: --limit <N>
 
-   (`required`) - specifies the max disk usage N bytes(approximate). Traffic Dump will stop capturing new sessions once disk usage exceeds this limit.
+   (`required`) - specifies the max disk usage N bytes (approximate). Traffic Dump will stop capturing new sessions once disk usage exceeds this limit.
 
-* ``traffic_ctl`` command.
-   ``traffic_ctl plugin msg traffic_dump.sample N`` - changes the sampling ratio N as mentioned above.
-   ``traffic_ctl plugin msg traffic_dump.reset`` - resets the disk usage counter.
-   ``traffic_ctl plugin msg traffic_dump.limit N`` - changes the max disk usage.
+``traffic_ctl`` <command>
+   * ``traffic_ctl plugin msg traffic_dump.sample N`` - changes the sampling ratio N as mentioned above.
+   * ``traffic_ctl plugin msg traffic_dump.reset`` - resets the disk usage counter.
+   * ``traffic_ctl plugin msg traffic_dump.limit N`` - changes the max disk usage to N bytes as mentioned above.
 
 Replay Format
 =============
 This format contains traffic data including:
+
 * Each session and transactions in the session.
 * Timestamps.
 * The four headers (ua request, proxy request, origin server response, proxy response).
 * The protocol stack for the user agent.
 * The transaction count for the outbound session.
 * The content block sizes.
-* See schema here: :ts:git:`tests/tools/traffic-replay/replay_schema.json`
+* See schema here: :ts:git:`tests/tools/lib/replay_schema.json`

@@ -24,7 +24,9 @@ TSVIOBufferGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSIOBuffer TSVIOBufferGet(TSVIO viop)
 

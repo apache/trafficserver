@@ -118,6 +118,12 @@ LogFile::LogFile(const LogFile &copy)
 LogFile::~LogFile()
 {
   Debug("log-file", "entering LogFile destructor, this=%p", this);
+
+  // close_file() checks whether a file is open before attempting to close, so
+  // this is safe to call even if a file had not been opened. Further, calling
+  // close_file() here ensures that we do not leak file descriptors.
+  close_file();
+
   delete m_log;
   ats_free(m_header);
   ats_free(m_name);
@@ -252,18 +258,24 @@ LogFile::close_file()
 {
   if (is_open()) {
     if (m_file_format == LOG_FILE_PIPE) {
-      ::close(m_fd);
-      Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
+      if (::close(m_fd)) {
+        Error("Error closing LogFile %s: %s.", m_name, strerror(errno));
+      } else {
+        Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
+        RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
+      }
       m_fd = -1;
     } else if (m_log) {
-      m_log->close_file();
-      Debug("log-file", "LogFile %s is closed", m_log->get_name());
+      if (m_log->close_file()) {
+        Error("Error closing LogFile %s: %s.", m_log->get_name(), strerror(errno));
+      } else {
+        Debug("log-file", "LogFile %s is closed", m_log->get_name());
+        RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
+      }
     } else {
       Warning("LogFile %s is open but was not closed", m_name);
     }
   }
-
-  RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
 }
 
 struct RolledFile {
@@ -363,7 +375,9 @@ LogFile::roll(long interval_start, long interval_end, bool reopen_after_rolling)
     // Since these two methods of using BaseLogFile are not compatible, we perform the logging log file specific
     // close file operation here within the containing LogFile object.
     if (m_log->roll(interval_start, interval_end)) {
-      m_log->close_file();
+      if (m_log->close_file()) {
+        Error("Error closing LogFile %s: %s.", m_log->get_name(), strerror(errno));
+      }
 
       if (reopen_after_rolling) {
         /* If we re-open now log file will be created even if there is nothing being logged */

@@ -23,7 +23,9 @@ TSHttpTxnClientPacketTosSet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpTxnClientPacketTosSet(TSHttpTxn txnp, int tos)
 

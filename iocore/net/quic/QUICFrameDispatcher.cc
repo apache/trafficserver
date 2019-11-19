@@ -43,7 +43,7 @@ QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
 
 QUICConnectionErrorUPtr
 QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &ack_only,
-                                    bool &is_flow_controlled, bool *has_non_probing_frame)
+                                    bool &is_flow_controlled, bool *has_non_probing_frame, const QUICPacket *packet)
 {
   uint16_t cursor               = 0;
   ack_only                      = true;
@@ -51,7 +51,7 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
   QUICConnectionErrorUPtr error = nullptr;
 
   while (cursor < size) {
-    const QUICFrame &frame = this->_frame_factory.fast_create(payload + cursor, size - cursor);
+    const QUICFrame &frame = this->_frame_factory.fast_create(payload + cursor, size - cursor, packet);
     if (frame.type() == QUICFrameType::UNKNOWN) {
       QUICDebug("Failed to create a frame (%u bytes skipped)", size - cursor);
       break;

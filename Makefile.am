@@ -104,7 +104,9 @@ if BUILD_DOCS
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) install-man
 endif
 
-TESTS = tools/check-unused-dependencies
+if OS_LINUX
+    TESTS = tools/check-unused-dependencies
+endif
 
 rat:
 	java -jar $(top_srcdir)/ci/apache-rat-0.13-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)

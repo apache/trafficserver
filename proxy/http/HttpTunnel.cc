@@ -1182,8 +1182,12 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case HTTP_TUNNEL_EVENT_CONSUMER_DETACH:
     if (p->alive) {
-      p->alive      = false;
-      p->bytes_read = p->read_vio->ndone;
+      p->alive = false;
+      if (p->read_vio) {
+        p->bytes_read = p->read_vio->ndone;
+      } else {
+        p->bytes_read = 0;
+      }
       // Clear any outstanding reads so they don't
       // collide with future tunnel IO's
       p->vc->do_io_read(nullptr, 0, nullptr);

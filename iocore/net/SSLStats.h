@@ -68,6 +68,7 @@ enum SSL_Stats {
   ssl_user_agent_session_miss_stat,
   ssl_user_agent_session_timeout_stat,
   ssl_total_handshake_time_stat,
+  ssl_total_attempts_handshake_count_in_stat,
   ssl_total_success_handshake_count_in_stat,
   ssl_total_tickets_created_stat,
   ssl_total_tickets_verified_stat,
@@ -89,6 +90,7 @@ enum SSL_Stats {
   ssl_error_read_eos,
   ssl_error_ssl,
   ssl_sni_name_set_failure,
+  ssl_total_attempts_handshake_count_out_stat,
   ssl_total_success_handshake_count_out_stat,
 
   /* ocsp stapling stats */

@@ -45,10 +45,8 @@ public:
 
   static void convert_request(HTTPVersion outgoing_ver, HTTPHdr *outgoing_request);
   static void convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoing_response);
-  static void convert_to_0_9_request_header(HTTPHdr *outgoing_request);
   static void convert_to_1_0_request_header(HTTPHdr *outgoing_request);
   static void convert_to_1_1_request_header(HTTPHdr *outgoing_request);
-  static void convert_to_0_9_response_header(HTTPHdr *outgoing_response);
   static void convert_to_1_0_response_header(HTTPHdr *outgoing_response);
   static void convert_to_1_1_response_header(HTTPHdr *outgoing_response);
 

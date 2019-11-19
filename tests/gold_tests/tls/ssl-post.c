@@ -134,15 +134,15 @@ spawn_same_session_send(void *arg)
     ret = select(sfd + 1, &reads, &writes, NULL, NULL);
     if (FD_ISSET(sfd, &reads) || FD_ISSET(sfd, &writes)) {
       ret = write_ret = SSL_write(ssl, req_buf, strlen(req_buf));
-      if (write_ret >= 0)
+      if (write_ret > 0)
         post_write_ret = SSL_write(ssl, post_buf, sizeof(post_buf));
     }
   }
 
-  while (write_ret < 0) {
+  while (write_ret <= 0) {
     write_ret = SSL_write(ssl, req_buf, strlen(req_buf));
   }
-  while (post_write_ret < 0) {
+  while (post_write_ret <= 0) {
     post_write_ret = SSL_write(ssl, post_buf, sizeof(post_buf));
   }
 

@@ -1124,6 +1124,24 @@ HdrHeap::dump_heap(int len)
   fprintf(stderr, "\n-------------- End header heap dump -----------\n");
 }
 
+uint64_t
+HdrHeap::total_used_size() const
+{
+  uint64_t size    = 0;
+  const HdrHeap *h = this;
+
+  while (h) {
+    size += (h->m_free_start - h->m_data_start);
+    h = h->m_next;
+  }
+
+  return size;
+}
+
+//
+// HdrStrHeap
+//
+
 void
 HdrStrHeap::free()
 {

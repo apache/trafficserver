@@ -28,6 +28,7 @@
  */
 
 #include "tscore/ink_platform.h"
+#include "tscore/Filenames.h"
 #include <dlfcn.h>
 #include "P_EventSystem.h"
 #include "P_Cache.h"
@@ -64,11 +65,11 @@ init_reverse_proxy()
   reconfig_mutex = new_ProxyMutex();
   rewrite_table  = new UrlRewrite();
 
-  Note("remap.config loading ...");
+  Note("%s loading ...", ts::filename::REMAP);
   if (!rewrite_table->load()) {
-    Fatal("remap.config failed to load");
+    Fatal("%s failed to load", ts::filename::REMAP);
   }
-  Note("remap.config finished loading");
+  Note("%s finished loading", ts::filename::REMAP);
 
   REC_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.proxy_name", url_rewrite_CB, (void *)TSNAME_CHANGED);
@@ -136,11 +137,11 @@ reloadUrlRewrite()
 {
   UrlRewrite *newTable, *oldTable;
 
-  Note("remap.config loading ...");
-  Debug("url_rewrite", "remap.config updated, reloading...");
+  Note("%s loading ...", ts::filename::REMAP);
+  Debug("url_rewrite", "%s updated, reloading...", ts::filename::REMAP);
   newTable = new UrlRewrite();
   if (newTable->load()) {
-    static const char *msg = "remap.config finished loading";
+    static const char *msg = "%s finished loading";
 
     // Hold at least one lease, until we reload the configuration
     newTable->acquire();
@@ -154,15 +155,15 @@ reloadUrlRewrite()
     oldTable->pluginFactory.deactivate();
     oldTable->release();
 
-    Debug("url_rewrite", "%s", msg);
+    Debug("url_rewrite", msg, ts::filename::REMAP);
     Note("%s", msg);
     return true;
   } else {
-    static const char *msg = "remap.config failed to load";
+    static const char *msg = "%s failed to load";
 
     delete newTable;
-    Debug("url_rewrite", "%s", msg);
-    Error("%s", msg);
+    Debug("url_rewrite", msg, ts::filename::REMAP);
+    Error(msg, ts::filename::REMAP);
     return false;
   }
 }

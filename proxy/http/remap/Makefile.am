@@ -54,6 +54,16 @@ libhttp_remap_a_SOURCES = \
 	UrlRewrite.cc \
 	UrlRewrite.h
 
+COMMON_PLUGINDSO_LDADDS = \
+	$(OPENSSL_LIBS) \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	@HWLOC_LIBS@
+
 clang-tidy-local: $(libhttp_remap_a_SOURCES)
 	$(CXX_Clang_Tidy)
 
@@ -61,18 +71,23 @@ TESTS = $(check_PROGRAMS)
 check_PROGRAMS =  test_PluginDso test_PluginFactory test_RemapPluginInfo
 
 test_PluginDso_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DPLUGIN_DSO_TESTS
+test_PluginDso_LIBTOOLFLAGS = --preserve-dup-deps
 EXTRA_test_PluginDso_DEPENDENCIES = unit-tests/plugin_v1.la
-test_PluginDso_LDADD = $(OPENSSL_LIBS)
-test_PluginDso_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore
+test_PluginDso_LDADD = $(COMMON_PLUGINDSO_LDADDS)
+test_PluginDso_LDFLAGS = $(AM_LDFLAGS)
 test_PluginDso_SOURCES = \
 	unit-tests/test_PluginDso.cc \
 	unit-tests/plugin_testing_common.cc \
 	PluginDso.cc
 
 test_PluginFactory_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DPLUGIN_DSO_TESTS
-EXTRA_test_PluginFactory_DEPENDENCIES = unit-tests/plugin_v1.la
-test_PluginFactory_LDADD = $(OPENSSL_LIBS)
-test_PluginFactory_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore
+test_PluginFactory_LIBTOOLFLAGS = --preserve-dup-deps
+EXTRA_test_PluginFactory_DEPENDENCIES = \
+	unit-tests/plugin_v1.la \
+	unit-tests/plugin_init_fail.la
+	unit-tests/plugin_instinit_fail.la
+test_PluginFactory_LDADD = $(COMMON_PLUGINDSO_LDADDS)
+test_PluginFactory_LDFLAGS = $(AM_LDFLAGS)
 test_PluginFactory_SOURCES = \
 	unit-tests/test_PluginFactory.cc \
 	unit-tests/plugin_testing_common.cc \
@@ -81,6 +96,7 @@ test_PluginFactory_SOURCES = \
 	RemapPluginInfo.cc
 
 test_RemapPluginInfo_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DPLUGIN_DSO_TESTS
+test_RemapPluginInfo_LIBTOOLFLAGS = --preserve-dup-deps
 EXTRA_test_RemapPluginInfo_DEPENDENCIES = \
 	unit-tests/plugin_missing_init.la \
 	unit-tests/plugin_missing_doremap.la \
@@ -88,9 +104,8 @@ EXTRA_test_RemapPluginInfo_DEPENDENCIES = \
 	unit-tests/plugin_required_cb.la \
 	unit-tests/plugin_missing_newinstance.la \
 	unit-tests/plugin_testing_calls.la
-test_RemapPluginInfo_LDADD = \
-	$(OPENSSL_LIBS)
-test_RemapPluginInfo_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore
+test_RemapPluginInfo_LDADD = $(COMMON_PLUGINDSO_LDADDS)
+test_RemapPluginInfo_LDFLAGS = $(AM_LDFLAGS)
 test_RemapPluginInfo_SOURCES = \
 	unit-tests/plugin_testing_common.cc \
 	unit-tests/plugin_testing_calls.cc \
@@ -109,6 +124,8 @@ DSO_LDFLAGS = \
 pkglib_LTLIBRARIES = \
 	unit-tests/plugin_v1.la \
 	unit-tests/plugin_v2.la \
+	unit-tests/plugin_init_fail.la \
+	unit-tests/plugin_instinit_fail.la \
 	unit-tests/plugin_required_cb.la \
 	unit-tests/plugin_missing_deleteinstance.la \
 	unit-tests/plugin_missing_doremap.la \
@@ -121,6 +138,12 @@ unit_tests_plugin_v1_la_CPPFLAGS = -DPLUGINDSOVER=1 $(AM_CPPFLAGS)
 unit_tests_plugin_v2_la_SOURCES = unit-tests/plugin_misc_cb.cc
 unit_tests_plugin_v2_la_LDFLAGS = $(DSO_LDFLAGS)
 unit_tests_plugin_v2_la_CPPFLAGS = -DPLUGINDSOVER=2 $(AM_CPPFLAGS)
+unit_tests_plugin_init_fail_la_SOURCES = unit-tests/plugin_init_fail.cc
+unit_tests_plugin_init_fail_la_LDFLAGS = $(DSO_LDFLAGS)
+unit_tests_plugin_init_fail_la_CPPFLAGS = $(AM_CPPFLAGS)
+unit_tests_plugin_instinit_fail_la_SOURCES = unit-tests/plugin_instinit_fail.cc
+unit_tests_plugin_instinit_fail_la_LDFLAGS = $(DSO_LDFLAGS)
+unit_tests_plugin_instinit_fail_la_CPPFLAGS = $(AM_CPPFLAGS)
 unit_tests_plugin_required_cb_la_SOURCES = unit-tests/plugin_required_cb.cc
 unit_tests_plugin_required_cb_la_LDFLAGS = $(DSO_LDFLAGS)
 unit_tests_plugin_required_cb_la_CPPFLAGS = -DPLUGINDSOVER=1 $(AM_CPPFLAGS)

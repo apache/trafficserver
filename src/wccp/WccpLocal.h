@@ -296,7 +296,7 @@ public:
   );
   /// Access const element.
   RouterAssignElt const &elt(int idx ///< Index of target element.
-                             ) const;
+  ) const;
   /// Get the number of elements.
   uint32_t getCount() const;
   //@}
@@ -537,7 +537,7 @@ public:
   uint32_t getCount() const;
   /// Get a cache address.
   uint32_t getAddr(int idx ///< Index of target address.
-                   ) const;
+  ) const;
   /// Set a cache address.
   self &setAddr(int idx,      ///< Index of target address.
                 uint32_t addr ///< Address value to set.
@@ -547,7 +547,7 @@ public:
   );
   /// Access a const bucket.
   Bucket const &operator[](size_t idx ///< Bucket index (0..N_BUCKETS-1)
-                           ) const;
+  ) const;
   //@}
 
   /** Do a round robin assignment.
@@ -1046,7 +1046,7 @@ public:
   );
 
   bool validate(MsgBuffer const &msg ///< Message data.
-                ) const;
+  ) const;
 
 protected:
   /// Local to this message shared key / password.
@@ -1105,7 +1105,7 @@ public:
 
   /// Get a port value.
   uint16_t getPort(int idx ///< Index of target port.
-                   ) const;
+  ) const;
   /// Set a port value.
   self &setPort(int idx,      ///< Index of port.
                 uint16_t port ///< Value for port.
@@ -1195,7 +1195,7 @@ public:
   uint32_t getFromCount() const;
   /// Get received from address.
   uint32_t getFromAddr(int idx ///< Index of address.
-                       ) const;
+  ) const;
   /// Set received from address.
   self &setFromAddr(int idx,      ///< Index of address.
                     uint32_t addr ///< Address value.
@@ -1335,14 +1335,14 @@ public:
   );
   /// Access cache element.
   CacheIdBox const &cacheId(int idx ///< Index of target element.
-                            ) const;
+  ) const;
   /// Get router count field.
   /// @note No @c setf method because this cannot be changed independently.
   /// @see fill
   uint32_t getRouterCount() const;
   /// Get router address.
   uint32_t getRouterAddr(int idx ///< Index of router.
-                         ) const;
+  ) const;
   /// Set router address.
   self &setRouterAddr(int idx,      ///< Index of router.
                       uint32_t addr ///< Address value.
@@ -1418,7 +1418,7 @@ public:
   uint32_t getCacheCount() const;
   /// Get a cache address.
   uint32_t getCacheAddr(int idx ///< Index of target address.
-                        ) const;
+  ) const;
   /// Set a cache address.
   self &setCacheAddr(int idx,      ///< Index of target address.
                      uint32_t addr ///< Address value to set.
@@ -1499,7 +1499,7 @@ public:
   uint32_t getCacheCount() const;
   /// Get a cache address.
   uint32_t getCacheAddr(int idx ///< Index of target address.
-                        ) const;
+  ) const;
   /// Set a cache address.
   self &setCacheAddr(int idx,      ///< Index of target address.
                      uint32_t addr ///< Address value to set.
@@ -1509,7 +1509,7 @@ public:
   );
   /// Access a bucket.
   Bucket const &bucket(int idx ///< Index of target bucket.
-                       ) const;
+  ) const;
   //@}
 
   /// Fill out the component from an @c Assignment.
@@ -1560,7 +1560,7 @@ public:
   CapabilityElt &elt(int idx ///< Index of target element.
   );
   CapabilityElt const &elt(int idx ///< Index of target element.
-                           ) const;
+  ) const;
   /// Get the element count.
   /// @note No corresponding @c setf_ because that cannot be changed once set.
   /// @see fill
@@ -2268,7 +2268,7 @@ protected:
   /// @return Security option to use during message fill.
   SecurityOption setSecurity(BaseMsg &msg,          ///< Message.
                              GroupData const &group ///< Group data used to control fill.
-                             ) const;
+  ) const;
   /// Validate a security component.
   bool validateSecurity(BaseMsg &msg,          ///< Message data (including security component).
                         GroupData const &group ///< Group data for message.
@@ -2301,11 +2301,11 @@ namespace detail
       /// Time until next packet.
       /// @return Seconds until a packet should be sent.
       time_t waitTime(time_t now ///< Current time.
-                      ) const;
+      ) const;
       /// Time till next ping.
       /// @return Seconds until a HERE_I_AM should be sent.
       time_t pingTime(time_t now ///< Current time.
-                      ) const;
+      ) const;
 
       uint32_t m_addr;       ///< Router identifying IP address.
       uint32_t m_generation; ///< Router's view change number.
@@ -2406,7 +2406,7 @@ namespace detail
       /// Time until next event.
       /// @return The number of seconds until the next event of interest.
       time_t waitTime(time_t now ///< Current time.
-                      ) const;
+      ) const;
 
       /** Cull routers.
           Routers that have not replied recently are moved from the
@@ -2503,7 +2503,7 @@ public:
   */
   virtual ts::Errata checkRouterAssignment(GroupData const &group,    ///< Group with assignment.
                                            RouterViewComp const &comp ///< Assignment reported by router.
-                                           ) const;
+  ) const;
 
 protected:
   /// Generate contents in HERE_I_AM @a msg for seed router.

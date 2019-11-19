@@ -815,6 +815,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   bool result = true;
   if (nullptr == pi) {
     snprintf(errbuf, errbufsize, "%s", error.c_str());
+    result = false;
   } else {
     mp->add_plugin_instance(pi);
   }
@@ -1329,7 +1330,7 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
 
   /* Now after we parsed the configuration and (re)loaded plugins and plugin instances
    * accordingly notify all plugins that we are done */
-  rewrite->pluginFactory.indicatePostReload(status ? TS_SUCCESS : TS_ERROR);
+  rewrite->pluginFactory.indicatePostReload(status);
 
   return status;
 }

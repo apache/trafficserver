@@ -613,6 +613,18 @@ public:
     return _client_transaction_id;
   }
 
+  int
+  client_transaction_priority_weight() const
+  {
+    return _client_transaction_priority_weight;
+  }
+
+  int
+  client_transaction_priority_dependence() const
+  {
+    return _client_transaction_priority_dependence;
+  }
+
   void set_server_netvc_inactivity_timeout(NetVConnection *netvc);
   void set_server_netvc_active_timeout(NetVConnection *netvc);
   void set_server_netvc_connect_timeout(NetVConnection *netvc);
@@ -621,6 +633,7 @@ public:
 private:
   PostDataBuffers _postbuf;
   int _client_connection_id = -1, _client_transaction_id = -1;
+  int _client_transaction_priority_weight = -1, _client_transaction_priority_dependence = -1;
 };
 
 // Function to get the cache_sm object - YTS Team, yamsat

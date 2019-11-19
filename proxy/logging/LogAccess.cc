@@ -2556,6 +2556,38 @@ LogAccess::marshal_client_http_transaction_id(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_http_transaction_priority_weight(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      id = m_http_sm->client_transaction_priority_weight();
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_client_http_transaction_priority_dependence(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      id = m_http_sm->client_transaction_priority_dependence();
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_http_header_field(LogField::Container container, char *field, char *buf)
 {
   char *str        = nullptr;
@@ -2841,7 +2873,10 @@ LogAccess::set_http_header_field(LogField::Container container, char *field, cha
       // Loop over dups, update each of them
       //
       while (fld) {
-        header->value_set((const char *)field, static_cast<int>(::strlen(field)), buf, len);
+        // make sure to reuse header heaps as otherwise
+        // coalesce logic in header heap may free up
+        // memory pointed to by cquuc or other log fields
+        header->field_value_set(fld, buf, len, true);
         fld = fld->m_next_dup;
       }
     }

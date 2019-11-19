@@ -33,6 +33,7 @@
 #include "HttpDebugNames.h"
 #include <ctime>
 #include "tscore/ParseRules.h"
+#include "tscore/Filenames.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "logging/Log.h"
@@ -654,6 +655,14 @@ HttpTransact::StartRemapRequest(State *s)
   }
 
   TxnDebug("http_trans", "END HttpTransact::StartRemapRequest");
+
+  TxnDebug("http_trans", "Checking if transaction wants to upgrade");
+  if (handle_upgrade_request(s)) {
+    // everything should be handled by the upgrade handler.
+    TxnDebug("http_trans", "Transaction will be upgraded by the appropriate upgrade handler.");
+    return;
+  }
+
   TRANSACT_RETURN(SM_ACTION_API_PRE_REMAP, HttpTransact::PerformRemap);
 }
 
@@ -845,6 +854,9 @@ done:
 bool
 HttpTransact::handle_upgrade_request(State *s)
 {
+  HTTPHdr &request = s->hdr_info.client_request;
+  s->method        = request.method_get_wksidx();
+
   // Quickest way to determine that this is defintely not an upgrade.
   /* RFC 6455 The method of the request MUST be GET, and the HTTP version MUST
         be at least 1.1. */
@@ -957,7 +969,7 @@ HttpTransact::handle_websocket_upgrade_pre_remap(State *s)
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
   }
 
-  TRANSACT_RETURN(SM_ACTION_API_READ_REQUEST_HDR, HttpTransact::StartRemapRequest);
+  TRANSACT_RETURN(SM_ACTION_API_PRE_REMAP, HttpTransact::PerformRemap);
 }
 
 void
@@ -1002,7 +1014,7 @@ HttpTransact::ModifyRequest(State *s)
   bootstrap_state_variables_from_request(s, &request);
 
   ////////////////////////////////////////////////
-  // If there is no scheme default to http      //
+  // If there is no scheme, default to http      //
   ////////////////////////////////////////////////
   URL *url = request.url_get();
 
@@ -1071,13 +1083,6 @@ HttpTransact::ModifyRequest(State *s)
   }
 
   TxnDebug("http_trans", "END HttpTransact::ModifyRequest");
-  TxnDebug("http_trans", "Checking if transaction wants to upgrade");
-
-  if (handle_upgrade_request(s)) {
-    // everything should be handled by the upgrade handler.
-    TxnDebug("http_trans", "Transaction will be upgraded by the appropriate upgrade handler.");
-    return;
-  }
 
   TRANSACT_RETURN(SM_ACTION_API_READ_REQUEST_HDR, HttpTransact::StartRemapRequest);
 }
@@ -1118,7 +1123,7 @@ HttpTransact::HandleRequest(State *s)
 {
   TxnDebug("http_trans", "START HttpTransact::HandleRequest");
 
-  if (!s->state_machine->is_waiting_for_full_body) {
+  if (!s->state_machine->is_waiting_for_full_body && !s->state_machine->is_using_post_buffer) {
     ink_assert(!s->hdr_info.server_request.valid());
 
     HTTP_INCREMENT_DYN_STAT(http_incoming_requests_stat);
@@ -1332,7 +1337,6 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   s->server_info.http_version.set(1, 0);
   s->server_info.keep_alive                  = HTTP_NO_KEEPALIVE;
   s->host_db_info.app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_10;
-  s->host_db_info.app.http_data.pipeline_max = 1;
   s->server_info.dst_addr.setToAnyAddr(AF_INET);                                 // must set an address or we can't set the port.
   s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // this is the info that matters.
 
@@ -1817,11 +1821,6 @@ HttpTransact::DecideCacheLookup(State *s)
     }
   }
 
-  if (service_transaction_in_proxy_only_mode(s)) {
-    s->cache_info.action = CACHE_DO_NO_ACTION;
-    s->current.mode      = TUNNELLING_PROXY;
-    HTTP_INCREMENT_DYN_STAT(http_throttled_proxy_only_stat);
-  }
   // at this point the request is ready to continue down the
   // traffic server path.
 
@@ -2896,7 +2895,6 @@ HttpTransact::handle_cache_write_lock(State *s)
       }
 
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-      return;
     default:
       s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
       remove_ims                 = true;
@@ -2904,14 +2902,25 @@ HttpTransact::handle_cache_write_lock(State *s)
     }
     break;
   case CACHE_WL_READ_RETRY:
-    //  Write failed but retried and got a vector to read
-    //  We need to clean up our state so that transact does
-    //  not assert later on.  Then handle the open read hit
-    //
     s->request_sent_time      = UNDEFINED_TIME;
     s->response_received_time = UNDEFINED_TIME;
     s->cache_info.action      = CACHE_DO_LOOKUP;
-    remove_ims                = true;
+    if (!s->cache_info.object_read) {
+      //  Write failed and read retry triggered
+      //  Clean up server_request and re-initiate
+      //  Cache Lookup
+      ink_assert(s->cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY);
+      s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
+      StateMachineAction_t next;
+      next           = SM_ACTION_CACHE_LOOKUP;
+      s->next_action = next;
+      s->hdr_info.server_request.destroy();
+      TRANSACT_RETURN(next, nullptr);
+    }
+    //  Write failed but retried and got a vector to read
+    //  We need to clean up our state so that transact does
+    //  not assert later on.  Then handle the open read hit
+    remove_ims = true;
     SET_VIA_STRING(VIA_DETAIL_CACHE_TYPE, VIA_DETAIL_CACHE);
     break;
   case CACHE_WL_INIT:
@@ -5214,11 +5223,6 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
   if (incoming_hdr->type_get() != HTTP_TYPE_RESPONSE) {
     return NOT_A_RESPONSE_HEADER;
   }
-  // If the response is 0.9 then there is no status
-  //   code or date
-  if (did_forward_server_send_0_9_response(s) == true) {
-    return NO_RESPONSE_HEADER_ERROR;
-  }
 
   HTTPStatus incoming_status = incoming_hdr->status_get();
   if (!incoming_status) {
@@ -5248,16 +5252,6 @@ HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
 #endif
 
   return NO_RESPONSE_HEADER_ERROR;
-}
-
-bool
-HttpTransact::did_forward_server_send_0_9_response(State *s)
-{
-  if (s->hdr_info.server_response.version_get() == HTTPVersion(0, 9)) {
-    s->current.server->http_version.set(0, 9);
-    return true;
-  }
-  return false;
 }
 
 bool
@@ -5436,10 +5430,6 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
       s->http_config_param->keepalive_internal_vc ? incoming_request->keep_alive_get() : HTTP_NO_KEEPALIVE;
   } else {
     s->client_info.keep_alive = incoming_request->keep_alive_get();
-  }
-
-  if (s->client_info.keep_alive == HTTP_KEEPALIVE && s->client_info.http_version == HTTPVersion(1, 1)) {
-    s->client_info.pipeline_possible = true;
   }
 
   if (!s->server_info.name || s->redirect_info.redirect_in_process) {
@@ -6061,8 +6051,8 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     // If a ttl is set, allow caching even if response contains
     // Cache-Control headers to prevent caching
     if (s->cache_control.ttl_in_cache > 0) {
-      TxnDebug("http_trans",
-               "[is_response_cacheable] Cache-control header directives in response overridden by ttl in cache.config");
+      TxnDebug("http_trans", "[is_response_cacheable] Cache-control header directives in response overridden by ttl in %s",
+               ts::filename::CACHE);
     } else {
       TxnDebug("http_trans", "[is_response_cacheable] NO by response cache control");
       return false;
@@ -6323,28 +6313,6 @@ HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
     s->current.state = BAD_INCOMING_RESPONSE;
     return false;
   }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Name       : service_transaction_in_proxy_only_mode
-// Description: uses some metric to force this transaction to be proxy-only
-//
-// Details    :
-//
-// Some metric may be employed to force the traffic server to enter
-// a proxy-only mode temporarily. This function is called to determine
-// if the current transaction should be proxy-only. The function is
-// called from initialize_state_variables_from_request and is used to
-// set s->current.mode to TUNNELLING_PROXY and just for safety to set
-// s->cache_info.action to CACHE_DO_NO_ACTION.
-//
-// Currently the function is just a placeholder and always returns false.
-//
-///////////////////////////////////////////////////////////////////////////////
-bool
-HttpTransact::service_transaction_in_proxy_only_mode(State * /* s ATS_UNUSED */)
-{
-  return false;
 }
 
 void
@@ -6757,11 +6725,10 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     // to the client to keep the connection alive.
     // Insert a Transfer-Encoding header in the response if necessary.
 
-    // check that the client is HTTP 1.1 and the conf allows chunking or the client
-    // protocol unchunks before returning to the user agent (i.e. is http/2)
-    if (s->client_info.http_version == HTTPVersion(1, 1) &&
-        (s->txn_conf->chunking_enabled == 1 ||
-         (s->state_machine->plugin_tag && (!strncmp(s->state_machine->plugin_tag, "http/2", 6)))) &&
+    // check that the client protocol is HTTP/1.1 and the conf allows chunking or
+    // the client protocol doesn't support chunked transfer coding (i.e. HTTP/1.0, HTTP/2, and HTTP/3)
+    if (s->state_machine->ua_txn && s->state_machine->ua_txn->is_chunked_encoding_supported() &&
+        s->client_info.http_version == HTTPVersion(1, 1) && s->txn_conf->chunking_enabled == 1 &&
         // if we're not sending a body, don't set a chunked header regardless of server response
         !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
         // we do not need chunked encoding for internal error messages
@@ -6794,10 +6761,12 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
 
     // Close the connection if client_info is not keep-alive.
     // Otherwise, if we cannot trust the content length, we will close the connection
-    // unless we are going to use chunked encoding or the client issued
-    // a PUSH request
+    // unless we are going to use chunked encoding on HTTP/1.1 or the client issued a PUSH request
     if (s->client_info.keep_alive != HTTP_KEEPALIVE) {
       ka_action = KA_DISABLED;
+    } else if (s->state_machine->client_protocol && (IP_PROTO_TAG_HTTP_3.compare(s->state_machine->client_protocol) == 0 ||
+                                                     strncmp(s->state_machine->client_protocol, "http/2", 6) == 0)) {
+      ka_action = KA_CONNECTION;
     } else if (s->hdr_info.trust_response_cl == false &&
                !(s->client_info.receive_chunked_response == true ||
                  (s->method == HTTP_WKSIDX_PUSH && s->client_info.keep_alive == HTTP_KEEPALIVE))) {
@@ -7985,24 +7954,6 @@ HttpTransact::build_redirect_response(State *s)
   h->value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/html", 9);
 
   s->arena.str_free(to_free);
-}
-
-void
-HttpTransact::build_upgrade_response(State *s)
-{
-  TxnDebug("http_upgrade", "[HttpTransact::build_upgrade_response]");
-
-  // 101 Switching Protocols
-  HTTPStatus status_code    = HTTP_STATUS_SWITCHING_PROTOCOL;
-  const char *reason_phrase = http_hdr_reason_lookup(status_code);
-  build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status_code, reason_phrase);
-
-  //////////////////////////
-  // set upgrade headers  //
-  //////////////////////////
-  HTTPHdr *h = &s->hdr_info.client_response;
-  h->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "Upgrade", strlen("Upgrade"));
-  h->value_set(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE, MIME_UPGRADE_H2C_TOKEN, strlen(MIME_UPGRADE_H2C_TOKEN));
 }
 
 const char *

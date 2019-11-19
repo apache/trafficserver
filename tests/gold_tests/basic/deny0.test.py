@@ -18,7 +18,6 @@ Test that Trafficserver rejects requests for host 0
 #  limitations under the License.
 
 import os
-import socket
 Test.Summary = '''
 Test that Trafficserver rejects requests for host 0
 '''

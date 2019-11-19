@@ -56,10 +56,6 @@ inkcoreapi extern int64_t max_iobuffer_size;
 extern int64_t default_small_iobuffer_size;
 extern int64_t default_large_iobuffer_size; // matched to size of OS buffers
 
-#if !defined(TRACK_BUFFER_USER)
-#define TRACK_BUFFER_USER 1
-#endif
-
 enum AllocType {
   NO_ALLOC,
   MEMALIGNED,
@@ -231,9 +227,7 @@ public:
   */
   char *_data = nullptr;
 
-#ifdef TRACK_BUFFER_USER
   const char *_location = nullptr;
-#endif
 
   /**
     Constructor. Initializes state for a IOBufferData object. Do not use
@@ -447,9 +441,6 @@ public:
   */
   void set(IOBufferData *d, int64_t len = 0, int64_t offset = 0);
   void set_internal(void *b, int64_t len, int64_t asize_index);
-  void realloc_set_internal(void *b, int64_t buf_size, int64_t asize_index);
-  void realloc(void *b, int64_t buf_size);
-  void realloc(int64_t i);
 
   /**
     Frees the IOBufferBlock object and its underlying memory.
@@ -464,9 +455,7 @@ public:
   char *_end     = nullptr;
   char *_buf_end = nullptr;
 
-#ifdef TRACK_BUFFER_USER
   const char *_location = nullptr;
-#endif
 
   /**
     The underlying reference to the allocated memory. A reference to a
@@ -1008,8 +997,6 @@ public:
   */
   int64_t write(IOBufferChain const *chain, int64_t len = INT64_MAX, int64_t offset = 0);
 
-  int64_t remove_append(IOBufferReader *);
-
   /**
     Returns a pointer to the first writable block on the block chain.
     Returns nullptr if there are not currently any writable blocks on the
@@ -1085,16 +1072,6 @@ public:
   int64_t block_size();
 
   /**
-    Returns the default data block size for this buffer.
-
-  */
-  int64_t
-  total_size()
-  {
-    return block_size();
-  }
-
-  /**
     Returns true if amount of the data outstanding on the buffer exceeds
     the watermark.
 
@@ -1102,7 +1079,7 @@ public:
   bool
   high_water()
   {
-    return max_read_avail() > water_mark;
+    return is_max_read_avail_more_than(this->water_mark);
   }
 
   /**
@@ -1127,7 +1104,6 @@ public:
   {
     return current_write_avail() <= water_mark;
   }
-  void set_size_index(int64_t size);
 
   /**
     Allocates a new IOBuffer reader and sets it's its 'accessor' field
@@ -1175,16 +1151,26 @@ public:
   void alloc(int64_t i = default_large_iobuffer_size);
   void append_block_internal(IOBufferBlock *b);
   int64_t write(IOBufferBlock const *b, int64_t len, int64_t offset);
-  int64_t puts(char *buf, int64_t len);
 
   // internal interface
 
-  bool
-  empty()
-  {
-    return !_writer;
-  }
+  /**
+    Get the maximum amount of available data across all of the readers.
+    If there're no allocated reader, return available data size of current writer.
+
+    This calls IOBufferReader::read_avail() and it could be expensive when it has a ton of IOBufferBlock.
+    The `is_max_read_avail(int64_t size)` is preferred if possible.
+
+    @return maximum amount of available data
+   */
   int64_t max_read_avail();
+
+  /**
+    Check if there is more than @a size bytes available to read.
+
+    @return @c true if more than @a size byte are available.
+  */
+  bool is_max_read_avail_more_than(int64_t size);
 
   int max_block_count();
   void check_add_block();
@@ -1229,17 +1215,6 @@ public:
     water_mark = 0;
   }
 
-  void
-  realloc(int64_t i)
-  {
-    _writer->realloc(i);
-  }
-  void
-  realloc(void *b, int64_t buf_size)
-  {
-    _writer->realloc(b, buf_size);
-  }
-
   int64_t size_index;
 
   /**
@@ -1255,9 +1230,7 @@ public:
   Ptr<IOBufferBlock> _writer;
   IOBufferReader readers[MAX_MIOBUFFER_READERS];
 
-#ifdef TRACK_BUFFER_USER
   const char *_location = nullptr;
-#endif
 
   MIOBuffer(void *b, int64_t bufsize, int64_t aWater_mark);
   // cppcheck-suppress noExplicitConstructor; allow implicit conversion
@@ -1289,12 +1262,6 @@ struct MIOBufferAccessor {
     return mbuf->block_size();
   }
 
-  int64_t
-  total_size() const
-  {
-    return block_size();
-  }
-
   void reader_for(IOBufferReader *abuf);
   void reader_for(MIOBuffer *abuf);
   void writer_for(MIOBuffer *abuf);
@@ -1323,13 +1290,8 @@ private:
   IOBufferReader *entry = nullptr;
 };
 
-extern MIOBuffer *new_MIOBuffer_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *loc,
-#endif
-  int64_t size_index = default_large_iobuffer_size);
+extern MIOBuffer *new_MIOBuffer_internal(const char *loc, int64_t size_index = default_large_iobuffer_size);
 
-#ifdef TRACK_BUFFER_USER
 class MIOBuffer_tracker
 {
   const char *loc;
@@ -1342,15 +1304,9 @@ public:
     return new_MIOBuffer_internal(loc, size_index);
   }
 };
-#endif
 
-extern MIOBuffer *new_empty_MIOBuffer_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *loc,
-#endif
-  int64_t size_index = default_large_iobuffer_size);
+extern MIOBuffer *new_empty_MIOBuffer_internal(const char *loc, int64_t size_index = default_large_iobuffer_size);
 
-#ifdef TRACK_BUFFER_USER
 class Empty_MIOBuffer_tracker
 {
   const char *loc;
@@ -1363,32 +1319,17 @@ public:
     return new_empty_MIOBuffer_internal(loc, size_index);
   }
 };
-#endif
 
 /// MIOBuffer allocator/deallocator
-#ifdef TRACK_BUFFER_USER
 #define new_MIOBuffer MIOBuffer_tracker(RES_PATH("memory/IOBuffer/"))
 #define new_empty_MIOBuffer Empty_MIOBuffer_tracker(RES_PATH("memory/IOBuffer/"))
-#else
-#define new_MIOBuffer new_MIOBuffer_internal
-#define new_empty_MIOBuffer new_empty_MIOBuffer_internal
-#endif
 extern void free_MIOBuffer(MIOBuffer *mio);
 //////////////////////////////////////////////////////////////////////
 
-extern IOBufferBlock *new_IOBufferBlock_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *loc
-#endif
-);
+extern IOBufferBlock *new_IOBufferBlock_internal(const char *loc);
 
-extern IOBufferBlock *new_IOBufferBlock_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *loc,
-#endif
-  IOBufferData *d, int64_t len = 0, int64_t offset = 0);
+extern IOBufferBlock *new_IOBufferBlock_internal(const char *loc, IOBufferData *d, int64_t len = 0, int64_t offset = 0);
 
-#ifdef TRACK_BUFFER_USER
 class IOBufferBlock_tracker
 {
   const char *loc;
@@ -1406,29 +1347,16 @@ public:
     return new_IOBufferBlock_internal(loc, d.get(), len, offset);
   }
 };
-#endif
 
 /// IOBufferBlock allocator
-#ifdef TRACK_BUFFER_USER
 #define new_IOBufferBlock IOBufferBlock_tracker(RES_PATH("memory/IOBuffer/"))
-#else
-#define new_IOBufferBlock new_IOBufferBlock_internal
-#endif
 ////////////////////////////////////////////////////////////
 
-extern IOBufferData *new_IOBufferData_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *location,
-#endif
-  int64_t size_index = default_large_iobuffer_size, AllocType type = DEFAULT_ALLOC);
+extern IOBufferData *new_IOBufferData_internal(const char *location, int64_t size_index = default_large_iobuffer_size,
+                                               AllocType type = DEFAULT_ALLOC);
 
-extern IOBufferData *new_xmalloc_IOBufferData_internal(
-#ifdef TRACK_BUFFER_USER
-  const char *location,
-#endif
-  void *b, int64_t size);
+extern IOBufferData *new_xmalloc_IOBufferData_internal(const char *location, void *b, int64_t size);
 
-#ifdef TRACK_BUFFER_USER
 class IOBufferData_tracker
 {
   const char *loc;
@@ -1441,16 +1369,10 @@ public:
     return new_IOBufferData_internal(loc, size_index, type);
   }
 };
-#endif
 
 // TODO: remove new_xmalloc_IOBufferData. Because ats_xmalloc() doesn't exist anymore.
-#ifdef TRACK_BUFFER_USER
 #define new_IOBufferData IOBufferData_tracker(RES_PATH("memory/IOBuffer/"))
 #define new_xmalloc_IOBufferData(b, size) new_xmalloc_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), (b), (size))
-#else
-#define new_IOBufferData new_IOBufferData_internal
-#define new_xmalloc_IOBufferData new_xmalloc_IOBufferData_internal
-#endif
 
 extern int64_t iobuffer_size_to_index(int64_t size, int64_t max = max_iobuffer_size);
 extern int64_t index_to_buffer_size(int64_t idx);

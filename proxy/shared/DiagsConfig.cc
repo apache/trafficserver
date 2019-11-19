@@ -25,6 +25,7 @@
 #include "tscore/ink_memory.h"
 #include "tscore/ink_file.h"
 #include "tscore/I_Layout.h"
+#include "tscore/Filenames.h"
 #include "DiagsConfig.h"
 #include "records/P_RecCore.h"
 
@@ -337,7 +338,7 @@ DiagsConfig::register_diags_callbacks()
   for (i = 0; config_record_names[i] != nullptr; i++) {
     status = (REC_RegisterConfigUpdateFunc(config_record_names[i], diags_config_callback, o) == REC_ERR_OKAY);
     if (!status) {
-      Warning("couldn't register variable '%s', is records.config up to date?", config_record_names[i]);
+      Warning("couldn't register variable '%s', is %s up to date?", config_record_names[i], ts::filename::RECORDS);
     }
     total_status = total_status && status;
   }

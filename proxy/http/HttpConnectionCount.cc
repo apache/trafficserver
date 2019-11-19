@@ -22,12 +22,16 @@
  */
 
 #include <algorithm>
+#include <deque>
 #include <records/P_RecDefs.h>
+#include <HttpConfig.h>
 #include "HttpConnectionCount.h"
 #include "tscore/bwf_std_format.h"
 #include "tscore/BufferWriter.h"
 
 using namespace std::literals;
+
+extern int http_config_cb(const char *, RecDataT, RecData, void *);
 
 OutboundConnTrack::Imp OutboundConnTrack::_imp;
 
@@ -76,51 +80,55 @@ static_assert(OutboundConnTrack::Group::Clock::period::den >= 1000);
 // Configuration callback functions.
 namespace
 {
-int
+bool
 Config_Update_Conntrack_Min(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::TxnConfig *>(cookie);
 
   if (RECD_INT == dtype) {
     config->min = data.rec_int;
+    return true;
   }
-  return REC_ERR_OKAY;
+  return false;
 }
 
-int
+bool
 Config_Update_Conntrack_Max(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::TxnConfig *>(cookie);
 
   if (RECD_INT == dtype) {
     config->max = data.rec_int;
+    return true;
   }
-  return REC_ERR_OKAY;
+  return false;
 }
 
-int
+bool
 Config_Update_Conntrack_Queue_Size(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::GlobalConfig *>(cookie);
 
   if (RECD_INT == dtype) {
     config->queue_size = data.rec_int;
+    return true;
   }
-  return REC_ERR_OKAY;
+  return false;
 }
 
-int
+bool
 Config_Update_Conntrack_Queue_Delay(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::GlobalConfig *>(cookie);
 
   if (RECD_INT == dtype && data.rec_int > 0) {
     config->queue_delay = std::chrono::milliseconds(data.rec_int);
+    return true;
   }
-  return REC_ERR_OKAY;
+  return false;
 }
 
-int
+bool
 Config_Update_Conntrack_Match(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::TxnConfig *>(cookie);
@@ -130,35 +138,26 @@ Config_Update_Conntrack_Match(const char *name, RecDataT dtype, RecData data, vo
     std::string_view tag{data.rec_string};
     if (OutboundConnTrack::lookup_match_type(tag, match_type)) {
       config->match = match_type;
+      return true;
     } else {
       OutboundConnTrack::Warning_Bad_Match_Type(tag);
     }
   } else {
     Warning("Invalid type for '%s' - must be 'INT'", OutboundConnTrack::CONFIG_VAR_MATCH.data());
   }
-  return REC_ERR_OKAY;
+  return false;
 }
 
-int
+bool
 Config_Update_Conntrack_Alert_Delay(const char *name, RecDataT dtype, RecData data, void *cookie)
 {
   auto config = static_cast<OutboundConnTrack::GlobalConfig *>(cookie);
 
   if (RECD_INT == dtype && data.rec_int >= 0) {
     config->alert_delay = std::chrono::seconds(data.rec_int);
+    return true;
   }
-  return REC_ERR_OKAY;
-}
-
-// Do the initial load of a configuration var by grabbing the raw value from the records data
-// and calling the update callback. This must be a function because that's how the records
-// interface works. Everything needed is already in the record @a r.
-void
-Load_Config_Var(RecRecord const *r, void *)
-{
-  for (auto cb = r->config_meta.update_cb_list; nullptr != cb; cb = cb->next) {
-    cb->update_cb(r->name, r->data_type, r->data, cb->update_cookie);
-  }
+  return false;
 }
 
 } // namespace
@@ -169,20 +168,12 @@ OutboundConnTrack::config_init(GlobalConfig *global, TxnConfig *txn)
   _global_config = global; // remember this for later retrieval.
                            // Per transaction lookup must be done at call time because it changes.
 
-  RecRegisterConfigUpdateCb(CONFIG_VAR_MIN.data(), &Config_Update_Conntrack_Min, txn);
-  RecRegisterConfigUpdateCb(CONFIG_VAR_MAX.data(), &Config_Update_Conntrack_Max, txn);
-  RecRegisterConfigUpdateCb(CONFIG_VAR_MATCH.data(), &Config_Update_Conntrack_Match, txn);
-  RecRegisterConfigUpdateCb(CONFIG_VAR_QUEUE_SIZE.data(), &Config_Update_Conntrack_Queue_Size, global);
-  RecRegisterConfigUpdateCb(CONFIG_VAR_QUEUE_DELAY.data(), &Config_Update_Conntrack_Queue_Delay, global);
-  RecRegisterConfigUpdateCb(CONFIG_VAR_ALERT_DELAY.data(), &Config_Update_Conntrack_Alert_Delay, global);
-
-  // Load 'em up by firing off the config update callback.
-  RecLookupRecord(CONFIG_VAR_MIN.data(), &Load_Config_Var, nullptr, true);
-  RecLookupRecord(CONFIG_VAR_MAX.data(), &Load_Config_Var, nullptr, true);
-  RecLookupRecord(CONFIG_VAR_MATCH.data(), &Load_Config_Var, nullptr, true);
-  RecLookupRecord(CONFIG_VAR_QUEUE_SIZE.data(), &Load_Config_Var, nullptr, true);
-  RecLookupRecord(CONFIG_VAR_QUEUE_DELAY.data(), &Load_Config_Var, nullptr, true);
-  RecLookupRecord(CONFIG_VAR_ALERT_DELAY.data(), &Load_Config_Var, nullptr, true);
+  Enable_Config_Var(CONFIG_VAR_MIN, &Config_Update_Conntrack_Min, txn);
+  Enable_Config_Var(CONFIG_VAR_MAX, &Config_Update_Conntrack_Max, txn);
+  Enable_Config_Var(CONFIG_VAR_MATCH, &Config_Update_Conntrack_Match, txn);
+  Enable_Config_Var(CONFIG_VAR_QUEUE_SIZE, &Config_Update_Conntrack_Queue_Size, global);
+  Enable_Config_Var(CONFIG_VAR_QUEUE_DELAY, &Config_Update_Conntrack_Queue_Delay, global);
+  Enable_Config_Var(CONFIG_VAR_ALERT_DELAY, &Config_Update_Conntrack_Alert_Delay, global);
 }
 
 OutboundConnTrack::TxnState

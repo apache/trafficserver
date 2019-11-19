@@ -27,7 +27,9 @@ Traffic Server IO buffer API.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSIOBuffer TSIOBufferCreate(void)
 .. function:: TSIOBuffer TSIOBufferSizedCreate(TSIOBufferSizeIndex index)

@@ -24,7 +24,9 @@ TSConfig Functions
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. type:: void (*TSConfigDestroyFunc)(void*)
 .. function:: unsigned int TSConfigSet(unsigned int id, void * data, TSConfigDestroyFunc funcp)

@@ -24,7 +24,9 @@ TSMimeHdrFieldCreate
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc hdr, TSMLoc * out)
 .. function:: TSReturnCode TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc hdr, const char * name, int name_len, TSMLoc * out)

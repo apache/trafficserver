@@ -27,6 +27,12 @@
 #include <iosfwd>
 
 #include "tscore/ink_assert.h"
+
+#if defined(UNIT_TEST_BUFFER_WRITER)
+#undef ink_assert
+#define ink_assert ink_release_assert
+#endif
+
 #include "tscore/BufferWriter.h"
 
 #if !defined(UNIT_TEST_BUFFER_WRITER)

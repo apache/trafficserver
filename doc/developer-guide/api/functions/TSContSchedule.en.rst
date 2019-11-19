@@ -24,7 +24,9 @@ TSContSchedule
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSAction TSContSchedule(TSCont contp, TSHRTime timeout)
 

@@ -26,7 +26,6 @@
 
 **************************************************************************/
 #include "tscore/ink_defs.h"
-#include "I_MIOBufferWriter.h"
 #include "P_EventSystem.h"
 
 //
@@ -63,26 +62,6 @@ init_buffer_allocators(int iobuffer_advice)
 //
 // MIOBuffer
 //
-int64_t
-MIOBuffer::remove_append(IOBufferReader *r)
-{
-  int64_t l = 0;
-  while (r->block) {
-    Ptr<IOBufferBlock> b = r->block;
-    r->block             = r->block->next;
-    b->_start += r->start_offset;
-    if (b->start() >= b->end()) {
-      r->start_offset = -r->start_offset;
-      continue;
-    }
-    r->start_offset = 0;
-    l += b->read_avail();
-    append_block(b.get());
-  }
-  r->mbuf->_writer = nullptr;
-  return l;
-}
-
 int64_t
 MIOBuffer::write(const void *abuf, int64_t alen)
 {
@@ -154,26 +133,24 @@ MIOBuffer::write(IOBufferBlock const *b, int64_t alen, int64_t offset)
   return alen - len;
 }
 
-int64_t
-MIOBuffer::puts(char *s, int64_t len)
+bool
+MIOBuffer::is_max_read_avail_more_than(int64_t size)
 {
-  char *pc = end();
-  char *pb = s;
-  while (pc < buf_end()) {
-    if (len-- <= 0) {
-      return -1;
+  bool no_reader = true;
+  for (auto &reader : this->readers) {
+    if (reader.allocated()) {
+      if (reader.is_read_avail_more_than(size)) {
+        return true;
+      }
+      no_reader = false;
     }
-    if (!*pb || *pb == '\n') {
-      int64_t n = static_cast<int64_t>(pb - s);
-      memcpy(end(), s, n + 1); // Up to and including '\n'
-      end()[n + 1] = 0;
-      fill(n + 1);
-      return n + 1;
-    }
-    pc++;
-    pb++;
   }
-  return 0;
+
+  if (no_reader && this->_writer) {
+    return (this->_writer->read_avail() > size);
+  }
+
+  return false;
 }
 
 //
@@ -354,81 +331,6 @@ IOBufferChain::consume(int64_t size)
   _len -= zret;
   if (_head == nullptr || _len == 0) {
     _head = nullptr, _tail = nullptr, _len = 0;
-  }
-  return zret;
-}
-
-//
-// MIOBufferWriter
-//
-MIOBufferWriter &
-MIOBufferWriter::write(const void *data_, size_t length)
-{
-  const char *data = static_cast<const char *>(data_);
-
-  while (length) {
-    IOBufferBlock *iobbPtr = _miob->first_write_block();
-
-    if (!iobbPtr) {
-      addBlock();
-
-      iobbPtr = _miob->first_write_block();
-
-      ink_assert(iobbPtr);
-    }
-
-    size_t writeSize = iobbPtr->write_avail();
-
-    if (length < writeSize) {
-      writeSize = length;
-    }
-
-    std::memcpy(iobbPtr->end(), data, writeSize);
-    iobbPtr->fill(writeSize);
-
-    data += writeSize;
-    length -= writeSize;
-
-    _numWritten += writeSize;
-  }
-
-  return *this;
-}
-
-std::ostream &
-MIOBufferWriter::operator>>(std::ostream &stream) const
-{
-  IOBufferReader *r = _miob->alloc_reader();
-  if (r) {
-    IOBufferBlock *b;
-    while (nullptr != (b = r->get_current_block())) {
-      auto n = b->read_avail();
-      stream.write(b->start(), n);
-      r->consume(n);
-    }
-    _miob->dealloc_reader(r);
-  }
-  return stream;
-}
-
-ssize_t
-MIOBufferWriter::operator>>(int fd) const
-{
-  ssize_t zret           = 0;
-  IOBufferReader *reader = _miob->alloc_reader();
-  if (reader) {
-    IOBufferBlock *b;
-    while (nullptr != (b = reader->get_current_block())) {
-      auto n = b->read_avail();
-      auto r = ::write(fd, b->start(), n);
-      if (r <= 0) {
-        break;
-      } else {
-        reader->consume(r);
-        zret += r;
-      }
-    }
-    _miob->dealloc_reader(reader);
   }
   return zret;
 }

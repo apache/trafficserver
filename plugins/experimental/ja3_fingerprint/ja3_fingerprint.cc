@@ -302,7 +302,7 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
 #error OpenSSL cannot be 1.1.0
 #endif
 
-    TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
+    TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
 
     // OpenSSL handle
     SSL *ssl = reinterpret_cast<SSL *>(sslobj);

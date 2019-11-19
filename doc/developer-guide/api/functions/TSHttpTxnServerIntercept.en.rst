@@ -27,7 +27,9 @@ Intercept origin server requests.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
 

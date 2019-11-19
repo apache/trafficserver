@@ -53,11 +53,11 @@ Key type
 
 The plugin manipulates the `cache key` by default. If `parent selection URL` manipulation is needed the following option can be used:
 
-* ``--key-type=[cache_key|parent_selection_url]`` (default: ``cache_key``)
+* ``--key-type=<list of target types>``  (default: ``cache_key``) - list of ``cache_key`` or ``parent_selection_url``, if multiple ``--key-type`` options are specified then all values are combined together.
 
-One instance of this plugin can used either for `cache key` or `parent selection URL` manupulation but never both.
-If `simultaneous cache key and parent selection URL manipulation`_ is needed two separate instances of the plugin
-have to be loaded for each key type.
+An instance of this plugin can be used for applying manipulations to `cache key`, `parent selection URL` or both depending on the need. See `simultaneous cache key and parent selection URL manipulation`_
+for examples of how to apply the **same** set of manipulations to both targets with a single plugin instance or applying **different** sets of manipulations to each target using separate plugin instances.
+
 
 Cache key structure and related plugin parameters
 =================================================
@@ -83,21 +83,21 @@ Cache key structure and related plugin parameters
 
 ::
 
-  Optional components      | ┌─────────────────┬────────────── ───┬──────────────────────┐
-  (included in this order) | │ --static-prefix | --capture-prefix │ --capture-prefix-uri │
+  Optional components      | ┌─────────────────┬──────────────────┬──────────────────────┐
+  (included in this order) | │ --static-prefix │ --capture-prefix │ --capture-prefix-uri │
                            | ├─────────────────┴──────────────────┴──────────────────────┤
-  Default values if no     | │ /host/port or scheme://host:port (see the table below)    |
+  Default values if no     | │ /host/port or scheme://host:port (see the table below)    │
   optional components      | └───────────────────────────────────────────────────────────┘
   configured               |
 
   ┌────────────────────┬─────────────────────────┬──────────────────────┐
-  │ --canonical-prefix |  default value if no    │ input used for       │
-  │                    |  prefix parameters used │ --capture-prefix     │
-  ├────────────────────┴─────────────────────────┴──────────────────────┤
-  │ false              | /host/port              | host:port            |
-  ├────────────────────┴─────────────────────────┴──────────────────────┤
-  │ true               | scheme://host:port      | scheme://host:port   |
-  └──────────────────────────────────────────────┴──────────────────────┘
+  │ --canonical-prefix │  default value if no    │ input used for       │
+  │                    │  prefix parameters used │ --capture-prefix     │
+  ├────────────────────┼─────────────────────────┼──────────────────────┤
+  │ false              │ /host/port              │ host:port            │
+  ├────────────────────┼─────────────────────────┼──────────────────────┤
+  │ true               │ scheme://host:port      │ scheme://host:port   │
+  └────────────────────┴─────────────────────────┴──────────────────────┘
 
 
 * ``--static-prefix=<value>`` (default: empty string) - if specified and not an empty string the ``<value>`` will be added to the `cache key`.
@@ -114,9 +114,9 @@ Cache key structure and related plugin parameters
 ::
 
   Optional components      | ┌────────────┬──────────────┐
-  (included in this order) | │ --ua-class | --ua-capture │
+  (included in this order) | │ --ua-class │ --ua-capture │
                            | ├────────────┴──────────────┤
-  Default values if no     | │ (empty)                   |
+  Default values if no     | │ (empty)                   │
   optional components      | └───────────────────────────┘
   configured               |
 
@@ -135,8 +135,8 @@ Cache key structure and related plugin parameters
 
   Optional components      | ┌───────────────────┬───────────────────┐
                            | │ --include-headers │  --capture-header │
-                           | ├───────────────────────────────────────┤
-  Default values if no     | │ (empty)           |  (empty)          |
+                           | ├───────────────────┼───────────────────┤
+  Default values if no     | │ (empty)           │  (empty)          │
   optional components      | └───────────────────┴───────────────────┘
   configured               |
 
@@ -152,7 +152,7 @@ Cache key structure and related plugin parameters
   Optional components      | ┌───────────────────┐
                            | │ --include-cookies │
                            | ├───────────────────┤
-  Default values if no     | │ (empty)           |
+  Default values if no     | │ (empty)           │
   optional components      | └───────────────────┘
   configured               |
 
@@ -164,9 +164,9 @@ Cache key structure and related plugin parameters
 ::
 
   Optional components      | ┌────────────────────┬────────────────┐
-  (included in this order) | │ --capture-path-uri | --capture-path │
+  (included in this order) | │ --capture-path-uri │ --capture-path │
                            | ├────────────────────┴────────────────┤
-  Default values if no     | │ URI path                            |
+  Default values if no     | │ URI path                            │
   optional components      | └─────────────────────────────────────┘
   configured               |
 
@@ -664,3 +664,20 @@ For this purpose two separate instances are loaded for that remap rule:
 
 In the example above the first instance of the plugin sets the prefix to the parent selection URI and
 the second instance of the plugin sets the prefix to the cache key.
+
+The **same** string manipulations can be applied to both cache key and parent selection url more concisely without chaining cachekey plugin instances by specifying multiple target types `--key-type`.
+
+Instead of::
+
+    @plugin=cachekey.so \
+        @pparam=--key-type=parent_selection_url \
+        @pparam=--remove-all-params=true
+    @plugin=cachekey.so \
+        @pparam=--key-type=cache_key \
+        @pparam=--remove-all-params=true
+
+one could write::
+
+    @plugin=cachekey.so \
+        @pparam=--key-type=parent_selection_url,cache_key \
+        @pparam=--remove-all-params=true
