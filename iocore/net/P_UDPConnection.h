@@ -35,19 +35,17 @@
 class UDPConnectionInternal : public UDPConnection
 {
 public:
-  UDPConnectionInternal();
+  UDPConnectionInternal() = default;
   ~UDPConnectionInternal() override;
 
   Continuation *continuation = nullptr;
-  int recvActive             = 0; // interested in receiving
   int refcount               = 0; // public for assertion
 
-  SOCKET fd;
-  IpEndpoint binding;
-  int binding_valid = 0;
-  int tobedestroyed = 0;
-  int sendGenerationNum;
-  int64_t lastSentPktTSSeqNum;
+  SOCKET fd = -1;
+  IpEndpoint binding{};
+  bool binding_valid    = false;
+  int tobedestroyed     = 0;
+  int sendGenerationNum = 0;
 
   // this is for doing packet scheduling: we keep two values so that we can
   // implement cancel.  The first value tracks the startTime of the last
@@ -55,19 +53,9 @@ public:
   // startTime of the last packet when we are doing scheduling;  whenever the
   // associated continuation cancels a packet, we rest lastPktStartTime to be
   // the same as the lastSentPktStartTime.
-  uint64_t lastSentPktStartTime;
-  uint64_t lastPktStartTime;
+  uint64_t lastSentPktStartTime = 0;
+  uint64_t lastPktStartTime     = 0;
 };
-
-TS_INLINE
-UDPConnectionInternal::UDPConnectionInternal() : fd(-1)
-{
-  sendGenerationNum    = 0;
-  lastSentPktTSSeqNum  = -1;
-  lastSentPktStartTime = 0;
-  lastPktStartTime     = 0;
-  memset(&binding, 0, sizeof binding);
-}
 
 TS_INLINE
 UDPConnectionInternal::~UDPConnectionInternal()
@@ -87,7 +75,7 @@ UDPConnection::setBinding(struct sockaddr const *s)
 {
   UDPConnectionInternal *p = static_cast<UDPConnectionInternal *>(this);
   ats_ip_copy(&p->binding, s);
-  p->binding_valid = 1;
+  p->binding_valid = true;
 }
 
 TS_INLINE void
@@ -97,10 +85,10 @@ UDPConnection::setBinding(IpAddr const &ip, in_port_t port)
   IpEndpoint addr;
   addr.assign(ip, htons(port));
   ats_ip_copy(&p->binding, addr);
-  p->binding_valid = 1;
+  p->binding_valid = true;
 }
 
-TS_INLINE int
+TS_INLINE bool
 UDPConnection::getBinding(struct sockaddr *s)
 {
   UDPConnectionInternal *p = static_cast<UDPConnectionInternal *>(this);
@@ -142,22 +130,6 @@ TS_INLINE int
 UDPConnection::getPortNum()
 {
   return ats_ip_port_host_order(&static_cast<UDPConnectionInternal *>(this)->binding);
-}
-
-TS_INLINE int64_t
-UDPConnection::cancel()
-{
-  UDPConnectionInternal *p = static_cast<UDPConnectionInternal *>(this);
-
-  p->sendGenerationNum++;
-  p->lastPktStartTime = p->lastSentPktStartTime;
-  return p->lastSentPktTSSeqNum;
-}
-
-TS_INLINE void
-UDPConnection::SetLastSentPktTSSeqNum(int64_t sentSeqNum)
-{
-  static_cast<UDPConnectionInternal *>(this)->lastSentPktTSSeqNum = sentSeqNum;
 }
 
 TS_INLINE void
