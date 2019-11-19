@@ -97,8 +97,7 @@ UDPConnection::recv(Continuation *c)
   // register callback interest.
   p->continuation = c;
   ink_assert(c != nullptr);
-  mutex         = c->mutex;
-  p->recvActive = 1;
+  mutex = c->mutex;
   return ACTION_RESULT_NONE;
 }
 
