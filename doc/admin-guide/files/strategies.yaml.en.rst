@@ -15,13 +15,16 @@
   specific language governing permissions and limitations
   under the License.
 
-.. include:: ../../common.defs
-
 ===============
 strategies.yaml
 ===============
 
 .. configfile:: strategies.yaml
+
+.. include:: ../../common.defs
+
+.. toctree::
+   :maxdepth: 2
 
 The :file:`strategies.yaml` file identifies the next hop proxies used in an
 cache hierarchy and the algorithms used to select the next hop proxy. Use 
@@ -173,7 +176,8 @@ Each **strategy** in the list may using the following parameters::
    #. **consistent_hash**: hosts are selected using a **hash_key**.
 
 - **hash_key**: The hashing key used by the **consistent_hash** policy. If not specified, defaults to **path** which is the
-  same policy used in the **parent.config** implementation. Use one of::
+  same policy used in the **parent.config** implementation. Use one of:
+
    #. **hostname**: Creates a hash using the **hostname** in the request URL.
    #. **path**: (**default**) Creates a hash over the path poertion of the request URL.
    #. **path+query**: Same as **path** but adds the **query string** in the request URL.
@@ -188,44 +192,48 @@ Each **strategy** in the list may using the following parameters::
   - **max_simple_retries**: Part of the **failover** map and is an integer value of the maximum number of retries for a **simple retry** on the list of indicated response codes.  **simple retry** is used to retry an upstream request using another upstream server if the response received on from the original upstream request matches any of the response codes configured for this strategy in the **failover** map.  If no failover response codes are configured, no **simple retry** is attempted.
 
   - **ring_mode**: Part of the **failover** map. The host ring selection mode.  Use either **exhaust_ring** or **alternate_ring**
-   #. **exhaust_ring**: when a host normally selected by the policy fails, another host is selected from the same group.  A new group is not selected until all hosts on the previous group have been exhausted.
+
+   #. **exhaust_ring**: when a host normally selected by the policy fails, another host is selected from the same group.  A new group is not selected until all hosts on the previous group have been exhausted
    #. **alternate_ring**: retry hosts are selected from groups in an alternating group fashion.
+
   - **response_codes**: Part of the **failover** map.  This is a list of **http** response codes that may be used for **simple retry**.
   - **health_check**: Part of the **failover** map.  A list of health checks. **passive** is the default and means that the state machine marks down **hosts** when a transaction timeout or connection error is detected.  **passive** is always used by the next hop strategies.  **active** means that some external process may actively health check the hosts using the defined **health check url** and mark them down using **traffic_ctl**.
 
 
-Example::
+Example:
+::
 
- #include unit-tests/hosts.yaml
- #
-strategies:
-  - strategy: 'strategy-1'
-    policy: consistent_hash
-    hash_key: cache_key
-    go_direct: false
-    groups:
-      - *g1
-      - *g2
-    scheme http
-    failover:
-      ring_mode: exhaust_ring
-      response_codes:
-        - 404
-        - 503
-      health_check:
-        - passive
-  - strategy: 'strategy-2'
-    policy: rr_strict
-    hash_key: cache_key
-    go_direct: true
-    groups:
-      - *g1
-      - *g2
-    scheme http
-    failover:
-      ring_mode: exhaust_ring
-      response_codes:
-        - 404
-        - 503
-      health_check:
-        - passive
+  #include unit-tests/hosts.yaml
+  #
+  strategies:
+    - strategy: 'strategy-1'
+      policy: consistent_hash
+      hash_key: cache_key
+      go_direct: false
+      groups:
+        - *g1
+        - *g2
+      scheme http
+      failover:
+        ring_mode: exhaust_ring
+        response_codes:
+          - 404
+          - 503
+        health_check:
+          - passive
+    - strategy: 'strategy-2'
+      policy: rr_strict
+      hash_key: cache_key
+      go_direct: true
+      groups:
+        - *g1
+        - *g2
+      scheme http
+      failover:
+        ring_mode: exhaust_ring
+        response_codes:
+          - 404
+          - 503
+        health_check:
+          - passive
+
