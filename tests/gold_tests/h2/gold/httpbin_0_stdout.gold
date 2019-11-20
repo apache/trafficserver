@@ -1,10 +1,5 @@
 {
-  "args": {}, ``
-  "headers": {
-    "Accept": "*/*", ``
-    "Host": ``
-    "User-Agent": "curl/``
-  }, ``
-  "origin": ``
+  ``
   "url": "http://``/get"
+  ``
 }

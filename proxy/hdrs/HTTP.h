@@ -623,7 +623,7 @@ public:
   /// header internals, they must be able to do this.
   void mark_target_dirty() const;
 
-  HTTPStatus status_get();
+  HTTPStatus status_get() const;
   void status_set(HTTPStatus status);
 
   const char *reason_get(int *length);
@@ -642,6 +642,7 @@ public:
   bool is_cache_control_set(const char *cc_directive_wks);
   bool is_pragma_no_cache_set();
   bool is_keep_alive_set() const;
+  bool expect_final_response() const;
   HTTPKeepAlive keep_alive_get() const;
 
 protected:
@@ -1001,6 +1002,24 @@ HTTPHdr::is_keep_alive_set() const
   return this->keep_alive_get() == HTTP_KEEPALIVE;
 }
 
+/**
+   Check the status code is informational and expecting final response
+   - e.g. "100 Continue", "103 Early Hints"
+
+   Please note that "101 Switching Protocol" is not included.
+ */
+inline bool
+HTTPHdr::expect_final_response() const
+{
+  switch (this->status_get()) {
+  case HTTP_STATUS_CONTINUE:
+  case HTTP_STATUS_EARLY_HINTS:
+    return true;
+  default:
+    return false;
+  }
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -1151,7 +1170,7 @@ http_hdr_status_get(HTTPHdrImpl *hh)
   -------------------------------------------------------------------------*/
 
 inline HTTPStatus
-HTTPHdr::status_get()
+HTTPHdr::status_get() const
 {
   ink_assert(valid());
 
