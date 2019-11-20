@@ -489,28 +489,21 @@ LogUtils::get_unrolled_filename(ts::TextView rolled_filename)
 
   suffix.remove_prefix_at('.');
   // Using the above squid.log example, suffix now looks like:
-  //   log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.ol
+  //   log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old
 
-  if (suffix.find('_') != std::string::npos) {
-    suffix.remove_prefix_at('_');
-    // suffix now looks like:
-    //   some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.ol
-  } else if (suffix.find('.') != std::string::npos) {
-    // There was no underscore in the file after the first '.'.
-    // Some logs have the following format (without the hostname):
-    // diags.log.20191114.21h43m16s-20191114.21h43m17s.old
-
-    suffix.remove_prefix_at('.');
-    // Using the diags.log from our above example, suffix now looks like:
-    //   log.20191114.21h43m16s-20191114.21h43m17s.old
-  } else {
-    // If there isn't a '.' or an '_' after the first '.', then this
-    // doesn't look like a rolled file.
-    return rolled_filename;
+  // Some suffixes do not have the hostname.  Rolled diags.log files will look
+  // something like this, for example:
+  //   diags.log.20191114.21h43m16s-20191114.21h43m17s.old
+  //
+  // For these, the second delimeter will be a period. For this reason, we also
+  // split_prefix_at with a period as well.
+  if (suffix.split_prefix_at('_') || suffix.split_prefix_at('.')) {
+    // ' + 1' to remove the '_' or second '.':
+    return unrolled_name.remove_suffix(suffix.size() + 1);
   }
-
-  // ' + 1' to remove the '_' or second '.':
-  return unrolled_name.remove_suffix(suffix.size() + 1);
+  // If there isn't a '.' or an '_' after the first '.', then this
+  // doesn't look like a rolled file.
+  return rolled_filename;
 }
 
 // Checks if the file pointed to by full_filename either is a regular
