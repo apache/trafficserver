@@ -33,7 +33,7 @@ Synopsis
 Description
 ===========
 
-Get the TSSslVerifyCTX object that corresponds to the certificates being verified for the SSL connection 
+Get the TSSslVerifyCTX object that corresponds to the certificates being verified for the SSL connection
 corresponding to :arg:`svc`.
 
 This value is only meaningful during the peer certificate verification callbacks, specifically during callbacks

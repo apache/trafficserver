@@ -15,5 +15,5 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-nc -l -p $1  -c 'echo -e "This is a reply"'  -o test.out &
-echo "This is a test" | openssl s_client -servername bar.com -connect localhost:$2 -ign_eof 
+nc -l -p $1 -c 'echo -e "This is a reply"' -o test.out &
+echo "This is a test" | openssl s_client -servername bar.com -connect localhost:$2 -ign_eof
