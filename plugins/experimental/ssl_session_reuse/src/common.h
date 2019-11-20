@@ -24,7 +24,6 @@
 #pragma once
 
 #include <iostream>
-#include <sstream>
 #include <iomanip>
 #include <string>
 #include <cstring>
@@ -70,7 +69,7 @@ private:
   std::mutex threads_mutex;
 };
 
-std::string hex_str(std::string str);
+std::string hex_str(std::string const &str);
 
 int encrypt_encode64(const unsigned char *key, int key_length, const unsigned char *in_data, int in_data_len, char *out_data,
                      size_t out_data_size, size_t *out_data_len);
