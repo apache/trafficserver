@@ -88,6 +88,9 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
       //
       THEN("when making requests and taking nodes down.")
       {
+        REQUIRE(nhf.strategies_loaded == true);
+        REQUIRE(strategy != nullptr);
+
         // first request.
         br(&request, "rabbit.net");
         result.reset();
@@ -217,6 +220,9 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
 
       THEN("when making requests and taking nodes down.")
       {
+        REQUIRE(nhf.strategies_loaded == true);
+        REQUIRE(strategy != nullptr);
+
         // first request.
         br(&request, "rabbit.net");
         result.reset();
@@ -311,6 +317,9 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
 
       THEN("expect the following results when making requests and marking hosts down.")
       {
+        REQUIRE(nhf.strategies_loaded == true);
+        REQUIRE(strategy != nullptr);
+
         // first request.
         br(&request, "bunny.net/asset1");
         result.reset();
