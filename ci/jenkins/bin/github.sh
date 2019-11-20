@@ -62,17 +62,21 @@ autoreconf -if
     ${DEBUG}
 
 # Build and run regressions
+echo
 echo -n "Main build started at " && date
 ${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q= || exit 1
 echo -n "Main build finished at " && date
 echo
 echo -n "Unit tests started at " && date
-${ATS_MAKE} check VERBOSE=Y V=1 &&  ${ATS_MAKE} install
+${ATS_MAKE} -j 2 check VERBOSE=Y V=1 && ${ATS_MAKE} install
 echo -n "Unit tests finished at " && date
 
 [ -x ${INSTALL}/bin/traffic_server ] || exit 1
 
+echo
+echo -n "Regression tests started at " && date
 ${INSTALL}/bin/traffic_server -K -k -R 1
+echo -n "Regression tests finished at " && date
 [ "0" != "$?" ] && exit 1
 
 exit 0
