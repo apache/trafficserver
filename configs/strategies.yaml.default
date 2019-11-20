@@ -31,7 +31,7 @@
 # and 'strategies' in this given order.
 #
 #
-# This example YAML document shows a complete definiton in a single strategies.yaml
+# This example YAML document shows a complete definition in a single strategies.yaml
 # file.  There are other example unit test files in the source tree showing examples of
 # using '#include' and different formats available for use, proxy/http/remap/unit-tests/
 # See the documentation which describes each parameter in detail.

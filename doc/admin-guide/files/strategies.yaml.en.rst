@@ -51,13 +51,13 @@ and **strategies**.  These name spaces may be in separate files.  When in separa
 factory into a single YAML document in the order, **hosts**, **groups**, and the **strategies**.
 
 Alternatively if the config parameter `proxy.config.url_remap.strategies.filename` refers to
-a directory, the NextHopStrategyFactory will alphanumerically concatenate all files in that directory that end in `.yaml` by name into a single document stream for parsing.  The final document must be a vaild `YAML` document with single `strategies` node and optionally a single `hosts` and `groups` node.  Any **#include filename** strings are ignored when reading `.yaml` files in a directory.
+a directory, the NextHopStrategyFactory will alphanumerically concatenate all files in that directory that end in `.yaml` by name into a single document stream for parsing.  The final document must be a valid `YAML` document with single `strategies` node and optionally a single `hosts` and `groups` node.  Any **#include filename** strings are ignored when reading `.yaml` files in a directory.
 
 Hosts definitions
 =================
 
 The **hosts** definitions is a **YAML** list of hosts.  This list is **optional** but if not used, the
-**groups** list **must** include complete defintions for hosts.  See the **group** examples below.
+**groups** list **must** include complete definitions for hosts.  See the **group** examples below.
 
 In the example below, **hosts** is a **YAML** list of hosts.  Each host entry  uses a **YAML** anchor,
 **&p1** and **&p2** that may be used elsewhere in the **YAML** document to refer to hosts **p1** and **p2**.
@@ -89,14 +89,14 @@ Example::
 Groups definitions
 ==================
 
-The **groups** definitions is a **YAML** list of host groups.  host groups are used as the primary and secondary groups used by nexthop to choose hosts from.  The first group is the **primary** group next hop chooses hosts from.  The remaing groups are used failover.  The **strategies** **policy** specifies how the groups are used.
+The **groups** definitions is a **YAML** list of host groups.  host groups are used as the primary and secondary groups used by nexthop to choose hosts from.  The first group is the **primary** group next hop chooses hosts from.  The remaining groups are used failover.  The **strategies** **policy** specifies how the groups are used.
 
 Below are examples of group definitions.  The first example is using **YAML** anchors and references.
 When using **references**, the complete **YAML** document must include the **anchors** portion of the document first.
 
 The second example shows a complete **groups** definition without the use of a **hosts** name space and it's **YAML** anchors.
 
-The field defintions in the examples below are defined in the **hosts** section.
+The field definitions in the examples below are defined in the **hosts** section.
 
 Example using **YAML** anchors and references::
 
@@ -112,7 +112,7 @@ Example using **YAML** anchors and references::
       - <<: *p4
         weight: 1.5
 
-Explicitly defined Example, no **YAML** referenences::
+Explicitly defined Example, no **YAML** references::
 
   groups:
     - &g1
@@ -158,7 +158,7 @@ Explicitly defined Example, no **YAML** referenences::
             health_check_url: https://192.168.1.4:443
         weight: 0.5
 
-Strategies defintions
+Strategies definitions
 =====================
 
 The **strategies** namespace defines a **YAML** list of strategies that may be applied to a **remap**
@@ -179,14 +179,14 @@ Each **strategy** in the list may using the following parameters::
   same policy used in the **parent.config** implementation. Use one of:
 
    #. **hostname**: Creates a hash using the **hostname** in the request URL.
-   #. **path**: (**default**) Creates a hash over the path poertion of the request URL.
+   #. **path**: (**default**) Creates a hash over the path portion of the request URL.
    #. **path+query**: Same as **path** but adds the **query string** in the request URL.
-   #. **path+fragment**: Same as **path** but adds the fragement portion of the URL.
+   #. **path+fragment**: Same as **path** but adds the fragment portion of the URL.
    #. **cache_key**: Uses the hash key from the **cachekey** plugin.  defaults to **path** if the **cachekey** plugin is not configured on the **remap**.
    #. **url**: Creates a hash from the entire request url.
 
 - **go_direct** - A boolean value indicating whether a transaction may bypass proxies and go direct to the origin. Defaults to **true**
-- **parent_is_proxy**: A boolean value which indicates if the groups of hosts are proxy caches or origins.  **true** (default) means all the hosts used in the reamp are trafficserver caches.  **false** means the hosts are origins that the next hop strategies may use for load balancing and/or failover.
+- **parent_is_proxy**: A boolean value which indicates if the groups of hosts are proxy caches or origins.  **true** (default) means all the hosts used in the remap are |TS| caches.  **false** means the hosts are origins that the next hop strategies may use for load balancing and/or failover.
 - **scheme** Indicates which scheme the strategy supports, *http* or *https*
   - **failover**: A map of **failover** information.
   - **max_simple_retries**: Part of the **failover** map and is an integer value of the maximum number of retries for a **simple retry** on the list of indicated response codes.  **simple retry** is used to retry an upstream request using another upstream server if the response received on from the original upstream request matches any of the response codes configured for this strategy in the **failover** map.  If no failover response codes are configured, no **simple retry** is attempted.
