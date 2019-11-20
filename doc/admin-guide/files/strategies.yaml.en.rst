@@ -27,7 +27,7 @@ strategies.yaml
    :maxdepth: 2
 
 The :file:`strategies.yaml` file identifies the next hop proxies used in an
-cache hierarchy and the algorithms used to select the next hop proxy. Use 
+cache hierarchy and the algorithms used to select the next hop proxy. Use
 this file to perform the following configuration:
 
 -  Set up next hop cache hierarchies, with multiple parents and parent
@@ -50,7 +50,7 @@ and **strategies**.  These name spaces may be in separate files.  When in separa
 **#include filename** in the `strategies.yaml` so that they are concatenated by the strategy
 factory into a single YAML document in the order, **hosts**, **groups**, and the **strategies**.
 
-Alternatively if the config parameter `proxy.config.url_remap.strategies.filename` refers to 
+Alternatively if the config parameter `proxy.config.url_remap.strategies.filename` refers to
 a directory, the NextHopStrategyFactory will alphanumerically concatenate all files in that directory that end in `.yaml` by name into a single document stream for parsing.  The final document must be a vaild `YAML` document with single `strategies` node and optionally a single `hosts` and `groups` node.  Any **#include filename** strings are ignored when reading `.yaml` files in a directory.
 
 Hosts definitions
@@ -59,14 +59,14 @@ Hosts definitions
 The **hosts** definitions is a **YAML** list of hosts.  This list is **optional** but if not used, the
 **groups** list **must** include complete defintions for hosts.  See the **group** examples below.
 
-In the example below, **hosts** is a **YAML** list of hosts.  Each host entry  uses a **YAML** anchor, 
+In the example below, **hosts** is a **YAML** list of hosts.  Each host entry  uses a **YAML** anchor,
 **&p1** and **&p2** that may be used elsewhere in the **YAML** document to refer to hosts **p1** and **p2**.
 
 - **host**: the host value is a hostname string
 - **protocol**: a list of schemes, ports, and health check urls for  the host.
-- **healthcheck**: health check information with the **url** used to check 
+- **healthcheck**: health check information with the **url** used to check
   the hosts health by some external health check agent.
-  
+
 Example::
 
   hosts:
@@ -85,7 +85,7 @@ Example::
         - scheme: http
           port: 80
           health_check_url: http://192.168.1.2:80
-  
+
 Groups definitions
 ==================
 
@@ -111,7 +111,7 @@ Example using **YAML** anchors and references::
       	weight: 0.5
       - <<: *p4
         weight: 1.5
- 
+
 Explicitly defined Example, no **YAML** referenences::
 
   groups:
@@ -119,20 +119,20 @@ Explicitly defined Example, no **YAML** referenences::
       - p1
         host: p1.foo.com
         protocol:
-          - scheme: http 
+          - scheme: http
             port: 80
             health_check_url: http://192.168.1.1:80
-          - scheme: https 
+          - scheme: https
             port: 443
             health_check_url: https://192.168.1.1:443
         weight: 0.5
       - p2
         host: p2.foo.com
         protocol:
-          - scheme: http 
+          - scheme: http
             port: 80
             health_check_url: http://192.168.1.2:80
-          - scheme: https 
+          - scheme: https
             port: 443
             health_check_url: https://192.168.1.2:443
         weight: 0.5
@@ -140,23 +140,23 @@ Explicitly defined Example, no **YAML** referenences::
       - p3
         host: p3.foo.com
         protocol:
-          - scheme: http 
+          - scheme: http
             port: 80
             health_check_url: http://192.168.1.3:80
-          - scheme: https 
+          - scheme: https
             port: 443
             health_check_url: https://192.168.1.3:443
         weight: 0.5
       - p4
         host: p4.foo.com
         protocol:
-          - scheme: http 
+          - scheme: http
             port: 80
             health_check_url: http://192.168.1.4:80
-          - scheme: https 
+          - scheme: https
             port: 443
             health_check_url: https://192.168.1.4:443
-        weight: 0.5      
+        weight: 0.5
 
 Strategies defintions
 =====================
@@ -171,7 +171,7 @@ Each **strategy** in the list may using the following parameters::
 
    #. **rr_ip**: round robin selection using the modulus of the client IP
    #. **rr_strict**: strict round robin over the list of hosts in the primary group.
-   #. **first_live**: always selects the first host in the primary group.  Other hosts are selected when the first host fails.  
+   #. **first_live**: always selects the first host in the primary group.  Other hosts are selected when the first host fails.
    #. **latched**:  Same as **first_live** but primary selection sticks to whatever host was used by a previous transaction.
    #. **consistent_hash**: hosts are selected using a **hash_key**.
 
@@ -184,7 +184,7 @@ Each **strategy** in the list may using the following parameters::
    #. **path+fragment**: Same as **path** but adds the fragement portion of the URL.
    #. **cache_key**: Uses the hash key from the **cachekey** plugin.  defaults to **path** if the **cachekey** plugin is not configured on the **remap**.
    #. **url**: Creates a hash from the entire request url.
-   
+
 - **go_direct** - A boolean value indicating whether a transaction may bypass proxies and go direct to the origin. Defaults to **true**
 - **parent_is_proxy**: A boolean value which indicates if the groups of hosts are proxy caches or origins.  **true** (default) means all the hosts used in the reamp are trafficserver caches.  **false** means the hosts are origins that the next hop strategies may use for load balancing and/or failover.
 - **scheme** Indicates which scheme the strategy supports, *http* or *https*
@@ -236,4 +236,3 @@ Example:
           - 503
         health_check:
           - passive
-
