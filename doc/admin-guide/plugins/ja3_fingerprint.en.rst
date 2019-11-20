@@ -36,7 +36,7 @@ effective way to detect malicious clients even when superficial details are modi
 JA3 is available `here <https://github.com/salesforce/ja3>`__.
 
 The calculated JA3 fingerprints are then appended to upstream request in the field ``X-JA3-Sig``
-(to be processed at upstream). If multiple duplicates exist for the field name, it will append to the last 
+(to be processed at upstream). If multiple duplicates exist for the field name, it will append to the last
 occurrence; if none exists, it will add such a field to the headers. The signatures can also be logged locally.
 
 Plugin Configuration
@@ -72,4 +72,3 @@ API changes with regard to opaque structures.
 There is a potential issue with very old TLS clients which can cause a crash in the plugin. This is
 due to a `bug in OpenSSL <https://github.com/openssl/openssl/pull/8756>`__ which should be fixed in
 a future release.
-

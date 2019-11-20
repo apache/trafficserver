@@ -23,16 +23,16 @@ This file is a simple wrapper that will call the Reusable Gold Testing System (A
 This script will check for the necessary packages needed to create a pipenv that can run Autest. If any package is missing, the script will alert the user. If all packages are available, it install a virtual environment using the provided Pipfile.
 
 ### Pipfile
-This file is used to setup a virtual environment using pipenv. It contains information including the packages needed for Autest. 
+This file is used to setup a virtual environment using pipenv. It contains information including the packages needed for Autest.
 A set of commands for pipenv:
- * **pipenv install**: create virtual environment from the Pipfile. 
+ * **pipenv install**: create virtual environment from the Pipfile.
  * **pipenv shell**: launch a shell with the environment running(type "exit" to leave the shell).
  * **pipenv run cmd**: run command in the virtual environment without entering a shell, where cmd is the shell command to run.
  * **pipenv --rm**: remove the environment.
 
 # Basic setup
 
-AuTest can be run using the script file autest.sh listed above. Run the file from the tests/ directory followed by --ats-bin and the bin name. (ie ~/ats/bin) This will run the wrapper for the tests.  
+AuTest can be run using the script file autest.sh listed above. Run the file from the tests/ directory followed by --ats-bin and the bin name. (ie ~/ats/bin) This will run the wrapper for the tests.
 
 To run autest manually, the recommended way is to follow these steps:
 1. **pipenv install**: create the virtual environment(only needed once).
@@ -65,7 +65,7 @@ This command line argument will point to your build of ATS you want to test. At 
  * select_ports - have the testing system automatically select a nonSSL port to use for this instance of ATS
  * enable_tls - have the testing system also auto-select a SSL port to use (NOTE: This does not set up certs and other TLS-related configs.)
 
-This function will define a sandbox for an instance of trafficserver to run under. The function will return a AuTest process object that will have a number of files and variables define for making it easier to define a test. If both *select_ports* and *enable_tls* are toggled to **False**, then the test writer will be responsible for setting up the ports and the ready condition for an instance of ATS. 
+This function will define a sandbox for an instance of trafficserver to run under. The function will return a AuTest process object that will have a number of files and variables define for making it easier to define a test. If both *select_ports* and *enable_tls* are toggled to **False**, then the test writer will be responsible for setting up the ports and the ready condition for an instance of ATS.
 
 #### Environment
 The environment of the process will have a number of added environment variables to control trafficserver running the in the sandbox location correctly. This can be used to easily setup other commands that should run under same environment.
