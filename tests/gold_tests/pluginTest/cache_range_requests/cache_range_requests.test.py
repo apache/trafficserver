@@ -76,7 +76,7 @@ res_full = {"headers":
   "HTTP/1.1 200 OK\r\n" +
   "Cache-Control: max-age=500\r\n" +
   "Connection: close\r\n" +
-  'Etag: "772102f4-56f4bc1e6d417"\r\n' +
+  'Etag: "path"\r\n' +
   "Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT\r\n" +
   "\r\n",
   "timestamp": "1469733493.993",
@@ -107,7 +107,7 @@ res_inner = {"headers":
   "Cache-Control: max-age=500\r\n" +
   "Content-Range: bytes {0}/{1}\r\n".format(inner_str, bodylen) +
   "Connection: close\r\n" +
-  'Etag: "772102f4-56f4bc1e6d417"\r\n' +
+  'Etag: "path"\r\n' +
   "Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT\r\n" +
   "\r\n",
   "timestamp": "1469733493.993",
@@ -135,7 +135,7 @@ res_frange = {"headers":
   "Cache-Control: max-age=500\r\n" +
   "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) +
   "Connection: close\r\n" +
-  'Etag: "772102f4-56f4bc1e6d417"\r\n' +
+  'Etag: "path"\r\n' +
   "Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT\r\n" +
   "\r\n",
   "timestamp": "1469733493.993",
@@ -163,7 +163,7 @@ res_last = {"headers":
   "Cache-Control: max-age=200\r\n" +
   "Content-Range: bytes {0}-{1}/{1}\r\n".format(bodylen - 5, bodylen) +
   "Connection: close\r\n" +
-  'Etag: "772102f4-56f4bc1e6d417"\r\n' +
+  'Etag: "path"\r\n' +
   "Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT\r\n" +
   "\r\n",
   "timestamp": "1469733493.993",
@@ -191,7 +191,7 @@ res_pselect = {"headers":
   "Cache-Control: max-age=200\r\n" +
   "Content-Range: bytes {}/19\r\n".format(pselect_str) +
   "Connection: close\r\n" +
-  'Etag: "772102f4-56f4bc1e6d417"\r\n' +
+  'Etag: "path"\r\n' +
   "Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT\r\n" +
   "\r\n",
   "timestamp": "1469733493.993",
@@ -200,11 +200,30 @@ res_pselect = {"headers":
 
 server.addResponse("sessionlog.json", req_pselect, res_pselect)
 
+req_psd = {"headers":
+  "GET /path HTTP/1.1\r\n" +
+  "Host: psd\r\n" +
+  "Accept: */*\r\n" +
+  "Range: bytes={}\r\n".format(pselect_str) +
+  "uuid: pselect\r\n" +
+  "\r\n",
+  "timestamp": "1469733493.993",
+  "body": ""
+}
+
+server.addResponse("sessionlog.json", req_psd, res_pselect)
+
 # cache range requests plugin remap
 ts.Disk.remap_config.AddLines([
   'map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port) +
     ' @plugin=cache_range_requests.so',
+
+	# parent select cache key option
   'map http://parentselect http://127.0.0.1:{}'.format(server.Variables.Port) +
+    ' @plugin=cache_range_requests.so @pparam=--ps-cachekey',
+
+	# deprecated
+  'map http://psd http://127.0.0.1:{}'.format(server.Variables.Port) +
     ' @plugin=cache_range_requests.so @pparam=ps_mode:cache_key_url',
 ])
 
@@ -336,5 +355,18 @@ ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str)
 ps.ReturnCode = 0
 ps.Streams.stdout = "gold/pselect_none.stdout.gold"
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+
+# 11 Test - cache_key_url request -- deprecated
+tr = Test.AddTestRun("cache_key_url request - dprecated")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://psd/path -r {} -H "uuid: pselect"'.format(pselect_str)
+ps.ReturnCode = 0
+ps.Streams.stdout = "gold/pselect.stdout.gold"
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+  "X-ParentSelection-Key: .*-bytes=",
+  "expected bytes in parent selection key",
+)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

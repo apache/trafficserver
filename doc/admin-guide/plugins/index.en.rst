@@ -50,6 +50,7 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Background Fetch <background_fetch.en>
    Cache Key Manipulation <cachekey.en>
    Cache Promotion Policies <cache_promote.en>
+   Cache Range Requests <cache_range_requests.en>
    Combo Handler <combo_handler.en>
    Configuration Remap <conf_remap.en>
    Cookie Remap <cookie_remap.en>
@@ -63,7 +64,6 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Regex Remap <regex_remap.en>
    Regex Revalidate <regex_revalidate.en>
    Remap Purge <remap_purge.en>
-   Slice <slice.en>
    Stats over HTTP <stats_over_http.en>
    TCPInfo <tcpinfo.en>
    XDebug <xdebug.en>
@@ -82,6 +82,9 @@ Plugins that are considered stable are installed by default in |TS| releases.
 
 :doc:`Cache Promotion Policies <cache_promote.en>`
    Allows for control over which assets should be written to cache, or not.
+
+:doc:`Cache Range Requests <cache_range_requests.en>`
+   Cache ranges by adding the range request header to the cache key.
 
 :doc:`Combo Handler <combo_handler.en>`
    Provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response.
@@ -159,7 +162,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Multiplexer <multiplexer.en>
    MySQL Remap <mysql_remap.en>
    Signed URLs <url_sig.en>
-   Slicer <slice.en>
+   Slice <slice.en>
    SSL Headers <sslheaders.en>
    SSL Session Reuse <ssl_session_reuse.en>
    System Statistics <system_stats.en>
@@ -223,10 +226,10 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Signed URLs <url_sig.en>`
    Adds support for verifying URL signatures for incoming requests to either deny or redirect access.
 
-:doc:`Slicer <slice.en>`
+:doc:`Slice <slice.en>`
    Slice full file or range based requests into deterministic chunks, allowing large files to be
-   spread across multiple cache stripes. Allows range requests to be satisfied by stitching these
-   chunks together.
+   spread across multiple cache stripes. Allows arbitrary range requests to be satisfied by stitching
+   these chunks together.
 
 :doc:`SSL Session Reuse <ssl_session_reuse.en>`
    Coordinates Session ID and ticket based TLS session resumption between a group of ATS machines.
