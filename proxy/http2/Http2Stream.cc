@@ -639,6 +639,17 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
         h2_proxy_ssn->connection_state.send_headers_frame(this);
       }
 
+      // Roll back states of response header to read final response
+      if (this->response_header.expect_final_response()) {
+        this->response_header_done = false;
+        response_header.destroy();
+        response_header.create(HTTP_TYPE_RESPONSE);
+        http_parser_clear(&http_parser);
+        http_parser_init(&http_parser);
+      }
+
+      this->signal_write_event(call_update);
+
       if (this->response_reader->is_read_avail_more_than(0)) {
         this->_milestones.mark(Http2StreamMilestone::START_TX_DATA_FRAMES);
         this->send_response_body(call_update);
