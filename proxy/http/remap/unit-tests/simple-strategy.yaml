@@ -22,13 +22,13 @@
 #
 #  @section details Details
 #
-# 
+#
 # unit test simple-strategy.yaml example
 #
 strategies:
-  - strategy: 'strategy-3'
-    policy: rr_ip 
-    groups: 
+  - strategy: "strategy-3"
+    policy: rr_ip
+    groups:
       - &g1
         - host: p1.foo.com
           hash_string: slsklslsk
@@ -71,17 +71,17 @@ strategies:
               port: 443
               health_check_url: https://192.168.2.2:443
           weight: 1.0
-    scheme: https 
-    failover: 
-      ring_mode: exhaust_ring 
-      response_codes: 
+    scheme: https
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
         - 404
         - 502
         - 503
-      health_check: 
+      health_check:
         - passive
         - active
-  - strategy: 'strategy-4'
+  - strategy: "strategy-4"
     policy: latched
     groups:
       - &g1
@@ -105,14 +105,13 @@ strategies:
               port: 443
               health_check_url: https://192.168.1.4:443
           weight: 1.0
-    scheme: http 
-    failover: 
+    scheme: http
+    failover:
       ring_mode: alternate_ring
       response_codes:
         - 404
         - 502
         - 503
-      health_check: 
+      health_check:
         - passive
         - active
-

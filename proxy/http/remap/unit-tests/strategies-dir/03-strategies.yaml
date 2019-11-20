@@ -22,7 +22,7 @@
 #
 #  @section details Details
 #
-# 
+#
 # unit test data.
 #
 strategies:
@@ -52,14 +52,14 @@ strategies:
     groups:
       - *g1
       - *g2
-    scheme: http 
-    failover: 
+    scheme: http
+    failover:
       max_simple_retries: 2
       ring_mode: alternate_ring
       response_codes:
         - 404
         - 502
         - 503
-      health_check: 
+      health_check:
         - passive
         - active

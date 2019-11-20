@@ -22,14 +22,14 @@
 #
 #  @section details Details
 #
-# 
+#
 # unit testing strategies for NextHopConsistentHash.
 #
 strategies:
-  - strategy: 'consistent-hash-1'
-    policy: consistent_hash 
-    hash_key: path 
-    groups: 
+  - strategy: "consistent-hash-1"
+    policy: consistent_hash
+    hash_key: path
+    groups:
       - &g1
         - host: p1.foo.com
           protocol:
@@ -87,21 +87,21 @@ strategies:
               port: 443
               health_check_url: https://192.168.3.2:443
           weight: 1.0
-    scheme: http 
-    failover: 
-      ring_mode: exhaust_ring 
-      response_codes: 
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
         - 404
         - 502
         - 503
-      health_check: 
+      health_check:
         - passive
         - active
-  - strategy: 'consistent-hash-2'
-    policy: consistent_hash 
-    hash_key: path 
+  - strategy: "consistent-hash-2"
+    policy: consistent_hash
+    hash_key: path
     go_direct: false
-    groups: 
+    groups:
       - &g1
         - host: c1.foo.com
           protocol:
@@ -146,26 +146,26 @@ strategies:
             - scheme: http
               port: 80
               health_check_url: http://192.168.3.1:80
-            - scheme: https 
+            - scheme: https
               port: 443
               health_check_url: https://192.168.3.1:443
           weight: 1.0
         - host: c6.bar.com
           protocol:
-            - scheme: http 
+            - scheme: http
               port: 80
               health_check_url: http://192.168.3.2:80
-            - scheme: https 
+            - scheme: https
               port: 443
               health_check_url: https://192.168.3.2:443
           weight: 1.0
-    scheme: http 
-    failover: 
-      ring_mode: alternate_ring 
-      response_codes: 
+    scheme: http
+    failover:
+      ring_mode: alternate_ring
+      response_codes:
         - 404
         - 502
         - 503
-      health_check: 
+      health_check:
         - passive
         - active

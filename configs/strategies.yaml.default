@@ -7,30 +7,30 @@
 # The purpose of this file is to specify the strategies available for
 #   use in locating upstream caches for use to satisfy requests
 #
-# This is a YAML formatted file to define hosts, groups of hosts and next hop strategies that 
+# This is a YAML formatted file to define hosts, groups of hosts and next hop strategies that
 # may be used by remap
 #
 # There are three top-level YAML name spaces: 'hosts', 'groups', and 'strategies'.
-#   'hosts' is a YAML list of host's definitions and is used when defining 'groups' YAML 
-#     references are supported. 
-#   'groups' is a YAML list that aggregates a group of hosts together and serves as the 
-#     equivalent to the rings used in parent.config.  You may define upto five groups in a 
+#   'hosts' is a YAML list of host's definitions and is used when defining 'groups' YAML
+#     references are supported.
+#   'groups' is a YAML list that aggregates a group of hosts together and serves as the
+#     equivalent to the rings used in parent.config.  You may define upto five groups in a
 #     config, see MAX_GROUPS.
-#   'strategies' is a YAML list of strategy definitions. 
+#   'strategies' is a YAML list of strategy definitions.
 #
-# Files may be broken up into several different files.  The main file loaded by the Next Hop 
-# Strategy factory is this file, strategies.yaml.  You may move the 'hosts' and 'groups' 
-# definitions into separate files and then include them in this file using: 
+# Files may be broken up into several different files.  The main file loaded by the Next Hop
+# Strategy factory is this file, strategies.yaml.  You may move the 'hosts' and 'groups'
+# definitions into separate files and then include them in this file using:
 #
 #   '#include path_to_hosts_and_groups_file'
 #
-# It is even possible to put individual strategies into separate file.  The Next Hop 
-# strategy factory  concatenates all included files together in a single YAML document at 
+# It is even possible to put individual strategies into separate file.  The Next Hop
+# strategy factory  concatenates all included files together in a single YAML document at
 # each point where it sees an '#include file_name'.  When using this feature you just need to
 # ensure that the final concatenation is a valid YAML document with 'hosts', 'groups'
 # and 'strategies' in this given order.
 #
-# 
+#
 # This example YAML document shows a complete definiton in a single strategies.yaml
 # file.  There are other example unit test files in the source tree showing examples of
 # using '#include' and different formats available for use, proxy/http/remap/unit-tests/
@@ -40,7 +40,7 @@
 #
 #
 # hosts:
-#   - &p1 
+#   - &p1
 #     host: p1.foo.com
 #     hash_string: slsklslsk # optional hash string that replaces the hostname in consistent hashing.
 #     protocol:
@@ -59,14 +59,14 @@
 #       - scheme: https
 #         port: 443
 #         health_check_url: https://192.168.1.2:443
-#   - &s1 
+#   - &s1
 #     host: s1.foo.com
 #     hash_string: slsklslsk # optional hash string that replaces the hostname in consistent hashing.
 #     protocol:
 #       - scheme: http
 #         port: 80
 #         health_check_url: http://192.168.2.1:80
-#       - scheme: https 
+#       - scheme: https
 #         port: 443
 #         health_check_url: https://192.168.2.1:443
 #   - &s2
@@ -98,8 +98,8 @@
 #     groups: # groups of hosts, these groups are used as rings in consistent hash and arrays of host groups for round_robin.
 #       - *g1
 #       - *g2
-#     scheme: http 
-#     failover: 
+#     scheme: http
+#     failover:
 #       max_simple_retries: 2 # default is 1, indicates the maximum number of simple retries for the listed response codes.
 #       ring_mode: exhaust_ring # enumerated as exhaust_ring or alternate_ring
 #           #1) in 'exhaust_ring' mode all the servers in a ring are exhausted before failing over to secondary ring
@@ -113,20 +113,20 @@
 #         - active
 #   - strategy: 'mid-tier-south'
 #     policy: latched
-#     hash_key: uri 
-#     go_direct: false 
+#     hash_key: uri
+#     go_direct: false
 #     parent_is_proxy: false  # next hop hosts  are origin servers
 #     groups:
 #       - *g1
 #       - *g2
-#     scheme: https 
-#     failover: 
-#       max_simple_retries: 2 
+#     scheme: https
+#     failover:
+#       max_simple_retries: 2
 #       ring_mode: alternate_ring
 #       response_codes:
 #         - 404
 #         - 502
 #         - 503
-#       health_check: 
+#       health_check:
 #         - passive
 #         - active

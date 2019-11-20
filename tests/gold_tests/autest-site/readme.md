@@ -14,14 +14,14 @@ To use the CurlHeader tester when writing tests, which is not one of the default
 
  Examples:
  * To check for header 'X-Cache' that have value 'miss' and header 'cache-control' that have value starting with 'max', provide the following dictionary to tester:
-    
-        {    
-            'X-Cache' : 'miss',   
+
+        {
+            'X-Cache' : 'miss',
             'cache-control' : {'equal_re' : 'max.*'}
         }
 
  * To check for header 'Age' that can have any value and header 'etag' that have value either matching 'myetag' or end with 'p', provide the following dictionary to tester:
- 
+
         {
             'Age' : None,
             'etag' : {
