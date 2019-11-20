@@ -587,7 +587,8 @@ QUICConnectionId::QUICConnectionId()
 
 QUICConnectionId::QUICConnectionId(const uint8_t *buf, uint8_t len) : _len(len)
 {
-  memcpy(this->_id, buf, len);
+  ink_assert(len <= QUICConnectionId::MAX_LENGTH);
+  memcpy(this->_id, buf, std::min(static_cast<int>(len), QUICConnectionId::MAX_LENGTH));
 }
 
 uint8_t
@@ -721,6 +722,10 @@ QUICInvariants::dcid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len
     // remote dcil is local scil
     dcid_len    = QUICConnectionId::SCID_LEN;
     dcid_offset = QUICInvariants::SH_DCID_OFFSET;
+  }
+
+  if (dcid_len > QUICConnectionId::MAX_LENGTH) {
+    return false;
   }
 
   if (dcid_offset + dcid_len > buf_len) {
