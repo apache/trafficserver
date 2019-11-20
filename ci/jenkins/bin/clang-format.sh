@@ -17,14 +17,23 @@
 #  limitations under the License.
 
 cd "${WORKSPACE}/src"
-autoreconf -if && ./configure
-[ "0" != "$?" ] && exit -1
 
-${ATS_MAKE} -j clang-format
-[ "0" != "$?" ] && exit -1
+# First, make sure there are no trailing WS!!!
+git grep -IE ' +$' | fgrep -v '.gold:'
+if [ "1" != "$?" ]; then
+    echo "Error: Trailing whitespaces are not allowed!"
+    echo "Error: Please run: git grep -IE ' +$'"
+    exit 1
+fi
+
+autoreconf -if && ./configure
+[ "0" != "$?" ] && exit 1
+
+${ATS_MAKE} clang-format
+[ "0" != "$?" ] && exit 1
 
 git diff --exit-code
-[ "0" != "$?" ] && exit -1
+[ "0" != "$?" ] && exit 1
 
 # Normal exit
 exit 0

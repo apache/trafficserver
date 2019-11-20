@@ -19,10 +19,13 @@
 cd "${WORKSPACE}/${BUILD_NUMBER}/build"
 [ -d BUILDS ] && cd BUILDS
 
-${ATS_MAKE} check VERBOSE=Y V=1 || exit 1
+echo
+echo -n "Unit tests started at " && date
+${ATS_MAKE} -j 2 check VERBOSE=Y V=1 || exit 1
+echo -n "Unit tests finished at " && date
 ${ATS_MAKE} install || exit 1
 
 echo
-echo -n "Unit tests started at " && date
+echo -n "Regression tests started at " && date
 "${WORKSPACE}/${BUILD_NUMBER}/install/bin/traffic_server" -k -K -R 1
-echo -n "Unit tests finished at " && date
+echo -n "Regression tests finished at " && date
