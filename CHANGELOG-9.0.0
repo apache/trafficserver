@@ -283,7 +283,7 @@ Changes with Apache Traffic Server 9.0.0
   #4927 - Cleanup: Convert HTTPHdr::length_get to real method.
   #4928 - Pull Age out of the gold test
   #4931 - For tls tests look at logs until config has been reloaded
-  #4933 - Plugin Traffic Dump: new feature for setting limit on disk usage. 
+  #4933 - Plugin Traffic Dump: new feature for setting limit on disk usage.
   #4935 - Use the appropriate length field for uintmax_t
   #4938 - Fix client_hello_cb to correctly check for sufficient server_name data
   #4940 - ats_scoped_str: c++17 cleanup.
@@ -407,7 +407,7 @@ Changes with Apache Traffic Server 9.0.0
   #5258 - Adds cache alternate update tests
   #5259 - Fixed cache RWW test crash
   #5261 - Fixed pthread mutex init issue with cache test
-  #5262 - JA3 fingerprint: Corrected usage of OpenSSL API for ec and ecpf list retrieval. 
+  #5262 - JA3 fingerprint: Corrected usage of OpenSSL API for ec and ecpf list retrieval.
   #5264 - Fix reason tag of traffic_ctl host
   #5265 - Fix IntrusiveHashMap active bucket list corruption issue during expansion.
   #5266 - Ignore unsupported HTTP/2 settings parameters
@@ -498,7 +498,7 @@ Changes with Apache Traffic Server 9.0.0
   #5414 - Add API and fix logic for TS_SSL_VERIFY_*_HOOK.
   #5415 - MemSpan: Update to templated style, fix gcc9 compile error.
   #5416 - Move setsockopt from UnixNetProcessor to Server::setup_fd_for_listen
-  #5417 - Change HostStatus to use only one stat per host.  
+  #5417 - Change HostStatus to use only one stat per host.
   #5420 - Adds update header only test case
   #5421 - Check nullptr before call netvc->do_io_close in SSLNextProtocolAccept::mainEvent
   #5423 - This fixes parsing where the [ ] section gets merged into values
@@ -638,7 +638,7 @@ Changes with Apache Traffic Server 9.0.0
   #5704 - Add dest addr information to incoming UDPPacket objects
   #5705 - Make TSVConnInacitivityTimeoutCancel work as expected.
   #5706 - Add optional normalization of scheme and host to lower case letters in effective URLs.
-  #5707 - JA3: append to the last dub if X-JA3-Sig/X-JA3-RAW exist 
+  #5707 - JA3: append to the last dub if X-JA3-Sig/X-JA3-RAW exist
   #5710 - Convert regression tests for XPACK into Catch based unit tests
   #5711 - Fix client transaction stats
   #5714 - Add a required library to "Getting Started" docs
