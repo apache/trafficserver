@@ -30,18 +30,21 @@
 
 #include "common.h"
 
-const unsigned char salt[] = {115, 97, 108, 117, 0, 85, 137, 229};
+const unsigned char salt[]      = {115, 97, 108, 117, 0, 85, 137, 229};
+const unsigned char hex_chars[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 std::string
-hex_str(std::string str)
+hex_str(std::string const &str)
 {
-  std::string hex_str = "";
-  for (char &c : str) {
-    std::stringstream stream;
-    stream << std::hex << std::setfill('0') << std::setw(2) << (0xFF & static_cast<unsigned int>(c));
-    hex_str += stream.str();
+  size_t len = str.size() * 2 + 1;
+  char hex_str[len];
+  for (unsigned long int i = 0; i < str.size(); ++i) {
+    unsigned char c    = str.at(i);
+    hex_str[i * 2]     = hex_chars[(c & 0xF0) >> 4];
+    hex_str[i * 2 + 1] = hex_chars[(c & 0x0F)];
   }
-  return hex_str;
+  hex_str[len] = '\0';
+  return std::string(hex_str, len);
 }
 
 int
