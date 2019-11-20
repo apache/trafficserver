@@ -25,7 +25,7 @@ This script will check for the necessary packages needed to create a pipenv that
 ### Pipfile
 This file is used to setup a virtual environment using pipenv. It contains information including the packages needed for Autest.
 A set of commands for pipenv:
- * **pipenv install**: create virtual environment from the Pipfile.
+ * **pipenv install**: create virtual environment from the Pipfile. ( If you're going to add tests, add `-d` option to install dev packages )
  * **pipenv shell**: launch a shell with the environment running(type "exit" to leave the shell).
  * **pipenv run cmd**: run command in the virtual environment without entering a shell, where cmd is the shell command to run.
  * **pipenv --rm**: remove the environment.
