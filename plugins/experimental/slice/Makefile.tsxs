@@ -62,5 +62,5 @@ TSCXXFLAGS = $(shell tsxs -q CXXFLAGS)
 slice_test: slice_test.cc ContentRange.cc Range.cc
 	$(TSCXX) -o $@ $^ $(TSCXXFLAGS) -I$(TSINCLUDE) -DUNITTEST
 
-clean: 
+clean:
 	rm -fv *.lo *.so

@@ -22,7 +22,7 @@
 #
 #  @section details Details
 #
-# 
+#
 # unit test strategy.yaml example
 #
 #include unit-tests/hosts.yaml
@@ -36,7 +36,7 @@ strategies:
       - *g1
       - *g2
     scheme: http
-    failover: 
+    failover:
       ring_mode: exhaust_ring
       response_codes:
         - 404

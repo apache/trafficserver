@@ -119,7 +119,7 @@ Current error types logged:
 With slice error logs disabled these type errors can typically be detected
 by observing crc=ERR_READ_ERROR and pscl=0 in normal logs.
 
-At the current time only single range requests or the first part of a 
+At the current time only single range requests or the first part of a
 multi part range request of the forms:
 ```
 Range: bytes=<begin>-<end>

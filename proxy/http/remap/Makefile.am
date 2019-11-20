@@ -139,7 +139,7 @@ test_NextHopStrategyFactory_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
 	@YAMLCPP_LIBS@ \
-	@HWLOC_LIBS@ 
+	@HWLOC_LIBS@
 
 test_NextHopStrategyFactory_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore
 
@@ -168,7 +168,7 @@ test_NextHopRoundRobin_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
 	@YAMLCPP_LIBS@ \
-	@HWLOC_LIBS@ 
+	@HWLOC_LIBS@
 
 test_NextHopRoundRobin_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore
 
@@ -197,7 +197,7 @@ test_NextHopConsistentHash_LDADD = \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
 	@YAMLCPP_LIBS@ \
-	@HWLOC_LIBS@ 
+	@HWLOC_LIBS@
 
 test_NextHopConsistentHash_LDFLAGS = $(AM_LDFLAGS) -L$(top_builddir)/src/tscore/.libs -ltscore
 
