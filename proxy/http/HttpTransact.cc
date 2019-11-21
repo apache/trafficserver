@@ -78,6 +78,187 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 
 extern HttpBodyFactory *body_factory;
 
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static bool
+bypass_ok(HttpTransact::State *s)
+{
+  bool r          = false;
+  url_mapping *mp = s->url_map.getMapping();
+
+  if (mp && mp->strategy) {
+    // remap strategies do not support the TSHttpTxnParentProxySet API.
+    r = mp->strategy->go_direct;
+  } else if (s->parent_params) {
+    r = s->parent_result.bypass_ok();
+  }
+  return r;
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static bool
+is_api_result(HttpTransact::State *s)
+{
+  bool r          = false;
+  url_mapping *mp = s->url_map.getMapping();
+
+  if (mp && mp->strategy) {
+    // remap strategies do not support the TSHttpTxnParentProxySet API.
+    r = false;
+  } else if (s->parent_params) {
+    r = s->parent_result.is_api_result();
+  }
+  return r;
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static unsigned
+max_retries(HttpTransact::State *s, ParentRetry_t method)
+{
+  unsigned int r  = 0;
+  url_mapping *mp = s->url_map.getMapping();
+
+  if (mp && mp->strategy) {
+    // remap strategies does not support unavailable_server_responses
+    if (method == PARENT_RETRY_SIMPLE) {
+      r = mp->strategy->max_simple_retries;
+    }
+  } else if (s->parent_params) {
+    r = s->parent_result.max_retries(method);
+  }
+  return r;
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static uint32_t
+numParents(HttpTransact::State *s)
+{
+  uint32_t r      = 0;
+  url_mapping *mp = s->url_map.getMapping();
+
+  if (mp && mp->strategy) {
+    r = mp->strategy->num_parents;
+  } else if (s->parent_params) {
+    r = s->parent_params->numParents(&s->parent_result);
+  }
+  return r;
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static bool
+parent_is_proxy(HttpTransact::State *s)
+{
+  bool r          = false;
+  url_mapping *mp = s->url_map.getMapping();
+
+  if (mp && mp->strategy) {
+    r = mp->strategy->parent_is_proxy;
+  } else if (s->parent_params) {
+    r = s->parent_result.parent_is_proxy();
+  }
+  return r;
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static bool
+response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
+{
+  bool r          = false;
+  url_mapping *mp = s->url_map.getMapping();
+
+  if (mp && mp->strategy) {
+    if (mp->strategy->resp_codes.codes.size() > 0) {
+      r = mp->strategy->resp_codes.contains(response_code);
+    }
+  } else if (s->parent_params) {
+    r = s->parent_result.response_is_retryable(response_code);
+  }
+  return r;
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static unsigned
+retry_type(HttpTransact::State *s)
+{
+  unsigned r      = PARENT_RETRY_NONE;
+  url_mapping *mp = s->url_map.getMapping();
+
+  if (mp && mp->strategy) {
+    if (mp->strategy->resp_codes.codes.size() > 0) {
+      r = PARENT_RETRY_SIMPLE;
+    }
+  } else if (s->parent_params) {
+    r = s->parent_result.retry_type();
+  }
+  return r;
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static void
+findParent(HttpTransact::State *s)
+{
+  url_mapping *mp = s->url_map.getMapping();
+
+  if (mp && mp->strategy) {
+    return mp->strategy->findNextHop(s->state_machine->sm_id, s->parent_result, s->request_data, s->txn_conf->parent_fail_threshold,
+                                     s->txn_conf->parent_retry_time);
+  } else if (s->parent_params) {
+    return s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
+                                        s->txn_conf->parent_retry_time);
+  }
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static void
+markParentDown(HttpTransact::State *s)
+{
+  url_mapping *mp = s->url_map.getMapping();
+
+  if (mp && mp->strategy) {
+    return mp->strategy->markNextHopDown(s->state_machine->sm_id, s->parent_result, s->txn_conf->parent_fail_threshold,
+                                         s->txn_conf->parent_retry_time);
+  } else if (s->parent_params) {
+    return s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
+  }
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static void
+markParentUp(HttpTransact::State *s)
+{
+  url_mapping *mp = s->url_map.getMapping();
+  if (mp && mp->strategy) {
+    return mp->strategy->markNextHopUp(s->state_machine->sm_id, s->parent_result);
+  } else if (s->parent_params) {
+    return s->parent_params->markParentUp(&s->parent_result);
+  }
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static void
+nextParent(HttpTransact::State *s)
+{
+  url_mapping *mp = s->url_map.getMapping();
+  if (mp && mp->strategy) {
+    // NextHop only has a findNextHop() function.
+    return mp->strategy->findNextHop(s->state_machine->sm_id, s->parent_result, s->request_data, s->txn_conf->parent_fail_threshold,
+                                     s->txn_conf->parent_retry_time);
+  } else if (s->parent_params) {
+    return s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
+                                        s->txn_conf->parent_retry_time);
+  }
+}
+
 inline static bool
 is_localhost(const char *name, int len)
 {
@@ -92,14 +273,13 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
   HTTPStatus server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
 
   TxnDebug("http_trans", "[simple_or_unavailabe_server_retry] server_response = %d, simple_retry_attempts: %d, numParents:%d ",
-           server_response, s->current.simple_retry_attempts, s->parent_params->numParents(&s->parent_result));
+           server_response, s->current.simple_retry_attempts, numParents(s));
 
   // simple retry is enabled, 0x1
-  if ((s->parent_result.retry_type() & PARENT_RETRY_SIMPLE) &&
-      s->current.simple_retry_attempts < s->parent_result.max_retries(PARENT_RETRY_SIMPLE) &&
+  if ((retry_type(s) & PARENT_RETRY_SIMPLE) && s->current.simple_retry_attempts < max_retries(s, PARENT_RETRY_SIMPLE) &&
       server_response == HTTP_STATUS_NOT_FOUND) {
     TxnDebug("http_trans", "RECEIVED A SIMPLE RETRY RESPONSE");
-    if (s->current.simple_retry_attempts < s->parent_params->numParents(&s->parent_result)) {
+    if (s->current.simple_retry_attempts < numParents(s)) {
       s->current.state      = HttpTransact::PARENT_RETRY;
       s->current.retry_type = PARENT_RETRY_SIMPLE;
       return;
@@ -109,11 +289,11 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
     }
   }
   // unavailable server retry is enabled 0x2
-  else if ((s->parent_result.retry_type() & PARENT_RETRY_UNAVAILABLE_SERVER) &&
-           s->current.unavailable_server_retry_attempts < s->parent_result.max_retries(PARENT_RETRY_UNAVAILABLE_SERVER) &&
-           s->parent_result.response_is_retryable(server_response)) {
+  else if ((retry_type(s) & PARENT_RETRY_UNAVAILABLE_SERVER) &&
+           s->current.unavailable_server_retry_attempts < max_retries(s, PARENT_RETRY_UNAVAILABLE_SERVER) &&
+           response_is_retryable(s, server_response)) {
     TxnDebug("parent_select", "RECEIVED A PARENT_RETRY_UNAVAILABLE_SERVER RESPONSE");
-    if (s->current.unavailable_server_retry_attempts < s->parent_params->numParents(&s->parent_result)) {
+    if (s->current.unavailable_server_retry_attempts < numParents(s)) {
       s->current.state      = HttpTransact::PARENT_RETRY;
       s->current.retry_type = PARENT_RETRY_UNAVAILABLE_SERVER;
       return;
@@ -265,13 +445,11 @@ find_server_and_update_current_info(HttpTransact::State *s)
     s->parent_result.result = PARENT_DIRECT;
   } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting) {
     if (s->parent_result.result == PARENT_SPECIFIED) {
-      s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
-                                   s->txn_conf->parent_retry_time);
+      nextParent(s);
     } else {
-      s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
-                                   s->txn_conf->parent_retry_time);
+      findParent(s);
     }
-    if (!s->parent_result.is_some() || s->parent_result.is_api_result() || s->parent_result.parent_is_proxy()) {
+    if (!s->parent_result.is_some() || is_api_result(s) || parent_is_proxy(s)) {
       TxnDebug("http_trans", "request not cacheable, so bypass parent");
       s->parent_result.result = PARENT_DIRECT;
     }
@@ -284,25 +462,21 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // with respect to whether a request is cacheable or not.
     // For example, the cache_urls_that_look_dynamic variable.
     if (s->parent_result.result == PARENT_SPECIFIED) {
-      s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
-                                   s->txn_conf->parent_retry_time);
+      nextParent(s);
     } else {
-      s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
-                                   s->txn_conf->parent_retry_time);
+      findParent(s);
     }
-    if (!s->parent_result.is_some() || s->parent_result.is_api_result() || s->parent_result.parent_is_proxy()) {
+    if (!s->parent_result.is_some() || is_api_result(s) || parent_is_proxy(s)) {
       TxnDebug("http_trans", "request not cacheable, so bypass parent");
       s->parent_result.result = PARENT_DIRECT;
     }
   } else {
     switch (s->parent_result.result) {
     case PARENT_UNDEFINED:
-      s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
-                                   s->txn_conf->parent_retry_time);
+      findParent(s);
       break;
     case PARENT_SPECIFIED:
-      s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
-                                   s->txn_conf->parent_retry_time);
+      nextParent(s);
 
       // Hack!
       // We already have a parent that failed, if we are now told
@@ -319,8 +493,8 @@ find_server_and_update_current_info(HttpTransact::State *s)
       //   1) the config permitted us to dns the origin server
       //   2) the config permits us
       //   3) the parent was not set from API
-      if (s->http_config_param->no_dns_forward_to_parent == 0 && s->parent_result.bypass_ok() &&
-          s->parent_result.parent_is_proxy() && !s->parent_params->apiParentExists(&s->request_data)) {
+      if (s->http_config_param->no_dns_forward_to_parent == 0 && bypass_ok(s) && parent_is_proxy(s) &&
+          !s->parent_params->apiParentExists(&s->request_data)) {
         s->parent_result.result = PARENT_DIRECT;
       }
       break;
@@ -1427,7 +1601,7 @@ HttpTransact::PPDNSLookup(State *s)
   if (!s->dns_info.lookup_success) {
     // Mark parent as down due to resolving failure
     HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
-    s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
+    markParentDown(s);
     // DNS lookup of parent failed, find next parent or o.s.
     if (find_server_and_update_current_info(s) == HttpTransact::HOST_NONE) {
       ink_assert(s->current.request_to == HOST_NONE);
@@ -3311,7 +3485,7 @@ HttpTransact::handle_response_from_parent(State *s)
   // response is from a parent origin server.
   if (is_response_valid(s, &s->hdr_info.server_response) && s->current.request_to == HttpTransact::PARENT_PROXY) {
     // check for a retryable response if simple or unavailable server retry are enabled.
-    if (s->parent_result.retry_type() & (PARENT_RETRY_SIMPLE | PARENT_RETRY_UNAVAILABLE_SERVER)) {
+    if (retry_type(s) & (PARENT_RETRY_SIMPLE | PARENT_RETRY_UNAVAILABLE_SERVER)) {
       simple_or_unavailable_server_retry(s);
     }
   }
@@ -3323,13 +3497,13 @@ HttpTransact::handle_response_from_parent(State *s)
     s->current.server->connect_result = 0;
     SET_VIA_STRING(VIA_DETAIL_PP_CONNECT, VIA_DETAIL_PP_SUCCESS);
     if (s->parent_result.retry) {
-      s->parent_params->markParentUp(&s->parent_result);
+      markParentUp(s);
     }
     handle_forward_server_connection_open(s);
     break;
   case PARENT_RETRY:
     if (s->current.retry_type == PARENT_RETRY_SIMPLE) {
-      if (s->current.simple_retry_attempts >= s->parent_result.max_retries(PARENT_RETRY_SIMPLE)) {
+      if (s->current.simple_retry_attempts >= max_retries(s, PARENT_RETRY_SIMPLE)) {
         TxnDebug("http_trans", "PARENT_RETRY_SIMPLE: retried all parents, send error to client.");
         s->current.retry_type = PARENT_RETRY_NONE;
       } else {
@@ -3339,7 +3513,7 @@ HttpTransact::handle_response_from_parent(State *s)
         next_lookup           = find_server_and_update_current_info(s);
       }
     } else if (s->current.retry_type == PARENT_RETRY_UNAVAILABLE_SERVER) {
-      if (s->current.unavailable_server_retry_attempts >= s->parent_result.max_retries(PARENT_RETRY_UNAVAILABLE_SERVER)) {
+      if (s->current.unavailable_server_retry_attempts >= max_retries(s, PARENT_RETRY_UNAVAILABLE_SERVER)) {
         TxnDebug("http_trans", "PARENT_RETRY_UNAVAILABLE_SERVER: retried all parents, send error to client.");
         s->current.retry_type = PARENT_RETRY_NONE;
       } else {
@@ -3347,7 +3521,7 @@ HttpTransact::handle_response_from_parent(State *s)
         TxnDebug("http_trans", "PARENT_RETRY_UNAVAILABLE_SERVER: marking parent down and trying another.");
         s->current.retry_type = PARENT_RETRY_NONE;
         HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
-        s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
+        markParentDown(s);
         next_lookup = find_server_and_update_current_info(s);
       }
     }
@@ -3373,7 +3547,7 @@ HttpTransact::handle_response_from_parent(State *s)
     if (!is_request_retryable(s)) {
       if (s->current.state != OUTBOUND_CONGESTION) {
         HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
-        s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
+        markParentDown(s);
       }
       s->parent_result.result = PARENT_FAIL;
       handle_parent_died(s);
@@ -4014,6 +4188,10 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           s->cache_info.action = CACHE_DO_DELETE;
           s->next_action       = SM_ACTION_SERVER_READ;
         } else {
+          if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
+            s->state_machine->do_range_setup_if_necessary();
+            // Check client request range header if we cached a stealed content with cacheable=false
+          }
           s->cache_info.action = CACHE_DO_SERVE_AND_DELETE;
           s->next_action       = SM_ACTION_SERVE_FROM_CACHE;
         }
@@ -7513,7 +7691,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   if (outgoing_request->method_get_wksidx() == HTTP_WKSIDX_CONNECT) {
     // CONNECT method requires a target in the URL, so always force it from the Host header.
     outgoing_request->set_url_target_from_host_field();
-  } else if (s->current.request_to == PARENT_PROXY && s->parent_result.parent_is_proxy()) {
+  } else if (s->current.request_to == PARENT_PROXY && parent_is_proxy(s)) {
     // If we have a parent proxy set the URL target field.
     if (!outgoing_request->is_target_in_url()) {
       TxnDebug("http_trans", "[build_request] adding target to URL for parent proxy");

@@ -154,6 +154,11 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
   if (!map) {
     return false;
   }
+
+  // if there is a configured next hop strategy, make it available in the state.
+  if (map->strategy) {
+    s->next_hop_strategy = map->strategy;
+  }
   // Do fast ACL filtering (it is safe to check map here)
   table->PerformACLFiltering(s, map);
 

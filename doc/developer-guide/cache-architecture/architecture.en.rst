@@ -109,7 +109,7 @@ Span Structure
 
 Each cache span is marked at the front with a span header of type :class:`DiskHeader`. Each span is
 divided in to *span blocks*. These can be thought of similarly to normal disk partitions, marking
-out blocks of storage. Span blocks can v ary in size, subject only to being a multiple of the
+out blocks of storage. Span blocks can vary in size, subject only to being a multiple of the
 *volume block size* which is currently 128MB and, of course, being no larger than the span. The
 relationship between a span block and a cache stripe is the same as between a disk partition and a
 file system. A cache stripe is structured data contained in a span block and always occupies the

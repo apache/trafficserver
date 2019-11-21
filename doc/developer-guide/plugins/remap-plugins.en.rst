@@ -107,7 +107,7 @@ notifications like :func:`TSRemapPreConfigReload` and :func:`TSRemapPostConfigRe
 
 Instead of trying to foresee the needs or the expectations of each use-case, a more "open-ended"
 and straight-forward design was chosen for the configuration reload notifications.
-The notifications are broadcast to all loaded plugins at the moments before and after 
+The notifications are broadcast to all loaded plugins at the moments before and after
 the reload attempt, regardless of whether a plugin is part of the new configuration or not.
 
 :func:`TSRemapPreConfigReload` is called *before* the parsing of a new remap configuration starts

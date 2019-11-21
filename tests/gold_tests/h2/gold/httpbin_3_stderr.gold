@@ -1,0 +1,9 @@
+``
+> POST /post HTTP/2
+``
+> Expect: 100-continue
+``
+< HTTP/2 100``
+``
+< HTTP/2 200``
+``

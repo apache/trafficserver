@@ -97,7 +97,7 @@ client_key                The file containing the client private key that corres
                           |TS| tries to use a private key in client_cert.  Otherwise,
                           :ts:cv:`proxy.config.ssl.client.private_key.filename` is used.
 
-http2                     Indicates whether the H2 protocol should be added to or removed from the 
+http2                     Indicates whether the H2 protocol should be added to or removed from the
                           protocol negotiation list.  The valid values are :code:`on` or :code:`off`.
 
 disable_h2                Deprecated for the more general h2 setting.  Setting disable_h2

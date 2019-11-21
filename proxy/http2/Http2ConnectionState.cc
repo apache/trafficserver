@@ -1416,7 +1416,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
   switch (result) {
   case Http2SendDataFrameResult::NO_ERROR: {
     // No response body to send
-    if (len == 0 && !stream->is_body_done()) {
+    if (len == 0 && !stream->is_write_vio_done()) {
       dependency_tree->deactivate(node, len);
     } else {
       dependency_tree->update(node, len);
@@ -1477,12 +1477,12 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   // Are we at the end?
   // If we return here, we never send the END_STREAM in the case of a early terminating OS.
   // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
-  if (!stream->is_body_done() && payload_length == 0) {
+  if (!stream->is_write_vio_done() && payload_length == 0) {
     Http2StreamDebug(this->ua_session, stream->get_id(), "No payload");
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
-  if (stream->is_body_done() && !_sm->is_read_avail_more_than(0)) {
+  if (stream->is_write_vio_done() && !_sm->is_read_avail_more_than(0)) {
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
   }
 
@@ -1506,7 +1506,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &data);
 
   if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
-    Http2StreamDebug(ua_session, stream->get_id(), "End of DATA frame");
+    Http2StreamDebug(ua_session, stream->get_id(), "END_STREAM");
     stream->send_end_stream = true;
     // Setting to the same state shouldn't be erroneous
     stream->change_state(data.header().type, data.header().flags);
@@ -1584,7 +1584,9 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   if (header_blocks_size <= static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]))) {
     payload_length = header_blocks_size;
     flags |= HTTP2_FLAGS_HEADERS_END_HEADERS;
-    if (h2_hdr.presence(MIME_PRESENCE_CONTENT_LENGTH) && h2_hdr.get_content_length() == 0) {
+    if ((h2_hdr.presence(MIME_PRESENCE_CONTENT_LENGTH) && h2_hdr.get_content_length() == 0) ||
+        (!resp_header->expect_final_response() && stream->is_write_vio_done())) {
+      Http2StreamDebug(ua_session, stream->get_id(), "END_STREAM");
       flags |= HTTP2_FLAGS_HEADERS_END_STREAM;
       stream->send_end_stream = true;
     }
