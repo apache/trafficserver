@@ -137,7 +137,6 @@ public:
   // Variables
   CryptoHash hostname_hash;
 
-  int64_t con_id     = 0;
   int transact_count = 0;
   HSS_State state    = HSS_INIT;
 

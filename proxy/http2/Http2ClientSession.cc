@@ -30,14 +30,13 @@
     this->remember(MakeSourceLocation(), e, r); \
   }
 
-#define STATE_ENTER(state_name, event)                                                       \
-  do {                                                                                       \
-    REMEMBER(event, this->recursion)                                                         \
-    SsnDebug(this, "http2_cs", "[%" PRId64 "] [%s, %s]", this->connection_id(), #state_name, \
-             HttpDebugNames::get_event_name(event));                                         \
+#define STATE_ENTER(state_name, event)                                                                                        \
+  do {                                                                                                                        \
+    REMEMBER(event, this->recursion)                                                                                          \
+    SsnDebug(this, "http2_cs", "[%" PRId64 "] [%s, %s]", this->get_id(), #state_name, HttpDebugNames::get_event_name(event)); \
   } while (0)
 
-#define Http2SsnDebug(fmt, ...) SsnDebug(this, "http2_cs", "[%" PRId64 "] " fmt, this->connection_id(), ##__VA_ARGS__)
+#define Http2SsnDebug(fmt, ...) SsnDebug(this, "http2_cs", "[%" PRId64 "] " fmt, this->get_id(), ##__VA_ARGS__)
 
 #define HTTP2_SET_SESSION_HANDLER(handler) \
   do {                                     \
@@ -108,7 +107,7 @@ Http2ClientSession::free()
 
   // Slow Log
   if (Http2::con_slow_log_threshold != 0 && ink_hrtime_from_msec(Http2::con_slow_log_threshold) < total_time) {
-    Error("[%" PRIu64 "] Slow H2 Connection: open: %" PRIu64 " close: %.3f", this->con_id,
+    Error("[%" PRIu64 "] Slow H2 Connection: open: %" PRIu64 " close: %.3f", this->get_id(),
           ink_hrtime_to_msec(this->_milestones[Http2SsnMilestone::OPEN]),
           this->_milestones.difference_sec(Http2SsnMilestone::OPEN, Http2SsnMilestone::CLOSE));
   }
@@ -190,7 +189,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->_milestones.mark(Http2SsnMilestone::OPEN);
 
   // Unique client session identifier.
-  this->con_id    = ProxySession::next_connection_id();
+  this->_id       = ProxySession::next_id();
   this->client_vc = new_vc;
   client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
   this->schedule_event = nullptr;
@@ -343,7 +342,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     bool is_zombie = connection_state.get_zombie_event() != nullptr;
     retval         = (this->*session_handler)(event, edata);
     if (is_zombie && connection_state.get_zombie_event() != nullptr) {
-      Warning("Processed read event for zombie session %" PRId64, connection_id());
+      Warning("Processed read event for zombie session %" PRId64, get_id());
     }
     break;
   }
@@ -404,7 +403,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
       const char *client_ip = ats_ip_ntop(get_client_addr(), ipb, sizeof(ipb));
       Error("HTTP/2 session error client_ip=%s session_id=%" PRId64
             " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
-            client_ip, connection_id(), this->connection_state.get_stream_error_rate(), Http2::stream_error_rate_threshold);
+            client_ip, get_id(), this->connection_state.get_stream_error_rate(), Http2::stream_error_rate_threshold);
       Http2SsnDebug("Preparing for graceful shutdown because of a high stream error rate");
       cause_of_death = Http2SessionCod::HIGH_ERROR_RATE;
       this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM);
@@ -584,7 +583,7 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
       const char *client_ip = ats_ip_ntop(get_client_addr(), ipb, sizeof(ipb));
       Error("HTTP/2 session error client_ip=%s session_id=%" PRId64
             " closing a connection, because its stream error rate (%f) is too high",
-            client_ip, connection_id(), this->connection_state.get_stream_error_rate());
+            client_ip, get_id(), this->connection_state.get_stream_error_rate());
       err = Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
     }
 

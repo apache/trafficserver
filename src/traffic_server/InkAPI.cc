@@ -9734,7 +9734,7 @@ TSHttpSsnIdGet(TSHttpSsn ssnp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
-  return cs->connection_id();
+  return cs->get_id();
 }
 
 // Return information about the protocols used by the client

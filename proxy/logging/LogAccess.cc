@@ -2529,7 +2529,7 @@ LogAccess::marshal_client_http_connection_id(char *buf)
   if (buf) {
     int64_t id = 0;
     if (m_http_sm) {
-      id = m_http_sm->client_connection_id();
+      id = m_http_sm->client_session_id();
     }
     marshal_int(buf, id);
   }

@@ -40,7 +40,7 @@ ProxyTransaction::new_transaction()
   ink_release_assert(_proxy_ssn != nullptr);
   _sm = HttpSM::allocate();
   _sm->init();
-  HttpTxnDebug("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", _proxy_ssn->connection_id(),
+  HttpTxnDebug("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", _proxy_ssn->get_id(),
                _proxy_ssn->get_transact_count(), _sm->sm_id);
 
   PluginIdentity *pi = dynamic_cast<PluginIdentity *>(this->get_netvc());
@@ -56,8 +56,7 @@ ProxyTransaction::new_transaction()
 void
 ProxyTransaction::release(IOBufferReader *r)
 {
-  HttpTxnDebug("[%" PRId64 "] session released by sm [%" PRId64 "]", _proxy_ssn ? _proxy_ssn->connection_id() : 0,
-               _sm ? _sm->sm_id : 0);
+  HttpTxnDebug("[%" PRId64 "] session released by sm [%" PRId64 "]", _proxy_ssn ? _proxy_ssn->get_id() : 0, _sm ? _sm->sm_id : 0);
 
   this->decrement_client_transactions_stat();
 

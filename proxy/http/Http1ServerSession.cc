@@ -36,7 +36,6 @@
 #include "HttpSessionManager.h"
 #include "HttpSM.h"
 
-static int64_t next_ss_id = static_cast<int64_t>(0);
 ClassAllocator<Http1ServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
 
 void
@@ -69,7 +68,7 @@ Http1ServerSession::new_connection(NetVConnection *new_vc)
   mutex = new_vc->mutex;
 
   // Unique client session identifier.
-  con_id = ink_atomic_increment((&next_ss_id), 1);
+  _id = ProxySession::next_id();
 
   magic = HTTP_MAGIC_ALIVE;
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, 1); // Update the true global stat
@@ -78,7 +77,7 @@ Http1ServerSession::new_connection(NetVConnection *new_vc)
   read_buffer = new_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
 
   buf_reader = read_buffer->alloc_reader();
-  Debug("http_ss", "[%" PRId64 "] session born, netvc %p", con_id, new_vc);
+  Debug("http_ss", "[%" PRId64 "] session born, netvc %p", get_id(), new_vc);
   state = HSS_INIT;
 
   new_vc->set_tcp_congestion_control(SERVER_SIDE);
@@ -91,7 +90,7 @@ Http1ServerSession::enable_outbound_connection_tracking(OutboundConnTrack::Group
   conn_track_group = group;
   if (is_debug_tag_set("http_ss")) {
     ts::LocalBufferWriter<256> w;
-    w.print("[{}] new connection, ip: {}, group ({}), count: {}\0", con_id, get_server_ip(), *group, group->_count);
+    w.print("[{}] new connection, ip: {}, group ({}), count: {}\0", get_id(), get_server_ip(), *group, group->_count);
     Debug("http_ss", "%s", w.data());
   }
 }
@@ -126,7 +125,7 @@ Http1ServerSession::do_io_close(int alerrno)
   }
 
   if (debug_p) {
-    w.print("[{}] session close: nevtc {:x}", con_id, server_vc);
+    w.print("[{}] session close: nevtc {:x}", get_id(), server_vc);
   }
 
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
@@ -141,7 +140,7 @@ Http1ServerSession::do_io_close(int alerrno)
       }
     } else {
       // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.
-      Error("[http_ss] [%" PRId64 "] number of connections should be greater than or equal to zero: %u", con_id,
+      Error("[http_ss] [%" PRId64 "] number of connections should be greater than or equal to zero: %u", get_id(),
             conn_track_group->_count.load());
     }
   }

@@ -34,7 +34,7 @@
   }
 
 #define Http2StreamDebug(fmt, ...) \
-  SsnDebug(_proxy_ssn, "http2_stream", "[%" PRId64 "] [%u] " fmt, _proxy_ssn->connection_id(), this->get_id(), ##__VA_ARGS__);
+  SsnDebug(_proxy_ssn, "http2_stream", "[%" PRId64 "] [%u] " fmt, _proxy_ssn->get_id(), this->get_id(), ##__VA_ARGS__);
 
 ClassAllocator<Http2Stream> http2StreamAllocator("http2StreamAllocator");
 
@@ -746,7 +746,7 @@ Http2Stream::destroy()
   ink_release_assert(this->closed);
   ink_release_assert(reentrancy_count == 0);
 
-  uint64_t cid = 0;
+  uint64_t ssn_id = 0;
 
   // Safe to initiate SSN_CLOSE if this is the last stream
   if (_proxy_ssn) {
@@ -759,7 +759,7 @@ Http2Stream::destroy()
     // Update session's stream counts, so it accurately goes into keep-alive state
     h2_proxy_ssn->connection_state.release_stream(this);
 
-    cid = _proxy_ssn->connection_id();
+    ssn_id = _proxy_ssn->get_id();
   }
 
   // Clean up the write VIO in case of inactivity timeout
@@ -780,7 +780,7 @@ Http2Stream::destroy()
           "tx_hdrs: %.3f "
           "tx_data: %.3f "
           "close: %.3f",
-          cid, static_cast<uint32_t>(this->_id), this->_http_sm_id,
+          ssn_id, static_cast<uint32_t>(this->_id), this->_http_sm_id,
           ink_hrtime_to_msec(this->_milestones[Http2StreamMilestone::OPEN]),
           this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_DECODE_HEADERS),
           this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TXN),
