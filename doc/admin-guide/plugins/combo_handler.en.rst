@@ -47,6 +47,16 @@ The arguments in the :file:`plugin.config` line in order represent
 2. The name of the key used for signature verification (disabled by
    default)
 
+3. A colon separated list of headers which, if present on at least one response, will be
+   added to the combo response.
+
+4. The path of a config file with allowed content types of objects to be combined, one per
+   line, without parameters. (Blank lines and comments starting with "#" are ignored.)
+   Parameters in the Content-Type field value will be ignored when
+   checking if they appear in the allowed types.  If the path does not start with "/", the
+   config file must be located in the ATS config directory.  By default, all content types
+   are allowed, but if this file is specified, it must contain at least one content type.
+
 A "-" can be supplied as a value for any of these arguments to request
 default value be applied.
 

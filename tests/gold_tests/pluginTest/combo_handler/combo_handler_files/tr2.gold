@@ -1,0 +1,18 @@
+HTTP/1.1 200 OK
+Vary: Accept-Encoding
+Last-Modified: ``
+Content-Type: text/css ; charset=utf-8
+Cache-Control: max-age=31536000, Public
+Date: ``
+Age: ``
+Transfer-Encoding: chunked
+Connection: close
+Server: ATS/``
+
+3a
+Content for /obj1
+Content for /sub/obj2
+Content for /obj4
+
+0
+

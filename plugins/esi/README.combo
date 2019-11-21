@@ -1,6 +1,8 @@
 Combohandler
 --------------------
 
+NOTE:  THIS FILE IS OBSOLETE, SEE THE TRAFFICSERVER ADMIN GUIDE.
+
 This plugin provides that functionality (and more) with the same
 interface but with these differences in configuration:
 
