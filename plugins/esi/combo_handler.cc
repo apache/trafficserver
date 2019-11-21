@@ -23,10 +23,12 @@
 
 #include <list>
 #include <string>
+#include <string_view>
 #include <sstream>
 #include <vector>
 #include <algorithm>
 #include <ctime>
+#include <fstream>
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <limits>
@@ -36,6 +38,7 @@
 #include "ts/experimental.h"
 #include "ts/remap.h"
 #include "tscore/ink_defs.h"
+#include "tscpp/util/TextView.h"
 
 #include "HttpDataFetcherImpl.h"
 #include "gzip.h"
@@ -167,6 +170,32 @@ struct CacheControlHeader {
   Publicity _publicity  = Publicity::DEFAULT;
   bool _immutable       = true;
 };
+
+class ContentTypeHandler
+{
+public:
+  ContentTypeHandler(std::string &resp_header_fields) : _resp_header_fields(resp_header_fields) {}
+
+  // Returns false if _content_type_whitelist is not empty, and content-type field is either not present or not in the
+  // whitelist.  Adds first Content-type field it encounters in the headers passed to this function.
+  //
+  bool nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc);
+
+  // Load whitelist from config file.
+  //
+  static void loadWhiteList(std::string const &file_spec);
+
+private:
+  // Add Content-Type field to these.
+  //
+  std::string &_resp_header_fields;
+
+  bool _added_content_type{false};
+
+  static vector<std::string> _content_type_whitelist;
+};
+
+vector<std::string> ContentTypeHandler::_content_type_whitelist;
 
 bool
 InterceptData::init(TSVConn vconn)
@@ -309,7 +338,6 @@ static bool writeResponse(InterceptData &int_data);
 static bool writeErrorResponse(InterceptData &int_data, int &n_bytes_written);
 static bool writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_written);
 static void prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &resp_header_fields);
-static bool getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields);
 static bool getDefaultBucket(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_obj, ClientRequest &creq);
 
 // libesi TLS key.
@@ -391,6 +419,20 @@ TSPluginInit(int argc, const char *argv[])
   for (unsigned int i = 0; i < HEADER_WHITELIST.size(); i++) {
     LOG_DEBUG("WhiteList: %s", HEADER_WHITELIST[i].c_str());
   }
+
+  std::string content_type_whitelist_filespec = (argc > optind && (argv[optind][0] != '-' || argv[optind][1])) ? argv[optind] : "";
+  if (content_type_whitelist_filespec.empty()) {
+    LOG_DEBUG("No Content-Type whitelist file specified (all content types allowed)");
+  } else {
+    // If we have a path and it's not an absolute path, make it relative to the
+    // configuration directory.
+    if (content_type_whitelist_filespec[0] != '/') {
+      content_type_whitelist_filespec = std::string(TSConfigDirGet()) + '/' + content_type_whitelist_filespec;
+    }
+    LOG_DEBUG("Content-Type whitelist file: %s", content_type_whitelist_filespec.c_str());
+    ContentTypeHandler::loadWhiteList(content_type_whitelist_filespec);
+  }
+  ++optind;
 
   TSReleaseAssert(pthread_key_create(&threadKey, nullptr) == 0);
 
@@ -926,8 +968,6 @@ writeResponse(InterceptData &int_data)
 static void
 prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &resp_header_fields)
 {
-  bool got_content_type = false;
-
   if (int_data.creq.status == TS_HTTP_STATUS_OK) {
     HttpDataFetcherImpl::ResponseData resp_data;
     TSMLoc field_loc;
@@ -941,12 +981,16 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
       flags_list[i] = 0;
     }
 
+    ContentTypeHandler cth(resp_header_fields);
+
     for (StringList::iterator iter = int_data.creq.file_urls.begin(); iter != int_data.creq.file_urls.end(); ++iter) {
       if (int_data.fetcher->getData(*iter, resp_data) && resp_data.status == TS_HTTP_STATUS_OK) {
         body_blocks.push_back(ByteBlock(resp_data.content, resp_data.content_len));
         if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_CONTENT_TYPE) == HEADER_WHITELIST.end()) {
-          if (!got_content_type) {
-            got_content_type = getContentType(resp_data.bufp, resp_data.hdr_loc, resp_header_fields);
+          if (!cth.nextObjectHeader(resp_data.bufp, resp_data.hdr_loc)) {
+            LOG_ERROR("Content type missing or forbidden for requested URL [%s]", iter->c_str());
+            int_data.creq.status = TS_HTTP_STATUS_FORBIDDEN;
+            break;
           }
         }
 
@@ -1040,10 +1084,9 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
   }
 }
 
-static bool
-getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields)
+bool
+ContentTypeHandler::nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc)
 {
-  bool retval      = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
   if (field_loc != TS_NULL_MLOC) {
     bool values_added = false;
@@ -1052,21 +1095,86 @@ getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields)
     int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
-      if (!values_added) {
-        resp_header_fields.append("Content-Type: ");
-        values_added = true;
-      } else {
-        resp_header_fields.append(", ");
+      ts::TextView tv{value, value_len};
+      tv = tv.prefix(';').rtrim(std::string_view(" \t"));
+      if (_content_type_whitelist.empty()) {
+        ;
+      } else if (std::find_if(_content_type_whitelist.begin(), _content_type_whitelist.end(), [tv](ts::TextView tv2) -> bool {
+                   return strcasecmp(tv, tv2) == 0;
+                 }) == _content_type_whitelist.end()) {
+        return false;
+      } else if (tv.empty()) {
+        // Whitelist is bad, contains an empty string.
+        return false;
       }
-      resp_header_fields.append(value, value_len);
+      if (!_added_content_type) {
+        if (!values_added) {
+          _resp_header_fields.append("Content-Type: ");
+          values_added = true;
+        } else {
+          _resp_header_fields.append(", ");
+        }
+        _resp_header_fields.append(value, value_len);
+      }
     }
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     if (values_added) {
-      resp_header_fields.append("\r\n");
-      retval = true;
+      _resp_header_fields.append("\r\n");
+
+      // Assume that the Content-type field from the first header covers all the responses being combined.
+      _added_content_type = true;
+    }
+    return true;
+  }
+  // No content type header field so doesn't pass whitelist if there is one.
+  return _content_type_whitelist.empty();
+}
+
+void
+ContentTypeHandler::loadWhiteList(std::string const &file_spec)
+{
+  std::fstream fs;
+  char line_buffer[256];
+  bool extra_junk_on_line{false};
+  int line_num = 0;
+
+  fs.open(file_spec);
+  if (fs.good()) {
+    for (;;) {
+      ++line_num;
+      fs.getline(line_buffer, sizeof(line_buffer));
+      if (!fs.good()) {
+        break;
+      }
+      constexpr std::string_view bs{" \t"sv};
+      ts::TextView line{line_buffer, std::size_t(fs.gcount() - 1)};
+      line.ltrim(bs);
+      if (line.empty() || line[0] == '#') {
+        // Empty/comment line.
+        continue;
+      }
+      ts::TextView content_type{line.take_prefix_at(bs)};
+      line.trim(bs);
+      if (line.size() && (line[0] != '#')) {
+        extra_junk_on_line = true;
+        break;
+      }
+      _content_type_whitelist.emplace_back(content_type);
     }
   }
-  return retval;
+  if (fs.fail() && !(fs.eof() && (fs.gcount() == 0))) {
+    LOG_ERROR("Error reading Content-Type whitelist config file %s, line %d", file_spec.c_str(), line_num);
+  } else if (extra_junk_on_line) {
+    LOG_ERROR("More than one type on line %d in Content-Type whitelist config file %s", line_num, file_spec.c_str());
+  } else if (_content_type_whitelist.empty()) {
+    LOG_ERROR("Content-type whitelist config file %s must have at least one entry", file_spec.c_str());
+  } else {
+    // End of file.
+    return;
+  }
+  _content_type_whitelist.clear();
+  // An empty string marks object as bad.
+  _content_type_whitelist.emplace_back("");
 }
 
 static const char INVARIANT_FIELD_LINES[]    = {"Vary: Accept-Encoding\r\n"};
