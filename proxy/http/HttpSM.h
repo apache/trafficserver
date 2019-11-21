@@ -602,9 +602,9 @@ public:
   }
 
   int
-  client_connection_id() const
+  client_session_id() const
   {
-    return _client_connection_id;
+    return _client_ssn_id;
   }
 
   int
@@ -632,7 +632,7 @@ public:
 
 private:
   PostDataBuffers _postbuf;
-  int _client_connection_id = -1, _client_transaction_id = -1;
+  int _client_ssn_id = -1, _client_transaction_id = -1;
   int _client_transaction_priority_weight = -1, _client_transaction_priority_dependence = -1;
 };
 

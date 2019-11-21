@@ -169,7 +169,7 @@ ServerSessionPool::releaseSession(Http1ServerSession *ss)
   Debug("http_ss",
         "[%" PRId64 "] [release session] "
         "session placed into shared pool",
-        ss->con_id);
+        ss->get_id());
 }
 
 //   Called from the NetProcessor to let us know that a
@@ -217,7 +217,7 @@ ServerSessionPool::eventHandler(int event, void *data)
           Debug("http_ss",
                 "[%" PRId64 "] [session_bucket] session received io notice [%s], "
                 "resetting timeout to maintain minimum number of connections",
-                s->con_id, HttpDebugNames::get_event_name(event));
+                s->get_id(), HttpDebugNames::get_event_name(event));
           s->get_netvc()->set_inactivity_timeout(s->get_netvc()->get_inactivity_timeout());
           s->get_netvc()->set_active_timeout(s->get_netvc()->get_active_timeout());
           found = true;
@@ -227,7 +227,7 @@ ServerSessionPool::eventHandler(int event, void *data)
 
       // We've found our server session. Remove it from
       //   our lists and close it down
-      Debug("http_ss", "[%" PRId64 "] [session_pool] session %p received io notice [%s]", s->con_id, s,
+      Debug("http_ss", "[%" PRId64 "] [session_pool] session %p received io notice [%s]", s->get_id(), s,
             HttpDebugNames::get_event_name(event));
       ink_assert(s->state == HSS_KA_SHARED);
       // Out of the pool! Now!
@@ -301,7 +301,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
     //
     if (ServerSessionPool::match(to_return, ip, hostname_hash, match_style) &&
         ServerSessionPool::validate_sni(sm, to_return->get_netvc())) {
-      Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->con_id);
+      Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->get_id());
       to_return->state = HSS_ACTIVE;
       sm->attach_server_session(to_return);
       return HSM_DONE;
@@ -311,7 +311,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
     Debug("http_ss",
           "[%" PRId64 "] [acquire session] "
           "session not a match, returning to shared pool",
-          to_return->con_id);
+          to_return->get_id());
     to_return->release();
     to_return = nullptr;
   }
@@ -369,7 +369,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
   }
 
   if (to_return) {
-    Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->con_id);
+    Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->get_id());
     to_return->state = HSS_ACTIVE;
     // the attach_server_session will issue the do_io_read under the sm lock
     sm->attach_server_session(to_return);
@@ -391,7 +391,7 @@ HttpSessionManager::release_session(Http1ServerSession *to_release)
   if (lock.is_locked()) {
     pool->releaseSession(to_release);
   } else {
-    Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention", to_release->con_id);
+    Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention", to_release->get_id());
     released_p = false;
   }
 

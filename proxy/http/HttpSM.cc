@@ -496,7 +496,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
     auto p = ua_txn->get_proxy_ssn();
 
     if (p) {
-      _client_connection_id = p->connection_id();
+      _client_ssn_id = p->get_id();
     }
   }
 

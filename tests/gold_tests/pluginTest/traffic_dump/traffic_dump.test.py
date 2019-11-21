@@ -64,7 +64,7 @@ ts.Streams.stderr += Testers.ContainsExpression(
 # Set up the json replay file expectations.
 replay_file_session_1 = os.path.join(replay_dir, "127", "0000000000000000")
 ts.Disk.File(replay_file_session_1, exists=True)
-replay_file_session_2 = os.path.join(replay_dir, "127", "0000000000000001")
+replay_file_session_2 = os.path.join(replay_dir, "127", "0000000000000002")
 ts.Disk.File(replay_file_session_2, exists=True)
 
 # Execute the first transaction.

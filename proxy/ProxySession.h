@@ -86,7 +86,7 @@ public:
   ProxySession(ProxySession &) = delete;
   ProxySession &operator=(const ProxySession &) = delete;
 
-  static int64_t next_connection_id();
+  static int64_t next_id();
 
   // Virtual Methods
   virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) = 0;
@@ -142,7 +142,7 @@ public:
   bool is_draining() const;
   bool is_client_closed() const;
 
-  int64_t connection_id() const;
+  int64_t get_id() const;
   TSHttpHookID get_hookid() const;
   bool has_hooks() const;
 
@@ -169,7 +169,7 @@ protected:
   bool debug_on   = false;
   bool in_destroy = false;
 
-  int64_t con_id        = 0;
+  int64_t _id           = 0;
   Event *schedule_event = nullptr;
 
 private:
@@ -190,12 +190,12 @@ private:
 ///////////////////
 // INLINE
 
-static inline int64_t next_cs_id = 0;
+static inline int64_t next_ssn_id = 0;
 
 inline int64_t
-ProxySession::next_connection_id()
+ProxySession::next_id()
 {
-  return ink_atomic_increment(&next_cs_id, 1);
+  return ink_atomic_increment(&next_ssn_id, 1);
 }
 
 inline void *

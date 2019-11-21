@@ -40,10 +40,10 @@
 
 #define HttpSsnDebug(fmt, ...) SsnDebug(this, "http_cs", fmt, __VA_ARGS__)
 
-#define STATE_ENTER(state_name, event, vio)                                                             \
-  do {                                                                                                  \
-    /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */          \
-    HttpSsnDebug("[%" PRId64 "] [%s, %s]", con_id, #state_name, HttpDebugNames::get_event_name(event)); \
+#define STATE_ENTER(state_name, event, vio)                                                               \
+  do {                                                                                                    \
+    /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */            \
+    HttpSsnDebug("[%" PRId64 "] [%s, %s]", get_id(), #state_name, HttpDebugNames::get_event_name(event)); \
   } while (0)
 
 enum {
@@ -73,7 +73,7 @@ Http1ClientSession::destroy()
   if (!in_destroy) {
     in_destroy = true;
 
-    HttpSsnDebug("[%" PRId64 "] session destroy", con_id);
+    HttpSsnDebug("[%" PRId64 "] session destroy", get_id());
     ink_release_assert(!client_vc);
     ink_assert(read_buffer);
     ink_release_assert(transact_count == released_transactions);
@@ -143,7 +143,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ink_assert(lock.is_locked());
 
   // Unique client session identifier.
-  con_id = ProxySession::next_connection_id();
+  _id = ProxySession::next_id();
 
   schedule_event = nullptr;
 
@@ -181,7 +181,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ink_mutex_release(&debug_cs_list_mutex);
 #endif
 
-  HttpSsnDebug("[%" PRId64 "] session born, netvc %p", con_id, new_vc);
+  HttpSsnDebug("[%" PRId64 "] session born, netvc %p", get_id(), new_vc);
 
   client_vc->set_tcp_congestion_control(CLIENT_SIDE);
 
@@ -249,7 +249,7 @@ Http1ClientSession::do_io_close(int alerrno)
   if (half_close && this->trans.get_sm()) {
     read_state = HCS_HALF_CLOSED;
     SET_HANDLER(&Http1ClientSession::state_wait_for_close);
-    HttpSsnDebug("[%" PRId64 "] session half close", con_id);
+    HttpSsnDebug("[%" PRId64 "] session half close", get_id());
 
     if (client_vc) {
       // We want the client to know that that we're finished
@@ -275,7 +275,7 @@ Http1ClientSession::do_io_close(int alerrno)
     _reader->consume(_reader->read_avail());
   } else {
     read_state = HCS_CLOSED;
-    HttpSsnDebug("[%" PRId64 "] session closed", con_id);
+    HttpSsnDebug("[%" PRId64 "] session closed", get_id());
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
     conn_decrease = false;
@@ -424,10 +424,10 @@ Http1ClientSession::release(ProxyTransaction *trans)
   bool more_to_read = this->_reader->is_read_avail_more_than(0);
   if (more_to_read) {
     trans->destroy();
-    HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", con_id);
+    HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", get_id());
     new_transaction();
   } else {
-    HttpSsnDebug("[%" PRId64 "] initiating io for next header", con_id);
+    HttpSsnDebug("[%" PRId64 "] initiating io for next header", get_id());
     read_state = HCS_KEEP_ALIVE;
     SET_HANDLER(&Http1ClientSession::state_keep_alive);
     ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
@@ -470,7 +470,7 @@ Http1ClientSession::attach_server_session(Http1ServerSession *ssession, bool tra
     ink_assert(bound_ss == nullptr);
     ssession->state = HSS_KA_CLIENT_SLAVE;
     bound_ss        = ssession;
-    HttpSsnDebug("[%" PRId64 "] attaching server session [%" PRId64 "] as slave", con_id, ssession->con_id);
+    HttpSsnDebug("[%" PRId64 "] attaching server session [%" PRId64 "] as slave", get_id(), ssession->get_id());
     ink_assert(ssession->get_reader()->read_avail() == 0);
     ink_assert(ssession->get_netvc() != this->get_netvc());
 
