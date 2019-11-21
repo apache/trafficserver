@@ -62,6 +62,9 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
 
       THEN("then testing rr-strict.")
       {
+        REQUIRE(nhf.strategies_loaded == true);
+        REQUIRE(strategy != nullptr);
+
         // first request.
         ParentResult result;
         strategy->findNextHop(10000, result, rdata, fail_threshold, retry_time);
@@ -164,6 +167,9 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'first-live'", "[NextHop
 
       THEN("when making requests and marking down hosts.")
       {
+        REQUIRE(nhf.strategies_loaded == true);
+        REQUIRE(strategy != nullptr);
+
         // first request.
         ParentResult result;
         strategy->findNextHop(20000, result, rdata, fail_threshold, retry_time);
@@ -226,6 +232,9 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-ip'", "[NextHopRound
 
       THEN("when making requests and marking down hosts.")
       {
+        REQUIRE(nhf.strategies_loaded == true);
+        REQUIRE(strategy != nullptr);
+
         // first request.
         memcpy(&rdata.client_ip, &sa1, sizeof(sa1));
         ParentResult result;
@@ -278,6 +287,9 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'latched'", "[NextHopRou
 
       THEN("when making requests and marking down hosts.")
       {
+        REQUIRE(nhf.strategies_loaded == true);
+        REQUIRE(strategy != nullptr);
+
         // first request should select p3
         ParentResult result;
         strategy->findNextHop(40000, result, rdata, fail_threshold, retry_time);
