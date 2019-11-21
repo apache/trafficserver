@@ -125,6 +125,7 @@ test_RemapPluginInfo_SOURCES = \
 test_NextHopStrategyFactory_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-D_NH_UNIT_TESTS_ \
+	-DTS_SRC_DIR=\"$(abs_top_srcdir)/proxy/http/remap/\" \
 	-I$(abs_top_srcdir)/tests/include \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
@@ -154,6 +155,7 @@ test_NextHopStrategyFactory_SOURCES = \
 test_NextHopRoundRobin_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-D_NH_UNIT_TESTS_ \
+	-DTS_SRC_DIR=\"$(abs_top_srcdir)/proxy/http/remap/\" \
 	-I$(abs_top_srcdir)/tests/include \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
@@ -183,6 +185,7 @@ test_NextHopRoundRobin_SOURCES = \
 test_NextHopConsistentHash_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-D_NH_UNIT_TESTS_ \
+	-DTS_SRC_DIR=\"$(abs_top_srcdir)/proxy/http/remap/\" \
 	-I$(abs_top_srcdir)/tests/include \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
