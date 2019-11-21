@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+set +x
 cd "${WORKSPACE}/src"
 
 # First, make sure there are no trailing WS!!!
@@ -25,6 +26,17 @@ if [ "1" != "$?" ]; then
     echo "Error: Please run: git grep -IE ' +$'"
     exit 1
 fi
+echo "Success! No trailing whitespace"
+
+# Make sure there are no DOS shit here.
+git grep -IE $'\r$' | fgrep -v 'lib/yamlcpp'
+if [ "1" != "$?" ]; then
+    echo "Error: Please make sure to run dos2unix on the above file(s)"
+    exit 1
+fi
+echo "Success! No DOS carriage return"
+
+set -x
 
 autoreconf -if && ./configure
 [ "0" != "$?" ] && exit 1
