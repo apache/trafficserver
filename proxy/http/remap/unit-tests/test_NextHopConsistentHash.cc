@@ -51,7 +51,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
   {
     // load the configuration strtegies.
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf("unit-tests/consistent-hash-tests.yaml");
+    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("consistent-hash-1");
 
     WHEN("the config is loaded.")
@@ -190,7 +190,7 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
   GIVEN("Loading the consistent-hash-tests.yaml config for 'consistent_hash' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf("unit-tests/consistent-hash-tests.yaml");
+    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("consistent-hash-1");
 
     WHEN("the config is loaded.")
@@ -292,7 +292,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
   GIVEN("Loading the consistent-hash-tests.yaml config for 'consistent_hash' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf("unit-tests/consistent-hash-tests.yaml");
+    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
     strategy = nhf.strategyInstance("consistent-hash-2");
 
     WHEN("the config is loaded.")

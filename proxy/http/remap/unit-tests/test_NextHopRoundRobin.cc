@@ -41,7 +41,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
   GIVEN("Loading the round-robin-tests.yaml config for round robin 'rr-strict' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf("unit-tests/round-robin-tests.yaml");
+    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/round-robin-tests.yaml");
     strategy = nhf.strategyInstance("rr-strict-exhaust-ring");
 
     WHEN("the config is loaded.")
@@ -146,7 +146,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'first-live'", "[NextHop
   GIVEN("Loading the round-robin-tests.yaml config for round robin 'first-live' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf("unit-tests/round-robin-tests.yaml");
+    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/round-robin-tests.yaml");
     strategy = nhf.strategyInstance("first-live");
 
     WHEN("the config is loaded.")
@@ -205,7 +205,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-ip'", "[NextHopRound
   GIVEN("Loading the round-robin-tests.yaml config for round robin 'rr-ip' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf("unit-tests/round-robin-tests.yaml");
+    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/round-robin-tests.yaml");
     strategy = nhf.strategyInstance("rr-ip");
     sockaddr_in sa1, sa2;
     sa1.sin_port   = 10000;
@@ -266,7 +266,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'latched'", "[NextHopRou
   GIVEN("Loading the round-robin-tests.yaml config for round robin 'latched' tests.")
   {
     std::shared_ptr<NextHopSelectionStrategy> strategy;
-    NextHopStrategyFactory nhf("unit-tests/round-robin-tests.yaml");
+    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/round-robin-tests.yaml");
     strategy = nhf.strategyInstance("latched");
 
     WHEN("the config is loaded.")
