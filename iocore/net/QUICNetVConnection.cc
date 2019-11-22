@@ -1202,8 +1202,8 @@ QUICNetVConnection::_state_handshake_process_handshake_packet(const QUICPacket &
 {
   // Source address is verified by receiving any message from the client encrypted using the
   // Handshake keys.
-  if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
-    this->_verfied_state.set_addr_verifed();
+  if (this->netvc_context == NET_VCONNECTION_IN && !this->_verified_state.is_verified()) {
+    this->_verified_state.set_addr_verifed();
   }
   return this->_recv_and_ack(packet);
 }
@@ -1372,8 +1372,8 @@ QUICNetVConnection::_state_common_send_packet()
       }
 
       uint32_t max_packet_size = udp_payload_len - written;
-      if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
-        max_packet_size = std::min(max_packet_size, this->_verfied_state.windows());
+      if (this->netvc_context == NET_VCONNECTION_IN && !this->_verified_state.is_verified()) {
+        max_packet_size = std::min(max_packet_size, this->_verified_state.windows());
       }
 
       QUICPacketInfoUPtr packet_info = std::make_unique<QUICPacketInfo>();
@@ -1393,9 +1393,9 @@ QUICNetVConnection::_state_common_send_packet()
         packet_info->type     = packet->type();
         packet_info->pn_space = QUICTypeUtil::pn_space(level);
 
-        if (this->netvc_context == NET_VCONNECTION_IN && !this->_verfied_state.is_verified()) {
-          QUICConDebug("send to unverified window: %u", this->_verfied_state.windows());
-          this->_verfied_state.consume(packet->size());
+        if (this->netvc_context == NET_VCONNECTION_IN && !this->_verified_state.is_verified()) {
+          QUICConDebug("send to unverified window: %u", this->_verified_state.windows());
+          this->_verified_state.consume(packet->size());
         }
 
         // TODO: do not write two QUIC Short Header Packets
@@ -1783,8 +1783,8 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
       }
     }
 
-    if (!this->_verfied_state.is_verified()) {
-      this->_verfied_state.fill(packet->size());
+    if (!this->_verified_state.is_verified()) {
+      this->_verified_state.fill(packet->size());
     }
   }
 

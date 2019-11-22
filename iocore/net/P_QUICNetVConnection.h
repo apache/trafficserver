@@ -353,7 +353,7 @@ private:
   uint32_t _seq_num            = 0;
 
   // TODO: Source addresses verification through an address validation token
-  QUICAddrVerifyState _verfied_state;
+  QUICAddrVerifyState _verified_state;
 
   std::unique_ptr<QUICContextImpl> _context;
 };
