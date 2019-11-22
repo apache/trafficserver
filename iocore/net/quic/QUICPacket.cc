@@ -807,6 +807,24 @@ QUICLongHeaderPacket::size() const
   return header_size + this->_payload_length;
 }
 
+QUICConnectionId
+QUICLongHeaderPacket::destination_cid() const
+{
+  return this->_dcid;
+}
+
+QUICConnectionId
+QUICLongHeaderPacket::source_cid() const
+{
+  return this->_scid;
+}
+
+QUICVersion
+QUICLongHeaderPacket::version() const
+{
+  return this->_version;
+}
+
 size_t
 QUICLongHeaderPacket::_write_common_header(uint8_t *buf) const
 {
@@ -878,6 +896,12 @@ QUICKeyPhase
 QUICShortHeaderPacket::key_phase() const
 {
   return this->_key_phase;
+}
+
+QUICConnectionId
+QUICShortHeaderPacket::destination_cid() const
+{
+  return this->_dcid;
 }
 
 QUICPacketNumber
@@ -1024,6 +1048,12 @@ QUICStatelessResetPacket::payload_block() const
   return block;
 }
 
+QUICStatelessResetToken
+QUICStatelessResetPacket::token() const
+{
+  return this->_token;
+}
+
 //
 // QUICVersionNegotiationPacket
 //
@@ -1037,6 +1067,12 @@ QUICPacketType
 QUICVersionNegotiationPacket::type() const
 {
   return QUICPacketType::VERSION_NEGOTIATION;
+}
+
+QUICVersion
+QUICVersionNegotiationPacket::version() const
+{
+  return 0;
 }
 
 Ptr<IOBufferBlock>
@@ -1086,6 +1122,18 @@ QUICVersionNegotiationPacket::payload_block() const
   block->fill(written_len);
 
   return block;
+}
+
+const QUICVersion *
+QUICVersionNegotiationPacket::versions() const
+{
+  return this->_versions;
+}
+
+int
+QUICVersionNegotiationPacket::nversions() const
+{
+  return _nversions;
 }
 
 //
@@ -1391,6 +1439,25 @@ QUICRetryPacket::type() const
   return QUICPacketType::RETRY;
 }
 
+uint16_t
+QUICRetryPacket::size() const
+{
+  size_t size            = 0;
+  Ptr<IOBufferBlock> tmp = this->header_block();
+  while (tmp) {
+    size += tmp->size();
+    tmp = tmp->next;
+  }
+
+  tmp = this->payload_block();
+  while (tmp) {
+    size += tmp->size();
+    tmp = tmp->next;
+  }
+
+  return size;
+}
+
 Ptr<IOBufferBlock>
 QUICRetryPacket::header_block() const
 {
@@ -1448,4 +1515,10 @@ QUICConnectionId
 QUICRetryPacket::original_dcid() const
 {
   return this->_ocid;
+}
+
+QUICRetryToken
+QUICRetryPacket::token() const
+{
+  return this->_token;
 }

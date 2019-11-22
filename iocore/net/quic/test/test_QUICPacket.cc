@@ -174,7 +174,7 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
     CHECK(packet_length == sizeof(buf));
   }
 
-  SECTION("Long Header (store) INITIAL Packet")
+  SECTION("INITIAL Packet (store)")
   {
     uint8_t buf[64] = {0};
     size_t len      = 0;
@@ -191,31 +191,30 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       0x01, 0x23, 0x45, 0x67,                         // Packet number
       0x11, 0x22, 0x33, 0x44, 0x55,                   // Payload (dummy)
     };
-    ats_unique_buf payload = ats_unique_malloc(5);
-    memcpy(payload.get(), expected + 17, 5);
+    Ptr<IOBufferBlock> payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(5));
+    payload->fill(5);
+    memcpy(payload->start(), expected + 17, 5);
 
-    QUICPacketHeaderUPtr header = QUICPacketHeader::build(
-      QUICPacketType::INITIAL, QUICKeyPhase::INITIAL, {reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8},
-      {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, 0x01234567, 0, 0x11223344, true,
-      std::move(payload), 5);
+    QUICInitialPacket packet(0x11223344, {reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8},
+                             {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, 0, nullptr, 5, 0x01234567,
+                             true, true, true);
+    packet.attach_payload(payload, true);
 
-    CHECK(header->size() == sizeof(expected) - 5);
-    CHECK(header->packet_size() == sizeof(expected));
-    CHECK(header->type() == QUICPacketType::INITIAL);
-    CHECK(
-      (header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
-    CHECK((header->source_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8)));
-    CHECK(header->packet_number() == 0x01234567);
-    CHECK(header->has_version() == true);
-    CHECK(header->version() == 0x11223344);
-    CHECK(header->is_crypto_packet());
+    CHECK(packet.size() == sizeof(expected) + 16);
+    CHECK(packet.type() == QUICPacketType::INITIAL);
+    CHECK((packet.destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
+    CHECK((packet.source_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8)));
+    CHECK(packet.packet_number() == 0x01234567);
+    CHECK(packet.version() == 0x11223344);
+    CHECK(packet.is_crypto_packet());
 
-    header->store(buf, &len);
-    CHECK(len == header->size());
-    CHECK(memcmp(buf, expected, len) == 0);
+    packet.store(buf, &len);
+    CHECK(len == packet.size() - 16);
+    CHECK(memcmp(buf, expected, len - 16) == 0);
   }
 
-  SECTION("Long Header (store) RETRY Packet")
+  SECTION("RETRY Packet (store)")
   {
     uint8_t buf[64] = {0};
     size_t len      = 0;
@@ -232,30 +231,20 @@ TEST_CASE("QUICPacketHeader - Long", "[quic]")
       0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, // Retry Token
       0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
     };
-    ats_unique_buf payload = ats_unique_malloc(16);
-    memcpy(payload.get(), expected + 30, 16);
+    QUICRetryToken token(expected + 30, 16);
 
-    QUICPacketHeaderUPtr header =
-      QUICPacketHeader::build(QUICPacketType::RETRY, QUICKeyPhase::INITIAL, 0x11223344,
-                              {reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8},
-                              {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8},
-                              {reinterpret_cast<const uint8_t *>("\x08\x07\x06\x05\x04\x03\x02\x01"), 8}, std::move(payload), 16);
+    QUICRetryPacket packet(0x11223344, {reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8},
+                           {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8},
+                           {reinterpret_cast<const uint8_t *>("\x08\x07\x06\x05\x04\x03\x02\x01"), 8}, token);
+    CHECK(packet.size() == sizeof(expected));
+    CHECK(packet.type() == QUICPacketType::RETRY);
+    CHECK((packet.destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
+    CHECK((packet.source_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8)));
+    CHECK(packet.version() == 0x11223344);
+    CHECK((packet.original_dcid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x08\x07\x06\x05\x04\x03\x02\x01"), 8)));
 
-    CHECK(header->size() == sizeof(expected) - 16);
-    CHECK(header->packet_size() == sizeof(expected));
-    CHECK(header->type() == QUICPacketType::RETRY);
-    CHECK(
-      (header->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8)));
-    CHECK((header->source_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8)));
-    CHECK(header->has_version() == true);
-    CHECK(header->version() == 0x11223344);
-
-    QUICPacketLongHeader *retry_header = static_cast<QUICPacketLongHeader *>(header.get());
-    CHECK((retry_header->original_dcid() ==
-           QUICConnectionId(reinterpret_cast<const uint8_t *>("\x08\x07\x06\x05\x04\x03\x02\x01"), 8)));
-
-    header->store(buf, &len);
-    CHECK(len == header->size());
+    packet.store(buf, &len);
+    CHECK(len == packet.size());
     CHECK(memcmp(buf, expected, 22) == 0);
     CHECK(memcmp(buf + 22, expected + 22, 8) == 0);
   }
@@ -292,7 +281,7 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
     CHECK(header->has_version() == false);
   }
 
-  SECTION("Short Header (store)")
+  SECTION("Short Header Packet (store)")
   {
     uint8_t buf[32] = {0};
     size_t len      = 0;
@@ -305,26 +294,24 @@ TEST_CASE("QUICPacketHeader - Short", "[quic]")
       0x01, 0x23, 0x45, 0x67,                         // Packet number
       0x11, 0x22, 0x33, 0x44, 0x55,                   // Protected Payload
     };
-    size_t payload_len = 5;
-    size_t header_len  = sizeof(expected) - 5;
+    size_t payload_len         = 5;
+    Ptr<IOBufferBlock> payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(5));
+    payload->fill(5);
+    memcpy(payload->start(), expected + sizeof(expected) - payload_len, payload_len);
 
-    ats_unique_buf payload = ats_unique_malloc(payload_len);
-    memcpy(payload.get(), expected + header_len, payload_len);
+    QUICShortHeaderPacket packet(dcid, 0x1234567, 0, QUICKeyPhase::PHASE_0, true, true);
+    packet.attach_payload(payload, true);
 
-    QUICPacketHeaderUPtr header =
-      QUICPacketHeader::build(QUICPacketType::PROTECTED, QUICKeyPhase::PHASE_0, dcid, 0x01234567, 0, std::move(payload), 32);
+    CHECK(packet.size() - 16 == 28);
+    CHECK(packet.key_phase() == QUICKeyPhase::PHASE_0);
+    CHECK(packet.type() == QUICPacketType::PROTECTED);
+    CHECK(packet.destination_cid() == dcid);
+    CHECK(packet.packet_number() == 0x01234567);
 
-    CHECK(header->size() == 23);
-    CHECK(header->packet_size() == 0);
-    CHECK(header->key_phase() == QUICKeyPhase::PHASE_0);
-    CHECK(header->type() == QUICPacketType::PROTECTED);
-    CHECK(header->destination_cid() == dcid);
-    CHECK(header->packet_number() == 0x01234567);
-    CHECK(header->has_version() == false);
-
-    header->store(buf, &len);
-    CHECK(len == header_len);
-    CHECK(memcmp(buf, expected, header_len) == 0);
+    packet.store(buf, &len);
+    CHECK(len == sizeof(expected));
+    CHECK(memcmp(buf, expected, sizeof(expected)) == 0);
   }
 }
 

@@ -270,10 +270,10 @@ public:
   virtual const IpEndpoint &from() const;
   virtual const IpEndpoint &to() const;
   virtual QUICPacketType type() const;
-  QUICConnectionId destination_cid() const;
-  QUICConnectionId source_cid() const;
+  virtual QUICConnectionId destination_cid() const;
+  virtual QUICConnectionId source_cid() const;
   virtual QUICPacketNumber packet_number() const;
-  QUICVersion version() const;
+  virtual QUICVersion version() const;
   const QUICPacketHeader &header() const;
   const uint8_t *payload() const;
   bool is_ack_eliciting() const;
@@ -357,6 +357,10 @@ public:
                        bool crypto);
 
   uint16_t size() const override;
+  QUICConnectionId destination_cid() const override;
+  QUICConnectionId source_cid() const override;
+
+  virtual QUICVersion version() const override;
 
   bool is_crypto_packet() const override;
 
@@ -364,7 +368,7 @@ protected:
   size_t _write_common_header(uint8_t *buf) const;
 
   Ptr<IOBufferBlock> _payload_block;
-  size_t _payload_length;
+  size_t _payload_length = 0;
 
 private:
   QUICVersion _version;
@@ -383,6 +387,7 @@ public:
   QUICPacketType type() const override;
   QUICKeyPhase key_phase() const override;
   QUICPacketNumber packet_number() const override;
+  QUICConnectionId destination_cid() const override;
   uint16_t size() const override;
   bool is_crypto_packet() const override;
 
@@ -410,6 +415,8 @@ public:
   Ptr<IOBufferBlock> header_block() const override;
   Ptr<IOBufferBlock> payload_block() const override;
 
+  QUICStatelessResetToken token() const;
+
 private:
   QUICStatelessResetToken _token;
 };
@@ -420,9 +427,13 @@ public:
   QUICVersionNegotiationPacket(QUICConnectionId dcid, QUICConnectionId scid, const QUICVersion versions[], int nversions);
 
   QUICPacketType type() const override;
+  QUICVersion version() const override;
 
   Ptr<IOBufferBlock> header_block() const override;
   Ptr<IOBufferBlock> payload_block() const override;
+
+  const QUICVersion *versions() const;
+  int nversions() const;
 
 private:
   const QUICVersion *_versions;
@@ -494,10 +505,12 @@ public:
   QUICRetryPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, QUICConnectionId ocid, QUICRetryToken &token);
 
   QUICPacketType type() const override;
+  uint16_t size() const override;
   Ptr<IOBufferBlock> header_block() const override;
   Ptr<IOBufferBlock> payload_block() const override;
 
   QUICConnectionId original_dcid() const;
+  QUICRetryToken token() const;
 
 private:
   QUICConnectionId _ocid;
