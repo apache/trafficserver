@@ -40,13 +40,13 @@
 #include "I_VIO.h"
 
 class Event;
-class UnixNetVConnection;
+class NetEventHandler;
 
 struct NetState {
   int enabled = 0;
   VIO vio;
-  Link<UnixNetVConnection> ready_link;
-  SLink<UnixNetVConnection> enable_link;
+  Link<NetEventHandler> ready_link;
+  SLink<NetEventHandler> enable_link;
   int in_enabled_list = 0;
   int triggered       = 0;
 

@@ -61,7 +61,7 @@ struct ShowNet : public ShowCont {
     }
 
     ink_hrtime now = Thread::get_hrtime();
-    forl_LL(UnixNetVConnection, vc, nh->open_list)
+    forl_LL(NetEventHandler, vc, nh->open_list)
     {
       //      uint16_t port = ats_ip_port_host_order(&addr.sa);
       if (ats_is_ip(&addr) && !ats_ip_addr_port_eq(&addr.sa, vc->get_remote_addr())) {
@@ -73,8 +73,8 @@ struct ShowNet : public ShowCont {
       ats_ip_ntop(vc->get_remote_addr(), ipbuf, sizeof(ipbuf));
       char opt_ipbuf[INET6_ADDRSTRLEN];
       char interbuf[80];
-      snprintf(interbuf, sizeof(interbuf), "[%s] %s:%d", vc->options.toString(vc->options.addr_binding),
-               vc->options.local_ip.toString(opt_ipbuf, sizeof(opt_ipbuf)), vc->options.local_port);
+      snprintf(interbuf, sizeof(interbuf), "[%s] %s:%d", vc->get_options().toString(vc->get_options().addr_binding),
+               vc->get_options().local_ip.toString(opt_ipbuf, sizeof(opt_ipbuf)), vc->get_options().local_port);
       CHECK_SHOW(show("<tr>"
                       //"<td><a href=\"/connection/%d\">%d</a></td>"
                       "<td>%d</td>"          // ID
@@ -96,7 +96,7 @@ struct ShowNet : public ShowCont {
                       "<td>%d</td>"          // shutdown
                       "<td>-%s</td>"         // comments
                       "</tr>\n",
-                      vc->id, ipbuf, ats_ip_port_host_order(vc->get_remote_addr()), vc->con.fd, interbuf,
+                      vc->id, ipbuf, ats_ip_port_host_order(vc->get_remote_addr()), vc->get_fd(), interbuf,
                       //                      vc->accept_port,
                       (int)((now - vc->submit_time) / HRTIME_SECOND), ethread->id, vc->read.enabled, vc->read.vio.nbytes,
                       vc->read.vio.ndone, vc->write.enabled, vc->write.vio.nbytes, vc->write.vio.ndone,
@@ -158,7 +158,7 @@ struct ShowNet : public ShowCont {
     CHECK_SHOW(show("<H3>Thread: %d</H3>\n", ithread));
     CHECK_SHOW(show("<table border=1>\n"));
     int connections = 0;
-    forl_LL(UnixNetVConnection, vc, nh->open_list) connections++;
+    forl_LL(NetEventHandler, vc, nh->open_list) connections++;
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Connections", connections));
     // CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Size", pollDescriptor->nfds));
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Ready", pollDescriptor->result));

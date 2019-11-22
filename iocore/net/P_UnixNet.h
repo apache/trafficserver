@@ -75,7 +75,7 @@
 struct PollDescriptor;
 typedef PollDescriptor *EventLoop;
 
-class UnixNetVConnection;
+class NetEventHandler;
 class UnixUDPConnection;
 struct DNSConnection;
 struct NetAccept;
@@ -89,14 +89,14 @@ struct EventIO {
   int type             = 0;
   union {
     Continuation *c;
-    UnixNetVConnection *vc;
+    NetEventHandler *vc;
     DNSConnection *dnscon;
     NetAccept *na;
     UnixUDPConnection *uc;
   } data;
   int start(EventLoop l, DNSConnection *vc, int events);
   int start(EventLoop l, NetAccept *vc, int events);
-  int start(EventLoop l, UnixNetVConnection *vc, int events);
+  int start(EventLoop l, NetEventHandler *vc, int events);
   int start(EventLoop l, UnixUDPConnection *vc, int events);
   int start(EventLoop l, int fd, Continuation *c, int events);
   // Change the existing events by adding modify(EVENTIO_READ)
@@ -118,7 +118,7 @@ struct EventIO {
 #include "P_UnixPollDescriptor.h"
 #include <limits>
 
-class UnixNetVConnection;
+class NetEventHandler;
 class NetHandler;
 typedef int (NetHandler::*NetContHandler)(int, void *);
 typedef unsigned int uint32;
@@ -236,15 +236,15 @@ public:
   // If we don't get rid of @a trigger_event we should remove @a thread.
   EThread *thread      = nullptr;
   Event *trigger_event = nullptr;
-  QueM(UnixNetVConnection, NetState, read, ready_link) read_ready_list;
-  QueM(UnixNetVConnection, NetState, write, ready_link) write_ready_list;
-  Que(UnixNetVConnection, link) open_list;
-  DList(UnixNetVConnection, cop_link) cop_list;
-  ASLLM(UnixNetVConnection, NetState, read, enable_link) read_enable_list;
-  ASLLM(UnixNetVConnection, NetState, write, enable_link) write_enable_list;
-  Que(UnixNetVConnection, keep_alive_queue_link) keep_alive_queue;
+  QueM(NetEventHandler, NetState, read, ready_link) read_ready_list;
+  QueM(NetEventHandler, NetState, write, ready_link) write_ready_list;
+  Que(NetEventHandler, open_link) open_list;
+  DList(NetEventHandler, cop_link) cop_list;
+  ASLLM(NetEventHandler, NetState, read, enable_link) read_enable_list;
+  ASLLM(NetEventHandler, NetState, write, enable_link) write_enable_list;
+  Que(NetEventHandler, keep_alive_queue_link) keep_alive_queue;
   uint32_t keep_alive_queue_size = 0;
-  Que(UnixNetVConnection, active_queue_link) active_queue;
+  Que(NetEventHandler, active_queue_link) active_queue;
   uint32_t active_queue_size = 0;
 
   /// configuration settings for managing the active and keep-alive queues
@@ -293,10 +293,10 @@ public:
   void process_ready_list();
   void manage_keep_alive_queue();
   bool manage_active_queue(bool ignore_queue_size);
-  void add_to_keep_alive_queue(UnixNetVConnection *vc);
-  void remove_from_keep_alive_queue(UnixNetVConnection *vc);
-  bool add_to_active_queue(UnixNetVConnection *vc);
-  void remove_from_active_queue(UnixNetVConnection *vc);
+  void add_to_keep_alive_queue(NetEventHandler *vc);
+  void remove_from_keep_alive_queue(NetEventHandler *vc);
+  bool add_to_active_queue(NetEventHandler *vc);
+  void remove_from_active_queue(NetEventHandler *vc);
 
   /// Per process initialization logic.
   static void init_for_process();
@@ -304,42 +304,42 @@ public:
   void configure_per_thread_values();
 
   /**
-    Start to handle read & write event on a UnixNetVConnection.
+    Start to handle read & write event on a NetEventHandler.
     Initial the socket fd of netvc for polling system.
     Only be called when holding the mutex of this NetHandler.
 
-    @param netvc UnixNetVConnection to be managed by this NetHandler.
+    @param netvc NetEventHandler to be managed by this NetHandler.
     @return 0 on success, netvc->nh set to this NetHandler.
             -ERRNO on failure.
    */
-  int startIO(UnixNetVConnection *netvc);
+  int startIO(NetEventHandler *netvc);
   /**
-    Stop to handle read & write event on a UnixNetVConnection.
+    Stop to handle read & write event on a NetEventHandler.
     Remove the socket fd of netvc from polling system.
     Only be called when holding the mutex of this NetHandler and must call stopCop(netvc) first.
 
-    @param netvc UnixNetVConnection to be released.
+    @param netvc NetEventHandler to be released.
     @return netvc->nh set to nullptr.
    */
-  void stopIO(UnixNetVConnection *netvc);
+  void stopIO(NetEventHandler *netvc);
 
   /**
-    Start to handle active timeout and inactivity timeout on a UnixNetVConnection.
+    Start to handle active timeout and inactivity timeout on a NetEventHandler.
     Put the netvc into open_list. All NetVCs in the open_list is checked for timeout by InactivityCop.
     Only be called when holding the mutex of this NetHandler and must call startIO(netvc) first.
 
-    @param netvc UnixNetVConnection to be managed by InactivityCop
+    @param netvc NetEventHandler to be managed by InactivityCop
    */
-  void startCop(UnixNetVConnection *netvc);
+  void startCop(NetEventHandler *netvc);
   /**
-    Stop to handle active timeout and inactivity on a UnixNetVConnection.
+    Stop to handle active timeout and inactivity on a NetEventHandler.
     Remove the netvc from open_list and cop_list.
     Also remove the netvc from keep_alive_queue and active_queue if its context is IN.
     Only be called when holding the mutex of this NetHandler.
 
-    @param netvc UnixNetVConnection to be released.
+    @param netvc NetEventHandler to be released.
    */
-  void stopCop(UnixNetVConnection *netvc);
+  void stopCop(NetEventHandler *netvc);
 
   // Signal the epoll_wait to terminate.
   void signalActivity() override;
@@ -347,15 +347,14 @@ public:
   /**
     Release a netvc and free it.
 
-    @param netvc UnixNetVConnection to be detached.
+    @param netvc NetEventHandler to be detached.
    */
-  void free_netvc(UnixNetVConnection *netvc);
+  void free_netvc(NetEventHandler *netvc);
 
   NetHandler();
 
 private:
-  void _close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time,
-                 int &total_idle_count);
+  void _close_vc(NetEventHandler *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time, int &total_idle_count);
 
   /// Static method used as the callback for runtime configuration updates.
   static int update_nethandler_config(const char *name, RecDataT, RecData data, void *);
@@ -507,10 +506,10 @@ check_transient_accept_error(int res)
 }
 
 //
-// Disable a UnixNetVConnection
+// Disable a NetEventHandler
 //
 static inline void
-read_disable(NetHandler *nh, UnixNetVConnection *vc)
+read_disable(NetHandler *nh, NetEventHandler *vc)
 {
   if (!vc->write.enabled) {
     vc->set_inactivity_timeout(0);
@@ -522,7 +521,7 @@ read_disable(NetHandler *nh, UnixNetVConnection *vc)
 }
 
 static inline void
-write_disable(NetHandler *nh, UnixNetVConnection *vc)
+write_disable(NetHandler *nh, NetEventHandler *vc)
 {
   if (!vc->read.enabled) {
     vc->set_inactivity_timeout(0);
@@ -546,10 +545,10 @@ EventIO::start(EventLoop l, NetAccept *vc, int events)
   return start(l, vc->server.fd, (Continuation *)vc, events);
 }
 TS_INLINE int
-EventIO::start(EventLoop l, UnixNetVConnection *vc, int events)
+EventIO::start(EventLoop l, NetEventHandler *vc, int events)
 {
   type = EVENTIO_READWRITE_VC;
-  return start(l, vc->con.fd, (Continuation *)vc, events);
+  return start(l, vc->get_fd(), (Continuation *)vc, events);
 }
 TS_INLINE int
 EventIO::start(EventLoop l, UnixUDPConnection *vc, int events)
@@ -576,7 +575,7 @@ EventIO::close()
     return data.na->server.close();
     break;
   case EVENTIO_READWRITE_VC:
-    return data.vc->con.close();
+    return data.vc->close();
     break;
   }
   return -1;
@@ -775,10 +774,10 @@ EventIO::stop()
 }
 
 TS_INLINE int
-NetHandler::startIO(UnixNetVConnection *netvc)
+NetHandler::startIO(NetEventHandler *netvc)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
-  ink_assert(netvc->thread == this_ethread());
+  ink_assert(netvc->get_thread() == this_ethread());
   int res = 0;
 
   PollDescriptor *pd = get_PollDescriptor(this->thread);
@@ -799,7 +798,7 @@ NetHandler::startIO(UnixNetVConnection *netvc)
 }
 
 TS_INLINE void
-NetHandler::stopIO(UnixNetVConnection *netvc)
+NetHandler::stopIO(NetEventHandler *netvc)
 {
   ink_release_assert(netvc->nh == this);
 
@@ -820,7 +819,7 @@ NetHandler::stopIO(UnixNetVConnection *netvc)
 }
 
 TS_INLINE void
-NetHandler::startCop(UnixNetVConnection *netvc)
+NetHandler::startCop(NetEventHandler *netvc)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
   ink_release_assert(netvc->nh == this);
@@ -830,7 +829,7 @@ NetHandler::startCop(UnixNetVConnection *netvc)
 }
 
 TS_INLINE void
-NetHandler::stopCop(UnixNetVConnection *netvc)
+NetHandler::stopCop(NetEventHandler *netvc)
 {
   ink_release_assert(netvc->nh == this);
 

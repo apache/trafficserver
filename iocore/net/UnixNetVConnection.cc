@@ -866,8 +866,7 @@ UnixNetVConnection::reenable_re(VIO *vio)
   }
 }
 
-UnixNetVConnection::UnixNetVConnection() : flags(0)
-
+UnixNetVConnection::UnixNetVConnection()
 {
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::startEvent);
 }
@@ -889,6 +888,12 @@ void
 UnixNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 {
   read_from_net(nh, this, lthread);
+}
+
+void
+UnixNetVConnection::net_write_io(NetHandler *nh, EThread *lthread)
+{
+  write_to_net(nh, this, lthread);
 }
 
 // This code was pulled out of write_to_net so
