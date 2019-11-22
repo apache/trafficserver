@@ -130,6 +130,12 @@ HQSession::get_transact_count() const
   return 0;
 }
 
+bool
+HQSession::support_sni() const
+{
+  return this->_client_vc;
+}
+
 //
 // Http3Session
 //

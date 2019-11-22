@@ -1844,6 +1844,24 @@ Security
    ``2`` Similar to 0, except return a 416 error code and no response body.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.http.host_sni_policy INT 2
+
+   This option controls how host header and SNI name mismatches are handled.  Mismatches
+   may result in SNI-based policies defined in :file:`sni.yaml` being avoided.  For example, ``foo.com``
+   may be the fqdn value in :file:`sni.yaml` which defines that client certificates are required.
+   The user could specify ``bar.com`` as the SNI to avoid the policy requiring the client certificate
+   but specify ``foo.com`` as the HTTP host header to still access the same object.
+
+   Therefore, if a host header would have triggered a SNI policy, it is possible that the user is
+   trying to bypass a SNI policy if the host header and SNI values do not match.
+
+   If this setting is 0, no checking is performed.  If this setting is 1 or 2, the host header and SNI values
+   are compared if the host header value would have triggered a SNI policy.  If there is a mismatch and the value
+   is 1, a warning is generated but the transaction is allowed to proceed.  If the value is 2 and there is a
+   mismatch, a warning is generated and a status 403 is returned.
+
+   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`host_sni_policy attribute<override-host-sni-policy>` action.
+
 Cache Control
 =============
 

@@ -1456,6 +1456,14 @@ static const RecordElement RecordsConfig[] =
   // Controls for TLS ASYN_JOBS and engine loading
   {RECT_CONFIG, "proxy.config.ssl.async.handshake.enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL},
   {RECT_CONFIG, "proxy.config.ssl.engine.conf_file", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL},
+
+  //###########
+  //#
+  //# Control how the host/sni name mismatches are handled
+  //# 0 - no checking. 1 - log in mismatch. 2 - enforcing
+  //#
+  //###########
+  {RECT_CONFIG, "proxy.config.http.host_sni_policy", RECD_INT, "2", RECU_NULL, RR_NULL, RECC_NULL, "[0-2]", RECA_NULL},
 };
 // clang-format on
 

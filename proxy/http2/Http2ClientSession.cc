@@ -745,3 +745,9 @@ Http2ClientSession::add_url_to_pushed_table(const char *url, int url_len)
     h2_pushed_urls.emplace(url);
   }
 }
+
+bool
+Http2ClientSession::support_sni() const
+{
+  return client_vc ? client_vc->support_sni() : false;
+}
