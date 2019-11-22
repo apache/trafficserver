@@ -720,7 +720,10 @@ serialize(std::ostream &os, T const &t)
     for (const auto &kv : schema.fields) {
       name_width = max(name_width, kv.first.length());
     }
-    for (const auto &[fname, field] : schema.fields) {
+    // TODO: clang-5 didn't like the use of a range based for here, change later
+    for (auto it = schema.fields.begin(); it != schema.fields.end(); ++it) {
+      auto &fname = it->first;
+      auto &field = it->second;
       ink_assert(field.serializer);
       os << setw(indent) << "" << setw(name_width) << right << fname << ": ";
       field.serializer(os, details::FieldPtrGet(t, field));
