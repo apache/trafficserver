@@ -63,6 +63,8 @@ ts.Disk.sni_yaml.AddLines([
     'sni:',
     '- fqdn: bob.bar.com',
     '  verify_client: NONE',
+    '- fqdn: "bob.com"',
+    '  verify_client: STRICT',
     '- fqdn: bob.*.com',
     '  verify_client: NONE',
     '- fqdn: "*bar.com"',
@@ -168,3 +170,17 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl --tls-max 1.2 -k --cert ./server.pem --key ./server.key --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/case1".format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 35
+
+
+# Test that the fqdn's match completely.  bob.com should require client certificate. bob.com.com should not
+tr = Test.AddTestRun("Connect to bob.com without cert, should fail")
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+tr.Processes.Default.Command = "curl --tls-max 1.2 -k --resolve 'bob.com:{0}:127.0.0.1' https://bob.com:{0}/case1".format(ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 35
+
+tr = Test.AddTestRun("Connect to bob.com.com without cert, should succeed")
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+tr.Processes.Default.Command = "curl --tls-max 1.2 -k --resolve 'bob.com.com:{0}:127.0.0.1' https://bob.com.com:{0}/case1".format(ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
