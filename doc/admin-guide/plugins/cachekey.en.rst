@@ -56,7 +56,7 @@ The plugin manipulates the `cache key` by default. If `parent selection URL` man
 * ``--key-type=<list of target types>``  (default: ``cache_key``) - list of ``cache_key`` or ``parent_selection_url``, if multiple ``--key-type`` options are specified then all values are combined together.
 
 An instance of this plugin can be used for applying manipulations to `cache key`, `parent selection URL` or both depending on the need. See `simultaneous cache key and parent selection URL manipulation`_
-for examples of how to apply the **same** set of manupulations to both targets with a single plugin instance or applying **diferent** sets of manipulations to each target using separate plugin instances.
+for examples of how to apply the **same** set of manipulations to both targets with a single plugin instance or applying **different** sets of manipulations to each target using separate plugin instances.
 
 
 Cache key structure and related plugin parameters
@@ -83,21 +83,21 @@ Cache key structure and related plugin parameters
 
 ::
 
-  Optional components      | ┌─────────────────┬────────────── ───┬──────────────────────┐
-  (included in this order) | │ --static-prefix | --capture-prefix │ --capture-prefix-uri │
+  Optional components      | ┌─────────────────┬──────────────────┬──────────────────────┐
+  (included in this order) | │ --static-prefix │ --capture-prefix │ --capture-prefix-uri │
                            | ├─────────────────┴──────────────────┴──────────────────────┤
-  Default values if no     | │ /host/port or scheme://host:port (see the table below)    |
+  Default values if no     | │ /host/port or scheme://host:port (see the table below)    │
   optional components      | └───────────────────────────────────────────────────────────┘
   configured               |
 
   ┌────────────────────┬─────────────────────────┬──────────────────────┐
-  │ --canonical-prefix |  default value if no    │ input used for       │
-  │                    |  prefix parameters used │ --capture-prefix     │
-  ├────────────────────┴─────────────────────────┴──────────────────────┤
-  │ false              | /host/port              | host:port            |
-  ├────────────────────┴─────────────────────────┴──────────────────────┤
-  │ true               | scheme://host:port      | scheme://host:port   |
-  └──────────────────────────────────────────────┴──────────────────────┘
+  │ --canonical-prefix │  default value if no    │ input used for       │
+  │                    │  prefix parameters used │ --capture-prefix     │
+  ├────────────────────┼─────────────────────────┼──────────────────────┤
+  │ false              │ /host/port              │ host:port            │
+  ├────────────────────┼─────────────────────────┼──────────────────────┤
+  │ true               │ scheme://host:port      │ scheme://host:port   │
+  └────────────────────┴─────────────────────────┴──────────────────────┘
 
 
 * ``--static-prefix=<value>`` (default: empty string) - if specified and not an empty string the ``<value>`` will be added to the `cache key`.
@@ -114,9 +114,9 @@ Cache key structure and related plugin parameters
 ::
 
   Optional components      | ┌────────────┬──────────────┐
-  (included in this order) | │ --ua-class | --ua-capture │
+  (included in this order) | │ --ua-class │ --ua-capture │
                            | ├────────────┴──────────────┤
-  Default values if no     | │ (empty)                   |
+  Default values if no     | │ (empty)                   │
   optional components      | └───────────────────────────┘
   configured               |
 
@@ -135,8 +135,8 @@ Cache key structure and related plugin parameters
 
   Optional components      | ┌───────────────────┬───────────────────┐
                            | │ --include-headers │  --capture-header │
-                           | ├───────────────────────────────────────┤
-  Default values if no     | │ (empty)           |  (empty)          |
+                           | ├───────────────────┼───────────────────┤
+  Default values if no     | │ (empty)           │  (empty)          │
   optional components      | └───────────────────┴───────────────────┘
   configured               |
 
@@ -152,7 +152,7 @@ Cache key structure and related plugin parameters
   Optional components      | ┌───────────────────┐
                            | │ --include-cookies │
                            | ├───────────────────┤
-  Default values if no     | │ (empty)           |
+  Default values if no     | │ (empty)           │
   optional components      | └───────────────────┘
   configured               |
 
@@ -164,9 +164,9 @@ Cache key structure and related plugin parameters
 ::
 
   Optional components      | ┌────────────────────┬────────────────┐
-  (included in this order) | │ --capture-path-uri | --capture-path │
+  (included in this order) | │ --capture-path-uri │ --capture-path │
                            | ├────────────────────┴────────────────┤
-  Default values if no     | │ URI path                            |
+  Default values if no     | │ URI path                            │
   optional components      | └─────────────────────────────────────┘
   configured               |
 

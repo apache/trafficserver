@@ -284,6 +284,20 @@ TS_ARG_ENABLE_VAR([has], [tests])
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
+# Build expensive unit tests ?
+#
+
+AC_MSG_CHECKING([whether to enable expensive unit tests])
+AC_ARG_ENABLE([expensive-tests],
+  [AS_HELP_STRING([--enable-expensive-tests],[turn on expensive unit tests])],
+  [],
+  [enable_expensive_tests=no]
+)
+AC_MSG_RESULT([$enable_expensive_tests])
+TS_ARG_ENABLE_VAR([has], [expensive_tests])
+AM_CONDITIONAL([EXPENSIVE_TESTS], [test 0 -ne $has_expensive_tests])
+
+#
 # Build documentation?
 #
 
@@ -724,6 +738,7 @@ case $host_os in
 esac
 
 TS_ADDTO(AM_CPPFLAGS, [-D$host_os_def])
+AM_CONDITIONAL([OS_LINUX], [test "x$host_os_def" = "xlinux"])
 
 dnl AM_PROG_AR is not always available, but it doesn't seem to be needed in older versions.
 ifdef([AM_PROG_AR],
@@ -2070,6 +2085,25 @@ AC_CHECK_TYPE([struct tcp_info],
   ]]
 )
 
+AC_MSG_CHECKING([whether to include systemtap tracing support])
+AC_ARG_ENABLE([systemtap],
+              [AS_HELP_STRING([--enable-systemtap],
+                              [Enable inclusion of systemtap trace support])],
+              [ENABLE_SYSTEMTAP="${enableval}"], [ENABLE_SYSTEMTAP='no'])
+AM_CONDITIONAL([ENABLE_SYSTEMTAP], [test x$ENABLE_SYSTEMTAP = xyes])
+AC_MSG_RESULT(${ENABLE_SYSTEMTAP})
+
+if test "x${ENABLE_SYSTEMTAP}" = xyes; then
+  AC_CHECK_PROGS(DTRACE, dtrace)
+  if test -z "$DTRACE"; then
+    AC_MSG_ERROR([dtrace not found])
+  fi
+  AC_CHECK_HEADER([sys/sdt.h], [SDT_H_FOUND='yes'],
+                  [SDT_H_FOUND='no';
+                     AC_MSG_ERROR([systemtap support needs sys/sdt.h header])])
+  AC_DEFINE([HAVE_SYSTEMTAP], [1], [Define to 1 if using probes.])
+fi
+
 # See if we can build the remap_stats plugin
 AS_IF([test "x$enable_experimental_plugins" = "xyes"],
   [
@@ -2080,8 +2114,6 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"],
         AC_CHECK_FUNCS([hcreate_r hsearch_r])
       ])
   ])
-AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
-  [ test "x$enable_experimental_plugins" = "xyes" -a "x$ac_cv_header_search_h" = "xyes" -a "x$ac_cv_type_struct_hsearch_data" = "xyes" -a "x$ac_cv_func_hcreate_r" = "xyes" -a "x$ac_cv_func_hsearch_r" = "xyes" ])
 
 AC_ARG_WITH([default-stack-size],
   [AS_HELP_STRING([--with-default-stack-size],[specify the default stack size in bytes [default=1048576]])],

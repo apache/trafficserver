@@ -575,7 +575,7 @@ void
 Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool call_update)
 {
   if (!this->is_client_state_writeable() || closed || _proxy_ssn == nullptr || write_vio.mutex == nullptr ||
-      (buf_reader == nullptr && write_len == 0)) {
+      (buf_reader == nullptr && write_len == 0) || this->response_reader == nullptr) {
     return;
   }
 
@@ -589,22 +589,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
 
   SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
 
-  // if response is chunked, limit the dechunked_buffer size.
-  bool is_done = false;
-  if (this->chunked) {
-    if (chunked_handler.dechunked_buffer && chunked_handler.dechunked_buffer->max_read_avail() > HTTP2_MAX_BUFFER_USAGE) {
-      if (buffer_full_write_event == nullptr) {
-        buffer_full_write_event = _thread->schedule_imm(this, VC_EVENT_WRITE_READY);
-      }
-    } else {
-      this->response_process_data(is_done);
-    }
-  }
-
-  if (this->response_get_data_reader() == nullptr) {
-    return;
-  }
-  int64_t bytes_avail = this->response_get_data_reader()->read_avail();
+  int64_t bytes_avail = this->response_reader->read_avail();
   if (write_vio.nbytes > 0 && write_vio.ntodo() > 0) {
     int64_t num_to_write = write_vio.ntodo();
     if (num_to_write > write_len) {
@@ -619,7 +604,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
                    ", reader.read_avail=%" PRId64,
                    write_vio.nbytes, write_vio.ndone, write_vio.get_writer()->write_avail(), bytes_avail);
 
-  if (bytes_avail <= 0 && !is_done) {
+  if (bytes_avail <= 0) {
     return;
   }
 
@@ -654,17 +639,18 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
         h2_proxy_ssn->connection_state.send_headers_frame(this);
       }
 
-      // See if the response is chunked.  Set up the dechunking logic if it is
-      // Make sure to check if the chunk is complete and signal appropriately
-      this->response_initialize_data_handling(is_done);
+      // Roll back states of response header to read final response
+      if (this->response_header.expect_final_response()) {
+        this->response_header_done = false;
+        response_header.destroy();
+        response_header.create(HTTP_TYPE_RESPONSE);
+        http_parser_clear(&http_parser);
+        http_parser_init(&http_parser);
+      }
 
-      // If there is additional data, send it along in a data frame.  Or if this was header only
-      // make sure to send the end of stream
-      is_done |= (write_vio.ntodo() + this->response_header.length_get()) == bytes_avail;
-      if (this->response_is_data_available() || is_done) {
-        if (is_done) {
-          this->mark_body_done();
-        }
+      this->signal_write_event(call_update);
+
+      if (this->response_reader->is_read_avail_more_than(0)) {
         this->_milestones.mark(Http2StreamMilestone::START_TX_DATA_FRAMES);
         this->send_response_body(call_update);
       }
@@ -677,9 +663,6 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
       break;
     }
   } else {
-    if (write_vio.ntodo() == bytes_avail || is_done) {
-      this->mark_body_done();
-    }
     this->_milestones.mark(Http2StreamMilestone::START_TX_DATA_FRAMES);
     this->send_response_body(call_update);
   }
@@ -711,12 +694,12 @@ Http2Stream::signal_write_event(bool call_update)
   }
 }
 
-void
+bool
 Http2Stream::push_promise(URL &url, const MIMEField *accept_encoding)
 {
   Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
   SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
-  h2_proxy_ssn->connection_state.send_push_promise_frame(this, url, accept_encoding);
+  return h2_proxy_ssn->connection_state.send_push_promise_frame(this, url, accept_encoding);
 }
 
 void
@@ -820,7 +803,6 @@ Http2Stream::destroy()
   if (header_blocks) {
     ats_free(header_blocks);
   }
-  chunked_handler.clear();
   clear_timers();
   clear_io_events();
   http_parser_clear(&http_parser);
@@ -829,53 +811,10 @@ Http2Stream::destroy()
   THREAD_FREE(this, http2StreamAllocator, this_ethread());
 }
 
-void
-Http2Stream::response_initialize_data_handling(bool &is_done)
-{
-  is_done           = false;
-  int chunked_index = response_header.value_get_index(TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING,
-                                                      TS_HTTP_VALUE_CHUNKED, TS_HTTP_LEN_CHUNKED);
-  // -1 means this value was not found for this field
-  if (chunked_index >= 0) {
-    Http2StreamDebug("Response is chunked");
-    chunked = true;
-    this->chunked_handler.init_by_action(this->response_reader, ChunkedHandler::ACTION_DECHUNK);
-    this->chunked_handler.state            = ChunkedHandler::CHUNK_READ_SIZE;
-    this->chunked_handler.dechunked_reader = this->chunked_handler.dechunked_buffer->alloc_reader();
-    this->response_reader->dealloc();
-    this->response_reader = nullptr;
-    // Get things going if there is already data waiting
-    if (this->chunked_handler.chunked_reader->is_read_avail_more_than(0)) {
-      response_process_data(is_done);
-    }
-  }
-}
-
-void
-Http2Stream::response_process_data(bool &done)
-{
-  done = false;
-  if (chunked) {
-    do {
-      if (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL) {
-        chunked_handler.state = ChunkedHandler::CHUNK_READ_SIZE_START;
-      }
-      done = this->chunked_handler.process_chunked_content();
-    } while (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL);
-  }
-}
-
-bool
-Http2Stream::response_is_data_available() const
-{
-  IOBufferReader *reader = this->response_get_data_reader();
-  return reader ? reader->is_read_avail_more_than(0) : false;
-}
-
 IOBufferReader *
 Http2Stream::response_get_data_reader() const
 {
-  return (chunked) ? chunked_handler.dechunked_reader : response_reader;
+  return this->response_reader;
 }
 
 void
@@ -1051,17 +990,6 @@ Http2Stream::_switch_thread_if_not_on_right_thread(int event, void *edata)
     return false;
   }
   return true;
-}
-
-void
-Http2Stream::mark_body_done()
-{
-  body_done = true;
-  if (response_is_chunked()) {
-    ink_assert(chunked_handler.state == ChunkedHandler::CHUNK_READ_DONE ||
-               chunked_handler.state == ChunkedHandler::CHUNK_READ_ERROR);
-    this->write_vio.nbytes = response_header.length_get() + chunked_handler.dechunked_size;
-  }
 }
 
 int

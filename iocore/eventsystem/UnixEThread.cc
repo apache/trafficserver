@@ -56,8 +56,6 @@ EThread::EThread()
 
 EThread::EThread(ThreadType att, int anid) : id(anid), tt(att)
 {
-  ethreads_to_be_signalled = static_cast<EThread **>(ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *)));
-  memset(ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));
   memset(thread_private, 0, PER_THREAD_DATA);
 #if HAVE_EVENTFD
   evfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -92,15 +90,7 @@ EThread::EThread(ThreadType att, Event *e) : tt(att), start_event(e)
 
 // Provide a destructor so that SDK functions which create and destroy
 // threads won't have to deal with EThread memory deallocation.
-EThread::~EThread()
-{
-  if (n_ethreads_to_be_signalled > 0) {
-    flush_signals(this);
-  }
-  ats_free(ethreads_to_be_signalled);
-  // TODO: This can't be deleted ....
-  // delete[]l1_hash;
-}
+EThread::~EThread() {}
 
 bool
 EThread::is_event_type(EventType et)
@@ -268,10 +258,6 @@ EThread::execute_regular()
       ++(current_metric->_wait);
     } else {
       sleep_time = 0;
-    }
-
-    if (n_ethreads_to_be_signalled) {
-      flush_signals(this);
     }
 
     tail_cb->waitForActivity(sleep_time);

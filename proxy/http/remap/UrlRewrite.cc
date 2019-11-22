@@ -27,6 +27,7 @@
 #include "ReverseProxy.h"
 #include "RemapConfig.h"
 #include "tscore/I_Layout.h"
+#include "tscore/Filenames.h"
 #include "HttpSM.h"
 
 #define modulePrefix "[ReverseProxy]"
@@ -55,10 +56,10 @@ UrlRewrite::load()
 {
   ats_scoped_str config_file_path;
 
-  config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", "remap.config");
+  config_file_path = RecConfigReadConfigPath("proxy.config.url_remap.filename", ts::filename::REMAP);
   if (!config_file_path) {
     pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, "Unable to find proxy.config.url_remap.filename");
-    Warning("%s Unable to locate remap.config. No remappings in effect", modulePrefix);
+    Warning("%s Unable to locate %s. No remappings in effect", modulePrefix, ts::filename::REMAP);
     return false;
   }
 
@@ -83,6 +84,11 @@ UrlRewrite::load()
   /* Initialize the plugin factory */
   pluginFactory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
 
+  /* Initialize the next hop strategy factory */
+  std::string sf = RecConfigReadConfigPath("proxy.config.url_remap.strategies.filename", "strategies.yaml");
+  Debug("url_rewrite_regex", "strategyFactory file: %s", sf.c_str());
+  strategyFactory = new NextHopStrategyFactory(sf.c_str());
+
   if (0 == this->BuildTable(config_file_path)) {
     _valid = true;
     if (is_debug_tag_set("url_rewrite")) {
@@ -105,6 +111,7 @@ UrlRewrite::~UrlRewrite()
   DestroyStore(temporary_redirects);
   DestroyStore(forward_mappings_with_recv_port);
   _valid = false;
+  delete strategyFactory;
 }
 
 /** Sets the reverse proxy flag. */

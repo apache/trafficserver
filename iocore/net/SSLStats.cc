@@ -132,8 +132,12 @@ SSLInitializeStatistics()
   // SSL handshake time
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_handshake_time", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_handshake_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_attempts_handshake_count_in", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_attempts_handshake_count_in_stat, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count_in", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_success_handshake_count_in_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_attempts_handshake_count_out", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_attempts_handshake_count_out_stat, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count_out", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_success_handshake_count_out_stat, RecRawStatSyncCount);
 

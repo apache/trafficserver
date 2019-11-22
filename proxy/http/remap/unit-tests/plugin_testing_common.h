@@ -93,8 +93,9 @@ extern "C" {
 typedef void *GetPluginDebugObjectFunction(void);
 GetPluginDebugObjectFunction getPluginDebugObjectTest;
 
-#define Debug(category, fmt, ...) PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", category, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define Error(fmt, ...) PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define PluginDebug(category, fmt, ...) \
+  PrintToStdErr("(%s) %s:%d:%s() " fmt "\n", category, __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define PluginError(fmt, ...) PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 void PrintToStdErr(const char *fmt, ...);
 
 #ifdef __cplusplus

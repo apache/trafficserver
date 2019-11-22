@@ -40,6 +40,7 @@
 #include "tscore/ink_sprintf.h"
 #include "tscore/ink_file.h"
 #include "tscore/Regression.h"
+#include "tscore/Filenames.h"
 #include "ts/ts.h"
 #include "ts/experimental.h"
 #include "records/I_RecCore.h"
@@ -1995,7 +1996,6 @@ REGRESSION_TEST(SDK_API_TSCache)(RegressionTest *test, int /* atype ATS_UNUSED *
 //                    TSfread
 //                    TSfwrite
 //////////////////////////////////////////////
-#define PFX "plugin.config"
 
 // Note that for each test, if it fails, we set the error status and return.
 REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
@@ -2013,8 +2013,7 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
   struct stat stat_buffer_pre, stat_buffer_post, stat_buffer_input;
   char *ret_val;
   int read = 0, wrote = 0;
-  int64_t read_amount    = 0;
-  char INPUT_TEXT_FILE[] = "plugin.config";
+  int64_t read_amount = 0;
   char input_file_full_path[BUFSIZ];
 
   // Set full path to file at run time.
@@ -2027,7 +2026,7 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
     return;
   }
   // Add "etc/trafficserver" to point to config directory
-  ink_filepath_make(input_file_full_path, sizeof(input_file_full_path), TSConfigDirGet(), INPUT_TEXT_FILE);
+  ink_filepath_make(input_file_full_path, sizeof(input_file_full_path), TSConfigDirGet(), ts::filename::PLUGIN);
 
   // open existing file for reading
   if (!(source_read_file = TSfopen(input_file_full_path, "r"))) {
@@ -2041,7 +2040,7 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
   }
 
   // Create unique tmp _file_name_, do not use any TS file_name
-  snprintf(write_file_name, PATH_NAME_MAX, "/tmp/%sXXXXXX", PFX);
+  snprintf(write_file_name, PATH_NAME_MAX, "/tmp/%sXXXXXX", ts::filename::PLUGIN);
   int write_file_fd; // this file will be reopened below
   if ((write_file_fd = mkstemp(write_file_name)) <= 0) {
     SDK_RPRINT(test, "mkstemp", "std func", TC_FAIL, "can't create file for writing");

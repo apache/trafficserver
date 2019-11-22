@@ -16,8 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-import time
 Test.Summary = '''
 Basic slice plugin test
 '''
@@ -115,7 +113,7 @@ tr = Test.AddTestRun("Load Slice plugin")
 remap_config_path = ts.Disk.remap_config.Name
 tr.Disk.File(remap_config_path, typename="ats:config").AddLines([
   'map / http://127.0.0.1:{}'.format(server.Variables.Port) +
-    ' @plugin=slice.so @pparam=--test-blockbytes={}'.format(block_bytes)
+    ' @plugin=slice.so @pparam=--blockbytes-test={}'.format(block_bytes)
 ])
 
 tr.StillRunningAfter = ts

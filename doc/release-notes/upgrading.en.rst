@@ -34,7 +34,7 @@ removed in the next major release of ATS.
 
 API Changes
 -----------
-The following APIs have changed, either in semanatics, interfaces, or both.
+The following APIs have changed, either in semantics, interfaces, or both.
 
 
 Cache

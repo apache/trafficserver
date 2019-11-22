@@ -16,7 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 import re
 Test.Summary = '''
 Test tls tickets
@@ -95,7 +94,6 @@ def checkSession(ev) :
 
   f1Content = f1.read()
   f2Content = f2.read()
-  sessRegex = re.compile('Session-ID: ([0-9A-F]+)')
   match1 = re.findall('Session-ID: ([0-9A-F]+)', f1Content)
   match2 = re.findall('Session-ID: ([0-9A-F]+)', f2Content)
 

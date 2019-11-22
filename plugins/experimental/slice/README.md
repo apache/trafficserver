@@ -15,66 +15,86 @@ The plugin uses TSHttpConnect to delegate each block request to
 cache_range_requests.so which handles all cache and parent interaction.
 
 To enable the plugin, specify the plugin library via @plugin at the end
-of a remap line as follows (2MB slice in this example):
+of a remap line as follows (default 1MB slice in this example):
 
 ```
-map http://ats-cache/ http://parent/ @plugin=slice.so @pparam=--blockbytes=2M @plugin=cache_range_requests.so
+map http://ats-cache/ http://parent/ @plugin=slice.so @plugin=cache_range_requests.so
+map https://ats-cache/ http://parent/ @plugin=slice.so @plugin=cache_range_requests.so
 ```
 
-alternatively
+alternatively (2MB slice block)
 
 ```
 map http://ats-cache/ http://parent/ @plugin=slice.so @pparam=-b @pparam=2M @plugin=cache_range_requests.so
-```
-
-for global plugins.
-
-```
-slice.so --blockbytes=2097152
-cache_range_requests.so
-```
-
-alternatively:
-
-```
-slice.so -b 2M
-cache_range_requests.so
+map https://ats-cache/ http://parent/ @plugin=slice.so @pparam=--blockbytes=2M @plugin=cache_range_requests.so
 ```
 
 Options for the slice plugin (typically last one wins):
 ```
 --blockbytes=<number bytes> (optional)
   Slice block size.
-	Default is 1m or 1048576 bytes.
+  Default is 1m or 1048576 bytes.
   also -b <num bytes>
-	Suffix k,m,g supported.
-	Limited to 32k and 32m inclusive.
-	For backwards compatibility blockbytes:<num bytes> is also supported.
+  Suffix k,m,g supported.
+  Limited to 32k and 32m inclusive.
+  For backwards compatibility blockbytes:<num bytes> is also supported.
 
---test-blockbytes=<number bytes> (optional)
+--blockbytes-test=<number bytes> (optional)
   Slice block size for testing.
   also -t <num bytes>
-	Suffix k,m,g supported.
-	Limited to any positive number.
-	Ignored if --blockbytes is provided.
+  Suffix k,m,g supported.
+  Limited to any positive number.
+  Ignored if --blockbytes is provided.
+
+--remap-host=<loopback hostname> (optional)
+  Uses effective url with given host and port 0 for remapping.
+  Requires setting up an intermediate loopback remap rule.
+  -r for short
 
 --pace-errorlog=<second(s)> (optional)
   Limit stitching error logs to every 'n' second(s)
   Default is to log all errors (no pacing).
-  also -p <seconds>
+  also -e <seconds>
 
 --disable-errorlog (optional)
   Disable writing stitching errors to the error log.
   also -d
 ```
 
-**Note**: cache_range_requests **MUST** follow slice.so Put these plugins
-at the end of the plugin list
+By default the plugin uses the pristine url to loopback call back
+into the same rule as each range slice is issued.  The effective url
+with loopback remap host may be used by adding the '-r <hostname>' or
+'--remap-host=<hostname>' plugin option.
+
+Using the `--remap-host` option splits the plugin chain into 2 remap rules.
+One remap rule for all the incoming requests and the other for just the block
+range requests.  This allows for easier trouble shooting via logs and
+also allows for more effecient plugin rules.  The default pristine method
+runs the remap plugins twice, one for the incoming request and one for
+eace slice.  Splitting the rules allows for plugins like URI signing to
+be done on the client request only.
+
+NOTE: Requests NOT handled by the slice plugin (ie: HEAD requests) are
+handled as with a typical remap rule.  GET requests intercepted by the
+slice plugin are virtually reissued into ATS and are forward proxied
+through the cache_range_requests plugin.
+
+```
+map http://ats/ http://parent/ @plugin=slice.so @pparam=--blockbytes=512k @pparam=--remap-host=loopback
+map https://ats/ https://parent/ @plugin=slice.so @pparam=--blockbytes=512k @pparam=--remap-host=loopback
+
+# Virtual forward proxy for slice range blocks
+map http://loopback/ http://parent/ @plugin=cache_range_requests.so
+map https://loopback/ http://parent/ @plugin=cache_range_requests.so
+```
+
+**Note**: For default pristine behavior cache_range_requests **MUST**
+follow slice.so Put these plugins at the end of the plugin list
 
 **Note**: blockbytes is defined in bytes. Postfix for 'K', 'M' and 'G'
 may be used.  1048576 (1MB) is the default.
 
-For testing purposes an unchecked value of "bytesover" is also available.
+For testing purposes an unchecked value of "blockbytes-test" is also available.
 
 Debug output can be enable by setting the debug tag: **slice**.  If debug
 is enabled all block stitch errors will log to diags.log
@@ -90,16 +110,16 @@ provided to help with debugging.  Below is a sample error log entry::
 Current error types logged:
 ```
     Mismatch block Etag
-		Mismatch block Last-Modified
-		Non 206 internal block response
-		Mismatch/Bad block Content-Range
+    Mismatch block Last-Modified
+    Non 206 internal block response
+    Mismatch/Bad block Content-Range
 ```
 
 
 With slice error logs disabled these type errors can typically be detected
 by observing crc=ERR_READ_ERROR and pscl=0 in normal logs.
 
-At the current time only single range requests or the first part of a 
+At the current time only single range requests or the first part of a
 multi part range request of the forms:
 ```
 Range: bytes=<begin>-<end>

@@ -189,26 +189,8 @@ TEST_CASE("MIOBufferWriter", "[MIOBW]")
 
   REQUIRE(bw.extent() == ((iobbIdx * BlockSize) + blockUsed));
 
-// These tests don't work properly with clang for some reason.
-#if !defined(__clang__)
-
-  try {
-    bw.fill(bw.auxBufferCapacity() + 1);
-    REQUIRE(false);
-
-  } catch (InkAssertExcept) {
-    REQUIRE(true);
-  }
-
-  try {
-    bw.data();
-    REQUIRE(false);
-
-  } catch (InkAssertExcept) {
-    REQUIRE(true);
-  }
-
-#endif
+  REQUIRE_THROWS_AS(bw.fill(bw.auxBufferCapacity() + 1), InkAssertExcept);
+  REQUIRE_THROWS_AS(bw.data(), InkAssertExcept);
 }
 
 void

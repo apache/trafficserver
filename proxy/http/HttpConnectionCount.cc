@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <deque>
 #include <records/P_RecDefs.h>
+#include <HttpConfig.h>
 #include "HttpConnectionCount.h"
 #include "tscore/bwf_std_format.h"
 #include "tscore/BufferWriter.h"
@@ -157,50 +158,6 @@ Config_Update_Conntrack_Alert_Delay(const char *name, RecDataT dtype, RecData da
     return true;
   }
   return false;
-}
-
-/** Function to do enable configuration variables.
- *
- * @param name Configuration var name.
- * @param cb Callback to do the actual update of the master record.
- * @param cookie Extra data for @a cb
- *
- * This sets up a librecords callback that invokes @a cb and checks the return value. That should
- * be @c true if the master record was updated, @c false if not. Based on that, the run time copy
- * update is triggered or not. This then invokes the callback directly, to do the initial load
- * of the configuration variable in to the master record.
- */
-void
-Enable_Config_Var(ts::TextView const &name, bool (*cb)(const char *, RecDataT, RecData, void *), void *cookie)
-{
-  // Must use this indirection because the API requires a pure function, therefore no values can
-  // be bound in the lambda. Instead this is needed to pass in the data for both the lambda and
-  // the actual callback.
-  using Context = std::tuple<decltype(cb), void *>;
-
-  // To deal with process termination cleanup, store the context instances in a deque where
-  // tail insertion doesn't invalidate pointers.
-  static std::deque<Context> storage;
-
-  Context &ctx = storage.emplace_back(cb, cookie);
-  // Register the call back.
-  RecRegisterConfigUpdateCb(name.data(),
-                            [](const char *name, RecDataT dtype, RecData data, void *ctx) -> int {
-                              auto &&[cb, cookie] = *static_cast<Context *>(ctx);
-                              if ((*cb)(name, dtype, data, cookie)) {
-                                http_config_cb(name, dtype, data, cookie); // signal runtime config update.
-                              }
-                              return REC_ERR_OKAY;
-                            },
-                            &ctx);
-
-  // Use the record to do the initial data load.
-  RecLookupRecord(name.data(),
-                  [](RecRecord const *r, void *ctx) -> void {
-                    auto &&[cb, cookie] = *static_cast<Context *>(ctx);
-                    (*cb)(r->name, r->data_type, r->data, cookie);
-                  },
-                  &ctx);
 }
 
 } // namespace

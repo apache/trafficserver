@@ -29,6 +29,7 @@
 #include "QUICConfig.h"
 #include "QUICConnection.h"
 #include "QUICTypes.h"
+#include "tscore/Filenames.h"
 // #include "QUICGlobals.h"
 
 #define QUICConfDebug(fmt, ...) Debug("quic_conf", fmt, ##__VA_ARGS__)
@@ -128,7 +129,7 @@ QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, c
 #if TS_USE_TLS_SET_CIPHERSUITES
   if (params->server_tls13_cipher_suites != nullptr) {
     if (!SSL_CTX_set_ciphersuites(ctx, params->server_tls13_cipher_suites)) {
-      Error("invalid tls server cipher suites in records.config");
+      Error("invalid tls server cipher suites in %s", ts::filename::RECORDS);
       goto fail;
     }
   }
@@ -141,7 +142,7 @@ QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, c
 #else
     if (!SSL_CTX_set1_curves_list(ctx, params->server_groups_list)) {
 #endif
-      Error("invalid groups list for server in records.config");
+      Error("invalid groups list for server in %s", ts::filename::RECORDS);
       goto fail;
     }
   }

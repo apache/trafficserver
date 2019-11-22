@@ -20,9 +20,11 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+autopep8 = "*"
+pyflakes = "*"
 
 [packages]
-autest = "==1.7.3"
+autest = "==1.7.4"
 traffic-replay = "*" # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
 hyper = "*"
 dnslib = "*"
@@ -30,6 +32,8 @@ dnslib = "*"
 requests = "*"
 gunicorn = "*"
 httpbin = "*"
+microserver = ">=1.0.4"
+jsonschema = "*"
 
 [requires]
 python_version = "3"

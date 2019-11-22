@@ -24,7 +24,9 @@ TSHttpHdrReasonGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: const char* TSHttpHdrReasonGet(TSMBuffer bufp, TSMLoc offset, int * length)
 

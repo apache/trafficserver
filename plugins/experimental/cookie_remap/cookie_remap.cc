@@ -178,7 +178,6 @@ void
 urlencode(std::string &str)
 {
   size_t pos = 0;
-  std::string replacement;
   for (; pos < str.length(); pos++) {
     if (!isalnum(str[pos])) {
       char dec[2];
@@ -765,8 +764,6 @@ using OpMap = std::vector<StringPair>;
 static bool
 build_op(op &o, OpMap const &q)
 {
-  StringPair m;
-
   subop *sub = new subop();
 
   // loop through the array of key->value pairs
@@ -873,10 +870,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       }
 
       for (YAML::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
-        const YAML::Node &first  = it2->first;
-        const YAML::Node &second = it2->second;
+        const YAML::Node first  = it2->first;
+        const YAML::Node second = it2->second;
 
-        if (second.Type() != YAML::NodeType::Scalar) {
+        if (second.IsScalar() == false) {
           const string reason = "All op nodes must be of type scalar";
           TSError("Invalid YAML Configuration format for cookie_remap: %s, reason: %s", filename.c_str(), reason.c_str());
           return TS_ERROR;

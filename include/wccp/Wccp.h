@@ -187,7 +187,7 @@ public:
 
   /// Get a port value.
   uint16_t getPort(int idx ///< Index of target port.
-                   ) const;
+  ) const;
   /// Set a port value.
   self &setPort(int idx,      ///< Index of port.
                 uint16_t port ///< Value for port.

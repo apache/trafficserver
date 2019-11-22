@@ -44,6 +44,7 @@
 #include "IPAllow.h"
 #include "tscore/I_Layout.h"
 #include "tscore/bwf_std_format.h"
+#include "ts/sdt.h"
 
 #include <openssl/ossl_typ.h>
 #include <openssl/ssl.h>
@@ -1765,6 +1766,8 @@ HttpSM::state_http_server_open(int event, void *data)
 
     session->new_connection(vc);
 
+    ATS_PROBE1(new_origin_server_connection, t_state.current.server->name);
+
     session->state = HSS_ACTIVE;
     ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
 
@@ -3305,8 +3308,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     // only external POSTs should be subject to this logic; ruling out internal POSTs here
     bool is_eligible_post_request = ((t_state.method == HTTP_WKSIDX_POST) && !is_internal);
 
-    if ((is_eligible_post_request || t_state.client_info.pipeline_possible == true) && c->producer->vc_type != HT_STATIC &&
-        event == VC_EVENT_WRITE_COMPLETE) {
+    if (is_eligible_post_request && c->producer->vc_type != HT_STATIC && event == VC_EVENT_WRITE_COMPLETE) {
       ua_txn->set_half_close_flag(true);
     }
 
@@ -3615,7 +3617,6 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
       if (ua_producer->vc_type == HT_STATIC && event != VC_EVENT_ERROR && event != VC_EVENT_EOS) {
         ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
         // ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
-        t_state.client_info.pipeline_possible = false;
       } else {
         if (ua_producer->vc_type == HT_STATIC && t_state.redirect_info.redirect_in_process) {
           post_failed = true;
@@ -3625,7 +3626,6 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
       ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
       // we should not shutdown read side of the client here to prevent sending a reset
       // ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
-      t_state.client_info.pipeline_possible = false;
     } // end of added logic
 
     // We want to shutdown the tunnel here and see if there
@@ -5058,6 +5058,17 @@ HttpSM::do_http_server_open(bool raw)
     if (t_state.txn_conf->ssl_client_sni_policy != nullptr && !strcmp(t_state.txn_conf->ssl_client_sni_policy, "remap")) {
       len = strlen(t_state.server_info.name);
       opt.set_sni_servername(t_state.server_info.name, len);
+    } else if (t_state.txn_conf->ssl_client_sni_policy != nullptr &&
+               !strcmp(t_state.txn_conf->ssl_client_sni_policy, "verify_with_name_source")) {
+      // the same with "remap" policy to set sni_servername
+      len = strlen(t_state.server_info.name);
+      opt.set_sni_servername(t_state.server_info.name, len);
+
+      // also set sni_hostname with host header from server request in this policy
+      const char *host = t_state.hdr_info.server_request.host_get(&len);
+      if (host && len > 0) {
+        opt.set_sni_hostname(host, len);
+      }
     } else { // Do the default of host header for SNI
       const char *host = t_state.hdr_info.server_request.host_get(&len);
       if (host && len > 0) {
@@ -6854,6 +6865,23 @@ HttpSM::kill_this()
       update_stats();
     }
 
+    //////////////
+    // Log Data //
+    //////////////
+    SMDebug("http_seq", "[HttpSM::update_stats] Logging transaction");
+    if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
+      LogAccess accessor(this);
+
+      int ret = Log::access(&accessor);
+
+      if (ret & Log::FULL) {
+        SMDebug("http", "[update_stats] Logging system indicates FULL.");
+      }
+      if (ret & Log::FAIL) {
+        Log::error("failed to log transaction for at least one log object");
+      }
+    }
+
     if (ua_txn) {
       ua_txn->transaction_done();
     }
@@ -6871,23 +6899,6 @@ HttpSM::kill_this()
     ink_release_assert(tunnel.is_tunnel_active() == false);
 
     HTTP_SM_SET_DEFAULT_HANDLER(nullptr);
-
-    //////////////
-    // Log Data //
-    //////////////
-    SMDebug("http_seq", "[HttpSM::update_stats] Logging transaction");
-    if (Log::transaction_logging_enabled() && t_state.api_info.logging_enabled) {
-      LogAccess accessor(this);
-
-      int ret = Log::access(&accessor);
-
-      if (ret & Log::FULL) {
-        SMDebug("http", "[update_stats] Logging system indicates FULL.");
-      }
-      if (ret & Log::FAIL) {
-        Log::error("failed to log transaction for at least one log object");
-      }
-    }
 
     if (redirect_url != nullptr) {
       ats_free((void *)redirect_url);

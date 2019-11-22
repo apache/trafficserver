@@ -25,7 +25,9 @@ Change packet TOS for the server side connection.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
 

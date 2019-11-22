@@ -1098,7 +1098,7 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
       r = SSL_write(connections[cnum].ssl, urls[url_num].buf, urls[url_num].buf_bytes);
     else
       r = write(connections[cnum].conn_fd, urls[url_num].buf, urls[url_num].buf_bytes);
-    if (r < 0) {
+    if (r <= 0) {
       perror(urls[url_num].url_str);
       connections[cnum].reusable = 0;
       close_connection(cnum);
@@ -1216,7 +1216,7 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
     r = SSL_write(connections[cnum].ssl, urls[url_num].buf, urls[url_num].buf_bytes);
   else
     r = write(connections[cnum].conn_fd, urls[url_num].buf, urls[url_num].buf_bytes);
-  if (r < 0) {
+  if (r <= 0) {
     perror(urls[url_num].url_str);
     connections[cnum].reusable = 0;
     close_connection(cnum);

@@ -17,9 +17,6 @@ Test requiring certificate from user agent
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-import re
-
 Test.Summary = '''
 Test various options for requiring certificate from client for mutual authentication TLS
 '''

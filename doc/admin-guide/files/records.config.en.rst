@@ -317,11 +317,25 @@ Thread Variables
    The number of threads |TS| will create if `proxy.config.exec_thread.autoconfig`
    is set to ``0``, otherwise this option is ignored.
 
+.. ts:cv:: CONFIG proxy.config.exec_thread.listen INT 0
+
+   If enabled (``1``) all the exec_threads listen for incoming connections. `proxy.config.accept_threads`
+   should be disabled to enable this variable.
+
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
 
    The number of accept threads. If disabled (``0``), then accepts will be done
    in each of the worker threads.
 
+   ==================== ====================== =====================
+     accept_threads      exec_thread.listen         Effect
+   ==================== ====================== =====================
+   ``0``                 ``0``                  All worker threads accept new connections and share listen fd.
+   ``1``                 ``0``                  New connections are accepted on a dedicated accept thread and distributed to worker threads in round robin fashion.
+   ``0``                 ``1``                  All worker threads listen on the same port using SO_REUSEPORT. Each thread has its own listen fd and new connections are accepted on all the threads.
+   ==================== ====================== =====================
+
+   By default, `proxy.config.accept_threads` is set to 1 and `proxy.config.exec_thread.listen` is set to 0.
 .. ts:cv:: CONFIG proxy.config.thread.default.stacksize INT 1048576
 
    Default thread stack size, in bytes, for all threads (default is 1 MB).
@@ -2458,7 +2472,7 @@ DNS
 .. ts:cv:: CONFIG proxy.config.dns.nameservers STRING NULL
    :reloadable:
 
-   The DNS servers. Note that this does not overide :ts:cv:`proxy.config.dns.resolv_conf`.
+   The DNS servers. Note that this does not override :ts:cv:`proxy.config.dns.resolv_conf`.
    That is, the contents of the file listed in :ts:cv:`proxy.config.dns.resolv_conf` will
    be appended to the list of nameservers specified here. To prevent this, a bogus file
    can be listed there.
@@ -2896,6 +2910,7 @@ Logging Configuration
 
 .. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
    :reloadable:
+   :deprecated:
 
    This configuration value specifies the path to the
    :file:`logging.yaml` configuration file. If this is a relative
@@ -3047,6 +3062,7 @@ URL Remap Rules
 ===============
 
 .. ts:cv:: CONFIG proxy.config.url_remap.filename STRING remap.config
+   :deprecated:
 
    Sets the name of the :file:`remap.config` file.
 
@@ -3177,6 +3193,7 @@ SSL Termination
 
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.filename STRING ssl_multicert.config
+   :deprecated:
 
    The location of the :file:`ssl_multicert.config` file, relative
    to the |TS| configuration directory. In the following
@@ -3245,6 +3262,7 @@ SSL Termination
    file is changed with new tickets, use :option:`traffic_ctl config reload` to begin using them.
 
 .. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING sni.yaml
+   :deprecated:
 
    The filename of the :file:`sni.yaml` configuration file.
    If relative, it is relative to the configuration directory.
@@ -3464,7 +3482,21 @@ Client-Related Configuration
 
    Indicate how the SNI value for the TLS connection to the origin is selected.  By default it is
    `host` which means the host header field value is used for the SNI.  If `remap` is specified, the
-   remapped origin name is used for the SNI value.
+   remapped origin name is used for the SNI value.  If `verify_with_name_source` is specified, the
+   SNI will be the host header value and the name to check in the server certificate will be the
+   remap header value.
+   We have two names that could be used in the transaction host header and the SNI value to the
+   origin. These could be the host header from the client or the remap host name. Unless you have
+   pristine host header enabled, these are likely the same values.
+   If sni_policy = host, both the sni and the host header to origin will be the same.
+   If sni_policy = remap, the sni value with be the remap host name and the host header will be the
+   host header from the client.
+   In addition, We may want to set the SNI and host headers the same (makes some common web servers
+   happy), but the certificate served by the origin may have a name that corresponds to the remap
+   name. So instead of using the SNI name for the name check, we may want to use the remap name.
+   So if sni_policy = verify_with_name_source, the sni will be the host header value and the name to
+   check in the server certificate will be the remap header value.
+
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 0
 
@@ -3959,6 +3991,7 @@ SOCKS Processor
    Specifies the SOCKS version (``4``) or (``5``)
 
 .. ts:cv::  CONFIG proxy.config.socks.socks_config_file STRING socks.config
+   :deprecated:
 
    The socks.config file allows you to specify ranges of IP addresses
    that will not be relayed to the SOCKS server. It can also be used

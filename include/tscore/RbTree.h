@@ -52,7 +52,7 @@ namespace detail
     /// @return The child in the direction @a d if it exists,
     /// @c NULL if not.
     self *getChild(Direction d //!< The direction of the desired child
-                   ) const;
+    ) const;
 
     /** Determine which child a node is
         @return @c LEFT if @a n is the left child,
@@ -61,7 +61,7 @@ namespace detail
     */
     Direction
     getChildDirection(self *const &n //!< The presumed child node
-                      ) const
+    ) const
     {
       return (n == _left) ? LEFT : (n == _right) ? RIGHT : NONE;
     }

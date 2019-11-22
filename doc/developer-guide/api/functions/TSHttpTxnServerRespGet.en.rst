@@ -24,7 +24,9 @@ TSHttpTxnServerRespGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset)
 

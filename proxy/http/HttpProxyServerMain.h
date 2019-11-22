@@ -38,7 +38,7 @@ void init_accept_HttpProxyServer(int n_accept_threads = 0);
 
 /** Checkes whether we can call start_HttpProxyServer().
  */
-void init_HttpProxyServer(EThread *);
+void init_HttpProxyServer();
 
 /** Start the proxy server.
     The port data should have been created by @c prep_HttpProxyServer().

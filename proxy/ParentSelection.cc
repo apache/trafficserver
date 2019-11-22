@@ -30,6 +30,7 @@
 #include "HTTP.h"
 #include "HttpTransact.h"
 #include "I_Machine.h"
+#include "tscore/Filenames.h"
 
 #define MAX_SIMPLE_RETRIES 5
 #define MAX_UNAVAILABLE_SERVER_RETRIES 5
@@ -46,8 +47,6 @@ static const char *file_var      = "proxy.config.http.parent_proxy.file";
 static const char *default_var   = "proxy.config.http.parent_proxies";
 static const char *retry_var     = "proxy.config.http.parent_proxy.retry_time";
 static const char *threshold_var = "proxy.config.http.parent_proxy.fail_threshold";
-
-static const char *ParentResultStr[] = {"PARENT_UNDEFINED", "PARENT_DIRECT", "PARENT_SPECIFIED", "PARENT_AGENT", "PARENT_FAIL"};
 
 //
 //  Config Callback Prototypes
@@ -264,7 +263,7 @@ ParentConfig::startup()
 void
 ParentConfig::reconfigure()
 {
-  Note("parent.config loading ...");
+  Note("%s loading ...", ts::filename::PARENT);
 
   ParentConfigParams *params = nullptr;
 
@@ -280,7 +279,7 @@ ParentConfig::reconfigure()
     ParentConfig::print();
   }
 
-  Note("parent.config finished loading");
+  Note("%s finished loading", ts::filename::PARENT);
 }
 
 // void ParentConfig::print
@@ -743,14 +742,14 @@ ParentRecord::Init(matcher_line *line_info)
   }
 
   if (this->parents == nullptr && go_direct == false) {
-    return Result::failure("%s No parent specified in parent.config at line %d", modulePrefix, line_num);
+    return Result::failure("%s No parent specified in %s at line %d", modulePrefix, ts::filename::PARENT, line_num);
   }
   // Process any modifiers to the directive, if they exist
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
 
     if (tmp != nullptr) {
-      return Result::failure("%s %s at line %d in parent.config", modulePrefix, tmp, line_num);
+      return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::PARENT);
     }
     // record SCHEME modifier if present.
     // NULL if not present
@@ -895,7 +894,7 @@ setup_socks_servers(ParentRecord *rec_arr, int len)
 void
 SocksServerConfig::reconfigure()
 {
-  Note("socks.config loading ...");
+  Note("%s loading ...", ts::filename::SOCKS);
 
   char *default_val = nullptr;
   int retry_time    = 30;
@@ -935,7 +934,7 @@ SocksServerConfig::reconfigure()
     SocksServerConfig::print();
   }
 
-  Note("socks.config finished loading");
+  Note("%s finished loading", ts::filename::SOCKS);
 }
 
 void

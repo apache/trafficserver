@@ -18,7 +18,6 @@ Test the 408 response header.
 #  limitations under the License.
 
 import os
-import subprocess
 
 Test.Summary = '''
 Check 408 response header for protocol stack data.

@@ -27,7 +27,9 @@ Traffic Server URL object construction API.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSUrlCreate(TSMBuffer bufp, TSMLoc * locp)
 .. function:: TSReturnCode TSUrlClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_url, TSMLoc * locp)

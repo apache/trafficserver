@@ -75,10 +75,6 @@ ts.Disk.sni_yaml.AddLines([
 # Set up plugin
 Test.PreparePlugin(Test.Variables.AtsExampleDir + '/plugins/c-api/cert_update/cert_update.cc', ts)
 
-ts.Disk.plugin_config.AddLine(
-    'cert_update.so'
-)
-
 # Server-Cert-Pre
 # curl should see that Traffic Server presents bar.com cert from alice
 tr = Test.AddTestRun("Server-Cert-Pre")

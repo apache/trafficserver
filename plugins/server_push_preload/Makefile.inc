@@ -14,14 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkglib_LTLIBRARIES += experimental/server_push_preload/server_push_preload.la
+pkglib_LTLIBRARIES += server_push_preload/server_push_preload.la
 
-experimental_server_push_preload_server_push_preload_la_SOURCES = \
-  experimental/server_push_preload/server_push_preload.cc
+server_push_preload_server_push_preload_la_SOURCES = \
+  server_push_preload/server_push_preload.cc
 
-experimental_server_push_preload_server_push_preload_la_LDFLAGS = \
+server_push_preload_server_push_preload_la_LDFLAGS = \
   $(AM_LDFLAGS)
 
-experimental_server_push_preload_server_push_preload_la_LIBADD = \
+server_push_preload_server_push_preload_la_LIBADD = \
   $(top_builddir)/src/tscpp/api/libtscppapi.la
 

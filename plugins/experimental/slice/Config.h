@@ -29,7 +29,8 @@ struct Config {
   static constexpr int64_t const blockbytesdefault = 1024 * 1024;      // 1MB
 
   int64_t m_blockbytes{blockbytesdefault};
-  int m_paceerrsecs{0}; // -1 disable logging, 0 no pacing, max 60s
+  std::string m_remaphost; // remap host to use for loopback slice GET
+  int m_paceerrsecs{0};    // -1 disable logging, 0 no pacing, max 60s
 
   // Convert optarg to bytes
   static int64_t bytesFrom(char const *const valstr);

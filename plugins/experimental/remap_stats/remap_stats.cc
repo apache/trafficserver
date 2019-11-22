@@ -143,9 +143,9 @@ handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 }
 
 static void
-create_stat_name(ts::LocalBufferWriter<MAX_STAT_LENGTH> &stat_name, std::string_view h, std::string_view b)
+create_stat_name(ts::FixedBufferWriter &stat_name, std::string_view h, std::string_view b)
 {
-  stat_name.reset().reduce(1);
+  stat_name.reset().clip(1);
   stat_name.print("plugin.{}.{}.{}", PLUGIN_NAME, h, b);
   stat_name.extend(1).write('\0');
 }

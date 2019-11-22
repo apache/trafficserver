@@ -35,11 +35,12 @@
 #include "Config.h"
 #include "redis_auth.h"
 #include "ssl_utils.h"
+#include <inttypes.h>
 
 void *
 RedisPublisher::start_worker_thread(void *arg)
 {
-  plugin_threads.store(::pthread_self());
+  plugin_threads.store(pthread_self());
   ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
   ::pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
 
@@ -117,8 +118,11 @@ RedisPublisher::is_good()
 ::redisContext *
 RedisPublisher::setup_connection(const RedisEndpoint &re)
 {
-  ::pthread_t my_id = ::pthread_self();
-  TSDebug(PLUGIN, "RedisPublisher::setup_connection: Called by threadId: %lx", my_id);
+  uint64_t my_id = 0;
+  if (TSIsDebugTagSet(PLUGIN)) {
+    my_id = (uint64_t)pthread_self();
+    TSDebug(PLUGIN, "RedisPublisher::setup_connection: Called by threadId: %" PRIx64, my_id);
+  }
 
   RedisContextPtr my_context;
   struct ::timeval timeout;
@@ -128,14 +132,15 @@ RedisPublisher::setup_connection(const RedisEndpoint &re)
   for (int i = 0; i < static_cast<int>(m_redisConnectTries); ++i) {
     my_context.reset(::redisConnectWithTimeout(re.m_hostname.c_str(), re.m_port, timeout));
     if (!my_context) {
-      TSError("RedisPublisher::setup_connection: Connect to host: %s port: %d fail count: %d threadId: %lx", re.m_hostname.c_str(),
-              re.m_port, i + 1, my_id);
+      TSError("RedisPublisher::setup_connection: Connect to host: %s port: %d fail count: %d threadId: %" PRIx64,
+              re.m_hostname.c_str(), re.m_port, i + 1, my_id);
     } else if (my_context->err) {
-      TSError("RedisPublisher::setup_connection: Connect to host: %s port: %d fail count: %d threadId: %lx", re.m_hostname.c_str(),
-              re.m_port, i + 1, my_id);
+      TSError("RedisPublisher::setup_connection: Connect to host: %s port: %d fail count: %d threadId: %" PRIx64,
+              re.m_hostname.c_str(), re.m_port, i + 1, my_id);
       my_context.reset(nullptr);
     } else {
-      TSDebug(PLUGIN, "RedisPublisher::setup_connection: threadId: %lx Successfully connected to the redis instance.", my_id);
+      TSDebug(PLUGIN, "RedisPublisher::setup_connection: threadId: %" PRIx64 " Successfully connected to the redis instance.",
+              my_id);
 
       redisReply *reply = static_cast<redisReply *>(redisCommand(my_context.get(), "AUTH %s", redis_passwd.c_str()));
 
@@ -163,8 +168,11 @@ RedisPublisher::setup_connection(const RedisEndpoint &re)
 ::redisReply *
 RedisPublisher::send_publish(RedisContextPtr &ctx, const RedisEndpoint &re, const Message &msg)
 {
-  ::pthread_t my_id = ::pthread_self();
-  TSDebug(PLUGIN, "RedisPublisher::send_publish: Called by threadId: %lx", my_id);
+  uint64_t my_id = 0;
+  if (TSIsDebugTagSet(PLUGIN)) {
+    my_id = (uint64_t)pthread_self();
+    TSDebug(PLUGIN, "RedisPublisher::send_publish: Called by threadId: %" PRIx64, my_id);
+  }
 
   ::redisReply *current_reply(nullptr);
 
@@ -173,7 +181,8 @@ RedisPublisher::send_publish(RedisContextPtr &ctx, const RedisEndpoint &re, cons
       ctx.reset(setup_connection(re));
 
       if (!ctx) {
-        TSError("RedisPublisher::send_publish: Unable to setup a connection to the redis server: %s:%d threadId: %lx try: %d",
+        TSError("RedisPublisher::send_publish: Unable to setup a connection to the redis server: %s:%d threadId: %" PRIx64
+                " try: %d",
                 re.m_hostname.c_str(), re.m_port, my_id, (i + 1));
         continue;
       }
@@ -181,12 +190,12 @@ RedisPublisher::send_publish(RedisContextPtr &ctx, const RedisEndpoint &re, cons
 
     current_reply = static_cast<redisReply *>(::redisCommand(ctx.get(), "PUBLISH %s %s", msg.channel.c_str(), msg.data.c_str()));
     if (!current_reply) {
-      TSError("RedisPublisher::send_publish: Unable to get a reply from the server for publish. threadId: %lx try: %d", my_id,
-              (i + 1));
+      TSError("RedisPublisher::send_publish: Unable to get a reply from the server for publish. threadId: %" PRIx64 " try: %d",
+              my_id, (i + 1));
       ctx.reset(nullptr); // Clean up previous attempt
 
     } else if (REDIS_REPLY_ERROR == current_reply->type) {
-      TSError("RedisPublisher::send_publish: Server responded with error for publish. threadId: %lx try: %d", my_id, i + 1);
+      TSError("RedisPublisher::send_publish: Server responded with error for publish. threadId: %" PRIx64 " try: %d", my_id, i + 1);
       clear_reply(current_reply);
       current_reply = nullptr;
       ctx.reset(nullptr); // Clean up previous attempt
@@ -219,7 +228,6 @@ RedisPublisher::runWorker()
   }
   m_endpointIndexMutex.unlock();
 
-  ::pthread_t my_id = ::pthread_self();
   RedisContextPtr my_context;
   ::redisReply *current_reply(nullptr);
 
@@ -249,7 +257,10 @@ RedisPublisher::runWorker()
     ::sem_wait(&m_workerSem);
 
     if (current_message.cleanup) {
-      TSDebug(PLUGIN, "RedisPublisher::runWorker: threadId: %lx received the cleanup message. Exiting!", my_id);
+      if (TSIsDebugTagSet(PLUGIN)) {
+        auto my_id = (uint64_t)pthread_self();
+        TSDebug(PLUGIN, "RedisPublisher::runWorker: threadId: %" PRIx64 " received the cleanup message. Exiting!", my_id);
+      }
       break;
     }
     current_reply = send_publish(my_context, my_endpoint, current_message);
@@ -322,7 +333,11 @@ RedisPublisher::~RedisPublisher()
 std::string
 RedisPublisher::get_session(const std::string &channel)
 {
-  TSDebug(PLUGIN, "RedisPublisher::get_session: Called by threadId: %lx", ::pthread_self());
+  if (TSIsDebugTagSet(PLUGIN)) {
+    auto my_id = (uint64_t)pthread_self();
+    TSDebug(PLUGIN, "RedisPublisher::get_session: Called by threadId: %" PRIx64, my_id);
+  }
+
   std::string ret;
   uint32_t index    = get_hash_index(channel);
   redisReply *reply = nullptr;
@@ -354,7 +369,11 @@ RedisPublisher::get_session(const std::string &channel)
 redisReply *
 RedisPublisher::set_session(const Message &msg)
 {
-  TSDebug(PLUGIN, "RedisPublisher::set_session: Called by threadId: %lx", ::pthread_self());
+  if (TSIsDebugTagSet(PLUGIN)) {
+    auto my_id = (uint64_t)pthread_self();
+    TSDebug(PLUGIN, "RedisPublisher::set_session: Called by threadId: %" PRIx64, my_id);
+  }
+
   uint32_t index    = get_hash_index(msg.channel);
   redisReply *reply = nullptr;
   for (uint32_t i = 0; i < m_redisEndpoints.size(); i++) {

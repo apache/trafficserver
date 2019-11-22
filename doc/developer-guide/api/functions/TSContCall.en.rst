@@ -24,7 +24,9 @@ TSContCall
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: int TSContCall(TSCont contp, TSEvent event, void * edata)
 
@@ -49,11 +51,11 @@ If there is a mutex associated with :arg:`contp`, :func:`TSContCall` assumes tha
 value returned by the handler in :arg:`contp`.
 
 If :arg:`contp` has a mutex, the plugin must acquire the lock on the mutex for :arg:`contp` before calling
-:func:`TSContCall`. See :func:`TSContMutexGet` and :func:`TSMutexLockTry` for mechanisms for doing this. 
+:func:`TSContCall`. See :func:`TSContMutexGet` and :func:`TSMutexLockTry` for mechanisms for doing this.
 
 The most common case is the code called by :func:`TSContCall` must complete before further code is executed
 at the call site. An alternative approach to handling the locking directly would be to split the call site
-into two continuations, one of which is signalled (possibly via :func:`TSContCall`) from the original 
+into two continuations, one of which is signalled (possibly via :func:`TSContCall`) from the original
 :func:`TSContCall` target.
 
 Note mutexes returned by :func:`TSMutexCreate` are recursive mutexes, therefore if the lock is
@@ -67,4 +69,3 @@ shareable so that the same mutex can be used for multiple continuations.::
 In this example case, :code:`cont1` can assume the lock for :code:`cont2` is held. This should be
 considered carefully because for the same reason any thread protection between the continuations is
 removed. This works well for tightly coupled continuations that always operate in a fixed sequence.
-

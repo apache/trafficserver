@@ -339,18 +339,30 @@ BaseLogFile::open_file(int perm)
   return LOG_FILE_NO_ERROR;
 }
 
-/*
- * Closes actual log file, not metainfo
+/**
+ * @brief Close the managed log file.
+ *
+ * @note This closes the actual log file, not its metainfo.
+ *
+ * @return The result of calling fclose on the file descriptor or 0 if the file
+ * was not open. If the result is non-zero, fclose failed and errno is set
+ * appropriately.
  */
-void
+int
 BaseLogFile::close_file()
 {
+  int ret = 0;
   if (is_open()) {
-    fclose(m_fp);
     log_log_trace("BaseLogFile %s is closed\n", m_name.get());
+
+    // Both log_log_trace and fclose may set errno. Thus, keep fclose after
+    // log_log_trace so that by the time this function completes if errno was
+    // set by fclose it will remain upon function return.
+    ret       = fclose(m_fp);
     m_fp      = nullptr;
     m_is_init = false;
   }
+  return ret;
 }
 
 /*

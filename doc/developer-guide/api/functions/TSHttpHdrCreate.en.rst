@@ -24,7 +24,9 @@ TSHttpHdrCreate
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSMLoc TSHttpHdrCreate(TSMBuffer bufp)
 

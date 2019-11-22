@@ -38,6 +38,7 @@
 #include "tscore/ink_syslog.h"
 #include "tscore/hugepages.h"
 #include "tscore/runroot.h"
+#include "tscore/Filenames.h"
 
 #include "ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
 
@@ -857,23 +858,23 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
 
   if (!urlRewriteVerify()) {
     exitStatus |= (1 << 0);
-    fprintf(stderr, "ERROR: Failed to load remap.config, exitStatus %d\n\n", exitStatus);
+    fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", ts::filename::REMAP, exitStatus);
   } else {
-    fprintf(stderr, "INFO: Successfully loaded remap.config\n\n");
+    fprintf(stderr, "INFO: Successfully loaded %s\n\n", ts::filename::REMAP);
   }
 
   if (RecReadConfigFile() != REC_ERR_OKAY) {
     exitStatus |= (1 << 1);
-    fprintf(stderr, "ERROR: Failed to load records.config, exitStatus %d\n\n", exitStatus);
+    fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", ts::filename::RECORDS, exitStatus);
   } else {
-    fprintf(stderr, "INFO: Successfully loaded records.config\n\n");
+    fprintf(stderr, "INFO: Successfully loaded %s\n\n", ts::filename::RECORDS);
   }
 
   if (!plugin_init(true)) {
     exitStatus |= (1 << 2);
-    fprintf(stderr, "ERROR: Failed to load plugin.config, exitStatus %d\n\n", exitStatus);
+    fprintf(stderr, "ERROR: Failed to load %s, exitStatus %d\n\n", ts::filename::PLUGIN, exitStatus);
   } else {
-    fprintf(stderr, "INFO: Successfully loaded plugin.config\n\n");
+    fprintf(stderr, "INFO: Successfully loaded %s\n\n", ts::filename::PLUGIN);
   }
 
   SSLInitializeLibrary();
@@ -1304,7 +1305,7 @@ syslog_log_configure()
 
     ats_free(facility_str);
     if (facility < 0) {
-      syslog(LOG_WARNING, "Bad syslog facility in records.config. Keeping syslog at LOG_DAEMON");
+      syslog(LOG_WARNING, "Bad syslog facility in %s. Keeping syslog at LOG_DAEMON", ts::filename::RECORDS);
     } else {
       Debug("server", "Setting syslog facility to %d", facility);
       closelog();
@@ -1474,7 +1475,8 @@ change_uid_gid(const char *user)
               "\tand then rebuild the server.\n"
               "\tIt is strongly suggested that you instead modify the\n"
               "\tproxy.config.admin.user_id directive in your\n"
-              "\trecords.config file to list a non-root user.\n");
+              "\t%s file to list a non-root user.\n",
+              ts::filename::RECORDS);
   }
 #endif
 }
@@ -1813,10 +1815,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   quic_NetProcessor.init();
 #endif
 
-  // If num_accept_threads == 0, let the ET_NET threads to set the condition variable,
+  // If num_accept_threads == 0, let the ET_NET threads set the condition variable,
   // Else we set it here so when checking the condition variable later it returns immediately.
-  if (num_accept_threads == 0) {
-    eventProcessor.schedule_spawn(&init_HttpProxyServer, ET_NET);
+  if (num_accept_threads == 0 || command_flag) {
+    eventProcessor.thread_group[ET_NET]._afterStartCallback = init_HttpProxyServer;
   } else {
     std::unique_lock<std::mutex> lock(proxyServerMutex);
     et_net_threads_ready = true;
@@ -1858,6 +1860,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     int cmd_ret = cmd_mode();
 
     if (cmd_ret != CMD_IN_PROGRESS) {
+      // Check the condition variable.
+      {
+        std::unique_lock<std::mutex> lock(proxyServerMutex);
+        proxyServerCheck.wait(lock, [] { return et_net_threads_ready; });
+      }
+
       if (cmd_ret >= 0) {
         ::exit(0); // everything is OK
       } else {
@@ -2029,8 +2037,7 @@ REGRESSION_TEST(Hdrs)(RegressionTest *t, int atype, int *pstatus)
 }
 #endif
 
-static void
-mgmt_restart_shutdown_callback(ts::MemSpan<void>)
+static void mgmt_restart_shutdown_callback(ts::MemSpan<void>)
 {
   sync_cache_dir_on_shutdown();
 }
@@ -2099,13 +2106,13 @@ init_ssl_ctx_callback(void *ctx, bool server)
 static void
 load_ssl_file_callback(const char *ssl_file)
 {
-  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file);
+  pmgmt->signalConfigFileChild(ts::filename::SSL_MULTICERT, ssl_file);
 }
 
 static void
 load_remap_file_callback(const char *remap_file)
 {
-  pmgmt->signalConfigFileChild("remap.config", remap_file);
+  pmgmt->signalConfigFileChild(ts::filename::REMAP, remap_file);
 }
 
 static void

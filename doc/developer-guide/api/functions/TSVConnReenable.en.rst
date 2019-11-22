@@ -24,7 +24,9 @@ TSVConnReenable
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSVConnReenable(TSVConn svc)
 
@@ -66,8 +68,6 @@ An extended version of TSVConnEnable that allows the plugin to return a status t
 the core logic.  If all goes well this is TS_EVENT_CONTINUE.  However, if
 the plugin wants to stop the processing it can set the event to TS_EVENT_ERROR.
 
-For example, in the case of the TS_SSL_VERIFY_SERVER_HOOK, the plugin make decide the 
-origin certificate is bad.  By calling TSVonnReenable with TS_EVENT_ERROR, the 
+For example, in the case of the TS_SSL_VERIFY_SERVER_HOOK, the plugin make decide the
+origin certificate is bad.  By calling TSVonnReenable with TS_EVENT_ERROR, the
 certificate check will error and the TLS handshake will fail.
-
-

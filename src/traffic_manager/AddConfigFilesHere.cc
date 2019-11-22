@@ -22,6 +22,7 @@
  */
 
 #include "tscore/ink_platform.h"
+#include "tscore/Filenames.h"
 #include "MgmtUtils.h"
 #include "tscore/Diags.h"
 #include "FileManager.h"
@@ -72,20 +73,20 @@ initializeRegistry()
     ink_assert(!"Configuration Object Registry Initialized More than Once");
   }
 
-  registerFile("proxy.config.log.config.filename", "logging.yaml");
-  registerFile("", "storage.config");
-  registerFile("proxy.config.socks.socks_config_file", "socks.config");
-  registerFile("records.config", "records.config");
-  registerFile("proxy.config.cache.control.filename", "cache.config");
-  registerFile("proxy.config.cache.ip_allow.filename", "ip_allow.yaml");
-  registerFile("proxy.config.http.parent_proxy.file", "parent.config");
-  registerFile("proxy.config.url_remap.filename", "remap.config");
-  registerFile("", "volume.config");
-  registerFile("proxy.config.cache.hosting_filename", "hosting.config");
-  registerFile("", "plugin.config");
-  registerFile("proxy.config.dns.splitdns.filename", "splitdns.config");
-  registerFile("proxy.config.ssl.server.multicert.filename", "ssl_multicert.config");
-  registerFile("proxy.config.ssl.servername.filename", "sni.config");
+  registerFile("proxy.config.log.config.filename", ts::filename::LOGGING);
+  registerFile("", ts::filename::STORAGE);
+  registerFile("proxy.config.socks.socks_config_file", ts::filename::SOCKS);
+  registerFile(ts::filename::RECORDS, ts::filename::RECORDS);
+  registerFile("proxy.config.cache.control.filename", ts::filename::CACHE);
+  registerFile("proxy.config.cache.ip_allow.filename", ts::filename::IP_ALLOW);
+  registerFile("proxy.config.http.parent_proxy.file", ts::filename::PARENT);
+  registerFile("proxy.config.url_remap.filename", ts::filename::REMAP);
+  registerFile("", ts::filename::VOLUME);
+  registerFile("proxy.config.cache.hosting_filename", ts::filename::HOSTING);
+  registerFile("", ts::filename::PLUGIN);
+  registerFile("proxy.config.dns.splitdns.filename", ts::filename::SPLITDNS);
+  registerFile("proxy.config.ssl.server.multicert.filename", ts::filename::SSL_MULTICERT);
+  registerFile("proxy.config.ssl.servername.filename", ts::filename::SNI);
 
   configFiles->registerCallback(testcall);
 }

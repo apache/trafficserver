@@ -49,7 +49,7 @@ public:
   SOCKET getFd();
   void setBinding(struct sockaddr const *);
   void setBinding(const IpAddr &, in_port_t);
-  inkcoreapi int getBinding(struct sockaddr *);
+  inkcoreapi bool getBinding(struct sockaddr *);
 
   void destroy();
   int shouldDestroy();
@@ -86,8 +86,6 @@ public:
   int getPortNum();
 
   int GetSendGenerationNumber(); // const
-  void SetLastSentPktTSSeqNum(int64_t sentSeqNum);
-  int64_t cancel();
   void setContinuation(Continuation *c);
 
   /**

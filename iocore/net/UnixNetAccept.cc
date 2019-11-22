@@ -201,15 +201,17 @@ NetAccept::init_accept(EThread *t)
   t->schedule_every(this, period);
 }
 
-void
-NetAccept::init_accept_per_thread()
+int
+NetAccept::accept_per_thread(int event, void *ep)
 {
-  int i, n;
+  int listen_per_thread = 0;
+  REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
 
-  ink_assert(opt.etype >= 0);
-
-  if (do_listen(NON_BLOCKING)) {
-    return;
+  if (listen_per_thread == 1) {
+    if (do_listen(NON_BLOCKING)) {
+      Fatal("[NetAccept::accept_per_thread]:error listenting on ports");
+      return -1;
+    }
   }
 
   if (accept_fn == net_accept) {
@@ -217,21 +219,38 @@ NetAccept::init_accept_per_thread()
   } else {
     SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
   }
+  PollDescriptor *pd = get_PollDescriptor(this_ethread());
+  if (this->ep.start(pd, this, EVENTIO_READ) < 0) {
+    Fatal("[NetAccept::accept_per_thread]:error starting EventIO");
+    return -1;
+  }
+  return 0;
+}
 
-  period = -HRTIME_MSECONDS(net_accept_period);
-  n      = eventProcessor.thread_group[opt.etype]._count;
+void
+NetAccept::init_accept_per_thread()
+{
+  int i, n;
+  int listen_per_thread = 0;
+
+  ink_assert(opt.etype >= 0);
+  REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
+
+  if (listen_per_thread == 0) {
+    if (do_listen(NON_BLOCKING)) {
+      Fatal("[NetAccept::accept_per_thread]:error listenting on ports");
+      return;
+    }
+  }
+
+  SET_HANDLER((NetAcceptHandler)&NetAccept::accept_per_thread);
+  n = eventProcessor.thread_group[opt.etype]._count;
 
   for (i = 0; i < n; i++) {
-    NetAccept *a       = (i < n - 1) ? clone() : this;
-    EThread *t         = eventProcessor.thread_group[opt.etype]._thread[i];
-    PollDescriptor *pd = get_PollDescriptor(t);
-
-    if (a->ep.start(pd, a, EVENTIO_READ) < 0) {
-      Warning("[NetAccept::init_accept_per_thread]:error starting EventIO");
-    }
-
-    a->mutex = get_NetHandler(t)->mutex;
-    t->schedule_every(a, period);
+    NetAccept *a = (i < n - 1) ? clone() : this;
+    EThread *t   = eventProcessor.thread_group[opt.etype]._thread[i];
+    a->mutex     = get_NetHandler(t)->mutex;
+    t->schedule_imm(a);
   }
 }
 
@@ -341,7 +360,7 @@ NetAccept::do_blocking_accept(EThread *t)
     NetHandler *h = get_NetHandler(t);
     // Assign NetHandler->mutex to NetVC
     vc->mutex = h->mutex;
-    t->schedule_imm_signal(vc);
+    t->schedule_imm(vc);
   } while (loop);
 
   return 1;
@@ -401,16 +420,18 @@ NetAccept::acceptFastEvent(int event, void *ep)
   int loop               = accept_till_done;
 
   do {
-    if (!opt.backdoor && check_net_throttle(ACCEPT)) {
-      ifd = NO_FD;
-      return EVENT_CONT;
-    }
-
     socklen_t sz = sizeof(con.addr);
     int fd       = socketManager.accept4(server.fd, &con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
     con.fd       = fd;
 
     if (likely(fd >= 0)) {
+      // check for throttle
+      if (!opt.backdoor && check_net_throttle(ACCEPT)) {
+        // close the connection as we are in throttle state
+        con.close();
+        NET_SUM_DYN_STAT(net_connections_throttled_in_stat, 1);
+        continue;
+      }
       Debug("iocore_net", "accepted a new socket: %d", fd);
       NET_SUM_GLOBAL_DYN_STAT(net_tcp_accept_stat, 1);
       if (opt.send_bufsize > 0) {
@@ -440,6 +461,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
     // check return value from accept()
     if (res < 0) {
+      Debug("iocore_net", "received : %s", strerror(errno));
       res = -errno;
       if (res == -EAGAIN || res == -ECONNABORTED
 #if defined(linux)
@@ -458,9 +480,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
 
     vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
-    if (!vc) {
-      goto Ldone;
-    }
+    ink_release_assert(vc);
 
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();

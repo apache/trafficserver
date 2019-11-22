@@ -55,6 +55,35 @@ TEST(LoadNodeTest, Binary) {
             node[1].as<Binary>());
 }
 
+TEST(LoadNodeTest, BinaryWithWhitespaces) {
+  Node node = Load(
+      "binaryText: !binary |-\n"
+      "  "
+      "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieS\n"
+      "  "
+      "B0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIG"
+      "\n"
+      "  "
+      "x1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbi"
+      "\n"
+      "  "
+      "B0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZG"
+      "\n"
+      "  "
+      "dlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS"
+      "\n"
+      "  4K");
+  EXPECT_EQ(Binary(reinterpret_cast<const unsigned char*>(
+                       "Man is distinguished, not only by his reason, "
+                       "but by this singular passion from other "
+                       "animals, which is a lust of the mind, that by "
+                       "a perseverance of delight in the continued and "
+                       "indefatigable generation of knowledge, exceeds "
+                       "the short vehemence of any carnal pleasure.\n"),
+                   270),
+            node["binaryText"].as<Binary>());
+}
+
 TEST(LoadNodeTest, IterateSequence) {
   Node node = Load("[1, 3, 5, 7]");
   int seq[] = {1, 3, 5, 7};
@@ -208,8 +237,8 @@ struct ParserExceptionTestCase {
 TEST(NodeTest, IncompleteJson) {
   std::vector<ParserExceptionTestCase> tests = {
       {"JSON map without value", "{\"access\"", ErrorMsg::END_OF_MAP_FLOW},
-      {"JSON map with colon but no value", "{\"access\":",
-       ErrorMsg::END_OF_MAP_FLOW},
+      {"JSON map with colon but no value",
+       "{\"access\":", ErrorMsg::END_OF_MAP_FLOW},
       {"JSON map with unclosed value quote", "{\"access\":\"",
        ErrorMsg::END_OF_MAP_FLOW},
       {"JSON map without end brace", "{\"access\":\"abc\"",
@@ -232,9 +261,9 @@ TEST(NodeTest, LoadTildeAsNull) {
 }
 
 TEST(NodeTest, LoadTagWithParenthesis) {
-    Node node = Load("!Complex(Tag) foo");
-    EXPECT_EQ(node.Tag(), "!Complex(Tag)");
-    EXPECT_EQ(node.as<std::string>(), "foo");
+  Node node = Load("!Complex(Tag) foo");
+  EXPECT_EQ(node.Tag(), "!Complex(Tag)");
+  EXPECT_EQ(node.as<std::string>(), "foo");
 }
 
 }  // namespace

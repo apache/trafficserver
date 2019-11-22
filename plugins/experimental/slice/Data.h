@@ -39,8 +39,8 @@ struct Data {
 
   sockaddr_storage m_client_ip;
 
-  // for pristine url coming in
-  TSMBuffer m_urlbuffer{nullptr};
+  // for pristine/effective url coming in
+  TSMBuffer m_urlbuf{nullptr};
   TSMLoc m_urlloc{nullptr};
 
   char m_hostname[8192];
@@ -80,7 +80,7 @@ struct Data {
   explicit Data(Config *const config)
     : m_config(config),
       m_client_ip(),
-      m_urlbuffer(nullptr),
+      m_urlbuf(nullptr),
       m_urlloc(nullptr),
       m_hostlen(0),
       m_etaglen(0),
@@ -113,11 +113,11 @@ struct Data {
   ~Data()
   {
     // decrData();
-    if (nullptr != m_urlbuffer) {
+    if (nullptr != m_urlbuf) {
       if (nullptr != m_urlloc) {
-        TSHandleMLocRelease(m_urlbuffer, TS_NULL_MLOC, m_urlloc);
+        TSHandleMLocRelease(m_urlbuf, TS_NULL_MLOC, m_urlloc);
       }
-      TSMBufferDestroy(m_urlbuffer);
+      TSMBufferDestroy(m_urlbuf);
     }
     if (nullptr != m_http_parser) {
       TSHttpParserDestroy(m_http_parser);

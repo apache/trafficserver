@@ -19,8 +19,6 @@
 import json
 import socket
 import ssl
-import time
-import sys
 
 from autest.api import AddWhenFunction
 from ports import get_port
@@ -57,6 +55,7 @@ def getHeaderFieldVal(request_header, field):
             val = field_v[0].strip()
     return val
 
+
 # addResponse adds customized response with respect to request_header. request_header and response_header are both dictionaries
 def addResponse(self, filename, request_header, response_header):
     client_request = Request.fromRequestLine(request_header["headers"], request_header["body"], None if "options" not in request_header else request_header["options"])
@@ -69,9 +68,8 @@ def addResponse(self, filename, request_header, response_header):
     addTransactionToSession(txn, absFilepath)
     return
 
+
 # adds transaction in json format to the specified file
-
-
 def addTransactionToSession(txn, JFile):
     jsondata = None
     if not os.path.exists(os.path.dirname(JFile)):
@@ -95,6 +93,7 @@ def addTransactionToSession(txn, JFile):
 
     with open(JFile, 'w+') as jf:
         jf.write(json.dumps(jsondata))
+
 
 def addSessionFromFiles(self, session_dir):
     self.Setup.Copy(session_dir, self.Variables.DataDir)
@@ -177,8 +176,8 @@ def MakeOriginServer(obj, name, port=None, s_port=None, ip='INADDR_LOOPBACK', de
         command += " --cert {0}".format(cert)
         command += " --s_port {0}".format(s_port)
 
-    # this might break if user specifies both both and ssl 
-    if not ssl: # in both or HTTP only mode
+    # this might break if user specifies both both and ssl
+    if not ssl:  # in both or HTTP only mode
         if not port:
             port = get_port(p, "Port")
 

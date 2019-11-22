@@ -24,7 +24,9 @@ TSContScheduleOnPool
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSAction TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
 

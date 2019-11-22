@@ -68,6 +68,7 @@ NetVCOptions::reset()
 
   sni_servername              = nullptr;
   ssl_servername              = nullptr;
+  sni_hostname                = nullptr;
   ssl_client_cert_name        = nullptr;
   ssl_client_private_key_name = nullptr;
   ssl_client_ca_cert_name     = nullptr;

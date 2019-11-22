@@ -106,7 +106,7 @@ struct HttpHeader {
                    char *const valstr,  // <-- return string value
                    int *const vallen,   // <-- pass in capacity, returns len of string
                    int const index = -1 // retrieves all values
-                   ) const;
+  ) const;
 
   /**
     Sets or adds a key/value

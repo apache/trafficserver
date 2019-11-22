@@ -24,7 +24,9 @@ TSTransformOutputVConnGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSVConn TSTransformOutputVConnGet(TSVConn connp)
 

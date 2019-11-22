@@ -30,6 +30,7 @@
 #include "HttpTransact.h"
 #include "tscore/Regex.h"
 #include "PluginFactory.h"
+#include "NextHopStrategyFactory.h"
 
 #include <memory>
 
@@ -210,6 +211,7 @@ public:
   int num_rules_forward_with_recv_port = 0;
 
   PluginFactory pluginFactory;
+  NextHopStrategyFactory *strategyFactory = nullptr;
 
 private:
   bool _valid = false;
