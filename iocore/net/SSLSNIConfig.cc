@@ -70,6 +70,9 @@ SNIConfigParams::loadSNIConfig()
     if (item.verify_client_level != 255) {
       ai->actions.push_back(std::make_unique<VerifyClient>(item.verify_client_level));
     }
+    if (item.host_sni_policy != 255) {
+      ai->actions.push_back(std::make_unique<HostSniPolicy>(item.host_sni_policy));
+    }
     if (!item.protocol_unset) {
       ai->actions.push_back(std::make_unique<TLSValidProtocols>(item.protocol_mask));
     }

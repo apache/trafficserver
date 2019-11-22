@@ -1,4 +1,5 @@
 /** @file
+ *
 
   A brief file description
 
@@ -1250,6 +1251,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.number_of_redirections, "proxy.config.http.number_of_redirections");
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
   HttpEstablishStaticConfigStringAlloc(c.redirect_actions_string, "proxy.config.http.redirect.actions");
+  HttpEstablishStaticConfigByte(c.http_host_sni_policy, "proxy.config.http.host_sni_policy");
 
   HttpEstablishStaticConfigStringAlloc(c.oride.ssl_client_sni_policy, "proxy.config.ssl.client.sni_policy");
 
@@ -1529,6 +1531,7 @@ HttpConfig::reconfigure()
   params->post_copy_size                    = m_master.post_copy_size;
   params->redirect_actions_string           = ats_strdup(m_master.redirect_actions_string);
   params->redirect_actions_map = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
+  params->http_host_sni_policy = m_master.http_host_sni_policy;
 
   params->oride.ssl_client_sni_policy = ats_strdup(m_master.oride.ssl_client_sni_policy);
 

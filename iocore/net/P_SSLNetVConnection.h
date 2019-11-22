@@ -401,12 +401,18 @@ public:
   // The serverName is either a pointer to the (null-terminated) name fetched from the
   // SSL object or the empty string.
   const char *
-  get_server_name() const
+  get_server_name() const override
   {
     return _serverName.get() ? _serverName.get() : "";
   }
 
   void set_server_name(std::string_view name);
+
+  bool
+  support_sni() override
+  {
+    return true;
+  }
 
   /// Set by asynchronous hooks to request a specific operation.
   SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
@@ -438,6 +444,8 @@ public:
   {
     verify_cert = ctx;
   }
+
+  static bool TestClientAction(const char *servername, const IpEndpoint &ep, int &enforcement_policy);
 
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
