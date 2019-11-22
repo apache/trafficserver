@@ -107,6 +107,8 @@ public:
   void set_rx_error_code(ProxyError e);
   void set_tx_error_code(ProxyError e);
 
+  bool support_sni() const;
+
   /// Variables
   //
   HttpSessionAccept::Options upstream_outbound_options; // overwritable copy of options
@@ -212,4 +214,10 @@ inline const char *
 ProxyTransaction::protocol_contains(std::string_view tag_prefix) const
 {
   return _proxy_ssn ? _proxy_ssn->protocol_contains(tag_prefix) : nullptr;
+}
+
+inline bool
+ProxyTransaction::support_sni() const
+{
+  return _proxy_ssn ? _proxy_ssn->support_sni() : false;
 }

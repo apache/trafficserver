@@ -41,6 +41,7 @@ TSDECL(client_key);
 TSDECL(ip_allow);
 TSDECL(valid_tls_versions_in);
 TSDECL(http2);
+TSDECL(host_sni_policy);
 #undef TSDECL
 
 const int start = 0;
@@ -53,7 +54,8 @@ struct YamlSNIConfig {
     verify_server_policy,     // this applies to server side vc only
     verify_server_properties, // this applies to server side vc only
     client_cert,
-    h2 // this applies to client side only
+    h2,             // this applies to client side only
+    host_sni_policy // Applies to client side only
   };
   enum class Level { NONE = 0, MODERATE, STRICT };
   enum class Policy : uint8_t { DISABLED = 0, PERMISSIVE, ENFORCED, UNSET };
@@ -67,6 +69,7 @@ struct YamlSNIConfig {
     std::string fqdn;
     std::optional<bool> offer_h2; // Has no value by default, so do not initialize!
     uint8_t verify_client_level = 255;
+    uint8_t host_sni_policy     = 255;
     std::string tunnel_destination;
     bool tunnel_decrypt               = false;
     Policy verify_server_policy       = Policy::UNSET;

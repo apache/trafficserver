@@ -39,6 +39,18 @@ class ActionItem
 {
 public:
   virtual int SNIAction(Continuation *cont) const = 0;
+
+  /**
+    This method tests whether this action would have been triggered by a
+    particuarly SNI value and IP address combination.  This is run after the
+    TLS exchange finished to see if the client used an SNI name different from
+    the host name to avoid SNI-based policy
+  */
+  virtual bool
+  TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &policy) const
+  {
+    return false;
+  }
   virtual ~ActionItem(){};
 };
 
@@ -102,6 +114,36 @@ public:
     setClientCertLevel(ssl_vc->ssl, this->mode);
     return SSL_TLSEXT_ERR_OK;
   }
+  bool
+  TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &policy) const override
+  {
+    // This action is triggered by a SNI if it was set
+    return true;
+  }
+};
+
+class HostSniPolicy : public ActionItem
+{
+  uint8_t policy;
+
+public:
+  HostSniPolicy(const char *param) : policy(atoi(param)) {}
+  HostSniPolicy(uint8_t param) : policy(param) {}
+  ~HostSniPolicy() override {}
+  int
+  SNIAction(Continuation *cont) const override
+  {
+    // On action this doesn't do anything
+    return SSL_TLSEXT_ERR_OK;
+  }
+  bool
+  TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &in_policy) const override
+  {
+    // Update the policy when testing
+    in_policy = this->policy;
+    // But this action didn't really trigger during the action phase
+    return false;
+  }
 };
 
 class TLSValidProtocols : public ActionItem
@@ -127,6 +169,11 @@ public:
       ssl_vc->protocol_mask     = protocol_mask;
     }
     return SSL_TLSEXT_ERR_OK;
+  }
+  bool
+  TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &policy) const override
+  {
+    return !unset;
   }
 };
 
@@ -177,5 +224,14 @@ public:
       Debug("ssl_sni", "%s is not allowed. Denying connection", buff);
       return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
+  }
+  bool
+  TestClientSNIAction(const char *servrername, const IpEndpoint &ep, int &policy) const override
+  {
+    bool retval = false;
+    if (ip_map.contains(ep)) {
+      retval = true;
+    }
+    return retval;
   }
 };

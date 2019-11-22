@@ -104,12 +104,11 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_client_cert,
                                                TS_client_key,
                                                TS_http2,
-                                               TS_ip_allow
+                                               TS_ip_allow,
 #if TS_USE_HELLO_CB
-                                               ,
-                                               TS_valid_tls_versions_in
+                                               TS_valid_tls_versions_in,
 #endif
-};
+                                               TS_host_sni_policy};
 
 namespace YAML
 {
@@ -144,6 +143,12 @@ template <> struct convert<YamlSNIConfig::Item> {
         throw YAML::ParserException(node[TS_verify_client].Mark(), "unknown value \"" + value + "\"");
       }
       item.verify_client_level = static_cast<uint8_t>(level);
+    }
+
+    if (node[TS_host_sni_policy]) {
+      auto value           = node[TS_host_sni_policy].as<std::string>();
+      int policy           = POLICY_DESCRIPTOR.get(value);
+      item.host_sni_policy = static_cast<uint8_t>(policy);
     }
 
     if (node[TS_tunnel_route]) {

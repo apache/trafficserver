@@ -49,6 +49,7 @@ public:
   void release(ProxyTransaction *trans) override;
   NetVConnection *get_netvc() const override;
   int get_transact_count() const override;
+  bool support_sni() override;
 
   // HQSession
   void add_transaction(HQTransaction *);

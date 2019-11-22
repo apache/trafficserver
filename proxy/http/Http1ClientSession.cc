@@ -597,3 +597,9 @@ Http1ClientSession::get_protocol_string() const
 {
   return "http";
 }
+
+bool
+Http1ClientSession::support_sni() const
+{
+  return client_vc ? client_vc->support_sni() : false;
+}

@@ -457,6 +457,15 @@ public:
   virtual Action *send_OOB(Continuation *cont, char *buf, int len);
 
   /**
+    Return the server name that is appropriate for the network VC type
+  */
+  virtual const char *
+  get_server_name() const
+  {
+    return nullptr;
+  }
+
+  /**
     Cancels a scheduled send_OOB. Part of the message could have
     been sent already. Not callbacks to the cont are made after
     this call. The Action returned by send_OOB should not be accessed
@@ -626,6 +635,16 @@ public:
   get_context() const
   {
     return netvc_context;
+  }
+
+  /**
+   * Returns true if the network protocol
+   * supports a client provided SNI value
+   */
+  virtual bool
+  support_sni()
+  {
+    return false;
   }
 
   /** Structure holding user options. */
