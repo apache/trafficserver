@@ -43,10 +43,11 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   QUICPadder padder(NetVConnectionContext_t::NET_VCONNECTION_IN);
   MockQUICCongestionController cc;
   QUICLossDetector detector(context, &cc, &rtt_measure, &pinger, &padder);
-  ats_unique_buf payload = ats_unique_malloc(512);
-  size_t payload_len     = 512;
-  QUICPacketUPtr packet  = QUICPacketFactory::create_null_packet();
-  QUICAckFrame *frame    = nullptr;
+  Ptr<IOBufferBlock> payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  payload->alloc(iobuffer_size_to_index(512));
+  size_t payload_len    = 512;
+  QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
+  QUICAckFrame *frame   = nullptr;
 
   SECTION("Handshake")
   {
@@ -66,16 +67,16 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     CHECK(len < 4);
 
     // Send SERVER_CLEARTEXT (Handshake message)
-    ats_unique_buf payload = ats_unique_malloc(sizeof(raw));
-    memcpy(payload.get(), raw, sizeof(raw));
+    payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(sizeof(raw)));
+    memcpy(payload->start(), raw, sizeof(raw));
+    payload->fill(sizeof(raw));
 
-    QUICPacketHeaderUPtr header =
-      QUICPacketHeader::build(QUICPacketType::HANDSHAKE, QUICKeyPhase::HANDSHAKE,
-                              {reinterpret_cast<const uint8_t *>("\xff\xdd\xbb\x99\x77\x55\x33\x11"), 8},
-                              {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, 0x00000001, 0, 0x00112233,
-                              false, std::move(payload), sizeof(raw));
-    QUICPacketUPtr packet = QUICPacketUPtr(new QUICPacket(std::move(header), std::move(payload), sizeof(raw), true, false),
-                                           [](QUICPacket *p) { delete p; });
+    QUICHandshakePacket *handshake_packet = new QUICHandshakePacket(
+      0x00112233, {reinterpret_cast<const uint8_t *>("\xff\xdd\xbb\x99\x77\x55\x33\x11"), 8},
+      {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, sizeof(raw), 0, true, true, false);
+    handshake_packet->attach_payload(payload, true);
+    QUICPacketUPtr packet = QUICPacketUPtr(handshake_packet, [](QUICPacket *p) { delete p; });
     detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{
       packet->packet_number(),
       Thread::get_hrtime(),
@@ -105,37 +106,67 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     // Send packet (1) to (7)
     QUICPacketNumberSpace pn_space = QUICPacketNumberSpace::ApplicationData;
     QUICEncryptionLevel level      = QUICEncryptionLevel::ONE_RTT;
-    payload                        = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet1         = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
-                                                        std::move(payload), payload_len, true, false);
+    payload                        = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->fill(payload_len);
+    uint8_t packet_1_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet1 = pf.create_short_header_packet(
+      packet_1_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
     REQUIRE(packet1 != nullptr);
-    payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet2  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
-                                                        std::move(payload), payload_len, true, false);
-    payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet3  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
-                                                        std::move(payload), payload_len, true, false);
-    payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet4  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
-                                                        std::move(payload), payload_len, true, false);
-    payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet5  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
-                                                        std::move(payload), payload_len, true, false);
-    payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet6  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
-                                                        std::move(payload), payload_len, true, false);
-    payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet7  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
-                                                        std::move(payload), payload_len, true, false);
-    payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet8  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
-                                                        std::move(payload), payload_len, true, false);
-    payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet9  = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
-                                                        std::move(payload), payload_len, true, false);
-    payload                 = ats_unique_malloc(payload_len);
-    QUICPacketUPtr packet10 = pf.create_protected_packet(connection_id, detector.largest_acked_packet_number(pn_space),
-                                                         std::move(payload), payload_len, true, false);
+    payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->fill(payload_len);
+    uint8_t packet_2_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet2 = pf.create_short_header_packet(
+      packet_2_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
+    payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->fill(payload_len);
+    uint8_t packet_3_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet3 = pf.create_short_header_packet(
+      packet_3_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
+    payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->fill(payload_len);
+    uint8_t packet_4_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet4 = pf.create_short_header_packet(
+      packet_4_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
+    payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->fill(payload_len);
+    uint8_t packet_5_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet5 = pf.create_short_header_packet(
+      packet_5_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
+    payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->fill(payload_len);
+    uint8_t packet_6_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet6 = pf.create_short_header_packet(
+      packet_6_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
+    payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->fill(payload_len);
+    uint8_t packet_7_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet7 = pf.create_short_header_packet(
+      packet_7_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
+    payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->fill(payload_len);
+    uint8_t packet_8_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet8 = pf.create_short_header_packet(
+      packet_8_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
+    payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->fill(payload_len);
+    uint8_t packet_9_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet9 = pf.create_short_header_packet(
+      packet_9_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
+    payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->fill(payload_len);
+    uint8_t packet_10_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet10 = pf.create_short_header_packet(
+      packet_10_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
 
     QUICPacketNumber pn1  = packet1->packet_number();
     QUICPacketNumber pn2  = packet2->packet_number();

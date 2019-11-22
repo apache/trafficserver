@@ -292,7 +292,7 @@ QUICPacketFactory::create_short_header_packet(uint8_t *packet_buf, QUICConnectio
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_stateless_reset_packet(QUICConnectionId connection_id, QUICStatelessResetToken stateless_reset_token)
+QUICPacketFactory::create_stateless_reset_packet(QUICStatelessResetToken stateless_reset_token)
 {
   return QUICPacketUPtr(new QUICStatelessResetPacket(stateless_reset_token), &QUICPacketDeleter::delete_packet_new);
 }

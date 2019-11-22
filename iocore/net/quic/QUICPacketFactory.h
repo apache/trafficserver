@@ -45,8 +45,7 @@ class QUICPacketFactory
 public:
   static QUICPacketUPtr create_null_packet();
   static QUICPacketUPtr create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid);
-  static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id,
-                                                      QUICStatelessResetToken stateless_reset_token);
+  static QUICPacketUPtr create_stateless_reset_packet(QUICStatelessResetToken stateless_reset_token);
   static QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
                                             QUICConnectionId original_dcid, QUICRetryToken &token);
 
