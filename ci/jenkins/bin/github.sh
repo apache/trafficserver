@@ -18,7 +18,7 @@
 
 set +x
 
-INSTALL="${WORKSPACE}/${BUILD_NUMBER}/install"
+INSTALL="${ATS_BUILD_BASEDIR}/install"
 
 # Optional settings
 CCACHE=""

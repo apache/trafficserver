@@ -18,7 +18,7 @@
 
 set +x
 
-INSTALL="${WORKSPACE}/${BUILD_NUMBER}/install"
+INSTALL="${ATS_BUILD_BASEDIR}/install"
 URL="https://ci.trafficserver.apache.org/autest"
 JOB_ID=${ghprbPullId:-${ATS_BRANCH:-master}}
 AUSB="ausb-${JOB_ID}.${BUILD_NUMBER}"
