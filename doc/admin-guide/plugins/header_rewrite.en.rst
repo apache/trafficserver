@@ -786,24 +786,6 @@ Old expansion variable   Condition variable to use with concatenations
 %<cquup>                 %{CLIENT-URL:PATH}
 ======================== ==========================================================================
 
-Header Values
--------------
-
-Setting a header with a value can take the following formats:
-
-- Any `condition <Conditions_>`_ which extracts a value from the request.
-
-- ``$N``, where 0 <= N <= 9, from matching groups in a regular expression.
-
-- A string (which can contain the numbered matches from a regular expression as
-  described above).
-
-- Null.
-
-Supplying no value for a header for certain operators can lead to an effective
-no-op. In particular, `add-header`_ and `set-header`_ will simply short-circuit
-if no value has been supplied for the named header.
-
 URL Parts
 ---------
 
