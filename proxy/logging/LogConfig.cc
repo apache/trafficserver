@@ -616,8 +616,7 @@ LogConfig::update_space_used()
         //
         // then check if the candidate belongs to any given log type
         //
-        std::string_view rolled_filename(entry->d_name, strlen(entry->d_name));
-        auto iter = deleting_info.find(LogUtils::get_unrolled_filename(rolled_filename));
+        auto iter = deleting_info.find(LogUtils::get_unrolled_filename(entry->d_name));
         if (iter == deleting_info.end()) {
           // We won't delete the log if its name doesn't match any give type.
           continue;
