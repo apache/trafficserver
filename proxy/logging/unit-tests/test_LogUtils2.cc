@@ -131,7 +131,7 @@ RecSignalManager(int, char const *, std::size_t)
 {
 }
 
-TEST_CASE("LogUtilsUnrolled", "get_unrolled_filename")
+TEST_CASE("get_unrolled_filename parses possible log files as expected", "[get_unrolled_filename]")
 {
   // Rolled log inputs.
   constexpr ts::TextView with_underscore = "squid.log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old";
