@@ -26,11 +26,11 @@
 #include <string_view>
 #include <string>
 
-#include "tscore/IntrusiveHashMap.h"
 #include "tscore/ink_platform.h"
 #include "records/P_RecProcess.h"
 #include "ProxyConfig.h"
 #include "LogObject.h"
+#include "RolledLogDeleter.h"
 #include "tscpp/util/MemSpan.h"
 
 /* Instead of enumerating the stats in DynamicStats.h, each module needs
@@ -77,73 +77,6 @@ enum {
 extern RecRawStatBlock *log_rsb;
 
 struct dirent;
-
-/*-------------------------------------------------------------------------
-  LogDeleteCandidate, LogDeletingInfo&Descriptor
-  -------------------------------------------------------------------------*/
-
-struct LogDeleteCandidate {
-  std::string name;
-  int64_t size;
-  time_t mtime;
-
-  LogDeleteCandidate(char *p_name, int64_t st_size, time_t st_time) : name(p_name), size(st_size), mtime(st_time) {}
-};
-
-struct LogDeletingInfo {
-  std::string name;
-  int min_count;
-  std::vector<LogDeleteCandidate> candidates;
-
-  LogDeletingInfo *_next{nullptr};
-  LogDeletingInfo *_prev{nullptr};
-
-  LogDeletingInfo(const char *type, int limit) : name(type), min_count(limit) {}
-  LogDeletingInfo(std::string_view type, int limit) : name(type), min_count(limit) {}
-
-  void
-  clear()
-  {
-    candidates.clear();
-  }
-};
-
-struct LogDeletingInfoDescriptor {
-  using key_type   = std::string_view;
-  using value_type = LogDeletingInfo;
-
-  static key_type
-  key_of(value_type *value)
-  {
-    return value->name;
-  }
-
-  static bool
-  equal(key_type const &lhs, key_type const &rhs)
-  {
-    return lhs == rhs;
-  }
-
-  static value_type *&
-  next_ptr(value_type *value)
-  {
-    return value->_next;
-  }
-
-  static value_type *&
-  prev_ptr(value_type *value)
-  {
-    return value->_prev;
-  }
-
-  static constexpr std::hash<std::string_view> hasher{};
-
-  static auto
-  hash_of(key_type s) -> decltype(hasher(s))
-  {
-    return hasher(s);
-  }
-};
 
 /*-------------------------------------------------------------------------
   this object keeps the state of the logging configuraion variables.  upon
@@ -224,6 +157,18 @@ public:
     return log_object_manager.has_api_objects();
   }
 
+  /** Register rolled logs of logname for auto-deletion when there are space
+   * constraints.
+   *
+   * @param[in] logname The name of the unrolled log to register, such as
+   * "diags.log".
+   *
+   * @param[in] rolling_min_count The minimum amount of rolled logs of logname
+   * to try to keep around. A value of 0 expresses a desire to keep all rolled
+   * files, if possible.
+   */
+  void register_rolled_log_auto_delete(std::string_view logname, int rolling_min_count);
+
 public:
   bool initialized             = false;
   bool reconfiguration_needed  = false;
@@ -254,8 +199,6 @@ public:
   bool rolling_allow_empty;
   bool auto_delete_rolled_files;
 
-  IntrusiveHashMap<LogDeletingInfoDescriptor> deleting_info;
-
   int sampling_frequency;
   int file_stat_frequency;
   int space_used_frequency;
@@ -277,6 +220,8 @@ private:
   bool m_partition_full             = false;
   bool m_partition_low              = false;
   bool m_log_directory_inaccessible = false;
+
+  RolledLogDeleter rolledLogDeleter;
 
   // noncopyable
   // -- member functions not allowed --

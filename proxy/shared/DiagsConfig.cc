@@ -245,7 +245,8 @@ DiagsConfig::config_diags_norecords()
 #endif
 }
 
-DiagsConfig::DiagsConfig(const char *prefix_string, const char *filename, const char *tags, const char *actions, bool use_records)
+DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, const char *tags, const char *actions,
+                         bool use_records)
   : callbacks_established(false), diags_log(nullptr), diags(nullptr)
 {
   char diags_logpath[PATH_NAME_MAX];

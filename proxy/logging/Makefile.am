@@ -61,19 +61,24 @@ liblogging_a_SOURCES = \
 	LogObject.h \
 	LogUtils.cc \
 	LogUtils.h \
+	RolledLogDeleter.cc \
+	RolledLogDeleter.h \
 	YamlLogConfig.cc \
 	YamlLogConfigDecoders.cc \
 	YamlLogConfig.h
 
 check_PROGRAMS = \
 	test_LogUtils \
-	test_LogUtils2
+	test_LogUtils2 \
+	test_RolledLogDeleter
 
 TESTS = \
 	test_LogUtils \
-	test_LogUtils2
+	test_LogUtils2 \
+	test_RolledLogDeleter
 
-test_LogUtils_CPPFLAGS =  $(AM_CPPFLAGS)\
+test_LogUtils_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
 	-DTEST_LOG_UTILS
 
 test_LogUtils_SOURCES = \
@@ -84,7 +89,8 @@ test_LogUtils_LDADD = \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a
 
-test_LogUtils2_CPPFLAGS =  $(AM_CPPFLAGS)\
+test_LogUtils2_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
 	-DTEST_LOG_UTILS \
 	-I$(abs_top_srcdir)/tests/include
 
@@ -94,6 +100,21 @@ test_LogUtils2_SOURCES = \
 	unit-tests/test_LogUtils2.cc
 
 test_LogUtils2_LDADD = \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a
+
+test_RolledLogDeleter_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-DTEST_LOG_UTILS \
+	-I$(abs_top_srcdir)/tests/include
+
+test_RolledLogDeleter_SOURCES = \
+	RolledLogDeleter.cc \
+	LogUtils.cc \
+	unit-tests/test_RolledLogDeleter.cc
+
+test_RolledLogDeleter_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a
