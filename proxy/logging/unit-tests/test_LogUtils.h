@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <cstring>
+
 struct MIMEField {
   const char *tag, *value;
 

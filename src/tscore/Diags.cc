@@ -88,15 +88,17 @@ location(const SourceLocation *loc, DiagsShowLocation show, DiagsLevel level)
 //
 //////////////////////////////////////////////////////////////////////////////
 
-Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLogFile *_diags_log, int dl_perm, int ol_perm)
+Diags::Diags(std::string_view prefix_string, const char *bdt, const char *bat, BaseLogFile *_diags_log, int dl_perm, int ol_perm)
   : diags_log(nullptr),
     stdout_log(nullptr),
     stderr_log(nullptr),
     magic(DIAGS_MAGIC),
     show_location(SHOW_LOCATION_NONE),
     base_debug_tags(nullptr),
-    base_action_tags(nullptr)
+    base_action_tags(nullptr),
+    prefix_str(prefix_string)
 {
+  ink_release_assert(!prefix_str.empty());
   int i;
 
   cleanup_func = nullptr;
@@ -116,11 +118,8 @@ Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLo
   config.enabled[DiagsTagType_Debug]  = (base_debug_tags != nullptr);
   config.enabled[DiagsTagType_Action] = (base_action_tags != nullptr);
   diags_on_for_plugins                = config.enabled[DiagsTagType_Debug];
-  prefix_str                          = prefix_string;
 
   // The caller must always provide a non-empty prefix.
-  ink_release_assert(prefix_str);
-  ink_release_assert(*prefix_str);
 
   for (i = 0; i < DiagsLevel_Count; i++) {
     config.outputs[i].to_stdout   = false;

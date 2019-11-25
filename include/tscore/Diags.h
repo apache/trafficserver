@@ -111,7 +111,7 @@ struct DiagsConfigState {
 class Diags
 {
 public:
-  Diags(const char *prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log,
+  Diags(std::string_view prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log,
         int diags_log_perm = -1, int output_log_perm = -1);
   virtual ~Diags();
 
@@ -230,7 +230,7 @@ public:
   IpAddr debug_client_ip;
 
 private:
-  const char *prefix_str;
+  const std::string prefix_str;
   mutable ink_mutex tag_table_lock; // prevents reconfig/read races
   DFA *activated_tags[2];           // 1 table for debug, 1 for action
 

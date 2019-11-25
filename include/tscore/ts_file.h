@@ -180,6 +180,9 @@ namespace file
 
   // Return the filename derived from path p.
   //
+  // This is made to match the std::filesystem::path::filename behavior:
+  //   https://en.cppreference.com/w/cpp/filesystem/path/filename
+  //
   // Examples:
   //   given "/foo/bar.txt", this returns "bar.txt"
   //   given "/foo/bar", this returns "bar"
