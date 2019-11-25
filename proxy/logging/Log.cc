@@ -1015,10 +1015,10 @@ Log::init_when_enabled()
     // setup global scrap object
     //
     global_scrap_format = MakeTextLogFormat();
-    global_scrap_object =
-      new LogObject(global_scrap_format, Log::config->logfile_dir, "scrapfile.log", LOG_FILE_BINARY, nullptr,
-                    Log::config->rolling_enabled, Log::config->preproc_threads, Log::config->rolling_interval_sec,
-                    Log::config->rolling_offset_hr, Log::config->rolling_size_mb);
+    global_scrap_object = new LogObject(
+      global_scrap_format, Log::config->logfile_dir, "scrapfile.log", LOG_FILE_BINARY, nullptr, Log::config->rolling_enabled,
+      Log::config->preproc_threads, Log::config->rolling_interval_sec, Log::config->rolling_offset_hr, Log::config->rolling_size_mb,
+      /* auto create */ false, Log::config->rolling_max_count, Log::config->rolling_min_count);
 
     // create the flush thread
     create_threads();
