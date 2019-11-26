@@ -279,8 +279,8 @@ HttpBodyFactory::reconfigure()
   ats_scoped_str directory_of_template_sets(RecConfigReadConfigPath("proxy.config.body_factory.template_sets_dir", "body_factory"));
 
   if (access(directory_of_template_sets, R_OK) < 0) {
-    Warning("Unable to access() directory '%s': %d, %s", (const char *)directory_of_template_sets, errno, strerror(errno));
-    Warning(" Please set 'proxy.config.body_factory.template_sets_dir' ");
+    Fatal("Unable to access() directory '%s': %d, %s.  Please set 'proxy.config.body_factory.template_sets_dir' ",
+          (const char *)directory_of_template_sets, errno, strerror(errno));
   }
 
   Debug("body_factory", "directory_of_template_sets = '%s' ", (const char *)directory_of_template_sets);

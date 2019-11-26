@@ -2361,7 +2361,7 @@ Customizable User Response Pages
 
    The customizable response page default directory. If this is a
    relative path, |TS| resolves it relative to the
-   ``PREFIX`` directory.
+   ``SYSCONFDIR`` directory.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.template_base STRING ""
     :reloadable:

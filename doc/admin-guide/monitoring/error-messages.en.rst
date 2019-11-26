@@ -136,7 +136,7 @@ is provided in :ref:`appendix-http-status-codes`.
 
 The error messages can be customized. The actual response is generated from a template. These
 templates are stored in files which means the errors responses can be customized by modifying these
-files. The default directory for the template files is ``PREFIX/body_factory/default`` but this can
+files. The default directory for the template files is ``SYSCONFDIR/body_factory/default`` but this can
 be changed by the configuration variable :ts:cv:`proxy.config.body_factory.template_sets_dir`. All
 files in this directory are added to a lookup table which is consulted when the error message is
 generated. The name used for lookup is by default that listed in the :ref:`following table
