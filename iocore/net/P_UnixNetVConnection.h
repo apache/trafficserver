@@ -36,7 +36,7 @@
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"
-#include "NetEventHandler.h"
+#include "NetEvent.h"
 
 class UnixNetVConnection;
 class NetHandler;
@@ -105,7 +105,7 @@ struct OOB_callback : public Continuation {
 
 enum tcp_congestion_control_t { CLIENT_SIDE, SERVER_SIDE };
 
-class UnixNetVConnection : public NetVConnection, public NetEventHandler
+class UnixNetVConnection : public NetVConnection, public NetEvent
 {
 public:
   int64_t outstanding() override;
@@ -217,7 +217,7 @@ public:
     return false;
   }
 
-  // NetEventHandler
+  // NetEvent
   virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
   virtual void net_write_io(NetHandler *nh, EThread *lthread) override;
   virtual void free(EThread *t) override;

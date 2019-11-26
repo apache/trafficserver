@@ -27,14 +27,14 @@
 
 class NetHandler;
 
-// this class is used to NetHandler to hide some detail of NetEventHandler.
-// To combine the `UDPConenction` and `NetEventHandler`. NetHandler should
+// this class is used to NetHandler to hide some detail of NetEvent.
+// To combine the `UDPConenction` and `NetEvent`. NetHandler should
 // callback to net_read_io or net_write_io when net event happen.
-class NetEventHandler
+class NetEvent
 {
 public:
-  NetEventHandler() = default;
-  virtual ~NetEventHandler() {}
+  NetEvent() = default;
+  virtual ~NetEvent() {}
   virtual void net_read_io(NetHandler *nh, EThread *lthread)  = 0;
   virtual void net_write_io(NetHandler *nh, EThread *lthread) = 0;
   virtual void free(EThread *t)                               = 0;
@@ -75,14 +75,14 @@ public:
   ink_hrtime next_activity_timeout_at   = 0;
   ink_hrtime submit_time                = 0;
 
-  LINK(NetEventHandler, open_link);
-  LINK(NetEventHandler, cop_link);
-  LINKM(NetEventHandler, read, ready_link)
-  SLINKM(NetEventHandler, read, enable_link)
-  LINKM(NetEventHandler, write, ready_link)
-  SLINKM(NetEventHandler, write, enable_link)
-  LINK(NetEventHandler, keep_alive_queue_link);
-  LINK(NetEventHandler, active_queue_link);
+  LINK(NetEvent, open_link);
+  LINK(NetEvent, cop_link);
+  LINKM(NetEvent, read, ready_link)
+  SLINKM(NetEvent, read, enable_link)
+  LINKM(NetEvent, write, ready_link)
+  SLINKM(NetEvent, write, enable_link)
+  LINK(NetEvent, keep_alive_queue_link);
+  LINK(NetEvent, active_queue_link);
 
   union {
     unsigned int flags = 0;

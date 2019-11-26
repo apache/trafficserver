@@ -40,13 +40,13 @@
 #include "I_VIO.h"
 
 class Event;
-class NetEventHandler;
+class NetEvent;
 
 struct NetState {
   int enabled = 0;
   VIO vio;
-  Link<NetEventHandler> ready_link;
-  SLink<NetEventHandler> enable_link;
+  Link<NetEvent> ready_link;
+  SLink<NetEvent> enable_link;
   int in_enabled_list = 0;
   int triggered       = 0;
 

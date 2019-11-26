@@ -75,7 +75,7 @@
 struct PollDescriptor;
 typedef PollDescriptor *EventLoop;
 
-class NetEventHandler;
+class NetEvent;
 class UnixUDPConnection;
 struct DNSConnection;
 struct NetAccept;
@@ -89,14 +89,14 @@ struct EventIO {
   int type             = 0;
   union {
     Continuation *c;
-    NetEventHandler *vc;
+    NetEvent *vc;
     DNSConnection *dnscon;
     NetAccept *na;
     UnixUDPConnection *uc;
   } data;
   int start(EventLoop l, DNSConnection *vc, int events);
   int start(EventLoop l, NetAccept *vc, int events);
-  int start(EventLoop l, NetEventHandler *vc, int events);
+  int start(EventLoop l, NetEvent *vc, int events);
   int start(EventLoop l, UnixUDPConnection *vc, int events);
   int start(EventLoop l, int fd, Continuation *c, int events);
   // Change the existing events by adding modify(EVENTIO_READ)
@@ -118,7 +118,7 @@ struct EventIO {
 #include "P_UnixPollDescriptor.h"
 #include <limits>
 
-class NetEventHandler;
+class NetEvent;
 class NetHandler;
 typedef int (NetHandler::*NetContHandler)(int, void *);
 typedef unsigned int uint32;
@@ -236,15 +236,15 @@ public:
   // If we don't get rid of @a trigger_event we should remove @a thread.
   EThread *thread      = nullptr;
   Event *trigger_event = nullptr;
-  QueM(NetEventHandler, NetState, read, ready_link) read_ready_list;
-  QueM(NetEventHandler, NetState, write, ready_link) write_ready_list;
-  Que(NetEventHandler, open_link) open_list;
-  DList(NetEventHandler, cop_link) cop_list;
-  ASLLM(NetEventHandler, NetState, read, enable_link) read_enable_list;
-  ASLLM(NetEventHandler, NetState, write, enable_link) write_enable_list;
-  Que(NetEventHandler, keep_alive_queue_link) keep_alive_queue;
+  QueM(NetEvent, NetState, read, ready_link) read_ready_list;
+  QueM(NetEvent, NetState, write, ready_link) write_ready_list;
+  Que(NetEvent, open_link) open_list;
+  DList(NetEvent, cop_link) cop_list;
+  ASLLM(NetEvent, NetState, read, enable_link) read_enable_list;
+  ASLLM(NetEvent, NetState, write, enable_link) write_enable_list;
+  Que(NetEvent, keep_alive_queue_link) keep_alive_queue;
   uint32_t keep_alive_queue_size = 0;
-  Que(NetEventHandler, active_queue_link) active_queue;
+  Que(NetEvent, active_queue_link) active_queue;
   uint32_t active_queue_size = 0;
 
   /// configuration settings for managing the active and keep-alive queues
@@ -293,10 +293,10 @@ public:
   void process_ready_list();
   void manage_keep_alive_queue();
   bool manage_active_queue(bool ignore_queue_size);
-  void add_to_keep_alive_queue(NetEventHandler *vc);
-  void remove_from_keep_alive_queue(NetEventHandler *vc);
-  bool add_to_active_queue(NetEventHandler *vc);
-  void remove_from_active_queue(NetEventHandler *vc);
+  void add_to_keep_alive_queue(NetEvent *vc);
+  void remove_from_keep_alive_queue(NetEvent *vc);
+  bool add_to_active_queue(NetEvent *vc);
+  void remove_from_active_queue(NetEvent *vc);
 
   /// Per process initialization logic.
   static void init_for_process();
@@ -304,42 +304,42 @@ public:
   void configure_per_thread_values();
 
   /**
-    Start to handle read & write event on a NetEventHandler.
+    Start to handle read & write event on a NetEvent.
     Initial the socket fd of netvc for polling system.
     Only be called when holding the mutex of this NetHandler.
 
-    @param netvc NetEventHandler to be managed by this NetHandler.
+    @param netvc NetEvent to be managed by this NetHandler.
     @return 0 on success, netvc->nh set to this NetHandler.
             -ERRNO on failure.
    */
-  int startIO(NetEventHandler *netvc);
+  int startIO(NetEvent *netvc);
   /**
-    Stop to handle read & write event on a NetEventHandler.
+    Stop to handle read & write event on a NetEvent.
     Remove the socket fd of netvc from polling system.
     Only be called when holding the mutex of this NetHandler and must call stopCop(netvc) first.
 
-    @param netvc NetEventHandler to be released.
+    @param netvc NetEvent to be released.
     @return netvc->nh set to nullptr.
    */
-  void stopIO(NetEventHandler *netvc);
+  void stopIO(NetEvent *netvc);
 
   /**
-    Start to handle active timeout and inactivity timeout on a NetEventHandler.
+    Start to handle active timeout and inactivity timeout on a NetEvent.
     Put the netvc into open_list. All NetVCs in the open_list is checked for timeout by InactivityCop.
     Only be called when holding the mutex of this NetHandler and must call startIO(netvc) first.
 
-    @param netvc NetEventHandler to be managed by InactivityCop
+    @param netvc NetEvent to be managed by InactivityCop
    */
-  void startCop(NetEventHandler *netvc);
+  void startCop(NetEvent *netvc);
   /**
-    Stop to handle active timeout and inactivity on a NetEventHandler.
+    Stop to handle active timeout and inactivity on a NetEvent.
     Remove the netvc from open_list and cop_list.
     Also remove the netvc from keep_alive_queue and active_queue if its context is IN.
     Only be called when holding the mutex of this NetHandler.
 
-    @param netvc NetEventHandler to be released.
+    @param netvc NetEvent to be released.
    */
-  void stopCop(NetEventHandler *netvc);
+  void stopCop(NetEvent *netvc);
 
   // Signal the epoll_wait to terminate.
   void signalActivity() override;
@@ -347,14 +347,14 @@ public:
   /**
     Release a netvc and free it.
 
-    @param netvc NetEventHandler to be detached.
+    @param netvc NetEvent to be detached.
    */
-  void free_netvc(NetEventHandler *netvc);
+  void free_netvc(NetEvent *netvc);
 
   NetHandler();
 
 private:
-  void _close_vc(NetEventHandler *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time, int &total_idle_count);
+  void _close_vc(NetEvent *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time, int &total_idle_count);
 
   /// Static method used as the callback for runtime configuration updates.
   static int update_nethandler_config(const char *name, RecDataT, RecData data, void *);
@@ -506,10 +506,10 @@ check_transient_accept_error(int res)
 }
 
 //
-// Disable a NetEventHandler
+// Disable a NetEvent
 //
 static inline void
-read_disable(NetHandler *nh, NetEventHandler *vc)
+read_disable(NetHandler *nh, NetEvent *vc)
 {
   if (!vc->write.enabled) {
     vc->set_inactivity_timeout(0);
@@ -521,7 +521,7 @@ read_disable(NetHandler *nh, NetEventHandler *vc)
 }
 
 static inline void
-write_disable(NetHandler *nh, NetEventHandler *vc)
+write_disable(NetHandler *nh, NetEvent *vc)
 {
   if (!vc->read.enabled) {
     vc->set_inactivity_timeout(0);
@@ -545,7 +545,7 @@ EventIO::start(EventLoop l, NetAccept *vc, int events)
   return start(l, vc->server.fd, (Continuation *)vc, events);
 }
 TS_INLINE int
-EventIO::start(EventLoop l, NetEventHandler *vc, int events)
+EventIO::start(EventLoop l, NetEvent *vc, int events)
 {
   type = EVENTIO_READWRITE_VC;
   return start(l, vc->get_fd(), (Continuation *)vc, events);
@@ -774,7 +774,7 @@ EventIO::stop()
 }
 
 TS_INLINE int
-NetHandler::startIO(NetEventHandler *netvc)
+NetHandler::startIO(NetEvent *netvc)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
   ink_assert(netvc->get_thread() == this_ethread());
@@ -798,7 +798,7 @@ NetHandler::startIO(NetEventHandler *netvc)
 }
 
 TS_INLINE void
-NetHandler::stopIO(NetEventHandler *netvc)
+NetHandler::stopIO(NetEvent *netvc)
 {
   ink_release_assert(netvc->nh == this);
 
@@ -819,7 +819,7 @@ NetHandler::stopIO(NetEventHandler *netvc)
 }
 
 TS_INLINE void
-NetHandler::startCop(NetEventHandler *netvc)
+NetHandler::startCop(NetEvent *netvc)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
   ink_release_assert(netvc->nh == this);
@@ -829,7 +829,7 @@ NetHandler::startCop(NetEventHandler *netvc)
 }
 
 TS_INLINE void
-NetHandler::stopCop(NetEventHandler *netvc)
+NetHandler::stopCop(NetEvent *netvc)
 {
   ink_release_assert(netvc->nh == this);
 

@@ -27,7 +27,7 @@
 #include "I_Tasks.h"
 
 struct ShowNet;
-using ShowNetEventHandler = int (ShowNet::*)(int, Event *);
+using ShowNetEvent = int (ShowNet::*)(int, Event *);
 struct ShowNet : public ShowCont {
   int ithread;
   IpEndpoint addr;
@@ -61,7 +61,7 @@ struct ShowNet : public ShowCont {
     }
 
     ink_hrtime now = Thread::get_hrtime();
-    forl_LL(NetEventHandler, vc, nh->open_list)
+    forl_LL(NetEvent, vc, nh->open_list)
     {
       //      uint16_t port = ats_ip_port_host_order(&addr.sa);
       if (ats_is_ip(&addr) && !ats_ip_addr_port_eq(&addr.sa, vc->get_remote_addr())) {
@@ -158,7 +158,7 @@ struct ShowNet : public ShowCont {
     CHECK_SHOW(show("<H3>Thread: %d</H3>\n", ithread));
     CHECK_SHOW(show("<table border=1>\n"));
     int connections = 0;
-    forl_LL(NetEventHandler, vc, nh->open_list) connections++;
+    forl_LL(NetEvent, vc, nh->open_list) connections++;
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Connections", connections));
     // CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Size", pollDescriptor->nfds));
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Ready", pollDescriptor->result));
