@@ -259,7 +259,13 @@ EThread::execute_regular()
     next_time             = EventQueue.earliest_timeout();
     ink_hrtime sleep_time = next_time - Thread::get_hrtime_updated();
     if (sleep_time > 0) {
-      sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
+      if (EventQueueExternal.localQueue.empty()) {
+        sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
+      } else {
+        // Because of a missed lock, Timed-Event and Negative-Event have been pushed into localQueue for retry in awhile.
+        // Therefore, we have to set the limitation of sleep time in order to handle the next retry in time.
+        sleep_time = std::min(sleep_time, DELAY_FOR_RETRY);
+      }
       ++(current_metric->_wait);
     } else {
       sleep_time = 0;
