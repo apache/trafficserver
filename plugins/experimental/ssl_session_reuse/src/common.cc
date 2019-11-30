@@ -43,7 +43,7 @@ hex_str(std::string const &str)
     hex_str[i * 2]     = hex_chars[(c & 0xF0) >> 4];
     hex_str[i * 2 + 1] = hex_chars[(c & 0x0F)];
   }
-  hex_str[len] = '\0';
+  hex_str[len - 1] = '\0';
   return std::string(hex_str, len);
 }
 
