@@ -98,13 +98,14 @@ Config::fromArgs(int const argc, char const *const argv[])
     {const_cast<char *>("remap-host"), required_argument, nullptr, 'r'},
     {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
     {const_cast<char *>("disable-errorlog"), no_argument, nullptr, 'd'},
+    {const_cast<char *>("throttle"), no_argument, nullptr, 'o'},
     {nullptr, 0, nullptr, 0},
   };
 
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:t:r:p:d", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:t:r:p:do", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -148,6 +149,10 @@ Config::fromArgs(int const argc, char const *const argv[])
     } break;
     case 'd':
       m_paceerrsecs = -1;
+      break;
+    case 'o':
+      m_throttle = true;
+      DEBUG_LOG("Enabling internal block throttling");
       break;
     default:
       break;

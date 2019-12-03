@@ -22,7 +22,6 @@ all: $(PLUGIN).so
 SOURCES = \
 	Config.cc \
 	ContentRange.cc \
-	Data.cc \
 	HttpHeader.cc \
 	Range.cc \
 	client.cc \

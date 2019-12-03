@@ -18,9 +18,11 @@
 
 #include "server.h"
 
+#include "Config.h"
 #include "ContentRange.h"
 #include "response.h"
 #include "transfer.h"
+#include "util.h"
 
 #include "ts/experimental.h"
 
@@ -28,14 +30,6 @@
 
 namespace
 {
-void
-shutdown(TSCont const contp, Data *const data)
-{
-  DEBUG_LOG("shutting down transaction");
-  delete data;
-  TSContDestroy(contp);
-}
-
 ContentRange
 contentRangeFrom(HttpHeader const &header)
 {
@@ -66,15 +60,20 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
 
   //  DEBUG_LOG("First header\n%s", header.toString().c_str());
 
-  data->m_dnstream.setupVioWrite(contp);
+  data->m_dnstream.setupVioWrite(contp, INT64_MAX);
 
-  // only process a 206, everything else gets a pass through
+  TSVIO const output_vio      = data->m_dnstream.m_write.m_vio;
+  TSIOBuffer const output_buf = data->m_dnstream.m_write.m_iobuf;
+
+  // only process a 206, everything else gets a (possibly incomplete)
+  // pass through
   if (TS_HTTP_STATUS_PARTIAL_CONTENT != header.status()) {
     DEBUG_LOG("Initial response other than 206: %d", header.status());
-    data->m_bail = true;
 
-    TSHttpHdrPrint(header.m_buffer, header.m_lochdr, data->m_dnstream.m_write.m_iobuf);
-
+    // Should run TSVIONSetBytes(output_io, hlen + bodybytes);
+    //    int const hlen = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
+    //    TSVIONBytesSet(output_vio, hlen);
+    TSHttpHdrPrint(header.m_buffer, header.m_lochdr, output_buf);
     transfer_all_bytes(data);
 
     return false;
@@ -83,13 +82,10 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   ContentRange const blockcr = contentRangeFrom(header);
   // 206 with bad content range?
   if (!blockcr.isValid()) {
-    data->m_bail = true;
-
     static std::string const &msg502 = string502();
-
-    TSIOBufferWrite(data->m_dnstream.m_write.m_iobuf, msg502.data(), msg502.size());
-    TSVIOReenable(data->m_dnstream.m_write.m_vio);
-
+    TSVIONBytesSet(output_vio, msg502.size());
+    TSIOBufferWrite(output_buf, msg502.data(), msg502.size());
+    TSVIOReenable(output_vio);
     return false;
   }
 
@@ -108,18 +104,21 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
 
   int64_t const bodybytes = data->m_req_range.size();
 
-  // range past end of data, assume 416 needs to be sent
+  // range begins past end of data but inside last block, send 416
   bool const send416 = (bodybytes <= 0 || TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE == data->m_statustype);
   if (send416) {
-    data->m_bail               = true;
     std::string const &bodystr = bodyString416();
     form416HeaderAndBody(header, data->m_contentlen, bodystr);
 
-    TSHttpHdrPrint(header.m_buffer, header.m_lochdr, data->m_dnstream.m_write.m_iobuf);
+    int const hlen     = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
+    int64_t const blen = bodystr.size();
 
-    TSIOBufferWrite(data->m_dnstream.m_write.m_iobuf, bodystr.data(), bodystr.size());
+    TSVIONBytesSet(output_vio, int64_t(hlen) + blen);
+    TSHttpHdrPrint(header.m_buffer, header.m_lochdr, output_buf);
+    TSIOBufferWrite(output_buf, bodystr.data(), bodystr.size());
+    TSVIOReenable(output_vio);
 
-    TSVIOReenable(data->m_dnstream.m_write.m_vio);
+    data->m_upstream.m_read.close();
 
     return false;
   }
@@ -146,8 +145,6 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
 
     // corner case, return 500 ??
     if (!crstat) {
-      data->m_bail = true;
-
       data->m_upstream.close();
       data->m_dnstream.close();
 
@@ -156,9 +153,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     }
 
     header.setKeyVal(TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE, rangestr, rangelen);
-  }
-  // fix up for 200 response
-  else if (TS_HTTP_STATUS_OK == data->m_statustype) {
+  } else if (TS_HTTP_STATUS_OK == data->m_statustype) {
     header.setStatus(TS_HTTP_STATUS_OK);
     static char const *const reason = TSHttpHdrReasonLookup(TS_HTTP_STATUS_OK);
     header.setReason(reason, strlen(reason));
@@ -170,15 +165,13 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   header.setKeyVal(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, bufstr, buflen);
 
   // add the response header length to the total bytes to send
-  int64_t const headerbytes = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
+  int const hbytes = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
 
-  data->m_bytestosend = headerbytes + bodybytes;
-
-  TSHttpHdrPrint(header.m_buffer, header.m_lochdr, data->m_dnstream.m_write.m_iobuf);
-
-  data->m_bytessent = headerbytes;
-
-  TSVIOReenable(data->m_dnstream.m_write.m_vio);
+  TSVIONBytesSet(output_vio, hbytes + bodybytes);
+  data->m_bytestosend = hbytes + bodybytes;
+  TSHttpHdrPrint(header.m_buffer, header.m_lochdr, output_buf);
+  data->m_bytessent = hbytes;
+  TSVIOReenable(output_vio);
 
   return true;
 }
@@ -304,7 +297,6 @@ handleNextServerHeader(Data *const data, TSCont const contp)
   // only process a 206, everything else just aborts
   if (TS_HTTP_STATUS_PARTIAL_CONTENT != header.status()) {
     logSliceError("Non 206 internal block response", data, header);
-    data->m_bail = true;
     return false;
   }
 
@@ -312,7 +304,6 @@ handleNextServerHeader(Data *const data, TSCont const contp)
   ContentRange const blockcr = contentRangeFrom(header);
   if (!blockcr.isValid() || blockcr.m_length != data->m_contentlen) {
     logSliceError("Mismatch/Bad block Content-Range", data, header);
-    data->m_bail = true;
     return false;
   }
 
@@ -341,7 +332,7 @@ handleNextServerHeader(Data *const data, TSCont const contp)
   }
 
   if (!same) {
-    data->m_bail = true;
+    data->m_upstream.close();
     return false;
   }
 
@@ -356,30 +347,46 @@ handleNextServerHeader(Data *const data, TSCont const contp)
 void
 handle_server_resp(TSCont contp, TSEvent event, Data *const data)
 {
-  if (TS_EVENT_VCONN_READ_READY == event || TS_EVENT_VCONN_READ_COMPLETE == event) {
+  DEBUG_LOG("%p handle_server_resp: %s", data, TSHttpEventNameLookup(event));
+
+#if defined(COLLECT_STATS)
+  TSStatIntIncrement(stats::Server, 1);
+#endif
+
+  switch (event) {
+  case TS_EVENT_VCONN_READ_READY: {
     // has block response header been parsed??
     if (!data->m_server_block_header_parsed) {
-      // the server response header didn't fit into the input buffer??
-      if (TS_PARSE_DONE !=
-          data->m_resp_hdrmgr.populateFrom(data->m_http_parser, data->m_upstream.m_read.m_reader, TSHttpHdrParseResp)) {
+      int64_t consumed              = 0;
+      TSIOBufferReader const reader = data->m_upstream.m_read.m_reader;
+      TSVIO const input_vio         = data->m_upstream.m_read.m_vio;
+      TSParseResult const res       = data->m_resp_hdrmgr.populateFrom(data->m_http_parser, reader, TSHttpHdrParseResp, &consumed);
+
+      TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + consumed);
+
+      // the server response header didn't fit into the input buffer.
+      if (TS_PARSE_CONT == res) {
         return;
       }
 
       // very first server response header
       bool headerStat = false;
-      if (!data->m_server_first_header_parsed) {
-        headerStat                         = handleFirstServerHeader(data, contp);
-        data->m_server_first_header_parsed = true;
-      } else {
-        headerStat = handleNextServerHeader(data, contp);
-      }
 
-      data->m_server_block_header_parsed = true;
+      if (TS_PARSE_DONE == res) {
+        if (!data->m_server_first_header_parsed) {
+          headerStat                         = handleFirstServerHeader(data, contp);
+          data->m_server_first_header_parsed = true;
+        } else {
+          headerStat = handleNextServerHeader(data, contp);
+        }
+
+        data->m_server_block_header_parsed = true;
+      }
 
       // kill the upstream and allow dnstream to clean up
       if (!headerStat) {
-        data->m_upstream.close();
-        data->m_bail = true;
+        data->m_upstream.abort();
+        data->m_blockstate = Data::BlockState::Fail;
         if (data->m_dnstream.m_write.isOpen()) {
           TSVIOReenable(data->m_dnstream.m_write.m_vio);
         } else {
@@ -393,39 +400,20 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
     }
 
     transfer_content_bytes(data);
-  } else if (TS_EVENT_VCONN_EOS == event) {
-    // from testing as far as I can tell, if the sub transaction returns
-    // a valid header TS_EVENT_VCONN_READ_READY event is always called first.
-    // this event being called means the input stream is null.
-    // An upstream transaction that aborts immediately (or a few bytes)
-    // after it sends a header may end up here with nothing in the upstream
-    // buffer.
+  } break;
+  case TS_EVENT_VCONN_READ_COMPLETE: {
+    // fprintf(stderr, "%p: TS_EVENT_VCONN_READ_COMPLETE\n", data);
+  } break;
+  case TS_EVENT_VCONN_EOS: {
+    data->m_blockstate = Data::BlockState::Pending;
+    data->m_upstream.close();
 
-    // this is called when the upstream connection is done.
-    // make sure to drain all the bytes out before
-    // issuing the next block request
-    data->m_iseos = true;
-
-    // corner condition, good source header + 0 length aborted content
-    // results in no header being read, just an EOS.
-    // trying to delete the upstream will crash ATS (??)
-    if (0 == data->m_blockexpected) {
-      shutdown(contp, data); // this will crash if first block
+    // check for block truncation
+    if (data->m_blockconsumed < data->m_blockexpected) {
+      DEBUG_LOG("%p handle_server_resp truncation: %" PRId64 "\n", data, data->m_blockexpected - data->m_blockconsumed);
+      data->m_blockstate = Data::BlockState::Fail;
+      //      shutdown(contp, data);
       return;
-    }
-
-    transfer_content_bytes(data);
-
-    if (!data->m_dnstream.m_write.isOpen()) // server drain condition
-    {
-      shutdown(contp, data);
-      return;
-    }
-
-    // all bytes left transferred to client buffer
-    if (0 == TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader)) {
-      data->m_upstream.close();
-      TSVIOReenable(data->m_dnstream.m_write.m_vio);
     }
 
     // prepare for the next request block
@@ -435,16 +423,45 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
     // issues a speculative request for the first block
     // in that case fast forward to the real first in range block
     // Btw this isn't implemented yet, to be handled
-    int64_t const firstblock(data->m_req_range.firstBlockFor(data->m_config->m_blockbytes));
+    int64_t const firstblock = data->m_req_range.firstBlockFor(data->m_config->m_blockbytes);
     if (data->m_blocknum < firstblock) {
       data->m_blocknum = firstblock;
     }
 
-    // done processing blocks?
-    if (!data->m_req_range.blockIsInside(data->m_config->m_blockbytes, data->m_blocknum)) {
-      data->m_blocknum = -1; // signal value no more blocks
+    // continue processing blocks?
+    if (data->m_req_range.blockIsInside(data->m_config->m_blockbytes, data->m_blocknum)) {
+      // Don't immediately request the next slice if the client
+      // isn't keeping up
+
+      bool start_next_block = true;
+
+      // throttle condition
+      if (data->m_config->m_throttle && data->m_dnstream.m_read.isOpen()) {
+        TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
+        int64_t const output_done = TSVIONDoneGet(output_vio);
+        int64_t const output_sent = data->m_bytessent;
+        int64_t const threshout   = data->m_config->m_blockbytes;
+
+        if (threshout < (output_done - output_sent)) {
+          start_next_block = false;
+          DEBUG_LOG("%p handle_server_resp: throttling %" PRId64, data, (output_done - output_sent));
+        }
+      }
+
+      if (start_next_block) {
+        request_block(contp, data);
+      }
+
+    } else {
+      data->m_upstream.close();
+      data->m_blockstate = Data::BlockState::Done;
+      if (!data->m_dnstream.m_read.isOpen()) {
+        shutdown(contp, data);
+      }
     }
-  } else {
-    DEBUG_LOG("Unhandled event: %d", event);
+  } break;
+  default: {
+    DEBUG_LOG("%p handle_server_resp uhandled event: %s", data, TSHttpEventNameLookup(event));
+  } break;
   }
 }

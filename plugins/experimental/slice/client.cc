@@ -18,89 +18,32 @@
 
 #include "client.h"
 
-#include "transfer.h"
+#include "Config.h"
+#include "util.h"
 
-namespace
-{
-void
-shutdown(TSCont const contp, Data *const data)
-{
-  DEBUG_LOG("shutting down transaction");
-  delete data;
-  TSContDestroy(contp);
-}
-
-// create and issue a block request
-bool
-requestBlock(TSCont contp, Data *const data)
-{
-  int64_t const blockbeg = (data->m_config->m_blockbytes * data->m_blocknum);
-  Range blockbe(blockbeg, blockbeg + data->m_config->m_blockbytes);
-
-  char rangestr[1024];
-  int rangelen      = sizeof(rangestr);
-  bool const rpstat = blockbe.toStringClosed(rangestr, &rangelen);
-  TSAssert(rpstat);
-
-  DEBUG_LOG("requestBlock: %s", rangestr);
-
-  // reuse the incoming client header, just change the range
-  HttpHeader header(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
-
-  // add/set sub range key and add slicer tag
-  bool const rangestat = header.setKeyVal(TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, rangestr, rangelen);
-
-  if (!rangestat) {
-    ERROR_LOG("Error trying to set range request header %s", rangestr);
-    return false;
-  }
-
-  // create virtual connection back into ATS
-  TSVConn const upvc = TSHttpConnect(reinterpret_cast<sockaddr *>(&data->m_client_ip));
-
-  // set up connection with the HttpConnect server, maybe clear old one
-  data->m_upstream.setupConnection(upvc);
-  data->m_upstream.setupVioWrite(contp);
-
-  TSHttpHdrPrint(header.m_buffer, header.m_lochdr, data->m_upstream.m_write.m_iobuf);
-  TSVIOReenable(data->m_upstream.m_write.m_vio);
-
-  /*
-          std::string const headerstr(header.toString());
-          DEBUG_LOG("Headers\n%s", headerstr.c_str());
-  */
-
-  // get ready for data back from the server
-  data->m_upstream.setupVioRead(contp);
-
-  // anticipate the next server response header
-  TSHttpParserClear(data->m_http_parser);
-  data->m_resp_hdrmgr.resetHeader();
-
-  data->m_blockexpected              = 0;
-  data->m_blockconsumed              = 0;
-  data->m_iseos                      = false;
-  data->m_server_block_header_parsed = false;
-
-  return true;
-}
-
-} // namespace
+#include <cinttypes>
 
 // this is called once per transaction when the client sends a req header
 bool
 handle_client_req(TSCont contp, TSEvent event, Data *const data)
 {
-  if (TS_EVENT_VCONN_READ_READY == event || TS_EVENT_VCONN_READ_COMPLETE == event) {
+  switch (event) {
+  case TS_EVENT_VCONN_READ_READY:
+  case TS_EVENT_VCONN_READ_COMPLETE: {
     if (nullptr == data->m_http_parser) {
       data->m_http_parser = TSHttpParserCreate();
     }
 
-    // the client request header didn't fit into the input buffer:
+    // Read the header from the buffer
+    int64_t consumed = 0;
     if (TS_PARSE_DONE !=
-        data->m_req_hdrmgr.populateFrom(data->m_http_parser, data->m_dnstream.m_read.m_reader, TSHttpHdrParseReq)) {
+        data->m_req_hdrmgr.populateFrom(data->m_http_parser, data->m_dnstream.m_read.m_reader, TSHttpHdrParseReq, &consumed)) {
       return false;
     }
+
+    // update the VIO
+    TSVIO const input_vio = data->m_dnstream.m_read.m_vio;
+    TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + consumed);
 
     // make the header manipulator
     HttpHeader header(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
@@ -123,18 +66,18 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
       bool const isRangeGood = rangebe.fromStringClosed(rangestr);
 
       if (isRangeGood) {
-        DEBUG_LOG("Partial content request");
+        DEBUG_LOG("%p Partial content request", data);
         data->m_statustype = TS_HTTP_STATUS_PARTIAL_CONTENT;
       } else // signal a 416 needs to be formed and sent
       {
-        DEBUG_LOG("Ill formed/unhandled range: %s", rangestr);
+        DEBUG_LOG("%p Ill formed/unhandled range: %s", data, rangestr);
         data->m_statustype = TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE;
 
         // First block will give Content-Length
         rangebe = Range(0, data->m_config->m_blockbytes);
       }
     } else {
-      DEBUG_LOG("Full content request");
+      DEBUG_LOG("%p Full content request", data);
       static char const *const valstr = "-";
       static size_t const vallen      = strlen(valstr);
       header.setKeyVal(SLICER_MIME_FIELD_INFO, strlen(SLICER_MIME_FIELD_INFO), valstr, vallen);
@@ -151,8 +94,8 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     header.removeKey(TS_MIME_FIELD_X_FORWARDED_FOR, TS_MIME_LEN_X_FORWARDED_FOR);
 
     // send the first block request to server
-    if (!requestBlock(contp, data)) {
-      shutdown(contp, data);
+    if (!request_block(contp, data)) {
+      abort(contp, data);
       return false;
     }
 
@@ -163,6 +106,10 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     header.removeKey(TS_MIME_FIELD_IF_NONE_MATCH, TS_MIME_LEN_IF_NONE_MATCH);
     header.removeKey(TS_MIME_FIELD_IF_RANGE, TS_MIME_LEN_IF_RANGE);
     header.removeKey(TS_MIME_FIELD_IF_UNMODIFIED_SINCE, TS_MIME_LEN_IF_UNMODIFIED_SINCE);
+  } break;
+  default: {
+    DEBUG_LOG("%p handle_client_req unhandled event %d %s", data, event, TSHttpEventNameLookup(event));
+  } break;
   }
 
   return true;
@@ -172,61 +119,47 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
 void
 handle_client_resp(TSCont contp, TSEvent event, Data *const data)
 {
-  if (TS_EVENT_VCONN_WRITE_READY == event || TS_EVENT_VCONN_WRITE_COMPLETE == event) {
-    transfer_content_bytes(data);
+  DEBUG_LOG("%p handle_client_resp %s", data, TSHttpEventNameLookup(event));
 
-    // done transferring from server to client buffer?
-    if (data->m_bytestosend <= data->m_bytessent) {
-      // real amount transferred to client
-      int64_t const bytessent(TSVIONDoneGet(data->m_dnstream.m_write.m_vio));
+#if defined(COLLECT_STATS)
+  TSStatIntIncrement(stats::Client, 1);
+#endif
 
-      // is the output buffer drained?
-      if (data->m_bytestosend <= bytessent) {
-        data->m_dnstream.close();
-        if (!data->m_upstream.m_read.isOpen()) {
-          shutdown(contp, data);
-          return;
+  switch (event) {
+  case TS_EVENT_VCONN_WRITE_READY: {
+    if (Data::BlockState::Pending == data->m_blockstate) {
+      bool start_next_block = true;
+
+      if (data->m_config->m_throttle) {
+        TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
+        int64_t const output_done = TSVIONDoneGet(output_vio);
+        int64_t const output_sent = data->m_bytessent;
+        int64_t const threshout   = data->m_config->m_blockbytes;
+
+        if (threshout < (output_done - output_sent)) {
+          start_next_block = false;
+          DEBUG_LOG("%p handle_client_resp: throttling %" PRId64, data, (output_done - output_sent));
         }
       }
 
-      // continue allowing the downstream to drain
-      return;
-    }
-
-    // error condition from the server side
-    if (data->m_bail) {
-      shutdown(contp, data);
-      return;
-    }
-
-    // check for upstream eos, maybe request next block
-    if (data->m_iseos) {
-      // still need to drain the server side
-      if (0 < TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader)) {
-        TSVIOReenable(data->m_dnstream.m_write.m_vio);
-        return;
+      if (start_next_block) {
+        request_block(contp, data);
       }
-
-      // if done or partial block
-      if (data->m_blocknum < 0 || data->m_blockconsumed < data->m_blockexpected) {
-        shutdown(contp, data);
-        return;
-      }
-
-      // ready for next block
-      requestBlock(contp, data);
     }
-  }
-  // client closed connection
-  else if (TS_EVENT_ERROR == event) {
-    DEBUG_LOG("got a TS_EVENT_ERROR from the client");
+  } break;
+  case TS_EVENT_VCONN_WRITE_COMPLETE: {
+    if (TSIsDebugTagSet(PLUGIN_NAME) && reader_avail_more_than(data->m_upstream.m_read.m_reader, 0)) {
+      int64_t const left = TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader);
+      DEBUG_LOG("%p WRITE_COMPLETE called with %" PRId64 " bytes left", data, left);
+    }
 
-    // allow the upstream server to drain
     data->m_dnstream.close();
     if (!data->m_upstream.m_read.isOpen()) {
       shutdown(contp, data);
     }
-  } else {
-    DEBUG_LOG("Unhandled event: %d", event);
+  } break;
+  default: {
+    DEBUG_LOG("%p handle_client_resp unhandled event %d %s", data, event, TSHttpEventNameLookup(event));
+  } break;
   }
 }

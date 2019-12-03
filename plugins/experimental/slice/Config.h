@@ -30,6 +30,7 @@ struct Config {
 
   int64_t m_blockbytes{blockbytesdefault};
   std::string m_remaphost; // remap host to use for loopback slice GET
+  bool m_throttle{false};  // internal block throttling
   int m_paceerrsecs{0};    // -1 disable logging, 0 no pacing, max 60s
 
   // Convert optarg to bytes

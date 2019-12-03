@@ -27,6 +27,8 @@
  * New block requests are also initiated by the client.
  */
 
+bool requestBlock(TSCont contp, Data *const data);
+
 /** returns true if the incoming vio can be turned off
  */
 bool handle_client_req(TSCont contp, TSEvent event, Data *const data);

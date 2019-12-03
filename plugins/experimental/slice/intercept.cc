@@ -26,11 +26,10 @@
 int
 intercept_hook(TSCont contp, TSEvent event, void *edata)
 {
-  // DEBUG_LOG("intercept_hook: %d", event);
-
   Data *const data = static_cast<Data *>(TSContDataGet(contp));
+
   if (nullptr == data) {
-    DEBUG_LOG("Events handled after data already torn down");
+    ERROR_LOG("intercept_hook called without data");
     TSContDestroy(contp);
     return TS_EVENT_ERROR;
   }
@@ -42,15 +41,15 @@ intercept_hook(TSCont contp, TSEvent event, void *edata)
     // set up reader from client
     TSVConn const downvc = static_cast<TSVConn>(edata);
     data->m_dnstream.setupConnection(downvc);
-    data->m_dnstream.setupVioRead(contp);
+    data->m_dnstream.setupVioRead(contp, INT64_MAX);
   } break;
 
+  case TS_EVENT_NET_ACCEPT_FAILED:
   case TS_EVENT_VCONN_INACTIVITY_TIMEOUT:
   case TS_EVENT_VCONN_ACTIVE_TIMEOUT:
-  case TS_EVENT_HTTP_TXN_CLOSE:
-    delete data;
-    TSContDestroy(contp);
-    break;
+  case TS_EVENT_ERROR: {
+    abort(contp, data);
+  } break;
 
   default: {
     // data from client -- only the initial header
@@ -66,7 +65,7 @@ intercept_hook(TSCont contp, TSEvent event, void *edata)
       // DEBUG_LOG("shutting down send to server pipe");
       TSVConnShutdown(data->m_upstream.m_vc, 0, 1);
     }
-    // server has data for us, typically handle just the header
+    // server has data for us
     else if (data->m_upstream.m_read.isOpen() && edata == data->m_upstream.m_read.m_vio) {
       handle_server_resp(contp, event, data);
     }
@@ -75,13 +74,8 @@ intercept_hook(TSCont contp, TSEvent event, void *edata)
       handle_client_resp(contp, event, data);
     } else {
       ERROR_LOG("Unhandled event: %d", event);
-      /*
-      std::cerr << __func__
-              << ": events received after intercept state torn down"
-              << std::endl;
-      */
     }
-  }
+  } break;
   }
 
   return TS_EVENT_CONTINUE;

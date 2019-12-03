@@ -152,6 +152,16 @@ Range::firstBlockFor(int64_t const blocksize) const
   }
 }
 
+int64_t
+Range::lastBlockFor(int64_t const blocksize) const
+{
+  if (0 < blocksize && isValid()) {
+    return std::max((int64_t)0, (m_end - 1) / blocksize);
+  } else {
+    return -1;
+  }
+}
+
 Range
 Range::intersectedWith(Range const &other) const
 {
@@ -162,7 +172,6 @@ bool
 Range::blockIsInside(int64_t const blocksize, int64_t const blocknum) const
 {
   Range const blockrange(blocksize * blocknum, blocksize * (blocknum + 1));
-
   Range const isec(blockrange.intersectedWith(*this));
 
   return isec.isValid();
