@@ -761,12 +761,14 @@ Changes with Apache Traffic Server 9.0.0
   #6000 - Add QUIC draft-23 support
   #6003 - Cleanup: do not re-define _proxy_ssn variable in local
   #6006 - Rewrote remap_stats plugin to use C++
+  #6007 - Graduate TSHttpTxnServerPush to the stable API interface
   #6008 - Do not schedule stuff during shutdown
   #6011 - clang-analyzer: Add a null check
   #6013 - Add basic SystemTap markers support
   #6016 - Fix host type in host matcher.
   #6024 - Make proxy.config.http.request_buffer_enabled configurable and bug fix
   #6031 - listen on all the net threads
+  #6049 - set host name in TLS extension for SNI Host check in service side with sni policy verify_with_name_source.
   #6054 - Ignore MgmtMessageHdr if ProcessManager is not running
   #6062 - Adding connection close headers to regex_remap test.
   #6066 - Fixing session sharing with IP matching.
@@ -817,3 +819,5 @@ Changes with Apache Traffic Server 9.0.0
   #6189 - Fixed issue with macOS Catalina and pcre 8.43 enabling pcre-jit
   #6190 - Fix ssl_session_reuse to compile on macOS and FreeBSD
   #6191 - Limit this check to Linux, where ldd always works
+  #6212 - Cleanup trailing whitespaces, and YAML formatting
+  #6224 - Fixed build issue with clang5 and Extendible
