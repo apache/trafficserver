@@ -261,6 +261,14 @@ typedef enum {
     TS_HTTP_LAST_HOOK _must_ be the last element. Only right place
     to insert a new element is just before TS_HTTP_LAST_HOOK.
 
+    @note The TS_HTTP hooks below have to be in the same order as their
+    corresponding TS_EVENT counterparts.  We use this in calculating the
+    corresponding event from a hook ID by summing
+    TS_EVENT_HTTP_READ_REQUEST_HDR with the hook ID (see the invoke call in
+    HttpSM::state_api_callout). For example, the following expression must
+    be true:
+
+    TS_EVENT_HTTP_TXN_CLOSE == TS_EVENT_HTTP_READ_REQUEST_HDR + TS_HTTP_TXN_CLOSE_HOOK
  */
 typedef enum {
   TS_HTTP_READ_REQUEST_HDR_HOOK,
@@ -279,7 +287,14 @@ typedef enum {
   TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK,
   TS_HTTP_PRE_REMAP_HOOK,
   TS_HTTP_POST_REMAP_HOOK,
+  TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK,
   TS_HTTP_RESPONSE_CLIENT_HOOK,
+
+  // NOTE:
+  // If adding any TS_HTTP hooks, be sure to understand the note above in the
+  // doxygen comment about the ordering of these enum values with respect to
+  // their corresponding TS_EVENT values.
+
   // Putting the SSL hooks in the same enum space
   // So both sets of hooks can be set by the same Hook function
   TS_SSL_FIRST_HOOK,
@@ -297,7 +312,6 @@ typedef enum {
   TS_VCONN_OUTBOUND_START_HOOK,
   TS_VCONN_OUTBOUND_CLOSE_HOOK,
   TS_SSL_LAST_HOOK = TS_VCONN_OUTBOUND_CLOSE_HOOK,
-  TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK,
   TS_HTTP_LAST_HOOK
 } TSHttpHookID;
 
@@ -459,25 +473,25 @@ typedef enum {
 
   TS_EVENT_AIO_DONE = 3900,
 
-  TS_EVENT_HTTP_CONTINUE                = 60000,
-  TS_EVENT_HTTP_ERROR                   = 60001,
-  TS_EVENT_HTTP_READ_REQUEST_HDR        = 60002,
-  TS_EVENT_HTTP_OS_DNS                  = 60003,
-  TS_EVENT_HTTP_SEND_REQUEST_HDR        = 60004,
-  TS_EVENT_HTTP_READ_CACHE_HDR          = 60005,
-  TS_EVENT_HTTP_READ_RESPONSE_HDR       = 60006,
-  TS_EVENT_HTTP_SEND_RESPONSE_HDR       = 60007,
-  TS_EVENT_HTTP_REQUEST_TRANSFORM       = 60008,
-  TS_EVENT_HTTP_RESPONSE_TRANSFORM      = 60009,
-  TS_EVENT_HTTP_SELECT_ALT              = 60010,
-  TS_EVENT_HTTP_TXN_START               = 60011,
-  TS_EVENT_HTTP_TXN_CLOSE               = 60012,
-  TS_EVENT_HTTP_SSN_START               = 60013,
-  TS_EVENT_HTTP_SSN_CLOSE               = 60014,
-  TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE   = 60015,
-  TS_EVENT_HTTP_PRE_REMAP               = 60016,
-  TS_EVENT_HTTP_POST_REMAP              = 60017,
-  TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE = 60018,
+  TS_EVENT_HTTP_CONTINUE                     = 60000,
+  TS_EVENT_HTTP_ERROR                        = 60001,
+  TS_EVENT_HTTP_READ_REQUEST_HDR             = 60002,
+  TS_EVENT_HTTP_OS_DNS                       = 60003,
+  TS_EVENT_HTTP_SEND_REQUEST_HDR             = 60004,
+  TS_EVENT_HTTP_READ_CACHE_HDR               = 60005,
+  TS_EVENT_HTTP_READ_RESPONSE_HDR            = 60006,
+  TS_EVENT_HTTP_SEND_RESPONSE_HDR            = 60007,
+  TS_EVENT_HTTP_REQUEST_TRANSFORM            = 60008,
+  TS_EVENT_HTTP_RESPONSE_TRANSFORM           = 60009,
+  TS_EVENT_HTTP_SELECT_ALT                   = 60010,
+  TS_EVENT_HTTP_TXN_START                    = 60011,
+  TS_EVENT_HTTP_TXN_CLOSE                    = 60012,
+  TS_EVENT_HTTP_SSN_START                    = 60013,
+  TS_EVENT_HTTP_SSN_CLOSE                    = 60014,
+  TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE        = 60015,
+  TS_EVENT_HTTP_PRE_REMAP                    = 60016,
+  TS_EVENT_HTTP_POST_REMAP                   = 60017,
+  TS_EVENT_HTTP_REQUEST_BUFFER_READ_COMPLETE = 60018,
 
   TS_EVENT_LIFECYCLE_PORTS_INITIALIZED          = 60100,
   TS_EVENT_LIFECYCLE_PORTS_READY                = 60101,
