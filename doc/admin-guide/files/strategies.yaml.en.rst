@@ -23,9 +23,6 @@ strategies.yaml
 
 .. include:: ../../common.defs
 
-.. toctree::
-   :maxdepth: 2
-
 The :file:`strategies.yaml` file identifies the next hop proxies used in an
 cache hierarchy and the algorithms used to select the next hop proxy. Use
 this file to perform the following configuration:
@@ -159,7 +156,7 @@ Explicitly defined Example, no **YAML** references::
         weight: 0.5
 
 Strategies definitions
-=====================
+======================
 
 The **strategies** namespace defines a **YAML** list of strategies that may be applied to a **remap**
 entry using the **@strategy** tag in remap.config.
