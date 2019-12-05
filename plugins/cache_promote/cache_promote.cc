@@ -28,11 +28,16 @@
 #include <unordered_map>
 #include <list>
 
+#include "tscore/ink_config.h"
+#include "tscore/ink_defs.h"
+#include "tscore/BufferWriter.h"
+
 #include "ts/ts.h"
 #include "ts/remap.h"
 #include "tscore/ink_config.h"
 
 #define MINIMUM_BUCKET_SIZE 10
+#define MAX_STAT_LENGTH (1 << 8)
 
 static const char *PLUGIN_NAME = "cache_promote";
 
@@ -45,6 +50,7 @@ static const struct option longopt[] = {
   {const_cast<char *>("sample"), required_argument, nullptr, 's'},
   // For the LRU policy
   {const_cast<char *>("buckets"), required_argument, nullptr, 'b'},
+  {const_cast<char *>("stats-enable-with-id"), required_argument, nullptr, 'e'},
   {const_cast<char *>("hits"), required_argument, nullptr, 'h'},
   // EOF
   {nullptr, no_argument, nullptr, '\0'},
@@ -92,6 +98,42 @@ public:
     return true;
   }
 
+  int
+  create_stat(std::string_view name, std::string_view remap_identifier)
+  {
+    int stat_id = -1;
+    ts::LocalBufferWriter<MAX_STAT_LENGTH> stat_name;
+    stat_name.reset().clip(1);
+    stat_name.print("plugin.{}.{}.{}", PLUGIN_NAME, remap_identifier, name);
+    stat_name.extend(1).write('\0');
+
+    if (TS_ERROR == TSStatFindName(stat_name.data(), &stat_id)) {
+      stat_id = TSStatCreate(stat_name.data(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+      if (TS_ERROR == stat_id) {
+        TSDebug(PLUGIN_NAME, "Error creating stat_name: %s", stat_name.data());
+      } else {
+        TSDebug(PLUGIN_NAME, "Created stat_name: %s, stat_id: %d", stat_name.data(), stat_id);
+      }
+    }
+
+    return stat_id;
+  }
+  void
+  decrementStat(const int stat, const int amount)
+  {
+    if (stats_enabled) {
+      TSStatIntDecrement(stat, amount);
+    }
+  }
+
+  void
+  incrementStat(const int stat, const int amount)
+  {
+    if (stats_enabled) {
+      TSStatIntIncrement(stat, amount);
+    }
+  }
+
   virtual ~PromotionPolicy() = default;
   ;
 
@@ -102,9 +144,16 @@ public:
   }
 
   // These are pure virtual
-  virtual bool doPromote(TSHttpTxn txnp) = 0;
-  virtual const char *policyName() const = 0;
-  virtual void usage() const             = 0;
+  virtual bool doPromote(TSHttpTxn txnp)       = 0;
+  virtual const char *policyName() const       = 0;
+  virtual void usage() const                   = 0;
+  virtual bool stats_add(const char *remap_id) = 0;
+
+  // when true stats are incremented.
+  bool stats_enabled    = false;
+  int cache_hits_id     = -1;
+  int promoted_id       = -1;
+  int total_requests_id = -1;
 
 private:
   float _sample = 0.0;
@@ -120,6 +169,9 @@ public:
   bool doPromote(TSHttpTxn /* txnp ATS_UNUSED */) override
   {
     TSDebug(PLUGIN_NAME, "ChancePolicy::doPromote(%f)", getSample());
+
+    incrementStat(promoted_id, 1);
+
     return true;
   }
 
@@ -133,6 +185,32 @@ public:
   policyName() const override
   {
     return "chance";
+  }
+
+  bool
+  stats_add(const char *remap_id) override
+  {
+    std::string_view remap_identifier                 = remap_id;
+    const std::tuple<std::string_view, int *> stats[] = {
+      {"cache_hits", &cache_hits_id},
+      {"promoted", &promoted_id},
+      {"total_requests", &total_requests_id},
+    };
+
+    if (nullptr == remap_id) {
+      TSError("[%s] no remap identifier specified for for stats, no stats will be used", PLUGIN_NAME);
+      return false;
+    }
+
+    for (int ii = 0; ii < 3; ii++) {
+      std::string_view name = std::get<0>(stats[ii]);
+      int *id               = std::get<1>(stats[ii]);
+      if ((*(id) = create_stat(name, remap_identifier)) == TS_ERROR) {
+        return false;
+      }
+    }
+
+    return true;
   }
 };
 
@@ -280,6 +358,7 @@ public:
     if (_map.end() != map_it) {
       // We have an entry in the LRU
       TSAssert(_list_size > 0); // mismatch in the LRUs hash and list, shouldn't happen
+      incrementStat(lru_hit_id, 1);
       if (++(map_it->second->second) >= _hits) {
         // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
         TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
@@ -287,6 +366,9 @@ public:
         ++_freelist_size;
         --_list_size;
         _map.erase(map_it->first);
+        incrementStat(promoted_id, 1);
+        incrementStat(freelist_size_id, 1);
+        decrementStat(lru_size_id, 1);
         ret = true;
       } else {
         // It's still not promoted, make sure it's moved to the front of the list
@@ -295,19 +377,24 @@ public:
       }
     } else {
       // New LRU entry for the URL, try to repurpose the list entry as much as possible
+      incrementStat(lru_miss_id, 1);
       if (_list_size >= _buckets) {
         TSDebug(PLUGIN_NAME, "repurposing last LRUHash entry");
         _list.splice(_list.begin(), _list, --_list.end());
         _map.erase(&(_list.begin()->first));
+        incrementStat(lru_vacated_id, 1);
       } else if (_freelist_size > 0) {
         TSDebug(PLUGIN_NAME, "reusing LRUEntry from freelist");
         _list.splice(_list.begin(), _freelist, _freelist.begin());
         --_freelist_size;
         ++_list_size;
+        incrementStat(lru_size_id, 1);
+        decrementStat(freelist_size_id, 1);
       } else {
         TSDebug(PLUGIN_NAME, "creating new LRUEntry");
         _list.push_front(NULL_LRU_ENTRY);
         ++_list_size;
+        incrementStat(lru_size_id, 1);
       }
       // Update the "new" LRUEntry and add it to the hash
       _list.begin()->first          = hash;
@@ -333,6 +420,33 @@ public:
     return "LRU";
   }
 
+  bool
+  stats_add(const char *remap_id) override
+  {
+    std::string_view remap_identifier                 = remap_id;
+    const std::tuple<std::string_view, int *> stats[] = {
+      {"cache_hits", &cache_hits_id}, {"freelist_size", &freelist_size_id},
+      {"lru_size", &lru_size_id},     {"lru_hit", &lru_hit_id},
+      {"lru_miss", &lru_miss_id},     {"lru_vacated", &lru_vacated_id},
+      {"promoted", &promoted_id},     {"total_requests", &total_requests_id},
+    };
+
+    if (nullptr == remap_id) {
+      TSError("[%s] no remap identifier specified for for stats, no stats will be used", PLUGIN_NAME);
+      return false;
+    }
+
+    for (int ii = 0; ii < 8; ii++) {
+      std::string_view name = std::get<0>(stats[ii]);
+      int *id               = std::get<1>(stats[ii]);
+      if ((*(id) = create_stat(name, remap_identifier)) == TS_ERROR) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
 private:
   unsigned _buckets = 1000;
   unsigned _hits    = 10;
@@ -342,6 +456,14 @@ private:
   LRUMap _map;
   LRUList _list, _freelist;
   size_t _list_size = 0, _freelist_size = 0;
+
+  // internal stats ids
+  int freelist_size_id = -1;
+  int lru_size_id      = -1;
+  int lru_hit_id       = -1;
+  int lru_miss_id      = -1;
+  int lru_vacated_id   = -1;
+  int promoted_id      = -1;
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -363,7 +485,7 @@ public:
   factory(int argc, char *argv[])
   {
     while (true) {
-      int opt = getopt_long(argc, (char *const *)argv, "psbh", longopt, nullptr);
+      int opt = getopt_long(argc, (char *const *)argv, "psbhe", longopt, nullptr);
 
       if (opt == -1) {
         break;
@@ -378,6 +500,16 @@ public:
         }
         if (_policy) {
           TSDebug(PLUGIN_NAME, "created remap with cache promotion policy = %s", _policy->policyName());
+        }
+      } else if (opt == 'e') {
+        if (optarg == nullptr) {
+          TSError("[%s] the -%c option requires an argument, the remap identifier.", PLUGIN_NAME, opt);
+          return false;
+        } else {
+          if (_policy && _policy->stats_add(optarg)) {
+            _policy->stats_enabled = true;
+            TSDebug(PLUGIN_NAME, "stats collection is enabled");
+          }
         }
       } else {
         if (_policy) {
@@ -440,8 +572,16 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
         default:
           // Do nothing, just let it handle the lookup.
           TSDebug(PLUGIN_NAME, "cache-status is %d (hit), nothing to do", obj_status);
+
+          if (config->getPolicy()->stats_enabled) {
+            TSStatIntIncrement(config->getPolicy()->cache_hits_id, 1);
+          }
           break;
         }
+      }
+
+      if (config->getPolicy()->stats_enabled) {
+        TSStatIntIncrement(config->getPolicy()->total_requests_id, 1);
       }
     } else {
       TSDebug(PLUGIN_NAME, "Request is an internal (plugin) request, implicitly promoted");
