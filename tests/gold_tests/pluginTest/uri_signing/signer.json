@@ -1,0 +1,18 @@
+{
+ "iss": "issuer",
+ "token_lifetime": 90,
+ "keys": [
+  {
+   "alg": "HS256",
+   "k": "SECRET00",
+   "kid": "0",
+   "kty": "oct"
+  },
+  {
+   "alg": "HS256",
+   "k": "SECRET01",
+   "kid": "1",
+   "kty": "oct"
+  }
+ ]
+}

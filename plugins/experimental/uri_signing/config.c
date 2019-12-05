@@ -289,7 +289,6 @@ read_config(const char *path)
         PluginDebug("Found Id in the config: %s", cfg->id);
       }
     }
-    json_decref(id_json);
 
     json_t *strip_json = json_object_get(jwks, "strip_token");
     if (strip_json) {

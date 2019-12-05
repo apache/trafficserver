@@ -1,0 +1,27 @@
+{
+ "issuer": {
+  "id": "issuer",
+  "renewal_kid": "1",
+  "strip_token": true,
+  "auth_directives": [
+   {
+    "auth": "allow",
+    "uri": "regex:.*crossdomain.xml"
+   }
+  ],
+  "keys": [
+   {
+    "alg": "HS256",
+    "k": "SECRET00",
+    "kid": "0",
+    "kty": "oct"
+   },
+   {
+    "alg": "HS256",
+    "k": "SECRET01",
+    "kid": "1",
+    "kty": "oct"
+   }
+  ]
+ }
+}
