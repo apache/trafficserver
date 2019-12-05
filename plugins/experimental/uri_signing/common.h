@@ -33,7 +33,10 @@ void PrintToStdErr(const char *fmt, ...);
 #else
 
 #include "ts/ts.h"
-#define PluginDebug(...) TSDebug("uri_signing", PLUGIN_NAME " " __VA_ARGS__)
-#define PluginError(...) PluginDebug(__VA_ARGS__), TSError(PLUGIN_NAME " " __VA_ARGS__)
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#define PluginDebug(fmt, ...) TSDebug(PLUGIN_NAME, "[%s:% 4d] %s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__);
+#define PluginError(fmt, ...)      \
+  PluginDebug(fmt, ##__VA_ARGS__); \
+  TSError("[%s:% 4d] %s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__);
 
 #endif
