@@ -62,10 +62,23 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   TSDebug(PLUGIN_NAME, "Initializing remap function of %s -> %s with config from %s", argv[0], argv[1], argv[2]);
 
-  const char *install_dir = TSInstallDirGet();
-  size_t config_file_ct   = snprintf(NULL, 0, "%s/%s/%s", install_dir, "etc/trafficserver", argv[2]);
-  char *config_file       = malloc(config_file_ct + 1);
-  (void)snprintf(config_file, config_file_ct + 1, "%s/%s/%s", install_dir, "etc/trafficserver", argv[2]);
+  char const *const fname = argv[2];
+
+  if (0 == strlen(fname)) {
+    snprintf(errbuf, errbuf_size, "[TSRemapNewKeyInstance] - Invalid config file name for %s -> %s", argv[0], argv[1]);
+    return TS_ERROR;
+  }
+
+  char *config_file = NULL;
+  if ('/' == fname[0]) {
+    config_file = strdup(fname);
+  } else {
+    char const *const config_dir = TSConfigDirGet();
+    size_t const config_file_ct  = snprintf(NULL, 0, "%s/%s", config_dir, fname);
+    config_file                  = malloc(config_file_ct + 1);
+    (void)snprintf(config_file, config_file_ct + 1, "%s/%s", config_dir, fname);
+  }
+
   TSDebug(PLUGIN_NAME, "config file name: %s", config_file);
   struct config *cfg = read_config(config_file);
   if (!cfg) {
@@ -159,8 +172,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   const char *url         = NULL;
   char *strip_uri         = NULL;
   TSRemapStatus status    = TSREMAP_NO_REMAP;
+  bool checked_auth       = false;
 
-  const char *package = "URISigningPackage";
+  static char const *const package = "URISigningPackage";
 
   TSMBuffer mbuf;
   TSMLoc ul;
@@ -207,7 +221,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     field = TSMimeHdrFieldFind(buffer, hdr, "Cookie", 6);
     if (field == TS_NULL_MLOC) {
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr);
-      goto fail;
+      if (!checked_auth) {
+        goto check_auth;
+      } else {
+        goto fail;
+      }
     }
 
     const char *client_cookie;
@@ -218,7 +236,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr);
 
     if (!client_cookie || !client_cookie_ct) {
-      goto fail;
+      if (!checked_auth) {
+        goto check_auth;
+      } else {
+        goto fail;
+      }
     }
     size_t client_cookie_sz_ct = client_cookie_ct;
   check_more_cookies:
@@ -246,11 +268,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         cjose_jws_t *map_jws = get_jws_from_uri(map_url, map_url_ct, package, map_strip_uri, map_strip_size, &map_strip_ct);
         cjose_jws_release(map_jws);
 
-        char *strip_uri_start = &map_strip_uri[0];
-        char *strip_uri_end   = &map_strip_uri[map_strip_ct];
-        PluginDebug("Stripping token from upstream url to: %s", strip_uri_start);
+        char const *strip_uri_start = map_strip_uri;
 
-        TSParseResult parse_rc = TSUrlParse(rri->requestBufp, rri->requestUrl, (const char **)&strip_uri_start, strip_uri_end);
+        /* map_strip_uri is null terminated */
+        size_t const mlen         = strlen(strip_uri_start);
+        char const *strip_uri_end = strip_uri_start + mlen;
+
+        PluginDebug("Stripping token from upstream url to: %.*s", (int)mlen, strip_uri_start);
+
+        TSParseResult parse_rc = TSUrlParse(rri->requestBufp, rri->requestUrl, &strip_uri_start, strip_uri_end);
         if (map_url != NULL) {
           TSfree(map_url);
         }
@@ -266,8 +292,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       }
     }
   }
+check_auth:
   /* Check auth_dir and pass through if configured */
   if (uri_matches_auth_directive((struct config *)ih, url, url_ct)) {
+    PluginDebug("Auth directive matched for %.*s", url_ct, url);
     if (url != NULL) {
       TSfree((void *)url);
     }
@@ -276,6 +304,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     }
     return TSREMAP_NO_REMAP;
   }
+  checked_auth = true;
+
   if (!jws) {
     goto fail;
   }

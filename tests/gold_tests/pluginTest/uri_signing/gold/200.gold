@@ -1,0 +1,13 @@
+``
+> GET `` HTTP/1.1
+> User-Agent: curl/``
+> Host: somehost``
+> Accept: */*
+> Proxy-Connection: ``
+``
+< HTTP/1.1 200 OK
+< Content-Length: ``
+< Date: ``
+< Proxy-Connection: ``
+< Server: ATS/``
+``

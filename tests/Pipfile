@@ -34,6 +34,7 @@ gunicorn = "*"
 httpbin = "*"
 microserver = ">=1.0.4"
 jsonschema = "*"
+python-jose = "*"
 
 [requires]
 python_version = "3"
