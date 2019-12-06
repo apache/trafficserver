@@ -1773,12 +1773,14 @@ QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
   if (result == QUICPacketCreationResult::SUCCESS) {
     if (this->direction() == NET_VCONNECTION_OUT) {
       // Reset CID if a server sent back a new CID
-      // FIXME This should happen only once
-      QUICConnectionId src_cid = packet->source_cid();
-      // FIXME src connection id could be zero ? if so, check packet header type.
-      if (src_cid != QUICConnectionId::ZERO()) {
-        if (this->_peer_quic_connection_id != src_cid) {
-          this->_update_peer_cid(src_cid);
+      // FIXME This should happen only once - it should probably be controlled by PathManager
+      if (packet->type() != QUICPacketType::RETRY || !this->_av_token) {
+        QUICConnectionId src_cid = packet->source_cid();
+        // FIXME src connection id could be zero ? if so, check packet header type.
+        if (src_cid != QUICConnectionId::ZERO()) {
+          if (this->_peer_quic_connection_id != src_cid) {
+            this->_update_peer_cid(src_cid);
+          }
         }
       }
     }
