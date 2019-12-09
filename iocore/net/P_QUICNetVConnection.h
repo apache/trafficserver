@@ -318,7 +318,7 @@ private:
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   void _handle_error(QUICConnectionErrorUPtr error);
-  QUICPacketUPtr _dequeue_recv_packet(QUICPacketCreationResult &result);
+  QUICPacketUPtr _dequeue_recv_packet(uint8_t *packet_buf, QUICPacketCreationResult &result);
   void _validate_new_path(const QUICPath &path);
 
   int _complete_handshake_if_possible();

@@ -766,7 +766,8 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     QUICPacketCreationResult result;
     net_activity(this, this_ethread());
     do {
-      QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
+      uint8_t packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
+      QUICPacketUPtr packet = this->_dequeue_recv_packet(packet_buf, result);
       if (result == QUICPacketCreationResult::NOT_READY) {
         error = nullptr;
       } else if (result == QUICPacketCreationResult::FAILED) {
@@ -1256,7 +1257,8 @@ QUICNetVConnection::_state_connection_established_receive_packet()
   // Receive a QUIC packet
   net_activity(this, this_ethread());
   do {
-    QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
+    uint8_t packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet = this->_dequeue_recv_packet(packet_buf, result);
     if (result == QUICPacketCreationResult::FAILED) {
       // Don't make this error, and discard the packet.
       // Because:
@@ -1299,7 +1301,8 @@ QUICNetVConnection::_state_closing_receive_packet()
 {
   while (this->_packet_recv_queue.size() > 0) {
     QUICPacketCreationResult result;
-    QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
+    uint8_t packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet = this->_dequeue_recv_packet(packet_buf, result);
     if (result == QUICPacketCreationResult::SUCCESS) {
       switch (packet->type()) {
       case QUICPacketType::VERSION_NEGOTIATION:
@@ -1330,7 +1333,8 @@ QUICNetVConnection::_state_draining_receive_packet()
 {
   while (this->_packet_recv_queue.size() > 0) {
     QUICPacketCreationResult result;
-    QUICPacketUPtr packet = this->_dequeue_recv_packet(result);
+    uint8_t packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
+    QUICPacketUPtr packet = this->_dequeue_recv_packet(packet_buf, result);
     if (result == QUICPacketCreationResult::SUCCESS) {
       this->_recv_and_ack(*packet);
       // Do NOT schedule WRITE_READY event from this point.
@@ -1766,9 +1770,9 @@ QUICNetVConnection::_handle_error(QUICConnectionErrorUPtr error)
 }
 
 QUICPacketUPtr
-QUICNetVConnection::_dequeue_recv_packet(QUICPacketCreationResult &result)
+QUICNetVConnection::_dequeue_recv_packet(uint8_t *packet_buf, QUICPacketCreationResult &result)
 {
-  QUICPacketUPtr packet = this->_packet_recv_queue.dequeue(result);
+  QUICPacketUPtr packet = this->_packet_recv_queue.dequeue(packet_buf, result);
 
   if (result == QUICPacketCreationResult::SUCCESS) {
     if (this->direction() == NET_VCONNECTION_OUT) {

@@ -323,6 +323,8 @@ public:
 class QUICPacket
 {
 public:
+  static constexpr int MAX_INSTANCE_SIZE = 1024;
+
   QUICPacket();
 
   /*
@@ -416,5 +418,11 @@ public:
   {
     packet->~QUICPacket();
     quicPacketAllocator.free(packet);
+  }
+
+  static void
+  delete_dont_free(QUICPacket *packet)
+  {
+    packet->~QUICPacket();
   }
 };

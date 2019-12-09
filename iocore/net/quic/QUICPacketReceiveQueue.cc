@@ -44,7 +44,7 @@ QUICPacketReceiveQueue::enqueue(UDPPacket *packet)
 }
 
 QUICPacketUPtr
-QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
+QUICPacketReceiveQueue::dequeue(uint8_t *packet_buf, QUICPacketCreationResult &result)
 {
   QUICPacketUPtr quic_packet = QUICPacketFactory::create_null_packet();
   UDPPacket *udp_packet      = nullptr;
@@ -148,7 +148,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
   }
 
   if (this->_ph_protector.unprotect(pkt.get(), pkt_len)) {
-    quic_packet = this->_packet_factory.create(this->_udp_con, this->_from, this->_to, std::move(pkt), pkt_len,
+    quic_packet = this->_packet_factory.create(packet_buf, this->_udp_con, this->_from, this->_to, std::move(pkt), pkt_len,
                                                this->_largest_received_packet_number, result);
   } else {
     // ZERO_RTT might be rejected

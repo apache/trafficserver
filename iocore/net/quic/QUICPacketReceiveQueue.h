@@ -36,7 +36,7 @@ public:
   QUICPacketReceiveQueue(QUICPacketFactory &packet_factory, QUICPacketHeaderProtector &ph_protector);
 
   void enqueue(UDPPacket *packet);
-  QUICPacketUPtr dequeue(QUICPacketCreationResult &result);
+  QUICPacketUPtr dequeue(uint8_t *packet_buf, QUICPacketCreationResult &result);
   uint32_t size();
   void reset();
 
