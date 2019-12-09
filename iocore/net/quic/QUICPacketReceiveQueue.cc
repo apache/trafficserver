@@ -67,7 +67,7 @@ QUICPacketReceiveQueue::dequeue(uint8_t *packet_buf, QUICPacketCreationResult &r
     IOBufferBlock *b   = udp_packet->getIOBlockChain();
     size_t written     = 0;
     while (b) {
-      memcpy(this->_payload.get() + written, b->buf(), b->read_avail());
+      memcpy(this->_payload.get() + written, b->start(), b->read_avail());
       written += b->read_avail();
       b = b->next.get();
     }
