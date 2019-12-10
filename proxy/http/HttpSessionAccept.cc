@@ -59,7 +59,7 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
 
   new_session->new_connection(netvc, iobuf, reader);
 
-  new_session->trans.upstream_outbound_options = *new_session->accept_options;
+  new_session->_txn->upstream_outbound_options = *new_session->accept_options;
 
   return true;
 }
