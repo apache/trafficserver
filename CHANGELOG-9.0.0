@@ -629,6 +629,7 @@ Changes with Apache Traffic Server 9.0.0
   #5683 - Cleanup example directory
   #5686 - Reverse internal order of HPACK Dynamic Table Entries
   #5690 - Fix race condition in test
+  #5695 - Add MIMEHdr Garbage Collection to HPACK Dynamic Table
   #5697 - Coalesce empty objects in HdrHeap
   #5698 - Remove unused LibBulkIO
   #5699 - Remove unused header file ink_inout.h
@@ -757,6 +758,7 @@ Changes with Apache Traffic Server 9.0.0
   #5980 - Fix use-after-free problem related to logging headers
   #5985 - Add filename to error message in header_rewrite
   #5986 - Remove hard-coded ssl_multicert.config log reference
+  #5987 - Removing traffic_cop reference in admin guide introduction
   #5992 - Cache SSL EC explicitly
   #6000 - Add QUIC draft-23 support
   #6003 - Cleanup: do not re-define _proxy_ssn variable in local
@@ -782,9 +784,11 @@ Changes with Apache Traffic Server 9.0.0
   #6094 - Issue #4294: Handle return value of SSL_write() properly
   #6095 - For remap_stats, removes configure time dependency on search.h
   #6096 - Fixing log cleanup candidate selection and adding a test for it.
+  #6098 - Replace container of HPACK dynamic table from std::vector to std::deque
   #6099 - doc + unittest TSRemap(Init|NewInstance) failures
   #6106 - Removes proxy.config.cache.storage_filename
   #6116 - Updated to clang-format v9.0.0
+  #6118 - Avoid IOBufferReader::read_avail() call from MIOBuffer::high_water()
   #6120 - Fix null pointer dereference reported by clang-analyzer
   #6125 - Add Metrics to track SSL Handshake attempts
   #6126 - Fix the thread ready check
@@ -805,11 +809,13 @@ Changes with Apache Traffic Server 9.0.0
   #6160 - Fixes misc. spelling and whitespace
   #6163 - Update yaml-cpp to 0.6.3
   #6167 - Fixed gcc7 issue with yaml-cpp 0.6.3
+  #6168 - Add cache_range_requests autest, add to x-parentselectiion-key to xdebug plugin.
   #6169 - Fixes cppcheck issues for cookie_remap plugin
   #6170 - Add test to catch regressions in sni and override configs
   #6173 - Remove HttpTransact::build_upgrade_response
   #6174 - Remove useless UDP function
   #6175 - Removes the ssn_close hook, it can never work
+  #6176 - Fixing rolled log cleanup parsing for <something>.log.<something> files.
   #6180 - RBTree - fix potential nullptr dereference
   #6181 - remap_stats: Fix BufferWriter usage error.
   #6182 - tslua: Exposes set/get version for server request objects
@@ -819,5 +825,12 @@ Changes with Apache Traffic Server 9.0.0
   #6189 - Fixed issue with macOS Catalina and pcre 8.43 enabling pcre-jit
   #6190 - Fix ssl_session_reuse to compile on macOS and FreeBSD
   #6191 - Limit this check to Linux, where ldd always works
+  #6198 - Move logging before session could be freed
+  #6201 - ssl_session_reuse optimization to check if diags is on
+  #6204 - Lua plugin fix: Account for null in output from TSUrlPercentDecode.
+  #6207 - Add autopep8 & pyflakes in dev-packages for AuTest
+  #6209 - Add 100-continue expectation support on H2 connection
   #6212 - Cleanup trailing whitespaces, and YAML formatting
+  #6218 - Fix stringstream crash during shutdown
   #6224 - Fixed build issue with clang5 and Extendible
+  #6231 - Adjust the refcounts to avoid Mutex leak
