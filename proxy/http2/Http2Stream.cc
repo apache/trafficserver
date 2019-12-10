@@ -909,16 +909,22 @@ Http2Stream::release(IOBufferReader *r)
 }
 
 void
-Http2Stream::increment_client_transactions_stat()
+Http2Stream::increment_txn_stat()
 {
-  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
-  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT, _thread);
+  ink_assert(_proxy_ssn);
+  if (_proxy_ssn->get_netvc()->get_context() == NET_VCONNECTION_IN) {
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT, _thread);
+  }
 }
 
 void
-Http2Stream::decrement_client_transactions_stat()
+Http2Stream::decrement_txn_stat()
 {
-  HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
+  ink_assert(_proxy_ssn);
+  if (_proxy_ssn->get_netvc()->get_context() == NET_VCONNECTION_IN) {
+    HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
+  }
 }
 
 ssize_t

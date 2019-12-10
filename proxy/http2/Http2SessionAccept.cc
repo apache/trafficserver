@@ -36,6 +36,9 @@ Http2SessionAccept::~Http2SessionAccept() = default;
 bool
 Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
+  ink_assert(iobuf == nullptr); // not set in this code path
+  ink_assert(reader == nullptr);
+
   sockaddr const *client_ip = netvc->get_remote_addr();
   IpAllow::ACL session_acl  = IpAllow::match(client_ip, IpAllow::SRC_ADDR);
   if (!session_acl.isValid()) {

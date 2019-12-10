@@ -49,7 +49,7 @@ ProxyTransaction::new_transaction()
     _sm->plugin_id  = pi->getPluginId();
   }
 
-  this->increment_client_transactions_stat();
+  this->increment_txn_stat();
   _sm->attach_client_session(this, _reader);
 }
 
@@ -58,7 +58,7 @@ ProxyTransaction::release(IOBufferReader *r)
 {
   HttpTxnDebug("[%" PRId64 "] session released by sm [%" PRId64 "]", _proxy_ssn ? _proxy_ssn->get_id() : 0, _sm ? _sm->sm_id : 0);
 
-  this->decrement_client_transactions_stat();
+  this->decrement_txn_stat();
 
   // Pass along the release to the session
   if (_proxy_ssn) {

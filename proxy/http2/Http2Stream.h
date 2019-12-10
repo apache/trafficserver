@@ -93,8 +93,8 @@ public:
 
   bool allow_half_open() const override;
   bool is_first_transaction() const override;
-  void increment_client_transactions_stat() override;
-  void decrement_client_transactions_stat() override;
+  void increment_txn_stat() override;
+  void decrement_txn_stat() override;
   int get_transaction_id() const override;
   int get_transaction_priority_weight() const override;
   int get_transaction_priority_dependence() const override;

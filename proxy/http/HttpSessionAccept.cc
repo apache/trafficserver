@@ -29,6 +29,9 @@
 bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
+  ink_assert(iobuf == nullptr);  // not set on this code path
+  ink_assert(reader == nullptr); // not set on this code path
+
   sockaddr const *client_ip = netvc->get_remote_addr();
   IpAllow::ACL acl;
   ip_port_text_buffer ipb;
