@@ -1159,7 +1159,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
     }
   }
 
-  Http2Stream *new_stream = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread());
+  Http2Stream *new_stream = new Http2Stream();
   new_stream->init(new_id, client_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
 
   ink_assert(nullptr != new_stream);

@@ -36,8 +36,6 @@
 #define Http2StreamDebug(fmt, ...) \
   SsnDebug(_proxy_ssn, "http2_stream", "[%" PRId64 "] [%u] " fmt, _proxy_ssn->get_id(), this->get_id(), ##__VA_ARGS__);
 
-ClassAllocator<Http2Stream> http2StreamAllocator("http2StreamAllocator");
-
 Http2Stream::Http2Stream(Http2StreamId sid, ssize_t initial_rwnd) : _id(sid), _client_rwnd(initial_rwnd)
 {
   SET_HANDLER(&Http2Stream::main_event_handler);
@@ -808,7 +806,7 @@ Http2Stream::destroy()
   http_parser_clear(&http_parser);
 
   super::destroy();
-  THREAD_FREE(this, http2StreamAllocator, this_ethread());
+  delete this;
 }
 
 IOBufferReader *

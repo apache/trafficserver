@@ -64,6 +64,7 @@ ProxyTransaction::release(IOBufferReader *r)
   if (_proxy_ssn) {
     _proxy_ssn->release(this);
   }
+  this->destroy();
 }
 
 void
@@ -77,6 +78,7 @@ ProxyTransaction::destroy()
 {
   _sm = nullptr;
   this->mutex.clear();
+  delete this;
 }
 
 // See if we need to schedule on the primary thread for the transaction or change the thread that is associated with the VC.

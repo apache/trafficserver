@@ -37,7 +37,6 @@ public:
   ////////////////////
   // Methods
   void release(IOBufferReader *r) override;
-  void destroy() override; // todo make ~Http1Transaction()
 
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;

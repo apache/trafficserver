@@ -115,9 +115,6 @@ Http1ClientSession::free()
   // Clean up the write VIO in case of inactivity timeout
   this->do_io_write(nullptr, 0, nullptr);
 
-  // Free the transaction resources
-  this->_txn->super_type::destroy();
-
   if (client_vc) {
     client_vc->do_io_close();
     client_vc = nullptr;
@@ -135,7 +132,6 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   client_vc      = new_vc;
   magic          = HTTP_CS_MAGIC_ALIVE;
   mutex          = new_vc->mutex;
-  _txn->mutex    = mutex; // Share this mutex with the transaction
   ssn_start_time = Thread::get_hrtime();
   in_destroy     = false;
 
@@ -410,9 +406,11 @@ Http1ClientSession::reenable(VIO *vio)
 
 // Called from the Http1Transaction::release
 void
-Http1ClientSession::release(ProxyTransaction *trans)
+Http1ClientSession::release(ProxyTransaction *txn)
 {
   ink_assert(read_state == HCS_ACTIVE_READER || read_state == HCS_INIT);
+  ink_assert(_txn == txn);
+  _txn = nullptr;
 
   // Clean up the write VIO in case of inactivity timeout
   this->do_io_write(nullptr, 0, nullptr);
@@ -423,7 +421,6 @@ Http1ClientSession::release(ProxyTransaction *trans)
   //  IO to wait for new data
   bool more_to_read = this->_reader->is_read_avail_more_than(0);
   if (more_to_read) {
-    trans->destroy();
     HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", get_id());
     new_transaction();
   } else {
@@ -437,7 +434,6 @@ Http1ClientSession::release(ProxyTransaction *trans)
       client_vc->cancel_active_timeout();
       client_vc->add_to_keep_alive_queue();
     }
-    trans->destroy();
   }
 }
 
@@ -456,6 +452,9 @@ Http1ClientSession::new_transaction()
 
   read_state = HCS_ACTIVE_READER;
 
+  ink_assert(_txn == nullptr);
+  _txn        = new Http1Transaction();
+  _txn->mutex = this->mutex; // Share this mutex with the transaction
   _txn->set_proxy_ssn(this);
   transact_count++;
 
