@@ -124,13 +124,6 @@ DiagsConfig::reconfigure_diags()
   if (!all_found) {
     Error("couldn't fetch all proxy.config.diags values");
   } else {
-    //////////////////////////////
-    // clear out old tag tables //
-    //////////////////////////////
-
-    diags->deactivate_all(DiagsTagType_Debug);
-    diags->deactivate_all(DiagsTagType_Action);
-
     //////////////////////////////////////////////////////////////////////
     // add new tag tables from records.config or command line overrides //
     //////////////////////////////////////////////////////////////////////

@@ -35,7 +35,6 @@
 
 #include <cstdarg>
 #include "ink_mutex.h"
-#include "Regex.h"
 #include "ink_apidefs.h"
 #include "ContFlags.h"
 #include "ink_inet.h"
@@ -46,6 +45,9 @@
 #define BYTES_IN_MB 1000000
 
 class Diags;
+
+// This friend class only exists in the unit test executable.
+class DiagsUnitTest;
 
 // extern int diags_on_for_plugins;
 enum DiagsTagType {
@@ -92,6 +94,33 @@ struct DiagsConfigState {
   static int enabled[2];                     // one debug, one action
   DiagsModeOutput outputs[DiagsLevel_Count]; // where each level prints
 };
+
+using DiagEnabled = volatile char; // Non-zero value means enabled. (Volatile used for C compatibility.)
+
+namespace ts
+{
+namespace detail
+{
+  // This class is implemented in DiagsTagHelper.cc.
+  class DiagsTagHelper
+  {
+    friend class ::Diags;
+
+    DiagsTagHelper();
+    ~DiagsTagHelper();
+
+    DiagEnabled const *flag_for_tag(const char *tag, DiagsTagType mode = DiagsTagType_Debug);
+
+    void activate_taglist(const char *taglist, DiagsTagType mode = DiagsTagType_Debug);
+
+    struct Data;
+
+    Data *d[2];
+
+    friend class ::DiagsUnitTest;
+  };
+} // end namespace detail
+} // end namespace ts
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -147,16 +176,20 @@ public:
   }
 
   bool
-  on(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const
+  on(const char *tag, DiagsTagType mode = DiagsTagType_Debug)
   {
-    return this->on(mode) && tag_activated(tag, mode);
+    return this->on(mode) && *(_dt_helper.flag_for_tag(tag, mode));
   }
 
   /////////////////////////////////////
   // low-level tag inquiry functions //
   /////////////////////////////////////
 
-  bool tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const;
+  bool
+  tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug)
+  {
+    return *(_dt_helper.flag_for_tag(tag, mode));
+  }
 
   /////////////////////////////
   // raw printing interfaces //
@@ -181,7 +214,7 @@ public:
   void print_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
 
   void
-  log(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(5, 6)
+  log(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) TS_PRINTFLIKE(5, 6)
   {
     if (on(tag)) {
       va_list ap;
@@ -231,8 +264,12 @@ public:
 
 private:
   const std::string prefix_str;
+
+  friend class ts::detail::DiagsTagHelper;
+
+  ts::detail::DiagsTagHelper _dt_helper;
+
   mutable ink_mutex tag_table_lock; // prevents reconfig/read races
-  DFA *activated_tags[2];           // 1 table for debug, 1 for action
 
   // These are the default logfile permissions
   int diags_logfile_perm  = -1;

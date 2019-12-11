@@ -60,6 +60,7 @@ libtscore_la_SOURCES = \
 	ContFlags.cc \
 	CryptoHash.cc \
 	Diags.cc \
+	DiagsTagHelper.cc \
 	Errata.cc \
 	EventNotify.cc \
 	Extendible.cc \
@@ -109,6 +110,8 @@ libtscore_la_SOURCES = \
 	MatcherUtils.cc \
 	MemArena.cc \
 	MMH.cc \
+	OneWriterMultiReader.h \
+	OneWriterMultiReader.cc \
 	ParseRules.cc \
 	RbTree.cc \
 	Regex.cc \
@@ -173,6 +176,7 @@ test_tscore_SOURCES = \
 	unit_tests/test_ArgParser.cc \
 	unit_tests/test_BufferWriter.cc \
 	unit_tests/test_BufferWriterFormat.cc \
+	unit_tests/test_Diags.cc \
 	unit_tests/test_Extendible.cc \
 	unit_tests/test_History.cc \
 	unit_tests/test_ink_inet.cc \
@@ -183,7 +187,8 @@ test_tscore_SOURCES = \
 	unit_tests/test_List.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
-  unit_tests/test_ParseRules.cc \
+	unit_tests/test_OneWriterMultiReader.cc \
+	unit_tests/test_ParseRules.cc \
 	unit_tests/test_PriorityQueue.cc \
 	unit_tests/test_Ptr.cc \
 	unit_tests/test_Regex.cc \

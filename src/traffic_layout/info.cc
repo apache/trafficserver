@@ -25,6 +25,7 @@
 #include "tscore/I_Layout.h"
 #include "tscore/Filenames.h"
 #include "tscore/BufferWriter.h"
+#include <tscore/Regex.h>
 #include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
 #include "info.h"

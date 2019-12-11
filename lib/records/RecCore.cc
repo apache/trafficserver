@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include <tscore/Regex.h>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"

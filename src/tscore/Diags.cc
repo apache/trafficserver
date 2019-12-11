@@ -135,13 +135,6 @@ Diags::Diags(std::string_view prefix_string, const char *bdt, const char *bat, B
   stdout_log->open_file(); // should never fail
   stderr_log->open_file(); // should never fail
 
-  //////////////////////////////////////////////////////////////////
-  // start off with empty tag tables, will build in reconfigure() //
-  //////////////////////////////////////////////////////////////////
-
-  activated_tags[DiagsTagType_Debug]  = nullptr;
-  activated_tags[DiagsTagType_Action] = nullptr;
-
   outputlog_rolling_enabled  = RollingEnabledValues::NO_ROLLING;
   outputlog_rolling_interval = -1;
   outputlog_rolling_size     = -1;
@@ -325,35 +318,6 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 
 //////////////////////////////////////////////////////////////////////////////
 //
-//      bool Diags::tag_activated(char * tag, DiagsTagType mode)
-//
-//      This routine inquires if a particular <tag> in the tag table of
-//      type <mode> is activated, returning true if it is, false if it
-//      isn't.  If <tag> is nullptr, true is returned.  The call uses a lock
-//      to get atomic access to the tag tables.
-//
-//////////////////////////////////////////////////////////////////////////////
-
-bool
-Diags::tag_activated(const char *tag, DiagsTagType mode) const
-{
-  bool activated = false;
-
-  if (tag == nullptr) {
-    return (true);
-  }
-
-  lock();
-  if (activated_tags[mode]) {
-    activated = (activated_tags[mode]->match(tag) != -1);
-  }
-  unlock();
-
-  return (activated);
-}
-
-//////////////////////////////////////////////////////////////////////////////
-//
 //      void Diags::activate_taglist(char * taglist, DiagsTagType mode)
 //
 //      This routine adds all tags in the vertical-bar-separated taglist
@@ -367,13 +331,7 @@ void
 Diags::activate_taglist(const char *taglist, DiagsTagType mode)
 {
   if (taglist) {
-    lock();
-    if (activated_tags[mode]) {
-      delete activated_tags[mode];
-    }
-    activated_tags[mode] = new DFA;
-    activated_tags[mode]->compile(taglist);
-    unlock();
+    _dt_helper.activate_taglist(taglist, mode);
   }
 }
 
@@ -390,12 +348,7 @@ Diags::activate_taglist(const char *taglist, DiagsTagType mode)
 void
 Diags::deactivate_all(DiagsTagType mode)
 {
-  lock();
-  if (activated_tags[mode]) {
-    delete activated_tags[mode];
-    activated_tags[mode] = nullptr;
-  }
-  unlock();
+  _dt_helper.activate_taglist(nullptr, mode);
 }
 
 //////////////////////////////////////////////////////////////////////////////

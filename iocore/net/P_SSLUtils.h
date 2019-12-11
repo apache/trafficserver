@@ -31,6 +31,7 @@
 
 #include "tscore/ink_config.h"
 #include "tscore/Diags.h"
+#include <tscore/Regex.h>
 #include "records/I_RecCore.h"
 #include "P_SSLCertLookup.h"
 
